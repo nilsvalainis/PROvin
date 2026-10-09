@@ -15,7 +15,7 @@ import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import type { IrissMobilePlatform } from "@/lib/iriss-listings-mobile-platform";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { listingCostsFor, type IrissListPrefs, type ListingTaxOverride } from "@/lib/iriss-listings-operator-prefs";
-import { listingTaxLabel, listingTaxResolved, taxFromVehicle } from "@/lib/iriss-listings-vat";
+import { listingTaxCostArgs, listingTaxLabel, listingTaxResolved, taxFromVehicle } from "@/lib/iriss-listings-vat";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
 
 function eur(n: number | null | undefined): string {
@@ -64,8 +64,9 @@ export function IrissListDrawer({
   const [lvMsg, setLvMsg] = useState("");
   const dmg = classifyListingDamage(v.damageRaw);
   const lv = prefs.damageLv[v.id] ?? "";
-  const real = bid0 == null ? null : listingRealCost(tax.kind, tax.rate ?? 0, bid, extras);
-  const mb = budget != null ? listingMaxBid(tax.kind, tax.rate ?? 0, budget, extras) : null;
+  const taxArgs = listingTaxCostArgs(tax);
+  const real = bid0 == null ? null : listingRealCost(taxArgs.kind, taxArgs.foreignVatPct, bid, extras);
+  const mb = budget != null ? listingMaxBid(taxArgs.kind, taxArgs.foreignVatPct, budget, extras) : null;
   const sourceHref = resolveListingDetailUrl(v);
   const yearLabel = listingYearLabel(v);
   const powerKwLabel = formatListingPowerKwLabel(v.powerKw);

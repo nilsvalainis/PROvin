@@ -47,7 +47,7 @@ import {
   type IrissListTab,
 } from "@/lib/iriss-listings-operator-prefs";
 import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
-import { listingTaxResolved, type ListingTax } from "@/lib/iriss-listings-vat";
+import { listingTaxCostArgs, listingTaxResolved, type ListingTax } from "@/lib/iriss-listings-vat";
 import {
   IRISS_LISTING_PLATFORMS,
   type IrissListingPlatform,
@@ -186,8 +186,8 @@ function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs, budget: number | 
   if (budget == null) return null;
   const bid = listingBidPrice(v);
   if (bid == null) return null;
-  const tax = taxOf(v, prefs);
-  return listingMaxBid(tax.kind, tax.rate ?? 0, budget, extrasOf(v, prefs)) - bid;
+  const args = listingTaxCostArgs(taxOf(v, prefs));
+  return listingMaxBid(args.kind, args.foreignVatPct, budget, extrasOf(v, prefs)) - bid;
 }
 
 function daysInAuction(v: IrissListingVehicle, nowMs: number | null): string {
@@ -420,7 +420,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
       const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.orderBrandModels.join(" ")} ${linked.map((o) => `${o.clientName} ${o.brandModel} ${o.preferredColors} ${o.brief}`).join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs.fav, prefs.hidden, prefs.orderOv, hideTech, orderById, orderFilter]);
+  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, orderById, orderFilter]);
 
   const sorted = useMemo(() => {
     const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs, budgetOf(v, prefs, orderById)) }));
@@ -882,8 +882,9 @@ function VehicleCard({
   const tax = taxOf(v, prefs);
   const extras = extrasOf(v, prefs);
   const bid = listingBidPrice(v);
-  const real = bid == null ? null : listingRealCost(tax.kind, tax.rate ?? 0, bid, extras);
-  const mb = budget != null ? listingMaxBid(tax.kind, tax.rate ?? 0, budget, extras) : null;
+  const taxArgs = listingTaxCostArgs(tax);
+  const real = bid == null ? null : listingRealCost(taxArgs.kind, taxArgs.foreignVatPct, bid, extras);
+  const mb = budget != null ? listingMaxBid(taxArgs.kind, taxArgs.foreignVatPct, budget, extras) : null;
   const room = mb != null && bid != null ? mb - bid : null;
   const dmg = classifyListingDamage(v.damageRaw);
   const fav = prefs.fav.includes(v.id);

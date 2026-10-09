@@ -1,6 +1,10 @@
 /**
  * PVN režīma noteikšana visām LIST platformām (Auto1, Openlane, Autobid).
- * Gala cena rēķinās no `kind` + `rate`. Detekcijas izmaiņas paliek šajā failā.
+ *
+ * Šis fails ir vienīgā vieta, kur mainīt detekciju. UI (`listingTaxLabel`,
+ * `IrissListTaxBadge`) un gala cena (`listingRealCost` iekš
+ * `lib/iriss-listings-cost.ts`) ņem tikai `kind` + `rate`. Spec fixtures:
+ * `lib/iriss-listings-vat.test.ts`.
  */
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
 import type { ListingTaxKind } from "@/lib/iriss-listings-cost";
@@ -70,8 +74,8 @@ function rateFromNoteOrCountry(note: string, country?: string, vatRate?: number 
   return { rate: null, rateFrom: "" };
 }
 
-function autobidFromNote(note: string): ListingTax {
-  const raw = `taxInformation: „${note}”`;
+function taxFromNote(note: string, rawPrefix = "taxInformation"): ListingTax {
+  const raw = `${rawPrefix}: „${note}”`;
   if (noteSuggestsMargin(note)) return { kind: "margin", rate: null, raw, rateFrom: "" };
   const m = note.match(/(\d{1,2}(?:[.,]\d+)?)\s*%/);
   if (m && (noteSuggestsIncluded(note) || /includ|incl|inkl|mwst|vat/i.test(note))) {
@@ -85,55 +89,64 @@ function autobidFromNote(note: string): ListingTax {
   return { kind: "unknown", rate: null, raw, rateFrom: "" };
 }
 
-export function detectListingTax(input: ListingTaxInput): ListingTax {
+function detectAuto1Tax(input: ListingTaxInput): ListingTax {
   const note = (input.vatNote ?? "").trim();
-  if (input.platform === "auto1") {
-    const raw = [
-      input.salesVatType != null ? `salesVatType: ${input.salesVatType}` : "",
-      input.taxDeduction != null ? `taxDeduction: ${input.taxDeduction}` : "",
-      input.vatRate != null ? `vatRate: ${input.vatRate}` : "",
-      input.countryCode ? `countryCode: ${input.countryCode}` : "",
-      note && !/salesVatType/i.test(note) ? note : "",
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    const typeFromNote = note.match(/105[34]/);
-    const sales = input.salesVatType ?? (typeFromNote ? Number(typeFromNote[0]) : null);
-    if (sales === 1053 || input.taxDeduction === false) return { kind: "margin", rate: null, raw: raw || note || "salesVatType 1053", rateFrom: "" };
-    if (sales === 1054 || input.taxDeduction === true) {
-      const rate = input.vatRate ?? countryVat(input.countryCode);
-      if (rate == null) return { kind: "unknown", rate: null, raw: raw || "salesVatType 1054, likme nav", rateFrom: "" };
-      return { kind: "gross", rate, raw: raw || `salesVatType 1054`, rateFrom: input.vatRate != null ? "v2 meta.finance.vatRate" : `valsts ${input.countryCode}` };
-    }
-    if (note) return autobidFromNote(note);
-    return { kind: "unknown", rate: null, raw: raw || "Auto1 PVN lauks nav", rateFrom: "" };
+  const raw = [
+    input.salesVatType != null ? `salesVatType: ${input.salesVatType}` : "",
+    input.taxDeduction != null ? `taxDeduction: ${input.taxDeduction}` : "",
+    input.vatRate != null ? `vatRate: ${input.vatRate}` : "",
+    input.countryCode ? `countryCode: ${input.countryCode}` : "",
+    note && !/salesVatType/i.test(note) ? note : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const typeFromNote = note.match(/105[34]/);
+  const sales = input.salesVatType ?? (typeFromNote ? Number(typeFromNote[0]) : null);
+  if (sales === 1053 || input.taxDeduction === false) return { kind: "margin", rate: null, raw: raw || note || "salesVatType 1053", rateFrom: "" };
+  if (sales === 1054 || input.taxDeduction === true) {
+    const rate = input.vatRate ?? countryVat(input.countryCode);
+    if (rate == null) return { kind: "unknown", rate: null, raw: raw || "salesVatType 1054, likme nav", rateFrom: "" };
+    return { kind: "gross", rate, raw: raw || `salesVatType 1054`, rateFrom: input.vatRate != null ? "v2 meta.finance.vatRate" : `valsts ${input.countryCode}` };
   }
-  if (input.platform === "openline") {
-    const raw = [
-      input.isMargin === true ? "IsMargin: true" : input.isMargin === false ? "IsMargin: false" : "",
-      note,
-      input.countryCode ? `countryCode: ${input.countryCode}` : "",
-    ]
-      .filter(Boolean)
-      .join(" · ");
-    if (input.isMargin === true || noteSuggestsMargin(note)) {
-      return { kind: "margin", rate: null, raw: raw || "IsMargin: true", rateFrom: "" };
-    }
-    if (noteSuggestsIncluded(note)) {
-      const { rate, rateFrom } = rateFromNoteOrCountry(note, input.countryCode, input.vatRate);
-      if (rate == null) {
-        if (input.isMargin === false) return { kind: "gross", rate: null, raw: raw || note, rateFrom: "" };
-        return { kind: "unknown", rate: null, raw: raw || note, rateFrom: "" };
-      }
-      return { kind: "gross", rate, raw: raw || note, rateFrom };
-    }
-    if (noteSuggestsExcluded(note) || input.isMargin === false) {
-      return { kind: "net", rate: null, raw: raw || note || "VAT excluded", rateFrom: "" };
-    }
-    if (note) return autobidFromNote(note);
-    return { kind: "unknown", rate: null, raw: raw || "IsMargin nav", rateFrom: "" };
+  if (note) return taxFromNote(note);
+  return { kind: "unknown", rate: null, raw: raw || "Auto1 PVN lauks nav", rateFrom: "" };
+}
+
+function detectOpenlaneTax(input: ListingTaxInput): ListingTax {
+  const note = (input.vatNote ?? "").trim();
+  const raw = [
+    input.isMargin === true ? "IsMargin: true" : input.isMargin === false ? "IsMargin: false" : "",
+    note,
+    input.countryCode ? `countryCode: ${input.countryCode}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  if (input.isMargin === true || noteSuggestsMargin(note)) {
+    return { kind: "margin", rate: null, raw: raw || "IsMargin: true", rateFrom: "" };
   }
-  return autobidFromNote(note);
+  if (noteSuggestsIncluded(note)) {
+    const { rate, rateFrom } = rateFromNoteOrCountry(note, input.countryCode, input.vatRate);
+    if (rate == null) {
+      if (input.isMargin === false) return { kind: "gross", rate: null, raw: raw || note, rateFrom: "" };
+      return { kind: "unknown", rate: null, raw: raw || note, rateFrom: "" };
+    }
+    return { kind: "gross", rate, raw: raw || note, rateFrom };
+  }
+  if (noteSuggestsExcluded(note) || input.isMargin === false) {
+    return { kind: "net", rate: null, raw: raw || note || "VAT excluded", rateFrom: "" };
+  }
+  if (note) return taxFromNote(note);
+  return { kind: "unknown", rate: null, raw: raw || "IsMargin nav", rateFrom: "" };
+}
+
+function detectAutobidTax(input: ListingTaxInput): ListingTax {
+  return taxFromNote((input.vatNote ?? "").trim());
+}
+
+export function detectListingTax(input: ListingTaxInput): ListingTax {
+  if (input.platform === "auto1") return detectAuto1Tax(input);
+  if (input.platform === "openline") return detectOpenlaneTax(input);
+  return detectAutobidTax(input);
 }
 
 export function taxFromVehicle(v: Pick<IrissListingVehicle, "platform" | "vatNote" | "salesVatType" | "taxDeduction" | "isMargin" | "countryCode" | "vatRate">): ListingTax {
@@ -166,4 +179,9 @@ export function listingTaxResolved(
     kind: ov.kind,
     rate: ov.kind === "gross" ? ov.rate ?? detected.rate : detected.rate,
   };
+}
+
+/** `listingRealCost` / `listingMaxBid` arguments from a detected (or overridden) tax. */
+export function listingTaxCostArgs(t: ListingTax): { kind: ListingTaxKind; foreignVatPct: number } {
+  return { kind: t.kind, foreignVatPct: t.rate ?? 0 };
 }
