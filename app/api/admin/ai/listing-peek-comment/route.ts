@@ -7,6 +7,7 @@ import { nextJsonBodyWithAiUsage } from "@/lib/admin-ai-route-response";
 import { getAdminSession } from "@/lib/admin-auth";
 import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { generateListingPeekCommentWithAi } from "@/lib/admin-ai-listing-peek";
+import { quickEvalAiContextForPeek } from "@/lib/quick-eval-service";
 import { parseAiModelTier } from "@/lib/ai-admin-model-tier";
 
 export const maxDuration = 300;
@@ -42,8 +43,10 @@ export async function POST(req: Request) {
 
   try {
     return await nextJsonBodyWithAiUsage(async () => {
+      const registryContext = await quickEvalAiContextForPeek(str(b.peekId)).catch(() => "");
       const result = await generateListingPeekCommentWithAi({
         listingUrl,
+        registryContext,
         operatorNotes: str(b.operatorNotes),
         existingDraftPlain: str(b.existingDraftPlain).trim() || undefined,
         modelTier:

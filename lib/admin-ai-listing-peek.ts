@@ -35,6 +35,8 @@ export async function generateListingPeekCommentWithAi(input: {
   operatorNotes?: string;
   existingDraftPlain?: string;
   modelTier?: AiAdminModelTier | null;
+  /** Bezmaksas avotu kopsavilkums (CSDD, sludinājuma vēsture, ārzemju reģistri). */
+  registryContext?: string;
 }): Promise<{
   closer: boolean;
   lines: Record<ListingPeekTopicId, string>;
@@ -52,6 +54,13 @@ export async function generateListingPeekCommentWithAi(input: {
       "",
       listingBlock,
       "",
+      ...(input.registryContext?.trim()
+        ? [
+            "Bezmaksas reģistru dati par šo auto (izmanto nobraukumam, negadījumiem, tehniskajam stāvoklim):",
+            input.registryContext.trim(),
+            "",
+          ]
+        : []),
       "Sagatavju frāzes (drīksti izmantot vārds vārdā, ja der):",
       listingPeekPhraseBank(),
       "",
