@@ -33,6 +33,8 @@ export type QuickEvalExportRecord = {
   conflicts: SourceBlockKey[];
 };
 
+export type QuickEvalLtabMark = "clean" | "claims";
+
 export type QuickEvalDoc = {
   version: 1;
   peekId: string;
@@ -42,6 +44,14 @@ export type QuickEvalDoc = {
   seed?: { at: string; parts: FreeSourceSeedParts };
   reusedFrom?: QuickEvalReuseRecord[];
   exports?: QuickEvalExportRecord[];
+  /** Kad katrs bezmaksas avots pēdējo reizi ielasīts (atslēga = seed daļa: listing, csdd, tjekbil…). */
+  sourceAt?: Record<string, string>;
+  /** VIN SCAN: maksas avotu pieejamība bez pirkuma. */
+  vinScan?: { at: string; indicators: import("@/lib/vin-scan/types").VinScanIndicator[] };
+  /** CC-VIN foto skaits (PROVIN skripts pārlūkā). */
+  ccVin?: { at: string; count: number | null; error?: string };
+  /** LTAB pārbaudi dara operators; atzīme saglabājas un aiziet vēstulē / eksportā. */
+  ltab?: { at: string; mark: QuickEvalLtabMark };
   createdAt: string;
   updatedAt: string;
 };
@@ -84,6 +94,10 @@ export function parseQuickEvalDoc(raw: string, peekId: string): QuickEvalDoc | n
       ...(o.seed && typeof o.seed === "object" ? { seed: o.seed } : {}),
       ...(Array.isArray(o.reusedFrom) ? { reusedFrom: o.reusedFrom } : {}),
       ...(Array.isArray(o.exports) ? { exports: o.exports } : {}),
+      ...(o.sourceAt && typeof o.sourceAt === "object" ? { sourceAt: o.sourceAt } : {}),
+      ...(o.vinScan && Array.isArray(o.vinScan.indicators) ? { vinScan: o.vinScan } : {}),
+      ...(o.ccVin && typeof o.ccVin === "object" ? { ccVin: o.ccVin } : {}),
+      ...(o.ltab && (o.ltab.mark === "clean" || o.ltab.mark === "claims") ? { ltab: o.ltab } : {}),
       createdAt: typeof o.createdAt === "string" ? o.createdAt : base.createdAt,
       updatedAt: typeof o.updatedAt === "string" ? o.updatedAt : base.updatedAt,
     };

@@ -11,6 +11,8 @@ import {
   listQuickEvalExportCandidates,
   quickEvalBlockSummaries,
   seedQuickEval,
+  setQuickEvalCcVin,
+  setQuickEvalLtabMark,
 } from "@/lib/quick-eval-service";
 import { readQuickEval } from "@/lib/quick-eval-store";
 import { findVinHistory, reuseVehicleData } from "@/lib/vin-history";
@@ -61,8 +63,19 @@ export async function POST(req: Request) {
   const action = String(b.action ?? "");
 
   if (action === "refresh") {
-    const doc = await seedQuickEval(peek.id, { refresh: true });
+    const only = String(b.only ?? "").trim();
+    const doc = await seedQuickEval(peek.id, only ? { only } : { refresh: true });
     return NextResponse.json({ ok: Boolean(doc), parts: doc?.seed?.parts ?? null });
+  }
+  if (action === "ltab") {
+    const mark = b.mark === "clean" || b.mark === "claims" ? b.mark : null;
+    const doc = await setQuickEvalLtabMark(peek.id, mark);
+    return NextResponse.json({ ok: Boolean(doc), ltab: doc?.ltab ?? null });
+  }
+  if (action === "ccvin") {
+    const count = typeof b.count === "number" && Number.isFinite(b.count) ? Math.max(0, Math.trunc(b.count)) : null;
+    const doc = await setQuickEvalCcVin(peek.id, count, typeof b.error === "string" ? b.error.slice(0, 160) : undefined);
+    return NextResponse.json({ ok: Boolean(doc) });
   }
   if (action === "export") {
     const sessionId = String(b.sessionId ?? "").trim();

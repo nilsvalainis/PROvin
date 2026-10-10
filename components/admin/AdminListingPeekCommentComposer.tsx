@@ -51,7 +51,10 @@ export function AdminListingPeekCommentComposer({
   initialCloser = true,
   initialLetter,
   submitLabel = "Nosūtīt e-pastu",
+  facts,
 }: {
+  /** Avotu fakti pie tēmām (piem. nobraukums no DK reģistra), lai sagataves izvēlētos pēc datiem. */
+  facts?: Partial<Record<ListingPeekTopicId, string>>;
   fieldId: string;
   peekId: string;
   smtpOk: boolean;
@@ -269,6 +272,11 @@ export function AdminListingPeekCommentComposer({
                   className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[13px] text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
                 />
               </div>
+              {facts?.[topic.id] ? (
+                <p className="mt-1 pl-10 text-[11px] leading-snug text-[var(--color-provin-muted)]">
+                  {facts[topic.id]}
+                </p>
+              ) : null}
               {open ? (
                 <div id={`${fieldId}-${topic.id}-panel`} className="mt-2 pl-10">
                   <AdminListingPeekTopicChips
