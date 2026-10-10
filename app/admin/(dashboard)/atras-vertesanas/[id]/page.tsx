@@ -1,3 +1,4 @@
+import { cache, Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
@@ -26,6 +27,26 @@ import { saveQuickEvalContact, setQuickEvalStatus } from "../actions";
 
 export const dynamic = "force-dynamic";
 
+const candidatesFor = cache((peekId: string) => listQuickEvalExportCandidates(peekId).catch(() => []));
+
+async function ExportSection({
+  peekId,
+  exports,
+  dropUp = false,
+}: {
+  peekId: string;
+  exports: Array<{ sessionId: string; at: string; mode: string }>;
+  dropUp?: boolean;
+}) {
+  const candidates = await candidatesFor(peekId);
+  return <AdminQuickEvalExportMenu peekId={peekId} candidates={candidates} exports={exports} dropUp={dropUp} />;
+}
+
+async function VinBarSection({ peekId, keys }: { peekId: string; keys: Array<string | null | undefined> }) {
+  const entries = await findVinHistory(keys, { peekId }).catch(() => []);
+  return <AdminQuickEvalVinBar peekId={peekId} entries={entries} />;
+}
+
 const STATUS_PILL: Record<string, { label: string; cls: string }> = {
   new: { label: "Jauns", cls: "bg-sky-50 text-sky-800 ring-sky-200" },
   in_progress: { label: "Procesā", cls: "bg-amber-50 text-amber-900 ring-amber-200" },
@@ -52,12 +73,8 @@ export default async function QuickEvalDetailPage({
     peek = (await updateListingPeekStatus(peek.id, "in_progress").catch(() => null)) ?? { ...peek, status: "in_progress" };
   }
   const [doc, all] = await Promise.all([readQuickEval(peek.id).catch(() => null), listListingPeeks(200).catch(() => [])]);
-  const [candidates, vinHistory] = await Promise.all([
-    listQuickEvalExportCandidates(peek.id).catch(() => []),
-    findVinHistory([peek.vin, doc?.vin, doc?.sourceBlocks.csdd.registrationNumber, doc?.sourceBlocks.csdd.vin], {
-      peekId: peek.id,
-    }).catch(() => []),
-  ]);
+  // VIN vēsture un eksporta kandidāti skenē visus pasūtījumus → straumē ar Suspense, lapa nerāda tukšu ekrānu.
+  const vinKeys = [peek.vin, doc?.vin, doc?.sourceBlocks.csdd.registrationNumber, doc?.sourceBlocks.csdd.vin];
 
   const listingUrl = canonicalizeListingUrl(peek.listingUrl);
   const blocks = doc?.sourceBlocks;
@@ -153,7 +170,9 @@ export default async function QuickEvalDetailPage({
           <div className="hidden flex-wrap items-center gap-1.5 md:flex">
             {peek.phone ? <AdminWhatsAppOpenButton phone={peek.phone} variant="pill" /> : null}
             <AdminCopyVinButton vin={vin} />
-            <AdminQuickEvalExportMenu peekId={peek.id} candidates={candidates} exports={doc?.exports ?? []} />
+            <Suspense fallback={<span className={`${hdrBtn} opacity-60`}>Eksportēt…</span>}>
+              <ExportSection peekId={peek.id} exports={doc?.exports ?? []} />
+            </Suspense>
             <form action={setQuickEvalStatus} className="flex gap-1.5">
               <input type="hidden" name="id" value={peek.id} />
               <input type="hidden" name="back" value={back} />
@@ -195,7 +214,9 @@ export default async function QuickEvalDetailPage({
         </details>
       </section>
 
-      <AdminQuickEvalVinBar peekId={peek.id} entries={vinHistory} />
+      <Suspense fallback={null}>
+        <VinBarSection peekId={peek.id} keys={vinKeys} />
+      </Suspense>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
@@ -294,7 +315,9 @@ export default async function QuickEvalDetailPage({
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <AdminCopyVinButton vin={vin} />
-          <AdminQuickEvalExportMenu peekId={peek.id} candidates={candidates} exports={doc?.exports ?? []} dropUp />
+          <Suspense fallback={<span className={`${hdrBtn} opacity-60`}>Eksportēt…</span>}>
+            <ExportSection peekId={peek.id} exports={doc?.exports ?? []} dropUp />
+          </Suspense>
         </div>
       </div>
     </div>

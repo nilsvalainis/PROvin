@@ -215,10 +215,35 @@ async function readDoc(): Promise<ListingPeekDoc> {
   return fromFs ?? emptyDoc();
 }
 
+/**
+ * Tikai lasīšanai (saraksts, viens ieraksts, polling skaitītāji): viens Blob GET uz ~3 s un
+ * kopīgs inflight solījums, lai vienā lapas ielādē 3–4 izsaukumi nedara 3–4 GET.
+ * Rakstīšanas ceļi (read-modify-write) vienmēr lasa svaigi ar `readDoc()`.
+ */
+const READ_CACHE_TTL_MS = 3000;
+let readCache: { at: number; doc: ListingPeekDoc } | null = null;
+let readInflight: Promise<ListingPeekDoc> | null = null;
+
+async function readDocCached(): Promise<ListingPeekDoc> {
+  if (readCache && Date.now() - readCache.at < READ_CACHE_TTL_MS) return readCache.doc;
+  if (readInflight) return readInflight;
+  readInflight = readDoc()
+    .then((doc) => {
+      readCache = { at: Date.now(), doc };
+      return doc;
+    })
+    .finally(() => {
+      readInflight = null;
+    });
+  return readInflight;
+}
+
 async function writeDoc(doc: ListingPeekDoc): Promise<void> {
+  readCache = null;
   const token = blobToken();
   if (token) {
     await writeToBlob(token, doc);
+    readCache = null;
     try {
       await writeToFilesystem(doc);
     } catch {
@@ -315,7 +340,7 @@ export async function createListingPeek(input: {
 }
 
 export async function listListingPeeks(limit = 100): Promise<ListingPeekEntry[]> {
-  const doc = await readDoc();
+  const doc = await readDocCached();
   return doc.entries
     .slice()
     .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
@@ -346,7 +371,7 @@ export async function isListingPeekPublicQueuePaused(): Promise<boolean> {
 export async function getListingPeekById(id: string): Promise<ListingPeekEntry | null> {
   const trimmed = id.trim();
   if (!trimmed) return null;
-  const doc = await readDoc();
+  const doc = await readDocCached();
   return doc.entries.find((e) => e.id === trimmed) ?? null;
 }
 

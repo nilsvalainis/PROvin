@@ -119,6 +119,7 @@ async function readDashboardDraftIndexDoc(): Promise<DashboardDraftIndexDoc> {
 }
 
 async function writeDashboardDraftIndexDoc(doc: DashboardDraftIndexDoc): Promise<void> {
+  indexReadCache = null;
   const dir = getOrderDraftStorageDir();
   const blob = getOrderDraftBlobConfig();
   if (!dir && !blob) return;
@@ -230,18 +231,47 @@ async function readDraftFileSummaryFields(
   return empty;
 }
 
+/**
+ * Melnraksti, kuriem backfill jau mēģināts šajā instancē (lauks tur tiešām tukšs, piem. nav piezīmju).
+ * Bez šī katrs saraksta / VIN vēstures pieprasījums atkārtoti lasīja līdz 40 pilniem melnrakstiem.
+ */
+const BACKFILL_RETRY_MS = 10 * 60 * 1000;
+const backfillTriedAt = new Map<string, number>();
+
+const INDEX_READ_TTL_MS = 3000;
+let indexReadCache: { at: number; doc: DashboardDraftIndexDoc } | null = null;
+let indexReadInflight: Promise<DashboardDraftIndexDoc> | null = null;
+
+/** Tikai lasīšanai: viens GET uz ~3 s (vienā lapā summaries izsauc vairākas funkcijas). */
+async function readDashboardDraftIndexDocCached(): Promise<DashboardDraftIndexDoc> {
+  if (indexReadCache && Date.now() - indexReadCache.at < INDEX_READ_TTL_MS) return indexReadCache.doc;
+  if (indexReadInflight) return indexReadInflight;
+  indexReadInflight = readDashboardDraftIndexDoc()
+    .then((doc) => {
+      indexReadCache = { at: Date.now(), doc };
+      return doc;
+    })
+    .finally(() => {
+      indexReadInflight = null;
+    });
+  return indexReadInflight;
+}
+
 /** Viena JSON lasīšana visiem dashboard laukiem; trūkstošo makeModel aizpilda no melnraksta. */
 export async function readDashboardDraftSummaries(
   sessionIds: string[],
 ): Promise<Map<string, DashboardDraftIndexEntry>> {
-  const doc = await readDashboardDraftIndexDoc();
+  const doc = await readDashboardDraftIndexDocCached();
   const out = new Map<string, DashboardDraftIndexEntry>();
   const needsBackfill: string[] = [];
 
   for (const id of sessionIds) {
     const entry = doc.entries[id] ?? EMPTY_ENTRY;
     out.set(id, entry);
-    if (!entry.makeModel || !entry.vin || !entry.notes) needsBackfill.push(id);
+    if (!entry.makeModel || !entry.vin || !entry.notes) {
+      const tried = backfillTriedAt.get(id);
+      if (!tried || Date.now() - tried > BACKFILL_RETRY_MS) needsBackfill.push(id);
+    }
   }
 
   if (needsBackfill.length > 0) {
@@ -253,6 +283,7 @@ export async function readDashboardDraftSummaries(
         const prev = out.get(id) ?? EMPTY_ENTRY;
         if (prev.makeModel && prev.vin && prev.notes) return;
         const fromDraft = await readDraftFileSummaryFields(id);
+        backfillTriedAt.set(id, Date.now());
         const next = {
           ...prev,
           makeModel: prev.makeModel || fromDraft.makeModel,

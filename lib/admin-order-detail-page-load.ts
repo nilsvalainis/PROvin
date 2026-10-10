@@ -103,6 +103,19 @@ export async function loadAdminOrderDetailPageData(
   }
 
   try {
+    // Neatkarīgās lasīšanas sāk uzreiz paralēli Stripe pieprasījumam (agrāk – viena pēc otras).
+    const draftP = readOrderDraft(sid).then(
+      (v) => ({ ok: true as const, v }),
+      (e: unknown) => ({ ok: false as const, e }),
+    );
+    const upsellP = readSessionUpsellDoc(sid).then(
+      (v) => ({ ok: true as const, v }),
+      (e: unknown) => ({ ok: false as const, e }),
+    );
+    const colorP = getAuditResultColor(sid).then(
+      (v) => ({ ok: true as const, v }),
+      (e: unknown) => ({ ok: false as const, e }),
+    );
     let order: Awaited<ReturnType<typeof getCheckoutSessionDetail>>;
     try {
       order = await getCheckoutSessionDetail(sid);
@@ -128,9 +141,10 @@ export async function loadAdminOrderDetailPageData(
     }
 
     let serverOrderDraft: OrderDraftState | null = null;
-    try {
-      serverOrderDraft = await readOrderDraft(sid);
-    } catch (e) {
+    const draftRes = await draftP;
+    if (draftRes.ok) serverOrderDraft = draftRes.v;
+    else {
+      const e = draftRes.e;
       const msg = e instanceof Error ? e.message : String(e);
       return {
         ok: false,
@@ -159,7 +173,9 @@ export async function loadAdminOrderDetailPageData(
     const partnerAuditPurpose =
       parsePartnerAuditPurposeFromNotes(mergedNotes) ||
       (order.auditPurpose === "client" || order.auditPurpose === "internal" ? order.auditPurpose : null);
-    const upsellDoc = await readSessionUpsellDoc(sid);
+    const upsellRes = await upsellP;
+    if (!upsellRes.ok) throw upsellRes.e;
+    const upsellDoc = upsellRes.v;
     const upsellOverlay = upsellListOverlay(
       upsellDoc
         ? Object.values(upsellDoc.offers)
@@ -191,11 +207,9 @@ export async function loadAdminOrderDetailPageData(
     }
 
     let auditResultColor: AuditResultColor | null = null;
-    try {
-      auditResultColor = await getAuditResultColor(sid);
-    } catch (e) {
-      console.warn("[admin-order-detail] audit result color failed", e);
-    }
+    const colorRes = await colorP;
+    if (colorRes.ok) auditResultColor = colorRes.v;
+    else console.warn("[admin-order-detail] audit result color failed", colorRes.e);
 
     return {
       ok: true,
