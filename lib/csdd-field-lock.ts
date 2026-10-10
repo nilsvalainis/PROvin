@@ -44,8 +44,8 @@ export function isCsddApiLockedKey(key: string): key is CsddApiLockedKey {
 
 /** Formas lauks: „Kravas furgons (N1)”, ja reģistrā ir gan TL veids, gan COC kategorija. */
 export function formatCsddVehicleTypeDisplay(kind: string, cocCategory: string): string {
-  const k = kind.trim();
-  const c = cocCategory.trim();
+  const k = String(kind ?? "").trim();
+  const c = String(cocCategory ?? "").trim();
   if (k && c && !k.toLowerCase().includes(c.toLowerCase())) return `${k} (${c})`;
   return k || c;
 }

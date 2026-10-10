@@ -142,8 +142,8 @@ export function applyCsddTechDataToBlock(
  * jāredz, jo tā parasti nozīmē, ka klients iedevis citas mašīnas numuru.
  */
 export function csddVinMatchesOrder(registryVin: string, orderVinOrPlate: string): boolean | null {
-  const registry = registryVin.trim().toUpperCase();
-  const order = orderVinOrPlate.trim().toUpperCase().replace(/[\s-]/g, "");
+  const registry = String(registryVin ?? "").trim().toUpperCase();
+  const order = String(orderVinOrPlate ?? "").trim().toUpperCase().replace(/[\s-]/g, "");
   if (!registry || !order) return null;
   if (order.length < 11) return null; // numurzīme, ne VIN
   return registry === order;

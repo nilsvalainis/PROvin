@@ -372,7 +372,7 @@ export function AdminCsddSourceBlock({
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {CSDD_FORM_STRUCTURED_FIELDS.map(({ key, label }) => {
-          const strVal = value[key] as string;
+          const strVal = typeof value[key] === "string" ? (value[key] as string) : String(value[key] ?? "");
           const vignette = assessLvVignette({
             vehicleType: value.vehicleType,
             grossMassKg: value.grossMassKg,
@@ -403,7 +403,7 @@ export function AdminCsddSourceBlock({
             flagTitle = insuranceValidUntilFlagTitle(flag);
           } else if (key === "vin") {
             flag = getVinMismatchUiFlag(strVal, orderVin);
-            if (flag !== "none") flagTitle = `${VIN_MISMATCH_FLAG_TITLE} Pasūtījumā: ${orderVin.trim().toUpperCase()}`;
+            if (flag !== "none") flagTitle = `${VIN_MISMATCH_FLAG_TITLE} Pasūtījumā: ${String(orderVin ?? "").trim().toUpperCase()}`;
           } else if (isVignetteField) {
             flag = getLvVignetteFieldUiFlag(vignette, key, strVal);
             if (flag === "yellow") {
