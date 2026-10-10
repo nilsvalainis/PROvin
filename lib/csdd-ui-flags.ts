@@ -52,8 +52,11 @@ export function getNextInspectionDateUiFlag(isoDate: string, referenceDate: Date
 }
 
 /** OCTA polise: beigusies → sarkans; beigsies 30 dienu laikā → dzeltens. */
-export function getInsuranceValidUntilUiFlag(isoDate: string, referenceDate: Date = new Date()): CsddFieldUiFlag {
-  const target = parseLocalDateIso(isoDate);
+export function getInsuranceValidUntilUiFlag(
+  isoDate: string | null | undefined,
+  referenceDate: Date = new Date(),
+): CsddFieldUiFlag {
+  const target = parseLocalDateIso(String(isoDate ?? ""));
   if (!target) return "none";
   const diff = daysFromRefToTarget(target, startOfLocalDay(referenceDate));
   if (diff < 0) return "red";
@@ -68,9 +71,12 @@ export function insuranceValidUntilFlagTitle(flag: CsddFieldUiFlag): string {
 }
 
 /** CSDD VIN ≠ pasūtījuma VIN → sarkans (abi pilni 17 zīmju VIN). */
-export function getVinMismatchUiFlag(csddVin: string, orderVin: string): CsddFieldUiFlag {
-  const a = csddVin.trim().toUpperCase().replace(/[\s-]/g, "");
-  const b = orderVin.trim().toUpperCase().replace(/[\s-]/g, "");
+export function getVinMismatchUiFlag(
+  csddVin: string | null | undefined,
+  orderVin: string | null | undefined,
+): CsddFieldUiFlag {
+  const a = String(csddVin ?? "").trim().toUpperCase().replace(/[\s-]/g, "");
+  const b = String(orderVin ?? "").trim().toUpperCase().replace(/[\s-]/g, "");
   if (a.length !== 17 || b.length !== 17) return "none";
   return a === b ? "none" : "red";
 }
