@@ -2,6 +2,7 @@ import "server-only";
 
 import { autobidPageUrl, parseAutobidSearchPage, type AutobidVehicle } from "@/lib/iriss-listings-autobid";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
+import { listingSearchReadComplete } from "@/lib/iriss-listings-membership";
 import type { IrissListingSourceStatus } from "@/lib/iriss-listings-types";
 
 const BROWSER_UA =
@@ -14,6 +15,7 @@ export type AutobidSourceFetchResult = {
   rawPages: string[];
   pagesFetched: number;
   pageCount: number;
+  complete: boolean;
 };
 
 export type AutobidFetchOptions = {
@@ -92,17 +94,17 @@ export async function fetchAutobidSource(sourceUrl: string, opts: AutobidFetchOp
     try {
       url = autobidPageUrl(sourceUrl, page);
     } catch {
-      return { status: "fetch_failed", note: "Nederīgs URL.", vehicles: [], rawPages, pagesFetched, pageCount };
+      return { status: "fetch_failed", note: "Nederīgs URL.", vehicles: [], rawPages, pagesFetched, pageCount, complete: false };
     }
     const got = await fetchPageHtml(url, opts.timeoutMs, fetchImpl);
     if (!got.ok) {
-      if (page === 1) return { status: "fetch_failed", note: got.note, vehicles: [], rawPages, pagesFetched, pageCount };
+      if (page === 1) return { status: "fetch_failed", note: got.note, vehicles: [], rawPages, pagesFetched, pageCount, complete: false };
       partialNote = `${page}. lapa neizdevās: ${got.note}`;
       break;
     }
     const http = httpStatusToSource(got.statusCode);
     if (http) {
-      if (page === 1) return { ...http, vehicles: [], rawPages, pagesFetched, pageCount };
+      if (page === 1) return { ...http, vehicles: [], rawPages, pagesFetched, pageCount, complete: false };
       partialNote = `${page}. lapa: ${http.note}`;
       break;
     }
@@ -117,6 +119,7 @@ export async function fetchAutobidSource(sourceUrl: string, opts: AutobidFetchOp
           rawPages,
           pagesFetched: 1,
           pageCount,
+          complete: false,
         };
       }
       partialNote = `${page}. lapu neizdevās parsēt.`;
@@ -135,6 +138,13 @@ export async function fetchAutobidSource(sourceUrl: string, opts: AutobidFetchOp
   if (vehicles.size === 0) notes.push("Meklējums šobrīd nedod rezultātus (0 auto).");
   if (pageCount > opts.maxPages) notes.push(`Nolasītas ${pagesFetched}/${pageCount} lapas (limits ${opts.maxPages}).`);
   if (partialNote) notes.push(partialNote);
+  const complete = listingSearchReadComplete({
+    status: "ok",
+    pagesFetched,
+    pageCount,
+    maxPages: opts.maxPages,
+    pageError: Boolean(partialNote),
+  });
   return {
     status: "ok",
     note: notes.join(" "),
@@ -142,5 +152,6 @@ export async function fetchAutobidSource(sourceUrl: string, opts: AutobidFetchOp
     rawPages,
     pagesFetched,
     pageCount,
+    complete,
   };
 }

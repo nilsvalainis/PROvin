@@ -46,6 +46,8 @@ import {
   type IrissListPrefs,
   type IrissListTab,
 } from "@/lib/iriss-listings-operator-prefs";
+import { IRISS_LIST_SERVER_IDS_MIGRATED_KEY } from "@/lib/iriss-listings-operator-state";
+import type { IrissListingsRejectedEntry } from "@/lib/iriss-listings-types";
 import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import {
   computeListingVatHealth,
@@ -258,6 +260,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
   const [nowMs, setNowMs] = useState<number | null>(null);
   const [prefs, setPrefs] = useState<IrissListPrefs>(defaultIrissListPrefs);
   const [prefsReady, setPrefsReady] = useState(false);
+  const [rejectedSnapshots, setRejectedSnapshots] = useState<IrissListingsRejectedEntry[]>([]);
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [previewOrders, setPreviewOrders] = useState<IrissListingOrderBrief[] | null>(null);
   const [showCosts, setShowCosts] = useState(false);
@@ -275,10 +278,45 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
 
   useEffect(() => {
     const storage = irissListBrowserStorage();
-    setPrefs(storage ? migrateIrissListPrefs(storage) : defaultIrissListPrefs());
+    const local = storage ? migrateIrissListPrefs(storage) : defaultIrissListPrefs();
+    setPrefs(local);
     setPrefsReady(true);
     setMounted(true);
     setNowMs(Date.now());
+
+    function applyServer(data: { fav?: unknown; rejected?: unknown }) {
+      const fav = Array.isArray(data.fav) ? data.fav.filter((x): x is string => typeof x === "string") : [];
+      const rejected = Array.isArray(data.rejected)
+        ? data.rejected.filter((x): x is IrissListingsRejectedEntry => Boolean(x) && typeof x === "object" && typeof (x as { id?: unknown }).id === "string")
+        : [];
+      setRejectedSnapshots(rejected);
+      setPrefs((p) => ({ ...p, fav, hidden: rejected.map((r) => r.id) }));
+    }
+
+    void (async () => {
+      try {
+        const migrated = storage ? Boolean(storage.getItem(IRISS_LIST_SERVER_IDS_MIGRATED_KEY)) : true;
+        if (!migrated && (local.fav.length > 0 || local.hidden.length > 0)) {
+          const res = await fetch("/api/admin/iriss-listings/operator-prefs", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "migrate", fav: local.fav, hidden: local.hidden }),
+          });
+          if (res.ok) {
+            applyServer(await res.json());
+            storage?.setItem(IRISS_LIST_SERVER_IDS_MIGRATED_KEY, "1");
+            return;
+          }
+        }
+        const res = await fetch("/api/admin/iriss-listings/operator-prefs", { credentials: "include" });
+        if (!res.ok) return;
+        applyServer(await res.json());
+        storage?.setItem(IRISS_LIST_SERVER_IDS_MIGRATED_KEY, "1");
+      } catch {
+        /* paliek lokālie id, līdz serveris atbild */
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -388,7 +426,17 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
     writeListQuery({ sources: next.length === SOURCE_CHIPS.length ? [] : next });
   }
 
-  const vehicles = useMemo(() => latest?.vehicles ?? [], [latest?.vehicles]);
+  const liveVehicles = useMemo(() => latest?.vehicles ?? [], [latest?.vehicles]);
+  const extraHiddenVehicles = useMemo(() => {
+    const liveIds = new Set(liveVehicles.map((v) => v.id));
+    return rejectedSnapshots
+      .map((r) => r.vehicle)
+      .filter((v): v is IrissListingVehicle => v != null && !liveIds.has(v.id));
+  }, [rejectedSnapshots, liveVehicles]);
+  const vehicles = useMemo(
+    () => (listScope === "hidden" ? [...liveVehicles, ...extraHiddenVehicles] : liveVehicles),
+    [listScope, liveVehicles, extraHiddenVehicles],
+  );
 
   const counts = useMemo(() => {
     let fresh = 0;
@@ -438,8 +486,33 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
   const vatHealthLine = useMemo(() => formatListingVatHealthLine(vatHealth), [vatHealth]);
   const drawerVehicle = useMemo(() => vehicles.find((v) => v.id === drawerId) ?? null, [vehicles, drawerId]);
   const techCount = useMemo(() => vehicles.filter((v) => v.change !== "gone" && !prefs.hidden.includes(v.id) && listingHasHardTechDamage(v.damageRaw)).length, [vehicles, prefs.hidden]);
-  const favCount = prefs.fav.filter((id) => vehicles.some((v) => v.id === id)).length;
-  const hiddenCount = prefs.hidden.filter((id) => vehicles.some((v) => v.id === id)).length;
+  const favCount = prefs.fav.filter((id) => liveVehicles.some((v) => v.id === id)).length;
+  const hiddenCount = prefs.hidden.length;
+
+  function toggleListingPref(list: "fav" | "hidden", id: string, on: boolean, vehicle: IrissListingVehicle) {
+    setPrefs((p) => {
+      const cur = p[list];
+      const next = on ? [...cur.filter((x) => x !== id), id] : cur.filter((x) => x !== id);
+      return { ...p, [list]: next };
+    });
+    if (list === "hidden") {
+      setRejectedSnapshots((prev) =>
+        on
+          ? [{ id, rejectedAt: new Date().toISOString(), vehicle }, ...prev.filter((r) => r.id !== id)]
+          : prev.filter((r) => r.id !== id),
+      );
+    }
+    void fetch("/api/admin/iriss-listings/operator-prefs", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: list === "fav" ? (on ? "fav" : "unfav") : on ? "reject" : "unreject",
+        id,
+        vehicle,
+      }),
+    });
+  }
 
   const problemSources = useMemo(() => (latest?.sources ?? []).filter((s) => s.status !== "ok"), [latest?.sources]);
 
@@ -843,6 +916,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
             nowMs={nowMs}
             prefs={prefs}
             onPrefs={setPrefs}
+            onToggleListing={toggleListingPref}
             linked={linkedOrdersOf(v, prefs, orderById)}
             budget={budgetOf(v, prefs, orderById)}
             onOpen={() => setDrawerId(v.id)}
@@ -868,6 +942,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
             budget={budgetOf(drawerVehicle, prefs, orderById)}
             onClose={() => setDrawerId(null)}
             onPrefs={setPrefs}
+            onToggleListing={toggleListingPref}
             onPreviewOrder={(o) => {
               const linked = linkedOrdersOf(drawerVehicle, prefs, orderById);
               setPreviewOrders(linked.length > 0 ? linked : [o]);
@@ -888,6 +963,7 @@ function VehicleCard({
   nowMs,
   prefs,
   onPrefs,
+  onToggleListing,
   linked,
   budget,
   onOpen,
@@ -900,6 +976,7 @@ function VehicleCard({
   nowMs: number | null;
   prefs: IrissListPrefs;
   onPrefs: (next: IrissListPrefs) => void;
+  onToggleListing: (list: "fav" | "hidden", id: string, on: boolean, vehicle: IrissListingVehicle) => void;
   linked: IrissListingOrderBrief[];
   budget: number | null;
   onOpen: () => void;
@@ -935,9 +1012,7 @@ function VehicleCard({
   const accent = v.platform === "autobid" ? "border-l-violet-500" : v.platform === "openline" ? "border-l-indigo-600" : "border-l-amber-500";
 
   function toggle(list: "fav" | "hidden") {
-    const cur = prefs[list];
-    const next = cur.includes(v.id) ? cur.filter((x) => x !== v.id) : [...cur, v.id];
-    onPrefs({ ...prefs, [list]: next });
+    onToggleListing(list, v.id, !prefs[list].includes(v.id), v);
   }
 
   const mobileSpecs = [yearLabel, fmtKm(v.mileageKm), v.transmission, powerKwLabel].filter(Boolean);

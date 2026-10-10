@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
-import { buildIrissListingSources, groupIrissListingSources } from "@/lib/iriss-listings-sources";
+import { buildIrissListingSources, groupIrissListingSources, irissReadableListingFingerprint } from "@/lib/iriss-listings-sources";
 import type { IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
 function row(
@@ -97,5 +97,15 @@ describe("buildIrissListingSources", () => {
     const sharedGroup = autobid.find((g) => g.orders.length === 2)!;
     expect(sharedGroup.orders.map((o) => o.orderId).sort()).toEqual(["a", "b"]);
     expect(autobid.find((g) => g.orders.length === 1)!.orders[0]!.orderId).toBe("a");
+  });
+
+  it("fingerprint changes when a readable link or status changes, not for mobile.de", () => {
+    const active = row("a", "active", { autobid: "https://autobid.de/en/search-results?q=1", mobile: "https://suchen.mobile.de/a" });
+    const mobileOnlyChange = row("a", "active", { autobid: "https://autobid.de/en/search-results?q=1", mobile: "https://suchen.mobile.de/b" });
+    const linkChange = row("a", "active", { autobid: "https://autobid.de/en/search-results?q=2", mobile: "https://suchen.mobile.de/a" });
+    const inactive = row("a", "inactive", { autobid: "https://autobid.de/en/search-results?q=1" });
+    expect(irissReadableListingFingerprint(active)).toBe(irissReadableListingFingerprint(mobileOnlyChange));
+    expect(irissReadableListingFingerprint(active)).not.toBe(irissReadableListingFingerprint(linkChange));
+    expect(irissReadableListingFingerprint(inactive)).toBe("inactive|");
   });
 });

@@ -209,6 +209,7 @@ describe("vat health", () => {
       auctionStage: "",
       firstSeenAt: "2026-10-01T00:00:00.000Z",
       lastSeenAt: "2026-10-01T00:00:00.000Z",
+      sourceKeys: [],
       missingRuns: 0,
       change: "unchanged" as const,
       priceHistory: [],

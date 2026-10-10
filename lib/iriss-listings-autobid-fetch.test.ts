@@ -40,6 +40,7 @@ describe("fetchAutobidSource", () => {
     });
     const r = await fetchAutobidSource(SRC, { ...opts, fetchImpl: impl });
     expect(r.status).toBe("ok");
+    expect(r.complete).toBe(true);
     expect(r.vehicles.map((v) => v.externalId)).toEqual(["1", "2", "3"]);
     expect(r.pagesFetched).toBe(2);
     expect(r.pageCount).toBe(2);
@@ -52,6 +53,7 @@ describe("fetchAutobidSource", () => {
     const { impl, calls } = fetchMock(() => ({ status: 200, body: pageHtml([1], 9) }));
     const r = await fetchAutobidSource(SRC, { ...opts, maxPages: 2, fetchImpl: impl });
     expect(r.status).toBe("ok");
+    expect(r.complete).toBe(false);
     expect(calls).toHaveLength(2);
     expect(r.note).toContain("2/9");
   });
@@ -69,6 +71,7 @@ describe("fetchAutobidSource", () => {
       fetchImpl: fetchMock((url) => (url.includes("currentPage") ? { status: 429, body: "" } : { status: 200, body: pageHtml([1], 3) })).impl,
     });
     expect(partial.status).toBe("ok");
+    expect(partial.complete).toBe(false);
     expect(partial.vehicles).toHaveLength(1);
     expect(partial.note).toContain("2. lapa");
   });

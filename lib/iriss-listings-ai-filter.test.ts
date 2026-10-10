@@ -32,6 +32,7 @@ function vehicle(partial: Partial<IrissListingVehicle> & Pick<IrissListingVehicl
     auctionStage: "BEFORE_AUCTION",
     firstSeenAt: "2026-10-01T00:00:00Z",
     lastSeenAt: "2026-10-07T00:00:00Z",
+    sourceKeys: [],
     missingRuns: 0,
     change: "unchanged",
     priceHistory: [],

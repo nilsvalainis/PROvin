@@ -38,6 +38,7 @@ export function IrissListDrawer({
   budget,
   onClose,
   onPrefs,
+  onToggleListing,
   onPreviewOrder,
   mobile,
 }: {
@@ -48,6 +49,7 @@ export function IrissListDrawer({
   budget: number | null;
   onClose: () => void;
   onPrefs: (next: IrissListPrefs) => void;
+  onToggleListing?: (list: "fav" | "hidden", id: string, on: boolean, vehicle: IrissListingVehicle) => void;
   onPreviewOrder?: (order: IrissListingOrderBrief) => void;
   mobile?: IrissMobilePlatform | null;
 }) {
@@ -170,8 +172,12 @@ export function IrissListDrawer({
           className={`grid h-11 w-11 place-items-center rounded-lg border text-lg ${prefs.fav.includes(v.id) ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB]"}`}
           title={prefs.fav.includes(v.id) ? "Noņemt no favorītiem" : "Favorīts"}
           onClick={() => {
-            const fav = prefs.fav.includes(v.id) ? prefs.fav.filter((x) => x !== v.id) : [...prefs.fav, v.id];
-            onPrefs({ ...prefs, fav });
+            const on = !prefs.fav.includes(v.id);
+            if (onToggleListing) onToggleListing("fav", v.id, on, v);
+            else {
+              const fav = on ? [...prefs.fav, v.id] : prefs.fav.filter((x) => x !== v.id);
+              onPrefs({ ...prefs, fav });
+            }
           }}
         >
           {prefs.fav.includes(v.id) ? "★" : "☆"}
@@ -181,8 +187,12 @@ export function IrissListDrawer({
           className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] text-lg"
           title={prefs.hidden.includes(v.id) ? "Rādīt atkal" : "Nav interesanti"}
           onClick={() => {
-            const hidden = prefs.hidden.includes(v.id) ? prefs.hidden.filter((x) => x !== v.id) : [...prefs.hidden, v.id];
-            onPrefs({ ...prefs, hidden });
+            const on = !prefs.hidden.includes(v.id);
+            if (onToggleListing) onToggleListing("hidden", v.id, on, v);
+            else {
+              const hidden = on ? [...prefs.hidden, v.id] : prefs.hidden.filter((x) => x !== v.id);
+              onPrefs({ ...prefs, hidden });
+            }
           }}
         >
           {prefs.hidden.includes(v.id) ? "↺" : "✕"}

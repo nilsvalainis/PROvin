@@ -24,7 +24,7 @@
       "maxDuration": 120
     },
     "app/api/admin/iriss-pasutijumi/**/*.ts": {
-      "maxDuration": 120
+      "maxDuration": 300
     },
     "app/api/cron/admin-drafts-daily-backup/route.ts": {
       "maxDuration": 120
@@ -55,7 +55,7 @@
     },
     {
       "path": "/api/cron/iriss-listings-daily-sync",
-      "schedule": "*/6 6,7,10,11,14,15 * * *"
+      "schedule": "*/6 5-19 * * *"
     },
     {
       "path": "/api/cron/dealer-data-sweep",

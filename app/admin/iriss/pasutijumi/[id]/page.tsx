@@ -1,5 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { IrissPasutijumsEditor } from "@/components/admin/IrissPasutijumsEditor";
+import { readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
+import type { IrissListingSourceRun } from "@/lib/iriss-listings-types";
 import { isIrissPasutijumiStoreEnabled, isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { stripIrissOfferImageDataUrls } from "@/lib/iriss-pasutijums-offer-images";
 
@@ -25,5 +27,19 @@ export default async function IrissPasutijumsDetailPage({
   const sp = (await searchParams) ?? {};
   const autoOpenNewOffer = sp.newOffer === "1";
   const forceNoClientPdf = sp.noClientPdf === "1";
-  return <IrissPasutijumsEditor initialRecord={stripIrissOfferImageDataUrls(rec)} autoOpenNewOffer={autoOpenNewOffer} forceNoClientPdf={forceNoClientPdf} />;
+  let listingSourceRuns: IrissListingSourceRun[] = [];
+  try {
+    const latest = await readIrissListingsLatestView();
+    listingSourceRuns = (latest?.sources ?? []).filter((s) => s.orderId === id);
+  } catch {
+    listingSourceRuns = [];
+  }
+  return (
+    <IrissPasutijumsEditor
+      initialRecord={stripIrissOfferImageDataUrls(rec)}
+      autoOpenNewOffer={autoOpenNewOffer}
+      forceNoClientPdf={forceNoClientPdf}
+      listingSourceRuns={listingSourceRuns}
+    />
+  );
 }

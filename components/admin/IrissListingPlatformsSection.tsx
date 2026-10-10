@@ -15,6 +15,9 @@ import {
   removeIrissListingLinkRow,
   setIrissListingLinkRow,
 } from "@/lib/iriss-listing-link-lists";
+import { listingLinkRunForUrl } from "@/lib/iriss-listings-url";
+import { detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
+import type { IrissListingSourceRun } from "@/lib/iriss-listings-types";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 const inp =
@@ -67,14 +70,51 @@ type LinkKey = keyof Pick<
   "listingLinkMobile" | "listingLinkAutobid" | "listingLinkOpenline" | "listingLinkAuto1" | "listingLinksOther"
 >;
 
+function fmtLinkReadAt(iso: string): string {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return iso || "";
+  return new Intl.DateTimeFormat("lv-LV", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Riga",
+  }).format(new Date(t));
+}
+
+function listingLinkStatusLine(run: IrissListingSourceRun | null): string {
+  if (!run) return "Vēl nav nolasīts";
+  const when = run.fetchedAt ? fmtLinkReadAt(run.fetchedAt) : "";
+  if (run.status === "skipped") return [when, "Gaida nākamo nolasīšanu"].filter(Boolean).join(" · ");
+  if (run.status !== "ok") {
+    const err =
+      run.status === "login_required"
+        ? "Jāielogojas"
+        : run.status === "blocked_by_waf"
+          ? "Bloķēts"
+          : run.status === "relay_not_configured"
+            ? "Relejs nav pieslēgts"
+            : run.status === "parse_failed"
+              ? "Parse kļūda"
+              : "Nolasīšana neizdevās";
+    return [when, err, run.note].filter(Boolean).join(" · ");
+  }
+  const count = `${run.vehicleCount} ${run.vehicleCount === 1 ? "sludinājums" : "sludinājumi"}`;
+  const extra = run.complete === false ? "nolasījums nepilnīgs" : "";
+  return [when, count, extra].filter(Boolean).join(" · ");
+}
+
 function SourceLinkList({
   label,
   links,
   onChange,
+  statusFor,
 }: {
   label: string;
   links: readonly string[];
   onChange: (next: string[]) => void;
+  statusFor?: (url: string) => IrissListingSourceRun | null;
 }) {
   const rows = coerceIrissListingLinkList(links);
   const canAdd = rows.length < IRISS_LISTING_LINKS_PER_SOURCE_MAX;
@@ -120,6 +160,9 @@ function SourceLinkList({
               </button>
             </div>
             {err ? <p className="px-0.5 text-[11px] text-red-600">{err}</p> : null}
+            {statusFor && line.trim() && detectIrissListingPlatform(line) ? (
+              <p className="px-0.5 text-[11px] text-[var(--color-provin-muted)]">{listingLinkStatusLine(statusFor(line))}</p>
+            ) : null}
           </div>
         );
       })}
@@ -130,12 +173,14 @@ function SourceLinkList({
 type Props = {
   rec: IrissPasutijumsRecord;
   onPatch: (patch: Partial<IrissPasutijumsRecord>) => void;
+  sourceRuns?: IrissListingSourceRun[];
 };
 
-export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
+export function IrissListingPlatformsFields({ rec, onPatch, sourceRuns = [] }: Props) {
   const patchLinks = (key: LinkKey, next: string[]) => {
     onPatch({ [key]: next });
   };
+  const statusFor = (url: string) => listingLinkRunForUrl(sourceRuns, rec.id, url);
 
   return (
     <div className="mt-3 border-t border-slate-200/80 pt-3">
@@ -152,16 +197,19 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
           label="Autobid"
           links={rec.listingLinkAutobid}
           onChange={(next) => patchLinks("listingLinkAutobid", next)}
+          statusFor={statusFor}
         />
         <SourceLinkList
           label="Openline"
           links={rec.listingLinkOpenline}
           onChange={(next) => patchLinks("listingLinkOpenline", next)}
+          statusFor={statusFor}
         />
         <SourceLinkList
           label="Auto1"
           links={rec.listingLinkAuto1}
           onChange={(next) => patchLinks("listingLinkAuto1", next)}
+          statusFor={statusFor}
         />
       </div>
       <div className="mt-3">
@@ -169,6 +217,7 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
           label="Citi"
           links={rec.listingLinksOther}
           onChange={(next) => patchLinks("listingLinksOther", next)}
+          statusFor={statusFor}
         />
       </div>
     </div>

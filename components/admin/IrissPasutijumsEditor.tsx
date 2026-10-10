@@ -11,6 +11,7 @@ import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSectio
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
+import type { IrissListingSourceRun } from "@/lib/iriss-listings-types";
 import {
   defaultIrissDzintarzemeTameDraft,
   IRISS_DEAL_DETAIL_OPTIONS,
@@ -76,6 +77,10 @@ function parseRecordFromPatchResponse(data: unknown): IrissPasutijumsRecord | nu
   const r = (data as { record: unknown }).record;
   if (typeof r !== "object" || r === null) return null;
   return r as IrissPasutijumsRecord;
+}
+
+function parseListingsImportStarted(data: unknown): boolean {
+  return Boolean(data && typeof data === "object" && (data as { listingsImportStarted?: unknown }).listingsImportStarted === true);
 }
 
 type SaveResult = IrissOrderSaveResult;
@@ -482,10 +487,12 @@ export function IrissPasutijumsEditor({
   initialRecord,
   autoOpenNewOffer = false,
   forceNoClientPdf = false,
+  listingSourceRuns = [],
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
   forceNoClientPdf?: boolean;
+  listingSourceRuns?: IrissListingSourceRun[];
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(initialRecord);
@@ -559,6 +566,12 @@ export function IrissPasutijumsEditor({
         return { ok: true };
       };
 
+      const finishOkWithListings = (record: IrissPasutijumsRecord | null, listingsImportStarted: boolean): SaveResult => {
+        const result = finishOk(record);
+        if (!silent && listingsImportStarted) setSaveMsg("Saglabāts. Sludinājumu nolasīšana sākta fonā.");
+        return result;
+      };
+
       try {
         if (useXhr) {
           const result = await patchJsonWithUploadProgress(url, payload, onUploadProgress);
@@ -568,7 +581,7 @@ export function IrissPasutijumsEditor({
             return { ok: false, error: err };
           }
           const record = parseRecordFromPatchResponse(result.data);
-          return finishOk(record);
+          return finishOkWithListings(record, parseListingsImportStarted(result.data));
         }
 
         const res = await fetch(url, {
@@ -590,7 +603,7 @@ export function IrissPasutijumsEditor({
           return { ok: false, error: err };
         }
         const record = parseRecordFromPatchResponse(data);
-        return finishOk(record);
+        return finishOkWithListings(record, parseListingsImportStarted(data));
       } catch (e) {
         const err = `Tīkla kļūda: ${e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200)}`;
         if (!silent) setSaveMsg(err);
@@ -1431,7 +1444,7 @@ export function IrissPasutijumsEditor({
 
         <section className={shellCard}>
           <BlockTitle>Sludinājumu platformas (saites)</BlockTitle>
-          <IrissListingPlatformsFields rec={rec} onPatch={patchRecord} />
+          <IrissListingPlatformsFields rec={rec} onPatch={patchRecord} sourceRuns={listingSourceRuns} />
           <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
 

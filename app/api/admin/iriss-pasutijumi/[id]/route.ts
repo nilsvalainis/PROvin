@@ -1,6 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
+import { applyIrissListingsMembershipNow } from "@/lib/iriss-listings-membership-apply";
+import { irissReadableListingFingerprint } from "@/lib/iriss-listings-sources";
+import { runIrissListingsDailySync } from "@/lib/iriss-listings-sync";
 import {
   IRISS_MAX_OFFER_ATTACHMENTS,
   normalizeIrissDzintarzemeTameDraft,
@@ -17,8 +20,8 @@ import {
 } from "@/lib/iriss-pasutijumi-store";
 
 export const runtime = "nodejs";
-/** Vercel: garš JSON + Blob/FS — pagarināts laiks, lai pēc 100% augšupielādes nepazustu ar 504. */
-export const maxDuration = 120;
+/** Vercel: garš JSON + Blob/FS; pēc saišu maiņas fona nolasīšana līdz 300 s. */
+export const maxDuration = 300;
 
 function parseOfferAttachments(raw: unknown): IrissOfferAttachment[] {
   if (!Array.isArray(raw)) return [];
@@ -147,6 +150,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     const ok = await getAdminSession();
     if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+    const previous = await readIrissPasutijums(id);
 
     let body: unknown;
     try {
@@ -190,7 +194,24 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     }
 
     const saved = await readIrissPasutijums(id);
-    return NextResponse.json({ ok: true, record: saved });
+    const prevFp = previous ? irissReadableListingFingerprint(previous) : "";
+    const nextFp = saved ? irissReadableListingFingerprint(saved) : rec.listStatus !== "active" ? `${rec.listStatus}|` : irissReadableListingFingerprint(rec);
+    const listingsChanged = prevFp !== nextFp;
+    let listingsImportStarted = false;
+    if (listingsChanged) {
+      await applyIrissListingsMembershipNow();
+      if (saved?.listStatus === "active") {
+        listingsImportStarted = true;
+        after(async () => {
+          try {
+            await runIrissListingsDailySync({ onlyOrderIds: [id] });
+          } catch (e) {
+            console.error("[iriss PATCH] listings import failed", { id, err: String(e) });
+          }
+        });
+      }
+    }
+    return NextResponse.json({ ok: true, record: saved, listingsCleanup: listingsChanged, listingsImportStarted });
   } catch (e) {
     console.error("[iriss PATCH] unhandled", {
       id,
@@ -212,5 +233,10 @@ export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string 
   if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   const d = await deleteIrissPasutijums(id);
   if (!d.ok) return NextResponse.json({ error: d.error }, { status: 500 });
+  try {
+    await applyIrissListingsMembershipNow();
+  } catch (e) {
+    console.error("[iriss DELETE] listings membership cleanup failed", { id, err: String(e) });
+  }
   return NextResponse.json({ ok: true });
 }

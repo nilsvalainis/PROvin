@@ -210,6 +210,30 @@ export async function sendAdminNewPartnerNotificationEmail(payload: AdminNewPart
   }
 }
 
+const IRISS_NEW_LISTINGS_NOTIFY_EMAIL = "info@provin.lv";
+
+export function getIrissNewListingsNotifyEmail(): string {
+  return process.env.IRISS_LISTINGS_NOTIFY_EMAIL?.trim() || IRISS_NEW_LISTINGS_NOTIFY_EMAIL;
+}
+
+/** IRISS LIST: jauni atbilstoši sludinājumi pēc nolasīšanas. */
+export async function sendIrissNewListingsNotificationEmail(opts: {
+  subject: string;
+  text: string;
+  html: string;
+}): Promise<void> {
+  const to = getIrissNewListingsNotifyEmail();
+  if (!isSmtpConfigured()) {
+    console.warn("[email] SMTP_USER/SMTP_PASS missing: IRISS jauno sludinājumu e-pasts netika nosūtīts.");
+    return;
+  }
+  try {
+    await sendSmtpMail({ to, subject: opts.subject, text: opts.text, html: opts.html });
+  } catch (e) {
+    console.error("[email] sendIrissNewListingsNotificationEmail SMTP:", e);
+  }
+}
+
 export async function trySendAdminNewPartnerNotificationEmail(
   payload: AdminNewPartnerEmailPayload,
 ): Promise<void> {
