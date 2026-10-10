@@ -59,47 +59,58 @@ export async function findVinHistory(
   ]);
   const drafts = await readOrderDraftSummaries(paid.map((r) => r.id)).catch(() => new Map());
 
-  for (const row of paid) {
-    if (out.length >= MAX_ENTRIES) break;
-    if (row.isDemo || row.id === exclude.sessionId || row.checkoutLine === "provin_select") continue;
-    const d = drafts.get(row.id);
-    if (!vehicleKeysOverlap(keys, vehicleKeys(row.vin, d?.vin))) continue;
-    const draft = await readOrderDraft(row.id).catch(() => null);
-    const blocks = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks);
-    const k = keysWithData(blocks);
-    const createdMs = row.created < 1_000_000_000_000 ? row.created * 1000 : row.created;
-    out.push({
-      kind: "order",
-      id: row.id,
-      createdAt: new Date(createdMs).toISOString(),
-      savedAt: draft?.workspaceSavedAt ?? draft?.updatedAt ?? null,
-      who: d?.customerName || row.customerEmail || "—",
-      status: d?.auditCompletedAt ? "Izpildīts" : null,
-      dataKeys: k.all,
-      purchasedKeys: k.purchased,
-      labels: k.purchased.map((x) => SOURCE_BLOCK_LABELS[x]),
-    });
-  }
+  // Atlase bez I/O, tad visi melnraksti / ātrie vērtējumi paralēli (agrāk – pa vienam).
+  const orderRows = paid
+    .filter((row) => {
+      if (row.isDemo || row.id === exclude.sessionId || row.checkoutLine === "provin_select") return false;
+      return vehicleKeysOverlap(keys, vehicleKeys(row.vin, drafts.get(row.id)?.vin));
+    })
+    .slice(0, MAX_ENTRIES);
+  const peekRows = peeks
+    .filter((p) => p.id !== exclude.peekId && vehicleKeysOverlap(keys, vehicleKeys(p.vin)))
+    .slice(0, Math.max(0, MAX_ENTRIES - orderRows.length));
 
-  for (const p of peeks) {
-    if (out.length >= MAX_ENTRIES) break;
-    if (p.id === exclude.peekId) continue;
-    if (!vehicleKeysOverlap(keys, vehicleKeys(p.vin))) continue;
-    const doc = await readQuickEval(p.id).catch(() => null);
-    const blocks = doc?.sourceBlocks ?? mergeSourceBlocksWithDefaults(null);
-    const k = keysWithData(blocks);
-    out.push({
-      kind: "quick",
-      id: `qe:${p.id}`,
-      createdAt: p.createdAt,
-      savedAt: doc?.seed?.at ?? doc?.updatedAt ?? null,
-      who: p.email,
-      status: p.status,
-      dataKeys: k.all,
-      purchasedKeys: k.purchased,
-      labels: k.purchased.map((x) => SOURCE_BLOCK_LABELS[x]),
-    });
-  }
+  const [orderEntries, peekEntries] = await Promise.all([
+    Promise.all(
+      orderRows.map(async (row): Promise<VinHistoryEntry> => {
+        const d = drafts.get(row.id);
+        const draft = await readOrderDraft(row.id).catch(() => null);
+        const blocks = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks);
+        const k = keysWithData(blocks);
+        const createdMs = row.created < 1_000_000_000_000 ? row.created * 1000 : row.created;
+        return {
+          kind: "order",
+          id: row.id,
+          createdAt: new Date(createdMs).toISOString(),
+          savedAt: draft?.workspaceSavedAt ?? draft?.updatedAt ?? null,
+          who: d?.customerName || row.customerEmail || "—",
+          status: d?.auditCompletedAt ? "Izpildīts" : null,
+          dataKeys: k.all,
+          purchasedKeys: k.purchased,
+          labels: k.purchased.map((x) => SOURCE_BLOCK_LABELS[x]),
+        };
+      }),
+    ),
+    Promise.all(
+      peekRows.map(async (p): Promise<VinHistoryEntry> => {
+        const doc = await readQuickEval(p.id).catch(() => null);
+        const blocks = doc?.sourceBlocks ?? mergeSourceBlocksWithDefaults(null);
+        const k = keysWithData(blocks);
+        return {
+          kind: "quick",
+          id: `qe:${p.id}`,
+          createdAt: p.createdAt,
+          savedAt: doc?.seed?.at ?? doc?.updatedAt ?? null,
+          who: p.email,
+          status: p.status,
+          dataKeys: k.all,
+          purchasedKeys: k.purchased,
+          labels: k.purchased.map((x) => SOURCE_BLOCK_LABELS[x]),
+        };
+      }),
+    ),
+  ]);
+  out.push(...orderEntries, ...peekEntries);
 
   out.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
   return out;

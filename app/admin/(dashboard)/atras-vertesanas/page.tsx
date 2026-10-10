@@ -77,13 +77,14 @@ export default async function AdminListingPeeksPage({
   const tab: TabId = (TABS.find((t) => t.id === sp?.tab)?.id ?? "pending") as TabId;
   const q = (sp?.q ?? "").trim();
   const entries = await listListingPeeks(200);
-  const vinSeen = await loadVinSeenCounts(entries).catch(() => new Map<string, number>());
   const counts = Object.fromEntries(TABS.map((t) => [t.id, entries.filter((e) => inTab(e, t.id)).length])) as Record<TabId, number>;
   const rows = entries.filter((e) => inTab(e, tab) && matchesQuery(e, q));
   const shown = rows.slice(0, 80);
-  const docs = new Map<string, QuickEvalDoc | null>(
-    await Promise.all(shown.map(async (e) => [e.id, await readQuickEval(e.id).catch(() => null)] as const)),
-  );
+  const [vinSeen, docPairs] = await Promise.all([
+    loadVinSeenCounts(entries).catch(() => new Map<string, number>()),
+    Promise.all(shown.map(async (e) => [e.id, await readQuickEval(e.id).catch(() => null)] as const)),
+  ]);
+  const docs = new Map<string, QuickEvalDoc | null>(docPairs);
   const tabHref = (t: TabId) => `/admin/atras-vertesanas?tab=${t}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
 
   return (

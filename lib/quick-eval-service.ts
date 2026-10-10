@@ -267,8 +267,8 @@ export type QuickEvalCandidateView = ExportCandidate & { email: string | null; v
 export async function listQuickEvalExportCandidates(peekId: string): Promise<QuickEvalCandidateView[]> {
   const peek = await getListingPeekById(peekId);
   if (!peek) return [];
-  const doc = await readQuickEval(peek.id);
-  const paid = (await listPaidCheckoutSessions()).filter((r) => !r.isDemo && r.checkoutLine !== "provin_select");
+  const [doc, paidAll] = await Promise.all([readQuickEval(peek.id).catch(() => null), listPaidCheckoutSessions()]);
+  const paid = paidAll.filter((r) => !r.isDemo && r.checkoutLine !== "provin_select");
   const drafts = await readOrderDraftSummaries(paid.map((r) => r.id)).catch(() => new Map());
   const orders: QuickEvalMatchOrder[] = paid.map((r) => {
     const d = drafts.get(r.id);
