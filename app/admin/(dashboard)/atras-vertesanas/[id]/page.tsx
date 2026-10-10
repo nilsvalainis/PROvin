@@ -11,14 +11,13 @@ import {
   AdminQuickEvalRefreshAll,
   AdminQuickEvalSourceGrid,
   AdminQuickEvalVinBar,
-  fmtLv,
 } from "@/components/admin/AdminQuickEvalDetail";
 import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { isSmtpConfigured } from "@/lib/email/send-transactional";
 import { parseListingPeekCustomerComment } from "@/lib/listing-peek-comment-presets";
 import { getListingPeekById, listListingPeeks, updateListingPeekStatus } from "@/lib/listing-peek-store";
 import { canonicalizeListingUrl } from "@/lib/order-field-validation";
-import { buildLetterFacts, buildSourceCards, csddCardFacts, type QuickEvalCardInput } from "@/lib/quick-eval-cards";
+import { buildLetterFacts, buildSourceCards, csddCardFacts, fmtLv, type QuickEvalCardInput } from "@/lib/quick-eval-cards";
 import { listQuickEvalExportCandidates } from "@/lib/quick-eval-service";
 import { readQuickEval } from "@/lib/quick-eval-store";
 import { heardAboutDisplayLabel } from "@/lib/stripe-session";
@@ -52,7 +51,7 @@ export default async function QuickEvalDetailPage({
   if (peek.status === "new") {
     peek = (await updateListingPeekStatus(peek.id, "in_progress").catch(() => null)) ?? { ...peek, status: "in_progress" };
   }
-  const [doc, all] = await Promise.all([readQuickEval(peek.id), listListingPeeks(200)]);
+  const [doc, all] = await Promise.all([readQuickEval(peek.id).catch(() => null), listListingPeeks(200).catch(() => [])]);
   const [candidates, vinHistory] = await Promise.all([
     listQuickEvalExportCandidates(peek.id).catch(() => []),
     findVinHistory([peek.vin, doc?.vin, doc?.sourceBlocks.csdd.registrationNumber, doc?.sourceBlocks.csdd.vin], {
