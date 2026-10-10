@@ -344,3 +344,14 @@ export const QE_TONE_DOT: Record<CardTone, string> = {
   none: "bg-slate-300",
   pending: "bg-slate-200 ring-1 ring-slate-300",
 };
+
+/** Datums lv-LV (der gan serverim, gan klientam). */
+export function fmtLv(iso: string | null | undefined, withTime = true): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return iso;
+  return withTime
+    ? d.toLocaleString("lv-LV", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+    : d.toLocaleDateString("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+

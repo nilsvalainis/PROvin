@@ -3,21 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { buildCheckcarVinReportUrl, CHECKCAR_VIN_HOME_URL, normalizeVinForServiceUrls } from "@/lib/admin-vin-urls";
-import { QE_TONE_BAR, QE_TONE_DOT, type CardTone, type SourceCardModel } from "@/lib/quick-eval-cards";
+import { fmtLv, QE_TONE_BAR, QE_TONE_DOT, type CardTone, type SourceCardModel } from "@/lib/quick-eval-cards";
 import type { QuickEvalCandidateView } from "@/lib/quick-eval-service";
 import type { VinHistoryEntry } from "@/lib/vin-history";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 
 const FACT_TONE = { ok: "text-emerald-700", warn: "text-amber-700", bad: "text-rose-700" } as const;
-
-export function fmtLv(iso: string | null | undefined, withTime = true): string {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (!Number.isFinite(d.getTime())) return iso;
-  return withTime
-    ? d.toLocaleString("lv-LV", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
-    : d.toLocaleDateString("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
 
 const btn =
   "inline-flex items-center justify-center rounded-[9px] border border-slate-300 bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--color-apple-text)] hover:bg-slate-50 disabled:opacity-50";
