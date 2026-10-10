@@ -1,6 +1,8 @@
 import "server-only";
 
 import { computeFreeSourceSeed } from "@/lib/admin-free-source-seed";
+import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { runVinScan } from "@/lib/vin-scan/run";
 import { readOrderDraft, patchOrderDraft } from "@/lib/admin-order-draft-store";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
@@ -57,34 +59,86 @@ function emptyWorkspaceBody(): OrderDraftWorkspaceBody {
 
 // ── F2: bezmaksas avoti ───────────────────────────────────────────────
 
-/** Bezmaksas avotu ielase ātrajam vērtējumam (CSDD, sludinājums, DK/EE/SE). `refresh` ielasa no jauna. */
-export async function seedQuickEval(peekId: string, opts: { refresh?: boolean } = {}): Promise<QuickEvalDoc | null> {
+export const QUICK_EVAL_SEED_PART_BLOCKS: Record<string, SourceBlockKey[]> = {
+  listing: ["tirgus", "listing_analysis"],
+  csdd: ["csdd"],
+  tjekbil: ["tjekbil"],
+  mnt_ee: ["mnt_ee"],
+  lkf_ee: ["lkf_ee"],
+  carinfo: ["carinfo"],
+};
+
+function resetFreeBlocks(baseline: WorkspaceSourceBlocks, keys: readonly SourceBlockKey[]): WorkspaceSourceBlocks {
+  const defaults = mergeSourceBlocksWithDefaults(null);
+  const fresh: WorkspaceSourceBlocks = { ...baseline };
+  for (const key of keys) {
+    if (key === "csdd") {
+      // PDF daļa (ja atkārtoti izmantota) paliek; API ielasa no jauna un tas atkal ir prioritārs.
+      const c = { ...baseline.csdd };
+      delete c.registry;
+      delete c.conflicts;
+      fresh.csdd = c;
+    } else {
+      (fresh as Record<SourceBlockKey, unknown>)[key] = defaults[key];
+    }
+  }
+  return fresh;
+}
+
+/**
+ * Bezmaksas avotu ielase ātrajam vērtējumam (CSDD, sludinājums, DK/EE/SE) + VIN SCAN.
+ * `refresh` ielasa visu no jauna; `only` – tikai vienu avotu (kartītes „Mēģināt vēlreiz”).
+ */
+export async function seedQuickEval(
+  peekId: string,
+  opts: { refresh?: boolean; only?: string } = {},
+): Promise<QuickEvalDoc | null> {
   const peek = await getListingPeekById(peekId);
   if (!peek) return null;
   const current = (await readQuickEval(peek.id)) ?? emptyQuickEvalDoc(peek.id);
   let baseline = current.sourceBlocks;
-  if (opts.refresh) {
-    const defaults = mergeSourceBlocksWithDefaults(null);
-    const fresh: WorkspaceSourceBlocks = { ...baseline };
-    for (const key of FREE_SOURCE_BLOCK_KEYS) {
-      if (key === "csdd") {
-        // PDF daļa (ja atkārtoti izmantota) paliek; API ielasa no jauna un tas atkal ir prioritārs.
-        const c = { ...baseline.csdd };
-        delete c.registry;
-        delete c.conflicts;
-        fresh.csdd = c;
-      } else {
-        (fresh as Record<SourceBlockKey, unknown>)[key] = defaults[key];
-      }
-    }
-    baseline = fresh;
+  if (opts.only && QUICK_EVAL_SEED_PART_BLOCKS[opts.only]) {
+    baseline = resetFreeBlocks(baseline, QUICK_EVAL_SEED_PART_BLOCKS[opts.only]!);
+  } else if (opts.refresh) {
+    baseline = resetFreeBlocks(baseline, FREE_SOURCE_BLOCK_KEYS);
   }
-  const seeded = await computeFreeSourceSeed(baseline, { vin: peek.vin, listingUrl: peek.listingUrl });
-  return updateQuickEval(peek.id, (doc) => ({
+  const doScan = !opts.only || opts.only === "vin_scan";
+  const seedPromise =
+    opts.only === "vin_scan"
+      ? Promise.resolve(null)
+      : computeFreeSourceSeed(baseline, { vin: peek.vin, listingUrl: peek.listingUrl });
+  const seeded = await seedPromise;
+  const vin = seeded?.resolvedVin || current.vin || (isValidVin(normalizeVin(peek.vin ?? "")) ? normalizeVin(peek.vin ?? "") : "");
+  const scan = doScan && vin && isValidVin(vin) ? await runVinScan(vin).catch(() => null) : null;
+  const now = new Date().toISOString();
+  return updateQuickEval(peek.id, (doc) => {
+    const parts = seeded ? { ...(opts.only ? doc.seed?.parts : {}), ...seeded.parts } : doc.seed?.parts ?? {};
+    const sourceAt = { ...(doc.sourceAt ?? {}) };
+    if (seeded) for (const k of Object.keys(seeded.parts)) if (!opts.only || k === opts.only) sourceAt[k] = now;
+    return {
+      ...doc,
+      vin: vin || doc.vin,
+      sourceBlocks: seeded ? seeded.blocks : doc.sourceBlocks,
+      seed: { at: now, parts },
+      sourceAt,
+      ...(scan ? { vinScan: { at: now, indicators: scan } } : {}),
+    };
+  });
+}
+
+export async function setQuickEvalLtabMark(peekId: string, mark: "clean" | "claims" | null): Promise<QuickEvalDoc | null> {
+  return updateQuickEval(peekId, (doc) => {
+    const next = { ...doc };
+    if (mark) next.ltab = { at: new Date().toISOString(), mark };
+    else delete next.ltab;
+    return next;
+  });
+}
+
+export async function setQuickEvalCcVin(peekId: string, count: number | null, error?: string): Promise<QuickEvalDoc | null> {
+  return updateQuickEval(peekId, (doc) => ({
     ...doc,
-    vin: seeded.resolvedVin || doc.vin,
-    sourceBlocks: seeded.blocks,
-    seed: { at: new Date().toISOString(), parts: seeded.parts },
+    ccVin: { at: new Date().toISOString(), count, ...(error ? { error } : {}) },
   }));
 }
 
@@ -143,6 +197,15 @@ function photoSessionsOf(doc: QuickEvalDoc): string[] {
   return [...new Set((doc.reusedFrom ?? []).map((r) => r.fromId).filter((id) => !id.startsWith("qe:")))];
 }
 
+/** LTAB atzīme no ātrā vērtējuma → LTAB bloka komentārs pasūtījumā (tikai, ja tur tukšs). */
+function withLtabMark(doc: QuickEvalDoc): WorkspaceSourceBlocks {
+  if (!doc.ltab || doc.sourceBlocks.ltab.comments.trim()) return doc.sourceBlocks;
+  const d = new Date(doc.ltab.at);
+  const when = Number.isFinite(d.getTime()) ? d.toLocaleDateString("lv-LV") : "";
+  const text = `LTAB pārbaudīts ātrajā vērtējumā${when ? ` (${when})` : ""}: ${doc.ltab.mark === "clean" ? "zaudējumu nav" : "ir zaudējumi"}.`;
+  return { ...doc.sourceBlocks, ltab: { ...doc.sourceBlocks.ltab, comments: text } };
+}
+
 export async function exportQuickEvalToOrder(
   peekId: string,
   sessionId: string,
@@ -150,7 +213,8 @@ export async function exportQuickEvalToOrder(
 ): Promise<QuickEvalExportResult> {
   const doc = await readQuickEval(peekId);
   if (!doc) return { ok: false, error: "no_quick_eval_data" };
-  const r = await importBlocksIntoOrder(sessionId, doc.sourceBlocks, { photoSessions: photoSessionsOf(doc) });
+  const blocks = withLtabMark(doc);
+  const r = await importBlocksIntoOrder(sessionId, blocks, { photoSessions: photoSessionsOf(doc) });
   if (!r.ok) return r;
   await updateQuickEval(doc.peekId, (d) => ({
     ...d,
