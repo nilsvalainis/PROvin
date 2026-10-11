@@ -198,7 +198,7 @@ export function AdminVinScanPanel({ vin }: { vin: string }) {
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">Ātrā avotu pārbaude</p>
           <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-            Servera avoti atbild uzreiz. Pārējie atveras vienā cilnē: skripts ieraksta VIN un nolasa, vai ieraksts ir redzams pirms pirkuma.
+            Servera avoti atbild uzreiz. Pārējie atveras vienā cilnē. CarVertical VIN aizpilda, bet pogu nespied: jaunu atskaiti pērk tikai CarVertical blokā.
           </p>
         </div>
         <button

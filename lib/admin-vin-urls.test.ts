@@ -61,11 +61,8 @@ describe("admin VIN service URLs", () => {
     expect(buildCheckcarVinReportUrl("short")).toBeNull();
   });
 
-  it("opens CarVertical as a companion when clicking AutoDNA", () => {
-    const extra = companionSourceOpensForBlock("autodna", vin);
-    expect(extra).toHaveLength(1);
-    expect(extra[0]?.href).toBe(CARVERTICAL_REPORTS_URL);
-    expect(extra[0]?.handoffVin).toBe(vin);
+  it("does not auto-open CarVertical when clicking AutoDNA (that bought reports)", () => {
+    expect(companionSourceOpensForBlock("autodna", vin)).toEqual([]);
     expect(companionSourceOpensForBlock("carvertical", vin)).toEqual([]);
   });
 
