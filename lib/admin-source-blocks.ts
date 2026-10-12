@@ -1861,6 +1861,10 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       comments: (citi.comments ?? "").trim(),
       ...syncedSourceBlockPhotos(citi),
       ...(sourcePdfChecklistHasAny(citi.pdfChecklist) ? { pdfChecklist: citi.pdfChecklist } : {}),
+      ...(() => {
+        const timeline = (citi.vehicleHistoryTimeline ?? []).filter(carVerticalTimelineRowInPdf);
+        return timeline.length > 0 ? { vehicleHistoryTimeline: timeline } : {};
+      })(),
       ...((citi.damageDetails ?? []).length > 0 ? { damageDetails: citi.damageDetails } : {}),
       ...((citi.mileagePasteRaw ?? citi.rawUnprocessedData ?? "").trim()
         ? { sourceRaw: (citi.mileagePasteRaw || citi.rawUnprocessedData || "").trim() }
