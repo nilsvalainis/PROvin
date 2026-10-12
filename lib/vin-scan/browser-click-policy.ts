@@ -7,7 +7,6 @@ import type { VinScanBrowserId } from "@/lib/vin-scan/catalog";
 export const VIN_SCAN_BROWSER_AUTO_CLICK_IDS = [
   "bid_cars",
   "plc_auction",
-  "vp_wanted",
   "lt_itpr",
   "nicb",
   "bidfax",

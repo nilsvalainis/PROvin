@@ -20,6 +20,9 @@ export type ScanHttpResult = {
   text: string;
   cookie: string;
   ua?: string;
+  proxyUrl?: string;
+  /** CapSolver neapgāja Cloudflare; zonde drīkst to pateikt, nevis parsēt challenge HTML. */
+  challengeReason?: string;
 };
 
 const DEFAULT_TIMEOUT_MS = 12_000;
@@ -62,7 +65,8 @@ export async function scanFetch(
     timeoutMs: init.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     proxyUrl: init.proxyUrl,
   });
-  return { status: res.status, text: res.text, cookie: res.cookie, ua: VIN_HTTP_UA };
+  const ua = init.headers?.["user-agent"] || VIN_HTTP_UA;
+  return { status: res.status, text: res.text, cookie: res.cookie, ua, proxyUrl: init.proxyUrl };
 }
 
 async function bypassCloudflare(websiteURL: string, challenged: VinHttpResult, ua: string): Promise<
@@ -106,12 +110,13 @@ export async function scanFetchSmart(
     timeoutMs?: number;
     solveUrl?: string;
     sourceLabel?: string;
+    userAgent?: string;
   } = {},
 ): Promise<ScanHttpResult> {
   const timeoutMs = init.timeoutMs ?? 20_000;
   const headers = init.headers ?? {};
   let cookie = init.cookie ?? "";
-  let ua = VIN_HTTP_UA;
+  let ua = init.userAgent || VIN_HTTP_UA;
   let proxyUrl = vinStickyHttpProxyUrl();
   const first = await vinHttpFetch(url, {
     method: init.method,
@@ -126,7 +131,7 @@ export async function scanFetchSmart(
   if (isCloudflareChallengeHtml(first.text, first.status)) {
     const bypassed = await bypassCloudflare(init.solveUrl || url, { ...first, cookie }, ua);
     if ("reason" in bypassed) {
-      return { status: first.status, text: first.text, cookie, ua };
+      return { status: first.status, text: first.text, cookie, ua, proxyUrl, challengeReason: bypassed.reason };
     }
     cookie = bypassed.cookie;
     ua = bypassed.ua;
@@ -139,7 +144,11 @@ export async function scanFetchSmart(
       timeoutMs,
       proxyUrl,
     });
-    return { status: retry.status, text: retry.text, cookie: mergeCookieHeader(cookie, retry.cookie), ua };
+    const merged = { status: retry.status, text: retry.text, cookie: mergeCookieHeader(cookie, retry.cookie), ua, proxyUrl };
+    if (isCloudflareChallengeHtml(retry.text, retry.status)) {
+      return { ...merged, challengeReason: "Cloudflare palika lapā pēc CapSolver" };
+    }
+    return merged;
   }
 
   const recaptchaKey = recaptchaSiteKey(first.text);
@@ -181,7 +190,13 @@ export async function scanFetchSmart(
     }
   }
 
-  return { status: first.status, text: first.text, cookie, ua };
+  return { status: first.status, text: first.text, cookie, ua, proxyUrl };
+}
+
+export function scanChallengeReason(res: ScanHttpResult): string | null {
+  if (res.challengeReason) return res.challengeReason;
+  if (isCloudflareChallengeHtml(res.text, res.status)) return "Cloudflare palika lapā";
+  return null;
 }
 
 export function scanCaptchaTokenPlaceholder(html: string): { kind: "recaptcha_v2" | "turnstile"; siteKey: string } | null {

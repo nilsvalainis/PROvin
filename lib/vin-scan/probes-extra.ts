@@ -1,7 +1,7 @@
 import "server-only";
 
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
-import { scanCaptchaTokenPlaceholder, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
+import { scanCaptchaTokenPlaceholder, scanChallengeReason, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
 import {
   oemBrandForVin,
   parseAuctionArchive,
@@ -13,12 +13,11 @@ import {
   parseRdwOpenData,
   parseRegitra,
   parseTraficom,
-  parseUkMot,
   parseVegvesen,
   type OemRecallBrand,
 } from "@/lib/vin-scan/parse-extra";
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
-import { extractInputValue, extractPageFromHtml, mergeCookieHeader } from "@/lib/vin-sources/html-extract";
+import { extractHtmlInputFields, extractInputValue, extractPageFromHtml, mergeCookieHeader } from "@/lib/vin-sources/html-extract";
 import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 
@@ -107,52 +106,6 @@ export async function probeVegvesen(ctx: VinScanContext): Promise<VinScanIndicat
     return done("vegvesen", ctx, last.status === "unknown" ? { status: "unknown", summary: "vegvesen.no API prasa pilnvaru; publiskā lapa paliek cilnē" } : last);
   } catch (e) {
     return failed("vegvesen", ctx, e);
-  }
-}
-
-function motApiKey(): string {
-  return (
-    process.env.DVSA_MOT_API_KEY?.trim() ||
-    process.env.MOT_HISTORY_API_KEY?.trim() ||
-    process.env.MOT_API_KEY?.trim() ||
-    ""
-  );
-}
-
-export async function probeUkMot(ctx: VinScanContext): Promise<VinScanIndicator> {
-  const key = motApiKey();
-  const plate = ctx.plates.uk;
-  if (!key && !plate) {
-    return done("uk_mot", ctx, {
-      status: "needs_input",
-      summary: "Vajag UK reģ. nr. (publiskā MOT lapa). VIN vaicājums ir DVSA API ar atslēgu",
-    });
-  }
-  if (!key) {
-    return done("uk_mot", ctx, {
-      status: "skipped",
-      summary: "UK MOT pēc VIN vajag DVSA_MOT_API_KEY. Publiskā lapa ir pēc numura un paliek cilnē",
-    });
-  }
-  try {
-    const query = plate
-      ? `registration=${encodeURIComponent(plate)}`
-      : `vin=${encodeURIComponent(ctx.vin)}`;
-    const res = await scanFetch(`https://history.mot.api.gov.uk/v1/trade/vehicles/mot-tests?${query}`, {
-      headers: { accept: "application/json", "x-api-key": key },
-      timeoutMs: 15_000,
-    });
-    const parsed = parseUkMot(res.status, res.text);
-    if (parsed.status === "skipped" && plate && ctx.vin) {
-      const vinRes = await scanFetch(
-        `https://history.mot.api.gov.uk/v1/trade/vehicles/mot-tests?vin=${encodeURIComponent(ctx.vin)}`,
-        { headers: { accept: "application/json", "x-api-key": key }, timeoutMs: 15_000 },
-      );
-      return done("uk_mot", ctx, parseUkMot(vinRes.status, vinRes.text));
-    }
-    return done("uk_mot", ctx, parsed);
-  } catch (e) {
-    return failed("uk_mot", ctx, e);
   }
 }
 
@@ -310,34 +263,53 @@ export async function probeTraficom(ctx: VinScanContext): Promise<VinScanIndicat
   }
 }
 
-async function probeWanted(
-  id: "vp_wanted" | "lt_itpr",
-  ctx: VinScanContext,
-  url: string,
-): Promise<VinScanIndicator> {
-  try {
-    const page = await scanFetchSmart(url, { timeoutMs: 20_000, sourceLabel: id });
-    const text = extractPageFromHtml(page.text).text || page.text.replace(/<[^>]+>/g, " ");
-    const parsed = classifyPoliceWanted(id, text, ctx.vin);
-    if (parsed) return done(id, ctx, parsed);
-    const classified = classifyBrowserProbe(id, text, ctx.vin);
-    if (classified) return done(id, ctx, classified);
-    return done(id, ctx, { status: "unknown", summary: "Policijas lapa nav atpazīta" });
-  } catch (e) {
-    return failed(id, ctx, e);
-  }
-}
+const LT_POLICE_URL = "https://www.epolicija.lt/itpr_paieska/transportas_lt.php";
 
-export async function probeVpWanted(ctx: VinScanContext): Promise<VinScanIndicator> {
-  return probeWanted("vp_wanted", ctx, `https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin=${encodeURIComponent(ctx.vin)}`);
+function readPolicePage(html: string, vin: string): VinScanParse {
+  const text = extractPageFromHtml(html).text || html.replace(/<[^>]+>/g, " ");
+  const parsed = classifyPoliceWanted("lt_itpr", text, vin);
+  if (parsed) return parsed;
+  const classified = classifyBrowserProbe("lt_itpr", text, vin);
+  if (classified) return classified;
+  return { status: "unknown", summary: "Policijas lapa nav atpazīta" };
 }
 
 export async function probeLtPolice(ctx: VinScanContext): Promise<VinScanIndicator> {
-  return probeWanted(
-    "lt_itpr",
-    ctx,
-    `https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=${encodeURIComponent(ctx.vin)}`,
-  );
+  const getUrl = `${LT_POLICE_URL}?knr=${encodeURIComponent(ctx.vin)}`;
+  try {
+    const page = await scanFetchSmart(getUrl, {
+      timeoutMs: 45_000,
+      solveUrl: LT_POLICE_URL,
+      sourceLabel: "LT policija",
+    });
+    const challenge = scanChallengeReason(page);
+    if (challenge) return done("lt_itpr", ctx, { status: "unknown", summary: `epolicija.lt: ${challenge}` });
+    const first = readPolicePage(page.text, ctx.vin);
+    if (first.status === "found" || first.status === "none") return done("lt_itpr", ctx, first);
+    const fields = extractHtmlInputFields(page.text);
+    fields.knr = ctx.vin;
+    if (!fields.vnr) fields.vnr = "";
+    const body = new URLSearchParams(fields).toString();
+    const posted = await scanFetch(LT_POLICE_URL, {
+      method: "POST",
+      headers: {
+        accept: "text/html,application/xhtml+xml",
+        "content-type": "application/x-www-form-urlencoded",
+        origin: "https://www.epolicija.lt",
+        referer: getUrl,
+        ...(page.ua ? { "user-agent": page.ua } : {}),
+      },
+      body,
+      cookie: page.cookie,
+      proxyUrl: page.proxyUrl,
+      timeoutMs: 25_000,
+    });
+    const postChallenge = scanChallengeReason(posted);
+    if (postChallenge) return done("lt_itpr", ctx, { status: "unknown", summary: `epolicija.lt: ${postChallenge}` });
+    return done("lt_itpr", ctx, readPolicePage(posted.text, ctx.vin));
+  } catch (e) {
+    return failed("lt_itpr", ctx, e);
+  }
 }
 
 async function probeHtmlSource(

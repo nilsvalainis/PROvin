@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.16.0
+// @version      1.17.0
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -43,8 +43,6 @@
 // @match        https://www.plc.auction/*
 // @match        https://www.epolicija.lt/*
 // @match        https://epolicija.lt/*
-// @match        https://www.vp.gov.lv/*
-// @match        https://vp.gov.lv/*
 // @match        https://www.nicb.org/*
 // @match        https://nicb.org/*
 // @match        https://bidfax.info/*
@@ -60,7 +58,6 @@
 // @match        https://opendata.rdw.nl/*
 // @match        https://www.vegvesen.no/*
 // @match        https://vegvesen.no/*
-// @match        https://www.check-mot.service.gov.uk/*
 // @match        https://biluppgifter.se/*
 // @match        https://www.regitra.lt/*
 // @match        https://www.traficom.fi/*
@@ -90,7 +87,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.16.0";
+  const SCRIPT_VERSION = "1.17.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -575,7 +572,6 @@
       carfax_eu: "https://www.carfax.eu/preview-page?vin=" + v,
       checkcar_vin: "https://checkcar.vin/report/check/" + v,
       plc_auction: "https://plc.auction/?vin=" + v,
-      vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin=" + v,
       lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=" + v,
       nicb: "https://www.nicb.org/vincheck?vin=" + v,
       bidfax: "https://bidfax.info/?s=" + v,
@@ -584,10 +580,9 @@
       mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf?vin=" + v,
       lkf_ee: "https://lkf.ee/et/kahjukontroll?vin=" + v,
       carinfo: "https://www.car.info/en-se/vin/" + v,
-      nummerplade: "https://www.nummerplade.net/?vin=" + v,
+      nummerplade: "https://www.nummerplade.net/stelnummer/" + String(vin || "").toLowerCase() + ".html",
       rdw: "https://opendata.rdw.nl/resource/m9d7-ebf2.json?vin=" + v,
       vegvesen: "https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/?understellsnummer=" + v,
-      uk_mot: "https://www.check-mot.service.gov.uk/enter-reg?vin=" + v,
       biluppgifter: "https://biluppgifter.se/" + v,
       regitra: "https://www.regitra.lt/lt/e-paslaugos/transporto-priemones-duomenu-patikra?vin=" + v,
       traficom: "https://www.traficom.fi/en/transport/road/vehicle-information?vin=" + v,
@@ -612,7 +607,6 @@
     if (name.endsWith("carfax.eu")) return "carfax_eu";
     if (name.endsWith("checkcar.vin")) return "checkcar_vin";
     if (name.endsWith("plc.auction")) return "plc_auction";
-    if (name.endsWith("vp.gov.lv")) return "vp_wanted";
     if (name.endsWith("epolicija.lt")) return "lt_itpr";
     if (name.endsWith("nicb.org")) return "nicb";
     if (name.endsWith("bidfax.info")) return "bidfax";
@@ -624,7 +618,6 @@
     if (name.endsWith("nummerplade.net")) return "nummerplade";
     if (name.endsWith("rdw.nl")) return "rdw";
     if (name.endsWith("vegvesen.no")) return "vegvesen";
-    if (name.endsWith("check-mot.service.gov.uk")) return "uk_mot";
     if (name.endsWith("biluppgifter.se")) return "biluppgifter";
     if (name.endsWith("regitra.lt")) return "regitra";
     if (name.endsWith("traficom.fi")) return "traficom";
@@ -762,7 +755,7 @@
       const bits = [title, location.replace(/\s+/g, " ").trim(), String(saleDate).trim(), String(winningBid).replace(/\s+/g, " ").trim()].filter(Boolean);
       return { status: "found", summary: bits.join(" · ") };
     }
-    if (id === "vp_wanted" || id === "lt_itpr") {
+    if (id === "lt_itpr") {
       if (/lapa netika atrasta|lapa nav atrasta|page not found|404 not found|šāda lapa neeksistē/i.test(text)) {
         return { status: "unknown", summary: "Publiskā lapa nav pieejama" };
       }
@@ -1049,7 +1042,7 @@
       const input =
         id === "plc_auction"
           ? findPlcSearchInput()
-          : id === "vp_wanted" || id === "lt_itpr"
+          : id === "lt_itpr"
             ? findPoliceWantedInput()
             : findScanVinInput();
       if (input) {
@@ -1063,17 +1056,16 @@
         blocker !== "captcha" &&
         (id === "bid_cars" ||
           id === "plc_auction" ||
-          id === "vp_wanted" ||
           id === "lt_itpr" ||
           id === "nicb" ||
           id === "bidfax" ||
           id === "poctra");
       if (mayClick && filled && !clicked && ticks >= 3) {
         clicked = clickSafeCheck();
-        if (!clicked && (id === "plc_auction" || id === "vp_wanted" || id === "lt_itpr") && input && typeof input.form?.requestSubmit === "function") {
+        if (!clicked && (id === "plc_auction" || id === "lt_itpr") && input && typeof input.form?.requestSubmit === "function") {
           input.form.requestSubmit();
           clicked = true;
-        } else if (!clicked && (id === "plc_auction" || id === "vp_wanted" || id === "lt_itpr") && input) {
+        } else if (!clicked && (id === "plc_auction" || id === "lt_itpr") && input) {
           input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
           clicked = true;
         }

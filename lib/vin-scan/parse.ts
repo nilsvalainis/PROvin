@@ -3,6 +3,7 @@
  */
 import type { CsddTechDataResult } from "@/lib/csdd-tech-data";
 import type { VinScanParse, VinScanVehicle } from "@/lib/vin-scan/types";
+import { extractPageFromHtml } from "@/lib/vin-sources/html-extract";
 import type { VinSourceFetchResult } from "@/lib/vin-sources/types";
 
 function asRecord(v: unknown): Record<string, unknown> {
@@ -205,6 +206,82 @@ export function parseNummerpladeProbe(
   if (!text.trim()) return { status: "unknown", summary: "nummerplade.net tukša atbilde" };
   if (!mappedFound) return { status: "none", summary: mappedMessage || "nummerplade.net neatpazina šo VIN" };
   return { status: "found", summary: mappedMessage || "Ir nummerplade.net" };
+}
+
+function pairValue(pairs: { label: string; value: string }[], re: RegExp): string {
+  return pairs.find((p) => re.test(p.label))?.value.replace(/\s+/g, " ").trim() ?? "";
+}
+
+function jsonFromHtmlScript(html: string): unknown | null {
+  const next = /<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i.exec(html)?.[1];
+  if (next) {
+    try {
+      return JSON.parse(next) as unknown;
+    } catch {
+      /* ignore */
+    }
+  }
+  return null;
+}
+
+function findNummerpladeVehicle(v: unknown, depth = 0): Record<string, unknown> | null {
+  if (!v || typeof v !== "object" || depth > 8) return null;
+  const rec = asRecord(v);
+  const nested = asRecord(rec.koeretoej);
+  if (nested.maerke || nested.nummerplade || nested.stelnummer) return nested;
+  if (rec.maerke || rec.nummerplade || rec.stelnummer) return rec;
+  for (const val of Object.values(rec)) {
+    const found = findNummerpladeVehicle(val, depth + 1);
+    if (found) return found;
+  }
+  return null;
+}
+
+function nummerpladeFound(vehicle: Record<string, unknown>): VinScanParse {
+  const make = str(vehicle.maerke) || str(vehicle.make);
+  const model = str(vehicle.model);
+  const plate = str(vehicle.nummerplade) || str(vehicle.regNr);
+  const year = str(vehicle.foerste_registrering).slice(0, 4) || str(vehicle.model_aar);
+  const bits = [[make, model].filter(Boolean).join(" "), plate].filter(Boolean);
+  return {
+    status: "found",
+    summary: `nummerplade.net: ${bits.join(" · ") || "transportlīdzeklis"}`,
+    vehicle: make || model || year ? { make, model, year } : undefined,
+  };
+}
+
+/** Publiskā nummerplade.net lapa pēc Cloudflare: JSON iekš HTML vai etiķete:vērtība. */
+export function parseNummerpladeHtml(status: number, html: string, vin: string): VinScanParse {
+  if (status === 404) return { status: "none", summary: "nummerplade.net šo VIN neatpazina" };
+  if (status !== 200 && status !== 0) {
+    return { status: "unknown", summary: `nummerplade.net atbildēja ar HTTP ${status}` };
+  }
+  const raw = html || "";
+  if (/<title>\s*just a moment/i.test(raw)) {
+    return { status: "unknown", summary: "nummerplade.net Cloudflare palika lapā" };
+  }
+  const fromScript = findNummerpladeVehicle(jsonFromHtmlScript(raw));
+  if (fromScript) return nummerpladeFound(fromScript);
+  if (/ingen k[øo]ret[øo]j|ikke fundet|no vehicles? found|0 resultater|fandtes ikke/i.test(raw)) {
+    return { status: "none", summary: "nummerplade.net šo VIN neatpazina" };
+  }
+  const page = extractPageFromHtml(raw);
+  const make = pairValue(page.pairs, /m[æa]rke|make|fabrikat/i);
+  const model = pairValue(page.pairs, /^model$|modeltype/i);
+  const plate = pairValue(page.pairs, /nummerplade|reg\.?\s*nr|registreringsnummer/i);
+  const stel = pairValue(page.pairs, /stelnummer|chassis|vin/i);
+  const text = page.text;
+  const hasVin = Boolean(vin) && text.toUpperCase().includes(vin.trim().toUpperCase());
+  if ((make || model || plate || stel) && (hasVin || plate || stel)) {
+    return nummerpladeFound({ maerke: make, model, nummerplade: plate, stelnummer: stel });
+  }
+  if (hasVin && /(m[æa]rke|stelnummer|nummerplade|synsrapport)/i.test(text)) {
+    return { status: "found", summary: "Ir nummerplade.net" };
+  }
+  if (!raw.trim() || (/nummerplade eller stelnummer|søg på nummerplade/i.test(text) && !hasVin)) {
+    return { status: "unknown", summary: "nummerplade.net lapa bez rezultāta" };
+  }
+  return { status: "unknown", summary: "nummerplade.net lapa nav atpazīta" };
 }
 
 export function parseNhtsaDecode(status: number, text: string): VinScanParse {

@@ -17,7 +17,6 @@ export const VIN_SCAN_SOURCE_IDS = [
   "lkf_ee",
   "rdw",
   "vegvesen",
-  "uk_mot",
   "nhtsa_recalls",
   "nicb",
   "recall_vw",
@@ -28,7 +27,6 @@ export const VIN_SCAN_SOURCE_IDS = [
   "biluppgifter",
   "regitra",
   "traficom",
-  "vp_wanted",
   "lt_itpr",
   "stat_vin",
   "bid_cars",
@@ -47,12 +45,9 @@ export const VIN_SCAN_FAST_IDS = [
   "tjekbil",
   "esyn",
   "dsb",
-  "carpass",
   "mnt_ee",
   "csdd",
   "nhtsa_recalls",
-  "vp_wanted",
-  "lt_itpr",
 ] as const satisfies readonly VinScanSourceId[];
 
 /**
@@ -67,12 +62,10 @@ export const VIN_SCAN_BROWSER_IDS = [
   "lkf_ee",
   "rdw",
   "vegvesen",
-  "uk_mot",
   "nicb",
   "biluppgifter",
   "regitra",
   "traficom",
-  "vp_wanted",
   "lt_itpr",
   "stat_vin",
   "bid_cars",
@@ -165,9 +158,9 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "nummerplade",
     label: "nummerplade.net",
     country: "DK",
-    hint: "Dānijas reģistrs (gratis kešs, ja ir API atslēga)",
+    hint: "Dānijas reģistrs. Publiskā lapa, Cloudflare caur CapSolver",
     needs: ["vin"],
-    openUrl: (vin) => `https://www.nummerplade.net/?vin=${vinQuery(vin)}`,
+    openUrl: (vin) => `https://www.nummerplade.net/stelnummer/${vin.trim().toLowerCase()}.html`,
   },
   {
     id: "carinfo",
@@ -206,19 +199,6 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     needs: ["vin"],
     openUrl: (vin) =>
       `https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/?understellsnummer=${vinQuery(vin)}`,
-  },
-  {
-    id: "uk_mot",
-    label: "UK MOT",
-    country: "UK",
-    hint: "MOT vēsture. Publiskā lapa pēc UK numura; API pieņem arī VIN",
-    needs: ["uk", "vin"],
-    needsAny: true,
-    openUrl: (vin, plates) => {
-      const reg = plates?.uk ? plateQ(plates.uk) : "";
-      if (reg) return `https://www.check-mot.service.gov.uk/enter-reg?registration=${reg}&vin=${vinQuery(vin)}`;
-      return `https://www.check-mot.service.gov.uk/enter-reg?vin=${vinQuery(vin)}`;
-    },
   },
   {
     id: "nhtsa_recalls",
@@ -305,14 +285,6 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
       const plate = plates?.fi ? plateQ(plates.fi) : "";
       return `https://www.traficom.fi/en/transport/road/vehicle-information?vin=${vinQuery(vin)}${plate ? `&plate=${plate}` : ""}`;
     },
-  },
-  {
-    id: "vp_wanted",
-    label: "VP meklētie",
-    country: "LV",
-    hint: "Valsts policija, meklētie transportlīdzekļi",
-    needs: ["vin"],
-    openUrl: (vin) => `https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin=${vinQuery(vin)}`,
   },
   {
     id: "lt_itpr",
@@ -415,7 +387,7 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanCatalogItem[] = VIN_SCAN_
 );
 
 /** Minimālā Tampermonkey versija VIN SCAN dziļajām saitēm un aizpildei. */
-export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 16 } as const;
+export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 17 } as const;
 
 export function vinScanUserscriptMeetsMin(raw: string): boolean {
   const parts = raw.split(".").map((n) => Number.parseInt(n, 10));
@@ -462,4 +434,6 @@ export const VIN_SCAN_REMOVED_IDS = [
   "vininspect",
   "oneauto",
   "outvin",
+  "vp_wanted",
+  "uk_mot",
 ] as const;

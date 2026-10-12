@@ -4,7 +4,7 @@ import { fetchCsddTechData } from "@/lib/csdd-tech-data";
 import { fetchVinSource } from "@/lib/vin-sources";
 import { mapNummerpladePayload, nummerpladeApiKey } from "@/lib/vin-sources/nummerplade";
 import { isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
-import { scanFetch } from "@/lib/vin-scan/http";
+import { scanChallengeReason, scanFetch, scanFetchSmart } from "@/lib/vin-scan/http";
 import {
   dsbScanFromParts,
   esynVehicleSummary,
@@ -15,6 +15,7 @@ import {
   parseDsbSearchHtml,
   parseEsynChassis,
   parseEsynInspections,
+  parseNummerpladeHtml,
   parseNummerpladeProbe,
   parseTjekbilProbe,
   parseVinSourceScan,
@@ -36,9 +37,7 @@ import {
   probeRegitra,
   probeStatVin,
   probeTraficom,
-  probeUkMot,
   probeVegvesen,
-  probeVpWanted,
 } from "@/lib/vin-scan/probes-extra";
 import { isValidScanPlate, vinScanPlateLabel, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
@@ -85,28 +84,61 @@ export async function probeTjekbil(ctx: VinScanContext): Promise<VinScanIndicato
   }
 }
 
+function nummerpladeFromJson(status: number, text: string): VinScanParse | null {
+  if (status !== 200 || !text.trim()) return null;
+  try {
+    const mapped = mapNummerpladePayload(JSON.parse(text) as unknown);
+    const parsed = parseNummerpladeProbe(status, text, mapped.found, mapped.message);
+    return {
+      ...parsed,
+      mileage: mapped.mileage.map((row) => ({ date: row.date, odometer: row.odometer })),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function probeNummerplade(ctx: VinScanContext): Promise<VinScanIndicator> {
   const key = nummerpladeApiKey();
-  if (!key) return done("nummerplade", ctx, { status: "skipped", summary: "Nav NUMMERPLADE_API_KEY" });
-  try {
-    const res = await scanFetch(`https://www.nummerplade.net/api/v1/koeretoej/${encodeURIComponent(ctx.vin)}`, {
-      headers: { accept: "application/json", "X-Api-Noegle": key, referer: "https://www.nummerplade.net/" },
-    });
-    let mappedFound = false;
-    let mappedMessage = "";
-    let mileage: VinScanParse["mileage"];
-    if (res.status === 200 && res.text.trim()) {
-      try {
-        const mapped = mapNummerpladePayload(JSON.parse(res.text) as unknown);
-        mappedFound = mapped.found;
-        mappedMessage = mapped.message;
-        mileage = mapped.mileage.map((row) => ({ date: row.date, odometer: row.odometer }));
-      } catch {
-        mappedFound = false;
-      }
+  if (key) {
+    try {
+      const res = await scanFetch(`https://www.nummerplade.net/api/v1/koeretoej/${encodeURIComponent(ctx.vin)}`, {
+        headers: { accept: "application/json", "X-Api-Noegle": key, referer: "https://www.nummerplade.net/" },
+      });
+      const fromKey = nummerpladeFromJson(res.status, res.text);
+      if (fromKey && fromKey.status !== "unknown") return done("nummerplade", ctx, fromKey);
+    } catch {
+      /* publiskā lapa zemāk */
     }
-    const parsed = parseNummerpladeProbe(res.status, res.text, mappedFound, mappedMessage);
-    return done("nummerplade", ctx, { ...parsed, mileage });
+  }
+  try {
+    const resultUrl = `https://www.nummerplade.net/stelnummer/${ctx.vin.toLowerCase()}.html`;
+    const page = await scanFetchSmart(resultUrl, {
+      timeoutMs: 45_000,
+      solveUrl: "https://www.nummerplade.net/",
+      sourceLabel: "nummerplade.net",
+    });
+    const challenge = scanChallengeReason(page);
+    if (challenge) return done("nummerplade", ctx, { status: "unknown", summary: `nummerplade.net: ${challenge}` });
+    const htmlParsed = parseNummerpladeHtml(page.status, page.text, ctx.vin);
+    if (htmlParsed.status === "found" || htmlParsed.status === "none") {
+      return done("nummerplade", ctx, { ...htmlParsed, openUrl: resultUrl });
+    }
+    const api = await scanFetch(`https://www.nummerplade.net/api/v1/koeretoej/${encodeURIComponent(ctx.vin)}`, {
+      headers: {
+        accept: "application/json",
+        referer: resultUrl,
+        "user-agent": page.ua || "",
+      },
+      cookie: page.cookie,
+      proxyUrl: page.proxyUrl,
+      timeoutMs: 20_000,
+    });
+    const fromApi = nummerpladeFromJson(api.status, api.text);
+    if (fromApi && (fromApi.status === "found" || fromApi.status === "none")) {
+      return done("nummerplade", ctx, { ...fromApi, openUrl: resultUrl });
+    }
+    return done("nummerplade", ctx, htmlParsed);
   } catch (e) {
     return failed("nummerplade", ctx, e);
   }
@@ -161,7 +193,13 @@ export async function probeDsb(ctx: VinScanContext): Promise<VinScanIndicator> {
 
 export async function probeCarpass(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    const page = await scanFetch("https://public.car-pass.be/recalls", { headers: { accept: "text/html" } });
+    const page = await scanFetchSmart("https://public.car-pass.be/recalls", {
+      headers: { accept: "text/html" },
+      timeoutMs: 45_000,
+      sourceLabel: "Car-Pass",
+    });
+    const challenge = scanChallengeReason(page);
+    if (challenge) return done("carpass", ctx, { status: "unknown", summary: `Car-Pass: ${challenge}` });
     const csrf = parseCarpassCsrf(page.text);
     if (!csrf) return done("carpass", ctx, { status: "unknown", summary: "Car-Pass neatgrieza drošības žetonu" });
     const body = new URLSearchParams({ vin: ctx.vin, _csrf: csrf }).toString();
@@ -173,10 +211,14 @@ export async function probeCarpass(ctx: VinScanContext): Promise<VinScanIndicato
         "x-csrf-token": csrf,
         origin: "https://public.car-pass.be",
         referer: "https://public.car-pass.be/recalls",
+        ...(page.ua ? { "user-agent": page.ua } : {}),
       },
       body,
       cookie: page.cookie,
+      proxyUrl: page.proxyUrl,
     });
+    const postChallenge = scanChallengeReason(res);
+    if (postChallenge) return done("carpass", ctx, { status: "unknown", summary: `Car-Pass: ${postChallenge}` });
     return done("carpass", ctx, parseCarpassRecalls(res.status, res.text));
   } catch (e) {
     return failed("carpass", ctx, e);
@@ -228,7 +270,6 @@ const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIn
   lkf_ee: probeLkfEe,
   rdw: probeRdw,
   vegvesen: probeVegvesen,
-  uk_mot: probeUkMot,
   nhtsa_recalls: probeNhtsaRecalls,
   nicb: probeNicb,
   recall_vw: (ctx) => probeOemRecall(ctx, "vw"),
@@ -239,7 +280,6 @@ const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIn
   biluppgifter: probeBiluppgifter,
   regitra: probeRegitra,
   traficom: probeTraficom,
-  vp_wanted: probeVpWanted,
   lt_itpr: probeLtPolice,
   stat_vin: probeStatVin,
   bid_cars: probeBidCars,

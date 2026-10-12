@@ -21,7 +21,6 @@ describe("pārlūka katalogs", () => {
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "plc_auction")?.openUrl(VIN)).toBe(
       `https://plc.auction/?vin=${VIN}`,
     );
-    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "vp_wanted")?.openUrl(VIN)).toContain("vp.gov.lv");
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "lt_itpr")?.openUrl(VIN)).toContain("epolicija.lt");
   });
 });

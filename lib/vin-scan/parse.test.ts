@@ -17,6 +17,7 @@ import {
   parseEsynChassis,
   parseEsynInspections,
   parseNhtsaDecode,
+  parseNummerpladeHtml,
   parseNummerpladeProbe,
   parseTjekbilProbe,
   parseVinSourceScan,
@@ -39,6 +40,11 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("rdw");
     expect(VIN_SCAN_SOURCE_IDS).toContain("nhtsa_recalls");
     expect(VIN_SCAN_SOURCE_IDS).toContain("bidfax");
+    expect(VIN_SCAN_SOURCE_IDS).not.toContain("vp_wanted");
+    expect(VIN_SCAN_SOURCE_IDS).not.toContain("uk_mot");
+    expect(VIN_SCAN_CATALOG.find((s) => s.id === "nummerplade")?.openUrl("WVWZZZ7NZEV015204")).toContain(
+      "/stelnummer/wvwzzz7nzev015204.html",
+    );
     expect(defaultVinScanSourceIds()).toEqual([...VIN_SCAN_SOURCE_IDS]);
     for (const removed of VIN_SCAN_REMOVED_IDS) {
       expect(VIN_SCAN_SOURCE_IDS).not.toContain(removed);
@@ -153,6 +159,24 @@ describe("nummerplade probe", () => {
     expect(parseNummerpladeProbe(200, "{}", true, "nummerplade.net: VW Golf").status).toBe("found");
     expect(parseNummerpladeProbe(429, "", false, "").summary).toContain("limits");
     expect(parseNummerpladeProbe(404, "", false, "").status).toBe("none");
+  });
+
+  it("nolasa publisko HTML bez API atslēgas", () => {
+    const html = `
+      <html><body>
+        <dl>
+          <dt>Mærke</dt><dd>Volkswagen</dd>
+          <dt>Model</dt><dd>Sharan</dd>
+          <dt>Nummerplade</dt><dd>CM53865</dd>
+          <dt>Stelnummer</dt><dd>${DK_VIN}</dd>
+        </dl>
+      </body></html>
+    `;
+    const parsed = parseNummerpladeHtml(200, html, DK_VIN);
+    expect(parsed.status).toBe("found");
+    expect(parsed.summary).toMatch(/Volkswagen/);
+    expect(parseNummerpladeHtml(200, "<html><title>Just a moment...</title></html>", DK_VIN).summary).toMatch(/Cloudflare/);
+    expect(parseNummerpladeHtml(200, "<p>Ingen køretøjer fundet</p>", DK_VIN).status).toBe("none");
   });
 });
 

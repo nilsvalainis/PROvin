@@ -64,7 +64,6 @@ export function classifyBrowserProbe(id: VinScanBrowserId | string, text: string
       const parsed = classifyPlcAuction(text);
       return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped" | "needs_input">, summary: parsed.summary } : null;
     }
-    case "vp_wanted":
     case "lt_itpr": {
       const parsed = classifyPoliceWanted(id, text, vin);
       return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped" | "needs_input">, summary: parsed.summary } : null;

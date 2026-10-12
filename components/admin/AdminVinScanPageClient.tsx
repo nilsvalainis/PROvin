@@ -21,7 +21,15 @@ import { collectVinScanMileage, pickVinScanVehicle } from "@/lib/vin-scan/summar
 import { vinScanFormatHint } from "@/lib/vin-scan/vin-check";
 
 const inp =
-  "min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
+  "min-w-0 w-full bg-transparent py-2.5 font-mono text-[15px] tracking-wide text-[var(--color-apple-text)] outline-none placeholder:font-sans placeholder:tracking-normal placeholder:text-[#c7c7cc]";
+
+const btnPrimary =
+  "inline-flex h-11 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] px-4 text-[15px] font-semibold text-white transition hover:opacity-95 disabled:opacity-50";
+
+const btnSecondary =
+  "inline-flex h-11 items-center justify-center rounded-xl bg-[#f2f2f7] px-4 text-[15px] font-medium text-[var(--color-apple-text)] transition hover:bg-[#ebebf0] disabled:opacity-50";
+
+const fieldLabel = "text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]";
 
 const PLATE_FIELDS: { kind: VinScanPlateKind; label: string; placeholder: string }[] = [
   { kind: "lv", label: "LV numurs", placeholder: "NG8493" },
@@ -168,11 +176,11 @@ export function AdminVinScanPageClient({
   }
 
   return (
-    <div className="mt-6 space-y-4">
+    <div className="mx-auto mt-3 w-full max-w-[860px] space-y-3 px-2 sm:px-0">
       <AdminVinHandoffBinder vin={valid ? vin : ""} />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <label className="block space-y-1 sm:col-span-2 lg:col-span-1">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">VIN</span>
+      <section className="overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
+        <label className="block border-b border-[#e5e5ea] px-3">
+          <span className={fieldLabel}>VIN</span>
           <input
             type="text"
             inputMode="text"
@@ -186,86 +194,74 @@ export function AdminVinScanPageClient({
             aria-label="VIN skenēšanai"
           />
           {vin && vinHint.warning ? (
-            <p className="text-[10px] text-amber-700 dark:text-amber-300">{vinHint.warning}</p>
+            <p className="pb-2 text-[11.5px] text-amber-700">{vinHint.warning}</p>
           ) : null}
         </label>
-        {PLATE_FIELDS.map((field) => (
-          <label key={field.kind} className="block space-y-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
-              {field.label}
-            </span>
-            <input
-              type="text"
-              inputMode="text"
-              autoCapitalize="characters"
-              autoComplete="off"
-              spellCheck={false}
-              className={inp}
-              value={platesDraft[field.kind]}
-              onChange={(e) => setPlatesDraft((prev) => ({ ...prev, [field.kind]: e.target.value.toUpperCase() }))}
-              onBlur={() => {
-                if (field.kind === "lv") void lookupLvPlate();
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && field.kind === "lv") {
-                  e.preventDefault();
-                  void lookupLvPlate();
-                }
-              }}
-              placeholder={field.placeholder}
-              aria-label={field.label}
-            />
-          </label>
-        ))}
-      </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2">
+          {PLATE_FIELDS.map((field, idx) => (
+            <label
+              key={field.kind}
+              className={`block px-3 ${idx < PLATE_FIELDS.length - 1 || PLATE_FIELDS.length % 2 === 0 ? "border-b border-[#e5e5ea]" : ""} ${idx % 2 === 0 ? "sm:border-r" : ""}`}
+            >
+              <span className={fieldLabel}>{field.label}</span>
+              <input
+                type="text"
+                inputMode="text"
+                autoCapitalize="characters"
+                autoComplete="off"
+                spellCheck={false}
+                className={inp}
+                value={platesDraft[field.kind]}
+                onChange={(e) => setPlatesDraft((prev) => ({ ...prev, [field.kind]: e.target.value.toUpperCase() }))}
+                onBlur={() => {
+                  if (field.kind === "lv") void lookupLvPlate();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && field.kind === "lv") {
+                    e.preventDefault();
+                    void lookupLvPlate();
+                  }
+                }}
+                placeholder={field.placeholder}
+                aria-label={field.label}
+              />
+            </label>
+          ))}
+        </div>
+      </section>
+      {plate || plateBusy || isValidScanPlate("lv", plates.lv) ? (
+        <p className="px-1 text-[11.5px] text-[#8e8e93]">
+          {plateBusy
+            ? "CSDD…"
+            : plate
+              ? plate.ok
+                ? [plate.vin, [plate.year, plate.make, plate.model].filter(Boolean).join(" "), plate.status]
+                    .filter(Boolean)
+                    .join(" · ")
+                : plate.status
+              : ""}
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-center gap-2">
-        {plate || plateBusy || isValidScanPlate("lv", plates.lv) ? (
-          <p className="text-[11px] text-[var(--color-apple-text)]">
-            {plateBusy
-              ? "CSDD…"
-              : plate
-                ? plate.ok
-                  ? [plate.vin, [plate.year, plate.make, plate.model].filter(Boolean).join(" "), plate.status]
-                      .filter(Boolean)
-                      .join(" · ")
-                  : plate.status
-                : ""}
-          </p>
-        ) : null}
-        <button
-          type="button"
-          disabled={plateBusy || !isValidScanPlate("lv", plates.lv)}
-          onClick={() => void scanWithPlateVin()}
-          className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
-        >
-          Skenēt ar LV numuru
-        </button>
-        <button
-          type="button"
-          disabled={!canScan}
-          onClick={() => requestScan(false)}
-          className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
-        >
+        <button type="button" disabled={!canScan} onClick={() => requestScan(false)} className={btnPrimary}>
           Skenēt visus avotus
         </button>
-        <button
-          type="button"
-          disabled={!canScan}
-          onClick={() => requestScan(true)}
-          className="rounded-md border border-slate-300 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] disabled:opacity-50 dark:border-slate-600"
-        >
+        <button type="button" disabled={!canScan} onClick={() => requestScan(true)} className={btnSecondary}>
           Skenēt no jauna
         </button>
         <button
           type="button"
-          disabled={!valid || creating}
-          onClick={() => void createManualOrder()}
-          className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
+          disabled={plateBusy || !isValidScanPlate("lv", plates.lv)}
+          onClick={() => void scanWithPlateVin()}
+          className={btnSecondary}
         >
+          Skenēt ar LV numuru
+        </button>
+        <button type="button" disabled={!valid || creating} onClick={() => void createManualOrder()} className={btnPrimary}>
           {creating ? "Veido…" : "Izveidot manuālo pasūtījumu"}
         </button>
       </div>
-      {createError ? <p className="text-[10px] text-rose-600 dark:text-rose-300">{createError}</p> : null}
+      {createError ? <p className="px-1 text-[11.5px] text-red-600">{createError}</p> : null}
       <AdminVinScanPanel
         vin={vin}
         plates={plates}

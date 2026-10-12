@@ -23,7 +23,17 @@ const SLOW_TIMEOUT_MS = 45_000;
 const DEFAULT_TIMEOUT_MS = 14_000;
 const CAPTCHA_TIMEOUT_MS = 90_000;
 
-const CAPTCHA_SOURCES = new Set<VinScanSourceId>(["lkf_ee", "carinfo", "nicb", "auchistory", "stat_vin", "mnt_ee"]);
+const CAPTCHA_SOURCES = new Set<VinScanSourceId>([
+  "lkf_ee",
+  "carinfo",
+  "nicb",
+  "auchistory",
+  "stat_vin",
+  "mnt_ee",
+  "nummerplade",
+  "lt_itpr",
+  "carpass",
+]);
 
 function timeoutMsFor(id: VinScanSourceId): number {
   if (CAPTCHA_SOURCES.has(id)) return CAPTCHA_TIMEOUT_MS;
