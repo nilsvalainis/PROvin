@@ -66,3 +66,25 @@ export function sortAdminOrdersIncompleteFirst<
     return bAt - aAt;
   });
 }
+
+/**
+ * NOTEIKUMS (Nils, 2026-10-12): atverot PRO pasūtījumu sarakstu, VISI aktīvie (neizpildītie)
+ * pasūtījumi VIENMĒR ir augšā — grupā „Aktīvie” pāri visām dienām. Kārtība: kavētie pirmie,
+ * tad pēc mazākā atlikušā laika (t.i. agrākais 48 h termiņš augšā). Izpildītie (un B2B pakas)
+ * seko zemāk, grupēti pa dienām. Filtri (>10 €, rezultāta čipi) tiek piemēroti pirms šī.
+ */
+export function partitionAdminOrdersActiveFirst<
+  T extends {
+    created: number;
+    deadlineFromUnix?: number | null;
+    auditComplete?: boolean;
+    isB2bPack?: boolean;
+  },
+>(rows: T[]): { active: T[]; done: T[] } {
+  const active: T[] = [];
+  const done: T[] = [];
+  for (const r of rows) (r.auditComplete || r.isB2bPack ? done : active).push(r);
+  const deadlineStart = (r: T) => r.deadlineFromUnix ?? r.created;
+  active.sort((a, b) => deadlineStart(a) - deadlineStart(b));
+  return { active, done };
+}

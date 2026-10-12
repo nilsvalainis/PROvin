@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ADMIN_AUDIT_COMPLETE_STORAGE_KEY,
+  partitionAdminOrdersActiveFirst,
   parseAuditCompleteIds,
   serializeAuditCompleteIds,
   setAuditCompleteInLocalCache,
@@ -69,5 +70,20 @@ describe("admin-audit-deadline-complete", () => {
       { id: "open", created: 200 },
     ];
     expect(sortAdminOrdersIncompleteFirst(rows).map((r) => r.id)).toEqual(["open", "pack-new"]);
+  });
+});
+
+describe("partitionAdminOrdersActiveFirst (noteikums: aktīvie vienmēr augšā)", () => {
+  it("visi neizpildītie ir aktīvajos neatkarīgi no dienas; kavētie / mazākais atlikums pirmie", () => {
+    const rows = [
+      { id: "new", created: 3000 },
+      { id: "done", created: 2500, auditComplete: true },
+      { id: "old", created: 1000 },
+      { id: "pack", created: 2800, isB2bPack: true },
+      { id: "reset", created: 500, deadlineFromUnix: 2000 },
+    ];
+    const { active, done } = partitionAdminOrdersActiveFirst(rows);
+    expect(active.map((r) => r.id)).toEqual(["old", "reset", "new"]);
+    expect(done.map((r) => r.id)).toEqual(["done", "pack"]);
   });
 });
