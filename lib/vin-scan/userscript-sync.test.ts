@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   VIN_SCAN_BROWSER_CATALOG,
   VIN_SCAN_BROWSER_IDS,
+  VIN_SCAN_SOURCE_IDS,
   VIN_SCAN_USERSCRIPT_MIN,
   vinScanUserscriptMeetsMin,
   vinScanUserscriptMinLabel,
@@ -19,12 +20,12 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.12\.0/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.12.0"');
+    expect(src).toMatch(/@version\s+1\.15\.0/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.15.0"');
     expect(src).toContain("const SCAN_URLS = {");
-    expect(src).toContain('plc_auction: "https://plc.auction/"');
-    expect(src).toContain('vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli"');
-    expect(src).toContain('lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php"');
+    expect(src).toContain('plc_auction: "https://plc.auction/?vin="');
+    expect(src).toContain('vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin="');
+    expect(src).toContain('lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr="');
     expect(src).toContain("// @match        https://plc.auction/*");
     expect(src).toContain("// @match        https://www.epolicija.lt/*");
     expect(src).toContain("// @match        https://www.vp.gov.lv/*");
@@ -46,6 +47,11 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).toContain("vp_wanted");
     expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).toContain("lt_itpr");
     expect(src).toContain('id === "plc_auction"');
+    for (const paid of ["nummerplade", "oneauto", "outvin", "csdd", "carinfo", "lkf_ee"] as const) {
+      expect(VIN_SCAN_SOURCE_IDS).not.toContain(paid);
+      expect(VIN_SCAN_BROWSER_IDS).not.toContain(paid);
+      expect(src).not.toMatch(new RegExp(`${paid}:\\s*"https://`));
+    }
   });
 
   it("kataloga URL un SCAN_URLS ved uz tiem pašiem hostiem", () => {
@@ -53,21 +59,23 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "checkcar_vin")?.openUrl(vin)).toBe(
       `https://checkcar.vin/report/check/${vin}`,
     );
-    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "plc_auction")?.openUrl(vin)).toBe("https://plc.auction/");
+    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "plc_auction")?.openUrl(vin)).toBe(
+      `https://plc.auction/?vin=${vin}`,
+    );
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "vp_wanted")?.openUrl(vin)).toBe(
-      "https://www.vp.gov.lv/lv/mekletie-transportlidzekli",
+      `https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin=${vin}`,
     );
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "lt_itpr")?.openUrl(vin)).toBe(
-      "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+      `https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=${vin}`,
     );
     expect(src).toContain("https://checkcar.vin/report/check/");
   });
 
-  it("minimālā paneļa versija ir 1.12", () => {
-    expect(vinScanUserscriptMinLabel()).toBe("1.12");
-    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 12 });
-    expect(vinScanUserscriptMeetsMin("1.11.0")).toBe(false);
-    expect(vinScanUserscriptMeetsMin("1.12.0")).toBe(true);
+  it("minimālā paneļa versija ir 1.15", () => {
+    expect(vinScanUserscriptMinLabel()).toBe("1.15");
+    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 15 });
+    expect(vinScanUserscriptMeetsMin("1.14.0")).toBe(false);
+    expect(vinScanUserscriptMeetsMin("1.15.0")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
   });
 

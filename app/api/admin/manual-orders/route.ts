@@ -9,6 +9,8 @@ import {
   deleteManualOrder,
   updateManualOrder,
 } from "@/lib/admin-manual-orders";
+import { createVinScanManualOrder } from "@/lib/vin-scan/create-manual-order";
+import { parseVinScanManualOrderInput } from "@/lib/vin-scan/manual-order-seed";
 
 export const runtime = "nodejs";
 
@@ -18,11 +20,31 @@ function storeErrorStatus(error: string): number {
   return 503;
 }
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
     const ok = await getAdminSession();
     if (!ok) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    const rawText = await req.text();
+    let body: unknown = null;
+    if (rawText.trim()) {
+      try {
+        body = JSON.parse(rawText) as unknown;
+      } catch {
+        return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+      }
+    }
+    if (body && typeof body === "object" && "vin" in (body as Record<string, unknown>)) {
+      const input = parseVinScanManualOrderInput(body);
+      if (!input) {
+        return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
+      }
+      const created = await createVinScanManualOrder(input);
+      if (!created.ok) {
+        return NextResponse.json({ error: created.error }, { status: storeErrorStatus(created.error) });
+      }
+      return NextResponse.json({ ok: true, orderId: created.orderId, record: { id: created.orderId } });
     }
     const res = await createManualOrder();
     if (!res.ok) {

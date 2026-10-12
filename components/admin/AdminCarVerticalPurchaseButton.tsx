@@ -13,8 +13,31 @@ type Props = {
 };
 
 /**
+ * Pēc `confirm` atver CarVertical pirkuma cilni ar userscript karogu.
+ * Bez apstiprinājuma nenotiek. Pēc apstiprinājuma skripts iziet checkout
+ * soļus (mērķa aptauja, uznirstošie, saglabātā apmaksa). 3-D Secure paliek operatoram.
+ */
+export function openCarVerticalPurchaseTab(vin: string): boolean {
+  const clean = normalizeVin(vin);
+  if (!isValidVin(clean)) return false;
+  if (!window.confirm(CARVERTICAL_PURCHASE_CONFIRM_LV)) return false;
+  const result = purchaseCarVerticalReport({ vin: clean, explicitOperatorConfirm: true });
+  if (!result.ok) return false;
+  const a = document.createElement("a");
+  a.href = result.href;
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.dataset.provinHandoffVin = result.vin;
+  a.dataset.provinCarverticalPurchase = "1";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  return true;
+}
+
+/**
  * Vienīgā admin poga, kas pēc apstiprinājuma atver CarVertical pirkumu.
- * MENU / VIN scan / AutoDNA virsraksts vairs nespied pirkuma pogu.
+ * MENU / VIN scan priekšskatījums / AutoDNA virsraksts vairs nespied pirkuma pogu.
  */
 export function AdminCarVerticalPurchaseButton({ disabled, readOnly }: Props) {
   const vin = normalizeVin(useAdminVinHandoff()?.vin ?? "");
@@ -22,18 +45,7 @@ export function AdminCarVerticalPurchaseButton({ disabled, readOnly }: Props) {
 
   const onBuy = () => {
     if (disabled || readOnly || !ready) return;
-    if (!window.confirm(CARVERTICAL_PURCHASE_CONFIRM_LV)) return;
-    const result = purchaseCarVerticalReport({ vin, explicitOperatorConfirm: true });
-    if (!result.ok) return;
-    const a = document.createElement("a");
-    a.href = result.href;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    a.dataset.provinHandoffVin = result.vin;
-    a.dataset.provinCarverticalPurchase = "1";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    openCarVerticalPurchaseTab(vin);
   };
 
   return (

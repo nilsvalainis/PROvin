@@ -9,8 +9,6 @@ import {
   dsbScanFromParts,
   esynVehicleSummary,
   formatCsddPlateLookup,
-  oneautoScanCopy,
-  outvinScanCopy,
   parseCarpassCsrf,
   parseCarpassRecalls,
   parseCsddTechScan,
@@ -19,7 +17,6 @@ import {
   parseEsynChassis,
   parseEsynInspections,
   parseNhtsaDecode,
-  parseNummerpladeProbe,
   parseTjekbilProbe,
   parseVinSourceScan,
   vehicleFromPlcTitle,
@@ -30,12 +27,23 @@ import { countVinScanStatuses } from "@/lib/vin-scan/types";
 const DK_VIN = "VF12RFL1H49621453";
 
 describe("vin scan catalog", () => {
-  it("katalogā ir unikāli A līmeņa avoti, t.sk. CSDD un valstu reģistri", () => {
+  it("katalogā ir unikāli bezmaksas A līmeņa avoti", () => {
     expect(VIN_SCAN_CATALOG.map((s) => s.id)).toEqual([...VIN_SCAN_SOURCE_IDS]);
     expect(new Set(VIN_SCAN_SOURCE_IDS).size).toBe(VIN_SCAN_SOURCE_IDS.length);
-    expect(VIN_SCAN_SOURCE_IDS).toEqual(expect.arrayContaining(["csdd", "mnt_ee", "lkf_ee", "carinfo", "tjekbil", "carpass"]));
-    expect(defaultVinScanSourceIds({ oneauto: false, outvin: false })).not.toContain("oneauto");
-    expect(defaultVinScanSourceIds({ oneauto: true, outvin: false })).toContain("oneauto");
+    expect(VIN_SCAN_SOURCE_IDS).toEqual(["tjekbil", "esyn", "dsb", "carpass", "mnt_ee", "nhtsa"]);
+    expect(defaultVinScanSourceIds()).toEqual([...VIN_SCAN_SOURCE_IDS]);
+    for (const paid of ["nummerplade", "oneauto", "outvin", "csdd", "carinfo", "lkf_ee"] as const) {
+      expect(VIN_SCAN_SOURCE_IDS).not.toContain(paid);
+    }
+  });
+
+  it("katram servera avotam ir VIN meklēšanas URL", () => {
+    const vin = "WBA5R1C0XLFH42873";
+    for (const item of VIN_SCAN_CATALOG) {
+      const url = item.openUrl(vin);
+      expect(url).toMatch(/^https:\/\//);
+      expect(url.toUpperCase()).toContain(vin);
+    }
   });
 });
 
@@ -145,22 +153,6 @@ describe("nhtsa", () => {
 
   it("bez ražotāja ir tukšs avots", () => {
     expect(parseNhtsaDecode(200, JSON.stringify({ Results: [{ Make: "", ErrorCode: "6" }] })).status).toBe("none");
-  });
-});
-
-describe("maksas avoti paliek līdz pogai", () => {
-  it("oneauto un outvin nepērk datus", () => {
-    expect(oneautoScanCopy(false).status).toBe("skipped");
-    expect(oneautoScanCopy(true).status).toBe("manual");
-    expect(outvinScanCopy("WBA5R1C0XLFH42873", true).summary).toContain("Eiropas VIN");
-    expect(outvinScanCopy("1HGCM82633A123456", true).status).toBe("manual");
-    expect(outvinScanCopy("1HGCM82633A123456", false).status).toBe("skipped");
-  });
-
-  it("nummerplade limits nav sarkanais", () => {
-    expect(parseNummerpladeProbe(429, "", false, "").status).toBe("unknown");
-    expect(parseNummerpladeProbe(404, "", false, "").status).toBe("none");
-    expect(parseNummerpladeProbe(200, "{}", true, "RENAULT Captur").status).toBe("found");
   });
 });
 
