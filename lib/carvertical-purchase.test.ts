@@ -88,8 +88,8 @@ describe("CarVertical click policy", () => {
 describe("userscript stays aligned with no auto-buy", () => {
   it("does not auto-click CarVertical preview and gates check behind purchase flag", () => {
     const src = readFileSync(path.join(ROOT, "public/userscripts/provin-vin-autofill.user.js"), "utf8");
-    expect(src).toMatch(/@version\s+1\.10\.0/);
-    expect(src).toContain('id === "autodna_preview" || id === "vininspect" || id === "bid_cars"');
+    expect(src).toMatch(/@version\s+1\.11\.0/);
+    expect(src).toContain('id === "autodna_preview" || id === "vininspect" || id === "bid_cars" || id === "plc_auction"');
     expect(src).not.toContain('id === "carvertical_preview" || id === "vininspect"');
     expect(src).toContain("carVerticalPurchaseConfirmed");
     expect(src).toContain("provinCarverticalPurchase");

@@ -3,6 +3,7 @@
  * Tas pats lēmums ir iebūvēts `public/userscripts/provin-vin-autofill.user.js` (`classifyBrowserProbe`).
  */
 import type { VinScanBrowserId } from "@/lib/vin-scan/catalog";
+import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
 import type { VinScanStatus } from "@/lib/vin-scan/types";
 
 export type BrowserProbeRead = {
@@ -89,8 +90,14 @@ export function classifyBrowserProbe(id: VinScanBrowserId, text: string, vin: st
         return { status: "none", summary: "auto.vin šo VIN neatpazina" };
       }
       return null;
-    case "checkcar_vin":
-      return null;
+    case "checkcar_vin": {
+      const parsed = classifyCheckcarVinText(text, vin);
+      return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped">, summary: parsed.summary } : null;
+    }
+    case "plc_auction": {
+      const parsed = classifyPlcAuction(text);
+      return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped">, summary: parsed.summary } : null;
+    }
     default:
       return null;
   }

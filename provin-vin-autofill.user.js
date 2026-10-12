@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.10.0
+// @version      1.11.0
 // @description  Admin MENU VIN auto-fill un ātrās pārbaudes zondes. CarVertical pogas nespied, ja operators nav apstiprinājis maksas pirkumu.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -41,6 +41,8 @@
 // @match        https://cebia.com/*
 // @match        https://www.auto.vin/*
 // @match        https://auto.vin/*
+// @match        https://plc.auction/*
+// @match        https://www.plc.auction/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
@@ -54,7 +56,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.10.0";
+  const SCRIPT_VERSION = "1.11.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -457,7 +459,7 @@
 
   function scanUrl(id, vin) {
     const v = encodeURIComponent(vin);
-    const urls = {
+    const SCAN_URLS = {
       stat_vin: "https://stat.vin/cars/" + v,
       bid_cars: "https://bid.cars/en/search?q=" + v,
       vininspect: "https://vininspect.com/vin/" + v,
@@ -468,8 +470,9 @@
       carvertical_preview: "https://www.carvertical.com/lv/user/reports",
       auto_vin: "https://www.auto.vin/en/checkout?vin=" + v,
       checkcar_vin: "https://checkcar.vin/report/check/" + v,
+      plc_auction: "https://plc.auction/",
     };
-    return urls[id] || "";
+    return SCAN_URLS[id] || "";
   }
 
   function scanIdForHost(name) {
@@ -483,6 +486,7 @@
     if (name.endsWith("carvertical.com")) return "carvertical_preview";
     if (name === "auto.vin" || name.endsWith(".auto.vin")) return "auto_vin";
     if (name.endsWith("checkcar.vin")) return "checkcar_vin";
+    if (name.endsWith("plc.auction")) return "plc_auction";
     return "";
   }
 
@@ -583,6 +587,36 @@
         return { status: "none", summary: "auto.vin šo VIN neatpazina" };
       }
       return null;
+    }
+    if (id === "checkcar_vin") {
+      const photoCount = /(\d+)\s*(photos?|images?|pictures?|foto)/i.exec(text);
+      const n = photoCount ? Number(photoCount[1]) : NaN;
+      if (isFinite(n) && n > 0) return { status: "found", summary: n + " foto" };
+      if (/no photos?( available)?|0 photos?|photos? not (available|found)|no images?|couldn.t find|didn.t find|vehicle not found|not found|no report|report not found|no records/i.test(text)) {
+        return { status: "none", summary: "Atskaitē nav foto" };
+      }
+      if (hasVin && /photo|image|gallery|auction|mileage|odometer|lot|vehicle history|\breport\b/i.test(text)) {
+        return { status: "found", summary: "Ir vēstures atskaite" };
+      }
+      return null;
+    }
+    if (id === "plc_auction") {
+      if (/sorry,\s*could not find what you were looking for/i.test(text)) {
+        return { status: "none", summary: "Nav ierakstu" };
+      }
+      const titleMatch = /([A-Za-z][A-Za-z0-9 ./-]*?,\s*\d{4}\s*\(\s*LOT\s*[№N#:]+\s*[^)]+\))/i.exec(text);
+      if (!titleMatch) return null;
+      const title = titleMatch[1].replace(/\s+/g, " ").trim();
+      const location = (text.match(/Location:\s*([^\n]+)/i) || [])[1] || "";
+      const saleDate = (text.match(/Sale date:\s*([^\n]+)/i) || text.match(/Updated:\s*(\d{4}-\d{2}-\d{2})/i) || [])[1] || "";
+      const winningBid =
+        (text.match(/Winning bid:\s*([^\n]+)/i) ||
+          text.match(/Final bid:\s*([^\n]+)/i) ||
+          text.match(/Sold for:\s*([^\n]+)/i) ||
+          text.match(/Buy Now price[^0-9]{0,20}([0-9 \u00a0]+USD)/i) ||
+          [])[1] || "";
+      const bits = [title, location.replace(/\s+/g, " ").trim(), String(saleDate).trim(), String(winningBid).replace(/\s+/g, " ").trim()].filter(Boolean);
+      return { status: "found", summary: bits.join(" · ") };
     }
     return null;
   }
@@ -739,6 +773,50 @@
     return null;
   }
 
+  function findPlcSearchInput() {
+    const nodes = document.querySelectorAll("input, textarea");
+    for (const el of nodes) {
+      if (!isVisible(el) || el.disabled) continue;
+      if (el.type === "password" || el.type === "hidden" || el.type === "email" || el.type === "checkbox") continue;
+      const blob = (
+        (el.name || "") +
+        " " +
+        (el.id || "") +
+        " " +
+        (el.getAttribute("placeholder") || "") +
+        " " +
+        (el.getAttribute("aria-label") || "")
+      ).toLowerCase();
+      if (blob.includes("search") || blob.includes("vin") || blob.includes("find") || el.type === "search") return el;
+    }
+    for (const el of nodes) {
+      if (!isVisible(el) || el.disabled) continue;
+      if (el.type === "text" || el.type === "search" || !el.type) return el;
+    }
+    return null;
+  }
+
+  function extractPlcAuctionExtras() {
+    const lotUrl = /\/auction\/lot\//i.test(location.pathname) ? location.href : "";
+    const seen = new Set();
+    let first = "";
+    let count = 0;
+    for (const img of document.querySelectorAll("img")) {
+      const src = img.currentSrc || img.getAttribute("src") || img.getAttribute("data-src") || "";
+      const w = img.naturalWidth || img.width || 0;
+      const h = img.naturalHeight || img.height || 0;
+      if (!src || src.indexOf("data:") === 0) continue;
+      if (/logo|icon|flag|sprite|avatar|favicon/i.test(src)) continue;
+      if ((w && w < 80) || (h && h < 80)) continue;
+      const clean = String(src).toLowerCase();
+      if (seen.has(clean)) continue;
+      seen.add(clean);
+      count += 1;
+      if (!first) first = src;
+    }
+    return { lotUrl: lotUrl, photoUrl: first, photoCount: count };
+  }
+
   function clickSafeCheck() {
     const pay = /pirkt|buy|apmaks|checkout|pay\b|zamów|koupit|order|subscribe|pasūtīt/i;
     const want = /pārbaudi|pārbaudīt|check|verify|search|meklēt|sākt/i;
@@ -786,7 +864,7 @@
         lastText = text;
         stableTicks = 0;
       }
-      const input = findScanVinInput();
+      const input = id === "plc_auction" ? findPlcSearchInput() : findScanVinInput();
       if (input) {
         const current = String(input.value || "")
           .replace(/[\s-]/g, "")
@@ -794,16 +872,34 @@
         if (current !== probeVin) setNativeValue(input, probeVin);
         filled = true;
       }
-      const mayClick = blocker !== "captcha" && (id === "autodna_preview" || id === "vininspect" || id === "bid_cars");
+      const mayClick =
+        blocker !== "captcha" && (id === "autodna_preview" || id === "vininspect" || id === "bid_cars" || id === "plc_auction");
       if (mayClick && filled && !clicked && ticks >= 3) {
         clicked = clickSafeCheck();
+        if (!clicked && id === "plc_auction" && input && typeof input.form?.requestSubmit === "function") {
+          input.form.requestSubmit();
+          clicked = true;
+        } else if (!clicked && id === "plc_auction" && input) {
+          input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+          clicked = true;
+        }
       }
       if (blocker === "captcha") showProvinBadge("Apstipriniet captcha");
       else if (blocker === "cloudflare") showProvinBadge("Apstipriniet Cloudflare");
       const result = classifyBrowserProbe(id, text, probeVin);
       if (result) {
         window.clearInterval(timer);
-        publishScan({ id: id, vin: probeVin, status: result.status, summary: result.summary, detail: "" });
+        const extras = id === "plc_auction" ? extractPlcAuctionExtras() : { lotUrl: "", photoUrl: "", photoCount: 0 };
+        publishScan({
+          id: id,
+          vin: probeVin,
+          status: result.status,
+          summary: result.summary,
+          detail: "",
+          photoUrl: extras.photoUrl,
+          photoCount: extras.photoCount,
+          openUrl: extras.lotUrl || "",
+        });
         return;
       }
       /* Lapa ir ielādēta un 8 s nemainās, bet neviens šablons nesakrīt: atdod fragmentu, nevis gaida 70 s. */
@@ -1170,11 +1266,26 @@
           last = count;
           stable = 0;
         }
+        const classified = classifyBrowserProbe("checkcar_vin", text, probeVin);
         /* Admin panelim vajag tikai faktu, vai bildes ir. Pirmo foto pietiek. */
         if (count > 0 && stable >= 1) {
           console.log("PROVIN checkcar: ir foto");
           window.clearInterval(timer);
           publishCheckcarPhotos(probeVin, count, "");
+        } else if (classified && classified.status === "found" && stable >= 4) {
+          console.log("PROVIN checkcar: klasifikators saka found");
+          window.clearInterval(timer);
+          publishScan({
+            id: "checkcar_vin",
+            vin: probeVin,
+            status: "found",
+            summary: classified.summary,
+            detail: "",
+          });
+        } else if (classified && classified.status === "none" && ticks >= 16 && stable >= 6) {
+          console.log("PROVIN checkcar: klasifikators saka none");
+          window.clearInterval(timer);
+          publishCheckcarPhotos(probeVin, 0, "");
         } else if (count === 0 && ticks >= 24 && stable >= 8) {
           console.log("PROVIN checkcar: atskaitē nav fotogrāfiju");
           window.clearInterval(timer);

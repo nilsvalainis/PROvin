@@ -1,7 +1,9 @@
 import "server-only";
 
+import { fetchCsddTechData } from "@/lib/csdd-tech-data";
 import { getOneautoApiConfig } from "@/lib/oneauto-api";
 import { getOutvinConfig } from "@/lib/outvin-api";
+import { fetchVinSource } from "@/lib/vin-sources";
 import { mapNummerpladePayload, nummerpladeApiKey } from "@/lib/vin-sources/nummerplade";
 import { scanFetch } from "@/lib/vin-scan/http";
 import {
@@ -11,6 +13,7 @@ import {
   outvinScanCopy,
   parseCarpassCsrf,
   parseCarpassRecalls,
+  parseCsddTechScan,
   parseDsbEntryCount,
   parseDsbSearchHtml,
   parseEsynChassis,
@@ -18,6 +21,7 @@ import {
   parseNhtsaDecode,
   parseNummerpladeProbe,
   parseTjekbilProbe,
+  parseVinSourceScan,
 } from "@/lib/vin-scan/parse";
 import { buildVinScanIndicator, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 
@@ -157,4 +161,36 @@ export function probeOneauto(vin: string): VinScanIndicator {
 
 export function probeOutvin(vin: string): VinScanIndicator {
   return done("outvin", vin, outvinScanCopy(vin, Boolean(getOutvinConfig())));
+}
+
+export async function probeCsdd(vin: string): Promise<VinScanIndicator> {
+  try {
+    return done("csdd", vin, parseCsddTechScan(await fetchCsddTechData(vin)));
+  } catch (e) {
+    return failed("csdd", vin, e);
+  }
+}
+
+export async function probeMntEe(vin: string): Promise<VinScanIndicator> {
+  try {
+    return done("mnt_ee", vin, parseVinSourceScan(await fetchVinSource("mnt_ee", vin)));
+  } catch (e) {
+    return failed("mnt_ee", vin, e);
+  }
+}
+
+export async function probeLkfEe(vin: string): Promise<VinScanIndicator> {
+  try {
+    return done("lkf_ee", vin, parseVinSourceScan(await fetchVinSource("lkf_ee", vin)));
+  } catch (e) {
+    return failed("lkf_ee", vin, e);
+  }
+}
+
+export async function probeCarinfo(vin: string): Promise<VinScanIndicator> {
+  try {
+    return done("carinfo", vin, parseVinSourceScan(await fetchVinSource("carinfo", vin)));
+  } catch (e) {
+    return failed("carinfo", vin, e);
+  }
 }

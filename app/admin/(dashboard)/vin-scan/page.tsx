@@ -1,6 +1,7 @@
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminVinScanPageClient } from "@/components/admin/AdminVinScanPageClient";
 import { normalizeVin } from "@/lib/order-field-validation";
+import { vinScanPaidKeys } from "@/lib/vin-scan/keys";
 
 export const metadata = {
   title: "VIN SCAN",
@@ -15,6 +16,7 @@ export default async function AdminVinScanPage({
 }) {
   const sp = searchParams ? await searchParams : undefined;
   const initialVin = normalizeVin(sp?.vin ?? "");
+  const paidKeys = vinScanPaidKeys();
 
   return (
     <div className="w-full max-w-none">
@@ -29,7 +31,7 @@ export default async function AdminVinScanPage({
           Ātrā avotu pārbaude pēc VIN. Pasūtījuma darba zonā šis bloks vairs nav.
         </p>
       </AdminDashboardHeaderWithMenu>
-      <AdminVinScanPageClient initialVin={initialVin} />
+      <AdminVinScanPageClient initialVin={initialVin} paidKeys={paidKeys} />
     </div>
   );
 }
