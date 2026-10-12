@@ -20,9 +20,17 @@ import {
 import { TP5_DEALER_SAMPLE_REPORT_HREF, TP5_MINI_SAMPLE_REPORT_HREF } from "@/lib/test-pricing-5-ui-copy";
 import { getTestPricingPlan } from "@/lib/test-pricing-plans";
 
-const SHARED_COMPARE_ROWS_LV = [
+const AUDITS_COMPARE_ROWS_LV = [
   "Konsultācija un ieteikumi klātienes apskatei",
   "Apdrošinātāju dati un tehnisko apskašu vēsture",
+  "Sludinājuma, pārdevēja un tehnisko risku analīze",
+  "CarVertical + AutoDNA + Izcelsmes valsts reģistri",
+  "Oficiālo dīleru un izsoļu portālu arhīva dati*",
+];
+
+const MINI_COMPARE_ROWS_LV = [
+  "Konsultācija un ieteikumi klātienes apskatei",
+  "OCTA dati un tehnisko apskašu vēsture",
   "Sludinājuma, pārdevēja un tehnisko risku analīze",
   "CarVertical + AutoDNA + Izcelsmes valsts reģistri",
   "Oficiālo dīleru un izsoļu portālu arhīva dati*",
@@ -53,14 +61,26 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(getTp5MobileService("dealer").features).toHaveLength(5);
   });
 
+  it("keeps a MINI-only OCTA feature line and leaves AUDITS insurer copy unchanged", () => {
+    const mini = getTp5MobileService("mini");
+    const audits = getTp5MobileService("audits");
+    expect(mini.features.map((f) => f.name)).toEqual(MINI_COMPARE_ROWS_LV);
+    expect(audits.features.map((f) => f.name)).toEqual(AUDITS_COMPARE_ROWS_LV);
+    expect(mini.features[1]?.name).toBe("OCTA dati un tehnisko apskašu vēsture");
+    expect(mini.features[1]?.reserveTwoLines).toBe(true);
+    expect(audits.features[1]?.name).toBe("Apdrošinātāju dati un tehnisko apskašu vēsture");
+    expect(audits.features[1]?.reserveTwoLines).toBeUndefined();
+    expect("tagline" in mini).toBe(false);
+  });
+
   it("maps AUDITS and MINI as the same compare stack without flag emojis", () => {
     const mini = getTp5MobileService("mini");
     const audits = getTp5MobileService("audits");
     expect(audits.description).toBe("");
     expect(mini.description).toBe("");
     expect(audits.recommended).toBe(true);
-    expect(audits.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
-    expect(mini.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
+    expect(audits.features.map((f) => f.name)).toEqual(AUDITS_COMPARE_ROWS_LV);
+    expect(mini.features.map((f) => f.name)).toEqual(MINI_COMPARE_ROWS_LV);
     expect(audits.features.every((f) => f.included)).toBe(true);
     expect(mini.features.filter((f) => f.included)).toHaveLength(3);
     expect(mini.features.filter((f) => !f.included)).toHaveLength(2);

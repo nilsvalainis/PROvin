@@ -2705,6 +2705,13 @@ html[data-site-theme="light"] .inlineInput:focus {
   line-height: 1.4;
 }
 
+/* Same two-line box as a wrapped mobile feature row (`1.4` line-height + row padding). */
+@media (max-width: 360px) {
+  .mobilePackLines .featureRowDual {
+    min-height: calc(2 * 1.4em + 0.44rem);
+  }
+}
+
 .mobilePackLines .featureMark {
   width: 1rem;
   height: 1.4em;
@@ -2790,4 +2797,178 @@ html[data-site-theme="light"] .inlineInput:focus {
 
 .mobileHeroFields {
   margin-top: 1.15rem;
+}
+
+/* MINI pre-pay confirm: same overlay language as dealer popup + liquid CTA metrics. */
+.miniConfirmRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.miniConfirmBackdrop {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgb(2 6 23 / 0.58);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  cursor: pointer;
+}
+
+.miniConfirmLayer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.miniConfirmPanel {
+  pointer-events: auto;
+  width: min(22.75rem, calc(100vw - 1.25rem));
+  padding: 1.15rem 1.1rem 1.05rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: linear-gradient(160deg, #1c2028 0%, #0e1016 100%);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.35);
+}
+
+.miniConfirmTitle {
+  margin: 0 0 0.7rem;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: rgb(244 244 245 / 0.98);
+}
+
+.miniConfirmBody {
+  margin: 0 0 0.55rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 450;
+  line-height: 1.45;
+  color: rgb(161 161 170 / 0.95);
+}
+
+.miniConfirmListHeading {
+  margin: 0.7rem 0 0.4rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: rgb(228 228 231 / 0.96);
+}
+
+.miniConfirmList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.miniConfirmListItem {
+  display: grid;
+  grid-template-columns: 0.7rem minmax(0, 1fr);
+  align-items: flex-start;
+  column-gap: 0.5rem;
+  margin: 0 0 0.38rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 450;
+  line-height: 1.45;
+  color: rgb(161 161 170 / 0.95);
+}
+
+.miniConfirmDot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.35em;
+  border-radius: 999px;
+}
+
+.miniConfirmDotInc {
+  background: rgb(167 243 208 / 0.95);
+}
+
+.miniConfirmDotExc {
+  background: #ef4444;
+}
+
+.miniConfirmWarn {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgb(245 158 11 / 0.55);
+  background: rgb(245 158 11 / 0.08);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fbbf24;
+}
+
+.miniConfirmActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.95rem;
+}
+
+.miniConfirmPrimary {
+  composes: liquidCta;
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+.miniConfirmSecondary {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 54px;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgb(113 113 122 / 0.55);
+  border-radius: 999px;
+  background: rgb(24 24 27 / 0.72);
+  color: rgb(161 161 170 / 0.95);
+  font-family: inherit;
+  font-size: clamp(0.72rem, 2.2vw, 0.84rem);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.miniConfirmSecondary:hover {
+  filter: brightness(1.05);
+}
+
+html[data-site-theme="light"] .miniConfirmPanel {
+  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
+  border-color: rgb(203 213 225 / 0.6);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.1);
+}
+
+html[data-site-theme="light"] .miniConfirmTitle {
+  color: #0f172a;
+}
+
+html[data-site-theme="light"] .miniConfirmBody,
+html[data-site-theme="light"] .miniConfirmListItem {
+  color: #64748b;
+}
+
+html[data-site-theme="light"] .miniConfirmListHeading {
+  color: #0f172a;
+}
+
+html[data-site-theme="light"] .miniConfirmSecondary {
+  border-color: rgb(148 163 184 / 0.45);
+  background: rgb(241 245 249 / 0.9);
+  color: #475569;
 }

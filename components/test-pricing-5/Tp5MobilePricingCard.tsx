@@ -108,7 +108,9 @@ function MobileFeatureRow({
         ? styles.featureLabelBrands
         : styles.featureLabelActive;
     return (
-      <li className={`${styles.featureRow}${isBrands ? ` ${styles.featureRowBrands}` : ""}`}>
+      <li
+        className={`${styles.featureRow}${isBrands ? ` ${styles.featureRowBrands}` : ""}${feature.reserveTwoLines ? ` ${styles.featureRowDual}` : ""}`}
+      >
         <span className={`${styles.featureMark} ${markClass}`} aria-hidden>
           {isBrands ? null : "✓"}
         </span>
