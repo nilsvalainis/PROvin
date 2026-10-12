@@ -548,8 +548,8 @@ export function AdminOrdersTable({
   }, [orders, completeOverride, colorOverride, colorFilter]);
 
   /**
-   * NOTEIKUMS: visi aktīvie (neizpildītie) vienmēr augšā grupā „Aktīvie” (kavētie / mazākais
-   * atlikums pirmie, sk. partitionAdminOrdersActiveFirst); izpildītie zemāk pa dienām (Rīgas laikā).
+   * NOTEIKUMS: visi aktīvie (neizpildītie) vienmēr augšā grupā „Aktīvie” (jaunākie ienākušie pirmie,
+   * kavētie netiek celti augšā — sk. partitionAdminOrdersActiveFirst); izpildītie zemāk pa dienām (Rīgas laikā).
    */
   const dayGroups = useMemo(() => {
     const { active, done } = partitionAdminOrdersActiveFirst(displayedOrders);

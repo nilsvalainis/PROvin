@@ -73,17 +73,28 @@ describe("admin-audit-deadline-complete", () => {
   });
 });
 
-describe("partitionAdminOrdersActiveFirst (noteikums: aktīvie vienmēr augšā)", () => {
-  it("visi neizpildītie ir aktīvajos neatkarīgi no dienas; kavētie / mazākais atlikums pirmie", () => {
+describe("partitionAdminOrdersActiveFirst (noteikums: aktīvie augšā, jaunākie pirmie)", () => {
+  it("reāli dati: jaunākie neizpildītie augšā, kavētie pēc datuma (netiek celti augšā)", () => {
+    const t = (iso: string) => Date.parse(iso) / 1000;
     const rows = [
-      { id: "new", created: 3000 },
-      { id: "done", created: 2500, auditComplete: true },
-      { id: "old", created: 1000 },
-      { id: "pack", created: 2800, isB2bPack: true },
-      { id: "reset", created: 500, deadlineFromUnix: 2000 },
+      { id: "iveco-kave-609h", created: t("2026-09-15T10:51:00Z") },
+      { id: "renault-kave-26h", created: t("2026-10-09T18:10:00Z") },
+      { id: "passat-12h", created: t("2026-10-11T07:18:00Z") },
+      { id: "cla-mini-38h", created: t("2026-10-12T10:01:00Z") },
+      { id: "x6-mini-39h", created: t("2026-10-12T10:23:00Z") },
+      { id: "skoda-izpildits", created: t("2026-10-09T11:07:00Z"), auditComplete: true },
+      { id: "pack", created: t("2026-10-12T12:00:00Z"), isB2bPack: true },
+      { id: "vecs-ar-piepirkumu", created: t("2026-08-01T10:00:00Z"), activityUnix: t("2026-10-12T11:00:00Z") },
     ];
     const { active, done } = partitionAdminOrdersActiveFirst(rows);
-    expect(active.map((r) => r.id)).toEqual(["old", "reset", "new"]);
-    expect(done.map((r) => r.id)).toEqual(["done", "pack"]);
+    expect(active.map((r) => r.id)).toEqual([
+      "vecs-ar-piepirkumu",
+      "x6-mini-39h",
+      "cla-mini-38h",
+      "passat-12h",
+      "renault-kave-26h",
+      "iveco-kave-609h",
+    ]);
+    expect(done.map((r) => r.id)).toEqual(["skoda-izpildits", "pack"]);
   });
 });

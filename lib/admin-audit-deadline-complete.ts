@@ -68,15 +68,16 @@ export function sortAdminOrdersIncompleteFirst<
 }
 
 /**
- * NOTEIKUMS (Nils, 2026-10-12): atverot PRO pasūtījumu sarakstu, VISI aktīvie (neizpildītie)
- * pasūtījumi VIENMĒR ir augšā — grupā „Aktīvie” pāri visām dienām. Kārtība: kavētie pirmie,
- * tad pēc mazākā atlikušā laika (t.i. agrākais 48 h termiņš augšā). Izpildītie (un B2B pakas)
- * seko zemāk, grupēti pa dienām. Filtri (>10 €, rezultāta čipi) tiek piemēroti pirms šī.
+ * NOTEIKUMS (Nils, 2026-10-12, labots): atverot PRO pasūtījumu sarakstu, VISI aktīvie (neizpildītie)
+ * pasūtījumi VIENMĒR ir augšā — grupā „Aktīvie” pāri visām dienām. Grupā kārtība pēc ienākšanas:
+ * JAUNĀKIE augšā (activityUnix ?? created, dilstoši; piepirkums lieto apmaksas brīdi). Kavētie NETIEK
+ * celti augšā — tie paliek grupā pēc datuma kā citi. Izpildītie (un B2B pakas) seko zemāk pa dienām.
+ * Filtri (>10 €, rezultāta čipi) tiek piemēroti pirms šī.
  */
 export function partitionAdminOrdersActiveFirst<
   T extends {
     created: number;
-    deadlineFromUnix?: number | null;
+    activityUnix?: number;
     auditComplete?: boolean;
     isB2bPack?: boolean;
   },
@@ -84,7 +85,7 @@ export function partitionAdminOrdersActiveFirst<
   const active: T[] = [];
   const done: T[] = [];
   for (const r of rows) (r.auditComplete || r.isB2bPack ? done : active).push(r);
-  const deadlineStart = (r: T) => r.deadlineFromUnix ?? r.created;
-  active.sort((a, b) => deadlineStart(a) - deadlineStart(b));
+  const arrivedAt = (r: T) => r.activityUnix ?? r.created;
+  active.sort((a, b) => arrivedAt(b) - arrivedAt(a));
   return { active, done };
 }
