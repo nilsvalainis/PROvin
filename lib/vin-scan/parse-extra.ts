@@ -39,9 +39,25 @@ export function oemBrandForVin(vin: string): OemRecallBrand | null {
   return null;
 }
 
+export function parseVpicMakeModelYear(status: number, text: string): { make: string; model: string; year: string } | null {
+  if (status !== 200) return null;
+  try {
+    const rec = asRecord(JSON.parse(text) as unknown);
+    const row = asRecord(asArray(rec.Results)[0] ?? asArray(rec.results)[0]);
+    const make = str(row.Make);
+    const model = str(row.Model);
+    const year = str(row.ModelYear);
+    if (!make || !year) return null;
+    return { make, model, year };
+  } catch {
+    return null;
+  }
+}
+
 export function parseNhtsaRecalls(status: number, text: string): VinScanParse {
   if (status === 404) return { status: "none", summary: "NHTSA atsaukumu nav", flags: { recallCount: 0 } };
-  if (status !== 200) return { status: "unknown", summary: `NHTSA atsaukumi: HTTP ${status}` };
+  /** NHTSA 400 + tukšs results ir derīgs „atsaukumu nav”, ne kļūda. */
+  if (status !== 200 && status !== 400) return { status: "unknown", summary: `NHTSA atsaukumi: HTTP ${status}` };
   let data: unknown;
   try {
     data = JSON.parse(text) as unknown;

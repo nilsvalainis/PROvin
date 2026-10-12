@@ -4,6 +4,7 @@ import {
   oemBrandForVin,
   parseAuctionArchive,
   parseNhtsaRecalls,
+  parseVpicMakeModelYear,
   parseRdwOpenData,
   parseUkMot,
 } from "@/lib/vin-scan/parse-extra";
@@ -22,6 +23,15 @@ describe("OEM WMI", () => {
 describe("NHTSA atsaukumi un RDW", () => {
   it("skaita atsaukumus", () => {
     expect(parseNhtsaRecalls(200, JSON.stringify({ results: [] })).status).toBe("none");
+    expect(parseNhtsaRecalls(400, JSON.stringify({ Count: 0, Message: "Results returned successfully", results: [] })).status).toBe(
+      "none",
+    );
+    expect(
+      parseVpicMakeModelYear(
+        200,
+        JSON.stringify({ Results: [{ Make: "VOLKSWAGEN", Model: "SHARAN", ModelYear: "2013" }] }),
+      ),
+    ).toEqual({ make: "VOLKSWAGEN", model: "SHARAN", year: "2013" });
     expect(parseNhtsaRecalls(200, JSON.stringify({ results: [{ Component: "AIR BAGS" }, { Component: "FUEL" }] })).summary).toContain(
       "2",
     );

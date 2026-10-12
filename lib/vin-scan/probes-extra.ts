@@ -8,6 +8,7 @@ import {
   parseBiluppgifter,
   parseNicbHtml,
   parseNhtsaRecalls,
+  parseVpicMakeModelYear,
   parseOemRecallHtml,
   parseRdwOpenData,
   parseRegitra,
@@ -98,7 +99,12 @@ export async function probeVegvesen(ctx: VinScanContext): Promise<VinScanIndicat
       last = parseVegvesen(res.status, res.text);
       if (last.status === "found" || last.status === "none") return done("vegvesen", ctx, last);
     }
-    return done("vegvesen", ctx, last ?? { status: "unknown", summary: "vegvesen.no neatbildēja" });
+    const page = await scanFetchSmart(
+      `https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/?understellsnummer=${encodeURIComponent(ctx.vin)}`,
+      { timeoutMs: 20_000, sourceLabel: "vegvesen" },
+    );
+    last = parseVegvesen(page.status, page.text);
+    return done("vegvesen", ctx, last.status === "unknown" ? { status: "unknown", summary: "vegvesen.no API prasa pilnvaru; publiskā lapa paliek cilnē" } : last);
   } catch (e) {
     return failed("vegvesen", ctx, e);
   }
@@ -150,12 +156,34 @@ export async function probeUkMot(ctx: VinScanContext): Promise<VinScanIndicator>
   }
 }
 
+async function nhtsaRecallsForVin(vin: string): Promise<VinScanParse> {
+  const decoded = await scanFetch(
+    `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`,
+    { headers: { accept: "application/json" } },
+  );
+  const ids = parseVpicMakeModelYear(decoded.status, decoded.text);
+  if (!ids) return { status: "unknown", summary: "NHTSA vPIC VIN dekodēšana neizdevās" };
+  const rec = await scanFetch(
+    `https://api.nhtsa.gov/recalls/recallsByVehicle?make=${encodeURIComponent(ids.make)}&model=${encodeURIComponent(ids.model)}&modelYear=${encodeURIComponent(ids.year)}`,
+    { headers: { accept: "application/json" } },
+  );
+  const parsed = parseNhtsaRecalls(rec.status, rec.text);
+  if (parsed.status === "none") {
+    return {
+      ...parsed,
+      summary: `NHTSA atsaukumu nav (${ids.year} ${ids.make} ${ids.model})`.trim(),
+      vehicle: { make: ids.make, model: ids.model, year: ids.year },
+    };
+  }
+  if (parsed.status === "found") {
+    return { ...parsed, vehicle: { make: ids.make, model: ids.model, year: ids.year } };
+  }
+  return parsed;
+}
+
 export async function probeNhtsaRecalls(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    const res = await scanFetch(`https://api.nhtsa.gov/recalls/recallsByVin?vin=${encodeURIComponent(ctx.vin)}`, {
-      headers: { accept: "application/json" },
-    });
-    return done("nhtsa_recalls", ctx, parseNhtsaRecalls(res.status, res.text));
+    return done("nhtsa_recalls", ctx, await nhtsaRecallsForVin(ctx.vin));
   } catch (e) {
     return failed("nhtsa_recalls", ctx, e);
   }
@@ -196,10 +224,7 @@ export async function probeOemRecall(ctx: VinScanContext, brand: OemRecallBrand)
     return done(meta.id, ctx, { status: "skipped", summary: "Cits ražotājs" });
   }
   try {
-    const nhtsa = await scanFetch(`https://api.nhtsa.gov/recalls/recallsByVin?vin=${encodeURIComponent(ctx.vin)}`, {
-      headers: { accept: "application/json" },
-    });
-    const fromNhtsa = parseNhtsaRecalls(nhtsa.status, nhtsa.text);
+    const fromNhtsa = await nhtsaRecallsForVin(ctx.vin);
     if (fromNhtsa.status === "found" || fromNhtsa.status === "none") {
       return done(meta.id, ctx, {
         ...fromNhtsa,

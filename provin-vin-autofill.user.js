@@ -586,7 +586,7 @@
       carinfo: "https://www.car.info/en-se/vin/" + v,
       nummerplade: "https://www.nummerplade.net/?vin=" + v,
       rdw: "https://opendata.rdw.nl/resource/m9d7-ebf2.json?vin=" + v,
-      vegvesen: "https://www.vegvesen.no/kjoretoy/kjoretoyopplysninger/sjekk-kjoretoyopplysninger/?understellsnummer=" + v,
+      vegvesen: "https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/?understellsnummer=" + v,
       uk_mot: "https://www.check-mot.service.gov.uk/enter-reg?vin=" + v,
       biluppgifter: "https://biluppgifter.se/" + v,
       regitra: "https://www.regitra.lt/lt/e-paslaugos/transporto-priemones-duomenu-patikra?vin=" + v,

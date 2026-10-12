@@ -205,7 +205,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     hint: "Norvēģijas reģistrs pēc VIN",
     needs: ["vin"],
     openUrl: (vin) =>
-      `https://www.vegvesen.no/kjoretoy/kjoretoyopplysninger/sjekk-kjoretoyopplysninger/?understellsnummer=${vinQuery(vin)}`,
+      `https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/?understellsnummer=${vinQuery(vin)}`,
   },
   {
     id: "uk_mot",
