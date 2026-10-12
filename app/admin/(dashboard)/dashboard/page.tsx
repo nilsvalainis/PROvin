@@ -14,7 +14,6 @@ import { getAuditResultColorMap } from "@/lib/admin-audit-result-color-store";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
-import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 import { getB2bPartnerByEmail, getB2bPartnerById } from "@/lib/b2b-partner-store";
 import {
   isB2bPackAdminOrder,
@@ -126,36 +125,35 @@ export default async function AdminOrdersPage({
   const onlyDemoShown = orders.length > 0 && orders.every((o) => o.isDemo);
   const hasStripeIssue = Boolean(stripeError);
 
+  /** V1 rīkjosla: summas filtra slēdzis (aizstāj agrāko paziņojumu) + kompakts „＋ Jauns”. */
+  const amountChip =
+    hiddenByAmount > 0 || showAll ? (
+      <Link
+        href={showAll ? "/admin/dashboard" : "/admin/dashboard?show_all=1"}
+        title={
+          showAll
+            ? `Rāda visus apmaksātos pasūtījumus (${allOrders.length}). Klikšķis: tikai virs 10 €.`
+            : `Rāda tikai pasūtījumus virs 10 € (${orders.length} no ${allOrders.length}). Slēpti: ${hiddenByAmount}. Klikšķis: rādīt visus.`
+        }
+        aria-pressed={!showAll}
+        className={`admin-nav-link inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-lg px-2.5 text-[12px] transition ${
+          showAll ? "bg-[#e9e9ee] text-[#3a3a3c]" : "bg-[#e8efff] font-semibold text-[var(--color-provin-accent)]"
+        }`}
+      >
+        &gt;10 €
+        <span className="hidden sm:inline">· {showAll ? `visi ${allOrders.length}` : `${orders.length}/${allOrders.length}`}</span>
+        {showAll ? null : <span aria-hidden>✓</span>}
+      </Link>
+    ) : null;
+  const toolbarEnd = (
+    <>
+      {amountChip}
+      <AdminCreateManualOrderButton compact />
+    </>
+  );
+
   return (
     <div className="w-full max-w-none">
-      {hiddenByAmount > 0 ? (
-        <div className="mt-3 rounded-2xl border border-slate-200/90 bg-slate-50/90 px-4 py-3 text-sm text-[var(--color-apple-text)] shadow-sm">
-          {showAll ? (
-            <p>
-              Rāda <strong className="font-semibold">visus</strong> apmaksātos pasūtījumus no Stripe (
-              {allOrders.length}).{" "}
-              <Link
-                href="/admin/dashboard"
-                className="font-medium text-[var(--color-provin-accent)] underline-offset-2 hover:underline"
-              >
-                Noklusējuma skats (tikai virs 10 €)
-              </Link>
-            </p>
-          ) : (
-            <p>
-              Noklusējumā rāda tikai pasūtījumus ar summu <strong className="font-semibold">lielāku par 10 €</strong> (
-              {orders.length} no {allOrders.length}). Slēpti: {hiddenByAmount}.{" "}
-              <Link
-                href="/admin/dashboard?show_all=1"
-                className="font-medium text-[var(--color-provin-accent)] underline-offset-2 hover:underline"
-              >
-                Rādīt visus
-              </Link>
-            </p>
-          )}
-        </div>
-      ) : null}
-
       {hasStripeIssue && orders.length > 0 ? (
         <div
           className={`mt-3 rounded-2xl border px-4 py-3.5 text-sm shadow-sm ${
@@ -200,44 +198,15 @@ export default async function AdminOrdersPage({
         </div>
       ) : null}
 
-      <div className="mt-4 flex justify-end">
-        <AdminCreateManualOrderButton />
-      </div>
-
       {orders.length > 0 ? (
-        <>
-          <HeardAboutStats orders={tableOrders} />
-          <AdminOrdersTable orders={tableOrders} />
-        </>
-      ) : null}
+        <AdminOrdersTable orders={tableOrders} toolbarEnd={toolbarEnd} />
+      ) : (
+        <div className="mt-4 flex justify-end">{toolbarEnd}</div>
+      )}
 
       <div className="mt-8 flex flex-wrap items-start justify-end gap-3 border-t border-slate-100/80 pt-4">
         <AdminOrdersExportButton />
       </div>
     </div>
-  );
-}
-
-function HeardAboutStats({ orders }: { orders: SerializedAdminOrderTableRow[] }) {
-  const counts = new Map<string, number>();
-  for (const order of orders) {
-    const label = order.heardAbout?.trim();
-    if (!label) continue;
-    counts.set(label, (counts.get(label) ?? 0) + 1);
-  }
-  const rows = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "lv"));
-  if (rows.length === 0) return null;
-  return (
-    <p className="mt-4 text-[12px] text-[var(--color-provin-muted)]">
-      Kur uzzināja:{" "}
-      {rows.map(([label, count], i) => (
-        <span key={label}>
-          {i > 0 ? ", " : null}
-          <span className="font-medium text-[var(--color-apple-text)]">
-            {label} {count}
-          </span>
-        </span>
-      ))}
-    </p>
   );
 }
