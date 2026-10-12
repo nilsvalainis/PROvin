@@ -132,27 +132,23 @@ function useBadges() {
 }
 
 /**
- * Žetons: steidzams — tumši sarkans (#DC2626) ar baltiem treknajiem cipariem; nesteidzams — neitrāli pelēks.
- * Krāsas ar inline stilu, jo admin-ios-theme.css piespiež `span { color: #000 }` (tāpēc agrāk cipari bija melni).
+ * Žetons (askētisks): tikai skaitlis bez fona — 12px, tabulārie cipari, labajā malā.
+ * Nesteidzams: pelēks #6B7280; steidzams: sarkans #DC2626 trekns. Krāsa ar inline stilu,
+ * jo admin-ios-theme.css piespiež `span { color: #000 }`.
  * „Pasūtījumi” — pelēks, sarkans tikai ja kāds kavē termiņu.
  */
 function Badge({ n, dot = false, gray = false }: { n: number; dot?: boolean; gray?: boolean }) {
   if (n <= 0) return null;
-  const style = gray ? { backgroundColor: "#E5E7EB", color: "#374151" } : { backgroundColor: "#DC2626", color: "#FFFFFF" };
+  const color = gray ? "#6B7280" : "#DC2626";
   if (dot) {
     return (
-      <span
-        className="absolute right-1.5 top-1 h-2.5 w-2.5 rounded-full ring-2 ring-white"
-        style={{ backgroundColor: gray ? "#9CA3AF" : "#DC2626" }}
-        aria-hidden
-      />
+      <span className="absolute right-1 top-0.5 text-[10px] leading-none tabular-nums" style={{ color, fontWeight: gray ? 500 : 700 }}>
+        {n > 99 ? "99+" : n}
+      </span>
     );
   }
   return (
-    <span
-      className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11.5px] font-bold leading-none tabular-nums ring-2 ring-white"
-      style={style}
-    >
+    <span className="ml-auto shrink-0 text-right text-[12px] leading-none tabular-nums" style={{ color, fontWeight: gray ? 500 : 700 }}>
       {n > 99 ? "99+" : n}
     </span>
   );
@@ -326,7 +322,7 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
             <Link key={t.label} href={t.href} aria-current={on ? "page" : undefined} className={`admin-nav-link relative flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] ${on ? "font-semibold text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}>
               <span className="relative">
                 <Icon className="h-[21px] w-[21px]" strokeWidth={on ? 2.3 : 1.9} aria-hidden />
-                {n > 0 ? <span className="absolute -right-2.5 -top-1.5"><Badge n={n} gray={gray} /></span> : null}
+                {n > 0 ? <span className="absolute -right-3.5 -top-1"><Badge n={n} gray={gray} dot /></span> : null}
               </span>
               <span className="max-w-full truncate px-0.5">{t.label}</span>
             </Link>
@@ -335,7 +331,7 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
         <button type="button" onClick={() => setMore(true)} className={`relative flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] ${!inTabs || more ? "font-semibold text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`} aria-expanded={more} aria-label="Vairāk">
           <span className="relative">
             <MoreHorizontal className="h-[21px] w-[21px]" aria-hidden />
-            {moreBadge > 0 ? <span className="absolute -right-2.5 -top-1.5"><Badge n={moreBadge} /></span> : null}
+            {moreBadge > 0 ? <span className="absolute -right-3.5 -top-1"><Badge n={moreBadge} dot /></span> : null}
           </span>
           Vairāk
         </button>
