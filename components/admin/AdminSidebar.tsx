@@ -131,13 +131,28 @@ function useBadges() {
   return { fast, partners, orders, ordersOverdue } as const;
 }
 
-/** Žetons: sarkans pēc noklusējuma; „Pasūtījumi” — pelēks, sarkans tikai ja kāds kavē termiņu. */
+/**
+ * Žetons: steidzams — tumši sarkans (#DC2626) ar baltiem treknajiem cipariem; nesteidzams — neitrāli pelēks.
+ * Krāsas ar inline stilu, jo admin-ios-theme.css piespiež `span { color: #000 }` (tāpēc agrāk cipari bija melni).
+ * „Pasūtījumi” — pelēks, sarkans tikai ja kāds kavē termiņu.
+ */
 function Badge({ n, dot = false, gray = false }: { n: number; dot?: boolean; gray?: boolean }) {
   if (n <= 0) return null;
-  const bg = gray ? "bg-[#8e8e93]" : "bg-rose-600";
-  if (dot) return <span className={`absolute right-1.5 top-1 h-2 w-2 rounded-full ${bg}`} aria-hidden />;
+  const style = gray ? { backgroundColor: "#E5E7EB", color: "#374151" } : { backgroundColor: "#DC2626", color: "#FFFFFF" };
+  if (dot) {
+    return (
+      <span
+        className="absolute right-1.5 top-1 h-2.5 w-2.5 rounded-full ring-2 ring-white"
+        style={{ backgroundColor: gray ? "#9CA3AF" : "#DC2626" }}
+        aria-hidden
+      />
+    );
+  }
   return (
-    <span className={`inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full ${bg} px-1 text-[10px] font-bold leading-none text-white`}>
+    <span
+      className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11.5px] font-bold leading-none tabular-nums ring-2 ring-white"
+      style={style}
+    >
       {n > 99 ? "99+" : n}
     </span>
   );
