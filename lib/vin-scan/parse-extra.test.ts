@@ -31,9 +31,12 @@ describe("NHTSA atsaukumi un RDW", () => {
         JSON.stringify({ Results: [{ Make: "VOLKSWAGEN", Model: "SHARAN", ModelYear: "2013" }] }),
       ),
     ).toEqual({ make: "VOLKSWAGEN", model: "SHARAN", year: "2013" });
-    expect(parseNhtsaRecalls(200, JSON.stringify({ results: [{ Component: "AIR BAGS" }, { Component: "FUEL" }] })).summary).toContain(
-      "2",
-    );
+    const nhtsa = parseNhtsaRecalls(200, JSON.stringify({ results: [{ Component: "AIR BAGS" }, { Component: "FUEL" }] }));
+    expect(nhtsa.summary).toContain("2");
+    expect(nhtsa.recalls).toEqual([
+      { title: "AIR BAGS", date: "" },
+      { title: "FUEL", date: "" },
+    ]);
   });
 
   it("RDW NAP un APK", () => {

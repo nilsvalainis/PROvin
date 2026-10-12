@@ -40,6 +40,7 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("rdw");
     expect(VIN_SCAN_SOURCE_IDS).toContain("nhtsa_recalls");
     expect(VIN_SCAN_SOURCE_IDS).toContain("bidfax");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("listing_history");
     expect(VIN_SCAN_SOURCE_IDS).not.toContain("vp_wanted");
     expect(VIN_SCAN_SOURCE_IDS).not.toContain("uk_mot");
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "nummerplade")?.openUrl("WVWZZZ7NZEV015204")).toContain(
@@ -56,6 +57,7 @@ describe("vin scan catalog", () => {
     for (const item of VIN_SCAN_CATALOG) {
       const url = item.openUrl(vin);
       expect(url).toMatch(/^https:\/\//);
+      if (item.needs.includes("listing") && !item.needs.includes("vin")) continue;
       expect(url.toUpperCase()).toContain(vin);
     }
   });
@@ -99,6 +101,9 @@ describe("esyn", () => {
       }),
     );
     expect(inspections.count).toBe(2);
+    expect(inspections.inspections).toHaveLength(2);
+    expect(inspections.inspections?.[0]?.result).toBe("izturēta");
+    expect(inspections.inspections?.[0]?.odometer).toContain("385");
     expect(inspections.summary).toContain("izturēta");
     expect(inspections.detail).toContain("385");
     expect(inspections.detail).toContain("320");

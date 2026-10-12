@@ -22,6 +22,38 @@ export type VinScanMedia = {
   photoCount?: number;
 };
 
+export type VinScanInspection = {
+  date: string;
+  result?: string;
+  odometer?: string;
+};
+
+export type VinScanRecall = {
+  title: string;
+  date?: string;
+};
+
+export type VinScanIncident = {
+  date?: string;
+  summary: string;
+};
+
+export type VinScanAuction = {
+  title?: string;
+  date?: string;
+  price?: string;
+  venue?: string;
+  photoUrl?: string;
+  photoCount?: number;
+};
+
+export type VinScanListing = {
+  date: string;
+  price?: string;
+  odometer?: string;
+  photoUrl?: string;
+};
+
 export type VinScanFlags = {
   wanted?: boolean;
   stolen?: boolean;
@@ -43,6 +75,11 @@ export type VinScanIndicator = {
   mileage?: VinScanMileage[];
   media?: VinScanMedia;
   flags?: VinScanFlags;
+  inspections?: VinScanInspection[];
+  recalls?: VinScanRecall[];
+  incidents?: VinScanIncident[];
+  auctions?: VinScanAuction[];
+  listings?: VinScanListing[];
 };
 
 export type VinScanParse = {
@@ -54,11 +91,17 @@ export type VinScanParse = {
   media?: VinScanMedia;
   flags?: VinScanFlags;
   openUrl?: string | null;
+  inspections?: VinScanInspection[];
+  recalls?: VinScanRecall[];
+  incidents?: VinScanIncident[];
+  auctions?: VinScanAuction[];
+  listings?: VinScanListing[];
 };
 
 export type VinScanContext = {
   vin: string;
   plates: VinScanPlates;
+  listingUrl: string;
 };
 
 export function buildVinScanIndicator(
@@ -80,6 +123,11 @@ export function buildVinScanIndicator(
     mileage: (parsed.mileage ?? []).map((row) => ({ ...row, source: meta.label })),
     media: parsed.media,
     flags: parsed.flags,
+    inspections: parsed.inspections,
+    recalls: parsed.recalls,
+    incidents: parsed.incidents,
+    auctions: parsed.auctions,
+    listings: parsed.listings,
   };
 }
 

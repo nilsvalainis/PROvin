@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { fetchCsddTechData } from "@/lib/csdd-tech-data";
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { canonicalizeListingUrl, isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
 import {
   hasAnyVinScanPlate,
@@ -48,7 +48,8 @@ export async function POST(req: Request) {
 
   let vin = normalizeVin(String(body.vin ?? ""));
   const plates = parseVinScanPlates(body.plates);
-  if (!isValidVin(vin) && !hasAnyVinScanPlate(plates)) {
+  const listingUrl = canonicalizeListingUrl(String(body.listingUrl ?? ""));
+  if (!isValidVin(vin) && !hasAnyVinScanPlate(plates) && !isPlausibleListingUrl(listingUrl)) {
     return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
   }
 
@@ -56,6 +57,28 @@ export async function POST(req: Request) {
   if (isValidVin(vin) && !force) {
     const cached = await readVinScanSnapshot(vin).catch(() => null);
     if (cached && vinScanSnapshotFresh(cached)) {
+      if (isPlausibleListingUrl(listingUrl)) {
+        const listing = await runVinScan({ vin, plates, listingUrl, sourceIds: ["listing_history"] });
+        const rest = (Array.isArray(cached.indicators) ? cached.indicators : []).filter(
+          (row) => row && typeof row === "object" && (row as { id?: unknown }).id !== "listing_history",
+        );
+        const byId = new Map<string, unknown>();
+        for (const row of [...rest, ...listing]) {
+          if (row && typeof row === "object" && typeof (row as { id?: unknown }).id === "string") {
+            byId.set((row as { id: string }).id, row);
+          }
+        }
+        const indicators = defaultVinScanSourceIds()
+          .map((id) => byId.get(id))
+          .filter(Boolean);
+        return NextResponse.json({
+          ok: true,
+          vin,
+          scannedAt: cached.scannedAt,
+          indicators,
+          cached: true,
+        });
+      }
       return NextResponse.json({ ok: true, vin, scannedAt: cached.scannedAt, indicators: cached.indicators, cached: true });
     }
   }
@@ -66,7 +89,7 @@ export async function POST(req: Request) {
   }
 
   const requested = sanitizeVinScanSourceIds(body.sources) ?? defaultVinScanSourceIds();
-  const indicators = await runVinScan({ vin, plates, sourceIds: requested });
+  const indicators = await runVinScan({ vin, plates, listingUrl, sourceIds: requested });
   const scannedAt = new Date().toISOString();
   if (isValidVin(vin)) {
     await writeVinScanSnapshot({ vin, plates, scannedAt, indicators }).catch(() => undefined);

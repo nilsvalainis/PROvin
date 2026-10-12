@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
 
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { AdminVinScanResultCards } from "@/components/admin/AdminVinScanResultCards";
+import { isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl } from "@/lib/vin-scan/catalog";
 import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
 import {
@@ -32,6 +33,11 @@ type ScanRow = {
   mileage: NonNullable<VinScanIndicator["mileage"]>;
   media?: VinScanIndicator["media"];
   flags?: VinScanIndicator["flags"];
+  inspections?: VinScanIndicator["inspections"];
+  recalls?: VinScanIndicator["recalls"];
+  incidents?: VinScanIndicator["incidents"];
+  auctions?: VinScanIndicator["auctions"];
+  listings?: VinScanIndicator["listings"];
 };
 
 export type VinScanPanelSnapshotRow = {
@@ -46,6 +52,11 @@ export type VinScanPanelSnapshotRow = {
   detail?: string;
   flags?: ScanRow["flags"];
   media?: ScanRow["media"];
+  inspections?: ScanRow["inspections"];
+  recalls?: ScanRow["recalls"];
+  incidents?: ScanRow["incidents"];
+  auctions?: ScanRow["auctions"];
+  listings?: ScanRow["listings"];
 };
 
 export type VinScanPanelSnapshot = {
@@ -123,6 +134,16 @@ function asVehicle(v: unknown): ScanRow["vehicle"] {
   return { make, model, year };
 }
 
+function asObjectArray<T>(v: unknown, map: (o: Record<string, unknown>) => T | null): T[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      return map(row as Record<string, unknown>);
+    })
+    .filter((row): row is T => Boolean(row));
+}
+
 function asMedia(v: unknown): ScanRow["media"] {
   const fromObj = v && typeof v === "object" ? (v as Record<string, unknown>) : {};
   const url = String(fromObj.photoUrl || "");
@@ -136,12 +157,28 @@ function cacheKey(vin: string): string {
   return `provin-vin-scan-v2:${vin}`;
 }
 
-function rowsFromIndicators(indicators: unknown[], vin: string, plates: VinScanPlates): Record<string, ScanRow> {
+function rowsFromIndicators(
+  indicators: unknown[],
+  vin: string,
+  plates: VinScanPlates,
+  listingUrl = "",
+): Record<string, ScanRow> {
   const next: Record<string, ScanRow> = {};
   for (const item of indicators) {
     if (!isServerIndicator(item)) continue;
     const meta = CATALOG.find((source) => source.id === item.id);
-    const rec = item as ScanRow & { vehicle?: unknown; mileage?: unknown; media?: unknown; flags?: unknown; detail?: unknown };
+    const rec = item as ScanRow & {
+      vehicle?: unknown;
+      mileage?: unknown;
+      media?: unknown;
+      flags?: unknown;
+      detail?: unknown;
+      inspections?: unknown;
+      recalls?: unknown;
+      incidents?: unknown;
+      auctions?: unknown;
+      listings?: unknown;
+    };
     next[item.id] = {
       id: item.id,
       label: meta?.label || item.label,
@@ -149,11 +186,53 @@ function rowsFromIndicators(indicators: unknown[], vin: string, plates: VinScanP
       status: item.status,
       summary: item.summary,
       detail: String(rec.detail || item.detail || ""),
-      openUrl: typeof item.openUrl === "string" && item.openUrl ? item.openUrl : meta?.openUrl(vin, plates) ?? null,
+      openUrl:
+        typeof item.openUrl === "string" && item.openUrl
+          ? item.openUrl
+          : meta?.openUrl(vin, plates, listingUrl) ?? null,
       vehicle: asVehicle(rec.vehicle) ?? item.vehicle,
       mileage: asMileage(rec.mileage).map((row) => ({ ...row, source: row.source || meta?.label || item.label })),
       media: asMedia(rec.media) ?? item.media,
       flags: rec.flags && typeof rec.flags === "object" ? (rec.flags as ScanRow["flags"]) : item.flags,
+      inspections: asObjectArray(rec.inspections, (o) => {
+        const date = String(o.date || "");
+        const result = String(o.result || "");
+        const odometer = String(o.odometer || "");
+        if (!date && !result && !odometer) return null;
+        return { date, result, odometer };
+      }),
+      recalls: asObjectArray(rec.recalls, (o) => {
+        const title = String(o.title || "");
+        if (!title) return null;
+        return { title, date: String(o.date || "") };
+      }),
+      incidents: asObjectArray(rec.incidents, (o) => {
+        const summary = String(o.summary || "");
+        if (!summary) return null;
+        return { date: String(o.date || ""), summary };
+      }),
+      auctions: asObjectArray(rec.auctions, (o) => {
+        const photoCountRaw = o.photoCount;
+        const photoCount = typeof photoCountRaw === "number" ? photoCountRaw : Number(photoCountRaw);
+        const row = {
+          title: String(o.title || ""),
+          date: String(o.date || ""),
+          price: String(o.price || ""),
+          venue: String(o.venue || ""),
+          photoUrl: String(o.photoUrl || "") || undefined,
+          photoCount: Number.isFinite(photoCount) && photoCount > 0 ? photoCount : undefined,
+        };
+        if (!row.title && !row.date && !row.price && !row.venue && !row.photoUrl && !row.photoCount) return null;
+        return row;
+      }),
+      listings: asObjectArray(rec.listings, (o) => {
+        const date = String(o.date || "");
+        const price = String(o.price || "");
+        const odometer = String(o.odometer || "");
+        const photoUrl = String(o.photoUrl || "");
+        if (!date && !price && !odometer && !photoUrl) return null;
+        return { date, price, odometer, photoUrl: photoUrl || undefined };
+      }),
     };
   }
   return next;
@@ -164,19 +243,22 @@ type HistoryEntry = { vin: string; scannedAt: string; found: number; none: numbe
 export function AdminVinScanPanel({
   vin,
   plates,
+  listingUrl = "",
   scanNonce = 0,
   scanForce = false,
   onSnapshot,
 }: {
   vin: string;
   plates: VinScanPlates;
+  listingUrl?: string;
   scanNonce?: number;
   scanForce?: boolean;
   onSnapshot?: (snapshot: VinScanPanelSnapshot) => void;
 }) {
   const clean = normalizeVin(vin);
   const valid = isValidVin(clean);
-  const canScan = valid || hasAnyVinScanPlate(plates);
+  const listing = listingUrl.trim();
+  const canScan = valid || hasAnyVinScanPlate(plates) || isPlausibleListingUrl(listing);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [byId, setById] = useState<Record<string, ScanRow>>({});
@@ -199,7 +281,7 @@ export function AdminVinScanPanel({
         if (raw) {
           const parsed = JSON.parse(raw) as { scannedAt?: string; indicators?: unknown[] };
           if (Array.isArray(parsed.indicators) && !cancelled) {
-            setById(rowsFromIndicators(parsed.indicators, clean, plates));
+            setById(rowsFromIndicators(parsed.indicators, clean, plates, listing));
             setScannedAt(typeof parsed.scannedAt === "string" ? parsed.scannedAt : "");
           }
         }
@@ -213,7 +295,7 @@ export function AdminVinScanPanel({
           stale?: boolean;
         } | null;
         if (cancelled || !res.ok || !data?.snapshot || !Array.isArray(data.snapshot.indicators)) return;
-        setById(rowsFromIndicators(data.snapshot.indicators, clean, plates));
+        setById(rowsFromIndicators(data.snapshot.indicators, clean, plates, listing));
         setScannedAt(typeof data.snapshot.scannedAt === "string" ? data.snapshot.scannedAt : "");
         try {
           localStorage.setItem(cacheKey(clean), JSON.stringify(data.snapshot));
@@ -227,7 +309,7 @@ export function AdminVinScanPanel({
     return () => {
       cancelled = true;
     };
-    // plates used only to rebuild openUrl; VIN is the cache key.
+    // plates/listing used only to rebuild openUrl; VIN is the cache key.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clean, valid]);
 
@@ -241,10 +323,6 @@ export function AdminVinScanPanel({
   }, [scannedAt]);
 
   const rows = CATALOG.map((item) => byId[item.id]).filter((row): row is ScanRow => Boolean(row));
-  const open = openId ? byId[openId] : undefined;
-  const openHref = open
-    ? resolveVinScanOpenUrl(CATALOG.find((item) => item.id === open.id) || { openUrl: () => "" }, clean, open.openUrl, plates)
-    : "";
   const facts = rows.length > 0 ? buildVinScanFacts(rows) : null;
   const unknownIds = CATALOG.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
   const canRetry = !busy && unknownIds.length > 0;
@@ -257,6 +335,7 @@ export function AdminVinScanPanel({
       body: JSON.stringify({
         vin: clean,
         plates,
+        listingUrl: listing,
         force: Boolean(opts.force),
         ...(opts.sources?.length ? { sources: opts.sources } : {}),
       }),
@@ -272,7 +351,7 @@ export function AdminVinScanPanel({
       return;
     }
     if (typeof data.scannedAt === "string") setScannedAt(data.scannedAt);
-    const next = rowsFromIndicators(data.indicators, clean, plates);
+    const next = rowsFromIndicators(data.indicators, clean, plates, listing);
     setById((prev) => ({ ...prev, ...next }));
     try {
       localStorage.setItem(
@@ -342,16 +421,21 @@ export function AdminVinScanPanel({
           country: item.country,
           status: row?.status ?? "idle",
           summary: row?.summary ?? "",
-          openUrl: resolveVinScanOpenUrl(item, clean, row?.openUrl, plates),
+          openUrl: resolveVinScanOpenUrl(item, clean, row?.openUrl, plates, listing),
           vehicle: row?.vehicle,
           mileage: row?.mileage ?? [],
           detail: row?.detail,
           flags: row?.flags,
           media: row?.media,
+          inspections: row?.inspections,
+          recalls: row?.recalls,
+          incidents: row?.incidents,
+          auctions: row?.auctions,
+          listings: row?.listings,
         };
       }),
     });
-  }, [byId, scannedAt, busy, clean, onSnapshot, plates]);
+  }, [byId, scannedAt, busy, clean, onSnapshot, plates, listing]);
 
   return (
     <section className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]" aria-busy={busy}>
@@ -404,30 +488,16 @@ export function AdminVinScanPanel({
           ))}
         </div>
       ) : null}
-      {facts ? (
-        <div className="mx-2 mb-1 space-y-0.5 rounded-lg border border-[var(--admin-border-subtle)] px-2 py-1.5">
-          <p className="text-[11px] font-semibold text-[var(--color-apple-text)]">
-            {[facts.vehicleLine, facts.mileageLine].filter(Boolean).join(" · ")}
-          </p>
+      {facts && (facts.wanted.length || facts.mileageRollback || scannedAt) ? (
+        <div className="mx-2 mb-1 space-y-0.5 px-1 py-1">
           {facts.mileageRollback ? (
             <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">Nobraukuma nesakritība</p>
           ) : null}
           {facts.wanted.length ? (
-            <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">Meklēšanā / zagts: {facts.wanted.join(", ")}</p>
-          ) : null}
-          {facts.recalls.length ? (
-            <p className="text-[10px] text-[var(--color-apple-text)]">Atsaukumi: {facts.recalls.join("; ")}</p>
-          ) : null}
-          {facts.auctionPhotos.length ? (
-            <p className="text-[10px] text-[var(--color-apple-text)]">Izsoles foto: {facts.auctionPhotos.join("; ")}</p>
-          ) : null}
-          {facts.registrations.length ? (
-            <p className="text-[10px] text-[var(--color-apple-text)]">Reģistrācijas: {facts.registrations.join(", ")}</p>
+            <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">{facts.wanted.join(", ")}</p>
           ) : null}
           {scannedAt ? (
-            <p className="text-[10px] text-[var(--color-provin-muted)]">
-              {formatVinScanScannedAt(scannedAt)}
-            </p>
+            <p className="text-[10px] text-[var(--color-provin-muted)]">{formatVinScanScannedAt(scannedAt)}</p>
           ) : null}
         </div>
       ) : null}
@@ -438,7 +508,7 @@ export function AdminVinScanPanel({
           const row = byId[item.id];
           const status = busy && !row ? "checking" : busy && row?.status === "unknown" ? "checking" : (row?.status ?? (busy ? "checking" : "idle"));
           const active = openId === item.id;
-          const href = canScan ? resolveVinScanOpenUrl(item, clean, row?.openUrl, plates) : "";
+          const href = canScan ? resolveVinScanOpenUrl(item, clean, row?.openUrl, plates, listing) : "";
           return (
             <li key={item.id}>
               <div
@@ -493,49 +563,7 @@ export function AdminVinScanPanel({
           );
         })}
       </ul>
-      {open ? (
-        <div className="mx-2 mb-2 rounded-lg border border-[var(--admin-border-subtle)] px-2 py-1.5">
-          <p
-            className={`text-[10px] font-semibold ${
-              isVinScanWantedSource(open.id) && open.status === "found"
-                ? "text-rose-700 dark:text-rose-300"
-                : "text-[var(--color-apple-text)]"
-            }`}
-          >
-            {open.label} · {statusLabel(open.id, busy ? "checking" : open.status)}
-          </p>
-          <p
-            className={`mt-0.5 text-[10px] leading-snug ${
-              isVinScanWantedSource(open.id) && open.status === "found"
-                ? "font-semibold text-rose-700 dark:text-rose-300"
-                : "text-[var(--color-apple-text)]"
-            }`}
-          >
-            {open.summary}
-          </p>
-          {open.detail ? (
-            <p className="mt-0.5 whitespace-pre-line text-[10px] leading-snug text-[var(--color-provin-muted)]">{open.detail}</p>
-          ) : null}
-          {open.media?.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={open.media.photoUrl} alt="" className="mt-1 h-16 w-24 rounded object-cover" />
-          ) : null}
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            {openHref ? (
-              <a
-                href={openHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-provin-handoff-vin={clean || undefined}
-                className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
-              >
-                <ExternalLink className="h-3 w-3" aria-hidden />
-                Atvērt
-              </a>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+      <AdminVinScanResultCards rows={rows} />
     </section>
   );
 }

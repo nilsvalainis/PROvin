@@ -27,6 +27,7 @@ import {
   probeBiluppgifter,
   probeCarfaxEu,
   probeCheckcarVin,
+  probeListingHistory,
   probeLtPolice,
   probeNicb,
   probeNhtsaRecalls,
@@ -39,6 +40,7 @@ import {
   probeTraficom,
   probeVegvesen,
 } from "@/lib/vin-scan/probes-extra";
+import { isPlausibleListingUrl } from "@/lib/order-field-validation";
 import { isValidScanPlate, vinScanPlateLabel, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 import { vinScanCatalogItem } from "@/lib/vin-scan/catalog";
@@ -65,11 +67,13 @@ export function sourceNeedsInput(id: VinScanSourceId, ctx: VinScanContext): VinS
   const vinOk = ctx.vin.length >= 11;
   const missing = item.needs.filter((need) => {
     if (need === "vin") return !vinOk;
+    if (need === "listing") return !isPlausibleListingUrl(ctx.listingUrl);
     return !isValidScanPlate(need, ctx.plates[need]);
   });
   if (missing.length === 0) return null;
   if (item.needsAny && missing.length < item.needs.length) return null;
   const first = missing[0]!;
+  if (first === "listing") return done(id, ctx, { status: "needs_input", summary: "Vajag sludinājumu" });
   return needsInput(id, ctx, first === "vin" ? "vin" : first);
 }
 
@@ -265,6 +269,7 @@ const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIn
   carpass: probeCarpass,
   mnt_ee: probeMntEe,
   csdd: probeCsdd,
+  listing_history: probeListingHistory,
   nummerplade: probeNummerplade,
   carinfo: probeCarinfo,
   lkf_ee: probeLkfEe,

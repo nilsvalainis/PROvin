@@ -37,13 +37,14 @@ describe("userscript sync with VIN scan catalog", () => {
     for (const item of VIN_SCAN_BROWSER_CATALOG) {
       expect(src).toMatch(new RegExp(`${item.id}:\\s*"https://`));
     }
-    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(30);
+    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(31);
     expect(VIN_SCAN_SOURCE_IDS).toContain("csdd");
     expect(VIN_SCAN_SOURCE_IDS).toContain("nummerplade");
     expect(VIN_SCAN_SOURCE_IDS).toContain("carinfo");
     expect(VIN_SCAN_SOURCE_IDS).toContain("lkf_ee");
     expect(VIN_SCAN_SOURCE_IDS).toContain("rdw");
     expect(VIN_SCAN_SOURCE_IDS).toContain("bidfax");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("listing_history");
     expect(VIN_SCAN_BROWSER_IDS).toContain("plc_auction");
     expect(VIN_SCAN_BROWSER_IDS).toContain("checkcar_vin");
     expect(VIN_SCAN_BROWSER_IDS).not.toContain("vp_wanted");

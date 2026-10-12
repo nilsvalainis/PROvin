@@ -12,6 +12,7 @@ export const VIN_SCAN_SOURCE_IDS = [
   "carpass",
   "mnt_ee",
   "csdd",
+  "listing_history",
   "nummerplade",
   "carinfo",
   "lkf_ee",
@@ -79,7 +80,7 @@ export const VIN_SCAN_BROWSER_IDS = [
 
 export type VinScanBrowserId = (typeof VIN_SCAN_BROWSER_IDS)[number];
 
-export type VinScanNeed = "vin" | VinScanPlateKind;
+export type VinScanNeed = "vin" | "listing" | VinScanPlateKind;
 
 export type VinScanCatalogItem = {
   id: VinScanSourceId;
@@ -90,7 +91,7 @@ export type VinScanCatalogItem = {
   needs: readonly VinScanNeed[];
   /** true: der VIN vai norādītā numurzīme. */
   needsAny?: boolean;
-  openUrl: (vin: string, plates?: VinScanPlates) => string;
+  openUrl: (vin: string, plates?: VinScanPlates, listingUrl?: string) => string;
 };
 
 function vinQuery(vin: string): string {
@@ -152,6 +153,17 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     openUrl: (vin, plates) => {
       const q = vin || plates?.lv || "";
       return `https://e.csdd.lv/tadati/?vin=${vinQuery(q)}`;
+    },
+  },
+  {
+    id: "listing_history",
+    label: "Sludinājuma vēsture",
+    country: "LV",
+    hint: "Adify / Tirgus Dati sludinājuma cenu vēsture",
+    needs: ["listing"],
+    openUrl: (_vin, _plates, listingUrl) => {
+      const url = String(listingUrl || "").trim();
+      return url ? `https://adify.lv/history?url=${encodeURIComponent(url)}` : "https://adify.lv/history";
     },
   },
   {
@@ -405,7 +417,7 @@ export type VinScanAnyCatalogItem = {
   label: string;
   country: string;
   hint: string;
-  openUrl: (vin: string, plates?: VinScanPlates) => string;
+  openUrl: (vin: string, plates?: VinScanPlates, listingUrl?: string) => string;
 };
 
 export function vinScanAllCatalog(): readonly VinScanAnyCatalogItem[] {
@@ -413,14 +425,15 @@ export function vinScanAllCatalog(): readonly VinScanAnyCatalogItem[] {
 }
 
 export function resolveVinScanOpenUrl(
-  item: { openUrl: (vin: string, plates?: VinScanPlates) => string },
+  item: { openUrl: (vin: string, plates?: VinScanPlates, listingUrl?: string) => string },
   vin: string,
   resultUrl?: string | null,
   plates?: VinScanPlates,
+  listingUrl?: string,
 ): string {
   const fromResult = String(resultUrl || "").trim();
   if (fromResult) return fromResult;
-  return item.openUrl(vin, plates ?? emptyVinScanPlates()).trim();
+  return item.openUrl(vin, plates ?? emptyVinScanPlates(), listingUrl).trim();
 }
 
 export const VIN_SCAN_TTL_MS = 12 * 60 * 60 * 1000;

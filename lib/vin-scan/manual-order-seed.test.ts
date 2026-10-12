@@ -39,7 +39,7 @@ describe("vin scan open URLs", () => {
     for (const item of catalog) {
       const url = item.openUrl(VIN);
       expect(url).toMatch(/^https:\/\//);
-      expect(url.toUpperCase()).toContain(VIN);
+      if (item.id !== "listing_history") expect(url.toUpperCase()).toContain(VIN);
       expect(resolveVinScanOpenUrl(item, VIN, null)).toBe(url);
     }
     expect(resolveVinScanOpenUrl(VIN_SCAN_CATALOG[0]!, VIN, "https://lot.example/abc")).toBe(

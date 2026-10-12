@@ -91,8 +91,8 @@ export function parseEsynInspections(text: string): VinScanParse & { count: numb
   } catch {
     return { status: "unknown", summary: "Apskates saraksts nav JSON", count: 0 };
   }
-  const inspections = asRecord(data).inspection;
-  const rows = Array.isArray(inspections) ? inspections.map((row) => asRecord(row)) : [];
+  const rawInspections = asRecord(data).inspection;
+  const rows = Array.isArray(rawInspections) ? rawInspections.map((row) => asRecord(row)) : [];
   if (rows.length === 0) return { status: "none", summary: "Auto ir reģistrā, apskašu nav", count: 0 };
   const lines = rows.slice(0, 8).map((row) => {
     const date = str(row.date).slice(0, 10);
@@ -114,11 +114,21 @@ export function parseEsynInspections(text: string): VinScanParse & { count: numb
       return { date, odometer: kmLv(km) };
     })
     .filter((row): row is { date: string; odometer: string } => Boolean(row));
+  const inspections = rows.map((row) => {
+    const date = str(row.date).slice(0, 10);
+    const code = str(row.conclusion).toUpperCase();
+    const verdict = ESYN_CONCLUSION_LV[code] ?? code;
+    const exact = typeof row.exactOdometer === "number" ? row.exactOdometer : null;
+    const coarse = typeof row.odometer === "number" ? row.odometer : null;
+    const km = exact != null && exact > 0 ? exact : coarse != null && coarse > 0 ? coarse * 1000 : null;
+    return { date, result: verdict, odometer: km != null ? kmLv(km) : "" };
+  });
   return {
     status: "found",
     summary: `${rows.length} apskates${latest ? `, pēdējā ${latest}` : ""}`,
     detail: lines.join("\n"),
     mileage,
+    inspections,
     count: rows.length,
   };
 }
@@ -132,6 +142,7 @@ export function esynVehicleSummary(vehicle: EsynVehicle, inspections: VinScanPar
     detail: inspections.detail,
     vehicle: vehicle.make || vehicle.model ? { make: vehicle.make, model: vehicle.model, year: "" } : undefined,
     mileage: inspections.mileage,
+    inspections: inspections.inspections,
   };
 }
 
@@ -432,6 +443,14 @@ export function classifyPlcAuction(text: string): VinScanParse | null {
       .join("\n"),
     vehicle: vehicleFromPlcTitle(parsed.title),
     mileage: parsed.mileage && parsed.saleDate ? [{ date: parsed.saleDate, odometer: `${parsed.mileage} km` }] : undefined,
+    auctions: [
+      {
+        title: parsed.title,
+        date: parsed.saleDate,
+        price: parsed.winningBid,
+        venue: parsed.location,
+      },
+    ],
   };
 }
 

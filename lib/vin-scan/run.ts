@@ -18,6 +18,7 @@ const SLOW_SOURCES = new Set<VinScanSourceId>([
   "regitra",
   "traficom",
   "biluppgifter",
+  "listing_history",
 ]);
 const SLOW_TIMEOUT_MS = 45_000;
 const DEFAULT_TIMEOUT_MS = 14_000;
@@ -63,6 +64,7 @@ function withTimeout(id: VinScanSourceId, ctx: VinScanContext, job: Promise<VinS
 export type RunVinScanInput = {
   vin: string;
   plates?: VinScanPlates;
+  listingUrl?: string;
   sourceIds?: readonly string[];
 };
 
@@ -75,6 +77,7 @@ export async function runVinScan(
   const ctx: VinScanContext = {
     vin: input.vin.trim().toUpperCase(),
     plates: input.plates ?? emptyVinScanPlates(),
+    listingUrl: input.listingUrl?.trim() ?? "",
   };
   const wanted = input.sourceIds?.length
     ? VIN_SCAN_CATALOG.filter((item) => input.sourceIds!.includes(item.id))

@@ -74,17 +74,20 @@ export function parseNhtsaRecalls(status: number, text: string): VinScanParse {
     }
     return { status: "none", summary: "NHTSA atsaukumu nav", flags: { recallCount: 0 } };
   }
-  const lines = results.slice(0, 8).map((row) => {
+  const recalls = results.map((row) => {
     const r = asRecord(row);
-    return [str(r.Component) || str(r.component), str(r.RecallDate) || str(r.ReportReceivedDate), str(r.Summary).slice(0, 120)]
-      .filter(Boolean)
-      .join(" · ");
+    return {
+      title: str(r.Component) || str(r.component) || str(r.NHTSACampaignNumber) || "Atsaukums",
+      date: str(r.RecallDate) || str(r.ReportReceivedDate),
+    };
   });
+  const lines = recalls.slice(0, 8).map((row) => [row.title, row.date].filter(Boolean).join(" · "));
   return {
     status: "found",
     summary: `${count} NHTSA atsaukumi`,
     detail: lines.join("\n"),
     flags: { recallCount: count },
+    recalls,
   };
 }
 
@@ -133,6 +136,14 @@ export function parseRdwOpenData(parts: {
     detail: [keuringLines.join("\n"), recalls.length ? `${recalls.length} RDW atsaukumi` : ""].filter(Boolean).join("\n"),
     vehicle: make || model || year ? { make, model, year } : undefined,
     mileage,
+    inspections: keuring.map((row) => {
+      const d = str(row.vervaldatum_keuring) || str(row.datum_keuring);
+      const kms = str(row.tellerstand);
+      return { date: d, odometer: kms ? kmLv(kms) : "" };
+    }).filter((row) => row.date || row.odometer),
+    recalls: recalls
+      .map((row) => ({ title: str(row.referentiecode) || str(row.referentie) || "Atsaukums", date: str(row.datum) }))
+      .filter((row) => row.title),
     flags: {
       registrationCountry: "NL",
       napJudgement: nap || undefined,
@@ -273,6 +284,7 @@ export function parseAuctionArchive(status: number, html: string, vin: string, l
       summary: photoCount > 0 ? `${label}: ir izsole, ${photoCount} foto` : `${label}: ir izsoles ieraksts`,
       media: photoCount > 0 ? { photoCount } : undefined,
       flags: { photoCount: photoCount || undefined },
+      auctions: [{ title: label, photoCount: photoCount || undefined }],
     };
   }
   if (/no results|not found|nothing found/i.test(text)) return { status: "none", summary: `${label}: nav izsoles ieraksta` };

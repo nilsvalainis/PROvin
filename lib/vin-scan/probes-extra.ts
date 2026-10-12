@@ -1,5 +1,8 @@
 import "server-only";
 
+import { canonicalizeListingUrl } from "@/lib/order-field-validation";
+import { fetchListingPriceHistory } from "@/lib/listing-price-history";
+import { vinScanParseFromListingHistory } from "@/lib/vin-scan/listing-history";
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { scanCaptchaTokenPlaceholder, scanChallengeReason, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
 import {
@@ -422,5 +425,14 @@ export async function probePoctra(ctx: VinScanContext): Promise<VinScanIndicator
     return done("poctra", ctx, parseAuctionArchive(page.status, page.text, ctx.vin, "Poctra"));
   } catch (e) {
     return failed("poctra", ctx, e);
+  }
+}
+
+export async function probeListingHistory(ctx: VinScanContext): Promise<VinScanIndicator> {
+  try {
+    const snap = await fetchListingPriceHistory(canonicalizeListingUrl(ctx.listingUrl));
+    return done("listing_history", ctx, vinScanParseFromListingHistory(snap));
+  } catch (e) {
+    return failed("listing_history", ctx, e);
   }
 }

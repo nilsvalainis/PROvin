@@ -8,6 +8,7 @@ const UI_FILES = [
   "app/admin/(dashboard)/vin-scan/page.tsx",
   "components/admin/AdminVinScanPageClient.tsx",
   "components/admin/AdminVinScanPanel.tsx",
+  "components/admin/AdminVinScanResultCards.tsx",
 ] as const;
 
 const BANNED = [

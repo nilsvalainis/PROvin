@@ -8,7 +8,7 @@ import {
   AdminVinScanPanel,
   type VinScanPanelSnapshot,
 } from "@/components/admin/AdminVinScanPanel";
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { canonicalizeListingUrl, isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { isCsddTechDataResult, type CsddTechData } from "@/lib/csdd-tech-data";
 import {
   emptyVinScanPlates,
@@ -55,8 +55,10 @@ export function AdminVinScanPageClient({
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
   const [foreignOpen, setForeignOpen] = useState(false);
+  const [listingDraft, setListingDraft] = useState("");
   const vin = useMemo(() => normalizeVin(draft), [draft]);
   const valid = isValidVin(vin);
+  const listingUrl = useMemo(() => canonicalizeListingUrl(listingDraft), [listingDraft]);
   const plates = useMemo(
     () => ({
       lv: normalizeScanPlate(platesDraft.lv),
@@ -70,7 +72,8 @@ export function AdminVinScanPageClient({
   const canScan =
     valid ||
     isValidScanPlate("lv", plates.lv) ||
-    FOREIGN_FIELDS.some((f) => isValidScanPlate(f.kind, plates[f.kind]));
+    FOREIGN_FIELDS.some((f) => isValidScanPlate(f.kind, plates[f.kind])) ||
+    isPlausibleListingUrl(listingUrl);
   const hasScanResult = Boolean(
     scanSnapshot?.scannedAt && scanSnapshot.rows.some((row) => row.status !== "idle"),
   );
@@ -227,6 +230,21 @@ export function AdminVinScanPageClient({
           />
         </label>
       </div>
+      <label className="block space-y-1">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
+          Sludinājums
+        </span>
+        <input
+          type="url"
+          inputMode="url"
+          autoComplete="off"
+          spellCheck={false}
+          className={inp}
+          value={listingDraft}
+          onChange={(e) => setListingDraft(e.target.value)}
+          aria-label="Sludinājums"
+        />
+      </label>
       <div>
         <button
           type="button"
@@ -303,6 +321,7 @@ export function AdminVinScanPageClient({
       <AdminVinScanPanel
         vin={vin}
         plates={plates}
+        listingUrl={listingUrl}
         scanNonce={scanNonce}
         scanForce={scanForce}
         onSnapshot={onSnapshot}
