@@ -25,6 +25,7 @@ import {
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5DealerRefundTip } from "@/components/test-pricing-5/Tp5DealerRefundTip";
+import { Tp5MiniLvHint } from "@/components/test-pricing-5/Tp5MiniLvHint";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
 
 function SampleReportPdfIcon() {
@@ -147,17 +148,6 @@ function PackTitle({ title }: { title: string }) {
     );
   }
   return <>{title}</>;
-}
-
-function MiniTagline({ tagline, taglineShort }: { tagline: string; taglineShort?: string }) {
-  const short = taglineShort?.trim() || tagline;
-  return (
-    <span className={styles.miniTitleTagline}>
-      <span className={styles.lvFlag} aria-hidden />
-      <span className={styles.miniTaglineFull}>{tagline}</span>
-      <span className={styles.miniTaglineShort}>{short}</span>
-    </span>
-  );
 }
 
 function CheckoutFields({
@@ -340,7 +330,7 @@ function MobilePackLayout({
           {activeService.tagline ? (
             <span className={styles.miniTitleRow}>
               <PackTitle title={cardTitle} />
-              <MiniTagline tagline={activeService.tagline} taglineShort={activeService.taglineShort} />
+              <Tp5MiniLvHint tip={activeService.tagline} />
             </span>
           ) : (
             <PackTitle title={cardTitle} />
@@ -487,31 +477,46 @@ export function Tp5MobilePricingCard({
         >
           {services.map((service) => {
             const active = activeServiceId === service.id;
+            const labelClass = `${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`;
+            const tabAria = `${service.title}${service.tagline ? ` · ${service.tagline}` : ""}${uiCopy.packageAriaSuffix}`;
+            const badge =
+              service.id === "dealer" ? (
+                <span className={styles.catalogPopularBadge}>{uiCopy.newBadge}</span>
+              ) : null;
+            if (service.id === "mini" && service.tagline) {
+              return (
+                <span
+                  key={service.id}
+                  className={styles.tierTabBtn}
+                  data-active={active ? "true" : undefined}
+                >
+                  {badge}
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    aria-label={tabAria}
+                    className={styles.tierTabMiniHit}
+                    onClick={() => setActiveServiceId(service.id)}
+                  >
+                    <span className={labelClass}>{service.title}</span>
+                  </button>
+                  <Tp5MiniLvHint tip={service.tagline} />
+                </span>
+              );
+            }
             return (
               <button
                 key={service.id}
                 type="button"
                 role="tab"
                 aria-selected={active}
-                aria-label={`${service.title}${service.tagline ? ` · ${service.tagline}` : ""}${uiCopy.packageAriaSuffix}`}
+                aria-label={tabAria}
                 className={styles.tierTabBtn}
                 onClick={() => setActiveServiceId(service.id)}
               >
-                {service.id === "dealer" ? (
-                  <span className={styles.catalogPopularBadge}>{uiCopy.newBadge}</span>
-                ) : null}
-                <span
-                  className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
-                >
-                  {service.id === "mini" && service.tagline ? (
-                    <span className={styles.miniTitleRow}>
-                      {service.title}
-                      <MiniTagline tagline={service.tagline} taglineShort={service.taglineShort} />
-                    </span>
-                  ) : (
-                    service.title
-                  )}
-                </span>
+                {badge}
+                <span className={labelClass}>{service.title}</span>
               </button>
             );
           })}

@@ -20,9 +20,17 @@ import {
 import { TP5_DEALER_SAMPLE_REPORT_HREF, TP5_MINI_SAMPLE_REPORT_HREF } from "@/lib/test-pricing-5-ui-copy";
 import { getTestPricingPlan } from "@/lib/test-pricing-plans";
 
-const SHARED_COMPARE_ROWS_LV = [
+const AUDITS_COMPARE_ROWS_LV = [
   "Konsultācija un ieteikumi klātienes apskatei",
   "Apdrošinātāju dati un tehnisko apskašu vēsture",
+  "Sludinājuma, pārdevēja un tehnisko risku analīze",
+  "CarVertical + AutoDNA + Izcelsmes valsts reģistri",
+  "Oficiālo dīleru un izsoļu portālu arhīva dati*",
+];
+
+const MINI_COMPARE_ROWS_LV = [
+  "Konsultācija un ieteikumi klātienes apskatei",
+  "OCTA dati un tehnisko apskašu vēsture",
   "Sludinājuma, pārdevēja un tehnisko risku analīze",
   "CarVertical + AutoDNA + Izcelsmes valsts reģistri",
   "Oficiālo dīleru un izsoļu portālu arhīva dati*",
@@ -53,19 +61,22 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(getTp5MobileService("dealer").features).toHaveLength(5);
   });
 
-  it("adds a MINI-only tagline and short form without changing feature lines", () => {
+  it("adds a MINI-only LV-scope tooltip and keeps AUDITS insurer copy unchanged", () => {
     const mini = getTp5MobileService("mini");
     const audits = getTp5MobileService("audits");
-    expect(mini.tagline).toBe("Latvijā ekspluatētiem auto");
-    expect(mini.taglineShort).toBe("LV auto");
+    expect(mini.tagline).toBe("Pakalpojums paredzēts Latvijā ekspluatētiem auto.");
     expect(audits.tagline).toBeUndefined();
     expect(getTp5MobileService("dealer").tagline).toBeUndefined();
-    expect(getTp5MobileService("mini", "en").tagline).toBe("For cars used in Latvia");
-    expect(getTp5MobileService("mini", "de").taglineShort).toBe("LV-Autos");
-    expect(getTp5MobileService("mini", "ru").taglineShort).toBe("LV авто");
-    expect(mini.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
-    expect(audits.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
-    expect(`${mini.tagline}${mini.taglineShort}`).not.toMatch(/[\u2013\u2014]/);
+    expect(getTp5MobileService("mini", "en").tagline).toBe(
+      "This service is intended for cars used in Latvia.",
+    );
+    expect(getTp5MobileService("mini", "de").tagline).toContain("Lettland");
+    expect(getTp5MobileService("mini", "ru").tagline).toContain("Латвии");
+    expect(mini.features.map((f) => f.name)).toEqual(MINI_COMPARE_ROWS_LV);
+    expect(audits.features.map((f) => f.name)).toEqual(AUDITS_COMPARE_ROWS_LV);
+    expect(mini.features[1]?.name).toBe("OCTA dati un tehnisko apskašu vēsture");
+    expect(audits.features[1]?.name).toBe("Apdrošinātāju dati un tehnisko apskašu vēsture");
+    expect(mini.tagline).not.toMatch(/[\u2013\u2014]/);
     expect(mini.tagline?.toLowerCase()).not.toContain("eksperts");
   });
 
@@ -75,8 +86,8 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(audits.description).toBe("");
     expect(mini.description).toBe("");
     expect(audits.recommended).toBe(true);
-    expect(audits.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
-    expect(mini.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
+    expect(audits.features.map((f) => f.name)).toEqual(AUDITS_COMPARE_ROWS_LV);
+    expect(mini.features.map((f) => f.name)).toEqual(MINI_COMPARE_ROWS_LV);
     expect(audits.features.every((f) => f.included)).toBe(true);
     expect(mini.features.filter((f) => f.included)).toHaveLength(3);
     expect(mini.features.filter((f) => !f.included)).toHaveLength(2);

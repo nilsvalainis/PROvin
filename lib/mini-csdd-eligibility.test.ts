@@ -138,18 +138,33 @@ describe("MINI confirm modal markup", () => {
 });
 
 describe("MINI confirm CSS flag", () => {
-  it("draws a flat 2:1 Latvian flag in carmine / white / carmine 2:1:2", () => {
+  it("draws a refined 2:1 Latvian flag with a 1px border and radius", () => {
     const css = readFileSync(join(ROOT, "components/test-pricing-5/test-pricing-5.module.css"), "utf8");
     expect(css).toContain(".lvFlag");
     expect(css.toLowerCase()).toContain("#9e3039");
-    expect(css).toContain("height: 0.72em");
-    expect(css).toContain("width: 1.44em");
+    expect(css).toContain("height: 0.6em");
+    expect(css).toContain("width: 1.2em");
+    expect(css).toMatch(/\.lvFlag\s*\{[^}]*border:\s*1px solid/);
+    expect(css).toMatch(/\.lvFlag\s*\{[^}]*border-radius:\s*1px;/);
     expect(css).toMatch(/\.miniTitleRow\s*\{[^}]*display:\s*inline;/);
     expect(css).toMatch(/\.miniTitleTagline\s*\{[^}]*line-height:\s*inherit;/);
     expect(css).not.toMatch(/\.miniTitleRow\s*\{[^}]*inline-flex/);
     expect(css).toMatch(/#9E3039 0 40%/i);
     expect(css).toMatch(/#fff 40% 60%/i);
     expect(css).toMatch(/#9E3039 60% 100%/i);
+  });
+
+  it("overlays the MINI info popover and keeps a circular i control", () => {
+    const css = readFileSync(join(ROOT, "components/test-pricing-5/test-pricing-5.module.css"), "utf8");
+    const hint = readFileSync(join(ROOT, "components/test-pricing-5/Tp5MiniLvHint.tsx"), "utf8");
+    expect(css).toMatch(/\.miniLvInfoBtn\s*\{[^}]*border-radius:\s*999px;/);
+    expect(css).toMatch(/\.miniLvInfoPopup\s*\{[^}]*position:\s*absolute;/);
+    expect(hint).toContain('aria-label={tip}');
+    expect(hint).toContain("aria-describedby={open ? tipId : undefined}");
+    expect(hint).toContain('role="tooltip"');
+    expect(hint).toContain('Escape');
+    expect(hint).not.toContain("Latvijā ekspluatētiem auto");
+    expect(hint).not.toContain("LV auto");
   });
 
   it("renders include/exclude markers as site green and red CSS circles", () => {
