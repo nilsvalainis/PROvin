@@ -46,7 +46,7 @@ export type QuickEvalDoc = {
   exports?: QuickEvalExportRecord[];
   /** Kad katrs bezmaksas avots pēdējo reizi ielasīts (atslēga = seed daļa: listing, csdd, tjekbil…). */
   sourceAt?: Record<string, string>;
-  /** VIN SCAN: maksas avotu pieejamība bez pirkuma. */
+  /** VIN SCAN: bezmaksas publisko reģistru (DK/BE/NL/US u.c.) ātrā skenēšana. */
   vinScan?: { at: string; indicators: import("@/lib/vin-scan/types").VinScanIndicator[] };
   /** CC-VIN foto skaits (PROVIN skripts pārlūkā). */
   ccVin?: { at: string; count: number | null; error?: string };

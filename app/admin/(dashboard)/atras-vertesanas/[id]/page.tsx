@@ -14,6 +14,9 @@ import {
   AdminQuickEvalVinBar,
 } from "@/components/admin/AdminQuickEvalDetail";
 import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
+import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
+import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import { ADMIN_RAIL_ASIDE, ADMIN_RAIL_BOX, ADMIN_RAIL_BTN } from "@/lib/admin-rail-styles";
 import { isSmtpConfigured } from "@/lib/email/send-transactional";
 import { parseListingPeekCustomerComment } from "@/lib/listing-peek-comment-presets";
 import { getListingPeekById, listListingPeeks, updateListingPeekStatus } from "@/lib/listing-peek-store";
@@ -33,13 +36,23 @@ async function ExportSection({
   peekId,
   exports,
   dropUp = false,
+  rail = false,
 }: {
   peekId: string;
   exports: Array<{ sessionId: string; at: string; mode: string }>;
   dropUp?: boolean;
+  rail?: boolean;
 }) {
   const candidates = await candidatesFor(peekId);
-  return <AdminQuickEvalExportMenu peekId={peekId} candidates={candidates} exports={exports} dropUp={dropUp} />;
+  return (
+    <AdminQuickEvalExportMenu
+      peekId={peekId}
+      candidates={candidates}
+      exports={exports}
+      dropUp={dropUp}
+      {...(rail ? { triggerClassName: ADMIN_RAIL_BTN, triggerLabel: "Eksportēt" } : {})}
+    />
+  );
 }
 
 async function VinBarSection({ peekId, keys }: { peekId: string; keys: Array<string | null | undefined> }) {
@@ -94,7 +107,9 @@ export default async function QuickEvalDetailPage({
   const facts = input ? buildLetterFacts(input) : {};
   const csdd = blocks ? csddCardFacts(blocks.csdd, peek.vin ?? "") : [];
   const title = csdd.find((f) => f.label === "Marka, modelis")?.value || "Auto";
-  const plateVin = csdd.find((f) => f.label === "Reģ. nr. · VIN")?.value.replace(/ \(VIN.*$/, "");
+  const plateVinRaw = csdd.find((f) => f.label === "Reģ. nr. · VIN")?.value.replace(/ \(VIN.*$/, "");
+  const plateVin = plateVinRaw;
+  const railPlate = (plateVinRaw ?? "").split(" · ")[0]?.trim() || "";
   const year = csdd.find((f) => f.label === "Izlaiduma gads")?.value;
   const vin = doc?.vin || peek.vin || "";
 
@@ -110,7 +125,7 @@ export default async function QuickEvalDetailPage({
   const pill = STATUS_PILL[peek.status] ?? STATUS_PILL.new!;
 
   return (
-    <div className="w-full max-w-none pb-24 md:pb-6">
+    <div className="w-full max-w-none pb-24 md:pb-6 lg:pr-[4.75rem]">
       <AdminDashboardHeaderWithMenu>
         <p className="text-[11px] text-[var(--color-provin-muted)]">
           <Link href="/admin/atras-vertesanas" className="text-[var(--color-provin-accent)] hover:underline">
@@ -167,7 +182,7 @@ export default async function QuickEvalDetailPage({
               <AdminListingPeekSla createdAt={peek.createdAt} complete={isDone} rejected={isRejected} />
             </div>
           </div>
-          <div className="hidden flex-wrap items-center gap-1.5 md:flex">
+          <div className="hidden flex-wrap items-center gap-1.5 md:flex lg:hidden">
             {peek.phone ? <AdminWhatsAppOpenButton phone={peek.phone} variant="pill" /> : null}
             <AdminCopyVinButton vin={vin} />
             <Suspense fallback={<span className={`${hdrBtn} opacity-60`}>Eksportēt…</span>}>
@@ -238,59 +253,122 @@ export default async function QuickEvalDetailPage({
         </p>
       )}
 
-      <div className="mt-4 grid gap-3 lg:grid-cols-[1.45fr_1fr]">
-        <section className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-          <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--color-apple-text)]">
-            {isDone ? "Vēstule klientam · nosūtīta" : "Vēstule klientam"}
-            {peek.commentSentAt ? (
-              <span className="ml-2 font-normal normal-case tracking-normal text-[var(--color-provin-muted)]">{fmtLv(peek.commentSentAt)}</span>
-            ) : null}
-          </h3>
-          <AdminListingPeekCommentComposer
-            fieldId={`peek-${peek.id}`}
-            peekId={peek.id}
-            listingUrl={listingUrl}
-            smtpOk={smtpOk}
-            facts={facts}
-            {...(isDone && peek.comment
-              ? {
-                  initialLines: parsed?.lines,
-                  initialCloser: parsed?.closer,
-                  initialLetter: peek.comment,
-                  submitLabel: "Nosūtīt vēlreiz",
-                }
-              : {})}
-          />
-        </section>
-        <div className="space-y-3">
-          <section className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-            <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--color-apple-text)]">Foto</h3>
-            <AdminListingPeekPhotos peekId={peek.id} photos={peek.photos ?? []} />
-          </section>
-          <section className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-[12px]">
-            <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--color-apple-text)]">Vēsture</h3>
-            <ul className="space-y-1 text-[var(--color-provin-muted)]">
-              <li>{fmtLv(peek.createdAt)} · pieprasījums saņemts</li>
-              {doc?.seed?.at ? <li>{fmtLv(doc.seed.at)} · bezmaksas avoti ielasīti</li> : null}
-              {(doc?.reusedFrom ?? []).map((r) => (
-                <li key={`${r.fromId}-${r.at}`}>
-                  {fmtLv(r.at)} · pārnesti nopirktie dati ({r.keys.join(", ")})
-                </li>
-              ))}
-              {doc?.ltab ? <li>{fmtLv(doc.ltab.at)} · LTAB atzīme: {doc.ltab.mark === "clean" ? "nav zaudējumu" : "ir zaudējumi"}</li> : null}
-              {peek.commentSentAt ? <li>{fmtLv(peek.commentSentAt)} · vēstule nosūtīta</li> : null}
-              {(doc?.exports ?? []).map((x) => (
-                <li key={`${x.sessionId}-${x.at}`}>
-                  {fmtLv(x.at)} · {x.mode === "auto" ? "automātiski importēts" : "eksportēts"} uz{" "}
-                  <Link href={`/admin/orders/${x.sessionId}`} className="text-[var(--color-provin-accent)] hover:underline">
-                    pasūtījumu
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
+    <section className="mt-4 rounded-2xl bg-white px-4 py-3 shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)]">
+      <h3 className="mb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--color-apple-text)]">
+        {isDone ? "Vēstule klientam · nosūtīta" : "Vēstule klientam"}
+        {peek.commentSentAt ? (
+          <span className="ml-2 font-normal normal-case tracking-normal text-[var(--color-provin-muted)]">{fmtLv(peek.commentSentAt)}</span>
+        ) : null}
+      </h3>
+      <AdminListingPeekCommentComposer
+        fieldId={`peek-${peek.id}`}
+        peekId={peek.id}
+        listingUrl={listingUrl}
+        smtpOk={smtpOk}
+        facts={facts}
+        {...(isDone && peek.comment
+          ? {
+              initialLines: parsed?.lines,
+              initialCloser: parsed?.closer,
+              initialLetter: peek.comment,
+              submitLabel: "Nosūtīt vēlreiz",
+            }
+          : {})}
+      />
+    </section>
+    <details id="qe-foto" className="group mt-3 rounded-2xl bg-white px-4 py-3 shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)]">
+      <summary className="cursor-pointer select-none text-[12px] font-semibold text-[#3a3a3c]">Foto ({(peek.photos ?? []).length})</summary>
+      <div className="mt-2">
+      <AdminListingPeekPhotos peekId={peek.id} photos={peek.photos ?? []} />
+    </div>
+    </details>
+    <details id="qe-vesture" className="mt-3 rounded-2xl bg-white px-4 py-3 text-[12px] shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)]">
+      <summary className="cursor-pointer select-none text-[12px] font-semibold text-[#3a3a3c]">Vēsture</summary>
+      <div className="mt-2">
+      <ul className="space-y-1 text-[var(--color-provin-muted)]">
+        <li>{fmtLv(peek.createdAt)} · pieprasījums saņemts</li>
+        {doc?.seed?.at ? <li>{fmtLv(doc.seed.at)} · bezmaksas avoti ielasīti</li> : null}
+        {(doc?.reusedFrom ?? []).map((r) => (
+          <li key={`${r.fromId}-${r.at}`}>
+            {fmtLv(r.at)} · pārnesti nopirktie dati ({r.keys.join(", ")})
+          </li>
+        ))}
+        {doc?.ltab ? <li>{fmtLv(doc.ltab.at)} · LTAB atzīme: {doc.ltab.mark === "clean" ? "nav zaudējumu" : "ir zaudējumi"}</li> : null}
+        {peek.commentSentAt ? <li>{fmtLv(peek.commentSentAt)} · vēstule nosūtīta</li> : null}
+        {(doc?.exports ?? []).map((x) => (
+          <li key={`${x.sessionId}-${x.at}`}>
+            {fmtLv(x.at)} · {x.mode === "auto" ? "automātiski importēts" : "eksportēts"} uz{" "}
+            <Link href={`/admin/orders/${x.sessionId}`} className="text-[var(--color-provin-accent)] hover:underline">
+              pasūtījumu
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+    </details>
+
+      {/* Labā mala 1:1 kā pasūtījuma darba zonā (AdminOrderStickyActionRail stils) + ātrā vērtējuma darbības. */}
+      <aside className={ADMIN_RAIL_ASIDE} aria-label="Ātrās darbības">
+        <div className={ADMIN_RAIL_BOX}>
+          <div className="flex flex-col items-center gap-0.5 px-0.5">
+            <span className="font-mono text-[8px] leading-none tracking-tight" title={vin || "VIN"}>
+              {vin ? vin.slice(-6) : "VIN"}
+            </span>
+            {vin ? <AdminVinCopyButton value={vin} /> : null}
+          </div>
+          <div className="flex flex-col items-center gap-0.5 px-0.5">
+            <span className="max-w-full truncate font-mono text-[8px] leading-none" title={railPlate || "Reģ. nr."}>
+              {railPlate || "Reģ."}
+            </span>
+            <AdminClipboardButton
+              value={railPlate}
+              titleReady="Kopēt reģistrācijas numuru"
+              titleCopied="Kopēts"
+              ariaReady="Kopēt reģistrācijas numuru starpliktuvē"
+              ariaCopied="Reģistrācijas numurs nokopēts"
+            />
+          </div>
+          <div className="flex justify-center">
+            <AdminWhatsAppOpenButton phone={peek.phone ?? ""} />
+          </div>
+          {listingUrl ? (
+            <a href={listingUrl} target="_blank" rel="noopener noreferrer" className={ADMIN_RAIL_BTN} title={listingUrl}>
+              ss.lv
+            </a>
+          ) : (
+            <span className={`${ADMIN_RAIL_BTN} cursor-not-allowed opacity-40`} title="Nav sludinājuma saites">
+              ss.lv
+            </span>
+          )}
+          <div className="my-0.5 h-px bg-black/10" aria-hidden />
+          <Suspense fallback={<span className={`${ADMIN_RAIL_BTN} opacity-60`}>Eksportēt</span>}>
+            <ExportSection peekId={peek.id} exports={doc?.exports ?? []} rail />
+          </Suspense>
+          <form action={setQuickEvalStatus} className="flex flex-col gap-1">
+            <input type="hidden" name="id" value={peek.id} />
+            <input type="hidden" name="back" value={back} />
+            <button type="submit" name="status" value="rejected" disabled={isRejected} className={`${ADMIN_RAIL_BTN} text-rose-700`}>
+              Noraidīt
+            </button>
+            <button
+              type="submit"
+              name="status"
+              value="completed"
+              disabled={isDone}
+              className={`${ADMIN_RAIL_BTN} border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700`}
+            >
+              Pabeigts
+            </button>
+          </form>
+          <div className="my-0.5 h-px bg-black/10" aria-hidden />
+          <a href="#qe-foto" className={ADMIN_RAIL_BTN}>
+            Foto {(peek.photos ?? []).length}
+          </a>
+          <a href="#qe-vesture" className={ADMIN_RAIL_BTN}>
+            Vēsture
+          </a>
         </div>
-      </div>
+      </aside>
 
       {/* Telefonā: lēmums īkšķa zonā. */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-3 py-2 backdrop-blur md:hidden">
