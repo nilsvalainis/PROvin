@@ -57,6 +57,7 @@ export type VinScanPanelSnapshotRow = {
 export type VinScanPanelSnapshot = {
   scannedAt: string;
   rows: VinScanPanelSnapshotRow[];
+  busy?: boolean;
 };
 
 const CATALOG = VIN_SCAN_CATALOG;
@@ -367,6 +368,7 @@ export function AdminVinScanPanel({
   useEffect(() => {
     onSnapshot?.({
       scannedAt,
+      busy,
       rows: CATALOG.map((item) => {
         const row = byId[item.id];
         return {
@@ -384,7 +386,7 @@ export function AdminVinScanPanel({
         };
       }),
     });
-  }, [byId, scannedAt, clean, onSnapshot, plates]);
+  }, [byId, scannedAt, busy, clean, onSnapshot, plates]);
 
   return (
     <section className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]" aria-busy={busy}>
@@ -425,22 +427,6 @@ export function AdminVinScanPanel({
               </button>
             </>
           ) : null}
-          <button
-            type="button"
-            disabled={!canScan || busy}
-            onClick={() => void scan(false)}
-            className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
-          >
-            {busy ? "Skenē…" : "Skenēt avotus"}
-          </button>
-          <button
-            type="button"
-            disabled={!canScan || busy}
-            onClick={() => void scan(true)}
-            className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] disabled:opacity-50 dark:border-slate-600"
-          >
-            Skenēt no jauna
-          </button>
         </div>
       </div>
       {history.length > 0 ? (
