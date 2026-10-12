@@ -2,106 +2,99 @@ import { describe, expect, it } from "vitest";
 import { dealerDataOperatorMessageEmailHtml } from "@/lib/email/html-templates";
 import {
   buildMiniToAuditsRecommendationDraft,
+  latvianVocativeFirstName,
+  MINI_TO_AUDITS_APPROVED_TEXT,
   MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
   MINI_TO_AUDITS_RECOMMENDATION_LABEL,
   miniToAuditsGreeting,
-  miniToAuditsVehiclePhrase,
 } from "@/lib/email/mini-to-audits-recommendation";
-import {
-  AUDIT_PRICE_CENTS,
-  formatEurFromCents,
-  MINI_CATALOG_CENTS,
-  MINI_DEALER_ADDON_CENTS,
-} from "@/lib/order-upsell";
+import { AUDIT_PRICE_CENTS, formatEurFromCents, MINI_CATALOG_CENTS } from "@/lib/order-upsell";
 
-const MINI = formatEurFromCents(MINI_CATALOG_CENTS);
-const AUDITS = formatEurFromCents(AUDIT_PRICE_CENTS);
 const DIFF = formatEurFromCents(AUDIT_PRICE_CENTS - MINI_CATALOG_CENTS);
-const DEALER = formatEurFromCents(MINI_DEALER_ADDON_CENTS);
 const PAY_URL = "https://checkout.stripe.com/c/pay/cs_test_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 function draft(partial: Partial<Parameters<typeof buildMiniToAuditsRecommendationDraft>[0]> = {}) {
   return buildMiniToAuditsRecommendationDraft({
-    miniPrice: MINI,
-    auditsPrice: AUDITS,
     differencePrice: DIFF,
-    dealerAddonPrice: DEALER,
     paymentUrl: PAY_URL,
     ...partial,
   });
 }
 
-describe("miniToAuditsGreeting", () => {
-  it("uses the customer name when present", () => {
-    expect(miniToAuditsGreeting("Jānis Bērziņš")).toBe("Labdien, Jānis Bērziņš!");
+describe("latvianVocativeFirstName", () => {
+  it("turns masculine -s/-is names into vocative", () => {
+    expect(latvianVocativeFirstName("Jānis Bērziņš")).toBe("Jāni");
+    expect(latvianVocativeFirstName("Andris")).toBe("Andri");
+    expect(latvianVocativeFirstName("Nils")).toBe("Nil");
+    expect(latvianVocativeFirstName("Kristaps")).toBe("Kristap");
   });
 
-  it("falls back without a name", () => {
-    expect(miniToAuditsGreeting("  ")).toBe("Labdien!");
-    expect(miniToAuditsGreeting(null)).toBe("Labdien!");
+  it("keeps feminine -a names", () => {
+    expect(latvianVocativeFirstName("Anna Kalniņa")).toBe("Anna");
+    expect(latvianVocativeFirstName("Māra")).toBe("Māra");
   });
 });
 
-describe("miniToAuditsVehiclePhrase", () => {
-  it("joins car and VIN", () => {
-    expect(miniToAuditsVehiclePhrase({ car: "Volkswagen Passat", vin: "wvwzzz3cze123456" })).toBe(
-      "Volkswagen Passat (VIN WVWZZZ3CZE123456)",
-    );
+describe("miniToAuditsGreeting", () => {
+  it("uses the vocative", () => {
+    expect(miniToAuditsGreeting("Jānis Bērziņš")).toBe("Labdien, Jāni!");
+    expect(miniToAuditsGreeting("Anna Kalniņa")).toBe("Labdien, Anna!");
   });
 
-  it("uses VIN alone", () => {
-    expect(miniToAuditsVehiclePhrase({ vin: "WVWZZZ3CZE123456" })).toBe("VIN WVWZZZ3CZE123456");
+  it("keeps the name placeholder without a name", () => {
+    expect(miniToAuditsGreeting("  ")).toBe("Labdien, {vards}!");
+    expect(miniToAuditsGreeting(null)).toBe("Labdien, {vards}!");
   });
 });
 
 describe("buildMiniToAuditsRecommendationDraft", () => {
-  it("fills name, vehicle and the Stripe difference link", () => {
+  it("uses the approved wording with vocative, car, VIN and Stripe link", () => {
     const d = draft({
-      customerName: "Anna",
+      customerName: "Jānis Bērziņš",
       vin: "WVWZZZ3CZE123456",
       car: "VW Passat",
     });
     expect(d.subject).toContain(MINI_TO_AUDITS_RECOMMENDATION_LABEL);
-    expect(d.subject).toContain("VW Passat");
-    expect(d.subject).toContain("WVWZZZ3CZE123456");
-    expect(d.emailText).toContain("Labdien, Anna!");
-    expect(d.emailText).toContain("VW Passat (VIN WVWZZZ3CZE123456)");
-    expect(d.emailText).toContain(`Apmaksāt: ${PAY_URL}`);
-    expect(d.whatsappText).toContain(`Apmaksāt: ${PAY_URL}`);
+    expect(d.emailText).toBe(
+      MINI_TO_AUDITS_APPROVED_TEXT.replaceAll("{vards}", "Jāni")
+        .replaceAll("{auto}", "VW Passat")
+        .replaceAll("{vin}", "WVWZZZ3CZE123456")
+        .replaceAll("{starpiba}", "60,00")
+        .replaceAll("{maksajuma_saite}", PAY_URL),
+    );
+    expect(d.whatsappText).toBe(d.emailText);
+    expect(d.emailText).toContain("Labdien, Jāni!");
+    expect(d.emailText).toContain("Paldies par PROVIN MINI pasūtījumu VW Passat (VIN WVWZZZ3CZE123456).");
+    expect(d.emailText).toContain(`Starpību (60,00 €) varat apmaksāt šeit:\n${PAY_URL}`);
+    expect(d.emailText).toContain("T: 29502039");
   });
 
   it("computes the catalog difference from package prices", () => {
-    expect(MINI).toBe("39,99 €");
-    expect(AUDITS).toBe("99,99 €");
     expect(DIFF).toBe("60,00 €");
     const d = draft();
-    expect(d.emailText).toContain("39,99 €");
-    expect(d.emailText).toContain("60,00 €");
-    expect(d.emailText).toContain("99,99 €");
-    expect(d.emailText).toContain("19,99 €");
+    expect(d.emailText).toContain("Starpību (60,00 €)");
+    expect(d.emailText).not.toContain("39,99 €");
+    expect(d.emailText).not.toContain("99,99 €");
   });
 
-  it("explains MINI coverage and AUDITS-only checks", () => {
+  it("keeps the approved MINI and AUDITS bullets", () => {
     const d = draft();
-    expect(d.emailText).toContain("individuālu konsultāciju un ieteikumus klātienes apskatei");
-    expect(d.emailText).toContain("apdrošinātāju datus un tehniskās apskates vēsturi");
-    expect(d.emailText).toContain("sludinājuma, pārdevēja un tehnisko risku analīzi");
-    expect(d.emailText).toContain("CarVertical un AutoDNA");
-    expect(d.emailText).toContain("izcelsmes valsts reģistrus");
-    expect(d.emailText).toContain("oficiālā dīlera servisa vēsturi un izsoļu portālu arhīvu");
-    expect(d.emailText).toContain("negadījumu vēsturi");
-    expect(d.emailText).toContain("ārvalstu nobraukuma hronoloģiju");
-    expect(d.emailText).toContain("oficiālā dīlera datus");
-    expect(d.emailText).toContain("Iesakām šim auto pāriet uz pilno PROVIN AUDITS");
-    expect(d.emailText).toContain("turpināsim ar PROVIN MINI kā pasūtīts");
-    expect(d.emailText).toContain("vispirms pievienot tikai oficiālā dīlera datus");
-    expect(d.emailText).toContain("nebūs pārbaužu maksas ārvalstu datubāzēs");
-    expect(d.emailText).toContain("starptautiskie valsts reģistri");
+    expect(d.emailText).toContain("✓ Konsultāciju un ieteikumus klātienes apskatei");
+    expect(d.emailText).toContain("✓ Apdrošinātāju datus un tehnisko apskašu vēsturi");
+    expect(d.emailText).toContain("✓ Sludinājuma, pārdevēja un tehnisko risku analīzi");
+    expect(d.emailText).toContain("✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus");
+    expect(d.emailText).toContain("✓ Oficiālo dīleru un izsoļu portālu arhīva datus");
+    expect(d.emailText).toContain("negadījumu vēsturi, nobraukuma vēsturi ārvalstīs");
+    expect(d.emailText).toContain("Mēs iesakām pilno auditu");
+    expect(d.emailText).toContain("turpināsim ar MINI");
+    expect(d.emailText).toContain("ārvalstu maksas datubāzēs");
   });
 
-  it("keeps a manual payment-link placeholder when the URL is missing", () => {
-    const d = draft({ paymentUrl: "" });
-    expect(d.emailText).toContain(`Apmaksāt: ${MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER}`);
+  it("keeps placeholders when name, car, VIN or payment URL are missing", () => {
+    const d = draft({ paymentUrl: "", customerName: "", car: "", vin: "" });
+    expect(d.emailText).toContain("Labdien, {vards}!");
+    expect(d.emailText).toContain("pasūtījumu {auto} (VIN {vin})");
+    expect(d.emailText).toContain(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER);
   });
 
   it("never uses eksperts or unicode dashes", () => {
@@ -112,12 +105,12 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
     }
   });
 
-  it("turns the pay line into an HTML CTA", () => {
-    const d = draft();
+  it("turns the payment URL into an HTML CTA", () => {
+    const d = draft({ customerName: "Anna" });
     const html = dealerDataOperatorMessageEmailHtml({ text: d.emailText });
     expect(html).toContain(`href="${PAY_URL}"`);
     expect(html).toContain("Apmaksāt");
-    expect(html).toContain("Labdien!");
+    expect(html).toContain("Labdien, Anna!");
     expect(html).not.toMatch(/\u2014|\u2013/);
   });
 });

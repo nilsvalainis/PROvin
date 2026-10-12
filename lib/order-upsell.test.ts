@@ -134,12 +134,10 @@ describe("order upsell quotes", () => {
       targetCents: 9999,
     });
     expect(draft.subject).toContain(MINI_TO_AUDITS_RECOMMENDATION_LABEL);
-    expect(draft.emailText).toContain("Labdien, Anna Kalniņa!");
-    expect(draft.emailText).toContain("VW Passat (VIN WVWZZZ3CZE123456)");
-    expect(draft.emailText).toContain("39,99 €");
-    expect(draft.emailText).toContain("60,00 €");
-    expect(draft.emailText).toContain("99,99 €");
-    expect(draft.emailText).toContain(`Apmaksāt: ${stripePay}`);
+    expect(draft.emailText).toContain("Labdien, Anna!");
+    expect(draft.emailText).toContain("Paldies par PROVIN MINI pasūtījumu VW Passat (VIN WVWZZZ3CZE123456).");
+    expect(draft.emailText).toContain("Starpību (60,00 €)");
+    expect(draft.emailText).toContain(`apmaksāt šeit:\n${stripePay}`);
     expect(isStripeHostedPaymentUrl(stripePay)).toBe(true);
     expect(draft.emailText.toLowerCase()).not.toContain("ekspert");
     expect(draft.emailText).not.toMatch(/\u2014|\u2013/);
@@ -185,7 +183,7 @@ describe("order upsell quotes", () => {
   it("fills the payment-link placeholder", () => {
     expect(
       ensureUpsellUrlInText(
-        `Labdien!\n\nApmaksāt: ${MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER}`,
+        `Labdien!\n\n${MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER}`,
         "https://checkout.stripe.com/c/pay/cs_test_x",
       ),
     ).toContain("https://checkout.stripe.com/c/pay/cs_test_x");
