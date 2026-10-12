@@ -15,6 +15,7 @@ import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder"
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
+import { AdminClientOrdersChip } from "@/components/admin/AdminClientOrdersChip";
 import { AdminCustomerHistoryPanel } from "@/components/admin/AdminCustomerHistoryPanel";
 import { AdminOrderVinHistoryPanel } from "@/components/admin/AdminOrderVinHistoryPanel";
 import { ClientHydrationGate } from "@/components/admin/ClientHydrationGate";
@@ -538,6 +539,20 @@ export function AdminOrderDetailView({
                     hideToolbar
                     resetVersion={orderFieldResetKey}
                   />
+                  {(customerHistory?.otherPaid ?? []).filter((p) => p.matchVia === "email" || p.matchVia === "email_and_phone").length > 0 ? (
+                    <p className="-mt-1 flex items-center gap-1.5 px-1 text-[11.5px] text-[#8e8e93]">
+                      Iepriekšējie pasūtījumi ar šo e-pastu:
+                      <AdminClientOrdersChip
+                        items={(customerHistory?.otherPaid ?? []).filter((p) => p.matchVia === "email" || p.matchVia === "email_and_phone").map((p) => ({
+                          id: p.id,
+                          created: p.created,
+                          vin: p.vin,
+                          amountTotal: p.amountTotal,
+                          href: p.href,
+                        }))}
+                      />
+                    </p>
+                  ) : null}
                   <AdminSavableTextField
                     id="edit-customer-phone"
                     label="Tālrunis"

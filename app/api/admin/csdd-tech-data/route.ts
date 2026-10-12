@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { recordSourceOutcomes } from "@/lib/source-health-store";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { fetchCsddTechData } from "@/lib/csdd-tech-data";
@@ -32,5 +33,7 @@ export async function POST(req: Request) {
   }
 
   const snapshot = await fetchCsddTechData(nr1);
+  const csddOk = snapshot.found || /nav atrast|nav reģistr|not found/i.test(snapshot.message);
+  after(() => recordSourceOutcomes([{ id: "csdd", ok: csddOk, msg: snapshot.message }]));
   return NextResponse.json(snapshot);
 }

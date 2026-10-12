@@ -3,7 +3,8 @@
  *   1. GET /vehicle/{VIN} — transporta pasūtījums
  *   2. GET /history/{VIN}/{type} — type 1 (serviss) vai 2 (carfax)
  */
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { recordSourceOutcomes } from "@/lib/source-health-store";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { getOutvinConfig } from "@/lib/outvin-api";
@@ -110,6 +111,7 @@ export async function POST(req: Request) {
       );
     }
 
+    after(() => recordSourceOutcomes([{ id: "outvin", ok: true }]));
     return NextResponse.json({
       bundle: result.bundle,
       results: result.results,
@@ -121,6 +123,7 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
+    after(() => recordSourceOutcomes([{ id: "outvin", ok: false, msg }]));
     console.error("[admin/outvin/purchase] unhandled exception", { vin, types, message: msg, error: e });
     if (msg === "missing_outvin_credentials") {
       return NextResponse.json({ error: "missing_outvin_credentials" }, { status: 503 });

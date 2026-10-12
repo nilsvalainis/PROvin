@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AdminClientOrdersChip } from "@/components/admin/AdminClientOrdersChip";
 import { Fragment, useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
@@ -753,7 +754,7 @@ export function AdminOrdersTable({
 
               <div className="mt-2 flex items-end justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="flex min-w-0 items-center gap-1.5 text-[12px] text-[var(--color-apple-text)]"><span className="truncate">{v.primaryClient}</span><SourceIcon source={o.heardAbout} /></p>
+                  <p className="flex min-w-0 items-center gap-1.5 text-[12px] text-[var(--color-apple-text)]"><span className="truncate">{v.primaryClient}</span>{o.clientOrders?.length ? <AdminClientOrdersChip items={o.clientOrders.map((c) => ({ ...c, href: `${detailBaseNormalized}/${encodeURIComponent(c.id)}` }))} /> : null}<SourceIcon source={o.heardAbout} /></p>
                   <p className="mt-0.5 truncate text-[11px] tabular-nums text-[var(--color-provin-muted)]">
                     {dateFmt.format(new Date(o.created * 1000))} ·{" "}
                     {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
@@ -922,6 +923,7 @@ export function AdminOrdersTable({
                           {primaryClient}
                         </Link>
                       )}
+                      {o.clientOrders?.length ? <AdminClientOrdersChip items={o.clientOrders.map((c) => ({ ...c, href: `${detailBaseNormalized}/${encodeURIComponent(c.id)}` }))} /> : null}
                       <SourceIcon source={o.heardAbout} />
                     </div>
                     {secondaryClient ? <p className="mt-0.5 truncate text-[11px] text-[#aeaeb2]">{secondaryClient}</p> : null}

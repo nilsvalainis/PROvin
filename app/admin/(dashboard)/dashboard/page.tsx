@@ -7,6 +7,7 @@ import {
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
 import { countRepeatVins } from "@/lib/admin-repeat-vin";
+import { previousOrdersByEmail } from "@/lib/admin-client-orders";
 import { listListingPeeks } from "@/lib/listing-peek-store";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { getAuditDeadlineCompleteMap } from "@/lib/admin-audit-complete-store";
@@ -133,8 +134,24 @@ export default async function AdminOrdersPage({
       ...peeks.map((p) => ({ id: `qe:${p.id}`, vins: [p.vin] })),
     ],
   );
+  // Klienta kartīte: „N×” — iepriekšējie pasūtījumi ar to pašu e-pastu.
+  const clientOrders = previousOrdersByEmail(
+    ordersWithUpsell.filter((o) => !o.isB2bPack),
+    allOrders
+      .filter((o) => !o.isDemo && o.checkoutLine !== "provin_select")
+      .map((o) => ({
+        id: o.id,
+        created: o.created,
+        customerEmail: draftSummaries.get(o.id)?.customerEmail || o.customerEmail,
+        vin: draftSummaries.get(o.id)?.vin || o.vin,
+        amountTotal: o.amountTotal,
+        currency: o.currency,
+      })),
+  );
   const tableOrders = sortAdminOrdersIncompleteFirst(
-    serializeAdminOrderTableRows(ordersWithUpsell.map((o) => ({ ...o, repeatVin: repeatVin.get(o.id) ?? 0 }))),
+    serializeAdminOrderTableRows(
+      ordersWithUpsell.map((o) => ({ ...o, repeatVin: repeatVin.get(o.id) ?? 0, clientOrders: clientOrders.get(o.id) ?? [] })),
+    ),
   );
   const demoPrefOn = isDemoOrdersEnabled();
   const onlyDemoShown = orders.length > 0 && orders.every((o) => o.isDemo);
