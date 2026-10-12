@@ -310,7 +310,7 @@ function seedTraficomFiBlock(input: VinScanManualOrderInput): WorkspaceSourceBlo
       detail: src.detail,
       flags: src.flags,
     })),
-    input.plates,
+    { fi: input.plates?.fi ?? "" },
   );
   const flagged = (input.sources ?? []).find((src) => src.flags?.finlandLinked === true);
   const source = hit.linked === true ? hit.source : flagged?.flags?.finlandLinkSource || "";
