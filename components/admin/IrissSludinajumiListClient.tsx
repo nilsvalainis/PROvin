@@ -9,6 +9,7 @@ import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/a
 import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
 import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
 import { useMobilePlatform } from "@/hooks/useMobilePlatform";
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
 import { listingAuctionTypeLabel, isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import { listingBidPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts } from "@/lib/iriss-listings-cost";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
@@ -266,6 +267,30 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Filtri un „⋯” aizveras, klikšķinot/pieskaroties jebkur ārpusē vai nospiežot Esc.
+  useEffect(() => {
+    if (!filterOpen && !menuOpen) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (filterOpen && filterRef.current && !filterRef.current.contains(t)) setFilterOpen(false);
+      if (menuOpen && menuRef.current && !menuRef.current.contains(t)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setFilterOpen(false);
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [filterOpen, menuOpen]);
   const mobile = useMobilePlatform();
   const restoredQueryRef = useRef(false);
   const tab = prefs.tab;
@@ -577,18 +602,22 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
               className="h-9 w-40 shrink rounded-[9px] bg-[#e9e9ee] px-3 text-base text-[var(--color-apple-text)] outline-none placeholder:text-[#8e8e93] sm:h-7 sm:w-64 sm:text-[12.5px]"
             />
           ) : (
-            <button type="button" aria-label="Meklēt" onClick={() => setSearchOpen(true)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[15px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:w-7">
-              ⌕
+            <button type="button" aria-label="Meklēt" onClick={() => setSearchOpen(true)} className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] font-medium text-[#3a3a3c] hover:bg-[#e9e9ee] sm:h-7">
+              <Search className="h-4 w-4" aria-hidden />
+              <span className="hidden min-[420px]:inline">Meklēt</span>
             </button>
           )}
-          <div className="relative shrink-0">
+          <div ref={filterRef} className="relative shrink-0">
             <button
               type="button"
               aria-label="Filtri"
+              aria-expanded={filterOpen}
               onClick={() => { setFilterOpen((v) => !v); setMenuOpen(false); }}
-              className={`grid h-9 w-9 place-items-center rounded-full text-[14px] hover:bg-[#e9e9ee] sm:h-7 sm:w-7 ${activeFilterCount > 0 ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}
+              className={`inline-flex h-9 items-center gap-1 rounded-full px-2 text-[12px] font-medium hover:bg-[#e9e9ee] sm:h-7 ${activeFilterCount > 0 ? "text-[var(--color-provin-accent)]" : "text-[#3a3a3c]"}`}
             >
-              ⚲{activeFilterCount > 0 ? <sup className="text-[9px] font-semibold">{activeFilterCount}</sup> : null}
+              <SlidersHorizontal className="h-4 w-4" aria-hidden />
+              <span className="hidden min-[420px]:inline">Filtri</span>
+              {activeFilterCount > 0 ? <span className="rounded-full bg-[var(--color-provin-accent)] px-1.5 text-[10px] font-semibold leading-4 text-white">{activeFilterCount}</span> : null}
             </button>
             {filterOpen ? (
               <div className="fixed inset-x-2 bottom-2 z-40 rounded-2xl bg-white p-3.5 text-[12px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-9 sm:w-[300px] sm:rounded-xl">
@@ -609,10 +638,6 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
                   <span className="text-[#8e8e93]">–</span>
                   <input type="number" min={0} inputMode="numeric" aria-label="Cena līdz" placeholder="Līdz" defaultValue={searchParams.get("max") ?? ""} key={`max-${searchParams.get("max") ?? ""}`} onBlur={(e) => writeListQuery({ max: e.target.value.trim() })} className="h-9 w-full rounded-lg bg-[#f2f2f5] px-2.5 text-base outline-none sm:h-7 sm:text-[12px]" />
                 </div>
-                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Kārtot</p>
-                <select aria-label="Kārtot pēc" value={sort} onChange={(e) => { const next = parseListingSort(e.target.value); if (next) writeListQuery({ sort: next }); }} className="mt-1 h-9 w-full rounded-lg bg-[#f2f2f5] px-2 text-base font-semibold outline-none sm:h-7 sm:text-[12px]">
-                  {LISTING_SORTS.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
-                </select>
                 <label className="mt-3 flex items-center gap-2 font-medium">
                   <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={hideTech} onChange={(e) => setPrefs((p) => ({ ...p, hideTech: e.target.checked }))} />
                   Slēpt ar motora/kārbas bojājumiem ({techCount})
@@ -627,8 +652,23 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
               </div>
             ) : null}
           </div>
-          <div className="relative shrink-0">
-            <button type="button" aria-label="Vairāk" onClick={() => { setMenuOpen((v) => !v); setFilterOpen(false); }} className="grid h-9 w-9 place-items-center rounded-full text-[16px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:w-7">
+          <label className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7">
+            <ArrowUpDown className="h-3.5 w-3.5" aria-hidden />
+            <span className="hidden sm:inline">Kārtot</span>
+            <select
+              aria-label="Kārtot pēc"
+              value={sort}
+              onChange={(e) => {
+                const next = parseListingSort(e.target.value);
+                if (next) writeListQuery({ sort: next });
+              }}
+              className="max-w-[7.5rem] bg-transparent text-[12px] font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-none"
+            >
+              {LISTING_SORTS.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+            </select>
+          </label>
+          <div ref={menuRef} className="relative shrink-0">
+            <button type="button" aria-label="Vairāk" aria-expanded={menuOpen} onClick={() => { setMenuOpen((v) => !v); setFilterOpen(false); }} className="grid h-9 w-9 place-items-center rounded-full text-[16px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:w-7">
               ⋯
             </button>
             {menuOpen ? (
