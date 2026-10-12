@@ -20,7 +20,7 @@ export const IRISS_LIST_PREFS_MAX_BYTES = 100_000;
 export const IRISS_LIST_LEGACY_PREFS_KEYS = ["provin-iriss-list-v1", "provin-iriss-list-v2", "provin-iriss-list-v3"] as const;
 
 const TAX_KINDS = new Set<ListingTaxKind>(["net", "margin", "gross"]);
-const TABS = new Set(["new", "price", "all", "gone"]);
+const TABS = new Set(["new", "price", "all", "gone", "fav"]);
 const SCOPES = new Set(["all", "fav", "hidden"]);
 const BANNED_ROOT_KEYS = [
   "vehicles",
@@ -40,7 +40,7 @@ const BANNED_ROOT_KEYS = [
 ] as const;
 
 export type ListingTaxOverride = { kind: ListingTaxKind; rate?: number | null };
-export type IrissListTab = "new" | "price" | "all" | "gone";
+export type IrissListTab = "new" | "price" | "all" | "gone" | "fav";
 export type IrissListScope = "all" | "fav" | "hidden";
 
 export type IrissListPrefs = {

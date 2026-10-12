@@ -157,3 +157,43 @@ export function listingOrderShortId(id: string): string {
 export function listingOrdersById(orders: readonly IrissListingOrderBrief[]): Map<string, IrissListingOrderBrief> {
   return new Map(orders.map((o) => [o.id, o]));
 }
+
+export type ListingClientOption = { value: string; label: string; indent: boolean };
+
+/**
+ * Klientu filtra opcijas vienā plakanā sarakstā.
+ * Agrāk `<optgroup label=klients>` + „Visi · klients” rādīja katru klientu divreiz
+ * (grupas virsraksts + opcija), un viena klienta ar 1 pasūtījumu – pat trīs rindās.
+ * Tagad: pasūtījumi bez dublikātiem pēc id, klienti grupēti pēc normalizēta vārda;
+ * klients ar vienu pasūtījumu = viena rinda, ar vairākiem = „Vārds · visi (N)” + pasūtījumi ievilkti.
+ */
+export function buildListingClientOptions(
+  orders: readonly IrissListingOrderBrief[],
+  include: (o: IrissListingOrderBrief) => boolean,
+  serialize: (f: ListingOrderFilter) => string,
+  fmtBudget: (n: number) => string,
+): ListingClientOption[] {
+  const seen = new Set<string>();
+  const groups = new Map<string, { name: string; list: IrissListingOrderBrief[] }>();
+  for (const o of orders) {
+    if (!o.id || seen.has(o.id) || !include(o)) continue;
+    seen.add(o.id);
+    const name = (o.clientName || "Bez vārda").replace(/\s+/g, " ").trim();
+    const key = name.toLocaleLowerCase("lv");
+    const g = groups.get(key) ?? { name, list: [] };
+    g.list.push(o);
+    groups.set(key, g);
+  }
+  const orderLabel = (o: IrissListingOrderBrief) =>
+    [o.brandModel || "Pasūtījums", o.productionYears, o.budget != null ? fmtBudget(o.budget) : "budžets nav"].filter(Boolean).join(" · ");
+  const out: ListingClientOption[] = [];
+  for (const g of [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, "lv"))) {
+    if (g.list.length === 1) {
+      out.push({ value: serialize({ kind: "order", id: g.list[0]!.id }), label: `${g.name} · ${orderLabel(g.list[0]!)}`, indent: false });
+      continue;
+    }
+    out.push({ value: serialize({ kind: "client", name: g.list[0]!.clientName }), label: `${g.name} · visi (${g.list.length})`, indent: false });
+    for (const o of g.list) out.push({ value: serialize({ kind: "order", id: o.id }), label: orderLabel(o), indent: true });
+  }
+  return out;
+}
