@@ -17,10 +17,15 @@ export default async function AdminVinScanPage({
   const initialVin = normalizeVin(sp?.vin ?? "");
 
   return (
-    <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">
+    <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu>
-        <h1 className="text-[17px] font-semibold tracking-tight text-[var(--color-apple-text)]">VIN SCAN</h1>
-        <p className="mt-0.5 max-w-2xl text-[11.5px] leading-snug text-[#8e8e93]">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+          Avoti
+        </p>
+        <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
+          VIN SCAN
+        </h1>
+        <p className="mt-1 max-w-2xl text-[13px] leading-snug text-[var(--color-provin-muted)]">
           VIN un/vai numurs. Serveris nolasa visus bezmaksas avotus, saglabā rezultātu un atver avotus jau ar VIN.
         </p>
       </AdminDashboardHeaderWithMenu>

@@ -387,12 +387,13 @@ export function AdminVinScanPanel({
   }, [byId, scannedAt, clean, onSnapshot, plates]);
 
   return (
-    <section className="space-y-2" aria-busy={busy}>
-      <div className="flex flex-wrap items-center gap-2 px-1">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Avoti</h2>
-          <p className="text-[11.5px] leading-snug text-[#8e8e93]">
-            {busy ? "Skenē…" : "Serveris nolasa visus bezmaksas avotus. Captcha un Cloudflare iet caur CapSolver."}
+    <section className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]" aria-busy={busy}>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-2">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">Avotu skenēšana</p>
+          <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
+            Serveris nolasa visus bezmaksas avotus uzreiz un saglabā rezultātu pie VIN. Cilne atver jau aizpildītu meklēšanu.
+            Captcha un Cloudflare iet caur esošo risinātāju, bez apstiprinājuma. Maksas pirkums paliek pasūtījuma darba zonā.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -401,7 +402,7 @@ export function AdminVinScanPanel({
               type="button"
               disabled={!canScan || busy}
               onClick={() => void retryUnknown()}
-              className="inline-flex h-9 items-center rounded-[10px] bg-[#e9e9ee] px-3 text-[13px] font-medium text-[#3a3a3c] disabled:opacity-50"
+              className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] disabled:opacity-50 dark:border-slate-600"
             >
               Atkārtot neizdevušos
             </button>
@@ -411,31 +412,47 @@ export function AdminVinScanPanel({
               <button
                 type="button"
                 onClick={() => void copyExport("text")}
-                className="inline-flex h-9 items-center rounded-[10px] bg-[#e9e9ee] px-3 text-[13px] font-medium text-[#3a3a3c]"
+                className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-slate-600"
               >
                 Kopēt
               </button>
               <button
                 type="button"
                 onClick={() => void copyExport("json")}
-                className="inline-flex h-9 items-center rounded-[10px] bg-[#e9e9ee] px-3 text-[13px] font-medium text-[#3a3a3c]"
+                className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-slate-600"
               >
                 JSON
               </button>
             </>
           ) : null}
+          <button
+            type="button"
+            disabled={!canScan || busy}
+            onClick={() => void scan(false)}
+            className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
+          >
+            {busy ? "Skenē…" : "Skenēt avotus"}
+          </button>
+          <button
+            type="button"
+            disabled={!canScan || busy}
+            onClick={() => void scan(true)}
+            className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] disabled:opacity-50 dark:border-slate-600"
+          >
+            Skenēt no jauna
+          </button>
         </div>
       </div>
       {history.length > 0 ? (
-        <div className="flex flex-wrap gap-1 px-1">
+        <div className="mx-2 mb-1 flex flex-wrap gap-1">
           {history.map((entry) => (
             <a
               key={`${entry.vin}-${entry.scannedAt}`}
               href={`/admin/vin-scan?vin=${encodeURIComponent(entry.vin)}`}
-              className={`rounded-full px-2 py-0.5 font-mono text-[11px] ${
+              className={`rounded-md border px-1.5 py-0.5 font-mono text-[9px] ${
                 entry.vin === clean
-                  ? "bg-[var(--color-provin-accent-soft)] text-[var(--color-apple-text)]"
-                  : "bg-[#e9e9ee] text-[#8e8e93]"
+                  ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40"
+                  : "border-slate-200 text-[var(--color-provin-muted)] hover:bg-black/[0.04] dark:border-slate-700"
               }`}
               title={`Skenēts ${formatVinScanScannedAt(entry.scannedAt)}`}
             >
@@ -445,27 +462,29 @@ export function AdminVinScanPanel({
         </div>
       ) : null}
       {facts ? (
-        <div className="overflow-hidden rounded-xl bg-white px-3.5 py-2.5 shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
-          <p className="text-[15px] font-medium text-[var(--color-apple-text)]">
-            {[facts.vehicleLine, facts.mileageLine].filter(Boolean).join(" · ") || "Kopsavilkums"}
+        <div className="mx-2 mb-1 space-y-0.5 rounded-lg border border-[var(--admin-border-subtle)] px-2 py-1.5">
+          <p className="text-[11px] font-semibold text-[var(--color-apple-text)]">
+            {[facts.vehicleLine, facts.mileageLine].filter(Boolean).join(" · ")}
           </p>
           {facts.mileageRollback ? (
-            <p className="mt-0.5 text-[12px] font-semibold text-red-600">Nobraukuma nesakritība: vēlāks datums ar mazāku km.</p>
+            <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">
+              Nobraukuma nesakritība: vēlāks datums ar mazāku km.
+            </p>
           ) : null}
           {facts.wanted.length ? (
-            <p className="mt-0.5 text-[12px] font-semibold text-red-600">Meklēšanā / zagts: {facts.wanted.join(", ")}</p>
+            <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">Meklēšanā / zagts: {facts.wanted.join(", ")}</p>
           ) : null}
           {facts.recalls.length ? (
-            <p className="mt-0.5 text-[12px] text-[var(--color-apple-text)]">Atsaukumi: {facts.recalls.join("; ")}</p>
+            <p className="text-[10px] text-[var(--color-apple-text)]">Atsaukumi: {facts.recalls.join("; ")}</p>
           ) : null}
           {facts.auctionPhotos.length ? (
-            <p className="mt-0.5 text-[12px] text-[var(--color-apple-text)]">Izsoles foto: {facts.auctionPhotos.join("; ")}</p>
+            <p className="text-[10px] text-[var(--color-apple-text)]">Izsoles foto: {facts.auctionPhotos.join("; ")}</p>
           ) : null}
           {facts.registrations.length ? (
-            <p className="mt-0.5 text-[12px] text-[var(--color-apple-text)]">Reģistrācijas: {facts.registrations.join(", ")}</p>
+            <p className="text-[10px] text-[var(--color-apple-text)]">Reģistrācijas: {facts.registrations.join(", ")}</p>
           ) : null}
           {scannedAt ? (
-            <p className="mt-0.5 text-[11.5px] text-[#8e8e93]">
+            <p className="text-[10px] text-[var(--color-provin-muted)]">
               Skenēts: {formatVinScanScannedAt(scannedAt)}
               {cached ? " · saglabāts" : ""}
               {stale ? " · kešs vecāks par 12 h" : ""}
@@ -473,42 +492,46 @@ export function AdminVinScanPanel({
           ) : null}
         </div>
       ) : null}
-      {!canScan ? <p className="px-1 text-[11.5px] text-[#8e8e93]">Ievadi VIN vai vismaz vienu numuru.</p> : null}
-      {scriptNote ? <p className="px-1 text-[11.5px] text-[#8e8e93]">{scriptNote}</p> : null}
-      {error ? <p className="px-1 text-[11.5px] text-red-600">{error}</p> : null}
-      {copyNote ? <p className="px-1 text-[11.5px] text-[#8e8e93]">{copyNote}</p> : null}
-      <ul className="overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
+      {!canScan ? <p className="px-2.5 pb-2 text-[10px] text-[var(--color-provin-muted)]">Ievadi VIN vai vismaz vienu numuru.</p> : null}
+      {scriptNote ? <p className="px-2.5 pb-1 text-[10px] text-[var(--color-provin-muted)]">{scriptNote}</p> : null}
+      {error ? <p className="px-2.5 pb-2 text-[10px] text-rose-600 dark:text-rose-300">{error}</p> : null}
+      {copyNote ? <p className="px-2.5 pb-1 text-[10px] text-[var(--color-provin-muted)]">{copyNote}</p> : null}
+      <ul className="grid grid-cols-2 gap-1 px-2 pb-2 sm:grid-cols-4">
         {CATALOG.map((item) => {
           const row = byId[item.id];
           const status = busy && !row ? "checking" : busy && row?.status === "unknown" ? "checking" : (row?.status ?? (busy ? "checking" : "idle"));
           const active = openId === item.id;
           const href = canScan ? resolveVinScanOpenUrl(item, clean, row?.openUrl, plates) : "";
           return (
-            <li key={item.id} className="border-b border-[#e5e5ea] last:border-b-0">
+            <li key={item.id}>
               <div
-                className={`flex min-h-[52px] min-w-0 items-stretch ${
-                  vinScanWantedTileClass(item.id, status) || (active ? "bg-[var(--color-provin-accent-soft)]/40" : "")
+                className={`flex min-w-0 items-stretch rounded-lg border ${
+                  vinScanWantedTileClass(item.id, status) ||
+                  (active
+                    ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
+                    : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]")
                 }`}
               >
                 <button
                   type="button"
                   title={item.hint}
                   onClick={() => setOpenId(active ? null : item.id)}
-                  className="flex min-w-0 flex-1 items-center gap-2.5 py-2 pl-3.5 pr-1 text-left transition hover:bg-black/[0.02]"
+                  className="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1 text-left"
                 >
                   <span className={`h-2 w-2 shrink-0 rounded-full ${statusDot(item.id, status)}`} aria-hidden />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[15px] font-medium text-[var(--color-apple-text)]">{item.label}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[10px] font-semibold text-[var(--color-apple-text)]">{item.label}</span>
                     <span
-                      className={`block truncate text-[11.5px] ${
-                        isVinScanWantedSource(item.id) && status === "found" ? "font-semibold text-red-600" : "text-[#8e8e93]"
+                      className={`block truncate text-[9px] ${
+                        isVinScanWantedSource(item.id) && status === "found"
+                          ? "font-semibold text-rose-700 dark:text-rose-300"
+                          : "text-[var(--color-provin-muted)]"
                       }`}
                     >
                       {statusLabel(item.id, status)}
                       {status !== "checking" && row?.summary ? ` · ${row.summary}` : ""}
                     </span>
                   </span>
-                  <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.04em] text-[#aeaeb2]">{item.country}</span>
                 </button>
                 {href ? (
                   <a
@@ -518,59 +541,69 @@ export function AdminVinScanPanel({
                     title={`Atvērt ${item.label}`}
                     aria-label={`Atvērt ${item.label}`}
                     data-provin-handoff-vin={clean || undefined}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center self-center rounded-full text-[var(--color-provin-accent)] hover:bg-black/[0.04]"
+                    className="inline-flex shrink-0 items-center px-1.5 text-[var(--color-provin-accent)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                   >
-                    <ExternalLink className="h-4 w-4" aria-hidden />
+                    <ExternalLink className="h-3 w-3" aria-hidden />
                   </a>
                 ) : (
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center self-center text-[#c7c7cc]" aria-hidden>
-                    <ExternalLink className="h-4 w-4" />
+                  <span
+                    className="inline-flex shrink-0 items-center px-1.5 text-slate-300 dark:text-slate-600"
+                    title="Ievadi VIN, lai atvērtu avotu"
+                    aria-hidden
+                  >
+                    <ExternalLink className="h-3 w-3" />
                   </span>
                 )}
               </div>
-              {active && open ? (
-                <div className="border-t border-[#e5e5ea] bg-[#f8f8f9] px-3.5 py-2.5">
-                  <p
-                    className={`text-[13px] font-medium ${
-                      isVinScanWantedSource(open.id) && open.status === "found" ? "text-red-600" : "text-[var(--color-apple-text)]"
-                    }`}
-                  >
-                    {open.label} · {statusLabel(open.id, busy ? "checking" : open.status)}
-                  </p>
-                  <p
-                    className={`mt-0.5 text-[12.5px] leading-snug ${
-                      isVinScanWantedSource(open.id) && open.status === "found" ? "font-semibold text-red-600" : "text-[var(--color-apple-text)]"
-                    }`}
-                  >
-                    {open.summary}
-                  </p>
-                  {open.detail ? (
-                    <p className="mt-0.5 whitespace-pre-line text-[12px] leading-snug text-[#8e8e93]">{open.detail}</p>
-                  ) : null}
-                  {open.media?.photoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={open.media.photoUrl} alt="" className="mt-1.5 h-16 w-24 rounded-lg object-cover" />
-                  ) : null}
-                  {openHref ? (
-                    <a
-                      href={openHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      data-provin-handoff-vin={clean || undefined}
-                      className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-medium text-[var(--color-provin-accent)]"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-                      Atvērt avotu
-                    </a>
-                  ) : null}
-                </div>
-              ) : null}
             </li>
           );
         })}
       </ul>
+      {open ? (
+        <div className="mx-2 mb-2 rounded-lg border border-[var(--admin-border-subtle)] px-2 py-1.5">
+          <p
+            className={`text-[10px] font-semibold ${
+              isVinScanWantedSource(open.id) && open.status === "found"
+                ? "text-rose-700 dark:text-rose-300"
+                : "text-[var(--color-apple-text)]"
+            }`}
+          >
+            {open.label} · {statusLabel(open.id, busy ? "checking" : open.status)}
+          </p>
+          <p
+            className={`mt-0.5 text-[10px] leading-snug ${
+              isVinScanWantedSource(open.id) && open.status === "found"
+                ? "font-semibold text-rose-700 dark:text-rose-300"
+                : "text-[var(--color-apple-text)]"
+            }`}
+          >
+            {open.summary}
+          </p>
+          {open.detail ? (
+            <p className="mt-0.5 whitespace-pre-line text-[10px] leading-snug text-[var(--color-provin-muted)]">{open.detail}</p>
+          ) : null}
+          {open.media?.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={open.media.photoUrl} alt="" className="mt-1 h-16 w-24 rounded object-cover" />
+          ) : null}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            {openHref ? (
+              <a
+                href={openHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-provin-handoff-vin={clean || undefined}
+                className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" aria-hidden />
+                Atvērt avotu
+              </a>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       {counts ? (
-        <p className="px-1 text-[11.5px] text-[#8e8e93]">
+        <p className="px-2.5 pb-2 text-[9px] text-[var(--color-provin-muted)]">
           {`Ir dati: ${counts.found}. Nav: ${counts.none}. Neizdevās: ${counts.unknown}. Vajag ievadi: ${counts.needs_input}. Nav atslēgas: ${counts.skipped}.`}
         </p>
       ) : null}
