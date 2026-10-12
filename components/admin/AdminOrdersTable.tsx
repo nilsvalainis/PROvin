@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
@@ -408,7 +408,10 @@ export function AdminOrdersTable({
   orderDetailHrefBase = "/admin/orders",
   orderEditsLocalStorageKeyPrefix = "provin-admin-order-edits-v1-",
   consultationList = false,
+  toolbarEnd,
 }: {
+  /** Papildu vadīklas tās pašas rīkjoslas labajā pusē (PRO saraksts: summas slēdzis, „＋ Jauns”). */
+  toolbarEnd?: ReactNode;
   orders: AdminOrdersTableRow[];
   /** Piem. `/admin/konsultacijas` — saite „Atvērt”. */
   orderDetailHrefBase?: string;
@@ -489,53 +492,37 @@ export function AdminOrdersTable({
   const detailBaseNormalized = orderDetailHrefBase.replace(/\/$/, "");
   const hug = "w-[1%] whitespace-nowrap";
 
-  const filterChip =
-    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold transition";
 
   return (
     <>
-      <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <span className="text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
-          Rezultāts
-        </span>
-        <button
-          type="button"
-          className={`${filterChip} ${
-            colorFilter === "all"
-              ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/50 text-[var(--color-provin-accent)]"
-              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-          }`}
-          onClick={() => setColorFilter("all")}
-        >
-          Visi
-        </button>
-        {AUDIT_RESULT_COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            className={`${filterChip} ${
-              colorFilter === c
-                ? "border-slate-300 bg-slate-50 text-[var(--color-apple-text)]"
-                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-            }`}
-            onClick={() => setColorFilter(c)}
-          >
-            <span className={`h-2 w-2 rounded-full ${AUDIT_RESULT_COLOR_DOT_CLASS[c]}`} aria-hidden />
-            {AUDIT_RESULT_COLOR_LABEL_LV[c]}
-          </button>
-        ))}
-        <button
-          type="button"
-          className={`${filterChip} ${
-            colorFilter === "none"
-              ? "border-slate-300 bg-slate-50 text-[var(--color-apple-text)]"
-              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-          }`}
-          onClick={() => setColorFilter("none")}
-        >
-          <span className="h-2 w-2 rounded-full bg-slate-200 ring-1 ring-slate-300/80" aria-hidden />
-          Bez krāsas
-        </button>
+      {/* V1: viena slaida rinda — rezultāta segmenti kreisi, papildu vadīklas labi. */}
+      <div className="mt-2 flex items-center gap-2">
+        <div role="tablist" aria-label="Rezultāts" className="flex min-w-0 overflow-x-auto rounded-[9px] bg-[#e9e9ee] p-[2px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {(["all", ...AUDIT_RESULT_COLORS, "none"] as const).map((c) => {
+            const on = colorFilter === c;
+            const label = c === "all" ? "Visi" : c === "none" ? "Bez" : AUDIT_RESULT_COLOR_LABEL_LV[c];
+            return (
+              <button
+                key={c}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                aria-label={c === "none" ? "Bez krāsas" : label}
+                title={c === "none" ? "Bez krāsas" : label}
+                onClick={() => setColorFilter(c)}
+                className={`inline-flex h-7 shrink-0 items-center gap-1.5 rounded-[7px] px-2.5 text-[12.5px] transition sm:px-3 ${on ? "bg-white font-semibold text-[var(--color-apple-text)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-[#3a3a3c]"}`}
+              >
+                {c === "all" ? null : c === "none" ? (
+                  <span className="h-2 w-2 rounded-full bg-slate-200 ring-1 ring-slate-300/80" aria-hidden />
+                ) : (
+                  <span className={`h-2 w-2 rounded-full ${AUDIT_RESULT_COLOR_DOT_CLASS[c]}`} aria-hidden />
+                )}
+                <span className={c === "all" ? "" : "hidden sm:inline"}>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {toolbarEnd ? <div className="ml-auto flex shrink-0 items-center gap-1.5">{toolbarEnd}</div> : null}
       </div>
 
       {/* Telefonā deviņu kolonnu tabula nav lasāma, tāpēc tā pati rinda ir karte.
