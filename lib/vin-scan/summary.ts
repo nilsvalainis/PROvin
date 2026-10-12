@@ -1,4 +1,12 @@
-import type { VinScanIndicator, VinScanMileage, VinScanVehicle } from "@/lib/vin-scan/types";
+import type { VinScanIndicator, VinScanMileage, VinScanStatus, VinScanVehicle } from "@/lib/vin-scan/types";
+
+export type VinScanOverviewRow = {
+  id: string;
+  status: VinScanStatus;
+  label?: string;
+  vehicle?: VinScanVehicle;
+  mileage?: VinScanMileage[];
+};
 
 const RIGA = "Europe/Riga";
 
@@ -7,12 +15,15 @@ export function formatVinScanScannedAt(iso: string): string {
   if (Number.isNaN(d.getTime())) return "";
   return new Intl.DateTimeFormat("lv-LV", {
     timeZone: RIGA,
-    dateStyle: "short",
-    timeStyle: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(d);
 }
 
-export function pickVinScanVehicle(rows: readonly VinScanIndicator[]): VinScanVehicle | null {
+export function pickVinScanVehicle(rows: readonly VinScanOverviewRow[]): VinScanVehicle | null {
   const ranked = ["csdd", "nhtsa", "tjekbil", "esyn", "carinfo", "plc_auction"] as const;
   for (const id of ranked) {
     const row = rows.find((item) => item.id === id && item.status === "found" && item.vehicle);
@@ -22,7 +33,7 @@ export function pickVinScanVehicle(rows: readonly VinScanIndicator[]): VinScanVe
   return any?.vehicle ?? null;
 }
 
-export function collectVinScanMileage(rows: readonly VinScanIndicator[]): VinScanMileage[] {
+export function collectVinScanMileage(rows: readonly VinScanOverviewRow[]): VinScanMileage[] {
   const seen = new Set<string>();
   const out: VinScanMileage[] = [];
   for (const row of rows) {
@@ -49,7 +60,7 @@ export function formatVinScanMileageLine(rows: readonly VinScanMileage[]): strin
     .join("; ");
 }
 
-export function buildVinScanOverview(rows: readonly VinScanIndicator[]): { vehicleLine: string; mileageLine: string } {
+export function buildVinScanOverview(rows: readonly VinScanOverviewRow[]): { vehicleLine: string; mileageLine: string } {
   return {
     vehicleLine: formatVinScanVehicleLine(pickVinScanVehicle(rows)),
     mileageLine: formatVinScanMileageLine(collectVinScanMileage(rows)),
@@ -59,7 +70,7 @@ export function buildVinScanOverview(rows: readonly VinScanIndicator[]): { vehic
 export function formatVinScanExportText(opts: {
   vin: string;
   scannedAt: string;
-  rows: readonly VinScanIndicator[];
+  rows: readonly (VinScanOverviewRow & Partial<VinScanIndicator>)[];
 }): string {
   const overview = buildVinScanOverview(opts.rows);
   const when = formatVinScanScannedAt(opts.scannedAt);
@@ -78,7 +89,7 @@ export function formatVinScanExportText(opts: {
 export function formatVinScanExportJson(opts: {
   vin: string;
   scannedAt: string;
-  rows: readonly VinScanIndicator[];
+  rows: readonly (VinScanOverviewRow & Partial<VinScanIndicator>)[];
 }): string {
   return JSON.stringify(
     {

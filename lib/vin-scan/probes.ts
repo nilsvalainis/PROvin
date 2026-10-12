@@ -78,7 +78,7 @@ export async function probeEsyn(vin: string): Promise<VinScanIndicator> {
       headers: { accept: "application/json" },
     });
     const parsed = parseEsynChassis(chassis.status, chassis.text, vin);
-    if (!("vehicle" in parsed)) return done("esyn", vin, parsed);
+    if (!parsed.ok) return done("esyn", vin, parsed);
     const make = parsed.vehicle.make || "-";
     const list = await scanFetch(
       `https://findsynsrapport.esyn.dk/webapi/v1/chassismake/${encodeURIComponent(vin)}/${encodeURIComponent(make)}`,

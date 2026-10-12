@@ -54,20 +54,23 @@ export function parseTjekbilProbe(status: number, text: string): VinScanParse {
 
 export type EsynVehicle = { make: string; model: string; plate: string; chassis: string };
 
+export type EsynChassisHit = { ok: true; vehicle: EsynVehicle };
+export type EsynChassisMiss = VinScanParse & { ok: false };
+
 export function parseEsynChassis(
   status: number,
   text: string,
   vin: string,
-): { vehicle: EsynVehicle } | VinScanParse {
-  if (status === 404) return { status: "none", summary: "Nav Dānijas apskašu reģistrā" };
-  if (status !== 200) return { status: "unknown", summary: `esyn.dk atbildēja ar HTTP ${status}` };
+): EsynChassisHit | EsynChassisMiss {
+  if (status === 404) return { ok: false, status: "none", summary: "Nav Dānijas apskašu reģistrā" };
+  if (status !== 200) return { ok: false, status: "unknown", summary: `esyn.dk atbildēja ar HTTP ${status}` };
   let data: unknown;
   try {
     data = JSON.parse(text) as unknown;
   } catch {
-    return { status: "unknown", summary: "esyn.dk atbilde nav JSON" };
+    return { ok: false, status: "unknown", summary: "esyn.dk atbilde nav JSON" };
   }
-  if (asRecord(data).error) return { status: "none", summary: "Nav Dānijas apskašu reģistrā" };
+  if (asRecord(data).error) return { ok: false, status: "none", summary: "Nav Dānijas apskašu reģistrā" };
   const rows = Array.isArray(data) ? data : [data];
   const wanted = vin.trim().toUpperCase();
   const match =
@@ -77,8 +80,8 @@ export function parseEsynChassis(
   const chassis = str(match.chassisNumber).toUpperCase();
   const make = str(match.make);
   const model = str(match.model);
-  if (!chassis && !make && !model) return { status: "none", summary: "Nav Dānijas apskašu reģistrā" };
-  return { vehicle: { make, model, plate: str(match.registrationNumber), chassis } };
+  if (!chassis && !make && !model) return { ok: false, status: "none", summary: "Nav Dānijas apskašu reģistrā" };
+  return { ok: true, vehicle: { make, model, plate: str(match.registrationNumber), chassis } };
 }
 
 export function parseEsynInspections(text: string): VinScanParse & { count: number } {

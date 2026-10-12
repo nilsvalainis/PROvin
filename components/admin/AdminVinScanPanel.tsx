@@ -197,7 +197,7 @@ export function AdminVinScanPanel({
   const unknownBrowser = VIN_SCAN_BROWSER_CATALOG.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
   const canRetry = !busy && (unknownServer.length > 0 || unknownBrowser.length > 0);
 
-  function startBrowserScan(sourceIds = VIN_SCAN_BROWSER_CATALOG.map((item) => item.id)) {
+  function startBrowserScan(sourceIds: readonly string[] = VIN_SCAN_BROWSER_CATALOG.map((item) => item.id)) {
     if (sourceIds.length === 0) return;
     const ready = vinScanUserscriptMeetsMin(document.documentElement.getAttribute("data-provin-userscript") || "");
     if (!ready) {

@@ -32,7 +32,7 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(VIN_SCAN_BROWSER_IDS).toContain("autodna_preview");
     expect(src).toContain('if (id === "checkcar_vin")');
     expect(src).toContain('if (id === "plc_auction")');
-    expect(src).toContain("Sorry, could not find what you were looking for");
+    expect(src).toContain("sorry,\\s*could not find what you were looking for");
     expect(src).toContain("Nav ierakstu");
     expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).toContain("plc_auction");
     expect(src).toContain('id === "plc_auction"');

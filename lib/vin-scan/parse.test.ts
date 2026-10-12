@@ -67,7 +67,7 @@ describe("esyn", () => {
       ]),
       DK_VIN,
     );
-    expect(chassis).toMatchObject({ vehicle: { make: "Renault", model: "Captur", plate: "AB12345" } });
+    expect(chassis).toMatchObject({ ok: true, vehicle: { make: "Renault", model: "Captur", plate: "AB12345" } });
     const inspections = parseEsynInspections(
       JSON.stringify({
         inspection: [
@@ -80,7 +80,7 @@ describe("esyn", () => {
     expect(inspections.summary).toContain("izturēta");
     expect(inspections.detail).toContain("385");
     expect(inspections.detail).toContain("320");
-    if (!("vehicle" in chassis)) throw new Error("expected vehicle");
+    if (!chassis.ok) throw new Error("expected vehicle");
     const merged = esynVehicleSummary(chassis.vehicle, inspections);
     expect(merged.status).toBe("found");
     expect(merged.summary).toContain("Renault Captur");
@@ -88,8 +88,8 @@ describe("esyn", () => {
 
   it("neatpazīts VIN ir tukšs avots", () => {
     const miss = parseEsynChassis(404, JSON.stringify({ error: "Resultatet findes ikke" }), DK_VIN);
-    expect("vehicle" in miss).toBe(false);
-    if ("vehicle" in miss) return;
+    expect(miss.ok).toBe(false);
+    if (miss.ok) return;
     expect(miss.status).toBe("none");
   });
 });

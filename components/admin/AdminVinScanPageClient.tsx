@@ -4,8 +4,13 @@ import { useMemo, useState } from "react";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import { AdminVinScanPanel } from "@/components/admin/AdminVinScanPanel";
 import { isValidPlateNumber, isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
+import type { CsddTechDataResult } from "@/lib/csdd-tech-data";
 import { formatCsddPlateLookup } from "@/lib/vin-scan/parse";
 import type { VinScanPaidKeys } from "@/lib/vin-scan/types";
+
+function isCsddTechDataResult(v: unknown): v is CsddTechDataResult {
+  return v != null && typeof v === "object" && "found" in v;
+}
 
 const inp =
   "min-w-0 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -39,8 +44,8 @@ export function AdminVinScanPageClient({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ nr1: plateValue }),
       });
-      const data = (await res.json().catch(() => null)) as Parameters<typeof formatCsddPlateLookup>[0] | { error?: string } | null;
-      if (!res.ok || !data || "error" in data) {
+      const data: unknown = await res.json().catch(() => null);
+      if (!res.ok || !isCsddTechDataResult(data)) {
         const next = { ok: false, vin: "", make: "", model: "", year: "", status: res.status === 401 ? "Nav admin sesijas" : "CSDD vaicājums neizdevās" };
         setPlate(next);
         return next;
