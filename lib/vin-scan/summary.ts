@@ -1,4 +1,5 @@
 import type { VinScanIndicator, VinScanMileage, VinScanStatus, VinScanVehicle } from "@/lib/vin-scan/types";
+import { isVinScanWantedSource } from "@/lib/vin-scan/wanted";
 
 export type VinScanOverviewRow = {
   id: string;
@@ -81,7 +82,15 @@ export function formatVinScanExportText(opts: {
     `Nobraukums: ${overview.mileageLine}`,
     "",
     "Avoti:",
-    ...opts.rows.map((row) => `- ${row.label} (${row.country}): ${row.status} · ${row.summary}`),
+    ...opts.rows.map((row) => {
+      const wanted =
+        isVinScanWantedSource(row.id) && (row.status === "found" || row.status === "none")
+          ? row.status === "found"
+            ? "meklēšanā"
+            : "nav meklēšanā"
+          : row.status;
+      return `- ${row.label} (${row.country}): ${wanted} · ${row.summary}`;
+    }),
   ];
   return lines.filter((line, i) => line !== "" || i === 4).join("\n").trim();
 }

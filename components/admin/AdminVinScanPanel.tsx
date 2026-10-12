@@ -11,6 +11,12 @@ import {
 } from "@/lib/vin-scan/catalog";
 import { buildVinScanOverview, formatVinScanExportJson, formatVinScanExportText, formatVinScanScannedAt } from "@/lib/vin-scan/summary";
 import { countVinScanStatuses, VIN_SCAN_STATUSES, type VinScanIndicator, type VinScanPaidKeys, type VinScanStatus } from "@/lib/vin-scan/types";
+import {
+  isVinScanWantedSource,
+  vinScanWantedDotClass,
+  vinScanWantedStatusLabel,
+  vinScanWantedTileClass,
+} from "@/lib/vin-scan/wanted";
 
 type ScanRow = {
   id: string;
@@ -52,6 +58,16 @@ const STATUS_LV: Record<VinScanStatus | "idle" | "checking", string> = {
   idle: "Gaida",
   checking: "Pārbauda…",
 };
+
+function statusLabel(id: string, status: VinScanStatus | "idle" | "checking"): string {
+  const wanted = isVinScanWantedSource(id) ? vinScanWantedStatusLabel(status) : "";
+  return wanted || STATUS_LV[status];
+}
+
+function statusDot(id: string, status: VinScanStatus | "idle" | "checking"): string {
+  const wanted = isVinScanWantedSource(id) ? vinScanWantedDotClass(status) : "";
+  return wanted || DOT[status];
+}
 
 function isStatus(v: unknown): v is VinScanStatus {
   return typeof v === "string" && (VIN_SCAN_STATUSES as readonly string[]).includes(v);
@@ -395,16 +411,23 @@ export function AdminVinScanPanel({
                 title={item.hint}
                 onClick={() => setOpenId(active ? null : item.id)}
                 className={`flex w-full min-w-0 items-center gap-1.5 rounded-lg border px-1.5 py-1 text-left transition ${
-                  active
+                  vinScanWantedTileClass(item.id, status) ||
+                  (active
                     ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
-                    : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                    : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]")
                 }`}
               >
-                <span className={`h-2 w-2 shrink-0 rounded-full ${DOT[status]}`} aria-hidden />
+                <span className={`h-2 w-2 shrink-0 rounded-full ${statusDot(item.id, status)}`} aria-hidden />
                 <span className="min-w-0">
                   <span className="block truncate text-[10px] font-semibold text-[var(--color-apple-text)]">{item.label}</span>
-                  <span className="block truncate text-[9px] text-[var(--color-provin-muted)]">
-                    {STATUS_LV[status]}
+                  <span
+                    className={`block truncate text-[9px] ${
+                      isVinScanWantedSource(item.id) && status === "found"
+                        ? "font-semibold text-rose-700 dark:text-rose-300"
+                        : "text-[var(--color-provin-muted)]"
+                    }`}
+                  >
+                    {statusLabel(item.id, status)}
                     {status !== "checking" && row?.summary ? ` · ${row.summary}` : ""}
                   </span>
                 </span>
@@ -415,10 +438,24 @@ export function AdminVinScanPanel({
       </ul>
       {open ? (
         <div className="mx-2 mb-2 rounded-lg border border-[var(--admin-border-subtle)] px-2 py-1.5">
-          <p className="text-[10px] font-semibold text-[var(--color-apple-text)]">
-            {open.label} · {STATUS_LV[checking.includes(open.id) ? "checking" : open.status]}
+          <p
+            className={`text-[10px] font-semibold ${
+              isVinScanWantedSource(open.id) && open.status === "found"
+                ? "text-rose-700 dark:text-rose-300"
+                : "text-[var(--color-apple-text)]"
+            }`}
+          >
+            {open.label} · {statusLabel(open.id, checking.includes(open.id) ? "checking" : open.status)}
           </p>
-          <p className="mt-0.5 text-[10px] leading-snug text-[var(--color-apple-text)]">{open.summary}</p>
+          <p
+            className={`mt-0.5 text-[10px] leading-snug ${
+              isVinScanWantedSource(open.id) && open.status === "found"
+                ? "font-semibold text-rose-700 dark:text-rose-300"
+                : "text-[var(--color-apple-text)]"
+            }`}
+          >
+            {open.summary}
+          </p>
           {open.detail ? (
             <p className="mt-0.5 whitespace-pre-line text-[10px] leading-snug text-[var(--color-provin-muted)]">{open.detail}</p>
           ) : null}

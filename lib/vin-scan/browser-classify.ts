@@ -4,6 +4,7 @@
  */
 import type { VinScanBrowserId } from "@/lib/vin-scan/catalog";
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
+import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
 import type { VinScanStatus } from "@/lib/vin-scan/types";
 
 export type BrowserProbeRead = {
@@ -96,6 +97,11 @@ export function classifyBrowserProbe(id: VinScanBrowserId, text: string, vin: st
     }
     case "plc_auction": {
       const parsed = classifyPlcAuction(text);
+      return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped">, summary: parsed.summary } : null;
+    }
+    case "vp_wanted":
+    case "lt_itpr": {
+      const parsed = classifyPoliceWanted(id, text, vin);
       return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped">, summary: parsed.summary } : null;
     }
     default:

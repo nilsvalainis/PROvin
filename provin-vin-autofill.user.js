@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.11.0
+// @version      1.12.0
 // @description  Admin MENU VIN auto-fill un ātrās pārbaudes zondes. CarVertical pogas nespied, ja operators nav apstiprinājis maksas pirkumu.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -43,6 +43,10 @@
 // @match        https://auto.vin/*
 // @match        https://plc.auction/*
 // @match        https://www.plc.auction/*
+// @match        https://www.epolicija.lt/*
+// @match        https://epolicija.lt/*
+// @match        https://www.vp.gov.lv/*
+// @match        https://vp.gov.lv/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
@@ -56,7 +60,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.11.0";
+  const SCRIPT_VERSION = "1.12.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -471,6 +475,8 @@
       auto_vin: "https://www.auto.vin/en/checkout?vin=" + v,
       checkcar_vin: "https://checkcar.vin/report/check/" + v,
       plc_auction: "https://plc.auction/",
+      vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli",
+      lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
     };
     return SCAN_URLS[id] || "";
   }
@@ -487,6 +493,8 @@
     if (name === "auto.vin" || name.endsWith(".auto.vin")) return "auto_vin";
     if (name.endsWith("checkcar.vin")) return "checkcar_vin";
     if (name.endsWith("plc.auction")) return "plc_auction";
+    if (name.endsWith("vp.gov.lv")) return "vp_wanted";
+    if (name.endsWith("epolicija.lt")) return "lt_itpr";
     return "";
   }
 
@@ -617,6 +625,23 @@
           [])[1] || "";
       const bits = [title, location.replace(/\s+/g, " ").trim(), String(saleDate).trim(), String(winningBid).replace(/\s+/g, " ").trim()].filter(Boolean);
       return { status: "found", summary: bits.join(" · ") };
+    }
+    if (id === "vp_wanted" || id === "lt_itpr") {
+      if (/lapa netika atrasta|lapa nav atrasta|page not found|404 not found|šāda lapa neeksistē/i.test(text)) {
+        return { status: "unknown", summary: "Publiskā lapa nav pieejama" };
+      }
+      if (/duomenų nerasta|įrašų nėra|įrašų nerasta|nerasta įrašų|pagal (jūsų )?nurodytus|neieškoma|nav meklēšanā|nav šajā sarakstā|sarakstā nav|transportlīdzeklis nav meklēšanā/i.test(text)) {
+        return { status: "none", summary: "Nav meklēšanā" };
+      }
+      if (/paieškos priežast|paiešką paskelb|ieškoma transporto priemon|pavogt|vagyst|meklēšanā izsludin|izsludināts meklēšanā|\bnozagts\b|stolen vehicle|wanted vehicle/i.test(text)) {
+        const reason =
+          (text.match(/paieškos priežast(?:is)?:?\s*([^\n.]{3,80})/i) ||
+            text.match(/meklēšanas iemesls:?\s*([^\n.]{3,80})/i) ||
+            [])[1] || "";
+        const extra = String(reason).replace(/\s+/g, " ").trim();
+        return { status: "found", summary: extra ? "Meklēšanā. " + extra : "Meklēšanā" };
+      }
+      return null;
     }
     return null;
   }
@@ -773,6 +798,27 @@
     return null;
   }
 
+  function findPoliceWantedInput() {
+    const knr = document.querySelector("input[name='knr'], input#knr");
+    if (knr && isVisible(knr) && !knr.disabled) return knr;
+    const nodes = document.querySelectorAll("input, textarea");
+    for (const el of nodes) {
+      if (!isVisible(el) || el.disabled) continue;
+      if (el.type === "password" || el.type === "hidden" || el.type === "email" || el.type === "checkbox") continue;
+      const blob = (
+        (el.name || "") +
+        " " +
+        (el.id || "") +
+        " " +
+        (el.getAttribute("placeholder") || "") +
+        " " +
+        (el.getAttribute("aria-label") || "")
+      ).toLowerCase();
+      if (/vin|chassis|kebul|kėbul|sasij|šasij|identifikav|knr/.test(blob)) return el;
+    }
+    return findScanVinInput();
+  }
+
   function findPlcSearchInput() {
     const nodes = document.querySelectorAll("input, textarea");
     for (const el of nodes) {
@@ -819,7 +865,7 @@
 
   function clickSafeCheck() {
     const pay = /pirkt|buy|apmaks|checkout|pay\b|zamów|koupit|order|subscribe|pasūtīt/i;
-    const want = /pārbaudi|pārbaudīt|check|verify|search|meklēt|sākt/i;
+    const want = /pārbaudi|pārbaudīt|check|verify|search|meklēt|sākt|ieškoti/i;
     const buttons = Array.from(document.querySelectorAll("button, [role='button'], input[type='submit']"));
     const hit = buttons.find((b) => {
       if (!isVisible(b) || b.disabled) return false;
@@ -864,7 +910,12 @@
         lastText = text;
         stableTicks = 0;
       }
-      const input = id === "plc_auction" ? findPlcSearchInput() : findScanVinInput();
+      const input =
+        id === "plc_auction"
+          ? findPlcSearchInput()
+          : id === "vp_wanted" || id === "lt_itpr"
+            ? findPoliceWantedInput()
+            : findScanVinInput();
       if (input) {
         const current = String(input.value || "")
           .replace(/[\s-]/g, "")
@@ -873,13 +924,19 @@
         filled = true;
       }
       const mayClick =
-        blocker !== "captcha" && (id === "autodna_preview" || id === "vininspect" || id === "bid_cars" || id === "plc_auction");
+        blocker !== "captcha" &&
+        (id === "autodna_preview" ||
+          id === "vininspect" ||
+          id === "bid_cars" ||
+          id === "plc_auction" ||
+          id === "vp_wanted" ||
+          id === "lt_itpr");
       if (mayClick && filled && !clicked && ticks >= 3) {
         clicked = clickSafeCheck();
-        if (!clicked && id === "plc_auction" && input && typeof input.form?.requestSubmit === "function") {
+        if (!clicked && (id === "plc_auction" || id === "vp_wanted" || id === "lt_itpr") && input && typeof input.form?.requestSubmit === "function") {
           input.form.requestSubmit();
           clicked = true;
-        } else if (!clicked && id === "plc_auction" && input) {
+        } else if (!clicked && (id === "plc_auction" || id === "vp_wanted" || id === "lt_itpr") && input) {
           input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
           clicked = true;
         }
