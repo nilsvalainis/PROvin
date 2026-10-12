@@ -5,7 +5,8 @@
  * Datus ņem no SPA XHR `GET /v1/car-search/cars/search/<searchId>`
  * (`{totalHits, hits[], aggregations, serverTime}`). Cenas ir centos. `firstRegistrationDate`,
  * `auctionStartDatetime` un `auctionEndDatetime` ir ms. Detaļu saite lieto `stockNumber`
- * (`/en/app/merchant/car/BW03512`), ne skaitlisko `id`. VIN sarakstā nav.
+ * (`/en/app/merchant/car/BW03512`), ne skaitlisko `id`. VIN saraksta API parasti nav;
+ * ja hits[] tomēr iedod `vin` / `vinNumber`, to mapējam.
  * `img-pa.auto1.com` strādā ar provin.lv Referer, tāpēc admin lapā no-referrer nav vajadzīgs.
  */
 import { isoDate, makeItem, num, str } from "../items.mjs";
@@ -169,9 +170,17 @@ export function mapAuto1Car(car, nowMs = Date.now()) {
   const sourceCountry = str(car.sourceCountry ?? (finance && typeof finance === "object" ? finance.sourceCountryCode : ""));
   const owningCountry = str(car.owningCountry);
   const imageUrls = (Array.isArray(car.images) ? car.images : []).map((img) => str(img?.fullUrl ?? img?.url ?? img)).filter(Boolean);
+  const vin = str(car.vin) || str(car.vinNumber) || str(car.vehicleIdentificationNumber) || str(car.VIN);
+  const color = str(car.colorName ?? car.colourName ?? car.exteriorColor ?? car.color ?? car.bodyColor);
+  const bodyType = str(car.bodyType ?? car.bodyStyle ?? car.category);
+  const doorCount = str(car.doorCount ?? car.doors ?? car.numberOfDoors);
   return {
     ...item,
     stockNumber: stock,
+    vin: vin || undefined,
+    color: color || undefined,
+    bodyType: bodyType || undefined,
+    doorCount: doorCount || undefined,
     expectedPrice: eurosFromCents(car.expectedPriceDisplay),
     salesVatType: num(car.salesVatType),
     taxDeduction: typeof car.taxDeduction === "boolean" ? car.taxDeduction : null,

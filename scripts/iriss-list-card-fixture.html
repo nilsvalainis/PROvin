@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --color-apple-text: #1d1d1f; --color-provin-muted: #6e6e73; --color-provin-accent: #007aff; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; background: #F8F8F9; color: #1d1d1f; }
+  </style>
+</head>
+<body class="p-5">
+<p class="mb-3 rounded-lg bg-amber-50 px-3 py-1.5 text-[11px] text-amber-900">IRISS LIST kartīte · fixture (tās pašas Tailwind klases kā IrissListingVehicleCard)</p>
+<p class="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Budžetā ietilpst</p>
+<article class="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm sm:flex-row sm:items-stretch sm:gap-4 sm:overflow-visible sm:rounded-2xl sm:p-3.5">
+  <div class="w-full shrink-0 space-y-1.5 sm:w-[300px]">
+    <div class="relative h-[220px] w-full overflow-hidden rounded-none border-0 sm:h-[200px] sm:rounded-lg sm:border sm:border-slate-200/90" style="background:linear-gradient(135deg,#9aa5b1,#5b6672)">
+      <span class="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 text-[10px] font-semibold text-white">📷 17</span>
+      <button type="button" class="absolute left-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow">‹</button>
+      <button type="button" class="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow">›</button>
+    </div>
+    <div class="hidden gap-1.5 sm:flex">
+      <div class="relative h-[46px] flex-1 overflow-hidden rounded-md border border-slate-200/90 ring-2 ring-[var(--color-provin-accent)]" style="background:linear-gradient(135deg,#9aa5b1,#5b6672)"></div>
+      <div class="relative h-[46px] flex-1 overflow-hidden rounded-md border border-slate-200/90" style="background:linear-gradient(135deg,#b8c2cc,#7b8794)"></div>
+      <div class="relative h-[46px] flex-1 overflow-hidden rounded-md border border-slate-200/90" style="background:linear-gradient(135deg,#c9b8a6,#8d7a66)"></div>
+      <div class="relative h-[46px] flex-1 overflow-hidden rounded-md border border-slate-200/90" style="background:linear-gradient(135deg,#a7b9c9,#61788f)"><div class="absolute inset-0 grid place-items-center bg-black/45 text-[11px] font-bold text-white">+14</div></div>
+    </div>
+  </div>
+  <div class="flex min-w-0 flex-1 flex-col gap-2 p-2.5 sm:p-0">
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold tabular-nums text-slate-500">
+      <span>Nr. ZK48291</span><span>·</span>
+      <span class="inline-flex flex-wrap items-center gap-1.5">
+        <span>VIN WBA…7731</span>
+        <button type="button" class="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">Kopēt</button>
+        <a href="/admin/vin-scan?vin=WBAZZZ8V0K1237731" class="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-provin-accent)]">Atvērt VIN SCAN</a>
+      </span>
+    </div>
+    <div class="text-[17px] font-semibold leading-tight text-[var(--color-apple-text)]">BMW X5 xDrive30d M Sport</div>
+    <div class="text-[12px] text-[var(--color-provin-muted)]">SUV · 5 durvis</div>
+    <div class="grid grid-cols-3 gap-2 sm:grid-cols-6 sm:border-y sm:border-dashed sm:border-[#E5E7EB] sm:py-2">
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">1. reģ.</div><div class="text-[13px] font-semibold tabular-nums text-[var(--color-apple-text)]">03/2019</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Nobraukums</div><div class="text-[13px] font-semibold tabular-nums text-[var(--color-apple-text)]">142 300 km</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Degviela</div><div class="text-[13px] font-semibold tabular-nums text-[var(--color-apple-text)]">Dīzelis</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Kārba</div><div class="text-[13px] font-semibold tabular-nums text-[var(--color-apple-text)]">Automāts</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Jauda</div><div class="text-[13px] font-semibold tabular-nums text-[var(--color-apple-text)]">195 kW</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Krāsa</div><div class="text-[13px] font-semibold tabular-nums text-[var(--color-apple-text)]">Melna</div></div>
+    </div>
+    <div class="flex flex-wrap items-center gap-1">
+      <span class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">AUTO1 🇩🇪 Berlīne</span>
+      <span class="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">2. diena</span>
+      <span class="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">JAUNS</span>
+      <span class="inline-flex items-center rounded-md border border-blue-300 bg-blue-100 px-2 py-1 text-[13px] font-extrabold text-blue-900">PVN atgūstams</span>
+      <span class="rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">Virsbūve</span>
+    </div>
+    <div class="sm:hidden">
+      <div class="rounded-xl bg-[#f2f2f5] p-3">
+        <div class="flex items-start justify-between">
+          <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pašreizējā cena · 7 solījumi</div>
+          <div class="flex gap-1.5">
+            <button class="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] bg-white sm:h-9 sm:w-9">☆</button>
+            <button class="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] bg-white sm:h-9 sm:w-9">✕</button>
+          </div>
+        </div>
+        <div class="mt-1 text-[26px] font-extrabold tabular-nums leading-none">24 850 €</div>
+        <div class="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz 27 900 €</div>
+        <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums text-amber-600">⏱ 1d 04:12 <span class="font-semibold text-slate-500">· beidzas 13.10. 18:00</span></div>
+      </div>
+      <div class="mt-2 grid gap-0.5 rounded-xl border border-dashed border-[#E5E7EB] p-3 text-[11px] tabular-nums">
+        <div class="flex justify-between"><span>Kopējās izmaksas</span><b>30 410 €</b></div>
+        <div class="text-[10px] leading-snug text-slate-500">t.sk. PVN 21% no visas summas: 5 280 €</div>
+        <div><span class="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-extrabold text-emerald-800">+1 590 €</span></div>
+        <div class="flex justify-between text-slate-500"><span>Maks.</span><b class="text-[var(--color-apple-text)]">26 400 €</b></div>
+      </div>
+    </div>
+    <input class="mt-auto w-full rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 py-1 text-[12px]" placeholder="Piezīme…" />
+  </div>
+  <div class="hidden w-[260px] shrink-0 sm:block">
+    <div class="rounded-xl bg-[#f2f2f5] p-3">
+      <div class="flex items-start justify-between">
+        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pašreizējā cena · 7 solījumi</div>
+        <div class="flex gap-1.5">
+          <button class="grid h-9 w-9 place-items-center rounded-lg border border-[#E5E7EB] bg-white">☆</button>
+          <button class="grid h-9 w-9 place-items-center rounded-lg border border-[#E5E7EB] bg-white">✕</button>
+        </div>
+      </div>
+      <div class="mt-1 text-[26px] font-extrabold tabular-nums leading-none">24 850 €</div>
+      <div class="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz 27 900 €</div>
+      <div class="mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums text-amber-600">⏱ 1d 04:12 <span class="font-semibold text-slate-500">· beidzas 13.10. 18:00</span></div>
+    </div>
+    <div class="mt-2 grid gap-0.5 rounded-xl border border-dashed border-[#E5E7EB] p-3 text-[11px] tabular-nums">
+      <div class="hidden justify-between sm:flex"><span>Klienta budžets</span><b>32 000 €</b></div>
+      <div class="flex justify-between"><span>Kopējās izmaksas</span><b>30 410 €</b></div>
+      <div class="text-[10px] leading-snug text-slate-500">t.sk. PVN 21% no visas summas: 5 280 €</div>
+      <div><span class="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-extrabold text-emerald-800">+1 590 €</span></div>
+      <div class="flex justify-between text-slate-500"><span>Maks.</span><b class="text-[var(--color-apple-text)]">26 400 €</b></div>
+      <div class="hidden justify-between text-slate-500 sm:flex"><span>var solīt vēl</span><span>1 550 €</span></div>
+    </div>
+  </div>
+</article>
+<p class="mb-1.5 mt-4 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Budžets pārsniegts</p>
+<article class="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-[#E5E7EB] bg-white shadow-sm sm:flex-row sm:items-stretch sm:gap-4 sm:overflow-visible sm:rounded-2xl sm:p-3.5">
+  <div class="w-full shrink-0 space-y-1.5 sm:w-[300px]">
+    <div class="relative h-[220px] w-full overflow-hidden rounded-none sm:h-[200px] sm:rounded-lg sm:border sm:border-slate-200/90" style="background:linear-gradient(135deg,#9aa5b1,#5b6672)">
+      <span class="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 text-[10px] font-semibold text-white">📷 17</span>
+      <button type="button" class="absolute left-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow">‹</button>
+      <button type="button" class="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow">›</button>
+    </div>
+    <div class="hidden gap-1.5 sm:flex">
+      <div class="relative h-[46px] flex-1 overflow-hidden rounded-md border border-slate-200/90 ring-2 ring-[var(--color-provin-accent)]" style="background:linear-gradient(135deg,#9aa5b1,#5b6672)"></div>
+      <div class="relative h-[46px] flex-1 overflow-hidden rounded-md border border-slate-200/90" style="background:linear-gradient(135deg,#b8c2cc,#7b8794)"></div>
+      <div class="relative h-[46px] flex-1 overflow-hidden rounded-md border border-slate-200/90" style="background:linear-gradient(135deg,#c9b8a6,#8d7a66)"></div>
+      <div class="relative h-[46px] flex-1 overflow-hidden rounded-md border border-slate-200/90" style="background:linear-gradient(135deg,#a7b9c9,#61788f)"><div class="absolute inset-0 grid place-items-center bg-black/45 text-[11px] font-bold text-white">+14</div></div>
+    </div>
+  </div>
+  <div class="flex min-w-0 flex-1 flex-col gap-2 p-2.5 sm:p-0">
+    <div class="flex flex-wrap items-center gap-x-2 text-[11px] font-semibold tabular-nums text-slate-500">
+      <span>Nr. ZK48291</span><span>·</span><span>VIN WBA…7731</span>
+    </div>
+    <div class="text-[17px] font-semibold leading-tight text-[var(--color-apple-text)]">BMW X5 xDrive30d M Sport</div>
+    <div class="grid grid-cols-3 gap-2 sm:grid-cols-6 sm:border-y sm:border-dashed sm:border-[#E5E7EB] sm:py-2">
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">1. reģ.</div><div class="text-[13px] font-semibold tabular-nums">03/2019</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Nobraukums</div><div class="text-[13px] font-semibold tabular-nums">142 300 km</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Degviela</div><div class="text-[13px] font-semibold tabular-nums">Dīzelis</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Kārba</div><div class="text-[13px] font-semibold tabular-nums">Automāts</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Jauda</div><div class="text-[13px] font-semibold tabular-nums">195 kW</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Krāsa</div><div class="text-[13px] font-semibold tabular-nums">Melna</div></div>
+    </div>
+    <div class="flex flex-wrap gap-1">
+      <span class="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">AUTO1 🇩🇪 Berlīne</span>
+      <span class="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">JAUNS</span>
+      <span class="rounded-md bg-red-600 px-1.5 py-0.5 text-[10px] font-bold text-white">Virsbūve</span>
+    </div>
+    <input class="mt-auto w-full rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 py-1 text-[12px]" placeholder="Piezīme…" />
+  </div>
+  <div class="hidden w-[260px] shrink-0 sm:block">
+    <div class="rounded-xl bg-[#f2f2f5] p-3">
+      <div class="flex items-start justify-between">
+        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pašreizējā cena · 7 solījumi</div>
+        <div class="flex gap-1.5">
+          <button class="grid h-9 w-9 place-items-center rounded-lg border border-[#E5E7EB] bg-white">☆</button>
+          <button class="grid h-9 w-9 place-items-center rounded-lg border border-[#E5E7EB] bg-white">✕</button>
+        </div>
+      </div>
+      <div class="mt-1 text-[26px] font-extrabold tabular-nums leading-none">24 850 €</div>
+      <div class="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz 27 900 €</div>
+      <div class="mt-2 flex items-center gap-1.5 text-[12px] font-extrabold tabular-nums text-amber-600">⏱ 1d 04:12 <span class="font-semibold text-slate-500">· beidzas 13.10. 18:00</span></div>
+    </div>
+    <div class="mt-2 grid gap-0.5 rounded-xl border border-dashed border-[#E5E7EB] p-3 text-[11px] tabular-nums">
+      <div class="hidden justify-between sm:flex"><span>Klienta budžets</span><b>29 000 €</b></div>
+      <div class="flex justify-between"><span>Kopējās izmaksas</span><b>30 410 €</b></div>
+      <div class="text-[10px] leading-snug text-slate-500">t.sk. PVN 21% no visas summas: 5 280 €</div>
+      <div><span class="rounded-md bg-red-100 px-1.5 py-0.5 text-[11px] font-extrabold text-red-800">-1 410 €</span></div>
+      <div class="flex justify-between text-slate-500"><span>Maks.</span><b class="text-[var(--color-apple-text)]">23 500 €</b></div>
+      <div class="hidden justify-between text-slate-500 sm:flex"><span>virs maks.</span><span>1 350 €</span></div>
+    </div>
+  </div>
+</article>
+</body>
+</html>

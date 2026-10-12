@@ -151,6 +151,22 @@ test("title falls back to mainType and subType, image prefers mainImageFullUrl, 
   assert.equal(item.priceCurrent, 5123);
 });
 
+test("maps vin, color, body and doors when the hit has them", () => {
+  const item = mapAuto1Car(
+    hit({
+      vin: "WBAZZZ8V0K1237731",
+      colorName: "Black",
+      bodyType: "SUV",
+      doorCount: 5,
+    }),
+  );
+  assert.equal(item.vin, "WBAZZZ8V0K1237731");
+  assert.equal(item.color, "Black");
+  assert.equal(item.bodyType, "SUV");
+  assert.equal(item.doorCount, "5");
+  assert.equal(mapAuto1Car(hit()).vin, undefined);
+});
+
 test("stage uses auction times or seconds when auctionType is empty", () => {
   const during = hit({ auctionType: "" });
   assert.equal(auto1Stage(during, START_MS + 1000), "IN_AUCTION");

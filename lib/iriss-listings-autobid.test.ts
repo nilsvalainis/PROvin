@@ -64,7 +64,7 @@ function fixtureFlat(): unknown[] {
     { m: 37 }, // 36
     "https://cdn.autobid.de/data/cars/x_m.jpg", // 37
     "Including 19% VAT", // 38
-    { itemLocationCountry: 40 }, // 39
+    { itemLocationCountry: 40, vin: 47 }, // 39
     { isoCode: 44 }, // 40
     { id: 70, name: "Transmission", value: 45 }, // 41
     "Volvo", // 42
@@ -72,6 +72,7 @@ function fixtureFlat(): unknown[] {
     "DE", // 44
     "Automatic", // 45
     "Stuttgart", // 46
+    "WBAZZZ8V0K1237731", // 47
   ];
 }
 
@@ -121,6 +122,7 @@ describe("parseAutobidSearchPage", () => {
     expect(v.countryCode).toBe("DE");
     expect(v.imageUrl).toBe("https://cdn.autobid.de/data/cars/x_m.jpg");
     expect(v.vatNote).toBe("Including 19% VAT");
+    expect(v.vin).toBe("WBAZZZ8V0K1237731");
 
     const v2 = page!.vehicles[1]!;
     expect(v2.externalId).toBe("3587387");

@@ -4,6 +4,8 @@
  * Pārbaudīts 2026-10: HTTP 200 bez login, bez captcha.
  */
 
+import { pickListingBodyType, pickListingColor, pickListingDoorCount, pickListingVin } from "@/lib/iriss-listings-extract";
+
 export type AutobidVehicle = {
   externalId: string;
   auctionId: string;
@@ -27,6 +29,10 @@ export type AutobidVehicle = {
   powerKw: string;
   location: string;
   countryCode: string;
+  vin?: string;
+  color?: string;
+  bodyType?: string;
+  doorCount?: string;
 };
 
 export type AutobidSearchPage = {
@@ -225,6 +231,10 @@ export function mapAutobidVehicle(raw: Rec): AutobidVehicle | null {
     powerKw: equipmentValue(raw.equipments, EQ_POWER_KW),
     location: equipmentValue(raw.equipments, EQ_LOCATION),
     countryCode: country,
+    vin: pickListingVin(raw) || undefined,
+    color: pickListingColor(raw) || undefined,
+    bodyType: pickListingBodyType(raw) || undefined,
+    doorCount: pickListingDoorCount(raw) || undefined,
   };
 }
 

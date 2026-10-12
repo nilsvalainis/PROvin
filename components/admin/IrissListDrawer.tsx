@@ -244,11 +244,11 @@ export function IrissListDrawer({
         <div className="rounded-xl border border-[#E5E7EB] p-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pie šīs cenas</div>
           {!real ? (
-            <p className="text-[12px] text-slate-500">{budget != null ? `Budžets ${eur(budget)}. ` : "Budžets nav. "}Cenas nav</p>
+            <p className="text-[12px] text-slate-500">{budget != null ? `Klienta budžets ${eur(budget)}. ` : "Klienta budžets nav. "}Cenas nav</p>
           ) : (
             <>
-              {budget != null ? <div className="text-[12px]">Budžets <b className="tabular-nums">{eur(budget)}</b></div> : <div className="text-[12px] font-semibold text-amber-900">Budžets nav</div>}
-              <div className="text-[12px]">Gala <b className="tabular-nums">{eur(gala ?? real.total)}</b></div>
+              {budget != null ? <div className="text-[12px]">Klienta budžets <b className="tabular-nums">{eur(budget)}</b></div> : <div className="text-[12px] font-semibold text-amber-900">Klienta budžets nav</div>}
+              <div className="text-[12px]">Kopējās izmaksas <b className="tabular-nums">{eur(gala ?? real.total)}</b></div>
               <div className="text-[11px] text-slate-500">{listingVatShareLine(real, eur)}</div>
               {budget != null && gala != null ? (
                 <div className={`text-[11px] font-extrabold ${gala <= budget ? "text-emerald-700" : "text-red-700"}`}>

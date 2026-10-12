@@ -69,6 +69,11 @@ export type IrissListingVehicle = {
   imageUrl: string;
   /** Papildu bildes no avota (Auto1 images[], Autobid imageGroups). */
   imageUrls?: string[];
+  /** VIN, ja avots to iedod (Openlane ChassisNumber, Autobid additionalInformation, Auto1 ja ir). */
+  vin?: string;
+  color?: string;
+  bodyType?: string;
+  doorCount?: string;
   isMargin?: boolean | null;
   salesVatType?: number | null;
   taxDeduction?: boolean | null;
