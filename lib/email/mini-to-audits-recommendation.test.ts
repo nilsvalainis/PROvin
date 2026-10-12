@@ -80,6 +80,8 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
 
   it("keeps the approved MINI and AUDITS bullets", () => {
     const d = draft();
+    expect(d.emailText).toContain("Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS.");
+    expect(d.emailText).not.toContain("Pārskatot auto");
     expect(d.emailText).toContain("✓ Konsultāciju un ieteikumus klātienes apskatei");
     expect(d.emailText).toContain("✓ OCTA negadījumus un tehnisko apskašu vēsturi");
     expect(d.emailText).toContain("✓ Sludinājuma, pārdevēja un tehnisko risku analīzi");

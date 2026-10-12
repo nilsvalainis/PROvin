@@ -15,7 +15,7 @@ export const MINI_TO_AUDITS_APPROVED_TEXT = `Labdien, {vards}!
 
 Paldies par PROVIN MINI pasūtījumu {auto} (VIN {vin}).
 
-Pārskatot auto, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
+Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
 
 PROVIN MINI ietver:
 ✓ Konsultāciju un ieteikumus klātienes apskatei
