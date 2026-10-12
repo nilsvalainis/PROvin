@@ -50,7 +50,7 @@ body:has(.admin-ios-theme) {
   font-family: inherit;
 }
 
-.admin-ios-theme a:not(.iriss-listing-platform-chip) {
+.admin-ios-theme a:not(.iriss-listing-platform-chip):not(.admin-nav-link) {
   color: #000000;
 }
 

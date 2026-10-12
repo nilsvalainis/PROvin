@@ -1,26 +1,12 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { AdminSidebarNav } from "./AdminSidebarNav";
-import { IrissAdminSidebarNav } from "./IrissAdminSidebarNav";
-import { AdminWorkspaceSwitcher } from "./AdminWorkspaceSwitcher";
-import { LogoutButton } from "./LogoutButton";
+import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./AdminSidebar";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
 import { AdminVinHandoffProvider } from "./AdminVinHandoffContext";
-
-/** Mobilajā admin augšējā joslā — tās pašas 3 strīpiņas kā publiskajā HeaderClient. */
-function AdminMobileMenuIcon({ lineClass }: { lineClass: string }) {
-  return (
-    <span className="flex flex-col items-center justify-center gap-[4px]" aria-hidden>
-      <span className={`h-px w-[19px] ${lineClass}`} />
-      <span className={`h-px w-[19px] ${lineClass}`} />
-      <span className={`h-px w-[19px] ${lineClass}`} />
-    </span>
-  );
-}
 
 type AdminShellLayoutValue = {
   sidebarCollapsed: boolean;
@@ -43,36 +29,8 @@ type Props = {
   workspace?: AdminShellWorkspace;
 };
 
-const MOBILE_NAV_TOP_REM = 3.5;
-
-export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Props) {
+export function AdminShell({ children, notice, workspace = "pro" }: Props) {
   const pathname = usePathname() ?? "";
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-
-  useEffect(() => {
-    setMobileNavOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (!mobileNavOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [mobileNavOpen]);
-
-  useEffect(() => {
-    if (!mobileNavOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileNavOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [mobileNavOpen]);
-
-  const onAsideCloseClick = useCallback(() => setMobileNavOpen(false), []);
-
   const shellLayoutValue = useMemo(
     () => ({ sidebarCollapsed: false, expandSidebar: () => undefined }),
     [],
@@ -80,82 +38,18 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
 
   const isProWorkspace = workspace === "pro";
   const isDetailScreen = /^\/admin\/(?:iriss\/pasutijumi|orders|konsultacijas|commission-invoice|partneri)\/[^/]+$/.test(pathname);
-  const asideMobileClasses = mobileNavOpen
-    ? "max-md:fixed max-md:right-0 max-md:top-[3.5rem] max-md:z-[60] max-md:flex max-md:h-[calc(100dvh-3.5rem)] max-md:w-[min(14rem,74vw)] max-md:flex-col max-md:overflow-y-auto max-md:border-l max-md:border-slate-200/70 max-md:bg-white/98 max-md:shadow-2xl max-md:backdrop-blur-sm"
-    : "max-md:hidden";
+  /** Detaļu lapām ar savu apakšējo joslu mobilajā cilņu joslu nerādām. */
+  const hideTabBar = isDetailScreen || /^\/admin\/atras-vertesanas\/[^/]+$/.test(pathname);
+  const { collapsed, toggle } = useAdminSidebarCollapsed();
 
   return (
     <AdminVinHandoffProvider>
-    <div className="flex min-h-dvh flex-col bg-white">
-      <header className="sticky top-0 z-[45] shrink-0 border-b border-black/35 bg-[var(--color-provin-accent-soft)]/50 shadow-sm">
-        <div className="flex items-center gap-2 px-3 py-2 sm:px-4">
-        <div className="min-w-0 flex flex-1 items-center gap-2">
-          <AdminWorkspaceSwitcher />
-          <div className="hidden items-center gap-2 md:flex">
-            <div className="h-5 w-px bg-black/35" aria-hidden />
-            {isProWorkspace ? (
-              <AdminSidebarNav baseUrl={baseUrl} orientation="horizontal" />
-            ) : (
-              <IrissAdminSidebarNav orientation="horizontal" />
-            )}
-          </div>
-        </div>
-        <div className="hidden items-center gap-3 md:flex">
-          <LogoutButton className="md:w-auto" />
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5 md:hidden">
-          <button
-            type="button"
-            onClick={() => setMobileNavOpen((open) => !open)}
-            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-black/35 bg-transparent p-1.5 text-black shadow-sm outline-none transition hover:bg-black/5 focus-visible:ring-2 focus-visible:ring-black/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-provin-accent-soft)]"
-            aria-expanded={mobileNavOpen}
-            aria-controls="admin-mobile-nav-aside"
-            aria-label={mobileNavOpen ? "Aizvērt galveno izvēlni" : "Atvērt galveno izvēlni"}
-          >
-            <AdminMobileMenuIcon lineClass="bg-black" />
-          </button>
-        </div>
-        </div>
-      </header>
-
-      {mobileNavOpen ? (
-        <button
-          type="button"
-          aria-hidden
-          tabIndex={-1}
-          className="fixed inset-x-0 bottom-0 z-[55] border-0 bg-black/45 p-0 md:hidden"
-          style={{ top: `${MOBILE_NAV_TOP_REM}rem` }}
-          onClick={() => setMobileNavOpen(false)}
-        />
-      ) : null}
-
-      <div className={`flex min-h-0 flex-1 flex-col ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
-        <aside
-          id="admin-mobile-nav-aside"
-          className={`shrink-0 border-b border-[#E5E7EB] bg-white shadow-sm md:hidden ${asideMobileClasses}`}
-          aria-hidden={!mobileNavOpen}
-        >
-          <div className="flex flex-col gap-2 p-2.5">
-            <div className="flex w-full min-w-0 items-start justify-between gap-2">
-              <span aria-hidden />
-              <button
-                type="button"
-                onClick={onAsideCloseClick}
-                className="shrink-0 rounded-lg border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 md:hidden"
-                aria-label="Aizvērt galveno izvēlni"
-                title="Aizvērt izvēlni"
-              >
-                <span aria-hidden className="tabular-nums">
-                  «
-                </span>
-              </button>
-            </div>
-            {isProWorkspace ? <AdminSidebarNav baseUrl={baseUrl} /> : <IrissAdminSidebarNav />}
-            <div className="pt-0.5">
-              <LogoutButton />
-            </div>
-          </div>
-        </aside>
+    <div
+      className={`flex min-h-dvh bg-white ${hideTabBar ? "" : "max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]"}`}
+      style={{ ["--admin-tabbar-h" as string]: hideTabBar ? "0px" : "3.5rem" }}
+    >
+      <AdminSidebar collapsed={collapsed} onToggle={toggle} />
+      <div className={`flex min-h-0 min-w-0 flex-1 flex-col ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
         <AdminShellLayoutContext.Provider value={shellLayoutValue}>
           <AdminAuditDeadlineTickProvider>
             <AdminShellMainWithMobilePull isDetailScreen={isDetailScreen} notice={notice}>
@@ -164,6 +58,7 @@ export function AdminShell({ children, baseUrl, notice, workspace = "pro" }: Pro
           </AdminAuditDeadlineTickProvider>
         </AdminShellLayoutContext.Provider>
       </div>
+      {hideTabBar ? null : <AdminMobileTabBar workspace={workspace} />}
     </div>
     </AdminVinHandoffProvider>
   );
