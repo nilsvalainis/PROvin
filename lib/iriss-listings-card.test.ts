@@ -14,7 +14,6 @@ import {
   listingVinScanHref,
   listingVinShort,
   listingVinSourceMark,
-  LISTING_VIN_UNVERIFIED_MARK,
 } from "@/lib/iriss-listings-card";
 import { listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost } from "@/lib/iriss-listings-cost";
 
@@ -55,37 +54,43 @@ describe("listing thumbs / VIN / specs", () => {
     expect(listingVinSourceMark("ocr_photo")).toBe("no foto");
   });
 
-  it("VIN card state: confirmed scan, unverified mark, conflict without VIN SCAN", () => {
+  it("VIN card state: visible VIN always has Kopēt / VIN SCAN; conflict and weak OCR hide", () => {
     const vin = "WBAZZZ8V0K1237731";
-    const honda = "1HGCM82633A004352";
-    expect(listingVinCardState({ vin, vinSource: "source" })).toMatchObject({
-      tone: "normal",
-      mark: "",
-      scanHref: listingVinScanHref(vin),
-      handoff: true,
-    });
-    expect(listingVinCardState({ vin, vinSource: "ocr_photo", vinOcrStatus: "confirmed" })).toMatchObject({
-      tone: "normal",
-      mark: "",
-      scanHref: listingVinScanHref(vin),
-      handoff: true,
-    });
-    expect(listingVinCardState({ vin, vinSource: "ocr_photo", vinOcrStatus: "unverified" })).toMatchObject({
-      tone: "unverified",
-      mark: LISTING_VIN_UNVERIFIED_MARK,
-      scanHref: listingVinScanHref(vin),
-      handoff: true,
-    });
-    expect(listingVinCardState({ vin, vinSource: "ocr_photo", vinOcrStatus: "found" })?.mark).toBe(LISTING_VIN_UNVERIFIED_MARK);
-    const conflict = listingVinCardState({
+    const href = listingVinScanHref(vin);
+    expect(listingVinCardState({ vin, vinSource: "source" })).toEqual({
       vin,
-      vinSource: "ocr_photo",
-      vinOcrStatus: "conflict",
-      vinOcrAlts: [honda],
+      scanHref: href,
+      handoff: true,
     });
-    expect(conflict).toMatchObject({ tone: "conflict", mark: "", scanHref: "", handoff: false });
-    expect(conflict?.title).toContain(vin);
-    expect(conflict?.title).toContain(honda);
+    expect(listingVinCardState({ vin, vinSource: "ocr_photo", vinOcrStatus: "confirmed" })).toEqual({
+      vin,
+      scanHref: href,
+      handoff: true,
+    });
+    expect(listingVinCardState({ vin, vinSource: "ocr_photo", vinOcrStatus: "unverified" })).toEqual({
+      vin,
+      scanHref: href,
+      handoff: true,
+    });
+    expect(listingVinCardState({ vin, vinSource: "ocr_photo", vinOcrStatus: "found" })).toEqual({
+      vin,
+      scanHref: href,
+      handoff: true,
+    });
+    expect(
+      listingVinCardState({
+        vin,
+        vinSource: "ocr_photo",
+        vinOcrStatus: "conflict",
+      }),
+    ).toBeNull();
+    expect(
+      listingVinCardState({
+        vin: "WBAZZZ8V1K1237731",
+        vinSource: "ocr_photo",
+        vinOcrStatus: "unverified",
+      }),
+    ).toBeNull();
   });
 
   it("formats euro with a space thousands separator from 4 digits", () => {

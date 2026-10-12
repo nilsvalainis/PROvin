@@ -17,8 +17,8 @@
  * job per listing (daily cap 150, shared with list sync) and still likely
  * return no VIN. So we do not open detail pages here.
  *
- * Fallback, off the ingest path: OCR of document-like photos (cap 6), ISO 3779
- * check digit, compare hits, cache confirmed / unverified / conflict.
+ * Fallback, off the ingest path: OCR of document-like photos (cap 6), compare
+ * hits across photos, show VIN only if 2+ agree or the check digit is valid.
  */
 
 import { pickListingVin } from "@/lib/iriss-listings-extract";

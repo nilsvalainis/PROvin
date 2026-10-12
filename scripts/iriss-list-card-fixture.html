@@ -119,7 +119,12 @@
   </div>
   <div class="flex min-w-0 flex-1 flex-col gap-2 p-2.5 sm:p-0">
     <div class="flex flex-wrap items-center gap-x-2 text-[11px] font-semibold tabular-nums text-slate-500">
-      <span>Nr. ZK48291</span><span>·</span><span>VIN WBA…7731</span>
+      <span>Nr. ZK48291</span><span>·</span>
+      <span class="inline-flex flex-wrap items-center gap-1.5">
+        <span>VIN WBA…7731</span>
+        <button type="button" class="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">Kopēt</button>
+        <a href="/admin/vin-scan?vin=WBAZZZ8V0K1237731" class="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-provin-accent)]">Atvērt VIN SCAN</a>
+      </span>
     </div>
     <div class="text-[17px] font-semibold leading-tight text-[var(--color-apple-text)]">BMW X5 xDrive30d M Sport</div>
     <div class="grid grid-cols-3 gap-2 sm:grid-cols-6 sm:border-y sm:border-dashed sm:border-[#E5E7EB] sm:py-2">

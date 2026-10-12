@@ -1,7 +1,7 @@
 /**
  * Background Auto1 VIN OCR. Not on the list ingest path.
  * OCRs document-like photos (cap 6), ISO 3779 check digit, compares hits.
- * Cached on the vehicle as confirmed / unverified / conflict / miss.
+ * Cached on the vehicle as confirmed (shown) or miss (hidden).
  */
 import "server-only";
 
@@ -10,7 +10,7 @@ import {
   LISTING_VIN_OCR_MAX_PHOTOS,
   LISTING_VIN_OCR_SOURCE,
   compareListingOcrVins,
-  extractIso3779VinsFromText,
+  extractVinCandidatesFromText,
   rankListingPhotosForVinOcr,
   type ListingVinOcrDecisionStatus,
   type ListingVinPhotoInput,
@@ -110,18 +110,20 @@ export async function ocrVinFromListingPhotos(input: ListingVinPhotoInput): Prom
       const { data } = await worker.recognize(prepared);
       const text = data.text ?? "";
       textChars += text.length;
-      vinsPerPhoto.push(extractIso3779VinsFromText(text).filter((v) => !isPlaceholderVin(v)));
+      vinsPerPhoto.push(extractVinCandidatesFromText(text).filter((v) => !isPlaceholderVin(v)));
     } catch {
       /* nākamā bilde, nepārtrauc pēc pirmā trāpījuma */
     }
   }
   const decision = compareListingOcrVins(vinsPerPhoto);
-  if (!decision.vin) return { ...empty, vinOcrStatus: "miss", photosTried, textChars };
+  if (!decision.vin || decision.status !== "confirmed") {
+    return { ...empty, vinOcrStatus: "miss", photosTried, textChars };
+  }
   return {
     vin: decision.vin,
-    alts: decision.alts,
+    alts: [],
     vinSource: LISTING_VIN_OCR_SOURCE,
-    vinOcrStatus: decision.status,
+    vinOcrStatus: "confirmed",
     photosTried,
     textChars,
   };

@@ -64,6 +64,11 @@ export function iso3779CheckDigit(vin17: string): string | null {
   return r === 10 ? "X" : String(r);
 }
 
+/** 17-char VIN alphabet (no I/O/Q). Does not require the check digit. */
+export function isIsoVinAlphabet17(vin: string): boolean {
+  return VIN17_RE.test(normalizeIsoVin(vin));
+}
+
 /** True only for a 17-char VIN whose 9th character matches the ISO 3779 check digit. */
 export function hasIso3779CheckDigit(vin: string): boolean {
   const v = normalizeIsoVin(vin);
@@ -85,19 +90,24 @@ export function vinOcrAlphabetVariants(raw17: string): string[] {
   return out;
 }
 
-/** Sliding 17-char windows from OCR / document text; check-digit required. */
-export function extractIso3779VinsFromText(text: string): string[] {
+/** Sliding 17-char VIN-alphabet windows from OCR / document text. */
+export function extractVinCandidatesFromText(text: string): string[] {
   const found: string[] = [];
   const seen = new Set<string>();
   const chunks = text.toUpperCase().match(/[A-Z0-9]{17,}/g) ?? [];
   for (const chunk of chunks) {
     for (let i = 0; i <= chunk.length - 17; i++) {
       for (const cand of vinOcrAlphabetVariants(chunk.slice(i, i + 17))) {
-        if (!hasIso3779CheckDigit(cand) || isPlaceholderVin(cand) || seen.has(cand)) continue;
+        if (isPlaceholderVin(cand) || seen.has(cand)) continue;
         seen.add(cand);
         found.push(cand);
       }
     }
   }
   return found;
+}
+
+/** Sliding 17-char windows from OCR / document text; check-digit required. */
+export function extractIso3779VinsFromText(text: string): string[] {
+  return extractVinCandidatesFromText(text).filter(hasIso3779CheckDigit);
 }

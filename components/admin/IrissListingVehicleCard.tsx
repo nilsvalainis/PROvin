@@ -117,7 +117,6 @@ export function IrissListingVehicleCard({
 }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [vinCopied, setVinCopied] = useState(false);
-  const [vinAltsOpen, setVinAltsOpen] = useState(false);
   useListingVinOcr(v, (id, patch) => onVinPatch?.(id, patch));
   const gallery = listingCardGallery(v);
   const photos = imageHidden ? [] : gallery.photos;
@@ -314,30 +313,7 @@ export function IrissListingVehicleCard({
                 className="inline-flex flex-wrap items-center gap-1.5"
                 data-provin-handoff-vin={vinUi.handoff ? vinUi.vin : undefined}
               >
-                <span
-                  className={
-                    vinUi.tone === "conflict"
-                      ? "cursor-pointer text-amber-800"
-                      : vinUi.tone === "unverified"
-                        ? "text-slate-500"
-                        : undefined
-                  }
-                  title={vinUi.title || undefined}
-                  onClick={
-                    vinUi.alts.length
-                      ? (e) => {
-                          e.stopPropagation();
-                          setVinAltsOpen((open) => !open);
-                        }
-                      : undefined
-                  }
-                >
-                  VIN {listingVinShort(vinUi.vin)}
-                  {vinUi.mark ? <span className="ml-1 text-[10px] font-medium text-slate-400">{vinUi.mark}</span> : null}
-                </span>
-                {vinAltsOpen && vinUi.alts.length ? (
-                  <span className="text-amber-800">{vinUi.alts.map((a) => listingVinShort(a)).join(" · ")}</span>
-                ) : null}
+                <span>VIN {listingVinShort(vinUi.vin)}</span>
                 <button
                   type="button"
                   className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50"
@@ -348,15 +324,13 @@ export function IrissListingVehicleCard({
                 >
                   {vinCopied ? "Nokopēts" : "Kopēt"}
                 </button>
-                {vinUi.scanHref ? (
-                  <a
-                    href={vinUi.scanHref}
-                    className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-50"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Atvērt VIN SCAN
-                  </a>
-                ) : null}
+                <a
+                  href={vinUi.scanHref}
+                  className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-50"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Atvērt VIN SCAN
+                </a>
               </span>
             ) : null}
           </div>

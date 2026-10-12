@@ -42,19 +42,34 @@ describe("rankListingPhotosForVinOcr", () => {
 });
 
 describe("compareListingOcrVins", () => {
+  const wrongDigit = "WBAZZZ8V1K1237731";
+
   it("confirms when two photos agree", () => {
     expect(compareListingOcrVins([[VIN], [VIN]])).toEqual({ vin: VIN, alts: [], status: "confirmed" });
     expect(listingVinOcrDecisionFromTexts([`VIN ${VIN}`, `Ident ${VIN}`]).status).toBe("confirmed");
   });
 
-  it("marks a single photo hit as unverified", () => {
-    expect(compareListingOcrVins([[VIN], []])).toEqual({ vin: VIN, alts: [], status: "unverified" });
+  it("confirms a single photo hit that passes the check digit", () => {
+    expect(compareListingOcrVins([[VIN], []])).toEqual({ vin: VIN, alts: [], status: "confirmed" });
   });
 
-  it("conflicts when photos disagree and keeps both values", () => {
+  it("hides a single photo hit without a check digit", () => {
+    expect(compareListingOcrVins([[wrongDigit]])).toEqual({ vin: "", alts: [wrongDigit], status: "miss" });
+  });
+
+  it("confirms when two photos agree even without a check digit", () => {
+    expect(compareListingOcrVins([[wrongDigit], [wrongDigit]])).toEqual({
+      vin: wrongDigit,
+      alts: [],
+      status: "confirmed",
+    });
+  });
+
+  it("hides when photos disagree one-to-one", () => {
     const r = compareListingOcrVins([[VIN], [HONDA]]);
-    expect(r.status).toBe("conflict");
-    expect([r.vin, ...r.alts].sort()).toEqual([HONDA, VIN].sort());
+    expect(r.status).toBe("miss");
+    expect(r.vin).toBe("");
+    expect(r.alts.sort()).toEqual([HONDA, VIN].sort());
   });
 
   it("does not stop comparing after the first photo hit", () => {
@@ -65,8 +80,15 @@ describe("compareListingOcrVins", () => {
     });
   });
 
-  it("treats two VINs on one photo as conflict", () => {
-    expect(compareListingOcrVins([[VIN, HONDA]]).status).toBe("conflict");
+  it("confirms the majority VIN when one extra candidate appears once", () => {
+    expect(compareListingOcrVins([[VIN, HONDA], [VIN]])).toEqual({ vin: VIN, alts: [], status: "confirmed" });
+  });
+
+  it("hides two different VINs on one photo", () => {
+    const r = compareListingOcrVins([[VIN, HONDA]]);
+    expect(r.status).toBe("miss");
+    expect(r.vin).toBe("");
+    expect(r.alts.sort()).toEqual([HONDA, VIN].sort());
   });
 
   it("knows which OCR statuses are already cross-checked", () => {

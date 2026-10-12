@@ -5,7 +5,13 @@
  */
 
 import { isPlaceholderVin } from "@/lib/order-field-validation";
-import { extractIso3779VinsFromText, hasIso3779CheckDigit, vinOcrAlphabetVariants } from "@/lib/vin-iso3779";
+import {
+  extractIso3779VinsFromText,
+  extractVinCandidatesFromText,
+  hasIso3779CheckDigit,
+  isIsoVinAlphabet17,
+  vinOcrAlphabetVariants,
+} from "@/lib/vin-iso3779";
 
 export const LISTING_VIN_OCR_SOURCE = "ocr_photo" as const;
 export const LISTING_VIN_OCR_MAX_PHOTOS = 6;
@@ -77,7 +83,11 @@ export function listingVinOcrIsCrossChecked(status: string | null | undefined): 
   return status === "confirmed" || status === "unverified" || status === "conflict";
 }
 
-/** Per-photo ISO 3779 hits. 2+ photos same VIN = confirmed; one photo = unverified; mix = conflict. */
+/**
+ * Show a VIN only when the same value appears on 2+ photos, or a single
+ * candidate passes the ISO 3779 check digit. Ties and lone invalid strings
+ * stay hidden (miss).
+ */
 export function compareListingOcrVins(vinsPerPhoto: readonly (readonly string[])[]): ListingVinOcrDecision {
   const votes = new Map<string, number>();
   for (const photo of vinsPerPhoto) {
@@ -85,7 +95,7 @@ export function compareListingOcrVins(vinsPerPhoto: readonly (readonly string[])
       ...new Set(
         photo
           .map((v) => v.trim().toUpperCase())
-          .filter((v) => hasIso3779CheckDigit(v) && !isPlaceholderVin(v)),
+          .filter((v) => isIsoVinAlphabet17(v) && !isPlaceholderVin(v)),
       ),
     ];
     if (unique.length === 0) continue;
@@ -93,15 +103,15 @@ export function compareListingOcrVins(vinsPerPhoto: readonly (readonly string[])
   }
   const ranked = [...votes.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   if (ranked.length === 0) return { vin: "", alts: [], status: "miss" };
-  if (ranked.length > 1) {
-    return { vin: ranked[0]![0], alts: ranked.slice(1).map(([v]) => v), status: "conflict" };
-  }
   const [vin, n] = ranked[0]!;
-  return { vin, alts: [], status: n >= 2 ? "confirmed" : "unverified" };
+  const second = ranked[1]?.[1] ?? 0;
+  if (n >= 2 && n > second) return { vin, alts: [], status: "confirmed" };
+  if (ranked.length === 1 && hasIso3779CheckDigit(vin)) return { vin, alts: [], status: "confirmed" };
+  return { vin: "", alts: ranked.map(([v]) => v), status: "miss" };
 }
 
 export function listingVinOcrDecisionFromTexts(texts: readonly string[]): ListingVinOcrDecision {
-  return compareListingOcrVins(texts.map((t) => extractIso3779VinsFromText(t)));
+  return compareListingOcrVins(texts.map((t) => extractVinCandidatesFromText(t)));
 }
 
 export function extractIso3779VinFromUrls(urls: string[]): string {
@@ -112,7 +122,7 @@ export function extractIso3779VinFromUrls(urls: string[]): string {
   return "";
 }
 
-export { extractIso3779VinsFromText, hasIso3779CheckDigit, vinOcrAlphabetVariants };
+export { extractIso3779VinsFromText, extractVinCandidatesFromText, hasIso3779CheckDigit, vinOcrAlphabetVariants };
 
 export function pickFirstIso3779Vin(values: string[]): string {
   for (const v of values) {

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   extractIso3779VinsFromText,
+  extractVinCandidatesFromText,
   hasIso3779CheckDigit,
   iso3779CheckDigit,
+  isIsoVinAlphabet17,
   vinOcrAlphabetVariants,
 } from "@/lib/vin-iso3779";
 
@@ -32,5 +34,13 @@ describe("ISO 3779 check digit", () => {
 
   it("does not treat random 17-char codes as VINs", () => {
     expect(extractIso3779VinsFromText("ABCDEFGHJKLMNPRST")).toEqual([]);
+  });
+
+  it("keeps a 17-char alphabet candidate without a check digit", () => {
+    const wrong = "WBAZZZ8V1K1237731";
+    expect(isIsoVinAlphabet17(wrong)).toBe(true);
+    expect(hasIso3779CheckDigit(wrong)).toBe(false);
+    expect(extractVinCandidatesFromText(`Ident ${wrong}`)).toEqual([wrong]);
+    expect(extractIso3779VinsFromText(`Ident ${wrong}`)).toEqual([]);
   });
 });

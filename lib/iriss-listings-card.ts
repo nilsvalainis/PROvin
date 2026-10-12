@@ -6,6 +6,7 @@ import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import { listingCopyId, type ListingDetailUrlInput } from "@/lib/iriss-listings-detail-url";
 import { listingVinSourceMark } from "@/lib/iriss-listings-vin-from-photos";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { hasIso3779CheckDigit } from "@/lib/vin-iso3779";
 
 export { listingVinSourceMark };
 
@@ -48,67 +49,30 @@ export function listingVinScanHref(vin: string): string {
   return `${LISTING_VIN_SCAN_PATH}?vin=${encodeURIComponent(v)}`;
 }
 
-export const LISTING_VIN_UNVERIFIED_MARK = "nepārbaudīts";
-
 export type ListingVinCardState = {
   vin: string;
-  alts: string[];
-  tone: "normal" | "unverified" | "conflict";
-  mark: string;
   scanHref: string;
   handoff: boolean;
-  title: string;
 };
 
-/** LIST VIN rinda: avots/apstiprināts parasti; viens foto - nepārbaudīts; nesakritība - brīdinājums, bez VIN SCAN. */
+/**
+ * LIST VIN rinda: avota VIN, vai OCR tikai ja 2+ foto sakrīt / check digit der.
+ * Nesakritība un viena nederīga virkne - nerāda neko. Bez palīdzības tekstiem.
+ */
 export function listingVinCardState(v: {
   vin?: string;
   vinSource?: string;
   vinOcrStatus?: string;
-  vinOcrAlts?: string[];
 }): ListingVinCardState | null {
   const vin = v.vin && isValidVin(normalizeVin(v.vin)) ? normalizeVin(v.vin) : "";
   if (!vin) return null;
-  const alts = [
-    ...new Set((v.vinOcrAlts ?? []).map((x) => normalizeVin(x)).filter((x) => x && x !== vin && isValidVin(x))),
-  ];
-  const ocr = v.vinSource === "ocr_photo";
-  const conflict = ocr && (v.vinOcrStatus === "conflict" || alts.length > 0);
-  const unverified =
-    ocr &&
-    !conflict &&
-    (v.vinOcrStatus === "unverified" || v.vinOcrStatus === "found" || v.vinOcrStatus == null || v.vinOcrStatus === "");
-  if (conflict) {
-    return {
-      vin,
-      alts,
-      tone: "conflict",
-      mark: "",
-      scanHref: "",
-      handoff: false,
-      title: [vin, ...alts].join(" · "),
-    };
+  if (v.vinSource === "ocr_photo") {
+    if (v.vinOcrStatus === "conflict") return null;
+    if (v.vinOcrStatus !== "confirmed" && !hasIso3779CheckDigit(vin)) return null;
   }
-  if (unverified) {
-    return {
-      vin,
-      alts: [],
-      tone: "unverified",
-      mark: LISTING_VIN_UNVERIFIED_MARK,
-      scanHref: listingVinScanHref(vin),
-      handoff: true,
-      title: "",
-    };
-  }
-  return {
-    vin,
-    alts: [],
-    tone: "normal",
-    mark: "",
-    scanHref: listingVinScanHref(vin),
-    handoff: true,
-    title: "",
-  };
+  const scanHref = listingVinScanHref(vin);
+  if (!scanHref) return null;
+  return { vin, scanHref, handoff: true };
 }
 
 /** Pilns VIN operators kopē; kartītē saīsināts kā maketā (WBA…7731). */

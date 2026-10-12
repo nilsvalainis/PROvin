@@ -46,17 +46,17 @@ async function runQueue() {
         };
         const status = asVinOcrStatus(json.status);
         const alts = asAlts(json.vinOcrAlts);
-        if (json.status === "has_vin" || status === "confirmed" || status === "unverified" || status === "conflict" || status === "found") {
+        if (json.status === "has_vin" || status === "confirmed") {
           const vin = typeof json.vin === "string" ? json.vin : "";
           if (vin) {
             patch = {
               vin,
               vinSource: json.vinSource === "ocr_photo" ? "ocr_photo" : "source",
-              vinOcrStatus: json.vinSource === "ocr_photo" ? status ?? "unverified" : undefined,
+              vinOcrStatus: json.vinSource === "ocr_photo" ? "confirmed" : undefined,
               vinOcrAlts: json.vinSource === "ocr_photo" ? alts : undefined,
             };
           }
-        } else if (json.status === "miss") {
+        } else if (json.status === "miss" || status === "conflict") {
           patch = { vinOcrStatus: "miss", vinOcrAlts: [] };
         }
       }

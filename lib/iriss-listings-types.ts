@@ -85,8 +85,8 @@ export type IrissListingVehicle = {
   vinSource?: "source" | "ocr_photo";
   vinOcrAt?: string;
   /**
-   * OCR krustpārbaude: `confirmed` 2+ foto sakrīt, `unverified` viens foto,
-   * `conflict` foto nesakrīt, `miss` nav VIN. `found` = vecais pirmais trāpījums.
+   * OCR krustpārbaude: `confirmed` = 2+ foto vai derīgs check digit (rāda VIN).
+   * `miss` = nav ko rādīt. `unverified` / `conflict` / `found` = vecais kešs.
    */
   vinOcrStatus?: IrissListingVinOcrStatus;
   /** Citi ISO 3779 VIN, ja foto nesakrīt. */

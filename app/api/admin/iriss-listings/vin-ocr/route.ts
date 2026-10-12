@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   try {
     const r = await ocrVinFromListingPhotos(vehicle);
     const at = new Date().toISOString();
-    if (r.vin && (r.vinOcrStatus === "confirmed" || r.vinOcrStatus === "unverified" || r.vinOcrStatus === "conflict")) {
+    if (r.vin && r.vinOcrStatus === "confirmed") {
       const saved = await patchIrissListingVehicleVin(id, {
         vin: r.vin,
         vinSource: "ocr_photo",
