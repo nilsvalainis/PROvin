@@ -20,8 +20,9 @@ import {
   formatVinScanScannedAt,
   formatVinScanVehicleLine,
   pickVinScanVehicle,
+  type VinScanOverviewRow,
 } from "@/lib/vin-scan/summary";
-import type { VinScanMileage, VinScanVehicle } from "@/lib/vin-scan/types";
+import type { VinScanMileage, VinScanStatus, VinScanVehicle } from "@/lib/vin-scan/types";
 
 const SOURCE_STATUS_LV: Record<string, string> = {
   found: "Ir dati",
@@ -154,6 +155,23 @@ function asSource(v: unknown): VinScanManualOrderSource | null {
   };
 }
 
+function asOverviewStatus(status: string | undefined): VinScanStatus | "idle" {
+  if (status === "found" || status === "none" || status === "unknown" || status === "manual" || status === "skipped" || status === "idle") {
+    return status;
+  }
+  return "idle";
+}
+
+function sourcesAsOverview(sources: VinScanManualOrderSource[] | undefined): VinScanOverviewRow[] {
+  return (sources ?? []).map((src) => ({
+    id: src.id,
+    status: asOverviewStatus(src.status),
+    label: src.label,
+    vehicle: src.vehicle,
+    mileage: src.mileage,
+  }));
+}
+
 function resolveVehicle(input: VinScanManualOrderInput): VinScanVehicle | null {
   if (input.vehicle && (input.vehicle.make || input.vehicle.model || input.vehicle.year)) {
     return input.vehicle;
@@ -161,12 +179,12 @@ function resolveVehicle(input: VinScanManualOrderInput): VinScanVehicle | null {
   if (input.csdd && (input.csdd.make || input.csdd.model || input.csdd.year)) {
     return { make: input.csdd.make, model: input.csdd.model, year: input.csdd.year };
   }
-  return pickVinScanVehicle(input.sources ?? []);
+  return pickVinScanVehicle(sourcesAsOverview(input.sources));
 }
 
 function resolveMileage(input: VinScanManualOrderInput): VinScanMileage[] {
   if (input.mileage && input.mileage.length > 0) return input.mileage;
-  return collectVinScanMileage(input.sources ?? []);
+  return collectVinScanMileage(sourcesAsOverview(input.sources));
 }
 
 function statusLabel(status: string): string {
