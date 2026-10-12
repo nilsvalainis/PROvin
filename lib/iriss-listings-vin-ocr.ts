@@ -53,7 +53,7 @@ async function fetchPhoto(url: string): Promise<Buffer | null> {
 
 type TessWorker = {
   recognize: (img: Buffer) => Promise<{ data: { text?: string } }>;
-  terminate: () => Promise<void>;
+  terminate: () => Promise<unknown>;
 };
 
 let workerPromise: Promise<TessWorker> | null = null;
@@ -62,7 +62,7 @@ async function ocrWorker(): Promise<TessWorker> {
   if (!workerPromise) {
     workerPromise = (async () => {
       const { createWorker } = await import("tesseract.js");
-      return (await createWorker("eng", undefined, { logger: () => undefined })) as TessWorker;
+      return (await createWorker("eng", undefined, { logger: () => undefined })) as unknown as TessWorker;
     })();
   }
   try {
