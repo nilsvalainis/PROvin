@@ -9,6 +9,8 @@ import { getAuditDeadlineCompleteMap } from "@/lib/admin-audit-complete-store";
 import { filterAdminOrdersForDashboard } from "@/lib/admin-order-amount-filter";
 import { listAdminOrders } from "@/lib/admin-orders";
 import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
+import { upsellListOverlay } from "@/lib/order-upsell";
+import { readUpsellDisplayOffers } from "@/lib/order-upsell-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,10 +22,13 @@ export async function GET() {
   try {
     const { rows } = await listAdminOrders();
     const orders = filterAdminOrdersForDashboard(rows, false);
-    const done = await getAuditDeadlineCompleteMap(orders.map((o) => o.id));
+    const ids = orders.map((o) => o.id);
+    const [done, upsell] = await Promise.all([getAuditDeadlineCompleteMap(ids), readUpsellDisplayOffers(ids)]);
     const { activeCount, overdueCount } = countAdminActiveOrders(
       orders.map((o) => ({
         created: o.created,
+        // Kā sarakstā: piepirkuma termiņš skaitās no piepirkuma apmaksas.
+        deadlineFromUnix: upsellListOverlay(upsell.get(o.id) ?? [])?.paidAtUnix,
         auditComplete: Boolean(done.get(o.id)),
         isB2bPack: isB2bPackAdminOrder(o),
       })),

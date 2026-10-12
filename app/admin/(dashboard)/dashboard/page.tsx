@@ -6,6 +6,8 @@ import {
 } from "@/lib/admin-order-amount-filter";
 import { serializeAdminOrderTableRows } from "@/lib/serialize-admin-order-table";
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
+import { countRepeatVins } from "@/lib/admin-repeat-vin";
+import { listListingPeeks } from "@/lib/listing-peek-store";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { getAuditDeadlineCompleteMap } from "@/lib/admin-audit-complete-store";
 import { upsellListOverlay } from "@/lib/order-upsell";
@@ -120,7 +122,20 @@ export default async function AdminOrdersPage({
       upsellBadge: overlay.badge,
     };
   });
-  const tableOrders = sortAdminOrdersIncompleteFirst(serializeAdminOrderTableRows(ordersWithUpsell));
+  // „Atkārtots VIN”: marķieris rindā, ja šis VIN jau ir citā pasūtījumā vai ātrajā vērtējumā.
+  const peeks = await listListingPeeks(500).catch(() => []);
+  const repeatVin = countRepeatVins(
+    ordersWithUpsell.filter((o) => !o.isB2bPack).map((o) => ({ id: o.id, vins: [o.vin] })),
+    [
+      ...allOrders
+        .filter((o) => !o.isDemo && o.checkoutLine !== "provin_select")
+        .map((o) => ({ id: o.id, vins: [o.vin, draftSummaries.get(o.id)?.vin] })),
+      ...peeks.map((p) => ({ id: `qe:${p.id}`, vins: [p.vin] })),
+    ],
+  );
+  const tableOrders = sortAdminOrdersIncompleteFirst(
+    serializeAdminOrderTableRows(ordersWithUpsell.map((o) => ({ ...o, repeatVin: repeatVin.get(o.id) ?? 0 }))),
+  );
   const demoPrefOn = isDemoOrdersEnabled();
   const onlyDemoShown = orders.length > 0 && orders.every((o) => o.isDemo);
   const hasStripeIssue = Boolean(stripeError);

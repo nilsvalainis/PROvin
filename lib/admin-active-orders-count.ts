@@ -1,4 +1,4 @@
-import { AUDIT_PREPARATION_DEADLINE_MS } from "@/lib/admin-audit-deadline";
+import { formatAuditDeadlineRemaining } from "@/lib/admin-audit-deadline";
 
 /**
  * Sānjoslas „Pasūtījumi” žetons: aktīvo (neizpildīto) skaits un vai kāds kavē 48 h termiņu.
@@ -13,7 +13,8 @@ export function countAdminActiveOrders(
   for (const r of rows) {
     if (r.auditComplete || r.isB2bPack) continue;
     activeCount++;
-    if ((r.deadlineFromUnix ?? r.created) * 1000 + AUDIT_PREPARATION_DEADLINE_MS < nowMs) overdueCount++;
+    // Tieši tā pati funkcija un sākuma laiks kā tabulas termiņa šūnā (piepirkumam — apmaksas brīdis).
+    if (formatAuditDeadlineRemaining(r.deadlineFromUnix ?? r.created, nowMs).status === "overdue") overdueCount++;
   }
   return { activeCount, overdueCount };
 }
