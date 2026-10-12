@@ -121,6 +121,7 @@ export type IrissListingsSyncCursor = {
   doneKeys: string[];
 };
 
+/** Operatora ✕ slēpšana nav šajā skatā: sync pārraksta latest.json. Paslēptie auto: `dismissed.json`. */
 export type IrissListingsLatestView = {
   version: 2;
   generatedAt: string;

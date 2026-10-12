@@ -41,6 +41,12 @@ import {
 import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
 import { nextIrissListingsAutomaticReadLabel } from "@/lib/iriss-listings-schedule";
 import {
+  dismissedHiddenIds,
+  uniqueListingIds,
+  type IrissListingDismissedEntry,
+  type IrissListingDismissPatch,
+} from "@/lib/iriss-listings-dismiss";
+import {
   defaultIrissListPrefs,
   irissListBrowserStorage,
   listingCostsFor,
@@ -242,6 +248,8 @@ type Props = {
   orders: IrissListingOrderBrief[];
   /** SCAN ieraksti kā „pasūtījumi” ar `scan:` id. */
   scanOrders?: IrissListingOrderBrief[];
+  /** Servera `dismissed.json`: paliek pēc refresh, citā ierīcē un pēc sync. */
+  dismissed?: IrissListingDismissedEntry[];
 };
 
 const DATASET_STORAGE_KEY = "iriss-list-dataset";
@@ -252,7 +260,37 @@ const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> =
   { id: "auto1", label: "Auto1" },
 ];
 
-export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanOrders = [] }: Props) {
+async function persistListingDismissItems(items: IrissListingDismissPatch[]): Promise<void> {
+  if (items.length === 0) return;
+  try {
+    await fetch("/api/admin/iriss-listings/dismiss", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items }),
+    });
+  } catch {
+    /* localStorage jau atjaunots; nākamā ielāde mēģinās vēlreiz */
+  }
+}
+
+function dismissPatchesFromIds(
+  ids: readonly string[],
+  hidden: boolean,
+  vehicles: readonly IrissListingVehicle[],
+): IrissListingDismissPatch[] {
+  return ids.map((id) => {
+    const v = vehicles.find((x) => x.id === id);
+    return {
+      id,
+      hidden,
+      ...(v?.platform ? { platform: v.platform } : {}),
+      ...(v?.externalId ? { externalId: v.externalId } : {}),
+    };
+  });
+}
+
+export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanOrders = [], dismissed = [] }: Props) {
   const [dataset, setDatasetState] = useState<IrissListingDataset>("orders");
   useEffect(() => {
     try {
@@ -271,7 +309,10 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
   const [showSources, setShowSources] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [nowMs, setNowMs] = useState<number | null>(null);
-  const [prefs, setPrefs] = useState<IrissListPrefs>(defaultIrissListPrefs);
+  const [prefs, setPrefs] = useState<IrissListPrefs>(() => ({
+    ...defaultIrissListPrefs(),
+    hidden: dismissedHiddenIds(dismissed, latest?.vehicles ?? []),
+  }));
   const [prefsReady, setPrefsReady] = useState(false);
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [previewOrders, setPreviewOrders] = useState<IrissListingOrderBrief[] | null>(null);
@@ -318,10 +359,17 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
   useEffect(() => {
     const storage = irissListBrowserStorage();
     const loaded = storage ? migrateIrissListPrefs(storage) : defaultIrissListPrefs();
-    setPrefs({ ...loaded, tab: "new", listScope: "all", sort: null, budget: null });
+    const vehicles = latest?.vehicles ?? [];
+    const serverHidden = dismissedHiddenIds(dismissed, vehicles);
+    const hidden = uniqueListingIds([...serverHidden, ...loaded.hidden]);
+    setPrefs({ ...loaded, hidden, tab: "new", listScope: "all", sort: null, budget: null });
     setPrefsReady(true);
     setMounted(true);
     setNowMs(Date.now());
+    const localOnly = loaded.hidden.filter((id) => !serverHidden.includes(id));
+    void persistListingDismissItems(dismissPatchesFromIds(localOnly, true, vehicles));
+    // Servera dismissed nāk no SSR pirmajā renderī; tikai starta hidrācija.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -335,6 +383,21 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
     if (!storage) return;
     persistIrissListPrefs(storage, prefs);
   }, [prefs, prefsReady]);
+
+  function applyPrefs(next: IrissListPrefs) {
+    const prevHidden = prefs.hidden;
+    setPrefs(next);
+    const storage = irissListBrowserStorage();
+    if (storage) persistIrissListPrefs(storage, next);
+    const added = next.hidden.filter((id) => !prevHidden.includes(id));
+    const removed = prevHidden.filter((id) => !next.hidden.includes(id));
+    if (added.length === 0 && removed.length === 0) return;
+    const vehicles = latest?.vehicles ?? [];
+    void persistListingDismissItems([
+      ...dismissPatchesFromIds(added, true, vehicles),
+      ...dismissPatchesFromIds(removed, false, vehicles),
+    ]);
+  }
 
   useEffect(() => {
     if (!drawerId) return;
@@ -849,7 +912,7 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
             v={v}
             nowMs={nowMs}
             prefs={prefs}
-            onPrefs={setPrefs}
+            onPrefs={applyPrefs}
             linked={linkedOrdersOf(v, prefs, orderById)}
             budget={budgetOf(v, prefs, orderById)}
             onOpen={() => setDrawerId(v.id)}
@@ -874,7 +937,7 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
             linked={linkedOrdersOf(drawerVehicle, prefs, orderById)}
             budget={budgetOf(drawerVehicle, prefs, orderById)}
             onClose={() => setDrawerId(null)}
-            onPrefs={setPrefs}
+            onPrefs={applyPrefs}
             onPreviewOrder={(o) => {
               const linked = linkedOrdersOf(drawerVehicle, prefs, orderById);
               setPreviewOrders(linked.length > 0 ? linked : [o]);

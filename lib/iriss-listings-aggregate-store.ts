@@ -5,6 +5,11 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { applyAuto1CentsMigration } from "@/lib/iriss-listings-auto1-cents";
+import {
+  emptyIrissListingsDismissed,
+  normalizeDismissedView,
+  type IrissListingsDismissedView,
+} from "@/lib/iriss-listings-dismiss";
 import { computeListingVatHealth } from "@/lib/iriss-listings-vat";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { listingYearDigits } from "@/lib/iriss-listings-list-view";
@@ -26,6 +31,7 @@ import {
 const DEFAULT_RELATIVE_DIR = ".data/iriss-sludinajumi";
 const DEFAULT_BLOB_PREFIX = "iriss-sludinajumi/";
 const LATEST_FILENAME = "latest.json";
+const DISMISSED_FILENAME = "dismissed.json";
 const SNAPSHOTS_DIRNAME = "snapshots";
 const RAW_DIRNAME = "raw";
 
@@ -326,6 +332,35 @@ export async function readIrissListingsLatestView(): Promise<IrissListingsLatest
   }
 }
 
+export async function readIrissListingsDismissed(): Promise<IrissListingsDismissedView> {
+  const empty = emptyIrissListingsDismissed();
+  const r = resolveStorage();
+  if (r.kind === "disabled") return empty;
+  try {
+    const raw =
+      r.kind === "blob"
+        ? await readBlobJson(`${r.prefix}${DISMISSED_FILENAME}`, r.token)
+        : JSON.parse(await fs.readFile(path.join(r.dir, DISMISSED_FILENAME), "utf8")) as unknown;
+    return normalizeDismissedView(raw);
+  } catch {
+    return empty;
+  }
+}
+
+export async function writeIrissListingsDismissed(
+  view: IrissListingsDismissedView,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const r = resolveStorage();
+    if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+    const clean = normalizeDismissedView(view);
+    await writeJson(r, DISMISSED_FILENAME, JSON.stringify(clean, null, 2));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 export async function writeIrissListingsRun(view: IrissListingsLatestView): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const r = resolveStorage();
@@ -333,6 +368,7 @@ export async function writeIrissListingsRun(view: IrissListingsLatestView): Prom
     const vehicles = applyAuto1CentsMigration(view.vehicles).vehicles;
     const clean: IrissListingsLatestView = { ...view, vehicles };
     const snapshot: IrissListingsSnapshot = clean;
+    // Paslēptie auto ir dismissed.json; šis raksts to neaiztiek.
     await writeJson(r, LATEST_FILENAME, JSON.stringify(clean, null, 2));
     await writeJson(r, `${SNAPSHOTS_DIRNAME}/${clean.summary.runId}.json`, JSON.stringify(snapshot));
     return { ok: true };
