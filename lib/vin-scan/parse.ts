@@ -1,8 +1,10 @@
 /**
  * Tīras atbilžu parsēšanas funkcijas ātrajai VIN pārbaudei. Bez tīkla.
  */
+import type { CsddTechDataResult } from "@/lib/csdd-tech-data";
 import { vinFactoryRegion } from "@/lib/outvin-source-catalog";
-import type { VinScanParse, VinScanStatus } from "@/lib/vin-scan/types";
+import type { VinScanParse, VinScanStatus, VinScanVehicle } from "@/lib/vin-scan/types";
+import type { VinSourceFetchResult } from "@/lib/vin-sources/types";
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -32,32 +34,43 @@ export function parseTjekbilProbe(status: number, text: string): VinScanParse {
     return { status: "unknown", summary: "tjekbil.dk atbilde nav JSON" };
   }
   const basic = asRecord(asRecord(data).basic);
-  const vehicle = [str(basic.maerkeTypeNavn), str(basic.modelTypeNavn)].filter(Boolean).join(" ");
+  const make = str(basic.maerkeTypeNavn);
+  const model = str(basic.modelTypeNavn);
+  const vehicle = [make, model].filter(Boolean).join(" ");
   const plate = str(basic.regNr);
   const regStatus = str(basic.status);
+  const firstReg = str(basic.foersteRegistreringDato);
+  const year = firstReg.match(/(\d{4})/)?.[1] ?? "";
   if (!vehicle && !plate && !str(basic.stelNr)) {
     return { status: "none", summary: "tjekbil.dk neatgrieza auto" };
   }
-  const bits = [vehicle, plate, regStatus].filter(Boolean);
-  return { status: "found", summary: bits.join(", ") || "Ir Dānijas reģistrā" };
+  const bits = [vehicle, year, plate, regStatus].filter(Boolean);
+  return {
+    status: "found",
+    summary: bits.join(", ") || "Ir Dānijas reģistrā",
+    vehicle: make || model || year ? { make, model, year } : undefined,
+  };
 }
 
 export type EsynVehicle = { make: string; model: string; plate: string; chassis: string };
+
+export type EsynChassisHit = { ok: true; vehicle: EsynVehicle };
+export type EsynChassisMiss = VinScanParse & { ok: false };
 
 export function parseEsynChassis(
   status: number,
   text: string,
   vin: string,
-): { vehicle: EsynVehicle } | VinScanParse {
-  if (status === 404) return { status: "none", summary: "Nav Dānijas apskašu reģistrā" };
-  if (status !== 200) return { status: "unknown", summary: `esyn.dk atbildēja ar HTTP ${status}` };
+): EsynChassisHit | EsynChassisMiss {
+  if (status === 404) return { ok: false, status: "none", summary: "Nav Dānijas apskašu reģistrā" };
+  if (status !== 200) return { ok: false, status: "unknown", summary: `esyn.dk atbildēja ar HTTP ${status}` };
   let data: unknown;
   try {
     data = JSON.parse(text) as unknown;
   } catch {
-    return { status: "unknown", summary: "esyn.dk atbilde nav JSON" };
+    return { ok: false, status: "unknown", summary: "esyn.dk atbilde nav JSON" };
   }
-  if (asRecord(data).error) return { status: "none", summary: "Nav Dānijas apskašu reģistrā" };
+  if (asRecord(data).error) return { ok: false, status: "none", summary: "Nav Dānijas apskašu reģistrā" };
   const rows = Array.isArray(data) ? data : [data];
   const wanted = vin.trim().toUpperCase();
   const match =
@@ -67,8 +80,8 @@ export function parseEsynChassis(
   const chassis = str(match.chassisNumber).toUpperCase();
   const make = str(match.make);
   const model = str(match.model);
-  if (!chassis && !make && !model) return { status: "none", summary: "Nav Dānijas apskašu reģistrā" };
-  return { vehicle: { make, model, plate: str(match.registrationNumber), chassis } };
+  if (!chassis && !make && !model) return { ok: false, status: "none", summary: "Nav Dānijas apskašu reģistrā" };
+  return { ok: true, vehicle: { make, model, plate: str(match.registrationNumber), chassis } };
 }
 
 export function parseEsynInspections(text: string): VinScanParse & { count: number } {
@@ -91,10 +104,21 @@ export function parseEsynInspections(text: string): VinScanParse & { count: numb
     return [date, verdict, km != null ? kmLv(km) : ""].filter(Boolean).join(", ");
   });
   const latest = lines[0] ?? "";
+  const mileage = rows
+    .map((row) => {
+      const date = str(row.date).slice(0, 10);
+      const exact = typeof row.exactOdometer === "number" ? row.exactOdometer : null;
+      const coarse = typeof row.odometer === "number" ? row.odometer : null;
+      const km = exact != null && exact > 0 ? exact : coarse != null && coarse > 0 ? coarse * 1000 : null;
+      if (!date || km == null) return null;
+      return { date, odometer: kmLv(km) };
+    })
+    .filter((row): row is { date: string; odometer: string } => Boolean(row));
   return {
     status: "found",
     summary: `${rows.length} apskates${latest ? `, pēdējā ${latest}` : ""}`,
     detail: lines.join("\n"),
+    mileage,
     count: rows.length,
   };
 }
@@ -106,6 +130,8 @@ export function esynVehicleSummary(vehicle: EsynVehicle, inspections: VinScanPar
     status: inspections.status === "unknown" ? "found" : inspections.status,
     summary: [head, inspections.summary].filter(Boolean).join(". "),
     detail: inspections.detail,
+    vehicle: vehicle.make || vehicle.model ? { make: vehicle.make, model: vehicle.model, year: "" } : undefined,
+    mileage: inspections.mileage,
   };
 }
 
@@ -188,6 +214,7 @@ export function parseNhtsaDecode(status: number, text: string): VinScanParse {
     status: "found",
     summary: clean ? name : `Daļējs dekodējums: ${name}`,
     detail: errorText,
+    vehicle: { make, model, year },
   };
 }
 
@@ -219,4 +246,145 @@ export function parseNummerpladeProbe(status: number, text: string, mappedFound:
   if (!text.trim()) return { status: "unknown", summary: "nummerplade.net tukša atbilde" };
   if (!mappedFound) return { status: "none", summary: mappedMessage || "nummerplade.net neatpazina šo VIN" };
   return { status: "found", summary: mappedMessage || "Ir nummerplade.net" };
+}
+
+function vehicleFromName(make: string, model: string, year: string): VinScanVehicle | undefined {
+  if (!make && !model && !year) return undefined;
+  return { make, model, year };
+}
+
+export function parseCsddTechScan(result: CsddTechDataResult): VinScanParse {
+  if (result.found) {
+    const d = result.data;
+    const name = [d.year, d.make, d.model].filter(Boolean).join(" ");
+    const extras = [
+      d.registrationNumber,
+      d.inspectionValidUntilIso ? `TA līdz ${d.inspectionValidUntilIso}` : "",
+    ].filter(Boolean);
+    return {
+      status: "found",
+      summary: extras.length ? `${name || "Ir CSDD reģistrā"}, ${extras.join(", ")}` : name || "Ir CSDD reģistrā",
+      vehicle: vehicleFromName(d.make, d.model, d.year),
+    };
+  }
+  const msg = result.message.trim() || "CSDD datus neizdevās nolasīt";
+  if (/relejs nav konfigurēts/i.test(msg)) return { status: "skipped", summary: msg };
+  if (/netika atrasts|nav transportlīdzekļa datu|tukša/i.test(msg)) return { status: "none", summary: msg };
+  return { status: "unknown", summary: msg };
+}
+
+export type CsddPlateLookupView = {
+  ok: boolean;
+  vin: string;
+  make: string;
+  model: string;
+  year: string;
+  status: string;
+};
+
+export function formatCsddPlateLookup(result: CsddTechDataResult): CsddPlateLookupView {
+  if (!result.found) {
+    return { ok: false, vin: "", make: "", model: "", year: "", status: result.message };
+  }
+  const d = result.data;
+  const status = d.inspectionValidUntilIso
+    ? `TA līdz ${d.inspectionValidUntilIso}`
+    : d.registrationNumber || "Reģistrā";
+  return { ok: true, vin: d.vin, make: d.make, model: d.model, year: d.year, status };
+}
+
+export function parseVinSourceScan(result: VinSourceFetchResult): VinScanParse {
+  const mileage = result.mileage
+    .map((row) => ({ date: row.date, odometer: row.odometer }))
+    .filter((row) => row.date || row.odometer);
+  const detail = [result.ownersSummary, result.statusRecords, ...result.notes].filter(Boolean).join("\n");
+  if (result.found) {
+    return {
+      status: "found",
+      summary: result.message,
+      detail,
+      mileage,
+    };
+  }
+  const msg = result.message.trim() || "Avotu neizdevās nolasīt";
+  if (
+    /nav CAPSOLVER|VIN_SOURCES_BROWSER|tikai lokālajā vidē|relejs nav konfigurēts|nav MNT_RELAY|browser off/i.test(msg)
+  ) {
+    return { status: "skipped", summary: msg };
+  }
+  if (/nav .*reģistrā|neatrāda|netika atrasts|gadījumi nav atrasti|publiski strukturēti dati netika/i.test(msg)) {
+    return { status: "none", summary: msg };
+  }
+  return { status: "unknown", summary: msg, detail };
+}
+
+export type PlcAuctionFacts = {
+  title: string;
+  location: string;
+  saleDate: string;
+  winningBid: string;
+  mileage: string;
+};
+
+export function parsePlcAuctionFacts(text: string): { none: true } | PlcAuctionFacts | null {
+  const flat = text.replace(/\u00a0/g, " ");
+  if (/sorry,\s*could not find what you were looking for/i.test(flat)) return { none: true };
+  const title =
+    /([A-Za-z][A-Za-z0-9 ./-]*?,\s*\d{4}\s*\(\s*LOT\s*[№N#:]+\s*[^)]+\))/i
+      .exec(flat)?.[1]
+      ?.replace(/\s+/g, " ")
+      .trim() ?? "";
+  if (!title) return null;
+  const location = /Location:\s*([^\n]+)/i.exec(flat)?.[1]?.replace(/\s+/g, " ").trim() ?? "";
+  const saleDate =
+    /Sale date:\s*([^\n]+)/i.exec(flat)?.[1]?.replace(/\s+/g, " ").trim() ||
+    /Updated:\s*(\d{4}-\d{2}-\d{2})/i.exec(flat)?.[1]?.trim() ||
+    "";
+  const winningBid =
+    /Winning bid:\s*([^\n]+)/i.exec(flat)?.[1]?.replace(/\s+/g, " ").trim() ||
+    /Final bid:\s*([^\n]+)/i.exec(flat)?.[1]?.replace(/\s+/g, " ").trim() ||
+    /Sold for:\s*([^\n]+)/i.exec(flat)?.[1]?.replace(/\s+/g, " ").trim() ||
+    /Buy Now price[^0-9]{0,20}([0-9 \u00a0]+USD)/i.exec(flat)?.[1]?.replace(/\s+/g, " ").trim() ||
+    "";
+  const mileage = /Mileage:\s*([\d\s]+)\s*km/i.exec(flat)?.[1]?.replace(/\s+/g, " ").trim() ?? "";
+  return { title, location, saleDate, winningBid, mileage };
+}
+
+export function vehicleFromPlcTitle(title: string): VinScanVehicle | undefined {
+  const head = /^(.+?),\s*(\d{4})/.exec(title.trim());
+  if (!head) return undefined;
+  const parts = head[1].trim().split(/\s+/);
+  return { make: parts[0] ?? "", model: parts.slice(1).join(" "), year: head[2] ?? "" };
+}
+
+export function classifyPlcAuction(text: string): VinScanParse | null {
+  const parsed = parsePlcAuctionFacts(text);
+  if (!parsed) return null;
+  if ("none" in parsed) return { status: "none", summary: "Nav ierakstu" };
+  const bits = [parsed.title, parsed.location, parsed.saleDate, parsed.winningBid].filter(Boolean);
+  const km = parsed.mileage ? `${parsed.mileage} km` : "";
+  return {
+    status: "found",
+    summary: bits.join(" · "),
+    detail: [parsed.location && `Vieta: ${parsed.location}`, parsed.saleDate && `Datums: ${parsed.saleDate}`, parsed.winningBid && `Likme: ${parsed.winningBid}`, km && `Nobraukums: ${km}`]
+      .filter(Boolean)
+      .join("\n"),
+    vehicle: vehicleFromPlcTitle(parsed.title),
+    mileage: parsed.mileage && parsed.saleDate ? [{ date: parsed.saleDate, odometer: `${parsed.mileage} km` }] : undefined,
+  };
+}
+
+export function classifyCheckcarVinText(text: string, vin: string): VinScanParse | null {
+  const upperVin = vin.trim().toUpperCase();
+  const hasVin = Boolean(upperVin) && text.toUpperCase().includes(upperVin);
+  const photoCount = /(\d+)\s*(photos?|images?|pictures?|foto)/i.exec(text);
+  const n = photoCount ? Number(photoCount[1]) : NaN;
+  if (Number.isFinite(n) && n > 0) return { status: "found", summary: `${n} foto` };
+  if (/no photos?( available)?|0 photos?|photos? not (available|found)|no images?|couldn.t find|didn.t find|vehicle not found|not found|no report|report not found|no records/i.test(text)) {
+    return { status: "none", summary: "Atskaitē nav foto" };
+  }
+  if (hasVin && /photo|image|gallery|auction|mileage|odometer|lot|vehicle history|\breport\b/i.test(text)) {
+    return { status: "found", summary: "Ir vēstures atskaite" };
+  }
+  return null;
 }

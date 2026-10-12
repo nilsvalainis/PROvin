@@ -19,6 +19,10 @@ describe("pārlūka katalogs", () => {
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "stat_vin")?.openUrl(VIN)).toContain(VIN);
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "carfax_eu")?.openUrl(VIN)).toContain("preview-page");
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "auto_vin")?.openUrl(VIN)).toContain("checkout?vin=");
+    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "plc_auction")?.openUrl(VIN)).toBe("https://plc.auction/");
+    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "autodna_preview")?.openUrl(VIN)).toContain("autodna.lv/vin/");
+    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "vp_wanted")?.openUrl(VIN)).toContain("vp.gov.lv");
+    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "lt_itpr")?.openUrl(VIN)).toContain("epolicija.lt");
   });
 });
 
@@ -64,5 +68,17 @@ describe("classifyBrowserProbe", () => {
     expect(classifyCheckcarPhotos(3, false)).toMatchObject({ status: "found", summary: "3 foto" });
     expect(classifyCheckcarPhotos(0, false)).toBeNull();
     expect(classifyCheckcarPhotos(0, true)?.status).toBe("none");
+    expect(classifyBrowserProbe("checkcar_vin", "No photos available", VIN)?.status).toBe("none");
+    expect(classifyBrowserProbe("checkcar_vin", `${VIN} auction gallery 4 photos`, VIN)?.summary).toBe("4 foto");
+  });
+
+  it("plc.auction lots un tukšs meklējums", () => {
+    expect(classifyBrowserProbe("plc_auction", "Sorry, could not find what you were looking for..", VIN)).toMatchObject({
+      status: "none",
+      summary: "Nav ierakstu",
+    });
+    expect(
+      classifyBrowserProbe("plc_auction", "SKODA SUPERB, 2012 (LOT №: 111) Location: LV, Riga Updated: 2024-01-02", VIN)?.status,
+    ).toBe("found");
   });
 });

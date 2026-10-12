@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import { VIN_SCAN_CATALOG, VIN_SCAN_SOURCE_IDS } from "@/lib/vin-scan/catalog";
+import { parseCsddTechDataXml } from "@/lib/csdd-tech-data";
+import { emptyVinSourceResult } from "@/lib/vin-sources/types";
 import {
+  classifyCheckcarVinText,
+  classifyPlcAuction,
   dsbScanFromParts,
   esynVehicleSummary,
+  formatCsddPlateLookup,
   oneautoScanCopy,
   outvinScanCopy,
   parseCarpassCsrf,
   parseCarpassRecalls,
+  parseCsddTechScan,
   parseDsbEntryCount,
   parseDsbSearchHtml,
   parseEsynChassis,
@@ -15,15 +21,21 @@ import {
   parseNhtsaDecode,
   parseNummerpladeProbe,
   parseTjekbilProbe,
+  parseVinSourceScan,
+  vehicleFromPlcTitle,
 } from "@/lib/vin-scan/parse";
+import { defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
 import { countVinScanStatuses } from "@/lib/vin-scan/types";
 
 const DK_VIN = "VF12RFL1H49621453";
 
 describe("vin scan catalog", () => {
-  it("katalogā ir unikāli A līmeņa avoti", () => {
+  it("katalogā ir unikāli A līmeņa avoti, t.sk. CSDD un valstu reģistri", () => {
     expect(VIN_SCAN_CATALOG.map((s) => s.id)).toEqual([...VIN_SCAN_SOURCE_IDS]);
     expect(new Set(VIN_SCAN_SOURCE_IDS).size).toBe(VIN_SCAN_SOURCE_IDS.length);
+    expect(VIN_SCAN_SOURCE_IDS).toEqual(expect.arrayContaining(["csdd", "mnt_ee", "lkf_ee", "carinfo", "tjekbil", "carpass"]));
+    expect(defaultVinScanSourceIds({ oneauto: false, outvin: false })).not.toContain("oneauto");
+    expect(defaultVinScanSourceIds({ oneauto: true, outvin: false })).toContain("oneauto");
   });
 });
 
@@ -55,7 +67,7 @@ describe("esyn", () => {
       ]),
       DK_VIN,
     );
-    expect(chassis).toMatchObject({ vehicle: { make: "Renault", model: "Captur", plate: "AB12345" } });
+    expect(chassis).toMatchObject({ ok: true, vehicle: { make: "Renault", model: "Captur", plate: "AB12345" } });
     const inspections = parseEsynInspections(
       JSON.stringify({
         inspection: [
@@ -68,7 +80,7 @@ describe("esyn", () => {
     expect(inspections.summary).toContain("izturēta");
     expect(inspections.detail).toContain("385");
     expect(inspections.detail).toContain("320");
-    if (!("vehicle" in chassis)) throw new Error("expected vehicle");
+    if (!chassis.ok) throw new Error("expected vehicle");
     const merged = esynVehicleSummary(chassis.vehicle, inspections);
     expect(merged.status).toBe("found");
     expect(merged.summary).toContain("Renault Captur");
@@ -76,8 +88,8 @@ describe("esyn", () => {
 
   it("neatpazīts VIN ir tukšs avots", () => {
     const miss = parseEsynChassis(404, JSON.stringify({ error: "Resultatet findes ikke" }), DK_VIN);
-    expect("vehicle" in miss).toBe(false);
-    if ("vehicle" in miss) return;
+    expect(miss.ok).toBe(false);
+    if (miss.ok) return;
     expect(miss.status).toBe("none");
   });
 });
@@ -149,6 +161,67 @@ describe("maksas avoti paliek līdz pogai", () => {
     expect(parseNummerpladeProbe(429, "", false, "").status).toBe("unknown");
     expect(parseNummerpladeProbe(404, "", false, "").status).toBe("none");
     expect(parseNummerpladeProbe(200, "{}", true, "RENAULT Captur").status).toBe("found");
+  });
+});
+
+describe("CSDD un valstu reģistri", () => {
+  it("CSDD found / none / skipped", () => {
+    const xml = parseCsddTechDataXml(
+      "<TL_DATI><RN>NG8493</RN><VIN>TMBJH9NP9N7043581</VIN><MARKA>SKODA</MARKA><MODELIS>SUPERB</MODELIS><GADS>2012</GADS><TA_LIDZ>14092028</TA_LIDZ></TL_DATI>",
+    );
+    expect(parseCsddTechScan(xml)).toMatchObject({
+      status: "found",
+      vehicle: { make: "SKODA", model: "SUPERB", year: "2012" },
+    });
+    expect(parseCsddTechScan({ found: false, message: "CSDD relejs nav konfigurēts" }).status).toBe("skipped");
+    expect(parseCsddTechScan({ found: false, message: "CSDD neatbildēja (HTTP 502)" }).status).toBe("unknown");
+    expect(parseCsddTechScan({ found: false, message: "CSDD reģistrā šāds numurs netika atrasts" }).status).toBe("none");
+    expect(formatCsddPlateLookup(xml)).toMatchObject({ ok: true, vin: "TMBJH9NP9N7043581", year: "2012" });
+  });
+
+  it("Igaunijas / Zviedrijas avotus mapē no fetchVinSource rezultāta", () => {
+    const found = emptyVinSourceResult("mnt_ee", DK_VIN, "Atrasts");
+    found.found = true;
+    found.message = "Atrasts Igaunijas reģistrā (1 nobraukuma ieraksti)";
+    found.mileage = [{ date: "2024-03-12", odometer: "145230", country: "Igaunija" }];
+    expect(parseVinSourceScan(found)).toMatchObject({ status: "found", mileage: [{ date: "2024-03-12", odometer: "145230" }] });
+    expect(parseVinSourceScan(emptyVinSourceResult("mnt_ee", DK_VIN, "VIN nav Igaunijas transportlīdzekļu reģistrā")).status).toBe(
+      "none",
+    );
+    expect(
+      parseVinSourceScan(emptyVinSourceResult("lkf_ee", DK_VIN, "Nav CAPSOLVER_API_KEY. Igaunijas reģistrs no servera vajag CapSolver")).status,
+    ).toBe("skipped");
+    expect(parseVinSourceScan(emptyVinSourceResult("carinfo", DK_VIN, "car.info HTTP ielase neizdevās")).status).toBe("unknown");
+  });
+});
+
+describe("plc.auction un CheckCar.vin", () => {
+  it("nolasa lotu vai Nav ierakstu", () => {
+    expect(classifyPlcAuction("Sorry, could not find what you were looking for..")).toMatchObject({
+      status: "none",
+      summary: "Nav ierakstu",
+    });
+    const page = `
+      Skoda Superb, 2012 (Lot №: 395157146)
+      Location: DE, Greifswald
+      Updated: 2026-10-11
+      Winning bid: 4 200 EUR
+      Mileage: 155 000 km
+    `;
+    const found = classifyPlcAuction(page);
+    expect(found?.status).toBe("found");
+    expect(found?.summary).toContain("Greifswald");
+    expect(found?.summary).toContain("4 200 EUR");
+    expect(vehicleFromPlcTitle("Skoda Superb, 2012 (Lot №: 1)")).toEqual({ make: "Skoda", model: "Superb", year: "2012" });
+  });
+
+  it("CheckCar.vin found/none no lapas teksta", () => {
+    expect(classifyCheckcarVinText("No photos available for this VIN", DK_VIN)?.status).toBe("none");
+    expect(classifyCheckcarVinText(`${DK_VIN} Vehicle history report 12 photos`, DK_VIN)).toMatchObject({
+      status: "found",
+      summary: "12 foto",
+    });
+    expect(classifyCheckcarVinText("Loading report…", DK_VIN)).toBeNull();
   });
 });
 

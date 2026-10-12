@@ -5,7 +5,9 @@ import {
   csddTechDataLookupPath,
   csddXmlTagValue,
   decodeCsddXmlBody,
+  emptyCsddTechData,
   fetchCsddTechData,
+  isCsddTechDataResult,
   parseCsddTechDataXml,
 } from "@/lib/csdd-tech-data";
 import {
@@ -324,5 +326,15 @@ describe("csddVinMatchesOrder", () => {
     expect(csddVinMatchesOrder("TMBJH9NP9N7043581", "WAUZZZ4L98D010101")).toBe(false);
     expect(csddVinMatchesOrder("TMBJH9NP9N7043581", "NG8493")).toBeNull();
     expect(csddVinMatchesOrder("", "TMBJH9NP9N7043581")).toBeNull();
+  });
+});
+
+describe("isCsddTechDataResult", () => {
+  it("pieņem found/none un noraida API kļūdas objektu arī bez error lauka", () => {
+    expect(isCsddTechDataResult({ found: false, message: "nav" })).toBe(true);
+    expect(isCsddTechDataResult({ found: true, message: "ok", data: emptyCsddTechData() })).toBe(true);
+    expect(isCsddTechDataResult({ error: "unauthorized" })).toBe(false);
+    expect(isCsddTechDataResult({})).toBe(false);
+    expect(isCsddTechDataResult(null)).toBe(false);
   });
 });

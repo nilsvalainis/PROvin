@@ -4,11 +4,15 @@
  */
 
 export const VIN_SCAN_SOURCE_IDS = [
+  "csdd",
   "tjekbil",
   "nummerplade",
   "esyn",
   "dsb",
   "carpass",
+  "mnt_ee",
+  "lkf_ee",
+  "carinfo",
   "nhtsa",
   "oneauto",
   "outvin",
@@ -30,6 +34,13 @@ function vinQuery(vin: string): string {
 }
 
 export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
+  {
+    id: "csdd",
+    label: "CSDD",
+    country: "LV",
+    hint: "Latvijas reģistrs caur esošo releju",
+    openUrl: () => "https://e.csdd.lv/tadati/",
+  },
   {
     id: "tjekbil",
     label: "tjekbil.dk",
@@ -66,6 +77,27 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     openUrl: () => "https://public.car-pass.be/recalls",
   },
   {
+    id: "mnt_ee",
+    label: "mnt.ee",
+    country: "EE",
+    hint: "Igaunijas transportlīdzekļu reģistrs",
+    openUrl: () => "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+  },
+  {
+    id: "lkf_ee",
+    label: "lkf.ee",
+    country: "EE",
+    hint: "Igaunijas OCTA atlīdzības",
+    openUrl: () => "https://lkf.ee/et/kahjukontroll",
+  },
+  {
+    id: "carinfo",
+    label: "car.info",
+    country: "SE",
+    hint: "Zviedrijas un Nordics agregators",
+    openUrl: () => "https://www.car.info/en-se/",
+  },
+  {
     id: "nhtsa",
     label: "NHTSA",
     country: "US",
@@ -94,11 +126,25 @@ export function vinScanCatalogItem(id: VinScanSourceId): VinScanCatalogItem {
   return item;
 }
 
+export function isVinScanSourceId(v: string): v is VinScanSourceId {
+  return (VIN_SCAN_SOURCE_IDS as readonly string[]).includes(v);
+}
+
+export function defaultVinScanSourceIds(keys: { oneauto: boolean; outvin: boolean }): VinScanSourceId[] {
+  return VIN_SCAN_SOURCE_IDS.filter((id) => {
+    if (id === "oneauto") return keys.oneauto;
+    if (id === "outvin") return keys.outvin;
+    return true;
+  });
+}
+
 /**
  * Pārlūka zondes (2. solis). URL jāsakrīt ar `SCAN_URLS` failā `public/userscripts/provin-vin-autofill.user.js`.
  * Serveris šos avotus neizsauc. Skripts aizpilda VIN un nolasa, vai ieraksts ir redzams pirms pirkuma.
  */
 export const VIN_SCAN_BROWSER_IDS = [
+  "vp_wanted",
+  "lt_itpr",
   "stat_vin",
   "bid_cars",
   "vininspect",
@@ -109,6 +155,7 @@ export const VIN_SCAN_BROWSER_IDS = [
   "carvertical_preview",
   "auto_vin",
   "checkcar_vin",
+  "plc_auction",
 ] as const;
 
 export type VinScanBrowserId = (typeof VIN_SCAN_BROWSER_IDS)[number];
@@ -122,6 +169,20 @@ export type VinScanBrowserItem = {
 };
 
 export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanBrowserItem[] = [
+  {
+    id: "vp_wanted",
+    label: "VP meklētie",
+    country: "LV",
+    hint: "Valsts policija, meklētie transportlīdzekļi. Forma pārlūkā",
+    openUrl: () => "https://www.vp.gov.lv/lv/mekletie-transportlidzekli",
+  },
+  {
+    id: "lt_itpr",
+    label: "LT policija",
+    country: "LT",
+    hint: "Lietuvas policija, ieškomos transporto priemonės. VIN lauks knr",
+    openUrl: () => "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+  },
   {
     id: "stat_vin",
     label: "stat.vin",
@@ -192,4 +253,29 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanBrowserItem[] = [
     hint: "Vai atskaitē ir foto",
     openUrl: (vin) => `https://checkcar.vin/report/check/${vinQuery(vin)}`,
   },
+  {
+    id: "plc_auction",
+    label: "plc.auction",
+    country: "EU",
+    hint: "Izsoles lots. VIN ievada sākumlapas meklēšanā",
+    openUrl: () => "https://plc.auction/",
+  },
 ];
+
+export function isVinScanBrowserId(v: string): v is VinScanBrowserId {
+  return (VIN_SCAN_BROWSER_IDS as readonly string[]).includes(v);
+}
+
+/** Minimālā Tampermonkey versija, kas zina VP/LT meklētos TL. */
+export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 12 } as const;
+
+export function vinScanUserscriptMeetsMin(raw: string): boolean {
+  const parts = raw.split(".").map((n) => Number.parseInt(n, 10));
+  const major = parts[0] ?? 0;
+  const minor = parts[1] ?? 0;
+  return major > VIN_SCAN_USERSCRIPT_MIN.major || (major === VIN_SCAN_USERSCRIPT_MIN.major && minor >= VIN_SCAN_USERSCRIPT_MIN.minor);
+}
+
+export function vinScanUserscriptMinLabel(): string {
+  return `${VIN_SCAN_USERSCRIPT_MIN.major}.${VIN_SCAN_USERSCRIPT_MIN.minor}`;
+}

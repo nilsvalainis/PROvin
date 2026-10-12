@@ -4,6 +4,28 @@ import { vinScanCatalogItem, type VinScanSourceId } from "@/lib/vin-scan/catalog
 export const VIN_SCAN_STATUSES = ["found", "none", "unknown", "manual", "skipped"] as const;
 export type VinScanStatus = (typeof VIN_SCAN_STATUSES)[number];
 
+export type VinScanVehicle = {
+  make: string;
+  model: string;
+  year: string;
+};
+
+export type VinScanMileage = {
+  date: string;
+  odometer: string;
+  source: string;
+};
+
+export type VinScanMedia = {
+  photoUrl?: string;
+  photoCount?: number;
+};
+
+export type VinScanPaidKeys = {
+  oneauto: boolean;
+  outvin: boolean;
+};
+
 export type VinScanIndicator = {
   id: VinScanSourceId;
   label: string;
@@ -12,12 +34,18 @@ export type VinScanIndicator = {
   summary: string;
   detail: string;
   openUrl: string | null;
+  vehicle?: VinScanVehicle;
+  mileage?: VinScanMileage[];
+  media?: VinScanMedia;
 };
 
 export type VinScanParse = {
   status: VinScanStatus;
   summary: string;
   detail?: string;
+  vehicle?: VinScanVehicle;
+  mileage?: Omit<VinScanMileage, "source">[];
+  media?: VinScanMedia;
 };
 
 export function buildVinScanIndicator(
@@ -34,6 +62,9 @@ export function buildVinScanIndicator(
     summary: parsed.summary,
     detail: parsed.detail?.trim() ?? "",
     openUrl: meta.openUrl(vin),
+    vehicle: parsed.vehicle,
+    mileage: (parsed.mileage ?? []).map((row) => ({ ...row, source: meta.label })),
+    media: parsed.media,
   };
 }
 
