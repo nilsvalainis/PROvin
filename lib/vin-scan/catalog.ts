@@ -217,8 +217,8 @@ export function isVinScanBrowserId(v: string): v is VinScanBrowserId {
   return (VIN_SCAN_BROWSER_IDS as readonly string[]).includes(v);
 }
 
-/** Minimālā Tampermonkey versija, kas zina VP/LT meklētos TL. */
-export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 12 } as const;
+/** Minimālā Tampermonkey versija VIN SCAN paneļa zondēm un CarVertical checkout soļiem. */
+export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 15 } as const;
 
 export function vinScanUserscriptMeetsMin(raw: string): boolean {
   const parts = raw.split(".").map((n) => Number.parseInt(n, 10));

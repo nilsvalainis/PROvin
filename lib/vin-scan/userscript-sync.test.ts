@@ -20,8 +20,8 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.14\.0/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.14.0"');
+    expect(src).toMatch(/@version\s+1\.15\.0/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.15.0"');
     expect(src).toContain("const SCAN_URLS = {");
     expect(src).toContain('plc_auction: "https://plc.auction/?vin="');
     expect(src).toContain('vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin="');
@@ -71,11 +71,11 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(src).toContain("https://checkcar.vin/report/check/");
   });
 
-  it("minimālā paneļa versija ir 1.12", () => {
-    expect(vinScanUserscriptMinLabel()).toBe("1.12");
-    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 12 });
-    expect(vinScanUserscriptMeetsMin("1.11.0")).toBe(false);
-    expect(vinScanUserscriptMeetsMin("1.12.0")).toBe(true);
+  it("minimālā paneļa versija ir 1.15", () => {
+    expect(vinScanUserscriptMinLabel()).toBe("1.15");
+    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 15 });
+    expect(vinScanUserscriptMeetsMin("1.14.0")).toBe(false);
+    expect(vinScanUserscriptMeetsMin("1.15.0")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
   });
 

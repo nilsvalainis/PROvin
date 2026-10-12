@@ -408,7 +408,7 @@ export function AdminVinScanPanel({
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">Ātrā avotu pārbaude</p>
           <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-            Servera avoti atbild uzreiz. Pārējie atveras vienā cilnē. CarVertical priekšskatījums iet automātiski. Jaunu atskaiti pērk tikai ar „Pirkt atskaiti” pēc apstiprinājuma.
+            Servera avoti atbild uzreiz. Pārējie atveras vienā cilnē. CarVertical priekšskatījums iet automātiski. Jaunu atskaiti pērk tikai ar „Pirkt atskaiti” pēc apstiprinājuma. Checkout soļus skripts iziet pats; 3-D Secure paliek operatoram.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">

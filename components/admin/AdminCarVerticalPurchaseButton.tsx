@@ -14,7 +14,8 @@ type Props = {
 
 /**
  * Pēc `confirm` atver CarVertical pirkuma cilni ar userscript karogu.
- * Bez apstiprinājuma nenotiek. Checkout pogas joprojām nespied.
+ * Bez apstiprinājuma nenotiek. Pēc apstiprinājuma skripts iziet checkout
+ * soļus (mērķa aptauja, uznirstošie, saglabātā apmaksa). 3-D Secure paliek operatoram.
  */
 export function openCarVerticalPurchaseTab(vin: string): boolean {
   const clean = normalizeVin(vin);
