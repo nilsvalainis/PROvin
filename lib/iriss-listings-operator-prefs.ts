@@ -1,6 +1,7 @@
 /**
  * IRISS LIST operatora iestatījumi pārlūkā.
  * localStorage: tikai mazi UI lauki (filtri, kārtošana, izmaksas, budžets, ID, piezīmes).
+ * `hidden[]` ir lokāls kešs; pastāvīgā slēpšana ir servera `dismissed.json`.
  * Pilni auto dati, raw, foto un vēsture paliek servera Blob (vai IndexedDB, ja kādreiz vajadzēs kešu).
  */
 

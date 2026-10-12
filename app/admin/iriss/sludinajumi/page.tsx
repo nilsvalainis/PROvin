@@ -1,6 +1,11 @@
 import { Suspense } from "react";
 import { IrissSludinajumiListClient } from "@/components/admin/IrissSludinajumiListClient";
-import { getIrissListingsStorageState, readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
+import {
+  getIrissListingsStorageState,
+  readIrissListingsDismissed,
+  readIrissListingsLatestView,
+} from "@/lib/iriss-listings-aggregate-store";
+import { emptyIrissListingsDismissed } from "@/lib/iriss-listings-dismiss";
 import { irissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 import { irissScanOrderBrief } from "@/lib/iriss-scan-listings";
@@ -10,12 +15,14 @@ export const dynamic = "force-dynamic";
 
 export default async function IrissSludinajumiPage() {
   const storage = getIrissListingsStorageState();
-  const latest = storage.enabled ? await readIrissListingsLatestView() : null;
   // Abi datu kopumi (klientu pasūtījumi + SCAN) ielādējas paralēli; kļūda vienā neaptur otru.
-  const [orders, scanOrders] = await Promise.all([
+  const [latest, dismissedView, orders, scanOrders] = await Promise.all([
+    storage.enabled ? readIrissListingsLatestView() : Promise.resolve(null),
+    storage.enabled ? readIrissListingsDismissed() : Promise.resolve(emptyIrissListingsDismissed()),
     listIrissPasutijumi().then((rows) => rows.map(irissListingOrderBrief)).catch(() => []),
     listIrissScan().then((rows) => rows.map(irissScanOrderBrief)).catch(() => []),
   ]);
+  const dismissed = dismissedView.entries;
 
   return (
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">
@@ -39,7 +46,7 @@ export default async function IrissSludinajumiPage() {
 
       {storage.enabled ? (
         <Suspense fallback={null}>
-          <IrissSludinajumiListClient latest={latest} orders={orders} scanOrders={scanOrders} />
+          <IrissSludinajumiListClient latest={latest} orders={orders} scanOrders={scanOrders} dismissed={dismissed} />
         </Suspense>
       ) : null}
     </div>
