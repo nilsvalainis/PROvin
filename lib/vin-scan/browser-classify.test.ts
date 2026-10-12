@@ -11,19 +11,16 @@ import {
 const VIN = "WBA5R1C0XLFH42873";
 
 describe("pārlūka katalogs", () => {
-  it("id nesakrīt ar servera avotiem un URL satur VIN, kur tas vajadzīgs", () => {
+  it("id ir servera kataloga apakškopa un URL satur VIN", () => {
     expect(VIN_SCAN_BROWSER_CATALOG.map((s) => s.id)).toEqual([...VIN_SCAN_BROWSER_IDS]);
     for (const id of VIN_SCAN_BROWSER_IDS) {
-      expect(VIN_SCAN_SOURCE_IDS.includes(id as (typeof VIN_SCAN_SOURCE_IDS)[number])).toBe(false);
+      expect(VIN_SCAN_SOURCE_IDS.includes(id)).toBe(true);
     }
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "stat_vin")?.openUrl(VIN)).toContain(VIN);
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "carfax_eu")?.openUrl(VIN)).toContain("preview-page");
-    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "auto_vin")?.openUrl(VIN)).toContain("checkout?vin=");
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "plc_auction")?.openUrl(VIN)).toBe(
       `https://plc.auction/?vin=${VIN}`,
     );
-    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "autodna_preview")?.openUrl(VIN)).toContain("autodna.lv/vin/");
-    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "vp_wanted")?.openUrl(VIN)).toContain("vp.gov.lv");
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "lt_itpr")?.openUrl(VIN)).toContain("epolicija.lt");
   });
 });
@@ -51,17 +48,6 @@ describe("classifyBrowserProbe", () => {
     });
     expect(classifyBrowserProbe("carfax_eu", "No records found for this VIN", VIN)?.status).toBe("none");
     expect(classifyBrowserProbe("carfax_eu", "Check a car record by record", VIN)).toBeNull();
-  });
-
-  it("maksas priekšskatījums neapstiprina pirkumu", () => {
-    expect(classifyBrowserProbe("autodna_preview", "Atrasti 3 ieraksti. Pirkt atskaiti", VIN)?.summary).toContain(
-      "Pirkums paliek operatoram",
-    );
-    expect(classifyBrowserProbe("autodna_preview", "Dati nav pieejami", VIN)?.status).toBe("none");
-    expect(
-      classifyBrowserProbe("auto_vin", "We correctly identified your vehicle BMW 330i 2020", VIN),
-    ).toMatchObject({ status: "manual" });
-    expect(classifyBrowserProbe("carvertical_preview", `${VIN} Mēs atradām datus par šo auto`, VIN)?.status).toBe("found");
   });
 
   it("captcha paliek gaidīšana, CheckCar foto skaita atsevišķi", () => {

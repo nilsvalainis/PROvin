@@ -17,23 +17,38 @@ import {
   parseEsynChassis,
   parseEsynInspections,
   parseNhtsaDecode,
+  parseNummerpladeHtml,
+  parseNummerpladeProbe,
   parseTjekbilProbe,
   parseVinSourceScan,
   vehicleFromPlcTitle,
 } from "@/lib/vin-scan/parse";
-import { defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
+import { VIN_SCAN_REMOVED_IDS, defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
 import { countVinScanStatuses } from "@/lib/vin-scan/types";
 
 const DK_VIN = "VF12RFL1H49621453";
 
 describe("vin scan catalog", () => {
-  it("katalogā ir unikāli bezmaksas A līmeņa avoti", () => {
+  it("katalogā ir unikāli VIN SCAN avoti, bez izņemtajiem maksas/dekodēšanas avotiem", () => {
     expect(VIN_SCAN_CATALOG.map((s) => s.id)).toEqual([...VIN_SCAN_SOURCE_IDS]);
     expect(new Set(VIN_SCAN_SOURCE_IDS).size).toBe(VIN_SCAN_SOURCE_IDS.length);
-    expect(VIN_SCAN_SOURCE_IDS).toEqual(["tjekbil", "esyn", "dsb", "carpass", "mnt_ee", "nhtsa"]);
+    expect(VIN_SCAN_SOURCE_IDS).toContain("tjekbil");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("csdd");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("nummerplade");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("carinfo");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("lkf_ee");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("rdw");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("nhtsa_recalls");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("bidfax");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("listing_history");
+    expect(VIN_SCAN_SOURCE_IDS).not.toContain("vp_wanted");
+    expect(VIN_SCAN_SOURCE_IDS).not.toContain("uk_mot");
+    expect(VIN_SCAN_CATALOG.find((s) => s.id === "nummerplade")?.openUrl("WVWZZZ7NZEV015204")).toContain(
+      "/stelnummer/wvwzzz7nzev015204.html",
+    );
     expect(defaultVinScanSourceIds()).toEqual([...VIN_SCAN_SOURCE_IDS]);
-    for (const paid of ["nummerplade", "oneauto", "outvin", "csdd", "carinfo", "lkf_ee"] as const) {
-      expect(VIN_SCAN_SOURCE_IDS).not.toContain(paid);
+    for (const removed of VIN_SCAN_REMOVED_IDS) {
+      expect(VIN_SCAN_SOURCE_IDS).not.toContain(removed);
     }
   });
 
@@ -42,6 +57,7 @@ describe("vin scan catalog", () => {
     for (const item of VIN_SCAN_CATALOG) {
       const url = item.openUrl(vin);
       expect(url).toMatch(/^https:\/\//);
+      if (item.needs.includes("listing") && !item.needs.includes("vin")) continue;
       expect(url.toUpperCase()).toContain(vin);
     }
   });
@@ -85,6 +101,9 @@ describe("esyn", () => {
       }),
     );
     expect(inspections.count).toBe(2);
+    expect(inspections.inspections).toHaveLength(2);
+    expect(inspections.inspections?.[0]?.result).toBe("izturēta");
+    expect(inspections.inspections?.[0]?.odometer).toContain("385");
     expect(inspections.summary).toContain("izturēta");
     expect(inspections.detail).toContain("385");
     expect(inspections.detail).toContain("320");
@@ -137,6 +156,32 @@ describe("car-pass", () => {
     const parsed = parseCarpassRecalls(200, JSON.stringify({ result: "ok", success: true, recalls: [{ id: 1 }, { id: 2 }] }));
     expect(parsed.status).toBe("found");
     expect(parsed.summary).toContain("2");
+  });
+});
+
+describe("nummerplade probe", () => {
+  it("mapē found un kvotu", () => {
+    expect(parseNummerpladeProbe(200, "{}", true, "nummerplade.net: VW Golf").status).toBe("found");
+    expect(parseNummerpladeProbe(429, "", false, "").summary).toContain("limits");
+    expect(parseNummerpladeProbe(404, "", false, "").status).toBe("none");
+  });
+
+  it("nolasa publisko HTML bez API atslēgas", () => {
+    const html = `
+      <html><body>
+        <dl>
+          <dt>Mærke</dt><dd>Volkswagen</dd>
+          <dt>Model</dt><dd>Sharan</dd>
+          <dt>Nummerplade</dt><dd>CM53865</dd>
+          <dt>Stelnummer</dt><dd>${DK_VIN}</dd>
+        </dl>
+      </body></html>
+    `;
+    const parsed = parseNummerpladeHtml(200, html, DK_VIN);
+    expect(parsed.status).toBe("found");
+    expect(parsed.summary).toMatch(/Volkswagen/);
+    expect(parseNummerpladeHtml(200, "<html><title>Just a moment...</title></html>", DK_VIN).summary).toMatch(/Cloudflare/);
+    expect(parseNummerpladeHtml(200, "<p>Ingen køretøjer fundet</p>", DK_VIN).status).toBe("none");
   });
 });
 
@@ -225,7 +270,8 @@ describe("countVinScanStatuses", () => {
         { status: "found" },
         { status: "none" },
         { status: "manual" },
+        { status: "needs_input" },
       ]),
-    ).toMatchObject({ found: 2, none: 1, manual: 1, unknown: 0, skipped: 0 });
+    ).toMatchObject({ found: 2, none: 1, manual: 1, unknown: 0, skipped: 0, needs_input: 1 });
   });
 });

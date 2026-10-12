@@ -1,35 +1,54 @@
 import "server-only";
 
 import { VIN_SCAN_CATALOG, isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
-import {
-  probeCarpass,
-  probeDsb,
-  probeEsyn,
-  probeMntEe,
-  probeNhtsa,
-  probeTjekbil,
-} from "@/lib/vin-scan/probes";
-import { buildVinScanIndicator, type VinScanIndicator } from "@/lib/vin-scan/types";
+import { sourceNeedsInput, vinScanProbeFor } from "@/lib/vin-scan/probes";
+import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
+import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator } from "@/lib/vin-scan/types";
 
-const PROBES: Record<VinScanSourceId, (vin: string) => Promise<VinScanIndicator> | VinScanIndicator> = {
-  tjekbil: probeTjekbil,
-  esyn: probeEsyn,
-  dsb: probeDsb,
-  carpass: probeCarpass,
-  mnt_ee: probeMntEe,
-  nhtsa: probeNhtsa,
-};
+const SLOW_SOURCES = new Set<VinScanSourceId>([
+  "mnt_ee",
+  "lkf_ee",
+  "carinfo",
+  "nicb",
+  "auchistory",
+  "stat_vin",
+  "bidfax",
+  "poctra",
+  "checkcar_vin",
+  "regitra",
+  "traficom",
+  "biluppgifter",
+  "listing_history",
+]);
+const SLOW_TIMEOUT_MS = 45_000;
+const DEFAULT_TIMEOUT_MS = 14_000;
+const CAPTCHA_TIMEOUT_MS = 90_000;
 
-const SLOW_SOURCES = new Set<VinScanSourceId>(["mnt_ee"]);
-const SLOW_TIMEOUT_MS = 28_000;
+const CAPTCHA_SOURCES = new Set<VinScanSourceId>([
+  "lkf_ee",
+  "carinfo",
+  "nicb",
+  "auchistory",
+  "stat_vin",
+  "mnt_ee",
+  "nummerplade",
+  "lt_itpr",
+  "carpass",
+]);
 
-function withTimeout(id: VinScanSourceId, vin: string, job: Promise<VinScanIndicator> | VinScanIndicator): Promise<VinScanIndicator> {
+function timeoutMsFor(id: VinScanSourceId): number {
+  if (CAPTCHA_SOURCES.has(id)) return CAPTCHA_TIMEOUT_MS;
+  if (SLOW_SOURCES.has(id)) return SLOW_TIMEOUT_MS;
+  return DEFAULT_TIMEOUT_MS;
+}
+
+function withTimeout(id: VinScanSourceId, ctx: VinScanContext, job: Promise<VinScanIndicator> | VinScanIndicator): Promise<VinScanIndicator> {
   const run = Promise.resolve(job);
-  if (!SLOW_SOURCES.has(id)) return run;
+  const ms = timeoutMsFor(id);
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
-      resolve(buildVinScanIndicator(id, vin, { status: "unknown", summary: "Avots neatbildēja laikā" }));
-    }, SLOW_TIMEOUT_MS);
+      resolve(buildVinScanIndicator(id, ctx.vin, { status: "unknown", summary: "Avots neatbildēja laikā" }, ctx.plates));
+    }, ms);
     run
       .then((row) => {
         clearTimeout(timer);
@@ -37,23 +56,44 @@ function withTimeout(id: VinScanSourceId, vin: string, job: Promise<VinScanIndic
       })
       .catch(() => {
         clearTimeout(timer);
-        resolve(buildVinScanIndicator(id, vin, { status: "unknown", summary: "Avotu neizdevās nolasīt" }));
+        resolve(buildVinScanIndicator(id, ctx.vin, { status: "unknown", summary: "Avotu neizdevās nolasīt" }, ctx.plates));
       });
   });
 }
 
-/** Visi A līmeņa avoti paralēli. Viena zonde, kas krīt, kļūst par unknown un neaptur pārējās. */
-export async function runVinScan(vin: string, sourceIds?: readonly string[]): Promise<VinScanIndicator[]> {
-  const normalized = vin.trim().toUpperCase();
-  const wanted = sourceIds?.length
-    ? VIN_SCAN_CATALOG.filter((item) => sourceIds.includes(item.id))
+export type RunVinScanInput = {
+  vin: string;
+  plates?: VinScanPlates;
+  listingUrl?: string;
+  sourceIds?: readonly string[];
+};
+
+/** Visi avoti paralēli. Viena zonde, kas krīt, kļūst par unknown un neaptur pārējās. */
+export async function runVinScan(
+  vinOrInput: string | RunVinScanInput,
+  sourceIds?: readonly string[],
+): Promise<VinScanIndicator[]> {
+  const input: RunVinScanInput = typeof vinOrInput === "string" ? { vin: vinOrInput, sourceIds } : vinOrInput;
+  const ctx: VinScanContext = {
+    vin: input.vin.trim().toUpperCase(),
+    plates: input.plates ?? emptyVinScanPlates(),
+    listingUrl: input.listingUrl?.trim() ?? "",
+  };
+  const wanted = input.sourceIds?.length
+    ? VIN_SCAN_CATALOG.filter((item) => input.sourceIds!.includes(item.id))
     : VIN_SCAN_CATALOG;
   const rows = await Promise.all(
     wanted.map(async (item) => {
+      const missing = sourceNeedsInput(item.id, ctx);
+      if (missing) return missing;
+      const probe = vinScanProbeFor(item.id);
+      if (!probe) {
+        return buildVinScanIndicator(item.id, ctx.vin, { status: "unknown", summary: "Zonde nav pieejama" }, ctx.plates);
+      }
       try {
-        return await withTimeout(item.id, normalized, PROBES[item.id](normalized));
+        return await withTimeout(item.id, ctx, probe(ctx));
       } catch {
-        return buildVinScanIndicator(item.id, normalized, { status: "unknown", summary: "Avotu neizdevās nolasīt" });
+        return buildVinScanIndicator(item.id, ctx.vin, { status: "unknown", summary: "Avotu neizdevās nolasīt" }, ctx.plates);
       }
     }),
   );

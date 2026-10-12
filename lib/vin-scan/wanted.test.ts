@@ -30,7 +30,7 @@ describe("policijas meklētie TL", () => {
       status: "none",
       summary: "Nav meklēšanā",
     });
-    expect(classifyPoliceWanted("vp_wanted", "Transportlīdzeklis nav meklēšanā.", VIN)).toMatchObject({
+    expect(classifyPoliceWanted("lt_itpr", "Transportlīdzeklis nav meklēšanā.", VIN)).toMatchObject({
       status: "none",
       summary: "Nav meklēšanā",
     });
@@ -45,16 +45,16 @@ describe("policijas meklētie TL", () => {
       summary: expect.stringContaining("Meklēšanā"),
     });
     const lv = `VIN ${VIN} izsludināts meklēšanā. Meklēšanas iemesls: zādzība.`;
-    expect(classifyPoliceWanted("vp_wanted", lv, VIN)?.status).toBe("found");
+    expect(classifyPoliceWanted("lt_itpr", lv, VIN)?.status).toBe("found");
     expect(vinScanWantedStatusLabel("found")).toBe("Meklēšanā");
     expect(vinScanWantedDotClass("found")).toBe("bg-rose-600");
-    expect(vinScanWantedTileClass("vp_wanted", "found")).toContain("rose");
+    expect(vinScanWantedTileClass("lt_itpr", "found")).toContain("rose");
     expect(isVinScanWantedSource("lt_itpr")).toBe(true);
     expect(isVinScanWantedSource("plc_auction")).toBe(false);
   });
 
   it("404 nav apgalvojums, ka nav meklēšanā", () => {
-    expect(classifyPoliceWanted("vp_wanted", "Lapa netika atrasta. Page not found.", VIN)).toMatchObject({
+    expect(classifyPoliceWanted("lt_itpr", "Lapa netika atrasta. Page not found.", VIN)).toMatchObject({
       status: "unknown",
       summary: "Publiskā lapa nav pieejama",
     });

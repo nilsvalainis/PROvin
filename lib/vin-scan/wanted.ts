@@ -1,7 +1,7 @@
 import type { VinScanBrowserId } from "@/lib/vin-scan/catalog";
 import type { VinScanParse, VinScanStatus } from "@/lib/vin-scan/types";
 
-export const VIN_SCAN_WANTED_BROWSER_IDS = ["vp_wanted", "lt_itpr"] as const;
+export const VIN_SCAN_WANTED_BROWSER_IDS = ["lt_itpr"] as const;
 export type VinScanWantedId = (typeof VIN_SCAN_WANTED_BROWSER_IDS)[number];
 
 export function isVinScanWantedSource(id: string): id is VinScanWantedId {
@@ -66,7 +66,7 @@ function extraBits(text: string): string {
 
 /** Meklēto TL lapa: found = ir sarakstā, none = nav sarakstā. 404 nav „nav meklēšanā”. */
 export function classifyPoliceWanted(id: VinScanBrowserId, text: string, vin: string): VinScanParse | null {
-  if (id !== "vp_wanted" && id !== "lt_itpr") return null;
+  if (id !== "lt_itpr") return null;
   const flat = text.replace(/\u00a0/g, " ");
   if (isMissingPage(flat) && !isWantedHit(flat) && !isClearNone(flat)) {
     return { status: "unknown", summary: "Publiskā lapa nav pieejama" };

@@ -33,11 +33,13 @@ const SAMPLE_XML = `<?xml version="1.0"?>
 describe("vin scan open URLs", () => {
   it("katram avotam ir šī VIN meklēšanas vai rezultāta URL", () => {
     const catalog = vinScanAllCatalog();
-    expect(catalog.length).toBe(VIN_SCAN_CATALOG.length + VIN_SCAN_BROWSER_CATALOG.length);
+    expect(catalog.length).toBe(VIN_SCAN_CATALOG.length);
+    expect(VIN_SCAN_BROWSER_CATALOG.length).toBeGreaterThan(0);
+    expect(VIN_SCAN_BROWSER_CATALOG.length).toBeLessThan(VIN_SCAN_CATALOG.length);
     for (const item of catalog) {
       const url = item.openUrl(VIN);
       expect(url).toMatch(/^https:\/\//);
-      expect(url.toUpperCase()).toContain(VIN);
+      if (item.id !== "listing_history") expect(url.toUpperCase()).toContain(VIN);
       expect(resolveVinScanOpenUrl(item, VIN, null)).toBe(url);
     }
     expect(resolveVinScanOpenUrl(VIN_SCAN_CATALOG[0]!, VIN, "https://lot.example/abc")).toBe(

@@ -21,7 +21,7 @@ function row(
 
 describe("vin scan summary", () => {
   const rows = [
-    row("nhtsa", { status: "found", summary: "2012 Volkswagen Golf", vehicle: { make: "Volkswagen", model: "Golf", year: "2012" } }),
+    row("rdw", { status: "found", summary: "2012 Volkswagen Golf", vehicle: { make: "Volkswagen", model: "Golf", year: "2012" } }),
     row("tjekbil", {
       status: "found",
       summary: "2012 SKODA SUPERB",
@@ -69,9 +69,9 @@ describe("vin scan summary", () => {
       scannedAt: "2026-10-12T09:00:00.000Z",
       rows: [
         {
-          id: "vp_wanted",
-          label: "VP meklētie",
-          country: "LV",
+          id: "lt_itpr",
+          label: "LT policija",
+          country: "LT",
           status: "found",
           summary: "Meklēšanā",
         },

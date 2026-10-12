@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         PROVIN — VIN & Tirgus dati auto-fill
+// @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.15.0
-// @description  Admin MENU VIN auto-fill un ātrās pārbaudes zondes. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
+// @version      1.17.0
+// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -30,8 +30,6 @@
 // @match        https://www.stat.vin/*
 // @match        https://bid.cars/*
 // @match        https://www.bid.cars/*
-// @match        https://vininspect.com/*
-// @match        https://www.vininspect.com/*
 // @match        https://auchistory.com/*
 // @match        https://www.auchistory.com/*
 // @match        https://www.carfax.eu/*
@@ -45,8 +43,37 @@
 // @match        https://www.plc.auction/*
 // @match        https://www.epolicija.lt/*
 // @match        https://epolicija.lt/*
-// @match        https://www.vp.gov.lv/*
-// @match        https://vp.gov.lv/*
+// @match        https://www.nicb.org/*
+// @match        https://nicb.org/*
+// @match        https://bidfax.info/*
+// @match        https://www.bidfax.info/*
+// @match        https://poctra.com/*
+// @match        https://www.poctra.com/*
+// @match        https://e.csdd.lv/*
+// @match        https://eteenindus.mnt.ee/*
+// @match        https://lkf.ee/*
+// @match        https://www.nummerplade.net/*
+// @match        https://nummerplade.net/*
+// @match        https://ovi.rdw.nl/*
+// @match        https://opendata.rdw.nl/*
+// @match        https://www.vegvesen.no/*
+// @match        https://vegvesen.no/*
+// @match        https://biluppgifter.se/*
+// @match        https://www.regitra.lt/*
+// @match        https://www.traficom.fi/*
+// @match        https://www.nhtsa.gov/*
+// @match        https://www.tjekbil.dk/*
+// @match        https://tjekbil.dk/*
+// @match        https://findsynsrapport.esyn.dk/*
+// @match        https://app.digitalservicebog.dk/*
+// @match        https://public.car-pass.be/*
+// @match        https://www.volkswagen.co.uk/*
+// @match        https://www.bmwusa.com/*
+// @match        https://www.bmw.com/*
+// @match        https://www.mbusa.com/*
+// @match        https://www.mercedes-benz.com/*
+// @match        https://www.volvocars.com/*
+// @match        https://www.toyota.com/*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
@@ -60,7 +87,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.15.0";
+  const SCRIPT_VERSION = "1.17.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -430,6 +457,20 @@
     return m ? String(m[1]).toUpperCase() : "";
   }
 
+  function vinFromDeepPath() {
+    const patterns = [
+      /\/cars\/([A-HJ-NPR-Z0-9]{11,17})/i,
+      /\/search\/([A-HJ-NPR-Z0-9]{11,17})/i,
+      /\/vin\/(?:[A-Z]{1,3}\/)?([A-HJ-NPR-Z0-9]{11,17})/i,
+      /\/([A-HJ-NPR-Z0-9]{17})(?:\/|$)/i,
+    ];
+    for (const re of patterns) {
+      const m = path.match(re);
+      if (m) return String(m[1]).toUpperCase();
+    }
+    return "";
+  }
+
   function peekPendingVin() {
     let vin = "";
     try {
@@ -451,7 +492,13 @@
       }
     }
     if (!vin) {
-      const vinRaw = params.get("vin") || params.get("q");
+      const vinRaw =
+        params.get("vin") ||
+        params.get("q") ||
+        params.get("knr") ||
+        params.get("s") ||
+        params.get("chassisNumber") ||
+        params.get("understellsnummer");
       if (vinRaw && String(vinRaw).trim()) {
         vin = String(vinRaw)
           .replace(/[\s-]/g, "")
@@ -460,6 +507,7 @@
     }
     if (!vin) vin = vinFromAutodnaPath();
     if (!vin) vin = vinFromCheckcarPath();
+    if (!vin) vin = vinFromDeepPath();
     return vin;
   }
 
@@ -520,17 +568,34 @@
     const SCAN_URLS = {
       stat_vin: "https://stat.vin/cars/" + v,
       bid_cars: "https://bid.cars/en/search?q=" + v,
-      vininspect: "https://vininspect.com/vin/" + v,
       auchistory: "https://auchistory.com/?vin=" + v,
       carfax_eu: "https://www.carfax.eu/preview-page?vin=" + v,
-      cebia: "https://en.cebia.com/?vin=" + v,
-      autodna_preview: "https://www.autodna.lv/vin/" + v,
-      carvertical_preview: "https://www.carvertical.com/lv/user/reports?vin=" + v,
-      auto_vin: "https://www.auto.vin/en/checkout?vin=" + v,
       checkcar_vin: "https://checkcar.vin/report/check/" + v,
       plc_auction: "https://plc.auction/?vin=" + v,
-      vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin=" + v,
       lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=" + v,
+      nicb: "https://www.nicb.org/vincheck?vin=" + v,
+      bidfax: "https://bidfax.info/?s=" + v,
+      poctra: "https://poctra.com/search/" + v,
+      csdd: "https://e.csdd.lv/tadati/?vin=" + v,
+      mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf?vin=" + v,
+      lkf_ee: "https://lkf.ee/et/kahjukontroll?vin=" + v,
+      carinfo: "https://www.car.info/en-se/vin/" + v,
+      nummerplade: "https://www.nummerplade.net/stelnummer/" + String(vin || "").toLowerCase() + ".html",
+      rdw: "https://opendata.rdw.nl/resource/m9d7-ebf2.json?vin=" + v,
+      vegvesen: "https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/?understellsnummer=" + v,
+      biluppgifter: "https://biluppgifter.se/" + v,
+      regitra: "https://www.regitra.lt/lt/e-paslaugos/transporto-priemones-duomenu-patikra?vin=" + v,
+      traficom: "https://www.traficom.fi/en/transport/road/vehicle-information?vin=" + v,
+      tjekbil: "https://www.tjekbil.dk/?vin=" + v,
+      esyn: "https://findsynsrapport.esyn.dk/?chassisNumber=" + v,
+      dsb: "https://app.digitalservicebog.dk/search?vin=" + v + "&country=eu",
+      carpass: "https://public.car-pass.be/recalls?vin=" + v,
+      nhtsa_recalls: "https://www.nhtsa.gov/recalls?vin=" + v,
+      recall_vw: "https://www.volkswagen.co.uk/en/owners-and-services/recalls.html?vin=" + v,
+      recall_bmw: "https://www.bmwusa.com/recall.html?vin=" + v,
+      recall_mercedes: "https://www.mbusa.com/en/recall?vin=" + v,
+      recall_volvo: "https://www.volvocars.com/intl/support/car/recalls?vin=" + v,
+      recall_toyota: "https://www.toyota.com/recall/?vin=" + v,
     };
     return SCAN_URLS[id] || "";
   }
@@ -538,17 +603,34 @@
   function scanIdForHost(name) {
     if (name === "stat.vin" || name.endsWith(".stat.vin")) return "stat_vin";
     if (name.endsWith("bid.cars")) return "bid_cars";
-    if (name.endsWith("vininspect.com")) return "vininspect";
     if (name.endsWith("auchistory.com")) return "auchistory";
     if (name.endsWith("carfax.eu")) return "carfax_eu";
-    if (name === "cebia.com" || name.endsWith(".cebia.com")) return "cebia";
-    if (name.endsWith("autodna.lv") || name.endsWith("autodna.com")) return "autodna_preview";
-    if (name.endsWith("carvertical.com")) return "carvertical_preview";
-    if (name === "auto.vin" || name.endsWith(".auto.vin")) return "auto_vin";
     if (name.endsWith("checkcar.vin")) return "checkcar_vin";
     if (name.endsWith("plc.auction")) return "plc_auction";
-    if (name.endsWith("vp.gov.lv")) return "vp_wanted";
     if (name.endsWith("epolicija.lt")) return "lt_itpr";
+    if (name.endsWith("nicb.org")) return "nicb";
+    if (name.endsWith("bidfax.info")) return "bidfax";
+    if (name.endsWith("poctra.com")) return "poctra";
+    if (name.endsWith("e.csdd.lv")) return "csdd";
+    if (name.endsWith("mnt.ee")) return "mnt_ee";
+    if (name.endsWith("lkf.ee")) return "lkf_ee";
+    if (name.endsWith("car.info")) return "carinfo";
+    if (name.endsWith("nummerplade.net")) return "nummerplade";
+    if (name.endsWith("rdw.nl")) return "rdw";
+    if (name.endsWith("vegvesen.no")) return "vegvesen";
+    if (name.endsWith("biluppgifter.se")) return "biluppgifter";
+    if (name.endsWith("regitra.lt")) return "regitra";
+    if (name.endsWith("traficom.fi")) return "traficom";
+    if (name.endsWith("tjekbil.dk")) return "tjekbil";
+    if (name.endsWith("esyn.dk")) return "esyn";
+    if (name.endsWith("digitalservicebog.dk")) return "dsb";
+    if (name.endsWith("car-pass.be")) return "carpass";
+    if (name.endsWith("nhtsa.gov")) return "nhtsa_recalls";
+    if (name.endsWith("volkswagen.co.uk")) return "recall_vw";
+    if (name.endsWith("bmwusa.com") || name.endsWith("bmw.com")) return "recall_bmw";
+    if (name.endsWith("mbusa.com") || name.endsWith("mercedes-benz.com")) return "recall_mercedes";
+    if (name.endsWith("volvocars.com")) return "recall_volvo";
+    if (name.endsWith("toyota.com")) return "recall_toyota";
     return "";
   }
 
@@ -586,13 +668,6 @@
     if (id === "bid_cars") {
       if (/no results|0 vehicles|nothing found|no cars found/i.test(text)) return { status: "none", summary: "Nav izsoles arhīvā" };
       if (hasVin && /lot|bid|sold|auction|mileage/i.test(text)) return { status: "found", summary: "Ir izsoles ieraksts" };
-      return null;
-    }
-    if (id === "vininspect") {
-      if (/no records|couldn.t find|didn.t find|0 records/i.test(text)) return { status: "none", summary: "Nav vēstures ieraksta" };
-      if (hasVin && /records found|vehicle history|we found \d+|full history/i.test(text)) {
-        return { status: "found", summary: "Ir vēstures priekšskatījums" };
-      }
       return null;
     }
     if (id === "auchistory") {
@@ -680,7 +755,7 @@
       const bits = [title, location.replace(/\s+/g, " ").trim(), String(saleDate).trim(), String(winningBid).replace(/\s+/g, " ").trim()].filter(Boolean);
       return { status: "found", summary: bits.join(" · ") };
     }
-    if (id === "vp_wanted" || id === "lt_itpr") {
+    if (id === "lt_itpr") {
       if (/lapa netika atrasta|lapa nav atrasta|page not found|404 not found|šāda lapa neeksistē/i.test(text)) {
         return { status: "unknown", summary: "Publiskā lapa nav pieejama" };
       }
@@ -967,7 +1042,7 @@
       const input =
         id === "plc_auction"
           ? findPlcSearchInput()
-          : id === "vp_wanted" || id === "lt_itpr"
+          : id === "lt_itpr"
             ? findPoliceWantedInput()
             : findScanVinInput();
       if (input) {
@@ -979,24 +1054,24 @@
       }
       const mayClick =
         blocker !== "captcha" &&
-        (id === "autodna_preview" ||
-          id === "vininspect" ||
-          id === "bid_cars" ||
+        (id === "bid_cars" ||
           id === "plc_auction" ||
-          id === "vp_wanted" ||
-          id === "lt_itpr");
+          id === "lt_itpr" ||
+          id === "nicb" ||
+          id === "bidfax" ||
+          id === "poctra");
       if (mayClick && filled && !clicked && ticks >= 3) {
         clicked = clickSafeCheck();
-        if (!clicked && (id === "plc_auction" || id === "vp_wanted" || id === "lt_itpr") && input && typeof input.form?.requestSubmit === "function") {
+        if (!clicked && (id === "plc_auction" || id === "lt_itpr") && input && typeof input.form?.requestSubmit === "function") {
           input.form.requestSubmit();
           clicked = true;
-        } else if (!clicked && (id === "plc_auction" || id === "vp_wanted" || id === "lt_itpr") && input) {
+        } else if (!clicked && (id === "plc_auction" || id === "lt_itpr") && input) {
           input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
           clicked = true;
         }
       }
-      if (blocker === "captcha") showProvinBadge("Apstipriniet captcha");
-      else if (blocker === "cloudflare") showProvinBadge("Apstipriniet Cloudflare");
+      if (blocker === "captcha") showProvinBadge("Captcha: VIN SCAN risina serverī");
+      else if (blocker === "cloudflare") showProvinBadge("Cloudflare: VIN SCAN risina serverī");
       const result = classifyBrowserProbe(id, text, probeVin);
       if (result) {
         window.clearInterval(timer);
@@ -1022,9 +1097,9 @@
       if (ticks > 140) {
         window.clearInterval(timer);
         const timedOut = blocker === "captcha"
-          ? { status: "manual", summary: "VIN aizpildīts. Captcha jāapstiprina šajā cilnē" }
+          ? { status: "unknown", summary: "Captcha palika lapā. VIN SCAN to risina serverī ar CapSolver" }
           : blocker === "cloudflare"
-            ? { status: "unknown", summary: "Cloudflare apturēja lapu" }
+            ? { status: "unknown", summary: "Cloudflare palika lapā. VIN SCAN to risina serverī ar CapSolver" }
             : { status: "unknown", summary: "Avots neatbildēja laikā" };
         publishScan({ id: id, vin: probeVin, status: timedOut.status, summary: timedOut.summary, detail: "" });
       }
@@ -1588,7 +1663,7 @@
     el.dispatchEvent(new KeyboardEvent("keydown", opts));
     el.dispatchEvent(new KeyboardEvent("keypress", opts));
     el.dispatchEvent(new KeyboardEvent("keyup", opts));
-    /* car.info meklēšana ir JS overlay — form.requestSubmit ved uz 404 /search?q= */
+    /* car.info meklēšana ir JS overlay: form.requestSubmit ved uz 404 /search?q= */
   }
 
   function clickCarinfoSearchIcon() {
@@ -1737,14 +1812,68 @@
     }, 500);
   }
 
+  function findGenericVinInput() {
+    const selectors = [
+      'input[name="vin"]',
+      'input#vin',
+      'textarea[name="vin"]',
+      'input[name="chassisNumber"]',
+      'input[name="understellsnummer"]',
+      'input[name="knr"]',
+      'input[name="stelnummer"]',
+      'input[placeholder*="VIN" i]',
+      'input[placeholder*="vin" i]',
+    ];
+    for (const sel of selectors) {
+      try {
+        const el = document.querySelector(sel);
+        if (el && isVisible(el) && !el.disabled) return el;
+      } catch {
+        /* ignore */
+      }
+    }
+    for (const el of document.querySelectorAll("input, textarea")) {
+      if (!isVisible(el) || el.disabled || el.type === "password" || el.type === "hidden") continue;
+      const blob = ((el.name || "") + " " + (el.id || "") + " " + (el.getAttribute("placeholder") || "") + " " + (el.getAttribute("aria-label") || "")).toLowerCase();
+      if (blob.includes("vin") || blob.includes("chassis") || blob.includes("understell") || blob.includes("stelnummer")) return el;
+    }
+    return null;
+  }
+
+  function findGenericPlateInput() {
+    const plate =
+      params.get("registration") ||
+      params.get("kenteken") ||
+      params.get("plate") ||
+      "";
+    if (!plate) return null;
+    const selectors = [
+      'input[name="registration"]',
+      'input[name="kenteken"]',
+      'input[name="plate"]',
+      'input[name="regNr"]',
+      'input[placeholder*="reg" i]',
+    ];
+    for (const sel of selectors) {
+      try {
+        const el = document.querySelector(sel);
+        if (el && isVisible(el) && !el.disabled) return { el: el, plate: String(plate).toUpperCase() };
+      } catch {
+        /* ignore */
+      }
+    }
+    return null;
+  }
+
   const isCV = host.endsWith("carvertical.com");
   const isAR = host.endsWith("auto-records.com");
   const isDNA = host.endsWith("autodna.lv") || host.endsWith("autodna.com");
   const isCTR = host.endsWith("checkthisreg.com");
   const isInfo = host.endsWith("car.info");
   const isCheckcar = host.endsWith("checkcar.vin");
+  const isScanHost = Boolean(scanIdForHost(host));
 
-  if (!isCV && !isAR && !isDNA && !isCTR && !isInfo && !isCheckcar) return;
+  if (!isCV && !isAR && !isDNA && !isCTR && !isInfo && !isCheckcar && !isScanHost) return;
 
   let tries = 0;
   const maxTries = 220;
@@ -1882,6 +2011,22 @@
       window.clearInterval(interval);
       console.log("PROVIN checkcar: skaitu fotogrāfijas", probeVin);
       watchCheckcarPhotos(probeVin);
+      return;
+    }
+
+    if (isScanHost) {
+      const plateHit = findGenericPlateInput();
+      if (plateHit) {
+        const have = String(plateHit.el.value || "").replace(/[\s-]/g, "").toUpperCase();
+        const want = String(plateHit.plate || "").replace(/[\s-]/g, "").toUpperCase();
+        if (have !== want) setNativeValue(plateHit.el, plateHit.plate);
+      }
+      const el = findGenericVinInput();
+      if (el && !el.disabled) {
+        fillAndClear(el);
+        done = true;
+        window.clearInterval(interval);
+      }
     }
   }, 250);
 })();

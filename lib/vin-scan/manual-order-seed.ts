@@ -32,6 +32,7 @@ const SOURCE_STATUS_LV: Record<string, string> = {
   unknown: "Neizdevās",
   manual: "Līdz pogai",
   skipped: "Nav atslēgas",
+  needs_input: "Vajag ievadi",
   idle: "Gaida",
   checking: "Pārbauda",
 };
@@ -53,6 +54,7 @@ export type VinScanManualOrderInput = {
   vin: string;
   plate?: string;
   plateStatus?: string;
+  plates?: { lv?: string; nl?: string; lt?: string; fi?: string; uk?: string };
   csdd?: CsddTechData | null;
   vehicle?: VinScanVehicle | null;
   mileage?: VinScanMileage[];
@@ -92,6 +94,16 @@ export function parseVinScanManualOrderInput(raw: unknown): VinScanManualOrderIn
 
   const plate = typeof o.plate === "string" ? normalizePlateNumber(o.plate) : "";
   const plateStatus = typeof o.plateStatus === "string" ? o.plateStatus.trim() : "";
+  const platesRaw = o.plates && typeof o.plates === "object" ? (o.plates as Record<string, unknown>) : null;
+  const plates = platesRaw
+    ? {
+        lv: typeof platesRaw.lv === "string" ? normalizePlateNumber(platesRaw.lv) : "",
+        nl: typeof platesRaw.nl === "string" ? normalizePlateNumber(platesRaw.nl) : "",
+        lt: typeof platesRaw.lt === "string" ? normalizePlateNumber(platesRaw.lt) : "",
+        fi: typeof platesRaw.fi === "string" ? normalizePlateNumber(platesRaw.fi) : "",
+        uk: typeof platesRaw.uk === "string" ? normalizePlateNumber(platesRaw.uk) : "",
+      }
+    : undefined;
   const scannedAt = typeof o.scannedAt === "string" ? o.scannedAt.trim() : "";
   const csdd = parseCsddTechDataFromUnknown(o.csdd);
   const vehicle = asVehicle(o.vehicle);
@@ -102,6 +114,7 @@ export function parseVinScanManualOrderInput(raw: unknown): VinScanManualOrderIn
     vin,
     ...(plate ? { plate } : {}),
     ...(plateStatus ? { plateStatus } : {}),
+    ...(plates && (plates.lv || plates.nl || plates.lt || plates.fi || plates.uk) ? { plates } : {}),
     ...(csdd ? { csdd } : {}),
     ...(vehicle ? { vehicle } : {}),
     ...(mileage.length ? { mileage } : {}),
@@ -209,6 +222,15 @@ export function buildVinScanManualOrderNotes(input: VinScanManualOrderInput): st
     `VIN: ${vin}`,
   ];
   if (plate) lines.push(`Reģ. nr.: ${plate}`);
+  if (input.plates) {
+    const extra = [
+      input.plates.nl ? `NL ${input.plates.nl}` : "",
+      input.plates.lt ? `LT ${input.plates.lt}` : "",
+      input.plates.fi ? `FI ${input.plates.fi}` : "",
+      input.plates.uk ? `UK ${input.plates.uk}` : "",
+    ].filter(Boolean);
+    if (extra.length) lines.push(`Citu valstu numuri: ${extra.join(", ")}`);
+  }
   if (input.plateStatus) lines.push(`CSDD: ${input.plateStatus}`);
   if (vehicleLine) lines.push(`Auto: ${vehicleLine}`);
   if (scanned) lines.push(`Skenēts: ${scanned}`);

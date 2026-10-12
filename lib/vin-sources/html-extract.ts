@@ -154,6 +154,23 @@ function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** Visi `<input name>` lauki POST formai (hidden + redzamie). */
+export function extractHtmlInputFields(html: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const re = /<input\b([^>]*)>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    const attrs = m[1] ?? "";
+    const name = /(?:^|\s)name=["']([^"']+)["']/i.exec(attrs)?.[1];
+    if (!name) continue;
+    const type = /(?:^|\s)type=["']([^"']+)["']/i.exec(attrs)?.[1]?.toLowerCase() ?? "text";
+    if (type === "file" || type === "image") continue;
+    const value = /(?:^|\s)value=["']([^"']*)["']/i.exec(attrs)?.[1] ?? "";
+    if (!(name in out) || value) out[name] = decodeEntities(value);
+  }
+  return out;
+}
+
 export function extractInputValue(html: string, name: string): string {
   const n = escapeRe(name);
   const re = new RegExp(`name="${n}"[^>]*value="([^"]*)"`, "i");
