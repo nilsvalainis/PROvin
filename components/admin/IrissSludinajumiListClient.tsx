@@ -32,6 +32,7 @@ import {
   listingOrdersById,
   listingVehicleOrderIds,
   parseListingOrderFilter,
+  buildListingClientOptions,
   serializeListingOrderFilter,
   vehicleMatchesOrderFilter,
   type IrissListingOrderBrief,
@@ -49,8 +50,6 @@ import {
 import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import {
   computeListingVatHealth,
-  formatListingVatHealthLine,
-  listingTaxChip,
   listingTaxCostArgs,
   listingTaxResolved,
   type ListingTax,
@@ -186,7 +185,7 @@ function budgetOf(
   prefs: IrissListPrefs,
   byId: ReadonlyMap<string, IrissListingOrderBrief>,
 ): number | null {
-  return listingBudgetForVehicle(prefs.budget, linkedOrdersOf(v, prefs, byId));
+  return listingBudgetForVehicle(null, linkedOrdersOf(v, prefs, byId));
 }
 
 function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs, budget: number | null): number | null {
@@ -233,6 +232,9 @@ function CountryFlag({ code }: { code: string }) {
   );
 }
 
+/** Atverot lapu vienmēr: cilne „Jauni”, kārtot „Jaunākie” (neatjauno no localStorage). */
+const DEFAULT_SORT: ListingSort = "seen";
+
 type Props = {
   latest: IrissListingsLatestView | null;
   orders: IrissListingOrderBrief[];
@@ -261,12 +263,15 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [previewOrders, setPreviewOrders] = useState<IrissListingOrderBrief[] | null>(null);
   const [showCosts, setShowCosts] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const mobile = useMobilePlatform();
   const restoredQueryRef = useRef(false);
   const tab = prefs.tab;
   const listScope = prefs.listScope;
   const hideTech = prefs.hideTech;
-  const sort = parseListingSort(searchParams.get("sort")) ?? "ending";
+  const sort = parseListingSort(searchParams.get("sort")) ?? DEFAULT_SORT;
   const sources = parseListingSources(searchParams.get("src"));
   const priceMin = parsePriceBound(searchParams.get("min"));
   const priceMax = parsePriceBound(searchParams.get("max"));
@@ -275,7 +280,8 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
 
   useEffect(() => {
     const storage = irissListBrowserStorage();
-    setPrefs(storage ? migrateIrissListPrefs(storage) : defaultIrissListPrefs());
+    const loaded = storage ? migrateIrissListPrefs(storage) : defaultIrissListPrefs();
+    setPrefs({ ...loaded, tab: "new", listScope: "all", sort: null, budget: null });
     setPrefsReady(true);
     setMounted(true);
     setNowMs(Date.now());
@@ -312,8 +318,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
     restoredQueryRef.current = true;
     const params = new URLSearchParams(searchParams.toString());
     let changed = false;
-    if (!searchParams.get("sort") && prefs.sort && prefs.sort !== "ending") {
-      params.set("sort", prefs.sort);
+    if (false) {
       changed = true;
     }
     if (!searchParams.get("src") && prefs.sources.length > 0) {
@@ -346,11 +351,11 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
   }) {
     const params = new URLSearchParams(searchParams.toString());
     const sortNext = next.sort ?? sort;
-    if (sortNext === "ending") params.delete("sort");
+    if (sortNext === DEFAULT_SORT) params.delete("sort");
     else params.set("sort", sortNext);
     setPrefs((p) => ({
       ...p,
-      sort: sortNext === "ending" ? null : sortNext,
+      sort: null,
       ...(next.sources
         ? { sources: next.sources.length === 0 || next.sources.length === SOURCE_CHIPS.length ? [] : next.sources }
         : {}),
@@ -409,6 +414,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
         if (v.change !== "gone") return false;
       } else {
         if (v.change === "gone") return false;
+        if (tab === "fav" && !prefs.fav.includes(v.id)) return false;
         if (tab === "new" && !isNew(v, nowMs)) return false;
         if (tab === "price" && recentPriceChanges(v, nowMs).length === 0) return false;
       }
@@ -431,11 +437,11 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
 
   const sorted = useMemo(() => {
     const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs, budgetOf(v, prefs, orderById)) }));
-    return sortListingVehicles(withRoom, sort, nowMs ?? Number.POSITIVE_INFINITY).sort((a, b) => Number(prefs.fav.includes(b.id)) - Number(prefs.fav.includes(a.id)));
+    // Favorīts nepārvieto auto saraksta augšā (lai lapa nelec); favorīti ir cilnē „★ Favorīti”.
+    return sortListingVehicles(withRoom, sort, nowMs ?? Number.POSITIVE_INFINITY);
   }, [visible, sort, nowMs, prefs, orderById]);
 
   const vatHealth = useMemo(() => latest?.vatHealth ?? computeListingVatHealth(vehicles), [latest?.vatHealth, vehicles]);
-  const vatHealthLine = useMemo(() => formatListingVatHealthLine(vatHealth), [vatHealth]);
   const drawerVehicle = useMemo(() => vehicles.find((v) => v.id === drawerId) ?? null, [vehicles, drawerId]);
   const techCount = useMemo(() => vehicles.filter((v) => v.change !== "gone" && !prefs.hidden.includes(v.id) && listingHasHardTechDamage(v.damageRaw)).length, [vehicles, prefs.hidden]);
   const favCount = prefs.fav.filter((id) => vehicles.some((v) => v.id === id)).length;
@@ -505,27 +511,36 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
     { id: "price", label: "Cenu izmaiņas", count: counts.price },
     { id: "all", label: "Visi", count: counts.all },
     { id: "gone", label: "Pazuduši", count: counts.gone },
+    { id: "fav", label: "★ Favorīti", count: favCount },
   ];
 
   const I = listingExtrasI(prefs.costs);
-  const budgetOverride = prefs.budget;
-  const maxNet = budgetOverride != null ? listingMaxBid("net", 0, budgetOverride, I) : null;
-  const maxMargin = budgetOverride != null ? listingMaxBid("margin", 0, budgetOverride, I) : null;
-  const maxGross19 = budgetOverride != null ? listingMaxBid("gross", 19, budgetOverride, I) : null;
-  const maxGross21 = budgetOverride != null ? listingMaxBid("gross", 21, budgetOverride, I) : null;
-  const orderFilterOptions = useMemo(() => {
-    const byClient = new Map<string, IrissListingOrderBrief[]>();
-    for (const o of orders) {
-      if (o.listStatus !== "active" && !vehicles.some((v) => listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv).includes(o.id))) {
-        continue;
-      }
-      const name = o.clientName || "Bez vārda";
-      const list = byClient.get(name) ?? [];
-      list.push(o);
-      byClient.set(name, list);
-    }
-    return [...byClient.entries()].sort((a, b) => a[0].localeCompare(b[0], "lv"));
-  }, [orders, vehicles, prefs.orderOv]);
+  const clientOptions = useMemo(
+    () =>
+      buildListingClientOptions(
+        orders,
+        (o) => o.listStatus === "active" || vehicles.some((v) => listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv).includes(o.id)),
+        serializeListingOrderFilter,
+        fmtEur,
+      ),
+    [orders, vehicles, prefs.orderOv],
+  );
+  const platformDots = (["auto1", "openline", "autobid"] as const).map((platform) => {
+    const h = vatHealth[platform];
+    const login = health?.items.find((x) => x.platform === platform);
+    const warn = h.stale + h.missingFields + h.rateMissing + h.conflict + h.defaultUnrecognised;
+    const bad = h.level === "red" || (login && login.status !== "ok" && login.status !== "stale" && login.status !== "not_run" && login.status !== "no_sources");
+    const amber = h.level === "amber" || warn > 0 || login?.status === "stale";
+    const label = platform === "auto1" ? "Auto1" : platform === "openline" ? "Openlane" : "Autobid";
+    const vat =
+      platform === "auto1"
+        ? `${h.margin} Margin · ${h.gross} ar PVN · ${warn} ⚠`
+        : platform === "openline"
+          ? `${h.margin} · ${h.net} NETO · ${warn} ⚠`
+          : `${h.margin} · ${h.gross} · ${warn} ⚠`;
+    return { platform, label, vat, tone: bad ? "bg-red-500" : amber ? "bg-amber-400" : "bg-emerald-500", title: `${label}: ${login ? healthLabel(login.status) : "nav pārbaudīts"} · ${vat}${h.reason ? ` · ${h.reason}` : ""}` };
+  });
+  const activeFilterCount = (sources.length > 0 ? 1 : 0) + (priceMin != null || priceMax != null ? 1 : 0) + (hideTech ? 1 : 0) + (listScope === "hidden" ? 1 : 0);
 
   function setGlobalCost(part: keyof ListingCostParts, value: number) {
     setPrefs((p) => ({ ...p, costs: { ...p.costs, [part]: value } }));
@@ -533,294 +548,199 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
 
   return (
     <div className="mt-2 space-y-2 touch-manipulation sm:mt-3 sm:space-y-3">
-      <section className="sticky top-0 z-20 rounded-xl border border-orange-200 bg-orange-50 px-2.5 py-1.5 text-[12px] shadow-sm sm:rounded-2xl sm:px-4 sm:py-2.5">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-x-4 sm:gap-y-2">
-          <label className="inline-flex min-h-11 items-center gap-2 font-semibold text-orange-900 sm:min-h-0">
-            <span className="sm:hidden">Pārrakstīt €</span>
-            <span className="hidden sm:inline">Klienta budžets €</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              value={prefs.budget ?? ""}
-              placeholder="pārrakstīt"
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                setPrefs((p) => ({ ...p, budget: Number.isFinite(n) && n > 0 ? n : null }));
-              }}
-              className={`h-11 w-[7.5rem] rounded-lg border bg-white px-2 text-base font-bold tabular-nums outline-none sm:h-auto sm:w-[130px] sm:py-1 sm:text-[14px] ${budgetOverride != null ? "border-orange-300" : "border-orange-200"}`}
-            />
-          </label>
-          <span className="tabular-nums">I = <b>{fmtEur(I)}</b></span>
-          <button
-            type="button"
-            onClick={() => setShowCosts((x) => !x)}
-            className="inline-flex min-h-11 items-center rounded-full border border-orange-200 bg-white px-3 text-[12px] font-semibold text-orange-950 sm:min-h-8"
-          >
-            {showCosts ? "Slēpt I" : "Izmaksas"}
-          </button>
-          {budgetOverride == null ? (
-            <span className="hidden text-[11px] font-medium text-orange-950/80 sm:inline">Budžets no pasūtījuma. Šis lauks pārraksta visus.</span>
-          ) : (
-            <span className="-mx-2.5 flex w-[calc(100%+1.25rem)] snap-x snap-mandatory gap-3 overflow-x-auto px-2.5 pb-0.5 tabular-nums [scrollbar-width:none] sm:mx-0 sm:w-auto sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
-              <span className="snap-start shrink-0"><TaxBadge tax={listingTaxChip("net")} /> maks. <b>{fmtEur(maxNet)}</b></span>
-              <span className="snap-start shrink-0"><TaxBadge tax={listingTaxChip("margin")} /> maks. <b>{fmtEur(maxMargin)}</b></span>
-              <span className="snap-start shrink-0"><TaxBadge tax={listingTaxChip("gross", 19)} /> maks. <b>{fmtEur(maxGross19)}</b></span>
-              <span className="snap-start shrink-0"><TaxBadge tax={listingTaxChip("gross", 21)} /> maks. <b>{fmtEur(maxGross21)}</b></span>
-            </span>
-          )}
-        </div>
-        {showCosts ? (
-          <div className="mt-1.5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-            {([
-              ["fee", "Izsoles komisija"],
-              ["transport", "Transports"],
-              ["commission", "Komisija"],
-              ["unplanned", "Neplānotie"],
-            ] as const).map(([k, l]) => (
-              <label key={k} className="grid text-[10px] font-semibold text-slate-500">
-                {l}
-                <input type="number" inputMode="numeric" value={prefs.costs[k]} onChange={(e) => setGlobalCost(k, Number(e.target.value) || 0)} className="h-11 w-full rounded-md border border-[#E5E7EB] bg-white px-2 text-base font-normal text-[var(--color-apple-text)] sm:h-8 sm:w-[88px] sm:px-1.5 sm:text-[12px]" />
-              </label>
-            ))}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="rounded-xl border border-[#E5E7EB] bg-white px-2.5 py-2 shadow-sm sm:rounded-2xl sm:px-4 sm:py-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="min-w-0 flex-1 truncate text-[11px] text-[var(--color-provin-muted)] sm:flex sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1 sm:text-[13px] sm:whitespace-normal">
-            <span>
-              <span className="sm:hidden">Nolasīts </span>
-              <span className="hidden sm:inline">Pēdējā nolasīšana: </span>
-              <span className="font-semibold text-[var(--color-apple-text)]">
-                {mounted && latest?.summary.finishedAt
-                  ? fmtDateTime(latest.summary.finishedAt)
-                  : latest?.summary.finishedAt
-                    ? "\u00a0"
-                    : "nav veikta"}
-              </span>
-            </span>
-            <span>
-              Nākamā automātiskā nolasīšana:{" "}
-              <span className="font-semibold text-[var(--color-apple-text)]">
-                {mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "\u00a0"}
-              </span>
-            </span>
-            <span className="hidden sm:inline">Avoti OK: {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0}</span>
-            <span className="hidden sm:inline">Auto: {counts.all}</span>
-            <span className="hidden sm:inline">Jauni: {mounted ? counts.fresh : "\u00a0"}</span>
-            <span className="hidden sm:inline">Cenu izmaiņas: {mounted ? counts.price : "\u00a0"}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => void syncNow()}
-            disabled={syncBusy}
-            className="inline-flex min-h-11 shrink-0 items-center rounded-full border border-[var(--color-provin-accent)] bg-white px-3.5 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-55 sm:min-h-10"
-          >
-            {syncBusy ? (syncMsg && /\d+\/\d+/.test(syncMsg) ? syncMsg.replace(" meklējumi nolasīti", "") : "Nolasa...") : "Nolasīt"}
-          </button>
-        </div>
-        <div className="-mx-2.5 mt-2 flex snap-x gap-1.5 overflow-x-auto px-2.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
-          {(["auto1", "openline", "autobid"] as const).map((platform) => {
-            const h = vatHealth[platform];
-            const cls =
-              h.level === "red"
-                ? "border-red-300 bg-red-50 text-red-800"
-                : h.level === "amber"
-                  ? "border-amber-300 bg-amber-50 text-amber-900"
-                  : "border-slate-200 bg-slate-50 text-slate-600";
-            const warn = h.stale + h.missingFields + h.rateMissing + h.conflict + h.defaultUnrecognised;
-            const label =
-              platform === "auto1"
-                ? `Auto1 ${h.margin} Margin · ${h.gross} ar PVN · ${warn} ⚠`
-                : platform === "openline"
-                  ? `Openlane ${h.margin} · ${h.net} NETO · ${warn} ⚠`
-                  : `Autobid ${h.margin} · ${h.gross} · ${warn} ⚠`;
-            return (
-              <span key={platform} title={h.reason || vatHealthLine} className={`inline-flex shrink-0 snap-start items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${cls}`}>
-                {label}
-              </span>
-            );
-          })}
-        </div>
-        {syncMsg ? <p className="mt-2 text-[12px] text-[var(--color-provin-muted)]">{syncMsg}</p> : null}
-        <div className="-mx-2.5 mt-2 flex snap-x gap-1.5 overflow-x-auto px-2.5 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
-          {(mounted && health?.items
-            ? health.items
-            : IRISS_LISTING_PLATFORMS.map((platform) => ({ platform, status: "not_run" as const, note: "", checkedAt: "" }))
-          ).map((item) => (
-            <span key={item.platform} className="inline-flex shrink-0 snap-start items-center gap-1">
-              <span
-                title={item.note}
-                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${healthClass(item.status)}`}
+      {/* min-7: centrēta segmentu vadīkla + izvēršama meklēšana + filtri + „⋯”; zem tās sīka pelēka statusa rinda. */}
+      <header className="sticky top-0 z-20 -mx-2 bg-[#F8F8F9]/95 px-2 pb-1.5 pt-1 backdrop-blur sm:mx-0 sm:px-0">
+        <div className="flex items-center justify-center gap-2 sm:gap-2.5">
+          <div className="flex min-w-0 max-w-full overflow-x-auto rounded-[10px] bg-[#e9e9ee] p-[2px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setPrefs((p) => ({ ...p, tab: t.id }))}
+                className={`inline-flex h-9 shrink-0 items-center gap-1 rounded-[8px] px-3 text-[12.5px] transition sm:h-7 ${
+                  tab === t.id ? "bg-white font-semibold text-[var(--color-apple-text)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-[#3a3a3c]"
+                }`}
               >
-                {PLATFORM_LABEL_LONG[item.platform]}: {healthLabel(item.status)}
-              </span>
-              <IrissListingsLoginButton platform={item.platform} onDone={() => void loadHealth()} />
-            </span>
-          ))}
-          {problemSources.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => setShowSources((v) => !v)}
-              className="ml-auto inline-flex h-11 shrink-0 items-center text-[11px] font-medium text-[var(--color-provin-accent)] hover:underline sm:h-auto"
-            >
-              {showSources ? "Slēpt avotu problēmas" : `Avotu problēmas (${problemSources.length})`}
-            </button>
-          ) : null}
-        </div>
-        {showSources && problemSources.length > 0 ? (
-          <ul className="mt-2 space-y-1 border-t border-[#E5E7EB] pt-2 text-[11px] text-slate-600">
-            {problemSources.map((s) => (
-              <li key={s.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <span className={`inline-flex items-center rounded-full border px-1.5 py-0 text-[10px] font-semibold ${platformBadgeClass(s.platform)}`}>
-                  {PLATFORM_LABEL[s.platform]}
-                </span>
-                <span className="font-medium text-[var(--color-apple-text)]">{s.orderBrandModel || s.orderId}</span>
-                <span>{sourceStatusLabel(s.status)}</span>
-                {s.note ? <span className="text-slate-500">{s.note}</span> : null}
-                <a href={s.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--color-provin-accent)] hover:underline">
-                  avots
-                </a>
-              </li>
+                {t.id === "price" ? <><span className="sm:hidden">Cenas</span><span className="hidden sm:inline">{t.label}</span></> : t.id === "fav" ? <><span className="sm:hidden">★</span><span className="hidden sm:inline">{t.label}</span></> : t.label}
+                <span className="text-[11px] font-normal text-[#8e8e93]">{t.id === "new" || t.id === "price" ? (mounted ? t.count : "\u00a0") : t.count}</span>
+              </button>
             ))}
-          </ul>
-        ) : null}
-      </section>
-
-      <section className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="-mx-1 flex gap-1 overflow-x-auto px-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:rounded-full sm:border sm:border-[#E5E7EB] sm:bg-white sm:p-1 sm:shadow-sm sm:px-1 [&::-webkit-scrollbar]:hidden">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setPrefs((p) => ({ ...p, tab: t.id }))}
-              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-semibold transition sm:min-h-8 ${
-                tab === t.id ? "bg-[var(--color-apple-text)] text-white" : "border border-[#E5E7EB] bg-white text-[var(--color-provin-muted)] sm:border-0"
-              }`}
-            >
-              {t.id === "price" ? <><span className="sm:hidden">Cenas</span><span className="hidden sm:inline">{t.label}</span></> : t.label}
-              <span className={`rounded-full px-1.5 text-[10px] ${tab === t.id ? "bg-white/20" : "bg-slate-100"}`}>
-                {t.id === "new" || t.id === "price" ? (mounted ? t.count : "\u00a0") : t.count}
-              </span>
+          </div>
+          {searchOpen || query ? (
+            <input
+              type="search"
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onBlur={() => { if (!query) setSearchOpen(false); }}
+              placeholder="Meklēt marku, modeli, VIN"
+              className="h-9 w-40 shrink rounded-[9px] bg-[#e9e9ee] px-3 text-base text-[var(--color-apple-text)] outline-none placeholder:text-[#8e8e93] sm:h-7 sm:w-64 sm:text-[12.5px]"
+            />
+          ) : (
+            <button type="button" aria-label="Meklēt" onClick={() => setSearchOpen(true)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[15px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:w-7">
+              ⌕
             </button>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Meklēt"
-            className="h-11 min-w-0 flex-1 rounded-full border border-[#E5E7EB] bg-white px-4 text-base text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 focus:border-slate-400 sm:h-10 sm:min-w-[220px] sm:text-[13px]"
-          />
-          <label className="inline-flex h-11 min-w-0 items-center gap-1 rounded-full border border-[#E5E7EB] bg-white px-2.5 text-[12px] text-[var(--color-provin-muted)] shadow-sm sm:h-10 sm:gap-2 sm:px-3">
-            <span className="hidden font-medium sm:inline">Kārtot pēc</span>
-            <select
-              aria-label="Kārtot pēc"
-              value={sort}
-              onChange={(e) => {
-                const next = parseListingSort(e.target.value);
-                if (next) writeListQuery({ sort: next });
-              }}
-              className="max-w-[42vw] bg-transparent text-base font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-none sm:text-[13px]"
+          )}
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              aria-label="Filtri"
+              onClick={() => { setFilterOpen((v) => !v); setMenuOpen(false); }}
+              className={`grid h-9 w-9 place-items-center rounded-full text-[14px] hover:bg-[#e9e9ee] sm:h-7 sm:w-7 ${activeFilterCount > 0 ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}
             >
-              {LISTING_SORTS.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
+              ⚲{activeFilterCount > 0 ? <sup className="text-[9px] font-semibold">{activeFilterCount}</sup> : null}
+            </button>
+            {filterOpen ? (
+              <div className="fixed inset-x-2 bottom-2 z-40 rounded-2xl bg-white p-3.5 text-[12px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-9 sm:w-[300px] sm:rounded-xl">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Avots</p>
+                <div className="mt-1 flex gap-1.5">
+                  {SOURCE_CHIPS.map((src) => {
+                    const on = sources.length === 0 || sources.includes(src.id);
+                    return (
+                      <button key={src.id} type="button" aria-pressed={on} onClick={() => toggleSource(src.id)} className={`h-9 rounded-lg px-2.5 text-[12px] font-semibold sm:h-7 ${on ? "bg-[var(--color-apple-text)] text-white" : "bg-[#f2f2f5] text-[#8e8e93]"}`}>
+                        {src.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Cena €</p>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <input type="number" min={0} inputMode="numeric" aria-label="Cena no" placeholder="No" defaultValue={searchParams.get("min") ?? ""} key={`min-${searchParams.get("min") ?? ""}`} onBlur={(e) => writeListQuery({ min: e.target.value.trim() })} className="h-9 w-full rounded-lg bg-[#f2f2f5] px-2.5 text-base outline-none sm:h-7 sm:text-[12px]" />
+                  <span className="text-[#8e8e93]">–</span>
+                  <input type="number" min={0} inputMode="numeric" aria-label="Cena līdz" placeholder="Līdz" defaultValue={searchParams.get("max") ?? ""} key={`max-${searchParams.get("max") ?? ""}`} onBlur={(e) => writeListQuery({ max: e.target.value.trim() })} className="h-9 w-full rounded-lg bg-[#f2f2f5] px-2.5 text-base outline-none sm:h-7 sm:text-[12px]" />
+                </div>
+                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Kārtot</p>
+                <select aria-label="Kārtot pēc" value={sort} onChange={(e) => { const next = parseListingSort(e.target.value); if (next) writeListQuery({ sort: next }); }} className="mt-1 h-9 w-full rounded-lg bg-[#f2f2f5] px-2 text-base font-semibold outline-none sm:h-7 sm:text-[12px]">
+                  {LISTING_SORTS.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+                </select>
+                <label className="mt-3 flex items-center gap-2 font-medium">
+                  <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={hideTech} onChange={(e) => setPrefs((p) => ({ ...p, hideTech: e.target.checked }))} />
+                  Slēpt ar motora/kārbas bojājumiem ({techCount})
+                </label>
+                <label className="mt-2 flex items-center gap-2 font-medium">
+                  <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={listScope === "hidden"} onChange={(e) => setPrefs((p) => ({ ...p, listScope: e.target.checked ? "hidden" : "all" }))} />
+                  Rādīt tikai paslēptos ({hiddenCount})
+                </label>
+                <button type="button" onClick={() => setFilterOpen(false)} className="mt-3 h-10 w-full rounded-lg bg-[var(--color-provin-accent)] text-[12.5px] font-semibold text-white sm:h-8">
+                  Rādīt {sorted.length} auto
+                </button>
+              </div>
+            ) : null}
+          </div>
+          <div className="relative shrink-0">
+            <button type="button" aria-label="Vairāk" onClick={() => { setMenuOpen((v) => !v); setFilterOpen(false); }} className="grid h-9 w-9 place-items-center rounded-full text-[16px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:w-7">
+              ⋯
+            </button>
+            {menuOpen ? (
+              <div className="fixed inset-x-2 bottom-2 z-40 max-h-[80vh] overflow-y-auto rounded-2xl bg-white p-3.5 text-[12px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-9 sm:w-[340px] sm:rounded-xl">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Nolasīšana</p>
+                <div className="mt-1 grid grid-cols-[1fr_auto] gap-y-0.5">
+                  <span className="text-[#8e8e93]">Pēdējā</span><span>{mounted && latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : "nav veikta"}</span>
+                  <span className="text-[#8e8e93]">Nākamā automātiskā</span><span>{mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "\u00a0"}</span>
+                  <span className="text-[#8e8e93]">Avoti OK · Auto · Jauni · Cenas</span><span>{latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0} · {counts.all} · {mounted ? counts.fresh : ""} · {mounted ? counts.price : ""}</span>
+                </div>
+                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">PVN pa avotiem</p>
+                {platformDots.map((d) => (
+                  <div key={d.platform} className="flex justify-between gap-3 py-0.5" title={d.title}>
+                    <span className="flex items-center gap-1.5"><i className={`inline-block h-2 w-2 rounded-full ${d.tone}`} />{d.label}</span>
+                    <span className="text-[#8e8e93]">{d.vat}</span>
+                  </div>
+                ))}
+                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Pieslēgumi</p>
+                {(mounted && health?.items ? health.items : IRISS_LISTING_PLATFORMS.map((platform) => ({ platform, status: "not_run" as const, note: "", checkedAt: "" }))).map((item) => (
+                  <div key={item.platform} className="flex items-center justify-between gap-2 py-0.5">
+                    <span title={item.note} className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${healthClass(item.status)}`}>
+                      {PLATFORM_LABEL_LONG[item.platform]}: {healthLabel(item.status)}
+                    </span>
+                    <IrissListingsLoginButton platform={item.platform} onDone={() => void loadHealth()} />
+                  </div>
+                ))}
+                {problemSources.length > 0 ? (
+                  <>
+                    <button type="button" onClick={() => setShowSources((v) => !v)} className="mt-2 text-[11px] font-medium text-[var(--color-provin-accent)] hover:underline">
+                      {showSources ? "Slēpt avotu problēmas" : `Avotu problēmas (${problemSources.length})`}
+                    </button>
+                    {showSources ? (
+                      <ul className="mt-1 space-y-1 text-[11px] text-slate-600">
+                        {problemSources.map((src) => (
+                          <li key={src.id} className="flex flex-wrap items-center gap-x-2">
+                            <span className={`rounded-full border px-1.5 text-[10px] font-semibold ${platformBadgeClass(src.platform)}`}>{PLATFORM_LABEL[src.platform]}</span>
+                            <span className="font-medium text-[var(--color-apple-text)]">{src.orderBrandModel || src.orderId}</span>
+                            <span>{sourceStatusLabel(src.status)}</span>
+                            {src.note ? <span className="text-slate-500">{src.note}</span> : null}
+                            <a href={src.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--color-provin-accent)] hover:underline">avots</a>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </>
+                ) : null}
+                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Izmaksas</p>
+                <div className="flex items-center justify-between">
+                  <span className="tabular-nums">I = <b>{fmtEur(I)}</b></span>
+                  <button type="button" onClick={() => setShowCosts((x) => !x)} className="text-[12px] font-semibold text-[var(--color-provin-accent)]">
+                    {showCosts ? "Slēpt I" : "Izmaksas ›"}
+                  </button>
+                </div>
+                {showCosts ? (
+                  <div className="mt-1.5 grid grid-cols-2 gap-2">
+                    {([
+                      ["fee", "Izsoles komisija"],
+                      ["transport", "Transports"],
+                      ["commission", "Komisija"],
+                      ["unplanned", "Neplānotie"],
+                    ] as const).map(([k, l]) => (
+                      <label key={k} className="grid text-[10px] font-semibold text-slate-500">
+                        {l}
+                        <input type="number" inputMode="numeric" value={prefs.costs[k]} onChange={(e) => setGlobalCost(k, Number(e.target.value) || 0)} className="h-10 w-full rounded-md bg-[#f2f2f5] px-2 text-base font-normal text-[var(--color-apple-text)] outline-none sm:h-8 sm:text-[12px]" />
+                      </label>
+                    ))}
+                  </div>
+                ) : null}
+                <p className="mt-1 text-[10.5px] text-[#8e8e93]">Budžets – no pasūtījumiem.</p>
+                <button type="button" onClick={() => setMenuOpen(false)} className="mt-3 h-10 w-full rounded-lg bg-[#f2f2f5] text-[12.5px] font-semibold sm:hidden">Aizvērt</button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+        <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[11px] text-[#8e8e93]">
+          <span className="inline-flex items-center gap-1.5">
+            {platformDots.map((d) => (
+              <span key={d.platform} title={d.title} className="inline-flex items-center gap-1">
+                <i className={`inline-block h-[7px] w-[7px] rounded-full ${d.tone}`} />
+                <span className="hidden sm:inline">{d.label}</span>
+              </span>
+            ))}
+          </span>
+          <span>
+            Nolasīts {mounted && latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : latest?.summary.finishedAt ? "\u00a0" : "nav"}
+            <span className="hidden sm:inline"> · nākamā {mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "\u00a0"}</span>
+            {" "}· {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0} avoti OK
+          </span>
+          <button type="button" onClick={() => void syncNow()} disabled={syncBusy} className="font-semibold text-[var(--color-provin-accent)] disabled:opacity-55">
+            {syncBusy ? (syncMsg && /\d+\/\d+/.test(syncMsg) ? syncMsg.replace(" meklējumi nolasīti", "") : "Nolasa…") : "Nolasīt"}
+          </button>
+          <span className="text-[#d1d1d6]">|</span>
+          <label className="inline-flex max-w-[60vw] items-center gap-1">
+            <span>Klients</span>
+            <select
+              aria-label="Klients un pasūtījums"
+              value={serializeListingOrderFilter(orderFilter)}
+              onChange={(e) => writeListQuery({ ord: e.target.value || null })}
+              className="max-w-[48vw] bg-transparent text-[11.5px] font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-[260px]"
+            >
+              <option value="">Visi klienti</option>
+              {clientOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.indent ? "\u00a0\u00a0\u00a0— " : ""}
+                  {o.label}
                 </option>
               ))}
             </select>
           </label>
         </div>
-      </section>
-
-      <section className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
-        {SOURCE_CHIPS.map((s) => {
-          const on = sources.length === 0 || sources.includes(s.id);
-          return (
-            <button
-              key={s.id}
-              type="button"
-              aria-pressed={on}
-              onClick={() => toggleSource(s.id)}
-              className={`inline-flex h-11 shrink-0 items-center rounded-full border px-3 text-[12px] font-semibold sm:h-8 ${
-                on ? "border-[var(--color-apple-text)] bg-[var(--color-apple-text)] text-white" : "border-[#E5E7EB] bg-white text-[var(--color-provin-muted)]"
-              }`}
-            >
-              {s.label}
-            </button>
-          );
-        })}
-        <input
-          type="number"
-          min={0}
-          inputMode="numeric"
-          aria-label="Cena no"
-          placeholder="No €"
-          defaultValue={searchParams.get("min") ?? ""}
-          key={`min-${searchParams.get("min") ?? ""}`}
-          onBlur={(e) => writeListQuery({ min: e.target.value.trim() })}
-          className="h-11 w-[5.5rem] shrink-0 rounded-full border border-[#E5E7EB] bg-white px-3 text-base text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 sm:h-8 sm:w-28 sm:text-[12px]"
-        />
-        <input
-          type="number"
-          min={0}
-          inputMode="numeric"
-          aria-label="Cena līdz"
-          placeholder="Līdz €"
-          defaultValue={searchParams.get("max") ?? ""}
-          key={`max-${searchParams.get("max") ?? ""}`}
-          onBlur={(e) => writeListQuery({ max: e.target.value.trim() })}
-          className="h-11 w-[5.5rem] shrink-0 rounded-full border border-[#E5E7EB] bg-white px-3 text-base text-[var(--color-apple-text)] shadow-sm outline-none placeholder:text-slate-400 sm:h-8 sm:w-28 sm:text-[12px]"
-        />
-        <label className="inline-flex h-11 min-w-0 max-w-[70vw] items-center gap-1 rounded-full border border-[#E5E7EB] bg-white px-2.5 text-[12px] text-[var(--color-provin-muted)] shadow-sm sm:h-8 sm:max-w-none sm:gap-2 sm:px-3">
-          <span className="hidden font-medium sm:inline">Klients</span>
-          <select
-            aria-label="Klients un pasūtījums"
-            value={serializeListingOrderFilter(orderFilter)}
-            onChange={(e) => writeListQuery({ ord: e.target.value || null })}
-            className="max-w-[58vw] bg-transparent text-base font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-[280px] sm:text-[13px]"
-          >
-            <option value="">Visi klienti</option>
-            {orderFilterOptions.map(([name, list]) => (
-              <optgroup key={name} label={name}>
-                <option value={serializeListingOrderFilter({ kind: "client", name })}>Visi · {name}</option>
-                {list.map((o) => (
-                  <option key={o.id} value={serializeListingOrderFilter({ kind: "order", id: o.id })}>
-                    {o.brandModel || "Pasūtījums"} {o.productionYears ? `· ${o.productionYears}` : ""} {o.budget != null ? `· ${fmtEur(o.budget)}` : "· Budžets nav"}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-        </label>
-      </section>
-
-      <section className="-mx-1 flex gap-2 overflow-x-auto px-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
-        {([
-          ["all", `Visi ${counts.all - hiddenCount}`],
-          ["fav", `★ ${favCount}`],
-          ["hidden", `Paslēptie ${hiddenCount}`],
-        ] as const).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setPrefs((p) => ({ ...p, listScope: id }))}
-            className={`inline-flex h-11 shrink-0 items-center rounded-full border px-3 text-[12px] font-semibold sm:h-8 ${
-              listScope === id ? "border-[var(--color-apple-text)] bg-[var(--color-apple-text)] text-white" : "border-[#E5E7EB] bg-white text-[var(--color-provin-muted)]"
-            }`}
-          >
-            {id === "fav" ? <><span className="sm:hidden">{label}</span><span className="hidden sm:inline">★ Favorīti {favCount}</span></> : label}
-          </button>
-        ))}
-        <label className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 text-[12px] font-semibold text-[var(--color-apple-text)] sm:h-8">
-          <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={hideTech} onChange={(e) => setPrefs((p) => ({ ...p, hideTech: e.target.checked }))} />
-          <span className="sm:hidden">Bez motora/kārbas ({techCount})</span>
-          <span className="hidden sm:inline">Slēpt ar motora/kārbas bojājumiem ({techCount})</span>
-        </label>
-      </section>
+        {syncMsg && !syncBusy ? <p className="mt-0.5 text-center text-[11px] text-[#8e8e93]">{syncMsg}</p> : null}
+      </header>
 
       {visible.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-10 text-center shadow-sm">
