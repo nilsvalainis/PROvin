@@ -1,30 +1,109 @@
 "use client";
 
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { ChevronLeft, ExternalLink, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import {
-  buildListingPlatformChips,
-  IR_LISTING_ALL_CHIP_STYLE,
-  LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
-  LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
-} from "@/lib/iriss-listing-links";
+  addIrissListingLinkRow,
+  coerceIrissListingLinkList,
+  IRISS_LISTING_LINKS_PER_SOURCE_MAX,
+  irissListingLinkUrlError,
+  removeIrissListingLinkRow,
+  setIrissListingLinkRow,
+} from "@/lib/iriss-listing-link-lists";
+import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
+import { IRISS_SCAN_SOURCES, type IrissScanLinkKey } from "@/lib/iriss-scan-sources";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 
-const fieldClass =
-  "min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
+/** min-7 stils: pelēks fons, baltas grupētas kartes, sīki pelēki virsraksti, akcenta teksts darbībām. */
+function SourceGroup({
+  label,
+  color,
+  links,
+  onChange,
+}: {
+  label: string;
+  color: string;
+  links: readonly string[];
+  onChange: (next: string[]) => void;
+}) {
+  const rows = coerceIrissListingLinkList(links);
+  const filled = rows.filter((r) => r.trim()).length;
+  const canAdd = rows.length < IRISS_LISTING_LINKS_PER_SOURCE_MAX;
+  return (
+    <section>
+      <div className="mb-1 flex items-center gap-1.5 px-1">
+        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} aria-hidden />
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">{label}</h2>
+        <span className="text-[11px] text-[#aeaeb2]">{filled > 0 ? filled : ""}</span>
+      </div>
+      <div className="overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
+        {rows.map((line, idx) => {
+          const err = irissListingLinkUrlError(line);
+          const open = line.trim() && !err ? line.trim() : null;
+          return (
+            <div key={idx} className="border-b border-[#e5e5ea] last:border-b-0">
+              <div className="flex min-h-[44px] items-center gap-1 pl-3 pr-1">
+                <input
+                  className={`min-w-0 flex-1 bg-transparent py-2.5 text-[15px] outline-none placeholder:text-[#c7c7cc] ${err ? "text-red-600" : "text-[var(--color-apple-text)]"}`}
+                  type="url"
+                  inputMode="url"
+                  autoComplete="off"
+                  placeholder="https://…"
+                  value={line}
+                  onChange={(e) => onChange(setIrissListingLinkRow(rows, idx, e.target.value))}
+                  aria-label={`${label} — saite ${idx + 1}`}
+                  aria-invalid={Boolean(err)}
+                />
+                {open ? (
+                  <a href={open} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[var(--color-provin-accent)] hover:bg-black/[0.04]" title="Atvērt" aria-label="Atvērt saiti">
+                    <ExternalLink className="h-4 w-4" aria-hidden />
+                  </a>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => onChange(removeIrissListingLinkRow(rows, idx))}
+                  disabled={rows.length <= 1 && !line.trim()}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#aeaeb2] transition hover:bg-red-50 hover:text-red-600 disabled:invisible"
+                  title="Noņemt saiti"
+                  aria-label="Noņemt saiti"
+                >
+                  <X className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+              {err ? <p className="px-3 pb-2 text-[11px] text-red-600">{err}</p> : null}
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => onChange(addIrissListingLinkRow(rows))}
+          disabled={!canAdd}
+          className="flex min-h-[44px] w-full items-center gap-1.5 border-t border-[#e5e5ea] px-3 text-left text-[14px] font-medium text-[var(--color-provin-accent)] transition hover:bg-black/[0.02] disabled:opacity-35"
+        >
+          <Plus className="h-4 w-4" aria-hidden /> Pievienot saiti
+        </button>
+      </div>
+    </section>
+  );
+}
 
 export function IrissScanEditor({ initialRecord }: { initialRecord: IrissScanRecord }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissScanRecord>(initialRecord);
   const [busy, setBusy] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const chips = useMemo(() => buildListingPlatformChips(rec, 5), [rec]);
+  const chips = useMemo(() => buildListingPlatformChips(rec, 50), [rec]);
 
-  const patchRecord = useCallback((patch: Partial<IrissScanRecord>) => setRec((r) => ({ ...r, ...patch })), []);
+  const patchRecord = useCallback((patch: Partial<IrissScanRecord>) => {
+    setRec((r) => ({ ...r, ...patch }));
+    setDirty(true);
+    setSaveMsg(null);
+  }, []);
 
   const save = useCallback(async () => {
     setBusy(true);
@@ -42,120 +121,83 @@ export function IrissScanEditor({ initialRecord }: { initialRecord: IrissScanRec
       }
       const data = (await res.json()) as { record?: IrissScanRecord };
       if (data.record) setRec(data.record);
-      setSaveMsg("Saglabāts.");
+      setDirty(false);
+      setSaveMsg("Saglabāts");
     } catch {
-      setSaveMsg("Tīkla kļūda.");
+      setSaveMsg("Tīkla kļūda");
     } finally {
       setBusy(false);
     }
   }, [rec]);
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 sm:px-6 lg:px-10">
+    <div className="mx-auto w-full max-w-[720px] px-3 pb-10 sm:px-6">
       <AdminDashboardHeaderWithMenu>
-        <div className="flex flex-col gap-2">
-          <Link href="/admin/iriss/scan" title="Atpakaļ" aria-label="Atpakaļ" className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-full border border-slate-200/90 bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50">
-            <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2.3} aria-hidden />
-            <span>Atpakaļ</span>
+        <div className="flex items-center justify-between gap-2">
+          <Link href="/admin/iriss/scan" className="inline-flex min-h-10 items-center gap-0.5 text-[15px] font-medium text-[var(--color-provin-accent)]">
+            <ChevronLeft className="h-5 w-5" strokeWidth={2.4} aria-hidden /> SCAN
           </Link>
-          <div>
-            <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">IRISS · SCAN</p>
-            <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">SCAN ieraksts</h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" disabled={busy} onClick={() => void save()} className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-[var(--color-provin-accent)] bg-transparent px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-50">
-              <Save className="h-4 w-4" aria-hidden />
-              {busy ? "Saglabā..." : "Saglabāt"}
+          <div className="flex items-center gap-2">
+            {saveMsg ? <span className="text-[12px] text-[#8e8e93]">{saveMsg}</span> : dirty ? <span className="text-[12px] text-[#8e8e93]">Nesaglabātas izmaiņas</span> : null}
+            <button
+              type="button"
+              disabled={busy || !dirty}
+              onClick={() => void save()}
+              className="inline-flex h-9 items-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[14px] font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-40"
+            >
+              {busy ? "Saglabā…" : "Saglabāt"}
             </button>
           </div>
         </div>
-        {saveMsg ? <p className="mt-2 text-[12px] font-medium text-[var(--color-provin-muted)]">{saveMsg}</p> : null}
       </AdminDashboardHeaderWithMenu>
 
-      <div className="mt-3 space-y-4 sm:mt-4 sm:space-y-5">
-        <section className="rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
-          {chips.length > 0 ? (
-            <div className={`mb-3 ${LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}`}>
-              {chips.map((c, i) => (
-                <a key={`${c.href}-${i}`} href={c.href} target="_blank" rel="noopener noreferrer" title={c.title} className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} style={c.chipStyle}>
-                  {c.letter}
-                </a>
-              ))}
-              <button type="button" onClick={() => chips.forEach((chip) => window.open(chip.href, "_blank", "noopener,noreferrer"))} title="Atvērt visas saites" aria-label="Atvērt visas saites" className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} style={IR_LISTING_ALL_CHIP_STYLE}>
-                ALL
-              </button>
-            </div>
-          ) : null}
-          <label className="block min-w-0">
-            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Marka modelis</span>
-            <input className={fieldClass} value={rec.brandModel} onChange={(e) => patchRecord({ brandModel: e.target.value })} />
-          </label>
-
-          <div className="mt-3 border-t border-slate-200/80 pt-3">
-            <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-provin-muted)]">Sludinājumu saites</p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <label className="min-w-0">
-                <span className="mb-0.5 block text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">Mobile</span>
-                <input className={fieldClass} type="url" value={rec.listingLinkMobile} onChange={(e) => patchRecord({ listingLinkMobile: e.target.value })} />
-              </label>
-              <label className="min-w-0">
-                <span className="mb-0.5 block text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">Autobid</span>
-                <input className={fieldClass} type="url" value={rec.listingLinkAutobid} onChange={(e) => patchRecord({ listingLinkAutobid: e.target.value })} />
-              </label>
-              <label className="min-w-0">
-                <span className="mb-0.5 block text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">Openline</span>
-                <input className={fieldClass} type="url" value={rec.listingLinkOpenline} onChange={(e) => patchRecord({ listingLinkOpenline: e.target.value })} />
-              </label>
-              <label className="min-w-0">
-                <span className="mb-0.5 block text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">Auto1</span>
-                <input className={fieldClass} type="url" value={rec.listingLinkAuto1} onChange={(e) => patchRecord({ listingLinkAuto1: e.target.value })} />
-              </label>
-            </div>
-            <div className="mt-2 space-y-2">
-              {rec.listingLinksOther.map((line, idx) => (
-                <input
-                  key={idx}
-                  className={fieldClass}
-                  type="url"
-                  value={line}
-                  onChange={(e) => {
-                    const next = [...rec.listingLinksOther];
-                    next[idx] = e.target.value;
-                    patchRecord({ listingLinksOther: next });
-                  }}
-                  placeholder="Citi: https://..."
-                />
-              ))}
-              <button
-                type="button"
-                onClick={() => patchRecord({ listingLinksOther: [...rec.listingLinksOther, ""] })}
-                className="inline-flex min-h-[40px] items-center justify-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
-              >
-                Pievienot rindu
-              </button>
-            </div>
+      <div className="mt-2 space-y-5">
+        <div>
+          <input
+            className="w-full bg-transparent px-1 text-[1.6rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] outline-none placeholder:text-[#c7c7cc]"
+            placeholder="Marka modelis"
+            aria-label="Marka modelis"
+            value={rec.brandModel}
+            onChange={(e) => patchRecord({ brandModel: e.target.value })}
+          />
+          <div className="mt-1 flex items-center gap-2 px-1 text-[12px] text-[#8e8e93]">
+            <span>{chips.length} {chips.length === 1 ? "saite" : "saites"}</span>
+            {chips.length > 0 ? (
+              <>
+                <span className="text-[#d1d1d6]">·</span>
+                <button type="button" onClick={() => chips.forEach((c) => window.open(c.href, "_blank", "noopener,noreferrer"))} className="font-semibold text-[var(--color-provin-accent)]">
+                  Atvērt visas
+                </button>
+              </>
+            ) : null}
           </div>
-        </section>
+        </div>
 
-        <section className="rounded-xl border border-red-100/80 bg-red-50/20 p-4 shadow-sm sm:p-5">
-          <p className="text-[12px] leading-snug text-red-950/90">Neatgriezeniski dzēst šo SCAN ierakstu.</p>
-          <button type="button" onClick={() => setDeleteOpen(true)} className="mt-3 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 shadow-sm transition hover:bg-red-50">
-            <Trash2 className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
-            Dzēst ierakstu
-          </button>
-        </section>
+        {IRISS_SCAN_SOURCES.map((s) => (
+          <SourceGroup key={s.key} label={s.label} color={s.color} links={rec[s.key]} onChange={(next) => patchRecord({ [s.key]: next } as Pick<IrissScanRecord, IrissScanLinkKey>)} />
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setDeleteOpen(true)}
+          className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl bg-white text-[15px] font-medium text-red-600 shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)] transition hover:bg-red-50/50"
+        >
+          <Trash2 className="h-4 w-4" aria-hidden /> Dzēst ierakstu
+        </button>
       </div>
 
       {deleteOpen ? (
-        <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6" onClick={() => setDeleteOpen(false)} role="presentation">
-          <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-base font-semibold text-[var(--color-apple-text)]">Vai tiešām vēlaties neatgriezeniski dzēst šo SCAN ierakstu?</h2>
-            <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={() => setDeleteOpen(false)} className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50">
+        <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6" onClick={() => setDeleteOpen(false)} role="presentation">
+          <div role="dialog" aria-modal="true" className="w-full max-w-sm rounded-2xl bg-white p-5 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Dzēst šo SCAN ierakstu?</h2>
+            <p className="mt-1 text-[13px] text-[#8e8e93]">Darbību nevar atsaukt.</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setDeleteOpen(false)} className="h-11 rounded-xl bg-[#f2f2f7] text-[15px] font-medium text-[var(--color-apple-text)]">
                 Atcelt
               </button>
               <button
                 type="button"
+                disabled={busy}
                 onClick={async () => {
                   setBusy(true);
                   try {
@@ -167,9 +209,9 @@ export function IrissScanEditor({ initialRecord }: { initialRecord: IrissScanRec
                     setBusy(false);
                   }
                 }}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-red-700 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:bg-red-800"
+                className="h-11 rounded-xl bg-red-600 text-[15px] font-semibold text-white disabled:opacity-50"
               >
-                Dzēst
+                {busy ? "Dzēš…" : "Dzēst"}
               </button>
             </div>
           </div>
