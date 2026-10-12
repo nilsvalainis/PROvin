@@ -13,9 +13,9 @@ export default async function IrissScanListPage() {
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">
       {storeEnabled && rows.length > 0 ? <IrissScanListClient rows={rows} initialListOrder={initialListOrder} /> : null}
       {storeEnabled && rows.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
-          <p className="font-medium text-black">Nav SCAN ierakstu</p>
-          <p className="mt-2 text-sm text-black">Spied „+”, lai izveidotu pirmo ierakstu.</p>
+        <div className="mx-auto mt-10 max-w-sm px-6 text-center">
+          <p className="text-[17px] font-semibold text-[var(--color-apple-text)]">Nav SCAN ierakstu</p>
+          <p className="mt-1 text-[13px] text-[#8e8e93]">Spied „+”, lai izveidotu pirmo ierakstu.</p>
         </div>
       ) : null}
       {storeEnabled && rows.length === 0 ? <IrissScanNewFab /> : null}

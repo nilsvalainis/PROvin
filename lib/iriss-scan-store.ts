@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import os from "node:os";
 import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
+import { normalizeIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 import { emptyIrissScanRecord, type IrissScanListOrder, type IrissScanListRow, type IrissScanRecord } from "@/lib/iriss-scan-types";
 
 const DEFAULT_RELATIVE_DIR = ".data/iriss-scan";
@@ -181,10 +182,9 @@ async function listBlobRecordIds(prefix: string, token: string): Promise<string[
   return ids;
 }
 
-function normalizeOtherLinks(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [""];
-  const out = raw.map((x) => sanitizeDraftTextForStorage(typeof x === "string" ? x : "", 2048)).slice(0, 20);
-  return out.length > 0 ? out : [""];
+/** Vecais formāts (viena virkne avotā) → masīvs; jaunais masīvs paliek. */
+function normalizeLinks(raw: unknown): string[] {
+  return normalizeIrissListingLinkList(raw, (s) => sanitizeDraftTextForStorage(s, 2048));
 }
 
 function normalizeRecord(raw: unknown, id: string): IrissScanRecord | null {
@@ -200,11 +200,11 @@ function normalizeRecord(raw: unknown, id: string): IrissScanRecord | null {
     updatedAt: str("updatedAt") || base.updatedAt,
     pinnedAt: sanitizeDraftTextForStorage(str("pinnedAt"), 64),
     brandModel: sanitizeDraftTextForStorage(str("brandModel"), 400),
-    listingLinkMobile: sanitizeDraftTextForStorage(str("listingLinkMobile"), 2048),
-    listingLinkAutobid: sanitizeDraftTextForStorage(str("listingLinkAutobid"), 2048),
-    listingLinkOpenline: sanitizeDraftTextForStorage(str("listingLinkOpenline"), 2048),
-    listingLinkAuto1: sanitizeDraftTextForStorage(str("listingLinkAuto1"), 2048),
-    listingLinksOther: normalizeOtherLinks(o.listingLinksOther),
+    listingLinkMobile: normalizeLinks(o.listingLinkMobile),
+    listingLinkAutobid: normalizeLinks(o.listingLinkAutobid),
+    listingLinkOpenline: normalizeLinks(o.listingLinkOpenline),
+    listingLinkAuto1: normalizeLinks(o.listingLinkAuto1),
+    listingLinksOther: normalizeLinks(o.listingLinksOther),
   };
 }
 

@@ -4,10 +4,10 @@ export type IrissScanRecord = {
   updatedAt: string;
   pinnedAt: string;
   brandModel: string;
-  listingLinkMobile: string;
-  listingLinkAutobid: string;
-  listingLinkOpenline: string;
-  listingLinkAuto1: string;
+  listingLinkMobile: string[];
+  listingLinkAutobid: string[];
+  listingLinkOpenline: string[];
+  listingLinkAuto1: string[];
   listingLinksOther: string[];
 };
 
@@ -25,10 +25,10 @@ export function emptyIrissScanRecord(id: string, nowIso: string): IrissScanRecor
     updatedAt: nowIso,
     pinnedAt: "",
     brandModel: "",
-    listingLinkMobile: "",
-    listingLinkAutobid: "",
-    listingLinkOpenline: "",
-    listingLinkAuto1: "",
+    listingLinkMobile: [""],
+    listingLinkAutobid: [""],
+    listingLinkOpenline: [""],
+    listingLinkAuto1: [""],
     listingLinksOther: [""],
   };
 }

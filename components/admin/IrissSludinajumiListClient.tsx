@@ -38,6 +38,7 @@ import {
   vehicleMatchesOrderFilter,
   type IrissListingOrderBrief,
 } from "@/lib/iriss-listings-orders";
+import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
 import { nextIrissListingsAutomaticReadLabel } from "@/lib/iriss-listings-schedule";
 import {
   defaultIrissListPrefs,
@@ -239,7 +240,11 @@ const DEFAULT_SORT: ListingSort = "seen";
 type Props = {
   latest: IrissListingsLatestView | null;
   orders: IrissListingOrderBrief[];
+  /** SCAN ieraksti kā „pasūtījumi” ar `scan:` id. */
+  scanOrders?: IrissListingOrderBrief[];
 };
+
+const DATASET_STORAGE_KEY = "iriss-list-dataset";
 
 const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> = [
   { id: "autobid", label: "Autobid" },
@@ -247,7 +252,14 @@ const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> =
   { id: "auto1", label: "Auto1" },
 ];
 
-export function IrissSludinajumiListClient({ latest, orders }: Props) {
+export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanOrders = [] }: Props) {
+  const [dataset, setDatasetState] = useState<IrissListingDataset>("orders");
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(DATASET_STORAGE_KEY) === "scan") setDatasetState("scan");
+    } catch {}
+  }, []);
+  const orders = dataset === "scan" ? scanOrders : clientOrders;
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -301,7 +313,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
   const priceMin = parsePriceBound(searchParams.get("min"));
   const priceMax = parsePriceBound(searchParams.get("max"));
   const orderFilter = parseListingOrderFilter(searchParams.get("ord"));
-  const orderById = useMemo(() => listingOrdersById(orders), [orders]);
+  const orderById = useMemo(() => listingOrdersById([...clientOrders, ...scanOrders]), [clientOrders, scanOrders]);
 
   useEffect(() => {
     const storage = irissListBrowserStorage();
@@ -418,7 +430,12 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
     writeListQuery({ sources: next.length === SOURCE_CHIPS.length ? [] : next });
   }
 
-  const vehicles = useMemo(() => latest?.vehicles ?? [], [latest?.vehicles]);
+  const allVehicles = useMemo(() => latest?.vehicles ?? [], [latest?.vehicles]);
+  /** Divi datu kopumi: klientu pasūtījumu auto vai SCAN saraksta auto. Kartītes tās pašas. */
+  const vehicles = useMemo(
+    () => allVehicles.filter((v) => vehicleInListingDataset(listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv), dataset)),
+    [allVehicles, dataset, prefs.orderOv],
+  );
 
   const counts = useMemo(() => {
     let fresh = 0;
@@ -467,7 +484,7 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
   }, [visible, sort, nowMs, prefs, orderById]);
 
   const vatHealth = useMemo(() => latest?.vatHealth ?? computeListingVatHealth(vehicles), [latest?.vatHealth, vehicles]);
-  const drawerVehicle = useMemo(() => vehicles.find((v) => v.id === drawerId) ?? null, [vehicles, drawerId]);
+  const drawerVehicle = useMemo(() => allVehicles.find((v) => v.id === drawerId) ?? null, [allVehicles, drawerId]);
   const techCount = useMemo(() => vehicles.filter((v) => v.change !== "gone" && !prefs.hidden.includes(v.id) && listingHasHardTechDamage(v.damageRaw)).length, [vehicles, prefs.hidden]);
   const favCount = prefs.fav.filter((id) => vehicles.some((v) => v.id === id)).length;
   const hiddenCount = prefs.hidden.filter((id) => vehicles.some((v) => v.id === id)).length;
@@ -567,6 +584,16 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
   });
   const activeFilterCount = (sources.length > 0 ? 1 : 0) + (priceMin != null || priceMax != null ? 1 : 0) + (hideTech ? 1 : 0) + (listScope === "hidden" ? 1 : 0);
 
+  function setDataset(next: IrissListingDataset) {
+    if (next === dataset) return;
+    setDatasetState(next);
+    try {
+      window.localStorage.setItem(DATASET_STORAGE_KEY, next);
+    } catch {}
+    // Klienta/SCAN filtrs nav savietojams starp kopumiem.
+    if (orderFilter.kind !== "all") writeListQuery({ ord: null });
+  }
+
   function setGlobalCost(part: keyof ListingCostParts, value: number) {
     setPrefs((p) => ({ ...p, costs: { ...p.costs, [part]: value } }));
   }
@@ -575,6 +602,26 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
     <div className="mt-2 space-y-2 touch-manipulation sm:mt-3 sm:space-y-3">
       {/* min-7: centrēta segmentu vadīkla + izvēršama meklēšana + filtri + „⋯”; zem tās sīka pelēka statusa rinda. */}
       <header className="sticky top-0 z-20 -mx-2 bg-[#F8F8F9]/95 px-2 pb-1.5 pt-1 backdrop-blur sm:mx-0 sm:px-0">
+        <div className="mb-1.5 flex justify-center">
+          <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[#e9e9ee] p-[2px] text-[12px]">
+            {([
+              ["orders", "Klientu pasūtījumi", clientOrders.length],
+              ["scan", "SCAN", scanOrders.length],
+            ] as const).map(([id, label, n]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={dataset === id}
+                onClick={() => setDataset(id)}
+                className={`inline-flex h-8 items-center gap-1 rounded-full px-3.5 transition sm:h-7 ${dataset === id ? "bg-white font-semibold text-[var(--color-apple-text)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-[#3a3a3c]"}`}
+              >
+                {label}
+                <span className="text-[11px] font-normal text-[#8e8e93]">{n}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex items-center justify-center gap-2 sm:gap-2.5">
           <div className="flex min-w-0 max-w-full overflow-x-auto rounded-[10px] bg-[#e9e9ee] p-[2px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tabs.map((t) => (
@@ -762,14 +809,14 @@ export function IrissSludinajumiListClient({ latest, orders }: Props) {
           </button>
           <span className="text-[#d1d1d6]">|</span>
           <label className="inline-flex max-w-[60vw] items-center gap-1">
-            <span>Klients</span>
+            <span>{dataset === "scan" ? "SCAN" : "Klients"}</span>
             <select
-              aria-label="Klients un pasūtījums"
+              aria-label={dataset === "scan" ? "SCAN ieraksts" : "Klients un pasūtījums"}
               value={serializeListingOrderFilter(orderFilter)}
               onChange={(e) => writeListQuery({ ord: e.target.value || null })}
               className="max-w-[48vw] bg-transparent text-[11.5px] font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-[260px]"
             >
-              <option value="">Visi klienti</option>
+              <option value="">{dataset === "scan" ? "Visi SCAN" : "Visi klienti"}</option>
               {clientOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.indent ? "\u00a0\u00a0\u00a0— " : ""}

@@ -78,10 +78,10 @@ function OrderPreviewBody({ order }: { order: IrissListingOrderBrief }) {
         )}
       </div>
       <Link
-        href={`/admin/iriss/pasutijumi/${encodeURIComponent(order.id)}`}
+        href={order.id.startsWith("scan:") ? `/admin/iriss/scan/${encodeURIComponent(order.id.slice(5))}` : `/admin/iriss/pasutijumi/${encodeURIComponent(order.id)}`}
         className="inline-flex h-11 items-center justify-center rounded-full border border-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-[var(--color-provin-accent)]"
       >
-        Atvērt pasūtījumu
+        {order.id.startsWith("scan:") ? "Atvērt SCAN" : "Atvērt pasūtījumu"}
       </Link>
     </article>
   );

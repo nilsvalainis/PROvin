@@ -1,14 +1,10 @@
 "use client";
 
-import { Pin, Trash2 } from "lucide-react";
+import { ChevronRight, MoreHorizontal, Pin, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import {
-  buildListingPlatformChips,
-  IR_LISTING_ALL_CHIP_STYLE,
-  LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
-  LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
-} from "@/lib/iriss-listing-links";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
+import { irissScanSourceCounts } from "@/lib/iriss-scan-sources";
 import type { IrissScanListOrder, IrissScanListRow } from "@/lib/iriss-scan-types";
 import { IrissScanNewFab } from "@/components/admin/IrissScanNewFab";
 
@@ -38,104 +34,153 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
   const [localRows, setLocalRows] = useState(rows);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const visibleRows = useMemo(() => orderRows(localRows, initialListOrder), [localRows, initialListOrder]);
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const ordered = useMemo(() => orderRows(localRows, initialListOrder), [localRows, initialListOrder]);
+  const visibleRows = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? ordered.filter((r) => r.brandModel.toLowerCase().includes(q)) : ordered;
+  }, [ordered, query]);
+  const linkTotal = useMemo(() => localRows.reduce((n, r) => n + buildListingPlatformChips(r, 100).length, 0), [localRows]);
+
+  useEffect(() => {
+    if (!menuId) return;
+    const onDown = (e: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuId(null);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuId(null);
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuId]);
+
+  async function togglePin(row: IrissScanListRow) {
+    setBusyId(row.id);
+    setMenuId(null);
+    try {
+      const res = await fetch(`/api/admin/iriss-scan/${encodeURIComponent(row.id)}`, { credentials: "include" });
+      if (!res.ok) return;
+      const data = (await res.json()) as { record?: IrissScanListRow };
+      if (!data.record) return;
+      const patchRes = await fetch(`/api/admin/iriss-scan/${encodeURIComponent(row.id)}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...data.record, pinnedAt: data.record.pinnedAt ? "" : new Date().toISOString() }),
+      });
+      if (!patchRes.ok) return;
+      const patched = (await patchRes.json()) as { record?: IrissScanListRow };
+      if (!patched.record) return;
+      setLocalRows((prev) => prev.map((x) => (x.id === row.id ? patched.record! : x)));
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   return (
     <>
-      <div className="mt-3 flex flex-col gap-3 sm:gap-4">
-        {visibleRows.map((row) => {
-          const chips = buildListingPlatformChips(row, 5);
-          return (
-            <div key={row.id} className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-sm transition hover:border-slate-300">
-              <div className="flex items-stretch">
-                <Link
-                  href={`/admin/iriss/scan/${encodeURIComponent(row.id)}`}
-                  aria-label={`Atvērt SCAN: ${row.brandModel || "—"}`}
-                  className="flex min-w-0 flex-1 flex-row items-center gap-2.5 p-3 outline-none ring-[var(--color-provin-accent)]/30 transition hover:bg-black/[0.03] active:bg-black/[0.05] focus-visible:ring-2 sm:gap-3 sm:p-4"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <p className="truncate text-[14px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[15px]">{row.brandModel || "—"}</p>
-                      {row.pinnedAt ? <Pin className="h-3.5 w-3.5 shrink-0 text-black" aria-hidden /> : null}
+      <div className="mx-auto w-full max-w-[860px] px-2 sm:px-0">
+        {/* min-7: virsraksts + skaits, meklēšana pa labi; zem tā sīka pelēka statusa rinda. */}
+        <header className="sticky top-0 z-20 -mx-2 bg-[#F8F8F9]/95 px-2 pb-1.5 pt-2 backdrop-blur sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-2">
+            <h1 className="flex-1 text-[17px] font-semibold tracking-tight text-[var(--color-apple-text)]">SCAN</h1>
+            {searchOpen || query ? (
+              <input
+                type="search"
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onBlur={() => { if (!query) setSearchOpen(false); }}
+                placeholder="Meklēt marku…"
+                className="h-9 w-44 rounded-[10px] bg-[#e9e9ee] px-3 text-[14px] outline-none sm:w-64"
+              />
+            ) : (
+              <button type="button" onClick={() => setSearchOpen(true)} className="inline-flex h-9 items-center gap-1.5 rounded-[10px] bg-[#e9e9ee] px-3 text-[13px] font-medium text-[#3a3a3c]">
+                <Search className="h-4 w-4" aria-hidden /> <span className="hidden min-[420px]:inline">Meklēt</span>
+              </button>
+            )}
+          </div>
+          <p className="mt-0.5 text-[11.5px] text-[#8e8e93]">
+            {localRows.length} {localRows.length === 1 ? "ieraksts" : "ieraksti"} · {linkTotal} saites{query ? ` · atrasti ${visibleRows.length}` : ""}
+          </p>
+        </header>
+
+        {visibleRows.length === 0 ? (
+          <p className="mt-6 text-center text-[13px] text-[#8e8e93]">Nekas nav atrasts</p>
+        ) : (
+          <ul className="mt-2 overflow-visible rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
+            {visibleRows.map((row) => {
+              const counts = irissScanSourceCounts(row);
+              return (
+                <li key={row.id} className="relative flex items-center border-b border-[#e5e5ea] last:border-b-0">
+                  <Link
+                    href={`/admin/iriss/scan/${encodeURIComponent(row.id)}`}
+                    aria-label={`Atvērt SCAN: ${row.brandModel || "—"}`}
+                    className="flex min-h-[56px] min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 pr-1 transition hover:bg-black/[0.02]"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        {row.pinnedAt ? <Pin className="h-3 w-3 shrink-0 fill-current text-[#8e8e93]" aria-label="Piesprausts" /> : null}
+                        <p className="truncate text-[15px] font-medium text-[var(--color-apple-text)]">{row.brandModel || "Bez nosaukuma"}</p>
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11.5px] text-[#8e8e93]">
+                        {counts.length === 0 ? <span>Nav saišu</span> : null}
+                        {counts.map((c) => (
+                          <span key={c.key} className="inline-flex items-center gap-1" title={c.label}>
+                            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />
+                            {c.label}{c.count > 1 ? ` ${c.count}` : ""}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <span className="hidden shrink-0 self-center rounded-full border border-[#E5E7EB] px-2.5 py-1 text-[11px] font-semibold text-black shadow-sm sm:inline-flex sm:px-3 sm:py-1.5 sm:text-[12px]">
-                    Atvērt
-                  </span>
-                </Link>
-                <button
-                  type="button"
-                  disabled={busyId === row.id}
-                  onClick={async () => {
-                    setBusyId(row.id);
-                    try {
-                      const res = await fetch(`/api/admin/iriss-scan/${encodeURIComponent(row.id)}`, { credentials: "include" });
-                      if (!res.ok) return;
-                      const data = (await res.json()) as { record?: IrissScanListRow };
-                      if (!data.record) return;
-                      const patchRes = await fetch(`/api/admin/iriss-scan/${encodeURIComponent(row.id)}`, {
-                        method: "PATCH",
-                        credentials: "include",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ ...data.record, pinnedAt: data.record.pinnedAt ? "" : new Date().toISOString() }),
-                      });
-                      if (!patchRes.ok) return;
-                      const patched = (await patchRes.json()) as { record?: IrissScanListRow };
-                      if (!patched.record) return;
-                      setLocalRows((prev) => prev.map((x) => (x.id === row.id ? patched.record! : x)));
-                    } finally {
-                      setBusyId(null);
-                    }
-                  }}
-                  className="m-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
-                  title={row.pinnedAt ? "Noņemt piespraušanu" : "Piespraust augšā"}
-                  aria-label={row.pinnedAt ? "Noņemt piespraušanu" : "Piespraust augšā"}
-                >
-                  <Pin className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  disabled={busyId === row.id}
-                  onClick={() => setDeleteTargetId(row.id)}
-                  className="my-2 mr-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-red-200 bg-white text-red-700 shadow-sm transition hover:bg-red-50"
-                  title="Dzēst ierakstu"
-                  aria-label="Dzēst ierakstu"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-              {chips.length > 0 ? (
-                <div className="border-t border-[#E5E7EB] px-3 py-2.5 sm:px-4 sm:py-2.5">
-                  <div role="group" aria-label="Sludinājumu platformu saites" className={LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}>
-                    {chips.map((c, i) => (
-                      <a key={`${c.href}-${i}`} href={c.href} target="_blank" rel="noopener noreferrer" title={c.title} className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} style={c.chipStyle}>
-                        {c.letter}
-                      </a>
-                    ))}
+                    <ChevronRight className="h-4 w-4 shrink-0 text-[#c7c7cc]" aria-hidden />
+                  </Link>
+                  <div ref={menuId === row.id ? menuRef : undefined} className="relative shrink-0 pr-2">
                     <button
                       type="button"
-                      onClick={() => chips.forEach((chip) => window.open(chip.href, "_blank", "noopener,noreferrer"))}
-                      title="Atvērt visas saites"
-                      aria-label="Atvērt visas saites"
-                      className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
-                      style={IR_LISTING_ALL_CHIP_STYLE}
+                      disabled={busyId === row.id}
+                      onClick={() => setMenuId((m) => (m === row.id ? null : row.id))}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#8e8e93] transition hover:bg-black/[0.04] disabled:opacity-40"
+                      aria-label="Darbības"
+                      title="Darbības"
                     >
-                      ALL
+                      <MoreHorizontal className="h-5 w-5" aria-hidden />
                     </button>
+                    {menuId === row.id ? (
+                      <div className="absolute right-2 top-10 z-30 w-52 overflow-hidden rounded-xl bg-white/95 text-[14px] shadow-[0_8px_30px_rgba(0,0,0,0.16),0_0_0_0.5px_rgba(0,0,0,0.1)] backdrop-blur">
+                        {buildListingPlatformChips(row, 100).length > 0 ? (
+                          <button type="button" onClick={() => { buildListingPlatformChips(row, 100).forEach((c) => window.open(c.href, "_blank", "noopener,noreferrer")); setMenuId(null); }} className="block w-full border-b border-[#e5e5ea] px-3.5 py-2.5 text-left hover:bg-black/[0.03]">
+                            Atvērt visas saites
+                          </button>
+                        ) : null}
+                        <button type="button" onClick={() => void togglePin(row)} className="block w-full border-b border-[#e5e5ea] px-3.5 py-2.5 text-left hover:bg-black/[0.03]">
+                          {row.pinnedAt ? "Atspraust" : "Piespraust augšā"}
+                        </button>
+                        <button type="button" onClick={() => { setMenuId(null); setDeleteTargetId(row.id); }} className="flex w-full items-center gap-2 px-3.5 py-2.5 text-left text-red-600 hover:bg-red-50/60">
+                          <Trash2 className="h-4 w-4" aria-hidden /> Dzēst
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       {deleteTargetId ? (
-        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6" onClick={() => !busyId && setDeleteTargetId(null)} role="presentation">
-          <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-base font-semibold text-[var(--color-apple-text)]">Vai tiešām vēlaties neatgriezeniski dzēst šo SCAN ierakstu?</h2>
-            <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={() => setDeleteTargetId(null)} disabled={Boolean(busyId)} className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50">
+        <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6" onClick={() => !busyId && setDeleteTargetId(null)} role="presentation">
+          <div role="dialog" aria-modal="true" className="w-full max-w-sm rounded-2xl bg-white p-5 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Dzēst šo SCAN ierakstu?</h2>
+            <p className="mt-1 text-[13px] text-[#8e8e93]">Darbību nevar atsaukt.</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setDeleteTargetId(null)} disabled={Boolean(busyId)} className="h-11 rounded-xl bg-[#f2f2f7] text-[15px] font-medium text-[var(--color-apple-text)] disabled:opacity-50">
                 Atcelt
               </button>
               <button
@@ -144,10 +189,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
                   if (!deleteTargetId) return;
                   setBusyId(deleteTargetId);
                   try {
-                    const res = await fetch(`/api/admin/iriss-scan/${encodeURIComponent(deleteTargetId)}`, {
-                      method: "DELETE",
-                      credentials: "include",
-                    });
+                    const res = await fetch(`/api/admin/iriss-scan/${encodeURIComponent(deleteTargetId)}`, { method: "DELETE", credentials: "include" });
                     if (!res.ok) return;
                     setLocalRows((prev) => prev.filter((x) => x.id !== deleteTargetId));
                     setDeleteTargetId(null);
@@ -156,7 +198,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
                   }
                 }}
                 disabled={Boolean(busyId)}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-red-700 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:bg-red-800 disabled:opacity-50"
+                className="h-11 rounded-xl bg-red-600 text-[15px] font-semibold text-white disabled:opacity-50"
               >
                 {busyId ? "Dzēš…" : "Dzēst"}
               </button>

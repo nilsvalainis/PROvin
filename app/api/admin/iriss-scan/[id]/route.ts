@@ -1,14 +1,13 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { deleteIrissScan, isSafeIrissScanId, readIrissScan, writeIrissScan } from "@/lib/iriss-scan-store";
+import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 
 export const runtime = "nodejs";
 
-function parseOtherFromBody(o: Record<string, unknown>): string[] {
-  const v = o.listingLinksOther;
-  if (!Array.isArray(v)) return [""];
-  return v.map((x) => (typeof x === "string" ? x : "")).slice(0, 20);
+function links(o: Record<string, unknown>, k: string): string[] {
+  return coerceIrissListingLinkList(o[k]);
 }
 
 function parseBodyRecord(id: string, body: unknown): IrissScanRecord | null {
@@ -21,11 +20,11 @@ function parseBodyRecord(id: string, body: unknown): IrissScanRecord | null {
     updatedAt: str("updatedAt"),
     pinnedAt: str("pinnedAt"),
     brandModel: str("brandModel"),
-    listingLinkMobile: str("listingLinkMobile"),
-    listingLinkAutobid: str("listingLinkAutobid"),
-    listingLinkOpenline: str("listingLinkOpenline"),
-    listingLinkAuto1: str("listingLinkAuto1"),
-    listingLinksOther: parseOtherFromBody(o),
+    listingLinkMobile: links(o, "listingLinkMobile"),
+    listingLinkAutobid: links(o, "listingLinkAutobid"),
+    listingLinkOpenline: links(o, "listingLinkOpenline"),
+    listingLinkAuto1: links(o, "listingLinkAuto1"),
+    listingLinksOther: links(o, "listingLinksOther"),
   };
 }
 
