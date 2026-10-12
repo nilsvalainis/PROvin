@@ -71,7 +71,7 @@ export function buildVinScanOverview(rows: readonly VinScanOverviewRow[]): { veh
 export function formatVinScanExportText(opts: {
   vin: string;
   scannedAt: string;
-  rows: readonly (VinScanOverviewRow & Partial<VinScanIndicator>)[];
+  rows: readonly (VinScanOverviewRow & Partial<Omit<VinScanIndicator, "id">>)[];
 }): string {
   const overview = buildVinScanOverview(opts.rows);
   const when = formatVinScanScannedAt(opts.scannedAt);
@@ -98,7 +98,7 @@ export function formatVinScanExportText(opts: {
 export function formatVinScanExportJson(opts: {
   vin: string;
   scannedAt: string;
-  rows: readonly (VinScanOverviewRow & Partial<VinScanIndicator>)[];
+  rows: readonly (VinScanOverviewRow & Partial<Omit<VinScanIndicator, "id">>)[];
 }): string {
   return JSON.stringify(
     {
