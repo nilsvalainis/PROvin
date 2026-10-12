@@ -3,11 +3,14 @@ import { describe, expect, it } from "vitest";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
 import {
+  citiAvotiSectionPdfTitle,
   coerceVendorAvotuBlock,
   createDefaultSourceBlocks,
+  emptyCitiAvotiSection,
   SOURCE_BLOCK_LABELS,
   toPdfManualVendorBlocks,
 } from "@/lib/admin-source-blocks";
+import { buildVehicleLifecycleEvents } from "@/lib/vehicle-lifecycle-timeline";
 import { extractAutodnaReport } from "@/lib/autodna-report-extract";
 import { extractCarverticalReport } from "@/lib/carvertical-report-extract";
 import { convertAmountTextToEur } from "@/lib/currency-eur-convert";
@@ -585,6 +588,46 @@ describe("laikposma fakta piemērošana (upsert_vehicle_history_timeline_row)", 
         includeInPdf: true,
       },
     ]);
+  });
+
+  it("iekļauj CITI AVOTI laikposma rindas ar PDF karodziņu un Avota nosaukumu", () => {
+    const blocks = createDefaultSourceBlocks();
+    const section = {
+      ...emptyCitiAvotiSection(),
+      label: "CarFax",
+      vehicleHistoryTimeline: [
+        {
+          date: "13.10.2025",
+          country: "Latvija",
+          description: "Veikta tehniskā apskate",
+          odometer: "254941",
+          includeInPdf: false,
+        },
+        {
+          date: "24.10.2019",
+          country: "ASV",
+          description: "Pirmā reģistrācija",
+          includeInPdf: true,
+        },
+      ],
+    };
+    blocks.citi_avoti = { sections: [section] };
+    const vendors = toPdfManualVendorBlocks(blocks);
+    const citi = vendors.find((v) => v.title === citiAvotiSectionPdfTitle(section, 0, 1));
+    expect(citi).toBeDefined();
+    expect(citi?.title).toContain("CarFax");
+    expect(citi?.vehicleHistoryTimeline).toEqual([
+      {
+        date: "24.10.2019",
+        country: "ASV",
+        description: "Pirmā reģistrācija",
+        includeInPdf: true,
+      },
+    ]);
+    const events = buildVehicleLifecycleEvents({ manualVendorBlocks: citi ? [citi] : [] });
+    const first = events.find((e) => e.kind === "first_registration");
+    expect(first?.sources).toContain(citiAvotiSectionPdfTitle(section, 0, 1));
+    expect(events.some((e) => e.date.includes("2025"))).toBe(false);
   });
 });
 
