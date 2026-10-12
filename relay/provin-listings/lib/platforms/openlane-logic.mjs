@@ -255,11 +255,21 @@ export function mapOpenlaneAuction(auction, anchors = [], nowMs = Date.now()) {
     auctionEndAt: isoDate(auction.BatchEndDate),
     auctionStage: stageFor(auction, nowMs),
   });
+  const ident = auction.CarIdentification && typeof auction.CarIdentification === "object" ? auction.CarIdentification : {};
+  const vin = str(auction.ChassisNumber || auction.VIN || auction.Vin || ident.Vin || ident.VIN || ident.ChassisNumber);
+  const color = str(auction.Color || auction.ColorName || auction.ExteriorColor || auction.BodyColor || ident.Color);
+  const bodyType = str(auction.BodyType || auction.BodyStyle || ident.BodyType || ident.Body);
+  const doorRaw = auction.NumberOfDoors ?? auction.Doors ?? auction.DoorCount ?? ident.NumberOfDoors;
+  const doorCount = str(doorRaw);
   return {
     ...item,
     isMargin,
     vatRate: num(auction.VatRate ?? auction.VatPercentage ?? auction.VATPercentage ?? auction.VatPercent),
     bidCount: num(auction.BidCount ?? auction.NumberOfBids),
     damageRaw: str(auction.DamageDescription || auction.DamageText || auction.Comments || ""),
+    vin: vin || undefined,
+    color: color || undefined,
+    bodyType: bodyType || undefined,
+    doorCount: doorCount || undefined,
   };
 }

@@ -203,6 +203,10 @@ describe("mapRelayFetchResponse", () => {
         priceCurrent: null,
         priceBuyNow: 8900,
         auctionEndAt: "2026-10-08T16:00:00.000Z",
+        vin: "WBAZZZ8V0K1237731",
+        color: "Black",
+        bodyType: "SUV",
+        doorCount: "5",
         salesVatType: 1053,
         taxDeduction: false,
         sourceCountry: "DE",
@@ -217,6 +221,10 @@ describe("mapRelayFetchResponse", () => {
       platform: "auto1",
       externalId: "987654",
       stockNumber: "BW03512",
+      vin: "WBAZZZ8V0K1237731",
+      color: "Black",
+      bodyType: "SUV",
+      doorCount: "5",
       imageUrls: ["https://img-pa.auto1.com/img/a.jpg", "https://img-pa.auto1.com/img/b.jpg"],
       priceMinimal: 6513,
       auctionEndAt: "2026-10-08T16:00:00.000Z",
@@ -227,6 +235,22 @@ describe("mapRelayFetchResponse", () => {
       orderId: "o3",
       detailUrl: "https://www.auto1.com/en/app/merchant/car/BW03512",
     });
+    expect(v?.vinSource).toBe("source");
+  });
+
+  it("fills Auto1 VIN from stored raw hits when items omitted it", () => {
+    const r = mapRelayFetchResponse(
+      {
+        status: "ok",
+        items: [{ externalId: "987654", stockNumber: "BW03512", title: "BMW 320d", imageUrl: "https://img-pa.auto1.com/img/a.jpg" }],
+        raw: {
+          kind: "auto1-xhr",
+          pages: [{ json: { hits: [{ id: 987654, stockNumber: "BW03512", vin: "WBAZZZ8V0K1237731" }] } }],
+        },
+      },
+      { platform: "auto1", orderId: "o3", orderBrandModel: "BMW 320d" },
+    );
+    expect(r.vehicles[0]?.vin).toBe("WBAZZZ8V0K1237731");
   });
 
   it("fills Openlane detail URL and year from first registration when the relay omitted them", () => {

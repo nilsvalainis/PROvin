@@ -5,7 +5,9 @@
  * Datus ņem no SPA XHR `GET /v1/car-search/cars/search/<searchId>`
  * (`{totalHits, hits[], aggregations, serverTime}`). Cenas ir centos. `firstRegistrationDate`,
  * `auctionStartDatetime` un `auctionEndDatetime` ir ms. Detaļu saite lieto `stockNumber`
- * (`/en/app/merchant/car/BW03512`), ne skaitlisko `id`. VIN sarakstā nav.
+ * (`/en/app/merchant/car/BW03512`), ne skaitlisko `id`. VIN saraksta API parasti nav
+ * (merchant hold-back); ja hits[] tomēr iedod `vin` / `vinNumber`, to mapējam.
+ * Detaļu lapu atsevišķi neatveram. Document-tipa bildes iet `documentImageUrls`.
  * `img-pa.auto1.com` strādā ar provin.lv Referer, tāpēc admin lapā no-referrer nav vajadzīgs.
  */
 import { isoDate, makeItem, num, str } from "../items.mjs";
@@ -21,6 +23,20 @@ export function auto1ListApiRe(pattern = process.env.AUTO1_LIST_API_RE) {
 }
 
 const LIST_API_RE = auto1ListApiRe();
+
+/** Health.discoveredApis: ceļa šablons, lai searchId neaizņem 20 slotus. */
+export function auto1ApiTemplate(url) {
+  try {
+    const p = new URL(url).pathname;
+    return p
+      .replace(/\/cars\/search\/[^/]+$/i, "/cars/search/:id")
+      .replace(/\/[0-9a-f]{8,}[0-9a-f-]*/gi, "/:id")
+      .replace(/\/[A-Z]{1,3}\d{4,}\b/g, "/:stock")
+      .replace(/\/\d{4,}\b/g, "/:id");
+  } catch {
+    return String(url || "").split("?")[0];
+  }
+}
 
 export const auto1 = {
   id: "auto1",
@@ -111,6 +127,23 @@ function auto1Image(car) {
   return first ? str(first.fullUrl) : "";
 }
 
+function auto1ImageKind(img) {
+  if (!img || typeof img !== "object") return "";
+  return str(img.type ?? img.imageType ?? img.category ?? img.tag ?? img.group);
+}
+
+function auto1DocumentImageUrls(car) {
+  const images = Array.isArray(car.images) ? car.images : [];
+  const docs = [];
+  for (const img of images) {
+    const url = str(img?.fullUrl ?? img?.url ?? (typeof img === "string" ? img : ""));
+    if (!url) continue;
+    const kind = auto1ImageKind(img);
+    if (/document|paper|registration|service|invoice|certificate|schein|brief|dokum/i.test(`${kind} ${url}`)) docs.push(url);
+  }
+  return docs.slice(0, 20);
+}
+
 function auto1Location(car) {
   const loc = car.currentLocation;
   if (!loc || typeof loc !== "object") return "";
@@ -169,9 +202,20 @@ export function mapAuto1Car(car, nowMs = Date.now()) {
   const sourceCountry = str(car.sourceCountry ?? (finance && typeof finance === "object" ? finance.sourceCountryCode : ""));
   const owningCountry = str(car.owningCountry);
   const imageUrls = (Array.isArray(car.images) ? car.images : []).map((img) => str(img?.fullUrl ?? img?.url ?? img)).filter(Boolean);
+  const documentImageUrls = auto1DocumentImageUrls(car);
+  const vin = str(car.vin) || str(car.vinNumber) || str(car.vehicleIdentificationNumber) || str(car.VIN);
+  const color = str(car.colorName ?? car.colourName ?? car.exteriorColor ?? car.color ?? car.bodyColor);
+  const bodyType = str(car.bodyType ?? car.bodyStyle ?? car.category);
+  const doorCount = str(car.doorCount ?? car.doors ?? car.numberOfDoors);
   return {
     ...item,
     stockNumber: stock,
+    vin: vin || undefined,
+    vinSource: vin ? "source" : undefined,
+    documentImageUrls: documentImageUrls.length ? documentImageUrls : undefined,
+    color: color || undefined,
+    bodyType: bodyType || undefined,
+    doorCount: doorCount || undefined,
     expectedPrice: eurosFromCents(car.expectedPriceDisplay),
     salesVatType: num(car.salesVatType),
     taxDeduction: typeof car.taxDeduction === "boolean" ? car.taxDeduction : null,
@@ -191,19 +235,18 @@ async function fetchSource(page, sourceUrl, { maxPages, log, state }) {
   const onResponse = async (res) => {
     const url = res.url();
     if (!API_HOST_RE.test(url)) return;
-    if (LIST_API_RE && !LIST_API_RE.test(url)) return;
     const ct = res.headers()["content-type"] ?? "";
     if (!/json/i.test(ct)) return;
+    state?.addDiscoveredApi("auto1", auto1ApiTemplate(url));
+    if (LIST_API_RE && !LIST_API_RE.test(url)) return;
     try {
       const json = await res.json();
       if (isAuto1EmptySearchJson(json)) {
-        state?.addDiscoveredApi("auto1", url);
         candidates.push({ url, json, cars: [], empty: true });
         return;
       }
       const arrays = findCarArrays(json);
       if (arrays.length === 0) return;
-      state?.addDiscoveredApi("auto1", url);
       candidates.push({ url, json, cars: arrays.sort((a, b) => b.length - a.length)[0] });
     } catch {
       /* ne JSON */

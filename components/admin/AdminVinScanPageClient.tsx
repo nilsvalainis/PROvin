@@ -49,7 +49,7 @@ export function AdminVinScanPageClient({
   const [plateBusy, setPlateBusy] = useState(false);
   const [plate, setPlate] = useState<PlateView | null>(null);
   const [csddData, setCsddData] = useState<CsddTechData | null>(null);
-  const [scanNonce, setScanNonce] = useState(0);
+  const [scanNonce, setScanNonce] = useState(() => (isValidVin(normalizeVin(initialVin)) ? 1 : 0));
   const [scanForce, setScanForce] = useState(false);
   const [scanSnapshot, setScanSnapshot] = useState<VinScanPanelSnapshot | null>(null);
   const [creating, setCreating] = useState(false);

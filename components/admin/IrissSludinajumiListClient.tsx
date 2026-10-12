@@ -3,23 +3,18 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
-import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
 import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
-import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
+import { IrissListingVehicleCard } from "@/components/admin/IrissListingVehicleCard";
 import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
-import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
+import { type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useMobilePlatform } from "@/hooks/useMobilePlatform";
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
-import { listingAuctionTypeLabel, isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
-import { listingBidPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts } from "@/lib/iriss-listings-cost";
-import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
-import { classifyListingDamage, listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
-import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
-import type { IrissMobilePlatform } from "@/lib/iriss-listings-mobile-platform";
+import { isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
+import { listingBidPrice, listingExtrasI, listingMaxBid, type ListingCostParts } from "@/lib/iriss-listings-cost";
+import { listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 import {
   LISTING_SORTS,
   type ListingSort,
-  listingYearLabel,
   parseListingSort,
   parseListingSources,
   parsePriceBound,
@@ -55,7 +50,6 @@ import {
   type IrissListPrefs,
   type IrissListTab,
 } from "@/lib/iriss-listings-operator-prefs";
-import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import {
   computeListingVatHealth,
   listingTaxCostArgs,
@@ -130,11 +124,6 @@ function fmtEur(n: number | null): string {
   return `${Math.round(n).toLocaleString("lv-LV")} €`;
 }
 
-function fmtKm(n: number | null): string {
-  if (n === null) return "";
-  return `${Math.round(n).toLocaleString("lv-LV")} km`;
-}
-
 function fmtDateTime(iso: string): string {
   const t = Date.parse(iso);
   if (!Number.isFinite(t)) return iso || "";
@@ -162,14 +151,6 @@ function isNew(v: IrissListingVehicle, nowMs: number | null): boolean {
 function recentPriceChanges(v: IrissListingVehicle, nowMs: number | null): IrissListingVehicle["priceHistory"] {
   if (nowMs == null) return [];
   return v.priceHistory.filter((c) => isRealListingPriceChange(c) && hoursSince(c.at, nowMs) <= RECENT_WINDOW_HOURS);
-}
-
-function stageLabel(stage: string): string {
-  const s = stage.toUpperCase();
-  if (s === "BEFORE_AUCTION") return "pirms izsoles";
-  if (s === "IN_AUCTION" || s === "RUNNING") return "izsole notiek";
-  if (s === "AFTER_AUCTION" || s === "FINISHED") return "izsole beigusies";
-  return stage ? stage.toLowerCase().replace(/_/g, " ") : "";
 }
 
 function taxOf(v: IrissListingVehicle, prefs: IrissListPrefs): ListingTax {
@@ -202,42 +183,6 @@ function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs, budget: number | 
   if (bid == null) return null;
   const args = listingTaxCostArgs(taxOf(v, prefs));
   return listingMaxBid(args.kind, args.foreignVatPct, budget, extrasOf(v, prefs)) - bid;
-}
-
-function daysInAuction(v: IrissListingVehicle, nowMs: number | null): string {
-  if (nowMs == null) return "";
-  const t = Date.parse(v.auctionStartAt || v.firstSeenAt);
-  if (!Number.isFinite(t)) return "";
-  const d = (nowMs - t) / 86_400_000;
-  return d < 1 ? `${Math.max(1, Math.round(d * 24))} h izsolē` : `${Math.floor(d)} d izsolē`;
-}
-
-function countdown(endIso: string, nowMs: number | null): { t: string; k: string } {
-  if (nowMs == null) return { t: "\u00a0", k: "text-slate-400" };
-  if (!endIso.trim()) return { t: "Beigu laiks nav zināms", k: "text-slate-400" };
-  const end = Date.parse(endIso);
-  if (!Number.isFinite(end)) return { t: "Beigu laiks nav zināms", k: "text-slate-400" };
-  const ms = end - nowMs;
-  if (ms <= 0) return { t: "Beigusies", k: "text-slate-400" };
-  const s = Math.floor(ms / 1000);
-  const d = Math.floor(s / 86400);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const clock = `${pad(Math.floor((s % 86400) / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
-  return { t: d ? `${d} d ${clock}` : clock, k: ms < 36e5 ? "text-red-600" : ms < 86_400_000 ? "text-orange-600" : "text-[var(--color-apple-text)]" };
-}
-
-function TaxBadge({ tax, size = "sm" }: { tax: ListingTax; size?: "sm" | "md" }) {
-  return <IrissListTaxBadge tax={tax} size={size} />;
-}
-
-function CountryFlag({ code }: { code: string }) {
-  const f = countryFlagLabel(code);
-  if (!f) return null;
-  return (
-    <span title={f.title} aria-label={f.title}>
-      {f.flag}
-    </span>
-  );
 }
 
 /** Atverot lapu vienmēr: cilne „Jauni”, kārtot „Jaunākie” (neatjauno no localStorage). */
@@ -302,6 +247,7 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [hiddenImages, setHiddenImages] = useState<Record<string, true>>({});
+  const [vinPatch, setVinPatch] = useState<Record<string, ListingVinOcrPatch>>({});
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const [health, setHealth] = useState<IrissPlatformHealthReport | null>(null);
@@ -493,7 +439,10 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
     writeListQuery({ sources: next.length === SOURCE_CHIPS.length ? [] : next });
   }
 
-  const allVehicles = useMemo(() => latest?.vehicles ?? [], [latest?.vehicles]);
+  const allVehicles = useMemo(
+    () => (latest?.vehicles ?? []).map((v) => (vinPatch[v.id] ? { ...v, ...vinPatch[v.id] } : v)),
+    [latest?.vehicles, vinPatch],
+  );
   /** Divi datu kopumi: klientu pasūtījumu auto vai SCAN saraksta auto. Kartītes tās pašas. */
   const vehicles = useMemo(
     () => allVehicles.filter((v) => vehicleInListingDataset(listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv), dataset)),
@@ -535,7 +484,7 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
       const linked = linkedOrdersOf(v, prefs, orderById);
       if (!vehicleMatchesOrderFilter(linked, orderFilter)) return false;
       if (!q) return true;
-      const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.orderBrandModels.join(" ")} ${linked.map((o) => `${o.clientName} ${o.brandModel} ${o.preferredColors} ${o.brief}`).join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
+      const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.vin ?? ""} ${v.stockNumber ?? ""} ${v.orderBrandModels.join(" ")} ${linked.map((o) => `${o.clientName} ${o.brandModel} ${o.preferredColors} ${o.brief}`).join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
       return hay.includes(q);
     });
   }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, orderById, orderFilter]);
@@ -907,7 +856,7 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
 
       <div className="space-y-1.5 sm:space-y-2">
         {sorted.map((v) => (
-          <VehicleCard
+          <IrissListingVehicleCard
             key={v.id}
             v={v}
             nowMs={nowMs}
@@ -923,6 +872,7 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
             mobile={mobile}
             imageHidden={Boolean(hiddenImages[v.id])}
             onImageError={() => setHiddenImages((prev) => ({ ...prev, [v.id]: true }))}
+            onVinPatch={(id, patch) => setVinPatch((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))}
           />
         ))}
       </div>
@@ -950,251 +900,5 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
         <IrissListingOrderPreview orders={previewOrders} onClose={() => setPreviewOrders(null)} />
       ) : null}
     </div>
-  );
-}
-
-function VehicleCard({
-  v,
-  nowMs,
-  prefs,
-  onPrefs,
-  linked,
-  budget,
-  onOpen,
-  onPreviewOrder,
-  mobile,
-  imageHidden,
-  onImageError,
-}: {
-  v: IrissListingVehicle;
-  nowMs: number | null;
-  prefs: IrissListPrefs;
-  onPrefs: (next: IrissListPrefs) => void;
-  linked: IrissListingOrderBrief[];
-  budget: number | null;
-  onOpen: () => void;
-  onPreviewOrder: (order: IrissListingOrderBrief) => void;
-  mobile: IrissMobilePlatform | null;
-  imageHidden: boolean;
-  onImageError: () => void;
-}) {
-  const fresh = isNew(v, nowMs);
-  const changes = recentPriceChanges(v, nowMs);
-  const gone = v.change === "gone";
-  const tax = taxOf(v, prefs);
-  const extras = extrasOf(v, prefs);
-  const bid = listingBidPrice(v);
-  const taxArgs = listingTaxCostArgs(tax);
-  const real = bid == null ? null : listingRealCost(taxArgs.kind, taxArgs.foreignVatPct, bid, extras);
-  const gala = bid == null ? null : listingFinalPrice(tax, bid, extras);
-  const mb = budget != null ? listingMaxBid(taxArgs.kind, taxArgs.foreignVatPct, budget, extras) : null;
-  const room = mb != null && bid != null ? mb - bid : null;
-  const dmg = classifyListingDamage(v.damageRaw);
-  const fav = prefs.fav.includes(v.id);
-  const hidden = prefs.hidden.includes(v.id);
-  const customCost = Boolean(prefs.costOv[v.id]);
-  const auctionTypeLabel = listingAuctionTypeLabel(v.auctionType);
-  const cd = countdown(v.auctionEndAt, nowMs);
-  const yearLabel = listingYearLabel(v);
-  const sourceHref = resolveListingDetailUrl(v);
-  const powerKwLabel = formatListingPowerKwLabel(v.powerKw);
-  const specs = [yearLabel, fmtKm(v.mileageKm), v.fuel, v.transmission, powerKwLabel, v.location].filter(Boolean);
-  const left = gala != null && budget != null ? budget - gala : null;
-  const border =
-    gone ? "border-[#E5E7EB] opacity-70" : fav ? "border-amber-200" : fresh ? "border-emerald-200" : changes.length > 0 ? "border-sky-200" : "border-[#E5E7EB]";
-  const accent = v.platform === "autobid" ? "border-l-violet-500" : v.platform === "openline" ? "border-l-indigo-600" : "border-l-amber-500";
-
-  function toggle(list: "fav" | "hidden") {
-    const cur = prefs[list];
-    const next = cur.includes(v.id) ? cur.filter((x) => x !== v.id) : [...cur, v.id];
-    onPrefs({ ...prefs, [list]: next });
-  }
-
-  const mobileSpecs = [yearLabel, fmtKm(v.mileageKm), v.transmission, powerKwLabel].filter(Boolean);
-
-  return (
-    <article
-      role="button"
-      tabIndex={0}
-      onClick={onOpen}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
-      className={`flex cursor-pointer flex-col gap-2 rounded-xl border border-l-[5px] bg-white p-2 shadow-sm [content-visibility:auto] [contain-intrinsic-size:1px_132px] touch-manipulation hover:border-slate-300 sm:flex-row sm:flex-nowrap sm:items-start sm:gap-3 sm:rounded-2xl sm:p-3.5 sm:[content-visibility:visible] ${border} ${accent} ${fav ? "shadow-[0_0_0_2px_#fde68a]" : ""} ${hidden ? "opacity-50" : ""}`}
-    >
-      <div className="flex min-w-0 gap-2 sm:contents">
-        <div className="shrink-0" onClick={(e) => sourceHref && e.stopPropagation()}>
-          {v.imageUrl && !imageHidden ? (
-            sourceHref ? (
-              <IrissListingSourceOpen v={v} mobile={mobile} title={`Atvērt ${PLATFORM_LABEL[v.platform]}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={v.imageUrl}
-                  alt={v.title || "Auto foto"}
-                  loading="lazy"
-                  referrerPolicy={v.platform === "openline" || /images\.openlane\.eu/i.test(v.imageUrl) ? "no-referrer" : undefined}
-                  className="h-16 w-[4.5rem] rounded-md border border-slate-200/90 bg-slate-50 object-cover sm:h-[88px] sm:w-32 sm:rounded-lg"
-                  onError={onImageError}
-                />
-              </IrissListingSourceOpen>
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={v.imageUrl}
-                alt={v.title || "Auto foto"}
-                loading="lazy"
-                referrerPolicy={v.platform === "openline" || /images\.openlane\.eu/i.test(v.imageUrl) ? "no-referrer" : undefined}
-                className="h-16 w-[4.5rem] rounded-md border border-slate-200/90 bg-slate-50 object-cover sm:h-[88px] sm:w-32 sm:rounded-lg"
-                onError={onImageError}
-              />
-            )
-          ) : (
-            <div className="flex h-16 w-[4.5rem] items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50 text-[9px] font-semibold uppercase tracking-[0.08em] text-slate-400 sm:h-[88px] sm:w-32 sm:rounded-lg sm:text-[10px]">
-              Nav foto
-            </div>
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
-          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-            {sourceHref ? (
-              <IrissListingSourceOpen
-                v={v}
-                mobile={mobile}
-                title={`Atvērt ${PLATFORM_LABEL[v.platform]}`}
-                className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}
-              >
-                {PLATFORM_LABEL[v.platform]}
-              </IrissListingSourceOpen>
-            ) : (
-              <span className={`inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-semibold sm:px-2 sm:text-[10px] ${platformBadgeClass(v.platform)}`}>
-                {PLATFORM_LABEL[v.platform]}
-              </span>
-            )}
-            <IrissListingSourceExtras v={v} mobile={mobile} />
-            <CountryFlag code={v.countryCode} />
-            <span className="hidden sm:inline">{daysInAuction(v, nowMs) ? <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{daysInAuction(v, nowMs)}</span> : null}</span>
-            {v.bidCount != null ? <span className="hidden rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 sm:inline-flex">{v.bidCount} solījumi</span> : null}
-            {auctionTypeLabel ? <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 sm:inline-flex">{auctionTypeLabel}</span> : null}
-            {gone ? <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[9px] font-semibold text-slate-600 sm:px-2 sm:text-[10px]">PAZUDIS</span> : null}
-            {!gone && fresh ? <span className="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-800 sm:px-2 sm:text-[10px]">JAUNS</span> : null}
-            {customCost ? <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 sm:inline-flex" title="Izmaksas šim auto mainītas">I {fmtEur(extras)}</span> : null}
-          </div>
-          <div className="flex min-w-0 items-baseline gap-1.5">
-            <div className="truncate text-[13px] font-semibold leading-tight text-[var(--color-apple-text)] sm:text-[15px]" title={v.title}>
-              {v.title || v.orderBrandModels[0] || "-"}
-            </div>
-            <span className="shrink-0 text-[11px] font-semibold tabular-nums text-slate-500 sm:text-[12px]">{yearLabel}</span>
-            {powerKwLabel ? (
-              <span className="shrink-0 text-[11px] font-semibold tabular-nums text-[var(--color-apple-text)] sm:text-[12px]">{powerKwLabel}</span>
-            ) : null}
-          </div>
-          <p className="truncate text-[11px] text-[var(--color-provin-muted)] sm:text-[12px] sm:hidden">{mobileSpecs.join(" · ")}</p>
-          <p className="hidden truncate text-[12px] text-[var(--color-provin-muted)] sm:block">{specs.join(" · ")}</p>
-          <div className="flex flex-wrap gap-1">
-            {dmg.status === "nodata" ? (
-              <span className="hidden rounded-md border border-[#E5E7EB] bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 sm:inline">
-                {v.platform === "auto1" ? "bojājumi detaļās" : "Nav datu"}
-              </span>
-            ) : null}
-            {dmg.status === "none" ? <span className="hidden rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 sm:inline">Tehn. bojājumi nav norādīti</span> : null}
-            {dmg.cats.map((c, i) => (
-              <span key={c.name} className={`rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:text-[10px] ${i >= 2 ? "hidden sm:inline" : ""}`}>
-                ⚠ {c.name}
-              </span>
-            ))}
-            {dmg.cats.length > 2 ? <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:hidden">+{dmg.cats.length - 2}</span> : null}
-          </div>
-          <div onClick={(e) => e.stopPropagation()}>
-            <IrissListingOrderChips orders={linked} onPreview={onPreviewOrder} />
-          </div>
-          <input
-            className={`mt-1 hidden w-full rounded-md border border-dashed px-2 py-1 text-[12px] outline-none sm:block ${prefs.notes[v.id] ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}
-            placeholder="✎ Pierakstīt piezīmi"
-            value={prefs.notes[v.id] ?? ""}
-            onClick={(e) => e.stopPropagation()}
-            onChange={(e) => onPrefs({ ...prefs, notes: { ...prefs.notes, [v.id]: e.target.value } })}
-          />
-        </div>
-
-        <div className="flex shrink-0 flex-col gap-1 sm:hidden" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-          <button type="button" title={fav ? "Noņemt no favorītiem" : "Favorīts"} onClick={() => toggle("fav")} className={`grid h-11 w-11 place-items-center rounded-lg border text-lg ${fav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB] bg-white"}`}>
-            {fav ? "★" : "☆"}
-          </button>
-          <button type="button" title={hidden ? "Rādīt atkal" : "Nav interesanti"} onClick={() => toggle("hidden")} className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] bg-white text-lg">
-            {hidden ? "↺" : "✕"}
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 border-t border-dashed border-[#E5E7EB] pt-1.5 sm:contents">
-        <div className="grid gap-0.5 sm:min-w-[165px] sm:justify-items-end sm:text-right">
-          <div className="hidden text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:block">Pašreizējā cena</div>
-          <div className="flex flex-wrap items-center gap-1 sm:justify-end">
-            <span className="text-[18px] font-extrabold tabular-nums leading-none sm:text-[22px]">{bid == null ? "-" : fmtEur(bid)}</span>
-            <TaxBadge tax={tax} size="md" />
-          </div>
-          {v.priceBuyNow != null && v.priceBuyNow !== bid ? <div className="hidden text-[11px] text-slate-500 sm:block">pirkt uzreiz {fmtEur(v.priceBuyNow)}</div> : null}
-          <div className={`text-[11px] font-extrabold tabular-nums sm:text-[12px] ${cd.k}`}>{cd.t}</div>
-          {v.auctionStage ? <div className="hidden text-[11px] text-slate-500 sm:block">{stageLabel(v.auctionStage)}</div> : null}
-        </div>
-
-        <div className="grid gap-0.5 sm:min-w-[175px] sm:border-l sm:border-dashed sm:border-[#E5E7EB] sm:pl-3">
-          {bid == null || !real ? (
-            <div className="text-[11px] tabular-nums text-slate-500">
-              {budget != null ? (
-                <>
-                  Budžets <b className="text-[var(--color-apple-text)]">{fmtEur(budget)}</b>
-                </>
-              ) : (
-                <span className="font-semibold text-amber-900">Budžets nav</span>
-              )}
-              {bid == null ? " · Cenas nav" : ""}
-            </div>
-          ) : (
-            <>
-              {budget != null ? (
-                <div className="hidden justify-between text-[11px] tabular-nums sm:flex">
-                  <span>Budžets</span>
-                  <b>{fmtEur(budget)}</b>
-                </div>
-              ) : (
-                <div className="text-[11px] font-semibold text-amber-900">Budžets nav</div>
-              )}
-              <div className="flex justify-between text-[11px] tabular-nums"><span>Gala</span><b>{fmtEur(gala ?? real.total)}</b></div>
-              <div className="text-[10px] leading-snug text-slate-500">{listingVatShareLine(real, fmtEur)}</div>
-              {left != null ? (
-                <div>
-                  {left >= 0 ? (
-                    <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-extrabold text-emerald-800 sm:text-[11px]">+{fmtEur(left)}</span>
-                  ) : (
-                    <span className="rounded-md bg-red-100 px-1.5 py-0.5 text-[10px] font-extrabold text-red-800 sm:text-[11px]">-{fmtEur(-left)}</span>
-                  )}
-                </div>
-              ) : null}
-              {mb != null ? <div className="flex justify-between text-[11px] tabular-nums text-slate-500"><span>Maks.</span><b className="text-[var(--color-apple-text)]">{fmtEur(mb)}</b></div> : null}
-              {room != null ? (
-                <div className="hidden justify-between text-[11px] tabular-nums text-slate-500 sm:flex">
-                  <span>{room >= 0 ? "var solīt vēl" : "virs maks."}</span>
-                  <span>{fmtEur(Math.abs(room))}</span>
-                </div>
-              ) : null}
-            </>
-          )}
-        </div>
-      </div>
-
-      <div className="hidden flex-col gap-1.5 sm:flex" onClick={(e) => e.stopPropagation()}>
-        <button type="button" title={fav ? "Noņemt no favorītiem" : "Favorīts"} onClick={() => toggle("fav")} className={`grid h-11 w-11 place-items-center rounded-lg border ${fav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB] bg-white"}`}>
-          {fav ? "★" : "☆"}
-        </button>
-        <button type="button" title={hidden ? "Rādīt atkal" : "Nav interesanti"} onClick={() => toggle("hidden")} className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] bg-white">
-          {hidden ? "↺" : "✕"}
-        </button>
-      </div>
-    </article>
   );
 }

@@ -149,6 +149,21 @@ const REAL_AUCTION = {
   IsMargin: true,
 };
 
+test("maps ChassisNumber as vin plus color/body/doors when present", () => {
+  const item = mapOpenlaneAuction({
+    ...REAL_AUCTION,
+    ChassisNumber: "WBAZZZ8V0K1237731",
+    Color: "Black",
+    BodyType: "SUV",
+    NumberOfDoors: 5,
+  });
+  assert.equal(item.vin, "WBAZZZ8V0K1237731");
+  assert.equal(item.color, "Black");
+  assert.equal(item.bodyType, "SUV");
+  assert.equal(item.doorCount, "5");
+  assert.equal(mapOpenlaneAuction(REAL_AUCTION).vin, undefined);
+});
+
 test("year and first registration come from DateFirstRegistration (real sample)", () => {
   const item = mapOpenlaneAuction(REAL_AUCTION, [], Date.parse("2026-10-09T09:00:00Z"));
   assert.equal(item.year, "2017");

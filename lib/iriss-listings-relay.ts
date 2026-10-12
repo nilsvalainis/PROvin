@@ -9,6 +9,8 @@
 import { parseAutobidNuxtJson } from "@/lib/iriss-listings-autobid";
 import { sanitizeAutobidNuxtPages } from "@/lib/iriss-listings-autobid-sanitize";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
+import { applyAuto1VinHints } from "@/lib/iriss-listings-auto1-vin";
+import { pickListingBodyType, pickListingColor, pickListingDoorCount, pickListingVin } from "@/lib/iriss-listings-extract";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { listingYearDigits } from "@/lib/iriss-listings-list-view";
 import { fillOpenlaneFuelTransmission } from "@/lib/iriss-listings-openlane-spec";
@@ -126,6 +128,7 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
     fuel = filled.fuel;
     transmission = filled.transmission;
   }
+  const vin = pickListingVin(item);
   return {
     id: irissListingVehicleId(platform, externalId),
     platform,
@@ -153,6 +156,14 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
     owningCountry: str(item.owningCountry) || undefined,
     imageUrl: str(item.imageUrl),
     imageUrls: Array.isArray(item.imageUrls) ? item.imageUrls.map(str).filter(Boolean).slice(0, 40) : undefined,
+    documentImageUrls: Array.isArray(item.documentImageUrls)
+      ? item.documentImageUrls.map(str).filter(Boolean).slice(0, 20)
+      : undefined,
+    vin: vin || undefined,
+    vinSource: str(item.vinSource) === "ocr_photo" ? "ocr_photo" : vin ? "source" : undefined,
+    color: pickListingColor(item) || str(item.color) || undefined,
+    bodyType: pickListingBodyType(item) || str(item.bodyType) || undefined,
+    doorCount: pickListingDoorCount(item) || str(item.doorCount) || undefined,
     isMargin: typeof item.isMargin === "boolean" ? item.isMargin : null,
     salesVatType: numOrNull(item.salesVatType),
     taxDeduction: typeof item.taxDeduction === "boolean" ? item.taxDeduction : null,
@@ -202,6 +213,10 @@ function autobidVehiclesFromNuxt(nuxtPages: string[], orderId: string, orderBran
         countryCode: v.countryCode,
         imageUrl: v.imageUrl,
         imageUrls: v.imageUrls,
+        vin: v.vin || undefined,
+        color: v.color || undefined,
+        bodyType: v.bodyType || undefined,
+        doorCount: v.doorCount || undefined,
         currency: "EUR",
         priceStart: v.priceStart,
         priceMinimal: v.priceMinimal,
@@ -258,6 +273,9 @@ export function mapRelayFetchResponse(
       } catch {
         rawPages = [];
       }
+    }
+    if (src.platform === "auto1") {
+      vehicles = applyAuto1VinHints(vehicles, raw ?? rawPages);
     }
   }
   if (vehicles.length === 0 && !/0 auto/.test(noteParts.join(" "))) noteParts.push("Meklējums šobrīd nedod rezultātus (0 auto).");

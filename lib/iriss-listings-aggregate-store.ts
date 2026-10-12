@@ -16,11 +16,13 @@ import { listingYearDigits } from "@/lib/iriss-listings-list-view";
 import { isIrissListingsAutomaticSlot } from "@/lib/iriss-listings-schedule";
 import {
   IRISS_LISTING_PLATFORMS,
+  IRISS_LISTING_VIN_OCR_STATUSES,
   type IrissListingPlatform,
   type IrissListingPriceChange,
   type IrissListingSourceRun,
   type IrissListingSyncRunSummary,
   type IrissListingVehicle,
+  type IrissListingVinOcrStatus,
   type IrissListingsLatestView,
   type IrissListingsSyncCursor,
   type IrissListingsRawBundle,
@@ -101,6 +103,16 @@ function isPlatform(v: string): v is IrissListingPlatform {
   return (IRISS_LISTING_PLATFORMS as readonly string[]).includes(v);
 }
 
+function parseVinOcrStatus(v: unknown): IrissListingVinOcrStatus | undefined {
+  const s = str(v);
+  return (IRISS_LISTING_VIN_OCR_STATUSES as readonly string[]).includes(s) ? (s as IrissListingVinOcrStatus) : undefined;
+}
+
+function parseVinOcrAlts(v: unknown): string[] | undefined {
+  const out = strArr(v).slice(0, 4);
+  return out.length ? out : undefined;
+}
+
 const SOURCE_STATUSES = new Set(["ok", "login_required", "blocked_by_waf", "parse_failed", "fetch_failed", "relay_not_configured", "skipped"]);
 const CHANGES = new Set(["new", "price_changed", "unchanged", "gone"]);
 const PRICE_FIELDS = new Set(["start", "minimal", "current", "buy_now"]);
@@ -152,6 +164,17 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     owningCountry: str(v.owningCountry) || undefined,
     imageUrl: str(v.imageUrl),
     imageUrls: Array.isArray(v.imageUrls) ? v.imageUrls.map(str).filter(Boolean).slice(0, 40) : undefined,
+    documentImageUrls: Array.isArray(v.documentImageUrls)
+      ? v.documentImageUrls.map(str).filter(Boolean).slice(0, 20)
+      : undefined,
+    vin: str(v.vin) || undefined,
+    vinSource: str(v.vinSource) === "ocr_photo" ? "ocr_photo" : str(v.vin) ? "source" : undefined,
+    vinOcrAt: str(v.vinOcrAt) || undefined,
+    vinOcrStatus: parseVinOcrStatus(v.vinOcrStatus),
+    vinOcrAlts: parseVinOcrAlts(v.vinOcrAlts),
+    color: str(v.color) || undefined,
+    bodyType: str(v.bodyType) || undefined,
+    doorCount: str(v.doorCount) || undefined,
     isMargin: typeof v.isMargin === "boolean" ? v.isMargin : null,
     salesVatType: numOrNull(v.salesVatType),
     taxDeduction: typeof v.taxDeduction === "boolean" ? v.taxDeduction : null,
@@ -380,6 +403,65 @@ export async function writeIrissListingsRun(view: IrissListingsLatestView): Prom
 /** `IRISS_LISTINGS_STORE_RAW=0` izslēdz. Noklusējumā glabā, lai struktūras maiņu var ātri izpētīt. */
 export function isIrissListingsRawStoreEnabled(): boolean {
   return !/^(0|false|no|off)$/i.test((process.env.IRISS_LISTINGS_STORE_RAW ?? "").trim());
+}
+
+/** Tikai latest.json, bez jauna snapshot (OCR VIN kešs). */
+export async function saveIrissListingsLatestView(view: IrissListingsLatestView): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const r = resolveStorage();
+    if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+    const vehicles = applyAuto1CentsMigration(view.vehicles).vehicles;
+    await writeJson(r, LATEST_FILENAME, JSON.stringify({ ...view, vehicles }, null, 2));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+const VIN_PATCH_STATUSES = new Set<string>(IRISS_LISTING_VIN_OCR_STATUSES);
+
+export type IrissListingVinPatch = {
+  vin?: string;
+  vinSource?: IrissListingVehicle["vinSource"];
+  vinOcrAt?: string;
+  vinOcrStatus?: IrissListingVehicle["vinOcrStatus"];
+  vinOcrAlts?: string[];
+  documentImageUrls?: string[];
+};
+
+let vinPatchChain: Promise<unknown> = Promise.resolve();
+
+export async function patchIrissListingVehicleVin(
+  id: string,
+  patch: IrissListingVinPatch,
+): Promise<{ ok: boolean; vehicle: IrissListingVehicle | null; persisted: boolean }> {
+  const run = async () => {
+    const view = await readIrissListingsLatestView();
+    if (!view) return { ok: false, vehicle: null, persisted: false };
+    const idx = view.vehicles.findIndex((v) => v.id === id);
+    if (idx < 0) return { ok: false, vehicle: null, persisted: false };
+    const prev = view.vehicles[idx]!;
+    const vin = str(patch.vin) || prev.vin;
+    const next: IrissListingVehicle = {
+      ...prev,
+      ...(vin ? { vin } : {}),
+      vinSource: patch.vinSource ?? prev.vinSource ?? (vin ? "source" : undefined),
+      vinOcrAt: str(patch.vinOcrAt) || prev.vinOcrAt,
+      vinOcrStatus: patch.vinOcrStatus && VIN_PATCH_STATUSES.has(patch.vinOcrStatus) ? patch.vinOcrStatus : prev.vinOcrStatus,
+      vinOcrAlts: patch.vinOcrAlts !== undefined ? parseVinOcrAlts(patch.vinOcrAlts) : prev.vinOcrAlts,
+      documentImageUrls: patch.documentImageUrls ?? prev.documentImageUrls,
+    };
+    const vehicles = view.vehicles.slice();
+    vehicles[idx] = next;
+    const saved = await saveIrissListingsLatestView({ ...view, vehicles });
+    return { ok: saved.ok, vehicle: next, persisted: saved.ok };
+  };
+  const queued = vinPatchChain.then(run, run);
+  vinPatchChain = queued.then(
+    () => undefined,
+    () => undefined,
+  );
+  return queued;
 }
 
 export async function writeIrissListingsRawBundle(bundle: IrissListingsRawBundle): Promise<{ ok: true } | { ok: false; error: string }> {

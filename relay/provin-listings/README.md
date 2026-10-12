@@ -103,6 +103,8 @@ vatNote, auctionId, auctionStartAt, auctionEndAt, auctionStage`.
 - **Auto1.** Bez auto-login (sesija ilga). Saraksts ir `GET /v1/car-search/cars/search/<searchId>` (`hits[]`).
   Marka ir `manufacturerName` (ne kods `manufacturer`). Cenas ir centos. Datumi ir ms. Detaļu saite un kartītes
   identifikators ir `stockNumber` (`/car/BW03512`), jo VIN sarakstā nav. `salesVatType` (1053/1054) netiek tulkots.
+  Detaļu lapu / documents API nolasīšanā neatveram (Chrome rinda). Ja hits[] VIN nedod, LIST pēc ielādes
+  slinkā OCR no foto (ISO 3779, kešs, UI `no foto`). `IRISS_LISTINGS_VIN_OCR=0` izslēdz.
 - **Autobid.** Tas pats `__NUXT_DATA__` ceļš, ko Vercel lasa publiski, bet ar ielogotu profilu. Relejs atdod
   `raw.nuxtPages[]` (viens JSON teksts uz lapu, `currentPage=N`), Vercel parsē ar esošo parsētāju. `items[]` tukšs.
   Pirms atbildes no NUXT tiek izgriezti JWT / Bearer un konta lauki (e-pasts, vārds, user/auth objekti).
@@ -115,6 +117,7 @@ vatNote, auctionId, auctionStartAt, auctionEndAt, auctionStage`.
 | `IRISS_LISTINGS_RELAY_TOKEN` | tas pats, kas `LISTINGS_RELAY_TOKEN` serverī |
 | `IRISS_LISTINGS_AUTOBID_VIA_RELAY` | `1`, ja Autobid jālasa ar ielogotu profilu caur releju (noklusējums: publiski no Vercel) |
 | `IRISS_LISTINGS_RELAY_TIMEOUT_MS` | noklusējums 180000 |
+| `IRISS_LISTINGS_VIN_OCR` | `0` izslēdz Auto1 foto OCR (noklusējums ieslēgts; slinks, kešots, UI `no foto`) |
 
 ## Servera env (`/etc/provin-listings.env`)
 

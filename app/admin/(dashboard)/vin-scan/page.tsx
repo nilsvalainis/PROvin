@@ -28,6 +28,7 @@ export default async function AdminVinScanPage({
   searchParams?: Promise<{ vin?: string }>;
 }) {
   const sp = searchParams ? await searchParams : undefined;
+  /** LIST kartīte: `/admin/vin-scan?vin=` aizpilda lauku; klients palaiž skenēšanu, ja VIN derīgs. */
   const initialVin = normalizeVin(sp?.vin ?? "");
   const health = await readSourceHealth();
   const primaryIds = new Set(PRIMARY_SOURCES.map((x) => x.id));

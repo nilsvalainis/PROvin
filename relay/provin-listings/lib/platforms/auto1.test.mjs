@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { yearOf } from "../items.mjs";
-import { auto1ListApiRe, auto1SearchPageUrl, auto1Stage, findCarArrays, isAuto1EmptySearchJson, looksLikeAuto1EmptyResultsPage, mapAuto1Car } from "./auto1.mjs";
+import { auto1ApiTemplate, auto1ListApiRe, auto1SearchPageUrl, auto1Stage, findCarArrays, isAuto1EmptySearchJson, looksLikeAuto1EmptyResultsPage, mapAuto1Car } from "./auto1.mjs";
 
 /** yearOf(String(ms)) šeit atrod "1960", kalendāra gads ir 2010. */
 const REG_MS = 1262304196000;
@@ -149,6 +149,37 @@ test("title falls back to mainType and subType, image prefers mainImageFullUrl, 
   assert.equal(item.title, "BMW 3 320");
   assert.equal(item.imageUrl, "https://img-pa.auto1.com/img/main.jpg");
   assert.equal(item.priceCurrent, 5123);
+});
+
+test("maps vin, color, body and doors when the hit has them", () => {
+  const item = mapAuto1Car(
+    hit({
+      vin: "WBAZZZ8V0K1237731",
+      colorName: "Black",
+      bodyType: "SUV",
+      doorCount: 5,
+    }),
+  );
+  assert.equal(item.vin, "WBAZZZ8V0K1237731");
+  assert.equal(item.vinSource, "source");
+  assert.equal(item.color, "Black");
+  assert.equal(item.bodyType, "SUV");
+  assert.equal(item.doorCount, "5");
+  assert.equal(mapAuto1Car(hit()).vin, undefined);
+});
+
+test("maps DOCUMENT images to documentImageUrls and templates discovered APIs", () => {
+  const item = mapAuto1Car(
+    hit({
+      images: [
+        { fullUrl: "https://img-pa.auto1.com/img/hero.jpg", type: "EXTERIOR" },
+        { fullUrl: "https://img-pa.auto1.com/img/schein.jpg", type: "DOCUMENT" },
+      ],
+    }),
+  );
+  assert.deepEqual(item.documentImageUrls, ["https://img-pa.auto1.com/img/schein.jpg"]);
+  assert.equal(auto1ApiTemplate("https://www.auto1.com/v1/car-search/cars/search/abc-123"), "/v1/car-search/cars/search/:id");
+  assert.equal(auto1ApiTemplate("https://www.auto1.com/v1/merchant/car/BW03512"), "/v1/merchant/car/:stock");
 });
 
 test("stage uses auction times or seconds when auctionType is empty", () => {

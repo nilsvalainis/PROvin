@@ -28,6 +28,7 @@ const BANNED_ROOT_KEYS = [
   "photos",
   "imageUrls",
   "imageUrl",
+  "documentImageUrls",
   "raw",
   "history",
   "priceHistory",
