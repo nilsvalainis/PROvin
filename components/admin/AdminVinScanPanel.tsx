@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
 
+import { openCarVerticalPurchaseTab } from "@/components/admin/AdminCarVerticalPurchaseButton";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import {
   VIN_SCAN_BROWSER_CATALOG,
@@ -31,6 +32,7 @@ type ScanRow = {
   vehicle?: VinScanIndicator["vehicle"];
   mileage: NonNullable<VinScanIndicator["mileage"]>;
   media?: VinScanIndicator["media"];
+  purchased?: boolean;
 };
 
 type ScanCatalogItem = {
@@ -50,6 +52,8 @@ export type VinScanPanelSnapshotRow = {
   openUrl: string;
   vehicle?: ScanRow["vehicle"];
   mileage: ScanRow["mileage"];
+  purchased?: boolean;
+  detail?: string;
 };
 
 export type VinScanPanelSnapshot = {
@@ -190,6 +194,7 @@ export function AdminVinScanPanel({
           vehicle?: unknown;
           mileage?: unknown;
           media?: unknown;
+          purchased?: boolean;
         }>
       ).detail;
       if (!detail || normalizeVin(detail.vin || "") !== clean) return;
@@ -208,6 +213,7 @@ export function AdminVinScanPanel({
           vehicle: asVehicle(detail.vehicle),
           mileage: asMileage(detail.mileage),
           media: asMedia(detail.media, detail.photoUrl, detail.photoCount),
+          purchased: Boolean(detail.purchased) || Boolean(prev[item.id]?.purchased),
         },
       }));
       setChecking((prev) => prev.filter((id) => id !== item.id));
@@ -326,6 +332,33 @@ export function AdminVinScanPanel({
     }
   }
 
+  function buyCarVertical() {
+    if (!valid) return;
+    const item = VIN_SCAN_BROWSER_CATALOG.find((source) => source.id === "carvertical_preview");
+    if (!item) return;
+    if (!openCarVerticalPurchaseTab(clean)) return;
+    setOpenId("carvertical_preview");
+    setById((prev) => {
+      const prevRow = prev.carvertical_preview;
+      return {
+        ...prev,
+        carvertical_preview: {
+          id: item.id,
+          label: item.label,
+          country: item.country,
+          status: prevRow?.purchased ? prevRow.status : "manual",
+          summary: prevRow?.purchased ? prevRow.summary : "Pirkums sākts…",
+          detail: prevRow?.detail || "",
+          openUrl: prevRow?.openUrl || item.openUrl(clean),
+          vehicle: prevRow?.vehicle,
+          mileage: prevRow?.mileage ?? [],
+          media: prevRow?.media,
+          purchased: prevRow?.purchased,
+        },
+      };
+    });
+  }
+
   async function copyExport(kind: "text" | "json") {
     const payload =
       kind === "json"
@@ -359,6 +392,8 @@ export function AdminVinScanPanel({
           openUrl: resolveVinScanOpenUrl(item, clean, row?.openUrl),
           vehicle: row?.vehicle,
           mileage: row?.mileage ?? [],
+          purchased: row?.purchased,
+          detail: row?.detail,
         };
       }),
     });
@@ -373,7 +408,7 @@ export function AdminVinScanPanel({
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">Ātrā avotu pārbaude</p>
           <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-            Servera avoti atbild uzreiz. Pārējie atveras vienā cilnē. CarVertical VIN aizpilda, bet pogu nespied: jaunu atskaiti pērk tikai CarVertical blokā.
+            Servera avoti atbild uzreiz. Pārējie atveras vienā cilnē. CarVertical priekšskatījums iet automātiski. Jaunu atskaiti pērk tikai ar „Pirkt atskaiti” pēc apstiprinājuma.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -412,6 +447,14 @@ export function AdminVinScanPanel({
             className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
           >
             {busy ? "Skenē…" : "Skenēt avotus"}
+          </button>
+          <button
+            type="button"
+            disabled={!valid}
+            onClick={() => buyCarVertical()}
+            className="rounded-md border border-amber-300/80 bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-950 transition hover:bg-amber-100 disabled:opacity-50"
+          >
+            Pirkt atskaiti
           </button>
         </div>
       </div>
@@ -462,7 +505,7 @@ export function AdminVinScanPanel({
                           : "text-[var(--color-provin-muted)]"
                       }`}
                     >
-                      {statusLabel(item.id, status)}
+                      {row?.purchased ? "Nopirkta" : statusLabel(item.id, status)}
                       {status !== "checking" && row?.summary ? ` · ${row.summary}` : ""}
                     </span>
                   </span>
@@ -520,18 +563,29 @@ export function AdminVinScanPanel({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={open.media.photoUrl} alt="" className="mt-1 h-16 w-24 rounded object-cover" />
           ) : null}
-          {openHref ? (
-            <a
-              href={openHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-provin-handoff-vin={clean || undefined}
-              className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
-            >
-              <ExternalLink className="h-3 w-3" aria-hidden />
-              Atvērt avotu
-            </a>
-          ) : null}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            {openHref ? (
+              <a
+                href={openHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-provin-handoff-vin={clean || undefined}
+                className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
+              >
+                <ExternalLink className="h-3 w-3" aria-hidden />
+                Atvērt avotu
+              </a>
+            ) : null}
+            {open.id === "carvertical_preview" && valid ? (
+              <button
+                type="button"
+                onClick={() => buyCarVertical()}
+                className="rounded-md border border-amber-300/80 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-950 transition hover:bg-amber-100"
+              >
+                Pirkt atskaiti
+              </button>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {counts ? (

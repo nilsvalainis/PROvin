@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.13.0
+// @version      1.14.0
 // @description  Admin MENU VIN auto-fill un ātrās pārbaudes zondes. CarVertical pogas nespied, ja operators nav apstiprinājis maksas pirkumu.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -60,7 +60,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.13.0";
+  const SCRIPT_VERSION = "1.14.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -77,6 +77,7 @@
   const GM_SCAN_JOB = "provin_scan_job";
   const GM_SCAN_RESULT = "provin_scan_result";
   const GM_CV_PURCHASE = "provin_cv_purchase";
+  const GM_CV_PURCHASE_RESULT = "provin_cv_purchase_result";
 
   /* ---------- Admin: saglabāt hand-off pirms jaunas cilnes ---------- */
   if (path.includes("/admin")) {
@@ -136,6 +137,29 @@
         try {
           if ((a.dataset.provinCarverticalPurchase || "").trim() === "1") {
             GM_setValue(GM_CV_PURCHASE, "1");
+            GM_deleteValue(GM_CV_PURCHASE_RESULT);
+            let cvPolls = 0;
+            const cvTimer = window.setInterval(() => {
+              cvPolls += 1;
+              let cvRaw = "";
+              try {
+                cvRaw = String(GM_getValue(GM_CV_PURCHASE_RESULT, "") || "");
+              } catch {
+                cvRaw = "";
+              }
+              if (cvRaw) {
+                window.clearInterval(cvTimer);
+                try {
+                  const cvData = JSON.parse(cvRaw);
+                  document.dispatchEvent(new CustomEvent("provin-vin-scan-result", { detail: cvData }));
+                  GM_deleteValue(GM_CV_PURCHASE_RESULT);
+                } catch {
+                  /* ignore */
+                }
+                return;
+              }
+              if (cvPolls > 160) window.clearInterval(cvTimer);
+            }, 500);
           } else if (vin || /carvertical\.com/i.test(a.href || "")) {
             GM_deleteValue(GM_CV_PURCHASE);
           }
@@ -979,7 +1003,7 @@
 
   const vin = peekPendingVin();
 
-  if (activeScanOnThisHost()) {
+  if (activeScanOnThisHost() && !(host.endsWith("carvertical.com") && carVerticalPurchaseConfirmed())) {
     watchBrowserProbe();
     return;
   }
@@ -1074,6 +1098,72 @@
       return want.test(t);
     });
     if (hit) hit.click();
+  }
+
+  function carVerticalReportLooksReady(text, vin) {
+    const t = String(text || "");
+    if (t.length < 200) return false;
+    const hasVin = Boolean(vin) && t.toUpperCase().indexOf(vin) !== -1;
+    if (/inform[aā]cija nav atrasta|no information found|couldn.t find any/i.test(t) && !hasVin) return false;
+    return (
+      hasVin &&
+      /odometer|nobraukum|mileage|full report|piln[aā] atskaite|vehicle history|negadījum|damage|atskaite|report ready|your report/i.test(t)
+    );
+  }
+
+  function publishCarVerticalPurchase(payload) {
+    if (window.__provinCvPurchasePublished) return;
+    window.__provinCvPurchasePublished = true;
+    try {
+      GM_setValue(GM_CV_PURCHASE_RESULT, JSON.stringify(payload));
+      GM_deleteValue(GM_CV_PURCHASE);
+    } catch (e) {
+      console.warn("PROVIN CarVertical pirkums", e);
+    }
+    showProvinBadge(payload.summary || "CarVertical");
+  }
+
+  function watchCarVerticalPurchasedReport(vin) {
+    if (!carVerticalPurchaseConfirmed()) return;
+    let ticks = 0;
+    let last = "";
+    let stable = 0;
+    const timer = window.setInterval(() => {
+      ticks += 1;
+      const text = document.body ? document.body.innerText || "" : "";
+      if (text === last) stable += 1;
+      else {
+        last = text;
+        stable = 0;
+      }
+      if (ticks === 1 || ticks === 8 || ticks === 16 || ticks === 28) clickCarVerticalCheck();
+      const ready = carVerticalReportLooksReady(text, vin);
+      if (ready && stable >= 4) {
+        window.clearInterval(timer);
+        publishCarVerticalPurchase({
+          id: "carvertical_preview",
+          vin: vin,
+          status: "found",
+          summary: "CarVertical atskaite nopirkta",
+          detail: scanTextExcerpt(text, vin),
+          openUrl: location.href,
+          purchased: true,
+        });
+        return;
+      }
+      if (ticks > 90) {
+        window.clearInterval(timer);
+        publishCarVerticalPurchase({
+          id: "carvertical_preview",
+          vin: vin,
+          status: ready ? "found" : "unknown",
+          summary: ready ? "CarVertical atskaite nopirkta" : "CarVertical pirkums sākts. Atskaite jāpārbauda cilnē",
+          detail: scanTextExcerpt(text, vin),
+          openUrl: location.href,
+          purchased: true,
+        });
+      }
+    }, 500);
   }
 
   function findAutoRecordsVinInput() {
@@ -1390,7 +1480,15 @@
         done = true;
         window.clearInterval(interval);
         fillAndClear(el);
-        window.setTimeout(clickCarVerticalCheck, 400);
+        window.setTimeout(function () {
+          clickCarVerticalCheck();
+          const pending = String(vin || "")
+            .replace(/[\s-]/g, "")
+            .toUpperCase();
+          if (carVerticalPurchaseConfirmed() && pending.length >= 11) {
+            watchCarVerticalPurchasedReport(pending);
+          }
+        }, 400);
       }
       return;
     }

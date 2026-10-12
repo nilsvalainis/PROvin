@@ -20,8 +20,8 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.13\.0/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.13.0"');
+    expect(src).toMatch(/@version\s+1\.14\.0/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.14.0"');
     expect(src).toContain("const SCAN_URLS = {");
     expect(src).toContain('plc_auction: "https://plc.auction/?vin="');
     expect(src).toContain('vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin="');

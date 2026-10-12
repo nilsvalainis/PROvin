@@ -68,3 +68,47 @@ export function carVerticalAutofillMayClick(label: string, purchaseConfirmed: bo
   if (CARVERTICAL_CHECKOUT_CLICK_RE.test(t)) return false;
   return CARVERTICAL_START_REPORT_CLICK_RE.test(t) || /pirkt|buy report|get report|full report/i.test(t);
 }
+
+export const CARVERTICAL_PURCHASE_SCAN_ID = "carvertical_preview" as const;
+
+export const CARVERTICAL_PURCHASED_SUMMARY_LV = "CarVertical atskaite nopirkta";
+
+export type CarVerticalPurchasedScanResult = {
+  id: typeof CARVERTICAL_PURCHASE_SCAN_ID;
+  vin: string;
+  status: "found" | "unknown";
+  summary: string;
+  detail: string;
+  openUrl: string;
+  purchased: true;
+};
+
+/** VIN SCAN / userscript rezultāts pēc apstiprināta pirkuma. Nav tīkla zvana pret CarVertical. */
+export function buildCarVerticalPurchasedScanResult(opts: {
+  vin: string;
+  openUrl: string;
+  detail?: string;
+  ready?: boolean;
+}): CarVerticalPurchasedScanResult {
+  const vin = normalizeVin(opts.vin);
+  const ready = opts.ready !== false;
+  return {
+    id: CARVERTICAL_PURCHASE_SCAN_ID,
+    vin,
+    status: ready ? "found" : "unknown",
+    summary: ready ? CARVERTICAL_PURCHASED_SUMMARY_LV : "CarVertical pirkums sākts. Atskaite jāpārbauda cilnē",
+    detail: String(opts.detail || "").trim(),
+    openUrl: opts.openUrl.trim(),
+    purchased: true,
+  };
+}
+
+export function isCarVerticalPurchasedScanSource(src: {
+  id?: string;
+  purchased?: boolean;
+  summary?: string;
+}): boolean {
+  if (src.id !== CARVERTICAL_PURCHASE_SCAN_ID) return false;
+  if (src.purchased === true) return true;
+  return /atskaite nopirkta/i.test(src.summary || "");
+}

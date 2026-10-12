@@ -5,7 +5,10 @@ import { describe, expect, it, vi } from "vitest";
 import { CARVERTICAL_REPORTS_URL } from "@/lib/admin-vin-urls";
 import {
   CARVERTICAL_AUTOMATIC_FLOW_SOURCE_FILES,
+  CARVERTICAL_PURCHASED_SUMMARY_LV,
+  buildCarVerticalPurchasedScanResult,
   carVerticalAutofillMayClick,
+  isCarVerticalPurchasedScanSource,
   purchaseCarVerticalReport,
 } from "@/lib/carvertical-purchase";
 import { VIN_SCAN_BROWSER_AUTO_CLICK_IDS, vinScanBrowserMayAutoClick } from "@/lib/vin-scan/browser-click-policy";
@@ -36,6 +39,29 @@ describe("purchaseCarVerticalReport", () => {
     });
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+  });
+
+  it("builds a purchased scan payload only as an attachable result", () => {
+    const built = buildCarVerticalPurchasedScanResult({
+      vin: VIN.toLowerCase(),
+      openUrl: "https://www.carvertical.com/lv/report/x",
+      detail: "odometer",
+    });
+    expect(built).toMatchObject({
+      id: "carvertical_preview",
+      vin: VIN,
+      status: "found",
+      summary: CARVERTICAL_PURCHASED_SUMMARY_LV,
+      purchased: true,
+      openUrl: "https://www.carvertical.com/lv/report/x",
+    });
+    expect(isCarVerticalPurchasedScanSource(built)).toBe(true);
+    expect(
+      isCarVerticalPurchasedScanSource({
+        id: "carvertical_preview",
+        summary: "CarVertical rāda priekšskatījumu. Pirkums paliek operatoram",
+      }),
+    ).toBe(false);
   });
 });
 
@@ -88,7 +114,7 @@ describe("CarVertical click policy", () => {
 describe("userscript stays aligned with no auto-buy", () => {
   it("does not auto-click CarVertical preview and gates check behind purchase flag", () => {
     const src = readFileSync(path.join(ROOT, "public/userscripts/provin-vin-autofill.user.js"), "utf8");
-    expect(src).toMatch(/@version\s+1\.13\.0/);
+    expect(src).toMatch(/@version\s+1\.14\.0/);
     expect(src).toContain('id === "autodna_preview"');
     expect(src).toContain('id === "plc_auction"');
     expect(src).toContain('id === "vp_wanted"');
@@ -97,5 +123,19 @@ describe("userscript stays aligned with no auto-buy", () => {
     expect(src).toContain("carVerticalPurchaseConfirmed");
     expect(src).toContain("provinCarverticalPurchase");
     expect(src).toContain("if (!carVerticalPurchaseConfirmed()) return;");
+    expect(src).toContain("provin_cv_purchase_result");
+    expect(src).toContain("watchCarVerticalPurchasedReport");
+    expect(src).toContain(CARVERTICAL_PURCHASED_SUMMARY_LV);
+  });
+
+  it("VIN SCAN panel buys only through the confirmed opener", () => {
+    const panel = readFileSync(path.join(ROOT, "components/admin/AdminVinScanPanel.tsx"), "utf8");
+    expect(panel).toContain("Pirkt atskaiti");
+    expect(panel).toContain("openCarVerticalPurchaseTab");
+    expect(panel).not.toContain("purchaseCarVerticalReport");
+    const opener = readFileSync(path.join(ROOT, "components/admin/AdminCarVerticalPurchaseButton.tsx"), "utf8");
+    expect(opener).toContain("window.confirm(CARVERTICAL_PURCHASE_CONFIRM_LV)");
+    expect(opener).toContain("explicitOperatorConfirm: true");
+    expect(opener).toContain('dataset.provinCarverticalPurchase = "1"');
   });
 });

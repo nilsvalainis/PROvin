@@ -187,7 +187,7 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanBrowserItem[] = [
     id: "carvertical_preview",
     label: "CarVertical",
     country: "EU",
-    hint: "Tikai jau nopirktās atskaites. Jaunu pērk tikai CarVertical pogā adminā",
+    hint: "Priekšskatījums automātiski. Jaunu atskaiti pērk tikai ar Pirkt atskaiti pēc apstiprinājuma",
     openUrl: (vin) => `https://www.carvertical.com/lv/user/reports?vin=${vinQuery(vin)}`,
   },
   {

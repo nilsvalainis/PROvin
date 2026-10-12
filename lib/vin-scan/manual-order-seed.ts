@@ -9,8 +9,10 @@ import {
 import {
   createDefaultSourceBlocks,
   emptyCsddFields,
+  emptyVendorAvotuBlock,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { isCarVerticalPurchasedScanSource } from "@/lib/carvertical-purchase";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { emptyCsddTechData, type CsddTechData } from "@/lib/csdd-tech-data";
 import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
@@ -43,6 +45,8 @@ export type VinScanManualOrderSource = {
   openUrl?: string | null;
   vehicle?: VinScanVehicle;
   mileage?: VinScanMileage[];
+  purchased?: boolean;
+  detail?: string;
 };
 
 export type VinScanManualOrderInput = {
@@ -152,6 +156,8 @@ function asSource(v: unknown): VinScanManualOrderSource | null {
     openUrl,
     ...(vehicle ? { vehicle } : {}),
     ...(mileage.length ? { mileage } : {}),
+    ...(o.purchased === true ? { purchased: true } : {}),
+    ...(typeof o.detail === "string" && o.detail.trim() ? { detail: o.detail.trim() } : {}),
   };
 }
 
@@ -227,6 +233,27 @@ export function buildVinScanMileageComment(input: VinScanManualOrderInput): stri
   return clip(formatVinScanMileageLine(mileage), 8_000);
 }
 
+function seedCarverticalBlock(input: VinScanManualOrderInput): WorkspaceSourceBlocks["carvertical"] {
+  const src = (input.sources ?? []).find((row) => row.id === "carvertical_preview");
+  const block = emptyVendorAvotuBlock();
+  if (!src) return block;
+  if (!isCarVerticalPurchasedScanSource(src)) {
+    if (src.openUrl) {
+      block.aiContextRaw = clip(`CarVertical priekšskatījums: ${src.openUrl}`, 8_000);
+    }
+    return block;
+  }
+  const lines = [
+    "CarVertical atskaite nopirkta no VIN SCAN pēc operatora apstiprinājuma.",
+    src.openUrl ? `Atskaite: ${src.openUrl}` : "",
+    src.summary && src.summary !== "CarVertical atskaite nopirkta" ? src.summary : "",
+    src.detail || "",
+  ].filter(Boolean);
+  block.comments = clip(lines.slice(0, 2).join("\n"), 8_000);
+  block.aiContextRaw = clip(lines.join("\n"), 12_000);
+  return block;
+}
+
 function seedCsddBlock(input: VinScanManualOrderInput): WorkspaceSourceBlocks["csdd"] {
   let csdd = emptyCsddFields();
   const vin = normalizeVin(input.vin);
@@ -258,6 +285,7 @@ export function buildVinScanManualOrderSeed(input: VinScanManualOrderInput): Vin
   const mileageComment = buildVinScanMileageComment(normalized);
   const blocks = createDefaultSourceBlocks();
   blocks.csdd = seedCsddBlock(normalized);
+  blocks.carvertical = seedCarverticalBlock(normalized);
 
   const orderEdits: OrderDraftOrderEdits = { vin, notes };
   if (mileageComment) orderEdits.mileageComment = mileageComment;

@@ -131,6 +131,51 @@ describe("vin scan manual order seed", () => {
     expect(input?.csdd?.make).toBe("SKODA");
   });
 
+  it("nopirkto CarVertical atskaiti ievieto avota blokā", () => {
+    const reportUrl = "https://www.carvertical.com/lv/report/abc123";
+    const seed = buildVinScanManualOrderSeed({
+      vin: VIN,
+      sources: [
+        {
+          id: "carvertical_preview",
+          label: "CarVertical",
+          status: "found",
+          summary: "CarVertical atskaite nopirkta",
+          openUrl: reportUrl,
+          purchased: true,
+          detail: "Nobraukums 185 000 km",
+        },
+      ],
+    });
+    const block = seed.workspace.sourceBlocks as {
+      carvertical: { comments: string; aiContextRaw: string };
+    };
+    expect(block.carvertical.comments).toContain("nopirkta");
+    expect(block.carvertical.comments).toContain(reportUrl);
+    expect(block.carvertical.aiContextRaw).toContain("185 000 km");
+  });
+
+  it("priekšskatījumu bez pirkuma neliek kā nopirktu atskaiti", () => {
+    const seed = buildVinScanManualOrderSeed({
+      vin: VIN,
+      sources: [
+        {
+          id: "carvertical_preview",
+          label: "CarVertical",
+          status: "found",
+          summary: "CarVertical rāda priekšskatījumu. Pirkums paliek operatoram",
+          openUrl: `https://www.carvertical.com/lv/user/reports?vin=${VIN}`,
+        },
+      ],
+    });
+    const block = seed.workspace.sourceBlocks as {
+      carvertical: { comments: string; aiContextRaw: string };
+    };
+    expect(block.carvertical.comments).toBe("");
+    expect(block.carvertical.aiContextRaw).toContain("priekšskatījums");
+    expect(block.carvertical.aiContextRaw).not.toContain("nopirkta");
+  });
+
   it("piezīmēs iekļauj arī avotus bez rezultāta", () => {
     const notes = buildVinScanManualOrderNotes({
       vin: VIN,
