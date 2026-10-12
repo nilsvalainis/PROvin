@@ -22,7 +22,7 @@ function row(
 describe("vin scan summary", () => {
   const rows = [
     row("nhtsa", { status: "found", summary: "2012 Volkswagen Golf", vehicle: { make: "Volkswagen", model: "Golf", year: "2012" } }),
-    row("csdd", {
+    row("tjekbil", {
       status: "found",
       summary: "2012 SKODA SUPERB",
       vehicle: { make: "SKODA", model: "SUPERB", year: "2012" },
@@ -39,7 +39,7 @@ describe("vin scan summary", () => {
     }),
   ];
 
-  it("CSDD marku/gadu ņem pirmām kārtām un savāc nobraukumu", () => {
+  it("tjekbil marku/gadu ņem pirmām kārtām un savāc nobraukumu", () => {
     expect(pickVinScanVehicle(rows)).toEqual({ make: "SKODA", model: "SUPERB", year: "2012" });
     expect(collectVinScanMileage(rows).map((r) => r.date)).toEqual(["2025-08-22", "2024-03-12"]);
     expect(buildVinScanOverview(rows).vehicleLine).toBe("2012 SKODA SUPERB");
@@ -54,7 +54,7 @@ describe("vin scan summary", () => {
     const text = formatVinScanExportText({ vin: VIN, scannedAt: "2026-10-12T09:00:00.000Z", rows });
     expect(text).toContain(VIN);
     expect(text).toContain("SKODA SUPERB");
-    expect(text).toContain("CSDD");
+    expect(text).toContain("tjekbil.dk");
     const json = JSON.parse(formatVinScanExportJson({ vin: VIN, scannedAt: "2026-10-12T09:00:00.000Z", rows })) as {
       vehicle: { make: string };
       mileage: unknown[];
