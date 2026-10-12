@@ -43,6 +43,8 @@ export type SerializedAdminOrderTableRow = {
   isB2bPack?: boolean;
   packQty?: number | null;
   invoicePdfUrl: string | null;
+  /** „Atkārtots VIN”: cik citos darbos (pasūtījumi, ātrie vērtējumi) šis VIN jau ir. */
+  repeatVin?: number;
 };
 
 type RowInput = {
@@ -72,6 +74,7 @@ type RowInput = {
   isB2bPack?: unknown;
   packQty?: unknown;
   invoicePdfUrl?: unknown;
+  repeatVin?: unknown;
 };
 
 function optionalCheckoutLine(o: RowInput): CheckoutLineKind | undefined {
@@ -138,6 +141,7 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
           ? null
           : String(o.heardAbout).trim(),
       ...(Boolean(o.auditComplete) ? { auditComplete: true as const } : {}),
+      ...(typeof o.repeatVin === "number" && o.repeatVin > 0 ? { repeatVin: Math.trunc(o.repeatVin) } : {}),
       ...(deadlineFromUnix ? { deadlineFromUnix } : {}),
       ...(activityUnix ? { activityUnix } : {}),
       ...(upsellBadge ? { upsellBadge } : {}),

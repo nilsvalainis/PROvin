@@ -6,6 +6,7 @@ import { buildCheckcarVinReportUrl, CHECKCAR_VIN_HOME_URL, normalizeVinForServic
 import { fmtLv, QE_TONE_BAR, QE_TONE_DOT, type CardTone, type SourceCardModel } from "@/lib/quick-eval-cards";
 import type { QuickEvalCandidateView } from "@/lib/quick-eval-service";
 import type { VinHistoryEntry } from "@/lib/vin-history";
+import { AdminVinHistoryList } from "@/components/admin/AdminVinHistoryList";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 
 const FACT_TONE = { ok: "text-emerald-700", warn: "text-amber-700", bad: "text-rose-700" } as const;
@@ -120,44 +121,19 @@ export function AdminQuickEvalVinBar({ peekId, entries }: { peekId: string; entr
   const [msg, setMsg] = useState<string | null>(null);
   if (entries.length === 0) return null;
   return (
-    <div className="mt-2.5 rounded-xl border border-[#bcd7f7] bg-[var(--color-provin-accent-soft)] px-3.5 py-2.5 text-[12.5px] text-[#0b3d80]">
-      <p className="font-semibold">Šis VIN jau pārbaudīts ({entries.length}). Klienta dati netiek kopēti.</p>
-      <ul className="mt-1 space-y-1.5">
-        {entries.map((e) => (
-          <li key={e.id} className="flex flex-wrap items-center justify-between gap-2">
-            <span>
-              <b>{e.kind === "order" ? "Pasūtījums" : "Ātrais vērtējums"}</b> {fmtLv(e.createdAt, false)} · {e.who}
-              {e.status ? ` · ${e.status}` : ""} —{" "}
-              {e.labels.length > 0 ? (
-                <>
-                  nopirkts <b>{e.labels.join(", ")}</b>, saglabāts {fmtLv(e.savedAt, false)}
-                </>
-              ) : e.dataKeys.length > 0 ? (
-                "tikai bezmaksas avoti"
-              ) : (
-                "datu nav"
-              )}
-            </span>
-            {e.purchasedKeys.length > 0 ? (
-              <button
-                type="button"
-                className={btnPri}
-                disabled={busy !== null}
-                onClick={async () => {
-                  setBusy(e.id);
-                  const r = await postAction(peekId, { action: "reuse", fromId: e.id });
-                  setMsg(r.ok ? copiedText(r.j) : `Kļūda: ${String(r.j.error ?? "")}`);
-                  setBusy(null);
-                  router.refresh();
-                }}
-              >
-                {busy === e.id ? "Pārnes…" : "Izmantot nopirktos datus"}
-              </button>
-            ) : null}
-          </li>
-        ))}
-      </ul>
-      {msg ? <p className="mt-1">{msg}</p> : null}
+    <div className="mt-2.5 space-y-1">
+      <AdminVinHistoryList
+        entries={entries}
+        busyId={busy}
+        onReuse={async (fromId) => {
+          setBusy(fromId);
+          const r = await postAction(peekId, { action: "reuse", fromId });
+          setMsg(r.ok ? copiedText(r.j) : `Kļūda: ${String(r.j.error ?? "")}`);
+          setBusy(null);
+          router.refresh();
+        }}
+      />
+      {msg ? <p className="px-1 text-[11px] text-[#3a3a3c]">{msg}</p> : null}
     </div>
   );
 }

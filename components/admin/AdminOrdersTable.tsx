@@ -739,6 +739,11 @@ export function AdminOrdersTable({
                     MINI
                   </span>
                 ) : null}
+                {o.repeatVin ? (
+                  <span className={CALM_TAG} title={`Atkārtots VIN: šis VIN jau ir ${o.repeatVin} citā(-os) darbā(-os) — pirms pirkšanas pārbaudi, ko var izmantot atkārtoti`}>
+                    ↻ Atkārtots VIN
+                  </span>
+                ) : null}
                 {o.upsellBadge ? (
                   <span className={CALM_TAG}>
                     {o.upsellBadge}
@@ -924,6 +929,11 @@ export function AdminOrdersTable({
                   <td className="py-1.5 pr-4">
                     <span className="flex flex-wrap items-center gap-1.5">
                       {miniHighlight ? <span className={CALM_MINI}>MINI</span> : null}
+                      {o.repeatVin ? (
+                  <span className={CALM_TAG} title={`Atkārtots VIN: šis VIN jau ir ${o.repeatVin} citā(-os) darbā(-os) — pirms pirkšanas pārbaudi, ko var izmantot atkārtoti`}>
+                    ↻ Atkārtots VIN
+                  </span>
+                ) : null}
                       {o.isDemo ? <span className={CALM_TAG}>Paraugs</span> : null}
                       {isPack ? (
                         <span className={CALM_TAG}>Paka</span>
