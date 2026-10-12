@@ -32,6 +32,37 @@ import {
 
 export type AdminOrdersTableRow = SerializedAdminOrderTableRow;
 
+/** Avota ikona pie klienta (agrāk atsevišķa kolonna „Avots”). Nosaukums — tooltip. */
+const SOURCE_ICON: Record<string, { bg: string; ch: string }> = {
+  tiktok: { bg: "#000000", ch: "♪" },
+  youtube: { bg: "#ff0000", ch: "▶" },
+  instagram: { bg: "linear-gradient(45deg,#f58529,#dd2a7b,#8134af)", ch: "◎" },
+  facebook: { bg: "#1877f2", ch: "f" },
+  google: { bg: "#4285f4", ch: "G" },
+};
+function SourceIcon({ source }: { source: string | null | undefined }) {
+  const label = source?.trim();
+  if (!label) return null;
+  const hit = SOURCE_ICON[label.toLowerCase()] ?? { bg: "#8e8e93", ch: label.charAt(0).toUpperCase() };
+  return (
+    <span
+      title={`Kur uzzināja: ${label}`}
+      aria-label={`Kur uzzināja: ${label}`}
+      role="img"
+      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold leading-none text-white"
+      style={{ background: hit.bg }}
+    >
+      {hit.ch}
+    </span>
+  );
+}
+
+/** Statuss tikai izņēmumiem — „Apmaksāts” nerādām. */
+function PaymentStatusException({ status }: { status: string }) {
+  if (status.toLowerCase() === "paid") return null;
+  return <PaymentStatusPill status={status} />;
+}
+
 function PaymentStatusPill({ status }: { status: string }) {
   const s = status.toLowerCase();
   if (s === "paid") {
@@ -620,7 +651,7 @@ export function AdminOrdersTable({
                     {PARTNER_VIN_AMOUNT_LABEL_LV}
                   </span>
                 ) : (
-                  <PaymentStatusPill status={o.paymentStatus} />
+                  <PaymentStatusException status={o.paymentStatus} />
                 )}
                 {o.isDemo ? (
                   <span className="rounded-full bg-[var(--color-provin-accent-soft)]/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-provin-accent)]">
@@ -655,16 +686,11 @@ export function AdminOrdersTable({
                     {o.upsellBadge}
                   </span>
                 ) : null}
-                {o.heardAbout?.trim() ? (
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-slate-700">
-                    {o.heardAbout.trim()}
-                  </span>
-                ) : null}
               </div>
 
               <div className="mt-2 flex items-end justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-[12px] text-[var(--color-apple-text)]">{v.primaryClient}</p>
+                  <p className="flex min-w-0 items-center gap-1.5 text-[12px] text-[var(--color-apple-text)]"><span className="truncate">{v.primaryClient}</span><SourceIcon source={o.heardAbout} /></p>
                   <p className="mt-0.5 truncate text-[11px] tabular-nums text-[var(--color-provin-muted)]">
                     {dateFmt.format(new Date(o.created * 1000))} ·{" "}
                     {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
@@ -707,27 +733,21 @@ export function AdminOrdersTable({
 
       <div className="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)] md:block">
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[1120px] text-left text-sm">
+        <table className="w-full min-w-[960px] text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/90 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-provin-muted)]">
-              <th className={`${hug} py-3.5 pl-4 pr-1`}>Datums</th>
-              <th className={`${hug} py-3.5 pl-1 pr-2`}>Rez.</th>
-              <th className={`${hug} py-3.5 pl-1 pr-4`}>Termiņš (48 h)</th>
-              <th className="px-4 py-3.5">VIN</th>
-              <th className="px-4 py-3.5">Marka, modelis</th>
-              <th className="px-4 py-3.5">Klients</th>
-              <th className={`${hug} px-4 py-3.5`}>Avots</th>
-              <th className={`${hug} py-3.5 pl-4 pr-1`}>Statuss</th>
-              <th className={`${hug} px-1 py-3.5 text-right`}>Summa</th>
-              <th className={`${hug} py-3.5 pl-1 pr-4 text-center`}>Rēķins</th>
-              <th className={`${hug} px-4 py-3.5 text-right`}>Darbība</th>
+              <th className={`${hug} py-3 pl-4 pr-2`}>Rez.</th>
+              <th className={`${hug} py-3 pl-2 pr-4`}>Datums · termiņš</th>
+              <th className="px-4 py-3">VIN · marka</th>
+              <th className="px-4 py-3">Klients</th>
+              <th className={`${hug} px-4 py-3 text-right`}>Summa</th>
+              <th className={`${hug} py-3 pl-2 pr-4 text-right`}>Rēķins</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {displayedOrders.map((o) => {
               const {
                 pdfHref,
-                detailBase,
                 orderHref,
                 vin,
                 hasVin,
@@ -777,8 +797,20 @@ export function AdminOrdersTable({
                         }
                   }
                 >
-                  <td className={`${hug} py-3.5 pl-4 pr-1 text-[var(--color-apple-text)]`}>
-                    <span className="flex flex-wrap items-center gap-2">
+                  <td className={`${hug} py-2 pl-4 pr-2`}>
+                    {isPack ? (
+                      <span className="text-[var(--color-provin-muted)]">—</span>
+                    ) : (
+                      <AdminAuditResultColorControl
+                        sessionId={o.id}
+                        initialColor={o.auditResultColor ?? null}
+                        compact
+                        onColorChange={(c) => markColor(o.id, c)}
+                      />
+                    )}
+                  </td>
+                  <td className={`${hug} py-2 pl-2 pr-4 text-[13px] text-[var(--color-apple-text)]`}>
+                    <span className="flex flex-wrap items-center gap-1.5">
                       {o.isManual && !isPartnerVin ? (
                         <ManualOrderDateCell id={o.id} created={o.created} />
                       ) : (
@@ -818,32 +850,18 @@ export function AdminOrdersTable({
                         </span>
                       ) : null}
                     </span>
-                  </td>
-                  <td className={`${hug} py-3.5 pl-1 pr-2`}>
-                    {isPack ? (
-                      <span className="text-[var(--color-provin-muted)]">—</span>
-                    ) : (
-                      <AdminAuditResultColorControl
-                        sessionId={o.id}
-                        initialColor={o.auditResultColor ?? null}
-                        compact
-                        onColorChange={(c) => markColor(o.id, c)}
-                      />
+                    {isPack ? null : (
+                      <div className="mt-1">
+                        <AdminAuditDeadlineCell
+                          sessionId={o.id}
+                          createdUnixSec={o.deadlineFromUnix ?? o.created}
+                          initialComplete={Boolean(o.auditComplete)}
+                          onCompleteChange={(complete) => markComplete(o.id, complete)}
+                        />
+                      </div>
                     )}
                   </td>
-                  <td className={`${hug} py-3.5 pl-1 pr-4`}>
-                    {isPack ? (
-                      <span className="text-[var(--color-provin-muted)]">—</span>
-                    ) : (
-                      <AdminAuditDeadlineCell
-                        sessionId={o.id}
-                        createdUnixSec={o.deadlineFromUnix ?? o.created}
-                        initialComplete={Boolean(o.auditComplete)}
-                        onCompleteChange={(complete) => markComplete(o.id, complete)}
-                      />
-                    )}
-                  </td>
-                  <td className="px-4 py-3.5 text-[var(--color-apple-text)]">
+                  <td className="max-w-[300px] px-4 py-2 text-[var(--color-apple-text)]">
                     {hasVin ? (
                       <span className="inline-flex max-w-full items-center gap-1">
                         <span className="whitespace-nowrap font-mono text-xs tracking-wide" title={vin}>
@@ -854,40 +872,28 @@ export function AdminOrdersTable({
                     ) : (
                       <span className="text-[var(--color-provin-muted)]">—</span>
                     )}
+                    <p className="mt-0.5 truncate text-[11.5px] text-[var(--color-provin-muted)]" title={isPack ? packLabel : o.makeModel?.trim() || undefined}>
+                      {isPack ? packLabel : o.makeModel?.trim() || "—"}
+                    </p>
                   </td>
-                  <td
-                    className="max-w-[180px] truncate px-4 py-3.5 text-[13px] text-[var(--color-apple-text)]"
-                    title={isPack ? packLabel : o.makeModel?.trim() || undefined}
-                  >
-                    {isPack ? (
-                      packLabel
-                    ) : o.makeModel?.trim() ? (
-                      o.makeModel.trim()
-                    ) : (
-                      <span className="text-[var(--color-provin-muted)]">—</span>
-                    )}
-                  </td>
-                  <td className="max-w-[260px] px-4 py-3.5 text-[var(--color-apple-text)]">
+                  <td className="max-w-[320px] px-4 py-2 text-[var(--color-apple-text)]">
                     <div className="min-w-0">
-                      <p className="truncate">{primaryClient}</p>
+                      <p className="flex min-w-0 items-center gap-1.5">
+                        {isPack ? (
+                          <span className="truncate">{primaryClient}</span>
+                        ) : (
+                          <Link href={orderHref} className="admin-nav-link truncate text-[var(--color-apple-text)] hover:underline" aria-label={`Atvērt pasūtījumu: ${primaryClient}`}>
+                            {primaryClient}
+                          </Link>
+                        )}
+                        <SourceIcon source={o.heardAbout} />
+                      </p>
                       {secondaryClient ? (
                         <p className="mt-0.5 truncate text-[11px] text-[var(--color-provin-muted)]">{secondaryClient}</p>
                       ) : null}
                     </div>
                   </td>
-                  <td className={`${hug} whitespace-nowrap px-4 py-3.5 text-[13px] text-[var(--color-apple-text)]`}>
-                    {o.heardAbout?.trim() || <span className="text-[var(--color-provin-muted)]">-</span>}
-                  </td>
-                  <td className={`${hug} py-3.5 pl-4 pr-1`}>
-                    {isPartnerVin ? (
-                      <span className="inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-violet-900 ring-1 ring-violet-200/80">
-                        {PARTNER_VIN_AMOUNT_LABEL_LV}
-                      </span>
-                    ) : (
-                      <PaymentStatusPill status={o.paymentStatus} />
-                    )}
-                  </td>
-                  <td className={`${hug} px-1 py-3.5 text-right tabular-nums font-medium text-[var(--color-apple-text)]`}>
+                  <td className={`${hug} px-4 py-2 text-right tabular-nums font-medium text-[var(--color-apple-text)]`}>
                     {isPartnerVin ? (
                       PARTNER_VIN_AMOUNT_LABEL_LV
                     ) : o.isManual ? (
@@ -895,43 +901,36 @@ export function AdminOrdersTable({
                     ) : (
                       formatMoneyEur(o.amountTotal, o.currency)
                     )}
-                  </td>
-                  <td className={`${hug} py-3.5 pl-1 pr-4 text-center`}>
-                    {pdfHref ? (
-                      <a
-                        href={pdfHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/90 text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/40 hover:bg-[var(--color-provin-accent-soft)]/50"
-                        aria-label="Atvērt rēķinu PDF"
-                        title="Rēķins (PDF)"
-                      >
-                        <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
-                      </a>
-                    ) : (
-                      <span className="text-[var(--color-provin-muted)]">—</span>
+                    {isPartnerVin ? null : o.paymentStatus.toLowerCase() === "paid" ? null : (
+                      <div className="mt-1">
+                        <PaymentStatusException status={o.paymentStatus} />
+                      </div>
                     )}
                   </td>
-                  <td className={`${hug} px-4 py-3.5 text-right`}>
-                    <span className="inline-flex items-center gap-2">
+                  <td className={`${hug} py-2 pl-2 pr-4 text-right`}>
+                    <span className="inline-flex items-center justify-end gap-1">
                       {isPartnerVin ? (
-                        <span
-                          onClick={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => e.stopPropagation()}
-                        >
+                        <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                           <AdminPartnerArchivePdfButton sessionId={o.id} compact />
                         </span>
                       ) : null}
                       {o.isManual && !isPack && !isPartnerVin ? <ManualOrderDeleteButton id={o.id} /> : null}
                       {isPack ? (
                         <span className="text-[11px] font-medium text-[var(--color-provin-muted)]">Tikai info</span>
-                      ) : (
-                        <Link
-                          href={`${detailBase}/${encodeURIComponent(o.id)}`}
-                          className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] hover:shadow-md"
+                      ) : pdfHref ? (
+                        <a
+                          href={pdfHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-provin-accent)] transition hover:bg-[var(--color-provin-accent-soft)]/50"
+                          aria-label="Atvērt rēķinu PDF"
+                          title="Rēķins (PDF)"
                         >
-                          Atvērt
-                        </Link>
+                          <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
+                        </a>
+                      ) : (
+                        <span className="inline-flex h-8 w-8 items-center justify-center text-[var(--color-provin-muted)]">—</span>
                       )}
                     </span>
                   </td>
