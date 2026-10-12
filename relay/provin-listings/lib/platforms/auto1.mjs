@@ -29,6 +29,7 @@ export function auto1ApiTemplate(url) {
   try {
     const p = new URL(url).pathname;
     return p
+      .replace(/\/cars\/search\/[^/]+$/i, "/cars/search/:id")
       .replace(/\/[0-9a-f]{8,}[0-9a-f-]*/gi, "/:id")
       .replace(/\/[A-Z]{1,3}\d{4,}\b/g, "/:stock")
       .replace(/\/\d{4,}\b/g, "/:id");
