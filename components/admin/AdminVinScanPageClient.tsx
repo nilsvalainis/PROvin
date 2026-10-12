@@ -4,13 +4,9 @@ import { useMemo, useState } from "react";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import { AdminVinScanPanel } from "@/components/admin/AdminVinScanPanel";
 import { isValidPlateNumber, isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
-import type { CsddTechDataResult } from "@/lib/csdd-tech-data";
+import { isCsddTechDataResult } from "@/lib/csdd-tech-data";
 import { formatCsddPlateLookup } from "@/lib/vin-scan/parse";
 import type { VinScanPaidKeys } from "@/lib/vin-scan/types";
-
-function isCsddTechDataResult(v: unknown): v is CsddTechDataResult {
-  return v != null && typeof v === "object" && "found" in v;
-}
 
 const inp =
   "min-w-0 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";

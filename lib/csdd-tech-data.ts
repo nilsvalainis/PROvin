@@ -45,6 +45,15 @@ export type CsddTechDataResult =
   | { found: true; data: CsddTechData; message: string }
   | { found: false; message: string };
 
+/** API kļūdas objekts (`{ error?: string }`) nav CSDD rezultāts, arī ja `error` nav aizpildīts. */
+export function isCsddTechDataResult(v: unknown): v is CsddTechDataResult {
+  if (v == null || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  if (typeof o.message !== "string") return false;
+  if (o.found === true) return o.data != null && typeof o.data === "object";
+  return o.found === false;
+}
+
 export function emptyCsddTechData(): CsddTechData {
   return {
     registrationNumber: "",
