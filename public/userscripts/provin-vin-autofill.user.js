@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.9.1
-// @description  Admin MENU VIN auto-fill un ātrās pārbaudes zondes. car.info + checkcar.vin. AutoDNA arī atver CarVertical. Sludinājuma vēsture no tirgusdati.lv caur pārlūku.
+// @version      1.10.0
+// @description  Admin MENU VIN auto-fill un ātrās pārbaudes zondes. CarVertical pogas nespied, ja operators nav apstiprinājis maksas pirkumu.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -54,7 +54,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.9.1";
+  const SCRIPT_VERSION = "1.10.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -70,6 +70,7 @@
   const GM_CC_RESULT = "provin_cc_photo_result";
   const GM_SCAN_JOB = "provin_scan_job";
   const GM_SCAN_RESULT = "provin_scan_result";
+  const GM_CV_PURCHASE = "provin_cv_purchase";
 
   /* ---------- Admin: saglabāt hand-off pirms jaunas cilnes ---------- */
   if (path.includes("/admin")) {
@@ -125,6 +126,15 @@
           } catch (e) {
             console.warn("PROVIN admin: GM_setValue VIN", e);
           }
+        }
+        try {
+          if ((a.dataset.provinCarverticalPurchase || "").trim() === "1") {
+            GM_setValue(GM_CV_PURCHASE, "1");
+          } else if (vin || /carvertical\.com/i.test(a.href || "")) {
+            GM_deleteValue(GM_CV_PURCHASE);
+          }
+        } catch (e) {
+          console.warn("PROVIN admin: CarVertical pirkuma karogs", e);
         }
         const listingUrl = (a.dataset.provinHandoffListingUrl || "").trim();
         if (listingUrl && /tirgusdati\.lv/i.test(a.getAttribute("href") || "")) {
@@ -784,7 +794,7 @@
         if (current !== probeVin) setNativeValue(input, probeVin);
         filled = true;
       }
-      const mayClick = blocker !== "captcha" && (id === "autodna_preview" || id === "carvertical_preview" || id === "vininspect" || id === "bid_cars");
+      const mayClick = blocker !== "captcha" && (id === "autodna_preview" || id === "vininspect" || id === "bid_cars");
       if (mayClick && filled && !clicked && ticks >= 3) {
         clicked = clickSafeCheck();
       }
@@ -886,10 +896,31 @@
     return null;
   }
 
+  function carVerticalPurchaseConfirmed() {
+    try {
+      if (String(GM_getValue(GM_CV_PURCHASE, "") || "") === "1") return true;
+    } catch {
+      /* ignore */
+    }
+    try {
+      return new URLSearchParams(window.location.search).get("provin_purchase") === "1";
+    } catch {
+      return false;
+    }
+  }
+
   function clickCarVerticalCheck() {
-    if (clickByText(/sākt pārbaudi|pārbaudīt|pārbaudi|check|verify|turpin|continue|search|meklēt/i)) return;
-    const submit = document.querySelector('form button[type="submit"], button[type="submit"]');
-    submit?.click();
+    if (!carVerticalPurchaseConfirmed()) return;
+    const pay = /apmaks|checkout|pay\b|subscribe|card number|maksāt|pievienot kart/i;
+    const want = /sākt pārbaudi|pārbaudīt|pārbaudi|check vin|verify|search|meklēt|pirkt|buy report|get report|full report/i;
+    const buttons = Array.from(document.querySelectorAll("button, [role='button'], input[type='submit']"));
+    const hit = buttons.find((b) => {
+      if (!isVisible(b) || b.disabled) return false;
+      const t = ((b.textContent || b.value || "") + "").trim();
+      if (!t || pay.test(t)) return false;
+      return want.test(t);
+    });
+    if (hit) hit.click();
   }
 
   function findAutoRecordsVinInput() {

@@ -1,0 +1,98 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { describe, expect, it, vi } from "vitest";
+
+import { CARVERTICAL_REPORTS_URL } from "@/lib/admin-vin-urls";
+import {
+  CARVERTICAL_AUTOMATIC_FLOW_SOURCE_FILES,
+  carVerticalAutofillMayClick,
+  purchaseCarVerticalReport,
+} from "@/lib/carvertical-purchase";
+import { VIN_SCAN_BROWSER_AUTO_CLICK_IDS, vinScanBrowserMayAutoClick } from "@/lib/vin-scan/browser-click-policy";
+
+const VIN = "WVWZZZ1JZXW000001";
+const ROOT = process.cwd();
+
+describe("purchaseCarVerticalReport", () => {
+  it("refuses a call without explicit operator confirm", () => {
+    const sneaky = { vin: VIN, explicitOperatorConfirm: false as unknown as true };
+    expect(purchaseCarVerticalReport(sneaky)).toEqual({ ok: false, code: "missing_confirm" });
+  });
+
+  it("refuses an invalid VIN even after confirm", () => {
+    expect(purchaseCarVerticalReport({ vin: "ABC", explicitOperatorConfirm: true })).toEqual({
+      ok: false,
+      code: "invalid_vin",
+    });
+  });
+
+  it("after confirm only returns the reports URL and does not fetch", () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    expect(purchaseCarVerticalReport({ vin: VIN, explicitOperatorConfirm: true })).toEqual({
+      ok: true,
+      mode: "manual_browser",
+      href: CARVERTICAL_REPORTS_URL,
+      vin: VIN,
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+});
+
+describe("automatic flows do not call purchaseCarVerticalReport", () => {
+  it("seed, webhook, cron and VIN-scan sources never import the purchase function", () => {
+    for (const rel of CARVERTICAL_AUTOMATIC_FLOW_SOURCE_FILES) {
+      const src = readFileSync(path.join(ROOT, rel), "utf8");
+      expect(src, rel).not.toMatch(/purchaseCarVerticalReport/);
+      expect(src, rel).not.toMatch(/carvertical-purchase/);
+      expect(src, rel).not.toMatch(/api\.carvertical/i);
+    }
+  });
+
+  it("free-source seed and VIN-scan runner never mention a CarVertical order", () => {
+    const free = readFileSync(path.join(ROOT, "lib/admin-free-source-seed.ts"), "utf8");
+    const scan = readFileSync(path.join(ROOT, "lib/vin-scan/run.ts"), "utf8");
+    const stripe = readFileSync(path.join(ROOT, "app/api/webhooks/stripe/route.ts"), "utf8");
+    expect(free).not.toMatch(/carvertical/i);
+    expect(scan).not.toMatch(/carvertical/i);
+    expect(stripe).not.toMatch(/carvertical/i);
+    expect(stripe).not.toMatch(/purchaseCarVerticalReport/);
+  });
+});
+
+describe("CarVertical click policy", () => {
+  it("never auto-clicks without operator confirm, including Sākt pārbaudi", () => {
+    expect(carVerticalAutofillMayClick("Sākt pārbaudi", false)).toBe(false);
+    expect(carVerticalAutofillMayClick("Pārbaudīt", false)).toBe(false);
+    expect(carVerticalAutofillMayClick("Continue", false)).toBe(false);
+    expect(carVerticalAutofillMayClick("Buy report", false)).toBe(false);
+  });
+
+  it("after confirm may start the report but never checkout", () => {
+    expect(carVerticalAutofillMayClick("Sākt pārbaudi", true)).toBe(true);
+    expect(carVerticalAutofillMayClick("Pārbaudīt VIN", true)).toBe(true);
+    expect(carVerticalAutofillMayClick("Pirkt atskaiti", true)).toBe(true);
+    expect(carVerticalAutofillMayClick("Buy report", true)).toBe(true);
+    expect(carVerticalAutofillMayClick("Checkout", true)).toBe(false);
+    expect(carVerticalAutofillMayClick("Maksāt", true)).toBe(false);
+    expect(carVerticalAutofillMayClick("Continue to payment", true)).toBe(false);
+  });
+
+  it("VIN scan browser auto-click list excludes CarVertical", () => {
+    expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).not.toContain("carvertical_preview");
+    expect(vinScanBrowserMayAutoClick("carvertical_preview")).toBe(false);
+    expect(vinScanBrowserMayAutoClick("autodna_preview")).toBe(true);
+  });
+});
+
+describe("userscript stays aligned with no auto-buy", () => {
+  it("does not auto-click CarVertical preview and gates check behind purchase flag", () => {
+    const src = readFileSync(path.join(ROOT, "public/userscripts/provin-vin-autofill.user.js"), "utf8");
+    expect(src).toMatch(/@version\s+1\.10\.0/);
+    expect(src).toContain('id === "autodna_preview" || id === "vininspect" || id === "bid_cars"');
+    expect(src).not.toContain('id === "carvertical_preview" || id === "vininspect"');
+    expect(src).toContain("carVerticalPurchaseConfirmed");
+    expect(src).toContain("provinCarverticalPurchase");
+    expect(src).toContain("if (!carVerticalPurchaseConfirmed()) return;");
+  });
+});

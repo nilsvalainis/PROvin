@@ -63,6 +63,7 @@ import {
   countVendorOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
+import { AdminCarVerticalPurchaseButton } from "@/components/admin/AdminCarVerticalPurchaseButton";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -209,6 +210,9 @@ export function AdminVendorAvotuSourceBlock({
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
+        {blockKey === "carvertical" ? (
+          <AdminCarVerticalPurchaseButton disabled={disabled} readOnly={readOnly} />
+        ) : null}
         {blockKey === "carvertical" || blockKey === "autodna" ? (
           getSourceBlocks && applyPatchedBlocks ? (
             <AdminHistoryVendorPdfUpload

@@ -122,14 +122,15 @@ export function vinAutofillServiceHomeUrl(key: VinAutofillServiceKey): string {
   return CARINFO_HOME_URL;
 }
 
-/** AutoDNA virsraksta klikšķis paralēli atver CarVertical Manas atskaites ar to pašu VIN. */
+/**
+ * Papildu cilnes no avota virsraksta. CarVertical šeit NAV: ielogotā kontā
+ * VIN + automātiskais klikšķis pērk atskaiti. Pirkums paliek admin pogā.
+ */
 export function companionSourceOpensForBlock(
-  blockKey: "autodna" | "carvertical" | "auto_records" | "carinfo",
-  rawVin: string,
+  _blockKey: "autodna" | "carvertical" | "auto_records" | "carinfo",
+  _rawVin: string,
 ): SourceBlockExternalOpen[] {
-  if (blockKey !== "autodna") return [];
-  const vin = normalizeVinForServiceUrls(rawVin);
-  return [{ href: CARVERTICAL_REPORTS_URL, handoffVin: vin || null }];
+  return [];
 }
 
 export type SourceBlockExternalOpen = {
