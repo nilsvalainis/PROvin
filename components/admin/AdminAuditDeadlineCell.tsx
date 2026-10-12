@@ -21,7 +21,10 @@ export function AdminAuditDeadlineCell({
   createdUnixSec,
   initialComplete = false,
   onCompleteChange,
+  calm = false,
 }: {
+  /** H2 mierīgais stils: teksts bez burbuļa; krāsa tikai kavējumam. */
+  calm?: boolean;
   sessionId: string;
   createdUnixSec: number;
   /** Servera stāvoklis pēc lapas ielādes. */
@@ -78,11 +81,18 @@ export function AdminAuditDeadlineCell({
       type="button"
       onClick={() => void onToggle()}
       disabled={saving}
-      className={`${PILL_BASE} tabular-nums ${isComplete ? PILL_COMPLETED : PILL_BY_STATUS[status]}`}
+      className={
+        calm
+          ? `inline-flex items-center gap-1.5 rounded-md px-1 py-0.5 -mx-1 text-[12.5px] tabular-nums transition hover:bg-black/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-black/15 disabled:cursor-wait disabled:opacity-70 ${
+              isComplete ? "text-[#aeaeb2]" : status === "overdue" ? "font-semibold text-[#d70015]" : "font-medium text-[var(--color-apple-text)]"
+            }`
+          : `${PILL_BASE} tabular-nums ${isComplete ? PILL_COMPLETED : PILL_BY_STATUS[status]}`
+      }
       aria-pressed={isComplete}
       title={isComplete ? "Izpildīts — klikšķis atceļ" : "Atzīmēt auditu kā izpildītu"}
     >
-      {isComplete ? "Izpildīts" : label}
+      {calm && !isComplete && status === "overdue" ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff3b30]" aria-hidden /> : null}
+      {isComplete ? (calm ? "✓ Izpildīts" : "Izpildīts") : calm ? label.replace(/^Kavējas /, "Kavē ") : label}
     </button>
   );
 }
