@@ -7,6 +7,7 @@ import {
   ChevronsRight,
   Cog,
   Euro,
+  FileText,
   Handshake,
   Home,
   LayoutGrid,
@@ -26,7 +27,7 @@ import { useCallback, useEffect, useState } from "react";
 
 /** Variants A: grupēta kreisā sānjosla visiem admin paneļiem (PRO + IRISS). Mobilajā — apakšējā cilņu josla + „Vairāk”. */
 
-type Item = { href: string; label: string; icon: LucideIcon; badge?: "fast" | "partners"; match: (p: string) => boolean };
+type Item = { href: string; label: string; icon: LucideIcon; badge?: "fast" | "partners" | "orders"; plus?: boolean; match: (p: string) => boolean };
 type Group = { title: string; items: Item[] };
 
 const starts = (prefix: string) => (p: string) => p.startsWith(prefix);
@@ -39,15 +40,16 @@ const starts = (prefix: string) => (p: string) => p.startsWith(prefix);
 export const ADMIN_NAV_LABELS = {
   groupPro: "PRO",
   groupIriss: "IRISS",
-  groupSaturs: "Saturs",
-  groupBizness: "Bizness",
+  groupWeb: "WEB",
+  groupB2b: "B2B",
   orders: "Pasūtījumi",
   vinScan: "VIN pārbaude",
   fast: "Ātrie vērtējumi",
-  irissHome: "Pieteikumi",
-  irissScan: "SCAN",
-  irissList: "LIST",
-  irissNew: "Jauns",
+  irissHome: "Pasūtījumi",
+  irissNew: "Jauns pasūtījums",
+  irissScan: "Meklētājs",
+  irissList: "Filtri",
+  irissWaybills: "Pavadzīmes",
   blogs: "Blogs",
   aggregates: "Agregāti",
   stats: "Statistika",
@@ -61,20 +63,22 @@ const SAKUMS: Item = {
   href: "/admin/dashboard",
   label: L.orders,
   icon: Home,
+  badge: "orders",
   match: (p) => p === "/admin" || p.startsWith("/admin/dashboard") || p.startsWith("/admin/orders/"),
 };
 const FAST: Item = { href: "/admin/atras-vertesanas", label: L.fast, icon: Zap, badge: "fast", match: starts("/admin/atras-vertesanas") };
 const VIN: Item = { href: "/admin/vin-scan", label: L.vinScan, icon: ScanLine, match: starts("/admin/vin-scan") };
 const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Handshake, badge: "partners", match: starts("/admin/partneri") };
-const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, match: starts("/admin/iriss/pasutijumi") };
+const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, plus: true, match: starts("/admin/iriss/pasutijumi") };
 const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
+const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybills, icon: FileText, match: starts("/admin/iriss/pavadzimes") };
 const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, match: starts("/admin/iriss/sludinajumi") };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
   { title: L.groupPro, items: [SAKUMS, VIN, FAST] },
-  { title: L.groupIriss, items: [I_HOME, I_SCAN, I_LIST] },
+  { title: L.groupIriss, items: [I_HOME, I_SCAN, I_LIST, I_WAYBILLS] },
   {
-    title: L.groupSaturs,
+    title: L.groupWeb,
     items: [
       { href: "/admin/blogs", label: L.blogs, icon: PenLine, match: starts("/admin/blogs") },
       { href: "/admin/agregatu-zinasanas", label: L.aggregates, icon: Cog, match: starts("/admin/agregatu-zinasanas") },
@@ -82,7 +86,7 @@ export const ADMIN_NAV_GROUPS: Group[] = [
     ],
   },
   {
-    title: L.groupBizness,
+    title: L.groupB2b,
     items: [
       { href: "/admin/commission-invoice", label: L.invoices, icon: Euro, match: starts("/admin/commission-invoice") },
       PARTNERI,
@@ -92,7 +96,7 @@ export const ADMIN_NAV_GROUPS: Group[] = [
 
 const STORAGE_KEY = "admin-sidebar-collapsed";
 
-function useCount(url: string, key: "openCount" | "unseenCount"): number {
+function useCount(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount"): number {
   const pathname = usePathname();
   const [n, setN] = useState(0);
   const refresh = useCallback(async () => {
@@ -122,14 +126,18 @@ function useCount(url: string, key: "openCount" | "unseenCount"): number {
 function useBadges() {
   const fast = useCount("/api/admin/listing-peeks/open-count", "openCount");
   const partners = useCount("/api/admin/partners/unseen-count", "unseenCount");
-  return { fast, partners } as const;
+  const orders = useCount("/api/admin/orders/active-count", "activeCount");
+  const ordersOverdue = useCount("/api/admin/orders/active-count", "overdueCount");
+  return { fast, partners, orders, ordersOverdue } as const;
 }
 
-function Badge({ n, dot = false }: { n: number; dot?: boolean }) {
+/** Žetons: sarkans pēc noklusējuma; „Pasūtījumi” — pelēks, sarkans tikai ja kāds kavē termiņu. */
+function Badge({ n, dot = false, gray = false }: { n: number; dot?: boolean; gray?: boolean }) {
   if (n <= 0) return null;
-  if (dot) return <span className="absolute right-1.5 top-1 h-2 w-2 rounded-full bg-rose-600" aria-hidden />;
+  const bg = gray ? "bg-[#8e8e93]" : "bg-rose-600";
+  if (dot) return <span className={`absolute right-1.5 top-1 h-2 w-2 rounded-full ${bg}`} aria-hidden />;
   return (
-    <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-bold leading-none text-white">
+    <span className={`inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full ${bg} px-1 text-[10px] font-bold leading-none text-white`}>
       {n > 99 ? "99+" : n}
     </span>
   );
@@ -215,11 +223,12 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
             {g.items.map((it) => {
               const on = it.match(pathname);
               const n = it.badge ? badges[it.badge] : 0;
+              const gray = it.badge === "orders" && badges.ordersOverdue === 0;
               const Icon = it.icon;
               return (
+                <div key={it.href} className="relative">
                 <Link
-                  key={it.href}
-                  href={it.href}
+                                    href={it.href}
                   title={collapsed ? it.label : undefined}
                   aria-current={on ? "page" : undefined}
                   className={`admin-nav-link relative flex h-9 items-center gap-2.5 rounded-lg text-[13.5px] transition ${collapsed ? "justify-center" : "px-2.5"} ${
@@ -227,22 +236,23 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
                   }`}
                 >
                   <Icon className={`h-[17px] w-[17px] shrink-0 ${on ? "" : "text-[#8e8e93]"}`} strokeWidth={2} aria-hidden />
-                  {collapsed ? <Badge n={n} dot /> : <><span className="min-w-0 flex-1 truncate">{it.label}</span><Badge n={n} /></>}
+                  {collapsed ? <Badge n={n} dot gray={gray} /> : <><span className="min-w-0 flex-1 truncate">{it.label}</span><Badge n={n} gray={gray} />{it.plus ? <span className="w-6 shrink-0" aria-hidden /> : null}</>}
                 </Link>
+                  {it.plus && !collapsed ? (
+                    <button
+                      type="button"
+                      onClick={() => void offer.create()}
+                      disabled={offer.busy}
+                      title={L.irissNew}
+                      aria-label={L.irissNew}
+                      className="absolute right-1.5 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-[#8e8e93] transition hover:bg-black/[0.06] hover:text-[var(--color-apple-text)] disabled:opacity-50"
+                    >
+                      {offer.busy ? <span className="text-[10px]">…</span> : <Plus className="h-4 w-4" aria-hidden />}
+                    </button>
+                  ) : null}
+                </div>
               );
             })}
-            {g.title === L.groupIriss ? (
-              <button
-                type="button"
-                onClick={() => void offer.create()}
-                disabled={offer.busy}
-                title="Jauns piedāvājums bez klienta datiem"
-                className={`flex h-9 w-full items-center gap-2.5 rounded-lg text-[13.5px] text-[var(--color-provin-accent)] transition hover:bg-black/[0.04] disabled:opacity-50 ${collapsed ? "justify-center" : "px-2.5"}`}
-              >
-                <Plus className="h-[17px] w-[17px] shrink-0" aria-hidden />
-                {collapsed ? null : <span>{offer.busy ? "Veido…" : L.irissNew}</span>}
-              </button>
-            ) : null}
           </div>
         ))}
       </nav>
@@ -295,12 +305,13 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
         {tabs.map((t) => {
           const on = t.match(pathname);
           const n = t.badge ? badges[t.badge] : 0;
+          const gray = t.badge === "orders" && badges.ordersOverdue === 0;
           const Icon = t.icon;
           return (
             <Link key={t.label} href={t.href} aria-current={on ? "page" : undefined} className={`admin-nav-link relative flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] ${on ? "font-semibold text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}>
               <span className="relative">
                 <Icon className="h-[21px] w-[21px]" strokeWidth={on ? 2.3 : 1.9} aria-hidden />
-                {n > 0 ? <span className="absolute -right-2.5 -top-1.5"><Badge n={n} /></span> : null}
+                {n > 0 ? <span className="absolute -right-2.5 -top-1.5"><Badge n={n} gray={gray} /></span> : null}
               </span>
               <span className="max-w-full truncate px-0.5">{t.label}</span>
             </Link>
@@ -326,20 +337,24 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
                   {g.items.map((it) => {
                     const on = it.match(pathname);
                     const n = it.badge ? badges[it.badge] : 0;
+              const gray = it.badge === "orders" && badges.ordersOverdue === 0;
                     const Icon = it.icon;
                     return (
-                      <Link key={it.href} href={it.href} onClick={() => setMore(false)} className={`admin-nav-link flex h-11 items-center gap-3 border-b border-[#e5e5ea] px-3 text-[15px] last:border-b-0 ${on ? "font-semibold text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}>
+                      <div key={it.href} className="relative border-b border-[#e5e5ea] last:border-b-0">
+                      <Link href={it.href} onClick={() => setMore(false)} className={`admin-nav-link flex h-11 items-center gap-3 px-3 text-[15px] ${on ? "font-semibold text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}>
                         <Icon className={`h-[18px] w-[18px] ${on ? "" : "text-[#8e8e93]"}`} aria-hidden />
                         <span className="flex-1">{it.label}</span>
-                        <Badge n={n} />
+                        <Badge n={n} gray={gray} />
+                        {it.plus ? <span className="w-8 shrink-0" aria-hidden /> : null}
                       </Link>
+                        {it.plus ? (
+                          <button type="button" onClick={() => void offer.create()} disabled={offer.busy} aria-label={L.irissNew} className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[#3a3a3c] disabled:opacity-50">
+                            <Plus className="h-[18px] w-[18px]" aria-hidden />
+                          </button>
+                        ) : null}
+                      </div>
                     );
                   })}
-                  {g.title === L.groupIriss ? (
-                    <button type="button" onClick={() => void offer.create()} disabled={offer.busy} className="flex h-11 w-full items-center gap-3 px-3 text-left text-[15px] text-[var(--color-provin-accent)] disabled:opacity-50">
-                      <Plus className="h-[18px] w-[18px]" aria-hidden /> {offer.busy ? "Veido…" : L.irissNew}
-                    </button>
-                  ) : null}
                 </div>
               </div>
             ))}
