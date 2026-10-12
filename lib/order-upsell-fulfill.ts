@@ -14,7 +14,8 @@ import { readUpsellByToken, settleUpsellOffer } from "@/lib/order-upsell-store";
  * Darba zona, komentāri un PDF paliek. Jauna pasūtījuma rinda netiek veidota.
  */
 export async function fulfillOrderUpsellPayment(session: Stripe.Checkout.Session): Promise<void> {
-  const parentSessionId = session.metadata?.upgrade_of?.trim() ?? "";
+  const parentSessionId =
+    session.metadata?.upgrade_of?.trim() || session.metadata?.order_id?.trim() || "";
   const kindRaw = session.metadata?.upgrade_kind?.trim() ?? "";
   const token = session.metadata?.upgrade_token?.trim() ?? "";
   if (!isSafeOrderDraftSessionId(parentSessionId) || !isOrderUpsellKind(kindRaw)) {

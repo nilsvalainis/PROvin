@@ -9,6 +9,11 @@ import {
   isDealerHighlightAdminOrder,
   isMiniHighlightAdminOrder,
 } from "@/lib/admin-customer-identity";
+import {
+  buildMiniToAuditsRecommendationDraft,
+  MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
+  MINI_TO_AUDITS_RECOMMENDATION_LABEL,
+} from "@/lib/email/mini-to-audits-recommendation";
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
 
 export const UPSELL_LINK_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -192,12 +197,104 @@ export function upsellKindButtonLabel(quote: UpsellQuote): string {
   if (quote.kind === "mini_to_dealer") {
     return `Piedāvāt dīlera datus (${formatEurFromCents(quote.chargeCents)})`;
   }
-  return `Piedāvāt pilno auditu (${formatEurFromCents(quote.chargeCents)})`;
+  return MINI_TO_AUDITS_RECOMMENDATION_LABEL;
 }
 
 export function upsellStripeProductName(kind: OrderUpsellKind): string {
   if (kind === "mini_to_dealer") return "Oficiālā dīlera dati (papildinājums)";
   return "PROVIN AUDITS papildinājums";
+}
+
+export type OrderUpsellStripeMetaInput = {
+  parentSessionId: string;
+  kind: OrderUpsellKind;
+  token: string;
+  targetLine: OrderUpsellTargetLine;
+  vin?: string | null;
+  phone?: string | null;
+};
+
+/** Stripe Checkout / Payment Link metadata: piesaista maksājumu pasūtījumam un VIN. */
+export function buildOrderUpsellStripeMetadata(input: OrderUpsellStripeMetaInput): Record<string, string> {
+  const vin = (input.vin ?? "").trim();
+  const phone = (input.phone ?? "").trim();
+  return {
+    fulfillment: "order_upsell",
+    upgrade_of: input.parentSessionId,
+    order_id: input.parentSessionId,
+    upgrade_kind: input.kind,
+    upgrade_token: input.token,
+    checkout_line: input.targetLine,
+    ...(vin ? { vin } : {}),
+    ...(phone ? { phone } : {}),
+  };
+}
+
+export type OrderUpsellCheckoutSessionParams = {
+  mode: "payment";
+  customer_email: string;
+  line_items: [
+    {
+      price_data: {
+        currency: "eur";
+        product_data: { name: string; description: string };
+        unit_amount: number;
+      };
+      quantity: 1;
+    },
+  ];
+  success_url: string;
+  cancel_url: string;
+  metadata: Record<string, string>;
+  locale: "lv";
+};
+
+export function buildOrderUpsellCheckoutSessionParams(opts: {
+  kind: OrderUpsellKind;
+  chargeCents: number;
+  parentSessionId: string;
+  token: string;
+  targetLine: OrderUpsellTargetLine;
+  vin?: string | null;
+  phone?: string | null;
+  email: string;
+  origin: string;
+}): OrderUpsellCheckoutSessionParams {
+  const vin = (opts.vin ?? "").trim();
+  const origin = opts.origin.replace(/\/$/, "");
+  const back = `${origin}${upsellPublicPath(opts.token)}`;
+  return {
+    mode: "payment",
+    customer_email: opts.email.trim(),
+    line_items: [
+      {
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: upsellStripeProductName(opts.kind),
+            description: vin
+              ? `Papildinājums jau apmaksātam pasūtījumam. VIN ${vin}.`
+              : "Papildinājums jau apmaksātam pasūtījumam.",
+          },
+          unit_amount: opts.chargeCents,
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: `${back}?paid=1`,
+    cancel_url: back,
+    metadata: buildOrderUpsellStripeMetadata(opts),
+    locale: "lv",
+  };
+}
+
+export function isStripeHostedPaymentUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "checkout.stripe.com" || host === "buy.stripe.com";
+  } catch {
+    return false;
+  }
 }
 
 function vinSuffix(vin?: string | null): string {
@@ -214,6 +311,8 @@ export type UpsellDraft = {
 export function buildUpsellDraft(opts: {
   kind: OrderUpsellKind;
   vin?: string | null;
+  customerName?: string | null;
+  car?: string | null;
   url: string;
   priorCents: number;
   chargeCents: number;
@@ -226,6 +325,19 @@ export function buildUpsellDraft(opts: {
   const pay = `Apmaksāt: ${opts.url}`;
   const ttl = "Saite derīga 30 dienas.";
   const sign = clientMessageSignOff();
+
+  if (opts.kind === "mini_to_audit") {
+    return buildMiniToAuditsRecommendationDraft({
+      customerName: opts.customerName,
+      vin: opts.vin,
+      car: opts.car,
+      paymentUrl: opts.url,
+      miniPrice: formatEurFromCents(opts.priorCents),
+      auditsPrice: formatEurFromCents(opts.targetCents),
+      differencePrice: charge,
+      dealerAddonPrice: formatEurFromCents(MINI_DEALER_ADDON_CENTS),
+    });
+  }
 
   if (opts.kind === "mini_to_dealer") {
     const emailText = [
@@ -261,14 +373,8 @@ export function buildUpsellDraft(opts: {
     };
   }
 
-  const lead =
-    opts.kind === "dealer_to_audit"
-      ? `Jūsu oficiālā dīlera datu pasūtījumam${vin} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`
-      : `Jūsu PROVIN MINI pasūtījumam${vin} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`;
-  const priceNote =
-    opts.kind === "mini_to_audit"
-      ? "Pilnajam auditam atlaides nav. Šī ir atlikusī summa līdz 99,99 €."
-      : "Papildu apmaksa ir 75,00 €. Kopā sanāk pilnais audits.";
+  const lead = `Jūsu oficiālā dīlera datu pasūtījumam${vin} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`;
+  const priceNote = "Papildu apmaksa ir 75,00 €. Kopā sanāk pilnais audits.";
 
   const emailText = [
     "Labdien!",
@@ -315,6 +421,9 @@ export function buildUpsellDraft(opts: {
 
 export function ensureUpsellUrlInText(text: string, url: string): string {
   if (text.includes(url)) return text;
+  if (text.includes(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER)) {
+    return text.split(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER).join(url);
+  }
   const trimmed = text.trim();
   return trimmed ? `${trimmed}\n\nApmaksāt: ${url}` : `Apmaksāt: ${url}`;
 }

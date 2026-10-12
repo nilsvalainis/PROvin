@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { extractCsddMakeModelFromWorkspace } from "@/lib/admin-csdd-make-model";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { normalizeWhatsAppPhoneDigits } from "@/lib/admin-whatsapp-phone";
@@ -13,6 +14,7 @@ import {
   upsellListOverlay,
   upsellPublicPath,
 } from "@/lib/order-upsell";
+import { ensureOrderUpsellStripePaymentUrl } from "@/lib/order-upsell-checkout";
 import {
   openUpsellOffer,
   readSessionUpsellDoc,
@@ -41,7 +43,12 @@ async function loadContext(sessionId: string) {
     normalizeWhatsAppPhoneDigits(
       draft?.orderEdits?.customerPhone || order.phone || order.customerDetailsPhone || "",
     ) ?? "";
-  return { order, offers, email: email.trim(), phone };
+  const customerName =
+    [draft?.orderEdits?.customerName, order.customerName].find((v) => typeof v === "string" && v.trim())?.trim() ??
+    "";
+  const vin = [draft?.orderEdits?.vin, order.vin].find((v) => typeof v === "string" && v.trim())?.trim() ?? "";
+  const car = extractCsddMakeModelFromWorkspace(draft?.workspace) ?? "";
+  return { order, offers, email: email.trim(), phone, customerName, vin, car };
 }
 
 export async function GET(req: Request) {
@@ -95,10 +102,28 @@ export async function POST(req: Request) {
   if (!opened.ok) {
     return NextResponse.json({ error: opened.error }, { status: opened.error === "already_settled" ? 409 : 503 });
   }
-  const url = `${getPublicSiteOrigin()}${upsellPublicPath(opened.offer.token)}`;
+  let url = `${getPublicSiteOrigin()}${upsellPublicPath(opened.offer.token)}`;
+  if (quote.kind === "mini_to_audit") {
+    if (!ctx.email) {
+      return NextResponse.json({ error: "missing_email" }, { status: 400 });
+    }
+    const pay = await ensureOrderUpsellStripePaymentUrl({
+      parentSessionId: sessionId,
+      email: ctx.email,
+      vin: ctx.vin || ctx.order.vin,
+      phone: ctx.phone,
+      offer: opened.offer,
+    });
+    if (!pay.ok) {
+      return NextResponse.json({ error: pay.error }, { status: 503 });
+    }
+    url = pay.url;
+  }
   const draft = buildUpsellDraft({
     kind: quote.kind,
-    vin: ctx.order.vin,
+    vin: ctx.vin || ctx.order.vin,
+    customerName: ctx.customerName,
+    car: ctx.car,
     url,
     priorCents: quote.priorCents,
     chargeCents: quote.chargeCents,
@@ -108,6 +133,8 @@ export async function POST(req: Request) {
     url,
     email: ctx.email,
     phone: ctx.phone,
+    customerName: ctx.customerName,
+    car: ctx.car,
     ...draft,
   });
 }

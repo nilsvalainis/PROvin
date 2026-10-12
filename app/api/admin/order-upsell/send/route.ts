@@ -5,6 +5,7 @@ import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { trySendDealerDataOperatorEmail } from "@/lib/email/send-transactional";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
+import { ensureOrderUpsellStripePaymentUrl } from "@/lib/order-upsell-checkout";
 import { ensureUpsellUrlInText, isOrderUpsellKind, upsellPublicPath } from "@/lib/order-upsell";
 import { readSessionUpsellDoc } from "@/lib/order-upsell-store";
 import { getPublicSiteOrigin } from "@/lib/site-url";
@@ -45,7 +46,20 @@ export async function POST(req: Request) {
   if (!offer || offer.status !== "open") {
     return NextResponse.json({ error: "offer_not_open" }, { status: 400 });
   }
-  const url = `${getPublicSiteOrigin()}${upsellPublicPath(offer.token)}`;
+  let url = `${getPublicSiteOrigin()}${upsellPublicPath(offer.token)}`;
+  if (kindRaw === "mini_to_audit") {
+    const pay = await ensureOrderUpsellStripePaymentUrl({
+      parentSessionId: sessionId,
+      email: to,
+      vin: order.vin,
+      phone: order.phone,
+      offer,
+    });
+    if (!pay.ok) {
+      return NextResponse.json({ error: pay.error }, { status: 503 });
+    }
+    url = pay.url;
+  }
   const sent = await trySendDealerDataOperatorEmail({
     to,
     subject,

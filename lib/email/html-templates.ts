@@ -386,6 +386,17 @@ export function dealerDataOperatorMessageEmailHtml(opts: { title?: string | null
         const label = /^apmaksāt$/i.test(m[1] ?? "") ? "Apmaksāt" : "Pasūtīt PROVIN AUDITS";
         return ctaButton(m[2], label);
       }
+      const lines = block.split("\n");
+      const last = (lines[lines.length - 1] ?? "").trim();
+      if (isValidHttpUrl(last) && lines.length === 1) {
+        return ctaButton(last, "Apmaksāt");
+      }
+      if (isValidHttpUrl(last) && lines.length > 1) {
+        const head = lines.slice(0, -1).join("\n").trim();
+        const html = esc(head).replace(/\n/g, "<br/>");
+        return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${html}</p>
+${ctaButton(last, "Apmaksāt")}`;
+      }
       const html = esc(block).replace(/\n/g, "<br/>");
       return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${html}</p>`;
     })
