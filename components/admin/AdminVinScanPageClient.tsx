@@ -19,10 +19,9 @@ import {
 } from "@/lib/vin-scan/plates";
 import { formatCsddPlateLookup } from "@/lib/vin-scan/parse";
 import { collectVinScanMileage, pickVinScanVehicle } from "@/lib/vin-scan/summary";
-import { vinScanFormatHint } from "@/lib/vin-scan/vin-check";
 
 const inp =
-  "min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
+  "min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
 const btnPrimary =
   "rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50";
@@ -30,11 +29,11 @@ const btnPrimary =
 const btnSecondary =
   "rounded-md border border-slate-300 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] disabled:opacity-50 dark:border-slate-600";
 
-const FOREIGN_FIELDS: { kind: Exclude<VinScanPlateKind, "lv">; label: string; placeholder: string }[] = [
-  { kind: "nl", label: "NL numurs", placeholder: "G123BB" },
-  { kind: "lt", label: "LT numurs", placeholder: "ABC123" },
-  { kind: "fi", label: "FI numurs", placeholder: "ABC123" },
-  { kind: "uk", label: "UK numurs", placeholder: "AB12CDE" },
+const FOREIGN_FIELDS: { kind: Exclude<VinScanPlateKind, "lv">; label: string }[] = [
+  { kind: "nl", label: "NL numurs" },
+  { kind: "lt", label: "LT numurs" },
+  { kind: "fi", label: "FI numurs" },
+  { kind: "uk", label: "UK numurs" },
 ];
 
 type PlateView = { ok: boolean; vin: string; make: string; model: string; year: string; status: string };
@@ -68,7 +67,6 @@ export function AdminVinScanPageClient({
     }),
     [platesDraft],
   );
-  const vinHint = vinScanFormatHint(vin);
   const canScan =
     valid ||
     isValidScanPlate("lv", plates.lv) ||
@@ -202,12 +200,8 @@ export function AdminVinScanPageClient({
             className={inp}
             value={draft}
             onChange={(e) => setDraft(e.target.value.toUpperCase())}
-            placeholder="Ievadi 11-17 zīmju VIN"
-            aria-label="VIN skenēšanai"
+            aria-label="VIN"
           />
-          {vin && vinHint.warning ? (
-            <p className="text-[10px] text-amber-700 dark:text-amber-300">{vinHint.warning}</p>
-          ) : null}
         </label>
         <label className="block space-y-1">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">LV numurs</span>
@@ -229,7 +223,6 @@ export function AdminVinScanPageClient({
                 void lookupLvPlate();
               }
             }}
-            placeholder="NG8493"
             aria-label="LV numurs"
           />
         </label>
@@ -261,7 +254,6 @@ export function AdminVinScanPageClient({
                   className={inp}
                   value={platesDraft[field.kind]}
                   onChange={(e) => setPlatesDraft((prev) => ({ ...prev, [field.kind]: e.target.value.toUpperCase() }))}
-                  placeholder={field.placeholder}
                   aria-label={field.label}
                 />
               </label>

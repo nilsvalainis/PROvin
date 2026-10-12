@@ -4,13 +4,7 @@ import { useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
 
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import {
-  VIN_SCAN_CATALOG,
-  VIN_SCAN_TTL_MS,
-  resolveVinScanOpenUrl,
-  vinScanUserscriptMeetsMin,
-  vinScanUserscriptMinLabel,
-} from "@/lib/vin-scan/catalog";
+import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl } from "@/lib/vin-scan/catalog";
 import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
 import {
   buildVinScanFacts,
@@ -18,7 +12,7 @@ import {
   formatVinScanExportText,
   formatVinScanScannedAt,
 } from "@/lib/vin-scan/summary";
-import { countVinScanStatuses, VIN_SCAN_STATUSES, type VinScanIndicator, type VinScanStatus } from "@/lib/vin-scan/types";
+import { VIN_SCAN_STATUSES, type VinScanIndicator, type VinScanStatus } from "@/lib/vin-scan/types";
 import {
   isVinScanWantedSource,
   vinScanWantedDotClass,
@@ -188,24 +182,8 @@ export function AdminVinScanPanel({
   const [byId, setById] = useState<Record<string, ScanRow>>({});
   const [openId, setOpenId] = useState<string | null>(null);
   const [scannedAt, setScannedAt] = useState("");
-  const [cached, setCached] = useState(false);
-  const [stale, setStale] = useState(false);
   const [copyNote, setCopyNote] = useState("");
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [scriptNote, setScriptNote] = useState("");
-
-  useEffect(() => {
-    const installed = document.documentElement.getAttribute("data-provin-userscript") || "";
-    if (!vinScanUserscriptMeetsMin(installed)) {
-      setScriptNote(
-        installed
-          ? `Atjauniniet PROVIN skriptu līdz ${vinScanUserscriptMinLabel()}, lai cilnes atvērtos ar aizpildītu VIN.`
-          : `Ieslēdziet PROVIN skriptu (${vinScanUserscriptMinLabel()}), lai avota cilne aizpildītu VIN.`,
-      );
-    } else {
-      setScriptNote("");
-    }
-  }, []);
 
   useEffect(() => {
     setById({});
@@ -213,8 +191,6 @@ export function AdminVinScanPanel({
     setOpenId(null);
     setScannedAt("");
     setCopyNote("");
-    setCached(false);
-    setStale(false);
     if (!valid) return;
     let cancelled = false;
     (async () => {
@@ -225,9 +201,6 @@ export function AdminVinScanPanel({
           if (Array.isArray(parsed.indicators) && !cancelled) {
             setById(rowsFromIndicators(parsed.indicators, clean, plates));
             setScannedAt(typeof parsed.scannedAt === "string" ? parsed.scannedAt : "");
-            setCached(true);
-            const age = parsed.scannedAt ? Date.now() - Date.parse(parsed.scannedAt) : VIN_SCAN_TTL_MS + 1;
-            setStale(!Number.isFinite(age) || age > VIN_SCAN_TTL_MS);
           }
         }
       } catch {
@@ -242,8 +215,6 @@ export function AdminVinScanPanel({
         if (cancelled || !res.ok || !data?.snapshot || !Array.isArray(data.snapshot.indicators)) return;
         setById(rowsFromIndicators(data.snapshot.indicators, clean, plates));
         setScannedAt(typeof data.snapshot.scannedAt === "string" ? data.snapshot.scannedAt : "");
-        setCached(true);
-        setStale(Boolean(data.stale));
         try {
           localStorage.setItem(cacheKey(clean), JSON.stringify(data.snapshot));
         } catch {
@@ -270,7 +241,6 @@ export function AdminVinScanPanel({
   }, [scannedAt]);
 
   const rows = CATALOG.map((item) => byId[item.id]).filter((row): row is ScanRow => Boolean(row));
-  const counts = rows.length > 0 ? countVinScanStatuses(rows) : null;
   const open = openId ? byId[openId] : undefined;
   const openHref = open
     ? resolveVinScanOpenUrl(CATALOG.find((item) => item.id === open.id) || { openUrl: () => "" }, clean, open.openUrl, plates)
@@ -302,13 +272,8 @@ export function AdminVinScanPanel({
       return;
     }
     if (typeof data.scannedAt === "string") setScannedAt(data.scannedAt);
-    setCached(Boolean(data.cached));
-    setStale(false);
     const next = rowsFromIndicators(data.indicators, clean, plates);
     setById((prev) => ({ ...prev, ...next }));
-    if (typeof data.vin === "string" && data.vin && data.vin !== clean) {
-      /* CSDD numurs atgrieza VIN; kešs paliek zem atgrieztā VIN. */
-    }
     try {
       localStorage.setItem(
         cacheKey(typeof data.vin === "string" && data.vin ? data.vin : clean),
@@ -390,15 +355,8 @@ export function AdminVinScanPanel({
 
   return (
     <section className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]" aria-busy={busy}>
-      <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-2">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">Avotu skenēšana</p>
-          <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-            Serveris nolasa visus bezmaksas avotus uzreiz un saglabā rezultātu pie VIN. Cilne atver jau aizpildītu meklēšanu.
-            Captcha un Cloudflare iet caur esošo risinātāju, bez apstiprinājuma. Maksas pirkums paliek pasūtījuma darba zonā.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
+      {canRetry || rows.length > 0 ? (
+        <div className="flex flex-wrap items-center justify-end gap-1.5 px-2.5 py-2">
           {canRetry ? (
             <button
               type="button"
@@ -428,9 +386,9 @@ export function AdminVinScanPanel({
             </>
           ) : null}
         </div>
-      </div>
+      ) : null}
       {history.length > 0 ? (
-        <div className="mx-2 mb-1 flex flex-wrap gap-1">
+        <div className="mx-2 mt-2 mb-1 flex flex-wrap gap-1">
           {history.map((entry) => (
             <a
               key={`${entry.vin}-${entry.scannedAt}`}
@@ -440,7 +398,6 @@ export function AdminVinScanPanel({
                   ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40"
                   : "border-slate-200 text-[var(--color-provin-muted)] hover:bg-black/[0.04] dark:border-slate-700"
               }`}
-              title={`Skenēts ${formatVinScanScannedAt(entry.scannedAt)}`}
             >
               {entry.vin} · {entry.found}
             </a>
@@ -453,9 +410,7 @@ export function AdminVinScanPanel({
             {[facts.vehicleLine, facts.mileageLine].filter(Boolean).join(" · ")}
           </p>
           {facts.mileageRollback ? (
-            <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">
-              Nobraukuma nesakritība: vēlāks datums ar mazāku km.
-            </p>
+            <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">Nobraukuma nesakritība</p>
           ) : null}
           {facts.wanted.length ? (
             <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">Meklēšanā / zagts: {facts.wanted.join(", ")}</p>
@@ -471,18 +426,14 @@ export function AdminVinScanPanel({
           ) : null}
           {scannedAt ? (
             <p className="text-[10px] text-[var(--color-provin-muted)]">
-              Skenēts: {formatVinScanScannedAt(scannedAt)}
-              {cached ? " · saglabāts" : ""}
-              {stale ? " · kešs vecāks par 12 h" : ""}
+              {formatVinScanScannedAt(scannedAt)}
             </p>
           ) : null}
         </div>
       ) : null}
-      {!canScan ? <p className="px-2.5 pb-2 text-[10px] text-[var(--color-provin-muted)]">Ievadi VIN vai vismaz vienu numuru.</p> : null}
-      {scriptNote ? <p className="px-2.5 pb-1 text-[10px] text-[var(--color-provin-muted)]">{scriptNote}</p> : null}
       {error ? <p className="px-2.5 pb-2 text-[10px] text-rose-600 dark:text-rose-300">{error}</p> : null}
       {copyNote ? <p className="px-2.5 pb-1 text-[10px] text-[var(--color-provin-muted)]">{copyNote}</p> : null}
-      <ul className="grid grid-cols-2 gap-1 px-2 pb-2 sm:grid-cols-4">
+      <ul className="grid grid-cols-2 gap-1 px-2 py-2 sm:grid-cols-4">
         {CATALOG.map((item) => {
           const row = byId[item.id];
           const status = busy && !row ? "checking" : busy && row?.status === "unknown" ? "checking" : (row?.status ?? (busy ? "checking" : "idle"));
@@ -500,7 +451,6 @@ export function AdminVinScanPanel({
               >
                 <button
                   type="button"
-                  title={item.hint}
                   onClick={() => setOpenId(active ? null : item.id)}
                   className="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1 text-left"
                 >
@@ -524,8 +474,7 @@ export function AdminVinScanPanel({
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    title={`Atvērt ${item.label}`}
-                    aria-label={`Atvērt ${item.label}`}
+                    aria-label={item.label}
                     data-provin-handoff-vin={clean || undefined}
                     className="inline-flex shrink-0 items-center px-1.5 text-[var(--color-provin-accent)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                   >
@@ -534,7 +483,6 @@ export function AdminVinScanPanel({
                 ) : (
                   <span
                     className="inline-flex shrink-0 items-center px-1.5 text-slate-300 dark:text-slate-600"
-                    title="Ievadi VIN, lai atvērtu avotu"
                     aria-hidden
                   >
                     <ExternalLink className="h-3 w-3" />
@@ -582,16 +530,11 @@ export function AdminVinScanPanel({
                 className="inline-flex items-center gap-1 text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
               >
                 <ExternalLink className="h-3 w-3" aria-hidden />
-                Atvērt avotu
+                Atvērt
               </a>
             ) : null}
           </div>
         </div>
-      ) : null}
-      {counts ? (
-        <p className="px-2.5 pb-2 text-[9px] text-[var(--color-provin-muted)]">
-          {`Ir dati: ${counts.found}. Nav: ${counts.none}. Neizdevās: ${counts.unknown}. Vajag ievadi: ${counts.needs_input}. Nav atslēgas: ${counts.skipped}.`}
-        </p>
       ) : null}
     </section>
   );

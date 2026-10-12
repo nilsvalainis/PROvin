@@ -19,15 +19,9 @@ export default async function AdminVinScanPage({
   return (
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu>
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-          Avoti
-        </p>
-        <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
+        <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           VIN SCAN
         </h1>
-        <p className="mt-1 max-w-2xl text-[13px] leading-snug text-[var(--color-provin-muted)]">
-          VIN un/vai numurs. Serveris nolasa visus bezmaksas avotus, saglabā rezultātu un atver avotus jau ar VIN.
-        </p>
       </AdminDashboardHeaderWithMenu>
       <AdminVinScanPageClient initialVin={initialVin} />
     </div>
