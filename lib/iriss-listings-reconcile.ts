@@ -71,6 +71,23 @@ function stripSourceFields(v: IrissFetchedVehicle): VehicleFields {
   return copy as VehicleFields;
 }
 
+/** OCR / iepriekšējā VIN paliek, ja šis nolasījums VIN nedod. Avota VIN uzvar. */
+export function mergeKeptListingVin(
+  prev: Pick<IrissListingVehicle, "vin" | "vinSource" | "vinOcrAt" | "vinOcrStatus" | "documentImageUrls">,
+  next: Pick<VehicleFields, "vin" | "vinSource" | "vinOcrAt" | "vinOcrStatus" | "documentImageUrls">,
+): Pick<IrissListingVehicle, "vin" | "vinSource" | "vinOcrAt" | "vinOcrStatus" | "documentImageUrls"> {
+  const vin = next.vin || prev.vin;
+  const fromSource = Boolean(next.vin);
+  const documentImageUrls = [...new Set([...(next.documentImageUrls ?? []), ...(prev.documentImageUrls ?? [])])];
+  return {
+    vin: vin || undefined,
+    vinSource: fromSource ? next.vinSource ?? "source" : next.vinSource ?? prev.vinSource,
+    vinOcrAt: next.vinOcrAt || prev.vinOcrAt,
+    vinOcrStatus: next.vinOcrStatus || prev.vinOcrStatus,
+    documentImageUrls: documentImageUrls.length ? documentImageUrls : undefined,
+  };
+}
+
 function uniqSorted(values: string[]): string[] {
   return [...new Set(values.filter((v) => v.trim()))].sort((a, b) => a.localeCompare(b));
 }
@@ -153,6 +170,7 @@ export function reconcileVehicles(input: ReconcileInput): ReconcileOutput {
     if (changes.length > 0) priceChangedCount += 1;
     out.push({
       ...fields,
+      ...mergeKeptListingVin(prev, fields),
       orderIds: uniqSorted([...orderIds, ...prev.orderIds.filter((id) => input.activeOrderIds.has(id))]),
       orderBrandModels: uniqSorted([...orderBrandModels, ...prev.orderBrandModels]),
       firstSeenAt: prev.firstSeenAt || now,

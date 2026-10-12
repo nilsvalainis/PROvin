@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { IrissListingBudgetBox } from "@/components/admin/IrissListingBudgetBox";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
 import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
@@ -17,6 +18,7 @@ import {
   listingThumbOverflowLabel,
   listingVinScanHref,
   listingVinShort,
+  listingVinSourceMark,
 } from "@/lib/iriss-listings-card";
 import { listingBidPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost } from "@/lib/iriss-listings-cost";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
@@ -108,6 +110,7 @@ export function IrissListingVehicleCard({
   mobile,
   imageHidden,
   onImageError,
+  onVinPatch,
 }: {
   v: IrissListingVehicle;
   nowMs: number | null;
@@ -120,9 +123,11 @@ export function IrissListingVehicleCard({
   mobile: IrissMobilePlatform | null;
   imageHidden: boolean;
   onImageError: () => void;
+  onVinPatch?: (id: string, patch: ListingVinOcrPatch) => void;
 }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [vinCopied, setVinCopied] = useState(false);
+  useListingVinOcr(v, (id, patch) => onVinPatch?.(id, patch));
   const gallery = listingCardGallery(v);
   const photos = imageHidden ? [] : gallery.photos;
   const interactive = gallery.interactive && photos.length > 1;
@@ -152,6 +157,7 @@ export function IrissListingVehicleCard({
   const stock = listingStockNo(v);
   const vin = v.vin && isValidVin(normalizeVin(v.vin)) ? normalizeVin(v.vin) : "";
   const vinHref = vin ? listingVinScanHref(vin) : "";
+  const vinMark = listingVinSourceMark(v.vinSource);
   const days = listingDaysInAuctionLabel(v.auctionStartAt || v.firstSeenAt, nowMs);
   const referrerPolicy: "no-referrer" | undefined =
     v.platform === "openline" || /images\.openlane\.eu/i.test(currentPhoto) ? "no-referrer" : undefined;
@@ -318,7 +324,10 @@ export function IrissListingVehicleCard({
             {stock && vin ? <span aria-hidden>·</span> : null}
             {vin ? (
               <span className="inline-flex flex-wrap items-center gap-1.5" data-provin-handoff-vin={vin}>
-                <span>VIN {listingVinShort(vin)}</span>
+                <span>
+                  VIN {listingVinShort(vin)}
+                  {vinMark ? <span className="font-medium text-slate-400"> ({vinMark})</span> : null}
+                </span>
                 <button
                   type="button"
                   className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50"

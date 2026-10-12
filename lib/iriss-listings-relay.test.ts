@@ -235,6 +235,22 @@ describe("mapRelayFetchResponse", () => {
       orderId: "o3",
       detailUrl: "https://www.auto1.com/en/app/merchant/car/BW03512",
     });
+    expect(v?.vinSource).toBe("source");
+  });
+
+  it("fills Auto1 VIN from stored raw hits when items omitted it", () => {
+    const r = mapRelayFetchResponse(
+      {
+        status: "ok",
+        items: [{ externalId: "987654", stockNumber: "BW03512", title: "BMW 320d", imageUrl: "https://img-pa.auto1.com/img/a.jpg" }],
+        raw: {
+          kind: "auto1-xhr",
+          pages: [{ json: { hits: [{ id: 987654, stockNumber: "BW03512", vin: "WBAZZZ8V0K1237731" }] } }],
+        },
+      },
+      { platform: "auto1", orderId: "o3", orderBrandModel: "BMW 320d" },
+    );
+    expect(r.vehicles[0]?.vin).toBe("WBAZZZ8V0K1237731");
   });
 
   it("fills Openlane detail URL and year from first registration when the relay omitted them", () => {

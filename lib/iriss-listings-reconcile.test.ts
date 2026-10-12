@@ -263,4 +263,24 @@ describe("reconcileVehicles", () => {
     expect(r.vehicles[0]!.change).toBe("price_changed");
     expect(r.vehicles[0]!.priceHistory).toEqual([{ at: T2, field: "minimal", from: 6513, to: 6400 }]);
   });
+
+  it("keeps an OCR VIN when the next Auto1 read still has no VIN", () => {
+    const first = run(
+      [],
+      [fetched({ id: "a", platform: "auto1", vin: undefined, stockNumber: "BW03512" })],
+      T1,
+    ).vehicles;
+    const withOcr: IrissListingVehicle = {
+      ...first[0]!,
+      vin: "WBAZZZ8V0K1237731",
+      vinSource: "ocr_photo",
+      vinOcrAt: T1,
+      vinOcrStatus: "found",
+      documentImageUrls: ["https://img-pa.auto1.com/img/schein.jpg"],
+    };
+    const r = run([withOcr], [fetched({ id: "a", platform: "auto1", vin: undefined, stockNumber: "BW03512" })], T2);
+    expect(r.vehicles[0]!.vin).toBe("WBAZZZ8V0K1237731");
+    expect(r.vehicles[0]!.vinSource).toBe("ocr_photo");
+    expect(r.vehicles[0]!.documentImageUrls).toEqual(["https://img-pa.auto1.com/img/schein.jpg"]);
+  });
 });

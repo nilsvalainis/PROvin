@@ -10,6 +10,7 @@ import {
   listingThumbOverflowLabel,
   listingVinScanHref,
   listingVinShort,
+  listingVinSourceMark,
 } from "@/lib/iriss-listings-card";
 
 describe("listingCardGallery", () => {
@@ -46,6 +47,7 @@ describe("listing thumbs / VIN / specs", () => {
     expect(listingVinShort(vin)).toBe("WBA…7731");
     expect(listingVinScanHref(vin)).toBe("/admin/vin-scan?vin=WBAZZZ8V0K1237731");
     expect(listingVinScanHref("nope")).toBe("");
+    expect(listingVinSourceMark("ocr_photo")).toBe("no foto");
   });
 
   it("formats first registration and hides empty spec cells", () => {

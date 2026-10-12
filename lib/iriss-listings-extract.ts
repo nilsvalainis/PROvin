@@ -1,7 +1,7 @@
 /**
  * VIN / krāsa / virsbūve no izsoļu avota objektiem. Tukšs, ja lauka nav vai VIN nav derīgs.
- * Auto1 saraksta API parasti VIN nedod; Openlane ChassisNumber meklēšanā bieži null;
- * Autobid VIN parādās additionalInformation vai aprīkojumā, ja avots to iedod.
+ * Auto1 `hits[]` parasti VIN nedod (skat. `lib/iriss-listings-auto1-vin.ts`); Openlane ChassisNumber
+ * meklēšanā bieži null; Autobid VIN parādās additionalInformation vai aprīkojumā, ja avots to iedod.
  */
 
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";

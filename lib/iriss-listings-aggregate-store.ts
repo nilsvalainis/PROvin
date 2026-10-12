@@ -152,7 +152,13 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     owningCountry: str(v.owningCountry) || undefined,
     imageUrl: str(v.imageUrl),
     imageUrls: Array.isArray(v.imageUrls) ? v.imageUrls.map(str).filter(Boolean).slice(0, 40) : undefined,
+    documentImageUrls: Array.isArray(v.documentImageUrls)
+      ? v.documentImageUrls.map(str).filter(Boolean).slice(0, 20)
+      : undefined,
     vin: str(v.vin) || undefined,
+    vinSource: str(v.vinSource) === "ocr_photo" ? "ocr_photo" : str(v.vin) ? "source" : undefined,
+    vinOcrAt: str(v.vinOcrAt) || undefined,
+    vinOcrStatus: str(v.vinOcrStatus) === "found" || str(v.vinOcrStatus) === "miss" ? (str(v.vinOcrStatus) as "found" | "miss") : undefined,
     color: str(v.color) || undefined,
     bodyType: str(v.bodyType) || undefined,
     doorCount: str(v.doorCount) || undefined,
@@ -384,6 +390,63 @@ export async function writeIrissListingsRun(view: IrissListingsLatestView): Prom
 /** `IRISS_LISTINGS_STORE_RAW=0` izslēdz. Noklusējumā glabā, lai struktūras maiņu var ātri izpētīt. */
 export function isIrissListingsRawStoreEnabled(): boolean {
   return !/^(0|false|no|off)$/i.test((process.env.IRISS_LISTINGS_STORE_RAW ?? "").trim());
+}
+
+/** Tikai latest.json, bez jauna snapshot (OCR VIN kešs). */
+export async function saveIrissListingsLatestView(view: IrissListingsLatestView): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const r = resolveStorage();
+    if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+    const vehicles = applyAuto1CentsMigration(view.vehicles).vehicles;
+    await writeJson(r, LATEST_FILENAME, JSON.stringify({ ...view, vehicles }, null, 2));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+const VIN_PATCH_STATUSES = new Set(["found", "miss"]);
+
+export type IrissListingVinPatch = {
+  vin?: string;
+  vinSource?: IrissListingVehicle["vinSource"];
+  vinOcrAt?: string;
+  vinOcrStatus?: IrissListingVehicle["vinOcrStatus"];
+  documentImageUrls?: string[];
+};
+
+let vinPatchChain: Promise<unknown> = Promise.resolve();
+
+export async function patchIrissListingVehicleVin(
+  id: string,
+  patch: IrissListingVinPatch,
+): Promise<{ ok: boolean; vehicle: IrissListingVehicle | null; persisted: boolean }> {
+  const run = async () => {
+    const view = await readIrissListingsLatestView();
+    if (!view) return { ok: false, vehicle: null, persisted: false };
+    const idx = view.vehicles.findIndex((v) => v.id === id);
+    if (idx < 0) return { ok: false, vehicle: null, persisted: false };
+    const prev = view.vehicles[idx]!;
+    const vin = str(patch.vin) || prev.vin;
+    const next: IrissListingVehicle = {
+      ...prev,
+      ...(vin ? { vin } : {}),
+      vinSource: patch.vinSource ?? prev.vinSource ?? (vin ? "source" : undefined),
+      vinOcrAt: str(patch.vinOcrAt) || prev.vinOcrAt,
+      vinOcrStatus: patch.vinOcrStatus && VIN_PATCH_STATUSES.has(patch.vinOcrStatus) ? patch.vinOcrStatus : prev.vinOcrStatus,
+      documentImageUrls: patch.documentImageUrls ?? prev.documentImageUrls,
+    };
+    const vehicles = view.vehicles.slice();
+    vehicles[idx] = next;
+    const saved = await saveIrissListingsLatestView({ ...view, vehicles });
+    return { ok: saved.ok, vehicle: next, persisted: saved.ok };
+  };
+  const queued = vinPatchChain.then(run, run);
+  vinPatchChain = queued.then(
+    () => undefined,
+    () => undefined,
+  );
+  return queued;
 }
 
 export async function writeIrissListingsRawBundle(bundle: IrissListingsRawBundle): Promise<{ ok: true } | { ok: false; error: string }> {

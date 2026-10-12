@@ -6,6 +6,7 @@ import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
 import { IrissListingVehicleCard } from "@/components/admin/IrissListingVehicleCard";
 import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
+import { type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useMobilePlatform } from "@/hooks/useMobilePlatform";
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
 import { isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
@@ -246,6 +247,7 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [hiddenImages, setHiddenImages] = useState<Record<string, true>>({});
+  const [vinPatch, setVinPatch] = useState<Record<string, ListingVinOcrPatch>>({});
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const [health, setHealth] = useState<IrissPlatformHealthReport | null>(null);
@@ -437,7 +439,10 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
     writeListQuery({ sources: next.length === SOURCE_CHIPS.length ? [] : next });
   }
 
-  const allVehicles = useMemo(() => latest?.vehicles ?? [], [latest?.vehicles]);
+  const allVehicles = useMemo(
+    () => (latest?.vehicles ?? []).map((v) => (vinPatch[v.id] ? { ...v, ...vinPatch[v.id] } : v)),
+    [latest?.vehicles, vinPatch],
+  );
   /** Divi datu kopumi: klientu pasūtījumu auto vai SCAN saraksta auto. Kartītes tās pašas. */
   const vehicles = useMemo(
     () => allVehicles.filter((v) => vehicleInListingDataset(listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv), dataset)),
@@ -867,6 +872,7 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
             mobile={mobile}
             imageHidden={Boolean(hiddenImages[v.id])}
             onImageError={() => setHiddenImages((prev) => ({ ...prev, [v.id]: true }))}
+            onVinPatch={(id, patch) => setVinPatch((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))}
           />
         ))}
       </div>

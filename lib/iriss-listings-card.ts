@@ -4,7 +4,10 @@
 
 import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import { listingCopyId, type ListingDetailUrlInput } from "@/lib/iriss-listings-detail-url";
+import { listingVinSourceMark } from "@/lib/iriss-listings-vin-from-photos";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+
+export { listingVinSourceMark };
 
 export const LISTING_VIN_SCAN_PATH = "/admin/vin-scan";
 

@@ -71,6 +71,12 @@ export type IrissListingVehicle = {
   imageUrls?: string[];
   /** VIN, ja avots to iedod (Openlane ChassisNumber, Autobid additionalInformation, Auto1 ja ir). */
   vin?: string;
+  /** `source` = JSON/lauks; `ocr_photo` = nolasīts no foto (UI: „no foto”). */
+  vinSource?: "source" | "ocr_photo";
+  vinOcrAt?: string;
+  vinOcrStatus?: "found" | "miss";
+  /** Auto1 images[] ar type=DOCUMENT u.c. OCR vispirms šīs. */
+  documentImageUrls?: string[];
   color?: string;
   bodyType?: string;
   doorCount?: string;
