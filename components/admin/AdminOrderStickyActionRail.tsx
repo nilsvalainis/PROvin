@@ -8,6 +8,7 @@ import type { FlashMaxSelection } from "@/lib/admin-flash-max";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { isValidHttpUrl } from "@/lib/order-field-validation";
+import { ADMIN_RAIL_ASIDE, ADMIN_RAIL_BOX, ADMIN_RAIL_BTN } from "@/lib/admin-rail-styles";
 
 type Props = {
   vin: string;
@@ -30,8 +31,7 @@ type Props = {
   sourceBlocks?: WorkspaceSourceBlocks | null;
 };
 
-const railBtn =
-  "inline-flex h-7 w-full items-center justify-center rounded-md border border-black/10 bg-white/50 px-1 text-[9px] font-semibold text-[var(--color-apple-text)] shadow-sm backdrop-blur-sm transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-40";
+const railBtn = ADMIN_RAIL_BTN;
 
 function vinTail(vin: string): string {
   const t = vin.trim();
@@ -65,10 +65,10 @@ export function AdminOrderStickyActionRail({
 
   return (
     <aside
-      className="pointer-events-none fixed right-1.5 top-28 z-30 hidden w-[4.5rem] flex-col gap-1 lg:flex"
+      className={ADMIN_RAIL_ASIDE}
       aria-label="Ātrās darbības"
     >
-      <div className="pointer-events-auto flex flex-col gap-1 rounded-lg border border-white/40 bg-white/40 p-1 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-zinc-900/40">
+      <div className={ADMIN_RAIL_BOX}>
         <div className="flex flex-col items-center gap-0.5 px-0.5">
           <span className="font-mono text-[8px] leading-none tracking-tight" title={vin || "VIN"}>
             {vinShort || "VIN"}
