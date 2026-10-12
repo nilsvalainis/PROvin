@@ -481,6 +481,21 @@ export function AdminOrderDetailView({
                       {isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : order.paymentStatus}
                     </dd>
                   </div>
+                  {order.paymentStatus === "paid" && order.amountTotal != null && !isPartnerVin ? (
+                    <div className="min-w-0">
+                      <dt className={metaLabel}>Rēķins</dt>
+                      <dd className={metaValue}>
+                        <a
+                          href={`/api/admin/invoice/${encodeURIComponent(order.id)}/pdf`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="admin-nav-link font-medium text-[var(--color-apple-text)] underline decoration-[#d1d1d6] underline-offset-2"
+                        >
+                          Atvērt PDF ↗
+                        </a>
+                      </dd>
+                    </div>
+                  ) : null}
                 </dl>
               </div>
             </AdminCollapsibleShell>
