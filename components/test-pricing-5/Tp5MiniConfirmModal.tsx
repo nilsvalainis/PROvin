@@ -75,17 +75,28 @@ export function Tp5MiniConfirmModal({
           {variant === "warning" ? (
             <p className={styles.miniConfirmWarn}>{copy.warnBar}</p>
           ) : null}
-          {body.split("\n\n").map((paragraph) => (
-            <p key={paragraph} className={styles.miniConfirmBody}>
-              {paragraph}
-            </p>
-          ))}
+          <p className={styles.miniConfirmBody}>{body}</p>
+          {variant === "normal" ? (
+            <>
+              <p className={styles.miniConfirmListHeading}>{copy.includesHeading}</p>
+              <ul className={styles.miniConfirmList}>
+                <li className={styles.miniConfirmListItem}>
+                  <span className={`${styles.miniConfirmDot} ${styles.miniConfirmDotInc}`} aria-hidden />
+                  <span>{copy.includesItem}</span>
+                </li>
+                <li className={styles.miniConfirmListItem}>
+                  <span className={`${styles.miniConfirmDot} ${styles.miniConfirmDotExc}`} aria-hidden />
+                  <span>{copy.excludesItem}</span>
+                </li>
+              </ul>
+            </>
+          ) : null}
           <div className={styles.miniConfirmActions}>
-            <button type="button" className={styles.miniConfirmPrimary} onClick={onContinueMini}>
-              {copy.continueMini}
-            </button>
-            <button type="button" className={styles.miniConfirmSecondary} onClick={onSwitchAudits}>
+            <button type="button" className={styles.miniConfirmPrimary} onClick={onSwitchAudits}>
               {copy.switchAudits}
+            </button>
+            <button type="button" className={styles.miniConfirmSecondary} onClick={onContinueMini}>
+              {copy.continueMini}
             </button>
           </div>
         </div>

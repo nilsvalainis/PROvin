@@ -3,6 +3,9 @@ import type { MiniCsddModalVariant } from "@/lib/mini-csdd-eligibility";
 export type Tp5MiniConfirmCopy = {
   title: string;
   body: string;
+  includesHeading: string;
+  includesItem: string;
+  excludesItem: string;
   continueMini: string;
   switchAudits: string;
   closeAria: string;
@@ -13,53 +16,62 @@ export type Tp5MiniConfirmCopy = {
 
 const LV: Tp5MiniConfirmCopy = {
   title: "Vai MINI ir piemērots šim auto?",
-  body: "PROVIN MINI ir paredzēts auto, kas ilgstoši ekspluatēts Latvijā.\n\nIetver konsultāciju un vietējo reģistru pārbaudi.\n\nNeietver maksas datubāzes, dīleru un izsoļu datus.",
-  continueMini: "Jā, turpināt ar MINI",
+  body: "PROVIN MINI ir paredzēts auto, kas ilgstoši ekspluatēts Latvijā.",
+  includesHeading: "Pakalpojumā ietverts:",
+  includesItem: "Konsultācija un vietējo reģistru pārbaude",
+  excludesItem: "Neietver: maksas datubāzes, dīleru un izsoļu datus",
+  continueMini: "Turpināt ar MINI",
   switchAudits: "Pāriet uz AUDITS",
   closeAria: "Aizvērt",
   warnTitle: "Šim auto iesakām PROVIN AUDITS",
-  warnBar: "⚠ Pēc CSDD datiem auto Latvijā reģistrēts mazāk nekā 3 gadus vai nav reģistrēts.",
+  warnBar: "⚠️ Auto Latvijā nav reģistrēts vai ir reģistrēts mazāk nekā 3 gadus.",
   warnBody:
-    "Ārvalstu vēsturi (negadījumi, nobraukums, dīlera dati) pārbauda tikai PROVIN AUDITS. MINI joprojām var pasūtīt, bet tā ārvalstu vēsturi neaptvers.",
+    "Ārvalstu vēsturi (negadījumus, nobraukumu, dīlera datus) pārbauda tikai PROVIN AUDITS. MINI parāda tikai Latvijas datus un sniedz konsultāciju.",
 };
 
 const EN: Tp5MiniConfirmCopy = {
   title: "Is MINI the right fit for this car?",
-  body: "PROVIN MINI is intended for cars that have been used in Latvia for a longer time.\n\nIt includes a consultation and a check of local registers.\n\nIt does not include paid databases, dealer or auction data.",
-  continueMini: "Yes, continue with MINI",
+  body: "PROVIN MINI is intended for cars that have been used in Latvia for a longer time.",
+  includesHeading: "Included in this service:",
+  includesItem: "Consultation and a check of local registers",
+  excludesItem: "Not included: paid databases, dealer and auction data",
+  continueMini: "Continue with MINI",
   switchAudits: "Switch to AUDITS",
   closeAria: "Close",
   warnTitle: "For this car we recommend PROVIN AUDITS",
-  warnBar:
-    "⚠ CSDD data shows the car has been registered in Latvia for less than 3 years, or is not registered.",
+  warnBar: "⚠️ The car is not registered in Latvia, or has been registered for less than 3 years.",
   warnBody:
-    "Foreign history (accidents, mileage, dealer data) is checked only by PROVIN AUDITS. You can still order MINI, but it will not cover foreign history.",
+    "Foreign history (accidents, mileage, dealer data) is checked only by PROVIN AUDITS. MINI shows Latvian data only and provides a consultation.",
 };
 
 const DE: Tp5MiniConfirmCopy = {
   title: "Passt MINI zu diesem Auto?",
-  body: "PROVIN MINI ist für Autos gedacht, die länger in Lettland genutzt wurden.\n\nEnthalten sind eine Beratung und die Prüfung lokaler Register.\n\nNicht enthalten sind kostenpflichtige Datenbanken sowie Händler- und Auktionsdaten.",
-  continueMini: "Ja, mit MINI fortfahren",
+  body: "PROVIN MINI ist für Autos gedacht, die länger in Lettland genutzt wurden.",
+  includesHeading: "In der Leistung enthalten:",
+  includesItem: "Beratung und Prüfung lokaler Register",
+  excludesItem: "Nicht enthalten: kostenpflichtige Datenbanken, Händler- und Auktionsdaten",
+  continueMini: "Mit MINI fortfahren",
   switchAudits: "Zu AUDITS wechseln",
   closeAria: "Schließen",
   warnTitle: "Für dieses Auto empfehlen wir PROVIN AUDITS",
-  warnBar:
-    "⚠ Laut CSDD ist das Auto in Lettland weniger als 3 Jahre zugelassen oder nicht zugelassen.",
+  warnBar: "⚠️ Das Auto ist in Lettland nicht zugelassen oder weniger als 3 Jahre zugelassen.",
   warnBody:
-    "Die ausländische Historie (Unfälle, Laufleistung, Händlerdaten) prüft nur PROVIN AUDITS. MINI können Sie weiterhin bestellen, aber die ausländische Historie ist darin nicht enthalten.",
+    "Die ausländische Historie (Unfälle, Laufleistung, Händlerdaten) prüft nur PROVIN AUDITS. MINI zeigt nur lettische Daten und bietet eine Beratung.",
 };
 
 const RU: Tp5MiniConfirmCopy = {
   title: "Подходит ли MINI для этого авто?",
-  body: "PROVIN MINI предназначен для автомобилей, которые давно эксплуатируются в Латвии.\n\nВходит консультация и проверка местных реестров.\n\nНе входят платные базы, дилерские и аукционные данные.",
-  continueMini: "Да, продолжить с MINI",
+  body: "PROVIN MINI предназначен для автомобилей, которые давно эксплуатируются в Латвии.",
+  includesHeading: "В услугу входит:",
+  includesItem: "Консультация и проверка местных реестров",
+  excludesItem: "Не входит: платные базы, дилерские и аукционные данные",
+  continueMini: "Продолжить с MINI",
   switchAudits: "Перейти на AUDITS",
   closeAria: "Закрыть",
   warnTitle: "Для этого авто рекомендуем PROVIN AUDITS",
-  warnBar:
-    "⚠ По данным CSDD автомобиль зарегистрирован в Латвии менее 3 лет или не зарегистрирован.",
+  warnBar: "⚠️ Автомобиль не зарегистрирован в Латвии или зарегистрирован менее 3 лет.",
   warnBody:
-    "Зарубежную историю (аварии, пробег, данные дилера) проверяет только PROVIN AUDITS. MINI по-прежнему можно заказать, но зарубежную историю он не охватит.",
+    "Зарубежную историю (аварии, пробег, данные дилера) проверяет только PROVIN AUDITS. MINI показывает только латвийские данные и даёт консультацию.",
 };
 
 export function getTp5MiniConfirmCopy(locale?: string): Tp5MiniConfirmCopy {

@@ -79,12 +79,31 @@ describe("mini CSDD eligibility", () => {
 });
 
 describe("MINI confirm copy", () => {
-  it("uses joprojām and never eksperts or unicode dashes", () => {
+  it("locks Latvian warning and normal strings, buttons, and list items", () => {
     const lv = getTp5MiniConfirmCopy();
-    expect(lv.warnBody).toContain("joprojām");
-    expect(lv.warnBody).not.toContain("joprojam");
+    expect(miniConfirmTitle(lv, "normal")).toBe("Vai MINI ir piemērots šim auto?");
+    expect(miniConfirmBody(lv, "normal")).toBe(
+      "PROVIN MINI ir paredzēts auto, kas ilgstoši ekspluatēts Latvijā.",
+    );
+    expect(lv.includesHeading).toBe("Pakalpojumā ietverts:");
+    expect(lv.includesItem).toBe("Konsultācija un vietējo reģistru pārbaude");
+    expect(lv.excludesItem).toBe("Neietver: maksas datubāzes, dīleru un izsoļu datus");
+    expect(lv.includesItem).not.toMatch(/🟢|🔴/);
+    expect(lv.excludesItem).not.toMatch(/🟢|🔴/);
+    expect(lv.switchAudits).toBe("Pāriet uz AUDITS");
+    expect(lv.continueMini).toBe("Turpināt ar MINI");
+    expect(miniConfirmTitle(lv, "warning")).toBe("Šim auto iesakām PROVIN AUDITS");
+    expect(lv.warnBar).toBe(
+      "⚠️ Auto Latvijā nav reģistrēts vai ir reģistrēts mazāk nekā 3 gadus.",
+    );
+    expect(miniConfirmBody(lv, "warning")).toBe(
+      "Ārvalstu vēsturi (negadījumus, nobraukumu, dīlera datus) pārbauda tikai PROVIN AUDITS. MINI parāda tikai Latvijas datus un sniedz konsultāciju.",
+    );
+  });
+
+  it("never uses eksperts or unicode dashes in any locale", () => {
     for (const copy of [
-      lv,
+      getTp5MiniConfirmCopy(),
       getTp5MiniConfirmCopy("en"),
       getTp5MiniConfirmCopy("de"),
       getTp5MiniConfirmCopy("ru"),
@@ -94,12 +113,27 @@ describe("MINI confirm copy", () => {
       expect(blob).not.toMatch(/[\u2013\u2014]/);
     }
   });
+});
 
-  it("keeps warning and normal titles distinct", () => {
-    const lv = getTp5MiniConfirmCopy("lv");
-    expect(miniConfirmTitle(lv, "normal")).toBe("Vai MINI ir piemērots šim auto?");
-    expect(miniConfirmTitle(lv, "warning")).toBe("Šim auto iesakām PROVIN AUDITS");
-    expect(miniConfirmBody(lv, "warning")).toContain("Ārvalstu vēsturi");
+describe("MINI confirm modal markup", () => {
+  it("puts AUDITS first as primary, then MINI as secondary, with CSS dots not emoji", () => {
+    const modal = readFileSync(
+      join(ROOT, "components/test-pricing-5/Tp5MiniConfirmModal.tsx"),
+      "utf8",
+    );
+    const primaryAt = modal.indexOf("styles.miniConfirmPrimary");
+    const secondaryAt = modal.indexOf("styles.miniConfirmSecondary");
+    const switchAt = modal.indexOf("{copy.switchAudits}");
+    const continueAt = modal.indexOf("{copy.continueMini}");
+    expect(primaryAt).toBeGreaterThan(0);
+    expect(secondaryAt).toBeGreaterThan(primaryAt);
+    expect(switchAt).toBeGreaterThan(primaryAt);
+    expect(switchAt).toBeLessThan(secondaryAt);
+    expect(continueAt).toBeGreaterThan(secondaryAt);
+    expect(modal).toContain("styles.miniConfirmDotInc");
+    expect(modal).toContain("styles.miniConfirmDotExc");
+    expect(modal).not.toContain("🟢");
+    expect(modal).not.toContain("🔴");
   });
 });
 
@@ -116,5 +150,16 @@ describe("MINI confirm CSS flag", () => {
     expect(css).toMatch(/#9E3039 0 40%/i);
     expect(css).toMatch(/#fff 40% 60%/i);
     expect(css).toMatch(/#9E3039 60% 100%/i);
+  });
+
+  it("renders include/exclude markers as site green and red CSS circles", () => {
+    const css = readFileSync(join(ROOT, "components/test-pricing-5/test-pricing-5.module.css"), "utf8");
+    expect(css).toMatch(/\.miniConfirmDot\s*\{[^}]*border-radius:\s*999px;/);
+    expect(css).toMatch(/\.miniConfirmDotInc\s*\{[^}]*background:\s*rgb\(167 243 208 \/ 0\.95\);/);
+    expect(css).toMatch(/\.miniConfirmDotExc\s*\{[^}]*background:\s*#ef4444;/);
+    expect(css).toMatch(/\.miniConfirmPrimary\s*\{[^}]*composes:\s*liquidCta;/);
+    expect(css).toMatch(
+      /\.miniConfirmSecondary\s*\{[^}]*border:\s*1px solid rgb\(113 113 122 \/ 0\.55\);/,
+    );
   });
 });
