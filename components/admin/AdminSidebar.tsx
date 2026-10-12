@@ -12,7 +12,6 @@ import {
   LayoutGrid,
   List,
   LogOut,
-  MessageSquare,
   MoreHorizontal,
   PenLine,
   Plus,
@@ -32,40 +31,63 @@ type Group = { title: string; items: Item[] };
 
 const starts = (prefix: string) => (p: string) => p.startsWith(prefix);
 
+/**
+ * Centrālā izvēlnes nosaukumu konfigurācija — pārdēvēšanai maini tikai šeit
+ * (attiecas uz sānjoslu, mobilo tab joslu un „Vairāk” lapu). Maršruti nemainās.
+ * Konsultācijas (/admin/konsultacijas) apzināti paslēptas no izvēlnes; maršruts saglabāts.
+ */
+export const ADMIN_NAV_LABELS = {
+  groupPro: "PRO",
+  groupIriss: "IRISS",
+  groupSaturs: "Saturs",
+  groupBizness: "Bizness",
+  orders: "Pasūtījumi",
+  vinScan: "VIN pārbaude",
+  fast: "Ātrie vērtējumi",
+  irissHome: "Pieteikumi",
+  irissScan: "SCAN",
+  irissList: "LIST",
+  irissNew: "Jauns",
+  blogs: "Blogs",
+  aggregates: "Agregāti",
+  stats: "Statistika",
+  invoices: "Rēķini",
+  partners: "Partneri",
+  logout: "Iziet",
+} as const;
+const L = ADMIN_NAV_LABELS;
+
 const SAKUMS: Item = {
   href: "/admin/dashboard",
-  label: "Sākums",
+  label: L.orders,
   icon: Home,
   match: (p) => p === "/admin" || p.startsWith("/admin/dashboard") || p.startsWith("/admin/orders/"),
 };
-const FAST: Item = { href: "/admin/atras-vertesanas", label: "Ātrie vērtējumi", icon: Zap, badge: "fast", match: starts("/admin/atras-vertesanas") };
-const KONS: Item = { href: "/admin/konsultacijas", label: "Konsultācijas", icon: MessageSquare, match: starts("/admin/konsultacijas") };
-const PARTNERI: Item = { href: "/admin/partneri", label: "Partneri", icon: Handshake, badge: "partners", match: starts("/admin/partneri") };
-const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: "Home", icon: Car, match: starts("/admin/iriss/pasutijumi") };
-const I_SCAN: Item = { href: "/admin/iriss/scan", label: "SCAN", icon: Radar, match: starts("/admin/iriss/scan") };
-const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: "LIST", icon: List, match: starts("/admin/iriss/sludinajumi") };
+const FAST: Item = { href: "/admin/atras-vertesanas", label: L.fast, icon: Zap, badge: "fast", match: starts("/admin/atras-vertesanas") };
+const VIN: Item = { href: "/admin/vin-scan", label: L.vinScan, icon: ScanLine, match: starts("/admin/vin-scan") };
+const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Handshake, badge: "partners", match: starts("/admin/partneri") };
+const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, match: starts("/admin/iriss/pasutijumi") };
+const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
+const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, match: starts("/admin/iriss/sludinajumi") };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
+  { title: L.groupPro, items: [SAKUMS, VIN, FAST] },
+  { title: L.groupIriss, items: [I_HOME, I_SCAN, I_LIST] },
   {
-    title: "Darbs",
-    items: [SAKUMS, FAST, { href: "/admin/vin-scan", label: "VIN SCAN", icon: ScanLine, match: starts("/admin/vin-scan") }, KONS],
+    title: L.groupSaturs,
+    items: [
+      { href: "/admin/blogs", label: L.blogs, icon: PenLine, match: starts("/admin/blogs") },
+      { href: "/admin/agregatu-zinasanas", label: L.aggregates, icon: Cog, match: starts("/admin/agregatu-zinasanas") },
+      { href: "/admin/statistika", label: L.stats, icon: BarChart3, match: starts("/admin/statistika") },
+    ],
   },
   {
-    title: "Bizness",
+    title: L.groupBizness,
     items: [
-      { href: "/admin/commission-invoice", label: "Rēķini", icon: Euro, match: starts("/admin/commission-invoice") },
+      { href: "/admin/commission-invoice", label: L.invoices, icon: Euro, match: starts("/admin/commission-invoice") },
       PARTNERI,
-      { href: "/admin/statistika", label: "Statistika", icon: BarChart3, match: starts("/admin/statistika") },
     ],
   },
-  {
-    title: "Saturs",
-    items: [
-      { href: "/admin/blogs", label: "Blogs", icon: PenLine, match: starts("/admin/blogs") },
-      { href: "/admin/agregatu-zinasanas", label: "Agregāti", icon: Cog, match: starts("/admin/agregatu-zinasanas") },
-    ],
-  },
-  { title: "IRISS", items: [I_HOME, I_SCAN, I_LIST] },
 ];
 
 const STORAGE_KEY = "admin-sidebar-collapsed";
@@ -209,7 +231,7 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
                 </Link>
               );
             })}
-            {g.title === "IRISS" ? (
+            {g.title === L.groupIriss ? (
               <button
                 type="button"
                 onClick={() => void offer.create()}
@@ -218,7 +240,7 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
                 className={`flex h-9 w-full items-center gap-2.5 rounded-lg text-[13.5px] text-[var(--color-provin-accent)] transition hover:bg-black/[0.04] disabled:opacity-50 ${collapsed ? "justify-center" : "px-2.5"}`}
               >
                 <Plus className="h-[17px] w-[17px] shrink-0" aria-hidden />
-                {collapsed ? null : <span>{offer.busy ? "Veido…" : "Jauns ORDER"}</span>}
+                {collapsed ? null : <span>{offer.busy ? "Veido…" : L.irissNew}</span>}
               </button>
             ) : null}
           </div>
@@ -228,11 +250,11 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
         <button
           type="button"
           onClick={() => void logout()}
-          title="Iziet"
+          title={L.logout}
           className={`flex h-9 items-center gap-2.5 rounded-lg text-[13px] text-[#8e8e93] transition hover:bg-black/[0.04] hover:text-[var(--color-apple-text)] ${collapsed ? "w-9 justify-center" : "w-full px-2.5"}`}
         >
           <LogOut className="h-4 w-4 shrink-0" aria-hidden />
-          {collapsed ? null : <span>Iziet</span>}
+          {collapsed ? null : <span>{L.logout}</span>}
         </button>
       </div>
     </aside>
@@ -260,7 +282,7 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
 
   const PRO_HUB: Item = { href: "/admin/dashboard", label: "PRO", icon: LayoutGrid, match: () => false };
   const IRISS_HUB: Item = { href: "/admin/iriss/pasutijumi", label: "IRISS", icon: Car, match: starts("/admin/iriss") };
-  const tabs: Item[] = workspace === "iriss" ? [I_HOME, I_SCAN, I_LIST, PRO_HUB] : [SAKUMS, FAST, KONS, IRISS_HUB];
+  const tabs: Item[] = workspace === "iriss" ? [I_HOME, I_SCAN, I_LIST, PRO_HUB] : [SAKUMS, VIN, FAST, IRISS_HUB];
   const inTabs = tabs.some((t) => t.match(pathname));
   const moreBadge = workspace === "iriss" ? badges.fast + badges.partners : badges.partners;
 
@@ -313,16 +335,16 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
                       </Link>
                     );
                   })}
-                  {g.title === "IRISS" ? (
+                  {g.title === L.groupIriss ? (
                     <button type="button" onClick={() => void offer.create()} disabled={offer.busy} className="flex h-11 w-full items-center gap-3 px-3 text-left text-[15px] text-[var(--color-provin-accent)] disabled:opacity-50">
-                      <Plus className="h-[18px] w-[18px]" aria-hidden /> {offer.busy ? "Veido…" : "Jauns ORDER"}
+                      <Plus className="h-[18px] w-[18px]" aria-hidden /> {offer.busy ? "Veido…" : L.irissNew}
                     </button>
                   ) : null}
                 </div>
               </div>
             ))}
             <button type="button" onClick={() => void logout()} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#f2f2f7] text-[15px] text-red-600">
-              <LogOut className="h-4 w-4" aria-hidden /> Iziet
+              <LogOut className="h-4 w-4" aria-hidden /> {L.logout}
             </button>
           </div>
         </div>
