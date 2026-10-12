@@ -148,7 +148,7 @@ describe("MINI title has no flag or tagline", () => {
     expect(card).not.toContain("Tp5MiniLvHint");
     expect(card).not.toContain("tagline");
     expect(css).toMatch(
-      /\.mobilePackLines \.featureRowDual\s*\{[^}]*min-height:\s*calc\(2 \* 1\.4em\);/,
+      /\.mobilePackLines \.featureRowDual\s*\{[^}]*min-height:\s*calc\(2 \* 1\.4em \+ 0\.44rem\);/,
     );
   });
 });

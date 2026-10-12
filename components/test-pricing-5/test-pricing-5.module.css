@@ -2705,10 +2705,10 @@ html[data-site-theme="light"] .inlineInput:focus {
   line-height: 1.4;
 }
 
-/* Same two-line box as a wrapped mobile feature row (`1.4` line-height). */
+/* Same two-line box as a wrapped mobile feature row (`1.4` line-height + row padding). */
 @media (max-width: 360px) {
   .mobilePackLines .featureRowDual {
-    min-height: calc(2 * 1.4em);
+    min-height: calc(2 * 1.4em + 0.44rem);
   }
 }
 
