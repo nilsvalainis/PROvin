@@ -153,7 +153,9 @@ export function listingSubtitleParts(v: { bodyType?: string; doorCount?: string 
 
 export function listingFmtEur(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "";
-  return `${Math.round(n).toLocaleString("lv-LV")} €`;
+  const rounded = Math.round(n);
+  const grouped = String(Math.abs(rounded)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${rounded < 0 ? "-" : ""}${grouped} €`;
 }
 
 export const LISTING_BUDGET_FIT_OK = "Ietilpst budžetā";

@@ -53,6 +53,12 @@ describe("listing thumbs / VIN / specs", () => {
     expect(listingVinSourceMark("ocr_photo")).toBe("no foto");
   });
 
+  it("formats euro with a space thousands separator from 4 digits", () => {
+    expect(listingFmtEur(3590)).toBe("3 590 €");
+    expect(listingFmtEur(34412)).toBe("34 412 €");
+    expect(listingFmtEur(null)).toBe("");
+  });
+
   it("budget fit pill has no helper sentence", () => {
     expect(listingBudgetFitPill(32_000, 30_410)).toEqual({ ok: true, label: "Ietilpst budžetā +1 590 €" });
     expect(listingBudgetFitPill(29_000, 30_410)).toEqual({ ok: false, label: "Pārsniedz budžetu -1 410 €" });
