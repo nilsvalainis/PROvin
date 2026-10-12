@@ -280,14 +280,8 @@ export function buildUpsellDraft(opts: {
     };
   }
 
-  const lead =
-    opts.kind === "dealer_to_audit"
-      ? `Jūsu oficiālā dīlera datu pasūtījumam${vin} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`
-      : `Jūsu PROVIN MINI pasūtījumam${vin} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`;
-  const priceNote =
-    opts.kind === "mini_to_audit"
-      ? "Pilnajam auditam atlaides nav. Šī ir atlikusī summa līdz 99,99 €."
-      : "Papildu apmaksa ir 75,00 €. Kopā sanāk pilnais audits.";
+  const lead = `Jūsu oficiālā dīlera datu pasūtījumam${vin} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`;
+  const priceNote = "Papildu apmaksa ir 75,00 €. Kopā sanāk pilnais audits.";
 
   const emailText = [
     "Labdien!",
