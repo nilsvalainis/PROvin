@@ -38,7 +38,7 @@ const SOURCE_LABEL: Record<(typeof FI_TEXT_SOURCES)[number], string> = {
 
 const FI_WORD =
   /(?:^|[^A-Za-zĀ-žÄÖäö])(?:somij[aāe]?|finland(?:e)?|suomi|finnish)(?:[^A-Za-zĀ-žÄÖäö]|$)/i;
-const FI_CODE = /(?:^|[^A-Za-z])FI(?:[^A-Za-z]|$)/;
+const FI_CODE = /(?:^|[^A-Za-z])FI(?:[^A-Za-z]|$)/i;
 
 export function textMentionsFinland(raw: string): boolean {
   const text = String(raw || "").replace(/\u00a0/g, " ");
@@ -87,7 +87,7 @@ export function applyFinlandLink<T extends FinlandLinkRow>(
     if (hit.linked == null) {
       delete flags.finlandLinked;
       delete flags.finlandLinkSource;
-      return { ...row, flags: Object.keys(flags).length ? flags : row.flags };
+      return { ...row, flags: Object.keys(flags).length ? flags : undefined };
     }
     flags.finlandLinked = hit.linked;
     flags.finlandLinkSource = hit.source;
