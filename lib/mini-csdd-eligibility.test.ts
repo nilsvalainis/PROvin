@@ -110,6 +110,9 @@ describe("MINI confirm CSS flag", () => {
     expect(css.toLowerCase()).toContain("#9e3039");
     expect(css).toContain("height: 0.72em");
     expect(css).toContain("width: 1.44em");
+    expect(css).toMatch(/\.miniTitleRow\s*\{[^}]*display:\s*inline;/);
+    expect(css).toMatch(/\.miniTitleTagline\s*\{[^}]*line-height:\s*inherit;/);
+    expect(css).not.toMatch(/\.miniTitleRow\s*\{[^}]*inline-flex/);
     expect(css).toMatch(/#9E3039 0 40%/i);
     expect(css).toMatch(/#fff 40% 60%/i);
     expect(css).toMatch(/#9E3039 60% 100%/i);
