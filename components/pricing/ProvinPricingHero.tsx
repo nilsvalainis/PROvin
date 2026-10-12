@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
 import { Tp5DesktopFeatureIconRow } from "@/components/test-pricing-5/Tp5DesktopFeatureIconRow";
+import { Tp5MiniConfirmModal } from "@/components/test-pricing-5/Tp5MiniConfirmModal";
 import { Tp5MobilePricingCard } from "@/components/test-pricing-5/Tp5MobilePricingCard";
 import { getTp5HeroCopy } from "@/lib/test-pricing-5-hero-copy";
 import {
@@ -18,6 +19,11 @@ import {
   validateTp5InlineFields,
   type Tp5InlineFieldErrors,
 } from "@/lib/test-pricing-5-inline-checkout";
+import {
+  MINI_CSDD_LOOKUP_TIMEOUT_MS,
+  parseMiniCsddVariantResponse,
+  type MiniCsddModalVariant,
+} from "@/lib/mini-csdd-eligibility";
 import { normalizeVin } from "@/lib/order-field-validation";
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 import { useTierSwipe } from "@/lib/use-test-pricing-tier-swipe";
@@ -48,6 +54,7 @@ export function ProvinPricingHero({
   const [errors, setErrors] = useState<Tp5InlineFieldErrors>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [miniConfirm, setMiniConfirm] = useState<MiniCsddModalVariant | null>(null);
   const mobileHeroCopy = getTp5HeroCopy(locale, mobileActiveId);
   const desktopHeroCopy = getTp5HeroCopy(locale, desktopActiveId);
 
@@ -113,13 +120,71 @@ export function ProvinPricingHero({
     [checkoutSource, listingUrl, locale, uiCopy.checkoutErrorFallback, vin],
   );
 
+  const lookupMiniConfirmVariant = useCallback(async (): Promise<MiniCsddModalVariant> => {
+    const ctrl = new AbortController();
+    const timer = window.setTimeout(() => ctrl.abort(), MINI_CSDD_LOOKUP_TIMEOUT_MS + 500);
+    try {
+      const res = await fetch("/api/checkout/mini-csdd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vin: normalizeVin(vin) }),
+        signal: ctrl.signal,
+      });
+      const data: unknown = await res.json().catch(() => ({}));
+      return parseMiniCsddVariantResponse(data);
+    } catch {
+      return "normal";
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }, [vin]);
+
+  const requestServiceCheckout = useCallback(
+    async (serviceId: Tp5MobileServiceId) => {
+      if (serviceId !== "mini") {
+        await submitCheckout(TP5_MOBILE_CHECKOUT_PLAN[serviceId]);
+        return;
+      }
+      setGlobalError(null);
+      const validation = validateTp5InlineFields(listingUrl, vin, locale);
+      if (!validation.ok) {
+        setErrors(validation.errors);
+        const first = validation.errors.listingUrl ?? validation.errors.vin;
+        if (first) setGlobalError(first);
+        return;
+      }
+      setErrors({});
+      setLoading(true);
+      const variant = await lookupMiniConfirmVariant();
+      setLoading(false);
+      setMiniConfirm(variant);
+    },
+    [listingUrl, locale, lookupMiniConfirmVariant, submitCheckout, vin],
+  );
+
   const submitMobileCheckout = useCallback(() => {
-    void submitCheckout(TP5_MOBILE_CHECKOUT_PLAN[mobileActiveId]);
-  }, [mobileActiveId, submitCheckout]);
+    void requestServiceCheckout(mobileActiveId);
+  }, [mobileActiveId, requestServiceCheckout]);
 
   const submitDesktopCheckout = useCallback(() => {
-    void submitCheckout(TP5_MOBILE_CHECKOUT_PLAN[desktopActiveId]);
-  }, [desktopActiveId, submitCheckout]);
+    void requestServiceCheckout(desktopActiveId);
+  }, [desktopActiveId, requestServiceCheckout]);
+
+  const closeMiniConfirm = useCallback(() => {
+    setMiniConfirm(null);
+  }, []);
+
+  const continueMiniCheckout = useCallback(() => {
+    setMiniConfirm(null);
+    void submitCheckout(TP5_MOBILE_CHECKOUT_PLAN.mini);
+  }, [submitCheckout]);
+
+  const switchToAuditsCheckout = useCallback(() => {
+    setMiniConfirm(null);
+    setMobileActiveId("audits");
+    setDesktopActiveId("audits");
+    void submitCheckout(TP5_MOBILE_CHECKOUT_PLAN.audits);
+  }, [submitCheckout]);
 
   const stopSwipePropagation = (event: SyntheticEvent) => {
     event.stopPropagation();
@@ -204,6 +269,14 @@ export function ProvinPricingHero({
         </div>
       </div>
       </section>
+      <Tp5MiniConfirmModal
+        open={miniConfirm !== null}
+        variant={miniConfirm ?? "normal"}
+        locale={locale}
+        onContinueMini={continueMiniCheckout}
+        onSwitchAudits={switchToAuditsCheckout}
+        onClose={closeMiniConfirm}
+      />
     </div>
   );
 }

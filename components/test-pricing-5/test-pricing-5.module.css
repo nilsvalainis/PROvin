@@ -2791,3 +2791,194 @@ html[data-site-theme="light"] .inlineInput:focus {
 .mobileHeroFields {
   margin-top: 1.15rem;
 }
+
+/* MINI title tagline: inline, nowrap. Do not change .mobilePackTitle / .tierTabLabel metrics. */
+.miniTitleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  max-width: 100%;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.lvFlag {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1.44em;
+  height: 0.72em;
+  border-radius: 0.04em;
+  background: linear-gradient(
+    to bottom,
+    #9E3039 0 40%,
+    #fff 40% 60%,
+    #9E3039 60% 100%
+  );
+}
+
+.miniTitleTagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32em;
+  min-width: 0;
+  font-size: 0.85em;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  text-transform: none;
+  color: rgb(148 163 184 / 0.9);
+}
+
+.miniTaglineShort {
+  display: none;
+}
+
+@media (max-width: 360px) {
+  .mobilePackTitle .miniTaglineFull {
+    display: none;
+  }
+
+  .mobilePackTitle .miniTaglineShort {
+    display: inline;
+  }
+}
+
+/* Desktop tabs are ~1/3 of 27.5rem; text would collide with AUDITS, so flag only. */
+.tierTabLabel .miniTaglineFull,
+.tierTabLabel .miniTaglineShort {
+  display: none;
+}
+
+.tierTabLabel .miniTitleTagline {
+  gap: 0;
+  color: rgb(161 161 170 / 0.95);
+}
+
+html[data-site-theme="light"] .miniTitleTagline,
+html[data-site-theme="light"] .tierTabLabel .miniTitleTagline {
+  color: #64748b;
+}
+
+/* MINI pre-pay confirm: same overlay language as dealer popup + liquid CTA metrics. */
+.miniConfirmRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.miniConfirmBackdrop {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgb(2 6 23 / 0.58);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  cursor: pointer;
+}
+
+.miniConfirmLayer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.miniConfirmPanel {
+  pointer-events: auto;
+  width: min(22.75rem, calc(100vw - 1.25rem));
+  padding: 1.15rem 1.1rem 1.05rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: linear-gradient(160deg, #1c2028 0%, #0e1016 100%);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.35);
+}
+
+.miniConfirmTitle {
+  margin: 0 0 0.7rem;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: rgb(244 244 245 / 0.98);
+}
+
+.miniConfirmBody {
+  margin: 0 0 0.55rem;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 450;
+  line-height: 1.45;
+  color: rgb(161 161 170 / 0.95);
+}
+
+.miniConfirmWarn {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgb(245 158 11 / 0.55);
+  background: rgb(245 158 11 / 0.08);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fbbf24;
+}
+
+.miniConfirmActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.95rem;
+}
+
+.miniConfirmPrimary {
+  composes: liquidCta;
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+.miniConfirmSecondary {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 54px;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 999px;
+  background: transparent;
+  color: #f4f4f5;
+  font-family: inherit;
+  font-size: clamp(0.72rem, 2.2vw, 0.84rem);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.miniConfirmSecondary:hover {
+  filter: brightness(1.05);
+}
+
+html[data-site-theme="light"] .miniConfirmPanel {
+  background: linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
+  border-color: rgb(203 213 225 / 0.6);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.1);
+}
+
+html[data-site-theme="light"] .miniConfirmTitle {
+  color: #0f172a;
+}
+
+html[data-site-theme="light"] .miniConfirmBody {
+  color: #64748b;
+}
+
+html[data-site-theme="light"] .miniConfirmSecondary {
+  border-color: rgb(148 163 184 / 0.35);
+  color: #1d1d1f;
+}

@@ -8,6 +8,7 @@ import {
 import {
   catalogPackageAnchorId,
   getCatalogFeatureBreakdownPackages,
+  getHomeFeatureBreakdownPackages,
 } from "@/lib/home-feature-breakdown";
 import { buildSiteRailSections, siteRailActiveFromHash, siteRailRouteActiveIndex } from "@/lib/site-rail-sections";
 
@@ -41,6 +42,18 @@ describe("pakalpojumi catalog", () => {
     expect(dealer.sampleReportHref).toContain("dilera");
     const mini = pkgs.find((p) => p.id === "mini")!;
     expect(mini.sampleReportHref).toContain("provin-mini-piemers");
+    const registers = mini.items.find((item) => item.icon === "eu-registry")!;
+    expect(registers.title).toBe("Latvijas reģistri & TA vēsture");
+    expect(registers.description).toContain("Latvijas publisko reģistru");
+    expect(registers.description).not.toContain("Eiropas");
+    expect(registers.description.toLowerCase()).not.toContain("eksperts");
+    expect(`${registers.title}${registers.description}`).not.toMatch(/[\u2013\u2014]/);
+    for (const locale of ["en", "de", "ru"] as const) {
+      const locMini = getHomeFeatureBreakdownPackages(locale).find((pkg) => pkg.id === "mini")!;
+      const locRegisters = locMini.items.find((item) => item.icon === "eu-registry")!;
+      expect(locRegisters.description).not.toMatch(/Europ|Европ/i);
+      expect(locRegisters.title.toLowerCase()).not.toContain("eksperts");
+    }
     expect(pkgs.find((p) => p.id === "koreaUsa")).toBeUndefined();
     const partner = pkgs.find((p) => p.id === "partner")!;
     expect(partner.title).toBe("PROVIN BUSINESS");

@@ -55,9 +55,9 @@ const MINI_LV: HomeFeatureBreakdownPackage = {
       icon: "listing-analysis",
     },
     {
-      title: "Izcelsmes valsts reģistri & TA vēsture",
+      title: "Latvijas reģistri & TA vēsture",
       description:
-        "Detalizēta Latvijas un Eiropas publisko reģistru datu analīze, tostarp visu tehnisko apskašu vēsture.",
+        "Detalizēta Latvijas publisko reģistru datu analīze, tostarp visu tehnisko apskašu vēsture.",
       icon: "eu-registry",
     },
     {
@@ -194,9 +194,9 @@ const MINI_EN: HomeFeatureBreakdownPackage = {
       icon: "listing-analysis",
     },
     {
-      title: "Origin-country registers & inspection history",
+      title: "Latvian registers & inspection history",
       description:
-        "Detailed analysis of Latvian and European public registry data, including the full roadworthiness inspection history.",
+        "Detailed analysis of Latvian public registry data, including the full roadworthiness inspection history.",
       icon: "eu-registry",
     },
     {
@@ -413,9 +413,9 @@ const MINI_DE: HomeFeatureBreakdownPackage = {
       icon: "listing-analysis",
     },
     {
-      title: "Register des Herkunftslandes und Prüfhistorie",
+      title: "Lettische Register und Prüfhistorie",
       description:
-        "Ausführliche Analyse lettischer und europäischer öffentlicher Register, einschließlich der vollständigen Historie der technischen Prüfungen.",
+        "Ausführliche Analyse lettischer öffentlicher Register, einschließlich der vollständigen Historie der technischen Prüfungen.",
       icon: "eu-registry",
     },
     {
@@ -575,8 +575,8 @@ const MINI_RU: HomeFeatureBreakdownPackage = {
       icon: "listing-analysis",
     },
     {
-      title: "Реестры страны происхождения и история техосмотров",
-      description: "Подробный разбор данных публичных реестров Латвии и Европы, включая всю историю техосмотров.",
+      title: "Реестры Латвии и история техосмотров",
+      description: "Подробный разбор данных публичных реестров Латвии, включая всю историю техосмотров.",
       icon: "eu-registry",
     },
     {

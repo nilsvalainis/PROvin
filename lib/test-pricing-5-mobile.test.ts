@@ -53,6 +53,22 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(getTp5MobileService("dealer").features).toHaveLength(5);
   });
 
+  it("adds a MINI-only tagline and short form without changing feature lines", () => {
+    const mini = getTp5MobileService("mini");
+    const audits = getTp5MobileService("audits");
+    expect(mini.tagline).toBe("Latvijā ekspluatētiem auto");
+    expect(mini.taglineShort).toBe("LV auto");
+    expect(audits.tagline).toBeUndefined();
+    expect(getTp5MobileService("dealer").tagline).toBeUndefined();
+    expect(getTp5MobileService("mini", "en").tagline).toBe("For cars used in Latvia");
+    expect(getTp5MobileService("mini", "de").taglineShort).toBe("LV-Autos");
+    expect(getTp5MobileService("mini", "ru").taglineShort).toBe("LV авто");
+    expect(mini.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
+    expect(audits.features.map((f) => f.name)).toEqual(SHARED_COMPARE_ROWS_LV);
+    expect(`${mini.tagline}${mini.taglineShort}`).not.toMatch(/[\u2013\u2014]/);
+    expect(mini.tagline?.toLowerCase()).not.toContain("eksperts");
+  });
+
   it("maps AUDITS and MINI as the same compare stack without flag emojis", () => {
     const mini = getTp5MobileService("mini");
     const audits = getTp5MobileService("audits");

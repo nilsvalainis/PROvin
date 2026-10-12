@@ -149,6 +149,17 @@ function PackTitle({ title }: { title: string }) {
   return <>{title}</>;
 }
 
+function MiniTagline({ tagline, taglineShort }: { tagline: string; taglineShort?: string }) {
+  const short = taglineShort?.trim() || tagline;
+  return (
+    <span className={styles.miniTitleTagline}>
+      <span className={styles.lvFlag} aria-hidden />
+      <span className={styles.miniTaglineFull}>{tagline}</span>
+      <span className={styles.miniTaglineShort}>{short}</span>
+    </span>
+  );
+}
+
 function CheckoutFields({
   vin,
   listingUrl,
@@ -326,7 +337,14 @@ function MobilePackLayout({
           <span className={styles.mobilePackRec}>{uiCopy.recommended}</span>
         ) : null}
         <p className={styles.mobilePackTitle}>
-          <PackTitle title={cardTitle} />
+          {activeService.tagline ? (
+            <span className={styles.miniTitleRow}>
+              <PackTitle title={cardTitle} />
+              <MiniTagline tagline={activeService.tagline} taglineShort={activeService.taglineShort} />
+            </span>
+          ) : (
+            <PackTitle title={cardTitle} />
+          )}
         </p>
         <p className={styles.mobilePackPrice}>
           {activeService.price} <span className={styles.mobilePackPriceUnit}>{uiCopy.perReport}</span>
@@ -475,7 +493,7 @@ export function Tp5MobilePricingCard({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                aria-label={`${service.title}${uiCopy.packageAriaSuffix}`}
+                aria-label={`${service.title}${service.tagline ? ` · ${service.tagline}` : ""}${uiCopy.packageAriaSuffix}`}
                 className={styles.tierTabBtn}
                 onClick={() => setActiveServiceId(service.id)}
               >
@@ -485,7 +503,14 @@ export function Tp5MobilePricingCard({
                 <span
                   className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
                 >
-                  {service.title}
+                  {service.id === "mini" && service.tagline ? (
+                    <span className={styles.miniTitleRow}>
+                      {service.title}
+                      <MiniTagline tagline={service.tagline} taglineShort={service.taglineShort} />
+                    </span>
+                  ) : (
+                    service.title
+                  )}
                 </span>
               </button>
             );

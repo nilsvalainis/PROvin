@@ -52,6 +52,10 @@ export type Tp5MobileService = {
   tabTitle?: string;
   /** Mobile card heading when it differs from `title`. */
   cardTitle?: string;
+  /** Inline after the MINI title only. Empty/absent on other tiers. */
+  tagline?: string;
+  /** Narrow-screen / desktop-tab fallback so the title row never wraps. */
+  taglineShort?: string;
   price: string;
   buttonText: string;
   /** Compact mobile CTA (`PASŪTĪT 39,99 €`). Desktop keeps `buttonText`. */
@@ -209,6 +213,8 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     id: "mini",
     title: "PROVIN MINI",
     tabTitle: "MINI",
+    tagline: "Latvijā ekspluatētiem auto",
+    taglineShort: "LV auto",
     price: "39,99 €",
     buttonText: "PASŪTĪT MINI AUDITU 39,99 €",
     buttonTextShort: "PASŪTĪT 39,99 €",
@@ -257,6 +263,8 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     id: "mini",
     title: "PROVIN MINI",
     tabTitle: "MINI",
+    tagline: "For cars used in Latvia",
+    taglineShort: "LV cars",
     price: "€39.99",
     buttonText: "ORDER MINI AUDIT €39.99",
     buttonTextShort: "ORDER €39.99",
@@ -305,6 +313,8 @@ const TP5_MOBILE_SERVICES_DE: Tp5MobileService[] = [
     id: "mini",
     title: "PROVIN MINI",
     tabTitle: "MINI",
+    tagline: "Für in Lettland genutzte Autos",
+    taglineShort: "LV-Autos",
     price: "39,99 €",
     buttonText: "MINI-AUDIT BESTELLEN 39,99 €",
     buttonTextShort: "BESTELLEN 39,99 €",
@@ -353,6 +363,8 @@ const TP5_MOBILE_SERVICES_RU: Tp5MobileService[] = [
     id: "mini",
     title: "PROVIN MINI",
     tabTitle: "MINI",
+    tagline: "Для авто, эксплуатируемых в Латвии",
+    taglineShort: "LV авто",
     price: "39,99 €",
     buttonText: "ЗАКАЗАТЬ MINI-АУДИТ 39,99 €",
     buttonTextShort: "ЗАКАЗАТЬ 39,99 €",
