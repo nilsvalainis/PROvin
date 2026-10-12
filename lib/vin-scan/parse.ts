@@ -192,6 +192,21 @@ export function parseCarpassRecalls(status: number, text: string): VinScanParse 
   return { status: "unknown", summary: "Car-Pass neatgrieza rezultātu" };
 }
 
+export function parseNummerpladeProbe(
+  status: number,
+  text: string,
+  mappedFound: boolean,
+  mappedMessage: string,
+): VinScanParse {
+  if (status === 429) return { status: "unknown", summary: "nummerplade.net dienas limits (100 opslag)" };
+  if (status === 401 || status === 403) return { status: "unknown", summary: "nummerplade.net API atslēga nav derīga" };
+  if (status === 404) return { status: "none", summary: "nummerplade.net šo VIN neatpazina" };
+  if (status !== 200) return { status: "unknown", summary: `nummerplade.net atbildēja ar HTTP ${status}` };
+  if (!text.trim()) return { status: "unknown", summary: "nummerplade.net tukša atbilde" };
+  if (!mappedFound) return { status: "none", summary: mappedMessage || "nummerplade.net neatpazina šo VIN" };
+  return { status: "found", summary: mappedMessage || "Ir nummerplade.net" };
+}
+
 export function parseNhtsaDecode(status: number, text: string): VinScanParse {
   if (status !== 200) return { status: "unknown", summary: `NHTSA atbildēja ar HTTP ${status}` };
   let data: unknown;

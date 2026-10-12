@@ -2,6 +2,7 @@ import "server-only";
 
 import { computeFreeSourceSeed } from "@/lib/admin-free-source-seed";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { vinScanFastSourceIds } from "@/lib/vin-scan/catalog";
 import { runVinScan } from "@/lib/vin-scan/run";
 import { readOrderDraft, patchOrderDraft } from "@/lib/admin-order-draft-store";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
@@ -109,7 +110,8 @@ export async function seedQuickEval(
       : computeFreeSourceSeed(baseline, { vin: peek.vin, listingUrl: peek.listingUrl });
   const seeded = await seedPromise;
   const vin = seeded?.resolvedVin || current.vin || (isValidVin(normalizeVin(peek.vin ?? "")) ? normalizeVin(peek.vin ?? "") : "");
-  const scan = doScan && vin && isValidVin(vin) ? await runVinScan(vin).catch(() => null) : null;
+  const scan =
+    doScan && vin && isValidVin(vin) ? await runVinScan({ vin, sourceIds: vinScanFastSourceIds() }).catch(() => null) : null;
   const now = new Date().toISOString();
   return updateQuickEval(peek.id, (doc) => {
     const parts = seeded ? { ...(opts.only ? doc.seed?.parts : {}), ...seeded.parts } : doc.seed?.parts ?? {};

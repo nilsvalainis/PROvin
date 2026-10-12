@@ -17,23 +17,31 @@ import {
   parseEsynChassis,
   parseEsynInspections,
   parseNhtsaDecode,
+  parseNummerpladeProbe,
   parseTjekbilProbe,
   parseVinSourceScan,
   vehicleFromPlcTitle,
 } from "@/lib/vin-scan/parse";
-import { defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
+import { VIN_SCAN_REMOVED_IDS, defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
 import { countVinScanStatuses } from "@/lib/vin-scan/types";
 
 const DK_VIN = "VF12RFL1H49621453";
 
 describe("vin scan catalog", () => {
-  it("katalogā ir unikāli bezmaksas A līmeņa avoti", () => {
+  it("katalogā ir unikāli VIN SCAN avoti, bez izņemtajiem maksas/dekodēšanas avotiem", () => {
     expect(VIN_SCAN_CATALOG.map((s) => s.id)).toEqual([...VIN_SCAN_SOURCE_IDS]);
     expect(new Set(VIN_SCAN_SOURCE_IDS).size).toBe(VIN_SCAN_SOURCE_IDS.length);
-    expect(VIN_SCAN_SOURCE_IDS).toEqual(["tjekbil", "esyn", "dsb", "carpass", "mnt_ee", "nhtsa"]);
+    expect(VIN_SCAN_SOURCE_IDS).toContain("tjekbil");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("csdd");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("nummerplade");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("carinfo");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("lkf_ee");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("rdw");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("nhtsa_recalls");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("bidfax");
     expect(defaultVinScanSourceIds()).toEqual([...VIN_SCAN_SOURCE_IDS]);
-    for (const paid of ["nummerplade", "oneauto", "outvin", "csdd", "carinfo", "lkf_ee"] as const) {
-      expect(VIN_SCAN_SOURCE_IDS).not.toContain(paid);
+    for (const removed of VIN_SCAN_REMOVED_IDS) {
+      expect(VIN_SCAN_SOURCE_IDS).not.toContain(removed);
     }
   });
 
@@ -140,6 +148,14 @@ describe("car-pass", () => {
   });
 });
 
+describe("nummerplade probe", () => {
+  it("mapē found un kvotu", () => {
+    expect(parseNummerpladeProbe(200, "{}", true, "nummerplade.net: VW Golf").status).toBe("found");
+    expect(parseNummerpladeProbe(429, "", false, "").summary).toContain("limits");
+    expect(parseNummerpladeProbe(404, "", false, "").status).toBe("none");
+  });
+});
+
 describe("nhtsa", () => {
   it("tīrs dekodējums ir atradums", () => {
     const parsed = parseNhtsaDecode(
@@ -225,7 +241,8 @@ describe("countVinScanStatuses", () => {
         { status: "found" },
         { status: "none" },
         { status: "manual" },
+        { status: "needs_input" },
       ]),
-    ).toMatchObject({ found: 2, none: 1, manual: 1, unknown: 0, skipped: 0 });
+    ).toMatchObject({ found: 2, none: 1, manual: 1, unknown: 0, skipped: 0, needs_input: 1 });
   });
 });

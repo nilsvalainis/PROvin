@@ -21,7 +21,7 @@ function row(
 
 describe("vin scan summary", () => {
   const rows = [
-    row("nhtsa", { status: "found", summary: "2012 Volkswagen Golf", vehicle: { make: "Volkswagen", model: "Golf", year: "2012" } }),
+    row("rdw", { status: "found", summary: "2012 Volkswagen Golf", vehicle: { make: "Volkswagen", model: "Golf", year: "2012" } }),
     row("tjekbil", {
       status: "found",
       summary: "2012 SKODA SUPERB",

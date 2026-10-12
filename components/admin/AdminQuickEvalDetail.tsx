@@ -272,7 +272,7 @@ function SourceCard({ card, peekId }: { card: SourceCardModel; peekId: string })
   );
 }
 
-const SCAN_TONE: Record<string, CardTone> = { found: "ok", none: "none", unknown: "warn", manual: "none", skipped: "none" };
+const SCAN_TONE: Record<string, CardTone> = { found: "ok", none: "none", unknown: "warn", manual: "none", skipped: "none", needs_input: "none" };
 
 /** CC-VIN foto skaits: PROVIN skripts pārlūkā atver checkcar.vin fonā un atgriež skaitu. */
 function CcVinChip({ peekId, vin, count, at }: { peekId: string; vin: string; count: number | null | undefined; at?: string }) {

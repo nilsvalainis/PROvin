@@ -202,15 +202,15 @@ describe("CarVertical click policy", () => {
   it("VIN scan browser auto-click list excludes CarVertical", () => {
     expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).not.toContain("carvertical_preview");
     expect(vinScanBrowserMayAutoClick("carvertical_preview")).toBe(false);
-    expect(vinScanBrowserMayAutoClick("autodna_preview")).toBe(true);
+    expect(vinScanBrowserMayAutoClick("autodna_preview")).toBe(false);
   });
 });
 
 describe("userscript stays aligned with no auto-buy", () => {
   it("does not auto-click CarVertical preview and gates check behind purchase flag", () => {
     const src = readFileSync(path.join(ROOT, "public/userscripts/provin-vin-autofill.user.js"), "utf8");
-    expect(src).toMatch(/@version\s+1\.15\.0/);
-    expect(src).toContain('id === "autodna_preview"');
+    expect(src).toMatch(/@version\s+1\.16\.0/);
+    expect(src).toContain('id === "nicb"');
     expect(src).toContain('id === "plc_auction"');
     expect(src).toContain('id === "vp_wanted"');
     expect(src).toContain('id === "lt_itpr"');
@@ -235,11 +235,12 @@ describe("userscript stays aligned with no auto-buy", () => {
     expect(src).toContain(CARVERTICAL_3DS_PAGE_RE.source);
   });
 
-  it("VIN SCAN panel buys only through the confirmed opener", () => {
+  it("VIN SCAN panel does not buy CarVertical; purchase stays in the order opener", () => {
     const panel = readFileSync(path.join(ROOT, "components/admin/AdminVinScanPanel.tsx"), "utf8");
-    expect(panel).toContain("Pirkt atskaiti");
-    expect(panel).toContain("openCarVerticalPurchaseTab");
+    expect(panel).not.toContain("Pirkt atskaiti");
+    expect(panel).not.toContain("openCarVerticalPurchaseTab");
     expect(panel).not.toContain("purchaseCarVerticalReport");
+    expect(panel).not.toContain("carvertical");
     const opener = readFileSync(path.join(ROOT, "components/admin/AdminCarVerticalPurchaseButton.tsx"), "utf8");
     expect(opener).toContain("window.confirm(CARVERTICAL_PURCHASE_CONFIRM_LV)");
     expect(opener).toContain("explicitOperatorConfirm: true");

@@ -3,16 +3,21 @@
 import { useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
 
-import { openCarVerticalPurchaseTab } from "@/components/admin/AdminCarVerticalPurchaseButton";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import {
-  VIN_SCAN_BROWSER_CATALOG,
   VIN_SCAN_CATALOG,
+  VIN_SCAN_TTL_MS,
   resolveVinScanOpenUrl,
   vinScanUserscriptMeetsMin,
   vinScanUserscriptMinLabel,
 } from "@/lib/vin-scan/catalog";
-import { buildVinScanOverview, formatVinScanExportJson, formatVinScanExportText, formatVinScanScannedAt } from "@/lib/vin-scan/summary";
+import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
+import {
+  buildVinScanFacts,
+  formatVinScanExportJson,
+  formatVinScanExportText,
+  formatVinScanScannedAt,
+} from "@/lib/vin-scan/summary";
 import { countVinScanStatuses, VIN_SCAN_STATUSES, type VinScanIndicator, type VinScanStatus } from "@/lib/vin-scan/types";
 import {
   isVinScanWantedSource,
@@ -32,15 +37,7 @@ type ScanRow = {
   vehicle?: VinScanIndicator["vehicle"];
   mileage: NonNullable<VinScanIndicator["mileage"]>;
   media?: VinScanIndicator["media"];
-  purchased?: boolean;
-};
-
-type ScanCatalogItem = {
-  id: string;
-  label: string;
-  country: string;
-  hint: string;
-  openUrl: (vin: string) => string;
+  flags?: VinScanIndicator["flags"];
 };
 
 export type VinScanPanelSnapshotRow = {
@@ -52,8 +49,9 @@ export type VinScanPanelSnapshotRow = {
   openUrl: string;
   vehicle?: ScanRow["vehicle"];
   mileage: ScanRow["mileage"];
-  purchased?: boolean;
   detail?: string;
+  flags?: ScanRow["flags"];
+  media?: ScanRow["media"];
 };
 
 export type VinScanPanelSnapshot = {
@@ -61,8 +59,7 @@ export type VinScanPanelSnapshot = {
   rows: VinScanPanelSnapshotRow[];
 };
 
-const SERVER_CATALOG: readonly ScanCatalogItem[] = VIN_SCAN_CATALOG;
-const CATALOG: readonly ScanCatalogItem[] = [...VIN_SCAN_CATALOG, ...VIN_SCAN_BROWSER_CATALOG];
+const CATALOG = VIN_SCAN_CATALOG;
 
 const DOT: Record<VinScanStatus | "idle" | "checking", string> = {
   found: "bg-emerald-500",
@@ -70,6 +67,7 @@ const DOT: Record<VinScanStatus | "idle" | "checking", string> = {
   unknown: "bg-slate-400",
   manual: "bg-amber-400",
   skipped: "bg-slate-300 dark:bg-slate-600",
+  needs_input: "bg-amber-300",
   idle: "bg-transparent ring-1 ring-slate-300 dark:ring-slate-600",
   checking: "animate-pulse bg-sky-400",
 };
@@ -80,6 +78,7 @@ const STATUS_LV: Record<VinScanStatus | "idle" | "checking", string> = {
   unknown: "Neizdevās",
   manual: "Līdz pogai",
   skipped: "Nav atslēgas",
+  needs_input: "Vajag ievadi",
   idle: "Gaida",
   checking: "Pārbauda…",
 };
@@ -101,7 +100,7 @@ function isStatus(v: unknown): v is VinScanStatus {
 function isServerIndicator(v: unknown): v is ScanRow {
   if (!v || typeof v !== "object") return false;
   const o = v as Record<string, unknown>;
-  return typeof o.id === "string" && isStatus(o.status) && typeof o.summary === "string" && typeof o.detail === "string";
+  return typeof o.id === "string" && isStatus(o.status) && typeof o.summary === "string";
 }
 
 function asMileage(v: unknown): ScanRow["mileage"] {
@@ -129,188 +128,203 @@ function asVehicle(v: unknown): ScanRow["vehicle"] {
   return { make, model, year };
 }
 
-function asMedia(v: unknown, photoUrl?: unknown, photoCount?: unknown): ScanRow["media"] {
+function asMedia(v: unknown): ScanRow["media"] {
   const fromObj = v && typeof v === "object" ? (v as Record<string, unknown>) : {};
-  const url = String(fromObj.photoUrl || photoUrl || "");
-  const countRaw = fromObj.photoCount ?? photoCount;
+  const url = String(fromObj.photoUrl || "");
+  const countRaw = fromObj.photoCount;
   const count = typeof countRaw === "number" ? countRaw : Number(countRaw);
   if (!url && !Number.isFinite(count)) return undefined;
   return { photoUrl: url || undefined, photoCount: Number.isFinite(count) ? count : undefined };
 }
 
-function browserRow(item: ScanCatalogItem, vin: string, status: VinScanStatus, summary: string): ScanRow {
-  return {
-    id: item.id,
-    label: item.label,
-    country: item.country,
-    status,
-    summary,
-    detail: "",
-    openUrl: item.openUrl(vin),
-    mileage: [],
-  };
+function cacheKey(vin: string): string {
+  return `provin-vin-scan-v2:${vin}`;
 }
+
+function rowsFromIndicators(indicators: unknown[], vin: string, plates: VinScanPlates): Record<string, ScanRow> {
+  const next: Record<string, ScanRow> = {};
+  for (const item of indicators) {
+    if (!isServerIndicator(item)) continue;
+    const meta = CATALOG.find((source) => source.id === item.id);
+    const rec = item as ScanRow & { vehicle?: unknown; mileage?: unknown; media?: unknown; flags?: unknown; detail?: unknown };
+    next[item.id] = {
+      id: item.id,
+      label: meta?.label || item.label,
+      country: meta?.country || item.country,
+      status: item.status,
+      summary: item.summary,
+      detail: String(rec.detail || item.detail || ""),
+      openUrl: typeof item.openUrl === "string" && item.openUrl ? item.openUrl : meta?.openUrl(vin, plates) ?? null,
+      vehicle: asVehicle(rec.vehicle) ?? item.vehicle,
+      mileage: asMileage(rec.mileage).map((row) => ({ ...row, source: row.source || meta?.label || item.label })),
+      media: asMedia(rec.media) ?? item.media,
+      flags: rec.flags && typeof rec.flags === "object" ? (rec.flags as ScanRow["flags"]) : item.flags,
+    };
+  }
+  return next;
+}
+
+type HistoryEntry = { vin: string; scannedAt: string; found: number; none: number };
 
 export function AdminVinScanPanel({
   vin,
+  plates,
   scanNonce = 0,
+  scanForce = false,
   onSnapshot,
 }: {
   vin: string;
+  plates: VinScanPlates;
   scanNonce?: number;
+  scanForce?: boolean;
   onSnapshot?: (snapshot: VinScanPanelSnapshot) => void;
 }) {
   const clean = normalizeVin(vin);
   const valid = isValidVin(clean);
+  const canScan = valid || hasAnyVinScanPlate(plates);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [byId, setById] = useState<Record<string, ScanRow>>({});
-  const [checking, setChecking] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [scannedAt, setScannedAt] = useState("");
+  const [cached, setCached] = useState(false);
+  const [stale, setStale] = useState(false);
   const [copyNote, setCopyNote] = useState("");
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [scriptNote, setScriptNote] = useState("");
+
+  useEffect(() => {
+    const installed = document.documentElement.getAttribute("data-provin-userscript") || "";
+    if (!vinScanUserscriptMeetsMin(installed)) {
+      setScriptNote(
+        installed
+          ? `Atjauniniet PROVIN skriptu līdz ${vinScanUserscriptMinLabel()}, lai cilnes atvērtos ar aizpildītu VIN.`
+          : `Ieslēdziet PROVIN skriptu (${vinScanUserscriptMinLabel()}), lai avota cilne aizpildītu VIN.`,
+      );
+    } else {
+      setScriptNote("");
+    }
+  }, []);
 
   useEffect(() => {
     setById({});
-    setChecking([]);
     setError("");
     setOpenId(null);
     setScannedAt("");
     setCopyNote("");
-  }, [clean]);
+    setCached(false);
+    setStale(false);
+    if (!valid) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = localStorage.getItem(cacheKey(clean));
+        if (raw) {
+          const parsed = JSON.parse(raw) as { scannedAt?: string; indicators?: unknown[] };
+          if (Array.isArray(parsed.indicators) && !cancelled) {
+            setById(rowsFromIndicators(parsed.indicators, clean, plates));
+            setScannedAt(typeof parsed.scannedAt === "string" ? parsed.scannedAt : "");
+            setCached(true);
+            const age = parsed.scannedAt ? Date.now() - Date.parse(parsed.scannedAt) : VIN_SCAN_TTL_MS + 1;
+            setStale(!Number.isFinite(age) || age > VIN_SCAN_TTL_MS);
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+      try {
+        const res = await fetch(`/api/admin/vin-scan?vin=${encodeURIComponent(clean)}`, { credentials: "include" });
+        const data = (await res.json().catch(() => null)) as {
+          snapshot?: { scannedAt?: string; indicators?: unknown[] } | null;
+          stale?: boolean;
+        } | null;
+        if (cancelled || !res.ok || !data?.snapshot || !Array.isArray(data.snapshot.indicators)) return;
+        setById(rowsFromIndicators(data.snapshot.indicators, clean, plates));
+        setScannedAt(typeof data.snapshot.scannedAt === "string" ? data.snapshot.scannedAt : "");
+        setCached(true);
+        setStale(Boolean(data.stale));
+        try {
+          localStorage.setItem(cacheKey(clean), JSON.stringify(data.snapshot));
+        } catch {
+          /* ignore */
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // plates used only to rebuild openUrl; VIN is the cache key.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clean, valid]);
 
   useEffect(() => {
-    const onResult = (event: Event) => {
-      const detail = (
-        event as CustomEvent<{
-          id?: string;
-          vin?: string;
-          status?: string;
-          summary?: string;
-          detail?: string;
-          openUrl?: string;
-          photoUrl?: string;
-          photoCount?: number;
-          vehicle?: unknown;
-          mileage?: unknown;
-          media?: unknown;
-          purchased?: boolean;
-        }>
-      ).detail;
-      if (!detail || normalizeVin(detail.vin || "") !== clean) return;
-      const item = VIN_SCAN_BROWSER_CATALOG.find((source) => source.id === detail.id);
-      if (!item || !isStatus(detail.status)) return;
-      setById((prev) => ({
-        ...prev,
-        [item.id]: {
-          id: item.id,
-          label: item.label,
-          country: item.country,
-          status: detail.status as VinScanStatus,
-          summary: String(detail.summary || (detail.status === "none" && item.id === "plc_auction" ? "Nav ierakstu" : "")),
-          detail: String(detail.detail || ""),
-          openUrl: typeof detail.openUrl === "string" && detail.openUrl ? detail.openUrl : item.openUrl(clean),
-          vehicle: asVehicle(detail.vehicle),
-          mileage: asMileage(detail.mileage),
-          media: asMedia(detail.media, detail.photoUrl, detail.photoCount),
-          purchased: Boolean(detail.purchased) || Boolean(prev[item.id]?.purchased),
-        },
-      }));
-      setChecking((prev) => prev.filter((id) => id !== item.id));
-    };
-    document.addEventListener("provin-vin-scan-result", onResult);
-    return () => document.removeEventListener("provin-vin-scan-result", onResult);
-  }, [clean]);
+    void fetch("/api/admin/vin-scan?history=1", { credentials: "include" })
+      .then((res) => res.json())
+      .then((data: { entries?: HistoryEntry[] }) => {
+        if (Array.isArray(data?.entries)) setHistory(data.entries.slice(0, 12));
+      })
+      .catch(() => undefined);
+  }, [scannedAt]);
 
   const rows = CATALOG.map((item) => byId[item.id]).filter((row): row is ScanRow => Boolean(row));
   const counts = rows.length > 0 ? countVinScanStatuses(rows) : null;
   const open = openId ? byId[openId] : undefined;
   const openHref = open
-    ? resolveVinScanOpenUrl(CATALOG.find((item) => item.id === open.id) || { openUrl: () => "" }, clean, open.openUrl)
+    ? resolveVinScanOpenUrl(CATALOG.find((item) => item.id === open.id) || { openUrl: () => "" }, clean, open.openUrl, plates)
     : "";
-  const overview = rows.length > 0 ? buildVinScanOverview(rows) : null;
-  const unknownServer = SERVER_CATALOG.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
-  const unknownBrowser = VIN_SCAN_BROWSER_CATALOG.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
-  const canRetry = !busy && (unknownServer.length > 0 || unknownBrowser.length > 0);
+  const facts = rows.length > 0 ? buildVinScanFacts(rows) : null;
+  const unknownIds = CATALOG.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
+  const canRetry = !busy && unknownIds.length > 0;
 
-  function startBrowserScan(sourceIds: readonly string[] = VIN_SCAN_BROWSER_CATALOG.map((item) => item.id)) {
-    if (sourceIds.length === 0) return;
-    const ready = vinScanUserscriptMeetsMin(document.documentElement.getAttribute("data-provin-userscript") || "");
-    if (!ready) {
-      const installed = document.documentElement.getAttribute("data-provin-userscript");
-      const summary = installed ? `Atjauniniet PROVIN skriptu līdz ${vinScanUserscriptMinLabel()}` : "PROVIN skripts nav ieslēgts";
-      const manual: Record<string, ScanRow> = {};
-      for (const item of VIN_SCAN_BROWSER_CATALOG.filter((source) => sourceIds.includes(source.id))) {
-        manual[item.id] = browserRow(item, clean, "manual", summary);
-      }
-      setById((prev) => ({ ...prev, ...manual }));
-      setChecking((prev) => prev.filter((id) => !sourceIds.includes(id)));
-      return;
-    }
-    const first = VIN_SCAN_BROWSER_CATALOG.find((item) => item.id === sourceIds[0]);
-    const popup = window.open(first?.openUrl(clean) || "about:blank", "provin-vin-scan");
-    if (!popup) {
-      setError("Pārlūks bloķēja cilni. Atļaujiet uznirstošos logus šai lapai.");
-      return;
-    }
-    setChecking((prev) => [...new Set([...prev.filter((id) => !sourceIds.includes(id)), ...sourceIds])]);
-    document.dispatchEvent(
-      new CustomEvent("provin-vin-scan-browser", {
-        detail: {
-          vin: clean,
-          sources: sourceIds,
-          opened: true,
-        },
-      }),
-    );
-  }
-
-  async function scanServer(sourceIds?: string[]) {
+  async function scanServer(opts: { force?: boolean; sources?: string[] } = {}) {
     const res = await fetch("/api/admin/vin-scan", {
       method: "POST",
       credentials: "include",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(sourceIds?.length ? { vin: clean, sources: sourceIds } : { vin: clean }),
+      body: JSON.stringify({
+        vin: clean,
+        plates,
+        force: Boolean(opts.force),
+        ...(opts.sources?.length ? { sources: opts.sources } : {}),
+      }),
     });
     const data = (await res.json().catch(() => null)) as {
       indicators?: unknown;
       scannedAt?: string;
+      vin?: string;
+      cached?: boolean;
     } | null;
     if (!res.ok || !data || !Array.isArray(data.indicators)) {
       setError(res.status === 401 ? "Nav admin sesijas" : "Servera skenēšana neizdevās");
       return;
     }
     if (typeof data.scannedAt === "string") setScannedAt(data.scannedAt);
-    const next: Record<string, ScanRow> = {};
-    for (const item of data.indicators) {
-      if (!isServerIndicator(item)) continue;
-      const meta = VIN_SCAN_CATALOG.find((source) => source.id === item.id);
-      const rec = item as ScanRow & { vehicle?: unknown; mileage?: unknown; media?: unknown };
-      next[item.id] = {
-        id: item.id,
-        label: meta?.label || item.label,
-        country: meta?.country || item.country,
-        status: item.status,
-        summary: item.summary,
-        detail: item.detail,
-        openUrl: meta?.openUrl(clean) ?? item.openUrl,
-        vehicle: asVehicle(rec.vehicle) ?? item.vehicle,
-        mileage: asMileage(rec.mileage).map((row) => ({ ...row, source: row.source || meta?.label || item.label })),
-        media: asMedia(rec.media) ?? item.media,
-      };
-    }
+    setCached(Boolean(data.cached));
+    setStale(false);
+    const next = rowsFromIndicators(data.indicators, clean, plates);
     setById((prev) => ({ ...prev, ...next }));
-    setOpenId((current) => (current && (next[current] || byId[current]) ? current : null));
+    if (typeof data.vin === "string" && data.vin && data.vin !== clean) {
+      /* CSDD numurs atgrieza VIN; kešs paliek zem atgrieztā VIN. */
+    }
+    try {
+      localStorage.setItem(
+        cacheKey(typeof data.vin === "string" && data.vin ? data.vin : clean),
+        JSON.stringify({ vin: data.vin || clean, scannedAt: data.scannedAt, indicators: data.indicators, plates }),
+      );
+    } catch {
+      /* ignore */
+    }
   }
 
-  async function scan() {
-    if (!valid || busy) return;
+  async function scan(force = false) {
+    if (!canScan || busy) return;
     setBusy(true);
     setError("");
     setScannedAt(new Date().toISOString());
-    startBrowserScan();
     try {
-      await scanServer();
+      await scanServer({ force });
     } catch {
       setError("Servera skenēšana neizdevās");
     } finally {
@@ -319,44 +333,16 @@ export function AdminVinScanPanel({
   }
 
   async function retryUnknown() {
-    if (!valid || busy || !canRetry) return;
+    if (!canScan || busy || !canRetry) return;
     setBusy(true);
     setError("");
-    startBrowserScan(unknownBrowser);
     try {
-      if (unknownServer.length > 0) await scanServer(unknownServer);
+      await scanServer({ force: true, sources: unknownIds });
     } catch {
       setError("Servera skenēšana neizdevās");
     } finally {
       setBusy(false);
     }
-  }
-
-  function buyCarVertical() {
-    if (!valid) return;
-    const item = VIN_SCAN_BROWSER_CATALOG.find((source) => source.id === "carvertical_preview");
-    if (!item) return;
-    if (!openCarVerticalPurchaseTab(clean)) return;
-    setOpenId("carvertical_preview");
-    setById((prev) => {
-      const prevRow = prev.carvertical_preview;
-      return {
-        ...prev,
-        carvertical_preview: {
-          id: item.id,
-          label: item.label,
-          country: item.country,
-          status: prevRow?.purchased ? prevRow.status : "manual",
-          summary: prevRow?.purchased ? prevRow.summary : "Pirkums sākts…",
-          detail: prevRow?.detail || "",
-          openUrl: prevRow?.openUrl || item.openUrl(clean),
-          vehicle: prevRow?.vehicle,
-          mileage: prevRow?.mileage ?? [],
-          media: prevRow?.media,
-          purchased: prevRow?.purchased,
-        },
-      };
-    });
   }
 
   async function copyExport(kind: "text" | "json") {
@@ -373,8 +359,8 @@ export function AdminVinScanPanel({
   }
 
   useEffect(() => {
-    if (scanNonce > 0 && valid) void scan();
-    // scanNonce is the only trigger; scan reads current VIN.
+    if (scanNonce > 0 && canScan) void scan(scanForce);
+    // scanNonce is the only trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanNonce]);
 
@@ -389,33 +375,32 @@ export function AdminVinScanPanel({
           country: item.country,
           status: row?.status ?? "idle",
           summary: row?.summary ?? "",
-          openUrl: resolveVinScanOpenUrl(item, clean, row?.openUrl),
+          openUrl: resolveVinScanOpenUrl(item, clean, row?.openUrl, plates),
           vehicle: row?.vehicle,
           mileage: row?.mileage ?? [],
-          purchased: row?.purchased,
           detail: row?.detail,
+          flags: row?.flags,
+          media: row?.media,
         };
       }),
     });
-  }, [byId, scannedAt, clean, onSnapshot]);
+  }, [byId, scannedAt, clean, onSnapshot, plates]);
 
   return (
-    <section
-      className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]"
-      aria-busy={busy || checking.length > 0}
-    >
+    <section className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]" aria-busy={busy}>
       <div className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-2">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">Ātrā avotu pārbaude</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)]">Avotu skenēšana</p>
           <p className="text-[10px] leading-snug text-[var(--color-provin-muted)]">
-            Servera avoti atbild uzreiz. Pārējie atveras vienā cilnē. CarVertical priekšskatījums iet automātiski. Jaunu atskaiti pērk tikai ar „Pirkt atskaiti” pēc apstiprinājuma. Checkout soļus skripts iziet pats; 3-D Secure paliek operatoram.
+            Serveris nolasa visus bezmaksas avotus uzreiz un saglabā rezultātu pie VIN. Cilne atver jau aizpildītu meklēšanu.
+            Captcha un Cloudflare iet caur esošo risinātāju, bez apstiprinājuma. Maksas pirkums paliek pasūtījuma darba zonā.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           {canRetry ? (
             <button
               type="button"
-              disabled={!valid || busy}
+              disabled={!canScan || busy}
               onClick={() => void retryUnknown()}
               className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] disabled:opacity-50 dark:border-slate-600"
             >
@@ -442,43 +427,81 @@ export function AdminVinScanPanel({
           ) : null}
           <button
             type="button"
-            disabled={!valid || busy}
-            onClick={() => void scan()}
+            disabled={!canScan || busy}
+            onClick={() => void scan(false)}
             className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
           >
             {busy ? "Skenē…" : "Skenēt avotus"}
           </button>
           <button
             type="button"
-            disabled={!valid}
-            onClick={() => buyCarVertical()}
-            className="rounded-md border border-amber-300/80 bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-950 transition hover:bg-amber-100 disabled:opacity-50"
+            disabled={!canScan || busy}
+            onClick={() => void scan(true)}
+            className="rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] disabled:opacity-50 dark:border-slate-600"
           >
-            Pirkt atskaiti
+            Skenēt no jauna
           </button>
         </div>
       </div>
-      {overview ? (
-        <div className="mx-2 mb-1 rounded-lg border border-[var(--admin-border-subtle)] px-2 py-1.5">
+      {history.length > 0 ? (
+        <div className="mx-2 mb-1 flex flex-wrap gap-1">
+          {history.map((entry) => (
+            <a
+              key={`${entry.vin}-${entry.scannedAt}`}
+              href={`/admin/vin-scan?vin=${encodeURIComponent(entry.vin)}`}
+              className={`rounded-md border px-1.5 py-0.5 font-mono text-[9px] ${
+                entry.vin === clean
+                  ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40"
+                  : "border-slate-200 text-[var(--color-provin-muted)] hover:bg-black/[0.04] dark:border-slate-700"
+              }`}
+              title={`Skenēts ${formatVinScanScannedAt(entry.scannedAt)}`}
+            >
+              {entry.vin} · {entry.found}
+            </a>
+          ))}
+        </div>
+      ) : null}
+      {facts ? (
+        <div className="mx-2 mb-1 space-y-0.5 rounded-lg border border-[var(--admin-border-subtle)] px-2 py-1.5">
           <p className="text-[11px] font-semibold text-[var(--color-apple-text)]">
-            {[overview.vehicleLine, overview.mileageLine].filter(Boolean).join(" · ")}
+            {[facts.vehicleLine, facts.mileageLine].filter(Boolean).join(" · ")}
           </p>
+          {facts.mileageRollback ? (
+            <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">
+              Nobraukuma nesakritība: vēlāks datums ar mazāku km.
+            </p>
+          ) : null}
+          {facts.wanted.length ? (
+            <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">Meklēšanā / zagts: {facts.wanted.join(", ")}</p>
+          ) : null}
+          {facts.recalls.length ? (
+            <p className="text-[10px] text-[var(--color-apple-text)]">Atsaukumi: {facts.recalls.join("; ")}</p>
+          ) : null}
+          {facts.auctionPhotos.length ? (
+            <p className="text-[10px] text-[var(--color-apple-text)]">Izsoles foto: {facts.auctionPhotos.join("; ")}</p>
+          ) : null}
+          {facts.registrations.length ? (
+            <p className="text-[10px] text-[var(--color-apple-text)]">Reģistrācijas: {facts.registrations.join(", ")}</p>
+          ) : null}
           {scannedAt ? (
-            <p className="text-[10px] text-[var(--color-provin-muted)]">Skenēts: {formatVinScanScannedAt(scannedAt)}</p>
+            <p className="text-[10px] text-[var(--color-provin-muted)]">
+              Skenēts: {formatVinScanScannedAt(scannedAt)}
+              {cached ? " · saglabāts" : ""}
+              {stale ? " · kešs vecāks par 12 h" : ""}
+            </p>
           ) : null}
         </div>
       ) : null}
-      {!valid ? (
-        <p className="px-2.5 pb-2 text-[10px] text-[var(--color-provin-muted)]">Ievadi VIN.</p>
-      ) : null}
+      {!canScan ? <p className="px-2.5 pb-2 text-[10px] text-[var(--color-provin-muted)]">Ievadi VIN vai vismaz vienu numuru.</p> : null}
+      {scriptNote ? <p className="px-2.5 pb-1 text-[10px] text-[var(--color-provin-muted)]">{scriptNote}</p> : null}
       {error ? <p className="px-2.5 pb-2 text-[10px] text-rose-600 dark:text-rose-300">{error}</p> : null}
       {copyNote ? <p className="px-2.5 pb-1 text-[10px] text-[var(--color-provin-muted)]">{copyNote}</p> : null}
       <ul className="grid grid-cols-2 gap-1 px-2 pb-2 sm:grid-cols-4">
         {CATALOG.map((item) => {
           const row = byId[item.id];
-          const status = checking.includes(item.id) ? "checking" : (row?.status ?? "idle");
+          const status = busy && !row ? "checking" : busy && row?.status === "unknown" ? "checking" : (row?.status ?? (busy ? "checking" : "idle"));
           const active = openId === item.id;
-          const href = valid ? resolveVinScanOpenUrl(item, clean, row?.openUrl) : "";
+          const href = canScan ? resolveVinScanOpenUrl(item, clean, row?.openUrl, plates) : "";
           return (
             <li key={item.id}>
               <div
@@ -505,7 +528,7 @@ export function AdminVinScanPanel({
                           : "text-[var(--color-provin-muted)]"
                       }`}
                     >
-                      {row?.purchased ? "Nopirkta" : statusLabel(item.id, status)}
+                      {statusLabel(item.id, status)}
                       {status !== "checking" && row?.summary ? ` · ${row.summary}` : ""}
                     </span>
                   </span>
@@ -545,7 +568,7 @@ export function AdminVinScanPanel({
                 : "text-[var(--color-apple-text)]"
             }`}
           >
-            {open.label} · {statusLabel(open.id, checking.includes(open.id) ? "checking" : open.status)}
+            {open.label} · {statusLabel(open.id, busy ? "checking" : open.status)}
           </p>
           <p
             className={`mt-0.5 text-[10px] leading-snug ${
@@ -576,21 +599,12 @@ export function AdminVinScanPanel({
                 Atvērt avotu
               </a>
             ) : null}
-            {open.id === "carvertical_preview" && valid ? (
-              <button
-                type="button"
-                onClick={() => buyCarVertical()}
-                className="rounded-md border border-amber-300/80 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-950 transition hover:bg-amber-100"
-              >
-                Pirkt atskaiti
-              </button>
-            ) : null}
           </div>
         </div>
       ) : null}
       {counts ? (
         <p className="px-2.5 pb-2 text-[9px] text-[var(--color-provin-muted)]">
-          {`Ir dati: ${counts.found}. Nav: ${counts.none}. Neizdevās: ${counts.unknown}. Līdz pogai: ${counts.manual}. Nav atslēgas: ${counts.skipped}.`}
+          {`Ir dati: ${counts.found}. Nav: ${counts.none}. Neizdevās: ${counts.unknown}. Vajag ievadi: ${counts.needs_input}. Nav atslēgas: ${counts.skipped}.`}
         </p>
       ) : null}
     </section>

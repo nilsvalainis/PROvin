@@ -1,5 +1,5 @@
 /**
- * Redzamā lapas teksta klasifikācija pārlūka zondēm.
+ * Redzamā lapas teksta klasifikācija pārlūka zondēm un servera HTML ielasei.
  * Tas pats lēmums ir iebūvēts `public/userscripts/provin-vin-autofill.user.js` (`classifyBrowserProbe`).
  */
 import type { VinScanBrowserId } from "@/lib/vin-scan/catalog";
@@ -8,7 +8,7 @@ import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
 import type { VinScanStatus } from "@/lib/vin-scan/types";
 
 export type BrowserProbeRead = {
-  status: Exclude<VinScanStatus, "skipped">;
+  status: Exclude<VinScanStatus, "skipped" | "needs_input">;
   summary: string;
 };
 
@@ -29,7 +29,7 @@ function hasVin(text: string, vin: string): boolean {
 }
 
 /** null: lapa vēl nav gatava, zonde turpina gaidīt. */
-export function classifyBrowserProbe(id: VinScanBrowserId, text: string, vin: string): BrowserProbeRead | null {
+export function classifyBrowserProbe(id: VinScanBrowserId | string, text: string, vin: string): BrowserProbeRead | null {
   if (isBrowserChallenge(text)) return null;
   switch (id) {
     case "stat_vin":
@@ -40,13 +40,6 @@ export function classifyBrowserProbe(id: VinScanBrowserId, text: string, vin: st
       }
       return hasVin(text, vin) && /lot|bid|sold|auction|mileage/i.test(text)
         ? { status: "found", summary: "Ir izsoles ieraksts" }
-        : null;
-    case "vininspect":
-      if (/no records|couldn.t find|didn.t find|0 records/i.test(text)) {
-        return { status: "none", summary: "Nav vēstures ieraksta" };
-      }
-      return hasVin(text, vin) && /records found|vehicle history|we found \d+|full history/i.test(text)
-        ? { status: "found", summary: "Ir vēstures priekšskatījums" }
         : null;
     case "auchistory":
       if (/no (auction )?records|vehicle not found|nothing found/i.test(text)) {
@@ -63,47 +56,27 @@ export function classifyBrowserProbe(id: VinScanBrowserId, text: string, vin: st
       }
       return null;
     }
-    case "cebia":
-      return hasVin(text, vin) && /basic verification|z[aá]kladn[ií] ov[eě][rř]en[ií]|smart code/i.test(text)
-        ? { status: "found", summary: "Cebia priekšskatījums ir atvērts" }
-        : null;
-    case "autodna_preview":
-      return classifyPaidPreview(text, "AutoDNA");
-    case "carvertical_preview":
-      if (/inform[aā]cija nav atrasta|no information found|couldn.t find any/i.test(text)) {
-        return { status: "none", summary: "CarVertical priekšskatījumā datu nav" };
-      }
-      return hasVin(text, vin) && /m[eē]s atrad[aā]m|we found|found information|atrad[aā]m datus/i.test(text)
-        ? { status: "found", summary: "CarVertical rāda priekšskatījumu. Pirkums paliek operatoram" }
-        : null;
-    case "auto_vin":
-      if (/we correctly identified your vehicle/i.test(text)) {
-        const name = /identified your vehicle\s+([^\n.]{3,80})/i.exec(text);
-        const vehicle = name?.[1]?.trim() ?? "";
-        return {
-          status: "manual",
-          summary: vehicle
-            ? `Auto atpazīts: ${vehicle}. Servisa ieraksti redzami pēc pirkuma`
-            : "Auto atpazīts. Servisa ieraksti redzami pēc pirkuma",
-        };
-      }
-      if (/couldn.t identify|unable to identify|invalid vin/i.test(text)) {
-        return { status: "none", summary: "auto.vin šo VIN neatpazina" };
-      }
-      return null;
     case "checkcar_vin": {
       const parsed = classifyCheckcarVinText(text, vin);
-      return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped">, summary: parsed.summary } : null;
+      return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped" | "needs_input">, summary: parsed.summary } : null;
     }
     case "plc_auction": {
       const parsed = classifyPlcAuction(text);
-      return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped">, summary: parsed.summary } : null;
+      return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped" | "needs_input">, summary: parsed.summary } : null;
     }
     case "vp_wanted":
     case "lt_itpr": {
       const parsed = classifyPoliceWanted(id, text, vin);
-      return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped">, summary: parsed.summary } : null;
+      return parsed ? { status: parsed.status as Exclude<VinScanStatus, "skipped" | "needs_input">, summary: parsed.summary } : null;
     }
+    case "bidfax":
+      return classifyAuction(text, vin, "BidFax: nav izsoles ieraksta", "BidFax: ir izsoles ieraksts");
+    case "poctra":
+      return classifyAuction(text, vin, "Poctra: nav izsoles ieraksta", "Poctra: ir izsoles ieraksts");
+    case "nicb":
+      if (/stolen/i.test(text) && hasVin(text, vin)) return { status: "found", summary: "NICB: iespējams zagts" };
+      if (/no records|not found|clean record|is not listed/i.test(text)) return { status: "none", summary: "NICB sarakstā nav" };
+      return null;
     default:
       return null;
   }
@@ -117,18 +90,6 @@ function classifyAuction(text: string, vin: string, noneSummary: string, foundSu
     return null;
   }
   if (/auction|sold|sale date|odometer|mileage|lot|bid/i.test(text)) return { status: "found", summary: foundSummary };
-  return null;
-}
-
-function classifyPaidPreview(text: string, brand: string): BrowserProbeRead | null {
-  if (/nav atrast|dati nav pieejami|no data found|no records found|brak danych|nie znaleziono/i.test(text)) {
-    return { status: "none", summary: `${brand} priekšskatījumā datu nav` };
-  }
-  const count = /(\d+)\s*(ierakst|rekord|records?)/i.exec(text);
-  if (count) return { status: "found", summary: `${count[1]} ieraksti ${brand} priekšskatījumā. Pirkums paliek operatoram` };
-  if (/pieejam[aā] inform[aā]cija|available data/i.test(text)) {
-    return { status: "found", summary: `${brand} rāda priekšskatījumu. Pirkums paliek operatoram` };
-  }
   return null;
 }
 

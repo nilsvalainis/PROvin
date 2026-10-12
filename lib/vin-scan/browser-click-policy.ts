@@ -2,15 +2,16 @@ import type { VinScanBrowserId } from "@/lib/vin-scan/catalog";
 
 /**
  * Pārlūka zondes, kurām userscript drīkst nospiest drošo „pārbaudīt” (ne pirkumu).
- * CarVertical šeit NAV: ielogotā kontā „Sākt pārbaudi” tērē kredītus.
+ * AutoDNA / CarVertical VIN SCAN vairs nav: pirkums paliek pasūtījuma darba zonā.
  */
 export const VIN_SCAN_BROWSER_AUTO_CLICK_IDS = [
-  "autodna_preview",
-  "vininspect",
   "bid_cars",
   "plc_auction",
   "vp_wanted",
   "lt_itpr",
+  "nicb",
+  "bidfax",
+  "poctra",
 ] as const;
 
 export type VinScanBrowserAutoClickId = (typeof VIN_SCAN_BROWSER_AUTO_CLICK_IDS)[number];
@@ -19,6 +20,6 @@ export function vinScanBrowserMayAutoClick(id: string): id is VinScanBrowserAuto
   return (VIN_SCAN_BROWSER_AUTO_CLICK_IDS as readonly string[]).includes(id);
 }
 
-export function vinScanBrowserIsPaidPreview(id: VinScanBrowserId): boolean {
-  return id === "carvertical_preview" || id === "autodna_preview";
+export function vinScanBrowserIsPaidPreview(_id: VinScanBrowserId): boolean {
+  return false;
 }

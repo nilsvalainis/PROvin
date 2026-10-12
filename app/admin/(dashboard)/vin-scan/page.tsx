@@ -26,7 +26,7 @@ export default async function AdminVinScanPage({
           VIN SCAN
         </h1>
         <p className="mt-1 max-w-2xl text-[13px] leading-snug text-[var(--color-provin-muted)]">
-          Ātrā avotu pārbaude pēc VIN. Pasūtījuma darba zonā šis bloks vairs nav.
+          VIN un/vai numurs. Serveris nolasa visus bezmaksas avotus, saglabā rezultātu un atver avotus jau ar VIN.
         </p>
       </AdminDashboardHeaderWithMenu>
       <AdminVinScanPageClient initialVin={initialVin} />
