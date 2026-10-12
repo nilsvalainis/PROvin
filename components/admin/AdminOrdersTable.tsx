@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
 import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
@@ -16,7 +16,10 @@ import {
   partnerAuditPurposeLabelLv,
 } from "@/lib/b2b-partner-orders";
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
-import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
+import {
+  partitionAdminOrdersActiveFirst,
+  sortAdminOrdersIncompleteFirst,
+} from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
 import {
   AdminAuditResultColorControl,
@@ -543,22 +546,27 @@ export function AdminOrdersTable({
     return sortAdminOrdersIncompleteFirst(filtered);
   }, [orders, completeOverride, colorOverride, colorFilter]);
 
-  /** H2: grupas pa dienām (Rīgas laikā), jaunākā diena augšā; grupas iekšienē saglabājas esošā kārtība. */
+  /**
+   * NOTEIKUMS: visi aktīvie (neizpildītie) vienmēr augšā grupā „Aktīvie” (kavētie / mazākais
+   * atlikums pirmie, sk. partitionAdminOrdersActiveFirst); izpildītie zemāk pa dienām (Rīgas laikā).
+   */
   const dayGroups = useMemo(() => {
+    const { active, done } = partitionAdminOrdersActiveFirst(displayedOrders);
+    const sumOf = (list: typeof displayedOrders) =>
+      list.reduce((n, o) => n + (typeof o.amountTotal === "number" ? o.amountTotal : 0), 0);
     const map = new Map<string, typeof displayedOrders>();
-    for (const o of displayedOrders) {
+    for (const o of done) {
       const key = RIGA_DAY.format(new Date(o.created * 1000));
       const list = map.get(key);
       if (list) list.push(o);
       else map.set(key, [o]);
     }
-    return [...map.entries()]
+    const days = [...map.entries()]
       .sort((a, b) => (a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0))
-      .map(([key, list]) => ({
-        key,
-        list,
-        sum: list.reduce((n, o) => n + (typeof o.amountTotal === "number" ? o.amountTotal : 0), 0),
-      }));
+      .map(([key, list]) => ({ key, isActive: false, list, sum: sumOf(list) }));
+    return active.length > 0
+      ? [{ key: "__active", isActive: true, list: active, sum: sumOf(active) }, ...days]
+      : days;
   }, [displayedOrders]);
   const [nowMs, setNowMs] = useState<number | null>(null);
   useEffect(() => setNowMs(Date.now()), []);
@@ -610,7 +618,15 @@ export function AdminOrdersTable({
       {/* Telefonā deviņu kolonnu tabula nav lasāma, tāpēc tā pati rinda ir karte.
           No 768 px uz augšu rāda tieši to pašu tabulu, kas bija līdz šim. */}
       <ul className="mt-4 space-y-2 md:hidden">
-        {displayedOrders.map((o) => {
+        {dayGroups.map((g) => (
+        <Fragment key={g.key}>
+          <li className="px-1 pt-2 text-[12px] font-semibold text-[#3a3a3c]">
+            {g.isActive ? "Aktīvie" : nowMs != null ? adminOrderDayLabel(g.key, nowMs) : g.key}
+            <span className="ml-2 font-normal text-[#aeaeb2]">
+              {g.list.length} pasūt. · {formatMoneyEur(g.sum, "eur")}
+            </span>
+          </li>
+          {g.list.map((o) => {
           const v = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
           const accent = "";
           const openOrderFromCard = (e: MouseEvent) => {
@@ -771,6 +787,8 @@ export function AdminOrdersTable({
             </li>
           );
         })}
+        </Fragment>
+        ))}
       </ul>
 
       <div className="mt-3 hidden overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)] md:block">
@@ -792,7 +810,7 @@ export function AdminOrdersTable({
           <tbody key={g.key}>
             <tr className="border-t border-[#ededed] bg-[#fafafa]">
               <td colSpan={8} className="px-4 py-1.5 text-[12px] font-semibold text-[#3a3a3c]">
-                {nowMs != null ? adminOrderDayLabel(g.key, nowMs) : g.key}
+                {g.isActive ? "Aktīvie" : nowMs != null ? adminOrderDayLabel(g.key, nowMs) : g.key}
                 <span className="ml-2 font-normal text-[#aeaeb2]">
                   {g.list.length} pasūt. · {formatMoneyEur(g.sum, "eur")}
                 </span>
