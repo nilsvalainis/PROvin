@@ -137,7 +137,7 @@ export default async function AdminOrdersPage({
         }
         aria-pressed={!showAll}
         className={`admin-nav-link inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-lg px-2.5 text-[12px] transition ${
-          showAll ? "bg-[#e9e9ee] text-[#3a3a3c]" : "bg-[#e8efff] font-semibold text-[var(--color-provin-accent)]"
+          showAll ? "bg-[#e9e9ee] text-[#8e8e93]" : "bg-[#e9e9ee] font-semibold text-[#3a3a3c]"
         }`}
       >
         &gt;10 €

@@ -38,7 +38,7 @@ export function AdminCreateManualOrderButton({ compact = false }: { compact?: bo
         onClick={() => void onCreate()}
         disabled={creating}
         className={compact
-          ? "inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-lg bg-[var(--color-provin-accent)] px-2.5 text-[12.5px] font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          ? "inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-lg bg-[#1d1d1f] px-2.5 text-[12.5px] font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           : "inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white px-3.5 py-1.5 text-xs font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-[var(--color-provin-accent-soft)]/40 disabled:cursor-not-allowed disabled:opacity-60"}
         title="Izveidot tukšu pasūtījumu manuāli (piem., individuālam piedāvājumam)"
       >

@@ -32,29 +32,60 @@ import {
 
 export type AdminOrdersTableRow = SerializedAdminOrderTableRow;
 
-/** Avota ikona pie klienta (agrāk atsevišķa kolonna „Avots”). Nosaukums — tooltip. */
-const SOURCE_ICON: Record<string, { bg: string; ch: string }> = {
-  tiktok: { bg: "#000000", ch: "♪" },
-  youtube: { bg: "#ff0000", ch: "▶" },
-  instagram: { bg: "linear-gradient(45deg,#f58529,#dd2a7b,#8134af)", ch: "◎" },
-  facebook: { bg: "#1877f2", ch: "f" },
-  google: { bg: "#4285f4", ch: "G" },
-};
+/** Avots: neitrāls pelēks čips ar vienkrāsainu ikonu (H2). Nosaukums arī tooltipā. */
+function SourceGlyph({ k }: { k: string }) {
+  const c = "#6e6e73";
+  if (k === "tiktok")
+    return <svg width="10" height="10" viewBox="0 0 24 24" fill={c} aria-hidden><path d="M16.5 3c.3 2.2 1.7 3.8 4 4v3.2c-1.5 0-2.8-.4-4-1.1v6.4A5.6 5.6 0 1 1 11 9.9v3.3a2.4 2.4 0 1 0 2.2 2.4V3h3.3z" /></svg>;
+  if (k === "youtube")
+    return <svg width="11" height="10" viewBox="0 0 24 24" aria-hidden><rect x="2" y="5" width="20" height="14" rx="4" fill={c} /><path d="M10 9v6l5-3z" fill="#f2f2f7" /></svg>;
+  if (k === "instagram")
+    return <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.6" aria-hidden><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /></svg>;
+  if (k === "facebook")
+    return <svg width="9" height="10" viewBox="0 0 24 24" fill={c} aria-hidden><path d="M14 8h3V4h-3c-2.8 0-4 1.8-4 4.3V10H7v4h3v8h4v-8h3l1-4h-4V8.6c0-.4.3-.6.6-.6z" /></svg>;
+  if (k === "google")
+    return <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="3" aria-hidden><path d="M20 12a8 8 0 1 1-2.3-5.6M20 12h-8" /></svg>;
+  return <svg width="8" height="8" viewBox="0 0 24 24" fill={c} aria-hidden><circle cx="12" cy="12" r="6" /></svg>;
+}
 function SourceIcon({ source }: { source: string | null | undefined }) {
   const label = source?.trim();
   if (!label) return null;
-  const hit = SOURCE_ICON[label.toLowerCase()] ?? { bg: "#8e8e93", ch: label.charAt(0).toUpperCase() };
   return (
     <span
       title={`Kur uzzināja: ${label}`}
-      aria-label={`Kur uzzināja: ${label}`}
-      role="img"
-      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold leading-none text-white"
-      style={{ background: hit.bg }}
+      className="inline-flex h-[19px] shrink-0 items-center gap-1 rounded-[5px] bg-[#f2f2f7] pl-1.5 pr-[7px] text-[11px] font-medium leading-none text-[#6e6e73]"
     >
-      {hit.ch}
+      <SourceGlyph k={label.toLowerCase()} />
+      {label}
     </span>
   );
+}
+
+/** H2: kluss žetons (pelēks rāmis). MINI — vienīgais krāsainais (kluss dzeltenbrūns teksts). */
+const CALM_TAG = "inline-flex items-center rounded-[5px] border border-[#e5e5ea] px-1.5 py-px text-[11px] font-medium text-[#8e8e93] whitespace-nowrap";
+const CALM_MINI = "text-[10.5px] font-semibold tracking-[0.04em] text-[#9a7b00]";
+
+const RIGA_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Riga", year: "numeric", month: "2-digit", day: "2-digit" });
+const RIGA_TIME = new Intl.DateTimeFormat("lv-LV", { timeZone: "Europe/Riga", hour: "2-digit", minute: "2-digit" });
+const LV_MONTHS = ["janvāris", "februāris", "marts", "aprīlis", "maijs", "jūnijs", "jūlijs", "augusts", "septembris", "oktobris", "novembris", "decembris"];
+const LV_MON_SHORT = ["janv.", "febr.", "marts", "apr.", "maijs", "jūn.", "jūl.", "aug.", "sept.", "okt.", "nov.", "dec."];
+
+/** Dienas virsraksts Rīgas laikā: „Šodien · 12. okt.”, „Vakar · 11. okt.”, „10. oktobris”, citā gadā ar gadu. */
+export function adminOrderDayLabel(dayKey: string, nowMs: number): string {
+  const [y, m, d] = dayKey.split("-").map(Number) as [number, number, number];
+  const today = RIGA_DAY.format(new Date(nowMs));
+  const yesterday = RIGA_DAY.format(new Date(nowMs - 86_400_000));
+  const short = `${d}. ${LV_MON_SHORT[m - 1]}`;
+  if (dayKey === today) return `Šodien · ${short}`;
+  if (dayKey === yesterday) return `Vakar · ${short}`;
+  const thisYear = today.slice(0, 4) === String(y);
+  return `${d}. ${LV_MONTHS[m - 1]}${thisYear ? "" : ` ${y}`}`;
+}
+
+function PaymentStatusCalm({ status }: { status: string }) {
+  const s = status.toLowerCase();
+  const label = s === "unpaid" ? "Pirms apmaksas" : s === "no_payment_required" ? "Bez maksas" : status;
+  return <span className={CALM_TAG}>{label}</span>;
 }
 
 /** Statuss tikai izņēmumiem — „Apmaksāts” nerādām. */
@@ -512,6 +543,26 @@ export function AdminOrdersTable({
     return sortAdminOrdersIncompleteFirst(filtered);
   }, [orders, completeOverride, colorOverride, colorFilter]);
 
+  /** H2: grupas pa dienām (Rīgas laikā), jaunākā diena augšā; grupas iekšienē saglabājas esošā kārtība. */
+  const dayGroups = useMemo(() => {
+    const map = new Map<string, typeof displayedOrders>();
+    for (const o of displayedOrders) {
+      const key = RIGA_DAY.format(new Date(o.created * 1000));
+      const list = map.get(key);
+      if (list) list.push(o);
+      else map.set(key, [o]);
+    }
+    return [...map.entries()]
+      .sort((a, b) => (a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0))
+      .map(([key, list]) => ({
+        key,
+        list,
+        sum: list.reduce((n, o) => n + (typeof o.amountTotal === "number" ? o.amountTotal : 0), 0),
+      }));
+  }, [displayedOrders]);
+  const [nowMs, setNowMs] = useState<number | null>(null);
+  useEffect(() => setNowMs(Date.now()), []);
+
   const markComplete = useCallback((id: string, complete: boolean) => {
     setCompleteOverride((prev) => ({ ...prev, [id]: complete }));
   }, []);
@@ -561,17 +612,7 @@ export function AdminOrdersTable({
       <ul className="mt-4 space-y-2 md:hidden">
         {displayedOrders.map((o) => {
           const v = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
-          const accent = o.isDemo
-            ? "border-l-[var(--color-provin-accent)]"
-            : v.isPack
-              ? "border-l-violet-400"
-              : v.partnerHighlight
-                ? "border-l-violet-500"
-                : v.dealerHighlight
-                  ? "border-l-sky-400"
-                  : v.miniHighlight
-                    ? "border-l-amber-400"
-                    : "border-l-slate-200";
+          const accent = "";
           const openOrderFromCard = (e: MouseEvent) => {
             if (v.isPack) return;
             if (!shouldOpenAdminOrderFromRowClick(e.target)) return;
@@ -586,7 +627,7 @@ export function AdminOrdersTable({
               key={o.id}
               role={v.isPack ? undefined : "link"}
               tabIndex={v.isPack ? undefined : 0}
-              className={`rounded-xl border border-slate-200/70 border-l-4 p-3 shadow-[0_1px_10px_rgba(15,23,42,0.04)] ${accent} ${
+              className={`rounded-xl border border-[#ececee] p-3 ${accent} ${
                 v.isPack
                   ? "cursor-default bg-violet-50/70"
                   : v.partnerHighlight
@@ -636,6 +677,7 @@ export function AdminOrdersTable({
                 {v.isPack ? null : (
                   <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                     <AdminAuditDeadlineCell
+                      calm
                       sessionId={o.id}
                       createdUnixSec={o.deadlineFromUnix ?? o.created}
                       initialComplete={Boolean(o.auditComplete)}
@@ -647,42 +689,42 @@ export function AdminOrdersTable({
 
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 {v.isPartnerVin ? (
-                  <span className="inline-flex rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-violet-900 ring-1 ring-violet-200/80">
+                  <span className={CALM_TAG}>
                     {PARTNER_VIN_AMOUNT_LABEL_LV}
                   </span>
                 ) : (
                   <PaymentStatusException status={o.paymentStatus} />
                 )}
                 {o.isDemo ? (
-                  <span className="rounded-full bg-[var(--color-provin-accent-soft)]/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-provin-accent)]">
+                  <span className={CALM_TAG}>
                     Paraugs
                   </span>
                 ) : null}
                 {v.isPack ? (
-                  <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900">
+                  <span className={CALM_TAG}>
                     Paka
                   </span>
                 ) : v.partnerHighlight ? (
-                  <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900">
+                  <span className={CALM_TAG}>
                     Partneris{v.partnerCompanyName ? ` · ${v.partnerCompanyName}` : ""}
                   </span>
                 ) : o.isManual ? (
-                  <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800">
+                  <span className={CALM_TAG}>
                     Manuāls
                   </span>
                 ) : null}
                 {v.partnerPurposeLabel ? (
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-800 ring-1 ring-violet-200/80">
+                  <span className={CALM_TAG}>
                     {v.partnerPurposeLabel}
                   </span>
                 ) : null}
                 {v.miniHighlight ? (
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950">
+                  <span className={CALM_MINI}>
                     MINI
                   </span>
                 ) : null}
                 {o.upsellBadge ? (
-                  <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-sky-950">
+                  <span className={CALM_TAG}>
                     {o.upsellBadge}
                   </span>
                 ) : null}
@@ -710,7 +752,7 @@ export function AdminOrdersTable({
                       href={v.pdfHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/90 text-[var(--color-provin-accent)]"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ececee] text-[#8e8e93]"
                       aria-label="Atvērt rēķinu PDF"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -720,7 +762,7 @@ export function AdminOrdersTable({
                   {v.isPack ? (
                     <span className="text-[11px] font-medium text-[var(--color-provin-muted)]">Tikai info</span>
                   ) : (
-                    <span className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-2 text-xs font-semibold text-white shadow-sm">
+                    <span className="inline-flex rounded-full bg-[#f2f2f7] px-3.5 py-2 text-xs font-semibold text-[#3a3a3c]">
                       Atvērt
                     </span>
                   )}
@@ -731,21 +773,32 @@ export function AdminOrdersTable({
         })}
       </ul>
 
-      <div className="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)] md:block">
+      <div className="mt-3 hidden overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)] md:block">
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[960px] text-left text-sm">
+        <table className="w-full min-w-[980px] text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-100 bg-slate-50/90 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-provin-muted)]">
-              <th className={`${hug} py-3 pl-4 pr-2`}>Rez.</th>
-              <th className={`${hug} py-3 pl-2 pr-4`}>Datums · termiņš</th>
-              <th className="px-4 py-3">VIN · marka</th>
-              <th className="px-4 py-3">Klients</th>
-              <th className={`${hug} px-4 py-3 text-right`}>Summa</th>
-              <th className={`${hug} py-3 pl-2 pr-4 text-right`}>Rēķins</th>
+            <tr className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#aeaeb2]">
+              <th className={`${hug} py-2 pl-4 pr-2`}><span className="sr-only">Rezultāts</span></th>
+              <th className={`${hug} py-2 pl-2 pr-4`}>Termiņš</th>
+              <th className={`${hug} py-2 pr-4`}>Laiks</th>
+              <th className="py-2 pr-4">Auto</th>
+              <th className="py-2 pr-4">Klients</th>
+              <th className="py-2 pr-4"><span className="sr-only">Atzīmes</span></th>
+              <th className={`${hug} py-2 pr-4 text-right`}>Summa</th>
+              <th className={`${hug} py-2 pr-4`}><span className="sr-only">Rēķins</span></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
-            {displayedOrders.map((o) => {
+          {dayGroups.map((g) => (
+          <tbody key={g.key}>
+            <tr className="border-t border-[#ededed] bg-[#fafafa]">
+              <td colSpan={8} className="px-4 py-1.5 text-[12px] font-semibold text-[#3a3a3c]">
+                {nowMs != null ? adminOrderDayLabel(g.key, nowMs) : g.key}
+                <span className="ml-2 font-normal text-[#aeaeb2]">
+                  {g.list.length} pasūt. · {formatMoneyEur(g.sum, "eur")}
+                </span>
+              </td>
+            </tr>
+            {g.list.map((o) => {
               const {
                 pdfHref,
                 orderHref,
@@ -774,19 +827,15 @@ export function AdminOrdersTable({
               return (
                 <tr
                   key={o.id}
-                  className={
+                  className={`h-[52px] border-t border-[#f2f2f2] transition-colors ${
                     isPack
-                      ? "bg-violet-50/70"
-                      : o.isDemo
-                        ? "cursor-pointer bg-[var(--color-provin-accent-soft)]/25 transition-colors hover:bg-[var(--color-provin-accent-soft)]/45"
-                        : partnerHighlight
-                          ? "cursor-pointer bg-violet-50/90 transition-colors hover:bg-violet-100/80"
-                          : dealerHighlight
-                            ? "cursor-pointer bg-sky-50/80 transition-colors hover:bg-sky-100/80"
-                            : miniHighlight
-                              ? "cursor-pointer bg-amber-50/90 transition-colors hover:bg-amber-100/80"
-                              : "cursor-pointer transition-colors hover:bg-slate-50/90"
-                  }
+                      ? "bg-[#faf9fc]"
+                      : o.isDemo || partnerHighlight || dealerHighlight
+                        ? "cursor-pointer bg-[#f8fafc] hover:bg-[#f2f4f7]"
+                        : miniHighlight
+                          ? "cursor-pointer bg-[#fdfcf6] hover:bg-[#f8f6ec]"
+                          : "cursor-pointer hover:bg-[#f7f7f8]"
+                  }`}
                   onClick={isPack ? undefined : openOrderFromRow}
                   onAuxClick={
                     isPack
@@ -797,9 +846,9 @@ export function AdminOrdersTable({
                         }
                   }
                 >
-                  <td className={`${hug} py-2 pl-4 pr-2`}>
+                  <td className={`${hug} py-1.5 pl-4 pr-2`}>
                     {isPack ? (
-                      <span className="text-[var(--color-provin-muted)]">—</span>
+                      <span className="text-[#c7c7cc]">—</span>
                     ) : (
                       <AdminAuditResultColorControl
                         sessionId={o.id}
@@ -809,106 +858,78 @@ export function AdminOrdersTable({
                       />
                     )}
                   </td>
-                  <td className={`${hug} py-2 pl-2 pr-4 text-[13px] text-[var(--color-apple-text)]`}>
-                    <span className="flex flex-wrap items-center gap-1.5">
-                      {o.isManual && !isPartnerVin ? (
-                        <ManualOrderDateCell id={o.id} created={o.created} />
-                      ) : (
-                        dateFmt.format(new Date(o.created * 1000))
-                      )}
-                      {o.isDemo ? (
-                        <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--color-provin-accent)] ring-1 ring-[var(--color-provin-accent)]/20">
-                          Paraugs
-                        </span>
-                      ) : null}
-                      {isPack ? (
-                        <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900 ring-1 ring-violet-200/80">
-                          Paka
-                        </span>
-                      ) : partnerHighlight ? (
-                        <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-900 ring-1 ring-violet-200/80">
-                          Partneris{partnerCompanyName ? ` · ${partnerCompanyName}` : ""}
-                        </span>
-                      ) : o.isManual ? (
-                        <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sky-800 ring-1 ring-sky-200/80">
-                          Manuāls
-                        </span>
-                      ) : null}
-                      {partnerPurposeLabel ? (
-                        <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-800 ring-1 ring-violet-200/80">
-                          {partnerPurposeLabel}
-                        </span>
-                      ) : null}
-                      {miniHighlight ? (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950 ring-1 ring-amber-300/80">
-                          MINI
-                        </span>
-                      ) : null}
-                      {o.upsellBadge ? (
-                        <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-sky-950 ring-1 ring-sky-200/80">
-                          {o.upsellBadge}
-                        </span>
-                      ) : null}
-                    </span>
-                    {isPack ? null : (
-                      <div className="mt-1">
-                        <AdminAuditDeadlineCell
-                          sessionId={o.id}
-                          createdUnixSec={o.deadlineFromUnix ?? o.created}
-                          initialComplete={Boolean(o.auditComplete)}
-                          onCompleteChange={(complete) => markComplete(o.id, complete)}
-                        />
-                      </div>
+                  <td className={`${hug} py-1.5 pl-2 pr-4`}>
+                    {isPack ? (
+                      <span className="text-[#c7c7cc]">—</span>
+                    ) : (
+                      <AdminAuditDeadlineCell
+                        calm
+                        sessionId={o.id}
+                        createdUnixSec={o.deadlineFromUnix ?? o.created}
+                        initialComplete={Boolean(o.auditComplete)}
+                        onCompleteChange={(complete) => markComplete(o.id, complete)}
+                      />
                     )}
                   </td>
-                  <td className="max-w-[300px] px-4 py-2 text-[var(--color-apple-text)]">
+                  <td className={`${hug} py-1.5 pr-4 text-[12.5px] tabular-nums text-[#8e8e93]`}>
+                    {o.isManual && !isPartnerVin ? <ManualOrderDateCell id={o.id} created={o.created} /> : RIGA_TIME.format(new Date(o.created * 1000))}
+                  </td>
+                  <td className="max-w-[320px] py-1.5 pr-4">
+                    <p
+                      className={`truncate text-[14px] ${isPack || o.makeModel?.trim() ? "font-semibold text-[var(--color-apple-text)]" : "text-[#aeaeb2]"}`}
+                      title={isPack ? packLabel : o.makeModel?.trim() || undefined}
+                    >
+                      {isPack ? packLabel : o.makeModel?.trim() || "Marka nav norādīta"}
+                    </p>
                     {hasVin ? (
-                      <span className="inline-flex max-w-full items-center gap-1">
-                        <span className="whitespace-nowrap font-mono text-xs tracking-wide" title={vin}>
+                      <span className="mt-0.5 inline-flex max-w-full items-center gap-1">
+                        <span className="whitespace-nowrap font-mono text-[11.5px] tracking-wide text-[#aeaeb2]" title={vin}>
                           {vin}
                         </span>
                         <AdminVinCopyButton value={vin} />
                       </span>
-                    ) : (
-                      <span className="text-[var(--color-provin-muted)]">—</span>
-                    )}
-                    <p className="mt-0.5 truncate text-[11.5px] text-[var(--color-provin-muted)]" title={isPack ? packLabel : o.makeModel?.trim() || undefined}>
-                      {isPack ? packLabel : o.makeModel?.trim() || "—"}
-                    </p>
+                    ) : null}
                   </td>
-                  <td className="max-w-[320px] px-4 py-2 text-[var(--color-apple-text)]">
-                    <div className="min-w-0">
-                      <p className="flex min-w-0 items-center gap-1.5">
-                        {isPack ? (
-                          <span className="truncate">{primaryClient}</span>
-                        ) : (
-                          <Link href={orderHref} className="admin-nav-link truncate text-[var(--color-apple-text)] hover:underline" aria-label={`Atvērt pasūtījumu: ${primaryClient}`}>
-                            {primaryClient}
-                          </Link>
-                        )}
-                        <SourceIcon source={o.heardAbout} />
-                      </p>
-                      {secondaryClient ? (
-                        <p className="mt-0.5 truncate text-[11px] text-[var(--color-provin-muted)]">{secondaryClient}</p>
-                      ) : null}
+                  <td className="max-w-[340px] py-1.5 pr-4">
+                    <div className="flex min-w-0 items-center gap-2">
+                      {isPack ? (
+                        <span className="truncate text-[14px] text-[#3a3a3c]">{primaryClient}</span>
+                      ) : (
+                        <Link href={orderHref} className="admin-nav-link truncate text-[14px] text-[#3a3a3c] hover:underline" aria-label={`Atvērt pasūtījumu: ${primaryClient}`}>
+                          {primaryClient}
+                        </Link>
+                      )}
+                      <SourceIcon source={o.heardAbout} />
                     </div>
+                    {secondaryClient ? <p className="mt-0.5 truncate text-[11px] text-[#aeaeb2]">{secondaryClient}</p> : null}
                   </td>
-                  <td className={`${hug} px-4 py-2 text-right tabular-nums font-medium text-[var(--color-apple-text)]`}>
+                  <td className="py-1.5 pr-4">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      {miniHighlight ? <span className={CALM_MINI}>MINI</span> : null}
+                      {o.isDemo ? <span className={CALM_TAG}>Paraugs</span> : null}
+                      {isPack ? (
+                        <span className={CALM_TAG}>Paka</span>
+                      ) : partnerHighlight ? (
+                        <span className={CALM_TAG}>Partneris{partnerCompanyName ? ` · ${partnerCompanyName}` : ""}</span>
+                      ) : o.isManual ? (
+                        <span className={CALM_TAG}>Manuāls</span>
+                      ) : null}
+                      {partnerPurposeLabel ? <span className={CALM_TAG}>{partnerPurposeLabel}</span> : null}
+                      {o.upsellBadge ? <span className={CALM_TAG}>{o.upsellBadge}</span> : null}
+                      {!isPartnerVin && o.paymentStatus.toLowerCase() !== "paid" ? <PaymentStatusCalm status={o.paymentStatus} /> : null}
+                    </span>
+                  </td>
+                  <td className={`${hug} py-1.5 pr-4 text-right text-[14px] font-semibold tabular-nums text-[var(--color-apple-text)]`}>
                     {isPartnerVin ? (
-                      PARTNER_VIN_AMOUNT_LABEL_LV
+                      <span className="text-[12px] font-medium text-[#8e8e93]">{PARTNER_VIN_AMOUNT_LABEL_LV}</span>
                     ) : o.isManual ? (
                       <ManualOrderAmountCell id={o.id} amountTotal={o.amountTotal} currency={o.currency} />
                     ) : (
                       formatMoneyEur(o.amountTotal, o.currency)
                     )}
-                    {isPartnerVin ? null : o.paymentStatus.toLowerCase() === "paid" ? null : (
-                      <div className="mt-1">
-                        <PaymentStatusException status={o.paymentStatus} />
-                      </div>
-                    )}
                   </td>
-                  <td className={`${hug} py-2 pl-2 pr-4 text-right`}>
-                    <span className="inline-flex items-center justify-end gap-1">
+                  <td className={`${hug} py-1.5 pr-3 text-right`}>
+                    <span className="inline-flex items-center justify-end gap-0.5 text-[#aeaeb2]">
                       {isPartnerVin ? (
                         <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                           <AdminPartnerArchivePdfButton sessionId={o.id} compact />
@@ -916,21 +937,21 @@ export function AdminOrdersTable({
                       ) : null}
                       {o.isManual && !isPack && !isPartnerVin ? <ManualOrderDeleteButton id={o.id} /> : null}
                       {isPack ? (
-                        <span className="text-[11px] font-medium text-[var(--color-provin-muted)]">Tikai info</span>
+                        <span className="text-[11px] text-[#aeaeb2]">Tikai info</span>
                       ) : pdfHref ? (
                         <a
                           href={pdfHref}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--color-provin-accent)] transition hover:bg-[var(--color-provin-accent-soft)]/50"
+                          className="admin-nav-link inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#aeaeb2] transition hover:bg-black/[0.05] hover:text-[#3a3a3c]"
                           aria-label="Atvērt rēķinu PDF"
                           title="Rēķins (PDF)"
                         >
-                          <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
+                          <FileText className="h-4 w-4" strokeWidth={1.8} aria-hidden />
                         </a>
                       ) : (
-                        <span className="inline-flex h-8 w-8 items-center justify-center text-[var(--color-provin-muted)]">—</span>
+                        <span className="inline-flex h-8 w-8" aria-hidden />
                       )}
                     </span>
                   </td>
@@ -938,6 +959,7 @@ export function AdminOrdersTable({
               );
             })}
           </tbody>
+          ))}
         </table>
         </div>
       </div>
