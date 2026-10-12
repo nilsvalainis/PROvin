@@ -3,7 +3,7 @@ import { isVinScanWantedSource } from "@/lib/vin-scan/wanted";
 
 export type VinScanOverviewRow = {
   id: string;
-  status: VinScanStatus;
+  status: VinScanStatus | "idle";
   label?: string;
   vehicle?: VinScanVehicle;
   mileage?: VinScanMileage[];

@@ -22,7 +22,8 @@ export type VinScanCatalogItem = {
   country: string;
   /** Ko nozīmē zaļais punkts. */
   hint: string;
-  openUrl: (vin: string) => string | null;
+  /** Šī VIN meklēšanas vai rezultāta lapa (vienmēr atverama jaunā cilnē). */
+  openUrl: (vin: string) => string;
 };
 
 function vinQuery(vin: string): string {
@@ -35,7 +36,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     label: "tjekbil.dk",
     country: "DK",
     hint: "Dānijas reģistrs (DMR)",
-    openUrl: () => "https://www.tjekbil.dk/",
+    openUrl: (vin) => `https://www.tjekbil.dk/?vin=${vinQuery(vin)}`,
   },
   {
     id: "esyn",
@@ -56,14 +57,14 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     label: "Car-Pass",
     country: "BE",
     hint: "Beļģijas atsaukumi",
-    openUrl: () => "https://public.car-pass.be/recalls",
+    openUrl: (vin) => `https://public.car-pass.be/recalls?vin=${vinQuery(vin)}`,
   },
   {
     id: "mnt_ee",
     label: "mnt.ee",
     country: "EE",
     hint: "Igaunijas transportlīdzekļu reģistrs",
-    openUrl: () => "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+    openUrl: (vin) => `https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf?vin=${vinQuery(vin)}`,
   },
   {
     id: "nhtsa",
@@ -124,14 +125,14 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanBrowserItem[] = [
     label: "VP meklētie",
     country: "LV",
     hint: "Valsts policija, meklētie transportlīdzekļi. Forma pārlūkā",
-    openUrl: () => "https://www.vp.gov.lv/lv/mekletie-transportlidzekli",
+    openUrl: (vin) => `https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin=${vinQuery(vin)}`,
   },
   {
     id: "lt_itpr",
     label: "LT policija",
     country: "LT",
     hint: "Lietuvas policija, ieškomos transporto priemonės. VIN lauks knr",
-    openUrl: () => "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+    openUrl: (vin) => `https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=${vinQuery(vin)}`,
   },
   {
     id: "stat_vin",
@@ -159,7 +160,7 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanBrowserItem[] = [
     label: "AucHistory",
     country: "US",
     hint: "Izsoles foto un bojājumi. Captcha jāapstiprina cilnē",
-    openUrl: () => "https://auchistory.com/",
+    openUrl: (vin) => `https://auchistory.com/?vin=${vinQuery(vin)}`,
   },
   {
     id: "carfax_eu",
@@ -173,7 +174,7 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanBrowserItem[] = [
     label: "Cebia",
     country: "CZ",
     hint: "VIN aizpilde. Captcha jāapstiprina cilnē",
-    openUrl: () => "https://en.cebia.com/",
+    openUrl: (vin) => `https://en.cebia.com/?vin=${vinQuery(vin)}`,
   },
   {
     id: "autodna_preview",
@@ -187,7 +188,7 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanBrowserItem[] = [
     label: "CarVertical",
     country: "EU",
     hint: "Tikai jau nopirktās atskaites. Jaunu pērk tikai CarVertical pogā adminā",
-    openUrl: () => "https://www.carvertical.com/lv/user/reports",
+    openUrl: (vin) => `https://www.carvertical.com/lv/user/reports?vin=${vinQuery(vin)}`,
   },
   {
     id: "auto_vin",
@@ -208,7 +209,7 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanBrowserItem[] = [
     label: "plc.auction",
     country: "EU",
     hint: "Izsoles lots. VIN ievada sākumlapas meklēšanā",
-    openUrl: () => "https://plc.auction/",
+    openUrl: (vin) => `https://plc.auction/?vin=${vinQuery(vin)}`,
   },
 ];
 
@@ -228,4 +229,29 @@ export function vinScanUserscriptMeetsMin(raw: string): boolean {
 
 export function vinScanUserscriptMinLabel(): string {
   return `${VIN_SCAN_USERSCRIPT_MIN.major}.${VIN_SCAN_USERSCRIPT_MIN.minor}`;
+}
+
+export type VinScanAnyCatalogItem = {
+  id: string;
+  label: string;
+  country: string;
+  hint: string;
+  openUrl: (vin: string) => string;
+};
+
+/** Servera un pārlūka katalogs vienā sarakstā (flīžu un manuālā pasūtījuma saitēm). */
+export function vinScanAllCatalog(): readonly VinScanAnyCatalogItem[] {
+  return [...VIN_SCAN_CATALOG, ...VIN_SCAN_BROWSER_CATALOG];
+}
+
+/** Šī VIN avota lapa: skenēšanas rezultāta URL, ja ir, citādi kataloga meklēšana. */
+export function resolveVinScanOpenUrl(
+  item: { openUrl: (vin: string) => string },
+  vin: string,
+  resultUrl?: string | null,
+): string {
+  const fromResult = String(resultUrl || "").trim();
+  if (fromResult) return fromResult;
+  const fromCatalog = item.openUrl(vin).trim();
+  return fromCatalog;
 }

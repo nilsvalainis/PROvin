@@ -36,6 +36,15 @@ describe("vin scan catalog", () => {
       expect(VIN_SCAN_SOURCE_IDS).not.toContain(paid);
     }
   });
+
+  it("katram servera avotam ir VIN meklēšanas URL", () => {
+    const vin = "WBA5R1C0XLFH42873";
+    for (const item of VIN_SCAN_CATALOG) {
+      const url = item.openUrl(vin);
+      expect(url).toMatch(/^https:\/\//);
+      expect(url.toUpperCase()).toContain(vin);
+    }
+  });
 });
 
 describe("parseTjekbilProbe", () => {

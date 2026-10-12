@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ExternalLink } from "lucide-react";
 
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import {
   VIN_SCAN_BROWSER_CATALOG,
   VIN_SCAN_CATALOG,
+  resolveVinScanOpenUrl,
   vinScanUserscriptMeetsMin,
   vinScanUserscriptMinLabel,
 } from "@/lib/vin-scan/catalog";
@@ -36,7 +38,23 @@ type ScanCatalogItem = {
   label: string;
   country: string;
   hint: string;
-  openUrl: (vin: string) => string | null;
+  openUrl: (vin: string) => string;
+};
+
+export type VinScanPanelSnapshotRow = {
+  id: string;
+  label: string;
+  country: string;
+  status: VinScanStatus | "idle";
+  summary: string;
+  openUrl: string;
+  vehicle?: ScanRow["vehicle"];
+  mileage: ScanRow["mileage"];
+};
+
+export type VinScanPanelSnapshot = {
+  scannedAt: string;
+  rows: VinScanPanelSnapshotRow[];
 };
 
 const SERVER_CATALOG: readonly ScanCatalogItem[] = VIN_SCAN_CATALOG;
@@ -132,9 +150,11 @@ function browserRow(item: ScanCatalogItem, vin: string, status: VinScanStatus, s
 export function AdminVinScanPanel({
   vin,
   scanNonce = 0,
+  onSnapshot,
 }: {
   vin: string;
   scanNonce?: number;
+  onSnapshot?: (snapshot: VinScanPanelSnapshot) => void;
 }) {
   const clean = normalizeVin(vin);
   const valid = isValidVin(clean);
@@ -199,6 +219,9 @@ export function AdminVinScanPanel({
   const rows = CATALOG.map((item) => byId[item.id]).filter((row): row is ScanRow => Boolean(row));
   const counts = rows.length > 0 ? countVinScanStatuses(rows) : null;
   const open = openId ? byId[openId] : undefined;
+  const openHref = open
+    ? resolveVinScanOpenUrl(CATALOG.find((item) => item.id === open.id) || { openUrl: () => "" }, clean, open.openUrl)
+    : "";
   const overview = rows.length > 0 ? buildVinScanOverview(rows) : null;
   const unknownServer = SERVER_CATALOG.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
   const unknownBrowser = VIN_SCAN_BROWSER_CATALOG.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
@@ -322,6 +345,25 @@ export function AdminVinScanPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanNonce]);
 
+  useEffect(() => {
+    onSnapshot?.({
+      scannedAt,
+      rows: CATALOG.map((item) => {
+        const row = byId[item.id];
+        return {
+          id: item.id,
+          label: item.label,
+          country: item.country,
+          status: row?.status ?? "idle",
+          summary: row?.summary ?? "",
+          openUrl: resolveVinScanOpenUrl(item, clean, row?.openUrl),
+          vehicle: row?.vehicle,
+          mileage: row?.mileage ?? [],
+        };
+      }),
+    });
+  }, [byId, scannedAt, clean, onSnapshot]);
+
   return (
     <section
       className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]"
@@ -393,34 +435,60 @@ export function AdminVinScanPanel({
           const row = byId[item.id];
           const status = checking.includes(item.id) ? "checking" : (row?.status ?? "idle");
           const active = openId === item.id;
+          const href = valid ? resolveVinScanOpenUrl(item, clean, row?.openUrl) : "";
           return (
             <li key={item.id}>
-              <button
-                type="button"
-                title={item.hint}
-                onClick={() => setOpenId(active ? null : item.id)}
-                className={`flex w-full min-w-0 items-center gap-1.5 rounded-lg border px-1.5 py-1 text-left transition ${
+              <div
+                className={`flex min-w-0 items-stretch rounded-lg border ${
                   vinScanWantedTileClass(item.id, status) ||
                   (active
                     ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
                     : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]")
                 }`}
               >
-                <span className={`h-2 w-2 shrink-0 rounded-full ${statusDot(item.id, status)}`} aria-hidden />
-                <span className="min-w-0">
-                  <span className="block truncate text-[10px] font-semibold text-[var(--color-apple-text)]">{item.label}</span>
-                  <span
-                    className={`block truncate text-[9px] ${
-                      isVinScanWantedSource(item.id) && status === "found"
-                        ? "font-semibold text-rose-700 dark:text-rose-300"
-                        : "text-[var(--color-provin-muted)]"
-                    }`}
-                  >
-                    {statusLabel(item.id, status)}
-                    {status !== "checking" && row?.summary ? ` · ${row.summary}` : ""}
+                <button
+                  type="button"
+                  title={item.hint}
+                  onClick={() => setOpenId(active ? null : item.id)}
+                  className="flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1 text-left"
+                >
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${statusDot(item.id, status)}`} aria-hidden />
+                  <span className="min-w-0">
+                    <span className="block truncate text-[10px] font-semibold text-[var(--color-apple-text)]">{item.label}</span>
+                    <span
+                      className={`block truncate text-[9px] ${
+                        isVinScanWantedSource(item.id) && status === "found"
+                          ? "font-semibold text-rose-700 dark:text-rose-300"
+                          : "text-[var(--color-provin-muted)]"
+                      }`}
+                    >
+                      {statusLabel(item.id, status)}
+                      {status !== "checking" && row?.summary ? ` · ${row.summary}` : ""}
+                    </span>
                   </span>
-                </span>
-              </button>
+                </button>
+                {href ? (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Atvērt ${item.label}`}
+                    aria-label={`Atvērt ${item.label}`}
+                    data-provin-handoff-vin={clean || undefined}
+                    className="inline-flex shrink-0 items-center px-1.5 text-[var(--color-provin-accent)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                  >
+                    <ExternalLink className="h-3 w-3" aria-hidden />
+                  </a>
+                ) : (
+                  <span
+                    className="inline-flex shrink-0 items-center px-1.5 text-slate-300 dark:text-slate-600"
+                    title="Ievadi VIN, lai atvērtu avotu"
+                    aria-hidden
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </span>
+                )}
+              </div>
             </li>
           );
         })}
@@ -452,14 +520,15 @@ export function AdminVinScanPanel({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={open.media.photoUrl} alt="" className="mt-1 h-16 w-24 rounded object-cover" />
           ) : null}
-          {open.openUrl ? (
+          {openHref ? (
             <a
-              href={open.openUrl}
+              href={openHref}
               target="_blank"
               rel="noopener noreferrer"
               data-provin-handoff-vin={clean || undefined}
-              className="mt-1 inline-block text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
+              className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-[var(--color-provin-accent)] hover:underline"
             >
+              <ExternalLink className="h-3 w-3" aria-hidden />
               Atvērt avotu
             </a>
           ) : null}

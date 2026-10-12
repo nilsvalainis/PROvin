@@ -1,11 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
-import { AdminVinScanPanel } from "@/components/admin/AdminVinScanPanel";
+import {
+  AdminVinScanPanel,
+  type VinScanPanelSnapshot,
+} from "@/components/admin/AdminVinScanPanel";
 import { isValidPlateNumber, isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
-import { isCsddTechDataResult } from "@/lib/csdd-tech-data";
+import { isCsddTechDataResult, type CsddTechData } from "@/lib/csdd-tech-data";
 import { formatCsddPlateLookup } from "@/lib/vin-scan/parse";
+import { collectVinScanMileage, pickVinScanVehicle } from "@/lib/vin-scan/summary";
 
 const inp =
   "min-w-0 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -17,15 +22,23 @@ export function AdminVinScanPageClient({
 }: {
   initialVin?: string;
 }) {
+  const router = useRouter();
   const [draft, setDraft] = useState(() => normalizeVin(initialVin));
   const [plateDraft, setPlateDraft] = useState("");
   const [plateBusy, setPlateBusy] = useState(false);
   const [plate, setPlate] = useState<PlateView | null>(null);
+  const [csddData, setCsddData] = useState<CsddTechData | null>(null);
   const [scanNonce, setScanNonce] = useState(0);
+  const [scanSnapshot, setScanSnapshot] = useState<VinScanPanelSnapshot | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
   const vin = useMemo(() => normalizeVin(draft), [draft]);
   const valid = isValidVin(vin);
   const plateValue = normalizePlateNumber(plateDraft);
   const plateOk = isValidPlateNumber(plateValue);
+  const onSnapshot = useCallback((snapshot: VinScanPanelSnapshot) => {
+    setScanSnapshot(snapshot);
+  }, []);
 
   async function lookupPlate(): Promise<PlateView | null> {
     if (!plateOk || plateBusy) return plate;
@@ -41,14 +54,17 @@ export function AdminVinScanPageClient({
       if (!res.ok || !isCsddTechDataResult(data)) {
         const next = { ok: false, vin: "", make: "", model: "", year: "", status: res.status === 401 ? "Nav admin sesijas" : "CSDD vaicājums neizdevās" };
         setPlate(next);
+        setCsddData(null);
         return next;
       }
       const next = formatCsddPlateLookup(data);
       setPlate(next);
+      setCsddData(data.found ? data.data : null);
       return next;
     } catch {
       const next = { ok: false, vin: "", make: "", model: "", year: "", status: "CSDD vaicājums neizdevās" };
       setPlate(next);
+      setCsddData(null);
       return next;
     } finally {
       setPlateBusy(false);
@@ -60,6 +76,55 @@ export function AdminVinScanPageClient({
     if (!resolved?.ok || !isValidVin(resolved.vin)) return;
     setDraft(normalizeVin(resolved.vin));
     setScanNonce((n) => n + 1);
+  }
+
+  async function createManualOrder() {
+    if (!valid || creating) return;
+    setCreating(true);
+    setCreateError("");
+    const rows = scanSnapshot?.rows ?? [];
+    const plateVehicle =
+      plate?.ok && (plate.make || plate.model || plate.year)
+        ? { make: plate.make, model: plate.model, year: plate.year }
+        : null;
+    const vehicle = plateVehicle ?? pickVinScanVehicle(rows);
+    try {
+      const res = await fetch("/api/admin/manual-orders", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          vin,
+          plate: plateOk ? plateValue : csddData?.registrationNumber || "",
+          plateStatus: plate?.status || "",
+          csdd: csddData,
+          vehicle,
+          mileage: collectVinScanMileage(rows),
+          scannedAt: scanSnapshot?.scannedAt || "",
+          sources: rows,
+        }),
+      });
+      const data = (await res.json().catch(() => null)) as { orderId?: unknown; record?: { id?: unknown }; error?: unknown } | null;
+      const orderId =
+        (typeof data?.orderId === "string" && data.orderId) ||
+        (typeof data?.record?.id === "string" && data.record.id) ||
+        "";
+      if (!res.ok || !orderId) {
+        setCreateError(
+          res.status === 401
+            ? "Nav admin sesijas"
+            : typeof data?.error === "string"
+              ? data.error
+              : "Neizdevās izveidot pasūtījumu",
+        );
+        return;
+      }
+      router.push(`/admin/orders/${encodeURIComponent(orderId)}`);
+    } catch (e) {
+      setCreateError(e instanceof Error ? e.message : "Tīkla kļūda");
+    } finally {
+      setCreating(false);
+    }
   }
 
   return (
@@ -106,30 +171,41 @@ export function AdminVinScanPageClient({
           />
         </label>
       </div>
-      {plate || plateOk || plateBusy ? (
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-[11px] text-[var(--color-apple-text)]">
-            {plateBusy
-              ? "CSDD…"
-              : plate
-                ? plate.ok
-                  ? [plate.vin, [plate.year, plate.make, plate.model].filter(Boolean).join(" "), plate.status]
-                      .filter(Boolean)
-                      .join(" · ")
-                  : plate.status
-                : ""}
-          </p>
-          <button
-            type="button"
-            disabled={plateBusy || (!plate?.ok && !plateOk)}
-            onClick={() => void scanWithPlateVin()}
-            className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
-          >
-            Skenēt ar šo VIN
-          </button>
-        </div>
-      ) : null}
-      <AdminVinScanPanel vin={vin} scanNonce={scanNonce} />
+      <div className="flex flex-wrap items-center gap-2">
+        {plate || plateOk || plateBusy ? (
+          <>
+            <p className="text-[11px] text-[var(--color-apple-text)]">
+              {plateBusy
+                ? "CSDD…"
+                : plate
+                  ? plate.ok
+                    ? [plate.vin, [plate.year, plate.make, plate.model].filter(Boolean).join(" "), plate.status]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : plate.status
+                  : ""}
+            </p>
+            <button
+              type="button"
+              disabled={plateBusy || (!plate?.ok && !plateOk)}
+              onClick={() => void scanWithPlateVin()}
+              className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
+            >
+              Skenēt ar šo VIN
+            </button>
+          </>
+        ) : null}
+        <button
+          type="button"
+          disabled={!valid || creating}
+          onClick={() => void createManualOrder()}
+          className="rounded-md border border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] transition hover:bg-[var(--color-provin-accent-soft)]/70 disabled:opacity-50"
+        >
+          {creating ? "Veido…" : "Izveidot manuālo pasūtījumu"}
+        </button>
+      </div>
+      {createError ? <p className="text-[10px] text-rose-600 dark:text-rose-300">{createError}</p> : null}
+      <AdminVinScanPanel vin={vin} scanNonce={scanNonce} onSnapshot={onSnapshot} />
     </div>
   );
 }

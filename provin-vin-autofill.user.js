@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN — VIN & Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.12.0
+// @version      1.13.0
 // @description  Admin MENU VIN auto-fill un ātrās pārbaudes zondes. CarVertical pogas nespied, ja operators nav apstiprinājis maksas pirkumu.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -60,7 +60,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.12.0";
+  const SCRIPT_VERSION = "1.13.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -467,16 +467,16 @@
       stat_vin: "https://stat.vin/cars/" + v,
       bid_cars: "https://bid.cars/en/search?q=" + v,
       vininspect: "https://vininspect.com/vin/" + v,
-      auchistory: "https://auchistory.com/",
+      auchistory: "https://auchistory.com/?vin=" + v,
       carfax_eu: "https://www.carfax.eu/preview-page?vin=" + v,
-      cebia: "https://en.cebia.com/",
+      cebia: "https://en.cebia.com/?vin=" + v,
       autodna_preview: "https://www.autodna.lv/vin/" + v,
-      carvertical_preview: "https://www.carvertical.com/lv/user/reports",
+      carvertical_preview: "https://www.carvertical.com/lv/user/reports?vin=" + v,
       auto_vin: "https://www.auto.vin/en/checkout?vin=" + v,
       checkcar_vin: "https://checkcar.vin/report/check/" + v,
-      plc_auction: "https://plc.auction/",
-      vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli",
-      lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+      plc_auction: "https://plc.auction/?vin=" + v,
+      vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin=" + v,
+      lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=" + v,
     };
     return SCAN_URLS[id] || "";
   }

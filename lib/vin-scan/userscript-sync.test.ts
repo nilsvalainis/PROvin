@@ -20,12 +20,12 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.12\.0/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.12.0"');
+    expect(src).toMatch(/@version\s+1\.13\.0/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.13.0"');
     expect(src).toContain("const SCAN_URLS = {");
-    expect(src).toContain('plc_auction: "https://plc.auction/"');
-    expect(src).toContain('vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli"');
-    expect(src).toContain('lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php"');
+    expect(src).toContain('plc_auction: "https://plc.auction/?vin="');
+    expect(src).toContain('vp_wanted: "https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin="');
+    expect(src).toContain('lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr="');
     expect(src).toContain("// @match        https://plc.auction/*");
     expect(src).toContain("// @match        https://www.epolicija.lt/*");
     expect(src).toContain("// @match        https://www.vp.gov.lv/*");
@@ -59,12 +59,14 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "checkcar_vin")?.openUrl(vin)).toBe(
       `https://checkcar.vin/report/check/${vin}`,
     );
-    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "plc_auction")?.openUrl(vin)).toBe("https://plc.auction/");
+    expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "plc_auction")?.openUrl(vin)).toBe(
+      `https://plc.auction/?vin=${vin}`,
+    );
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "vp_wanted")?.openUrl(vin)).toBe(
-      "https://www.vp.gov.lv/lv/mekletie-transportlidzekli",
+      `https://www.vp.gov.lv/lv/mekletie-transportlidzekli?vin=${vin}`,
     );
     expect(VIN_SCAN_BROWSER_CATALOG.find((s) => s.id === "lt_itpr")?.openUrl(vin)).toBe(
-      "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+      `https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=${vin}`,
     );
     expect(src).toContain("https://checkcar.vin/report/check/");
   });
