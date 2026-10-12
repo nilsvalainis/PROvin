@@ -6,7 +6,6 @@ import {
   parseNhtsaRecalls,
   parseVpicMakeModelYear,
   parseRdwOpenData,
-  parseUkMot,
 } from "@/lib/vin-scan/parse-extra";
 import { detectVinScanMileageRollback } from "@/lib/vin-scan/summary";
 
@@ -47,22 +46,6 @@ describe("NHTSA atsaukumi un RDW", () => {
     expect(parsed.summary).toContain("NAP");
     expect(parsed.flags?.recallCount).toBe(1);
     expect(parsed.flags?.registrationCountry).toBe("NL");
-  });
-
-  it("UK MOT odometru rindas", () => {
-    const parsed = parseUkMot(
-      200,
-      JSON.stringify([
-        {
-          make: "FORD",
-          model: "FOCUS",
-          firstUsedDate: "2015-03-01",
-          motTests: [{ completedDate: "2024-02-01", odometerValue: "82000", odometerUnit: "mi", testResult: "PASSED" }],
-        },
-      ]),
-    );
-    expect(parsed.status).toBe("found");
-    expect(parsed.mileage?.[0]?.odometer).toMatch(/km/);
   });
 });
 

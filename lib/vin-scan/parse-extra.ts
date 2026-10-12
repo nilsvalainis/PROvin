@@ -176,47 +176,6 @@ export function parseVegvesen(status: number, text: string): VinScanParse {
   };
 }
 
-export function parseUkMot(status: number, text: string): VinScanParse {
-  if (status === 404) return { status: "none", summary: "UK MOT vēsturē nav" };
-  if (status === 401 || status === 403) return { status: "skipped", summary: "UK MOT API atslēga nav derīga vai nav iestatīta" };
-  if (status !== 200) return { status: "unknown", summary: `UK MOT atbildēja ar HTTP ${status}` };
-  let data: unknown;
-  try {
-    data = JSON.parse(text) as unknown;
-  } catch {
-    if (/no mot|not found|no vehicle/i.test(text)) return { status: "none", summary: "UK MOT vēsturē nav" };
-    return { status: "unknown", summary: "UK MOT atbilde nav JSON" };
-  }
-  const rows = Array.isArray(data) ? data.map(asRecord) : [asRecord(data)];
-  const first = rows[0];
-  if (!first || (!str(first.registration) && !str(first.vin) && !asArray(first.motTests).length)) {
-    return { status: "none", summary: "UK MOT vēsturē nav" };
-  }
-  const make = str(first.make);
-  const model = str(first.model);
-  const year = str(first.firstUsedDate).slice(0, 4) || str(first.manufactureYear) || str(first.yearOfManufacture);
-  const tests = asArray(first.motTests).map(asRecord);
-  const mileage = tests
-    .map((t) => {
-      const date = str(t.completedDate).slice(0, 10);
-      const odo = str(t.odometerValue);
-      const unit = str(t.odometerUnit);
-      if (!date || !odo) return null;
-      const km = /mi|mile/i.test(unit) ? `${Math.round(Number(odo) * 1.60934).toLocaleString("lv-LV")} km` : kmLv(odo);
-      return { date, odometer: km };
-    })
-    .filter((row): row is { date: string; odometer: string } => Boolean(row));
-  const last = tests[0];
-  const lastResult = last ? str(last.testResult) : "";
-  return {
-    status: "found",
-    summary: [make, model, year, tests.length ? `${tests.length} MOT` : "", lastResult].filter(Boolean).join(", ") || "Ir UK MOT vēsturē",
-    vehicle: make || model || year ? { make, model, year } : undefined,
-    mileage,
-    flags: { registrationCountry: "UK" },
-  };
-}
-
 export function parseNicbHtml(html: string, vin: string): VinScanParse {
   const text = html.replace(/<[^>]+>/g, " ");
   if (/stolen/i.test(text) && text.toUpperCase().includes(vin.toUpperCase())) {
