@@ -2,8 +2,7 @@
  * Tīras atbilžu parsēšanas funkcijas ātrajai VIN pārbaudei. Bez tīkla.
  */
 import type { CsddTechDataResult } from "@/lib/csdd-tech-data";
-import { vinFactoryRegion } from "@/lib/outvin-source-catalog";
-import type { VinScanParse, VinScanStatus, VinScanVehicle } from "@/lib/vin-scan/types";
+import type { VinScanParse, VinScanVehicle } from "@/lib/vin-scan/types";
 import type { VinSourceFetchResult } from "@/lib/vin-sources/types";
 
 function asRecord(v: unknown): Record<string, unknown> {
@@ -216,36 +215,6 @@ export function parseNhtsaDecode(status: number, text: string): VinScanParse {
     detail: errorText,
     vehicle: { make, model, year },
   };
-}
-
-export function oneautoScanCopy(configured: boolean): VinScanParse {
-  if (!configured) return { status: "skipped", summary: "Nav ONEAUTO_API_KEY" };
-  return {
-    status: "manual",
-    summary: "Atslēga ir. Skenēšana tikai pārbauda atslēgu. Datus pērk Auto-Records solī",
-  };
-}
-
-export function outvinScanCopy(vin: string, configured: boolean): VinScanParse {
-  const region = vinFactoryRegion(vin);
-  const carfax =
-    region === "europe"
-      ? "ASV Carfax (Type 2): Eiropas VIN, parasti nav"
-      : "ASV Carfax (Type 2): esamība nav zināma bez pirkuma";
-  const service = "Servisa vēsture (Type 1): esamība nav zināma bez pirkuma";
-  const head = configured ? "Atslēga ir. Skenēšana tikai pārbauda atslēgu." : "Nav OUTVIN_EMAIL / OUTVIN_PASSWORD.";
-  const status: VinScanStatus = configured ? "manual" : "skipped";
-  return { status, summary: `${head} ${service}. ${carfax}.` };
-}
-
-export function parseNummerpladeProbe(status: number, text: string, mappedFound: boolean, mappedMessage: string): VinScanParse {
-  if (status === 429) return { status: "unknown", summary: "nummerplade.net dienas limits (100 opslag)" };
-  if (status === 401 || status === 403) return { status: "unknown", summary: "nummerplade.net API atslēga nav derīga" };
-  if (status === 404) return { status: "none", summary: "nummerplade.net šo VIN neatpazina" };
-  if (status !== 200) return { status: "unknown", summary: `nummerplade.net atbildēja ar HTTP ${status}` };
-  if (!text.trim()) return { status: "unknown", summary: "nummerplade.net tukša atbilde" };
-  if (!mappedFound) return { status: "none", summary: mappedMessage || "nummerplade.net neatpazina šo VIN" };
-  return { status: "found", summary: mappedMessage || "Ir nummerplade.net" };
 }
 
 function vehicleFromName(make: string, model: string, year: string): VinScanVehicle | undefined {

@@ -2,37 +2,25 @@ import "server-only";
 
 import { VIN_SCAN_CATALOG, isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 import {
-  probeCarinfo,
   probeCarpass,
-  probeCsdd,
   probeDsb,
   probeEsyn,
-  probeLkfEe,
   probeMntEe,
   probeNhtsa,
-  probeNummerplade,
-  probeOneauto,
-  probeOutvin,
   probeTjekbil,
 } from "@/lib/vin-scan/probes";
 import { buildVinScanIndicator, type VinScanIndicator } from "@/lib/vin-scan/types";
 
 const PROBES: Record<VinScanSourceId, (vin: string) => Promise<VinScanIndicator> | VinScanIndicator> = {
-  csdd: probeCsdd,
   tjekbil: probeTjekbil,
-  nummerplade: probeNummerplade,
   esyn: probeEsyn,
   dsb: probeDsb,
   carpass: probeCarpass,
   mnt_ee: probeMntEe,
-  lkf_ee: probeLkfEe,
-  carinfo: probeCarinfo,
   nhtsa: probeNhtsa,
-  oneauto: probeOneauto,
-  outvin: probeOutvin,
 };
 
-const SLOW_SOURCES = new Set<VinScanSourceId>(["mnt_ee", "lkf_ee", "carinfo", "csdd"]);
+const SLOW_SOURCES = new Set<VinScanSourceId>(["mnt_ee"]);
 const SLOW_TIMEOUT_MS = 28_000;
 
 function withTimeout(id: VinScanSourceId, vin: string, job: Promise<VinScanIndicator> | VinScanIndicator): Promise<VinScanIndicator> {

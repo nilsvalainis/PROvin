@@ -1,21 +1,17 @@
 /**
  * Ātrās VIN pārbaudes avoti (1. solis): servera JSON vai HTML, bez captcha un bez maksas pirkuma.
+ * Maksas API / kvota šeit nav: nummerplade.net, OneAuto, Outvin, CSDD relejs (līguma limits),
+ * car.info un lkf.ee (CapSolver par katru vaicājumu). Tie paliek pasūtījuma darba zonā.
  * Klienta panelis un servera zondes lieto šo pašu sarakstu.
  */
 
 export const VIN_SCAN_SOURCE_IDS = [
-  "csdd",
   "tjekbil",
-  "nummerplade",
   "esyn",
   "dsb",
   "carpass",
   "mnt_ee",
-  "lkf_ee",
-  "carinfo",
   "nhtsa",
-  "oneauto",
-  "outvin",
 ] as const;
 
 export type VinScanSourceId = (typeof VIN_SCAN_SOURCE_IDS)[number];
@@ -35,25 +31,11 @@ function vinQuery(vin: string): string {
 
 export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
   {
-    id: "csdd",
-    label: "CSDD",
-    country: "LV",
-    hint: "Latvijas reģistrs caur esošo releju",
-    openUrl: () => "https://e.csdd.lv/tadati/",
-  },
-  {
     id: "tjekbil",
     label: "tjekbil.dk",
     country: "DK",
     hint: "Dānijas reģistrs (DMR)",
     openUrl: () => "https://www.tjekbil.dk/",
-  },
-  {
-    id: "nummerplade",
-    label: "nummerplade.net",
-    country: "DK",
-    hint: "Dānijas reģistrs, maksas API ar dienas limitu",
-    openUrl: () => "https://www.nummerplade.net/",
   },
   {
     id: "esyn",
@@ -84,39 +66,11 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     openUrl: () => "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
   },
   {
-    id: "lkf_ee",
-    label: "lkf.ee",
-    country: "EE",
-    hint: "Igaunijas OCTA atlīdzības",
-    openUrl: () => "https://lkf.ee/et/kahjukontroll",
-  },
-  {
-    id: "carinfo",
-    label: "car.info",
-    country: "SE",
-    hint: "Zviedrijas un Nordics agregators",
-    openUrl: () => "https://www.car.info/en-se/",
-  },
-  {
     id: "nhtsa",
     label: "NHTSA",
     country: "US",
     hint: "VIN dekodējums, ne vēsture",
     openUrl: (vin) => `https://vpic.nhtsa.dot.gov/decoder/VinDecoder?VIN=${vinQuery(vin)}`,
-  },
-  {
-    id: "oneauto",
-    label: "OneAuto",
-    country: "OEM",
-    hint: "Maksas API. Skenēšana tikai pārbauda atslēgu",
-    openUrl: () => "https://www.oneautoapi.com/home/api/",
-  },
-  {
-    id: "outvin",
-    label: "Outvin",
-    country: "OEM",
-    hint: "Maksas API. Skenēšana tikai pārbauda atslēgu",
-    openUrl: () => "https://www.outvin.com/",
   },
 ];
 
@@ -130,12 +84,8 @@ export function isVinScanSourceId(v: string): v is VinScanSourceId {
   return (VIN_SCAN_SOURCE_IDS as readonly string[]).includes(v);
 }
 
-export function defaultVinScanSourceIds(keys: { oneauto: boolean; outvin: boolean }): VinScanSourceId[] {
-  return VIN_SCAN_SOURCE_IDS.filter((id) => {
-    if (id === "oneauto") return keys.oneauto;
-    if (id === "outvin") return keys.outvin;
-    return true;
-  });
+export function defaultVinScanSourceIds(): VinScanSourceId[] {
+  return [...VIN_SCAN_SOURCE_IDS];
 }
 
 /**

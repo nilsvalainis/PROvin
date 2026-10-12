@@ -6,7 +6,6 @@ import { AdminVinScanPanel } from "@/components/admin/AdminVinScanPanel";
 import { isValidPlateNumber, isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 import { isCsddTechDataResult } from "@/lib/csdd-tech-data";
 import { formatCsddPlateLookup } from "@/lib/vin-scan/parse";
-import type { VinScanPaidKeys } from "@/lib/vin-scan/types";
 
 const inp =
   "min-w-0 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -15,10 +14,8 @@ type PlateView = { ok: boolean; vin: string; make: string; model: string; year: 
 
 export function AdminVinScanPageClient({
   initialVin = "",
-  paidKeys,
 }: {
   initialVin?: string;
-  paidKeys: VinScanPaidKeys;
 }) {
   const [draft, setDraft] = useState(() => normalizeVin(initialVin));
   const [plateDraft, setPlateDraft] = useState("");
@@ -132,7 +129,7 @@ export function AdminVinScanPageClient({
           </button>
         </div>
       ) : null}
-      <AdminVinScanPanel vin={vin} scanNonce={scanNonce} paidKeys={paidKeys} />
+      <AdminVinScanPanel vin={vin} scanNonce={scanNonce} />
     </div>
   );
 }

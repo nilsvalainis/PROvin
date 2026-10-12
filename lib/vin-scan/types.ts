@@ -21,11 +21,6 @@ export type VinScanMedia = {
   photoCount?: number;
 };
 
-export type VinScanPaidKeys = {
-  oneauto: boolean;
-  outvin: boolean;
-};
-
 export type VinScanIndicator = {
   id: VinScanSourceId;
   label: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import {
@@ -10,7 +10,7 @@ import {
   vinScanUserscriptMinLabel,
 } from "@/lib/vin-scan/catalog";
 import { buildVinScanOverview, formatVinScanExportJson, formatVinScanExportText, formatVinScanScannedAt } from "@/lib/vin-scan/summary";
-import { countVinScanStatuses, VIN_SCAN_STATUSES, type VinScanIndicator, type VinScanPaidKeys, type VinScanStatus } from "@/lib/vin-scan/types";
+import { countVinScanStatuses, VIN_SCAN_STATUSES, type VinScanIndicator, type VinScanStatus } from "@/lib/vin-scan/types";
 import {
   isVinScanWantedSource,
   vinScanWantedDotClass,
@@ -38,6 +38,9 @@ type ScanCatalogItem = {
   hint: string;
   openUrl: (vin: string) => string | null;
 };
+
+const SERVER_CATALOG: readonly ScanCatalogItem[] = VIN_SCAN_CATALOG;
+const CATALOG: readonly ScanCatalogItem[] = [...VIN_SCAN_CATALOG, ...VIN_SCAN_BROWSER_CATALOG];
 
 const DOT: Record<VinScanStatus | "idle" | "checking", string> = {
   found: "bg-emerald-500",
@@ -129,11 +132,9 @@ function browserRow(item: ScanCatalogItem, vin: string, status: VinScanStatus, s
 export function AdminVinScanPanel({
   vin,
   scanNonce = 0,
-  paidKeys,
 }: {
   vin: string;
   scanNonce?: number;
-  paidKeys: VinScanPaidKeys;
 }) {
   const clean = normalizeVin(vin);
   const valid = isValidVin(clean);
@@ -143,17 +144,7 @@ export function AdminVinScanPanel({
   const [checking, setChecking] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [scannedAt, setScannedAt] = useState("");
-  const [keys, setKeys] = useState<VinScanPaidKeys>(paidKeys);
   const [copyNote, setCopyNote] = useState("");
-
-  const serverCatalog = useMemo(
-    () => VIN_SCAN_CATALOG.filter((item) => (item.id === "oneauto" ? keys.oneauto : item.id === "outvin" ? keys.outvin : true)),
-    [keys],
-  );
-  const catalog: readonly ScanCatalogItem[] = useMemo(
-    () => [...serverCatalog, ...VIN_SCAN_BROWSER_CATALOG],
-    [serverCatalog],
-  );
 
   useEffect(() => {
     setById({});
@@ -205,11 +196,11 @@ export function AdminVinScanPanel({
     return () => document.removeEventListener("provin-vin-scan-result", onResult);
   }, [clean]);
 
-  const rows = catalog.map((item) => byId[item.id]).filter((row): row is ScanRow => Boolean(row));
+  const rows = CATALOG.map((item) => byId[item.id]).filter((row): row is ScanRow => Boolean(row));
   const counts = rows.length > 0 ? countVinScanStatuses(rows) : null;
   const open = openId ? byId[openId] : undefined;
   const overview = rows.length > 0 ? buildVinScanOverview(rows) : null;
-  const unknownServer = serverCatalog.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
+  const unknownServer = SERVER_CATALOG.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
   const unknownBrowser = VIN_SCAN_BROWSER_CATALOG.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
   const canRetry = !busy && (unknownServer.length > 0 || unknownBrowser.length > 0);
 
@@ -255,13 +246,11 @@ export function AdminVinScanPanel({
     const data = (await res.json().catch(() => null)) as {
       indicators?: unknown;
       scannedAt?: string;
-      keys?: VinScanPaidKeys;
     } | null;
     if (!res.ok || !data || !Array.isArray(data.indicators)) {
       setError(res.status === 401 ? "Nav admin sesijas" : "Servera skenēšana neizdevās");
       return;
     }
-    if (data.keys) setKeys(data.keys);
     if (typeof data.scannedAt === "string") setScannedAt(data.scannedAt);
     const next: Record<string, ScanRow> = {};
     for (const item of data.indicators) {
@@ -400,7 +389,7 @@ export function AdminVinScanPanel({
       {error ? <p className="px-2.5 pb-2 text-[10px] text-rose-600 dark:text-rose-300">{error}</p> : null}
       {copyNote ? <p className="px-2.5 pb-1 text-[10px] text-[var(--color-provin-muted)]">{copyNote}</p> : null}
       <ul className="grid grid-cols-2 gap-1 px-2 pb-2 sm:grid-cols-4">
-        {catalog.map((item) => {
+        {CATALOG.map((item) => {
           const row = byId[item.id];
           const status = checking.includes(item.id) ? "checking" : (row?.status ?? "idle");
           const active = openId === item.id;

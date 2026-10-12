@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
-import { vinScanPaidKeys } from "@/lib/vin-scan/keys";
 import { runVinScan, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
 
 export const runtime = "nodejs";
@@ -23,14 +22,12 @@ export async function POST(req: Request) {
   const vin = normalizeVin(String(body.vin ?? ""));
   if (!isValidVin(vin)) return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
 
-  const keys = vinScanPaidKeys();
-  const requested = sanitizeVinScanSourceIds(body.sources) ?? defaultVinScanSourceIds(keys);
+  const requested = sanitizeVinScanSourceIds(body.sources) ?? defaultVinScanSourceIds();
   const indicators = await runVinScan(vin, requested);
   return NextResponse.json({
     ok: true,
     vin,
     scannedAt: new Date().toISOString(),
-    keys,
     indicators,
   });
 }

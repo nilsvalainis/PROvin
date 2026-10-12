@@ -1,25 +1,17 @@
 import "server-only";
 
-import { fetchCsddTechData } from "@/lib/csdd-tech-data";
-import { getOneautoApiConfig } from "@/lib/oneauto-api";
-import { getOutvinConfig } from "@/lib/outvin-api";
 import { fetchVinSource } from "@/lib/vin-sources";
-import { mapNummerpladePayload, nummerpladeApiKey } from "@/lib/vin-sources/nummerplade";
 import { scanFetch } from "@/lib/vin-scan/http";
 import {
   dsbScanFromParts,
   esynVehicleSummary,
-  oneautoScanCopy,
-  outvinScanCopy,
   parseCarpassCsrf,
   parseCarpassRecalls,
-  parseCsddTechScan,
   parseDsbEntryCount,
   parseDsbSearchHtml,
   parseEsynChassis,
   parseEsynInspections,
   parseNhtsaDecode,
-  parseNummerpladeProbe,
   parseTjekbilProbe,
   parseVinSourceScan,
 } from "@/lib/vin-scan/parse";
@@ -45,30 +37,6 @@ export async function probeTjekbil(vin: string): Promise<VinScanIndicator> {
     return done("tjekbil", vin, parseTjekbilProbe(res.status, res.text));
   } catch (e) {
     return failed("tjekbil", vin, e);
-  }
-}
-
-export async function probeNummerplade(vin: string): Promise<VinScanIndicator> {
-  const key = nummerpladeApiKey();
-  if (!key) return done("nummerplade", vin, { status: "skipped", summary: "Nav NUMMERPLADE_API_KEY" });
-  try {
-    const res = await scanFetch(`https://www.nummerplade.net/api/v1/koeretoej/${encodeURIComponent(vin)}`, {
-      headers: { accept: "application/json", "X-Api-Noegle": key, referer: "https://www.nummerplade.net/" },
-    });
-    let mappedFound = false;
-    let mappedMessage = "";
-    if (res.status === 200 && res.text.trim()) {
-      try {
-        const mapped = mapNummerpladePayload(JSON.parse(res.text) as unknown);
-        mappedFound = mapped.found;
-        mappedMessage = mapped.message;
-      } catch {
-        mappedFound = false;
-      }
-    }
-    return done("nummerplade", vin, parseNummerpladeProbe(res.status, res.text, mappedFound, mappedMessage));
-  } catch (e) {
-    return failed("nummerplade", vin, e);
   }
 }
 
@@ -155,42 +123,10 @@ export async function probeNhtsa(vin: string): Promise<VinScanIndicator> {
   }
 }
 
-export function probeOneauto(vin: string): VinScanIndicator {
-  return done("oneauto", vin, oneautoScanCopy(Boolean(getOneautoApiConfig())));
-}
-
-export function probeOutvin(vin: string): VinScanIndicator {
-  return done("outvin", vin, outvinScanCopy(vin, Boolean(getOutvinConfig())));
-}
-
-export async function probeCsdd(vin: string): Promise<VinScanIndicator> {
-  try {
-    return done("csdd", vin, parseCsddTechScan(await fetchCsddTechData(vin)));
-  } catch (e) {
-    return failed("csdd", vin, e);
-  }
-}
-
 export async function probeMntEe(vin: string): Promise<VinScanIndicator> {
   try {
     return done("mnt_ee", vin, parseVinSourceScan(await fetchVinSource("mnt_ee", vin)));
   } catch (e) {
     return failed("mnt_ee", vin, e);
-  }
-}
-
-export async function probeLkfEe(vin: string): Promise<VinScanIndicator> {
-  try {
-    return done("lkf_ee", vin, parseVinSourceScan(await fetchVinSource("lkf_ee", vin)));
-  } catch (e) {
-    return failed("lkf_ee", vin, e);
-  }
-}
-
-export async function probeCarinfo(vin: string): Promise<VinScanIndicator> {
-  try {
-    return done("carinfo", vin, parseVinSourceScan(await fetchVinSource("carinfo", vin)));
-  } catch (e) {
-    return failed("carinfo", vin, e);
   }
 }

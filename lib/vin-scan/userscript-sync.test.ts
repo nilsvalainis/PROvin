@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   VIN_SCAN_BROWSER_CATALOG,
   VIN_SCAN_BROWSER_IDS,
+  VIN_SCAN_SOURCE_IDS,
   VIN_SCAN_USERSCRIPT_MIN,
   vinScanUserscriptMeetsMin,
   vinScanUserscriptMinLabel,
@@ -46,6 +47,11 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).toContain("vp_wanted");
     expect(VIN_SCAN_BROWSER_AUTO_CLICK_IDS).toContain("lt_itpr");
     expect(src).toContain('id === "plc_auction"');
+    for (const paid of ["nummerplade", "oneauto", "outvin", "csdd", "carinfo", "lkf_ee"] as const) {
+      expect(VIN_SCAN_SOURCE_IDS).not.toContain(paid);
+      expect(VIN_SCAN_BROWSER_IDS).not.toContain(paid);
+      expect(src).not.toMatch(new RegExp(`${paid}:\\s*"https://`));
+    }
   });
 
   it("kataloga URL un SCAN_URLS ved uz tiem pašiem hostiem", () => {
