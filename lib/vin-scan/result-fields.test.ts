@@ -36,4 +36,26 @@ describe("buildVinScanResultCard", () => {
       }),
     ).toBeNull();
   });
+
+  it("Nav statuss ar tukšu marku nav kartīte", () => {
+    expect(
+      buildVinScanResultCard({
+        id: "nhtsa_recalls",
+        label: "NHTSA atsaukumi",
+        status: "none",
+        vehicle: { make: "VOLKSWAGEN", model: "", year: "1984" },
+      }),
+    ).toBeNull();
+  });
+
+  it("apskates no detail nav atsaukumi", () => {
+    const card = buildVinScanResultCard({
+      id: "esyn",
+      label: "esyn.dk",
+      status: "found",
+      detail: "2026-09-15, izturēta, 198 579 km\n2026-01-28, izturēta, 188 528 km",
+    });
+    expect(card?.inspections).toHaveLength(2);
+    expect(card?.recalls).toEqual([]);
+  });
 });

@@ -67,28 +67,27 @@ function recallsFromDetail(detail: string): VinScanRecall[] {
   for (const raw of detail.split("\n")) {
     const line = raw.trim();
     if (!line) continue;
+    if (DATE_LINE.test(line) && /\bkm\b/i.test(line)) continue;
     const parts = line.split(/\s·\s/).map((p) => p.trim()).filter(Boolean);
-    if (parts.length === 0) continue;
+    if (parts.length < 2) continue;
     const date = parts.find((p) => /^\d{4}-\d{2}-\d{2}/.test(p) || /^\d{1,2}\.\d{1,2}\.\d{4}/.test(p)) ?? "";
-    const title = parts.find((p) => p !== date) ?? line;
+    const title = parts.find((p) => p !== date) ?? "";
     if (title) out.push({ title, date });
   }
   return out;
 }
 
 export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard | null {
-  const inspections =
-    (row.inspections ?? []).filter((item) => item.date || item.result || item.odometer).length > 0
-      ? (row.inspections ?? []).filter((item) => item.date || item.result || item.odometer)
-      : inspectionsFromDetail(row.detail ?? "");
+  const parsedInspections = (row.inspections ?? []).filter((item) => item.date || item.result || item.odometer);
+  const inspections = parsedInspections.length > 0 ? parsedInspections : inspectionsFromDetail(row.detail ?? "");
   const fromParse = (row.recalls ?? []).filter((item) => item.title);
-  const fromDetail = fromParse.length > 0 ? [] : recallsFromDetail(row.detail ?? "");
+  const fromDetail = fromParse.length > 0 || inspections.length > 0 ? [] : recallsFromDetail(row.detail ?? "");
   const recalls =
     fromParse.length > 0
       ? fromParse
       : fromDetail.length > 0
         ? fromDetail
-        : row.flags?.recallCount
+        : row.status === "found" && row.flags?.recallCount
           ? [{ title: String(row.flags.recallCount) }]
           : [];
   const incidents = (row.incidents ?? []).filter((item) => item.summary);
@@ -101,17 +100,16 @@ export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard
     row.vehicle && (row.vehicle.make || row.vehicle.model || row.vehicle.year) ? row.vehicle : null;
   const photoUrl = row.media?.photoUrl || auctions.find((item) => item.photoUrl)?.photoUrl || "";
   const photoCount = row.media?.photoCount || row.flags?.photoCount || 0;
-  if (
-    !vehicle &&
-    mileage.length === 0 &&
-    inspections.length === 0 &&
-    incidents.length === 0 &&
-    recalls.length === 0 &&
-    auctions.length === 0 &&
-    listings.length === 0 &&
-    !photoUrl &&
-    photoCount <= 0
-  ) {
+  const hasRecords =
+    mileage.length > 0 ||
+    inspections.length > 0 ||
+    incidents.length > 0 ||
+    recalls.length > 0 ||
+    auctions.length > 0 ||
+    listings.length > 0 ||
+    Boolean(photoUrl) ||
+    photoCount > 0;
+  if (!hasRecords && (row.status !== "found" || !vehicle)) {
     return null;
   }
   return {
