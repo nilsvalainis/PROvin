@@ -137,36 +137,23 @@ describe("MINI confirm modal markup", () => {
   });
 });
 
-describe("MINI confirm CSS flag", () => {
-  it("draws a refined 2:1 Latvian flag with a 1px border and radius", () => {
+describe("MINI title has no flag or tagline", () => {
+  it("does not keep flag, info-icon, or tagline CSS on the pricing title", () => {
     const css = readFileSync(join(ROOT, "components/test-pricing-5/test-pricing-5.module.css"), "utf8");
-    expect(css).toContain(".lvFlag");
-    expect(css.toLowerCase()).toContain("#9e3039");
-    expect(css).toContain("height: 0.6em");
-    expect(css).toContain("width: 1.2em");
-    expect(css).toMatch(/\.lvFlag\s*\{[^}]*border:\s*1px solid/);
-    expect(css).toMatch(/\.lvFlag\s*\{[^}]*border-radius:\s*1px;/);
-    expect(css).toMatch(/\.miniTitleRow\s*\{[^}]*display:\s*inline;/);
-    expect(css).toMatch(/\.miniTitleTagline\s*\{[^}]*line-height:\s*inherit;/);
-    expect(css).not.toMatch(/\.miniTitleRow\s*\{[^}]*inline-flex/);
-    expect(css).toMatch(/#9E3039 0 40%/i);
-    expect(css).toMatch(/#fff 40% 60%/i);
-    expect(css).toMatch(/#9E3039 60% 100%/i);
+    const card = readFileSync(join(ROOT, "components/test-pricing-5/Tp5MobilePricingCard.tsx"), "utf8");
+    expect(css).not.toContain(".lvFlag");
+    expect(css).not.toContain(".miniTitleTagline");
+    expect(css).not.toContain(".miniLvInfoBtn");
+    expect(css).not.toContain(".miniTitleRow");
+    expect(card).not.toContain("Tp5MiniLvHint");
+    expect(card).not.toContain("tagline");
+    expect(css).toMatch(
+      /\.mobilePackLines \.featureRowDual\s*\{[^}]*min-height:\s*calc\(2 \* 1\.4em\);/,
+    );
   });
+});
 
-  it("overlays the MINI info popover and keeps a circular i control", () => {
-    const css = readFileSync(join(ROOT, "components/test-pricing-5/test-pricing-5.module.css"), "utf8");
-    const hint = readFileSync(join(ROOT, "components/test-pricing-5/Tp5MiniLvHint.tsx"), "utf8");
-    expect(css).toMatch(/\.miniLvInfoBtn\s*\{[^}]*border-radius:\s*999px;/);
-    expect(css).toMatch(/\.miniLvInfoPopup\s*\{[^}]*position:\s*absolute;/);
-    expect(hint).toContain('aria-label={tip}');
-    expect(hint).toContain("aria-describedby={open ? tipId : undefined}");
-    expect(hint).toContain('role="tooltip"');
-    expect(hint).toContain('Escape');
-    expect(hint).not.toContain("Latvijā ekspluatētiem auto");
-    expect(hint).not.toContain("LV auto");
-  });
-
+describe("MINI confirm CSS", () => {
   it("renders include/exclude markers as site green and red CSS circles", () => {
     const css = readFileSync(join(ROOT, "components/test-pricing-5/test-pricing-5.module.css"), "utf8");
     expect(css).toMatch(/\.miniConfirmDot\s*\{[^}]*border-radius:\s*999px;/);

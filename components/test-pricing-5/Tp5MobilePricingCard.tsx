@@ -25,7 +25,6 @@ import {
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5DealerRefundTip } from "@/components/test-pricing-5/Tp5DealerRefundTip";
-import { Tp5MiniLvHint } from "@/components/test-pricing-5/Tp5MiniLvHint";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
 
 function SampleReportPdfIcon() {
@@ -109,7 +108,9 @@ function MobileFeatureRow({
         ? styles.featureLabelBrands
         : styles.featureLabelActive;
     return (
-      <li className={`${styles.featureRow}${isBrands ? ` ${styles.featureRowBrands}` : ""}`}>
+      <li
+        className={`${styles.featureRow}${isBrands ? ` ${styles.featureRowBrands}` : ""}${feature.reserveTwoLines ? ` ${styles.featureRowDual}` : ""}`}
+      >
         <span className={`${styles.featureMark} ${markClass}`} aria-hidden>
           {isBrands ? null : "✓"}
         </span>
@@ -327,14 +328,7 @@ function MobilePackLayout({
           <span className={styles.mobilePackRec}>{uiCopy.recommended}</span>
         ) : null}
         <p className={styles.mobilePackTitle}>
-          {activeService.tagline ? (
-            <span className={styles.miniTitleRow}>
-              <PackTitle title={cardTitle} />
-              <Tp5MiniLvHint tip={activeService.tagline} />
-            </span>
-          ) : (
-            <PackTitle title={cardTitle} />
-          )}
+          <PackTitle title={cardTitle} />
         </p>
         <p className={styles.mobilePackPrice}>
           {activeService.price} <span className={styles.mobilePackPriceUnit}>{uiCopy.perReport}</span>
@@ -477,46 +471,24 @@ export function Tp5MobilePricingCard({
         >
           {services.map((service) => {
             const active = activeServiceId === service.id;
-            const labelClass = `${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`;
-            const tabAria = `${service.title}${service.tagline ? ` · ${service.tagline}` : ""}${uiCopy.packageAriaSuffix}`;
-            const badge =
-              service.id === "dealer" ? (
-                <span className={styles.catalogPopularBadge}>{uiCopy.newBadge}</span>
-              ) : null;
-            if (service.id === "mini" && service.tagline) {
-              return (
-                <span
-                  key={service.id}
-                  className={styles.tierTabBtn}
-                  data-active={active ? "true" : undefined}
-                >
-                  {badge}
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    aria-label={tabAria}
-                    className={styles.tierTabMiniHit}
-                    onClick={() => setActiveServiceId(service.id)}
-                  >
-                    <span className={labelClass}>{service.title}</span>
-                  </button>
-                  <Tp5MiniLvHint tip={service.tagline} />
-                </span>
-              );
-            }
             return (
               <button
                 key={service.id}
                 type="button"
                 role="tab"
                 aria-selected={active}
-                aria-label={tabAria}
+                aria-label={`${service.title}${uiCopy.packageAriaSuffix}`}
                 className={styles.tierTabBtn}
                 onClick={() => setActiveServiceId(service.id)}
               >
-                {badge}
-                <span className={labelClass}>{service.title}</span>
+                {service.id === "dealer" ? (
+                  <span className={styles.catalogPopularBadge}>{uiCopy.newBadge}</span>
+                ) : null}
+                <span
+                  className={`${styles.tierTabLabel} ${styles.tierTabLabelCompact} ${active ? styles.tierTabLabelActive : styles.tierTabLabelInactive}`}
+                >
+                  {service.title}
+                </span>
               </button>
             );
           })}

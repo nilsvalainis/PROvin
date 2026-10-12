@@ -61,23 +61,16 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(getTp5MobileService("dealer").features).toHaveLength(5);
   });
 
-  it("adds a MINI-only LV-scope tooltip and keeps AUDITS insurer copy unchanged", () => {
+  it("keeps a MINI-only OCTA feature line and leaves AUDITS insurer copy unchanged", () => {
     const mini = getTp5MobileService("mini");
     const audits = getTp5MobileService("audits");
-    expect(mini.tagline).toBe("Pakalpojums paredzēts Latvijā ekspluatētiem auto.");
-    expect(audits.tagline).toBeUndefined();
-    expect(getTp5MobileService("dealer").tagline).toBeUndefined();
-    expect(getTp5MobileService("mini", "en").tagline).toBe(
-      "This service is intended for cars used in Latvia.",
-    );
-    expect(getTp5MobileService("mini", "de").tagline).toContain("Lettland");
-    expect(getTp5MobileService("mini", "ru").tagline).toContain("Латвии");
     expect(mini.features.map((f) => f.name)).toEqual(MINI_COMPARE_ROWS_LV);
     expect(audits.features.map((f) => f.name)).toEqual(AUDITS_COMPARE_ROWS_LV);
     expect(mini.features[1]?.name).toBe("OCTA dati un tehnisko apskašu vēsture");
+    expect(mini.features[1]?.reserveTwoLines).toBe(true);
     expect(audits.features[1]?.name).toBe("Apdrošinātāju dati un tehnisko apskašu vēsture");
-    expect(mini.tagline).not.toMatch(/[\u2013\u2014]/);
-    expect(mini.tagline?.toLowerCase()).not.toContain("eksperts");
+    expect(audits.features[1]?.reserveTwoLines).toBeUndefined();
+    expect("tagline" in mini).toBe(false);
   });
 
   it("maps AUDITS and MINI as the same compare stack without flag emojis", () => {

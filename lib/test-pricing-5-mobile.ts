@@ -28,6 +28,8 @@ export type Tp5MobileFeature = {
   tone?: Tp5FeatureTone;
   /** Optional supporting line under the feature name. */
   subtitle?: string;
+  /** Keep the mobile pack row at two-line height on narrow screens. */
+  reserveTwoLines?: boolean;
 };
 
 export type Tp5MobileServiceId = "mini" | "audits" | "dealer" | "koreaUsa";
@@ -52,8 +54,6 @@ export type Tp5MobileService = {
   tabTitle?: string;
   /** Mobile card heading when it differs from `title`. */
   cardTitle?: string;
-  /** MINI-only tooltip on the flag + i hint after the title. Absent on other tiers. */
-  tagline?: string;
   price: string;
   buttonText: string;
   /** Compact mobile CTA (`PASŪTĪT 39,99 €`). Desktop keeps `buttonText`. */
@@ -96,7 +96,7 @@ const AUDITS_FEATURES_EN: Tp5MobileFeature[] = [
 
 const MINI_FEATURES_LV: Tp5MobileFeature[] = [
   { name: "Konsultācija un ieteikumi klātienes apskatei", included: true },
-  { name: "OCTA dati un tehnisko apskašu vēsture", included: true },
+  { name: "OCTA dati un tehnisko apskašu vēsture", included: true, reserveTwoLines: true },
   { name: "Sludinājuma, pārdevēja un tehnisko risku analīze", included: true },
   { name: "CarVertical + AutoDNA + Izcelsmes valsts reģistri", included: false },
   { name: "Oficiālo dīleru un izsoļu portālu arhīva dati*", included: false },
@@ -104,7 +104,7 @@ const MINI_FEATURES_LV: Tp5MobileFeature[] = [
 
 const MINI_FEATURES_EN: Tp5MobileFeature[] = [
   { name: "Consultation and in-person viewing tips", included: true },
-  { name: "OCTA data and technical inspection history", included: true },
+  { name: "OCTA data and technical inspection history", included: true, reserveTwoLines: true },
   { name: "Listing, seller and technical risk analysis", included: true },
   { name: "CarVertical + AutoDNA + Origin-country registers", included: false },
   { name: "Official dealer and auction portal archive data*", included: false },
@@ -150,7 +150,7 @@ const AUDITS_FEATURES_DE: Tp5MobileFeature[] = [
 
 const MINI_FEATURES_DE: Tp5MobileFeature[] = [
   { name: "Beratung und Hinweise zur Besichtigung vor Ort", included: true },
-  { name: "OCTA-Daten und Historie der technischen Prüfungen", included: true },
+  { name: "OCTA-Daten und Historie der technischen Prüfungen", included: true, reserveTwoLines: true },
   { name: "Analyse von Inserat, Verkäufer und technischen Risiken", included: true },
   { name: "CarVertical + AutoDNA + Register des Herkunftslandes", included: false },
   { name: "Daten offizieller Händler und Auktionsarchive*", included: false },
@@ -181,7 +181,7 @@ const AUDITS_FEATURES_RU: Tp5MobileFeature[] = [
 
 const MINI_FEATURES_RU: Tp5MobileFeature[] = [
   { name: "Консультация и советы для осмотра на месте", included: true },
-  { name: "Данные OCTA и история техосмотров", included: true },
+  { name: "Данные OCTA и история техосмотров", included: true, reserveTwoLines: true },
   { name: "Разбор объявления, продавца и технических рисков", included: true },
   { name: "CarVertical + AutoDNA + реестры страны происхождения", included: false },
   { name: "Данные официальных дилеров и архивов аукционов*", included: false },
@@ -211,7 +211,6 @@ export const TP5_MOBILE_SERVICES: Tp5MobileService[] = [
     id: "mini",
     title: "PROVIN MINI",
     tabTitle: "MINI",
-    tagline: "Pakalpojums paredzēts Latvijā ekspluatētiem auto.",
     price: "39,99 €",
     buttonText: "PASŪTĪT MINI AUDITU 39,99 €",
     buttonTextShort: "PASŪTĪT 39,99 €",
@@ -260,7 +259,6 @@ const TP5_MOBILE_SERVICES_EN: Tp5MobileService[] = [
     id: "mini",
     title: "PROVIN MINI",
     tabTitle: "MINI",
-    tagline: "This service is intended for cars used in Latvia.",
     price: "€39.99",
     buttonText: "ORDER MINI AUDIT €39.99",
     buttonTextShort: "ORDER €39.99",
@@ -309,7 +307,6 @@ const TP5_MOBILE_SERVICES_DE: Tp5MobileService[] = [
     id: "mini",
     title: "PROVIN MINI",
     tabTitle: "MINI",
-    tagline: "Diese Leistung ist für in Lettland genutzte Autos gedacht.",
     price: "39,99 €",
     buttonText: "MINI-AUDIT BESTELLEN 39,99 €",
     buttonTextShort: "BESTELLEN 39,99 €",
@@ -358,7 +355,6 @@ const TP5_MOBILE_SERVICES_RU: Tp5MobileService[] = [
     id: "mini",
     title: "PROVIN MINI",
     tabTitle: "MINI",
-    tagline: "Услуга предназначена для автомобилей, эксплуатируемых в Латвии.",
     price: "39,99 €",
     buttonText: "ЗАКАЗАТЬ MINI-АУДИТ 39,99 €",
     buttonTextShort: "ЗАКАЗАТЬ 39,99 €",
