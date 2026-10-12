@@ -45,6 +45,8 @@ export type SerializedAdminOrderTableRow = {
   invoicePdfUrl: string | null;
   /** „Atkārtots VIN”: cik citos darbos (pasūtījumi, ātrie vērtējumi) šis VIN jau ir. */
   repeatVin?: number;
+  /** Klienta kartīte: iepriekšējie pasūtījumi ar to pašu e-pastu. */
+  clientOrders?: { id: string; created: number; vin: string | null; amountTotal: number | null; currency: string | null }[];
 };
 
 type RowInput = {
@@ -75,6 +77,7 @@ type RowInput = {
   packQty?: unknown;
   invoicePdfUrl?: unknown;
   repeatVin?: unknown;
+  clientOrders?: unknown;
 };
 
 function optionalCheckoutLine(o: RowInput): CheckoutLineKind | undefined {
@@ -141,6 +144,9 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
           ? null
           : String(o.heardAbout).trim(),
       ...(Boolean(o.auditComplete) ? { auditComplete: true as const } : {}),
+      ...(Array.isArray(o.clientOrders) && o.clientOrders.length > 0
+        ? { clientOrders: o.clientOrders as SerializedAdminOrderTableRow["clientOrders"] }
+        : {}),
       ...(typeof o.repeatVin === "number" && o.repeatVin > 0 ? { repeatVin: Math.trunc(o.repeatVin) } : {}),
       ...(deadlineFromUnix ? { deadlineFromUnix } : {}),
       ...(activityUnix ? { activityUnix } : {}),

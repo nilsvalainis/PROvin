@@ -1,6 +1,7 @@
 import "server-only";
 
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { recordSourceOutcomes } from "@/lib/source-health-store";
 
 import type { AutodnaApiFailure, AutodnaBinarySuccess, AutodnaJsonSuccess } from "@/lib/autodna-api";
 import { autodnaFailureHttpStatus } from "@/lib/autodna-api";
@@ -10,6 +11,11 @@ export function autodnaResultToNextResponse(
   logTag: string,
   context: Record<string, string>,
 ): NextResponse {
+  after(() =>
+    recordSourceOutcomes([
+      { id: "autodna", ok: result.ok, msg: result.ok ? undefined : `${result.code}: ${result.message ?? ""}` },
+    ]),
+  );
   if (!result.ok) {
     console.error(`[${logTag}] upstream failure`, {
       ...context,
