@@ -97,7 +97,13 @@ export function AdminOrderUpsellPanel({
       });
       const data = (await res.json().catch(() => ({}))) as Draft & { error?: string };
       if (!res.ok) {
-        setNotice("Piedāvājumu neizdevās sagatavot.");
+        if (data.error === "missing_email") {
+          setNotice("Nav klienta e-pasta. Stripe apmaksas saiti nevar izveidot.");
+        } else if (data.error === "stripe_config") {
+          setNotice("Stripe nav iestatīts. Apmaksas saiti nevar izveidot.");
+        } else {
+          setNotice("Piedāvājumu neizdevās sagatavot.");
+        }
         return;
       }
       setDraft({
@@ -134,7 +140,12 @@ export function AdminOrderUpsellPanel({
         }),
       });
       if (!res.ok) {
-        setNotice("E-pastu neizdevās nosūtīt.");
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        if (data.error === "stripe_config" || data.error === "stripe_session_failed") {
+          setNotice("E-pastu nesūtīju: Stripe apmaksas saite nav gatava.");
+        } else {
+          setNotice("E-pastu neizdevās nosūtīt.");
+        }
         return;
       }
       setNotice("E-pasts nosūtīts.");

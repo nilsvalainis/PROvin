@@ -18,7 +18,7 @@ const MINI = formatEurFromCents(MINI_CATALOG_CENTS);
 const AUDITS = formatEurFromCents(AUDIT_PRICE_CENTS);
 const DIFF = formatEurFromCents(AUDIT_PRICE_CENTS - MINI_CATALOG_CENTS);
 const DEALER = formatEurFromCents(MINI_DEALER_ADDON_CENTS);
-const PAY_URL = "https://provin.lv/lv/papildinajums/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const PAY_URL = "https://checkout.stripe.com/c/pay/cs_test_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 function draft(partial: Partial<Parameters<typeof buildMiniToAuditsRecommendationDraft>[0]> = {}) {
   return buildMiniToAuditsRecommendationDraft({

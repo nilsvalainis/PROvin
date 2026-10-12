@@ -35,6 +35,9 @@ export type StoredUpsellOffer = {
   status: OrderUpsellStatus;
   paidAt?: string;
   stripeSessionId?: string;
+  /** Hosted Stripe Checkout, izveidots e-pasta saitei (vēl neapmaksāts). */
+  stripeCheckoutSessionId?: string;
+  stripeCheckoutUrl?: string;
 };
 
 type SessionUpsellDoc = {
@@ -152,6 +155,12 @@ function parseOffer(raw: unknown, kind: OrderUpsellKind): StoredUpsellOffer | nu
     status,
     ...(typeof o.paidAt === "string" && o.paidAt ? { paidAt: o.paidAt } : {}),
     ...(typeof o.stripeSessionId === "string" && o.stripeSessionId ? { stripeSessionId: o.stripeSessionId } : {}),
+    ...(typeof o.stripeCheckoutSessionId === "string" && o.stripeCheckoutSessionId
+      ? { stripeCheckoutSessionId: o.stripeCheckoutSessionId }
+      : {}),
+    ...(typeof o.stripeCheckoutUrl === "string" && o.stripeCheckoutUrl
+      ? { stripeCheckoutUrl: o.stripeCheckoutUrl }
+      : {}),
   };
 }
 
@@ -251,6 +260,7 @@ export async function openUpsellOffer(sessionId: string, quote: UpsellQuote, now
   }
   const nowIso = new Date(nowMs).toISOString();
   const reuse = prev && prev.status === "open" && Date.parse(prev.expiresAt) > nowMs ? prev.token : randomBytes(16).toString("hex");
+  const reuseOpen = Boolean(prev && prev.status === "open" && reuse === prev.token);
   const offer: StoredUpsellOffer = {
     token: reuse,
     kind: quote.kind,
@@ -261,6 +271,10 @@ export async function openUpsellOffer(sessionId: string, quote: UpsellQuote, now
     createdAt: prev && reuse === prev.token ? prev.createdAt : nowIso,
     expiresAt: new Date(nowMs + UPSELL_LINK_TTL_MS).toISOString(),
     status: "open",
+    ...(reuseOpen && prev?.stripeCheckoutSessionId
+      ? { stripeCheckoutSessionId: prev.stripeCheckoutSessionId }
+      : {}),
+    ...(reuseOpen && prev?.stripeCheckoutUrl ? { stripeCheckoutUrl: prev.stripeCheckoutUrl } : {}),
   };
   if (prev && prev.token !== offer.token) {
     const marked = await writeToken({
@@ -278,6 +292,29 @@ export async function openUpsellOffer(sessionId: string, quote: UpsellQuote, now
     offers: { ...existing.offers, [quote.kind]: offer },
   };
   const saved = await writeSessionDoc(next);
+  if (!saved) return { ok: false, error: "store_failed" };
+  return { ok: true, offer };
+}
+
+export async function attachUpsellStripeCheckout(args: {
+  sessionId: string;
+  kind: OrderUpsellKind;
+  stripeCheckoutSessionId: string;
+  stripeCheckoutUrl: string;
+}): Promise<{ ok: true; offer: StoredUpsellOffer } | { ok: false; error: string }> {
+  if (!isSafeOrderDraftSessionId(args.sessionId)) return { ok: false, error: "invalid_session" };
+  const doc = await readSessionUpsellDoc(args.sessionId);
+  const prev = doc?.offers[args.kind];
+  if (!prev || prev.status !== "open") return { ok: false, error: "missing_offer" };
+  const offer: StoredUpsellOffer = {
+    ...prev,
+    stripeCheckoutSessionId: args.stripeCheckoutSessionId.trim(),
+    stripeCheckoutUrl: args.stripeCheckoutUrl.trim(),
+  };
+  const saved = await writeSessionDoc({
+    parentSessionId: args.sessionId,
+    offers: { ...doc!.offers, [args.kind]: offer },
+  });
   if (!saved) return { ok: false, error: "store_failed" };
   return { ok: true, offer };
 }

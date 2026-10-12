@@ -94,7 +94,7 @@ export function buildMiniToAuditsRecommendationDraft(
     "",
     `Ir arī starpsolis: vispirms pievienot tikai oficiālā dīlera datus (${opts.dealerAddonPrice}) un pēc tam lemt par pilno auditu. Šajā solī nebūs pārbaužu maksas ārvalstu datubāzēs (CarVertical, AutoDNA); paliek starptautiskie valsts reģistri un dīlera ieraksti. Ja vēlaties šo variantu, atbildiet uz šo e-pastu.`,
     "",
-    "Saite derīga 30 dienas.",
+    "Apmaksas saite ir piesaistīta šim pasūtījumam. Ja tā vairs neatveras, atbildiet uz šo e-pastu.",
     "",
     sign,
   ].join("\n");

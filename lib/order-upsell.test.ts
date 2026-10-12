@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
-import { MINI_TO_AUDITS_RECOMMENDATION_LABEL } from "@/lib/email/mini-to-audits-recommendation";
+import {
+  MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
+  MINI_TO_AUDITS_RECOMMENDATION_LABEL,
+} from "@/lib/email/mini-to-audits-recommendation";
 import {
   availableUpsellQuotes,
+  buildOrderUpsellCheckoutSessionParams,
+  buildOrderUpsellStripeMetadata,
   buildUpsellDraft,
   DEALER_TO_AUDIT_CENTS,
   ensureUpsellUrlInText,
+  isStripeHostedPaymentUrl,
   MINI_CATALOG_CENTS,
   MINI_DEALER_ADDON_CENTS,
   quoteOrderUpsell,
@@ -116,12 +122,13 @@ describe("order upsell quotes", () => {
   });
 
   it("builds the MINI to AUDITS recommendation with name, car and difference", () => {
+    const stripePay = "https://checkout.stripe.com/c/pay/cs_test_a1b2c3";
     const draft = buildUpsellDraft({
       kind: "mini_to_audit",
       customerName: "Anna Kalniņa",
       car: "VW Passat",
       vin: "WVWZZZ3CZE123456",
-      url: "https://provin.lv/lv/papildinajums/abc",
+      url: stripePay,
       priorCents: MINI_CATALOG_CENTS,
       chargeCents: 6000,
       targetCents: 9999,
@@ -132,15 +139,56 @@ describe("order upsell quotes", () => {
     expect(draft.emailText).toContain("39,99 €");
     expect(draft.emailText).toContain("60,00 €");
     expect(draft.emailText).toContain("99,99 €");
-    expect(draft.emailText).toContain("Apmaksāt: https://provin.lv/lv/papildinajums/abc");
+    expect(draft.emailText).toContain(`Apmaksāt: ${stripePay}`);
+    expect(isStripeHostedPaymentUrl(stripePay)).toBe(true);
     expect(draft.emailText.toLowerCase()).not.toContain("ekspert");
     expect(draft.emailText).not.toMatch(/\u2014|\u2013/);
   });
 
-  it("appends the pay link if the operator removed it", () => {
-    expect(ensureUpsellUrlInText("Sveiki", "https://provin.lv/lv/papildinajums/abc")).toBe(
-      "Sveiki\n\nApmaksāt: https://provin.lv/lv/papildinajums/abc",
+  it("puts order id and VIN on the Stripe Checkout session so payment upgrades to AUDITS", () => {
+    const params = buildOrderUpsellCheckoutSessionParams({
+      kind: "mini_to_audit",
+      chargeCents: 6000,
+      parentSessionId: "cs_test_order123",
+      token: "a".repeat(32),
+      targetLine: "audit",
+      vin: "WVWZZZ3CZE123456",
+      email: "anna@example.com",
+      origin: "https://www.provin.lv",
+    });
+    expect(params.mode).toBe("payment");
+    expect(params.customer_email).toBe("anna@example.com");
+    expect(params.line_items[0]?.price_data.unit_amount).toBe(6000);
+    expect(params.metadata).toEqual(
+      buildOrderUpsellStripeMetadata({
+        parentSessionId: "cs_test_order123",
+        kind: "mini_to_audit",
+        token: "a".repeat(32),
+        targetLine: "audit",
+        vin: "WVWZZZ3CZE123456",
+      }),
     );
+    expect(params.metadata.fulfillment).toBe("order_upsell");
+    expect(params.metadata.order_id).toBe("cs_test_order123");
+    expect(params.metadata.upgrade_of).toBe("cs_test_order123");
+    expect(params.metadata.upgrade_kind).toBe("mini_to_audit");
+    expect(params.metadata.checkout_line).toBe("audit");
+    expect(params.metadata.vin).toBe("WVWZZZ3CZE123456");
+  });
+
+  it("appends the pay link if the operator removed it", () => {
+    expect(ensureUpsellUrlInText("Sveiki", "https://checkout.stripe.com/c/pay/cs_test_x")).toBe(
+      "Sveiki\n\nApmaksāt: https://checkout.stripe.com/c/pay/cs_test_x",
+    );
+  });
+
+  it("fills the payment-link placeholder", () => {
+    expect(
+      ensureUpsellUrlInText(
+        `Labdien!\n\nApmaksāt: ${MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER}`,
+        "https://checkout.stripe.com/c/pay/cs_test_x",
+      ),
+    ).toContain("https://checkout.stripe.com/c/pay/cs_test_x");
   });
 
   it("sorts a fresh upsell above older incomplete orders", () => {

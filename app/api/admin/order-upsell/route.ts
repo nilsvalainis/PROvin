@@ -14,6 +14,7 @@ import {
   upsellListOverlay,
   upsellPublicPath,
 } from "@/lib/order-upsell";
+import { ensureOrderUpsellStripePaymentUrl } from "@/lib/order-upsell-checkout";
 import {
   openUpsellOffer,
   readSessionUpsellDoc,
@@ -101,7 +102,23 @@ export async function POST(req: Request) {
   if (!opened.ok) {
     return NextResponse.json({ error: opened.error }, { status: opened.error === "already_settled" ? 409 : 503 });
   }
-  const url = `${getPublicSiteOrigin()}${upsellPublicPath(opened.offer.token)}`;
+  let url = `${getPublicSiteOrigin()}${upsellPublicPath(opened.offer.token)}`;
+  if (quote.kind === "mini_to_audit") {
+    if (!ctx.email) {
+      return NextResponse.json({ error: "missing_email" }, { status: 400 });
+    }
+    const pay = await ensureOrderUpsellStripePaymentUrl({
+      parentSessionId: sessionId,
+      email: ctx.email,
+      vin: ctx.vin || ctx.order.vin,
+      phone: ctx.phone,
+      offer: opened.offer,
+    });
+    if (!pay.ok) {
+      return NextResponse.json({ error: pay.error }, { status: 503 });
+    }
+    url = pay.url;
+  }
   const draft = buildUpsellDraft({
     kind: quote.kind,
     vin: ctx.vin || ctx.order.vin,

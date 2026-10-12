@@ -11,6 +11,7 @@ import {
 } from "@/lib/admin-customer-identity";
 import {
   buildMiniToAuditsRecommendationDraft,
+  MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
   MINI_TO_AUDITS_RECOMMENDATION_LABEL,
 } from "@/lib/email/mini-to-audits-recommendation";
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
@@ -204,6 +205,98 @@ export function upsellStripeProductName(kind: OrderUpsellKind): string {
   return "PROVIN AUDITS papildinājums";
 }
 
+export type OrderUpsellStripeMetaInput = {
+  parentSessionId: string;
+  kind: OrderUpsellKind;
+  token: string;
+  targetLine: OrderUpsellTargetLine;
+  vin?: string | null;
+  phone?: string | null;
+};
+
+/** Stripe Checkout / Payment Link metadata: piesaista maksājumu pasūtījumam un VIN. */
+export function buildOrderUpsellStripeMetadata(input: OrderUpsellStripeMetaInput): Record<string, string> {
+  const vin = (input.vin ?? "").trim();
+  const phone = (input.phone ?? "").trim();
+  return {
+    fulfillment: "order_upsell",
+    upgrade_of: input.parentSessionId,
+    order_id: input.parentSessionId,
+    upgrade_kind: input.kind,
+    upgrade_token: input.token,
+    checkout_line: input.targetLine,
+    ...(vin ? { vin } : {}),
+    ...(phone ? { phone } : {}),
+  };
+}
+
+export type OrderUpsellCheckoutSessionParams = {
+  mode: "payment";
+  customer_email: string;
+  line_items: [
+    {
+      price_data: {
+        currency: "eur";
+        product_data: { name: string; description: string };
+        unit_amount: number;
+      };
+      quantity: 1;
+    },
+  ];
+  success_url: string;
+  cancel_url: string;
+  metadata: Record<string, string>;
+  locale: "lv";
+};
+
+export function buildOrderUpsellCheckoutSessionParams(opts: {
+  kind: OrderUpsellKind;
+  chargeCents: number;
+  parentSessionId: string;
+  token: string;
+  targetLine: OrderUpsellTargetLine;
+  vin?: string | null;
+  phone?: string | null;
+  email: string;
+  origin: string;
+}): OrderUpsellCheckoutSessionParams {
+  const vin = (opts.vin ?? "").trim();
+  const origin = opts.origin.replace(/\/$/, "");
+  const back = `${origin}${upsellPublicPath(opts.token)}`;
+  return {
+    mode: "payment",
+    customer_email: opts.email.trim(),
+    line_items: [
+      {
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: upsellStripeProductName(opts.kind),
+            description: vin
+              ? `Papildinājums jau apmaksātam pasūtījumam. VIN ${vin}.`
+              : "Papildinājums jau apmaksātam pasūtījumam.",
+          },
+          unit_amount: opts.chargeCents,
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: `${back}?paid=1`,
+    cancel_url: back,
+    metadata: buildOrderUpsellStripeMetadata(opts),
+    locale: "lv",
+  };
+}
+
+export function isStripeHostedPaymentUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "checkout.stripe.com" || host === "buy.stripe.com";
+  } catch {
+    return false;
+  }
+}
+
 function vinSuffix(vin?: string | null): string {
   const v = (vin ?? "").trim().toUpperCase();
   return v ? ` (VIN ${v})` : "";
@@ -328,6 +421,9 @@ export function buildUpsellDraft(opts: {
 
 export function ensureUpsellUrlInText(text: string, url: string): string {
   if (text.includes(url)) return text;
+  if (text.includes(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER)) {
+    return text.split(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER).join(url);
+  }
   const trimmed = text.trim();
   return trimmed ? `${trimmed}\n\nApmaksāt: ${url}` : `Apmaksāt: ${url}`;
 }
