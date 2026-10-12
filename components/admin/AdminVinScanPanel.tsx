@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
 
 import { AdminVinScanResultCards } from "@/components/admin/AdminVinScanResultCards";
 import { isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl } from "@/lib/vin-scan/catalog";
+import { applyFinlandLink } from "@/lib/vin-scan/finland-link";
 import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
 import {
   buildVinScanFacts,
@@ -322,9 +323,16 @@ export function AdminVinScanPanel({
       .catch(() => undefined);
   }, [scannedAt]);
 
-  const rows = CATALOG.map((item) => byId[item.id]).filter((row): row is ScanRow => Boolean(row));
+  const displayById = useMemo(() => {
+    const list = applyFinlandLink(Object.values(byId), plates);
+    const next: Record<string, ScanRow> = {};
+    for (const row of list) next[row.id] = row;
+    return next;
+  }, [byId, plates]);
+
+  const rows = CATALOG.map((item) => displayById[item.id]).filter((row): row is ScanRow => Boolean(row));
   const facts = rows.length > 0 ? buildVinScanFacts(rows) : null;
-  const unknownIds = CATALOG.filter((item) => byId[item.id]?.status === "unknown").map((item) => item.id);
+  const unknownIds = CATALOG.filter((item) => displayById[item.id]?.status === "unknown").map((item) => item.id);
   const canRetry = !busy && unknownIds.length > 0;
 
   async function scanServer(opts: { force?: boolean; sources?: string[] } = {}) {
@@ -414,7 +422,7 @@ export function AdminVinScanPanel({
       scannedAt,
       busy,
       rows: CATALOG.map((item) => {
-        const row = byId[item.id];
+        const row = displayById[item.id];
         return {
           id: item.id,
           label: item.label,
@@ -435,7 +443,7 @@ export function AdminVinScanPanel({
         };
       }),
     });
-  }, [byId, scannedAt, busy, clean, onSnapshot, plates, listing]);
+  }, [displayById, scannedAt, busy, clean, onSnapshot, plates, listing]);
 
   return (
     <section className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]" aria-busy={busy}>
@@ -505,7 +513,7 @@ export function AdminVinScanPanel({
       {copyNote ? <p className="px-2.5 pb-1 text-[10px] text-[var(--color-provin-muted)]">{copyNote}</p> : null}
       <ul className="grid grid-cols-2 gap-1 px-2 py-2 sm:grid-cols-4">
         {CATALOG.map((item) => {
-          const row = byId[item.id];
+          const row = displayById[item.id];
           const status = busy && !row ? "checking" : busy && row?.status === "unknown" ? "checking" : (row?.status ?? (busy ? "checking" : "idle"));
           const active = openId === item.id;
           const href = canScan ? resolveVinScanOpenUrl(item, clean, row?.openUrl, plates, listing) : "";

@@ -369,7 +369,14 @@ export function parseVinSourceScan(result: VinSourceFetchResult): VinScanParse {
   const mileage = result.mileage
     .map((row) => ({ date: row.date, odometer: row.odometer }))
     .filter((row) => row.date || row.odometer);
-  const detail = [result.ownersSummary, result.statusRecords, ...result.notes].filter(Boolean).join("\n");
+  const countries = [
+    ...result.mileage.map((row) => row.country),
+    ...result.incidents.map((row) => row.country),
+    ...result.timeline.map((row) => row.country),
+  ].filter((name, i, all) => Boolean(name) && all.indexOf(name) === i);
+  const detail = [result.ownersSummary, result.statusRecords, ...result.notes, ...countries]
+    .filter(Boolean)
+    .join("\n");
   if (result.found) {
     return {
       status: "found",

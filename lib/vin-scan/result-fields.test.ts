@@ -48,6 +48,31 @@ describe("buildVinScanResultCard", () => {
     ).toBeNull();
   });
 
+  it("Traficom Somijas saite ir kartīte arī bez markas", () => {
+    const yes = buildVinScanResultCard({
+      id: "traficom",
+      label: "Traficom",
+      status: "unknown",
+      flags: { finlandLinked: true, finlandLinkSource: "FI numurs" },
+    });
+    expect(yes?.finlandLink).toEqual({ linked: "jā", source: "FI numurs" });
+    const no = buildVinScanResultCard({
+      id: "traficom",
+      label: "Traficom",
+      status: "none",
+      flags: { finlandLinked: false, finlandLinkSource: "Traficom" },
+    });
+    expect(no?.finlandLink).toEqual({ linked: "nē", source: "Traficom" });
+    expect(
+      buildVinScanResultCard({
+        id: "traficom",
+        label: "Traficom",
+        status: "unknown",
+        summary: "Traficom captcha netika apieta",
+      }),
+    ).toBeNull();
+  });
+
   it("apskates no detail nav atsaukumi", () => {
     const card = buildVinScanResultCard({
       id: "esyn",

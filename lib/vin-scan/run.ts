@@ -3,6 +3,7 @@ import "server-only";
 import { VIN_SCAN_CATALOG, isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { sourceNeedsInput, vinScanProbeFor } from "@/lib/vin-scan/probes";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
+import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator } from "@/lib/vin-scan/types";
 
 const SLOW_SOURCES = new Set<VinScanSourceId>([
@@ -97,7 +98,7 @@ export async function runVinScan(
       }
     }),
   );
-  return rows;
+  return applyFinlandLinkToIndicators(rows, ctx.plates);
 }
 
 export function sanitizeVinScanSourceIds(raw: unknown): VinScanSourceId[] | undefined {

@@ -178,6 +178,49 @@ describe("vin scan manual order seed", () => {
     expect(block.carvertical.aiContextRaw).not.toContain("nopirkta");
   });
 
+  it("Somijas jā ievieto Traficom statusRecords, nē un unknown atstāj tukšu", () => {
+    const yes = buildVinScanManualOrderSeed({
+      vin: VIN,
+      plates: { fi: "ABC123" },
+      sources: [
+        {
+          id: "traficom",
+          label: "Traficom",
+          status: "unknown",
+          summary: "Traficom captcha netika apieta",
+        },
+      ],
+    });
+    const yesBlock = yes.workspace.sourceBlocks as { traficom_fi: { statusRecords: string } };
+    expect(yesBlock.traficom_fi.statusRecords).toBe("Saistīts ar Somiju: jā · FI numurs");
+
+    const no = buildVinScanManualOrderSeed({
+      vin: VIN,
+      sources: [
+        {
+          id: "traficom",
+          label: "Traficom",
+          status: "none",
+          summary: "Traficom šo VIN neatpazina",
+        },
+      ],
+    });
+    expect((no.workspace.sourceBlocks as { traficom_fi: { statusRecords: string } }).traficom_fi.statusRecords).toBe("");
+
+    const unknown = buildVinScanManualOrderSeed({
+      vin: VIN,
+      sources: [
+        {
+          id: "traficom",
+          label: "Traficom",
+          status: "unknown",
+          summary: "Traficom captcha netika apieta",
+        },
+      ],
+    });
+    expect((unknown.workspace.sourceBlocks as { traficom_fi: { statusRecords: string } }).traficom_fi.statusRecords).toBe("");
+  });
+
   it("piezīmēs iekļauj arī avotus bez rezultāta", () => {
     const notes = buildVinScanManualOrderNotes({
       vin: VIN,

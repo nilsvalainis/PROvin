@@ -10,12 +10,14 @@ import {
   createDefaultSourceBlocks,
   emptyCsddFields,
   emptyVendorAvotuBlock,
+  emptyVinRegistryBlock,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { isCarVerticalPurchasedScanSource } from "@/lib/carvertical-purchase";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { emptyCsddTechData, type CsddTechData } from "@/lib/csdd-tech-data";
 import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
+import { detectFinlandLink, finlandLinkStatusLine } from "@/lib/vin-scan/finland-link";
 import {
   collectVinScanMileage,
   formatVinScanMileageLine,
@@ -24,7 +26,7 @@ import {
   pickVinScanVehicle,
   type VinScanOverviewRow,
 } from "@/lib/vin-scan/summary";
-import type { VinScanMileage, VinScanStatus, VinScanVehicle } from "@/lib/vin-scan/types";
+import type { VinScanFlags, VinScanMileage, VinScanStatus, VinScanVehicle } from "@/lib/vin-scan/types";
 
 const SOURCE_STATUS_LV: Record<string, string> = {
   found: "Ir dati",
@@ -48,6 +50,7 @@ export type VinScanManualOrderSource = {
   mileage?: VinScanMileage[];
   purchased?: boolean;
   detail?: string;
+  flags?: VinScanFlags;
 };
 
 export type VinScanManualOrderInput = {
@@ -160,6 +163,7 @@ function asSource(v: unknown): VinScanManualOrderSource | null {
   const openUrl = typeof o.openUrl === "string" && o.openUrl.trim() ? o.openUrl.trim() : null;
   const vehicle = asVehicle(o.vehicle) ?? undefined;
   const mileage = asMileage(o.mileage);
+  const flags = asFlags(o.flags);
   return {
     id: id || label,
     label: label || id,
@@ -171,7 +175,27 @@ function asSource(v: unknown): VinScanManualOrderSource | null {
     ...(mileage.length ? { mileage } : {}),
     ...(o.purchased === true ? { purchased: true } : {}),
     ...(typeof o.detail === "string" && o.detail.trim() ? { detail: o.detail.trim() } : {}),
+    ...(flags ? { flags } : {}),
   };
+}
+
+function asFlags(v: unknown): VinScanFlags | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const o = v as Record<string, unknown>;
+  const flags: VinScanFlags = {};
+  if (typeof o.wanted === "boolean") flags.wanted = o.wanted;
+  if (typeof o.stolen === "boolean") flags.stolen = o.stolen;
+  if (typeof o.recallCount === "number" && Number.isFinite(o.recallCount)) flags.recallCount = o.recallCount;
+  if (typeof o.photoCount === "number" && Number.isFinite(o.photoCount)) flags.photoCount = o.photoCount;
+  if (typeof o.registrationCountry === "string" && o.registrationCountry.trim()) {
+    flags.registrationCountry = o.registrationCountry.trim();
+  }
+  if (typeof o.napJudgement === "string" && o.napJudgement.trim()) flags.napJudgement = o.napJudgement.trim();
+  if (typeof o.finlandLinked === "boolean") flags.finlandLinked = o.finlandLinked;
+  if (typeof o.finlandLinkSource === "string" && o.finlandLinkSource.trim()) {
+    flags.finlandLinkSource = o.finlandLinkSource.trim();
+  }
+  return Object.keys(flags).length ? flags : undefined;
 }
 
 function asOverviewStatus(status: string | undefined): VinScanStatus | "idle" {
@@ -276,6 +300,25 @@ function seedCarverticalBlock(input: VinScanManualOrderInput): WorkspaceSourceBl
   return block;
 }
 
+function seedTraficomFiBlock(input: VinScanManualOrderInput): WorkspaceSourceBlocks["traficom_fi"] {
+  const block = emptyVinRegistryBlock();
+  const hit = detectFinlandLink(
+    (input.sources ?? []).map((src) => ({
+      id: src.id,
+      status: src.status,
+      summary: src.summary,
+      detail: src.detail,
+      flags: src.flags,
+    })),
+    input.plates,
+  );
+  const flagged = (input.sources ?? []).find((src) => src.flags?.finlandLinked === true);
+  const source = hit.linked === true ? hit.source : flagged?.flags?.finlandLinkSource || "";
+  if (hit.linked !== true && !flagged) return block;
+  block.statusRecords = clip(finlandLinkStatusLine({ finlandLinked: true, finlandLinkSource: source }), 8_000);
+  return block;
+}
+
 function seedCsddBlock(input: VinScanManualOrderInput): WorkspaceSourceBlocks["csdd"] {
   let csdd = emptyCsddFields();
   const vin = normalizeVin(input.vin);
@@ -308,6 +351,7 @@ export function buildVinScanManualOrderSeed(input: VinScanManualOrderInput): Vin
   const blocks = createDefaultSourceBlocks();
   blocks.csdd = seedCsddBlock(normalized);
   blocks.carvertical = seedCarverticalBlock(normalized);
+  blocks.traficom_fi = seedTraficomFiBlock(normalized);
 
   const orderEdits: OrderDraftOrderEdits = { vin, notes };
   if (mileageComment) orderEdits.mileageComment = mileageComment;

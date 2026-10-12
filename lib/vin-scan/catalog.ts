@@ -291,8 +291,8 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "traficom",
     label: "Traficom",
     country: "FI",
-    hint: "Somijas reģistrs pēc FI numura",
-    needs: ["fi"],
+    hint: "Somijas reģistrs. Publiskā saite pēc VIN",
+    needs: ["vin"],
     openUrl: (vin, plates) => {
       const plate = plates?.fi ? plateQ(plates.fi) : "";
       return `https://www.traficom.fi/en/transport/road/vehicle-information?vin=${vinQuery(vin)}${plate ? `&plate=${plate}` : ""}`;

@@ -17,7 +17,14 @@ export type VinScanResultRow = {
   vehicle?: VinScanVehicle;
   mileage?: VinScanMileage[];
   media?: { photoUrl?: string; photoCount?: number };
-  flags?: { recallCount?: number; photoCount?: number; wanted?: boolean; stolen?: boolean };
+  flags?: {
+    recallCount?: number;
+    photoCount?: number;
+    wanted?: boolean;
+    stolen?: boolean;
+    finlandLinked?: boolean;
+    finlandLinkSource?: string;
+  };
   inspections?: VinScanInspection[];
   recalls?: VinScanRecall[];
   incidents?: { date?: string; summary: string }[];
@@ -38,6 +45,7 @@ export type VinScanResultCard = {
   listings: VinScanListing[];
   photoUrl: string;
   photoCount: number;
+  finlandLink: { linked: "jā" | "nē"; source: string } | null;
 };
 
 const DATE_LINE =
@@ -100,6 +108,13 @@ export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard
     row.vehicle && (row.vehicle.make || row.vehicle.model || row.vehicle.year) ? row.vehicle : null;
   const photoUrl = row.media?.photoUrl || auctions.find((item) => item.photoUrl)?.photoUrl || "";
   const photoCount = row.media?.photoCount || row.flags?.photoCount || 0;
+  const finlandLink =
+    row.flags?.finlandLinked === true || row.flags?.finlandLinked === false
+      ? {
+          linked: row.flags.finlandLinked ? ("jā" as const) : ("nē" as const),
+          source: String(row.flags.finlandLinkSource || "").trim(),
+        }
+      : null;
   const hasRecords =
     mileage.length > 0 ||
     inspections.length > 0 ||
@@ -109,7 +124,7 @@ export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard
     listings.length > 0 ||
     Boolean(photoUrl) ||
     photoCount > 0;
-  if (!hasRecords && (row.status !== "found" || !vehicle)) {
+  if (!hasRecords && !finlandLink && (row.status !== "found" || !vehicle)) {
     return null;
   }
   return {
@@ -125,6 +140,7 @@ export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard
     listings,
     photoUrl,
     photoCount,
+    finlandLink,
   };
 }
 

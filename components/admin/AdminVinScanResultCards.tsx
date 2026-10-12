@@ -44,6 +44,12 @@ export function AdminVinScanResultCards({ rows }: { rows: readonly VinScanResult
             ) : null}
           </div>
           <div className="space-y-0.5">
+            {card.finlandLink ? (
+              <>
+                <Kv label="Saistīts ar Somiju" value={card.finlandLink.linked} />
+                <Kv label="Avots" value={card.finlandLink.source} />
+              </>
+            ) : null}
             <Kv label="Marka" value={card.vehicle?.make ?? ""} />
             <Kv label="Modelis" value={card.vehicle?.model ?? ""} />
             <Kv label="Gads" value={card.vehicle?.year ?? ""} />

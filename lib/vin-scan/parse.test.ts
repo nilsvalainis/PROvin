@@ -41,6 +41,7 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("nhtsa_recalls");
     expect(VIN_SCAN_SOURCE_IDS).toContain("bidfax");
     expect(VIN_SCAN_SOURCE_IDS).toContain("listing_history");
+    expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.needs).toEqual(["vin"]);
     expect(VIN_SCAN_SOURCE_IDS).not.toContain("vp_wanted");
     expect(VIN_SCAN_SOURCE_IDS).not.toContain("uk_mot");
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "nummerplade")?.openUrl("WVWZZZ7NZEV015204")).toContain(
@@ -229,6 +230,11 @@ describe("CSDD un valstu reģistri", () => {
       parseVinSourceScan(emptyVinSourceResult("lkf_ee", DK_VIN, "Nav CAPSOLVER_API_KEY. Igaunijas reģistrs no servera vajag CapSolver")).status,
     ).toBe("skipped");
     expect(parseVinSourceScan(emptyVinSourceResult("carinfo", DK_VIN, "car.info HTTP ielase neizdevās")).status).toBe("unknown");
+    const fi = emptyVinSourceResult("carinfo", DK_VIN, "Atrasts");
+    fi.found = true;
+    fi.message = "Atrasts car.info";
+    fi.mileage = [{ date: "2024-03-12", odometer: "120000", country: "Somija" }];
+    expect(parseVinSourceScan(fi).detail).toContain("Somija");
   });
 });
 

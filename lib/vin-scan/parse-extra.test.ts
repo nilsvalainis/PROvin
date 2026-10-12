@@ -4,6 +4,7 @@ import {
   oemBrandForVin,
   parseAuctionArchive,
   parseNhtsaRecalls,
+  parseTraficom,
   parseVpicMakeModelYear,
   parseRdwOpenData,
 } from "@/lib/vin-scan/parse-extra";
@@ -49,6 +50,31 @@ describe("NHTSA atsaukumi un RDW", () => {
     expect(parsed.summary).toContain("NAP");
     expect(parsed.flags?.recallCount).toBe(1);
     expect(parsed.flags?.registrationCountry).toBe("NL");
+  });
+});
+
+describe("Traficom", () => {
+  it("found ar marku un modeli ir FI", () => {
+    const parsed = parseTraficom(200, "<html>Make VOLVO Model V70 Year 2008</html>");
+    expect(parsed).toMatchObject({
+      status: "found",
+      vehicle: { make: "VOLVO", model: "V70", year: "2008" },
+      flags: { registrationCountry: "FI" },
+    });
+  });
+
+  it("ei löytynyt bez auto ir none", () => {
+    expect(parseTraficom(200, "<html>Ajoneuvoa ei löytynyt</html>")).toMatchObject({
+      status: "none",
+      summary: "Traficom šo VIN neatpazina",
+    });
+  });
+
+  it("Suomi.fi / captcha bez auto ir unknown, ne none", () => {
+    expect(parseTraficom(200, "<html>Identify yourself Suomi.fi kirjaudu</html>").status).toBe("unknown");
+    expect(parseTraficom(200, "<html>Just a moment Cloudflare captcha</html>").status).toBe("unknown");
+    expect(parseTraficom(403, "").status).toBe("unknown");
+    expect(parseTraficom(200, "<html>Model year: 2008</html>").status).toBe("unknown");
   });
 });
 
