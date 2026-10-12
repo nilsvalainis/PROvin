@@ -23,7 +23,7 @@ export function AdminVinScanResultCards({ rows }: { rows: readonly VinScanResult
   const cards = vinScanResultCards(rows);
   if (cards.length === 0) return null;
   return (
-    <ul className="grid grid-cols-1 gap-2 px-2 pb-2 sm:grid-cols-2">
+    <ul className="grid grid-cols-1 gap-2 px-2 pb-20 sm:grid-cols-2 sm:pb-2">
       {cards.map((card) => (
         <li
           key={card.id}
@@ -58,7 +58,7 @@ export function AdminVinScanResultCards({ rows }: { rows: readonly VinScanResult
                 </li>
               ))}
             </ul>
-          ) : card.mileage.length > 0 ? (
+          ) : card.listings.length === 0 && card.mileage.length > 0 ? (
             <ul className="mt-1.5 space-y-0.5">
               {card.mileage.map((row, i) => (
                 <li key={`${row.date}-${i}`} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-2">
