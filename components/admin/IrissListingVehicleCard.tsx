@@ -18,7 +18,6 @@ import {
   listingThumbOverflowLabel,
   listingVinScanHref,
   listingVinShort,
-  listingVinSourceMark,
 } from "@/lib/iriss-listings-card";
 import { listingBidPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost } from "@/lib/iriss-listings-cost";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
@@ -69,14 +68,6 @@ function CountryFlag({ code }: { code: string }) {
       {f.flag}
     </span>
   );
-}
-
-function stageLabel(stage: string): string {
-  const s = stage.toUpperCase();
-  if (s === "BEFORE_AUCTION") return "pirms izsoles";
-  if (s === "IN_AUCTION" || s === "RUNNING") return "izsole notiek";
-  if (s === "AFTER_AUCTION" || s === "FINISHED") return "izsole beigusies";
-  return stage ? stage.toLowerCase().replace(/_/g, " ") : "";
 }
 
 function ListingPhoto({
@@ -148,7 +139,6 @@ export function IrissListingVehicleCard({
   const dmg = classifyListingDamage(v.damageRaw);
   const fav = prefs.fav.includes(v.id);
   const hidden = prefs.hidden.includes(v.id);
-  const customCost = Boolean(prefs.costOv[v.id]);
   const auctionTypeLabel = listingAuctionTypeLabel(v.auctionType);
   const cd = listingCountdown(v.auctionEndAt, nowMs);
   const sourceHref = resolveListingDetailUrl(v);
@@ -157,7 +147,6 @@ export function IrissListingVehicleCard({
   const stock = listingStockNo(v);
   const vin = v.vin && isValidVin(normalizeVin(v.vin)) ? normalizeVin(v.vin) : "";
   const vinHref = vin ? listingVinScanHref(vin) : "";
-  const vinMark = listingVinSourceMark(v.vinSource);
   const days = listingDaysInAuctionLabel(v.auctionStartAt || v.firstSeenAt, nowMs);
   const referrerPolicy: "no-referrer" | undefined =
     v.platform === "openline" || /images\.openlane\.eu/i.test(currentPhoto) ? "no-referrer" : undefined;
@@ -218,9 +207,7 @@ export function IrissListingVehicleCard({
             />
           )
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-slate-50 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-400">
-            Nav foto
-          </div>
+          <div className="h-full w-full bg-slate-50" />
         )}
         {photos.length > 0 ? (
           <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 text-[10px] font-semibold text-white">
@@ -324,10 +311,7 @@ export function IrissListingVehicleCard({
             {stock && vin ? <span aria-hidden>·</span> : null}
             {vin ? (
               <span className="inline-flex flex-wrap items-center gap-1.5" data-provin-handoff-vin={vin}>
-                <span>
-                  VIN {listingVinShort(vin)}
-                  {vinMark ? <span className="font-medium text-slate-400"> ({vinMark})</span> : null}
-                </span>
+                <span>VIN {listingVinShort(vin)}</span>
                 <button
                   type="button"
                   className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50"
@@ -406,21 +390,6 @@ export function IrissListingVehicleCard({
               JAUNS
             </span>
           ) : null}
-          {customCost ? (
-            <span className="hidden rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900 sm:inline-flex" title="Izmaksas šim auto mainītas">
-              I {listingFmtEur(extras)}
-            </span>
-          ) : null}
-          {dmg.status === "nodata" ? (
-            <span className="hidden rounded-md border border-[#E5E7EB] bg-slate-50 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 sm:inline">
-              {v.platform === "auto1" ? "bojājumi detaļās" : "Nav datu"}
-            </span>
-          ) : null}
-          {dmg.status === "none" ? (
-            <span className="hidden rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800 sm:inline">
-              Tehn. bojājumi nav norādīti
-            </span>
-          ) : null}
           {dmg.cats.map((c, i) => (
             <span key={c.name} className={`rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:text-[10px] ${i >= 2 ? "hidden sm:inline" : ""}`}>
               {c.name}
@@ -446,15 +415,17 @@ export function IrissListingVehicleCard({
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               <span className="text-[26px] font-extrabold tabular-nums leading-none">{bid == null ? "-" : listingFmtEur(bid)}</span>
-              <IrissListTaxBadge tax={tax} size="md" />
+              <IrissListTaxBadge tax={tax} size="md" quiet />
             </div>
             {v.priceBuyNow != null && v.priceBuyNow !== bid ? (
               <div className="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz {listingFmtEur(v.priceBuyNow)}</div>
             ) : null}
-            <div className={`mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums ${cd.k}`}>
-              ⏱ {cd.t}
-              {cd.end ? <span className="font-semibold text-slate-500">· {cd.end}</span> : null}
-            </div>
+            {v.auctionEndAt ? (
+              <div className={`mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums ${cd.k}`}>
+                ⏱ {cd.t}
+                {cd.end ? <span className="font-semibold text-slate-500">· {cd.end}</span> : null}
+              </div>
+            ) : null}
           </div>
           <IrissListingBudgetBox budget={budget} gala={gala} real={real} maxBid={mb} room={room} priceMissing={bid == null} />
         </div>
@@ -480,16 +451,17 @@ export function IrissListingVehicleCard({
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <span className="text-[26px] font-extrabold tabular-nums leading-none">{bid == null ? "-" : listingFmtEur(bid)}</span>
-            <IrissListTaxBadge tax={tax} size="md" />
+            <IrissListTaxBadge tax={tax} size="md" quiet />
           </div>
           {v.priceBuyNow != null && v.priceBuyNow !== bid ? (
             <div className="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz {listingFmtEur(v.priceBuyNow)}</div>
           ) : null}
-          <div className={`mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums ${cd.k}`}>
-            ⏱ {cd.t}
-            {cd.end ? <span className="font-semibold text-slate-500">· {cd.end}</span> : null}
-          </div>
-          {v.auctionStage ? <div className="mt-0.5 text-[11px] text-slate-500">{stageLabel(v.auctionStage)}</div> : null}
+          {v.auctionEndAt ? (
+            <div className={`mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums ${cd.k}`}>
+              ⏱ {cd.t}
+              {cd.end ? <span className="font-semibold text-slate-500">· {cd.end}</span> : null}
+            </div>
+          ) : null}
         </div>
         <IrissListingBudgetBox budget={budget} gala={gala} real={real} maxBid={mb} room={room} priceMissing={bid == null} />
       </div>

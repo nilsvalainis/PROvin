@@ -19,7 +19,7 @@
  *
  * Fallback, off the ingest path: optional OCR of listing photos (service
  * book / registration / invoices / dash plate), ISO 3779 check digit, cached
- * on the vehicle as vinSource=ocr_photo ("no foto" in the UI).
+ * on the vehicle as vinSource=ocr_photo. LIST kartīte VIN avota zīmi nerāda.
  */
 
 import { pickListingVin } from "@/lib/iriss-listings-extract";

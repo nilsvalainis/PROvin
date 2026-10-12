@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   listingAuctionEndLabel,
+  listingBudgetFitPill,
   listingCardGallery,
   listingCountdown,
   listingDaysInAuctionLabel,
   listingFirstRegLabel,
+  listingFmtEur,
   listingSpecCells,
   listingSubtitleParts,
   listingThumbOverflowLabel,
@@ -12,6 +14,7 @@ import {
   listingVinShort,
   listingVinSourceMark,
 } from "@/lib/iriss-listings-card";
+import { listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost } from "@/lib/iriss-listings-cost";
 
 describe("listingCardGallery", () => {
   it("uses only imageUrl without strip when imageUrls is missing", () => {
@@ -48,6 +51,31 @@ describe("listing thumbs / VIN / specs", () => {
     expect(listingVinScanHref(vin)).toBe("/admin/vin-scan?vin=WBAZZZ8V0K1237731");
     expect(listingVinScanHref("nope")).toBe("");
     expect(listingVinSourceMark("ocr_photo")).toBe("no foto");
+  });
+
+  it("budget fit pill has no helper sentence", () => {
+    expect(listingBudgetFitPill(32_000, 30_410)).toEqual({ ok: true, label: "Ietilpst budžetā +1 590 €" });
+    expect(listingBudgetFitPill(29_000, 30_410)).toEqual({ ok: false, label: "Pārsniedz budžetu -1 410 €" });
+    expect(listingBudgetFitPill(32_000, 30_410).label).not.toMatch(/t\.sk\.|zem budžeta|virs budžeta/i);
+  });
+
+  it("receipt rows match a single extras total plus 21% VAT", () => {
+    const extras = listingExtrasI();
+    const bid = 24_850;
+    const real = listingRealCost("net", 0, bid, extras);
+    const total = listingFinalPrice({ kind: "net", rate: null }, bid, extras);
+    expect(extras).toBe(3_590);
+    expect(listingFmtEur(real.extras)).toBe("3 590 €");
+    expect(listingFmtEur(real.vat)).toBe("5 972 €");
+    expect(listingFmtEur(total)).toBe("34 412 €");
+    expect(listingBudgetFitPill(36_000, total)).toEqual({ ok: true, label: "Ietilpst budžetā +1 588 €" });
+    expect(listingBudgetFitPill(29_000, total)).toEqual({ ok: false, label: "Pārsniedz budžetu -5 412 €" });
+    const mbOk = listingMaxBid("net", 0, 36_000, extras);
+    expect(listingFmtEur(mbOk)).toBe("26 162 €");
+    expect(listingFmtEur(Math.abs(mbOk - bid))).toBe("1 312 €");
+    const mbOver = listingMaxBid("net", 0, 29_000, extras);
+    expect(listingFmtEur(mbOver)).toBe("20 377 €");
+    expect(listingFmtEur(Math.abs(mbOver - bid))).toBe("4 473 €");
   });
 
   it("formats first registration and hides empty spec cells", () => {

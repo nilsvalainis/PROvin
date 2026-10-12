@@ -155,3 +155,13 @@ export function listingFmtEur(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "";
   return `${Math.round(n).toLocaleString("lv-LV")} €`;
 }
+
+export const LISTING_BUDGET_FIT_OK = "Ietilpst budžetā";
+export const LISTING_BUDGET_FIT_OVER = "Pārsniedz budžetu";
+
+/** +X € zem budžeta / -X € virs. Bez paskaidrojuma. */
+export function listingBudgetFitPill(budget: number, total: number): { ok: boolean; label: string } {
+  const left = budget - total;
+  if (left >= 0) return { ok: true, label: `${LISTING_BUDGET_FIT_OK} +${listingFmtEur(left)}` };
+  return { ok: false, label: `${LISTING_BUDGET_FIT_OVER} -${listingFmtEur(-left)}` };
+}

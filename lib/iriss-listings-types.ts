@@ -71,7 +71,7 @@ export type IrissListingVehicle = {
   imageUrls?: string[];
   /** VIN, ja avots to iedod (Openlane ChassisNumber, Autobid additionalInformation, Auto1 ja ir). */
   vin?: string;
-  /** `source` = JSON/lauks; `ocr_photo` = nolasīts no foto (UI: „no foto”). */
+  /** `source` = JSON/lauks; `ocr_photo` = nolasīts no foto (LIST kartītē avota zīmi nerāda). */
   vinSource?: "source" | "ocr_photo";
   vinOcrAt?: string;
   vinOcrStatus?: "found" | "miss";
