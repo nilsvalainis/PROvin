@@ -133,7 +133,7 @@ describe("order upsell quotes", () => {
       chargeCents: 6000,
       targetCents: 9999,
     });
-    expect(draft.subject).toContain(MINI_TO_AUDITS_RECOMMENDATION_LABEL);
+    expect(draft.subject).toBe("Jūsu PROVIN MINI pasūtījums: VW Passat");
     expect(draft.emailText).toContain("Labdien, Anna!");
     expect(draft.emailText).toContain("Paldies par PROVIN MINI pasūtījumu VW Passat (VIN WVWZZZ3CZE123456).");
     expect(draft.emailText).toContain("Starpību (60,00 €)");

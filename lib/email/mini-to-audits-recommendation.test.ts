@@ -54,7 +54,8 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
       vin: "WVWZZZ3CZE123456",
       car: "VW Passat",
     });
-    expect(d.subject).toContain(MINI_TO_AUDITS_RECOMMENDATION_LABEL);
+    expect(d.subject).toBe("Jūsu PROVIN MINI pasūtījums: VW Passat");
+    expect(d.subject).not.toContain(MINI_TO_AUDITS_RECOMMENDATION_LABEL);
     expect(d.emailText).toBe(
       MINI_TO_AUDITS_APPROVED_TEXT.replaceAll("{vards}", "Jāni")
         .replaceAll("{auto}", "VW Passat")
@@ -80,14 +81,17 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
   it("keeps the approved MINI and AUDITS bullets", () => {
     const d = draft();
     expect(d.emailText).toContain("✓ Konsultāciju un ieteikumus klātienes apskatei");
-    expect(d.emailText).toContain("✓ Apdrošinātāju datus un tehnisko apskašu vēsturi");
+    expect(d.emailText).toContain("✓ OCTA negadījumus un tehnisko apskašu vēsturi");
     expect(d.emailText).toContain("✓ Sludinājuma, pārdevēja un tehnisko risku analīzi");
     expect(d.emailText).toContain("✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus");
     expect(d.emailText).toContain("✓ Oficiālo dīleru un izsoļu portālu arhīva datus");
     expect(d.emailText).toContain("negadījumu vēsturi, nobraukuma vēsturi ārvalstīs");
+    expect(d.emailText).toContain("kas ievestiem auto ir paši svarīgākie.");
     expect(d.emailText).toContain("Mēs iesakām pilno auditu");
     expect(d.emailText).toContain("turpināsim ar MINI");
-    expect(d.emailText).toContain("ārvalstu maksas datubāzēs");
+    expect(d.emailText).not.toContain("atbilstu");
+    expect(d.emailText).not.toContain("pie ievestiem");
+    expect(d.emailText).not.toContain("oficiālā dīlera datiem un tālāk lemt");
   });
 
   it("keeps placeholders when name, car, VIN or payment URL are missing", () => {
@@ -95,6 +99,7 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
     expect(d.emailText).toContain("Labdien, {vards}!");
     expect(d.emailText).toContain("pasūtījumu {auto} (VIN {vin})");
     expect(d.emailText).toContain(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER);
+    expect(d.subject).toBe("Jūsu PROVIN MINI pasūtījums");
   });
 
   it("never uses eksperts or unicode dashes", () => {

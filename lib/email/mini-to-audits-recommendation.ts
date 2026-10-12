@@ -15,23 +15,21 @@ export const MINI_TO_AUDITS_APPROVED_TEXT = `Labdien, {vards}!
 
 Paldies par PROVIN MINI pasūtījumu {auto} (VIN {vin}).
 
-Pārskatot auto, redzam, ka šim auto vairāk atbilstu PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
+Pārskatot auto, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
 
 PROVIN MINI ietver:
 ✓ Konsultāciju un ieteikumus klātienes apskatei
-✓ Apdrošinātāju datus un tehnisko apskašu vēsturi
+✓ OCTA negadījumus un tehnisko apskašu vēsturi
 ✓ Sludinājuma, pārdevēja un tehnisko risku analīzi
 
 Tikai PROVIN AUDITS ietver:
 ✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus
 ✓ Oficiālo dīleru un izsoļu portālu arhīva datus
 
-Tas nozīmē, ka tieši AUDITS parāda negadījumu vēsturi, nobraukuma vēsturi ārvalstīs un oficiālā dīlera servisa datus, kas pie ievestiem auto ir paši svarīgākie.
+Tas nozīmē, ka tieši AUDITS parāda negadījumu vēsturi, nobraukuma vēsturi ārvalstīs un oficiālā dīlera servisa datus, kas ievestiem auto ir paši svarīgākie.
 
 Mēs iesakām pilno auditu. Starpību ({starpiba} €) varat apmaksāt šeit:
 {maksajuma_saite}
-
-Var arī vispirms papildināt pārbaudi tikai ar oficiālā dīlera datiem un tālāk lemt pēc situācijas. Jāņem vērā, ka tādā gadījumā netiks veikta pārbaude ārvalstu maksas datubāzēs.
 
 Ja papildu dati nav vajadzīgi, turpināsim ar MINI.
 
@@ -108,11 +106,13 @@ export function buildMiniToAuditsRecommendationDraft(
     .replaceAll("{vin}", vin)
     .replaceAll("{starpiba}", starpiba)
     .replaceAll("{maksajuma_saite}", pay);
-  const vehicle = miniToAuditsVehiclePhrase({ vin: opts.vin, car: opts.car });
-  const subjectVehicle = vehicle ? ` (${vehicle})` : "";
+  const carForSubject = (opts.car ?? "").trim().replace(/\s+/g, " ");
+  const subject = carForSubject
+    ? `Jūsu PROVIN MINI pasūtījums: ${carForSubject}`
+    : "Jūsu PROVIN MINI pasūtījums";
 
   return {
-    subject: `PROVIN.LV: ${MINI_TO_AUDITS_RECOMMENDATION_LABEL}${subjectVehicle}`,
+    subject,
     emailText: text,
     whatsappText: text,
   };
