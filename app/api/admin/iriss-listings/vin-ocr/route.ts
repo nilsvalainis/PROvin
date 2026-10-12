@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { patchIrissListingVehicleVin, readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
 import { isIrissListingsVinOcrEnabled, ocrVinFromListingPhotos } from "@/lib/iriss-listings-vin-ocr";
+import { listingVinOcrIsCrossChecked } from "@/lib/iriss-listings-vin-from-photos";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const MISS_RETRY_MS = 7 * 86_400_000;
 
@@ -29,39 +30,51 @@ export async function POST(req: Request) {
   if (!vehicle) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const existing = vehicle.vin && isValidVin(normalizeVin(vehicle.vin)) ? normalizeVin(vehicle.vin) : "";
-  if (existing) {
+  if (existing && vehicle.vinSource !== "ocr_photo") {
     return NextResponse.json({
       status: "has_vin",
       vin: existing,
       vinSource: vehicle.vinSource ?? "source",
+      vinOcrAlts: [] as string[],
+    });
+  }
+  if (existing && listingVinOcrIsCrossChecked(vehicle.vinOcrStatus)) {
+    return NextResponse.json({
+      status: vehicle.vinOcrStatus,
+      vin: existing,
+      vinSource: "ocr_photo",
+      vinOcrAlts: vehicle.vinOcrAlts ?? [],
+      cached: true,
     });
   }
 
   const missAt = vehicle.vinOcrStatus === "miss" && vehicle.vinOcrAt ? Date.parse(vehicle.vinOcrAt) : NaN;
   if (Number.isFinite(missAt) && Date.now() - missAt < MISS_RETRY_MS) {
-    return NextResponse.json({ status: "miss", vin: "", vinSource: "", cached: true });
+    return NextResponse.json({ status: "miss", vin: "", vinSource: "", vinOcrAlts: [] as string[], cached: true });
   }
 
   try {
     const r = await ocrVinFromListingPhotos(vehicle);
     const at = new Date().toISOString();
-    if (r.vin) {
+    if (r.vin && (r.vinOcrStatus === "confirmed" || r.vinOcrStatus === "unverified" || r.vinOcrStatus === "conflict")) {
       const saved = await patchIrissListingVehicleVin(id, {
         vin: r.vin,
         vinSource: "ocr_photo",
         vinOcrAt: at,
-        vinOcrStatus: "found",
+        vinOcrStatus: r.vinOcrStatus,
+        vinOcrAlts: r.alts,
       });
       return NextResponse.json({
-        status: "found",
+        status: r.vinOcrStatus,
         vin: r.vin,
         vinSource: "ocr_photo",
+        vinOcrAlts: r.alts,
         photosTried: r.photosTried,
         persisted: saved.persisted,
       });
     }
-    await patchIrissListingVehicleVin(id, { vinOcrAt: at, vinOcrStatus: "miss" });
-    return NextResponse.json({ status: "miss", vin: "", vinSource: "", photosTried: r.photosTried });
+    await patchIrissListingVehicleVin(id, { vinOcrAt: at, vinOcrStatus: "miss", vinOcrAlts: [] });
+    return NextResponse.json({ status: "miss", vin: "", vinSource: "", vinOcrAlts: [] as string[], photosTried: r.photosTried });
   } catch (e) {
     return NextResponse.json(
       { error: "ocr_failed", detail: e instanceof Error ? e.message : "unknown" },

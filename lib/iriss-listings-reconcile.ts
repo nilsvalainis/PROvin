@@ -73,17 +73,19 @@ function stripSourceFields(v: IrissFetchedVehicle): VehicleFields {
 
 /** OCR / iepriekšējā VIN paliek, ja šis nolasījums VIN nedod. Avota VIN uzvar. */
 export function mergeKeptListingVin(
-  prev: Pick<IrissListingVehicle, "vin" | "vinSource" | "vinOcrAt" | "vinOcrStatus" | "documentImageUrls">,
-  next: Pick<VehicleFields, "vin" | "vinSource" | "vinOcrAt" | "vinOcrStatus" | "documentImageUrls">,
-): Pick<IrissListingVehicle, "vin" | "vinSource" | "vinOcrAt" | "vinOcrStatus" | "documentImageUrls"> {
+  prev: Pick<IrissListingVehicle, "vin" | "vinSource" | "vinOcrAt" | "vinOcrStatus" | "vinOcrAlts" | "documentImageUrls">,
+  next: Pick<VehicleFields, "vin" | "vinSource" | "vinOcrAt" | "vinOcrStatus" | "vinOcrAlts" | "documentImageUrls">,
+): Pick<IrissListingVehicle, "vin" | "vinSource" | "vinOcrAt" | "vinOcrStatus" | "vinOcrAlts" | "documentImageUrls"> {
   const vin = next.vin || prev.vin;
   const fromSource = Boolean(next.vin);
   const documentImageUrls = [...new Set([...(next.documentImageUrls ?? []), ...(prev.documentImageUrls ?? [])])];
+  const vinOcrAlts = next.vinOcrAlts?.length ? next.vinOcrAlts : prev.vinOcrAlts;
   return {
     vin: vin || undefined,
     vinSource: fromSource ? next.vinSource ?? "source" : next.vinSource ?? prev.vinSource,
     vinOcrAt: next.vinOcrAt || prev.vinOcrAt,
     vinOcrStatus: next.vinOcrStatus || prev.vinOcrStatus,
+    vinOcrAlts: vinOcrAlts?.length ? vinOcrAlts : undefined,
     documentImageUrls: documentImageUrls.length ? documentImageUrls : undefined,
   };
 }

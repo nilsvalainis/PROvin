@@ -16,7 +16,7 @@ import {
   listingStockNo,
   listingSubtitleParts,
   listingThumbOverflowLabel,
-  listingVinScanHref,
+  listingVinCardState,
   listingVinShort,
 } from "@/lib/iriss-listings-card";
 import { listingBidPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost } from "@/lib/iriss-listings-cost";
@@ -28,7 +28,6 @@ import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { listingCostsFor, type IrissListPrefs } from "@/lib/iriss-listings-operator-prefs";
 import { listingTaxCostArgs, listingTaxResolved } from "@/lib/iriss-listings-vat";
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   autobid: "AUTOBID",
@@ -118,6 +117,7 @@ export function IrissListingVehicleCard({
 }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [vinCopied, setVinCopied] = useState(false);
+  const [vinAltsOpen, setVinAltsOpen] = useState(false);
   useListingVinOcr(v, (id, patch) => onVinPatch?.(id, patch));
   const gallery = listingCardGallery(v);
   const photos = imageHidden ? [] : gallery.photos;
@@ -145,8 +145,8 @@ export function IrissListingVehicleCard({
   const specs = listingSpecCells(v);
   const subtitle = listingSubtitleParts(v);
   const stock = listingStockNo(v);
-  const vin = v.vin && isValidVin(normalizeVin(v.vin)) ? normalizeVin(v.vin) : "";
-  const vinHref = vin ? listingVinScanHref(vin) : "";
+  const vinUi = listingVinCardState(v);
+  const vin = vinUi?.vin ?? "";
   const days = listingDaysInAuctionLabel(v.auctionStartAt || v.firstSeenAt, nowMs);
   const referrerPolicy: "no-referrer" | undefined =
     v.platform === "openline" || /images\.openlane\.eu/i.test(currentPhoto) ? "no-referrer" : undefined;
@@ -305,13 +305,39 @@ export function IrissListingVehicleCard({
       {photoBlock}
 
       <div className="flex min-w-0 flex-1 flex-col gap-2 p-2.5 sm:p-0">
-        {(stock || vin) && (
+        {(stock || vinUi) && (
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold tabular-nums text-slate-500">
             {stock ? <span>Nr. {stock}</span> : null}
-            {stock && vin ? <span aria-hidden>·</span> : null}
-            {vin ? (
-              <span className="inline-flex flex-wrap items-center gap-1.5" data-provin-handoff-vin={vin}>
-                <span>VIN {listingVinShort(vin)}</span>
+            {stock && vinUi ? <span aria-hidden>·</span> : null}
+            {vinUi ? (
+              <span
+                className="inline-flex flex-wrap items-center gap-1.5"
+                data-provin-handoff-vin={vinUi.handoff ? vinUi.vin : undefined}
+              >
+                <span
+                  className={
+                    vinUi.tone === "conflict"
+                      ? "cursor-pointer text-amber-800"
+                      : vinUi.tone === "unverified"
+                        ? "text-slate-500"
+                        : undefined
+                  }
+                  title={vinUi.title || undefined}
+                  onClick={
+                    vinUi.alts.length
+                      ? (e) => {
+                          e.stopPropagation();
+                          setVinAltsOpen((open) => !open);
+                        }
+                      : undefined
+                  }
+                >
+                  VIN {listingVinShort(vinUi.vin)}
+                  {vinUi.mark ? <span className="ml-1 text-[10px] font-medium text-slate-400">{vinUi.mark}</span> : null}
+                </span>
+                {vinAltsOpen && vinUi.alts.length ? (
+                  <span className="text-amber-800">{vinUi.alts.map((a) => listingVinShort(a)).join(" · ")}</span>
+                ) : null}
                 <button
                   type="button"
                   className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50"
@@ -322,9 +348,9 @@ export function IrissListingVehicleCard({
                 >
                   {vinCopied ? "Nokopēts" : "Kopēt"}
                 </button>
-                {vinHref ? (
+                {vinUi.scanHref ? (
                   <a
-                    href={vinHref}
+                    href={vinUi.scanHref}
                     className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-50"
                     onClick={(e) => e.stopPropagation()}
                   >

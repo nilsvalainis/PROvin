@@ -16,11 +16,13 @@ import { listingYearDigits } from "@/lib/iriss-listings-list-view";
 import { isIrissListingsAutomaticSlot } from "@/lib/iriss-listings-schedule";
 import {
   IRISS_LISTING_PLATFORMS,
+  IRISS_LISTING_VIN_OCR_STATUSES,
   type IrissListingPlatform,
   type IrissListingPriceChange,
   type IrissListingSourceRun,
   type IrissListingSyncRunSummary,
   type IrissListingVehicle,
+  type IrissListingVinOcrStatus,
   type IrissListingsLatestView,
   type IrissListingsSyncCursor,
   type IrissListingsRawBundle,
@@ -101,6 +103,16 @@ function isPlatform(v: string): v is IrissListingPlatform {
   return (IRISS_LISTING_PLATFORMS as readonly string[]).includes(v);
 }
 
+function parseVinOcrStatus(v: unknown): IrissListingVinOcrStatus | undefined {
+  const s = str(v);
+  return (IRISS_LISTING_VIN_OCR_STATUSES as readonly string[]).includes(s) ? (s as IrissListingVinOcrStatus) : undefined;
+}
+
+function parseVinOcrAlts(v: unknown): string[] | undefined {
+  const out = strArr(v).slice(0, 4);
+  return out.length ? out : undefined;
+}
+
 const SOURCE_STATUSES = new Set(["ok", "login_required", "blocked_by_waf", "parse_failed", "fetch_failed", "relay_not_configured", "skipped"]);
 const CHANGES = new Set(["new", "price_changed", "unchanged", "gone"]);
 const PRICE_FIELDS = new Set(["start", "minimal", "current", "buy_now"]);
@@ -158,7 +170,8 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     vin: str(v.vin) || undefined,
     vinSource: str(v.vinSource) === "ocr_photo" ? "ocr_photo" : str(v.vin) ? "source" : undefined,
     vinOcrAt: str(v.vinOcrAt) || undefined,
-    vinOcrStatus: str(v.vinOcrStatus) === "found" || str(v.vinOcrStatus) === "miss" ? (str(v.vinOcrStatus) as "found" | "miss") : undefined,
+    vinOcrStatus: parseVinOcrStatus(v.vinOcrStatus),
+    vinOcrAlts: parseVinOcrAlts(v.vinOcrAlts),
     color: str(v.color) || undefined,
     bodyType: str(v.bodyType) || undefined,
     doorCount: str(v.doorCount) || undefined,
@@ -405,13 +418,14 @@ export async function saveIrissListingsLatestView(view: IrissListingsLatestView)
   }
 }
 
-const VIN_PATCH_STATUSES = new Set(["found", "miss"]);
+const VIN_PATCH_STATUSES = new Set<string>(IRISS_LISTING_VIN_OCR_STATUSES);
 
 export type IrissListingVinPatch = {
   vin?: string;
   vinSource?: IrissListingVehicle["vinSource"];
   vinOcrAt?: string;
   vinOcrStatus?: IrissListingVehicle["vinOcrStatus"];
+  vinOcrAlts?: string[];
   documentImageUrls?: string[];
 };
 
@@ -434,6 +448,7 @@ export async function patchIrissListingVehicleVin(
       vinSource: patch.vinSource ?? prev.vinSource ?? (vin ? "source" : undefined),
       vinOcrAt: str(patch.vinOcrAt) || prev.vinOcrAt,
       vinOcrStatus: patch.vinOcrStatus && VIN_PATCH_STATUSES.has(patch.vinOcrStatus) ? patch.vinOcrStatus : prev.vinOcrStatus,
+      vinOcrAlts: patch.vinOcrAlts !== undefined ? parseVinOcrAlts(patch.vinOcrAlts) : prev.vinOcrAlts,
       documentImageUrls: patch.documentImageUrls ?? prev.documentImageUrls,
     };
     const vehicles = view.vehicles.slice();

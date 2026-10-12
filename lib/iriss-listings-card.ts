@@ -48,6 +48,69 @@ export function listingVinScanHref(vin: string): string {
   return `${LISTING_VIN_SCAN_PATH}?vin=${encodeURIComponent(v)}`;
 }
 
+export const LISTING_VIN_UNVERIFIED_MARK = "nepārbaudīts";
+
+export type ListingVinCardState = {
+  vin: string;
+  alts: string[];
+  tone: "normal" | "unverified" | "conflict";
+  mark: string;
+  scanHref: string;
+  handoff: boolean;
+  title: string;
+};
+
+/** LIST VIN rinda: avots/apstiprināts parasti; viens foto - nepārbaudīts; nesakritība - brīdinājums, bez VIN SCAN. */
+export function listingVinCardState(v: {
+  vin?: string;
+  vinSource?: string;
+  vinOcrStatus?: string;
+  vinOcrAlts?: string[];
+}): ListingVinCardState | null {
+  const vin = v.vin && isValidVin(normalizeVin(v.vin)) ? normalizeVin(v.vin) : "";
+  if (!vin) return null;
+  const alts = [
+    ...new Set((v.vinOcrAlts ?? []).map((x) => normalizeVin(x)).filter((x) => x && x !== vin && isValidVin(x))),
+  ];
+  const ocr = v.vinSource === "ocr_photo";
+  const conflict = ocr && (v.vinOcrStatus === "conflict" || alts.length > 0);
+  const unverified =
+    ocr &&
+    !conflict &&
+    (v.vinOcrStatus === "unverified" || v.vinOcrStatus === "found" || v.vinOcrStatus == null || v.vinOcrStatus === "");
+  if (conflict) {
+    return {
+      vin,
+      alts,
+      tone: "conflict",
+      mark: "",
+      scanHref: "",
+      handoff: false,
+      title: [vin, ...alts].join(" · "),
+    };
+  }
+  if (unverified) {
+    return {
+      vin,
+      alts: [],
+      tone: "unverified",
+      mark: LISTING_VIN_UNVERIFIED_MARK,
+      scanHref: listingVinScanHref(vin),
+      handoff: true,
+      title: "",
+    };
+  }
+  return {
+    vin,
+    alts: [],
+    tone: "normal",
+    mark: "",
+    scanHref: listingVinScanHref(vin),
+    handoff: true,
+    title: "",
+  };
+}
+
 /** Pilns VIN operators kopē; kartītē saīsināts kā maketā (WBA…7731). */
 export function listingVinShort(vin: string): string {
   const v = normalizeVin(vin);

@@ -44,6 +44,16 @@ export type IrissListingPriceChange = {
 
 export type IrissListingVehicleChange = "new" | "price_changed" | "unchanged" | "gone";
 
+export type IrissListingVinOcrStatus = "confirmed" | "unverified" | "conflict" | "miss" | "found";
+
+export const IRISS_LISTING_VIN_OCR_STATUSES: readonly IrissListingVinOcrStatus[] = [
+  "confirmed",
+  "unverified",
+  "conflict",
+  "miss",
+  "found",
+];
+
 export type IrissListingVehicle = {
   /** sha1(platform|externalId), stabils starp nolasījumiem. */
   id: string;
@@ -71,10 +81,16 @@ export type IrissListingVehicle = {
   imageUrls?: string[];
   /** VIN, ja avots to iedod (Openlane ChassisNumber, Autobid additionalInformation, Auto1 ja ir). */
   vin?: string;
-  /** `source` = JSON/lauks; `ocr_photo` = nolasīts no foto (LIST kartītē avota zīmi nerāda). */
+  /** `source` = JSON/lauks; `ocr_photo` = nolasīts no foto. */
   vinSource?: "source" | "ocr_photo";
   vinOcrAt?: string;
-  vinOcrStatus?: "found" | "miss";
+  /**
+   * OCR krustpārbaude: `confirmed` 2+ foto sakrīt, `unverified` viens foto,
+   * `conflict` foto nesakrīt, `miss` nav VIN. `found` = vecais pirmais trāpījums.
+   */
+  vinOcrStatus?: IrissListingVinOcrStatus;
+  /** Citi ISO 3779 VIN, ja foto nesakrīt. */
+  vinOcrAlts?: string[];
   /** Auto1 images[] ar type=DOCUMENT u.c. OCR vispirms šīs. */
   documentImageUrls?: string[];
   color?: string;

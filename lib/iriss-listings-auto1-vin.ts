@@ -17,9 +17,8 @@
  * job per listing (daily cap 150, shared with list sync) and still likely
  * return no VIN. So we do not open detail pages here.
  *
- * Fallback, off the ingest path: optional OCR of listing photos (service
- * book / registration / invoices / dash plate), ISO 3779 check digit, cached
- * on the vehicle as vinSource=ocr_photo. LIST kartīte VIN avota zīmi nerāda.
+ * Fallback, off the ingest path: OCR of document-like photos (cap 6), ISO 3779
+ * check digit, compare hits, cache confirmed / unverified / conflict.
  */
 
 import { pickListingVin } from "@/lib/iriss-listings-extract";

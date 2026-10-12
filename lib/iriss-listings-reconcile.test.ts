@@ -275,12 +275,15 @@ describe("reconcileVehicles", () => {
       vin: "WBAZZZ8V0K1237731",
       vinSource: "ocr_photo",
       vinOcrAt: T1,
-      vinOcrStatus: "found",
+      vinOcrStatus: "conflict",
+      vinOcrAlts: ["1HGCM82633A004352"],
       documentImageUrls: ["https://img-pa.auto1.com/img/schein.jpg"],
     };
     const r = run([withOcr], [fetched({ id: "a", platform: "auto1", vin: undefined, stockNumber: "BW03512" })], T2);
     expect(r.vehicles[0]!.vin).toBe("WBAZZZ8V0K1237731");
     expect(r.vehicles[0]!.vinSource).toBe("ocr_photo");
+    expect(r.vehicles[0]!.vinOcrStatus).toBe("conflict");
+    expect(r.vehicles[0]!.vinOcrAlts).toEqual(["1HGCM82633A004352"]);
     expect(r.vehicles[0]!.documentImageUrls).toEqual(["https://img-pa.auto1.com/img/schein.jpg"]);
   });
 });
