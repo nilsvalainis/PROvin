@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { extractCsddMakeModelFromWorkspace } from "@/lib/admin-csdd-make-model";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { normalizeWhatsAppPhoneDigits } from "@/lib/admin-whatsapp-phone";
@@ -41,7 +42,12 @@ async function loadContext(sessionId: string) {
     normalizeWhatsAppPhoneDigits(
       draft?.orderEdits?.customerPhone || order.phone || order.customerDetailsPhone || "",
     ) ?? "";
-  return { order, offers, email: email.trim(), phone };
+  const customerName =
+    [draft?.orderEdits?.customerName, order.customerName].find((v) => typeof v === "string" && v.trim())?.trim() ??
+    "";
+  const vin = [draft?.orderEdits?.vin, order.vin].find((v) => typeof v === "string" && v.trim())?.trim() ?? "";
+  const car = extractCsddMakeModelFromWorkspace(draft?.workspace) ?? "";
+  return { order, offers, email: email.trim(), phone, customerName, vin, car };
 }
 
 export async function GET(req: Request) {
@@ -98,7 +104,9 @@ export async function POST(req: Request) {
   const url = `${getPublicSiteOrigin()}${upsellPublicPath(opened.offer.token)}`;
   const draft = buildUpsellDraft({
     kind: quote.kind,
-    vin: ctx.order.vin,
+    vin: ctx.vin || ctx.order.vin,
+    customerName: ctx.customerName,
+    car: ctx.car,
     url,
     priorCents: quote.priorCents,
     chargeCents: quote.chargeCents,
@@ -108,6 +116,8 @@ export async function POST(req: Request) {
     url,
     email: ctx.email,
     phone: ctx.phone,
+    customerName: ctx.customerName,
+    car: ctx.car,
     ...draft,
   });
 }

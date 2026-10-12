@@ -9,6 +9,10 @@ import {
   isDealerHighlightAdminOrder,
   isMiniHighlightAdminOrder,
 } from "@/lib/admin-customer-identity";
+import {
+  buildMiniToAuditsRecommendationDraft,
+  MINI_TO_AUDITS_RECOMMENDATION_LABEL,
+} from "@/lib/email/mini-to-audits-recommendation";
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
 
 export const UPSELL_LINK_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -192,7 +196,7 @@ export function upsellKindButtonLabel(quote: UpsellQuote): string {
   if (quote.kind === "mini_to_dealer") {
     return `Piedāvāt dīlera datus (${formatEurFromCents(quote.chargeCents)})`;
   }
-  return `Piedāvāt pilno auditu (${formatEurFromCents(quote.chargeCents)})`;
+  return MINI_TO_AUDITS_RECOMMENDATION_LABEL;
 }
 
 export function upsellStripeProductName(kind: OrderUpsellKind): string {
@@ -214,6 +218,8 @@ export type UpsellDraft = {
 export function buildUpsellDraft(opts: {
   kind: OrderUpsellKind;
   vin?: string | null;
+  customerName?: string | null;
+  car?: string | null;
   url: string;
   priorCents: number;
   chargeCents: number;
@@ -226,6 +232,19 @@ export function buildUpsellDraft(opts: {
   const pay = `Apmaksāt: ${opts.url}`;
   const ttl = "Saite derīga 30 dienas.";
   const sign = clientMessageSignOff();
+
+  if (opts.kind === "mini_to_audit") {
+    return buildMiniToAuditsRecommendationDraft({
+      customerName: opts.customerName,
+      vin: opts.vin,
+      car: opts.car,
+      paymentUrl: opts.url,
+      miniPrice: formatEurFromCents(opts.priorCents),
+      auditsPrice: formatEurFromCents(opts.targetCents),
+      differencePrice: charge,
+      dealerAddonPrice: formatEurFromCents(MINI_DEALER_ADDON_CENTS),
+    });
+  }
 
   if (opts.kind === "mini_to_dealer") {
     const emailText = [

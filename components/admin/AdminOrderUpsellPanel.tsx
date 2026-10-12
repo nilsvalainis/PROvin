@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
+import { MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER } from "@/lib/email/mini-to-audits-recommendation";
 import type { OrderUpsellKind } from "@/lib/order-upsell";
 
 type Quote = {
@@ -29,6 +30,14 @@ type Draft = {
 
 const btn =
   "rounded-md border border-slate-300 bg-white px-2 py-1 text-[10px] font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50";
+
+function replacePayUrl(text: string, prev: string, next: string): string {
+  if (prev && text.includes(prev)) return text.split(prev).join(next);
+  if (text.includes(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER)) {
+    return text.split(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER).join(next || MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER);
+  }
+  return text;
+}
 
 export function AdminOrderUpsellPanel({
   sessionId,
@@ -192,6 +201,9 @@ export function AdminOrderUpsellPanel({
 
       {draft ? (
         <div className="mt-2 space-y-2 rounded-md border border-sky-200 bg-white p-2">
+          <p className="text-[10px] text-slate-500">
+            Priekšskatījums. Klientam aiziet tikai pēc pogas „Sūtīt”.
+          </p>
           <label className="block text-[10px] font-medium text-slate-500">
             E-pasts
             <input
@@ -206,6 +218,23 @@ export function AdminOrderUpsellPanel({
               className="mt-0.5 w-full rounded border border-slate-200 px-2 py-1 text-[12px]"
               value={draft.subject}
               onChange={(e) => setDraft({ ...draft, subject: e.target.value })}
+            />
+          </label>
+          <label className="block text-[10px] font-medium text-slate-500">
+            Maksājuma saite
+            <input
+              className="mt-0.5 w-full rounded border border-slate-200 px-2 py-1 text-[12px]"
+              value={draft.url}
+              onChange={(e) => {
+                const next = e.target.value;
+                const prev = draft.url;
+                setDraft({
+                  ...draft,
+                  url: next,
+                  emailText: replacePayUrl(draft.emailText, prev, next),
+                  whatsappText: replacePayUrl(draft.whatsappText, prev, next),
+                });
+              }}
             />
           </label>
           <label className="block text-[10px] font-medium text-slate-500">
@@ -226,7 +255,7 @@ export function AdminOrderUpsellPanel({
           </label>
           <div className="flex flex-wrap gap-1.5">
             <button type="button" className={btn} disabled={busy !== null || !draft.email} onClick={() => void sendEmail()}>
-              {busy === "send" ? "Sūta…" : "Nosūtīt e-pastu"}
+              {busy === "send" ? "Sūta…" : "Sūtīt"}
             </button>
             <button
               type="button"

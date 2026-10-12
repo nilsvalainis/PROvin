@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { sortAdminOrdersIncompleteFirst } from "@/lib/admin-audit-deadline-complete";
+import { MINI_TO_AUDITS_RECOMMENDATION_LABEL } from "@/lib/email/mini-to-audits-recommendation";
 import {
   availableUpsellQuotes,
   buildUpsellDraft,
   DEALER_TO_AUDIT_CENTS,
   ensureUpsellUrlInText,
+  MINI_CATALOG_CENTS,
   MINI_DEALER_ADDON_CENTS,
   quoteOrderUpsell,
+  upsellKindButtonLabel,
   upsellListOverlay,
   type UpsellOfferSnapshot,
 } from "@/lib/order-upsell";
@@ -57,11 +60,13 @@ describe("order upsell quotes", () => {
   it("offers MINI a dealer add-on at 19,99 and the audit remainder without a discount", () => {
     const order = { checkoutLine: "mini" as const, amountTotalCents: 3999 };
     expect(quoteOrderUpsell("mini_to_dealer", order)?.chargeCents).toBe(MINI_DEALER_ADDON_CENTS);
-    expect(quoteOrderUpsell("mini_to_audit", order)).toMatchObject({
+    const auditQuote = quoteOrderUpsell("mini_to_audit", order);
+    expect(auditQuote).toMatchObject({
       chargeCents: 6000,
       priorCents: 3999,
       targetCents: 9999,
     });
+    expect(upsellKindButtonLabel(auditQuote!)).toBe(MINI_TO_AUDITS_RECOMMENDATION_LABEL);
     const afterDealer = [
       offer({
         kind: "mini_to_dealer",
@@ -108,6 +113,28 @@ describe("order upsell quotes", () => {
         offer({ kind: "dealer_to_audit", status: "open" }),
       ]),
     ).toBeNull();
+  });
+
+  it("builds the MINI to AUDITS recommendation with name, car and difference", () => {
+    const draft = buildUpsellDraft({
+      kind: "mini_to_audit",
+      customerName: "Anna Kalniņa",
+      car: "VW Passat",
+      vin: "WVWZZZ3CZE123456",
+      url: "https://provin.lv/lv/papildinajums/abc",
+      priorCents: MINI_CATALOG_CENTS,
+      chargeCents: 6000,
+      targetCents: 9999,
+    });
+    expect(draft.subject).toContain(MINI_TO_AUDITS_RECOMMENDATION_LABEL);
+    expect(draft.emailText).toContain("Labdien, Anna Kalniņa!");
+    expect(draft.emailText).toContain("VW Passat (VIN WVWZZZ3CZE123456)");
+    expect(draft.emailText).toContain("39,99 €");
+    expect(draft.emailText).toContain("60,00 €");
+    expect(draft.emailText).toContain("99,99 €");
+    expect(draft.emailText).toContain("Apmaksāt: https://provin.lv/lv/papildinajums/abc");
+    expect(draft.emailText.toLowerCase()).not.toContain("ekspert");
+    expect(draft.emailText).not.toMatch(/\u2014|\u2013/);
   });
 
   it("appends the pay link if the operator removed it", () => {
