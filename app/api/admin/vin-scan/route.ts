@@ -10,7 +10,9 @@ import {
   isValidScanPlate,
   parseVinScanPlates,
 } from "@/lib/vin-scan/plates";
+import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
 import { runVinScan, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
+import type { VinScanIndicator } from "@/lib/vin-scan/types";
 import { listVinScanHistory, readVinScanSnapshot, vinScanSnapshotFresh, writeVinScanSnapshot } from "@/lib/vin-scan/store";
 
 export const runtime = "nodejs";
@@ -69,18 +71,25 @@ export async function POST(req: Request) {
             byId.set((row as { id: string }).id, row);
           }
         }
-        const indicators = defaultVinScanSourceIds()
+        const merged = defaultVinScanSourceIds()
           .map((id) => byId.get(id))
-          .filter(Boolean);
+          .filter(Boolean) as VinScanIndicator[];
         return NextResponse.json({
           ok: true,
           vin,
           scannedAt: cached.scannedAt,
-          indicators,
+          indicators: applyFinlandLinkToIndicators(merged, plates),
           cached: true,
         });
       }
-      return NextResponse.json({ ok: true, vin, scannedAt: cached.scannedAt, indicators: cached.indicators, cached: true });
+      const cachedRows = (Array.isArray(cached.indicators) ? cached.indicators : []) as VinScanIndicator[];
+      return NextResponse.json({
+        ok: true,
+        vin,
+        scannedAt: cached.scannedAt,
+        indicators: applyFinlandLinkToIndicators(cachedRows, plates),
+        cached: true,
+      });
     }
   }
 

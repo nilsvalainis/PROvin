@@ -249,17 +249,40 @@ export function parseRegitra(status: number, html: string): VinScanParse {
 export function parseTraficom(status: number, html: string): VinScanParse {
   if (status !== 200) return { status: "unknown", summary: `Traficom HTTP ${status}` };
   const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
-  if (/ei löytynyt|not found|no vehicle/i.test(text)) return { status: "none", summary: "Traficom šo numuru neatpazina" };
-  if (/captcha|recaptcha|just a moment/i.test(text) && !/merkki|make|vin/i.test(text)) {
+  const make =
+    /(?:Make|Merkki)[:\s]+([A-Za-z0-9][A-Za-z0-9 -]{0,28}?)(?=\s+(?:Model|Malli|Year|Vuosimalli|First|Vin)\b|$)/i
+      .exec(text)?.[1]
+      ?.trim() || "";
+  const model =
+    /(?:Model|Malli)(?!\s*year)[:\s]+([A-Za-z0-9][A-Za-z0-9 -]{0,38}?)(?=\s+(?:Year|Vuosimalli|Make|Merkki|First|Vin)\b|$)/i
+      .exec(text)?.[1]
+      ?.trim() || "";
+  const year =
+    /(?:Model year|Vuosimalli|(?<!\w)Year)[:\s]+((?:19|20)\d{2})/i.exec(text)?.[1] ||
+    /(?:First registration|Ensimmäinen käyttöönotto)[:\s]+.*?((?:19|20)\d{2})/i.exec(text)?.[1] ||
+    "";
+  if (
+    /ei löytynyt|ajoneuvoa ei löytynyt|no vehicle (was )?found|vehicle was not found/i.test(text) &&
+    !make &&
+    !model
+  ) {
+    return { status: "none", summary: "Traficom šo VIN neatpazina" };
+  }
+  if (
+    (/suomi\.fi|identify yourself|kirjaudu|e-identif|strong authentication|pankkitunnus|mobile certificate|certificate card|my e-services/i.test(
+      text,
+    ) ||
+      /captcha|recaptcha|just a moment/i.test(text)) &&
+    !make &&
+    !model
+  ) {
     return { status: "unknown", summary: "Traficom captcha netika apieta" };
   }
-  const make = /Make[:\s]+([A-Za-z0-9 -]{2,30})/i.exec(text)?.[1]?.trim() || /Merkki[:\s]+([A-Za-z0-9 -]{2,30})/i.exec(text)?.[1]?.trim() || "";
-  const model = /Model[:\s]+([A-Za-z0-9 -]{2,40})/i.exec(text)?.[1]?.trim() || /Malli[:\s]+([A-Za-z0-9 -]{2,40})/i.exec(text)?.[1]?.trim() || "";
   if (!make && !model) return { status: "unknown", summary: "Traficom lapa nav atpazīta" };
   return {
     status: "found",
-    summary: [make, model].filter(Boolean).join(" ") || "Ir Traficom reģistrā",
-    vehicle: make || model ? { make, model, year: "" } : undefined,
+    summary: [make, model, year].filter(Boolean).join(" ") || "Ir Traficom reģistrā",
+    vehicle: make || model || year ? { make, model, year } : undefined,
     flags: { registrationCountry: "FI" },
   };
 }

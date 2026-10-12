@@ -61,6 +61,8 @@ export type VinScanFlags = {
   photoCount?: number;
   registrationCountry?: string;
   napJudgement?: string;
+  finlandLinked?: boolean;
+  finlandLinkSource?: string;
 };
 
 export type VinScanIndicator = {
