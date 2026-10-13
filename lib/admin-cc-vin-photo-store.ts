@@ -144,7 +144,7 @@ export async function readCcVinPhotoJpeg(
   options?: { coverWatermark?: boolean },
 ): Promise<Buffer | null> {
   if (!isSafeOrderDraftSessionId(sessionId) || !isSafeCcVinPhotoId(photoId)) return null;
-  const coverWatermark = options?.coverWatermark !== false;
+  const coverWatermark = options?.coverWatermark === true;
 
   const blob = getOrderDraftBlobConfig();
   if (blob) {

@@ -104,7 +104,7 @@ export type CcVinBlockState = {
   aiContextRaw: string;
   photos: CcVinPhotoMeta[];
   photoGroups: CcVinPhotoGroup[];
-  /** Slēpt CheckCar.vin ūdenszīmi pirms foto saglabāšanas (noklusējums: ieslēgts). */
+  /** Slēpt CheckCar.vin ūdenszīmi pirms foto saglabāšanas (noklusējums: izslēgts). */
   hidePhotoWatermarks?: boolean;
   pdfChecklist?: CcVinPdfChecklist;
 };
@@ -333,7 +333,7 @@ export function normalizeCcVinBlock(raw: unknown): CcVinBlockState {
     aiContextRaw: str(o.aiContextRaw, 200000),
     photos: synced.photos,
     photoGroups: synced.photoGroups,
-    hidePhotoWatermarks: o.hidePhotoWatermarks === false ? false : true,
+    hidePhotoWatermarks: o.hidePhotoWatermarks === true,
     ...("pdfChecklist" in o ? { pdfChecklist: normalizeChecklist(o.pdfChecklist) } : {}),
   };
 }

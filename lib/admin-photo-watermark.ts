@@ -1,10 +1,10 @@
 /**
  * CheckCar.vin ūdenszīmes slēpšana pirms admin foto saglabāšanas.
- * CC.VIN: noklusējums ieslēgts. Pārējās sadaļas: noklusējums izslēgts.
+ * Visas sadaļas (t.sk. CC.VIN): noklusējums izslēgts. Ieslēdz tikai operators, ja foto jau ir trešās puses ūdenszīme.
  */
 
 export const HIDE_PHOTO_WATERMARKS_DEFAULT = false;
-export const HIDE_CC_VIN_PHOTO_WATERMARKS_DEFAULT = true;
+export const HIDE_CC_VIN_PHOTO_WATERMARKS_DEFAULT = HIDE_PHOTO_WATERMARKS_DEFAULT;
 
 function parseHidePhotoWatermarksFlag(raw: unknown, fallback: boolean): boolean {
   if (!raw || typeof raw !== "object") return fallback;
@@ -19,7 +19,7 @@ export function parseHidePhotoWatermarks(raw: unknown): boolean {
 }
 
 export function parseCcVinHidePhotoWatermarks(raw: unknown): boolean {
-  return parseHidePhotoWatermarksFlag(raw, HIDE_CC_VIN_PHOTO_WATERMARKS_DEFAULT);
+  return parseHidePhotoWatermarks(raw);
 }
 
 export function formRequestsWatermarkCover(form: FormData): boolean {
@@ -29,10 +29,10 @@ export function formRequestsWatermarkCover(form: FormData): boolean {
   return HIDE_PHOTO_WATERMARKS_DEFAULT;
 }
 
-/** CC.VIN lasīšana (priekšskatījums / PDF) - slēdzis no saglabātā bloka. */
+/** CC.VIN lasīšana (priekšskatījums / PDF) - slēdzis no saglabātā bloka; trūkstošs lauks = izslēgts. */
 export function hidePhotoWatermarksFromCcVinWorkspace(workspace: unknown): boolean {
-  if (!workspace || typeof workspace !== "object") return HIDE_CC_VIN_PHOTO_WATERMARKS_DEFAULT;
+  if (!workspace || typeof workspace !== "object") return HIDE_PHOTO_WATERMARKS_DEFAULT;
   const blocks = (workspace as { sourceBlocks?: unknown }).sourceBlocks;
-  if (!blocks || typeof blocks !== "object") return HIDE_CC_VIN_PHOTO_WATERMARKS_DEFAULT;
+  if (!blocks || typeof blocks !== "object") return HIDE_PHOTO_WATERMARKS_DEFAULT;
   return parseCcVinHidePhotoWatermarks((blocks as { cc_vin?: unknown }).cc_vin);
 }

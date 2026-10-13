@@ -1,3 +1,5 @@
+import { readFileSync } from "fs";
+import path from "path";
 import { describe, expect, it } from "vitest";
 import sharp from "sharp";
 
@@ -8,6 +10,8 @@ import {
   jpegFromAdminPhotoUpload,
 } from "@/lib/admin-photo-normalize";
 import { jpegWithCheckcarWatermarkCovered } from "@/lib/checkcar-watermark-cover";
+
+const SERVICE_SCREEN = path.join(process.cwd(), "lib/fixtures/checkcar-watermark-service-screen.jpg");
 
 describe("admin photo normalize", () => {
   it("atpazīst HEIC faila vārdu un ftyp maģiju", () => {
@@ -68,5 +72,16 @@ describe("admin photo normalize", () => {
     const junk = Buffer.from("not-an-image");
     const out = await jpegWithCheckcarWatermarkCovered(junk);
     expect(out).toBe(junk);
+  });
+
+  it("noklusējumā neslēpj CheckCar ūdenszīmi", async () => {
+    const jpeg = readFileSync(SERVICE_SCREEN);
+    const off = await jpegFromAdminPhotoUpload(jpeg, 320 * 1024);
+    const on = await jpegFromAdminPhotoUpload(jpeg, 320 * 1024, { coverCheckcarWatermark: true });
+    expect(off.ok).toBe(true);
+    expect(on.ok).toBe(true);
+    if (off.ok && on.ok) {
+      expect(off.jpeg.equals(on.jpeg)).toBe(false);
+    }
   });
 });
