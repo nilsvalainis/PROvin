@@ -453,3 +453,67 @@ ${clientSignOffHtml()}
 `;
   return shell(inner, { omitBrandRibbon: true });
 }
+
+export type MorningSummaryEmailLine = {
+  title: string;
+  detail: string;
+};
+
+function morningSummaryEmailSection(title: string, lines: MorningSummaryEmailLine[]): string {
+  if (lines.length === 0) return "";
+  const rows = lines
+    .map(
+      (line) =>
+        `<tr><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;color:${INK};">${esc(line.title)}</td><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:13px;color:${MUTED};text-align:right;white-space:nowrap;">${esc(line.detail)}</td></tr>`,
+    )
+    .join("");
+  return `<p style="margin:22px 0 8px;font-size:13px;font-weight:600;color:${INK};">${esc(title)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>`;
+}
+
+/** Admin rīta kopsavilkums: īss HTML, saite uz /admin/kopsavilkums. */
+export function morningSummaryEmailHtml(opts: {
+  dateLabel: string;
+  pageUrl: string;
+  open: number;
+  urgent: number;
+  overdue: number;
+  openAudits: number;
+  openPeeks: number;
+  newPeeksLast24h: number;
+  overdueAudits: MorningSummaryEmailLine[];
+  dueTodayAudits: MorningSummaryEmailLine[];
+  newPeeks: MorningSummaryEmailLine[];
+}): string {
+  const empty =
+    opts.overdueAudits.length + opts.dueTodayAudits.length + opts.newPeeks.length === 0
+      ? `<p style="margin:20px 0 0;font-size:15px;color:${MUTED};">Nav kavētu auditu un jaunu vērtējumu pēdējās 24 h.</p>`
+      : "";
+  const inner = `
+<p style="margin:0 0 6px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Rīta kopsavilkums</p>
+<p style="margin:0 0 20px;font-size:14px;color:${MUTED};">${esc(opts.dateLabel)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+<tr>
+<td style="width:33%;padding:10px 8px;background:#f4f4f5;border-radius:10px;text-align:center;">
+<p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${MUTED};">Atvērti</p>
+<p style="margin:0;font-size:22px;font-weight:700;color:${INK};">${opts.open}</p>
+</td>
+<td style="width:33%;padding:10px 8px;background:#fff7ed;border-radius:10px;text-align:center;">
+<p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${MUTED};">Steidzami</p>
+<p style="margin:0;font-size:22px;font-weight:700;color:${INK};">${opts.urgent}</p>
+</td>
+<td style="width:33%;padding:10px 8px;background:#fef2f2;border-radius:10px;text-align:center;">
+<p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${MUTED};">Kavēti</p>
+<p style="margin:0;font-size:22px;font-weight:700;color:${INK};">${opts.overdue}</p>
+</td>
+</tr>
+</table>
+<p style="margin:12px 0 0;font-size:13px;color:${MUTED};">Auditi ${opts.openAudits} · vērtējumi ${opts.openPeeks} · jauni 24 h: ${opts.newPeeksLast24h}</p>
+${morningSummaryEmailSection("Kavētie auditi (48 h)", opts.overdueAudits)}
+${morningSummaryEmailSection("Šodienas termiņi", opts.dueTodayAudits)}
+${morningSummaryEmailSection("Jauni ātrie vērtējumi (24 h)", opts.newPeeks)}
+${empty}
+${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}
+`;
+  return shell(inner);
+}

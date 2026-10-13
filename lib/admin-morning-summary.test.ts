@@ -93,6 +93,8 @@ describe("admin-morning-summary", () => {
     expect(summary.urgentAudits).toEqual([]);
     expect(summary.unansweredPeeks.map((i) => i.id)).toEqual(["peek-late", "peek-open"]);
     expect(summary.unansweredPeeks[0]?.isNew).toBe(true);
+    expect(summary.counts.newPeeksLast24h).toBe(1);
+    expect(summary.newPeeksLast24h.map((i) => i.id)).toEqual(["peek-open"]);
   });
 
   it("uses upsell paidAt as the 48 h anchor", () => {
