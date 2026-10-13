@@ -26,7 +26,8 @@ function blobFlagPath(prefix: string, sessionId: string): string {
   return `${prefix}${SUBDIR}/${sessionId}.json`;
 }
 
-async function readFlag(sessionId: string): Promise<boolean> {
+/** true/false = droši zināms; null = lasīšanas kļūda (piem. Blob 429/tīkls) — NAV „neizpildīts”. */
+async function readFlagOnce(sessionId: string): Promise<boolean | null> {
   const dir = getOrderDraftStorageDir();
   const blob = getOrderDraftBlobConfig();
 
@@ -41,8 +42,11 @@ async function readFlag(sessionId: string): Promise<boolean> {
         const raw = JSON.parse(await new Response(res.stream).text()) as { complete?: unknown };
         if (raw?.complete === true) return true;
       }
-    } catch {
-      /* fall through */
+      if (process.env.VERCEL === "1" || !dir) return false;
+    } catch (e) {
+      const name = (e as { name?: string })?.name ?? "";
+      if (!/NotFound/i.test(name)) return null;
+      if (process.env.VERCEL === "1" || !dir) return false;
     }
   }
 
@@ -58,6 +62,29 @@ async function readFlag(sessionId: string): Promise<boolean> {
   }
 
   return false;
+}
+
+/**
+ * Agrāk jebkura Blob kļūda klusi = „neizpildīts”. Ar ~60 paralēliem GET daļa trāpīja limitos,
+ * tāpēc sānjoslas „Pasūtījumi” žetons rādīja nejaušu skaitu (23, 53…) pie 1 reāla aktīvā.
+ * Tagad: atkārtojumi + ierobežota paralēle.
+ */
+async function readFlag(sessionId: string): Promise<boolean> {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const v = await readFlagOnce(sessionId);
+    if (v !== null) return v;
+    await new Promise((r) => setTimeout(r, 150 * 2 ** attempt));
+  }
+  console.warn("[audit-complete] flag read failed after retries", sessionId);
+  return false;
+}
+
+async function mapLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<void>): Promise<void> {
+  let i = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) await fn(items[i++]!);
+  });
+  await Promise.all(workers);
 }
 
 async function writeFlag(
@@ -148,11 +175,9 @@ export async function getAuditDeadlineCompleteMap(
 ): Promise<Map<string, boolean>> {
   const out = new Map<string, boolean>();
   const ids = sessionIds.filter(isSafeOrderDraftSessionId);
-  await Promise.all(
-    ids.map(async (id) => {
-      out.set(id, await readFlag(id));
-    }),
-  );
+  await mapLimit(ids, 8, async (id) => {
+    out.set(id, await readFlag(id));
+  });
   for (const id of sessionIds) {
     if (!out.has(id)) out.set(id, false);
   }
