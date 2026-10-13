@@ -367,6 +367,24 @@ export function vinDecodeParseFromLocal(decoded: VinDecode): VinScanParse {
   };
 }
 
+/** vPIC bieži dod 1980. ciklu (B=1981), lokālais ISO 2010. ciklu (B=2011). */
+export function preferVinModelYear(localYear: string, vpicYear: string, nowYear = new Date().getFullYear()): string {
+  if (!vpicYear) return localYear;
+  if (!localYear) return vpicYear;
+  if (localYear === vpicYear) return localYear;
+  const localN = Number(localYear);
+  const vpicN = Number(vpicYear);
+  if (!Number.isFinite(localN)) return vpicYear;
+  if (!Number.isFinite(vpicN)) return localYear;
+  if (Math.abs(localN - vpicN) === 30) {
+    const inWindow = (y: number) => y >= 1990 && y <= nowYear + 1;
+    if (inWindow(localN) && !inWindow(vpicN)) return localYear;
+    if (inWindow(vpicN) && !inWindow(localN)) return vpicYear;
+    return String(Math.max(localN, vpicN));
+  }
+  return vpicYear;
+}
+
 export function mergeVinDecodeWithVpic(local: VinDecode, vpic: VinScanParse | null): VinScanParse {
   const base = vinDecodeParseFromLocal(local);
   if (base.status !== "found") return vpic && vpic.status === "found" ? vpic : base;
@@ -374,7 +392,7 @@ export function mergeVinDecodeWithVpic(local: VinDecode, vpic: VinScanParse | nu
   if (!vpicOk || !vpic?.vehicle) return base;
   const make = vpic.vehicle.make || base.vehicle?.make || "";
   const model = vpic.vehicle.model || base.vehicle?.model || "";
-  const year = vpic.vehicle.year || base.vehicle?.year || "";
+  const year = preferVinModelYear(base.vehicle?.year || local.year, vpic.vehicle.year);
   const countryCode = local.countryCode || vpic.flags?.registrationCountry || "";
   const countryName = vinOriginCountryLabel(countryCode) || local.countryName;
   return {

@@ -4,7 +4,7 @@
  * Kad būs atslēga, `probeBiluppgifter` vispirms sauc `fetchBiluppgifterApi`.
  */
 
-export function biluppgifterApiConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
+export function biluppgifterApiConfigured(env: Record<string, string | undefined> = process.env): boolean {
   return Boolean(String(env.BILUPPGIFTER_API_KEY ?? "").trim());
 }
 

@@ -83,6 +83,18 @@ describe("vinDecodeParseFromLocal / vPIC merge", () => {
     expect(merged.flags?.registrationCountry).toBe("SE");
   });
 
+  it("vPIC 1981 (ISO cikls) neaizstāj lokālo 2011", () => {
+    const merged = mergeVinDecodeWithVpic(decodeVinLocal(VOLVO_SE), {
+      status: "found",
+      summary: "Daļējs dekodējums: 1981 VOLVO",
+      vehicle: { make: "VOLVO", model: "", year: "1981" },
+    });
+    expect(merged.vehicle?.year).toBe("2011");
+    expect(merged.vehicle?.make).toBe("VOLVO");
+    expect(merged.summary).toContain("2011");
+    expect(merged.flags?.registrationCountry).toBe("SE");
+  });
+
   it("vPIC kļūda atstāj lokālo dekodējumu", () => {
     const merged = mergeVinDecodeWithVpic(decodeVinLocal(VOLVO_SE), {
       status: "unknown",

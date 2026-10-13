@@ -73,5 +73,6 @@ describe("VIN SCAN health", () => {
         { id: "csdd", status: "none", summary: "CSDD reģistrā šāds numurs netika atrasts" },
       ]),
     ).toBe(true);
+    expect(vinScanIndicatorsAreCacheable([{ id: "vin_decode", status: "found", summary: "Volvo" }])).toBe(true);
   });
 });

@@ -68,6 +68,9 @@ export async function probeRdw(ctx: VinScanContext): Promise<VinScanIndicator> {
       return String(first?.kenteken || plate || "").replace(/[\s-]/g, "").toUpperCase();
     };
     const vehicle = await getJson(vehicleUrl);
+    if (!plate && vehicle.status === 400) {
+      return done("rdw", ctx, { status: "needs_input", summary: "Vajag NL numuru" });
+    }
     if (vehicle.status !== 200) return done("rdw", ctx, { status: "unknown", summary: `RDW HTTP ${vehicle.status}` });
     const kenteken = await kentekenAfter(vehicle.data);
     const keuringP = kenteken
