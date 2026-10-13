@@ -31,7 +31,7 @@ export async function generateSourcesComparisonWithAi(input: AiOrderContextInput
 
 ${orderContext}
 
-${sourceCommentsContext ? `---\n\nEsošie eksperta komentāri avotu sadaļās (obligāti izmanto salīdzinājumā, neatkārto vārds vārdā):\n\n${sourceCommentsContext}\n\n---\n\n` : ""}Sagatavo iekšēju lietas kopskatu laukam „${ADMIN_SOURCES_COMPARISON_LABEL}”.
+${sourceCommentsContext ? `---\n\nEsošie komentāri avotu sadaļās (obligāti izmanto salīdzinājumā, neatkārto vārds vārdā):\n\n${sourceCommentsContext}\n\n---\n\n` : ""}Sagatavo iekšēju lietas kopskatu laukam „${ADMIN_SOURCES_COMPARISON_LABEL}”.
 Obligāti šādā kārtībā: ZINĀMS (tikai fakti un forenzikas cipari), INTERPRETĀCIJAS (vairāki scenāriji), NAV ZINĀMS (ko līdz galam izskaidrot nevaram). Pēc tam avotu kartēšana un pietiekamība.
 Ja kontekstā ir nobraukuma forenzikas brief, tos ciparus pārkopē. Neizvēlies vienu versiju kā patiesību.`,
     {

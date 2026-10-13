@@ -29,7 +29,7 @@ export type AdminOrderDetailPageLoadSuccess = {
   ok: true;
   sessionId: string;
   order: AdminOrderDetailClientModel;
-  serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null;
+  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
@@ -215,7 +215,12 @@ export async function loadAdminOrderDetailPageData(
       ok: true,
       sessionId: sid,
       order: clientOrder,
-      serverOrderDraft: serverOrderDraft ? { orderEdits: serverOrderDraft.orderEdits ?? {} } : null,
+      serverOrderDraft: serverOrderDraft
+        ? {
+            orderEdits: serverOrderDraft.orderEdits ?? {},
+            ...(serverOrderDraft.autoIngest ? { autoIngest: serverOrderDraft.autoIngest } : {}),
+          }
+        : null,
       serverWorkspaceJson,
       orderDraftPersistenceEnabled: isOrderDraftStorageDurable(),
       aiAllowed: aiAllowsOrder(Boolean(order.isDemo)),

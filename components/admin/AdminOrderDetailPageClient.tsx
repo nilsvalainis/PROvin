@@ -25,7 +25,7 @@ export function AdminOrderDetailPageClient({
 }: {
   sessionId: string;
   order: AdminOrderDetailClientModel;
-  serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null;
+  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;

@@ -9,7 +9,11 @@ import {
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
-import { buildBannedVocabularyPromptRules } from "@/lib/provin-banned-vocabulary";
+import {
+  buildBannedVocabularyPromptRules,
+  buildForbiddenPersonaNounPromptRules,
+  stripForbiddenPersonaNouns,
+} from "@/lib/provin-banned-vocabulary";
 
 export const SOURCE_COMMENT_NO_ISSUES_LV = "Problēmas nav konstatētas.";
 
@@ -18,7 +22,7 @@ export const SOURCE_COMMENT_ANOMALY_PREFIX = "NEATBILSTĪBA: ";
 
 const SOURCE_COMMENT_ANOMALY_PREFIX_RE = /^(?:ANOMĀLIJA|NEATBILSTĪBA):\s*/i;
 
-/** Obligātā vārdu krājuma un rindkopu disciplīna — visi ✨ eksperta komentāri. */
+/** Obligātā vārdu krājuma un rindkopu disciplīna — visi ✨ lauku komentāri. */
 export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (mandatory):
 - Use "automašīna" (or "auto", "šī automašīna") when referring to the vehicle in buyer-facing prose — NEVER "automobīlis".
 - "transportlīdzeklis" is allowed only when citing official CSDD/registry wording verbatim; otherwise prefer "automašīna".
@@ -26,16 +30,17 @@ export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (man
 - EPISTEMIC HEDGING (digital audit — not a physical inspection): prefer „teorētiski”, „visticamāk”, „ļoti iespējams”, „augsta/vidēja/zema varbūtība”, „pēc pieejamajiem datiem”, „salīdzinoši labs”, „labs rādījums datos”, „tas datos izskatās labi”, „tipiski šim agregātam”, „ja apkope bijusi atbilstoša”, „neizslēdz”, „var norādīt”, „liecina”. Avoid absolute claims that the car is „tehniski perfekts”, „bez riskiem”, or „garantēti kārtībā” without physical inspection. Never pad a fact with kancelejisks „signāls/faktors” wording.
 - Missing records: „trūkums”, „datu neesamība”, „iztrūkstoši dati”, „avotos nav fiksēts” - never a vacuum metaphor for gaps. Workshop term „vakuumsūknis” is allowed.
 - Crankshaft pulley / harmonic balancer: always „kloķvārpstas skriemelis (demferis)”.
-- ${buildBannedVocabularyPromptRules()}`;
+- ${buildBannedVocabularyPromptRules()}
+- ${buildForbiddenPersonaNounPromptRules()}`;
 
-/** Atturīgs eksperta tonis — bez pārspīlējumiem un bez 100 % apgalvojumiem. */
+/** Atturīgs tonis — bez pārspīlējumiem un bez 100 % apgalvojumiem. */
 export const PROVIN_RESTRAINED_TONE_RULES = `RESTRAINED EXPERT VOICE (mandatory — PROVIN gives a documentary opinion, not a verdict):
 - BANNED WORDS in client-facing Latvian text: „kritisks” / „kritiski” / „kritiska”, „anomālija”, „katastrofāls”, „šokējošs”, „drastisks”, „briesmīgs”, „milzīgs”, „bīstams”, „skandalozs”, „krāpšana”, „mahinācija”, „absolūti”, „nepārprotami”, „acīmredzami”, „100 %”, „pierāda”, „garantēti”. No exclamation marks, no ALL-CAPS emphasis, no stacked dramatic adjectives.
 - Neutral replacements: „neatbilstība”, „nesakritība”, „pretruna starp avotiem”, „iztrūkstoši dati”, „būtisks”, „paaugstināts risks”, „jāņem vērā”, „jāpārbauda klātienē”, „dati to neapstiprina”, „dati to neizslēdz”.
 - Digital registry data can be incomplete, delayed, or entered with errors. State what the records show („ierakstos fiksēts”, „pēc pieejamajiem datiem”, „avotos nav fiksēts”) — never as proven physical condition and never as proven intent (odometer manipulation, fraud, concealment).
 - Missing records do not prove a clean car; an existing record does not prove severity. Make clear which of the two the data supports.
 - One calibrated sentence outweighs three emphatic ones: never repeat the same warning inside one field and never add a dramatic closing paragraph.
-- The client should feel he is reading a calm senior expert opinion — informative, not pushy, no sales pressure and no scare tactics.`;
+- The client should feel he is reading a calm documentary opinion — informative, not pushy, no sales pressure and no scare tactics.`;
 
 /**
  * Admin dialogs „Papildu piezīmes AI” → user-prompt section „OPERATORA KOMANDAS”.
@@ -461,7 +466,7 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/\bvakuums(?!ūkn)/g, "trūkums"],
   ];
   for (const [re, rep] of replacements) out = out.replace(re, rep);
-  return out;
+  return stripForbiddenPersonaNouns(out);
 }
 
 function stripClientMarkdownMarkers(text: string): string {
@@ -775,7 +780,7 @@ Example:
 - Reģistrēts neliels virsbūves bojājums Vācijā (summa <=100 EUR). Bojāta labā sāna priekšpuse un kreisais sāns.
 - 07.03.2021 Dīlera apkope pie 46,441 km.`;
 
-/** Vienots eksperta komentāru vizuālais formāts — ✨ avoti, PDF, cena, nobraukums u.c. */
+/** Vienots komentāru vizuālais formāts — ✨ avoti, PDF, cena, nobraukums u.c. */
 export const AI_EXPERT_PARAGRAPH_PRESENTATION = `
 VISUAL PRESENTATION (mandatory for all expert client PDF comments):
 ${PROVIN_REPORT_COPY_VOCABULARY}
@@ -949,7 +954,7 @@ export const AI_HISTORICAL_REPORTS_CONTEXT_RULES = `HISTORICAL AUDIT REPORTS (cr
 - OPERATOR NOTES WIN over any historical excerpt.
 - Match paragraph rhythm and "automašīna" vocabulary; keep CLIENT VALUE DENSITY (short, high-value — no fluff).`;
 
-/** Dziļā eksperta analīze — CSDD, AutoDNA, CarVertical, LTAB ✨ admin komentāri. */
+/** Dziļā avota analīze — CSDD, AutoDNA, CarVertical, LTAB ✨ admin komentāri. */
 export const HYBRID_COMMENT_RULES = `
 COMMENTARY RULES for PROVIN Senior Auto Expert:
 ${AI_EXPERT_PARAGRAPH_PRESENTATION}
@@ -979,7 +984,7 @@ ${AI_DAMAGE_CLAIM_CONTEXT_RULES}
 - ANTI-REPETITION (mandatory): Do NOT restate the same mileage timeline, annual averages, engine-hour essay, missing-data narrative (those belong in „NOBRAUKUMA VĒSTURES KOMENTĀRS”), oil-change interval math (that belongs in „Eļļas maiņas intervāli”), incident severity essay, technical-risk catalogue, inspection checklist, or summary verdict already written in other expert fields or other source comments — UNLESS the operator notes explicitly supply that material for THIS field; then keep the operator's detail here and process EVERY operator topic (anti-repetition must not delete an operator theme). Per-source text = unique facts from THIS source + at most ONE cross-check sentence vs other sources when generating from data alone. If another source comment already covered the same fact AND the operator did not ask you to write it here: one short confirmation only — never a near-duplicate essay.
 `;
 
-/** AI PDF extract JSON — eksperta komentārs (visi avoti). */
+/** AI PDF extract JSON — avota komentārs (visi avoti). */
 export const SOURCE_PDF_COMMENT_AI_RULES = `COMMENTS field (client PDF expert commentary):
 ${HYBRID_COMMENT_RULES}
 - Extract and interpret ALL substantive facts from this report: mileage, damage zones, registration, insurance, policy periods, dealer/service milestones — not only anomalies.
@@ -1000,7 +1005,7 @@ ${HYBRID_COMMENT_RULES}
 
 export type NormalizeExpertCommentOptions = {
   maxParagraphs?: number;
-  /** PDF izvilkumam drīkst likt „…”; eksperta komentāram nogriež pie rindkopas, bez elipses. */
+  /** PDF izvilkumam drīkst likt „…”; avota komentāram nogriež pie rindkopas, bez elipses. */
   ellipsis?: boolean;
 };
 

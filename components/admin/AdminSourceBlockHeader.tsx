@@ -1,5 +1,6 @@
 "use client";
 
+import { createContext, useContext, type ReactNode } from "react";
 import type { SourceBlockKey } from "@/lib/admin-source-blocks";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS, SOURCE_BLOCK_EXTERNAL_URL, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
@@ -8,6 +9,24 @@ import { SOURCE_BLOCK_LUCIDE } from "@/lib/admin-lucide-registry";
 import { companionSourceOpensForBlock, resolveSourceBlockExternalOpen } from "@/lib/admin-vin-urls";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { TRAFFIC_HEADER_STRIP_CLASS } from "@/lib/admin-block-traffic-status";
+import type { AutoIngestChip } from "@/lib/admin-auto-ingest";
+
+const AutoIngestChipCtx = createContext<Partial<Record<string, AutoIngestChip>>>({});
+
+export function AdminAutoIngestChipProvider({
+  chips,
+  children,
+}: {
+  chips: Partial<Record<string, AutoIngestChip>>;
+  children: ReactNode;
+}) {
+  return <AutoIngestChipCtx.Provider value={chips}>{children}</AutoIngestChipCtx.Provider>;
+}
+
+const INGEST_CHIP_TONE: Record<AutoIngestChip["tone"], string> = {
+  no_data: "bg-orange-50 text-orange-700 border-orange-200",
+  failed: "bg-rose-50 text-rose-700 border-rose-200",
+};
 
 function ExternalLinkIcon({ className }: { className?: string }) {
   return (
@@ -37,6 +56,7 @@ type Props = {
 };
 
 export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFillLevel }: Props) {
+  const ingestChip = useContext(AutoIngestChipCtx)[blockKey];
   const label = SOURCE_BLOCK_LABELS[blockKey];
   const vin = useAdminVinHandoff()?.vin ?? "";
   const vinAware =
@@ -75,6 +95,13 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFi
       <AdminProvinLucide icon={Icon} />
       <span>{label}</span>
       <ExternalLinkIcon className="shrink-0 opacity-45 text-slate-500" />
+      {ingestChip ? (
+        <span
+          className={`rounded border px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal ${INGEST_CHIP_TONE[ingestChip.tone]}`}
+        >
+          {ingestChip.label}
+        </span>
+      ) : null}
     </a>
   );
 

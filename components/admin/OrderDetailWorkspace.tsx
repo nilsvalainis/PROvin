@@ -5,7 +5,9 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import { flushSync } from "react-dom";
 import { createPortal } from "react-dom";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
+import { AdminAutoIngestChipProvider } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
+import { autoIngestChipsByBlock, type AutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
 import { AdminCcVinSourceBlock } from "@/components/admin/AdminCcVinSourceBlock";
@@ -317,6 +319,7 @@ export type OrderWorkspacePayload = {
   notes: string | null;
   serverInternalComment: string | null;
   serverAttachments: { label: string; fileName: string }[];
+  autoIngest?: AutoIngestStatus | null;
 };
 
 type PortfolioEntry = {
@@ -3983,7 +3986,13 @@ export function OrderDetailWorkspace({
     openWhatsAppChat(whatsappPhoneDigits, whatsappPrefill);
   }, [whatsappPhoneDigits, whatsappPrefill]);
 
+  const autoIngestChips = useMemo(
+    () => autoIngestChipsByBlock(payload.autoIngest),
+    [payload.autoIngest],
+  );
+
   return (
+    <AdminAutoIngestChipProvider chips={autoIngestChips}>
     <div className="relative min-w-0 pb-24 max-md:pb-36">
       {previewBody}
 
@@ -5194,5 +5203,6 @@ export function OrderDetailWorkspace({
         </div>
       </div>
     </div>
+    </AdminAutoIngestChipProvider>
   );
 }

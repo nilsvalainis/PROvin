@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - name: Vitest
+        run: npm test
+      - name: Typecheck
+        # Non-blocking: tsc may already fail on main. Failures are still visible in the log.
+        run: npx tsc --noEmit
+        continue-on-error: true

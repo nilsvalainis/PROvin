@@ -1,5 +1,5 @@
 /**
- * Ražotāju / agregātu case rules — statiskā PROVIN ekspertu bāze (auditu pieredze + tehniskā literatūra).
+ * Ražotāju / agregātu case rules — statiskā PROVIN zināšanu bāze (auditu pieredze + tehniskā literatūra).
  * Dinamiskie mācījumi no saglabātajām atskaitēm: `lib/admin-audit-learnings-store.ts`.
  */
 import type { VehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";

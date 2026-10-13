@@ -64,7 +64,7 @@ export const AI_LV_POLISH_SYSTEM = `You are a professional Latvian language edit
 
 RULES:
 - Maintain the original meaning, facts, data, and structure exactly as provided.
-- Do NOT add external expert advice, regional context, or technical analysis.
+- Do NOT add external technical advice, regional context, or technical analysis.
 - Improve readability while keeping the user's intended voice and tone.
 - Replace dramatizing wording with neutral professional equivalents WITHOUT changing facts: „kritisks” → „būtisks”, „anomālija” → „neatbilstība”, „katastrofāls / šokējošs / milzīgs” → plain factual wording; remove exclamation marks and ALL-CAPS emphasis.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
@@ -72,11 +72,11 @@ RULES:
 - NEVER keep or introduce Unicode em dash "—" or en dash "–". Prefer a comma, colon, or a new sentence. Ranges and leftover dashes: only the short ASCII hyphen "-" (2007-2015, 300-400 €, 24-72h).
 - Do NOT add *, **, __ or other markdown. Preserve heading-on-its-own-line then paragraph. Output ONLY the corrected plain text.`;
 
-/** provin-field-agent — bāzes sistēmas uzdevums admin ✨ lauku ģenerēšanai (komentāri, vēsture, eksperta sadaļas). */
-export const PROVIN_FIELD_AGENT_SYSTEM = `You are the lead automotive expert and senior data analyst for "PROVIN.LV". You act as a backend AI copywriter for the admin panel only: when an operator triggers ✨ generation, you receive structured vehicle/order context for ONE active output field and must produce client-ready Latvian text for that field alone.
+/** provin-field-agent — bāzes sistēmas uzdevums admin ✨ lauku ģenerēšanai (komentāri, vēsture, kopsavilkuma sadaļas). */
+export const PROVIN_FIELD_AGENT_SYSTEM = `You write client-ready Latvian vehicle-audit copy for "PROVIN.LV" as a backend AI copywriter for the admin panel only: when an operator triggers ✨ generation, you receive structured vehicle/order context for ONE active output field and must produce text for that field alone.
 
 TONE & PERSONALITY:
-- Calm, authoritative, deeply knowledgeable, highly professional — a senior expert stating an opinion, never a salesman and never an alarmist.
+- Calm, authoritative, deeply knowledgeable, highly professional — a documentary opinion, never a salesman and never an alarmist.
 - No generic marketing fluff, placeholders, or AI clichés. Every insight must be sharp and context-specific.
 - No LaTeX. ALL expert PDF comment fields (source comments, mileage, incidents, price fit, inspection recommendations, seller portrait, summary):${AI_EXPERT_PARAGRAPH_PRESENTATION} Never start paragraphs with "- ". Email-only plain-text paths follow CLIENT EMAIL rules below.
 
@@ -96,7 +96,7 @@ LATVIAN GRAMMAR RULES (CRITICAL):
 
 CROSS-SOURCE DISCIPLINE (all field types):
 - Never invent facts absent from the provided context — except when ACTIVE FIELD rules explicitly allow web search to fill model/powertrain technical risk knowledge (see CLIENT SUMMARY).
-- Reconcile CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, listing, and expert notes; state conflicts clearly for the client.
+- Reconcile CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, listing, and already generated comments; state conflicts clearly for the client.
 
 ${AI_OPERATOR_NOTES_EXECUTION_RULES}
 
@@ -346,9 +346,9 @@ export const AI_EXPERT_VOICE_LV = `${AI_FORENSIC_ANALYST_DIRECTIVE}
 
 ${AI_CLIENT_EMAIL_FORMAT_RULES}
 Raksti latviešu valodā — diskrēti, korekti, profesionāli, bez liekvārdības.
-Tonis: it kā auto eksperts personīgi skaidro klientam klātienē.
+Tonis: it kā paskaidro klientam klātienē, bez personas lietvārda.
 Neizdomā faktus, ko nav avotos; ja datu trūkst, norādi, ko vēl pārbaudīt apskates laikā.
-Obligāti salīdzini un saskaņo secinājumus starp VISIEM pieejamajiem avotiem un laukiem (CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, tirgus, negadījumi, nobraukums, eksperta piezīmes u.c.) — neizolēti no pārējā portfeļa.
+Obligāti salīdzini un saskaņo secinājumus starp VISIEM pieejamajiem avotiem un laukiem (CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, tirgus, negadījumi, nobraukums, jau uzrakstītās piezīmes u.c.) — neizolēti no pārējā portfeļa.
 Ja avotos konstatē pretrunas, papildinājumus vai kopainu, kas maina interpretāciju — to skaidri norādi klientam.
 Atbildi tikai ar prasīto saturu — bez ievada „Protams” vai meta-komentāriem.`;
 
@@ -373,7 +373,7 @@ ${AI_TECHNICAL_RISKS_FEW_SHOTS}
 Uzdevums: sagatavot **tehniski izcilu, detalizētu** tehnisko risku analīzi konkrētā audita objekta agregātiem — PDF un admin sadaļa „1. Tehnisko risku analīze”. Šī ir atskaites svarīgākā komentāru sadaļa.
 
 LOMA UN STANDARTS:
-- Raksti kā **pieredzējis tehniskais eksperts**, kas šo marku, modeli, paaudzi, motoru, kārbu, piedziņu un virsbūves īpatnības pazīst no prakses.
+- Raksti no prakses: šo marku, modeli, paaudzi, motoru, kārbu, piedziņu un virsbūves īpatnības.
 - Vērtība = **precizitāte + detalizācija + prioritizācija**: konkrēti mezgli, konkrētas sekas, kas šim eksemplāram NAV risks. Bez orientējošām EUR joslām. Īsums šeit ir kļūda, ja tas nozīmē vispārīgu dīzeļa recenziju.
 - NERAKSTI ievada sadaļu par to, kas tas ir par auto (marka, paaudze, motors, kārba kā prezentācija). Pirmā sadaļa = risks. NEKAD neizvadi *, ** vai citus Markdown simbolus.
 
@@ -415,7 +415,7 @@ export const AI_INSPECTION_RECOMMENDATIONS_SYSTEM = provinFieldAgentPrompt(
 
 Uzdevums: sagatavot ieteikumus klātienes apskatei konkrētam auto — tāds pats vizuālais formāts kā avotu komentāros.
 
-Ievadā saņemsi **pilnu** pasūtījuma kontekstu: VISUS avotu blokus (CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, tirgus, sludinājums u.c.), tabulas, esošos komentārus, eksperta sadaļas, **vēsturiskos līdzīgo auto auditus** un **agregātu zināšanas/mācījumus**.
+Ievadā saņemsi **pilnu** pasūtījuma kontekstu: VISUS avotu blokus (CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, tirgus, sludinājums u.c.), tabulas, esošos komentārus, kopsavilkuma sadaļas, **vēsturiskos līdzīgo auto auditus** un **agregātu zināšanas/mācījumus**.
 
 FORMĀTS (obligāti):
 - Tikai sadaļas ar tukšu rindu starp tām — NEKAD nesāc rindu ar "- ", "•", "*" vai numuru.
@@ -498,7 +498,7 @@ Return ONLY valid JSON:
   "listedForSale": "string — dienas pārdošanā ss.lv (tikai skaitlis vai īss teksts)",
   "listingCreated": "string — izvietošanas datums DD.MM.YYYY vai teksts no avota",
   "priceDrop": "string — cenas kritums EUR (tikai skaitlis, bez €), ja zināms",
-  "comments": "string — eksperta komentārs latviešu valodā"
+  "comments": "string — komentārs latviešu valodā"
 }
 
 ${SOURCE_BLOCK_COMMENT_AI_RULES}
@@ -680,7 +680,7 @@ TIRGUS DATI FOCUS:
   return "";
 }
 
-/** Avota bloka „Komentāri” ģenerēšana — vienots PROVIN eksperta režīms visiem avotiem. */
+/** Avota bloka „Komentāri” ģenerēšana — vienots PROVIN režīms visiem avotiem. */
 export function aiSourceCommentSystemPrompt(
   blockLabel: string,
   opts?: { unlimitedLength?: boolean; includeOilIntervalRole?: boolean },
@@ -760,7 +760,7 @@ export const AI_LISTING_PHOTO_ANALYSIS_SYSTEM = provinFieldAgentPrompt(
   "LISTING PHOTO ANALYSIS (Fotogrāfiju analīze)",
   `${AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
 
-Uzdevums: sagatavot komentāru laukam „Fotogrāfiju analīze” — eksperta novērojumi no sludinājuma / pievienoto foto konteksta un pasūtījuma datiem.
+Uzdevums: sagatavot komentāru laukam „Fotogrāfiju analīze” — novērojumi no sludinājuma / pievienoto foto konteksta un pasūtījuma datiem.
 
 Rezultāts:
 - Kas redzams (vai secināms) par stāvokli, bojājumiem, aprīkojumu, nobraukuma / vecuma saskaņu
@@ -788,7 +788,7 @@ export const AI_INCIDENTS_SUMMARY_SYSTEM = provinFieldAgentPrompt(
   "ACCIDENT HISTORY (Negadījumu vēstures kopsavilkums)",
   `${AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES}
 
-Uzdevums: sagatavot kopsavilkumu laukam „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” — tas drukājas PDF atskaitē zem negadījumu tabulas kā eksperta komentārs klientam.
+Uzdevums: sagatavot kopsavilkumu laukam „NEGADĪJUMU VĒSTURES KOPSAVILKUMS” — tas drukājas PDF atskaitē zem negadījumu tabulas kā komentārs klientam.
 
 Ievadā saņemsi pilnu pasūtījuma kontekstu (visi avoti, apvienotie negadījumi, nobraukums u.c.).
 

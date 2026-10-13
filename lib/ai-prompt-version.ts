@@ -176,9 +176,12 @@
  *   neizdomā.
  * - 2026-10-08.2 - BMW E60/E61 dārgo slazdu saraksts (Active Steering u.c.)
  *   vairs netiek likts uz 3. sēriju (E90/F30 u.c.). E60 paka tikai E60/E61.
+ * - 2026-10-13.1 - Aizliegts personas lietvārds klienta tekstā (LV e-vārds
+ *   un infleksijas, ekspertīze, EN expert, RU эксперт, DE Experte); prompts
+ *   bez personas lietvārda; deterministisks izejas filtrs pirms saglabāšanas.
  * - 2026-10-08.3 - Rūsas josla plašāka par LV/LT/EE, ja datos ir ilga
  *   ekspluatācija (Zviedrija, Somija, Norvēģija, Dānija, Austrija, Polija,
  *   Vācijas lejasdaļa, Austrumvācija). Itālija/Francija: vizuāla piesardzība.
  *   Valsti neizdomā. Aizliegts datu „vakuums”; kloķvārpstas skriemelis (demferis).
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-08.3";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-13.1";

@@ -25,6 +25,7 @@ import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/pro
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
+import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
 import {
   stableWorkspaceChecksum,
@@ -213,6 +214,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     typeof o.clientReportFilename === "string" && o.clientReportFilename.trim()
       ? o.clientReportFilename.trim()
       : undefined;
+  const autoIngest = parseAutoIngestStatus(o.autoIngest);
   return {
     orderEdits,
     workspace,
@@ -226,6 +228,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     ...(auditCompletedAt !== undefined ? { auditCompletedAt } : {}),
     ...(clientReportReadyAt ? { clientReportReadyAt } : {}),
     ...(clientReportFilename ? { clientReportFilename } : {}),
+    ...(autoIngest ? { autoIngest } : {}),
   };
 }
 
@@ -237,6 +240,7 @@ function extraDraftPersistFields(prev: OrderDraftState | null | undefined) {
     ...(prev?.auditCompletedAt !== undefined ? { auditCompletedAt: prev.auditCompletedAt } : {}),
     ...(prev?.clientReportReadyAt != null ? { clientReportReadyAt: prev.clientReportReadyAt } : {}),
     ...(prev?.clientReportFilename != null ? { clientReportFilename: prev.clientReportFilename } : {}),
+    ...(prev?.autoIngest ? { autoIngest: prev.autoIngest } : {}),
   };
 }
 
@@ -850,6 +854,62 @@ export async function upsertOrderDraftClientReportFields(
   fields: { clientReportReadyAt: string; clientReportFilename: string },
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   return upsertOrderDraftInvoiceFields(sessionId, fields);
+}
+
+export async function upsertOrderDraftAutoIngest(
+  sessionId: string,
+  autoIngest: import("@/lib/admin-auto-ingest").AutoIngestStatus,
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  const parsed = parseAutoIngestStatus(autoIngest);
+  if (!parsed) return { ok: false, error: "invalid_auto_ingest" };
+  const dir = resolveDraftDir();
+  const blob = resolveOrderDraftBlob();
+  if (!dir && !blob) return { ok: false, error: "store_disabled" };
+  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
+
+  const prev = await readOrderDraft(sessionId);
+  const updatedAt = new Date().toISOString();
+  const doc = {
+    sessionId,
+    updatedAt,
+    orderEdits: prev?.orderEdits ?? {},
+    workspace: prev?.workspace ?? null,
+    ...(prev?.workspaceRevision != null ? { workspaceRevision: prev.workspaceRevision } : {}),
+    ...(prev?.workspaceChecksum != null ? { workspaceChecksum: prev.workspaceChecksum } : {}),
+    ...extraDraftPersistFields(prev),
+    autoIngest: parsed,
+  };
+
+  let fsOk = false;
+  let blobOk = false;
+
+  if (dir) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const fp = draftFilePath(dir, sessionId);
+      const tmp = `${fp}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
+      await fs.rename(tmp, fp);
+      fsOk = true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!blob) return { ok: false, error: `write_failed:${msg}` };
+    }
+  }
+
+  if (blob) {
+    try {
+      await writeOrderDraftJsonToBlob(sessionId, doc, blob);
+      blobOk = true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!fsOk) return { ok: false, error: `blob_write_failed:${msg}` };
+    }
+  }
+
+  if (!fsOk && !blobOk) return { ok: false, error: "write_failed:no_backend" };
+  invalidateOrderDraftCache(sessionId);
+  return { ok: true, updatedAt };
 }
 
 /** @deprecated Lietot `upsertOrderDraftInvoiceFields`. */

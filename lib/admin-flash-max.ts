@@ -229,9 +229,14 @@ export function defaultFlashMaxBreadths(): Record<string, CommentBreadth> {
   return Object.fromEntries(FLASH_MAX_JOBS.map((job) => [job.id, defaultFlashMaxJobBreadth(job.id)]));
 }
 
+/** FLASH MAX noklusējums: Avotu salīdzinājums ir daily sarakstā, bet nav atzīmēts. */
+export const FLASH_MAX_DEFAULT_SELECTED_IDS: readonly string[] = FLASH_MAX_DAILY_JOB_IDS.filter(
+  (id) => id !== "sources_comparison",
+);
+
 export function defaultFlashMaxSelection(): FlashMaxSelection {
   return {
-    selectedIds: [...FLASH_MAX_DAILY_JOB_IDS],
+    selectedIds: [...FLASH_MAX_DEFAULT_SELECTED_IDS],
     tiers: defaultFlashMaxTiers(),
     breadths: defaultFlashMaxBreadths(),
   };

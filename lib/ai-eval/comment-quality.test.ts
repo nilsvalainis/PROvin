@@ -141,6 +141,16 @@ describe("stripSummaryDualismOpener", () => {
   });
 });
 
+describe("forbidden persona nouns", () => {
+  it("flags Latvian e-word family in generated comments", () => {
+    const issues = evaluateExpertCommentQuality(
+      "Raksta kā pieredzējis tehniskais eksperts, kas šo motoru pazīst no prakses.",
+      { field: "generic" },
+    );
+    expect(issues.some((i) => i.code === "vocabulary_eksperts")).toBe(true);
+  });
+});
+
 describe("planning leak", () => {
   it("flags an English Internal Analysis preamble", () => {
     const issues = evaluateExpertCommentQuality(

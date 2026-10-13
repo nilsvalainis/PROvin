@@ -37,6 +37,7 @@ export async function GET(req: Request) {
         updatedAt: draft?.updatedAt ?? null,
         workspaceRevision: draft?.workspaceRevision ?? 0,
         workspaceChecksum: draft?.workspaceChecksum ?? null,
+        autoIngest: draft?.autoIngest ?? null,
         durable,
         storageBackend: durable ? (process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX?.trim() ? "blob" : "filesystem") : "none",
       });
