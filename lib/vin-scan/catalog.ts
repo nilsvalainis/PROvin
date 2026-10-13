@@ -106,7 +106,8 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     country: "ISO",
     hint: "Ražotājs, izcelsmes valsts, gads",
     needs: ["vin"],
-    openUrl: (vin) => `https://vpic.nhtsa.dot.gov/decoder/Decoder?VIN=${vinQuery(vin)}`,
+    // Agrāk /decoder/Decoder?VIN= → bezgalīgs 302 uz /Error/NotFound (ERR_TOO_MANY_REDIRECTS). vPIC API JSON atveras droši.
+    openUrl: (vin) => `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vinQuery(vin)}?format=json`,
   },
   {
     id: "tjekbil",
