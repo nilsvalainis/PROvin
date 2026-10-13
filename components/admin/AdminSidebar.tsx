@@ -157,7 +157,7 @@ function refreshCount(url: string): Promise<void> {
   return e.inflight;
 }
 
-function useCount(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount"): number {
+function useCount(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount" | "urgentCount"): number {
   const pathname = usePathname();
   const [n, setN] = useState(0);
   useEffect(() => {
@@ -184,12 +184,20 @@ function useCount(url: string, key: "openCount" | "unseenCount" | "activeCount" 
   return n;
 }
 
+function ordersBadgeTone(badges: { ordersOverdue: number; ordersUrgent: number }) {
+  return {
+    gray: badges.ordersOverdue === 0 && badges.ordersUrgent === 0,
+    warn: badges.ordersOverdue === 0 && badges.ordersUrgent > 0,
+  };
+}
+
 function useBadges() {
   const fast = useCount("/api/admin/listing-peeks/open-count", "openCount");
   const partners = useCount("/api/admin/partners/unseen-count", "unseenCount");
   const orders = useCount("/api/admin/orders/active-count", "activeCount");
   const ordersOverdue = useCount("/api/admin/orders/active-count", "overdueCount");
-  return { fast, partners, orders, ordersOverdue } as const;
+  const ordersUrgent = useCount("/api/admin/orders/active-count", "urgentCount");
+  return { fast, partners, orders, ordersOverdue, ordersUrgent } as const;
 }
 
 /**
@@ -198,18 +206,29 @@ function useBadges() {
  * jo admin-ios-theme.css piespiež `span { color: #000 }`.
  * „Pasūtījumi” — pelēks, sarkans tikai ja kāds kavē termiņu.
  */
-function Badge({ n, dot = false, gray = false }: { n: number; dot?: boolean; gray?: boolean }) {
+function Badge({
+  n,
+  dot = false,
+  gray = false,
+  warn = false,
+}: {
+  n: number;
+  dot?: boolean;
+  gray?: boolean;
+  warn?: boolean;
+}) {
   if (n <= 0) return null;
-  const color = gray ? "#6B7280" : "#DC2626";
+  const color = gray ? "#6B7280" : warn ? "#D97706" : "#DC2626";
+  const weight = gray ? 500 : 700;
   if (dot) {
     return (
-      <span className="absolute right-1 top-0.5 text-[10px] leading-none tabular-nums" style={{ color, fontWeight: gray ? 500 : 700 }}>
+      <span className="absolute right-1 top-0.5 text-[10px] leading-none tabular-nums" style={{ color, fontWeight: weight }}>
         {n > 99 ? "99+" : n}
       </span>
     );
   }
   return (
-    <span className="ml-auto shrink-0 text-right text-[12px] leading-none tabular-nums" style={{ color, fontWeight: gray ? 500 : 700 }}>
+    <span className="ml-auto shrink-0 text-right text-[12px] leading-none tabular-nums" style={{ color, fontWeight: weight }}>
       {n > 99 ? "99+" : n}
     </span>
   );
@@ -295,7 +314,7 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
             {g.items.map((it) => {
               const on = it.match(pathname);
               const n = it.badge ? badges[it.badge] : 0;
-              const gray = it.badge === "orders" && badges.ordersOverdue === 0;
+              const tone = it.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
               const Icon = it.icon;
               return (
                 <div key={it.href} className="relative">
@@ -308,7 +327,7 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
                   }`}
                 >
                   <Icon className={`h-[17px] w-[17px] shrink-0 ${on ? "" : "text-[#8e8e93]"}`} strokeWidth={2} aria-hidden />
-                  {collapsed ? <Badge n={n} dot gray={gray} /> : <><span className="min-w-0 flex-1 truncate">{it.label}</span><Badge n={n} gray={gray} />{it.plus ? <span className="w-6 shrink-0" aria-hidden /> : null}</>}
+                  {collapsed ? <Badge n={n} dot gray={tone.gray} warn={tone.warn} /> : <><span className="min-w-0 flex-1 truncate">{it.label}</span><Badge n={n} gray={tone.gray} warn={tone.warn} />{it.plus ? <span className="w-6 shrink-0" aria-hidden /> : null}</>}
                 </Link>
                   {it.plus && !collapsed ? (
                     <button
@@ -377,13 +396,13 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
         {tabs.map((t) => {
           const on = t.match(pathname);
           const n = t.badge ? badges[t.badge] : 0;
-          const gray = t.badge === "orders" && badges.ordersOverdue === 0;
+          const tone = t.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
           const Icon = t.icon;
           return (
             <Link key={t.label} href={t.href} aria-current={on ? "page" : undefined} className={`admin-nav-link relative flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] ${on ? "font-semibold text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}>
               <span className="relative">
                 <Icon className="h-[21px] w-[21px]" strokeWidth={on ? 2.3 : 1.9} aria-hidden />
-                {n > 0 ? <span className="absolute -right-3.5 -top-1"><Badge n={n} gray={gray} dot /></span> : null}
+                {n > 0 ? <span className="absolute -right-3.5 -top-1"><Badge n={n} gray={tone.gray} warn={tone.warn} dot /></span> : null}
               </span>
               <span className="max-w-full truncate px-0.5">{t.label}</span>
             </Link>
@@ -409,14 +428,14 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
                   {g.items.map((it) => {
                     const on = it.match(pathname);
                     const n = it.badge ? badges[it.badge] : 0;
-              const gray = it.badge === "orders" && badges.ordersOverdue === 0;
+                    const tone = it.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
                     const Icon = it.icon;
                     return (
                       <div key={it.href} className="relative border-b border-[#e5e5ea] last:border-b-0">
                       <Link href={it.href} onClick={() => setMore(false)} className={`admin-nav-link flex h-11 items-center gap-3 px-3 text-[15px] ${on ? "font-semibold text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}>
                         <Icon className={`h-[18px] w-[18px] ${on ? "" : "text-[#8e8e93]"}`} aria-hidden />
                         <span className="flex-1">{it.label}</span>
-                        <Badge n={n} gray={gray} />
+                        <Badge n={n} gray={tone.gray} warn={tone.warn} />
                         {it.plus ? <span className="w-8 shrink-0" aria-hidden /> : null}
                       </Link>
                         {it.plus ? (

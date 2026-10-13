@@ -1,5 +1,8 @@
 import type { OrderEmailPayload } from "@/lib/email/types";
-import { sendAdminNewOrderNotificationEmail } from "@/lib/email/send-transactional";
+import {
+  sendAdminAuditSlaWarningEmail,
+  sendAdminNewOrderNotificationEmail,
+} from "@/lib/email/send-transactional";
 
 export type OrderPayload = OrderEmailPayload;
 
@@ -82,4 +85,50 @@ export async function notifyAdminEmail(payload: OrderPayload): Promise<void> {
     return;
   }
   await sendAdminNewOrderNotificationEmail(payload, to);
+}
+
+export async function notifyAdminAuditSlaWarning(opts: {
+  sessionId: string;
+  vin: string | null;
+  remainingLabel: string;
+  adminUrl: string;
+}): Promise<{ email: boolean; telegram: boolean }> {
+  let email = false;
+  let telegram = false;
+
+  const to = getAdminOrderNotifyEmail();
+  if (to) {
+    await sendAdminAuditSlaWarningEmail(opts, to);
+    email = true;
+  }
+
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (token && chatId) {
+    const text = [
+      "⏰ <b>PROVIN: 3 h līdz audita termiņam</b>",
+      "",
+      `<b>Session:</b> <code>${escapeHtml(opts.sessionId)}</code>`,
+      `<b>VIN:</b> ${escapeHtml(opts.vin ?? "-")}`,
+      `<b>Atlicis:</b> ${escapeHtml(opts.remainingLabel)}`,
+      `<b>Admin:</b> ${escapeHtml(opts.adminUrl)}`,
+    ].join("\n");
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+      }),
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`Telegram SLA send failed: ${res.status} ${t}`);
+    }
+    telegram = true;
+  }
+
+  return { email, telegram };
 }

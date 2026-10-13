@@ -5,6 +5,7 @@ import {
   partnerVerifyEmailHtml,
   adminNewPartnerHtml,
   morningSummaryEmailHtml,
+  adminAuditSlaWarningHtml,
 } from "@/lib/email/html-templates";
 
 const listingUrl = "https://www.ss.com/msg/lv/transport/cars/bmw/x5/abc.html";
@@ -67,6 +68,24 @@ describe("partnerPasswordResetEmailHtml", () => {
     expect(html).toContain("Atjaunojiet paroli");
     expect(html).toContain("https://provin.lv/lv/partneriem/parole?token=rst_abc");
     expect(html).toContain("24 stundas");
+    expect(html).not.toContain("\u2014");
+    expect(html).not.toContain("\u2013");
+  });
+});
+
+describe("adminAuditSlaWarningHtml", () => {
+  it("warns about the 3 h audit SLA without IRISS LIST copy or dashes", () => {
+    const html = adminAuditSlaWarningHtml({
+      adminUrl: "https://www.provin.lv/admin/orders/cs_test",
+      lines: [
+        { label: "VIN", value: "WVWZZZ" },
+        { label: "Atlicis", value: "2 h 10 min" },
+      ],
+    });
+    expect(html).toContain("Audita termiņš: atlikušas ≤ 3 h");
+    expect(html).toContain("WVWZZZ");
+    expect(html).toContain("https://www.provin.lv/admin/orders/cs_test");
+    expect(html).toContain("48 h sagatavošanas SLA");
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
   });

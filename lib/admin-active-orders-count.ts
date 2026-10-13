@@ -7,14 +7,17 @@ import { formatAuditDeadlineRemaining } from "@/lib/admin-audit-deadline";
 export function countAdminActiveOrders(
   rows: { created: number; deadlineFromUnix?: number | null; auditComplete?: boolean; isB2bPack?: boolean }[],
   nowMs: number,
-): { activeCount: number; overdueCount: number } {
+): { activeCount: number; overdueCount: number; urgentCount: number } {
   let activeCount = 0;
   let overdueCount = 0;
+  let urgentCount = 0;
   for (const r of rows) {
     if (r.auditComplete || r.isB2bPack) continue;
     activeCount++;
     // Tieši tā pati funkcija un sākuma laiks kā tabulas termiņa šūnā (piepirkumam — apmaksas brīdis).
-    if (formatAuditDeadlineRemaining(r.deadlineFromUnix ?? r.created, nowMs).status === "overdue") overdueCount++;
+    const status = formatAuditDeadlineRemaining(r.deadlineFromUnix ?? r.created, nowMs).status;
+    if (status === "overdue") overdueCount++;
+    else if (status === "urgent") urgentCount++;
   }
-  return { activeCount, overdueCount };
+  return { activeCount, overdueCount, urgentCount };
 }
