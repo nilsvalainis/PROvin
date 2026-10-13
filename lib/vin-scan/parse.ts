@@ -391,7 +391,11 @@ export function parseVinSourceScan(result: VinSourceFetchResult): VinScanParse {
   ) {
     return { status: "skipped", summary: msg };
   }
-  if (/nav .*reģistrā|neatrāda|netika atrasts|gadījumi nav atrasti|publiski strukturēti dati netika/i.test(msg)) {
+  if (
+    /nav .*reģistrā|neatrāda|neatradīja|netika atrasts|gadījumi nav atrasti|publiski strukturēti dati netika|meklēšanā šo VIN/i.test(
+      msg,
+    )
+  ) {
     return { status: "none", summary: msg };
   }
   return { status: "unknown", summary: msg, detail };

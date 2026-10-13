@@ -7,7 +7,9 @@ import { fmtLv, QE_TONE_DOT, type CardTone, type SourceCardModel } from "@/lib/q
 import type { QuickEvalCandidateView } from "@/lib/quick-eval-service";
 import type { VinHistoryEntry } from "@/lib/vin-history";
 import { AdminVinHistoryList } from "@/components/admin/AdminVinHistoryList";
+import { quickEvalNordicSearchLinks } from "@/lib/quick-eval-vin-scan";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
+import { decodeVinLocal } from "@/lib/vin-scan/vin-decode";
 
 const FACT_TONE = { ok: "text-emerald-700", warn: "text-amber-700", bad: "text-rose-700" } as const;
 
@@ -220,7 +222,7 @@ function CcVinChip({ peekId, vin, count, at }: { peekId: string; vin: string; co
 }
 
 /** VIN SCAN indikatori, kuriem jau ir sava kartīte (nedublē). */
-const SCAN_HAS_OWN_CARD = new Set(["tjekbil", "mnt_ee", "lkf_ee", "carinfo", "csdd"]);
+const SCAN_HAS_OWN_CARD = new Set(["tjekbil", "mnt_ee", "lkf_ee", "carinfo", "csdd", "listing_history"]);
 
 type GridCard = {
   key: string;
@@ -328,8 +330,8 @@ function EmptyRowItem({ r, peekId }: { r: EmptyRow; peekId: string }) {
 
 /**
  * Avotu režģis (variants A): kartītes TIKAI avotiem ar datiem; tukšie / kļūdainie / „nav atrasts” —
- * vienā sakļautā rindā „Bez datiem (N)” ar atkārtošanu katram. VIN SCAN avoti (tjekbil.dk, esyn.dk,
- * nummerplade.net u.c.) ir BEZMAKSAS publiskie reģistri — tie rādās kā parastas kartītes, ja atrada datus.
+ * vienā sakļautā rindā „Bez datiem (N)” ar atkārtošanu katram. VIN SCAN avoti (pilnais katalogs:
+ * WMI dekodēšana, tjekbil.dk, esyn.dk, nummerplade.net u.c.) rādās kā parastas kartītes, ja atrada datus.
  * CC-VIN — sava kartīte (ir/nav dati, foto skaits, saite). Pēc atkārtotas ielādes jaunie dati parādās
  * automātiski (router.refresh, kamēr kāds avots vēl ielādējas — periodiski).
  */
@@ -379,12 +381,19 @@ export function AdminQuickEvalSourceGrid({
     more: "checkcar.vin — atveras jaunā cilnē; foto skaitu nolasa PROVIN skripts.",
     extra: <CcVinChip peekId={peekId} vin={vin} count={ccVin?.count} at={ccVin?.at} />,
   });
+  const nordic = quickEvalNordicSearchLinks(vin);
+  const nordicOnDecodeCard = Boolean(vinScan?.indicators.some((i) => i.id === "vin_decode" && i.status === "found"));
   const scanMeta = vinScan ? fmtLv(vinScan.at) : "nav ielasīts";
   for (const i of vinScan?.indicators ?? []) {
     if (SCAN_HAS_OWN_CARD.has(i.id)) continue;
     const title = i.country && i.country !== "EU" ? `${i.label} · ${i.country}` : i.label;
     if (i.status === "found") {
       const facts: GridCard["facts"] = [];
+      if (i.id === "vin_decode") {
+        const decoded = decodeVinLocal(vin);
+        if (decoded.wmi) facts.push({ label: "WMI", value: decoded.wmi });
+        if (decoded.countryName) facts.push({ label: "Valsts", value: decoded.countryName });
+      }
       if (i.vehicle && (i.vehicle.make || i.vehicle.model)) facts.push({ label: "Auto", value: [i.vehicle.make, i.vehicle.model].filter(Boolean).join(" ") });
       if (i.vehicle?.year) facts.push({ label: "Gads", value: i.vehicle.year });
       const lastMileage = i.mileage?.[i.mileage.length - 1];
@@ -392,7 +401,32 @@ export function AdminQuickEvalSourceGrid({
       if (i.mileage && i.mileage.length > 1) facts.push({ label: "Ieraksti", value: String(i.mileage.length) });
       if (typeof i.media?.photoCount === "number") facts.push({ label: "Foto", value: String(i.media.photoCount) });
       facts.push({ label: "Rezultāts", value: i.summary });
-      data.push({ key: `scan:${i.id}`, title, tone: SCAN_TONE[i.status] ?? "ok", meta: scanMeta, link: i.openUrl, facts, more: i.detail || null });
+      data.push({
+        key: `scan:${i.id}`,
+        title,
+        tone: SCAN_TONE[i.status] ?? "ok",
+        meta: scanMeta,
+        link: i.openUrl,
+        facts,
+        more: i.detail || null,
+        extra:
+          i.id === "vin_decode" && nordic.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {nordic.map((link) => (
+                <a
+                  key={link.id}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-provin-handoff-vin={vin || undefined}
+                  className={btnSm}
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          ) : undefined,
+      });
     } else {
       empty.push({ key: `scan:${i.id}`, title, message: i.summary || "Nav atrasts", retry: "vin_scan", link: i.openUrl });
     }
@@ -413,6 +447,22 @@ export function AdminQuickEvalSourceGrid({
 
   return (
     <div className="mt-3 space-y-3">
+      {!nordicOnDecodeCard && nordic.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {nordic.map((link) => (
+            <a
+              key={link.id}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-provin-handoff-vin={vin || undefined}
+              className={btnSm}
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+      ) : null}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {data.map((c) => (
           <QeCard key={c.key} c={c} />

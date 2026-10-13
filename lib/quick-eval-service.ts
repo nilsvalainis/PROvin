@@ -2,7 +2,7 @@ import "server-only";
 
 import { computeFreeSourceSeed } from "@/lib/admin-free-source-seed";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { vinScanFastSourceIds } from "@/lib/vin-scan/catalog";
+import { quickEvalVinScanInput } from "@/lib/quick-eval-vin-scan";
 import { runVinScan } from "@/lib/vin-scan/run";
 import { readOrderDraft, patchOrderDraft } from "@/lib/admin-order-draft-store";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
@@ -87,7 +87,8 @@ function resetFreeBlocks(baseline: WorkspaceSourceBlocks, keys: readonly SourceB
 }
 
 /**
- * Bezmaksas avotu ielase ātrajam vērtējumam (CSDD, sludinājums, DK/EE/SE) + VIN SCAN.
+ * Bezmaksas avotu ielase ātrajam vērtējumam (CSDD, sludinājums, DK/EE/SE)
+ * plus pilnais VIN SCAN katalogs (`quickEvalVinScanInput`, tas pats cauruļvads kā VIN SCAN lapai).
  * `refresh` ielasa visu no jauna; `only` – tikai vienu avotu (kartītes „Mēģināt vēlreiz”).
  */
 export async function seedQuickEval(
@@ -110,8 +111,17 @@ export async function seedQuickEval(
       : computeFreeSourceSeed(baseline, { vin: peek.vin, listingUrl: peek.listingUrl });
   const seeded = await seedPromise;
   const vin = seeded?.resolvedVin || current.vin || (isValidVin(normalizeVin(peek.vin ?? "")) ? normalizeVin(peek.vin ?? "") : "");
+  const blocksForScan = seeded?.blocks ?? current.sourceBlocks;
   const scan =
-    doScan && vin && isValidVin(vin) ? await runVinScan({ vin, sourceIds: vinScanFastSourceIds() }).catch(() => null) : null;
+    doScan && vin && isValidVin(vin)
+      ? await runVinScan(
+          quickEvalVinScanInput({
+            vin,
+            listingUrl: peek.listingUrl,
+            registrationNumber: blocksForScan.csdd.registry?.data?.registrationNumber || blocksForScan.csdd.registrationNumber,
+          }),
+        ).catch(() => null)
+      : null;
   const now = new Date().toISOString();
   return updateQuickEval(peek.id, (doc) => {
     const parts = seeded ? { ...(opts.only ? doc.seed?.parts : {}), ...seeded.parts } : doc.seed?.parts ?? {};

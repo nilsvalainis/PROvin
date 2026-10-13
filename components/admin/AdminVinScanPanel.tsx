@@ -16,6 +16,11 @@ import {
 } from "@/lib/vin-scan/summary";
 import { VIN_SCAN_STATUSES, type VinScanIndicator, type VinScanStatus } from "@/lib/vin-scan/types";
 import {
+  decodeVinLocal,
+  nordicVinSearchLinks,
+  vinDecodeParseFromLocal,
+} from "@/lib/vin-scan/vin-decode";
+import {
   isVinScanWantedSource,
   vinScanWantedDotClass,
   vinScanWantedStatusLabel,
@@ -158,6 +163,25 @@ function cacheKey(vin: string): string {
   return `provin-vin-scan-v2:${vin}`;
 }
 
+function localVinDecodeRow(vin: string): ScanRow | null {
+  const parsed = vinDecodeParseFromLocal(decodeVinLocal(vin));
+  if (parsed.status !== "found") return null;
+  const meta = CATALOG.find((source) => source.id === "vin_decode");
+  if (!meta) return null;
+  return {
+    id: "vin_decode",
+    label: meta.label,
+    country: meta.country,
+    status: parsed.status,
+    summary: parsed.summary,
+    detail: parsed.detail ?? "",
+    openUrl: meta.openUrl(vin),
+    vehicle: parsed.vehicle,
+    mileage: [],
+    flags: parsed.flags,
+  };
+}
+
 function rowsFromIndicators(
   indicators: unknown[],
   vin: string,
@@ -269,7 +293,8 @@ export function AdminVinScanPanel({
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
-    setById({});
+    const localDecode = valid ? localVinDecodeRow(clean) : null;
+    setById(localDecode ? { vin_decode: localDecode } : {});
     setError("");
     setOpenId(null);
     setScannedAt("");
@@ -282,7 +307,10 @@ export function AdminVinScanPanel({
         if (raw) {
           const parsed = JSON.parse(raw) as { scannedAt?: string; indicators?: unknown[] };
           if (Array.isArray(parsed.indicators) && !cancelled) {
-            setById(rowsFromIndicators(parsed.indicators, clean, plates, listing));
+            setById({
+              ...(localDecode ? { vin_decode: localDecode } : {}),
+              ...rowsFromIndicators(parsed.indicators, clean, plates, listing),
+            });
             setScannedAt(typeof parsed.scannedAt === "string" ? parsed.scannedAt : "");
           }
         }
@@ -296,7 +324,10 @@ export function AdminVinScanPanel({
           stale?: boolean;
         } | null;
         if (cancelled || !res.ok || !data?.snapshot || !Array.isArray(data.snapshot.indicators)) return;
-        setById(rowsFromIndicators(data.snapshot.indicators, clean, plates, listing));
+        setById({
+          ...(localDecode ? { vin_decode: localDecode } : {}),
+          ...rowsFromIndicators(data.snapshot.indicators, clean, plates, listing),
+        });
         setScannedAt(typeof data.snapshot.scannedAt === "string" ? data.snapshot.scannedAt : "");
         try {
           localStorage.setItem(cacheKey(clean), JSON.stringify(data.snapshot));
@@ -334,6 +365,9 @@ export function AdminVinScanPanel({
   const facts = rows.length > 0 ? buildVinScanFacts(rows) : null;
   const unknownIds = CATALOG.filter((item) => displayById[item.id]?.status === "unknown").map((item) => item.id);
   const canRetry = !busy && unknownIds.length > 0;
+  const nordicLinks = valid ? nordicVinSearchLinks(clean) : [];
+  const linkBtn =
+    "rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-slate-600";
 
   async function scanServer(opts: { force?: boolean; sources?: string[] } = {}) {
     const res = await fetch("/api/admin/vin-scan", {
@@ -447,8 +481,20 @@ export function AdminVinScanPanel({
 
   return (
     <section className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]" aria-busy={busy}>
-      {canRetry || rows.length > 0 ? (
+      {canRetry || rows.length > 0 || nordicLinks.length > 0 ? (
         <div className="flex flex-wrap items-center justify-end gap-1.5 px-2.5 py-2">
+          {nordicLinks.map((link) => (
+            <a
+              key={link.id}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-provin-handoff-vin={clean || undefined}
+              className={linkBtn}
+            >
+              {link.label}
+            </a>
+          ))}
           {canRetry ? (
             <button
               type="button"

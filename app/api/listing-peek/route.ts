@@ -9,7 +9,7 @@ import { createListingPeek, isListingPeekRateLimitExempt } from "@/lib/listing-p
 import { seedQuickEval } from "@/lib/quick-eval-service";
 
 export const runtime = "nodejs";
-/** Bezmaksas avotu ielase (CSDD, sludinājums, DK/EE/SE) notiek fonā pēc atbildes klientam. */
+/** Bezmaksas avotu ielase un pilnais VIN SCAN katalogs notiek fonā pēc atbildes klientam. */
 export const maxDuration = 300;
 
 const BURST_WINDOW_MS = 15 * 60 * 1000;

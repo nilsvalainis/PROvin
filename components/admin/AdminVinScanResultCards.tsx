@@ -53,6 +53,7 @@ export function AdminVinScanResultCards({ rows }: { rows: readonly VinScanResult
             <Kv label="Marka" value={card.vehicle?.make ?? ""} />
             <Kv label="Modelis" value={card.vehicle?.model ?? ""} />
             <Kv label="Gads" value={card.vehicle?.year ?? ""} />
+            <Kv label="Valsts" value={card.origin} />
           </div>
           {card.inspections.length > 0 ? (
             <ul className="mt-1.5 space-y-0.5">

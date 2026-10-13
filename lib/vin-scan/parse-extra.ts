@@ -47,7 +47,7 @@ export function parseVpicMakeModelYear(status: number, text: string): { make: st
     const make = str(row.Make);
     const model = str(row.Model);
     const year = str(row.ModelYear);
-    if (!make || !year) return null;
+    if (!make) return null;
     return { make, model, year };
   } catch {
     return null;

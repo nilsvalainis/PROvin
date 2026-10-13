@@ -6,6 +6,7 @@
 import { type VinScanPlateKind, type VinScanPlates, emptyVinScanPlates } from "@/lib/vin-scan/plates";
 
 export const VIN_SCAN_SOURCE_IDS = [
+  "vin_decode",
   "tjekbil",
   "esyn",
   "dsb",
@@ -41,15 +42,11 @@ export const VIN_SCAN_SOURCE_IDS = [
 
 export type VinScanSourceId = (typeof VIN_SCAN_SOURCE_IDS)[number];
 
-/** Ātrie HTTP avoti ātrajam vērtējumam. VIN SCAN lapa skenē visu katalogu. */
-export const VIN_SCAN_FAST_IDS = [
-  "tjekbil",
-  "esyn",
-  "dsb",
-  "mnt_ee",
-  "csdd",
-  "nhtsa_recalls",
-] as const satisfies readonly VinScanSourceId[];
+/**
+ * Ātrie vērtējumi un VIN SCAN lapa lieto vienu katalogu (pilnu `VIN_SCAN_SOURCE_IDS`).
+ * Vārds paliek vēsturisks; saturā tas vairs nav HTTP apakškopa.
+ */
+export const VIN_SCAN_FAST_IDS = VIN_SCAN_SOURCE_IDS;
 
 /**
  * Userscript aizpilda VIN, kad operators atver avota cilni.
@@ -103,6 +100,14 @@ function plateQ(raw: string): string {
 }
 
 export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
+  {
+    id: "vin_decode",
+    label: "WMI",
+    country: "ISO",
+    hint: "Ražotājs, izcelsmes valsts, gads",
+    needs: ["vin"],
+    openUrl: (vin) => `https://vpic.nhtsa.dot.gov/decoder/Decoder?VIN=${vinQuery(vin)}`,
+  },
   {
     id: "tjekbil",
     label: "tjekbil.dk",
@@ -390,8 +395,13 @@ export function defaultVinScanSourceIds(): VinScanSourceId[] {
   return [...VIN_SCAN_SOURCE_IDS];
 }
 
+/** Kopējais VIN SCAN cauruļvads: VIN SCAN lapa un Ātrie vērtējumi. */
+export function vinScanPipelineSourceIds(): VinScanSourceId[] {
+  return defaultVinScanSourceIds();
+}
+
 export function vinScanFastSourceIds(): VinScanSourceId[] {
-  return [...VIN_SCAN_FAST_IDS];
+  return vinScanPipelineSourceIds();
 }
 
 export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanCatalogItem[] = VIN_SCAN_CATALOG.filter((item) =>
