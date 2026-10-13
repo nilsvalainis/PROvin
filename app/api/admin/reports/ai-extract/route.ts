@@ -271,7 +271,11 @@ export async function POST(req: Request) {
           vehicleAiExtractionMeta: meta,
         };
         const { workspace } = coalesceOrderDraftWorkspacePatch(incoming, prevW ?? null, sessionId);
-        const persistResult = await patchOrderDraft(sessionId, { workspace });
+        const persistResult = await patchOrderDraft(
+          sessionId,
+          { workspace },
+          { expectedWorkspaceRevision: prev?.workspaceRevision ?? 0 },
+        );
         if (persistResult.ok && persistResult.durable) {
           console.info("[ai_extract:persist]", {
             sessionId,

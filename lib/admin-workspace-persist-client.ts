@@ -140,8 +140,8 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
     workspace: draftBody,
     saveGeneration: gen,
   };
-  if (opts.expectedWorkspaceRevision != null && opts.expectedWorkspaceRevision > 0) {
-    patchBody.expectedWorkspaceRevision = opts.expectedWorkspaceRevision;
+  if (opts.expectedWorkspaceRevision != null && Number.isFinite(opts.expectedWorkspaceRevision)) {
+    patchBody.expectedWorkspaceRevision = Math.max(0, Math.floor(opts.expectedWorkspaceRevision));
   }
   const res = await fetch("/api/admin/order-draft", {
     method: "PATCH",
@@ -207,7 +207,23 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
   };
 }
 
-/** Queued persist ar vienu stale-retry pēc servera refetch. */
+export function isWorkspaceRevisionConflict(error: string | undefined | null): boolean {
+  return error === "stale_revision" || error === "overwrite_blocked";
+}
+
+/** Droša lauku apvienošana (tukšais neēd pilno). Operatoram jāapstiprina pirms PATCH. */
+export function buildSafeMergePersistBody(
+  local: OrderWorkspacePersistBody,
+  serverWorkspace: OrderDraftWorkspaceBody | null,
+  baseline: OrderWorkspacePersistBody | null = null,
+): OrderWorkspacePersistBody {
+  return coalesceOrderWorkspacePersistBody(
+    normalizeOrderWorkspacePersistBody(local),
+    serverWorkspace ? workspacePersistFromDraftWorkspace(serverWorkspace) : baseline,
+  );
+}
+
+/** Queued persist. Konfliktu (stale / overwrite) neatrisina klusi. UI piedāvā pārlādēt vai apvienot. */
 export async function persistWorkspaceState(
   opts: PersistWorkspaceStateOptions,
 ): Promise<PersistWorkspaceStateResult> {
@@ -219,23 +235,23 @@ export async function persistWorkspaceState(
     extra: { context: opts.logContext, generation: opts.saveGeneration },
   });
 
-  return enqueueWorkspacePersist(opts.sessionId, async () => {
-    let result = await patchWorkspaceOnce(opts);
-    if (result.ok === false && result.error === "stale_revision") {
-      const fresh = await fetchCanonicalWorkspace(opts.sessionId);
-      const merged = coalesceOrderWorkspacePersistBody(
-        normalizeOrderWorkspacePersistBody(opts.body),
-        fresh.workspace ? workspacePersistFromDraftWorkspace(fresh.workspace) : opts.baseline,
-      );
-      result = await patchWorkspaceOnce({
-        ...opts,
-        body: merged,
-        baseline: fresh.workspace ? workspacePersistFromDraftWorkspace(fresh.workspace) : opts.baseline,
-        expectedWorkspaceRevision: fresh.workspaceRevision,
-      });
-    }
-    return result;
+  return enqueueWorkspacePersist(opts.sessionId, async () => patchWorkspaceOnce(opts));
+}
+
+/** Operatora apstiprināta droša apvienošana ar servera kanonu, tad PATCH ar svaigu revision. */
+export async function persistWorkspaceSafeMerge(
+  opts: PersistWorkspaceStateOptions,
+): Promise<PersistWorkspaceStateResult & { mergedBody: OrderWorkspacePersistBody }> {
+  const fresh = await fetchCanonicalWorkspace(opts.sessionId);
+  const mergedBody = buildSafeMergePersistBody(opts.body, fresh.workspace, opts.baseline);
+  const result = await persistWorkspaceState({
+    ...opts,
+    body: mergedBody,
+    baseline: fresh.workspace ? workspacePersistFromDraftWorkspace(fresh.workspace) : opts.baseline,
+    expectedWorkspaceRevision: fresh.workspaceRevision,
+    logContext: opts.logContext ?? "safe_merge",
   });
+  return { ...result, mergedBody };
 }
 
 export function workspacePersistFromDraftWorkspace(

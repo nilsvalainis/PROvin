@@ -99,7 +99,11 @@ export async function POST(req: Request) {
       }
       return NextResponse.json({ error: err }, { status: 500 });
     }
-    return NextResponse.json({ ok: true, updatedAt: result.updatedAt });
+    return NextResponse.json({
+      ok: true,
+      updatedAt: result.updatedAt,
+      workspaceRevision: result.workspaceRevision,
+    });
   } catch (e) {
     console.error("[order-draft] POST", e);
     const msg = e instanceof Error ? e.message : "unknown";

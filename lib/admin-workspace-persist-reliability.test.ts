@@ -9,6 +9,11 @@ import { coalesceOrderWorkspacePersistBody, pickOrderWorkspaceHydrationServerFir
 import { createDefaultSourceBlocks, emptyVendorAvotuBlock } from "@/lib/admin-source-blocks";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { enqueueWorkspacePersist } from "@/lib/admin-workspace-persist-queue";
+import {
+  buildSafeMergePersistBody,
+  isWorkspaceRevisionConflict,
+} from "@/lib/admin-workspace-persist-client";
+import { nextWorkspaceRevisionAfterRestore } from "@/lib/admin-workspace-integrity";
 
 function draftWithComment(comment: string): OrderDraftWorkspaceBody {
   const blocks = createDefaultSourceBlocks();
@@ -175,6 +180,42 @@ describe("E2E persistence simulation", () => {
     const localStorageEmpty = null;
     expect(localStorageEmpty).toBeNull();
     expect(reloadFromServer?.iriss).toBe("Summary");
+  });
+});
+
+describe("revision conflict contract", () => {
+  it("treats stale_revision and overwrite_blocked as conflicts, not success", () => {
+    expect(isWorkspaceRevisionConflict("stale_revision")).toBe(true);
+    expect(isWorkspaceRevisionConflict("overwrite_blocked")).toBe(true);
+    expect(isWorkspaceRevisionConflict("store_not_durable")).toBe(false);
+    expect(isWorkspaceRevisionConflict(undefined)).toBe(false);
+  });
+
+  it("safe merge keeps filled server fields when local is empty", () => {
+    const local = draftWithComment("");
+    const server = draftWithComment("Cita cilne saglabāja komentāru");
+    server.iriss = "Servera kopsavilkums";
+    const merged = buildSafeMergePersistBody(
+      {
+        sourceBlocks: local.sourceBlocks,
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+      },
+      server,
+    );
+    expect(merged.sourceBlocks.autodna.comments).toContain("Cita cilne");
+    expect(merged.iriss).toBe("Servera kopsavilkums");
+  });
+
+  it("restore bumps revision so the other tab cannot overwrite quietly", () => {
+    expect(nextWorkspaceRevisionAfterRestore(0)).toBe(1);
+    expect(nextWorkspaceRevisionAfterRestore(4)).toBe(5);
+    expect(nextWorkspaceRevisionAfterRestore(undefined)).toBe(1);
   });
 });
 
