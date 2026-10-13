@@ -47,8 +47,8 @@ export const ADMIN_NAV_LABELS = {
   fast: "Ātrie vērtējumi",
   irissHome: "Pasūtījumi",
   irissNew: "Jauns pasūtījums",
-  irissScan: "Meklētājs",
-  irissList: "Filtri",
+  irissScan: "Radars",
+  irissList: "Klientu filtri",
   irissWaybills: "Pavadzīmes",
   blogs: "Blogs",
   aggregates: "Agregāti",
@@ -76,7 +76,7 @@ const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, ico
 
 export const ADMIN_NAV_GROUPS: Group[] = [
   { title: L.groupPro, items: [SAKUMS, VIN, FAST] },
-  { title: L.groupIriss, items: [I_HOME, I_SCAN, I_LIST, I_WAYBILLS] },
+  { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_WAYBILLS] },
   {
     title: L.groupWeb,
     items: [
@@ -96,30 +96,85 @@ export const ADMIN_NAV_GROUPS: Group[] = [
 
 const STORAGE_KEY = "admin-sidebar-collapsed";
 
-function useCount(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount"): number {
-  const pathname = usePathname();
-  const [n, setN] = useState(0);
-  const refresh = useCallback(async () => {
+/**
+ * Žetonu skaiti — viens kopīgs avots katram URL (modulī), nevis atsevišķs fetch katram žetonam/komponentam.
+ * Agrāk: katrs žetons sāka ar 0, „Pasūtījumi” skaits un „kavē” nāca no 2 dažādiem pieprasījumiem
+ * (dažādos brīžos → skaitlis/krāsa lēca), un pēc pārlādes žetons pazuda līdz atbildei.
+ * Tagad: pēdējā zināmā vērtība no sessionStorage uzreiz pēc montēšanas, viens pieprasījums uz URL,
+ * visi abonenti saņem to pašu atbildi; kļūdas gadījumā vērtība netiek nomesta uz 0.
+ */
+type CountData = Record<string, number>;
+const countStore = new Map<string, { data: CountData | null; inflight: Promise<void> | null; subs: Set<() => void> }>();
+const SS_PREFIX = "admin-badge:";
+
+function countEntry(url: string) {
+  let e = countStore.get(url);
+  if (!e) {
+    e = { data: null, inflight: null, subs: new Set() };
+    try {
+      const raw = window.sessionStorage.getItem(SS_PREFIX + url);
+      if (raw) e.data = JSON.parse(raw) as CountData;
+    } catch {
+      /* nav kritiski */
+    }
+    countStore.set(url, e);
+  }
+  return e;
+}
+
+function refreshCount(url: string): Promise<void> {
+  const e = countEntry(url);
+  if (e.inflight) return e.inflight;
+  e.inflight = (async () => {
     try {
       const res = await fetch(url, { credentials: "include", cache: "no-store" });
       if (!res.ok) return;
-      const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-      const v = data[key];
-      setN(typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
+      const json = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+      if (!json) return;
+      const next: CountData = {};
+      for (const [k, v] of Object.entries(json)) {
+        if (typeof v === "number" && Number.isFinite(v)) next[k] = Math.max(0, Math.floor(v));
+      }
+      e.data = next;
+      try {
+        window.sessionStorage.setItem(SS_PREFIX + url, JSON.stringify(next));
+      } catch {
+        /* nav kritiski */
+      }
+      e.subs.forEach((f) => f());
     } catch {
-      /* žetons nav kritisks */
+      /* žetons nav kritisks — paturam iepriekšējo vērtību */
+    } finally {
+      e.inflight = null;
     }
+  })();
+  return e.inflight;
+}
+
+function useCount(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount"): number {
+  const pathname = usePathname();
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    const e = countEntry(url);
+    const sync = () => setN(e.data?.[key] ?? 0);
+    sync();
+    e.subs.add(sync);
+    return () => {
+      e.subs.delete(sync);
+    };
   }, [url, key]);
   useEffect(() => {
-    void refresh();
-    const t = window.setInterval(() => void refresh(), 45_000);
-    const onFocus = () => void refresh();
+    void refreshCount(url);
+    const t = window.setInterval(() => void refreshCount(url), 45_000);
+    const onFocus = () => void refreshCount(url);
     window.addEventListener("focus", onFocus);
+    window.addEventListener("admin-orders-changed", onFocus);
     return () => {
       window.clearInterval(t);
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("admin-orders-changed", onFocus);
     };
-  }, [pathname, refresh]);
+  }, [pathname, url]);
   return n;
 }
 
@@ -303,7 +358,7 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
 
   const PRO_HUB: Item = { href: "/admin/dashboard", label: "PRO", icon: LayoutGrid, match: () => false };
   const IRISS_HUB: Item = { href: "/admin/iriss/pasutijumi", label: "IRISS", icon: Car, match: starts("/admin/iriss") };
-  const tabs: Item[] = workspace === "iriss" ? [I_HOME, I_SCAN, I_LIST, PRO_HUB] : [SAKUMS, VIN, FAST, IRISS_HUB];
+  const tabs: Item[] = workspace === "iriss" ? [I_HOME, I_LIST, I_SCAN, PRO_HUB] : [SAKUMS, VIN, FAST, IRISS_HUB];
   const inTabs = tabs.some((t) => t.match(pathname));
   const moreBadge = workspace === "iriss" ? badges.fast + badges.partners : badges.partners;
 

@@ -5,8 +5,7 @@
 import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
-import { countOpenListingPeeks } from "@/lib/listing-peek-queue";
-import { listListingPeeks } from "@/lib/listing-peek-store";
+import { getListingPeekQueueSnapshot } from "@/lib/listing-peek-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,8 +15,8 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   try {
-    const peeks = await listListingPeeks(200);
-    const openCount = countOpenListingPeeks(peeks);
+    // Svaigs (nekešots) dokuments un visi ieraksti — nevis instances kešs + 200 limits (žetons lēca).
+    const { openCount } = await getListingPeekQueueSnapshot();
     return NextResponse.json({ ok: true, openCount });
   } catch (e) {
     console.error("[admin/listing-peeks/open-count]", e);

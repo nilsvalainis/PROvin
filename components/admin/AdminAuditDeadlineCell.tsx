@@ -67,6 +67,8 @@ export function AdminAuditDeadlineCell({
         );
         return;
       }
+      // Sānjoslas „Pasūtījumi” žetons atjaunojas uzreiz, nevis pēc 45 s (citādi lec).
+      window.dispatchEvent(new Event("admin-orders-changed"));
     } catch {
       setIsComplete(!next);
       onCompleteChange?.(!next);
