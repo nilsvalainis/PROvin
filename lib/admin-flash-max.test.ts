@@ -47,7 +47,10 @@ describe("FLASH MAX jobs", () => {
     expect(FLASH_MAX_JOBS.some((j) => j.id === "asv" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "finnik" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "tirgus" && j.group === "daily")).toBe(true);
-    expect(defaultFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_DAILY_JOB_IDS]);
+    expect(defaultFlashMaxSelection().selectedIds).toEqual(
+      FLASH_MAX_DAILY_JOB_IDS.filter((id) => id !== "sources_comparison"),
+    );
+    expect(defaultFlashMaxSelection().selectedIds).not.toContain("sources_comparison");
     expect(FLASH_MAX_JOBS.some((j) => j.id === "ltab" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto")).toBe(false);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "oneauto_oil" || j.id === "oneauto_service")).toBe(false);

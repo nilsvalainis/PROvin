@@ -60,6 +60,8 @@ export type OrderDraftState = {
   /** Kad admin nosūtījis atskaiti klientam un PDF saglabāts partnera arhīvam. */
   clientReportReadyAt?: string;
   clientReportFilename?: string;
+  /** Automātiskā ielase pēc apmaksas (CSDD, DK/EE/SE, sludinājuma vēsture). */
+  autoIngest?: import("@/lib/admin-auto-ingest").AutoIngestStatus;
 };
 
 export function orderDraftHasOrderEdits(e: OrderDraftOrderEdits | undefined): boolean {

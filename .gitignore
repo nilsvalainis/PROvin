@@ -48,6 +48,9 @@ social-banner/node_modules/
 social-banner/banner.jpg
 social-banner/iriss-thumbs/out/
 
+# sqlite / playwright stray session files
+:memory:.ses
+
 # typescript
 next-env.d.ts
 *.tsbuildinfo

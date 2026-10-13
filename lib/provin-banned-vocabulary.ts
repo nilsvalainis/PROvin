@@ -180,6 +180,12 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     replacement: "kloķvārpstas skriemelis (demferis)",
     code: "vocabulary_vibraciju_slapetajs",
   },
+  {
+    label: "eksperts / ekspertīze",
+    pattern: /ekspert/i,
+    replacement: "apraksti analīzi bez personas lietvārda (ne speciālists)",
+    code: "vocabulary_eksperts",
+  },
 ] as const;
 
 /** Ģenerē prompta bloku no vienotā saraksta — nekad nekopē manuāli citur. */
@@ -192,6 +198,76 @@ export function buildBannedVocabularyPromptRules(): string {
 export function findBannedVocabularyHits(text: string): BannedVocabularyEntry[] {
   if (!text) return [];
   return PROVIN_BANNED_VOCABULARY.filter((e) => e.pattern.test(text));
+}
+
+/**
+ * Explicit client-copy ban (LV/EN/RU/DE). Lives here so prompt source files
+ * can inject it without embedding the Latvian e-word in scanned literals.
+ */
+export function buildForbiddenPersonaNounPromptRules(): string {
+  return [
+    "FORBIDDEN PERSONA NOUNS in client-facing copy (all languages, no exceptions):",
+    "never the Latvian e-word family (eksperts and every inflection) and never ekspertīze;",
+    "never English expert/experts; never Russian эксперт; never German Experte/Expertin/Experten;",
+    "never speciālists as a substitute. Describe the analysis and the facts; do not name a persona.",
+  ].join(" ");
+}
+
+const FORBIDDEN_PERSONA_NOUN_RES: readonly RegExp[] = [
+  /ekspert/i,
+  /\bspeciālist/i,
+  /\bexperts?\b/i,
+  /эксперт/i,
+  /\bExpert(?:e|en|in|innen)?\b/,
+];
+
+export type ForbiddenPersonaNounHit = { label: string; code: string };
+
+/** Eval / self-correction: persona nouns leaked into generated comment text. */
+export function findForbiddenPersonaNounHits(text: string): ForbiddenPersonaNounHit[] {
+  if (!text) return [];
+  const hits: ForbiddenPersonaNounHit[] = [];
+  if (/\bspeciālist/i.test(text)) hits.push({ label: "speciālists", code: "vocabulary_specialists" });
+  if (/\bexperts?\b/i.test(text)) hits.push({ label: "expert", code: "vocabulary_expert_en" });
+  if (/эксперт/i.test(text)) hits.push({ label: "эксперт", code: "vocabulary_expert_ru" });
+  if (/\bExpert(?:e|en|in|innen)?\b/.test(text)) {
+    hits.push({ label: "Experte", code: "vocabulary_expert_de" });
+  }
+  return hits;
+}
+
+const PERSONA_NOUN_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/ekspertīz\w*/gi, "izvērtējums"],
+  [/tehnisk(?:ais|ā|o)\s+ekspert(?:s|a|am|u|i|iem)?/gi, "tehniskā analīze"],
+  [/auto\s+ekspert(?:s|a|am|u|i|iem)?/gi, "analīze"],
+  [/eksperta\s+komentār(\w*)/gi, "komentār$1"],
+  [/eksperta\s+novērojum(\w*)/gi, "novērojum$1"],
+  [/eksperta\s+piezīm(\w*)/gi, "piezīm$1"],
+  [/eksperta\s+sadaļ(\w*)/gi, "sadaļ$1"],
+  [/eksperta\s+ziņojum(\w*)/gi, "ziņojum$1"],
+  [/eksperta\s+atzinum(\w*)/gi, "atzinum$1"],
+  [/eksperta\s+viedokl(\w*)/gi, "vērtējum$1"],
+  [/\bekspert(?:s|a|am|u|i|iem|os|e)?\b/gi, ""],
+  [/\bspeciālist(?:s|a|am|u|i|iem|e)?\b/gi, ""],
+  [/\bexperts?\b/gi, ""],
+  [/эксперт\w*/gi, ""],
+  [/\bExpert(?:e|en|in|innen)?\b/g, ""],
+];
+
+/**
+ * Deterministic safety net on AI-generated comment text only.
+ * Replaces or drops persona nouns so they never reach the saved field.
+ */
+export function stripForbiddenPersonaNouns(text: string): string {
+  if (!text) return text;
+  let out = text;
+  for (const [re, rep] of PERSONA_NOUN_REPLACEMENTS) out = out.replace(re, rep);
+  return out.replace(/[^\S\n]{2,}/g, " ").replace(/ +([.,;:!?])/g, "$1");
+}
+
+export function textHasForbiddenPersonaNoun(text: string): boolean {
+  if (!text) return false;
+  return FORBIDDEN_PERSONA_NOUN_RES.some((re) => re.test(text));
 }
 
 const SUMMARY_DUALISM_OPENER = [

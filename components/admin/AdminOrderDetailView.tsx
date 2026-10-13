@@ -130,7 +130,7 @@ export function AdminOrderDetailView({
   auditResultColor = null,
 }: {
   order: AdminOrderDetailClientModel;
-  serverOrderDraft: Pick<OrderDraftState, "orderEdits"> | null;
+  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
@@ -835,6 +835,7 @@ export function AdminOrderDetailView({
           notes: mergedNotes.trim() ? mergedNotes : null,
           serverInternalComment: order.internalComment ?? null,
           serverAttachments: order.attachments ?? [],
+          autoIngest: serverOrderDraft?.autoIngest ?? null,
         }}
       />
       </div>

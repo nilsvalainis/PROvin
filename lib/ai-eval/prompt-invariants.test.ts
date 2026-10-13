@@ -687,7 +687,23 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/source-summary-comment-format.ts")).toMatch(
       /buildBannedVocabularyPromptRules/,
     );
+    expect(readRepo("lib/source-summary-comment-format.ts")).toMatch(
+      /buildForbiddenPersonaNounPromptRules/,
+    );
     expect(readRepo("lib/ai-eval/comment-quality.ts")).toMatch(/findBannedVocabularyHits/);
+    expect(readRepo("lib/ai-eval/comment-quality.ts")).toMatch(/findForbiddenPersonaNounHits/);
+    expect(readRepo("lib/source-summary-comment-format.ts")).toMatch(/stripForbiddenPersonaNouns/);
+  });
+
+  it("injected persona-noun ban reaches the vocabulary prompt without living in admin-ai-prompts.ts", () => {
+    expect(PROVIN_REPORT_COPY_VOCABULARY).toContain("FORBIDDEN PERSONA NOUNS");
+    expect(AI_EXPERT_PARAGRAPH_PRESENTATION).toContain("FORBIDDEN PERSONA NOUNS");
+    expect(readRepo("lib/admin-ai-prompts.ts")).not.toMatch(/ekspert/i);
+    expect(readRepo("lib/admin-ai-source-comment.ts")).not.toMatch(/ekspert/i);
+    expect(readRepo("lib/admin-ai-sources-comparison.ts")).not.toMatch(/ekspert/i);
+    expect(readRepo("lib/admin-ai-summary.ts")).not.toMatch(/ekspert/i);
+    expect(readRepo("lib/admin-ai-tirgus-market.ts")).not.toMatch(/ekspert/i);
+    expect(readRepo("lib/admin-ai-order-context.ts")).not.toMatch(/ekspert/i);
   });
 
   it("EUR safety net keeps 2.0 TDI / 0.03 headings instead of chopping the paragraph start", () => {

@@ -1,7 +1,12 @@
 import "server-only";
 
 import { computeFreeSourceSeed, type FreeSourceSeedParts } from "@/lib/admin-free-source-seed";
-import { isSafeOrderDraftSessionId, patchOrderDraft, readOrderDraft } from "@/lib/admin-order-draft-store";
+import {
+  isSafeOrderDraftSessionId,
+  patchOrderDraft,
+  readOrderDraft,
+  upsertOrderDraftAutoIngest,
+} from "@/lib/admin-order-draft-store";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import {
   orderDraftWorkspaceToPersistBody,
@@ -47,7 +52,11 @@ export async function seedPaidOrderAutoSources(
   const parts: PaidOrderAutoSeedParts = seeded.parts;
   const blocks = seeded.blocks;
   const listingFilled = seeded.listingFilled;
-  if (!seeded.changed) return { ok: true, patched: false, ...parts };
+  const ingest = { at: new Date().toISOString(), parts };
+  if (!seeded.changed) {
+    await upsertOrderDraftAutoIngest(sessionId, ingest).catch(() => null);
+    return { ok: true, patched: false, ...parts };
+  }
 
   const incoming = persistBodyToOrderDraftWorkspace(
     {
@@ -64,6 +73,7 @@ export async function seedPaidOrderAutoSources(
     listingFilled ? { orderEdits: { listingUrl }, workspace: incoming } : { workspace: incoming },
     { force: true },
   );
+  await upsertOrderDraftAutoIngest(sessionId, ingest).catch(() => null);
   if (!patched.ok) return { ok: false, patched: false, ...parts };
   return { ok: true, patched: true, ...parts };
 }

@@ -54,7 +54,7 @@ export async function generateTirgusMarketWithAi(
 
 ${marketContext ? `${marketContext}\n\n---\n\n` : ""}${orderContext}
 
-Sagatavo tirgus analīzi: aizpildi laukus „Auto pārdošanā (dienas)”, „Izveidots”, „Cenas izmaiņas (euro)” un eksperta komentāru latviešu valodā.
+Sagatavo tirgus analīzi: aizpildi laukus „Auto pārdošanā (dienas)”, „Izveidots”, „Cenas izmaiņas (euro)” un komentāru latviešu valodā.
 Ja ss.lv datos ir dienas platformā — izmanto to listedForSale; ja ir cenu vēsture — aprēķini priceDrop kā starpību EUR (tikai skaitlis, bez € simbola).`,
     {
       operatorNotes: input.operatorNotes,

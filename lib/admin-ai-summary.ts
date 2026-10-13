@@ -71,11 +71,11 @@ ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
 
 ${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
       sourceCommentsContext
-        ? `Esošie eksperta komentāri avotu sadaļās (TIKAI konteksts — NEATKĀRTO un neapkopo teikumus):\n\n${sourceCommentsContext}\n\n---\n\n`
+        ? `Esošie komentāri avotu sadaļās (TIKAI konteksts — NEATKĀRTO un neapkopo teikumus):\n\n${sourceCommentsContext}\n\n---\n\n`
         : ""
     }${
       expertBundle
-        ? `Eksperta jau sagatavotās sadaļas (TIKAI konteksts — NEATKĀRTO detalizāciju):\n\n${expertBundle}\n\n---\n\n`
+        ? `Jau sagatavotās sadaļas (TIKAI konteksts — NEATKĀRTO detalizāciju):\n\n${expertBundle}\n\n---\n\n`
         : ""
     }Sagatavo gala kopsavilkumu klientam laukam „3. Kopsavilkums”.
 

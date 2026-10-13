@@ -114,7 +114,7 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
   );
 
   const chainingSection = previousComments.trim()
-    ? `=== Esošie eksperta komentāri citos avotos (JAU UZRAKSTĪTI — NEATKĀRTO; tikai īss delta / papildinājums) ===
+    ? `=== Esošie komentāri citos avotos (JAU UZRAKSTĪTI — NEATKĀRTO; tikai īss delta / papildinājums) ===
 ${previousComments}
 
 `

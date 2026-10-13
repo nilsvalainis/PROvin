@@ -51,6 +51,13 @@ describe("applyProvinReportCopyVocabulary", () => {
     expect(applyProvinReportCopyVocabulary("kloķvārpstas svārstību slāpētājs (skriemelis)")).toBe(
       "kloķvārpstas skriemelis (demferis)",
     );
+    expect(applyProvinReportCopyVocabulary("Foto un apraksta ekspertīze.")).toBe(
+      "Foto un apraksta izvērtējums.",
+    );
+    expect(applyProvinReportCopyVocabulary("Esošie eksperta komentāri paliek.")).toBe(
+      "Esošie komentāri paliek.",
+    );
+    expect(applyProvinReportCopyVocabulary("a senior expert opinion")).not.toMatch(/\bexperts?\b/i);
   });
 });
 
@@ -199,5 +206,13 @@ describe("finalizeProvinExpertAiComment", () => {
     expect(finalized).toMatch(/^Sadales ķēdes resurss/);
     expect(finalized).toMatch(/N47/);
     expect(finalized).not.toMatch(/I have analyzed/);
+  });
+
+  it("strips forbidden persona nouns from generated comment text", () => {
+    const out = finalizeProvinExpertAiComment(
+      "Tehniskais eksperts uzskata, ka motors datos izskatās kārtībā.",
+    );
+    expect(out).not.toMatch(/ekspert/i);
+    expect(out).toMatch(/motors datos izskatās kārtībā/);
   });
 });

@@ -2,7 +2,7 @@
  * Deterministic quality checks for PROVIN expert AI comments (no API calls).
  * Used by golden fixtures and as a regression harness when prompts change.
  */
-import { findBannedVocabularyHits } from "@/lib/provin-banned-vocabulary";
+import { findBannedVocabularyHits, findForbiddenPersonaNounHits } from "@/lib/provin-banned-vocabulary";
 import { findCopiedOtherAuditPhrases } from "@/lib/admin-ai-other-audit-style";
 import { COMMENT_LENGTH_BUDGET, commentQualityMaxChars } from "@/lib/ai-comment-length-budget";
 import { looksLikeLeakedAiPlanning } from "@/lib/source-summary-comment-format";
@@ -179,6 +179,14 @@ export function evaluateExpertCommentQuality(
     issues.push({
       code: hit.code,
       message: `Nedrīkst lietot „${hit.label}” — izmanto: ${hit.replacement}`,
+    });
+  }
+
+  for (const hit of findForbiddenPersonaNounHits(t)) {
+    if (issues.some((i) => i.code === hit.code)) continue;
+    issues.push({
+      code: hit.code,
+      message: `Nedrīkst lietot „${hit.label}” klienta tekstā — apraksti analīzi bez personas lietvārda`,
     });
   }
 
