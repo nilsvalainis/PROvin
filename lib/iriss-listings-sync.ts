@@ -174,7 +174,7 @@ function isDirectAutobid(group: IrissListingSourceGroup, autobidRelay: boolean):
   return group.platform === "autobid" && !autobidRelay;
 }
 
-/** Jau saglabātie Volvo 133/140 kW (u.c. noteikumi) pazūd uzreiz, nevis pēc 2 missingRuns. */
+/** Jau saglabātie Volvo 110/133/140 kW (u.c. noteikumi) pazūd uzreiz, nevis pēc 2 missingRuns. */
 function purgeExcludedFromLatestView(view: IrissListingsLatestView): IrissListingsLatestView {
   const vehicles = rejectExcludedIrissListings(view.vehicles);
   if (vehicles.length === view.vehicles.length) return view;

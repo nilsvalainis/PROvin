@@ -3,7 +3,7 @@
  * Piemēro kopīgajā sync ceļā pirms saglabāšanas: Auto1, Autobid, Openlane un nākamās platformas.
  *
  * Openlane jauda: relejs mapē `auction.Kw` (skat. relay REAL_AUCTION fixture `Kw: 140`) uz `powerKw`.
- * Ja `powerKw` tukšs, mēģinām kW no virsraksta / dzinēja teksta (`133 kW`, `181 PS` / hp).
+ * Ja `powerKw` tukšs, mēģinām kW no virsraksta / dzinēja teksta (`110 kW` / `150 PS`, `133 kW` / `181 PS`).
  * Jauda nav zināma: sludinājumu atstājam.
  */
 
@@ -14,10 +14,10 @@ export type IrissListingExcludeRule = {
   powerKw: readonly number[];
 };
 
-/** Sākotnējais noteikums: Volvo 133 kW / 140 kW (181 PS / 190 PS) neparādās LIST. */
-export const IRISS_LISTING_EXCLUDE_RULES: readonly IrissListingExcludeRule[] = [{ make: "volvo", powerKw: [133, 140] }];
+/** Volvo 110 / 133 / 140 kW (150 PS / 181 PS / 190 PS) neparādās LIST. */
+export const IRISS_LISTING_EXCLUDE_RULES: readonly IrissListingExcludeRule[] = [{ make: "volvo", powerKw: [110, 133, 140] }];
 
-/** Avotu kW noapaļojums pret noteikuma mērķi (181 PS = 133 kW, 190 PS = 140 kW). */
+/** Avotu kW noapaļojums pret noteikuma mērķi (150 PS = 110 kW, 181 PS = 133 kW, 190 PS = 140 kW). */
 export const IRISS_LISTING_EXCLUDE_POWER_TOLERANCE_KW = 1;
 
 export type IrissListingExcludeFields = {
@@ -48,7 +48,7 @@ export function listingMakeMatches(item: IrissListingExcludeFields, make: string
 
 /**
  * kW no `powerKw` (tukšs skaitlis = kW), citādi no virsraksta / dzinēja teksta.
- * `181 PS` / `181 hp` -> 133; `190 PS` -> 140.
+ * `150 PS` -> 110; `181 PS` / `181 hp` -> 133; `190 PS` -> 140.
  */
 export function resolveListingPowerKw(item: IrissListingExcludeFields): number | null {
   const fromField = parseEnginePowerKwFromText(item.powerKw ?? "", { bareNumberIsKw: true });
