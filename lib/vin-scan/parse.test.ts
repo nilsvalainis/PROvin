@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { VIN_SCAN_CATALOG, VIN_SCAN_SOURCE_IDS } from "@/lib/vin-scan/catalog";
+import {
+  VIN_SCAN_CATALOG,
+  VIN_SCAN_REMOVED_IDS,
+  VIN_SCAN_SOURCE_IDS,
+  defaultVinScanSourceIds,
+  vinScanFastSourceIds,
+  vinScanPipelineSourceIds,
+} from "@/lib/vin-scan/catalog";
 import { parseCsddTechDataXml } from "@/lib/csdd-tech-data";
 import { emptyVinSourceResult } from "@/lib/vin-sources/types";
 import {
@@ -23,7 +30,6 @@ import {
   parseVinSourceScan,
   vehicleFromPlcTitle,
 } from "@/lib/vin-scan/parse";
-import { VIN_SCAN_REMOVED_IDS, defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
 import { countVinScanStatuses } from "@/lib/vin-scan/types";
 
 const DK_VIN = "VF12RFL1H49621453";
@@ -50,6 +56,8 @@ describe("vin scan catalog", () => {
       "/stelnummer/wvwzzz7nzev015204.html",
     );
     expect(defaultVinScanSourceIds()).toEqual([...VIN_SCAN_SOURCE_IDS]);
+    expect(vinScanPipelineSourceIds()).toEqual([...VIN_SCAN_SOURCE_IDS]);
+    expect(vinScanFastSourceIds()).toEqual([...VIN_SCAN_SOURCE_IDS]);
     for (const removed of VIN_SCAN_REMOVED_IDS) {
       expect(VIN_SCAN_SOURCE_IDS).not.toContain(removed);
     }
