@@ -8,6 +8,7 @@
 
 import { parseAutobidNuxtJson } from "@/lib/iriss-listings-autobid";
 import { sanitizeAutobidNuxtPages } from "@/lib/iriss-listings-autobid-sanitize";
+import { fillListingPowerKwField } from "@/lib/iriss-listings-exclude-rules";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { applyAuto1VinHints } from "@/lib/iriss-listings-auto1-vin";
 import { pickListingBodyType, pickListingColor, pickListingDoorCount, pickListingVin } from "@/lib/iriss-listings-extract";
@@ -149,7 +150,7 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
     mileageKm: numOrNull(item.mileageKm),
     fuel,
     transmission,
-    powerKw: str(item.powerKw),
+    powerKw: fillListingPowerKwField({ powerKw: str(item.powerKw), title, engineText: str(item.engine) }),
     location: str(item.location),
     countryCode: str(item.countryCode),
     sourceCountry: str(item.sourceCountry) || undefined,
@@ -208,7 +209,7 @@ function autobidVehiclesFromNuxt(nuxtPages: string[], orderId: string, orderBran
         mileageKm: v.mileageKm,
         fuel: v.fuel,
         transmission: v.transmission,
-        powerKw: v.powerKw,
+        powerKw: fillListingPowerKwField({ powerKw: v.powerKw, title: v.title }),
         location: v.location,
         countryCode: v.countryCode,
         imageUrl: v.imageUrl,

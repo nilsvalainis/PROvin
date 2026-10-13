@@ -263,6 +263,23 @@ describe("mapRelayFetchResponse", () => {
     expect(v?.detailUrl).toBe("https://www.openlane.eu/en/car/A1");
     expect(v?.year).toBe("2021");
   });
+
+  it("keeps Openlane powerKw from auction.Kw and derives kW from title when the field is empty", () => {
+    const fromKw = mapRelayItem(
+      { externalId: "A1", title: "Volvo V60 181 PS", powerKw: "140" },
+      "openline",
+      "o1",
+      "Volvo V60",
+    );
+    expect(fromKw?.powerKw).toBe("140");
+    const fromTitle = mapRelayItem(
+      { externalId: "A2", title: "Volvo V60 181 PS", powerKw: "" },
+      "openline",
+      "o1",
+      "Volvo V60",
+    );
+    expect(fromTitle?.powerKw).toBe("133");
+  });
 });
 
 describe("fetchViaIrissRelay", () => {

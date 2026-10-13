@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { applyAuto1CentsMigration } from "@/lib/iriss-listings-auto1-cents";
+import { rejectExcludedIrissListings } from "@/lib/iriss-listings-exclude-rules";
 import {
   emptyIrissListingsDismissed,
   normalizeDismissedView,
@@ -262,23 +263,25 @@ function normalizeLatest(raw: unknown): { view: IrissListingsLatestView; persist
     ? raw.vehicles.map(normalizeVehicle).filter((x): x is IrissListingVehicle => x !== null)
     : [];
   const migrated = applyAuto1CentsMigration(vehicles);
+  const kept = rejectExcludedIrissListings(migrated.vehicles);
   const sources = Array.isArray(raw.sources)
     ? raw.sources.map(normalizeSource).filter((x): x is IrissListingSourceRun => x !== null)
     : [];
   const cursor = normalizeCursor(raw.cursor);
   const lastAutomaticSlot = isIrissListingsAutomaticSlot(str(raw.lastAutomaticSlot)) ? str(raw.lastAutomaticSlot) : "";
+  const excludedRemoved = kept.length !== migrated.vehicles.length;
   return {
     view: {
       version: 2,
       generatedAt,
-      summary,
+      summary: excludedRemoved ? { ...summary, vehicleCount: kept.length } : summary,
       sources,
-      vehicles: migrated.vehicles,
+      vehicles: kept,
       ...(cursor ? { cursor } : {}),
       ...(lastAutomaticSlot ? { lastAutomaticSlot } : {}),
-      vatHealth: computeListingVatHealth(migrated.vehicles),
+      vatHealth: computeListingVatHealth(kept),
     },
-    persistCents: migrated.changed,
+    persistCents: migrated.changed || excludedRemoved,
   };
 }
 
@@ -388,8 +391,12 @@ export async function writeIrissListingsRun(view: IrissListingsLatestView): Prom
   try {
     const r = resolveStorage();
     if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
-    const vehicles = applyAuto1CentsMigration(view.vehicles).vehicles;
-    const clean: IrissListingsLatestView = { ...view, vehicles };
+    const vehicles = rejectExcludedIrissListings(applyAuto1CentsMigration(view.vehicles).vehicles);
+    const clean: IrissListingsLatestView = {
+      ...view,
+      vehicles,
+      summary: { ...view.summary, vehicleCount: vehicles.length },
+    };
     const snapshot: IrissListingsSnapshot = clean;
     // Paslēptie auto ir dismissed.json; šis raksts to neaiztiek.
     await writeJson(r, LATEST_FILENAME, JSON.stringify(clean, null, 2));
@@ -410,8 +417,8 @@ export async function saveIrissListingsLatestView(view: IrissListingsLatestView)
   try {
     const r = resolveStorage();
     if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
-    const vehicles = applyAuto1CentsMigration(view.vehicles).vehicles;
-    await writeJson(r, LATEST_FILENAME, JSON.stringify({ ...view, vehicles }, null, 2));
+    const vehicles = rejectExcludedIrissListings(applyAuto1CentsMigration(view.vehicles).vehicles);
+    await writeJson(r, LATEST_FILENAME, JSON.stringify({ ...view, vehicles, summary: { ...view.summary, vehicleCount: vehicles.length } }, null, 2));
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
