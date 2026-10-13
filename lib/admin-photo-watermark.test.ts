@@ -6,9 +6,10 @@ import {
   parseCcVinHidePhotoWatermarks,
   parseHidePhotoWatermarks,
 } from "@/lib/admin-photo-watermark";
+import { emptyCcVinBlock, normalizeCcVinBlock } from "@/lib/cc-vin-report";
 
 describe("admin photo watermark toggle", () => {
-  it("ārpus CC.VIN noklusējumā neslēpj ūdenszīmi, ja lauks nav saglabāts", () => {
+  it("visās sadaļās noklusējumā neslēpj ūdenszīmi, ja lauks nav saglabāts", () => {
     expect(parseHidePhotoWatermarks(undefined)).toBe(false);
     expect(parseHidePhotoWatermarks({})).toBe(false);
     expect(parseHidePhotoWatermarks({ hidePhotoWatermarks: true })).toBe(true);
@@ -27,18 +28,32 @@ describe("admin photo watermark toggle", () => {
     expect(formRequestsWatermarkCover(new FormData())).toBe(false);
   });
 
-  it("CC.VIN noklusējumā slēpj ūdenszīmi", () => {
-    expect(parseCcVinHidePhotoWatermarks(undefined)).toBe(true);
-    expect(parseCcVinHidePhotoWatermarks({})).toBe(true);
+  it("CC.VIN noklusējumā neslēpj ūdenszīmi", () => {
+    expect(parseCcVinHidePhotoWatermarks(undefined)).toBe(false);
+    expect(parseCcVinHidePhotoWatermarks({})).toBe(false);
     expect(parseCcVinHidePhotoWatermarks({ hidePhotoWatermarks: false })).toBe(false);
+    expect(parseCcVinHidePhotoWatermarks({ hidePhotoWatermarks: true })).toBe(true);
   });
 
-  it("CC.VIN slēdzi lasa no darba zonas bloka", () => {
-    expect(hidePhotoWatermarksFromCcVinWorkspace(null)).toBe(true);
+  it("CC.VIN slēdzi lasa no darba zonas bloka un saglabāto vērtību nemaina", () => {
+    expect(hidePhotoWatermarksFromCcVinWorkspace(null)).toBe(false);
+    expect(hidePhotoWatermarksFromCcVinWorkspace({ sourceBlocks: {} })).toBe(false);
     expect(
       hidePhotoWatermarksFromCcVinWorkspace({
         sourceBlocks: { cc_vin: { hidePhotoWatermarks: false } },
       }),
     ).toBe(false);
+    expect(
+      hidePhotoWatermarksFromCcVinWorkspace({
+        sourceBlocks: { cc_vin: { hidePhotoWatermarks: true } },
+      }),
+    ).toBe(true);
+  });
+
+  it("CC.VIN normalizācija trūkstošu slēdzi uzskata par izslēgtu, saglabāto true atstāj", () => {
+    expect(emptyCcVinBlock().hidePhotoWatermarks).toBeUndefined();
+    expect(normalizeCcVinBlock({}).hidePhotoWatermarks).toBe(false);
+    expect(normalizeCcVinBlock({ hidePhotoWatermarks: false }).hidePhotoWatermarks).toBe(false);
+    expect(normalizeCcVinBlock({ hidePhotoWatermarks: true }).hidePhotoWatermarks).toBe(true);
   });
 });
