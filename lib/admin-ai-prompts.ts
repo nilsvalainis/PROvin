@@ -298,7 +298,7 @@ export const AI_CLIENT_PDF_PLAIN_RULES = `CLIENT PDF / REPORT FORMAT (legacy pla
 - Prefer the expert format: heading on its own line, then the paragraph. NEVER output *, ** or other markdown.
 - Do not wrap output in quotation marks or code fences.`;
 
-/** Eksperta PDF komentāri — virsraksts savā rindā, tad rindkopa (avoti, nobraukums, negadījumi, cena). Bez Markdown *. */
+/** PDF komentāri - virsraksts savā rindā, tad rindkopa (avoti, nobraukums, negadījumi, cena). Bez Markdown *. */
 export const AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES = `CLIENT PDF EXPERT COMMENT FORMAT (mandatory):
 ${AI_EXPERT_PARAGRAPH_PRESENTATION}
 ${PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES}

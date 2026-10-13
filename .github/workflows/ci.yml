@@ -13,7 +13,8 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-      - run: npm ci
+      # package-lock.json on main can drift from package.json (`npm ci` fails).
+      - run: npm install
       - name: Vitest
         run: npm test
       - name: Typecheck

@@ -62,7 +62,7 @@ export type AiOrderContextInput = {
   customerName: string | null;
   notes: string | null;
   sourceBlocks: WorkspaceSourceBlocks;
-  /** Eksperta jau sagatavotais saturs (konteksts, ne pārrakstīšanai). */
+  /** Jau sagatavotais audita saturs (konteksts, ne pārrakstīšanai). */
   irissSummary?: string;
   inspectionPlan?: string;
   /** 1. Tehnisko risku analīze. */
@@ -178,7 +178,7 @@ function vendorRawLogsPlainText(blocks: WorkspaceSourceBlocks): string {
   return parts.join("\n\n");
 }
 
-/** Visi jau aizpildītie eksperta komentāri — stila reference ✨ ģenerēšanai. */
+/** Visi jau aizpildītie audita komentāri - stila reference ✨ ģenerēšanai. */
 export function buildFinishedReportStyleReferenceSection(input: {
   sourceBlocks: WorkspaceSourceBlocks;
   irissSummary?: string;
@@ -290,16 +290,16 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
 
   const expertParts = [
     input.technicalRiskAnalysis?.trim()
-      ? block(`Eksperta ${ADMIN_TECHNICAL_RISKS_LABEL} (melnraksts)`, adminRichHtmlToPlainText(input.technicalRiskAnalysis))
+      ? block(`${ADMIN_TECHNICAL_RISKS_LABEL} (melnraksts)`, adminRichHtmlToPlainText(input.technicalRiskAnalysis))
       : "",
     input.inspectionPlan?.trim()
-      ? block("Eksperta ieteikumi apskatei (melnraksts)", adminRichHtmlToPlainText(input.inspectionPlan))
+      ? block("2. Ieteikumi klātienes apskatei (melnraksts)", adminRichHtmlToPlainText(input.inspectionPlan))
       : "",
     input.priceFit?.trim()
       ? block("Cenas atbilstība (melnraksts)", adminRichHtmlToPlainText(input.priceFit))
       : "",
     input.irissSummary?.trim()
-      ? block("Eksperta kopsavilkums (melnraksts)", adminRichHtmlToPlainText(input.irissSummary))
+      ? block("3. Kopsavilkums (melnraksts)", adminRichHtmlToPlainText(input.irissSummary))
       : "",
     input.internalComment?.trim()
       ? block(ADMIN_INCIDENTS_SUMMARY_LABEL, adminRichHtmlToPlainText(input.internalComment))
@@ -313,7 +313,7 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
   ].filter(Boolean);
 
   if (expertParts.length > 0) {
-    parts.push(block("Eksperta piezīmes un melnraksti", expertParts.join("\n\n")));
+    parts.push(block("Audita piezīmes un melnraksti", expertParts.join("\n\n")));
   }
 
   const styleReference = buildFinishedReportStyleReferenceSection({

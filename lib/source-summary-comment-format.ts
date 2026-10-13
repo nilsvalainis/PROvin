@@ -624,7 +624,7 @@ function formatExpertParagraphs(t: string): string[] {
 }
 
 /**
- * Eksperta komentāra forma (vārdu krājums, rindkopas) — bez garuma nogriešanas.
+ * Komentāra forma (vārdu krājums, rindkopas) - bez garuma nogriešanas.
  * Nogriezts teksts pēc ģenerēšanas nozīmē, ka apmaksātais saturs tiek izmests.
  */
 export function normalizeProvinExpertAiComment(raw: string | undefined | null): string {

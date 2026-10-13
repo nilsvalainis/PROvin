@@ -703,6 +703,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-sources-comparison.ts")).not.toMatch(/ekspert/i);
     expect(readRepo("lib/admin-ai-summary.ts")).not.toMatch(/ekspert/i);
     expect(readRepo("lib/admin-ai-tirgus-market.ts")).not.toMatch(/ekspert/i);
+    expect(readRepo("lib/admin-ai-order-context.ts")).not.toMatch(/ekspert/i);
   });
 
   it("EUR safety net keeps 2.0 TDI / 0.03 headings instead of chopping the paragraph start", () => {
