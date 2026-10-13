@@ -7,6 +7,7 @@ import {
   writeIrissListingsRun,
 } from "@/lib/iriss-listings-aggregate-store";
 import { fetchAutobidSource, randomPauseMs } from "@/lib/iriss-listings-autobid-fetch";
+import { fillListingPowerKwField, rejectExcludedIrissListings } from "@/lib/iriss-listings-exclude-rules";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import { fetchViaIrissRelay, readIrissRelayConfig } from "@/lib/iriss-listings-relay";
@@ -119,7 +120,7 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
         mileageKm: v.mileageKm,
         fuel: v.fuel,
         transmission: v.transmission,
-        powerKw: v.powerKw,
+        powerKw: fillListingPowerKwField({ powerKw: v.powerKw, title: v.title }),
         location: v.location,
         countryCode: v.countryCode,
         imageUrl: v.imageUrl,
@@ -173,6 +174,13 @@ function isDirectAutobid(group: IrissListingSourceGroup, autobidRelay: boolean):
   return group.platform === "autobid" && !autobidRelay;
 }
 
+/** Jau saglabātie Volvo 133/140 kW (u.c. noteikumi) pazūd uzreiz, nevis pēc 2 missingRuns. */
+function purgeExcludedFromLatestView(view: IrissListingsLatestView): IrissListingsLatestView {
+  const vehicles = rejectExcludedIrissListings(view.vehicles);
+  if (vehicles.length === view.vehicles.length) return view;
+  return { ...view, vehicles, summary: { ...view.summary, vehicleCount: vehicles.length } };
+}
+
 function emptySyncSummary(startedAt: string, runId: string): IrissListingSyncRunSummary {
   return {
     startedAt,
@@ -212,7 +220,12 @@ export async function runIrissListingsDailySync(
   const concurrency = envInt("IRISS_LISTINGS_FETCH_CONCURRENCY", 3, 1, 3);
   const automaticSlot = isIrissListingsAutomaticSlot(opts.automaticSlot) ? opts.automaticSlot : "";
 
-  const previous = await readIrissListingsLatestView();
+  const previousRead = await readIrissListingsLatestView();
+  const previous = previousRead ? purgeExcludedFromLatestView(previousRead) : null;
+  if (previous && previous !== previousRead) {
+    const purged = await writeIrissListingsRun(previous);
+    if (!purged.ok) warnings.push(`Izslēgto sludinājumu dzēšana neizdevās: ${purged.error}`);
+  }
   const slotAlreadyStarted = Boolean(automaticSlot && previous?.lastAutomaticSlot === automaticSlot);
   const restart = opts.continuation === true || slotAlreadyStarted ? false : opts.restart === true || Boolean(automaticSlot);
 
@@ -318,7 +331,9 @@ export async function runIrissListingsDailySync(
       });
       if (hit.fetch.status === "ok") okSourceKeys.add(sourceKey(src.platform, src.orderId));
     }
-    if (hit.fetch.status === "ok") fetched.push(...fanOutFetchedVehicles(hit.fetch.vehicles, g.orders));
+    if (hit.fetch.status === "ok") {
+      fetched.push(...fanOutFetchedVehicles(rejectExcludedIrissListings(hit.fetch.vehicles), g.orders));
+    }
     if (hit.fetch.rawPages.length > 0) raw.sources.push({ platform: g.platform, sourceUrl: g.sourceUrl, pages: hit.fetch.rawPages });
   }
 
@@ -339,22 +354,23 @@ export async function runIrissListingsDailySync(
     now: finishedAt,
     goneAfterMissingRuns: 2,
   });
+  const recVehicles = rejectExcludedIrissListings(rec.vehicles);
   const summary = summarize(
     mergedRuns,
-    { vehicleCount: rec.vehicles.length, newCount: rec.newCount, priceChangedCount: rec.priceChangedCount, goneCount: rec.goneCount },
+    { vehicleCount: recVehicles.length, newCount: rec.newCount, priceChangedCount: rec.priceChangedCount, goneCount: rec.goneCount },
     startedAt,
     finishedAt,
     runId,
   );
   const doneKeys = [...new Set([...picked.carriedDone, ...completedKeys])].sort((a, b) => a.localeCompare(b));
   const lastAutomaticSlot = automaticSlot || previous?.lastAutomaticSlot;
-  const vatHealth = computeListingVatHealth(rec.vehicles);
+  const vatHealth = computeListingVatHealth(recVehicles);
   const view: IrissListingsLatestView = {
     version: 2,
     generatedAt: finishedAt,
     summary,
     sources: mergedRuns,
-    vehicles: rec.vehicles,
+    vehicles: recVehicles,
     cursor: { day: today, doneKeys },
     ...(lastAutomaticSlot ? { lastAutomaticSlot } : {}),
     vatHealth,
