@@ -323,6 +323,14 @@ async function probeHtmlSource(
 ): Promise<VinScanIndicator> {
   try {
     const page = await scanFetchSmart(url, { timeoutMs: 20_000, sourceLabel: id });
+    // Cloudflare / bloķēts: skaidrs iemesls, nevis „Lapa nav atpazīta” (agrāk parsēja izaicinājuma lapu).
+    const challenge = scanChallengeReason(page);
+    if (challenge) {
+      return done(id, ctx, { status: "unknown", summary: `Cloudflare bloķē servera pārbaudi — atver saiti (${challenge})`, openUrl: url });
+    }
+    if (page.status === 403 || page.status === 429) {
+      return done(id, ctx, { status: "unknown", summary: `Avots bloķē servera pieprasījumu (HTTP ${page.status}) — atver saiti`, openUrl: url });
+    }
     const text = extractPageFromHtml(page.text).text || page.text.replace(/<[^>]+>/g, " ");
     const parsed = classify(text);
     if (parsed) return done(id, ctx, { ...parsed, openUrl: page.status === 200 ? url : parsed.openUrl });
