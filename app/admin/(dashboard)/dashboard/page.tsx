@@ -186,6 +186,13 @@ export default async function AdminOrdersPage({
 
   return (
     <div className="w-full max-w-none">
+      <Link
+        href="/admin/kopsavilkums"
+        className="mb-3 flex min-h-12 items-center justify-between rounded-2xl border border-[#e5e5ea] bg-white px-4 text-[15px] font-semibold text-[var(--color-apple-text)] shadow-sm md:hidden"
+      >
+        Rīta kopsavilkums
+        <span className="text-[13px] font-medium text-[var(--color-provin-accent)]">Atvērt</span>
+      </Link>
       {hasStripeIssue && orders.length > 0 ? (
         <div
           className={`mt-3 rounded-2xl border px-4 py-3.5 text-sm shadow-sm ${

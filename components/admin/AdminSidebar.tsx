@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  CalendarRange,
   Car,
   ChevronsLeft,
   ChevronsRight,
@@ -18,6 +19,7 @@ import {
   Plus,
   Radar,
   ScanLine,
+  Sun,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -43,12 +45,14 @@ export const ADMIN_NAV_LABELS = {
   groupWeb: "WEB",
   groupB2b: "B2B",
   orders: "Pasūtījumi",
+  morning: "Rīta kopsavilkums",
   vinScan: "VIN pārbaude",
   fast: "Ātrie vērtējumi",
   irissHome: "Pasūtījumi",
   irissNew: "Jauns pasūtījums",
   irissScan: "Radars",
   irissList: "Klientu filtri",
+  irissReport: "Mēneša atskaite",
   irissWaybills: "Pavadzīmes",
   blogs: "Blogs",
   aggregates: "Agregāti",
@@ -66,6 +70,7 @@ const SAKUMS: Item = {
   badge: "orders",
   match: (p) => p === "/admin" || p.startsWith("/admin/dashboard") || p.startsWith("/admin/orders/"),
 };
+const MORNING: Item = { href: "/admin/kopsavilkums", label: L.morning, icon: Sun, match: starts("/admin/kopsavilkums") };
 const FAST: Item = { href: "/admin/atras-vertesanas", label: L.fast, icon: Zap, badge: "fast", match: starts("/admin/atras-vertesanas") };
 const VIN: Item = { href: "/admin/vin-scan", label: L.vinScan, icon: ScanLine, match: starts("/admin/vin-scan") };
 const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Handshake, badge: "partners", match: starts("/admin/partneri") };
@@ -73,10 +78,11 @@ const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon
 const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
 const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybills, icon: FileText, match: starts("/admin/iriss/pavadzimes") };
 const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, match: starts("/admin/iriss/sludinajumi") };
+const I_REPORT: Item = { href: "/admin/iriss/atskaite", label: L.irissReport, icon: CalendarRange, match: starts("/admin/iriss/atskaite") };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
-  { title: L.groupPro, items: [SAKUMS, VIN, FAST] },
-  { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_WAYBILLS] },
+  { title: L.groupPro, items: [MORNING, SAKUMS, VIN, FAST] },
+  { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_REPORT, I_WAYBILLS] },
   {
     title: L.groupWeb,
     items: [

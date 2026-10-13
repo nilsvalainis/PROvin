@@ -956,7 +956,13 @@ export function IrissPasutijumiListClient({
           </label>
           <IrissPasutijumiStatusFilter counts={statusCounts} />
           <IrissOrderSortSelect compact />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1.5">
+            <Link
+              href="/admin/iriss/atskaite"
+              className="inline-flex h-8 items-center rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm"
+            >
+              Atskaite
+            </Link>
             <AdminIrissOrdersExportButton compact />
           </div>
         </div>
