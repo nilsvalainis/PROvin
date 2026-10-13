@@ -12,8 +12,8 @@ import {
 } from "@/lib/iriss-listings-exclude-rules";
 
 describe("IRISS_LISTING_EXCLUDE_RULES", () => {
-  it("starts with Volvo 133 and 140 kW", () => {
-    expect(IRISS_LISTING_EXCLUDE_RULES).toEqual([{ make: "volvo", powerKw: [133, 140] }]);
+  it("starts with Volvo 110, 133 and 140 kW", () => {
+    expect(IRISS_LISTING_EXCLUDE_RULES).toEqual([{ make: "volvo", powerKw: [110, 133, 140] }]);
   });
 });
 
@@ -39,6 +39,7 @@ describe("resolveListingPowerKw", () => {
     expect(resolveListingPowerKw({ powerKw: "", title: "Volvo V60 181 PS" })).toBe(Math.round(181 * HP_TO_KW));
     expect(resolveListingPowerKw({ powerKw: "", title: "Volvo V60 181 hp" })).toBe(133);
     expect(resolveListingPowerKw({ powerKw: "", title: "Volvo V60 190 PS" })).toBe(140);
+    expect(resolveListingPowerKw({ powerKw: "", title: "Volvo V60 150 PS" })).toBe(110);
     expect(resolveListingPowerKw({ powerKw: "", engineText: "181 hp D4" })).toBe(133);
   });
 
@@ -59,13 +60,17 @@ describe("resolveListingPowerKw", () => {
 });
 
 describe("shouldExcludeIrissListing", () => {
-  it("excludes Volvo at 133 and 140 kW from any source fields", () => {
+  it("excludes Volvo at 110, 133 and 140 kW from any source fields", () => {
+    expect(shouldExcludeIrissListing({ manufacturer: "Volvo", title: "V60", powerKw: "110" })).toBe(true);
     expect(shouldExcludeIrissListing({ manufacturer: "Volvo", title: "XC60", powerKw: "133" })).toBe(true);
     expect(shouldExcludeIrissListing({ manufacturer: "Volvo", title: "V60", powerKw: "140" })).toBe(true);
     expect(shouldExcludeIrissListing({ manufacturer: "volvo", title: "V60 D4", powerKw: "140" })).toBe(true);
   });
 
   it("tolerates ±1 kW rounding", () => {
+    expect(shouldExcludeIrissListing({ manufacturer: "Volvo", powerKw: "109" })).toBe(true);
+    expect(shouldExcludeIrissListing({ manufacturer: "Volvo", powerKw: "111" })).toBe(true);
+    expect(shouldExcludeIrissListing({ manufacturer: "Volvo", powerKw: "108" })).toBe(false);
     expect(shouldExcludeIrissListing({ manufacturer: "Volvo", powerKw: "132" })).toBe(true);
     expect(shouldExcludeIrissListing({ manufacturer: "Volvo", powerKw: "134" })).toBe(true);
     expect(shouldExcludeIrissListing({ manufacturer: "Volvo", powerKw: "139" })).toBe(true);
@@ -74,7 +79,8 @@ describe("shouldExcludeIrissListing", () => {
     expect(shouldExcludeIrissListing({ manufacturer: "Volvo", powerKw: "142" })).toBe(false);
   });
 
-  it("excludes when kW is only in the title (181 PS / 190 hp)", () => {
+  it("excludes when kW is only in the title (150 PS / 181 PS / 190 hp)", () => {
+    expect(shouldExcludeIrissListing({ manufacturer: "Volvo", title: "V60 150 PS", powerKw: "" })).toBe(true);
     expect(shouldExcludeIrissListing({ manufacturer: "Volvo", title: "V60 181 PS", powerKw: "" })).toBe(true);
     expect(shouldExcludeIrissListing({ manufacturer: "", title: "Volvo V60 190 hp - Diesel", powerKw: "" })).toBe(true);
   });
@@ -104,6 +110,7 @@ describe("rejectExcludedIrissListings / purge", () => {
   it("drops matching rows and reports how many were removed", () => {
     const items = [
       { id: "keep-bmw", manufacturer: "BMW", title: "320d", powerKw: "140" },
+      { id: "drop-110", manufacturer: "Volvo", title: "V60 D3", powerKw: "110" },
       { id: "drop-kw", manufacturer: "Volvo", title: "V60", powerKw: "140" },
       { id: "drop-ps", manufacturer: "Volvo", title: "V60 181 PS", powerKw: "" },
       { id: "keep-unknown", manufacturer: "Volvo", title: "XC60 B5", powerKw: "" },
@@ -111,8 +118,8 @@ describe("rejectExcludedIrissListings / purge", () => {
     ];
     expect(rejectExcludedIrissListings(items).map((v) => v.id)).toEqual(["keep-bmw", "keep-unknown", "keep-173"]);
     expect(purgeExcludedIrissListings(items)).toEqual({
-      items: [items[0], items[3], items[4]],
-      removed: 2,
+      items: [items[0], items[4], items[5]],
+      removed: 3,
     });
   });
 });
