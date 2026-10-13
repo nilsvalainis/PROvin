@@ -287,21 +287,34 @@ export function parseTraficom(status: number, html: string): VinScanParse {
   };
 }
 
+/** Redzamais lapas teksts: bez <script>/<style>/<noscript> un atribūtiem (tur bieži atkārtojas meklētais VIN/URL). */
+function visibleText(html: string): string {
+  return html
+    .replace(/<(script|style|noscript|template)\b[\s\S]*?<\/\1>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;|&#160;/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+/**
+ * Izsoļu arhīvi (AucHistory, BidFax, Poctra). Trāpījums TIKAI tad, ja meklētais VIN ir redzamajā tekstā
+ * kopā ar lota datiem. Agrāk VIN no skripta (`current_url`) + „Featured cars” bloks + <img> skaits
+ * deva viltus „ir izsole, N foto” (piem. AucHistory WAUZZZF50NA041246).
+ */
 export function parseAuctionArchive(status: number, html: string, vin: string, label: string): VinScanParse {
   if (status === 404) return { status: "none", summary: `${label}: nav izsoles ieraksta` };
   if (status >= 400) return { status: "unknown", summary: `${label} HTTP ${status}` };
-  const text = html.replace(/<[^>]+>/g, " ");
-  if (/just a moment|cf-browser|verify you are human/i.test(text) && !text.toUpperCase().includes(vin.toUpperCase())) {
+  const text = visibleText(html);
+  const upperVin = vin.trim().toUpperCase();
+  const vinVisible = Boolean(upperVin) && text.toUpperCase().includes(upperVin);
+  if (/just a moment|cf-browser|verify you are human/i.test(text) && !vinVisible) {
     return { status: "unknown", summary: `${label}: Cloudflare netika apieta` };
   }
-  if (/no results|not found|nothing found|no records|0 results/i.test(text) && !/lot|auction|sold/i.test(text)) {
-    return { status: "none", summary: `${label}: nav izsoles ieraksta` };
-  }
-  const photos = /(\d+)\s*(photos?|images?|pictures?|foto)/i.exec(text);
-  const n = photos ? Number(photos[1]) : NaN;
-  const imgCount = (html.match(/<img\b/gi) || []).length;
-  const photoCount = Number.isFinite(n) && n > 0 ? n : imgCount > 8 ? imgCount : 0;
-  if (text.toUpperCase().includes(vin.toUpperCase()) && /lot|auction|sold|bid|copart|iaai/i.test(text)) {
+  if (!vinVisible) return { status: "none", summary: `${label}: nav izsoles ieraksta` };
+  if (/\blot\b|auction|sold|\bbid\b|copart|iaai|damage/i.test(text)) {
+    const photos = /(\d+)\s*(photos?|images?|pictures?|foto)/i.exec(text);
+    const n = photos ? Number(photos[1]) : NaN;
+    const photoCount = Number.isFinite(n) && n > 0 ? n : 0;
     return {
       status: "found",
       summary: photoCount > 0 ? `${label}: ir izsole, ${photoCount} foto` : `${label}: ir izsoles ieraksts`,
@@ -310,8 +323,7 @@ export function parseAuctionArchive(status: number, html: string, vin: string, l
       auctions: [{ title: label, photoCount: photoCount || undefined }],
     };
   }
-  if (/no results|not found|nothing found/i.test(text)) return { status: "none", summary: `${label}: nav izsoles ieraksta` };
-  return { status: "unknown", summary: `${label}: lapa nav atpazīta` };
+  return { status: "none", summary: `${label}: nav izsoles ieraksta` };
 }
 
 export function parseOemRecallHtml(status: number, html: string, vin: string, brand: string): VinScanParse {
