@@ -6,6 +6,7 @@ import type {
   VinScanRecall,
   VinScanVehicle,
 } from "@/lib/vin-scan/types";
+import { vinOriginCountryLabel } from "@/lib/vin-scan/vin-decode";
 
 export type VinScanResultRow = {
   id: string;
@@ -24,6 +25,7 @@ export type VinScanResultRow = {
     stolen?: boolean;
     finlandLinked?: boolean;
     finlandLinkSource?: string;
+    registrationCountry?: string;
   };
   inspections?: VinScanInspection[];
   recalls?: VinScanRecall[];
@@ -37,6 +39,7 @@ export type VinScanResultCard = {
   label: string;
   href: string;
   vehicle: VinScanVehicle | null;
+  origin: string;
   mileage: { date: string; odometer: string }[];
   inspections: VinScanInspection[];
   incidents: { date?: string; summary: string }[];
@@ -115,6 +118,7 @@ export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard
           source: String(row.flags.finlandLinkSource || "").trim(),
         }
       : null;
+  const origin = vinOriginCountryLabel(String(row.flags?.registrationCountry || ""));
   const hasRecords =
     mileage.length > 0 ||
     inspections.length > 0 ||
@@ -124,7 +128,7 @@ export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard
     listings.length > 0 ||
     Boolean(photoUrl) ||
     photoCount > 0;
-  if (!hasRecords && !finlandLink && (row.status !== "found" || !vehicle)) {
+  if (!hasRecords && !finlandLink && !origin && (row.status !== "found" || !vehicle)) {
     return null;
   }
   return {
@@ -132,6 +136,7 @@ export function buildVinScanResultCard(row: VinScanResultRow): VinScanResultCard
     label: row.label,
     href: String(row.openUrl || "").trim(),
     vehicle,
+    origin,
     mileage: mileage.map((item) => ({ date: item.date, odometer: item.odometer })),
     inspections,
     incidents,

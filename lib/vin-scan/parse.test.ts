@@ -29,9 +29,11 @@ import { countVinScanStatuses } from "@/lib/vin-scan/types";
 const DK_VIN = "VF12RFL1H49621453";
 
 describe("vin scan catalog", () => {
-  it("katalogā ir unikāli VIN SCAN avoti, bez izņemtajiem maksas/dekodēšanas avotiem", () => {
+  it("katalogā ir unikāli VIN SCAN avoti, bez izņemtajiem maksas avotiem; WMI dekodēšana paliek", () => {
     expect(VIN_SCAN_CATALOG.map((s) => s.id)).toEqual([...VIN_SCAN_SOURCE_IDS]);
     expect(new Set(VIN_SCAN_SOURCE_IDS).size).toBe(VIN_SCAN_SOURCE_IDS.length);
+    expect(VIN_SCAN_SOURCE_IDS).toContain("vin_decode");
+    expect(VIN_SCAN_SOURCE_IDS[0]).toBe("vin_decode");
     expect(VIN_SCAN_SOURCE_IDS).toContain("tjekbil");
     expect(VIN_SCAN_SOURCE_IDS).toContain("csdd");
     expect(VIN_SCAN_SOURCE_IDS).toContain("nummerplade");
@@ -230,6 +232,11 @@ describe("CSDD un valstu reģistri", () => {
       parseVinSourceScan(emptyVinSourceResult("lkf_ee", DK_VIN, "Nav CAPSOLVER_API_KEY. Igaunijas reģistrs no servera vajag CapSolver")).status,
     ).toBe("skipped");
     expect(parseVinSourceScan(emptyVinSourceResult("carinfo", DK_VIN, "car.info HTTP ielase neizdevās")).status).toBe("unknown");
+    expect(
+      parseVinSourceScan(
+        emptyVinSourceResult("carinfo", DK_VIN, "car.info meklēšanā šo VIN neatradīja (Zviedrija un citi Nordics)"),
+      ).status,
+    ).toBe("none");
     const fi = emptyVinSourceResult("carinfo", DK_VIN, "Atrasts");
     fi.found = true;
     fi.message = "Atrasts car.info";

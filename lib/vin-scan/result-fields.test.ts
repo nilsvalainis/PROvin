@@ -13,6 +13,19 @@ describe("buildVinScanResultCard", () => {
     });
     expect(card?.vehicle).toEqual({ make: "VOLKSWAGEN", model: "SHARAN", year: "2013" });
     expect(card?.mileage[0]?.odometer).toBe("198 579 km");
+    expect(card?.origin).toBe("");
+  });
+
+  it("WMI dekodējums ar valsti ir kartīte", () => {
+    const card = buildVinScanResultCard({
+      id: "vin_decode",
+      label: "WMI",
+      status: "found",
+      vehicle: { make: "Volvo", model: "", year: "2011" },
+      flags: { registrationCountry: "SE" },
+    });
+    expect(card?.origin).toBe("Zviedrija");
+    expect(card?.vehicle?.make).toBe("Volvo");
   });
 
   it("parsē apskates no detail, ja masīva nav", () => {

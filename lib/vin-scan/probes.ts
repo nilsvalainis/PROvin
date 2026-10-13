@@ -39,6 +39,7 @@ import {
   probeStatVin,
   probeTraficom,
   probeVegvesen,
+  probeVinDecode,
 } from "@/lib/vin-scan/probes-extra";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
 import { isValidScanPlate, vinScanPlateLabel, type VinScanPlates } from "@/lib/vin-scan/plates";
@@ -263,6 +264,7 @@ export async function probeCarinfo(ctx: VinScanContext): Promise<VinScanIndicato
 }
 
 const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIndicator> | VinScanIndicator> = {
+  vin_decode: probeVinDecode,
   tjekbil: probeTjekbil,
   esyn: probeEsyn,
   dsb: probeDsb,

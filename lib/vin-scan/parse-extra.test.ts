@@ -32,6 +32,9 @@ describe("NHTSA atsaukumi un RDW", () => {
         JSON.stringify({ Results: [{ Make: "VOLKSWAGEN", Model: "SHARAN", ModelYear: "2013" }] }),
       ),
     ).toEqual({ make: "VOLKSWAGEN", model: "SHARAN", year: "2013" });
+    expect(
+      parseVpicMakeModelYear(200, JSON.stringify({ Results: [{ Make: "VOLVO", Model: "XC60", ModelYear: "" }] })),
+    ).toEqual({ make: "VOLVO", model: "XC60", year: "" });
     const nhtsa = parseNhtsaRecalls(200, JSON.stringify({ results: [{ Component: "AIR BAGS" }, { Component: "FUEL" }] }));
     expect(nhtsa.summary).toContain("2");
     expect(nhtsa.recalls).toEqual([

@@ -6,6 +6,7 @@
 import { type VinScanPlateKind, type VinScanPlates, emptyVinScanPlates } from "@/lib/vin-scan/plates";
 
 export const VIN_SCAN_SOURCE_IDS = [
+  "vin_decode",
   "tjekbil",
   "esyn",
   "dsb",
@@ -43,6 +44,7 @@ export type VinScanSourceId = (typeof VIN_SCAN_SOURCE_IDS)[number];
 
 /** Ātrie HTTP avoti ātrajam vērtējumam. VIN SCAN lapa skenē visu katalogu. */
 export const VIN_SCAN_FAST_IDS = [
+  "vin_decode",
   "tjekbil",
   "esyn",
   "dsb",
@@ -103,6 +105,14 @@ function plateQ(raw: string): string {
 }
 
 export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
+  {
+    id: "vin_decode",
+    label: "WMI",
+    country: "ISO",
+    hint: "Ražotājs, izcelsmes valsts, gads",
+    needs: ["vin"],
+    openUrl: (vin) => `https://vpic.nhtsa.dot.gov/decoder/Decoder?VIN=${vinQuery(vin)}`,
+  },
   {
     id: "tjekbil",
     label: "tjekbil.dk",

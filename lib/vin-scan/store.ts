@@ -9,6 +9,7 @@ import path from "path";
 import { get, put } from "@vercel/blob";
 
 import { VIN_SCAN_TTL_MS } from "@/lib/vin-scan/catalog";
+import { vinScanIndicatorsAreCacheable } from "@/lib/vin-scan/health";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 
@@ -116,7 +117,8 @@ function asSnapshot(raw: unknown): VinScanSnapshot | null {
 export function vinScanSnapshotFresh(snapshot: VinScanSnapshot, ttlMs = VIN_SCAN_TTL_MS): boolean {
   const t = Date.parse(snapshot.scannedAt);
   if (!Number.isFinite(t)) return false;
-  return Date.now() - t < ttlMs;
+  if (Date.now() - t >= ttlMs) return false;
+  return vinScanIndicatorsAreCacheable(snapshot.indicators);
 }
 
 export async function readVinScanSnapshot(vin: string): Promise<VinScanSnapshot | null> {
