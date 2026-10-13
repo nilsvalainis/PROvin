@@ -8,14 +8,13 @@ import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { META_ORDER_LUCIDE } from "@/lib/admin-lucide-registry";
 import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlToolbar";
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
-import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { whatsappPrefillForOrder } from "@/lib/admin-whatsapp-messages";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { OrderDetailWorkspace } from "@/components/admin/OrderDetailWorkspace";
-import { AdminClientOrdersChip } from "@/components/admin/AdminClientOrdersChip";
+import { AdminCustomerCard } from "@/components/admin/AdminCustomerCard";
 import { AdminCustomerHistoryPanel } from "@/components/admin/AdminCustomerHistoryPanel";
 import { AdminOrderVinHistoryPanel } from "@/components/admin/AdminOrderVinHistoryPanel";
 import { ClientHydrationGate } from "@/components/admin/ClientHydrationGate";
@@ -39,6 +38,7 @@ import {
 import { AdminAuditResultColorControl } from "@/components/admin/AdminAuditResultColorControl";
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
+import { AdminAuditSlaOrderBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
 
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
 export type AdminOrderDetailClientModel = {
@@ -511,7 +511,7 @@ export function AdminOrderDetailView({
               header={
                 <h2 className={`${sectionTitle} flex flex-wrap items-center gap-x-2 gap-y-0 px-2 py-2`}>
                   <AdminProvinLucide icon={META_ORDER_LUCIDE.client} />
-                  Klienta dati
+                  Klients
                 </h2>
               }
               headerActions={
@@ -521,78 +521,30 @@ export function AdminOrderDetailView({
                 />
               }
             >
-              <div className="space-y-1 px-2 pb-2">
-                <div className="mt-0 flex min-h-0 min-w-0 max-w-full flex-col gap-2">
-                  {order.partnerCompanyName?.trim() ? (
-                    <div className="rounded-md bg-violet-50 px-2 py-1.5 ring-1 ring-violet-200/80">
-                      <p className="text-[9px] font-bold uppercase tracking-wide text-violet-800">Partnera SIA</p>
-                      <p className="text-[13px] font-semibold text-violet-950">{order.partnerCompanyName.trim()}</p>
-                      {partnerAuditPurposeLabelLv(order.partnerAuditPurpose) ? (
-                        <p className="mt-0.5 text-[11px] font-medium text-violet-900">
-                          {partnerAuditPurposeLabelLv(order.partnerAuditPurpose)}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <AdminSavableTextField
-                    id="edit-customer-name"
-                    label="Vārds, uzvārds"
-                    value={mergedCustomerName}
-                    onChange={(v) => persistEdits({ customerName: v })}
-                    placeholder="Klienta vārds"
-                    compact
-                    hideToolbar
-                    resetVersion={orderFieldResetKey}
-                  />
-                  <AdminSavableTextField
-                    id="edit-customer-email"
-                    label="E-pasts"
-                    value={mergedCustomerEmail}
-                    onChange={(v) => persistEdits({ customerEmail: v })}
-                    placeholder="epasts@piemers.lv"
-                    compact
-                    hideToolbar
-                    resetVersion={orderFieldResetKey}
-                  />
-                  {(customerHistory?.otherPaid ?? []).filter((p) => p.matchVia === "email" || p.matchVia === "email_and_phone").length > 0 ? (
-                    <p className="-mt-1 flex items-center gap-1.5 px-1 text-[11.5px] text-[#8e8e93]">
-                      Iepriekšējie pasūtījumi ar šo e-pastu:
-                      <AdminClientOrdersChip
-                        items={(customerHistory?.otherPaid ?? []).filter((p) => p.matchVia === "email" || p.matchVia === "email_and_phone").map((p) => ({
-                          id: p.id,
-                          created: p.created,
-                          vin: p.vin,
-                          amountTotal: p.amountTotal,
-                          href: p.href,
-                        }))}
-                      />
-                    </p>
-                  ) : null}
-                  <AdminSavableTextField
-                    id="edit-customer-phone"
-                    label="Tālrunis"
-                    value={mergedCustomerPhone}
-                    onChange={(v) => persistEdits({ customerPhone: v })}
-                    placeholder="+371..."
-                    compact
-                    hideToolbar
-                    resetVersion={orderFieldResetKey}
-                    endAdornment={
-                      <AdminWhatsAppOpenButton
-                        phone={mergedCustomerPhone}
-                        prefillMessage={whatsappPrefillForOrder({
-                          checkoutLine: order.checkoutLine,
-                          amountTotalCents: order.amountTotal,
-                          vin: mergedVin,
-                        })}
-                      />
-                    }
-                  />
-                  <div
-                    id={`admin-portfolio-slot-${order.id}`}
-                    className="min-h-0 min-w-0 rounded-md has-[*]:bg-white/70 has-[*]:ring-1 has-[*]:ring-slate-200/70"
-                  />
-                </div>
+              <div className="space-y-1">
+                <AdminCustomerCard
+                  history={customerHistory}
+                  partnerCompanyName={order.partnerCompanyName}
+                  partnerAuditPurpose={order.partnerAuditPurpose}
+                  name={mergedCustomerName}
+                  email={mergedCustomerEmail}
+                  phone={mergedCustomerPhone}
+                  contactMethod={mergedContactMethod}
+                  onName={(v) => persistEdits({ customerName: v })}
+                  onEmail={(v) => persistEdits({ customerEmail: v })}
+                  onPhone={(v) => persistEdits({ customerPhone: v })}
+                  onContactMethod={(v) => persistEdits({ contactMethod: v })}
+                  whatsappPrefill={whatsappPrefillForOrder({
+                    checkoutLine: order.checkoutLine,
+                    amountTotalCents: order.amountTotal,
+                    vin: mergedVin,
+                  })}
+                  resetVersion={orderFieldResetKey}
+                />
+                <div
+                  id={`admin-portfolio-slot-${order.id}`}
+                  className="min-h-0 min-w-0 rounded-md px-2 has-[*]:bg-white/70 has-[*]:ring-1 has-[*]:ring-slate-200/70"
+                />
               </div>
             </AdminCollapsibleShell>
           </section>
@@ -793,6 +745,7 @@ export function AdminOrderDetailView({
         <AdminOrderUpsellPanel sessionId={order.id} placement="mini" />
       ) : null}
 
+      <AdminAuditSlaOrderBanner createdUnixSec={order.created} />
       <div id={`admin-order-alerts-slot-${order.id}`} className="min-w-0" />
 
       <OrderDetailWorkspace

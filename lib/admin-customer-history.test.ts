@@ -12,7 +12,12 @@ import {
   paidProductLabel,
   TELEGRAM_GROUP_AMOUNT_CENTS,
 } from "@/lib/admin-customer-identity";
-import { buildCustomerHistory } from "@/lib/admin-customer-history";
+import {
+  adminContactChannelLabel,
+  buildCustomerHistory,
+  emptyCustomerHistory,
+  summarizeCustomerKnown,
+} from "@/lib/admin-customer-history";
 
 describe("customer identity keys", () => {
   it("normalizes email case and trim", () => {
@@ -100,6 +105,19 @@ describe("telegram vs audit amounts", () => {
       "/admin/konsultacijas/cs_1",
     );
     expect(adminOrderHref({ id: "cs_2", checkoutLine: "audit" })).toBe("/admin/orders/cs_2");
+  });
+});
+
+describe("customer card summary", () => {
+  it("labels contact channels without inventing IRISS copy", () => {
+    expect(adminContactChannelLabel(null)).toBe("E-pasts");
+    expect(adminContactChannelLabel("whatsapp")).toBe("WhatsApp");
+    expect(adminContactChannelLabel("telegram")).toBe("Telegram");
+    expect(adminContactChannelLabel("Zvans")).toBe("Zvans");
+  });
+
+  it("summarizes a first-time client", () => {
+    expect(summarizeCustomerKnown(emptyCustomerHistory())).toBe("Jauns klients.");
   });
 });
 
@@ -208,6 +226,7 @@ describe("buildCustomerHistory", () => {
           created: 180,
           amountTotal: 9999,
           currency: "EUR",
+          vin: null,
           emails: ["a@provin.lv"],
           phones: [],
           isDemo: true,
@@ -219,5 +238,7 @@ describe("buildCustomerHistory", () => {
     expect(history.otherPaid.find((r) => r.id === "cs_tg")?.isTelegramGroup).toBe(true);
     expect(history.flags.telegramGroup).toBe(true);
     expect(history.flags.repeatPaid).toBe(true);
+    expect(summarizeCustomerKnown(history)).toContain("Atkārtots");
+    expect(summarizeCustomerKnown(history)).toContain("1 cits pasūtījums");
   });
 });

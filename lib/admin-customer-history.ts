@@ -74,6 +74,48 @@ const PEEK_STATUSES = new Set<CustomerHistoryPeekStatus>([
   "rejected",
 ]);
 
+export function adminContactChannelLabel(raw: string | null | undefined): string {
+  const t = (raw ?? "").trim();
+  if (!t) return "E-pasts";
+  const key = t.toLowerCase();
+  if (key === "whatsapp") return "WhatsApp";
+  if (key === "telegram") return "Telegram";
+  if (key === "email" || key === "e-pasts" || key === "epasts") return "E-pasts";
+  return t;
+}
+
+export function normalizeAdminContactChannel(raw: string | null | undefined): string {
+  const t = (raw ?? "").trim();
+  const key = t.toLowerCase();
+  if (!t || key === "email" || key === "e-pasts" || key === "epasts") return "";
+  if (key === "whatsapp") return "whatsapp";
+  if (key === "telegram") return "telegram";
+  return t;
+}
+
+/** Viens teikums operatoram: kas jau zināms. Tukšs, ja nav vēstures signālu. */
+export function summarizeCustomerKnown(history: CustomerHistory | null): string {
+  if (!history) return "";
+  const paid = history.otherPaid.filter((r) => !r.isTelegramGroup).length;
+  const peekCount = history.peeks.length;
+  const sentPeek = history.peeks.filter((p) => Boolean(p.comment)).length;
+  const parts: string[] = [];
+  if (history.flags.repeatPaid) {
+    parts.push(paid === 1 ? "1 cits pasūtījums" : `${paid} citi pasūtījumi`);
+  }
+  if (peekCount > 0) {
+    const peekLabel = peekCount === 1 ? "1 ātrais vērtējums" : `${peekCount} ātrie vērtējumi`;
+    parts.push(sentPeek > 0 ? peekLabel : `${peekLabel}, atbilde nav saglabāta`);
+  }
+  if (history.flags.telegramGroup) parts.push("Telegram grupa");
+  if (parts.length === 0) return "Jauns klients.";
+  if (!history.flags.repeatPaid && peekCount === 0 && history.flags.telegramGroup) {
+    return "Telegram grupa.";
+  }
+  if (!history.flags.repeatPaid) return `Pirmais apmaksātais. ${parts.join(". ")}.`;
+  return `Atkārtots. ${parts.join(". ")}.`;
+}
+
 export function emptyCustomerHistory(): CustomerHistory {
   return {
     peeks: [],
