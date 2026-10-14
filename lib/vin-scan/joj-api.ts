@@ -49,6 +49,7 @@ export type FetchJojSearchVinDeps = {
   env?: JojApiEnv;
   fetchImpl?: typeof fetch;
   skipCache?: boolean;
+  skipRateLimit?: boolean;
 };
 
 export async function fetchJojSearchVin(vin: string, deps: FetchJojSearchVinDeps = {}): Promise<VinScanParse> {
@@ -59,7 +60,7 @@ export async function fetchJojSearchVin(vin: string, deps: FetchJojSearchVinDeps
     const cached = await readJojVinCache(clean).catch(() => null);
     if (cached) return cached.parse;
   }
-  await waitTurn();
+  if (!deps.skipRateLimit) await waitTurn();
   const url = jojSearchVinUrl(clean, jojApiBaseUrl(env));
   const fetchImpl = deps.fetchImpl ?? fetch;
   const res = await fetchImpl(url, {

@@ -4,13 +4,9 @@ import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { isSafeOrderDraftSessionId, readOrderDraft, upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
 import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { mergeVinScanIndicators, parseOrderVinScanRecord, type OrderVinScanRecord } from "@/lib/order-vin-scan";
-import {
-  freeVinScanSourceIds,
-  isPaidVinScanSourceId,
-  VIN_SCAN_METERED_SOURCE_IDS,
-} from "@/lib/vin-scan/free-sources";
-import { runVinScan } from "@/lib/vin-scan/run";
+import { isPaidVinScanSourceId, vinScanAutoSourceIds } from "@/lib/vin-scan/free-sources";
 import { isVinScanSourceId } from "@/lib/vin-scan/catalog";
+import { runVinScan } from "@/lib/vin-scan/run";
 import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
 import { recordSourceOutcomes } from "@/lib/source-health-store";
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
@@ -67,19 +63,18 @@ export async function runOrderFreeVinScan(
   await upsertOrderDraftVinScan(sessionId, running).catch(() => null);
 
   try {
-    const wanted = (opts.sourceIds ?? []).filter(
-      (id) => isVinScanSourceId(id) && !isPaidVinScanSourceId(id),
-    );
     const isPro =
       order?.checkoutLine === "audit" ||
       order?.checkoutLine === "premium" ||
       (typeof order?.amountTotal === "number" && order.amountTotal >= 7999);
-    let sourceIds = wanted.length ? wanted : [...freeVinScanSourceIds()];
-    if (!wanted.length && (opts.includeMetered || isPro)) {
-      for (const id of VIN_SCAN_METERED_SOURCE_IDS) {
-        if (isVinScanSourceId(id) && !sourceIds.includes(id)) sourceIds.push(id);
-      }
-    }
+    const wanted = (opts.sourceIds ?? []).filter(
+      (id) => isVinScanSourceId(id) && !isPaidVinScanSourceId(id),
+    );
+    const sourceIds = vinScanAutoSourceIds({
+      sourceIds: opts.sourceIds,
+      includeMetered: opts.includeMetered,
+      isPro,
+    });
     const scanned = await runVinScan({
       vin,
       listingUrl: opts.listingUrl?.trim() || "",

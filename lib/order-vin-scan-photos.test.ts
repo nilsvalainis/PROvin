@@ -51,6 +51,26 @@ describe("VIN SCAN izsoļu foto URL", () => {
     expect(urls).not.toContain("https://bid.cars/x.jpg");
   });
 
+  it("JoJ import-motor foto iet AUCTION importā, pēc stat.vin", () => {
+    const joj = "https://cars2.import-motor.com/copart/a.webp";
+    const extra = "https://cs.copart.com/p/1.jpg";
+    const urls = collectVinScanAuctionPhotoUrls([
+      indicator({
+        id: "joj_copart_iaai",
+        status: "found",
+        media: { photoUrl: joj, photoUrls: [joj, extra] },
+        auctions: [{ venue: "Copart", photoUrl: joj }],
+      }),
+      indicator({
+        id: "stat_vin",
+        status: "found",
+        media: { photoUrl: extra, photoUrls: [extra] },
+      }),
+    ]);
+    expect(urls[0]).toBe(extra);
+    expect(urls).toContain(joj);
+  });
+
   it("grupas virsraksts un jau ieliktas bildes", () => {
     expect(
       vinScanAuctionPhotoGroupTitle([
