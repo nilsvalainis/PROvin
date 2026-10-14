@@ -99,6 +99,12 @@ export function verifyWorkspaceIntegrity(
   return { ok: true, revision: actualRevision, checksum: actualChecksum, fillScore: actualFill };
 }
 
+/** Restore palielina revision pret pašreizējo kanonu, lai citas cilnes saņemtu stale_revision. */
+export function nextWorkspaceRevisionAfterRestore(currentRevision: number | undefined | null): number {
+  const n = typeof currentRevision === "number" && Number.isFinite(currentRevision) ? currentRevision : 0;
+  return Math.max(0, Math.floor(n)) + 1;
+}
+
 /** Vai incoming ir būtiski tukšāks par baseline (bloķē overwrite bez force). */
 export function isEmptyRegressiveOverwrite(
   incoming: OrderWorkspacePersistBody,

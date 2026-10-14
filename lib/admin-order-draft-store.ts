@@ -28,6 +28,7 @@ import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/adm
 import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
 import {
+  nextWorkspaceRevisionAfterRestore,
   stableWorkspaceChecksum,
   verifyWorkspaceIntegrity,
   workspaceFillScoreFromDraft,
@@ -423,7 +424,7 @@ export async function listOrderDraftRevisions(
 export async function restoreOrderDraftRevision(
   sessionId: string,
   revisionId: string,
-): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; updatedAt: string; workspaceRevision: number } | { ok: false; error: string }> {
   const dir = resolveDraftDir();
   if (!dir) return { ok: false, error: "store_disabled" };
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
@@ -441,10 +442,17 @@ export async function restoreOrderDraftRevision(
   const doc = (parsed as { doc?: unknown }).doc;
   const normalized = normalizeLoadedDraft(doc, sessionId);
   if (!normalized) return { ok: false, error: "invalid_revision" };
+  const current = await readOrderDraftUncached(sessionId);
+  const workspaceRevision = nextWorkspaceRevisionAfterRestore(current?.workspaceRevision);
   const updatedAt = new Date().toISOString();
+  const workspaceChecksum =
+    normalized.workspace != null ? stableWorkspaceChecksum(normalized.workspace) : null;
   const nextDoc = {
     sessionId,
     updatedAt,
+    workspaceSavedAt: updatedAt,
+    workspaceRevision,
+    workspaceChecksum,
     orderEdits: normalized.orderEdits,
     workspace: normalized.workspace,
     ...extraDraftPersistFields(normalized),
@@ -456,7 +464,7 @@ export async function restoreOrderDraftRevision(
     await fs.writeFile(tmp, JSON.stringify(nextDoc), "utf8");
     await fs.rename(tmp, fp);
     await writeOrderDraftRevision(dir, sessionId, nextDoc, "restore");
-    return { ok: true, updatedAt };
+    return { ok: true, updatedAt, workspaceRevision };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: `write_failed:${msg}` };

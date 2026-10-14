@@ -3,6 +3,10 @@ import "server-only";
 import archiver from "archiver";
 import { PassThrough } from "node:stream";
 import { finished } from "node:stream/promises";
+import {
+  buildIrissOrdersBackupPayload,
+  type IrissOrdersBackupPayload,
+} from "@/lib/admin-iriss-pasutijumi-backup-payload";
 import { buildIrissPasutijumiListPdfBytes } from "@/lib/iriss-pasutijums-pdf";
 import {
   irissPasutijumiListPdfFilename,
@@ -14,23 +18,9 @@ import {
   readIrissListOrder,
   readIrissPasutijums,
 } from "@/lib/iriss-pasutijumi-store";
-import type { IrissPasutijumiListOrder, IrissPasutijumsListRow, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import type { IrissPasutijumsListRow, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
-export type IrissOrdersBackupMeta = {
-  exportedAt: string;
-  draftFilesCount: number;
-  listPdfIncluded: boolean;
-  storage: ReturnType<typeof getIrissPasutijumiStorageState>;
-};
-
-function backupDateSlug(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-export function irissOrdersBackupFilename(ext: "zip" | "json" | "pdf"): string {
-  if (ext === "pdf") return irissPasutijumiListPdfFilename();
-  return `provin-iriss-pasutijumi-backup-${backupDateSlug()}.${ext}`;
-}
+export { irissOrdersBackupFilename, type IrissOrdersBackupPayload } from "@/lib/admin-iriss-pasutijumi-backup-payload";
 
 async function collectIrissDraftRecords(): Promise<Map<string, IrissPasutijumsRecord>> {
   const map = new Map<string, IrissPasutijumsRecord>();
@@ -70,27 +60,14 @@ async function gatherBackupParts(opts?: { includeListPdf?: boolean }): Promise<G
   return { records, listOrder, listRows, listPdf, storage };
 }
 
-export type IrissOrdersBackupPayload = {
-  meta: IrissOrdersBackupMeta;
-  listOrder: IrissPasutijumiListOrder | null;
-  listRows: IrissPasutijumsListRow[];
-  orderDrafts: Record<string, string>;
-};
-
 function toPayload(g: Gathered): IrissOrdersBackupPayload {
-  const orderDrafts: Record<string, string> = {};
-  for (const [name, rec] of g.records) orderDrafts[name] = `${JSON.stringify(rec, null, 2)}\n`;
-  return {
-    meta: {
-      exportedAt: new Date().toISOString(),
-      draftFilesCount: g.records.size,
-      listPdfIncluded: Boolean(g.listPdf),
-      storage: g.storage,
-    },
+  return buildIrissOrdersBackupPayload({
+    records: g.records,
     listOrder: g.listOrder,
     listRows: g.listRows,
-    orderDrafts,
-  };
+    storage: g.storage,
+    listPdfIncluded: Boolean(g.listPdf),
+  });
 }
 
 export async function buildIrissOrdersBackupJsonString(): Promise<string> {

@@ -24,7 +24,7 @@ export async function GET() {
     const orders = filterAdminOrdersForDashboard(rows, false);
     const ids = orders.map((o) => o.id);
     const [done, upsell] = await Promise.all([getAuditDeadlineCompleteMap(ids), readUpsellDisplayOffers(ids)]);
-    const { activeCount, overdueCount } = countAdminActiveOrders(
+    const { activeCount, overdueCount, urgentCount } = countAdminActiveOrders(
       orders.map((o) => ({
         created: o.created,
         // Kā sarakstā: piepirkuma termiņš skaitās no piepirkuma apmaksas.
@@ -34,7 +34,7 @@ export async function GET() {
       })),
       Date.now(),
     );
-    return NextResponse.json({ ok: true, activeCount, overdueCount });
+    return NextResponse.json({ ok: true, activeCount, overdueCount, urgentCount });
   } catch (e) {
     console.error("[admin/orders/active-count]", e);
     return NextResponse.json({ error: "load_failed" }, { status: 500 });

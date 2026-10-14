@@ -118,6 +118,26 @@ ${cta}
   return shell(inner);
 }
 
+export function adminAuditSlaWarningHtml(opts: {
+  lines: { label: string; value: string }[];
+  adminUrl?: string;
+}): string {
+  const rows = opts.lines
+    .map(
+      (l) =>
+        `<tr><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;color:${MUTED};width:38%;">${esc(l.label)}</td><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;">${esc(l.value)}</td></tr>`,
+    )
+    .join("");
+  const cta = opts.adminUrl ? ctaButton(opts.adminUrl, "Atvērt pasūtījumu") : "";
+  const inner = `
+<p style="margin:0 0 8px;font-size:20px;font-weight:600;">Audita termiņš: atlikušas ≤ 3 h</p>
+<p style="margin:0 0 24px;color:${MUTED};font-size:14px;">PROVIN 48 h sagatavošanas SLA.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
+${cta}
+`;
+  return shell(inner);
+}
+
 /** Bezmaksas īss sludinājuma komentārs + CTA uz PROVIN AUDITS (e-pasta klientiem drošs HTML). */
 export function listingPeekCustomerCommentHtml(opts: {
   comment: string;

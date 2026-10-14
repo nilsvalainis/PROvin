@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import type { Attachment } from "nodemailer/lib/mailer";
 import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
 import {
+  adminAuditSlaWarningHtml,
   adminNewOrderHtml,
   adminNewPartnerHtml,
   auditCompletedEmailHtml,
@@ -152,6 +153,48 @@ export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayl
     await sendSmtpMail({ to: adminTo, subject, text, html });
   } catch (e) {
     console.error("[email] sendAdminNewOrderNotificationEmail SMTP:", e);
+    throw e instanceof Error ? e : new Error(String(e));
+  }
+}
+
+export type AdminAuditSlaWarningEmailPayload = {
+  sessionId: string;
+  vin: string | null;
+  remainingLabel: string;
+  adminUrl: string;
+};
+
+export async function sendAdminAuditSlaWarningEmail(
+  payload: AdminAuditSlaWarningEmailPayload,
+  adminTo: string,
+): Promise<void> {
+  const subject = `PROVIN: 3 h līdz audita termiņam: ${payload.vin ?? payload.sessionId}`;
+  const text = [
+    "Audita sagatavošanas termiņš: atlikušas ≤ 3 h.",
+    "",
+    `Session: ${payload.sessionId}`,
+    `VIN: ${payload.vin ?? "-"}`,
+    `Atlicis: ${payload.remainingLabel}`,
+    `Admin: ${payload.adminUrl}`,
+  ].join("\n");
+  const html = adminAuditSlaWarningHtml({
+    adminUrl: payload.adminUrl,
+    lines: [
+      { label: "Session", value: payload.sessionId },
+      { label: "VIN", value: payload.vin ?? "-" },
+      { label: "Atlicis", value: payload.remainingLabel },
+    ],
+  });
+
+  const transport = getSmtpTransport();
+  if (!transport) {
+    console.warn("[email] SLA brīdinājums: SMTP nav iestatīts, e-pasts netika nosūtīts.");
+    return;
+  }
+  try {
+    await sendSmtpMail({ to: adminTo, subject, text, html });
+  } catch (e) {
+    console.error("[email] sendAdminAuditSlaWarningEmail SMTP:", e);
     throw e instanceof Error ? e : new Error(String(e));
   }
 }

@@ -110,13 +110,19 @@ export function AdminIrissOrdersExportButton({ compact = false }: { compact?: bo
           type="button"
           disabled={busy}
           onClick={() => void runExport("json")}
-          className={btnClass}
-          title="Rezerves kopija: visi pasūtījumu JSON melnraksti vienā failā"
+          className={
+            compact
+              ? "inline-flex h-8 items-center gap-1.5 rounded-md border border-transparent bg-transparent px-2 text-[11px] font-medium text-slate-500 transition hover:text-[var(--color-apple-text)] disabled:opacity-55"
+              : btnClass
+          }
+          title="Rezerves kopija: visi pasūtījumi un piedāvājumi, ieskaitot attēlus"
         >
           {loadingFormat === "json" ? (
             <Loader2 className={`${iconClass} animate-spin text-[var(--color-provin-accent)]`} aria-hidden />
-          ) : null}
-          JSON
+          ) : compact ? null : (
+            <Download className={`${iconClass} text-[var(--color-provin-accent)]`} aria-hidden />
+          )}
+          Eksportēt backup
         </button>
       </div>
       {phase === "error" && errMsg ? (

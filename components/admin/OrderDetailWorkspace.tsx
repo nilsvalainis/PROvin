@@ -92,8 +92,13 @@ import {
 import { resolveOrderWorkspaceHydration } from "@/lib/admin-order-workspace-hydrate";
 import {
   bumpWorkspaceSaveGeneration,
+  fetchCanonicalWorkspace,
+  isWorkspaceRevisionConflict,
+  persistWorkspaceSafeMerge,
   persistWorkspaceState,
+  workspacePersistFromDraftWorkspace,
 } from "@/lib/admin-workspace-persist-client";
+import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
 import { workspaceDebugLog } from "@/lib/admin-workspace-debug-log";
 import { usePathname } from "next/navigation";
 import {
@@ -729,6 +734,11 @@ export function OrderDetailWorkspace({
   const [workspaceAutosaveStatus, setWorkspaceAutosaveStatus] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [workspaceRevisionConflict, setWorkspaceRevisionConflict] = useState<
+    "stale_revision" | "overwrite_blocked" | null
+  >(null);
+  const [workspaceConflictBusy, setWorkspaceConflictBusy] = useState(false);
+  const workspaceRevisionConflictRef = useRef(false);
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
   const [portfolio, setPortfolio] = useState<PortfolioEntry[]>([]);
@@ -995,6 +1005,10 @@ export function OrderDetailWorkspace({
         return false;
       }
       if (!workspaceHydratedOnceRef.current) return false;
+      if (workspaceRevisionConflictRef.current) {
+        setWorkspaceAutosaveStatus("error");
+        return false;
+      }
       syncWsPersistRefFromState();
       const myGen = bumpWorkspaceSaveGeneration();
       workspaceServerSaveGenRef.current = myGen;
@@ -1037,8 +1051,7 @@ export function OrderDetailWorkspace({
           pdfVisibility: pdfVisibilityRef.current,
           pdfBannerInclude: pdfBannerIncludeRef.current,
           manualBanners: manualBannersRef.current,
-          expectedWorkspaceRevision:
-            workspaceRevisionRef.current > 0 ? workspaceRevisionRef.current : undefined,
+          expectedWorkspaceRevision: workspaceRevisionRef.current,
           saveGeneration: myGen,
           logContext,
           fetchKeepalive: logContext === "navigation_flush",
@@ -1060,13 +1073,22 @@ export function OrderDetailWorkspace({
         if (result.workspaceRevision > workspaceRevisionRef.current) {
           workspaceRevisionRef.current = result.workspaceRevision;
         }
-      } else if (!result.ok && typeof result.currentRevision === "number") {
-        workspaceRevisionRef.current = result.currentRevision;
       }
       if (result.generation !== workspaceServerSaveGenRef.current) {
         return result.ok;
       }
       if (!result.ok) {
+        if (isWorkspaceRevisionConflict(result.error)) {
+          workspaceRevisionConflictRef.current = true;
+          setWorkspaceRevisionConflict(result.error === "overwrite_blocked" ? "overwrite_blocked" : "stale_revision");
+          workspaceDebugLog("overwrite_blocked", {
+            sessionId: payload.sessionId,
+            source: "client_patch",
+            error: result.error,
+            revision: result.currentRevision,
+            extra: { context: logContext },
+          });
+        }
         setWorkspaceSaveServerOk(false);
         setWorkspaceAutosaveStatus("error");
         return false;
@@ -1083,6 +1105,79 @@ export function OrderDetailWorkspace({
     },
     [commitWorkspaceLocalNow, orderDraftPersistenceEnabled, payload.sessionId, syncWsPersistRefFromState],
   );
+
+  const clearWorkspaceRevisionConflict = useCallback(() => {
+    workspaceRevisionConflictRef.current = false;
+    setWorkspaceRevisionConflict(null);
+  }, []);
+
+  const reloadCanonicalWorkspaceFromServer = useCallback(async () => {
+    setWorkspaceConflictBusy(true);
+    try {
+      const fresh = await fetchCanonicalWorkspace(payload.sessionId);
+      const body = fresh.workspace ? workspacePersistFromDraftWorkspace(fresh.workspace) : null;
+      if (body) {
+        setWs(applyPersistBodyToWs(body));
+      }
+      workspaceRevisionRef.current = fresh.workspaceRevision;
+      commitWorkspaceLocalNow({ force: true });
+      clearWorkspaceRevisionConflict();
+      setWorkspaceSaveServerOk(true);
+      setWorkspaceAutosaveStatus("saved");
+    } catch {
+      setWorkspaceAutosaveStatus("error");
+    } finally {
+      setWorkspaceConflictBusy(false);
+    }
+  }, [applyPersistBodyToWs, clearWorkspaceRevisionConflict, commitWorkspaceLocalNow, payload.sessionId]);
+
+  const mergeWorkspaceRevisionConflict = useCallback(async () => {
+    if (!orderDraftPersistenceEnabled) return;
+    setWorkspaceConflictBusy(true);
+    workspaceRevisionConflictRef.current = false;
+    try {
+      syncWsPersistRefFromState();
+      const body = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
+      const result = await persistWorkspaceSafeMerge({
+        sessionId: payload.sessionId,
+        body,
+        baseline: lastGoodPersistBodyRef.current,
+        pdfVisibility: pdfVisibilityRef.current,
+        pdfBannerInclude: pdfBannerIncludeRef.current,
+        manualBanners: manualBannersRef.current,
+        expectedWorkspaceRevision: workspaceRevisionRef.current,
+        logContext: "safe_merge",
+      });
+      if (!result.ok) {
+        workspaceRevisionConflictRef.current = true;
+        if (isWorkspaceRevisionConflict(result.error)) {
+          setWorkspaceRevisionConflict(result.error === "overwrite_blocked" ? "overwrite_blocked" : "stale_revision");
+        }
+        setWorkspaceSaveServerOk(false);
+        setWorkspaceAutosaveStatus("error");
+        return;
+      }
+      setWs(applyPersistBodyToWs(result.mergedBody));
+      workspaceRevisionRef.current = result.workspaceRevision;
+      commitWorkspaceLocalNow({ force: true });
+      clearWorkspaceRevisionConflict();
+      setWorkspaceSaveServerOk(true);
+      setWorkspaceAutosaveStatus("saved");
+      setWorkspaceSaveFlash(true);
+    } catch {
+      workspaceRevisionConflictRef.current = true;
+      setWorkspaceAutosaveStatus("error");
+    } finally {
+      setWorkspaceConflictBusy(false);
+    }
+  }, [
+    applyPersistBodyToWs,
+    clearWorkspaceRevisionConflict,
+    commitWorkspaceLocalNow,
+    orderDraftPersistenceEnabled,
+    payload.sessionId,
+    syncWsPersistRefFromState,
+  ]);
 
   const buildAiOrderPayload = useCallback(
     (extra: { operatorNotes?: string; existingDraftPlain?: string } = {}) => {
@@ -4229,6 +4324,14 @@ export function OrderDetailWorkspace({
       ) : null}
 
       <AdminPersistenceHealthBanner durableConfigured={orderDraftPersistenceEnabled} />
+      {workspaceRevisionConflict ? (
+        <AdminWorkspaceRevisionConflictBanner
+          kind={workspaceRevisionConflict}
+          busy={workspaceConflictBusy}
+          onReload={() => void reloadCanonicalWorkspaceFromServer()}
+          onSafeMerge={() => void mergeWorkspaceRevisionConflict()}
+        />
+      ) : null}
 
       <nav
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"

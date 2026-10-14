@@ -22,6 +22,9 @@ import {
   sortAdminOrdersIncompleteFirst,
 } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
+import { AdminAuditSlaListBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
+import { formatAuditDeadlineRemaining } from "@/lib/admin-audit-deadline";
+import { useAdminAuditDeadlineTick } from "@/components/admin/AdminAuditDeadlineTickProvider";
 import {
   AdminAuditResultColorControl,
 } from "@/components/admin/AdminAuditResultColorControl";
@@ -579,6 +582,19 @@ export function AdminOrdersTable({
   }, [displayedOrders]);
   const [nowMs, setNowMs] = useState<number | null>(null);
   useEffect(() => setNowMs(Date.now()), []);
+  const slaTick = useAdminAuditDeadlineTick();
+  void slaTick;
+  const slaCounts = useMemo(() => {
+    let urgentCount = 0;
+    let overdueCount = 0;
+    for (const o of displayedOrders) {
+      if (o.auditComplete || o.isB2bPack) continue;
+      const status = formatAuditDeadlineRemaining(o.deadlineFromUnix ?? o.created).status;
+      if (status === "overdue") overdueCount++;
+      else if (status === "urgent") urgentCount++;
+    }
+    return { urgentCount, overdueCount };
+  }, [displayedOrders, slaTick]);
 
   const markComplete = useCallback((id: string, complete: boolean) => {
     setCompleteOverride((prev) => ({ ...prev, [id]: complete }));
@@ -594,6 +610,7 @@ export function AdminOrdersTable({
 
   return (
     <>
+      <AdminAuditSlaListBanner urgentCount={slaCounts.urgentCount} overdueCount={slaCounts.overdueCount} />
       {/* V1: viena slaida rinda — rezultāta segmenti kreisi, papildu vadīklas labi. */}
       <div className="mt-2 flex items-center gap-2">
         <div role="tablist" aria-label="Rezultāts" className="flex min-w-0 overflow-x-auto rounded-[9px] bg-[#e9e9ee] p-[2px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
