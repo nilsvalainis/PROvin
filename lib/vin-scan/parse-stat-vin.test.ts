@@ -33,6 +33,7 @@ describe("parseStatVinPage", () => {
     expect(r.auctions?.some((row) => row.venue === "Copart")).toBe(true);
     expect(r.media?.photoUrl).toContain("copart.com");
     expect((r.media?.photoCount ?? 0) >= 2).toBe(true);
+    expect((r.media?.photoUrls?.length ?? 0) >= 1).toBe(true);
   });
 
   it("tukša lapa bez šī VIN ir none", () => {

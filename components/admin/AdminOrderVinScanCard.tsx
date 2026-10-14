@@ -57,7 +57,7 @@ export function AdminOrderVinScanCard({
   vin: string;
   listingUrl: string;
   initial: OrderVinScanRecord | null;
-  onImportAuction: (record: OrderVinScanRecord) => void;
+  onImportAuction: (record: OrderVinScanRecord) => void | Promise<void>;
   onImportCsdd: (record: OrderVinScanRecord) => void;
   onImportListing: (record: OrderVinScanRecord) => void;
 }) {
@@ -131,7 +131,14 @@ export function AdminOrderVinScanCard({
   const runAction = (row: OrderVinScanSourceRow) => {
     if (!record) return;
     if (row.action === "import_auction") {
-      onImportAuction(record);
+      void (async () => {
+        setBusy(true);
+        try {
+          await onImportAuction(record);
+        } finally {
+          setBusy(false);
+        }
+      })();
       return;
     }
     if (row.action === "import_csdd") {

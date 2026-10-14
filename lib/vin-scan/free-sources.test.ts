@@ -57,5 +57,14 @@ describe("free VIN SCAN avoti", () => {
     expect(card).toContain("Ielikt CSDD");
     expect(card).toContain("Ielikt SLUDIN");
     expect(card).not.toMatch(/paraugs/i);
+    const dash = readFileSync(path.join(ROOT, "app/admin/(dashboard)/dashboard/page.tsx"), "utf8");
+    expect(dash).toContain("AdminOrderVinScanDashboardCards");
+    expect(dash).toContain("pickOrderVinScanDashboardCards");
+    const photos = readFileSync(path.join(ROOT, "app/api/admin/order-vin-scan-photos/route.ts"), "utf8");
+    expect(photos).toContain("importVinScanAuctionPhotosToCcVin");
+    expect(photos).not.toMatch(/purchaseCarVerticalReport/);
+    const table = readFileSync(path.join(ROOT, "components/admin/AdminOrdersTable.tsx"), "utf8");
+    expect(table).toContain("h-[46px]");
+    expect(table).not.toContain("vinScan");
   });
 });

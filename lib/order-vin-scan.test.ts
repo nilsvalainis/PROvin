@@ -9,7 +9,11 @@ import {
   formatOrderVinScanClock,
   mergeVinScanIndicators,
   orderVinScanCompactHint,
+  orderVinScanDashboardHintFromRecord,
+  parseOrderVinScanDashboardHint,
   parseOrderVinScanRecord,
+  pickOrderVinScanDashboardCards,
+  shouldShowVinScanDashboardCard,
   shouldStartOrderVinScanOnDraftPatch,
   vinScanAuctionsToCcVinParsed,
 } from "@/lib/order-vin-scan";
@@ -198,5 +202,29 @@ describe("VIN SCAN palaišana no draft PATCH", () => {
     );
     expect(merged.find((r) => r.id === "stat_vin")?.status).toBe("found");
     expect(merged.find((r) => r.id === "bid_cars")?.status).toBe("found");
+  });
+});
+
+describe("VIN SCAN dashboard kartītes", () => {
+  it("rāda jaunu PRO ar atrastiem avotiem un slēpj izpildīto / konsultāciju", () => {
+    const rec = parseOrderVinScanRecord({
+      at: "2026-10-14T09:00:00.000Z",
+      vin: "WBA5R1C0XLFH42873",
+      status: "done",
+      indicators: [STAT, indicator({ id: "csdd", label: "CSDD", status: "found", summary: "1. reģ." })],
+    });
+    const hint = orderVinScanDashboardHintFromRecord(rec);
+    expect(hint?.foundLabels).toEqual(["stat.vin", "CSDD"]);
+    expect(parseOrderVinScanDashboardHint(hint)?.found).toBe(2);
+    expect(shouldShowVinScanDashboardCard({ hint, auditComplete: false })).toBe(true);
+    expect(shouldShowVinScanDashboardCard({ hint, auditComplete: true })).toBe(false);
+    expect(shouldShowVinScanDashboardCard({ hint, checkoutLine: "provin_select" })).toBe(false);
+    const cards = pickOrderVinScanDashboardCards([
+      { sessionId: "cs_old", title: "Vecs", hint, auditComplete: true },
+      { sessionId: "cs_new", title: "CLA 180", vin: "WBA5R1C0XLFH42873", hint },
+    ]);
+    expect(cards).toHaveLength(1);
+    expect(cards[0]?.href).toBe("/admin/orders/cs_new");
+    expect(cards[0]?.foundLabels).toContain("stat.vin");
   });
 });

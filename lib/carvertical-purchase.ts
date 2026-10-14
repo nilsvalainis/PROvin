@@ -29,6 +29,7 @@ export const CARVERTICAL_AUTOMATIC_FLOW_SOURCE_FILES = [
   "app/api/admin/manual-orders/route.ts",
   "app/api/admin/order-draft/route.ts",
   "app/api/admin/order-vin-scan/route.ts",
+  "app/api/admin/order-vin-scan-photos/route.ts",
   "app/api/admin/vin-scan/route.ts",
   "app/api/admin/vin-sources/fetch/route.ts",
   "app/api/cron/dealer-data-sweep/route.ts",

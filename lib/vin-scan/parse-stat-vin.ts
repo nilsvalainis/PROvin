@@ -305,7 +305,14 @@ export function parseStatVinPage(input: StatVinPageInput): VinScanParse {
         .filter(Boolean)
         .join("\n"),
       vehicle,
-      media: firstPhoto || photoCount > 0 ? { photoUrl: firstPhoto || undefined, photoCount: photoCount || undefined } : undefined,
+      media:
+        firstPhoto || photoCount > 0 || photos.length
+          ? {
+              photoUrl: firstPhoto || undefined,
+              photoCount: photoCount || undefined,
+              photoUrls: photos.slice(0, 20),
+            }
+          : undefined,
       flags: photoCount > 0 ? { photoCount } : undefined,
       auctions: auctions.length ? auctions : [{ title: "Izsoles ieraksts", photoUrl: firstPhoto || undefined, photoCount: photoCount || undefined }],
     };

@@ -103,6 +103,12 @@ export function parseVinScanIndicator(raw: unknown): VinScanIndicator | null {
               typeof (o.media as { photoCount?: unknown }).photoCount === "number"
                 ? (o.media as { photoCount: number }).photoCount
                 : undefined,
+            photoUrls: Array.isArray((o.media as { photoUrls?: unknown }).photoUrls)
+              ? (o.media as { photoUrls: unknown[] })
+                  .photoUrls.filter((u): u is string => typeof u === "string" && u.trim().startsWith("http"))
+                  .map((u) => u.trim())
+                  .slice(0, 20)
+              : undefined,
           }
         : undefined,
     flags: o.flags && typeof o.flags === "object" ? (o.flags as VinScanIndicator["flags"]) : undefined,
@@ -149,8 +155,9 @@ function photoUrlsOf(row: VinScanIndicator): string[] {
     urls.push(url);
   };
   push(row.media?.photoUrl);
+  for (const extra of row.media?.photoUrls ?? []) push(extra);
   for (const auction of row.auctions ?? []) push(auction.photoUrl);
-  return urls.slice(0, 8);
+  return urls.slice(0, 20);
 }
 
 function canImportAuction(row: VinScanIndicator): boolean {
@@ -314,6 +321,120 @@ export function mergeVinScanIndicators(
   for (const row of prev) map.set(row.id, row);
   for (const row of incoming) map.set(row.id, row);
   return [...map.values()];
+}
+
+export type OrderVinScanDashboardHint = {
+  at: string;
+  vin: string;
+  status: OrderVinScanRunStatus;
+  found: number;
+  none: number;
+  error: number;
+  foundLabels: string[];
+  hint: string;
+};
+
+export const ORDER_VIN_SCAN_DASHBOARD_LIMIT = 8;
+
+export function orderVinScanDashboardHintFromRecord(
+  record: OrderVinScanRecord | null | undefined,
+): OrderVinScanDashboardHint | null {
+  const sum = buildOrderVinScanSummary(record);
+  if (!sum || !record) return null;
+  const foundLabels = sum.rows.filter((r) => r.state === "found").map((r) => r.label).slice(0, 8);
+  const hint = sum.rows.find((r) => r.valuable && r.state === "found")?.hint || foundLabels[0] || "";
+  return {
+    at: record.at,
+    vin: record.vin,
+    status: record.status,
+    found: sum.found,
+    none: sum.none,
+    error: sum.error,
+    foundLabels,
+    hint,
+  };
+}
+
+export function parseOrderVinScanDashboardHint(raw: unknown): OrderVinScanDashboardHint | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const at = typeof o.at === "string" && o.at.trim() ? o.at.trim() : "";
+  const vin = typeof o.vin === "string" ? o.vin.trim().toUpperCase() : "";
+  if (!at || !vin) return null;
+  if (o.status !== "running" && o.status !== "done" && o.status !== "error") return null;
+  const found = Math.max(0, Math.floor(Number(o.found) || 0));
+  const none = Math.max(0, Math.floor(Number(o.none) || 0));
+  const error = Math.max(0, Math.floor(Number(o.error) || 0));
+  const foundLabels = Array.isArray(o.foundLabels)
+    ? o.foundLabels.filter((s): s is string => typeof s === "string" && s.trim()).map((s) => s.trim()).slice(0, 8)
+    : [];
+  const hint = typeof o.hint === "string" ? o.hint.trim().slice(0, 160) : "";
+  return { at, vin, status: o.status, found, none, error, foundLabels, hint };
+}
+
+export function shouldShowVinScanDashboardCard(args: {
+  checkoutLine?: string | null;
+  auditComplete?: boolean;
+  isB2bPack?: boolean;
+  hint: OrderVinScanDashboardHint | null | undefined;
+}): boolean {
+  if (args.isB2bPack) return false;
+  if (args.checkoutLine === "provin_select") return false;
+  if (args.auditComplete) return false;
+  const hint = args.hint;
+  if (!hint) return false;
+  if (hint.status === "running") return true;
+  return hint.found > 0 || hint.error > 0;
+}
+
+export type OrderVinScanDashboardCard = {
+  sessionId: string;
+  href: string;
+  title: string;
+  vin: string;
+  foundLabels: string[];
+  found: number;
+  none: number;
+  error: number;
+  status: OrderVinScanRunStatus;
+  hint: string;
+};
+
+export function pickOrderVinScanDashboardCards(
+  items: readonly {
+    sessionId: string;
+    title: string;
+    vin?: string | null;
+    checkoutLine?: string | null;
+    auditComplete?: boolean;
+    isB2bPack?: boolean;
+    hint: OrderVinScanDashboardHint | null | undefined;
+  }[],
+  limit = ORDER_VIN_SCAN_DASHBOARD_LIMIT,
+): OrderVinScanDashboardCard[] {
+  const out: OrderVinScanDashboardCard[] = [];
+  const sorted = [...items].sort((a, b) => {
+    const at = Date.parse(b.hint?.at || "") - Date.parse(a.hint?.at || "");
+    return Number.isFinite(at) ? at : 0;
+  });
+  for (const item of sorted) {
+    if (!shouldShowVinScanDashboardCard(item)) continue;
+    const hint = item.hint!;
+    out.push({
+      sessionId: item.sessionId,
+      href: `/admin/orders/${encodeURIComponent(item.sessionId)}`,
+      title: item.title.trim() || hint.vin || "Pasūtījums",
+      vin: (item.vin || hint.vin).trim().toUpperCase(),
+      foundLabels: hint.foundLabels,
+      found: hint.found,
+      none: hint.none,
+      error: hint.error,
+      status: hint.status,
+      hint: hint.hint,
+    });
+    if (out.length >= limit) break;
+  }
+  return out;
 }
 
 export function orderVinScanCompactHint(summary: OrderVinScanSummary | null | undefined): string {

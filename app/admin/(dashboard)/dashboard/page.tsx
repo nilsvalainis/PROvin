@@ -17,6 +17,8 @@ import { getAuditResultColorMap } from "@/lib/admin-audit-result-color-store";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
+import { AdminOrderVinScanDashboardCards } from "@/components/admin/AdminOrderVinScanDashboardCards";
+import { pickOrderVinScanDashboardCards } from "@/lib/order-vin-scan";
 import { getB2bPartnerByEmail, getB2bPartnerById } from "@/lib/b2b-partner-store";
 import {
   isB2bPackAdminOrder,
@@ -238,7 +240,22 @@ export default async function AdminOrdersPage({
       ) : null}
 
       {orders.length > 0 ? (
-        <AdminOrdersTable orders={tableOrders} toolbarEnd={toolbarEnd} />
+        <>
+          <AdminOrderVinScanDashboardCards
+            cards={pickOrderVinScanDashboardCards(
+              ordersWithUpsell.map((o) => ({
+                sessionId: o.id,
+                title: [o.makeModel, o.vin || draftSummaries.get(o.id)?.vin].filter(Boolean).join(" · ") || o.customerName || "Pasūtījums",
+                vin: o.vin || draftSummaries.get(o.id)?.vin || null,
+                checkoutLine: o.checkoutLine,
+                auditComplete: Boolean(o.auditComplete),
+                isB2bPack: Boolean(o.isB2bPack),
+                hint: draftSummaries.get(o.id)?.vinScan ?? null,
+              })),
+            )}
+          />
+          <AdminOrdersTable orders={tableOrders} toolbarEnd={toolbarEnd} />
+        </>
       ) : (
         <div className="mt-4 flex justify-end">{toolbarEnd}</div>
       )}

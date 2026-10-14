@@ -26,7 +26,7 @@ import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
-import { parseOrderVinScanRecord } from "@/lib/order-vin-scan";
+import { orderVinScanDashboardHintFromRecord, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
 import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
 import {
   nextWorkspaceRevisionAfterRestore,
@@ -1032,6 +1032,9 @@ async function upsertOrderDraftVinScanUnlocked(
 
   if (!fsOk && !blobOk) return { ok: false, error: "write_failed:no_backend" };
   invalidateOrderDraftCache(sessionId);
+  void upsertDashboardDraftIndexEntry(sessionId, {
+    vinScan: orderVinScanDashboardHintFromRecord(parsed),
+  }).catch(() => {});
   return { ok: true, updatedAt };
 }
 

@@ -5,6 +5,12 @@ import path from "node:path";
 import { get, put } from "@vercel/blob";
 import { extractCsddMakeModelFromWorkspace } from "@/lib/admin-csdd-make-model";
 import { getOrderDraftBlobConfig, getOrderDraftStorageDir } from "@/lib/admin-order-draft-store";
+import {
+  parseOrderVinScanDashboardHint,
+  parseOrderVinScanRecord,
+  orderVinScanDashboardHintFromRecord,
+  type OrderVinScanDashboardHint,
+} from "@/lib/order-vin-scan";
 
 const INDEX_FILENAME = "admin-dashboard-draft-index.json";
 
@@ -19,6 +25,8 @@ export type DashboardDraftIndexEntry = {
   auditCompletedAt: string | null;
   vin: string | null;
   notes: string | null;
+  /** Bezmaksas VIN SCAN kopsavilkums jaunajām dashboard kartītēm. */
+  vinScan: OrderVinScanDashboardHint | null;
 };
 
 type DashboardDraftIndexDoc = {
@@ -36,6 +44,7 @@ const EMPTY_ENTRY: DashboardDraftIndexEntry = {
   auditCompletedAt: null,
   vin: null,
   notes: null,
+  vinScan: null,
 };
 
 function indexFsPath(dir: string): string {
@@ -61,6 +70,7 @@ function normalizeEntry(raw: unknown): DashboardDraftIndexEntry | null {
         : null,
     vin: typeof o.vin === "string" && o.vin.trim() ? o.vin.trim() : null,
     notes: typeof o.notes === "string" && o.notes.trim() ? o.notes.trim() : null,
+    vinScan: parseOrderVinScanDashboardHint(o.vinScan),
   };
 }
 
@@ -171,6 +181,7 @@ export async function upsertDashboardDraftIndexEntry(
       patch.auditCompletedAt !== undefined ? patch.auditCompletedAt : prev.auditCompletedAt,
     vin: patch.vin !== undefined ? patch.vin : prev.vin,
     notes: patch.notes !== undefined ? patch.notes : prev.notes,
+    vinScan: patch.vinScan !== undefined ? patch.vinScan : prev.vinScan,
   };
   doc.updatedAt = new Date().toISOString();
   await writeDashboardDraftIndexDoc(doc);
@@ -179,7 +190,13 @@ export async function upsertDashboardDraftIndexEntry(
 function summaryFieldsFromDraftRaw(raw: {
   workspace?: unknown;
   orderEdits?: { vin?: unknown; notes?: unknown };
-}): { makeModel: string | null; vin: string | null; notes: string | null } {
+  vinScan?: unknown;
+}): {
+  makeModel: string | null;
+  vin: string | null;
+  notes: string | null;
+  vinScan: OrderVinScanDashboardHint | null;
+} {
   const vin = typeof raw.orderEdits?.vin === "string" && raw.orderEdits.vin.trim() ? raw.orderEdits.vin.trim() : null;
   const notes =
     typeof raw.orderEdits?.notes === "string" && raw.orderEdits.notes.trim() ? raw.orderEdits.notes.trim() : null;
@@ -187,13 +204,22 @@ function summaryFieldsFromDraftRaw(raw: {
     makeModel: extractCsddMakeModelFromWorkspace(raw.workspace),
     vin,
     notes,
+    vinScan: orderVinScanDashboardHintFromRecord(parseOrderVinScanRecord(raw.vinScan)),
   };
 }
 
-async function readDraftFileSummaryFields(
-  sessionId: string,
-): Promise<{ makeModel: string | null; vin: string | null; notes: string | null }> {
-  const empty = { makeModel: null as string | null, vin: null as string | null, notes: null as string | null };
+async function readDraftFileSummaryFields(sessionId: string): Promise<{
+  makeModel: string | null;
+  vin: string | null;
+  notes: string | null;
+  vinScan: OrderVinScanDashboardHint | null;
+}> {
+  const empty = {
+    makeModel: null as string | null,
+    vin: null as string | null,
+    notes: null as string | null,
+    vinScan: null as OrderVinScanDashboardHint | null,
+  };
   const dir = getOrderDraftStorageDir();
   const blob = getOrderDraftBlobConfig();
 
@@ -202,9 +228,10 @@ async function readDraftFileSummaryFields(
       const raw = JSON.parse(await fs.readFile(path.join(dir, `${sessionId}.json`), "utf8")) as {
         workspace?: unknown;
         orderEdits?: { vin?: unknown; notes?: unknown };
+        vinScan?: unknown;
       };
       const fields = summaryFieldsFromDraftRaw(raw);
-      if (fields.makeModel || fields.vin || fields.notes) return fields;
+      if (fields.makeModel || fields.vin || fields.notes || fields.vinScan) return fields;
     } catch {
       /* try blob */
     }
@@ -221,6 +248,7 @@ async function readDraftFileSummaryFields(
       const raw = JSON.parse(await new Response(res.stream).text()) as {
         workspace?: unknown;
         orderEdits?: { vin?: unknown; notes?: unknown };
+        vinScan?: unknown;
       };
       return summaryFieldsFromDraftRaw(raw);
     } catch {
@@ -268,7 +296,7 @@ export async function readDashboardDraftSummaries(
   for (const id of sessionIds) {
     const entry = doc.entries[id] ?? EMPTY_ENTRY;
     out.set(id, entry);
-    if (!entry.makeModel || !entry.vin || !entry.notes) {
+    if (!entry.makeModel || !entry.vin || !entry.notes || !entry.vinScan) {
       const tried = backfillTriedAt.get(id);
       if (!tried || Date.now() - tried > BACKFILL_RETRY_MS) needsBackfill.push(id);
     }
@@ -277,11 +305,17 @@ export async function readDashboardDraftSummaries(
   if (needsBackfill.length > 0) {
     const BACKFILL_CAP = 40;
     const toFill = needsBackfill.slice(0, BACKFILL_CAP);
-    const found: { id: string; makeModel: string | null; vin: string | null; notes: string | null }[] = [];
+    const found: {
+      id: string;
+      makeModel: string | null;
+      vin: string | null;
+      notes: string | null;
+      vinScan: OrderVinScanDashboardHint | null;
+    }[] = [];
     await Promise.all(
       toFill.map(async (id) => {
         const prev = out.get(id) ?? EMPTY_ENTRY;
-        if (prev.makeModel && prev.vin && prev.notes) return;
+        if (prev.makeModel && prev.vin && prev.notes && prev.vinScan) return;
         const fromDraft = await readDraftFileSummaryFields(id);
         backfillTriedAt.set(id, Date.now());
         const next = {
@@ -289,9 +323,21 @@ export async function readDashboardDraftSummaries(
           makeModel: prev.makeModel || fromDraft.makeModel,
           vin: prev.vin || fromDraft.vin,
           notes: prev.notes || fromDraft.notes,
+          vinScan: prev.vinScan || fromDraft.vinScan,
         };
-        if (next.makeModel !== prev.makeModel || next.vin !== prev.vin || next.notes !== prev.notes) {
-          found.push({ id, makeModel: next.makeModel, vin: next.vin, notes: next.notes });
+        if (
+          next.makeModel !== prev.makeModel ||
+          next.vin !== prev.vin ||
+          next.notes !== prev.notes ||
+          next.vinScan !== prev.vinScan
+        ) {
+          found.push({
+            id,
+            makeModel: next.makeModel,
+            vin: next.vin,
+            notes: next.notes,
+            vinScan: next.vinScan,
+          });
           out.set(id, next);
         }
       }),
@@ -307,6 +353,7 @@ export async function readDashboardDraftSummaries(
               makeModel: prev.makeModel || row.makeModel,
               vin: prev.vin || row.vin,
               notes: prev.notes || row.notes,
+              vinScan: prev.vinScan || row.vinScan,
             };
           }
           latest.updatedAt = new Date().toISOString();
