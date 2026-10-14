@@ -17,6 +17,8 @@ import { autoImportQuickEvalForPaidOrder } from "@/lib/quick-eval-service";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
+import { clientLinkHashFromStripeMetadata } from "@/lib/client-link";
+import { consumeClientLinkByHash } from "@/lib/client-link-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,6 +64,15 @@ async function fulfillPaidCheckoutSession(
       await upsertPaidCheckoutSessionFromStripe(session);
     } catch (err) {
       console.warn("[stripe webhook] paid index upsert failed:", err);
+    }
+
+    const clientLinkHash = clientLinkHashFromStripeMetadata(session.metadata);
+    if (clientLinkHash) {
+      try {
+        await consumeClientLinkByHash(clientLinkHash, session.id);
+      } catch (err) {
+        console.warn("[stripe webhook] client link consume failed:", err);
+      }
     }
 
     const order = getOrderFieldsFromSession(session);
