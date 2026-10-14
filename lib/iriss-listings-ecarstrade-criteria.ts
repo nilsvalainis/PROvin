@@ -40,48 +40,52 @@ export type UnmappedCriterion = {
   reason: string;
 };
 
-/** mobile.de `ms=MAKEID;MODELID`. Ofic. refdata, pārbaudīts pret biežākajām IRISS markām. */
+/**
+ * mobile.de consumer `ms=MAKEID;MODELID` (`qsmakeBuy` / suchen.mobile.de).
+ * 24100 = Toyota (ne Suzuki), 17700 = Mitsubishi (ne Mini), 17500 = MINI, 23600 = Suzuki.
+ * 20700 = Renault; Porsche ir 20100. 13900 = KTM, Lexus ir 15200. 1400 = Other (ne Alpine).
+ */
 export const MOBILE_DE_MAKE_ID_TO_NAME: Record<string, string> = {
+  "3": "Cupra",
+  "4": "Polestar",
+  "135": "Tesla",
   "900": "Alfa Romeo",
-  "1400": "Alpine",
+  "1100": "ALPINA",
   "1900": "Audi",
   "3500": "BMW",
-  "4300": "Cadillac",
+  "4700": "Cadillac",
   "5600": "Chevrolet",
-  "6800": "Citroen",
-  "7100": "Dacia",
-  "8700": "Fiat",
+  "5900": "Citroen",
+  "6600": "Dacia",
+  "8800": "Fiat",
   "9000": "Ford",
   "11000": "Honda",
   "11600": "Hyundai",
-  "12100": "Infiniti",
-  "12700": "Jaguar",
-  "13000": "Jeep",
+  "11650": "Infiniti",
+  "12400": "Jaguar",
+  "12600": "Jeep",
   "13200": "Kia",
-  "13400": "Land Rover",
-  "13900": "Lexus",
-  "14300": "Maserati",
-  "14800": "Mazda",
+  "14800": "Land Rover",
+  "15200": "Lexus",
+  "16600": "Maserati",
+  "16800": "Mazda",
   "17200": "Mercedes-Benz",
   "17300": "MG",
-  "17700": "MINI",
-  "18300": "Mitsubishi",
+  "17500": "MINI",
+  "17700": "Mitsubishi",
   "18700": "Nissan",
   "19000": "Opel",
   "19300": "Peugeot",
-  "19600": "Polestar",
-  "20700": "Porsche",
-  "21100": "Renault",
-  "21600": "Seat",
+  "20100": "Porsche",
+  "20700": "Renault",
+  "22500": "Seat",
   "22900": "Skoda",
-  "23100": "Smart",
-  "23700": "Subaru",
-  "24100": "Suzuki",
-  "24200": "Toyota",
-  "24300": "Tesla",
+  "23000": "Smart",
+  "23500": "Subaru",
+  "23600": "Suzuki",
+  "24100": "Toyota",
   "25100": "Volvo",
   "25200": "Volkswagen",
-  "25700": "Cupra",
 };
 
 const COLOR_ALIASES: Record<string, string> = {
@@ -317,17 +321,17 @@ export function resolveMakeFromAutobidBrandId(brandId: string): string | null {
   return name ?? null;
 }
 
-/** mobile.de Porsche 20700 + Wohnmobil/Evado/Westfalia ir kemperu kategorija, ne Porsche auto. */
+/** mobile.de Wohnmobil/Evado/Westfalia ir kemperu kategorija, ne auto marka (arī ja ms=20700 Renault). */
 const MOBILE_CAMPER_MODEL = /wohnmobil|reisemobil|evado|westfalia|generation|camping/i;
 
 export function resolveMakeFromMobileMs(ms: string): { make: string | null; model: string } {
   const parts = ms.split(";").map((p) => p.trim());
   const makeId = parts[0] ?? "";
   const modelName = parts[3] || "";
-  const make = MOBILE_DE_MAKE_ID_TO_NAME[makeId] ?? null;
-  if (make && /porsche/i.test(make) && MOBILE_CAMPER_MODEL.test(modelName)) {
+  if (MOBILE_CAMPER_MODEL.test(modelName)) {
     return { make: null, model: "" };
   }
+  const make = MOBILE_DE_MAKE_ID_TO_NAME[makeId] ?? null;
   return { make, model: modelName };
 }
 
@@ -424,7 +428,11 @@ export function isSingleVehicleListingUrl(raw: string): boolean {
         u.searchParams.has("makesModels");
       return !hasSearch;
     }
-    if (host.includes("openlane.") && /\/(car|detail|vehicle)\//.test(path)) return true;
+    if (host.includes("openlane.")) {
+      if (/\/(car|detail|vehicle)\//.test(path)) return true;
+      const auctionId = (u.searchParams.get("auctionId") ?? u.searchParams.get("auctionid") ?? "").trim();
+      if (auctionId) return true;
+    }
     if (host.includes("autobid.") && /\/(offer|auction-item)\//.test(path)) return true;
     return false;
   } catch {

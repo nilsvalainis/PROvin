@@ -9,6 +9,7 @@ import {
   ecarstradeCarJsonUrl,
   ecarstradeDetailUrl,
   ecarstradePageStart,
+  ecarstradeSearchPageUrl,
   isEcarstradeSearchUrl,
   mergeEcarstradeHtmlPrices,
   mergeEcarstradeJsonPrices,
@@ -441,8 +442,25 @@ export async function fetchEcarstradeSource(sourceUrl: string, opts: EcarstradeF
 
   let enrichNote = "";
   if (loggedIn && accessToken) {
-    const fromSearch = mergePricesFromSearchHtml(vehicles, searchHtml);
-    const missingAfterList = [...vehicles.values()].filter(vehicleNeedsPrice).length;
+    let fromSearch = mergePricesFromSearchHtml(vehicles, searchHtml);
+    let searchCf = Boolean(searchHtml) && isCloudflareChallengeHtml(searchHtml, 200);
+    const missingCount = () => [...vehicles.values()].filter(vehicleNeedsPrice).length;
+    if (missingCount() > 0) {
+      const htmlTimeout = Math.min(opts.timeoutMs, 8000);
+      for (let page = 1; page <= Math.max(1, pagesFetched); page += 1) {
+        if (missingCount() === 0) break;
+        if (page === 1 && fromSearch > 0 && !searchCf) continue;
+        const htmlUrl = ecarstradeSearchPageUrl(sourceUrl, ecarstradePageStart(page, perPage));
+        const got = await fetchHtmlPage(htmlUrl, htmlTimeout, fetchImpl, cookie);
+        if (isCloudflareChallengeHtml(got.text, got.statusCode)) {
+          searchCf = true;
+          break;
+        }
+        if (got.statusCode >= 400 || !got.text.trim()) continue;
+        fromSearch += mergePricesFromSearchHtml(vehicles, got.text);
+      }
+    }
+    const missingAfterList = missingCount();
     if (missingAfterList === 0) {
       enrichNote = fromSearch
         ? `Cenas no /search HTML: ${fromSearch}.`
@@ -450,7 +468,10 @@ export async function fetchEcarstradeSource(sourceUrl: string, opts: EcarstradeF
     } else {
       enrichNote = await enrichMissingPrices(vehicles, fetchImpl, cookie, accessToken, opts.timeoutMs);
       if (fromSearch) enrichNote = [`Cenas no /search HTML: ${fromSearch}.`, enrichNote].filter(Boolean).join(" ");
-      const still = [...vehicles.values()].filter(vehicleNeedsPrice).length;
+      if (searchCf && !/Cloudflare/i.test(enrichNote)) {
+        enrichNote = [`/search bloķē Cloudflare.`, enrichNote].filter(Boolean).join(" ");
+      }
+      const still = missingCount();
       if (still > 0 && still === missingAfterList && !enrichNote) {
         enrichNote = `Sesija ir, bet ${still} auto kartītes joprojām bez cenas (Sign in to buy).`;
       } else if (still > 0 && missingAfterList > 0 && /Cloudflare/i.test(enrichNote) && still === missingAfterList) {

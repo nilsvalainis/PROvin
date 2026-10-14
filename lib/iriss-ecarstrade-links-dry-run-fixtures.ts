@@ -89,7 +89,7 @@ export function ecarstradePreciseLinksDryRunRecords(): IrissEcarstradeDryRunReco
       brandModel: "LEXUS/TOYOTA",
       listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makes=lexus&makes=toyota&yearFrom=2018"],
       listingLinkMobile: [
-        "https://suchen.mobile.de/fahrzeuge/search.html?ms=13900&minPowerAsArray=150&maxPowerAsArray=200",
+        "https://suchen.mobile.de/fahrzeuge/search.html?ms=15200&minPowerAsArray=150&maxPowerAsArray=200",
       ],
     },
     {

@@ -121,4 +121,16 @@ describe("iriss scan eCarsTrade link backfill", () => {
     expect(again.preview.added).toEqual([]);
     expect(again.record.listingLinkEcarstrade).toEqual(next.record.listingLinkEcarstrade);
   });
+
+  it("ignores Openlane auctionId single-car links when planning ET searches", () => {
+    const preview = previewEcarstradeLinksForScan(
+      rec({
+        brandModel: "Volvo XC60",
+        listingLinkOpenline: ["https://www.openlane.eu/en/findcar?auctionId=1234567"],
+      }),
+    );
+    expect(preview.plans.every((p) => !p.sourceUrls.some((u) => /auctionId=/i.test(u)))).toBe(true);
+    expect(preview.generated[0]).toContain("mark[]=68");
+    expect(preview.generated[0]).toContain("model[]=1866");
+  });
 });
