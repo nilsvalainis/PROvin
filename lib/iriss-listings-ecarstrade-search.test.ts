@@ -2,9 +2,10 @@ import { describe, expect, it } from "vitest";
 import { resolveEcarstradeMake, resolveEcarstradeModel, resolveMakeModelFromBrand } from "@/lib/iriss-listings-ecarstrade-catalog";
 import {
   ecarstradeSearchUrl,
+  fillFilterGaps,
   fillMakeModelFromBrand,
   filterFromBrandModel,
-  mergeEcarstradeFilters,
+  filterFromOrderFields,
   parseListingSearchUrl,
   sameEcarstradeSearch,
 } from "@/lib/iriss-listings-ecarstrade-search";
@@ -140,23 +141,71 @@ describe("eCarsTrade search mapper", () => {
     expect(mobile.powerToKw).toBe(176);
   });
 
-  it("merges two platform filters into one tight eCarsTrade search", () => {
-    const a = parseListingSearchUrl(
-      "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&maxMileage=180000&fuelTypes=DIESEL",
+  it("maps Auto1 drive, color, doors, equipment and exclusions to ET + post-filter params", () => {
+    const filter = parseListingSearchUrl(
+      "https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=A6&driveTypes=ALL_WHEEL&colors=BLACK&doorCount=5&equipment=navigation&excludedModels=Allroad&maxMileage=160000&fuelTypes=DIESEL&gearboxes=AUTOMATIC&bodyTypes=ESTATE&cubicCapacityFrom=2000&cubicCapacityTo=3000",
     );
-    const b = parseListingSearchUrl(
-      "https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2019&mileageTo=150000&fuels=diesel",
+    expect(filter.makeIds).toEqual([5]);
+    expect(filter.drives).toEqual(["awd"]);
+    expect(filter.colors).toEqual(["Black"]);
+    expect(filter.doorsFrom).toBe(5);
+    expect(filter.includeTokens).toContain("navigation");
+    expect(filter.excludeTokens.some((t) => /allroad/i.test(t))).toBe(true);
+    expect(filter.engineFromCc).toBe(2000);
+    expect(filter.engineToCc).toBe(3000);
+    const url = ecarstradeSearchUrl(filter)!;
+    expect(url).toContain("color[]=Black");
+    expect(url).toContain("iriss_drive=awd");
+    expect(url).toContain("iriss_need=navigation");
+    expect(url).toContain("engine_from=2000");
+    expect(url).toContain("doors_from=5");
+    expect(url).toContain("category[]=Estate%20Car");
+  });
+
+  it("maps Mobile.de ms make id and Autobid name-brand", () => {
+    const mobile = parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=25100;29;;&minMileage=10000&maxMileage=140000&fuels=DIESEL");
+    expect(mobile.makeIds).toEqual([68]);
+    expect(mobile.mileageTo).toBe(140000);
+    expect(mobile.fuels).toEqual(["Diesel"]);
+
+    const autobid = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?name-brand=BMW&name-model=530&yearFrom-year=2017&gearboxId-gearbox=Automatic",
     );
-    const merged = mergeEcarstradeFilters(a, b);
-    expect(merged.makeIds).toEqual([68]);
-    expect(merged.modelId).toBe(1866);
-    expect(merged.yearFrom).toBe(2019);
-    expect(merged.mileageTo).toBe(150000);
-    expect(merged.fuels).toEqual(["Diesel"]);
-    const url = ecarstradeSearchUrl(merged)!;
-    expect(url).toContain("year_from=2019");
-    expect(url).toContain("mileage_to=150000");
-    expect(url).toContain("model[]=1866");
+    expect(autobid.makeIds).toEqual([7]);
+    expect(autobid.modelName).toMatch(/530/);
+    expect(autobid.gearboxes).toEqual(["Automatic"]);
+  });
+
+  it("fills order form years, budget, km and drive into gaps", () => {
+    const fromUrl = parseListingSearchUrl(
+      "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&fuelTypes=DIESEL",
+    );
+    const fromOrder = filterFromOrderFields({
+      brandModel: "Volvo XC60",
+      productionYears: "2018-2022",
+      maxMileage: "150 000",
+      totalBudget: "28 000 €",
+      driveType: "4x4",
+      preferredColors: "melns, pelēks",
+      nonPreferredColors: "dzeltens",
+      equipmentRequired: "navigācija",
+      dealVat21Required: true,
+    });
+    const filled = fillFilterGaps(fromUrl, fromOrder);
+    expect(filled.yearFrom).toBe(2018);
+    expect(filled.yearTo).toBe(2022);
+    expect(filled.mileageTo).toBe(150000);
+    expect(filled.priceTo).toBe(28000);
+    expect(filled.drives).toEqual(["awd"]);
+    expect(filled.colors).toEqual(["Black", "Grey"]);
+    expect(filled.excludeColors).toEqual(["Yellow"]);
+    expect(filled.vat).toEqual(["reclaimable"]);
+    const url = ecarstradeSearchUrl(filled)!;
+    expect(url).toContain("year_from=2018");
+    expect(url).toContain("price_to=28000");
+    expect(url).toContain("iriss_drive=awd");
+    expect(url).toContain("iriss_exclude_color=Yellow");
+    expect(url).toContain("vat[]=reclaimable");
   });
 
   it("treats reordered country params as the same search", () => {
@@ -164,5 +213,46 @@ describe("eCarsTrade search mapper", () => {
     const b = "https://ecarstrade.com/search?country[]=GER&model[]=1866&mark[]=68&country[]=BEL&country[]=LUX&country[]=NET";
     expect(sameEcarstradeSearch(a, b)).toBe(true);
     expect(sameEcarstradeSearch(a, "https://ecarstrade.com/search?mark[]=68&model[]=1510")).toBe(false);
+  });
+
+  it("reads eCarsTrade mark[] / model[] as catalog ids, not Autobid brandIds", () => {
+    const volvo = parseListingSearchUrl(
+      "https://ecarstrade.com/search?mark[]=68&model[]=1866&year_from=2018&mileage_to=150000&iriss_drive=awd",
+    );
+    expect(volvo.makeIds).toEqual([68]);
+    expect(volvo.makeNames).toEqual(["Volvo"]);
+    expect(volvo.modelId).toBe(1866);
+    expect(volvo.modelName).toBe("XC60");
+    expect(volvo.yearFrom).toBe(2018);
+    expect(volvo.mileageTo).toBe(150000);
+    expect(volvo.drives).toEqual(["awd"]);
+
+    const nissan = parseListingSearchUrl("https://ecarstrade.com/search?mark[]=49");
+    expect(nissan.makeIds).toEqual([49]);
+    expect(nissan.makeNames).toEqual(["Nissan"]);
+
+    const autobidVolvo = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?brandId-brand=49&name-model=XC60",
+    );
+    expect(autobidVolvo.makeIds).toEqual([68]);
+    expect(autobidVolvo.makeNames).toEqual(["Volvo"]);
+  });
+
+  it("maps ALL_WHEEL and AUTOMATIC without treating substring all as wildcard", () => {
+    const filter = parseListingSearchUrl(
+      "https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&driveTypes=ALL_WHEEL&gearboxes=AUTOMATIC",
+    );
+    expect(filter.drives).toEqual(["awd"]);
+    expect(filter.gearboxes).toEqual(["Automatic"]);
+  });
+
+  it("does not treat XC60 model digits as engine cm3", () => {
+    const filter = filterFromBrandModel("Volvo XC60");
+    expect(filter.makeIds).toEqual([68]);
+    expect(filter.modelId).toBe(1866);
+    expect(filter.engineFromCc).toBeNull();
+    expect(filter.engineToCc).toBeNull();
+    const url = ecarstradeSearchUrl(filter)!;
+    expect(url).not.toContain("engine_from=");
   });
 });

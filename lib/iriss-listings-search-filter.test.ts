@@ -71,3 +71,46 @@ describe("vehicleMatchesSearchFilter", () => {
     expect(kept.map((v) => v.title)).toEqual(["Volvo XC60 D4"]);
   });
 });
+
+describe("vehicleMatchesSearchFilter post-filter", () => {
+  it("drops opposite drive and excluded colors, keeps quattro", () => {
+    const filter = parseListingSearchUrl(
+      "https://ecarstrade.com/search?mark[]=5&model[]=1&iriss_drive=awd&iriss_exclude_color=Yellow",
+    );
+    expect(
+      vehicleMatchesSearchFilter(
+        { title: "Audi A6 3.0 TDI quattro", manufacturer: "Audi", color: "Black" },
+        filter,
+      ),
+    ).toBe(true);
+    expect(
+      vehicleMatchesSearchFilter({ title: "Audi A6 2.0 TDI Front", manufacturer: "Audi", color: "Blue" }, filter),
+    ).toBe(false);
+    expect(
+      vehicleMatchesSearchFilter(
+        { title: "Audi A6 3.0 TDI quattro", manufacturer: "Audi", color: "Yellow" },
+        filter,
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps unknown drive/color rather than dropping", () => {
+    const filter = parseListingSearchUrl("https://ecarstrade.com/search?mark[]=68&iriss_drive=awd&iriss_need=navi");
+    expect(vehicleMatchesSearchFilter({ title: "Volvo XC60", manufacturer: "Volvo" }, filter)).toBe(true);
+  });
+
+  it("applies year/km from the ET URL to a fetched list", () => {
+    const filter = parseListingSearchUrl(
+      "https://ecarstrade.com/search?mark[]=68&year_from=2018&mileage_to=150000",
+    );
+    const kept = applySearchFilterToVehicles(
+      [
+        { title: "Volvo XC60", manufacturer: "Volvo", year: "2020", mileageKm: 80_000 },
+        { title: "Volvo XC60", manufacturer: "Volvo", year: "2015", mileageKm: 80_000 },
+        { title: "BMW X3", manufacturer: "BMW", year: "2020", mileageKm: 80_000 },
+      ],
+      filter,
+    );
+    expect(kept.map((v) => `${v.manufacturer} ${v.year}`)).toEqual(["Volvo 2020"]);
+  });
+});

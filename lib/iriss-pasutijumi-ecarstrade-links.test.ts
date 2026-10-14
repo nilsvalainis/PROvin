@@ -72,11 +72,15 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     expect(preview.added[0]).toContain("mark[]=66");
   });
 
-  it("replace swaps the stored eCarsTrade URL for the tight merged filter", () => {
+  it("replace swaps stored eCarsTrade URLs for the precise filter including order fields", () => {
     const row = rec({
       brandModel: "Volvo XC60",
+      productionYears: "2019-2022",
+      maxMileage: "140000",
+      totalBudget: "26000",
+      driveType: "AWD",
       listingLinkAuto1: [
-        "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2019&maxMileage=140000",
+        "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&fuelTypes=DIESEL",
       ],
       listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68", "https://ecarstrade.com/search?mark[]=68&mark[]=7"],
     });
@@ -85,6 +89,8 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     expect(next.record.listingLinkEcarstrade).toHaveLength(1);
     expect(next.record.listingLinkEcarstrade[0]).toContain("year_from=2019");
     expect(next.record.listingLinkEcarstrade[0]).toContain("mileage_to=140000");
+    expect(next.record.listingLinkEcarstrade[0]).toContain("price_to=26000");
     expect(next.record.listingLinkEcarstrade[0]).toContain("model[]=1866");
+    expect(next.record.listingLinkEcarstrade[0]).toContain("iriss_drive=awd");
   });
 });

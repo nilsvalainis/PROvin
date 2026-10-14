@@ -107,5 +107,5 @@ export async function POST(req: Request) {
     saved.push(stored);
   }
 
-  return NextResponse.json({ applied: apply, saved, ...summarize(previews) });
+  return NextResponse.json({ applied: apply, replace, saved, ...summarize(previews) });
 }

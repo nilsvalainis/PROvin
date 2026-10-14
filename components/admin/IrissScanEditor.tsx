@@ -215,9 +215,15 @@ export function IrissScanEditor({
                       method: "POST",
                       credentials: "include",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(persistId ? { apply: true, replace: true, id: persistId } : { apply: false, replace: true, record: rec }),
+                      body: JSON.stringify(
+                        persistId ? { apply: true, replace: true, id: persistId } : { apply: false, replace: true, record: rec },
+                      ),
                     });
-                    const data = (await res.json()) as { saved?: IrissScanRecord[]; addedCount?: number; results?: Array<{ added?: string[]; generated?: string[] }> };
+                    const data = (await res.json()) as {
+                      saved?: IrissScanRecord[];
+                      addedCount?: number;
+                      results?: Array<{ added?: string[]; generated?: string[] }>;
+                    };
                     if (!res.ok) {
                       setSaveMsg("eCarsTrade ģenerēšana neizdevās");
                       return;
@@ -235,7 +241,7 @@ export function IrissScanEditor({
                       return;
                     }
                     patchRecord({ listingLinkEcarstrade: generated });
-                    setSaveMsg(`Sagatavota eCarsTrade saite. Saglabā.`);
+                    setSaveMsg(`Sagatavotas ${generated.length} eCarsTrade saites. Saglabā.`);
                   } finally {
                     setBusy(false);
                   }

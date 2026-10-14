@@ -1,4 +1,5 @@
 import { resolveEcarstradeMake, resolveMakesFromBrand } from "@/lib/iriss-listings-ecarstrade-catalog";
+import { driveTokensForMatch, mapEcarstradeColor } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
   fillMakeModelFromBrand,
   parseListingSearchUrl,
@@ -16,6 +17,8 @@ export type ListingSearchVehicle = {
   transmission?: string;
   powerKw?: string;
   bodyType?: string;
+  color?: string;
+  doorCount?: string;
   priceStart?: number | null;
   priceCurrent?: number | null;
   priceBuyNow?: number | null;
@@ -57,6 +60,11 @@ function priceOf(v: ListingSearchVehicle): number | null {
   return null;
 }
 
+function doorsOf(v: ListingSearchVehicle): number | null {
+  const n = Number.parseInt(String(v.doorCount ?? "").replace(/[^\d]/g, ""), 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
 function inRange(value: number | null, from: number | null, to: number | null): boolean {
   if (from == null && to == null) return true;
   if (value == null) return true;
@@ -86,7 +94,31 @@ function makeMatchesHay(hay: string, name: string): boolean {
   return false;
 }
 
-/** Sistēmas puses filtrs pret nolasīto auto (eCarsTrade API dažus parametrus ignorē). */
+function driveMatches(hay: string, drives: EcarstradeSearchFilter["drives"]): boolean {
+  if (drives.length === 0) return true;
+  if (!hay.trim()) return true;
+  const wanted = drives.some((d) => driveTokensForMatch(d).some((t) => includesToken(hay, t)));
+  if (wanted) return true;
+  const other = (["awd", "fwd", "rwd"] as const).filter((d) => !drives.includes(d));
+  const hasOther = other.some((d) => driveTokensForMatch(d).some((t) => includesToken(hay, t)));
+  return !hasOther;
+}
+
+function colorMatches(raw: string, wanted: string[], excluded: string[]): boolean {
+  if (!raw.trim()) return true;
+  const mapped = mapEcarstradeColor(raw);
+  const hay = mapped || raw;
+  if (excluded.some((c) => includesToken(hay, c))) return false;
+  if (wanted.length === 0) return true;
+  return wanted.some((c) => includesToken(hay, c));
+}
+
+function excludeMatches(hay: string, tokens: string[]): boolean {
+  if (tokens.length === 0 || !hay.trim()) return true;
+  return !tokens.some((t) => includesToken(hay, t));
+}
+
+/** Sistēmas puses filtrs pret nolasīto auto (eCarsTrade API daļu parametru ignorē). */
 export function vehicleMatchesSearchFilter(v: ListingSearchVehicle, filter: EcarstradeSearchFilter): boolean {
   const hay = `${v.manufacturer ?? ""} ${v.title ?? ""}`;
   if (hay.trim() && filter.makeNames.length > 0 && !filter.makeNames.some((name) => makeMatchesHay(hay, name))) return false;
@@ -95,9 +127,13 @@ export function vehicleMatchesSearchFilter(v: ListingSearchVehicle, filter: Ecar
   if (!inRange(v.mileageKm ?? null, filter.mileageFrom, filter.mileageTo)) return false;
   if (!inRange(priceOf(v), filter.priceFrom, filter.priceTo)) return false;
   if (!inRange(powerOf(v), filter.powerFromKw, filter.powerToKw)) return false;
+  if (!inRange(doorsOf(v), filter.doorsFrom, filter.doorsTo)) return false;
   if (!matchesAny(v.fuel ?? "", filter.fuels)) return false;
   if (!matchesAny(v.transmission ?? "", filter.gearboxes)) return false;
   if (!matchesAny(`${v.bodyType ?? ""} ${v.title ?? ""}`, filter.bodies)) return false;
+  if (!driveMatches(`${v.title ?? ""} ${v.bodyType ?? ""}`, filter.drives)) return false;
+  if (!colorMatches(v.color ?? "", filter.colors, filter.excludeColors)) return false;
+  if (!excludeMatches(hay, filter.excludeTokens)) return false;
   return true;
 }
 
@@ -149,8 +185,7 @@ function auto1Manufacturer(name: string): string {
 
 /**
  * Tukši Auto1/Openlane/Autobid meklējumi (tikai `channel=24h` / tukšs findcar) nolasot
- * visu inventāru noildz - tas pats 7+7+7 avotu kļūdu raksts.
- * Ievieto marku no brandModel, ja URL to jau nesatur.
+ * visu inventāru noildz. Ievieto marku no brandModel, ja URL to jau nesatur.
  */
 export function enrichListingSearchUrl(
   platform: IrissListingPlatform | "mobile",
@@ -222,7 +257,14 @@ export function applySearchFilterToVehicles<T extends ListingSearchVehicle>(
     filter.powerToKw != null ||
     filter.fuels.length > 0 ||
     filter.gearboxes.length > 0 ||
-    filter.bodies.length > 0;
+    filter.bodies.length > 0 ||
+    filter.colors.length > 0 ||
+    filter.drives.length > 0 ||
+    filter.includeTokens.length > 0 ||
+    filter.excludeTokens.length > 0 ||
+    filter.excludeColors.length > 0 ||
+    filter.doorsFrom != null ||
+    filter.doorsTo != null;
   if (!hasBound) return [...vehicles];
   return vehicles.filter((v) => vehicleMatchesSearchFilter(v, filter));
 }
