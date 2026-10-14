@@ -54,10 +54,10 @@ describe("adminRichHtmlToPdfSafeHtml", () => {
     expect(out).toBe("<strong>11.2023</strong><br />Eļļas un eļļas filtru maiņa;");
   });
 
-  it("preserves intentional blank line from empty contentEditable block", () => {
+  it("collapses empty contentEditable block to single line break in PDF", () => {
     const html = "<div>Pirma rinda</div><div><br></div><div>Otra rinda</div>";
     const out = adminRichHtmlToPdfSafeHtml(html);
-    expect(out).toBe("Pirma rinda<br /><br />Otra rinda");
+    expect(out).toBe("Pirma rinda<br />Otra rinda");
   });
 
   it("preserves bold from pasted span font-weight styles", () => {

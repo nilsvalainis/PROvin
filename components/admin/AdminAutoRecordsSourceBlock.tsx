@@ -85,13 +85,19 @@ import {
 } from "@/lib/admin-clear-odometer-readings";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { clearAutoRecordsEquipment } from "@/lib/outvin-admin-sync";
+import { AdminAutoGrowTextarea } from "@/components/admin/AdminAutoGrowTextarea";
+import {
+  ADMIN_SOURCE_DATA_TABLE_CLASS,
+  ADMIN_SOURCE_TABLE_CELL,
+  ADMIN_SOURCE_TABLE_WRAP_CLASS,
+} from "@/lib/admin-source-data-table";
 
 const DEALER_ARIA = "Oficiālā dīlera dati";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
 
-const mileCell = "px-1.5 py-0.5";
+const mileCell = ADMIN_SOURCE_TABLE_CELL;
 
 type Props = {
   value: AutoRecordsBlockState;
@@ -404,11 +410,11 @@ export function AdminAutoRecordsSourceBlock({
           </p>
           <AdminMileageRangeBar rows={displayRows} />
           <div
-            className="overflow-x-auto rounded-lg border border-slate-200/90"
+            className={ADMIN_SOURCE_TABLE_WRAP_CLASS}
             data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}
             data-provin-block="auto_records"
           >
-            <table className="w-full min-w-[280px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[280px]`}>
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
                   <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>
@@ -541,29 +547,26 @@ export function AdminAutoRecordsSourceBlock({
             {PROVIN_SERVICE_WORKS_TABLE_TITLE}
           </p>
           <div
-            className="overflow-x-auto rounded-lg border border-slate-200/90"
+            className={ADMIN_SOURCE_TABLE_WRAP_CLASS}
             data-provin-mileage-table={PROVIN_SERVICE_WORKS_TABLE_DOM_KIND}
             data-provin-block="auto_records"
           >
-            <table className="w-full min-w-[460px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[460px]`}>
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
                   <th
-                    className={`${mileCell} w-[86px]`}
+                    className={mileCell}
                     data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.datums}
                   >
                     Datums
                   </th>
                   <th
-                    className={`${mileCell} w-[86px]`}
+                    className={mileCell}
                     data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.odometrsKm}
                   >
                     Odometrs (km)
                   </th>
-                  <th
-                    className={`${mileCell} w-[150px]`}
-                    data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.vieta}
-                  >
+                  <th className={mileCell} data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.vieta}>
                     {SERVICE_WORKS_LOCATION_LABEL}
                   </th>
                   <th className={mileCell} data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.darbi}>
@@ -644,9 +647,9 @@ export function AdminAutoRecordsSourceBlock({
                           {row.location.trim() || "—"}
                         </span>
                       ) : (
-                        <textarea
-                          className={`${inp} min-h-[52px] resize-y leading-snug`}
-                          rows={2}
+                        <AdminAutoGrowTextarea
+                          className={inp}
+                          rows={1}
                           value={row.location}
                           disabled={disabled}
                           maxLength={AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN}
@@ -672,9 +675,9 @@ export function AdminAutoRecordsSourceBlock({
                           {row.works.trim() || "—"}
                         </span>
                       ) : (
-                        <textarea
-                          className={`${inp} min-h-[52px] resize-y leading-snug`}
-                          rows={2}
+                        <AdminAutoGrowTextarea
+                          className={inp}
+                          rows={1}
                           value={row.works}
                           disabled={disabled}
                           maxLength={AUTO_RECORDS_SERVICE_WORKS_MAX_LEN}

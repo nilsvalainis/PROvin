@@ -43,6 +43,7 @@ import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle"
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { emptyLtabBlock, emptyLtabRow, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
+import { ADMIN_SOURCE_DATA_TABLE_CLASS, ADMIN_SOURCE_TABLE_WRAP_CLASS } from "@/lib/admin-source-data-table";
 import {
   LTAB_COMMENT_TEMPLATES,
   applyLtabCommentTemplate,
@@ -174,7 +175,7 @@ export function AdminLtabSourceBlock({
               Negadījumi (datums · summa · valsts)
             </p>
             <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
-              <table className="w-full min-w-[280px] border-collapse text-[11px]">
+              <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[280px]`}>
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
                     <th className={mileCell}>Datums</th>

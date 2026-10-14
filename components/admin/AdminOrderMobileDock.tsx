@@ -285,7 +285,7 @@ export function AdminOrderMobileDock({
           />
           <button
             type="button"
-            className={`${dockItem} provin-dock-client text-[#0066cc]`}
+            className={`${dockItem} border-[#25D366]/30 bg-[#25D366]/12 text-[#128C7E] hover:bg-[#25D366]/20`}
             disabled={!whatsappDigits}
             title={whatsappDigits ? `Atvērt WhatsApp: ${(customerPhone ?? "").trim()}` : "Nav derīga tālruņa numura WhatsApp atvēršanai"}
             aria-label="Atvērt WhatsApp sarunu ar klientu"

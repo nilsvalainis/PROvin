@@ -7,6 +7,7 @@
  * komentārs → AI konteksts. Specifikācijas šeit netiek dublētas — akcents ir uz sarkanajiem karogiem.
  */
 
+import { AdminAutoGrowTextarea } from "@/components/admin/AdminAutoGrowTextarea";
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminCcVinPhotoProbeButton } from "@/components/admin/AdminCcVinPhotoProbeButton";
@@ -36,6 +37,7 @@ import {
   PROVIN_MILEAGE_TABLE_FIELD,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { ADMIN_SOURCE_DATA_TABLE_CLASS } from "@/lib/admin-source-data-table";
 import {
   autoRecordsRowHasData,
   formatAutoRecordsDateForOutput,
@@ -202,9 +204,9 @@ export function AdminCcVinSourceBlock({
           {value_.trim() || "—"}
         </span>
       ) : opts?.multiline ? (
-        <textarea
-          className={`${inp} min-h-[44px] resize-y leading-snug`}
-          rows={2}
+        <AdminAutoGrowTextarea
+          className={inp}
+          rows={1}
           value={value_}
           disabled={disabled}
           placeholder={opts?.placeholder}
@@ -280,7 +282,7 @@ export function AdminCcVinSourceBlock({
             {CC_VIN_SUBTITLES.checks}
           </p>
           <div className={tableWrap}>
-            <table className="w-full min-w-[320px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[320px]`}>
               <thead>
                 <tr className={headRow}>
                   <th className={cell}>Reģistrs</th>
@@ -384,7 +386,7 @@ export function AdminCcVinSourceBlock({
             data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}
             data-provin-block="cc_vin"
           >
-            <table className="w-full min-w-[280px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[280px]`}>
               <thead>
                 <tr className={headRow}>
                   <th
@@ -565,10 +567,10 @@ export function AdminCcVinSourceBlock({
             {CC_VIN_SUBTITLES.damages}
           </p>
           <div className={tableWrap}>
-            <table className="w-full min-w-[420px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[420px]`}>
               <thead>
                 <tr className={headRow}>
-                  <th className={`${cell} w-[86px]`}>Datums</th>
+                  <th className={`${cell} `}>Datums</th>
                   <th className={`${cell} w-[110px]`}>Vieta / reģions</th>
                   <th className={`${cell} w-[92px]`}>Summa</th>
                   <th className={cell}>Bojājums</th>
@@ -685,10 +687,10 @@ export function AdminCcVinSourceBlock({
                 {title}
               </p>
               <div className={tableWrap}>
-                <table className="w-full min-w-[380px] border-collapse text-[11px]">
+                <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[380px]`}>
                   <thead>
                     <tr className={headRow}>
-                      <th className={`${cell} w-[86px]`}>Datums</th>
+                      <th className={`${cell} `}>Datums</th>
                       <th className={`${cell} w-[170px]`}>{labelHead}</th>
                       <th className={cell}>Detaļas</th>
                       {!readOnly ? (
@@ -768,11 +770,11 @@ export function AdminCcVinSourceBlock({
             {CC_VIN_SUBTITLES.titles}
           </p>
           <div className={tableWrap}>
-            <table className="w-full min-w-[380px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[380px]`}>
               <thead>
                 <tr className={headRow}>
-                  <th className={`${cell} w-[86px]`}>Datums</th>
-                  <th className={`${cell} w-[150px]`}>Reģions</th>
+                  <th className={`${cell} `}>Datums</th>
+                  <th className={`${cell} `}>Reģions</th>
                   <th className={`${cell} w-[92px]`}>Odometrs (km)</th>
                   <th className={cell}>Piezīme</th>
                   {!readOnly ? (
@@ -860,10 +862,10 @@ export function AdminCcVinSourceBlock({
             {CC_VIN_SUBTITLES.sales}
           </p>
           <div className={tableWrap}>
-            <table className="w-full min-w-[460px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[460px]`}>
               <thead>
                 <tr className={headRow}>
-                  <th className={`${cell} w-[86px]`}>Datums</th>
+                  <th className={`${cell} `}>Datums</th>
                   <th className={cell}>Vieta / izsole</th>
                   <th className={`${cell} w-[92px]`}>Odometrs (km)</th>
                   <th className={`${cell} w-[96px]`}>Cena</th>

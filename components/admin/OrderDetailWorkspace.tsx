@@ -225,6 +225,7 @@ import {
 import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { whatsappPrefillForOrder } from "@/lib/admin-whatsapp-messages";
+import { AdminWhatsAppIconButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import {
   AdminCommonPhrasesDrawer,
@@ -415,18 +416,13 @@ const workspaceSectionTitle = `font-medium uppercase tracking-wide text-[var(--c
 const workspaceSectionShell =
   "rounded-xl bg-[var(--admin-surface-elevated)] p-2 shadow-sm ring-1 ring-[var(--admin-border-subtle)]";
 
-function WhatsAppIconGlyph() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M19.11 4.89A9.91 9.91 0 0 0 12.06 2a9.99 9.99 0 0 0-8.57 15.14L2 22l5-1.31A10 10 0 1 0 19.11 4.89ZM12.06 20a7.9 7.9 0 0 1-4.03-1.1l-.29-.17-2.96.78.8-2.88-.19-.3A8 8 0 1 1 12.06 20Zm4.4-5.97c-.24-.12-1.42-.7-1.64-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1-.37-1.9-1.18-.7-.62-1.17-1.39-1.3-1.63-.14-.24-.01-.37.1-.49.1-.1.24-.26.36-.39.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.41-.54-.42h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.33.98 2.49c.12.16 1.68 2.56 4.06 3.59.57.24 1.01.39 1.36.5.57.18 1.09.16 1.5.1.46-.07 1.42-.58 1.62-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z"
-      />
-    </svg>
-  );
-}
-
 const WIZARD_SUMMARY_STEP = 12;
+
+const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
+  empty: "bg-zinc-400",
+  partial: "bg-amber-400",
+  complete: "bg-emerald-500",
+};
 
 function dashboardWizardTrafficLevel(p: OrderWorkspacePayload): TrafficFillLevel {
   const vin = (p.vin ?? "").trim();
@@ -4433,21 +4429,23 @@ export function OrderDetailWorkspace({
       ) : null}
 
       <AdminPersistenceHealthBanner durableConfigured={orderDraftPersistenceEnabled} />
-      {workspaceRevisionConflict ? (
-        <AdminWorkspaceRevisionConflictBanner
-          kind={workspaceRevisionConflict}
-          busy={workspaceConflictBusy}
-          onReload={() => void reloadCanonicalWorkspaceFromServer()}
-          onSafeMerge={() => void mergeWorkspaceRevisionConflict()}
-        />
-      ) : null}
-
       <nav
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
         aria-label="Soli pa solim"
       >
         {/* Telefonā soļi ir pirmie (order-1); Saglabāt iet uz apakšējo doku. */}
         <div className={`mx-auto flex w-full min-w-0 flex-col gap-1.5 md:flex-row md:flex-wrap md:items-center md:gap-2 ${ADMIN_CONTENT_MAX}`}>
+          {workspaceRevisionConflict ? (
+            <div className="order-0 w-full min-w-0 md:order-none md:basis-full">
+              <AdminWorkspaceRevisionConflictBanner
+                inline
+                kind={workspaceRevisionConflict}
+                busy={workspaceConflictBusy}
+                onReload={() => void reloadCanonicalWorkspaceFromServer()}
+                onSafeMerge={() => void mergeWorkspaceRevisionConflict()}
+              />
+            </div>
+          ) : null}
           <div className="order-2 flex min-w-0 flex-wrap items-center gap-1.5 md:order-1 md:contents">
           <button
             type="button"
@@ -4548,6 +4546,7 @@ export function OrderDetailWorkspace({
                 <div key={row} className={`provin-tabs grid min-w-0 ${cols} gap-1 max-md:contents`}>
                   {wizardStepsUi.map(({ label, row: stepRow }, idx) => {
                     if (stepRow !== row) return null;
+                    const lvl = wizardStepLevels[idx] ?? "empty";
                     const active = wizardStep === idx;
                     return (
                       <button
@@ -4555,14 +4554,19 @@ export function OrderDetailWorkspace({
                         type="button"
                         onClick={() => goWizardStep(idx)}
                         aria-current={active ? "step" : undefined}
-                        className={`provin-tab flex min-w-0 flex-col items-center gap-0.5 rounded-lg border px-0.5 py-1 text-center transition max-md:shrink-0 max-md:snap-start max-md:flex-row max-md:gap-1.5 max-md:rounded-full max-md:px-2.5 max-md:py-1.5 sm:flex-row sm:justify-start sm:gap-1 sm:px-1.5 ${
+                        className={`provin-tab flex min-w-0 flex-col items-center gap-0.5 rounded-lg border px-1 py-1.5 text-center transition max-md:shrink-0 max-md:snap-start max-md:flex-row max-md:gap-1.5 max-md:rounded-full max-md:px-3 max-md:py-2 sm:flex-row sm:justify-start sm:gap-1.5 sm:px-2 sm:py-1.5 ${
                           active
                             ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
                             : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                         }`}
                       >
                         <span
-                          className={`line-clamp-2 w-full text-[8px] font-semibold uppercase leading-tight tracking-tight max-md:line-clamp-1 max-md:w-auto max-md:whitespace-nowrap max-md:text-[10px] max-md:normal-case max-md:tracking-normal sm:line-clamp-1 sm:text-left sm:text-[9px] ${
+                          className={`h-2 w-2 shrink-0 rounded-full ring-2 ring-[var(--admin-nav-bg)] ${WIZARD_STEP_DOT[lvl]}`}
+                          title={`Aizpildījums: ${lvl}`}
+                          aria-hidden
+                        />
+                        <span
+                          className={`line-clamp-2 w-full text-[9px] font-semibold uppercase leading-tight tracking-tight max-md:line-clamp-1 max-md:w-auto max-md:whitespace-nowrap max-md:text-[11px] max-md:normal-case max-md:tracking-normal sm:line-clamp-1 sm:text-left sm:text-[10px] ${
                             active ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
                           }`}
                         >
@@ -4606,23 +4610,15 @@ export function OrderDetailWorkspace({
                 </a>
               ) : null}
               {whatsappPhoneDigits ? (
-                <button
-                  type="button"
-                  onClick={handleWhatsAppOpen}
-                  className={`${ADMIN_PRO_TONE.client} inline-flex h-6 w-6 items-center justify-center rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]/40 focus-visible:ring-offset-1`}
+                <AdminWhatsAppIconButton
                   title={`WhatsApp: ${payload.customerPhone ?? ""}`}
-                  aria-label="Atvērt WhatsApp sarunu ar klientu"
-                >
-                  <WhatsAppIconGlyph />
-                </button>
+                  onClick={handleWhatsAppOpen}
+                />
               ) : (
-                <span
-                  className="inline-flex h-6 w-6 cursor-not-allowed items-center justify-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)] opacity-60"
+                <AdminWhatsAppIconButton
+                  disabled
                   title="Nav klienta tālruņa WhatsApp atvēršanai"
-                  aria-hidden
-                >
-                  <WhatsAppIconGlyph />
-                </span>
+                />
               )}
               {vinBarCopyFlash ? (
                 <span className="text-[8px] font-semibold text-emerald-600 dark:text-emerald-400" role="status">

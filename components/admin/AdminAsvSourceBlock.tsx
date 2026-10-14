@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminAutoGrowTextarea } from "@/components/admin/AdminAutoGrowTextarea";
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { useState } from "react";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
@@ -40,6 +41,7 @@ import {
   type AsvTitleRow,
 } from "@/lib/asv-report";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
+import { ADMIN_SOURCE_DATA_TABLE_CLASS } from "@/lib/admin-source-data-table";
 
 const ARIA = "ASV vēsture";
 
@@ -125,9 +127,9 @@ export function AdminAsvSourceBlock({
           {value_.trim() || "-"}
         </span>
       ) : opts?.multiline ? (
-        <textarea
-          className={`${inp} min-h-[44px] resize-y leading-snug`}
-          rows={2}
+        <AdminAutoGrowTextarea
+          className={inp}
+          rows={1}
           value={value_}
           disabled={disabled}
           onChange={(e) => onNext(e.target.value)}
@@ -233,7 +235,7 @@ export function AdminAsvSourceBlock({
             {ASV_SUBTITLES.checks}
           </p>
           <div className={tableWrap}>
-            <table className="w-full min-w-[360px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[360px]`}>
               <thead>
                 <tr className={headRow}>
                   <th className={cell}>Reģistrs</th>
@@ -282,10 +284,10 @@ export function AdminAsvSourceBlock({
           </p>
           <AdminMileageRangeBar rows={mileageRows} />
           <div className={tableWrap}>
-            <table className="w-full min-w-[360px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[360px]`}>
               <thead>
                 <tr className={headRow}>
-                  <th className={`${cell} w-[86px]`}>Datums</th>
+                  <th className={`${cell}`}>Datums</th>
                   <th className={`${cell} w-[90px]`}>km</th>
                   <th className={cell}>Valsts / štats</th>
                   {!readOnly ? <th className={`${cell} w-[28px]`} aria-label="Noņemt" /> : null}
@@ -332,10 +334,10 @@ export function AdminAsvSourceBlock({
             {ASV_SUBTITLES.damages}
           </p>
           <div className={tableWrap}>
-            <table className="w-full min-w-[420px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[420px]`}>
               <thead>
                 <tr className={headRow}>
-                  <th className={`${cell} w-[86px]`}>Datums</th>
+                  <th className={`${cell}`}>Datums</th>
                   <th className={cell}>Apraksts</th>
                   <th className={`${cell} w-[80px]`}>Summa</th>
                   <th className={`${cell} w-[110px]`}>Vieta</th>
@@ -395,10 +397,10 @@ export function AdminAsvSourceBlock({
                 {title}
               </p>
               <div className={tableWrap}>
-                <table className="w-full min-w-[380px] border-collapse text-[11px]">
+                <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[380px]`}>
                   <thead>
                     <tr className={headRow}>
-                      <th className={`${cell} w-[86px]`}>Datums</th>
+                      <th className={`${cell}`}>Datums</th>
                       <th className={`${cell} w-[160px]`}>Ieraksts</th>
                       <th className={cell}>Detaļas</th>
                       {!readOnly ? <th className={`${cell} w-[28px]`} aria-label="Noņemt" /> : null}
@@ -442,10 +444,10 @@ export function AdminAsvSourceBlock({
             {ASV_SUBTITLES.titles}
           </p>
           <div className={tableWrap}>
-            <table className="w-full min-w-[420px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[420px]`}>
               <thead>
                 <tr className={headRow}>
-                  <th className={`${cell} w-[86px]`}>Datums</th>
+                  <th className={`${cell}`}>Datums</th>
                   <th className={`${cell} w-[90px]`}>Štats</th>
                   <th className={`${cell} w-[80px]`}>km</th>
                   <th className={cell}>Piezīme</th>
@@ -490,10 +492,10 @@ export function AdminAsvSourceBlock({
             {ASV_SUBTITLES.sales}
           </p>
           <div className={tableWrap}>
-            <table className="w-full min-w-[480px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[480px]`}>
               <thead>
                 <tr className={headRow}>
-                  <th className={`${cell} w-[86px]`}>Datums</th>
+                  <th className={`${cell}`}>Datums</th>
                   <th className={cell}>Vieta</th>
                   <th className={`${cell} w-[80px]`}>km</th>
                   <th className={`${cell} w-[80px]`}>Cena</th>

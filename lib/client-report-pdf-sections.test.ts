@@ -68,9 +68,9 @@ describe("PDF design system", () => {
     const html = doc();
     expect(html).toContain("--pdf-radius-outer:12px");
     expect(html).toContain("--pdf-radius-inner:8px");
-    expect(html).toContain("--pdf-gap-section:32px");
-    expect(html).toContain("--pdf-gap-block:20px");
-    expect(html).toContain("--pdf-gap-heading:22px");
+    expect(html).toContain("--pdf-gap-section:1em");
+    expect(html).toContain("--pdf-gap-block:1em");
+    expect(html).toContain("--pdf-gap-heading:1em");
     expect(html).toContain("--pdf-fs-sec:13px");
     expect(html).toContain("--pdf-comment-bg:#F6FAFF");
     expect(html).not.toContain("background:#F3F8FF");
@@ -88,7 +88,7 @@ describe("PDF design system", () => {
     );
     expect(html).toContain(".pdf-report-comment-note-body br + strong");
     expect(html).toMatch(
-      /\.pdf-report-comment-note-body br \+ strong[\s\S]*margin-top:12px/,
+      /\.pdf-report-comment-note-body br \+ strong[\s\S]*margin-top:0/,
     );
   });
 

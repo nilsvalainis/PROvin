@@ -16,12 +16,18 @@ type Props = {
   onClick: () => void;
 };
 
-/** Visi modeļi vizuāli vienādi klusi; modeļa nosaukums ir pogas tekstā un `title`. */
-export const ADMIN_AI_BTN_QUIET_CLASS =
-  "provin-ai-btn border border-[#d2d2d7] bg-transparent text-[#6e6e73] shadow-none hover:border-[rgba(175,82,222,0.45)] hover:bg-[rgba(175,82,222,0.10)] hover:text-[#7d3fa0] focus-visible:border-[rgba(175,82,222,0.45)] focus-visible:bg-[rgba(175,82,222,0.10)] focus-visible:text-[#7d3fa0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(175,82,222,0.25)]";
+/** Per-modeļa krāsas — operatori atpazīst aģentu pēc pogas. */
+export const ADMIN_AI_TIER_BTN_CLASS: Record<AiAdminModelTier, string> = {
+  pro: "border border-violet-700/70 bg-violet-600/95 text-white hover:bg-violet-600 hover:brightness-105 focus-visible:ring-violet-500/35",
+  flash: "border border-emerald-700/70 bg-emerald-600/95 text-white hover:bg-emerald-600 hover:brightness-105 focus-visible:ring-emerald-500/35",
+  lite: "border border-sky-700/70 bg-sky-600/95 text-white hover:bg-sky-600 hover:brightness-105 focus-visible:ring-sky-500/35",
+  gemini: "border border-amber-700/70 bg-amber-600/95 text-white hover:bg-amber-600 hover:brightness-105 focus-visible:ring-amber-500/35",
+  "gemini-flash":
+    "border border-teal-700/70 bg-teal-600/95 text-white hover:bg-teal-600 hover:brightness-105 focus-visible:ring-teal-500/35",
+};
 
 export const ADMIN_AI_BADGE_CLASS =
-  "provin-ai-badge rounded px-1 py-px text-[9px] font-bold tracking-[0.05em] bg-[#f2f2f7] text-current";
+  "provin-ai-badge rounded px-1 py-px text-[9px] font-bold tracking-[0.05em] bg-white/25 text-inherit";
 
 const VARIANT_HINT: Record<AiAdminModelTier, string> = {
   pro: "Claude Opus — dārgākais; tikai kopsavilkumam vai apzinātai dziļai analīzei",
@@ -47,7 +53,7 @@ export function AdminAiGenerateButton({
     <button
       type="button"
       data-ai-tier={variant}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${ADMIN_AI_BTN_QUIET_CLASS}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium shadow-sm transition focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-40 ${ADMIN_AI_TIER_BTN_CLASS[variant]}`}
       disabled={disabled || busy}
       onClick={onClick}
       title={hint}

@@ -64,6 +64,7 @@ import {
   countVendorOdometerReadings,
 } from "@/lib/admin-clear-odometer-readings";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
+import { ADMIN_SOURCE_DATA_TABLE_CLASS } from "@/lib/admin-source-data-table";
 import { AdminCarVerticalPurchaseButton } from "@/components/admin/AdminCarVerticalPurchaseButton";
 
 const inp =
@@ -232,7 +233,7 @@ export function AdminVendorAvotuSourceBlock({
           data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}
           data-provin-block={blockKey}
         >
-          <table className="w-full min-w-[280px] border-collapse text-[11px]">
+          <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[280px]`}>
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
                 <th className={mileCell} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>
@@ -371,7 +372,7 @@ export function AdminVendorAvotuSourceBlock({
               Sludinājuma, izsoles un vēsturiskās cenas rindas nav fiziska valstu maiņa.
             </p>
             <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90 bg-gradient-to-b from-slate-50/50 to-white shadow-[0_1px_8px_rgba(15,23,42,0.04)]">
-              <table className="w-full min-w-[420px] border-collapse text-[11px]">
+              <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[420px]`}>
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
                     <th className={`w-12 ${mileCell}`}>PDF</th>
@@ -500,7 +501,7 @@ export function AdminVendorAvotuSourceBlock({
           </p>
           {!readOnly || incidentsHaveData ? (
           <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90 bg-gradient-to-b from-slate-50/50 to-white shadow-[0_1px_8px_rgba(15,23,42,0.04)]">
-            <table className="w-full min-w-[280px] border-collapse text-[11px]">
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[280px]`}>
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
                   <th className={mileCell}>Datums</th>
