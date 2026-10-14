@@ -34,8 +34,9 @@ import {
   type AsvTitleRow,
 } from "@/lib/asv-report";
 import { vinScanAuctionsToCcVinParsed } from "@/lib/order-vin-scan";
-import { JOJ_API_SOURCE_ID } from "@/lib/vin-scan/joj-api";
 import { buildVinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
+
+const JOJ_ASV_SOURCE_ID = "joj_copart_iaai" as const;
 
 export type {
   AsvDataSourceId,
@@ -114,7 +115,7 @@ export function bundleFromCcVinParsed(parsed: CcVinParsedReport): AsvSourceTable
 }
 
 export function bundleFromJojVinScan(vin: string, parse: VinScanParse): AsvSourceTableBundle {
-  const indicator = buildVinScanIndicator(JOJ_API_SOURCE_ID, vin, parse);
+  const indicator = buildVinScanIndicator(JOJ_ASV_SOURCE_ID, vin, parse);
   const parsed = vinScanAuctionsToCcVinParsed([indicator]);
   const bundle = bundleFromCcVinParsed(parsed);
   bundle.reportDate = bundle.reportDate || parsed.reportDate;

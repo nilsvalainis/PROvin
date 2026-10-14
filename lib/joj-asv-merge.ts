@@ -11,9 +11,9 @@ import {
 } from "@/lib/asv-photo-types";
 import { bundleFromJojVinScan, setAsvJojSnapshot } from "@/lib/asv-source-merge";
 import { collectVinScanAuctionPhotoUrls } from "@/lib/order-vin-scan-photos";
-import { buildVinScanIndicator } from "@/lib/vin-scan/types";
-import { JOJ_API_SOURCE_ID } from "@/lib/vin-scan/joj-api";
-import type { VinScanParse, VinScanStatus } from "@/lib/vin-scan/types";
+import { buildVinScanIndicator, type VinScanParse, type VinScanStatus } from "@/lib/vin-scan/types";
+
+const JOJ_ASV_SOURCE_ID = "joj_copart_iaai" as const;
 
 export const JOJ_ASV_PRICE_USD_CENTS = 50;
 
@@ -49,7 +49,7 @@ export function mergeJojParseIntoAsvBlock(
   parse: VinScanParse,
   prev: AsvBlockState,
 ): { block: AsvBlockState; photoUrls: string[]; photoGroupTitle: string } {
-  const indicator = buildVinScanIndicator(JOJ_API_SOURCE_ID, vin, parse);
+  const indicator = buildVinScanIndicator(JOJ_ASV_SOURCE_ID, vin, parse);
   const photoUrls = collectVinScanAuctionPhotoUrls([indicator]);
   const jojBundle = bundleFromJojVinScan(vin, parse);
   const block = setAsvJojSnapshot(prev, jojBundle);
