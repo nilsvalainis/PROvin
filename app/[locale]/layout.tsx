@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { RootHtml } from "@/components/RootHtml";
 import { LocaleHtmlLang } from "@/components/LocaleHtmlLang";
 import { CookieConsent } from "@/components/CookieConsent";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
@@ -90,6 +91,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const tMetaDesc = await getTranslations({ locale, namespace: "Meta" });
 
   return (
+    <RootHtml lang={locale}>
     <NextIntlClientProvider locale={locale} messages={messages}>
       <SiteJsonLd locale={locale} description={tMetaDesc("description")} />
       <LenisProvider>
@@ -103,5 +105,6 @@ export default async function LocaleLayout({ children, params }: Props) {
         <WhatsAppFab />
       </LenisProvider>
     </NextIntlClientProvider>
+    </RootHtml>
   );
 }

@@ -27,8 +27,8 @@ type Props = {
   gaMeasurementId: string | null;
   /** TikTok Pixel SDK ID; `null` — pixel neielādē. */
   tiktokPixelId: string | null;
-  /** Pieprasījuma hosts (bez porta); `null` — tikai ceļa filtrs. */
-  requestHostname: string | null;
+  /** Hosts (bez porta). Ja nav dots — nolasa klientā (`window.location`), lai izkārtojums nelasa `headers()` un lapas paliek statiskas/CDN kešojamas. */
+  requestHostname?: string | null;
 };
 
 /**
@@ -43,7 +43,12 @@ export function ConsentAwareAnalytics({
   const pathname = usePathname() ?? "/";
   const [gaAllowed, setGaAllowed] = useState(false);
 
-  const analyticsEnabled = shouldEnablePublicSiteAnalytics(pathname, requestHostname);
+  const [clientHost, setClientHost] = useState<string | null | undefined>(requestHostname ?? undefined);
+  useEffect(() => {
+    if (requestHostname === undefined || requestHostname === null) setClientHost(window.location.hostname.toLowerCase());
+  }, [requestHostname]);
+  // Līdz hosts zināms — analītiku neieslēdzam (citādi preview domēni uz brīdi skaitītos).
+  const analyticsEnabled = clientHost !== undefined && shouldEnablePublicSiteAnalytics(pathname, clientHost);
 
   const sync = useCallback(() => {
     setGaAllowed(readAnalyticsAllowed());

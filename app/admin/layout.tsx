@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { RootHtml } from "@/components/RootHtml";
 import "./admin-ios-theme.css";
 
 export const metadata: Metadata = {
@@ -9,8 +10,10 @@ export const metadata: Metadata = {
 
 export default function AdminRootLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="admin-ios-theme min-h-dvh bg-[var(--admin-ios-bg)]">
-      {children}
-    </div>
+    <RootHtml lang="lv">
+      <div className="admin-ios-theme min-h-dvh bg-[var(--admin-ios-bg)]">
+        {children}
+      </div>
+    </RootHtml>
   );
 }
