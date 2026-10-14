@@ -74,6 +74,92 @@ export function oneautoProductsCostCents(ids: readonly OneautoProductId[]): numb
   return sum;
 }
 
+/** 24h mīkstais cooldown vienam VIN+produktam; operators var apzināti pārrakstīt. */
+export const ONEAUTO_SOFT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
+export type OneautoResultLike = {
+  ok?: boolean;
+  error?: string;
+  payload?: unknown;
+  httpStatus?: number;
+  message?: string;
+  fallback?: string;
+};
+
+export type OneautoResultTone = "ok" | "pending" | "problem";
+
+/** Iekasējam tikai produktus ar reāliem datiem. no_data / kļūda / pending = €0.00. */
+export function oneautoChargedCostCents(
+  ids: readonly OneautoProductId[],
+  results: Partial<Record<OneautoProductId, OneautoResultLike>>,
+): number {
+  const charged = ids.filter((id) => {
+    const r = results[id];
+    return r != null && oneautoResultTone(r) === "ok";
+  });
+  return oneautoProductsCostCents(charged);
+}
+
+export function oneautoResultIsNoData(result: OneautoResultLike): boolean {
+  return result.error === "no_data" || oneautoPayloadIsNoData(result.payload, result.error ?? "");
+}
+
+export function oneautoResultIsUnavailable(result: OneautoResultLike): boolean {
+  return (
+    result.error === "api_unavailable" ||
+    oneautoPayloadIsApiUnavailable(result.payload, result.error ?? "")
+  );
+}
+
+export function oneautoResultIsPending(result: OneautoResultLike): boolean {
+  return result.error === "pending" || oneautoPayloadIsPending(undefined, result.payload);
+}
+
+export function oneautoResultTone(result: OneautoResultLike): OneautoResultTone {
+  if (oneautoResultIsPending(result)) return "pending";
+  if (result.ok === true && !oneautoResultIsNoData(result) && !oneautoResultIsUnavailable(result)) {
+    return "ok";
+  }
+  return "problem";
+}
+
+export function oneautoProductStatusLabel(result: OneautoResultLike): string {
+  if (oneautoResultIsPending(result)) return "gaida OEM";
+  if (oneautoResultIsNoData(result)) {
+    return result.fallback
+      ? "nav datu (nav iekasēts) · fallback"
+      : "nav datu (nav iekasēts)";
+  }
+  if (oneautoResultIsUnavailable(result)) return "API nav pieejams";
+  if (oneautoResultTone(result) === "ok") return "ielādēts";
+  return result.error?.trim() || "kļūda";
+}
+
+export function oneautoSelectedHaveProblem(
+  selected: readonly OneautoProductId[],
+  results: Partial<Record<OneautoProductId, OneautoResultLike>>,
+): boolean {
+  return selected.some((id) => {
+    const r = results[id];
+    return r != null && oneautoResultTone(r) === "problem";
+  });
+}
+
+/** Veiksmīgi ielādētie produkti, kam vēl nav pagājušas 24h (mīkstais cooldown). */
+export function oneautoProductsInSoftCooldown(
+  selected: readonly OneautoProductId[],
+  results: Partial<Record<OneautoProductId, OneautoResultLike>>,
+  fetchedAt: string,
+  nowMs = Date.now(),
+): OneautoProductId[] {
+  const fetched = Date.parse(fetchedAt);
+  if (!Number.isFinite(fetched) || nowMs - fetched >= ONEAUTO_SOFT_COOLDOWN_MS) return [];
+  return selected.filter((id) => {
+    const r = results[id];
+    return r != null && oneautoResultTone(r) === "ok";
+  });
+}
+
 export function formatOneautoCostEur(cents: number): string {
   const n = Math.max(0, cents) / 100;
   return `€${n.toFixed(2)}`;
@@ -309,6 +395,28 @@ function collectOneautoErrorTexts(payload: unknown, extraText = ""): string[] {
 /** OEM atbilde: šim VIN datu nav, maksa nav iekasēta. Tas nav tīkla / 502 kļūda. */
 export function oneautoPayloadIsNoData(payload: unknown, extraText = ""): boolean {
   return collectOneautoErrorTexts(payload, extraText).some((t) => NO_DATA_RE.test(t));
+}
+
+/** OneAuto kļūdas / no-data teksts UI un logiem. Dod priekšroku `error`/`message` laukiem. */
+export function oneautoPayloadPrimaryMessage(payload: unknown, extraText = ""): string {
+  const compact = (t: string) => t.replace(/\s+/g, " ").trim();
+  const fromPayload = collectOneautoErrorTexts(payload, "")
+    .map(compact)
+    .find((t) => t.length > 0);
+  if (fromPayload) return fromPayload.slice(0, 400);
+  const extra = compact(extraText);
+  if (!extra) return "";
+  if (extra.startsWith("{") || extra.startsWith("[")) {
+    try {
+      const nested = collectOneautoErrorTexts(JSON.parse(extraText) as unknown, "")
+        .map(compact)
+        .find((t) => t.length > 0);
+      if (nested) return nested.slice(0, 400);
+    } catch {
+      /* raw JSON paliek kā fallback */
+    }
+  }
+  return extra.slice(0, 400);
 }
 
 /** OEM produkts nav pieejams šim ceļam / atslēgai (nepareizs path vai konta entitlements). */

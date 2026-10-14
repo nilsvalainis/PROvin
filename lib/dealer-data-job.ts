@@ -214,18 +214,19 @@ export async function runDealerDataJob(args: {
   }
 
   const result = fetched.results.oe_service_history;
-  if (result && result.ok === false) {
+  const noData =
+    !result ||
+    result.error === "no_data" ||
+    oneautoPayloadIsNoData(result.payload) ||
+    !oneautoDisplayHasRows(fetched.display);
+
+  if (result && result.ok === false && result.error !== "no_data") {
     // `insufficient_balance` un `api_unavailable` ir mūsu puses problēma, ne klienta:
     // atmaksu nepiedāvājam, operators mēģina vēlreiz.
     const error = String(result.error ?? "upstream_error").slice(0, 200);
     await upsertDealerDataJob(sessionId, { vin, status: "failed", attempts, error, trigger: args.trigger });
     return { ok: false, status: "failed", reason: error };
   }
-
-  const noData =
-    !result ||
-    oneautoPayloadIsNoData(result.payload) ||
-    !oneautoDisplayHasRows(fetched.display);
 
   if (noData) {
     await upsertDealerDataJob(sessionId, {

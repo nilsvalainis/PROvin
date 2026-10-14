@@ -7,11 +7,16 @@ import {
   buildOneautoDisplay,
   filledOneautoServiceEvents,
   formatOneautoCostEur,
+  oneautoChargedCostCents,
   oneautoDisplayHasRows,
-  oneautoPayloadIsApiUnavailable,
-  oneautoPayloadIsNoData,
-  oneautoPayloadIsPending,
+  oneautoProductStatusLabel,
   oneautoProductsCostCents,
+  oneautoProductsInSoftCooldown,
+  oneautoResultIsNoData,
+  oneautoResultIsPending,
+  oneautoResultIsUnavailable,
+  oneautoResultTone,
+  oneautoSelectedHaveProblem,
   oneautoServiceHistoryIsEmpty,
   type OneautoDisplaySections,
   type OneautoProductId,
@@ -56,20 +61,17 @@ function oneautoFetchErrorLv(code: string): string {
   }
 }
 
-function oneautoResultIsNoData(result: { ok?: boolean; error?: string; payload?: unknown }): boolean {
-  return oneautoPayloadIsNoData(result.payload, result.error ?? "") || result.error === "no_data";
-}
+const STATUS_TEXT: Record<ReturnType<typeof oneautoResultTone>, string> = {
+  ok: "text-emerald-700",
+  pending: "text-amber-700",
+  problem: "text-rose-700",
+};
 
-function oneautoResultIsUnavailable(result: {
-  ok?: boolean;
-  error?: string;
-  payload?: unknown;
-}): boolean {
-  return (
-    oneautoPayloadIsApiUnavailable(result.payload, result.error ?? "") ||
-    result.error === "api_unavailable"
-  );
-}
+const STATUS_DOT: Record<ReturnType<typeof oneautoResultTone>, string> = {
+  ok: "bg-emerald-600",
+  pending: "bg-amber-500",
+  problem: "bg-rose-600",
+};
 
 type Props = {
   ingest: AutoRecordsOneautoIngest;
@@ -101,19 +103,22 @@ export function AdminOneautoIngestBar({
   const value = ingest.lastFetchedVin || ingest.selectedProducts.length ? ingest : emptyOneautoIngest();
   const effectiveVin = normalizeVin(value.vinOverride || orderVin);
   const estimatedCost = formatOneautoCostEur(oneautoProductsCostCents(value.selectedProducts));
+  const chargedCost = formatOneautoCostEur(
+    oneautoChargedCostCents(value.selectedProducts, value.results),
+  );
   const imageCostHint = formatOneautoImageCostEur(ONEAUTO_IMAGE_MAX_VIEWS);
   const selectedSet = useMemo(() => new Set(value.selectedProducts), [value.selectedProducts]);
   const cachedForVin =
     Boolean(value.lastFetchedVin) && normalizeVin(value.lastFetchedVin) === effectiveVin;
   const historyResult = value.results.oe_service_history;
-  const historyPending = Boolean(
-    historyResult &&
-      (historyResult.error === "pending" ||
-        oneautoPayloadIsPending(undefined, historyResult.payload)),
-  );
+  const historyPending = Boolean(historyResult && oneautoResultIsPending(historyResult));
   const historyEmpty = Boolean(
     historyResult && oneautoServiceHistoryIsEmpty(historyResult.payload),
   );
+  const selectedHaveProblem = oneautoSelectedHaveProblem(value.selectedProducts, value.results);
+  const cooldownProducts = cachedForVin
+    ? oneautoProductsInSoftCooldown(value.selectedProducts, value.results, value.fetchedAt)
+    : [];
   const canFetchImages = Boolean(sessionId && photosEnabled && onImagesFetched);
 
   const toggleProduct = (id: OneautoProductId, checked: boolean) => {
@@ -129,11 +134,18 @@ export function AdminOneautoIngestBar({
       setError(oneautoFetchErrorLv("no_products_selected"));
       return;
     }
-    if (cachedForVin && hasMappedData) {
-      const ok = window.confirm(
-        `Šim VIN jau ir saglabāti OneAuto dati. Ielādēt no jauna? Tas atkārtoti iekasēs ${estimatedCost}.`,
+    let productsToFetch = [...value.selectedProducts];
+    if (cooldownProducts.length > 0) {
+      const labels = cooldownProducts
+        .map((id) => ONEAUTO_PRODUCTS.find((p) => p.id === id)?.label ?? id)
+        .join(", ");
+      const override = window.confirm(
+        `Šim VIN pēdējās 24h jau ir ielādēts: ${labels}. Ielādēt šos produktus no jauna? Tas var atkārtoti iekasēt maksu.`,
       );
-      if (!ok) return;
+      if (!override) {
+        productsToFetch = productsToFetch.filter((id) => !cooldownProducts.includes(id));
+        if (productsToFetch.length === 0) return;
+      }
     }
     setBusy(true);
     setError(null);
@@ -142,7 +154,7 @@ export function AdminOneautoIngestBar({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vin: effectiveVin, products: value.selectedProducts }),
+        body: JSON.stringify({ vin: effectiveVin, products: productsToFetch }),
       });
       const body = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -196,7 +208,7 @@ export function AdminOneautoIngestBar({
         ...value,
         lastFetchedVin: body.vin ?? effectiveVin,
         fetchedAt: new Date().toISOString(),
-        lastCostEur: body.costEur ?? estimatedCost,
+        lastCostEur: formatOneautoCostEur(oneautoChargedCostCents(value.selectedProducts, nextResults)),
         results: nextResults,
         serviceTimelineOriginal,
       };
@@ -272,10 +284,13 @@ export function AdminOneautoIngestBar({
         <legend className="sr-only">OneAuto produkti</legend>
         {ONEAUTO_PRODUCTS.map((p) => {
           const result = value.results[p.id];
-          const resultPending = Boolean(
-            result &&
-              (result.error === "pending" || oneautoPayloadIsPending(undefined, result.payload)),
-          );
+          const tone = result ? oneautoResultTone(result) : null;
+          const detail =
+            result && tone === "problem"
+              ? [result.httpStatus ? `HTTP ${result.httpStatus}` : "", result.message ?? ""]
+                  .filter(Boolean)
+                  .join(" · ")
+              : "";
           return (
             <label
               key={p.id}
@@ -295,28 +310,17 @@ export function AdminOneautoIngestBar({
                 {p.hint ? (
                   <span className="ml-1 text-[var(--color-provin-muted)]">- {p.hint}</span>
                 ) : null}
-                {result ? (
-                  <span
-                    className={`ml-1 ${
-                      resultPending
-                        ? "text-amber-700"
-                        : oneautoResultIsNoData(result) || oneautoResultIsUnavailable(result)
-                          ? "text-slate-600"
-                          : result.ok
-                            ? "text-emerald-700"
-                            : "text-rose-700"
-                    }`}
-                  >
-                    {resultPending
-                      ? "gaida OEM"
-                      : oneautoResultIsNoData(result)
-                        ? "nav datu (nav iekasēts)"
-                        : oneautoResultIsUnavailable(result)
-                          ? "API nav pieejams"
-                          : result.ok
-                            ? "ielādēts"
-                            : (result.error ?? "kļūda")}
+                {result && tone ? (
+                  <span className={`ml-1 inline-flex items-center gap-1 ${STATUS_TEXT[tone]}`}>
+                    <span
+                      className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[tone]}`}
+                      aria-hidden
+                    />
+                    {oneautoProductStatusLabel(result)}
                   </span>
+                ) : null}
+                {detail ? (
+                  <span className="mt-0.5 block text-[10px] leading-snug text-rose-700">{detail}</span>
                 ) : null}
               </span>
             </label>
@@ -351,11 +355,18 @@ export function AdminOneautoIngestBar({
           </button>
         </div>
       ) : null}
-      {cachedForVin && hasMappedData ? (
+      {cachedForVin && selectedHaveProblem ? (
+        <p className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] text-rose-800">
+          VIN {value.lastFetchedVin}
+          {value.fetchedAt ? ` · ${value.fetchedAt.slice(0, 16).replace("T", " ")}` : ""}
+          {` · ${chargedCost}`}. Daļai produktu nav datu vai ir kļūda. Atkārtota ielāde ir
+          iespējama.
+        </p>
+      ) : cachedForVin && hasMappedData ? (
         <p className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-900">
           Saglabāti dati VIN {value.lastFetchedVin}
           {value.fetchedAt ? ` · ${value.fetchedAt.slice(0, 16).replace("T", " ")}` : ""}
-          {value.lastCostEur ? ` · ${value.lastCostEur}` : ""}. Atkārtota ielāde nav nepieciešama.
+          {` · ${chargedCost}`}. Atkārtota ielāde nav nepieciešama.
         </p>
       ) : null}
       {cachedForVin && historyPending ? (

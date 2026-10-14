@@ -271,7 +271,7 @@ describe("OneAuto → OFICIĀLĀ DĪLERA DATI", () => {
         serviceTimelineOriginal: [],
       },
     );
-    expect(ingest.serviceTimelineOriginal[0]?.works).toContain("Automatic gearbox");
+    expect(ingest.serviceTimelineOriginal?.[0]?.works).toContain("Automatic gearbox");
     expect(ingest.results.oe_service_history?.payload).toEqual(rich.oe_service_history.payload);
   });
 
@@ -303,5 +303,28 @@ describe("OneAuto → OFICIĀLĀ DĪLERA DATI", () => {
     const merged = mergeOneautoProductResults(rich, failed);
     expect(merged.oe_service_history?.payload).toEqual(rich.oe_service_history.payload);
     expect(merged.oe_service_history?.ok).toBe(true);
+  });
+
+  it("no_data atjauno sarkano statusu, bet nepārraksta bagātāku payload", () => {
+    const rich = {
+      vin_decoder: {
+        ok: true,
+        payload: { success: true, result: { oem_engine_desc: "M274" } },
+      },
+    };
+    const noData = {
+      vin_decoder: {
+        ok: false,
+        error: "no_data",
+        httpStatus: 404,
+        message: "There is no data available for this vehicle identification number.",
+        payload: { success: false, error: "There is no data available" },
+      },
+    };
+    const merged = mergeOneautoProductResults(rich, noData);
+    expect(merged.vin_decoder?.ok).toBe(false);
+    expect(merged.vin_decoder?.error).toBe("no_data");
+    expect(merged.vin_decoder?.httpStatus).toBe(404);
+    expect(merged.vin_decoder?.payload).toEqual(rich.vin_decoder.payload);
   });
 });

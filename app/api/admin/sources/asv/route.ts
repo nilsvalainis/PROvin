@@ -48,7 +48,9 @@ export async function POST(req: Request) {
       sessionId,
       reportId: reportId || undefined,
     });
-    const allFailed = products.every((id) => fetched.results[id]?.ok === false);
+    const allFailed = products.every(
+      (id) => fetched.results[id]?.ok === false && fetched.results[id]?.error !== "no_data",
+    );
     const failCodes = products.map((id) => fetched.results[id]?.error ?? "upstream_error");
     const allPending = failCodes.every((c) => c === "pending");
     const balanceFail = failCodes.includes("insufficient_balance");
