@@ -1,6 +1,7 @@
 import { adminRichHtmlToPdfSafeHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import { PDF_TIGHT_RICH_BODY_RULES_CSS } from "@/lib/pdf-tight-comment-spacing";
 
 /** Sekundārā virsrakstu krāsa (Tailwind slate-900 tuvinājums). */
 const INK = "#111827";
@@ -307,7 +308,7 @@ function irissPrintShell(accent: string, title: string, body: string, opts?: { m
       box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
     }
     .ipdf-card h3 {
-      margin: 0 0 8px;
+      margin: 0 0 0.35em;
       font-size: 0.58rem;
       font-weight: 900;
       letter-spacing: 0.132em;
@@ -434,6 +435,7 @@ function irissPrintShell(accent: string, title: string, body: string, opts?: { m
     .ipdf-ft-k { font-weight: 700; color: ${INK}; flex: 0 0 auto; min-width: 5.5rem; letter-spacing: 0.011em; }
     .ipdf-ft-v { font-weight: 500; color: ${INK}; flex: 1 1 12rem; letter-spacing: 0.011em; }
     .ipdf-ft-plain { margin: 0; font-size: 0.62rem; font-weight: 500; color: ${INK}; line-height: 1.45; letter-spacing: 0.011em; }
+    ${PDF_TIGHT_RICH_BODY_RULES_CSS}
   `;
 
   const fontLink = `<link rel="preconnect" href="https://fonts.googleapis.com"/>

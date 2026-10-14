@@ -10,6 +10,7 @@
  * NETULKO: oriģinālie API dati. „factory code/desc” nav Vehicle sadaļā - tikai Equipment.
  */
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
+import { PDF_TIGHT_RICH_BODY_RULES_CSS } from "@/lib/pdf-tight-comment-spacing";
 import { autoRecordsServiceWorkRowHasData } from "@/lib/auto-records-service-works";
 import {
   ONEAUTO_PRODUCT_IDS,
@@ -584,7 +585,7 @@ const OEM_CSS = `
   .oem-sec{margin:0 0 20px;padding:0 0 2px;break-inside:avoid-page;}
   .oem-sec + .oem-sec{border-top:1px solid #e2e8f0;padding-top:16px;}
   h2{
-    margin:0 0 10px;font-size:9px;font-weight:650;letter-spacing:0.12em;
+    margin:0 0 0.35em;font-size:9px;font-weight:650;letter-spacing:0.12em;
     text-transform:uppercase;color:#94a3b8;
   }
   .oem-specs{
@@ -612,7 +613,7 @@ const OEM_CSS = `
   .oem-svc td.oem-work,.oem-work{white-space:pre-wrap;line-height:1.4;word-break:break-word;}
   .oem-svc tr:last-child td{border-bottom:0;}
   .num{font-variant-numeric:tabular-nums;white-space:nowrap;}
-  .oem-extra{margin-top:3px;color:#475569;white-space:pre-wrap;}
+  .oem-extra{margin-top:0;color:#475569;white-space:pre-wrap;}
   .oem-eq{
     display:grid;grid-template-columns:1fr 1fr;gap:0 14px;column-gap:16px;
   }
@@ -640,6 +641,7 @@ const OEM_CSS = `
     .oem-sec{break-inside:auto;}
     .oem-eq-item{break-inside:avoid;}
   }
+  ${PDF_TIGHT_RICH_BODY_RULES_CSS}
 `;
 
 export function buildOemDealerDocumentHtml(args: {

@@ -13,9 +13,9 @@ function WhatsAppIcon({ gradientId }: { gradientId: string }) {
     <svg viewBox="0 0 24 24" className="provin-whatsapp-fab__svg" aria-hidden>
       <defs>
         <linearGradient id={gradientId} x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#4ade80" />
-          <stop offset="55%" stopColor="#22c55e" />
-          <stop offset="100%" stopColor="#16a34a" />
+          <stop offset="0%" stopColor="#3DDC84" />
+          <stop offset="55%" stopColor="#25D366" />
+          <stop offset="100%" stopColor="#128C7E" />
         </linearGradient>
       </defs>
       <path
