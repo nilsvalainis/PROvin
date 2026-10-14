@@ -6,7 +6,8 @@ import { NextResponse, after } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { parseOrderVinScanRecord } from "@/lib/order-vin-scan";
+import { ORDER_VIN_SCAN_BROWSER_IMPORT_IDS, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
+import { upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 
 export const runtime = "nodejs";
@@ -41,6 +42,27 @@ export async function POST(req: Request) {
     const listingUrl =
       (typeof b.listingUrl === "string" && b.listingUrl.trim()) || draft?.orderEdits?.listingUrl || null;
     const sourceId = typeof b.sourceId === "string" ? b.sourceId.trim() : "";
+
+    // „Atvērt + importēt”: PROVIN skripts nolasīja bloķēto avotu pārlūkā → ieliek rezultātu šai rindai.
+    const br = b.browserResult as Record<string, unknown> | undefined;
+    if (br && typeof br === "object") {
+      const id = typeof br.id === "string" ? br.id : "";
+      const status: "found" | "none" | "" = br.status === "found" || br.status === "none" ? br.status : "";
+      if (!existing || !ORDER_VIN_SCAN_BROWSER_IMPORT_IDS.includes(id) || !status || existing.vin !== vin) {
+        return NextResponse.json({ error: "invalid_browser_result" }, { status: 400 });
+      }
+      const summary = (typeof br.summary === "string" ? br.summary : "").trim().slice(0, 300);
+      const next = {
+        ...existing,
+        indicators: existing.indicators.map((row) =>
+          row.id === id ? { ...row, status: status as "found" | "none", summary: summary || (status === "found" ? "Atrasts (pārlūkā)" : "Nav datu (pārlūkā)") } : row,
+        ),
+      };
+      const saved = await upsertOrderDraftVinScan(sessionId, next);
+      if (!saved.ok) return NextResponse.json({ error: saved.error }, { status: 500 });
+      return NextResponse.json({ ok: true, vinScan: next });
+    }
+
     const force = b.force === true || Boolean(sourceId);
 
     after(() =>

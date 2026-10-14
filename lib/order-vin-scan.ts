@@ -22,7 +22,15 @@ export type OrderVinScanRecord = {
 
 export type OrderVinScanSourceState = "found" | "none" | "error";
 
-export type OrderVinScanRowAction = "import_auction" | "import_csdd" | "import_listing" | "open" | "retry";
+export type OrderVinScanRowAction = "import_auction" | "import_csdd" | "import_listing" | "open" | "open_import" | "retry";
+
+/** Avoti, ko Cloudflare bieži bloķē serverim — tos atver pārlūkā un importē ar PROVIN skriptu / ielīmēšanu. */
+export const ORDER_VIN_SCAN_BROWSER_IMPORT_IDS: readonly string[] = ["stat_vin", "bid_cars", "checkcar_vin", "bidfax"];
+const BLOCKED_HINT_RE = /cloudflare|\b403\b|captcha|challenge|bloķ|blocked|lapa nav atpazīta|just a moment/i;
+
+export function isOrderVinScanBrowserBlocked(id: string, state: OrderVinScanSourceState, hint: string): boolean {
+  return state === "error" && ORDER_VIN_SCAN_BROWSER_IMPORT_IDS.includes(id) && BLOCKED_HINT_RE.test(hint);
+}
 
 export type OrderVinScanSourceRow = {
   id: string;
@@ -35,6 +43,8 @@ export type OrderVinScanSourceRow = {
   photoUrls: string[];
   canImportAuction: boolean;
   action: OrderVinScanRowAction;
+  /** Cloudflare bloķēts pārlūka avots — neitrāls stāvoklis, nevis „kļūda”. */
+  blocked?: boolean;
 };
 
 export type OrderVinScanSummary = {
@@ -167,6 +177,7 @@ function canImportAuction(row: VinScanIndicator): boolean {
 }
 
 function rowAction(row: VinScanIndicator, state: OrderVinScanSourceState): OrderVinScanRowAction {
+  if (isOrderVinScanBrowserBlocked(row.id, state, row.summary ?? "")) return "open_import";
   if (state === "error") return "retry";
   if (row.id === "stat_vin" && canImportAuction(row)) return "import_auction";
   if (row.id === "csdd" && state === "found") return "import_csdd";
@@ -199,14 +210,16 @@ export function buildOrderVinScanSummary(record: OrderVinScanRecord | null | und
       photoUrls: photoUrlsOf(row),
       canImportAuction: canImportAuction(row),
       action: rowAction(row, state),
+      ...(isOrderVinScanBrowserBlocked(row.id, state, row.summary ?? "") ? { blocked: true } : {}),
     };
   });
   const found = rows.filter((r) => r.state === "found");
   const none = rows.filter((r) => r.state === "none");
-  const error = rows.filter((r) => r.state === "error");
+  const error = rows.filter((r) => r.state === "error" && !r.blocked);
+  const blocked = rows.filter((r) => r.blocked);
   const byRank = (a: OrderVinScanSourceRow, b: OrderVinScanSourceRow) =>
     rowRank(a) - rowRank(b) || a.label.localeCompare(b.label, "lv");
-  const visible = [...found, ...error].sort(byRank);
+  const visible = [...found, ...error, ...blocked].sort(byRank);
   const noneRows = [...none].sort((a, b) => a.label.localeCompare(b.label, "lv"));
   return {
     at: record.at,

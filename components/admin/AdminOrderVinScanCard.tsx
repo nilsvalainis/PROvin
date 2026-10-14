@@ -41,6 +41,7 @@ function actionLabel(action: OrderVinScanSourceRow["action"]): string {
   if (action === "import_csdd") return "Ielikt CSDD";
   if (action === "import_listing") return "Ielikt SLUDIN";
   if (action === "retry") return "Atkārtot";
+  if (action === "open_import") return "Atvērt + importēt";
   return "Atvērt";
 }
 
@@ -92,6 +93,28 @@ export function AdminOrderVinScanCard({
       window.clearInterval(timer);
     };
   }, [sessionId, record?.status]);
+
+  useEffect(() => {
+    const onResult = (ev: Event) => {
+      const d = (ev as CustomEvent).detail as { id?: string; vin?: string; status?: string; summary?: string } | null;
+      if (!d?.id || String(d.vin || "").toUpperCase() !== vin.trim().toUpperCase()) return;
+      if (d.status !== "found" && d.status !== "none") return;
+      void fetch("/api/admin/order-vin-scan", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId, vin, browserResult: { id: d.id, status: d.status, summary: d.summary ?? "" } }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json: { vinScan?: unknown } | null) => {
+          const next = parseOrderVinScanRecord(json?.vinScan);
+          if (next) setRecord(next);
+        })
+        .catch(() => undefined);
+    };
+    document.addEventListener("provin-vin-scan-result", onResult);
+    return () => document.removeEventListener("provin-vin-scan-result", onResult);
+  }, [sessionId, vin]);
 
   const summary = useMemo(() => buildOrderVinScanSummary(record), [record]);
   const sourceCount = record?.indicators.length ?? 0;
@@ -149,6 +172,17 @@ export function AdminOrderVinScanCard({
       onImportListing(record);
       return;
     }
+    if (row.action === "open_import") {
+      if (!row.openUrl) return;
+      // PROVIN skripts (ja instalēts) nolasa lapu pārlūkā un atsūta rezultātu; citādi — ielīmē tekstu Copilot.
+      try {
+        document.dispatchEvent(new CustomEvent("provin-vin-scan-browser", { detail: { vin, sources: [row.id] } }));
+      } catch {
+        /* ignore */
+      }
+      window.open(row.openUrl, "provin-vin-scan");
+      return;
+    }
     if (row.action === "retry") {
       void startScan(row.id);
       return;
@@ -201,10 +235,12 @@ export function AdminOrderVinScanCard({
               key={row.id}
               className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-[var(--color-apple-text)]"
             >
-              <Dot state={row.state} />
+              <Dot state={row.blocked ? "none" : row.state} />
               <b className="truncate font-semibold">{rowLabel(row)}</b>
-              <span className={`min-w-0 truncate ${row.state === "error" ? "text-rose-700" : ""}`}>
-                {row.hint || (row.state === "error" ? "Kļūda" : "")}
+              <span className={`min-w-0 truncate ${row.blocked ? "text-slate-500" : row.state === "error" ? "text-rose-700" : ""}`}>
+                {row.blocked
+                  ? "Avots bloķē serveri — atver pārlūkā un importē"
+                  : row.hint || (row.state === "error" ? "Kļūda" : "")}
               </span>
               <span className="flex items-center justify-end gap-1">
                 {row.photoUrls.slice(0, 3).map((url) => (
