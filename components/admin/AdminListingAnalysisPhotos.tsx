@@ -1,5 +1,6 @@
 "use client";
 
+import { appendUploadedPhotosToGroup } from "@/lib/photo-group-append";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   DndContext,
@@ -308,6 +309,9 @@ export function AdminListingAnalysisPhotos({
   };
 
   const groups = dragDraft ?? photoGroups;
+  // K5: jaunākās grupas pēc `await` (augšupielāde / dzēšana), nevis closure brīža kopija.
+  const photoGroupsRef = useRef(photoGroups);
+  photoGroupsRef.current = photoGroups;
 
   const serverImgSrc = useCallback(
     (photoId: string) =>
@@ -477,8 +481,10 @@ export function AdminListingAnalysisPhotos({
       }
 
       if (uploaded.length > 0) {
-        const nextGroups = nextGroupList.map((g) =>
-          g.id === targetGroupId ? { ...g, photos: [...g.photos, ...uploaded] } : g,
+        const nextGroups = appendUploadedPhotosToGroup(
+          ensureGroupInList(photoGroupsRef.current, targetGroupId, emptyGroup),
+          targetGroupId,
+          uploaded,
         );
         await commitGroups(nextGroups);
         tick();
@@ -588,7 +594,7 @@ export function AdminListingAnalysisPhotos({
         URL.revokeObjectURL(cached);
         previewUrlsRef.current.delete(photoId);
       }
-      const next = photoGroups.map((g) =>
+      const next = photoGroupsRef.current.map((g) =>
         g.id === groupId ? { ...g, photos: g.photos.filter((p) => p.id !== photoId) } : g,
       );
       await commitGroups(next);
