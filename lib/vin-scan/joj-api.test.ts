@@ -50,6 +50,7 @@ describe("JoJ API VIN SCAN", () => {
       expect(String(input)).toBe(`${JOJ_API_DEFAULT_BASE}/search-vin/${VIN}?prices_history=1`);
       expect(init?.method).toBe("GET");
       expect((init?.headers as Record<string, string>)["X-JoJAPI-Key"]).toBe("jk_test");
+      expect((init?.headers as Record<string, string>).Authorization).toBe("Bearer jk_test");
       return new Response(foundBody(), { status: 200, headers: { "content-type": "application/json" } });
     });
     const out = await fetchJojSearchVin(VIN, {
@@ -148,7 +149,7 @@ describe("JoJ API VIN SCAN", () => {
   });
 
   it("429 un 401 nav kešojamas; 404 ir none", async () => {
-    const { fetchJojSearchVin } = await import("@/lib/vin-scan/joj-api");
+    const { fetchJojSearchVin, jojParseIsCacheable } = await import("@/lib/vin-scan/joj-api");
     const limited = vi.fn(async () => new Response("{}", { status: 429 }));
     const out429 = await fetchJojSearchVin(VIN, {
       env: { JOJ_API_KEY: "jk_test" },
@@ -168,5 +169,33 @@ describe("JoJ API VIN SCAN", () => {
     });
     expect(none.status).toBe("none");
     expect(none.summary).toBe("nav ierakstu");
+    expect(jojParseIsCacheable({ status: "none", summary: "nav ierakstu" }, 404)).toBe(true);
+    expect(jojParseIsCacheable({ status: "found", summary: "Copart" }, 200)).toBe(true);
+    expect(jojParseIsCacheable({ status: "unknown", summary: "JoJ API HTTP 502" }, 502)).toBe(false);
+    expect(jojParseIsCacheable({ status: "unknown", summary: "JoJ API limits (1 req/s)" }, 429)).toBe(false);
+  });
+
+  it("5xx (bezmaksas gateway) netiek kešots, atkārto HTTP", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "joj-5xx-"));
+    vi.stubEnv("VIN_SCAN_DIR", dir);
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
+    const { fetchJojSearchVin } = await import("@/lib/vin-scan/joj-api");
+    const gateway = vi.fn(async () => new Response("{}", { status: 502 }));
+    const first = await fetchJojSearchVin(VIN, {
+      env: { JOJ_API_KEY: "jk_test" },
+      fetchImpl: gateway,
+      skipRateLimit: true,
+      skipDicts: true,
+    });
+    expect(first.status).toBe("unknown");
+    const second = await fetchJojSearchVin(VIN, {
+      env: { JOJ_API_KEY: "jk_test" },
+      fetchImpl: gateway,
+      skipRateLimit: true,
+      skipDicts: true,
+    });
+    expect(second.status).toBe("unknown");
+    expect(gateway).toHaveBeenCalledTimes(2);
+    await rm(dir, { recursive: true, force: true });
   });
 });

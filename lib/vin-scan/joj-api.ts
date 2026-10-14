@@ -1,7 +1,9 @@
 /**
  * JoJ Copart/IAAI: GET /search-vin/{vin}?prices_history=1 ($0.50, 1 req/s).
- * 404 = nav ierakstu (kešs). /search-lot tikai ja VIN 404 un lots ir zināms.
- * Auth: X-JoJAPI-Key (jk_). Host: https://carstat-copart-iaai.jojapi.net
+ * Auth: X-JoJAPI-Key (keys start with jk_). Bearer also accepted.
+ * 404 / empty lots are charged: cache as nav ierakstu (30d). 5xx / gateway errors are free: do not cache.
+ * /search-lot only when VIN is 404 and a lot number is known.
+ * Host: https://carstat-copart-iaai.jojapi.net
  */
 import "server-only";
 
@@ -54,6 +56,12 @@ export function jojNotConfiguredParse(): VinScanParse {
   return { status: "skipped", summary: JOJ_NOT_CONFIGURED };
 }
 
+/** 404/empty (charged) and 423 (restricted record) are cacheable. 5xx/401/429/gateway are free: retry next scan. */
+export function jojParseIsCacheable(parsed: VinScanParse, httpStatus: number): boolean {
+  if (parsed.status === "found" || parsed.status === "none") return true;
+  return parsed.status === "unknown" && httpStatus === 423;
+}
+
 export type FetchJojSearchVinDeps = {
   env?: JojApiEnv;
   fetchImpl?: typeof fetch;
@@ -79,6 +87,7 @@ export async function jojApiGet(
     headers: {
       accept: "application/json",
       "X-JoJAPI-Key": jojApiKey(env),
+      Authorization: `Bearer ${jojApiKey(env)}`,
     },
   });
   const text = await res.text();
@@ -132,8 +141,6 @@ export async function fetchJojSearchVin(vin: string, deps: FetchJojSearchVinDeps
     }).catch(() => EMPTY_JOJ_NAME_DICT);
   }
   const parsed = parseJojSearchVinFull({ status, json, vin: clean, dict }).parse;
-  const cacheable =
-    parsed.status === "found" || parsed.status === "none" || (parsed.status === "unknown" && status === 423);
-  if (cacheable) await writeJojVinCache(clean, parsed).catch(() => undefined);
+  if (jojParseIsCacheable(parsed, status)) await writeJojVinCache(clean, parsed).catch(() => undefined);
   return parsed;
 }
