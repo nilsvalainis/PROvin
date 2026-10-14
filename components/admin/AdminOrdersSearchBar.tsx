@@ -72,7 +72,7 @@ export function AdminOrdersSearchBar() {
       </div>
       <div
         className={`fixed inset-x-0 z-30 flex items-center gap-2 border-t border-[#e5e5ea] bg-white/95 px-4 py-2.5 backdrop-blur md:hidden ${pending ? "opacity-70" : ""}`}
-        style={{ bottom: "calc(var(--admin-tabbar-h, 0px) + env(safe-area-inset-bottom, 0px))" }}
+        style={{ bottom: "var(--admin-tabbar-h, 0px)" }}
       >
         {input}
         {sortSelect}
