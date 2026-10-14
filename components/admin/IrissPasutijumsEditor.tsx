@@ -11,6 +11,7 @@ import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSectio
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
+import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import {
   IRISS_STALE_REVISION,
   irissPasutijumsHasOperatorContent,
@@ -504,7 +505,7 @@ export function IrissPasutijumsEditor({
   unsavedDraft?: boolean;
 }) {
   const router = useRouter();
-  const [rec, setRec] = useState<IrissPasutijumsRecord>(initialRecord);
+  const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
@@ -518,7 +519,7 @@ export function IrissPasutijumsEditor({
   const [offerWhatsappBusy, setOfferWhatsappBusy] = useState(false);
   const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
   const autoOpenOfferDone = useRef(false);
-  const lastSavedSnapshot = useRef(JSON.stringify(initialRecord));
+  const lastSavedSnapshot = useRef(JSON.stringify(withAutoEcarstradeLinks(initialRecord)));
   const recRef = useRef(rec);
   recRef.current = rec;
   const autosaveTimer = useRef<number | null>(null);
@@ -533,11 +534,11 @@ export function IrissPasutijumsEditor({
   const [offerFilePrepare, setOfferFilePrepare] = useState<{ pct: number; label: string } | null>(null);
 
   const patch = useCallback(<K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => {
-    setRec((r) => ({ ...r, [key]: value }));
+    setRec((r) => withAutoEcarstradeLinks({ ...r, [key]: value }));
   }, []);
 
   const patchRecord = useCallback((p: Partial<IrissPasutijumsRecord>) => {
-    setRec((r) => ({ ...r, ...p }));
+    setRec((r) => withAutoEcarstradeLinks({ ...r, ...p }));
   }, []);
 
   const save = useCallback(
@@ -550,7 +551,7 @@ export function IrissPasutijumsEditor({
       const redirectToList = opts?.redirectToList === true;
       const silent = opts?.silent === true;
       const onUploadProgress = opts?.onUploadProgress;
-      const payload = opts?.payload ?? recRef.current;
+      const payload = withAutoEcarstradeLinks(opts?.payload ?? recRef.current);
       const useXhr = Boolean(onUploadProgress) || !silent;
 
       if (silent) {
@@ -597,7 +598,7 @@ export function IrissPasutijumsEditor({
       const applyStale = (data: unknown): SaveResult => {
         const server = parseRecordFromPatchResponse(data);
         if (!server) return { ok: false, error: "Konflikts saglabājot. Pārlādē lapu." };
-        const merged = mergeIrissPasutijumsRecords(server, recRef.current);
+        const merged = withAutoEcarstradeLinks(mergeIrissPasutijumsRecords(server, recRef.current));
         merged.workspaceRevision = irissWorkspaceRevision(server);
         setRec(merged);
         recRef.current = merged;
@@ -681,7 +682,7 @@ export function IrissPasutijumsEditor({
         const data = (await res.json()) as { record?: IrissPasutijumsRecord };
         if (!data.record || cancelled) return;
         setRec((prev) => {
-          const merged = mergeIrissOfferImageDataUrls(prev, data.record!);
+          const merged = withAutoEcarstradeLinks(mergeIrissOfferImageDataUrls(prev, data.record!));
           lastSavedSnapshot.current = JSON.stringify(merged);
           return merged;
         });

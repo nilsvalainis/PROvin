@@ -647,6 +647,8 @@ export function IrissPasutijumiListClient({
   });
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [ectBusy, setEctBusy] = useState(false);
+  const [ectMsg, setEctMsg] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
   const narrowSwipeViewport = useNarrowIrissSwipeViewport();
   const swipeClosersRef = useRef<Map<string, () => void>>(new Map());
@@ -916,6 +918,39 @@ export function IrissPasutijumiListClient({
     });
   }, [schedulePersistListOrder]);
 
+  async function appendEcarstradeLinks() {
+    if (ectBusy) return;
+    setEctBusy(true);
+    setEctMsg(null);
+    try {
+      const res = await fetch("/api/admin/iriss-pasutijumi/ecarstrade-links", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apply: true }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        addedCount?: number;
+        updatedCount?: number;
+        saved?: IrissPasutijumsListRow[];
+      };
+      if (!res.ok) {
+        setEctMsg(data.error === "store_disabled" ? "Krātuve nav pieejama" : "eCarsTrade saišu pievienošana neizdevās");
+        return;
+      }
+      if (data.saved?.length) {
+        const byId = new Map(data.saved.map((r) => [r.id, r]));
+        setLocalRows((prev) => prev.map((row) => (byId.has(row.id) ? { ...row, ...byId.get(row.id)! } : row)));
+      }
+      const added = data.addedCount ?? 0;
+      const updated = data.updatedCount ?? 0;
+      setEctMsg(added === 0 ? "Jaunu eCarsTrade saišu nav" : `Pievienotas ${added} eCarsTrade ${added === 1 ? "saite" : "saites"} (${updated} pasūtījumi)`);
+    } finally {
+      setEctBusy(false);
+    }
+  }
+
   const onReorderUnpinned = useCallback((ids: string[]) => {
     setListOrder((prev) => {
       const next = { ...prev, unpinnedOrder: ids };
@@ -958,6 +993,15 @@ export function IrissPasutijumiListClient({
           <IrissPasutijumiStatusFilter counts={statusCounts} />
           <IrissOrderSortSelect compact />
           <div className="ml-auto flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => void appendEcarstradeLinks()}
+              disabled={ectBusy}
+              className="inline-flex h-8 items-center rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm disabled:opacity-40"
+              title="Pievienot eCarsTrade saites no Auto1 / Openlane / Autobid filtriem visiem pasūtījumiem"
+            >
+              {ectBusy ? "ET…" : "eCarsTrade"}
+            </button>
             <Link
               href="/admin/iriss/atskaite"
               className="inline-flex h-8 items-center rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm"
@@ -967,6 +1011,7 @@ export function IrissPasutijumiListClient({
             <AdminIrissOrdersExportButton compact />
           </div>
         </div>
+        {ectMsg ? <p className="mt-1 text-[11px] text-[#8e8e93]">{ectMsg}</p> : null}
       </div>
 
       <div className="flex flex-col gap-2">

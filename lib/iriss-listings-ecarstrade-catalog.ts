@@ -167,12 +167,75 @@ export function splitBrandModel(brandModel: string): { make: string; model: stri
   return { make: tokens[0] ?? "", model: tokens.slice(1).join(" ") };
 }
 
+/** `100-130kw` / `176 kW` no nosaukuma. Pārējo tekstu atstāj. */
+export function extractPowerKwFromBrand(brandModel: string): { from: number; to: number; rest: string } | null {
+  const raw = String(brandModel ?? "").replace(/[\u2013\u2014]/g, "-");
+  const range = raw.match(/(\d{2,4})\s*-\s*(\d{2,4})\s*k\s*w\b/i);
+  if (range && range.index != null) {
+    const a = Number.parseInt(range[1] ?? "", 10);
+    const b = Number.parseInt(range[2] ?? "", 10);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+    const rest = `${raw.slice(0, range.index)} ${raw.slice(range.index + range[0].length)}`.replace(/\s+/g, " ").trim();
+    return { from: Math.min(a, b), to: Math.max(a, b), rest };
+  }
+  const one = raw.match(/(\d{2,4})\s*k\s*w\b/i);
+  if (one && one.index != null) {
+    const n = Number.parseInt(one[1] ?? "", 10);
+    if (!Number.isFinite(n)) return null;
+    const rest = `${raw.slice(0, one.index)} ${raw.slice(one.index + one[0].length)}`.replace(/\s+/g, " ").trim();
+    return { from: n, to: n, rest };
+  }
+  return null;
+}
+
+function splitMakeCandidates(raw: string): string[] {
+  return raw
+    .split(/\s*(?:[/|,+]|&| un | and )\s*/i)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+export function resolveMakesFromBrand(brandModel: string): {
+  makes: EcarstradeMark[];
+  model: EcarstradeModel | null;
+  modelText: string;
+} {
+  const power = extractPowerKwFromBrand(brandModel);
+  const text = power?.rest || String(brandModel ?? "").trim();
+  const parts = splitMakeCandidates(text);
+  const makes: EcarstradeMark[] = [];
+  const seen = new Set<number>();
+  let modelText = "";
+  const push = (mark: EcarstradeMark | null) => {
+    if (!mark || seen.has(mark.id)) return;
+    seen.add(mark.id);
+    makes.push(mark);
+  };
+  for (const part of parts) {
+    const whole = resolveEcarstradeMake(part);
+    if (whole) {
+      push(whole);
+      continue;
+    }
+    const split = splitBrandModel(part);
+    const make = resolveEcarstradeMake(split.make);
+    if (make) {
+      push(make);
+      if (!modelText && split.model) modelText = stripKnownSuffixes(split.model);
+    }
+  }
+  if (makes.length === 0) {
+    const split = splitBrandModel(text);
+    push(resolveEcarstradeMake(split.make));
+    modelText = stripKnownSuffixes(split.model);
+  }
+  const model = makes.length === 1 ? resolveEcarstradeModel(makes[0]!.id, modelText) : null;
+  return { makes, model, modelText };
+}
+
 export function resolveMakeModelFromBrand(brandModel: string): { make: EcarstradeMark | null; model: EcarstradeModel | null; modelText: string } {
-  const split = splitBrandModel(brandModel);
-  const make = resolveEcarstradeMake(split.make);
-  const modelText = stripKnownSuffixes(split.model);
-  const model = make ? resolveEcarstradeModel(make.id, modelText) : null;
-  return { make, model, modelText };
+  const r = resolveMakesFromBrand(brandModel);
+  return { make: r.makes[0] ?? null, model: r.model, modelText: r.modelText };
 }
 
 const TRAILING_TOKENS = new Set([

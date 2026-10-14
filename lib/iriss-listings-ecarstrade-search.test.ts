@@ -28,7 +28,7 @@ describe("eCarsTrade search mapper", () => {
     const url =
       "https://www.auto1.com/en/app/merchant/cars?channel=24h&manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018-01-01&firstRegistrationTo=2022-12-31&minMileage=10000&maxMileage=150000&fuelTypes=DIESEL&gearboxes=AUTOMATIC&bodyTypes=SUV&minPrice=12000&maxPrice=28000&powerFrom=110&powerTo=180";
     const filter = parseListingSearchUrl(url);
-    expect(filter.makeId).toBe(68);
+    expect(filter.makeIds).toEqual([68]);
     expect(filter.modelId).toBe(1866);
     expect(filter.yearFrom).toBe(2018);
     expect(filter.yearTo).toBe(2022);
@@ -61,7 +61,7 @@ describe("eCarsTrade search mapper", () => {
     const openlane = parseListingSearchUrl(
       "https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2019&yearTo=2023&mileageFrom=0&mileageTo=180000&fuels=diesel&transmissions=automatic",
     );
-    expect(openlane.makeId).toBe(68);
+    expect(openlane.makeIds).toEqual([68]);
     expect(openlane.modelId).toBe(1866);
     expect(openlane.yearFrom).toBe(2019);
     expect(openlane.fuels).toEqual(["Diesel"]);
@@ -69,7 +69,7 @@ describe("eCarsTrade search mapper", () => {
     const autobid = parseListingSearchUrl(
       "https://autobid.de/en/search-results?brandId-brand=49&name-model=XC60&yearFrom-year=2018&mileageTo-mileage=160000",
     );
-    expect(autobid.makeId).toBe(68);
+    expect(autobid.makeIds).toEqual([68]);
     expect(autobid.modelId).toBe(1866);
     expect(autobid.yearFrom).toBe(2018);
     expect(autobid.mileageTo).toBe(160000);
@@ -80,7 +80,7 @@ describe("eCarsTrade search mapper", () => {
       "https://www.auto1.com/en/app/merchant/cars?minHorsePower=150&maxHorsePower=200&fuelTypes=PETROL",
     );
     const filled = fillMakeModelFromBrand(parsed, "BMW 520d");
-    expect(filled.makeId).toBe(7);
+    expect(filled.makeIds).toEqual([7]);
     expect(filled.modelId).toBe(resolveEcarstradeModel(7, "520")?.id);
     expect(filled.powerFromKw).toBe(110);
     expect(filled.powerToKw).toBe(147);
@@ -90,9 +90,53 @@ describe("eCarsTrade search mapper", () => {
   it("maps Avant / Variant to Estate Car and VW alias", () => {
     expect(resolveEcarstradeMake("VW")?.name).toBe("Volkswagen");
     const filter = filterFromBrandModel("Audi A6 Avant");
-    expect(filter.makeId).toBe(5);
+    expect(filter.makeIds).toEqual([5]);
     expect(filter.modelName).toBe("A6");
     expect(filter.bodies).toEqual(["Estate Car"]);
+  });
+
+  it("maps slash-joined multi-make brandModel and kW from the title", () => {
+    const lexus = filterFromBrandModel("LEXUS/TOYOTA");
+    expect(lexus.makeIds).toEqual([39, 66]);
+    expect(lexus.modelId).toBeNull();
+    const lexusUrl = ecarstradeSearchUrl(lexus)!;
+    expect(lexusUrl).toContain("mark[]=39");
+    expect(lexusUrl).toContain("mark[]=66");
+    expect(lexusUrl).not.toContain("model[]=");
+
+    const power = filterFromBrandModel("Audi/VW/Porsche 176kw");
+    expect(power.makeIds).toEqual([5, 67, 54]);
+    expect(power.powerFromKw).toBe(176);
+    expect(power.powerToKw).toBe(176);
+    const powerUrl = ecarstradeSearchUrl(power)!;
+    expect(powerUrl).toContain("mark[]=5");
+    expect(powerUrl).toContain("mark[]=67");
+    expect(powerUrl).toContain("mark[]=54");
+    expect(powerUrl).toContain("power_from=176");
+    expect(powerUrl).toContain("power_to=176");
+  });
+
+  it("keeps BMW 5/7 as one make and maps Volvo 100-130kw power range", () => {
+    const bmw = filterFromBrandModel("BMW 5/7");
+    expect(bmw.makeIds).toEqual([7]);
+    const volvo = filterFromBrandModel("Volvo 100-130kw");
+    expect(volvo.makeIds).toEqual([68]);
+    expect(volvo.powerFromKw).toBe(100);
+    expect(volvo.powerToKw).toBe(130);
+  });
+
+  it("reads multiple Openlane makes and Mobile kW into one filter", () => {
+    const openlane = parseListingSearchUrl(
+      "https://www.openlane.eu/en/findcar?makes=lexus&makes=toyota&yearFrom=2018",
+    );
+    expect(openlane.makeIds).toEqual([39, 66]);
+    expect(openlane.yearFrom).toBe(2018);
+    const mobile = parseListingSearchUrl(
+      "https://suchen.mobile.de/fahrzeuge/search.html?make=Porsche&minPowerAsArray=176&maxPowerAsArray=176",
+    );
+    expect(mobile.makeIds).toEqual([54]);
+    expect(mobile.powerFromKw).toBe(176);
+    expect(mobile.powerToKw).toBe(176);
   });
 
   it("treats reordered country params as the same search", () => {
