@@ -29,9 +29,10 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem }: Props<
     [items, pageStart],
   );
 
+  const listSig = `${items.length}:${items[0] ? getKey(items[0]) : ""}:${items[items.length - 1] ? getKey(items[items.length - 1]!) : ""}`;
   useEffect(() => {
     setPage(0);
-  }, [items]);
+  }, [listSig]);
 
   useEffect(() => {
     const el = scrollerRef.current;
