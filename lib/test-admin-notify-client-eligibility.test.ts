@@ -3,6 +3,7 @@ import {
   canNotifyClientOrder,
   isManualNotifyClientOrder,
   notifyClientBlockedMessage,
+  notifyClientSendBlockedReason,
 } from "@/lib/admin-notify-client-eligibility";
 
 describe("admin-notify-client-eligibility", () => {
@@ -59,5 +60,43 @@ describe("admin-notify-client-eligibility", () => {
         customerEmail: "",
       }),
     ).toContain("e-pasts");
+  });
+
+  it("uses short UI reason: missing email vs unpaid", () => {
+    expect(
+      notifyClientSendBlockedReason({
+        id: "manual_order_123_abc",
+        paymentStatus: "unpaid",
+        isManual: true,
+        customerEmail: "",
+      }),
+    ).toBe("Nav klienta e-pasta");
+    expect(
+      notifyClientSendBlockedReason({
+        id: "cs_test_1",
+        paymentStatus: "unpaid",
+        customerEmail: "a@example.com",
+      }),
+    ).toBe("Nav apmaksāts");
+    expect(
+      notifyClientSendBlockedReason({
+        id: "cs_test_1",
+        paymentStatus: "unpaid",
+        customerEmail: "",
+      }),
+    ).toBe("Nav apmaksāts");
+    expect(
+      notifyClientSendBlockedReason(
+        { id: "cs_test_1", paymentStatus: "paid", customerEmail: null },
+        "",
+      ),
+    ).toBe("Nav klienta e-pasta");
+    expect(
+      notifyClientSendBlockedReason({
+        id: "cs_test_1",
+        paymentStatus: "paid",
+        customerEmail: "a@example.com",
+      }),
+    ).toBe("");
   });
 });
