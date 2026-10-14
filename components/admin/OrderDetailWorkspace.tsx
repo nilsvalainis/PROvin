@@ -4866,6 +4866,8 @@ export function OrderDetailWorkspace({
               onPdfIncludeOilChange={(next) => onPdfVisibilityChange({ autoRecordsOilInterval: next })}
               pdfIncludeEquipment={pdfVisibility.autoRecordsEquipment !== false}
               onPdfIncludeEquipmentChange={(next) => onPdfVisibilityChange({ autoRecordsEquipment: next })}
+              pdfIncludeOneauto={pdfVisibility.oneauto}
+              onPdfIncludeOneautoChange={(next) => onPdfVisibilityChange({ oneauto: next })}
               aiComment={aiCommentSlot("auto_records")}
               aiServiceHistory={aiCommentSlot("auto_records", undefined, "serviceHistoryNotes")}
               aiOilChangeInterval={aiCommentSlot("auto_records", undefined, "oilChangeIntervalNotes")}

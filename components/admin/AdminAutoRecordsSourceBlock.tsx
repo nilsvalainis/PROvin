@@ -121,6 +121,9 @@ type Props = {
   onPdfIncludeOilChange?: (next: boolean) => void;
   pdfIncludeEquipment?: boolean;
   onPdfIncludeEquipmentChange?: (next: boolean) => void;
+  /** OneAuto servisa laika līnija klienta PDF (`pdfVisibility.oneauto`). */
+  pdfIncludeOneauto?: boolean;
+  onPdfIncludeOneautoChange?: (next: boolean) => void;
   aiComment?: AdminAiSourceCommentSlot;
   aiServiceHistory?: AdminAiSourceCommentSlot;
   aiOilChangeInterval?: AdminAiSourceCommentSlot;
@@ -153,6 +156,8 @@ export function AdminAutoRecordsSourceBlock({
   pdfIncludeOil = true,
   onPdfIncludeOilChange,
   pdfIncludeEquipment = true,
+  pdfIncludeOneauto,
+  onPdfIncludeOneautoChange,
   onPdfIncludeEquipmentChange,
   aiComment,
   aiServiceHistory,
@@ -302,6 +307,16 @@ export function AdminAutoRecordsSourceBlock({
               pdfProgressKey={dealerPdfProgressKey}
               pdfProgressPct={dealerPdfProgressPct}
             />
+          ) : null}
+          {onPdfIncludeOneautoChange && pdfIncludeOneauto !== undefined ? (
+            <div className="flex justify-end px-1">
+              <AdminPdfIncludeToggle
+                id={`oneauto-pdf-${sessionId}`}
+                label="OneAuto PDF"
+                checked={pdfIncludeOneauto}
+                onChange={onPdfIncludeOneautoChange}
+              />
+            </div>
           ) : null}
           <AdminOneautoIngestBar
             ingest={value.oneautoIngest ?? emptyOneautoIngest()}
