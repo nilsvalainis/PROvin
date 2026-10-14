@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   currentRigaYearMonth,
+  formatLvCalendarDay,
   formatLvYearMonth,
   formatYearMonthKey,
   isoInRigaYearMonth,
   parseYearMonthKey,
   rigaCalendarDayKey,
+  rigaClockHour,
   rigaYearMonthKey,
   shiftYearMonth,
 } from "@/lib/admin-riga-calendar";
@@ -37,6 +39,13 @@ describe("admin-riga-calendar", () => {
     expect(isoInRigaYearMonth("2026-09-30T21:30:00.000Z", 2026, 10)).toBe(true);
     expect(isoInRigaYearMonth("2026-09-30T20:30:00.000Z", 2026, 10)).toBe(false);
     expect(isoInRigaYearMonth("bad", 2026, 10)).toBe(false);
+  });
+
+  it("reads the Riga wall-clock hour across DST", () => {
+    expect(rigaClockHour(Date.parse("2026-10-13T05:00:00.000Z"))).toBe(8);
+    expect(rigaClockHour(Date.parse("2026-01-15T06:00:00.000Z"))).toBe(8);
+    expect(rigaClockHour(Date.parse("2026-01-15T05:00:00.000Z"))).toBe(7);
+    expect(formatLvCalendarDay(Date.parse("2026-10-13T05:00:00.000Z"))).toBe("13. oktobris");
   });
 
   it("labels the month in Latvian and defaults to current Riga month", () => {

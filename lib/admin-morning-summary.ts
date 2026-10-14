@@ -1,6 +1,10 @@
 import { auditDeadlineMs, formatAuditDeadlineRemaining, type AuditDeadlineStatus } from "@/lib/admin-audit-deadline";
 import { rigaCalendarDayKey } from "@/lib/admin-riga-calendar";
-import { formatListingPeekDeadlineRemaining } from "@/lib/listing-peek-deadline";
+import {
+  LISTING_PEEK_REPLY_DEADLINE_MS,
+  formatListingPeekDeadlineRemaining,
+  listingPeekCreatedMs,
+} from "@/lib/listing-peek-deadline";
 import { isOpenListingPeekWork } from "@/lib/listing-peek-queue";
 
 export type MorningSummaryOrderInput = {
@@ -52,6 +56,7 @@ export type MorningSummaryCounts = {
   unansweredPeeks: number;
   urgentPeeks: number;
   overduePeeks: number;
+  newPeeksLast24h: number;
 };
 
 export type MorningSummary = {
@@ -60,6 +65,7 @@ export type MorningSummary = {
   dueTodayAudits: MorningQueueItem[];
   urgentAudits: MorningQueueItem[];
   unansweredPeeks: MorningQueueItem[];
+  newPeeksLast24h: MorningQueueItem[];
 };
 
 function peekHost(url: string | undefined): string {
@@ -133,6 +139,13 @@ function toAuditItem(order: MorningSummaryOrderInput, nowMs: number): MorningQue
   };
 }
 
+export function isPeekCreatedLast24h(peek: MorningSummaryPeekInput, nowMs: number): boolean {
+  const created = listingPeekCreatedMs(peek.createdAt);
+  if (created == null) return false;
+  const age = nowMs - created;
+  return age >= 0 && age < LISTING_PEEK_REPLY_DEADLINE_MS;
+}
+
 function toPeekItem(peek: MorningSummaryPeekInput, nowMs: number): MorningQueueItem {
   const sla = formatListingPeekDeadlineRemaining(peek.createdAt, nowMs);
   const open = isOpenListingPeekWork(peek);
@@ -167,6 +180,11 @@ export function buildMorningSummary(
   const dueTodayAudits = auditItems.filter((i) => i.dueToday && i.deadlineStatus !== "overdue");
   const listedAuditIds = new Set([...overdueAudits, ...dueTodayAudits].map((i) => i.id));
   const urgentAudits = auditItems.filter((i) => i.deadlineStatus === "urgent" && !listedAuditIds.has(i.id));
+  const newPeeksLast24h = peeks
+    .filter((p) => isPeekCreatedLast24h(p, nowMs))
+    .slice()
+    .sort((a, b) => (listingPeekCreatedMs(b.createdAt) ?? 0) - (listingPeekCreatedMs(a.createdAt) ?? 0))
+    .map((p) => toPeekItem(p, nowMs));
 
   return {
     counts: {
@@ -184,10 +202,12 @@ export function buildMorningSummary(
       unansweredPeeks: peekItems.filter((i) => i.unanswered || i.isNew).length,
       urgentPeeks: peekItems.filter((i) => i.deadlineStatus === "urgent").length,
       overduePeeks: peekItems.filter((i) => i.deadlineStatus === "overdue").length,
+      newPeeksLast24h: newPeeksLast24h.length,
     },
     overdueAudits,
     dueTodayAudits,
     urgentAudits,
     unansweredPeeks: peekItems,
+    newPeeksLast24h,
   };
 }

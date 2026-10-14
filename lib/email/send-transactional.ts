@@ -731,3 +731,21 @@ export async function trySendDealerDataOperatorEmail(opts: {
     return false;
   }
 }
+
+/** Admin rīta kopsavilkums (Vercel Cron). From = SMTP_FROM / info@provin.lv. */
+export async function sendMorningSummaryEmail(opts: {
+  to: string | string[];
+  subject: string;
+  text: string;
+  html: string;
+}): Promise<void> {
+  if (!isSmtpConfigured()) {
+    throw new Error("SMTP_USER / SMTP_PASS nav iestatīti");
+  }
+  await sendSmtpMail({
+    to: opts.to,
+    subject: opts.subject,
+    text: opts.text,
+    html: opts.html,
+  });
+}
