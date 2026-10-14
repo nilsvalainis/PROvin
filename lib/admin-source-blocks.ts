@@ -2779,6 +2779,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   incidentPhotos: IncidentPhotoMeta[];
   sourceBlockWipes?: SourceBlockKey[];
   deletedPhotoIds?: string[];
+  clearedFields?: Record<string, number>;
 } | null {
   if (!raw) return null;
   try {
@@ -2824,6 +2825,15 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
         if (!Array.isArray(p.deletedPhotoIds)) return {};
         const ids = [...new Set(p.deletedPhotoIds.filter((v): v is string => typeof v === "string" && v.trim() !== ""))].slice(0, 2000);
         return ids.length > 0 ? { deletedPhotoIds: ids } : {};
+      })(),
+      ...(() => {
+        const c = p.clearedFields;
+        if (!c || typeof c !== "object" || Array.isArray(c)) return {};
+        const out: Record<string, number> = {};
+        for (const [k, v] of Object.entries(c as Record<string, unknown>)) {
+          if (typeof v === "number" && Number.isFinite(v) && v > 0) out[k] = v;
+        }
+        return Object.keys(out).length > 0 ? { clearedFields: out } : {};
       })(),
     };
   } catch {

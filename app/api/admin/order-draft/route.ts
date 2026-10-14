@@ -15,6 +15,7 @@ import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/pro
 import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
 import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
+import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
@@ -155,6 +156,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     incidentPhotos: Array.isArray(o.incidentPhotos) ? o.incidentPhotos : undefined,
     ...sourceBlockWipesSnapshotField(o.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(o.deletedPhotoIds),
+    ...clearedFieldsSnapshotField(o.clearedFields),
   };
 }
 

@@ -17,6 +17,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField, mergeDeletedPhotoIds, parseDeletedPhotoIds, stripDeletedPhotos } from "@/lib/admin-photo-tombstones";
+import { clearedFieldsSnapshotField, mergeClearedFields, parseClearedFields } from "@/lib/admin-cleared-fields";
 import {
   autoRecordsTrafficLevel,
   ccVinTrafficLevel,
@@ -73,6 +74,8 @@ export type OrderWorkspacePersistBody = {
   sourceBlockWipes?: SourceBlockKey[];
   /** K1: dzēsto bilžu id — apvienošanā vienmēr uzvar (bilde neatgriežas). */
   deletedPhotoIds?: string[];
+  /** K2: apzināti iztukšoti lauki (lauks → ms) — tukšais uzvar pār bagātāku baseline. */
+  clearedFields?: Record<string, number>;
 };
 
 export type WorkspaceHydrationSource = "local" | "backup" | "server";
@@ -281,7 +284,25 @@ export function coalesceOrderWorkspacePersistBody(
       ...sourceBlockWipesSnapshotField(wipes),
     });
   }
+  // K2: tikai ienākošā marķieri nozīmē „šī ierīce iztukšoja” — tie uzvar pār baseline.
+  const cleared = parseClearedFields(incoming.clearedFields);
   const baselineBlocks = mergeSourceBlocksWithDefaults(baseline.sourceBlocks);
+  for (const key of Object.keys(cleared)) {
+    if (!key.startsWith("block:")) continue;
+    const k = key.slice(6) as SourceBlockKey;
+    if (k in baselineBlocks && k in incomingBlocks) {
+      // Teksta daļai uzvar ienākošais; bildes joprojām apvieno (K1 kapakmeņi).
+      (baselineBlocks as Record<string, unknown>)[k] = {
+        ...(incomingBlocks as Record<string, unknown>)[k] as object,
+        ...(() => {
+          const b = (baselineBlocks as Record<string, Record<string, unknown>>)[k] ?? {};
+          const o: Record<string, unknown> = {};
+          for (const f of ["photos", "photoGroups"]) if (f in b) o[f] = b[f];
+          return o;
+        })(),
+      };
+    }
+  }
   const mergedBlocks: WorkspaceSourceBlocks = {
     csdd: wiped.has("csdd")
       ? incomingBlocks.csdd
@@ -408,10 +429,16 @@ export function coalesceOrderWorkspacePersistBody(
   const dead = new Set(tombstones);
   return {
     sourceBlocks: stripDeletedPhotos(mergeSourceBlocksWithDefaults(mergedBlocks), dead),
-    iriss: pickRicherTextField(incoming.iriss, baseline.iriss),
-    apskatesPlāns: pickRicherTextField(incoming.apskatesPlāns, baseline.apskatesPlāns),
-    tehniskoRiskuAnalize: pickRicherTextField(incoming.tehniskoRiskuAnalize, baseline.tehniskoRiskuAnalize),
-    cenasAtbilstiba: pickRicherTextField(incoming.cenasAtbilstiba, baseline.cenasAtbilstiba),
+    iriss: cleared.iriss ? incoming.iriss ?? "" : pickRicherTextField(incoming.iriss, baseline.iriss),
+    apskatesPlāns: cleared["apskatesPlāns"]
+      ? incoming.apskatesPlāns ?? ""
+      : pickRicherTextField(incoming.apskatesPlāns, baseline.apskatesPlāns),
+    tehniskoRiskuAnalize: cleared.tehniskoRiskuAnalize
+      ? incoming.tehniskoRiskuAnalize ?? ""
+      : pickRicherTextField(incoming.tehniskoRiskuAnalize, baseline.tehniskoRiskuAnalize),
+    cenasAtbilstiba: cleared.cenasAtbilstiba
+      ? incoming.cenasAtbilstiba ?? ""
+      : pickRicherTextField(incoming.cenasAtbilstiba, baseline.cenasAtbilstiba),
     previewConfirmed: incoming.previewConfirmed || baseline.previewConfirmed,
     vehicleAiExtraction: incoming.vehicleAiExtraction ?? baseline.vehicleAiExtraction,
     vehicleAiExtractionMeta: incoming.vehicleAiExtractionMeta ?? baseline.vehicleAiExtractionMeta,
@@ -419,6 +446,7 @@ export function coalesceOrderWorkspacePersistBody(
     incidentPhotos: stripDeletedPhotos({ photos: incidentSynced.photos }, dead).photos,
     ...sourceBlockWipesSnapshotField(wipes),
     ...deletedPhotoIdsSnapshotField(tombstones),
+    ...clearedFieldsSnapshotField(mergeClearedFields(baseline.clearedFields, incoming.clearedFields)),
   };
 }
 
@@ -429,6 +457,9 @@ export function isRegressiveWorkspacePersist(
 ): boolean {
   if (!baseline) return false;
   if (parseSourceBlockWipes(incoming.sourceBlockWipes).length > 0) return false;
+  // K2: apzināta iztukšošana nav regresija.
+  // Tikai svaigi marķieri (≤10 min), lai vecs marķieris neatslēdz aizsardzību uz visiem laikiem.
+  if (Object.values(parseClearedFields(incoming.clearedFields)).some((t) => Date.now() - t < 10 * 60_000)) return false;
   const coalesced = coalesceOrderWorkspacePersistBody(incoming, baseline);
   const inScore = workspaceHydrationFillScore(coalesced);
   const baseScore = workspaceHydrationFillScore(baseline);
@@ -462,6 +493,7 @@ export function buildOrderDraftWorkspaceBody(
     incidentPhotos: safe.incidentPhotos,
     ...sourceBlockWipesSnapshotField(safe.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(safe.deletedPhotoIds),
+    ...clearedFieldsSnapshotField(safe.clearedFields),
   };
 }
 
@@ -509,6 +541,7 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
     incidentPhotos: stripDeletedPhotos({ photos: incident.incidentPhotos }, dead).photos,
     ...sourceBlockWipesSnapshotField(body.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(tombstones),
+    ...clearedFieldsSnapshotField(body.clearedFields),
   };
 }
 
@@ -537,6 +570,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     incidentPhotos: normalized.incidentPhotos,
     ...sourceBlockWipesSnapshotField(normalized.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(normalized.deletedPhotoIds),
+    ...clearedFieldsSnapshotField(normalized.clearedFields),
     savedAt,
   });
 }
@@ -566,6 +600,7 @@ export function serializeOrderWorkspaceSnapshot(
     incidentPhotos: safe.incidentPhotos,
     ...sourceBlockWipesSnapshotField(safe.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(safe.deletedPhotoIds),
+    ...clearedFieldsSnapshotField(safe.clearedFields),
     savedAt,
   });
 }

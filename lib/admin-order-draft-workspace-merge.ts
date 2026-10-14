@@ -13,6 +13,7 @@ import {
 } from "@/lib/admin-order-workspace-persist";
 import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
+import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
 
 export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): OrderWorkspacePersistBody {
   return normalizeOrderWorkspacePersistBody({
@@ -28,6 +29,7 @@ export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): Or
     incidentPhotos: w.incidentPhotos ?? [],
     ...sourceBlockWipesSnapshotField(w.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(w.deletedPhotoIds),
+    ...clearedFieldsSnapshotField(w.clearedFields),
   });
 }
 
@@ -53,6 +55,7 @@ export function persistBodyToOrderDraftWorkspace(
     incidentPhotoGroups: safe.incidentPhotoGroups,
     incidentPhotos: safe.incidentPhotos,
     ...deletedPhotoIdsSnapshotField(safe.deletedPhotoIds),
+    ...clearedFieldsSnapshotField(safe.clearedFields),
   };
 }
 
