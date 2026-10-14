@@ -5,6 +5,8 @@ export const routing = defineRouting({
   locales: APP_LOCALES,
   defaultLocale: DEFAULT_LOCALE,
   localeDetection: false,
+  /** Bez `NEXT_LOCALE` sīkdatnes: `set-cookie` padara statiskās lapas nekešojamas Vercel CDN (private, no-store). Valodu nosaka URL prefikss. */
+  localeCookie: false,
   /** HTML `hreflang` nāk no metadatiem; Link header citādi rāda ceļus bez `/lv`. */
   alternateLinks: false,
   /**
