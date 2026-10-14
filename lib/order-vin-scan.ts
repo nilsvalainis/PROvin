@@ -366,7 +366,7 @@ export function parseOrderVinScanDashboardHint(raw: unknown): OrderVinScanDashbo
   const none = Math.max(0, Math.floor(Number(o.none) || 0));
   const error = Math.max(0, Math.floor(Number(o.error) || 0));
   const foundLabels = Array.isArray(o.foundLabels)
-    ? o.foundLabels.filter((s): s is string => typeof s === "string" && s.trim()).map((s) => s.trim()).slice(0, 8)
+    ? o.foundLabels.filter((s): s is string => typeof s === "string" && s.trim() !== "").map((s) => s.trim()).slice(0, 8)
     : [];
   const hint = typeof o.hint === "string" ? o.hint.trim().slice(0, 160) : "";
   return { at, vin, status: o.status, found, none, error, foundLabels, hint };
