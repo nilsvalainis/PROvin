@@ -1,5 +1,6 @@
 "use client";
 
+import { adminProBtn } from "@/lib/admin-pro-tones";
 import { appendUploadedPhotosToGroup } from "@/lib/photo-group-append";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -802,7 +803,7 @@ export function AdminListingAnalysisPhotos({
                 type="button"
                 onClick={() => void removeAllPhotos()}
                 disabled={busy}
-                className="inline-flex items-center gap-1 rounded-md border border-red-200/80 bg-red-50/80 px-2 py-1 text-[10px] font-medium text-red-700 hover:bg-red-100/80 disabled:opacity-45 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300"
+                className={adminProBtn("danger")}
               >
                 <Trash2 className="h-3.5 w-3.5" aria-hidden />
                 Dzēst visas

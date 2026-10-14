@@ -1,5 +1,6 @@
 "use client";
 
+import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
 import { useCallback, useEffect, useState } from "react";
 import { openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import { MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER } from "@/lib/email/mini-to-audits-recommendation";
@@ -184,8 +185,8 @@ export function AdminOrderUpsellPanel({
   }
 
   return (
-    <section className="mb-2 rounded-lg border border-sky-200/90 bg-sky-50/50 px-2 py-2">
-      <p className="text-[10px] font-medium uppercase tracking-wide text-sky-800">Piepirkums esošajam pasūtījumam</p>
+    <section className="mb-2 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 py-2">
+      <p className="text-[10px] font-medium uppercase tracking-wide text-slate-600">Piepirkums esošajam pasūtījumam</p>
       {showApplied && applied ? (
         <p className="mt-1 text-[11px] text-sky-950">{applied.badge}. Iepriekš ievadītie dati paliek.</p>
       ) : null}
@@ -193,7 +194,7 @@ export function AdminOrderUpsellPanel({
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           {quotes.map((q) => (
             <span key={q.kind} className="inline-flex flex-wrap gap-1">
-              <button type="button" className={btn} disabled={busy !== null} onClick={() => void openDraft(q.kind)}>
+              <button type="button" className={`${btn} ${ADMIN_PRO_TONE.money}`} disabled={busy !== null} onClick={() => void openDraft(q.kind)}>
                 {busy === q.kind ? "Gatavo…" : q.label}
               </button>
               <button
@@ -265,12 +266,12 @@ export function AdminOrderUpsellPanel({
             />
           </label>
           <div className="flex flex-wrap gap-1.5">
-            <button type="button" className={btn} disabled={busy !== null || !draft.email} onClick={() => void sendEmail()}>
+            <button type="button" className={`${btn} ${ADMIN_PRO_TONE.client}`} disabled={busy !== null || !draft.email} onClick={() => void sendEmail()}>
               {busy === "send" ? "Sūta…" : "Sūtīt"}
             </button>
             <button
               type="button"
-              className={btn}
+              className={`${btn} ${ADMIN_PRO_TONE.client}`}
               disabled={!draft.phone}
               title={draft.phone ? "Atvērt WhatsApp" : "Nav klienta tālruņa"}
               onClick={() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -378,7 +379,7 @@ export function AdminDealerDataJobStrip({
         {showRefund ? (
           <button
             type="button"
-            className={`${btn} border-rose-300 text-rose-700 hover:bg-rose-50`}
+            className={`${btn} ${ADMIN_PRO_TONE.danger}`}
             disabled={!editable || busy !== null}
             onClick={() => void refund()}
           >
@@ -392,15 +393,15 @@ export function AdminDealerDataJobStrip({
           </button>
         ) : null}
 
-        <button type="button" className={btn} onClick={() => void copyTemplate(false)}>
+        <button type="button" className={`${btn} ${ADMIN_PRO_TONE.client}`} onClick={() => void copyTemplate(false)}>
           WhatsApp: nav datu
         </button>
-        <button type="button" className={btn} onClick={() => void copyTemplate(true)}>
+        <button type="button" className={`${btn} ${ADMIN_PRO_TONE.client}`} onClick={() => void copyTemplate(true)}>
           WhatsApp: atcelts
         </button>
         <button
           type="button"
-          className={btn}
+          className={`${btn} ${ADMIN_PRO_TONE.client}`}
           disabled={busy !== null}
           onClick={() => openMail("message", "no_data")}
         >
@@ -408,7 +409,7 @@ export function AdminDealerDataJobStrip({
         </button>
         <button
           type="button"
-          className={btn}
+          className={`${btn} ${ADMIN_PRO_TONE.client}`}
           disabled={busy !== null}
           onClick={() => openMail("message", "cancelled")}
         >
@@ -440,7 +441,7 @@ export function AdminDealerDataJobStrip({
         ) : null}
         <button
           type="button"
-          className={`${btn} border-emerald-300 text-emerald-800 hover:bg-emerald-50`}
+          className={`${btn} ${ADMIN_PRO_TONE.client}`}
           disabled={busy !== null}
           onClick={() => openMail("pdf", "ready")}
         >
@@ -525,7 +526,7 @@ export function AdminDealerDataJobStrip({
               </button>
               <button
                 type="button"
-                className={`${btn} border-emerald-400 bg-emerald-50 text-emerald-900 hover:bg-emerald-100`}
+                className={`${btn} ${ADMIN_PRO_TONE.client}`}
                 disabled={busy !== null}
                 onClick={() => void sendMail()}
               >

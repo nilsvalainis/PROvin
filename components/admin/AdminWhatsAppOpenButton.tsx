@@ -17,11 +17,11 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-const whatsappBtnClass = `${adminCompactCopyBtnClass} border-emerald-200/90 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100/80 hover:text-emerald-800`;
-const whatsappPillClass = `${adminActionPillBase} bg-emerald-700 hover:bg-emerald-800 focus-visible:ring-emerald-600`;
-const whatsappPillDisabledClass = `${adminActionPillBase} cursor-not-allowed bg-emerald-800/35 text-white/80`;
+const whatsappBtnClass = `${adminCompactCopyBtnClass} provin-tone-client border-[#0071e3]/25 bg-[#0071e3]/10 text-[#0066cc] hover:border-[#0071e3]/40 hover:bg-[#0071e3]/15 hover:text-[#0058b0]`;
+const whatsappPillClass = `${adminActionPillBase} bg-[#0071e3] hover:bg-[#0062c4] focus-visible:ring-[#0071e3]`;
+const whatsappPillDisabledClass = `${adminActionPillBase} cursor-not-allowed bg-[#0071e3]/35 text-white/80`;
 
-/** Blakus klienta tālrunim — atver WhatsApp sarunu (desktop app, tad wa.me). */
+/** Blakus klienta tālrunim: atver WhatsApp sarunu (desktop app, tad wa.me). */
 export function AdminWhatsAppOpenButton({
   phone,
   variant = "icon",

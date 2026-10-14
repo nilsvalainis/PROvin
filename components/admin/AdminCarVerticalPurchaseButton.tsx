@@ -1,5 +1,6 @@
 "use client";
 
+import { adminProBtn } from "@/lib/admin-pro-tones";
 import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
 import {
   CARVERTICAL_PURCHASE_CONFIRM_LV,
@@ -54,7 +55,7 @@ export function AdminCarVerticalPurchaseButton({ disabled, readOnly }: Props) {
         type="button"
         disabled={disabled || readOnly || !ready}
         onClick={onBuy}
-        className="rounded-md border border-amber-300/80 bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-950 transition hover:bg-amber-100 disabled:opacity-50"
+        className={adminProBtn("money")}
       >
         Pirkt CarVertical atskaiti
       </button>
