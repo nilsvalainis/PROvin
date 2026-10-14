@@ -755,69 +755,6 @@ export function widenExactSearchBounds(filter: EcarstradeSearchFilter): Ecarstra
     next.engineFromCc = Math.max(600, next.engineFromCc - 200);
     next.engineToCc = Math.min(9000, next.engineToCc + 200);
   }
-  if (next.powerFromKw != null && next.powerFromKw === next.powerToKw) {
-    next.powerFromKw = Math.max(40, next.powerFromKw - 15);
-    next.powerToKw = next.powerToKw + 15;
-  }
-  return next;
-}
-
-/** ET future_api slāņi, kas bieži noņem visu krājumu, ja sakrīt Auto1+Openlane+Autobid+forma. */
-export function ecarstradeApiStackFields(filter: EcarstradeSearchFilter): string[] {
-  const fields: string[] = [];
-  if (filter.modelId || filter.modelName) fields.push("model");
-  if (filter.yearFrom != null || filter.yearTo != null) fields.push("year");
-  if (filter.mileageFrom != null || filter.mileageTo != null) fields.push("mileage");
-  if (filter.priceFrom != null || filter.priceTo != null) fields.push("price");
-  if (filter.powerFromKw != null || filter.powerToKw != null) fields.push("power");
-  if (filter.fuels.length) fields.push("fuel");
-  if (filter.gearboxes.length) fields.push("gear");
-  if (filter.bodies.length) fields.push("body");
-  if (filter.colors.length) fields.push("color");
-  if (filter.engineFromCc != null || filter.engineToCc != null) fields.push("engine");
-  if (filter.doorsFrom != null || filter.doorsTo != null) fields.push("doors");
-  if (filter.seatsFrom != null || filter.seatsTo != null) fields.push("seats");
-  if (filter.vat.length) fields.push("vat");
-  if (filter.emissionFrom) fields.push("emission");
-  return fields;
-}
-
-/**
- * Noņem ET API slāņus, kas parasti dod 0, lai paliek make+model+year (+ km/cena/degviela/kārba).
- * Vietas, durvis, vēlamās krāsas, PVN, precīzs kW un virsbūve pie zināma modeļa paliek ārpus URL.
- */
-export function loosenStackedEcarstradeFilter(filter: EcarstradeSearchFilter): EcarstradeSearchFilter {
-  const next = cloneEcarstradeFilter(filter);
-  next.seatsFrom = null;
-  next.seatsTo = null;
-  next.doorsFrom = null;
-  next.doorsTo = null;
-  next.colors = [];
-  next.vat = [];
-  next.emissionFrom = "";
-  next.mileageFrom = null;
-  next.priceFrom = null;
-  if (next.powerFromKw != null && next.powerFromKw === next.powerToKw) {
-    next.powerFromKw = null;
-    next.powerToKw = null;
-  }
-  if (next.modelId) {
-    next.engineFromCc = null;
-    next.engineToCc = null;
-    next.bodies = [];
-  }
-  const extras = ecarstradeApiStackFields(next).filter((f) => f !== "model" && f !== "year").length;
-  if (extras >= 4) {
-    next.powerFromKw = null;
-    next.powerToKw = null;
-    next.bodies = [];
-    next.engineFromCc = null;
-    next.engineToCc = null;
-  }
-  if (next.fuels.length && next.gearboxes.length && next.mileageTo != null && next.priceTo != null) {
-    next.gearboxes = [];
-    next.priceTo = null;
-  }
   return next;
 }
 

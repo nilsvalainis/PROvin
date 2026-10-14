@@ -2,14 +2,12 @@ import { describe, expect, it } from "vitest";
 import { resolveEcarstradeMake, resolveEcarstradeModel, resolveMakeModelFromBrand } from "@/lib/iriss-listings-ecarstrade-catalog";
 import { isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
-  ecarstradeApiStackFields,
   ecarstradeSearchUrl,
   fillFilterGaps,
   fillMakeModelFromBrand,
   filterFromBrandModel,
   filterFromOrderFields,
   filtersFromBrandModel,
-  loosenStackedEcarstradeFilter,
   parseListingSearchUrl,
   sameEcarstradeSearch,
   widenExactSearchBounds,
@@ -361,47 +359,6 @@ describe("eCarsTrade search mapper", () => {
     expect(jeep.some((f) => f.makeNames[0] === "Mitsubishi" && /Pajero/i.test(f.modelName))).toBe(true);
   });
 
-  it("loosens stacked seats/colors/exact kW/body from the ET API URL", () => {
-    const stacked = {
-      ...filterFromBrandModel("Volvo XC60"),
-      yearFrom: 2018,
-      yearTo: 2022,
-      mileageTo: 150000,
-      priceTo: 28000,
-      powerFromKw: 100,
-      powerToKw: 100,
-      fuels: ["Diesel"],
-      gearboxes: ["Automatic"],
-      bodies: ["SUV"],
-      colors: ["Black", "Grey"],
-      seatsFrom: 5,
-      seatsTo: 5,
-      doorsFrom: 5,
-      doorsTo: 5,
-      vat: ["reclaimable"],
-    };
-    expect(ecarstradeApiStackFields(stacked)).toEqual(
-      expect.arrayContaining(["model", "year", "seats", "color", "power", "vat"]),
-    );
-    const loose = loosenStackedEcarstradeFilter(stacked);
-    expect(loose.seatsFrom).toBeNull();
-    expect(loose.colors).toEqual([]);
-    expect(loose.vat).toEqual([]);
-    expect(loose.powerFromKw).toBeNull();
-    expect(loose.bodies).toEqual([]);
-    expect(loose.yearFrom).toBe(2018);
-    expect(loose.mileageTo).toBe(150000);
-    expect(loose.fuels).toEqual(["Diesel"]);
-    expect(loose.gearboxes).toEqual([]);
-    expect(loose.priceTo).toBeNull();
-    const url = ecarstradeSearchUrl(loose)!;
-    expect(url).not.toContain("places_from=");
-    expect(url).not.toContain("color[]=");
-    expect(url).not.toContain("vat[]=");
-    expect(url).toContain("year_from=2018");
-    expect(url).toContain("mark[]=68");
-  });
-
   it("maps Autobid brandIds from the verified IRISS set and e17 diesel", () => {
     const bmw = parseListingSearchUrl("https://autobid.de/en/search-results?brandId-brand=1&name-model=X5&e17=3&registrationFrom=2014");
     expect(bmw.makeIds).toEqual([7]);
@@ -470,8 +427,8 @@ describe("eCarsTrade search mapper", () => {
       powerFromKw: 176,
       powerToKw: 176,
     });
-    expect(kw.powerFromKw).toBe(161);
-    expect(kw.powerToKw).toBe(191);
+    expect(kw.powerFromKw).toBe(176);
+    expect(kw.powerToKw).toBe(176);
   });
 
   it("plans Opel Vivaro/Traffic without Porsche and with Openlane years", () => {
@@ -524,5 +481,38 @@ describe("eCarsTrade search mapper", () => {
     expect(vans.some((p) => p.filter.makeNames.includes("MAN"))).toBe(true);
     expect(vans.some((p) => /Crafter/i.test(p.filter.modelName))).toBe(true);
     expect(vans.some((p) => /Sprinter/i.test(p.filter.modelName))).toBe(true);
+  });
+
+  it("keeps stacked Auto1 and order-form criteria on the ET URL", () => {
+    const plans = planEcarstradeSearchUrls({
+      id: "stacked-keep",
+      brandModel: "Volvo XC60",
+      productionYears: "2018-2022",
+      maxMileage: "150000",
+      totalBudget: "28000",
+      engineType: "dīzelis",
+      transmission: "automāts",
+      bodyType: "SUV",
+      seatCount: "5",
+      preferredColors: "melns",
+      listingLinkAuto1: [
+        "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&firstRegistrationTo=2022&fuelTypes=DIESEL&gearboxes=AUTOMATIC&bodyTypes=SUV&maxMileage=150000&maxPrice=28000",
+      ],
+      listingLinkOpenline: [""],
+      listingLinkAutobid: [""],
+      listingLinkMobile: [""],
+      listingLinkEcarstrade: [""],
+    });
+    expect(plans).toHaveLength(1);
+    const url = plans[0]!.url;
+    expect(url).toContain("year_from=2018");
+    expect(url).toContain("year_to=2022");
+    expect(url).toContain("mileage_to=150000");
+    expect(url).toContain("price_to=28000");
+    expect(url).toContain("fuel[]=Diesel");
+    expect(url).toContain("gearbox[]=Automatic");
+    expect(url).toContain("places_from=5");
+    expect(url).toContain("color[]=Black");
+    expect(url).toMatch(/category\[\]=/);
   });
 });

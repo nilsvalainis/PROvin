@@ -69,7 +69,7 @@ describe("iriss scan eCarsTrade link backfill", () => {
       }),
     );
     expect(preview.added.some((u) => u.includes("mark[]=5") && u.includes("mark[]=67") && u.includes("mark[]=54"))).toBe(true);
-    expect(preview.added.some((u) => u.includes("power_from=161") && u.includes("power_to=191"))).toBe(true);
+    expect(preview.added.some((u) => u.includes("power_from=176") && u.includes("power_to=176"))).toBe(true);
   });
 
   it("keeps one ET link when Auto1 and Openlane overlap, and two when fuel differs", () => {

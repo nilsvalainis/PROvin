@@ -8,7 +8,6 @@ import {
   filterFromBrandModel,
   filterFromOrderFields,
   filtersFromBrandModel,
-  loosenStackedEcarstradeFilter,
   parseListingSearchDetailed,
   sameEcarstradeSearch,
   widenExactSearchBounds,
@@ -104,7 +103,7 @@ export function planEcarstradeSearchUrls(rec: IrissEcarstradeLinkSource): IrissE
   const plans: IrissEcarstradeLinkPlan[] = [];
   const seen = new Set<string>();
   for (const cluster of clusters) {
-    const filter = loosenStackedEcarstradeFilter(widenExactSearchBounds(cluster.filter));
+    const filter = widenExactSearchBounds(cluster.filter);
     const url = ecarstradeSearchUrl(filter);
     if (!url) continue;
     if (seen.has(url) || plans.some((p) => sameEcarstradeSearch(p.url, url))) continue;
