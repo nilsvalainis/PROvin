@@ -106,7 +106,7 @@ describe("captchaCreateTaskBody", () => {
     });
   });
 
-  it("Cloudflare Challenge: colon proxy paliek colon formā, tukšs ir ProxyLess", () => {
+  it("Cloudflare Challenge: AntiCloudflareTask ar proxy, bez websiteKey un bez ProxyLess", () => {
     const withProxy = captchaCreateTaskBody("key-1", {
       kind: "cloudflare_challenge",
       websiteURL: "https://www.car.info/en-se/",
@@ -116,16 +116,30 @@ describe("captchaCreateTaskBody", () => {
       type: "AntiCloudflareTask",
       proxy: "host.example:80:user:pass",
     });
-    const proxyless = captchaCreateTaskBody("key-1", {
+    expect(withProxy.task).not.toHaveProperty("websiteKey");
+    const urlProxy = captchaCreateTaskBody("key-1", {
+      kind: "cloudflare_challenge",
+      websiteURL: "https://stat.vin/",
+      proxy: FIXIE_URL,
+    });
+    expect(urlProxy.task).toMatchObject({
+      type: "AntiCloudflareTask",
+      websiteURL: "https://stat.vin/",
+      proxy: FIXIE_URL,
+    });
+    expect(urlProxy.task).not.toHaveProperty("websiteKey");
+    const noProxy = captchaCreateTaskBody("key-1", {
       kind: "cloudflare_challenge",
       websiteURL: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
       html: "<html><title>Just a moment...</title></html>",
     });
-    expect(proxyless.task).toMatchObject({
-      type: "AntiCloudflareTaskProxyLess",
+    expect(noProxy.task).toMatchObject({
+      type: "AntiCloudflareTask",
       html: "<html><title>Just a moment...</title></html>",
     });
-    expect((proxyless.task as { proxy?: string }).proxy).toBeUndefined();
+    expect(noProxy.task).not.toHaveProperty("websiteKey");
+    expect((noProxy.task as { proxy?: string }).proxy).toBeUndefined();
+    expect(String((noProxy.task as { type?: string }).type)).not.toMatch(/ProxyLess/i);
   });
 
   it("veido Turnstile uzdevumu", () => {
@@ -197,7 +211,7 @@ describe("capsolverProxyColonForm", () => {
 });
 
 describe("cloudflareChallengeTaskQueue", () => {
-  it("vispirms colon, tad URL, tad ProxyLess; invalid html atpazīst", () => {
+  it("vispirms URL, tad colon; nekad ProxyLess; invalid html atpazīst", () => {
     const prevFixie = process.env.FIXIE_URL;
     const prevCap = process.env.CAPSOLVER_PROXY;
     delete process.env.FIXIE_URL;
@@ -210,13 +224,17 @@ describe("cloudflareChallengeTaskQueue", () => {
         proxy: FIXIE_URL,
         html,
       });
-      expect(queue[0]).toMatchObject({ proxy: "group.usefixie.com:80:fixie:secret", html });
-      expect(queue[1]).toMatchObject({ proxy: "group.usefixie.com:80:fixie:secret" });
+      expect(queue[0]).toMatchObject({ proxy: FIXIE_URL, html });
+      expect(queue[1]).toMatchObject({ proxy: FIXIE_URL });
       expect(queue[1]?.html).toBeUndefined();
-      expect(queue.some((t) => t.proxy === FIXIE_URL && t.html === html)).toBe(true);
-      expect(queue[queue.length - 1]).toMatchObject({ kind: "cloudflare_challenge" });
-      expect(queue[queue.length - 1]?.proxy).toBeUndefined();
+      expect(queue.some((t) => t.proxy === "group.usefixie.com:80:fixie:secret" && t.html === html)).toBe(true);
+      expect(queue.every((t) => Boolean(t.proxy))).toBe(true);
+      expect(queue.length).toBe(4);
       expect(queue.length).toBeLessThanOrEqual(6);
+      expect(cloudflareChallengeTaskQueue({
+        kind: "cloudflare_challenge",
+        websiteURL: "https://stat.vin/",
+      })).toEqual([]);
     } finally {
       if (prevFixie === undefined) delete process.env.FIXIE_URL;
       else process.env.FIXIE_URL = prevFixie;
@@ -321,17 +339,23 @@ describe("solveCaptcha", () => {
     proxy: FIXIE_URL,
   };
 
-  it("Cloudflare: proxy connect failed tad ProxyLess", async () => {
+  it("Cloudflare: proxy connect failed tad colon, nekad ProxyLess", async () => {
     const prevFixie = process.env.FIXIE_URL;
     const prevCap = process.env.CAPSOLVER_PROXY;
     delete process.env.FIXIE_URL;
     delete process.env.CAPSOLVER_PROXY;
     const types: string[] = [];
+    const proxies: string[] = [];
     const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
-      const body = JSON.parse(String(init?.body ?? "{}")) as { task?: { type?: string; proxy?: string } };
+      const body = JSON.parse(String(init?.body ?? "{}")) as {
+        task?: { type?: string; proxy?: string; websiteKey?: string };
+      };
       const type = String(body.task?.type ?? "");
       if (type) types.push(type);
-      if (type === "AntiCloudflareTask") {
+      expect(body.task?.websiteKey).toBeUndefined();
+      const proxy = String(body.task?.proxy ?? "");
+      if (proxy) proxies.push(proxy);
+      if (proxy.startsWith("http")) {
         return {
           json: async () => ({ errorId: 1, errorDescription: "custom proxy connect failed" }),
           status: 400,
@@ -341,7 +365,7 @@ describe("solveCaptcha", () => {
         json: async () => ({
           errorId: 0,
           status: "ready",
-          taskId: "cf-pl",
+          taskId: "cf-colon",
           solution: { cookies: { cf_clearance: "cf-1" }, userAgent: "ua" },
         }),
         status: 200,
@@ -358,9 +382,40 @@ describe("solveCaptcha", () => {
         { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000 },
       );
       expect(result).toMatchObject({ ok: true, token: "cf-1" });
-      expect(types).toContain("AntiCloudflareTask");
-      expect(types).toContain("AntiCloudflareTaskProxyLess");
-      if (result.ok) expect(result.proxy).toBeUndefined();
+      expect(types.every((t) => t === "AntiCloudflareTask")).toBe(true);
+      expect(types).not.toContain("AntiCloudflareTaskProxyLess");
+      expect(proxies.some((p) => p === FIXIE_URL)).toBe(true);
+      expect(proxies.some((p) => p === "group.usefixie.com:80:fixie:secret")).toBe(true);
+      if (result.ok) expect(result.proxy).toBe("group.usefixie.com:80:fixie:secret");
+    } finally {
+      if (prevFixie === undefined) delete process.env.FIXIE_URL;
+      else process.env.FIXIE_URL = prevFixie;
+      if (prevCap === undefined) delete process.env.CAPSOLVER_PROXY;
+      else process.env.CAPSOLVER_PROXY = prevCap;
+    }
+  });
+
+  it("Cloudflare bez proxy nesauc createTask", async () => {
+    const prevFixie = process.env.FIXIE_URL;
+    const prevCap = process.env.CAPSOLVER_PROXY;
+    delete process.env.FIXIE_URL;
+    delete process.env.CAPSOLVER_PROXY;
+    let creates = 0;
+    const fetchImpl = (async () => {
+      creates += 1;
+      return { json: async () => ({ errorId: 0, taskId: "x" }), status: 200 } as Response;
+    }) as typeof fetch;
+    try {
+      const result = await solveCaptcha(
+        {
+          kind: "cloudflare_challenge",
+          websiteURL: "https://stat.vin/",
+        },
+        { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000 },
+      );
+      expect(creates).toBe(0);
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toContain("FIXIE_URL");
     } finally {
       if (prevFixie === undefined) delete process.env.FIXIE_URL;
       else process.env.FIXIE_URL = prevFixie;
@@ -841,5 +896,84 @@ describe("mnt.ee ProxyLess vs CAPSOLVER_FORCE_PROXY", () => {
     expect(isMntRecaptchaM1FallbackEnabled("0")).toBe(false);
     expect(isMntRecaptchaM1FallbackEnabled("false")).toBe(false);
     expect(isMntRecaptchaM1FallbackEnabled(" off ")).toBe(false);
+  });
+});
+
+describe("CapSolver createTask payload schema", () => {
+  function taskOf(body: Record<string, unknown>): Record<string, unknown> {
+    return body.task as Record<string, unknown>;
+  }
+
+  it("AntiCloudflareTask: websiteURL + proxy, bez websiteKey", () => {
+    const lt = taskOf(
+      captchaCreateTaskBody("key-1", {
+        kind: "cloudflare_challenge",
+        websiteURL: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+        proxy: FIXIE_URL,
+        html: "<html><title>Just a moment...</title></html>",
+        userAgent: "Mozilla/5.0",
+      }),
+    );
+    expect(lt).toEqual({
+      type: "AntiCloudflareTask",
+      websiteURL: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+      proxy: FIXIE_URL,
+      html: "<html><title>Just a moment...</title></html>",
+      userAgent: "Mozilla/5.0",
+    });
+    const stat = taskOf(
+      captchaCreateTaskBody("key-1", {
+        kind: "cloudflare_challenge",
+        websiteURL: "https://stat.vin/",
+        proxy: FIXIE_URL,
+      }),
+    );
+    expect(stat).toEqual({
+      type: "AntiCloudflareTask",
+      websiteURL: "https://stat.vin/",
+      proxy: FIXIE_URL,
+    });
+  });
+
+  it("AntiTurnstileTaskProxyLess vajag websiteKey; CF to nenes", () => {
+    const ts = taskOf(
+      captchaCreateTaskBody("key-1", {
+        kind: "turnstile",
+        websiteURL: "https://www.car.info/en-se/",
+        websiteKey: "0x4AAAAAAAtest",
+      }),
+    );
+    expect(ts).toEqual({
+      type: "AntiTurnstileTaskProxyLess",
+      websiteURL: "https://www.car.info/en-se/",
+      websiteKey: "0x4AAAAAAAtest",
+    });
+    const cf = taskOf(
+      captchaCreateTaskBody("key-1", {
+        kind: "cloudflare_challenge",
+        websiteURL: "https://bid.cars/",
+        proxy: FIXIE_URL,
+      }),
+    );
+    expect(cf.type).toBe("AntiCloudflareTask");
+    expect(cf).not.toHaveProperty("websiteKey");
+  });
+
+  it("mnt.ee V3 paliek ProxyLess ar pageAction un websiteKey", () => {
+    const v3 = taskOf(
+      captchaCreateTaskBody("key-1", {
+        kind: "recaptcha_v3",
+        websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+        websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+        pageAction: "soiduk_otsing",
+        proxy: mntRecaptchaV3Proxy(),
+      }),
+    );
+    expect(v3).toEqual({
+      type: "ReCaptchaV3TaskProxyLess",
+      websiteURL: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf",
+      websiteKey: "6LfM2VUpAAAAAIxz2LW7-pZy2tcQpV1lA-B1kHCa",
+      pageAction: "soiduk_otsing",
+    });
   });
 });

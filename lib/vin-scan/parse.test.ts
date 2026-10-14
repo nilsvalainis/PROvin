@@ -31,7 +31,7 @@ import {
   parseVinSourceScan,
   vehicleFromPlcTitle,
 } from "@/lib/vin-scan/parse";
-import { countVinScanStatuses } from "@/lib/vin-scan/types";
+import { countVinScanStatuses, formatVinScanCountLine, vinScanCountBreakdown } from "@/lib/vin-scan/types";
 
 const DK_VIN = "VF12RFL1H49621453";
 
@@ -315,5 +315,23 @@ describe("countVinScanStatuses", () => {
         { status: "needs_input" },
       ]),
     ).toMatchObject({ found: 2, none: 1, manual: 1, unknown: 0, skipped: 0, needs_input: 1 });
+  });
+});
+
+describe("vinScanCountBreakdown", () => {
+  it("atver pārlūkā nav kļūda; CapSolver ir kļūda", () => {
+    const counts = vinScanCountBreakdown([
+      { status: "found", summary: "Copart" },
+      { status: "none", summary: "Nav" },
+      { status: "unknown", summary: "CapSolver: invalid task data: websiteKey is required (HTTP 400)" },
+      { status: "unknown", summary: "mnt.ee: captcha_rejected: reCAPTCHA v3 token rejected" },
+      { status: "unknown", summary: "Avots bloķē serveri - atver pārlūkā" },
+      { status: "unknown", summary: "Lapa nav atpazīta" },
+      { status: "unknown", summary: "vegvesen.no API prasa pilnvaru - atver pārlūkā" },
+      { status: "manual", summary: "Maksas" },
+      { status: "skipped", summary: "Nav atslēgas" },
+    ]);
+    expect(counts).toEqual({ total: 9, ok: 2, error: 2, browser: 3 });
+    expect(formatVinScanCountLine(counts)).toBe("2/9 OK · 2 kļūda · 3 pārlūks");
   });
 });

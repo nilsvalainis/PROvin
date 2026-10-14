@@ -27,6 +27,7 @@ describe("VIN SCAN Cloudflare-blocked browser sources", () => {
     }
     expect(by.carfax_eu!.action).toBe("retry");
     expect(s.error).toBe(1);
+    expect(s.browser).toBe(4);
   });
   it("non-block error on those sources stays retry", () => {
     const s = buildOrderVinScanSummary(rec([{ id: "stat_vin", status: "error", summary: "timeout" }]))!;

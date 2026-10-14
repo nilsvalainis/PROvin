@@ -226,6 +226,7 @@ export function AdminOrderVinScanCard({
                 <Counter state="found" count={summary.found} label="atrasta info" />
                 <Counter state="none" count={summary.none} label="nav datu" />
                 <Counter state="error" count={summary.error} label="kļūda" />
+                {summary.browser > 0 ? <Counter state="none" count={summary.browser} label="pārlūks" /> : null}
               </span>
             ) : null}
           </div>

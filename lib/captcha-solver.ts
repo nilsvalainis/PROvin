@@ -43,7 +43,11 @@ export type TurnstileTask = {
 export type CloudflareChallengeTask = {
   kind: "cloudflare_challenge";
   websiteURL: string;
-  /** Optional. Empty = AntiCloudflareTaskProxyLess. */
+  /**
+   * Required for AntiCloudflareTask (5s challenge). CapSolver has no
+   * AntiCloudflareTaskProxyLess; that name is treated as Turnstile and then
+   * demands websiteKey.
+   */
   proxy?: string;
   html?: string;
   userAgent?: string;
@@ -233,14 +237,15 @@ export function isInvalidHtmlFailure(reason: string): boolean {
 }
 
 /**
- * AntiCloudflareTask attempts: colon proxy (CapSolver 400 on URL form), then URL form,
- * then the other env proxy (FIXIE vs CAPSOLVER_PROXY), then proxyless.
- * With HTML, also retry without HTML if CapSolver rejects the snapshot.
+ * AntiCloudflareTask only (proxy required). URL form first (pre-#149 / Fixie DNS),
+ * then colon `host:port:user:pass`. Never ProxyLess: CapSolver maps that to Turnstile
+ * and returns "websiteKey is required".
  */
 export function cloudflareChallengeTaskQueue(task: CloudflareChallengeTask): CloudflareChallengeTask[] {
   const seen = new Set<string>();
   const out: CloudflareChallengeTask[] = [];
   const push = (proxy: string, html: string | undefined) => {
+    if (!proxy) return;
     const key = `${proxy}\0${html ? "1" : "0"}`;
     if (seen.has(key)) return;
     seen.add(key);
@@ -248,7 +253,7 @@ export function cloudflareChallengeTaskQueue(task: CloudflareChallengeTask): Clo
       kind: "cloudflare_challenge",
       websiteURL: task.websiteURL,
       userAgent: task.userAgent,
-      ...(proxy ? { proxy } : {}),
+      proxy,
       ...(html ? { html } : {}),
     });
   };
@@ -258,18 +263,16 @@ export function cloudflareChallengeTaskQueue(task: CloudflareChallengeTask): Clo
     .filter(Boolean);
   const forms: string[] = [];
   for (const raw of [...new Set(raws)]) {
-    const colon = capsolverProxyColonForm(raw);
     const url = capsolverProxyFromUrl(raw);
-    if (colon) forms.push(colon);
-    if (url && url !== colon) forms.push(url);
+    const colon = capsolverProxyColonForm(raw);
+    if (url) forms.push(url);
+    if (colon && colon !== url) forms.push(colon);
   }
   const html = task.html?.trim() || undefined;
   for (const proxy of [...new Set(forms)]) {
     if (html) push(proxy, html);
     push(proxy, undefined);
   }
-  if (html) push("", html);
-  push("", undefined);
   return out.slice(0, 6);
 }
 
@@ -378,9 +381,12 @@ export function captchaCreateTaskBody(
       },
     };
   }
-  const cfProxy = (task.proxy ?? "").trim();
+  const cfProxyRaw = (task.proxy ?? "").trim();
+  const cfProxy = /^(https?|socks[45]):\/\//i.test(cfProxyRaw)
+    ? capsolverProxyFromUrl(cfProxyRaw) ?? cfProxyRaw
+    : capsolverProxyColonForm(cfProxyRaw) ?? cfProxyRaw;
   const cfTask: Record<string, unknown> = {
-    type: cfProxy ? "AntiCloudflareTask" : "AntiCloudflareTaskProxyLess",
+    type: "AntiCloudflareTask",
     websiteURL: task.websiteURL,
   };
   if (cfProxy) cfTask.proxy = cfProxy;
@@ -555,17 +561,23 @@ function labeledSolveResult(result: CaptchaSolveResult, sourceLabel?: string): C
 export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Promise<CaptchaSolveResult> {
   if (task.kind === "cloudflare_challenge") {
     const queue = cloudflareChallengeTaskQueue(task);
+    if (queue.length === 0) {
+      return labeledSolveResult(
+        { ok: false, reason: "Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" },
+        deps.sourceLabel,
+      );
+    }
     let last: CaptchaSolveResult = { ok: false, reason: "CapSolver: Cloudflare uzdevums neizdevās" };
     const skipProxy = new Set<string>();
     let skipHtml = false;
     for (const variant of queue) {
       const proxyKey = (variant.proxy ?? "").trim();
-      if (skipProxy.has(proxyKey)) continue;
+      if (!proxyKey || skipProxy.has(proxyKey)) continue;
       if (skipHtml && variant.html) continue;
       last = await solveCaptchaOnce(variant, deps);
-      if (last.ok) return proxyKey ? { ...last, proxy: proxyKey } : last;
+      if (last.ok) return { ...last, proxy: proxyKey };
       if (/Nav CAPSOLVER_API_KEY/i.test(last.reason)) return last;
-      if (isProxyConnectFailure(last.reason) && proxyKey) skipProxy.add(proxyKey);
+      if (isProxyConnectFailure(last.reason)) skipProxy.add(proxyKey);
       if (isInvalidHtmlFailure(last.reason)) skipHtml = true;
     }
     return last;

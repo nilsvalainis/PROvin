@@ -12,6 +12,12 @@ describe("VIN SCAN avotu veselības iznākumi", () => {
     expect(isVinScanHealthFailure("unknown", "stat.vin: Cloudflare bloķē servera pārbaudi")).toBe(true);
     expect(isVinScanHealthFailure("unknown", "stat.vin: pieprasījumu limits (HTTP 429)")).toBe(true);
     expect(isVinScanHealthFailure("unknown", "Avots neatbildēja laikā")).toBe(true);
+    expect(isVinScanHealthFailure("unknown", "CapSolver: invalid task data: websiteKey is required (HTTP 400)")).toBe(
+      true,
+    );
+    expect(isVinScanHealthFailure("unknown", "mnt.ee: captcha_rejected: reCAPTCHA v3 token rejected")).toBe(true);
+    expect(isVinScanHealthFailure("unknown", "Avots bloķē serveri - atver pārlūkā")).toBe(false);
+    expect(isVinScanHealthFailure("unknown", "Lapa nav atpazīta")).toBe(false);
   });
 
   it("ieraksta tikai atbildes un bloķējumus", () => {

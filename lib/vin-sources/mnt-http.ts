@@ -36,6 +36,7 @@ import {
   extractPageFromHtml,
   extractPartialUpdateHtml,
   extractPartialViewState,
+  htmlForCloudflareSolver,
   isCloudflareChallengeHtml,
   mergeCookieHeader,
   parseMntAjaxSource,
@@ -74,12 +75,13 @@ async function getPage(session: Session): Promise<VinHttpResult> {
 async function bypassCloudflare(challenged: VinHttpResult, session: Session): Promise<Session | { reason: string }> {
   const proxy = getCaptchaSolverProxy();
   if (!proxy) return { reason: `${CF_LABEL}: Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL` };
+  const html = htmlForCloudflareSolver(challenged.text, challenged.status);
   const solved = await solveCaptcha(
     {
       kind: "cloudflare_challenge",
       websiteURL: MNT_URL,
       proxy,
-      html: challenged.text.slice(0, 80_000),
+      ...(html ? { html } : {}),
       userAgent: session.ua,
     },
     { timeoutMs: 90_000, sourceLabel: CF_LABEL },

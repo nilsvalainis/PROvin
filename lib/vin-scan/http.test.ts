@@ -75,10 +75,11 @@ describe("scanFetchSmart - stat.vin Cloudflare WAF", () => {
     });
 
     expect(solveCaptcha).toHaveBeenCalledTimes(1);
-    const task = solveCaptcha.mock.calls[0]?.[0] as { kind: string; websiteURL: string; html?: string };
+    const task = solveCaptcha.mock.calls[0]?.[0] as { kind: string; websiteURL: string; html?: string; proxy?: string };
     expect(task.kind).toBe("cloudflare_challenge");
     expect(task.websiteURL).toBe("https://stat.vin/");
     expect(task.html).toBeUndefined();
+    expect(task.proxy).toBe(FIXIE);
     expect(page.status).toBe(200);
     expect(page.challengeReason).toBeUndefined();
     expect(scanChallengeReason(page)).toBeNull();
@@ -202,38 +203,24 @@ describe("scanFetchSmart - stat.vin Cloudflare WAF", () => {
     const task = solveCaptcha.mock.calls[0]?.[0] as { html?: string; proxy?: string };
     expect(task.html).toContain("Just a moment");
     expect(task.html).toContain("_cf_chl_opt");
+    expect(task.proxy).toBe(FIXIE);
     expect(page.status).toBe(200);
     expect(page.challengeReason).toBeUndefined();
   });
 
-  it("bez CAPSOLVER_PROXY joprojām sauc CapSolver (ProxyLess rezerve)", async () => {
+  it("bez CAPSOLVER_PROXY / FIXIE_URL nesauc CapSolver (challenge prasa proxy)", async () => {
     mockGetCaptchaSolverProxy.mockReturnValue("");
     mockVinStickyHttpProxyUrl.mockReturnValue("");
-    vinHttpFetch
-      .mockResolvedValueOnce({
-        status: 403,
-        text: LT_CHALLENGE_HTML,
-        cookie: "",
-        finalUrl: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        text: "<html><body>ok</body></html>",
-        cookie: "cf_clearance=lt",
-        finalUrl: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
-      });
-    solveCaptcha.mockResolvedValue({
-      ok: true,
-      token: "cf-tok",
-      cookies: { cf_clearance: "lt" },
-      userAgent: "Mozilla/5.0 solver",
+    vinHttpFetch.mockResolvedValueOnce({
+      status: 403,
+      text: LT_CHALLENGE_HTML,
+      cookie: "",
+      finalUrl: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
     });
-    await scanFetchSmart("https://www.epolicija.lt/itpr_paieska/transportas_lt.php", {
+    const page = await scanFetchSmart("https://www.epolicija.lt/itpr_paieska/transportas_lt.php", {
       solveUrl: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
     });
-    expect(solveCaptcha).toHaveBeenCalledTimes(1);
-    const task = solveCaptcha.mock.calls[0]?.[0] as { proxy?: string; html?: string };
-    expect(task.proxy).toBeUndefined();
-    expect(task.html).toContain("Just a moment");
+    expect(solveCaptcha).not.toHaveBeenCalled();
+    expect(page.challengeReason).toMatch(/FIXIE_URL|CAPSOLVER_PROXY/);
   });
 });

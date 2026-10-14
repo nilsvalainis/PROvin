@@ -21,6 +21,7 @@ import {
 import {
   cookiesRecordToHeader,
   extractPageFromHtml,
+  htmlForCloudflareSolver,
   isCloudflareChallengeHtml,
   mergeCookieHeader,
 } from "@/lib/vin-sources/html-extract";
@@ -75,12 +76,13 @@ async function bypassCloudflare(
   if (!proxy) {
     return { reason: "car.info Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" };
   }
+  const html = htmlForCloudflareSolver(challenged.text, challenged.status);
   const solved = await solveCaptcha(
     {
       kind: "cloudflare_challenge",
       websiteURL,
       proxy,
-      html: challenged.text.slice(0, 80_000),
+      ...(html ? { html } : {}),
       userAgent: session.ua,
     },
     { timeoutMs: 90_000 },
