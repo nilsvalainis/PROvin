@@ -365,7 +365,9 @@ export function AdminConsultationDetailView({
                 compact
                 hideToolbar
                 resetVersion={orderFieldResetKey}
-                endAdornment={<AdminWhatsAppOpenButton phone={mergedCustomerPhone} />}
+                endAdornment={
+                  <AdminWhatsAppOpenButton phone={mergedCustomerPhone} templateId="wa.select_consultation" />
+                }
               />
             </div>
           </AdminCollapsibleShell>
