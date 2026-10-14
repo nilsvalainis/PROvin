@@ -27,6 +27,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { IrissPavadzimesSidebarCard } from "@/components/admin/IrissPavadzimesSidebarCard";
+import {
+  ADMIN_MOBILE_TABBAR_DOCK_NAV,
+  ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
+} from "@/lib/admin-mobile-shell";
+import { ADMIN_RAIL_V1_GLYPH, ADMIN_RAIL_V1_GLYPH_INNER } from "@/lib/admin-sticky-rail-v1-styles";
 
 /** Variants A: grupēta kreisā sānjosla visiem admin paneļiem (PRO + IRISS). Mobilajā — apakšējā cilņu josla + „Vairāk”. */
 
@@ -290,6 +295,29 @@ function useBadges() {
  * jo admin-ios-theme.css piespiež `span { color: #000 }`.
  * „Pasūtījumi” — pelēks, sarkans tikai ja kāds kavē termiņu.
  */
+/** Mobilās apakšējās joslas žetons: tumši sarkans / brīdinājums / pelēks, balti treknie cipari. */
+function MobileTabCountBadge({
+  n,
+  gray = false,
+  warn = false,
+}: {
+  n: number;
+  gray?: boolean;
+  warn?: boolean;
+}) {
+  if (n <= 0) return null;
+  const text = n > 99 ? "99+" : String(n);
+  const bg = gray ? "bg-[#9ca3af]" : warn ? "bg-[#d97706]" : "bg-[#b91c1c]";
+  return (
+    <span
+      className={`absolute -right-2 -top-1 inline-flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-bold leading-none text-white tabular-nums shadow-[0_0_0_1.5px_rgba(255,255,255,0.85)] ${bg}`}
+      aria-hidden
+    >
+      {text}
+    </span>
+  );
+}
+
 function Badge({
   n,
   dot = false,
@@ -468,58 +496,62 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   const inTabs = tabs.some((t) => t.match(pathname));
   const moreBadge = workspace === "iriss" ? badges.fast + badges.partners + badges.orders : badges.partners + badges.fast;
 
+  const tabItemClass = (on: boolean) =>
+    `admin-nav-link relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] py-0.5 text-[10px] font-medium transition-opacity ${
+      on ? "text-[var(--color-provin-accent)] opacity-100" : "text-[#8e8e93] opacity-75"
+    }`;
+
   return (
     <>
-      <nav
-        className="fixed inset-x-0 bottom-0 z-[35] flex h-[calc(49px+env(safe-area-inset-bottom,0px))] border-t border-[#e5e5ea] bg-[rgba(249,249,249,0.94)] pb-[env(safe-area-inset-bottom,0px)] backdrop-blur md:hidden"
-        aria-label="Galvenā izvēlne"
-      >
-        {tabs.map((t) => {
-          const on = t.match(pathname) && !more;
-          const n = t.badge ? badges[t.badge] : 0;
-          const tone = t.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
-          const Icon = t.icon;
-          return (
-            <Link
-              key={t.href}
-              href={t.href}
-              aria-current={on ? "page" : undefined}
-              className={`admin-nav-link relative flex h-[49px] min-w-0 flex-1 flex-col items-center justify-center gap-[3px] pt-0.5 text-[10px] font-medium ${
-                on ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"
-              }`}
-            >
-              <span className="relative">
-                <Icon className="h-[26px] w-[26px]" strokeWidth={on ? 2.2 : 1.8} aria-hidden />
-                {n > 0 ? (
-                  <span className="absolute -right-3.5 -top-0.5">
-                    <Badge n={n} gray={tone.gray} warn={tone.warn} dot />
+      <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
+        <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
+          {tabs.map((t) => {
+            const on = t.match(pathname) && !more;
+            const n = t.badge ? badges[t.badge] : 0;
+            const tone = t.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
+            const Icon = t.icon;
+            return (
+              <Link
+                key={t.href}
+                href={t.href}
+                aria-current={on ? "page" : undefined}
+                className={tabItemClass(on)}
+              >
+                <span className="relative">
+                  <span className={ADMIN_RAIL_V1_GLYPH}>
+                    <Icon
+                      className={`${ADMIN_RAIL_V1_GLYPH_INNER} ${on ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}
+                      strokeWidth={on ? 2.25 : 1.85}
+                      aria-hidden
+                    />
                   </span>
-                ) : null}
+                  {n > 0 ? <MobileTabCountBadge n={n} gray={tone.gray} warn={tone.warn} /> : null}
+                </span>
+                <span className="max-w-full truncate px-0.5 text-center leading-none">{t.label}</span>
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setMore((v) => !v)}
+            className={tabItemClass(!inTabs || more)}
+            aria-expanded={more}
+            aria-label="Vairāk"
+          >
+            <span className="relative">
+              <span className={ADMIN_RAIL_V1_GLYPH}>
+                <MoreHorizontal
+                  className={`${ADMIN_RAIL_V1_GLYPH_INNER} ${!inTabs || more ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}
+                  strokeWidth={!inTabs || more ? 2.25 : 1.85}
+                  aria-hidden
+                />
               </span>
-              <span className="max-w-full truncate px-0.5 leading-none">{t.label}</span>
-            </Link>
-          );
-        })}
-        <button
-          type="button"
-          onClick={() => setMore((v) => !v)}
-          className={`relative flex h-[49px] min-w-0 flex-1 flex-col items-center justify-center gap-[3px] pt-0.5 text-[10px] font-medium ${
-            !inTabs || more ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"
-          }`}
-          aria-expanded={more}
-          aria-label="Vairāk"
-        >
-          <span className="relative">
-            <MoreHorizontal className="h-[26px] w-[26px]" aria-hidden />
-            {moreBadge > 0 ? (
-              <span className="absolute -right-3.5 -top-0.5">
-                <Badge n={moreBadge} dot />
-              </span>
-            ) : null}
-          </span>
-          <span className="leading-none">Vairāk</span>
-        </button>
-      </nav>
+              {moreBadge > 0 ? <MobileTabCountBadge n={moreBadge} /> : null}
+            </span>
+            <span className="leading-none">Vairāk</span>
+          </button>
+        </nav>
+      </div>
       {more ? (
         <div
           className="fixed inset-x-0 top-0 z-[34] flex flex-col bg-[#f2f2f7] md:hidden"
