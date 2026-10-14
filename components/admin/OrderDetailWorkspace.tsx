@@ -5,6 +5,8 @@ import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useSta
 import { flushSync } from "react-dom";
 import { createPortal } from "react-dom";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
+import { AdminOrderCountryTimelineStrip } from "@/components/admin/AdminOrderCountryTimelineStrip";
+import { ADMIN_PRO_TONE, adminProBtn } from "@/lib/admin-pro-tones";
 import { AdminAutoIngestChipProvider } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { autoIngestChipsByBlock, type AutoIngestStatus } from "@/lib/admin-auto-ingest";
@@ -391,8 +393,10 @@ const workspaceToolbarBtn =
 
 const wizardFooterBtnBase =
   "inline-flex h-9 min-w-[7.25rem] shrink-0 items-center justify-center rounded-lg px-3 py-2 text-[11px] font-semibold tracking-tight transition disabled:cursor-not-allowed disabled:opacity-40";
-const wizardFooterPrintInk = `${wizardFooterBtnBase} min-w-[8.5rem] border border-slate-800 bg-slate-900 text-white shadow-sm hover:bg-black`;
-const wizardFooterOem = `${wizardFooterBtnBase} min-w-[8.75rem] border border-slate-400 bg-white text-slate-800 shadow-sm hover:bg-slate-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100`;
+const PDF_FOOTER_NEUTRAL_TONE =
+  "provin-tone provin-tone-neutral border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] shadow-sm hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
+const wizardFooterPrintInk = `${wizardFooterBtnBase} min-w-[8.5rem] ${PDF_FOOTER_NEUTRAL_TONE}`;
+const wizardFooterOem = `${wizardFooterBtnBase} min-w-[8.75rem] ${PDF_FOOTER_NEUTRAL_TONE}`;
 
 function adminCommentFieldLabel(icon: LucideIcon, title: string, extra?: ReactNode) {
   return (
@@ -421,12 +425,6 @@ function WhatsAppIconGlyph() {
     </svg>
   );
 }
-
-const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
-  empty: "bg-zinc-400",
-  partial: "bg-amber-400",
-  complete: "bg-emerald-500",
-};
 
 const WIZARD_SUMMARY_STEP = 12;
 
@@ -3891,7 +3889,7 @@ export function OrderDetailWorkspace({
                 type="button"
                 onClick={() => void runPrepareDraft()}
                 disabled={prepareDraftBusy || portfolio.every((p) => p.mime !== "application/pdf" && !/\.pdf$/i.test(p.name))}
-                className="inline-flex items-center gap-1 rounded-md border border-[var(--color-provin-accent)]/30 bg-[var(--color-provin-accent-soft)]/80 px-2 py-1 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent-soft)] disabled:cursor-not-allowed disabled:opacity-45"
+                className={adminProBtn("neutral")}
                 title="Portfeļa PDF → avotu tabulas + komentāru melnraksts"
               >
                 {prepareDraftBusy ? (
@@ -3906,7 +3904,7 @@ export function OrderDetailWorkspace({
               type="button"
               onClick={openNotifyClientDialog}
               disabled={notifyPhase === "loading"}
-              className="inline-flex items-center gap-1 rounded-md border border-emerald-700/25 bg-emerald-50/90 px-2 py-1 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100/95 disabled:opacity-50 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-900/50"
+              className={adminProBtn("client")}
               title={
                 notifySendBlockedReason
                   ? notifySendBlockedReason
@@ -4465,14 +4463,14 @@ export function OrderDetailWorkspace({
             disabled={!workspaceHydrated || workspaceSaveBusy}
             className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-semibold shadow-sm transition disabled:opacity-50 max-md:hidden ${
               workspaceSaveBusy
-                ? "border-emerald-700/25 bg-emerald-50/90 text-emerald-900 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
+                ? "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)]"
                 : workspaceAutosaveStatus === "error"
                   ? "border-amber-400/80 bg-amber-50 text-amber-950 hover:bg-amber-100 dark:border-amber-600/50 dark:bg-amber-950/40 dark:text-amber-100"
                   : workspaceSaveFlash || workspaceAutosaveStatus === "saved"
                     ? orderDraftPersistenceEnabled && !workspaceSaveServerOk
                       ? "border-amber-400/80 bg-amber-50 text-amber-950 hover:bg-amber-100 dark:border-amber-600/50 dark:bg-amber-950/40 dark:text-amber-100"
-                      : "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 dark:border-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-                    : "border-emerald-700/25 bg-emerald-50/90 text-emerald-900 hover:bg-emerald-100 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100"
+                      : "provin-save-saved border-[#1d1d1f] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-zinc-300 dark:hover:bg-white/[0.06]"
+                    : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
             }`}
             title="Saglabāt avotu datus (papildus automātiskajam saglabājumam) - lokāli un serverī"
             aria-label={
@@ -4547,29 +4545,22 @@ export function OrderDetailWorkspace({
             {([1, 2] as const).map((row) => {
               const cols = row === 1 ? "grid-cols-6" : "grid-cols-8";
               return (
-                <div key={row} className={`grid min-w-0 ${cols} gap-1 max-md:contents`}>
-                  {wizardStepsUi.map(({ label, Icon, row: stepRow }, idx) => {
+                <div key={row} className={`provin-tabs grid min-w-0 ${cols} gap-1 max-md:contents`}>
+                  {wizardStepsUi.map(({ label, row: stepRow }, idx) => {
                     if (stepRow !== row) return null;
-                    const lvl = wizardStepLevels[idx] ?? "empty";
                     const active = wizardStep === idx;
                     return (
                       <button
                         key={label}
                         type="button"
                         onClick={() => goWizardStep(idx)}
-                        className={`flex min-w-0 flex-col items-center gap-0.5 rounded-lg border px-0.5 py-1 text-center transition max-md:shrink-0 max-md:snap-start max-md:flex-row max-md:gap-1.5 max-md:rounded-full max-md:px-2.5 max-md:py-1.5 sm:flex-row sm:justify-start sm:gap-1 sm:px-1.5 ${
+                        aria-current={active ? "step" : undefined}
+                        className={`provin-tab flex min-w-0 flex-col items-center gap-0.5 rounded-lg border px-0.5 py-1 text-center transition max-md:shrink-0 max-md:snap-start max-md:flex-row max-md:gap-1.5 max-md:rounded-full max-md:px-2.5 max-md:py-1.5 sm:flex-row sm:justify-start sm:gap-1 sm:px-1.5 ${
                           active
                             ? "border-[var(--color-provin-accent)]/40 bg-[var(--color-provin-accent-soft)]/35"
                             : "border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                         }`}
                       >
-                        <span className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-black/[0.06] text-[var(--color-provin-muted)] max-md:h-4 max-md:w-4 max-md:bg-transparent dark:bg-white/10 dark:max-md:bg-transparent">
-                          <Icon className="h-3.5 w-3.5" aria-hidden />
-                          <span
-                            className={`absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full ring-2 ring-[var(--admin-surface-elevated)] ${WIZARD_STEP_DOT[lvl]}`}
-                            title={`Aizpildījums: ${lvl}`}
-                          />
-                        </span>
                         <span
                           className={`line-clamp-2 w-full text-[8px] font-semibold uppercase leading-tight tracking-tight max-md:line-clamp-1 max-md:w-auto max-md:whitespace-nowrap max-md:text-[10px] max-md:normal-case max-md:tracking-normal sm:line-clamp-1 sm:text-left sm:text-[9px] ${
                             active ? "text-[var(--color-apple-text)]" : "text-[var(--color-provin-muted)]"
@@ -4618,7 +4609,7 @@ export function OrderDetailWorkspace({
                 <button
                   type="button"
                   onClick={handleWhatsAppOpen}
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-emerald-400/80 bg-emerald-500 text-white shadow-sm transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-1"
+                  className={`${ADMIN_PRO_TONE.client} inline-flex h-6 w-6 items-center justify-center rounded-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]/40 focus-visible:ring-offset-1`}
                   title={`WhatsApp: ${payload.customerPhone ?? ""}`}
                   aria-label="Atvērt WhatsApp sarunu ar klientu"
                 >
@@ -4760,14 +4751,15 @@ export function OrderDetailWorkspace({
       />
 
       {/* Apakšējā atstarpe telefonā: fiksētais doks nedrīkst aizsegt pēdējo bloku. */}
-      <div className={`mx-auto w-full min-w-0 space-y-3 px-1 pt-3 max-md:pb-32 ${ADMIN_CONTENT_MAX}`}>
+      <div className={`provin-pro-content mx-auto w-full min-w-0 space-y-6 px-1 pt-4 max-md:pb-32 ${ADMIN_CONTENT_MAX}`}>
+        <AdminOrderCountryTimelineStrip sourceBlocks={ws.sourceBlocks} />
         {portfolioPortalDomId && !portfolioPortalTargetInParent ? (
           <div id={portfolioPortalDomId} className="min-h-0 min-w-0" />
         ) : null}
         {showPortfolioInline ? portfolioSection : null}
 
         {wizardStep === 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-6">
             {payload.checkoutLine === "provin_select" ? null : (
               <AdminOrderVinScanCard
                 sessionId={payload.sessionId}
@@ -4829,7 +4821,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {wizardStep === 1 ? (
-          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
             <div id="admin-order-block-csdd" className="flex min-h-0 min-w-0 flex-col">
               <AdminCsddSourceBlock
                 value={blocksDisplaySafe.csdd}
@@ -4871,7 +4863,7 @@ export function OrderDetailWorkspace({
         ) : null}
 
         {wizardStep === 2 ? (
-          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
             <div id="admin-order-block-autodna" className="flex min-h-0 min-w-0 flex-col">
               <AdminVendorAvotuSourceBlock
                 blockKey="autodna"
@@ -5151,7 +5143,7 @@ export function OrderDetailWorkspace({
                   disabled={!orderDraftPersistenceEnabled}
                   onCommit={commitListingCoverPhoto}
                 />
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-stretch">
                 <ListingAnalysisSubsectionHeading
                   className="h-full"
                   icon={LISTING_ANALYSIS_CHROME_LUCIDE.listingHistory}
@@ -5231,7 +5223,7 @@ export function OrderDetailWorkspace({
                 trafficStripClass=""
               />
               <div className="space-y-2 bg-transparent px-2 pb-2 pt-1.5">
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 lg:items-stretch">
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-stretch">
                 <div className="min-h-0 min-w-0">
                   <AdminAiFieldError message={aiIncidentsSummaryErr} />
                   <AdminAiPolishRichCommentShell
@@ -5435,7 +5427,7 @@ export function OrderDetailWorkspace({
             label="Ģenerēt PDF"
             busyLabel={pdfFamilyBusy("pdf")}
             disabled={pdfJob !== null}
-            toneClass="border border-emerald-800/40 bg-[#22C55E] text-white shadow-sm hover:bg-[#16a34a]"
+            toneClass="provin-tone provin-tone-primary border border-[#1d1d1f] bg-[#1d1d1f] text-white shadow-sm hover:bg-black"
             onPrimary={() => void openPrintReport()}
             onLang={(lang) => void openPrintReport({ lang })}
           />
@@ -5444,7 +5436,8 @@ export function OrderDetailWorkspace({
             title="Tā pati atskaite ar virsrakstu Business Datu atskaite."
             busyLabel={pdfFamilyBusy("business")}
             disabled={pdfJob !== null}
-            toneClass="border border-violet-800/40 bg-violet-600 text-white shadow-sm hover:bg-violet-700"
+            toneClass={PDF_FOOTER_NEUTRAL_TONE}
+            dividerClass="border-[var(--admin-border-subtle)]"
             onPrimary={() => void openPrintReport({ businessBrand: true })}
             onLang={(lang) => void openPrintReport({ businessBrand: true, lang })}
           />
@@ -5453,7 +5446,8 @@ export function OrderDetailWorkspace({
             title="Tikai OFICIĀLĀ DĪLERA DATI. Citi avoti netiek iekļauti."
             busyLabel={pdfFamilyBusy("dealer")}
             disabled={pdfJob !== null}
-            toneClass="border border-orange-800/35 bg-orange-500 text-white shadow-sm hover:bg-orange-600"
+            toneClass={PDF_FOOTER_NEUTRAL_TONE}
+            dividerClass="border-[var(--admin-border-subtle)]"
             onPrimary={() => void openPrintReport({ dealerOnly: true })}
             onLang={(lang) => void openPrintReport({ dealerOnly: true, lang })}
           />
@@ -5462,7 +5456,8 @@ export function OrderDetailWorkspace({
             title="Tikai ASV vēsture. Citi avoti netiek iekļauti."
             busyLabel={pdfFamilyBusy("asv")}
             disabled={pdfJob !== null}
-            toneClass="border border-blue-800/35 bg-blue-700 text-white shadow-sm hover:bg-blue-800"
+            toneClass={PDF_FOOTER_NEUTRAL_TONE}
+            dividerClass="border-[var(--admin-border-subtle)]"
             onPrimary={() => void openPrintReport({ asvOnly: true })}
             onLang={(lang) => void openPrintReport({ asvOnly: true, lang })}
           />
