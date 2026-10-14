@@ -1,9 +1,12 @@
 import { formatEurFromCents, type OrderUpsellKind } from "@/lib/order-upsell";
 import { DEALER_CATALOG_CENTS, MINI_DEALER_ADDON_CENTS } from "@/lib/order-upsell";
 import {
-  latvianVocativeFirstName,
-  miniToAuditsVehiclePhrase,
-} from "@/lib/email/mini-to-audits-recommendation";
+  MINI_TO_AUDITS_CAR_PLACEHOLDER,
+  MINI_TO_AUDITS_NAME_PLACEHOLDER,
+  MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
+  MINI_TO_AUDITS_VIN_PLACEHOLDER,
+} from "@/lib/email/mini-to-audits-approved-text";
+import { latvianVocativeFirstName } from "@/lib/email/mini-to-audits-recommendation";
 import { clientMessageSignOff, googleReviewPlainBlock, type ReportReadyProductKind } from "@/lib/email/report-ready-copy";
 import { defaultAuditsCtaBlock, defaultRefundBankNote } from "@/lib/messages/shared-blocks";
 
@@ -123,9 +126,9 @@ export function buildUpsellEmailVars(opts: {
       paraksts: clientMessageSignOff(),
     };
   }
-  const vards = latvianVocativeFirstName(opts.customerName) || "…";
-  const auto = (opts.car ?? "").trim() || "…";
-  const vin = (opts.vin ?? "").trim().toUpperCase() || "…";
+  const vards = latvianVocativeFirstName(opts.customerName) || MINI_TO_AUDITS_NAME_PLACEHOLDER;
+  const auto = (opts.car ?? "").trim() || MINI_TO_AUDITS_CAR_PLACEHOLDER;
+  const vin = (opts.vin ?? "").trim().toUpperCase() || MINI_TO_AUDITS_VIN_PLACEHOLDER;
   const carForSubject = (opts.car ?? "").trim();
   return {
     vards,
@@ -178,10 +181,10 @@ export function miniToAuditsVarsFromDraftInput(opts: {
   paymentUrl?: string | null;
   differencePrice: string;
 }): Record<string, string> {
-  const vards = latvianVocativeFirstName(opts.customerName) || "…";
-  const auto = (opts.car ?? "").trim() || miniToAuditsVehiclePhrase({ vin: opts.vin, car: opts.car });
-  const vin = (opts.vin ?? "").trim().toUpperCase() || "…";
-  const pay = (opts.paymentUrl ?? "").trim() || "…";
+  const vards = latvianVocativeFirstName(opts.customerName) || MINI_TO_AUDITS_NAME_PLACEHOLDER;
+  const auto = (opts.car ?? "").trim().replace(/\s+/g, " ") || MINI_TO_AUDITS_CAR_PLACEHOLDER;
+  const vin = (opts.vin ?? "").trim().toUpperCase() || MINI_TO_AUDITS_VIN_PLACEHOLDER;
+  const pay = (opts.paymentUrl ?? "").trim() || MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER;
   const starpiba = opts.differencePrice.replace(/\s*€\s*$/u, "").trim();
   const carForSubject = (opts.car ?? "").trim();
   return {

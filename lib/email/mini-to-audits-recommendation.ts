@@ -2,19 +2,26 @@
  * MINI → AUDITS ieteikuma e-pasta melnraksts (Nils apstiprinātais teksts).
  * Tīri stringi: der arī klienta komponentei, bez server-only.
  */
-import { MINI_TO_AUDITS_APPROVED_TEXT } from "@/lib/email/mini-to-audits-approved-text";
+import {
+  MINI_TO_AUDITS_APPROVED_TEXT,
+  MINI_TO_AUDITS_CAR_PLACEHOLDER,
+  MINI_TO_AUDITS_NAME_PLACEHOLDER,
+  MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
+  MINI_TO_AUDITS_VIN_PLACEHOLDER,
+} from "@/lib/email/mini-to-audits-approved-text";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import { miniToAuditsVarsFromDraftInput } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 export const MINI_TO_AUDITS_RECOMMENDATION_LABEL = "MINI → AUDITS ieteikums";
 
-export const MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER = "{maksajuma_saite}";
-export const MINI_TO_AUDITS_NAME_PLACEHOLDER = "{vards}";
-export const MINI_TO_AUDITS_CAR_PLACEHOLDER = "{auto}";
-export const MINI_TO_AUDITS_VIN_PLACEHOLDER = "{vin}";
-
-export { MINI_TO_AUDITS_APPROVED_TEXT };
+export {
+  MINI_TO_AUDITS_APPROVED_TEXT,
+  MINI_TO_AUDITS_CAR_PLACEHOLDER,
+  MINI_TO_AUDITS_NAME_PLACEHOLDER,
+  MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
+  MINI_TO_AUDITS_VIN_PLACEHOLDER,
+};
 
 export type MiniToAuditsRecommendationInput = {
   customerName?: string | null;
