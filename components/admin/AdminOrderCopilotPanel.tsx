@@ -236,8 +236,8 @@ export function AdminOrderCopilotTrigger({
       disabled={disabled}
       className={
         compact
-          ? "provin-ai-btn inline-flex h-7 w-full shrink-0 items-center justify-center rounded-md border border-[#d2d2d7] bg-transparent px-1 text-[#6e6e73] transition hover:border-[rgba(175,82,222,0.55)] hover:bg-[rgba(175,82,222,0.08)] hover:text-[#7d3fa0] disabled:opacity-50"
-          : "provin-ai-btn inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#d2d2d7] bg-transparent px-2.5 text-[11px] font-medium text-[#6e6e73] transition hover:border-[rgba(175,82,222,0.55)] hover:bg-[rgba(175,82,222,0.08)] hover:text-[#7d3fa0] disabled:opacity-50"
+          ? "inline-flex h-7 w-full shrink-0 items-center justify-center rounded-md border border-emerald-700/40 bg-emerald-600/90 px-1 text-white shadow-sm transition hover:bg-emerald-600 hover:brightness-105 disabled:opacity-50"
+          : "inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50 px-2.5 text-[11px] font-medium text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
       }
       title="Order Copilot: chat + PDF (nebloķē paneli)"
       aria-label="Atvērt Order Copilot"

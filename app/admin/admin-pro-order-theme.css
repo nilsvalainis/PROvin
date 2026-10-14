@@ -310,36 +310,27 @@
   box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.25) !important;
 }
 
-/* ---------- AI pogas: klusas, violetas tikai hover / fokusā ---------- */
-.admin-ios-theme .provin-ai-btn {
-  border: 1px solid #d2d2d7 !important;
-  background: transparent !important;
-  color: #6e6e73 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+/* ---------- Avotu tabulas: datumi / odometrs / auto-grow ---------- */
+.admin-ios-theme .provin-pro .provin-admin-data-table {
+  table-layout: auto;
 }
 
-.admin-ios-theme .provin-ai-btn:not(:disabled):hover,
-.admin-ios-theme .provin-ai-btn:focus-visible,
-.admin-ios-theme .provin-ai-btn[aria-expanded="true"] {
-  border-color: rgba(175, 82, 222, 0.45) !important;
-  background: rgba(175, 82, 222, 0.1) !important;
-  color: var(--pro-violet, #7d3fa0) !important;
-  outline: none;
+.admin-ios-theme .provin-pro .provin-admin-data-table input[data-provin-field="datums"] {
+  width: 11ch;
+  min-width: 11ch;
+  max-width: 13ch;
 }
 
-.admin-ios-theme .provin-ai-btn :is(span, svg) {
-  color: inherit !important;
+.admin-ios-theme .provin-pro .provin-admin-data-table input[data-provin-field="odometrsKm"] {
+  width: 9ch;
+  min-width: 8ch;
+  max-width: 11ch;
 }
 
-.admin-ios-theme .provin-ai-btn .provin-ai-badge {
-  background: #f2f2f7 !important;
-}
-
-.admin-ios-theme .provin-ai-btn:not(:disabled):hover .provin-ai-badge,
-.admin-ios-theme .provin-ai-btn:focus-visible .provin-ai-badge {
-  background: rgba(175, 82, 222, 0.18) !important;
+.admin-ios-theme .provin-pro .provin-admin-data-table th[data-provin-field="datums"],
+.admin-ios-theme .provin-pro .provin-admin-data-table th[data-provin-field="odometrsKm"] {
+  width: 1%;
+  white-space: nowrap;
 }
 
 /* ---------- Toņi: krāsa tikai nozīmei ---------- */
@@ -378,6 +369,7 @@
   backdrop-filter: none !important;
   border-radius: var(--pro-radius) !important;
   justify-content: center !important;
+  min-height: 2rem;
 }
 
 .admin-ios-theme .provin-pro:not(.dark) .provin-tab span {

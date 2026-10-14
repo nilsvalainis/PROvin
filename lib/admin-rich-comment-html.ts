@@ -475,5 +475,7 @@ export function adminRichHtmlToPdfSafeHtml(html: string): string {
   s = s.replace(/\n{3,}/g, "\n\n");
   s = s.replace(/\n+$/g, "");
   s = s.replace(/\r?\n/g, "<br />");
+  s = s.replace(/(<br\s*\/?>\s*){2,}/gi, "<br />");
+  s = s.replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "");
   return s.trim();
 }

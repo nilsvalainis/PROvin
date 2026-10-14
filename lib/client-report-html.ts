@@ -2186,9 +2186,9 @@ function clientReportPrintCss(): string {
         --pdf-shadow:0 1px 3px rgba(15,23,42,.06);
         --pdf-pad-outer:16px 18px;
         --pdf-pad-inner:12px 14px;
-        --pdf-gap-section:32px;
-        --pdf-gap-block:20px;
-        --pdf-gap-heading:22px;
+        --pdf-gap-section:1em;
+        --pdf-gap-block:1em;
+        --pdf-gap-heading:1em;
         --pdf-fs-sec:13px;
         --pdf-fs-base:11.5px;
         --pdf-fs-table:10.5px;
@@ -2237,7 +2237,7 @@ function clientReportPrintCss(): string {
         margin-top:var(--pdf-gap-block);
       }
       .provin-report-doc .pdf-source-count-note--mileage + .pdf-report-comment-note{
-        margin-top:12px;
+        margin-top:1em;
       }
       .provin-report-doc .pdf-report-comment-note{margin-top:var(--pdf-gap-block);}
       .sheet{background:#fff;padding:0;}
@@ -2691,7 +2691,7 @@ function clientReportPrintCss(): string {
       .pdf-report-comment-note-body br + strong,
       .pdf-incident-internal-note-body br + strong,
       .pdf-mileage-comment-note-body br + strong{
-        display:inline-block;margin-top:12px;
+        display:inline-block;margin-top:0;
       }
       .pdf-report-comment-note-body,
       .pdf-incident-internal-note-body,

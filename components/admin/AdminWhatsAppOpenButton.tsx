@@ -1,10 +1,15 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
-import { adminActionPillBase } from "@/components/admin/adminActionPill";
 import { adminCompactCopyBtnClass } from "@/components/admin/AdminClipboardButton";
 import { WHATSAPP_PREFILL_AUDIT } from "@/lib/admin-whatsapp-messages";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
+import {
+  ADMIN_WHATSAPP_COMPACT_BTN_CLASS,
+  ADMIN_WHATSAPP_ICON_BTN_CLASS,
+  ADMIN_WHATSAPP_PILL_CLASS,
+  ADMIN_WHATSAPP_PILL_DISABLED_CLASS,
+} from "@/lib/admin-whatsapp-ui";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -16,10 +21,6 @@ function WhatsAppIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-const whatsappBtnClass = `${adminCompactCopyBtnClass} provin-tone-client border-[#0071e3]/25 bg-[#0071e3]/10 text-[#0066cc] hover:border-[#0071e3]/40 hover:bg-[#0071e3]/15 hover:text-[#0058b0]`;
-const whatsappPillClass = `${adminActionPillBase} bg-[#0071e3] hover:bg-[#0062c4] focus-visible:ring-[#0071e3]`;
-const whatsappPillDisabledClass = `${adminActionPillBase} cursor-not-allowed bg-[#0071e3]/35 text-white/80`;
 
 /** Blakus klienta tālrunim: atver WhatsApp sarunu (desktop app, tad wa.me). */
 export function AdminWhatsAppOpenButton({
@@ -42,7 +43,7 @@ export function AdminWhatsAppOpenButton({
   if (variant === "pill") {
     if (!digits) {
       return (
-        <span className={whatsappPillDisabledClass} title="Nav derīga tālruņa numura WhatsApp atvēršanai">
+        <span className={ADMIN_WHATSAPP_PILL_DISABLED_CLASS} title="Nav derīga tālruņa numura WhatsApp atvēršanai">
           WA
         </span>
       );
@@ -51,7 +52,7 @@ export function AdminWhatsAppOpenButton({
       <button
         type="button"
         onClick={onClick}
-        className={whatsappPillClass}
+        className={ADMIN_WHATSAPP_PILL_CLASS}
         title={`Atvērt WhatsApp: ${phone.trim()}`}
         aria-label="Atvērt WhatsApp sarunu ar klientu"
       >
@@ -76,10 +77,38 @@ export function AdminWhatsAppOpenButton({
     <button
       type="button"
       onClick={onClick}
-      className={whatsappBtnClass}
+      className={ADMIN_WHATSAPP_COMPACT_BTN_CLASS}
       title={`Atvērt WhatsApp: ${phone.trim()}`}
       aria-label="Atvērt WhatsApp sarunu ar klientu"
     >
+      <WhatsAppIcon className="h-3.5 w-3.5" />
+    </button>
+  );
+}
+
+/** Zaļa kvadrātveida ikona (VIN josla, rail). */
+export function AdminWhatsAppIconButton({
+  disabled,
+  title,
+  onClick,
+}: {
+  disabled?: boolean;
+  title: string;
+  onClick?: () => void;
+}) {
+  if (disabled) {
+    return (
+      <span
+        className={`${ADMIN_WHATSAPP_ICON_BTN_CLASS} cursor-not-allowed opacity-50`}
+        title={title}
+        aria-hidden
+      >
+        <WhatsAppIcon className="h-3.5 w-3.5" />
+      </span>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={ADMIN_WHATSAPP_ICON_BTN_CLASS} title={title} aria-label={title}>
       <WhatsAppIcon className="h-3.5 w-3.5" />
     </button>
   );

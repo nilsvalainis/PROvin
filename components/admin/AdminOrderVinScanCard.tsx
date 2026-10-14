@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ScanLine } from "lucide-react";
+import { ChevronDown, ChevronUp, ScanLine } from "lucide-react";
 
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
@@ -66,6 +66,7 @@ export function AdminOrderVinScanCard({
   const [showFields, setShowFields] = useState(true);
   const [showNone, setShowNone] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [listExpanded, setListExpanded] = useState(false);
 
   useEffect(() => {
     setRecord(initial);
@@ -126,6 +127,17 @@ export function AdminOrderVinScanCard({
         ? `skenēts automātiski ${clock}${sourceCount ? ` · ${sourceCount} bezmaksas avoti` : ""}`
         : "vēl nav skenēts";
 
+  const dotRows = useMemo(() => {
+    if (!summary) return [];
+    const main = summary.rows.map((row) => ({
+      id: row.id,
+      state: row.blocked ? "none" : row.state,
+      label: row.label,
+    }));
+    const none = summary.noneRows.map((row) => ({ id: row.id, state: "none" as const, label: row.label }));
+    return [...main, ...none];
+  }, [summary]);
+
   const startScan = async (sourceId?: string) => {
     if (busy || !vin.trim()) return;
     setBusy(true);
@@ -174,7 +186,6 @@ export function AdminOrderVinScanCard({
     }
     if (row.action === "open_import") {
       if (!row.openUrl) return;
-      // PROVIN skripts (ja instalēts) nolasa lapu pārlūkā un atsūta rezultātu; citādi ielīmē tekstu Copilot.
       try {
         document.dispatchEvent(new CustomEvent("provin-vin-scan-browser", { detail: { vin, sources: [row.id] } }));
       } catch {
@@ -192,6 +203,46 @@ export function AdminOrderVinScanCard({
 
   const rowLabel = (row: OrderVinScanSourceRow) =>
     row.id === "stat_vin" && row.state === "found" ? `${row.label} ★` : row.label;
+
+  const collapsedStrip = (
+    <div className="flex min-w-0 flex-wrap items-center gap-2 py-1 text-[10.5px] text-[var(--color-provin-muted)]">
+      <span className="shrink-0">{meta}</span>
+      <button type="button" className={BTN} disabled={busy || !vin.trim()} onClick={() => void startScan()}>
+        Skenēt vēlreiz
+      </button>
+      {summary ? (
+        <>
+          <span className="flex flex-wrap items-center gap-1">
+            <Counter state="found" count={summary.found} label="atrasta info" />
+            <Counter state="none" count={summary.none} label="nav datu" />
+            <Counter state="error" count={summary.error} label="kļūda" />
+            {summary.browser > 0 ? <Counter state="none" count={summary.browser} label="pārlūks" /> : null}
+          </span>
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5" aria-label="Avotu indikatori">
+            {dotRows.map((row) => (
+              <span
+                key={row.id}
+                className="inline-flex p-0.5"
+                title={`${row.label}: ${row.state === "found" ? "atrasta info" : row.state === "error" ? "kļūda" : "nav datu"}`}
+              >
+                <Dot state={row.state} />
+              </span>
+            ))}
+          </span>
+          <button
+            type="button"
+            className={`${BTN} gap-0.5`}
+            onClick={() => setListExpanded(true)}
+            aria-expanded={listExpanded}
+          >
+            <ChevronDown className="h-3 w-3" aria-hidden />
+            Rādīt sarakstu
+          </button>
+        </>
+      ) : null}
+      {!record ? <span className="text-[11px]">VIN SCAN: vēl nav skenēts</span> : null}
+    </div>
+  );
 
   return (
     <AdminCollapsibleShell
@@ -216,93 +267,105 @@ export function AdminOrderVinScanCard({
     >
       {showFields ? (
         <div className="px-2 pb-2">
-          <div className="mb-2 flex flex-wrap items-center gap-2 text-[10.5px] text-[var(--color-provin-muted)]">
-            <span>{meta}</span>
-            <button type="button" className={BTN} disabled={busy || !vin.trim()} onClick={() => void startScan()}>
-              Skenēt vēlreiz
-            </button>
-            {summary ? (
-              <span className="ml-auto flex flex-wrap items-center gap-1.5">
-                <Counter state="found" count={summary.found} label="atrasta info" />
-                <Counter state="none" count={summary.none} label="nav datu" />
-                <Counter state="error" count={summary.error} label="kļūda" />
-                {summary.browser > 0 ? <Counter state="none" count={summary.browser} label="pārlūks" /> : null}
-              </span>
-            ) : null}
-          </div>
-
-          {summary?.rows.map((row) => (
-            <div
-              key={row.id}
-              className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-[var(--color-apple-text)]"
-            >
-              <Dot state={row.blocked ? "none" : row.state} />
-              <b className="truncate font-semibold">{rowLabel(row)}</b>
-              <span className={`min-w-0 truncate ${row.blocked ? "text-slate-500" : row.state === "error" ? "text-rose-700" : ""}`}>
-                {row.blocked
-                  ? "Avots bloķē serveri - atver pārlūkā un importē"
-                  : row.hint || (row.state === "error" ? "Kļūda" : "")}
-              </span>
-              <span className="flex items-center justify-end gap-1">
-                {row.photoUrls.slice(0, 3).map((url) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    key={url}
-                    src={url}
-                    alt=""
-                    className="h-[22px] w-[30px] rounded-[3px] object-cover"
-                  />
-                ))}
+          {!listExpanded ? (
+            collapsedStrip
+          ) : (
+            <>
+              <div className="mb-2 flex flex-wrap items-center gap-2 text-[10.5px] text-[var(--color-provin-muted)]">
+                <span>{meta}</span>
+                <button type="button" className={BTN} disabled={busy || !vin.trim()} onClick={() => void startScan()}>
+                  Skenēt vēlreiz
+                </button>
+                {summary ? (
+                  <span className="ml-auto flex flex-wrap items-center gap-1.5">
+                    <Counter state="found" count={summary.found} label="atrasta info" />
+                    <Counter state="none" count={summary.none} label="nav datu" />
+                    <Counter state="error" count={summary.error} label="kļūda" />
+                    {summary.browser > 0 ? <Counter state="none" count={summary.browser} label="pārlūks" /> : null}
+                  </span>
+                ) : null}
                 <button
                   type="button"
-                  className={row.action === "import_auction" ? BTN_AUCTION : BTN}
-                  disabled={busy || (row.action === "open" && !row.openUrl)}
-                  onClick={() => runAction(row)}
+                  className={`${BTN} ml-auto gap-0.5`}
+                  onClick={() => setListExpanded(false)}
+                  aria-expanded={listExpanded}
                 >
-                  {actionLabel(row.action)}
-                </button>
-              </span>
-            </div>
-          ))}
-
-          {summary && summary.none > 0 ? (
-            <>
-              <div className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-slate-500">
-                <Dot state="none" />
-                <b className="font-semibold">Nav datu ({summary.none})</b>
-                <span className="min-w-0 truncate">
-                  {showNone ? "" : summary.noneCollapsedLabels.slice(0, 8).join(" · ")}
-                </span>
-                <button type="button" className={BTN} onClick={() => setShowNone((v) => !v)}>
-                  {showNone ? "Slēpt" : "Rādīt"}
+                  <ChevronUp className="h-3 w-3" aria-hidden />
+                  Sakļaut
                 </button>
               </div>
-              {showNone
-                ? summary.noneRows.map((row) => (
-                    <div
-                      key={row.id}
-                      className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-slate-500"
-                    >
-                      <Dot state="none" />
-                      <b className="truncate font-semibold">{row.label}</b>
-                      <span className="min-w-0 truncate">{row.hint || "Nav datu"}</span>
-                      <button
-                        type="button"
-                        className={BTN}
-                        disabled={!row.openUrl}
-                        onClick={() => runAction(row)}
-                      >
-                        Atvērt
-                      </button>
-                    </div>
-                  ))
-                : null}
-            </>
-          ) : null}
 
-          {!record ? (
-            <p className="text-[11px] text-[var(--color-provin-muted)]">VIN SCAN: vēl nav skenēts</p>
-          ) : null}
+              {summary?.rows.map((row) => (
+                <div
+                  key={row.id}
+                  className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-[var(--color-apple-text)]"
+                >
+                  <Dot state={row.blocked ? "none" : row.state} />
+                  <b className="truncate font-semibold">{rowLabel(row)}</b>
+                  <span
+                    className={`min-w-0 truncate ${row.blocked ? "text-slate-500" : row.state === "error" ? "text-rose-700" : ""}`}
+                  >
+                    {row.blocked
+                      ? "Avots bloķē serveri - atver pārlūkā un importē"
+                      : row.hint || (row.state === "error" ? "Kļūda" : "")}
+                  </span>
+                  <span className="flex items-center justify-end gap-1">
+                    {row.photoUrls.slice(0, 3).map((url) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={url} src={url} alt="" className="h-[22px] w-[30px] rounded-[3px] object-cover" />
+                    ))}
+                    <button
+                      type="button"
+                      className={row.action === "import_auction" ? BTN_AUCTION : BTN}
+                      disabled={busy || (row.action === "open" && !row.openUrl)}
+                      onClick={() => runAction(row)}
+                    >
+                      {actionLabel(row.action)}
+                    </button>
+                  </span>
+                </div>
+              ))}
+
+              {summary && summary.none > 0 ? (
+                <>
+                  <div className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-slate-500">
+                    <Dot state="none" />
+                    <b className="font-semibold">Nav datu ({summary.none})</b>
+                    <span className="min-w-0 truncate">
+                      {showNone ? "" : summary.noneCollapsedLabels.slice(0, 8).join(" · ")}
+                    </span>
+                    <button type="button" className={BTN} onClick={() => setShowNone((v) => !v)}>
+                      {showNone ? "Slēpt" : "Rādīt"}
+                    </button>
+                  </div>
+                  {showNone
+                    ? summary.noneRows.map((row) => (
+                        <div
+                          key={row.id}
+                          className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-slate-500"
+                        >
+                          <Dot state="none" />
+                          <b className="truncate font-semibold">{row.label}</b>
+                          <span className="min-w-0 truncate">{row.hint || "Nav datu"}</span>
+                          <button
+                            type="button"
+                            className={BTN}
+                            disabled={!row.openUrl}
+                            onClick={() => runAction(row)}
+                          >
+                            Atvērt
+                          </button>
+                        </div>
+                      ))
+                    : null}
+                </>
+              ) : null}
+
+              {!record ? (
+                <p className="text-[11px] text-[var(--color-provin-muted)]">VIN SCAN: vēl nav skenēts</p>
+              ) : null}
+            </>
+          )}
         </div>
       ) : null}
     </AdminCollapsibleShell>
