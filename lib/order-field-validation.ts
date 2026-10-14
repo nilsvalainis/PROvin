@@ -32,11 +32,13 @@ export function normalizePlateNumber(s: string): string {
   return s.trim().toUpperCase().replace(/[\s-]/g, "");
 }
 
-/** Valsts numurzīme: 3–6 zīmes (burti/cipari) pēc atstarpju un defišu noņemšanas. */
+/**
+ * Latvijas valsts numurzīme (pēc normalizācijas): 2 burti + 1–4 cipari vai 3 burti + 1–3 cipari (kopā 3–6).
+ */
 export function isValidPlateNumber(v: string): boolean {
   const n = normalizePlateNumber(v);
   if (n.length < 3 || n.length > 6) return false;
-  return /^[A-Z0-9]+$/.test(n);
+  return /^(?:[A-Z]{2}\d{1,4}|[A-Z]{3}\d{1,3})$/.test(n);
 }
 
 /** Pasūtījuma “VIN” lauks: pieņem VIN kodu (11–17) vai valsts numurzīmi (3–6 zīmes). */

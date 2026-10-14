@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { createOperatorOrderWithFields } from "@/lib/create-operator-order";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
+import { resolveOrderVinFromPlate } from "@/lib/order-plate-vin-resolve";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import {
   getOrderContactFieldErrors,
@@ -105,12 +106,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: created.error }, { status: storeErrorStatus(created.error) });
   }
 
-  after(() =>
-    runOrderFreeVinScan(created.orderId, { vin, listingUrl: listingUrl || null }).then(
-      (r) => console.info("[operator-order] free VIN SCAN", { orderId: created.orderId, ...r }),
-      (err) => console.error("[operator-order] free VIN SCAN:", err),
-    ),
-  );
+  after(async () => {
+    try {
+      const resolved = await resolveOrderVinFromPlate(created.orderId, {
+        stripeVin: vin,
+        listingUrl: listingUrl || null,
+        runDownstream: true,
+      });
+      const effectiveVin = resolved.effectiveVin ?? vin;
+      if (!resolved.effectiveVin) {
+        console.info("[operator-order] plate→vin", { orderId: created.orderId, ...resolved });
+        return;
+      }
+      await runOrderFreeVinScan(created.orderId, { vin: effectiveVin, listingUrl: listingUrl || null });
+    } catch (err) {
+      console.error("[operator-order] plate→vin / VIN SCAN:", err);
+    }
+  });
 
   return NextResponse.json({ ok: true, orderId: created.orderId });
 }

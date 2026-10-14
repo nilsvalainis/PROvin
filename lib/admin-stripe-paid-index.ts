@@ -156,6 +156,20 @@ export async function upsertStripePaidIndexRow(row: AdminOrderRow): Promise<void
   await writeStripePaidIndex(next);
 }
 
+/** Pēc CSDD VIN atrisināšanas no numurzīmes — admin saraksta VIN kolonna. */
+export async function patchStripePaidIndexVin(sessionId: string, vin: string): Promise<void> {
+  const trimmed = vin.trim();
+  if (!trimmed) return;
+  const existing = (await readStripePaidIndex())?.rows ?? [];
+  const idx = existing.findIndex((r) => r.id === sessionId);
+  if (idx < 0) return;
+  const row = existing[idx]!;
+  if (row.vin === trimmed) return;
+  const next = [...existing];
+  next[idx] = { ...row, vin: trimmed };
+  await writeStripePaidIndex(next);
+}
+
 /** Jauns webhook upsert, kas ienāca Stripe skenēšanas laikā, paliek indeksā. */
 const KEEP_INDEX_ONLY_ROWS_MAX_AGE_SEC = 2 * 60 * 60;
 
