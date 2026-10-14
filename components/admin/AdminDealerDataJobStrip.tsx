@@ -116,7 +116,10 @@ export function AdminDealerDataJobStrip({
 
   useEffect(() => {
     if (job?.status !== "pending" && job?.status !== "running") return;
-    const t = setInterval(() => void load(), 10_000);
+    // Tikai redzamā cilnē (telefonā fonā netērē tīklu).
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 10_000);
     return () => clearInterval(t);
   }, [job?.status, load]);
 
