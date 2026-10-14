@@ -1,6 +1,7 @@
 /**
  * VIN SCAN avoti, ko drīkst palaist automātiski (bez maksas pirkuma).
- * CarVertical / AutoDNA / OutVin u.c. maksas soļi šeit nav.
+ * Maksas API (JoJ, Speckr, CarVertical, AutoDNA, OneAuto u.c.) tikai ar manuālu „Ielādēt”
+ * attiecīgajā pasūtījuma avota blokā.
  */
 
 import {
@@ -10,7 +11,7 @@ import {
   type VinScanSourceId,
 } from "@/lib/vin-scan/catalog";
 
-/** Maksas / manuāla pirkuma avoti. Automātiskā pasūtījuma skenēšana tos nekad neiekļauj. */
+/** Maksas / manuāla pirkuma avoti (nav VIN SCAN / auto-scan). */
 export const VIN_SCAN_PAID_SOURCE_IDS = [
   "carvertical",
   "carvertical_preview",
@@ -20,9 +21,11 @@ export const VIN_SCAN_PAID_SOURCE_IDS = [
   "vininspect",
   "oneauto",
   "auto_vin",
+  "joj_copart_iaai",
+  "speckr",
 ] as const;
 
-/** Maksas API zvans (JoJ $0.50, Speckr 1 kredīts): tikai VIN SCAN lapa vai jauns PRO pasūtījums. */
+/** Dokumentācijai: API, kas iekasē par zvanu (jau iekļauti `VIN_SCAN_PAID_SOURCE_IDS`). */
 export const VIN_SCAN_METERED_SOURCE_IDS = ["joj_copart_iaai", "speckr"] as const;
 
 const PAID = new Set<string>([...VIN_SCAN_PAID_SOURCE_IDS, ...VIN_SCAN_REMOVED_IDS]);
@@ -36,27 +39,19 @@ export function isMeteredVinScanSourceId(id: string): boolean {
   return METERED.has(id);
 }
 
-export function freeVinScanSourceIds(): VinScanSourceId[] {
-  return VIN_SCAN_SOURCE_IDS.filter((id) => !isPaidVinScanSourceId(id) && !isMeteredVinScanSourceId(id));
+export function isFreeVinScanSourceId(id: string): boolean {
+  return isVinScanSourceId(id) && !isPaidVinScanSourceId(id);
 }
 
-/** Explicit VIN SCAN retry / jauns PRO: pievieno JoJ $0.50. MINI, draft, quick-eval: nē. */
-export function vinScanAutoSourceIds(opts: {
-  sourceIds?: readonly string[];
-  includeMetered?: boolean;
-  isPro?: boolean;
-}): VinScanSourceId[] {
-  const wanted = (opts.sourceIds ?? []).filter(
-    (id): id is VinScanSourceId => isVinScanSourceId(id) && !isPaidVinScanSourceId(id),
-  );
+export function freeVinScanSourceIds(): VinScanSourceId[] {
+  return VIN_SCAN_SOURCE_IDS.filter((id) => isFreeVinScanSourceId(id));
+}
+
+/** Automātiskais pasūtījuma / quick-eval / VIN SCAN (bez maksas) avotu saraksts. */
+export function vinScanAutoSourceIds(opts: { sourceIds?: readonly string[] } = {}): VinScanSourceId[] {
+  const wanted = (opts.sourceIds ?? []).filter((id): id is VinScanSourceId => isFreeVinScanSourceId(id));
   if (wanted.length) return wanted;
-  const ids = [...freeVinScanSourceIds()];
-  if (opts.includeMetered || opts.isPro) {
-    for (const id of VIN_SCAN_METERED_SOURCE_IDS) {
-      if (isVinScanSourceId(id) && !ids.includes(id)) ids.push(id);
-    }
-  }
-  return ids;
+  return freeVinScanSourceIds();
 }
 
 export const VIN_SCAN_VALUABLE_SOURCE_IDS = [

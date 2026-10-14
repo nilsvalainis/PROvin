@@ -415,11 +415,12 @@ export function isVinScanBrowserId(v: string): v is VinScanBrowserId {
   return (VIN_SCAN_BROWSER_IDS as readonly string[]).includes(v);
 }
 
+/** VIN SCAN UI un POST noklusējums: tikai bezmaksas avoti (bez JoJ / Speckr u.c. maksas API). */
 export function defaultVinScanSourceIds(): VinScanSourceId[] {
-  return [...VIN_SCAN_SOURCE_IDS];
+  return vinScanPipelineSourceIds();
 }
 
-/** Ātrie vērtējumi un bezmaksas auto-scan: bez JoJ $0.50. VIN SCAN lapa lieto `defaultVinScanSourceIds`. */
+/** Ātrie vērtējumi un bezmaksas auto-scan: bez maksas API (JoJ, Speckr). */
 const VIN_SCAN_METERED_EXCLUDE_FROM_PIPELINE = new Set<VinScanSourceId>(["joj_copart_iaai", "speckr"]);
 
 export function vinScanPipelineSourceIds(): VinScanSourceId[] {

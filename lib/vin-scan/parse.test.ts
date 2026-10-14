@@ -68,7 +68,7 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "nummerplade")?.openUrl("WVWZZZ7NZEV015204")).toContain(
       "/stelnummer/wvwzzz7nzev015204.html",
     );
-    expect(defaultVinScanSourceIds()).toEqual([...VIN_SCAN_SOURCE_IDS]);
+    expect(defaultVinScanSourceIds()).toEqual(vinScanPipelineSourceIds());
     expect(vinScanPipelineSourceIds()).toEqual(
       VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai" && id !== "speckr"),
     );

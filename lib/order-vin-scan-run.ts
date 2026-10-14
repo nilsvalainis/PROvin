@@ -17,8 +17,6 @@ export type RunOrderFreeVinScanInput = {
   listingUrl?: string | null;
   force?: boolean;
   sourceIds?: readonly string[];
-  /** Operatora atkārtota palaišana: iekļauj JoJ API ($0.50), ja kešs neatbrīvo. */
-  includeMetered?: boolean;
 };
 
 export type RunOrderFreeVinScanResult = {
@@ -63,18 +61,10 @@ export async function runOrderFreeVinScan(
   await upsertOrderDraftVinScan(sessionId, running).catch(() => null);
 
   try {
-    const isPro =
-      order?.checkoutLine === "audit" ||
-      order?.checkoutLine === "premium" ||
-      (typeof order?.amountTotal === "number" && order.amountTotal >= 7999);
     const wanted = (opts.sourceIds ?? []).filter(
       (id) => isVinScanSourceId(id) && !isPaidVinScanSourceId(id),
     );
-    const sourceIds = vinScanAutoSourceIds({
-      sourceIds: opts.sourceIds,
-      includeMetered: opts.includeMetered,
-      isPro,
-    });
+    const sourceIds = vinScanAutoSourceIds({ sourceIds: opts.sourceIds });
     const scanned = await runVinScan({
       vin,
       listingUrl: opts.listingUrl?.trim() || "",

@@ -12,6 +12,7 @@ const AdminVinScanResultCards = dynamic(
 );
 import { isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl } from "@/lib/vin-scan/catalog";
+import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
 import { applyFinlandLink } from "@/lib/vin-scan/finland-link";
 import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
 import {
@@ -84,7 +85,8 @@ export type VinScanPanelSnapshot = {
   busy?: boolean;
 };
 
-const CATALOG = VIN_SCAN_CATALOG;
+const FREE_VIN_SCAN_IDS = new Set(freeVinScanSourceIds());
+const CATALOG = VIN_SCAN_CATALOG.filter((item) => FREE_VIN_SCAN_IDS.has(item.id));
 
 const DOT: Record<VinScanStatus | "idle" | "checking", string> = {
   found: "bg-emerald-500",

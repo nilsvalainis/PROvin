@@ -1,6 +1,7 @@
 import "server-only";
 
 import { VIN_SCAN_CATALOG, isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
+import { freeVinScanSourceIds, isFreeVinScanSourceId } from "@/lib/vin-scan/free-sources";
 import { sourceNeedsInput, vinScanProbeFor } from "@/lib/vin-scan/probes";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
@@ -48,9 +49,10 @@ export async function runVinScan(
     plates: input.plates ?? emptyVinScanPlates(),
     listingUrl: input.listingUrl?.trim() ?? "",
   };
-  const wanted = input.sourceIds?.length
-    ? VIN_SCAN_CATALOG.filter((item) => input.sourceIds!.includes(item.id))
-    : VIN_SCAN_CATALOG;
+  const ids = input.sourceIds?.length
+    ? input.sourceIds.filter((id): id is VinScanSourceId => isVinScanSourceId(id) && isFreeVinScanSourceId(id))
+    : freeVinScanSourceIds();
+  const wanted = VIN_SCAN_CATALOG.filter((item) => ids.includes(item.id));
   const rows = await Promise.all(
     wanted.map(async (item) => {
       const missing = sourceNeedsInput(item.id, ctx);
@@ -71,6 +73,8 @@ export async function runVinScan(
 
 export function sanitizeVinScanSourceIds(raw: unknown): VinScanSourceId[] | undefined {
   if (!Array.isArray(raw)) return undefined;
-  const ids = raw.filter((v): v is string => typeof v === "string").filter(isVinScanSourceId);
+  const ids = raw
+    .filter((v): v is string => typeof v === "string")
+    .filter((id): id is VinScanSourceId => isFreeVinScanSourceId(id));
   return ids.length > 0 ? ids : undefined;
 }

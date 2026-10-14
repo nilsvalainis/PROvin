@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { defaultVinScanSourceIds, VIN_SCAN_SOURCE_IDS, vinScanFastSourceIds, vinScanPipelineSourceIds } from "@/lib/vin-scan/catalog";
+import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
 import {
   quickEvalNordicSearchLinks,
   quickEvalVinScanInput,
@@ -11,13 +12,15 @@ import {
 const VOLVO_SE = "YV1DZ5251B2146640";
 
 describe("Ātrie vērtējumi VIN SCAN cauruļvads", () => {
-  it("lieto VIN SCAN cauruļvadu bez JoJ $0.50 zvana", () => {
+  it("lieto tikai bezmaksas VIN SCAN avotus (bez JoJ / Speckr)", () => {
     const ids = quickEvalVinScanSourceIds();
+    expect(ids).toEqual(freeVinScanSourceIds());
     expect(ids).toEqual(vinScanPipelineSourceIds());
     expect(ids).toEqual(vinScanFastSourceIds());
     expect(ids).not.toContain("joj_copart_iaai");
     expect(ids).not.toContain("speckr");
-    expect(defaultVinScanSourceIds()).toContain("joj_copart_iaai");
+    expect(defaultVinScanSourceIds()).not.toContain("joj_copart_iaai");
+    expect(defaultVinScanSourceIds()).not.toContain("speckr");
     expect(ids[0]).toBe("vin_decode");
     expect(ids).toContain("biluppgifter");
     expect(ids).toContain("carinfo");
