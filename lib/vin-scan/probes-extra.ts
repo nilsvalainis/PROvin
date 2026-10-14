@@ -5,7 +5,7 @@ import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { vinScanParseFromListingHistory } from "@/lib/vin-scan/listing-history";
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { traficomVehicleInfoUrl } from "@/lib/vin-scan/catalog";
-import { fetchJojSearchVin } from "@/lib/vin-scan/joj-api";
+import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
 import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 import { scanCaptchaTokenPlaceholder, scanChallengeReason, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
 import { fetchVinScanAuctionPage, isVinScanRelayUrl } from "@/lib/vin-scan/listings-page-relay";
@@ -408,7 +408,7 @@ async function probeHtmlSource(
 
 export async function probeJojCopartIaai(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    return done("joj_copart_iaai", ctx, await fetchJojSearchVin(ctx.vin));
+    return done("joj_copart_iaai", ctx, await fetchAuctionVinLots(ctx.vin));
   } catch (e) {
     return failed("joj_copart_iaai", ctx, e);
   }

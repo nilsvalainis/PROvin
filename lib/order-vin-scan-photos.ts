@@ -8,7 +8,7 @@ import type { VinScanIndicator } from "@/lib/vin-scan/types";
 export const ORDER_VIN_SCAN_PHOTO_IMPORT_MAX = 20;
 
 const HOST_OK =
-  /(^|\.)(copart\.com|iaai\.com|stat\.vin|bidfax\.(info|net)|poctra\.com|autoastat\.com|bid\.cars|cloudfront\.net|import-motor\.com)$/i;
+  /(^|\.)(copart\.com|copart\.fi|iaai\.com|stat\.vin|bidfax\.(info|net)|poctra\.com|autoastat\.com|bid\.cars|cloudfront\.net|import-motor\.com)$/i;
 
 const PRIVATE_HOST =
   /^(localhost|127\.|10\.|192\.168\.|169\.254\.|0\.|::1$|\[::1\])|^(172\.(1[6-9]|2\d|3[01])\.)/i;

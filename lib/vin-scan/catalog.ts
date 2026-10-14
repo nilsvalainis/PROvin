@@ -330,7 +330,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "joj_copart_iaai",
     label: "Copart/IAAI (JoJ API)",
     country: "US",
-    hint: "Copart un IAAI lots",
+    hint: "Copart/IAAI US/CA",
     needs: ["vin"],
     openUrl: (vin) => `https://www.copart.com/lotSearchResults/?free=true&query=${vinQuery(vin)}`,
   },

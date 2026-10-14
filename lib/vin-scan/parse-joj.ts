@@ -28,12 +28,27 @@ function named(v: unknown): string {
   return str(rec.name);
 }
 
-function venueFromDomain(domain: unknown): "Copart" | "IAAI" | "" {
+function countryIso(location: unknown): string {
+  const loc = asRecord(location);
+  const country = asRecord(loc.country);
+  return str(country.iso || country.code || country.name).toLowerCase();
+}
+
+function isFinlandLot(domainName: string, location: unknown): boolean {
+  if (domainName.includes("copart_fi") || domainName.includes("copart.fi")) return true;
+  const iso = countryIso(location);
+  return iso === "fi" || iso === "fin" || iso.includes("finland") || iso.includes("suomi");
+}
+
+export function venueFromDomain(domain: unknown, location?: unknown): "Copart FI" | "Copart" | "IAAI" | "" {
   const rec = asRecord(domain);
   const name = str(rec.name).toLowerCase();
   const id = rec.id;
-  if (name.includes("copart") || id === 3) return "Copart";
   if (name.includes("iaai") || name.includes("iaa") || id === 1) return "IAAI";
+  if (name.includes("copart") || id === 3) {
+    return isFinlandLot(name, location) ? "Copart FI" : "Copart";
+  }
+  if (isFinlandLot(name, location)) return "Copart FI";
   return "";
 }
 
@@ -43,10 +58,10 @@ function saleDate(raw: unknown): string {
   return iso?.[1] ?? s.slice(0, 32);
 }
 
-function formatUsd(n: unknown): string {
+function formatMoney(n: unknown, currency: "USD" | "EUR"): string {
   const v = typeof n === "number" ? n : Number(str(n).replace(/[^\d.-]/g, ""));
   if (!Number.isFinite(v) || v <= 0) return "";
-  return `${Math.round(v).toLocaleString("lv-LV")} USD`;
+  return `${Math.round(v).toLocaleString("lv-LV")} ${currency}`;
 }
 
 function kmLv(km: unknown, mi: unknown): string {
@@ -83,7 +98,12 @@ function photoList(images: unknown): string[] {
   return out.slice(0, PHOTO_MAX);
 }
 
-function lotOpenUrl(venue: string, lot: string, vin: string): string {
+export function lotOpenUrl(venue: string, lot: string, vin: string): string {
+  if (venue === "Copart FI") {
+    return lot
+      ? `https://www.copart.fi/lot/${encodeURIComponent(lot)}`
+      : `https://www.copart.fi/lotSearchResults/?free=true&query=${encodeURIComponent(vin)}`;
+  }
   if (venue === "Copart" && lot) return `https://www.copart.com/lot/${encodeURIComponent(lot)}`;
   if (venue === "IAAI" && lot) return `https://www.iaai.com/Search?Keyword=${encodeURIComponent(lot)}`;
   return `https://www.copart.com/lotSearchResults/?free=true&query=${encodeURIComponent(vin)}`;
@@ -135,13 +155,14 @@ export function parseJojSearchVin(input: {
 
   for (const raw of lots) {
     const lot = asRecord(raw);
-    const venue = venueFromDomain(lot.domain);
+    const venue = venueFromDomain(lot.domain, lot.location);
     const lotNo = str(lot.lot);
     const date = saleDate(lot.sale_date);
     const odo = asRecord(lot.odometer);
     const odometer = kmLv(odo.km, odo.mi);
     const damage = damageLabel(lot.damage);
-    const price = formatUsd(lot.final_bid) || formatUsd(lot.bid);
+    const currency = venue === "Copart FI" ? "EUR" : "USD";
+    const price = formatMoney(lot.final_bid, currency) || formatMoney(lot.bid, currency);
     const lotPhotos = photoList(lot.images);
     for (const url of lotPhotos) {
       if (seenPhoto.has(url) || photos.length >= PHOTO_MAX) continue;
