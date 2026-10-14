@@ -3,7 +3,7 @@
  */
 import type { CsddTechDataResult } from "@/lib/csdd-tech-data";
 import type { VinScanParse, VinScanVehicle } from "@/lib/vin-scan/types";
-import { extractPageFromHtml } from "@/lib/vin-sources/html-extract";
+import { decodeHtmlEntities, extractPageFromHtml } from "@/lib/vin-sources/html-extract";
 import type { VinSourceFetchResult } from "@/lib/vin-sources/types";
 
 function asRecord(v: unknown): Record<string, unknown> {
@@ -147,10 +147,14 @@ export function esynVehicleSummary(vehicle: EsynVehicle, inspections: VinScanPar
 }
 
 export function parseDsbSearchHtml(html: string): { vehicle: string; country: string; servicesPath: string | null } {
-  const vehicle = html.match(/id="header-car-name"[^>]*>\s*([^<]+?)\s*</i)?.[1]?.replace(/\s+/g, " ").trim() ?? "";
-  const country = html.match(/Result for\s*<strong>([^<]+)<\/strong>/i)?.[1]?.trim() ?? "";
+  const vehicle = decodeHtmlEntities(html.match(/id="header-car-name"[^>]*>\s*([^<]+?)\s*</i)?.[1] ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const country = decodeHtmlEntities(html.match(/Result for\s*<strong>([^<]+)<\/strong>/i)?.[1] ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
   const raw = html.match(/\/Search\/LoadServices\?[^"'<\s]+/i)?.[0] ?? "";
-  const servicesPath = raw ? raw.replace(/&amp;/g, "&") : null;
+  const servicesPath = raw ? decodeHtmlEntities(raw.replace(/&amp;/g, "&")) : null;
   return { vehicle, country, servicesPath };
 }
 

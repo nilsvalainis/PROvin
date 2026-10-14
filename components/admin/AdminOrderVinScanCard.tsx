@@ -174,7 +174,7 @@ export function AdminOrderVinScanCard({
     }
     if (row.action === "open_import") {
       if (!row.openUrl) return;
-      // PROVIN skripts (ja instalēts) nolasa lapu pārlūkā un atsūta rezultātu; citādi — ielīmē tekstu Copilot.
+      // PROVIN skripts (ja instalēts) nolasa lapu pārlūkā un atsūta rezultātu; citādi ielīmē tekstu Copilot.
       try {
         document.dispatchEvent(new CustomEvent("provin-vin-scan-browser", { detail: { vin, sources: [row.id] } }));
       } catch {
@@ -239,7 +239,7 @@ export function AdminOrderVinScanCard({
               <b className="truncate font-semibold">{rowLabel(row)}</b>
               <span className={`min-w-0 truncate ${row.blocked ? "text-slate-500" : row.state === "error" ? "text-rose-700" : ""}`}>
                 {row.blocked
-                  ? "Avots bloķē serveri — atver pārlūkā un importē"
+                  ? "Avots bloķē serveri - atver pārlūkā un importē"
                   : row.hint || (row.state === "error" ? "Kļūda" : "")}
               </span>
               <span className="flex items-center justify-end gap-1">

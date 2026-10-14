@@ -10,6 +10,7 @@ import {
 import {
   cookiesRecordToHeader,
   extractInputValue,
+  htmlForCloudflareSolver,
   isCloudflareChallengeHtml,
   looksLikeCloudflareWafBlock,
   mergeCookieHeader,
@@ -83,16 +84,13 @@ async function bypassCloudflare(websiteURL: string, challenged: VinHttpResult, u
 > {
   if (!hasCaptchaSolverKey()) return { reason: "Cloudflare: nav CAPSOLVER_API_KEY" };
   const proxy = getCaptchaSolverProxy();
-  if (!proxy) return { reason: "Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" };
-  const challengeHtml = isCloudflareChallengeHtml(challenged.text, challenged.status)
-    ? challenged.text.slice(0, 80_000)
-    : undefined;
+  const html = htmlForCloudflareSolver(challenged.text, challenged.status);
   const solved = await solveCaptcha(
     {
       kind: "cloudflare_challenge",
       websiteURL,
-      proxy,
-      ...(challengeHtml ? { html: challengeHtml } : {}),
+      ...(proxy ? { proxy } : {}),
+      ...(html ? { html } : {}),
       userAgent: ua,
     },
     { timeoutMs: 90_000, sourceLabel: "vin-scan" },
@@ -101,10 +99,13 @@ async function bypassCloudflare(websiteURL: string, challenged: VinHttpResult, u
   const fromCookies = cookiesRecordToHeader(solved.cookies);
   const clearance = fromCookies || (solved.token ? `cf_clearance=${solved.token}` : "");
   if (!clearance) return { reason: "CapSolver: cf_clearance tukšs" };
+  const solvedProxy = solved.proxy?.trim() || "";
   return {
     cookie: mergeCookieHeader(challenged.cookie, clearance),
     ua: solved.userAgent || ua,
-    proxyUrl: httpProxyUrlFromCapsolver(proxy) ?? vinStickyHttpProxyUrl(),
+    proxyUrl: solvedProxy
+      ? (httpProxyUrlFromCapsolver(solvedProxy) ?? vinStickyHttpProxyUrl())
+      : undefined,
   };
 }
 
@@ -123,6 +124,11 @@ export async function scanFetchSmart(
     solveUrl?: string;
     sourceLabel?: string;
     userAgent?: string;
+    /**
+     * stat.vin: also treat short/plaintext WAF 403 as Cloudflare (CapSolver without HTML).
+     * Other sources (LT policija): only real JS challenge pages, same as pre-#149.
+     */
+    wafBypass?: boolean;
   } = {},
 ): Promise<ScanHttpResult> {
   const timeoutMs = init.timeoutMs ?? 20_000;
@@ -130,6 +136,8 @@ export async function scanFetchSmart(
   let cookie = init.cookie ?? "";
   let ua = init.userAgent || VIN_HTTP_UA;
   let proxyUrl = vinStickyHttpProxyUrl();
+  const isCfBlock = (text: string, status: number) =>
+    init.wafBypass ? looksLikeCloudflareWafBlock(text, status) : isCloudflareChallengeHtml(text, status);
   const first = await vinHttpFetch(url, {
     method: init.method,
     headers: { "user-agent": ua, ...headers },
@@ -140,7 +148,7 @@ export async function scanFetchSmart(
   });
   cookie = mergeCookieHeader(cookie, first.cookie);
 
-  if (looksLikeCloudflareWafBlock(first.text, first.status)) {
+  if (isCfBlock(first.text, first.status)) {
     const bypassed = await bypassCloudflare(init.solveUrl || url, { ...first, cookie }, ua);
     if ("reason" in bypassed) {
       return {
@@ -172,7 +180,7 @@ export async function scanFetchSmart(
       proxyUrl,
       finalUrl: retry.finalUrl,
     };
-    if (looksLikeCloudflareWafBlock(retry.text, retry.status)) {
+    if (isCfBlock(retry.text, retry.status)) {
       return { ...merged, challengeReason: "Cloudflare palika lapā pēc CapSolver" };
     }
     return merged;
@@ -224,7 +232,7 @@ export async function scanFetchSmart(
 
 export function scanChallengeReason(res: ScanHttpResult): string | null {
   if (res.challengeReason) return res.challengeReason;
-  if (looksLikeCloudflareWafBlock(res.text, res.status)) return "Cloudflare palika lapā";
+  if (isCloudflareChallengeHtml(res.text, res.status)) return "Cloudflare palika lapā";
   return null;
 }
 

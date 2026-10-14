@@ -8,6 +8,7 @@ import {
 } from "@/lib/vin-sources/estonia-parse";
 import {
   cookieHeaderFromSetCookieLines,
+  decodeHtmlEntities,
   extractDrupalAjaxHtml,
   extractDrupalAjaxPageState,
   extractInnerHtmlById,
@@ -15,7 +16,9 @@ import {
   extractPageFromHtml,
   extractPartialUpdateHtml,
   extractPartialViewState,
+  htmlForCloudflareSolver,
   isCloudflareChallengeHtml,
+  isCloudflareManagedChallengeHtml,
   looksLikeCloudflareWafBlock,
   mergeCookieHeader,
   parseMntAjaxSource,
@@ -67,6 +70,16 @@ describe("isCloudflareChallengeHtml", () => {
     expect(isCloudflareChallengeHtml(body, 403)).toBe(false);
     expect(looksLikeCloudflareWafBlock(body, 403)).toBe(true);
     expect(looksLikeCloudflareWafBlock("<html><title>Car page</title></html>", 200)).toBe(false);
+    expect(htmlForCloudflareSolver(body, 403)).toBeUndefined();
+    expect(isCloudflareManagedChallengeHtml(body)).toBe(false);
+  });
+
+  it("CapSolver html ir tikai managed challenge, ne WAF 403 ar beacon", () => {
+    expect(htmlForCloudflareSolver(CF_MANAGED_CHALLENGE_PAGE, 403)).toContain("Just a moment");
+    const beacon403 = `<script>a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';</script>`;
+    expect(isCloudflareChallengeHtml(beacon403, 403)).toBe(true);
+    expect(htmlForCloudflareSolver(beacon403, 403)).toBeUndefined();
+    expect(decodeHtmlEntities("BMW&#xA0;X5&nbsp;M")).toBe("BMW X5 M");
   });
 });
 

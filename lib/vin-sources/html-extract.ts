@@ -20,14 +20,27 @@ export function stripHtmlToText(html: string): string {
   return clean(without.replace(/\n{3,}/g, "\n\n")).slice(0, 60000);
 }
 
-function decodeEntities(s: string): string {
+/** HTML entities in visible text (`&#xA0;`, `&nbsp;`, named, decimal, hex). */
+export function decodeHtmlEntities(s: string): string {
   return s
-    .replace(/&nbsp;/gi, " ")
+    .replace(/&nbsp;|&#160;|&#x0*a0;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&#(\d+);/g, (_, n: string) => {
+      const code = Number(n);
+      return Number.isFinite(code) && code > 0 && code < 0x110000 ? String.fromCodePoint(code) : _;
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (_, h: string) => {
+      const code = Number.parseInt(h, 16);
+      return Number.isFinite(code) && code > 0 && code < 0x110000 ? String.fromCodePoint(code) : _;
+    });
+}
+
+function decodeEntities(s: string): string {
+  return decodeHtmlEntities(s);
 }
 
 function cellText(cellHtml: string): string {
@@ -204,6 +217,30 @@ export function isCloudflareChallengeHtml(html: string, status = 200): boolean {
   }
   if ((status === 403 || status === 503) && /cloudflare|just a moment|challenge-platform/i.test(html)) return true;
   return false;
+}
+
+/** Real Cloudflare JS interstitial (Just a moment / managed challenge). Not a WAF block page. */
+export function isCloudflareManagedChallengeHtml(html: string): boolean {
+  if (/<title>\s*just a moment/i.test(html)) return true;
+  if (/cf-chl-bypass|_cf_chl_opt|cf_chl_rc_|id="challenge-form"/i.test(html)) return true;
+  if (/cdn-cgi\/challenge-platform\/h\/[a-z]\/(?:orchestrate|flow|pat)|cdn-cgi\/challenge-platform\/[^"'\s]*chl_page/i.test(html)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * HTML to send as CapSolver AntiCloudflareTask `html`.
+ * Managed JS challenge (Just a moment / LT policija): pass the snapshot.
+ * WAF block pages and short plaintext 403 (stat.vin Access blocked): omit, so CapSolver
+ * fetches `websiteURL` instead of rejecting "invalid html".
+ */
+export function htmlForCloudflareSolver(html: string, _status = 200): string | undefined {
+  const text = html ?? "";
+  const trimmed = text.trim();
+  if (!trimmed) return undefined;
+  if (isCloudflareManagedChallengeHtml(trimmed)) return text.slice(0, 80_000);
+  return undefined;
 }
 
 /**

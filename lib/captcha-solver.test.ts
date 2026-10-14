@@ -7,12 +7,15 @@ import {
   captchaProvider,
   captchaTaskDisplayName,
   captchaTaskTypeName,
+  capsolverProxyColonForm,
   capsolverProxyFromUrl,
+  cloudflareChallengeTaskQueue,
   defaultCaptchaSolveTimeoutMs,
   formatCaptchaPollTimeoutReason,
   getCaptchaSolverProxy,
   httpProxyUrlFromCapsolver,
   isCapsolverForceProxy,
+  isInvalidHtmlFailure,
   isMntRecaptchaM1FallbackEnabled,
   mntFormHttpProxyUrl,
   mntRecaptchaV3Proxy,
@@ -103,16 +106,26 @@ describe("captchaCreateTaskBody", () => {
     });
   });
 
-  it("veido Cloudflare Challenge uzdevumu ar proxy URL formā", () => {
-    const body = captchaCreateTaskBody("key-1", {
+  it("Cloudflare Challenge: colon proxy paliek colon formā, tukšs ir ProxyLess", () => {
+    const withProxy = captchaCreateTaskBody("key-1", {
       kind: "cloudflare_challenge",
       websiteURL: "https://www.car.info/en-se/",
       proxy: "host.example:80:user:pass",
     });
-    expect(body.task).toMatchObject({
+    expect(withProxy.task).toMatchObject({
       type: "AntiCloudflareTask",
-      proxy: "http://user:pass@host.example:80",
+      proxy: "host.example:80:user:pass",
     });
+    const proxyless = captchaCreateTaskBody("key-1", {
+      kind: "cloudflare_challenge",
+      websiteURL: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+      html: "<html><title>Just a moment...</title></html>",
+    });
+    expect(proxyless.task).toMatchObject({
+      type: "AntiCloudflareTaskProxyLess",
+      html: "<html><title>Just a moment...</title></html>",
+    });
+    expect((proxyless.task as { proxy?: string }).proxy).toBeUndefined();
   });
 
   it("veido Turnstile uzdevumu", () => {
@@ -171,6 +184,47 @@ describe("capsolverProxyFromUrl", () => {
       if (prevCap === undefined) delete process.env.CAPSOLVER_PROXY;
       else process.env.CAPSOLVER_PROXY = prevCap;
     }
+  });
+});
+
+describe("capsolverProxyColonForm", () => {
+  it("URL http://user:pass@host:port kļūst host:port:user:pass", () => {
+    expect(capsolverProxyColonForm(FIXIE_URL)).toBe("group.usefixie.com:80:fixie:secret");
+    expect(capsolverProxyColonForm("group.usefixie.com:80:fixie:secret")).toBe("group.usefixie.com:80:fixie:secret");
+    expect(capsolverProxyColonForm("")).toBeNull();
+    expect(capsolverProxyColonForm("not-a-proxy")).toBeNull();
+  });
+});
+
+describe("cloudflareChallengeTaskQueue", () => {
+  it("vispirms colon, tad URL, tad ProxyLess; invalid html atpazīst", () => {
+    const prevFixie = process.env.FIXIE_URL;
+    const prevCap = process.env.CAPSOLVER_PROXY;
+    delete process.env.FIXIE_URL;
+    delete process.env.CAPSOLVER_PROXY;
+    try {
+      const html = "<html><title>Just a moment...</title></html>";
+      const queue = cloudflareChallengeTaskQueue({
+        kind: "cloudflare_challenge",
+        websiteURL: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+        proxy: FIXIE_URL,
+        html,
+      });
+      expect(queue[0]).toMatchObject({ proxy: "group.usefixie.com:80:fixie:secret", html });
+      expect(queue[1]).toMatchObject({ proxy: "group.usefixie.com:80:fixie:secret" });
+      expect(queue[1]?.html).toBeUndefined();
+      expect(queue.some((t) => t.proxy === FIXIE_URL && t.html === html)).toBe(true);
+      expect(queue[queue.length - 1]).toMatchObject({ kind: "cloudflare_challenge" });
+      expect(queue[queue.length - 1]?.proxy).toBeUndefined();
+      expect(queue.length).toBeLessThanOrEqual(6);
+    } finally {
+      if (prevFixie === undefined) delete process.env.FIXIE_URL;
+      else process.env.FIXIE_URL = prevFixie;
+      if (prevCap === undefined) delete process.env.CAPSOLVER_PROXY;
+      else process.env.CAPSOLVER_PROXY = prevCap;
+    }
+    expect(isInvalidHtmlFailure("CapSolver: invalid task data: invalid html (HTTP 400)")).toBe(true);
+    expect(isInvalidHtmlFailure("custom proxy connect failed")).toBe(false);
   });
 });
 
@@ -266,6 +320,101 @@ describe("solveCaptcha", () => {
     websiteKey: "6LdtedISAAAAABWNkw4vodbhMcB1SZ-ykU6A04fL",
     proxy: FIXIE_URL,
   };
+
+  it("Cloudflare: proxy connect failed tad ProxyLess", async () => {
+    const prevFixie = process.env.FIXIE_URL;
+    const prevCap = process.env.CAPSOLVER_PROXY;
+    delete process.env.FIXIE_URL;
+    delete process.env.CAPSOLVER_PROXY;
+    const types: string[] = [];
+    const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? "{}")) as { task?: { type?: string; proxy?: string } };
+      const type = String(body.task?.type ?? "");
+      if (type) types.push(type);
+      if (type === "AntiCloudflareTask") {
+        return {
+          json: async () => ({ errorId: 1, errorDescription: "custom proxy connect failed" }),
+          status: 400,
+        } as Response;
+      }
+      return {
+        json: async () => ({
+          errorId: 0,
+          status: "ready",
+          taskId: "cf-pl",
+          solution: { cookies: { cf_clearance: "cf-1" }, userAgent: "ua" },
+        }),
+        status: 200,
+      } as Response;
+    }) as typeof fetch;
+    try {
+      const result = await solveCaptcha(
+        {
+          kind: "cloudflare_challenge",
+          websiteURL: "https://plc.auction/?vin=1",
+          proxy: FIXIE_URL,
+          html: "<html><title>Just a moment...</title></html>",
+        },
+        { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000 },
+      );
+      expect(result).toMatchObject({ ok: true, token: "cf-1" });
+      expect(types).toContain("AntiCloudflareTask");
+      expect(types).toContain("AntiCloudflareTaskProxyLess");
+      if (result.ok) expect(result.proxy).toBeUndefined();
+    } finally {
+      if (prevFixie === undefined) delete process.env.FIXIE_URL;
+      else process.env.FIXIE_URL = prevFixie;
+      if (prevCap === undefined) delete process.env.CAPSOLVER_PROXY;
+      else process.env.CAPSOLVER_PROXY = prevCap;
+    }
+  });
+
+  it("Cloudflare: invalid html tad atkārto bez html", async () => {
+    const prevFixie = process.env.FIXIE_URL;
+    const prevCap = process.env.CAPSOLVER_PROXY;
+    delete process.env.FIXIE_URL;
+    delete process.env.CAPSOLVER_PROXY;
+    const htmlFlags: boolean[] = [];
+    const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? "{}")) as { task?: { html?: string; type?: string } };
+      const hasHtml = Boolean(body.task?.html);
+      htmlFlags.push(hasHtml);
+      if (hasHtml) {
+        return {
+          json: async () => ({ errorId: 1, errorDescription: "invalid task data: invalid html" }),
+          status: 400,
+        } as Response;
+      }
+      return {
+        json: async () => ({
+          errorId: 0,
+          status: "ready",
+          taskId: "cf-ok",
+          solution: { cookies: { cf_clearance: "cf-2" }, userAgent: "ua" },
+        }),
+        status: 200,
+      } as Response;
+    }) as typeof fetch;
+    try {
+      const result = await solveCaptcha(
+        {
+          kind: "cloudflare_challenge",
+          websiteURL: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+          proxy: "group.usefixie.com:80:fixie:secret",
+          html: "<html>not a challenge</html>",
+        },
+        { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000 },
+      );
+      expect(result).toMatchObject({ ok: true, token: "cf-2" });
+      expect(htmlFlags[0]).toBe(true);
+      expect(htmlFlags.slice(1).some((h) => !h)).toBe(true);
+    } finally {
+      if (prevFixie === undefined) delete process.env.FIXIE_URL;
+      else process.env.FIXIE_URL = prevFixie;
+      if (prevCap === undefined) delete process.env.CAPSOLVER_PROXY;
+      else process.env.CAPSOLVER_PROXY = prevCap;
+    }
+  });
 
   it("atkārto createTask vienu reizi pie custom proxy connect failed", async () => {
     let creates = 0;

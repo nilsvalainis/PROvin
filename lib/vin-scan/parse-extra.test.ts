@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   oemBrandForVin,
   parseAuctionArchive,
+  parseBiluppgifter,
+  parseNicbHtml,
   parseNhtsaRecalls,
   parseTraficom,
+  parseVegvesen,
   parseVpicMakeModelYear,
   parseRdwOpenData,
 } from "@/lib/vin-scan/parse-extra";
@@ -76,8 +79,28 @@ describe("Traficom", () => {
   it("Suomi.fi / captcha bez auto ir unknown, ne none", () => {
     expect(parseTraficom(200, "<html>Identify yourself Suomi.fi kirjaudu</html>").status).toBe("unknown");
     expect(parseTraficom(200, "<html>Just a moment Cloudflare captcha</html>").status).toBe("unknown");
-    expect(parseTraficom(403, "").status).toBe("unknown");
+    expect(parseTraficom(403, "").summary).toMatch(/atver pārlūkā/);
+    expect(parseTraficom(404, "").summary).toMatch(/HTTP 404/);
     expect(parseTraficom(200, "<html>Model year: 2008</html>").status).toBe("unknown");
+  });
+});
+
+describe("NICB un vegvesen", () => {
+  it("NICB forma / captcha ir atver pārlūkā, ne lapa nav atpazīta", () => {
+    expect(parseNicbHtml("<html>VINCheck Check a VIN g-recaptcha form_build_id</html>", "WBA5R1C0XLFH42873").summary).toMatch(
+      /atver pārlūkā/,
+    );
+    expect(parseNicbHtml("<html>This VIN is not listed as stolen</html>", "WBA5R1C0XLFH42873").status).toBe("none");
+    expect(parseNicbHtml("<html>random landing</html>", "WBA5R1C0XLFH42873").summary).not.toMatch(/nav atpazīta/);
+  });
+
+  it("vegvesen 401 ir pilnvara, ne kļūdas kods", () => {
+    expect(parseVegvesen(401, "Unauthorized").summary).toMatch(/pilnvaru/);
+    expect(parseVegvesen(403, "").summary).toMatch(/atver pārlūkā/);
+  });
+
+  it("biluppgifter 403 ir atver pārlūkā", () => {
+    expect(parseBiluppgifter(403, "", "WBA5R1C0XLFH42873").summary).toMatch(/atver pārlūkā/);
   });
 });
 
@@ -87,6 +110,8 @@ describe("izsoles arhīvs un nobraukuma rollback", () => {
       "found",
     );
     expect(parseAuctionArchive(404, "", "WBA5R1C0XLFH42873", "Poctra").status).toBe("none");
+    expect(parseAuctionArchive(403, "", "WBA5R1C0XLFH42873", "Poctra").summary).toMatch(/atver pārlūkā/);
+    expect(parseAuctionArchive(403, "", "WBA5R1C0XLFH42873", "BidFax").summary).toMatch(/atver pārlūkā/);
   });
 
   it("vēlāks datums ar mazāku km ir rollback", () => {
