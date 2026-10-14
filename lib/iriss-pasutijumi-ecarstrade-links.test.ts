@@ -56,6 +56,14 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     expect(preview.added).toEqual([]);
     expect(preview.skippedReason).toMatch(/nav markas/i);
     expect(hasOtherAuctionListingLinks(rec({ brandModel: "Volvo XC60" }))).toBe(false);
+    expect(
+      hasOtherAuctionListingLinks(
+        rec({
+          brandModel: "Audi A6",
+          listingLinkMobile: ["https://suchen.mobile.de/fahrzeuge/search.html?ms=1900"],
+        }),
+      ),
+    ).toBe(false);
   });
 
   it("adds LEXUS/TOYOTA even when Auto1/Openlane/Autobid URLs have no make params", () => {

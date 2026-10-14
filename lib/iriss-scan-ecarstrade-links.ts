@@ -1,5 +1,5 @@
 import { filledIrissListingLinks, IRISS_LISTING_LINKS_PER_SOURCE_MAX } from "@/lib/iriss-listing-link-lists";
-import { isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
+import { isMobileDeListingUrl, isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
   describeEcarstradeFilter,
   ecarstradeSearchUrl,
@@ -43,13 +43,19 @@ export type IrissScanEcarstradeLinkPreview = {
   plans: IrissEcarstradeLinkPlan[];
 };
 
-function sourceUrls(rec: Pick<IrissEcarstradeLinkSource, "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile">): string[] {
+function isAuctionSearchUrl(url: string): boolean {
+  return !isSingleVehicleListingUrl(url) && !isMobileDeListingUrl(url);
+}
+
+/** Tikai Auto1 / Autobid / Openlane. Mobile.de (Pasūtījumi un Radars) ET neģenerē. */
+function sourceUrls(
+  rec: Pick<IrissEcarstradeLinkSource, "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid">,
+): string[] {
   return [
     ...filledIrissListingLinks(rec.listingLinkAuto1),
     ...filledIrissListingLinks(rec.listingLinkOpenline),
     ...filledIrissListingLinks(rec.listingLinkAutobid),
-    ...filledIrissListingLinks(rec.listingLinkMobile),
-  ].filter((url) => !isSingleVehicleListingUrl(url));
+  ].filter(isAuctionSearchUrl);
 }
 
 export function hasOtherAuctionListingLinks(
@@ -160,7 +166,7 @@ export function previewEcarstradeLinksForScan(rec: IrissEcarstradeLinkSource): I
   const room = Math.max(0, IRISS_LISTING_LINKS_PER_SOURCE_MAX - existing.length);
   const clipped = added.slice(0, room);
   let skippedReason = "";
-  if (generated.length === 0) skippedReason = "nav markas no brandModel vai Auto1/Openlane/Autobid/Mobile";
+  if (generated.length === 0) skippedReason = "nav markas no brandModel vai Auto1/Openlane/Autobid";
   else if (clipped.length === 0 && generated.length > 0) skippedReason = "eCarsTrade saite jau ir";
   else if (clipped.length < added.length) skippedReason = "sasniegts saišu limits";
   return previewFromPlans(rec, generated, clipped, skippedReason);
@@ -191,7 +197,7 @@ export function replaceEcarstradeLinks<T extends IrissEcarstradeLinkSource>(rec:
     rec,
     generated,
     same ? [] : generated,
-    generated.length === 0 ? "nav markas no brandModel vai Auto1/Openlane/Autobid/Mobile" : same ? "eCarsTrade saite jau ir aktuāla" : "",
+    generated.length === 0 ? "nav markas no brandModel vai Auto1/Openlane/Autobid" : same ? "eCarsTrade saite jau ir aktuāla" : "",
   );
   if (same) return { record: rec, preview };
   return {
