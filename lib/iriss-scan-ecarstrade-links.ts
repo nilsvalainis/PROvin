@@ -3,6 +3,7 @@ import {
   ecarstradeSearchUrl,
   fillMakeModelFromBrand,
   filterFromBrandModel,
+  mergeEcarstradeFilters,
   parseListingSearchUrl,
   sameEcarstradeSearch,
   type EcarstradeSearchFilter,
@@ -43,33 +44,25 @@ export function hasOtherAuctionListingLinks(
   return sourceUrls(rec).length > 0;
 }
 
-function filtersForRecord(
+function mergedFilterForRecord(
   rec: Pick<IrissEcarstradeLinkSource, "brandModel" | "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile">,
-): EcarstradeSearchFilter[] {
+): EcarstradeSearchFilter | null {
   const brand = rec.brandModel.trim();
   const urls = sourceUrls(rec);
-  const out: EcarstradeSearchFilter[] = [];
-  if (urls.length === 0) {
-    const fromBrand = filterFromBrandModel(brand);
-    return fromBrand.makeIds.length ? [fromBrand] : [];
+  let merged = filterFromBrandModel(brand);
+  for (const url of urls) {
+    merged = mergeEcarstradeFilters(merged, fillMakeModelFromBrand(parseListingSearchUrl(url), brand));
   }
-  for (const url of urls) out.push(fillMakeModelFromBrand(parseListingSearchUrl(url), brand));
-  const fromBrand = filterFromBrandModel(brand);
-  if (fromBrand.makeIds.length) out.push(fromBrand);
-  return out;
+  return merged.makeIds.length ? merged : null;
 }
 
 export function generateEcarstradeSearchUrls(
   rec: Pick<IrissEcarstradeLinkSource, "brandModel" | "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile">,
 ): string[] {
-  const out: string[] = [];
-  for (const filter of filtersForRecord(rec)) {
-    const url = ecarstradeSearchUrl(filter);
-    if (!url) continue;
-    if (out.some((existing) => sameEcarstradeSearch(existing, url))) continue;
-    out.push(url);
-  }
-  return out;
+  const filter = mergedFilterForRecord(rec);
+  if (!filter) return [];
+  const url = ecarstradeSearchUrl(filter);
+  return url ? [url] : [];
 }
 
 export function previewEcarstradeLinksForScan(rec: IrissEcarstradeLinkSource): IrissScanEcarstradeLinkPreview {
@@ -110,4 +103,25 @@ export function appendEcarstradeLinksToScan<T extends IrissEcarstradeLinkSource>
 /** Idempotents: pievieno trūkstošās eCarsTrade saites, esošās neatstāj. */
 export function withAutoEcarstradeLinks<T extends IrissEcarstradeLinkSource>(rec: T): T {
   return appendEcarstradeLinksToScan(rec).record;
+}
+
+/** Aizstāj esošās eCarsTrade saites ar no jauna ģenerēto filtru. */
+export function replaceEcarstradeLinks<T extends IrissEcarstradeLinkSource>(rec: T): { record: T; preview: IrissScanEcarstradeLinkPreview } {
+  const generated = generateEcarstradeSearchUrls(rec);
+  const existing = filledIrissListingLinks(rec.listingLinkEcarstrade);
+  const same =
+    generated.length === existing.length && generated.every((url, i) => sameEcarstradeSearch(url, existing[i] ?? ""));
+  const preview: IrissScanEcarstradeLinkPreview = {
+    id: rec.id,
+    brandModel: rec.brandModel,
+    generated,
+    added: same ? [] : generated,
+    alreadyHad: existing,
+    skippedReason: generated.length === 0 ? "nav markas no brandModel vai Auto1/Openlane/Autobid/Mobile" : same ? "eCarsTrade saite jau ir aktuāla" : "",
+  };
+  if (same) return { record: rec, preview };
+  return {
+    record: { ...rec, listingLinkEcarstrade: generated.length > 0 ? generated : [""] },
+    preview,
+  };
 }

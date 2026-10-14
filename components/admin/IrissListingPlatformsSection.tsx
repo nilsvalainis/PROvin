@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
+import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import {
   buildListingPlatformChips,
   IR_LISTING_ALL_CHIP_STYLE,
@@ -15,7 +17,7 @@ import {
   removeIrissListingLinkRow,
   setIrissListingLinkRow,
 } from "@/lib/iriss-listing-link-lists";
-import { appendEcarstradeLinksToPasutijums } from "@/lib/iriss-pasutijumi-ecarstrade-links";
+import { replaceEcarstradeLinksOnPasutijums } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 const inp =
@@ -46,7 +48,7 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
           className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
           style={c.chipStyle}
         >
-          {c.letter}
+            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} size="md" />
         </a>
       ))}
       <button
@@ -75,10 +77,12 @@ type LinkKey = keyof Pick<
 
 function SourceLinkList({
   label,
+  logoKey,
   links,
   onChange,
 }: {
   label: string;
+  logoKey?: IrissAuctionLogoKey;
   links: readonly string[];
   onChange: (next: string[]) => void;
 }) {
@@ -87,7 +91,14 @@ function SourceLinkList({
   return (
     <div className="min-w-0 space-y-1.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className={lbl}>{label}</span>
+        {logoKey ? (
+          <span className="inline-flex items-center" title={label}>
+            <IrissAuctionLogo platform={logoKey} fallback={label} size="md" />
+            <span className="sr-only">{label}</span>
+          </span>
+        ) : (
+          <span className={lbl}>{label}</span>
+        )}
         <button
           type="button"
           onClick={() => onChange(addIrissListingLinkRow(rows))}
@@ -144,8 +155,8 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
   };
 
   const generateEcarstrade = () => {
-    const next = appendEcarstradeLinksToPasutijums(rec);
-    if (next.preview.added.length === 0) return;
+    const next = replaceEcarstradeLinksOnPasutijums(rec);
+    if (next.preview.added.length === 0 && next.preview.skippedReason) return;
     onPatch({ listingLinkEcarstrade: next.record.listingLinkEcarstrade });
   };
 
@@ -159,34 +170,39 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
           type="button"
           onClick={generateEcarstrade}
           className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
-          title="Ģenerēt eCarsTrade saiti no Auto1 / Openlane / Autobid filtriem"
+          title="Aizstāt eCarsTrade saiti ar jaunu filtru no Auto1 / Openlane / Autobid"
         >
-          eCarsTrade no filtriem
+          Atjaunot eCarsTrade
         </button>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <SourceLinkList
           label="Mobile"
+          logoKey="mobile"
           links={rec.listingLinkMobile}
           onChange={(next) => patchLinks("listingLinkMobile", next)}
         />
         <SourceLinkList
           label="Autobid"
+          logoKey="autobid"
           links={rec.listingLinkAutobid}
           onChange={(next) => patchLinks("listingLinkAutobid", next)}
         />
         <SourceLinkList
-          label="Openline"
+          label="Openlane"
+          logoKey="openline"
           links={rec.listingLinkOpenline}
           onChange={(next) => patchLinks("listingLinkOpenline", next)}
         />
         <SourceLinkList
           label="Auto1"
+          logoKey="auto1"
           links={rec.listingLinkAuto1}
           onChange={(next) => patchLinks("listingLinkAuto1", next)}
         />
         <SourceLinkList
           label="eCarsTrade"
+          logoKey="ecarstrade"
           links={rec.listingLinkEcarstrade}
           onChange={(next) => patchLinks("listingLinkEcarstrade", next)}
         />

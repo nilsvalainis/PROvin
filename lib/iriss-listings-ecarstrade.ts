@@ -278,17 +278,111 @@ function auctionStageFromType(raw: string): string {
   return t.toUpperCase();
 }
 
-function closeAtIso(html: string, dataClose: unknown): string {
-  const utc = attr(html, "data-utc-time") || /data-utc-time=["']([^"']+)["']/i.exec(html)?.[1] || "";
-  if (utc) {
-    const t = Date.parse(utc);
-    if (Number.isFinite(t)) return new Date(t).toISOString();
-    return utc;
+const STOCK_PLACEHOLDER_CLOSE = /31\s+dec\s+203[6-9]|203[6-9]-12-31/i;
+
+function euroAmounts(raw: string): number[] {
+  const out: number[] = [];
+  const text = decodeHtmlEntities(raw).replace(/\u00a0/g, " ");
+  const re =
+    /(?:€|eur)\s*(\d{1,3}(?:[.\s]\d{3})+(?:[.,]\d{2})?|\d+(?:[.,]\d{2})?)|(\d{1,3}(?:[.\s]\d{3})+(?:[.,]\d{2})?|\d+(?:[.,]\d{2})?)\s*(?:€|eur)/gi;
+  for (const m of text.matchAll(re)) {
+    const n = price(m[1] || m[2]);
+    if (n != null && n >= 100) out.push(n);
   }
-  const close = str(dataClose);
-  if (!close) return "";
+  return out;
+}
+
+function amountAfter(raw: string, label: RegExp): number | null {
+  const m = label.exec(raw);
+  if (!m) return null;
+  const slice = raw.slice(m.index, m.index + 180);
+  return euroAmounts(slice)[0] ?? null;
+}
+
+function amountInClass(html: string, cls: string): number | null {
+  const re = new RegExp(`class=["'][^"']*${cls}[^"']*["'][^>]*>([\\s\\S]*?)</(?:div|span|button|a|strong)`, "i");
+  const m = html.match(re);
+  if (!m) return null;
+  const text = stripTags(m[1] ?? "");
+  return euroAmounts(text)[0] ?? price(text);
+}
+
+function firstPrice(...vals: unknown[]): number | null {
+  for (const v of vals) {
+    const n = price(v);
+    if (n != null) return n;
+  }
+  return null;
+}
+
+function flattenPriceData(data: Rec): Rec {
+  const nested = [data.car, data.auction, data.prices, data.pricing].filter(isRec);
+  return nested.length ? Object.assign({}, data, ...nested) : data;
+}
+
+export function parseEcarstradeCardPrices(
+  html: string,
+  data: Rec = {},
+): { buyNow: number | null; current: number | null; start: number | null } {
+  const d = flattenPriceData(data);
+  const block = /<div class="car-item__price"[\s\S]*$/i.exec(html)?.[0] ?? html;
+  const signedOut = /Sign in to (?:buy|see)/i.test(block);
+  const buyNowFromHtml = signedOut
+    ? null
+    : amountAfter(block, /PIRKT|BUY(?:\s+NOW)?|Buy now|Pirkt uzreiz/i) ??
+      amountInClass(block, "car-price__button") ??
+      amountInClass(block, "car-price__head-label__value");
+  const buyNow =
+    firstPrice(d.buy_now, d.buyNow, d.buy_now_price, d.buyNowPrice, d.fixed_price, d.fixedPrice, d.instant_price, d.instantPrice) ??
+    buyNowFromHtml;
+  const currentFromHtml = signedOut
+    ? null
+    : amountAfter(block, /Current bid|Highest bid|Pašreizēj|Max\.?\s*bid|Solījums/i) ??
+      amountInClass(block, "car-price__current-bid__value") ??
+      amountInClass(block, "car-price__bid-value");
+  const start = firstPrice(d.start_price, d.startPrice, d.min_bid, d.starting_bid, d.startingBid);
+  const maxBid = firstPrice(d.current_bid, d.currentBid, d.highest_bid, d.highestBid, d.max_bid, d.maxBid);
+  return { buyNow: buyNow ?? null, current: currentFromHtml ?? maxBid ?? null, start: start ?? null };
+}
+
+/** Stock/warehouse uses 31 Dec 2036; that is not an auction end. */
+export function ecarstradeAuctionEndAt(html: string, data: Rec, auctionType: string): string {
+  if (auctionType === "stock") return "";
+  const utc = attr(html, "data-utc-time") || /data-utc-time=["']([^"']+)["']/i.exec(html)?.[1] || "";
+  const closeAttr = attr(html, "data-close_time") || /data-close_time=["']([^"']+)["']/i.exec(html)?.[1] || "";
+  const close = utc || closeAttr || str(data.close_date) || str(data.close_time);
+  if (!close || close === "false" || STOCK_PLACEHOLDER_CLOSE.test(close)) return "";
   const t = Date.parse(close);
-  return Number.isFinite(t) ? new Date(t).toISOString() : "";
+  if (!Number.isFinite(t)) return "";
+  const days = (t - Date.now()) / 86_400_000;
+  if (days > 180 || days < -400) return "";
+  return new Date(t).toISOString();
+}
+
+export function applyEcarstradeSaleTypePrices(
+  auctionType: string,
+  parsed: { buyNow: number | null; current: number | null; start: number | null },
+): { priceStart: number | null; priceCurrent: number | null; priceBuyNow: number | null } {
+  const t = auctionType.trim().toLowerCase();
+  if (t === "stock" || t === "fix") {
+    return { priceStart: parsed.start, priceCurrent: null, priceBuyNow: parsed.buyNow ?? parsed.current };
+  }
+  if (t === "bid_or_fix") {
+    return {
+      priceStart: parsed.start,
+      priceCurrent: parsed.buyNow != null && parsed.current === parsed.buyNow ? null : parsed.current,
+      priceBuyNow: parsed.buyNow,
+    };
+  }
+  if (t === "bid") {
+    const n = parsed.current ?? parsed.start;
+    /** Public tender floor is often 850 € on every car - not a live bid. */
+    if (n != null && n <= 1000 && parsed.buyNow == null) {
+      return { priceStart: parsed.start ?? n, priceCurrent: null, priceBuyNow: null };
+    }
+    return { priceStart: parsed.start, priceCurrent: parsed.current, priceBuyNow: parsed.buyNow };
+  }
+  return { priceStart: parsed.start, priceCurrent: parsed.current, priceBuyNow: parsed.buyNow };
 }
 
 export function parseEcarstradeCard(html: string, data: Rec = {}): EcarstradeVehicle | null {
@@ -309,11 +403,10 @@ export function parseEcarstradeCard(html: string, data: Rec = {}): EcarstradeVeh
   const images = pickImages(html);
   const { countryCode, location } = countryFromCard(html);
   const vat = vatFromCard(html);
-  const auctionType = attr(html, "data-auction-type");
+  const auctionType = attr(html, "data-auction-type") || str(data.auction_type);
   const auctionHref = /href="(\/auctions\/auction[^"]+)"/i.exec(html)?.[1] ?? "";
   const auctionId = /auction(\d+)/i.exec(auctionHref)?.[1] || str(data.auction_id);
-  const maxBid = price(data.max_bid);
-  const isFixed = auctionType === "fix" || auctionType === "bid_or_fix";
+  const priced = applyEcarstradeSaleTypePrices(auctionType, parseEcarstradeCardPrices(html, data));
   return {
     externalId,
     auctionId,
@@ -322,11 +415,11 @@ export function parseEcarstradeCard(html: string, data: Rec = {}): EcarstradeVeh
     detailUrl: ecarstradeDetailUrl(externalId),
     auctionStage: auctionStageFromType(auctionType),
     auctionStartAt: "",
-    auctionEndAt: closeAtIso(html, data.close_date),
-    priceStart: null,
+    auctionEndAt: ecarstradeAuctionEndAt(html, data, auctionType),
+    priceStart: priced.priceStart,
     priceMinimal: null,
-    priceCurrent: isFixed ? null : maxBid,
-    priceBuyNow: isFixed ? maxBid : null,
+    priceCurrent: priced.priceCurrent,
+    priceBuyNow: priced.priceBuyNow,
     vatNote: vat.vatNote,
     taxDeduction: vat.taxDeduction,
     imageUrl: images[0] ?? "",
@@ -400,6 +493,40 @@ export function ecarstradeApiUrl(sourceUrl: string, start: number, perPage = ECA
 
 export function ecarstradePageStart(page: number, perPage = ECARSTRADE_DEFAULT_PER_PAGE): number {
   return Math.max(0, (Math.max(1, page) - 1) * perPage);
+}
+
+export function ecarstradeCarJsonUrl(externalId: string): string {
+  const id = externalId.trim();
+  return id ? `${ECARSTRADE_ORIGIN}/api/v1/cars/${encodeURIComponent(id)}` : "";
+}
+
+function saleTypeFromStage(stage: string, rawType = ""): string {
+  const t = rawType.trim().toLowerCase();
+  if (t === "stock" || t === "fix" || t === "bid_or_fix" || t === "bid" || t === "open") return t;
+  if (stage === "STOCK") return "stock";
+  if (stage === "FIXED_PRICE") return "fix";
+  if (stage === "BID_OR_BUY_NOW") return "bid_or_fix";
+  if (stage === "BLIND_AUCTION") return "bid";
+  if (stage === "OPEN_AUCTION") return "open";
+  return t || "open";
+}
+
+export function mergeEcarstradeJsonPrices(v: EcarstradeVehicle, json: Rec): EcarstradeVehicle {
+  const data = isRec(json.data) ? json.data : json;
+  const sale = saleTypeFromStage(v.auctionStage, str(data.auction_type));
+  const parsed = parseEcarstradeCardPrices("", data);
+  const priced = applyEcarstradeSaleTypePrices(sale, {
+    buyNow: parsed.buyNow ?? v.priceBuyNow,
+    current: parsed.current ?? v.priceCurrent,
+    start: parsed.start ?? v.priceStart,
+  });
+  return {
+    ...v,
+    priceStart: priced.priceStart ?? v.priceStart,
+    priceCurrent: priced.priceCurrent ?? v.priceCurrent,
+    priceBuyNow: priced.priceBuyNow ?? v.priceBuyNow,
+    auctionEndAt: v.auctionEndAt || ecarstradeAuctionEndAt("", data, sale),
+  };
 }
 
 export function readEcarstradeAuth(

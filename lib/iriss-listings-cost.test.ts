@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LISTING_COSTS, listingBidPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingTaxKind } from "@/lib/iriss-listings-cost";
+import { DEFAULT_LISTING_COSTS, listingBidPrice, listingCardPriceLabel, listingComparisonPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 
 const I = listingExtrasI(DEFAULT_LISTING_COSTS);
 const B = 18_000;
@@ -47,10 +47,20 @@ describe("listing extras and v4 control numbers", () => {
     expect(kinds.includes("unknown" as ListingTaxKind)).toBe(false);
   });
 
-  it("Auto1 bid uses minimal before start; Openlane does not", () => {
-    expect(listingBidPrice({ platform: "auto1", priceCurrent: null, priceStart: 4000, priceMinimal: 4100, priceBuyNow: 5000 })).toBe(4100);
+  it("comparison price prefers buy-now, then asking; Auto1 next-min is the expected final", () => {
+    expect(listingComparisonPrice({ platform: "auto1", priceCurrent: null, priceStart: 4000, priceMinimal: 4100, priceBuyNow: 5000 })).toBe(5000);
+    expect(listingComparisonPrice({ platform: "auto1", priceCurrent: 4000, priceStart: 4000, priceMinimal: 4100, priceBuyNow: null })).toBe(4100);
     expect(listingBidPrice({ platform: "openline", priceCurrent: null, priceStart: null, priceMinimal: 12250, priceBuyNow: 13300 })).toBe(13300);
-    expect(listingBidPrice({ platform: "openline", priceCurrent: 10150, priceStart: null, priceMinimal: 12250, priceBuyNow: null })).toBe(10150);
+    expect(listingBidPrice({ platform: "openline", priceCurrent: 10150, priceStart: null, priceMinimal: 12250, priceBuyNow: null })).toBe(12250);
+    expect(listingCardPriceLabel({ platform: "ecarstrade", priceCurrent: null, priceStart: null, priceBuyNow: 16200 })).toBe("Pirkt uzreiz");
+    expect(listingCardPriceLabel({ platform: "autobid", priceCurrent: 9000, priceStart: 8000, priceBuyNow: null })).toBe("Pašreizējā cena");
+  });
+
+  it("does not treat a low tender floor or Autobid reserve as an affordable price", () => {
+    expect(listingComparisonPrice({ platform: "ecarstrade", priceCurrent: 850, priceStart: 850, priceBuyNow: null })).toBeNull();
+    expect(listingComparisonPrice({ platform: "ecarstrade", priceCurrent: 850, priceStart: 850, priceBuyNow: 16200 })).toBe(16200);
+    expect(listingComparisonPrice({ platform: "autobid", priceCurrent: 9000, priceStart: null, priceMinimal: 500, priceBuyNow: null })).toBe(9000);
+    expect(listingComparisonPrice({ platform: "autobid", priceCurrent: 850, priceStart: 850, priceMinimal: 12000, priceBuyNow: null })).toBeNull();
   });
 
   it("VAT share line uses I for margin and the full base for net/gross", () => {

@@ -70,30 +70,62 @@ export function listingMaxBid(kind: ListingTaxKind, foreignVatPct: number, budge
 }
 
 /**
- * Solījuma bāze kā kartītē: current, tad start, tad buy-now.
- * Auto1: current, tad minimal (nākamais min. solījums), tad start, tad buy-now.
- * Openlane minimal ir pārdevēja vēlamā cena; Autobid minimal ir rezerve - tās neņem.
+ * Salīdzināšanas cena: pirkt-uzreiz / fiksētā / asking, ja ir.
+ * Citādi pašreizējais solījums ar sagaidāmo finālu. Zems starta solījums
+ * (piem. 850 € tenders) nav „lēts auto”.
  */
 function positivePrice(n: number | null | undefined): number | null {
   return n != null && Number.isFinite(n) && n > 0 ? n : null;
 }
 
-export function listingBidPrice(v: {
+function isLowFloorBid(n: number): boolean {
+  return n > 0 && n <= 1000;
+}
+
+export type ListingPriceFields = {
   platform?: string;
   priceCurrent: number | null;
   priceStart: number | null;
   priceMinimal?: number | null;
   priceBuyNow: number | null;
-}): number | null {
+};
+
+/**
+ * Salīdzināšanas / kartītes cena: pirkt-uzreiz, fiksētā, asking.
+ * Citādi solījums (Auto1: nākamais min. kā sagaidāmais fināls).
+ * Autobid rezerve (minimal) nav asking. 850 € tenders nav „lēts auto”.
+ */
+export function listingComparisonPrice(v: ListingPriceFields): number | null {
+  const buyNow = positivePrice(v.priceBuyNow);
+  if (buyNow != null) return buyNow;
+
+  const asking = v.platform === "openline" || v.platform === "ecarstrade" ? positivePrice(v.priceMinimal) : null;
+  if (asking != null) return asking;
+
+  const auto1Next = v.platform === "auto1" ? positivePrice(v.priceMinimal) : null;
   const current = positivePrice(v.priceCurrent);
-  if (current != null) return current;
-  if (v.platform === "auto1") {
-    const min = positivePrice(v.priceMinimal);
-    if (min != null) return min;
-  }
   const start = positivePrice(v.priceStart);
-  if (start != null) return start;
-  return positivePrice(v.priceBuyNow);
+
+  if (current != null) {
+    if (auto1Next != null && auto1Next > current) return auto1Next;
+    if (isLowFloorBid(current) && (start == null || current <= start)) return null;
+    return current;
+  }
+  if (auto1Next != null) return auto1Next;
+  if (start != null && !isLowFloorBid(start)) return start;
+  return null;
+}
+
+/** Kartītes un budžeta bāze - tā pati salīdzināšanas cena. */
+export function listingBidPrice(v: ListingPriceFields): number | null {
+  return listingComparisonPrice(v);
+}
+
+export function listingCardPriceLabel(v: ListingPriceFields): string {
+  const cmp = listingComparisonPrice(v);
+  const buyNow = positivePrice(v.priceBuyNow);
+  if (cmp != null && buyNow != null && cmp === buyNow) return "Pirkt uzreiz";
+  return "Pašreizējā cena";
 }
 
 /** Margin: 21% no I. NETO / AR PVN: 21% no visas bāzes (solījums pēc ārvalstu PVN + I). */

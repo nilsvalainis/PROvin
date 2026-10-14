@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 
 /** Droša saite — atvērt tikai http(s). */
@@ -18,17 +19,18 @@ export const LISTING_PLATFORM_CHIPS: Record<ListingPlatformChipKey, { letter: st
   citi: { letter: "C", title: "Citi" },
 };
 
-/** Inline — admin-ios-theme `a { color }` un Tailwind nevar pārrakstīt. */
+/** Official logos: no pill fill. Citi paliek teksta etiķete. */
 export const IR_LISTING_PLATFORM_CHIP_STYLE: Record<ListingPlatformChipKey, CSSProperties> = {
-  mobile: { backgroundColor: "#FF3B30", color: "#ffffff", border: "none" },
-  autobid: { backgroundColor: "#5AC8FA", color: "#000000", border: "none" },
-  openline: { backgroundColor: "#007AFF", color: "#ffffff", border: "none" },
-  auto1: { backgroundColor: "#FF9500", color: "#ffffff", border: "none" },
-  ecarstrade: { backgroundColor: "#34C759", color: "#ffffff", border: "none" },
+  mobile: { backgroundColor: "transparent", color: "inherit", border: "none", boxShadow: "none" },
+  autobid: { backgroundColor: "transparent", color: "inherit", border: "none", boxShadow: "none" },
+  openline: { backgroundColor: "transparent", color: "inherit", border: "none", boxShadow: "none" },
+  auto1: { backgroundColor: "transparent", color: "inherit", border: "none", boxShadow: "none" },
+  ecarstrade: { backgroundColor: "transparent", color: "inherit", border: "none", boxShadow: "none" },
   citi: {
-    backgroundColor: "#E5E5EA",
+    backgroundColor: "transparent",
     color: "#3a3a3c",
-    border: "1px solid #D1D1D6",
+    border: "none",
+    boxShadow: "none",
   },
 };
 
@@ -58,6 +60,7 @@ export type ListingPlatformChipDisplay = {
   letter: string;
   title: string;
   chipStyle: CSSProperties;
+  logoKey: IrissAuctionLogoKey;
 };
 
 export function buildListingPlatformChips(
@@ -75,6 +78,7 @@ export function buildListingPlatformChips(
       letter: c.letter,
       title: c.title,
       chipStyle: IR_LISTING_PLATFORM_CHIP_STYLE[key],
+      logoKey: key,
     });
   };
   const pushAll = (raw: IrissListingLinkField, key: ListingPlatformChipKey) => {
@@ -99,9 +103,9 @@ export const LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS =
 export const LISTING_PLATFORM_CHIPS_SCROLL_ROW_COMPACT_CLASS =
   "flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]";
 
-/** Kompakts noapaļots taisnstūris ar burtu; krāsas — `style={chipStyle}` no `buildListingPlatformChips`. */
+/** Logo saite bez čipa fona / robežas. */
 export const LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS =
-  "iriss-listing-platform-chip inline-flex h-10 min-w-[2.5rem] shrink-0 items-center justify-center rounded-xl px-2.5 text-[11px] font-semibold leading-none tracking-tight shadow-sm transition-transform active:scale-[0.96] sm:h-10 sm:min-w-[2.6rem] sm:px-2.5";
+  "iriss-listing-platform-chip inline-flex h-8 shrink-0 items-center justify-center bg-transparent px-0.5 text-[11px] font-semibold leading-none tracking-tight shadow-none transition-opacity hover:opacity-80 active:scale-[0.98]";
 
 export const LISTING_PLATFORM_CHIP_ANCHOR_COMPACT_CLASS =
-  "iriss-listing-platform-chip inline-flex h-6 min-w-[1.35rem] shrink-0 items-center justify-center rounded-md px-1.5 text-[9px] font-semibold leading-none tracking-tight transition-transform active:scale-[0.96]";
+  "iriss-listing-platform-chip inline-flex h-6 shrink-0 items-center justify-center bg-transparent px-0.5 text-[9px] font-semibold leading-none tracking-tight shadow-none transition-opacity hover:opacity-80 active:scale-[0.98]";

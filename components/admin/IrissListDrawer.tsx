@@ -6,7 +6,7 @@ import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/a
 import { classifyListingDamage, highlightListingDamage } from "@/lib/iriss-listings-damage";
 import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
 import { listingAuctionTypeLabel, realListingPriceHistory } from "@/lib/iriss-listings-auto1-cents";
-import { DEFAULT_LISTING_COSTS, listingBidPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
+import { DEFAULT_LISTING_COSTS, listingBidPrice, listingCardPriceLabel, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import { listingYearLabel } from "@/lib/iriss-listings-list-view";
@@ -235,12 +235,14 @@ export function IrissListDrawer({
 
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className="rounded-xl border border-orange-200 bg-orange-50 p-2.5">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pašreizējā cena</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{listingCardPriceLabel(v)}</div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="text-[22px] font-extrabold tabular-nums">{eur(listingBidPrice(v))}</div>
             <IrissListTaxBadge tax={tax} size="md" />
           </div>
-          {v.priceBuyNow != null ? <div className="text-[11px] text-slate-500">pirkt uzreiz {eur(v.priceBuyNow)}</div> : null}
+          {v.priceBuyNow != null && v.priceBuyNow !== listingBidPrice(v) ? (
+            <div className="text-[11px] text-slate-500">pirkt uzreiz {eur(v.priceBuyNow)}</div>
+          ) : null}
         </div>
         <div className="rounded-xl border border-[#E5E7EB] p-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pie šīs cenas</div>

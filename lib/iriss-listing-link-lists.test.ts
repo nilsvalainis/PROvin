@@ -121,5 +121,19 @@ describe("preview labels and chips", () => {
     expect(chips.filter((c) => c.letter === "OL")).toHaveLength(2);
     expect(chips.filter((c) => c.letter === "ET")).toHaveLength(1);
     expect(chips.map((c) => c.letter)).toEqual(["M", "M", "AB", "OL", "OL", "A1", "ET", "C"]);
+    expect(chips.map((c) => c.logoKey)).toEqual([
+      "mobile",
+      "mobile",
+      "autobid",
+      "openline",
+      "openline",
+      "auto1",
+      "ecarstrade",
+      "citi",
+    ]);
+    for (const c of chips.filter((x) => x.logoKey !== "citi")) {
+      expect(c.chipStyle.backgroundColor).toBe("transparent");
+      expect(c.chipStyle.border).toBe("none");
+    }
   });
 });

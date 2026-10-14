@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
+import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import { isHttpUrlForOpen } from "@/lib/iriss-listing-links";
 import { labelIrissListingLinkRows } from "@/lib/iriss-listing-link-lists";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
@@ -14,6 +16,15 @@ function fmtBudget(n: number | null, raw: string): string {
   const t = raw.trim();
   if (!t || t === "-") return "nav norādīts";
   return t;
+}
+
+function previewLogoKey(label: string): IrissAuctionLogoKey | null {
+  if (label.startsWith("Mobile")) return "mobile";
+  if (label.startsWith("Autobid")) return "autobid";
+  if (label.startsWith("Openlane")) return "openline";
+  if (label.startsWith("Auto1")) return "auto1";
+  if (label.startsWith("eCarsTrade")) return "ecarstrade";
+  return null;
 }
 
 function Field({ label, value }: { label: string; value: string }) {
@@ -63,14 +74,30 @@ function OrderPreviewBody({ order }: { order: IrissListingOrderBrief }) {
         {links.length === 0 ? (
           <p className="mt-1 text-[13px] text-slate-500">Nav piesaistītu saišu</p>
         ) : (
-          <ul className="mt-1 space-y-1">
-            {links.map((l) => (
-              <li key={`${l.label}-${l.href}`}>
-                <a href={l.href} target="_blank" rel="noopener noreferrer" className="text-[13px] font-medium text-[var(--color-provin-accent)] hover:underline">
-                  {l.label}
-                </a>
-              </li>
-            ))}
+          <ul className="mt-1 space-y-1.5">
+            {links.map((l) => {
+              const logoKey = previewLogoKey(l.label);
+              return (
+                <li key={`${l.label}-${l.href}`}>
+                  <a
+                    href={l.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={l.label}
+                    className="inline-flex items-center gap-1.5 bg-transparent text-[13px] font-medium text-[var(--color-provin-accent)] hover:opacity-80"
+                  >
+                    {logoKey ? (
+                      <>
+                        <IrissAuctionLogo platform={logoKey} fallback={l.label} size="md" />
+                        <span className="sr-only">{l.label}</span>
+                      </>
+                    ) : (
+                      l.label
+                    )}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

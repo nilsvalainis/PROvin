@@ -3,6 +3,7 @@ import {
   appendEcarstradeLinksToPasutijums,
   hasOtherAuctionListingLinks,
   previewEcarstradeLinksForPasutijums,
+  replaceEcarstradeLinksOnPasutijums,
   withAutoEcarstradeLinks,
 } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
@@ -69,5 +70,21 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     expect(preview.added.length).toBeGreaterThanOrEqual(1);
     expect(preview.added[0]).toContain("mark[]=39");
     expect(preview.added[0]).toContain("mark[]=66");
+  });
+
+  it("replace swaps the stored eCarsTrade URL for the tight merged filter", () => {
+    const row = rec({
+      brandModel: "Volvo XC60",
+      listingLinkAuto1: [
+        "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2019&maxMileage=140000",
+      ],
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68", "https://ecarstrade.com/search?mark[]=68&mark[]=7"],
+    });
+    const next = replaceEcarstradeLinksOnPasutijums(row);
+    expect(next.record.clientFirstName).toBe("Anna");
+    expect(next.record.listingLinkEcarstrade).toHaveLength(1);
+    expect(next.record.listingLinkEcarstrade[0]).toContain("year_from=2019");
+    expect(next.record.listingLinkEcarstrade[0]).toContain("mileage_to=140000");
+    expect(next.record.listingLinkEcarstrade[0]).toContain("model[]=1866");
   });
 });

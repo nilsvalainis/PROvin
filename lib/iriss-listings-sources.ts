@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { cleanHttpUrl, detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
+import { enrichListingSearchUrl } from "@/lib/iriss-listings-search-filter";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
 import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
 
@@ -77,18 +78,20 @@ export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[
   const seen = new Set<string>();
   const push = (row: SourceRow, platform: IrissListingPlatform | null, raw: string) => {
     if (!platform) return;
-    const sourceUrl = cleanHttpUrl(raw);
-    if (!sourceUrl) return;
-    const detected = detectIrissListingPlatform(sourceUrl);
+    const cleaned = cleanHttpUrl(raw);
+    if (!cleaned) return;
+    const detected = detectIrissListingPlatform(cleaned);
     /** Saite nepareizajā laukā (piem. Autobid URL Openlane laukā): uzticamies hostam. */
     const effective = detected ?? platform;
+    const brand = row.brandModel.trim();
+    const sourceUrl = enrichListingSearchUrl(effective, cleaned, brand);
     const key = `${row.id}|${sourceUrl}`;
     if (seen.has(key)) return;
     seen.add(key);
     out.push({
       id: irissListingSourceId(row.id, sourceUrl),
       orderId: row.id,
-      orderBrandModel: row.brandModel.trim(),
+      orderBrandModel: brand,
       platform: effective,
       sourceUrl,
     });

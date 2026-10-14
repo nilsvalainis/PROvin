@@ -5,12 +5,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
 import { IrissListingVehicleCard } from "@/components/admin/IrissListingVehicleCard";
+import { IrissListingVirtualList } from "@/components/admin/IrissListingVirtualList";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
 import { type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useMobilePlatform } from "@/hooks/useMobilePlatform";
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
 import { isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import { listingBidPrice, listingExtrasI, listingMaxBid, type ListingCostParts } from "@/lib/iriss-listings-cost";
+import { listingIsOverBudgetHidden, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
 import { listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 import {
   LISTING_SORTS,
@@ -90,13 +93,6 @@ const RECENT_WINDOW_HOURS = 36;
 
 type Tab = IrissListTab;
 
-function platformBadgeClass(platform: IrissListingPlatform): string {
-  if (platform === "autobid") return "bg-violet-50 text-violet-800 border-violet-200/80";
-  if (platform === "openline") return "bg-indigo-50 text-indigo-800 border-indigo-200/80";
-  if (platform === "ecarstrade") return "bg-emerald-50 text-emerald-800 border-emerald-200/80";
-  return "bg-amber-50 text-amber-800 border-amber-200/80";
-}
-
 function healthLabel(status: IrissPlatformHealthItem["status"]): string {
   if (status === "ok") return "OK";
   if (status === "stale") return "novecojis";
@@ -108,13 +104,13 @@ function healthLabel(status: IrissPlatformHealthItem["status"]): string {
   return "neizdevās";
 }
 
-function healthClass(status: IrissPlatformHealthItem["status"]): string {
-  if (status === "ok") return "bg-emerald-50 text-emerald-800 border-emerald-200/80";
-  if (status === "stale" || status === "no_sources" || status === "not_run") return "bg-slate-50 text-slate-700 border-slate-200/90";
-  if (status === "relay_not_configured") return "bg-sky-50 text-sky-900 border-sky-200/80";
-  if (status === "login_required") return "bg-amber-50 text-amber-900 border-amber-200/80";
-  if (status === "blocked_by_waf") return "bg-orange-50 text-orange-950 border-orange-200/90";
-  return "bg-red-50 text-red-900 border-red-200/80";
+function healthTextClass(status: IrissPlatformHealthItem["status"]): string {
+  if (status === "ok") return "text-emerald-800";
+  if (status === "stale" || status === "no_sources" || status === "not_run") return "text-slate-700";
+  if (status === "relay_not_configured") return "text-sky-900";
+  if (status === "login_required") return "text-amber-900";
+  if (status === "blocked_by_waf") return "text-orange-950";
+  return "text-red-900";
 }
 
 function sourceStatusLabel(status: IrissListingSourceRun["status"]): string {
@@ -311,6 +307,8 @@ export function IrissSludinajumiListClient({
   const tab = prefs.tab;
   const listScope = prefs.listScope;
   const hideTech = prefs.hideTech;
+  const hideOverBudget = prefs.hideOverBudget;
+  const overBudgetThreshold = prefs.overBudgetThreshold;
   const sort = parseListingSort(searchParams.get("sort")) ?? DEFAULT_SORT;
   const sources = parseListingSources(searchParams.get("src"));
   const priceMin = parsePriceBound(searchParams.get("min"));
@@ -517,11 +515,23 @@ export function IrissSludinajumiListClient({
       if (!vehicleInPriceRange(v, priceMin, priceMax)) return false;
       const linked = linkedOrdersOf(v, prefs, orderById);
       if (!vehicleMatchesOrderFilter(linked, orderFilter)) return false;
+      if (
+        listingIsOverBudgetHidden(
+          v,
+          listingCostsFor(prefs, v.id),
+          prefs.taxOv[v.id],
+          listingBudgetForVehicle(null, linked),
+          hideOverBudget,
+          overBudgetThreshold,
+        )
+      ) {
+        return false;
+      }
       if (!q) return true;
       const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.vin ?? ""} ${v.stockNumber ?? ""} ${v.orderBrandModels.join(" ")} ${linked.map((o) => `${o.clientName} ${o.brandModel} ${o.preferredColors} ${o.brief}`).join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, orderById, orderFilter]);
+  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, hideOverBudget, overBudgetThreshold, orderById, orderFilter]);
 
   const sorted = useMemo(() => {
     const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs, budgetOf(v, prefs, orderById)) }));
@@ -532,6 +542,21 @@ export function IrissSludinajumiListClient({
   const vatHealth = useMemo(() => latest?.vatHealth ?? computeListingVatHealth(vehicles), [latest?.vatHealth, vehicles]);
   const drawerVehicle = useMemo(() => allVehicles.find((v) => v.id === drawerId) ?? null, [allVehicles, drawerId]);
   const techCount = useMemo(() => vehicles.filter((v) => v.change !== "gone" && !prefs.hidden.includes(v.id) && listingHasHardTechDamage(v.damageRaw)).length, [vehicles, prefs.hidden]);
+  const overBudgetCount = useMemo(
+    () =>
+      vehicles.filter((v) => {
+        if (v.change === "gone" || prefs.hidden.includes(v.id)) return false;
+        return listingIsOverBudgetHidden(
+          v,
+          listingCostsFor(prefs, v.id),
+          prefs.taxOv[v.id],
+          budgetOf(v, prefs, orderById),
+          true,
+          overBudgetThreshold,
+        );
+      }).length,
+    [vehicles, prefs, orderById, overBudgetThreshold],
+  );
   const favCount = prefs.fav.filter((id) => vehicles.some((v) => v.id === id)).length;
   const hiddenCount = prefs.hidden.filter((id) => vehicles.some((v) => v.id === id)).length;
 
@@ -624,8 +649,6 @@ export function IrissSludinajumiListClient({
     const h = vatHealth[platform];
     const login = health?.items.find((x) => x.platform === platform);
     const warn = h.stale + h.missingFields + h.rateMissing + h.conflict + h.defaultUnrecognised;
-    const bad = h.level === "red" || (login && login.status !== "ok" && login.status !== "stale" && login.status !== "not_run" && login.status !== "no_sources");
-    const amber = h.level === "amber" || warn > 0 || login?.status === "stale";
     const label = PLATFORM_LABEL_LONG[platform];
     const vat =
       platform === "auto1"
@@ -635,7 +658,7 @@ export function IrissSludinajumiListClient({
           : platform === "ecarstrade"
             ? `${h.net} NETO · ${h.margin} · ${warn} ⚠`
             : `${h.margin} · ${h.gross} · ${warn} ⚠`;
-    return { platform, label, vat, tone: bad ? "bg-red-500" : amber ? "bg-amber-400" : "bg-emerald-500", title: `${label}: ${login ? healthLabel(login.status) : "nav pārbaudīts"} · ${vat}${h.reason ? ` · ${h.reason}` : ""}` };
+    return { platform, label, vat, title: `${label}: ${login ? healthLabel(login.status) : "nav pārbaudīts"} · ${vat}${h.reason ? ` · ${h.reason}` : ""}` };
   });
   const activeFilterCount = (sources.length > 0 ? 1 : 0) + (priceMin != null || priceMax != null ? 1 : 0) + (hideTech ? 1 : 0) + (listScope === "hidden" ? 1 : 0);
 
@@ -724,12 +747,19 @@ export function IrissSludinajumiListClient({
             {filterOpen ? (
               <div className="fixed inset-x-2 bottom-2 z-40 rounded-2xl bg-white p-3.5 text-[12px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-9 sm:w-[300px] sm:rounded-xl">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Avots</p>
-                <div className="mt-1 flex gap-1.5">
+                <div className="mt-1 flex flex-wrap gap-2">
                   {SOURCE_CHIPS.map((src) => {
                     const on = sources.length === 0 || sources.includes(src.id);
                     return (
-                      <button key={src.id} type="button" aria-pressed={on} onClick={() => toggleSource(src.id)} className={`h-9 rounded-lg px-2.5 text-[12px] font-semibold sm:h-7 ${on ? "bg-[var(--color-apple-text)] text-white" : "bg-[#f2f2f5] text-[#8e8e93]"}`}>
-                        {src.label}
+                      <button
+                        key={src.id}
+                        type="button"
+                        aria-pressed={on}
+                        aria-label={src.label}
+                        onClick={() => toggleSource(src.id)}
+                        className={`inline-flex h-8 items-center bg-transparent px-0.5 sm:h-7 ${on ? "opacity-100" : "opacity-35"}`}
+                      >
+                        <IrissAuctionLogo platform={src.id} fallback={src.label} size="sm" />
                       </button>
                     );
                   })}
@@ -743,6 +773,27 @@ export function IrissSludinajumiListClient({
                 <label className="mt-3 flex items-center gap-2 font-medium">
                   <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={hideTech} onChange={(e) => setPrefs((p) => ({ ...p, hideTech: e.target.checked }))} />
                   Slēpt ar motora/kārbas bojājumiem ({techCount})
+                </label>
+                <label className="mt-2 flex items-start gap-2 font-medium">
+                  <input type="checkbox" className="mt-0.5 h-5 w-5 sm:h-4 sm:w-4" checked={hideOverBudget} onChange={(e) => setPrefs((p) => ({ ...p, hideOverBudget: e.target.checked }))} />
+                  <span>
+                    Slēpt virs budžeta +
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      aria-label="Slieksnis virs budžeta, €"
+                      value={overBudgetThreshold}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        if (raw === "") return;
+                        setPrefs((p) => ({ ...p, overBudgetThreshold: parseOverBudgetThreshold(raw, p.overBudgetThreshold) }));
+                      }}
+                      className="mx-1 h-7 w-16 rounded-md bg-[#f2f2f5] px-1.5 text-center text-[12px] outline-none"
+                    />
+                    € ({overBudgetCount})
+                  </span>
                 </label>
                 <label className="mt-2 flex items-center gap-2 font-medium">
                   <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={listScope === "hidden"} onChange={(e) => setPrefs((p) => ({ ...p, listScope: e.target.checked ? "hidden" : "all" }))} />
@@ -784,7 +835,9 @@ export function IrissSludinajumiListClient({
                 <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Nolasīšana pa avotiem</p>
                 {ingestStats.map((s) => (
                   <div key={s.platform} className="flex justify-between gap-3 py-0.5">
-                    <span>{PLATFORM_LABEL_LONG[s.platform]}</span>
+                    <span className="inline-flex items-center">
+                      <IrissAuctionLogo platform={s.platform} fallback={PLATFORM_LABEL_LONG[s.platform]} size="sm" />
+                    </span>
                     <span className="text-[#8e8e93]">
                       {s.sourceCount === 0
                         ? "nav saišu"
@@ -795,15 +848,18 @@ export function IrissSludinajumiListClient({
                 <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">PVN pa avotiem</p>
                 {platformDots.map((d) => (
                   <div key={d.platform} className="flex justify-between gap-3 py-0.5" title={d.title}>
-                    <span className="flex items-center gap-1.5"><i className={`inline-block h-2 w-2 rounded-full ${d.tone}`} />{d.label}</span>
+                    <span className="flex items-center gap-1.5">
+                      <IrissAuctionLogo platform={d.platform} fallback={d.label} size="sm" />
+                    </span>
                     <span className="text-[#8e8e93]">{d.vat}</span>
                   </div>
                 ))}
                 <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Pieslēgumi</p>
                 {(mounted && health?.items ? health.items : IRISS_LISTING_PLATFORMS.map((platform) => ({ platform, status: "not_run" as const, note: "", checkedAt: "" }))).map((item) => (
                   <div key={item.platform} className="flex items-center justify-between gap-2 py-0.5">
-                    <span title={item.note} className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${healthClass(item.status)}`}>
-                      {PLATFORM_LABEL_LONG[item.platform]}: {healthLabel(item.status)}
+                    <span title={item.note} className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold">
+                      <IrissAuctionLogo platform={item.platform} fallback={PLATFORM_LABEL_LONG[item.platform]} size="sm" />
+                      <span className={healthTextClass(item.status)}>{healthLabel(item.status)}</span>
                     </span>
                     {IRISS_RELAY_LISTING_PLATFORMS.includes(item.platform) ? (
                       <IrissListingsLoginButton platform={item.platform} onDone={() => void loadHealth()} />
@@ -821,7 +877,7 @@ export function IrissSludinajumiListClient({
                       <ul className="mt-1 space-y-1 text-[11px] text-slate-600">
                         {problemSources.map((src) => (
                           <li key={src.id} className="flex flex-wrap items-center gap-x-2">
-                            <span className={`rounded-full border px-1.5 text-[10px] font-semibold ${platformBadgeClass(src.platform)}`}>{PLATFORM_LABEL[src.platform]}</span>
+                            <IrissAuctionLogo platform={src.platform} fallback={PLATFORM_LABEL[src.platform]} size="sm" />
                             <span className="font-medium text-[var(--color-apple-text)]">{src.orderBrandModel || src.orderId}</span>
                             <span>{sourceStatusLabel(src.status)}</span>
                             {src.note ? <span className="text-slate-500">{src.note}</span> : null}
@@ -864,8 +920,7 @@ export function IrissSludinajumiListClient({
           <span className="inline-flex items-center gap-1.5">
             {platformDots.map((d) => (
               <span key={d.platform} title={d.title} className="inline-flex items-center gap-1">
-                <i className={`inline-block h-[7px] w-[7px] rounded-full ${d.tone}`} />
-                <span className="hidden sm:inline">{d.label}</span>
+                <IrissAuctionLogo platform={d.platform} fallback={d.label} size="sm" />
               </span>
             ))}
           </span>
@@ -874,9 +929,17 @@ export function IrissSludinajumiListClient({
             <span className="hidden sm:inline"> · nākamā {mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "\u00a0"}</span>
             {" "}· {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0} avoti OK
             {ectIngest && (ectIngest.sourceCount > 0 || ectIngest.vehicleCount > 0) ? (
-              <span title="eCarsTrade nolasīšana"> · ET {ectIngest.okCount}/{ectIngest.sourceCount} · {ectIngest.vehicleCount} auto</span>
+              <span title="eCarsTrade nolasīšana" className="inline-flex items-center gap-1">
+                {" · "}
+                <IrissAuctionLogo platform="ecarstrade" fallback="eCarsTrade" size="sm" />
+                {ectIngest.okCount}/{ectIngest.sourceCount} · {ectIngest.vehicleCount} auto
+              </span>
             ) : (
-              <span title="eCarsTrade nolasīšana"> · ET nav saišu</span>
+              <span title="eCarsTrade nolasīšana" className="inline-flex items-center gap-1">
+                {" · "}
+                <IrissAuctionLogo platform="ecarstrade" fallback="eCarsTrade" size="sm" />
+                nav saišu
+              </span>
             )}
           </span>
           <button type="button" onClick={() => void syncNow()} disabled={syncBusy} className="font-semibold text-[var(--color-provin-accent)] disabled:opacity-55">
@@ -917,10 +980,11 @@ export function IrissSludinajumiListClient({
         </section>
       ) : null}
 
-      <div className="space-y-1.5 sm:space-y-2">
-        {sorted.map((v) => (
+      <IrissListingVirtualList
+        items={sorted}
+        getKey={(v) => v.id}
+        renderItem={(v) => (
           <IrissListingVehicleCard
-            key={v.id}
             v={v}
             nowMs={nowMs}
             prefs={prefs}
@@ -950,8 +1014,8 @@ export function IrissSludinajumiListClient({
               router.refresh();
             }}
           />
-        ))}
-      </div>
+        )}
+      />
 
       {drawerVehicle ? (
         <>

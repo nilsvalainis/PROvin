@@ -10,6 +10,79 @@
 </head>
 <body class="p-5">
 <p class="mb-3 rounded-lg bg-amber-50 px-3 py-1.5 text-[11px] text-amber-900">IRISS LIST kartīte · fixture (tās pašas Tailwind klases kā IrissListingVehicleCard)</p>
+<div class="mb-4 w-full rounded-xl bg-white p-3.5 text-[12px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:w-[300px]">
+  <p class="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Filtri</p>
+  <p class="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Cena €</p>
+  <label class="mt-3 flex items-center gap-2 font-medium">
+    <input type="checkbox" class="h-4 w-4" />
+    Slēpt ar motora/kārbas bojājumiem (0)
+  </label>
+  <label class="mt-2 flex items-start gap-2 font-medium">
+    <input type="checkbox" class="mt-0.5 h-4 w-4" checked />
+    <span>Slēpt virs budžeta + <span class="inline-block rounded-md bg-[#f2f2f5] px-1.5 py-0.5">2000</span> € (3)</span>
+  </label>
+  <label class="mt-2 flex items-center gap-2 font-medium">
+    <input type="checkbox" class="h-4 w-4" />
+    Rādīt tikai paslēptos (0)
+  </label>
+</div>
+<p class="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">eCarsTrade krājumi · pirkt uzreiz, bez fiktīva beigu laika</p>
+<article class="mb-4 flex cursor-pointer flex-col overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm sm:flex-row sm:items-stretch sm:gap-4 sm:overflow-visible sm:rounded-2xl sm:p-3.5">
+  <div class="w-full shrink-0 space-y-1.5 sm:w-[300px]">
+    <div class="relative h-[220px] w-full overflow-hidden rounded-none border-0 sm:h-[200px] sm:rounded-lg sm:border sm:border-slate-200/90" style="background:linear-gradient(135deg,#7a1f2b,#c44b3a)">
+      <span class="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 text-[10px] font-semibold text-white">📷 10</span>
+    </div>
+  </div>
+  <div class="flex min-w-0 flex-1 flex-col gap-2 p-2.5 sm:p-0">
+    <div class="text-[11px] font-semibold tabular-nums text-slate-500">Nr. 7602956</div>
+    <div class="text-[17px] font-semibold leading-tight text-[var(--color-apple-text)]">Hyundai Tucson 1.6 T-GDI Hybrid Feel Aut. LED Virtual ACC Navi Leather KeylessGo Camera Klima PDC ...</div>
+    <div class="grid grid-cols-3 gap-2 sm:grid-cols-6 sm:border-y sm:border-dashed sm:border-[#E5E7EB] sm:py-2">
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">1. reģ.</div><div class="text-[13px] font-semibold tabular-nums">03/2022</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Nobraukums</div><div class="text-[13px] font-semibold tabular-nums">105 926 km</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Degviela</div><div class="text-[13px] font-semibold tabular-nums">Hybrid</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Kārba</div><div class="text-[13px] font-semibold tabular-nums">Automatic</div></div>
+      <div><div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Jauda</div><div class="text-[13px] font-semibold tabular-nums">169 kW</div></div>
+    </div>
+    <div class="flex flex-wrap items-center gap-1">
+      <span class="inline-flex items-center gap-1.5 text-[10px] font-semibold">eCarsTrade · Machelen 🇧🇪</span>
+      <span class="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-900">STOCK</span>
+    </div>
+    <div class="sm:hidden">
+      <div class="rounded-xl bg-[#f2f2f5] p-3">
+        <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pirkt uzreiz</div>
+        <div class="mt-1 flex flex-wrap items-center gap-1.5">
+          <span class="text-[26px] font-extrabold tabular-nums leading-none">16 200 €</span>
+          <span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">NETO</span>
+        </div>
+      </div>
+      <div class="mt-2 grid gap-0.5 rounded-xl border border-dashed border-[#E5E7EB] p-3 text-[11px] tabular-nums">
+        <div class="flex justify-between"><span>Pirkt uzreiz</span><span>16 200 €</span></div>
+        <div class="flex justify-between"><span>+ Izmaksas</span><span>3 590 €</span></div>
+        <div class="flex justify-between"><span>+ PVN 21%</span><span>4 156 €</span></div>
+        <div class="flex justify-between"><span>= Kopējās izmaksas</span><b>23 946 €</b></div>
+        <div class="flex justify-between"><span>Klienta budžets</span><b>28 000 €</b></div>
+        <div><span class="inline-block rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-extrabold text-emerald-800">Ietilpst budžetā +4 054 €</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="hidden w-[260px] shrink-0 sm:block">
+    <div class="rounded-xl bg-[#f2f2f5] p-3">
+      <div class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pirkt uzreiz</div>
+      <div class="mt-1 flex flex-wrap items-center gap-1.5">
+        <span class="text-[26px] font-extrabold tabular-nums leading-none">16 200 €</span>
+        <span class="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">NETO</span>
+      </div>
+    </div>
+    <div class="mt-2 grid gap-0.5 rounded-xl border border-dashed border-[#E5E7EB] p-3 text-[11px] tabular-nums">
+      <div class="flex justify-between"><span>Pirkt uzreiz</span><span>16 200 €</span></div>
+      <div class="flex justify-between"><span>+ Izmaksas</span><span>3 590 €</span></div>
+      <div class="flex justify-between"><span>+ PVN 21%</span><span>4 156 €</span></div>
+      <div class="flex justify-between"><span>= Kopējās izmaksas</span><b>23 946 €</b></div>
+      <div class="flex justify-between"><span>Klienta budžets</span><b>28 000 €</b></div>
+      <div><span class="inline-block rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-extrabold text-emerald-800">Ietilpst budžetā +4 054 €</span></div>
+    </div>
+  </div>
+</article>
 <p class="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Budžetā ietilpst</p>
 <article class="flex cursor-pointer flex-col overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm sm:flex-row sm:items-stretch sm:gap-4 sm:overflow-visible sm:rounded-2xl sm:p-3.5">
   <div class="w-full shrink-0 space-y-1.5 sm:w-[300px]">

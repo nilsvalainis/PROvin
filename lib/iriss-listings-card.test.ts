@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  listingAuctionEndIsPlausible,
   listingAuctionEndLabel,
   listingBudgetFitPill,
   listingCardGallery,
@@ -160,5 +161,13 @@ describe("listing countdown", () => {
 
   it("marks finished auctions", () => {
     expect(listingCountdown("2026-10-01T00:00:00.000Z", Date.parse("2026-10-12T00:00:00.000Z")).t).toBe("Beigusies");
+  });
+
+  it("does not show a 2036 stock placeholder as 3731d", () => {
+    const now = Date.parse("2026-10-14T12:00:00.000Z");
+    const fake = "2036-12-31T21:59:00.000Z";
+    expect(listingAuctionEndIsPlausible(fake, now)).toBe(false);
+    expect(listingCountdown(fake, now)).toEqual({ t: "", k: "text-slate-400", end: "" });
+    expect(listingCountdown("", now).t).toBe("");
   });
 });

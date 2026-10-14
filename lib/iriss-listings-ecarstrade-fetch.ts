@@ -6,7 +6,9 @@ import {
   ECARSTRADE_DEFAULT_PER_PAGE,
   ECARSTRADE_ORIGIN,
   ecarstradeApiUrl,
+  ecarstradeCarJsonUrl,
   ecarstradePageStart,
+  mergeEcarstradeJsonPrices,
   parseEcarstradeApiPage,
   readEcarstradeAuth,
   type EcarstradeVehicle,
@@ -45,7 +47,10 @@ export function randomPauseMs(min: number, max: number): number {
   return Math.round(lo + Math.random() * (hi - lo));
 }
 
-type AuthSession = { cookie: string } | { skipped: true; note: string } | { failed: true; note: string; status: IrissListingSourceStatus };
+type AuthSession =
+  | { cookie: string; accessToken: string }
+  | { skipped: true; note: string }
+  | { failed: true; note: string; status: IrissListingSourceStatus };
 
 function isRec(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
@@ -108,7 +113,7 @@ async function loginEcarstrade(
     }
     const tokens = parseEcarstradeLoginBody(json);
     if (!tokens) return { failed: true, status: "login_required", note: "eCarsTrade login nedeva accessToken." };
-    return { cookie: ecarstradeAuthCookieHeader(tokens.accessToken, tokens.refreshToken) };
+    return { cookie: ecarstradeAuthCookieHeader(tokens.accessToken, tokens.refreshToken), accessToken: tokens.accessToken };
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
     return {
@@ -126,6 +131,7 @@ async function fetchApiText(
   timeoutMs: number,
   fetchImpl: typeof fetch,
   cookie: string,
+  accessToken = "",
 ): Promise<{ ok: true; statusCode: number; text: string } | { ok: false; note: string }> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -133,12 +139,14 @@ async function fetchApiText(
     const headers: Record<string, string> = {
       "User-Agent": BROWSER_UA,
       Accept: "application/json,text/plain,*/*",
-      "Accept-Language": "en-GB,en;q=0.9,de;q=0.8,lv;q=0.7",
+      "Accept-Language": "lv,en-GB;q=0.9,en;q=0.8",
       Referer: `${ECARSTRADE_ORIGIN}/search`,
       "Cache-Control": "no-cache",
       Pragma: "no-cache",
+      "X-Requested-With": "XMLHttpRequest",
     };
     if (cookie) headers.Cookie = cookie;
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
     const res = await fetchImpl(url, {
       method: "GET",
       headers,
@@ -179,6 +187,7 @@ export async function fetchEcarstradeSource(sourceUrl: string, opts: EcarstradeF
 
   const auth = await loginEcarstrade(fetchImpl, opts.timeoutMs, env);
   const cookie = "cookie" in auth ? auth.cookie : "";
+  const accessToken = "accessToken" in auth ? auth.accessToken : "";
   loggedIn = Boolean(cookie);
   const authNote = "note" in auth ? auth.note : loggedIn ? "eCarsTrade sesija ar dīlera kontu." : "";
   if ("failed" in auth && auth.failed && auth.status === "login_required") {
@@ -196,7 +205,7 @@ export async function fetchEcarstradeSource(sourceUrl: string, opts: EcarstradeF
     } catch {
       return { status: "fetch_failed", note: "Nederīgs eCarsTrade URL.", vehicles: [], rawPages, pagesFetched, pageCount, loggedIn };
     }
-    const got = await fetchApiText(url, opts.timeoutMs, fetchImpl, cookie);
+    const got = await fetchApiText(url, opts.timeoutMs, fetchImpl, cookie, accessToken);
     if (!got.ok) {
       if (page === 1) return { status: "fetch_failed", note: got.note, vehicles: [], rawPages, pagesFetched, pageCount, loggedIn };
       partialNote = `${page}. lapa neizdevās: ${got.note}`;
@@ -235,8 +244,32 @@ export async function fetchEcarstradeSource(sourceUrl: string, opts: EcarstradeF
     }
   }
 
+  let enrichNote = "";
+  if (loggedIn && accessToken) {
+    const missing = [...vehicles.values()].filter((v) => v.priceBuyNow == null && v.priceCurrent == null).slice(0, 30);
+    let enriched = 0;
+    for (const v of missing) {
+      const jsonUrl = ecarstradeCarJsonUrl(v.externalId);
+      if (!jsonUrl) continue;
+      const got = await fetchApiText(jsonUrl, Math.min(opts.timeoutMs, 8000), fetchImpl, cookie, accessToken);
+      if (!got.ok) continue;
+      if (got.statusCode === 401 || got.statusCode === 403) break;
+      if (got.statusCode >= 400) continue;
+      try {
+        const body = JSON.parse(got.text) as Record<string, unknown>;
+        const next = mergeEcarstradeJsonPrices(v, body);
+        vehicles.set(v.externalId, next);
+        if (next.priceBuyNow != null || next.priceCurrent != null) enriched += 1;
+      } catch {
+        continue;
+      }
+    }
+    if (enriched > 0) enrichNote = `Cenas no /api/v1/cars: ${enriched}.`;
+  }
+
   const notes: string[] = [];
   if (authNote) notes.push(authNote);
+  if (enrichNote) notes.push(enrichNote);
   if (vehicles.size === 0) notes.push("Meklējums šobrīd nedod rezultātus (0 auto) BE/NL/LU/DE.");
   if (pageCount > opts.maxPages) notes.push(`Nolasītas ${pagesFetched}/${pageCount} lapas (limits ${opts.maxPages}).`);
   if (partialNote) notes.push(partialNote);

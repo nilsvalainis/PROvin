@@ -6,6 +6,7 @@
  */
 
 import { DEFAULT_LISTING_COSTS, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
+import { DEFAULT_OVER_BUDGET_THRESHOLD_EUR, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
 import {
   LISTING_SORT_STORAGE_KEY,
   parseListingSort,
@@ -59,6 +60,9 @@ export type IrissListPrefs = {
   priceMin: number | null;
   priceMax: number | null;
   hideTech: boolean;
+  /** Slēpt auto, kuru kartītes kopējās izmaksas pārsniedz budžetu par slieksni. Noklusējums: jā. */
+  hideOverBudget: boolean;
+  overBudgetThreshold: number;
   tab: IrissListTab;
   listScope: IrissListScope;
   /** Auto id -> pasūtījumu id (pārraksta meklēšanas URL piesaisti). */
@@ -84,6 +88,8 @@ export function defaultIrissListPrefs(): IrissListPrefs {
     priceMin: null,
     priceMax: null,
     hideTech: false,
+    hideOverBudget: true,
+    overBudgetThreshold: DEFAULT_OVER_BUDGET_THRESHOLD_EUR,
     tab: "all",
     listScope: "all",
     orderOv: {},
@@ -279,6 +285,8 @@ export function parseIrissListPrefs(raw: string | null): IrissListPrefs {
       priceMin: typeof o.priceMin === "number" ? parsePriceBound(String(o.priceMin)) : parsePriceBound(typeof o.priceMin === "string" ? o.priceMin : null),
       priceMax: typeof o.priceMax === "number" ? parsePriceBound(String(o.priceMax)) : parsePriceBound(typeof o.priceMax === "string" ? o.priceMax : null),
       hideTech: o.hideTech === true,
+      hideOverBudget: o.hideOverBudget !== false,
+      overBudgetThreshold: parseOverBudgetThreshold(o.overBudgetThreshold),
       tab: parseTab(o.tab),
       listScope: parseScope(o.listScope),
       orderOv: parseOrderOv(o.orderOv),
