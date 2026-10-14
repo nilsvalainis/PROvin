@@ -5,7 +5,13 @@
 import { applyCcVinParsedReport } from "@/lib/cc-vin-report-apply";
 import { emptyCcVinParsedReport, type CcVinParsedReport } from "@/lib/cc-vin-report-parse";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
-import { VIN_SCAN_STATUSES, type VinScanAuction, type VinScanIndicator, type VinScanStatus } from "@/lib/vin-scan/types";
+import {
+  VIN_SCAN_STATUSES,
+  vinScanNeedsBrowser,
+  type VinScanAuction,
+  type VinScanIndicator,
+  type VinScanStatus,
+} from "@/lib/vin-scan/types";
 import { isValuableVinScanSourceId } from "@/lib/vin-scan/free-sources";
 import { vinScanCatalogItem, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 
@@ -29,7 +35,9 @@ export const ORDER_VIN_SCAN_BROWSER_IMPORT_IDS: readonly string[] = ["stat_vin",
 const BLOCKED_HINT_RE = /cloudflare|\b403\b|captcha|challenge|bloķ|blocked|lapa nav atpazīta|just a moment/i;
 
 export function isOrderVinScanBrowserBlocked(id: string, state: OrderVinScanSourceState, hint: string): boolean {
-  return state === "error" && ORDER_VIN_SCAN_BROWSER_IMPORT_IDS.includes(id) && BLOCKED_HINT_RE.test(hint);
+  if (state !== "error") return false;
+  if (vinScanNeedsBrowser("unknown", hint)) return true;
+  return ORDER_VIN_SCAN_BROWSER_IMPORT_IDS.includes(id) && BLOCKED_HINT_RE.test(hint);
 }
 
 export type OrderVinScanSourceRow = {
@@ -54,6 +62,7 @@ export type OrderVinScanSummary = {
   found: number;
   none: number;
   error: number;
+  browser: number;
   errorMessage?: string;
   rows: OrderVinScanSourceRow[];
   noneRows: OrderVinScanSourceRow[];
@@ -215,8 +224,8 @@ export function buildOrderVinScanSummary(record: OrderVinScanRecord | null | und
   });
   const found = rows.filter((r) => r.state === "found");
   const none = rows.filter((r) => r.state === "none");
-  const error = rows.filter((r) => r.state === "error" && !r.blocked);
   const blocked = rows.filter((r) => r.blocked);
+  const error = rows.filter((r) => r.state === "error" && !r.blocked);
   const byRank = (a: OrderVinScanSourceRow, b: OrderVinScanSourceRow) =>
     rowRank(a) - rowRank(b) || a.label.localeCompare(b.label, "lv");
   const visible = [...found, ...error, ...blocked].sort(byRank);
@@ -228,6 +237,7 @@ export function buildOrderVinScanSummary(record: OrderVinScanRecord | null | und
     found: found.length,
     none: none.length,
     error: error.length,
+    browser: blocked.length,
     ...(record.error ? { errorMessage: record.error } : {}),
     rows: visible,
     noneRows,
@@ -459,5 +469,6 @@ export function orderVinScanCompactHint(summary: OrderVinScanSummary | null | un
   const valuable = summary.rows.find((r) => r.valuable && r.state === "found");
   const hint = valuable?.hint || "";
   const bits = [`${summary.found} ar datiem`, `${summary.none} nav`, `${summary.error} kļūda`];
+  if (summary.browser) bits.push(`${summary.browser} pārlūks`);
   return hint ? `VIN SCAN: ${hint} · ${bits.join(", ")}` : `VIN SCAN: ${bits.join(", ")}`;
 }

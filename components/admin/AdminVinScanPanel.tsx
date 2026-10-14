@@ -20,7 +20,14 @@ import {
   formatVinScanExportText,
   formatVinScanScannedAt,
 } from "@/lib/vin-scan/summary";
-import { VIN_SCAN_STATUSES, type VinScanIndicator, type VinScanStatus } from "@/lib/vin-scan/types";
+import {
+  VIN_SCAN_STATUSES,
+  formatVinScanCountLine,
+  vinScanCountBreakdown,
+  vinScanNeedsBrowser,
+  type VinScanIndicator,
+  type VinScanStatus,
+} from "@/lib/vin-scan/types";
 import {
   decodeVinLocal,
   nordicVinSearchLinks,
@@ -101,9 +108,11 @@ const STATUS_LV: Record<VinScanStatus | "idle" | "checking", string> = {
   checking: "Pārbauda…",
 };
 
-function statusLabel(id: string, status: VinScanStatus | "idle" | "checking"): string {
+function statusLabel(id: string, status: VinScanStatus | "idle" | "checking", summary = ""): string {
   const wanted = isVinScanWantedSource(id) ? vinScanWantedStatusLabel(status) : "";
-  return wanted || STATUS_LV[status];
+  if (wanted) return wanted;
+  if (status === "unknown" && vinScanNeedsBrowser(status, summary)) return "Atver pārlūkā";
+  return STATUS_LV[status];
 }
 
 function statusDot(id: string, status: VinScanStatus | "idle" | "checking"): string {
@@ -373,6 +382,7 @@ export function AdminVinScanPanel({
 
   const rows = CATALOG.map((item) => displayById[item.id]).filter((row): row is ScanRow => Boolean(row));
   const facts = rows.length > 0 ? buildVinScanFacts(rows) : null;
+  const countLine = rows.length > 0 ? formatVinScanCountLine(vinScanCountBreakdown(rows)) : "";
   const unknownIds = CATALOG.filter((item) => displayById[item.id]?.status === "unknown").map((item) => item.id);
   const canRetry = !busy && unknownIds.length > 0;
   const nordicLinks = valid ? nordicVinSearchLinks(clean) : [];
@@ -553,13 +563,16 @@ export function AdminVinScanPanel({
           ))}
         </div>
       ) : null}
-      {facts && (facts.wanted.length || facts.mileageRollback || scannedAt) ? (
+      {facts && (facts.wanted.length || facts.mileageRollback || scannedAt || countLine) ? (
         <div className="mx-2 mb-1 space-y-0.5 px-1 py-1">
           {facts.mileageRollback ? (
             <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">Nobraukuma nesakritība</p>
           ) : null}
           {facts.wanted.length ? (
             <p className="text-[10px] font-semibold text-rose-700 dark:text-rose-300">{facts.wanted.join(", ")}</p>
+          ) : null}
+          {countLine ? (
+            <p className="text-[10px] tabular-nums text-[var(--color-provin-muted)]">{countLine}</p>
           ) : null}
           {scannedAt ? (
             <p className="text-[10px] text-[var(--color-provin-muted)]">{formatVinScanScannedAt(scannedAt)}</p>
@@ -599,7 +612,7 @@ export function AdminVinScanPanel({
                           : "text-[var(--color-provin-muted)]"
                       }`}
                     >
-                      {statusLabel(item.id, status)}
+                      {statusLabel(item.id, status, row?.summary)}
                       {status !== "checking" && row?.summary ? ` · ${row.summary}` : ""}
                     </span>
                   </span>

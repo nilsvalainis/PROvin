@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { sourceHealthColor, type SourceHealthDoc, type SourceHealthColor } from "@/lib/source-health";
+import { formatVinScanCountLine, vinScanNeedsBrowser } from "@/lib/vin-scan/types";
 
 export type SourceHealthItem = { id: string; label: string; manual?: boolean };
 
@@ -114,8 +115,25 @@ export function AdminSourceHealthCompact({ doc, items }: { doc: SourceHealthDoc;
   const [nowMs, setNowMs] = useState<number | null>(null);
   useEffect(() => setNowMs(Date.now()), []);
   const auto = items.filter((it) => !it.manual);
-  const ok = nowMs == null ? null : auto.filter((it) => sourceHealthColor(doc.sources[it.id], nowMs) === "green").length;
-  const bad = nowMs == null ? 0 : auto.filter((it) => sourceHealthColor(doc.sources[it.id], nowMs) === "red").length;
+  let ok: number | null = null;
+  let error = 0;
+  let browser = 0;
+  if (nowMs != null) {
+    ok = 0;
+    for (const it of auto) {
+      const color = sourceHealthColor(doc.sources[it.id], nowMs);
+      if (color === "green") {
+        ok += 1;
+        continue;
+      }
+      if (color !== "red") continue;
+      const msg = doc.sources[it.id]?.errors[0]?.msg ?? "";
+      if (vinScanNeedsBrowser("unknown", msg)) browser += 1;
+      else error += 1;
+    }
+  }
+  const countLine =
+    ok == null ? "…" : formatVinScanCountLine({ total: auto.length, ok, error, browser });
   return (
     <div>
       <button
@@ -125,8 +143,8 @@ export function AdminSourceHealthCompact({ doc, items }: { doc: SourceHealthDoc;
         className="flex w-full items-center justify-between py-1 text-left"
       >
         <span className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#86868b]">Avotu stāvoklis</span>
-        <span className="text-[11px] tabular-nums" style={{ color: bad ? "#DC2626" : "#86868b" }}>
-          {ok == null ? "…" : `${ok} / ${auto.length} OK${bad ? ` · ${bad} kļūda` : ""}`} {open ? "▾" : "›"}
+        <span className="text-[11px] tabular-nums" style={{ color: error ? "#DC2626" : "#86868b" }}>
+          {countLine} {open ? "▾" : "›"}
         </span>
       </button>
       {open ? (

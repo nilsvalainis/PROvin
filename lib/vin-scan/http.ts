@@ -84,12 +84,13 @@ async function bypassCloudflare(websiteURL: string, challenged: VinHttpResult, u
 > {
   if (!hasCaptchaSolverKey()) return { reason: "Cloudflare: nav CAPSOLVER_API_KEY" };
   const proxy = getCaptchaSolverProxy();
+  if (!proxy) return { reason: "Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" };
   const html = htmlForCloudflareSolver(challenged.text, challenged.status);
   const solved = await solveCaptcha(
     {
       kind: "cloudflare_challenge",
       websiteURL,
-      ...(proxy ? { proxy } : {}),
+      proxy,
       ...(html ? { html } : {}),
       userAgent: ua,
     },
@@ -99,13 +100,11 @@ async function bypassCloudflare(websiteURL: string, challenged: VinHttpResult, u
   const fromCookies = cookiesRecordToHeader(solved.cookies);
   const clearance = fromCookies || (solved.token ? `cf_clearance=${solved.token}` : "");
   if (!clearance) return { reason: "CapSolver: cf_clearance tukšs" };
-  const solvedProxy = solved.proxy?.trim() || "";
+  const solvedProxy = solved.proxy?.trim() || proxy;
   return {
     cookie: mergeCookieHeader(challenged.cookie, clearance),
     ua: solved.userAgent || ua,
-    proxyUrl: solvedProxy
-      ? (httpProxyUrlFromCapsolver(solvedProxy) ?? vinStickyHttpProxyUrl())
-      : undefined,
+    proxyUrl: httpProxyUrlFromCapsolver(solvedProxy) ?? vinStickyHttpProxyUrl(),
   };
 }
 

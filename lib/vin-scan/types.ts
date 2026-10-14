@@ -147,3 +147,48 @@ export function countVinScanStatuses(items: readonly { status: VinScanStatus }[]
   for (const item of items) counts[item.status] += 1;
   return counts;
 }
+
+/** Unknown that needs a browser, not a solver/network kļūda. */
+export function vinScanNeedsBrowser(status: string, summary = ""): boolean {
+  if (status === "found" || status === "none" || status === "skipped" || status === "needs_input" || status === "manual") {
+    return false;
+  }
+  return /atver pārlūkā|atver saiti|prasa pārlūku|prasa pilnvaru|lapa nav atpazīta/i.test(summary);
+}
+
+export type VinScanCountBreakdown = {
+  total: number;
+  ok: number;
+  error: number;
+  browser: number;
+};
+
+export function vinScanCountBreakdown(
+  items: readonly { status: string; summary?: string }[],
+): VinScanCountBreakdown {
+  let ok = 0;
+  let error = 0;
+  let browser = 0;
+  for (const item of items) {
+    if (item.status === "found" || item.status === "none") {
+      ok += 1;
+      continue;
+    }
+    if (item.status === "skipped" || item.status === "needs_input" || item.status === "manual") {
+      continue;
+    }
+    if (vinScanNeedsBrowser(item.status, item.summary ?? "")) {
+      browser += 1;
+      continue;
+    }
+    if (item.status === "unknown" || item.status === "error") error += 1;
+  }
+  return { total: items.length, ok, error, browser };
+}
+
+export function formatVinScanCountLine(counts: VinScanCountBreakdown): string {
+  const bits = [`${counts.ok}/${counts.total} OK`];
+  if (counts.error) bits.push(`${counts.error} kļūda`);
+  if (counts.browser) bits.push(`${counts.browser} pārlūks`);
+  return bits.join(" · ");
+}
