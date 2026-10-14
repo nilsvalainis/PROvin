@@ -382,12 +382,17 @@ export function AdminListingAnalysisPhotos({
     setStatusLine("Dzēš grupu…");
     try {
       if (group.photos.length > 0) {
-        await fetch(apiBasePath, {
+        const delRes = await fetch(apiBasePath, {
           method: "DELETE",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId, photoIds: group.photos.map((p) => p.id) }),
         });
+        if (!delRes.ok) {
+          // K1b: serveris neapstiprināja dzēšanu — stāvokli nemainām, lai bilde nepazūd tikai lokāli.
+          setError("Neizdevās izdzēst fotogrāfiju. Mēģini vēlreiz.");
+          return;
+        }
         for (const p of group.photos) {
           const cached = previewUrlsRef.current.get(p.id);
           if (cached) {
@@ -534,12 +539,17 @@ export function AdminListingAnalysisPhotos({
     setError(null);
     setStatusLine("Dzēš visas fotogrāfijas…");
     try {
-      await fetch(apiBasePath, {
+      const delRes = await fetch(apiBasePath, {
         method: "DELETE",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, deleteAll: true }),
       });
+      if (!delRes.ok) {
+        // K1b: serveris neapstiprināja dzēšanu — stāvokli nemainām, lai bilde nepazūd tikai lokāli.
+        setError("Neizdevās izdzēst fotogrāfiju. Mēģini vēlreiz.");
+        return;
+      }
       for (const g of photoGroups) {
         for (const p of g.photos) {
           const cached = previewUrlsRef.current.get(p.id);
@@ -562,12 +572,17 @@ export function AdminListingAnalysisPhotos({
     setError(null);
     setStatusLine("Dzēš fotogrāfiju…");
     try {
-      await fetch(apiBasePath, {
+      const delRes = await fetch(apiBasePath, {
         method: "DELETE",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sessionId, photoId }),
       });
+      if (!delRes.ok) {
+        // K1b: serveris neapstiprināja dzēšanu — stāvokli nemainām, lai bilde nepazūd tikai lokāli.
+        setError("Neizdevās izdzēst fotogrāfiju. Mēģini vēlreiz.");
+        return;
+      }
       const cached = previewUrlsRef.current.get(photoId);
       if (cached) {
         URL.revokeObjectURL(cached);

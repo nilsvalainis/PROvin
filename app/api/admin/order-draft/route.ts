@@ -14,6 +14,7 @@ import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/provin-alert-banners";
 import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
 import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
+import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
 
 export const maxDuration = 60;
 export const runtime = "nodejs";
@@ -153,6 +154,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     incidentPhotoGroups: Array.isArray(o.incidentPhotoGroups) ? o.incidentPhotoGroups : undefined,
     incidentPhotos: Array.isArray(o.incidentPhotos) ? o.incidentPhotos : undefined,
     ...sourceBlockWipesSnapshotField(o.sourceBlockWipes),
+    ...deletedPhotoIdsSnapshotField(o.deletedPhotoIds),
   };
 }
 

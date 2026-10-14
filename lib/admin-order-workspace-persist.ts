@@ -16,6 +16,7 @@ import {
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
 import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
+import { deletedPhotoIdsSnapshotField, mergeDeletedPhotoIds, parseDeletedPhotoIds, stripDeletedPhotos } from "@/lib/admin-photo-tombstones";
 import {
   autoRecordsTrafficLevel,
   ccVinTrafficLevel,
@@ -70,6 +71,8 @@ export type OrderWorkspacePersistBody = {
   incidentPhotos?: IncidentPhotoMeta[];
   /** Operatora apzināta avotu notīrīšana — šie bloki drīkst pārrakstīt bagātāku baseline. */
   sourceBlockWipes?: SourceBlockKey[];
+  /** K1: dzēsto bilžu id — apvienošanā vienmēr uzvar (bilde neatgriežas). */
+  deletedPhotoIds?: string[];
 };
 
 export type WorkspaceHydrationSource = "local" | "backup" | "server";
@@ -401,8 +404,10 @@ export function coalesceOrderWorkspacePersistBody(
       baseline.incidentPhotos,
     ),
   );
+  const tombstones = mergeDeletedPhotoIds(incoming.deletedPhotoIds, baseline.deletedPhotoIds);
+  const dead = new Set(tombstones);
   return {
-    sourceBlocks: mergeSourceBlocksWithDefaults(mergedBlocks),
+    sourceBlocks: stripDeletedPhotos(mergeSourceBlocksWithDefaults(mergedBlocks), dead),
     iriss: pickRicherTextField(incoming.iriss, baseline.iriss),
     apskatesPlāns: pickRicherTextField(incoming.apskatesPlāns, baseline.apskatesPlāns),
     tehniskoRiskuAnalize: pickRicherTextField(incoming.tehniskoRiskuAnalize, baseline.tehniskoRiskuAnalize),
@@ -410,9 +415,10 @@ export function coalesceOrderWorkspacePersistBody(
     previewConfirmed: incoming.previewConfirmed || baseline.previewConfirmed,
     vehicleAiExtraction: incoming.vehicleAiExtraction ?? baseline.vehicleAiExtraction,
     vehicleAiExtractionMeta: incoming.vehicleAiExtractionMeta ?? baseline.vehicleAiExtractionMeta,
-    incidentPhotoGroups: incidentSynced.photoGroups,
-    incidentPhotos: incidentSynced.photos,
+    incidentPhotoGroups: stripDeletedPhotos(incidentSynced.photoGroups, dead),
+    incidentPhotos: stripDeletedPhotos({ photos: incidentSynced.photos }, dead).photos,
     ...sourceBlockWipesSnapshotField(wipes),
+    ...deletedPhotoIdsSnapshotField(tombstones),
   };
 }
 
@@ -455,6 +461,7 @@ export function buildOrderDraftWorkspaceBody(
     incidentPhotoGroups: safe.incidentPhotoGroups,
     incidentPhotos: safe.incidentPhotos,
     ...sourceBlockWipesSnapshotField(safe.sourceBlockWipes),
+    ...deletedPhotoIdsSnapshotField(safe.deletedPhotoIds),
   };
 }
 
@@ -487,8 +494,10 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
   const merged = mergeSourceBlocksWithDefaults(body.sourceBlocks);
   const complete: WorkspaceSourceBlocks = { ...createDefaultSourceBlocks(), ...merged };
   const incident = incidentPhotosFromUnknown(body.incidentPhotoGroups, body.incidentPhotos);
+  const tombstones = parseDeletedPhotoIds(body.deletedPhotoIds);
+  const dead = new Set(tombstones);
   return {
-    sourceBlocks: complete,
+    sourceBlocks: stripDeletedPhotos(complete, dead),
     iriss: typeof body.iriss === "string" ? body.iriss : "",
     apskatesPlāns: typeof body.apskatesPlāns === "string" ? body.apskatesPlāns : "",
     tehniskoRiskuAnalize: typeof body.tehniskoRiskuAnalize === "string" ? body.tehniskoRiskuAnalize : "",
@@ -496,9 +505,10 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
     previewConfirmed: Boolean(body.previewConfirmed),
     vehicleAiExtraction: body.vehicleAiExtraction ?? null,
     vehicleAiExtractionMeta: body.vehicleAiExtractionMeta ?? null,
-    incidentPhotoGroups: incident.incidentPhotoGroups,
-    incidentPhotos: incident.incidentPhotos,
+    incidentPhotoGroups: stripDeletedPhotos(incident.incidentPhotoGroups, dead),
+    incidentPhotos: stripDeletedPhotos({ photos: incident.incidentPhotos }, dead).photos,
     ...sourceBlockWipesSnapshotField(body.sourceBlockWipes),
+    ...deletedPhotoIdsSnapshotField(tombstones),
   };
 }
 
@@ -526,6 +536,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     incidentPhotoGroups: normalized.incidentPhotoGroups,
     incidentPhotos: normalized.incidentPhotos,
     ...sourceBlockWipesSnapshotField(normalized.sourceBlockWipes),
+    ...deletedPhotoIdsSnapshotField(normalized.deletedPhotoIds),
     savedAt,
   });
 }
@@ -554,6 +565,7 @@ export function serializeOrderWorkspaceSnapshot(
     incidentPhotoGroups: safe.incidentPhotoGroups,
     incidentPhotos: safe.incidentPhotos,
     ...sourceBlockWipesSnapshotField(safe.sourceBlockWipes),
+    ...deletedPhotoIdsSnapshotField(safe.deletedPhotoIds),
     savedAt,
   });
 }

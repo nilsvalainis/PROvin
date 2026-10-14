@@ -24,6 +24,7 @@ import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/provin-alert-banners";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
+import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { orderVinScanDashboardHintFromRecord, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
@@ -542,6 +543,7 @@ async function patchOrderDraftUnlocked(
       incidentPhotoGroups: workspacePatch.incidentPhotoGroups,
       incidentPhotos: workspacePatch.incidentPhotos,
       ...sourceBlockWipesSnapshotField(incomingWipes),
+      ...deletedPhotoIdsSnapshotField(workspacePatch.deletedPhotoIds),
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (!h) return { ok: false, error: "invalid_workspace" };
@@ -560,6 +562,7 @@ async function patchOrderDraftUnlocked(
       incidentPhotoGroups: h.incidentPhotoGroups,
       incidentPhotos: h.incidentPhotos,
       ...sourceBlockWipesSnapshotField(h.sourceBlockWipes ?? incomingWipes),
+      ...deletedPhotoIdsSnapshotField(h.deletedPhotoIds),
     };
   }
 

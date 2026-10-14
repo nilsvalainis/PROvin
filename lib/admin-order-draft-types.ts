@@ -38,6 +38,8 @@ export type OrderDraftWorkspaceBody = {
   incidentPhotos?: import("@/lib/incident-photo-types").IncidentPhotoMeta[];
   /** Operatora apzināta avotu notīrīšana — PATCH coalesce nedrīkst atjaunot šos blokus. */
   sourceBlockWipes?: import("@/lib/admin-source-blocks").SourceBlockKey[];
+  /** K1: dzēsto bilžu id (kapakmeņi). */
+  deletedPhotoIds?: string[];
 };
 
 export type OrderDraftState = {
