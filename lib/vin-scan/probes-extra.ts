@@ -4,6 +4,7 @@ import { canonicalizeListingUrl } from "@/lib/order-field-validation";
 import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { vinScanParseFromListingHistory } from "@/lib/vin-scan/listing-history";
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
+import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 import { scanCaptchaTokenPlaceholder, scanChallengeReason, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
 import {
@@ -383,10 +384,19 @@ async function probeHtmlSource(
 }
 
 export async function probeStatVin(ctx: VinScanContext): Promise<VinScanIndicator> {
-  return probeHtmlSource("stat_vin", ctx, `https://stat.vin/cars/${encodeURIComponent(ctx.vin)}`, (text) => {
-    const r = classifyBrowserProbe("stat_vin", text, ctx.vin);
-    return r ? { status: r.status, summary: r.summary } : null;
-  });
+  const url = `https://stat.vin/cars/${encodeURIComponent(ctx.vin)}`;
+  try {
+    const page = await scanFetchSmart(url, { timeoutMs: 20_000, sourceLabel: "stat_vin" });
+    const parsed = parseStatVinPage({
+      status: page.status,
+      html: page.text,
+      vin: ctx.vin,
+      challenge: scanChallengeReason(page),
+    });
+    return done("stat_vin", ctx, { ...parsed, openUrl: url });
+  } catch (e) {
+    return failed("stat_vin", ctx, e);
+  }
 }
 
 export async function probeBidCars(ctx: VinScanContext): Promise<VinScanIndicator> {

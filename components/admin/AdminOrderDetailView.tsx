@@ -39,6 +39,7 @@ import { AdminAuditResultColorControl } from "@/components/admin/AdminAuditResul
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 import { AdminAuditSlaOrderBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
+import { AdminOrderVinScanStub } from "@/components/admin/AdminOrderVinScanStub";
 
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
 export type AdminOrderDetailClientModel = {
@@ -130,7 +131,7 @@ export function AdminOrderDetailView({
   auditResultColor = null,
 }: {
   order: AdminOrderDetailClientModel;
-  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest"> | null;
+  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest" | "vinScan"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
@@ -614,6 +615,7 @@ export function AdminOrderDetailView({
                   }
                 />
                 <AdminVinServiceLinkRow vin={mergedVin} />
+                <AdminOrderVinScanStub sessionId={order.id} initial={serverOrderDraft?.vinScan ?? null} />
               </div>
               <div
                 className={`min-w-0 max-w-full overflow-hidden rounded-md px-0.5 py-0.5 transition-[box-shadow,background-color] duration-500 ease-out ${

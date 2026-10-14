@@ -9,6 +9,7 @@ import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import { buildPartnerOrderNotes, isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
 import { findRecentPartnerVinOrder } from "@/lib/b2b-partner-vin-dedup";
 import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
+import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 import { createOperatorOrderWithFields } from "@/lib/create-operator-order";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import {
@@ -141,11 +142,23 @@ export async function POST(req: Request) {
 
   after(async () => {
     try {
-      const r = await seedPaidOrderAutoSources(created.orderId, {
-        vin,
-        listingUrl: listingRaw || null,
-      });
-      console.info("[partner/orders] paid order auto sources", { orderId: created.orderId, ...r });
+      const [seedRes, scanRes] = await Promise.allSettled([
+        seedPaidOrderAutoSources(created.orderId, {
+          vin,
+          listingUrl: listingRaw || null,
+        }),
+        runOrderFreeVinScan(created.orderId, { vin, listingUrl: listingRaw || null }),
+      ]);
+      if (seedRes.status === "fulfilled") {
+        console.info("[partner/orders] paid order auto sources", { orderId: created.orderId, ...seedRes.value });
+      } else {
+        console.error("[partner/orders] auto sources:", seedRes.reason);
+      }
+      if (scanRes.status === "fulfilled") {
+        console.info("[partner/orders] free VIN SCAN", { orderId: created.orderId, ...scanRes.value });
+      } else {
+        console.error("[partner/orders] free VIN SCAN:", scanRes.reason);
+      }
     } catch (err) {
       console.error("[partner/orders] auto sources:", err);
     }

@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createOperatorOrderWithFields } from "@/lib/create-operator-order";
+import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import {
   getOrderContactFieldErrors,
@@ -103,6 +104,13 @@ export async function POST(req: Request) {
   if (!created.ok) {
     return NextResponse.json({ error: created.error }, { status: storeErrorStatus(created.error) });
   }
+
+  after(() =>
+    runOrderFreeVinScan(created.orderId, { vin, listingUrl: listingUrl || null }).then(
+      (r) => console.info("[operator-order] free VIN SCAN", { orderId: created.orderId, ...r }),
+      (err) => console.error("[operator-order] free VIN SCAN:", err),
+    ),
+  );
 
   return NextResponse.json({ ok: true, orderId: created.orderId });
 }

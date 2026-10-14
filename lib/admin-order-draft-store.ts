@@ -26,6 +26,7 @@ import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
+import { parseOrderVinScanRecord } from "@/lib/order-vin-scan";
 import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
 import {
   nextWorkspaceRevisionAfterRestore,
@@ -37,6 +38,19 @@ import {
 const DEFAULT_RELATIVE_DIR = ".data/admin-order-drafts";
 const DRAFT_REVISIONS_DIRNAME = "_revisions";
 const MAX_DRAFT_REVISIONS_PER_SESSION = 40;
+
+/** Viena sesija: lasīšana+rakstīšana pēc kārtas, lai seed un VIN SCAN neizdzēš viens otru. */
+const draftWriteLocks = new Map<string, Promise<unknown>>();
+
+function withDraftWriteLock<T>(sessionId: string, fn: () => Promise<T>): Promise<T> {
+  const prev = draftWriteLocks.get(sessionId) ?? Promise.resolve();
+  const next = prev.catch(() => undefined).then(fn);
+  draftWriteLocks.set(sessionId, next);
+  void next.finally(() => {
+    if (draftWriteLocks.get(sessionId) === next) draftWriteLocks.delete(sessionId);
+  });
+  return next;
+}
 
 type OrderDraftBlobConfig = { token: string; prefix: string };
 
@@ -216,6 +230,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
       ? o.clientReportFilename.trim()
       : undefined;
   const autoIngest = parseAutoIngestStatus(o.autoIngest);
+  const vinScan = parseOrderVinScanRecord(o.vinScan);
   return {
     orderEdits,
     workspace,
@@ -230,6 +245,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     ...(clientReportReadyAt ? { clientReportReadyAt } : {}),
     ...(clientReportFilename ? { clientReportFilename } : {}),
     ...(autoIngest ? { autoIngest } : {}),
+    ...(vinScan ? { vinScan } : {}),
   };
 }
 
@@ -242,6 +258,7 @@ function extraDraftPersistFields(prev: OrderDraftState | null | undefined) {
     ...(prev?.clientReportReadyAt != null ? { clientReportReadyAt: prev.clientReportReadyAt } : {}),
     ...(prev?.clientReportFilename != null ? { clientReportFilename: prev.clientReportFilename } : {}),
     ...(prev?.autoIngest ? { autoIngest: prev.autoIngest } : {}),
+    ...(prev?.vinScan ? { vinScan: prev.vinScan } : {}),
   };
 }
 
@@ -425,9 +442,16 @@ export async function restoreOrderDraftRevision(
   sessionId: string,
   revisionId: string,
 ): Promise<{ ok: true; updatedAt: string; workspaceRevision: number } | { ok: false; error: string }> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
+  return withDraftWriteLock(sessionId, () => restoreOrderDraftRevisionUnlocked(sessionId, revisionId));
+}
+
+async function restoreOrderDraftRevisionUnlocked(
+  sessionId: string,
+  revisionId: string,
+): Promise<{ ok: true; updatedAt: string; workspaceRevision: number } | { ok: false; error: string }> {
   const dir = resolveDraftDir();
   if (!dir) return { ok: false, error: "store_disabled" };
-  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
   if (!/^[a-zA-Z0-9_.-]+$/.test(revisionId) || revisionId.length > 120) {
     return { ok: false, error: "invalid_revision" };
   }
@@ -476,6 +500,15 @@ export async function patchOrderDraft(
   patch: { orderEdits?: OrderDraftOrderEdits; workspace?: OrderDraftWorkspaceBody | null },
   options: OrderDraftPatchOptions = {},
 ): Promise<OrderDraftPatchSuccess | OrderDraftPatchFailure> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
+  return withDraftWriteLock(sessionId, () => patchOrderDraftUnlocked(sessionId, patch, options));
+}
+
+async function patchOrderDraftUnlocked(
+  sessionId: string,
+  patch: { orderEdits?: OrderDraftOrderEdits; workspace?: OrderDraftWorkspaceBody | null },
+  options: OrderDraftPatchOptions = {},
+): Promise<OrderDraftPatchSuccess | OrderDraftPatchFailure> {
   try {
   const writeStarted = Date.now();
   const dir = resolveDraftDir();
@@ -484,7 +517,6 @@ export async function patchOrderDraft(
   if (process.env.VERCEL === "1" && !blobCfg) {
     return { ok: false, error: "store_not_durable" };
   }
-  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
 
   const orderMeta = await getStripeCheckoutSessionMeta(sessionId, () => getCheckoutSessionDetail(sessionId));
   if (!orderMeta) return { ok: false, error: "not_found" };
@@ -797,12 +829,25 @@ export async function upsertOrderDraftInvoiceFields(
     clientReportFilename: string;
   }>,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
+  return withDraftWriteLock(sessionId, () => upsertOrderDraftInvoiceFieldsUnlocked(sessionId, fields));
+}
+
+async function upsertOrderDraftInvoiceFieldsUnlocked(
+  sessionId: string,
+  fields: Partial<{
+    invoiceNumber: string;
+    invoicePdfUrl: string;
+    invoicePdfGeneratedAt: string;
+    clientReportReadyAt: string;
+    clientReportFilename: string;
+  }>,
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   const dir = resolveDraftDir();
   const blob = resolveOrderDraftBlob();
   if (!dir && !blob) return { ok: false, error: "store_disabled" };
-  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
 
-  const prev = await readOrderDraft(sessionId);
+  const prev = await readOrderDraftUncached(sessionId);
   const updatedAt = new Date().toISOString();
   const doc = {
     sessionId,
@@ -868,14 +913,21 @@ export async function upsertOrderDraftAutoIngest(
   sessionId: string,
   autoIngest: import("@/lib/admin-auto-ingest").AutoIngestStatus,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
+  return withDraftWriteLock(sessionId, () => upsertOrderDraftAutoIngestUnlocked(sessionId, autoIngest));
+}
+
+async function upsertOrderDraftAutoIngestUnlocked(
+  sessionId: string,
+  autoIngest: import("@/lib/admin-auto-ingest").AutoIngestStatus,
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   const parsed = parseAutoIngestStatus(autoIngest);
   if (!parsed) return { ok: false, error: "invalid_auto_ingest" };
   const dir = resolveDraftDir();
   const blob = resolveOrderDraftBlob();
   if (!dir && !blob) return { ok: false, error: "store_disabled" };
-  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
 
-  const prev = await readOrderDraft(sessionId);
+  const prev = await readOrderDraftUncached(sessionId);
   const updatedAt = new Date().toISOString();
   const doc = {
     sessionId,
@@ -886,6 +938,69 @@ export async function upsertOrderDraftAutoIngest(
     ...(prev?.workspaceChecksum != null ? { workspaceChecksum: prev.workspaceChecksum } : {}),
     ...extraDraftPersistFields(prev),
     autoIngest: parsed,
+  };
+
+  let fsOk = false;
+  let blobOk = false;
+
+  if (dir) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const fp = draftFilePath(dir, sessionId);
+      const tmp = `${fp}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
+      await fs.rename(tmp, fp);
+      fsOk = true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!blob) return { ok: false, error: `write_failed:${msg}` };
+    }
+  }
+
+  if (blob) {
+    try {
+      await writeOrderDraftJsonToBlob(sessionId, doc, blob);
+      blobOk = true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!fsOk) return { ok: false, error: `blob_write_failed:${msg}` };
+    }
+  }
+
+  if (!fsOk && !blobOk) return { ok: false, error: "write_failed:no_backend" };
+  invalidateOrderDraftCache(sessionId);
+  return { ok: true, updatedAt };
+}
+
+export async function upsertOrderDraftVinScan(
+  sessionId: string,
+  vinScan: import("@/lib/order-vin-scan").OrderVinScanRecord,
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
+  return withDraftWriteLock(sessionId, () => upsertOrderDraftVinScanUnlocked(sessionId, vinScan));
+}
+
+async function upsertOrderDraftVinScanUnlocked(
+  sessionId: string,
+  vinScan: import("@/lib/order-vin-scan").OrderVinScanRecord,
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  const parsed = parseOrderVinScanRecord(vinScan);
+  if (!parsed) return { ok: false, error: "invalid_vin_scan" };
+  const dir = resolveDraftDir();
+  const blob = resolveOrderDraftBlob();
+  if (!dir && !blob) return { ok: false, error: "store_disabled" };
+
+  const prev = await readOrderDraftUncached(sessionId);
+  const updatedAt = new Date().toISOString();
+  const doc = {
+    sessionId,
+    updatedAt,
+    orderEdits: prev?.orderEdits ?? {},
+    workspace: prev?.workspace ?? null,
+    ...(prev?.workspaceRevision != null ? { workspaceRevision: prev.workspaceRevision } : {}),
+    ...(prev?.workspaceChecksum != null ? { workspaceChecksum: prev.workspaceChecksum } : {}),
+    ...extraDraftPersistFields(prev),
+    vinScan: parsed,
   };
 
   let fsOk = false;

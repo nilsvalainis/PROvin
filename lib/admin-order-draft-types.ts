@@ -62,6 +62,8 @@ export type OrderDraftState = {
   clientReportFilename?: string;
   /** Automātiskā ielase pēc apmaksas (CSDD, DK/EE/SE, sludinājuma vēsture). */
   autoIngest?: import("@/lib/admin-auto-ingest").AutoIngestStatus;
+  /** Bezmaksas VIN SCAN pēc pasūtījuma izveides (Stripe / manuāls). */
+  vinScan?: import("@/lib/order-vin-scan").OrderVinScanRecord;
 };
 
 export function orderDraftHasOrderEdits(e: OrderDraftOrderEdits | undefined): boolean {

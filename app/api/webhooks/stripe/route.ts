@@ -12,6 +12,7 @@ import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/str
 import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
 import { getStripe } from "@/lib/stripe";
 import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
+import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 import { autoImportQuickEvalForPaidOrder } from "@/lib/quick-eval-service";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
@@ -206,17 +207,26 @@ async function fulfillPaidCheckoutSession(
         } catch (err) {
           console.error("[stripe webhook] quick eval auto import:", err);
         }
-        try {
-          const r = await seedPaidOrderAutoSources(session.id, {
+        const [seedRes, scanRes] = await Promise.allSettled([
+          seedPaidOrderAutoSources(session.id, {
             vin: order.vin,
             listingUrl: order.listingUrl,
-          });
+          }),
+          runOrderFreeVinScan(session.id, { vin: order.vin, listingUrl: order.listingUrl }),
+        ]);
+        if (seedRes.status === "fulfilled") {
+          const r = seedRes.value;
           console.info("[stripe webhook] paid order auto sources", { sessionId: session.id, ...r });
           if (r.mnt_ee === "no_solver" || r.lkf_ee === "no_solver") {
             console.warn("[stripe webhook] Estonia registry seed skipped: nav CAPSOLVER_API_KEY");
           }
-        } catch (err) {
-          console.error("[stripe webhook] paid order auto sources:", err);
+        } else {
+          console.error("[stripe webhook] paid order auto sources:", seedRes.reason);
+        }
+        if (scanRes.status === "fulfilled") {
+          console.info("[stripe webhook] free VIN SCAN", { sessionId: session.id, ...scanRes.value });
+        } else {
+          console.error("[stripe webhook] free VIN SCAN:", scanRes.reason);
         }
       });
     }

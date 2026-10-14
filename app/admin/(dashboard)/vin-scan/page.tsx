@@ -8,6 +8,7 @@ import { VIN_SCAN_CATALOG } from "@/lib/vin-scan/catalog";
 /** Galvenie avoti vienmēr redzami; pārējie — ja par tiem ir ielādes dati. */
 const PRIMARY_SOURCES: SourceHealthItem[] = [
   { id: "csdd", label: "CSDD" },
+  { id: "stat_vin", label: "stat.vin" },
   { id: "mnt_ee", label: "MNT" },
   { id: "lkf_ee", label: "LKF" },
   { id: "autodna", label: "AutoDNA" },

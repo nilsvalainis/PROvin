@@ -21,8 +21,8 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.17\.0/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.17.0"');
+    expect(src).toMatch(/@version\s+1\.18\.0/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.18.0"');
     expect(src).toContain("const SCAN_URLS = {");
     expect(src).toContain('plc_auction: "https://plc.auction/?vin="');
     expect(src).not.toContain("vp.gov.lv");
@@ -52,6 +52,9 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(VIN_SCAN_BROWSER_IDS).toContain("lt_itpr");
     expect(VIN_SCAN_BROWSER_IDS).toContain("nicb");
     expect(src).toContain('if (id === "checkcar_vin")');
+    expect(src).toContain('if (id === "stat_vin")');
+    expect(src).toContain("extractStatVinExtras");
+    expect(src).toContain("pieprasījumu limits");
     expect(src).toContain('if (id === "plc_auction")');
     expect(src).toContain('if (id === "lt_itpr")');
     expect(src).toContain("sorry,\\s*could not find what you were looking for");
@@ -83,11 +86,11 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(src).toContain("https://checkcar.vin/report/check/");
   });
 
-  it("minimālā paneļa versija ir 1.17", () => {
-    expect(vinScanUserscriptMinLabel()).toBe("1.17");
-    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 17 });
-    expect(vinScanUserscriptMeetsMin("1.16.0")).toBe(false);
-    expect(vinScanUserscriptMeetsMin("1.17.0")).toBe(true);
+  it("minimālā paneļa versija ir 1.18", () => {
+    expect(vinScanUserscriptMinLabel()).toBe("1.18");
+    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 18 });
+    expect(vinScanUserscriptMeetsMin("1.17.0")).toBe(false);
+    expect(vinScanUserscriptMeetsMin("1.18.0")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
   });
 
