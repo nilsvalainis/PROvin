@@ -165,6 +165,40 @@ describe("eCarsTrade search mapper", () => {
     expect(url).toContain("category[]=Estate%20Car");
   });
 
+  it("maps official mobile.de make ids (24100 Toyota, 17700 Mitsubishi)", () => {
+    const toyota = parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=24100;19;;");
+    expect(toyota.makeNames).toEqual(["Toyota"]);
+    const mitsubishi = parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=17700;19;;");
+    expect(mitsubishi.makeNames).toEqual(["Mitsubishi"]);
+    const mini = parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=17500;;;");
+    expect(mini.makeNames).toEqual(["Mini"]);
+    const suzuki = parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=23600;20;;");
+    expect(suzuki.makeNames).toEqual(["Suzuki"]);
+    const lexus = parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=15200;;;");
+    expect(lexus.makeNames).toEqual(["Lexus"]);
+    const porsche = parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=20100;;;");
+    expect(porsche.makeNames).toEqual(["Porsche"]);
+    expect(parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=13900;;;").makeNames).not.toContain(
+      "Lexus",
+    );
+  });
+
+  it("reads Autobid name= as model when name-model is absent", () => {
+    const x5 = parseListingSearchUrl("https://autobid.de/en/search-results?brandId=1&name=X5&e17=3");
+    expect(x5.makeNames).toEqual(["BMW"]);
+    expect(x5.modelName).toBe("X5");
+    const land = parseListingSearchUrl("https://autobid.de/en/search-results?brandId=8&name=land");
+    expect(land.makeNames).toEqual(["Toyota"]);
+    expect(land.modelName).toMatch(/Land Cruiser/i);
+    const both = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?brandId=7&name=kodiaq&name-model=Kodiaq",
+    );
+    expect(both.modelName).toMatch(/Kodiaq/i);
+    const unknown32 = parseListingSearchUrl("https://autobid.de/en/search-results?brandId=32&name=X5");
+    expect(unknown32.unmapped.some((u) => u.key === "brandId" && u.value === "32")).toBe(true);
+    expect(unknown32.modelName).toBe("X5");
+  });
+
   it("maps Mobile.de ms make id and Autobid name-brand", () => {
     const mobile = parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=25100;29;;&minMileage=10000&maxMileage=140000&fuels=DIESEL");
     expect(mobile.makeIds).toEqual([68]);
@@ -323,6 +357,12 @@ describe("eCarsTrade search mapper", () => {
     const vans = filterFromBrandModel("Opel Vivaro/Traffic (Evado/Westfalia) + VIANO");
     expect(vans.makeNames).toEqual(expect.arrayContaining(["Opel", "Renault", "Mercedes"]));
     expect(vans.makeNames).not.toContain("Porsche");
+  });
+
+  it("ignores Openlane auctionId single-car links", () => {
+    expect(isSingleVehicleListingUrl("https://www.openlane.eu/en/findcar?auctionId=1234567")).toBe(true);
+    expect(isSingleVehicleListingUrl("https://www.openlane.eu/en/car/1234567")).toBe(true);
+    expect(isSingleVehicleListingUrl("https://www.openlane.eu/en/findcar?makes=volvo&models=xc60")).toBe(false);
   });
 
   it("ignores Auto1 id-only vehicle links and widens exact year/cm3", () => {

@@ -142,7 +142,7 @@ Produkcijas dati netiek rakstīti. Atjaunot ET palaižams pēc Nils apstiprināj
   - `https://www.openlane.eu/en/findcar?makes=lexus&makes=toyota&yearFrom=2018`
     - kritēriji: marka: Lexus, Toyota; gadi: 2018-…
 - **Mobile.de**
-  - `https://suchen.mobile.de/fahrzeuge/search.html?ms=13900&minPowerAsArray=150&maxPowerAsArray=200`
+  - `https://suchen.mobile.de/fahrzeuge/search.html?ms=15200&minPowerAsArray=150&maxPowerAsArray=200`
     - kritēriji: marka: Lexus; jauda: 150-200 kW
 
 **Rezultāta eCarsTrade**
@@ -151,7 +151,7 @@ Produkcijas dati netiek rakstīti. Atjaunot ET palaižams pēc Nils apstiprināj
   - saite: `https://ecarstrade.com/search?mark[]=39&mark[]=66&year_from=2018&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
   - kartēts: marka: Lexus, Toyota; gadi: 2018-…
 - ET 2 no 1 avota saišu:
-  - avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=13900&minPowerAsArray=150&maxPowerAsArray=200`
+  - avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=15200&minPowerAsArray=150&maxPowerAsArray=200`
   - saite: `https://ecarstrade.com/search?mark[]=39&power_from=150&power_to=200&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
   - kartēts: marka: Lexus; jauda: 150-200 kW
 

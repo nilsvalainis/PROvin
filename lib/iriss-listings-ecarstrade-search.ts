@@ -431,6 +431,7 @@ const HANDLED_KEYS = new Set(
     "q",
     "query",
     "search",
+    "name",
     "iriss_drive",
     "iriss_need",
     "iriss_exclude",
@@ -653,6 +654,9 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
     if (parsed.model) applyModelToken(filter, parsed.model, "name");
   }
   applyModelToken(filter, values(params, MODEL_KEYS)[0] ?? "", idSpace);
+  if (idSpace === "autobid" && !filter.modelName) {
+    applyModelToken(filter, values(params, ["name"])[0] ?? "", "name");
+  }
 
   filter.yearFrom = firstInt(params, YEAR_FROM_KEYS, yearFromRaw);
   filter.yearTo = firstInt(params, YEAR_TO_KEYS, yearFromRaw);

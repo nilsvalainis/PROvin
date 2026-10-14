@@ -10,6 +10,7 @@ import {
   ecarstradeCarJsonUrl,
   ecarstradeDetailUrl,
   ecarstradePageStart,
+  ecarstradeSearchPageUrl,
   mergeEcarstradeHtmlPrices,
   mergeEcarstradeJsonPrices,
   parseEcarstradeApiPage,
@@ -104,6 +105,7 @@ describe("eCarsTrade parser", () => {
     expect(u.searchParams.get("sort")).toBe("price.asc");
     expect(ecarstradePageStart(1)).toBe(0);
     expect(ecarstradePageStart(2, 20)).toBe(20);
+    expect(ecarstradeSearchPageUrl("https://ecarstrade.com/search?mark[]=68", 20)).toContain("start=20");
     expect(ecarstradeDetailUrl("7672194")).toBe("https://ecarstrade.com/cars/7672194");
   });
 

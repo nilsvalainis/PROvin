@@ -510,6 +510,14 @@ export function isEcarstradeSearchUrl(raw: string): boolean {
   }
 }
 
+/** Tā pati meklēšanas lapa ar `start`, lai pēc future_api paņemtu PIRKT no HTML. */
+export function ecarstradeSearchPageUrl(sourceUrl: string, start = 0): string {
+  const u = new URL(sourceUrl);
+  if (start > 0) u.searchParams.set("start", String(start));
+  else u.searchParams.delete("start");
+  return u.toString();
+}
+
 /** Operatora meklēšanas URL -> future_api.php, valsts vienmēr BEL/NET/LUX/GER. */
 export function ecarstradeApiUrl(sourceUrl: string, start: number, perPage = ECARSTRADE_DEFAULT_PER_PAGE): string {
   const src = new URL(sourceUrl);

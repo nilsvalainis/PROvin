@@ -241,6 +241,60 @@ export function filterForListingSource(sourceUrl: string, brandModel: string): E
   return fillMakeModelFromBrand(parseListingSearchUrl(sourceUrl), brandModel);
 }
 
+/**
+ * eCarsTrade future_api already applied mark/model/year/body. Catalog names
+ * (`2 Series`, `E-Class`, `Estate Car`) are not in titles (`220d`, `E220`, `Avant`),
+ * so re-matching them here dropped every found car and reconcile marked the store gone.
+ * Ingest keeps only iriss_* post-filters that the API never received.
+ */
+export function ingestFilterForListingSource(
+  platform: IrissListingPlatform | "mobile",
+  sourceUrl: string,
+  brandModel: string,
+): EcarstradeSearchFilter {
+  const full = filterForListingSource(sourceUrl, brandModel);
+  if (platform !== "ecarstrade") return full;
+  return {
+    ...full,
+    makeIds: [],
+    makeNames: [],
+    modelId: null,
+    modelName: "",
+    yearFrom: null,
+    yearTo: null,
+    mileageFrom: null,
+    mileageTo: null,
+    priceFrom: null,
+    priceTo: null,
+    powerFromKw: null,
+    powerToKw: null,
+    fuels: [],
+    gearboxes: [],
+    bodies: [],
+    colors: [],
+    engineFromCc: null,
+    engineToCc: null,
+    doorsFrom: null,
+    doorsTo: null,
+    seatsFrom: null,
+    seatsTo: null,
+    vat: [],
+    emissionFrom: "",
+    includeTokens: [],
+    unmapped: [],
+  };
+}
+
+export function applyListingEntryFilter<T extends ListingSearchVehicle>(
+  vehicles: readonly T[],
+  src: { platform: IrissListingPlatform | "mobile"; sourceUrl: string; orderBrandModel: string },
+): T[] {
+  return applySearchFilterToVehicles(
+    vehicles,
+    ingestFilterForListingSource(src.platform, src.sourceUrl, src.orderBrandModel),
+  );
+}
+
 export function applySearchFilterToVehicles<T extends ListingSearchVehicle>(
   vehicles: readonly T[],
   filter: EcarstradeSearchFilter,

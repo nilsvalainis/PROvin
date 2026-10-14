@@ -10,8 +10,7 @@ import { fetchAutobidSource, randomPauseMs } from "@/lib/iriss-listings-autobid-
 import { fetchEcarstradeSource } from "@/lib/iriss-listings-ecarstrade-fetch";
 import { fillListingPowerKwField, rejectExcludedIrissListings } from "@/lib/iriss-listings-exclude-rules";
 import {
-  applySearchFilterToVehicles,
-  filterForListingSource,
+  applyListingEntryFilter,
   listingSearchNeedsMake,
   listingSourceHasMakeParams,
 } from "@/lib/iriss-listings-search-filter";
@@ -77,11 +76,11 @@ type SourceFetch = {
   pageCount: number;
 };
 
-function applyEntryFilter<T extends { title?: string; manufacturer?: string; year?: string; firstRegistration?: string; mileageKm?: number | null; fuel?: string; transmission?: string; powerKw?: string; bodyType?: string; priceStart?: number | null; priceCurrent?: number | null; priceBuyNow?: number | null; priceMinimal?: number | null }>(
+function applyEntryFilter<T extends { title?: string; manufacturer?: string; year?: string; firstRegistration?: string; mileageKm?: number | null; fuel?: string; transmission?: string; powerKw?: string; bodyType?: string; color?: string; priceStart?: number | null; priceCurrent?: number | null; priceBuyNow?: number | null; priceMinimal?: number | null }>(
   vehicles: T[],
   src: IrissListingSource,
 ): T[] {
-  return applySearchFilterToVehicles(vehicles, filterForListingSource(src.sourceUrl, src.orderBrandModel));
+  return applyListingEntryFilter(vehicles, src);
 }
 
 function unboundedSearchSkip(src: IrissListingSource): SourceFetch | null {
