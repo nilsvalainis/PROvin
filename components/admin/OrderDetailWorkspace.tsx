@@ -97,6 +97,7 @@ import {
   sourceBlockWipesSnapshotField,
 } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField, mergeDeletedPhotoIds, removedPhotoIds } from "@/lib/admin-photo-tombstones";
+import { clearedFieldsSnapshotField, mergeClearedFields, nextClearedFields } from "@/lib/admin-cleared-fields";
 import { resolveOrderWorkspaceHydration } from "@/lib/admin-order-workspace-hydrate";
 import {
   bumpWorkspaceSaveGeneration,
@@ -359,6 +360,7 @@ type WorkspacePersist = {
   incidentPhotos: { id: string }[];
   sourceBlockWipes?: SourceBlockKey[];
   deletedPhotoIds?: string[];
+  clearedFields?: Record<string, number>;
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -513,6 +515,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
     incidentPhotos: ws.incidentPhotos,
     ...sourceBlockWipesSnapshotField(ws.sourceBlockWipes),
   ...deletedPhotoIdsSnapshotField(ws.deletedPhotoIds),
+  ...clearedFieldsSnapshotField(ws.clearedFields),
   };
 }
 
@@ -979,7 +982,21 @@ export function OrderDetailWorkspace({
       merged.deletedPhotoIds,
       prevWs.deletedPhotoIds,
     );
-    const normalized = normalizeOrderWorkspacePersistBody({ ...merged, ...deletedPhotoIdsSnapshotField(tombstones) });
+    // K2: lietotājs iztukšoja lauku → marķieris, lai saglabāšana neatjauno veco tekstu.
+    const cleared =
+      opts?.trackDeletes === false
+        ? mergeClearedFields(prevWs.clearedFields, merged.clearedFields)
+        : nextClearedFields(
+            prevWs as unknown as Record<string, unknown>,
+            merged as unknown as Record<string, unknown>,
+            mergeClearedFields(prevWs.clearedFields, merged.clearedFields),
+            Date.now(),
+          );
+    const normalized = normalizeOrderWorkspacePersistBody({
+      ...merged,
+      ...deletedPhotoIdsSnapshotField(tombstones),
+      clearedFields: cleared,
+    });
     const next: WorkspacePersist = {
       sourceBlocks: normalized.sourceBlocks,
       iriss: normalized.iriss,
@@ -993,6 +1010,7 @@ export function OrderDetailWorkspace({
       incidentPhotos: normalized.incidentPhotos ?? [],
       ...sourceBlockWipesSnapshotField(normalized.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(normalized.deletedPhotoIds),
+    ...clearedFieldsSnapshotField(normalized.clearedFields),
     };
     wsPersistRef.current = next;
     lastGoodPersistBodyRef.current = normalized;
@@ -1064,6 +1082,7 @@ export function OrderDetailWorkspace({
           incidentPhotos: body.incidentPhotos ?? [],
           ...sourceBlockWipesSnapshotField(body.sourceBlockWipes),
         ...deletedPhotoIdsSnapshotField(body.deletedPhotoIds),
+        ...clearedFieldsSnapshotField(body.clearedFields),
         };
         wsStateRef.current = wsPersistRef.current;
       }
@@ -1491,6 +1510,7 @@ export function OrderDetailWorkspace({
           }),
           ...sourceBlockWipesSnapshotField(nextWipes),
           ...deletedPhotoIdsSnapshotField(prev.deletedPhotoIds),
+          ...clearedFieldsSnapshotField(prev.clearedFields),
         });
         return applyPersistBodyToWs(next);
       });
@@ -2275,6 +2295,7 @@ export function OrderDetailWorkspace({
         incidentPhotos: chosen.incidentPhotos ?? [],
         ...sourceBlockWipesSnapshotField(chosen.sourceBlockWipes),
       ...deletedPhotoIdsSnapshotField(chosen.deletedPhotoIds),
+      ...clearedFieldsSnapshotField(chosen.clearedFields),
       };
 
       workspaceDebugLog("hydrate_source", {
@@ -2304,6 +2325,7 @@ export function OrderDetailWorkspace({
         incidentPhotos: chosen.incidentPhotos ?? [],
         ...sourceBlockWipesSnapshotField(chosen.sourceBlockWipes),
       ...deletedPhotoIdsSnapshotField(chosen.deletedPhotoIds),
+      ...clearedFieldsSnapshotField(chosen.clearedFields),
       };
       wsPersistRef.current = hydratedWs;
       wsStateRef.current = hydratedWs;

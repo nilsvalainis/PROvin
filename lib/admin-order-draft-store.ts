@@ -25,6 +25,7 @@ import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/pro
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
+import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { orderVinScanDashboardHintFromRecord, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
@@ -544,6 +545,7 @@ async function patchOrderDraftUnlocked(
       incidentPhotos: workspacePatch.incidentPhotos,
       ...sourceBlockWipesSnapshotField(incomingWipes),
       ...deletedPhotoIdsSnapshotField(workspacePatch.deletedPhotoIds),
+      ...clearedFieldsSnapshotField(workspacePatch.clearedFields),
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (!h) return { ok: false, error: "invalid_workspace" };
@@ -563,6 +565,7 @@ async function patchOrderDraftUnlocked(
       incidentPhotos: h.incidentPhotos,
       ...sourceBlockWipesSnapshotField(h.sourceBlockWipes ?? incomingWipes),
       ...deletedPhotoIdsSnapshotField(h.deletedPhotoIds),
+      ...clearedFieldsSnapshotField(h.clearedFields),
     };
   }
 

@@ -40,6 +40,8 @@ export type OrderDraftWorkspaceBody = {
   sourceBlockWipes?: import("@/lib/admin-source-blocks").SourceBlockKey[];
   /** K1: dzēsto bilžu id (kapakmeņi). */
   deletedPhotoIds?: string[];
+  /** K2: apzināti iztukšoti lauki (lauks → ms). */
+  clearedFields?: Record<string, number>;
 };
 
 export type OrderDraftState = {
