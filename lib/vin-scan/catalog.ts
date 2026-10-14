@@ -7,7 +7,6 @@ import { type VinScanPlateKind, type VinScanPlates, emptyVinScanPlates } from "@
 
 export const VIN_SCAN_SOURCE_IDS = [
   "vin_decode",
-  "speckr",
   "tjekbil",
   "esyn",
   "dsb",
@@ -118,14 +117,6 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     needs: ["vin"],
     // Agrāk /decoder/Decoder?VIN= → bezgalīgs 302 uz /Error/NotFound (ERR_TOO_MANY_REDIRECTS). vPIC API JSON atveras droši.
     openUrl: (vin) => `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vinQuery(vin)}?format=json`,
-  },
-  {
-    id: "speckr",
-    label: "Speckr",
-    country: "OEM",
-    hint: "Tesla VIN specs, opcijas un baterija (API, 1 kredīts)",
-    needs: ["vin"],
-    openUrl: (vin) => `https://speckr.com/?vin=${vinQuery(vin)}`,
   },
   {
     id: "tjekbil",
@@ -420,11 +411,9 @@ export function defaultVinScanSourceIds(): VinScanSourceId[] {
   return vinScanPipelineSourceIds();
 }
 
-/** Ātrie vērtējumi un bezmaksas auto-scan: bez maksas API (JoJ, Speckr). */
-const VIN_SCAN_METERED_EXCLUDE_FROM_PIPELINE = new Set<VinScanSourceId>(["joj_copart_iaai", "speckr"]);
-
+/** Ātrie vērtējumi un bezmaksas auto-scan: bez JoJ $0.50. Speckr tikai manuāli auto_records blokā. */
 export function vinScanPipelineSourceIds(): VinScanSourceId[] {
-  return VIN_SCAN_SOURCE_IDS.filter((id) => !VIN_SCAN_METERED_EXCLUDE_FROM_PIPELINE.has(id));
+  return VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai");
 }
 
 export function vinScanFastSourceIds(): VinScanSourceId[] {

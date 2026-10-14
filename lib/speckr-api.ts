@@ -4,13 +4,23 @@
  */
 import "server-only";
 
-import type { VinScanParse } from "@/lib/vin-scan/types";
-
 export const SPECKR_API_BASE = "https://speckr.com/api/v1";
 export const SPECKR_NOT_CONFIGURED = "nav konfigurēts";
-const FETCH_TIMEOUT_MS = 22_000;
 
 export type SpeckrApiEnv = Record<string, string | undefined>;
+
+export type SpeckrLoadOutcome = "ok" | "no_data" | "needs_payment" | "not_configured" | "error";
+
+export type SpeckrCompactLine = { label: string; value: string };
+
+export type SpeckrLoadResult = {
+  outcome: SpeckrLoadOutcome;
+  summary: string;
+  lines: SpeckrCompactLine[];
+  openUrl?: string;
+  vehicle?: { year: string; make: string; model: string };
+  errorCode?: string;
+};
 
 export function speckrApiKey(env: SpeckrApiEnv = process.env): string {
   return String(env.SPECKR_API_KEY ?? "").trim();
@@ -20,16 +30,11 @@ export function speckrApiConfigured(env: SpeckrApiEnv = process.env): boolean {
   return Boolean(speckrApiKey(env));
 }
 
-export function speckrNotConfiguredParse(): VinScanParse {
-  return { status: "skipped", summary: SPECKR_NOT_CONFIGURED };
-}
-
 type SpeckrRow = { key?: string; label?: string; value?: string | string[] };
 type SpeckrSection = { key?: string; title?: string; rows?: SpeckrRow[] };
 
 export type SpeckrVehicleSpecsPayload = {
   object?: string;
-  version?: string;
   vin?: string;
   title?: string;
   vehicle?: { year?: string | null; make?: string | null; model?: string | null; trim?: string | null };
@@ -48,7 +53,7 @@ export type SpeckrVehicleSpecsPayload = {
     capacity_summary?: string | null;
     last_measured?: string | null;
   };
-  range_and_charging?: { rows?: SpeckrRow[]; wheel_rows?: unknown[] };
+  range_and_charging?: { rows?: SpeckrRow[] };
   sections?: SpeckrSection[];
 };
 
@@ -58,108 +63,102 @@ function formatSpeckrValue(value: string | string[] | null | undefined): string 
   return String(value).trim();
 }
 
-function pushDetailLine(lines: string[], label: string, value: string | string[] | null | undefined): void {
+function pushLine(lines: SpeckrCompactLine[], label: string, value: string | string[] | null | undefined): void {
   const text = formatSpeckrValue(value);
   if (!text) return;
-  lines.push(`${label}: ${text}`);
+  lines.push({ label, value: text });
 }
 
-function pushRows(lines: string[], rows: SpeckrRow[] | undefined, heading?: string): void {
+function pushRows(lines: SpeckrCompactLine[], rows: SpeckrRow[] | undefined, limit = 24): void {
   if (!rows?.length) return;
-  if (heading) lines.push(heading);
   for (const row of rows) {
+    if (lines.length >= limit) break;
     const label = String(row.label ?? row.key ?? "").trim();
     const value = formatSpeckrValue(row.value);
     if (!label || !value) continue;
-    lines.push(`${label}: ${value}`);
+    lines.push({ label, value });
   }
 }
 
-export function parseSpeckrVehicleSpecs(json: SpeckrVehicleSpecsPayload): VinScanParse {
+export function parseSpeckrVehicleSpecs(json: SpeckrVehicleSpecsPayload): SpeckrLoadResult {
   const vehicle = json.vehicle ?? {};
   const year = formatSpeckrValue(vehicle.year);
   const make = formatSpeckrValue(vehicle.make);
-  const model = formatSpeckrValue(vehicle.model);
+  const modelCore = formatSpeckrValue(vehicle.model);
   const trim = formatSpeckrValue(vehicle.trim);
+  const model = [modelCore, trim].filter(Boolean).join(" ").trim() || modelCore;
   const title = formatSpeckrValue(json.title);
-  const ymm = [year, make, model, trim].filter(Boolean).join(" ");
+  const ymm = [year, make, model].filter(Boolean).join(" ");
   const summary = title || ymm || "Speckr specifikācija";
 
-  const detailLines: string[] = [];
+  const lines: SpeckrCompactLine[] = [];
   const sum = json.summary ?? {};
-  pushDetailLine(detailLines, "Ražošanas datums", sum.production_date);
-  pushDetailLine(detailLines, "Rūpnīca", sum.factory);
-  pushDetailLine(detailLines, "Riteņi", sum.wheels);
-  pushDetailLine(detailLines, "Krāsa", sum.paint);
-  pushDetailLine(detailLines, "Interjers", sum.interior);
-  pushDetailLine(detailLines, "Supercharging", sum.supercharging);
+  pushLine(lines, "Ražošanas datums", sum.production_date);
+  pushLine(lines, "Rūpnīca", sum.factory);
+  pushLine(lines, "Riteņi", sum.wheels);
+  pushLine(lines, "Krāsa", sum.paint);
+  pushLine(lines, "Interjers", sum.interior);
+  pushLine(lines, "Supercharging", sum.supercharging);
 
   const bat = json.battery ?? {};
   if (bat.state_of_health_percent != null && !Number.isNaN(bat.state_of_health_percent)) {
-    pushDetailLine(detailLines, "Baterijas SOH", `${bat.state_of_health_percent}%`);
+    pushLine(lines, "Baterijas SOH", `${bat.state_of_health_percent}%`);
   }
-  pushDetailLine(detailLines, "Lietojamā kapacitāte", bat.usable_capacity);
+  pushLine(lines, "Lietojamā kapacitāte", bat.usable_capacity);
   if (bat.original_capacity_kwh != null && !Number.isNaN(bat.original_capacity_kwh)) {
-    pushDetailLine(detailLines, "Oriģinālā kapacitāte", `${bat.original_capacity_kwh} kWh`);
+    pushLine(lines, "Oriģinālā kapacitāte", `${bat.original_capacity_kwh} kWh`);
   }
-  pushDetailLine(detailLines, "Kapacitātes kopsavilkums", bat.capacity_summary);
-  pushDetailLine(detailLines, "Pēdējais mērījums", bat.last_measured);
+  pushLine(lines, "Kapacitātes kopsavilkums", bat.capacity_summary);
 
-  pushRows(detailLines, json.range_and_charging?.rows, "Diapazons un uzlāde");
+  pushRows(lines, json.range_and_charging?.rows, 8);
   for (const section of json.sections ?? []) {
-    const heading = String(section.title ?? section.key ?? "").trim();
-    pushRows(detailLines, section.rows, heading || undefined);
+    if (lines.length >= 20) break;
+    for (const row of section.rows ?? []) {
+      if (lines.length >= 20) break;
+      const label = String(row.label ?? row.key ?? "").trim();
+      const value = formatSpeckrValue(row.value);
+      if (!label || !value) continue;
+      lines.push({ label, value });
+    }
   }
 
-  const hasVehicle = Boolean(make || model || year || trim);
-  const hasDetail = detailLines.length > 0;
+  const hasVehicle = Boolean(make || model || year);
+  const hasDetail = lines.length > 0;
   if (!hasVehicle && !hasDetail && !title) {
-    return { status: "none", summary: "Speckr šim VIN neatgrieza specifikāciju" };
+    return { outcome: "no_data", summary: "Speckr šim VIN neatgrieza specifikāciju", lines: [] };
   }
-
-  const vehicleOut = hasVehicle
-    ? { year, make, model: [model, trim].filter(Boolean).join(" ").trim() || model }
-    : undefined;
 
   return {
-    status: "found",
+    outcome: "ok",
     summary,
-    detail: detailLines.join("\n"),
-    vehicle: vehicleOut,
+    lines,
+    vehicle: hasVehicle ? { year, make, model } : undefined,
     openUrl: json.vin ? `https://speckr.com/?vin=${encodeURIComponent(json.vin)}` : undefined,
   };
 }
 
-function speckrErrorMessage(json: unknown): string {
-  if (!json || typeof json !== "object") return "";
+function speckrErrorMessage(json: unknown): { message: string; code: string } {
+  if (!json || typeof json !== "object") return { message: "", code: "" };
   const err = (json as { error?: { message?: string; code?: string } }).error;
-  const msg = String(err?.message ?? "").trim();
-  const code = String(err?.code ?? "").trim();
-  if (msg && code) return `${msg} (${code})`;
-  return msg || code;
+  return {
+    message: String(err?.message ?? "").trim(),
+    code: String(err?.code ?? "").trim(),
+  };
 }
 
-export function parseSpeckrHttpFailure(status: number, json: unknown): VinScanParse {
-  const msg = speckrErrorMessage(json);
+export function parseSpeckrHttpFailure(status: number, json: unknown): SpeckrLoadResult {
+  const { message, code } = speckrErrorMessage(json);
+  const summary = message || code || `Speckr HTTP ${status}`;
   if (status === 402) {
-    return { status: "manual", summary: msg || "Nav pietiekami Speckr kredītu" };
-  }
-  if (status === 401) {
-    return { status: "unknown", summary: msg || "Speckr API: nederīga atslēga" };
+    return { outcome: "needs_payment", summary: message || "Nav pietiekami Speckr kredītu", lines: [], errorCode: code || "insufficient_credits" };
   }
   if (status === 404 || status === 422) {
-    return { status: "none", summary: msg || "Speckr šo VIN neatbalsta vai neatpazīst" };
+    return { outcome: "no_data", summary: message || "Speckr šo VIN neatbalsta vai neatpazīst", lines: [], errorCode: code };
   }
-  if (status === 503) {
-    return { status: "unknown", summary: msg || "Speckr pagaidām nav pieejams" };
+  if (status === 401) {
+    return { outcome: "error", summary: message || "Speckr API: nederīga atslēga", lines: [], errorCode: code || "unauthorized" };
   }
-  if (status >= 500) {
-    return { status: "unknown", summary: msg || `Speckr servera kļūda HTTP ${status}` };
-  }
-  if (status === 429) {
-    return { status: "unknown", summary: msg || "Speckr: pārāk daudz pieprasījumu" };
-  }
-  return { status: "unknown", summary: msg || `Speckr HTTP ${status}` };
+  return { outcome: "error", summary, lines: [], errorCode: code };
 }
 
 export type FetchSpeckrVehicleSpecsDeps = {
@@ -169,19 +168,21 @@ export type FetchSpeckrVehicleSpecsDeps = {
 
 export function speckrIdempotencyKey(vin: string): string {
   const v = vin.trim().toUpperCase();
-  return `provin-vin-scan-${v}`.slice(0, 200);
+  return `provin-order-speckr-${v}`.slice(0, 200);
 }
 
 export async function fetchSpeckrVehicleSpecs(
   vin: string,
   deps: FetchSpeckrVehicleSpecsDeps = {},
-): Promise<VinScanParse> {
+): Promise<SpeckrLoadResult> {
   const env = deps.env ?? process.env;
-  if (!speckrApiConfigured(env)) return speckrNotConfiguredParse();
+  if (!speckrApiConfigured(env)) {
+    return { outcome: "not_configured", summary: SPECKR_NOT_CONFIGURED, lines: [] };
+  }
 
   const normalized = vin.trim().toUpperCase();
   if (normalized.length !== 17) {
-    return { status: "needs_input", summary: "Vajag pilnu 17 zīmju VIN" };
+    return { outcome: "error", summary: "Vajag pilnu 17 zīmju VIN", lines: [], errorCode: "invalid_vin" };
   }
 
   const fetchImpl = deps.fetchImpl ?? fetch;
@@ -189,7 +190,7 @@ export async function fetchSpeckrVehicleSpecs(
     const res = await fetchImpl(`${SPECKR_API_BASE}/vehicle-specs`, {
       method: "POST",
       cache: "no-store",
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(22_000),
       headers: {
         accept: "application/json",
         "content-type": "application/json",
@@ -213,8 +214,8 @@ export async function fetchSpeckrVehicleSpecs(
     return parseSpeckrHttpFailure(res.status, json);
   } catch (e) {
     if (e instanceof Error && (e.name === "TimeoutError" || e.message === "timeout")) {
-      return { status: "unknown", summary: "Speckr neatbildēja laikā" };
+      return { outcome: "error", summary: "Speckr neatbildēja laikā", lines: [], errorCode: "timeout" };
     }
-    return { status: "unknown", summary: "Speckr pieprasījumu neizdevās nosūtīt" };
+    return { outcome: "error", summary: "Speckr pieprasījumu neizdevās nosūtīt", lines: [], errorCode: "network" };
   }
 }

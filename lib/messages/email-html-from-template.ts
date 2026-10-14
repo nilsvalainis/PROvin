@@ -1,5 +1,10 @@
 import { plainTextToEmailHtmlParagraphs } from "@/lib/dealer-data-client-email";
 import {
+  adminRichHtmlToEmailBodyInner,
+  shouldUseRichEmailHtml,
+  wrapAdminRichEmailDocument,
+} from "@/lib/admin-tiptap/email-rich-html";
+import {
   auditCompletedEmailHtml,
   dealerDataOperatorMessageEmailHtml,
   listingPeekCustomerCommentHtml,
@@ -70,6 +75,10 @@ export function messageHtmlFromTemplate(
   }
   if (kind === "dealer_operator") {
     return dealerDataOperatorMessageEmailHtml({ title: subject ?? null, text: plainText });
+  }
+  if (shouldUseRichEmailHtml(plainText)) {
+    const inner = adminRichHtmlToEmailBodyInner(plainText);
+    return wrapAdminRichEmailDocument(inner);
   }
   const inner = plainTextToEmailHtmlParagraphs(plainText);
   return `<!DOCTYPE html><html lang="lv"><body>${inner}</body></html>`;

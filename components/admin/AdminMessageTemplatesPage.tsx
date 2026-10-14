@@ -1,6 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AdminProvinTiptapEditor,
+  type AdminProvinTiptapEditorHandle,
+} from "@/components/admin/AdminProvinTiptapEditor";
+import { adminTiptapPlainPreview } from "@/lib/admin-tiptap/storage-format";
 import { renderTemplateString, renderTemplateSubject } from "@/lib/messages/render-template";
 import {
   enrichVarsWithSharedBlocks,
@@ -29,11 +34,8 @@ const CHANNELS: { key: MessageChannel; label: string }[] = [
   { key: "block", label: "Kopīgie bloki" },
 ];
 
-function chipInsert(text: string, key: string, token: string): string {
-  return `${text}${text.endsWith("\n") || text.length === 0 ? "" : " "}${token}`;
-}
-
 export function AdminMessageTemplatesPage() {
+  const bodyEditorRef = useRef<AdminProvinTiptapEditorHandle | null>(null);
   const [channel, setChannel] = useState<MessageChannel>("email");
   const [rows, setRows] = useState<TemplateRow[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -139,10 +141,13 @@ export function AdminMessageTemplatesPage() {
     const partial: Record<string, string> = {};
     for (const v of selected.vars) partial[v.key] = v.sample;
     const merged = enrichVarsWithSharedBlocks(partial, templatesDoc);
-    const text = renderTemplateString(body, merged);
+    const bodyForRender = adminTiptapPlainPreview(body);
+    const text = renderTemplateString(bodyForRender, merged);
     const subj = selected.subject != null ? renderTemplateSubject(subject, merged) : undefined;
     return { text, subject: subj };
   }, [selected, body, subject, templatesDoc]);
+
+  const editorMode = selected?.channel === "whatsapp" ? "plain" : "rich";
 
   const save = async () => {
     if (!selected || !validation.ok) return;
@@ -313,18 +318,23 @@ export function AdminMessageTemplatesPage() {
                 </>
               ) : null}
               <label className="text-[12px] text-[#8e8e93]">Teksts</label>
-              <textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                rows={16}
-                className="mt-1 w-full rounded-[10px] border border-[#0a84ff] bg-white px-3 py-3 text-[14px] leading-relaxed shadow-[0_0_0_4px_rgba(10,132,255,0.1)]"
-              />
+              <div className="mt-1">
+                <AdminProvinTiptapEditor
+                  ref={bodyEditorRef}
+                  value={body}
+                  onChange={setBody}
+                  mode={editorMode}
+                  enableHeadings={selected.channel === "email"}
+                  placeholder="Šablona teksts…"
+                  aria-label="Šablona teksts"
+                />
+              </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {selected.vars.map((v) => (
                   <button
                     key={v.key}
                     type="button"
-                    onClick={() => setBody((t) => chipInsert(t, v.key, `{{${v.key}}}`))}
+                    onClick={() => bodyEditorRef.current?.insertAtCursor(`{{${v.key}}}`)}
                     className={`rounded-full border px-2.5 py-1 text-[12px] ${
                       v.required ? "border-[#0a84ff] text-[#0a66d8]" : "border-[#d2d2d7] text-[#3a3a3c]"
                     }`}

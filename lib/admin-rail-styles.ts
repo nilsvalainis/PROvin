@@ -1,4 +1,4 @@
-/** Kopīgs labās malas darbību joslas stils (pasūtījuma darba zona + ātrais vērtējums). */
+/** Kopīgs labās malas darbību joslas stils (ātrais vērtējums u.c., ne PRO pasūtījuma v1). */
 export const ADMIN_RAIL_ASIDE = "pointer-events-none fixed right-1.5 top-28 z-30 hidden w-[4.5rem] flex-col gap-1 lg:flex";
 export const ADMIN_RAIL_BOX =
   "provin-rail-box pointer-events-auto flex flex-col gap-1 rounded-lg border border-slate-200/25 bg-white/15 p-1 shadow-none backdrop-blur-sm dark:border-white/10 dark:bg-zinc-900/20";

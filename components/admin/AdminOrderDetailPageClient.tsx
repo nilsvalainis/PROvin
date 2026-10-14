@@ -25,7 +25,7 @@ export function AdminOrderDetailPageClient({
 }: {
   sessionId: string;
   order: AdminOrderDetailClientModel;
-  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest" | "vinScan"> | null;
+  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest" | "vinScan" | "vinPlateResolution"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;

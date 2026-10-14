@@ -161,7 +161,10 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
             {visibleRows.map((row) => {
               const counts = irissScanSourceCounts(row);
               return (
-                <li key={row.id} className="relative flex items-center border-b border-[#e5e5ea] last:border-b-0">
+                <li
+                  key={row.id}
+                  className="relative flex items-center border-b border-[#e5e5ea] last:border-b-0 [content-visibility:auto] [contain-intrinsic-size:1px_64px]"
+                >
                   <Link
                     href={`/admin/iriss/scan/${encodeURIComponent(row.id)}`}
                     aria-label={`Atvērt radaru: ${row.brandModel || row.vin || "ieraksts"}`}

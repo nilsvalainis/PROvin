@@ -15,7 +15,7 @@ import {
 const ROOT = process.cwd();
 
 describe("free VIN SCAN avoti", () => {
-  it("automātiskais saraksts ir kataloga avoti bez maksas pirkumiem un maksas API (JoJ, Speckr)", () => {
+  it("automātiskais saraksts ir kataloga avoti bez maksas pirkumiem un JoJ $0.50", () => {
     const free = freeVinScanSourceIds();
     expect(free).not.toContain("joj_copart_iaai");
     expect(free).not.toContain("speckr");
@@ -23,7 +23,6 @@ describe("free VIN SCAN avoti", () => {
     expect(free).toContain("stat_vin");
     expect(free).toContain("csdd");
     expect(isMeteredVinScanSourceId("joj_copart_iaai")).toBe(true);
-    expect(isMeteredVinScanSourceId("speckr")).toBe(true);
     expect(isMeteredVinScanSourceId("stat_vin")).toBe(false);
     for (const id of VIN_SCAN_PAID_SOURCE_IDS) {
       expect(free).not.toContain(id);
@@ -54,7 +53,7 @@ describe("free VIN SCAN avoti", () => {
     expect(run).not.toMatch(/purchaseCarVerticalReport/);
   });
 
-  it("automātiskais scan neiekļauj maksas avotus pat ar isPro / includeMetered / paid sourceIds", () => {
+  it("automātiskais scan neiekļauj maksas avotus (JoJ / paid sourceIds)", () => {
     const free = freeVinScanSourceIds();
     expect(vinScanAutoSourceIds({})).toEqual(free);
     expect(vinScanAutoSourceIds({ sourceIds: ["csdd"] })).toEqual(["csdd"]);

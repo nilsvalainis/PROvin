@@ -222,12 +222,15 @@ export function AdminOrderCopilotTrigger({
   disabled,
   busy,
   compact,
+  rail,
 }: {
   open: boolean;
   onOpen: () => void;
   disabled?: boolean;
   busy?: boolean;
   compact?: boolean;
+  /** PRO pasūtījuma labā josla — tikai ikona, bez fona. */
+  rail?: boolean;
 }) {
   return (
     <button
@@ -235,17 +238,40 @@ export function AdminOrderCopilotTrigger({
       data-copilot-trigger
       disabled={disabled}
       className={
-        compact
-          ? "inline-flex h-7 w-full shrink-0 items-center justify-center rounded-md border border-emerald-700/40 bg-emerald-600/90 px-1 text-white shadow-sm transition hover:bg-emerald-600 hover:brightness-105 disabled:opacity-50"
-          : "inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50 px-2.5 text-[11px] font-medium text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
+        rail
+          ? "inline-flex h-7 w-7 shrink-0 items-center justify-center border-0 bg-transparent p-0 opacity-100 transition hover:opacity-100 disabled:opacity-35"
+          : compact
+            ? "inline-flex h-7 w-full shrink-0 items-center justify-center rounded-md border border-emerald-700/40 bg-emerald-600/90 px-1 text-white shadow-sm transition hover:bg-emerald-600 hover:brightness-105 disabled:opacity-50"
+            : "inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-emerald-200/90 bg-emerald-50 px-2.5 text-[11px] font-medium text-emerald-900 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-900/40"
       }
       title="Order Copilot: chat + PDF (nebloķē paneli)"
       aria-label="Atvērt Order Copilot"
       aria-expanded={open}
       onClick={onOpen}
     >
-      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Bot className="h-3.5 w-3.5" aria-hidden />}
-      {compact ? null : <span className="hidden sm:inline">Copilot</span>}
+      {busy ? (
+        <Loader2 className="h-5 w-5 animate-spin text-slate-600" aria-hidden />
+      ) : rail ? (
+        <span className="provin-rail-v1-glyph flex h-7 w-7 items-center justify-center" aria-hidden>
+          <svg className="block h-5 w-5 max-h-5 max-w-5" viewBox="0 0 24 24">
+            <defs>
+              <linearGradient id="provin-copilot-trigger-rail" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#3b82f6" />
+                <stop offset="35%" stopColor="#8b5cf6" />
+                <stop offset="70%" stopColor="#ec4899" />
+                <stop offset="100%" stopColor="#f59e0b" />
+              </linearGradient>
+            </defs>
+            <path
+              fill="url(#provin-copilot-trigger-rail)"
+              d="M12 2.5c2.2 3.1 5.8 4.2 5.8 7.8 0 2.2-1.4 3.6-3.2 4.1 2.5.6 4.4 2.4 4.4 5.1 0 3.4-3.1 5.5-6.5 4.8-1.2-.2-2.2-.8-3-1.6-.8.8-1.8 1.4-3 1.6-3.4.7-6.5-1.4-6.5-4.8 0-2.7 1.9-4.5 4.4-5.1-1.8-.5-3.2-1.9-3.2-4.1 0-3.6 3.6-4.7 5.8-7.8.6-.8 1.4-.8 2 0z"
+            />
+          </svg>
+        </span>
+      ) : (
+        <Bot className="h-3.5 w-3.5" aria-hidden />
+      )}
+      {compact || rail ? null : <span className="hidden sm:inline">Copilot</span>}
     </button>
   );
 }

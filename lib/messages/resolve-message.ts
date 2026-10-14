@@ -9,6 +9,7 @@ import {
 import { renderTemplateString, renderTemplateSubject, validateTemplateDraft } from "@/lib/messages/render-template";
 import { messageHtmlFromTemplate } from "@/lib/messages/email-html-from-template";
 import { canonicalTemplateId, templateOverrideBody } from "@/lib/messages/template-aliases";
+import { adminTiptapPlainPreview, isAdminTiptapRichStorage } from "@/lib/admin-tiptap/storage-format";
 
 export type ResolveMessageOptions = {
   doc?: MessageTemplatesDoc | null;
@@ -39,11 +40,14 @@ export function resolveMessageSync(
   const tpl = effectiveTemplate(id, opts?.doc);
   if (!def || !tpl) return null;
   const merged = enrichVarsWithSharedBlocks(vars, opts?.doc);
-  const text = renderTemplateString(tpl.body, merged);
+  const renderedBody = renderTemplateString(tpl.body, merged);
+  const text = isAdminTiptapRichStorage(renderedBody)
+    ? adminTiptapPlainPreview(renderedBody)
+    : renderedBody;
   const subject = tpl.subject ? renderTemplateSubject(tpl.subject, merged) : undefined;
   const html =
     def.channel === "email"
-      ? messageHtmlFromTemplate(def, text, subject, merged, opts?.htmlContext)
+      ? messageHtmlFromTemplate(def, renderedBody, subject, merged, opts?.htmlContext)
       : undefined;
   return { subject, text, html };
 }

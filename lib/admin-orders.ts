@@ -216,22 +216,34 @@ async function ensurePaidIndexHasSession(session: Stripe.Checkout.Session): Prom
   await upsertStripePaidIndexRow(row);
 }
 
+const URGENT_LEGAL_TTL_MS = 60_000;
+let urgentLegalMemo: { at: number; value: boolean } | null = null;
+
 /**
  * Ja ir vismaz viens reāls apmaksāts Stripe Checkout sesijas ieraksts, bet .env nav pilnu
  * uzņēmuma rekvizītu — admin panelī jāparāda obligāts brīdinājums (pirms mārketinga / Live).
  */
 export async function needsUrgentCompanyLegalOnAdmin(): Promise<boolean> {
   if (getCompanyLegal().isComplete) return false;
+  if (urgentLegalMemo && Date.now() - urgentLegalMemo.at < URGENT_LEGAL_TTL_MS) {
+    return urgentLegalMemo.value;
+  }
   const index = await readStripePaidIndex();
-  if (index?.rows.some((r) => r.paymentStatus === "paid" && !r.isDemo)) return true;
+  if (index?.rows.some((r) => r.paymentStatus === "paid" && !r.isDemo)) {
+    urgentLegalMemo = { at: Date.now(), value: true };
+    return true;
+  }
   try {
     const stripe = getStripe();
     const res = await stripe.checkout.sessions.list(
       { limit: 1, status: "complete" },
       { timeout: STRIPE_CHECKOUT_LIST_TIMEOUT_MS },
     );
-    return res.data.some((s) => s.payment_status === "paid");
+    const value = res.data.some((s) => s.payment_status === "paid");
+    urgentLegalMemo = { at: Date.now(), value };
+    return value;
   } catch {
+    urgentLegalMemo = { at: Date.now(), value: false };
     return false;
   }
 }
