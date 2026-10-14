@@ -10,10 +10,8 @@ import { countRepeatVins } from "@/lib/admin-repeat-vin";
 import { previousOrdersByEmail } from "@/lib/admin-client-orders";
 import { listListingPeeks } from "@/lib/listing-peek-store";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
-import { getAuditDeadlineCompleteMap } from "@/lib/admin-audit-complete-store";
+import { getOrderFlags } from "@/lib/admin-orders-flags";
 import { upsellListOverlay } from "@/lib/order-upsell";
-import { readUpsellDisplayOffers } from "@/lib/order-upsell-store";
-import { getAuditResultColorMap } from "@/lib/admin-audit-result-color-store";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
@@ -41,10 +39,10 @@ export default async function AdminOrdersPage({
   const hiddenByAmount = countAdminOrdersHiddenByAmountFilter(allOrders);
   const orders = filterAdminOrdersForDashboard(allOrders, showAll);
   const orderIds = orders.map((o) => o.id);
-  const [draftSummaries, auditCompleteMap, auditResultColorMap] = await Promise.all([
+  // „Izpildīts”, krāsa, upsell — no karodziņu indeksa (1 lasījums), nevis 3×N Blob failu.
+  const [draftSummaries, { complete: auditCompleteMap, color: auditResultColorMap, upsell: upsellOffers }] = await Promise.all([
     readOrderDraftSummaries(orderIds),
-    getAuditDeadlineCompleteMap(orderIds),
-    getAuditResultColorMap(orderIds),
+    getOrderFlags(orderIds),
   ]);
   const partnerIds = new Set<string>();
   const packEmails = new Set<string>();
@@ -112,7 +110,6 @@ export default async function AdminOrdersPage({
       ...(notes && !isPack ? { notes } : {}),
     };
   });
-  const upsellOffers = await readUpsellDisplayOffers(ordersWithInvoice.map((o) => o.id));
   const ordersWithUpsell = ordersWithInvoice.map((o) => {
     const overlay = upsellListOverlay(upsellOffers.get(o.id) ?? []);
     if (!overlay) return o;
