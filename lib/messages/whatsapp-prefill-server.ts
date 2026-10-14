@@ -16,7 +16,6 @@ const ALLOWED_TEMPLATE_IDS = new Set([
   "wa.dealer.cancelled",
   "wa.upsell.mini_to_dealer",
   "wa.upsell.dealer_to_audit",
-  "wa.upsell.mini_to_audit",
 ]);
 
 export function isAllowedWhatsappPrefillTemplateId(id: string): boolean {
@@ -41,7 +40,8 @@ export function renderWhatsappPrefillText(query: WhatsappPrefillQuery, doc?: Mes
   if (templateId === "wa.listing_peek") {
     const vars = enrichVarsWithSharedBlocks(
       {
-        jautajumu_rinda: "Ja rodas jautājumi, droši rakstiet šeit vai uz info@provin.lv.",
+        komentars: "",
+        jautajumu_rinda: "Jautājumi: rakstiet šeit vai info@provin.lv.",
       },
       doc,
     );

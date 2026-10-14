@@ -1,4 +1,5 @@
 import { MESSAGE_TEMPLATE_DEFS, MESSAGE_TEMPLATE_IDS } from "@/lib/messages/registry-data";
+import { canonicalTemplateId } from "@/lib/messages/template-aliases";
 import type { MessageChannel, MessageTemplateDef } from "@/lib/messages/types";
 
 const BY_ID = new Map<string, MessageTemplateDef>(MESSAGE_TEMPLATE_DEFS.map((d) => [d.id, d]));
@@ -6,7 +7,7 @@ const BY_ID = new Map<string, MessageTemplateDef>(MESSAGE_TEMPLATE_DEFS.map((d) 
 export { MESSAGE_TEMPLATE_DEFS, MESSAGE_TEMPLATE_IDS };
 
 export function getMessageTemplateDef(id: string): MessageTemplateDef | undefined {
-  return BY_ID.get(id);
+  return BY_ID.get(canonicalTemplateId(id));
 }
 
 export function listMessageTemplates(channel?: MessageChannel): MessageTemplateDef[] {

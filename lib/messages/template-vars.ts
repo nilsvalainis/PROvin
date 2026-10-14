@@ -60,8 +60,15 @@ export function buildDealerNoDataVars(opts: {
   amountEur?: string | null;
   refunded: boolean;
 }): Record<string, string> {
+  const summa = amountLineDefault(opts.amountEur);
+  const refunded = opts.refunded === true;
   return {
-    summa: amountLineDefault(opts.amountEur),
+    temats: refunded
+      ? "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts"
+      : "PROVIN.LV: dīlera dati nav pieejami",
+    atmaksa_rinda: refunded
+      ? `Summa: ${summa} (veikta pilnā apmērā uz to pašu maksājumu karti).`
+      : `Summa: ${summa} (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).`,
   };
 }
 

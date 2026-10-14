@@ -8,6 +8,7 @@ import {
   LISTING_PEEK_TOPICS,
   assembleListingPeekCustomerComment,
   parseListingPeekAiPayload,
+  stripListingPeekCommentLeadingGreeting,
   stripListingPeekMarkdown,
   type ListingPeekTopicId,
 } from "@/lib/listing-peek-comment-presets";
@@ -88,8 +89,10 @@ export async function generateListingPeekCommentWithAi(input: {
   }
 
   const closer = parsed.closer;
-  const text = stripListingPeekMarkdown(
-    parsed.letter?.trim() || assembleListingPeekCustomerComment({ closer, lines }),
+  const text = stripListingPeekCommentLeadingGreeting(
+    stripListingPeekMarkdown(
+      parsed.letter?.trim() || assembleListingPeekCustomerComment({ closer, lines }),
+    ),
   ).trim();
   if (!text) throw new Error("ai_invalid_json");
   return {

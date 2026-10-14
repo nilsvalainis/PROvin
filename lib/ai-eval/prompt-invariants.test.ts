@@ -123,6 +123,9 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(
       /AI_LISTING_PEEK_COMMENT_SYSTEM[\s\S]*?VIENA rindkopa/,
     );
+    expect(prompts).toMatch(
+      /AI_LISTING_PEEK_COMMENT_SYSTEM[\s\S]*?NESĀC ar „Sveiki”|NESĀC ar „Labdien”/,
+    );
   });
 
   it("summary prompt demands discussed facts, not dual-history or section recap", () => {

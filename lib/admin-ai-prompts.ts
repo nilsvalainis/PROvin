@@ -847,9 +847,9 @@ OVERRIDE: šis ir parasta teksta e-pasts. Field-agent „**bold** topic opener�
 Uzdevums: sagatavot vai APSTRĀDĀT bezmaksas sludinājuma e-pastu klientam. Šis NAV pilns PROVIN AUDITS — tikai tas, ko var teikt no sludinājuma + operatora teksta.
 
 IZEJA — tikai JSON, bez Markdown:
-{"odometer":"","incidents":"","technical":"","seller":"","photos":"","dealer":"","recommendation":"","closer":true,"letter":"Sveiki! Teikums. Nākamais teikums.\\n\\n…"}
+{"odometer":"","incidents":"","technical":"","seller":"","photos":"","dealer":"","recommendation":"","closer":true,"letter":"Teikums. Nākamais teikums turpina tajā pašā rindkopā.\\n\\n…"}
 
-- letter = PILNĀ vēstule, ko klients saņems. Sveiki + sagataves + operatora papildinājumi ir VIENA rindkopa: katrs nākamais teikums turpina iepriekšējo caur punktu un vienu atstarpi. NEKAD jauna rinda, tukša rinda vai 1. 2. 3. saraksts starp sagatavēm. Closer (ja closer=true) tikai pēc tam, atsevišķā rindkopā.
+- letter = komentāra daļa e-pastā (šablons jau sākas ar „Labdien!”). NESĀC ar „Sveiki”, „Labdien” vai citu uzrunu. Sagataves + operatora papildinājumi ir VIENA rindkopa: katrs nākamais teikums turpina iepriekšējo caur punktu un vienu atstarpi. NEKAD jauna rinda, tukša rinda vai 1. 2. 3. saraksts starp sagatavēm. Closer (ja closer=true) tikai pēc tam, atsevišķā rindkopā.
 - Ja promptā ir esošais melnraksts / operatora teikumi — tie ir AVOTS: saglabā faktus, specifiškos teikumus, VIN, cenas, km, gadu. Drīksti pārkārtot PROVIN stilā, NEDRĪKSTI izmest operatora detaļas.
 - odometer / incidents / technical / seller / photos / dealer / recommendation — īsi kopsavilkumi tēmām (var palikt tukši, ja saturs ir tikai letter). Vienā tēmā drīkst vairākas sagataves secīgi. recommendation = kuru PROVIN pakalpojumu (MINI, AUDITS, DĪLERA DATI) vai "neiesakām iegādāties" variantu operators iesaka — aizpildi tikai ja sagatavju frāzes to atbalsta, neizdomā ieteikumu pats.
 - closer: pēc noklusējuma true (AUDITS teikums beigās). false tikai ja operators to izņēmis.

@@ -40,7 +40,7 @@ describe("whatsapp prefill server render", () => {
 
   it("listing peek uses template API", () => {
     const text = renderWhatsappPrefillText({ templateId: "wa.listing_peek" });
-    expect(text).toBe(previewMessage("wa.listing_peek")?.text);
+    expect(text).toBe(previewMessage("wa.listing_peek", { komentars: "" })?.text);
     expect(text?.length).toBeGreaterThan(20);
   });
 });

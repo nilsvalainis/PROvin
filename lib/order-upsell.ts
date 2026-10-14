@@ -330,7 +330,7 @@ export function buildUpsellDraft(
       ? "wa.upsell.mini_to_dealer"
       : opts.kind === "dealer_to_audit"
         ? "wa.upsell.dealer_to_audit"
-        : "wa.upsell.mini_to_audit";
+        : "email.upsell.mini_to_audit";
   const vars = buildUpsellEmailVars(opts);
   const waVars = buildUpsellWaVars(opts);
   const emailRendered = renderTemplateById(emailId, vars, templatesDoc);

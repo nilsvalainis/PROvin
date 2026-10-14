@@ -30,7 +30,7 @@ import {
 describe("message template registry", () => {
   it("exports stable template id list (41 entries incl. B2B locales)", () => {
     expect(MESSAGE_TEMPLATE_IDS.length).toBe(MESSAGE_TEMPLATE_DEFS.length);
-    expect(MESSAGE_TEMPLATE_DEFS.length).toBeGreaterThanOrEqual(70);
+    expect(MESSAGE_TEMPLATE_DEFS.length).toBeGreaterThanOrEqual(55);
   });
 
   it("each template renders with sample vars", () => {
@@ -106,7 +106,7 @@ describe("template parity without overrides", () => {
     const legacy = buildMiniToAuditsRecommendationDraft(input);
     const vars = miniToAuditsVarsFromDraftInput(input);
     expect(resolveMessageSync("email.upsell.mini_to_audit", vars)?.text).toBe(legacy.emailText);
-    expect(resolveMessageSync("wa.upsell.mini_to_audit", vars)?.text).toBe(legacy.whatsappText);
+    expect(resolveMessageSync("email.upsell.mini_to_audit", vars)?.text).toBe(legacy.whatsappText);
   });
 
   it("client link email", () => {

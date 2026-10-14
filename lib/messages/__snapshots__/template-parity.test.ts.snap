@@ -112,15 +112,15 @@ exports[`template snapshots (default text) > snapshot email.dealer.no_data 1`] =
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: dīlera dati nav pieejami</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Informācija par naudas atmaksu:<br/>Summa: 24,99 € (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Dīlera servisa vēsture šim pasūtījumam nav pieejama.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Summa: 24,99 € (atgriezīsim uz to pašu karti).</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
 <tr><td>
 <a href="https://provin.lv" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Pasūtīt PROVIN AUDITS</a>
 </td></tr></table>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jautājumi: info@provin.lv</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
@@ -130,62 +130,9 @@ exports[`template snapshots (default text) > snapshot email.dealer.no_data 1`] =
   "subject": "PROVIN.LV: dīlera dati nav pieejami",
   "text": "Labdien!
 
-Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
+Dīlera servisa vēsture šim pasūtījumam nav pieejama.
 
-Informācija par naudas atmaksu:
-Summa: 24,99 € (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).
-
-Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
-
-Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.
-
-Pasūtīt: https://provin.lv
-
-Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.
-
-Ar cieņu,
-Nils / IRISS
-PROVIN.LV",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot email.dealer.no_data_refunded 1`] = `
-{
-  "html": "<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Informācija par naudas atmaksu:<br/>Summa: 24,99 € (veikta pilnā apmērā uz to pašu maksājumu karti).</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="https://provin.lv" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Pasūtīt PROVIN AUDITS</a>
-</td></tr></table>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>",
-  "subject": "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts",
-  "text": "Labdien!
-
-Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
-
-Informācija par naudas atmaksu:
-Summa: 24,99 € (veikta pilnā apmērā uz to pašu maksājumu karti).
+Summa: 24,99 € (atgriezīsim uz to pašu karti).
 
 Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
 
@@ -193,7 +140,7 @@ Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDI
 
 Pasūtīt: https://provin.lv
 
-Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.
+Jautājumi: info@provin.lv
 
 Ar cieņu,
 Nils / IRISS
@@ -256,7 +203,7 @@ exports[`template snapshots (default text) > snapshot email.listing_peek 1`] = `
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;color:#1d1d1f;">Īss skatījums uz tavu sludinājumu</p>
 <p style="margin:0 0 18px;font-size:13px;line-height:1.5;color:#6b7280;">Sludinājums<br/>
 <a href="https://www.ss.lv/…" target="_blank" style="color:#0061D2;text-decoration:underline;word-break:break-all;">https://www.ss.lv/…</a></p>
-<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#1d1d1f;">Īss operatora komentārs…</p>
+<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#1d1d1f;">Īss komentārs par sludinājumu.</p>
 
 <p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:#1d1d1f;">Noskaidro visu par savu topošo auto.</p>
 <p style="margin:0 0 4px;font-size:14px;line-height:1.55;color:#6b7280;">PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.</p>
@@ -274,25 +221,19 @@ exports[`template snapshots (default text) > snapshot email.listing_peek 1`] = `
 </body>
 </html>",
   "subject": "PROVIN: īss komentārs par tavu sludinājumu",
-  "text": "Labdien!
-
-Īss skatījums uz tavu sludinājumu:
+  "text": "Sveiki!
 
 
 https://www.ss.lv/…
 
 
-Īss operatora komentārs…
+Īss komentārs par sludinājumu.
 
 
 Pielikumā 2 fotogrāfijas.
 
 
-Noskaidro visu par savu topošo auto.
-PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.
-
-Pasūtīt:
-https://provin.lv/?plan=audits#home-hero
+PROVIN AUDITS: https://provin.lv/?plan=audits#home-hero
 
 Ar cieņu,
 Nils / IRISS
@@ -300,81 +241,7 @@ PROVIN.LV",
 }
 `;
 
-exports[`template snapshots (default text) > snapshot email.partner_password_reset.de 1`] = `
-{
-  "html": "<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Setzen Sie Ihr Passwort zurück</p>
-<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Mit diesem Link legen Sie ein neues Passwort für Ihr PROVIN.LV-Partnerkonto fest.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="https://provin.lv/lv/partneriem/parole?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Neues Passwort festlegen</a>
-</td></tr></table>
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Der Link ist 24 Stunden gültig und nur einmal verwendbar. Wenn Sie das nicht angefordert haben, ignorieren Sie die Nachricht.</p>
-
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>",
-  "subject": "PROVIN.LV: Passwort zurücksetzen",
-  "text": "Mit diesem Link legen Sie ein neues Passwort für Ihr PROVIN.LV-Partnerkonto fest.
-
-https://provin.lv/lv/partneriem/parole?token=…
-
-Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot email.partner_password_reset.en 1`] = `
-{
-  "html": "<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Reset your password</p>
-<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Use this link to set a new password for your PROVIN.LV partner account.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="https://provin.lv/lv/partneriem/parole?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Set a new password</a>
-</td></tr></table>
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">The link is valid for 24 hours and can be used once. If you did not request this, ignore the message.</p>
-
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>",
-  "subject": "PROVIN.LV: reset your password",
-  "text": "Use this link to set a new password for your PROVIN.LV partner account.
-
-https://provin.lv/lv/partneriem/parole?token=…
-
-The link is valid for 24 hours and can be used once.",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot email.partner_password_reset.lv 1`] = `
+exports[`template snapshots (default text) > snapshot email.partner_password_reset 1`] = `
 {
   "html": "<!DOCTYPE html>
 <html lang="lv">
@@ -411,118 +278,7 @@ Saite ir derīga 24 stundas un izmantojama vienu reizi.",
 }
 `;
 
-exports[`template snapshots (default text) > snapshot email.partner_password_reset.ru 1`] = `
-{
-  "html": "<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Восстановление пароля</p>
-<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">По этой ссылке можно задать новый пароль партнёрского аккаунта PROVIN.LV.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="https://provin.lv/lv/partneriem/parole?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Задать новый пароль</a>
-</td></tr></table>
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Ссылка действует 24 часа и срабатывает только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.</p>
-
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>",
-  "subject": "PROVIN.LV: сброс пароля",
-  "text": "По этой ссылке можно задать новый пароль партнёрского аккаунта PROVIN.LV.
-
-https://provin.lv/lv/partneriem/parole?token=…
-
-Ссылка действует 24 часа и срабатывает только один раз.",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot email.partner_verify.change.de 1`] = `
-{
-  "html": "<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Bestätigen Sie die neue E-Mail</p>
-<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Bestätigen Sie diese Adresse, um die E-Mail Ihres PROVIN.LV-Partnerkontos zu ändern.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">E-Mail bestätigen</a>
-</td></tr></table>
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Der Link ist 24 Stunden gültig und nur einmal verwendbar. Wenn Sie das nicht angefordert haben, ignorieren Sie die Nachricht.</p>
-
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>",
-  "subject": "PROVIN.LV: neue E-Mail bestätigen",
-  "text": "Bestätigen Sie diese Adresse, um die E-Mail Ihres PROVIN.LV-Partnerkontos zu ändern.
-
-https://provin.lv/lv/partneriem/apstiprinat?token=…
-
-Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot email.partner_verify.change.en 1`] = `
-{
-  "html": "<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Confirm your new email</p>
-<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Confirm this address to finish updating your PROVIN.LV partner account.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Confirm email</a>
-</td></tr></table>
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">The link is valid for 24 hours and can be used once. If you did not request this, ignore the message.</p>
-
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>",
-  "subject": "PROVIN.LV: confirm your new email",
-  "text": "Confirm this address to finish updating your PROVIN.LV partner account.
-
-https://provin.lv/lv/partneriem/apstiprinat?token=…
-
-The link is valid for 24 hours and can be used once.",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot email.partner_verify.change.lv 1`] = `
+exports[`template snapshots (default text) > snapshot email.partner_verify.change 1`] = `
 {
   "html": "<!DOCTYPE html>
 <html lang="lv">
@@ -559,118 +315,7 @@ Saite ir derīga 24 stundas un izmantojama vienu reizi.",
 }
 `;
 
-exports[`template snapshots (default text) > snapshot email.partner_verify.change.ru 1`] = `
-{
-  "html": "<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Подтвердите новый адрес почты</p>
-<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Подтвердите этот адрес, чтобы сменить адрес почты партнёрского аккаунта PROVIN.LV.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Подтвердить адрес</a>
-</td></tr></table>
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Ссылка действует 24 часа и срабатывает только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.</p>
-
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>",
-  "subject": "PROVIN.LV: подтвердите новый адрес",
-  "text": "Подтвердите этот адрес, чтобы сменить адрес почты партнёрского аккаунта PROVIN.LV.
-
-https://provin.lv/lv/partneriem/apstiprinat?token=…
-
-Ссылка действует 24 часа и срабатывает только один раз.",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot email.partner_verify.signup.de 1`] = `
-{
-  "html": "<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Bestätigen Sie Ihre E-Mail</p>
-<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Bestätigen Sie diese Adresse, um Ihr PROVIN.LV-Partnerkonto einzurichten.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">E-Mail bestätigen</a>
-</td></tr></table>
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Der Link ist 24 Stunden gültig und nur einmal verwendbar. Wenn Sie das nicht angefordert haben, ignorieren Sie die Nachricht.</p>
-
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>",
-  "subject": "PROVIN.LV: E-Mail bestätigen",
-  "text": "Bestätigen Sie diese Adresse, um Ihr PROVIN.LV-Partnerkonto einzurichten.
-
-https://provin.lv/lv/partneriem/apstiprinat?token=…
-
-Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot email.partner_verify.signup.en 1`] = `
-{
-  "html": "<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Confirm your email</p>
-<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Confirm this address to finish opening your PROVIN.LV partner account.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Confirm email</a>
-</td></tr></table>
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">The link is valid for 24 hours and can be used once. If you did not request this, ignore the message.</p>
-
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>",
-  "subject": "PROVIN.LV: confirm your email",
-  "text": "Confirm this address to finish opening your PROVIN.LV partner account.
-
-https://provin.lv/lv/partneriem/apstiprinat?token=…
-
-The link is valid for 24 hours and can be used once.",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot email.partner_verify.signup.lv 1`] = `
+exports[`template snapshots (default text) > snapshot email.partner_verify.signup 1`] = `
 {
   "html": "<!DOCTYPE html>
 <html lang="lv">
@@ -704,43 +349,6 @@ exports[`template snapshots (default text) > snapshot email.partner_verify.signu
 https://provin.lv/lv/partneriem/apstiprinat?token=…
 
 Saite ir derīga 24 stundas un izmantojama vienu reizi.",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot email.partner_verify.signup.ru 1`] = `
-{
-  "html": "<!DOCTYPE html>
-<html lang="lv">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>PROVIN</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
-<tr><td align="center" style="padding:48px 20px;">
-<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-<tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Подтвердите адрес почты</p>
-<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Подтвердите этот адрес, чтобы открыть партнёрский аккаунт PROVIN.LV.</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
-<tr><td>
-<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Подтвердить адрес</a>
-</td></tr></table>
-<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Ссылка действует 24 часа и срабатывает только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.</p>
-
-</td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
-</td></tr></table>
-</body>
-</html>",
-  "subject": "PROVIN.LV: подтвердите адрес почты",
-  "text": "Подтвердите этот адрес, чтобы открыть партнёрский аккаунт PROVIN.LV.
-
-https://provin.lv/lv/partneriem/apstiprinat?token=…
-
-Ссылка действует 24 часа и срабатывает только один раз.",
 }
 `;
 
@@ -1131,22 +739,6 @@ exports[`template snapshots (default text) > snapshot iriss.pdf.offer.kv.client 
 }
 `;
 
-exports[`template snapshots (default text) > snapshot iriss.pdf.offer.kv.email 1`] = `
-{
-  "html": undefined,
-  "subject": undefined,
-  "text": "E-pasts",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot iriss.pdf.offer.kv.phone 1`] = `
-{
-  "html": undefined,
-  "subject": undefined,
-  "text": "Tālrunis",
-}
-`;
-
 exports[`template snapshots (default text) > snapshot iriss.pdf.offer.price.car 1`] = `
 {
   "html": undefined,
@@ -1192,14 +784,6 @@ exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.basic 
   "html": undefined,
   "subject": undefined,
   "text": "Pamatinformācija",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.client 1`] = `
-{
-  "html": undefined,
-  "subject": undefined,
-  "text": "Klienta dati",
 }
 `;
 
@@ -1331,14 +915,6 @@ exports[`template snapshots (default text) > snapshot iriss.pdf.order.hero_sub 1
 }
 `;
 
-exports[`template snapshots (default text) > snapshot iriss.pdf.order.kv.email 1`] = `
-{
-  "html": undefined,
-  "subject": undefined,
-  "text": "E-pasts",
-}
-`;
-
 exports[`template snapshots (default text) > snapshot iriss.pdf.order.kv.first_name 1`] = `
 {
   "html": undefined,
@@ -1360,22 +936,6 @@ exports[`template snapshots (default text) > snapshot iriss.pdf.order.kv.order_d
   "html": undefined,
   "subject": undefined,
   "text": "Pasūtījuma datums",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot iriss.pdf.order.kv.phone 1`] = `
-{
-  "html": undefined,
-  "subject": undefined,
-  "text": "Tālrunis",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot iriss.pdf.order.sec.client 1`] = `
-{
-  "html": undefined,
-  "subject": undefined,
-  "text": "Klienta dati",
 }
 `;
 
@@ -1408,6 +968,30 @@ exports[`template snapshots (default text) > snapshot iriss.pdf.order.sec.vehicl
   "html": undefined,
   "subject": undefined,
   "text": "Transportlīdzekļa specifikācija",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.shared.kv.email 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "E-pasts",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.shared.kv.phone 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Tālrunis",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.shared.sec.client 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Klienta dati",
 }
 `;
 
@@ -1458,11 +1042,11 @@ exports[`template snapshots (default text) > snapshot wa.listing_peek 1`] = `
 {
   "html": undefined,
   "subject": undefined,
-  "text": "Labdien!
+  "text": "Sveiki!
 
-Pievienoju īsu komentāru par sludinājumu, ko apskatījām.
+Īss komentārs par sludinājumu.
 
-Ja rodas jautājumi, droši rakstiet šeit vai uz info@provin.lv.
+Jautājumi: rakstiet šeit vai info@provin.lv.
 
 Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
@@ -1562,39 +1146,6 @@ Apmaksāt: https://buy.stripe.com/…
 Ar cieņu,
 Nils / IRISS
 PROVIN.LV",
-}
-`;
-
-exports[`template snapshots (default text) > snapshot wa.upsell.mini_to_audit 1`] = `
-{
-  "html": undefined,
-  "subject": undefined,
-  "text": "Labdien, Jāni!
-
-Paldies par PROVIN MINI pasūtījumu VW Golf.
-
-Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
-
-PROVIN MINI ietver:
-✓ Konsultāciju un ieteikumus klātienes apskatei
-✓ OCTA negadījumus un tehnisko apskašu vēsturi
-✓ Sludinājuma, pārdevēja un tehnisko risku analīzi
-
-Tikai PROVIN AUDITS ietver:
-✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus
-✓ Oficiālo dīleru un izsoļu portālu arhīva datus
-
-Tas nozīmē, ka tieši AUDITS parāda negadījumu vēsturi, nobraukuma vēsturi ārvalstīs un oficiālā dīlera servisa datus, kas ievestiem auto ir paši svarīgākie.
-
-Mēs iesakām pilno auditu. Starpību (60,00 €) varat apmaksāt šeit:
-https://buy.stripe.com/…
-
-Ja papildu dati nav vajadzīgi, turpināsim ar MINI.
-
-Ar cieņu,
-Nils
-PROVIN.LV
-T: 29502039",
 }
 `;
 

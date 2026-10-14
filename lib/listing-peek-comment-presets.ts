@@ -4,7 +4,36 @@
  * Vienā sadaļā drīkst atlasīt vairākas frāzes (secīgi, punkts + atstarpe).
  */
 
+/** Mantots parsēšanai vecām vēstulēm; jaunajos melnrakstos netiek pievienots (e-pasta šablons jau sākas ar Labdien!). */
 export const LISTING_PEEK_COMMENT_GREETING = "Sveiki!";
+
+const LEADING_PEEK_GREETING_RE =
+  /^(?:Labdien|Sveiki)(?:\s*[!,]|\s+)(?:\s*[!,])?\s*/i;
+
+/** Noņem uzrunu no komentāra, ja e-pasta/WA šablons jau sākas ar Labdien/Sveiki. */
+export function stripListingPeekCommentLeadingGreeting(text: string): string {
+  let t = text.replace(/\r/g, "").trim();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const withoutLegacy = t.replace(new RegExp(`^${LISTING_PEEK_COMMENT_GREETING}\\s*`, "i"), "").trimStart();
+    if (withoutLegacy !== t) {
+      t = withoutLegacy;
+      changed = true;
+    }
+    const withoutGeneric = t.replace(LEADING_PEEK_GREETING_RE, "").trimStart();
+    if (withoutGeneric !== t) {
+      t = withoutGeneric;
+      changed = true;
+    }
+    const withoutBlank = t.replace(/^\n+/, "").trimStart();
+    if (withoutBlank !== t) {
+      t = withoutBlank;
+      changed = true;
+    }
+  }
+  return t.trim();
+}
 
 export const LISTING_PEEK_COMMENT_CLOSER =
   "Šis ir virspusējs sākotnējais vērtējums. Pilnu auto analīzi ar nobraukuma hronoloģiju, negadījumu datiem, dīleru vēsturi un specifisko tehnisko risku analīzi nodrošina PROVIN AUDITS. Tas ir drošākais veids, kā pilnvērtīgi noskaidrot digitālo auto vēsturi, izvairīties no dārgiem remontiem un iegūt argumentus cenas apspriešanai.";
@@ -367,7 +396,7 @@ export function assembleListingPeekCustomerComment(input: {
   lines: Partial<Record<ListingPeekTopicId, string>>;
 }): string {
   const points = LISTING_PEEK_TOPIC_IDS.map((id) => input.lines[id]?.trim() ?? "").filter(Boolean);
-  let body = input.greeting !== false ? LISTING_PEEK_COMMENT_GREETING : "";
+  let body = input.greeting === true ? LISTING_PEEK_COMMENT_GREETING : "";
   for (const text of points) {
     body = joinListingPeekSentences(body, text);
   }
@@ -445,9 +474,7 @@ export function parseListingPeekCustomerComment(raw: string): {
   }
 
   if (numbered.length === 0) {
-    const leftover = withoutCloser
-      .replace(new RegExp(`^${LISTING_PEEK_COMMENT_GREETING}\\s*`, "i"), "")
-      .trim();
+    const leftover = stripListingPeekCommentLeadingGreeting(withoutCloser);
     for (const topic of LISTING_PEEK_TOPICS) {
       if (!unused.has(topic.id)) continue;
       const hits = topic.phrases.filter((p) => leftover.includes(p.text)).map((p) => p.text);

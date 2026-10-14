@@ -8,6 +8,7 @@ import {
 } from "@/lib/messages/registry";
 import { renderTemplateString, renderTemplateSubject, validateTemplateDraft } from "@/lib/messages/render-template";
 import { messageHtmlFromTemplate } from "@/lib/messages/email-html-from-template";
+import { canonicalTemplateId, templateOverrideBody } from "@/lib/messages/template-aliases";
 
 export type ResolveMessageOptions = {
   doc?: MessageTemplatesDoc | null;
@@ -18,9 +19,10 @@ export type ResolveMessageOptions = {
 export { enrichVarsWithSharedBlocks } from "@/lib/messages/shared-block-vars";
 
 function effectiveTemplate(id: string, doc?: MessageTemplatesDoc | null): { subject?: string; body: string } | null {
-  const def = getMessageTemplateDef(id);
+  const canonical = canonicalTemplateId(id);
+  const def = getMessageTemplateDef(canonical);
   if (!def) return null;
-  const o = doc?.overrides[id];
+  const o = templateOverrideBody(id, doc);
   return {
     subject: o?.subject ?? def.subject,
     body: o?.body ?? def.body,
@@ -32,7 +34,8 @@ export function resolveMessageSync(
   vars: Record<string, string>,
   opts?: ResolveMessageOptions,
 ): RenderedMessage | null {
-  const def = getMessageTemplateDef(id);
+  const canonical = canonicalTemplateId(id);
+  const def = getMessageTemplateDef(canonical);
   const tpl = effectiveTemplate(id, opts?.doc);
   if (!def || !tpl) return null;
   const merged = enrichVarsWithSharedBlocks(vars, opts?.doc);

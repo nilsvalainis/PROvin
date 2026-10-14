@@ -5,6 +5,7 @@ import {
   LISTING_PEEK_TOPICS,
   assembleListingPeekCustomerComment,
   insertListingPeekLetterSentence,
+  stripListingPeekCommentLeadingGreeting,
   joinListingPeekSentences,
   listingPeekPhraseById,
   listingPeekPhraseByTone,
@@ -52,7 +53,7 @@ describe("toggleListingPeekSentence", () => {
 });
 
 describe("assembleListingPeekCustomerComment", () => {
-  it("joins templates in one paragraph after Sveiki", () => {
+  it("joins templates in one paragraph without default greeting", () => {
     const comment = assembleListingPeekCustomerComment({
       lines: {
         odometer: listingPeekPhraseByTone("odometer", "positive"),
@@ -63,7 +64,8 @@ describe("assembleListingPeekCustomerComment", () => {
         dealer: listingPeekPhraseByTone("dealer", "positive"),
       },
     });
-    expect(comment.startsWith(`${LISTING_PEEK_COMMENT_GREETING} `)).toBe(true);
+    expect(comment.startsWith("Sākotnējie dati norāda")).toBe(true);
+    expect(comment).not.toMatch(/^Sveiki|^Labdien/i);
     expect(comment).not.toMatch(/\n(?!\n)/);
     expect(comment).not.toContain("1. ");
     expect(comment).toContain("Sākotnējie dati norāda uz augstu odometra rādījumu ticamību");
@@ -94,11 +96,17 @@ describe("assembleListingPeekCustomerComment", () => {
       lines: { technical: listingPeekPhraseByTone("technical", "caution") },
     });
     const [body, closerBlock] = comment.split("\n\n");
-    expect(body).toBe(
-      `${LISTING_PEEK_COMMENT_GREETING} ${listingPeekPhraseByTone("technical", "caution")}`,
-    );
+    expect(body).toBe(listingPeekPhraseByTone("technical", "caution"));
     expect(body).not.toContain("\n");
     expect(closerBlock).toBe(LISTING_PEEK_COMMENT_CLOSER);
+  });
+
+  it("optional greeting:true prepends Sveiki for legacy flows", () => {
+    const comment = assembleListingPeekCustomerComment({
+      greeting: true,
+      lines: { technical: listingPeekPhraseByTone("technical", "caution") },
+    });
+    expect(comment.startsWith(`${LISTING_PEEK_COMMENT_GREETING} `)).toBe(true);
   });
 
   it("still reads an older numbered letter back into topic fields", () => {
