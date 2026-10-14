@@ -1,11 +1,11 @@
 # eCarsTrade precīzo saišu dry-run
 
 Produkcijas dati netiek rakstīti. Atjaunot ET palaižams pēc Nils apstiprinājuma.
-Šis saraksts ir no reprezentatīviem Auto1 / Autobid / Openlane filtriem (fixtures). Mobile.de ET saitei neņem vērā. Dzīvais Blob šajā vidē nav pieejams; pēc merge Nils palaiž Atjaunot ET uz pasūtījumiem un radaru. Live ecarstrade.com 2026-10-14: mark[] value Volvo=68, Audi=5, BMW=7, Mercedes=45, Lexus=39, Toyota=66, Porsche=54; fuel[]=Diesel un category[]=SUV/Off-road Vehicle/Pickup Truck sakrīt ar HTML. future_api mark[]=68&model[]=1866 atdod XC60; dīzeļa filtrs izslēdz hibrīdus.
+Šis saraksts ir no reprezentatīviem Auto1 / Autobid / Openlane filtriem (fixtures). Mobile.de un pasūtījuma forma ET saitei neņem vērā. Dzīvais Blob šajā vidē nav pieejams; pēc merge Nils palaiž Atjaunot ET uz pasūtījumiem un radaru. Live ecarstrade.com 2026-10-14: mark[] value Volvo=68, Audi=5, BMW=7, Mercedes=45, Lexus=39, Toyota=66, Porsche=54; fuel[]=Diesel un category[]=SUV/Off-road Vehicle/Pickup Truck sakrīt ar HTML. future_api mark[]=68&model[]=1866 atdod XC60; dīzeļa filtrs izslēdz hibrīdus.
 
 - Pasūtījumi: 4
 - Radars / Meklētājs: 4
-- Ieraksti ar vismaz vienu nekartējamu kritēriju: 1
+- Ieraksti ar vismaz vienu nekartējamu kritēriju: 0
 
 ## Pasūtījumi
 
@@ -150,27 +150,14 @@ ET 1 avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=
 - kārba (forma): automāts
 
 **Avotu saites**
-- (nav Auto1 / Openlane / Autobid / Mobile saišu; ET no brandModel / formas)
+- (nav Auto1 / Openlane / Autobid saišu; ET no formas/Mobile nerada)
 
 **Rezultāta eCarsTrade**
-- ET 1 no 0 avota saišu:
-  - saite: `https://ecarstrade.com/search?mark[]=7&model[]=83&model[]=85&year_from=2016&mileage_to=180000&price_to=22000&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: BMW; modelis: 5 Series, 7 Series (id 83, 85); gadi: 2016-…; nobraukums: …-180000 km; cena: …-22000 EUR; degviela: Diesel; kārba: Automatic
+- nav ģenerējama ET saite (nav izsoles saites ar marku).
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
 
-ET 1 avots: `(brandModel / forma)`
-
-| Kritērijs | Izsoles saite | ET URL |
-|---|---|---|
-| marka | - | BMW |
-| modelis | - | 5 Series, 7 Series (id 83, 85) |
-| gadi | - | 2016-… |
-| nobraukums | - | …-180000 km |
-| cena | - | …-22000 EUR |
-| degviela | - | Diesel |
-| kārba | - | Automatic |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=7&model[]=83&model[]=85&year_from=2016&mileage_to=180000&price_to=22000&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+- nav ģenerējama ET saite (nav izsoles saites ar marku).
 
 
 ### Pasūtījums: Pēteris / Autobid nezināms brandId 12
@@ -184,25 +171,11 @@ ET 1 avots: `(brandModel / forma)`
     - kritēriji: modelis: E 220; gadi: 2017-…; nav kartējams: brandId=12 (Autobid brandId nav kartē; marka ņemta no brandModel, ja ir); country=FR (ET nolasīšana paliek BE/NL/LU/DE; citas valstis URL nepaplašina)
 
 **Rezultāta eCarsTrade**
-- ET 1 no 1 avota saišu:
-  - avots: `https://autobid.de/en/search-results?brandId-brand=12&name-model=E%20220&yearFrom-year=2017&origincountries=FR`
-  - saite: `https://ecarstrade.com/search?mark[]=45&model[]=815&year_from=2017&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: Mercedes; modelis: E 220 (id 815); gadi: 2017-…
-  - **nav kartējams uz ET URL** (ingest post-filtrs / ignorēts):
-    - brandId=12 (Autobid brandId nav kartē; marka ņemta no brandModel, ja ir)
-    - country=FR (ET nolasīšana paliek BE/NL/LU/DE; citas valstis URL nepaplašina)
+- nav ģenerējama ET saite (nav izsoles saites ar marku).
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
 
-ET 1 avots: `https://autobid.de/en/search-results?brandId-brand=12&name-model=E%20220&yearFrom-year=2017&origincountries=FR`
-
-| Kritērijs | Izsoles saite | ET URL |
-|---|---|---|
-| marka | - | Mercedes |
-| modelis | E 220 | E 220 (id 815) |
-| gadi | 2017-… | 2017-… |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=45&model[]=815&year_from=2017&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
-| nav ET lauka | brandId=12 (Autobid brandId nav kartē; marka ņemta no brandModel, ja ir); country=FR (ET nolasīšana paliek BE/NL/LU/DE; citas valstis URL nepaplašina) | iriss_* post-filtrs / atzīmēts |
+- nav ģenerējama ET saite (nav izsoles saites ar marku).
 
 
 ## Radars / Meklētājs
@@ -280,18 +253,11 @@ ET 1 avots: `https://www.openlane.eu/en/findcar?makes=lexus&makes=toyota&yearFro
     - kritēriji: marka: Porsche; nobraukums: 10000-140000 km; jauda: 176-176 kW
 
 **Rezultāta eCarsTrade**
-- ET 1 no 0 avota saišu:
-  - saite: `https://ecarstrade.com/search?mark[]=54&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: Porsche
+- nav ģenerējama ET saite (nav izsoles saites ar marku).
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
 
-ET 1 avots: `(brandModel / forma)`
-
-| Kritērijs | Izsoles saite | ET URL |
-|---|---|---|
-| marka | - | Porsche |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=54&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+- nav ģenerējama ET saite (nav izsoles saites ar marku).
 
 
 ### Radars: Volvo XC60 Mobile.de ms=25100
@@ -305,16 +271,8 @@ ET 1 avots: `(brandModel / forma)`
     - kritēriji: marka: Volvo; modelis: XC60 (id 1866); nobraukums: 10000-140000 km; degviela: Diesel
 
 **Rezultāta eCarsTrade**
-- ET 1 no 0 avota saišu:
-  - saite: `https://ecarstrade.com/search?mark[]=68&model[]=1866&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: Volvo; modelis: XC60 (id 1866)
+- nav ģenerējama ET saite (nav izsoles saites ar marku).
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
 
-ET 1 avots: `(brandModel / forma)`
-
-| Kritērijs | Izsoles saite | ET URL |
-|---|---|---|
-| marka | - | Volvo |
-| modelis | - | XC60 (id 1866) |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=68&model[]=1866&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+- nav ģenerējama ET saite (nav izsoles saites ar marku).

@@ -3,7 +3,6 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import {
   appendEcarstradeLinksToPasutijums,
-  hasOtherAuctionListingLinks,
   previewEcarstradeLinksForPasutijums,
   replaceEcarstradeLinksOnPasutijums,
 } from "@/lib/iriss-pasutijumi-ecarstrade-links";
@@ -55,8 +54,8 @@ function summarize(previews: ReturnType<typeof previewEcarstradeLinksForPasutiju
   return {
     results: previews,
     addedCount: previews.reduce((n, p) => n + p.added.length, 0),
-    updatedCount: previews.filter((p) => p.added.length > 0).length,
-    skippedCount: previews.filter((p) => p.added.length === 0).length,
+    updatedCount: previews.filter((p) => p.changed).length,
+    skippedCount: previews.filter((p) => !p.changed).length,
   };
 }
 
@@ -129,22 +128,18 @@ export async function POST(req: Request) {
   const previews = [];
   const saved = [];
   for (const rec of rows) {
-    if (!hasOtherAuctionListingLinks(rec) && !rec.brandModel.trim()) {
-      const preview = previewOf(rec, replace);
-      previews.push(preview);
-      continue;
-    }
     if (!apply) {
       previews.push(previewOf(rec, replace));
       continue;
     }
     const next = applyLinks(rec);
     previews.push(next.preview);
-    if (next.preview.added.length === 0) continue;
+    if (!next.preview.changed) continue;
     const w = await writeIrissPasutijums(next.record, { expectedWorkspaceRevision: rec.workspaceRevision });
     if (!w.ok) {
       if (w.stale || w.error === IRISS_STALE_REVISION) {
         next.preview.added = [];
+        next.preview.changed = false;
         next.preview.skippedReason = "konflikts saglabājot, mēģini vēlreiz";
         continue;
       }

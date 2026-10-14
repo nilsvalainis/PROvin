@@ -16,6 +16,7 @@ describe("eCarsTrade dry-run markdown", () => {
     expect(md).toContain("Audi A6 diesel vs petrol");
     expect(md).toContain("Mobile.de (ET neņem vērā)");
     expect(md).not.toMatch(/fuel\[\]=Petrol/);
+    expect(md).toContain("nav izsoles saites ar marku");
     expect(md).toContain("nav kartējams");
     expect(md).toContain("brandId=12");
     expect(md).not.toContain("engine_from=6060");

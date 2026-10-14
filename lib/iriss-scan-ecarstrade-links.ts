@@ -3,11 +3,7 @@ import { isMobileDeListingUrl, isSingleVehicleListingUrl } from "@/lib/iriss-lis
 import {
   describeEcarstradeFilter,
   ecarstradeSearchUrl,
-  fillFilterGaps,
-  fillMakeModelFromBrand,
   fillMissingModelFromBrand,
-  filterFromOrderFields,
-  filtersFromBrandModel,
   parseListingSearchDetailed,
   sameEcarstradeSearch,
   type EcarstradeSearchFilter,
@@ -41,6 +37,8 @@ export type IrissScanEcarstradeLinkPreview = {
   alreadyHad: string[];
   skippedReason: string;
   plans: IrissEcarstradeLinkPlan[];
+  /** true, ja listingLinkEcarstrade mainās (arī kad formas ET jānokasa). */
+  changed: boolean;
 };
 
 function isAuctionSearchUrl(url: string): boolean {
@@ -64,56 +62,28 @@ export function hasOtherAuctionListingLinks(
   return sourceUrls(rec).length > 0;
 }
 
-function orderFieldsOf(rec: IrissEcarstradeLinkSource): OrderSearchFields {
-  return {
-    brandModel: rec.brandModel,
-    productionYears: rec.productionYears,
-    totalBudget: rec.totalBudget,
-    engineType: rec.engineType,
-    transmission: rec.transmission,
-    bodyType: rec.bodyType,
-    driveType: rec.driveType,
-    seatCount: rec.seatCount,
-    maxMileage: rec.maxMileage,
-    preferredColors: rec.preferredColors,
-    nonPreferredColors: rec.nonPreferredColors,
-    equipmentRequired: rec.equipmentRequired,
-    dealVat21Required: rec.dealVat21Required,
-  };
-}
-
 function unmappedLines(filter: EcarstradeSearchFilter): string[] {
   return filter.unmapped.map((u) => `${u.key}=${u.value} (${u.reason})`);
 }
 
+const NO_AUCTION_ET_REASON = "nav izsoles saites ar marku (Auto1/Openlane/Autobid)";
+
+/** Tikai izsoles URL filtri. Formas lauki (gadi, km, kārba, brandModel kā avots) ET nerada. */
 function filterFromAuctionUrl(url: string, brandModel: string): EcarstradeSearchFilter {
   const parsed = parseListingSearchDetailed(url).filter;
-  if (parsed.makeIds.length) return fillMissingModelFromBrand(parsed, brandModel);
-  return fillMakeModelFromBrand(parsed, brandModel);
+  if (!parsed.makeIds.length) return parsed;
+  return fillMissingModelFromBrand(parsed, brandModel);
 }
 
 export function planEcarstradeSearchUrls(rec: IrissEcarstradeLinkSource): IrissEcarstradeLinkPlan[] {
   const brand = rec.brandModel.trim();
-  const urls = sourceUrls(rec);
-  const order = filterFromOrderFields(orderFieldsOf(rec));
-  const brandOnly = filtersFromBrandModel(brand);
-  const parsed = urls
+  const parsed = sourceUrls(rec)
     .map((url) => ({
       sourceUrl: url,
       filter: filterFromAuctionUrl(url, brand),
     }))
     .filter((row) => row.filter.makeIds.length > 0);
-  const clusters =
-    parsed.length > 0
-      ? parsed.map((row) => ({ filter: row.filter, sourceUrls: [row.sourceUrl] }))
-      : brandOnly.map((filter) => ({ filter: fillFilterGaps(filter, order), sourceUrls: [] as string[] }));
-  if (parsed.length > 0) {
-    const covered = new Set(clusters.flatMap((c) => c.filter.makeIds));
-    for (const bf of brandOnly) {
-      const id = bf.makeIds[0];
-      if (id && !covered.has(id)) clusters.push({ filter: fillFilterGaps(bf, order), sourceUrls: [] });
-    }
-  }
+  const clusters = parsed.map((row) => ({ filter: row.filter, sourceUrls: [row.sourceUrl] }));
   const plans: IrissEcarstradeLinkPlan[] = [];
   const seen = new Set<string>();
   for (const cluster of clusters) {
@@ -142,6 +112,7 @@ function previewFromPlans(
   generated: string[],
   added: string[],
   skippedReason: string,
+  changed: boolean,
 ): IrissScanEcarstradeLinkPreview {
   return {
     id: rec.id,
@@ -151,6 +122,7 @@ function previewFromPlans(
     alreadyHad: filledIrissListingLinks(rec.listingLinkEcarstrade),
     skippedReason,
     plans: planEcarstradeSearchUrls(rec),
+    changed,
   };
 }
 
@@ -166,10 +138,10 @@ export function previewEcarstradeLinksForScan(rec: IrissEcarstradeLinkSource): I
   const room = Math.max(0, IRISS_LISTING_LINKS_PER_SOURCE_MAX - existing.length);
   const clipped = added.slice(0, room);
   let skippedReason = "";
-  if (generated.length === 0) skippedReason = "nav markas no brandModel vai Auto1/Openlane/Autobid";
+  if (generated.length === 0) skippedReason = NO_AUCTION_ET_REASON;
   else if (clipped.length === 0 && generated.length > 0) skippedReason = "eCarsTrade saite jau ir";
   else if (clipped.length < added.length) skippedReason = "sasniegts saišu limits";
-  return previewFromPlans(rec, generated, clipped, skippedReason);
+  return previewFromPlans(rec, generated, clipped, skippedReason, clipped.length > 0);
 }
 
 export function appendEcarstradeLinksToScan<T extends IrissEcarstradeLinkSource>(rec: T): { record: T; preview: IrissScanEcarstradeLinkPreview } {
@@ -197,7 +169,8 @@ export function replaceEcarstradeLinks<T extends IrissEcarstradeLinkSource>(rec:
     rec,
     generated,
     same ? [] : generated,
-    generated.length === 0 ? "nav markas no brandModel vai Auto1/Openlane/Autobid" : same ? "eCarsTrade saite jau ir aktuāla" : "",
+    generated.length === 0 ? NO_AUCTION_ET_REASON : same ? "eCarsTrade saite jau ir aktuāla" : "",
+    !same,
   );
   if (same) return { record: rec, preview };
   return {

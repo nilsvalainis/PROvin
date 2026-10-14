@@ -156,7 +156,7 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
 
   const generateEcarstrade = () => {
     const next = replaceEcarstradeLinksOnPasutijums(rec);
-    if (next.preview.added.length === 0 && next.preview.skippedReason) return;
+    if (!next.preview.changed) return;
     onPatch({ listingLinkEcarstrade: next.record.listingLinkEcarstrade });
   };
 
@@ -170,7 +170,7 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
           type="button"
           onClick={generateEcarstrade}
           className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
-          title="Atjaunot eCarsTrade saiti no Auto1 / Openlane / Autobid / Mobile filtriem"
+          title="Atjaunot eCarsTrade saiti tikai no Auto1 / Openlane / Autobid filtriem"
         >
           Atjaunot eCarsTrade
         </button>

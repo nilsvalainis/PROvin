@@ -222,6 +222,7 @@ export function IrissScanEditor({
                     const data = (await res.json()) as {
                       saved?: IrissScanRecord[];
                       addedCount?: number;
+                      updatedCount?: number;
                       results?: Array<{ added?: string[]; generated?: string[] }>;
                     };
                     if (!res.ok) {
@@ -232,12 +233,12 @@ export function IrissScanEditor({
                     if (persistId && saved) {
                       setRec(saved);
                       setDirty(false);
-                      setSaveMsg(data.addedCount ? `Aizstātas eCarsTrade saites` : "eCarsTrade saite jau ir aktuāla");
+                      setSaveMsg(data.updatedCount || data.addedCount ? `Aizstātas eCarsTrade saites` : "eCarsTrade saite jau ir aktuāla");
                       return;
                     }
                     const generated = data.results?.[0]?.generated ?? data.results?.[0]?.added ?? [];
                     if (generated.length === 0) {
-                      setSaveMsg("Nav eCarsTrade filtra no markas vai Auto1/Openlane/Autobid");
+                      setSaveMsg("Nav eCarsTrade filtra no izsoles saites (Auto1/Openlane/Autobid)");
                       return;
                     }
                     patchRecord({ listingLinkEcarstrade: generated });
