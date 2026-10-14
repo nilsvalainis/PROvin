@@ -8,19 +8,9 @@ import {
   resolveReportReadyProductKind,
   type ReportReadyProductKind,
 } from "@/lib/email/report-ready-copy";
-import { renderTemplateById } from "@/lib/messages/render-template-id";
+import { resolveMessageSync } from "@/lib/messages/resolve-message";
 import { buildWaReportReadyVars, waReportReadyTemplateId } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
-
-function vinPhrase(vin?: string | null): string {
-  const v = (vin ?? "").trim().toUpperCase();
-  return v ? ` transportlīdzeklim ar VIN ${v}` : "";
-}
-
-function vinLine(vin: string | null | undefined): string {
-  const v = (vin ?? "").trim().toUpperCase();
-  return v ? ` (VIN ${v})` : "";
-}
 
 function amountLine(amountEur?: string | null): string {
   const a = (amountEur ?? "").trim();
@@ -43,17 +33,16 @@ export function whatsappPrefillReportReady(
   templatesDoc?: MessageTemplatesDoc | null,
 ): string {
   const vars = buildWaReportReadyVars(opts);
-  const rendered = renderTemplateById(waReportReadyTemplateId(opts.kind), vars, templatesDoc);
+  const rendered = resolveMessageSync(waReportReadyTemplateId(opts.kind), vars, { doc: templatesDoc });
   if (rendered?.text) return rendered.text;
 
-  const vin = vinPhrase(opts.vin);
   const parts: string[] = ["Labdien!", ""];
   if (opts.kind === "dealer") {
-    parts.push(`Jūsu pieprasītie oficiālā dīlera servisa vēstures dati${vin} ir sagatavoti.`);
+    parts.push("Jūsu pieprasītie oficiālā dīlera servisa vēstures dati ir sagatavoti.");
   } else if (opts.kind === "mini") {
-    parts.push(`Jūsu pasūtītā PROVIN MINI atskaite${vin} ir sagatavota.`);
+    parts.push("Jūsu pasūtītā PROVIN MINI atskaite ir sagatavota.");
   } else {
-    parts.push(`Jūsu pasūtītā PROVIN AUDITS atskaite${vin} ir sagatavota.`);
+    parts.push("Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.");
   }
   parts.push("", whatsappQuestionsLine(opts.kind), "", googleReviewPlainBlock(), "", clientMessageSignOff());
   return parts.join("\n");
@@ -72,7 +61,7 @@ export function whatsappPrefillForOrder(args: {
 }
 
 export function whatsappPrefillSelectConsultation(templatesDoc?: MessageTemplatesDoc | null): string {
-  const rendered = renderTemplateById("wa.select_consultation", {}, templatesDoc);
+  const rendered = resolveMessageSync("wa.select_consultation", {}, { doc: templatesDoc });
   if (rendered?.text) return rendered.text;
   return `Sveiki!
 
@@ -96,19 +85,15 @@ export function whatsappPrefillDealerNoDataRefunded(
   templatesDoc?: MessageTemplatesDoc | null,
 ): string {
   const vars = {
-    vin_line: vinLine(vin),
     summa: amountLine(amountEur),
-    refund_piezime: "Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.",
-    audits_cta: `Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.\n\nPasūtīt: https://provin.lv`,
-    paraksts: clientMessageSignOff(),
   };
-  const rendered = renderTemplateById("wa.dealer.no_data_refunded", vars, templatesDoc);
+  const rendered = resolveMessageSync("wa.dealer.no_data_refunded", vars, { doc: templatesDoc });
   if (rendered?.text) return rendered.text;
 
   const amount = amountLine(amountEur);
   return `Labdien!
 
-Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam${vinLine(vin)}. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
+Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
 
 Informācija par naudas atmaksu:
 Summa: ${amount} (veikta pilnā apmērā uz to pašu maksājumu karti).
@@ -126,17 +111,17 @@ ${clientMessageSignOff()}`;
 
 /** Apmaksa atcelta vai atgriezta pēc klienta lūguma, pirms darbs uzsākts. */
 export function whatsappPrefillDealerPaymentCancelled(vin?: string | null, templatesDoc?: MessageTemplatesDoc | null): string {
-  const vars = { vin_line: vinLine(vin), paraksts: clientMessageSignOff() };
-  const rendered = renderTemplateById("wa.dealer.cancelled", vars, templatesDoc);
+  const vars = {};
+  const rendered = resolveMessageSync("wa.dealer.cancelled", vars, { doc: templatesDoc });
   if (rendered?.text) return rendered.text;
 
   return `Sveiki!
 
-Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts un maksājums atgriezts pilnā apmērā.${vinLine(vin)}
+Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts un maksājums atgriezts pilnā apmērā.
 
 Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.
 
-Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, droši rakstiet šeit.
+Ja vēlaties pasūtīt atkārtoti, droši rakstiet šeit.
 
 ${clientMessageSignOff()}`;
 }

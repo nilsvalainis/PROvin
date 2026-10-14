@@ -12,7 +12,7 @@ describe("whatsapp report-ready prefills", () => {
       vin: "WAUZZZF44LA062962",
     });
     expect(t).toContain("oficiālā dīlera servisa vēstures dati");
-    expect(t).toContain("WAUZZZF44LA062962");
+    expect(t).not.toMatch(/\(VIN\s/i);
     expect(t).not.toContain("20%");
     expect(t).not.toContain("79,99");
     expect(t).toContain("atvēlēsiet īsu brīdi");
@@ -37,7 +37,7 @@ describe("whatsapp report-ready prefills", () => {
 describe("dealer no-data WhatsApp", () => {
   it("keeps refund copy and the new sign-off", () => {
     const t = whatsappPrefillDealerNoDataRefunded("WDB1400511A032828", "24,99 €");
-    expect(t).toContain("VIN WDB1400511A032828");
+    expect(t).not.toMatch(/\(VIN\s/i);
     expect(t).toContain("Nils / IRISS");
     expect(t).toContain("PROVIN.LV");
     expect(t).not.toMatch(/—/);

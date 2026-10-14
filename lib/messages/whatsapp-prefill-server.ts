@@ -41,9 +41,7 @@ export function renderWhatsappPrefillText(query: WhatsappPrefillQuery, doc?: Mes
   if (templateId === "wa.listing_peek") {
     const vars = enrichVarsWithSharedBlocks(
       {
-        vin_phrase: "",
-        jautajumu_rinda:
-          "Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!",
+        jautajumu_rinda: "Ja rodas jautājumi, droši rakstiet šeit vai uz info@provin.lv.",
       },
       doc,
     );
@@ -59,11 +57,8 @@ export function renderWhatsappPrefillText(query: WhatsappPrefillQuery, doc?: Mes
   }
 
   if (templateId === "wa.dealer.no_data_refunded") {
-    const vin = (query.vin ?? "").trim().toUpperCase();
-    const vinLine = vin ? ` (VIN ${vin})` : "";
     const vars = enrichVarsWithSharedBlocks(
       {
-        vin_line: vinLine,
         summa: (query.summa ?? "").trim() || "24,99 €",
       },
       doc,
@@ -72,10 +67,7 @@ export function renderWhatsappPrefillText(query: WhatsappPrefillQuery, doc?: Mes
   }
 
   if (templateId === "wa.dealer.cancelled") {
-    const vin = (query.vin ?? "").trim().toUpperCase();
-    const vinLine = vin ? ` (VIN ${vin})` : "";
-    const vars = enrichVarsWithSharedBlocks({ vin_line: vinLine }, doc);
-    return resolveMessageSync(templateId, vars, { doc })?.text ?? null;
+    return resolveMessageSync(templateId, enrichVarsWithSharedBlocks({}, doc), { doc })?.text ?? null;
   }
 
   return resolveMessageSync(templateId, enrichVarsWithSharedBlocks({}, doc), { doc })?.text ?? null;

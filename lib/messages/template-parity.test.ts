@@ -5,7 +5,6 @@ import {
   whatsappPrefillSelectConsultation,
 } from "@/lib/admin-whatsapp-messages";
 import { buildClientLinkEmailCopy, formatClientLinkExpiryLong, formatClientLinkAmount } from "@/lib/client-link";
-import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
 import {
   buildDealerCancelledEmailDraft,
   buildDealerNoDataEmailDraft,
@@ -71,17 +70,12 @@ describe("template parity without overrides", () => {
 
     const cancelled = buildDealerCancelledEmailDraft({ vin: "ABC", amountEur: "24,99 €" });
     const cancelledTpl = resolveMessageSync("email.dealer.cancelled", {
-      vin_suffix: " (VIN ABC)",
       summa: "24,99 €",
-      paraksts: clientMessageSignOff(),
     });
     expect(cancelledTpl?.text).toBe(cancelled.text);
 
     const ready = buildDealerReadyEmailDraft({ vin: "ABC" });
-    const readyTpl = resolveMessageSync("email.dealer.ready_pdf", {
-      vin_suffix: " (VIN ABC)",
-      paraksts: clientMessageSignOff(),
-    });
+    const readyTpl = resolveMessageSync("email.dealer.ready_pdf", {});
     expect(readyTpl?.text).toBe(ready.text);
   });
 

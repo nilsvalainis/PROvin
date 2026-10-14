@@ -135,7 +135,8 @@ describe("order upsell quotes", () => {
     });
     expect(draft.subject).toBe("Jūsu PROVIN MINI pasūtījums: VW Passat");
     expect(draft.emailText).toContain("Labdien, Anna!");
-    expect(draft.emailText).toContain("Paldies par PROVIN MINI pasūtījumu VW Passat (VIN WVWZZZ3CZE123456).");
+    expect(draft.emailText).toContain("Paldies par PROVIN MINI pasūtījumu VW Passat.");
+    expect(draft.emailText).not.toMatch(/\(VIN\s/i);
     expect(draft.emailText).toContain("Starpību (60,00 €)");
     expect(draft.emailText).toContain(`apmaksāt šeit:\n${stripePay}`);
     expect(isStripeHostedPaymentUrl(stripePay)).toBe(true);

@@ -75,9 +75,9 @@ exports[`template snapshots (default text) > snapshot email.dealer.cancelled 1`]
 <tr><td align="center" style="padding:48px 20px;">
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: pasūtījums atcelts un maksājums atgriezts</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts (VIN WVWZZZ1KZAW000123).</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: pasūtījums atcelts un maksājums atgriezts</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Atmaksa 24,99 € veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, atbildiet uz šo e-pastu.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
@@ -85,11 +85,11 @@ exports[`template snapshots (default text) > snapshot email.dealer.cancelled 1`]
 </body>
 </html>",
   "subject": "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts",
-  "text": "Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts (VIN WVWZZZ1KZAW000123).
+  "text": "Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts.
 
 Atmaksa 24,99 € veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.
 
-Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, atbildiet uz šo e-pastu.
+Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.
 
 Ar cieņu,
 Nils / IRISS
@@ -112,7 +112,7 @@ exports[`template snapshots (default text) > snapshot email.dealer.no_data 1`] =
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: dīlera dati nav pieejami</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Informācija par naudas atmaksu:<br/>Summa: 24,99 € (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.</p>
@@ -130,7 +130,7 @@ exports[`template snapshots (default text) > snapshot email.dealer.no_data 1`] =
   "subject": "PROVIN.LV: dīlera dati nav pieejami",
   "text": "Labdien!
 
-Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
+Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
 
 Informācija par naudas atmaksu:
 Summa: 24,99 € (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).
@@ -164,7 +164,7 @@ exports[`template snapshots (default text) > snapshot email.dealer.no_data_refun
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Informācija par naudas atmaksu:<br/>Summa: 24,99 € (veikta pilnā apmērā uz to pašu maksājumu karti).</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.</p>
@@ -182,7 +182,7 @@ exports[`template snapshots (default text) > snapshot email.dealer.no_data_refun
   "subject": "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts",
   "text": "Labdien!
 
-Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
+Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
 
 Informācija par naudas atmaksu:
 Summa: 24,99 € (veikta pilnā apmērā uz to pašu maksājumu karti).
@@ -216,7 +216,7 @@ exports[`template snapshots (default text) > snapshot email.dealer.ready_pdf 1`]
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: oficiālā dīlera dati pielikumā</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Dokuments pievienots PDF pielikumā.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Dokuments pievienots PDF pielikumā.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
 </td></tr></table>
@@ -227,7 +227,7 @@ exports[`template snapshots (default text) > snapshot email.dealer.ready_pdf 1`]
   "subject": "PROVIN.LV: oficiālā dīlera dati pielikumā",
   "text": "Labdien!
 
-Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Dokuments pievienots PDF pielikumā.
+Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Dokuments pievienots PDF pielikumā.
 
 Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).
 
@@ -295,6 +295,7 @@ Pasūtīt:
 https://provin.lv/?plan=audits#home-hero
 
 Ar cieņu,
+Nils / IRISS
 PROVIN.LV",
 }
 `;
@@ -761,7 +762,7 @@ exports[`template snapshots (default text) > snapshot email.payment_confirmation
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Paldies par pasūtījumu</p>
 <p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Maksājums ir saņemts. Jūsu pasūtījums tiek apstrādāts.</p>
 <p style="margin:0 0 6px;font-size:14px;"><strong>Summa:</strong> 99,99 EUR</p>
-<p style="margin:0 0 24px;font-size:14px;"><strong>VIN:</strong> WVWZZZ1KZAW000123</p>
+<p style="margin:0 0 24px;font-size:14px;"><strong>VIN:</strong> -</p>
 <p style="margin:0 0 24px;font-size:14px;">Rēķins PDF ir pievienots šim e-pastam. To var arī lejupielādēt šeit.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
 <tr><td>
@@ -777,7 +778,6 @@ exports[`template snapshots (default text) > snapshot email.payment_confirmation
   "text": "Paldies par pasūtījumu.
 
 Summa: 99,99 EUR
-VIN: WVWZZZ1KZAW000123
 
 Rēķins PDF ir pievienots šim e-pastam.
 Rēķins (PDF): https://provin.lv/api/invoice/download?session_id=…",
@@ -800,7 +800,7 @@ exports[`template snapshots (default text) > snapshot email.report_ready.audits 
 <tr><td>
 
 <p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītā PROVIN AUDITS atskaite transportlīdzeklim ar VIN <strong>WVWZZZ1KZAW000123</strong> ir sagatavota.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.</p>
 <p style="margin:0 0 4px;font-size:15px;color:#1d1d1f;line-height:1.6;">E-pasta pielikumā atradīsiet:</p>
 <ul style="margin:4px 0 16px;padding-left:22px;color:#1d1d1f;font-size:15px;line-height:1.45;">
 <li style="margin:4px 0;">Kopsavilkuma PDF atskaiti</li>
@@ -814,10 +814,10 @@ exports[`template snapshots (default text) > snapshot email.report_ready.audits 
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN AUDITS atskaite (WVWZZZ1KZAW000123)",
+  "subject": "PROVIN AUDITS atskaite ir gatava",
   "text": "Labdien!
 
-Jūsu pasūtītā PROVIN AUDITS atskaite transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavota.
+Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.
 
 E-pasta pielikumā atradīsiet:
 - Kopsavilkuma PDF atskaiti
@@ -851,7 +851,7 @@ exports[`template snapshots (default text) > snapshot email.report_ready.dealer 
 <tr><td>
 
 <p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pieprasītie oficiālā dīlera servisa vēstures dati transportlīdzeklim ar VIN <strong>WVWZZZ1KZAW000123</strong> ir sagatavoti.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pieprasītie oficiālā dīlera servisa vēstures dati ir sagatavoti.</p>
 <p style="margin:0 0 4px;font-size:15px;color:#1d1d1f;line-height:1.6;">Pielikumā atradīsiet šādus dokumentus:</p>
 <ul style="margin:4px 0 16px;padding-left:22px;color:#1d1d1f;font-size:15px;line-height:1.45;"><li style="margin:4px 0;">OFICIALA_DILERA_DATI.pdf</li></ul>
 <p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>.</p>
@@ -862,10 +862,10 @@ exports[`template snapshots (default text) > snapshot email.report_ready.dealer 
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN servisa vēstures atskaite (WVWZZZ1KZAW000123)",
+  "subject": "PROVIN servisa vēstures atskaite ir gatava",
   "text": "Labdien!
 
-Jūsu pieprasītie oficiālā dīlera servisa vēstures dati transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavoti.
+Jūsu pieprasītie oficiālā dīlera servisa vēstures dati ir sagatavoti.
 
 Pielikumā atradīsiet šādus dokumentus:
 - OFICIALA_DILERA_DATI.pdf
@@ -898,7 +898,7 @@ exports[`template snapshots (default text) > snapshot email.report_ready.mini 1`
 <tr><td>
 
 <p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītā PROVIN MINI atskaite transportlīdzeklim ar VIN <strong>WVWZZZ1KZAW000123</strong> ir sagatavota un pievienota šī e-pasta pielikumā.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītā PROVIN MINI atskaite ir sagatavota un pievienota šī e-pasta pielikumā.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja Jums rodas kādi jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>, labprāt palīdzēsim!</p>
 <p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
 <p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
@@ -907,10 +907,10 @@ exports[`template snapshots (default text) > snapshot email.report_ready.mini 1`
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN MINI atskaite (WVWZZZ1KZAW000123)",
+  "subject": "PROVIN MINI atskaite ir gatava",
   "text": "Labdien!
 
-Jūsu pasūtītā PROVIN MINI atskaite transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavota un pievienota šī e-pasta pielikumā.
+Jūsu pasūtītā PROVIN MINI atskaite ir sagatavota un pievienota šī e-pasta pielikumā.
 
 Ja Jums rodas kādi jautājumi, droši rakstiet mums uz info@provin.lv, labprāt palīdzēsim!
 
@@ -938,8 +938,8 @@ exports[`template snapshots (default text) > snapshot email.upsell.dealer_to_aud
 <tr><td align="center" style="padding:48px 20px;">
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: pilnais audits esošajam pasūtījumam (VIN WVWZZZ1KZAW000123)</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu oficiālā dīlera datu pasūtījumam (VIN WVWZZZ1KZAW000123) varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: pilnais audits esošajam pasūtījumam</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu oficiālā dīlera datu pasūtījumam varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jau samaksāts: 24,99 €<br/>Papildu apmaksa: 75,00 €<br/>Kopā: 99,99 €</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Papildu apmaksa ir 75,00 €. Kopā sanāk pilnais audits.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jau ievadītie dati paliek. Pievienosim to, kā vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.</p>
@@ -954,10 +954,10 @@ exports[`template snapshots (default text) > snapshot email.upsell.dealer_to_aud
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN.LV: pilnais audits esošajam pasūtījumam (VIN WVWZZZ1KZAW000123)",
+  "subject": "PROVIN.LV: pilnais audits esošajam pasūtījumam",
   "text": "Labdien!
 
-Jūsu oficiālā dīlera datu pasūtījumam (VIN WVWZZZ1KZAW000123) varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.
+Jūsu oficiālā dīlera datu pasūtījumam varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.
 
 Jau samaksāts: 24,99 €
 Papildu apmaksa: 75,00 €
@@ -980,7 +980,7 @@ PROVIN.LV",
 exports[`template snapshots (default text) > snapshot email.upsell.mini_to_audit 1`] = `
 {
   "html": "<!DOCTYPE html><html lang="lv"><body><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien, Jāni!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Paldies par PROVIN MINI pasūtījumu VW Golf (VIN WVWZZZ1KZAW000123).</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Paldies par PROVIN MINI pasūtījumu VW Golf.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">PROVIN MINI ietver:<br/>✓ Konsultāciju un ieteikumus klātienes apskatei<br/>✓ OCTA negadījumus un tehnisko apskašu vēsturi<br/>✓ Sludinājuma, pārdevēja un tehnisko risku analīzi</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Tikai PROVIN AUDITS ietver:<br/>✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus<br/>✓ Oficiālo dīleru un izsoļu portālu arhīva datus</p>
@@ -991,7 +991,7 @@ exports[`template snapshots (default text) > snapshot email.upsell.mini_to_audit
   "subject": "VW Golf",
   "text": "Labdien, Jāni!
 
-Paldies par PROVIN MINI pasūtījumu VW Golf (VIN WVWZZZ1KZAW000123).
+Paldies par PROVIN MINI pasūtījumu VW Golf.
 
 Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
 
@@ -1032,8 +1032,8 @@ exports[`template snapshots (default text) > snapshot email.upsell.mini_to_deale
 <tr><td align="center" style="padding:48px 20px;">
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam (VIN WVWZZZ1KZAW000123)</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN MINI pasūtījumam (VIN WVWZZZ1KZAW000123) varam pievienot oficiālā dīlera servisa vēsturi.</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera servisa vēsturi.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Cena šim pasūtījumam: 19,99 € (atsevišķi dīlera dati maksā 24,99 €).</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Dati tiks pievienoti esošajam pasūtījumam. Jau ievadītā informācija paliek.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
@@ -1047,10 +1047,10 @@ exports[`template snapshots (default text) > snapshot email.upsell.mini_to_deale
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam (VIN WVWZZZ1KZAW000123)",
+  "subject": "PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam",
   "text": "Labdien!
 
-Jūsu PROVIN MINI pasūtījumam (VIN WVWZZZ1KZAW000123) varam pievienot oficiālā dīlera servisa vēsturi.
+Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera servisa vēsturi.
 
 Cena šim pasūtījumam: 19,99 € (atsevišķi dīlera dati maksā 24,99 €).
 
@@ -1417,11 +1417,11 @@ exports[`template snapshots (default text) > snapshot wa.dealer.cancelled 1`] = 
   "subject": undefined,
   "text": "Sveiki!
 
-Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts un maksājums atgriezts pilnā apmērā. (VIN WVWZZZ1KZAW000123)
+Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts un maksājums atgriezts pilnā apmērā.
 
 Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.
 
-Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, droši rakstiet šeit.
+Ja vēlaties pasūtīt atkārtoti, droši rakstiet šeit.
 
 Ar cieņu,
 Nils / IRISS
@@ -1435,7 +1435,7 @@ exports[`template snapshots (default text) > snapshot wa.dealer.no_data_refunded
   "subject": undefined,
   "text": "Labdien!
 
-Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
+Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
 
 Informācija par naudas atmaksu:
 Summa: 24,99 € (veikta pilnā apmērā uz to pašu maksājumu karti).
@@ -1460,9 +1460,9 @@ exports[`template snapshots (default text) > snapshot wa.listing_peek 1`] = `
   "subject": undefined,
   "text": "Labdien!
 
-Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.
+Pievienoju īsu komentāru par sludinājumu, ko apskatījām.
 
-Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!
+Ja rodas jautājumi, droši rakstiet šeit vai uz info@provin.lv.
 
 Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
@@ -1478,7 +1478,7 @@ exports[`template snapshots (default text) > snapshot wa.report_ready.audits 1`]
   "subject": undefined,
   "text": "Labdien!
 
-Jūsu pasūtītā PROVIN AUDITS atskaite transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavota.
+Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.
 
 Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!
 
@@ -1496,7 +1496,7 @@ exports[`template snapshots (default text) > snapshot wa.report_ready.dealer 1`]
   "subject": undefined,
   "text": "Labdien!
 
-Jūsu pieprasītie oficiālā dīlera servisa vēstures dati transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavoti.
+Jūsu pieprasītie oficiālā dīlera servisa vēstures dati ir sagatavoti.
 
 Ja Jums rodas papildu jautājumi, droši rakstiet šeit vai uz info@provin.lv.
 
@@ -1514,7 +1514,7 @@ exports[`template snapshots (default text) > snapshot wa.report_ready.mini 1`] =
   "subject": undefined,
   "text": "Labdien!
 
-Jūsu pasūtītā PROVIN MINI atskaite transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavota.
+Jūsu pasūtītā PROVIN MINI atskaite ir sagatavota.
 
 Ja Jums rodas kādi jautājumi, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!
 
@@ -1549,7 +1549,7 @@ exports[`template snapshots (default text) > snapshot wa.upsell.dealer_to_audit 
   "subject": undefined,
   "text": "Labdien!
 
-Jūsu oficiālā dīlera datu pasūtījumam (VIN WVWZZZ1KZAW000123) varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.
+Jūsu oficiālā dīlera datu pasūtījumam varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.
 
 Jau samaksāts: 24,99 €
 Papildu apmaksa: 75,00 €
@@ -1571,7 +1571,7 @@ exports[`template snapshots (default text) > snapshot wa.upsell.mini_to_audit 1`
   "subject": undefined,
   "text": "Labdien, Jāni!
 
-Paldies par PROVIN MINI pasūtījumu VW Golf (VIN WVWZZZ1KZAW000123).
+Paldies par PROVIN MINI pasūtījumu VW Golf.
 
 Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
 
@@ -1604,7 +1604,7 @@ exports[`template snapshots (default text) > snapshot wa.upsell.mini_to_dealer 1
   "subject": undefined,
   "text": "Labdien!
 
-Jūsu PROVIN MINI pasūtījumam (VIN WVWZZZ1KZAW000123) varam pievienot oficiālā dīlera servisa vēsturi par 19,99 €.
+Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera servisa vēsturi par 19,99 €.
 
 Dati tiks pievienoti esošajam pasūtījumam.
 

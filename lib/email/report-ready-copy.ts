@@ -13,8 +13,7 @@ import {
   defaultGoogleReviewBlock,
   defaultSignOffBlock,
 } from "@/lib/messages/shared-blocks";
-import { getMessageTemplateDef } from "@/lib/messages/registry";
-import { renderTemplateString } from "@/lib/messages/render-template";
+import { resolveMessageSync } from "@/lib/messages/resolve-message";
 import { buildReportReadyEmailVars, reportReadyTemplateId } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
@@ -39,18 +38,10 @@ export function resolveReportReadyProductKind(args: {
   return "audits";
 }
 
-function vinPhrase(vin: string): string {
-  return vin ? ` transportlīdzeklim ar VIN ${vin}` : "";
-}
-
-export function buildReportReadySubject(kind: ReportReadyProductKind, vin: string): string {
-  if (kind === "dealer") {
-    return vin ? `PROVIN servisa vēstures atskaite (${vin})` : "PROVIN servisa vēstures atskaite";
-  }
-  if (kind === "mini") {
-    return vin ? `PROVIN MINI atskaite (${vin})` : "PROVIN MINI atskaite";
-  }
-  return vin ? `PROVIN AUDITS atskaite (${vin})` : "PROVIN AUDITS atskaite";
+export function buildReportReadySubject(kind: ReportReadyProductKind, _vin?: string): string {
+  if (kind === "dealer") return "PROVIN servisa vēstures atskaite ir gatava";
+  if (kind === "mini") return "PROVIN MINI atskaite ir gatava";
+  return "PROVIN AUDITS atskaite ir gatava";
 }
 
 function reportReadyClosingLines(includeGoogleReview?: boolean): string[] {
@@ -72,15 +63,9 @@ export function buildReportReadyPlainText(
   templatesDoc?: MessageTemplatesDoc | null,
 ): string {
   const vars = buildReportReadyEmailVars(opts);
-  const def = getMessageTemplateDef(reportReadyTemplateId(opts.kind));
-  const override = templatesDoc?.overrides[reportReadyTemplateId(opts.kind)];
-  const bodyTpl = override?.body ?? def?.body;
-  if (bodyTpl) {
-    const withSign = { ...vars, paraksts: vars.paraksts || clientMessageSignOff() };
-    return renderTemplateString(bodyTpl, withSign);
-  }
+  const rendered = resolveMessageSync(reportReadyTemplateId(opts.kind), vars, { doc: templatesDoc });
+  if (rendered?.text) return rendered.text;
 
-  const vin = opts.vin.trim();
   const files = opts.attachmentLines.filter((n) => n.trim());
   const closing = reportReadyClosingLines(opts.includeGoogleReview);
 
@@ -88,7 +73,7 @@ export function buildReportReadyPlainText(
     const parts = [
       "Labdien!",
       "",
-      `Jūsu pieprasītie oficiālā dīlera servisa vēstures dati${vinPhrase(vin)} ir sagatavoti.`,
+      "Jūsu pieprasītie oficiālā dīlera servisa vēstures dati ir sagatavoti.",
       "",
       "Pielikumā atradīsiet šādus dokumentus:",
     ];
@@ -108,7 +93,7 @@ export function buildReportReadyPlainText(
     return [
       "Labdien!",
       "",
-      `Jūsu pasūtītā PROVIN MINI atskaite${vinPhrase(vin)} ir sagatavota un pievienota šī e-pasta pielikumā.`,
+      "Jūsu pasūtītā PROVIN MINI atskaite ir sagatavota un pievienota šī e-pasta pielikumā.",
       "",
       "Ja Jums rodas kādi jautājumi, droši rakstiet mums uz info@provin.lv, labprāt palīdzēsim!",
       "",
@@ -119,7 +104,7 @@ export function buildReportReadyPlainText(
   return [
     "Labdien!",
     "",
-    `Jūsu pasūtītā PROVIN AUDITS atskaite${vinPhrase(vin)} ir sagatavota.`,
+    "Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.",
     "",
     "E-pasta pielikumā atradīsiet:",
     "",

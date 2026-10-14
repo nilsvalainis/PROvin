@@ -15,7 +15,7 @@ describe("report-ready product emails", () => {
 
   it("builds dealer subject without a consumer discount", () => {
     expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962")).toBe(
-      "PROVIN servisa vēstures atskaite (WAUZZZF44LA062962)",
+      "PROVIN servisa vēstures atskaite ir gatava",
     );
     const text = buildReportReadyPlainText({
       kind: "dealer",
@@ -35,7 +35,7 @@ describe("report-ready product emails", () => {
   });
 
   it("builds mini and audits bodies", () => {
-    expect(buildReportReadySubject("mini", "ABC")).toBe("PROVIN MINI atskaite (ABC)");
+    expect(buildReportReadySubject("mini", "ABC")).toBe("PROVIN MINI atskaite ir gatava");
     expect(buildReportReadyPlainText({ kind: "mini", vin: "ABC", attachmentLines: [] })).toContain(
       "PROVIN MINI atskaite",
     );

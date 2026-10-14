@@ -22,7 +22,7 @@ describe("dealer-data-client-email drafts", () => {
     });
     expect(d.kind).toBe("no_data");
     expect(d.subject).toMatch(/atgriezts/i);
-    expect(d.text).toContain("WDB1400511A032828");
+    expect(d.text).not.toMatch(/\(VIN\s/i);
     expect(d.text).toContain("24,99 €");
     expect(d.text).toMatch(/atcelta rezervētā summa/);
     expect(d.text).toContain("PROVIN AUDITS");
@@ -54,7 +54,7 @@ describe("dealer-data-client-email drafts", () => {
 describe("dealer no-data WhatsApp + HTML CTA", () => {
   it("WA template matches A + soft CTA", () => {
     const t = whatsappPrefillDealerNoDataRefunded("WDB1400511A032828", "24,99 €");
-    expect(t).toContain("VIN WDB1400511A032828");
+    expect(t).not.toMatch(/\(VIN\s/i);
     expect(t).toContain("24,99 €");
     expect(t).toContain("Pasūtīt: https://provin.lv");
     expect(t).not.toMatch(/—/);

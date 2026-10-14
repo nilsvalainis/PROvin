@@ -4,26 +4,9 @@ import {
   MINI_TO_AUDITS_CAR_PLACEHOLDER,
   MINI_TO_AUDITS_NAME_PLACEHOLDER,
   MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
-  MINI_TO_AUDITS_VIN_PLACEHOLDER,
 } from "@/lib/email/mini-to-audits-approved-text";
 import { latvianVocativeFirstName } from "@/lib/email/mini-to-audits-recommendation";
-import { clientMessageSignOff, googleReviewPlainBlock, type ReportReadyProductKind } from "@/lib/email/report-ready-copy";
-import { defaultAuditsCtaBlock, defaultRefundBankNote } from "@/lib/messages/shared-blocks";
-
-export function vinSuffixForEmail(vin?: string | null): string {
-  const v = (vin ?? "").trim().toUpperCase();
-  return v ? ` (VIN ${v})` : "";
-}
-
-export function vinPhraseForBody(vin?: string | null): string {
-  const v = (vin ?? "").trim().toUpperCase();
-  return v ? ` transportlīdzeklim ar VIN ${v}` : "";
-}
-
-export function vinLineWa(vin?: string | null): string {
-  const v = (vin ?? "").trim().toUpperCase();
-  return v ? ` (VIN ${v})` : "";
-}
+import type { ReportReadyProductKind } from "@/lib/email/report-ready-copy";
 
 export function amountLineDefault(amountEur?: string | null): string {
   const a = (amountEur ?? "").trim();
@@ -44,7 +27,6 @@ export function buildReportReadyEmailVars(opts: {
   attachmentLines: string[];
   includeGoogleReview?: boolean;
 }): Record<string, string> {
-  const vin = opts.vin.trim();
   const files = opts.attachmentLines.filter((n) => n.trim());
   let pielikumi = "";
   if (opts.kind === "audits") {
@@ -52,12 +34,9 @@ export function buildReportReadyEmailVars(opts: {
   } else if (opts.kind === "dealer" && files.length > 0) {
     pielikumi = ["", ...files.map((n) => `- ${n}`)].join("\n");
   }
-  return {
-    vin,
-    pielikumi,
-    google_atsauksme: opts.includeGoogleReview ? googleReviewPlainBlock() : "",
-    paraksts: clientMessageSignOff(),
-  };
+  const vars: Record<string, string> = { pielikumi };
+  if (!opts.includeGoogleReview) vars.google_atsauksme = "";
+  return vars;
 }
 
 export function whatsappQuestionsLine(kind: ReportReadyProductKind): string {
@@ -72,10 +51,7 @@ export function whatsappQuestionsLine(kind: ReportReadyProductKind): string {
 
 export function buildWaReportReadyVars(opts: { kind: ReportReadyProductKind; vin?: string | null }): Record<string, string> {
   return {
-    vin_phrase: vinPhraseForBody(opts.vin),
     jautajumu_rinda: whatsappQuestionsLine(opts.kind),
-    google_atsauksme: googleReviewPlainBlock(),
-    paraksts: clientMessageSignOff(),
   };
 }
 
@@ -85,11 +61,7 @@ export function buildDealerNoDataVars(opts: {
   refunded: boolean;
 }): Record<string, string> {
   return {
-    vin_suffix: vinSuffixForEmail(opts.vin),
     summa: amountLineDefault(opts.amountEur),
-    refund_piezime: defaultRefundBankNote(),
-    audits_cta: defaultAuditsCtaBlock(),
-    paraksts: clientMessageSignOff(),
   };
 }
 
@@ -103,37 +75,30 @@ export function buildUpsellEmailVars(opts: {
   customerName?: string | null;
   car?: string | null;
 }): Record<string, string> {
-  const vin_suffix = vinSuffixForEmail(opts.vin);
   const prior = formatEurFromCents(opts.priorCents);
   const charge = formatEurFromCents(opts.chargeCents);
   const total = formatEurFromCents(opts.targetCents);
   if (opts.kind === "mini_to_dealer") {
     return {
-      vin_suffix,
       papildus_cena: charge,
       kataloga_cena: formatEurFromCents(DEALER_CATALOG_CENTS),
       maksajuma_saite: opts.url,
-      paraksts: clientMessageSignOff(),
     };
   }
   if (opts.kind === "dealer_to_audit") {
     return {
-      vin_suffix,
       jau_samaksats: prior,
       papildus_cena: charge,
       kopa: total,
       maksajuma_saite: opts.url,
-      paraksts: clientMessageSignOff(),
     };
   }
   const vards = latvianVocativeFirstName(opts.customerName) || MINI_TO_AUDITS_NAME_PLACEHOLDER;
   const auto = (opts.car ?? "").trim() || MINI_TO_AUDITS_CAR_PLACEHOLDER;
-  const vin = (opts.vin ?? "").trim().toUpperCase() || MINI_TO_AUDITS_VIN_PLACEHOLDER;
   const carForSubject = (opts.car ?? "").trim();
   return {
     vards,
     auto,
-    vin,
     starpiba: charge.replace(/\s*€\s*$/u, "").trim(),
     maksajuma_saite: opts.url,
     temats_auto: carForSubject ? `Jūsu PROVIN MINI pasūtījums: ${carForSubject}` : "Jūsu PROVIN MINI pasūtījums",
@@ -156,21 +121,17 @@ export function buildUpsellWaVars(opts: {
   const emailVars = buildUpsellEmailVars(opts);
   if (opts.kind === "mini_to_dealer") {
     return {
-      vin_suffix: emailVars.vin_suffix ?? "",
       papildus_cena: emailVars.papildus_cena ?? "",
       maksajuma_saite: opts.url,
-      paraksts: clientMessageSignOff(),
     };
   }
-  const vin_suffix = vinSuffixForEmail(opts.vin);
-  const lead = `Jūsu oficiālā dīlera datu pasūtījumam${vin_suffix} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`;
+  const lead = "Jūsu oficiālā dīlera datu pasūtījumam varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.";
   return {
     lead,
     jau_samaksats: formatEurFromCents(opts.priorCents),
     papildus_cena: formatEurFromCents(opts.chargeCents),
     kopa: formatEurFromCents(opts.targetCents),
     maksajuma_saite: opts.url,
-    paraksts: clientMessageSignOff(),
   };
 }
 
@@ -183,14 +144,12 @@ export function miniToAuditsVarsFromDraftInput(opts: {
 }): Record<string, string> {
   const vards = latvianVocativeFirstName(opts.customerName) || MINI_TO_AUDITS_NAME_PLACEHOLDER;
   const auto = (opts.car ?? "").trim().replace(/\s+/g, " ") || MINI_TO_AUDITS_CAR_PLACEHOLDER;
-  const vin = (opts.vin ?? "").trim().toUpperCase() || MINI_TO_AUDITS_VIN_PLACEHOLDER;
   const pay = (opts.paymentUrl ?? "").trim() || MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER;
   const starpiba = opts.differencePrice.replace(/\s*€\s*$/u, "").trim();
   const carForSubject = (opts.car ?? "").trim();
   return {
     vards,
     auto,
-    vin,
     starpiba,
     maksajuma_saite: pay,
     temats_auto: carForSubject ? `Jūsu PROVIN MINI pasūtījums: ${carForSubject}` : "Jūsu PROVIN MINI pasūtījums",

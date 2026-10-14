@@ -2,6 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { renderTemplateString, renderTemplateSubject } from "@/lib/messages/render-template";
+import {
+  enrichVarsWithSharedBlocks,
+  messageTemplatesDocFromOverrides,
+} from "@/lib/messages/shared-block-vars";
 import { previewMessage, validateMessageOverride } from "@/lib/messages/resolve-message";
 import type { MessageChannel, MessageTemplateDef } from "@/lib/messages/types";
 
@@ -71,6 +75,23 @@ export function AdminMessageTemplatesPage() {
     [channelRows, selectedId],
   );
 
+  const templatesDoc = useMemo(() => {
+    const overrides: Record<string, { subject?: string; body: string; updatedAt: string; updatedBy: string }> =
+      {};
+    for (const r of rows) {
+      if (r.override) overrides[r.id] = r.override;
+    }
+    if (selected?.channel === "block") {
+      overrides[selected.id] = {
+        body,
+        subject: selected.subject != null ? subject : undefined,
+        updatedAt: "",
+        updatedBy: "",
+      };
+    }
+    return messageTemplatesDocFromOverrides(overrides);
+  }, [rows, selected?.id, selected?.channel, body, subject]);
+
   useEffect(() => {
     if (!selected) return;
     setSelectedId(selected.id);
@@ -109,17 +130,19 @@ export function AdminMessageTemplatesPage() {
 
   const preview = useMemo(() => {
     if (!selected) return null;
-    return previewMessage(selected.id, { ...Object.fromEntries(selected.vars.map((v) => [v.key, v.sample])) });
-  }, [selected]);
+    const partial = Object.fromEntries(selected.vars.map((v) => [v.key, v.sample]));
+    return previewMessage(selected.id, partial, templatesDoc);
+  }, [selected, templatesDoc]);
 
   const previewRendered = useMemo(() => {
     if (!selected) return null;
     const partial: Record<string, string> = {};
     for (const v of selected.vars) partial[v.key] = v.sample;
-    const text = renderTemplateString(body, partial);
-    const subj = selected.subject != null ? renderTemplateSubject(subject, partial) : undefined;
+    const merged = enrichVarsWithSharedBlocks(partial, templatesDoc);
+    const text = renderTemplateString(body, merged);
+    const subj = selected.subject != null ? renderTemplateSubject(subject, merged) : undefined;
     return { text, subject: subj };
-  }, [selected, body, subject]);
+  }, [selected, body, subject, templatesDoc]);
 
   const save = async () => {
     if (!selected || !validation.ok) return;
@@ -400,7 +423,7 @@ export function AdminMessageTemplatesPage() {
         <div className="rounded-[14px] border border-[#e5e5ea] bg-white p-4">
           <div className="mb-2 flex items-center justify-between text-[12px] text-[#8e8e93]">
             <span>Priekšskatījums</span>
-            <span>paraugs: WVWZZZ1KZAW000123</span>
+            <span>kopīgie bloki no aktuālā saglabājuma</span>
           </div>
           {selected?.channel === "email" ? (
             <div className="overflow-hidden rounded-xl border border-[#e5e5ea]">

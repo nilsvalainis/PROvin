@@ -7,7 +7,6 @@ import {
   MINI_TO_AUDITS_CAR_PLACEHOLDER,
   MINI_TO_AUDITS_NAME_PLACEHOLDER,
   MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
-  MINI_TO_AUDITS_VIN_PLACEHOLDER,
 } from "@/lib/email/mini-to-audits-approved-text";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import { miniToAuditsVarsFromDraftInput } from "@/lib/messages/template-vars";
@@ -20,7 +19,6 @@ export {
   MINI_TO_AUDITS_CAR_PLACEHOLDER,
   MINI_TO_AUDITS_NAME_PLACEHOLDER,
   MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
-  MINI_TO_AUDITS_VIN_PLACEHOLDER,
 };
 
 export type MiniToAuditsRecommendationInput = {
@@ -59,18 +57,6 @@ export function miniToAuditsGreeting(customerName?: string | null): string {
   return `Labdien, ${vocative || MINI_TO_AUDITS_NAME_PLACEHOLDER}!`;
 }
 
-export function miniToAuditsVehiclePhrase(opts: {
-  vin?: string | null;
-  car?: string | null;
-}): string {
-  const vin = (opts.vin ?? "").trim().toUpperCase();
-  const car = (opts.car ?? "").trim().replace(/\s+/g, " ");
-  if (car && vin) return `${car} (VIN ${vin})`;
-  if (car) return car;
-  if (vin) return `VIN ${vin}`;
-  return "";
-}
-
 function amountWithoutEuro(price: string): string {
   return price.replace(/\s*€\s*$/u, "").trim();
 }
@@ -97,12 +83,10 @@ export function buildMiniToAuditsRecommendationDraft(
 
   const vards = latvianVocativeFirstName(opts.customerName) || MINI_TO_AUDITS_NAME_PLACEHOLDER;
   const auto = (opts.car ?? "").trim().replace(/\s+/g, " ") || MINI_TO_AUDITS_CAR_PLACEHOLDER;
-  const vin = (opts.vin ?? "").trim().toUpperCase() || MINI_TO_AUDITS_VIN_PLACEHOLDER;
   const pay = (opts.paymentUrl ?? "").trim() || MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER;
   const starpiba = amountWithoutEuro(opts.differencePrice);
   const text = MINI_TO_AUDITS_APPROVED_TEXT.replaceAll("{vards}", vards)
     .replaceAll("{auto}", auto)
-    .replaceAll("{vin}", vin)
     .replaceAll("{starpiba}", starpiba)
     .replaceAll("{maksajuma_saite}", pay);
   const carForSubject = (opts.car ?? "").trim().replace(/\s+/g, " ");
