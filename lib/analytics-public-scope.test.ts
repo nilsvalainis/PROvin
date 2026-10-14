@@ -20,6 +20,8 @@ describe("isPublicSiteAnalyticsPath", () => {
     expect(isPublicSiteAnalyticsPath("/lv/demo")).toBe(false);
     expect(isPublicSiteAnalyticsPath("/en/demo/something")).toBe(false);
     expect(isPublicSiteAnalyticsPath("/api/checkout")).toBe(false);
+    expect(isPublicSiteAnalyticsPath("/b2b-demo")).toBe(false);
+    expect(isPublicSiteAnalyticsPath("/b2b-demo/pasutijumi")).toBe(false);
   });
 });
 

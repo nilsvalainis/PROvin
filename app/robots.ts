@@ -14,6 +14,8 @@ export default function robots(): MetadataRoute.Robots {
           "/test-pricing",
           "/test-checkout",
           "/demo/",
+          "/b2b-demo",
+          "/b2b-demo/",
           "/view/",
           "/p/",
           "/s/",

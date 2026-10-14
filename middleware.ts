@@ -26,6 +26,7 @@ import {
 import { SEO_LOCALE_HEADER } from "./lib/seo-public-paths";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
 import { isClientLinkPath } from "./lib/client-link";
+import { decideB2bDemoHostRequest } from "./lib/b2b-demo-host";
 
 /* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
    papildu redirectus; next-intl ar vienu lokalizāciju un `localePrefix: "as-needed"`/`never` deva 307 cilpu uz `/`. */
@@ -59,6 +60,24 @@ function requestWithLocaleHeader(request: NextRequest, locale: string): NextRequ
 
 export default function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
+  const b2bDemo = decideB2bDemoHostRequest(request.headers.get("host"), pathname);
+  if (b2bDemo.action === "redirect") {
+    const dest = request.nextUrl.clone();
+    dest.pathname = b2bDemo.pathname;
+    dest.search = pathname === "/" ? "" : dest.search;
+    return redirect307(dest);
+  }
+  if (b2bDemo.action === "not_found") {
+    return new NextResponse("Not Found", { status: 404, headers: { "X-Robots-Tag": "noindex, nofollow" } });
+  }
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+  if (pathname === "/b2b-demo" || pathname.startsWith("/b2b-demo/")) {
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return res;
+  }
 
   if (isApexHostname(request.headers.get("host"))) {
     const dest = wwwOrigin(request.nextUrl);
@@ -191,6 +210,6 @@ export default function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next|_vercel|sitemap\\.xml|robots\\.txt|.*\\..*).*)",
+    "/((?!_next|_vercel|sitemap\\.xml|robots\\.txt|.*\\..*).*)",
   ],
 };
