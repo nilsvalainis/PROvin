@@ -107,3 +107,33 @@ export function AdminSourceHealthStrip({ doc, items }: { doc: SourceHealthDoc; i
     </div>
   );
 }
+
+/** Kompakta rinda lapas apakšā: „Avotu stāvoklis · N / M OK ›”; pieskāriens izvērš pilno joslu. */
+export function AdminSourceHealthCompact({ doc, items }: { doc: SourceHealthDoc; items: SourceHealthItem[] }) {
+  const [open, setOpen] = useState(false);
+  const [nowMs, setNowMs] = useState<number | null>(null);
+  useEffect(() => setNowMs(Date.now()), []);
+  const auto = items.filter((it) => !it.manual);
+  const ok = nowMs == null ? null : auto.filter((it) => sourceHealthColor(doc.sources[it.id], nowMs) === "green").length;
+  const bad = nowMs == null ? 0 : auto.filter((it) => sourceHealthColor(doc.sources[it.id], nowMs) === "red").length;
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between py-1 text-left"
+      >
+        <span className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#86868b]">Avotu stāvoklis</span>
+        <span className="text-[11px] tabular-nums" style={{ color: bad ? "#DC2626" : "#86868b" }}>
+          {ok == null ? "…" : `${ok} / ${auto.length} OK${bad ? ` · ${bad} kļūda` : ""}`} {open ? "▾" : "›"}
+        </span>
+      </button>
+      {open ? (
+        <div className="mt-2">
+          <AdminSourceHealthStrip doc={doc} items={items} />
+        </div>
+      ) : null}
+    </div>
+  );
+}

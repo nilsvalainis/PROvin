@@ -141,7 +141,8 @@ function refreshCount(url: string): Promise<void> {
       for (const [k, v] of Object.entries(json)) {
         if (typeof v === "number" && Number.isFinite(v)) next[k] = Math.max(0, Math.floor(v));
       }
-      e.data = next;
+      // Trūkstošs lauks (apakšvaicājums neizdevās) paliek ar iepriekšējo vērtību — nelec uz 0.
+      e.data = { ...(e.data ?? {}), ...next };
       try {
         window.sessionStorage.setItem(SS_PREFIX + url, JSON.stringify(next));
       } catch {
@@ -171,7 +172,10 @@ function useCount(url: string, key: "openCount" | "unseenCount" | "activeCount" 
   }, [url, key]);
   useEffect(() => {
     void refreshCount(url);
-    const t = window.setInterval(() => void refreshCount(url), 45_000);
+    // Fona cilnē nepollējam (telefonā taupa tīklu/bateriju); atgriežoties — focus atjauno.
+    const t = window.setInterval(() => {
+      if (document.visibilityState === "visible") void refreshCount(url);
+    }, 45_000);
     const onFocus = () => void refreshCount(url);
     window.addEventListener("focus", onFocus);
     window.addEventListener("admin-orders-changed", onFocus);
@@ -191,12 +195,15 @@ function ordersBadgeTone(badges: { ordersOverdue: number; ordersUrgent: number }
   };
 }
 
+/** Visi žetoni vienā pieprasījumā (agrāk 3). */
+const BADGES_URL = "/api/admin/badges";
+
 function useBadges() {
-  const fast = useCount("/api/admin/listing-peeks/open-count", "openCount");
-  const partners = useCount("/api/admin/partners/unseen-count", "unseenCount");
-  const orders = useCount("/api/admin/orders/active-count", "activeCount");
-  const ordersOverdue = useCount("/api/admin/orders/active-count", "overdueCount");
-  const ordersUrgent = useCount("/api/admin/orders/active-count", "urgentCount");
+  const fast = useCount(BADGES_URL, "openCount");
+  const partners = useCount(BADGES_URL, "unseenCount");
+  const orders = useCount(BADGES_URL, "activeCount");
+  const ordersOverdue = useCount(BADGES_URL, "overdueCount");
+  const ordersUrgent = useCount(BADGES_URL, "urgentCount");
   return { fast, partners, orders, ordersOverdue, ordersUrgent } as const;
 }
 
