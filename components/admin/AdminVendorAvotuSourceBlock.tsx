@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { Fragment } from "react";
 import { LossAmountFieldChrome } from "@/components/admin/LossAmountFieldChrome";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
@@ -210,6 +211,7 @@ export function AdminVendorAvotuSourceBlock({
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
+        <AdminMileageRangeBar rows={displayRows} />
         {blockKey === "carvertical" ? (
           <AdminCarVerticalPurchaseButton disabled={disabled} readOnly={readOnly} />
         ) : null}
