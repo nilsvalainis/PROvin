@@ -189,10 +189,6 @@ export const IGNORED_SEARCH_PARAM_KEYS = new Set([
   "refid",
   "ref",
   "sr",
-  "e70",
-  "carlist-e70",
-  "categoryid-category",
-  "carlist-category",
 ]);
 
 /** Openlane `fuelTypes=100003` (IRISS: 100003 dīzelis, 100001 benzīns, 100013 hibrīds). */
@@ -414,7 +410,10 @@ export function parseOpenlaneMakesModels(raw: string): MakeModelPair[] {
 }
 
 export function parseZeroUnboundedRange(raw: string): { from: number | null; to: number | null } {
-  const s = raw.trim();
+  const s = raw
+    .trim()
+    .replace(/[\u2013\u2014]/g, ",")
+    .replace(/\uFF1A/g, ":");
   if (!s) return { from: null, to: null };
   const pair = s.match(/^(\d*)\s*[,:]\s*(\d*)$/);
   if (pair) {
@@ -428,6 +427,23 @@ export function parseZeroUnboundedRange(raw: string): { from: number | null; to:
   const n = Number.parseInt(s.replace(/[^\d]/g, ""), 10);
   if (!Number.isFinite(n) || n <= 0) return { from: null, to: null };
   return { from: n, to: n };
+}
+
+/**
+ * mobile.de `fr` / `ml` / `p` / `pw` ir `no:līdz`.
+ * `2018:` un `2018` bez augšējās robežas = tikai from, nekad 2018-2018.
+ */
+export function parseMobileDeColonRange(raw: string): { from: number | null; to: number | null } {
+  const s = raw
+    .trim()
+    .replace(/[\u2013\u2014]/g, ",")
+    .replace(/\uFF1A/g, ":");
+  if (!s) return { from: null, to: null };
+  if (/^\d+$/.test(s)) {
+    const n = Number.parseInt(s, 10);
+    return Number.isFinite(n) && n > 0 ? { from: n, to: null } : { from: null, to: null };
+  }
+  return parseZeroUnboundedRange(s);
 }
 
 export function mapOpenlaneFuelToken(raw: string): string | null {

@@ -259,6 +259,7 @@ export function ingestFilterForListingSource(
     makeIds: [],
     makeNames: [],
     modelId: null,
+    modelIds: [],
     modelName: "",
     yearFrom: null,
     yearTo: null,

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { resolveEcarstradeMake, resolveEcarstradeModel, resolveMakeModelFromBrand } from "@/lib/iriss-listings-ecarstrade-catalog";
-import { isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
+import {
+  AUTOBID_BRAND_ID_TO_NAME,
+  resolveEcarstradeMake,
+  resolveEcarstradeModel,
+  resolveMakeModelFromBrand,
+} from "@/lib/iriss-listings-ecarstrade-catalog";
+import { isSingleVehicleListingUrl, parseMobileDeColonRange, parseZeroUnboundedRange } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
   ecarstradeSearchUrl,
   fillFilterGaps,
@@ -562,5 +567,136 @@ describe("eCarsTrade search mapper", () => {
     expect(url).toMatch(/category\[\]=/);
     expect(url).not.toContain("places_from=5");
     expect(url).not.toContain("color[]=Black");
+  });
+
+  it("maps Autobid e70 / gearboxId gearbox and does not invent brandId 12 as Mercedes", () => {
+    expect(AUTOBID_BRAND_ID_TO_NAME["12"]).toBeUndefined();
+    expect(AUTOBID_BRAND_ID_TO_NAME["1"]).toBe("BMW");
+    expect(AUTOBID_BRAND_ID_TO_NAME["2"]).toBe("Volkswagen");
+    expect(AUTOBID_BRAND_ID_TO_NAME["3"]).toBe("Mercedes");
+    expect(AUTOBID_BRAND_ID_TO_NAME["10"]).toBe("Audi");
+    expect(AUTOBID_BRAND_ID_TO_NAME["49"]).toBe("Volvo");
+    const raw = parseListingSearchUrl("https://autobid.de/en/search-results?brandId-brand=12&name-model=E");
+    expect(raw.makeIds).toEqual([]);
+    expect(raw.unmapped.some((u) => u.key === "brandId" && u.value === "12")).toBe(true);
+    const e70 = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?brandId=3&name-model=E&e70=Automatic",
+    );
+    expect(e70.makeNames).toEqual(["Mercedes"]);
+    expect(e70.modelName).toBe("E-Class");
+    expect(e70.modelId).toBe(815);
+    expect(e70.gearboxes).toEqual(["Automatic"]);
+    const idKey = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?brandId=1&name=5&gearboxId=Automatic&carList-e70=Automatik",
+    );
+    expect(idKey.makeNames).toEqual(["BMW"]);
+    expect(idKey.modelName).toBe("5 Series");
+    expect(idKey.modelId).toBe(83);
+    expect(idKey.gearboxes).toEqual(["Automatic"]);
+  });
+
+  it("maps Auto1 limo/combi, Openlane MPV/Berline/Break, Autobid category and mobile.de SportsCar", () => {
+    expect(parseListingSearchUrl("https://www.auto1.com/en/app/merchant/cars?bodyTypes=LIMO").bodies).toEqual(["Saloon"]);
+    expect(parseListingSearchUrl("https://www.auto1.com/en/app/merchant/cars?bodyTypes=COMBI").bodies).toEqual([
+      "Estate Car",
+    ]);
+    expect(parseListingSearchUrl("https://www.auto1.com/en/app/merchant/cars?bodyTypes=LIMOUSINE").bodies).toEqual([
+      "Saloon",
+    ]);
+    expect(parseListingSearchUrl("https://www.openlane.eu/en/findcar?bodyTypes=mpv").bodies).toEqual(["Van/Minibus"]);
+    expect(parseListingSearchUrl("https://www.openlane.eu/en/findcar?bodyTypes=berline").bodies).toEqual(["Saloon"]);
+    expect(parseListingSearchUrl("https://www.openlane.eu/en/findcar?bodyTypes=break").bodies).toEqual(["Estate Car"]);
+    expect(
+      parseListingSearchUrl("https://autobid.de/en/search-results?categoryId-category=Limousine").bodies,
+    ).toEqual(["Saloon"]);
+    expect(parseListingSearchUrl("https://autobid.de/en/search-results?carList-category=Kombi").bodies).toEqual([
+      "Estate Car",
+    ]);
+    expect(parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?c=SportsCar").bodies).toEqual([
+      "Sports Car/Coupe",
+    ]);
+  });
+
+  it("keeps mobile.de fr=2018: as year_from only and AUTOMATIC_GEAR as Automatic only", () => {
+    expect(parseZeroUnboundedRange("2018:")).toEqual({ from: 2018, to: null });
+    expect(parseMobileDeColonRange("2018:")).toEqual({ from: 2018, to: null });
+    expect(parseMobileDeColonRange("2018")).toEqual({ from: 2018, to: null });
+    expect(parseMobileDeColonRange("2018:2022")).toEqual({ from: 2018, to: 2022 });
+    const filter = parseListingSearchUrl(
+      "https://suchen.mobile.de/fahrzeuge/search.html?ms=17700;;;Pajero&tr=AUTOMATIC_GEAR&fr=2018:",
+    );
+    expect(filter.yearFrom).toBe(2018);
+    expect(filter.yearTo).toBeNull();
+    expect(filter.gearboxes).toEqual(["Automatic"]);
+    expect(filter.gearboxes).not.toContain("Semi-automatic");
+    const url = ecarstradeSearchUrl(filter)!;
+    expect(url).toContain("year_from=2018");
+    expect(url).not.toContain("year_to=");
+    expect(url).toContain("gearbox[]=Automatic");
+    expect(url).not.toContain("Semi-automatic");
+  });
+
+  it("maps Pajero, Mercedes E, BMW 5 and Auto1 BMW 5er+7er as exact model[] values", () => {
+    const pajero = parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=17700;;;Pajero");
+    expect(pajero.makeNames).toEqual(["Mitsubishi"]);
+    expect(pajero.modelName).toBe("Pajero");
+    expect(pajero.modelId).toBe(897);
+    expect(ecarstradeSearchUrl(pajero)).toContain("model[]=897");
+
+    const mercedesE = parseListingSearchUrl("https://autobid.de/en/search-results?brandId=3&name-model=E");
+    expect(mercedesE.makeNames).toEqual(["Mercedes"]);
+    expect(mercedesE.modelName).toBe("E-Class");
+    expect(mercedesE.modelId).toBe(815);
+    expect(ecarstradeSearchUrl(mercedesE)).toContain("model[]=815");
+
+    const bmw5 = parseListingSearchUrl("https://autobid.de/en/search-results?brandId=1&name-model=5");
+    expect(bmw5.makeNames).toEqual(["BMW"]);
+    expect(bmw5.modelName).toBe("5 Series");
+    expect(bmw5.modelId).toBe(83);
+    expect(ecarstradeSearchUrl(bmw5)).toContain("model[]=83");
+
+    const both = parseListingSearchUrl(
+      "https://www.auto1.com/en/app/merchant/cars?manufacturers=BMW%7C5er;BMW%7C7er",
+    );
+    expect(both.makeIds).toEqual([7]);
+    expect(both.modelIds).toEqual([83, 85]);
+    expect(both.modelName).toMatch(/5 Series/);
+    expect(both.modelName).toMatch(/7 Series/);
+    const bothUrl = ecarstradeSearchUrl(both)!;
+    expect(bothUrl).toContain("model[]=83");
+    expect(bothUrl).toContain("model[]=85");
+
+    const brand = filterFromBrandModel("BMW 5/7");
+    expect(brand.makeIds).toEqual([7]);
+    expect(brand.modelIds).toEqual([83, 85]);
+
+    const jeepPajero = planEcarstradeSearchUrls({
+      id: "md-pajero",
+      brandModel: "Jeep, Mitsubishi Pajero",
+      listingLinkAuto1: [""],
+      listingLinkOpenline: [""],
+      listingLinkAutobid: [""],
+      listingLinkMobile: ["https://suchen.mobile.de/fahrzeuge/search.html?ms=17700;;;"],
+      listingLinkEcarstrade: [""],
+    });
+    const mit = jeepPajero.find((p) => p.filter.makeNames.includes("Mitsubishi"));
+    expect(mit?.filter.modelId).toBe(897);
+    expect(mit?.url).toContain("model[]=897");
+
+    const e220 = planEcarstradeSearchUrls({
+      id: "ab-e220",
+      brandModel: "Mercedes E",
+      listingLinkAuto1: [""],
+      listingLinkOpenline: [""],
+      listingLinkAutobid: [
+        "https://autobid.de/en/search-results?brandId-brand=12&name-model=E%20220&yearFrom-year=2017",
+      ],
+      listingLinkMobile: [""],
+      listingLinkEcarstrade: [""],
+    });
+    expect(e220[0]?.filter.makeNames).toEqual(["Mercedes"]);
+    expect(e220[0]?.filter.modelName).toMatch(/E-Class|E 220/);
+    expect(e220[0]?.url).toMatch(/model\[\]=(815|2530)/);
+    expect(e220[0]?.url).not.toMatch(/mark\[\]=45(?!.*model\[\])/);
   });
 });
