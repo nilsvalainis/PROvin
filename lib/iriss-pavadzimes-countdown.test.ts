@@ -4,6 +4,7 @@ import {
   formatWaybillCountdown,
   formatWaybillExpiryDdMmHm,
   parseLvTransitPlate,
+  WAYBILL_COUNTDOWN_COLOR,
   waybillCountdownStatus,
   waybillRemainingShare,
 } from "@/lib/iriss-pavadzimes-countdown";
@@ -71,6 +72,16 @@ describe("waybillRemainingShare", () => {
   it("beigušai ir 0", () => {
     const now = rigaLocalToUtc(2026, 10, 14, 16, 0)!;
     expect(waybillRemainingShare(issued.toISOString(), until.toISOString(), now)).toBe(0);
+  });
+});
+
+describe("WAYBILL_COUNTDOWN_COLOR", () => {
+  it("ir variant J statusu krāsas", () => {
+    expect(WAYBILL_COUNTDOWN_COLOR).toEqual({
+      ok: "#15803d",
+      soon: "#c2410c",
+      expired: "#b91c1c",
+    });
   });
 });
 
