@@ -30,6 +30,11 @@ describe("free VIN SCAN avoti", () => {
   it("stat.vin ir vērtīgais noklusējuma avots", () => {
     expect(isValuableVinScanSourceId("stat_vin")).toBe(true);
     expect(isValuableVinScanSourceId("carvertical")).toBe(false);
+    const probe = readFileSync(path.join(ROOT, "lib/vin-scan/probes-extra.ts"), "utf8");
+    expect(probe).toContain("solveUrl: STAT_VIN_ORIGIN");
+    expect(probe).toContain('https://stat.vin/');
+    expect(probe).toContain("timeoutMs: 45_000");
+    expect(probe).toContain("page.finalUrl");
   });
 
   it("automātiskās plūsmas palaiž tikai freeVinScanSourceIds", () => {

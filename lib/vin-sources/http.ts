@@ -13,6 +13,8 @@ export type VinHttpResult = {
   status: number;
   text: string;
   cookie: string;
+  /** Final URL after redirects (`redirect: "follow"`). stat.vin not-found → `/car-not-found`. */
+  finalUrl?: string;
 };
 
 function cookieFrom(res: Response): string {
@@ -55,7 +57,12 @@ export async function vinHttpFetch(
     if (init.proxyUrl) fetchInit.dispatcher = new ProxyAgent(init.proxyUrl);
     const res = await fetch(url, fetchInit);
     const text = await res.text();
-    return { status: res.status, text, cookie: mergeCookieHeader(init.cookie ?? "", cookieFrom(res)) };
+    return {
+      status: res.status,
+      text,
+      cookie: mergeCookieHeader(init.cookie ?? "", cookieFrom(res)),
+      finalUrl: res.url || url,
+    };
   } catch (e) {
     if (e instanceof Error && e.name === "AbortError") throw new Error("timeout");
     throw e;

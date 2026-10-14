@@ -78,7 +78,9 @@ describe("telegram vs audit amounts", () => {
       "Telegram grupa (9,99 €)",
     );
     expect(paidProductLabel({ checkoutLine: "premium", amountTotalCents: 9999 })).toBe("PROVIN AUDITS");
+    expect(paidProductLabel({ checkoutLine: "audits", amountTotalCents: 9999 })).toBe("PROVIN AUDITS");
     expect(paidProductLabel({ checkoutLine: "mini", amountTotalCents: 3999 })).toBe("PROVIN MINI");
+    expect(paidProductLabel({ checkoutLine: "plus", amountTotalCents: 3999 })).toBe("PROVIN MINI");
     expect(paidProductLabel({ checkoutLine: "business", amountTotalCents: 6999 })).toBe("PROVIN BUSINESS");
     expect(paidProductLabel({ checkoutLine: "dealer", amountTotalCents: 1999 })).toBe("Dīlera dati");
   });

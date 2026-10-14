@@ -206,6 +206,22 @@ export function isCloudflareChallengeHtml(html: string, status = 200): boolean {
   return false;
 }
 
+/**
+ * Cloudflare WAF / bot-block, also when there is no "Just a moment" interstitial.
+ * stat.vin from datacenter IPs: HTTP 403, `text/plain`, body
+ * `Access blocked, contact us at support@stat.vin A` (server: cloudflare).
+ * `isCloudflareChallengeHtml` misses that, so CapSolver never ran.
+ */
+export function looksLikeCloudflareWafBlock(html: string, status = 200): boolean {
+  if (isCloudflareChallengeHtml(html, status)) return true;
+  if (status !== 403 && status !== 503) return false;
+  const text = html.replace(/\s+/g, " ").trim();
+  if (!text) return true;
+  if (/access blocked|access denied|error code:\s*10\d{2}\b|attention required!/i.test(text)) return true;
+  if (text.length < 80 && !/<html[\s>]/i.test(html) && !/<!doctype/i.test(html)) return true;
+  return false;
+}
+
 export function cookiesRecordToHeader(cookies: Record<string, string>): string {
   return Object.entries(cookies)
     .filter(([, v]) => v.trim())

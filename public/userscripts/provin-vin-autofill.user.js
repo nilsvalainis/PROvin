@@ -660,7 +660,7 @@
         return { status: "unknown", summary: "stat.vin: pieprasījumu limits" };
       }
       if (!hasVin) {
-        if (/not found|page not found|no vehicle|nothing found|no results|no similar cars|were not found/i.test(text)) {
+        if (/not found|page not found|car not found|car-not-found|no vehicle|nothing found|no results|no similar cars|were not found/i.test(text)) {
           return { status: "none", summary: "Nav izsoles ieraksta" };
         }
         return null;

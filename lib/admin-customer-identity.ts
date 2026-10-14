@@ -114,7 +114,7 @@ export function paidProductLabel(args: {
   if (line === "dealer") return "Dīlera dati";
   if (line === "mini" || line === "plus" || line === "listing_filter") return "PROVIN MINI";
   if (line === "consultation" || line === "provin_select") return "PROVIN SELECT";
-  if (line === "premium" || line === "audit") return "PROVIN AUDITS";
+  if (line === "premium" || line === "audit" || line === "audits") return "PROVIN AUDITS";
   if (args.amountTotalCents === 3999) return "PROVIN MINI";
   if (args.amountTotalCents === 6999) return "PROVIN BUSINESS";
   if (args.amountTotalCents === 1999 || args.amountTotalCents === 2499) return "Dīlera dati";

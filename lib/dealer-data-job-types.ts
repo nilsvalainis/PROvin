@@ -107,6 +107,7 @@ const NON_DEALER_CHECKOUT_LINES = new Set([
   "listing_filter",
   "plus",
   "premium",
+  "audits",
   "business",
 ]);
 
