@@ -14,11 +14,16 @@ describe("order field validation — VIN vai numurzīme", () => {
     expect(isValidVinOrPlate("1HGCM82633A004352")).toBe(true);
   });
 
-  it("accepts a 3–6 char license plate (with spaces or hyphen)", () => {
+  it("accepts a Latvian license plate (with spaces or hyphen)", () => {
     expect(isValidPlateNumber("KG982")).toBe(true);
     expect(isValidPlateNumber("kg 982")).toBe(true);
     expect(isValidPlateNumber("AB-1234")).toBe(true);
     expect(isValidVinOrPlate("KG982")).toBe(true);
+  });
+
+  it("rejects non-LV plate patterns", () => {
+    expect(isValidPlateNumber("12ABC")).toBe(false);
+    expect(isValidPlateNumber("ABCD12")).toBe(false);
   });
 
   it("rejects values that are neither VIN nor plate", () => {

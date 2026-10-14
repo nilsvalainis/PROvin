@@ -5,6 +5,8 @@
 
 export type OrderDraftOrderEdits = {
   vin?: string;
+  /** Klienta ievadītā LV numurzīme (ja VIN atrisināts atsevišķi). */
+  licensePlate?: string;
   listingUrl?: string;
   customerName?: string;
   customerEmail?: string;
@@ -68,6 +70,8 @@ export type OrderDraftState = {
   autoIngest?: import("@/lib/admin-auto-ingest").AutoIngestStatus;
   /** Bezmaksas VIN SCAN pēc pasūtījuma izveides (Stripe / manuāls). */
   vinScan?: import("@/lib/order-vin-scan").OrderVinScanRecord;
+  /** CSDD mēģinājums pārvērst numurzīmi par VIN pēc pasūtījuma. */
+  vinPlateResolution?: import("@/lib/order-vin-plate-resolution").OrderVinPlateResolution;
 };
 
 export function orderDraftHasOrderEdits(e: OrderDraftOrderEdits | undefined): boolean {

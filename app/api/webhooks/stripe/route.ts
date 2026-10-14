@@ -13,6 +13,11 @@ import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
 import { getStripe } from "@/lib/stripe";
 import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
+import {
+  ensureOrderDraftEditsFromCheckoutFields,
+  resolveOrderVinFromPlate,
+} from "@/lib/order-plate-vin-resolve";
+import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { autoImportQuickEvalForPaidOrder } from "@/lib/quick-eval-service";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
@@ -211,19 +216,49 @@ async function fulfillPaidCheckoutSession(
       // `after`, nevis `void`: ielase (relejs, CapSolver, mnt.ee) var ilgt pēc atbildes Stripe.
       // Visi avoti vienā piegājienā (paralēli zvani, viena saglabāšana), lai iekļautos 300 s.
       after(async () => {
+        await ensureOrderDraftEditsFromCheckoutFields(session.id, {
+          vinOrPlate: order.vin,
+          listingUrl: order.listingUrl,
+          customerEmail: email,
+          customerPhone: phone,
+          customerName: order.customerName,
+          notes: order.notes,
+        }).catch((err) => {
+          console.error("[stripe webhook] order draft seed:", err);
+        });
+
+        let effectiveVin = order.vin?.trim() ? normalizeVin(order.vin) : "";
+        if (effectiveVin && !isValidVin(effectiveVin)) {
+          try {
+            const resolved = await resolveOrderVinFromPlate(session.id, {
+              stripeVin: order.vin,
+              listingUrl: order.listingUrl,
+              runDownstream: false,
+            });
+            if (resolved.effectiveVin) effectiveVin = resolved.effectiveVin;
+            console.info("[stripe webhook] plate→vin", { sessionId: session.id, ...resolved });
+          } catch (err) {
+            console.error("[stripe webhook] plate→vin:", err);
+          }
+        }
+
         // Ātrais vērtējums ar to pašu VIN + e-pastu → dati pāriet automātiski (pirms bezmaksas ielases).
         try {
-          const qe = await autoImportQuickEvalForPaidOrder(session.id, { vin: order.vin, email });
+          const qe = await autoImportQuickEvalForPaidOrder(session.id, {
+            vin: effectiveVin || order.vin,
+            email,
+          });
           if (qe) console.info("[stripe webhook] quick eval auto import", { sessionId: session.id, ...qe });
         } catch (err) {
           console.error("[stripe webhook] quick eval auto import:", err);
         }
+        const vinForAuto = effectiveVin && isValidVin(effectiveVin) ? effectiveVin : order.vin;
         const [seedRes, scanRes] = await Promise.allSettled([
           seedPaidOrderAutoSources(session.id, {
-            vin: order.vin,
+            vin: vinForAuto,
             listingUrl: order.listingUrl,
           }),
-          runOrderFreeVinScan(session.id, { vin: order.vin, listingUrl: order.listingUrl }),
+          runOrderFreeVinScan(session.id, { vin: vinForAuto, listingUrl: order.listingUrl }),
         ]);
         if (seedRes.status === "fulfilled") {
           const r = seedRes.value;
