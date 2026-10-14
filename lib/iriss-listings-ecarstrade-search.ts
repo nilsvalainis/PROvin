@@ -15,14 +15,20 @@ import {
 import {
   isNoiseSearchParam,
   isWildcardCriterion,
+  mapAutobidFuelToken,
   mapEcarstradeColor,
   mapEcarstradeDrive,
   mapEmissionClass,
   mapEngineCc,
+  mapOpenlaneFuelToken,
   mapVat,
+  parseAuto1Manufacturers,
+  parseOpenlaneMakesModels,
+  parseZeroUnboundedRange,
   resolveMakeFromMobileMs,
   splitListTokens,
   type EcarstradeDrive,
+  type MakeModelPair,
   type UnmappedCriterion,
 } from "@/lib/iriss-listings-ecarstrade-criteria";
 import { ECARSTRADE_ORIGIN, ECARSTRADE_SEARCH_PATH } from "@/lib/iriss-listings-ecarstrade";
@@ -230,7 +236,6 @@ function mapBody(raw: string): string | null {
 
 const MAKE_KEYS = [
   "manufacturer",
-  "manufacturers",
   "manufacturername",
   "make",
   "makes",
@@ -268,7 +273,6 @@ const YEAR_FROM_KEYS = [
   "regfrom",
   "yearfrom-year",
   "regist",
-  "fr",
 ];
 const YEAR_TO_KEYS = [
   "yearto",
@@ -291,11 +295,23 @@ const KM_FROM_KEYS = [
   "odometerfrom",
   "mileagefrom-mileage",
   "kilom",
-  "ml",
+  "kilometresfrom-e68_1",
+  "carlist-e68from",
 ];
-const KM_TO_KEYS = ["mileageto", "mileage_to", "kmto", "maxmileage", "odometerto", "mileageto-mileage", "kilom_to"];
-const PRICE_FROM_KEYS = ["pricefrom", "price_from", "minprice", "pricemin", "pricefrom-price"];
-const PRICE_TO_KEYS = ["priceto", "price_to", "maxprice", "pricemax", "priceto-price", "price_to"];
+const KM_TO_KEYS = [
+  "mileageto",
+  "mileage_to",
+  "kmto",
+  "maxmileage",
+  "odometerto",
+  "mileageto-mileage",
+  "kilom_to",
+  "kilometresto-e68_2",
+  "kilometresto",
+  "carlist-e68to",
+];
+const PRICE_FROM_KEYS = ["pricefrom", "price_from", "minprice", "pricemin", "pricefrom-price", "pricemin"];
+const PRICE_TO_KEYS = ["priceto", "price_to", "maxprice", "pricemax", "priceto-price", "price_to", "startprice2"];
 const POWER_FROM_KEYS = [
   "powerfrom",
   "power_from",
@@ -305,6 +321,7 @@ const POWER_FROM_KEYS = [
   "minpowerasarray",
   "minpowerkw",
   "power",
+  "poweroutputfrom",
 ];
 const POWER_TO_KEYS = [
   "powerto",
@@ -318,8 +335,18 @@ const POWER_TO_KEYS = [
 ];
 const HP_FROM_KEYS = ["minhorsepower", "horsepowerfrom", "hpfrom"];
 const HP_TO_KEYS = ["maxhorsepower", "horsepowerto", "hpto"];
-const FUEL_KEYS = ["fuel", "fuels", "fueltype", "fueltypes", "fuel[]", "fuelid-fuel"];
-const GEAR_KEYS = ["gearbox", "gearboxes", "transmission", "transmissions", "gearbox[]", "gearboxid-gearbox"];
+const FUEL_KEYS = ["fuel", "fuels", "fueltype", "fueltypes", "fuel[]", "fuelid-fuel", "ft", "e17", "carlist-e17"];
+const GEAR_KEYS = [
+  "gearbox",
+  "gearboxes",
+  "geartypes",
+  "transmission",
+  "transmissions",
+  "transmissiontypes",
+  "gearbox[]",
+  "gearboxid-gearbox",
+  "tr",
+];
 const BODY_KEYS = ["body", "bodies", "bodytype", "bodytypes", "category", "categories", "category[]", "c"];
 const COLOR_KEYS = ["color", "colors", "colour", "colours", "color[]", "exteriorcolor", "exteriorcolours", "colorid-color"];
 const DRIVE_KEYS = ["drive", "drives", "drivetype", "drivetypes", "drivetrain", "wheeldrive", "iriss_drive"];
@@ -379,6 +406,27 @@ const HANDLED_KEYS = new Set(
     "brandid",
     "brand-id",
     "name-brand",
+    "manufacturers",
+    "makesmodels",
+    "registrationyears",
+    "mileages",
+    "prices",
+    "enginesizes",
+    "kws",
+    "horsepowers",
+    "p",
+    "cc",
+    "fr",
+    "ml",
+    "pw",
+    "e17",
+    "carlist-e17",
+    "kilometresfrom-e68_1",
+    "kilometresto-e68_2",
+    "carlist-e68from",
+    "carlist-e68to",
+    "poweroutputfrom",
+    "startprice2",
     "ms",
     "q",
     "query",
@@ -420,13 +468,51 @@ function values(params: Map<string, string[]>, keys: string[]): string[] {
   const out: string[] = [];
   for (const key of keys) {
     for (const v of params.get(key) ?? []) {
-      for (const part of v.split(/[,|]/)) {
+      for (const part of v.split(/[,;]/)) {
         const t = part.trim();
         if (t) out.push(t);
       }
     }
   }
   return out;
+}
+
+function rawValues(params: Map<string, string[]>, keys: string[]): string[] {
+  const out: string[] = [];
+  for (const key of keys) {
+    for (const v of params.get(key) ?? []) {
+      const t = v.trim();
+      if (t) out.push(t);
+    }
+  }
+  return out;
+}
+
+function applyRange(
+  filter: EcarstradeSearchFilter,
+  raw: string,
+  fromKey: "yearFrom" | "mileageFrom" | "priceFrom" | "powerFromKw" | "engineFromCc",
+  toKey: "yearTo" | "mileageTo" | "priceTo" | "powerToKw" | "engineToCc",
+  parseYear = false,
+): void {
+  const range = parseZeroUnboundedRange(raw);
+  let from = range.from;
+  let to = range.to;
+  if (parseYear) {
+    if (from != null && (from < 1980 || from > 2035)) from = null;
+    if (to != null && (to < 1980 || to > 2035)) to = null;
+  }
+  if (from != null && filter[fromKey] == null) filter[fromKey] = from;
+  if (to != null && filter[toKey] == null) filter[toKey] = to;
+}
+
+function applyMakeModelPairs(filter: EcarstradeSearchFilter, pairs: MakeModelPair[], idSpace: MakeIdSpace): void {
+  const models = new Set<string>();
+  for (const pair of pairs) {
+    applyMakeToken(filter, pair.make, idSpace);
+    if (pair.model) models.add(pair.model);
+  }
+  if (models.size === 1) applyModelToken(filter, [...models][0] ?? "", "name");
 }
 
 function firstInt(params: Map<string, string[]>, keys: string[], parse = intFromRaw): number | null {
@@ -547,15 +633,21 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
   }
   const params = collectParams(url);
   const idSpace = hostMakeIdSpace(url);
+  for (const raw of rawValues(params, ["manufacturers"])) {
+    applyMakeModelPairs(filter, parseAuto1Manufacturers(raw), "name");
+  }
+  for (const raw of rawValues(params, ["makesmodels"])) {
+    applyMakeModelPairs(filter, parseOpenlaneMakesModels(raw), "name");
+  }
   for (const raw of values(params, MAKE_KEYS)) applyMakeToken(filter, raw, idSpace);
   for (const raw of values(params, ["brandid-brand", "brandid", "brand-id"])) {
     applyMakeToken(filter, raw, "autobid");
   }
   for (const raw of values(params, ["name-brand"])) applyMakeToken(filter, raw, "name");
-  for (const ms of values(params, ["ms"])) {
+  for (const ms of rawValues(params, ["ms"])) {
     const parsed = resolveMakeFromMobileMs(ms);
     if (parsed.make) applyMakeToken(filter, parsed.make, "name");
-    else if (ms.trim()) {
+    else if (ms.trim() && !/wohnmobil|evado|westfalia|generation/i.test(ms)) {
       filter.unmapped.push({ key: "ms", value: ms, reason: "mobile.de makeId nav kartē" });
     }
     if (parsed.model) applyModelToken(filter, parsed.model, "name");
@@ -564,18 +656,35 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
 
   filter.yearFrom = firstInt(params, YEAR_FROM_KEYS, yearFromRaw);
   filter.yearTo = firstInt(params, YEAR_TO_KEYS, yearFromRaw);
+  for (const raw of rawValues(params, ["registrationyears", "fr"])) applyRange(filter, raw, "yearFrom", "yearTo", true);
   filter.mileageFrom = firstInt(params, KM_FROM_KEYS);
   filter.mileageTo = firstInt(params, KM_TO_KEYS);
+  for (const raw of rawValues(params, ["mileages", "ml"])) applyRange(filter, raw, "mileageFrom", "mileageTo");
   filter.priceFrom = firstInt(params, PRICE_FROM_KEYS);
   filter.priceTo = firstInt(params, PRICE_TO_KEYS);
+  for (const raw of rawValues(params, ["prices", "p"])) applyRange(filter, raw, "priceFrom", "priceTo");
   filter.powerFromKw = firstInt(params, POWER_FROM_KEYS);
   filter.powerToKw = firstInt(params, POWER_TO_KEYS);
+  for (const raw of rawValues(params, ["kws", "pw"])) applyRange(filter, raw, "powerFromKw", "powerToKw");
   const hpFrom = firstInt(params, HP_FROM_KEYS);
   const hpTo = firstInt(params, HP_TO_KEYS);
+  const powerUnit = (params.get("powerunit") ?? [])[0]?.toLowerCase() ?? "";
   if (filter.powerFromKw == null && hpFrom != null) filter.powerFromKw = hpToKw(hpFrom);
   if (filter.powerToKw == null && hpTo != null) filter.powerToKw = hpToKw(hpTo);
+  if (powerUnit === "hp") {
+    if (filter.powerFromKw != null) filter.powerFromKw = hpToKw(filter.powerFromKw);
+    if (filter.powerToKw != null) filter.powerToKw = hpToKw(filter.powerToKw);
+  }
+  for (const raw of rawValues(params, ["horsepowers"])) {
+    const range = parseZeroUnboundedRange(raw);
+    if (filter.powerFromKw == null && range.from != null) filter.powerFromKw = hpToKw(range.from);
+    if (filter.powerToKw == null && range.to != null) filter.powerToKw = hpToKw(range.to);
+  }
 
-  filter.fuels = uniq(values(params, FUEL_KEYS).map(mapFuel).filter((x): x is string => Boolean(x)));
+  const fuels = values(params, FUEL_KEYS).map((raw) => {
+    return mapFuel(raw) ?? mapFuel(mapOpenlaneFuelToken(raw) ?? "") ?? mapFuel(mapAutobidFuelToken(raw) ?? "");
+  });
+  filter.fuels = uniq(fuels.filter((x): x is string => Boolean(x)));
   filter.gearboxes = uniq(values(params, GEAR_KEYS).map(mapGearbox).filter((x): x is string => Boolean(x)));
   filter.bodies = uniq(values(params, BODY_KEYS).map(mapBody).filter((x): x is string => Boolean(x)));
   filter.colors = uniq(values(params, COLOR_KEYS).map(mapEcarstradeColor).filter((x): x is string => Boolean(x)));
@@ -583,6 +692,7 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
 
   filter.engineFromCc = firstInt(params, ENGINE_FROM_KEYS, (v) => mapEngineCc(v) ?? intFromRaw(v));
   filter.engineToCc = firstInt(params, ENGINE_TO_KEYS, (v) => mapEngineCc(v) ?? intFromRaw(v));
+  for (const raw of rawValues(params, ["enginesizes", "cc"])) applyRange(filter, raw, "engineFromCc", "engineToCc");
   filter.doorsFrom = firstInt(params, DOOR_FROM_KEYS);
   filter.doorsTo = firstInt(params, DOOR_TO_KEYS);
   filter.seatsFrom = firstInt(params, SEAT_FROM_KEYS);
@@ -612,6 +722,20 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
 
 export function parseListingSearchUrl(rawUrl: string): EcarstradeSearchFilter {
   return parseListingSearchDetailed(rawUrl).filter;
+}
+
+/** Viens gads / viens cm³ no avota saites: ET meklējumam ±1 gads un ±200 cm³. */
+export function widenExactSearchBounds(filter: EcarstradeSearchFilter): EcarstradeSearchFilter {
+  const next = cloneEcarstradeFilter(filter);
+  if (next.yearFrom != null && next.yearFrom === next.yearTo) {
+    next.yearFrom = Math.max(1980, next.yearFrom - 1);
+    next.yearTo = Math.min(2035, next.yearTo + 1);
+  }
+  if (next.engineFromCc != null && next.engineFromCc === next.engineToCc) {
+    next.engineFromCc = Math.max(600, next.engineFromCc - 200);
+    next.engineToCc = Math.min(9000, next.engineToCc + 200);
+  }
+  return next;
 }
 
 export function filterFromBrandModel(brandModel: string): EcarstradeSearchFilter {
