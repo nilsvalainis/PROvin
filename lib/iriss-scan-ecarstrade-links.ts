@@ -5,7 +5,7 @@ import {
   describeEcarstradeFilter,
   ecarstradeSearchUrl,
   fillFilterGaps,
-  filterFromBrandModel,
+  fillMakeModelFromBrand,
   filterFromOrderFields,
   filtersFromBrandModel,
   parseListingSearchDetailed,
@@ -81,16 +81,23 @@ function unmappedLines(filter: EcarstradeSearchFilter): string[] {
   return filter.unmapped.map((u) => `${u.key}=${u.value} (${u.reason})`);
 }
 
+function filterFromAuctionUrl(url: string, brandModel: string): EcarstradeSearchFilter {
+  const parsed = parseListingSearchDetailed(url).filter;
+  if (parsed.makeIds.length) return parsed;
+  return fillMakeModelFromBrand(parsed, brandModel);
+}
+
 export function planEcarstradeSearchUrls(rec: IrissEcarstradeLinkSource): IrissEcarstradeLinkPlan[] {
   const brand = rec.brandModel.trim();
   const urls = sourceUrls(rec);
   const order = filterFromOrderFields(orderFieldsOf(rec));
-  const extras = fillFilterGaps(filterFromBrandModel(brand), order);
-  const brandFilters = filtersFromBrandModel(brand).map((f) => fillFilterGaps(f, order));
-  const parsed = urls.map((url) => {
-    const detailed = parseListingSearchDetailed(url);
-    return { sourceUrl: url, filter: fillFilterGaps(detailed.filter, extras) };
-  });
+  const brandOnly = filtersFromBrandModel(brand);
+  const brandFilters =
+    urls.length > 0 ? brandOnly : brandOnly.map((f) => fillFilterGaps(f, order));
+  const parsed = urls.map((url) => ({
+    sourceUrl: url,
+    filter: filterFromAuctionUrl(url, brand),
+  }));
   const clusters =
     parsed.length > 0 ? clusterEcarstradeFilters(parsed) : brandFilters.map((filter) => ({ filter, sourceUrls: [] as string[] }));
   if (parsed.length > 0) {

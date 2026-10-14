@@ -483,7 +483,7 @@ describe("eCarsTrade search mapper", () => {
     expect(vans.some((p) => /Sprinter/i.test(p.filter.modelName))).toBe(true);
   });
 
-  it("keeps stacked Auto1 and order-form criteria on the ET URL", () => {
+  it("keeps Auto1 stacked criteria and does not add order-form seats or colors", () => {
     const plans = planEcarstradeSearchUrls({
       id: "stacked-keep",
       brandModel: "Volvo XC60",
@@ -511,8 +511,8 @@ describe("eCarsTrade search mapper", () => {
     expect(url).toContain("price_to=28000");
     expect(url).toContain("fuel[]=Diesel");
     expect(url).toContain("gearbox[]=Automatic");
-    expect(url).toContain("places_from=5");
-    expect(url).toContain("color[]=Black");
     expect(url).toMatch(/category\[\]=/);
+    expect(url).not.toContain("places_from=5");
+    expect(url).not.toContain("color[]=Black");
   });
 });
