@@ -5,13 +5,25 @@ import {
   ONEAUTO_SOURCE_TAG,
   buildOneautoDisplay,
   formatOneautoCostEur,
+  oneautoChargedCostCents,
   oneautoPayloadIsApiUnavailable,
-  oneautoPayloadIsNoData,
   oneautoPayloadIsPending,
-  oneautoProductsCostCents,
+  oneautoResultIsNoData,
   type OneautoProductId,
 } from "@/lib/oneauto-catalog";
 import type { OneautoProductResult } from "@/lib/oneauto-block";
+import {
+  buildOneautoProductResult,
+  classifyOneautoError,
+  oneautoResponsePreview,
+} from "@/lib/oneauto-product-result";
+import {
+  mergeVinDecodeFallbackPowertrain,
+  oneautoPowertrainFromLocalVin,
+  oneautoPowertrainFromVinScanParse,
+} from "@/lib/oneauto-vin-fallback";
+import { decodeVinLocal, mergeVinDecodeWithVpic } from "@/lib/vin-scan/vin-decode";
+import { parseNhtsaDecode } from "@/lib/vin-scan/parse";
 import {
   ONEAUTO_IMAGE_FROM_ID_PATH,
   ONEAUTO_IMAGE_SEARCH_BY_VIN_PATH,
@@ -42,14 +54,30 @@ export function getOneautoApiConfig(): OneautoApiConfig | null {
 }
 
 function classifyError(status: number, bodyText: string): string {
-  const t = bodyText.toLowerCase();
-  if (oneautoPayloadIsNoData(null, bodyText)) return "no_data";
-  if (oneautoPayloadIsApiUnavailable(null, bodyText)) return "api_unavailable";
-  if (status === 402 || /insufficient|balance|credit|quota/.test(t)) return "insufficient_balance";
-  if (status === 400 || /invalid.?vin|vin/.test(t)) return "invalid_vin";
-  if (status === 401 || status === 403) return "unauthorized_upstream";
-  if (status >= 500) return "upstream_error";
-  return bodyText.trim().slice(0, 240) || `http_${status}`;
+  return classifyOneautoError(status, bodyText);
+}
+
+function logOneautoProduct(vin: string, product: string, status: number, payload: unknown): void {
+  console.info("[oneauto]", vin, product, status, oneautoResponsePreview(payload, 300));
+}
+
+async function fetchVinDecoderFallbackRows(vin: string) {
+  const local = decodeVinLocal(vin);
+  try {
+    const res = await fetch(
+      `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(vin)}?format=json`,
+      {
+        headers: { accept: "application/json" },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    const text = await res.text();
+    const vpic = parseNhtsaDecode(res.status, text);
+    return oneautoPowertrainFromVinScanParse(mergeVinDecodeWithVpic(local, vpic));
+  } catch {
+    return oneautoPowertrainFromLocalVin(vin);
+  }
 }
 
 async function readJson(res: Response): Promise<unknown> {
@@ -171,44 +199,12 @@ export async function fetchOneautoProducts(opts: {
     if (!product) continue;
     try {
       const fetched = await fetchWithPoll(config, product.path, opts.vin);
-      if (payloadLooksPending(fetched.status, fetched.payload)) {
-        results[id] = { ok: false, error: "pending", payload: fetched.payload };
-        continue;
-      }
-      if (!fetched.ok) {
-        const errText =
-          fetched.payload && typeof fetched.payload === "object"
-            ? JSON.stringify(fetched.payload).slice(0, 400)
-            : "";
-        if (oneautoPayloadIsNoData(fetched.payload, errText)) {
-          results[id] = { ok: true, payload: fetched.payload };
-          continue;
-        }
-        if (oneautoPayloadIsApiUnavailable(fetched.payload, errText)) {
-          results[id] = { ok: false, error: "api_unavailable", payload: fetched.payload };
-          continue;
-        }
-        const code = classifyError(fetched.status, errText);
-        results[id] = { ok: false, error: code, payload: fetched.payload };
-        continue;
-      }
-      const body = fetched.payload;
-      if (body && typeof body === "object" && (body as { success?: unknown }).success === false) {
-        const errText = JSON.stringify(body).slice(0, 400);
-        if (oneautoPayloadIsNoData(body, errText)) {
-          results[id] = { ok: true, payload: body };
-          continue;
-        }
-        if (oneautoPayloadIsApiUnavailable(body, errText)) {
-          results[id] = { ok: false, error: "api_unavailable", payload: body };
-          continue;
-        }
-        results[id] = { ok: false, error: classifyError(fetched.status, errText), payload: body };
-        continue;
-      }
-      results[id] = { ok: true, payload: body };
-      rawForDisplay[id] = body;
+      logOneautoProduct(opts.vin, id, fetched.status, fetched.payload);
+      const classified = buildOneautoProductResult(fetched);
+      results[id] = classified;
+      if (classified.ok) rawForDisplay[id] = fetched.payload;
     } catch (e) {
+      logOneautoProduct(opts.vin, id, 0, e instanceof Error ? e.message : "network_error");
       results[id] = {
         ok: false,
         error: e instanceof Error ? e.message.slice(0, 240) : "network_error",
@@ -217,14 +213,27 @@ export async function fetchOneautoProducts(opts: {
     }
   }
 
-  const costCents = oneautoProductsCostCents(opts.products);
+  let display = buildOneautoDisplay(rawForDisplay);
+  const decoderResult = results.vin_decoder;
+  if (decoderResult && oneautoResultIsNoData(decoderResult)) {
+    const fallbackRows = await fetchVinDecoderFallbackRows(opts.vin);
+    if (fallbackRows.length > 0) {
+      results.vin_decoder = { ...decoderResult, fallback: "vin_scan" };
+      display = {
+        ...display,
+        powertrain: mergeVinDecodeFallbackPowertrain(display.powertrain, fallbackRows),
+      };
+    }
+  }
+
+  const costCents = oneautoChargedCostCents(opts.products, results);
   return {
     source: ONEAUTO_SOURCE_TAG,
     vin: opts.vin,
     costEur: formatOneautoCostEur(costCents),
     costCents,
     results,
-    display: buildOneautoDisplay(rawForDisplay),
+    display,
   };
 }
 

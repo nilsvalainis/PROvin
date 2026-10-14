@@ -40,7 +40,9 @@ export async function POST(req: Request) {
 
   try {
     const fetched = await fetchOneautoProducts({ vin, products });
-    const allFailed = products.every((id) => fetched.results[id]?.ok === false);
+    const allFailed = products.every(
+      (id) => fetched.results[id]?.ok === false && fetched.results[id]?.error !== "no_data",
+    );
     const allPending = products.every((id) => fetched.results[id]?.error === "pending");
     const balanceFail = Object.values(fetched.results).some((r) => r?.error === "insufficient_balance");
     if (allFailed && balanceFail) {

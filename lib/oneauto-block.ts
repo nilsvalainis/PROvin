@@ -25,6 +25,9 @@ export type OneautoProductResult = {
   ok: boolean;
   error?: string;
   payload: unknown;
+  httpStatus?: number;
+  message?: string;
+  fallback?: "vin_scan";
 };
 
 export type OneautoBlockState = {
@@ -125,6 +128,13 @@ export function parseResultMap(raw: unknown): Partial<Record<OneautoProductId, O
       ok: r.ok === true,
       error: typeof r.error === "string" ? r.error.slice(0, 400) : undefined,
       payload: r.payload,
+      ...(typeof r.httpStatus === "number" && Number.isFinite(r.httpStatus)
+        ? { httpStatus: Math.floor(r.httpStatus) }
+        : {}),
+      ...(typeof r.message === "string" && r.message.trim()
+        ? { message: r.message.trim().slice(0, 400) }
+        : {}),
+      ...(r.fallback === "vin_scan" ? { fallback: "vin_scan" as const } : {}),
     };
   }
   return out;

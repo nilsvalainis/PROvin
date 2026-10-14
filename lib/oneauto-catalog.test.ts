@@ -3,10 +3,17 @@ import {
   ONEAUTO_DEFAULT_PRODUCT_IDS,
   ONEAUTO_PRODUCTS,
   ONEAUTO_SERVICE_TIMELINE_MAX,
+  ONEAUTO_SOFT_COOLDOWN_MS,
   buildOneautoDisplay,
   formatOneautoCostEur,
+  oneautoChargedCostCents,
   oneautoPayloadIsPending,
+  oneautoPayloadPrimaryMessage,
+  oneautoProductStatusLabel,
   oneautoProductsCostCents,
+  oneautoProductsInSoftCooldown,
+  oneautoResultTone,
+  oneautoSelectedHaveProblem,
   composeOneautoServiceWorks,
   oneautoOdometerToKm,
   oneautoPayloadIsApiUnavailable,
@@ -112,6 +119,78 @@ describe("OneAuto katalogs", () => {
     expect(oneautoPayloadIsNoData(payload)).toBe(true);
     expect(oneautoServiceHistoryIsEmpty(payload)).toBe(true);
     expect(oneautoPayloadIsNoData(null, JSON.stringify(payload))).toBe(true);
+    expect(oneautoPayloadPrimaryMessage(payload)).toMatch(/no data available/i);
+    expect(oneautoResultTone({ ok: false, error: "no_data", payload })).toBe("problem");
+    expect(oneautoProductStatusLabel({ ok: false, error: "no_data", payload })).toBe(
+      "nav datu (nav iekasēts)",
+    );
+    expect(
+      oneautoProductStatusLabel({ ok: false, error: "no_data", payload, fallback: "vin_scan" }),
+    ).toBe("nav datu (nav iekasēts) · fallback");
+  });
+
+  it("no_data un kļūdas produktus neiekasē un neslēpj sarkanajā kopsavilkumā", () => {
+    const noData = {
+      vin_decoder: {
+        ok: false,
+        error: "no_data",
+        payload: {
+          success: false,
+          error:
+            "There is no data available for this vehicle identification number. You have not been charged.",
+        },
+      },
+    };
+    expect(oneautoChargedCostCents(["vin_decoder"], noData)).toBe(0);
+    expect(formatOneautoCostEur(0)).toBe("€0.00");
+    expect(oneautoSelectedHaveProblem(["vin_decoder"], noData)).toBe(true);
+    expect(
+      oneautoChargedCostCents(["vin_decoder", "oe_service_history"], {
+        ...noData,
+        oe_service_history: {
+          ok: true,
+          payload: { success: true, result: { service_events: [{ date: "2020-01-01" }] } },
+        },
+      }),
+    ).toBe(300);
+    expect(
+      oneautoResultTone({
+        ok: true,
+        payload: {
+          success: false,
+          error:
+            "There is no data available for this vehicle identification number. You have not been charged.",
+        },
+      }),
+    ).toBe("problem");
+    expect(oneautoResultTone({ ok: true, payload: { success: true, make: "BMW" } })).toBe("ok");
+    expect(oneautoProductStatusLabel({ ok: true, payload: { success: true } })).toBe("ielādēts");
+    expect(oneautoResultTone({ ok: false, error: "upstream_error" })).toBe("problem");
+  });
+
+  it("24h mīkstais cooldown attiecas tikai uz veiksmīgiem produktiem", () => {
+    const fetchedAt = "2026-10-14T16:00:00.000Z";
+    const now = Date.parse(fetchedAt) + 60 * 60 * 1000;
+    const results = {
+      vin_decoder: { ok: false, error: "no_data" as const, payload: { success: false } },
+      oe_service_history: { ok: true, payload: { success: true } },
+    };
+    expect(
+      oneautoProductsInSoftCooldown(
+        ["vin_decoder", "oe_service_history"],
+        results,
+        fetchedAt,
+        now,
+      ),
+    ).toEqual(["oe_service_history"]);
+    expect(
+      oneautoProductsInSoftCooldown(
+        ["vin_decoder", "oe_service_history"],
+        results,
+        fetchedAt,
+        Date.parse(fetchedAt) + ONEAUTO_SOFT_COOLDOWN_MS + 1,
+      ),
+    ).toEqual([]);
   });
 
   it("Build Sheet v2 Accepted (bez request_id) ir pending un jāpollē", () => {

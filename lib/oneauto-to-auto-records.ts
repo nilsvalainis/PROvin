@@ -155,7 +155,18 @@ export function mergeOneautoProductResults(
       continue;
     }
     // A failed/pending fetch (error, or ok:false) may never replace an existing richer result.
+    // no_data is a definitive OEM answer: store the red status, but keep a richer prior payload.
     const curRank = oneautoPayloadRank(id, cur.payload);
+    if (next.error === "no_data") {
+      const nextRank = oneautoPayloadRank(id, next.payload);
+      out[id] = {
+        ...next,
+        ok: false,
+        error: "no_data",
+        payload: curRank > nextRank ? cur.payload : next.payload,
+      };
+      continue;
+    }
     if (!next.ok && curRank > 0) {
       out[id] = cur;
       continue;

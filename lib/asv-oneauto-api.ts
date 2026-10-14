@@ -86,7 +86,7 @@ async function fetchProductWithFallback(
       const text = errText(fetched.payload);
       if (!fetched.ok) {
         if (oneautoPayloadIsNoData(fetched.payload, text)) {
-          return { ok: true, path, payload: fetched.payload };
+          return { ok: false, error: "no_data", path, payload: fetched.payload };
         }
         if (oneautoPayloadIsServiceNotEnabled(fetched.payload, text)) {
           last = { ok: false, error: "service_not_enabled", path, payload: fetched.payload };
@@ -110,7 +110,7 @@ async function fetchProductWithFallback(
           continue;
         }
         if (oneautoPayloadIsNoData(body, text)) {
-          return { ok: true, path, payload: body };
+          return { ok: false, error: "no_data", path, payload: body };
         }
         last = { ok: false, error: classifyError(fetched.status, text), path, payload: body };
         continue;
