@@ -63,9 +63,84 @@ const MAKE_ALIASES: Record<string, string> = {
   "ssang yong": "ssangyong",
 };
 
-/** Autobid `brandId-brand` → markas nosaukums. Volvo=49 ir pārbaudīts IRISS testos. */
+/**
+ * Autobid `brandId-brand` / `brandId` → markas nosaukums.
+ * Pārbaudīts pret IRISS pasūtījumu Autobid URL + brandModel (2026-10-14 backups).
+ * 271 ir Mercedes (Viano) atsevišķs Autobid brandId, ne jauna marka.
+ */
 export const AUTOBID_BRAND_ID_TO_NAME: Record<string, string> = {
+  "1": "BMW",
+  "2": "Volkswagen",
+  "3": "Mercedes",
+  "7": "Skoda",
+  "8": "Toyota",
+  "9": "Kia",
+  "10": "Audi",
+  "22": "Ford",
+  "24": "Hyundai",
+  "25": "Renault",
+  "37": "Mitsubishi",
+  "38": "Nissan",
+  "41": "Opel",
+  "44": "Seat",
+  "48": "Suzuki",
   "49": "Volvo",
+  "105": "Mini",
+  "271": "Mercedes",
+};
+
+/** Modeļa teksts, kas pats norāda marku (Vivaro/Traffic/Viano bez markas prefiksa). */
+const IMPLIED_MAKE_MODELS: Array<{ keys: string[]; make: string; catalogModel: string }> = [
+  { keys: ["traffic", "trafic"], make: "Renault", catalogModel: "Trafic" },
+  { keys: ["vivaro"], make: "Opel", catalogModel: "Vivaro" },
+  { keys: ["viano"], make: "Mercedes", catalogModel: "Viano" },
+  { keys: ["primastar"], make: "Nissan", catalogModel: "Primastar" },
+  { keys: ["alhambra"], make: "Seat", catalogModel: "Alhambra" },
+];
+
+const MODEL_QUERY_ALIASES: Record<string, string> = {
+  "1er": "1 Series",
+  "2er": "2 Series",
+  "3er": "3 Series",
+  "4er": "4 Series",
+  "5er": "5 Series",
+  "6er": "6 Series",
+  "7er": "7 Series",
+  "8er": "8 Series",
+  ceed: "cee'd",
+  "cee d": "cee'd",
+  "cee'd": "cee'd",
+  traffic: "Trafic",
+  w164: "ML-Class",
+  w166: "ML-Class",
+  w204: "C-Class",
+  w205: "C-Class",
+  w211: "E-Class",
+  w212: "E-Class",
+  w213: "E-Class",
+  w221: "S-Class",
+  "c class": "C-Class",
+  "c klasse": "C-Class",
+  "e class": "E-Class",
+  "e klasse": "E-Class",
+  "s class": "S-Class",
+  "s klasse": "S-Class",
+  "v class": "V-Class",
+  "v klasse": "V-Class",
+  "m class": "ML-Class",
+  "m klasse": "ML-Class",
+  ml: "ML-Class",
+};
+
+const MERCEDES_CHASSIS_TO_MODEL: Record<string, string> = {
+  "164": "ML-Class",
+  "166": "ML-Class",
+  "204": "C-Class",
+  "205": "C-Class",
+  "211": "E-Class",
+  "212": "E-Class",
+  "213": "E-Class",
+  "221": "S-Class",
 };
 
 export function normalizeCatalogKey(raw: string): string {
@@ -143,6 +218,44 @@ function modelScore(query: string, catalogName: string): number {
   return 0;
 }
 
+function stripParentheticals(raw: string): string {
+  return raw.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export function modelQueryCandidates(raw: string): string[] {
+  const query = String(raw ?? "").trim();
+  if (!query) return [];
+  const cleaned = stripParentheticals(query);
+  const out: string[] = [];
+  const push = (s: string) => {
+    const t = s.trim();
+    if (t && !out.some((x) => normalizeCatalogKey(x) === normalizeCatalogKey(t))) out.push(t);
+  };
+  push(query);
+  push(cleaned);
+  push(stripKnownSuffixes(cleaned));
+  const addAlias = (text: string) => {
+    const key = normalizeCatalogKey(text);
+    if (key && MODEL_QUERY_ALIASES[key]) push(MODEL_QUERY_ALIASES[key]);
+  };
+  addAlias(cleaned);
+  const first = (cleaned.split(/\s+/)[0] ?? "").replace(/[.,;:]+$/g, "");
+  if (first) {
+    push(first);
+    addAlias(first);
+  }
+  const bmwEr = cleaned.match(/\b([1-8])er\b/i);
+  if (bmwEr?.[1]) push(`${bmwEr[1]} Series`);
+  const chassis = cleaned.match(/\bw\s?(164|166|204|205|211|212|213|221)\b/i);
+  if (chassis?.[1] && MERCEDES_CHASSIS_TO_MODEL[chassis[1]]) push(MERCEDES_CHASSIS_TO_MODEL[chassis[1]]!);
+  if (/\be\s?\d{3}\b/i.test(cleaned)) push("E-Class");
+  if (/\bv\s*(klase|klasse|class)\b/i.test(cleaned)) push("V-Class");
+  if (/\bml\s?\d{3}\b/i.test(cleaned)) push("ML-Class");
+  if (/\bceed\b/i.test(cleaned)) push("cee'd");
+  if (/\btraffic\b/i.test(cleaned)) push("Trafic");
+  return out;
+}
+
 export function resolveEcarstradeModel(makeId: number, raw: string): EcarstradeModel | null {
   const query = String(raw ?? "").trim();
   if (!query) return null;
@@ -152,11 +265,18 @@ export function resolveEcarstradeModel(makeId: number, raw: string): EcarstradeM
   }
   let best: EcarstradeModel | null = null;
   let bestScore = 0;
-  for (const model of ecarstradeModelsForMake(makeId)) {
-    const score = modelScore(query, model.name);
-    if (score > bestScore) {
-      best = model;
-      bestScore = score;
+  const models = ecarstradeModelsForMake(makeId);
+  for (const candidate of modelQueryCandidates(query)) {
+    if (/^\d+$/.test(candidate)) {
+      const byId = resolveEcarstradeModelById(makeId, Number.parseInt(candidate, 10));
+      if (byId) return byId;
+    }
+    for (const model of models) {
+      const score = modelScore(candidate, model.name);
+      if (score > bestScore) {
+        best = model;
+        bestScore = score;
+      }
     }
   }
   return bestScore > 0 ? best : null;
@@ -211,6 +331,18 @@ function splitMakeCandidates(raw: string): string[] {
     .filter(Boolean);
 }
 
+function impliedMakeFromModelToken(raw: string): { make: EcarstradeMark; modelText: string } | null {
+  const key = normalizeCatalogKey(stripParentheticals(raw).split(/\s+/)[0] ?? "");
+  if (!key) return null;
+  for (const row of IMPLIED_MAKE_MODELS) {
+    if (!row.keys.includes(key)) continue;
+    const make = resolveEcarstradeMake(row.make);
+    if (!make) return null;
+    return { make, modelText: row.catalogModel };
+  }
+  return null;
+}
+
 export function resolveMakesFromBrand(brandModel: string): {
   makes: EcarstradeMark[];
   model: EcarstradeModel | null;
@@ -237,13 +369,26 @@ export function resolveMakesFromBrand(brandModel: string): {
     const make = resolveEcarstradeMake(split.make);
     if (make) {
       push(make);
-      if (!modelText && split.model) modelText = stripKnownSuffixes(split.model);
+      if (!modelText && split.model) modelText = stripKnownSuffixes(stripParentheticals(split.model));
+      continue;
+    }
+    const implied = impliedMakeFromModelToken(part);
+    if (implied) {
+      push(implied.make);
+      if (!modelText) modelText = implied.modelText;
     }
   }
   if (makes.length === 0) {
     const split = splitBrandModel(text);
     push(resolveEcarstradeMake(split.make));
-    modelText = stripKnownSuffixes(split.model);
+    modelText = stripKnownSuffixes(stripParentheticals(split.model));
+    if (makes.length === 0) {
+      const implied = impliedMakeFromModelToken(text);
+      if (implied) {
+        push(implied.make);
+        modelText = implied.modelText;
+      }
+    }
   }
   const model = makes.length === 1 ? resolveEcarstradeModel(makes[0]!.id, modelText) : null;
   return { makes, model, modelText };

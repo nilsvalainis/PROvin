@@ -112,7 +112,7 @@ describe("fetchEcarstradeSource", () => {
     expect(accepts[0]).toMatch(/application\/json/);
     expect(JSON.parse(bodies[0]!)).toEqual({ username: "sia-iriss@inbox.lv", password: "x" });
     expect(bodies[0]).not.toContain("email");
-    const activate = calls.find((c) => c.url === `https://ecarstrade.com${ECARSTRADE_SESSION_ACTIVATE_PATH}`);
+    const activate = calls.find((c) => c.url.startsWith(`https://ecarstrade.com${ECARSTRADE_SESSION_ACTIVATE_PATH}`));
     expect(activate?.cookie).toContain("eCT/user=tok-a");
     expect(activate?.cookie).toContain("eCT/refresh-token=tok-r");
     const apiCall = calls.find((c) => c.url.includes("future_api.php"));
@@ -243,6 +243,33 @@ describe("fetchEcarstradeSource", () => {
     expect(jsonHits).toBe(1);
     expect(r.note).toMatch(/Cloudflare/i);
     expect(r.note).toMatch(/publisks|Sign in to buy/i);
+  });
+
+  it("takes PIRKT from logged-in /search HTML when future_api is public and Cloudflare blocks detail APIs", async () => {
+    const html = readFileSync(join(FIX, "card-tucson-loggedin.html"), "utf8");
+    const { impl } = fetchMock((url) => {
+      if (url.includes("/api/v1/auth/login")) {
+        return { status: 200, body: JSON.stringify({ data: { accessToken: "tok-a", refreshToken: "tok-r" } }) };
+      }
+      if (url.includes("/setsession.php")) {
+        return { status: 200, body: "", setCookie: ["eCT/PHPSESSID=sess1; Path=/"] };
+      }
+      if (url.includes("/api/v1/cars/") || /\/cars\/\d+/.test(url)) {
+        return { status: 403, body: "<html><title>Just a moment...</title></html>" };
+      }
+      if (url.includes("/search") && !url.includes("future_api")) {
+        return { status: 200, body: `<html>${html}</html>` };
+      }
+      return { status: 200, body: tucsonPublicPage() };
+    });
+    const r = await fetchEcarstradeSource(SRC, {
+      ...opts,
+      fetchImpl: impl,
+      env: { ECARSTRADE_USER: "sia-iriss@inbox.lv", ECARSTRADE_PASS: "x" },
+    });
+    expect(r.status).toBe("ok");
+    expect(r.vehicles[0]).toMatchObject({ externalId: "7602956", priceBuyNow: 16200 });
+    expect(r.note).toMatch(/\/search HTML/i);
   });
 
   it("forwards PHPSESSID from warmup onto future_api after login", async () => {

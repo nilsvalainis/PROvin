@@ -1,4 +1,4 @@
-import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
+import { coerceIrissListingLinkList, filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { describeEcarstradeFilter, parseListingSearchDetailed } from "@/lib/iriss-listings-ecarstrade-search";
 import { planEcarstradeSearchUrls, type IrissEcarstradeLinkSource } from "@/lib/iriss-scan-ecarstrade-links";
 
@@ -69,19 +69,110 @@ export function formatEcarstradeDryRunEntry(rec: IrissEcarstradeDryRunRecord): s
   return lines.join("\n");
 }
 
-export function formatEcarstradeDryRunReport(records: readonly IrissEcarstradeDryRunRecord[]): string {
+function asRec(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+}
+
+function strField(rec: Record<string, unknown>, key: string): string {
+  const v = rec[key];
+  return typeof v === "string" ? v : "";
+}
+
+/** Pasūtījumu backup → dry-run rindas. Bez vārda, e-pasta, tālruņa. */
+export function dryRunRecordsFromPasutijumiBackup(payload: unknown): IrissEcarstradeDryRunRecord[] {
+  const root = asRec(payload);
+  const drafts = root && asRec(root.orderDrafts);
+  if (!drafts) return [];
+  const out: IrissEcarstradeDryRunRecord[] = [];
+  for (const raw of Object.values(drafts)) {
+    let rec: Record<string, unknown> | null = null;
+    if (typeof raw === "string") {
+      try {
+        rec = asRec(JSON.parse(raw));
+      } catch {
+        rec = null;
+      }
+    } else {
+      rec = asRec(raw);
+    }
+    if (!rec) continue;
+    const id = strField(rec, "id") || `draft-${out.length + 1}`;
+    const brandModel = strField(rec, "brandModel");
+    out.push({
+      kind: "pasutijums",
+      id,
+      label: brandModel || id.slice(0, 8),
+      brandModel,
+      productionYears: strField(rec, "productionYears"),
+      totalBudget: strField(rec, "totalBudget"),
+      engineType: strField(rec, "engineType"),
+      transmission: strField(rec, "transmission"),
+      bodyType: strField(rec, "bodyType"),
+      driveType: strField(rec, "driveType"),
+      seatCount: strField(rec, "seatCount"),
+      maxMileage: strField(rec, "maxMileage"),
+      preferredColors: strField(rec, "preferredColors"),
+      nonPreferredColors: strField(rec, "nonPreferredColors"),
+      equipmentRequired: strField(rec, "equipmentRequired"),
+      dealVat21Required: rec.dealVat21Required === true,
+      listingLinkAuto1: coerceIrissListingLinkList(rec.listingLinkAuto1),
+      listingLinkOpenline: coerceIrissListingLinkList(rec.listingLinkOpenline),
+      listingLinkAutobid: coerceIrissListingLinkList(rec.listingLinkAutobid),
+      listingLinkMobile: coerceIrissListingLinkList(rec.listingLinkMobile),
+      listingLinkEcarstrade: coerceIrissListingLinkList(rec.listingLinkEcarstrade),
+    });
+  }
+  return out;
+}
+
+export function summarizeEcarstradeDryRun(records: readonly IrissEcarstradeDryRunRecord[]): string[] {
+  let plans = 0;
+  let makeOnly = 0;
+  let unmappedBrand = 0;
+  let porsche = 0;
+  let singleYear = 0;
+  let exactCc = 0;
+  for (const rec of records) {
+    const built = planEcarstradeSearchUrls(rec);
+    plans += built.length;
+    for (const p of built) {
+      if (p.filter.makeIds.length > 0 && !p.filter.modelName) makeOnly += 1;
+      if (p.unmapped.some((u) => /brandId/i.test(u))) unmappedBrand += 1;
+      if (p.filter.makeNames.includes("Porsche")) porsche += 1;
+      if (p.filter.yearFrom != null && p.filter.yearFrom === p.filter.yearTo) singleYear += 1;
+      if (p.filter.engineFromCc != null && p.filter.engineFromCc === p.filter.engineToCc) exactCc += 1;
+    }
+  }
+  return [
+    `- ET plāni: ${plans}`,
+    `- Make-only plāni (nav modeļa): ${makeOnly}`,
+    `- Plāni ar nekartētu Autobid brandId: ${unmappedBrand}`,
+    `- Plāni ar Porsche marku: ${porsche}`,
+    `- Plāni ar vienu gadu (no=līdz): ${singleYear}`,
+    `- Plāni ar precīzu cm3 (no=līdz): ${exactCc}`,
+  ];
+}
+
+export function formatEcarstradeDryRunReport(
+  records: readonly IrissEcarstradeDryRunRecord[],
+  opts?: { realBackup?: boolean },
+): string {
   const orders = records.filter((r) => r.kind === "pasutijums");
   const scans = records.filter((r) => r.kind === "scan");
   const flagged = records.filter((r) => planEcarstradeSearchUrls(r).some((p) => p.unmapped.length > 0));
+  const intro = opts?.realBackup
+    ? "Šis saraksts ir no IRISS pasūtījumu backup (anonymizēts: bez vārda, e-pasta, tālruņa). Produkcijas Blob netiek rakstīts."
+    : "Šis saraksts ir no reprezentatīviem Auto1 / Autobid / Openlane / Mobile filtriem (fixtures). Dzīvais Blob šajā vidē nav pieejams; pēc merge Nils palaiž Atjaunot ET uz pasūtījumiem un radaru.";
   const parts = [
     "# eCarsTrade precīzo saišu dry-run",
     "",
     "Produkcijas dati netiek rakstīti. Atjaunot ET palaižams pēc Nils apstiprinājuma.",
-    "Šis saraksts ir no reprezentatīviem Auto1 / Autobid / Openlane / Mobile filtriem (fixtures). Dzīvais Blob šajā vidē nav pieejams; pēc merge Nils palaiž Atjaunot ET uz pasūtījumiem un radaru.",
+    intro,
     "",
     `- Pasūtījumi: ${orders.length}`,
     `- Radars / Meklētājs: ${scans.length}`,
     `- Ieraksti ar vismaz vienu nekartējamu kritēriju: ${flagged.length}`,
+    ...(opts?.realBackup ? summarizeEcarstradeDryRun(records) : []),
     "",
   ];
   if (orders.length) {

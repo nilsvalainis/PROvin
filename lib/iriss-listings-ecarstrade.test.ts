@@ -14,6 +14,7 @@ import {
   mergeEcarstradeJsonPrices,
   parseEcarstradeApiPage,
   parseEcarstradeCard,
+  parseEcarstradeSearchHtml,
   readEcarstradeAuth,
   splitConcatenatedJsonObjects,
 } from "@/lib/iriss-listings-ecarstrade";
@@ -213,5 +214,13 @@ describe("eCarsTrade parser", () => {
     expect(merged.priceBuyNow).toBe(16200);
     expect(merged.priceCurrent).toBeNull();
     expect(mergeEcarstradeHtmlPrices(pub!, card("card-tucson-public.html")).priceBuyNow).toBeNull();
+  });
+
+  it("parses PIRKT from a logged-in /search HTML page", () => {
+    const html = `<html><body>${card("card-tucson-loggedin.html")}</body></html>`;
+    const vehicles = parseEcarstradeSearchHtml(html);
+    expect(vehicles).toHaveLength(1);
+    expect(vehicles[0]).toMatchObject({ externalId: "7602956", priceBuyNow: 16200 });
+    expect(parseEcarstradeSearchHtml("<html><title>Just a moment...</title></html>")).toEqual([]);
   });
 });

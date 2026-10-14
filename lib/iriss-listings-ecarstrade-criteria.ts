@@ -165,7 +165,51 @@ export const IGNORED_SEARCH_PARAM_KEYS = new Set([
   "session",
   "token",
   "csrf",
+  "id",
+  "searchid",
+  "powerunit",
+  "dir",
+  "dam",
+  "od",
+  "sb",
+  "st",
+  "cn",
+  "ssid",
+  "issearchrequest",
+  "s",
+  "vc",
+  "radiussearchzipcode",
+  "sortingtype",
+  "accidents",
+  "countryoforigin",
+  "refid",
+  "ref",
+  "sr",
+  "e70",
+  "carlist-e70",
+  "carlist-e21from",
+  "carlist-e21to",
+  "carlist-e19from",
+  "carlist-e19to",
+  "categoryid-category",
+  "carlist-category",
 ]);
+
+/** Openlane `fuelTypes=100003` (IRISS: 100003 dīzelis, 100001 benzīns, 100013 hibrīds). */
+export const OPENLANE_FUEL_ID_TO_NAME: Record<string, string> = {
+  "100001": "petrol",
+  "100003": "diesel",
+  "100013": "hybrid",
+};
+
+/** Autobid `e17` (IRISS: 2 benzīns, 3 dīzelis, 6/12/14 hibrīds). */
+export const AUTOBID_FUEL_ID_TO_NAME: Record<string, string> = {
+  "2": "petrol",
+  "3": "diesel",
+  "6": "hybrid",
+  "12": "hybrid",
+  "14": "hybrid",
+};
 
 function fold(raw: string): string {
   return raw
@@ -273,11 +317,17 @@ export function resolveMakeFromAutobidBrandId(brandId: string): string | null {
   return name ?? null;
 }
 
+/** mobile.de Porsche 20700 + Wohnmobil/Evado/Westfalia ir kemperu kategorija, ne Porsche auto. */
+const MOBILE_CAMPER_MODEL = /wohnmobil|reisemobil|evado|westfalia|generation|camping/i;
+
 export function resolveMakeFromMobileMs(ms: string): { make: string | null; model: string } {
   const parts = ms.split(";").map((p) => p.trim());
   const makeId = parts[0] ?? "";
   const modelName = parts[3] || "";
   const make = MOBILE_DE_MAKE_ID_TO_NAME[makeId] ?? null;
+  if (make && /porsche/i.test(make) && MOBILE_CAMPER_MODEL.test(modelName)) {
+    return { make: null, model: "" };
+  }
   return { make, model: modelName };
 }
 
@@ -297,4 +347,87 @@ export function isNoiseSearchParam(key: string): boolean {
   if (IGNORED_SEARCH_PARAM_KEYS.has(k)) return true;
   if (k.startsWith("utm")) return true;
   return false;
+}
+
+export type MakeModelPair = { make: string; model: string };
+
+/** Auto1 `manufacturers=MAKE|MODEL|VARIANT;MAKE|MODEL` - nesagriezt visus `|` kā atsevišķas markas. */
+export function parseAuto1Manufacturers(raw: string): MakeModelPair[] {
+  const out: MakeModelPair[] = [];
+  for (const group of raw.split(";")) {
+    const parts = group.split("|").map((s) => s.trim()).filter(Boolean);
+    if (!parts[0]) continue;
+    out.push({ make: parts[0], model: parts[1] ?? "" });
+  }
+  return out;
+}
+
+/** Openlane `makesModels=Make,Model|Make,Model`. */
+export function parseOpenlaneMakesModels(raw: string): MakeModelPair[] {
+  const out: MakeModelPair[] = [];
+  for (const group of raw.split("|")) {
+    const t = group.trim();
+    if (!t) continue;
+    const comma = t.indexOf(",");
+    if (comma < 0) {
+      out.push({ make: t, model: "" });
+      continue;
+    }
+    out.push({ make: t.slice(0, comma).trim(), model: t.slice(comma + 1).trim() });
+  }
+  return out;
+}
+
+export function parseZeroUnboundedRange(raw: string): { from: number | null; to: number | null } {
+  const s = raw.trim();
+  if (!s) return { from: null, to: null };
+  const pair = s.match(/^(\d*)\s*[,:]\s*(\d*)$/);
+  if (pair) {
+    const a = pair[1] ? Number.parseInt(pair[1], 10) : null;
+    const b = pair[2] ? Number.parseInt(pair[2], 10) : null;
+    return {
+      from: a != null && Number.isFinite(a) && a > 0 ? a : null,
+      to: b != null && Number.isFinite(b) && b > 0 ? b : null,
+    };
+  }
+  const n = Number.parseInt(s.replace(/[^\d]/g, ""), 10);
+  if (!Number.isFinite(n) || n <= 0) return { from: null, to: null };
+  return { from: n, to: n };
+}
+
+export function mapOpenlaneFuelToken(raw: string): string | null {
+  const id = OPENLANE_FUEL_ID_TO_NAME[raw.trim()];
+  return id ?? null;
+}
+
+export function mapAutobidFuelToken(raw: string): string | null {
+  return AUTOBID_FUEL_ID_TO_NAME[raw.trim()] ?? null;
+}
+
+/**
+ * Viena auto kartīte (ne meklēšanas filtrs). Auto1 `id=` kopā ar manufacturers paliek meklējums.
+ */
+export function isSingleVehicleListingUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    const host = u.hostname.toLowerCase();
+    const path = u.pathname.toLowerCase();
+    if (/\/(details\.html|fahrzeugangebot|offer\/|vehicle\/\d|item\/\d)/.test(path)) return true;
+    if (host.includes("auto1.com")) {
+      const id = (u.searchParams.get("id") ?? "").trim();
+      if (!id) return false;
+      const hasSearch =
+        u.searchParams.has("manufacturers") ||
+        u.searchParams.has("manufacturer") ||
+        u.searchParams.has("makes") ||
+        u.searchParams.has("make") ||
+        u.searchParams.has("makesModels");
+      return !hasSearch;
+    }
+    if (host.includes("openlane.") && /\/(car|detail|vehicle)\//.test(path)) return true;
+    if (host.includes("autobid.") && /\/(offer|auction-item)\//.test(path)) return true;
+    return false;
+  } catch {
+    return false;
+  }
 }

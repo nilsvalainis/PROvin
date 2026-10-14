@@ -452,6 +452,27 @@ export function parseEcarstradeCard(html: string, data: Rec = {}): EcarstradeVeh
   };
 }
 
+/** Meklēšanas HTML (ne future_api): kartītes ar data-itemId. */
+export function parseEcarstradeSearchHtml(html: string): EcarstradeVehicle[] {
+  if (!html.trim() || isCloudflareLike(html)) return [];
+  const byId = new Map<string, EcarstradeVehicle>();
+  const re = /data-itemId=["'](\d+)["']/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    const id = m[1] ?? "";
+    if (!id || byId.has(id)) continue;
+    const start = html.lastIndexOf("<div", m.index);
+    const slice = html.slice(Math.max(0, start), m.index + 12_000);
+    const v = parseEcarstradeCard(slice, { id });
+    if (v && listingCountryAllowed(v.countryCode)) byId.set(id, v);
+  }
+  return [...byId.values()];
+}
+
+function isCloudflareLike(html: string): boolean {
+  return /just a moment|cf-mitigated|cf-browser-verification/i.test(html);
+}
+
 export function parseEcarstradeApiPage(
   raw: string,
   pageNumber = 1,

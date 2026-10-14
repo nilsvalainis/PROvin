@@ -1,4 +1,5 @@
 import { filledIrissListingLinks, IRISS_LISTING_LINKS_PER_SOURCE_MAX } from "@/lib/iriss-listing-link-lists";
+import { isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
   clusterEcarstradeFilters,
   describeEcarstradeFilter,
@@ -8,6 +9,7 @@ import {
   filterFromOrderFields,
   parseListingSearchDetailed,
   sameEcarstradeSearch,
+  widenExactSearchBounds,
   type EcarstradeSearchFilter,
   type OrderSearchFields,
 } from "@/lib/iriss-listings-ecarstrade-search";
@@ -47,7 +49,7 @@ function sourceUrls(rec: Pick<IrissEcarstradeLinkSource, "listingLinkAuto1" | "l
     ...filledIrissListingLinks(rec.listingLinkOpenline),
     ...filledIrissListingLinks(rec.listingLinkAutobid),
     ...filledIrissListingLinks(rec.listingLinkMobile),
-  ];
+  ].filter((url) => !isSingleVehicleListingUrl(url));
 }
 
 export function hasOtherAuctionListingLinks(
@@ -90,16 +92,17 @@ export function planEcarstradeSearchUrls(rec: IrissEcarstradeLinkSource): IrissE
   const plans: IrissEcarstradeLinkPlan[] = [];
   const seen = new Set<string>();
   for (const cluster of clusters) {
-    const url = ecarstradeSearchUrl(cluster.filter);
+    const filter = widenExactSearchBounds(cluster.filter);
+    const url = ecarstradeSearchUrl(filter);
     if (!url) continue;
     if (seen.has(url) || plans.some((p) => sameEcarstradeSearch(p.url, url))) continue;
     seen.add(url);
     plans.push({
       sourceUrls: cluster.sourceUrls,
-      filter: cluster.filter,
+      filter,
       url,
-      criteria: describeEcarstradeFilter(cluster.filter),
-      unmapped: unmappedLines(cluster.filter),
+      criteria: describeEcarstradeFilter(filter),
+      unmapped: unmappedLines(filter),
     });
   }
   return plans;

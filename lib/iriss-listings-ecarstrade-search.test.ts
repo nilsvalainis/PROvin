@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveEcarstradeMake, resolveEcarstradeModel, resolveMakeModelFromBrand } from "@/lib/iriss-listings-ecarstrade-catalog";
+import { isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
   ecarstradeSearchUrl,
   fillFilterGaps,
@@ -8,7 +9,9 @@ import {
   filterFromOrderFields,
   parseListingSearchUrl,
   sameEcarstradeSearch,
+  widenExactSearchBounds,
 } from "@/lib/iriss-listings-ecarstrade-search";
+import { planEcarstradeSearchUrls } from "@/lib/iriss-scan-ecarstrade-links";
 
 describe("eCarsTrade search mapper", () => {
   it("resolves Volvo XC60 to mark 68 / model 1866", () => {
@@ -254,5 +257,113 @@ describe("eCarsTrade search mapper", () => {
     expect(filter.engineToCc).toBeNull();
     const url = ecarstradeSearchUrl(filter)!;
     expect(url).not.toContain("engine_from=");
+  });
+
+  it("reads Auto1 manufacturers=MAKE|MODEL and gearTypes/reg/km without splitting pipes", () => {
+    const filter = parseListingSearchUrl(
+      "https://www.auto1.com/en/app/merchant/cars?manufacturers=BMW%7C2er%7C218d%20Gran%20Tourer%3BBMW%7C2er%7C220d%20Gran%20Tourer&gearTypes=automatic&regFrom=2016&regTo=2020&mileageTo=150000&fuelTypes=DIESEL",
+    );
+    expect(filter.makeIds).toEqual([7]);
+    expect(filter.modelName).toMatch(/2 Series/i);
+    expect(filter.gearboxes).toEqual(["Automatic"]);
+    expect(filter.yearFrom).toBe(2016);
+    expect(filter.yearTo).toBe(2020);
+    expect(filter.mileageTo).toBe(150000);
+    expect(filter.fuels).toEqual(["Diesel"]);
+  });
+
+  it("reads Openlane makesModels, registrationYears and numeric fuelTypes", () => {
+    const filter = parseListingSearchUrl(
+      "https://www.openlane.eu/en/findcar?makesModels=BMW,2%20Series&registrationYears=2018,2022&fuelTypes=100003&transmissionTypes=Automatic&mileages=0,175000&prices=0,20000",
+    );
+    expect(filter.makeIds).toEqual([7]);
+    expect(filter.modelName).toMatch(/2 Series/i);
+    expect(filter.yearFrom).toBe(2018);
+    expect(filter.yearTo).toBe(2022);
+    expect(filter.fuels).toEqual(["Diesel"]);
+    expect(filter.gearboxes).toEqual(["Automatic"]);
+    expect(filter.mileageTo).toBe(175000);
+    expect(filter.priceTo).toBe(20000);
+  });
+
+  it("maps Autobid brandIds from the verified IRISS set and e17 diesel", () => {
+    const bmw = parseListingSearchUrl("https://autobid.de/en/search-results?brandId-brand=1&name-model=X5&e17=3&registrationFrom=2014");
+    expect(bmw.makeIds).toEqual([7]);
+    expect(bmw.modelName).toBe("X5");
+    expect(bmw.fuels).toEqual(["Diesel"]);
+    expect(bmw.yearFrom).toBe(2014);
+    const opel = parseListingSearchUrl("https://autobid.de/en/search-results?brandId=41&name-model=Vivaro");
+    expect(opel.makeNames).toEqual(["Opel"]);
+    const mercedes = parseListingSearchUrl("https://autobid.de/en/search-results?brandId-brand=271&name-model=Viano");
+    expect(mercedes.makeNames).toEqual(["Mercedes"]);
+  });
+
+  it("reads Mobile.de ft/tr/p/fr/ml ranges and skips Porsche camper ms", () => {
+    const filter = parseListingSearchUrl(
+      "https://suchen.mobile.de/fahrzeuge/search.html?ms=19000;;;Vivaro&ms=20700;;;Wohnmobil&ms=20700;;;Evado&ft=DIESEL&tr=AUTOMATIC_GEAR&p=8000:15000&fr=2015:2018&ml=100000:2990000",
+    );
+    expect(filter.makeNames).toEqual(["Opel"]);
+    expect(filter.makeNames).not.toContain("Porsche");
+    expect(filter.fuels).toEqual(["Diesel"]);
+    expect(filter.gearboxes).toEqual(["Automatic"]);
+    expect(filter.priceFrom).toBe(8000);
+    expect(filter.priceTo).toBe(15000);
+    expect(filter.yearFrom).toBe(2015);
+    expect(filter.yearTo).toBe(2018);
+    expect(filter.mileageFrom).toBe(100000);
+    expect(filter.mileageTo).toBe(2990000);
+  });
+
+  it("extracts models from plan titles: A6, W212, V-Klasse, Ceed, 3er, Traffic", () => {
+    expect(filterFromBrandModel("Audi A6").modelName).toBe("A6");
+    expect(filterFromBrandModel("Mercedes w212 (E250/300/350) ELEGANCE").modelName).toBe("E-Class");
+    expect(filterFromBrandModel("Mercedes V klase").modelName).toBe("V-Class");
+    expect(filterFromBrandModel("KIA CEED CD").modelName).toMatch(/cee'd/i);
+    expect(filterFromBrandModel("BMW 3er ar M57 e90").modelName).toBe("3 Series");
+    const vans = filterFromBrandModel("Opel Vivaro/Traffic (Evado/Westfalia) + VIANO");
+    expect(vans.makeNames).toEqual(expect.arrayContaining(["Opel", "Renault", "Mercedes"]));
+    expect(vans.makeNames).not.toContain("Porsche");
+  });
+
+  it("ignores Auto1 id-only vehicle links and widens exact year/cm3", () => {
+    expect(isSingleVehicleListingUrl("https://www.auto1.com/en/app/merchant/cars?id=95a1ea78-e733-414d-a526-46e47e97efb3")).toBe(true);
+    expect(
+      isSingleVehicleListingUrl(
+        "https://www.auto1.com/en/app/merchant/cars?id=95a1ea78-e733-414d-a526-46e47e97efb3&manufacturers=Opel%7CVivaro",
+      ),
+    ).toBe(false);
+    const wide = widenExactSearchBounds({
+      ...filterFromBrandModel("Audi A6"),
+      yearFrom: 2018,
+      yearTo: 2018,
+      engineFromCc: 2000,
+      engineToCc: 2000,
+    });
+    expect(wide.yearFrom).toBe(2017);
+    expect(wide.yearTo).toBe(2019);
+    expect(wide.engineFromCc).toBe(1800);
+    expect(wide.engineToCc).toBe(2200);
+  });
+
+  it("plans Opel Vivaro/Traffic without Porsche and with Openlane years", () => {
+    const plans = planEcarstradeSearchUrls({
+      id: "vivaro-test",
+      brandModel: "Opel Vivaro/Traffic (Evado/Westfalia) + VIANO",
+      listingLinkAuto1: [
+        "https://www.auto1.com/en/app/merchant/cars?id=95a1ea78-e733-414d-a526-46e47e97efb3&manufacturers=Opel%7CVivaro%3BRenault%7CTrafic&gearTypes=manual&regFrom=2009&regTo=2014&mileageTo=250000",
+      ],
+      listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makesModels=Opel,Vivaro%7CRenault,Trafic&registrationYears=2009,2014&fuelTypes=100003"],
+      listingLinkAutobid: ["https://autobid.de/en/search-results?brandId-brand=41&brandId=25&name-model=Vivaro&e17=3"],
+      listingLinkMobile: [
+        "https://suchen.mobile.de/fahrzeuge/search.html?ms=20700;;;Wohnmobil&ms=19000;;;Vivaro&ft=DIESEL",
+      ],
+      listingLinkEcarstrade: [""],
+    });
+    expect(plans.length).toBeGreaterThan(0);
+    const joined = plans.map((p) => p.url).join(" ");
+    expect(joined).not.toContain("mark[]=54");
+    expect(plans.some((p) => p.filter.makeNames.includes("Opel"))).toBe(true);
+    expect(plans.some((p) => p.filter.yearFrom === 2009 && p.filter.yearTo === 2014)).toBe(true);
+    expect(plans.some((p) => p.filter.fuels.includes("Diesel"))).toBe(true);
   });
 });
