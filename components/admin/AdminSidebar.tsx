@@ -241,21 +241,10 @@ async function logout() {
 
 function useNewIrissOffer() {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const create = useCallback(async () => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const res = await fetch("/api/admin/iriss-pasutijumi", { method: "POST", credentials: "include", headers: { Accept: "application/json" } });
-      const data = (await res.json().catch(() => ({}))) as { id?: unknown };
-      if (!res.ok || typeof data.id !== "string") return;
-      router.push(`/admin/iriss/pasutijumi/${encodeURIComponent(data.id)}?newOffer=1&noClientPdf=1`);
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, router]);
-  return { busy, create };
+  const create = useCallback(() => {
+    router.push("/admin/iriss/pasutijumi/new");
+  }, [router]);
+  return { busy: false, create };
 }
 
 export function useAdminSidebarCollapsed() {

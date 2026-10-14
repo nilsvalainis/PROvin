@@ -49,7 +49,8 @@ describe("listing thumbs / VIN / specs", () => {
   it("shortens VIN and builds VIN SCAN query", () => {
     const vin = "WBAZZZ8V0K1237731";
     expect(listingVinShort(vin)).toBe("WBA…7731");
-    expect(listingVinScanHref(vin)).toBe("/admin/vin-scan?vin=WBAZZZ8V0K1237731");
+    expect(listingVinScanHref(vin)).toBe("/admin/iriss/scan?vin=WBAZZZ8V0K1237731");
+    expect(listingVinScanHref(vin)).not.toContain("/admin/vin-scan");
     expect(listingVinScanHref("nope")).toBe("");
     expect(listingVinSourceMark("ocr_photo")).toBe("no foto");
   });

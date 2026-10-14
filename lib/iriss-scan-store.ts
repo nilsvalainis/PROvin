@@ -200,6 +200,7 @@ function normalizeRecord(raw: unknown, id: string): IrissScanRecord | null {
     updatedAt: str("updatedAt") || base.updatedAt,
     pinnedAt: sanitizeDraftTextForStorage(str("pinnedAt"), 64),
     brandModel: sanitizeDraftTextForStorage(str("brandModel"), 400),
+    vin: sanitizeDraftTextForStorage(str("vin"), 32),
     listingLinkMobile: normalizeLinks(o.listingLinkMobile),
     listingLinkAutobid: normalizeLinks(o.listingLinkAutobid),
     listingLinkOpenline: normalizeLinks(o.listingLinkOpenline),
@@ -378,15 +379,17 @@ export async function writeIrissScan(record: IrissScanRecord): Promise<{ ok: tru
   }
 }
 
-export async function createIrissScan(): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+export async function createIrissScan(
+  seed?: Partial<IrissScanRecord> & { id?: string },
+): Promise<{ ok: true; id: string; record: IrissScanRecord } | { ok: false; error: string }> {
   const r = resolveStorage();
   if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
-  const id = crypto.randomUUID();
+  const id = seed?.id && isSafeIrissScanId(seed.id) ? seed.id : crypto.randomUUID();
   const now = new Date().toISOString();
-  const rec = emptyIrissScanRecord(id, now);
+  const rec = { ...emptyIrissScanRecord(id, now), ...seed, id, createdAt: now, updatedAt: now };
   const w = await writeIrissScan(rec);
   if (!w.ok) return { ok: false, error: w.error };
-  return { ok: true, id };
+  return { ok: true, id, record: rec };
 }
 
 export async function deleteIrissScan(id: string): Promise<{ ok: true } | { ok: false; error: string }> {

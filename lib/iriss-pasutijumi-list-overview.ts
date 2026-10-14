@@ -5,6 +5,7 @@
 
 import {
   IRISS_DEAL_DETAIL_OPTIONS,
+  IRISS_PASUTIJUMS_LIST_STATUS_LV,
   type IrissPasutijumiListOrder,
   type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
@@ -26,11 +27,7 @@ export type IrissPasutijumsOverview = {
   notes: string | null;
 };
 
-const LIST_STATUS_LV: Record<IrissPasutijumsListStatus, string> = {
-  active: "Aktīvs",
-  completed: "Izpildīts",
-  inactive: "Neaktīvs",
-};
+const LIST_STATUS_LV: Record<IrissPasutijumsListStatus, string> = IRISS_PASUTIJUMS_LIST_STATUS_LV;
 
 export function irissPasutijumiListPdfFilename(d = new Date()): string {
   return `provin-pasutijumu-saraksts-${d.toISOString().slice(0, 10)}.pdf`;
@@ -129,6 +126,7 @@ export function collectIrissPasutijumsOverview(record: IrissPasutijumsRecord): I
     if (v) specLines.push(`${label}: ${v}`);
   };
   pushSpec("Marka / modelis", record.brandModel);
+  pushSpec("VIN", record.vin);
   pushSpec("Gads / periods", record.productionYears);
   pushSpec("Maks. nobraukums", record.maxMileage);
   pushSpec("Transmisija", record.transmission);

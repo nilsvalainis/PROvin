@@ -22,6 +22,7 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     clientLastName: rec.clientLastName.trim(),
     orderDate: rec.orderDate.trim(),
     brandModel: rec.brandModel.trim() || "—",
+    vin: rec.vin.trim(),
     totalBudget: rec.totalBudget.trim() || "—",
     phone: rec.phone.trim() || "—",
     productionYears: rec.productionYears.trim(),
@@ -115,6 +116,7 @@ export function irissListRowMatchesQuery(row: IrissPasutijumsListRow, query: str
   const hay = [
     name,
     row.brandModel,
+    row.vin ?? "",
     row.phone,
     row.clientFirstName,
     row.clientLastName,
@@ -127,19 +129,21 @@ export function irissListRowMatchesQuery(row: IrissPasutijumsListRow, query: str
   return hay.includes(q);
 }
 
-export function countIrissListStatuses(rows: readonly IrissPasutijumsListRow[]): {
-  active: number;
-  completed: number;
-  inactive: number;
-} {
-  let active = 0;
-  let completed = 0;
-  let inactive = 0;
+export function countIrissListStatuses(
+  rows: readonly IrissPasutijumsListRow[],
+): Record<import("@/lib/iriss-pasutijumi-types").IrissPasutijumsListStatus, number> {
+  const counts = {
+    active: 0,
+    searching: 0,
+    offered: 0,
+    reserved: 0,
+    completed: 0,
+    inactive: 0,
+  };
   for (const row of rows) {
     const st = row.listStatus ?? "active";
-    if (st === "completed") completed += 1;
-    else if (st === "inactive") inactive += 1;
-    else active += 1;
+    if (st in counts) counts[st] += 1;
+    else counts.active += 1;
   }
-  return { active, completed, inactive };
+  return counts;
 }

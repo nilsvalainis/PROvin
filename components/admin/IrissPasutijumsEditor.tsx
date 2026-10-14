@@ -12,11 +12,22 @@ import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/com
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import {
+  IRISS_STALE_REVISION,
+  irissPasutijumsHasOperatorContent,
+  irissWorkspaceRevision,
+  mergeIrissPasutijumsRecords,
+  planSilentAutosave,
+} from "@/lib/iriss-pasutijumi-save-safety";
+import {
   defaultIrissDzintarzemeTameDraft,
   IRISS_DEAL_DETAIL_OPTIONS,
   IRISS_MAX_OFFER_ATTACHMENTS,
+  IRISS_PASUTIJUMS_LIST_STATUSES,
+  IRISS_PASUTIJUMS_LIST_STATUS_LV,
+  parseIrissPasutijumsListStatus,
   type IrissOfferAttachment,
   type IrissOfferRecord,
+  type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
 import {
@@ -159,6 +170,7 @@ type OfferDraft = {
   id: string;
   title: string;
   brandModel: string;
+  vin: string;
   year: string;
   mileage: string;
   priceGermany: string;
@@ -189,6 +201,7 @@ function newOfferDraft(nextNumber: number): OfferDraft {
     id: crypto.randomUUID(),
     title: `Piedāvājums ${nextNumber}`,
     brandModel: "",
+    vin: "",
     year: "",
     mileage: "",
     priceGermany: "",
@@ -276,6 +289,7 @@ function isOfferDraftSyncedWithRecord(draft: OfferDraft, offer: IrissOfferRecord
   if (draft.id !== offer.id) return false;
   if (draft.title !== offer.title) return false;
   if (draft.brandModel !== offer.brandModel) return false;
+  if ((draft.vin ?? "") !== (offer.vin ?? "")) return false;
   if (draft.year !== offer.year) return false;
   if (draft.mileage !== offer.mileage) return false;
   if (draft.priceGermany !== offer.priceGermany) return false;
@@ -482,10 +496,12 @@ export function IrissPasutijumsEditor({
   initialRecord,
   autoOpenNewOffer = false,
   forceNoClientPdf = false,
+  unsavedDraft = false,
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
   forceNoClientPdf?: boolean;
+  unsavedDraft?: boolean;
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(initialRecord);
@@ -507,6 +523,8 @@ export function IrissPasutijumsEditor({
   recRef.current = rec;
   const autosaveTimer = useRef<number | null>(null);
   const autosaveInFlight = useRef(false);
+  const autosaveQueued = useRef(false);
+  const persistedIdRef = useRef(unsavedDraft ? "" : initialRecord.id);
   const imagesHydrating = useRef(irissRecordNeedsOfferImageHydration(initialRecord));
   const [imagesReady, setImagesReady] = useState(!imagesHydrating.current);
 
@@ -535,7 +553,13 @@ export function IrissPasutijumsEditor({
       const payload = opts?.payload ?? recRef.current;
       const useXhr = Boolean(onUploadProgress) || !silent;
 
-      if (silent && autosaveInFlight.current) return { ok: false, error: "Saglabāšana jau notiek (race)." };
+      if (silent) {
+        const plan = planSilentAutosave(autosaveInFlight.current);
+        if (plan.queue) {
+          autosaveQueued.current = true;
+          return { ok: false, error: "Saglabāšana rindā." };
+        }
+      }
       if (imagesHydrating.current) return { ok: false, error: "Ielādē attēlus." };
       if (!silent) {
         setBusy(true);
@@ -543,12 +567,23 @@ export function IrissPasutijumsEditor({
       }
       if (silent) autosaveInFlight.current = true;
 
-      const url = `/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`;
+      const persistId = persistedIdRef.current;
+      const isCreate = !persistId;
+      const url = isCreate
+        ? "/api/admin/iriss-pasutijumi"
+        : `/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`;
+      const body = {
+        ...payload,
+        expectedWorkspaceRevision: irissWorkspaceRevision(payload),
+      };
 
       const finishOk = (record: IrissPasutijumsRecord | null): SaveResult => {
+        if (record?.id) persistedIdRef.current = record.id;
         lastSavedSnapshot.current = JSON.stringify(record ?? payload);
         if (!silent) {
           setRec((current) => pickRecordAfterOrderSave(current, payload, record));
+        } else if (record && irissWorkspaceRevision(record) !== irissWorkspaceRevision(payload)) {
+          setRec((current) => ({ ...current, workspaceRevision: record.workspaceRevision }));
         }
         if (redirectToList) {
           router.push("/admin/iriss/pasutijumi");
@@ -559,10 +594,23 @@ export function IrissPasutijumsEditor({
         return { ok: true };
       };
 
+      const applyStale = (data: unknown): SaveResult => {
+        const server = parseRecordFromPatchResponse(data);
+        if (!server) return { ok: false, error: "Konflikts saglabājot. Pārlādē lapu." };
+        const merged = mergeIrissPasutijumsRecords(server, recRef.current);
+        merged.workspaceRevision = irissWorkspaceRevision(server);
+        setRec(merged);
+        recRef.current = merged;
+        lastSavedSnapshot.current = JSON.stringify(server);
+        if (!silent) setSaveMsg("Serverī bija jaunāka versija. Apvienots droši. Saglabā vēlreiz.");
+        return { ok: false, error: IRISS_STALE_REVISION };
+      };
+
       try {
-        if (useXhr) {
-          const result = await patchJsonWithUploadProgress(url, payload, onUploadProgress);
+        if (!isCreate && useXhr) {
+          const result = await patchJsonWithUploadProgress(url, body, onUploadProgress);
           if (!result.ok) {
+            if (result.status === 409) return applyStale(result.data);
             const err = formatXhrPatchFailure(result);
             if (!silent) setSaveMsg(err);
             return { ok: false, error: err };
@@ -572,10 +620,10 @@ export function IrissPasutijumsEditor({
         }
 
         const res = await fetch(url, {
-          method: "PATCH",
+          method: isCreate ? "POST" : "PATCH",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(isCreate ? { record: body } : body),
         });
         const text = await res.text();
         let data: unknown = {};
@@ -584,12 +632,18 @@ export function IrissPasutijumsEditor({
         } catch {
           data = {};
         }
+        if (res.status === 409) return applyStale(data);
         if (!res.ok) {
           const err = formatPatchFailureMessage(res.status, data, text ? text.slice(0, 280) : undefined);
           if (!silent) setSaveMsg(err);
           return { ok: false, error: err };
         }
         const record = parseRecordFromPatchResponse(data);
+        if (isCreate && record?.id && record.id !== payload.id) {
+          router.replace(`/admin/iriss/pasutijumi/${encodeURIComponent(record.id)}`);
+        } else if (isCreate && persistId === "" && payload.id) {
+          router.replace(`/admin/iriss/pasutijumi/${encodeURIComponent(payload.id)}`);
+        }
         return finishOk(record);
       } catch (e) {
         const err = `Tīkla kļūda: ${e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200)}`;
@@ -597,7 +651,15 @@ export function IrissPasutijumsEditor({
         return { ok: false, error: err };
       } finally {
         if (!silent) setBusy(false);
-        if (silent) autosaveInFlight.current = false;
+        if (silent) {
+          autosaveInFlight.current = false;
+          if (autosaveQueued.current) {
+            autosaveQueued.current = false;
+            window.setTimeout(() => {
+              void save({ silent: true });
+            }, 0);
+          }
+        }
       }
     },
     [router],
@@ -637,6 +699,7 @@ export function IrissPasutijumsEditor({
 
   useEffect(() => {
     if (!imagesReady) return;
+    if (!persistedIdRef.current && !irissPasutijumsHasOperatorContent(rec)) return;
     const snap = JSON.stringify(rec);
     if (snap === lastSavedSnapshot.current) return;
     if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
@@ -727,6 +790,7 @@ export function IrissPasutijumsEditor({
       id: offer.id,
       title: offer.title,
       brandModel: offer.brandModel,
+      vin: offer.vin ?? "",
       year: offer.year,
       mileage: offer.mileage,
       priceGermany: offer.priceGermany,
@@ -829,6 +893,7 @@ export function IrissPasutijumsEditor({
         id: offerDraft.id,
         title: cleanedTitle,
         brandModel: offerDraft.brandModel,
+        vin: offerDraft.vin,
         year: offerDraft.firstRegistration || offerDraft.year,
         mileage: offerDraft.odometerReading || offerDraft.mileage,
         priceGermany: offerDraft.carPrice || offerDraft.priceGermany,
@@ -1251,10 +1316,32 @@ export function IrissPasutijumsEditor({
         <section className={shellCard}>
           <BlockTitle>Transportlīdzekļa specifikācija</BlockTitle>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="block min-w-0">
+              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Statuss</span>
+              <select
+                className={fieldClass}
+                value={rec.listStatus}
+                onChange={(e) => patch("listStatus", parseIrissPasutijumsListStatus(e.target.value))}
+                aria-label="Pasūtījuma statuss"
+              >
+                {IRISS_PASUTIJUMS_LIST_STATUSES.map((s: IrissPasutijumsListStatus) => (
+                  <option key={s} value={s}>
+                    {IRISS_PASUTIJUMS_LIST_STATUS_LV[s]}
+                  </option>
+                ))}
+              </select>
+            </label>
             <LabeledInput
               label="Marka / modelis"
               value={rec.brandModel}
               onChange={(e) => patch("brandModel", e.target.value)}
+            />
+            <LabeledInput
+              label="VIN"
+              value={rec.vin}
+              onChange={(e) => patch("vin", e.target.value.toUpperCase())}
+              autoComplete="off"
+              spellCheck={false}
             />
             <LabeledInput
               label="Ražošanas gadi"
@@ -1522,6 +1609,13 @@ export function IrissPasutijumsEditor({
                     label="Marka, modelis"
                     value={offerDraft.brandModel}
                     onChange={(e) => setOfferDraft((d) => ({ ...d, brandModel: e.target.value }))}
+                  />
+                  <LabeledInput
+                    label="VIN"
+                    value={offerDraft.vin}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, vin: e.target.value.toUpperCase() }))}
+                    autoComplete="off"
+                    spellCheck={false}
                   />
                   <LabeledInput
                     label="Pirmā reģistrācija"

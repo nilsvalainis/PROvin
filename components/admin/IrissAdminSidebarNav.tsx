@@ -25,13 +25,13 @@ export function IrissAdminSidebarNav({ orientation = "vertical" }: Props) {
   return (
     <nav className={horizontal ? "flex flex-wrap items-center gap-1" : "flex flex-col gap-1.5"}>
       <Link href="/admin/iriss/pasutijumi" className={navItemClass(pasutijumiActive)}>
-        HOME
+        Pasūtījumi
       </Link>
       <Link href="/admin/iriss/scan" className={navItemClass(scanActive)}>
-        SCAN
+        Radars
       </Link>
       <Link href="/admin/iriss/sludinajumi" className={navItemClass(sludinajumiActive)}>
-        LIST
+        Klientu filtri
       </Link>
       <IrissNewOfferMenuButton compact={horizontal} />
       {!horizontal ? (

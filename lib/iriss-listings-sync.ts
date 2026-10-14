@@ -35,6 +35,7 @@ import type {
 } from "@/lib/iriss-listings-types";
 import { computeListingVatHealth, logListingVatHealth } from "@/lib/iriss-listings-vat";
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { irissScanSourceRows } from "@/lib/iriss-scan-listings";
 import { listIrissScan } from "@/lib/iriss-scan-store";
 
@@ -249,7 +250,7 @@ export async function runIrissListingsDailySync(
   const [orderRows, scanRows] = await Promise.all([listIrissPasutijumi(), listIrissScan().catch(() => [])]);
   /** SCAN ieraksti = papildu avoti ar `scan:` id; LIST tos rāda atsevišķā „SCAN” skatā. */
   const rows = [...orderRows, ...irissScanSourceRows(scanRows)];
-  const activeOrderIds = new Set(rows.filter((r) => r.listStatus === "active").map((r) => r.id));
+  const activeOrderIds = new Set(rows.filter((r) => isIrissPasutijumsWorkingStatus(r.listStatus ?? "active")).map((r) => r.id));
   const allSources = buildIrissListingSources(rows);
   const maxSources = envInt("IRISS_LISTINGS_MAX_SOURCES_PER_RUN", 200, 1, 2000);
   const sources = allSources.slice(0, maxSources);

@@ -24,6 +24,7 @@ describe("buildIrissOrdersBackupPayload", () => {
         id: "off-1",
         title: "Piedāvājums 1",
         brandModel: "BMW 520d",
+        vin: "",
         year: "",
         mileage: "",
         priceGermany: "",

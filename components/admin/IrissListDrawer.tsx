@@ -12,6 +12,7 @@ import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import { listingYearLabel } from "@/lib/iriss-listings-list-view";
 import { listingOfferLeaks, listingOfferText } from "@/lib/iriss-listings-offer";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
+import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import type { IrissMobilePlatform } from "@/lib/iriss-listings-mobile-platform";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { listingCostsFor, type IrissListPrefs, type ListingTaxOverride } from "@/lib/iriss-listings-operator-prefs";
@@ -73,7 +74,7 @@ export function IrissListDrawer({
   const powerKwLabel = formatListingPowerKwLabel(v.powerKw);
   const reassigned = Boolean(prefs.orderOv[v.id]?.length);
   const assignValue = linked.length === 1 ? linked[0]!.id : "";
-  const assignChoices = orders.filter((o) => o.listStatus === "active" || linked.some((l) => l.id === o.id));
+  const assignChoices = orders.filter((o) => isIrissPasutijumsWorkingStatus(o.listStatus) || linked.some((l) => l.id === o.id));
   const priceHistory = realListingPriceHistory(v.priceHistory);
   const auctionTypeLabel = listingAuctionTypeLabel(v.auctionType);
   const flag = countryFlagLabel(v.countryCode);

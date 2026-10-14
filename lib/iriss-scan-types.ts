@@ -4,6 +4,8 @@ export type IrissScanRecord = {
   updatedAt: string;
   pinnedAt: string;
   brandModel: string;
+  /** VIN, ja zināms. Tukšs vecajos JSON. */
+  vin: string;
   listingLinkMobile: string[];
   listingLinkAutobid: string[];
   listingLinkOpenline: string[];
@@ -25,6 +27,7 @@ export function emptyIrissScanRecord(id: string, nowIso: string): IrissScanRecor
     updatedAt: nowIso,
     pinnedAt: "",
     brandModel: "",
+    vin: "",
     listingLinkMobile: [""],
     listingLinkAutobid: [""],
     listingLinkOpenline: [""],

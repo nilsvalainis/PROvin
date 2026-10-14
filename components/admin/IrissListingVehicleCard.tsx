@@ -101,6 +101,7 @@ export function IrissListingVehicleCard({
   imageHidden,
   onImageError,
   onVinPatch,
+  onCreateOrder,
 }: {
   v: IrissListingVehicle;
   nowMs: number | null;
@@ -114,9 +115,11 @@ export function IrissListingVehicleCard({
   imageHidden: boolean;
   onImageError: () => void;
   onVinPatch?: (id: string, patch: ListingVinOcrPatch) => void;
+  onCreateOrder?: (v: IrissListingVehicle) => void | Promise<void>;
 }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [vinCopied, setVinCopied] = useState(false);
+  const [createBusy, setCreateBusy] = useState(false);
   useListingVinOcr(v, (id, patch) => onVinPatch?.(id, patch));
   const gallery = listingCardGallery(v);
   const photos = imageHidden ? [] : gallery.photos;
@@ -329,7 +332,7 @@ export function IrissListingVehicleCard({
                   className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-50"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Atvērt VIN SCAN
+                  VIN SCAN
                 </a>
               </span>
             ) : null}
@@ -399,8 +402,22 @@ export function IrissListingVehicleCard({
             <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:hidden">+{dmg.cats.length - 2}</span>
           ) : null}
         </div>
-        <div onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <IrissListingOrderChips orders={linked} onPreview={onPreviewOrder} />
+          {onCreateOrder ? (
+            <button
+              type="button"
+              disabled={createBusy}
+              className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCreateBusy(true);
+                void Promise.resolve(onCreateOrder(v)).finally(() => setCreateBusy(false));
+              }}
+            >
+              {createBusy ? "Veido…" : "Izveidot pasūtījumu"}
+            </button>
+          ) : null}
         </div>
 
         <div className="sm:hidden">

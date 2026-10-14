@@ -62,6 +62,9 @@ describe("IRISS saraksta rinda", () => {
     expect(irissListRowMatchesQuery(row, "acc")).toBe(true);
     expect(row.powerKwLabel).toBe("");
     expect(irissListRowPowerKwLabel(row)).toBe("");
+    rec.vin = "WVWZZZ1JZ3W386752";
+    expect(irissPasutijumsToListRow(rec).vin).toBe("WVWZZZ1JZ3W386752");
+    expect(irissListRowMatchesQuery(irissPasutijumsToListRow(rec), "WVWZZZ")).toBe(true);
   });
 
   it("parses kW from engine type or equipment, converting hp", () => {
@@ -102,19 +105,36 @@ describe("IRISS saraksta rinda", () => {
       ...emptyIrissPasutijums("c", "2026-01-03T00:00:00.000Z"),
       listStatus: "inactive",
     });
-    expect(countIrissListStatuses([a, b, c])).toEqual({ active: 1, completed: 1, inactive: 1 });
+    expect(countIrissListStatuses([a, b, c])).toEqual({
+      active: 1,
+      searching: 0,
+      offered: 0,
+      reserved: 0,
+      completed: 1,
+      inactive: 1,
+    });
   });
 });
 
 describe("IRISS statusa filtrs", () => {
-  it("defaults to active only", () => {
+  it("defaults to working statuses", () => {
     expect(parseIrissListStatusFilter(null)).toEqual(IRISS_LIST_STATUS_DEFAULT_FILTER);
-    expect(IRISS_LIST_STATUS_DEFAULT_FILTER).toEqual({ active: true, completed: false, inactive: false });
+    expect(IRISS_LIST_STATUS_DEFAULT_FILTER).toEqual({
+      active: true,
+      searching: true,
+      offered: true,
+      reserved: true,
+      completed: false,
+      inactive: false,
+    });
   });
 
-  it("does not treat missing keys as on", () => {
-    expect(parseIrissListStatusFilter(JSON.stringify({ active: true }))).toEqual({
+  it("keeps old v2 JSON and turns new statuses on so existing data stay visible", () => {
+    expect(parseIrissListStatusFilter(JSON.stringify({ active: true, completed: false, inactive: false }))).toEqual({
       active: true,
+      searching: true,
+      offered: true,
+      reserved: true,
       completed: false,
       inactive: false,
     });
@@ -129,6 +149,7 @@ describe("IRISS piedāvājuma attēlu hidratācija", () => {
         id: "o1",
         title: "",
         brandModel: "",
+        vin: "",
         year: "",
         mileage: "",
         priceGermany: "",
@@ -154,9 +175,18 @@ describe("IRISS piedāvājuma attēlu hidratācija", () => {
         updatedAt: rec.updatedAt,
       },
     ];
+    rec.offers[0]!.attachments.push({
+      id: "a2",
+      name: "blob.jpg",
+      mimeType: "image/jpeg",
+      size: 800,
+      dataUrl: "",
+      blobPath: "offers/abc/off1/a2",
+    });
     const stripped = stripIrissOfferImageDataUrls(rec);
     expect(stripped.offers[0]?.attachments[0]?.dataUrl).toBe("");
     expect(stripped.offers[0]?.attachments[0]?.size).toBe(1200);
+    expect(stripped.offers[0]?.attachments[1]?.blobPath).toBe("offers/abc/off1/a2");
     expect(irissRecordNeedsOfferImageHydration(stripped)).toBe(true);
     const merged = mergeIrissOfferImageDataUrls(stripped, rec);
     expect(merged.offers[0]?.attachments[0]?.dataUrl).toContain("data:image/jpeg");

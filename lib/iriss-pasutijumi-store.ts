@@ -7,11 +7,21 @@ import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
+import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
+import { attachmentAfterBlobPut, parseDataUrlPayload } from "@/lib/iriss-offer-attachment-blob";
 import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
+import {
+  irissRevisionMatches,
+  irissWorkspaceRevision,
+  IRISS_STALE_REVISION,
+  nextIrissWorkspaceRevision,
+  parseExpectedIrissRevision,
+} from "@/lib/iriss-pasutijumi-save-safety";
 import {
   emptyIrissPasutijums,
   IRISS_MAX_OFFER_ATTACHMENTS,
   normalizeIrissDzintarzemeTameDraft,
+  parseIrissPasutijumsListStatus,
   type IrissOfferAttachment,
   type IrissOfferRecord,
   type IrissPasutijumiListOrder,
@@ -26,6 +36,7 @@ const BLOB_PREFIX = "iriss-pasutijumi/";
 const LIST_ORDER_FILENAME = "_list-order.json";
 /** Listes vieglais indekss (bez pilnā record/offer payload). */
 const LIST_ROWS_FILENAME = "_list-rows.json";
+const LISTING_ORDER_OV_FILENAME = "_listing-order-ov.json";
 const BACKUP_RELATIVE_DIR = ".data/iriss-pasutijumi-backups";
 const LOCAL_MIRROR_RELATIVE_DIR = ".data/iriss-pasutijumi-local-mirror";
 const LOCAL_MIRROR_BUNDLE_FILENAME = "_all-orders.json";
@@ -352,10 +363,21 @@ function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const name = sanitizeDraftTextForStorage(typeof o.name === "string" ? o.name : "", 160);
       const mimeType = sanitizeDraftTextForStorage(typeof o.mimeType === "string" ? o.mimeType : "", 120);
       const dataUrl = sanitizeDraftTextForStorage(typeof o.dataUrl === "string" ? o.dataUrl : "", 15_000_000);
+      const blobPath = sanitizeDraftTextForStorage(typeof o.blobPath === "string" ? o.blobPath : "", 400);
+      const blobUrl = sanitizeDraftTextForStorage(typeof o.blobUrl === "string" ? o.blobUrl : "", 800);
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? Math.max(0, Math.min(sizeRaw, 10_000_000)) : 0;
-      if (!id || !name || !dataUrl) return null;
-      return { id, name, mimeType, size, dataUrl };
+      if (!id || !name) return null;
+      if (!dataUrl && !blobPath) return null;
+      return {
+        id,
+        name,
+        mimeType,
+        size,
+        dataUrl,
+        ...(blobPath ? { blobPath } : {}),
+        ...(blobUrl ? { blobUrl } : {}),
+      };
     })
     .filter((x): x is IrissOfferAttachment => x !== null)
     .slice(0, IRISS_MAX_OFFER_ATTACHMENTS);
@@ -376,6 +398,7 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
         id,
         title: title || `Piedāvājums ${idx + 1}`,
         brandModel: sanitizeDraftTextForStorage(typeof o.brandModel === "string" ? o.brandModel : "", 320),
+        vin: sanitizeDraftTextForStorage(typeof o.vin === "string" ? o.vin : "", 32),
         year: sanitizeDraftTextForStorage(typeof o.year === "string" ? o.year : "", 64),
         mileage: sanitizeDraftTextForStorage(typeof o.mileage === "string" ? o.mileage : "", 120),
         priceGermany: sanitizeDraftTextForStorage(typeof o.priceGermany === "string" ? o.priceGermany : "", 120),
@@ -406,9 +429,7 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
 }
 
 function normalizeListStatus(raw: unknown): IrissPasutijumsListStatus {
-  const s = typeof raw === "string" ? raw.trim().toLowerCase() : "";
-  if (s === "completed" || s === "inactive" || s === "active") return s;
-  return "active";
+  return parseIrissPasutijumsListStatus(raw);
 }
 
 function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null {
@@ -424,6 +445,9 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     createdAt: str("createdAt") || base.createdAt,
     updatedAt: str("updatedAt") || base.updatedAt,
     pinnedAt: sanitizeDraftTextForStorage(str("pinnedAt"), 64),
+    workspaceRevision: irissWorkspaceRevision({
+      workspaceRevision: parseExpectedIrissRevision(o.workspaceRevision) ?? 0,
+    }),
     listStatus: normalizeListStatus(o.listStatus),
     clientFirstName: sanitizeDraftTextForStorage(str("clientFirstName"), 120),
     clientLastName: sanitizeDraftTextForStorage(str("clientLastName"), 120),
@@ -431,6 +455,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     email: sanitizeDraftTextForStorage(str("email"), 320),
     orderDate: sanitizeDraftTextForStorage(str("orderDate"), 32),
     brandModel: sanitizeDraftTextForStorage(str("brandModel"), 400),
+    vin: sanitizeDraftTextForStorage(str("vin"), 32),
     productionYears: sanitizeDraftTextForStorage(str("productionYears"), 120),
     totalBudget: sanitizeDraftTextForStorage(str("totalBudget"), 120),
     engineType: sanitizeDraftTextForStorage(str("engineType"), 200),
@@ -488,6 +513,7 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
       clientLastName: sanitizeDraftTextForStorage(typeof o.clientLastName === "string" ? o.clientLastName : "", 120),
       orderDate: sanitizeDraftTextForStorage(typeof o.orderDate === "string" ? o.orderDate : "", 32),
       brandModel: sanitizeDraftTextForStorage(typeof o.brandModel === "string" ? o.brandModel : "—", 400) || "—",
+      vin: sanitizeDraftTextForStorage(typeof o.vin === "string" ? o.vin : "", 32),
       totalBudget: sanitizeDraftTextForStorage(typeof o.totalBudget === "string" ? o.totalBudget : "—", 120) || "—",
       phone: sanitizeDraftTextForStorage(typeof o.phone === "string" ? o.phone : "—", 64) || "—",
       productionYears: sanitizeDraftTextForStorage(typeof o.productionYears === "string" ? o.productionYears : "", 80),
@@ -681,7 +707,101 @@ export async function readIrissPasutijums(id: string): Promise<IrissPasutijumsRe
   }
 }
 
-export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promise<{ ok: true } | { ok: false; error: string }> {
+export type WriteIrissPasutijumsResult =
+  | { ok: true; record: IrissPasutijumsRecord }
+  | { ok: false; error: string; stale?: boolean; record?: IrissPasutijumsRecord };
+
+async function persistOneOfferImage(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  orderId: string,
+  offerId: string,
+  att: IrissOfferAttachment,
+): Promise<IrissOfferAttachment> {
+  if (att.blobPath && !att.dataUrl) return att;
+  if (!att.dataUrl) return att;
+  const parsed = parseDataUrlPayload(att.dataUrl);
+  if (!parsed) return att;
+  try {
+    if (r.kind === "blob") {
+      const pathname = `${r.prefix}offers/${orderId}/${offerId}/${att.id}`;
+      const putRes = await put(pathname, parsed.bytes, {
+        access: "private",
+        token: r.token,
+        contentType: parsed.mimeType || att.mimeType || "application/octet-stream",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+      });
+      return attachmentAfterBlobPut(att, pathname, putRes.url);
+    }
+    const relFs = `offers/${orderId}/${offerId}/${att.id}`;
+    const dir = path.join(r.dir, "offers", orderId, offerId);
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(r.dir, relFs), parsed.bytes);
+    return attachmentAfterBlobPut(att, relFs);
+  } catch (e) {
+    console.error("[iriss offer image] keep dataUrl, blob write failed", e);
+    return att;
+  }
+}
+
+async function persistOfferImages(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  record: IrissPasutijumsRecord,
+): Promise<IrissPasutijumsRecord> {
+  const offers = [];
+  for (const offer of record.offers) {
+    const attachments = [];
+    for (const att of offer.attachments) {
+      attachments.push(await persistOneOfferImage(r, record.id, offer.id, att));
+    }
+    offers.push({ ...offer, attachments });
+  }
+  return { ...record, offers };
+}
+
+async function bytesToDataUrl(bytes: Buffer, mimeType: string): Promise<string> {
+  return `data:${mimeType || "application/octet-stream"};base64,${bytes.toString("base64")}`;
+}
+
+async function hydrateOneOfferImage(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  att: IrissOfferAttachment,
+): Promise<IrissOfferAttachment> {
+  if (att.dataUrl || !att.blobPath) return att;
+  try {
+    if (r.kind === "blob") {
+      const res = await get(att.blobPath, { access: "private", token: r.token, useCache: false });
+      if (!res || res.statusCode !== 200 || !res.stream) return att;
+      const buf = Buffer.from(await new Response(res.stream).arrayBuffer());
+      return { ...att, dataUrl: await bytesToDataUrl(buf, att.mimeType) };
+    }
+    const fp = path.isAbsolute(att.blobPath) ? att.blobPath : path.join(r.dir, att.blobPath);
+    const buf = await fs.readFile(fp);
+    return { ...att, dataUrl: await bytesToDataUrl(buf, att.mimeType) };
+  } catch (e) {
+    console.error("[iriss offer image] hydrate failed, keep blobPath", e);
+    return att;
+  }
+}
+
+export async function hydrateIrissPasutijumsImages(record: IrissPasutijumsRecord): Promise<IrissPasutijumsRecord> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return record;
+  const offers = [];
+  for (const offer of record.offers) {
+    const attachments = [];
+    for (const att of offer.attachments) {
+      attachments.push(await hydrateOneOfferImage(r, att));
+    }
+    offers.push({ ...offer, attachments });
+  }
+  return { ...record, offers };
+}
+
+export async function writeIrissPasutijums(
+  record: IrissPasutijumsRecord,
+  opts?: { expectedWorkspaceRevision?: number | null },
+): Promise<WriteIrissPasutijumsResult> {
   try {
     const r = resolveStorage();
     if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
@@ -690,18 +810,25 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
     if (!sanitized) return { ok: false, error: "invalid_record" };
     const updatedAt = new Date().toISOString();
     const existing = await readIrissPasutijums(record.id);
+    const existingRev = irissWorkspaceRevision(existing);
+    if (existing && !irissRevisionMatches(existingRev, opts?.expectedWorkspaceRevision ?? null)) {
+      return { ok: false, error: IRISS_STALE_REVISION, stale: true, record: existing };
+    }
     const createdAt = existing?.createdAt ?? sanitized.createdAt ?? updatedAt;
-    const out: IrissPasutijumsRecord = {
+    let out: IrissPasutijumsRecord = {
       ...sanitized,
       updatedAt,
       createdAt,
+      workspaceRevision: existingRev,
     };
+    out = await persistOfferImages(r, out);
     if (existing && !isMeaningfullyChanged(existing, out)) {
       if (r.kind === "blob" && BLOB_RECORD_CACHE_TTL_MS > 0) {
         cacheBlobRecord(out.id, existing);
       }
-      return { ok: true };
+      return { ok: true, record: existing };
     }
+    out = { ...out, workspaceRevision: nextIrissWorkspaceRevision(existingRev) };
     const backupTs = updatedAt.replace(/[:.]/g, "-");
 
     if (r.kind === "blob") {
@@ -740,7 +867,7 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
       }
       await writeLocalMirrorSnapshot(out).catch(() => undefined);
       await writeLocalMirrorFullBundle().catch(() => undefined);
-      return { ok: true };
+      return { ok: true, record: out };
     }
 
     await fs.mkdir(r.dir, { recursive: true });
@@ -762,24 +889,75 @@ export async function writeIrissPasutijums(record: IrissPasutijumsRecord): Promi
     invalidateBlobListCache();
     await writeLocalMirrorSnapshot(out).catch(() => undefined);
     await writeLocalMirrorFullBundle().catch(() => undefined);
-    return { ok: true };
+    return { ok: true, record: out };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg };
   }
 }
 
-export async function createIrissPasutijums(): Promise<
-  { ok: true; id: string } | { ok: false; error: string }
-> {
+export async function createIrissPasutijums(
+  seed?: Partial<IrissPasutijumsRecord> & { id?: string },
+): Promise<{ ok: true; id: string; record: IrissPasutijumsRecord } | { ok: false; error: string }> {
   const r = resolveStorage();
   if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
-  const id = crypto.randomUUID();
+  const id = seed?.id && isSafeIrissPasutijumsId(seed.id) ? seed.id : crypto.randomUUID();
   const now = new Date().toISOString();
-  const rec = emptyIrissPasutijums(id, now);
-  const w = await writeIrissPasutijums(rec);
+  const rec = { ...emptyIrissPasutijums(id, now), ...seed, id, createdAt: now, updatedAt: now, workspaceRevision: 0 };
+  const w = await writeIrissPasutijums(rec, { expectedWorkspaceRevision: 0 });
   if (!w.ok) return { ok: false, error: w.error };
-  return { ok: true, id };
+  return { ok: true, id, record: w.record };
+}
+
+function listingOrderOvBlobPath(prefix: string): string {
+  return `${prefix}${LISTING_ORDER_OV_FILENAME}`;
+}
+
+function listingOrderOvFsPath(dir: string): string {
+  return path.join(dir, LISTING_ORDER_OV_FILENAME);
+}
+
+export async function readIrissListingOrderOv(): Promise<IrissListingOrderOv> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return {};
+  if (r.kind === "blob") {
+    const raw = await readJsonFromBlob(listingOrderOvBlobPath(r.prefix), r.token);
+    return parseIrissListingOrderOv(raw);
+  }
+  try {
+    const txt = await fs.readFile(listingOrderOvFsPath(r.dir), "utf8");
+    return parseIrissListingOrderOv(JSON.parse(txt) as unknown);
+  } catch {
+    return {};
+  }
+}
+
+export async function writeIrissListingOrderOv(
+  ov: IrissListingOrderOv,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+  const next = parseIrissListingOrderOv(ov);
+  try {
+    if (r.kind === "blob") {
+      await put(listingOrderOvBlobPath(r.prefix), JSON.stringify(next, null, 2), {
+        access: "private",
+        token: r.token,
+        contentType: "application/json; charset=utf-8",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+      });
+      return { ok: true };
+    }
+    await fs.mkdir(r.dir, { recursive: true });
+    const fp = listingOrderOvFsPath(r.dir);
+    const tmp = `${fp}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify(next, null, 2), "utf8");
+    await fs.rename(tmp, fp);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
 }
 
 function normalizeListOrderIdList(raw: unknown): string[] {

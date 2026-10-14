@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { cleanHttpUrl, detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
-import type { IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
+import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
 
 export type IrissListingSource = {
   id: string;
@@ -67,7 +67,7 @@ type SourceRow = Pick<IrissPasutijumsListRow, "id" | "brandModel" | "listStatus"
 };
 
 /**
- * Avoti tikai no pasūtījumiem ar statusu „Aktīvs”. Ņem visas Autobid / Openlane / Auto1
+ * Avoti no darba statusiem (aktīvs, meklē, piedāvāts, rezervēts). Ņem visas Autobid / Openlane / Auto1
  * (un „Citi”, ja hosts ir izsole) saites. Identisks URL starp pasūtījumiem paliek viena nolasīšana.
  * Mobile.de saites šeit neiekļaujam (tās glabā un rāda formā / priekšskatījumā, bet nelasām).
  */
@@ -96,7 +96,7 @@ export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[
     for (const url of filledIrissListingLinks(raw)) push(row, platform, url);
   };
   for (const row of rows) {
-    if (row.listStatus !== "active") continue;
+    if (!isIrissPasutijumsWorkingStatus(row.listStatus ?? "active")) continue;
     pushAll(row, "autobid", row.listingLinkAutobid);
     pushAll(row, "openline", row.listingLinkOpenline);
     pushAll(row, "auto1", row.listingLinkAuto1);

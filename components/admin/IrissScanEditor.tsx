@@ -3,7 +3,7 @@
 import { ChevronLeft, ExternalLink, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import {
   addIrissListingLinkRow,
@@ -90,13 +90,20 @@ function SourceGroup({
   );
 }
 
-export function IrissScanEditor({ initialRecord }: { initialRecord: IrissScanRecord }) {
+export function IrissScanEditor({
+  initialRecord,
+  unsavedDraft = false,
+}: {
+  initialRecord: IrissScanRecord;
+  unsavedDraft?: boolean;
+}) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissScanRecord>(initialRecord);
   const [busy, setBusy] = useState(false);
-  const [dirty, setDirty] = useState(false);
+  const [dirty, setDirty] = useState(Boolean(unsavedDraft && initialRecord.vin));
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const persistedIdRef = useRef(unsavedDraft ? "" : initialRecord.id);
   const chips = useMemo(() => buildListingPlatformChips(rec, 50), [rec]);
 
   const patchRecord = useCallback((patch: Partial<IrissScanRecord>) => {
@@ -109,18 +116,29 @@ export function IrissScanEditor({ initialRecord }: { initialRecord: IrissScanRec
     setBusy(true);
     setSaveMsg(null);
     try {
-      const res = await fetch(`/api/admin/iriss-scan/${encodeURIComponent(rec.id)}`, {
-        method: "PATCH",
+      const persistId = persistedIdRef.current;
+      const isCreate = !persistId;
+      const url = isCreate ? "/api/admin/iriss-scan" : `/api/admin/iriss-scan/${encodeURIComponent(rec.id)}`;
+      const res = await fetch(url, {
+        method: isCreate ? "POST" : "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(rec),
+        body: JSON.stringify(isCreate ? { record: rec } : rec),
       });
       if (!res.ok) {
-        setSaveMsg(`Kļūda ${res.status}`);
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        setSaveMsg(data.error === "empty_record" ? "Nav ko saglabāt. Ieraksti VIN, marku vai saiti." : `Kļūda ${res.status}`);
         return;
       }
-      const data = (await res.json()) as { record?: IrissScanRecord };
-      if (data.record) setRec(data.record);
+      const data = (await res.json()) as { record?: IrissScanRecord; id?: string };
+      if (data.record) {
+        setRec(data.record);
+        persistedIdRef.current = data.record.id;
+        if (isCreate) router.replace(`/admin/iriss/scan/${encodeURIComponent(data.record.id)}`);
+      } else if (typeof data.id === "string") {
+        persistedIdRef.current = data.id;
+        if (isCreate) router.replace(`/admin/iriss/scan/${encodeURIComponent(data.id)}`);
+      }
       setDirty(false);
       setSaveMsg("Saglabāts");
     } catch {
@@ -128,14 +146,14 @@ export function IrissScanEditor({ initialRecord }: { initialRecord: IrissScanRec
     } finally {
       setBusy(false);
     }
-  }, [rec]);
+  }, [rec, router]);
 
   return (
     <div className="mx-auto w-full max-w-[720px] px-3 pb-10 sm:px-6">
       <AdminDashboardHeaderWithMenu>
         <div className="flex items-center justify-between gap-2">
           <Link href="/admin/iriss/scan" className="inline-flex min-h-10 items-center gap-0.5 text-[15px] font-medium text-[var(--color-provin-accent)]">
-            <ChevronLeft className="h-5 w-5" strokeWidth={2.4} aria-hidden /> SCAN
+            <ChevronLeft className="h-5 w-5" strokeWidth={2.4} aria-hidden /> Radars
           </Link>
           <div className="flex items-center gap-2">
             {saveMsg ? <span className="text-[12px] text-[#8e8e93]">{saveMsg}</span> : dirty ? <span className="text-[12px] text-[#8e8e93]">Nesaglabātas izmaiņas</span> : null}
@@ -159,6 +177,16 @@ export function IrissScanEditor({ initialRecord }: { initialRecord: IrissScanRec
             aria-label="Marka modelis"
             value={rec.brandModel}
             onChange={(e) => patchRecord({ brandModel: e.target.value })}
+          />
+          <input
+            className="mt-2 w-full bg-transparent px-1 text-[15px] tracking-wide text-[var(--color-apple-text)] outline-none placeholder:text-[#c7c7cc]"
+            placeholder="VIN"
+            aria-label="VIN"
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellCheck={false}
+            value={rec.vin}
+            onChange={(e) => patchRecord({ vin: e.target.value.toUpperCase() })}
           />
           <div className="mt-1 flex items-center gap-2 px-1 text-[12px] text-[#8e8e93]">
             <span>{chips.length} {chips.length === 1 ? "saite" : "saites"}</span>
@@ -189,7 +217,7 @@ export function IrissScanEditor({ initialRecord }: { initialRecord: IrissScanRec
       {deleteOpen ? (
         <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6" onClick={() => setDeleteOpen(false)} role="presentation">
           <div role="dialog" aria-modal="true" className="w-full max-w-sm rounded-2xl bg-white p-5 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Dzēst šo SCAN ierakstu?</h2>
+            <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Dzēst šo radara ierakstu?</h2>
             <p className="mt-1 text-[13px] text-[#8e8e93]">Darbību nevar atsaukt.</p>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button type="button" onClick={() => setDeleteOpen(false)} className="h-11 rounded-xl bg-[#f2f2f7] text-[15px] font-medium text-[var(--color-apple-text)]">
@@ -201,6 +229,10 @@ export function IrissScanEditor({ initialRecord }: { initialRecord: IrissScanRec
                 onClick={async () => {
                   setBusy(true);
                   try {
+                    if (!persistedIdRef.current) {
+                      router.push("/admin/iriss/scan");
+                      return;
+                    }
                     const res = await fetch(`/api/admin/iriss-scan/${encodeURIComponent(rec.id)}`, { method: "DELETE", credentials: "include" });
                     if (!res.ok) return;
                     router.push("/admin/iriss/scan");
