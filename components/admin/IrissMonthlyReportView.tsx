@@ -4,12 +4,9 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { formatIrissMonthlyReportCsv, type IrissMonthlyReport } from "@/lib/iriss-monthly-report";
 import { formatYearMonthKey, shiftYearMonth } from "@/lib/admin-riga-calendar";
+import { IRISS_PASUTIJUMS_LIST_STATUS_LV } from "@/lib/iriss-pasutijumi-types";
 
-const STATUS_LV: Record<IrissMonthlyReport["rows"][number]["status"], string> = {
-  active: "Aktīvs",
-  completed: "Izpildīts",
-  inactive: "Neaktīvs",
-};
+const STATUS_LV = IRISS_PASUTIJUMS_LIST_STATUS_LV;
 
 function hrefForMonth(year: number, month: number): string {
   return `/admin/iriss/atskaite?month=${formatYearMonthKey(year, month)}`;

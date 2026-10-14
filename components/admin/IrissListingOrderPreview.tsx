@@ -5,13 +5,9 @@ import { useEffect } from "react";
 import { isHttpUrlForOpen } from "@/lib/iriss-listing-links";
 import { labelIrissListingLinkRows } from "@/lib/iriss-listing-link-lists";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
-import type { IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import { IRISS_PASUTIJUMS_LIST_STATUS_LV } from "@/lib/iriss-pasutijumi-types";
 
-const STATUS_LABEL: Record<IrissPasutijumsListStatus, string> = {
-  active: "Aktīvs",
-  completed: "Izpildīts",
-  inactive: "Neaktīvs",
-};
+const STATUS_LABEL = IRISS_PASUTIJUMS_LIST_STATUS_LV;
 
 function fmtBudget(n: number | null, raw: string): string {
   if (n != null) return `${Math.round(n).toLocaleString("lv-LV")} €`;

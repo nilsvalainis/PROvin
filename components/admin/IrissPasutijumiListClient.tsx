@@ -38,7 +38,7 @@ import {
   readIrissListStatusFilter,
   type IrissListStatusFilterState,
 } from "@/components/admin/IrissPasutijumiStatusFilter";
-import { dispatchIrissListStatusFilter } from "@/lib/iriss-pasutijumi-status-filter";
+import { dispatchIrissListStatusFilter, parseIrissListStatusFilter } from "@/lib/iriss-pasutijumi-status-filter";
 import { IrissOrderSortSelect } from "@/components/admin/IrissOrderSortSelect";
 
 type SortMode = IrissOrderSortMode;
@@ -735,11 +735,7 @@ export function IrissPasutijumiListClient({
     const handler = (e: Event) => {
       const d = (e as CustomEvent<IrissListStatusFilterState>).detail;
       if (!d || typeof d !== "object") return;
-      setStatusFilter({
-        active: Boolean(d.active),
-        completed: Boolean(d.completed),
-        inactive: Boolean(d.inactive),
-      });
+      setStatusFilter(parseIrissListStatusFilter(JSON.stringify(d)));
     };
     window.addEventListener(IRISS_LIST_STATUS_FILTER_EVENT, handler as EventListener);
     return () => window.removeEventListener(IRISS_LIST_STATUS_FILTER_EVENT, handler as EventListener);

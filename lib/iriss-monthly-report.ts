@@ -6,7 +6,7 @@ import {
   parseYearMonthKey,
 } from "@/lib/admin-riga-calendar";
 import { formatIrissClientName } from "@/lib/iriss-pasutijumi-list-row";
-import type { IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import { parseIrissPasutijumsListStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
 /**
  * TODO(multi-tenant): kad IRISS B2B dīleru tenanti būs, filtrēt pēc tenantId.
@@ -59,8 +59,7 @@ export type IrissMonthlyReport = {
 };
 
 function normalizeStatus(raw: string | undefined): IrissPasutijumsListStatus {
-  if (raw === "completed" || raw === "inactive") return raw;
-  return "active";
+  return parseIrissPasutijumsListStatus(raw);
 }
 
 export function resolveIrissReportMonth(
