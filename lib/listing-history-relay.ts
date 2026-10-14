@@ -5,6 +5,8 @@
  * un parsē to pašu SSR HTML (`<table class="history">`, `__NEXT_DATA__`).
  */
 
+import { looksLikeListingHistoryCloudflareChallenge } from "@/lib/listing-history-cloudflare";
+
 /** Jina Reader: bez atslēgas ~20 pieprasījumi minūtē no viena IP. */
 const JINA_RELAY_TEMPLATE = "https://r.jina.ai/{url}";
 
@@ -74,7 +76,7 @@ async function relayAttempt(
   relayUrl: string,
   headers: Record<string, string>,
   timeoutMs: number,
-): Promise<{ html: string | null; retry: boolean }> {
+): Promise<{ html: string | null; retry: boolean; cloudflare?: boolean }> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -87,13 +89,16 @@ async function relayAttempt(
     });
     if (!res.ok) {
       console.warn("[listing-history relay] HTTP", res.status, relayUrl);
-      return { html: null, retry: relayStatusIsWorthRetry(res.status) };
+      return { html: null, retry: relayStatusIsWorthRetry(res.status), cloudflare: false };
     }
     const html = await res.text();
-    return { html: html.trim() ? html : null, retry: false };
+    if (html.trim() && looksLikeListingHistoryCloudflareChallenge(html)) {
+      return { html: null, retry: false, cloudflare: true };
+    }
+    return { html: html.trim() ? html : null, retry: false, cloudflare: false };
   } catch (e) {
     console.warn("[listing-history relay] neizdevās:", e instanceof Error ? e.message : e);
-    return { html: null, retry: false };
+    return { html: null, retry: false, cloudflare: false };
   } finally {
     clearTimeout(timer);
   }
@@ -114,11 +119,13 @@ export async function fetchListingHistoryHtmlViaRelay(
 
     const first = await relayAttempt(relayUrl, headers, timeoutMs);
     if (first.html) return first.html;
+    if (first.cloudflare) return null;
     if (!first.retry) continue;
 
     await sleep(retryDelayMs);
     const second = await relayAttempt(relayUrl, headers, timeoutMs);
     if (second.html) return second.html;
+    if (second.cloudflare) return null;
   }
   return null;
 }

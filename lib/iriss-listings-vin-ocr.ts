@@ -22,6 +22,9 @@ export { LISTING_VIN_OCR_MAX_PHOTOS };
 const FETCH_TIMEOUT_MS = 8_000;
 const MAX_IMAGE_BYTES = 3_500_000;
 const OCR_MAX_EDGE = 1400;
+/** Viena foto OCR (serverless); kopā ar foto lejuplādi nepārsniedz maršruta budžetu. */
+const OCR_RECOGNIZE_TIMEOUT_MS = 22_000;
+const OCR_DEFAULT_BUDGET_MS = 95_000;
 
 export function isIrissListingsVinOcrEnabled(): boolean {
   return !/^(0|false|no|off)$/i.test((process.env.IRISS_LISTINGS_VIN_OCR ?? "1").trim());
@@ -66,7 +69,8 @@ async function ocrWorker(): Promise<TessWorker> {
   if (!workerPromise) {
     workerPromise = (async () => {
       const { createWorker } = await import("tesseract.js");
-      return (await createWorker("eng", undefined, { logger: () => undefined })) as unknown as TessWorker;
+      const worker = await createWorker("eng", undefined, { logger: () => undefined });
+      return worker as unknown as TessWorker;
     })();
   }
   try {
@@ -74,6 +78,21 @@ async function ocrWorker(): Promise<TessWorker> {
   } catch (e) {
     workerPromise = null;
     throw e;
+  }
+}
+
+async function recognizeWithTimeout(worker: TessWorker, prepared: Buffer, timeoutMs: number): Promise<string> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const { data } = await Promise.race([
+      worker.recognize(prepared),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("ocr_recognize_timeout")), timeoutMs);
+      }),
+    ]);
+    return data.text ?? "";
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -86,17 +105,23 @@ export type ListingVinOcrResult = {
   textChars: number;
 };
 
-export async function ocrVinFromListingPhotos(input: ListingVinPhotoInput): Promise<ListingVinOcrResult> {
+export async function ocrVinFromListingPhotos(
+  input: ListingVinPhotoInput,
+  opts: { deadlineMs?: number } = {},
+): Promise<ListingVinOcrResult> {
   const empty: ListingVinOcrResult = { vin: "", alts: [], vinSource: "", vinOcrStatus: "", photosTried: 0, textChars: 0 };
   if (!isIrissListingsVinOcrEnabled()) return empty;
   const urls = rankListingPhotosForVinOcr(input, LISTING_VIN_OCR_MAX_PHOTOS);
   if (urls.length === 0) return empty;
 
+  const deadlineMs = opts.deadlineMs ?? Date.now() + OCR_DEFAULT_BUDGET_MS;
   let photosTried = 0;
   let textChars = 0;
   const vinsPerPhoto: string[][] = [];
   const worker = await ocrWorker();
   for (const url of urls) {
+    const remainingMs = deadlineMs - Date.now();
+    if (remainingMs < 5_000) break;
     const raw = await fetchPhoto(url);
     if (!raw) continue;
     let prepared: Buffer;
@@ -107,8 +132,8 @@ export async function ocrVinFromListingPhotos(input: ListingVinPhotoInput): Prom
     }
     photosTried += 1;
     try {
-      const { data } = await worker.recognize(prepared);
-      const text = data.text ?? "";
+      const recognizeMs = Math.min(OCR_RECOGNIZE_TIMEOUT_MS, Math.max(3_000, remainingMs - 2_000));
+      const text = await recognizeWithTimeout(worker, prepared, recognizeMs);
       textChars += text.length;
       vinsPerPhoto.push(extractVinCandidatesFromText(text).filter((v) => !isPlaceholderVin(v)));
     } catch {

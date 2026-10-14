@@ -13,6 +13,23 @@ import type { IrissListingPlatform, IrissListingSourceRun, IrissListingsSyncCurs
 
 /** Vercel funkcijas griesti šiem diviem maršrutiem. Budžets (`IRISS_LISTINGS_TIME_BUDGET_MS`) ir zem tā. */
 export const IRISS_LISTINGS_ROUTE_MAX_DURATION_MS = 300_000;
+/** Atstarpes rezerve pirms Vercel 300 s noildzes (in-flight releja fetch). */
+export const IRISS_LISTINGS_ROUTE_DEADLINE_SAFETY_MS = 15_000;
+
+export function listingSyncRouteDeadlineMs(startedMs: number): number {
+  return startedMs + IRISS_LISTINGS_ROUTE_MAX_DURATION_MS - IRISS_LISTINGS_ROUTE_DEADLINE_SAFETY_MS;
+}
+
+export function remainingListingSyncRouteMs(deadlineMs: number, nowMs: number = Date.now()): number {
+  return Math.max(0, deadlineMs - nowMs);
+}
+
+/** Samazina timeout, lai funkcija nepārsniegtu maršruta deadline. */
+export function capListingJobTimeoutMs(deadlineMs: number, timeoutMs: number, reserveMs = 4_000): number {
+  const rem = remainingListingSyncRouteMs(deadlineMs);
+  if (rem <= reserveMs) return 0;
+  return Math.min(timeoutMs, rem - reserveMs);
+}
 /** Tiešajam Autobid (lapas * timeout) atstājam rezervi, lai in-flight nepārsniedz maxDuration. */
 export const DIRECT_FETCH_HEADROOM_MS = 45_000;
 /** Releja fetch timeout ir līdz 180 s; nesākam jaunu, ja līdz 300 s griestiem nav 90 s. */

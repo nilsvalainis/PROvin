@@ -22,14 +22,17 @@ import { buildIrissListingSources, groupIrissListingSources, irissListingVehicle
 import {
   canStartListingJob,
   capEcarstradeRelayGroups,
+  capListingJobTimeoutMs,
   DIRECT_FETCH_HEADROOM_MS,
   ECARSTRADE_RELAY_HEADROOM_MS,
   fanOutFetchedVehicles,
   IRISS_LISTINGS_ROUTE_MAX_DURATION_MS,
   listingSyncProgress,
+  listingSyncRouteDeadlineMs,
   mergeListingSourceRuns,
   orderListingSyncGroups,
   RELAY_FETCH_HEADROOM_MS,
+  remainingListingSyncRouteMs,
   runBounded,
   selectListingSyncQueue,
 } from "@/lib/iriss-listings-sync-plan";
@@ -50,6 +53,8 @@ import { listIrissScan } from "@/lib/iriss-scan-store";
 export type IrissListingsSyncResult = {
   ok: boolean;
   skipped?: "already_ran_this_hour" | "already_done" | "continuation_not_allowed";
+  /** Vēl ir nenolasīti meklējumi šajā dienas ciklā (nākamā partija vai `after()`). */
+  continueSync?: boolean;
   warnings: string[];
   summary: IrissListingSyncRunSummary;
   view: IrissListingsLatestView;
@@ -102,7 +107,20 @@ function unboundedSearchSkip(src: IrissListingSource): SourceFetch | null {
   };
 }
 
-async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
+type ListingSyncFetchContext = { deadlineMs: number };
+
+function budgetSkipFetch(note = "Laika budžets beidzās pirms avota lasīšanas."): SourceFetch {
+  return {
+    status: "skipped",
+    note,
+    vehicles: [],
+    rawPages: [],
+    pagesFetched: 0,
+    pageCount: 0,
+  };
+}
+
+async function fetchSource(src: IrissListingSource, ctx?: ListingSyncFetchContext): Promise<SourceFetch> {
   const skip = unboundedSearchSkip(src);
   if (skip) return skip;
   if (src.platform === "ecarstrade") {
@@ -118,7 +136,12 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
       };
     }
     if (relay) {
-      const rr = await fetchViaIrissRelay(relay, src, { maxPages: envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25) });
+      const relayTimeout = ctx ? capListingJobTimeoutMs(ctx.deadlineMs, relay.timeoutMs) : relay.timeoutMs;
+      if (ctx && relayTimeout <= 0) return budgetSkipFetch();
+      const rr = await fetchViaIrissRelay(relay, src, {
+        maxPages: envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25),
+        ...(relayTimeout > 0 ? { timeoutMs: relayTimeout } : {}),
+      });
       if (rr.vehicles.length > 0) {
         return {
           status: "ok",
@@ -130,9 +153,12 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
         };
       }
     }
+    const fetchTimeout = envInt("IRISS_LISTINGS_FETCH_TIMEOUT_MS", 18_000, 8_000, 60_000);
+    const timeoutMs = ctx ? capListingJobTimeoutMs(ctx.deadlineMs, fetchTimeout) : fetchTimeout;
+    if (ctx && timeoutMs <= 0) return budgetSkipFetch();
     const r = await fetchEcarstradeSource(src.sourceUrl, {
       maxPages: envInt("IRISS_LISTINGS_ECARSTRADE_MAX_PAGES", 5, 1, 25),
-      timeoutMs: envInt("IRISS_LISTINGS_FETCH_TIMEOUT_MS", 18_000, 8_000, 60_000),
+      timeoutMs,
       pauseMinMs: 700,
       pauseMaxMs: 1_800,
     });
@@ -197,7 +223,12 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
         };
       }
     } else {
-      const r = await fetchViaIrissRelay(relay, src, { maxPages: envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25) });
+      const relayTimeout = ctx ? capListingJobTimeoutMs(ctx.deadlineMs, relay.timeoutMs) : relay.timeoutMs;
+      if (ctx && relayTimeout <= 0) return budgetSkipFetch();
+      const r = await fetchViaIrissRelay(relay, src, {
+        maxPages: envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25),
+        ...(relayTimeout > 0 ? { timeoutMs: relayTimeout } : {}),
+      });
       return {
         status: r.status,
         note: r.note,
@@ -210,9 +241,12 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
   }
 
   if (src.platform === "autobid") {
+    const fetchTimeout = envInt("IRISS_LISTINGS_FETCH_TIMEOUT_MS", 18_000, 8_000, 60_000);
+    const timeoutMs = ctx ? capListingJobTimeoutMs(ctx.deadlineMs, fetchTimeout) : fetchTimeout;
+    if (ctx && timeoutMs <= 0) return budgetSkipFetch();
     const r = await fetchAutobidSource(src.sourceUrl, {
       maxPages: envInt("IRISS_LISTINGS_AUTOBID_MAX_PAGES", 5, 1, 25),
-      timeoutMs: envInt("IRISS_LISTINGS_FETCH_TIMEOUT_MS", 18_000, 8_000, 60_000),
+      timeoutMs,
       pauseMinMs: 700,
       pauseMaxMs: 1_800,
     });
@@ -340,7 +374,9 @@ export async function runIrissListingsDailySync(
   const today = startedAt.slice(0, 10);
   const runId = `run-${startedAt.replace(/[:.]/g, "-")}`;
   const warnings: string[] = [];
-  const timeBudgetMs = envInt("IRISS_LISTINGS_TIME_BUDGET_MS", 240_000, 30_000, 280_000);
+  const timeBudgetMs = envInt("IRISS_LISTINGS_TIME_BUDGET_MS", 210_000, 30_000, 270_000);
+  const deadlineMs = listingSyncRouteDeadlineMs(startedMs);
+  const fetchCtx: ListingSyncFetchContext = { deadlineMs };
   const concurrency = envInt("IRISS_LISTINGS_FETCH_CONCURRENCY", 3, 1, 3);
   const automaticSlot = isIrissListingsAutomaticSlot(opts.automaticSlot) ? opts.automaticSlot : "";
 
@@ -415,13 +451,18 @@ export async function runIrissListingsDailySync(
     ordered,
     concurrency,
     (g) => {
+      if (remainingListingSyncRouteMs(deadlineMs) < 8_000) return false;
       const headroom =
         g.platform === "ecarstrade" && ecarstradeRelay
           ? ECARSTRADE_RELAY_HEADROOM_MS
           : !isFastDirectFetch(g, fastOpts) && relayOn
             ? RELAY_FETCH_HEADROOM_MS
             : DIRECT_FETCH_HEADROOM_MS;
-      return canStartListingJob(Date.now() - startedMs, timeBudgetMs, headroom);
+      const cappedHeadroom = Math.min(
+        headroom,
+        capListingJobTimeoutMs(deadlineMs, headroom, 2_000) || headroom,
+      );
+      return canStartListingJob(Date.now() - startedMs, timeBudgetMs, cappedHeadroom);
     },
     async (g) => {
       const direct = isFastDirectFetch(g, fastOpts);
@@ -430,7 +471,7 @@ export async function runIrissListingsDailySync(
       const lead = g.orders[0]!;
       let fetchResult: SourceFetch;
       try {
-        fetchResult = await fetchSource(lead);
+        fetchResult = await fetchSource(lead, fetchCtx);
       } catch (e) {
         fetchResult = { status: "fetch_failed", note: formatFetchError(e, "fetch failed"), vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
       }
@@ -519,5 +560,7 @@ export async function runIrissListingsDailySync(
     if (!rawWrite.ok) warnings.push(`Raw datu saglabāšana neizdevās: ${rawWrite.error}`);
   }
 
-  return { ok: write.ok, warnings, summary, view, progress: listingSyncProgress(progressTotal, doneKeys) };
+  const progress = listingSyncProgress(progressTotal, doneKeys);
+  const continueSync = progress.total > 0 && progress.done < progress.total;
+  return { ok: write.ok, warnings, summary, view, progress, continueSync };
 }

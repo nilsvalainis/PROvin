@@ -15,12 +15,21 @@ import {
   RELAY_FETCH_HEADROOM_MS,
   ECARSTRADE_RELAY_HEADROOM_MS,
   capEcarstradeRelayGroups,
+  capListingJobTimeoutMs,
+  listingSyncRouteDeadlineMs,
   runBounded,
   selectListingSyncQueue,
   serialInterSourcePauseMs,
 } from "@/lib/iriss-listings-sync-plan";
 
 describe("listing sync capacity", () => {
+  it("caps per-job timeout to the route deadline", () => {
+    const started = Date.now();
+    const deadline = listingSyncRouteDeadlineMs(started);
+    expect(capListingJobTimeoutMs(deadline, 180_000)).toBeLessThanOrEqual(180_000);
+    expect(capListingJobTimeoutMs(Date.now() - 1_000, 180_000)).toBe(0);
+  });
+
   it("92 sources with a 4s serial gap do not fit in the 300s route", () => {
     expect(serialInterSourcePauseMs(92, 4_000)).toBe(364_000);
     expect(serialInterSourcePauseMs(92, 4_000)).toBeGreaterThan(IRISS_LISTINGS_ROUTE_MAX_DURATION_MS);

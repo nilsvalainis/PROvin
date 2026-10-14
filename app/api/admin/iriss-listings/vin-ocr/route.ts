@@ -8,6 +8,8 @@ import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
+const OCR_ROUTE_BUDGET_MS = 100_000;
+
 const MISS_RETRY_MS = 7 * 86_400_000;
 
 export async function POST(req: Request) {
@@ -54,7 +56,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const r = await ocrVinFromListingPhotos(vehicle);
+    const r = await ocrVinFromListingPhotos(vehicle, { deadlineMs: Date.now() + OCR_ROUTE_BUDGET_MS });
     const at = new Date().toISOString();
     if (r.vin && r.vinOcrStatus === "confirmed") {
       const saved = await patchIrissListingVehicleVin(id, {

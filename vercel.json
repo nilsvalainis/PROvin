@@ -35,6 +35,10 @@
     "app/api/admin/iriss-listings/sync-now/route.ts": {
       "maxDuration": 300
     },
+    "app/api/admin/iriss-listings/vin-ocr/route.ts": {
+      "maxDuration": 120,
+      "memory": 3008
+    },
     "app/api/admin/iriss-listings/session-health/route.ts": {
       "maxDuration": 60
     },

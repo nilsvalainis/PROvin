@@ -162,9 +162,9 @@ describe("fetchAdifyListingHistory", () => {
   const blocked = () => ({
     ok: false,
     status: 403,
-    headers: { get: () => null, getSetCookie: () => [] },
-    clone: () => ({ text: async () => "" }),
-    text: async () => "",
+    headers: { get: () => "cloudflare", getSetCookie: () => [] },
+    clone: () => ({ text: async () => "<title>Just a moment...</title>" }),
+    text: async () => "<title>Just a moment...</title>",
   });
 
   afterEach(() => {
@@ -192,7 +192,32 @@ describe("fetchAdifyListingHistory", () => {
     const snap = await fetchAdifyListingHistory(Q7_URL, NOW);
 
     expect(snap.found).toBe(false);
-    expect(snap.message).toBe("Adify neatbildēja (HTTP 403)");
+    expect(snap.blocked).toBe(true);
+    expect(snap.message).toMatch(/Cloudflare bloķēja/i);
+  });
+
+  it("fails fast on Cloudflare challenge HTML without treating it as data", async () => {
+    const cfHtml = "<html><title>Just a moment...</title><body>Checking your browser</body></html>";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: unknown) => {
+        if (String(input).startsWith("https://r.jina.ai/")) {
+          return { ok: true, status: 200, text: async () => cfHtml };
+        }
+        return {
+          ok: false,
+          status: 403,
+          headers: { get: () => "cloudflare", getSetCookie: () => [] },
+          text: async () => cfHtml,
+        };
+      }),
+    );
+
+    const snap = await fetchAdifyListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(false);
+    expect(snap.blocked).toBe(true);
+    expect(snap.message).toMatch(/pārlūkā/i);
   });
 });
 

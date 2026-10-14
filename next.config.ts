@@ -43,10 +43,16 @@ const nextConfig: NextConfig = {
     "puppeteer-extra-plugin-user-preferences",
     "heic-convert",
     "heic-decode",
+    "tesseract.js",
   ],
-  /** pdfjs worker tiek ielādēts pēc ceļa, tāpēc Next izsekošana to neatrod automātiski. */
+  /** pdfjs / tesseract worker faili tiek ielādēti pēc ceļa, tāpēc Next izsekošana tos neatrod automātiski. */
   outputFileTracingIncludes: {
     "/api/admin/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+    "/api/admin/iriss-listings/vin-ocr": [
+      "./node_modules/tesseract.js/dist/**",
+      "./node_modules/tesseract.js/src/worker-script/**",
+      "./node_modules/tesseract.js-core/**",
+    ],
   },
   reactStrictMode: true,
   /** Server Actions + App Router pieprasījumu ķermeņa limits (multipart uz API maršrutiem).
