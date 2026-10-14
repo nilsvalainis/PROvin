@@ -31,17 +31,7 @@ import {
   newB2bDemoTenantId,
 } from "@/lib/b2b-demo-users";
 import { isSafeB2bDemoSlug, isSafeB2bDemoTenantId, normalizeB2bDemoEmail, normalizeB2bDemoSlug } from "@/lib/b2b-demo-ids";
-import type {
-  B2bDemoEncryptedAuctionSession,
-  B2bDemoIndex,
-  B2bDemoOrder,
-  B2bDemoRole,
-  B2bDemoSettings,
-  B2bDemoTenant,
-  B2bDemoTenantDocument,
-  B2bDemoUser,
-  B2bDemoUserPublic,
-} from "@/lib/b2b-demo-types";
+import { toPublicB2bDemoUser, type B2bDemoEncryptedAuctionSession, type B2bDemoIndex, type B2bDemoOrder, type B2bDemoRole, type B2bDemoSettings, type B2bDemoTenant, type B2bDemoTenantDocument, type B2bDemoUser, type B2bDemoUserPublic } from "@/lib/b2b-demo-types";
 
 const RELATIVE_DIR = ".data/b2b-demo";
 
@@ -385,8 +375,7 @@ export async function addB2bDemoTenantEmployee(
     index.emailIndex[email] = { tenantId, userId: user.userId };
     index.updatedAt = user.updatedAt;
     await store.writeIndex(index);
-    const { passwordHash: _h, ...pub } = user;
-    return pub;
+    return toPublicB2bDemoUser(user);
   });
 }
 

@@ -138,6 +138,13 @@ export function isB2bDemoAuctionPlatform(value: unknown): value is B2bDemoAuctio
 }
 
 export function toPublicB2bDemoUser(user: B2bDemoUser): B2bDemoUserPublic {
-  const { passwordHash: _passwordHash, ...rest } = user;
-  return rest;
+  return {
+    tenantId: user.tenantId,
+    userId: user.userId,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
 }
