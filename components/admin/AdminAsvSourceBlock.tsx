@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { useState } from "react";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
@@ -279,6 +280,7 @@ export function AdminAsvSourceBlock({
               onClear={() => onChange({ ...value, mileage: [emptyAsvMileageRow()] })}
             />
           </p>
+          <AdminMileageRangeBar rows={mileageRows} />
           <div className={tableWrap}>
             <table className="w-full min-w-[360px] border-collapse text-[11px]">
               <thead>

@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Bot,
+  Check,
+  Copy,
+  ExternalLink,
   FileText,
+  MessageCircle,
   MessageSquareText,
   MoreHorizontal,
   Quote,
@@ -12,9 +16,9 @@ import {
   X,
 } from "lucide-react";
 
-import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
-import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
-import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
+import { copyTextToClipboard } from "@/components/admin/AdminClipboardButton";
+import { WHATSAPP_PREFILL_AUDIT } from "@/lib/admin-whatsapp-messages";
+import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import {
   defaultFlashMaxSelection,
   summaryOnlyFlashMaxSelection,
@@ -69,7 +73,54 @@ type Props = {
 };
 
 const dockItem =
-  "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[9px] font-medium tracking-wide transition active:opacity-70 disabled:opacity-35";
+  "provin-dock-item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[9px] font-medium tracking-wide transition active:opacity-70 disabled:opacity-35";
+
+const dockIcon = "h-[19px] w-[19px]";
+
+/** Doka kopēšanas poga: tās pašas etiķetes kā `AdminClipboardButton`, tikai doka izmērā. */
+function DockCopyItem({
+  value,
+  label,
+  titleReady,
+  ariaReady,
+  ariaCopied,
+  onCopied,
+}: {
+  value: string;
+  label: string;
+  titleReady: string;
+  ariaReady: string;
+  ariaCopied: string;
+  onCopied?: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const v = value.trim();
+  const onClick = useCallback(async () => {
+    if (!v) return;
+    if (await copyTextToClipboard(v)) {
+      setCopied(true);
+      onCopied?.();
+      window.setTimeout(() => setCopied(false), 1600);
+    }
+  }, [v, onCopied]);
+  return (
+    <button
+      type="button"
+      className={`${dockItem} text-[var(--color-apple-text)]`}
+      disabled={!v}
+      title={copied ? "Kopēts" : titleReady}
+      aria-label={copied ? ariaCopied : ariaReady}
+      onClick={() => void onClick()}
+    >
+      {copied ? (
+        <Check className={dockIcon} strokeWidth={1.75} aria-hidden />
+      ) : (
+        <Copy className={dockIcon} strokeWidth={1.5} aria-hidden />
+      )}
+      {label}
+    </button>
+  );
+}
 
 const sheetRow =
   "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[13px] font-medium text-[var(--color-apple-text)] transition hover:bg-black/[0.04] disabled:opacity-40 dark:hover:bg-white/[0.06]";
@@ -197,6 +248,7 @@ export function AdminOrderMobileDock({
   const [sheet, setSheet] = useState<null | "flash" | "more" | "pdf">(null);
   const listingHref = listingUrl?.trim() && isValidHttpUrl(listingUrl.trim()) ? listingUrl.trim() : null;
   const flashDisabled = !aiAllowed || !workspaceHydrated || prepareDraftBusy || flashMaxBusy;
+  const whatsappDigits = useMemo(() => normalizeWhatsAppPhoneDigits(customerPhone ?? ""), [customerPhone]);
 
   const runFlash = (selection: FlashMaxSelection) => {
     setSheet(null);
@@ -215,24 +267,69 @@ export function AdminOrderMobileDock({
         className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
         aria-label="Ātrās darbības"
       >
-        <div className="pointer-events-auto flex w-full max-w-md items-stretch gap-0.5 rounded-[1.35rem] border border-black/10 bg-[var(--admin-surface-elevated)]/92 px-1.5 py-1 shadow-[0_8px_28px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:shadow-[0_8px_28px_rgba(0,0,0,0.45)]">
+        <div className="provin-dock pointer-events-auto flex w-full max-w-lg items-stretch gap-0 rounded-[1.35rem] border border-black/10 bg-[var(--admin-surface-elevated)]/92 px-1 py-1 shadow-[0_8px_28px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:shadow-[0_8px_28px_rgba(0,0,0,0.45)]">
+          <DockCopyItem
+            value={vin}
+            label="VIN"
+            titleReady="Kopēt VIN"
+            ariaReady="Kopēt VIN starpliktuvē"
+            ariaCopied="VIN nokopēts starpliktuvē"
+            onCopied={onVinCopied}
+          />
+          <DockCopyItem
+            value={plate}
+            label="Reģ."
+            titleReady="Kopēt reģistrācijas numuru"
+            ariaReady="Kopēt reģistrācijas numuru starpliktuvē"
+            ariaCopied="Reģistrācijas numurs nokopēts"
+          />
           <button
             type="button"
-            className={`${dockItem} ${flashMaxBusy ? "text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}
-            disabled={flashDisabled}
-            onClick={() => setSheet("flash")}
+            className={`${dockItem} provin-dock-client text-[#0066cc]`}
+            disabled={!whatsappDigits}
+            title={whatsappDigits ? `Atvērt WhatsApp: ${(customerPhone ?? "").trim()}` : "Nav derīga tālruņa numura WhatsApp atvēršanai"}
+            aria-label="Atvērt WhatsApp sarunu ar klientu"
+            onClick={() => {
+              if (whatsappDigits) openWhatsAppChat(whatsappDigits, whatsappPrefill ?? WHATSAPP_PREFILL_AUDIT);
+            }}
           >
-            <Sparkles className="h-[22px] w-[22px]" strokeWidth={1.5} aria-hidden />
-            {flashMaxBusy ? "…" : "FLASH"}
+            <MessageCircle className={dockIcon} strokeWidth={1.5} aria-hidden />
+            WA
           </button>
+          {listingHref ? (
+            <a
+              href={listingHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${dockItem} text-[var(--color-apple-text)]`}
+              title={listingHref}
+            >
+              <ExternalLink className={dockIcon} strokeWidth={1.5} aria-hidden />
+              ss.lv
+            </a>
+          ) : (
+            <span className={`${dockItem} cursor-not-allowed text-[var(--color-apple-text)] opacity-35`} title="Nav sludinājuma saites">
+              <ExternalLink className={dockIcon} strokeWidth={1.5} aria-hidden />
+              ss.lv
+            </span>
+          )}
           <button
             type="button"
-            className={`${dockItem} ${copilotOpen || copilotBusy ? "text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}
+            className={`${dockItem} ${copilotOpen || copilotBusy ? "text-[#7d3fa0]" : "text-[var(--color-apple-text)]"}`}
             disabled={!aiAllowed}
             onClick={onOpenCopilot}
           >
-            <Bot className="h-[22px] w-[22px]" strokeWidth={1.5} aria-hidden />
+            <Bot className={dockIcon} strokeWidth={1.5} aria-hidden />
             Copilot
+          </button>
+          <button
+            type="button"
+            className={`${dockItem} ${flashMaxBusy ? "text-[#7d3fa0]" : "text-[var(--color-apple-text)]"}`}
+            disabled={flashDisabled}
+            onClick={() => setSheet("flash")}
+          >
+            <Sparkles className={dockIcon} strokeWidth={1.5} aria-hidden />
+            {flashMaxBusy ? "…" : "FLASH"}
           </button>
           <button
             type="button"
@@ -240,7 +337,7 @@ export function AdminOrderMobileDock({
             disabled={pdfProgressKey !== null}
             onClick={() => setSheet("pdf")}
           >
-            <FileText className="h-[22px] w-[22px]" strokeWidth={1.5} aria-hidden />
+            <FileText className={dockIcon} strokeWidth={1.5} aria-hidden />
             {pdfProgressKey ? `${pdfProgressPct ?? 0}%` : "PDF"}
           </button>
           <button
@@ -248,7 +345,7 @@ export function AdminOrderMobileDock({
             className={`${dockItem} text-[var(--color-apple-text)]`}
             onClick={() => setSheet("more")}
           >
-            <MoreHorizontal className="h-[22px] w-[22px]" strokeWidth={1.5} aria-hidden />
+            <MoreHorizontal className={dockIcon} strokeWidth={1.5} aria-hidden />
             Vairāk
           </button>
         </div>
@@ -283,7 +380,7 @@ export function AdminOrderMobileDock({
       {sheet === "pdf" ? (
         <Sheet title="Ģenerēt PDF" onClose={() => setSheet(null)}>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdf)}>
-            <FileText className="h-4 w-4 shrink-0 text-emerald-600" strokeWidth={1.5} aria-hidden />
+            <FileText className="h-4 w-4 shrink-0 text-[var(--color-apple-text)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">{pdfProgressKey === "pdf" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt PDF"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Pilnā PROVIN atskaite</span>
@@ -298,7 +395,7 @@ export function AdminOrderMobileDock({
             onDe={() => runPdf(onGeneratePdfDe)}
           />
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateBusinessPdf)}>
-            <FileText className="h-4 w-4 shrink-0 text-violet-600" strokeWidth={1.5} aria-hidden />
+            <FileText className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">{pdfProgressKey === "business" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt BUSINESS PDF"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">
@@ -315,7 +412,7 @@ export function AdminOrderMobileDock({
             onDe={() => runPdf(onGenerateBusinessPdfDe)}
           />
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdf)}>
-            <FileText className="h-4 w-4 shrink-0 text-sky-600" strokeWidth={1.5} aria-hidden />
+            <FileText className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">{pdfProgressKey === "dealer" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt dīlera PDF"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tikai oficiālā dīlera dati</span>
@@ -330,7 +427,7 @@ export function AdminOrderMobileDock({
             onDe={() => runPdf(onGenerateDealerPdfDe)}
           />
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateAsvPdf)}>
-            <FileText className="h-4 w-4 shrink-0 text-blue-700" strokeWidth={1.5} aria-hidden />
+            <FileText className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">{pdfProgressKey === "asv" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt ASV PDF"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tikai ASV vēsture</span>
@@ -345,14 +442,14 @@ export function AdminOrderMobileDock({
             onDe={() => runPdf(onGenerateAsvPdfDe)}
           />
           <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateOemPdf)}>
-            <FileText className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.5} aria-hidden />
+            <FileText className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">OEM dīlera PDF</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Oriģinālie API dati bez tulkojuma</span>
             </span>
           </button>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePrintInkPdf)}>
-            <FileText className="h-4 w-4 shrink-0 text-amber-700" strokeWidth={1.5} aria-hidden />
+            <FileText className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">{pdfProgressKey === "ink" ? `${pdfProgressPct ?? 0}%` : "Drukājamā versija"}</span>
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tumšāks teksts papīra drukai</span>
@@ -397,36 +494,6 @@ export function AdminOrderMobileDock({
             <Quote className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             Biežās frāzes
           </button>
-
-          <div className="mt-1 border-t border-[var(--admin-border-subtle)] px-3 pt-3">
-            <div className="flex items-center gap-2 text-[11px] text-[var(--color-provin-muted)]">
-              <span className="min-w-0 flex-1 truncate font-mono">{vin || "- VIN -"}</span>
-              {vin ? <AdminVinCopyButton value={vin} onCopied={onVinCopied} /> : null}
-            </div>
-            <div className="mt-2 flex items-center gap-2 text-[11px] text-[var(--color-provin-muted)]">
-              <span className="min-w-0 flex-1 truncate font-mono">{plate || "- Reģ. nr. -"}</span>
-              <AdminClipboardButton
-                value={plate}
-                titleReady="Kopēt reģistrācijas numuru"
-                titleCopied="Kopēts"
-                ariaReady="Kopēt reģistrācijas numuru starpliktuvē"
-                ariaCopied="Reģistrācijas numurs nokopēts"
-              />
-            </div>
-            <div className="mt-3 flex items-center gap-2">
-              <AdminWhatsAppOpenButton phone={customerPhone ?? ""} prefillMessage={whatsappPrefill} />
-              {listingHref ? (
-                <a
-                  href={listingHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-lg border border-[var(--admin-border-subtle)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-apple-text)]"
-                >
-                  Sludinājums
-                </a>
-              ) : null}
-            </div>
-          </div>
         </Sheet>
       ) : null}
     </>

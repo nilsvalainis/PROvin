@@ -26,7 +26,7 @@ type Props = {
   "aria-label"?: string;
   /** Virsraksts formatēšanas rindā. */
   label?: ReactNode;
-  /** Ģenerēšanas pogas tajā pašā rindā. */
+  /** Ģenerēšanas pogas virsraksta rindā. */
   actions?: ReactNode;
 };
 
@@ -91,13 +91,12 @@ export function AdminAiPolishRichCommentShell({
 
   const toolbarEnd = (
     <>
-      {actions}
       {canUndo ? (
         <button
           type="button"
           onClick={handleUndo}
           disabled={disabled}
-          className="inline-flex items-center gap-1 rounded-md border border-slate-200/80 bg-transparent px-2 py-0.5 text-[10px] font-medium text-slate-500 shadow-none transition hover:border-slate-300 hover:bg-slate-50/80 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="provin-tool-btn inline-flex items-center gap-1 rounded-md border border-slate-200/80 bg-transparent px-2 py-0.5 text-[10px] font-medium text-slate-500 shadow-none transition hover:border-slate-300 hover:bg-slate-50/80 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
           title="Atgriezt tekstu pirms pēdējās AI labošanas"
         >
           <RotateCcw className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
@@ -144,6 +143,7 @@ export function AdminAiPolishRichCommentShell({
         onChange={onChange}
         aria-label={ariaLabel}
         label={label}
+        headerEnd={actions}
         toolbarEnd={toolbarEnd}
       />
       {error ? (

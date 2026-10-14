@@ -90,7 +90,7 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFi
           window.open(extra.href, "_blank", "noopener,noreferrer");
         }
       }}
-      className={`inline-flex max-w-full flex-1 items-center gap-2 font-medium uppercase tracking-wide underline-offset-2 transition hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)] focus-visible:ring-offset-1 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS} text-slate-600`}
+      className={`provin-source-title inline-flex max-w-full flex-1 items-center gap-2 font-medium uppercase tracking-wide underline-offset-2 transition hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)] focus-visible:ring-offset-1 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS} text-slate-600`}
     >
       <AdminProvinLucide icon={Icon} />
       <span>{label}</span>

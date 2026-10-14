@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { useState } from "react";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
@@ -478,6 +479,7 @@ export function AdminVinRegistrySourceBlock({
           <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
           {CSDD_MILEAGE_UNIFIED_TITLE}
         </p>
+        <AdminMileageRangeBar rows={mileage} />
         <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90">
           <table className="w-full min-w-[320px] border-collapse text-[11px]">
             <thead>

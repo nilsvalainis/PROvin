@@ -101,8 +101,10 @@ type AdminInternalRichCommentEditorProps = {
   "aria-label"?: string;
   /** Virsraksts tajā pašā rindā ar formatēšanu / ✨. */
   label?: ReactNode;
-  /** Ģenerēt, ✨, × — rindas labajā pusē. */
+  /** ✨, Atgriezt, ×: formatēšanas rindas labajā pusē. */
   toolbarEnd?: ReactNode;
+  /** AI ģenerēšanas pogas virsraksta rindas labajā pusē. */
+  headerEnd?: ReactNode;
 };
 
 type ActiveMarks = {
@@ -122,6 +124,7 @@ export function AdminInternalRichCommentEditor({
   "aria-label": ariaLabel = "Iekšējais komentārs",
   label,
   toolbarEnd,
+  headerEnd,
 }: AdminInternalRichCommentEditorProps) {
   const ref = useRef<HTMLDivElement>(null);
   const syncingFromParent = useRef(false);
@@ -227,7 +230,7 @@ export function AdminInternalRichCommentEditor({
   );
 
   const applySpanStyle = useCallback(
-    (style: Record<string, string>) => {
+    (style: Record<string, string>, opts?: { clearDescendantProp?: string }) => {
       const el = ref.current;
       if (!el) return;
       el.focus();
@@ -254,6 +257,17 @@ export function AdminInternalRichCommentEditor({
         const span = document.createElement("span");
         span.setAttribute("style", styleStr);
         span.appendChild(contents);
+        const clearProp = opts?.clearDescendantProp;
+        if (clearProp) {
+          /** Iekšējie vecie stili citādi „uzvar” jauno (piem. sarkans → zils neko nemaina). */
+          span.querySelectorAll<HTMLElement>("[style]").forEach((n) => {
+            n.style.removeProperty(clearProp);
+            if (!n.getAttribute("style")?.trim()) n.removeAttribute("style");
+          });
+          if (clearProp === "color") {
+            span.querySelectorAll("font[color]").forEach((n) => n.removeAttribute("color"));
+          }
+        }
         range.insertNode(span);
         sel.removeAllRanges();
         const after = document.createRange();
@@ -266,12 +280,26 @@ export function AdminInternalRichCommentEditor({
     [emit],
   );
 
+  /**
+   * Teksta krāsa = burtu `color`, nekad fons. Iezīmētam tekstam ietinam paši (`span style="color"`),
+   * jo `foreColor` dažos pārlūkos ar `styleWithCSS` neuzvedas vienādi; kursoram atstājam `foreColor`,
+   * lai turpmāk rakstītais teksts paliek iekrāsots.
+   */
   const applyTextColor = useCallback(
     (hex: string) => {
       setPalette(null);
-      runFormat("foreColor", hex);
+      const el = ref.current;
+      if (!el) return;
+      const sel = window.getSelection();
+      const collapsed = !sel || sel.rangeCount === 0 || sel.getRangeAt(0).collapsed;
+      if (collapsed || !selectionInsideEditor()) {
+        runFormat("foreColor", hex);
+        return;
+      }
+      applySpanStyle({ color: hex }, { clearDescendantProp: "color" });
+      refreshMarks();
     },
-    [runFormat],
+    [applySpanStyle, refreshMarks, runFormat, selectionInsideEditor],
   );
 
   const applyHighlight = useCallback(
@@ -392,9 +420,17 @@ export function AdminInternalRichCommentEditor({
   );
 
   return (
-    <div className={className}>
-      <div className="mb-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-      {label ? <div className="min-w-0 shrink-0">{label}</div> : null}
+    <div className={`provin-rich ${className}`.trim()}>
+      {label || headerEnd ? (
+        <div className="provin-rich-head mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          {label ? <div className="min-w-0 shrink-0">{label}</div> : null}
+          {headerEnd ? (
+            <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">{headerEnd}</div>
+          ) : null}
+        </div>
+      ) : null}
+      <div className="provin-rich-card min-w-0">
+      <div className="provin-rich-toolbar mb-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
       <div
         data-rich-toolbar
         className="relative flex min-w-0 flex-1 flex-wrap items-center gap-1"
@@ -421,9 +457,10 @@ export function AdminInternalRichCommentEditor({
           aria-expanded={palette === "text"}
           className={`${toolBtnBase} ${palette === "text" ? toolBtnActive : toolBtnIdle}`}
           onClick={() => setPalette((p) => (p === "text" ? null : "text"))}
-          title="Teksta krāsa"
+          title="Teksta krāsa (burtu krāsa)"
         >
           <Baseline className="h-3.5 w-3.5" aria-hidden />
+          <span className="provin-rich-tool-label ml-1 font-medium">Krāsa</span>
         </button>
         <button
           type="button"
@@ -434,6 +471,7 @@ export function AdminInternalRichCommentEditor({
           title="Izcelt (marķieris)"
         >
           <Highlighter className="h-3.5 w-3.5" aria-hidden />
+          <span className="provin-rich-tool-label ml-1 font-medium">Izcelt</span>
         </button>
         <button
           type="button"
@@ -443,6 +481,7 @@ export function AdminInternalRichCommentEditor({
           title="Notīrīt formatējumu"
         >
           <RemoveFormatting className="h-3.5 w-3.5" aria-hidden />
+          <span className="provin-rich-tool-label ml-1 font-medium">Notīrīt</span>
         </button>
 
         <span className={dividerClass} aria-hidden />
@@ -495,7 +534,7 @@ export function AdminInternalRichCommentEditor({
                   onClick={() =>
                     palette === "text" ? applyTextColor(c.css) : applyHighlight(c.css)
                   }
-                  className="h-6 w-6 rounded border border-black/15 shadow-sm transition-transform hover:scale-110 dark:border-white/25"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded border border-black/15 text-[13px] font-bold leading-none shadow-sm transition-transform hover:scale-110 dark:border-white/25"
                   style={
                     c.id === "none"
                       ? {
@@ -503,9 +542,21 @@ export function AdminInternalRichCommentEditor({
                             "linear-gradient(45deg, transparent 45%, #ef4444 45%, #ef4444 55%, transparent 55%)",
                           backgroundColor: "var(--admin-field-bg)",
                         }
-                      : { backgroundColor: c.css }
+                      : palette === "text"
+                        ? {
+                            backgroundColor: "#ffffff",
+                            color: c.css,
+                            boxShadow: `inset 0 -3px 0 ${c.css}`,
+                          }
+                        : { backgroundColor: c.css }
                   }
-                />
+                >
+                  {palette === "text" ? (
+                    <span aria-hidden style={{ color: c.css }}>
+                      A
+                    </span>
+                  ) : null}
+                </button>
               ))}
             </div>
           </div>
@@ -531,6 +582,7 @@ export function AdminInternalRichCommentEditor({
         onMouseUp={refreshMarks}
         onFocus={refreshMarks}
       />
+      </div>
     </div>
   );
 }

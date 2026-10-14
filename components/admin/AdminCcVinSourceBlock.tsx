@@ -7,6 +7,7 @@
  * komentārs → AI konteksts. Specifikācijas šeit netiek dublētas — akcents ir uz sarkanajiem karogiem.
  */
 
+import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminCcVinPhotoProbeButton } from "@/components/admin/AdminCcVinPhotoProbeButton";
 import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
@@ -377,6 +378,7 @@ export function AdminCcVinSourceBlock({
             <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
             {CSDD_MILEAGE_UNIFIED_TITLE}
           </p>
+          <AdminMileageRangeBar rows={mileageRows} />
           <div
             className={tableWrap}
             data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}

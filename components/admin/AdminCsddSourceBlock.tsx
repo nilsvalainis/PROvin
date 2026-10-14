@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { useEffect, useRef } from "react";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
@@ -531,6 +532,7 @@ export function AdminCsddSourceBlock({
           </p>
           <AdminPdfIncludeToggle checked={pdfIncludeMileageTable} onChange={onPdfIncludeMileageTableChange} />
         </div>
+        <AdminMileageRangeBar rows={mileageRows} />
         <div
           className="overflow-x-auto rounded-lg border border-slate-200/90"
           data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}

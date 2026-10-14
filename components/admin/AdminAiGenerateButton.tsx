@@ -11,16 +11,17 @@ type Props = {
   demoOnly?: boolean;
   title?: string;
   variant?: AiAdminModelTier;
+  /** Mazs „AI” marķieris ieteiktajai (pirmajai) pogai. */
+  badge?: boolean;
   onClick: () => void;
 };
 
-const VARIANT_CLASS: Record<AiAdminModelTier, string> = {
-  pro: "border border-violet-700 bg-violet-600 text-white hover:bg-violet-700",
-  flash: "border border-emerald-700/70 bg-emerald-600 text-white hover:bg-emerald-700",
-  lite: "border border-sky-700/70 bg-sky-600 text-white hover:bg-sky-700",
-  gemini: "border border-amber-700/70 bg-amber-600 text-white hover:bg-amber-700",
-  "gemini-flash": "border border-teal-700/70 bg-teal-600 text-white hover:bg-teal-700",
-};
+/** Visi modeļi vizuāli vienādi klusi; modeļa nosaukums ir pogas tekstā un `title`. */
+export const ADMIN_AI_BTN_QUIET_CLASS =
+  "provin-ai-btn border border-[#d2d2d7] bg-transparent text-[#6e6e73] shadow-none hover:border-[rgba(175,82,222,0.45)] hover:bg-[rgba(175,82,222,0.10)] hover:text-[#7d3fa0] focus-visible:border-[rgba(175,82,222,0.45)] focus-visible:bg-[rgba(175,82,222,0.10)] focus-visible:text-[#7d3fa0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(175,82,222,0.25)]";
+
+export const ADMIN_AI_BADGE_CLASS =
+  "provin-ai-badge rounded px-1 py-px text-[9px] font-bold tracking-[0.05em] bg-[#f2f2f7] text-current";
 
 const VARIANT_HINT: Record<AiAdminModelTier, string> = {
   pro: "Claude Opus — dārgākais; tikai kopsavilkumam vai apzinātai dziļai analīzei",
@@ -37,6 +38,7 @@ export function AdminAiGenerateButton({
   demoOnly,
   title,
   variant = "pro",
+  badge = false,
   onClick,
 }: Props) {
   const hint = title ?? (demoOnly ? "AI pieejams tikai DEMO pasūtījumiem (drošības iemesli)" : VARIANT_HINT[variant]);
@@ -44,13 +46,19 @@ export function AdminAiGenerateButton({
   return (
     <button
       type="button"
-      className={`inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[11px] font-medium shadow-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${VARIANT_CLASS[variant]}`}
+      data-ai-tier={variant}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${ADMIN_AI_BTN_QUIET_CLASS}`}
       disabled={disabled || busy}
       onClick={onClick}
       title={hint}
       aria-busy={busy}
     >
       {busy ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden /> : null}
+      {badge && !busy ? (
+        <span className={ADMIN_AI_BADGE_CLASS} aria-hidden>
+          AI
+        </span>
+      ) : null}
       {label}
     </button>
   );

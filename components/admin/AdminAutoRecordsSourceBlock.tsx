@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import {
   AdminSourceCommentField,
   type AdminAiSourceCommentSlot,
@@ -401,6 +402,7 @@ export function AdminAutoRecordsSourceBlock({
             <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
             {CSDD_MILEAGE_UNIFIED_TITLE}
           </p>
+          <AdminMileageRangeBar rows={displayRows} />
           <div
             className="overflow-x-auto rounded-lg border border-slate-200/90"
             data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}
