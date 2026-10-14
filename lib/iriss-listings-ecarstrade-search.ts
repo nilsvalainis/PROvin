@@ -26,6 +26,7 @@ import {
   parseAuto1Manufacturers,
   parseAutobidCarlistManufacturerModel,
   parseOpenlaneMakesModels,
+  parseMobileDeColonRange,
   parseZeroUnboundedRange,
   resolveMakeFromMobileMs,
   splitListTokens,
@@ -41,6 +42,8 @@ export type EcarstradeSearchFilter = {
   makeIds: number[];
   makeNames: string[];
   modelId: number | null;
+  /** Vairāki `model[]` vienai markai (BMW 5er+7er). */
+  modelIds: number[];
   modelName: string;
   yearFrom: number | null;
   yearTo: number | null;
@@ -130,6 +133,7 @@ const emptyFilter = (): EcarstradeSearchFilter => ({
   makeIds: [],
   makeNames: [],
   modelId: null,
+  modelIds: [],
   modelName: "",
   yearFrom: null,
   yearTo: null,
@@ -162,6 +166,15 @@ function pushMake(filter: EcarstradeSearchFilter, mark: EcarstradeMark | null): 
   if (!mark || filter.makeIds.includes(mark.id)) return;
   filter.makeIds.push(mark.id);
   filter.makeNames.push(mark.name);
+}
+
+function uniqNums(values: number[]): number[] {
+  const out: number[] = [];
+  for (const n of values) {
+    if (!Number.isFinite(n) || out.includes(n)) continue;
+    out.push(n);
+  }
+  return out;
 }
 
 function uniq(values: string[]): string[] {
@@ -216,22 +229,22 @@ function mapFuel(raw: string): string | null {
 function mapGearbox(raw: string): string | null {
   const s = raw.toLowerCase().replace(/[_-]+/g, " ").trim();
   if (isWildcardCriterion(s)) return null;
-  if (/semi|dsg|dct|s.?tronic/.test(s) && /semi/.test(s)) return ECARSTRADE_GEARBOX.semi;
-  if (/auto|tiptronic|dsg|dct|cvt|s.?tronic|pdk/.test(s)) return ECARSTRADE_GEARBOX.automatic;
-  if (/manual|manuell|mehān|mehan|stick/.test(s)) return ECARSTRADE_GEARBOX.manual;
+  if (/\bsemi\b|halbauto|semi automatic|semiautomatic/.test(s)) return ECARSTRADE_GEARBOX.semi;
+  if (/auto|tiptronic|dsg|dct|cvt|s.?tronic|pdk|automatik/.test(s)) return ECARSTRADE_GEARBOX.automatic;
+  if (/manual|manuell|mehān|mehan|stick|schalt/.test(s)) return ECARSTRADE_GEARBOX.manual;
   return null;
 }
 
 function mapBody(raw: string): string | null {
   const s = raw.toLowerCase().replace(/[_-]+/g, " ").trim();
   if (isWildcardCriterion(s)) return null;
-  if (/suv|off.?road|pickup|crossover|gelande/.test(s)) return ECARSTRADE_BODY.suv;
-  if (/estate|avant|variant|kombi|touring|wagon|sw\b/.test(s)) return ECARSTRADE_BODY.estate;
+  if (/suv|off.?road|offroad|pickup|crossover|gelande/.test(s)) return ECARSTRADE_BODY.suv;
+  if (/estate|avant|variant|kombi|combi|touring|wagon|\bbreak\b|station/.test(s)) return ECARSTRADE_BODY.estate;
   if (/convertible|cabrio|roadster/.test(s)) return ECARSTRADE_BODY.convertible;
-  if (/coupe|coupé|sports? car/.test(s)) return ECARSTRADE_BODY.coupe;
-  if (/van|minibus|transporter/.test(s)) return ECARSTRADE_BODY.van;
+  if (/coupe|coupé|sports?\s*car|sportscar/.test(s)) return ECARSTRADE_BODY.coupe;
+  if (/\bmpv\b|van|minibus|transporter/.test(s)) return ECARSTRADE_BODY.van;
   if (/small|hatch|compact/.test(s)) return ECARSTRADE_BODY.small;
-  if (/saloon|sedan|limousine/.test(s)) return ECARSTRADE_BODY.saloon;
+  if (/saloon|sedan|limousine|\blimo\b|berline/.test(s)) return ECARSTRADE_BODY.saloon;
   if (/bike|motorcycle/.test(s)) return ECARSTRADE_BODY.bike;
   return null;
 }
@@ -352,9 +365,30 @@ const GEAR_KEYS = [
   "transmissiontypes",
   "gearbox[]",
   "gearboxid-gearbox",
+  "gearboxid",
+  "e70",
+  "carlist-e70",
+  "eq70",
+  "e18",
+  "carlist-e18",
   "tr",
 ];
-const BODY_KEYS = ["body", "bodies", "bodytype", "bodytypes", "category", "categories", "category[]", "c"];
+const BODY_KEYS = [
+  "body",
+  "bodies",
+  "bodytype",
+  "bodytypes",
+  "category",
+  "categories",
+  "category[]",
+  "categoryid-category",
+  "categoryid",
+  "carlist-category",
+  "carlist-categoryid",
+  "vehicletype",
+  "vehicletypes",
+  "c",
+];
 const COLOR_KEYS = ["color", "colors", "colour", "colours", "color[]", "exteriorcolor", "exteriorcolours", "colorid-color"];
 const DRIVE_KEYS = ["drive", "drives", "drivetype", "drivetypes", "drivetrain", "wheeldrive", "iriss_drive"];
 const ENGINE_FROM_KEYS = [
@@ -521,12 +555,20 @@ function applyRange(
 }
 
 function applyMakeModelPairs(filter: EcarstradeSearchFilter, pairs: MakeModelPair[], idSpace: MakeIdSpace): void {
-  const models = new Set<string>();
   for (const pair of pairs) {
     applyMakeToken(filter, pair.make, idSpace);
-    if (pair.model) models.add(pair.model);
+    if (pair.model) applyModelToken(filter, pair.model, "name");
   }
-  if (models.size === 1) applyModelToken(filter, [...models][0] ?? "", "name");
+}
+
+function pushResolvedModel(filter: EcarstradeSearchFilter, model: { id: number; name: string }): void {
+  if (!filter.modelIds.includes(model.id)) filter.modelIds.push(model.id);
+  if (filter.modelId == null) filter.modelId = model.id;
+  const names = filter.modelName
+    ? filter.modelName.split(", ").map((s) => s.trim()).filter(Boolean)
+    : [];
+  if (!names.includes(model.name)) names.push(model.name);
+  filter.modelName = names.join(", ");
 }
 
 function firstInt(params: Map<string, string[]>, keys: string[], parse = intFromRaw): number | null {
@@ -603,15 +645,13 @@ function applyModelToken(filter: EcarstradeSearchFilter, modelRaw: string, idSpa
     if (/^\d+$/.test(modelText) && idSpace === "ecarstrade") {
       const byId = resolveEcarstradeModelById(filter.makeIds[0]!, Number.parseInt(modelText, 10));
       if (byId) {
-        filter.modelId = byId.id;
-        filter.modelName = byId.name;
+        pushResolvedModel(filter, byId);
         return;
       }
     }
     const model = resolveEcarstradeModel(filter.makeIds[0]!, modelText);
     if (model) {
-      filter.modelId = model.id;
-      filter.modelName = model.name;
+      pushResolvedModel(filter, model);
       return;
     }
   }
@@ -676,14 +716,23 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
       });
     }
   }
-  applyModelToken(filter, values(params, MODEL_KEYS)[0] ?? "", idSpace);
+  for (const raw of values(params, MODEL_KEYS)) applyModelToken(filter, raw, idSpace);
   if (idSpace === "autobid" && !filter.modelName) {
     applyModelToken(filter, values(params, ["name"])[0] ?? "", "name");
   }
 
   filter.yearFrom = firstInt(params, YEAR_FROM_KEYS, yearFromRaw);
   filter.yearTo = firstInt(params, YEAR_TO_KEYS, yearFromRaw);
-  for (const raw of rawValues(params, ["registrationyears", "fr"])) applyRange(filter, raw, "yearFrom", "yearTo", true);
+  for (const raw of rawValues(params, ["fr"])) {
+    const range = parseMobileDeColonRange(raw);
+    let from = range.from;
+    let to = range.to;
+    if (from != null && (from < 1980 || from > 2035)) from = null;
+    if (to != null && (to < 1980 || to > 2035)) to = null;
+    if (from != null && filter.yearFrom == null) filter.yearFrom = from;
+    if (to != null && filter.yearTo == null) filter.yearTo = to;
+  }
+  for (const raw of rawValues(params, ["registrationyears"])) applyRange(filter, raw, "yearFrom", "yearTo", true);
   filter.mileageFrom = firstInt(params, KM_FROM_KEYS);
   filter.mileageTo = firstInt(params, KM_TO_KEYS);
   for (const raw of rawValues(params, ["mileages", "ml"])) applyRange(filter, raw, "mileageFrom", "mileageTo");
@@ -712,8 +761,28 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
     return mapFuel(raw) ?? mapFuel(mapOpenlaneFuelToken(raw) ?? "") ?? mapFuel(mapAutobidFuelToken(raw) ?? "");
   });
   filter.fuels = uniq(fuels.filter((x): x is string => Boolean(x)));
-  filter.gearboxes = uniq(values(params, GEAR_KEYS).map(mapGearbox).filter((x): x is string => Boolean(x)));
-  filter.bodies = uniq(values(params, BODY_KEYS).map(mapBody).filter((x): x is string => Boolean(x)));
+  const gearRaw = values(params, GEAR_KEYS);
+  filter.gearboxes = uniq(gearRaw.map(mapGearbox).filter((x): x is string => Boolean(x)));
+  for (const raw of gearRaw) {
+    if (/^\d+$/.test(raw) && !mapGearbox(raw)) {
+      filter.unmapped.push({
+        key: "gearbox",
+        value: raw,
+        reason: "kārbas skaitliskais ID nav kartē; ingest post-filtrs, nepaplašina",
+      });
+    }
+  }
+  const bodyRaw = values(params, BODY_KEYS);
+  filter.bodies = uniq(bodyRaw.map(mapBody).filter((x): x is string => Boolean(x)));
+  for (const raw of bodyRaw) {
+    if (/^\d+$/.test(raw) && !mapBody(raw)) {
+      filter.unmapped.push({
+        key: "category",
+        value: raw,
+        reason: "virsbūves skaitliskais ID nav kartē; ingest post-filtrs, nepaplašina",
+      });
+    }
+  }
   filter.colors = uniq(values(params, COLOR_KEYS).map(mapEcarstradeColor).filter((x): x is string => Boolean(x)));
   for (const raw of values(params, DRIVE_KEYS)) pushDriveFromText(filter, raw);
 
@@ -759,17 +828,32 @@ export function widenExactSearchBounds(filter: EcarstradeSearchFilter): Ecarstra
   return cloneEcarstradeFilter(filter);
 }
 
-/** Ja izsoles URL ir marka bez modeļa, bet brandModel nosauc tieši vienu modeli tai markai. */
+function resolvePendingModels(filter: EcarstradeSearchFilter): EcarstradeSearchFilter {
+  if (filter.makeIds.length !== 1) return filter;
+  if (filter.modelIds.length || filter.modelId) return filter;
+  const names = filter.modelName
+    .split(/[,;/|]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!names.length) return filter;
+  const next = cloneEcarstradeFilter(filter);
+  for (const name of names) {
+    const model = resolveEcarstradeModel(next.makeIds[0]!, name);
+    if (model) pushResolvedModel(next, model);
+  }
+  return next;
+}
+
+/** Ja izsoles URL ir marka bez modeļa, brandModel var aizpildīt tieši šīs markas modeļus. */
 export function fillMissingModelFromBrand(filter: EcarstradeSearchFilter, brandModel: string): EcarstradeSearchFilter {
-  if (filter.makeIds.length !== 1 || filter.modelId) return filter;
-  if (/[/|]/.test(brandModel) && !/\b\d+\s*k\s*w\b/i.test(brandModel)) return filter;
-  const extra = filterFromBrandModel(brandModel);
-  if (extra.makeIds.length !== 1 || extra.makeIds[0] !== filter.makeIds[0] || !extra.modelId) return filter;
-  return {
-    ...cloneEcarstradeFilter(filter),
-    modelId: extra.modelId,
-    modelName: extra.modelName,
-  };
+  const pending = resolvePendingModels(filter);
+  if (pending.makeIds.length !== 1 || pending.modelIds.length || pending.modelId) return pending;
+  const pairs = resolveMakeModelPairsFromBrand(brandModel);
+  const pair = pairs.find((p) => p.make.id === pending.makeIds[0] && p.models.length);
+  if (!pair) return pending;
+  const next = cloneEcarstradeFilter(pending);
+  for (const model of pair.models) pushResolvedModel(next, model);
+  return next;
 }
 
 function applySharedBrandCriteria(target: EcarstradeSearchFilter, shared: EcarstradeSearchFilter): void {
@@ -797,9 +881,8 @@ export function filtersFromBrandModel(brandModel: string): EcarstradeSearchFilte
   return pairs.map((pair) => {
     const filter = emptyFilter();
     pushMake(filter, pair.make);
-    if (pair.model) {
-      filter.modelId = pair.model.id;
-      filter.modelName = pair.model.name;
+    if (pair.models.length) {
+      for (const model of pair.models) pushResolvedModel(filter, model);
     } else if (pair.modelText) {
       filter.modelName = pair.modelText;
     }
@@ -812,9 +895,10 @@ export function filterFromBrandModel(brandModel: string): EcarstradeSearchFilter
   const filter = emptyFilter();
   const resolved = resolveMakesFromBrand(brandModel);
   for (const mark of resolved.makes) pushMake(filter, mark);
-  if (resolved.model && filter.makeIds.length === 1) {
-    filter.modelId = resolved.model.id;
-    filter.modelName = resolved.model.name;
+  if (resolved.models.length && filter.makeIds.length === 1) {
+    for (const model of resolved.models) pushResolvedModel(filter, model);
+  } else if (resolved.model && filter.makeIds.length === 1) {
+    pushResolvedModel(filter, resolved.model);
   } else if (resolved.modelText && filter.makeIds.length === 1) {
     filter.modelName = resolved.modelText;
   }
@@ -895,12 +979,14 @@ export function fillFilterGaps(filter: EcarstradeSearchFilter, extra: Ecarstrade
   const makeIds = filter.makeIds.length ? [...filter.makeIds] : [...extra.makeIds];
   const makeNames = filter.makeIds.length ? [...filter.makeNames] : [...extra.makeNames];
   const multi = makeIds.length > 1;
-  const modelId = multi ? null : filter.modelId ?? extra.modelId;
+  const modelIds = multi ? [] : filter.modelIds.length ? [...filter.modelIds] : [...extra.modelIds];
+  const modelId = multi ? null : filter.modelId ?? extra.modelId ?? modelIds[0] ?? null;
   const modelName = multi ? "" : filter.modelName || extra.modelName;
-  return {
+  return resolvePendingModels({
     makeIds,
     makeNames,
     modelId,
+    modelIds: modelId && !modelIds.includes(modelId) ? [modelId, ...modelIds] : modelIds,
     modelName,
     yearFrom: filter.yearFrom ?? extra.yearFrom,
     yearTo: filter.yearTo ?? extra.yearTo,
@@ -927,7 +1013,7 @@ export function fillFilterGaps(filter: EcarstradeSearchFilter, extra: Ecarstrade
     excludeTokens: uniq([...filter.excludeTokens, ...extra.excludeTokens]),
     excludeColors: uniq([...filter.excludeColors, ...extra.excludeColors]),
     unmapped: [...filter.unmapped, ...extra.unmapped],
-  };
+  });
 }
 
 /** Savieno URL markas ar brandModel tikai tad, ja URL markas nav. */
@@ -1022,6 +1108,7 @@ export function mergeCompatibleEcarstradeFilters(a: EcarstradeSearchFilter, b: E
     makeIds: [...makeIds],
     makeNames: [...makeNames],
     modelId: a.modelId ?? b.modelId,
+    modelIds: uniqNums(a.modelIds.length ? a.modelIds : b.modelIds.length ? b.modelIds : [a.modelId ?? b.modelId].filter((n): n is number => n != null)),
     modelName: a.modelName || b.modelName,
     yearFrom: year.from,
     yearTo: year.to,
@@ -1078,7 +1165,10 @@ export function ecarstradeSearchUrl(filter: EcarstradeSearchFilter): string | nu
   if (filter.makeIds.length === 0) return null;
   const parts: string[] = [];
   for (const id of filter.makeIds) appendQuery(parts, "mark[]", String(id));
-  if (filter.makeIds.length === 1 && filter.modelId) appendQuery(parts, "model[]", String(filter.modelId));
+  if (filter.makeIds.length === 1) {
+    const ids = filter.modelIds.length ? filter.modelIds : filter.modelId != null ? [filter.modelId] : [];
+    for (const id of uniqNums(ids)) appendQuery(parts, "model[]", String(id));
+  }
   if (filter.yearFrom != null) appendQuery(parts, "year_from", String(filter.yearFrom));
   if (filter.yearTo != null) appendQuery(parts, "year_to", String(filter.yearTo));
   if (filter.mileageFrom != null) appendQuery(parts, "mileage_from", String(filter.mileageFrom));
@@ -1110,7 +1200,7 @@ export function ecarstradeSearchUrl(filter: EcarstradeSearchFilter): string | nu
 export function ecarstradeFilterSignature(filter: EcarstradeSearchFilter): string {
   return [
     [...filter.makeIds].sort((a, b) => a - b).join(","),
-    filter.makeIds.length === 1 ? filter.modelId ?? "" : "",
+    filter.makeIds.length === 1 ? (filter.modelIds.length ? [...filter.modelIds].sort((a, b) => a - b).join(",") : filter.modelId ?? "") : "",
     filter.yearFrom ?? "",
     filter.yearTo ?? "",
     filter.mileageFrom ?? "",
@@ -1159,7 +1249,10 @@ export function sameEcarstradeSearch(a: string, b: string): boolean {
 export function describeEcarstradeFilter(filter: EcarstradeSearchFilter): string[] {
   const lines: string[] = [];
   if (filter.makeNames.length) lines.push(`marka: ${filter.makeNames.join(", ")}`);
-  if (filter.modelName) lines.push(`modelis: ${filter.modelName}${filter.modelId ? ` (id ${filter.modelId})` : ""}`);
+  if (filter.modelName) {
+    const ids = filter.modelIds.length ? filter.modelIds : filter.modelId != null ? [filter.modelId] : [];
+    lines.push(`modelis: ${filter.modelName}${ids.length ? ` (id ${ids.join(", ")})` : ""}`);
+  }
   if (filter.yearFrom != null || filter.yearTo != null) lines.push(`gadi: ${filter.yearFrom ?? "…"}-${filter.yearTo ?? "…"}`);
   if (filter.mileageFrom != null || filter.mileageTo != null) {
     lines.push(`nobraukums: ${filter.mileageFrom ?? "…"}-${filter.mileageTo ?? "…"} km`);
@@ -1194,6 +1287,7 @@ export function cloneEcarstradeFilter(filter: EcarstradeSearchFilter): Ecarstrad
     ...filter,
     makeIds: [...filter.makeIds],
     makeNames: [...filter.makeNames],
+    modelIds: [...filter.modelIds],
     fuels: [...filter.fuels],
     gearboxes: [...filter.gearboxes],
     bodies: [...filter.bodies],

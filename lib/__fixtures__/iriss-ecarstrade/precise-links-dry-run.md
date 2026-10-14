@@ -170,8 +170,8 @@ ET 2 avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=DIESEL
 
 **Rezultāta eCarsTrade**
 - ET 1 no 0 avota saišu:
-  - saite: `https://ecarstrade.com/search?mark[]=7&year_from=2016&mileage_to=180000&price_to=22000&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: BMW; modelis: 5; gadi: 2016-…; nobraukums: …-180000 km; cena: …-22000 EUR; degviela: Diesel; kārba: Automatic
+  - saite: `https://ecarstrade.com/search?mark[]=7&model[]=83&model[]=85&year_from=2016&mileage_to=180000&price_to=22000&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
+  - kartēts: marka: BMW; modelis: 5 Series, 7 Series (id 83, 85); gadi: 2016-…; nobraukums: …-180000 km; cena: …-22000 EUR; degviela: Diesel; kārba: Automatic
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
 
@@ -180,13 +180,13 @@ ET 1 avots: `(brandModel / forma)`
 | Kritērijs | Izsoles saite | ET URL |
 |---|---|---|
 | marka | - | BMW |
-| modelis | - | 5 |
+| modelis | - | 5 Series, 7 Series (id 83, 85) |
 | gadi | - | 2016-… |
 | nobraukums | - | …-180000 km |
 | cena | - | …-22000 EUR |
 | degviela | - | Diesel |
 | kārba | - | Automatic |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=7&year_from=2016&mileage_to=180000&price_to=22000&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+| ET saite | - | `https://ecarstrade.com/search?mark[]=7&model[]=83&model[]=85&year_from=2016&mileage_to=180000&price_to=22000&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
 
 
 ### Pasūtījums: Pēteris / Autobid nezināms brandId 12
@@ -202,8 +202,8 @@ ET 1 avots: `(brandModel / forma)`
 **Rezultāta eCarsTrade**
 - ET 1 no 1 avota saišu:
   - avots: `https://autobid.de/en/search-results?brandId-brand=12&name-model=E%20220&yearFrom-year=2017&origincountries=FR`
-  - saite: `https://ecarstrade.com/search?mark[]=45&year_from=2017&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: Mercedes; modelis: E 220; gadi: 2017-…
+  - saite: `https://ecarstrade.com/search?mark[]=45&model[]=815&year_from=2017&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
+  - kartēts: marka: Mercedes; modelis: E 220 (id 815); gadi: 2017-…
   - **nav kartējams uz ET URL** (ingest post-filtrs / ignorēts):
     - brandId=12 (Autobid brandId nav kartē; marka ņemta no brandModel, ja ir)
     - country=FR (ET nolasīšana paliek BE/NL/LU/DE; citas valstis URL nepaplašina)
@@ -215,9 +215,9 @@ ET 1 avots: `https://autobid.de/en/search-results?brandId-brand=12&name-model=E%
 | Kritērijs | Izsoles saite | ET URL |
 |---|---|---|
 | marka | - | Mercedes |
-| modelis | E 220 | E 220 |
+| modelis | E 220 | E 220 (id 815) |
 | gadi | 2017-… | 2017-… |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=45&year_from=2017&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+| ET saite | - | `https://ecarstrade.com/search?mark[]=45&model[]=815&year_from=2017&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
 | nav ET lauka | brandId=12 (Autobid brandId nav kartē; marka ņemta no brandModel, ja ir); country=FR (ET nolasīšana paliek BE/NL/LU/DE; citas valstis URL nepaplašina) | iriss_* post-filtrs / atzīmēts |
 
 
