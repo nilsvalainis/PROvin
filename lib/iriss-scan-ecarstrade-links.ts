@@ -7,7 +7,17 @@ import {
   sameEcarstradeSearch,
   type EcarstradeSearchFilter,
 } from "@/lib/iriss-listings-ecarstrade-search";
-import type { IrissScanRecord } from "@/lib/iriss-scan-types";
+
+/** Radars un pasūtījumi dala tos pašus sludinājumu saišu laukus. */
+export type IrissEcarstradeLinkSource = {
+  id: string;
+  brandModel: string;
+  listingLinkAuto1: readonly string[];
+  listingLinkOpenline: readonly string[];
+  listingLinkAutobid: readonly string[];
+  listingLinkMobile: readonly string[];
+  listingLinkEcarstrade: readonly string[];
+};
 
 export type IrissScanEcarstradeLinkPreview = {
   id: string;
@@ -18,9 +28,7 @@ export type IrissScanEcarstradeLinkPreview = {
   skippedReason: string;
 };
 
-function sourceUrls(
-  rec: Pick<IrissScanRecord, "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile">,
-): string[] {
+function sourceUrls(rec: Pick<IrissEcarstradeLinkSource, "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile">): string[] {
   return [
     ...filledIrissListingLinks(rec.listingLinkAuto1),
     ...filledIrissListingLinks(rec.listingLinkOpenline),
@@ -29,11 +37,14 @@ function sourceUrls(
   ];
 }
 
+export function hasOtherAuctionListingLinks(
+  rec: Pick<IrissEcarstradeLinkSource, "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile">,
+): boolean {
+  return sourceUrls(rec).length > 0;
+}
+
 function filtersForRecord(
-  rec: Pick<
-    IrissScanRecord,
-    "brandModel" | "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile"
-  >,
+  rec: Pick<IrissEcarstradeLinkSource, "brandModel" | "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile">,
 ): EcarstradeSearchFilter[] {
   const brand = rec.brandModel.trim();
   const urls = sourceUrls(rec);
@@ -49,7 +60,7 @@ function filtersForRecord(
 }
 
 export function generateEcarstradeSearchUrls(
-  rec: Pick<IrissScanRecord, "brandModel" | "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile">,
+  rec: Pick<IrissEcarstradeLinkSource, "brandModel" | "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile">,
 ): string[] {
   const out: string[] = [];
   for (const filter of filtersForRecord(rec)) {
@@ -61,12 +72,7 @@ export function generateEcarstradeSearchUrls(
   return out;
 }
 
-export function previewEcarstradeLinksForScan(
-  rec: Pick<
-    IrissScanRecord,
-    "id" | "brandModel" | "listingLinkAuto1" | "listingLinkOpenline" | "listingLinkAutobid" | "listingLinkMobile" | "listingLinkEcarstrade"
-  >,
-): IrissScanEcarstradeLinkPreview {
+export function previewEcarstradeLinksForScan(rec: IrissEcarstradeLinkSource): IrissScanEcarstradeLinkPreview {
   const generated = generateEcarstradeSearchUrls(rec);
   const existing = filledIrissListingLinks(rec.listingLinkEcarstrade);
   const added: string[] = [];
@@ -91,7 +97,7 @@ export function previewEcarstradeLinksForScan(
   };
 }
 
-export function appendEcarstradeLinksToScan(rec: IrissScanRecord): { record: IrissScanRecord; preview: IrissScanEcarstradeLinkPreview } {
+export function appendEcarstradeLinksToScan<T extends IrissEcarstradeLinkSource>(rec: T): { record: T; preview: IrissScanEcarstradeLinkPreview } {
   const preview = previewEcarstradeLinksForScan(rec);
   if (preview.added.length === 0) return { record: rec, preview };
   const existing = filledIrissListingLinks(rec.listingLinkEcarstrade);
@@ -99,4 +105,9 @@ export function appendEcarstradeLinksToScan(rec: IrissScanRecord): { record: Iri
     record: { ...rec, listingLinkEcarstrade: [...existing, ...preview.added] },
     preview,
   };
+}
+
+/** Idempotents: pievieno trūkstošās eCarsTrade saites, esošās neatstāj. */
+export function withAutoEcarstradeLinks<T extends IrissEcarstradeLinkSource>(rec: T): T {
+  return appendEcarstradeLinksToScan(rec).record;
 }

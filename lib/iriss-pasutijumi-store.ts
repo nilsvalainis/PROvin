@@ -9,6 +9,7 @@ import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
 import { attachmentAfterBlobPut, parseDataUrlPayload } from "@/lib/iriss-offer-attachment-blob";
+import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
 import {
   irissRevisionMatches,
@@ -811,8 +812,9 @@ export async function writeIrissPasutijums(
     const r = resolveStorage();
     if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
     if (!isSafeIrissPasutijumsId(record.id)) return { ok: false, error: "invalid_id" };
-    const sanitized = normalizeRecord(record, record.id);
-    if (!sanitized) return { ok: false, error: "invalid_record" };
+    const sanitizedRaw = normalizeRecord(record, record.id);
+    if (!sanitizedRaw) return { ok: false, error: "invalid_record" };
+    const sanitized = withAutoEcarstradeLinks(sanitizedRaw);
     const updatedAt = new Date().toISOString();
     const existing = await readIrissPasutijums(record.id);
     const existingRev = irissWorkspaceRevision(existing);

@@ -15,6 +15,7 @@ import {
   removeIrissListingLinkRow,
   setIrissListingLinkRow,
 } from "@/lib/iriss-listing-link-lists";
+import { appendEcarstradeLinksToPasutijums } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 const inp =
@@ -142,11 +143,27 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
     onPatch({ [key]: next });
   };
 
+  const generateEcarstrade = () => {
+    const next = appendEcarstradeLinksToPasutijums(rec);
+    if (next.preview.added.length === 0) return;
+    onPatch({ listingLinkEcarstrade: next.record.listingLinkEcarstrade });
+  };
+
   return (
     <div className="mt-3 border-t border-slate-200/80 pt-3">
-      <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-provin-muted)]">
-        Sludinājumu platformas (saites)
-      </p>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-provin-muted)]">
+          Sludinājumu platformas (saites)
+        </p>
+        <button
+          type="button"
+          onClick={generateEcarstrade}
+          className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
+          title="Ģenerēt eCarsTrade saiti no Auto1 / Openlane / Autobid filtriem"
+        >
+          eCarsTrade no filtriem
+        </button>
+      </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <SourceLinkList
           label="Mobile"
