@@ -7,8 +7,10 @@ import {
   ecarstradeRelayApiUrl,
   ecarstradeRelayDetailUrl,
   ecarstradeRelaySearchPageUrl,
+  extractEcarstradeRelayItems,
   htmlFromEcarstradeApiBody,
   idsNeedingDetailPrice,
+  itemsFromEcarstradeApiBody,
 } from "./ecarstrade.mjs";
 
 test("search page URL sets start for page 2+", () => {
@@ -51,4 +53,46 @@ test("future_api concatenated JSON result is card HTML", () => {
   const html = htmlFromEcarstradeApiBody(raw);
   assert.match(html, /data-itemId="99"/);
   assert.deepEqual(collectEcarstradeCardIds(html), ["99"]);
+});
+
+test("extracts current bid and buy-now from a logged-in card", () => {
+  const html = `
+    <div class="card rounded-6 car-item" data-itemId="6752454" data-auction-type="bid_or_fix">
+      <div class="item-title"><span>Audi R8 Spyder</span></div>
+      <span class="car-price__current-bid__value">€ 12000</span>
+      <button class="car-price__button">PIRKT 45000€</button>
+    </div>`;
+  const items = extractEcarstradeRelayItems(html);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].externalId, "6752454");
+  assert.equal(items[0].priceCurrent, 12000);
+  assert.equal(items[0].priceBuyNow, 45000);
+  assert.match(items[0].title, /Audi R8/i);
+});
+
+test("extracts PIRKT when the title is only in the muted subtitle", () => {
+  const html = `
+    <div class="wrap">
+      <div class="small text-muted">#7602956 - Hyundai Tucson</div>
+      <div data-itemId="7602956" data-auction-type="stock">
+        <button class="car-price__button">PIRKT 16200€</button>
+      </div>
+    </div>`;
+  const items = extractEcarstradeRelayItems(html);
+  assert.equal(items[0].externalId, "7602956");
+  assert.equal(items[0].priceBuyNow, 16200);
+  assert.match(items[0].title, /Hyundai Tucson|#7602956/i);
+});
+
+test("future_api JSON data.max_bid becomes current price on the item", () => {
+  const card = '<div data-itemId="99"><div class="item-title"><span>Volvo XC60</span></div></div>';
+  const raw = JSON.stringify({
+    car_id: "99",
+    data: { id: "99", max_bid: "25500", auction_type: "bid" },
+    result: Buffer.from(card, "utf8").toString("base64"),
+  });
+  const items = itemsFromEcarstradeApiBody(raw);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].priceCurrent, 25500);
+  assert.equal(items[0].title, "Volvo XC60");
 });

@@ -407,7 +407,10 @@ export function parseEcarstradeCard(html: string, data: Rec = {}): EcarstradeVeh
   if (!externalId) return null;
   const title =
     stripTags(/<div class="item-title[\s\S]*?<span>([\s\S]*?)<\/span>/i.exec(html)?.[1] ?? "") ||
-    stripTags(/aria-label="Share\s+([^"]+)"/i.exec(html)?.[1] ?? "");
+    stripTags(/aria-label="Share\s+([^"]+)"/i.exec(html)?.[1] ?? "") ||
+    stripTags(/<div class="small text-muted">\s*#\d+\s*-\s*([^<]+)/i.exec(html)?.[1] ?? "") ||
+    stripTags(/alt=["']([^"']+)["']/i.exec(html)?.[1] ?? "") ||
+    `#${externalId}`;
   if (!title) return null;
   const sub = stripTags(/<div class="small text-muted">([\s\S]*?)<\/div>/i.exec(html)?.[1] ?? "");
   const makeFromSub = sub.replace(/^#\d+\s*-\s*/i, "").split(/\s+/)[0] ?? "";
@@ -461,8 +464,14 @@ export function parseEcarstradeSearchHtml(html: string): EcarstradeVehicle[] {
   while ((m = re.exec(html))) {
     const id = m[1] ?? "";
     if (!id || byId.has(id)) continue;
-    const start = html.lastIndexOf("<div", m.index);
-    const slice = html.slice(Math.max(0, start), m.index + 12_000);
+    const before = html.slice(0, m.index).toLowerCase();
+    const marker = Math.max(before.lastIndexOf("car-item"), before.lastIndexOf("data-itemid"));
+    let start = html.lastIndexOf("<div", m.index);
+    if (marker >= 0) {
+      const div = html.lastIndexOf("<div", marker + 1);
+      if (div >= 0) start = div;
+    }
+    const slice = html.slice(Math.max(0, start), m.index + 16_000);
     const v = parseEcarstradeCard(slice, { id });
     if (v && listingCountryAllowed(v.countryCode)) byId.set(id, v);
   }

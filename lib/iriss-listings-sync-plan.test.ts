@@ -13,6 +13,8 @@ import {
   mergeListingSourceRuns,
   orderListingSyncGroups,
   RELAY_FETCH_HEADROOM_MS,
+  ECARSTRADE_RELAY_HEADROOM_MS,
+  capEcarstradeRelayGroups,
   runBounded,
   selectListingSyncQueue,
   serialInterSourcePauseMs,
@@ -32,6 +34,21 @@ describe("listing sync capacity", () => {
     expect(canStartListingJob(240_000, 240_000, DIRECT_FETCH_HEADROOM_MS)).toBe(false);
     expect(canStartListingJob(200_000, 240_000, RELAY_FETCH_HEADROOM_MS)).toBe(true);
     expect(canStartListingJob(210_000, 240_000, RELAY_FETCH_HEADROOM_MS)).toBe(false);
+    expect(canStartListingJob(0, 240_000, ECARSTRADE_RELAY_HEADROOM_MS)).toBe(true);
+    expect(canStartListingJob(120_000, 240_000, ECARSTRADE_RELAY_HEADROOM_MS)).toBe(false);
+  });
+
+  it("keeps one ET search per relay batch and leaves the rest for the next run", () => {
+    const groups = [
+      { platform: "openline" as const, key: "o1" },
+      { platform: "ecarstrade" as const, key: "e1" },
+      { platform: "ecarstrade" as const, key: "e2" },
+      { platform: "ecarstrade" as const, key: "e3" },
+      { platform: "auto1" as const, key: "a1" },
+    ];
+    const capped = capEcarstradeRelayGroups(groups, true, 1);
+    expect(capped.map((g) => g.key)).toEqual(["o1", "e1", "a1"]);
+    expect(capEcarstradeRelayGroups(groups, false, 1)).toHaveLength(5);
   });
 });
 

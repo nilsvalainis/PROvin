@@ -224,6 +224,78 @@ describe("mapRelayFetchResponse", () => {
     expect(r.note).toContain("0 auto");
   });
 
+  it("uses relay items[] when HTML parse is empty so cards become cars", () => {
+    const r = mapRelayFetchResponse(
+      {
+        status: "ok",
+        note: "eCarsTrade 2 auto no releja Chrome (future_api pārlūkā).",
+        items: [
+          {
+            platform: "ecarstrade",
+            externalId: "6752454",
+            title: "Audi R8 Spyder",
+            priceCurrent: 12000,
+            priceBuyNow: 45000,
+            detailUrl: "https://ecarstrade.com/cars/6752454",
+          },
+          {
+            platform: "ecarstrade",
+            externalId: "7602956",
+            title: "Hyundai Tucson",
+            priceBuyNow: 16200,
+            detailUrl: "https://ecarstrade.com/cars/7602956",
+          },
+        ],
+        raw: { kind: "ecarstrade-html", searchPages: ["<html><body>no cards</body></html>"], detailPages: [], loggedIn: true },
+        pagesFetched: 1,
+        pageCount: 1,
+      },
+      { platform: "ecarstrade", orderId: "o9", orderBrandModel: "Audi" },
+    );
+    expect(r.status).toBe("ok");
+    expect(r.vehicles).toHaveLength(2);
+    expect(r.vehicles.find((v) => v.externalId === "6752454")).toMatchObject({ priceCurrent: 12000, priceBuyNow: 45000 });
+    expect(r.note).not.toContain("0 auto");
+  });
+
+  it("mergeListingPricesFromRelay keeps relay-only cars when Vercel inventory is empty", () => {
+    const relay = [
+      {
+        id: "r1",
+        platform: "ecarstrade" as const,
+        externalId: "99",
+        detailUrl: "https://ecarstrade.com/cars/99",
+        orderId: "o9",
+        orderBrandModel: "Volvo",
+        title: "Volvo XC60",
+        manufacturer: "Volvo",
+        year: "2020",
+        firstRegistration: "",
+        mileageKm: null,
+        fuel: "",
+        transmission: "",
+        powerKw: "",
+        location: "",
+        countryCode: "BE",
+        imageUrl: "",
+        currency: "EUR",
+        priceStart: null,
+        priceMinimal: null,
+        priceCurrent: 25500,
+        priceBuyNow: null,
+        vatNote: "",
+        auctionId: "",
+        auctionStartAt: "",
+        auctionEndAt: "",
+        auctionStage: "",
+      },
+    ];
+    const merged = mergeListingPricesFromRelay([], relay);
+    expect(merged.vehicles).toHaveLength(1);
+    expect(merged.vehicles[0]?.priceCurrent).toBe(25500);
+    expect(merged.priced).toBe(1);
+  });
+
   it("ecarstrade empty HTML does not append 0 auto", () => {
     const r = mapRelayFetchResponse(
       {

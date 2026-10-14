@@ -270,7 +270,9 @@ export function mergeListingPricesFromRelay(
 ): { vehicles: IrissFetchedVehicle[]; priced: number } {
   const byId = new Map(relayVehicles.map((v) => [v.externalId, v]));
   let priced = 0;
+  const seen = new Set<string>();
   const vehicles = base.map((v) => {
+    seen.add(v.externalId);
     const extra = byId.get(v.externalId);
     if (!extra) return v;
     const next = {
@@ -284,7 +286,20 @@ export function mergeListingPricesFromRelay(
     }
     return next;
   });
+  for (const extra of relayVehicles) {
+    if (seen.has(extra.externalId)) continue;
+    vehicles.push(extra);
+    if (extra.priceBuyNow != null || extra.priceCurrent != null) priced += 1;
+  }
   return { vehicles, priced };
+}
+
+/** Releja items[] (cenas) + HTML parse: tas pats id, cenas no items. */
+export function unionListingVehiclesFromRelay(
+  fromHtml: IrissFetchedVehicle[],
+  fromItems: IrissFetchedVehicle[],
+): IrissFetchedVehicle[] {
+  return mergeListingPricesFromRelay(fromHtml, fromItems).vehicles;
 }
 
 function autobidVehiclesFromNuxt(nuxtPages: string[], orderId: string, orderBrandModel: string): { vehicles: IrissFetchedVehicle[]; parsedPages: number } {
@@ -360,10 +375,13 @@ export function mapRelayFetchResponse(
 
   if (src.platform === "ecarstrade" && raw && raw.kind === "ecarstrade-html") {
     const parsed = ecarstradeVehiclesFromRelayHtml(raw, src.orderId, src.orderBrandModel);
-    vehicles = parsed.vehicles;
+    const fromItems = (Array.isArray(body.items) ? body.items : [])
+      .map((it) => mapRelayItem(it, "ecarstrade", src.orderId, src.orderBrandModel))
+      .filter((v): v is IrissFetchedVehicle => v !== null);
+    vehicles = unionListingVehiclesFromRelay(parsed.vehicles, fromItems);
     rawPages = parsed.rawPages;
-    if (parsed.searchPageCount > 0 && parsed.vehicles.length === 0) {
-      if (!noteParts.some((n) => /kartīt|nedeva|bez login/i.test(n))) {
+    if (parsed.searchPageCount > 0 && vehicles.length === 0) {
+      if (!noteParts.some((n) => /kartīt|nedeva|bez login|neizdevās izvilkt/i.test(n))) {
         noteParts.push("Releja eCarsTrade HTML nedeva auto kartītes.");
       }
     }
