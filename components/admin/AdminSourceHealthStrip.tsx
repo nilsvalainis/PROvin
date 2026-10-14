@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { sourceHealthColor, type SourceHealthDoc, type SourceHealthColor } from "@/lib/source-health";
-import { formatVinScanCountLine, vinScanNeedsBrowser } from "@/lib/vin-scan/types";
+import {
+  formatVinScanCountLine,
+  vinScanNeedsBrowser,
+  type VinScanCountBreakdown,
+} from "@/lib/vin-scan/types";
+
+/** Live VIN SCAN counts (same list/counter as the result tiles). */
+export const VinScanLiveCountsContext = createContext<VinScanCountBreakdown | null>(null);
 
 export type SourceHealthItem = { id: string; label: string; manual?: boolean };
 
@@ -114,11 +121,16 @@ export function AdminSourceHealthCompact({ doc, items }: { doc: SourceHealthDoc;
   const [open, setOpen] = useState(false);
   const [nowMs, setNowMs] = useState<number | null>(null);
   useEffect(() => setNowMs(Date.now()), []);
+  const live = useContext(VinScanLiveCountsContext);
   const auto = items.filter((it) => !it.manual);
   let ok: number | null = null;
   let error = 0;
   let browser = 0;
-  if (nowMs != null) {
+  if (live) {
+    ok = live.ok;
+    error = live.error;
+    browser = live.browser;
+  } else if (nowMs != null) {
     ok = 0;
     for (const it of auto) {
       const color = sourceHealthColor(doc.sources[it.id], nowMs);
@@ -132,8 +144,11 @@ export function AdminSourceHealthCompact({ doc, items }: { doc: SourceHealthDoc;
       else error += 1;
     }
   }
-  const countLine =
-    ok == null ? "…" : formatVinScanCountLine({ total: auto.length, ok, error, browser });
+  const countLine = live
+    ? formatVinScanCountLine(live)
+    : ok == null
+      ? "…"
+      : formatVinScanCountLine({ total: auto.length, ok, error, browser });
   return (
     <div>
       <button

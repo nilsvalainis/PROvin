@@ -4,43 +4,11 @@ import { VIN_SCAN_CATALOG, isVinScanSourceId, type VinScanSourceId } from "@/lib
 import { sourceNeedsInput, vinScanProbeFor } from "@/lib/vin-scan/probes";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
+import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator } from "@/lib/vin-scan/types";
 
-const SLOW_SOURCES = new Set<VinScanSourceId>([
-  "mnt_ee",
-  "lkf_ee",
-  "carinfo",
-  "nicb",
-  "auchistory",
-  "stat_vin",
-  "bidfax",
-  "poctra",
-  "checkcar_vin",
-  "regitra",
-  "traficom",
-  "biluppgifter",
-  "listing_history",
-]);
-const SLOW_TIMEOUT_MS = 45_000;
-const DEFAULT_TIMEOUT_MS = 14_000;
-const CAPTCHA_TIMEOUT_MS = 90_000;
-
-const CAPTCHA_SOURCES = new Set<VinScanSourceId>([
-  "lkf_ee",
-  "carinfo",
-  "nicb",
-  "auchistory",
-  "stat_vin",
-  "mnt_ee",
-  "nummerplade",
-  "lt_itpr",
-  "carpass",
-]);
-
 function timeoutMsFor(id: VinScanSourceId): number {
-  if (CAPTCHA_SOURCES.has(id)) return CAPTCHA_TIMEOUT_MS;
-  if (SLOW_SOURCES.has(id)) return SLOW_TIMEOUT_MS;
-  return DEFAULT_TIMEOUT_MS;
+  return vinScanSourceTimeoutMs(id);
 }
 
 function withTimeout(id: VinScanSourceId, ctx: VinScanContext, job: Promise<VinScanIndicator> | VinScanIndicator): Promise<VinScanIndicator> {

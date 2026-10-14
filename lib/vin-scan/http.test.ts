@@ -29,14 +29,7 @@ const LT_CHALLENGE_HTML = `<!DOCTYPE html><html lang="en-US"><head><title>Just a
 <div id="challenge-error-text">Enable JavaScript and cookies to continue</div>
 <script>window._cf_chl_opt={cType:'managed'};a.src='/cdn-cgi/challenge-platform/h/b/orchestrate/chl_page/v1';</script>
 </body></html>`;
-const FOUND_HTML = `<!doctype html><html><body>
-  <h1>RAM 2500 2026 VIN: ${VIN}</h1>
-  <p>Sale History (13) Auction Date Final Bid Copart</p>
-  <p>Lot: 50558298 Damage: Front End Odometer 185389</p>
-  <img src="https://cs.copart.com/v1/auth/img/lot/50558298/1.jpg">
-</body></html>`;
-
-describe("scanFetchSmart - stat.vin Cloudflare WAF", () => {
+describe("scanFetchSmart - Cloudflare", () => {
   afterEach(() => {
     vinHttpFetch.mockReset();
     solveCaptcha.mockReset();
@@ -46,108 +39,24 @@ describe("scanFetchSmart - stat.vin Cloudflare WAF", () => {
     mockVinStickyHttpProxyUrl.mockReturnValue(FIXIE);
   });
 
-  it("403 Access blocked iet caur CapSolver AntiCloudflareTask un atgriež izsoles lapu", async () => {
-    vinHttpFetch
-      .mockResolvedValueOnce({
-        status: 403,
-        text: STAT_VIN_WAF_403,
-        cookie: "",
-        finalUrl: `https://stat.vin/cars/${VIN}`,
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        text: FOUND_HTML,
-        cookie: "cf_clearance=abc",
-        finalUrl: `https://stat.vin/cars/${VIN}`,
-      });
-    solveCaptcha.mockResolvedValue({
-      ok: true,
-      token: "cf-tok",
-      cookies: { cf_clearance: "abc" },
-      userAgent: "Mozilla/5.0 solver",
-    });
-
-    const page = await scanFetchSmart(`https://stat.vin/cars/${VIN}`, {
-      timeoutMs: 45_000,
-      solveUrl: "https://stat.vin/",
-      sourceLabel: "stat_vin",
-      wafBypass: true,
-    });
-
-    expect(solveCaptcha).toHaveBeenCalledTimes(1);
-    const task = solveCaptcha.mock.calls[0]?.[0] as { kind: string; websiteURL: string; html?: string; proxy?: string };
-    expect(task.kind).toBe("cloudflare_challenge");
-    expect(task.websiteURL).toBe("https://stat.vin/");
-    expect(task.html).toBeUndefined();
-    expect(task.proxy).toBe(FIXIE);
-    expect(page.status).toBe(200);
-    expect(page.challengeReason).toBeUndefined();
-    expect(scanChallengeReason(page)).toBeNull();
-
-    const parsed = parseStatVinPage({
-      status: page.status,
-      html: page.text,
-      vin: VIN,
-      challenge: scanChallengeReason(page),
-      finalUrl: page.finalUrl,
-    });
-    expect(parsed.status).toBe("found");
-    expect(parsed.summary).toMatch(/Copart/i);
-  });
-
-  it("pēc CapSolver car-not-found ir none", async () => {
-    vinHttpFetch
-      .mockResolvedValueOnce({
-        status: 403,
-        text: STAT_VIN_WAF_403,
-        cookie: "",
-        finalUrl: `https://stat.vin/cars/${VIN}`,
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        text: "<html><body><h1>Car not found</h1></body></html>",
-        cookie: "cf_clearance=abc",
-        finalUrl: "https://stat.vin/car-not-found",
-      });
-    solveCaptcha.mockResolvedValue({
-      ok: true,
-      token: "cf-tok",
-      cookies: { cf_clearance: "abc" },
-      userAgent: "Mozilla/5.0 solver",
-    });
-
-    const page = await scanFetchSmart(`https://stat.vin/cars/${VIN}`, {
-      solveUrl: "https://stat.vin/",
-      sourceLabel: "stat_vin",
-      wafBypass: true,
-    });
-    const parsed = parseStatVinPage({
-      status: page.status,
-      html: page.text,
-      vin: VIN,
-      challenge: scanChallengeReason(page),
-      finalUrl: page.finalUrl,
-    });
-    expect(parsed.status).toBe("none");
-    expect(parsed.summary).toBe("Nav izsoles ieraksta");
-  });
-
-  it("ja CapSolver neizdodas, paliek error ar Cloudflare iemeslu", async () => {
+  it("403 Access blocked (nav JS challenge) nesauc CapSolver", async () => {
     vinHttpFetch.mockResolvedValueOnce({
       status: 403,
       text: STAT_VIN_WAF_403,
       cookie: "",
       finalUrl: `https://stat.vin/cars/${VIN}`,
     });
-    solveCaptcha.mockResolvedValue({ ok: false, reason: "CapSolver: proxy timeout" });
 
     const page = await scanFetchSmart(`https://stat.vin/cars/${VIN}`, {
+      timeoutMs: 45_000,
       solveUrl: "https://stat.vin/",
       sourceLabel: "stat_vin",
-      wafBypass: true,
     });
+
+    expect(solveCaptcha).not.toHaveBeenCalled();
     expect(page.status).toBe(403);
-    expect(page.challengeReason).toMatch(/CapSolver/i);
+    expect(page.text).toBe(STAT_VIN_WAF_403);
+    expect(page.challengeReason).toBeUndefined();
     const parsed = parseStatVinPage({
       status: page.status,
       html: page.text,
@@ -156,10 +65,9 @@ describe("scanFetchSmart - stat.vin Cloudflare WAF", () => {
       finalUrl: page.finalUrl,
     });
     expect(parsed.status).toBe("unknown");
-    expect(parsed.summary).toMatch(/Cloudflare/i);
   });
 
-  it("bez wafBypass īsais WAF 403 nesauc CapSolver (LT pre-#149)", async () => {
+  it("īsais WAF 403 nesauc CapSolver (LT pre-#149)", async () => {
     vinHttpFetch.mockResolvedValueOnce({
       status: 403,
       text: STAT_VIN_WAF_403,
@@ -200,10 +108,11 @@ describe("scanFetchSmart - stat.vin Cloudflare WAF", () => {
       sourceLabel: "LT policija",
     });
     expect(solveCaptcha).toHaveBeenCalledTimes(1);
-    const task = solveCaptcha.mock.calls[0]?.[0] as { html?: string; proxy?: string };
+    const task = solveCaptcha.mock.calls[0]?.[0] as { html?: string; proxy?: string; type?: string };
     expect(task.html).toContain("Just a moment");
     expect(task.html).toContain("_cf_chl_opt");
     expect(task.proxy).toBe(FIXIE);
+    expect(task).not.toHaveProperty("websiteKey");
     expect(page.status).toBe(200);
     expect(page.challengeReason).toBeUndefined();
   });

@@ -17,7 +17,9 @@ import {
   type VinScanPlates,
 } from "@/lib/vin-scan/plates";
 import { formatCsddPlateLookup } from "@/lib/vin-scan/parse";
+import { VinScanLiveCountsContext } from "@/components/admin/AdminSourceHealthStrip";
 import { collectVinScanMileage, pickVinScanVehicle } from "@/lib/vin-scan/summary";
+import { vinScanCountBreakdown } from "@/lib/vin-scan/types";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25 max-md:h-12 max-md:rounded-[10px] max-md:text-[17px]";
@@ -395,7 +397,17 @@ export function AdminVinScanPageClient({
         onSnapshot={onSnapshot}
         historyOpen={historyOpen}
       />
-      {footer ? <div className="border-t border-[#e5e5ea] pt-3">{footer}</div> : null}
+      {footer ? (
+        <VinScanLiveCountsContext.Provider
+          value={
+            hasScanResult && scanSnapshot
+              ? vinScanCountBreakdown(scanSnapshot.rows.filter((row) => row.status !== "idle"))
+              : null
+          }
+        >
+          <div className="border-t border-[#e5e5ea] pt-3">{footer}</div>
+        </VinScanLiveCountsContext.Provider>
+      ) : null}
     </div>
   );
 }

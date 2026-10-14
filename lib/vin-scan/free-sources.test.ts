@@ -31,9 +31,11 @@ describe("free VIN SCAN avoti", () => {
     expect(isValuableVinScanSourceId("stat_vin")).toBe(true);
     expect(isValuableVinScanSourceId("carvertical")).toBe(false);
     const probe = readFileSync(path.join(ROOT, "lib/vin-scan/probes-extra.ts"), "utf8");
-    expect(probe).toContain("solveUrl: STAT_VIN_ORIGIN");
     expect(probe).toContain('https://stat.vin/');
-    expect(probe).toContain("timeoutMs: 45_000");
+    expect(probe).toContain("fetchVinScanAuctionPage");
+    expect(probe).toContain("fetchAuctionHtml(url, \"stat_vin\")");
+    expect(probe).not.toContain("wafBypass");
+    expect(probe).not.toContain("STAT_VIN_ORIGIN");
     expect(probe).toContain("page.finalUrl");
   });
 

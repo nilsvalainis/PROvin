@@ -7,6 +7,7 @@ import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { traficomVehicleInfoUrl } from "@/lib/vin-scan/catalog";
 import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 import { scanCaptchaTokenPlaceholder, scanChallengeReason, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
+import { fetchVinScanAuctionPage, isVinScanRelayUrl } from "@/lib/vin-scan/listings-page-relay";
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
 import {
   oemBrandForVin,
@@ -364,6 +365,13 @@ export async function probeLtPolice(ctx: VinScanContext): Promise<VinScanIndicat
   }
 }
 
+async function fetchAuctionHtml(url: string, sourceLabel: string) {
+  if (isVinScanRelayUrl(url)) {
+    return fetchVinScanAuctionPage(url, () => scanFetch(url, { timeoutMs: 20_000 }));
+  }
+  return scanFetchSmart(url, { timeoutMs: 20_000, sourceLabel });
+}
+
 async function probeHtmlSource(
   id: VinScanIndicator["id"],
   ctx: VinScanContext,
@@ -371,7 +379,7 @@ async function probeHtmlSource(
   classify: (text: string) => VinScanParse | null,
 ): Promise<VinScanIndicator> {
   try {
-    const page = await scanFetchSmart(url, { timeoutMs: 20_000, sourceLabel: id });
+    const page = await fetchAuctionHtml(url, id);
     // Cloudflare / bloķēts: skaidrs iemesls, nevis „Lapa nav atpazīta” (agrāk parsēja izaicinājuma lapu).
     const challenge = scanChallengeReason(page);
     if (challenge) {
@@ -397,17 +405,10 @@ async function probeHtmlSource(
   }
 }
 
-const STAT_VIN_ORIGIN = "https://stat.vin/";
-
 export async function probeStatVin(ctx: VinScanContext): Promise<VinScanIndicator> {
   const url = `https://stat.vin/cars/${encodeURIComponent(ctx.vin)}`;
   try {
-    const page = await scanFetchSmart(url, {
-      timeoutMs: 45_000,
-      solveUrl: STAT_VIN_ORIGIN,
-      sourceLabel: "stat_vin",
-      wafBypass: true,
-    });
+    const page = await fetchAuctionHtml(url, "stat_vin");
     const parsed = parseStatVinPage({
       status: page.status,
       html: page.text,
@@ -489,10 +490,7 @@ export async function probePlcAuction(ctx: VinScanContext): Promise<VinScanIndic
 export async function probeBidfax(ctx: VinScanContext): Promise<VinScanIndicator> {
   const url = `https://bidfax.info/?s=${encodeURIComponent(ctx.vin)}`;
   try {
-    const page = await scanFetchSmart(url, {
-      timeoutMs: 20_000,
-      sourceLabel: "BidFax",
-    });
+    const page = await fetchAuctionHtml(url, "BidFax");
     const challenge = scanChallengeReason(page);
     if (challenge) {
       return done("bidfax", ctx, {
@@ -510,10 +508,7 @@ export async function probeBidfax(ctx: VinScanContext): Promise<VinScanIndicator
 export async function probePoctra(ctx: VinScanContext): Promise<VinScanIndicator> {
   const url = `https://poctra.com/search/${encodeURIComponent(ctx.vin)}`;
   try {
-    const page = await scanFetchSmart(url, {
-      timeoutMs: 20_000,
-      sourceLabel: "Poctra",
-    });
+    const page = await fetchAuctionHtml(url, "Poctra");
     const challenge = scanChallengeReason(page);
     if (challenge) {
       return done("poctra", ctx, {

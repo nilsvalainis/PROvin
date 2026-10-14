@@ -12,6 +12,7 @@
  *   LISTINGS_STATE_FILE         noklusējums /var/lib/provin-listings/state.json
  *   LISTINGS_MAX_PAGES          noklusējums 5 (lapas vienam avotam)
  *   LISTINGS_MAX_FETCHES_PER_DAY noklusējums 150 uz platformu (1 pilna diena + Nolasīt tagad)
+ *   LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY noklusējums 400 (POST /listings/page)
  *   LISTINGS_MAX_QUEUE          noklusējums 40 (garāka rinda -> 503)
  *   LISTINGS_MANUAL_LOGIN_MINUTES noklusējums 15
  *   OPENLANE_USER / OPENLANE_PASS, AUTOBID_USER / AUTOBID_PASS, ECARSTRADE_USER / ECARSTRADE_PASS
@@ -22,6 +23,7 @@
  * API (viss zem /listings, prefiksu Caddy nenoņem):
  *   GET  /listings/health                 bez auth: sesiju stāvoklis, rinda, dienas skaitītāji
  *   POST /listings/fetch                  {platform, sourceUrl, orderId, maxPages?}
+ *   POST /listings/page                   {url}  VIN SCAN izsoļu HTML (stat.vin, bid.cars, …)
  *   POST /listings/session/check          {platform}
  *   POST /listings/login/:platform        atver redzamu Chrome + īslaicīgs noVNC tokens adminam
  *   POST /listings/login/:platform/close  aizver manuālo login un pārbauda sesiju
@@ -47,6 +49,7 @@ import { ecarstrade } from "./lib/platforms/ecarstrade.mjs";
 import { openlane } from "./lib/platforms/openlane.mjs";
 import { sanitizeAutobidRelayRaw } from "./lib/sanitize-autobid.mjs";
 import { PLATFORMS, RelayState } from "./lib/state.mjs";
+import { fetchVinScanPageHtml, validVinScanPageUrl } from "./lib/vinscan-page.mjs";
 
 const HOST = process.env.LISTINGS_RELAY_HOST || "127.0.0.1";
 const PORT = Number(process.env.LISTINGS_RELAY_PORT || 8789);
@@ -54,6 +57,10 @@ const TOKEN = (process.env.LISTINGS_RELAY_TOKEN ?? "").trim();
 const STATE_FILE = process.env.LISTINGS_STATE_FILE || "/var/lib/provin-listings/state.json";
 const MAX_PAGES = Math.max(1, Number(process.env.LISTINGS_MAX_PAGES || 5));
 const MAX_FETCHES_PER_DAY = Math.max(1, Number(process.env.LISTINGS_MAX_FETCHES_PER_DAY || 150));
+const VINSCAN_MAX_FETCHES_PER_DAY = Math.max(
+  1,
+  Number(process.env.LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY || 400),
+);
 const MAX_QUEUE = Math.max(1, Number(process.env.LISTINGS_MAX_QUEUE || 40));
 const MANUAL_LOGIN_MINUTES = Math.max(1, Number(process.env.LISTINGS_MANUAL_LOGIN_MINUTES || 15));
 const OPENLANE_PUBLIC_FALLBACK = /^(1|true|yes)$/i.test(process.env.OPENLANE_ALLOW_PUBLIC_FALLBACK ?? "");
@@ -327,6 +334,34 @@ const server = createServer(async (req, res) => {
     body = await readJson(req);
   } catch (e) {
     return sendJson(res, 400, { ok: false, error: e instanceof Error ? e.message : "nederīgs JSON" });
+  }
+
+  if (path === "/page") {
+    const pageUrl = validVinScanPageUrl(body.url);
+    if (!pageUrl) return sendJson(res, 400, { ok: false, error: "url nav atļauts VIN SCAN hosts" });
+    if (browserQueue.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, error: "rinda pilna" });
+    if (state.countFetch("vinscan", VINSCAN_MAX_FETCHES_PER_DAY)) {
+      return sendJson(res, 429, { ok: false, error: `dienas limits ${VINSCAN_MAX_FETCHES_PER_DAY} nolasīšanas VIN SCAN` });
+    }
+    log(`vinscan page ${pageUrl.slice(0, 120)} (rinda ${browserQueue.queueLength})`);
+    try {
+      const out = await browserQueue.run("page:vinscan", async () => {
+        const started = Date.now();
+        const { page, close } = await openProfile("vinscan");
+        try {
+          const got = await fetchVinScanPageHtml(page, pageUrl);
+          return { ok: true, ...got, elapsedMs: Date.now() - started };
+        } finally {
+          await close();
+        }
+      });
+      log(`vinscan page HTTP ${out.status} ${out.elapsedMs} ms ${out.finalUrl?.slice(0, 80) ?? ""}`);
+      return sendJson(res, 200, out);
+    } catch (e) {
+      const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
+      log(`vinscan page kļūda: ${note}`);
+      return sendJson(res, 500, { ok: false, error: note });
+    }
   }
 
   const loginMatch = path.match(/^\/login\/(openlane|auto1|autobid|ecarstrade)(\/close)?$/);
