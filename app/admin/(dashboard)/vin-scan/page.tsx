@@ -6,17 +6,7 @@ import { AdminSourceHealthCompact, type SourceHealthItem } from "@/components/ad
 import { readSourceHealth } from "@/lib/source-health-store";
 import { VIN_SCAN_CATALOG } from "@/lib/vin-scan/catalog";
 
-/** Galvenie avoti vienmēr redzami; pārējie — ja par tiem ir ielādes dati. */
-const PRIMARY_SOURCES: SourceHealthItem[] = [
-  { id: "csdd", label: "CSDD" },
-  { id: "stat_vin", label: "stat.vin" },
-  { id: "mnt_ee", label: "MNT" },
-  { id: "lkf_ee", label: "LKF" },
-  { id: "autodna", label: "AutoDNA" },
-  { id: "outvin", label: "OutVin" },
-  { id: "carvertical", label: "CarVertical", manual: true },
-  { id: "cc_vin", label: "CC-VIN", manual: true },
-];
+/** Tāds pats avotu saraksts kā VIN SCAN flīzēm (32), nevis primārie + veselības filtrs. */
 
 export const metadata = {
   title: "VIN pārbaude",
@@ -54,10 +44,6 @@ export default async function AdminVinScanPage({
 
 async function SourceHealthSection() {
   const health = await readSourceHealth();
-  const primaryIds = new Set(PRIMARY_SOURCES.map((x) => x.id));
-  const others: SourceHealthItem[] = VIN_SCAN_CATALOG.filter((c) => !primaryIds.has(c.id) && health.sources[c.id]).map((c) => ({
-    id: c.id,
-    label: c.label,
-  }));
-  return <AdminSourceHealthCompact doc={health} items={[...PRIMARY_SOURCES, ...others]} />;
+  const items: SourceHealthItem[] = VIN_SCAN_CATALOG.map((c) => ({ id: c.id, label: c.label }));
+  return <AdminSourceHealthCompact doc={health} items={items} />;
 }

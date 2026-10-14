@@ -31,6 +31,7 @@ import {
   parseVinSourceScan,
   vehicleFromPlcTitle,
 } from "@/lib/vin-scan/parse";
+import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
 import { countVinScanStatuses, formatVinScanCountLine, vinScanCountBreakdown } from "@/lib/vin-scan/types";
 
 const DK_VIN = "VF12RFL1H49621453";
@@ -50,6 +51,9 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("nhtsa_recalls");
     expect(VIN_SCAN_SOURCE_IDS).toContain("bidfax");
     expect(VIN_SCAN_SOURCE_IDS).toContain("listing_history");
+    expect(VIN_SCAN_SOURCE_IDS).toContain("lt_itpr");
+    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(32);
+    expect(VIN_SCAN_CATALOG).toHaveLength(32);
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.needs).toEqual(["vin"]);
     expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873")).toBe(
       "https://www.traficom.fi/en/transport/road/vehicle-information?vin=WBA5R1C0XLFH42873",
@@ -315,6 +319,19 @@ describe("countVinScanStatuses", () => {
         { status: "needs_input" },
       ]),
     ).toMatchObject({ found: 2, none: 1, manual: 1, unknown: 0, skipped: 0, needs_input: 1 });
+  });
+});
+
+describe("vinScanSourceTimeoutMs", () => {
+  it("izsoļu avotiem (Chrome relejs) ir garāks timeouts nekā 14 s noklusējumam", () => {
+    expect(vinScanSourceTimeoutMs("stat_vin")).toBe(80_000);
+    expect(vinScanSourceTimeoutMs("bid_cars")).toBe(80_000);
+    expect(vinScanSourceTimeoutMs("plc_auction")).toBe(80_000);
+    expect(vinScanSourceTimeoutMs("checkcar_vin")).toBe(80_000);
+    expect(vinScanSourceTimeoutMs("bidfax")).toBe(80_000);
+    expect(vinScanSourceTimeoutMs("poctra")).toBe(80_000);
+    expect(vinScanSourceTimeoutMs("lt_itpr")).toBe(90_000);
+    expect(vinScanSourceTimeoutMs("vin_decode")).toBe(14_000);
   });
 });
 

@@ -38,6 +38,7 @@ describe("userscript sync with VIN scan catalog", () => {
       expect(src).toMatch(new RegExp(`${item.id}:\\s*"https://`));
     }
     expect(VIN_SCAN_SOURCE_IDS).toHaveLength(32);
+    expect(VIN_SCAN_SOURCE_IDS).toContain("lt_itpr");
     expect(VIN_SCAN_SOURCE_IDS).toContain("vin_decode");
     expect(VIN_SCAN_SOURCE_IDS).toContain("csdd");
     expect(VIN_SCAN_SOURCE_IDS).toContain("nummerplade");
