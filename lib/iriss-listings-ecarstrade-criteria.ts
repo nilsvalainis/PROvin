@@ -317,18 +317,29 @@ export function resolveMakeFromAutobidBrandId(brandId: string): string | null {
   return name ?? null;
 }
 
+/**
+ * suchen.mobile.de `ms=MAKEID;MODELID;;` vai `MAKEID;MODELID;;NAME`.
+ * Tikai pārbaudīti modeļu ID (neuzminēt 19/20: Toyota 19 nav tas pats kas Mitsubishi 19).
+ * Volvo 25100;29 ir XC60 (Nils radars + ET model[]=1866).
+ */
+export const MOBILE_DE_MODEL_ID_TO_NAME: Record<string, Record<string, string>> = {
+  "25100": { "29": "XC60" },
+};
+
 /** mobile.de Wohnmobil/Evado/Westfalia ir kemperu kategorija, ne auto marka (arī ja ms=20700 Renault). */
 const MOBILE_CAMPER_MODEL = /wohnmobil|reisemobil|evado|westfalia|generation|camping/i;
 
-export function resolveMakeFromMobileMs(ms: string): { make: string | null; model: string } {
+export function resolveMakeFromMobileMs(ms: string): { make: string | null; model: string; modelId: string } {
   const parts = ms.split(";").map((p) => p.trim());
   const makeId = parts[0] ?? "";
+  const modelId = parts[1] ?? "";
   const modelName = parts[3] || "";
   if (MOBILE_CAMPER_MODEL.test(modelName)) {
-    return { make: null, model: "" };
+    return { make: null, model: "", modelId: "" };
   }
   const make = MOBILE_DE_MAKE_ID_TO_NAME[makeId] ?? null;
-  return { make, model: modelName };
+  const mapped = modelId ? MOBILE_DE_MODEL_ID_TO_NAME[makeId]?.[modelId] ?? "" : "";
+  return { make, model: modelName || mapped, modelId };
 }
 
 export function makeFromMobileMakeId(id: string): string | null {

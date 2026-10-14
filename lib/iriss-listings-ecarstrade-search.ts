@@ -668,6 +668,13 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
       filter.unmapped.push({ key: "ms", value: ms, reason: "mobile.de makeId nav kartē" });
     }
     if (parsed.model) applyModelToken(filter, parsed.model, "name");
+    else if (parsed.modelId) {
+      filter.unmapped.push({
+        key: "ms",
+        value: `${parsed.modelId}`,
+        reason: "mobile.de modelId nav kartē; modelis ņemts no brandModel, ja ir viens",
+      });
+    }
   }
   applyModelToken(filter, values(params, MODEL_KEYS)[0] ?? "", idSpace);
   if (idSpace === "autobid" && !filter.modelName) {
@@ -744,18 +751,25 @@ export function parseListingSearchUrl(rawUrl: string): EcarstradeSearchFilter {
   return parseListingSearchDetailed(rawUrl).filter;
 }
 
-/** Viens gads / viens cm³ no avota saites: ET meklējumam ±1 gads un ±200 cm³. */
+/**
+ * Nils: bez pielaidēm. Agrāk ±1 gads / ±200 cm³; tagad atstāj avota vērtības.
+ * @deprecated identitāte; nelietot plānošanā, lai nelaistu vaļīgākus filtrus.
+ */
 export function widenExactSearchBounds(filter: EcarstradeSearchFilter): EcarstradeSearchFilter {
-  const next = cloneEcarstradeFilter(filter);
-  if (next.yearFrom != null && next.yearFrom === next.yearTo) {
-    next.yearFrom = Math.max(1980, next.yearFrom - 1);
-    next.yearTo = Math.min(2035, next.yearTo + 1);
-  }
-  if (next.engineFromCc != null && next.engineFromCc === next.engineToCc) {
-    next.engineFromCc = Math.max(600, next.engineFromCc - 200);
-    next.engineToCc = Math.min(9000, next.engineToCc + 200);
-  }
-  return next;
+  return cloneEcarstradeFilter(filter);
+}
+
+/** Ja izsoles URL ir marka bez modeļa, bet brandModel nosauc tieši vienu modeli tai markai. */
+export function fillMissingModelFromBrand(filter: EcarstradeSearchFilter, brandModel: string): EcarstradeSearchFilter {
+  if (filter.makeIds.length !== 1 || filter.modelId) return filter;
+  if (/[/|]/.test(brandModel) && !/\b\d+\s*k\s*w\b/i.test(brandModel)) return filter;
+  const extra = filterFromBrandModel(brandModel);
+  if (extra.makeIds.length !== 1 || extra.makeIds[0] !== filter.makeIds[0] || !extra.modelId) return filter;
+  return {
+    ...cloneEcarstradeFilter(filter),
+    modelId: extra.modelId,
+    modelName: extra.modelName,
+  };
 }
 
 function applySharedBrandCriteria(target: EcarstradeSearchFilter, shared: EcarstradeSearchFilter): void {

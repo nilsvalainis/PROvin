@@ -72,7 +72,7 @@ describe("iriss scan eCarsTrade link backfill", () => {
     expect(preview.added.some((u) => u.includes("power_from=176") && u.includes("power_to=176"))).toBe(true);
   });
 
-  it("keeps one ET link when Auto1 and Openlane overlap, and two when fuel differs", () => {
+  it("keeps exact km from each auction and splits when fuel differs", () => {
     const same = previewEcarstradeLinksForScan(
       rec({
         brandModel: "Volvo XC60",
@@ -82,10 +82,10 @@ describe("iriss scan eCarsTrade link backfill", () => {
         listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2018&fuels=diesel&mileageTo=180000"],
       }),
     );
-    expect(same.generated).toHaveLength(1);
-    expect(same.generated[0]).toContain("year_from=2018");
-    expect(same.generated[0]).toContain("mileage_to=150000");
-    expect(same.generated[0]).toContain("fuel[]=Diesel");
+    expect(same.generated).toHaveLength(2);
+    expect(same.generated.some((u) => u.includes("mileage_to=150000"))).toBe(true);
+    expect(same.generated.some((u) => u.includes("mileage_to=180000"))).toBe(true);
+    expect(same.generated.every((u) => u.includes("year_from=2018") && u.includes("fuel[]=Diesel"))).toBe(true);
 
     const split = previewEcarstradeLinksForScan(
       rec({

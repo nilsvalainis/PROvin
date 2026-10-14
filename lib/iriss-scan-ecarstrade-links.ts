@@ -1,16 +1,15 @@
 import { filledIrissListingLinks, IRISS_LISTING_LINKS_PER_SOURCE_MAX } from "@/lib/iriss-listing-link-lists";
 import { isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
-  clusterEcarstradeFilters,
   describeEcarstradeFilter,
   ecarstradeSearchUrl,
   fillFilterGaps,
   fillMakeModelFromBrand,
+  fillMissingModelFromBrand,
   filterFromOrderFields,
   filtersFromBrandModel,
   parseListingSearchDetailed,
   sameEcarstradeSearch,
-  widenExactSearchBounds,
   type EcarstradeSearchFilter,
   type OrderSearchFields,
 } from "@/lib/iriss-listings-ecarstrade-search";
@@ -83,7 +82,7 @@ function unmappedLines(filter: EcarstradeSearchFilter): string[] {
 
 function filterFromAuctionUrl(url: string, brandModel: string): EcarstradeSearchFilter {
   const parsed = parseListingSearchDetailed(url).filter;
-  if (parsed.makeIds.length) return parsed;
+  if (parsed.makeIds.length) return fillMissingModelFromBrand(parsed, brandModel);
   return fillMakeModelFromBrand(parsed, brandModel);
 }
 
@@ -92,25 +91,27 @@ export function planEcarstradeSearchUrls(rec: IrissEcarstradeLinkSource): IrissE
   const urls = sourceUrls(rec);
   const order = filterFromOrderFields(orderFieldsOf(rec));
   const brandOnly = filtersFromBrandModel(brand);
-  const brandFilters =
-    urls.length > 0 ? brandOnly : brandOnly.map((f) => fillFilterGaps(f, order));
-  const parsed = urls.map((url) => ({
-    sourceUrl: url,
-    filter: filterFromAuctionUrl(url, brand),
-  }));
+  const parsed = urls
+    .map((url) => ({
+      sourceUrl: url,
+      filter: filterFromAuctionUrl(url, brand),
+    }))
+    .filter((row) => row.filter.makeIds.length > 0);
   const clusters =
-    parsed.length > 0 ? clusterEcarstradeFilters(parsed) : brandFilters.map((filter) => ({ filter, sourceUrls: [] as string[] }));
+    parsed.length > 0
+      ? parsed.map((row) => ({ filter: row.filter, sourceUrls: [row.sourceUrl] }))
+      : brandOnly.map((filter) => ({ filter: fillFilterGaps(filter, order), sourceUrls: [] as string[] }));
   if (parsed.length > 0) {
     const covered = new Set(clusters.flatMap((c) => c.filter.makeIds));
-    for (const bf of brandFilters) {
+    for (const bf of brandOnly) {
       const id = bf.makeIds[0];
-      if (id && !covered.has(id)) clusters.push({ filter: bf, sourceUrls: [] });
+      if (id && !covered.has(id)) clusters.push({ filter: fillFilterGaps(bf, order), sourceUrls: [] });
     }
   }
   const plans: IrissEcarstradeLinkPlan[] = [];
   const seen = new Set<string>();
   for (const cluster of clusters) {
-    const filter = widenExactSearchBounds(cluster.filter);
+    const filter = cluster.filter;
     const url = ecarstradeSearchUrl(filter);
     if (!url) continue;
     if (seen.has(url) || plans.some((p) => sameEcarstradeSearch(p.url, url))) continue;

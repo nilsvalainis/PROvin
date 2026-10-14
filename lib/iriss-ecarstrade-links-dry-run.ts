@@ -23,6 +23,38 @@ function sourceLinkBlock(title: string, urls: readonly string[]): string[] {
   return lines;
 }
 
+function cell(v: string): string {
+  return v.replace(/\|/g, "/").trim() || "-";
+}
+
+function exactComparisonTable(rec: IrissEcarstradeDryRunRecord): string[] {
+  const plans = planEcarstradeSearchUrls(rec);
+  const lines = ["", "**Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**", ""];
+  for (const [i, plan] of plans.entries()) {
+    const src = plan.sourceUrls[0] || "(brandModel / forma)";
+    const parsed = plan.sourceUrls[0] ? describeEcarstradeFilter(parseListingSearchDetailed(plan.sourceUrls[0]).filter) : [];
+    lines.push(`ET ${i + 1} avots: \`${src}\``);
+    lines.push("");
+    lines.push("| Kritērijs | Izsoles saite | ET URL |");
+    lines.push("|---|---|---|");
+    const etBits = describeEcarstradeFilter(plan.filter);
+    const keys = ["marka", "modelis", "gadi", "nobraukums", "cena", "jauda", "degviela", "kārba", "virsbūve", "krāsa", "tilpums", "durvis", "piedziņa", "aprīkojums", "izslēgts"];
+    for (const key of keys) {
+      const srcRow = parsed.find((c) => c.startsWith(key)) ?? "";
+      const etRow = etBits.find((c) => c.startsWith(key)) ?? "";
+      if (!srcRow && !etRow) continue;
+      lines.push(`| ${cell(key)} | ${cell(srcRow.replace(/^[^:]+:\s*/, ""))} | ${cell(etRow.replace(/^[^:]+:\s*/, ""))} |`);
+    }
+    lines.push(`| ET saite | - | \`${plan.url}\` |`);
+    if (plan.unmapped.length) {
+      lines.push(`| nav ET lauka | ${cell(plan.unmapped.join("; "))} | iriss_* post-filtrs / atzīmēts |`);
+    }
+    lines.push("");
+  }
+  if (plans.length === 0) lines.push("- nav ģenerējama ET saite (nav markas).", "");
+  return lines;
+}
+
 export function formatEcarstradeDryRunEntry(rec: IrissEcarstradeDryRunRecord): string {
   const plans = planEcarstradeSearchUrls(rec);
   const title = rec.label?.trim() || rec.brandModel.trim() || rec.id;
@@ -66,6 +98,7 @@ export function formatEcarstradeDryRunEntry(rec: IrissEcarstradeDryRunRecord): s
     lines.push("", "**Pašreizējā saglabātā ET** (netiek pārrakstīta šajā dry-run)");
     for (const u of existing) lines.push(`- \`${u}\``);
   }
+  lines.push(...exactComparisonTable(rec));
   return lines.join("\n");
 }
 
@@ -162,7 +195,7 @@ export function formatEcarstradeDryRunReport(
   const flagged = records.filter((r) => planEcarstradeSearchUrls(r).some((p) => p.unmapped.length > 0));
   const intro = opts?.realBackup
     ? "Šis saraksts ir no IRISS pasūtījumu backup (anonymizēts: bez vārda, e-pasta, tālruņa). Produkcijas Blob netiek rakstīts."
-    : "Šis saraksts ir no reprezentatīviem Auto1 / Autobid / Openlane / Mobile filtriem (fixtures). Dzīvais Blob šajā vidē nav pieejams; pēc merge Nils palaiž Atjaunot ET uz pasūtījumiem un radaru.";
+    : "Šis saraksts ir no reprezentatīviem Auto1 / Autobid / Openlane / Mobile filtriem (fixtures). Dzīvais Blob šajā vidē nav pieejams; pēc merge Nils palaiž Atjaunot ET uz pasūtījumiem un radaru. Live ecarstrade.com 2026-10-14: mark[] value Volvo=68, Audi=5, BMW=7, Mercedes=45, Lexus=39, Toyota=66, Porsche=54; fuel[]=Diesel un category[]=SUV/Off-road Vehicle/Pickup Truck sakrīt ar HTML. future_api mark[]=68&model[]=1866 atdod XC60; dīzeļa filtrs izslēdz hibrīdus.";
   const parts = [
     "# eCarsTrade precīzo saišu dry-run",
     "",
