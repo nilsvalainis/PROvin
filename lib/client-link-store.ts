@@ -4,9 +4,9 @@ import fs from "fs/promises";
 import path from "path";
 import { get, put } from "@vercel/blob";
 import { getOrderDraftBlobConfig, getOrderDraftStorageDir } from "@/lib/admin-order-draft-store";
+import { hashClientLinkToken } from "@/lib/client-link-crypto";
 import {
   applyAdminInputToRecord,
-  hashClientLinkToken,
   isSafeClientLinkToken,
   parseClientLinkRecord,
   type ClientLinkAdminInput,

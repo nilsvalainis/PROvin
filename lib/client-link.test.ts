@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
 import {
   applyAdminInputToRecord,
   buildClientLinkCheckoutSessionParams,
@@ -13,23 +15,21 @@ import {
   CLIENT_LINK_PATH_PREFIX,
   clientLinkAbsoluteUrl,
   clientLinkHashFromStripeMetadata,
-  clientLinkHashesEqual,
   clientLinkPublicPath,
   clientLinkPublicView,
   defaultClientLinkAdminInput,
   expiresAtFromCreated,
   formatClientLinkAmount,
-  hashClientLinkToken,
   isClientLinkExpired,
   isClientLinkPath,
   isClientLinkUsable,
   isSafeClientLinkToken,
-  newClientLinkToken,
   normalizeClientLinkAdminInput,
   parseClientLinkRecord,
   parseEurToCents,
   validateClientLinkSubmission,
 } from "@/lib/client-link";
+import { clientLinkHashesEqual, hashClientLinkToken, newClientLinkToken } from "@/lib/client-link-crypto";
 
 describe("client link token", () => {
   it("is at least 128 bits, unique, URL-safe, and stored only as sha256", () => {
