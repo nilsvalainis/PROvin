@@ -5,7 +5,8 @@
  * kā salīmēti JSON objekti `{status, car_id, data, result}`. `result` ir base64 HTML karte.
  * `data` dod solījumu / beigu laiku. Publiski (bez login) kartītes ir, cenas HTML slēpj
  * („Sign in to buy”), bet `data.max_bid` bieži ir. Login: `POST /api/v1/auth/login`
- * ar `{username, password}` -> `accessToken` / `refreshToken` (sīkdatnes eCT/user, eCT/refresh-token).
+ * + `Accept: application/json` ar `{username, password}` (ne `email`: 422) ->
+ * `data.accessToken` / `data.refreshToken` (sīkdatnes eCT/user, eCT/refresh-token).
  *
  * Valsts filtrs vienmēr BE / NL / LU / DE (`country[]=BEL|NET|LUX|GER`).
  */

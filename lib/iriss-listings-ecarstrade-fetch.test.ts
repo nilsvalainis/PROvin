@@ -61,9 +61,13 @@ describe("fetchEcarstradeSource", () => {
     expect(new URL(calls[0]!.url).searchParams.getAll("country[]")).toEqual(["BEL", "NET", "LUX", "GER"]);
   });
 
-  it("logs in when env credentials exist and sends the session cookie", async () => {
-    const { impl, calls } = fetchMock((url) => {
+  it("logs in with {username,password} (not email) and stores data.accessToken / data.refreshToken", async () => {
+    const bodies: string[] = [];
+    const accepts: string[] = [];
+    const { impl, calls } = fetchMock((url, init) => {
       if (url.includes("/api/v1/auth/login")) {
+        bodies.push(String(init?.body ?? ""));
+        accepts.push(new Headers(init?.headers).get("accept") ?? "");
         return { status: 200, body: JSON.stringify({ data: { accessToken: "tok-a", refreshToken: "tok-r" } }) };
       }
       return { status: 200, body: apiPage(["9"]) };
@@ -75,7 +79,11 @@ describe("fetchEcarstradeSource", () => {
     });
     expect(r.status).toBe("ok");
     expect(r.loggedIn).toBe(true);
-    expect(calls[0]!.url).toContain("/api/v1/auth/login");
+    expect(calls[0]!.url).toBe("https://ecarstrade.com/api/v1/auth/login");
+    expect(calls[0]!.method).toBe("POST");
+    expect(accepts[0]).toMatch(/application\/json/);
+    expect(JSON.parse(bodies[0]!)).toEqual({ username: "sia-iriss@inbox.lv", password: "x" });
+    expect(bodies[0]).not.toContain("email");
     expect(calls[1]!.cookie).toBe(ecarstradeAuthCookieHeader("tok-a", "tok-r"));
     expect(r.vehicles[0]!.externalId).toBe("9");
   });
