@@ -50,5 +50,5 @@ test("future_api concatenated JSON result is card HTML", () => {
   const raw = `${JSON.stringify({ result: Buffer.from(card, "utf8").toString("base64") })}${JSON.stringify({ result: "" })}`;
   const html = htmlFromEcarstradeApiBody(raw);
   assert.match(html, /data-itemId="99"/);
-  assert.equal(collectEcarstradeCardIds(html), ["99"]);
+  assert.deepEqual(collectEcarstradeCardIds(html), ["99"]);
 });
