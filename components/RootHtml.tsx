@@ -1,15 +1,12 @@
 import type { ReactNode } from "react";
-import { headers } from "next/headers";
 import Script from "next/script";
 import { Inter } from "next/font/google";
 import { ConsentAwareAnalytics } from "@/components/ConsentAwareAnalytics";
 import { getGaMeasurementId, getTikTokPixelId } from "@/lib/analytics-public";
-import { DEFAULT_LOCALE } from "@/i18n/locales";
 import { htmlLangForLocale } from "@/lib/seo-public-metadata";
-import { SEO_LOCALE_HEADER } from "@/lib/seo-public-paths";
 import { SiteThemeProvider } from "@/components/providers/SiteThemeProvider";
 import { SITE_THEME_COOKIE_KEY, SITE_THEME_STORAGE_KEY } from "@/lib/site-theme";
-import "./globals.css";
+import "@/app/globals.css";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext", "cyrillic"],
@@ -19,15 +16,15 @@ const inter = Inter({
   adjustFontFallback: true,
 });
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
+/**
+ * Kopīgais <html>/<body> apvalks. Agrāk app/layout.tsx lasīja `headers()` (lang + host), kas visas publiskās
+ * lapas padarīja dinamiskas (`cache-control: private, no-store`, CDN MISS). Tagad katrs saknes izkārtojums
+ * ([locale], admin) padod `lang` pats — publiskās lapas paliek statiskas un CDN kešojamas.
+ */
+export function RootHtml({ lang, children }: { lang: string; children: ReactNode }) {
   const gaMeasurementId = getGaMeasurementId();
   const tiktokPixelId = getTikTokPixelId();
-  const requestHeaders = await headers();
-  const hostHeader = requestHeaders.get("host");
-  const requestHostname = hostHeader?.split(":")[0]?.trim().toLowerCase() || null;
-  const localeHeader =
-    requestHeaders.get(SEO_LOCALE_HEADER) || requestHeaders.get("x-next-intl-locale");
-  const htmlLang = htmlLangForLocale(localeHeader || DEFAULT_LOCALE);
+  const htmlLang = htmlLangForLocale(lang);
   return (
     <html
       lang={htmlLang}
@@ -48,7 +45,6 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           <ConsentAwareAnalytics
             gaMeasurementId={gaMeasurementId}
             tiktokPixelId={tiktokPixelId}
-            requestHostname={requestHostname}
           />
         </SiteThemeProvider>
       </body>
