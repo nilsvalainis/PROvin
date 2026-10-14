@@ -4,6 +4,7 @@
  */
 import type { VinScanBrowserId } from "@/lib/vin-scan/catalog";
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
+import { classifyStatVinText } from "@/lib/vin-scan/parse-stat-vin";
 import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
 import type { VinScanStatus } from "@/lib/vin-scan/types";
 
@@ -33,7 +34,7 @@ export function classifyBrowserProbe(id: VinScanBrowserId | string, text: string
   if (isBrowserChallenge(text)) return null;
   switch (id) {
     case "stat_vin":
-      return classifyAuction(text, vin, "Nav izsoles ieraksta", "Ir izsoles ieraksts");
+      return classifyStatVinText(text, vin);
     case "bid_cars":
       if (/no results|0 vehicles|nothing found|no cars found/i.test(text)) {
         return { status: "none", summary: "Nav izsoles arhīvā" };

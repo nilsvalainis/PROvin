@@ -29,7 +29,7 @@ export type AdminOrderDetailPageLoadSuccess = {
   ok: true;
   sessionId: string;
   order: AdminOrderDetailClientModel;
-  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest"> | null;
+  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest" | "vinScan"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
@@ -219,6 +219,7 @@ export async function loadAdminOrderDetailPageData(
         ? {
             orderEdits: serverOrderDraft.orderEdits ?? {},
             ...(serverOrderDraft.autoIngest ? { autoIngest: serverOrderDraft.autoIngest } : {}),
+            ...(serverOrderDraft.vinScan ? { vinScan: serverOrderDraft.vinScan } : {}),
           }
         : null,
       serverWorkspaceJson,

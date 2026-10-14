@@ -39,7 +39,6 @@ import { AdminAuditResultColorControl } from "@/components/admin/AdminAuditResul
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 import { AdminAuditSlaOrderBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
-
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
 export type AdminOrderDetailClientModel = {
   id: string;
@@ -130,7 +129,7 @@ export function AdminOrderDetailView({
   auditResultColor = null,
 }: {
   order: AdminOrderDetailClientModel;
-  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest"> | null;
+  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest" | "vinScan"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
@@ -789,6 +788,7 @@ export function AdminOrderDetailView({
           serverInternalComment: order.internalComment ?? null,
           serverAttachments: order.attachments ?? [],
           autoIngest: serverOrderDraft?.autoIngest ?? null,
+          vinScan: serverOrderDraft?.vinScan ?? null,
         }}
       />
       </div>

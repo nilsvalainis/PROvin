@@ -13,6 +13,7 @@ import {
 import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
 import { runVinScan, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
+import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
 import { listVinScanHistory, readVinScanSnapshot, vinScanSnapshotFresh, writeVinScanSnapshot } from "@/lib/vin-scan/store";
 
 export const runtime = "nodejs";
@@ -101,15 +102,7 @@ export async function POST(req: Request) {
   const requested = sanitizeVinScanSourceIds(body.sources) ?? defaultVinScanSourceIds();
   const indicators = await runVinScan({ vin, plates, listingUrl, sourceIds: requested });
   const scannedAt = new Date().toISOString();
-  // Avotu veselība: tikai īsti ielādes mēģinājumi (bez „trūkst ievades” / „zonde nav pieejama”).
-  const SCAN_ERR = new Set(["Avots neatbildēja laikā", "Avotu neizdevās nolasīt"]);
-  after(() =>
-    recordSourceOutcomes(
-      indicators
-        .filter((r) => r.status !== "unknown" || SCAN_ERR.has(r.summary))
-        .map((r) => ({ id: r.id, ok: !SCAN_ERR.has(r.summary), msg: r.summary })),
-    ),
-  );
+  after(() => recordSourceOutcomes(vinScanSourceHealthOutcomes(indicators)));
   if (isValidVin(vin)) {
     await writeVinScanSnapshot({ vin, plates, scannedAt, indicators }).catch(() => undefined);
   }

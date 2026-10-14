@@ -2,7 +2,8 @@
  * Manuālie pasūtījumi — izveide, Summas/Laika labošana un dzēšana no admin saraksta.
  * Pasūtījumiem, kas neienāk caur tiešsaistes formu (individuāli piedāvājumi).
  */
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 import { getAdminSession } from "@/lib/admin-auth";
 import {
   createManualOrder,
@@ -44,6 +45,12 @@ export async function POST(req: Request) {
       if (!created.ok) {
         return NextResponse.json({ error: created.error }, { status: storeErrorStatus(created.error) });
       }
+      after(() =>
+        runOrderFreeVinScan(created.orderId, { vin: input.vin, listingUrl: null }).then(
+          (r) => console.info("[manual-orders] free VIN SCAN", { orderId: created.orderId, ...r }),
+          (err) => console.error("[manual-orders] free VIN SCAN:", err),
+        ),
+      );
       return NextResponse.json({ ok: true, orderId: created.orderId, record: { id: created.orderId } });
     }
     const res = await createManualOrder();

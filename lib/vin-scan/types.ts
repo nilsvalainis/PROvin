@@ -20,6 +20,8 @@ export type VinScanMileage = {
 export type VinScanMedia = {
   photoUrl?: string;
   photoCount?: number;
+  /** Izsoļu JPEG URL (stat.vin / Copart), līdz 20. */
+  photoUrls?: string[];
 };
 
 export type VinScanInspection = {

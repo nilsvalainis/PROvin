@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.17.0
+// @version      1.18.0
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -87,7 +87,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.17.0";
+  const SCRIPT_VERSION = "1.18.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -656,13 +656,24 @@
     if (isScanChallenge(text)) return null;
     const hasVin = text.toUpperCase().indexOf(vin) !== -1;
     if (id === "stat_vin") {
+      if (/too many requests|rate limit(?:ed)?|try again later/i.test(text) && !hasVin) {
+        return { status: "unknown", summary: "stat.vin: pieprasījumu limits" };
+      }
       if (!hasVin) {
         if (/not found|page not found|no vehicle|nothing found|no results|no similar cars|were not found/i.test(text)) {
           return { status: "none", summary: "Nav izsoles ieraksta" };
         }
         return null;
       }
-      if (/auction|sold|sale date|odometer|mileage|lot|bid/i.test(text)) return { status: "found", summary: "Ir izsoles ieraksts" };
+      if (/auction|sold|sale date|odometer|mileage|lot|bid|copart|iaai/i.test(text)) {
+        const venue = /iaai/i.test(text) ? "IAAI" : /copart/i.test(text) ? "Copart" : "";
+        const year = /((?:19|20)\d{2})/.exec(text);
+        const photos = /(\d+)\s*(?:photos?|images?|pictures?|foto)/i.exec(text);
+        const head = [venue, year && year[1] ? year[1] : ""].filter(Boolean).join(" ");
+        const bits = [head, photos && Number(photos[1]) > 0 ? photos[1] + " foto" : ""].filter(Boolean);
+        return { status: "found", summary: bits.length ? bits.join(", ") : "Ir izsoles ieraksts" };
+      }
+      if (/no sale history|sale history\s*\(\s*0\s*\)/i.test(text)) return { status: "none", summary: "Nav izsoles ieraksta" };
       return null;
     }
     if (id === "bid_cars") {
@@ -992,6 +1003,38 @@
     return { lotUrl: lotUrl, photoUrl: first, photoCount: count };
   }
 
+  function extractStatVinExtras() {
+    const seen = new Set();
+    let first = "";
+    let count = 0;
+    const auctions = [];
+    for (const img of document.querySelectorAll("img")) {
+      const src = img.currentSrc || img.getAttribute("src") || img.getAttribute("data-src") || "";
+      if (!src || src.indexOf("data:") === 0) continue;
+      if (/logo|icon|flag|sprite|avatar|favicon|pixel/i.test(src)) continue;
+      if (!/copart|iaai|stat\.vin|cloudfront|auction|\.jpe?g|\.webp/i.test(src)) continue;
+      const clean = String(src).toLowerCase();
+      if (seen.has(clean)) continue;
+      seen.add(clean);
+      count += 1;
+      if (!first) first = src;
+    }
+    const text = (document.body && document.body.innerText) || "";
+    const venue = /iaai/i.test(text) ? "IAAI" : /copart/i.test(text) ? "Copart" : "";
+    const lot = (text.match(/lot[:\s#№]*([0-9]{5,10})/i) || [])[1] || "";
+    const year = (text.match(/((?:19|20)\d{2})/) || [])[1] || "";
+    if (venue || lot || count) {
+      auctions.push({
+        title: [venue, lot ? "lots " + lot : ""].filter(Boolean).join(" · "),
+        date: year,
+        venue: venue,
+        photoUrl: first,
+        photoCount: count || undefined,
+      });
+    }
+    return { photoUrl: first, photoCount: count, auctions: auctions };
+  }
+
   function clickSafeCheck() {
     const pay = /pirkt|buy|apmaks|checkout|pay\b|zamów|koupit|order|subscribe|pasūtīt/i;
     const want = /pārbaudi|pārbaudīt|check|verify|search|meklēt|sākt|ieškoti/i;
@@ -1075,7 +1118,12 @@
       const result = classifyBrowserProbe(id, text, probeVin);
       if (result) {
         window.clearInterval(timer);
-        const extras = id === "plc_auction" ? extractPlcAuctionExtras() : { lotUrl: "", photoUrl: "", photoCount: 0 };
+        const extras =
+          id === "plc_auction"
+            ? extractPlcAuctionExtras()
+            : id === "stat_vin"
+              ? extractStatVinExtras()
+              : { lotUrl: "", photoUrl: "", photoCount: 0, auctions: [] };
         publishScan({
           id: id,
           vin: probeVin,
@@ -1085,6 +1133,7 @@
           photoUrl: extras.photoUrl,
           photoCount: extras.photoCount,
           openUrl: extras.lotUrl || "",
+          auctions: extras.auctions || [],
         });
         return;
       }

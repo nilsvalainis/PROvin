@@ -3,9 +3,12 @@
  * tikai validācija + `patchOrderDraft` (`orderEdits` merge ar iepriekšējo JSON, ne pilna aizvietošana).
  * 503 parasti nozīmē `store_disabled` vai rakstīšanas kļūdu (skat. `ADMIN_ORDER_DRAFT_DIR`).
  */
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable } from "@/lib/admin-order-draft-store";
+import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { shouldStartOrderVinScanOnDraftPatch } from "@/lib/order-vin-scan";
+import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { mergeProvinBannerPdfInclude, mergeProvinManualBanners } from "@/lib/provin-alert-banners";
@@ -38,6 +41,7 @@ export async function GET(req: Request) {
         workspaceRevision: draft?.workspaceRevision ?? 0,
         workspaceChecksum: draft?.workspaceChecksum ?? null,
         autoIngest: draft?.autoIngest ?? null,
+        vinScan: draft?.vinScan ?? null,
         durable,
         storageBackend: durable ? (process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX?.trim() ? "blob" : "filesystem") : "none",
       });
@@ -214,6 +218,7 @@ export async function PATCH(req: Request) {
         Math.floor(b.saveGeneration)
       : undefined;
 
+    const prevDraft = await readOrderDraft(sessionId).catch(() => null);
     const result = await patchOrderDraft(sessionId, patch, {
       expectedWorkspaceRevision,
       saveGeneration,
@@ -255,6 +260,26 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: "patch_failed", detail: err }, { status: 500 });
       }
       return NextResponse.json({ error: err }, { status: 500 });
+    }
+
+    const incomingVin = typeof patch.orderEdits?.vin === "string" ? normalizeVin(patch.orderEdits.vin) : "";
+    const prevVin = normalizeVin(prevDraft?.orderEdits?.vin ?? "");
+    if (
+      incomingVin &&
+      isValidVin(incomingVin) &&
+      !isPlaceholderVin(incomingVin) &&
+      shouldStartOrderVinScanOnDraftPatch(prevVin, incomingVin)
+    ) {
+      const listingUrl =
+        (typeof patch.orderEdits?.listingUrl === "string" && patch.orderEdits.listingUrl.trim()) ||
+        prevDraft?.orderEdits?.listingUrl ||
+        null;
+      after(() =>
+        runOrderFreeVinScan(sessionId, { vin: incomingVin, listingUrl }).then(
+          (r) => console.info("[order-draft] free VIN SCAN", { sessionId, ...r }),
+          (err) => console.error("[order-draft] free VIN SCAN:", err),
+        ),
+      );
     }
 
     return NextResponse.json({
