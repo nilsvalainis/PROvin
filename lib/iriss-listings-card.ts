@@ -131,10 +131,21 @@ export function listingAuctionEndLabel(endIso: string): string {
 
 export type ListingCountdown = { t: string; k: string; end: string };
 
+export function listingAuctionEndIsPlausible(endIso: string, nowMs: number | null): boolean {
+  if (!endIso.trim()) return false;
+  const endMs = Date.parse(endIso);
+  if (!Number.isFinite(endMs)) return false;
+  const now = nowMs ?? Date.now();
+  const days = (endMs - now) / 86_400_000;
+  return days <= 180 && days > -400;
+}
+
 export function listingCountdown(endIso: string, nowMs: number | null): ListingCountdown {
+  if (!listingAuctionEndIsPlausible(endIso, nowMs)) {
+    return { t: "", k: "text-slate-400", end: "" };
+  }
   const end = listingAuctionEndLabel(endIso);
   if (nowMs == null) return { t: "\u00a0", k: "text-slate-400", end };
-  if (!endIso.trim()) return { t: "Beigu laiks nav zināms", k: "text-slate-400", end: "" };
   const endMs = Date.parse(endIso);
   if (!Number.isFinite(endMs)) return { t: "Beigu laiks nav zināms", k: "text-slate-400", end: "" };
   const ms = endMs - nowMs;

@@ -3,11 +3,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { shouldExcludeIrissListing } from "@/lib/iriss-listings-exclude-rules";
+import { listingCardPriceLabel, listingComparisonPrice } from "@/lib/iriss-listings-cost";
 import {
   decodeEcarstradeCardHtml,
   ecarstradeApiUrl,
+  ecarstradeCarJsonUrl,
   ecarstradeDetailUrl,
   ecarstradePageStart,
+  mergeEcarstradeJsonPrices,
   parseEcarstradeApiPage,
   parseEcarstradeCard,
   readEcarstradeAuth,
@@ -109,5 +112,92 @@ describe("eCarsTrade parser", () => {
       username: "sia-iriss@inbox.lv",
       password: "secret",
     });
+  });
+
+  it("does not invent a price or 2036 end date for a public stock card (Tucson 7602956)", () => {
+    const v = parseEcarstradeCard(card("card-tucson-public.html"), {
+      id: "7602956",
+      max_bid: null,
+      close_date: "31 Dec 2036 23:59",
+      close_time: false,
+    });
+    expect(v).toMatchObject({
+      externalId: "7602956",
+      auctionStage: "STOCK",
+      priceBuyNow: null,
+      priceCurrent: null,
+      auctionEndAt: "",
+      taxDeduction: true,
+      countryCode: "BE",
+      powerKw: "169",
+      mileageKm: 105926,
+    });
+    expect(listingComparisonPrice({ ...v, platform: "ecarstrade" })).toBeNull();
+  });
+
+  it("parses PIRKT 16200 from a logged-in stock card and ignores Kopējā 16500 and the 2036 placeholder", () => {
+    const v = parseEcarstradeCard(card("card-tucson-loggedin.html"), {
+      id: "7602956",
+      max_bid: null,
+      close_date: "31 Dec 2036 23:59",
+    });
+    expect(v?.priceBuyNow).toBe(16200);
+    expect(v?.priceCurrent).toBeNull();
+    expect(v?.auctionEndAt).toBe("");
+    expect(v?.auctionStage).toBe("STOCK");
+    expect(listingComparisonPrice({ ...v!, platform: "ecarstrade" })).toBe(16200);
+    expect(listingCardPriceLabel({ ...v!, platform: "ecarstrade" })).toBe("Pirkt uzreiz");
+  });
+
+  it("parses fixed-price PIRKT and keeps a real close time; public fix has neither price nor fake date", () => {
+    const pub = parseEcarstradeCard(card("card-fix-public.html"), {
+      id: "7691293",
+      max_bid: null,
+      close_date: "15 Oct 2026 13:10",
+    });
+    expect(pub?.priceBuyNow).toBeNull();
+    expect(pub?.auctionStage).toBe("FIXED_PRICE");
+    expect(pub?.auctionEndAt).toBe("2026-10-15T11:10:00.000Z");
+    const logged = parseEcarstradeCard(card("card-fix-loggedin.html"), {
+      id: "7691293",
+      close_date: "15 Oct 2026 13:10",
+    });
+    expect(logged?.priceBuyNow).toBe(8900);
+    expect(logged?.priceCurrent).toBeNull();
+    expect(logged?.auctionEndAt).toBe("2026-10-15T11:10:00.000Z");
+  });
+
+  it("parses bid-or-fix current bid and buy-now; public card has no prices", () => {
+    const pub = parseEcarstradeCard(card("card-bid-or-fix-public.html"), { id: "6752454", max_bid: null });
+    expect(pub?.priceBuyNow).toBeNull();
+    expect(pub?.priceCurrent).toBeNull();
+    expect(pub?.auctionStage).toBe("BID_OR_BUY_NOW");
+    const logged = parseEcarstradeCard(card("card-bid-or-fix-loggedin.html"), { id: "6752454" });
+    expect(logged?.priceBuyNow).toBe(45000);
+    expect(logged?.priceCurrent).toBe(12000);
+    expect(listingComparisonPrice({ ...logged!, platform: "ecarstrade" })).toBe(45000);
+  });
+
+  it("treats a 850 € public tender floor as start, not a live bid", () => {
+    const v = parseEcarstradeCard(card("card-volvo.html"), { id: "7672194", max_bid: "850" });
+    expect(v?.priceStart).toBe(850);
+    expect(v?.priceCurrent).toBeNull();
+    expect(listingComparisonPrice({ ...v!, platform: "ecarstrade" })).toBeNull();
+  });
+
+  it("fills stock buy-now from /api/v1/cars JSON without using Kopējā as the bid", () => {
+    const pub = parseEcarstradeCard(card("card-tucson-public.html"), {
+      id: "7602956",
+      max_bid: null,
+      close_date: "31 Dec 2036 23:59",
+    });
+    expect(pub).toBeTruthy();
+    const merged = mergeEcarstradeJsonPrices(pub!, {
+      data: { id: "7602956", auction_type: "stock", buy_now_price: 16200, total_price: 16500, close_date: "31 Dec 2036 23:59" },
+    });
+    expect(merged.priceBuyNow).toBe(16200);
+    expect(merged.priceCurrent).toBeNull();
+    expect(merged.auctionEndAt).toBe("");
+    expect(ecarstradeCarJsonUrl("7602956")).toBe("https://ecarstrade.com/api/v1/cars/7602956");
   });
 });

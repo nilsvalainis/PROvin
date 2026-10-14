@@ -18,6 +18,7 @@ export type IrissListingBudgetBoxProps = {
   maxBid: number | null;
   room: number | null;
   priceMissing?: boolean;
+  priceLabel?: string;
 };
 
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
@@ -29,14 +30,14 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
   );
 }
 
-export function IrissListingBudgetBox({ budget, gala, real, maxBid, room, priceMissing }: IrissListingBudgetBoxProps) {
+export function IrissListingBudgetBox({ budget, gala, real, maxBid, room, priceMissing, priceLabel }: IrissListingBudgetBoxProps) {
   if (priceMissing || !real) return null;
   const total = gala ?? real.total;
   const pill = budget != null ? listingBudgetFitPill(budget, total) : null;
 
   return (
     <div className="mt-2 grid gap-0.5 rounded-xl border border-dashed border-[#E5E7EB] p-3 text-[11px] tabular-nums">
-      <Row label={LISTING_PRICE_LABEL} value={listingFmtEur(real.price)} />
+      <Row label={priceLabel || LISTING_PRICE_LABEL} value={listingFmtEur(real.price)} />
       <Row label={LISTING_COSTS_LABEL} value={listingFmtEur(real.extras)} />
       <Row label={LISTING_VAT_LABEL} value={listingFmtEur(real.vat)} />
       <Row label={`= ${LISTING_TOTAL_COST_LABEL}`} value={listingFmtEur(total)} strong />

@@ -13,6 +13,7 @@ import { useMobilePlatform } from "@/hooks/useMobilePlatform";
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
 import { isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import { listingBidPrice, listingExtrasI, listingMaxBid, type ListingCostParts } from "@/lib/iriss-listings-cost";
+import { listingIsOverBudgetHidden, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
 import { listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 import {
   LISTING_SORTS,
@@ -306,6 +307,8 @@ export function IrissSludinajumiListClient({
   const tab = prefs.tab;
   const listScope = prefs.listScope;
   const hideTech = prefs.hideTech;
+  const hideOverBudget = prefs.hideOverBudget;
+  const overBudgetThreshold = prefs.overBudgetThreshold;
   const sort = parseListingSort(searchParams.get("sort")) ?? DEFAULT_SORT;
   const sources = parseListingSources(searchParams.get("src"));
   const priceMin = parsePriceBound(searchParams.get("min"));
@@ -512,11 +515,23 @@ export function IrissSludinajumiListClient({
       if (!vehicleInPriceRange(v, priceMin, priceMax)) return false;
       const linked = linkedOrdersOf(v, prefs, orderById);
       if (!vehicleMatchesOrderFilter(linked, orderFilter)) return false;
+      if (
+        listingIsOverBudgetHidden(
+          v,
+          listingCostsFor(prefs, v.id),
+          prefs.taxOv[v.id],
+          listingBudgetForVehicle(null, linked),
+          hideOverBudget,
+          overBudgetThreshold,
+        )
+      ) {
+        return false;
+      }
       if (!q) return true;
       const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.vin ?? ""} ${v.stockNumber ?? ""} ${v.orderBrandModels.join(" ")} ${linked.map((o) => `${o.clientName} ${o.brandModel} ${o.preferredColors} ${o.brief}`).join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, orderById, orderFilter]);
+  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, hideOverBudget, overBudgetThreshold, orderById, orderFilter]);
 
   const sorted = useMemo(() => {
     const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs, budgetOf(v, prefs, orderById)) }));
@@ -527,6 +542,21 @@ export function IrissSludinajumiListClient({
   const vatHealth = useMemo(() => latest?.vatHealth ?? computeListingVatHealth(vehicles), [latest?.vatHealth, vehicles]);
   const drawerVehicle = useMemo(() => allVehicles.find((v) => v.id === drawerId) ?? null, [allVehicles, drawerId]);
   const techCount = useMemo(() => vehicles.filter((v) => v.change !== "gone" && !prefs.hidden.includes(v.id) && listingHasHardTechDamage(v.damageRaw)).length, [vehicles, prefs.hidden]);
+  const overBudgetCount = useMemo(
+    () =>
+      vehicles.filter((v) => {
+        if (v.change === "gone" || prefs.hidden.includes(v.id)) return false;
+        return listingIsOverBudgetHidden(
+          v,
+          listingCostsFor(prefs, v.id),
+          prefs.taxOv[v.id],
+          budgetOf(v, prefs, orderById),
+          true,
+          overBudgetThreshold,
+        );
+      }).length,
+    [vehicles, prefs, orderById, overBudgetThreshold],
+  );
   const favCount = prefs.fav.filter((id) => vehicles.some((v) => v.id === id)).length;
   const hiddenCount = prefs.hidden.filter((id) => vehicles.some((v) => v.id === id)).length;
 
@@ -743,6 +773,27 @@ export function IrissSludinajumiListClient({
                 <label className="mt-3 flex items-center gap-2 font-medium">
                   <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={hideTech} onChange={(e) => setPrefs((p) => ({ ...p, hideTech: e.target.checked }))} />
                   Slēpt ar motora/kārbas bojājumiem ({techCount})
+                </label>
+                <label className="mt-2 flex items-start gap-2 font-medium">
+                  <input type="checkbox" className="mt-0.5 h-5 w-5 sm:h-4 sm:w-4" checked={hideOverBudget} onChange={(e) => setPrefs((p) => ({ ...p, hideOverBudget: e.target.checked }))} />
+                  <span>
+                    Slēpt virs budžeta +
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      aria-label="Slieksnis virs budžeta, €"
+                      value={overBudgetThreshold}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const raw = e.target.value.trim();
+                        if (raw === "") return;
+                        setPrefs((p) => ({ ...p, overBudgetThreshold: parseOverBudgetThreshold(raw, p.overBudgetThreshold) }));
+                      }}
+                      className="mx-1 h-7 w-16 rounded-md bg-[#f2f2f5] px-1.5 text-center text-[12px] outline-none"
+                    />
+                    € ({overBudgetCount})
+                  </span>
                 </label>
                 <label className="mt-2 flex items-center gap-2 font-medium">
                   <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={listScope === "hidden"} onChange={(e) => setPrefs((p) => ({ ...p, listScope: e.target.checked ? "hidden" : "all" }))} />

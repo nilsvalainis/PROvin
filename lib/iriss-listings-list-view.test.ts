@@ -76,15 +76,15 @@ describe("listing sort", () => {
     expect(ids("ending", rows)).toEqual(["soon", "later", "ended-new", "ended-old", "none"]);
   });
 
-  it("sorts price by current, then start, then buy now, with nulls last in both directions", () => {
+  it("sorts by comparison price: buy-now first, then current, nulls last", () => {
     const rows = [
       car({ id: "none" }),
       car({ id: "buy", priceBuyNow: 5000 }),
-      car({ id: "start", priceStart: 9000, priceBuyNow: 1000 }),
+      car({ id: "start", priceStart: 9000, priceBuyNow: 12000 }),
       car({ id: "current", priceCurrent: 3000, priceStart: 100 }),
     ];
     expect(listingSortPrice(rows[1]!)).toBe(5000);
-    expect(listingSortPrice(rows[2]!)).toBe(9000);
+    expect(listingSortPrice(rows[2]!)).toBe(12000);
     expect(listingSortPrice(rows[3]!)).toBe(3000);
     expect(ids("price-asc", rows)).toEqual(["current", "buy", "start", "none"]);
     expect(ids("price-desc", rows)).toEqual(["start", "buy", "current", "none"]);
@@ -142,15 +142,19 @@ describe("listing filters", () => {
 
   it("drops cars without a price when a range is set", () => {
     const priced = car({ id: "a", priceCurrent: 4000 });
-    const fallback = car({ id: "b", priceStart: 1500 });
+    const fallback = car({ id: "b", priceStart: 2500 });
     const none = car({ id: "c" });
+    const floor = car({ id: "d", platform: "ecarstrade", priceCurrent: 850, priceStart: 850 });
+    const buyNow = car({ id: "e", platform: "ecarstrade", priceCurrent: 850, priceBuyNow: 16200 });
     expect(parsePriceBound("")).toBeNull();
     expect(parsePriceBound("-5")).toBeNull();
     expect(parsePriceBound("1,5")).toBe(1.5);
     expect(vehicleInPriceRange(priced, 3000, 5000)).toBe(true);
     expect(vehicleInPriceRange(priced, 4500, null)).toBe(false);
-    expect(vehicleInPriceRange(fallback, null, 2000)).toBe(true);
+    expect(vehicleInPriceRange(fallback, null, 3000)).toBe(true);
     expect(vehicleInPriceRange(none, 0, 99999)).toBe(false);
     expect(vehicleInPriceRange(none, null, null)).toBe(true);
+    expect(vehicleInPriceRange(floor, 0, 5000)).toBe(false);
+    expect(vehicleInPriceRange(buyNow, 10000, 20000)).toBe(true);
   });
 });

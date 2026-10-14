@@ -4,6 +4,7 @@
  */
 
 import { listingPriceChangeAbsReal } from "@/lib/iriss-listings-auto1-cents";
+import { listingComparisonPrice } from "@/lib/iriss-listings-cost";
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
 
 export type ListingSort =
@@ -56,7 +57,7 @@ type Sortable = Pick<
   | "priceCurrent"
   | "priceBuyNow"
   | "priceHistory"
-> & { _room?: number | null };
+> & { platform?: IrissListingPlatform; priceMinimal?: number | null; _room?: number | null };
 
 function timeMs(iso: string): number | null {
   if (!iso.trim()) return null;
@@ -64,12 +65,17 @@ function timeMs(iso: string): number | null {
   return Number.isFinite(t) ? t : null;
 }
 
-/** Pašreizējā, ja nav, sākuma, ja nav, pirkt tūlīt. */
-export function listingSortPrice(v: Pick<Sortable, "priceCurrent" | "priceStart" | "priceBuyNow">): number | null {
-  if (v.priceCurrent !== null) return v.priceCurrent;
-  if (v.priceStart !== null) return v.priceStart;
-  if (v.priceBuyNow !== null) return v.priceBuyNow;
-  return null;
+/** Salīdzināšanas cena (pirkt uzreiz / asking, citādi solījums). */
+export function listingSortPrice(
+  v: Pick<Sortable, "platform" | "priceCurrent" | "priceStart" | "priceBuyNow" | "priceMinimal">,
+): number | null {
+  return listingComparisonPrice({
+    platform: v.platform,
+    priceCurrent: v.priceCurrent,
+    priceStart: v.priceStart,
+    priceMinimal: v.priceMinimal ?? null,
+    priceBuyNow: v.priceBuyNow,
+  });
 }
 
 /** Gads no `year` vai pirmās reģistrācijas. Tukšs, ja nav (19|20)xx. */
@@ -164,7 +170,7 @@ export function parsePriceBound(raw: string | null | undefined): number | null {
 }
 
 export function vehicleInPriceRange(
-  v: Pick<Sortable, "priceCurrent" | "priceStart" | "priceBuyNow">,
+  v: Pick<Sortable, "platform" | "priceCurrent" | "priceStart" | "priceBuyNow" | "priceMinimal">,
   min: number | null,
   max: number | null,
 ): boolean {

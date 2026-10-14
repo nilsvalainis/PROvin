@@ -68,6 +68,8 @@ describe("iriss list prefs", () => {
     expect(parsed.sort).toBe("price-asc");
     expect(parsed.sources).toEqual(["auto1"]);
     expect(parsed.hideTech).toBe(true);
+    expect(parsed.hideOverBudget).toBe(true);
+    expect(parsed.overBudgetThreshold).toBe(2000);
     const slim = JSON.parse(serializeIrissListPrefs(parsed)) as Record<string, unknown>;
     expect(slim.vehicles).toBeUndefined();
     expect(slim.photos).toBeUndefined();
@@ -164,6 +166,15 @@ describe("iriss list prefs", () => {
       },
     };
     expect(() => persistIrissListPrefs(storage, defaultIrissListPrefs())).not.toThrow();
+  });
+
+  it("defaults hide-over-budget on at 2000 € and keeps a custom threshold", () => {
+    expect(defaultIrissListPrefs().hideOverBudget).toBe(true);
+    expect(defaultIrissListPrefs().overBudgetThreshold).toBe(2000);
+    expect(parseIrissListPrefs("{}").hideOverBudget).toBe(true);
+    const parsed = parseIrissListPrefs(JSON.stringify({ hideOverBudget: false, overBudgetThreshold: 3500 }));
+    expect(parsed.hideOverBudget).toBe(false);
+    expect(parsed.overBudgetThreshold).toBe(3500);
   });
 
   it("keeps a small order reassignment map and client filter", () => {

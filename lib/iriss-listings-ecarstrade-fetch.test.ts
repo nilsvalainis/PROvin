@@ -28,16 +28,34 @@ function apiPage(ids: string[], extra = ""): string {
 }
 
 function fetchMock(handler: (url: string, init?: RequestInit) => { status: number; body: string } | Error) {
-  const calls: Array<{ url: string; cookie: string; method: string }> = [];
+  const calls: Array<{ url: string; cookie: string; method: string; auth: string }> = [];
   const impl = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const headers = new Headers(init?.headers);
-    calls.push({ url, cookie: headers.get("cookie") ?? "", method: init?.method ?? "GET" });
+    calls.push({
+      url,
+      cookie: headers.get("cookie") ?? "",
+      method: init?.method ?? "GET",
+      auth: headers.get("authorization") ?? "",
+    });
     const r = handler(url, init);
     if (r instanceof Error) throw r;
     return new Response(r.body, { status: r.status });
   }) as unknown as typeof fetch;
   return { impl, calls };
+}
+
+function tucsonPublicPage(): string {
+  const html = readFileSync(join(FIX, "card-tucson-public.html"), "utf8");
+  return (
+    "{}" +
+    JSON.stringify({
+      status: "200",
+      car_id: "7602956",
+      data: { id: "7602956", max_bid: null, close_date: "31 Dec 2036 23:59", close_time: false },
+      result: Buffer.from(html, "utf8").toString("base64"),
+    })
+  );
 }
 
 const opts = { maxPages: 3, timeoutMs: 8000, pauseMinMs: 0, pauseMaxMs: 0, perPage: 1, sleep: async () => undefined, env: {} };
@@ -113,5 +131,41 @@ describe("fetchEcarstradeSource", () => {
     });
     expect(parseEcarstradeLoginBody({ access_token: "z" })).toEqual({ accessToken: "z", refreshToken: "" });
     expect(parseEcarstradeLoginBody({ errors: [] })).toBeNull();
+  });
+
+  it("enriches a logged-in stock card from /api/v1/cars with Bearer and skips the 2036 close", async () => {
+    const { impl, calls } = fetchMock((url) => {
+      if (url.includes("/api/v1/auth/login")) {
+        return { status: 200, body: JSON.stringify({ data: { accessToken: "tok-a", refreshToken: "tok-r" } }) };
+      }
+      if (url.includes("/api/v1/cars/7602956")) {
+        return {
+          status: 200,
+          body: JSON.stringify({
+            data: { id: "7602956", auction_type: "stock", buy_now_price: 16200, total_price: 16500, close_date: "31 Dec 2036 23:59" },
+          }),
+        };
+      }
+      return { status: 200, body: tucsonPublicPage() };
+    });
+    const r = await fetchEcarstradeSource(SRC, {
+      ...opts,
+      fetchImpl: impl,
+      env: { ECARSTRADE_USER: "sia-iriss@inbox.lv", ECARSTRADE_PASS: "x" },
+    });
+    expect(r.status).toBe("ok");
+    expect(r.loggedIn).toBe(true);
+    expect(r.vehicles).toHaveLength(1);
+    expect(r.vehicles[0]).toMatchObject({
+      externalId: "7602956",
+      priceBuyNow: 16200,
+      priceCurrent: null,
+      auctionEndAt: "",
+      auctionStage: "STOCK",
+    });
+    const carCall = calls.find((c) => c.url.includes("/api/v1/cars/7602956"));
+    expect(carCall?.auth).toBe("Bearer tok-a");
+    expect(carCall?.cookie).toContain("eCT/user=tok-a");
+    expect(r.note).toMatch(/Cenas no \/api\/v1\/cars/);
   });
 });
