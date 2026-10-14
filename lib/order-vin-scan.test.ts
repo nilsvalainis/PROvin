@@ -68,7 +68,9 @@ describe("pasūtījuma VIN SCAN ieraksts", () => {
     const sum = buildOrderVinScanSummary(rec);
     expect(sum?.found).toBe(1);
     expect(sum?.none).toBe(2);
-    expect(sum?.error).toBe(1);
+    // Cloudflare bloķēts bid.cars — neitrāls „Atvērt + importēt”, nevis kļūda.
+    expect(sum?.error).toBe(0);
+    expect(sum?.rows.find((r) => r.id === "bid_cars")).toMatchObject({ blocked: true, action: "open_import" });
     expect(sum?.noneCollapsedLabels).toEqual(["Regitra", "tjekbil.dk"]);
     const stat = sum?.rows.find((r) => r.id === "stat_vin");
     expect(stat).toMatchObject({
