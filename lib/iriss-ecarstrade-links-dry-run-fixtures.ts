@@ -4,7 +4,7 @@ import type { IrissEcarstradeDryRunRecord } from "@/lib/iriss-ecarstrade-links-d
 
 const NOW = "2026-10-14T00:00:00.000Z";
 
-/** Tipiski Nils filtri (Auto1/Autobid/Openlane/Mobile) bez produkcijas Blob. */
+/** Tipiski Nils filtri (Auto1/Autobid/Openlane; Mobile.de ET neņem vērā) bez produkcijas Blob. */
 export function ecarstradePreciseLinksDryRunRecords(): IrissEcarstradeDryRunRecord[] {
   return [
     {

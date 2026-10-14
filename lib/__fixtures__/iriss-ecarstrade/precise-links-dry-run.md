@@ -1,7 +1,7 @@
 # eCarsTrade precīzo saišu dry-run
 
 Produkcijas dati netiek rakstīti. Atjaunot ET palaižams pēc Nils apstiprinājuma.
-Šis saraksts ir no reprezentatīviem Auto1 / Autobid / Openlane / Mobile filtriem (fixtures). Dzīvais Blob šajā vidē nav pieejams; pēc merge Nils palaiž Atjaunot ET uz pasūtījumiem un radaru. Live ecarstrade.com 2026-10-14: mark[] value Volvo=68, Audi=5, BMW=7, Mercedes=45, Lexus=39, Toyota=66, Porsche=54; fuel[]=Diesel un category[]=SUV/Off-road Vehicle/Pickup Truck sakrīt ar HTML. future_api mark[]=68&model[]=1866 atdod XC60; dīzeļa filtrs izslēdz hibrīdus.
+Šis saraksts ir no reprezentatīviem Auto1 / Autobid / Openlane filtriem (fixtures). Mobile.de ET saitei neņem vērā. Dzīvais Blob šajā vidē nav pieejams; pēc merge Nils palaiž Atjaunot ET uz pasūtījumiem un radaru. Live ecarstrade.com 2026-10-14: mark[] value Volvo=68, Audi=5, BMW=7, Mercedes=45, Lexus=39, Toyota=66, Porsche=54; fuel[]=Diesel un category[]=SUV/Off-road Vehicle/Pickup Truck sakrīt ar HTML. future_api mark[]=68&model[]=1866 atdod XC60; dīzeļa filtrs izslēdz hibrīdus.
 
 - Pasūtījumi: 4
 - Radars / Meklētājs: 4
@@ -107,7 +107,7 @@ ET 3 avots: `https://autobid.de/en/search-results?brandId-brand=49&name-model=XC
 - **Auto1**
   - `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=A6&driveTypes=ALL_WHEEL&colors=BLACK&doorCount=5&equipment=navigation&excludedModels=Allroad&maxMileage=160000&fuelTypes=DIESEL&gearboxes=AUTOMATIC&bodyTypes=ESTATE&cubicCapacityFrom=2000&cubicCapacityTo=3000&firstRegistrationFrom=2017`
     - kritēriji: marka: Audi; modelis: A6 (id 55); gadi: 2017-…; nobraukums: …-160000 km; degviela: Diesel; kārba: Automatic; virsbūve: Estate Car; krāsa: Black; tilpums: 2000-3000 cm3; durvis: 5-…; piedziņa (post-filtrs): awd; aprīkojums (post-filtrs): navigation; izslēgts (post-filtrs): Allroad
-- **Mobile.de**
+- **Mobile.de (ET neņem vērā)**
   - `https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=DIESEL&minFirstRegistrationDate=2017&maxMileage=160000&transmission=AUTOMATIC`
     - kritēriji: marka: Audi; gadi: 2017-…; nobraukums: …-160000 km; degviela: Diesel; kārba: Automatic
 
@@ -116,10 +116,6 @@ ET 3 avots: `https://autobid.de/en/search-results?brandId-brand=49&name-model=XC
   - avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=A6&driveTypes=ALL_WHEEL&colors=BLACK&doorCount=5&equipment=navigation&excludedModels=Allroad&maxMileage=160000&fuelTypes=DIESEL&gearboxes=AUTOMATIC&bodyTypes=ESTATE&cubicCapacityFrom=2000&cubicCapacityTo=3000&firstRegistrationFrom=2017`
   - saite: `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&mileage_to=160000&fuel[]=Diesel&gearbox[]=Automatic&category[]=Estate%20Car&color[]=Black&engine_from=2000&engine_to=3000&doors_from=5&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER&iriss_drive=awd&iriss_need=navigation&iriss_exclude=Allroad`
   - kartēts: marka: Audi; modelis: A6 (id 55); gadi: 2017-…; nobraukums: …-160000 km; degviela: Diesel; kārba: Automatic; virsbūve: Estate Car; krāsa: Black; tilpums: 2000-3000 cm3; durvis: 5-…; piedziņa (post-filtrs): awd; aprīkojums (post-filtrs): navigation; izslēgts (post-filtrs): Allroad
-- ET 2 no 1 avota saišu:
-  - avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=DIESEL&minFirstRegistrationDate=2017&maxMileage=160000&transmission=AUTOMATIC`
-  - saite: `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&mileage_to=160000&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: Audi; modelis: A6 (id 55); gadi: 2017-…; nobraukums: …-160000 km; degviela: Diesel; kārba: Automatic
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
 
@@ -141,18 +137,6 @@ ET 1 avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=
 | aprīkojums | navigation | navigation |
 | izslēgts | Allroad | Allroad |
 | ET saite | - | `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&mileage_to=160000&fuel[]=Diesel&gearbox[]=Automatic&category[]=Estate%20Car&color[]=Black&engine_from=2000&engine_to=3000&doors_from=5&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER&iriss_drive=awd&iriss_need=navigation&iriss_exclude=Allroad` |
-
-ET 2 avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=DIESEL&minFirstRegistrationDate=2017&maxMileage=160000&transmission=AUTOMATIC`
-
-| Kritērijs | Izsoles saite | ET URL |
-|---|---|---|
-| marka | Audi | Audi |
-| modelis | - | A6 (id 55) |
-| gadi | 2017-… | 2017-… |
-| nobraukums | …-160000 km | …-160000 km |
-| degviela | Diesel | Diesel |
-| kārba | Automatic | Automatic |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&mileage_to=160000&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
 
 
 ### Pasūtījums: Māra / BMW 5/7 (tikai forma)
@@ -232,7 +216,7 @@ ET 1 avots: `https://autobid.de/en/search-results?brandId-brand=12&name-model=E%
 - **Auto1**
   - `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=A6&fuelTypes=DIESEL&firstRegistrationFrom=2017`
     - kritēriji: marka: Audi; modelis: A6 (id 55); gadi: 2017-…; degviela: Diesel
-- **Mobile.de**
+- **Mobile.de (ET neņem vērā)**
   - `https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=PETROL&minFirstRegistrationDate=2017`
     - kritēriji: marka: Audi; gadi: 2017-…; degviela: Petrol
 
@@ -241,10 +225,6 @@ ET 1 avots: `https://autobid.de/en/search-results?brandId-brand=12&name-model=E%
   - avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=A6&fuelTypes=DIESEL&firstRegistrationFrom=2017`
   - saite: `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&fuel[]=Diesel&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
   - kartēts: marka: Audi; modelis: A6 (id 55); gadi: 2017-…; degviela: Diesel
-- ET 2 no 1 avota saišu:
-  - avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=PETROL&minFirstRegistrationDate=2017`
-  - saite: `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&fuel[]=Petrol&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: Audi; modelis: A6 (id 55); gadi: 2017-…; degviela: Petrol
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
 
@@ -258,16 +238,6 @@ ET 1 avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=
 | degviela | Diesel | Diesel |
 | ET saite | - | `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&fuel[]=Diesel&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
 
-ET 2 avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=PETROL&minFirstRegistrationDate=2017`
-
-| Kritērijs | Izsoles saite | ET URL |
-|---|---|---|
-| marka | Audi | Audi |
-| modelis | - | A6 (id 55) |
-| gadi | 2017-… | 2017-… |
-| degviela | Petrol | Petrol |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&fuel[]=Petrol&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
-
 
 ### Radars: LEXUS/TOYOTA Openlane + Mobile kW
 
@@ -278,7 +248,7 @@ ET 2 avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=PETROL
 - **Openlane**
   - `https://www.openlane.eu/en/findcar?makes=lexus&makes=toyota&yearFrom=2018`
     - kritēriji: marka: Lexus, Toyota; gadi: 2018-…
-- **Mobile.de**
+- **Mobile.de (ET neņem vērā)**
   - `https://suchen.mobile.de/fahrzeuge/search.html?ms=15200&minPowerAsArray=150&maxPowerAsArray=200`
     - kritēriji: marka: Lexus; jauda: 150-200 kW
 
@@ -287,10 +257,6 @@ ET 2 avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=PETROL
   - avots: `https://www.openlane.eu/en/findcar?makes=lexus&makes=toyota&yearFrom=2018`
   - saite: `https://ecarstrade.com/search?mark[]=39&mark[]=66&year_from=2018&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
   - kartēts: marka: Lexus, Toyota; gadi: 2018-…
-- ET 2 no 1 avota saišu:
-  - avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=15200&minPowerAsArray=150&maxPowerAsArray=200`
-  - saite: `https://ecarstrade.com/search?mark[]=39&power_from=150&power_to=200&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: Lexus; jauda: 150-200 kW
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
 
@@ -302,14 +268,6 @@ ET 1 avots: `https://www.openlane.eu/en/findcar?makes=lexus&makes=toyota&yearFro
 | gadi | 2018-… | 2018-… |
 | ET saite | - | `https://ecarstrade.com/search?mark[]=39&mark[]=66&year_from=2018&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
 
-ET 2 avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=15200&minPowerAsArray=150&maxPowerAsArray=200`
-
-| Kritērijs | Izsoles saite | ET URL |
-|---|---|---|
-| marka | Lexus | Lexus |
-| jauda | 150-200 kW | 150-200 kW |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=39&power_from=150&power_to=200&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
-
 
 ### Radars: Porsche 176 kW Mobile.de
 
@@ -317,26 +275,23 @@ ET 2 avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=15200&minPowerAsA
 - brandModel: Porsche
 
 **Avotu saites**
-- **Mobile.de**
+- **Mobile.de (ET neņem vērā)**
   - `https://suchen.mobile.de/fahrzeuge/search.html?make=Porsche&minPowerAsArray=176&maxPowerAsArray=176&minMileage=10000&maxMileage=140000`
     - kritēriji: marka: Porsche; nobraukums: 10000-140000 km; jauda: 176-176 kW
 
 **Rezultāta eCarsTrade**
-- ET 1 no 1 avota saišu:
-  - avots: `https://suchen.mobile.de/fahrzeuge/search.html?make=Porsche&minPowerAsArray=176&maxPowerAsArray=176&minMileage=10000&maxMileage=140000`
-  - saite: `https://ecarstrade.com/search?mark[]=54&mileage_from=10000&mileage_to=140000&power_from=176&power_to=176&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: Porsche; nobraukums: 10000-140000 km; jauda: 176-176 kW
+- ET 1 no 0 avota saišu:
+  - saite: `https://ecarstrade.com/search?mark[]=54&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
+  - kartēts: marka: Porsche
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
 
-ET 1 avots: `https://suchen.mobile.de/fahrzeuge/search.html?make=Porsche&minPowerAsArray=176&maxPowerAsArray=176&minMileage=10000&maxMileage=140000`
+ET 1 avots: `(brandModel / forma)`
 
 | Kritērijs | Izsoles saite | ET URL |
 |---|---|---|
-| marka | Porsche | Porsche |
-| nobraukums | 10000-140000 km | 10000-140000 km |
-| jauda | 176-176 kW | 176-176 kW |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=54&mileage_from=10000&mileage_to=140000&power_from=176&power_to=176&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+| marka | - | Porsche |
+| ET saite | - | `https://ecarstrade.com/search?mark[]=54&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
 
 
 ### Radars: Volvo XC60 Mobile.de ms=25100
@@ -345,24 +300,21 @@ ET 1 avots: `https://suchen.mobile.de/fahrzeuge/search.html?make=Porsche&minPowe
 - brandModel: Volvo XC60
 
 **Avotu saites**
-- **Mobile.de**
+- **Mobile.de (ET neņem vērā)**
   - `https://suchen.mobile.de/fahrzeuge/search.html?ms=25100;29;;&minMileage=10000&maxMileage=140000&fuels=DIESEL`
     - kritēriji: marka: Volvo; modelis: XC60 (id 1866); nobraukums: 10000-140000 km; degviela: Diesel
 
 **Rezultāta eCarsTrade**
-- ET 1 no 1 avota saišu:
-  - avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=25100;29;;&minMileage=10000&maxMileage=140000&fuels=DIESEL`
-  - saite: `https://ecarstrade.com/search?mark[]=68&model[]=1866&mileage_from=10000&mileage_to=140000&fuel[]=Diesel&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
-  - kartēts: marka: Volvo; modelis: XC60 (id 1866); nobraukums: 10000-140000 km; degviela: Diesel
+- ET 1 no 0 avota saišu:
+  - saite: `https://ecarstrade.com/search?mark[]=68&model[]=1866&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
+  - kartēts: marka: Volvo; modelis: XC60 (id 1866)
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
 
-ET 1 avots: `https://suchen.mobile.de/fahrzeuge/search.html?ms=25100;29;;&minMileage=10000&maxMileage=140000&fuels=DIESEL`
+ET 1 avots: `(brandModel / forma)`
 
 | Kritērijs | Izsoles saite | ET URL |
 |---|---|---|
-| marka | Volvo | Volvo |
-| modelis | XC60 (id 1866) | XC60 (id 1866) |
-| nobraukums | 10000-140000 km | 10000-140000 km |
-| degviela | Diesel | Diesel |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=68&model[]=1866&mileage_from=10000&mileage_to=140000&fuel[]=Diesel&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+| marka | - | Volvo |
+| modelis | - | XC60 (id 1866) |
+| ET saite | - | `https://ecarstrade.com/search?mark[]=68&model[]=1866&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |

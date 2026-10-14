@@ -59,7 +59,7 @@ describe("iriss scan eCarsTrade link backfill", () => {
     expect(preview.added[0]).toContain("mark[]=66");
   });
 
-  it("adds Audi/VW/Porsche 176kw from brandModel and Mobile filters", () => {
+  it("adds Audi/VW/Porsche 176kw from brandModel and ignores Mobile.de filters", () => {
     const preview = previewEcarstradeLinksForScan(
       rec({
         brandModel: "Audi/VW/Porsche 176kw",
@@ -68,6 +68,7 @@ describe("iriss scan eCarsTrade link backfill", () => {
         listingLinkMobile: ["https://suchen.mobile.de/fahrzeuge/search.html?minPowerAsArray=176&maxPowerAsArray=176"],
       }),
     );
+    expect(preview.plans.every((p) => p.sourceUrls.every((u) => !/mobile\.de/i.test(u)))).toBe(true);
     expect(preview.added.some((u) => u.includes("mark[]=5") && u.includes("mark[]=67") && u.includes("mark[]=54"))).toBe(true);
     expect(preview.added.some((u) => u.includes("power_from=176") && u.includes("power_to=176"))).toBe(true);
   });
@@ -98,9 +99,37 @@ describe("iriss scan eCarsTrade link backfill", () => {
         ],
       }),
     );
-    expect(split.generated.length).toBe(2);
-    expect(split.generated.some((u) => u.includes("fuel[]=Diesel"))).toBe(true);
-    expect(split.generated.some((u) => u.includes("fuel[]=Petrol"))).toBe(true);
+    expect(split.generated).toHaveLength(1);
+    expect(split.generated[0]).toContain("fuel[]=Diesel");
+    expect(split.generated[0]).not.toContain("fuel[]=Petrol");
+    expect(split.generated[0]).toContain("year_from=2018");
+    expect(split.generated[0]).not.toContain("year_from=2019");
+    expect(split.plans.every((p) => p.sourceUrls.every((u) => !/mobile\.de/i.test(u)))).toBe(true);
+  });
+
+  it("does not generate ET from mobile.de-only links or a mobile.de URL pasted into Auto1", () => {
+    const mobileOnly = previewEcarstradeLinksForScan(
+      rec({
+        brandModel: "Audi A6",
+        listingLinkMobile: [
+          "https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=PETROL&minFirstRegistrationDate=2017",
+        ],
+      }),
+    );
+    expect(mobileOnly.plans.every((p) => p.sourceUrls.length === 0)).toBe(true);
+    expect(mobileOnly.generated.join(" ")).not.toContain("fuel[]=Petrol");
+    expect(mobileOnly.generated.join(" ")).not.toContain("year_from=2017");
+
+    const pasted = previewEcarstradeLinksForScan(
+      rec({
+        brandModel: "Audi A6",
+        listingLinkAuto1: [
+          "https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=PETROL&minFirstRegistrationDate=2017",
+        ],
+      }),
+    );
+    expect(pasted.plans.every((p) => p.sourceUrls.every((u) => !/mobile\.de/i.test(u)))).toBe(true);
+    expect(pasted.generated.join(" ")).not.toContain("fuel[]=Petrol");
   });
 
   it("replace overwrites an old coarse eCarsTrade URL", () => {

@@ -533,3 +533,13 @@ export function isSingleVehicleListingUrl(raw: string): boolean {
     return false;
   }
 }
+
+/** Nils: Mobile.de filtrus ET saitei neņem vērā, arī ja ielīmēti Auto1/Autobid/Openlane laukā. */
+export function isMobileDeListingUrl(raw: string): boolean {
+  try {
+    const host = new URL(raw).hostname.toLowerCase();
+    return host === "mobile.de" || host.endsWith(".mobile.de");
+  } catch {
+    return false;
+  }
+}

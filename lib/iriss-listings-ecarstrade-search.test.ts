@@ -5,7 +5,12 @@ import {
   resolveEcarstradeModel,
   resolveMakeModelFromBrand,
 } from "@/lib/iriss-listings-ecarstrade-catalog";
-import { isSingleVehicleListingUrl, parseMobileDeColonRange, parseZeroUnboundedRange } from "@/lib/iriss-listings-ecarstrade-criteria";
+import {
+  isMobileDeListingUrl,
+  isSingleVehicleListingUrl,
+  parseMobileDeColonRange,
+  parseZeroUnboundedRange,
+} from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
   ecarstradeSearchUrl,
   fillFilterGaps,
@@ -410,6 +415,9 @@ describe("eCarsTrade search mapper", () => {
     expect(isSingleVehicleListingUrl("https://www.openlane.eu/en/findcar?auctionId=1234567")).toBe(true);
     expect(isSingleVehicleListingUrl("https://www.openlane.eu/en/car/1234567")).toBe(true);
     expect(isSingleVehicleListingUrl("https://www.openlane.eu/en/findcar?makes=volvo&models=xc60")).toBe(false);
+    expect(isMobileDeListingUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=1900")).toBe(true);
+    expect(isMobileDeListingUrl("https://www.mobile.de/fahrzeuge/search.html")).toBe(true);
+    expect(isMobileDeListingUrl("https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI")).toBe(false);
   });
 
   it("ignores Auto1 id-only vehicle links and does not widen exact year/cm3/kW", () => {
@@ -463,7 +471,7 @@ describe("eCarsTrade search mapper", () => {
     expect(auto1?.url).not.toContain("mileage_to=180000");
   });
 
-  it("fills A6 from brandModel onto Mobile.de Audi-only ms=1900 so ET does not list extra models", () => {
+  it("does not copy Mobile.de filters into ET; Audi A6 comes from brandModel only", () => {
     const plans = planEcarstradeSearchUrls({
       id: "audi-a6-mobile",
       brandModel: "Audi A6",
@@ -476,12 +484,13 @@ describe("eCarsTrade search mapper", () => {
       listingLinkEcarstrade: [""],
     });
     expect(plans).toHaveLength(1);
+    expect(plans[0]?.sourceUrls).toEqual([]);
     expect(plans[0]?.filter.makeIds).toEqual([5]);
     expect(plans[0]?.filter.modelId).toBe(55);
     expect(plans[0]?.filter.modelName).toBe("A6");
     expect(plans[0]?.url).toContain("model[]=55");
-    expect(plans[0]?.url).toContain("fuel[]=Petrol");
-    expect(plans[0]?.url).toContain("year_from=2017");
+    expect(plans[0]?.url).not.toContain("fuel[]=Petrol");
+    expect(plans[0]?.url).not.toContain("year_from=2017");
   });
 
   it("plans Opel Vivaro/Traffic without Porsche and with Openlane years", () => {
@@ -504,6 +513,7 @@ describe("eCarsTrade search mapper", () => {
     expect(plans.some((p) => p.filter.makeNames.includes("Opel"))).toBe(true);
     expect(plans.some((p) => p.filter.yearFrom === 2009 && p.filter.yearTo === 2014)).toBe(true);
     expect(plans.some((p) => p.filter.fuels.includes("Diesel"))).toBe(true);
+    expect(plans.every((p) => p.sourceUrls.every((u) => !/mobile\.de/i.test(u)))).toBe(true);
   });
 
   it("adds a Jeep search next to Mitsubishi Pajero and splits MAN/Crafter/Sprinter", () => {
@@ -799,6 +809,7 @@ describe("eCarsTrade search mapper", () => {
     const mit = jeepPajero.find((p) => p.filter.makeNames.includes("Mitsubishi"));
     expect(mit?.filter.modelId).toBe(897);
     expect(mit?.url).toContain("model[]=897");
+    expect(jeepPajero.every((p) => p.sourceUrls.every((u) => !/mobile\.de/i.test(u)))).toBe(true);
 
     const e220 = planEcarstradeSearchUrls({
       id: "ab-e220",

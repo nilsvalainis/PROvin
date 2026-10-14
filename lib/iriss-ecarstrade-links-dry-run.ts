@@ -75,7 +75,7 @@ export function formatEcarstradeDryRunEntry(rec: IrissEcarstradeDryRunRecord): s
     ...sourceLinkBlock("Auto1", rec.listingLinkAuto1),
     ...sourceLinkBlock("Openlane", rec.listingLinkOpenline),
     ...sourceLinkBlock("Autobid", rec.listingLinkAutobid),
-    ...sourceLinkBlock("Mobile.de", rec.listingLinkMobile),
+    ...sourceLinkBlock("Mobile.de (ET neņem vērā)", rec.listingLinkMobile),
   ];
   if (src.length) lines.push(...src);
   else lines.push("- (nav Auto1 / Openlane / Autobid / Mobile saišu; ET no brandModel / formas)");
@@ -195,7 +195,7 @@ export function formatEcarstradeDryRunReport(
   const flagged = records.filter((r) => planEcarstradeSearchUrls(r).some((p) => p.unmapped.length > 0));
   const intro = opts?.realBackup
     ? "Šis saraksts ir no IRISS pasūtījumu backup (anonymizēts: bez vārda, e-pasta, tālruņa). Produkcijas Blob netiek rakstīts."
-    : "Šis saraksts ir no reprezentatīviem Auto1 / Autobid / Openlane / Mobile filtriem (fixtures). Dzīvais Blob šajā vidē nav pieejams; pēc merge Nils palaiž Atjaunot ET uz pasūtījumiem un radaru. Live ecarstrade.com 2026-10-14: mark[] value Volvo=68, Audi=5, BMW=7, Mercedes=45, Lexus=39, Toyota=66, Porsche=54; fuel[]=Diesel un category[]=SUV/Off-road Vehicle/Pickup Truck sakrīt ar HTML. future_api mark[]=68&model[]=1866 atdod XC60; dīzeļa filtrs izslēdz hibrīdus.";
+    : "Šis saraksts ir no reprezentatīviem Auto1 / Autobid / Openlane filtriem (fixtures). Mobile.de ET saitei neņem vērā. Dzīvais Blob šajā vidē nav pieejams; pēc merge Nils palaiž Atjaunot ET uz pasūtījumiem un radaru. Live ecarstrade.com 2026-10-14: mark[] value Volvo=68, Audi=5, BMW=7, Mercedes=45, Lexus=39, Toyota=66, Porsche=54; fuel[]=Diesel un category[]=SUV/Off-road Vehicle/Pickup Truck sakrīt ar HTML. future_api mark[]=68&model[]=1866 atdod XC60; dīzeļa filtrs izslēdz hibrīdus.";
   const parts = [
     "# eCarsTrade precīzo saišu dry-run",
     "",
