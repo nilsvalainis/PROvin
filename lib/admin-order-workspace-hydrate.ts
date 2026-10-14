@@ -1,6 +1,6 @@
 /**
- * Vienkārša admin darba zonas ielāde: ja pārlūkā ir saglabāts melnraksts — tikai tas.
- * Servera/Blob dati tiek lietoti tikai pirmajā apmeklējumā (ja localStorage vēl nav).
+ * Admin darba zonas ielāde: uzvar jaunākais `savedAt` starp pārlūka melnrakstu, rezerves kopiju un serveri
+ * (K3 — vecs local vairs nepārraksta jaunāku servera versiju no citas ierīces).
  */
 import {
   createDefaultSourceBlocks,
@@ -64,37 +64,31 @@ export function resolveOrderWorkspaceHydration(args: {
   });
   const localRaw = args.localRaw?.trim() ? args.localRaw : args.localRawLegacyV2?.trim() ? args.localRawLegacyV2 : null;
 
-  if (localRaw) {
-    const hydrated = hydrateWorkspaceFromStorage(localRaw);
-    if (hydrated) {
-      return {
-        source: "local",
-        hydrated: withOrderDefaults(hydrated),
-        workspaceRevision: revisionFromRaw(localRaw),
-      };
-    }
-  }
-
+  // K3: uzvar jaunākais `savedAt` (local / backup / server). Vienāds vai nezināms laiks → local > backup > server (vecā secība).
   const backupPick = pickNewestBackupSnapshotRaw(args.backupRaw);
+  const candidates: { source: "local" | "backup" | "server"; raw: string; savedAtMs: number; rank: number }[] = [];
+  if (localRaw) candidates.push({ source: "local", raw: localRaw, savedAtMs: parseWorkspaceSnapshotSavedAtMs(localRaw), rank: 0 });
   if (backupPick) {
-    const hydrated = hydrateWorkspaceFromStorage(backupPick.data);
-    if (hydrated) {
-      return {
-        source: "backup",
-        hydrated: withOrderDefaults(hydrated),
-        workspaceRevision: revisionFromRaw(backupPick.data),
-      };
-    }
+    candidates.push({
+      source: "backup",
+      raw: backupPick.data,
+      savedAtMs: Math.max(backupPick.savedAtMs, parseWorkspaceSnapshotSavedAtMs(backupPick.data)),
+      rank: 1,
+    });
   }
-
   if (args.serverWorkspaceJson?.trim()) {
-    const hydrated = hydrateWorkspaceFromStorage(args.serverWorkspaceJson);
+    candidates.push({
+      source: "server",
+      raw: args.serverWorkspaceJson,
+      savedAtMs: parseWorkspaceSnapshotSavedAtMs(args.serverWorkspaceJson),
+      rank: 2,
+    });
+  }
+  candidates.sort((a, b) => b.savedAtMs - a.savedAtMs || a.rank - b.rank);
+  for (const c of candidates) {
+    const hydrated = hydrateWorkspaceFromStorage(c.raw);
     if (hydrated) {
-      return {
-        source: "server",
-        hydrated: withOrderDefaults(hydrated),
-        workspaceRevision: revisionFromRaw(args.serverWorkspaceJson),
-      };
+      return { source: c.source, hydrated: withOrderDefaults(hydrated), workspaceRevision: revisionFromRaw(c.raw) };
     }
   }
 

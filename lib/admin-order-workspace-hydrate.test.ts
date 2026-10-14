@@ -1,3 +1,4 @@
+import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { describe, expect, it } from "vitest";
 import { emptyVendorAvotuBlock, createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { serializeOrderWorkspaceSnapshotFromRef } from "@/lib/admin-order-workspace-persist";
@@ -24,18 +25,35 @@ function snapshotWithAutodnaComment(comment: string, savedAt: string): string {
 }
 
 describe("resolveOrderWorkspaceHydration", () => {
-  it("always uses localStorage when present, never server", () => {
+  it("K3: jaunāks serveris uzvar vecu local (cita ierīce)", () => {
     const local = snapshotWithAutodnaComment("Mans lokālais teksts", "2026-06-01T10:00:00.000Z");
     const server = snapshotWithAutodnaComment("Servera teksts", "2026-06-10T12:00:00.000Z");
+    const resolved = resolveOrderWorkspaceHydration({ localRaw: local, localRawLegacyV2: null, backupRaw: null, serverWorkspaceJson: server });
+    expect(resolved.source).toBe("server");
+    expect(resolved.hydrated.sourceBlocks.autodna.comments).toContain("Servera");
+  });
+
+  it("K3: jaunāks local (nesaglabāts) uzvar vecāku serveri", () => {
+    const local = snapshotWithAutodnaComment("Mans lokālais teksts", "2026-06-10T12:00:00.000Z");
+    const server = snapshotWithAutodnaComment("Servera teksts", "2026-06-01T10:00:00.000Z");
+    const resolved = resolveOrderWorkspaceHydration({ localRaw: local, localRawLegacyV2: null, backupRaw: null, serverWorkspaceJson: server });
+    expect(resolved.source).toBe("local");
+    expect(resolved.hydrated.sourceBlocks.autodna.comments).toContain("Mans lokālais");
+  });
+
+  it("K3: vienāds laiks → local (vecā secība); saturs (raw/PDF lauki) nemainīts", () => {
+    const t = "2026-06-10T12:00:00.000Z";
+    const local = snapshotWithAutodnaComment("Mans lokālais teksts", t);
     const resolved = resolveOrderWorkspaceHydration({
       localRaw: local,
       localRawLegacyV2: null,
       backupRaw: null,
-      serverWorkspaceJson: server,
+      serverWorkspaceJson: snapshotWithAutodnaComment("Servera teksts", t),
     });
     expect(resolved.source).toBe("local");
-    expect(resolved.hydrated.sourceBlocks.autodna.comments).toContain("Mans lokālais");
-    expect(resolved.hydrated.sourceBlocks.autodna.comments).not.toContain("Servera");
+    const direct = hydrateWorkspaceFromStorage(local)!;
+    expect(resolved.hydrated.sourceBlocks).toEqual(direct.sourceBlocks);
+    expect(resolved.hydrated.iriss).toBe(direct.iriss);
   });
 
   it("falls back to server only when no local", () => {
