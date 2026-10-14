@@ -18,7 +18,8 @@ describe("free VIN SCAN avoti", () => {
   it("automātiskais saraksts ir kataloga avoti bez maksas pirkumiem un JoJ $0.50", () => {
     const free = freeVinScanSourceIds();
     expect(free).not.toContain("joj_copart_iaai");
-    expect(free).toEqual(VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai"));
+    expect(free).not.toContain("speckr");
+    expect(free).toEqual(VIN_SCAN_SOURCE_IDS.filter((id) => !isPaidVinScanSourceId(id)));
     expect(free).toContain("stat_vin");
     expect(free).toContain("csdd");
     expect(isMeteredVinScanSourceId("joj_copart_iaai")).toBe(true);
@@ -52,15 +53,13 @@ describe("free VIN SCAN avoti", () => {
     expect(run).not.toMatch(/purchaseCarVerticalReport/);
   });
 
-  it("JoJ $0.50 tikai pie explicit scan vai jauna PRO, ne MINI/draft", () => {
+  it("automātiskais scan neiekļauj maksas avotus (JoJ / paid sourceIds)", () => {
     const free = freeVinScanSourceIds();
     expect(vinScanAutoSourceIds({})).toEqual(free);
-    expect(vinScanAutoSourceIds({ isPro: false })).not.toContain("joj_copart_iaai");
-    expect(vinScanAutoSourceIds({ isPro: true })).toContain("joj_copart_iaai");
-    expect(vinScanAutoSourceIds({ includeMetered: true })).toContain("joj_copart_iaai");
     expect(vinScanAutoSourceIds({ sourceIds: ["csdd"] })).toEqual(["csdd"]);
-    expect(vinScanAutoSourceIds({ sourceIds: ["joj_copart_iaai"] })).toEqual(["joj_copart_iaai"]);
-    expect(vinScanAutoSourceIds({ sourceIds: ["carvertical"], isPro: true })).toContain("joj_copart_iaai");
+    expect(vinScanAutoSourceIds({ sourceIds: ["joj_copart_iaai"] })).toEqual(free);
+    expect(vinScanAutoSourceIds({ sourceIds: ["speckr", "csdd"] })).toEqual(["csdd"]);
+    expect(vinScanAutoSourceIds({ sourceIds: ["carvertical"] })).toEqual(free);
   });
 
   it("melnraksta persistēšana saglabā vinScan blakus autoIngest", () => {

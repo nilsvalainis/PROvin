@@ -19,6 +19,7 @@ type Props = {
   orderVin: string;
   sessionId?: string;
   editable: boolean;
+  block: AsvBlockState;
   lastFetchedVin: string;
   lastReportId?: string;
   hasMappedData: boolean;
@@ -31,6 +32,7 @@ export function AdminAsvIngestBar({
   orderVin,
   sessionId = "",
   editable,
+  block: value,
   lastFetchedVin,
   lastReportId = "",
   hasMappedData,
@@ -78,6 +80,7 @@ export function AdminAsvIngestBar({
           sessionId: sessionId || undefined,
           reportId:
             lastReportId && cachedForVin ? lastReportId : undefined,
+          block: value,
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {

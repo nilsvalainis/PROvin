@@ -10,6 +10,7 @@ import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton"
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
 import { AdminAsvIngestBar } from "@/components/admin/AdminAsvIngestBar";
+import { AdminJojIngestBar } from "@/components/admin/AdminJojIngestBar";
 import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
@@ -42,6 +43,7 @@ import {
 } from "@/lib/asv-report";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import { ADMIN_SOURCE_DATA_TABLE_CLASS } from "@/lib/admin-source-data-table";
+import { appendAsvPhotoGroups } from "@/lib/joj-asv-merge";
 
 const ARIA = "ASV vēsture";
 
@@ -71,6 +73,7 @@ type Props = {
   onPhotoGroupsStructuralCommit?: (next: AsvBlockState["photoGroups"]) => void | Promise<void>;
   onGenerateAsvPdf?: () => void;
   orderVin?: string;
+  listingUrl?: string;
 };
 
 export function AdminAsvSourceBlock({
@@ -87,6 +90,7 @@ export function AdminAsvSourceBlock({
   onPhotoGroupsStructuralCommit,
   onGenerateAsvPdf,
   orderVin = "",
+  listingUrl = "",
 }: Props) {
   const editable = !readOnly && !disabled;
   const [selectedProducts, setSelectedProducts] = useState<AsvProductId[]>([...ASV_DEFAULT_PRODUCT_IDS]);
@@ -187,6 +191,7 @@ export function AdminAsvSourceBlock({
             orderVin={orderVin}
             sessionId={sessionId}
             editable={editable}
+            block={value}
             lastFetchedVin={value.lastFetchedVin}
             lastReportId={value.reportId}
             hasMappedData={odometerCount > 0 || (value.checks ?? []).length > 0}
@@ -194,14 +199,19 @@ export function AdminAsvSourceBlock({
             onSelectedProductsChange={setSelectedProducts}
             onFetched={(next) =>
               onChange({
-                ...value,
                 ...next,
                 comments: value.comments,
-                photoGroups:
-                  next.photoGroups && next.photoGroups.length > 0 ? next.photoGroups : value.photoGroups,
-                photos: next.photos && next.photos.length > 0 ? next.photos : value.photos,
               })
             }
+          />
+
+          <AdminJojIngestBar
+            orderVin={orderVin}
+            listingUrl={listingUrl}
+            sessionId={sessionId}
+            editable={editable}
+            value={value}
+            onChange={onChange}
           />
 
           <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-4">

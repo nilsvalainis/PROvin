@@ -1,15 +1,16 @@
 /**
  * Ātrie vērtējumi un VIN SCAN: tas pats avotu katalogs un tās pašas zondes.
  * Bezmaksas seed (CSDD / sludinājums / DK-EE-SE) paliek atsevišķi un aizpilda
- * darba zonas blokus; VIN SCAN indikatori nāk no `runVinScan` ar pilno katalogu.
+ * darba zonas blokus; VIN SCAN indikatori nāk no `runVinScan` (tikai bezmaksas avoti).
  */
 
-import { vinScanPipelineSourceIds, type VinScanSourceId } from "@/lib/vin-scan/catalog";
+import type { VinScanSourceId } from "@/lib/vin-scan/catalog";
+import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
 import { parseVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { nordicVinSearchLinks, type NordicVinSearchLink } from "@/lib/vin-scan/vin-decode";
 
 export function quickEvalVinScanSourceIds(): VinScanSourceId[] {
-  return vinScanPipelineSourceIds();
+  return freeVinScanSourceIds();
 }
 
 export function quickEvalVinScanPlatesFromCsdd(registrationNumber?: string | null): VinScanPlates {

@@ -406,11 +406,12 @@ export function isVinScanBrowserId(v: string): v is VinScanBrowserId {
   return (VIN_SCAN_BROWSER_IDS as readonly string[]).includes(v);
 }
 
+/** VIN SCAN UI un POST noklusējums: tikai bezmaksas avoti (bez JoJ / Speckr u.c. maksas API). */
 export function defaultVinScanSourceIds(): VinScanSourceId[] {
-  return [...VIN_SCAN_SOURCE_IDS];
+  return vinScanPipelineSourceIds();
 }
 
-/** Ātrie vērtējumi un bezmaksas auto-scan: bez JoJ $0.50. VIN SCAN lapa lieto `defaultVinScanSourceIds`. */
+/** Ātrie vērtējumi un bezmaksas auto-scan: bez JoJ $0.50. Speckr tikai manuāli auto_records blokā. */
 export function vinScanPipelineSourceIds(): VinScanSourceId[] {
   return VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai");
 }
