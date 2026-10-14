@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
 
-import { AdminVinScanResultCards } from "@/components/admin/AdminVinScanResultCards";
+import dynamic from "next/dynamic";
+
+// Rezultātu kartītes vajag tikai pēc pārbaudes — atsevišķs gabals, nav sākuma JS.
+const AdminVinScanResultCards = dynamic(
+  () => import("@/components/admin/AdminVinScanResultCards").then((m) => m.AdminVinScanResultCards),
+  { ssr: false },
+);
 import { isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl } from "@/lib/vin-scan/catalog";
 import { applyFinlandLink } from "@/lib/vin-scan/finland-link";
@@ -272,6 +278,7 @@ export function AdminVinScanPanel({
   scanNonce = 0,
   scanForce = false,
   onSnapshot,
+  historyOpen = false,
 }: {
   vin: string;
   plates: VinScanPlates;
@@ -279,6 +286,8 @@ export function AdminVinScanPanel({
   scanNonce?: number;
   scanForce?: boolean;
   onSnapshot?: (snapshot: VinScanPanelSnapshot) => void;
+  /** Iepriekšējās pārbaudes — ielādē un rāda tikai, kad atvērts. */
+  historyOpen?: boolean;
 }) {
   const clean = normalizeVin(vin);
   const valid = isValidVin(clean);
@@ -346,13 +355,14 @@ export function AdminVinScanPanel({
   }, [clean, valid]);
 
   useEffect(() => {
+    if (!historyOpen) return;
     void fetch("/api/admin/vin-scan?history=1", { credentials: "include" })
       .then((res) => res.json())
       .then((data: { entries?: HistoryEntry[] }) => {
         if (Array.isArray(data?.entries)) setHistory(data.entries.slice(0, 12));
       })
       .catch(() => undefined);
-  }, [scannedAt]);
+  }, [scannedAt, historyOpen]);
 
   const displayById = useMemo(() => {
     const list = applyFinlandLink(Object.values(byId), plates);
@@ -525,8 +535,9 @@ export function AdminVinScanPanel({
           ) : null}
         </div>
       ) : null}
-      {history.length > 0 ? (
-        <div className="mx-2 mt-2 mb-1 flex flex-wrap gap-1">
+      {historyOpen ? (
+        <div className="mx-2 mt-2 mb-1 flex flex-wrap gap-1" aria-label="Iepriekšējās pārbaudes">
+          {history.length === 0 ? <span className="text-[11px] text-[#86868b]">Vēsture tukša vai ielādējas…</span> : null}
           {history.map((entry) => (
             <a
               key={`${entry.vin}-${entry.scannedAt}`}
@@ -617,7 +628,7 @@ export function AdminVinScanPanel({
           );
         })}
       </ul>
-      <AdminVinScanResultCards rows={rows} />
+      {rows.length > 0 ? <AdminVinScanResultCards rows={rows} /> : null}
     </section>
   );
 }

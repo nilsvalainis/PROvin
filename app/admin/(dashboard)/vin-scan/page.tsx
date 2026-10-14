@@ -1,7 +1,8 @@
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminVinScanPageClient } from "@/components/admin/AdminVinScanPageClient";
 import { normalizeVin } from "@/lib/order-field-validation";
-import { AdminSourceHealthStrip, type SourceHealthItem } from "@/components/admin/AdminSourceHealthStrip";
+import { Suspense } from "react";
+import { AdminSourceHealthCompact, type SourceHealthItem } from "@/components/admin/AdminSourceHealthStrip";
 import { readSourceHealth } from "@/lib/source-health-store";
 import { VIN_SCAN_CATALOG } from "@/lib/vin-scan/catalog";
 
@@ -30,13 +31,6 @@ export default async function AdminVinScanPage({
   const sp = searchParams ? await searchParams : undefined;
   /** LIST kartīte: `/admin/vin-scan?vin=` aizpilda lauku; klients palaiž skenēšanu, ja VIN derīgs. */
   const initialVin = normalizeVin(sp?.vin ?? "");
-  const health = await readSourceHealth();
-  const primaryIds = new Set(PRIMARY_SOURCES.map((x) => x.id));
-  const others: SourceHealthItem[] = VIN_SCAN_CATALOG.filter((c) => !primaryIds.has(c.id) && health.sources[c.id]).map((c) => ({
-    id: c.id,
-    label: c.label,
-  }));
-
   return (
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu>
@@ -44,8 +38,25 @@ export default async function AdminVinScanPage({
           VIN pārbaude
         </h1>
       </AdminDashboardHeaderWithMenu>
-      <AdminSourceHealthStrip doc={health} items={[...PRIMARY_SOURCES, ...others]} />
-      <AdminVinScanPageClient initialVin={initialVin} />
+      <AdminVinScanPageClient
+        initialVin={initialVin}
+        footer={
+          // Straumēts: lapa neatgaida Blob nolasīšanu pirms pirmā zīmējuma.
+          <Suspense fallback={<p className="text-[11px] text-[#86868b]">Avotu stāvoklis…</p>}>
+            <SourceHealthSection />
+          </Suspense>
+        }
+      />
     </div>
   );
+}
+
+async function SourceHealthSection() {
+  const health = await readSourceHealth();
+  const primaryIds = new Set(PRIMARY_SOURCES.map((x) => x.id));
+  const others: SourceHealthItem[] = VIN_SCAN_CATALOG.filter((c) => !primaryIds.has(c.id) && health.sources[c.id]).map((c) => ({
+    id: c.id,
+    label: c.label,
+  }));
+  return <AdminSourceHealthCompact doc={health} items={[...PRIMARY_SOURCES, ...others]} />;
 }
