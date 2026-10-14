@@ -366,6 +366,7 @@ export function AdminVendorAvotuSourceBlock({
             </p>
             <p className="mb-1.5 text-[10px] text-slate-500">
               Pēc ielasīšanas izslēgti. Atzīmē PDF, lai rādītu laikposma joslā. Var labot, dzēst vai atstāt ārā.
+              Sludinājuma, izsoles un vēsturiskās cenas rindas nav fiziska valstu maiņa.
             </p>
             <div className="w-full min-w-0 overflow-x-auto rounded-lg border border-slate-200/90 bg-gradient-to-b from-slate-50/50 to-white shadow-[0_1px_8px_rgba(15,23,42,0.04)]">
               <table className="w-full min-w-[420px] border-collapse text-[11px]">

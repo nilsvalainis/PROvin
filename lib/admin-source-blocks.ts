@@ -13,6 +13,10 @@ import {
   type CarVerticalTimelineRow,
 } from "@/lib/carvertical-pdf-parse";
 import {
+  isVendorTimelineListingRecord,
+  VENDOR_TIMELINE_LISTING_AI_NOTE,
+} from "@/lib/vendor-timeline-listing";
+import {
   AUTODNA_LV_HOME_URL,
   AUTORECORDS_BASE_URL,
   CARINFO_HOME_URL,
@@ -1685,7 +1689,10 @@ export function vendorAvotuBlockToPlainText(b: VendorAvotuBlockState | null | un
   if (timeline.length > 0) {
     lines.push(CARVERTICAL_TIMELINE_TITLE);
     for (const r of timeline) {
-      lines.push([r.date, r.country, r.description].join("\t"));
+      const listingNote = isVendorTimelineListingRecord(r.description)
+        ? `\t[${VENDOR_TIMELINE_LISTING_AI_NOTE}]`
+        : "";
+      lines.push(`${[r.date, r.country, r.description].join("\t")}${listingNote}`);
     }
   }
   const checklistTxt = formatSourcePdfChecklistForPdf(safe.pdfChecklist);
@@ -1767,6 +1774,11 @@ export type ClientManualVendorBlockPdf = {
   comments: string;
   pdfChecklist?: SourcePdfChecklist;
   vehicleHistoryTimeline?: CarVerticalTimelineRow[];
+  /**
+   * Sludinājuma / izsoles laikposma rindas arī tad, ja PDF karodziņš ir izslēgts.
+   * Tikai valstu maiņas loģikai: odometra valsts no sludinājuma nav fiziska pārvietošanās.
+   */
+  listingCountryHints?: Array<{ date: string; country: string; odometer?: string }>;
   damageDetails?: CarVerticalDamageDetailRow[];
   /** AutoDNA / CarVertical iekopētais RAW — zonu hidratācijai, netiek drukāts. */
   sourceRaw?: string;
@@ -1787,6 +1799,21 @@ export type ClientManualLtabBlockPdf = {
   photoGroups?: SourceBlockPhotoGroup[];
 };
 
+function listingCountryHintsFromTimeline(
+  rows: CarVerticalTimelineRow[] | undefined,
+): NonNullable<ClientManualVendorBlockPdf["listingCountryHints"]> {
+  const out: NonNullable<ClientManualVendorBlockPdf["listingCountryHints"]> = [];
+  for (const r of rows ?? []) {
+    if (!carVerticalTimelineRowHasData(r) || !isVendorTimelineListingRecord(r.description)) continue;
+    out.push({
+      date: r.date,
+      country: r.country,
+      ...(r.odometer?.trim() ? { odometer: r.odometer } : {}),
+    });
+  }
+  return out;
+}
+
 export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientManualVendorBlockPdf[] {
   const out: ClientManualVendorBlockPdf[] = [];
   for (const k of LOSS_VENDOR_KEYS) {
@@ -1801,7 +1828,11 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       ...(sourcePdfChecklistHasAny(b.pdfChecklist) ? { pdfChecklist: b.pdfChecklist } : {}),
       ...(() => {
         const timeline = (b.vehicleHistoryTimeline ?? []).filter(carVerticalTimelineRowInPdf);
-        return timeline.length > 0 ? { vehicleHistoryTimeline: timeline } : {};
+        const listingCountryHints = listingCountryHintsFromTimeline(b.vehicleHistoryTimeline);
+        return {
+          ...(timeline.length > 0 ? { vehicleHistoryTimeline: timeline } : {}),
+          ...(listingCountryHints.length > 0 ? { listingCountryHints } : {}),
+        };
       })(),
       ...((b.damageDetails ?? []).length > 0 ? { damageDetails: b.damageDetails } : {}),
       ...(() => {
@@ -1863,7 +1894,11 @@ export function toPdfManualVendorBlocks(blocks: WorkspaceSourceBlocks): ClientMa
       ...(sourcePdfChecklistHasAny(citi.pdfChecklist) ? { pdfChecklist: citi.pdfChecklist } : {}),
       ...(() => {
         const timeline = (citi.vehicleHistoryTimeline ?? []).filter(carVerticalTimelineRowInPdf);
-        return timeline.length > 0 ? { vehicleHistoryTimeline: timeline } : {};
+        const listingCountryHints = listingCountryHintsFromTimeline(citi.vehicleHistoryTimeline);
+        return {
+          ...(timeline.length > 0 ? { vehicleHistoryTimeline: timeline } : {}),
+          ...(listingCountryHints.length > 0 ? { listingCountryHints } : {}),
+        };
       })(),
       ...((citi.damageDetails ?? []).length > 0 ? { damageDetails: citi.damageDetails } : {}),
       ...((citi.mileagePasteRaw ?? citi.rawUnprocessedData ?? "").trim()

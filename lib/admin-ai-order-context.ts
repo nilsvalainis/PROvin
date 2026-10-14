@@ -53,6 +53,7 @@ import {
 import { buildDealerIncidentLinkBrief } from "@/lib/admin-ai-dealer-incident-link";
 import { buildMileageForensicsBrief } from "@/lib/admin-ai-mileage-forensics";
 import { buildCommentLengthBudgetBrief } from "@/lib/ai-comment-length-budget";
+import { buildListingNotCountryChangeBrief } from "@/lib/admin-ai-listing-country";
 import type { CommentBreadth } from "@/lib/ai-comment-breadth";
 
 export type AiOrderContextInput = {
@@ -352,6 +353,9 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
 
   const mileageForensics = buildMileageForensicsBrief(unifiedMileagePayload(blocks));
   if (mileageForensics) parts.push(mileageForensics);
+
+  const listingCountries = buildListingNotCountryChangeBrief(blocks);
+  if (listingCountries) parts.push(listingCountries);
 
   parts.push(buildCommentLengthBudgetBrief(blocks, { breadth: input.commentBreadth }));
 

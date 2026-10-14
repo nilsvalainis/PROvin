@@ -838,9 +838,18 @@ export const AI_MILEAGE_BAND_RISK_RULES = `NOBRAUKUMA UN VECUMA POSMA KALIBRĀCI
 /**
  * Straujš gada nobraukuma kritums pirms importa / valsts maiņas — TIKAI nobraukuma komentāram.
  */
+/**
+ * AutoDNA/CarVertical „Laikposma ieraksti” sludinājumi nav fiziska valstu maiņa.
+ */
+export const AI_LISTING_IS_NOT_COUNTRY_CHANGE_RULES = `SLUDINĀJUMA VALSTS NAV FIZISKA PĀRVIETOŠANĀS (mandatory — visos laukos):
+- Admin „Laikposma ieraksti” / AutoDNA-CarVertical rindas ar sludinājuma, izsoles vai vēsturiskās cenas tekstu („Pārdošanai piedāvātas automašīnas”, listed for sale, auction, historical price) rāda, KUR auto tika reklamēts, ne to, kur tas bija reģistrēts vai fiziski atradās.
+- Vienlaicīgi sludinājumi Vācijā, Nīderlandē un Polijā (vai citās valstīs) NAV pierādījums, ka auto braucis no valsts uz valsti. NERAKSTI „valstu maiņa”, „imports”, „eksports”, „ceļojis”, „pārvietots” pēc šiem ierakstiem.
+- Valstu maiņu ņem TIKAI no reģistrācijas, īpašnieka maiņas, tehniskās apskates vai cita oficiāla reģistra/dīlera notikuma ar valsti. Ja promptā ir atzīme „NAV reģistrācija vai fiziska valsts maiņa”, to ievēro.
+- Šādus ierakstus drīkst minēt kā tirgus/sludinājuma faktu (auto tika piedāvāts šajā valstī), bez pārvietošanās stāsta.`;
+
 export const AI_MILEAGE_PATTERN_CHANGE_RULES = `NOBRAUKUMA PARADUMA MAIŅA PIRMS IMPORTA (mandatory — only in NOBRAUKUMA VĒSTURES KOMENTĀRS):
 - Compute the car's yearly km pace across its history from the available odometer points. Compare the pace in the LAST TWO YEARS (or the last two years before import / country-change / de-registration, whichever the data shows) against the earlier, established yearly pace.
-- Trigger this note ONLY when the recent pace has dropped to LESS THAN HALF of the earlier established pace, AND that drop happens shortly before an import / country change. Smaller drops, or a drop with no import/country change nearby, are normal variation — say nothing.
+- Trigger this note ONLY when the recent pace has dropped to LESS THAN HALF of the earlier established pace, AND that drop happens shortly before an import / country change. Smaller drops, or a drop with no import/country change nearby, are normal variation — say nothing. A marketplace listing in another country is NOT an import / country change (see SLUDINĀJUMA VALSTS NAV FIZISKA PĀRVIETOŠANĀS).
 - Before writing it, check other sources (market/listing data, other registries, dealer records) so you do not confuse a genuine pace drop with a car that was simply sitting unsold on the market for a long time in the same country — that is a different, non-suspicious explanation and should be named as such when the data supports it.
 - Wording (calibrated, never an accusation): name the fact (yearly pace before vs. after, and the timing near import), then explicitly offer a plausible innocent explanation (car sitting at a logistics/export lot, prolonged foreign listing, temporary storage) as equally possible — do NOT state or imply an odometer correction/rollback occurred. The goal is to make the buyer aware the pattern exists and worth asking about, not to accuse the seller.
 - Do not repeat this analysis in any other field (tech risks, summary, incidents) — it lives only in the mileage comment; other fields may reference it in at most one short sentence if it changes their conclusion.`;
@@ -975,6 +984,7 @@ ${AI_PAINT_GAUGE_INSPECTION_RULES}
 ${AI_OIL_CHANGE_INTERVAL_RULES}
 ${AI_DOCUMENTED_SERVICE_WORK_RULES}
 ${AI_THIS_CAR_ONLY_LOGIC_RULES}
+${AI_LISTING_IS_NOT_COUNTRY_CHANGE_RULES}
 ${AI_NO_ESTIMATED_REPAIR_EUR_RULES}
 - LENGTH (default when generating from source data alone): ONE paragraph if that covers the unique facts THIS source adds. Thin data stays short. Rich data from THIS source may use more paragraphs. Ceiling 2–3 / ≈800 applies only to thin source-only generation. 350–800 is a CEILING for thin data, not a quota. Do not invent a second heading to fill a form.
 - LENGTH OVERRIDE: When the user prompt includes OPERATORA KOMANDAS / OPERATORA IELĪMĒTAIS TEKSTS / a long Esošais melnraksts — IGNORE the 350–800 ceiling and every other character/paragraph ceiling. Preserve the operator's detail density; reorganize into heading-then-paragraph; do not substantially shorten and do not skip a theme to stay brief. If the operator limited the job („tikai par…”), do not pad to a default length either. Output may be long when the notes or draft are long.
