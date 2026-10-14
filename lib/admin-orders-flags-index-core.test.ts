@@ -31,3 +31,14 @@ describe("orders flags index core", () => {
     expect(parseOrderFlagsIndex(null)).toBeNull();
   });
 });
+
+describe("flags index race guard", () => {
+  it("older read never overwrites newer entry", () => {
+    const doc = withOrderFlagEntries(null, { a: { complete: true, color: null, upsell: [], at: 200 } }, "2026-01-01T00:00:00Z");
+    const after = withOrderFlagEntries(doc, { a: { complete: false, color: null, upsell: [], at: 100 }, b: { complete: false, color: null, upsell: [], at: 100 } }, "2026-01-01T00:00:00Z");
+    expect(after.entries.a!.complete).toBe(true);
+    expect(after.entries.b).toBeDefined();
+    const newer = withOrderFlagEntries(after, { a: { complete: false, color: null, upsell: [], at: 300 } }, "x");
+    expect(newer.entries.a!.complete).toBe(false);
+  });
+});

@@ -15,6 +15,7 @@ import type { UpsellOfferSnapshot } from "@/lib/order-upsell";
 
 async function readFromSource(ids: string[]): Promise<Record<string, OrderFlagsEntry>> {
   if (ids.length === 0) return {};
+  const at = Date.now();
   const [done, colors, upsell] = await Promise.all([
     getAuditDeadlineCompleteMap(ids),
     getAuditResultColorMap(ids),
@@ -22,7 +23,7 @@ async function readFromSource(ids: string[]): Promise<Record<string, OrderFlagsE
   ]);
   const out: Record<string, OrderFlagsEntry> = {};
   for (const id of ids) {
-    out[id] = { complete: Boolean(done.get(id)), color: colors.get(id) ?? null, upsell: upsell.get(id) ?? [] };
+    out[id] = { complete: Boolean(done.get(id)), color: colors.get(id) ?? null, upsell: upsell.get(id) ?? [], at };
   }
   return out;
 }
@@ -45,7 +46,8 @@ export async function getOrderFlags(ids: string[]): Promise<{
   if (needsOrderFlagsRebuild(doc, Date.now())) {
     scheduleBackground(async () => {
       const all = await readFromSource(ids);
-      await writeOrderFlagsIndex(withOrderFlagEntries(null, all, new Date().toISOString(), true));
+      const latest = await readOrderFlagsIndex();
+      await writeOrderFlagsIndex(withOrderFlagEntries(latest, all, new Date().toISOString(), true));
     });
   } else if (missing.length > 0) {
     scheduleBackground(async () => {
@@ -64,6 +66,14 @@ export async function getOrderFlags(ids: string[]): Promise<{
     upsell.set(id, e?.upsell ?? []);
   }
   return { complete, color, upsell };
+}
+
+/** Pēc rakstīšanas: nolasa svaigu ierakstu no avota un ieliek indeksā uz vietas (nevis tikai izmet). */
+export async function refreshOrderFlagEntry(sessionId: string): Promise<void> {
+  const fresh = await readFromSource([sessionId]);
+  const latest = await readOrderFlagsIndex();
+  if (!latest) return;
+  await writeOrderFlagsIndex(withOrderFlagEntries(latest, fresh, new Date().toISOString()));
 }
 
 function scheduleBackground(fn: () => Promise<void>) {

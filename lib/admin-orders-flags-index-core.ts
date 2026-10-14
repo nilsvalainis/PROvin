@@ -2,7 +2,7 @@
  * PRO pasūtījumu saraksta karodziņu indekss (tīrā loģika, bez I/O).
  * Viens dokuments ar katra pasūtījuma „Izpildīts”, rezultāta krāsu un upsell kopsavilkumu,
  * lai saraksts un žetoni nelasa 3×N atsevišķus Blob failus. Avota patiesība paliek per-id faili;
- * indekss ir kešs: rakstīšana izdzēš ierakstu, trūkstošos ierakstus nolasa no avota un ieliek atpakaļ,
+ * indekss ir kešs: rakstīšana ierakstu atjauno uz vietas (ar `at`),  trūkstošos ierakstus nolasa no avota un ieliek atpakaļ,
  * un periodiski (REBUILD_MS) viss indekss tiek pārbūvēts fonā.
  */
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
@@ -12,6 +12,8 @@ export type OrderFlagsEntry = {
   complete: boolean;
   color: AuditResultColor | null;
   upsell: UpsellOfferSnapshot[];
+  /** Avota nolasīšanas sākuma laiks (ms). Vecāks ieraksts nekad nepārraksta jaunāku. */
+  at?: number;
 };
 
 export type OrderFlagsIndexDoc = {
@@ -52,7 +54,13 @@ export function withOrderFlagEntries(
   rebuilt = false,
 ): OrderFlagsIndexDoc {
   const base = doc ?? emptyOrderFlagsIndex(nowIso);
-  return { v: 1, builtAt: rebuilt ? nowIso : base.builtAt, entries: { ...base.entries, ...add } };
+  const entries = { ...base.entries };
+  for (const [id, e] of Object.entries(add)) {
+    const cur = entries[id];
+    if (cur && (cur.at ?? 0) > (e.at ?? 0)) continue;
+    entries[id] = e;
+  }
+  return { v: 1, builtAt: rebuilt ? nowIso : base.builtAt, entries };
 }
 
 export function withoutOrderFlagEntry(doc: OrderFlagsIndexDoc, id: string): OrderFlagsIndexDoc {

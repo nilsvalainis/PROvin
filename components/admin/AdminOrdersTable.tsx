@@ -486,7 +486,10 @@ export function AdminOrdersTable({
   orderEditsLocalStorageKeyPrefix = "provin-admin-order-edits-v1-",
   consultationList = false,
   toolbarEnd,
+  doneOrder = "desc",
 }: {
+  /** Izpildīto dienu secība (servera kārtošana „Vecākie” → asc). */
+  doneOrder?: "desc" | "asc";
   /** Papildu vadīklas tās pašas rīkjoslas labajā pusē (PRO saraksts: summas slēdzis, „＋ Jauns”). */
   toolbarEnd?: ReactNode;
   orders: AdminOrdersTableRow[];
@@ -574,12 +577,17 @@ export function AdminOrdersTable({
       else map.set(key, [o]);
     }
     const days = [...map.entries()]
-      .sort((a, b) => (a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0))
-      .map(([key, list]) => ({ key, isActive: false, list, sum: sumOf(list) }));
+      .sort((a, b) => (doneOrder === "asc" ? -1 : 1) * (a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0))
+      .map(([key, list]) => ({
+        key,
+        isActive: false,
+        list: doneOrder === "asc" ? [...list].sort((x, y) => x.created - y.created) : list,
+        sum: sumOf(list),
+      }));
     return active.length > 0
       ? [{ key: "__active", isActive: true, list: active, sum: sumOf(active) }, ...days]
       : days;
-  }, [displayedOrders]);
+  }, [displayedOrders, doneOrder]);
   const [nowMs, setNowMs] = useState<number | null>(null);
   useEffect(() => setNowMs(Date.now()), []);
   const slaTick = useAdminAuditDeadlineTick();
