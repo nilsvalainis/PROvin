@@ -24,6 +24,7 @@ import {
   CHECKCAR_VIN_HOME_URL,
 } from "@/lib/admin-vin-urls";
 import { emptyOneautoBlock, parseOneautoBlockRaw, type OneautoBlockState } from "@/lib/oneauto-block";
+import { parseSpeckrOrderSnapshotRaw } from "@/lib/speckr-order";
 import {
   emptyOneautoIngest,
   foldOneautoBlockIntoAutoRecords,
@@ -978,6 +979,8 @@ export type AutoRecordsBlockState = {
   pdfChecklist?: SourcePdfChecklist;
   /** OneAuto API ielādes metadati (produkti, raw rezultāti). Nav atsevišķa PDF sadaļa. */
   oneautoIngest?: AutoRecordsOneautoIngest;
+  /** Speckr Tesla VIN specs — tikai manuāla maksas ielāde admin blokā. */
+  speckrSnapshot?: import("@/lib/speckr-order").SpeckrOrderSnapshot;
 };
 
 export type { OutvinDataBundle } from "@/lib/outvin-data-bundle";
@@ -2003,6 +2006,10 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
       hidePhotoWatermarks: raw.hidePhotoWatermarks === true,
       aiContextRaw: clipAiContextRaw(raw.aiContextRaw),
       oneautoIngest: parseOneautoIngestRaw(raw.oneautoIngest),
+      ...(() => {
+        const speckrSnapshot = parseSpeckrOrderSnapshotRaw(raw.speckrSnapshot);
+        return speckrSnapshot ? { speckrSnapshot } : {};
+      })(),
       ...(outvin ? { outvin } : {}),
       ...(outvinReport ? { outvinReport } : {}),
       ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),

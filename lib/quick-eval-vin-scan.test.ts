@@ -16,7 +16,6 @@ describe("Ātrie vērtējumi VIN SCAN cauruļvads", () => {
     expect(ids).toEqual(vinScanPipelineSourceIds());
     expect(ids).toEqual(vinScanFastSourceIds());
     expect(ids).not.toContain("joj_copart_iaai");
-    expect(ids).not.toContain("speckr");
     expect(defaultVinScanSourceIds()).toContain("joj_copart_iaai");
     expect(ids[0]).toBe("vin_decode");
     expect(ids).toContain("biluppgifter");
@@ -24,7 +23,7 @@ describe("Ātrie vērtējumi VIN SCAN cauruļvads", () => {
     expect(ids).toContain("listing_history");
     expect(ids).toContain("nhtsa_recalls");
     expect(ids).toContain("rdw");
-    expect(ids.length).toBe(VIN_SCAN_SOURCE_IDS.length - 2);
+    expect(ids.length).toBe(VIN_SCAN_SOURCE_IDS.length - 1);
   });
 
   it("nodod sludinājuma saiti un CSDD numuru VIN SCAN zondēm", () => {

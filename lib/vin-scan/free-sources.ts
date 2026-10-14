@@ -22,8 +22,8 @@ export const VIN_SCAN_PAID_SOURCE_IDS = [
   "auto_vin",
 ] as const;
 
-/** Maksas API zvans (JoJ $0.50, Speckr 1 kredīts): tikai VIN SCAN lapa vai jauns PRO pasūtījums. */
-export const VIN_SCAN_METERED_SOURCE_IDS = ["joj_copart_iaai", "speckr"] as const;
+/** Maksas API zvans ($0.50): tikai VIN SCAN lapa vai jauns PRO pasūtījums. */
+export const VIN_SCAN_METERED_SOURCE_IDS = ["joj_copart_iaai"] as const;
 
 const PAID = new Set<string>([...VIN_SCAN_PAID_SOURCE_IDS, ...VIN_SCAN_REMOVED_IDS]);
 const METERED = new Set<string>(VIN_SCAN_METERED_SOURCE_IDS);
