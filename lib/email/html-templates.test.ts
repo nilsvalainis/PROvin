@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { listingPeekCustomerCommentHtml, partnerPasswordResetEmailHtml, partnerVerifyEmailHtml, adminNewPartnerHtml } from "@/lib/email/html-templates";
+import {
+  listingPeekCustomerCommentHtml,
+  partnerPasswordResetEmailHtml,
+  partnerVerifyEmailHtml,
+  adminNewPartnerHtml,
+  morningSummaryEmailHtml,
+} from "@/lib/email/html-templates";
 
 const listingUrl = "https://www.ss.com/msg/lv/transport/cars/bmw/x5/abc.html";
 
@@ -81,5 +87,33 @@ describe("adminNewPartnerHtml", () => {
     expect(html).toContain("Atvērt partneri adminā");
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
+  });
+});
+
+describe("morningSummaryEmailHtml", () => {
+  it("lists counts, deadlines and the admin page CTA", () => {
+    const html = morningSummaryEmailHtml({
+      dateLabel: "13. oktobris",
+      pageUrl: "https://provin.lv/admin/kopsavilkums",
+      open: 5,
+      urgent: 1,
+      overdue: 2,
+      openAudits: 3,
+      openPeeks: 2,
+      newPeeksLast24h: 1,
+      overdueAudits: [{ title: "Audi A4", detail: "Kavējas 3 h" }],
+      dueTodayAudits: [{ title: "VINURGENT", detail: "1 h 0 min" }],
+      newPeeks: [{ title: "ss.com", detail: "Jauns" }],
+    });
+    expect(html).toContain("Rīta kopsavilkums");
+    expect(html).toContain("13. oktobris");
+    expect(html).toContain("Atvērti");
+    expect(html).toContain("Audi A4");
+    expect(html).toContain("Jauni ātrie vērtējumi (24 h)");
+    expect(html).toContain("https://provin.lv/admin/kopsavilkums");
+    expect(html).toContain("Atvērt kopsavilkumu");
+    expect(html).not.toContain("\u2014");
+    expect(html).not.toContain("\u2013");
+    expect(html.toLowerCase()).not.toContain("eksperts");
   });
 });
