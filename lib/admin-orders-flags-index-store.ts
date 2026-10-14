@@ -59,13 +59,17 @@ export async function writeOrderFlagsIndex(doc: OrderFlagsIndexDoc): Promise<voi
   }
 }
 
-/** Pēc „Izpildīts” / krāsas / upsell maiņas: izmet ierakstu, nākamā lasīšana paņem svaigu vērtību no avota. */
+/** Pēc „Izpildīts” / krāsas / upsell maiņas: atjauno ierakstu uz vietas no avota (ar `at`), lai fona raksts ar vecāku nolasījumu to nepārrakstītu. */
 export async function invalidateOrderFlags(sessionId: string): Promise<void> {
   try {
-    const doc = await readOrderFlagsIndex();
-    if (!doc?.entries[sessionId]) return;
-    await writeOrderFlagsIndex(withoutOrderFlagEntry(doc, sessionId));
+    const { refreshOrderFlagEntry } = await import("@/lib/admin-orders-flags");
+    await refreshOrderFlagEntry(sessionId);
   } catch {
-    /* kešs — nav kritiski */
+    try {
+      const doc = await readOrderFlagsIndex();
+      if (doc?.entries[sessionId]) await writeOrderFlagsIndex(withoutOrderFlagEntry(doc, sessionId));
+    } catch {
+      /* kešs — nav kritiski */
+    }
   }
 }

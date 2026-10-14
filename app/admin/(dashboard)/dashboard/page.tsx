@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { isDemoOrdersEnabled, listAdminOrders } from "@/lib/admin-orders";
 import {
   countAdminOrdersHiddenByAmountFilter,
@@ -17,6 +16,9 @@ import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportBut
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 import { AdminOrderVinScanDashboardCards } from "@/components/admin/AdminOrderVinScanDashboardCards";
 import { pickOrderVinScanDashboardCards } from "@/lib/order-vin-scan";
+import { ORDERS_PAGE_SIZE, parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
+import { AdminOrdersSearchBar } from "@/components/admin/AdminOrdersSearchBar";
+import Link from "next/link";
 import { getB2bPartnerByEmail, getB2bPartnerById } from "@/lib/b2b-partner-store";
 import {
   isB2bPackAdminOrder,
@@ -31,10 +33,11 @@ export const dynamic = "force-dynamic";
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ show_all?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
   const showAll = sp.show_all === "1" || sp.show_all === "true";
+  const ordersQuery = parseAdminOrdersQuery(sp);
   const { rows: allOrders, stripeError } = await listAdminOrders();
   const hiddenByAmount = countAdminOrdersHiddenByAmountFilter(allOrders);
   const orders = filterAdminOrdersForDashboard(allOrders, showAll);
@@ -176,6 +179,15 @@ export default async function AdminOrdersPage({
         {showAll ? null : <span aria-hidden>✓</span>}
       </Link>
     ) : null;
+  const paged = queryAdminOrderRows(tableOrders, ordersQuery);
+  const moreHref = (() => {
+    const p = new URLSearchParams();
+    if (showAll) p.set("show_all", "1");
+    if (ordersQuery.q) p.set("q", ordersQuery.q);
+    if (ordersQuery.sort === "oldest") p.set("sort", "oldest");
+    p.set("limit", String(ordersQuery.limit + ORDERS_PAGE_SIZE));
+    return `/admin/dashboard?${p.toString()}`;
+  })();
   const toolbarEnd = (
     <>
       {amountChip}
@@ -251,7 +263,34 @@ export default async function AdminOrdersPage({
               })),
             )}
           />
-          <AdminOrdersTable orders={tableOrders} toolbarEnd={toolbarEnd} />
+          <AdminOrdersTable
+            orders={paged.rows}
+            doneOrder={ordersQuery.sort === "oldest" ? "asc" : "desc"}
+            toolbarEnd={
+              <>
+                <AdminOrdersSearchBar />
+                {toolbarEnd}
+              </>
+            }
+          />
+          {ordersQuery.q && paged.matched === 0 ? (
+            <p className="mt-6 text-center text-sm text-[#86868b]">Nekas netika atrasts pēc „{ordersQuery.q}”.</p>
+          ) : null}
+          <div className="mt-6 flex flex-col items-center gap-2 pb-20 md:pb-0">
+            <p className="text-xs text-[#86868b]">
+              Aktīvie: {paged.activeCount} · izpildītie: {paged.doneShown} no {paged.doneTotal}
+            </p>
+            {paged.doneShown < paged.doneTotal ? (
+              <Link
+                href={moreHref}
+                scroll={false}
+                prefetch={false}
+                className="rounded-lg border border-[#d2d2d7] bg-white px-4 py-2 text-sm font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]"
+              >
+                Ielādēt vēl {Math.min(ORDERS_PAGE_SIZE, paged.doneTotal - paged.doneShown)}
+              </Link>
+            ) : null}
+          </div>
         </>
       ) : (
         <div className="mt-4 flex justify-end">{toolbarEnd}</div>
