@@ -8,6 +8,7 @@ import {
   resolveEcarstradeMakeFromBrandId,
   resolveEcarstradeModel,
   resolveEcarstradeModelById,
+  resolveMakeModelPairsFromBrand,
   resolveMakesFromBrand,
   stripKnownSuffixes,
   type EcarstradeMark,
@@ -23,6 +24,7 @@ import {
   mapOpenlaneFuelToken,
   mapVat,
   parseAuto1Manufacturers,
+  parseAutobidCarlistManufacturerModel,
   parseOpenlaneMakesModels,
   parseZeroUnboundedRange,
   resolveMakeFromMobileMs,
@@ -273,6 +275,7 @@ const YEAR_FROM_KEYS = [
   "regfrom",
   "yearfrom-year",
   "regist",
+  "carlist-e21from",
 ];
 const YEAR_TO_KEYS = [
   "yearto",
@@ -286,6 +289,7 @@ const YEAR_TO_KEYS = [
   "regto",
   "yearto-year",
   "regist_to",
+  "carlist-e21to",
 ];
 const KM_FROM_KEYS = [
   "mileagefrom",
@@ -322,6 +326,7 @@ const POWER_FROM_KEYS = [
   "minpowerkw",
   "power",
   "poweroutputfrom",
+  "carlist-e19from",
 ];
 const POWER_TO_KEYS = [
   "powerto",
@@ -332,6 +337,8 @@ const POWER_TO_KEYS = [
   "maxpowerasarray",
   "maxpowerkw",
   "power_to",
+  "poweroutputto",
+  "carlist-e19to",
 ];
 const HP_FROM_KEYS = ["minhorsepower", "horsepowerfrom", "hpfrom"];
 const HP_TO_KEYS = ["maxhorsepower", "horsepowerto", "hpto"];
@@ -426,6 +433,12 @@ const HANDLED_KEYS = new Set(
     "carlist-e68from",
     "carlist-e68to",
     "poweroutputfrom",
+    "poweroutputto",
+    "carlist-e21from",
+    "carlist-e21to",
+    "carlist-e19from",
+    "carlist-e19to",
+    "carlist-manufacturermodel",
     "startprice2",
     "ms",
     "q",
@@ -640,6 +653,9 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
   for (const raw of rawValues(params, ["makesmodels"])) {
     applyMakeModelPairs(filter, parseOpenlaneMakesModels(raw), "name");
   }
+  for (const raw of rawValues(params, ["carlist-manufacturermodel"])) {
+    applyMakeModelPairs(filter, parseAutobidCarlistManufacturerModel(raw), "name");
+  }
   for (const raw of values(params, MAKE_KEYS)) applyMakeToken(filter, raw, idSpace);
   for (const raw of values(params, ["brandid-brand", "brandid", "brand-id"])) {
     applyMakeToken(filter, raw, "autobid");
@@ -740,6 +756,42 @@ export function widenExactSearchBounds(filter: EcarstradeSearchFilter): Ecarstra
     next.engineToCc = Math.min(9000, next.engineToCc + 200);
   }
   return next;
+}
+
+function applySharedBrandCriteria(target: EcarstradeSearchFilter, shared: EcarstradeSearchFilter): void {
+  target.yearFrom = shared.yearFrom;
+  target.yearTo = shared.yearTo;
+  target.mileageFrom = shared.mileageFrom;
+  target.mileageTo = shared.mileageTo;
+  target.priceFrom = shared.priceFrom;
+  target.priceTo = shared.priceTo;
+  target.powerFromKw = shared.powerFromKw;
+  target.powerToKw = shared.powerToKw;
+  target.fuels = [...shared.fuels];
+  target.gearboxes = [...shared.gearboxes];
+  target.bodies = [...shared.bodies];
+  target.engineFromCc = shared.engineFromCc;
+  target.engineToCc = shared.engineToCc;
+  target.drives = [...shared.drives];
+}
+
+/** Viena rinda ar vairākām markām: atsevišķs ET meklējums katrai markai/modelim. */
+export function filtersFromBrandModel(brandModel: string): EcarstradeSearchFilter[] {
+  const pairs = resolveMakeModelPairsFromBrand(brandModel);
+  const shared = filterFromBrandModel(brandModel);
+  if (pairs.length <= 1) return [shared];
+  return pairs.map((pair) => {
+    const filter = emptyFilter();
+    pushMake(filter, pair.make);
+    if (pair.model) {
+      filter.modelId = pair.model.id;
+      filter.modelName = pair.model.name;
+    } else if (pair.modelText) {
+      filter.modelName = pair.modelText;
+    }
+    applySharedBrandCriteria(filter, shared);
+    return filter;
+  });
 }
 
 export function filterFromBrandModel(brandModel: string): EcarstradeSearchFilter {

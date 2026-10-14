@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -11,6 +14,7 @@ import {
   fetchViaIrissRelay,
   listingPlatformFromRelay,
   mapRelayFetchResponse,
+  mergeListingPricesFromRelay,
   mapRelayItem,
   mapRelayHealth,
   mapRelayLoginClose,
@@ -70,8 +74,10 @@ describe("iriss relay config", () => {
     expect(relayPlatformFor("openline")).toBe("openlane");
     expect(relayPlatformFor("auto1")).toBe("auto1");
     expect(relayPlatformFor("autobid")).toBe("autobid");
+    expect(relayPlatformFor("ecarstrade")).toBe("ecarstrade");
     expect(listingPlatformFromRelay("openlane")).toBe("openline");
     expect(listingPlatformFromRelay("auto1")).toBe("auto1");
+    expect(listingPlatformFromRelay("ecarstrade")).toBe("ecarstrade");
   });
 });
 
@@ -154,6 +160,62 @@ describe("mapRelayFetchResponse", () => {
     expect(mapRelayFetchResponse({ status: "blocked", note: "Cloudflare" }, openlaneSrc).status).toBe("blocked_by_waf");
     expect(mapRelayFetchResponse({ status: "error", note: "x" }, openlaneSrc).status).toBe("fetch_failed");
     expect(mapRelayFetchResponse("nope", openlaneSrc).status).toBe("fetch_failed");
+  });
+
+  it("parses eCarsTrade search HTML from the relay and merges missing prices", () => {
+    const html = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), "__fixtures__", "iriss-ecarstrade", "card-tucson-loggedin.html"),
+      "utf8",
+    );
+    const r = mapRelayFetchResponse(
+      {
+        status: "ok",
+        note: "eCarsTrade cenas no releja Chrome (/search).",
+        raw: { kind: "ecarstrade-html", searchPages: [html], detailPages: [], loggedIn: true },
+        pagesFetched: 1,
+        pageCount: 1,
+      },
+      { platform: "ecarstrade", orderId: "o9", orderBrandModel: "Hyundai Tucson" },
+    );
+    expect(r.status).toBe("ok");
+    expect(r.vehicles[0]).toMatchObject({ platform: "ecarstrade", externalId: "7602956" });
+    const merged = mergeListingPricesFromRelay(
+      [
+        {
+          id: "x",
+          platform: "ecarstrade",
+          externalId: "7602956",
+          detailUrl: "https://ecarstrade.com/cars/7602956",
+          orderId: "o9",
+          orderBrandModel: "Hyundai Tucson",
+          title: "Hyundai Tucson",
+          manufacturer: "Hyundai",
+          year: "2019",
+          firstRegistration: "",
+          mileageKm: 80000,
+          fuel: "Diesel",
+          transmission: "Automatic",
+          powerKw: "",
+          location: "BE",
+          countryCode: "BE",
+          imageUrl: "",
+          currency: "EUR",
+          priceStart: null,
+          priceMinimal: null,
+          priceCurrent: null,
+          priceBuyNow: null,
+          vatNote: "",
+          auctionId: "",
+          auctionStartAt: "",
+          auctionEndAt: "",
+          auctionStage: "",
+        },
+      ],
+      r.vehicles,
+    );
+    expect(r.vehicles[0]?.priceBuyNow).toBe(16200);
+    expect(merged.priced).toBe(1);
+    expect(merged.vehicles[0]?.priceBuyNow).toBe(16200);
   });
 
   it("ok with zero items adds the 0 auto note", () => {

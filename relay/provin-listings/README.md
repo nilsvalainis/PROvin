@@ -1,9 +1,9 @@
 # provin-listings: IRISS LIST pārlūka relejs (Hetzner)
 
-Atsevišķs Node serviss, kas PROVIN (Vercel) vārdā atver Openlane / Auto1 / Autobid īstā Chrome
+Atsevišķs Node serviss, kas PROVIN (Vercel) vārdā atver Openlane / Auto1 / Autobid / eCarsTrade īstā Chrome
 (Xvfb, pastāvīgi profili) un atdod auto sarakstu v2 formātā. Tas pats modelis kā mnt.ee relejs
 (`/opt/provin-mnt`), bet savs serviss, savs ports, savi profili, savs tokens.
-eCarsTrade (ecarstrade.com) šo releju nelieto: Vercel lasa `future_api.php` tieši (`ECARSTRADE_USER` / `ECARSTRADE_PASS`).
+eCarsTrade inventāru Vercel joprojām lasa no `future_api.php`. Cenas (`/search` + `/cars/{id}`), ko Cloudflare bloķē no Vercel, iet caur šo releju, ja `IRISS_LISTINGS_ECARSTRADE_VIA_RELAY=1`. ET paroles tikai šeit: `ECARSTRADE_USER` / `ECARSTRADE_PASS`.
 
 | Serviss | Ports | Caddy ceļš |
 | --- | --- | --- |
@@ -29,7 +29,7 @@ bash /root/provin-listings-src/install.sh
 
 # 3. aizpildīt tokenu un paroles
 openssl rand -hex 32            # -> LISTINGS_RELAY_TOKEN (tas pats Vercel IRISS_LISTINGS_RELAY_TOKEN)
-nano /etc/provin-listings.env   # OPENLANE_USER/PASS, AUTOBID_USER/PASS
+nano /etc/provin-listings.env   # OPENLANE_USER/PASS, AUTOBID_USER/PASS, ECARSTRADE_USER/PASS
 systemctl restart provin-listings
 
 # 4. pārbaude
@@ -80,7 +80,7 @@ Visi ceļi zem `/listings`. `POST` prasa `Authorization: Bearer <LISTINGS_RELAY_
 
 | Metode | Ceļš | Ko dara |
 | --- | --- | --- |
-| GET | `/listings/health` | bez auth: `platforms.{openlane,auto1,autobid}.session` (`ok` / `login_required` / `unknown`), pēdējā nolasīšana, kļūda, dienas skaitītāji, rinda, profili, vai ir paroles, `auto1.discoveredApis`, `manualLogin` |
+| GET | `/listings/health` | bez auth: `platforms.{openlane,auto1,autobid,ecarstrade}.session` (`ok` / `login_required` / `unknown`), pēdējā nolasīšana, kļūda, dienas skaitītāji, rinda, profili, vai ir paroles, `auto1.discoveredApis`, `manualLogin` |
 | GET | `/listings/vnc/:token/...` | noVNC (īslaicīgs tokens ceļā, bez Bearer; tikai kamēr login atvērts) |
 | POST | `/listings/fetch` | `{platform, sourceUrl, orderId, maxPages?}` -> `{ok, status, note, items[], raw, pagesFetched, pageCount, orderId, elapsedMs}` |
 | POST | `/listings/session/check` | `{platform}` -> sesijas pārbaude + auto-login, ja ir paroles |
@@ -109,6 +109,9 @@ vatNote, auctionId, auctionStartAt, auctionEndAt, auctionStage`.
 - **Autobid.** Tas pats `__NUXT_DATA__` ceļš, ko Vercel lasa publiski, bet ar ielogotu profilu. Relejs atdod
   `raw.nuxtPages[]` (viens JSON teksts uz lapu, `currentPage=N`), Vercel parsē ar esošo parsētāju. `items[]` tukšs.
   Pirms atbildes no NUXT tiek izgriezti JWT / Bearer un konta lauki (e-pasts, vārds, user/auth objekti).
+- **eCarsTrade.** Īsts Chrome ar dīlera sesiju. Relejs atver pasūtījuma `/search` (logged-in) un, ja kartītei nav PIRKT, līdz 20 `/cars/{id}`.
+  Atbilde: `raw.kind=ecarstrade-html`, `searchPages[]`, `detailPages[{id,html}]`, `items[]` tukšs. Vercel saplūdina cenas ar future_api inventāru.
+  Auto-login: `POST /api/v1/auth/login` no Chrome konteksta (`ECARSTRADE_USER` / `ECARSTRADE_PASS`). Pauzes starp lapām 1.2-2.6 s.
 
 ## Vercel env
 
@@ -117,13 +120,14 @@ vatNote, auctionId, auctionStartAt, auctionEndAt, auctionStage`.
 | `IRISS_LISTINGS_RELAY_URL` | `https://csdd-relay.provin.lv/listings` |
 | `IRISS_LISTINGS_RELAY_TOKEN` | tas pats, kas `LISTINGS_RELAY_TOKEN` serverī |
 | `IRISS_LISTINGS_AUTOBID_VIA_RELAY` | `1`, ja Autobid jālasa ar ielogotu profilu caur releju (noklusējums: publiski no Vercel) |
+| `IRISS_LISTINGS_ECARSTRADE_VIA_RELAY` | `1`, ja ET PIRKT/cenas jāņem no releja Chrome (noklusējums: tikai Vercel future_api) |
 | `IRISS_LISTINGS_RELAY_TIMEOUT_MS` | noklusējums 180000 |
 | `IRISS_LISTINGS_VIN_OCR` | `0` izslēdz Auto1 foto OCR (noklusējums ieslēgts; slinks, kešots, UI `no foto`) |
 
 ## Servera env (`/etc/provin-listings.env`)
 
 Skat. `provin-listings.env.example`. Obligāti: `LISTINGS_RELAY_TOKEN`. Auto-login: `OPENLANE_USER`, `OPENLANE_PASS`,
-`AUTOBID_USER`, `AUTOBID_PASS`. Pārējais ir noklusējumi.
+`AUTOBID_USER`, `AUTOBID_PASS`, `ECARSTRADE_USER`, `ECARSTRADE_PASS`. Pārējais ir noklusējumi.
 
 ## Žurnāls un stāvoklis
 

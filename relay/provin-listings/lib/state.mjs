@@ -6,7 +6,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-export const PLATFORMS = ["openlane", "auto1", "autobid"];
+export const PLATFORMS = ["openlane", "auto1", "autobid", "ecarstrade"];
 
 function emptyPlatform() {
   return {

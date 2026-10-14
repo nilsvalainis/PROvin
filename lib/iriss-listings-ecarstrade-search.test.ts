@@ -7,6 +7,7 @@ import {
   fillMakeModelFromBrand,
   filterFromBrandModel,
   filterFromOrderFields,
+  filtersFromBrandModel,
   parseListingSearchUrl,
   sameEcarstradeSearch,
   widenExactSearchBounds,
@@ -320,6 +321,44 @@ describe("eCarsTrade search mapper", () => {
     expect(filter.priceTo).toBe(20000);
   });
 
+  it("maps Autobid brandId 5 as Porsche, powerOutputTo and carList-manufacturermodel", () => {
+    const porsche = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?brandId=5&carList-manufacturermodel=5;911&powerOutputFrom=150&powerOutputTo=250",
+    );
+    expect(porsche.makeNames).toEqual(["Porsche"]);
+    expect(porsche.modelName).toMatch(/911/);
+    expect(porsche.powerFromKw).toBe(150);
+    expect(porsche.powerToKw).toBe(250);
+    expect(porsche.unmapped.some((u) => u.key === "brandId")).toBe(false);
+  });
+
+  it("maps Autobid carList-e21 year and carList-e19 power", () => {
+    const s60 = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?brandId=49&name=S60&carList-e21from=2004&carList-e21to=2009&carList-e19from=100&carList-e19to=120",
+    );
+    expect(s60.makeNames).toEqual(["Volvo"]);
+    expect(s60.modelName).toBe("S60");
+    expect(s60.yearFrom).toBe(2004);
+    expect(s60.yearTo).toBe(2009);
+    expect(s60.powerFromKw).toBe(100);
+    expect(s60.powerToKw).toBe(120);
+  });
+
+  it("maps BMW iX40, MAN/Crafter/Sprinter and Jeep/Pajero brand rows", () => {
+    const ix = filterFromBrandModel("BMW iX40");
+    expect(ix.makeNames).toEqual(["BMW"]);
+    expect(ix.modelName).toBe("iX");
+
+    const vans = filtersFromBrandModel("MAN/Crafter/Sprinter");
+    expect(vans.map((f) => f.makeNames[0])).toEqual(expect.arrayContaining(["MAN", "Volkswagen", "Mercedes"]));
+    expect(vans.some((f) => f.makeNames[0] === "Volkswagen" && /Crafter/i.test(f.modelName))).toBe(true);
+    expect(vans.some((f) => f.makeNames[0] === "Mercedes" && /Sprinter/i.test(f.modelName))).toBe(true);
+
+    const jeep = filtersFromBrandModel("Jeep, Mitsubishi Pajero");
+    expect(jeep.some((f) => f.makeNames[0] === "Jeep")).toBe(true);
+    expect(jeep.some((f) => f.makeNames[0] === "Mitsubishi" && /Pajero/i.test(f.modelName))).toBe(true);
+  });
+
   it("maps Autobid brandIds from the verified IRISS set and e17 diesel", () => {
     const bmw = parseListingSearchUrl("https://autobid.de/en/search-results?brandId-brand=1&name-model=X5&e17=3&registrationFrom=2014");
     expect(bmw.makeIds).toEqual([7]);
@@ -383,6 +422,13 @@ describe("eCarsTrade search mapper", () => {
     expect(wide.yearTo).toBe(2019);
     expect(wide.engineFromCc).toBe(1800);
     expect(wide.engineToCc).toBe(2200);
+    const kw = widenExactSearchBounds({
+      ...filterFromBrandModel("Audi A6"),
+      powerFromKw: 176,
+      powerToKw: 176,
+    });
+    expect(kw.powerFromKw).toBe(176);
+    expect(kw.powerToKw).toBe(176);
   });
 
   it("plans Opel Vivaro/Traffic without Porsche and with Openlane years", () => {
@@ -405,5 +451,68 @@ describe("eCarsTrade search mapper", () => {
     expect(plans.some((p) => p.filter.makeNames.includes("Opel"))).toBe(true);
     expect(plans.some((p) => p.filter.yearFrom === 2009 && p.filter.yearTo === 2014)).toBe(true);
     expect(plans.some((p) => p.filter.fuels.includes("Diesel"))).toBe(true);
+  });
+
+  it("adds a Jeep search next to Mitsubishi Pajero and splits MAN/Crafter/Sprinter", () => {
+    const pajero = planEcarstradeSearchUrls({
+      id: "jeep-pajero",
+      brandModel: "Jeep, Mitsubishi Pajero",
+      listingLinkAuto1: [
+        "https://www.auto1.com/en/app/merchant/cars?manufacturers=Mitsubishi%7CPajero&fuelTypes=DIESEL",
+      ],
+      listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makesModels=Mitsubishi,Pajero"],
+      listingLinkAutobid: ["https://autobid.de/lv/meklesanas-rezultati?brandId=37&name=Pajero"],
+      listingLinkMobile: [""],
+      listingLinkEcarstrade: [""],
+    });
+    expect(pajero.some((p) => p.filter.makeNames.includes("Mitsubishi") && /Pajero/i.test(p.filter.modelName))).toBe(true);
+    expect(pajero.some((p) => p.filter.makeNames.includes("Jeep"))).toBe(true);
+
+    const vans = planEcarstradeSearchUrls({
+      id: "vans",
+      brandModel: "MAN/Crafter/Sprinter",
+      listingLinkAuto1: [""],
+      listingLinkOpenline: [""],
+      listingLinkAutobid: [""],
+      listingLinkMobile: [""],
+      listingLinkEcarstrade: [""],
+    });
+    expect(vans.length).toBeGreaterThanOrEqual(3);
+    expect(vans.some((p) => p.filter.makeNames.includes("MAN"))).toBe(true);
+    expect(vans.some((p) => /Crafter/i.test(p.filter.modelName))).toBe(true);
+    expect(vans.some((p) => /Sprinter/i.test(p.filter.modelName))).toBe(true);
+  });
+
+  it("keeps Auto1 stacked criteria and does not add order-form seats or colors", () => {
+    const plans = planEcarstradeSearchUrls({
+      id: "stacked-keep",
+      brandModel: "Volvo XC60",
+      productionYears: "2018-2022",
+      maxMileage: "150000",
+      totalBudget: "28000",
+      engineType: "dīzelis",
+      transmission: "automāts",
+      bodyType: "SUV",
+      seatCount: "5",
+      preferredColors: "melns",
+      listingLinkAuto1: [
+        "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&firstRegistrationTo=2022&fuelTypes=DIESEL&gearboxes=AUTOMATIC&bodyTypes=SUV&maxMileage=150000&maxPrice=28000",
+      ],
+      listingLinkOpenline: [""],
+      listingLinkAutobid: [""],
+      listingLinkMobile: [""],
+      listingLinkEcarstrade: [""],
+    });
+    expect(plans).toHaveLength(1);
+    const url = plans[0]!.url;
+    expect(url).toContain("year_from=2018");
+    expect(url).toContain("year_to=2022");
+    expect(url).toContain("mileage_to=150000");
+    expect(url).toContain("price_to=28000");
+    expect(url).toContain("fuel[]=Diesel");
+    expect(url).toContain("gearbox[]=Automatic");
+    expect(url).toMatch(/category\[\]=/);
+    expect(url).not.toContain("places_from=5");
+    expect(url).not.toContain("color[]=Black");
   });
 });

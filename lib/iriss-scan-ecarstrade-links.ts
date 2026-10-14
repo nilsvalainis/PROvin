@@ -5,8 +5,9 @@ import {
   describeEcarstradeFilter,
   ecarstradeSearchUrl,
   fillFilterGaps,
-  filterFromBrandModel,
+  fillMakeModelFromBrand,
   filterFromOrderFields,
+  filtersFromBrandModel,
   parseListingSearchDetailed,
   sameEcarstradeSearch,
   widenExactSearchBounds,
@@ -80,15 +81,32 @@ function unmappedLines(filter: EcarstradeSearchFilter): string[] {
   return filter.unmapped.map((u) => `${u.key}=${u.value} (${u.reason})`);
 }
 
+function filterFromAuctionUrl(url: string, brandModel: string): EcarstradeSearchFilter {
+  const parsed = parseListingSearchDetailed(url).filter;
+  if (parsed.makeIds.length) return parsed;
+  return fillMakeModelFromBrand(parsed, brandModel);
+}
+
 export function planEcarstradeSearchUrls(rec: IrissEcarstradeLinkSource): IrissEcarstradeLinkPlan[] {
   const brand = rec.brandModel.trim();
   const urls = sourceUrls(rec);
-  const extras = fillFilterGaps(filterFromBrandModel(brand), filterFromOrderFields(orderFieldsOf(rec)));
-  const parsed = urls.map((url) => {
-    const detailed = parseListingSearchDetailed(url);
-    return { sourceUrl: url, filter: fillFilterGaps(detailed.filter, extras) };
-  });
-  const clusters = parsed.length > 0 ? clusterEcarstradeFilters(parsed) : extras.makeIds.length ? [{ filter: extras, sourceUrls: [] }] : [];
+  const order = filterFromOrderFields(orderFieldsOf(rec));
+  const brandOnly = filtersFromBrandModel(brand);
+  const brandFilters =
+    urls.length > 0 ? brandOnly : brandOnly.map((f) => fillFilterGaps(f, order));
+  const parsed = urls.map((url) => ({
+    sourceUrl: url,
+    filter: filterFromAuctionUrl(url, brand),
+  }));
+  const clusters =
+    parsed.length > 0 ? clusterEcarstradeFilters(parsed) : brandFilters.map((filter) => ({ filter, sourceUrls: [] as string[] }));
+  if (parsed.length > 0) {
+    const covered = new Set(clusters.flatMap((c) => c.filter.makeIds));
+    for (const bf of brandFilters) {
+      const id = bf.makeIds[0];
+      if (id && !covered.has(id)) clusters.push({ filter: bf, sourceUrls: [] });
+    }
+  }
   const plans: IrissEcarstradeLinkPlan[] = [];
   const seen = new Set<string>();
   for (const cluster of clusters) {

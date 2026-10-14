@@ -17,7 +17,7 @@ function rec(patch: Partial<ReturnType<typeof emptyIrissPasutijums>> = {}) {
 }
 
 describe("iriss pasūtījumi eCarsTrade link backfill", () => {
-  it("builds a search URL from Auto1/Openlane/Autobid filters without dropping order fields", () => {
+  it("builds a search URL from Auto1/Openlane/Autobid filters", () => {
     const row = rec({
       brandModel: "Volvo XC60",
       listingLinkAuto1: [
@@ -72,7 +72,7 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     expect(preview.added[0]).toContain("mark[]=66");
   });
 
-  it("replace swaps stored eCarsTrade URLs for the precise filter including order fields", () => {
+  it("replace copies Auto1 filters and does not stack order-form years/km/price", () => {
     const row = rec({
       brandModel: "Volvo XC60",
       productionYears: "2019-2022",
@@ -87,10 +87,11 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     const next = replaceEcarstradeLinksOnPasutijums(row);
     expect(next.record.clientFirstName).toBe("Anna");
     expect(next.record.listingLinkEcarstrade).toHaveLength(1);
-    expect(next.record.listingLinkEcarstrade[0]).toContain("year_from=2019");
-    expect(next.record.listingLinkEcarstrade[0]).toContain("mileage_to=140000");
-    expect(next.record.listingLinkEcarstrade[0]).toContain("price_to=26000");
+    expect(next.record.listingLinkEcarstrade[0]).toContain("fuel[]=Diesel");
     expect(next.record.listingLinkEcarstrade[0]).toContain("model[]=1866");
-    expect(next.record.listingLinkEcarstrade[0]).toContain("iriss_drive=awd");
+    expect(next.record.listingLinkEcarstrade[0]).not.toContain("year_from=2019");
+    expect(next.record.listingLinkEcarstrade[0]).not.toContain("mileage_to=140000");
+    expect(next.record.listingLinkEcarstrade[0]).not.toContain("price_to=26000");
+    expect(next.record.listingLinkEcarstrade[0]).not.toContain("iriss_drive=awd");
   });
 });

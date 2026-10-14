@@ -16,7 +16,7 @@ import {
 } from "@/lib/iriss-listings-search-filter";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
-import { fetchViaIrissRelay, readIrissRelayConfig } from "@/lib/iriss-listings-relay";
+import { fetchViaIrissRelay, mergeListingPricesFromRelay, readIrissRelayConfig } from "@/lib/iriss-listings-relay";
 import { isIrissListingsAutomaticSlot, isIrissListingsContinuationWindow } from "@/lib/iriss-listings-schedule";
 import { buildIrissListingSources, groupIrissListingSources, irissListingVehicleId, type IrissListingSource, type IrissListingSourceGroup } from "@/lib/iriss-listings-sources";
 import {
@@ -67,6 +67,11 @@ function autobidViaRelay(): boolean {
   return /^(1|true|yes)$/i.test(process.env.IRISS_LISTINGS_AUTOBID_VIA_RELAY ?? "");
 }
 
+/** eCarsTrade inventārs paliek future_api; `IRISS_LISTINGS_ECARSTRADE_VIA_RELAY=1` ņem PIRKT no releja Chrome. */
+function ecarstradeViaRelay(): boolean {
+  return /^(1|true|yes)$/i.test(process.env.IRISS_LISTINGS_ECARSTRADE_VIA_RELAY ?? "");
+}
+
 type SourceFetch = {
   status: IrissListingSourceStatus;
   note: string;
@@ -105,48 +110,62 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
       pauseMinMs: 700,
       pauseMaxMs: 1_800,
     });
+    let vehicles: IrissFetchedVehicle[] = r.vehicles.map((v) => ({
+      id: irissListingVehicleId("ecarstrade", v.externalId),
+      platform: "ecarstrade" as const,
+      externalId: v.externalId,
+      detailUrl: v.detailUrl,
+      orderId: src.orderId,
+      orderBrandModel: src.orderBrandModel,
+      title: v.title,
+      manufacturer: v.manufacturer,
+      year: v.year,
+      firstRegistration: v.firstRegistration,
+      mileageKm: v.mileageKm,
+      fuel: v.fuel,
+      transmission: v.transmission,
+      powerKw: fillListingPowerKwField({ powerKw: v.powerKw, title: v.title }),
+      location: v.location,
+      countryCode: v.countryCode,
+      imageUrl: v.imageUrl,
+      imageUrls: v.imageUrls,
+      color: v.color,
+      bodyType: v.bodyType,
+      taxDeduction: v.taxDeduction,
+      currency: "EUR",
+      priceStart: v.priceStart,
+      priceMinimal: v.priceMinimal,
+      priceCurrent: v.priceCurrent,
+      priceBuyNow: v.priceBuyNow,
+      vatNote: v.vatNote,
+      auctionId: v.auctionId,
+      auctionStartAt: v.auctionStartAt,
+      auctionEndAt: v.auctionEndAt,
+      auctionStage: v.auctionStage,
+    }));
+    const notes = [r.note];
+    const needsPrice = vehicles.some((v) => v.priceBuyNow == null && v.priceCurrent == null);
+    const relay = ecarstradeViaRelay() ? readIrissRelayConfig() : null;
+    if (needsPrice && relay) {
+      const rr = await fetchViaIrissRelay(relay, src, { maxPages: envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25) });
+      if (rr.status === "ok" && rr.vehicles.length > 0) {
+        const merged = mergeListingPricesFromRelay(vehicles, rr.vehicles);
+        vehicles = merged.vehicles;
+        if (merged.priced > 0) notes.push(`Cenas no releja Chrome: ${merged.priced}.`);
+        else if (rr.note) notes.push(rr.note);
+      } else if (rr.note) {
+        notes.push(`Releja ET cenas: ${rr.note}`);
+      }
+    } else if (needsPrice && ecarstradeViaRelay() && !relay) {
+      notes.push("ET cenas caur releju ieslēgtas, bet IRISS_LISTINGS_RELAY_URL / _TOKEN nav.");
+    }
     return {
       status: r.status,
-      note: r.note,
+      note: notes.filter(Boolean).join(" "),
       pagesFetched: r.pagesFetched,
       pageCount: r.pageCount,
       rawPages: r.rawPages,
-      vehicles: applyEntryFilter(
-        r.vehicles.map((v) => ({
-          id: irissListingVehicleId("ecarstrade", v.externalId),
-          platform: "ecarstrade" as const,
-          externalId: v.externalId,
-          detailUrl: v.detailUrl,
-          orderId: src.orderId,
-          orderBrandModel: src.orderBrandModel,
-          title: v.title,
-          manufacturer: v.manufacturer,
-          year: v.year,
-          firstRegistration: v.firstRegistration,
-          mileageKm: v.mileageKm,
-          fuel: v.fuel,
-          transmission: v.transmission,
-          powerKw: fillListingPowerKwField({ powerKw: v.powerKw, title: v.title }),
-          location: v.location,
-          countryCode: v.countryCode,
-          imageUrl: v.imageUrl,
-          imageUrls: v.imageUrls,
-          color: v.color,
-          bodyType: v.bodyType,
-          taxDeduction: v.taxDeduction,
-          currency: "EUR",
-          priceStart: v.priceStart,
-          priceMinimal: v.priceMinimal,
-          priceCurrent: v.priceCurrent,
-          priceBuyNow: v.priceBuyNow,
-          vatNote: v.vatNote,
-          auctionId: v.auctionId,
-          auctionStartAt: v.auctionStartAt,
-          auctionEndAt: v.auctionEndAt,
-          auctionStage: v.auctionStage,
-        })),
-        src,
-      ),
+      vehicles: applyEntryFilter(vehicles, src),
     };
   }
 

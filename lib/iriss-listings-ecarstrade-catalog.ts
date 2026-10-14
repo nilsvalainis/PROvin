@@ -85,6 +85,7 @@ export const AUTOBID_BRAND_ID_TO_NAME: Record<string, string> = {
   "44": "Seat",
   "48": "Suzuki",
   "49": "Volvo",
+  "5": "Porsche",
   "105": "Mini",
   "271": "Mercedes",
 };
@@ -96,6 +97,8 @@ const IMPLIED_MAKE_MODELS: Array<{ keys: string[]; make: string; catalogModel: s
   { keys: ["viano"], make: "Mercedes", catalogModel: "Viano" },
   { keys: ["primastar"], make: "Nissan", catalogModel: "Primastar" },
   { keys: ["alhambra"], make: "Seat", catalogModel: "Alhambra" },
+  { keys: ["crafter"], make: "Volkswagen", catalogModel: "Crafter" },
+  { keys: ["sprinter", "esprinter"], make: "Mercedes", catalogModel: "Sprinter" },
 ];
 
 const MODEL_QUERY_ALIASES: Record<string, string> = {
@@ -111,6 +114,12 @@ const MODEL_QUERY_ALIASES: Record<string, string> = {
   "cee d": "cee'd",
   "cee'd": "cee'd",
   traffic: "Trafic",
+  ix40: "iX",
+  "ix 40": "iX",
+  xdrive40: "iX",
+  "x drive 40": "iX",
+  crv: "CR-V",
+  "cr v": "CR-V",
   w164: "ML-Class",
   w166: "ML-Class",
   w204: "C-Class",
@@ -253,6 +262,8 @@ export function modelQueryCandidates(raw: string): string[] {
   if (/\bml\s?\d{3}\b/i.test(cleaned)) push("ML-Class");
   if (/\bceed\b/i.test(cleaned)) push("cee'd");
   if (/\btraffic\b/i.test(cleaned)) push("Trafic");
+  if (/\bix\s?40\b/i.test(cleaned) || /\bxdrive\s?40\b/i.test(cleaned)) push("iX");
+  if (/\bcr-?v\b/i.test(cleaned)) push("CR-V");
   return out;
 }
 
@@ -343,55 +354,74 @@ function impliedMakeFromModelToken(raw: string): { make: EcarstradeMark; modelTe
   return null;
 }
 
+export type BrandMakeModelPair = {
+  make: EcarstradeMark;
+  model: EcarstradeModel | null;
+  modelText: string;
+};
+
+function pairFromPart(part: string): BrandMakeModelPair | null {
+  const whole = resolveEcarstradeMake(part);
+  if (whole) return { make: whole, model: null, modelText: "" };
+  const split = splitBrandModel(part);
+  const make = resolveEcarstradeMake(split.make);
+  if (make) {
+    const modelText = stripKnownSuffixes(stripParentheticals(split.model));
+    return { make, model: resolveEcarstradeModel(make.id, modelText), modelText };
+  }
+  const implied = impliedMakeFromModelToken(part);
+  if (!implied) return null;
+  return {
+    make: implied.make,
+    model: resolveEcarstradeModel(implied.make.id, implied.modelText),
+    modelText: implied.modelText,
+  };
+}
+
+/** Viena brandModel rinda var būt vairākas markas ar saviem modeļiem (Jeep + Pajero, MAN/Crafter/Sprinter). */
+export function resolveMakeModelPairsFromBrand(brandModel: string): BrandMakeModelPair[] {
+  const power = extractPowerKwFromBrand(brandModel);
+  const text = power?.rest || String(brandModel ?? "").trim();
+  const parts = splitMakeCandidates(text);
+  const pairs: BrandMakeModelPair[] = [];
+  const seen = new Set<number>();
+  const push = (pair: BrandMakeModelPair | null) => {
+    if (!pair || seen.has(pair.make.id)) return;
+    seen.add(pair.make.id);
+    pairs.push(pair);
+  };
+  for (const part of parts) push(pairFromPart(part));
+  if (pairs.length === 0) {
+    const split = splitBrandModel(text);
+    const make = resolveEcarstradeMake(split.make);
+    if (make) {
+      const modelText = stripKnownSuffixes(stripParentheticals(split.model));
+      push({ make, model: resolveEcarstradeModel(make.id, modelText), modelText });
+    } else {
+      const implied = impliedMakeFromModelToken(text);
+      if (implied) {
+        push({
+          make: implied.make,
+          model: resolveEcarstradeModel(implied.make.id, implied.modelText),
+          modelText: implied.modelText,
+        });
+      }
+    }
+  }
+  return pairs;
+}
+
 export function resolveMakesFromBrand(brandModel: string): {
   makes: EcarstradeMark[];
   model: EcarstradeModel | null;
   modelText: string;
 } {
-  const power = extractPowerKwFromBrand(brandModel);
-  const text = power?.rest || String(brandModel ?? "").trim();
-  const parts = splitMakeCandidates(text);
-  const makes: EcarstradeMark[] = [];
-  const seen = new Set<number>();
-  let modelText = "";
-  const push = (mark: EcarstradeMark | null) => {
-    if (!mark || seen.has(mark.id)) return;
-    seen.add(mark.id);
-    makes.push(mark);
+  const pairs = resolveMakeModelPairsFromBrand(brandModel);
+  return {
+    makes: pairs.map((p) => p.make),
+    model: pairs.length === 1 ? pairs[0]!.model : null,
+    modelText: pairs.length === 1 ? pairs[0]!.modelText : pairs.find((p) => p.modelText)?.modelText ?? "",
   };
-  for (const part of parts) {
-    const whole = resolveEcarstradeMake(part);
-    if (whole) {
-      push(whole);
-      continue;
-    }
-    const split = splitBrandModel(part);
-    const make = resolveEcarstradeMake(split.make);
-    if (make) {
-      push(make);
-      if (!modelText && split.model) modelText = stripKnownSuffixes(stripParentheticals(split.model));
-      continue;
-    }
-    const implied = impliedMakeFromModelToken(part);
-    if (implied) {
-      push(implied.make);
-      if (!modelText) modelText = implied.modelText;
-    }
-  }
-  if (makes.length === 0) {
-    const split = splitBrandModel(text);
-    push(resolveEcarstradeMake(split.make));
-    modelText = stripKnownSuffixes(stripParentheticals(split.model));
-    if (makes.length === 0) {
-      const implied = impliedMakeFromModelToken(text);
-      if (implied) {
-        push(implied.make);
-        modelText = implied.modelText;
-      }
-    }
-  }
-  const model = makes.length === 1 ? resolveEcarstradeModel(makes[0]!.id, modelText) : null;
-  return { makes, model, modelText };
 }
 
 export function resolveMakeModelFromBrand(brandModel: string): { make: EcarstradeMark | null; model: EcarstradeModel | null; modelText: string } {
