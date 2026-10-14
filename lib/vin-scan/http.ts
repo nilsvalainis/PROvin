@@ -219,7 +219,11 @@ export async function scanFetchSmart(
   return { status: first.status, text: first.text, cookie, ua, proxyUrl, finalUrl: first.finalUrl };
 }
 
-export function scanChallengeReason(res: ScanHttpResult): string | null {
+export function scanChallengeReason(res: {
+  status: number;
+  text: string;
+  challengeReason?: string;
+}): string | null {
   if (res.challengeReason) return res.challengeReason;
   if (isCloudflareChallengeHtml(res.text, res.status)) return "Cloudflare palika lapā";
   return null;
