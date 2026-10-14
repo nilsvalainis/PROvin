@@ -2,17 +2,20 @@ import {
   ECARSTRADE_ALLOWED_COUNTRY_QUERY,
 } from "@/lib/iriss-listings-country-filter";
 import {
+  extractPowerKwFromBrand,
   resolveEcarstradeMake,
   resolveEcarstradeMakeFromBrandId,
   resolveEcarstradeModel,
-  resolveMakeModelFromBrand,
+  resolveMakesFromBrand,
   stripKnownSuffixes,
+  type EcarstradeMark,
 } from "@/lib/iriss-listings-ecarstrade-catalog";
 import { ECARSTRADE_ORIGIN, ECARSTRADE_SEARCH_PATH } from "@/lib/iriss-listings-ecarstrade";
 
 export type EcarstradeSearchFilter = {
-  makeId: number | null;
-  makeName: string;
+  /** Viena vai vairākas markas (`mark[]` atkārtojas). */
+  makeIds: number[];
+  makeNames: string[];
   modelId: number | null;
   modelName: string;
   yearFrom: number | null;
@@ -27,6 +30,11 @@ export type EcarstradeSearchFilter = {
   gearboxes: string[];
   bodies: string[];
 };
+
+/** Atpakaļsaderība: pirmā marka. */
+export function primaryMakeId(filter: Pick<EcarstradeSearchFilter, "makeIds">): number | null {
+  return filter.makeIds[0] ?? null;
+}
 
 export const ECARSTRADE_FUEL = {
   diesel: "Diesel",
@@ -56,8 +64,8 @@ export const ECARSTRADE_BODY = {
 } as const;
 
 const emptyFilter = (): EcarstradeSearchFilter => ({
-  makeId: null,
-  makeName: "",
+  makeIds: [],
+  makeNames: [],
   modelId: null,
   modelName: "",
   yearFrom: null,
@@ -72,6 +80,12 @@ const emptyFilter = (): EcarstradeSearchFilter => ({
   gearboxes: [],
   bodies: [],
 });
+
+function pushMake(filter: EcarstradeSearchFilter, mark: EcarstradeMark | null): void {
+  if (!mark || filter.makeIds.includes(mark.id)) return;
+  filter.makeIds.push(mark.id);
+  filter.makeNames.push(mark.name);
+}
 
 function uniq(values: string[]): string[] {
   const out: string[] = [];
@@ -155,8 +169,10 @@ const MAKE_KEYS = [
   "brands",
   "mark[]",
   "mark",
+  "make1",
+  "makemodelvariant1.makeid",
 ];
-const MODEL_KEYS = ["model", "models", "modelname", "name-model", "model[]", "typ", "type"];
+const MODEL_KEYS = ["model", "models", "modelname", "name-model", "model[]", "typ", "type", "modeldescription"];
 const YEAR_FROM_KEYS = [
   "yearfrom",
   "year_from",
@@ -185,8 +201,24 @@ const KM_FROM_KEYS = ["mileagefrom", "mileage_from", "kmfrom", "minmileage", "od
 const KM_TO_KEYS = ["mileageto", "mileage_to", "kmto", "maxmileage", "odometerto", "mileageto-mileage"];
 const PRICE_FROM_KEYS = ["pricefrom", "price_from", "minprice", "pricemin"];
 const PRICE_TO_KEYS = ["priceto", "price_to", "maxprice", "pricemax"];
-const POWER_FROM_KEYS = ["powerfrom", "power_from", "minpower", "kwfrom", "powerfrom-power"];
-const POWER_TO_KEYS = ["powerto", "power_to", "maxpower", "kwto", "powerto-power"];
+const POWER_FROM_KEYS = [
+  "powerfrom",
+  "power_from",
+  "minpower",
+  "kwfrom",
+  "powerfrom-power",
+  "minpowerasarray",
+  "minpowerkw",
+];
+const POWER_TO_KEYS = [
+  "powerto",
+  "power_to",
+  "maxpower",
+  "kwto",
+  "powerto-power",
+  "maxpowerasarray",
+  "maxpowerkw",
+];
 const HP_FROM_KEYS = ["minhorsepower", "horsepowerfrom", "hpfrom"];
 const HP_TO_KEYS = ["maxhorsepower", "horsepowerto", "hpto"];
 const FUEL_KEYS = ["fuel", "fuels", "fueltype", "fueltypes", "fuel[]", "fuelid-fuel"];
@@ -244,30 +276,34 @@ function hpToKw(hp: number): number {
   return Math.round(hp * 0.73549875);
 }
 
-function applyMakeModel(filter: EcarstradeSearchFilter, makeRaw: string, modelRaw: string): void {
-  const make = resolveEcarstradeMake(makeRaw);
-  if (make) {
-    filter.makeId = make.id;
-    filter.makeName = make.name;
-  } else if (makeRaw.trim() && /^\d+$/.test(makeRaw.trim())) {
-    const fromId = resolveEcarstradeMakeFromBrandId(makeRaw.trim());
-    if (fromId) {
-      filter.makeId = fromId.id;
-      filter.makeName = fromId.name;
-    }
+function applyMakeToken(filter: EcarstradeSearchFilter, makeRaw: string): void {
+  const t = makeRaw.trim();
+  if (!t) return;
+  const fromBrand = resolveMakesFromBrand(t);
+  if (fromBrand.makes.length > 0) {
+    for (const mark of fromBrand.makes) pushMake(filter, mark);
+    return;
   }
+  const make = resolveEcarstradeMake(t);
+  if (make) {
+    pushMake(filter, make);
+    return;
+  }
+  if (/^\d+$/.test(t)) pushMake(filter, resolveEcarstradeMakeFromBrandId(t));
+}
+
+function applyModelToken(filter: EcarstradeSearchFilter, modelRaw: string): void {
   const modelText = stripKnownSuffixes(modelRaw);
-  if (filter.makeId && modelText) {
-    const model = resolveEcarstradeModel(filter.makeId, modelText);
+  if (!modelText) return;
+  if (filter.makeIds.length === 1) {
+    const model = resolveEcarstradeModel(filter.makeIds[0]!, modelText);
     if (model) {
       filter.modelId = model.id;
       filter.modelName = model.name;
-    } else if (!filter.modelName) {
-      filter.modelName = modelText;
+      return;
     }
-  } else if (modelText && !filter.modelName) {
-    filter.modelName = modelText;
   }
+  if (!filter.modelName) filter.modelName = modelText;
 }
 
 export function parseListingSearchUrl(rawUrl: string): EcarstradeSearchFilter {
@@ -279,12 +315,12 @@ export function parseListingSearchUrl(rawUrl: string): EcarstradeSearchFilter {
     return filter;
   }
   const params = collectParams(url);
-  const brandId = values(params, ["brandid-brand", "brandid", "brand-id"])[0] ?? "";
-  const makeRaw =
-    values(params, MAKE_KEYS)[0] ??
-    (brandId ? resolveEcarstradeMakeFromBrandId(brandId)?.name ?? "" : "");
-  const modelRaw = values(params, MODEL_KEYS)[0] ?? "";
-  applyMakeModel(filter, makeRaw, modelRaw);
+  const makeRaws = [
+    ...values(params, MAKE_KEYS),
+    ...values(params, ["brandid-brand", "brandid", "brand-id"]),
+  ];
+  for (const raw of makeRaws) applyMakeToken(filter, raw);
+  applyModelToken(filter, values(params, MODEL_KEYS)[0] ?? "");
 
   filter.yearFrom = firstInt(params, YEAR_FROM_KEYS, yearFromRaw);
   filter.yearTo = firstInt(params, YEAR_TO_KEYS, yearFromRaw);
@@ -307,18 +343,20 @@ export function parseListingSearchUrl(rawUrl: string): EcarstradeSearchFilter {
 
 export function filterFromBrandModel(brandModel: string): EcarstradeSearchFilter {
   const filter = emptyFilter();
-  const resolved = resolveMakeModelFromBrand(brandModel);
-  if (resolved.make) {
-    filter.makeId = resolved.make.id;
-    filter.makeName = resolved.make.name;
-  }
-  if (resolved.model) {
+  const resolved = resolveMakesFromBrand(brandModel);
+  for (const mark of resolved.makes) pushMake(filter, mark);
+  if (resolved.model && filter.makeIds.length === 1) {
     filter.modelId = resolved.model.id;
     filter.modelName = resolved.model.name;
-  } else if (resolved.modelText) {
+  } else if (resolved.modelText && filter.makeIds.length === 1) {
     filter.modelName = resolved.modelText;
   }
-  const remainder = `${brandModel} ${resolved.modelText}`;
+  const power = extractPowerKwFromBrand(brandModel);
+  if (power) {
+    filter.powerFromKw = power.from;
+    filter.powerToKw = power.to;
+  }
+  const remainder = `${power?.rest || brandModel} ${resolved.modelText}`;
   const fuel = mapFuel(remainder);
   const gear = mapGearbox(remainder);
   const body = mapBody(remainder);
@@ -328,16 +366,29 @@ export function filterFromBrandModel(brandModel: string): EcarstradeSearchFilter
   return filter;
 }
 
-/** Aizpilda tukšo marku/modeli no brandModel, nepārraksta URL filtrus. */
+/** Savieno URL markas ar brandModel (vairākas markas, jauda). Modeli tikai pie vienas markas. */
 export function fillMakeModelFromBrand(filter: EcarstradeSearchFilter, brandModel: string): EcarstradeSearchFilter {
-  if (filter.makeId && filter.modelId) return filter;
   const fromBrand = filterFromBrandModel(brandModel);
+  const makeIds = [...filter.makeIds];
+  const makeNames = [...filter.makeNames];
+  fromBrand.makeIds.forEach((id, i) => {
+    if (!makeIds.includes(id)) {
+      makeIds.push(id);
+      makeNames.push(fromBrand.makeNames[i] ?? "");
+    }
+  });
+  const multi = makeIds.length > 1;
   return {
     ...filter,
-    makeId: filter.makeId ?? fromBrand.makeId,
-    makeName: filter.makeName || fromBrand.makeName,
-    modelId: filter.modelId ?? fromBrand.modelId,
-    modelName: filter.modelName || fromBrand.modelName,
+    makeIds,
+    makeNames,
+    modelId: multi ? null : filter.modelId ?? fromBrand.modelId,
+    modelName: multi ? "" : filter.modelName || fromBrand.modelName,
+    powerFromKw: filter.powerFromKw ?? fromBrand.powerFromKw,
+    powerToKw: filter.powerToKw ?? fromBrand.powerToKw,
+    fuels: filter.fuels.length ? filter.fuels : fromBrand.fuels,
+    gearboxes: filter.gearboxes.length ? filter.gearboxes : fromBrand.gearboxes,
+    bodies: filter.bodies.length ? filter.bodies : fromBrand.bodies,
   };
 }
 
@@ -346,10 +397,10 @@ function appendQuery(parts: string[], key: string, value: string): void {
 }
 
 export function ecarstradeSearchUrl(filter: EcarstradeSearchFilter): string | null {
-  if (!filter.makeId) return null;
+  if (filter.makeIds.length === 0) return null;
   const parts: string[] = [];
-  appendQuery(parts, "mark[]", String(filter.makeId));
-  if (filter.modelId) appendQuery(parts, "model[]", String(filter.modelId));
+  for (const id of filter.makeIds) appendQuery(parts, "mark[]", String(id));
+  if (filter.makeIds.length === 1 && filter.modelId) appendQuery(parts, "model[]", String(filter.modelId));
   if (filter.yearFrom != null) appendQuery(parts, "year_from", String(filter.yearFrom));
   if (filter.yearTo != null) appendQuery(parts, "year_to", String(filter.yearTo));
   if (filter.mileageFrom != null) appendQuery(parts, "mileage_from", String(filter.mileageFrom));
@@ -367,8 +418,8 @@ export function ecarstradeSearchUrl(filter: EcarstradeSearchFilter): string | nu
 
 export function ecarstradeFilterSignature(filter: EcarstradeSearchFilter): string {
   return [
-    filter.makeId ?? "",
-    filter.modelId ?? "",
+    [...filter.makeIds].sort((a, b) => a - b).join(","),
+    filter.makeIds.length === 1 ? filter.modelId ?? "" : "",
     filter.yearFrom ?? "",
     filter.yearTo ?? "",
     filter.mileageFrom ?? "",

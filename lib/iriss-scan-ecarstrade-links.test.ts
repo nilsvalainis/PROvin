@@ -44,4 +44,31 @@ describe("iriss scan eCarsTrade link backfill", () => {
     expect(preview.added).toEqual([]);
     expect(preview.skippedReason).toMatch(/nav markas/i);
   });
+
+  it("adds LEXUS/TOYOTA even when Auto1/Openlane/Autobid URLs have no make params", () => {
+    const preview = previewEcarstradeLinksForScan(
+      rec({
+        brandModel: "LEXUS/TOYOTA",
+        listingLinkAuto1: ["https://www.auto1.com/en/app/merchant/cars?channel=24h"],
+        listingLinkOpenline: ["https://www.openlane.eu/en/findcar"],
+        listingLinkAutobid: ["https://autobid.de/en/search-results"],
+      }),
+    );
+    expect(preview.added.length).toBeGreaterThanOrEqual(1);
+    expect(preview.added[0]).toContain("mark[]=39");
+    expect(preview.added[0]).toContain("mark[]=66");
+  });
+
+  it("adds Audi/VW/Porsche 176kw from brandModel and Mobile filters", () => {
+    const preview = previewEcarstradeLinksForScan(
+      rec({
+        brandModel: "Audi/VW/Porsche 176kw",
+        listingLinkOpenline: ["https://www.openlane.eu/en/findcar"],
+        listingLinkAutobid: ["https://autobid.de/en/search-results"],
+        listingLinkMobile: ["https://suchen.mobile.de/fahrzeuge/search.html?minPowerAsArray=176&maxPowerAsArray=176"],
+      }),
+    );
+    expect(preview.added.some((u) => u.includes("mark[]=5") && u.includes("mark[]=67") && u.includes("mark[]=54"))).toBe(true);
+    expect(preview.added.some((u) => u.includes("power_from=176") && u.includes("power_to=176"))).toBe(true);
+  });
 });

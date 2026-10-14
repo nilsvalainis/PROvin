@@ -37,6 +37,7 @@ import { mergeListingOrderOvMigration } from "@/lib/iriss-listing-order-ov";
 import { irissPasutijumsSeedFromListing } from "@/lib/iriss-pasutijums-from-listing";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
+import { irissListingPlatformIngestStats } from "@/lib/iriss-listings-ingest-stats";
 import { nextIrissListingsAutomaticReadLabel } from "@/lib/iriss-listings-schedule";
 import {
   dismissedHiddenIds,
@@ -535,6 +536,11 @@ export function IrissSludinajumiListClient({
   const hiddenCount = prefs.hidden.filter((id) => vehicles.some((v) => v.id === id)).length;
 
   const problemSources = useMemo(() => (latest?.sources ?? []).filter((s) => s.status !== "ok"), [latest?.sources]);
+  const ingestStats = useMemo(
+    () => irissListingPlatformIngestStats(latest?.sources ?? [], vehicles),
+    [latest?.sources, vehicles],
+  );
+  const ectIngest = ingestStats.find((s) => s.platform === "ecarstrade");
 
   async function syncNow() {
     if (syncBusy) return;
@@ -775,6 +781,17 @@ export function IrissSludinajumiListClient({
                   <span className="text-[#8e8e93]">Nākamā automātiskā</span><span>{mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "\u00a0"}</span>
                   <span className="text-[#8e8e93]">Avoti OK · Auto · Jauni · Cenas</span><span>{latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0} · {counts.all} · {mounted ? counts.fresh : ""} · {mounted ? counts.price : ""}</span>
                 </div>
+                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Nolasīšana pa avotiem</p>
+                {ingestStats.map((s) => (
+                  <div key={s.platform} className="flex justify-between gap-3 py-0.5">
+                    <span>{PLATFORM_LABEL_LONG[s.platform]}</span>
+                    <span className="text-[#8e8e93]">
+                      {s.sourceCount === 0
+                        ? "nav saišu"
+                        : `${s.okCount}/${s.sourceCount} avoti · ${s.vehicleCount} auto${s.status !== "ok" && s.status !== "none" ? ` · ${sourceStatusLabel(s.status)}` : ""}`}
+                    </span>
+                  </div>
+                ))}
                 <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">PVN pa avotiem</p>
                 {platformDots.map((d) => (
                   <div key={d.platform} className="flex justify-between gap-3 py-0.5" title={d.title}>
@@ -856,6 +873,11 @@ export function IrissSludinajumiListClient({
             Nolasīts {mounted && latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : latest?.summary.finishedAt ? "\u00a0" : "nav"}
             <span className="hidden sm:inline"> · nākamā {mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "\u00a0"}</span>
             {" "}· {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0} avoti OK
+            {ectIngest && (ectIngest.sourceCount > 0 || ectIngest.vehicleCount > 0) ? (
+              <span title="eCarsTrade nolasīšana"> · ET {ectIngest.okCount}/{ectIngest.sourceCount} · {ectIngest.vehicleCount} auto</span>
+            ) : (
+              <span title="eCarsTrade nolasīšana"> · ET nav saišu</span>
+            )}
           </span>
           <button type="button" onClick={() => void syncNow()} disabled={syncBusy} className="font-semibold text-[var(--color-provin-accent)] disabled:opacity-55">
             {syncBusy ? (syncMsg && /\d+\/\d+/.test(syncMsg) ? syncMsg.replace(" meklējumi nolasīti", "") : "Nolasa…") : "Nolasīt"}
