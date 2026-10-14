@@ -5,6 +5,8 @@
 
 import {
   emptyAutoRecordsBlock,
+  REGISTRY_STYLE_BLOCK_KEYS,
+  SOURCE_BLOCK_LABELS,
   type AutoRecordsBlockState,
   type CitiAvotiBlockState,
   type ClientManualLtabBlockPdf,
@@ -91,12 +93,32 @@ export type LifecycleEvent = {
   /**
    * Valsts nāk no sludinājuma/tirgus avota, ne no oficiāla reģistra vai dīlera datiem.
    * Šāda valsts nedrīkst noteikt robežšķērsošanas (importa) notikumus starp kaimiņiem
-   * un nedrīkst kļūt par jauno `prevCountry` — pretējā gadījumā pārdevēja kļūdains/apzināti
+   * un nedrīkst kļūt par jauno `prevCountry` - pretējā gadījumā pārdevēja kļūdains/apzināti
    * pazemināts nobraukums (ar piesaistītu nepareizu valsti) izskatās pēc reālas robežas
    * šķērsošanas turp un atpakaļ.
    */
   countryUnverified?: boolean;
+  /**
+   * Rinda no avota „Laikposma ieraksti” tabulas (AutoDNA, CarVertical, Citi avoti).
+   * Kā sludinājums: zemāks svars, neģenerē valsts maiņu un nekļūst par `prevCountry`.
+   * Atšķirībā no sludinājuma PDF nerāda „(pēc sludinājuma, nav apstiprināts)”.
+   * Reģistra hronoloģija (tjekbil / Finnik / Traficom u.c.) šo karogu nesaņem.
+   */
+  timelineInformational?: boolean;
 };
+
+/** Valsts no sludinājuma vai laikposma tabulas - rāda, bet nešķērso robežu. */
+export function lifecycleCountryIsSoft(e: Pick<LifecycleEvent, "countryUnverified" | "timelineInformational">): boolean {
+  return e.countryUnverified === true || e.timelineInformational === true;
+}
+
+/**
+ * „Laikposma ieraksti” (AutoDNA, CarVertical, Citi avoti) ir informatīvi.
+ * Publisko reģistru hronoloģija paliek stipra un drīkst dzīt valsts maiņu.
+ */
+export function vendorTimelineIsInformational(sourceTitle: string): boolean {
+  return !REGISTRY_STYLE_BLOCK_KEYS.some((k) => SOURCE_BLOCK_LABELS[k] === sourceTitle);
+}
 
 /** Mēnešu skaits starp notikumiem, no kura robs kļūst par patstāvīgu ierakstu. */
 const GAP_MONTHS_THRESHOLD = 24;
@@ -202,6 +224,7 @@ function makeEvent(args: {
   source?: string;
   tone?: LifecycleEventTone;
   countryUnverified?: boolean;
+  timelineInformational?: boolean;
 }): LifecycleEvent {
   const ms = parseLifecycleTimeMs(args.rawDate);
   const ev: LifecycleEvent = {
@@ -216,6 +239,7 @@ function makeEvent(args: {
     sources: args.source?.trim() ? [args.source.trim()] : [],
     tone: args.tone ?? "info",
     ...(args.countryUnverified ? { countryUnverified: true } : null),
+    ...(args.timelineInformational ? { timelineInformational: true } : null),
   };
   collapseCountryOnlyDetail(ev);
   return ev;
@@ -317,6 +341,13 @@ function classifyVendorTimelineKind(description: string): LifecycleEventKind {
   return "registration";
 }
 
+/** Laikposma tabulas rindas nedrīkst kļūt par importa kartīti vai sarkanu negadījumu. */
+function classifyInformationalVendorTimelineKind(description: string): LifecycleEventKind {
+  const kind = classifyVendorTimelineKind(description);
+  if (kind === "import" || kind === "incident") return "registration";
+  return kind;
+}
+
 function vendorTimelineTitleAndDetail(description: string, kind: LifecycleEventKind): { title: string; detail: string } {
   const raw = description.trim();
   if (kind === "inspection") {
@@ -332,9 +363,9 @@ function vendorTimelineTitleAndDetail(description: string, kind: LifecycleEventK
   return { title: raw || "Ieraksts reģistrā", detail: "" };
 }
 
-/** Reģistrācija, apskate, oficiāls odometrs u.c. - ne sludinājuma valsts. */
+/** Reģistrācija, apskate, oficiāls odometrs u.c. - ne sludinājuma vai laikposma tabulas valsts. */
 export function lifecycleEventProvidesCountryResidence(e: LifecycleEvent): boolean {
-  if (!e.country || e.countryUnverified) return false;
+  if (!e.country || lifecycleCountryIsSoft(e)) return false;
   if (e.kind === "listed" || e.kind === "gap") return false;
   return true;
 }
@@ -451,10 +482,13 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   }
 
   for (const b of input.manualVendorBlocks ?? []) {
+    const informational = vendorTimelineIsInformational(b.title);
     for (const t of b.vehicleHistoryTimeline ?? []) {
       if (t.includeInPdf === false) continue;
       if (!t.date.trim() && !t.description.trim()) continue;
-      const kind = classifyVendorTimelineKind(t.description);
+      const kind = informational
+        ? classifyInformationalVendorTimelineKind(t.description)
+        : classifyVendorTimelineKind(t.description);
       const { title, detail } = vendorTimelineTitleAndDetail(t.description, kind);
       const failedInspection =
         kind === "inspection" && /neizturēt|ikke godkendt|omsyn|betinget/i.test(`${title} ${detail} ${t.description}`);
@@ -467,10 +501,11 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
           country: t.country,
           odometer: t.odometer,
           source: b.title,
-          tone: failedInspection ? "warn" : kind === "incident" ? "alert" : "info",
-          // Tirgus/sludinājuma valsts nav reģistrācija - pretējā gadījumā
-          // DE/NL/PL sludinājumi vienā laikā izskatās pēc robežšķērsošanas.
-          countryUnverified: kind === "listed" && Boolean(t.country.trim()),
+          tone: informational ? "info" : failedInspection ? "warn" : kind === "incident" ? "alert" : "info",
+          // Tirgus sludinājums (ss.lv) paliek countryUnverified ar piezīmi.
+          // Laikposma tabulas rindas ir tāds pats zemais svars, bet bez „nav apstiprināts”.
+          countryUnverified: !informational && kind === "listed" && Boolean(t.country.trim()),
+          timelineInformational: informational,
         }),
       );
     }
@@ -635,7 +670,7 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
     const hosts = key ? byMonth.get(key) : undefined;
     const host = hosts?.find((h) => {
       if (h.kind === "odometer") return false;
-      if (h.kind === "listed" && !o.countryUnverified) return false;
+      if ((h.kind === "listed" || h.timelineInformational) && !lifecycleCountryIsSoft(o)) return false;
       return true;
     });
     if (o.kind === "anomaly" || !host) {
@@ -646,9 +681,11 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
     if (!host.country && o.country) {
       host.country = o.country;
       if (o.countryUnverified) host.countryUnverified = true;
-    } else if (host.country === o.country && !o.countryUnverified) {
+      if (o.timelineInformational) host.timelineInformational = true;
+    } else if (host.country === o.country && !lifecycleCountryIsSoft(o)) {
       // Apstiprināts nolasījums no cita avota pierāda to pašu valsti - vairs nav pieņēmums.
       host.countryUnverified = false;
+      host.timelineInformational = false;
     }
     for (const s of o.sources) if (!host.sources.includes(s)) host.sources.push(s);
     collapseCountryOnlyDetail(host);
@@ -671,10 +708,12 @@ function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
     if (!prev.country && e.country) {
       prev.country = e.country;
       if (e.countryUnverified) prev.countryUnverified = true;
-    } else if (prev.country && prev.country === e.country && !e.countryUnverified) {
+      if (e.timelineInformational) prev.timelineInformational = true;
+    } else if (prev.country && prev.country === e.country && !lifecycleCountryIsSoft(e)) {
       // Apstiprināts nolasījums no cita avota pierāda to pašu valsti - vairs nav pieņēmums.
       // Tā nekad nedrīkst palikt "(pēc sludinājuma, nav apstiprināts)" kopā ar oficiālu avotu punktu.
       prev.countryUnverified = false;
+      prev.timelineInformational = false;
     }
     if (!prev.detail && e.detail) prev.detail = e.detail;
     for (const s of e.sources) if (!prev.sources.includes(s)) prev.sources.push(s);
