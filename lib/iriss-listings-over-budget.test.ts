@@ -22,7 +22,9 @@ describe("over-budget filter", () => {
 
   it("uses the card total (price + I + PVN) against the client budget", () => {
     const v = {
-      platform: "ecarstrade",
+      platform: "ecarstrade" as const,
+      countryCode: "BE",
+      lastSeenAt: "",
       priceCurrent: null,
       priceStart: null,
       priceBuyNow: 16200,
@@ -39,7 +41,10 @@ describe("over-budget filter", () => {
 
   it("hides only when the filter is on and the overshoot is above the threshold", () => {
     const v = {
-      platform: "auto1",
+      platform: "auto1" as const,
+      countryCode: "DE",
+      lastSeenAt: "",
+      vatNote: "",
       priceCurrent: 10000,
       priceStart: 10000,
       priceBuyNow: null,
@@ -53,7 +58,9 @@ describe("over-budget filter", () => {
 
   it("does not treat an 850 € floor as cheap enough to stay in budget", () => {
     const v = {
-      platform: "ecarstrade",
+      platform: "ecarstrade" as const,
+      countryCode: "BE",
+      lastSeenAt: "",
       priceCurrent: 850,
       priceStart: 850,
       priceBuyNow: 16200,

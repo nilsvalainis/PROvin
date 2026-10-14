@@ -1,21 +1,16 @@
-import { listingBidPrice, listingExtrasI, listingFinalPrice, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
+import { listingBidPrice, listingExtrasI, listingFinalPrice, type ListingCostParts, type ListingPriceFields, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import { listingTaxResolved } from "@/lib/iriss-listings-vat";
 
 export const DEFAULT_OVER_BUDGET_THRESHOLD_EUR = 2000;
 
-export function listingCardTotal(v: {
-  platform?: string;
-  priceCurrent: number | null;
-  priceStart: number | null;
-  priceMinimal?: number | null;
-  priceBuyNow: number | null;
-  taxDeduction?: boolean | null;
-  vatRate?: number | null;
-  vatNote?: string;
-  isMargin?: boolean | null;
-  salesVatType?: number | null;
-  sourceCountry?: string;
-}, extras: ListingCostParts, taxOv?: { kind: ListingTaxKind; rate?: number | null }): number | null {
+/** Cena + tie paši PVN lauki, ko `listingTaxResolved` / kartīte. */
+export type ListingCardTotalVehicle = ListingPriceFields & Parameters<typeof listingTaxResolved>[0];
+
+export function listingCardTotal(
+  v: ListingCardTotalVehicle,
+  extras: ListingCostParts,
+  taxOv?: { kind: ListingTaxKind; rate?: number | null },
+): number | null {
   const bid = listingBidPrice(v);
   if (bid == null) return null;
   const tax = listingTaxResolved(v, taxOv);
@@ -40,7 +35,7 @@ export function parseOverBudgetThreshold(raw: unknown, fallback = DEFAULT_OVER_B
 }
 
 export function listingIsOverBudgetHidden(
-  v: Parameters<typeof listingCardTotal>[0],
+  v: ListingCardTotalVehicle,
   extras: ListingCostParts,
   taxOv: { kind: ListingTaxKind; rate?: number | null } | undefined,
   budget: number | null,
