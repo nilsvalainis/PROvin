@@ -17,7 +17,7 @@ import {
   type IrissRelayConfig,
 } from "@/lib/iriss-listings-relay";
 import type { IrissListingPlatform, IrissListingsLatestView } from "@/lib/iriss-listings-types";
-import { IRISS_LISTING_PLATFORMS } from "@/lib/iriss-listings-types";
+import { IRISS_RELAY_LISTING_PLATFORMS } from "@/lib/iriss-listings-types";
 
 export type IrissLoginAction = "start" | "close" | "verify";
 
@@ -31,6 +31,7 @@ export const IRISS_LOGIN_PROBE_SOURCE: Record<IrissListingPlatform, string> = {
   openline: "https://www.openlane.eu/en/findcar",
   auto1: "https://www.auto1.com/en/app/merchant/cars?channel=24h&page=1",
   autobid: "https://autobid.de/en/search-results",
+  ecarstrade: "https://ecarstrade.com/search",
 };
 
 export function parseIrissLoginRequest(body: unknown): IrissLoginRequest | { error: string } {
@@ -38,7 +39,7 @@ export function parseIrissLoginRequest(body: unknown): IrissLoginRequest | { err
   const rec = body as Record<string, unknown>;
   const platform = typeof rec.platform === "string" ? rec.platform.trim() : "";
   const action = typeof rec.action === "string" ? rec.action.trim() : "";
-  if (!IRISS_LISTING_PLATFORMS.includes(platform as IrissListingPlatform)) {
+  if (!IRISS_RELAY_LISTING_PLATFORMS.includes(platform as IrissListingPlatform)) {
     return { error: "platform: openline | auto1 | autobid" };
   }
   if (action !== "start" && action !== "close" && action !== "verify") {

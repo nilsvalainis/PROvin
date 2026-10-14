@@ -28,6 +28,8 @@ Vercel → **Project → Settings → Environment Variables** → vismaz **Produ
 
 Pārējie pēc `.env.example` (WhatsApp, e-pasti utt.).
 
+IRISS LIST eCarsTrade (opcionāli, Vercel Production/Preview): `ECARSTRADE_USER`, `ECARSTRADE_PASS`, `IRISS_LISTINGS_ECARSTRADE_MAX_PAGES`. Bez paroles nolasījums paliek publisks. Openlane/Auto1 joprojām caur releju; eCarsTrade releju nelieto.
+
 Pēc izmaiņām: **Deployments → … → Redeploy** (vai jauns `git push`).
 
 ### 3. Domēns provin.lv

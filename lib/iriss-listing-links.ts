@@ -7,13 +7,14 @@ export function isHttpUrlForOpen(s: string): boolean {
   return /^https?:\/\//i.test(t);
 }
 
-export type ListingPlatformChipKey = "mobile" | "autobid" | "openline" | "auto1" | "citi";
+export type ListingPlatformChipKey = "mobile" | "autobid" | "openline" | "auto1" | "ecarstrade" | "citi";
 
 export const LISTING_PLATFORM_CHIPS: Record<ListingPlatformChipKey, { letter: string; title: string }> = {
   mobile: { letter: "M", title: "Mobile" },
   autobid: { letter: "AB", title: "Autobid" },
   openline: { letter: "OL", title: "Openline" },
   auto1: { letter: "A1", title: "Auto1" },
+  ecarstrade: { letter: "ET", title: "eCarsTrade" },
   citi: { letter: "C", title: "Citi" },
 };
 
@@ -23,6 +24,7 @@ export const IR_LISTING_PLATFORM_CHIP_STYLE: Record<ListingPlatformChipKey, CSSP
   autobid: { backgroundColor: "#5AC8FA", color: "#000000", border: "none" },
   openline: { backgroundColor: "#007AFF", color: "#ffffff", border: "none" },
   auto1: { backgroundColor: "#FF9500", color: "#ffffff", border: "none" },
+  ecarstrade: { backgroundColor: "#34C759", color: "#ffffff", border: "none" },
   citi: {
     backgroundColor: "#E5E5EA",
     color: "#3a3a3c",
@@ -36,7 +38,7 @@ export const IR_LISTING_ALL_CHIP_STYLE: CSSProperties = {
   border: "1px solid #D1D1D6",
 };
 
-/** Lauki, pēc kuriem veidojas platformu čipu saites (kārtība: M, AB, OL, A1, tad Citi). Vecais formāts: virkne. */
+/** Lauki, pēc kuriem veidojas platformu čipu saites (kārtība: M, AB, OL, A1, ET, tad Citi). Vecais formāts: virkne. */
 export type IrissListingLinkField = string | readonly string[] | null | undefined;
 
 export type IrissListingLinksInput = {
@@ -44,6 +46,7 @@ export type IrissListingLinksInput = {
   listingLinkAutobid: IrissListingLinkField;
   listingLinkOpenline: IrissListingLinkField;
   listingLinkAuto1: IrissListingLinkField;
+  listingLinkEcarstrade: IrissListingLinkField;
   listingLinksOther: IrissListingLinkField;
 };
 
@@ -84,6 +87,7 @@ export function buildListingPlatformChips(
   pushAll(src.listingLinkAutobid, "autobid");
   pushAll(src.listingLinkOpenline, "openline");
   pushAll(src.listingLinkAuto1, "auto1");
+  pushAll(src.listingLinkEcarstrade, "ecarstrade");
   pushAll(src.listingLinksOther, "citi");
   return out;
 }

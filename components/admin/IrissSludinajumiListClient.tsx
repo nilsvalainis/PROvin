@@ -61,6 +61,7 @@ import {
 } from "@/lib/iriss-listings-vat";
 import {
   IRISS_LISTING_PLATFORMS,
+  IRISS_RELAY_LISTING_PLATFORMS,
   type IrissListingPlatform,
   type IrissListingSourceRun,
   type IrissListingVehicle,
@@ -73,12 +74,14 @@ const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   autobid: "AUTOBID",
   openline: "OPENLANE",
   auto1: "AUTO1",
+  ecarstrade: "ECARSTRADE",
 };
 
 const PLATFORM_LABEL_LONG: Record<IrissListingPlatform, string> = {
   autobid: "Autobid",
   openline: "Openlane",
   auto1: "Auto1",
+  ecarstrade: "eCarsTrade",
 };
 
 /** „Jauns” un „cena mainīta” rāda pēc laika loga, ne tikai pēdējās palaišanas, lai atkārtots „Nolasīt tagad” tos neizdzēš. */
@@ -89,6 +92,7 @@ type Tab = IrissListTab;
 function platformBadgeClass(platform: IrissListingPlatform): string {
   if (platform === "autobid") return "bg-violet-50 text-violet-800 border-violet-200/80";
   if (platform === "openline") return "bg-indigo-50 text-indigo-800 border-indigo-200/80";
+  if (platform === "ecarstrade") return "bg-emerald-50 text-emerald-800 border-emerald-200/80";
   return "bg-amber-50 text-amber-800 border-amber-200/80";
 }
 
@@ -207,6 +211,7 @@ const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> =
   { id: "autobid", label: "Autobid" },
   { id: "openline", label: "Openlane" },
   { id: "auto1", label: "Auto1" },
+  { id: "ecarstrade", label: "eCarsTrade" },
 ];
 
 async function persistListingDismissItems(items: IrissListingDismissPatch[]): Promise<void> {
@@ -609,19 +614,21 @@ export function IrissSludinajumiListClient({
       ),
     [orders, vehicles, prefs.orderOv],
   );
-  const platformDots = (["auto1", "openline", "autobid"] as const).map((platform) => {
+  const platformDots = (["auto1", "openline", "autobid", "ecarstrade"] as const).map((platform) => {
     const h = vatHealth[platform];
     const login = health?.items.find((x) => x.platform === platform);
     const warn = h.stale + h.missingFields + h.rateMissing + h.conflict + h.defaultUnrecognised;
     const bad = h.level === "red" || (login && login.status !== "ok" && login.status !== "stale" && login.status !== "not_run" && login.status !== "no_sources");
     const amber = h.level === "amber" || warn > 0 || login?.status === "stale";
-    const label = platform === "auto1" ? "Auto1" : platform === "openline" ? "Openlane" : "Autobid";
+    const label = PLATFORM_LABEL_LONG[platform];
     const vat =
       platform === "auto1"
         ? `${h.margin} Margin · ${h.gross} ar PVN · ${warn} ⚠`
         : platform === "openline"
           ? `${h.margin} · ${h.net} NETO · ${warn} ⚠`
-          : `${h.margin} · ${h.gross} · ${warn} ⚠`;
+          : platform === "ecarstrade"
+            ? `${h.net} NETO · ${h.margin} · ${warn} ⚠`
+            : `${h.margin} · ${h.gross} · ${warn} ⚠`;
     return { platform, label, vat, tone: bad ? "bg-red-500" : amber ? "bg-amber-400" : "bg-emerald-500", title: `${label}: ${login ? healthLabel(login.status) : "nav pārbaudīts"} · ${vat}${h.reason ? ` · ${h.reason}` : ""}` };
   });
   const activeFilterCount = (sources.length > 0 ? 1 : 0) + (priceMin != null || priceMax != null ? 1 : 0) + (hideTech ? 1 : 0) + (listScope === "hidden" ? 1 : 0);
@@ -781,7 +788,11 @@ export function IrissSludinajumiListClient({
                     <span title={item.note} className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${healthClass(item.status)}`}>
                       {PLATFORM_LABEL_LONG[item.platform]}: {healthLabel(item.status)}
                     </span>
-                    <IrissListingsLoginButton platform={item.platform} onDone={() => void loadHealth()} />
+                    {IRISS_RELAY_LISTING_PLATFORMS.includes(item.platform) ? (
+                      <IrissListingsLoginButton platform={item.platform} onDone={() => void loadHealth()} />
+                    ) : (
+                      <span className="text-[10.5px] text-[#8e8e93]">env ECARSTRADE_USER</span>
+                    )}
                   </div>
                 ))}
                 {problemSources.length > 0 ? (

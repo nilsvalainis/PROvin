@@ -4,6 +4,7 @@ const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   autobid: "Autobid.de (Vācijas izsoles)",
   openline: "OpenLane (Eiropas izsoles)",
   auto1: "AUTO1.com (wholesale EU)",
+  ecarstrade: "eCarsTrade (BE/NL/LU/DE izsoles)",
 };
 
 export function irissListingPlatformLabel(platform: IrissListingPlatform): string {
@@ -45,7 +46,7 @@ export function formatIrissListingsForAi(vehicles: IrissListingVehicle[]): strin
     return "### Eiropas izsoļu portāli (IRISS)\nNav pieejamu salīdzinājuma ierakstu (sinhronizācija izslēgta vai tukša).";
   }
   const lines: string[] = [
-    "### Eiropas izsoļu portāli (IRISS: Autobid, OpenLane, AUTO1)",
+    "### Eiropas izsoļu portāli (IRISS: Autobid, OpenLane, AUTO1, eCarsTrade)",
     `Salīdzinājuma auto (${vehicles.length}). Izsoles cenas ir sākuma / minimālās, ne gala pārdošanas cenas:`,
   ];
   for (const v of vehicles) {

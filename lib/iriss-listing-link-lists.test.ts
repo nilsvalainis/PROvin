@@ -36,12 +36,14 @@ describe("parseIrissPasutijumsListingLinks", () => {
       listingLinkAutobid: "https://autobid.de/en/search-results?q=1",
       listingLinkOpenline: "https://www.openlane.eu/en/findcar",
       listingLinkAuto1: "https://www.auto1.com/en/app/merchant/cars",
+      listingLinkEcarstrade: "https://ecarstrade.com/search?mark[]=68",
       listingLinksOther: ["https://example.com/x", ""],
     });
     expect(parsed.listingLinkMobile).toEqual(["https://suchen.mobile.de/a"]);
     expect(parsed.listingLinkAutobid).toEqual(["https://autobid.de/en/search-results?q=1"]);
     expect(parsed.listingLinkOpenline).toEqual(["https://www.openlane.eu/en/findcar"]);
     expect(parsed.listingLinkAuto1).toEqual(["https://www.auto1.com/en/app/merchant/cars"]);
+    expect(parsed.listingLinkEcarstrade).toEqual(["https://ecarstrade.com/search?mark[]=68"]);
     expect(parsed.listingLinksOther).toEqual(["https://example.com/x", ""]);
   });
 
@@ -51,11 +53,14 @@ describe("parseIrissPasutijumsListingLinks", () => {
       listingLinkAutobid: ["https://autobid.de/1", "https://autobid.de/2"],
       listingLinkOpenline: ["https://www.openlane.eu/1"],
       listingLinkAuto1: ["https://www.auto1.com/1", "https://www.auto1.com/2", "https://www.auto1.com/3"],
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68", "https://ecarstrade.com/search?mark[]=12"],
       listingLinksOther: ["https://citi.example/1"],
     });
     expect(parsed.listingLinkMobile).toHaveLength(2);
     expect(parsed.listingLinkAutobid).toEqual(["https://autobid.de/1", "https://autobid.de/2"]);
     expect(parsed.listingLinkAuto1).toHaveLength(3);
+    expect(parsed.listingLinkEcarstrade).toHaveLength(2);
+    expect(parseIrissPasutijumsListingLinks({ listingLinkAuto1: "https://www.auto1.com/x" }).listingLinkEcarstrade).toEqual([""]);
   });
 });
 
@@ -109,10 +114,12 @@ describe("preview labels and chips", () => {
       listingLinkAutobid: "https://autobid.de/en/search-results?q=1",
       listingLinkOpenline: ["https://www.openlane.eu/en/findcar", "https://www.openlane.eu/en/findcar?x=2"],
       listingLinkAuto1: ["https://www.auto1.com/en/app/merchant/cars"],
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68"],
       listingLinksOther: ["https://example.com/citi"],
     });
     expect(chips.filter((c) => c.letter === "M")).toHaveLength(2);
     expect(chips.filter((c) => c.letter === "OL")).toHaveLength(2);
-    expect(chips.map((c) => c.letter)).toEqual(["M", "M", "AB", "OL", "OL", "A1", "C"]);
+    expect(chips.filter((c) => c.letter === "ET")).toHaveLength(1);
+    expect(chips.map((c) => c.letter)).toEqual(["M", "M", "AB", "OL", "OL", "A1", "ET", "C"]);
   });
 });

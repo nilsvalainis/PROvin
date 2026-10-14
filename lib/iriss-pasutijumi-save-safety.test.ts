@@ -88,5 +88,6 @@ describe("irissPasutijumsHasOperatorContent", () => {
   it("treats VIN or listing link as content", () => {
     expect(irissPasutijumsHasOperatorContent(rec("a", { vin: "WVWZZZ1JZ3W386752" }))).toBe(true);
     expect(irissPasutijumsHasOperatorContent(rec("a", { listingLinkAuto1: ["https://auto1.com/x"] }))).toBe(true);
+    expect(irissPasutijumsHasOperatorContent(rec("a", { listingLinkEcarstrade: ["https://ecarstrade.com/search"] }))).toBe(true);
   });
 });

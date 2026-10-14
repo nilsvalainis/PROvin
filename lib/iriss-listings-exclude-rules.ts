@@ -1,6 +1,6 @@
 /**
  * IRISS LIST ingestijas izslēgšanas noteikumi (servera puse).
- * Piemēro kopīgajā sync ceļā pirms saglabāšanas: Auto1, Autobid, Openlane un nākamās platformas.
+ * Piemēro kopīgajā sync ceļā pirms saglabāšanas: Auto1, Autobid, Openlane, eCarsTrade.
  *
  * Openlane jauda: relejs mapē `auction.Kw` (skat. relay REAL_AUCTION fixture `Kw: 140`) uz `powerKw`.
  * Ja `powerKw` tukšs, mēģinām kW no virsraksta / dzinēja teksta (`110 kW` / `150 PS`, `133 kW` / `181 PS`).

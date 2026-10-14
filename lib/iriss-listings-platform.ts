@@ -4,12 +4,14 @@ const HOSTS: Record<IrissListingPlatform, string[]> = {
   autobid: ["autobid.de", "autobid.eu"],
   openline: ["openlane.eu", "openlane.com", "openline.eu"],
   auto1: ["auto1.com", "auto1.eu", "auto1-group.com"],
+  ecarstrade: ["ecarstrade.com"],
 };
 
 export const IRISS_LISTING_PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   autobid: "Autobid",
   openline: "Openlane",
   auto1: "Auto1",
+  ecarstrade: "eCarsTrade",
 };
 
 /** Mobile.de un nezināmi hosti dod `null`: šajā fāzē tos nelasa. */

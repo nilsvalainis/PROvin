@@ -33,4 +33,29 @@ describe("irissPasutijumsSeedFromListing", () => {
     expect(rec.engineType).toContain("140 kW");
     expect(irissListingVin("nope")).toBe("");
   });
+
+  it("puts an eCarsTrade detail URL on listingLinkEcarstrade", () => {
+    const rec = irissPasutijumsSeedFromListing(
+      {
+        id: "car-et",
+        title: "VOLVO EX30",
+        manufacturer: "Volvo",
+        year: "2025",
+        firstRegistration: "12/2025",
+        mileageKm: 8388,
+        fuel: "Electric",
+        transmission: "Automatic",
+        powerKw: "200",
+        vin: "",
+        detailUrl: "https://ecarstrade.com/cars/7672194",
+        platform: "ecarstrade",
+        color: "",
+        bodyType: "",
+      },
+      "ord-et",
+      "2026-10-14T10:00:00.000Z",
+    );
+    expect(rec.listingLinkEcarstrade).toEqual(["https://ecarstrade.com/cars/7672194"]);
+    expect(rec.listingLinkAuto1).toEqual([""]);
+  });
 });

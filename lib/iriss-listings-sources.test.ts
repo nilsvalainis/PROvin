@@ -6,7 +6,7 @@ import type { IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 function row(
   id: string,
   listStatus: IrissPasutijumsListStatus,
-  links: Partial<Record<"autobid" | "openline" | "auto1" | "mobile", string | string[]>> = {},
+  links: Partial<Record<"autobid" | "openline" | "auto1" | "ecarstrade" | "mobile", string | string[]>> = {},
   other: string[] = [],
 ) {
   return {
@@ -17,6 +17,7 @@ function row(
     listingLinkAutobid: links.autobid ?? "",
     listingLinkOpenline: links.openline ?? "",
     listingLinkAuto1: links.auto1 ?? "",
+    listingLinkEcarstrade: links.ecarstrade ?? "",
     listingLinksOther: other,
   };
 }
@@ -26,15 +27,17 @@ describe("detectIrissListingPlatform", () => {
     expect(detectIrissListingPlatform("https://autobid.de/en/search-results?x=1")).toBe("autobid");
     expect(detectIrissListingPlatform("https://www.openlane.eu/ru/findcar?y=2")).toBe("openline");
     expect(detectIrissListingPlatform("https://www.auto1.com/en/app/merchant/cars")).toBe("auto1");
+    expect(detectIrissListingPlatform("https://ecarstrade.com/search?mark[]=68")).toBe("ecarstrade");
+    expect(detectIrissListingPlatform("https://www.ecarstrade.com/search")).toBe("ecarstrade");
     expect(detectIrissListingPlatform("https://suchen.mobile.de/fahrzeuge/search.html")).toBeNull();
     expect(detectIrissListingPlatform("not a url")).toBeNull();
   });
 });
 
 describe("buildIrissListingSources", () => {
-  it("takes working orders and only the three auctions", () => {
+  it("takes working orders and only the four auctions", () => {
     const sources = buildIrissListingSources([
-      row("a", "active", { mobile: "https://suchen.mobile.de/x", autobid: "https://autobid.de/en/search-results?q=1", openline: "https://www.openlane.eu/en/findcar", auto1: "https://www.auto1.com/en/app/merchant/cars" }),
+      row("a", "active", { mobile: "https://suchen.mobile.de/x", autobid: "https://autobid.de/en/search-results?q=1", openline: "https://www.openlane.eu/en/findcar", auto1: "https://www.auto1.com/en/app/merchant/cars", ecarstrade: "https://ecarstrade.com/search?mark[]=68" }),
       row("s", "searching", { autobid: "https://autobid.de/en/search-results?q=4" }),
       row("o", "offered", { autobid: "https://autobid.de/en/search-results?q=5" }),
       row("r", "reserved", { autobid: "https://autobid.de/en/search-results?q=6" }),
@@ -45,6 +48,7 @@ describe("buildIrissListingSources", () => {
       "a:autobid",
       "a:openline",
       "a:auto1",
+      "a:ecarstrade",
       "s:autobid",
       "o:autobid",
       "r:autobid",

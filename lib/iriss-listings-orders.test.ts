@@ -69,10 +69,12 @@ describe("order briefs and linking", () => {
       listingLinkAutobid: ["https://autobid.de/1", "https://autobid.de/2"],
       listingLinkOpenline: ["https://www.openlane.eu/1"],
       listingLinkAuto1: ["https://www.auto1.com/1"],
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68"],
       listingLinksOther: ["https://example.com/citi", ""],
     });
     expect(b.listingLinkMobile).toEqual(["https://suchen.mobile.de/a", "https://suchen.mobile.de/b"]);
     expect(b.listingLinkAutobid).toEqual(["https://autobid.de/1", "https://autobid.de/2"]);
+    expect(b.listingLinkEcarstrade).toEqual(["https://ecarstrade.com/search?mark[]=68"]);
     expect(b.listingLinksOther).toEqual(["https://example.com/citi"]);
   });
 

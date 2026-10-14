@@ -25,6 +25,7 @@ function parseBodyRecord(id: string, body: unknown): IrissScanRecord | null {
     listingLinkAutobid: links(o, "listingLinkAutobid"),
     listingLinkOpenline: links(o, "listingLinkOpenline"),
     listingLinkAuto1: links(o, "listingLinkAuto1"),
+    listingLinkEcarstrade: links(o, "listingLinkEcarstrade"),
     listingLinksOther: links(o, "listingLinksOther"),
   };
 }

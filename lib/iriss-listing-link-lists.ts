@@ -1,7 +1,7 @@
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { isValidHttpUrl } from "@/lib/order-field-validation";
 
-/** Maks. saišu skaits vienā avotā (Auto1, Openlane, Autobid, Mobile, Citi). */
+/** Maks. saišu skaits vienā avotā (Auto1, Openlane, Autobid, eCarsTrade, Mobile, Citi). */
 export const IRISS_LISTING_LINKS_PER_SOURCE_MAX = 20;
 
 export type IrissPasutijumsListingLinkFields = {
@@ -9,6 +9,7 @@ export type IrissPasutijumsListingLinkFields = {
   listingLinkAutobid: string[];
   listingLinkOpenline: string[];
   listingLinkAuto1: string[];
+  listingLinkEcarstrade: string[];
   listingLinksOther: string[];
 };
 
@@ -93,7 +94,7 @@ function fieldFromRaw(o: Record<string, unknown>, key: string, alias?: string): 
   return undefined;
 }
 
-/** Pasūtījuma JSON (vecs vienas virknes formāts vai masīvi) → piecu avotu masīvi. */
+/** Pasūtījuma JSON (vecs vienas virknes formāts vai masīvi) → sešu avotu masīvi. */
 export function parseIrissPasutijumsListingLinks(
   raw: unknown,
   sanitize?: (s: string) => string,
@@ -104,6 +105,10 @@ export function parseIrissPasutijumsListingLinks(
     listingLinkAutobid: normalizeIrissListingLinkList(fieldFromRaw(o, "listingLinkAutobid", "listingLinksAutobid"), sanitize),
     listingLinkOpenline: normalizeIrissListingLinkList(fieldFromRaw(o, "listingLinkOpenline", "listingLinksOpenline"), sanitize),
     listingLinkAuto1: normalizeIrissListingLinkList(fieldFromRaw(o, "listingLinkAuto1", "listingLinksAuto1"), sanitize),
+    listingLinkEcarstrade: normalizeIrissListingLinkList(
+      fieldFromRaw(o, "listingLinkEcarstrade", "listingLinksEcarstrade"),
+      sanitize,
+    ),
     listingLinksOther: normalizeIrissListingLinkList(o.listingLinksOther, sanitize),
   };
 }

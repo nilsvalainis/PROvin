@@ -31,6 +31,7 @@ export function irissScanSourceRows(rows: readonly IrissScanListRow[]) {
     listingLinkAutobid: r.listingLinkAutobid,
     listingLinkOpenline: r.listingLinkOpenline,
     listingLinkAuto1: r.listingLinkAuto1,
+    listingLinkEcarstrade: r.listingLinkEcarstrade,
     listingLinksOther: r.listingLinksOther,
   }));
 }
@@ -59,6 +60,7 @@ export function irissScanOrderBrief(r: IrissScanListRow): IrissListingOrderBrief
     listingLinkAutobid: filledIrissListingLinks(r.listingLinkAutobid),
     listingLinkOpenline: filledIrissListingLinks(r.listingLinkOpenline),
     listingLinkAuto1: filledIrissListingLinks(r.listingLinkAuto1),
+    listingLinkEcarstrade: filledIrissListingLinks(r.listingLinkEcarstrade),
     listingLinksOther: filledIrissListingLinks(r.listingLinksOther),
     listStatus: "active",
   };

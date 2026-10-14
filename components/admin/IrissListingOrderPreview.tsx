@@ -32,6 +32,7 @@ function OrderPreviewBody({ order }: { order: IrissListingOrderBrief }) {
     { label: "Autobid", hrefs: order.listingLinkAutobid },
     { label: "Openlane", hrefs: order.listingLinkOpenline },
     { label: "Auto1", hrefs: order.listingLinkAuto1 },
+    { label: "eCarsTrade", hrefs: order.listingLinkEcarstrade },
     { label: "Cita", hrefs: order.listingLinksOther },
   ]).filter((x) => isHttpUrlForOpen(x.href));
   const engine = [order.engineType, order.powerKwLabel].filter(Boolean).join(" · ");

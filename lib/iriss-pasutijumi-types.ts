@@ -225,6 +225,7 @@ export type IrissPasutijumsRecord = {
   listingLinkAutobid: string[];
   listingLinkOpenline: string[];
   listingLinkAuto1: string[];
+  listingLinkEcarstrade: string[];
   /** „Citi” — vairākas rindas; tukšās pirms saglabāšanas var apvienot. */
   listingLinksOther: string[];
   /** Dzintarzeme Auto izmaksu tāmes lauki (admin autosaglabāšana). */
@@ -275,6 +276,7 @@ export type IrissPasutijumsListRow = {
   listingLinkAutobid: string[];
   listingLinkOpenline: string[];
   listingLinkAuto1: string[];
+  listingLinkEcarstrade: string[];
   listingLinksOther: string[];
 };
 
@@ -362,6 +364,7 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     listingLinkAutobid: [""],
     listingLinkOpenline: [""],
     listingLinkAuto1: [""],
+    listingLinkEcarstrade: [""],
     listingLinksOther: [""],
     dzintarzemeTameDraft: defaultIrissDzintarzemeTameDraft(),
     offers: [],

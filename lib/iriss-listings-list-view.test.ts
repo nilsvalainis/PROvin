@@ -134,6 +134,7 @@ describe("listing filters", () => {
   it("treats an empty source list as all platforms", () => {
     expect(parseListingSources("")).toEqual([]);
     expect(parseListingSources("auto1,nope,autobid")).toEqual(["autobid", "auto1"]);
+    expect(parseListingSources("ecarstrade,auto1")).toEqual(["auto1", "ecarstrade"]);
     expect(vehicleInSources("openline", [])).toBe(true);
     expect(vehicleInSources("openline", ["autobid"])).toBe(false);
     expect(vehicleInSources("autobid", ["autobid", "auto1"])).toBe(true);

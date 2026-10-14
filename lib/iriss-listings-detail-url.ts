@@ -20,6 +20,7 @@ export type ListingMobileOs = "ios" | "android";
 const AUTO1_DETAIL = "https://www.auto1.com/en/app/merchant/car/";
 const OPENLANE_DETAIL = "https://www.openlane.eu/en/car/";
 const AUTOBID_DETAIL = "https://autobid.de/en/item/";
+const ECARSTRADE_DETAIL = "https://ecarstrade.com/cars/";
 const AUTO1_STOCK_RE = /^[A-Z]{2}\d{5}$/;
 
 function looksLikeSearchNotDetail(platform: IrissListingPlatform, url: string): boolean {
@@ -27,6 +28,7 @@ function looksLikeSearchNotDetail(platform: IrissListingPlatform, url: string): 
   if (platform === "auto1") return /\/merchant\/cars(?:\?|$|\/)/.test(u) || /\/car-search\//.test(u);
   if (platform === "openline") return /\/findcar(?:v6)?(?:\/|\?|$)/.test(u);
   if (platform === "autobid") return /\/search-results/.test(u);
+  if (platform === "ecarstrade") return /\/search(?:\/|\?|$)/.test(u) || /\/selection\//.test(u);
   return false;
 }
 
@@ -51,6 +53,10 @@ export function listingDetailUrlBuilt(v: ListingDetailUrlInput): string {
   if (v.platform === "openline") {
     const id = key(v.auctionId) || key(v.externalId);
     return id ? `${OPENLANE_DETAIL}${encodeURIComponent(id)}` : "";
+  }
+  if (v.platform === "ecarstrade") {
+    const id = key(v.externalId);
+    return id ? `${ECARSTRADE_DETAIL}${encodeURIComponent(id)}` : "";
   }
   const id = key(v.externalId);
   return id ? `${AUTOBID_DETAIL}${encodeURIComponent(id)}` : "";

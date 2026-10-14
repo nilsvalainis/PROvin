@@ -234,6 +234,7 @@ const IrissRowCard = memo(function IrissRowCard({
     listingLinkAutobid: row.listingLinkAutobid,
     listingLinkOpenline: row.listingLinkOpenline,
     listingLinkAuto1: row.listingLinkAuto1,
+    listingLinkEcarstrade: row.listingLinkEcarstrade,
     listingLinksOther: row.listingLinksOther,
   });
   const brandFallback = irissBrandFallbackLabel(row.brandModel);

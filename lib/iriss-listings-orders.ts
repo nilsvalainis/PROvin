@@ -30,6 +30,7 @@ export type IrissListingOrderBrief = {
   listingLinkAutobid: string[];
   listingLinkOpenline: string[];
   listingLinkAuto1: string[];
+  listingLinkEcarstrade: string[];
   listingLinksOther: string[];
   listStatus: IrissPasutijumsListStatus;
 };
@@ -88,6 +89,7 @@ export function irissListingOrderBrief(row: IrissPasutijumsListRow): IrissListin
     listingLinkAutobid: filledIrissListingLinks(row.listingLinkAutobid),
     listingLinkOpenline: filledIrissListingLinks(row.listingLinkOpenline),
     listingLinkAuto1: filledIrissListingLinks(row.listingLinkAuto1),
+    listingLinkEcarstrade: filledIrissListingLinks(row.listingLinkEcarstrade),
     listingLinksOther: filledIrissListingLinks(row.listingLinksOther),
     listStatus: row.listStatus ?? "active",
   };

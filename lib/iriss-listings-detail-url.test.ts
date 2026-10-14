@@ -16,6 +16,9 @@ describe("resolveListingDetailUrl", () => {
     expect(resolveListingDetailUrl({ platform: "autobid", detailUrl: "https://autobid.de/en/item/volvo-xc60-3587391", externalId: "1" })).toBe(
       "https://autobid.de/en/item/volvo-xc60-3587391",
     );
+    expect(
+      resolveListingDetailUrl({ platform: "ecarstrade", detailUrl: "https://ecarstrade.com/cars/7672194", externalId: "7672194" }),
+    ).toBe("https://ecarstrade.com/cars/7672194");
   });
 
   it("builds Auto1 from stockNumber, not the numeric id, and ignores a search URL", () => {
@@ -42,6 +45,14 @@ describe("resolveListingDetailUrl", () => {
       }),
     ).toBe("https://www.openlane.eu/en/car/A99");
     expect(resolveListingDetailUrl({ platform: "autobid", externalId: "3587391" })).toBe("https://autobid.de/en/item/3587391");
+    expect(resolveListingDetailUrl({ platform: "ecarstrade", externalId: "7672194" })).toBe("https://ecarstrade.com/cars/7672194");
+    expect(
+      resolveListingDetailUrl({
+        platform: "ecarstrade",
+        detailUrl: "https://ecarstrade.com/search?mark[]=68",
+        externalId: "7672194",
+      }),
+    ).toBe("https://ecarstrade.com/cars/7672194");
     expect(
       resolveListingDetailUrl({
         platform: "autobid",
@@ -80,5 +91,6 @@ describe("resolveListingDetailUrl", () => {
     expect(listingCopyId({ platform: "auto1", stockNumber: "BW03512", externalId: "9" })).toBe("BW03512");
     expect(listingCopyId({ platform: "openline", auctionId: "1234567" })).toBe("1234567");
     expect(listingCopyId({ platform: "autobid", externalId: "3587391" })).toBe("3587391");
+    expect(listingCopyId({ platform: "ecarstrade", externalId: "7672194" })).toBe("7672194");
   });
 });

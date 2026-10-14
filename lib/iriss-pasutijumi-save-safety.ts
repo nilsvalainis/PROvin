@@ -142,6 +142,7 @@ export function mergeIrissPasutijumsRecords(
   next.listingLinkAutobid = mergeLinkLists(local.listingLinkAutobid, server.listingLinkAutobid);
   next.listingLinkOpenline = mergeLinkLists(local.listingLinkOpenline, server.listingLinkOpenline);
   next.listingLinkAuto1 = mergeLinkLists(local.listingLinkAuto1, server.listingLinkAuto1);
+  next.listingLinkEcarstrade = mergeLinkLists(local.listingLinkEcarstrade, server.listingLinkEcarstrade);
   next.listingLinksOther = mergeLinkLists(local.listingLinksOther, server.listingLinksOther);
 
   const byId = new Map(server.offers.map((o) => [o.id, o]));
@@ -187,6 +188,7 @@ export function irissPasutijumsHasOperatorContent(rec: IrissPasutijumsRecord): b
     ...rec.listingLinkAutobid,
     ...rec.listingLinkOpenline,
     ...rec.listingLinkAuto1,
+    ...rec.listingLinkEcarstrade,
     ...rec.listingLinksOther,
   ].some((s) => s.trim());
   return links;
