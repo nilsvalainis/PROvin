@@ -4,18 +4,13 @@
  */
 
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
-import { getMessageTemplateDef } from "@/lib/messages/registry";
-import { renderTemplateString, renderTemplateSubject } from "@/lib/messages/render-template";
-import { buildDealerNoDataVars, vinSuffixForEmail } from "@/lib/messages/template-vars";
+import { resolveMessageSync } from "@/lib/messages/resolve-message";
+import { buildDealerNoDataVars } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 import { DEALER_NO_DATA_AUDIT_CTA_URL } from "@/lib/messages/shared-blocks";
 
 export { DEALER_NO_DATA_AUDIT_CTA_URL };
-
-function vinSuffix(vin?: string | null): string {
-  return vinSuffixForEmail(vin);
-}
 
 function amountLine(amountEur?: string | null): string {
   const a = (amountEur ?? "").trim();
@@ -55,19 +50,11 @@ export function buildDealerNoDataEmailDraft(
   const refunded = opts.refunded === true;
   const id = refunded ? "email.dealer.no_data_refunded" : "email.dealer.no_data";
   const vars = buildDealerNoDataVars({ vin: opts.vin, amountEur: opts.amountEur, refunded });
-  const def = getMessageTemplateDef(id);
-  const override = templatesDoc?.overrides[id];
-  const bodyTpl = override?.body ?? def?.body;
-  const subjectTpl = override?.subject ?? def?.subject;
-  if (bodyTpl && subjectTpl) {
-    return {
-      kind: "no_data",
-      subject: renderTemplateSubject(subjectTpl, vars),
-      text: renderTemplateString(bodyTpl, vars),
-    };
+  const rendered = resolveMessageSync(id, vars, { doc: templatesDoc });
+  if (rendered?.subject && rendered.text) {
+    return { kind: "no_data", subject: rendered.subject, text: rendered.text };
   }
 
-  const vin = vinSuffix(opts.vin);
   const amount = amountLine(opts.amountEur);
   const subject = refunded
     ? "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts"
@@ -88,7 +75,7 @@ export function buildDealerNoDataEmailDraft(
   const text = [
     "Labdien!",
     "",
-    `Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam${vin}. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.`,
+    "Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.",
     "",
     refundBlock,
     "",
@@ -105,34 +92,22 @@ export function buildDealerCancelledEmailDraft(
   opts: { vin?: string | null; amountEur?: string | null },
   templatesDoc?: MessageTemplatesDoc | null,
 ): DealerClientEmailDraft {
-  const vars = {
-    vin_suffix: vinSuffix(opts.vin),
-    summa: amountLine(opts.amountEur),
-    paraksts: clientMessageSignOff(),
-  };
   const id = "email.dealer.cancelled";
-  const def = getMessageTemplateDef(id);
-  const override = templatesDoc?.overrides[id];
-  const bodyTpl = override?.body ?? def?.body;
-  const subjectTpl = override?.subject ?? def?.subject;
-  if (bodyTpl && subjectTpl) {
-    return {
-      kind: "cancelled",
-      subject: renderTemplateSubject(subjectTpl, vars),
-      text: renderTemplateString(bodyTpl, vars),
-    };
+  const vars = { summa: amountLine(opts.amountEur) };
+  const rendered = resolveMessageSync(id, vars, { doc: templatesDoc });
+  if (rendered?.subject && rendered.text) {
+    return { kind: "cancelled", subject: rendered.subject, text: rendered.text };
   }
-  const vin = vinSuffix(opts.vin);
   const amount = amountLine(opts.amountEur);
   return {
     kind: "cancelled",
     subject: "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts",
     text: [
-      `Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts${vin}.`,
+      "Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts.",
       "",
       `Atmaksa ${amount} veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.`,
       "",
-      "Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, atbildiet uz šo e-pastu.",
+      "Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.",
       "",
       clientMessageSignOff(),
     ].join("\n"),
@@ -144,27 +119,18 @@ export function buildDealerReadyEmailDraft(
   opts: { vin?: string | null },
   templatesDoc?: MessageTemplatesDoc | null,
 ): DealerClientEmailDraft {
-  const vars = { vin_suffix: vinSuffix(opts.vin), paraksts: clientMessageSignOff() };
   const id = "email.dealer.ready_pdf";
-  const def = getMessageTemplateDef(id);
-  const override = templatesDoc?.overrides[id];
-  const bodyTpl = override?.body ?? def?.body;
-  const subjectTpl = override?.subject ?? def?.subject;
-  if (bodyTpl && subjectTpl) {
-    return {
-      kind: "ready",
-      subject: renderTemplateSubject(subjectTpl, vars),
-      text: renderTemplateString(bodyTpl, vars),
-    };
+  const rendered = resolveMessageSync(id, {}, { doc: templatesDoc });
+  if (rendered?.subject && rendered.text) {
+    return { kind: "ready", subject: rendered.subject, text: rendered.text };
   }
-  const vin = vinSuffix(opts.vin);
   return {
     kind: "ready",
     subject: "PROVIN.LV: oficiālā dīlera dati pielikumā",
     text: [
       `Labdien!`,
       "",
-      `Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam${vin}. Dokuments pievienots PDF pielikumā.`,
+      "Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Dokuments pievienots PDF pielikumā.",
       "",
       "Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).",
       "",

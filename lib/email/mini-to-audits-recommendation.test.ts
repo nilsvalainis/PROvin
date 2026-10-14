@@ -48,7 +48,7 @@ describe("miniToAuditsGreeting", () => {
 });
 
 describe("buildMiniToAuditsRecommendationDraft", () => {
-  it("uses the approved wording with vocative, car, VIN and Stripe link", () => {
+  it("uses the approved wording with vocative, car and Stripe link", () => {
     const d = draft({
       customerName: "Jānis Bērziņš",
       vin: "WVWZZZ3CZE123456",
@@ -59,13 +59,13 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
     expect(d.emailText).toBe(
       MINI_TO_AUDITS_APPROVED_TEXT.replaceAll("{vards}", "Jāni")
         .replaceAll("{auto}", "VW Passat")
-        .replaceAll("{vin}", "WVWZZZ3CZE123456")
         .replaceAll("{starpiba}", "60,00")
         .replaceAll("{maksajuma_saite}", PAY_URL),
     );
     expect(d.whatsappText).toBe(d.emailText);
     expect(d.emailText).toContain("Labdien, Jāni!");
-    expect(d.emailText).toContain("Paldies par PROVIN MINI pasūtījumu VW Passat (VIN WVWZZZ3CZE123456).");
+    expect(d.emailText).toContain("Paldies par PROVIN MINI pasūtījumu VW Passat.");
+    expect(d.emailText).not.toMatch(/\(VIN\s/i);
     expect(d.emailText).toContain(`Starpību (60,00 €) varat apmaksāt šeit:\n${PAY_URL}`);
     expect(d.emailText).toContain("T: 29502039");
   });
@@ -96,10 +96,10 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
     expect(d.emailText).not.toContain("oficiālā dīlera datiem un tālāk lemt");
   });
 
-  it("keeps placeholders when name, car, VIN or payment URL are missing", () => {
+  it("keeps placeholders when name, car or payment URL are missing", () => {
     const d = draft({ paymentUrl: "", customerName: "", car: "", vin: "" });
     expect(d.emailText).toContain("Labdien, {vards}!");
-    expect(d.emailText).toContain("pasūtījumu {auto} (VIN {vin})");
+    expect(d.emailText).toContain("pasūtījumu {auto}.");
     expect(d.emailText).toContain(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER);
     expect(d.subject).toBe("Jūsu PROVIN MINI pasūtījums");
   });

@@ -2,11 +2,9 @@
 export const MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER = "{maksajuma_saite}";
 export const MINI_TO_AUDITS_NAME_PLACEHOLDER = "{vards}";
 export const MINI_TO_AUDITS_CAR_PLACEHOLDER = "{auto}";
-export const MINI_TO_AUDITS_VIN_PLACEHOLDER = "{vin}";
-
 export const MINI_TO_AUDITS_APPROVED_TEXT = `Labdien, {vards}!
 
-Paldies par PROVIN MINI pasūtījumu {auto} (VIN {vin}).
+Paldies par PROVIN MINI pasūtījumu {auto}.
 
 Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
 
