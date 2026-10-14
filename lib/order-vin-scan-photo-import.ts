@@ -53,7 +53,7 @@ export async function importVinScanAuctionPhotosToCcVin(
   const room = Math.max(0, Math.min(ORDER_VIN_SCAN_PHOTO_IMPORT_MAX, CC_VIN_MAX_PHOTOS - existingCount));
   const wanted = [...new Set(urls.map((u) => u.trim()).filter(isAllowedVinScanAuctionPhotoUrl))].slice(0, room);
   const photoIds: string[] = [];
-  let skipped = Math.max(0, urls.length - wanted.length);
+  const skipped = Math.max(0, urls.length - wanted.length);
   let failed = 0;
   let i = 0;
   const workers = Array.from({ length: Math.min(CONCURRENCY, wanted.length) }, async () => {
