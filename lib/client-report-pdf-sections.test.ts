@@ -760,7 +760,71 @@ describe("Vēstures kopsavilkums", () => {
     expect(listed).toBeTruthy();
     expect(listed!.title).toBe("Sludinājums");
     expect(listed!.detail).toMatch(/Pārdošanai/);
-    expect(listed!.countryUnverified).toBe(true);
+    expect(listed!.timelineInformational).toBe(true);
+    expect(listed!.countryUnverified).toBeFalsy();
+  });
+
+  it("renders laikposma rows in listing style without the unconfirmed note and without country-change cards", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: "CITI AVOTI - Francijas reģistri (HistoVec)",
+            mileageRows: [
+              { date: "10.01.2020", odometer: "12000", country: "Vācija" },
+              { date: "01.08.2022", odometer: "48000", country: "Vācija" },
+            ],
+            incidentRows: [],
+            comments: "",
+            vehicleHistoryTimeline: [
+              { date: "23.06.2021", country: "Francija", description: "Cesija", includeInPdf: true },
+            ],
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("Cesija");
+    expect(html).toContain("pdf-life-country--unverified");
+    expect(html).toContain("pdf-life-item--info");
+    expect(html).not.toContain("(pēc sludinājuma, nav apstiprināts)");
+    expect(html).not.toContain("pdf-life-item--import");
+    expect(html).not.toMatch(/Francija → Vācija|Vācija → Francija/);
+  });
+
+  it("keeps the unconfirmed note on the actual sales listing, not on laikposma rows", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        tirgusForm: {
+          ...emptyTirgusFields(),
+          listingCreated: "02.09.2026",
+          listingMileageOdometer: "243000",
+        },
+        listingUrl: "https://www.ss.lv/lv/transport/cars/bmw/x5/some-listing.html",
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.autodna,
+            mileageRows: [{ date: "08.01.2026", odometer: "236920", country: "Vācija" }],
+            incidentRows: [],
+            comments: "",
+            vehicleHistoryTimeline: [
+              { date: "23.06.2021", country: "Francija", description: "Cesija", includeInPdf: true },
+            ],
+          },
+        ],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("(pēc sludinājuma, nav apstiprināts)");
+    const cesijaLi = html.match(/Cesija[\s\S]*?<\/li>/)?.[0] ?? "";
+    expect(cesijaLi).not.toContain("(pēc sludinājuma, nav apstiprināts)");
+    expect(html).toContain("Cesija");
   });
 
   it("puts tjekbil registry timeline events into the history summary with km", () => {

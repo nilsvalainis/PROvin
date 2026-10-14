@@ -51,6 +51,7 @@ import {
 import { formatListingPriceDelta } from "@/lib/listing-price-lifecycle";
 import {
   buildVehicleLifecycleEvents,
+  lifecycleCountryIsSoft,
   lifecycleDetailDuplicatesCountry,
   PDF_LIFECYCLE_TITLE,
   type LifecycleEvent,
@@ -618,8 +619,9 @@ function buildPdfLifeMetaHtml(e: LifecycleEvent): string {
   const unverifiedNote = e.countryUnverified
     ? `<span class="pdf-life-country-note">(pēc sludinājuma, nav apstiprināts)</span>`
     : "";
+  const mutedCountry = lifecycleCountryIsSoft(e);
   const flag = e.country
-    ? `<span class="pdf-life-country${e.countryUnverified ? " pdf-life-country--unverified" : ""}"><span class="pdf-country-flag" aria-hidden="true">${pdfCountryFlagEmoji(e.country)}</span><span>${escapeHtml(e.country)}</span>${unverifiedNote}</span>`
+    ? `<span class="pdf-life-country${mutedCountry ? " pdf-life-country--unverified" : ""}"><span class="pdf-country-flag" aria-hidden="true">${pdfCountryFlagEmoji(e.country)}</span><span>${escapeHtml(e.country)}</span>${unverifiedNote}</span>`
     : "";
   const dots = e.sources.map((s) => pdfSourceDotHtml(s)).join("");
   const srcsWrap = e.sources.length > 4 ? " pdf-life-srcs--wrap" : "";
