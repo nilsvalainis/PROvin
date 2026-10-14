@@ -115,10 +115,16 @@ export function mergeAuctionVinParses(parts: readonly VinScanParse[]): VinScanPa
     year,
     photos.length ? `${photos.length} foto` : auctions.length > 1 ? `${auctions.length} lots` : "",
   ].filter(Boolean);
+  const jojFacts = found.find((p) => p.jojFacts)?.jojFacts;
+  const detail = found
+    .map((p) => p.detail?.trim())
+    .filter(Boolean)
+    .join("\n\n");
 
   return {
     status: "found",
     summary: bits.join(", ") || "Ir izsoles ieraksts",
+    ...(detail ? { detail } : {}),
     vehicle,
     auctions: auctions.slice(0, AUCTION_MAX),
     mileage: mileage.slice(0, AUCTION_MAX),
@@ -129,5 +135,6 @@ export function mergeAuctionVinParses(parts: readonly VinScanParse[]): VinScanPa
     },
     flags: { photoCount: photos.length },
     openUrl: openUrl || undefined,
+    ...(jojFacts ? { jojFacts } : {}),
   };
 }

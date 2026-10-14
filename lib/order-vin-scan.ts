@@ -105,6 +105,8 @@ export function parseVinScanIndicator(raw: unknown): VinScanIndicator | null {
     label = label || id;
   }
   const auctions = Array.isArray(o.auctions) ? o.auctions.map(asAuction).filter((row): row is VinScanAuction => Boolean(row)) : [];
+  const jojFacts =
+    o.jojFacts && typeof o.jojFacts === "object" ? (o.jojFacts as VinScanIndicator["jojFacts"]) : undefined;
   return {
     id: id as VinScanSourceId,
     label,
@@ -114,6 +116,7 @@ export function parseVinScanIndicator(raw: unknown): VinScanIndicator | null {
     detail: typeof o.detail === "string" ? o.detail : "",
     openUrl: typeof o.openUrl === "string" && o.openUrl.trim() ? o.openUrl.trim() : null,
     auctions,
+    ...(jojFacts ? { jojFacts } : {}),
     media:
       o.media && typeof o.media === "object"
         ? {
@@ -251,10 +254,25 @@ function dateLv(raw: string): string {
   return raw.trim().slice(0, 32);
 }
 
+function mergeJojFacts(out: CcVinParsedReport, facts: NonNullable<VinScanIndicator["jojFacts"]>) {
+  if (facts.vehicleLine && !out.vehicleLine) out.vehicleLine = facts.vehicleLine;
+  if (facts.reportDate && !out.reportDate) out.reportDate = facts.reportDate;
+  out.sales.push(...facts.sales);
+  out.damages.push(...facts.damages);
+  out.titles.push(...facts.titles);
+  out.insurance.push(...facts.insurance);
+  out.mileage.push(...facts.mileage);
+  out.notes.push(...facts.notes);
+}
+
 export function vinScanAuctionsToCcVinParsed(indicators: readonly VinScanIndicator[]): CcVinParsedReport {
   const out = emptyCcVinParsedReport();
   for (const src of indicators) {
     if (src.status !== "found") continue;
+    if (src.jojFacts && (src.jojFacts.sales.length || src.jojFacts.damages.length || src.jojFacts.notes.length)) {
+      mergeJojFacts(out, src.jojFacts);
+      continue;
+    }
     for (const auction of src.auctions ?? []) {
       const date = dateLv(auction.date || "");
       if (auction.venue || auction.title || date) {
@@ -293,21 +311,28 @@ export function applyVinScanAuctionsToCcVin(
   const photoUrls: string[] = [];
   const seen = new Set<string>();
   for (const src of indicators) {
-    for (const url of [src.media?.photoUrl, ...(src.auctions ?? []).map((a) => a.photoUrl)]) {
+    for (const url of [
+      src.media?.photoUrl,
+      ...(src.media?.photoUrls ?? []),
+      ...(src.auctions ?? []).map((a) => a.photoUrl),
+    ]) {
       const u = String(url || "").trim();
       if (!u || seen.has(u)) continue;
       seen.add(u);
       photoUrls.push(u);
     }
   }
+  const jojNotes = parsed.notes.filter((n) => n.trim()).join("\n\n");
   const lines = [
     next.rawUnprocessedData.trim(),
+    jojNotes,
     photoUrls.length ? `VIN SCAN izsoles foto:\n${photoUrls.slice(0, 40).join("\n")}` : "",
   ].filter(Boolean);
   return {
     block: {
       ...next,
       rawUnprocessedData: lines.join("\n\n").slice(0, 20_000),
+      aiContextRaw: [next.aiContextRaw.trim(), jojNotes].filter(Boolean).join("\n\n").slice(0, 20_000),
     },
     sales: parsed.sales.length,
     damages: parsed.damages.length,

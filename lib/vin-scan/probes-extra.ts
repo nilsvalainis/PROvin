@@ -408,7 +408,7 @@ async function probeHtmlSource(
 
 export async function probeJojCopartIaai(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    return done("joj_copart_iaai", ctx, await fetchAuctionVinLots(ctx.vin));
+    return done("joj_copart_iaai", ctx, await fetchAuctionVinLots(ctx.vin, { listingUrl: ctx.listingUrl }));
   } catch (e) {
     return failed("joj_copart_iaai", ctx, e);
   }

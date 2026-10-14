@@ -1,15 +1,24 @@
 /**
- * JoJ API Copart and IAAI: GET /search-vin/{vin} ($0.50, 1 req/s).
- * Auth: X-JoJAPI-Key. Host: https://<slug>.jojapi.net (docs: consumers only see *.jojapi.net).
+ * JoJ Copart/IAAI: GET /search-vin/{vin}?prices_history=1 ($0.50, 1 req/s).
+ * 404 = nav ierakstu (kešs). /search-lot tikai ja VIN 404 un lots ir zināms.
+ * Auth: X-JoJAPI-Key (jk_). Host: https://carstat-copart-iaai.jojapi.net
  */
 import "server-only";
 
-import { JOJ_NOT_CONFIGURED, jojSearchVinUrl, parseJojSearchVin } from "@/lib/vin-scan/parse-joj";
+import { loadJojNameDict } from "@/lib/vin-scan/joj-dicts";
+import { EMPTY_JOJ_NAME_DICT } from "@/lib/vin-scan/joj-labels";
+import {
+  JOJ_NOT_CONFIGURED,
+  jojSearchLotUrl,
+  jojSearchVinUrl,
+  knownJojLotFromUrl,
+  parseJojSearchVinFull,
+} from "@/lib/vin-scan/parse-joj";
 import { readJojVinCache, writeJojVinCache } from "@/lib/vin-scan/store";
 import type { VinScanParse } from "@/lib/vin-scan/types";
 
 export const JOJ_API_SOURCE_ID = "joj_copart_iaai" as const;
-export const JOJ_API_DEFAULT_BASE = "https://copart-and-iaai-api.jojapi.net";
+export const JOJ_API_DEFAULT_BASE = "https://carstat-copart-iaai.jojapi.net";
 const MIN_INTERVAL_MS = 1100;
 const FETCH_TIMEOUT_MS = 20_000;
 
@@ -50,18 +59,18 @@ export type FetchJojSearchVinDeps = {
   fetchImpl?: typeof fetch;
   skipCache?: boolean;
   skipRateLimit?: boolean;
+  skipDictCache?: boolean;
+  skipDicts?: boolean;
+  listingUrl?: string;
+  knownLot?: { lot: string; domain: "copart_com" | "iaai_com" } | null;
 };
 
-export async function fetchJojSearchVin(vin: string, deps: FetchJojSearchVinDeps = {}): Promise<VinScanParse> {
+export async function jojApiGet(
+  url: string,
+  deps: FetchJojSearchVinDeps,
+): Promise<{ status: number; json: unknown }> {
   const env = deps.env ?? process.env;
-  if (!jojApiConfigured(env)) return jojNotConfiguredParse();
-  const clean = vin.trim().toUpperCase();
-  if (!deps.skipCache) {
-    const cached = await readJojVinCache(clean).catch(() => null);
-    if (cached) return cached.parse;
-  }
   if (!deps.skipRateLimit) await waitTurn();
-  const url = jojSearchVinUrl(clean, jojApiBaseUrl(env));
   const fetchImpl = deps.fetchImpl ?? fetch;
   const res = await fetchImpl(url, {
     method: "GET",
@@ -79,8 +88,52 @@ export async function fetchJojSearchVin(vin: string, deps: FetchJojSearchVinDeps
   } catch {
     json = null;
   }
-  const parsed = parseJojSearchVin({ status: res.status, json, vin: clean });
-  const cacheable = parsed.status === "found" || parsed.status === "none" || (parsed.status === "unknown" && res.status === 423);
+  return { status: res.status, json };
+}
+
+function resolveKnownLot(deps: FetchJojSearchVinDeps): { lot: string; domain: "copart_com" | "iaai_com" } | null {
+  if (deps.knownLot?.lot && deps.knownLot.domain) return deps.knownLot;
+  return knownJojLotFromUrl(deps.listingUrl ?? "");
+}
+
+function jsonHasLots(json: unknown): boolean {
+  if (!json || typeof json !== "object") return false;
+  const root = json as Record<string, unknown>;
+  const data = root.data && typeof root.data === "object" && !Array.isArray(root.data) ? (root.data as Record<string, unknown>) : root;
+  return Array.isArray(data.lots) && data.lots.length > 0;
+}
+
+export async function fetchJojSearchVin(vin: string, deps: FetchJojSearchVinDeps = {}): Promise<VinScanParse> {
+  const env = deps.env ?? process.env;
+  if (!jojApiConfigured(env)) return jojNotConfiguredParse();
+  const clean = vin.trim().toUpperCase();
+  if (!deps.skipCache) {
+    const cached = await readJojVinCache(clean).catch(() => null);
+    if (cached) return cached.parse;
+  }
+  const base = jojApiBaseUrl(env);
+  const vinRes = await jojApiGet(jojSearchVinUrl(clean, base), deps);
+  let status = vinRes.status;
+  let json = vinRes.json;
+  if (status === 404) {
+    const lot = resolveKnownLot(deps);
+    if (lot) {
+      const lotRes = await jojApiGet(jojSearchLotUrl(lot.lot, lot.domain, base), deps);
+      status = lotRes.status;
+      json = lotRes.json;
+    }
+  }
+  let dict = EMPTY_JOJ_NAME_DICT;
+  if (status < 400 && jsonHasLots(json) && !deps.skipDicts) {
+    dict = await loadJojNameDict({
+      baseUrl: base,
+      getJson: (url) => jojApiGet(url, deps),
+      skipCache: deps.skipDictCache,
+    }).catch(() => EMPTY_JOJ_NAME_DICT);
+  }
+  const parsed = parseJojSearchVinFull({ status, json, vin: clean, dict }).parse;
+  const cacheable =
+    parsed.status === "found" || parsed.status === "none" || (parsed.status === "unknown" && status === 423);
   if (cacheable) await writeJojVinCache(clean, parsed).catch(() => undefined);
   return parsed;
 }
