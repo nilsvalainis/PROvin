@@ -1,0 +1,269 @@
+"use client";
+
+import { FileText, Loader2, Plus } from "lucide-react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
+import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
+
+type PageData = {
+  rows: IrissPavadzimeListRow[];
+  pendingParse: number;
+  dropboxConfigured: boolean;
+  dropboxError: string | null;
+};
+
+const hug = "w-[1%] whitespace-nowrap";
+
+function validityClass(tone: IrissPavadzimeValidityTone): string {
+  if (tone === "expired") return "font-semibold text-[#DC2626]";
+  if (tone === "today") return "font-semibold text-[#D97706]";
+  return "text-[#3a3a3c]";
+}
+
+function dash(v: string): string {
+  return v.trim() || "—";
+}
+
+export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
+  const [data, setData] = useState(initial);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const vinRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setData(initial);
+  }, [initial]);
+
+  useEffect(() => {
+    const t = window.setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  const refresh = useCallback(async () => {
+    const res = await fetch("/api/admin/iriss-pavadzimes", { credentials: "include", cache: "no-store" });
+    const json = (await res.json().catch(() => null)) as (PageData & { error?: unknown }) | null;
+    if (!res.ok || !json || !Array.isArray(json.rows)) {
+      throw new Error(typeof json?.error === "string" ? json.error : "Neizdevās ielādēt");
+    }
+    setData(json);
+    return json;
+  }, []);
+
+  useEffect(() => {
+    if (data.pendingParse <= 0) return;
+    const t = window.setTimeout(() => {
+      void refresh().catch(() => undefined);
+    }, 800);
+    return () => window.clearTimeout(t);
+  }, [data.pendingParse, refresh]);
+
+  const onUpload = useCallback(
+    async (file: File) => {
+      setUploading(true);
+      setError(null);
+      try {
+        const fd = new FormData();
+        fd.set("file", file);
+        const vin = vinRef.current?.value.trim() ?? "";
+        if (vin) fd.set("vin", vin);
+        const res = await fetch("/api/admin/iriss-pavadzimes/upload", {
+          method: "POST",
+          credentials: "include",
+          body: fd,
+        });
+        const json = (await res.json().catch(() => null)) as (PageData & { error?: string }) | null;
+        if (!res.ok || !json || !Array.isArray(json.rows)) {
+          throw new Error(typeof json?.error === "string" ? json.error : "Neizdevās augšupielādēt");
+        }
+        setData(json);
+        if (vinRef.current) vinRef.current.value = "";
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Neizdevās augšupielādēt");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [],
+  );
+
+  const now = new Date(nowMs);
+  const rows = data.rows;
+
+  return (
+    <>
+      <div className="mt-2 flex items-center gap-2">
+        {data.pendingParse > 0 ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#8e8e93]" aria-hidden /> : null}
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          <input
+            ref={vinRef}
+            type="text"
+            inputMode="text"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="VIN"
+            aria-label="VIN"
+            className="h-7 w-[9.5rem] rounded-lg border-0 bg-[#e9e9ee] px-2 text-[12px] text-[#1d1d1f] outline-none placeholder:text-[#8e8e93] focus:ring-2 focus:ring-[var(--color-provin-accent)]/35"
+          />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) void onUpload(f);
+            }}
+          />
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+            className="inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-lg bg-[#1d1d1f] px-2.5 text-[12.5px] font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />}
+            <span className="hidden sm:inline">PDF</span>
+          </button>
+        </div>
+      </div>
+      {error ? <p className="mt-1 text-right text-[11px] text-red-600">{error}</p> : null}
+      {data.dropboxError ? <p className="mt-1 text-right text-[11px] text-red-600">{data.dropboxError}</p> : null}
+
+      {rows.length === 0 ? (
+        <div className="mt-4 rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
+          <p className="font-medium text-black">Nav pavadzīmju</p>
+        </div>
+      ) : (
+        <>
+          <ul className="mt-4 space-y-2 md:hidden">
+            {rows.map((row) => {
+              const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
+              const orderHref = row.order ? `/admin/iriss/pasutijumi/${encodeURIComponent(row.order.id)}` : null;
+              return (
+                <li key={row.id} className="rounded-xl border border-[#ececee] bg-white p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className={`truncate text-[14px] font-semibold ${row.brandModel.trim() ? "text-[var(--color-apple-text)]" : "text-[#aeaeb2]"}`}>
+                        {dash(row.brandModel)}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] text-[var(--color-provin-muted)]">
+                        {dash(row.number)}
+                        {row.plate.trim() ? ` · ${row.plate}` : ""}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 text-[12px] tabular-nums ${validityClass(row.validityTone)}`}>
+                      {formatWaybillDateTime(row.validUntil, now) || "—"}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 font-mono text-[12px] tracking-wide text-[#3a3a3c]">{dash(row.vin)}</p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="text-[11px] tabular-nums text-[var(--color-provin-muted)]">
+                      {formatWaybillDateTime(row.issuedAt, now) || "—"}
+                    </span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <a
+                        href={pdfHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ececee] text-[#8e8e93]"
+                        aria-label="Atvērt PDF"
+                      >
+                        <FileText className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                      </a>
+                      {orderHref ? (
+                        <Link href={orderHref} className="inline-flex rounded-full bg-[#f2f2f7] px-3.5 py-2 text-xs font-semibold text-[#3a3a3c]">
+                          Pasūtījums
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="mt-3 hidden overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)] md:block">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1100px] text-left text-sm">
+                <thead>
+                  <tr className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#6e6e73]">
+                    <th className={`${hug} py-2.5 pl-4 pr-4`}>Nr.</th>
+                    <th className="py-2.5 pr-4">Auto</th>
+                    <th className={`${hug} py-2.5 pr-4`}>VIN</th>
+                    <th className={`${hug} py-2.5 pr-4`}>Reg./tranzīts</th>
+                    <th className={`${hug} py-2.5 pr-4`}>Derīga līdz</th>
+                    <th className={`${hug} py-2.5 pr-4`}>Izdošana</th>
+                    <th className={`${hug} py-2.5 pr-4`}>PDF</th>
+                    <th className={`${hug} py-2.5 pr-4`}>Pasūtījums</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row) => {
+                    const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
+                    const orderHref = row.order ? `/admin/iriss/pasutijumi/${encodeURIComponent(row.order.id)}` : null;
+                    const vin = row.vin.trim();
+                    return (
+                      <tr key={row.id} className="h-[46px] whitespace-nowrap border-t border-[#f0f0f2] transition-colors hover:bg-[#f7f7f8]">
+                        <td className={`${hug} py-1 pl-4 pr-4 font-mono text-[12px] tracking-wide text-[#3a3a3c]`}>{dash(row.number)}</td>
+                        <td className="max-w-[300px] py-1 pr-4">
+                          <span
+                            className={`truncate text-[14px] ${row.brandModel.trim() ? "font-bold text-[#1d1d1f]" : "text-[#aeaeb2]"}`}
+                            title={row.brandModel.trim() || undefined}
+                          >
+                            {dash(row.brandModel)}
+                          </span>
+                        </td>
+                        <td className={`${hug} py-1 pr-4`}>
+                          {vin ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="font-mono text-[12px] tracking-wide text-[#3a3a3c]" title={vin}>
+                                {vin}
+                              </span>
+                              <AdminVinCopyButton value={vin} />
+                            </span>
+                          ) : (
+                            <span className="text-[#c7c7cc]">—</span>
+                          )}
+                        </td>
+                        <td className={`${hug} py-1 pr-4 text-[13.5px] text-[#1d1d1f]`}>{dash(row.plate)}</td>
+                        <td className={`${hug} py-1 pr-4 text-[13px] tabular-nums ${validityClass(row.validityTone)}`}>
+                          {formatWaybillDateTime(row.validUntil, now) || "—"}
+                        </td>
+                        <td className={`${hug} py-1 pr-4 text-[13px] tabular-nums text-[#3a3a3c]`}>
+                          {formatWaybillDateTime(row.issuedAt, now) || "—"}
+                        </td>
+                        <td className={`${hug} py-1 pr-4`}>
+                          <a
+                            href={pdfHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="admin-nav-link text-[13.5px] text-[#1d1d1f] hover:underline"
+                          >
+                            Atvērt PDF
+                          </a>
+                        </td>
+                        <td className={`${hug} py-1 pr-4`}>
+                          {orderHref ? (
+                            <Link href={orderHref} className="admin-nav-link truncate text-[13.5px] text-[#1d1d1f] hover:underline">
+                              {row.order?.label || "Pasūtījums"}
+                            </Link>
+                          ) : (
+                            <span className="text-[#c7c7cc]">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
