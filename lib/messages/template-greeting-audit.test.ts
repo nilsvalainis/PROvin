@@ -22,6 +22,9 @@ describe("message template greeting audit", () => {
     for (const def of MESSAGE_TEMPLATE_DEFS) {
       const first = firstBodyLine(def.body);
       if (!OPENING_GREETING_LINE.test(first)) continue;
+      if (QUICK_ASSESSMENT_IDS.has(def.id) && !/^Sveiki\b/i.test(first)) {
+        offenders.push(`${def.id} must start with Sveiki`);
+      }
       const samples = templateSampleVars(def);
       for (const [key, value] of Object.entries(samples)) {
         const v = value.trim();
