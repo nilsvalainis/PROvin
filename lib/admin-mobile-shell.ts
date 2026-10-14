@@ -1,4 +1,4 @@
-/** Mobilā admin čaula (iPhone tab bar + vienīgais scroller + PTR). Desktop nemaina. */
+/** Mobilā admin čaula (iPhone tab bar + native `#admin-main-scroll` + PTR). Desktop nemaina. */
 
 export const ADMIN_MAIN_SCROLL_ID = "admin-main-scroll";
 

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function AdminRootLayout({ children }: { children: ReactNode }) {
   return (
     <RootHtml lang="lv">
-      <div className="admin-ios-theme min-h-dvh bg-[var(--admin-ios-bg)] max-md:h-dvh max-md:max-h-dvh max-md:overflow-hidden">
+      <div className="admin-ios-theme min-h-dvh bg-[var(--admin-ios-bg)]">
         {children}
       </div>
     </RootHtml>

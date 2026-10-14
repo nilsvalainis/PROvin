@@ -12,7 +12,7 @@ export default function AdminMobileShellTestLayout({ children }: { children: Rea
     notFound();
   }
   return (
-    <div className="admin-ios-theme min-h-dvh bg-[var(--admin-ios-bg)] max-md:h-dvh max-md:max-h-dvh max-md:overflow-hidden">
+    <div className="admin-ios-theme min-h-dvh bg-[var(--admin-ios-bg)] max-md:flex max-md:h-dvh max-md:min-h-0 max-md:flex-col">
       {children}
     </div>
   );

@@ -27,9 +27,10 @@ function isCoarseMobileViewport() {
 }
 
 /**
- * Mobilajā admin saturam. Detalizētās lapās (pasūtījums) nelietojam ligzdotu
- * ritinājumu un pull-to-refresh: tie aizturēja swipe un bieži bloķēja touch.
- * Saraksta lapās PTR paliek uz vienīgā scroller (`#admin-main-scroll`).
+ * iPhone shell (#125): tab bar + PTR paliek. Native pan uz `#admin-main-scroll`
+ * (overflow-y: auto, -webkit-overflow-scrolling: touch). #125 preventDefault +
+ * overflow:hidden uz html/body bloķēja pirksta ritināšanu; šeit touchmove ir
+ * pasīvs. Detalizētās lapās PTR nav, bet tas pats native scroller paliek.
  */
 export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children }: Props) {
   const router = useRouter();
@@ -116,7 +117,6 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
       const next = Math.min(rawDy * ADMIN_MOBILE_PTR_RUBBER, ADMIN_MOBILE_PTR_MAX_PX);
       pullPxRef.current = next;
       setPullPx(next);
-      if (next > 0) e.preventDefault();
     };
 
     const onTouchEnd = () => {
@@ -135,7 +135,7 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
     };
 
     el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
     el.addEventListener("touchend", onTouchEnd);
     el.addEventListener("touchcancel", resetPull);
 
@@ -155,21 +155,11 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
   const ptrState = refreshing ? "refreshing" : pullPx > 8 ? "pulling" : "idle";
 
   return (
-    <main
-      className={`min-w-0 w-full max-w-none flex-1 ${
-        isDetailScreen
-          ? "max-md:overflow-visible"
-          : "max-md:flex max-md:h-full max-md:min-h-0 max-md:flex-col max-md:overflow-hidden"
-      } ${mainPad}`}
-    >
+    <main className={`min-w-0 w-full max-w-none flex-1 max-md:flex max-md:h-full max-md:min-h-0 max-md:flex-col ${mainPad}`}>
       <div
         id={ADMIN_MAIN_SCROLL_ID}
         ref={scrollRef}
-        className={
-          isDetailScreen
-            ? "relative flex w-full min-w-0 flex-col"
-            : "relative flex w-full min-w-0 min-h-0 flex-1 flex-col max-md:overflow-y-auto max-md:overscroll-y-contain max-md:[-webkit-overflow-scrolling:touch] md:overflow-visible"
-        }
+        className="relative flex w-full min-w-0 min-h-0 flex-1 flex-col max-md:overflow-y-auto max-md:overscroll-y-contain max-md:[-webkit-overflow-scrolling:touch] md:overflow-visible"
       >
         {!isDetailScreen ? (
           <div
