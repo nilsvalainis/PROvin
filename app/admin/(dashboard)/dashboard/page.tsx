@@ -39,7 +39,10 @@ export default async function AdminOrdersPage({
   const sp = await searchParams;
   const showAll = sp.show_all === "1" || sp.show_all === "true";
   const ordersQuery = parseAdminOrdersQuery(sp);
-  const { rows: allOrders, stripeError } = await listAdminOrders();
+  const [{ rows: allOrders, stripeError }, peeks] = await Promise.all([
+    listAdminOrders(),
+    listListingPeeks(500).catch(() => [] as Awaited<ReturnType<typeof listListingPeeks>>),
+  ]);
   const hiddenByAmount = countAdminOrdersHiddenByAmountFilter(allOrders);
   const orders = filterAdminOrdersForDashboard(allOrders, showAll);
   const orderIds = orders.map((o) => o.id);
@@ -127,7 +130,6 @@ export default async function AdminOrdersPage({
     };
   });
   // „Atkārtots VIN”: marķieris rindā, ja šis VIN jau ir citā pasūtījumā vai ātrajā vērtējumā.
-  const peeks = await listListingPeeks(500).catch(() => []);
   const repeatVin = countRepeatVins(
     ordersWithUpsell.filter((o) => !o.isB2bPack).map((o) => ({ id: o.id, vins: [o.vin] })),
     [

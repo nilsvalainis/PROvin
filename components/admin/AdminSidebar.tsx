@@ -218,8 +218,9 @@ function refreshCount(url: string): Promise<void> {
   return e.inflight;
 }
 
-function useCount(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount" | "urgentCount"): number {
-  const pathname = usePathname();
+const badgePollRefs = new Map<string, number>();
+
+function useCountValue(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount" | "urgentCount"): number {
   const [n, setN] = useState(0);
   useEffect(() => {
     const e = countEntry(url);
@@ -230,22 +231,37 @@ function useCount(url: string, key: "openCount" | "unseenCount" | "activeCount" 
       e.subs.delete(sync);
     };
   }, [url, key]);
+  return n;
+}
+
+function useBadgeUrlPolling(url: string) {
+  const pathname = usePathname();
   useEffect(() => {
-    void refreshCount(url);
-    // Fona cilnē nepollējam (telefonā taupa tīklu/bateriju); atgriežoties — focus atjauno.
-    const t = window.setInterval(() => {
-      if (document.visibilityState === "visible") void refreshCount(url);
-    }, 45_000);
-    const onFocus = () => void refreshCount(url);
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("admin-orders-changed", onFocus);
+    const prev = badgePollRefs.get(url) ?? 0;
+    badgePollRefs.set(url, prev + 1);
+    if (prev === 0) {
+      void refreshCount(url);
+      const t = window.setInterval(() => {
+        if (document.visibilityState === "visible") void refreshCount(url);
+      }, 45_000);
+      const onFocus = () => void refreshCount(url);
+      window.addEventListener("focus", onFocus);
+      window.addEventListener("admin-orders-changed", onFocus);
+      return () => {
+        window.clearInterval(t);
+        window.removeEventListener("focus", onFocus);
+        window.removeEventListener("admin-orders-changed", onFocus);
+        const left = (badgePollRefs.get(url) ?? 1) - 1;
+        if (left <= 0) badgePollRefs.delete(url);
+        else badgePollRefs.set(url, left);
+      };
+    }
     return () => {
-      window.clearInterval(t);
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("admin-orders-changed", onFocus);
+      const left = (badgePollRefs.get(url) ?? 1) - 1;
+      if (left <= 0) badgePollRefs.delete(url);
+      else badgePollRefs.set(url, left);
     };
   }, [pathname, url]);
-  return n;
 }
 
 function ordersBadgeTone(badges: { ordersOverdue: number; ordersUrgent: number }) {
@@ -259,11 +275,12 @@ function ordersBadgeTone(badges: { ordersOverdue: number; ordersUrgent: number }
 const BADGES_URL = "/api/admin/badges";
 
 function useBadges() {
-  const fast = useCount(BADGES_URL, "openCount");
-  const partners = useCount(BADGES_URL, "unseenCount");
-  const orders = useCount(BADGES_URL, "activeCount");
-  const ordersOverdue = useCount(BADGES_URL, "overdueCount");
-  const ordersUrgent = useCount(BADGES_URL, "urgentCount");
+  useBadgeUrlPolling(BADGES_URL);
+  const fast = useCountValue(BADGES_URL, "openCount");
+  const partners = useCountValue(BADGES_URL, "unseenCount");
+  const orders = useCountValue(BADGES_URL, "activeCount");
+  const ordersOverdue = useCountValue(BADGES_URL, "overdueCount");
+  const ordersUrgent = useCountValue(BADGES_URL, "urgentCount");
   return { fast, partners, orders, ordersOverdue, ordersUrgent } as const;
 }
 

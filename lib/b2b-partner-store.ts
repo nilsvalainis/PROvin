@@ -134,7 +134,27 @@ async function readDoc(): Promise<PartnerDoc> {
   return fromFs ?? emptyDoc();
 }
 
+const READ_CACHE_TTL_MS = 3000;
+let readCache: { at: number; doc: PartnerDoc } | null = null;
+let readInflight: Promise<PartnerDoc> | null = null;
+
+/** Lasīšanai (saraksts, žetons, N× getById vienā pieprasījumā): viens Blob GET uz ~3 s. */
+async function readDocCached(): Promise<PartnerDoc> {
+  if (readCache && Date.now() - readCache.at < READ_CACHE_TTL_MS) return readCache.doc;
+  if (readInflight) return readInflight;
+  readInflight = readDoc()
+    .then((doc) => {
+      readCache = { at: Date.now(), doc };
+      return doc;
+    })
+    .finally(() => {
+      readInflight = null;
+    });
+  return readInflight;
+}
+
 async function writeDoc(doc: PartnerDoc): Promise<void> {
+  readCache = null;
   const next = { ...doc, updatedAt: new Date().toISOString() };
   const token = blobToken();
   if (token) {
@@ -165,7 +185,7 @@ function newPartnerId(): string {
 }
 
 export async function listB2bPartners(): Promise<B2bPartnerAdminListItem[]> {
-  const doc = await readDoc();
+  const doc = await readDocCached();
   return doc.partners
     .map(toAdminPartner)
     .sort((a, b) => a.companyName.localeCompare(b.companyName, "lv"));
@@ -173,14 +193,14 @@ export async function listB2bPartners(): Promise<B2bPartnerAdminListItem[]> {
 
 export async function getB2bPartnerById(id: string): Promise<B2bPartnerRecord | null> {
   if (!isSafeB2bPartnerId(id)) return null;
-  const doc = await readDoc();
+  const doc = await readDocCached();
   return doc.partners.find((p) => p.id === id) ?? null;
 }
 
 export async function getB2bPartnerByEmail(email: string): Promise<B2bPartnerRecord | null> {
   const key = normalizePartnerEmail(email);
   if (!key) return null;
-  const doc = await readDoc();
+  const doc = await readDocCached();
   return doc.partners.find((p) => p.email === key) ?? null;
 }
 
