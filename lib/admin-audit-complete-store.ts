@@ -8,6 +8,7 @@ import {
   getOrderDraftStorageDir,
   isSafeOrderDraftSessionId,
 } from "@/lib/admin-order-draft-store";
+import { invalidateOrderFlags } from "@/lib/admin-orders-flags-index-store";
 
 /**
  * „Izpildīts” — viens mazs fails uz pasūtījumu (nav kopīga indeksa → nav race).
@@ -162,6 +163,7 @@ export async function setAuditDeadlineComplete(
 
   const write = await writeFlag(sessionId, complete);
   if (!write.ok) return write;
+  await invalidateOrderFlags(sessionId);
 
   return {
     ok: true,

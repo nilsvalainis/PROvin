@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import fs from "fs/promises";
 import path from "path";
 import { get, put } from "@vercel/blob";
+import { invalidateOrderFlags } from "@/lib/admin-orders-flags-index-store";
 import {
   getOrderDraftBlobConfig,
   getOrderDraftStorageDir,
@@ -293,6 +294,7 @@ export async function openUpsellOffer(sessionId: string, quote: UpsellQuote, now
   };
   const saved = await writeSessionDoc(next);
   if (!saved) return { ok: false, error: "store_failed" };
+  await invalidateOrderFlags(sessionId);
   return { ok: true, offer };
 }
 
@@ -316,6 +318,7 @@ export async function attachUpsellStripeCheckout(args: {
     offers: { ...doc!.offers, [args.kind]: offer },
   });
   if (!saved) return { ok: false, error: "store_failed" };
+  await invalidateOrderFlags(args.sessionId);
   return { ok: true, offer };
 }
 
@@ -347,6 +350,7 @@ export async function settleUpsellOffer(args: {
     offers: { ...doc!.offers, [args.kind]: offer },
   });
   if (!saved) return { ok: false, error: "store_failed" };
+  await invalidateOrderFlags(args.sessionId);
   return { ok: true, offer };
 }
 

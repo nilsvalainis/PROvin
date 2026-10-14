@@ -5,12 +5,11 @@ import { NextResponse } from "next/server";
 
 import { getAdminSession } from "@/lib/admin-auth";
 import { countAdminActiveOrders } from "@/lib/admin-active-orders-count";
-import { getAuditDeadlineCompleteMap } from "@/lib/admin-audit-complete-store";
+import { getOrderFlags } from "@/lib/admin-orders-flags";
 import { filterAdminOrdersForDashboard } from "@/lib/admin-order-amount-filter";
 import { listAdminOrders } from "@/lib/admin-orders";
 import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
 import { upsellListOverlay } from "@/lib/order-upsell";
-import { readUpsellDisplayOffers } from "@/lib/order-upsell-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +22,7 @@ export async function GET() {
     const { rows } = await listAdminOrders();
     const orders = filterAdminOrdersForDashboard(rows, false);
     const ids = orders.map((o) => o.id);
-    const [done, upsell] = await Promise.all([getAuditDeadlineCompleteMap(ids), readUpsellDisplayOffers(ids)]);
+    const { complete: done, upsell } = await getOrderFlags(ids);
     const { activeCount, overdueCount, urgentCount } = countAdminActiveOrders(
       orders.map((o) => ({
         created: o.created,

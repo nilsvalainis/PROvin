@@ -12,6 +12,7 @@ import {
   getOrderDraftStorageDir,
   isSafeOrderDraftSessionId,
 } from "@/lib/admin-order-draft-store";
+import { invalidateOrderFlags } from "@/lib/admin-orders-flags-index-store";
 
 /**
  * Audita rezultāta krāsa — viens mazs fails uz pasūtījumu.
@@ -124,6 +125,7 @@ export async function setAuditResultColor(
 
   const write = await writeColor(sessionId, color);
   if (!write.ok) return write;
+  await invalidateOrderFlags(sessionId);
 
   return { ok: true, color };
 }
