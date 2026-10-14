@@ -34,8 +34,24 @@ type Props = {
   /** Sticky joslai: izvēlne atveras pa kreisi. */
   menuAlign?: "start" | "end";
   compact?: boolean;
+  /** PRO pasūtījuma labā josla — zibens ikona, bez fona. */
+  rail?: boolean;
   sourceBlocks?: WorkspaceSourceBlocks | null;
 };
+
+function RailFlashLightningIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden>
+      <path
+        d="M13 2L4 14h7l-1 8 10-14h-7V2z"
+        fill="#fbbf24"
+        stroke="#d97706"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 const SHORT_TIER: Record<AiAdminModelTier, string> = {
   "gemini-flash": "Flash",
@@ -125,6 +141,7 @@ export function AdminFlashMaxButton({
   onRun,
   menuAlign = "start",
   compact,
+  rail,
   sourceBlocks,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -186,18 +203,23 @@ export function AdminFlashMaxButton({
         aria-expanded={open}
         aria-haspopup="dialog"
         className={
-          compact
-            ? "inline-flex h-7 w-full shrink-0 items-center justify-center gap-0.5 rounded-md border border-teal-700/40 bg-teal-600/90 px-1 text-[9px] font-semibold text-white shadow-sm transition hover:bg-teal-600 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
-            : "inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-teal-700/40 bg-teal-600 px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-teal-700 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
+          rail
+            ? "inline-flex h-7 w-7 shrink-0 items-center justify-center border-0 bg-transparent p-0 transition disabled:cursor-not-allowed disabled:opacity-35"
+            : compact
+              ? "inline-flex h-7 w-full shrink-0 items-center justify-center gap-0.5 rounded-md border border-teal-700/40 bg-teal-600/90 px-1 text-[9px] font-semibold text-white shadow-sm transition hover:bg-teal-600 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
+              : "inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-teal-700/40 bg-teal-600 px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-teal-700 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45"
         }
         title="Atver izvēli: kuras sadaļas, ar kuriem aģentiem un kādu komandu ģenerēt. Noklusējums paliek esošie Flash Max lauki."
       >
         {busy ? (
-          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+          <Loader2 className={`${rail ? "h-5 w-5" : "h-3.5 w-3.5"} shrink-0 animate-spin text-slate-600`} aria-hidden />
+        ) : rail ? (
+          <RailFlashLightningIcon className="block h-5 w-5 max-h-5 max-w-5" />
         ) : (
           <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
         )}
-        {compact ? "MAX" : "FLASH MAX"}
+        {compact && !rail ? "MAX" : null}
+        {!compact && !rail ? "FLASH MAX" : null}
       </button>
       {open ? (
         <div
