@@ -170,7 +170,7 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
           type="button"
           onClick={generateEcarstrade}
           className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
-          title="Aizstāt eCarsTrade saiti ar jaunu filtru no Auto1 / Openlane / Autobid"
+          title="Atjaunot eCarsTrade saiti no Auto1 / Openlane / Autobid / Mobile filtriem"
         >
           Atjaunot eCarsTrade
         </button>

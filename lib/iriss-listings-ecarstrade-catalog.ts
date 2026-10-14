@@ -85,7 +85,9 @@ export function compactCatalogKey(raw: string): string {
 }
 
 const MARKS_BY_KEY = new Map<string, EcarstradeMark>();
+const MARKS_BY_ID = new Map<number, EcarstradeMark>();
 for (const mark of MARKS) {
+  MARKS_BY_ID.set(mark.id, mark);
   const key = normalizeCatalogKey(mark.name);
   if (key && !MARKS_BY_KEY.has(key)) MARKS_BY_KEY.set(key, mark);
   const compact = compactCatalogKey(mark.name);
@@ -111,6 +113,11 @@ export function resolveEcarstradeMake(raw: string): EcarstradeMark | null {
   const key = normalizeCatalogKey(raw);
   if (!key) return null;
   return MARKS_BY_KEY.get(key) ?? MARKS_BY_KEY.get(compactCatalogKey(raw)) ?? null;
+}
+
+export function resolveEcarstradeMakeById(id: number): EcarstradeMark | null {
+  if (!Number.isFinite(id) || id <= 0) return null;
+  return MARKS_BY_ID.get(id) ?? null;
 }
 
 export function resolveEcarstradeMakeFromBrandId(brandId: string): EcarstradeMark | null {
@@ -139,6 +146,10 @@ function modelScore(query: string, catalogName: string): number {
 export function resolveEcarstradeModel(makeId: number, raw: string): EcarstradeModel | null {
   const query = String(raw ?? "").trim();
   if (!query) return null;
+  if (/^\d+$/.test(query)) {
+    const byId = resolveEcarstradeModelById(makeId, Number.parseInt(query, 10));
+    if (byId) return byId;
+  }
   let best: EcarstradeModel | null = null;
   let bestScore = 0;
   for (const model of ecarstradeModelsForMake(makeId)) {
@@ -149,6 +160,11 @@ export function resolveEcarstradeModel(makeId: number, raw: string): EcarstradeM
     }
   }
   return bestScore > 0 ? best : null;
+}
+
+export function resolveEcarstradeModelById(makeId: number, modelId: number): EcarstradeModel | null {
+  if (!Number.isFinite(makeId) || !Number.isFinite(modelId) || modelId <= 0) return null;
+  return ecarstradeModelsForMake(makeId).find((m) => m.id === modelId) ?? null;
 }
 
 const TWO_WORD_MAKES = ["land rover", "alfa romeo", "ds automobiles", "rolls royce", "rolls-royce"];

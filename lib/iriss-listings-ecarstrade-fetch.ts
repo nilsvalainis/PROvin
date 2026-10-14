@@ -7,16 +7,29 @@ import {
   ECARSTRADE_ORIGIN,
   ecarstradeApiUrl,
   ecarstradeCarJsonUrl,
+  ecarstradeDetailUrl,
   ecarstradePageStart,
+  mergeEcarstradeHtmlPrices,
   mergeEcarstradeJsonPrices,
   parseEcarstradeApiPage,
   readEcarstradeAuth,
   type EcarstradeVehicle,
 } from "@/lib/iriss-listings-ecarstrade";
 import type { IrissListingSourceStatus } from "@/lib/iriss-listings-types";
+import {
+  cookieHeaderFromSetCookieLines,
+  isCloudflareChallengeHtml,
+  mergeCookieHeader,
+  splitCombinedSetCookieHeader,
+} from "@/lib/vin-sources/html-extract";
 
 const BROWSER_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+/** PHP sesija pirms login (ne `/search`: tas viesiem dzēš `eCT/user`). */
+export const ECARSTRADE_SESSION_WARMUP_PATH = "/setsession.php";
+/** Pēc JWT: tas pats `location.reload()`, ko dara vietnes login.js. */
+export const ECARSTRADE_SESSION_ACTIVATE_PATH = "/search";
 
 export type EcarstradeSourceFetchResult = {
   status: IrissListingSourceStatus;
@@ -60,9 +73,13 @@ function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
+function encodeCookieValue(raw: string): string {
+  return encodeURIComponent(raw).replace(/%2E/gi, ".");
+}
+
 export function ecarstradeAuthCookieHeader(accessToken: string, refreshToken = ""): string {
-  const parts = [`eCT/user=${accessToken}`];
-  if (refreshToken) parts.push(`eCT/refresh-token=${refreshToken}`);
+  const parts = [`eCT/user=${encodeCookieValue(accessToken)}`];
+  if (refreshToken) parts.push(`eCT/refresh-token=${encodeCookieValue(refreshToken)}`);
   return parts.join("; ");
 }
 
@@ -75,6 +92,70 @@ export function parseEcarstradeLoginBody(body: unknown): { accessToken: string; 
   return accessToken ? { accessToken, refreshToken } : null;
 }
 
+export function cookiesFromFetchResponse(res: Response): string {
+  const rows = typeof res.headers.getSetCookie === "function" ? res.headers.getSetCookie() : [];
+  const raw = rows.length > 0 ? cookieHeaderFromSetCookieLines(rows) : cookieHeaderFromSetCookieLines(splitCombinedSetCookieHeader(res.headers.get("set-cookie") ?? ""));
+  return dropDeletedCookies(raw);
+}
+
+export function dropDeletedCookies(header: string): string {
+  if (!header.trim()) return "";
+  const keep: string[] = [];
+  for (const part of header.split(";")) {
+    const piece = part.trim();
+    if (!piece || !piece.includes("=")) continue;
+    const eq = piece.indexOf("=");
+    const k = piece.slice(0, eq).trim();
+    const v = piece.slice(eq + 1).trim();
+    if (!k || !v || /^deleted$/i.test(v)) continue;
+    keep.push(`${k}=${v}`);
+  }
+  return keep.join("; ");
+}
+
+function mergeJar(previous: string, incoming: string): string {
+  return dropDeletedCookies(mergeCookieHeader(previous, incoming));
+}
+
+const browserHeaders = (): Record<string, string> => ({
+  "User-Agent": BROWSER_UA,
+  "Accept-Language": "lv,en-GB;q=0.9,en;q=0.8",
+  Origin: ECARSTRADE_ORIGIN,
+  Referer: `${ECARSTRADE_ORIGIN}/search`,
+  "Cache-Control": "no-cache",
+  Pragma: "no-cache",
+});
+
+async function fetchForCookies(
+  url: string,
+  timeoutMs: number,
+  fetchImpl: typeof fetch,
+  cookie: string,
+): Promise<string> {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const headers: Record<string, string> = {
+      ...browserHeaders(),
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    };
+    if (cookie) headers.Cookie = cookie;
+    const res = await fetchImpl(url, {
+      method: "GET",
+      headers,
+      redirect: "follow",
+      cache: "no-store",
+      signal: ctrl.signal,
+    });
+    await res.text().catch(() => "");
+    return mergeJar(cookie, cookiesFromFetchResponse(res));
+  } catch {
+    return cookie;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 async function loginEcarstrade(
   fetchImpl: typeof fetch,
   timeoutMs: number,
@@ -82,16 +163,21 @@ async function loginEcarstrade(
 ): Promise<AuthSession> {
   const creds = readEcarstradeAuth(env);
   if (!creds) return { skipped: true, note: "eCarsTrade lasīts publiski (nav ECARSTRADE_USER / ECARSTRADE_PASS)." };
+  let cookie = "";
+  try {
+    cookie = await fetchForCookies(new URL(ECARSTRADE_SESSION_WARMUP_PATH, ECARSTRADE_ORIGIN).toString(), timeoutMs, fetchImpl, "");
+  } catch {
+    cookie = "";
+  }
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetchImpl(new URL(ECARSTRADE_AUTH_PATH, ECARSTRADE_ORIGIN).toString(), {
       method: "POST",
       headers: {
-        "User-Agent": BROWSER_UA,
+        ...browserHeaders(),
         Accept: "application/json",
         "Content-Type": "application/json",
-        "Accept-Language": "en-GB,en;q=0.9",
       },
       body: JSON.stringify({ username: creds.username, password: creds.password }),
       redirect: "follow",
@@ -99,6 +185,7 @@ async function loginEcarstrade(
       signal: ctrl.signal,
     });
     const text = await res.text();
+    cookie = mergeJar(cookie, cookiesFromFetchResponse(res));
     if (res.status === 401 || res.status === 403) {
       return { failed: true, status: "login_required", note: `eCarsTrade login HTTP ${res.status}.` };
     }
@@ -113,7 +200,10 @@ async function loginEcarstrade(
     }
     const tokens = parseEcarstradeLoginBody(json);
     if (!tokens) return { failed: true, status: "login_required", note: "eCarsTrade login nedeva accessToken." };
-    return { cookie: ecarstradeAuthCookieHeader(tokens.accessToken, tokens.refreshToken), accessToken: tokens.accessToken };
+    cookie = mergeJar(cookie, ecarstradeAuthCookieHeader(tokens.accessToken, tokens.refreshToken));
+    cookie = await fetchForCookies(new URL(ECARSTRADE_SESSION_ACTIVATE_PATH, ECARSTRADE_ORIGIN).toString(), timeoutMs, fetchImpl, cookie);
+    cookie = mergeJar(cookie, ecarstradeAuthCookieHeader(tokens.accessToken, tokens.refreshToken));
+    return { cookie, accessToken: tokens.accessToken };
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
     return {
@@ -137,12 +227,8 @@ async function fetchApiText(
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const headers: Record<string, string> = {
-      "User-Agent": BROWSER_UA,
+      ...browserHeaders(),
       Accept: "application/json,text/plain,*/*",
-      "Accept-Language": "lv,en-GB;q=0.9,en;q=0.8",
-      Referer: `${ECARSTRADE_ORIGIN}/search`,
-      "Cache-Control": "no-cache",
-      Pragma: "no-cache",
       "X-Requested-With": "XMLHttpRequest",
     };
     if (cookie) headers.Cookie = cookie;
@@ -172,6 +258,79 @@ function httpStatusToSource(statusCode: number): { status: IrissListingSourceSta
   return null;
 }
 
+function isAuthJsonBlock(statusCode: number, text: string): boolean {
+  if (statusCode !== 401 && statusCode !== 403) return false;
+  if (isCloudflareChallengeHtml(text, statusCode)) return false;
+  return true;
+}
+
+function vehicleNeedsPrice(v: EcarstradeVehicle): boolean {
+  return v.priceBuyNow == null && v.priceCurrent == null;
+}
+
+async function enrichMissingPrices(
+  vehicles: Map<string, EcarstradeVehicle>,
+  fetchImpl: typeof fetch,
+  cookie: string,
+  accessToken: string,
+  timeoutMs: number,
+): Promise<string> {
+  const missing = [...vehicles.values()].filter(vehicleNeedsPrice).slice(0, 30);
+  if (missing.length === 0) return "";
+  let enrichedJson = 0;
+  let enrichedHtml = 0;
+  let jsonCf = false;
+  let htmlCf = false;
+  const perTry = Math.min(timeoutMs, 8000);
+  for (const v of missing) {
+    if (!jsonCf) {
+      const jsonUrl = ecarstradeCarJsonUrl(v.externalId);
+      if (jsonUrl) {
+        const got = await fetchApiText(jsonUrl, perTry, fetchImpl, cookie, accessToken);
+        if (got.ok) {
+          if (isCloudflareChallengeHtml(got.text, got.statusCode)) jsonCf = true;
+          else if (isAuthJsonBlock(got.statusCode, got.text)) jsonCf = true;
+          else if (got.statusCode < 400) {
+            try {
+              const body = JSON.parse(got.text) as Record<string, unknown>;
+              const next = mergeEcarstradeJsonPrices(v, body);
+              vehicles.set(v.externalId, next);
+              if (!vehicleNeedsPrice(next)) enrichedJson += 1;
+            } catch {
+              /* nederīgs JSON */
+            }
+          }
+        }
+      }
+    }
+    const now = vehicles.get(v.externalId) ?? v;
+    if (!vehicleNeedsPrice(now) || htmlCf) continue;
+    const htmlUrl = ecarstradeDetailUrl(now.externalId);
+    if (!htmlUrl) continue;
+    const got = await fetchApiText(htmlUrl, perTry, fetchImpl, cookie, accessToken);
+    if (!got.ok) continue;
+    if (isCloudflareChallengeHtml(got.text, got.statusCode)) {
+      htmlCf = true;
+      continue;
+    }
+    if (got.statusCode >= 400) continue;
+    const next = mergeEcarstradeHtmlPrices(now, got.text);
+    vehicles.set(v.externalId, next);
+    if (!vehicleNeedsPrice(next)) enrichedHtml += 1;
+    if (jsonCf && htmlCf) break;
+  }
+  const stillMissing = [...vehicles.values()].filter(vehicleNeedsPrice).length;
+  const bits: string[] = [];
+  if (enrichedJson > 0) bits.push(`Cenas no /api/v1/cars: ${enrichedJson}.`);
+  if (enrichedHtml > 0) bits.push(`Cenas no /cars HTML: ${enrichedHtml}.`);
+  if (jsonCf) bits.push("/api/v1/cars bloķē Cloudflare (challenge).");
+  if (htmlCf) bits.push("/cars/{id} bloķē Cloudflare.");
+  if (stillMissing > 0 && (jsonCf || htmlCf)) {
+    bits.push(`${stillMissing} auto bez cenas pēc enrich.`);
+  }
+  return bits.join(" ");
+}
+
 /** Nolasa meklēšanas lapas caur future_api.php. Bez parolēm strādā publiski. */
 export async function fetchEcarstradeSource(sourceUrl: string, opts: EcarstradeFetchOptions): Promise<EcarstradeSourceFetchResult> {
   const fetchImpl = opts.fetchImpl ?? fetch;
@@ -188,7 +347,7 @@ export async function fetchEcarstradeSource(sourceUrl: string, opts: EcarstradeF
   const auth = await loginEcarstrade(fetchImpl, opts.timeoutMs, env);
   const cookie = "cookie" in auth ? auth.cookie : "";
   const accessToken = "accessToken" in auth ? auth.accessToken : "";
-  loggedIn = Boolean(cookie);
+  loggedIn = Boolean(accessToken);
   const authNote = "note" in auth ? auth.note : loggedIn ? "eCarsTrade sesija ar dīlera kontu." : "";
   if ("failed" in auth && auth.failed && auth.status === "login_required") {
     /** Login neizdevās: tomēr mēģinām publisko sarakstu. */
@@ -246,25 +405,18 @@ export async function fetchEcarstradeSource(sourceUrl: string, opts: EcarstradeF
 
   let enrichNote = "";
   if (loggedIn && accessToken) {
-    const missing = [...vehicles.values()].filter((v) => v.priceBuyNow == null && v.priceCurrent == null).slice(0, 30);
-    let enriched = 0;
-    for (const v of missing) {
-      const jsonUrl = ecarstradeCarJsonUrl(v.externalId);
-      if (!jsonUrl) continue;
-      const got = await fetchApiText(jsonUrl, Math.min(opts.timeoutMs, 8000), fetchImpl, cookie, accessToken);
-      if (!got.ok) continue;
-      if (got.statusCode === 401 || got.statusCode === 403) break;
-      if (got.statusCode >= 400) continue;
-      try {
-        const body = JSON.parse(got.text) as Record<string, unknown>;
-        const next = mergeEcarstradeJsonPrices(v, body);
-        vehicles.set(v.externalId, next);
-        if (next.priceBuyNow != null || next.priceCurrent != null) enriched += 1;
-      } catch {
-        continue;
+    const missingAfterList = [...vehicles.values()].filter(vehicleNeedsPrice).length;
+    if (missingAfterList === 0) {
+      enrichNote = "Cenas no future_api kartītēm (sesija).";
+    } else {
+      enrichNote = await enrichMissingPrices(vehicles, fetchImpl, cookie, accessToken, opts.timeoutMs);
+      const still = [...vehicles.values()].filter(vehicleNeedsPrice).length;
+      if (still > 0 && still === missingAfterList && !enrichNote) {
+        enrichNote = `Sesija ir, bet ${still} auto kartītes joprojām bez cenas (Sign in to buy).`;
+      } else if (still > 0 && missingAfterList > 0 && /Cloudflare/i.test(enrichNote) && still === missingAfterList) {
+        enrichNote = `${enrichNote} future_api palika publisks (Sign in to buy).`;
       }
     }
-    if (enriched > 0) enrichNote = `Cenas no /api/v1/cars: ${enriched}.`;
   }
 
   const notes: string[] = [];

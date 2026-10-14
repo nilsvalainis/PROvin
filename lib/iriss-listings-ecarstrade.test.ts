@@ -10,6 +10,7 @@ import {
   ecarstradeCarJsonUrl,
   ecarstradeDetailUrl,
   ecarstradePageStart,
+  mergeEcarstradeHtmlPrices,
   mergeEcarstradeJsonPrices,
   parseEcarstradeApiPage,
   parseEcarstradeCard,
@@ -199,5 +200,18 @@ describe("eCarsTrade parser", () => {
     expect(merged.priceCurrent).toBeNull();
     expect(merged.auctionEndAt).toBe("");
     expect(ecarstradeCarJsonUrl("7602956")).toBe("https://ecarstrade.com/api/v1/cars/7602956");
+  });
+
+  it("fills stock buy-now from logged-in HTML without using Kopējā", () => {
+    const pub = parseEcarstradeCard(card("card-tucson-public.html"), {
+      id: "7602956",
+      max_bid: null,
+      close_date: "31 Dec 2036 23:59",
+    });
+    expect(pub).toBeTruthy();
+    const merged = mergeEcarstradeHtmlPrices(pub!, card("card-tucson-loggedin.html"));
+    expect(merged.priceBuyNow).toBe(16200);
+    expect(merged.priceCurrent).toBeNull();
+    expect(mergeEcarstradeHtmlPrices(pub!, card("card-tucson-public.html")).priceBuyNow).toBeNull();
   });
 });

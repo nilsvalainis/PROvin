@@ -145,7 +145,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
               onClick={() => void appendEcarstradeLinks()}
               disabled={ectBusy}
               className="inline-flex h-9 items-center rounded-[10px] bg-[#e9e9ee] px-3 text-[13px] font-medium text-[#3a3a3c] disabled:opacity-40"
-              title="Aizstāt eCarsTrade saites ar jaunu filtru (ne pievienot klāt)"
+              title="Atjaunot eCarsTrade saites no Auto1 / Openlane / Autobid / Mobile filtriem"
             >
               {ectBusy ? "ET…" : "Atjaunot ET"}
             </button>

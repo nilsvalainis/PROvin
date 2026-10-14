@@ -1017,7 +1017,7 @@ export function IrissPasutijumiListClient({
               onClick={() => void appendEcarstradeLinks()}
               disabled={ectBusy}
               className="inline-flex h-8 items-center rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm disabled:opacity-40"
-              title="Aizstāt eCarsTrade saites visos pasūtījumos ar jaunu filtru (ne pievienot klāt)"
+              title="Atjaunot eCarsTrade saites no Auto1 / Openlane / Autobid / Mobile filtriem visiem pasūtījumiem"
             >
               {ectBusy ? "ET…" : "Atjaunot ET"}
             </button>

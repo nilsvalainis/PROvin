@@ -31,6 +31,18 @@ function recordFromBody(raw: unknown): IrissPasutijumsRecord | null {
     ...base,
     brandModel: str("brandModel"),
     vin: str("vin"),
+    productionYears: str("productionYears"),
+    totalBudget: str("totalBudget"),
+    engineType: str("engineType"),
+    transmission: str("transmission"),
+    bodyType: str("bodyType"),
+    driveType: str("driveType"),
+    seatCount: str("seatCount"),
+    maxMileage: str("maxMileage"),
+    preferredColors: str("preferredColors"),
+    nonPreferredColors: str("nonPreferredColors"),
+    equipmentRequired: str("equipmentRequired"),
+    dealVat21Required: o.dealVat21Required === true,
     ...parseIrissPasutijumsListingLinks(o),
   };
 }
@@ -142,5 +154,5 @@ export async function POST(req: Request) {
     saved.push(irissPasutijumsToListRow(stored));
   }
 
-  return NextResponse.json({ applied: apply, saved, ...summarize(previews) });
+  return NextResponse.json({ applied: apply, replace, saved, ...summarize(previews) });
 }

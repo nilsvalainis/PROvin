@@ -7,6 +7,9 @@
  * („Sign in to buy”), bet `data.max_bid` bieži ir. Login: `POST /api/v1/auth/login`
  * + `Accept: application/json` ar `{username, password}` (ne `email`: 422) ->
  * `data.accessToken` / `data.refreshToken` (sīkdatnes eCT/user, eCT/refresh-token).
+ * Vietne pēc login dara `location.reload()` uz `/search`, lai PHP piesaistītu JWT
+ * sesijai (`eCT/PHPSESSID`). Bez šī soļa `future_api.php` paliek publisks.
+ * `/api/v1/cars/{id}` un `/cars/{id}` no serverless bieži ir Cloudflare challenge (403).
  *
  * Valsts filtrs vienmēr BE / NL / LU / DE (`country[]=BEL|NET|LUX|GER`).
  */
@@ -333,8 +336,22 @@ export function parseEcarstradeCardPrices(
       amountInClass(block, "car-price__button") ??
       amountInClass(block, "car-price__head-label__value");
   const buyNow =
-    firstPrice(d.buy_now, d.buyNow, d.buy_now_price, d.buyNowPrice, d.fixed_price, d.fixedPrice, d.instant_price, d.instantPrice) ??
-    buyNowFromHtml;
+    firstPrice(
+      d.buy_now,
+      d.buyNow,
+      d.buy_now_price,
+      d.buyNowPrice,
+      d.price_buy_now,
+      d.priceBuyNow,
+      d.fixed_price,
+      d.fixedPrice,
+      d.fix_price,
+      d.fixPrice,
+      d.instant_price,
+      d.instantPrice,
+      d.stock_price,
+      d.stockPrice,
+    ) ?? buyNowFromHtml;
   const currentFromHtml = signedOut
     ? null
     : amountAfter(block, /Current bid|Highest bid|Pašreizēj|Max\.?\s*bid|Solījums/i) ??
@@ -526,6 +543,27 @@ export function mergeEcarstradeJsonPrices(v: EcarstradeVehicle, json: Rec): Ecar
     priceCurrent: priced.priceCurrent ?? v.priceCurrent,
     priceBuyNow: priced.priceBuyNow ?? v.priceBuyNow,
     auctionEndAt: v.auctionEndAt || ecarstradeAuctionEndAt("", data, sale),
+  };
+}
+
+/** HTML kartīte / detaļa pēc login: PIRKT 16200, ne Kopējā. */
+export function mergeEcarstradeHtmlPrices(v: EcarstradeVehicle, html: string): EcarstradeVehicle {
+  if (!html.trim() || /Sign in to (?:buy|see)/i.test(html)) return v;
+  const sale = saleTypeFromStage(v.auctionStage);
+  const parsed = parseEcarstradeCardPrices(html, {});
+  const priced = applyEcarstradeSaleTypePrices(sale, {
+    buyNow: parsed.buyNow ?? v.priceBuyNow,
+    current: parsed.current ?? v.priceCurrent,
+    start: parsed.start ?? v.priceStart,
+  });
+  const fromCard = parseEcarstradeCard(html, { id: v.externalId, auction_type: sale });
+  return {
+    ...v,
+    priceStart: priced.priceStart ?? v.priceStart,
+    priceCurrent: priced.priceCurrent ?? v.priceCurrent,
+    priceBuyNow: priced.priceBuyNow ?? v.priceBuyNow,
+    auctionEndAt: v.auctionEndAt || fromCard?.auctionEndAt || ecarstradeAuctionEndAt(html, {}, sale),
+    auctionStage: v.auctionStage || fromCard?.auctionStage || "",
   };
 }
 

@@ -72,7 +72,38 @@ describe("iriss scan eCarsTrade link backfill", () => {
     expect(preview.added.some((u) => u.includes("power_from=176") && u.includes("power_to=176"))).toBe(true);
   });
 
-  it("replace overwrites an old eCarsTrade URL instead of appending", () => {
+  it("keeps one ET link when Auto1 and Openlane overlap, and two when fuel differs", () => {
+    const same = previewEcarstradeLinksForScan(
+      rec({
+        brandModel: "Volvo XC60",
+        listingLinkAuto1: [
+          "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&fuelTypes=DIESEL&maxMileage=150000",
+        ],
+        listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2018&fuels=diesel&mileageTo=180000"],
+      }),
+    );
+    expect(same.generated).toHaveLength(1);
+    expect(same.generated[0]).toContain("year_from=2018");
+    expect(same.generated[0]).toContain("mileage_to=150000");
+    expect(same.generated[0]).toContain("fuel[]=Diesel");
+
+    const split = previewEcarstradeLinksForScan(
+      rec({
+        brandModel: "Volvo XC60",
+        listingLinkAuto1: [
+          "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&fuelTypes=DIESEL&firstRegistrationFrom=2018",
+        ],
+        listingLinkMobile: [
+          "https://suchen.mobile.de/fahrzeuge/search.html?ms=25100&fuels=PETROL&minFirstRegistrationDate=2019",
+        ],
+      }),
+    );
+    expect(split.generated.length).toBe(2);
+    expect(split.generated.some((u) => u.includes("fuel[]=Diesel"))).toBe(true);
+    expect(split.generated.some((u) => u.includes("fuel[]=Petrol"))).toBe(true);
+  });
+
+  it("replace overwrites an old coarse eCarsTrade URL", () => {
     const row = rec({
       brandModel: "Volvo XC60",
       listingLinkAuto1: [
