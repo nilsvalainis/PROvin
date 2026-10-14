@@ -261,6 +261,7 @@ import {
   canNotifyClientOrder,
   isManualNotifyClientOrder,
   notifyClientBlockedMessage,
+  notifyClientSendBlockedReason,
 } from "@/lib/admin-notify-client-eligibility";
 import {
   isNotifyBlobUploadEnabled,
@@ -798,6 +799,9 @@ export function OrderDetailWorkspace({
   const notifyReportPdfExtraRef = useRef<HTMLInputElement>(null);
   /** Papildu audita PDF meta dialoga priekšskatam (nosaukums pēc pārdēvēšanas). */
   const [notifyExtraPdfMeta, setNotifyExtraPdfMeta] = useState<{ name: string; size: number } | null>(null);
+  const [notifyExtraPdfSaveBusy, setNotifyExtraPdfSaveBusy] = useState(false);
+  const [notifyExtraPdfSaveMsg, setNotifyExtraPdfSaveMsg] = useState<string | null>(null);
+  const [notifyExtraPdfSaveOk, setNotifyExtraPdfSaveOk] = useState(false);
   const [portfolioDropActive, setPortfolioDropActive] = useState(false);
   const [prepareDraftBusy, setPrepareDraftBusy] = useState(false);
   const [prepareDraftPhase, setPrepareDraftPhase] = useState<string | null>(null);
@@ -2816,10 +2820,40 @@ export function OrderDetailWorkspace({
     setNotifyPhase("idle");
     setNotifyLastSentTo(null);
     setNotifyExtraPdfMeta(null);
+    setNotifyExtraPdfSaveBusy(false);
+    setNotifyExtraPdfSaveMsg(null);
+    setNotifyExtraPdfSaveOk(false);
     setNotifyIncludeGoogleReview(false);
     if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
     setNotifyDialogOpen(true);
   }, []);
+
+  const persistNotifyExtraAuditPdf = useCallback(async (file: File, filename: string) => {
+    setNotifyExtraPdfSaveBusy(true);
+    setNotifyExtraPdfSaveMsg(null);
+    setNotifyExtraPdfSaveOk(false);
+    try {
+      const fd = new FormData();
+      fd.set("sessionId", payload.sessionId);
+      fd.set("reportPdf", file, filename);
+      const res = await fetch("/api/admin/partner-client-report", {
+        method: "POST",
+        credentials: "include",
+        body: fd,
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+      if (!res.ok) {
+        setNotifyExtraPdfSaveMsg(data.message || data.error || "Neizdevās saglabāt PDF.");
+        return;
+      }
+      setNotifyExtraPdfSaveOk(true);
+      setNotifyExtraPdfSaveMsg("PDF saglabāts pasūtījumā.");
+    } catch {
+      setNotifyExtraPdfSaveMsg("Tīkla kļūda. Neizdevās saglabāt PDF.");
+    } finally {
+      setNotifyExtraPdfSaveBusy(false);
+    }
+  }, [payload.sessionId]);
 
   const sendNotifyWithWorkspaceAttachments = useCallback(async () => {
     setNotifyErr(null);
@@ -3817,6 +3851,10 @@ export function OrderDetailWorkspace({
       ? portfolio.length - PORTFOLIO_INLINE_VISIBLE_MAX
       : 0;
 
+  const notifyCustomerEmail = payload.customerEmail?.trim() ?? "";
+  const canSendNotifyToClient = canNotifyClientOrder(payload, notifyCustomerEmail);
+  const notifySendBlockedReason = notifyClientSendBlockedReason(payload, notifyCustomerEmail);
+
   const portfolioSection = (
     <section id="admin-order-section-pielikumi" className={portfolioShellClass}>
       <div
@@ -3864,22 +3902,22 @@ export function OrderDetailWorkspace({
                 Sagatavot melnrakstu
               </button>
             ) : null}
-            {canNotifyClientOrder(payload, payload.customerEmail?.trim()) ? (
-              <button
-                type="button"
-                onClick={openNotifyClientDialog}
-                disabled={notifyPhase === "loading"}
-                className="inline-flex items-center gap-1 rounded-md border border-emerald-700/25 bg-emerald-50/90 px-2 py-1 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100/95 disabled:opacity-50 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-900/50"
-                title={
-                  isManualNotifyClientOrder(payload)
+            <button
+              type="button"
+              onClick={openNotifyClientDialog}
+              disabled={notifyPhase === "loading"}
+              className="inline-flex items-center gap-1 rounded-md border border-emerald-700/25 bg-emerald-50/90 px-2 py-1 text-[10px] font-semibold text-emerald-900 shadow-sm transition hover:bg-emerald-100/95 disabled:opacity-50 dark:border-emerald-600/40 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:bg-emerald-900/50"
+              title={
+                notifySendBlockedReason
+                  ? notifySendBlockedReason
+                  : isManualNotifyClientOrder(payload)
                     ? "Nosūtīt klientam e-pastu ar portfeļa failiem (manuāls pasūtījums)"
                     : "Nosūtīt klientam e-pastu ar portfeļa failiem un rēķinu"
-                }
-              >
-                <Send className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
-                Nosūtīt klientam
-              </button>
-            ) : null}
+              }
+            >
+              <Send className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
+              Nosūtīt klientam
+            </button>
             {payload.partnerCompanyName || payload.partnerId || isPartnerOrderNotes(payload.notes) ? (
               <AdminPartnerArchivePdfButton sessionId={payload.sessionId} />
             ) : null}
@@ -4279,22 +4317,39 @@ export function OrderDetailWorkspace({
                       ref={notifyReportPdfExtraRef}
                       type="file"
                       accept="application/pdf,.pdf"
+                      disabled={notifyPhase === "loading" || notifyExtraPdfSaveBusy}
                       className="block w-full text-[11px] text-[var(--color-apple-text)] file:mr-2 file:rounded-md file:border file:border-slate-200 file:bg-slate-50 file:px-2 file:py-1 file:text-[11px] dark:file:border-zinc-600 dark:file:bg-zinc-800"
                       onChange={() => {
                         const raw = notifyReportPdfExtraRef.current?.files?.[0] ?? null;
                         if (!raw || raw.size <= 0) {
                           setNotifyExtraPdfMeta(null);
+                          setNotifyExtraPdfSaveMsg(null);
+                          setNotifyExtraPdfSaveOk(false);
                           return;
                         }
+                        const name = buildProvinAuditPdfFilename(payload.vin, {
+                          checkoutLine: payload.checkoutLine,
+                          amountTotalCents: payload.amountTotal,
+                        });
                         setNotifyExtraPdfMeta({
-                          name: buildProvinAuditPdfFilename(payload.vin, {
-                            checkoutLine: payload.checkoutLine,
-                            amountTotalCents: payload.amountTotal,
-                          }),
+                          name,
                           size: raw.size,
                         });
+                        void persistNotifyExtraAuditPdf(raw, name);
                       }}
                     />
+                    {notifyExtraPdfSaveBusy ? (
+                      <p className="mt-1 text-[11px] leading-snug text-[var(--color-provin-muted)]" role="status">
+                        Saglabā PDF pasūtījumā...
+                      </p>
+                    ) : notifyExtraPdfSaveMsg ? (
+                      <p
+                        className={`mt-1 text-[11px] leading-snug ${notifyExtraPdfSaveOk ? "text-emerald-800" : "text-red-600"}`}
+                        role={notifyExtraPdfSaveOk ? "status" : "alert"}
+                      >
+                        {notifyExtraPdfSaveMsg}
+                      </p>
+                    ) : null}
                   </div>
                   <label className="mt-3 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2 text-[11px] leading-snug text-[var(--color-apple-text)] dark:border-zinc-700 dark:bg-zinc-900/40">
                     <input
@@ -4317,7 +4372,12 @@ export function OrderDetailWorkspace({
                 </div>
 
                 <div className="shrink-0 border-t border-[var(--admin-border-subtle)] px-4 py-3">
-                  <div className="flex flex-wrap justify-end gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    {notifySendBlockedReason ? (
+                      <span className="mr-auto text-[11px] leading-snug text-[var(--color-provin-muted)]">
+                        {notifySendBlockedReason}
+                      </span>
+                    ) : null}
                     <button
                       type="button"
                       disabled={notifyPhase === "loading"}
@@ -4328,7 +4388,8 @@ export function OrderDetailWorkspace({
                     </button>
                     <button
                       type="button"
-                      disabled={notifyPhase === "loading"}
+                      disabled={notifyPhase === "loading" || !canSendNotifyToClient}
+                      title={notifySendBlockedReason || undefined}
                       onClick={() => void sendNotifyWithWorkspaceAttachments()}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--color-provin-accent)] px-3 py-1.5 text-[11px] font-semibold text-white hover:opacity-95 disabled:opacity-50"
                     >

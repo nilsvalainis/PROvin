@@ -31,3 +31,15 @@ export function notifyClientBlockedMessage(order: NotifyClientOrderLike): string
   }
   return "Nosūtīt var tikai apmaksātam pasūtījumam.";
 }
+
+/** Īss iemesls atspējotai „Sūtīt” darbībai Pārskatā. */
+export function notifyClientSendBlockedReason(
+  order: NotifyClientOrderLike,
+  email?: string | null,
+): string {
+  if (canNotifyClientOrder(order, email)) return "";
+  if (isManualNotifyClientOrder(order)) return "Nav klienta e-pasta";
+  const paid = String(order.paymentStatus ?? "").trim().toLowerCase() === "paid";
+  if (!paid) return "Nav apmaksāts";
+  return "Nav klienta e-pasta";
+}
