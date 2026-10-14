@@ -55,15 +55,6 @@ const textareaClass = `${fieldClass} min-h-[100px] resize-y py-2.5 leading-snug`
 
 const offerPChipButtonClass = `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} cursor-pointer select-none`;
 
-/** Mobilajā rindā ar P čipiem — tāds pats augstums kā platformu čipiem. */
-const headerMobileSaveChipBtnClass =
-  `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} cursor-pointer border border-[var(--color-provin-accent)] ` +
-  "bg-transparent text-[var(--color-provin-accent)] hover:bg-[var(--color-provin-accent)]/8";
-
-const headerMobilePdfChipBtnClass =
-  `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} cursor-pointer border border-[var(--color-provin-accent)]/35 ` +
-  "bg-[var(--color-provin-accent-soft)]/60 text-[var(--color-provin-accent)] hover:bg-[var(--color-provin-accent-soft)]";
-
 const offerDialogMainBtnClass =
   "inline-flex min-h-[44px] min-w-[116px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50";
 
@@ -1185,17 +1176,17 @@ export function IrissPasutijumsEditor({
   ]);
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 sm:px-6 lg:px-10">
+    <div className="mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 max-md:pb-28 sm:px-6 lg:px-10">
       <AdminDashboardHeaderWithMenu>
         <div className="flex flex-col gap-2">
           <Link
             href="/admin/iriss/pasutijumi"
             title="Atpakaļ"
             aria-label="Atpakaļ"
-            className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-full border border-slate-200/90 bg-white px-3 py-1.5 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
+            className="inline-flex min-h-11 items-center gap-0.5 self-start text-[17px] font-medium text-[var(--color-provin-accent)] md:min-h-10 md:gap-1.5 md:rounded-full md:border md:border-slate-200/90 md:bg-white md:px-3 md:py-1.5 md:text-[12px] md:font-semibold md:shadow-sm md:hover:bg-slate-50"
           >
-            <ArrowLeft className="h-4 w-4 shrink-0" strokeWidth={2.3} aria-hidden />
-            <span>Atpakaļ</span>
+            <ArrowLeft className="h-5 w-5 shrink-0 md:h-4 md:w-4" strokeWidth={2.3} aria-hidden />
+            <span>Pasūtījumi</span>
           </Link>
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between md:gap-2">
             <div className="hidden min-w-0 md:block">
@@ -1235,23 +1226,13 @@ export function IrissPasutijumsEditor({
               ))}
               <button
                 type="button"
-                disabled={busy || orderPdfBusy}
-                title="Saglabāt"
-                aria-label={busy || orderPdfBusy ? "Saglabā" : "Saglabāt"}
-                onClick={saveCurrentPage}
-                className={headerMobileSaveChipBtnClass}
+                onClick={openCreateOffer}
+                className={offerPChipButtonClass}
+                style={{ backgroundColor: "#e5e5ea", color: "#3a3a3c", border: "1px solid #d1d1d6" }}
+                title="Jauns piedāvājums"
+                aria-label="Jauns piedāvājums"
               >
-                <Save className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
-              </button>
-              <button
-                type="button"
-                disabled={orderPdfBusy}
-                title="PDF"
-                aria-label="PDF"
-                onClick={() => void openPdf()}
-                className={headerMobilePdfChipBtnClass}
-              >
-                <FileDown className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+                +
               </button>
             </div>
             <div className="hidden shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2 md:flex">
@@ -1567,6 +1548,32 @@ export function IrissPasutijumsEditor({
             </button>
           </div>
         </section>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-[40] flex gap-2 border-t border-[#e5e5ea] bg-[rgba(249,249,249,0.94)] px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2.5 backdrop-blur md:hidden">
+        <button
+          type="button"
+          disabled={orderPdfBusy}
+          onClick={() => void openPdf()}
+          className="flex h-[50px] flex-1 items-center justify-center rounded-xl bg-white text-[17px] font-semibold text-[var(--color-provin-accent)] shadow-[inset_0_0_0_1px_#d1d1d6]"
+        >
+          {orderPdfBusy ? "PDF…" : "PDF"}
+        </button>
+        <button
+          type="button"
+          onClick={openCreateOffer}
+          className="flex h-[50px] flex-1 items-center justify-center rounded-xl bg-[#e5e5ea] text-[17px] font-semibold text-[var(--color-apple-text)]"
+        >
+          Piedāvājums
+        </button>
+        <button
+          type="button"
+          disabled={busy || orderPdfBusy}
+          onClick={saveCurrentPage}
+          className="flex h-[50px] flex-1 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] text-[17px] font-semibold text-white"
+        >
+          {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
+        </button>
       </div>
 
       {offerOpen ? (

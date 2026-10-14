@@ -20,10 +20,10 @@ import { formatCsddPlateLookup } from "@/lib/vin-scan/parse";
 import { collectVinScanMileage, pickVinScanVehicle } from "@/lib/vin-scan/summary";
 
 const inp =
-  "min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
+  "min-w-0 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-[13px] tracking-wide text-[var(--color-apple-text)] focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25 max-md:h-12 max-md:rounded-[10px] max-md:text-[17px]";
 
 const btnSecondary =
-  "rounded-md border border-slate-300 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] disabled:opacity-50 dark:border-slate-600";
+  "rounded-md border border-slate-300 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] disabled:opacity-50 dark:border-slate-600 max-md:h-11 max-md:rounded-xl max-md:px-4 max-md:text-[15px] max-md:normal-case max-md:tracking-normal";
 
 const FOREIGN_FIELDS: { kind: Exclude<VinScanPlateKind, "lv">; label: string }[] = [
   { kind: "nl", label: "NL numurs" },
@@ -250,7 +250,7 @@ export function AdminVinScanPageClient({
       type="button"
       disabled={!canScan || scanBusy || plateBusy}
       onClick={() => void runScan(false)}
-      className="h-11 rounded-[10px] bg-[#1d1d1f] px-5 text-[15px] font-semibold text-white transition hover:bg-black disabled:opacity-40 md:h-10 md:text-[14px]"
+      className="h-[50px] rounded-[10px] bg-[#1d1d1f] px-5 text-[17px] font-semibold text-white transition hover:bg-black disabled:opacity-40 md:h-10 md:text-[14px]"
     >
       {scanBusy ? "Pārbauda…" : "Pārbaudīt"}
     </button>
@@ -354,7 +354,7 @@ export function AdminVinScanPageClient({
         ) : null}
       </div>
       {plate || plateBusy || hasScanResult ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 max-md:flex-col max-md:items-stretch">
           {plate || plateBusy ? (
             <p className="text-[11px] text-[var(--color-apple-text)]">
               {plateBusy

@@ -680,6 +680,9 @@ export function IrissSludinajumiListClient({
     <div className="mt-2 space-y-2 touch-manipulation sm:mt-3 sm:space-y-3">
       {/* min-7: centrēta segmentu vadīkla + izvēršama meklēšana + filtri + „⋯”; zem tās sīka pelēka statusa rinda. */}
       <header className="sticky top-0 z-20 -mx-2 bg-[#F8F8F9]/95 px-2 pb-1.5 pt-1 backdrop-blur sm:mx-0 sm:px-0">
+        <h1 className="mb-2 hidden text-[34px] font-bold leading-none tracking-tight text-[var(--color-apple-text)] max-md:block">
+          Sludinājumi
+        </h1>
         <div className="mb-1.5 flex justify-center">
           <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[#e9e9ee] p-[2px] text-[12px]">
             {([
@@ -745,7 +748,11 @@ export function IrissSludinajumiListClient({
               {activeFilterCount > 0 ? <span className="rounded-full bg-[var(--color-provin-accent)] px-1.5 text-[10px] font-semibold leading-4 text-white">{activeFilterCount}</span> : null}
             </button>
             {filterOpen ? (
-              <div className="fixed inset-x-2 bottom-2 z-40 rounded-2xl bg-white p-3.5 text-[12px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-9 sm:w-[300px] sm:rounded-xl">
+              <>
+              <button type="button" aria-label="Aizvērt filtrus" className="fixed inset-0 z-30 bg-black/38 sm:hidden" onClick={() => setFilterOpen(false)} />
+              <div className="fixed inset-x-0 bottom-0 z-40 rounded-t-[14px] bg-[#f2f2f7] p-4 pb-[max(16px,env(safe-area-inset-bottom))] text-[15px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-9 sm:w-[300px] sm:rounded-xl sm:bg-white sm:p-3.5 sm:text-[12px]">
+                <div className="mx-auto mb-3 h-1.5 w-9 rounded-full bg-[#c7c7cc] sm:hidden" aria-hidden />
+                <p className="mb-2 text-center text-[17px] font-semibold sm:hidden">Filtri</p>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Avots</p>
                 <div className="mt-1 flex flex-wrap gap-2">
                   {SOURCE_CHIPS.map((src) => {
@@ -767,7 +774,7 @@ export function IrissSludinajumiListClient({
                 <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Cena €</p>
                 <div className="mt-1 flex items-center gap-1.5">
                   <input type="number" min={0} inputMode="numeric" aria-label="Cena no" placeholder="No" defaultValue={searchParams.get("min") ?? ""} key={`min-${searchParams.get("min") ?? ""}`} onBlur={(e) => writeListQuery({ min: e.target.value.trim() })} className="h-9 w-full rounded-lg bg-[#f2f2f5] px-2.5 text-base outline-none sm:h-7 sm:text-[12px]" />
-                  <span className="text-[#8e8e93]">–</span>
+                  <span className="text-[#8e8e93]">-</span>
                   <input type="number" min={0} inputMode="numeric" aria-label="Cena līdz" placeholder="Līdz" defaultValue={searchParams.get("max") ?? ""} key={`max-${searchParams.get("max") ?? ""}`} onBlur={(e) => writeListQuery({ max: e.target.value.trim() })} className="h-9 w-full rounded-lg bg-[#f2f2f5] px-2.5 text-base outline-none sm:h-7 sm:text-[12px]" />
                 </div>
                 <label className="mt-3 flex items-center gap-2 font-medium">
@@ -799,10 +806,11 @@ export function IrissSludinajumiListClient({
                   <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={listScope === "hidden"} onChange={(e) => setPrefs((p) => ({ ...p, listScope: e.target.checked ? "hidden" : "all" }))} />
                   Rādīt tikai paslēptos ({hiddenCount})
                 </label>
-                <button type="button" onClick={() => setFilterOpen(false)} className="mt-3 h-10 w-full rounded-lg bg-[var(--color-provin-accent)] text-[12.5px] font-semibold text-white sm:h-8">
+                <button type="button" onClick={() => setFilterOpen(false)} className="mt-3 h-[50px] w-full rounded-xl bg-[var(--color-provin-accent)] text-[17px] font-semibold text-white sm:h-8 sm:rounded-lg sm:text-[12.5px]">
                   Rādīt {sorted.length} auto
                 </button>
               </div>
+              </>
             ) : null}
           </div>
           <label className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7">
@@ -825,7 +833,11 @@ export function IrissSludinajumiListClient({
               ⋯
             </button>
             {menuOpen ? (
-              <div className="fixed inset-x-2 bottom-2 z-40 max-h-[80vh] overflow-y-auto rounded-2xl bg-white p-3.5 text-[12px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-9 sm:w-[340px] sm:rounded-xl">
+              <>
+              <button type="button" aria-label="Aizvērt" className="fixed inset-0 z-30 bg-black/38 sm:hidden" onClick={() => setMenuOpen(false)} />
+              <div className="fixed inset-x-0 bottom-0 z-40 max-h-[80vh] overflow-y-auto rounded-t-[14px] bg-[#f2f2f7] p-4 pb-[max(16px,env(safe-area-inset-bottom))] text-[15px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-9 sm:max-h-none sm:w-[340px] sm:rounded-xl sm:bg-white sm:p-3.5 sm:text-[12px]">
+                <div className="mx-auto mb-3 h-1.5 w-9 rounded-full bg-[#c7c7cc] sm:hidden" aria-hidden />
+                <p className="mb-2 text-center text-[17px] font-semibold sm:hidden">Vairāk</p>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Nolasīšana</p>
                 <div className="mt-1 grid grid-cols-[1fr_auto] gap-y-0.5">
                   <span className="text-[#8e8e93]">Pēdējā</span><span>{mounted && latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : "nav veikta"}</span>
@@ -910,9 +922,10 @@ export function IrissSludinajumiListClient({
                     ))}
                   </div>
                 ) : null}
-                <p className="mt-1 text-[10.5px] text-[#8e8e93]">Budžets – no pasūtījumiem.</p>
-                <button type="button" onClick={() => setMenuOpen(false)} className="mt-3 h-10 w-full rounded-lg bg-[#f2f2f5] text-[12.5px] font-semibold sm:hidden">Aizvērt</button>
+                <p className="mt-1 text-[10.5px] text-[#8e8e93]">Budžets - no pasūtījumiem.</p>
+                <button type="button" onClick={() => setMenuOpen(false)} className="mt-3 h-[50px] w-full rounded-xl bg-white text-[17px] font-semibold sm:hidden sm:h-10 sm:rounded-lg sm:bg-[#f2f2f5] sm:text-[12.5px]">Aizvērt</button>
               </div>
+              </>
             ) : null}
           </div>
         </div>

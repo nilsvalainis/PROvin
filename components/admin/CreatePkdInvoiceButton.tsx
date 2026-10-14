@@ -35,7 +35,7 @@ export function CreatePkdInvoiceButton() {
         type="button"
         onClick={createInvoice}
         disabled={busy}
-        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] px-5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-50"
+        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] px-5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-50 max-md:h-[50px] max-md:w-full max-md:text-[17px]"
       >
         {busy ? "Veido..." : "Izveidot jaunu rēķinu"}
       </button>

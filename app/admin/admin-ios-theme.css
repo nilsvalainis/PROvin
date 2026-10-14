@@ -20,6 +20,18 @@ body:has(.admin-ios-theme) {
   touch-action: pan-y pinch-zoom !important;
 }
 
+/* Mobilajā: dokuments neritina. Vienīgais ports ir `#admin-main-scroll`. */
+@media (max-width: 767px) {
+  html:has(.admin-ios-theme),
+  body:has(.admin-ios-theme) {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    overscroll-behavior-y: none !important;
+    touch-action: manipulation !important;
+  }
+}
+
 .admin-ios-theme {
   --admin-ios-bg: #ffffff;
   --admin-ios-surface: #ffffff;
@@ -100,6 +112,26 @@ body:has(.admin-ios-theme) {
   overflow-x: clip;
   overflow-y: visible;
   color: var(--color-apple-text);
+}
+
+@media (max-width: 767px) {
+  .admin-ios-theme main {
+    overflow: hidden;
+  }
+
+  .admin-ios-theme header h1 {
+    font-size: 34px !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+  }
+
+  .admin-ios-theme header h1.admin-mobile-nav-title {
+    font-size: 17px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em;
+    line-height: 1.2 !important;
+  }
 }
 
 .admin-ios-theme .rounded-2xl,

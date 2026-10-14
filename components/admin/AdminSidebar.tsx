@@ -11,7 +11,6 @@ import {
   FileText,
   Handshake,
   Home,
-  LayoutGrid,
   List,
   LogOut,
   MoreHorizontal,
@@ -418,10 +417,11 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
   );
 }
 
-/** Mobilā apakšējā cilņu josla: 4 konteksta cilnes + „Vairāk” (pilns grupētais saraksts apakšējā lapā). */
-export function AdminMobileTabBar(_props: { workspace?: AdminWorkspace }) {
+/** Mobilā apakšējā cilņu josla: 4 iPhone cilnes. PRO/IRISS centrs ir „Vairāk”. */
+export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: AdminWorkspace } = {}) {
   const pathname = usePathname() || "";
-  const workspace = useAdminWorkspace();
+  const workspaceFromPath = useAdminWorkspace();
+  const workspace = workspaceProp ?? workspaceFromPath;
   const badges = useBadges();
   const offer = useNewIrissOffer();
   const [more, setMore] = useState(false);
@@ -430,62 +430,93 @@ export function AdminMobileTabBar(_props: { workspace?: AdminWorkspace }) {
     if (!more) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMore(false);
     window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
+    return () => window.removeEventListener("keydown", onKey);
   }, [more]);
 
-  const PRO_HUB: Item = { href: "/admin/dashboard", label: "PRO", icon: LayoutGrid, match: () => false };
-  // I_SCAN (Radars) cilnēs paliek; VIN pārbaude IRISS zonā pieejama „Vairāk” izvēlnē.
-  const IRISS_HUB: Item = { href: "/admin/iriss/pasutijumi", label: "IRISS", icon: Car, match: starts("/admin/iriss") };
-  const tabs: Item[] = workspace === "iriss" ? [I_HOME, I_LIST, I_SCAN, PRO_HUB] : [SAKUMS, VIN, FAST, IRISS_HUB];
+  const irissTabs: Item[] = [
+    I_HOME,
+    { ...I_LIST, label: "Sludinājumi" },
+    I_SCAN,
+  ];
+  const proTabs: Item[] = [SAKUMS, VIN, { ...FAST, label: "Ātrie" }];
+  const tabs: Item[] = workspace === "iriss" ? irissTabs : proTabs;
   const inTabs = tabs.some((t) => t.match(pathname));
-  const moreBadge = workspace === "iriss" ? badges.fast + badges.partners : badges.partners;
+  const moreBadge = workspace === "iriss" ? badges.fast + badges.partners + badges.orders : badges.partners + badges.fast;
 
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-[35] flex border-t border-[#e5e5ea] bg-white/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-[35] flex h-[calc(49px+env(safe-area-inset-bottom,0px))] border-t border-[#e5e5ea] bg-[rgba(249,249,249,0.94)] pb-[env(safe-area-inset-bottom,0px)] backdrop-blur md:hidden"
         aria-label="Galvenā izvēlne"
       >
         {tabs.map((t) => {
-          const on = t.match(pathname);
+          const on = t.match(pathname) && !more;
           const n = t.badge ? badges[t.badge] : 0;
           const tone = t.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
           const Icon = t.icon;
           return (
-            <Link key={t.label} href={t.href} aria-current={on ? "page" : undefined} className={`admin-nav-link relative flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] ${on ? "font-semibold text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}>
+            <Link
+              key={t.href}
+              href={t.href}
+              aria-current={on ? "page" : undefined}
+              className={`admin-nav-link relative flex h-[49px] min-w-0 flex-1 flex-col items-center justify-center gap-[3px] pt-0.5 text-[10px] font-medium ${
+                on ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"
+              }`}
+            >
               <span className="relative">
-                <Icon className="h-[21px] w-[21px]" strokeWidth={on ? 2.3 : 1.9} aria-hidden />
-                {n > 0 ? <span className="absolute -right-3.5 -top-1"><Badge n={n} gray={tone.gray} warn={tone.warn} dot /></span> : null}
+                <Icon className="h-[26px] w-[26px]" strokeWidth={on ? 2.2 : 1.8} aria-hidden />
+                {n > 0 ? (
+                  <span className="absolute -right-3.5 -top-0.5">
+                    <Badge n={n} gray={tone.gray} warn={tone.warn} dot />
+                  </span>
+                ) : null}
               </span>
-              <span className="max-w-full truncate px-0.5">{t.label}</span>
+              <span className="max-w-full truncate px-0.5 leading-none">{t.label}</span>
             </Link>
           );
         })}
-        <button type="button" onClick={() => setMore(true)} className={`relative flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[10px] ${!inTabs || more ? "font-semibold text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`} aria-expanded={more} aria-label="Vairāk">
+        <button
+          type="button"
+          onClick={() => setMore((v) => !v)}
+          className={`relative flex h-[49px] min-w-0 flex-1 flex-col items-center justify-center gap-[3px] pt-0.5 text-[10px] font-medium ${
+            !inTabs || more ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"
+          }`}
+          aria-expanded={more}
+          aria-label="Vairāk"
+        >
           <span className="relative">
-            <MoreHorizontal className="h-[21px] w-[21px]" aria-hidden />
-            {moreBadge > 0 ? <span className="absolute -right-3.5 -top-1"><Badge n={moreBadge} dot /></span> : null}
+            <MoreHorizontal className="h-[26px] w-[26px]" aria-hidden />
+            {moreBadge > 0 ? (
+              <span className="absolute -right-3.5 -top-0.5">
+                <Badge n={moreBadge} dot />
+              </span>
+            ) : null}
           </span>
-          Vairāk
+          <span className="leading-none">Vairāk</span>
         </button>
       </nav>
       {more ? (
-        <div className="fixed inset-0 z-[120] md:hidden" role="dialog" aria-modal="true" aria-label="Visas sadaļas">
-          <button type="button" aria-label="Aizvērt" className="absolute inset-0 bg-black/35" onClick={() => setMore(false)} />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-white px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-2xl">
-            <div className="mx-auto mb-1 h-1.5 w-9 rounded-full bg-[#d1d1d6]" aria-hidden />
-            <div className="px-1 pt-2">
+        <div
+          className="fixed inset-x-0 top-0 z-[34] flex flex-col bg-[#f2f2f7] md:hidden"
+          style={{ bottom: "var(--admin-tabbar-h, 49px)" }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Vairāk"
+        >
+          <div className="flex shrink-0 items-end justify-between px-4 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
+            <h1 className="text-[34px] font-bold leading-none tracking-tight text-[var(--color-apple-text)]">Vairāk</h1>
+            <button type="button" onClick={() => setMore(false)} className="pb-1 text-[17px] font-medium text-[var(--color-provin-accent)]">
+              Aizvērt
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
+            <div className="mb-2">
               <WorkspaceSwitch ws={workspace} />
             </div>
             {WS_GROUPS[workspace].map((g) => (
               <div key={g.title}>
-                <p className="px-2 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">{g.title}</p>
-                <div className="overflow-hidden rounded-xl bg-[#f2f2f7]">
+                <p className="px-1 pb-1 pt-3 text-[13px] font-normal uppercase tracking-[0.04em] text-[#8e8e93]">{g.title}</p>
+                <div className="overflow-hidden rounded-xl bg-white">
                   {g.items.map((it) => {
                     const on = it.match(pathname);
                     const n = it.badge ? badges[it.badge] : 0;
@@ -493,8 +524,10 @@ export function AdminMobileTabBar(_props: { workspace?: AdminWorkspace }) {
                     const Icon = it.icon;
                     return (
                       <div key={it.href} className="relative border-b border-[#e5e5ea] last:border-b-0">
-                      <Link href={it.href} onClick={() => setMore(false)} className={`admin-nav-link flex h-11 items-center gap-3 px-3 text-[15px] ${on ? "font-semibold text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}>
-                        <Icon className={`h-[18px] w-[18px] ${on ? "" : "text-[#8e8e93]"}`} aria-hidden />
+                      <Link href={it.href} onClick={() => setMore(false)} className={`admin-nav-link flex min-h-11 items-center gap-3 px-3 py-2 text-[17px] ${on ? "font-semibold text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}>
+                        <span className="grid h-[29px] w-[29px] place-items-center rounded-[7px] bg-[#f2f2f7]">
+                          <Icon className={`h-[18px] w-[18px] ${on ? "" : "text-[#8e8e93]"}`} aria-hidden />
+                        </span>
                         <span className="flex-1">{it.label}</span>
                         <Badge n={n} gray={tone.gray} warn={tone.warn} />
                         {it.plus ? <span className="w-8 shrink-0" aria-hidden /> : null}
@@ -510,7 +543,7 @@ export function AdminMobileTabBar(_props: { workspace?: AdminWorkspace }) {
                 </div>
               </div>
             ))}
-            <button type="button" onClick={() => void logout()} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#f2f2f7] text-[15px] text-red-600">
+            <button type="button" onClick={() => void logout()} className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-[17px] text-red-600">
               <LogOut className="h-4 w-4" aria-hidden /> {L.logout}
             </button>
           </div>

@@ -10,7 +10,7 @@ export default function AdminAgregatuZinasanasPage() {
   return (
     <div className="w-full max-w-3xl space-y-4">
       <div>
-        <h1 className="text-[20px] font-semibold tracking-tight text-[var(--color-apple-text)]">
+        <h1 className="text-[20px] font-semibold tracking-tight text-[var(--color-apple-text)] max-md:text-[34px] max-md:font-bold max-md:leading-none">
           Agregātu zināšanas
         </h1>
         <p className="mt-2 text-[13px] leading-relaxed text-[var(--color-provin-muted)]">

@@ -40,7 +40,7 @@ export function CreateBlogPostButton() {
         type="button"
         onClick={createPost}
         disabled={busy}
-        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] px-5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-50"
+        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] px-5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-50 max-md:h-[50px] max-md:w-full max-md:text-[17px]"
       >
         {busy ? "Veido..." : "Jauns ieraksts"}
       </button>

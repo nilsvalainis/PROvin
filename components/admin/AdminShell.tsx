@@ -7,6 +7,7 @@ import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./Adm
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
 import { AdminVinHandoffProvider } from "./AdminVinHandoffContext";
+import { ADMIN_MOBILE_TABBAR_H_CSS } from "@/lib/admin-mobile-shell";
 
 type AdminShellLayoutValue = {
   sidebarCollapsed: boolean;
@@ -45,11 +46,13 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
   return (
     <AdminVinHandoffProvider>
     <div
-      className={`flex min-h-dvh bg-white ${hideTabBar ? "" : "max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))]"}`}
-      style={{ ["--admin-tabbar-h" as string]: hideTabBar ? "0px" : "3.5rem" }}
+      className={`flex min-h-dvh bg-white max-md:h-dvh max-md:max-h-dvh max-md:overflow-hidden ${
+        hideTabBar ? "" : "max-md:pb-[calc(49px+env(safe-area-inset-bottom,0px))]"
+      }`}
+      style={{ ["--admin-tabbar-h" as string]: hideTabBar ? "0px" : ADMIN_MOBILE_TABBAR_H_CSS }}
     >
       <AdminSidebar collapsed={collapsed} onToggle={toggle} />
-      <div className={`flex min-h-0 min-w-0 flex-1 flex-col ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
+      <div className={`flex min-h-0 min-w-0 flex-1 flex-col max-md:h-full max-md:overflow-hidden ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
         <AdminShellLayoutContext.Provider value={shellLayoutValue}>
           <AdminAuditDeadlineTickProvider>
             <AdminShellMainWithMobilePull isDetailScreen={isDetailScreen} notice={notice}>
