@@ -11,7 +11,7 @@ import { get, put } from "@vercel/blob";
 import { VIN_SCAN_TTL_MS } from "@/lib/vin-scan/catalog";
 import { vinScanIndicatorsAreCacheable } from "@/lib/vin-scan/health";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
-import type { VinScanIndicator } from "@/lib/vin-scan/types";
+import type { VinScanIndicator, VinScanParse } from "@/lib/vin-scan/types";
 
 export type VinScanSnapshot = {
   vin: string;
@@ -31,6 +31,8 @@ const DEFAULT_RELATIVE_DIR = ".data/vin-scans";
 const DEFAULT_BLOB_SUBPREFIX = "vin-scans/";
 const INDEX_KEY = "_history";
 const HISTORY_MAX = 40;
+/** JoJ /search-vin ir $0.50: kešs pēc VIN, 30 dienas. */
+export const JOJ_VIN_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 type BlobConfig = { token: string; prefix: string };
 
@@ -145,4 +147,40 @@ export async function writeVinScanSnapshot(snapshot: VinScanSnapshot): Promise<v
 export async function listVinScanHistory(): Promise<VinScanHistoryEntry[]> {
   const prev = (await readJson(INDEX_KEY)) as { entries?: VinScanHistoryEntry[] } | null;
   return Array.isArray(prev?.entries) ? prev.entries : [];
+}
+
+export type JojVinCache = {
+  vin: string;
+  cachedAt: string;
+  parse: VinScanParse;
+};
+
+function jojCacheKey(vin: string): string {
+  return `joj-${snapshotKey(vin)}`;
+}
+
+function asJojCache(raw: unknown): JojVinCache | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const vin = typeof o.vin === "string" ? o.vin : "";
+  const cachedAt = typeof o.cachedAt === "string" ? o.cachedAt : "";
+  if (!vin || !cachedAt || !o.parse || typeof o.parse !== "object") return null;
+  const t = Date.parse(cachedAt);
+  if (!Number.isFinite(t) || Date.now() - t >= JOJ_VIN_CACHE_TTL_MS) return null;
+  const parse = o.parse as VinScanParse;
+  if (parse.status !== "found" && parse.status !== "none" && parse.status !== "unknown") return null;
+  return { vin, cachedAt, parse };
+}
+
+export async function readJojVinCache(vin: string): Promise<JojVinCache | null> {
+  const key = snapshotKey(vin);
+  if (key.length < 11) return null;
+  return asJojCache(await readJson(jojCacheKey(vin)));
+}
+
+export async function writeJojVinCache(vin: string, parse: VinScanParse): Promise<void> {
+  const key = snapshotKey(vin);
+  if (key.length < 11) return;
+  const body: JojVinCache = { vin: vin.trim().toUpperCase(), cachedAt: new Date().toISOString(), parse };
+  await writeJson(jojCacheKey(vin), body);
 }

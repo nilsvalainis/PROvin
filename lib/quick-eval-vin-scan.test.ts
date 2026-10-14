@@ -11,19 +11,19 @@ import {
 const VOLVO_SE = "YV1DZ5251B2146640";
 
 describe("Ātrie vērtējumi VIN SCAN cauruļvads", () => {
-  it("lieto to pašu avotu sarakstu kā VIN SCAN lapa, ieskaitot WMI dekodēšanu", () => {
+  it("lieto VIN SCAN cauruļvadu bez JoJ $0.50 zvana", () => {
     const ids = quickEvalVinScanSourceIds();
-    expect(ids).toEqual(defaultVinScanSourceIds());
     expect(ids).toEqual(vinScanPipelineSourceIds());
     expect(ids).toEqual(vinScanFastSourceIds());
-    expect(ids).toEqual([...VIN_SCAN_SOURCE_IDS]);
+    expect(ids).not.toContain("joj_copart_iaai");
+    expect(defaultVinScanSourceIds()).toContain("joj_copart_iaai");
     expect(ids[0]).toBe("vin_decode");
     expect(ids).toContain("biluppgifter");
     expect(ids).toContain("carinfo");
     expect(ids).toContain("listing_history");
     expect(ids).toContain("nhtsa_recalls");
     expect(ids).toContain("rdw");
-    expect(ids.length).toBe(VIN_SCAN_SOURCE_IDS.length);
+    expect(ids.length).toBe(VIN_SCAN_SOURCE_IDS.length - 1);
   });
 
   it("nodod sludinājuma saiti un CSDD numuru VIN SCAN zondēm", () => {

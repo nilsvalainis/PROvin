@@ -83,6 +83,23 @@ describe("pasūtījuma VIN SCAN ieraksts", () => {
       action: "import_auction",
     });
     expect(stat?.photoUrls).toContain("https://cs.copart.com/a.jpg");
+    const jojRec = parseOrderVinScanRecord({
+      at: "2026-10-14T09:00:00.000Z",
+      vin: "WBA5R1C0XLFH42873",
+      status: "done",
+      indicators: [
+        indicator({
+          id: "joj_copart_iaai",
+          label: "Copart/IAAI (JoJ API)",
+          status: "found",
+          summary: "Copart 2026, 1 foto",
+          auctions: [{ title: "Copart · lots 94166665 · Side", date: "2026-03-25", venue: "Copart", photoCount: 1, photoUrl: "https://cars2.import-motor.com/a.webp" }],
+          media: { photoCount: 1, photoUrl: "https://cars2.import-motor.com/a.webp", photoUrls: ["https://cars2.import-motor.com/a.webp"] },
+        }),
+      ],
+    });
+    const jojSum = buildOrderVinScanSummary(jojRec);
+    expect(jojSum?.rows[0]).toMatchObject({ id: "joj_copart_iaai", action: "import_auction", canImportAuction: true });
     expect(sum?.rows[0]?.id).toBe("stat_vin");
     expect(sum?.noneRows.map((r) => r.id).sort()).toEqual(["regitra", "tjekbil"]);
     expect(orderVinScanCompactHint(sum)).toContain("Copart 2025, 20 foto");

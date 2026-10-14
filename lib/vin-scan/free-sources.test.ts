@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { VIN_SCAN_REMOVED_IDS, VIN_SCAN_SOURCE_IDS } from "@/lib/vin-scan/catalog";
 import {
   freeVinScanSourceIds,
+  isMeteredVinScanSourceId,
   isPaidVinScanSourceId,
   isValuableVinScanSourceId,
   VIN_SCAN_PAID_SOURCE_IDS,
@@ -13,11 +14,14 @@ import {
 const ROOT = process.cwd();
 
 describe("free VIN SCAN avoti", () => {
-  it("automātiskais saraksts ir visi kataloga avoti un nesatur maksas pirkumus", () => {
+  it("automātiskais saraksts ir kataloga avoti bez maksas pirkumiem un JoJ $0.50", () => {
     const free = freeVinScanSourceIds();
-    expect(free).toEqual([...VIN_SCAN_SOURCE_IDS]);
+    expect(free).not.toContain("joj_copart_iaai");
+    expect(free).toEqual(VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai"));
     expect(free).toContain("stat_vin");
     expect(free).toContain("csdd");
+    expect(isMeteredVinScanSourceId("joj_copart_iaai")).toBe(true);
+    expect(isMeteredVinScanSourceId("stat_vin")).toBe(false);
     for (const id of VIN_SCAN_PAID_SOURCE_IDS) {
       expect(free).not.toContain(id);
       expect(isPaidVinScanSourceId(id)).toBe(true);

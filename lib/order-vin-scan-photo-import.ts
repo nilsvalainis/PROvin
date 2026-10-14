@@ -28,7 +28,9 @@ async function downloadAuctionJpeg(url: string): Promise<Buffer | null> {
       ? "https://www.iaai.com/"
       : host.includes("stat.vin")
         ? "https://stat.vin/"
-        : undefined;
+        : host.includes("import-motor.com")
+          ? "https://www.copart.com/"
+          : undefined;
   const res = await fetch(url, {
     cache: "no-store",
     redirect: "follow",

@@ -17,18 +17,27 @@ export const VIN_SCAN_PAID_SOURCE_IDS = [
   "auto_vin",
 ] as const;
 
+/** Maksas API zvans ($0.50): tikai VIN SCAN lapa vai jauns PRO pasūtījums. */
+export const VIN_SCAN_METERED_SOURCE_IDS = ["joj_copart_iaai"] as const;
+
 const PAID = new Set<string>([...VIN_SCAN_PAID_SOURCE_IDS, ...VIN_SCAN_REMOVED_IDS]);
+const METERED = new Set<string>(VIN_SCAN_METERED_SOURCE_IDS);
 
 export function isPaidVinScanSourceId(id: string): boolean {
   return PAID.has(id);
 }
 
+export function isMeteredVinScanSourceId(id: string): boolean {
+  return METERED.has(id);
+}
+
 export function freeVinScanSourceIds(): VinScanSourceId[] {
-  return VIN_SCAN_SOURCE_IDS.filter((id) => !isPaidVinScanSourceId(id));
+  return VIN_SCAN_SOURCE_IDS.filter((id) => !isPaidVinScanSourceId(id) && !isMeteredVinScanSourceId(id));
 }
 
 export const VIN_SCAN_VALUABLE_SOURCE_IDS = [
   "stat_vin",
+  "joj_copart_iaai",
   "bid_cars",
   "auchistory",
   "checkcar_vin",

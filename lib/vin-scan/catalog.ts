@@ -31,6 +31,7 @@ export const VIN_SCAN_SOURCE_IDS = [
   "traficom",
   "lt_itpr",
   "stat_vin",
+  "joj_copart_iaai",
   "bid_cars",
   "auchistory",
   "carfax_eu",
@@ -326,6 +327,14 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     openUrl: (vin) => `https://stat.vin/cars/${vinQuery(vin)}`,
   },
   {
+    id: "joj_copart_iaai",
+    label: "Copart/IAAI (JoJ API)",
+    country: "US",
+    hint: "Copart un IAAI lots",
+    needs: ["vin"],
+    openUrl: (vin) => `https://www.copart.com/lotSearchResults/?free=true&query=${vinQuery(vin)}`,
+  },
+  {
     id: "bid_cars",
     label: "bid.cars",
     country: "US",
@@ -401,9 +410,9 @@ export function defaultVinScanSourceIds(): VinScanSourceId[] {
   return [...VIN_SCAN_SOURCE_IDS];
 }
 
-/** Kopējais VIN SCAN cauruļvads: VIN SCAN lapa un Ātrie vērtējumi. */
+/** Ātrie vērtējumi un bezmaksas auto-scan: bez JoJ $0.50. VIN SCAN lapa lieto `defaultVinScanSourceIds`. */
 export function vinScanPipelineSourceIds(): VinScanSourceId[] {
-  return defaultVinScanSourceIds();
+  return VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai");
 }
 
 export function vinScanFastSourceIds(): VinScanSourceId[] {

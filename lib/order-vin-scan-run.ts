@@ -4,7 +4,11 @@ import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { isSafeOrderDraftSessionId, readOrderDraft, upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
 import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { mergeVinScanIndicators, parseOrderVinScanRecord, type OrderVinScanRecord } from "@/lib/order-vin-scan";
-import { freeVinScanSourceIds, isPaidVinScanSourceId } from "@/lib/vin-scan/free-sources";
+import {
+  freeVinScanSourceIds,
+  isPaidVinScanSourceId,
+  VIN_SCAN_METERED_SOURCE_IDS,
+} from "@/lib/vin-scan/free-sources";
 import { runVinScan } from "@/lib/vin-scan/run";
 import { isVinScanSourceId } from "@/lib/vin-scan/catalog";
 import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
@@ -17,6 +21,8 @@ export type RunOrderFreeVinScanInput = {
   listingUrl?: string | null;
   force?: boolean;
   sourceIds?: readonly string[];
+  /** Operatora atkārtota palaišana: iekļauj JoJ API ($0.50), ja kešs neatbrīvo. */
+  includeMetered?: boolean;
 };
 
 export type RunOrderFreeVinScanResult = {
@@ -61,9 +67,19 @@ export async function runOrderFreeVinScan(
   await upsertOrderDraftVinScan(sessionId, running).catch(() => null);
 
   try {
-    const wanted = (opts.sourceIds ?? [])
-      .filter((id) => isVinScanSourceId(id) && !isPaidVinScanSourceId(id));
-    const sourceIds = wanted.length ? wanted : freeVinScanSourceIds();
+    const wanted = (opts.sourceIds ?? []).filter(
+      (id) => isVinScanSourceId(id) && !isPaidVinScanSourceId(id),
+    );
+    const isPro =
+      order?.checkoutLine === "audit" ||
+      order?.checkoutLine === "premium" ||
+      (typeof order?.amountTotal === "number" && order.amountTotal >= 7999);
+    let sourceIds = wanted.length ? wanted : [...freeVinScanSourceIds()];
+    if (!wanted.length && (opts.includeMetered || isPro)) {
+      for (const id of VIN_SCAN_METERED_SOURCE_IDS) {
+        if (isVinScanSourceId(id) && !sourceIds.includes(id)) sourceIds.push(id);
+      }
+    }
     const scanned = await runVinScan({
       vin,
       listingUrl: opts.listingUrl?.trim() || "",
