@@ -30,11 +30,9 @@ import {
   consultationSlotTabLevel,
   consultationSummaryTabLevel,
 } from "@/lib/consultation-tab-status";
-import { buildSelectConsultationDocumentHtml } from "@/lib/select-consultation-report-html";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
 import { AdminWhatsAppPdfSendButton } from "@/components/admin/AdminWhatsAppPdfSendButton";
 import { WHATSAPP_PREFILL_SELECT_CONSULTATION } from "@/lib/admin-whatsapp-messages";
-import { buildConsultationQuickPdfForWhatsApp } from "@/lib/consultation-whatsapp-quick-pdf";
 
 const ADMIN_CONTENT_MAX = "max-w-[min(76.8rem,calc(100vw-1.25rem))]";
 const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
@@ -431,6 +429,8 @@ export function ConsultationDetailWorkspace({
       }
     }
     const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeStyle: "short" });
+    // Smagais PDF HTML ģenerators (~290 kB gz) — ielādē tikai drukas brīdī.
+    const { buildSelectConsultationDocumentHtml } = await import("@/lib/select-consultation-report-html");
     const html = buildSelectConsultationDocumentHtml({
       order: {
         created: payload.created,
@@ -471,6 +471,8 @@ export function ConsultationDetailWorkspace({
 
   const generateConsultationPdfForWhatsApp = useCallback(async (): Promise<File | null> => {
     try {
+      // pdf-lib + fontkit (~175 kB gz) — tikai, kad tiešām veido PDF.
+      const { buildConsultationQuickPdfForWhatsApp } = await import("@/lib/consultation-whatsapp-quick-pdf");
       return await buildConsultationQuickPdfForWhatsApp(ws, {
         sessionId: payload.sessionId,
         customerName: payload.customerName,
