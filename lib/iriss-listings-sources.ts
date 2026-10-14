@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
+import { isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
 import { cleanHttpUrl, detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
 import { enrichListingSearchUrl } from "@/lib/iriss-listings-search-filter";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
@@ -80,6 +81,8 @@ export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[
     if (!platform) return;
     const cleaned = cleanHttpUrl(raw);
     if (!cleaned) return;
+    /** Openlane findcar?auctionId=... ir viena auto lapa un ingestā timeout. */
+    if (isSingleVehicleListingUrl(cleaned)) return;
     const detected = detectIrissListingPlatform(cleaned);
     /** Saite nepareizajā laukā (piem. Autobid URL Openlane laukā): uzticamies hostam. */
     const effective = detected ?? platform;

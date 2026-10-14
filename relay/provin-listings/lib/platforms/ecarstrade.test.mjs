@@ -4,8 +4,10 @@ import test from "node:test";
 import {
   collectEcarstradeCardIds,
   ecarstradeCardNeedsPrice,
+  ecarstradeRelayApiUrl,
   ecarstradeRelayDetailUrl,
   ecarstradeRelaySearchPageUrl,
+  htmlFromEcarstradeApiBody,
   idsNeedingDetailPrice,
 } from "./ecarstrade.mjs";
 
@@ -28,4 +30,25 @@ test("collects card ids and flags Sign in to buy", () => {
   assert.equal(ecarstradeCardNeedsPrice("Sign in to buy"), true);
   assert.equal(ecarstradeCardNeedsPrice('<span>PIRKT</span> 16 200 €'), false);
   assert.deepEqual(idsNeedingDetailPrice(html), ["111"]);
+});
+
+test("future_api URL copies search filters and skips iriss_ keys", () => {
+  const api = new URL(ecarstradeRelayApiUrl("https://ecarstrade.com/search?mark[]=68&year_from=2018&sort=time_left&iriss_x=1", 20));
+  assert.equal(api.pathname, "/future_api.php");
+  assert.equal(api.searchParams.get("request_type"), "cars");
+  assert.equal(api.searchParams.get("auction_type"), "search");
+  assert.equal(api.searchParams.get("start"), "20");
+  assert.equal(api.searchParams.get("perpage"), "20");
+  assert.equal(api.searchParams.get("sort"), "time_left.asc");
+  assert.equal(api.searchParams.get("mark[]"), "68");
+  assert.equal(api.searchParams.get("year_from"), "2018");
+  assert.equal(api.searchParams.has("iriss_x"), false);
+});
+
+test("future_api concatenated JSON result is card HTML", () => {
+  const card = '<div data-itemId="99"><span>PIRKT</span> 1 000 €</div>';
+  const raw = `${JSON.stringify({ result: Buffer.from(card, "utf8").toString("base64") })}${JSON.stringify({ result: "" })}`;
+  const html = htmlFromEcarstradeApiBody(raw);
+  assert.match(html, /data-itemId="99"/);
+  assert.equal(collectEcarstradeCardIds(html), ["99"]);
 });

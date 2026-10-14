@@ -224,6 +224,24 @@ describe("mapRelayFetchResponse", () => {
     expect(r.note).toContain("0 auto");
   });
 
+  it("ecarstrade empty HTML does not append 0 auto", () => {
+    const r = mapRelayFetchResponse(
+      {
+        status: "ok",
+        note: "eCarsTrade relejs ielogots, bet /search nedeva kartītes.",
+        items: [],
+        raw: { kind: "ecarstrade-html", searchPages: ["<html><body></body></html>"], detailPages: [], loggedIn: true },
+        pagesFetched: 1,
+        pageCount: 1,
+      },
+      { platform: "ecarstrade", orderId: "o9", orderBrandModel: "Hyundai Tucson" },
+    );
+    expect(r.status).toBe("ok");
+    expect(r.vehicles).toHaveLength(0);
+    expect(r.note).toContain("nedeva kartītes");
+    expect(r.note).not.toContain("0 auto");
+  });
+
   it("autobid raw.nuxtPages is parsed on the Vercel side", () => {
     const src = { platform: "autobid" as const, sourceUrl: "https://autobid.de/en/search-results?x=1", orderId: "o2", orderBrandModel: "Volvo XC60" };
     const r = mapRelayFetchResponse({ status: "ok", note: "", items: [], raw: { kind: "autobid-nuxt", nuxtPages: [nuxtPage()], loggedIn: true }, pagesFetched: 1, pageCount: 1 }, src);

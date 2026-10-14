@@ -16,18 +16,17 @@ Chrome darbojas pa vienam (rinda), ar nejaušām pauzēm starp lapām. Paroles t
 
 ## Uzstādīšana (root, SSH uz 37.27.149.106)
 
+Nersync uz servera. Kodam iet `tar` pa SSH. `install.sh` vispirms atrod savu mapi, tad `cd /` (lai npm no `/root` nedotu EACCES).
+
 ```bash
-# 1. kods uz servera (no repo mapes relay/provin-listings)
-rsync -a --exclude node_modules relay/provin-listings/ root@37.27.149.106:/root/provin-listings-src/
-
-# 2. uz servera
-ssh root@37.27.149.106
-bash /root/provin-listings-src/install.sh
+# 1+2. no repo saknes (laptop / CI), nevis uz servera:
+tar -C relay/provin-listings --exclude node_modules --exclude .git -czf - . \
+| ssh root@37.27.149.106 'rm -rf /root/provin-listings-src && mkdir -p /root/provin-listings-src && tar -C /root/provin-listings-src -xzf - && bash /root/provin-listings-src/install.sh'
 # install.sh: apt (xvfb, x11vnc, novnc, websockify), Node 20, lietotājs provin-listings,
-# /opt/provin-listings (kods), /var/lib/provin-listings (profili, state), Playwright Chromium,
-# /etc/provin-listings.env (no parauga, ja vēl nav), systemd vienības.
+# /opt/provin-listings (kods caur tar), /var/lib/provin-listings (profili, state), Playwright Chromium,
+# /etc/provin-listings.env (no parauga, ja vēl nav), systemd; ja serviss jau skrien, to restartē.
 
-# 3. aizpildīt tokenu un paroles
+# 3. aizpildīt tokenu un paroles (tikai pirmajā reizē)
 openssl rand -hex 32            # -> LISTINGS_RELAY_TOKEN (tas pats Vercel IRISS_LISTINGS_RELAY_TOKEN)
 nano /etc/provin-listings.env   # OPENLANE_USER/PASS, AUTOBID_USER/PASS, ECARSTRADE_USER/PASS
 systemctl restart provin-listings
@@ -37,8 +36,13 @@ systemctl status provin-listings --no-pager
 curl -s http://127.0.0.1:8789/listings/health
 ```
 
-Atkārtota izvietošana pēc koda izmaiņām: atkal `rsync` + `bash install.sh` (idempotents; env failu neaiztiek) vai tikai
-`rsync -a --exclude node_modules /root/provin-listings-src/ /opt/provin-listings/ && systemctl restart provin-listings`.
+Atkārtota izvietošana pēc koda izmaiņām: atkal tas pats `tar | ssh ... install.sh` (idempotents; env failu neaiztiek; servisu restartē).
+Bez `install.sh` (tikai kods + restart):
+
+```bash
+tar -C relay/provin-listings --exclude node_modules --exclude .git -czf - . \
+| ssh root@37.27.149.106 'rm -rf /tmp/provin-listings-src && mkdir -p /tmp/provin-listings-src && tar -C /tmp/provin-listings-src -xzf - && tar -C /tmp/provin-listings-src --exclude node_modules --exclude .git -cf - . | tar -C /opt/provin-listings -xf - && systemctl restart provin-listings'
+```
 
 Ja Openlane rāda Cloudflare challenge ar Playwright Chromium, uzstādi sistēmas Chrome (kā mnt relejam):
 `LISTINGS_CHROME_CHANNEL=chrome` jau ir noklusējums, relejs to lietos automātiski, ja `google-chrome-stable` ir.
@@ -69,7 +73,7 @@ uz Vercel un netiek saglabātas. Paliek tikai ielogotā sesija Chrome profilā u
 2. Atveras servera pārlūks. Ieraksti paroli un, ja prasa, e-pasta / 2FA kodu. Atzīmē „atcerēties”, ja ir.
 3. Kad esi iekšā, spied **Gatavs**. Relejs aizver pārlūku, pārbauda sesiju un nolasa 1 lapu.
 
-Relejam jābūt izvietotam ar šo kodu (`rsync` + `systemctl restart provin-listings`). Caddy `/listings/*`
+Relejam jābūt izvietotam ar šo kodu (`tar` pa SSH + `systemctl restart provin-listings`). Caddy `/listings/*`
 jau der, arī noVNC WebSocket. Jaunu Vercel env nav.
 
 Vecais SSH + noVNC ceļš joprojām strādā, ja paneļa logs neatveras.
@@ -109,9 +113,9 @@ vatNote, auctionId, auctionStartAt, auctionEndAt, auctionStage`.
 - **Autobid.** Tas pats `__NUXT_DATA__` ceļš, ko Vercel lasa publiski, bet ar ielogotu profilu. Relejs atdod
   `raw.nuxtPages[]` (viens JSON teksts uz lapu, `currentPage=N`), Vercel parsē ar esošo parsētāju. `items[]` tukšs.
   Pirms atbildes no NUXT tiek izgriezti JWT / Bearer un konta lauki (e-pasts, vārds, user/auth objekti).
-- **eCarsTrade.** Īsts Chrome ar dīlera sesiju. Relejs atver pasūtījuma `/search` (logged-in) un, ja kartītei nav PIRKT, līdz 20 `/cars/{id}`.
-  Atbilde: `raw.kind=ecarstrade-html`, `searchPages[]`, `detailPages[{id,html}]`, `items[]` tukšs. Vercel saplūdina cenas ar future_api inventāru.
-  Auto-login: `POST /api/v1/auth/login` no Chrome konteksta (`ECARSTRADE_USER` / `ECARSTRADE_PASS`). Pauzes starp lapām 1.2-2.6 s.
+- **eCarsTrade.** Īsts Chrome ar dīlera sesiju (pastāvīgs profils). JWT (`eCT/user`) saglabā ar 14 dienu termiņu, jo sesijas sīkdatne pazūd, kad Chrome aizveras. Probe ir `/setsession.php`, ne tukšs `/search` (viesiem tas dzēš eCT/user). Kartītes vispirms no `future_api.php` pašā pārlūkā (ar CF/sīkdatnēm); ja API tukšs, gaida `[data-itemId]` `/search`. Ja kartītei nav PIRKT, līdz 20 `/cars/{id}`.
+  Atbilde: `raw.kind=ecarstrade-html`, `searchPages[]`, `detailPages[{id,html}]`, `items[]` tukšs. Vercel saplūdina cenas ar future_api inventāru. Tukšs HTML nav „0 auto”.
+  Auto-login: `POST /api/v1/auth/login` no Chrome konteksta (`ECARSTRADE_USER` / `ECARSTRADE_PASS`), ar atkārtojumu pie HTTP 520/502/503/429. Pauzes starp lapām 1.2-2.6 s.
 
 ## Vercel env
 

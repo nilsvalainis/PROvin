@@ -362,8 +362,10 @@ export function mapRelayFetchResponse(
     const parsed = ecarstradeVehiclesFromRelayHtml(raw, src.orderId, src.orderBrandModel);
     vehicles = parsed.vehicles;
     rawPages = parsed.rawPages;
-    if (parsed.searchPageCount > 0 && parsed.vehicles.length === 0 && !/0 auto/.test(noteParts.join(" "))) {
-      noteParts.push("Releja eCarsTrade HTML nedeva auto kartītes.");
+    if (parsed.searchPageCount > 0 && parsed.vehicles.length === 0) {
+      if (!noteParts.some((n) => /kartīt|nedeva|bez login/i.test(n))) {
+        noteParts.push("Releja eCarsTrade HTML nedeva auto kartītes.");
+      }
     }
   } else if (src.platform === "autobid" && raw && Array.isArray(raw.nuxtPages)) {
     const nuxtPages = sanitizeAutobidNuxtPages(raw.nuxtPages.filter((x): x is string => typeof x === "string" && x.length > 0));
@@ -387,7 +389,9 @@ export function mapRelayFetchResponse(
       vehicles = applyAuto1VinHints(vehicles, raw ?? rawPages);
     }
   }
-  if (vehicles.length === 0 && !/0 auto/.test(noteParts.join(" "))) noteParts.push("Meklējums šobrīd nedod rezultātus (0 auto).");
+  if (vehicles.length === 0 && src.platform !== "ecarstrade" && !/0 auto/.test(noteParts.join(" "))) {
+    noteParts.push("Meklējums šobrīd nedod rezultātus (0 auto).");
+  }
   return { status: "ok", note: noteParts.join(" "), vehicles, rawPages, pagesFetched, pageCount, elapsedMs };
 }
 
