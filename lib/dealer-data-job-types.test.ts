@@ -46,7 +46,7 @@ describe("isDealerDataAutoFetchOrder", () => {
   });
 
   it("cenu josla nenostrādā uz citām līnijām, ja tās nejauši ir akcijas cenā", () => {
-    for (const line of ["mini", "listing_filter", "premium", "business", "provin_select", "consultation"]) {
+    for (const line of ["mini", "listing_filter", "plus", "premium", "audits", "business", "provin_select", "consultation"]) {
       expect(isDealerDataAutoFetchOrder({ checkoutLine: line, amountTotalCents: 1900 })).toBe(false);
     }
   });

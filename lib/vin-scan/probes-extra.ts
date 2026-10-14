@@ -383,15 +383,22 @@ async function probeHtmlSource(
   }
 }
 
+const STAT_VIN_ORIGIN = "https://stat.vin/";
+
 export async function probeStatVin(ctx: VinScanContext): Promise<VinScanIndicator> {
   const url = `https://stat.vin/cars/${encodeURIComponent(ctx.vin)}`;
   try {
-    const page = await scanFetchSmart(url, { timeoutMs: 20_000, sourceLabel: "stat_vin" });
+    const page = await scanFetchSmart(url, {
+      timeoutMs: 45_000,
+      solveUrl: STAT_VIN_ORIGIN,
+      sourceLabel: "stat_vin",
+    });
     const parsed = parseStatVinPage({
       status: page.status,
       html: page.text,
       vin: ctx.vin,
       challenge: scanChallengeReason(page),
+      finalUrl: page.finalUrl,
     });
     return done("stat_vin", ctx, { ...parsed, openUrl: url });
   } catch (e) {

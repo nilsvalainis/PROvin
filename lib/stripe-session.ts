@@ -10,18 +10,25 @@ export type CheckoutLineKind =
   | "dealer"
   | "business";
 
-/** Stripe Checkout `metadata.checkout_line` — vecām sesijām bez lauka uzskatām par `audit`. */
-export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): CheckoutLineKind {
-  const raw = session.metadata?.checkout_line?.trim().toLowerCase();
-  if (raw === "provin_select") return "provin_select";
-  if (raw === "consultation") return "consultation";
-  if (raw === "mini") return "mini";
-  if (raw === "listing_filter") return "mini";
-  if (raw === "premium") return "premium";
-  if (raw === "dealer") return "dealer";
-  if (raw === "business") return "business";
-  if (raw === "plus") return "mini";
+function normalizeCheckoutLineRaw(raw: string | null | undefined): CheckoutLineKind {
+  const v = raw?.trim().toLowerCase() ?? "";
+  if (v === "provin_select") return "provin_select";
+  if (v === "consultation") return "consultation";
+  if (v === "mini" || v === "listing_filter" || v === "plus") return "mini";
+  if (v === "premium" || v === "audits") return "premium";
+  if (v === "dealer") return "dealer";
+  if (v === "business") return "business";
   return "audit";
+}
+
+/**
+ * Stripe Checkout `metadata.checkout_line` - vecām sesijām bez lauka uzskatām par `audit`.
+ * `plus` un `product_tier: plus` paliek MINI (39,99 € ieraksti pirms kanoniskā `mini`).
+ */
+export function getCheckoutLineFromSession(session: Stripe.Checkout.Session): CheckoutLineKind {
+  const line = session.metadata?.checkout_line?.trim();
+  if (line) return normalizeCheckoutLineRaw(line);
+  return normalizeCheckoutLineRaw(session.metadata?.product_tier);
 }
 
 /** Hosted Stripe Checkout chrome follows the page locale. */

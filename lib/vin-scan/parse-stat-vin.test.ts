@@ -4,8 +4,17 @@ import {
   classifyStatVinText,
   extractStatVinPhotoUrls,
   formatStatVinFoundSummary,
+  isStatVinNotFoundUrl,
   parseStatVinPage,
 } from "@/lib/vin-scan/parse-stat-vin";
+
+/** Live datacenter response 2026-10-14: Cloudflare WAF, not a JS interstitial. */
+const STAT_VIN_WAF_403 = "Access blocked, contact us at support@stat.vin A";
+
+const CAR_NOT_FOUND_HTML = `<!doctype html><html><body>
+  <h1>Car not found</h1>
+  <p>We couldn't find a vehicle with this VIN. Redirected to /car-not-found.</p>
+</body></html>`;
 
 const VIN = "WBA5R1C0XLFH42873";
 
@@ -56,6 +65,36 @@ describe("parseStatVinPage", () => {
     expect(blocked.summary).toMatch(/403/);
   });
 
+  it("stat.vin WAF 403 (Access blocked) ir error, ne none", () => {
+    const r = parseStatVinPage({ status: 403, html: STAT_VIN_WAF_403, vin: VIN });
+    expect(r.status).toBe("unknown");
+    expect(r.summary).toMatch(/Cloudflare/i);
+    expect(r.summary).not.toMatch(/nav izsoles/i);
+  });
+
+  it("car-not-found redirect ir none, ne found un ne error", () => {
+    expect(isStatVinNotFoundUrl("https://stat.vin/car-not-found")).toBe(true);
+    expect(isStatVinNotFoundUrl("https://stat.vin/car-not-found?ref=1")).toBe(true);
+    expect(isStatVinNotFoundUrl(`https://stat.vin/cars/${VIN}`)).toBe(false);
+    const byUrl = parseStatVinPage({
+      status: 200,
+      html: "<html><body>Popular cars</body></html>",
+      vin: VIN,
+      finalUrl: "https://stat.vin/car-not-found",
+    });
+    expect(byUrl.status).toBe("none");
+    expect(byUrl.summary).toBe("Nav izsoles ieraksta");
+    const byHtml = parseStatVinPage({ status: 200, html: CAR_NOT_FOUND_HTML, vin: VIN });
+    expect(byHtml.status).toBe("none");
+  });
+
+  it("found paliek found tikai ar izsoles ierakstu", () => {
+    const r = parseStatVinPage({ status: 200, html: FOUND_HTML, vin: VIN, finalUrl: `https://stat.vin/cars/${VIN}` });
+    expect(r.status).toBe("found");
+    expect(r.auctions?.length).toBeGreaterThan(0);
+    expect((r.media?.photoCount ?? 0) >= 1).toBe(true);
+  });
+
   it("nolasa Next.js __NEXT_DATA__ izsoles masīvu", () => {
     const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
       props: {
@@ -92,6 +131,7 @@ describe("classifyStatVinText", () => {
       summary: "stat.vin: pieprasījumu limits",
     });
     expect(classifyStatVinText("Page not found", VIN)?.status).toBe("none");
+    expect(classifyStatVinText("Car not found", VIN)?.status).toBe("none");
     expect(
       classifyStatVinText(`RAM 2500 2026 VIN: ${VIN} Sale History (13) Auction Date Final Bid Copart`, VIN)?.status,
     ).toBe("found");

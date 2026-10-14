@@ -11,13 +11,15 @@ export type StatVinPageInput = {
   html: string;
   vin: string;
   challenge?: string | null;
+  /** After redirects. Missing VIN on stat.vin lands on `/car-not-found`. */
+  finalUrl?: string | null;
 };
 
 const CF_RE =
-  /just a moment|security verification|checking your browser|verify you are human|attention required|cf-browser-verification/i;
+  /just a moment|security verification|checking your browser|verify you are human|attention required|cf-browser-verification|access blocked/i;
 const RATE_RE = /too many requests|rate limit(?:ed)?|try again later/i;
 const NONE_RE =
-  /not found|page not found|no vehicle|nothing found|no results|no similar cars|were not found|no sale history|sale history\s*\(\s*0\s*\)/i;
+  /not found|page not found|car not found|car-not-found|no vehicle|nothing found|no results|no similar cars|were not found|no sale history|sale history\s*\(\s*0\s*\)|we couldn['’]?t find/i;
 const AUCTION_RE = /\b(auction|sold|sale date|odometer|mileage|lot|bid|copart|iaai)\b/i;
 const PHOTO_SKIP_RE = /logo|favicon|sprite|pixel|1x1|avatar|icon|emoji|placeholder|spinner|badge/i;
 const AUCTION_PHOTO_HOST_RE = /copart|iaai|stat\.vin|bidfax|poctra|cloudfront|auction/i;
@@ -48,6 +50,15 @@ function visibleText(html: string): string {
 function hasVin(text: string, vin: string): boolean {
   const v = vin.trim().toUpperCase();
   return Boolean(v) && text.toUpperCase().includes(v);
+}
+
+export function isStatVinNotFoundUrl(url: string | null | undefined): boolean {
+  if (!url?.trim()) return false;
+  try {
+    return /\/car-not-found(?:\/|$)/i.test(new URL(url).pathname);
+  } catch {
+    return /car-not-found/i.test(url);
+  }
 }
 
 function yearFromDate(raw: string): string {
@@ -268,13 +279,13 @@ export function parseStatVinPage(input: StatVinPageInput): VinScanParse {
   if (input.status === 429 || (RATE_RE.test(text) && !hasVin(text, vin))) {
     return { status: "unknown", summary: "stat.vin: pieprasījumu limits (HTTP 429)" };
   }
-  if (input.status === 403) {
-    return { status: "unknown", summary: "stat.vin: piekļuve bloķēta (HTTP 403)" };
-  }
   if (CF_RE.test(text) && !hasVin(text, vin)) {
     return { status: "unknown", summary: "stat.vin: Cloudflare bloķē servera pārbaudi" };
   }
-  if (input.status === 404) {
+  if (input.status === 403) {
+    return { status: "unknown", summary: "stat.vin: piekļuve bloķēta (HTTP 403)" };
+  }
+  if (input.status === 404 || isStatVinNotFoundUrl(input.finalUrl)) {
     return { status: "none", summary: "Nav izsoles ieraksta" };
   }
   if (input.status >= 400) {

@@ -16,6 +16,7 @@ import {
   extractPartialUpdateHtml,
   extractPartialViewState,
   isCloudflareChallengeHtml,
+  looksLikeCloudflareWafBlock,
   mergeCookieHeader,
   parseMntAjaxSource,
   splitCombinedSetCookieHeader,
@@ -59,6 +60,13 @@ describe("isCloudflareChallengeHtml", () => {
     const beaconOnly = `<script>a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';</script>`;
     expect(isCloudflareChallengeHtml(beaconOnly, 403)).toBe(true);
     expect(isCloudflareChallengeHtml(beaconOnly, 200)).toBe(false);
+  });
+
+  it("stat.vin plaintext WAF 403 is a block even without Just a moment HTML", () => {
+    const body = "Access blocked, contact us at support@stat.vin A";
+    expect(isCloudflareChallengeHtml(body, 403)).toBe(false);
+    expect(looksLikeCloudflareWafBlock(body, 403)).toBe(true);
+    expect(looksLikeCloudflareWafBlock("<html><title>Car page</title></html>", 200)).toBe(false);
   });
 });
 

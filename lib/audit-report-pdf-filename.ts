@@ -22,7 +22,7 @@ export function resolveProvinAuditPdfProductBrand(args: {
 }): ProvinAuditPdfProductBrand {
   const line = (args.checkoutLine ?? "").toString().trim().toLowerCase();
   if (line === "mini" || line === "plus" || line === "listing_filter") return "PROVIN_MINI";
-  if (line === "premium" || line === "audit") return "PROVIN_AUDITS";
+  if (line === "premium" || line === "audit" || line === "audits") return "PROVIN_AUDITS";
   // Dealer / SELECT / unknown - pēc summas; 39,99 € = MINI.
   if (args.amountTotalCents === MINI_AMOUNT_CENTS) return "PROVIN_MINI";
   return "PROVIN_AUDITS";

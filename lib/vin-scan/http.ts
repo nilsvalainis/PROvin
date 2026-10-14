@@ -11,6 +11,7 @@ import {
   cookiesRecordToHeader,
   extractInputValue,
   isCloudflareChallengeHtml,
+  looksLikeCloudflareWafBlock,
   mergeCookieHeader,
 } from "@/lib/vin-sources/html-extract";
 import { VIN_HTTP_UA, vinHttpFetch, type VinHttpResult } from "@/lib/vin-sources/http";
@@ -21,6 +22,7 @@ export type ScanHttpResult = {
   cookie: string;
   ua?: string;
   proxyUrl?: string;
+  finalUrl?: string;
   /** CapSolver neapgāja Cloudflare; zonde drīkst to pateikt, nevis parsēt challenge HTML. */
   challengeReason?: string;
 };
@@ -66,7 +68,14 @@ export async function scanFetch(
     proxyUrl: init.proxyUrl,
   });
   const ua = init.headers?.["user-agent"] || VIN_HTTP_UA;
-  return { status: res.status, text: res.text, cookie: res.cookie, ua, proxyUrl: init.proxyUrl };
+  return {
+    status: res.status,
+    text: res.text,
+    cookie: res.cookie,
+    ua,
+    proxyUrl: init.proxyUrl,
+    finalUrl: res.finalUrl,
+  };
 }
 
 async function bypassCloudflare(websiteURL: string, challenged: VinHttpResult, ua: string): Promise<
@@ -75,12 +84,15 @@ async function bypassCloudflare(websiteURL: string, challenged: VinHttpResult, u
   if (!hasCaptchaSolverKey()) return { reason: "Cloudflare: nav CAPSOLVER_API_KEY" };
   const proxy = getCaptchaSolverProxy();
   if (!proxy) return { reason: "Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" };
+  const challengeHtml = isCloudflareChallengeHtml(challenged.text, challenged.status)
+    ? challenged.text.slice(0, 80_000)
+    : undefined;
   const solved = await solveCaptcha(
     {
       kind: "cloudflare_challenge",
       websiteURL,
       proxy,
-      html: challenged.text.slice(0, 80_000),
+      ...(challengeHtml ? { html: challengeHtml } : {}),
       userAgent: ua,
     },
     { timeoutMs: 90_000, sourceLabel: "vin-scan" },
@@ -128,10 +140,18 @@ export async function scanFetchSmart(
   });
   cookie = mergeCookieHeader(cookie, first.cookie);
 
-  if (isCloudflareChallengeHtml(first.text, first.status)) {
+  if (looksLikeCloudflareWafBlock(first.text, first.status)) {
     const bypassed = await bypassCloudflare(init.solveUrl || url, { ...first, cookie }, ua);
     if ("reason" in bypassed) {
-      return { status: first.status, text: first.text, cookie, ua, proxyUrl, challengeReason: bypassed.reason };
+      return {
+        status: first.status,
+        text: first.text,
+        cookie,
+        ua,
+        proxyUrl,
+        finalUrl: first.finalUrl,
+        challengeReason: bypassed.reason,
+      };
     }
     cookie = bypassed.cookie;
     ua = bypassed.ua;
@@ -144,8 +164,15 @@ export async function scanFetchSmart(
       timeoutMs,
       proxyUrl,
     });
-    const merged = { status: retry.status, text: retry.text, cookie: mergeCookieHeader(cookie, retry.cookie), ua, proxyUrl };
-    if (isCloudflareChallengeHtml(retry.text, retry.status)) {
+    const merged = {
+      status: retry.status,
+      text: retry.text,
+      cookie: mergeCookieHeader(cookie, retry.cookie),
+      ua,
+      proxyUrl,
+      finalUrl: retry.finalUrl,
+    };
+    if (looksLikeCloudflareWafBlock(retry.text, retry.status)) {
       return { ...merged, challengeReason: "Cloudflare palika lapā pēc CapSolver" };
     }
     return merged;
@@ -170,6 +197,7 @@ export async function scanFetchSmart(
         text: first.text,
         cookie: mergeCookieHeader(cookie, cookiesRecordToHeader(solved.cookies)),
         ua: solved.userAgent || ua,
+        finalUrl: first.finalUrl,
       };
     }
   }
@@ -186,16 +214,17 @@ export async function scanFetchSmart(
         text: first.text,
         cookie: mergeCookieHeader(cookie, cookiesRecordToHeader(solved.cookies)),
         ua: solved.userAgent || ua,
+        finalUrl: first.finalUrl,
       };
     }
   }
 
-  return { status: first.status, text: first.text, cookie, ua, proxyUrl };
+  return { status: first.status, text: first.text, cookie, ua, proxyUrl, finalUrl: first.finalUrl };
 }
 
 export function scanChallengeReason(res: ScanHttpResult): string | null {
   if (res.challengeReason) return res.challengeReason;
-  if (isCloudflareChallengeHtml(res.text, res.status)) return "Cloudflare palika lapā";
+  if (looksLikeCloudflareWafBlock(res.text, res.status)) return "Cloudflare palika lapā";
   return null;
 }
 

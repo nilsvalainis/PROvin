@@ -11,6 +11,7 @@ import {
   getClientCommentCustomField,
   stripeCheckoutLocale,
 } from "@/lib/stripe-session";
+import { stripeCheckoutProductMetadata } from "@/lib/stripe-checkout-metadata";
 import {
   getTestPricingPlan,
   isTestPricingPlanId,
@@ -219,8 +220,7 @@ export async function POST(req: Request) {
           custom_fields: buildCheckoutCustomFields(plan, locale),
         }),
     metadata: {
-      checkout_line: plan.id,
-      product_tier: plan.id,
+      ...stripeCheckoutProductMetadata(plan.id),
       listing_url: listingUrl,
       vin: vin || "",
       report_delivery: "email",

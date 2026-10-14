@@ -17,6 +17,7 @@ describe("resolveProvinAuditPdfProductBrand", () => {
   it("maps audit/premium to PROVIN_AUDITS", () => {
     expect(resolveProvinAuditPdfProductBrand({ checkoutLine: "audit" })).toBe("PROVIN_AUDITS");
     expect(resolveProvinAuditPdfProductBrand({ checkoutLine: "premium" })).toBe("PROVIN_AUDITS");
+    expect(resolveProvinAuditPdfProductBrand({ checkoutLine: "audits" })).toBe("PROVIN_AUDITS");
   });
 
   it("falls back to amount when line unknown", () => {

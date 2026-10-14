@@ -138,6 +138,22 @@ describe("stripe-session - checkout line", () => {
       "dealer",
     );
   });
+
+  it("maps old plus MINI records and new mini/audits metadata", () => {
+    expect(getCheckoutLineFromSession(sessionWith({ metadata: { checkout_line: "plus" } }))).toBe("mini");
+    expect(getCheckoutLineFromSession(sessionWith({ metadata: { checkout_line: "mini" } }))).toBe("mini");
+    expect(getCheckoutLineFromSession(sessionWith({ metadata: { product_tier: "plus" } }))).toBe("mini");
+    expect(getCheckoutLineFromSession(sessionWith({ metadata: { product_tier: "mini" } }))).toBe("mini");
+    expect(getCheckoutLineFromSession(sessionWith({ metadata: { checkout_line: "premium" } }))).toBe(
+      "premium",
+    );
+    expect(getCheckoutLineFromSession(sessionWith({ metadata: { checkout_line: "audits" } }))).toBe(
+      "premium",
+    );
+    expect(
+      getCheckoutLineFromSession(sessionWith({ metadata: { checkout_line: "plus", product_tier: "mini" } })),
+    ).toBe("mini");
+  });
 });
 
 describe("stripe-session — billing address", () => {
