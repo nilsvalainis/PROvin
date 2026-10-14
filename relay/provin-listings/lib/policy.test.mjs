@@ -17,5 +17,7 @@ test("public fallback also runs when auto-login returns error", () => {
   assert.equal(shouldReadPublic("openlane", "ok", true), false);
   assert.equal(shouldReadPublic("auto1", "error", true), false);
   assert.equal(shouldReadPublic("auto1", "login_required", true), false);
+  assert.equal(shouldReadPublic("ecarstrade", "login_required", false), true);
+  assert.equal(shouldReadPublic("ecarstrade", "error", false), true);
 });
 

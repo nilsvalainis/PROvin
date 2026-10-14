@@ -30,7 +30,7 @@ echo "node $(node -v), npm $(npm -v)"
 
 echo "== Sistēmas lietotājs un mapes"
 id -u "$SERVICE_USER" >/dev/null 2>&1 || useradd --system --home "$DATA_DIR" --shell /usr/sbin/nologin "$SERVICE_USER"
-mkdir -p "$APP_DIR" "$DATA_DIR/profiles/openlane" "$DATA_DIR/profiles/auto1" "$DATA_DIR/profiles/autobid" "$DATA_DIR/ms-playwright"
+mkdir -p "$APP_DIR" "$DATA_DIR/profiles/openlane" "$DATA_DIR/profiles/auto1" "$DATA_DIR/profiles/autobid" "$DATA_DIR/profiles/ecarstrade" "$DATA_DIR/ms-playwright"
 chown -R "$SERVICE_USER:$SERVICE_USER" "$DATA_DIR"
 chmod 750 "$DATA_DIR"
 

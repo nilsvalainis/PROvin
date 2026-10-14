@@ -7,6 +7,8 @@ import {
   fillFilterGaps,
   filterFromBrandModel,
   filterFromOrderFields,
+  filtersFromBrandModel,
+  loosenStackedEcarstradeFilter,
   parseListingSearchDetailed,
   sameEcarstradeSearch,
   widenExactSearchBounds,
@@ -83,16 +85,26 @@ function unmappedLines(filter: EcarstradeSearchFilter): string[] {
 export function planEcarstradeSearchUrls(rec: IrissEcarstradeLinkSource): IrissEcarstradeLinkPlan[] {
   const brand = rec.brandModel.trim();
   const urls = sourceUrls(rec);
-  const extras = fillFilterGaps(filterFromBrandModel(brand), filterFromOrderFields(orderFieldsOf(rec)));
+  const order = filterFromOrderFields(orderFieldsOf(rec));
+  const extras = fillFilterGaps(filterFromBrandModel(brand), order);
+  const brandFilters = filtersFromBrandModel(brand).map((f) => fillFilterGaps(f, order));
   const parsed = urls.map((url) => {
     const detailed = parseListingSearchDetailed(url);
     return { sourceUrl: url, filter: fillFilterGaps(detailed.filter, extras) };
   });
-  const clusters = parsed.length > 0 ? clusterEcarstradeFilters(parsed) : extras.makeIds.length ? [{ filter: extras, sourceUrls: [] }] : [];
+  const clusters =
+    parsed.length > 0 ? clusterEcarstradeFilters(parsed) : brandFilters.map((filter) => ({ filter, sourceUrls: [] as string[] }));
+  if (parsed.length > 0) {
+    const covered = new Set(clusters.flatMap((c) => c.filter.makeIds));
+    for (const bf of brandFilters) {
+      const id = bf.makeIds[0];
+      if (id && !covered.has(id)) clusters.push({ filter: bf, sourceUrls: [] });
+    }
+  }
   const plans: IrissEcarstradeLinkPlan[] = [];
   const seen = new Set<string>();
   for (const cluster of clusters) {
-    const filter = widenExactSearchBounds(cluster.filter);
+    const filter = loosenStackedEcarstradeFilter(widenExactSearchBounds(cluster.filter));
     const url = ecarstradeSearchUrl(filter);
     if (!url) continue;
     if (seen.has(url) || plans.some((p) => sameEcarstradeSearch(p.url, url))) continue;

@@ -59,10 +59,10 @@ export function platformHealthFromView(
 export function mergeRelayHealth(
   item: IrissPlatformHealthItem,
   relay: IrissRelayHealth | null,
-  opts: { autobidViaRelay: boolean },
+  opts: { autobidViaRelay: boolean; ecarstradeViaRelay?: boolean },
 ): IrissPlatformHealthItem {
   if (!relay) return item;
-  if (item.platform === "ecarstrade") return item;
+  if (item.platform === "ecarstrade" && !opts.ecarstradeViaRelay) return item;
   if (item.platform === "autobid" && !opts.autobidViaRelay) return item;
   if (!relay.reachable) {
     if (item.status === "no_sources") return item;
@@ -88,13 +88,16 @@ export async function getIrissPlatformHealthReport(): Promise<IrissPlatformHealt
   const cfg = readIrissRelayConfig();
   const [latest, relay] = await Promise.all([readIrissListingsLatestView(), cfg ? fetchIrissRelayHealth(cfg) : Promise.resolve(null)]);
   const autobidViaRelay = /^(1|true|yes)$/i.test(process.env.IRISS_LISTINGS_AUTOBID_VIA_RELAY ?? "");
+  const ecarstradeViaRelay = /^(1|true|yes)$/i.test(process.env.IRISS_LISTINGS_ECARSTRADE_VIA_RELAY ?? "");
   const loginOpen =
     relay?.reachable && relay.manualLogin
       ? { platform: listingPlatformFromRelay(relay.manualLogin.platform), startedAt: relay.manualLogin.startedAt }
       : null;
   return {
     checkedAt,
-    items: IRISS_LISTING_PLATFORMS.map((platform) => mergeRelayHealth(platformHealthFromView(platform, latest, checkedAt), relay, { autobidViaRelay })),
+    items: IRISS_LISTING_PLATFORMS.map((platform) =>
+      mergeRelayHealth(platformHealthFromView(platform, latest, checkedAt), relay, { autobidViaRelay, ecarstradeViaRelay }),
+    ),
     relayReachable: Boolean(cfg && relay?.reachable),
     loginOpen,
   };

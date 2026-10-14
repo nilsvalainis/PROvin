@@ -191,10 +191,6 @@ export const IGNORED_SEARCH_PARAM_KEYS = new Set([
   "sr",
   "e70",
   "carlist-e70",
-  "carlist-e21from",
-  "carlist-e21to",
-  "carlist-e19from",
-  "carlist-e19to",
   "categoryid-category",
   "carlist-category",
 ]);
@@ -367,6 +363,30 @@ export function parseAuto1Manufacturers(raw: string): MakeModelPair[] {
 }
 
 /** Openlane `makesModels=Make,Model|Make,Model`. */
+export function parseAutobidCarlistManufacturerModel(raw: string): MakeModelPair[] {
+  const out: MakeModelPair[] = [];
+  for (const group of raw.split(/[|]/)) {
+    const t = group.trim();
+    if (!t) continue;
+    const sep = t.includes(";") ? ";" : t.includes(",") ? "," : "";
+    if (!sep) {
+      if (/^\d+$/.test(t)) {
+        const make = resolveMakeFromAutobidBrandId(t);
+        if (make) out.push({ make, model: "" });
+      } else {
+        out.push({ make: t, model: "" });
+      }
+      continue;
+    }
+    const i = t.indexOf(sep);
+    const makeRaw = t.slice(0, i).trim();
+    const model = t.slice(i + 1).trim();
+    const make = /^\d+$/.test(makeRaw) ? resolveMakeFromAutobidBrandId(makeRaw) ?? "" : makeRaw;
+    if (make) out.push({ make, model });
+  }
+  return out;
+}
+
 export function parseOpenlaneMakesModels(raw: string): MakeModelPair[] {
   const out: MakeModelPair[] = [];
   for (const group of raw.split("|")) {

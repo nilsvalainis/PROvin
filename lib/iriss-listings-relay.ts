@@ -8,6 +8,7 @@
 
 import { parseAutobidNuxtJson } from "@/lib/iriss-listings-autobid";
 import { sanitizeAutobidNuxtPages } from "@/lib/iriss-listings-autobid-sanitize";
+import { mergeEcarstradeHtmlPrices, parseEcarstradeSearchHtml, type EcarstradeVehicle } from "@/lib/iriss-listings-ecarstrade";
 import { fillListingPowerKwField } from "@/lib/iriss-listings-exclude-rules";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { applyAuto1VinHints } from "@/lib/iriss-listings-auto1-vin";
@@ -19,7 +20,7 @@ import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
 import { irissListingVehicleId } from "@/lib/iriss-listings-sources";
 import type { IrissListingPlatform, IrissListingSourceStatus } from "@/lib/iriss-listings-types";
 
-export type IrissRelayPlatform = "openlane" | "auto1" | "autobid";
+export type IrissRelayPlatform = "openlane" | "auto1" | "autobid" | "ecarstrade";
 
 export type IrissRelayConfig = {
   baseUrl: string;
@@ -86,7 +87,7 @@ const numOrNull = (v: unknown): number | null => (typeof v === "number" && Numbe
 /** Vercel platformas nosaukums "openline" (vēsturisks) -> releja "openlane". */
 export function relayPlatformFor(platform: IrissListingPlatform): IrissRelayPlatform {
   if (platform === "openline") return "openlane";
-  if (platform === "auto1" || platform === "autobid") return platform;
+  if (platform === "auto1" || platform === "autobid" || platform === "ecarstrade") return platform;
   return "autobid";
 }
 
@@ -188,6 +189,104 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
   };
 }
 
+function mapEcarstradeRelayVehicle(v: EcarstradeVehicle, orderId: string, orderBrandModel: string): IrissFetchedVehicle {
+  return {
+    id: irissListingVehicleId("ecarstrade", v.externalId),
+    platform: "ecarstrade",
+    externalId: v.externalId,
+    detailUrl: v.detailUrl,
+    orderId,
+    orderBrandModel,
+    title: v.title,
+    manufacturer: v.manufacturer,
+    year: v.year,
+    firstRegistration: v.firstRegistration,
+    mileageKm: v.mileageKm,
+    fuel: v.fuel,
+    transmission: v.transmission,
+    powerKw: fillListingPowerKwField({ powerKw: v.powerKw, title: v.title }),
+    location: v.location,
+    countryCode: v.countryCode,
+    imageUrl: v.imageUrl,
+    imageUrls: v.imageUrls,
+    color: v.color || undefined,
+    bodyType: v.bodyType || undefined,
+    taxDeduction: v.taxDeduction,
+    currency: "EUR",
+    priceStart: v.priceStart,
+    priceMinimal: v.priceMinimal,
+    priceCurrent: v.priceCurrent,
+    priceBuyNow: v.priceBuyNow,
+    vatNote: v.vatNote,
+    auctionId: v.auctionId,
+    auctionStartAt: v.auctionStartAt,
+    auctionEndAt: v.auctionEndAt,
+    auctionStage: v.auctionStage,
+  };
+}
+
+function ecarstradeVehiclesFromRelayHtml(
+  raw: Rec,
+  orderId: string,
+  orderBrandModel: string,
+): { vehicles: IrissFetchedVehicle[]; rawPages: string[]; searchPageCount: number } {
+  const byId = new Map<string, EcarstradeVehicle>();
+  const rawPages: string[] = [];
+  const searchPages = Array.isArray(raw.searchPages) ? raw.searchPages : [];
+  for (const html of searchPages) {
+    if (typeof html !== "string" || !html.trim()) continue;
+    rawPages.push(html.slice(0, 1_500_000));
+    for (const v of parseEcarstradeSearchHtml(html)) {
+      const now = byId.get(v.externalId);
+      byId.set(v.externalId, now ? mergeEcarstradeHtmlPrices(now, html) : v);
+    }
+  }
+  const detailPages = Array.isArray(raw.detailPages) ? raw.detailPages : [];
+  for (const row of detailPages) {
+    if (!isObj(row) || typeof row.html !== "string") continue;
+    const html = row.html;
+    rawPages.push(html.slice(0, 800_000));
+    const id = str(row.id);
+    const now = id ? byId.get(id) : undefined;
+    if (now) {
+      byId.set(now.externalId, mergeEcarstradeHtmlPrices(now, html));
+      continue;
+    }
+    for (const v of parseEcarstradeSearchHtml(html)) {
+      const prev = byId.get(v.externalId);
+      byId.set(v.externalId, prev ? mergeEcarstradeHtmlPrices(prev, html) : v);
+    }
+  }
+  return {
+    vehicles: [...byId.values()].map((v) => mapEcarstradeRelayVehicle(v, orderId, orderBrandModel)),
+    rawPages,
+    searchPageCount: searchPages.length,
+  };
+}
+
+export function mergeListingPricesFromRelay(
+  base: IrissFetchedVehicle[],
+  relayVehicles: IrissFetchedVehicle[],
+): { vehicles: IrissFetchedVehicle[]; priced: number } {
+  const byId = new Map(relayVehicles.map((v) => [v.externalId, v]));
+  let priced = 0;
+  const vehicles = base.map((v) => {
+    const extra = byId.get(v.externalId);
+    if (!extra) return v;
+    const next = {
+      ...v,
+      priceBuyNow: extra.priceBuyNow ?? v.priceBuyNow,
+      priceCurrent: extra.priceCurrent ?? v.priceCurrent,
+      priceStart: extra.priceStart ?? v.priceStart,
+    };
+    if (v.priceBuyNow == null && v.priceCurrent == null && (next.priceBuyNow != null || next.priceCurrent != null)) {
+      priced += 1;
+    }
+    return next;
+  });
+  return { vehicles, priced };
+}
+
 function autobidVehiclesFromNuxt(nuxtPages: string[], orderId: string, orderBrandModel: string): { vehicles: IrissFetchedVehicle[]; parsedPages: number } {
   const byId = new Map<string, IrissFetchedVehicle>();
   let parsedPages = 0;
@@ -259,7 +358,14 @@ export function mapRelayFetchResponse(
   const pagesFetched = numOrNull(body.pagesFetched) ?? 0;
   const pageCount = numOrNull(body.pageCount) ?? 0;
 
-  if (src.platform === "autobid" && raw && Array.isArray(raw.nuxtPages)) {
+  if (src.platform === "ecarstrade" && raw && raw.kind === "ecarstrade-html") {
+    const parsed = ecarstradeVehiclesFromRelayHtml(raw, src.orderId, src.orderBrandModel);
+    vehicles = parsed.vehicles;
+    rawPages = parsed.rawPages;
+    if (parsed.searchPageCount > 0 && parsed.vehicles.length === 0 && !/0 auto/.test(noteParts.join(" "))) {
+      noteParts.push("Releja eCarsTrade HTML nedeva auto kartītes.");
+    }
+  } else if (src.platform === "autobid" && raw && Array.isArray(raw.nuxtPages)) {
     const nuxtPages = sanitizeAutobidNuxtPages(raw.nuxtPages.filter((x): x is string => typeof x === "string" && x.length > 0));
     const parsed = autobidVehiclesFromNuxt(nuxtPages, src.orderId, src.orderBrandModel);
     vehicles = parsed.vehicles;
@@ -339,7 +445,7 @@ function mapManualLogin(body: Rec): IrissRelayHealth["manualLogin"] {
   const raw = isObj(body.manualLogin) ? body.manualLogin : null;
   if (!raw) return null;
   const platform = str(raw.platform);
-  if (platform !== "openlane" && platform !== "auto1" && platform !== "autobid") return null;
+  if (platform !== "openlane" && platform !== "auto1" && platform !== "autobid" && platform !== "ecarstrade") return null;
   return { platform, startedAt: str(raw.startedAt), vncReady: raw.vncReady === true };
 }
 
@@ -348,7 +454,7 @@ export function mapRelayHealth(body: unknown, checkedAt: string): IrissRelayHeal
     return { reachable: false, note: "Relejs atgrieza nederīgu health JSON.", checkedAt, platforms: {}, manualLogin: null };
   }
   const platforms: IrissRelayHealth["platforms"] = {};
-  for (const p of ["openlane", "auto1", "autobid"] as const) {
+  for (const p of ["openlane", "auto1", "autobid", "ecarstrade"] as const) {
     const s = body.platforms[p];
     if (!isObj(s)) continue;
     const session = str(s.session);
@@ -393,7 +499,7 @@ export function mapRelayLoginStart(body: unknown, relayBaseUrl: string): IrissRe
   if (!isObj(body)) return empty;
   const platform = str(body.platform);
   const vncToken = str(body.vncToken).toLowerCase();
-  const ok = body.ok === true && (platform === "openlane" || platform === "auto1" || platform === "autobid");
+  const ok = body.ok === true && (platform === "openlane" || platform === "auto1" || platform === "autobid" || platform === "ecarstrade");
   const vncError = str(body.vncError) || str(body.error);
   return {
     ok,
@@ -416,7 +522,7 @@ export function mapRelayLoginClose(body: unknown): IrissRelayLoginClose {
   const sessionRaw = str(body.session);
   return {
     ok: body.ok === true,
-    platform: platform === "openlane" || platform === "auto1" || platform === "autobid" ? platform : "",
+    platform: platform === "openlane" || platform === "auto1" || platform === "autobid" || platform === "ecarstrade" ? platform : "",
     loggedIn: body.loggedIn === true,
     session: sessionRaw === "ok" || sessionRaw === "login_required" ? sessionRaw : "unknown",
     why: str(body.why),

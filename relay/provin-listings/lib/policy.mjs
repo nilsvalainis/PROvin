@@ -16,7 +16,10 @@ export function envToken(raw, fallback) {
  * OPENLANE_ALLOW_PUBLIC_FALLBACK. `error` (ne tikai login_required) arī lasa publiski.
  */
 export function shouldReadPublic(platform, sessionStatus, openlanePublicFallback) {
-  const allow = platform === "autobid" || (platform === "openlane" && Boolean(openlanePublicFallback));
+  const allow =
+    platform === "autobid" ||
+    platform === "ecarstrade" ||
+    (platform === "openlane" && Boolean(openlanePublicFallback));
   return allow && (sessionStatus === "login_required" || sessionStatus === "error");
 }
 

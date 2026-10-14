@@ -28,7 +28,7 @@ Vercel → **Project → Settings → Environment Variables** → vismaz **Produ
 
 Pārējie pēc `.env.example` (WhatsApp, e-pasti utt.).
 
-IRISS LIST eCarsTrade (opcionāli, Vercel Production/Preview): `ECARSTRADE_USER`, `ECARSTRADE_PASS`, `IRISS_LISTINGS_ECARSTRADE_MAX_PAGES`. Login ir `POST /api/v1/auth/login` ar `{username, password}` (ne `email`). Bez paroles nolasījums paliek publisks. Openlane/Auto1 joprojām caur releju; eCarsTrade releju nelieto. Esošajiem Meklētājs ierakstiem eCarsTrade saites pievieno admin darbība `POST /api/admin/iriss-scan/ecarstrade-links` (Radars sarakstā poga eCarsTrade).
+IRISS LIST eCarsTrade: inventārs no Vercel `future_api.php` (`ECARSTRADE_USER` / `ECARSTRADE_PASS` / `IRISS_LISTINGS_ECARSTRADE_MAX_PAGES`). Login ir `POST /api/v1/auth/login` ar `{username, password}` (ne `email`). Cloudflare no Vercel IP bloķē `/search` un `/cars/{id}`: cenas caur releju ar `IRISS_LISTINGS_ECARSTRADE_VIA_RELAY=1` (ET paroles `/etc/provin-listings.env`). Openlane/Auto1 joprojām caur releju. Esošajiem Meklētājs ierakstiem eCarsTrade saites pievieno admin darbība `POST /api/admin/iriss-scan/ecarstrade-links` (Radars sarakstā poga eCarsTrade).
 
 Pēc izmaiņām: **Deployments → … → Redeploy** (vai jauns `git push`).
 

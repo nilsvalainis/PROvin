@@ -8,6 +8,7 @@ import {
   resolveEcarstradeMakeFromBrandId,
   resolveEcarstradeModel,
   resolveEcarstradeModelById,
+  resolveMakeModelPairsFromBrand,
   resolveMakesFromBrand,
   stripKnownSuffixes,
   type EcarstradeMark,
@@ -23,6 +24,7 @@ import {
   mapOpenlaneFuelToken,
   mapVat,
   parseAuto1Manufacturers,
+  parseAutobidCarlistManufacturerModel,
   parseOpenlaneMakesModels,
   parseZeroUnboundedRange,
   resolveMakeFromMobileMs,
@@ -273,6 +275,7 @@ const YEAR_FROM_KEYS = [
   "regfrom",
   "yearfrom-year",
   "regist",
+  "carlist-e21from",
 ];
 const YEAR_TO_KEYS = [
   "yearto",
@@ -286,6 +289,7 @@ const YEAR_TO_KEYS = [
   "regto",
   "yearto-year",
   "regist_to",
+  "carlist-e21to",
 ];
 const KM_FROM_KEYS = [
   "mileagefrom",
@@ -322,6 +326,7 @@ const POWER_FROM_KEYS = [
   "minpowerkw",
   "power",
   "poweroutputfrom",
+  "carlist-e19from",
 ];
 const POWER_TO_KEYS = [
   "powerto",
@@ -332,6 +337,8 @@ const POWER_TO_KEYS = [
   "maxpowerasarray",
   "maxpowerkw",
   "power_to",
+  "poweroutputto",
+  "carlist-e19to",
 ];
 const HP_FROM_KEYS = ["minhorsepower", "horsepowerfrom", "hpfrom"];
 const HP_TO_KEYS = ["maxhorsepower", "horsepowerto", "hpto"];
@@ -426,6 +433,12 @@ const HANDLED_KEYS = new Set(
     "carlist-e68from",
     "carlist-e68to",
     "poweroutputfrom",
+    "poweroutputto",
+    "carlist-e21from",
+    "carlist-e21to",
+    "carlist-e19from",
+    "carlist-e19to",
+    "carlist-manufacturermodel",
     "startprice2",
     "ms",
     "q",
@@ -640,6 +653,9 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
   for (const raw of rawValues(params, ["makesmodels"])) {
     applyMakeModelPairs(filter, parseOpenlaneMakesModels(raw), "name");
   }
+  for (const raw of rawValues(params, ["carlist-manufacturermodel"])) {
+    applyMakeModelPairs(filter, parseAutobidCarlistManufacturerModel(raw), "name");
+  }
   for (const raw of values(params, MAKE_KEYS)) applyMakeToken(filter, raw, idSpace);
   for (const raw of values(params, ["brandid-brand", "brandid", "brand-id"])) {
     applyMakeToken(filter, raw, "autobid");
@@ -739,7 +755,106 @@ export function widenExactSearchBounds(filter: EcarstradeSearchFilter): Ecarstra
     next.engineFromCc = Math.max(600, next.engineFromCc - 200);
     next.engineToCc = Math.min(9000, next.engineToCc + 200);
   }
+  if (next.powerFromKw != null && next.powerFromKw === next.powerToKw) {
+    next.powerFromKw = Math.max(40, next.powerFromKw - 15);
+    next.powerToKw = next.powerToKw + 15;
+  }
   return next;
+}
+
+/** ET future_api slāņi, kas bieži noņem visu krājumu, ja sakrīt Auto1+Openlane+Autobid+forma. */
+export function ecarstradeApiStackFields(filter: EcarstradeSearchFilter): string[] {
+  const fields: string[] = [];
+  if (filter.modelId || filter.modelName) fields.push("model");
+  if (filter.yearFrom != null || filter.yearTo != null) fields.push("year");
+  if (filter.mileageFrom != null || filter.mileageTo != null) fields.push("mileage");
+  if (filter.priceFrom != null || filter.priceTo != null) fields.push("price");
+  if (filter.powerFromKw != null || filter.powerToKw != null) fields.push("power");
+  if (filter.fuels.length) fields.push("fuel");
+  if (filter.gearboxes.length) fields.push("gear");
+  if (filter.bodies.length) fields.push("body");
+  if (filter.colors.length) fields.push("color");
+  if (filter.engineFromCc != null || filter.engineToCc != null) fields.push("engine");
+  if (filter.doorsFrom != null || filter.doorsTo != null) fields.push("doors");
+  if (filter.seatsFrom != null || filter.seatsTo != null) fields.push("seats");
+  if (filter.vat.length) fields.push("vat");
+  if (filter.emissionFrom) fields.push("emission");
+  return fields;
+}
+
+/**
+ * Noņem ET API slāņus, kas parasti dod 0, lai paliek make+model+year (+ km/cena/degviela/kārba).
+ * Vietas, durvis, vēlamās krāsas, PVN, precīzs kW un virsbūve pie zināma modeļa paliek ārpus URL.
+ */
+export function loosenStackedEcarstradeFilter(filter: EcarstradeSearchFilter): EcarstradeSearchFilter {
+  const next = cloneEcarstradeFilter(filter);
+  next.seatsFrom = null;
+  next.seatsTo = null;
+  next.doorsFrom = null;
+  next.doorsTo = null;
+  next.colors = [];
+  next.vat = [];
+  next.emissionFrom = "";
+  next.mileageFrom = null;
+  next.priceFrom = null;
+  if (next.powerFromKw != null && next.powerFromKw === next.powerToKw) {
+    next.powerFromKw = null;
+    next.powerToKw = null;
+  }
+  if (next.modelId) {
+    next.engineFromCc = null;
+    next.engineToCc = null;
+    next.bodies = [];
+  }
+  const extras = ecarstradeApiStackFields(next).filter((f) => f !== "model" && f !== "year").length;
+  if (extras >= 4) {
+    next.powerFromKw = null;
+    next.powerToKw = null;
+    next.bodies = [];
+    next.engineFromCc = null;
+    next.engineToCc = null;
+  }
+  if (next.fuels.length && next.gearboxes.length && next.mileageTo != null && next.priceTo != null) {
+    next.gearboxes = [];
+    next.priceTo = null;
+  }
+  return next;
+}
+
+function applySharedBrandCriteria(target: EcarstradeSearchFilter, shared: EcarstradeSearchFilter): void {
+  target.yearFrom = shared.yearFrom;
+  target.yearTo = shared.yearTo;
+  target.mileageFrom = shared.mileageFrom;
+  target.mileageTo = shared.mileageTo;
+  target.priceFrom = shared.priceFrom;
+  target.priceTo = shared.priceTo;
+  target.powerFromKw = shared.powerFromKw;
+  target.powerToKw = shared.powerToKw;
+  target.fuels = [...shared.fuels];
+  target.gearboxes = [...shared.gearboxes];
+  target.bodies = [...shared.bodies];
+  target.engineFromCc = shared.engineFromCc;
+  target.engineToCc = shared.engineToCc;
+  target.drives = [...shared.drives];
+}
+
+/** Viena rinda ar vairākām markām: atsevišķs ET meklējums katrai markai/modelim. */
+export function filtersFromBrandModel(brandModel: string): EcarstradeSearchFilter[] {
+  const pairs = resolveMakeModelPairsFromBrand(brandModel);
+  const shared = filterFromBrandModel(brandModel);
+  if (pairs.length <= 1) return [shared];
+  return pairs.map((pair) => {
+    const filter = emptyFilter();
+    pushMake(filter, pair.make);
+    if (pair.model) {
+      filter.modelId = pair.model.id;
+      filter.modelName = pair.model.name;
+    } else if (pair.modelText) {
+      filter.modelName = pair.modelText;
+    }
+    applySharedBrandCriteria(filter, shared);
+    return filter;
+  });
 }
 
 export function filterFromBrandModel(brandModel: string): EcarstradeSearchFilter {

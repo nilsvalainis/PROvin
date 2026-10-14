@@ -3,7 +3,7 @@
  * PROVIN IRISS LIST pārlūka relejs (Hetzner). Atsevišķs serviss no CSDD (8787) un mnt.ee (8788).
  *
  * PROVIN (Vercel) -> Caddy /listings/* -> šis serviss 127.0.0.1:8789 -> īsts Chrome (Xvfb) ar
- * pastāvīgiem profiliem /var/lib/provin-listings/profiles/{openlane,auto1,autobid}.
+ * pastāvīgiem profiliem /var/lib/provin-listings/profiles/{openlane,auto1,autobid,ecarstrade}.
  *
  * Vide (/etc/provin-listings.env, root 600):
  *   LISTINGS_RELAY_TOKEN        obligāts; tas pats, kas Vercel IRISS_LISTINGS_RELAY_TOKEN
@@ -14,7 +14,8 @@
  *   LISTINGS_MAX_FETCHES_PER_DAY noklusējums 150 uz platformu (1 pilna diena + Nolasīt tagad)
  *   LISTINGS_MAX_QUEUE          noklusējums 40 (garāka rinda -> 503)
  *   LISTINGS_MANUAL_LOGIN_MINUTES noklusējums 15
- *   OPENLANE_USER / OPENLANE_PASS, AUTOBID_USER / AUTOBID_PASS   auto-login; Auto1 tikai manuāli
+ *   OPENLANE_USER / OPENLANE_PASS, AUTOBID_USER / AUTOBID_PASS, ECARSTRADE_USER / ECARSTRADE_PASS
+ *   Auto1 tikai manuāli. eCarsTrade: cenas no logged-in /search (Vercel future_api paliek inventāram).
  *   OPENLANE_ALLOW_PUBLIC_FALLBACK=1  lasīt Openlane arī bez login (daļējas cenas)
  *   DISPLAY                     Xvfb displejs (systemd): :98, jo :99 jau lieto provin-mnt
  *
@@ -42,6 +43,7 @@ import {
 import { shouldReadPublic } from "./lib/policy.mjs";
 import { auto1 } from "./lib/platforms/auto1.mjs";
 import { autobid } from "./lib/platforms/autobid.mjs";
+import { ecarstrade } from "./lib/platforms/ecarstrade.mjs";
 import { openlane } from "./lib/platforms/openlane.mjs";
 import { sanitizeAutobidRelayRaw } from "./lib/sanitize-autobid.mjs";
 import { PLATFORMS, RelayState } from "./lib/state.mjs";
@@ -61,7 +63,7 @@ if (!TOKEN || TOKEN.length < 16) {
   process.exit(1);
 }
 
-const platforms = { openlane, auto1, autobid };
+const platforms = { openlane, auto1, autobid, ecarstrade };
 const state = new RelayState(STATE_FILE);
 await state.load();
 
@@ -106,7 +108,12 @@ function validSourceUrl(raw, platform) {
     const u = new URL(String(raw));
     if (u.protocol !== "https:") return "";
     const host = u.hostname.toLowerCase();
-    const allowed = { openlane: /(^|\.)openlane\.(eu|com)$/, auto1: /(^|\.)auto1\.(com|eu)$/, autobid: /(^|\.)autobid\.(de|eu)$/ }[platform];
+    const allowed = {
+      openlane: /(^|\.)openlane\.(eu|com)$/,
+      auto1: /(^|\.)auto1\.(com|eu)$/,
+      autobid: /(^|\.)autobid\.(de|eu)$/,
+      ecarstrade: /(^|\.)ecarstrade\.com$/,
+    }[platform];
     return allowed && allowed.test(host) ? u.toString() : "";
   } catch {
     return "";
@@ -157,7 +164,7 @@ async function runFetch({ platform, sourceUrl, orderId, maxPages }) {
   const { page, close } = await openProfile(platform);
   try {
     const session = await ensureSession(platform, page);
-    /** Autobid publiskie dati ir bāze (tos lasa arī Vercel), Openlane pēc izvēles; Auto1 bez login nav nekā. */
+    /** Autobid/eCarsTrade publiskie dati ir bāze; Openlane pēc izvēles; Auto1 bez login nav nekā. */
     const publicFallback = shouldReadPublic(platform, session.status, OPENLANE_PUBLIC_FALLBACK);
     if (session.status !== "ok" && !publicFallback) {
       state.setFetch(platform, session.status, session.note);
@@ -319,7 +326,7 @@ const server = createServer(async (req, res) => {
     return sendJson(res, 400, { ok: false, error: e instanceof Error ? e.message : "nederīgs JSON" });
   }
 
-  const loginMatch = path.match(/^\/login\/(openlane|auto1|autobid)(\/close)?$/);
+  const loginMatch = path.match(/^\/login\/(openlane|auto1|autobid|ecarstrade)(\/close)?$/);
   if (loginMatch) {
     const platform = loginMatch[1];
     if (loginMatch[2]) {
@@ -331,7 +338,7 @@ const server = createServer(async (req, res) => {
   }
 
   const platform = String(body.platform ?? "").trim();
-  if (!PLATFORMS.includes(platform)) return sendJson(res, 400, { ok: false, error: "platform: openlane | auto1 | autobid" });
+  if (!PLATFORMS.includes(platform)) return sendJson(res, 400, { ok: false, error: "platform: openlane | auto1 | autobid | ecarstrade" });
 
   if (path === "/session/check") {
     if (browserQueue.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, error: "rinda pilna" });
