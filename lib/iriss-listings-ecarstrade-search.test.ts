@@ -595,6 +595,91 @@ describe("eCarsTrade search mapper", () => {
     expect(idKey.gearboxes).toEqual(["Automatic"]);
   });
 
+  it("maps live Autobid e70=1|3|4 and carList-e70 from production order URLs", () => {
+    const vitara = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&brandId=48&name=Vitara&e17=2&registrationFrom=2014&registrationTo=2019&kilometresTo=170000&e70=1",
+    );
+    expect(vitara.gearboxes).toEqual(["Manual"]);
+    expect(ecarstradeSearchUrl(vitara)).toContain("gearbox[]=Manual");
+
+    const passat = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&brandId-brand=2&name-model=Passat&e17=3&kilometresFrom-e68_1=140000&kilometresTo-e68_2=220000&e70=3&registrationTo=2023&registrationFrom=2018&sortingType=auctionStartDate-ASCENDING",
+    );
+    expect(passat.gearboxes).toEqual(["Automatic"]);
+
+    const a6Meh = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=10&name-model=A6&e70=1&sortingType=auctionStartDate-ASCENDING",
+    );
+    expect(a6Meh.gearboxes).toEqual(["Manual"]);
+
+    const superb = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&brandId=7&e17=2&registrationFrom=2014&e70=1&name=Superb",
+    );
+    expect(superb.gearboxes).toEqual(["Manual"]);
+
+    const vito = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&brandId-brand=3&name-model=vito&registrationFrom=2020&e70=3&e17=3&registrationTo=2024&sortingType=auctionStartDate-ASCENDING",
+    );
+    expect(vito.gearboxes).toEqual(["Automatic"]);
+
+    const x3 = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&brandId-brand=1&name-model=X3&registrationTo=2019&registrationFrom=2014&e17=3&e70=3&sortingType=auctionStartDate-ASCENDING&carList-e21from=2014&carList-e21to=2020&carList-e19to=140",
+    );
+    expect(x3.gearboxes).toEqual(["Automatic"]);
+
+    const golfBoth = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=2&name-model=Golf&e17=3&kilometresTo-e68_2=200000&e70=1&powerOutputFrom=110&kilometresFrom-e68_1=0&sortingType=auctionStartDate-ASCENDING&carList-e70=3&carList-e21from=2018&carList-e68to=200000&carList-e17=3&carList-e21to=2024&carList-e19from=110",
+    );
+    expect(golfBoth.gearboxes).toEqual(["Manual", "Automatic"]);
+
+    const e220 = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=3&registrationTo=2021&sortingType=auctionStartDate-ASCENDING&carList-category=1;6&carList-e17=3&carList-e70=4&carList-e21to=2021&carList-e21from=2016&carList-e19from=140&carList-e19to=200",
+    );
+    expect(e220.gearboxes).toEqual(["Automatic"]);
+
+    const ateca = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&brandId-brand=44&name-model=Ateca&e17=3&e70=1&sortingType=auctionStartDate-ASCENDING",
+    );
+    expect(ateca.gearboxes).toEqual(["Manual"]);
+
+    const sharan = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=2&name-model=sharan&sortingType=auctionStartDate-ASCENDING&carList-e17=3&carList-e70=4",
+    );
+    expect(sharan.gearboxes).toEqual(["Automatic"]);
+
+    const tiguan = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=2&name-model=Tiguan&registrationTo=2015&e17=3&e70=3&sortingType=auctionStartDate-ASCENDING&carList-e21from=2011&carList-e19from=103&carList-e19to=103",
+    );
+    expect(tiguan.gearboxes).toEqual(["Automatic"]);
+
+    const granTourer = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=1&name-model=Gran+Tourer&e17=2&e17=3&kilometresFrom-e68_1=80000&kilometresTo-e68_2=240000&powerOutputFrom=110&sortingType=auctionStartDate-ASCENDING&carList-e70=4&carList-e68to=230000&carList-e21to=2023&carList-e21from=2016&carList-e17=3",
+    );
+    expect(granTourer.gearboxes).toEqual(["Automatic"]);
+
+    const kuga = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=22&name-model=kuga&e17=3&e70=1&sortingType=auctionStartDate-ASCENDING&carList-e21from=2019",
+    );
+    expect(kuga.gearboxes).toEqual(["Manual"]);
+
+    const xc60 = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&brandId-brand=49&name-model=XC60&e17=3&registrationTo=2017&sortingType=auctionStartDate-ASCENDING&carList-e19from=100&carList-e19to=120&carList-e21from=2013&carList-e21to=2017&carList-e70=4",
+    );
+    expect(xc60.gearboxes).toEqual(["Automatic"]);
+
+    const kodiaqTarraco = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=7&brandId-brand=44&e17=3&e70=3&kilometresFrom-e68_1=120000&registrationFrom=2017&registrationTo=2023&powerOutputFrom=110&sortingType=auctionStartDate-ASCENDING",
+    );
+    expect(kodiaqTarraco.gearboxes).toEqual(["Automatic"]);
+
+    const mini105 = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&kilometresFrom-e68_1=100000&brandId-brand=105&sortingType=auctionStartDate-ASCENDING&carList-e70=4",
+    );
+    expect(mini105.makeNames).toEqual(["Mini"]);
+    expect(mini105.gearboxes).toEqual(["Automatic"]);
+    expect(ecarstradeSearchUrl(mini105)).toContain("gearbox[]=Automatic");
+  });
+
   it("maps Auto1 limo/combi, Openlane MPV/Berline/Break, Autobid category and mobile.de SportsCar", () => {
     expect(parseListingSearchUrl("https://www.auto1.com/en/app/merchant/cars?bodyTypes=LIMO").bodies).toEqual(["Saloon"]);
     expect(parseListingSearchUrl("https://www.auto1.com/en/app/merchant/cars?bodyTypes=COMBI").bodies).toEqual([
@@ -617,6 +702,31 @@ describe("eCarsTrade search mapper", () => {
     ]);
   });
 
+  it("maps live Autobid categoryId-category and carList-category=1;6 from production URLs", () => {
+    const vans = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&e17=3&brandId-brand=25&brandId-brand=41&brandId-brand=38&registrationTo=2012&registrationFrom=2007&categoryId-category=10&categoryId-category=8&categoryId-category=56&sortingType=auctionStartDate-ASCENDING",
+    );
+    expect(vans.bodies).toEqual(["Van/Minibus"]);
+    expect(vans.unmapped.some((u) => u.key === "category")).toBe(false);
+    expect(ecarstradeSearchUrl(vans)).toContain("category[]=Van%2FMinibus");
+
+    const vivaro = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=41&brandId-brand=25&categoryId-category=10&e17=3&registrationTo=2014&registrationFrom=2010&sortingType=auctionStartDate-ASCENDING",
+    );
+    expect(vivaro.bodies).toEqual(["Van/Minibus"]);
+
+    const e220 = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=3&registrationTo=2021&sortingType=auctionStartDate-ASCENDING&carList-category=1;6&carList-e17=3&carList-e70=4&carList-e21to=2021&carList-e21from=2016&carList-e19from=140&carList-e19to=200",
+    );
+    expect(e220.bodies).toEqual(["Saloon"]);
+    expect(e220.unmapped.some((u) => u.key === "category" && u.value === "1")).toBe(false);
+
+    const w212 = parseListingSearchUrl(
+      "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&e17=3&registrationTo=2012&brandId-brand=3&name-model=E&sortingType=auctionStartDate-ASCENDING&carList-category=1;17&carList-category=1;6",
+    );
+    expect(w212.bodies).toEqual(["Estate Car", "Saloon"]);
+  });
+
   it("keeps mobile.de fr=2018: as year_from only and AUTOMATIC_GEAR as Automatic only", () => {
     expect(parseZeroUnboundedRange("2018:")).toEqual({ from: 2018, to: null });
     expect(parseMobileDeColonRange("2018:")).toEqual({ from: 2018, to: null });
@@ -634,6 +744,13 @@ describe("eCarsTrade search mapper", () => {
     expect(url).not.toContain("year_to=");
     expect(url).toContain("gearbox[]=Automatic");
     expect(url).not.toContain("Semi-automatic");
+
+    const tiguanAllspace = parseListingSearchUrl(
+      "https://suchen.mobile.de/fahrzeuge/search.html?cc=1450%3A2600&cn=DE&dam=false&fr=2018%3A&ft=DIESEL&isSearchRequest=true&ml=%3A160000&ms=25200%3B54%3B%3BAllspace&od=down&p=15000%3A24000&s=Car&sb=doc&tr=AUTOMATIC_GEAR&tr=SEMIAUTOMATIC_GEAR&vat=1&vc=Car",
+    );
+    expect(tiguanAllspace.gearboxes).toEqual(["Automatic"]);
+    expect(tiguanAllspace.gearboxes).not.toContain("Semi-automatic");
+    expect(ecarstradeSearchUrl(tiguanAllspace)).not.toContain("Semi-automatic");
   });
 
   it("maps Pajero, Mercedes E, BMW 5 and Auto1 BMW 5er+7er as exact model[] values", () => {
@@ -698,5 +815,113 @@ describe("eCarsTrade search mapper", () => {
     expect(e220[0]?.filter.modelName).toMatch(/E-Class|E 220/);
     expect(e220[0]?.url).toMatch(/model\[\]=(815|2530)/);
     expect(e220[0]?.url).not.toMatch(/mark\[\]=45(?!.*model\[\])/);
+  });
+
+  it("emits all mark[] and model[] pairs from live multi-make Auto1/Openlane/Autobid URLs", () => {
+    const traficAuto1 = parseListingSearchUrl(
+      "https://www.auto1.com/en/app/merchant/cars?channel=24h&countries=BE%3BDE%3BNL&dir=asc&fuelTypes=diesel&gearTypes=manual&manufacturers=Nissan%7CPrimastar%3BRenault%7CTrafic%3BOpel%7CVivaro&page=1&powerUnit=hp&priceMax=9000&priceMin=5000&regFrom=2007&regTo=2012",
+    );
+    expect(traficAuto1.makeNames).toEqual(expect.arrayContaining(["Nissan", "Renault", "Opel"]));
+    expect(traficAuto1.modelIds).toEqual(expect.arrayContaining([2741, 1146, 1818]));
+    const traficAuto1Url = ecarstradeSearchUrl(traficAuto1)!;
+    expect(traficAuto1Url).toContain("mark[]=49");
+    expect(traficAuto1Url).toContain("mark[]=55");
+    expect(traficAuto1Url).toContain("mark[]=50");
+    expect(traficAuto1Url).toContain("model[]=2741");
+    expect(traficAuto1Url).toContain("model[]=1146");
+    expect(traficAuto1Url).toContain("model[]=1818");
+
+    const traficOpenlane = parseListingSearchUrl(
+      "https://www.openlane.eu/en/findcar?makesModels=Renault%2CTrafic%7COpel%2CVivaro%7CNissan%2CPrimastar&fuelTypes=100003&transmissionTypes=Manual&registrationYears=0%2C2012",
+    );
+    expect(traficOpenlane.modelIds).toEqual(expect.arrayContaining([1146, 1818, 2741]));
+    expect(ecarstradeSearchUrl(traficOpenlane)).toContain("model[]=1146");
+
+    const kodiaqAuto1 = parseListingSearchUrl(
+      "https://www.auto1.com/en/app/merchant/cars?channel=24h&dir=asc&manufacturers=Seat%7CTarraco%7C2.0%20TDI%3BSkoda%7CKodiaq%7C2.0%20TDI&page=1&powerUnit=hp&priceMax=16000",
+    );
+    expect(kodiaqAuto1.modelIds).toEqual(expect.arrayContaining([3074, 2850]));
+    const kodiaqAuto1Url = ecarstradeSearchUrl(kodiaqAuto1)!;
+    expect(kodiaqAuto1Url).toContain("model[]=3074");
+    expect(kodiaqAuto1Url).toContain("model[]=2850");
+
+    const kodiaqOpenlane = parseListingSearchUrl(
+      "https://www.openlane.eu/ru/findcar?makesModels=Skoda%2CKodiaq%7CSeat%2CTarraco&fuelTypes=100003&transmissionTypes=Automatic&mileages=125000%2C0",
+    );
+    expect(kodiaqOpenlane.modelIds).toEqual(expect.arrayContaining([2850, 3074]));
+
+    const tiguanPassatE = parseListingSearchUrl(
+      "https://www.auto1.com/en/app/merchant/cars?channel=24h&fuelTypes=diesel&gearTypes=automatic&manufacturers=Volkswagen%7CTiguan%20Allspace%7C2.0%20TDI%3BVolkswagen%7CPassat%7C2.0%20TDI%3BVolkswagen%7CTiguan%7C2.0%20TDI%3BMercedes-Benz%7CE-Klasse",
+    );
+    expect(tiguanPassatE.makeNames).toEqual(expect.arrayContaining(["Volkswagen", "Mercedes"]));
+    expect(tiguanPassatE.modelIds).toEqual(expect.arrayContaining([3183, 1460, 1860, 815]));
+    const tiguanPassatEUrl = ecarstradeSearchUrl(tiguanPassatE)!;
+    expect(tiguanPassatEUrl).toContain("model[]=3183");
+    expect(tiguanPassatEUrl).toContain("model[]=1460");
+    expect(tiguanPassatEUrl).toContain("model[]=1860");
+    expect(tiguanPassatEUrl).toContain("model[]=815");
+
+    const tiguanPassatOpenlane = parseListingSearchUrl(
+      "https://www.openlane.eu/en/findcar?makesModels=Volkswagen%2CPassat%7CMercedes-Benz%2CE%7CVolkswagen&bodyTypes=Break%2CHatchback%2CSUV&fuelTypes=100003&transmissionTypes=Automatic",
+    );
+    expect(tiguanPassatOpenlane.makeNames).toEqual(expect.arrayContaining(["Volkswagen", "Mercedes"]));
+    expect(tiguanPassatOpenlane.modelIds).toEqual(expect.arrayContaining([1460, 815]));
+    expect(ecarstradeSearchUrl(tiguanPassatOpenlane)).toContain("model[]=1460");
+    expect(ecarstradeSearchUrl(tiguanPassatOpenlane)).toContain("model[]=815");
+
+    const alhambra = parseListingSearchUrl(
+      "https://www.auto1.com/en/app/merchant/cars?channel=24h&fuelTypes=diesel&gearTypes=automatic&manufacturers=Seat%7CAlhambra%7C2.0%20TDI%3BVolkswagen%7CSharan%7C2.0%20TDI",
+    );
+    expect(alhambra.modelIds).toEqual(expect.arrayContaining([1181, 1472]));
+    expect(ecarstradeSearchUrl(alhambra)).toContain("model[]=1181");
+    expect(ecarstradeSearchUrl(alhambra)).toContain("model[]=1472");
+
+    const touareg = parseListingSearchUrl(
+      "https://autobid.de/en/search-results?brandId-brand=2&brandId-brand=10&brandId-brand=5&name-model=Touareg",
+    );
+    expect(touareg.makeNames).toEqual(expect.arrayContaining(["Volkswagen", "Audi", "Porsche"]));
+    expect(touareg.modelIds).toContain(1475);
+    const touaregUrl = ecarstradeSearchUrl(touareg)!;
+    expect(touaregUrl).toContain("mark[]=67");
+    expect(touaregUrl).toContain("mark[]=5");
+    expect(touaregUrl).toContain("mark[]=54");
+    expect(touaregUrl).toContain("model[]=1475");
+
+    const kodiaqAutobid = planEcarstradeSearchUrls({
+      id: "kodiaq-tarraco-ab",
+      brandModel: "Škoda Kodiaq / Seat Tarraco",
+      listingLinkAuto1: [""],
+      listingLinkOpenline: [""],
+      listingLinkAutobid: [
+        "https://autobid.de/en/search-results?radiusSearchZipcode=3101&brandId-brand=7&brandId-brand=44&e17=3&e70=3&kilometresFrom-e68_1=120000&registrationFrom=2017&registrationTo=2023&powerOutputFrom=110&sortingType=auctionStartDate-ASCENDING",
+      ],
+      listingLinkMobile: [""],
+      listingLinkEcarstrade: [""],
+    });
+    const ab = kodiaqAutobid.find((p) => p.sourceUrls.some((u) => u.includes("autobid.de")));
+    expect(ab?.filter.gearboxes).toEqual(["Automatic"]);
+    expect(ab?.filter.modelIds).toEqual(expect.arrayContaining([2850, 3074]));
+    expect(ab?.url).toContain("model[]=2850");
+    expect(ab?.url).toContain("model[]=3074");
+    expect(ab?.url).toContain("gearbox[]=Automatic");
+
+    const vans = planEcarstradeSearchUrls({
+      id: "trafic-vans-ab",
+      brandModel: "Renault Traffic, Vivaro, Primastar (Caddy Maxi) ROLANDS",
+      listingLinkAuto1: [""],
+      listingLinkOpenline: [""],
+      listingLinkAutobid: [
+        "https://autobid.de/lv/meklesanas-rezultati?radiusSearchZipcode=3101&e17=3&brandId-brand=25&brandId-brand=41&brandId-brand=38&registrationTo=2012&registrationFrom=2007&categoryId-category=10&categoryId-category=8&categoryId-category=56&sortingType=auctionStartDate-ASCENDING",
+      ],
+      listingLinkMobile: [""],
+      listingLinkEcarstrade: [""],
+    });
+    const vanPlan = vans.find((p) => p.sourceUrls.some((u) => u.includes("autobid.de")));
+    expect(vanPlan?.filter.bodies).toEqual(["Van/Minibus"]);
+    expect(vanPlan?.filter.modelIds).toEqual(expect.arrayContaining([1146, 1818, 2741]));
+    expect(vanPlan?.url).toContain("model[]=1146");
+    expect(vanPlan?.url).toContain("model[]=1818");
+    expect(vanPlan?.url).toContain("model[]=2741");
+    expect(vanPlan?.url).toContain("category[]=Van%2FMinibus");
   });
 });

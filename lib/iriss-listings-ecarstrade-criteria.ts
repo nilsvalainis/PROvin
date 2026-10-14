@@ -207,6 +207,35 @@ export const AUTOBID_FUEL_ID_TO_NAME: Record<string, string> = {
   "14": "hybrid",
 };
 
+/**
+ * Autobid live `e70` / `carList-e70` (produkcijas IRISS saites).
+ * 1 = Manual (Ateca, Golf, Kuga, Superb, Q5, Vitara, A6 mehānika).
+ * 3 = Automatic (Tiguan, X3, A6 C7, Kodiaq/Tarraco, Vito, Passat).
+ * 4 = Automatic (Gran Tourer, Sharan, E220, XC60, Mini 105).
+ * Teksts `Automatic` paliek mapGearbox pusē.
+ */
+export const AUTOBID_GEARBOX_ID_TO_NAME: Record<string, "Manual" | "Automatic"> = {
+  "1": "Manual",
+  "3": "Automatic",
+  "4": "Automatic",
+};
+
+/**
+ * Autobid live virsbūve.
+ * `carList-category=1;6` sedan, `1;17` estate (`1` ir PKW tips, ne virsbūve).
+ * `categoryId-category` 8 / 10 / 56 = Van/Minibus (Trafic/Vivaro/Primastar).
+ */
+export const AUTOBID_BODY_ID_TO_NAME: Record<string, string> = {
+  "6": "Saloon",
+  "8": "Van/Minibus",
+  "10": "Van/Minibus",
+  "17": "Estate Car",
+  "56": "Van/Minibus",
+};
+
+/** `carList-category` pirmais skaitlis (1 = PKW) nav virsbūve. */
+export const AUTOBID_VEHICLE_TYPE_IDS = new Set(["1"]);
+
 function fold(raw: string): string {
   return raw
     .normalize("NFKD")
@@ -453,6 +482,24 @@ export function mapOpenlaneFuelToken(raw: string): string | null {
 
 export function mapAutobidFuelToken(raw: string): string | null {
   return AUTOBID_FUEL_ID_TO_NAME[raw.trim()] ?? null;
+}
+
+/** Autobid `e70=1|3|4` vai `carList-e70`. */
+export function mapAutobidGearboxId(raw: string): "Manual" | "Automatic" | null {
+  return AUTOBID_GEARBOX_ID_TO_NAME[raw.trim()] ?? null;
+}
+
+/**
+ * Autobid `categoryId-category=10` vai `carList-category=1;6`.
+ * Pāra otrajais skaitlis ir virsbūve; viens skaitlis `1` nav virsbūve.
+ */
+export function mapAutobidBodyId(raw: string): string | null {
+  const s = raw.trim();
+  if (!s) return null;
+  const pair = s.match(/^(\d+)\s*;\s*(\d+)$/);
+  const id = pair ? pair[2] : /^\d+$/.test(s) ? s : "";
+  if (!id || AUTOBID_VEHICLE_TYPE_IDS.has(id)) return null;
+  return AUTOBID_BODY_ID_TO_NAME[id] ?? null;
 }
 
 /**
