@@ -139,6 +139,13 @@ describe("AutoDNA deterministiskā ekstrakcija", () => {
     expect(extract.notes.some((n) => n.includes("29 380 EUR"))).toBe(true);
   });
 
+  it("sludinājuma valsti neliek countryTimeline (nav fiziska pārvietošanās)", () => {
+    expect(extract.countryTimeline.some((e) => e.date === "24.10.2019")).toBe(false);
+    expect(extract.countryTimeline.some((e) => e.date === "13.10.2025" && e.country === "Latvija")).toBe(
+      true,
+    );
+  });
+
   it("katru virsrakstu (TA, odometrs, cena) liek laikposmā; zaudējumu rindu - nē", () => {
     expect(extract.vehicleHistoryTimeline).toEqual([
       {
@@ -550,6 +557,29 @@ describe("laikposma fakta piemērošana (upsert_vehicle_history_timeline_row)", 
     expect(second.sourceBlocks.autodna.vehicleHistoryTimeline).toHaveLength(1);
   });
 
+  it("PDF-off sludinājuma rindu padod kā listingCountryHints, ne kā PDF laikposmu", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.autodna = coerceVendorAvotuBlock({
+      serviceHistory: [],
+      incidents: [],
+      comments: "",
+      vehicleHistoryTimeline: [
+        {
+          date: "15.03.2024",
+          country: "Vācija",
+          description: "Pārdošanai piedāvātas automašīnas",
+          odometer: "148200",
+          includeInPdf: false,
+        },
+      ],
+    });
+    const autodna = toPdfManualVendorBlocks(blocks).find((v) => v.title === SOURCE_BLOCK_LABELS.autodna);
+    expect(autodna?.vehicleHistoryTimeline).toBeUndefined();
+    expect(autodna?.listingCountryHints).toEqual([
+      { date: "15.03.2024", country: "Vācija", odometer: "148200" },
+    ]);
+  });
+
   it("ielasītiem laikposma ierakstiem pēc noklusējuma nav PDF karodziņa, bet odometrs paliek", () => {
     const block = coerceVendorAvotuBlock({
       serviceHistory: [],
@@ -616,6 +646,7 @@ describe("laikposma fakta piemērošana (upsert_vehicle_history_timeline_row)", 
     const citi = vendors.find((v) => v.title === citiAvotiSectionPdfTitle(section, 0, 1));
     expect(citi).toBeDefined();
     expect(citi?.title).toContain("CarFax");
+    expect(citi?.listingCountryHints).toBeUndefined();
     expect(citi?.vehicleHistoryTimeline).toEqual([
       {
         date: "24.10.2019",

@@ -95,6 +95,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/Finnik „TAXI: Ja” skaidrojums[\s\S]*TIKAI Finnik/);
     expect(prompts).toMatch(/APPROVED BY IRISS/);
     expect(prompts).toMatch(/Ja pievienoto foto nav/);
+    expect(prompts).toContain("AI_LISTING_IS_NOT_COUNTRY_CHANGE_RULES");
+    expect(readRepo("lib/source-summary-comment-format.ts")).toMatch(
+      /SLUDINĀJUMA VALSTS NAV FIZISKA PĀRVIETOŠANĀS/,
+    );
   });
 
   it("inspection and seller prompts use expert markdown, not hyphen checklists", () => {

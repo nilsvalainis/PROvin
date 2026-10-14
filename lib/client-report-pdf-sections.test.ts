@@ -756,7 +756,11 @@ describe("Vēstures kopsavilkums", () => {
       ],
     });
     expect(events.some((e) => /tehnisk/i.test(e.title) && e.date.includes("2025"))).toBe(false);
-    expect(events.some((e) => /Pārdošanai/.test(e.title))).toBe(true);
+    const listed = events.find((e) => e.kind === "listed");
+    expect(listed).toBeTruthy();
+    expect(listed!.title).toBe("Sludinājums");
+    expect(listed!.detail).toMatch(/Pārdošanai/);
+    expect(listed!.countryUnverified).toBe(true);
   });
 
   it("puts tjekbil registry timeline events into the history summary with km", () => {

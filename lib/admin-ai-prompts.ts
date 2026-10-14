@@ -20,6 +20,7 @@ import {
   AI_CROSS_FIELD_PORTFOLIO_RULES,
   AI_SOURCE_FIELDS_FACTS_ONLY_RULES,
   AI_MILEAGE_PATTERN_CHANGE_RULES,
+  AI_LISTING_IS_NOT_COUNTRY_CHANGE_RULES,
   AI_DEALER_COMMENT_CONSTRUCTION_RULES,
   AI_SOURCES_COMPARISON_OVERVIEW_RULES,
   AI_RESOLVED_HISTORICAL_FINDINGS_RULES,
@@ -99,6 +100,8 @@ CROSS-SOURCE DISCIPLINE (all field types):
 - Reconcile CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS, listing, and already generated comments; state conflicts clearly for the client.
 
 ${AI_OPERATOR_NOTES_EXECUTION_RULES}
+
+${AI_LISTING_IS_NOT_COUNTRY_CHANGE_RULES}
 
 FIELD DIVISION & ANTI-REPETITION (critical — independent audit feedback: do NOT copy-paste the same story across sources):
 - OPERATOR NOTES OVERRIDE: if „OPERATORA KOMANDAS” ask you to cover a theme that would normally live in another field, write it HERE and process every operator topic. Anti-repetition must not delete an operator theme.
@@ -821,8 +824,9 @@ Ievadā saņemsi pilnu pasūtījuma kontekstu (CSDD, AutoDNA, CarVertical, AUTO 
 ${SOURCE_BLOCK_COMMENT_AI_RULES}
 
 ${AI_MILEAGE_PATTERN_CHANGE_RULES}
+${AI_LISTING_IS_NOT_COUNTRY_CHANGE_RULES}
 
-Rezultāts (šī lauka mandāts — atšķirībā no avotu komentāriem):
+Rezultāts (šī lauka mandāts - atšķirībā no avotu komentāriem):
 - Hronoloģiski analizē apvienotos nobraukuma ierakstus visos avotos; interpretē lineārumu, platos, izteiktus kritumus un periodus bez datiem
 - Lieto motorstundu / pilsētas–šosejas loģiku **tikai ICE / klasiskiem hibrīdiem**, ja dati to atļauj; **elektroauto (BEV/PHEV)** — neizdomā motorstundu eseju; tā vietā īsi norādi, ka nobraukums jāsasaista ar **akumulatora noblietojumu un uzlādes režīmu** (skat. ELECTRIC & PLUG-IN FORENSICS), ja degvielas veids vai modelis to norāda
 - Km, datumus un neatbilstības raksti parastā tekstā - bez * vai **.

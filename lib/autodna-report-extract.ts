@@ -31,6 +31,7 @@ import {
   mergeVendorServiceEntries,
   type VendorServiceEntry,
 } from "@/lib/vendor-service-history";
+import { isVendorTimelineListingRecord } from "@/lib/vendor-timeline-listing";
 
 const HISTORY_END_RE =
   /^(Datu\s+interpret[āa]cijas|Iepriek[šs][ēe]jie\s+mekl[ēe]jumi|Apr[īi]kojums|Transportl[īi]dzek[ļl]a\s+arh[īi]va)/i;
@@ -249,12 +250,14 @@ export function extractAutodnaReport(rawText: string): VendorReportExtract {
 
   for (const event of events) {
     const country = eventCountry(event.lines);
-    if (country) timeline.push({ date: event.date, country });
+    const title = eventTitle(event.lines);
+    // Sludinājuma valsts nav reģistrācijas pierādījums - neaizpilda citu rindu valstis.
+    if (country && !isVendorTimelineListingRecord(title)) {
+      timeline.push({ date: event.date, country });
+    }
 
     const odometer = eventOdometer(event.lines);
     if (odometer) mileage.push({ date: event.date, odometer, country });
-
-    const title = eventTitle(event.lines);
     if (isVendorServiceEventTitle(title)) {
       const { category, works } = eventServiceWorks(event.lines, title);
       if (category || works.length > 0) {

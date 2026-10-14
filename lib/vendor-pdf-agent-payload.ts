@@ -57,7 +57,8 @@ ABSOLUTE RULES
 - If the timeline is ambiguous (e.g. the month of an import/export/re-registration) or the country is „Nezināma valsts” → leave country empty "". Never guess.
 
 4) COUNTRY TIMELINE (countryTimeline)
-- Return EVERY dated country record you can see (Laikposms entries, insurance, inspections, registration, damage headers) as {date, country}. This is the shared evidence pool used to fill missing countries - it is as important as the tables.
+- Return dated country records that evidence where the car was registered, inspected, insured, damaged, or serviced: insurance, inspections, registration, damage headers, dealer visits.
+- Do NOT put marketplace / listing / auction-ad / historical-price rows into countryTimeline („Pārdošanai piedāvātas automašīnas”, listed for sale, vehicle advertised, historical price). Being advertised in DE, NL and PL at once is not a physical country change. Those rows belong in vehicleHistoryTimeline only.
 
 5) INCIDENTS (damage / claims)
 - AutoDNA: „Transportlīdzekļa zaudējumu apjoms” → „Summa 510 000 - 520 000 CZK”.

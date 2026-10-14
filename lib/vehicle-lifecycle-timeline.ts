@@ -50,6 +50,7 @@ import {
   formatListingPriceEur,
 } from "@/lib/listing-price-lifecycle";
 import { resolveListingCountry } from "@/lib/listing-odometer";
+import { isVendorTimelineListingRecord } from "@/lib/vendor-timeline-listing";
 
 export const PDF_LIFECYCLE_TITLE = "Vēstures kopsavilkums";
 
@@ -311,7 +312,7 @@ function classifyVendorTimelineKind(description: string): LifecycleEventKind {
   if (/\bimport/.test(t) && !/apskate/.test(t)) return "import";
   if (/apskate|toldsyn|periodisk syn|registreringssyn/.test(t)) return "inspection";
   if (/negadīj|bojāj/.test(t)) return "incident";
-  if (/sludināj|pārdošan/.test(t)) return "listed";
+  if (isVendorTimelineListingRecord(description)) return "listed";
   if (/serviss|apkope/.test(t)) return "service";
   return "registration";
 }
@@ -324,7 +325,56 @@ function vendorTimelineTitleAndDetail(description: string, kind: LifecycleEventK
     if (/^(?:veikta\s+)?tehniskā apskate$/i.test(raw)) return { title: "Tehniskā apskate", detail: "" };
   }
   if (kind === "first_registration") return { title: "Pirmā reģistrācija", detail: "" };
+  if (kind === "listed") {
+    if (!raw || /^sludinājums$/i.test(raw)) return { title: "Sludinājums", detail: "" };
+    return { title: "Sludinājums", detail: raw };
+  }
   return { title: raw || "Ieraksts reģistrā", detail: "" };
+}
+
+/** Reģistrācija, apskate, oficiāls odometrs u.c. - ne sludinājuma valsts. */
+export function lifecycleEventProvidesCountryResidence(e: LifecycleEvent): boolean {
+  if (!e.country || e.countryUnverified) return false;
+  if (e.kind === "listed" || e.kind === "gap") return false;
+  return true;
+}
+
+function listingHintKey(date: string, country: string, odometer?: string): string[] {
+  const ms = parseLifecycleTimeMs(date);
+  const c = normalizeCountryNameLv(country) || country.trim();
+  const km = (odometer ?? "").replace(/\D/g, "");
+  const keys: string[] = [];
+  if (ms > 0 && c) keys.push(`m:${monthKey(ms)}|${c}`);
+  if (ms > 0 && km) keys.push(`k:${ms}|${km}`);
+  if (date.trim() && c) keys.push(`d:${date.trim()}|${c}`);
+  return keys;
+}
+
+function collectVendorListingHintKeys(input: LifecycleInput): Set<string> {
+  const keys = new Set<string>();
+  const add = (date: string, country: string, odometer?: string) => {
+    for (const k of listingHintKey(date, country, odometer)) keys.add(k);
+  };
+  for (const b of input.manualVendorBlocks ?? []) {
+    for (const hint of b.listingCountryHints ?? []) {
+      add(hint.date, hint.country, hint.odometer);
+    }
+    for (const t of b.vehicleHistoryTimeline ?? []) {
+      if (!isVendorTimelineListingRecord(t.description)) continue;
+      add(t.date, t.country, t.odometer);
+    }
+  }
+  return keys;
+}
+
+function odometerMatchesVendorListing(
+  listingKeys: Set<string>,
+  date: string,
+  country: string,
+  odometer: string,
+): boolean {
+  if (listingKeys.size === 0) return false;
+  return listingHintKey(date, country, odometer).some((k) => listingKeys.has(k));
 }
 
 function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
@@ -418,6 +468,9 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
           odometer: t.odometer,
           source: b.title,
           tone: failedInspection ? "warn" : kind === "incident" ? "alert" : "info",
+          // Tirgus/sludinājuma valsts nav reģistrācija - pretējā gadījumā
+          // DE/NL/PL sludinājumi vienā laikā izskatās pēc robežšķērsošanas.
+          countryUnverified: kind === "listed" && Boolean(t.country.trim()),
         }),
       );
     }
@@ -542,8 +595,10 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
   );
   if (rows.length === 0) return [];
   const { anomalyBySourceOrder } = analyzeUnifiedMileageAnomalies(rows);
+  const listingKeys = collectVendorListingHintKeys(input);
   return rows.map((r) => {
     const anomaly = anomalyBySourceOrder.get(r.sourceOrder) === true;
+    const listingCountry = odometerMatchesVendorListing(listingKeys, r.date, r.country, r.odometer);
     const ev = makeEvent({
       kind: anomaly ? "anomaly" : "odometer",
       rawDate: r.date,
@@ -551,7 +606,7 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
       country: r.country,
       odometer: r.odometer,
       tone: anomaly ? "alert" : "info",
-      countryUnverified: r.countryUnverified === true,
+      countryUnverified: r.countryUnverified === true || listingCountry,
     });
     ev.sources = [...r.sourceLabels];
     return ev;
@@ -605,7 +660,7 @@ function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
   const byKey = new Map<string, LifecycleEvent>();
   const out: LifecycleEvent[] = [];
   for (const e of events) {
-    const key = `${monthKey(e.time) || e.date}|${e.kind}|${e.title.toLowerCase()}`;
+    const key = `${monthKey(e.time) || e.date}|${e.kind}|${e.title.toLowerCase()}|${e.country.toLowerCase()}`;
     const prev = byKey.get(key);
     if (!prev) {
       byKey.set(key, e);
@@ -656,11 +711,9 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
       }
     }
     if (
-      e.country &&
+      lifecycleEventProvidesCountryResidence(e) &&
       prevCountry &&
-      e.country !== prevCountry &&
-      e.kind !== "gap" &&
-      !e.countryUnverified
+      e.country !== prevCountry
     ) {
       out.push({
         kind: "import",
@@ -678,7 +731,7 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
     }
     // Sludinājuma/tirgus valsts nekad nekļūst par jauno "zināmo" valsti: nākamais notikums
     // joprojām salīdzinās pret pēdējo oficiāli apstiprināto valsti, ne pret pārdevēja pieņēmumu.
-    if (e.country && !e.countryUnverified) prevCountry = e.country;
+    if (lifecycleEventProvidesCountryResidence(e)) prevCountry = e.country;
     out.push(e);
   }
   return out;
