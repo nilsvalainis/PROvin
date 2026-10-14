@@ -34,8 +34,8 @@ function summarize(previews: ReturnType<typeof previewEcarstradeLinksForScan>[])
   return {
     results: previews,
     addedCount: previews.reduce((n, p) => n + p.added.length, 0),
-    updatedCount: previews.filter((p) => p.added.length > 0).length,
-    skippedCount: previews.filter((p) => p.added.length === 0).length,
+    updatedCount: previews.filter((p) => p.changed).length,
+    skippedCount: previews.filter((p) => !p.changed).length,
   };
 }
 
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
     }
     const next = applyLinks(rec);
     previews.push(next.preview);
-    if (next.preview.added.length === 0) continue;
+    if (!next.preview.changed) continue;
     const w = await writeIrissScan(next.record);
     if (!w.ok) return NextResponse.json({ error: w.error }, { status: 500 });
     const stored = (await readIrissScan(next.record.id)) ?? next.record;

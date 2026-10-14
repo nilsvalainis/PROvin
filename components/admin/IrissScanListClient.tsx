@@ -98,7 +98,6 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
       });
       const data = (await res.json()) as {
         error?: string;
-        addedCount?: number;
         updatedCount?: number;
         saved?: IrissScanListRow[];
       };
@@ -110,9 +109,8 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
         const byId = new Map(data.saved.map((r) => [r.id, r]));
         setLocalRows((prev) => prev.map((row) => byId.get(row.id) ?? row));
       }
-      const added = data.addedCount ?? 0;
-      const updated = data.updatedCount ?? 0;
-      setEctMsg(added === 0 ? "eCarsTrade saites jau ir aktuālas" : `Aizstātas eCarsTrade saites: ${updated} ieraksti`);
+      const updated = data.updatedCount ?? data.saved?.length ?? 0;
+      setEctMsg(updated === 0 ? "eCarsTrade saites jau ir aktuālas" : `Aizstātas eCarsTrade saites: ${updated} ieraksti`);
     } finally {
       setEctBusy(false);
     }

@@ -42,9 +42,9 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     expect(twice.record.listingLinkEcarstrade).toEqual(once.record.listingLinkEcarstrade);
   });
 
-  it("auto-generates on save-shaped records that only have brandModel", () => {
+  it("does not auto-generate ET from brandModel or form fields alone", () => {
     const next = withAutoEcarstradeLinks(rec({ brandModel: "Skoda Octavia" }));
-    expect(next.listingLinkEcarstrade[0]).toContain("mark[]=61");
+    expect(next.listingLinkEcarstrade).toEqual([""]);
     expect(next.clientFirstName).toBe("Anna");
     expect(withAutoEcarstradeLinks(next).listingLinkEcarstrade).toEqual(next.listingLinkEcarstrade);
   });
@@ -54,7 +54,7 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     expect(hasOtherAuctionListingLinks(empty)).toBe(true);
     const preview = previewEcarstradeLinksForPasutijums(empty);
     expect(preview.added).toEqual([]);
-    expect(preview.skippedReason).toMatch(/nav markas/i);
+    expect(preview.skippedReason).toMatch(/nav izsoles saites/i);
     expect(hasOtherAuctionListingLinks(rec({ brandModel: "Volvo XC60" }))).toBe(false);
     expect(
       hasOtherAuctionListingLinks(
@@ -66,7 +66,7 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     ).toBe(false);
   });
 
-  it("adds LEXUS/TOYOTA even when Auto1/Openlane/Autobid URLs have no make params", () => {
+  it("does not invent LEXUS/TOYOTA from the form when auction URLs have no make params", () => {
     const preview = previewEcarstradeLinksForPasutijums(
       rec({
         brandModel: "LEXUS/TOYOTA",
@@ -75,9 +75,8 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
         listingLinkAutobid: ["https://autobid.de/en/search-results"],
       }),
     );
-    expect(preview.added.length).toBeGreaterThanOrEqual(1);
-    expect(preview.added[0]).toContain("mark[]=39");
-    expect(preview.added[0]).toContain("mark[]=66");
+    expect(preview.added).toEqual([]);
+    expect(preview.generated).toEqual([]);
   });
 
   it("replace copies Auto1 filters and does not stack order-form years/km/price", () => {
@@ -101,5 +100,17 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     expect(next.record.listingLinkEcarstrade[0]).not.toContain("mileage_to=140000");
     expect(next.record.listingLinkEcarstrade[0]).not.toContain("price_to=26000");
     expect(next.record.listingLinkEcarstrade[0]).not.toContain("iriss_drive=awd");
+  });
+
+  it("replace clears form-derived ET when the order has no auction links", () => {
+    const row = rec({
+      brandModel: "Skoda Octavia",
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=61&model[]=1460"],
+    });
+    const next = replaceEcarstradeLinksOnPasutijums(row);
+    expect(next.preview.changed).toBe(true);
+    expect(next.preview.generated).toEqual([]);
+    expect(next.record.listingLinkEcarstrade).toEqual([""]);
+    expect(next.record.clientFirstName).toBe("Anna");
   });
 });

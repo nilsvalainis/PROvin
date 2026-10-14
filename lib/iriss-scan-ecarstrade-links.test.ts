@@ -32,20 +32,20 @@ describe("iriss scan eCarsTrade link backfill", () => {
     expect(twice.record.listingLinkEcarstrade).toEqual(once.record.listingLinkEcarstrade);
   });
 
-  it("still generates from brandModel when platform links are empty", () => {
+  it("does not generate ET from brandModel or form fields when there are no auction links", () => {
     const preview = previewEcarstradeLinksForScan(rec({ brandModel: "Skoda Octavia" }));
-    expect(preview.added).toHaveLength(1);
-    expect(preview.added[0]).toContain("mark[]=61");
-    expect(preview.added[0]).toMatch(/model\[\]=/);
-  });
-
-  it("skips rows without a resolvable make", () => {
-    const preview = previewEcarstradeLinksForScan(rec({ brandModel: "", listingLinkAuto1: ["https://www.auto1.com/en/app/merchant/cars"] }));
     expect(preview.added).toEqual([]);
-    expect(preview.skippedReason).toMatch(/nav markas/i);
+    expect(preview.generated).toEqual([]);
+    expect(preview.skippedReason).toMatch(/nav izsoles saites/i);
   });
 
-  it("adds LEXUS/TOYOTA even when Auto1/Openlane/Autobid URLs have no make params", () => {
+  it("skips auction URLs without a make and does not fill from brandModel", () => {
+    const preview = previewEcarstradeLinksForScan(rec({ brandModel: "Skoda Octavia", listingLinkAuto1: ["https://www.auto1.com/en/app/merchant/cars"] }));
+    expect(preview.added).toEqual([]);
+    expect(preview.skippedReason).toMatch(/nav izsoles saites/i);
+  });
+
+  it("does not invent LEXUS/TOYOTA from brand when auction URLs have no make params", () => {
     const preview = previewEcarstradeLinksForScan(
       rec({
         brandModel: "LEXUS/TOYOTA",
@@ -54,12 +54,11 @@ describe("iriss scan eCarsTrade link backfill", () => {
         listingLinkAutobid: ["https://autobid.de/en/search-results"],
       }),
     );
-    expect(preview.added.length).toBeGreaterThanOrEqual(1);
-    expect(preview.added[0]).toContain("mark[]=39");
-    expect(preview.added[0]).toContain("mark[]=66");
+    expect(preview.added).toEqual([]);
+    expect(preview.generated).toEqual([]);
   });
 
-  it("adds Audi/VW/Porsche 176kw from brandModel and ignores Mobile.de filters", () => {
+  it("does not generate ET from brandModel 176kw or Mobile.de when auction URLs have no make", () => {
     const preview = previewEcarstradeLinksForScan(
       rec({
         brandModel: "Audi/VW/Porsche 176kw",
@@ -68,9 +67,8 @@ describe("iriss scan eCarsTrade link backfill", () => {
         listingLinkMobile: ["https://suchen.mobile.de/fahrzeuge/search.html?minPowerAsArray=176&maxPowerAsArray=176"],
       }),
     );
-    expect(preview.plans.every((p) => p.sourceUrls.every((u) => !/mobile\.de/i.test(u)))).toBe(true);
-    expect(preview.added.some((u) => u.includes("mark[]=5") && u.includes("mark[]=67") && u.includes("mark[]=54"))).toBe(true);
-    expect(preview.added.some((u) => u.includes("power_from=176") && u.includes("power_to=176"))).toBe(true);
+    expect(preview.added).toEqual([]);
+    expect(preview.generated).toEqual([]);
   });
 
   it("keeps exact km from each auction and splits when fuel differs", () => {
@@ -116,9 +114,9 @@ describe("iriss scan eCarsTrade link backfill", () => {
         ],
       }),
     );
-    expect(mobileOnly.plans.every((p) => p.sourceUrls.length === 0)).toBe(true);
-    expect(mobileOnly.generated.join(" ")).not.toContain("fuel[]=Petrol");
-    expect(mobileOnly.generated.join(" ")).not.toContain("year_from=2017");
+    expect(mobileOnly.plans).toEqual([]);
+    expect(mobileOnly.generated).toEqual([]);
+    expect(mobileOnly.skippedReason).toMatch(/nav izsoles saites/i);
 
     const pasted = previewEcarstradeLinksForScan(
       rec({
@@ -128,8 +126,8 @@ describe("iriss scan eCarsTrade link backfill", () => {
         ],
       }),
     );
-    expect(pasted.plans.every((p) => p.sourceUrls.every((u) => !/mobile\.de/i.test(u)))).toBe(true);
-    expect(pasted.generated.join(" ")).not.toContain("fuel[]=Petrol");
+    expect(pasted.plans).toEqual([]);
+    expect(pasted.generated).toEqual([]);
   });
 
   it("replace overwrites an old coarse eCarsTrade URL", () => {
@@ -159,7 +157,21 @@ describe("iriss scan eCarsTrade link backfill", () => {
       }),
     );
     expect(preview.plans.every((p) => !p.sourceUrls.some((u) => /auctionId=/i.test(u)))).toBe(true);
-    expect(preview.generated[0]).toContain("mark[]=68");
-    expect(preview.generated[0]).toContain("model[]=1866");
+    expect(preview.generated).toEqual([]);
+    expect(preview.skippedReason).toMatch(/nav izsoles saites/i);
+  });
+
+  it("replace clears form-derived ET when there is no auction make", () => {
+    const row = rec({
+      brandModel: "Skoda Octavia",
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=61&model[]=1460"],
+    });
+    const next = replaceEcarstradeLinks(row);
+    expect(next.preview.changed).toBe(true);
+    expect(next.preview.generated).toEqual([]);
+    expect(next.record.listingLinkEcarstrade).toEqual([""]);
+    const again = replaceEcarstradeLinks(next.record);
+    expect(again.preview.changed).toBe(false);
+    expect(again.record.listingLinkEcarstrade).toEqual([""]);
   });
 });

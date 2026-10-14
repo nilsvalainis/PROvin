@@ -471,7 +471,7 @@ describe("eCarsTrade search mapper", () => {
     expect(auto1?.url).not.toContain("mileage_to=180000");
   });
 
-  it("does not copy Mobile.de filters into ET; Audi A6 comes from brandModel only", () => {
+  it("does not generate ET from Mobile.de or brandModel when there is no auction link", () => {
     const plans = planEcarstradeSearchUrls({
       id: "audi-a6-mobile",
       brandModel: "Audi A6",
@@ -483,14 +483,7 @@ describe("eCarsTrade search mapper", () => {
       ],
       listingLinkEcarstrade: [""],
     });
-    expect(plans).toHaveLength(1);
-    expect(plans[0]?.sourceUrls).toEqual([]);
-    expect(plans[0]?.filter.makeIds).toEqual([5]);
-    expect(plans[0]?.filter.modelId).toBe(55);
-    expect(plans[0]?.filter.modelName).toBe("A6");
-    expect(plans[0]?.url).toContain("model[]=55");
-    expect(plans[0]?.url).not.toContain("fuel[]=Petrol");
-    expect(plans[0]?.url).not.toContain("year_from=2017");
+    expect(plans).toEqual([]);
   });
 
   it("plans Opel Vivaro/Traffic without Porsche and with Openlane years", () => {
@@ -516,7 +509,7 @@ describe("eCarsTrade search mapper", () => {
     expect(plans.every((p) => p.sourceUrls.every((u) => !/mobile\.de/i.test(u)))).toBe(true);
   });
 
-  it("adds a Jeep search next to Mitsubishi Pajero and splits MAN/Crafter/Sprinter", () => {
+  it("keeps auction Pajero links and does not add a Jeep ET from the form", () => {
     const pajero = planEcarstradeSearchUrls({
       id: "jeep-pajero",
       brandModel: "Jeep, Mitsubishi Pajero",
@@ -529,7 +522,8 @@ describe("eCarsTrade search mapper", () => {
       listingLinkEcarstrade: [""],
     });
     expect(pajero.some((p) => p.filter.makeNames.includes("Mitsubishi") && /Pajero/i.test(p.filter.modelName))).toBe(true);
-    expect(pajero.some((p) => p.filter.makeNames.includes("Jeep"))).toBe(true);
+    expect(pajero.every((p) => p.sourceUrls.length > 0)).toBe(true);
+    expect(pajero.some((p) => p.filter.makeNames.includes("Jeep") && p.sourceUrls.length === 0)).toBe(false);
 
     const vans = planEcarstradeSearchUrls({
       id: "vans",
@@ -540,10 +534,7 @@ describe("eCarsTrade search mapper", () => {
       listingLinkMobile: [""],
       listingLinkEcarstrade: [""],
     });
-    expect(vans.length).toBeGreaterThanOrEqual(3);
-    expect(vans.some((p) => p.filter.makeNames.includes("MAN"))).toBe(true);
-    expect(vans.some((p) => /Crafter/i.test(p.filter.modelName))).toBe(true);
-    expect(vans.some((p) => /Sprinter/i.test(p.filter.modelName))).toBe(true);
+    expect(vans).toEqual([]);
   });
 
   it("keeps Auto1 stacked criteria and does not add order-form seats or colors", () => {
@@ -806,13 +797,10 @@ describe("eCarsTrade search mapper", () => {
       listingLinkMobile: ["https://suchen.mobile.de/fahrzeuge/search.html?ms=17700;;;"],
       listingLinkEcarstrade: [""],
     });
-    const mit = jeepPajero.find((p) => p.filter.makeNames.includes("Mitsubishi"));
-    expect(mit?.filter.modelId).toBe(897);
-    expect(mit?.url).toContain("model[]=897");
-    expect(jeepPajero.every((p) => p.sourceUrls.every((u) => !/mobile\.de/i.test(u)))).toBe(true);
+    expect(jeepPajero).toEqual([]);
 
-    const e220 = planEcarstradeSearchUrls({
-      id: "ab-e220",
+    const fakeBrand = planEcarstradeSearchUrls({
+      id: "ab-e220-12",
       brandModel: "Mercedes E",
       listingLinkAuto1: [""],
       listingLinkOpenline: [""],
@@ -822,10 +810,23 @@ describe("eCarsTrade search mapper", () => {
       listingLinkMobile: [""],
       listingLinkEcarstrade: [""],
     });
+    expect(fakeBrand).toEqual([]);
+
+    const e220 = planEcarstradeSearchUrls({
+      id: "ab-e220",
+      brandModel: "Mercedes E",
+      listingLinkAuto1: [""],
+      listingLinkOpenline: [""],
+      listingLinkAutobid: [
+        "https://autobid.de/en/search-results?brandId-brand=3&name-model=E%20220&yearFrom-year=2017",
+      ],
+      listingLinkMobile: [""],
+      listingLinkEcarstrade: [""],
+    });
     expect(e220[0]?.filter.makeNames).toEqual(["Mercedes"]);
     expect(e220[0]?.filter.modelName).toMatch(/E-Class|E 220/);
     expect(e220[0]?.url).toMatch(/model\[\]=(815|2530)/);
-    expect(e220[0]?.url).not.toMatch(/mark\[\]=45(?!.*model\[\])/);
+    expect(e220[0]?.sourceUrls[0]).toContain("autobid.de");
   });
 
   it("emits all mark[] and model[] pairs from live multi-make Auto1/Openlane/Autobid URLs", () => {
