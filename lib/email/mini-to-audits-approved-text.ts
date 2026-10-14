@@ -1,4 +1,9 @@
 /** Apstiprinātais MINI → AUDITS klienta teksts (bez importu cikliem). */
+export const MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER = "{maksajuma_saite}";
+export const MINI_TO_AUDITS_NAME_PLACEHOLDER = "{vards}";
+export const MINI_TO_AUDITS_CAR_PLACEHOLDER = "{auto}";
+export const MINI_TO_AUDITS_VIN_PLACEHOLDER = "{vin}";
+
 export const MINI_TO_AUDITS_APPROVED_TEXT = `Labdien, {vards}!
 
 Paldies par PROVIN MINI pasūtījumu {auto} (VIN {vin}).
