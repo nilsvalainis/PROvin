@@ -46,7 +46,6 @@ export function offerValidUntilEndMs(ymd: string): number | null {
   const month = Number(m[2]);
   const day = Number(m[3]);
   const next = new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0));
-  const shown = rigaYmd(next.getTime());
   const targetNext = addDaysYmd(ymd, 1);
   let guess = next.getTime();
   for (let i = 0; i < 6; i += 1) {
