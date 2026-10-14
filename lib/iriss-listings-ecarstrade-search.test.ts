@@ -203,6 +203,9 @@ describe("eCarsTrade search mapper", () => {
   it("maps Mobile.de ms make id and Autobid name-brand", () => {
     const mobile = parseListingSearchUrl("https://suchen.mobile.de/fahrzeuge/search.html?ms=25100;29;;&minMileage=10000&maxMileage=140000&fuels=DIESEL");
     expect(mobile.makeIds).toEqual([68]);
+    expect(mobile.modelId).toBe(1866);
+    expect(mobile.modelName).toBe("XC60");
+    expect(mobile.mileageFrom).toBe(10000);
     expect(mobile.mileageTo).toBe(140000);
     expect(mobile.fuels).toEqual(["Diesel"]);
 
@@ -404,24 +407,24 @@ describe("eCarsTrade search mapper", () => {
     expect(isSingleVehicleListingUrl("https://www.openlane.eu/en/findcar?makes=volvo&models=xc60")).toBe(false);
   });
 
-  it("ignores Auto1 id-only vehicle links and widens exact year/cm3", () => {
+  it("ignores Auto1 id-only vehicle links and does not widen exact year/cm3/kW", () => {
     expect(isSingleVehicleListingUrl("https://www.auto1.com/en/app/merchant/cars?id=95a1ea78-e733-414d-a526-46e47e97efb3")).toBe(true);
     expect(
       isSingleVehicleListingUrl(
         "https://www.auto1.com/en/app/merchant/cars?id=95a1ea78-e733-414d-a526-46e47e97efb3&manufacturers=Opel%7CVivaro",
       ),
     ).toBe(false);
-    const wide = widenExactSearchBounds({
+    const exact = widenExactSearchBounds({
       ...filterFromBrandModel("Audi A6"),
       yearFrom: 2018,
       yearTo: 2018,
       engineFromCc: 2000,
       engineToCc: 2000,
     });
-    expect(wide.yearFrom).toBe(2017);
-    expect(wide.yearTo).toBe(2019);
-    expect(wide.engineFromCc).toBe(1800);
-    expect(wide.engineToCc).toBe(2200);
+    expect(exact.yearFrom).toBe(2018);
+    expect(exact.yearTo).toBe(2018);
+    expect(exact.engineFromCc).toBe(2000);
+    expect(exact.engineToCc).toBe(2000);
     const kw = widenExactSearchBounds({
       ...filterFromBrandModel("Audi A6"),
       powerFromKw: 176,
@@ -429,6 +432,51 @@ describe("eCarsTrade search mapper", () => {
     });
     expect(kw.powerFromKw).toBe(176);
     expect(kw.powerToKw).toBe(176);
+  });
+
+  it("plans one exact ET URL per auction link and does not merge different km", () => {
+    const plans = planEcarstradeSearchUrls({
+      id: "exact-no-merge",
+      brandModel: "Volvo XC60",
+      listingLinkAuto1: [
+        "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&fuelTypes=DIESEL&maxMileage=150000",
+      ],
+      listingLinkOpenline: [
+        "https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2018&fuels=diesel&mileageTo=180000",
+      ],
+      listingLinkAutobid: [""],
+      listingLinkMobile: [""],
+      listingLinkEcarstrade: [""],
+    });
+    expect(plans).toHaveLength(2);
+    const auto1 = plans.find((p) => p.sourceUrls.some((u) => u.includes("auto1.com")));
+    const openlane = plans.find((p) => p.sourceUrls.some((u) => u.includes("openlane")));
+    expect(auto1?.filter.mileageTo).toBe(150000);
+    expect(openlane?.filter.mileageTo).toBe(180000);
+    expect(auto1?.url).toContain("mileage_to=150000");
+    expect(openlane?.url).toContain("mileage_to=180000");
+    expect(auto1?.url).not.toContain("mileage_to=180000");
+  });
+
+  it("fills A6 from brandModel onto Mobile.de Audi-only ms=1900 so ET does not list extra models", () => {
+    const plans = planEcarstradeSearchUrls({
+      id: "audi-a6-mobile",
+      brandModel: "Audi A6",
+      listingLinkAuto1: [""],
+      listingLinkOpenline: [""],
+      listingLinkAutobid: [""],
+      listingLinkMobile: [
+        "https://suchen.mobile.de/fahrzeuge/search.html?ms=1900&fuels=PETROL&minFirstRegistrationDate=2017",
+      ],
+      listingLinkEcarstrade: [""],
+    });
+    expect(plans).toHaveLength(1);
+    expect(plans[0]?.filter.makeIds).toEqual([5]);
+    expect(plans[0]?.filter.modelId).toBe(55);
+    expect(plans[0]?.filter.modelName).toBe("A6");
+    expect(plans[0]?.url).toContain("model[]=55");
+    expect(plans[0]?.url).toContain("fuel[]=Petrol");
+    expect(plans[0]?.url).toContain("year_from=2017");
   });
 
   it("plans Opel Vivaro/Traffic without Porsche and with Openlane years", () => {
