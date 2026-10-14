@@ -1,0 +1,1289 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`template snapshots (default text) > snapshot block.audits_cta 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.
+
+Pasūtīt: https://provin.lv",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot block.email_footer_plain 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Šis e-pasts nosūtīts automātiski.
+PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Šis ir digitāls datu apkopojums, nevis automašīnas tehniskā diagnostika, un tas nekādā veidā nevar aizvietot pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.
+Personas datu apstrāde notiek saskaņā ar piemērojamiem tiesību aktiem (GDPR).",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot block.google_review 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot block.refund_bank_note 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot block.sign_off 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.client_link 1`] = `
+{
+  "html": "<!DOCTYPE html><html lang="lv"><body><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Sveiki!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu personīgā PROVIN AUDITS saite (99,99 €). Derīga līdz 15. okt. 2026.<br/>Pasūtījums tiks izveidots pēc apmaksas.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">https://buy.stripe.com/…</p></body></html>",
+  "subject": "PROVIN AUDITS: jūsu apmaksas saite",
+  "text": "Sveiki!
+
+Jūsu personīgā PROVIN AUDITS saite (99,99 €). Derīga līdz 15. okt. 2026.
+Pasūtījums tiks izveidots pēc apmaksas.
+
+https://buy.stripe.com/…",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.dealer.cancelled 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: pasūtījums atcelts un maksājums atgriezts</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts (VIN WVWZZZ1KZAW000123).</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Atmaksa 24,99 € veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, atbildiet uz šo e-pastu.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts",
+  "text": "Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts (VIN WVWZZZ1KZAW000123).
+
+Atmaksa 24,99 € veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.
+
+Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, atbildiet uz šo e-pastu.
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.dealer.no_data 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: dīlera dati nav pieejami</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Informācija par naudas atmaksu:<br/>Summa: 24,99 € (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Pasūtīt PROVIN AUDITS</a>
+</td></tr></table>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: dīlera dati nav pieejami",
+  "text": "Labdien!
+
+Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
+
+Informācija par naudas atmaksu:
+Summa: 24,99 € (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).
+
+Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
+
+Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.
+
+Pasūtīt: https://provin.lv
+
+Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.dealer.no_data_refunded 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Informācija par naudas atmaksu:<br/>Summa: 24,99 € (veikta pilnā apmērā uz to pašu maksājumu karti).</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Pasūtīt PROVIN AUDITS</a>
+</td></tr></table>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts",
+  "text": "Labdien!
+
+Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
+
+Informācija par naudas atmaksu:
+Summa: 24,99 € (veikta pilnā apmērā uz to pašu maksājumu karti).
+
+Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
+
+Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.
+
+Pasūtīt: https://provin.lv
+
+Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.dealer.ready_pdf 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: oficiālā dīlera dati pielikumā</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Dokuments pievienots PDF pielikumā.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: oficiālā dīlera dati pielikumā",
+  "text": "Labdien!
+
+Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Dokuments pievienots PDF pielikumā.
+
+Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.listing_peek 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+
+<p style="margin:0 0 8px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV · Bezmaksas komentārs</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;color:#1d1d1f;">Īss skatījums uz tavu sludinājumu</p>
+<p style="margin:0 0 18px;font-size:13px;line-height:1.5;color:#6b7280;">Sludinājums<br/>
+<a href="https://www.ss.lv/…" target="_blank" style="color:#0061D2;text-decoration:underline;word-break:break-all;">https://www.ss.lv/…</a></p>
+<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#1d1d1f;">Īss operatora komentārs…</p>
+
+<p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:#1d1d1f;">Noskaidro visu par savu topošo auto.</p>
+<p style="margin:0 0 4px;font-size:14px;line-height:1.55;color:#6b7280;">PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 10px;">
+<tr><td align="left" bgcolor="#0061D2" style="border-radius:9999px;background-color:#0061D2;">
+<a href="https://provin.lv/?plan=audits#home-hero" target="_blank" style="display:inline-block;padding:14px 28px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:700;line-height:1.25;color:#ffffff !important;text-decoration:none;border-radius:9999px;">Pasūtīt</a>
+</td></tr>
+</table>
+<p style="margin:0 0 18px;font-size:12px;line-height:1.45;color:#6b7280;">Ja poga neatveras: <a href="https://provin.lv/?plan=audits#home-hero" style="color:#0061D2;text-decoration:underline;">https://provin.lv/?plan=audits#home-hero</a></p>
+<p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:#1d1d1f;">Ar cieņu,<br/><span style="color:#6b7280;font-weight:600;">PROVIN.LV</span></p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN: īss komentārs par tavu sludinājumu",
+  "text": "Labdien!
+
+Īss skatījums uz tavu sludinājumu:
+
+
+https://www.ss.lv/…
+
+
+Īss operatora komentārs…
+
+
+Pielikumā 2 fotogrāfijas.
+
+
+Noskaidro visu par savu topošo auto.
+PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.
+
+Pasūtīt:
+https://provin.lv/?plan=audits#home-hero
+
+Ar cieņu,
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_password_reset.de 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Setzen Sie Ihr Passwort zurück</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Mit diesem Link legen Sie ein neues Passwort für Ihr PROVIN.LV-Partnerkonto fest.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/parole?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Neues Passwort festlegen</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Der Link ist 24 Stunden gültig und nur einmal verwendbar. Wenn Sie das nicht angefordert haben, ignorieren Sie die Nachricht.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: Passwort zurücksetzen",
+  "text": "Mit diesem Link legen Sie ein neues Passwort für Ihr PROVIN.LV-Partnerkonto fest.
+
+https://provin.lv/lv/partneriem/parole?token=…
+
+Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_password_reset.en 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Reset your password</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Use this link to set a new password for your PROVIN.LV partner account.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/parole?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Set a new password</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">The link is valid for 24 hours and can be used once. If you did not request this, ignore the message.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: reset your password",
+  "text": "Use this link to set a new password for your PROVIN.LV partner account.
+
+https://provin.lv/lv/partneriem/parole?token=…
+
+The link is valid for 24 hours and can be used once.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_password_reset.lv 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Atjaunojiet paroli</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Ar šo saiti varat iestatīt jaunu paroli savam PROVIN.LV partnera kontam.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/parole?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Iestatīt jaunu paroli</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Saite ir derīga 24 stundas un izmantojama vienu reizi. Ja jūs to neprasījāt, ignorējiet šo vēstuli.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: atjaunojiet paroli",
+  "text": "Ar šo saiti varat iestatīt jaunu paroli savam PROVIN.LV partnera kontam.
+
+https://provin.lv/lv/partneriem/parole?token=…
+
+Saite ir derīga 24 stundas un izmantojama vienu reizi.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_password_reset.ru 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Восстановление пароля</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">По этой ссылке можно задать новый пароль партнёрского аккаунта PROVIN.LV.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/parole?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Задать новый пароль</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Ссылка действует 24 часа и срабатывает только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: сброс пароля",
+  "text": "По этой ссылке можно задать новый пароль партнёрского аккаунта PROVIN.LV.
+
+https://provin.lv/lv/partneriem/parole?token=…
+
+Ссылка действует 24 часа и срабатывает только один раз.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_verify.change.de 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Bestätigen Sie die neue E-Mail</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Bestätigen Sie diese Adresse, um die E-Mail Ihres PROVIN.LV-Partnerkontos zu ändern.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">E-Mail bestätigen</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Der Link ist 24 Stunden gültig und nur einmal verwendbar. Wenn Sie das nicht angefordert haben, ignorieren Sie die Nachricht.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: neue E-Mail bestätigen",
+  "text": "Bestätigen Sie diese Adresse, um die E-Mail Ihres PROVIN.LV-Partnerkontos zu ändern.
+
+https://provin.lv/lv/partneriem/apstiprinat?token=…
+
+Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_verify.change.en 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Confirm your new email</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Confirm this address to finish updating your PROVIN.LV partner account.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Confirm email</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">The link is valid for 24 hours and can be used once. If you did not request this, ignore the message.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: confirm your new email",
+  "text": "Confirm this address to finish updating your PROVIN.LV partner account.
+
+https://provin.lv/lv/partneriem/apstiprinat?token=…
+
+The link is valid for 24 hours and can be used once.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_verify.change.lv 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Apstipriniet jauno e-pastu</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta e-pasta maiņu.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Apstiprināt e-pastu</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Saite ir derīga 24 stundas un izmantojama vienu reizi. Ja jūs to neprasījāt, ignorējiet šo vēstuli.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: apstipriniet jauno e-pastu",
+  "text": "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta e-pasta maiņu.
+
+https://provin.lv/lv/partneriem/apstiprinat?token=…
+
+Saite ir derīga 24 stundas un izmantojama vienu reizi.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_verify.change.ru 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Подтвердите новый адрес почты</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Подтвердите этот адрес, чтобы сменить адрес почты партнёрского аккаунта PROVIN.LV.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Подтвердить адрес</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Ссылка действует 24 часа и срабатывает только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: подтвердите новый адрес",
+  "text": "Подтвердите этот адрес, чтобы сменить адрес почты партнёрского аккаунта PROVIN.LV.
+
+https://provin.lv/lv/partneriem/apstiprinat?token=…
+
+Ссылка действует 24 часа и срабатывает только один раз.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_verify.signup.de 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Bestätigen Sie Ihre E-Mail</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Bestätigen Sie diese Adresse, um Ihr PROVIN.LV-Partnerkonto einzurichten.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">E-Mail bestätigen</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Der Link ist 24 Stunden gültig und nur einmal verwendbar. Wenn Sie das nicht angefordert haben, ignorieren Sie die Nachricht.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: E-Mail bestätigen",
+  "text": "Bestätigen Sie diese Adresse, um Ihr PROVIN.LV-Partnerkonto einzurichten.
+
+https://provin.lv/lv/partneriem/apstiprinat?token=…
+
+Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_verify.signup.en 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Confirm your email</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Confirm this address to finish opening your PROVIN.LV partner account.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Confirm email</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">The link is valid for 24 hours and can be used once. If you did not request this, ignore the message.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: confirm your email",
+  "text": "Confirm this address to finish opening your PROVIN.LV partner account.
+
+https://provin.lv/lv/partneriem/apstiprinat?token=…
+
+The link is valid for 24 hours and can be used once.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_verify.signup.lv 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Apstipriniet e-pastu</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta atvēršanu.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Apstiprināt e-pastu</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Saite ir derīga 24 stundas un izmantojama vienu reizi. Ja jūs to neprasījāt, ignorējiet šo vēstuli.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: apstipriniet e-pastu",
+  "text": "Apstipriniet šo adresi, lai pabeigtu PROVIN.LV partnera konta atvēršanu.
+
+https://provin.lv/lv/partneriem/apstiprinat?token=…
+
+Saite ir derīga 24 stundas un izmantojama vienu reizi.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.partner_verify.signup.ru 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Подтвердите адрес почты</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Подтвердите этот адрес, чтобы открыть партнёрский аккаунт PROVIN.LV.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/lv/partneriem/apstiprinat?token=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Подтвердить адрес</a>
+</td></tr></table>
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:#6b7280;">Ссылка действует 24 часа и срабатывает только один раз. Если вы этого не запрашивали, просто проигнорируйте письмо.</p>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: подтвердите адрес почты",
+  "text": "Подтвердите этот адрес, чтобы открыть партнёрский аккаунт PROVIN.LV.
+
+https://provin.lv/lv/partneriem/apstiprinat?token=…
+
+Ссылка действует 24 часа и срабатывает только один раз.",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.payment_confirmation 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Paldies par pasūtījumu</p>
+<p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Maksājums ir saņemts. Jūsu pasūtījums tiek apstrādāts.</p>
+<p style="margin:0 0 6px;font-size:14px;"><strong>Summa:</strong> 99,99 EUR</p>
+<p style="margin:0 0 24px;font-size:14px;"><strong>VIN:</strong> WVWZZZ1KZAW000123</p>
+<p style="margin:0 0 24px;font-size:14px;">Rēķins PDF ir pievienots šim e-pastam. To var arī lejupielādēt šeit.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://provin.lv/api/invoice/download?session_id=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Lejupielādēt rēķinu (PDF)</a>
+</td></tr></table>
+
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN: maksājums saņemts, rēķins pielikumā",
+  "text": "Paldies par pasūtījumu.
+
+Summa: 99,99 EUR
+VIN: WVWZZZ1KZAW000123
+
+Rēķins PDF ir pievienots šim e-pastam.
+Rēķins (PDF): https://provin.lv/api/invoice/download?session_id=…",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.report_ready.audits 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+
+<p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītā PROVIN AUDITS atskaite transportlīdzeklim ar VIN <strong>WVWZZZ1KZAW000123</strong> ir sagatavota.</p>
+<p style="margin:0 0 4px;font-size:15px;color:#1d1d1f;line-height:1.6;">E-pasta pielikumā atradīsiet:</p>
+<ul style="margin:4px 0 16px;padding-left:22px;color:#1d1d1f;font-size:15px;line-height:1.45;">
+<li style="margin:4px 0;">Kopsavilkuma PDF atskaiti</li>
+<li style="margin:4px 0;">Papildu materiālus un pielikumus</li>
+</ul>
+<p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>, labprāt palīdzēsim!</p>
+<p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
+<p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN AUDITS atskaite (WVWZZZ1KZAW000123)",
+  "text": "Labdien!
+
+Jūsu pasūtītā PROVIN AUDITS atskaite transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavota.
+
+E-pasta pielikumā atradīsiet:
+- Kopsavilkuma PDF atskaiti
+- Papildu materiālus un pielikumus
+
+Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz info@provin.lv, labprāt palīdzēsim!
+
+
+Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.report_ready.dealer 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+
+<p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pieprasītie oficiālā dīlera servisa vēstures dati transportlīdzeklim ar VIN <strong>WVWZZZ1KZAW000123</strong> ir sagatavoti.</p>
+<p style="margin:0 0 4px;font-size:15px;color:#1d1d1f;line-height:1.6;">Pielikumā atradīsiet šādus dokumentus:</p>
+<ul style="margin:4px 0 16px;padding-left:22px;color:#1d1d1f;font-size:15px;line-height:1.45;"><li style="margin:4px 0;">OFICIALA_DILERA_DATI.pdf</li></ul>
+<p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>.</p>
+<p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
+<p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN servisa vēstures atskaite (WVWZZZ1KZAW000123)",
+  "text": "Labdien!
+
+Jūsu pieprasītie oficiālā dīlera servisa vēstures dati transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavoti.
+
+Pielikumā atradīsiet šādus dokumentus:
+- OFICIALA_DILERA_DATI.pdf
+
+Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.
+
+
+Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.report_ready.mini 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+
+<p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītā PROVIN MINI atskaite transportlīdzeklim ar VIN <strong>WVWZZZ1KZAW000123</strong> ir sagatavota un pievienota šī e-pasta pielikumā.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja Jums rodas kādi jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>, labprāt palīdzēsim!</p>
+<p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
+<p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN MINI atskaite (WVWZZZ1KZAW000123)",
+  "text": "Labdien!
+
+Jūsu pasūtītā PROVIN MINI atskaite transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavota un pievienota šī e-pasta pielikumā.
+
+Ja Jums rodas kādi jautājumi, droši rakstiet mums uz info@provin.lv, labprāt palīdzēsim!
+
+
+Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.upsell.dealer_to_audit 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: pilnais audits esošajam pasūtījumam (VIN WVWZZZ1KZAW000123)</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu oficiālā dīlera datu pasūtījumam (VIN WVWZZZ1KZAW000123) varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jau samaksāts: 24,99 €<br/>Papildu apmaksa: 75,00 €<br/>Kopā: 99,99 €</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Papildu apmaksa ir 75,00 €. Kopā sanāk pilnais audits.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jau ievadītie dati paliek. Pievienosim to, kā vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://buy.stripe.com/…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Apmaksāt</a>
+</td></tr></table>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Saite derīga 30 dienas.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: pilnais audits esošajam pasūtījumam (VIN WVWZZZ1KZAW000123)",
+  "text": "Labdien!
+
+Jūsu oficiālā dīlera datu pasūtījumam (VIN WVWZZZ1KZAW000123) varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.
+
+Jau samaksāts: 24,99 €
+Papildu apmaksa: 75,00 €
+Kopā: 99,99 €
+
+Papildu apmaksa ir 75,00 €. Kopā sanāk pilnais audits.
+
+Jau ievadītie dati paliek. Pievienosim to, kā vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.
+
+Apmaksāt: https://buy.stripe.com/…
+
+Saite derīga 30 dienas.
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.upsell.mini_to_audit 1`] = `
+{
+  "html": "<!DOCTYPE html><html lang="lv"><body><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien, Jāni!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Paldies par PROVIN MINI pasūtījumu VW Golf (VIN WVWZZZ1KZAW000123).</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">PROVIN MINI ietver:<br/>✓ Konsultāciju un ieteikumus klātienes apskatei<br/>✓ OCTA negadījumus un tehnisko apskašu vēsturi<br/>✓ Sludinājuma, pārdevēja un tehnisko risku analīzi</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Tikai PROVIN AUDITS ietver:<br/>✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus<br/>✓ Oficiālo dīleru un izsoļu portālu arhīva datus</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Tas nozīmē, ka tieši AUDITS parāda negadījumu vēsturi, nobraukuma vēsturi ārvalstīs un oficiālā dīlera servisa datus, kas ievestiem auto ir paši svarīgākie.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Mēs iesakām pilno auditu. Starpību (60,00 €) varat apmaksāt šeit:<br/>https://buy.stripe.com/…</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja papildu dati nav vajadzīgi, turpināsim ar MINI.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV<br/>T: 29502039</p></body></html>",
+  "subject": "VW Golf",
+  "text": "Labdien, Jāni!
+
+Paldies par PROVIN MINI pasūtījumu VW Golf (VIN WVWZZZ1KZAW000123).
+
+Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
+
+PROVIN MINI ietver:
+✓ Konsultāciju un ieteikumus klātienes apskatei
+✓ OCTA negadījumus un tehnisko apskašu vēsturi
+✓ Sludinājuma, pārdevēja un tehnisko risku analīzi
+
+Tikai PROVIN AUDITS ietver:
+✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus
+✓ Oficiālo dīleru un izsoļu portālu arhīva datus
+
+Tas nozīmē, ka tieši AUDITS parāda negadījumu vēsturi, nobraukuma vēsturi ārvalstīs un oficiālā dīlera servisa datus, kas ievestiem auto ir paši svarīgākie.
+
+Mēs iesakām pilno auditu. Starpību (60,00 €) varat apmaksāt šeit:
+https://buy.stripe.com/…
+
+Ja papildu dati nav vajadzīgi, turpināsim ar MINI.
+
+Ar cieņu,
+Nils
+PROVIN.LV
+T: 29502039",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot email.upsell.mini_to_dealer 1`] = `
+{
+  "html": "<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PROVIN</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:#1d1d1f;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam (VIN WVWZZZ1KZAW000123)</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN MINI pasūtījumam (VIN WVWZZZ1KZAW000123) varam pievienot oficiālā dīlera servisa vēsturi.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Cena šim pasūtījumam: 19,99 € (atsevišķi dīlera dati maksā 24,99 €).</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Dati tiks pievienoti esošajam pasūtījumam. Jau ievadītā informācija paliek.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
+<tr><td>
+<a href="https://buy.stripe.com/…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Apmaksāt</a>
+</td></tr></table>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Saite derīga 30 dienas.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>",
+  "subject": "PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam (VIN WVWZZZ1KZAW000123)",
+  "text": "Labdien!
+
+Jūsu PROVIN MINI pasūtījumam (VIN WVWZZZ1KZAW000123) varam pievienot oficiālā dīlera servisa vēsturi.
+
+Cena šim pasūtījumam: 19,99 € (atsevišķi dīlera dati maksā 24,99 €).
+
+Dati tiks pievienoti esošajam pasūtījumam. Jau ievadītā informācija paliek.
+
+Apmaksāt: https://buy.stripe.com/…
+
+Saite derīga 30 dienas.
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.listing_offer 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "BMW 320d, 2018. gads
+
+Nobraukums: 145 000 km
+Motors: dīzelis, 140 kW (190 ZS)
+Ātrumkārba: automātiskā ātrumkārba
+Atrašanās: Vācija
+
+Auto atrodas Eiropā, piegāde uz Latviju. Gala cenu, vēsturi un tehniskā stāvokļa pārskatu sagatavosim pēc pieprasījuma.
+
+Dzintarzeme Auto",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.dealer.cancelled 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Sveiki!
+
+Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts un maksājums atgriezts pilnā apmērā. (VIN WVWZZZ1KZAW000123)
+
+Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.
+
+Ja vēlaties pasūtīt atkārtoti vai ar citu VIN, droši rakstiet šeit.
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.dealer.no_data_refunded 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam (VIN WVWZZZ1KZAW000123). Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
+
+Informācija par naudas atmaksu:
+Summa: 24,99 € (veikta pilnā apmērā uz to pašu maksājumu karti).
+
+Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
+
+Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.
+
+Pasūtīt: https://provin.lv
+
+Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv.
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.listing_peek 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.
+
+Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!
+
+Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.report_ready.audits 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Jūsu pasūtītā PROVIN AUDITS atskaite transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavota.
+
+Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!
+
+Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.report_ready.dealer 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Jūsu pieprasītie oficiālā dīlera servisa vēstures dati transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavoti.
+
+Ja Jums rodas papildu jautājumi, droši rakstiet šeit vai uz info@provin.lv.
+
+Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.report_ready.mini 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Jūsu pasūtītā PROVIN MINI atskaite transportlīdzeklim ar VIN WVWZZZ1KZAW000123 ir sagatavota.
+
+Ja Jums rodas kādi jautājumi, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!
+
+Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.select_consultation 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Sveiki!
+
+Nosūtu Jums PROVIN SELECT stratēģisko konsultāciju. Visus papildu materiālus nosūtīju uz Jūsu e-pastu.
+
+⚠️ Svarīgi: Sakarā ar tehniskiem uzlabojumiem, e-pasts dažkārt mēdz nonākt Spam mapē. Lūdzu, pārbaudiet!
+
+Ja rodas jautājumi par konsultācijas ieteikumiem vai vēlaties palīdzību auto izvēlē, droši rakstiet šeit vai zvaniet. Labprāt palīdzēšu!
+
+Ar cieņu,
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.upsell.dealer_to_audit 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Jūsu oficiālā dīlera datu pasūtījumam (VIN WVWZZZ1KZAW000123) varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.
+
+Jau samaksāts: 24,99 €
+Papildu apmaksa: 75,00 €
+Kopā: 99,99 €
+
+Jau ievadītie dati paliek.
+
+Apmaksāt: https://buy.stripe.com/…
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.upsell.mini_to_audit 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien, Jāni!
+
+Paldies par PROVIN MINI pasūtījumu VW Golf (VIN WVWZZZ1KZAW000123).
+
+Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
+
+PROVIN MINI ietver:
+✓ Konsultāciju un ieteikumus klātienes apskatei
+✓ OCTA negadījumus un tehnisko apskašu vēsturi
+✓ Sludinājuma, pārdevēja un tehnisko risku analīzi
+
+Tikai PROVIN AUDITS ietver:
+✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus
+✓ Oficiālo dīleru un izsoļu portālu arhīva datus
+
+Tas nozīmē, ka tieši AUDITS parāda negadījumu vēsturi, nobraukuma vēsturi ārvalstīs un oficiālā dīlera servisa datus, kas ievestiem auto ir paši svarīgākie.
+
+Mēs iesakām pilno auditu. Starpību (60,00 €) varat apmaksāt šeit:
+https://buy.stripe.com/…
+
+Ja papildu dati nav vajadzīgi, turpināsim ar MINI.
+
+Ar cieņu,
+Nils
+PROVIN.LV
+T: 29502039",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot wa.upsell.mini_to_dealer 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Labdien!
+
+Jūsu PROVIN MINI pasūtījumam (VIN WVWZZZ1KZAW000123) varam pievienot oficiālā dīlera servisa vēsturi par 19,99 €.
+
+Dati tiks pievienoti esošajam pasūtījumam.
+
+Apmaksāt: https://buy.stripe.com/…
+
+Ar cieņu,
+Nils / IRISS
+PROVIN.LV",
+}
+`;

@@ -1,4 +1,6 @@
 import { classifyListingDamage } from "@/lib/iriss-listings-damage";
+import { renderTemplateById } from "@/lib/messages/render-template-id";
+import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 export type ListingOfferVehicle = {
   title: string;
@@ -29,15 +31,30 @@ function kmf(n: number | null): string {
   return n == null ? "nav norādīts" : `${Math.round(n).toLocaleString("lv-LV")} km`;
 }
 
-export function listingOfferText(v: ListingOfferVehicle): string {
+export function listingOfferText(v: ListingOfferVehicle, templatesDoc?: MessageTemplatesDoc | null): string {
   const kw = Number.parseFloat(v.powerKw);
   const hp = Number.isFinite(kw) ? ` (${Math.round(kw * 1.36)} ZS)` : "";
   const gear = GEAR_LV[v.transmission] ?? (v.transmission ? v.transmission.toLowerCase() : "nav norādīta");
+  const motors =
+    v.fuel || v.powerKw
+      ? `Motors: ${[v.fuel.toLowerCase(), v.powerKw ? `${v.powerKw} kW${hp}` : ""].filter(Boolean).join(", ")}`
+      : "";
+  const vars = {
+    nosaukums: v.title,
+    gads: v.year ? `, ${v.year}. gads` : "",
+    nobraukums: kmf(v.mileageKm),
+    motors_rinda: motors,
+    atrumkarba: gear,
+    atrasanas_rinda: v.location ? `Atrašanās: ${v.location}` : "",
+  };
+  const rendered = renderTemplateById("iriss.listing_offer", vars, templatesDoc);
+  if (rendered?.text) return rendered.text;
+
   const lines = [
     `${v.title}${v.year ? `, ${v.year}. gads` : ""}`,
     "",
     `Nobraukums: ${kmf(v.mileageKm)}`,
-    v.fuel || v.powerKw ? `Motors: ${[v.fuel.toLowerCase(), v.powerKw ? `${v.powerKw} kW${hp}` : ""].filter(Boolean).join(", ")}` : "",
+    motors,
     `Ātrumkārba: ${gear}`,
     v.location ? `Atrašanās: ${v.location}` : "",
     "",

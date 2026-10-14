@@ -4,12 +4,17 @@
  */
 
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
+import { getMessageTemplateDef } from "@/lib/messages/registry";
+import { renderTemplateString, renderTemplateSubject } from "@/lib/messages/render-template";
+import { buildDealerNoDataVars, vinSuffixForEmail } from "@/lib/messages/template-vars";
+import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
-export const DEALER_NO_DATA_AUDIT_CTA_URL = "https://provin.lv";
+import { DEALER_NO_DATA_AUDIT_CTA_URL } from "@/lib/messages/shared-blocks";
+
+export { DEALER_NO_DATA_AUDIT_CTA_URL };
 
 function vinSuffix(vin?: string | null): string {
-  const v = (vin ?? "").trim().toUpperCase();
-  return v ? ` (VIN ${v})` : "";
+  return vinSuffixForEmail(vin);
 }
 
 function amountLine(amountEur?: string | null): string {
@@ -38,20 +43,35 @@ export function dealerNoDataAuditCtaBlock(): string {
  * E-pasts: OEM / dīlera datos nav ieraksta (ar vai bez jau veiktas atmaksas).
  * Noklusējums pēc atmaksas: A + soft CTA.
  */
-export function buildDealerNoDataEmailDraft(opts: {
-  vin?: string | null;
-  amountEur?: string | null;
-  /** true = teksts piemin, ka atmaksa jau veikta. */
-  refunded?: boolean;
-}): DealerClientEmailDraft {
+export function buildDealerNoDataEmailDraft(
+  opts: {
+    vin?: string | null;
+    amountEur?: string | null;
+    /** true = teksts piemin, ka atmaksa jau veikta. */
+    refunded?: boolean;
+  },
+  templatesDoc?: MessageTemplatesDoc | null,
+): DealerClientEmailDraft {
+  const refunded = opts.refunded === true;
+  const id = refunded ? "email.dealer.no_data_refunded" : "email.dealer.no_data";
+  const vars = buildDealerNoDataVars({ vin: opts.vin, amountEur: opts.amountEur, refunded });
+  const def = getMessageTemplateDef(id);
+  const override = templatesDoc?.overrides[id];
+  const bodyTpl = override?.body ?? def?.body;
+  const subjectTpl = override?.subject ?? def?.subject;
+  if (bodyTpl && subjectTpl) {
+    return {
+      kind: "no_data",
+      subject: renderTemplateSubject(subjectTpl, vars),
+      text: renderTemplateString(bodyTpl, vars),
+    };
+  }
+
   const vin = vinSuffix(opts.vin);
   const amount = amountLine(opts.amountEur);
-  const refunded = opts.refunded === true;
-
   const subject = refunded
     ? "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts"
     : "PROVIN.LV: dīlera dati nav pieejami";
-
   const refundBlock = refunded
     ? [
         "Informācija par naudas atmaksu:",
@@ -65,7 +85,6 @@ export function buildDealerNoDataEmailDraft(opts: {
         "",
         "Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.",
       ].join("\n");
-
   const text = [
     "Labdien!",
     "",
@@ -79,14 +98,30 @@ export function buildDealerNoDataEmailDraft(opts: {
     "",
     clientMessageSignOff(),
   ].join("\n");
-
   return { kind: "no_data", subject, text };
 }
 
-export function buildDealerCancelledEmailDraft(opts: {
-  vin?: string | null;
-  amountEur?: string | null;
-}): DealerClientEmailDraft {
+export function buildDealerCancelledEmailDraft(
+  opts: { vin?: string | null; amountEur?: string | null },
+  templatesDoc?: MessageTemplatesDoc | null,
+): DealerClientEmailDraft {
+  const vars = {
+    vin_suffix: vinSuffix(opts.vin),
+    summa: amountLine(opts.amountEur),
+    paraksts: clientMessageSignOff(),
+  };
+  const id = "email.dealer.cancelled";
+  const def = getMessageTemplateDef(id);
+  const override = templatesDoc?.overrides[id];
+  const bodyTpl = override?.body ?? def?.body;
+  const subjectTpl = override?.subject ?? def?.subject;
+  if (bodyTpl && subjectTpl) {
+    return {
+      kind: "cancelled",
+      subject: renderTemplateSubject(subjectTpl, vars),
+      text: renderTemplateString(bodyTpl, vars),
+    };
+  }
   const vin = vinSuffix(opts.vin);
   const amount = amountLine(opts.amountEur);
   return {
@@ -105,7 +140,23 @@ export function buildDealerCancelledEmailDraft(opts: {
 }
 
 /** E-pasts ar dīlera PDF pielikumu - operators rediģē pirms sūtīšanas. */
-export function buildDealerReadyEmailDraft(opts: { vin?: string | null }): DealerClientEmailDraft {
+export function buildDealerReadyEmailDraft(
+  opts: { vin?: string | null },
+  templatesDoc?: MessageTemplatesDoc | null,
+): DealerClientEmailDraft {
+  const vars = { vin_suffix: vinSuffix(opts.vin), paraksts: clientMessageSignOff() };
+  const id = "email.dealer.ready_pdf";
+  const def = getMessageTemplateDef(id);
+  const override = templatesDoc?.overrides[id];
+  const bodyTpl = override?.body ?? def?.body;
+  const subjectTpl = override?.subject ?? def?.subject;
+  if (bodyTpl && subjectTpl) {
+    return {
+      kind: "ready",
+      subject: renderTemplateSubject(subjectTpl, vars),
+      text: renderTemplateString(bodyTpl, vars),
+    };
+  }
   const vin = vinSuffix(opts.vin);
   return {
     kind: "ready",

@@ -7,16 +7,25 @@ import {
   isMiniHighlightAdminOrder,
 } from "@/lib/admin-customer-identity";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
+import {
+  CLIENT_MESSAGE_SIGN_OFF_LINES,
+  GOOGLE_REVIEW_URL,
+  defaultGoogleReviewBlock,
+  defaultSignOffBlock,
+} from "@/lib/messages/shared-blocks";
+import { getMessageTemplateDef } from "@/lib/messages/registry";
+import { renderTemplateString } from "@/lib/messages/render-template";
+import { buildReportReadyEmailVars, reportReadyTemplateId } from "@/lib/messages/template-vars";
+import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
-export const GOOGLE_REVIEW_URL = "https://g.page/r/CamRaT51IPQ_EBM/review";
-export const CLIENT_MESSAGE_SIGN_OFF_LINES = ["Ar cieņu,", "Nils / IRISS", "PROVIN.LV"] as const;
+export { GOOGLE_REVIEW_URL, CLIENT_MESSAGE_SIGN_OFF_LINES };
 
 export function googleReviewPlainBlock(): string {
-  return `Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: ${GOOGLE_REVIEW_URL}`;
+  return defaultGoogleReviewBlock();
 }
 
 export function clientMessageSignOff(): string {
-  return CLIENT_MESSAGE_SIGN_OFF_LINES.join("\n");
+  return defaultSignOffBlock();
 }
 
 export type ReportReadyProductKind = "dealer" | "mini" | "audits";
@@ -53,12 +62,24 @@ function reportReadyClosingLines(includeGoogleReview?: boolean): string[] {
   return lines;
 }
 
-export function buildReportReadyPlainText(opts: {
-  kind: ReportReadyProductKind;
-  vin: string;
-  attachmentLines: string[];
-  includeGoogleReview?: boolean;
-}): string {
+export function buildReportReadyPlainText(
+  opts: {
+    kind: ReportReadyProductKind;
+    vin: string;
+    attachmentLines: string[];
+    includeGoogleReview?: boolean;
+  },
+  templatesDoc?: MessageTemplatesDoc | null,
+): string {
+  const vars = buildReportReadyEmailVars(opts);
+  const def = getMessageTemplateDef(reportReadyTemplateId(opts.kind));
+  const override = templatesDoc?.overrides[reportReadyTemplateId(opts.kind)];
+  const bodyTpl = override?.body ?? def?.body;
+  if (bodyTpl) {
+    const withSign = { ...vars, paraksts: vars.paraksts || clientMessageSignOff() };
+    return renderTemplateString(bodyTpl, withSign);
+  }
+
   const vin = opts.vin.trim();
   const files = opts.attachmentLines.filter((n) => n.trim());
   const closing = reportReadyClosingLines(opts.includeGoogleReview);

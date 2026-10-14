@@ -15,6 +15,9 @@ import {
   MINI_TO_AUDITS_RECOMMENDATION_LABEL,
 } from "@/lib/email/mini-to-audits-recommendation";
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
+import { renderTemplateById } from "@/lib/messages/render-template-id";
+import { buildUpsellEmailVars, buildUpsellWaVars } from "@/lib/messages/template-vars";
+import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 export const UPSELL_LINK_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -308,16 +311,43 @@ export type UpsellDraft = {
   whatsappText: string;
 };
 
-export function buildUpsellDraft(opts: {
-  kind: OrderUpsellKind;
-  vin?: string | null;
-  customerName?: string | null;
-  car?: string | null;
-  url: string;
-  priorCents: number;
-  chargeCents: number;
-  targetCents: number;
-}): UpsellDraft {
+export function buildUpsellDraft(
+  opts: {
+    kind: OrderUpsellKind;
+    vin?: string | null;
+    customerName?: string | null;
+    car?: string | null;
+    url: string;
+    priorCents: number;
+    chargeCents: number;
+    targetCents: number;
+  },
+  templatesDoc?: MessageTemplatesDoc | null,
+): UpsellDraft {
+  const emailId =
+    opts.kind === "mini_to_dealer"
+      ? "email.upsell.mini_to_dealer"
+      : opts.kind === "dealer_to_audit"
+        ? "email.upsell.dealer_to_audit"
+        : "email.upsell.mini_to_audit";
+  const waId =
+    opts.kind === "mini_to_dealer"
+      ? "wa.upsell.mini_to_dealer"
+      : opts.kind === "dealer_to_audit"
+        ? "wa.upsell.dealer_to_audit"
+        : "wa.upsell.mini_to_audit";
+  const vars = buildUpsellEmailVars(opts);
+  const waVars = buildUpsellWaVars(opts);
+  const emailRendered = renderTemplateById(emailId, vars, templatesDoc);
+  const waRendered = renderTemplateById(waId, waVars, templatesDoc);
+  if (emailRendered?.text && waRendered?.text && emailRendered.subject) {
+    return {
+      subject: emailRendered.subject,
+      emailText: emailRendered.text,
+      whatsappText: waRendered.text,
+    };
+  }
+
   const vin = vinSuffix(opts.vin);
   const prior = formatEurFromCents(opts.priorCents);
   const charge = formatEurFromCents(opts.chargeCents);
