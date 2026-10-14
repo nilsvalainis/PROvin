@@ -16,12 +16,14 @@ import {
 } from "@/lib/iriss-listings-search-filter";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
-import { fetchViaIrissRelay, mergeListingPricesFromRelay, readIrissRelayConfig } from "@/lib/iriss-listings-relay";
+import { fetchViaIrissRelay, readIrissRelayConfig } from "@/lib/iriss-listings-relay";
 import { isIrissListingsAutomaticSlot, isIrissListingsContinuationWindow } from "@/lib/iriss-listings-schedule";
 import { buildIrissListingSources, groupIrissListingSources, irissListingVehicleId, type IrissListingSource, type IrissListingSourceGroup } from "@/lib/iriss-listings-sources";
 import {
   canStartListingJob,
+  capEcarstradeRelayGroups,
   DIRECT_FETCH_HEADROOM_MS,
+  ECARSTRADE_RELAY_HEADROOM_MS,
   fanOutFetchedVehicles,
   IRISS_LISTINGS_ROUTE_MAX_DURATION_MS,
   listingSyncProgress,
@@ -104,13 +106,37 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
   const skip = unboundedSearchSkip(src);
   if (skip) return skip;
   if (src.platform === "ecarstrade") {
+    const relay = ecarstradeViaRelay() ? readIrissRelayConfig() : null;
+    if (ecarstradeViaRelay() && !relay) {
+      return {
+        status: "relay_not_configured",
+        note: "ET cenas caur releju ieslēgtas, bet IRISS_LISTINGS_RELAY_URL / _TOKEN nav.",
+        vehicles: [],
+        rawPages: [],
+        pagesFetched: 0,
+        pageCount: 0,
+      };
+    }
+    if (relay) {
+      const rr = await fetchViaIrissRelay(relay, src, { maxPages: envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25) });
+      if (rr.vehicles.length > 0) {
+        return {
+          status: "ok",
+          note: rr.note,
+          vehicles: applyEntryFilter(rr.vehicles, src),
+          rawPages: rr.rawPages,
+          pagesFetched: rr.pagesFetched,
+          pageCount: rr.pageCount,
+        };
+      }
+    }
     const r = await fetchEcarstradeSource(src.sourceUrl, {
       maxPages: envInt("IRISS_LISTINGS_ECARSTRADE_MAX_PAGES", 5, 1, 25),
       timeoutMs: envInt("IRISS_LISTINGS_FETCH_TIMEOUT_MS", 18_000, 8_000, 60_000),
       pauseMinMs: 700,
       pauseMaxMs: 1_800,
     });
-    let vehicles: IrissFetchedVehicle[] = r.vehicles.map((v) => ({
+    const vehicles: IrissFetchedVehicle[] = r.vehicles.map((v) => ({
       id: irissListingVehicleId("ecarstrade", v.externalId),
       platform: "ecarstrade" as const,
       externalId: v.externalId,
@@ -143,25 +169,9 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
       auctionEndAt: v.auctionEndAt,
       auctionStage: v.auctionStage,
     }));
-    const notes = [r.note];
-    const needsPrice = vehicles.some((v) => v.priceBuyNow == null && v.priceCurrent == null);
-    const relay = ecarstradeViaRelay() ? readIrissRelayConfig() : null;
-    if (needsPrice && relay) {
-      const rr = await fetchViaIrissRelay(relay, src, { maxPages: envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25) });
-      if (rr.status === "ok" && rr.vehicles.length > 0) {
-        const merged = mergeListingPricesFromRelay(vehicles, rr.vehicles);
-        vehicles = merged.vehicles;
-        if (merged.priced > 0) notes.push(`Cenas no releja Chrome: ${merged.priced}.`);
-        else if (rr.note) notes.push(rr.note);
-      } else if (rr.note) {
-        notes.push(`Releja ET cenas: ${rr.note}`);
-      }
-    } else if (needsPrice && ecarstradeViaRelay() && !relay) {
-      notes.push("ET cenas caur releju ieslēgtas, bet IRISS_LISTINGS_RELAY_URL / _TOKEN nav.");
-    }
     return {
       status: r.status,
-      note: notes.filter(Boolean).join(" "),
+      note: relay && r.note ? `${r.note} Relejs nedeva auto ierakstus.` : r.note,
       pagesFetched: r.pagesFetched,
       pageCount: r.pageCount,
       rawPages: r.rawPages,
@@ -279,8 +289,13 @@ function summarize(
   };
 }
 
-function isDirectAutobid(group: IrissListingSourceGroup, autobidRelay: boolean): boolean {
-  return group.platform === "ecarstrade" || (group.platform === "autobid" && !autobidRelay);
+function isFastDirectFetch(
+  group: IrissListingSourceGroup,
+  opts: { autobidRelay: boolean; ecarstradeRelay: boolean },
+): boolean {
+  if (group.platform === "ecarstrade") return !opts.ecarstradeRelay;
+  if (group.platform === "autobid") return !opts.autobidRelay;
+  return false;
 }
 
 /** Jau saglabātie Volvo 110/133/140 kW (u.c. noteikumi) pazūd uzreiz, nevis pēc 2 missingRuns. */
@@ -383,22 +398,33 @@ export async function runIrissListingsDailySync(
 
   const relayOn = Boolean(readIrissRelayConfig());
   const autobidRelay = autobidViaRelay() && relayOn;
-  /** Tiešie Autobid vispirms (ātri, paralēli). Relejs aizņem Chrome pa vienam, tāpēc pēc tam. */
-  const ordered = [
-    ...picked.queue.filter((g) => isDirectAutobid(g, autobidRelay)),
-    ...picked.queue.filter((g) => !isDirectAutobid(g, autobidRelay)),
-  ];
+  const ecarstradeRelay = ecarstradeViaRelay() && relayOn;
+  const fastOpts = { autobidRelay, ecarstradeRelay };
+  /** Tiešie Autobid/ET vispirms (ātri, paralēli). Relejs (t.sk. ET Chrome) pēc tam, ET max 1 partijā. */
+  const ordered = capEcarstradeRelayGroups(
+    [
+      ...picked.queue.filter((g) => isFastDirectFetch(g, fastOpts)),
+      ...picked.queue.filter((g) => !isFastDirectFetch(g, fastOpts) && g.platform !== "ecarstrade"),
+      ...picked.queue.filter((g) => !isFastDirectFetch(g, fastOpts) && g.platform === "ecarstrade"),
+    ],
+    ecarstradeRelay,
+  );
 
   const results = new Map<string, { at: string; fetch: SourceFetch }>();
   const { started } = await runBounded(
     ordered,
     concurrency,
     (g) => {
-      const headroom = !isDirectAutobid(g, autobidRelay) && relayOn ? RELAY_FETCH_HEADROOM_MS : DIRECT_FETCH_HEADROOM_MS;
+      const headroom =
+        g.platform === "ecarstrade" && ecarstradeRelay
+          ? ECARSTRADE_RELAY_HEADROOM_MS
+          : !isFastDirectFetch(g, fastOpts) && relayOn
+            ? RELAY_FETCH_HEADROOM_MS
+            : DIRECT_FETCH_HEADROOM_MS;
       return canStartListingJob(Date.now() - startedMs, timeBudgetMs, headroom);
     },
     async (g) => {
-      const direct = isDirectAutobid(g, autobidRelay);
+      const direct = isFastDirectFetch(g, fastOpts);
       if (direct && concurrency > 1) await sleep(randomPauseMs(400, 900));
       else if (direct && results.size > 0) await sleep(randomPauseMs(1_500, 4_000));
       const lead = g.orders[0]!;

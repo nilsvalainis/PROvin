@@ -1,12 +1,13 @@
 /**
- * eCarsTrade cenas īstā Chrome (pastāvīgs profils).
- * Inventāru Vercel joprojām lasa no future_api.php. Relejs:
+ * eCarsTrade cenas un auto kartītes īstā Chrome (pastāvīgs profils).
+ * Atgriež items[] (solījums + PIRKT). Inventāra fallback Vercel paliek future_api.php. Relejs:
  * 1) saglabā JWT/PHPSESSID ar derīguma termiņu (sesijas sīkdatne citādi pazūd, kad Chrome aizveras);
  * 2) neprobe /search tukšu (viesiem tas dzēš eCT/user);
  * 3) kartītes ņem no JS vai no future_api.php pašā pārlūkā (ar CF/sīkdatnēm).
  * Paroles: ECARSTRADE_USER / ECARSTRADE_PASS (tikai /etc/provin-listings.env).
  */
 import { hasCaptchaOrChallenge, pageText, randomPause } from "../browser.mjs";
+import { makeItem, price as toPrice } from "../items.mjs";
 
 const ORIGIN = "https://ecarstrade.com";
 const AUTH_PATH = "/api/v1/auth/login";
@@ -146,6 +147,198 @@ export function htmlFromEcarstradeApiBody(raw) {
     }
   }
   return cards.join("\n");
+}
+
+function stripTags(s) {
+  return String(s ?? "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function euroAmounts(raw) {
+  const out = [];
+  const text = String(raw ?? "").replace(/\u00a0/g, " ");
+  const re =
+    /(?:€|eur)\s*(\d{1,3}(?:[.\s]\d{3})+(?:[.,]\d{2})?|\d+(?:[.,]\d{2})?)|(\d{1,3}(?:[.\s]\d{3})+(?:[.,]\d{2})?|\d+(?:[.,]\d{2})?)\s*(?:€|eur)/gi;
+  for (const m of text.matchAll(re)) {
+    const n = toPrice(m[1] || m[2]);
+    if (n != null && n >= 100) out.push(n);
+  }
+  return out;
+}
+
+function amountAfter(raw, label) {
+  const m = label.exec(raw);
+  if (!m) return null;
+  return euroAmounts(String(raw).slice(m.index, m.index + 180))[0] ?? null;
+}
+
+function amountInClass(html, cls) {
+  const re = new RegExp(`class=["'][^"']*${cls}[^"']*["'][^>]*>([\\s\\S]*?)</(?:div|span|button|a|strong)`, "i");
+  const m = html.match(re);
+  if (!m) return null;
+  const text = stripTags(m[1] ?? "");
+  return euroAmounts(text)[0] ?? toPrice(text);
+}
+
+function firstPrice(...vals) {
+  for (const v of vals) {
+    const n = toPrice(v);
+    if (n != null) return n;
+  }
+  return null;
+}
+
+function flattenPriceData(data) {
+  if (!data || typeof data !== "object") return {};
+  const nested = [data.car, data.auction, data.prices, data.pricing].filter((x) => x && typeof x === "object" && !Array.isArray(x));
+  return nested.length ? Object.assign({}, data, ...nested) : data;
+}
+
+export function ecarstradeCardSlice(html, index) {
+  const text = String(html ?? "");
+  const before = text.slice(0, Math.max(0, index)).toLowerCase();
+  const marker = Math.max(before.lastIndexOf("car-item"), before.lastIndexOf("data-itemid"));
+  let start = text.lastIndexOf("<div", index);
+  if (marker >= 0) {
+    const div = text.lastIndexOf("<div", marker + 1);
+    if (div >= 0) start = div;
+  }
+  return text.slice(Math.max(0, start), index + 16_000);
+}
+
+export function extractEcarstradeRelayItem(html, data = {}) {
+  const s = String(html ?? "");
+  const d = flattenPriceData(data);
+  const id = String(d.id || d.car_id || "").replace(/\D/g, "") || /data-itemId=["'](\d+)["']/i.exec(s)?.[1] || "";
+  if (!id) return null;
+  const title =
+    stripTags(/<div class="item-title[\s\S]*?<span>([\s\S]*?)<\/span>/i.exec(s)?.[1] ?? "") ||
+    stripTags(/aria-label="Share\s+([^"]+)"/i.exec(s)?.[1] ?? "") ||
+    stripTags(/<div class="small text-muted">\s*#\d+\s*-\s*([^<]+)/i.exec(s)?.[1] ?? "") ||
+    stripTags(/alt=["']([^"']+)["']/i.exec(s)?.[1] ?? "") ||
+    `#${id}`;
+    const manufacturer = title.replace(/^#\d+\s*-?\s*/i, "").split(/\s+/).find((w) => /[a-z]/i.test(w)) || "";
+  const signedOut = /Sign in to (?:buy|see)/i.test(s);
+  const buyNowFromHtml = signedOut
+    ? null
+    : amountAfter(s, /PIRKT|BUY(?:\s+NOW)?|Buy now|Pirkt uzreiz/i) ??
+      amountInClass(s, "car-price__button") ??
+      amountInClass(s, "car-price__head-label__value");
+  const currentFromHtml = signedOut
+    ? null
+    : amountAfter(s, /Current bid|Highest bid|Pašreizēj|Max\.?\s*bid|Solījums/i) ??
+      amountInClass(s, "car-price__current-bid__value") ??
+      amountInClass(s, "car-price__bid-value");
+  const buyNow = firstPrice(
+    d.buy_now,
+    d.buyNow,
+    d.buy_now_price,
+    d.buyNowPrice,
+    d.fixed_price,
+    d.fixedPrice,
+    d.fix_price,
+    buyNowFromHtml,
+  );
+  const current = firstPrice(d.current_bid, d.currentBid, d.highest_bid, d.max_bid, d.maxBid, currentFromHtml);
+  const start = firstPrice(d.start_price, d.startPrice, d.min_bid);
+  const auctionType = String(d.auction_type || /data-auction-type=["']([^"']+)["']/i.exec(s)?.[1] || "").toLowerCase();
+  let priceCurrent = current;
+  let priceBuyNow = buyNow;
+  if (auctionType === "stock" || auctionType === "fix") {
+    priceCurrent = null;
+    priceBuyNow = buyNow ?? current;
+  } else if (auctionType === "bid_or_fix" && buyNow != null && current === buyNow) {
+    priceCurrent = null;
+  }
+  const flag = /\/images\/flags\/h\d+\/([a-z]{2})\.png/i.exec(s)?.[1] || "";
+  const firstReg = stripTags(/data-original-title="First registration date"[\s\S]*?<div class="feature-value">([\s\S]*?)<\/div>/i.exec(s)?.[1] ?? "");
+  const kmRaw = stripTags(/data-original-title="Mileage"[\s\S]*?<div class="feature-value">([\s\S]*?)<\/div>/i.exec(s)?.[1] ?? "");
+  const km = (() => {
+    const m = kmRaw.replace(/\u00a0/g, " ").match(/([\d.\s]+)\s*(?:km|км)/i);
+    if (!m) return null;
+    const n = Number.parseInt(m[1].replace(/[.\s]/g, ""), 10);
+    return Number.isFinite(n) ? n : null;
+  })();
+  return makeItem("ecarstrade", {
+    externalId: id,
+    detailUrl: ecarstradeRelayDetailUrl(id),
+    title,
+    manufacturer,
+    year: firstReg.match(/((?:19|20)\d{2})/)?.[1] || "",
+    firstRegistration: firstReg,
+    mileageKm: km,
+    fuel: stripTags(/data-original-title="Fuel"[^>]*>([\s\S]*?)<\/span>/i.exec(s)?.[1] ?? ""),
+    transmission: stripTags(/data-original-title="Gearbox"[\s\S]*?<div class="feature-value">([\s\S]*?)<\/div>/i.exec(s)?.[1] ?? ""),
+    countryCode: flag.toUpperCase(),
+    location: stripTags(/<span>\s*(Belgium|The Netherlands|Netherlands|Luxembourg|Germany)\s*<\/span>/i.exec(s)?.[1] ?? ""),
+    imageUrl: /(?:data-src|src)=["']([^"']*(?:carsphotos|thumbnails|photo_)[^"']*)["']/i.exec(s)?.[1] || "",
+    priceStart: start,
+    priceCurrent,
+    priceBuyNow,
+    auctionId: String(d.auction_id || /auction(\d+)/i.exec(s)?.[1] || ""),
+    auctionStage: auctionType.toUpperCase(),
+  });
+}
+
+export function extractEcarstradeRelayItems(html) {
+  const text = String(html ?? "");
+  const byId = new Map();
+  const re = /data-itemId=["'](\d+)["']/gi;
+  let m;
+  while ((m = re.exec(text))) {
+    const id = m[1];
+    if (!id || byId.has(id)) continue;
+    const item = extractEcarstradeRelayItem(ecarstradeCardSlice(text, m.index), { id });
+    if (item) byId.set(id, item);
+  }
+  return [...byId.values()];
+}
+
+export function itemsFromEcarstradeApiBody(raw) {
+  const byId = new Map();
+  for (const obj of splitConcatenatedJsonObjects(raw)) {
+    const data = obj.data && typeof obj.data === "object" && !Array.isArray(obj.data) ? obj.data : {};
+    if (!data.id && obj.car_id) data.id = obj.car_id;
+    if (!data.auction_type && obj.auction_type) data.auction_type = obj.auction_type;
+    let html = "";
+    if (typeof obj.result === "string" && obj.result) {
+      try {
+        html = Buffer.from(obj.result, "base64").toString("utf8");
+      } catch {
+        html = "";
+      }
+    }
+    const item = extractEcarstradeRelayItem(html, data);
+    if (item && !byId.has(item.externalId)) byId.set(item.externalId, item);
+  }
+  return [...byId.values()];
+}
+
+export function mergeEcarstradeRelayItems(into, extra) {
+  const map = new Map((into ?? []).map((it) => [it.externalId, it]));
+  for (const it of extra ?? []) {
+    if (!it?.externalId) continue;
+    const prev = map.get(it.externalId);
+    if (!prev) {
+      map.set(it.externalId, it);
+      continue;
+    }
+    map.set(it.externalId, {
+      ...prev,
+      ...it,
+      title: it.title && it.title !== `#${it.externalId}` ? it.title : prev.title,
+      priceBuyNow: it.priceBuyNow ?? prev.priceBuyNow,
+      priceCurrent: it.priceCurrent ?? prev.priceCurrent,
+      priceStart: it.priceStart ?? prev.priceStart,
+    });
+  }
+  return [...map.values()];
 }
 
 function encodeCookieValue(raw) {
@@ -384,6 +577,7 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
     }
     const searchPages = [];
     const detailPages = [];
+    let items = [];
     let pageCount = 1;
     const missingIds = new Set();
     let usedApi = false;
@@ -395,6 +589,7 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
       const start = p <= 1 ? 0 : (p - 1) * 20;
       const api = await fetchApiInPage(page, ecarstradeRelayApiUrl(sourceUrl, start));
       let html = htmlFromEcarstradeApiBody(api.text);
+      items = mergeEcarstradeRelayItems(items, itemsFromEcarstradeApiBody(api.text));
       if (collectEcarstradeCardIds(html).length) {
         usedApi = true;
       } else {
@@ -411,12 +606,17 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
         const pageHtml = await page.content();
         const api2 = await fetchApiInPage(page, ecarstradeRelayApiUrl(sourceUrl, start));
         const apiHtml = htmlFromEcarstradeApiBody(api2.text);
+        items = mergeEcarstradeRelayItems(items, itemsFromEcarstradeApiBody(api2.text));
         if (collectEcarstradeCardIds(apiHtml).length) usedApi = true;
         html = [pageHtml, apiHtml].filter((h) => collectEcarstradeCardIds(h).length > 0).join("\n") || pageHtml;
       }
+      items = mergeEcarstradeRelayItems(items, extractEcarstradeRelayItems(html));
       searchPages.push(html.slice(0, 1_500_000));
       const ids = collectEcarstradeCardIds(html);
-      for (const id of idsNeedingDetailPrice(html)) missingIds.add(id);
+      const priced = new Set(items.filter((it) => it.priceBuyNow != null || it.priceCurrent != null).map((it) => it.externalId));
+      for (const id of idsNeedingDetailPrice(html)) {
+        if (!priced.has(id)) missingIds.add(id);
+      }
       if (ids.length === 0) {
         pageCount = p;
         break;
@@ -438,23 +638,25 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
       const challenge = await hasCaptchaOrChallenge(page);
       if (challenge) break;
       await page.waitForSelector("body", { timeout: 8_000 }).catch(() => undefined);
-      detailPages.push({ id, html: (await page.content()).slice(0, 800_000) });
+      const detailHtml = (await page.content()).slice(0, 800_000);
+      detailPages.push({ id, html: detailHtml });
+      items = mergeEcarstradeRelayItems(items, extractEcarstradeRelayItems(detailHtml));
     }
     const loggedIn = await isLoggedIn(page);
     if (loggedIn) await persistProfileCookies(page);
     const cardCount = searchPages.reduce((n, html) => n + collectEcarstradeCardIds(html).length, 0);
-    log(`ecarstrade ${searchPages.length} meklēšanas, ${detailPages.length} detaļas, kartītes=${cardCount}, api=${usedApi}, loggedIn=${loggedIn}`);
-    const note = loggedIn
-      ? usedApi
-        ? "eCarsTrade cenas no releja Chrome (future_api pārlūkā)."
-        : cardCount
-          ? "eCarsTrade cenas no releja Chrome (/search)."
+    log(`ecarstrade ${searchPages.length} meklēšanas, ${detailPages.length} detaļas, kartītes=${cardCount}, auto=${items.length}, api=${usedApi}, loggedIn=${loggedIn}`);
+    const note = items.length
+      ? `eCarsTrade ${items.length} auto no releja Chrome${usedApi ? " (future_api pārlūkā)" : " (/search)"}.`
+      : loggedIn
+        ? cardCount
+          ? `eCarsTrade kartītes=${cardCount}, bet auto ierakstus neizdevās izvilkt.`
           : "eCarsTrade relejs ielogots, bet /search nedeva kartītes."
-      : "eCarsTrade lasīts bez login (publiskās kartītes).";
+        : "eCarsTrade lasīts bez login (publiskās kartītes).";
     return {
       status: "ok",
       note,
-      items: [],
+      items,
       raw: { kind: "ecarstrade-html", searchPages, detailPages, loggedIn },
       pagesFetched: searchPages.length,
       pageCount,

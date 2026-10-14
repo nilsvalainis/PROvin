@@ -218,6 +218,20 @@ describe("eCarsTrade parser", () => {
     expect(mergeEcarstradeHtmlPrices(pub!, card("card-tucson-public.html")).priceBuyNow).toBeNull();
   });
 
+  it("keeps a card when item-title is missing but data-itemId and PIRKT are present", () => {
+    const html = `
+      <div class="car-item" data-itemId="888001" data-auction-type="stock">
+        <img alt="Opel Vivaro" src="/thumbnails/carsphotos/888001/photo_000/x.jpg">
+        <button class="car-price__button">PIRKT 9900€</button>
+        <span>Belgium</span>
+        <div class="item-action" style="background-image: url('/images/flags/h40/be.png')"></div>
+      </div>`;
+    const v = parseEcarstradeCard(html, { id: "888001" });
+    expect(v).toMatchObject({ externalId: "888001", priceBuyNow: 9900, countryCode: "BE" });
+    expect(v?.title).toMatch(/Opel Vivaro|#888001/i);
+    expect(parseEcarstradeSearchHtml(`<html>${html}</html>`)).toHaveLength(1);
+  });
+
   it("parses PIRKT from a logged-in /search HTML page", () => {
     const html = `<html><body>${card("card-tucson-loggedin.html")}</body></html>`;
     const vehicles = parseEcarstradeSearchHtml(html);

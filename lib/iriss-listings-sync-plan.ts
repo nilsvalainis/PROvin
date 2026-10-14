@@ -17,6 +17,25 @@ export const IRISS_LISTINGS_ROUTE_MAX_DURATION_MS = 300_000;
 export const DIRECT_FETCH_HEADROOM_MS = 45_000;
 /** Releja fetch timeout ir līdz 180 s; nesākam jaunu, ja līdz 300 s griestiem nav 90 s. */
 export const RELAY_FETCH_HEADROOM_MS = 90_000;
+/** ET caur Chrome: future_api + /search. Viena meklēšana var aizņemt gandrīz visu maršruta laiku. */
+export const ECARSTRADE_RELAY_HEADROOM_MS = 180_000;
+export const ECARSTRADE_RELAY_PER_BATCH = 1;
+
+/** ET caur releju: vienā 300 s palaišanā ne vairāk par `maxPerBatch` meklējumiem (pārējie nākamajā partijā). */
+export function capEcarstradeRelayGroups<T extends { platform: IrissListingPlatform }>(
+  groups: T[],
+  viaRelay: boolean,
+  maxPerBatch = ECARSTRADE_RELAY_PER_BATCH,
+): T[] {
+  if (!viaRelay) return groups;
+  const cap = Math.max(1, maxPerBatch);
+  let n = 0;
+  return groups.filter((g) => {
+    if (g.platform !== "ecarstrade") return true;
+    n += 1;
+    return n <= cap;
+  });
+}
 
 const WAITING_NOTE = "Gaida nākamo partiju: laika budžets beidzās.";
 
