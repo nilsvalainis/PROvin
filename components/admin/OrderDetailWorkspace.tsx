@@ -96,6 +96,7 @@ import {
   parseSourceBlockWipes,
   sourceBlockWipesSnapshotField,
 } from "@/lib/admin-source-block-wipes";
+import { deletedPhotoIdsSnapshotField, mergeDeletedPhotoIds, removedPhotoIds } from "@/lib/admin-photo-tombstones";
 import { resolveOrderWorkspaceHydration } from "@/lib/admin-order-workspace-hydrate";
 import {
   bumpWorkspaceSaveGeneration,
@@ -357,6 +358,7 @@ type WorkspacePersist = {
   incidentPhotoGroups: IncidentPhotoGroup[];
   incidentPhotos: { id: string }[];
   sourceBlockWipes?: SourceBlockKey[];
+  deletedPhotoIds?: string[];
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -510,6 +512,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
     incidentPhotoGroups: ws.incidentPhotoGroups,
     incidentPhotos: ws.incidentPhotos,
     ...sourceBlockWipesSnapshotField(ws.sourceBlockWipes),
+  ...deletedPhotoIdsSnapshotField(ws.deletedPhotoIds),
   };
 }
 
@@ -963,8 +966,20 @@ export function OrderDetailWorkspace({
     commitWorkspaceLocalNow({ force: true });
   }, [commitWorkspaceLocalNow, syncWsPersistRefFromState]);
 
-  const applyPersistBodyToWs = useCallback((merged: OrderWorkspacePersistBody): WorkspacePersist => {
-    const normalized = normalizeOrderWorkspacePersistBody(merged);
+  const applyPersistBodyToWs = useCallback((merged: OrderWorkspacePersistBody, opts?: { trackDeletes?: boolean }): WorkspacePersist => {
+    // K1: bildes, kas bija iepriekšējā stāvoklī, bet nav jaunajā → kapakmenis (dzēšana uzvar apvienošanā).
+    const prevWs = wsPersistRef.current;
+    const tombstones = mergeDeletedPhotoIds(
+      opts?.trackDeletes === false
+        ? []
+        : removedPhotoIds(
+            { b: prevWs.sourceBlocks, i: prevWs.incidentPhotoGroups },
+            { b: merged.sourceBlocks, i: merged.incidentPhotoGroups },
+          ),
+      merged.deletedPhotoIds,
+      prevWs.deletedPhotoIds,
+    );
+    const normalized = normalizeOrderWorkspacePersistBody({ ...merged, ...deletedPhotoIdsSnapshotField(tombstones) });
     const next: WorkspacePersist = {
       sourceBlocks: normalized.sourceBlocks,
       iriss: normalized.iriss,
@@ -977,6 +992,7 @@ export function OrderDetailWorkspace({
       incidentPhotoGroups: normalized.incidentPhotoGroups ?? [],
       incidentPhotos: normalized.incidentPhotos ?? [],
       ...sourceBlockWipesSnapshotField(normalized.sourceBlockWipes),
+    ...deletedPhotoIdsSnapshotField(normalized.deletedPhotoIds),
     };
     wsPersistRef.current = next;
     lastGoodPersistBodyRef.current = normalized;
@@ -1047,6 +1063,7 @@ export function OrderDetailWorkspace({
           incidentPhotoGroups: body.incidentPhotoGroups ?? [],
           incidentPhotos: body.incidentPhotos ?? [],
           ...sourceBlockWipesSnapshotField(body.sourceBlockWipes),
+        ...deletedPhotoIdsSnapshotField(body.deletedPhotoIds),
         };
         wsStateRef.current = wsPersistRef.current;
       }
@@ -1125,7 +1142,7 @@ export function OrderDetailWorkspace({
       const fresh = await fetchCanonicalWorkspace(payload.sessionId);
       const body = fresh.workspace ? workspacePersistFromDraftWorkspace(fresh.workspace) : null;
       if (body) {
-        setWs(applyPersistBodyToWs(body));
+        setWs(applyPersistBodyToWs(body, { trackDeletes: false }));
       }
       workspaceRevisionRef.current = fresh.workspaceRevision;
       commitWorkspaceLocalNow({ force: true });
@@ -1165,7 +1182,7 @@ export function OrderDetailWorkspace({
         setWorkspaceAutosaveStatus("error");
         return;
       }
-      setWs(applyPersistBodyToWs(result.mergedBody));
+      setWs(applyPersistBodyToWs(result.mergedBody, { trackDeletes: false }));
       workspaceRevisionRef.current = result.workspaceRevision;
       commitWorkspaceLocalNow({ force: true });
       clearWorkspaceRevisionConflict();
@@ -1473,6 +1490,7 @@ export function OrderDetailWorkspace({
             [key]: nextBlock,
           }),
           ...sourceBlockWipesSnapshotField(nextWipes),
+          ...deletedPhotoIdsSnapshotField(prev.deletedPhotoIds),
         });
         return applyPersistBodyToWs(next);
       });
@@ -2256,6 +2274,7 @@ export function OrderDetailWorkspace({
         incidentPhotoGroups: chosen.incidentPhotoGroups ?? [],
         incidentPhotos: chosen.incidentPhotos ?? [],
         ...sourceBlockWipesSnapshotField(chosen.sourceBlockWipes),
+      ...deletedPhotoIdsSnapshotField(chosen.deletedPhotoIds),
       };
 
       workspaceDebugLog("hydrate_source", {
@@ -2284,6 +2303,7 @@ export function OrderDetailWorkspace({
         incidentPhotoGroups: chosen.incidentPhotoGroups ?? [],
         incidentPhotos: chosen.incidentPhotos ?? [],
         ...sourceBlockWipesSnapshotField(chosen.sourceBlockWipes),
+      ...deletedPhotoIdsSnapshotField(chosen.deletedPhotoIds),
       };
       wsPersistRef.current = hydratedWs;
       wsStateRef.current = hydratedWs;

@@ -2733,3 +2733,34 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
     expect(doc).toContain("Auto ir bijis vieglā negadījumā.");
   });
 });
+
+describe("K1: dzēsta bilde nenonāk PDF", () => {
+  it("PDF ņem tikai grupās esošās bildes — dzēstais id (kapakmenis) netiek drukāts, pat ja fails glabātuvē palicis", async () => {
+    const { stripDeletedPhotos } = await import("@/lib/admin-photo-tombstones");
+    const keep = "la_ph_aabbccddeeff001122334455";
+    const gone = "la_ph_112233445566778899aabbcc";
+    const block = stripDeletedPhotos(
+      {
+        ...createDefaultSourceBlocks().listing_analysis,
+        photoGroups: [{ id: "la_phg_aabbccddeeff001122334455", title: "G", photos: [{ id: keep }, { id: gone }] }],
+        photos: [{ id: keep }, { id: gone }],
+      },
+      new Set([gone]),
+    );
+    const dataUrls = new Map([
+      [keep, "data:image/jpeg;base64,/9j/KEEP"],
+      [gone, "data:image/jpeg;base64,/9j/GONE"],
+    ]);
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({ listingAnalysis: block, pdfVisibility: mergePdfVisibility({ sludinajums: true }) }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      listingAnalysisPhotoDataUrls: dataUrls,
+    });
+    expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(1);
+    expect(doc).toContain("/9j/KEEP");
+    expect(doc).not.toContain("/9j/GONE");
+  });
+});

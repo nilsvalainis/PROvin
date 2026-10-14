@@ -2778,6 +2778,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   incidentPhotoGroups: IncidentPhotoGroup[];
   incidentPhotos: IncidentPhotoMeta[];
   sourceBlockWipes?: SourceBlockKey[];
+  deletedPhotoIds?: string[];
 } | null {
   if (!raw) return null;
   try {
@@ -2818,6 +2819,11 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
           (k): k is SourceBlockKey => typeof k === "string" && (SOURCE_BLOCK_KEYS as readonly string[]).includes(k),
         );
         return wipes.length > 0 ? { sourceBlockWipes: wipes } : {};
+      })(),
+      ...(() => {
+        if (!Array.isArray(p.deletedPhotoIds)) return {};
+        const ids = [...new Set(p.deletedPhotoIds.filter((v): v is string => typeof v === "string" && v.trim() !== ""))].slice(0, 2000);
+        return ids.length > 0 ? { deletedPhotoIds: ids } : {};
       })(),
     };
   } catch {
