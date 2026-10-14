@@ -2,6 +2,7 @@ import {
   ECARSTRADE_ALLOWED_COUNTRY_QUERY,
 } from "@/lib/iriss-listings-country-filter";
 import {
+  ecarstradeModelsForMake,
   extractPowerKwFromBrand,
   resolveEcarstradeMake,
   resolveEcarstradeMakeById,
@@ -14,9 +15,12 @@ import {
   type EcarstradeMark,
 } from "@/lib/iriss-listings-ecarstrade-catalog";
 import {
+  AUTOBID_VEHICLE_TYPE_IDS,
   isNoiseSearchParam,
   isWildcardCriterion,
+  mapAutobidBodyId,
   mapAutobidFuelToken,
+  mapAutobidGearboxId,
   mapEcarstradeColor,
   mapEcarstradeDrive,
   mapEmissionClass,
@@ -227,6 +231,8 @@ function mapFuel(raw: string): string | null {
 }
 
 function mapGearbox(raw: string): string | null {
+  const fromId = mapAutobidGearboxId(raw);
+  if (fromId) return fromId === "Manual" ? ECARSTRADE_GEARBOX.manual : ECARSTRADE_GEARBOX.automatic;
   const s = raw.toLowerCase().replace(/[_-]+/g, " ").trim();
   if (isWildcardCriterion(s)) return null;
   if (/\bsemi\b|halbauto|semi automatic|semiautomatic/.test(s)) return ECARSTRADE_GEARBOX.semi;
@@ -236,6 +242,8 @@ function mapGearbox(raw: string): string | null {
 }
 
 function mapBody(raw: string): string | null {
+  const fromId = mapAutobidBodyId(raw);
+  if (fromId) return fromId;
   const s = raw.toLowerCase().replace(/[_-]+/g, " ").trim();
   if (isWildcardCriterion(s)) return null;
   if (/suv|off.?road|offroad|pickup|crossover|gelande/.test(s)) return ECARSTRADE_BODY.suv;
@@ -247,6 +255,22 @@ function mapBody(raw: string): string | null {
   if (/saloon|sedan|limousine|\blimo\b|berline/.test(s)) return ECARSTRADE_BODY.saloon;
   if (/bike|motorcycle/.test(s)) return ECARSTRADE_BODY.bike;
   return null;
+}
+
+/** mobile.de Automatik = `tr=AUTOMATIC_GEAR` + `tr=SEMIAUTOMATIC_GEAR`; ET tikai Automatic. */
+function collapseImpliedSemiAutomatic(raw: string[], mapped: string[]): string[] {
+  const hasExplicitAuto = raw.some((r) => {
+    const s = r.toLowerCase().replace(/[_-]+/g, " ");
+    return /auto/.test(s) && !/semi/.test(s);
+  });
+  if (
+    hasExplicitAuto &&
+    mapped.includes(ECARSTRADE_GEARBOX.automatic) &&
+    mapped.includes(ECARSTRADE_GEARBOX.semi)
+  ) {
+    return mapped.filter((g) => g !== ECARSTRADE_GEARBOX.semi);
+  }
+  return mapped;
 }
 
 const MAKE_KEYS = [
@@ -557,7 +581,16 @@ function applyRange(
 function applyMakeModelPairs(filter: EcarstradeSearchFilter, pairs: MakeModelPair[], idSpace: MakeIdSpace): void {
   for (const pair of pairs) {
     applyMakeToken(filter, pair.make, idSpace);
-    if (pair.model) applyModelToken(filter, pair.model, "name");
+    if (!pair.model) continue;
+    const make = resolveEcarstradeMake(pair.make);
+    if (make) {
+      const model = resolveEcarstradeModel(make.id, pair.model);
+      if (model) {
+        pushResolvedModel(filter, model);
+        continue;
+      }
+    }
+    applyModelToken(filter, pair.model, "name");
   }
 }
 
@@ -641,15 +674,15 @@ function applyMakeToken(filter: EcarstradeSearchFilter, makeRaw: string, idSpace
 function applyModelToken(filter: EcarstradeSearchFilter, modelRaw: string, idSpace: MakeIdSpace = "name"): void {
   const modelText = stripKnownSuffixes(modelRaw);
   if (!modelText) return;
-  if (filter.makeIds.length === 1) {
+  for (const makeId of filter.makeIds) {
     if (/^\d+$/.test(modelText) && idSpace === "ecarstrade") {
-      const byId = resolveEcarstradeModelById(filter.makeIds[0]!, Number.parseInt(modelText, 10));
+      const byId = resolveEcarstradeModelById(makeId, Number.parseInt(modelText, 10));
       if (byId) {
         pushResolvedModel(filter, byId);
         return;
       }
     }
-    const model = resolveEcarstradeModel(filter.makeIds[0]!, modelText);
+    const model = resolveEcarstradeModel(makeId, modelText);
     if (model) {
       pushResolvedModel(filter, model);
       return;
@@ -762,7 +795,10 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
   });
   filter.fuels = uniq(fuels.filter((x): x is string => Boolean(x)));
   const gearRaw = values(params, GEAR_KEYS);
-  filter.gearboxes = uniq(gearRaw.map(mapGearbox).filter((x): x is string => Boolean(x)));
+  filter.gearboxes = collapseImpliedSemiAutomatic(
+    gearRaw,
+    uniq(gearRaw.map(mapGearbox).filter((x): x is string => Boolean(x))),
+  );
   for (const raw of gearRaw) {
     if (/^\d+$/.test(raw) && !mapGearbox(raw)) {
       filter.unmapped.push({
@@ -772,10 +808,10 @@ export function parseListingSearchDetailed(rawUrl: string): ParsedListingSearch 
       });
     }
   }
-  const bodyRaw = values(params, BODY_KEYS);
+  const bodyRaw = uniq([...rawValues(params, BODY_KEYS), ...values(params, BODY_KEYS)]);
   filter.bodies = uniq(bodyRaw.map(mapBody).filter((x): x is string => Boolean(x)));
   for (const raw of bodyRaw) {
-    if (/^\d+$/.test(raw) && !mapBody(raw)) {
+    if (!mapBody(raw) && /^\d+$/.test(raw) && !AUTOBID_VEHICLE_TYPE_IDS.has(raw)) {
       filter.unmapped.push({
         key: "category",
         value: raw,
@@ -829,7 +865,7 @@ export function widenExactSearchBounds(filter: EcarstradeSearchFilter): Ecarstra
 }
 
 function resolvePendingModels(filter: EcarstradeSearchFilter): EcarstradeSearchFilter {
-  if (filter.makeIds.length !== 1) return filter;
+  if (!filter.makeIds.length) return filter;
   if (filter.modelIds.length || filter.modelId) return filter;
   const names = filter.modelName
     .split(/[,;/|]+/)
@@ -838,22 +874,36 @@ function resolvePendingModels(filter: EcarstradeSearchFilter): EcarstradeSearchF
   if (!names.length) return filter;
   const next = cloneEcarstradeFilter(filter);
   for (const name of names) {
-    const model = resolveEcarstradeModel(next.makeIds[0]!, name);
-    if (model) pushResolvedModel(next, model);
+    for (const makeId of next.makeIds) {
+      const model = resolveEcarstradeModel(makeId, name);
+      if (model) {
+        pushResolvedModel(next, model);
+        break;
+      }
+    }
   }
   return next;
+}
+
+function makeOwnsModelId(makeId: number, modelId: number): boolean {
+  return ecarstradeModelsForMake(makeId).some((m) => m.id === modelId);
 }
 
 /** Ja izsoles URL ir marka bez modeļa, brandModel var aizpildīt tieši šīs markas modeļus. */
 export function fillMissingModelFromBrand(filter: EcarstradeSearchFilter, brandModel: string): EcarstradeSearchFilter {
   const pending = resolvePendingModels(filter);
-  if (pending.makeIds.length !== 1 || pending.modelIds.length || pending.modelId) return pending;
+  if (!pending.makeIds.length) return pending;
   const pairs = resolveMakeModelPairsFromBrand(brandModel);
-  const pair = pairs.find((p) => p.make.id === pending.makeIds[0] && p.models.length);
-  if (!pair) return pending;
   const next = cloneEcarstradeFilter(pending);
-  for (const model of pair.models) pushResolvedModel(next, model);
-  return next;
+  let added = false;
+  for (const makeId of next.makeIds) {
+    if (next.modelIds.some((id) => makeOwnsModelId(makeId, id))) continue;
+    const pair = pairs.find((p) => p.make.id === makeId && p.models.length);
+    if (!pair) continue;
+    for (const model of pair.models) pushResolvedModel(next, model);
+    added = true;
+  }
+  return added ? next : pending;
 }
 
 function applySharedBrandCriteria(target: EcarstradeSearchFilter, shared: EcarstradeSearchFilter): void {
@@ -978,10 +1028,9 @@ export function filterFromOrderFields(fields: OrderSearchFields): EcarstradeSear
 export function fillFilterGaps(filter: EcarstradeSearchFilter, extra: EcarstradeSearchFilter): EcarstradeSearchFilter {
   const makeIds = filter.makeIds.length ? [...filter.makeIds] : [...extra.makeIds];
   const makeNames = filter.makeIds.length ? [...filter.makeNames] : [...extra.makeNames];
-  const multi = makeIds.length > 1;
-  const modelIds = multi ? [] : filter.modelIds.length ? [...filter.modelIds] : [...extra.modelIds];
-  const modelId = multi ? null : filter.modelId ?? extra.modelId ?? modelIds[0] ?? null;
-  const modelName = multi ? "" : filter.modelName || extra.modelName;
+  const modelIds = filter.modelIds.length ? [...filter.modelIds] : [...extra.modelIds];
+  const modelId = filter.modelId ?? extra.modelId ?? modelIds[0] ?? null;
+  const modelName = filter.modelName || extra.modelName;
   return resolvePendingModels({
     makeIds,
     makeNames,
@@ -1165,10 +1214,8 @@ export function ecarstradeSearchUrl(filter: EcarstradeSearchFilter): string | nu
   if (filter.makeIds.length === 0) return null;
   const parts: string[] = [];
   for (const id of filter.makeIds) appendQuery(parts, "mark[]", String(id));
-  if (filter.makeIds.length === 1) {
-    const ids = filter.modelIds.length ? filter.modelIds : filter.modelId != null ? [filter.modelId] : [];
-    for (const id of uniqNums(ids)) appendQuery(parts, "model[]", String(id));
-  }
+  const ids = filter.modelIds.length ? filter.modelIds : filter.modelId != null ? [filter.modelId] : [];
+  for (const id of uniqNums(ids)) appendQuery(parts, "model[]", String(id));
   if (filter.yearFrom != null) appendQuery(parts, "year_from", String(filter.yearFrom));
   if (filter.yearTo != null) appendQuery(parts, "year_to", String(filter.yearTo));
   if (filter.mileageFrom != null) appendQuery(parts, "mileage_from", String(filter.mileageFrom));
@@ -1200,7 +1247,7 @@ export function ecarstradeSearchUrl(filter: EcarstradeSearchFilter): string | nu
 export function ecarstradeFilterSignature(filter: EcarstradeSearchFilter): string {
   return [
     [...filter.makeIds].sort((a, b) => a - b).join(","),
-    filter.makeIds.length === 1 ? (filter.modelIds.length ? [...filter.modelIds].sort((a, b) => a - b).join(",") : filter.modelId ?? "") : "",
+    filter.modelIds.length ? [...filter.modelIds].sort((a, b) => a - b).join(",") : filter.modelId ?? "",
     filter.yearFrom ?? "",
     filter.yearTo ?? "",
     filter.mileageFrom ?? "",
