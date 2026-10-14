@@ -80,9 +80,12 @@ const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybil
 const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, match: starts("/admin/iriss/sludinajumi") };
 const I_REPORT: Item = { href: "/admin/iriss/atskaite", label: L.irissReport, icon: CalendarRange, match: starts("/admin/iriss/atskaite") };
 
+/** Tā pati VIN pārbaudes lapa arī IRISS izvēlnē (dublēts ieraksts). */
+const I_VIN: Item = { ...VIN, label: L.vinScan };
+
 export const ADMIN_NAV_GROUPS: Group[] = [
   { title: L.groupPro, items: [MORNING, SAKUMS, VIN, FAST] },
-  { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_REPORT, I_WAYBILLS] },
+  { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_VIN, I_REPORT, I_WAYBILLS] },
   {
     title: L.groupWeb,
     items: [
@@ -99,6 +102,55 @@ export const ADMIN_NAV_GROUPS: Group[] = [
     ],
   },
 ];
+
+/** PRO un IRISS izvēlnes nejaucas: katrai darba zonai savas grupas. */
+export type AdminWorkspace = "pro" | "iriss";
+const WS_GROUPS: Record<AdminWorkspace, Group[]> = {
+  pro: ADMIN_NAV_GROUPS.filter((g) => g.title !== L.groupIriss),
+  iriss: ADMIN_NAV_GROUPS.filter((g) => g.title === L.groupIriss),
+};
+export const ADMIN_WS_COOKIE = "admin_ws";
+/** Lapas, kas pieder abām zonām — zonu nosaka pēdējā izvēle. */
+const SHARED_PATHS = ["/admin/vin-scan"];
+
+function readWsCookie(): AdminWorkspace | null {
+  if (typeof document === "undefined") return null;
+  const m = /(?:^|; )admin_ws=(pro|iriss)/.exec(document.cookie);
+  return m ? (m[1] as AdminWorkspace) : null;
+}
+function writeWsCookie(ws: AdminWorkspace) {
+  document.cookie = `${ADMIN_WS_COOKIE}=${ws}; Path=/admin; Max-Age=31536000; SameSite=Lax`;
+}
+
+/** Zona no URL; kopīgām lapām — pēdējā izmantotā (sīkdatne, lai /admin pēc pieteikšanās atver to pašu). */
+export function useAdminWorkspace(): AdminWorkspace {
+  const pathname = usePathname() || "";
+  const shared = SHARED_PATHS.some((p) => pathname.startsWith(p));
+  const fromPath: AdminWorkspace = pathname.startsWith("/admin/iriss") ? "iriss" : "pro";
+  const [stored, setStored] = useState<AdminWorkspace | null>(null);
+  useEffect(() => {
+    if (shared) setStored(readWsCookie());
+    else writeWsCookie(fromPath);
+  }, [shared, fromPath, pathname]);
+  return shared ? (stored ?? "pro") : fromPath;
+}
+
+function WorkspaceSwitch({ ws }: { ws: AdminWorkspace }) {
+  const seg = (on: boolean) =>
+    `admin-nav-link flex h-7 flex-1 items-center justify-center rounded-md text-[12px] font-semibold tracking-wide transition ${
+      on ? "bg-white text-[var(--color-apple-text)] shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#8e8e93] hover:text-[var(--color-apple-text)]"
+    }`;
+  return (
+    <div className="flex gap-0.5 rounded-lg bg-[#f2f2f7] p-0.5" role="tablist" aria-label="Darba zona">
+      <Link href="/admin/dashboard" onClick={() => writeWsCookie("pro")} className={seg(ws === "pro")} aria-current={ws === "pro" ? "page" : undefined}>
+        PRO
+      </Link>
+      <Link href="/admin/iriss/pasutijumi" onClick={() => writeWsCookie("iriss")} className={seg(ws === "iriss")} aria-current={ws === "iriss" ? "page" : undefined}>
+        IRISS
+      </Link>
+    </div>
+  );
+}
 
 const STORAGE_KEY = "admin-sidebar-collapsed";
 
@@ -278,6 +330,7 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
   const pathname = usePathname() || "";
   const badges = useBadges();
   const offer = useNewIrissOffer();
+  const ws = useAdminWorkspace();
   return (
     <aside
       className={`sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-[#e5e5ea] bg-white transition-[width] duration-200 md:flex ${collapsed ? "w-[64px]" : "w-[232px]"}`}
@@ -299,8 +352,13 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
           {collapsed ? <ChevronsRight className="h-4 w-4" aria-hidden /> : <ChevronsLeft className="h-4 w-4" aria-hidden />}
         </button>
       </div>
+      {collapsed ? null : (
+        <div className="shrink-0 px-2.5 pb-1">
+          <WorkspaceSwitch ws={ws} />
+        </div>
+      )}
       <nav className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-3 [scrollbar-width:thin]">
-        {ADMIN_NAV_GROUPS.map((g) => (
+        {WS_GROUPS[ws].map((g) => (
           <div key={g.title} className="mt-2 first:mt-0">
             {collapsed ? (
               <div className="mx-auto my-2 h-px w-6 bg-[#e5e5ea] first:hidden" aria-hidden />
@@ -359,8 +417,9 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
 }
 
 /** Mobilā apakšējā cilņu josla: 4 konteksta cilnes + „Vairāk” (pilns grupētais saraksts apakšējā lapā). */
-export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" }) {
+export function AdminMobileTabBar(_props: { workspace?: AdminWorkspace }) {
   const pathname = usePathname() || "";
+  const workspace = useAdminWorkspace();
   const badges = useBadges();
   const offer = useNewIrissOffer();
   const [more, setMore] = useState(false);
@@ -378,6 +437,7 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
   }, [more]);
 
   const PRO_HUB: Item = { href: "/admin/dashboard", label: "PRO", icon: LayoutGrid, match: () => false };
+  // I_SCAN (Radars) cilnēs paliek; VIN pārbaude IRISS zonā pieejama „Vairāk” izvēlnē.
   const IRISS_HUB: Item = { href: "/admin/iriss/pasutijumi", label: "IRISS", icon: Car, match: starts("/admin/iriss") };
   const tabs: Item[] = workspace === "iriss" ? [I_HOME, I_LIST, I_SCAN, PRO_HUB] : [SAKUMS, VIN, FAST, IRISS_HUB];
   const inTabs = tabs.some((t) => t.match(pathname));
@@ -417,7 +477,10 @@ export function AdminMobileTabBar({ workspace }: { workspace: "pro" | "iriss" })
           <button type="button" aria-label="Aizvērt" className="absolute inset-0 bg-black/35" onClick={() => setMore(false)} />
           <div className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-2xl bg-white px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 shadow-2xl">
             <div className="mx-auto mb-1 h-1.5 w-9 rounded-full bg-[#d1d1d6]" aria-hidden />
-            {ADMIN_NAV_GROUPS.map((g) => (
+            <div className="px-1 pt-2">
+              <WorkspaceSwitch ws={workspace} />
+            </div>
+            {WS_GROUPS[workspace].map((g) => (
               <div key={g.title}>
                 <p className="px-2 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">{g.title}</p>
                 <div className="overflow-hidden rounded-xl bg-[#f2f2f7]">
