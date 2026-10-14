@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { fetchAsvProducts } from "@/lib/asv-oneauto-api";
 import { parseAsvProductIds } from "@/lib/asv-catalog";
+import { normalizeAsvBlock } from "@/lib/asv-report";
 import { getOneautoApiConfig } from "@/lib/oneauto-api";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
   const sessionRaw = typeof o.sessionId === "string" ? o.sessionId.trim() : "";
   const sessionId = sessionRaw && isSafeOrderDraftSessionId(sessionRaw) ? sessionRaw : undefined;
   const reportId = typeof o.reportId === "string" ? o.reportId.trim().slice(0, 80) : "";
+  const prev = normalizeAsvBlock(o.block);
 
   try {
     const fetched = await fetchAsvProducts({
@@ -47,6 +49,7 @@ export async function POST(req: Request) {
       products,
       sessionId,
       reportId: reportId || undefined,
+      prev,
     });
     const allFailed = products.every(
       (id) => fetched.results[id]?.ok === false && fetched.results[id]?.error !== "no_data",

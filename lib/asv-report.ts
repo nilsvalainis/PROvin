@@ -9,6 +9,12 @@ import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import type { AsvPhotoGroup, AsvPhotoMeta } from "@/lib/asv-photo-types";
 import { normalizeAsvPhotoGroups, syncAsvPhotoGroupsAndFlat } from "@/lib/asv-photo-types";
+import type {
+  AsvDataSourceId,
+  AsvOverlapCompareRow,
+  AsvSourceAttribution,
+  AsvSourceSnapshots,
+} from "@/lib/asv-source-types";
 import {
   ccVinAlertChecks,
   ccVinAmountToEurDisplay,
@@ -61,6 +67,24 @@ export type AsvTitleRow = CcVinTitleRow;
 export type AsvSaleRow = CcVinSaleRow;
 export type AsvPdfChecklist = CcVinPdfChecklist;
 
+export type AsvJojIngest = {
+  lastFetchedVin: string;
+  fetchedAt: string;
+  lastCostUsd: string;
+  status: "found" | "none" | "skipped" | "unknown";
+  summary: string;
+};
+
+export function emptyAsvJojIngest(): AsvJojIngest {
+  return {
+    lastFetchedVin: "",
+    fetchedAt: "",
+    lastCostUsd: "",
+    status: "unknown",
+    summary: "",
+  };
+}
+
 export type AsvBlockState = {
   reportDate: string;
   attentionMarks: string;
@@ -71,6 +95,13 @@ export type AsvBlockState = {
   lastCostUsd: string;
   lastFetchedVin: string;
   fetchedAt: string;
+  /** JoJ Copart/IAAI ielādes metadati (atsevišķi no OneAuto VIN Audit). */
+  jojIngest?: AsvJojIngest;
+  /** Avotu datu slāņi (admin / nākotnes avota pārslēgšanai). */
+  sources?: AsvSourceSnapshots;
+  /** Pārklājošie lauki abos avotos (salīdzinājuma tabula PDF). */
+  overlapCompare?: AsvOverlapCompareRow[];
+  sourceAttribution?: AsvSourceAttribution;
   checks: AsvCheckRow[];
   mileage: AutoRecordsServiceRow[];
   damages: AsvDamageRow[];
@@ -122,6 +153,7 @@ export function emptyAsvBlock(): AsvBlockState {
     lastCostUsd: "",
     lastFetchedVin: "",
     fetchedAt: "",
+    jojIngest: emptyAsvJojIngest(),
     checks: [],
     mileage: [emptyAsvMileageRow()],
     damages: [emptyAsvDamageRow()],
@@ -199,6 +231,89 @@ function arr(raw: unknown): unknown[] {
 
 function rowObj(raw: unknown): Record<string, unknown> {
   return raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+}
+
+function normalizeAsvSources(raw: unknown): AsvSourceSnapshots | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const pickBundle = (b: unknown) => {
+    if (!b || typeof b !== "object") return undefined;
+    const x = b as Record<string, unknown>;
+    return {
+      reportDate: str(x.reportDate, 40),
+      attentionMarks: str(x.attentionMarks, 40),
+      ownersCount: str(x.ownersCount, 20),
+      checks: arr(x.checks) as AsvCheckRow[],
+      mileage: arr(x.mileage) as AutoRecordsServiceRow[],
+      damages: arr(x.damages) as AsvDamageRow[],
+      brands: arr(x.brands) as AsvRecordRow[],
+      titles: arr(x.titles) as AsvTitleRow[],
+      sales: arr(x.sales) as AsvSaleRow[],
+      liens: arr(x.liens) as AsvRecordRow[],
+      thefts: arr(x.thefts) as AsvRecordRow[],
+      notes: arr(x.notes).map((n) => str(n, 4000)).filter(Boolean),
+    };
+  };
+  const oneauto = pickBundle(o.oneauto);
+  const joj = pickBundle(o.joj);
+  if (!oneauto && !joj) return undefined;
+  return { ...(oneauto ? { oneauto } : {}), ...(joj ? { joj } : {}) };
+}
+
+function normalizeAsvOverlapCompare(raw: unknown): AsvOverlapCompareRow[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const out: AsvOverlapCompareRow[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const r = item as Record<string, unknown>;
+    const strongerRaw = str(r.stronger, 12);
+    const stronger: AsvOverlapCompareRow["stronger"] =
+      strongerRaw === "joj" || strongerRaw === "oneauto" || strongerRaw === "tie" ? strongerRaw : "tie";
+    const chosenRaw = str(r.chosen, 12);
+    const chosen: AsvOverlapCompareRow["chosen"] = chosenRaw === "joj" ? "joj" : "oneauto";
+    out.push({
+      field: str(r.field, 120),
+      oneauto: str(r.oneauto, 400),
+      joj: str(r.joj, 400),
+      stronger,
+      chosen,
+    });
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function normalizeAsvSourceAttribution(raw: unknown): AsvSourceAttribution | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const scalarsRaw = o.scalars && typeof o.scalars === "object" ? (o.scalars as Record<string, unknown>) : {};
+  const pickSrc = (v: unknown): AsvDataSourceId | undefined => (str(v, 12) === "joj" ? "joj" : str(v, 12) === "oneauto" ? "oneauto" : undefined);
+  const defaultSource: AsvDataSourceId = str(o.defaultSource, 12) === "joj" ? "joj" : "oneauto";
+  return {
+    defaultSource,
+    scalars: {
+      reportDate: pickSrc(scalarsRaw.reportDate),
+      attentionMarks: pickSrc(scalarsRaw.attentionMarks),
+      ownersCount: pickSrc(scalarsRaw.ownersCount),
+    },
+  };
+}
+
+function normalizeAsvJojIngest(raw: unknown): AsvJojIngest {
+  const e = emptyAsvJojIngest();
+  if (!raw || typeof raw !== "object") return e;
+  const o = raw as Record<string, unknown>;
+  const statusRaw = str(o.status, 20);
+  const status: AsvJojIngest["status"] =
+    statusRaw === "found" || statusRaw === "none" || statusRaw === "skipped" || statusRaw === "unknown"
+      ? statusRaw
+      : e.status;
+  return {
+    lastFetchedVin: str(o.lastFetchedVin, 20),
+    fetchedAt: str(o.fetchedAt, 40),
+    lastCostUsd: str(o.lastCostUsd, 20),
+    status,
+    summary: str(o.summary, 400),
+  };
 }
 
 export function normalizeAsvBlock(raw: unknown): AsvBlockState {
@@ -282,6 +397,10 @@ export function normalizeAsvBlock(raw: unknown): AsvBlockState {
     lastCostUsd: str(o.lastCostUsd, 20),
     lastFetchedVin: str(o.lastFetchedVin, 20),
     fetchedAt: str(o.fetchedAt, 40),
+    jojIngest: normalizeAsvJojIngest(o.jojIngest),
+    sources: normalizeAsvSources(o.sources),
+    overlapCompare: normalizeAsvOverlapCompare(o.overlapCompare),
+    sourceAttribution: normalizeAsvSourceAttribution(o.sourceAttribution),
     checks,
     mileage: withFallback(mileage, emptyAsvMileageRow),
     damages: withFallback(damages, emptyAsvDamageRow),

@@ -4996,6 +4996,7 @@ export function OrderDetailWorkspace({
               onPhotoGroupsStructuralCommit={commitAsvPhotoGroupsStructural}
               onGenerateAsvPdf={() => void openPrintReport({ asvOnly: true })}
               orderVin={payload.vin ?? ""}
+              listingUrl={payload.listingUrl ?? ""}
             />
           </div>
         ) : null}
