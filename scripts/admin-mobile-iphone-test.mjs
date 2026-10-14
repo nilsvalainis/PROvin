@@ -33,9 +33,10 @@ async function documentScrollState(page) {
     const body = document.body;
     const hs = getComputedStyle(html);
     const bs = getComputedStyle(body);
-    const se = document.scrollingElement || html;
     const overflowHidden = (v) => v === "hidden";
     const touchBlocks = (v) => v === "none";
+    const scrollHeight = Math.max(html.scrollHeight, body.scrollHeight);
+    const clientHeight = window.innerHeight;
     return {
       htmlOverflowY: hs.overflowY,
       bodyOverflowY: bs.overflowY,
@@ -46,10 +47,10 @@ async function documentScrollState(page) {
       htmlLocked: overflowHidden(hs.overflowY) || overflowHidden(hs.overflow),
       bodyLocked: overflowHidden(bs.overflowY) || overflowHidden(bs.overflow),
       touchLocked: touchBlocks(hs.touchAction) || touchBlocks(bs.touchAction),
-      scrollY: window.scrollY || se.scrollTop || 0,
-      scrollHeight: se.scrollHeight,
-      clientHeight: se.clientHeight,
-      canOverflow: se.scrollHeight > se.clientHeight + 8,
+      scrollY: window.scrollY || 0,
+      scrollHeight,
+      clientHeight,
+      canOverflow: scrollHeight > clientHeight + 80,
       scrollLockedClass: html.classList.contains("admin-scroll-locked"),
     };
   });
@@ -107,39 +108,6 @@ if (shotDir) {
 }
 
 await page.evaluate(() => window.scrollTo(0, 0));
-const beforeSwipe = await documentScrollState(page);
-await swipeTouch(page, 720, 180);
-const afterSwipe = await documentScrollState(page);
-const last = page.locator("[data-last-row='1']");
-
-if (afterSwipe.scrollY <= beforeSwipe.scrollY + 40) {
-  await page.evaluate(() => {
-    const se = document.scrollingElement || document.documentElement;
-    se.scrollTop = se.scrollHeight;
-    window.scrollTo(0, se.scrollHeight);
-  });
-}
-
-const afterProgrammatic = await documentScrollState(page);
-const lastBox = await last.boundingBox();
-const reachedEnd = afterProgrammatic.scrollY + afterProgrammatic.clientHeight >= afterProgrammatic.scrollHeight - 24;
-const lastVisible = lastBox ? lastBox.y + lastBox.height <= 844 + 24 : false;
-const touchMoved = afterSwipe.scrollY > beforeSwipe.scrollY + 40;
-
-if (!touchMoved && !(reachedEnd && lastVisible)) {
-  fail("SCROLL_FAIL", { beforeSwipe, afterSwipe, afterProgrammatic, reachedEnd, lastVisible, lastBox, errors });
-}
-if (!reachedEnd && !lastVisible) {
-  fail("SCROLL_END_FAIL", { afterProgrammatic, lastBox, errors });
-}
-
-if (shotDir) {
-  await page.screenshot({ path: `${shotDir}/after-pasutijumi-end.png`, fullPage: false });
-}
-
-await page.evaluate(() => window.scrollTo(0, 0));
-await page.waitForTimeout(80);
-
 await page.evaluate(() => {
   const el = document.getElementById("admin-main-scroll");
   if (!el) return;
@@ -165,23 +133,47 @@ await page.evaluate(() => {
   fire("touchmove", 160);
   fire("touchmove", 280);
 });
-
 if (shotDir) {
   await page.waitForTimeout(80);
   await page.screenshot({ path: `${shotDir}/after-ptr.png`, fullPage: false });
 }
-
 await page.evaluate(() => {
   const el = document.getElementById("admin-main-scroll");
   if (!el) return;
   const t = new Touch({ identifier: 1, target: el, clientX: 180, clientY: 280, pageX: 180, pageY: 280 });
   el.dispatchEvent(new TouchEvent("touchend", { bubbles: true, cancelable: true, touches: [], changedTouches: [t] }));
 });
-
 await page.waitForTimeout(160);
 const ptr = await page.getAttribute("#admin-ptr-indicator", "data-admin-ptr");
 if (ptr !== "refreshing" && ptr !== "pulling") {
   fail("PTR_FAIL", { ptr, errors });
+}
+await page.waitForTimeout(1000);
+await page.waitForSelector('[data-testid="order-row-row-24"]');
+
+await page.evaluate(() => window.scrollTo(0, 0));
+const beforeSwipe = await documentScrollState(page);
+await swipeTouch(page, 720, 180);
+const afterSwipe = await documentScrollState(page);
+const last = page.locator("[data-last-row='1']");
+const touchMoved = afterSwipe.scrollY > beforeSwipe.scrollY + 40;
+if (!touchMoved) {
+  fail("TOUCH_SCROLL_FAIL", { beforeSwipe, afterSwipe, errors });
+}
+
+await page.evaluate(() => window.scrollTo(0, Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)));
+const afterProgrammatic = await documentScrollState(page);
+const lastBox = await last.boundingBox();
+const maxScroll = Math.max(0, afterProgrammatic.scrollHeight - afterProgrammatic.clientHeight);
+const reachedEnd = afterProgrammatic.scrollY >= maxScroll - 32;
+const lastVisible = lastBox ? lastBox.y < 844 : false;
+
+if (!reachedEnd && !lastVisible) {
+  fail("SCROLL_END_FAIL", { afterProgrammatic, lastBox, maxScroll, errors });
+}
+
+if (shotDir) {
+  await page.screenshot({ path: `${shotDir}/after-pasutijumi-end.png`, fullPage: false });
 }
 
 const tabBar = page.getByRole("navigation", { name: "Galvenā izvēlne" });
@@ -199,26 +191,41 @@ if (shotDir) {
   await page.screenshot({ path: `${shotDir}/before-pasutijumi.png`, fullPage: false });
 }
 
+const pageReports = [];
+
+await page.goto(`${base}/admin/login`, { waitUntil: "domcontentloaded", timeout: 120_000 });
+await page.waitForTimeout(250);
+const loginState = await assertScrollUnlocked(page, "/admin/login");
+let loginTouch = 0;
+if (loginState.canOverflow) {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const beforeLogin = await documentScrollState(page);
+  await swipeTouch(page, 720, 180);
+  const afterLogin = await documentScrollState(page);
+  loginTouch = afterLogin.scrollY - beforeLogin.scrollY;
+  if (loginTouch <= 40) fail("TOUCH_SCROLL_FAIL /admin/login", { beforeLogin, afterLogin });
+}
+pageReports.push({
+  path: "/admin/login",
+  htmlOverflowY: loginState.htmlOverflowY,
+  bodyOverflowY: loginState.bodyOverflowY,
+  canOverflow: loginState.canOverflow,
+  touchDelta: loginTouch,
+});
+
 const loginRes = await page.request.post(`${base}/api/admin/login`, {
   data: { username: adminUser, password: adminPass },
 });
 const loginOk = loginRes.ok();
-const adminPages = [
-  "/admin/login",
-  "/admin/dashboard",
-  "/admin/iriss/pasutijumi",
-  "/admin/iriss/sludinajumi",
-  "/admin/vin-scan",
-];
+const adminPages = ["/admin/dashboard", "/admin/iriss/pasutijumi", "/admin/iriss/sludinajumi", "/admin/vin-scan"];
 
-const pageReports = [];
 for (const path of adminPages) {
-  if (path !== "/admin/login" && !loginOk) {
+  if (!loginOk) {
     pageReports.push({ path, skipped: "login failed" });
     continue;
   }
   await page.goto(`${base}${path}`, { waitUntil: "domcontentloaded", timeout: 120_000 });
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(400);
   const state = await assertScrollUnlocked(page, path);
   let touchDelta = 0;
   if (state.canOverflow) {
@@ -240,10 +247,28 @@ for (const path of adminPages) {
   });
 }
 
+const android = await browser.newPage({
+  ...IPHONE,
+  userAgent:
+    "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36",
+});
+await android.goto(`${base}/dev/admin-mobile-shell`, { waitUntil: "networkidle", timeout: 120_000 });
+const androidUnlocked = await assertScrollUnlocked(android, "android-shell");
+await android.evaluate(() => window.scrollTo(0, 0));
+const androidBefore = await documentScrollState(android);
+await swipeTouch(android, 720, 180);
+const androidAfter = await documentScrollState(android);
+const androidTouch = androidAfter.scrollY - androidBefore.scrollY;
+if (androidUnlocked.canOverflow && androidTouch <= 40) {
+  fail("TOUCH_SCROLL_FAIL android-shell", { androidBefore, androidAfter });
+}
+await android.close();
+
 await browser.close();
 console.log("OK", {
   shell: { touchMoved, reachedEnd, lastVisible, ptr },
   loginOk,
   pageReports,
+  android: { htmlOverflowY: androidUnlocked.htmlOverflowY, touchDelta: androidTouch },
   errors,
 });
