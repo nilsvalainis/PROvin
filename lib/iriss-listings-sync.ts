@@ -110,7 +110,7 @@ async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
       pauseMinMs: 700,
       pauseMaxMs: 1_800,
     });
-    let vehicles = r.vehicles.map((v) => ({
+    let vehicles: IrissFetchedVehicle[] = r.vehicles.map((v) => ({
       id: irissListingVehicleId("ecarstrade", v.externalId),
       platform: "ecarstrade" as const,
       externalId: v.externalId,
