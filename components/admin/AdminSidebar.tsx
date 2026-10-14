@@ -26,6 +26,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { IrissPavadzimesSidebarCard } from "@/components/admin/IrissPavadzimesSidebarCard";
 
 /** Variants A: grupēta kreisā sānjosla visiem admin paneļiem (PRO + IRISS). Mobilajā — apakšējā cilņu josla + „Vairāk”. */
 
@@ -400,6 +401,7 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
             })}
           </div>
         ))}
+        {ws === "iriss" && !collapsed ? <IrissPavadzimesSidebarCard /> : null}
       </nav>
       <div className={`shrink-0 border-t border-[#e5e5ea] p-2.5 ${collapsed ? "flex justify-center" : ""}`}>
         <button

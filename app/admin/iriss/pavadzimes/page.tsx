@@ -1,12 +1,21 @@
-export const metadata = { title: "Pavadzīmes" };
+import { IrissPavadzimesListClient } from "@/components/admin/IrissPavadzimesListClient";
+import { loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
 
-export default function IrissPavadzimesPage() {
+export const metadata = { title: "Pavadzīmes" };
+export const dynamic = "force-dynamic";
+export const maxDuration = 120;
+
+export default async function IrissPavadzimesPage() {
+  let data: Awaited<ReturnType<typeof loadIrissPavadzimesPageData>>;
+  try {
+    data = await loadIrissPavadzimesPageData();
+  } catch {
+    data = { rows: [], pendingParse: 0, dropboxConfigured: false, dropboxError: "Neizdevās ielādēt" };
+  }
+
   return (
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">
-      <div className="mx-auto mt-16 max-w-sm px-6 text-center">
-        <p className="text-[17px] font-semibold text-[var(--color-apple-text)]">Pavadzīmes</p>
-        <p className="mt-1 text-[13px] text-[#8e8e93]">Drīzumā</p>
-      </div>
+      <IrissPavadzimesListClient initial={data} />
     </div>
   );
 }
