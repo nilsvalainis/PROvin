@@ -5,7 +5,12 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { ecarstradeAuthCookieHeader, fetchEcarstradeSource, parseEcarstradeLoginBody } from "@/lib/iriss-listings-ecarstrade-fetch";
+import {
+  ECARSTRADE_SESSION_ACTIVATE_PATH,
+  ECARSTRADE_SESSION_WARMUP_PATH,
+  fetchEcarstradeSource,
+  parseEcarstradeLoginBody,
+} from "@/lib/iriss-listings-ecarstrade-fetch";
 
 const FIX = join(dirname(fileURLToPath(import.meta.url)), "__fixtures__", "iriss-ecarstrade");
 const SRC = "https://ecarstrade.com/search?mark[]=68";
@@ -27,7 +32,9 @@ function apiPage(ids: string[], extra = ""): string {
   return parts.join("") + extra;
 }
 
-function fetchMock(handler: (url: string, init?: RequestInit) => { status: number; body: string } | Error) {
+function fetchMock(
+  handler: (url: string, init?: RequestInit) => { status: number; body: string; setCookie?: string[] } | Error,
+) {
   const calls: Array<{ url: string; cookie: string; method: string; auth: string }> = [];
   const impl = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
@@ -40,7 +47,9 @@ function fetchMock(handler: (url: string, init?: RequestInit) => { status: numbe
     });
     const r = handler(url, init);
     if (r instanceof Error) throw r;
-    return new Response(r.body, { status: r.status });
+    const out = new Headers();
+    for (const line of r.setCookie ?? []) out.append("Set-Cookie", line);
+    return new Response(r.body, { status: r.status, headers: out });
   }) as unknown as typeof fetch;
   return { impl, calls };
 }
@@ -97,12 +106,17 @@ describe("fetchEcarstradeSource", () => {
     });
     expect(r.status).toBe("ok");
     expect(r.loggedIn).toBe(true);
-    expect(calls[0]!.url).toBe("https://ecarstrade.com/api/v1/auth/login");
-    expect(calls[0]!.method).toBe("POST");
+    expect(calls[0]!.url).toBe(`https://ecarstrade.com${ECARSTRADE_SESSION_WARMUP_PATH}`);
+    const loginCall = calls.find((c) => c.url.includes("/api/v1/auth/login"));
+    expect(loginCall?.method).toBe("POST");
     expect(accepts[0]).toMatch(/application\/json/);
     expect(JSON.parse(bodies[0]!)).toEqual({ username: "sia-iriss@inbox.lv", password: "x" });
     expect(bodies[0]).not.toContain("email");
-    expect(calls[1]!.cookie).toBe(ecarstradeAuthCookieHeader("tok-a", "tok-r"));
+    const activate = calls.find((c) => c.url === `https://ecarstrade.com${ECARSTRADE_SESSION_ACTIVATE_PATH}`);
+    expect(activate?.cookie).toContain("eCT/user=tok-a");
+    expect(activate?.cookie).toContain("eCT/refresh-token=tok-r");
+    const apiCall = calls.find((c) => c.url.includes("future_api.php"));
+    expect(apiCall?.cookie).toContain("eCT/user=tok-a");
     expect(r.vehicles[0]!.externalId).toBe("9");
   });
 
@@ -167,5 +181,87 @@ describe("fetchEcarstradeSource", () => {
     expect(carCall?.auth).toBe("Bearer tok-a");
     expect(carCall?.cookie).toContain("eCT/user=tok-a");
     expect(r.note).toMatch(/Cenas no \/api\/v1\/cars/);
+  });
+
+  it("keeps PIRKT 16200 from logged-in future_api HTML when /api/v1/cars is a Cloudflare 403", async () => {
+    const html = readFileSync(join(FIX, "card-tucson-loggedin.html"), "utf8");
+    const page =
+      "{}" +
+      JSON.stringify({
+        status: "200",
+        car_id: "7602956",
+        data: { id: "7602956", max_bid: null, close_date: "31 Dec 2036 23:59", close_time: false },
+        result: Buffer.from(html, "utf8").toString("base64"),
+      });
+    const { impl, calls } = fetchMock((url) => {
+      if (url.includes("/api/v1/auth/login")) {
+        return { status: 200, body: JSON.stringify({ data: { accessToken: "tok-a", refreshToken: "tok-r" } }) };
+      }
+      if (url.includes("/setsession.php")) {
+        return { status: 200, body: "", setCookie: ["eCT/PHPSESSID=sess1; Path=/; Domain=.ecarstrade.com"] };
+      }
+      if (url.includes("/api/v1/cars/") || /\/cars\/\d+/.test(url)) {
+        return { status: 403, body: "<html><title>Just a moment...</title></html>" };
+      }
+      return { status: 200, body: page };
+    });
+    const r = await fetchEcarstradeSource(SRC, {
+      ...opts,
+      fetchImpl: impl,
+      env: { ECARSTRADE_USER: "sia-iriss@inbox.lv", ECARSTRADE_PASS: "x" },
+    });
+    expect(r.status).toBe("ok");
+    expect(r.loggedIn).toBe(true);
+    expect(r.vehicles[0]).toMatchObject({ externalId: "7602956", priceBuyNow: 16200, priceCurrent: null });
+    expect(r.note).toMatch(/future_api kartītēm/i);
+    expect(calls.some((c) => c.url.includes("/api/v1/cars/"))).toBe(false);
+  });
+
+  it("does not abort the run when /api/v1/cars is Cloudflare 403 and future_api stayed public", async () => {
+    let jsonHits = 0;
+    const { impl } = fetchMock((url) => {
+      if (url.includes("/api/v1/auth/login")) {
+        return { status: 200, body: JSON.stringify({ data: { accessToken: "tok-a", refreshToken: "tok-r" } }) };
+      }
+      if (url.includes("/api/v1/cars/")) {
+        jsonHits += 1;
+        return { status: 403, body: "<html><title>Just a moment...</title></html>" };
+      }
+      if (/\/cars\/7602956/.test(url)) {
+        return { status: 403, body: "<html><title>Just a moment...</title></html>" };
+      }
+      return { status: 200, body: tucsonPublicPage() };
+    });
+    const r = await fetchEcarstradeSource(SRC, {
+      ...opts,
+      fetchImpl: impl,
+      env: { ECARSTRADE_USER: "sia-iriss@inbox.lv", ECARSTRADE_PASS: "x" },
+    });
+    expect(r.status).toBe("ok");
+    expect(r.loggedIn).toBe(true);
+    expect(r.vehicles[0]?.priceBuyNow).toBeNull();
+    expect(jsonHits).toBe(1);
+    expect(r.note).toMatch(/Cloudflare/i);
+    expect(r.note).toMatch(/publisks|Sign in to buy/i);
+  });
+
+  it("forwards PHPSESSID from warmup onto future_api after login", async () => {
+    const { impl, calls } = fetchMock((url) => {
+      if (url.includes("/setsession.php")) {
+        return { status: 200, body: "", setCookie: ["eCT/PHPSESSID=abcSession; Path=/"] };
+      }
+      if (url.includes("/api/v1/auth/login")) {
+        return { status: 200, body: JSON.stringify({ data: { accessToken: "tok-a", refreshToken: "tok-r" } }) };
+      }
+      return { status: 200, body: apiPage(["9"]) };
+    });
+    await fetchEcarstradeSource(SRC, {
+      ...opts,
+      fetchImpl: impl,
+      env: { ECARSTRADE_USER: "sia-iriss@inbox.lv", ECARSTRADE_PASS: "x" },
+    });
+    const apiCall = calls.find((c) => c.url.includes("future_api.php"));
+    expect(apiCall?.cookie).toContain("eCT/PHPSESSID=abcSession");
+    expect(apiCall?.cookie).toContain("eCT/user=tok-a");
   });
 });
