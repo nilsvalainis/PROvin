@@ -37,6 +37,8 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
   const [menuId, setMenuId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [ectBusy, setEctBusy] = useState(false);
+  const [ectMsg, setEctMsg] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const ordered = useMemo(() => orderRows(localRows, initialListOrder), [localRows, initialListOrder]);
   const visibleRows = useMemo(() => {
@@ -82,6 +84,39 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
     }
   }
 
+  async function appendEcarstradeLinks() {
+    if (ectBusy) return;
+    setEctBusy(true);
+    setEctMsg(null);
+    try {
+      const res = await fetch("/api/admin/iriss-scan/ecarstrade-links", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apply: true }),
+      });
+      const data = (await res.json()) as {
+        error?: string;
+        addedCount?: number;
+        updatedCount?: number;
+        saved?: IrissScanListRow[];
+      };
+      if (!res.ok) {
+        setEctMsg(data.error === "store_disabled" ? "Krātuve nav pieejama" : "eCarsTrade saišu pievienošana neizdevās");
+        return;
+      }
+      if (data.saved?.length) {
+        const byId = new Map(data.saved.map((r) => [r.id, r]));
+        setLocalRows((prev) => prev.map((row) => byId.get(row.id) ?? row));
+      }
+      const added = data.addedCount ?? 0;
+      const updated = data.updatedCount ?? 0;
+      setEctMsg(added === 0 ? "Jaunu eCarsTrade saišu nav" : `Pievienotas ${added} eCarsTrade ${added === 1 ? "saite" : "saites"} (${updated} ieraksti)`);
+    } finally {
+      setEctBusy(false);
+    }
+  }
+
   return (
     <>
       <div className="mx-auto w-full max-w-[860px] px-2 sm:px-0">
@@ -104,9 +139,19 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
                 <Search className="h-4 w-4" aria-hidden /> <span className="hidden min-[420px]:inline">Meklēt</span>
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => void appendEcarstradeLinks()}
+              disabled={ectBusy}
+              className="inline-flex h-9 items-center rounded-[10px] bg-[#e9e9ee] px-3 text-[13px] font-medium text-[#3a3a3c] disabled:opacity-40"
+              title="Pievienot eCarsTrade saites no Auto1 / Openlane / Autobid filtriem"
+            >
+              {ectBusy ? "ET…" : "eCarsTrade"}
+            </button>
           </div>
           <p className="mt-0.5 text-[11.5px] text-[#8e8e93]">
             {localRows.length} {localRows.length === 1 ? "ieraksts" : "ieraksti"} · {linkTotal} saites{query ? ` · atrasti ${visibleRows.length}` : ""}
+            {ectMsg ? ` · ${ectMsg}` : ""}
           </p>
         </header>
 

@@ -85,7 +85,9 @@ const numOrNull = (v: unknown): number | null => (typeof v === "number" && Numbe
 
 /** Vercel platformas nosaukums "openline" (vēsturisks) -> releja "openlane". */
 export function relayPlatformFor(platform: IrissListingPlatform): IrissRelayPlatform {
-  return platform === "openline" ? "openlane" : platform;
+  if (platform === "openline") return "openlane";
+  if (platform === "auto1" || platform === "autobid") return platform;
+  return "autobid";
 }
 
 export function listingPlatformFromRelay(platform: IrissRelayPlatform): IrissListingPlatform {

@@ -33,6 +33,7 @@ const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   autobid: "AUTOBID",
   openline: "OPENLANE",
   auto1: "AUTO1",
+  ecarstrade: "ECARSTRADE",
 };
 
 const RECENT_WINDOW_HOURS = 36;
@@ -56,6 +57,7 @@ function recentPriceChanges(v: IrissListingVehicle, nowMs: number | null): Iriss
 function platformBadgeClass(platform: IrissListingPlatform): string {
   if (platform === "autobid") return "bg-violet-50 text-violet-800 border-violet-200/80";
   if (platform === "openline") return "bg-indigo-50 text-indigo-800 border-indigo-200/80";
+  if (platform === "ecarstrade") return "bg-emerald-50 text-emerald-800 border-emerald-200/80";
   return "bg-amber-50 text-amber-800 border-amber-200/80";
 }
 

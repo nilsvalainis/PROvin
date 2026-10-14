@@ -22,6 +22,7 @@ describe("listingOfferText", () => {
     expect(text).toContain("Audi A6 Avant");
     expect(text).toContain("Dzintarzeme Auto");
     expect(listingOfferLeaks(text, v)).toEqual([]);
+    expect(listingOfferLeaks("Piedāvājums no eCarsTrade bez cenas", v)).toEqual(["platforma"]);
     expect(listingOfferLeaks("Cena 12 700 € https://x.lv Openlane WAUZZZ4G6FN012345 Ölverlust", v)).toEqual([
       "cena",
       "saite",

@@ -60,5 +60,6 @@ describe("formatIrissListingsForAi", () => {
     expect(text).toContain("18 900 EUR");
     expect(text).toContain("123 456 km");
     expect(text).not.toContain("\u2014");
+    expect(formatIrissListingsForAi([vehicle({ title: "VOLVO EX30", platform: "ecarstrade" })])).toContain("eCarsTrade");
   });
 });

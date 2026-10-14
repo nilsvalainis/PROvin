@@ -1,5 +1,5 @@
 /**
- * PVN režīma noteikšana visām LIST platformām (Auto1, Openlane, Autobid).
+ * PVN režīma noteikšana visām LIST platformām (Auto1, Openlane, Autobid, eCarsTrade).
  *
  * Šis fails ir vienīgā vieta, kur mainīt detekciju. UI un gala cena
  * (`listingFinalPrice`) ņem `kind` + `rate`. Spec: 2026-10-09, fixtures
@@ -207,6 +207,28 @@ const AUTOBID_MARGIN_RE = /tax on difference|differenzbesteuer|diferenc[eē]t|§
 const AUTOBID_NET_EXACT_RE = /^(?:net|netto|neto)$/iu;
 const AUTOBID_NET_RE = /zzgl\.?\s*\d*\s*%?\s*mwst|plus\s*\d*\s*%?\s*vat|excl\w*\.?\s*vat|bez\s*pvn/iu;
 
+function detectEcarstradeTax(input: ListingTaxInput): ListingTax {
+  const note = (input.vatNote ?? "").trim();
+  const raw = joinRaw([note, input.countryCode ? `countryCode: ${input.countryCode}` : ""]);
+  if (input.taxDeduction === true || /VAT deductible/i.test(note)) {
+    return tax({ kind: "net", rate: null, basis: input.taxDeduction === true ? "field" : "text", raw: raw || "VAT deductible", rateFrom: "" });
+  }
+  if (input.taxDeduction === false || /VAT non-deductible|VAT not deductible/i.test(note)) {
+    return tax({ kind: "margin", rate: null, basis: input.taxDeduction === false ? "field" : "text", raw: raw || "VAT non-deductible", rateFrom: "" });
+  }
+  if (!note) {
+    return tax({ kind: "margin", rate: null, basis: "default_silent", raw, rateFrom: "" });
+  }
+  return tax({
+    kind: "margin",
+    rate: null,
+    basis: "default_unrecognised",
+    flag: "unrecognised_text",
+    raw,
+    rateFrom: "",
+  });
+}
+
 function detectAutobidTax(input: ListingTaxInput): ListingTax {
   const note = (input.vatNote ?? "").trim();
   const raw = `taxInformation: „${note}”`;
@@ -237,6 +259,7 @@ function detectAutobidTax(input: ListingTaxInput): ListingTax {
 export function detectListingTax(input: ListingTaxInput): ListingTax {
   if (input.platform === "auto1") return detectAuto1Tax(input);
   if (input.platform === "openline") return detectOpenlaneTax(input);
+  if (input.platform === "ecarstrade") return detectEcarstradeTax(input);
   return detectAutobidTax(input);
 }
 
@@ -369,11 +392,13 @@ export function computeListingVatHealth(vehicles: readonly IrissListingVehicle[]
     auto1: emptyHealth(),
     openline: emptyHealth(),
     autobid: emptyHealth(),
+    ecarstrade: emptyHealth(),
   };
   const texts: Record<IrissListingPlatform, Map<string, number>> = {
     auto1: new Map(),
     openline: new Map(),
     autobid: new Map(),
+    ecarstrade: new Map(),
   };
   for (const v of vehicles) {
     if (v.change === "gone") continue;
@@ -392,7 +417,7 @@ export function computeListingVatHealth(vehicles: readonly IrissListingVehicle[]
       texts[v.platform].set(key, (texts[v.platform].get(key) ?? 0) + 1);
     }
   }
-  for (const p of ["auto1", "openline", "autobid"] as const) {
+  for (const p of ["auto1", "openline", "autobid", "ecarstrade"] as const) {
     out[p].unrecognisedTexts = [...texts[p].entries()]
       .map(([text, count]) => ({ text, count }))
       .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
@@ -406,7 +431,8 @@ export function formatListingVatHealthLine(health: ListingVatHealthMap): string 
   const a = health.auto1;
   const o = health.openline;
   const b = health.autobid;
-  return `PVN: Auto1 ${a.margin} Margin · ${a.gross} ar PVN · ${warn(a)} ⚠ | Openlane ${o.margin} · ${o.net} NETO · ${warn(o)} ⚠ | Autobid ${b.margin} · ${b.gross} · ${warn(b)} ⚠`;
+  const e = health.ecarstrade;
+  return `PVN: Auto1 ${a.margin} Margin · ${a.gross} ar PVN · ${warn(a)} ⚠ | Openlane ${o.margin} · ${o.net} NETO · ${warn(o)} ⚠ | Autobid ${b.margin} · ${b.gross} · ${warn(b)} ⚠ | eCarsTrade ${e.net} NETO · ${e.margin} · ${warn(e)} ⚠`;
 }
 
 export function logListingVatHealth(health: ListingVatHealthMap): void {
@@ -414,6 +440,7 @@ export function logListingVatHealth(health: ListingVatHealthMap): void {
     auto1: health.auto1,
     openlane: health.openline,
     autobid: health.autobid,
+    ecarstrade: health.ecarstrade,
   });
 }
 

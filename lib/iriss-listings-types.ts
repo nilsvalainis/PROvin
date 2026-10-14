@@ -3,9 +3,12 @@
  * Avoti nāk tikai no aktīvajiem IRISS pasūtījumiem. Mobile.de šajā fāzē nav.
  */
 
-export type IrissListingPlatform = "autobid" | "openline" | "auto1";
+export type IrissListingPlatform = "autobid" | "openline" | "auto1" | "ecarstrade";
 
-export const IRISS_LISTING_PLATFORMS: readonly IrissListingPlatform[] = ["autobid", "openline", "auto1"];
+export const IRISS_LISTING_PLATFORMS: readonly IrissListingPlatform[] = ["autobid", "openline", "auto1", "ecarstrade"];
+
+/** Platformas, ko lasa caur Hetzner releju (noVNC login). eCarsTrade iet tieši no Vercel. */
+export const IRISS_RELAY_LISTING_PLATFORMS: readonly IrissListingPlatform[] = ["autobid", "openline", "auto1"];
 
 /** Viena meklēšanas URL nolasīšanas iznākums. */
 export type IrissListingSourceStatus =

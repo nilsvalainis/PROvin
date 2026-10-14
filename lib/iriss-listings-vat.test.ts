@@ -6,6 +6,7 @@ import {
   computeListingVatHealth,
   detectListingTax,
   EU_VAT,
+  formatListingVatHealthLine,
   listingTaxLabel,
   listingTaxResolved,
   type ListingTaxInput,
@@ -167,6 +168,20 @@ describe("defaults and flags", () => {
     expect(detectListingTax({ platform: "openline", isMargin: false, vatNote: "Margin" }).kind).toBe("net");
   });
 
+  it("eCarsTrade VAT deductible is NETO and non-deductible is Margin", () => {
+    expect(detectListingTax({ platform: "ecarstrade", taxDeduction: true, vatNote: "VAT deductible" })).toMatchObject({
+      kind: "net",
+      basis: "field",
+      flag: null,
+    });
+    expect(listingTaxLabel(detectListingTax({ platform: "ecarstrade", taxDeduction: true }))).toBe("NETO");
+    expect(detectListingTax({ platform: "ecarstrade", taxDeduction: false, vatNote: "VAT non-deductible" })).toMatchObject({
+      kind: "margin",
+      basis: "field",
+    });
+    expect(detectListingTax({ platform: "ecarstrade", vatNote: "" })).toMatchObject({ kind: "margin", basis: "default_silent" });
+  });
+
   it("manual override is marked and does not hide later detection in tooltip raw", () => {
     const v = { platform: "autobid" as const, vatNote: "Exportfahrzeug", countryCode: "DE", lastSeenAt: "" };
     const t = listingTaxResolved(v, { kind: "gross", rate: 19 });
@@ -218,5 +233,7 @@ describe("vat health", () => {
     const health = computeListingVatHealth([base]);
     expect(health.auto1.stale).toBe(1);
     expect(health.auto1.level).toBe("red");
+    expect(health.ecarstrade.total).toBe(0);
+    expect(formatListingVatHealthLine(health)).toMatch(/eCarsTrade/);
   });
 });

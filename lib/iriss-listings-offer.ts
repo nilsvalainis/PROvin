@@ -52,7 +52,7 @@ export function listingOfferLeaks(text: string, v: ListingOfferVehicle): string[
   const out: string[] = [];
   if (/€|\beur\b|\d[\s\u00a0]?\d{3}[\s\u00a0]?(?:eur|€)/i.test(text)) out.push("cena");
   if (/https?:\/\/|www\./i.test(text)) out.push("saite");
-  if (/autobid|openlane|openline|auto1/i.test(text)) out.push("platforma");
+  if (/autobid|openlane|openline|auto1|ecarstrade/i.test(text)) out.push("platforma");
   const ids = [v.vin, v.stockNumber, v.externalId].filter((x): x is string => Boolean(x && x.length >= 5));
   if (ids.some((id) => text.toUpperCase().includes(id.toUpperCase()))) out.push("ID");
   if (classifyListingDamage(text).status === "hit") out.push("bojājumi");

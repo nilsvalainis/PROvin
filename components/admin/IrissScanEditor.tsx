@@ -198,6 +198,51 @@ export function IrissScanEditor({
                 </button>
               </>
             ) : null}
+            <span className="text-[#d1d1d6]">·</span>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                void (async () => {
+                  setBusy(true);
+                  setSaveMsg(null);
+                  try {
+                    const persistId = persistedIdRef.current;
+                    const res = await fetch("/api/admin/iriss-scan/ecarstrade-links", {
+                      method: "POST",
+                      credentials: "include",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(persistId ? { apply: true, id: persistId } : { apply: false, record: rec }),
+                    });
+                    const data = (await res.json()) as { saved?: IrissScanRecord[]; addedCount?: number; results?: Array<{ added?: string[] }> };
+                    if (!res.ok) {
+                      setSaveMsg("eCarsTrade ģenerēšana neizdevās");
+                      return;
+                    }
+                    const saved = data.saved?.[0];
+                    if (persistId && saved) {
+                      setRec(saved);
+                      setDirty(false);
+                      setSaveMsg(data.addedCount ? `Pievienotas ${data.addedCount} eCarsTrade saites` : "eCarsTrade saite jau ir");
+                      return;
+                    }
+                    const added = data.results?.[0]?.added ?? [];
+                    if (added.length === 0) {
+                      setSaveMsg("Nav eCarsTrade filtra no markas vai Auto1/Openlane/Autobid");
+                      return;
+                    }
+                    const existing = rec.listingLinkEcarstrade.map((s) => s.trim()).filter(Boolean);
+                    patchRecord({ listingLinkEcarstrade: [...existing, ...added] });
+                    setSaveMsg(`Sagatavotas ${added.length} eCarsTrade saites. Saglabā.`);
+                  } finally {
+                    setBusy(false);
+                  }
+                })();
+              }}
+              className="font-semibold text-[var(--color-provin-accent)] disabled:opacity-40"
+            >
+              eCarsTrade no filtriem
+            </button>
           </div>
         </div>
 

@@ -63,11 +63,12 @@ type SourceRow = Pick<IrissPasutijumsListRow, "id" | "brandModel" | "listStatus"
   listingLinkAutobid?: unknown;
   listingLinkOpenline?: unknown;
   listingLinkAuto1?: unknown;
+  listingLinkEcarstrade?: unknown;
   listingLinksOther?: unknown;
 };
 
 /**
- * Avoti no darba statusiem (aktīvs, meklē, piedāvāts, rezervēts). Ņem visas Autobid / Openlane / Auto1
+ * Avoti no darba statusiem (aktīvs, meklē, piedāvāts, rezervēts). Ņem visas Autobid / Openlane / Auto1 / eCarsTrade
  * (un „Citi”, ja hosts ir izsole) saites. Identisks URL starp pasūtījumiem paliek viena nolasīšana.
  * Mobile.de saites šeit neiekļaujam (tās glabā un rāda formā / priekšskatījumā, bet nelasām).
  */
@@ -100,6 +101,7 @@ export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[
     pushAll(row, "autobid", row.listingLinkAutobid);
     pushAll(row, "openline", row.listingLinkOpenline);
     pushAll(row, "auto1", row.listingLinkAuto1);
+    pushAll(row, "ecarstrade", row.listingLinkEcarstrade);
     for (const other of filledIrissListingLinks(row.listingLinksOther)) {
       const url = cleanHttpUrl(other);
       if (!url) continue;

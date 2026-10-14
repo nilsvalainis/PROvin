@@ -138,7 +138,7 @@ export function sortListingVehicles<T extends Sortable>(vehicles: readonly T[], 
   return [...vehicles].sort((a, b) => compare(a, b, sort, nowMs) || a.id.localeCompare(b.id));
 }
 
-const SOURCE_ORDER: readonly IrissListingPlatform[] = ["autobid", "openline", "auto1"];
+const SOURCE_ORDER: readonly IrissListingPlatform[] = ["autobid", "openline", "auto1", "ecarstrade"];
 
 /** Tukšs saraksts nozīmē visus avotus. */
 export function parseListingSources(raw: string | null | undefined): IrissListingPlatform[] {

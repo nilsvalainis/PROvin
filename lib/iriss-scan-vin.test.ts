@@ -16,5 +16,6 @@ describe("irissScanHasOperatorContent", () => {
     expect(irissScanHasOperatorContent(rec)).toBe(false);
     expect(irissScanHasOperatorContent({ ...rec, vin: "WBAZZZ8V0K1237731" })).toBe(true);
     expect(irissScanHasOperatorContent({ ...rec, listingLinkAuto1: ["https://auto1.com/x"] })).toBe(true);
+    expect(irissScanHasOperatorContent({ ...rec, listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68"] })).toBe(true);
   });
 });

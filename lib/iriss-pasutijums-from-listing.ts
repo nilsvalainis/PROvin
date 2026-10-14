@@ -14,10 +14,11 @@ export type IrissListingOrderSeedInput = Pick<
 
 function listingLinkField(platform: IrissListingPlatform): keyof Pick<
   IrissPasutijumsRecord,
-  "listingLinkAutobid" | "listingLinkOpenline" | "listingLinkAuto1"
+  "listingLinkAutobid" | "listingLinkOpenline" | "listingLinkAuto1" | "listingLinkEcarstrade"
 > {
   if (platform === "openline") return "listingLinkOpenline";
   if (platform === "auto1") return "listingLinkAuto1";
+  if (platform === "ecarstrade") return "listingLinkEcarstrade";
   return "listingLinkAutobid";
 }
 

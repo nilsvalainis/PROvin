@@ -7,6 +7,7 @@ const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   autobid: "Autobid",
   openline: "Openlane",
   auto1: "Auto1",
+  ecarstrade: "eCarsTrade",
 };
 
 type LoginResponse = {

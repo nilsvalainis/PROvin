@@ -64,7 +64,12 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
 
 type LinkKey = keyof Pick<
   IrissPasutijumsRecord,
-  "listingLinkMobile" | "listingLinkAutobid" | "listingLinkOpenline" | "listingLinkAuto1" | "listingLinksOther"
+  | "listingLinkMobile"
+  | "listingLinkAutobid"
+  | "listingLinkOpenline"
+  | "listingLinkAuto1"
+  | "listingLinkEcarstrade"
+  | "listingLinksOther"
 >;
 
 function SourceLinkList({
@@ -162,6 +167,11 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
           label="Auto1"
           links={rec.listingLinkAuto1}
           onChange={(next) => patchLinks("listingLinkAuto1", next)}
+        />
+        <SourceLinkList
+          label="eCarsTrade"
+          links={rec.listingLinkEcarstrade}
+          onChange={(next) => patchLinks("listingLinkEcarstrade", next)}
         />
       </div>
       <div className="mt-3">

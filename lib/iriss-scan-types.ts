@@ -10,6 +10,7 @@ export type IrissScanRecord = {
   listingLinkAutobid: string[];
   listingLinkOpenline: string[];
   listingLinkAuto1: string[];
+  listingLinkEcarstrade: string[];
   listingLinksOther: string[];
 };
 
@@ -32,6 +33,7 @@ export function emptyIrissScanRecord(id: string, nowIso: string): IrissScanRecor
     listingLinkAutobid: [""],
     listingLinkOpenline: [""],
     listingLinkAuto1: [""],
+    listingLinkEcarstrade: [""],
     listingLinksOther: [""],
   };
 }

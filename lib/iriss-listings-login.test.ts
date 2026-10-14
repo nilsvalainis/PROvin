@@ -56,6 +56,7 @@ describe("parseIrissLoginRequest", () => {
     expect(parseIrissLoginRequest({ platform: "auto1", action: "start" })).toEqual({ platform: "auto1", action: "start" });
     expect(parseIrissLoginRequest({ platform: "openline", action: "close" })).toEqual({ platform: "openline", action: "close" });
     expect(parseIrissLoginRequest({ platform: "autobid", action: "verify" })).toEqual({ platform: "autobid", action: "verify" });
+    expect(parseIrissLoginRequest({ platform: "ecarstrade", action: "start" })).toMatchObject({ error: expect.stringContaining("platform") });
     expect(parseIrissLoginRequest({ platform: "openlane", action: "start" })).toMatchObject({ error: expect.stringContaining("platform") });
     expect(parseIrissLoginRequest({ platform: "auto1", action: "hack" })).toMatchObject({ error: expect.stringContaining("action") });
   });

@@ -79,7 +79,12 @@ function cloneRecord(record: IrissPasutijumsRecord): IrissPasutijumsRecord {
 
 function cloneListingLinks(row: Pick<
   IrissPasutijumsListRow,
-  "listingLinkMobile" | "listingLinkAutobid" | "listingLinkOpenline" | "listingLinkAuto1" | "listingLinksOther"
+  | "listingLinkMobile"
+  | "listingLinkAutobid"
+  | "listingLinkOpenline"
+  | "listingLinkAuto1"
+  | "listingLinkEcarstrade"
+  | "listingLinksOther"
 >) {
   return parseIrissPasutijumsListingLinks(row);
 }

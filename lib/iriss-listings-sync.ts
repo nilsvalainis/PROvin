@@ -7,6 +7,7 @@ import {
   writeIrissListingsRun,
 } from "@/lib/iriss-listings-aggregate-store";
 import { fetchAutobidSource, randomPauseMs } from "@/lib/iriss-listings-autobid-fetch";
+import { fetchEcarstradeSource } from "@/lib/iriss-listings-ecarstrade-fetch";
 import { fillListingPowerKwField, rejectExcludedIrissListings } from "@/lib/iriss-listings-exclude-rules";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
@@ -71,6 +72,55 @@ type SourceFetch = {
 };
 
 async function fetchSource(src: IrissListingSource): Promise<SourceFetch> {
+  if (src.platform === "ecarstrade") {
+    const r = await fetchEcarstradeSource(src.sourceUrl, {
+      maxPages: envInt("IRISS_LISTINGS_ECARSTRADE_MAX_PAGES", 5, 1, 25),
+      timeoutMs: envInt("IRISS_LISTINGS_FETCH_TIMEOUT_MS", 18_000, 8_000, 60_000),
+      pauseMinMs: 700,
+      pauseMaxMs: 1_800,
+    });
+    return {
+      status: r.status,
+      note: r.note,
+      pagesFetched: r.pagesFetched,
+      pageCount: r.pageCount,
+      rawPages: r.rawPages,
+      vehicles: r.vehicles.map((v) => ({
+        id: irissListingVehicleId("ecarstrade", v.externalId),
+        platform: "ecarstrade",
+        externalId: v.externalId,
+        detailUrl: v.detailUrl,
+        orderId: src.orderId,
+        orderBrandModel: src.orderBrandModel,
+        title: v.title,
+        manufacturer: v.manufacturer,
+        year: v.year,
+        firstRegistration: v.firstRegistration,
+        mileageKm: v.mileageKm,
+        fuel: v.fuel,
+        transmission: v.transmission,
+        powerKw: fillListingPowerKwField({ powerKw: v.powerKw, title: v.title }),
+        location: v.location,
+        countryCode: v.countryCode,
+        imageUrl: v.imageUrl,
+        imageUrls: v.imageUrls,
+        color: v.color,
+        bodyType: v.bodyType,
+        taxDeduction: v.taxDeduction,
+        currency: "EUR",
+        priceStart: v.priceStart,
+        priceMinimal: v.priceMinimal,
+        priceCurrent: v.priceCurrent,
+        priceBuyNow: v.priceBuyNow,
+        vatNote: v.vatNote,
+        auctionId: v.auctionId,
+        auctionStartAt: v.auctionStartAt,
+        auctionEndAt: v.auctionEndAt,
+        auctionStage: v.auctionStage,
+      })),
+    };
+  }
+
   const relay = readIrissRelayConfig();
   const useRelay = src.platform !== "autobid" || autobidViaRelay();
 
@@ -172,7 +222,7 @@ function summarize(
 }
 
 function isDirectAutobid(group: IrissListingSourceGroup, autobidRelay: boolean): boolean {
-  return group.platform === "autobid" && !autobidRelay;
+  return group.platform === "ecarstrade" || (group.platform === "autobid" && !autobidRelay);
 }
 
 /** Jau saglabātie Volvo 110/133/140 kW (u.c. noteikumi) pazūd uzreiz, nevis pēc 2 missingRuns. */

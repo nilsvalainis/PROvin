@@ -3,6 +3,7 @@
 Atsevišķs Node serviss, kas PROVIN (Vercel) vārdā atver Openlane / Auto1 / Autobid īstā Chrome
 (Xvfb, pastāvīgi profili) un atdod auto sarakstu v2 formātā. Tas pats modelis kā mnt.ee relejs
 (`/opt/provin-mnt`), bet savs serviss, savs ports, savi profili, savs tokens.
+eCarsTrade (ecarstrade.com) šo releju nelieto: Vercel lasa `future_api.php` tieši (`ECARSTRADE_USER` / `ECARSTRADE_PASS`).
 
 | Serviss | Ports | Caddy ceļš |
 | --- | --- | --- |
