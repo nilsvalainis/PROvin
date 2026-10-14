@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import {
   CONSENT_STORAGE_KEY,
   parseConsent,
   PROVIN_CONSENT_UPDATED_EVENT,
 } from "@/lib/cookie-consent";
+import { shouldEnablePublicSiteAnalytics } from "@/lib/analytics-public-scope";
 
 function readAnalyticsAllowed(): boolean {
   if (typeof window === "undefined") return false;
@@ -24,14 +27,23 @@ type Props = {
   gaMeasurementId: string | null;
   /** TikTok Pixel SDK ID; `null` — pixel neielādē. */
   tiktokPixelId: string | null;
+  /** Pieprasījuma hosts (bez porta); `null` — tikai ceļa filtrs. */
+  requestHostname: string | null;
 };
 
 /**
  * Vercel Web Analytics — visiem apmeklējumiem (agregēti, pirmās puses mitināšanas statistika).
  * Google Analytics 4 un TikTok Pixel — tikai pēc sīkdatņu joslas piekrišanas „analītikai”.
  */
-export function ConsentAwareAnalytics({ gaMeasurementId, tiktokPixelId }: Props) {
+export function ConsentAwareAnalytics({
+  gaMeasurementId,
+  tiktokPixelId,
+  requestHostname,
+}: Props) {
+  const pathname = usePathname() ?? "/";
   const [gaAllowed, setGaAllowed] = useState(false);
+
+  const analyticsEnabled = shouldEnablePublicSiteAnalytics(pathname, requestHostname);
 
   const sync = useCallback(() => {
     setGaAllowed(readAnalyticsAllowed());
@@ -54,9 +66,14 @@ export function ConsentAwareAnalytics({ gaMeasurementId, tiktokPixelId }: Props)
   const id = gaMeasurementId;
   const ttPixel = tiktokPixelId;
 
+  if (!analyticsEnabled) {
+    return null;
+  }
+
   return (
     <>
       <Analytics />
+      <SpeedInsights />
       {gaAllowed && id ? (
         <>
           <Script

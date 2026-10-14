@@ -23,6 +23,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const gaMeasurementId = getGaMeasurementId();
   const tiktokPixelId = getTikTokPixelId();
   const requestHeaders = await headers();
+  const hostHeader = requestHeaders.get("host");
+  const requestHostname = hostHeader?.split(":")[0]?.trim().toLowerCase() || null;
   const localeHeader =
     requestHeaders.get(SEO_LOCALE_HEADER) || requestHeaders.get("x-next-intl-locale");
   const htmlLang = htmlLangForLocale(localeHeader || DEFAULT_LOCALE);
@@ -43,7 +45,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         />
         <SiteThemeProvider>
           {children}
-          <ConsentAwareAnalytics gaMeasurementId={gaMeasurementId} tiktokPixelId={tiktokPixelId} />
+          <ConsentAwareAnalytics
+            gaMeasurementId={gaMeasurementId}
+            tiktokPixelId={tiktokPixelId}
+            requestHostname={requestHostname}
+          />
         </SiteThemeProvider>
       </body>
     </html>
