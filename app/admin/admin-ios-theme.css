@@ -124,7 +124,17 @@ body:has(.admin-ios-theme) {
   .admin-ios-theme main {
     overflow-x: clip;
     overflow-y: visible;
+    min-height: 0;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Native pan on the iPhone-shell scroller. Nav preventDefault; nav overflow:hidden. */
+  #admin-main-scroll {
+    overflow-y: auto !important;
+    overflow-x: clip;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y pinch-zoom !important;
   }
 
   .admin-ios-theme header h1 {
