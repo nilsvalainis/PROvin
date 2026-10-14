@@ -7,6 +7,7 @@ import {
   previewEcarstradeLinksForPasutijums,
 } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
+import { IRISS_STALE_REVISION } from "@/lib/iriss-pasutijumi-save-safety";
 import {
   isIrissPasutijumiStoreEnabled,
   isSafeIrissPasutijumsId,
@@ -122,7 +123,14 @@ export async function POST(req: Request) {
     previews.push(next.preview);
     if (next.preview.added.length === 0) continue;
     const w = await writeIrissPasutijums(next.record, { expectedWorkspaceRevision: rec.workspaceRevision });
-    if (!w.ok) return NextResponse.json({ error: w.error }, { status: 500 });
+    if (!w.ok) {
+      if (w.stale || w.error === IRISS_STALE_REVISION) {
+        next.preview.added = [];
+        next.preview.skippedReason = "konflikts saglabājot, mēģini vēlreiz";
+        continue;
+      }
+      return NextResponse.json({ error: w.error }, { status: 500 });
+    }
     const stored = w.record ?? (await readIrissPasutijums(next.record.id)) ?? next.record;
     saved.push(irissPasutijumsToListRow(stored));
   }
