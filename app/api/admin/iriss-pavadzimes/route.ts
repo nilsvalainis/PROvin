@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
+import { loadIrissPavadzimesActiveCardData, loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
-export async function GET() {
+export async function GET(req: Request) {
   if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   try {
-    const data = await loadIrissPavadzimesPageData();
+    const active = new URL(req.url).searchParams.get("active") === "1";
+    const data = active ? await loadIrissPavadzimesActiveCardData() : await loadIrissPavadzimesPageData();
     return NextResponse.json(data);
   } catch (e) {
     return NextResponse.json(

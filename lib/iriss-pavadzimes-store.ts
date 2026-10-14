@@ -237,6 +237,12 @@ async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise
   return out;
 }
 
+/** Tikai Blob/FS indekss. Bez Dropbox saraksta un PDF parsēšanas (sānjoslas karte). */
+export async function readIrissPavadzimesCached(): Promise<IrissPavadzimeRecord[]> {
+  const index = await readIndex();
+  return sortIrissPavadzimes(index.items);
+}
+
 export async function listIrissPavadzimes(): Promise<IrissPavadzimesListResult> {
   const dropboxConfigured = isDropboxConfigured();
   let dropboxError: string | null = null;

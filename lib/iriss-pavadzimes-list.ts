@@ -1,7 +1,8 @@
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import { toActiveWaybillRows } from "@/lib/iriss-pavadzimes-active";
 import { matchIrissPavadzimesToOrders } from "@/lib/iriss-pavadzimes-match";
 import { waybillValidityTone } from "@/lib/iriss-pavadzimes-parse";
-import { listIrissPavadzimes } from "@/lib/iriss-pavadzimes-store";
+import { listIrissPavadzimes, readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
 
 export type IrissPavadzimesPageData = {
@@ -29,4 +30,12 @@ export async function loadIrissPavadzimesPageData(now = new Date()): Promise<Iri
     dropboxConfigured: listed.dropboxConfigured,
     dropboxError: listed.dropboxError,
   };
+}
+
+/** Sānjoslas karte: tikai kešs, bez Dropbox sync un bez pasūtījumu saskaņošanas. */
+export async function loadIrissPavadzimesActiveCardData(now = new Date()): Promise<{
+  rows: IrissPavadzimeListRow[];
+}> {
+  const cached = await readIrissPavadzimesCached();
+  return { rows: toActiveWaybillRows(cached, now) };
 }
