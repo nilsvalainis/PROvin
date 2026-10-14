@@ -20,7 +20,7 @@ export default async function AdminPartnersPage() {
   return (
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu>
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+        <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">
           B2B
         </p>
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
@@ -42,7 +42,35 @@ export default async function AdminPartnersPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
+        <>
+        <ul className="mt-6 overflow-hidden rounded-xl bg-white md:hidden">
+          {partners.map((row) => (
+            <li key={row.id} className="border-b border-[#e5e5ea] last:border-b-0">
+              <Link
+                href={`/admin/partneri/${encodeURIComponent(row.id)}`}
+                className="flex min-h-[88px] items-center justify-between gap-3 px-4 py-3"
+              >
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2">
+                    <span className="truncate text-[17px] font-semibold text-[var(--color-apple-text)]">{row.companyName}</span>
+                    {row.adminSeenAt == null ? (
+                      <span className="inline-flex h-5 items-center rounded-full bg-rose-600 px-1.5 text-[11px] font-bold uppercase leading-none text-white">
+                        Jauns
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[13px] text-[#8e8e93]">{row.email}</span>
+                  <span className="mt-0.5 block text-[13px] text-[#8e8e93]">
+                    {row.status === "active" ? (row.emailVerifiedAt ? "Aktīvs" : "Gaida e-pastu") : "Bloķēts"}
+                    {" · "}Business {creditsById[row.id]?.business ?? 0}
+                  </span>
+                </span>
+                <span className="shrink-0 text-[15px] font-medium text-[var(--color-provin-accent)]">Atvērt</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)] md:block">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1040px] text-left text-sm">
               <thead>
@@ -109,6 +137,7 @@ export default async function AdminPartnersPage() {
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

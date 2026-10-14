@@ -29,6 +29,7 @@
     "audit:knowledge": "node scripts/audit-knowledge-cli.mjs --load-env-local",
     "vin:fetch": "node scripts/vin-fetch.mjs",
     "screenshot:mobile": "node scripts/mobile-screenshot.mjs",
+    "test:admin-mobile": "node scripts/admin-mobile-iphone-test.mjs",
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe"
   },
   "overrides": {

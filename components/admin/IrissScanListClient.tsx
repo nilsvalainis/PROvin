@@ -124,7 +124,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
         {/* min-7: virsraksts + skaits, meklēšana pa labi; zem tā sīka pelēka statusa rinda. */}
         <header className="sticky top-0 z-20 -mx-2 bg-[#F8F8F9]/95 px-2 pb-1.5 pt-2 backdrop-blur sm:mx-0 sm:px-0">
           <div className="flex items-center gap-2">
-            <h1 className="flex-1 text-[17px] font-semibold tracking-tight text-[var(--color-apple-text)]">Radars</h1>
+            <h1 className="flex-1 text-[17px] font-semibold tracking-tight text-[var(--color-apple-text)] max-md:text-[34px] max-md:font-bold max-md:leading-none">Radars</h1>
             {searchOpen || query ? (
               <input
                 type="search"
@@ -167,7 +167,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
                   <Link
                     href={`/admin/iriss/scan/${encodeURIComponent(row.id)}`}
                     aria-label={`Atvērt radaru: ${row.brandModel || row.vin || "ieraksts"}`}
-                    className="flex min-h-[56px] min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 pr-1 transition hover:bg-black/[0.02]"
+                    className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 py-3 pl-4 pr-1 transition hover:bg-black/[0.02] md:min-h-[56px] md:py-2.5"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-1.5">

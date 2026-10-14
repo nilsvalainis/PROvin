@@ -24,7 +24,7 @@ export default async function AdminBlogsPage() {
   return (
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu>
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+        <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">
           PRO
         </p>
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
@@ -48,7 +48,28 @@ export default async function AdminBlogsPage() {
           </p>
         </div>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)]">
+        <>
+        <ul className="mt-6 overflow-hidden rounded-xl bg-white md:hidden">
+          {posts.map((post) => (
+            <li key={post.slug} className="border-b border-[#e5e5ea] last:border-b-0">
+              <Link
+                href={`/admin/blogs/${encodeURIComponent(post.slug)}`}
+                className="flex min-h-[72px] items-center justify-between gap-3 px-4 py-3"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-[17px] font-semibold text-[var(--color-apple-text)]">
+                    {post.lv.title}
+                  </span>
+                  <span className="mt-0.5 block text-[13px] text-[#8e8e93]">
+                    {post.publishedAt} · {viewCounts[post.slug] ?? 0} skat. · {commentCounts[post.slug] ?? 0} kom.
+                  </span>
+                </span>
+                <span className="shrink-0 text-[15px] font-medium text-[var(--color-provin-accent)]">Rediģēt</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_2px_24px_rgba(15,23,42,0.05)] md:block">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] text-left text-sm">
               <thead>
@@ -96,6 +117,7 @@ export default async function AdminBlogsPage() {
             </table>
           </div>
         </div>
+        </>
       )}
     </div>
   );

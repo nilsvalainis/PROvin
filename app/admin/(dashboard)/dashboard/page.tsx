@@ -197,6 +197,9 @@ export default async function AdminOrdersPage({
 
   return (
     <div className="w-full max-w-none">
+      <h1 className="mb-2 text-[34px] font-bold leading-none tracking-tight text-[var(--color-apple-text)] md:hidden">
+        Pasūtījumi
+      </h1>
       <Link
         href="/admin/kopsavilkums"
         className="mb-3 flex min-h-12 items-center justify-between rounded-2xl border border-[#e5e5ea] bg-white px-4 text-[15px] font-semibold text-[var(--color-apple-text)] shadow-sm md:hidden"

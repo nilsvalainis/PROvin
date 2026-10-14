@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Pin, Search, Trash2 } from "lucide-react";
+import { ArrowUpDown, ChevronDown, Pin, Search, Trash2 } from "lucide-react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
@@ -41,8 +41,18 @@ import {
 } from "@/components/admin/IrissPasutijumiStatusFilter";
 import { dispatchIrissListStatusFilter, parseIrissListStatusFilter } from "@/lib/iriss-pasutijumi-status-filter";
 import { IrissOrderSortSelect } from "@/components/admin/IrissOrderSortSelect";
+import { AdminMobileSheet } from "@/components/admin/AdminMobileSheet";
 
 type SortMode = IrissOrderSortMode;
+
+const SORT_LABEL: Record<SortMode, string> = {
+  created_desc: "Jaunākie vispirms",
+  created_asc: "Vecākie vispirms",
+  brand_asc: "Marka A-Z",
+  brand_desc: "Marka Z-A",
+  budget_asc: "Budžets: zemākā",
+  budget_desc: "Budžets: augstākā",
+};
 
 const SORT_MODES: readonly SortMode[] = [
   "created_desc",
@@ -370,7 +380,7 @@ const IrissRowCard = memo(function IrissRowCard({
     ) : null;
 
   const frontInner = (
-    <div className="relative flex min-h-[76px] items-center gap-2.5 py-2 pl-3 pr-2 md:min-h-[82px]">
+    <div className="relative flex min-h-[88px] items-center gap-2.5 py-2.5 pl-3 pr-2 md:min-h-[82px]">
       <Link
         href={`/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`}
         prefetch
@@ -388,7 +398,7 @@ const IrissRowCard = memo(function IrissRowCard({
             e.stopPropagation();
             setStatusMenuOpen((v) => !v);
           }}
-          className={`inline-flex h-7 items-center gap-0.5 rounded px-1.5 text-[11px] font-semibold ${statusBadgeClass(curStatus)}`}
+          className={`inline-flex h-8 items-center gap-0.5 rounded-md px-2 text-[13px] font-semibold md:h-7 md:rounded md:px-1.5 md:text-[11px] ${statusBadgeClass(curStatus)}`}
           aria-haspopup="menu"
           aria-expanded={statusMenuOpen}
         >
@@ -534,10 +544,11 @@ const IrissRowCard = memo(function IrissRowCard({
               setIsOpen(false);
               onPin(row.id);
             }}
-            className="flex h-full w-[72px] items-center justify-center bg-[#8E8E93] text-white transition active:brightness-95"
+            className="flex h-full w-[72px] flex-col items-center justify-center gap-0.5 bg-[#8E8E93] text-white transition active:brightness-95"
             aria-label={isPinned ? "Noņemt piespraušanu" : "Piespraust augšā"}
           >
             <Pin className="h-5 w-5" />
+            <span className="text-[11px] font-semibold leading-none">{isPinned ? "Noņemt" : "Piespraust"}</span>
           </button>
           <button
             type="button"
@@ -545,10 +556,11 @@ const IrissRowCard = memo(function IrissRowCard({
               setIsOpen(false);
               onAskDelete(row.id);
             }}
-            className="flex h-full w-[72px] items-center justify-center bg-[#FF3B30] text-white transition active:brightness-95"
+            className="flex h-full w-[72px] flex-col items-center justify-center gap-0.5 bg-[#FF3B30] text-white transition active:brightness-95"
             aria-label="Dzēst pasūtījumu"
           >
             <Trash2 className="h-5 w-5" />
+            <span className="text-[11px] font-semibold leading-none">Dzēst</span>
           </button>
         </div>
       ) : null}
@@ -636,6 +648,7 @@ export function IrissPasutijumiListClient({
   const [localRows, setLocalRows] = useState<IrissPasutijumsListRow[]>(rows);
   const [sortMode, setSortMode] = useState<SortMode>("created_desc");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const [listOrder, setListOrder] = useState<IrissPasutijumiListOrder>(() => {
     if (initialListOrder && (initialListOrder.pinnedOrder.length > 0 || initialListOrder.unpinnedOrder.length > 0)) {
@@ -977,23 +990,28 @@ export function IrissPasutijumiListClient({
 
   return (
     <>
-      <div className="sticky top-0 z-30 mb-2 border-b border-slate-200/80 bg-[#F8F8F9]/95 py-2 backdrop-blur-sm">
+      <div className="sticky top-0 z-30 mb-2 border-b border-slate-200/80 bg-[#F8F8F9]/95 py-2 backdrop-blur-sm max-md:border-b-0">
+        <h1 className="mb-2 hidden px-0.5 text-[34px] font-bold leading-none tracking-tight text-[var(--color-apple-text)] max-md:block">
+          Pasūtījumi
+        </h1>
         <div className="flex flex-wrap items-center gap-2">
           <label className="relative min-w-[10rem] flex-1 sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 md:left-2 md:h-3.5 md:w-3.5" aria-hidden />
             <input
               ref={searchRef}
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Meklēt (vārds, tālrunis, marka)"
+              placeholder="Vārds, tālrunis, marka"
               aria-label="Meklēt pasūtījumus"
-              className="h-8 w-full rounded-md border border-slate-200 bg-white pl-7 pr-2 text-[12px] text-black outline-none ring-[var(--color-provin-accent)]/25 placeholder:text-slate-400 focus:ring-2"
+              className="h-9 w-full rounded-[10px] border-0 bg-[#e5e5ea] pl-9 pr-3 text-base text-black outline-none placeholder:text-[#8e8e93] md:h-8 md:rounded-md md:border md:border-slate-200 md:bg-white md:pl-7 md:pr-2 md:text-[12px] md:placeholder:text-slate-400 md:ring-[var(--color-provin-accent)]/25 md:focus:ring-2"
             />
           </label>
-          <IrissPasutijumiStatusFilter counts={statusCounts} />
-          <IrissOrderSortSelect compact />
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="hidden md:contents">
+            <IrissPasutijumiStatusFilter counts={statusCounts} />
+            <IrissOrderSortSelect compact />
+          </div>
+          <div className="ml-auto hidden items-center gap-1.5 md:flex">
             <button
               type="button"
               onClick={() => void appendEcarstradeLinks()}
@@ -1012,8 +1030,78 @@ export function IrissPasutijumiListClient({
             <AdminIrissOrdersExportButton compact />
           </div>
         </div>
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <IrissPasutijumiStatusFilter
+            counts={statusCounts}
+            className="flex-nowrap [&_button]:h-8 [&_button]:rounded-full [&_button]:px-3 [&_button]:text-[13px]"
+          />
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white px-3 text-[13px] font-semibold text-[var(--color-apple-text)]"
+          >
+            <ArrowUpDown className="h-3.5 w-3.5" aria-hidden />
+            {SORT_LABEL[sortMode]}
+          </button>
+        </div>
         {ectMsg ? <p className="mt-1 text-[11px] text-[#8e8e93]">{ectMsg}</p> : null}
       </div>
+
+      <AdminMobileSheet
+        open={sheetOpen}
+        title="Kārtot un filtrēt"
+        onClose={() => setSheetOpen(false)}
+        action={
+          <button
+            type="button"
+            onClick={() => setSheetOpen(false)}
+            className="mt-3 flex h-[50px] w-full items-center justify-center rounded-xl bg-[var(--color-provin-accent)] text-[17px] font-semibold text-white"
+          >
+            Lietot
+          </button>
+        }
+      >
+        <div className="mb-3 overflow-hidden rounded-xl bg-white">
+          {SORT_MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => {
+                setSortMode(mode);
+                try {
+                  localStorage.setItem(IRISS_ORDER_SORT_KEY, mode);
+                } catch {
+                  /* ignore */
+                }
+                window.dispatchEvent(new CustomEvent(IRISS_ORDER_SORT_EVENT, { detail: mode }));
+              }}
+              className="flex min-h-12 w-full items-center justify-between border-b border-[#e5e5ea] px-4 text-[17px] last:border-b-0"
+            >
+              {SORT_LABEL[mode]}
+              {sortMode === mode ? <span className="text-[var(--color-provin-accent)]">✓</span> : null}
+            </button>
+          ))}
+        </div>
+        <div className="mb-3 overflow-hidden rounded-xl bg-white px-3 py-2">
+          <IrissPasutijumiStatusFilter counts={statusCounts} className="[&_button]:h-10 [&_button]:text-[15px]" />
+        </div>
+        <div className="overflow-hidden rounded-xl bg-white">
+          <button
+            type="button"
+            onClick={() => void appendEcarstradeLinks()}
+            disabled={ectBusy}
+            className="flex min-h-12 w-full items-center px-4 text-left text-[17px] disabled:opacity-40"
+          >
+            {ectBusy ? "eCarsTrade…" : "eCarsTrade saites"}
+          </button>
+          <Link href="/admin/iriss/atskaite" className="flex min-h-12 items-center border-t border-[#e5e5ea] px-4 text-[17px] text-[var(--color-apple-text)]">
+            Mēneša atskaite
+          </Link>
+          <div className="border-t border-[#e5e5ea] px-4 py-2">
+            <AdminIrissOrdersExportButton compact />
+          </div>
+        </div>
+      </AdminMobileSheet>
 
       <div className="flex flex-col gap-2">
         {visibleRows.length === 0 ? (

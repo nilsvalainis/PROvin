@@ -634,7 +634,7 @@ export function AdminOrdersTable({
                 aria-label={c === "none" ? "Bez krāsas" : label}
                 title={c === "none" ? "Bez krāsas" : label}
                 onClick={() => setColorFilter(c)}
-                className={`inline-flex h-7 shrink-0 items-center gap-1.5 rounded-[7px] px-2.5 text-[12.5px] transition sm:px-3 ${on ? "bg-white font-semibold text-[var(--color-apple-text)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-[#3a3a3c]"}`}
+                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[7px] px-2.5 text-[13px] transition sm:h-7 sm:px-3 sm:text-[12.5px] ${on ? "bg-white font-semibold text-[var(--color-apple-text)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-[#3a3a3c]"}`}
               >
                 {c === "all" ? null : c === "none" ? (
                   <span className="h-2 w-2 rounded-full bg-slate-200 ring-1 ring-slate-300/80" aria-hidden />
@@ -677,7 +677,7 @@ export function AdminOrdersTable({
               key={o.id}
               role={v.isPack ? undefined : "link"}
               tabIndex={v.isPack ? undefined : 0}
-              className={`rounded-xl border border-[#ececee] p-3 ${accent} ${
+              className={`rounded-xl border border-[#ececee] p-3.5 ${accent} ${
                 v.isPack
                   ? "cursor-default bg-violet-50/70"
                   : v.partnerHighlight
@@ -705,7 +705,7 @@ export function AdminOrdersTable({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="flex items-center gap-1.5 truncate text-[14px] font-semibold text-[var(--color-apple-text)]">
+                  <p className="flex items-center gap-1.5 truncate text-[17px] font-semibold text-[var(--color-apple-text)]">
                     {v.isPack ? null : (
                       <AdminAuditResultColorControl
                         sessionId={o.id}
@@ -716,7 +716,7 @@ export function AdminOrdersTable({
                     )}
                     {v.isPack ? v.packLabel : o.makeModel?.trim() || v.primaryClient}
                   </p>
-                  <p className="mt-0.5 truncate text-[11px] text-[var(--color-provin-muted)]">
+                  <p className="mt-0.5 truncate text-[13px] text-[var(--color-provin-muted)]">
                     {v.isPack
                       ? v.primaryClient
                       : v.hasVin

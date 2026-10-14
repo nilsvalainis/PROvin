@@ -15,6 +15,9 @@ export default async function IrissPavadzimesPage() {
 
   return (
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">
+      <h1 className="mb-2 px-1 text-[34px] font-bold leading-none tracking-tight text-[var(--color-apple-text)] md:hidden">
+        Pavadzīmes
+      </h1>
       <IrissPavadzimesListClient initial={data} />
     </div>
   );

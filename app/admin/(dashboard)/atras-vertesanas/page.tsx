@@ -90,7 +90,7 @@ export default async function AdminListingPeeksPage({
   return (
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu>
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">Lead</p>
+        <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">Lead</p>
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Ātrie vērtējumi
         </h1>
@@ -103,26 +103,26 @@ export default async function AdminListingPeeksPage({
       </div>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
-        <nav className="flex flex-wrap gap-1 rounded-xl bg-slate-100 p-1 text-[12px] font-semibold">
+        <nav className="flex flex-nowrap gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 text-[12px] font-semibold [scrollbar-width:none] max-md:w-full [&::-webkit-scrollbar]:hidden">
           {TABS.map((t) => (
             <Link
               key={t.id}
               href={tabHref(t.id)}
-              className={`rounded-lg px-3 py-1.5 ${tab === t.id ? "bg-white text-[var(--color-apple-text)] shadow-sm" : "text-[var(--color-provin-muted)] hover:text-[var(--color-apple-text)]"}`}
+              className={`inline-flex h-8 shrink-0 items-center rounded-lg px-3 py-1.5 max-md:h-9 max-md:text-[13px] ${tab === t.id ? "bg-white text-[var(--color-apple-text)] shadow-sm" : "text-[var(--color-provin-muted)] hover:text-[var(--color-apple-text)]"}`}
             >
               {t.label} <span className="font-normal">({counts[t.id]})</span>
             </Link>
           ))}
         </nav>
-        <form className="flex gap-1.5" action="/admin/atras-vertesanas">
+        <form className="flex gap-1.5 max-md:w-full" action="/admin/atras-vertesanas">
           <input type="hidden" name="tab" value={tab} />
           <input
             name="q"
             defaultValue={q}
             placeholder="Meklēt: VIN, e-pasts, tālrunis, saite"
-            className="w-[17rem] max-w-[60vw] rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-[var(--color-provin-accent)]"
+            className="w-[17rem] max-w-[60vw] rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-[var(--color-provin-accent)] max-md:h-9 max-md:max-w-none max-md:flex-1 max-md:rounded-[10px] max-md:border-0 max-md:bg-[#e5e5ea] max-md:text-base"
           />
-          <button type="submit" className="rounded-lg border border-slate-300 bg-white px-3 text-[12px] font-semibold hover:bg-slate-50">
+          <button type="submit" className="rounded-lg border border-slate-300 bg-white px-3 text-[12px] font-semibold hover:bg-slate-50 max-md:h-9 max-md:px-4 max-md:text-[13px]">
             Meklēt
           </button>
         </form>
@@ -155,17 +155,17 @@ export default async function AdminListingPeeksPage({
             const pending = e.status === "new" || e.status === "in_progress";
             const href = `/admin/atras-vertesanas/${encodeURIComponent(e.id)}`;
             return (
-              <li key={e.id} className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3.5 py-2.5 hover:bg-slate-50/70 md:flex-nowrap">
+              <li key={e.id} className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3.5 py-2.5 hover:bg-slate-50/70 max-md:min-h-[88px] max-md:items-start md:flex-nowrap">
                 <Link href={href} className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 md:flex-nowrap">
                   <span className="w-[11.5rem] shrink-0">
                     <AdminListingPeekSla createdAt={e.createdAt} complete={e.status === "completed"} rejected={e.status === "rejected"} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-semibold text-[var(--color-apple-text)]">
+                    <span className="block truncate text-[13px] font-semibold text-[var(--color-apple-text)] max-md:text-[17px]">
                       {e.status === "new" ? <i className="mr-1.5 inline-block h-2 w-2 rounded-full bg-[var(--color-provin-accent)]" title="Jauns, vēl nav atvērts" /> : null}
                       {title}
                     </span>
-                    <span className="block truncate font-mono text-[11px] text-[var(--color-provin-muted)]">{e.vin || "VIN nav"}</span>
+                    <span className="block truncate font-mono text-[11px] text-[var(--color-provin-muted)] max-md:text-[13px]">{e.vin || "VIN nav"}</span>
                   </span>
                   <span className="w-[12rem] min-w-0 truncate text-[12px] text-[var(--color-provin-muted)] max-md:w-full">
                     {e.email}

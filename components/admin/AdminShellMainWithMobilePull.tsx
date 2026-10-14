@@ -1,8 +1,19 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  ADMIN_MAIN_SCROLL_ID,
+  ADMIN_MOBILE_MQ,
+  ADMIN_MOBILE_PTR_HOLD_MS,
+  ADMIN_MOBILE_PTR_IDLE_PX,
+  ADMIN_MOBILE_PTR_LOCK_PX,
+  ADMIN_MOBILE_PTR_MAX_PX,
+  ADMIN_MOBILE_PTR_RUBBER,
+  ADMIN_MOBILE_PTR_THRESHOLD_PX,
+  adminMobilePtrLabel,
+} from "@/lib/admin-mobile-shell";
 
 type Props = {
   isDetailScreen: boolean;
@@ -10,20 +21,15 @@ type Props = {
   children: ReactNode;
 };
 
-const MOBILE_MAX = 767;
-const PULL_THRESHOLD_PX = 64;
-const RUBBER = 0.35;
-const MAX_PULL_PX = 72;
-
 function isCoarseMobileViewport() {
   if (typeof window === "undefined") return false;
-  return window.matchMedia(`(max-width: ${MOBILE_MAX}px)`).matches;
+  return window.matchMedia(ADMIN_MOBILE_MQ).matches;
 }
 
 /**
  * Mobilajā admin saturam. Detalizētās lapās (pasūtījums) nelietojam ligzdotu
  * ritinājumu un pull-to-refresh: tie aizturēja swipe un bieži bloķēja touch.
- * Saraksta lapās PTR paliek, bet preventDefault tikai pēc skaidra vilkiena uz leju.
+ * Saraksta lapās PTR paliek uz vienīgā scroller (`#admin-main-scroll`).
  */
 export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children }: Props) {
   const router = useRouter();
@@ -36,24 +42,32 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
   const lockingRef = useRef(false);
   const refreshingRef = useRef(false);
 
+  const [pullPx, setPullPx] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
   const resetPull = useCallback(() => {
     pullActiveRef.current = false;
     lockingRef.current = false;
     pullPxRef.current = 0;
+    setPullPx(0);
   }, []);
 
   const doRefresh = useCallback(() => {
     if (refreshingRef.current) return;
     refreshingRef.current = true;
-    resetPull();
+    setRefreshing(true);
+    setPullPx(48);
+    pullActiveRef.current = false;
+    lockingRef.current = false;
     router.refresh();
     window.setTimeout(() => {
       refreshingRef.current = false;
-    }, 900);
-  }, [resetPull, router]);
+      setRefreshing(false);
+      setPullPx(0);
+    }, ADMIN_MOBILE_PTR_HOLD_MS);
+  }, [router]);
 
   useEffect(() => {
-    // Detalizētajā ekrānā native scroll + horizontālais swipe; PTR netraucē.
     if (isDetailScreen) return;
 
     const el = scrollRef.current;
@@ -62,7 +76,7 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
     const onTouchStart = (e: TouchEvent) => {
       if (!isCoarseMobileViewport()) return;
       if (refreshingRef.current) return;
-      if (el.scrollTop > 2) return;
+      if (el.scrollTop > ADMIN_MOBILE_PTR_IDLE_PX) return;
       const t = e.touches[0];
       if (!t) return;
       startYRef.current = t.clientY;
@@ -74,7 +88,7 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
     const onTouchMove = (e: TouchEvent) => {
       if (!isCoarseMobileViewport()) return;
       if (!pullActiveRef.current || refreshingRef.current) return;
-      if (el.scrollTop > 2) {
+      if (el.scrollTop > ADMIN_MOBILE_PTR_IDLE_PX) {
         resetPull();
         return;
       }
@@ -84,7 +98,6 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
       const rawDy = t.clientY - startYRef.current;
       const rawDx = t.clientX - startXRef.current;
 
-      // Horizontāls žests (soļu sliede u.c.) - nekad neķeram.
       if (Math.abs(rawDx) > Math.abs(rawDy)) {
         resetPull();
         return;
@@ -93,15 +106,16 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
       if (rawDy <= 0) {
         pullPxRef.current = 0;
         lockingRef.current = false;
+        setPullPx(0);
         return;
       }
 
-      // preventDefault tikai pēc skaidra vilkiena, citādi Safari „apēd” scroll.
-      if (rawDy < 18 && !lockingRef.current) return;
+      if (rawDy < ADMIN_MOBILE_PTR_LOCK_PX && !lockingRef.current) return;
 
       lockingRef.current = true;
-      const next = Math.min(rawDy * RUBBER, MAX_PULL_PX);
+      const next = Math.min(rawDy * ADMIN_MOBILE_PTR_RUBBER, ADMIN_MOBILE_PTR_MAX_PX);
       pullPxRef.current = next;
+      setPullPx(next);
       if (next > 0) e.preventDefault();
     };
 
@@ -109,10 +123,15 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
       if (!isCoarseMobileViewport()) return;
       if (!pullActiveRef.current) return;
       const released = pullPxRef.current;
-      resetPull();
-      if (released >= PULL_THRESHOLD_PX && !refreshingRef.current) {
+      const shouldRefresh = released >= ADMIN_MOBILE_PTR_THRESHOLD_PX && !refreshingRef.current;
+      pullActiveRef.current = false;
+      lockingRef.current = false;
+      if (shouldRefresh) {
         doRefresh();
+        return;
       }
+      pullPxRef.current = 0;
+      setPullPx(0);
     };
 
     el.addEventListener("touchstart", onTouchStart, { passive: true });
@@ -132,16 +151,19 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
     ? "space-y-0 p-0"
     : "space-y-3 p-2 pt-2 sm:px-3 sm:pb-4 md:px-4 md:pb-5 lg:px-5 lg:pb-6";
 
+  const ptrLabel = adminMobilePtrLabel(refreshing, pullPx);
+  const ptrState = refreshing ? "refreshing" : pullPx > 8 ? "pulling" : "idle";
+
   return (
     <main
       className={`min-w-0 w-full max-w-none flex-1 ${
         isDetailScreen
           ? "max-md:overflow-visible"
-          : "max-md:flex max-md:min-h-0 max-md:flex-col max-md:overflow-hidden"
+          : "max-md:flex max-md:h-full max-md:min-h-0 max-md:flex-col max-md:overflow-hidden"
       } ${mainPad}`}
     >
       <div
-        id="admin-main-scroll"
+        id={ADMIN_MAIN_SCROLL_ID}
         ref={scrollRef}
         className={
           isDetailScreen
@@ -149,8 +171,30 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
             : "relative flex w-full min-w-0 min-h-0 flex-1 flex-col max-md:overflow-y-auto max-md:overscroll-y-contain max-md:[-webkit-overflow-scrolling:touch] md:overflow-visible"
         }
       >
+        {!isDetailScreen ? (
+          <div
+            id="admin-ptr-indicator"
+            data-admin-ptr={ptrState}
+            aria-live="polite"
+            className="pointer-events-none flex shrink-0 flex-col items-center justify-end overflow-hidden text-[12px] text-[#8e8e93] max-md:flex md:hidden"
+            style={{ height: pullPx > 0 || refreshing ? pullPx : 0 }}
+          >
+            {ptrLabel ? (
+              <div className="flex flex-col items-center gap-1 pb-1">
+                <span
+                  className={`inline-block h-[22px] w-[22px] rounded-full border-[2.4px] border-[#d1d1d6] border-t-[#8e8e93] ${
+                    refreshing ? "animate-spin" : ""
+                  }`}
+                  aria-hidden
+                />
+                <span>{ptrLabel}</span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <div
           className={`flex w-full min-w-0 max-w-none flex-col ${isDetailScreen ? "" : "gap-3"}`}
+          style={!isDetailScreen && pullPx > 0 ? { transform: `translateY(${Math.max(0, pullPx - 48)}px)` } : undefined}
         >
           {notice}
           <div className="w-full min-w-0 max-w-none">{children}</div>
