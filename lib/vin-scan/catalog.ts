@@ -99,6 +99,14 @@ function plateQ(raw: string): string {
   return encodeURIComponent(raw.trim().toUpperCase());
 }
 
+/** Traficom VIN-only URL. Empty `plate=` 404s; only append plate when present. */
+export function traficomVehicleInfoUrl(vin: string, plate = ""): string {
+  const p = plate.trim();
+  return `https://www.traficom.fi/en/transport/road/vehicle-information?vin=${vinQuery(vin)}${
+    p ? `&plate=${plateQ(p)}` : ""
+  }`;
+}
+
 export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
   {
     id: "vin_decode",
@@ -299,10 +307,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     country: "FI",
     hint: "Somijas reģistrs. Publiskā saite pēc VIN",
     needs: ["vin"],
-    openUrl: (vin, plates) => {
-      const plate = plates?.fi ? plateQ(plates.fi) : "";
-      return `https://www.traficom.fi/en/transport/road/vehicle-information?vin=${vinQuery(vin)}${plate ? `&plate=${plate}` : ""}`;
-    },
+    openUrl: (vin, plates) => traficomVehicleInfoUrl(vin, plates?.fi ?? ""),
   },
   {
     id: "lt_itpr",

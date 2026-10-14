@@ -43,7 +43,8 @@ export type TurnstileTask = {
 export type CloudflareChallengeTask = {
   kind: "cloudflare_challenge";
   websiteURL: string;
-  proxy: string;
+  /** Optional. Empty = AntiCloudflareTaskProxyLess. */
+  proxy?: string;
   html?: string;
   userAgent?: string;
 };
@@ -55,6 +56,8 @@ export type CaptchaSolveOk = {
   token: string;
   cookies: Record<string, string>;
   userAgent: string;
+  /** Raw CapSolver proxy of the variant that succeeded. Empty/omitted = ProxyLess. */
+  proxy?: string;
 };
 export type CaptchaSolveErr = { ok: false; reason: string };
 export type CaptchaSolveResult = CaptchaSolveOk | CaptchaSolveErr;
@@ -170,10 +173,104 @@ export function capsolverProxyFromUrl(raw: string): string | null {
   return null;
 }
 
+/**
+ * CapSolver custom proxy: `host:port:user:pass`.
+ * URL form `http://user:pass@host:port` often returns HTTP 400 "custom proxy connect failed".
+ */
+export function capsolverProxyColonForm(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  let host = "";
+  let port = "";
+  let user = "";
+  let pass = "";
+  if (/^(https?|socks[45]):\/\//i.test(trimmed)) {
+    try {
+      const parsed = new URL(trimmed);
+      host = parsed.hostname;
+      const scheme = parsed.protocol.replace(/:$/, "").toLowerCase();
+      port = parsed.port || defaultPortForProxyScheme(scheme);
+      user = decodeURIComponent(parsed.username || "");
+      pass = decodeURIComponent(parsed.password || "");
+    } catch {
+      return null;
+    }
+  } else {
+    const parts = trimmed.split(":");
+    const scheme = parts[0]?.toLowerCase() ?? "";
+    if (PROXY_SCHEMES.has(scheme) && parts.length >= 5) {
+      const [, h, p, u, ...rest] = parts;
+      host = h ?? "";
+      port = p ?? "";
+      user = u ?? "";
+      pass = rest.join(":");
+    } else if (parts.length >= 4) {
+      const [h, p, u, ...rest] = parts;
+      host = h ?? "";
+      port = p ?? "";
+      user = u ?? "";
+      pass = rest.join(":");
+    } else if (parts.length === 2) {
+      host = parts[0] ?? "";
+      port = parts[1] ?? "";
+    } else {
+      return null;
+    }
+  }
+  if (!host || !port) return null;
+  if (user) return `${host}:${port}:${user}:${pass}`;
+  return `${host}:${port}`;
+}
+
 function proxyForCapsolverTask(proxy: string | undefined): string {
   const trimmed = proxy?.trim() ?? "";
   if (!trimmed) return "";
   return capsolverProxyFromUrl(trimmed) ?? trimmed;
+}
+
+export function isInvalidHtmlFailure(reason: string): boolean {
+  return /invalid html|invalid task data:\s*invalid html/i.test(reason);
+}
+
+/**
+ * AntiCloudflareTask attempts: colon proxy (CapSolver 400 on URL form), then URL form,
+ * then the other env proxy (FIXIE vs CAPSOLVER_PROXY), then proxyless.
+ * With HTML, also retry without HTML if CapSolver rejects the snapshot.
+ */
+export function cloudflareChallengeTaskQueue(task: CloudflareChallengeTask): CloudflareChallengeTask[] {
+  const seen = new Set<string>();
+  const out: CloudflareChallengeTask[] = [];
+  const push = (proxy: string, html: string | undefined) => {
+    const key = `${proxy}\0${html ? "1" : "0"}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({
+      kind: "cloudflare_challenge",
+      websiteURL: task.websiteURL,
+      userAgent: task.userAgent,
+      ...(proxy ? { proxy } : {}),
+      ...(html ? { html } : {}),
+    });
+  };
+
+  const raws = [task.proxy, process.env.CAPSOLVER_PROXY, process.env.FIXIE_URL]
+    .map((s) => (s ?? "").trim())
+    .filter(Boolean);
+  const forms: string[] = [];
+  for (const raw of [...new Set(raws)]) {
+    const colon = capsolverProxyColonForm(raw);
+    const url = capsolverProxyFromUrl(raw);
+    if (colon) forms.push(colon);
+    if (url && url !== colon) forms.push(url);
+  }
+  const html = task.html?.trim() || undefined;
+  for (const proxy of [...new Set(forms)]) {
+    if (html) push(proxy, html);
+    push(proxy, undefined);
+  }
+  if (html) push("", html);
+  push("", undefined);
+  return out.slice(0, 6);
 }
 
 export function getCaptchaSolverProxy(): string {
@@ -281,11 +378,12 @@ export function captchaCreateTaskBody(
       },
     };
   }
+  const cfProxy = (task.proxy ?? "").trim();
   const cfTask: Record<string, unknown> = {
-    type: "AntiCloudflareTask",
+    type: cfProxy ? "AntiCloudflareTask" : "AntiCloudflareTaskProxyLess",
     websiteURL: task.websiteURL,
-    proxy: proxyForCapsolverTask(task.proxy) || task.proxy,
   };
+  if (cfProxy) cfTask.proxy = cfProxy;
   if (task.html) cfTask.html = task.html;
   if (task.userAgent) cfTask.userAgent = task.userAgent;
   return { clientKey: apiKey, task: cfTask };
@@ -455,6 +553,27 @@ function labeledSolveResult(result: CaptchaSolveResult, sourceLabel?: string): C
 }
 
 export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Promise<CaptchaSolveResult> {
+  if (task.kind === "cloudflare_challenge") {
+    const queue = cloudflareChallengeTaskQueue(task);
+    let last: CaptchaSolveResult = { ok: false, reason: "CapSolver: Cloudflare uzdevums neizdevās" };
+    const skipProxy = new Set<string>();
+    let skipHtml = false;
+    for (const variant of queue) {
+      const proxyKey = (variant.proxy ?? "").trim();
+      if (skipProxy.has(proxyKey)) continue;
+      if (skipHtml && variant.html) continue;
+      last = await solveCaptchaOnce(variant, deps);
+      if (last.ok) return proxyKey ? { ...last, proxy: proxyKey } : last;
+      if (/Nav CAPSOLVER_API_KEY/i.test(last.reason)) return last;
+      if (isProxyConnectFailure(last.reason) && proxyKey) skipProxy.add(proxyKey);
+      if (isInvalidHtmlFailure(last.reason)) skipHtml = true;
+    }
+    return last;
+  }
+  return solveCaptchaOnce(task, deps);
+}
+
+async function solveCaptchaOnce(task: CaptchaTask, deps: SolveDeps = {}): Promise<CaptchaSolveResult> {
   const provider = deps.provider ?? captchaProvider("capsolver", deps.apiKey ?? getCaptchaSolverApiKey());
   const apiKey = (deps.apiKey ?? provider.apiKey).trim();
   const label = deps.sourceLabel;
@@ -470,7 +589,7 @@ export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Pro
   const proxied = taskUsesCustomProxy(task) && provider.id === "capsolver";
   const taskType = captchaTaskTypeName(task, provider.id);
   const payload = captchaCreateTaskBody(apiKey, task, provider.id);
-  const maxAttempts = 2;
+  const maxAttempts = task.kind === "cloudflare_challenge" ? 1 : 2;
 
   let lastReason = formatCaptchaPollTimeoutReason({
     taskType,

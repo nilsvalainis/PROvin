@@ -5,6 +5,7 @@ import {
   VIN_SCAN_REMOVED_IDS,
   VIN_SCAN_SOURCE_IDS,
   defaultVinScanSourceIds,
+  traficomVehicleInfoUrl,
   vinScanFastSourceIds,
   vinScanPipelineSourceIds,
 } from "@/lib/vin-scan/catalog";
@@ -50,6 +51,12 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("bidfax");
     expect(VIN_SCAN_SOURCE_IDS).toContain("listing_history");
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.needs).toEqual(["vin"]);
+    expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873")).toBe(
+      "https://www.traficom.fi/en/transport/road/vehicle-information?vin=WBA5R1C0XLFH42873",
+    );
+    expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873", "")).not.toContain("plate=");
+    expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873", "ABC-123")).toContain("plate=ABC-123");
+    expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.openUrl("WBA5R1C0XLFH42873")).not.toContain("plate=");
     expect(VIN_SCAN_SOURCE_IDS).not.toContain("vp_wanted");
     expect(VIN_SCAN_SOURCE_IDS).not.toContain("uk_mot");
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "nummerplade")?.openUrl("WVWZZZ7NZEV015204")).toContain(
@@ -145,6 +152,20 @@ describe("digital servicebook", () => {
       country: "Global.eu (EU)",
       servicesPath: "/Search/LoadServices?vin=WBA5R1C0XLFH42873&country=eu",
     });
+  });
+
+  it("atkodē &#xA0; / &nbsp; modeļa nosaukumā", () => {
+    const nbsp = `
+      <h2 id="header-car-name">BMW&#xA0;X5</h2>
+      <span>Result for <strong>Global.eu&nbsp;(EU)</strong></span>
+      url: '/Search/LoadServices?vin=WBA5R1C0XLFH42873&amp;country=eu',
+    `;
+    expect(parseDsbSearchHtml(nbsp)).toEqual({
+      vehicle: "BMW X5",
+      country: "Global.eu (EU)",
+      servicesPath: "/Search/LoadServices?vin=WBA5R1C0XLFH42873&country=eu",
+    });
+    expect(dsbScanFromParts({ vehicle: "BMW X5", country: "Global.eu (EU)" }, 3).summary).toContain("BMW X5");
   });
 
   it("ierakstu skaits nosaka zaļo vai sarkano", () => {

@@ -154,13 +154,18 @@ export function parseRdwOpenData(parts: {
 
 export function parseVegvesen(status: number, text: string): VinScanParse {
   if (status === 404) return { status: "none", summary: "VIN nav vegvesen.no reģistrā" };
-  if (status === 401 || status === 403) return { status: "unknown", summary: `vegvesen.no atbildēja ar HTTP ${status}` };
+  if (status === 401 || status === 403) {
+    return { status: "unknown", summary: "vegvesen.no API prasa pilnvaru - atver pārlūkā" };
+  }
   if (status !== 200) return { status: "unknown", summary: `vegvesen.no atbildēja ar HTTP ${status}` };
   let data: unknown;
   try {
     data = JSON.parse(text) as unknown;
   } catch {
     if (/ikke funnet|not found|ingen treff/i.test(text)) return { status: "none", summary: "VIN nav vegvesen.no reģistrā" };
+    if (/unauthorized|authorization|api.?key|subscription required|ingen tilgang/i.test(text)) {
+      return { status: "unknown", summary: "vegvesen.no API prasa pilnvaru - atver pārlūkā" };
+    }
     return { status: "unknown", summary: "vegvesen.no atbilde nav JSON" };
   }
   const rec = asRecord(data);
@@ -189,23 +194,35 @@ export function parseVegvesen(status: number, text: string): VinScanParse {
 
 export function parseNicbHtml(html: string, vin: string): VinScanParse {
   const text = html.replace(/<[^>]+>/g, " ");
-  if (/stolen/i.test(text) && text.toUpperCase().includes(vin.toUpperCase())) {
+  const upperVin = vin.trim().toUpperCase();
+  const hasVin = Boolean(upperVin) && text.toUpperCase().includes(upperVin);
+  if (/stolen/i.test(text) && hasVin) {
     return { status: "found", summary: "NICB: iespējams zagts", flags: { stolen: true } };
   }
-  if (/total loss|salvage/i.test(text) && text.toUpperCase().includes(vin.toUpperCase())) {
+  if (/total loss|salvage/i.test(text) && hasVin) {
     return { status: "found", summary: "NICB: total loss / salvage ieraksts" };
   }
-  if (/no records|not found|clean record|no match|is not listed/i.test(text)) {
+  if (
+    /no records|not found|clean record|no match|is not listed|not listed as stolen|no theft records|does not appear/i.test(
+      text,
+    )
+  ) {
     return { status: "none", summary: "NICB sarakstā nav" };
   }
-  if (/recaptcha|i['’]m not a robot|hcaptcha/i.test(text) && !text.toUpperCase().includes(vin.toUpperCase())) {
-    return { status: "unknown", summary: "NICB captcha netika apieta" };
+  if (/recaptcha|i['’]m not a robot|hcaptcha/i.test(text) && !hasVin) {
+    return { status: "unknown", summary: "NICB captcha netika apieta - atver pārlūkā" };
   }
-  return { status: "unknown", summary: "NICB lapa nav atpazīta" };
+  if (/vincheck|check a vin|nicb\.org|vehicle identification number/i.test(text) || /g-recaptcha|form_build_id/i.test(html)) {
+    return { status: "unknown", summary: "NICB: atver pārlūkā" };
+  }
+  return { status: "unknown", summary: "NICB: atver pārlūkā" };
 }
 
 export function parseBiluppgifter(status: number, html: string, vin: string): VinScanParse {
   if (status === 404) return { status: "none", summary: "biluppgifter.se šo VIN neatpazina" };
+  if (status === 403 || status === 429) {
+    return { status: "unknown", summary: "biluppgifter.se: avots bloķē serveri - atver pārlūkā" };
+  }
   if (status !== 200) return { status: "unknown", summary: `biluppgifter.se HTTP ${status}` };
   const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
   if (/hittades inte|not found|ingen träff|404/i.test(text) && !text.toUpperCase().includes(vin.toUpperCase())) {
@@ -247,6 +264,12 @@ export function parseRegitra(status: number, html: string): VinScanParse {
 }
 
 export function parseTraficom(status: number, html: string): VinScanParse {
+  if (status === 404) {
+    return { status: "unknown", summary: "Traficom lapa nav pieejama (HTTP 404) - atver pārlūkā" };
+  }
+  if (status === 403 || status === 429) {
+    return { status: "unknown", summary: "Traficom: avots bloķē serveri - atver pārlūkā" };
+  }
   if (status !== 200) return { status: "unknown", summary: `Traficom HTTP ${status}` };
   const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
   const make =
@@ -303,6 +326,9 @@ function visibleText(html: string): string {
  */
 export function parseAuctionArchive(status: number, html: string, vin: string, label: string): VinScanParse {
   if (status === 404) return { status: "none", summary: `${label}: nav izsoles ieraksta` };
+  if (status === 403 || status === 429) {
+    return { status: "unknown", summary: `${label}: avots bloķē serveri - atver pārlūkā` };
+  }
   if (status >= 400) return { status: "unknown", summary: `${label} HTTP ${status}` };
   const text = visibleText(html);
   const upperVin = vin.trim().toUpperCase();

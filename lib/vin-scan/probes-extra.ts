@@ -4,6 +4,7 @@ import { canonicalizeListingUrl } from "@/lib/order-field-validation";
 import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { vinScanParseFromListingHistory } from "@/lib/vin-scan/listing-history";
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
+import { traficomVehicleInfoUrl } from "@/lib/vin-scan/catalog";
 import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 import { scanCaptchaTokenPlaceholder, scanChallengeReason, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
@@ -113,7 +114,13 @@ export async function probeVegvesen(ctx: VinScanContext): Promise<VinScanIndicat
       { timeoutMs: 20_000, sourceLabel: "vegvesen" },
     );
     last = parseVegvesen(page.status, page.text);
-    return done("vegvesen", ctx, last.status === "unknown" ? { status: "unknown", summary: "vegvesen.no API prasa pilnvaru; publiskā lapa paliek cilnē" } : last);
+    return done(
+      "vegvesen",
+      ctx,
+      last.status === "unknown"
+        ? { status: "unknown", summary: "vegvesen.no API prasa pilnvaru - atver pārlūkā" }
+        : last,
+    );
   } catch (e) {
     return failed("vegvesen", ctx, e);
   }
@@ -300,8 +307,7 @@ export async function probeRegitra(ctx: VinScanContext): Promise<VinScanIndicato
 
 export async function probeTraficom(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    const plate = ctx.plates.fi;
-    const url = `https://www.traficom.fi/en/transport/road/vehicle-information?plate=${encodeURIComponent(plate)}&vin=${encodeURIComponent(ctx.vin)}`;
+    const url = traficomVehicleInfoUrl(ctx.vin, ctx.plates.fi);
     const page = await scanFetchSmart(url, { timeoutMs: 25_000, sourceLabel: "Traficom" });
     return done("traficom", ctx, parseTraficom(page.status, page.text));
   } catch (e) {
@@ -369,15 +375,23 @@ async function probeHtmlSource(
     // Cloudflare / bloķēts: skaidrs iemesls, nevis „Lapa nav atpazīta” (agrāk parsēja izaicinājuma lapu).
     const challenge = scanChallengeReason(page);
     if (challenge) {
-      return done(id, ctx, { status: "unknown", summary: `Cloudflare bloķē servera pārbaudi — atver saiti (${challenge})`, openUrl: url });
+      return done(id, ctx, {
+        status: "unknown",
+        summary: `Avots bloķē serveri - atver pārlūkā (${challenge})`,
+        openUrl: url,
+      });
     }
     if (page.status === 403 || page.status === 429) {
-      return done(id, ctx, { status: "unknown", summary: `Avots bloķē servera pieprasījumu (HTTP ${page.status}) — atver saiti`, openUrl: url });
+      return done(id, ctx, {
+        status: "unknown",
+        summary: `Avots bloķē serveri - atver pārlūkā (HTTP ${page.status})`,
+        openUrl: url,
+      });
     }
     const text = extractPageFromHtml(page.text).text || page.text.replace(/<[^>]+>/g, " ");
     const parsed = classify(text);
     if (parsed) return done(id, ctx, { ...parsed, openUrl: page.status === 200 ? url : parsed.openUrl });
-    return done(id, ctx, { status: "unknown", summary: "Lapa nav atpazīta" });
+    return done(id, ctx, { status: "unknown", summary: "Avots prasa pārlūku - atver saiti", openUrl: url });
   } catch (e) {
     return failed(id, ctx, e);
   }
@@ -392,6 +406,7 @@ export async function probeStatVin(ctx: VinScanContext): Promise<VinScanIndicato
       timeoutMs: 45_000,
       solveUrl: STAT_VIN_ORIGIN,
       sourceLabel: "stat_vin",
+      wafBypass: true,
     });
     const parsed = parseStatVinPage({
       status: page.status,
@@ -472,24 +487,42 @@ export async function probePlcAuction(ctx: VinScanContext): Promise<VinScanIndic
 }
 
 export async function probeBidfax(ctx: VinScanContext): Promise<VinScanIndicator> {
+  const url = `https://bidfax.info/?s=${encodeURIComponent(ctx.vin)}`;
   try {
-    const page = await scanFetchSmart(`https://bidfax.info/?s=${encodeURIComponent(ctx.vin)}`, {
+    const page = await scanFetchSmart(url, {
       timeoutMs: 20_000,
       sourceLabel: "BidFax",
     });
-    return done("bidfax", ctx, parseAuctionArchive(page.status, page.text, ctx.vin, "BidFax"));
+    const challenge = scanChallengeReason(page);
+    if (challenge) {
+      return done("bidfax", ctx, {
+        status: "unknown",
+        summary: `BidFax: avots bloķē serveri - atver pārlūkā (${challenge})`,
+        openUrl: url,
+      });
+    }
+    return done("bidfax", ctx, { ...parseAuctionArchive(page.status, page.text, ctx.vin, "BidFax"), openUrl: url });
   } catch (e) {
     return failed("bidfax", ctx, e);
   }
 }
 
 export async function probePoctra(ctx: VinScanContext): Promise<VinScanIndicator> {
+  const url = `https://poctra.com/search/${encodeURIComponent(ctx.vin)}`;
   try {
-    const page = await scanFetchSmart(`https://poctra.com/search/${encodeURIComponent(ctx.vin)}`, {
+    const page = await scanFetchSmart(url, {
       timeoutMs: 20_000,
       sourceLabel: "Poctra",
     });
-    return done("poctra", ctx, parseAuctionArchive(page.status, page.text, ctx.vin, "Poctra"));
+    const challenge = scanChallengeReason(page);
+    if (challenge) {
+      return done("poctra", ctx, {
+        status: "unknown",
+        summary: `Poctra: avots bloķē serveri - atver pārlūkā (${challenge})`,
+        openUrl: url,
+      });
+    }
+    return done("poctra", ctx, { ...parseAuctionArchive(page.status, page.text, ctx.vin, "Poctra"), openUrl: url });
   } catch (e) {
     return failed("poctra", ctx, e);
   }
