@@ -393,7 +393,7 @@ export function AdminClientLinkButton() {
                 type="button"
                 onClick={sendWhatsApp}
                 disabled={!url}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#22c55e] px-3.5 text-[13px] font-semibold text-white disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[#25D366] px-3.5 text-[13px] font-semibold text-white transition hover:bg-[#20BD5A] hover:brightness-105 disabled:opacity-50"
               >
                 <WhatsAppGlyph className="h-3.5 w-3.5" />
                 Sūtīt WhatsApp

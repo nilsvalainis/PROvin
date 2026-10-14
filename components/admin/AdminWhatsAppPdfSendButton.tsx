@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
+import { ADMIN_WHATSAPP_FILLED_ICON_BTN_CLASS } from "@/lib/admin-whatsapp-ui";
 
 function WhatsAppIconGlyph() {
   return (
@@ -14,8 +15,7 @@ function WhatsAppIconGlyph() {
   );
 }
 
-const btnActiveClass =
-  "inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-lg border border-emerald-400/80 bg-emerald-500 px-2 text-white shadow-sm transition hover:bg-emerald-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 focus-visible:ring-offset-1";
+const btnActiveClass = ADMIN_WHATSAPP_FILLED_ICON_BTN_CLASS;
 
 const btnDisabledClass =
   "inline-flex h-9 min-w-9 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 text-[var(--color-provin-muted)] opacity-60";

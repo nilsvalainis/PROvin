@@ -28,6 +28,7 @@ import {
 import { adminRichHtmlToPdfSafeHtml } from "@/lib/admin-rich-comment-html";
 import { mergePdfVisibility, type PdfVisibilitySettings } from "@/lib/pdf-visibility";
 import { sectionIconPdfHtml } from "@/lib/section-icons";
+import { PDF_TIGHT_SELECT_EXTRA_CSS } from "@/lib/pdf-tight-comment-spacing";
 
 function esc(s: string): string {
   return s
@@ -294,15 +295,14 @@ export function buildSelectConsultationDocumentHtml(args: {
   const printTitle = "PROVIN_SELECT_Konsultacija.pdf";
   const extraPlainCss = `
     .pdf-select-slot-panel{break-inside:avoid-page;}
-    .pdf-select-slot-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:12px;}
     .pdf-select-slot-kv{margin:0;}
-    .pdf-select-csdd-stack{display:flex;flex-direction:column;gap:12px;}
     .pdf-select-csdd-stack > .pdf-unified-mileage-zone{margin:0;}
     .pdf-select-subsection{margin:0;}
     .pdf-select-subsection-title{
-      margin:0 0 6px;font-family:Inter,ui-sans-serif,sans-serif;font-size:0.7rem;font-weight:700;
+      margin:0 0 0.35em;font-family:Inter,ui-sans-serif,sans-serif;font-size:0.7rem;font-weight:700;
       letter-spacing:0.04em;text-transform:uppercase;color:#334155;
     }
+    ${PDF_TIGHT_SELECT_EXTRA_CSS}
     .pdf-select-plain{
       margin:0;padding:10px 12px;font-family:Inter,ui-sans-serif,sans-serif;font-size:0.72rem;line-height:1.45;
       white-space:pre-wrap;word-break:break-word;color:#1d1d1f;background:#fafafa;border-radius:8px;border:1px solid #f1f5f9;

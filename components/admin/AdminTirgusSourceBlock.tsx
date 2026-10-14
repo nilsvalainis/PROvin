@@ -41,6 +41,7 @@ import type { ListingMarketSnapshot } from "@/lib/listing-scrape";
 import { parseListedForSaleDays, shouldShowListedForSaleCriticalBanner } from "@/lib/tirgus-listed-ui";
 
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
+import { ADMIN_SOURCE_DATA_TABLE_CLASS, ADMIN_SOURCE_TABLE_CELL, ADMIN_SOURCE_TABLE_WRAP_CLASS } from "@/lib/admin-source-data-table";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -174,7 +175,7 @@ export function AdminTirgusSourceBlock({
       : "flex h-full min-h-0 flex-col rounded-lg border border-slate-200/90 bg-white p-2 shadow-sm";
 
   const embDense = variant === "embedded" && compact;
-  const cellPad = embDense ? "px-1.5 py-0.5" : "px-2 py-1";
+  const cellPad = ADMIN_SOURCE_TABLE_CELL;
 
   const historyRows = val.priceHistory ?? [];
   const historyPriceChange =
@@ -239,12 +240,14 @@ export function AdminTirgusSourceBlock({
   ) : null;
 
   const tableBlock = (
-    <div className="min-h-0 w-full overflow-x-auto rounded-lg border border-slate-200/90">
-      <table className={`w-full min-w-[280px] border-collapse ${embDense ? "text-[10px]" : "text-[11px]"}`}>
+    <div className={`min-h-0 w-full ${ADMIN_SOURCE_TABLE_WRAP_CLASS}`}>
+      <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[280px] ${embDense ? "text-[10px]" : ""}`}>
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
             <th className={cellPad}>{TIRGUS_LABEL_LISTED}</th>
-            <th className={cellPad}>{TIRGUS_LABEL_CREATED}</th>
+            <th className={cellPad} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>
+              {TIRGUS_LABEL_CREATED}
+            </th>
             <th className={cellPad}>{TIRGUS_LABEL_PRICE_DROP}</th>
           </tr>
         </thead>
@@ -285,6 +288,7 @@ export function AdminTirgusSourceBlock({
                   placeholder="piem., 20.05.2026"
                   value={val.listingCreated}
                   disabled={disabled}
+                  data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}
                   onChange={(e) => setField("listingCreated", e.target.value)}
                   aria-label={TIRGUS_LABEL_CREATED}
                 />
@@ -325,11 +329,11 @@ export function AdminTirgusSourceBlock({
   const odoCountry = ssLv ? LISTING_ODOMETER_COUNTRY_LV : val.listingMileageCountry;
   const odometerBlock = (
     <div
-      className="min-h-0 w-full overflow-x-auto rounded-lg border border-slate-200/90"
+      className={`min-h-0 w-full ${ADMIN_SOURCE_TABLE_WRAP_CLASS}`}
       data-provin-mileage-table={PROVIN_MILEAGE_TABLE_DOM_KIND}
       data-provin-block="tirgus"
     >
-      <table className={`w-full min-w-[280px] border-collapse ${embDense ? "text-[10px]" : "text-[11px]"}`}>
+      <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[280px] ${embDense ? "text-[10px]" : ""}`}>
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
             <th className={cellPad} data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.datums}>

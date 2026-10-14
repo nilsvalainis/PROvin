@@ -148,6 +148,7 @@ import {
   type SectionIconId,
 } from "@/lib/section-icons";
 import { buildPdfDocFooterHtml, pdfDocFooterCss } from "@/lib/client-report-pdf-footer";
+import { PDF_TIGHT_GAP_CSS_ROOT, PDF_TIGHT_RICH_BODY_RULES_CSS } from "@/lib/pdf-tight-comment-spacing";
 import {
   PDF_BUSINESS_DOC_SUBTITLE,
   PDF_BUSINESS_DOC_TITLE,
@@ -2186,9 +2187,7 @@ function clientReportPrintCss(): string {
         --pdf-shadow:0 1px 3px rgba(15,23,42,.06);
         --pdf-pad-outer:16px 18px;
         --pdf-pad-inner:12px 14px;
-        --pdf-gap-section:1em;
-        --pdf-gap-block:1em;
-        --pdf-gap-heading:1em;
+        ${PDF_TIGHT_GAP_CSS_ROOT}
         --pdf-fs-sec:13px;
         --pdf-fs-base:11.5px;
         --pdf-fs-table:10.5px;
@@ -2687,7 +2686,7 @@ function clientReportPrintCss(): string {
         border-left:3px solid var(--pdf-comment-edge);border-radius:10px;background:var(--pdf-comment-bg);
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-report-comment-note .pdf-subhead{margin:0 0 8px;}
+      .pdf-report-comment-note .pdf-subhead{margin:0 0 0.35em;}
       .pdf-report-comment-note-body br + strong,
       .pdf-incident-internal-note-body br + strong,
       .pdf-mileage-comment-note-body br + strong{
@@ -2695,7 +2694,7 @@ function clientReportPrintCss(): string {
       }
       .pdf-report-comment-note-body,
       .pdf-incident-internal-note-body,
-      .pdf-mileage-comment-note-body{margin:0;font-size:11px;line-height:1.55;color:#0f172a;font-family:Inter,sans-serif!important;}
+      .pdf-mileage-comment-note-body{margin:0;font-size:11px;line-height:1.45;color:#0f172a;font-family:Inter,sans-serif!important;}
       .pdf-report-comment-note-body strong, .pdf-report-comment-note-body b,
       .pdf-incident-internal-note-body strong, .pdf-incident-internal-note-body b,
       .pdf-mileage-comment-note-body strong, .pdf-mileage-comment-note-body b{font-weight:700;}
