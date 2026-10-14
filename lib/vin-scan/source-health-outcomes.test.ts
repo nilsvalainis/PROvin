@@ -18,6 +18,7 @@ describe("VIN SCAN avotu veselības iznākumi", () => {
     expect(isVinScanHealthFailure("unknown", "mnt.ee: captcha_rejected: reCAPTCHA v3 token rejected")).toBe(true);
     expect(isVinScanHealthFailure("unknown", "Avots bloķē serveri - atver pārlūkā")).toBe(false);
     expect(isVinScanHealthFailure("unknown", "Lapa nav atpazīta")).toBe(false);
+    expect(isVinScanHealthFailure("skipped", "nav konfigurēts")).toBe(false);
   });
 
   it("ieraksta tikai atbildes un bloķējumus", () => {

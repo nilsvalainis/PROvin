@@ -24,6 +24,8 @@ describe("VIN SCAN izsoļu foto URL", () => {
   it("laiž cauri tikai https izsoļu hostus", () => {
     expect(isAllowedVinScanAuctionPhotoUrl("https://cs.copart.com/lot/a.jpg")).toBe(true);
     expect(isAllowedVinScanAuctionPhotoUrl("https://vis.iaai.com/image.jpg")).toBe(true);
+    expect(isAllowedVinScanAuctionPhotoUrl("https://cars2.import-motor.com/copart/a.webp")).toBe(true);
+    expect(isAllowedVinScanAuctionPhotoUrl("https://www.copart.fi/photo/a.jpg")).toBe(true);
     expect(isAllowedVinScanAuctionPhotoUrl("http://cs.copart.com/a.jpg")).toBe(false);
     expect(isAllowedVinScanAuctionPhotoUrl("https://127.0.0.1/a.jpg")).toBe(false);
     expect(isAllowedVinScanAuctionPhotoUrl("https://evil.example/a.jpg")).toBe(false);
@@ -48,6 +50,26 @@ describe("VIN SCAN izsoļu foto URL", () => {
     expect(urls[0]).toBe("https://cs.copart.com/p/0.jpg");
     expect(urls).toHaveLength(ORDER_VIN_SCAN_PHOTO_IMPORT_MAX);
     expect(urls).not.toContain("https://bid.cars/x.jpg");
+  });
+
+  it("JoJ import-motor foto iet AUCTION importā, pēc stat.vin", () => {
+    const joj = "https://cars2.import-motor.com/copart/a.webp";
+    const extra = "https://cs.copart.com/p/1.jpg";
+    const urls = collectVinScanAuctionPhotoUrls([
+      indicator({
+        id: "joj_copart_iaai",
+        status: "found",
+        media: { photoUrl: joj, photoUrls: [joj, extra] },
+        auctions: [{ venue: "Copart", photoUrl: joj }],
+      }),
+      indicator({
+        id: "stat_vin",
+        status: "found",
+        media: { photoUrl: extra, photoUrls: [extra] },
+      }),
+    ]);
+    expect(urls[0]).toBe(extra);
+    expect(urls).toContain(joj);
   });
 
   it("grupas virsraksts un jau ieliktas bildes", () => {

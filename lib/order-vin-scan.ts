@@ -188,14 +188,14 @@ function canImportAuction(row: VinScanIndicator): boolean {
 function rowAction(row: VinScanIndicator, state: OrderVinScanSourceState): OrderVinScanRowAction {
   if (isOrderVinScanBrowserBlocked(row.id, state, row.summary ?? "")) return "open_import";
   if (state === "error") return "retry";
-  if (row.id === "stat_vin" && canImportAuction(row)) return "import_auction";
+  if ((row.id === "stat_vin" || row.id === "joj_copart_iaai") && canImportAuction(row)) return "import_auction";
   if (row.id === "csdd" && state === "found") return "import_csdd";
   if (row.id === "listing_history" && state === "found") return "import_listing";
   return "open";
 }
 
 function rowRank(row: OrderVinScanSourceRow): number {
-  if (row.id === "stat_vin" && row.state === "found") return 0;
+  if ((row.id === "stat_vin" || row.id === "joj_copart_iaai") && row.state === "found") return 0;
   if (row.id === "csdd" && row.state === "found") return 1;
   if (row.id === "listing_history" && row.state === "found") return 2;
   if (row.state === "found") return 3;

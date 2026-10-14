@@ -6,7 +6,7 @@ import { AdminSourceHealthCompact, type SourceHealthItem } from "@/components/ad
 import { readSourceHealth } from "@/lib/source-health-store";
 import { VIN_SCAN_CATALOG } from "@/lib/vin-scan/catalog";
 
-/** Tāds pats avotu saraksts kā VIN SCAN flīzēm (32), nevis primārie + veselības filtrs. */
+/** Tāds pats avotu saraksts kā VIN SCAN flīzēm, nevis primārie + veselības filtrs. */
 
 export const metadata = {
   title: "VIN pārbaude",

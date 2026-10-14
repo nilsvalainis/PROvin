@@ -70,6 +70,7 @@ export async function POST(req: Request) {
         vin,
         listingUrl,
         force,
+        includeMetered: !sourceId,
         ...(sourceId ? { sourceIds: [sourceId] } : {}),
       }).then(
         (r) => console.info("[order-vin-scan] retry", { sessionId, sourceId: sourceId || "all", ...r }),

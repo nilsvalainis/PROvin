@@ -22,13 +22,17 @@ export type ImportVinScanAuctionPhotosResult = {
 async function downloadAuctionJpeg(url: string): Promise<Buffer | null> {
   if (!isAllowedVinScanAuctionPhotoUrl(url)) return null;
   const host = new URL(url).hostname;
-  const referer = host.includes("copart")
-    ? "https://www.copart.com/"
-    : host.includes("iaai")
-      ? "https://www.iaai.com/"
-      : host.includes("stat.vin")
-        ? "https://stat.vin/"
-        : undefined;
+  const referer = host.includes("copart.fi")
+    ? "https://www.copart.fi/"
+    : host.includes("copart")
+      ? "https://www.copart.com/"
+      : host.includes("iaai")
+        ? "https://www.iaai.com/"
+        : host.includes("stat.vin")
+          ? "https://stat.vin/"
+          : host.includes("import-motor.com")
+            ? "https://www.copart.com/"
+            : undefined;
   const res = await fetch(url, {
     cache: "no-store",
     redirect: "follow",
