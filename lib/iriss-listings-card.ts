@@ -10,7 +10,7 @@ import { hasIso3779CheckDigit } from "@/lib/vin-iso3779";
 
 export { listingVinSourceMark };
 
-export const LISTING_VIN_SCAN_PATH = "/admin/vin-scan";
+export const LISTING_VIN_SCAN_PATH = "/admin/iriss/scan";
 
 export type ListingCardPhotoInput = {
   imageUrl?: string;

@@ -1,7 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import {
+  IRISS_PASUTIJUMS_LIST_STATUSES,
+  IRISS_PASUTIJUMS_LIST_STATUS_LV,
+  type IrissPasutijumsListStatus,
+} from "@/lib/iriss-pasutijumi-types";
 import {
   dispatchIrissListStatusFilter,
   IRISS_LIST_STATUS_FILTER_ALL,
@@ -20,15 +24,18 @@ export {
   type IrissListStatusFilterState,
 } from "@/lib/iriss-pasutijumi-status-filter";
 
-const LABELS: Record<IrissPasutijumsListStatus, string> = {
-  active: "Aktīvi",
-  completed: "Izpildīti",
-  inactive: "Neaktīvi",
+const CHIP_ON: Record<IrissPasutijumsListStatus, string> = {
+  active: "bg-slate-900 text-white",
+  searching: "bg-sky-100 text-sky-950 ring-1 ring-sky-700/30",
+  offered: "bg-amber-100 text-amber-950 ring-1 ring-amber-700/30",
+  reserved: "bg-violet-100 text-violet-950 ring-1 ring-violet-700/30",
+  completed: "bg-emerald-100 text-emerald-950 ring-1 ring-emerald-700/30",
+  inactive: "bg-red-100 text-red-950 ring-1 ring-red-700/30",
 };
 
 type Props = {
   className?: string;
-  counts?: { active: number; completed: number; inactive: number };
+  counts?: Record<IrissPasutijumsListStatus, number>;
 };
 
 export function IrissPasutijumiStatusFilter({ className = "", counts }: Props) {
@@ -42,11 +49,7 @@ export function IrissPasutijumiStatusFilter({ className = "", counts }: Props) {
     const onEv = (e: Event) => {
       const d = (e as CustomEvent<IrissListStatusFilterState>).detail;
       if (!d || typeof d !== "object") return;
-      setFilter({
-        active: Boolean(d.active),
-        completed: Boolean(d.completed),
-        inactive: Boolean(d.inactive),
-      });
+      setFilter(readIrissListStatusFilter());
     };
     window.addEventListener(IRISS_LIST_STATUS_FILTER_EVENT, onEv as EventListener);
     return () => window.removeEventListener(IRISS_LIST_STATUS_FILTER_EVENT, onEv as EventListener);
@@ -55,7 +58,7 @@ export function IrissPasutijumiStatusFilter({ className = "", counts }: Props) {
   const toggle = useCallback((key: IrissPasutijumsListStatus) => {
     setFilter((prev) => {
       const next = { ...prev, [key]: !prev[key] };
-      const countOn = (["active", "completed", "inactive"] as const).filter((k) => next[k]).length;
+      const countOn = IRISS_PASUTIJUMS_LIST_STATUSES.filter((k) => next[k]).length;
       if (countOn === 0) return prev;
       dispatchIrissListStatusFilter(next);
       return next;
@@ -67,11 +70,11 @@ export function IrissPasutijumiStatusFilter({ className = "", counts }: Props) {
     setFilter(IRISS_LIST_STATUS_FILTER_ALL);
   }, []);
 
-  const isAllOn = filter.active && filter.completed && filter.inactive;
+  const isAllOn = IRISS_PASUTIJUMS_LIST_STATUSES.every((k) => filter[k]);
 
   return (
     <div className={`flex flex-wrap items-center gap-1 ${className}`} role="group" aria-label="Statusa filtrs">
-      {(["active", "completed", "inactive"] as const).map((key) => {
+      {IRISS_PASUTIJUMS_LIST_STATUSES.map((key) => {
         const on = filter[key];
         const n = counts?.[key];
         return (
@@ -81,16 +84,10 @@ export function IrissPasutijumiStatusFilter({ className = "", counts }: Props) {
             onClick={() => toggle(key)}
             aria-pressed={on}
             className={`inline-flex h-8 items-center rounded-md px-2 text-[11px] font-semibold tabular-nums transition ${
-              on
-                ? key === "completed"
-                  ? "bg-emerald-100 text-emerald-950 ring-1 ring-emerald-700/30"
-                  : key === "inactive"
-                    ? "bg-red-100 text-red-950 ring-1 ring-red-700/30"
-                    : "bg-slate-900 text-white"
-                : "bg-black/[0.04] text-black/70 hover:bg-black/[0.08] hover:text-black"
+              on ? CHIP_ON[key] : "bg-black/[0.04] text-black/70 hover:bg-black/[0.08] hover:text-black"
             }`}
           >
-            {LABELS[key]}
+            {IRISS_PASUTIJUMS_LIST_STATUS_LV[key]}
             {typeof n === "number" ? <span className="ml-1 opacity-80">{n}</span> : null}
           </button>
         );

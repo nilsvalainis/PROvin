@@ -1,10 +1,21 @@
+import { redirect } from "next/navigation";
 import { IrissScanListClient } from "@/components/admin/IrissScanListClient";
 import { IrissScanNewFab } from "@/components/admin/IrissScanNewFab";
 import { getIrissScanStorageState, listIrissScan, readIrissScanListOrder } from "@/lib/iriss-scan-store";
+import { irissScanVinFromQuery } from "@/lib/iriss-scan-vin";
 
 export const dynamic = "force-dynamic";
 
-export default async function IrissScanListPage() {
+export default async function IrissScanListPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ vin?: string }>;
+}) {
+  const sp = (await searchParams) ?? {};
+  const vin = irissScanVinFromQuery(sp.vin);
+  if (vin) {
+    redirect(`/admin/iriss/scan/new?vin=${encodeURIComponent(vin)}`);
+  }
   const storage = getIrissScanStorageState();
   const storeEnabled = storage.enabled;
   const [rows, initialListOrder] = storeEnabled ? await Promise.all([listIrissScan(), readIrissScanListOrder()]) : [[], null];
@@ -14,14 +25,14 @@ export default async function IrissScanListPage() {
       {storeEnabled && rows.length > 0 ? <IrissScanListClient rows={rows} initialListOrder={initialListOrder} /> : null}
       {storeEnabled && rows.length === 0 ? (
         <div className="mx-auto mt-10 max-w-sm px-6 text-center">
-          <p className="text-[17px] font-semibold text-[var(--color-apple-text)]">Nav SCAN ierakstu</p>
+          <p className="text-[17px] font-semibold text-[var(--color-apple-text)]">Nav radara ierakstu</p>
           <p className="mt-1 text-[13px] text-[#8e8e93]">Spied „+”, lai izveidotu pirmo ierakstu.</p>
         </div>
       ) : null}
       {storeEnabled && rows.length === 0 ? <IrissScanNewFab /> : null}
       {!storeEnabled ? (
         <div className="mt-3 rounded-2xl border border-[#E5E7EB] bg-white px-4 py-3.5 text-sm text-black shadow-sm">
-          <p className="font-semibold">SCAN melnraksts ir izslēgts</p>
+          <p className="font-semibold">Radara melnraksts ir izslēgts</p>
           {storage.reason === "vercel_blob_token_missing" ? (
             <p className="mt-1.5 text-amber-900/90">
               Vercel vidē JSON tiek glabāti <span className="font-semibold">Vercel Blob</span>. Pievienojiet projektam mainīgo{" "}

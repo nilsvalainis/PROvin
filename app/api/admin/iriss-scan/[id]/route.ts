@@ -20,6 +20,7 @@ function parseBodyRecord(id: string, body: unknown): IrissScanRecord | null {
     updatedAt: str("updatedAt"),
     pinnedAt: str("pinnedAt"),
     brandModel: str("brandModel"),
+    vin: str("vin"),
     listingLinkMobile: links(o, "listingLinkMobile"),
     listingLinkAutobid: links(o, "listingLinkAutobid"),
     listingLinkOpenline: links(o, "listingLinkOpenline"),

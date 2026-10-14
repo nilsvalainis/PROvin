@@ -4,13 +4,18 @@ import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists
 import {
   IRISS_MAX_OFFER_ATTACHMENTS,
   normalizeIrissDzintarzemeTameDraft,
+  parseIrissPasutijumsListStatus,
   type IrissOfferAttachment,
   type IrissOfferRecord,
-  type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
 import {
+  IRISS_STALE_REVISION,
+  parseExpectedIrissRevision,
+} from "@/lib/iriss-pasutijumi-save-safety";
+import {
   deleteIrissPasutijums,
+  hydrateIrissPasutijumsImages,
   isSafeIrissPasutijumsId,
   readIrissPasutijums,
   writeIrissPasutijums,
@@ -30,10 +35,21 @@ function parseOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const name = typeof o.name === "string" ? o.name : "";
       const mimeType = typeof o.mimeType === "string" ? o.mimeType : "";
       const dataUrl = typeof o.dataUrl === "string" ? o.dataUrl : "";
+      const blobPath = typeof o.blobPath === "string" ? o.blobPath : "";
+      const blobUrl = typeof o.blobUrl === "string" ? o.blobUrl : "";
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? sizeRaw : 0;
-      if (!id || !name || !dataUrl) return null;
-      return { id, name, mimeType, dataUrl, size };
+      if (!id || !name) return null;
+      if (!dataUrl && !blobPath) return null;
+      return {
+        id,
+        name,
+        mimeType,
+        dataUrl,
+        size,
+        ...(blobPath ? { blobPath } : {}),
+        ...(blobUrl ? { blobUrl } : {}),
+      };
     })
     .filter((x): x is IrissOfferAttachment => x !== null)
     .slice(0, IRISS_MAX_OFFER_ATTACHMENTS);
@@ -52,6 +68,7 @@ function parseOffersFromBody(o: Record<string, unknown>): IrissOfferRecord[] {
         id,
         title: typeof r.title === "string" ? r.title : `Piedāvājums ${idx + 1}`,
         brandModel: typeof r.brandModel === "string" ? r.brandModel : "",
+        vin: typeof r.vin === "string" ? r.vin : "",
         year: typeof r.year === "string" ? r.year : "",
         mileage: typeof r.mileage === "string" ? r.mileage : "",
         priceGermany: typeof r.priceGermany === "string" ? r.priceGermany : "",
@@ -81,10 +98,8 @@ function parseOffersFromBody(o: Record<string, unknown>): IrissOfferRecord[] {
     .slice(0, 30);
 }
 
-function parseListStatusBody(v: unknown): IrissPasutijumsListStatus {
-  const s = typeof v === "string" ? v.trim().toLowerCase() : "";
-  if (s === "active" || s === "completed" || s === "inactive") return s;
-  return "active";
+function parseListStatusBody(v: unknown) {
+  return parseIrissPasutijumsListStatus(v);
 }
 
 function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | null {
@@ -97,6 +112,7 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     createdAt: str("createdAt"),
     updatedAt: str("updatedAt"),
     pinnedAt: str("pinnedAt"),
+    workspaceRevision: parseExpectedIrissRevision(o.workspaceRevision) ?? 0,
     listStatus: parseListStatusBody(o.listStatus),
     clientFirstName: str("clientFirstName"),
     clientLastName: str("clientLastName"),
@@ -104,6 +120,7 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     email: str("email"),
     orderDate: str("orderDate"),
     brandModel: str("brandModel"),
+    vin: str("vin"),
     productionYears: str("productionYears"),
     totalBudget: str("totalBudget"),
     engineType: str("engineType"),
@@ -137,7 +154,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   const rec = await readIrissPasutijums(id);
   if (!rec) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  return NextResponse.json({ record: rec });
+  const hydrated = await hydrateIrissPasutijumsImages(rec);
+  return NextResponse.json({ record: hydrated, workspaceRevision: hydrated.workspaceRevision });
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -165,9 +183,14 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       return NextResponse.json({ error: "invalid_body" }, { status: 400 });
     }
 
-    let w: { ok: true } | { ok: false; error: string };
+    const bodyObj = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+    const expected =
+      parseExpectedIrissRevision(bodyObj.expectedWorkspaceRevision) ??
+      parseExpectedIrissRevision(bodyObj.workspaceRevision);
+
+    let w: Awaited<ReturnType<typeof writeIrissPasutijums>>;
     try {
-      w = await writeIrissPasutijums(rec);
+      w = await writeIrissPasutijums(rec, { expectedWorkspaceRevision: expected });
     } catch (e) {
       console.error("[iriss PATCH] writeIrissPasutijums threw", {
         id,
@@ -185,12 +208,18 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
     }
 
     if (!w.ok) {
+      if (w.stale || w.error === IRISS_STALE_REVISION) {
+        return NextResponse.json(
+          { error: IRISS_STALE_REVISION, record: w.record, workspaceRevision: w.record?.workspaceRevision ?? 0 },
+          { status: 409 },
+        );
+      }
       console.error("[iriss PATCH] write rejected", { id, ms: Date.now() - t0, error: w.error });
       return NextResponse.json({ error: w.error }, { status: 500 });
     }
 
-    const saved = await readIrissPasutijums(id);
-    return NextResponse.json({ ok: true, record: saved });
+    const saved = w.record ?? (await readIrissPasutijums(id));
+    return NextResponse.json({ ok: true, record: saved, workspaceRevision: saved?.workspaceRevision ?? 0 });
   } catch (e) {
     console.error("[iriss PATCH] unhandled", {
       id,

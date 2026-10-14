@@ -36,6 +36,7 @@ describe("iriss pasūtījumu saraksta pārskats", () => {
         email: "edgars@example.com",
         orderDate: "2026-04-22",
         brandModel: "BMW iX40",
+        vin: "WBAZZZ8V0K1237731",
         productionYears: "2020",
         maxMileage: "60000",
         engineType: "Elektriskais",
@@ -61,6 +62,7 @@ describe("iriss pasūtījumu saraksta pārskats", () => {
       "Pasūtījuma datums: 2026-04-22",
     ]);
     expect(o.specLines).toContain("Marka / modelis: BMW iX40");
+    expect(o.specLines).toContain("VIN: WBAZZZ8V0K1237731");
     expect(o.specLines).toContain("Dzinēja tips: Elektriskais");
     expect(o.specLines).toContain("Virsbūves tips: Hečbeks");
     expect(o.specLines).toContain("Piedziņas tips: Aizmugurējā");

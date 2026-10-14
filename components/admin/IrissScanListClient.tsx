@@ -41,7 +41,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
   const ordered = useMemo(() => orderRows(localRows, initialListOrder), [localRows, initialListOrder]);
   const visibleRows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? ordered.filter((r) => r.brandModel.toLowerCase().includes(q)) : ordered;
+    return q ? ordered.filter((r) => `${r.brandModel} ${r.vin ?? ""}`.toLowerCase().includes(q)) : ordered;
   }, [ordered, query]);
   const linkTotal = useMemo(() => localRows.reduce((n, r) => n + buildListingPlatformChips(r, 100).length, 0), [localRows]);
 
@@ -88,7 +88,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
         {/* min-7: virsraksts + skaits, meklēšana pa labi; zem tā sīka pelēka statusa rinda. */}
         <header className="sticky top-0 z-20 -mx-2 bg-[#F8F8F9]/95 px-2 pb-1.5 pt-2 backdrop-blur sm:mx-0 sm:px-0">
           <div className="flex items-center gap-2">
-            <h1 className="flex-1 text-[17px] font-semibold tracking-tight text-[var(--color-apple-text)]">SCAN</h1>
+            <h1 className="flex-1 text-[17px] font-semibold tracking-tight text-[var(--color-apple-text)]">Radars</h1>
             {searchOpen || query ? (
               <input
                 type="search"
@@ -120,7 +120,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
                 <li key={row.id} className="relative flex items-center border-b border-[#e5e5ea] last:border-b-0">
                   <Link
                     href={`/admin/iriss/scan/${encodeURIComponent(row.id)}`}
-                    aria-label={`Atvērt SCAN: ${row.brandModel || "—"}`}
+                    aria-label={`Atvērt radaru: ${row.brandModel || row.vin || "ieraksts"}`}
                     className="flex min-h-[56px] min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 pr-1 transition hover:bg-black/[0.02]"
                   >
                     <div className="min-w-0 flex-1">
@@ -177,7 +177,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
       {deleteTargetId ? (
         <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6" onClick={() => !busyId && setDeleteTargetId(null)} role="presentation">
           <div role="dialog" aria-modal="true" className="w-full max-w-sm rounded-2xl bg-white p-5 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Dzēst šo SCAN ierakstu?</h2>
+            <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Dzēst šo radara ierakstu?</h2>
             <p className="mt-1 text-[13px] text-[#8e8e93]">Darbību nevar atsaukt.</p>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button type="button" onClick={() => setDeleteTargetId(null)} disabled={Boolean(busyId)} className="h-11 rounded-xl bg-[#f2f2f7] text-[15px] font-medium text-[var(--color-apple-text)] disabled:opacity-50">

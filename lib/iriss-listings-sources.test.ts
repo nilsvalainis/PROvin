@@ -32,13 +32,23 @@ describe("detectIrissListingPlatform", () => {
 });
 
 describe("buildIrissListingSources", () => {
-  it("takes only active orders and only the three auctions", () => {
+  it("takes working orders and only the three auctions", () => {
     const sources = buildIrissListingSources([
       row("a", "active", { mobile: "https://suchen.mobile.de/x", autobid: "https://autobid.de/en/search-results?q=1", openline: "https://www.openlane.eu/en/findcar", auto1: "https://www.auto1.com/en/app/merchant/cars" }),
+      row("s", "searching", { autobid: "https://autobid.de/en/search-results?q=4" }),
+      row("o", "offered", { autobid: "https://autobid.de/en/search-results?q=5" }),
+      row("r", "reserved", { autobid: "https://autobid.de/en/search-results?q=6" }),
       row("b", "completed", { autobid: "https://autobid.de/en/search-results?q=2" }),
       row("c", "inactive", { autobid: "https://autobid.de/en/search-results?q=3" }),
     ]);
-    expect(sources.map((s) => `${s.orderId}:${s.platform}`)).toEqual(["a:autobid", "a:openline", "a:auto1"]);
+    expect(sources.map((s) => `${s.orderId}:${s.platform}`)).toEqual([
+      "a:autobid",
+      "a:openline",
+      "a:auto1",
+      "s:autobid",
+      "o:autobid",
+      "r:autobid",
+    ]);
   });
 
   it("uses other links only when the host is an auction, dedupes, trusts host over field", () => {

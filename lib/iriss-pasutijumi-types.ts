@@ -7,7 +7,11 @@ export type IrissOfferAttachment = {
   name: string;
   mimeType: string;
   size: number;
+  /** Tukšs, ja attēls ir Blob (`blobPath`). Vecie ieraksti var saturēt dataUrl. */
   dataUrl: string;
+  /** Vercel Blob / FS ceļš. Migrācija atstāj dataUrl, ja augšupielāde neizdodas. */
+  blobPath?: string;
+  blobUrl?: string;
 };
 
 /** Maks. attēlu / pielikumu skaits vienā piedāvājumā (JSON PATCH ~12 MB ierobežojums). */
@@ -17,6 +21,8 @@ export type IrissOfferRecord = {
   id: string;
   title: string;
   brandModel: string;
+  /** VIN, ja zināms. Tukšs vecajos JSON. */
+  vin: string;
   /** Legacy lauks (saglabājam atpakaļsaderībai). */
   year: string;
   /** Legacy lauks (saglabājam atpakaļsaderībai). */
@@ -50,7 +56,46 @@ export type IrissOfferRecord = {
 };
 
 /** Saraksta statuss (vizuālais + filtrs) — saglabāts pasūtījuma JSON. */
-export type IrissPasutijumsListStatus = "active" | "completed" | "inactive";
+export const IRISS_PASUTIJUMS_LIST_STATUSES = [
+  "active",
+  "searching",
+  "offered",
+  "reserved",
+  "completed",
+  "inactive",
+] as const;
+
+export type IrissPasutijumsListStatus = (typeof IRISS_PASUTIJUMS_LIST_STATUSES)[number];
+
+export const IRISS_PASUTIJUMS_LIST_STATUS_LV: Record<IrissPasutijumsListStatus, string> = {
+  active: "Aktīvs",
+  searching: "Meklē",
+  offered: "Piedāvāts",
+  reserved: "Rezervēts",
+  completed: "Izpildīts",
+  inactive: "Neaktīvs",
+};
+
+export const IRISS_PASUTIJUMS_WORKING_STATUSES: readonly IrissPasutijumsListStatus[] = [
+  "active",
+  "searching",
+  "offered",
+  "reserved",
+];
+
+export function isIrissPasutijumsListStatus(v: unknown): v is IrissPasutijumsListStatus {
+  return typeof v === "string" && (IRISS_PASUTIJUMS_LIST_STATUSES as readonly string[]).includes(v);
+}
+
+export function parseIrissPasutijumsListStatus(v: unknown): IrissPasutijumsListStatus {
+  const s = typeof v === "string" ? v.trim().toLowerCase() : "";
+  if (isIrissPasutijumsListStatus(s)) return s;
+  return "active";
+}
+
+export function isIrissPasutijumsWorkingStatus(s: IrissPasutijumsListStatus): boolean {
+  return (IRISS_PASUTIJUMS_WORKING_STATUSES as readonly string[]).includes(s);
+}
 
 export type IrissDzintarzemeTameCommissionVariant = "A" | "B";
 
@@ -139,6 +184,8 @@ export type IrissPasutijumsRecord = {
   createdAt: string;
   updatedAt: string;
   pinnedAt: string;
+  /** Optimistic concurrency. Vecie JSON bez lauka = 0. */
+  workspaceRevision: number;
   /** Saraksta / darba plūsmas statuss. */
   listStatus: IrissPasutijumsListStatus;
   clientFirstName: string;
@@ -147,6 +194,8 @@ export type IrissPasutijumsRecord = {
   email: string;
   orderDate: string;
   brandModel: string;
+  /** VIN, ja zināms. Tukšs vecajos JSON. */
+  vin: string;
   productionYears: string;
   totalBudget: string;
   engineType: string;
@@ -194,6 +243,7 @@ export type IrissPasutijumsListRow = {
   clientLastName: string;
   orderDate: string;
   brandModel: string;
+  vin: string;
   totalBudget: string;
   phone: string;
   productionYears: string;
@@ -240,6 +290,38 @@ export const IRISS_DEAL_DETAIL_OPTIONS = [
   { key: "dealEkki", label: "EKKI" },
 ] as const satisfies ReadonlyArray<{ key: keyof IrissPasutijumsRecord; label: string }>;
 
+export function emptyIrissOfferRecord(id: string, nowIso: string, title = "Piedāvājums 1"): IrissOfferRecord {
+  return {
+    id,
+    title,
+    brandModel: "",
+    vin: "",
+    year: "",
+    mileage: "",
+    priceGermany: "",
+    comment: "",
+    firstRegistration: "",
+    odometerReading: "",
+    transmission: "",
+    location: "",
+    hasFullServiceHistory: false,
+    hasFactoryPaint: false,
+    hasNoRustBody: false,
+    hasSecondWheelSet: false,
+    specialNotes: "",
+    visualAssessment: "",
+    technicalAssessment: "",
+    summary: "",
+    carPrice: "",
+    deliveryPrice: "",
+    commissionFee: "",
+    offerValidDays: "",
+    attachments: [],
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+}
+
 export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijumsRecord {
   const d = nowIso.slice(0, 10);
   return {
@@ -247,6 +329,7 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     createdAt: nowIso,
     updatedAt: nowIso,
     pinnedAt: "",
+    workspaceRevision: 0,
     listStatus: "active",
     clientFirstName: "",
     clientLastName: "",
@@ -254,6 +337,7 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     email: "",
     orderDate: d,
     brandModel: "",
+    vin: "",
     productionYears: "",
     totalBudget: "",
     engineType: "",

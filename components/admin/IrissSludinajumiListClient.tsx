@@ -33,6 +33,9 @@ import {
   vehicleMatchesOrderFilter,
   type IrissListingOrderBrief,
 } from "@/lib/iriss-listings-orders";
+import { mergeListingOrderOvMigration } from "@/lib/iriss-listing-order-ov";
+import { irissPasutijumsSeedFromListing } from "@/lib/iriss-pasutijums-from-listing";
+import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
 import { nextIrissListingsAutomaticReadLabel } from "@/lib/iriss-listings-schedule";
 import {
@@ -195,6 +198,7 @@ type Props = {
   scanOrders?: IrissListingOrderBrief[];
   /** Servera `dismissed.json`: paliek pēc refresh, citā ierīcē un pēc sync. */
   dismissed?: IrissListingDismissedEntry[];
+  initialOrderOv?: Record<string, string[]>;
 };
 
 const DATASET_STORAGE_KEY = "iriss-list-dataset";
@@ -235,7 +239,13 @@ function dismissPatchesFromIds(
   });
 }
 
-export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanOrders = [], dismissed = [] }: Props) {
+export function IrissSludinajumiListClient({
+  latest,
+  orders: clientOrders,
+  scanOrders = [],
+  dismissed = [],
+  initialOrderOv = {},
+}: Props) {
   const [dataset, setDatasetState] = useState<IrissListingDataset>("orders");
   useEffect(() => {
     try {
@@ -308,7 +318,16 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
     const vehicles = latest?.vehicles ?? [];
     const serverHidden = dismissedHiddenIds(dismissed, vehicles);
     const hidden = uniqueListingIds([...serverHidden, ...loaded.hidden]);
-    setPrefs({ ...loaded, hidden, tab: "new", listScope: "all", sort: null, budget: null });
+    const migrated = mergeListingOrderOvMigration(initialOrderOv, loaded.orderOv);
+    if (migrated.persistServer) {
+      void fetch("/api/admin/iriss-listings/order-ov", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderOv: migrated.next }),
+      });
+    }
+    setPrefs({ ...loaded, hidden, tab: "new", listScope: "all", sort: null, budget: null, orderOv: migrated.next });
     setPrefsReady(true);
     setMounted(true);
     setNowMs(Date.now());
@@ -332,9 +351,18 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
 
   function applyPrefs(next: IrissListPrefs) {
     const prevHidden = prefs.hidden;
+    const orderOvChanged = JSON.stringify(next.orderOv) !== JSON.stringify(prefs.orderOv);
     setPrefs(next);
     const storage = irissListBrowserStorage();
     if (storage) persistIrissListPrefs(storage, next);
+    if (orderOvChanged) {
+      void fetch("/api/admin/iriss-listings/order-ov", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderOv: next.orderOv }),
+      });
+    }
     const added = next.hidden.filter((id) => !prevHidden.includes(id));
     const removed = prevHidden.filter((id) => !next.hidden.includes(id));
     if (added.length === 0 && removed.length === 0) return;
@@ -573,7 +601,9 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
     () =>
       buildListingClientOptions(
         orders,
-        (o) => o.listStatus === "active" || vehicles.some((v) => listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv).includes(o.id)),
+        (o) =>
+          isIrissPasutijumsWorkingStatus(o.listStatus) ||
+          vehicles.some((v) => listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv).includes(o.id)),
         serializeListingOrderFilter,
         fmtEur,
       ),
@@ -618,7 +648,7 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
           <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[#e9e9ee] p-[2px] text-[12px]">
             {([
               ["orders", "Klientu pasūtījumi", clientOrders.length],
-              ["scan", "SCAN", scanOrders.length],
+              ["scan", "Radars", scanOrders.length],
             ] as const).map(([id, label, n]) => (
               <button
                 key={id}
@@ -821,14 +851,14 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
           </button>
           <span className="text-[#d1d1d6]">|</span>
           <label className="inline-flex max-w-[60vw] items-center gap-1">
-            <span>{dataset === "scan" ? "SCAN" : "Klients"}</span>
+            <span>{dataset === "scan" ? "Radars" : "Klients"}</span>
             <select
-              aria-label={dataset === "scan" ? "SCAN ieraksts" : "Klients un pasūtījums"}
+              aria-label={dataset === "scan" ? "Radara ieraksts" : "Klients un pasūtījums"}
               value={serializeListingOrderFilter(orderFilter)}
               onChange={(e) => writeListQuery({ ord: e.target.value || null })}
               className="max-w-[48vw] bg-transparent text-[11.5px] font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-[260px]"
             >
-              <option value="">{dataset === "scan" ? "Visi SCAN" : "Visi klienti"}</option>
+              <option value="">{dataset === "scan" ? "Visi radari" : "Visi klienti"}</option>
               {clientOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.indent ? "\u00a0\u00a0\u00a0— " : ""}
@@ -873,6 +903,19 @@ export function IrissSludinajumiListClient({ latest, orders: clientOrders, scanO
             imageHidden={Boolean(hiddenImages[v.id])}
             onImageError={() => setHiddenImages((prev) => ({ ...prev, [v.id]: true }))}
             onVinPatch={(id, patch) => setVinPatch((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))}
+            onCreateOrder={async (vehicle) => {
+              const seed = irissPasutijumsSeedFromListing(vehicle, crypto.randomUUID(), new Date().toISOString());
+              const res = await fetch("/api/admin/iriss-pasutijumi", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify({ record: seed, listingVehicleId: vehicle.id }),
+              });
+              const data = (await res.json().catch(() => ({}))) as { id?: unknown };
+              if (!res.ok || typeof data.id !== "string") return;
+              router.push(`/admin/iriss/pasutijumi/${encodeURIComponent(data.id)}`);
+              router.refresh();
+            }}
           />
         ))}
       </div>

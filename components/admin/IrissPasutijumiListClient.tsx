@@ -24,11 +24,13 @@ import {
   irissPhoneTelHref,
 } from "@/lib/iriss-pasutijumi-list-row";
 import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
-import type {
-  IrissPasutijumiListOrder,
-  IrissPasutijumsListRow,
-  IrissPasutijumsListStatus,
-  IrissPasutijumsRecord,
+import {
+  IRISS_PASUTIJUMS_LIST_STATUSES,
+  IRISS_PASUTIJUMS_LIST_STATUS_LV,
+  type IrissPasutijumiListOrder,
+  type IrissPasutijumsListRow,
+  type IrissPasutijumsListStatus,
+  type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
 import {
   IRISS_LIST_STATUS_FILTER_EVENT,
@@ -36,7 +38,7 @@ import {
   readIrissListStatusFilter,
   type IrissListStatusFilterState,
 } from "@/components/admin/IrissPasutijumiStatusFilter";
-import { dispatchIrissListStatusFilter } from "@/lib/iriss-pasutijumi-status-filter";
+import { dispatchIrissListStatusFilter, parseIrissListStatusFilter } from "@/lib/iriss-pasutijumi-status-filter";
 import { IrissOrderSortSelect } from "@/components/admin/IrissOrderSortSelect";
 
 type SortMode = IrissOrderSortMode;
@@ -67,11 +69,7 @@ const SWIPE_AXIS_MIN = 14;
 const SWIPE_AXIS_BIAS = 8;
 const LIST_ORDER_PERSIST_DEBOUNCE_MS = 380;
 
-const STATUS_LABEL: Record<IrissPasutijumsListStatus, string> = {
-  active: "Aktīvs",
-  completed: "Izpildīts",
-  inactive: "Neaktīvs",
-};
+const STATUS_LABEL: Record<IrissPasutijumsListStatus, string> = IRISS_PASUTIJUMS_LIST_STATUS_LV;
 
 function useNarrowIrissSwipeViewport(): boolean {
   return useSyncExternalStore(
@@ -171,6 +169,9 @@ function statusBarClass(row: IrissPasutijumsListRow): string {
   const st = row.listStatus ?? "active";
   if (st === "completed") return "bg-emerald-500";
   if (st === "inactive") return "bg-red-500";
+  if (st === "searching") return "bg-sky-500";
+  if (st === "offered") return "bg-amber-500";
+  if (st === "reserved") return "bg-violet-500";
   if (row.pinnedAt) return "bg-emerald-600";
   return "bg-slate-400";
 }
@@ -178,6 +179,9 @@ function statusBarClass(row: IrissPasutijumsListRow): string {
 function statusBadgeClass(st: IrissPasutijumsListStatus): string {
   if (st === "completed") return "bg-emerald-100 text-emerald-950";
   if (st === "inactive") return "bg-red-100 text-red-950";
+  if (st === "searching") return "bg-sky-100 text-sky-950";
+  if (st === "offered") return "bg-amber-100 text-amber-950";
+  if (st === "reserved") return "bg-violet-100 text-violet-950";
   return "bg-slate-100 text-slate-800";
 }
 
@@ -491,7 +495,7 @@ const IrissRowCard = memo(function IrissRowCard({
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
-      {(["active", "completed", "inactive"] as const).map((s) => (
+      {IRISS_PASUTIJUMS_LIST_STATUSES.map((s) => (
         <button
           key={s}
           type="button"
@@ -731,11 +735,7 @@ export function IrissPasutijumiListClient({
     const handler = (e: Event) => {
       const d = (e as CustomEvent<IrissListStatusFilterState>).detail;
       if (!d || typeof d !== "object") return;
-      setStatusFilter({
-        active: Boolean(d.active),
-        completed: Boolean(d.completed),
-        inactive: Boolean(d.inactive),
-      });
+      setStatusFilter(parseIrissListStatusFilter(JSON.stringify(d)));
     };
     window.addEventListener(IRISS_LIST_STATUS_FILTER_EVENT, handler as EventListener);
     return () => window.removeEventListener(IRISS_LIST_STATUS_FILTER_EVENT, handler as EventListener);

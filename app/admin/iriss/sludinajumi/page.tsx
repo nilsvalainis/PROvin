@@ -7,7 +7,7 @@ import {
 } from "@/lib/iriss-listings-aggregate-store";
 import { emptyIrissListingsDismissed } from "@/lib/iriss-listings-dismiss";
 import { irissListingOrderBrief } from "@/lib/iriss-listings-orders";
-import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import { listIrissPasutijumi, readIrissListingOrderOv } from "@/lib/iriss-pasutijumi-store";
 import { irissScanOrderBrief } from "@/lib/iriss-scan-listings";
 import { listIrissScan } from "@/lib/iriss-scan-store";
 
@@ -16,11 +16,12 @@ export const dynamic = "force-dynamic";
 export default async function IrissSludinajumiPage() {
   const storage = getIrissListingsStorageState();
   // Abi datu kopumi (klientu pasūtījumi + SCAN) ielādējas paralēli; kļūda vienā neaptur otru.
-  const [latest, dismissedView, orders, scanOrders] = await Promise.all([
+  const [latest, dismissedView, orders, scanOrders, initialOrderOv] = await Promise.all([
     storage.enabled ? readIrissListingsLatestView() : Promise.resolve(null),
     storage.enabled ? readIrissListingsDismissed() : Promise.resolve(emptyIrissListingsDismissed()),
     listIrissPasutijumi().then((rows) => rows.map(irissListingOrderBrief)).catch(() => []),
     listIrissScan().then((rows) => rows.map(irissScanOrderBrief)).catch(() => []),
+    readIrissListingOrderOv().catch(() => ({})),
   ]);
   const dismissed = dismissedView.entries;
 
@@ -46,7 +47,13 @@ export default async function IrissSludinajumiPage() {
 
       {storage.enabled ? (
         <Suspense fallback={null}>
-          <IrissSludinajumiListClient latest={latest} orders={orders} scanOrders={scanOrders} dismissed={dismissed} />
+          <IrissSludinajumiListClient
+            latest={latest}
+            orders={orders}
+            scanOrders={scanOrders}
+            dismissed={dismissed}
+            initialOrderOv={initialOrderOv}
+          />
         </Suspense>
       ) : null}
     </div>

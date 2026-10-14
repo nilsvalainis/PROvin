@@ -14,6 +14,7 @@ import {
 } from "@/lib/iriss-pasutijumi-list-overview";
 import {
   getIrissPasutijumiStorageState,
+  hydrateIrissPasutijumsImages,
   listIrissPasutijumi,
   readIrissListOrder,
   readIrissPasutijums,
@@ -28,7 +29,7 @@ async function collectIrissDraftRecords(): Promise<Map<string, IrissPasutijumsRe
   for (const row of rows) {
     const rec = await readIrissPasutijums(row.id);
     if (!rec) continue;
-    map.set(`${row.id}.json`, rec);
+    map.set(`${row.id}.json`, await hydrateIrissPasutijumsImages(rec));
   }
   return map;
 }
