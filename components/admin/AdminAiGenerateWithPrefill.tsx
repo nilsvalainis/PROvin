@@ -86,12 +86,13 @@ export function AdminAiGenerateWithPrefill({
 
   return (
     <>
-      <div className="inline-flex flex-wrap items-center gap-1.5">
+      <div className="inline-flex flex-wrap items-center gap-1">
         {tiers.map((tier) => (
           <AdminAiGenerateButton
             key={tier}
             label={tier === recommendedTier ? label : SHORT_LABEL[tier]}
             variant={tier}
+            badge={tier === recommendedTier}
             disabled={disabled}
             busy={busy}
             demoOnly={demoOnly}

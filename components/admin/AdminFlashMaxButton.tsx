@@ -187,8 +187,8 @@ export function AdminFlashMaxButton({
         aria-haspopup="dialog"
         className={
           compact
-            ? "inline-flex h-7 w-full shrink-0 items-center justify-center gap-0.5 rounded-md border border-teal-700/40 bg-teal-600/90 px-1 text-[9px] font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
-            : "inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-teal-700/40 bg-teal-600 px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
+            ? "provin-ai-btn inline-flex h-7 w-full shrink-0 items-center justify-center gap-0.5 rounded-md border border-[#d2d2d7] bg-transparent px-1 text-[9px] font-semibold text-[#6e6e73] transition hover:border-[rgba(175,82,222,0.55)] hover:bg-[rgba(175,82,222,0.08)] hover:text-[#7d3fa0] disabled:cursor-not-allowed disabled:opacity-45"
+            : "provin-ai-btn inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border border-[#d2d2d7] bg-transparent px-2 text-[10px] font-semibold text-[#6e6e73] transition hover:border-[rgba(175,82,222,0.55)] hover:bg-[rgba(175,82,222,0.08)] hover:text-[#7d3fa0] disabled:cursor-not-allowed disabled:opacity-45"
         }
         title="Atver izvēli: kuras sadaļas, ar kuriem aģentiem un kādu komandu ģenerēt. Noklusējums paliek esošie Flash Max lauki."
       >
