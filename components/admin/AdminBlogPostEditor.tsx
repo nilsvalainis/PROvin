@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import type { BlogBlock, BlogPost } from "@/lib/blog/types";
+import { AdminProvinTiptapEditor } from "@/components/admin/AdminProvinTiptapEditor";
 import type { BlogCommentAdmin } from "@/lib/blog/types";
 
 type Props = {
@@ -393,10 +394,16 @@ export function AdminBlogPostEditor({ initialPost, initialComments }: Props) {
                     />
                   </div>
                 ) : (
-                  <textarea
-                    className={`${fieldClass} min-h-[88px]`}
+                  <AdminProvinTiptapEditor
                     value={block.text}
-                    onChange={(e) => updateBlock(index, { ...block, text: e.target.value })}
+                    onChange={(text) => updateBlock(index, { ...block, text })}
+                    mode="rich"
+                    enableHeadings={false}
+                    variant="field"
+                    className="mt-1"
+                    editorClassName="min-h-[88px] text-sm text-[var(--color-apple-text)]"
+                    placeholder="Teksts…"
+                    aria-label={`Bloga bloks ${block.type}`}
                   />
                 )}
               </li>
