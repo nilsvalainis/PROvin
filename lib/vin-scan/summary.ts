@@ -29,7 +29,7 @@ export function formatVinScanScannedAt(iso: string): string {
 }
 
 export function pickVinScanVehicle(rows: readonly VinScanOverviewRow[]): VinScanVehicle | null {
-  const ranked = ["csdd", "tjekbil", "rdw", "vegvesen", "esyn", "biluppgifter", "plc_auction", "vin_decode"] as const;
+  const ranked = ["csdd", "speckr", "tjekbil", "rdw", "vegvesen", "esyn", "biluppgifter", "plc_auction", "vin_decode"] as const;
   for (const id of ranked) {
     const row = rows.find((item) => item.id === id && item.status === "found" && item.vehicle);
     if (row?.vehicle && (row.vehicle.make || row.vehicle.model || row.vehicle.year)) return row.vehicle;
