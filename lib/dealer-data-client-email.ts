@@ -48,40 +48,25 @@ export function buildDealerNoDataEmailDraft(
   templatesDoc?: MessageTemplatesDoc | null,
 ): DealerClientEmailDraft {
   const refunded = opts.refunded === true;
-  const id = refunded ? "email.dealer.no_data_refunded" : "email.dealer.no_data";
+  const id = "email.dealer.no_data";
   const vars = buildDealerNoDataVars({ vin: opts.vin, amountEur: opts.amountEur, refunded });
   const rendered = resolveMessageSync(id, vars, { doc: templatesDoc });
   if (rendered?.subject && rendered.text) {
     return { kind: "no_data", subject: rendered.subject, text: rendered.text };
   }
 
-  const amount = amountLine(opts.amountEur);
-  const subject = refunded
-    ? "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts"
-    : "PROVIN.LV: dīlera dati nav pieejami";
-  const refundBlock = refunded
-    ? [
-        "Informācija par naudas atmaksu:",
-        `Summa: ${amount} (veikta pilnā apmērā uz to pašu maksājumu karti).`,
-        "",
-        "Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.",
-      ].join("\n")
-    : [
-        "Informācija par naudas atmaksu:",
-        `Summa: ${amount} (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).`,
-        "",
-        "Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.",
-      ].join("\n");
+  const varsFallback = buildDealerNoDataVars({ vin: opts.vin, amountEur: opts.amountEur, refunded });
+  const subject = varsFallback.temats ?? "PROVIN.LV: dīlera dati nav pieejami";
   const text = [
     "Labdien!",
     "",
-    "Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.",
+    "Dīlera servisa vēsture šim pasūtījumam nav pieejama.",
     "",
-    refundBlock,
+    varsFallback.atmaksa_rinda,
     "",
     dealerNoDataAuditCtaBlock(),
     "",
-    "Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.",
+    "Jautājumi: info@provin.lv",
     "",
     clientMessageSignOff(),
   ].join("\n");

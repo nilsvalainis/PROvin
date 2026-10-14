@@ -22,6 +22,7 @@ import {
 } from "@/lib/dealer-data-client-email";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { listingPeekPhotoCid } from "@/lib/listing-peek-photos";
+import { stripListingPeekCommentLeadingGreeting } from "@/lib/listing-peek-comment-presets";
 import { buildClientReportLegalFooterPlainText } from "@/lib/report-pdf-standards";
 import {
   buildReportReadyPlainText,
@@ -83,7 +84,6 @@ function adminOrderPlainText(p: OrderEmailPayload): string {
     `VIN: ${p.vin ?? "-"}`,
     `Sludinājums: ${p.listingUrl ?? "-"}`,
     p.contactMethod ? `Saziņa: ${contactLabel(p.contactMethod)}` : "Atskaite: e-pastā",
-    p.notes ? `Piezīmes: ${p.notes}` : "",
     p.heardAbout ? `Kur uzzināja: ${p.heardAbout}` : "",
     `Summa: ${p.amountTotal ?? "-"} ${p.currency ?? ""}`,
   ].filter(Boolean);
@@ -136,7 +136,6 @@ export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayl
       label: "Saziņa",
       value: payload.contactMethod ? contactLabel(payload.contactMethod) : "E-pasts (atskaite)",
     },
-    ...(payload.notes ? [{ label: "Piezīmes", value: payload.notes }] : []),
     ...(payload.heardAbout ? [{ label: "Kur uzzināja", value: payload.heardAbout }] : []),
     {
       label: "Summa",
@@ -550,7 +549,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     !origin || origin.includes("localhost") || origin.includes("127.0.0.1")
       ? "https://provin.lv/?plan=audits#home-hero"
       : `${origin}/?plan=audits#home-hero`;
-  const comment = opts.comment.trim();
+  const comment = stripListingPeekCommentLeadingGreeting(opts.comment);
   const listingUrl = (opts.listingUrl ?? "").trim();
   const photos = (opts.photos ?? []).filter((p) => p.id.trim() && p.jpeg.length > 0);
   await warmMessageTemplatesCache();
@@ -570,11 +569,9 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
   const text =
     rendered?.text ??
     [
-      "Labdien!",
+      "Sveiki!",
       "",
-      "Īss skatījums uz tavu sludinājumu:",
-      ...(listingUrl ? ["", listingUrl] : []),
-      "",
+      ...(listingUrl ? [`${listingUrl}`, ""] : []),
       comment,
       ...(photos.length > 0 ? ["", fotoPiezime] : []),
       "",
@@ -647,8 +644,8 @@ export async function sendPartnerVerifyEmail(opts: {
   await warmMessageTemplatesCache();
   const doc = getCachedMessageTemplatesDoc();
   const purposeKey = change ? "change" : "signup";
-  const templateId = `email.partner_verify.${purposeKey}.${loc}`;
-  const vars = { lead, verify_url: opts.verifyUrl, hint };
+  const templateId = `email.partner_verify.${purposeKey}`;
+  const vars = { temats: subject, lead, verify_url: opts.verifyUrl, hint };
   const rendered = resolveMessageSync(templateId, vars, { doc });
   const text = rendered?.text ?? [lead, "", opts.verifyUrl, "", hint].join("\n");
   const html =
@@ -712,8 +709,8 @@ export async function sendPartnerPasswordResetEmail(opts: {
   }[loc];
   await warmMessageTemplatesCache();
   const doc = getCachedMessageTemplatesDoc();
-  const templateId = `email.partner_password_reset.${loc}`;
-  const vars = { lead, reset_url: opts.resetUrl, hint };
+  const templateId = "email.partner_password_reset";
+  const vars = { temats: subject, lead, reset_url: opts.resetUrl, hint };
   const rendered = resolveMessageSync(templateId, vars, { doc });
   const text = rendered?.text ?? [lead, "", opts.resetUrl, "", hint].join("\n");
   const html =

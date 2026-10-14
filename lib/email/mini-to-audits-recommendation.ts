@@ -9,6 +9,7 @@ import {
   MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
 } from "@/lib/email/mini-to-audits-approved-text";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
+import { MINI_TO_AUDITS_MESSAGE_TEMPLATE_ID } from "@/lib/messages/template-aliases";
 import { miniToAuditsVarsFromDraftInput } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
@@ -75,8 +76,8 @@ export function buildMiniToAuditsRecommendationDraft(
     paymentUrl: opts.paymentUrl,
     differencePrice: opts.differencePrice,
   });
-  const emailRendered = renderTemplateById("email.upsell.mini_to_audit", vars, templatesDoc);
-  const waRendered = renderTemplateById("wa.upsell.mini_to_audit", vars, templatesDoc);
+  const emailRendered = renderTemplateById(MINI_TO_AUDITS_MESSAGE_TEMPLATE_ID, vars, templatesDoc);
+  const waRendered = renderTemplateById(MINI_TO_AUDITS_MESSAGE_TEMPLATE_ID, vars, templatesDoc);
   if (emailRendered?.subject && emailRendered.text && waRendered?.text) {
     return { subject: emailRendered.subject, emailText: emailRendered.text, whatsappText: waRendered.text };
   }

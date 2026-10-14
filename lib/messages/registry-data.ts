@@ -68,52 +68,46 @@ const PARTNER_RESET_LEAD: Record<string, string> = {
 };
 
 function partnerVerifyDefs(): MessageTemplateDef[] {
-  const locales = ["lv", "en", "de", "ru"] as const;
-  const out: MessageTemplateDef[] = [];
-  for (const loc of locales) {
-    for (const purpose of ["signup", "change"] as const) {
-      const id = `email.partner_verify.${purpose}.${loc}`;
-      out.push({
-        id,
-        channel: "email",
-        group: "B2B partneri",
-        title: purpose === "signup" ? "E-pasta apstiprināšana" : "Jaunā e-pasta apstiprināšana",
-        description: loc.toUpperCase(),
-        subject: PARTNER_VERIFY_SUBJECT[loc][purpose],
-        body: ["{{lead}}", "", "{{verify_url}}", "", "{{hint}}"].join("\n"),
-        vars: [
-          { key: "lead", label: "Ievads", sample: PARTNER_VERIFY_BODY[loc][purpose], required: true },
-          { key: "verify_url", label: "Apstiprināšanas saite", sample: "https://provin.lv/lv/partneriem/apstiprinat?token=…", required: true },
-          { key: "hint", label: "Piezīme", sample: PARTNER_VERIFY_HINT[loc] },
-        ],
-        tags: ["auto", "4 valodas"],
-        htmlKind: "partner_verify",
-        meta: { locale: loc, purpose },
-      });
-    }
-  }
-  return out;
+  return (["signup", "change"] as const).map((purpose) => ({
+    id: `email.partner_verify.${purpose}`,
+    channel: "email" as const,
+    group: "B2B partneri",
+    title: purpose === "signup" ? "E-pasta apstiprināšana" : "Jaunā e-pasta apstiprināšana",
+    description: "Visas valodas (ievads no {{lead}})",
+    subject: "{{temats}}",
+    body: ["{{lead}}", "", "{{verify_url}}", "", "{{hint}}"].join("\n"),
+    vars: [
+      { key: "temats", label: "Temats", sample: PARTNER_VERIFY_SUBJECT.lv[purpose], required: true },
+      { key: "lead", label: "Ievads", sample: PARTNER_VERIFY_BODY.lv[purpose], required: true },
+      { key: "verify_url", label: "Apstiprināšanas saite", sample: "https://provin.lv/lv/partneriem/apstiprinat?token=…", required: true },
+      { key: "hint", label: "Saite", sample: PARTNER_VERIFY_HINT.lv },
+    ],
+    tags: ["auto", "4 valodas"],
+    htmlKind: "partner_verify",
+    meta: { purpose },
+  }));
 }
 
 function partnerResetDefs(): MessageTemplateDef[] {
-  const locales = ["lv", "en", "de", "ru"] as const;
-  return locales.map((loc) => ({
-    id: `email.partner_password_reset.${loc}`,
-    channel: "email" as const,
-    group: "B2B partneri",
-    title: "Paroles atjaunošana",
-    description: loc.toUpperCase(),
-    subject: PARTNER_RESET_SUBJECT[loc],
-    body: ["{{lead}}", "", "{{reset_url}}", "", "{{hint}}"].join("\n"),
-    vars: [
-      { key: "lead", label: "Ievads", sample: PARTNER_RESET_LEAD[loc], required: true },
-      { key: "reset_url", label: "Atjaunošanas saite", sample: "https://provin.lv/lv/partneriem/parole?token=…", required: true },
-      { key: "hint", label: "Piezīme", sample: PARTNER_VERIFY_HINT[loc] },
-    ],
-    tags: ["auto", "4 valodas"],
-    htmlKind: "partner_password_reset",
-    meta: { locale: loc },
-  }));
+  return [
+    {
+      id: "email.partner_password_reset",
+      channel: "email",
+      group: "B2B partneri",
+      title: "Paroles atjaunošana",
+      description: "Visas valodas (ievads no {{lead}})",
+      subject: "{{temats}}",
+      body: ["{{lead}}", "", "{{reset_url}}", "", "{{hint}}"].join("\n"),
+      vars: [
+        { key: "temats", label: "Temats", sample: PARTNER_RESET_SUBJECT.lv, required: true },
+        { key: "lead", label: "Ievads", sample: PARTNER_RESET_LEAD.lv, required: true },
+        { key: "reset_url", label: "Atjaunošanas saite", sample: "https://provin.lv/lv/partneriem/parole?token=…", required: true },
+        { key: "hint", label: "Saite", sample: PARTNER_VERIFY_HINT.lv },
+      ],
+      tags: ["auto", "4 valodas"],
+      htmlKind: "partner_password_reset",
+    },
+  ];
 }
 
 export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
@@ -271,30 +265,24 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     title: "Īss komentārs par sludinājumu",
     subject: "PROVIN: īss komentārs par tavu sludinājumu",
     body: [
-      "Labdien!",
+      "Sveiki!",
       "",
-      "Īss skatījums uz tavu sludinājumu:",
       "{{#sludinajuma_saite}}",
-      "",
       "{{sludinajuma_saite}}",
-      "{{/sludinajuma_saite}}",
       "",
+      "{{/sludinajuma_saite}}",
       "{{komentars}}",
       "{{#foto_piezime}}",
       "",
       "{{foto_piezime}}",
       "{{/foto_piezime}}",
       "",
-      "Noskaidro visu par savu topošo auto.",
-      "PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.",
-      "",
-      "Pasūtīt:",
-      "{{audits_cta_saite}}",
+      "PROVIN AUDITS: {{audits_cta_saite}}",
       "",
       "{{paraksts}}",
     ].join("\n"),
     vars: [
-      { key: "komentars", label: "Komentārs", sample: "Īss operatora komentārs…", required: true },
+      { key: "komentars", label: "Komentārs", sample: "Īss komentārs par sludinājumu.", required: true },
       { key: "sludinajuma_saite", label: "Sludinājuma saite", sample: "https://www.ss.lv/…" },
       { key: "foto_piezime", label: "Foto piezīme", sample: "Pielikumā 2 fotogrāfijas." },
       { key: "audits_cta_saite", label: "AUDITS saite", sample: "https://provin.lv/?plan=audits#home-hero", required: true },
@@ -306,56 +294,26 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     id: "email.dealer.no_data",
     channel: "email",
     group: "Atmaksa un atcelšana",
-    title: "Dīlera dati nav (pirms atmaksas)",
-    subject: "PROVIN.LV: dīlera dati nav pieejami",
+    title: "Dīlera dati nav (ar atmaksu)",
+    subject: "{{temats}}",
     body: [
       "Labdien!",
       "",
-      "Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.",
+      "Dīlera servisa vēsture šim pasūtījumam nav pieejama.",
       "",
-      "Informācija par naudas atmaksu:",
-      "Summa: {{summa}} (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).",
+      "{{atmaksa_rinda}}",
       "",
       "{{refund_piezime}}",
       "",
       "{{audits_cta}}",
       "",
-      "Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.",
+      "Jautājumi: info@provin.lv",
       "",
       "{{paraksts}}",
     ].join("\n"),
     vars: [
-      { key: "summa", label: "Summa", sample: "24,99 €", required: true },
-      { key: "refund_piezime", label: "Atmaksas piezīme", sample: defaultRefundBankNote() },
-      { key: "audits_cta", label: "AUDITS CTA", sample: defaultAuditsCtaBlock() },
-      { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
-    ],
-    htmlKind: "dealer_operator",
-  },
-  {
-    id: "email.dealer.no_data_refunded",
-    channel: "email",
-    group: "Atmaksa un atcelšana",
-    title: "Dīlera dati nav, atmaksa veikta",
-    subject: "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts",
-    body: [
-      "Labdien!",
-      "",
-      "Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.",
-      "",
-      "Informācija par naudas atmaksu:",
-      "Summa: {{summa}} (veikta pilnā apmērā uz to pašu maksājumu karti).",
-      "",
-      "{{refund_piezime}}",
-      "",
-      "{{audits_cta}}",
-      "",
-      "Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.",
-      "",
-      "{{paraksts}}",
-    ].join("\n"),
-    vars: [
-      { key: "summa", label: "Summa", sample: "24,99 €", required: true },
+      { key: "temats", label: "Temats", sample: "PROVIN.LV: dīlera dati nav pieejami", required: true },
+      { key: "atmaksa_rinda", label: "Atmaksa", sample: "Summa: 24,99 € (atgriezīsim uz to pašu karti).", required: true },
       { key: "refund_piezime", label: "Atmaksas piezīme", sample: defaultRefundBankNote() },
       { key: "audits_cta", label: "AUDITS CTA", sample: defaultAuditsCtaBlock() },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
@@ -651,27 +609,14 @@ PROVIN.LV`,
     ],
   },
   {
-    id: "wa.upsell.mini_to_audit",
-    channel: "whatsapp",
-    group: "Piedāvājumi",
-    title: "MINI → AUDITS ieteikums",
-    body: miniToAuditsTemplateBody,
-    vars: [
-      { key: "vards", label: "Vārds", sample: "Jāni", required: true },
-      { key: "auto", label: "Auto", sample: "VW Golf", required: true },
-      { key: "starpiba", label: "Starpība", sample: "60,00", required: true },
-      { key: "maksajuma_saite", label: "Saite", sample: "https://buy.stripe.com/…", required: true },
-    ],
-  },
-  {
     id: "wa.listing_peek",
     channel: "whatsapp",
     group: "Ātrie vērtējumi",
     title: "Ātrais vērtējums",
     body: [
-      "Labdien!",
+      "Sveiki!",
       "",
-      "Pievienoju īsu komentāru par sludinājumu, ko apskatījām.",
+      "{{komentars}}",
       "",
       "{{jautajumu_rinda}}",
       "",
@@ -680,7 +625,8 @@ PROVIN.LV`,
       "{{paraksts}}",
     ].join("\n"),
     vars: [
-      { key: "jautajumu_rinda", label: "Jautājumu rinda", sample: "Ja rodas jautājumi, droši rakstiet šeit vai uz info@provin.lv." },
+      { key: "komentars", label: "Komentārs", sample: "Īss komentārs par sludinājumu.", required: true },
+      { key: "jautajumu_rinda", label: "Jautājumu rinda", sample: "Jautājumi: rakstiet šeit vai info@provin.lv." },
       { key: "google_atsauksme", label: "Google", sample: defaultGoogleReviewBlock() },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
     ],

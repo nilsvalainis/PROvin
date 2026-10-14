@@ -67,7 +67,7 @@ export function resolveIrissOfferPdfLabels(doc?: MessageTemplatesDoc | null): Ir
   const L = (id: string, vars: Record<string, string> = {}) => irissPdfLabel(id, vars, doc);
   return {
     heroSub: (date) => L("iriss.pdf.offer.hero_sub", { date }),
-    secClient: L("iriss.pdf.offer.sec.client"),
+    secClient: L("iriss.pdf.shared.sec.client"),
     secBasic: L("iriss.pdf.offer.sec.basic"),
     secEvalMarks: L("iriss.pdf.offer.sec.eval_marks"),
     secSpecial: L("iriss.pdf.offer.sec.special"),
@@ -79,8 +79,8 @@ export function resolveIrissOfferPdfLabels(doc?: MessageTemplatesDoc | null): Ir
     secPricing: L("iriss.pdf.offer.sec.pricing"),
     secPhotos: L("iriss.pdf.offer.sec.photos"),
     kvClient: L("iriss.pdf.offer.kv.client"),
-    kvPhone: L("iriss.pdf.offer.kv.phone"),
-    kvEmail: L("iriss.pdf.offer.kv.email"),
+    kvPhone: L("iriss.pdf.shared.kv.phone"),
+    kvEmail: L("iriss.pdf.shared.kv.email"),
     tileYear: L("iriss.pdf.offer.tile.year"),
     tileOdometer: L("iriss.pdf.offer.tile.odometer"),
     tileTransmission: L("iriss.pdf.offer.tile.transmission"),
@@ -101,15 +101,15 @@ export function resolveIrissOrderPdfLabels(doc?: MessageTemplatesDoc | null): Ir
   const L = (id: string, vars: Record<string, string> = {}) => irissPdfLabel(id, vars, doc);
   return {
     heroSub: (date) => L("iriss.pdf.order.hero_sub", { date }),
-    secClient: L("iriss.pdf.order.sec.client"),
+    secClient: L("iriss.pdf.shared.sec.client"),
     secVehicle: L("iriss.pdf.order.sec.vehicle"),
     secDeal: L("iriss.pdf.order.sec.deal"),
     secEquipment: L("iriss.pdf.order.sec.equipment"),
     secNotes: L("iriss.pdf.order.sec.notes"),
     kvFirstName: L("iriss.pdf.order.kv.first_name"),
     kvLastName: L("iriss.pdf.order.kv.last_name"),
-    kvPhone: L("iriss.pdf.order.kv.phone"),
-    kvEmail: L("iriss.pdf.order.kv.email"),
+    kvPhone: L("iriss.pdf.shared.kv.phone"),
+    kvEmail: L("iriss.pdf.shared.kv.email"),
     kvOrderDate: L("iriss.pdf.order.kv.order_date"),
     equipRequired: L("iriss.pdf.order.equip.required"),
     equipDesired: L("iriss.pdf.order.equip.desired"),
