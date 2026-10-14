@@ -432,11 +432,12 @@ function httpFailure(status: number, bodyText: string): IrissRelayFetchResult {
 export async function fetchViaIrissRelay(
   cfg: IrissRelayConfig,
   src: { platform: IrissListingPlatform; sourceUrl: string; orderId: string; orderBrandModel: string },
-  opts: { maxPages?: number; fetchImpl?: FetchLike } = {},
+  opts: { maxPages?: number; fetchImpl?: FetchLike; timeoutMs?: number } = {},
 ): Promise<IrissRelayFetchResult> {
   const fetchImpl = opts.fetchImpl ?? fetch;
+  const timeoutMs = Math.max(1_000, opts.timeoutMs ?? cfg.timeoutMs);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), cfg.timeoutMs);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetchImpl(`${cfg.baseUrl}/fetch`, {
       method: "POST",
@@ -456,7 +457,7 @@ export async function fetchViaIrissRelay(
     return mapRelayFetchResponse(body, src);
   } catch (e) {
     const aborted = e instanceof Error && e.name === "AbortError";
-    const note = aborted ? `Relejs neatbildēja ${Math.round(cfg.timeoutMs / 1000)} s laikā.` : `Releja savienojums neizdevās: ${formatFetchError(e, "fetch failed")}`;
+    const note = aborted ? `Relejs neatbildēja ${Math.round(timeoutMs / 1000)} s laikā.` : `Releja savienojums neizdevās: ${formatFetchError(e, "fetch failed")}`;
     return { status: "fetch_failed", note, vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0, elapsedMs: 0 };
   } finally {
     clearTimeout(timer);

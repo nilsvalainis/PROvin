@@ -4,6 +4,7 @@
  * Vēsture tiek lasīta no Next.js SSR lapas `/history?url=` (`__NEXT_DATA__`).
  */
 
+import { looksLikeListingHistoryCloudflareChallenge } from "@/lib/listing-history-cloudflare";
 import { fetchListingHistoryHtmlViaRelay } from "@/lib/listing-history-relay";
 
 export const ADIFY_HISTORY_PAGE_URL = "https://adify.lv/history";
@@ -50,6 +51,8 @@ export type AdifyListingHistorySnapshot = {
   listingUrl: string | null;
   /** No kura avota nākuši dati (ja atrasts). Trūkst vecākos saglabātos ierakstos. */
   source?: "adify" | "tirgusdati";
+  /** Cloudflare / WAF: serveris nevar ielasīt — atver pārlūkā vai importē HTML. */
+  blocked?: boolean;
 };
 
 const MAX_HISTORY_ROWS = 80;
@@ -276,64 +279,52 @@ function logAdifyBlocked(res: Response, snippet: string): void {
   }
 }
 
-function cookieHeaderFromResponse(res: Response): string {
-  const list = typeof res.headers.getSetCookie === "function" ? res.headers.getSetCookie() : [];
-  if (list.length > 0) {
-    return list
-      .map((c) => c.split(";")[0]?.trim() ?? "")
-      .filter(Boolean)
-      .join("; ");
-  }
-  const raw = res.headers.get("set-cookie");
-  if (!raw) return "";
-  return raw
-    .split(/,(?=[^ ;]+=)/)
-    .map((c) => c.split(";")[0]?.trim() ?? "")
-    .filter(Boolean)
-    .join("; ");
-}
+type AdifyDirectPageResult =
+  | { kind: "ok"; html: string }
+  | { kind: "cloudflare"; httpStatus: number }
+  | { kind: "error"; message: string };
 
-async function fetchAdifyHistoryPage(
-  listingUrl: string,
-  signal: AbortSignal,
-): Promise<Response> {
-  let cookie = "";
+/** Viena tiešā pieprasījuma ielāde (bez sākumlapas warm-up, lai neviļ CF 403 dubultā). */
+async function fetchAdifyHistoryPageDirect(listingUrl: string, signal: AbortSignal): Promise<AdifyDirectPageResult> {
   try {
-    const home = await fetch("https://adify.lv/", {
+    const res = await fetch(adifyHistoryPageLookupUrl(listingUrl), {
       method: "GET",
-      // Pirmais pieprasījums = tā, kā pārlūkā ierakstīta adrese: sec-fetch-site "none".
-      headers: adifyBrowserHeaders("none"),
       signal,
+      headers: {
+        ...adifyBrowserHeaders("same-origin"),
+        Referer: "https://adify.lv/",
+      },
       redirect: "follow",
       cache: "no-store",
     });
-    if (!home.ok) {
-      logAdifyBlocked(home, await home.text().catch(() => ""));
+    const html = await res.text();
+    if (looksLikeListingHistoryCloudflareChallenge(html) || (res.status === 403 && /cloudflare|just a moment/i.test(html))) {
+      logAdifyBlocked(res, html);
+      return { kind: "cloudflare", httpStatus: res.status };
     }
-    cookie = cookieHeaderFromResponse(home);
-  } catch {
-    cookie = "";
+    if (!res.ok) {
+      logAdifyBlocked(res, html);
+      return { kind: "error", message: `Adify neatbildēja (HTTP ${res.status})` };
+    }
+    return { kind: "ok", html };
+  } catch (e) {
+    const aborted = e instanceof Error && e.name === "AbortError";
+    return { kind: "error", message: aborted ? "Adify pieprasījums noildza" : "Neizdevās ielādēt Adify vēsturi" };
   }
-  const res = await fetch(adifyHistoryPageLookupUrl(listingUrl), {
-    method: "GET",
-    signal,
-    headers: {
-      // Otrais pieprasījums nāk no tās pašas izcelsmes (sekojot saitei mājaslapā).
-      ...adifyBrowserHeaders("same-origin"),
-      Referer: "https://adify.lv/",
-      ...(cookie ? { Cookie: cookie } : {}),
-    },
-    redirect: "follow",
-    cache: "no-store",
-  });
-  if (!res.ok) {
-    const snippet = await res
-      .clone()
-      .text()
-      .catch(() => "");
-    logAdifyBlocked(res, snippet);
-  }
-  return res;
+}
+
+function adifyBlockedSnapshot(message: string): AdifyListingHistorySnapshot {
+  return {
+    found: false,
+    blocked: true,
+    message,
+    rows: [],
+    durationDays: 0,
+    oldestDate: "",
+    newestDate: "",
+    priceChangeEur: 0,
+    listingUrl: null,
+  };
 }
 
 export function normalizeAdifyHistoryItems(
@@ -458,29 +449,45 @@ export async function fetchAdifyListingHistory(
   }
 
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 12_000);
+  const t = setTimeout(() => ctrl.abort(), 8_000);
   let message = "Neizdevās ielādēt Adify vēsturi";
+  let sawCloudflare = false;
   try {
-    const res = await fetchAdifyHistoryPage(listingUrl, ctrl.signal);
-    if (res.ok) {
-      const parsed = adifySnapshotFromHistoryHtml(await res.text(), now);
+    const direct = await fetchAdifyHistoryPageDirect(listingUrl, ctrl.signal);
+    if (direct.kind === "ok") {
+      const parsed = adifySnapshotFromHistoryHtml(direct.html, now);
       if (parsed.snapshot) return parsed.snapshot;
       message = parsed.message;
+    } else if (direct.kind === "cloudflare") {
+      sawCloudflare = true;
+      message = "Adify bloķēja pieprasījumu (Cloudflare)";
     } else {
-      message = `Adify neatbildēja (HTTP ${res.status})`;
+      message = direct.message;
     }
-  } catch (e) {
-    const aborted = e instanceof Error && e.name === "AbortError";
-    message = aborted ? "Adify pieprasījums noildza" : "Neizdevās ielādēt Adify vēsturi";
   } finally {
     clearTimeout(t);
   }
 
-  // Cloudflare noraida Vercel IP; tā pati lapa caur releju.
-  const relayed = await fetchListingHistoryHtmlViaRelay(adifyHistoryPageLookupUrl(listingUrl));
+  // Cloudflare noraida Vercel IP; mēģinām vienu releja caurlaidi (bez atkārtojumu cilpas).
+  const relayed = await fetchListingHistoryHtmlViaRelay(adifyHistoryPageLookupUrl(listingUrl), {
+    timeoutMs: sawCloudflare ? 12_000 : undefined,
+    retryDelayMs: 0,
+  });
   if (relayed) {
+    if (looksLikeListingHistoryCloudflareChallenge(relayed)) {
+      return adifyBlockedSnapshot(
+        "Cloudflare bloķēja Adify vēsturi no servera. Atver adify.lv/history pārlūkā un importē lapu (vai Tampermonkey).",
+      );
+    }
     const parsed = adifySnapshotFromHistoryHtml(relayed, now);
     if (parsed.snapshot) return parsed.snapshot;
+    message = parsed.message;
+  }
+
+  if (sawCloudflare) {
+    return adifyBlockedSnapshot(
+      "Cloudflare bloķēja Adify vēsturi no servera. Atver adify.lv/history pārlūkā un importē lapu (vai Tampermonkey).",
+    );
   }
   return { ...normalizeAdifyHistoryItems([], now), message };
 }

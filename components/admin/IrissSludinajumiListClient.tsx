@@ -586,6 +586,7 @@ export function IrissSludinajumiListClient({
           error?: string;
           warnings?: string[];
           skipped?: string;
+          continue?: boolean;
           progress?: { done?: number; total?: number };
         };
         if (!res.ok) {
@@ -597,7 +598,7 @@ export function IrissSludinajumiListClient({
         lastProgress = { done, total };
         if (total > 0) setSyncMsg(`${done}/${total} meklējumi nolasīti`);
         restart = false;
-        if (body.skipped === "already_done" || total === 0 || done >= total || done === prevDone) break;
+        if (body.skipped === "already_done" || total === 0 || done >= total || done === prevDone || body.continue === false) break;
         prevDone = done;
       }
       setSyncMsg(lastProgress.total > 0 ? `${lastProgress.done}/${lastProgress.total} meklējumi nolasīti.` : "Nolasīšana pabeigta.");

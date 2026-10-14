@@ -6,6 +6,7 @@
  */
 
 import { type AdifyListingHistorySnapshot, normalizeAdifyHistoryItems } from "@/lib/adify-listing-history";
+import { looksLikeListingHistoryCloudflareChallenge } from "@/lib/listing-history-cloudflare";
 import { fetchListingHistoryHtmlViaRelay } from "@/lib/listing-history-relay";
 
 export const TIRGUSDATI_HISTORY_PAGE_URL = "https://tirgusdati.lv/vesture";
@@ -28,9 +29,7 @@ export function tirgusDatiHistoryPageLookupUrl(listingUrl: string): string {
 }
 
 export function looksLikeTirgusDatiCloudflareChallenge(html: string): boolean {
-  return /just a moment|cf-browser-verification|performing security verification|enable javascript and cookies to continue/i.test(
-    html,
-  );
+  return looksLikeListingHistoryCloudflareChallenge(html);
 }
 
 function tirgusDatiEurAmount(text: string): number | null {
