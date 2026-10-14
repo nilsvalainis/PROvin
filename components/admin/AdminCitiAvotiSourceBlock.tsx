@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+
 import { AdminVendorAvotuSourceBlock } from "@/components/admin/AdminVendorAvotuSourceBlock";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
@@ -82,6 +84,16 @@ export function AdminCitiAvotiSourceBlock({
 }: Props) {
   const sections = (value.sections ?? []).length > 0 ? value.sections! : [emptyCitiAvotiSection()];
   const total = sections.length;
+  // K4: stabilas React atslēgas sekcijām (tikai UI; datos/PDF netiek glabātas), lai dzēšot sekciju
+  // redaktora iekšējais stāvoklis nepārlēk uz nākamo.
+  const keySeq = useRef(0);
+  const keysRef = useRef<string[]>([]);
+  const newKey = () => `citi-${++keySeq.current}`;
+  if (keysRef.current.length !== sections.length) {
+    const k = keysRef.current.slice(0, sections.length);
+    while (k.length < sections.length) k.push(newKey());
+    keysRef.current = k;
+  }
 
   const setSections = (next: CitiAvotiSectionState[]) => {
     onChange({ sections: next.length > 0 ? next : [emptyCitiAvotiSection()] });
@@ -93,11 +105,13 @@ export function AdminCitiAvotiSourceBlock({
   };
 
   const addSection = () => {
+    keysRef.current = [...keysRef.current, newKey()];
     setSections([...sections, emptyCitiAvotiSection()]);
   };
 
   const removeSection = (index: number) => {
     if (sections.length <= 1) return;
+    keysRef.current = keysRef.current.filter((_, i) => i !== index);
     setSections(sections.filter((_, i) => i !== index));
   };
 
@@ -142,7 +156,7 @@ export function AdminCitiAvotiSourceBlock({
             const titled = Boolean(section.label?.trim());
             return (
               <div
-                key={index}
+                key={keysRef.current[index] ?? index}
                 className="overflow-hidden rounded-lg border border-slate-300 bg-white/70 shadow-sm"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 border-l-4 border-[var(--color-provin-accent)] bg-slate-100 px-2 py-1.5">
