@@ -50,6 +50,8 @@ export type IrissOfferRecord = {
   deliveryPrice: string;
   commissionFee: string;
   offerValidDays: string;
+  /** Derīgs līdz (YYYY-MM-DD, Europe/Riga dienas beigas). Tukšs vecajos JSON. */
+  validUntil: string;
   attachments: IrissOfferAttachment[];
   createdAt: string;
   updatedAt: string;
@@ -278,6 +280,9 @@ export type IrissPasutijumsListRow = {
   listingLinkAuto1: string[];
   listingLinkEcarstrade: string[];
   listingLinksOther: string[];
+  /** Jaunākā piedāvājuma validUntil (YYYY-MM-DD). Tukšs vecajos JSON. */
+  latestOfferValidUntil?: string;
+  hasExpiredOffer?: boolean;
 };
 
 /** Saraksta kārtība (Blob/FS JSON) — piespraustie un pārējie atsevišķi. */
@@ -318,6 +323,7 @@ export function emptyIrissOfferRecord(id: string, nowIso: string, title = "Pied�
     deliveryPrice: "",
     commissionFee: "",
     offerValidDays: "",
+    validUntil: "",
     attachments: [],
     createdAt: nowIso,
     updatedAt: nowIso,

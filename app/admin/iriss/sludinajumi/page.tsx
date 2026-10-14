@@ -8,6 +8,8 @@ import {
 import { emptyIrissListingsDismissed } from "@/lib/iriss-listings-dismiss";
 import { irissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { listIrissPasutijumi, readIrissListingOrderOv } from "@/lib/iriss-pasutijumi-store";
+import { irissCompanyListingCosts } from "@/lib/iriss-company-settings";
+import { readIrissCompanySettings } from "@/lib/iriss-company-settings-store";
 import { irissScanOrderBrief } from "@/lib/iriss-scan-listings";
 import { listIrissScan } from "@/lib/iriss-scan-store";
 
@@ -16,12 +18,13 @@ export const dynamic = "force-dynamic";
 export default async function IrissSludinajumiPage() {
   const storage = getIrissListingsStorageState();
   // Abi datu kopumi (klientu pasūtījumi + SCAN) ielādējas paralēli; kļūda vienā neaptur otru.
-  const [latest, dismissedView, orders, scanOrders, initialOrderOv] = await Promise.all([
+  const [latest, dismissedView, orders, scanOrders, initialOrderOv, companySettings] = await Promise.all([
     storage.enabled ? readIrissListingsLatestView() : Promise.resolve(null),
     storage.enabled ? readIrissListingsDismissed() : Promise.resolve(emptyIrissListingsDismissed()),
     listIrissPasutijumi().then((rows) => rows.map(irissListingOrderBrief)).catch(() => []),
     listIrissScan().then((rows) => rows.map(irissScanOrderBrief)).catch(() => []),
     readIrissListingOrderOv().catch(() => ({})),
+    readIrissCompanySettings().catch(() => null),
   ]);
   const dismissed = dismissedView.entries;
 
@@ -53,6 +56,7 @@ export default async function IrissSludinajumiPage() {
             scanOrders={scanOrders}
             dismissed={dismissed}
             initialOrderOv={initialOrderOv}
+            companyCosts={companySettings ? irissCompanyListingCosts(companySettings) : undefined}
           />
         </Suspense>
       ) : null}

@@ -98,6 +98,7 @@ export function IrissListingVehicleCard({
   onImageError,
   onVinPatch,
   onCreateOrder,
+  onCreateOffer,
 }: {
   v: IrissListingVehicle;
   nowMs: number | null;
@@ -112,10 +113,12 @@ export function IrissListingVehicleCard({
   onImageError: () => void;
   onVinPatch?: (id: string, patch: ListingVinOcrPatch) => void;
   onCreateOrder?: (v: IrissListingVehicle) => void | Promise<void>;
+  onCreateOffer?: (v: IrissListingVehicle) => void | Promise<void>;
 }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [vinCopied, setVinCopied] = useState(false);
   const [createBusy, setCreateBusy] = useState(false);
+  const [offerBusy, setOfferBusy] = useState(false);
   useListingVinOcr(v, (id, patch) => onVinPatch?.(id, patch));
   const gallery = listingCardGallery(v);
   const photos = imageHidden ? [] : gallery.photos;
@@ -413,6 +416,20 @@ export function IrissListingVehicleCard({
               }}
             >
               {createBusy ? "Veido…" : "Izveidot pasūtījumu"}
+            </button>
+          ) : null}
+          {onCreateOffer ? (
+            <button
+              type="button"
+              disabled={offerBusy}
+              className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOfferBusy(true);
+                void Promise.resolve(onCreateOffer(v)).finally(() => setOfferBusy(false));
+              }}
+            >
+              {offerBusy ? "Veido…" : "Piedāvājums"}
             </button>
           ) : null}
         </div>

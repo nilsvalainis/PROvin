@@ -29,6 +29,7 @@ function fixtureFlat(): unknown[] {
       stage: 15,
       price: 16,
       auctionStartDate: 20,
+      auctionEndDate: 48,
       slug: 21,
       manufacturer: 22,
       equipments: 26,
@@ -73,6 +74,7 @@ function fixtureFlat(): unknown[] {
     "Automatic", // 45
     "Stuttgart", // 46
     "WBAZZZ8V0K1237731", // 47
+    ["Date", "2026-10-08T14:00:00+00:00"], // 48 auctionEndDate (shown 14:00)
   ];
 }
 
@@ -111,6 +113,7 @@ describe("parseAutobidSearchPage", () => {
     expect(v.priceMinimal).toBe(22800);
     expect(v.priceCurrent).toBeNull();
     expect(v.auctionStartAt).toBe("2026-10-08T08:00:00+00:00");
+    expect(v.auctionEndAt).toBe("2026-10-08T12:00:00.000Z");
     expect(v.auctionStage).toBe("BEFORE_AUCTION");
     expect(v.detailUrl).toBe("https://autobid.de/en/item/volvo-xc60-b5-awd-3587391");
     expect(v.firstRegistration).toBe("07.2024");

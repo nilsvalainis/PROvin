@@ -461,6 +461,11 @@ const IrissRowCard = memo(function IrissRowCard({
               {specSummary}
             </span>
           ) : null}
+          {row.hasExpiredOffer ? (
+            <span className="mt-0.5 inline-flex rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+              Piedāvājums beidzies
+            </span>
+          ) : null}
         </span>
       </div>
       {telHref ? (

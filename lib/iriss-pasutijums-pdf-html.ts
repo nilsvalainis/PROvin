@@ -1,5 +1,7 @@
 import { adminRichHtmlToPdfSafeHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
-import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
+import { resolveIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
+import { irissCompanyLogoAlt, irissCompanyLogoSrc, type IrissCompanySettings } from "@/lib/iriss-company-settings";
+import { formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
 import { resolveIrissOfferPdfLabels, resolveIrissOrderPdfLabels } from "@/lib/messages/iriss-pdf-labels";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -56,8 +58,14 @@ function sectionHead(title: string): string {
   return `<div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">${esc(title)}</h2></div>`;
 }
 
-function buildIrissPrintFooterHtml(accent: string): string {
-  const lines = getIrissPdfSupplierFooterLines();
+function logoAttrs(settings?: IrissCompanySettings | null): { src: string; alt: string } {
+  const empty = { logoUrl: "", logoAlt: "" } as IrissCompanySettings;
+  const s = settings ?? empty;
+  return { src: irissCompanyLogoSrc(s), alt: irissCompanyLogoAlt(s) };
+}
+
+function buildIrissPrintFooterHtml(accent: string, settings?: IrissCompanySettings | null): string {
+  const lines = resolveIrissPdfSupplierFooterLines(settings);
   const brand = esc(lines[0] ?? "");
   const rows = lines
     .slice(1)
@@ -457,6 +465,7 @@ export function buildIrissPasutijumsPrintHtml(
   record: IrissPasutijumsRecord,
   generatedAtFormatted: string,
   templatesDoc?: MessageTemplatesDoc | null,
+  settings?: IrissCompanySettings | null,
 ): string {
   const accent = "#64748b";
   const labels = resolveIrissOrderPdfLabels(templatesDoc);
@@ -464,7 +473,7 @@ export function buildIrissPasutijumsPrintHtml(
   const heroModel = record.brandModel.trim() || "PASŪTĪJUMS";
 
   const header = `<header class="ipdf-header">
-    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
+    <img class="ipdf-logo" src="${esc(logoAttrs(settings).src)}" width="160" height="40" alt="${esc(logoAttrs(settings).alt)}"/>
     <div>
       <p class="ipdf-hero-model">${esc(heroModel)}</p>
       <p class="ipdf-hero-sub">${esc(labels.heroSub(generatedAtFormatted))}</p>
@@ -538,7 +547,7 @@ export function buildIrissPasutijumsPrintHtml(
     ${blockIf(labels.secDeal, dealDetailsInner)}
     ${blockIf(labels.secEquipment, equip)}
     ${blockIf(labels.secNotes, notes)}
-    ${buildIrissPrintFooterHtml(accent)}`;
+    ${buildIrissPrintFooterHtml(accent, settings)}`;
 
   return irissPrintShell(accent, "PASŪTĪJUMS", body, { mutedSections: true });
 }
@@ -548,6 +557,7 @@ export function buildIrissOfferPrintHtml(
   offer: IrissOfferRecord,
   generatedAtFormatted: string,
   templatesDoc?: MessageTemplatesDoc | null,
+  settings?: IrissCompanySettings | null,
 ): string {
   const accent = IRISS_BRAND_ORANGE_HEX;
   const labels = resolveIrissOfferPdfLabels(templatesDoc);
@@ -555,7 +565,7 @@ export function buildIrissOfferPrintHtml(
   const heroTitle = offer.brandModel.trim() || offer.title.trim() || "Piedāvājums";
 
   const header = `<header class="ipdf-header">
-    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
+    <img class="ipdf-logo" src="${esc(logoAttrs(settings).src)}" width="160" height="40" alt="${esc(logoAttrs(settings).alt)}"/>
     <div>
       <p class="ipdf-hero-model">${esc(heroTitle)}</p>
       <p class="ipdf-hero-sub">${esc(labels.heroSub(generatedAtFormatted))}</p>
@@ -629,7 +639,12 @@ export function buildIrissOfferPrintHtml(
     rowIf(labels.priceDelivery, deliveryPrice) +
     rowIf(labels.priceCommission, commissionFee) +
     rowIf(labels.priceTotal, totalValue > 0 ? fmtMoney(totalValue) : "") +
-    rowIf(labels.priceValidDays, offer.offerValidDays);
+    rowIf(
+      labels.priceValidDays,
+      normalizeOfferValidUntil(offer.validUntil)
+        ? formatOfferValidUntilLv(offer.validUntil)
+        : offer.offerValidDays,
+    );
   const pricingTable = wrapTable(pricingRows);
 
   const imageAttachments = offer.attachments.filter(
@@ -661,7 +676,7 @@ export function buildIrissOfferPrintHtml(
     ${evalSections}
     ${blockIf(labels.secPricing, pricingTable)}
     ${blockIf(labels.secPhotos, filesInner, "ipdf-blk--media")}
-    ${buildIrissPrintFooterHtml(accent)}`;
+    ${buildIrissPrintFooterHtml(accent, settings)}`;
 
   return irissPrintShell(accent, heroTitle, body);
 }

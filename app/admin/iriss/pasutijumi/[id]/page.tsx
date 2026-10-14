@@ -10,7 +10,7 @@ type Props = { params: Promise<{ id: string }> };
 export default async function IrissPasutijumsDetailPage({
   params,
   searchParams,
-}: Props & { searchParams?: Promise<{ newOffer?: string; noClientPdf?: string }> }) {
+}: Props & { searchParams?: Promise<{ newOffer?: string; noClientPdf?: string; offer?: string }> }) {
   if (!isIrissPasutijumiStoreEnabled()) {
     redirect("/admin/iriss/pasutijumi");
   }
@@ -25,5 +25,13 @@ export default async function IrissPasutijumsDetailPage({
   const sp = (await searchParams) ?? {};
   const autoOpenNewOffer = sp.newOffer === "1";
   const forceNoClientPdf = sp.noClientPdf === "1";
-  return <IrissPasutijumsEditor initialRecord={stripIrissOfferImageDataUrls(rec)} autoOpenNewOffer={autoOpenNewOffer} forceNoClientPdf={forceNoClientPdf} />;
+  const autoOpenOfferId = typeof sp.offer === "string" ? sp.offer.trim() : "";
+  return (
+    <IrissPasutijumsEditor
+      initialRecord={stripIrissOfferImageDataUrls(rec)}
+      autoOpenNewOffer={autoOpenNewOffer}
+      autoOpenOfferId={autoOpenOfferId}
+      forceNoClientPdf={forceNoClientPdf}
+    />
+  );
 }

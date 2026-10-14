@@ -1,5 +1,10 @@
 import "server-only";
 
+import {
+  buildIrissFooterLinesFromSettings,
+  type IrissCompanySettings,
+} from "@/lib/iriss-company-settings";
+
 /**
  * **Tikai** SIA IRISS piedāvājuma PDF un drukas HTML (`iriss-pasutijums-pdf*`).
  *
@@ -34,4 +39,11 @@ export function getIrissPdfSupplierFooterLines(): string[] {
     );
   }
   return [...FOOTER_BRAND_ONLY];
+}
+
+/** Iestatījumu kājene, ja operators to aizpildījis; citādi env / zīmols. */
+export function resolveIrissPdfSupplierFooterLines(settings?: IrissCompanySettings | null): string[] {
+  const fromSettings = settings ? buildIrissFooterLinesFromSettings(settings) : [];
+  if (fromSettings.length > 0) return fromSettings;
+  return getIrissPdfSupplierFooterLines();
 }

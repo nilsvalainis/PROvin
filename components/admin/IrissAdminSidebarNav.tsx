@@ -20,6 +20,7 @@ export function IrissAdminSidebarNav({ orientation = "vertical" }: Props) {
   const pasutijumiActive = pathname.startsWith("/admin/iriss/pasutijumi");
   const scanActive = pathname.startsWith("/admin/iriss/scan");
   const sludinajumiActive = pathname.startsWith("/admin/iriss/sludinajumi");
+  const settingsActive = pathname.startsWith("/admin/iriss/iestatijumi");
   const horizontal = orientation === "horizontal";
 
   return (
@@ -32,6 +33,9 @@ export function IrissAdminSidebarNav({ orientation = "vertical" }: Props) {
       </Link>
       <Link href="/admin/iriss/sludinajumi" className={navItemClass(sludinajumiActive)}>
         Klientu filtri
+      </Link>
+      <Link href="/admin/iriss/iestatijumi" className={navItemClass(settingsActive)}>
+        Iestatījumi
       </Link>
       <IrissNewOfferMenuButton compact={horizontal} />
       {!horizontal ? (
