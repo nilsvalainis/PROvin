@@ -90,6 +90,19 @@ export function parseLvTransitPlate(raw: string): LvTransitPlateParts | null {
   return { letter: m[1]!, digits: m[2]!, last: m[3]! };
 }
 
+export const WAYBILL_COUNTDOWN_COLOR: Record<WaybillCountdownStatus, string> = {
+  ok: "#15803d",
+  soon: "#c2410c",
+  expired: "#b91c1c",
+};
+
+export const WAYBILL_PROGRESS_COLOR: Record<WaybillCountdownStatus, string> = {
+  ok: "#22c55e",
+  soon: "#f97316",
+  expired: "#ef4444",
+};
+
+/** Tailwind klases paliek kā rezerve; admin-ios-theme.css pārraksta `span` krāsu, tāpēc UI lieto inline. */
 export const WAYBILL_COUNTDOWN_TEXT: Record<WaybillCountdownStatus, string> = {
   ok: "text-[#15803d]",
   soon: "text-[#c2410c]",

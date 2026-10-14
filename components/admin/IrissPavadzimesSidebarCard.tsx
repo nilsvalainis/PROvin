@@ -7,18 +7,36 @@ import {
   formatWaybillCountdown,
   formatWaybillExpiryDdMmHm,
   parseLvTransitPlate,
-  WAYBILL_COUNTDOWN_TEXT,
-  WAYBILL_PROGRESS_FILL,
+  WAYBILL_COUNTDOWN_COLOR,
+  WAYBILL_PROGRESS_COLOR,
   waybillRemainingShare,
 } from "@/lib/iriss-pavadzimes-countdown";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
+
+const PLATE_RED = "#d21f2b";
+
+/**
+ * Krāsas un Barlow kā inline stils: `.admin-ios-theme :is(span, a)` piespiež `color: #000`
+ * un manto Inter, tāpēc Tailwind `text-[#…]` / `font-semibold` uz bērniem neuzvar.
+ */
+const plateGlyphStyle = {
+  color: PLATE_RED,
+  fontFamily: irissLvTransitPlateFont.style.fontFamily,
+  fontWeight: 600,
+  fontSize: 16,
+  lineHeight: 1,
+} as const;
 
 function LvTransitPlate({ plate }: { plate: string }) {
   const parts = parseLvTransitPlate(plate);
   return (
     <span
-      className="inline-flex h-[22px] w-[104px] shrink-0 overflow-hidden rounded-[3px] border border-[#c8102e] shadow-[0_0_0_1px_#d9d9d6]"
-      style={{ background: "linear-gradient(#fbfbfa,#efefec)" }}
+      className={`${irissLvTransitPlateFont.className} inline-flex h-[22px] w-[104px] shrink-0 overflow-hidden rounded-[3px] border border-[#c8102e] shadow-[0_0_0_1px_#d9d9d6]`}
+      style={{
+        background: "linear-gradient(#fbfbfa,#efefec)",
+        fontFamily: irissLvTransitPlateFont.style.fontFamily,
+        fontWeight: 600,
+      }}
       aria-label={plate.trim() || "Tranzīts"}
     >
       <span className="relative h-full w-[13px] shrink-0 bg-[#0039a6]">
@@ -26,22 +44,32 @@ function LvTransitPlate({ plate }: { plate: string }) {
           aria-hidden
           className="absolute left-1/2 top-[2px] h-[7px] w-[7px] -translate-x-1/2 rounded-full border border-dotted border-[#ffd200]"
         />
-        <span className="absolute inset-x-0 bottom-[1px] text-center text-[6.5px] font-semibold leading-none text-white">
+        <span
+          className="absolute inset-x-0 bottom-[1px] text-center text-[6.5px] font-semibold leading-none"
+          style={{ color: "#ffffff" }}
+        >
           LV
         </span>
       </span>
       <span
-        className={`${irissLvTransitPlateFont.className} flex h-full flex-1 items-center justify-between pr-[6px] pl-[5px] text-[16px] font-semibold leading-none text-[#d21f2b]`}
+        className="flex h-full flex-1 items-center justify-between pr-[6px] pl-[5px] leading-none"
+        style={plateGlyphStyle}
       >
         {parts ? (
           <>
-            <span>{parts.letter}</span>
-            <span>{parts.digits}</span>
-            <span aria-hidden className="inline-block h-[0.14em] w-[0.32em] bg-[#d21f2b]" />
-            <span>{parts.last}</span>
+            <span style={plateGlyphStyle}>{parts.letter}</span>
+            <span style={plateGlyphStyle}>{parts.digits}</span>
+            <span
+              aria-hidden
+              className="inline-block h-[0.14em] w-[0.32em]"
+              style={{ backgroundColor: PLATE_RED, color: PLATE_RED }}
+            />
+            <span style={plateGlyphStyle}>{parts.last}</span>
           </>
         ) : (
-          <span className="w-full truncate text-center">{plate.trim() || "-"}</span>
+          <span className="w-full truncate text-center" style={plateGlyphStyle}>
+            {plate.trim() || "-"}
+          </span>
         )}
       </span>
     </span>
@@ -107,14 +135,20 @@ export function IrissPavadzimesSidebarCard() {
                   </span>
                   <span className="mt-0.5 flex items-baseline justify-between gap-1">
                     <span className="text-[10.5px] tabular-nums text-[#6b7280]">{expiry}</span>
-                    <span className={`text-[10.5px] font-bold tabular-nums ${WAYBILL_COUNTDOWN_TEXT[count.status]}`}>
+                    <span
+                      className="text-[10.5px] font-bold tabular-nums"
+                      style={{ color: WAYBILL_COUNTDOWN_COLOR[count.status], fontWeight: 700 }}
+                    >
                       {count.label}
                     </span>
                   </span>
                   <span className="mt-1 block h-[3px] overflow-hidden rounded-[2px] bg-[#f3f4f6]">
                     <span
-                      className={`block h-full ${WAYBILL_PROGRESS_FILL[count.status]}`}
-                      style={{ width: `${Math.round(share * 1000) / 10}%` }}
+                      className="block h-full"
+                      style={{
+                        width: `${Math.round(share * 1000) / 10}%`,
+                        backgroundColor: WAYBILL_PROGRESS_COLOR[count.status],
+                      }}
                     />
                   </span>
                 </a>
