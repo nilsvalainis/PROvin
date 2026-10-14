@@ -135,6 +135,7 @@ async function ensureSession(platform, page) {
       }
     }
     if (await p.isLoggedIn(page)) {
+      if (typeof p.persistSession === "function") await p.persistSession(page).catch(() => undefined);
       state.setSession(platform, "ok");
       return { status: "ok", note: "session_ok" };
     }
@@ -146,6 +147,7 @@ async function ensureSession(platform, page) {
     const r = await p.login(page);
     state.setLogin(platform, r.note);
     if (r.ok) {
+      if (typeof p.persistSession === "function") await p.persistSession(page).catch(() => undefined);
       state.setSession(platform, "ok");
       return { status: "ok", note: r.note };
     }
@@ -180,6 +182,7 @@ async function runFetch({ platform, sourceUrl, orderId, maxPages }) {
     }
     return { ok: r.status === "ok", ...r, orderId, elapsedMs: Date.now() - started };
   } finally {
+    if (typeof p.persistSession === "function") await p.persistSession(page).catch(() => undefined);
     await close();
   }
 }

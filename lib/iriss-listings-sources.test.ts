@@ -138,4 +138,19 @@ describe("buildIrissListingSources", () => {
     expect(sources.find((s) => s.platform === "autobid")!.sourceUrl).toMatch(/name-brand=LEXUS|name-brand=TOYOTA/i);
     expect(groupIrissListingSources(auto1)).toHaveLength(2);
   });
+
+  it("skips Openlane auctionId single-car links that time out in ingest", () => {
+    const sources = buildIrissListingSources([
+      row("a", "active", {
+        openline: [
+          "https://www.openlane.eu/en/findcar?auctionId=11689710",
+          "https://www.openlane.eu/en/findcar?makes=volvo&models=xc60",
+        ],
+      }),
+    ]);
+    expect(sources).toHaveLength(1);
+    expect(sources[0]!.platform).toBe("openline");
+    expect(sources[0]!.sourceUrl).toMatch(/makes=volvo/i);
+    expect(sources.some((s) => /auctionId=/i.test(s.sourceUrl))).toBe(false);
+  });
 });

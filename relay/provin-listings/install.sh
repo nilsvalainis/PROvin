@@ -2,17 +2,31 @@
 # PROVIN IRISS LIST relejs: uzstādīšana uz Hetzner (Ubuntu/Debian). Palaist kā root.
 # Neaiztiek CSDD (8787), mnt.ee (8788) servisus un Caddy. Caddy maršrutu pievieno atsevišķi (skat. README).
 set -euo pipefail
+
+# SCRIPT_DIR vispirms. Pēc `cd /` relatīvais BASH_SOURCE kļūst par /, un iepriekšējais
+# rsync --delete nokopēja visu root FS uz /opt/provin-listings.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SRC_DIR="$SCRIPT_DIR"
+
 # npm no /root dod EACCES, ja skriptu palaiž no root mājas mapes.
 cd /
 
 APP_DIR="${APP_DIR:-/opt/provin-listings}"
 DATA_DIR="${DATA_DIR:-/var/lib/provin-listings}"
 ENV_FILE="${ENV_FILE:-/etc/provin-listings.env}"
-SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICE_USER="provin-listings"
 
 if [[ $EUID -ne 0 ]]; then
   echo "Palaist kā root (sudo)." >&2
+  exit 1
+fi
+
+if [[ -z "$SRC_DIR" || "$SRC_DIR" == "/" || "$SRC_DIR" == "$APP_DIR" || ! -f "$SRC_DIR/server.mjs" ]]; then
+  echo "Nederīgs SRC_DIR=$SRC_DIR (nav server.mjs). Palaid no izpakošanas mapes, nevis \`bash install.sh\` no /." >&2
+  exit 1
+fi
+if [[ -z "$APP_DIR" || "$APP_DIR" == "/" ]]; then
+  echo "Nederīgs APP_DIR=$APP_DIR" >&2
   exit 1
 fi
 
@@ -34,8 +48,10 @@ mkdir -p "$APP_DIR" "$DATA_DIR/profiles/openlane" "$DATA_DIR/profiles/auto1" "$D
 chown -R "$SERVICE_USER:$SERVICE_USER" "$DATA_DIR"
 chmod 750 "$DATA_DIR"
 
-echo "== Kods -> $APP_DIR"
-rsync -a --delete --exclude node_modules --exclude '.git' "$SRC_DIR/" "$APP_DIR/"
+echo "== Kods -> $APP_DIR (tar, bez rsync)"
+mkdir -p "$APP_DIR"
+find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name node_modules -exec rm -rf {} +
+tar -C "$SRC_DIR" --exclude=node_modules --exclude=.git -cf - . | tar -C "$APP_DIR" -xf -
 chown -R "$SERVICE_USER:$SERVICE_USER" "$APP_DIR"
 
 echo "== npm install + Playwright Chromium (kā $SERVICE_USER)"
@@ -62,8 +78,11 @@ install -m 644 "$SRC_DIR/systemd/provin-listings-xvfb.service" /etc/systemd/syst
 install -m 644 "$SRC_DIR/systemd/provin-listings.service" /etc/systemd/system/
 install -m 644 "$SRC_DIR/systemd/provin-listings-novnc.service" /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now provin-listings-xvfb.service
-systemctl enable --now provin-listings.service
+systemctl enable provin-listings-xvfb.service
+systemctl enable provin-listings.service
+# enable --now nestartē jau skrejošu vienību no jauna; pēc koda maiņas vienmēr restart.
+systemctl restart provin-listings-xvfb.service
+systemctl restart provin-listings.service
 # noVNC nestartē līdz ar boot: tikai ielogošanās laikā (systemctl start provin-listings-novnc).
 
 echo
