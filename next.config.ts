@@ -158,6 +158,20 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, follow" },
         ],
       },
+      {
+        source: "/s",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
+      {
+        source: "/s/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
     ];
   },
 };

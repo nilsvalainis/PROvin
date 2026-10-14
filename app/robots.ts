@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
           "/demo/",
           "/view/",
           "/p/",
+          "/s/",
           "/pasutit",
           "/paldies",
           "/partneriem/konts",

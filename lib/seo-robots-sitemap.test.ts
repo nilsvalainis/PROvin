@@ -7,7 +7,8 @@ describe("robots.txt", () => {
     const doc = robots();
     expect(doc.sitemap).toMatch(/\/sitemap\.xml$/);
     const disallow = doc.rules[0]?.disallow ?? [];
-    expect(disallow).toEqual(expect.arrayContaining(["/_next/static/media/", "/admin", "/p/"]));
+    expect(disallow).toEqual(expect.arrayContaining(["/_next/static/media/", "/admin", "/p/", "/s/"]));
+    expect(disallow).not.toContain("/s");
     expect(disallow).not.toContain("/p");
     expect(disallow).not.toContain("/icon");
     expect(disallow).not.toContain("/_next/");
@@ -21,5 +22,6 @@ describe("sitemap paths", () => {
     expect(paths).toEqual(
       expect.arrayContaining(["", "/biezi-jautajumi", "/vin-koda-parbaude", "/partneriem", "/pakalpojumi"]),
     );
+    expect(paths.some((p) => p === "/s" || p.startsWith("/s/"))).toBe(false);
   });
 });

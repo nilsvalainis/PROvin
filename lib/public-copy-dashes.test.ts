@@ -25,6 +25,7 @@ const PUBLIC_COPY_FILES = [
   join(REPO_ROOT, "lib/google-reviews-data.ts"),
   join(REPO_ROOT, "lib/blog/posts/mobile-de-scam-48000.ts"),
   join(REPO_ROOT, "lib/email/html-templates.ts"),
+  join(REPO_ROOT, "lib/client-link.ts"),
 ];
 
 /** Owner-approved LV VIN copy: numeric range with an en dash (`24–72`). */

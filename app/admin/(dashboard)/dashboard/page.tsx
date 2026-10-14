@@ -11,6 +11,7 @@ import { listListingPeeks } from "@/lib/listing-peek-store";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { getOrderFlags } from "@/lib/admin-orders-flags";
 import { upsellListOverlay } from "@/lib/order-upsell";
+import { AdminClientLinkButton } from "@/components/admin/AdminClientLinkButton";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
@@ -271,6 +272,7 @@ export default async function AdminOrdersPage({
             doneOrder={ordersQuery.sort === "oldest" ? "asc" : "desc"}
             toolbarEnd={
               <>
+                <AdminClientLinkButton />
                 <AdminOrdersSearchBar />
                 {toolbarEnd}
               </>
@@ -296,7 +298,10 @@ export default async function AdminOrdersPage({
           </div>
         </>
       ) : (
-        <div className="mt-4 flex justify-end">{toolbarEnd}</div>
+        <div className="mt-4 flex items-center justify-end gap-1.5">
+          <AdminClientLinkButton />
+          {toolbarEnd}
+        </div>
       )}
 
       <div className="mt-8 flex flex-wrap items-start justify-end gap-3 border-t border-slate-100/80 pt-4">

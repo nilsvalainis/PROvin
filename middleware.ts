@@ -25,6 +25,7 @@ import {
 } from "./lib/seo-redirects";
 import { SEO_LOCALE_HEADER } from "./lib/seo-public-paths";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
+import { isClientLinkPath } from "./lib/client-link";
 
 /* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
    papildu redirectus; next-intl ar vienu lokalizāciju un `localePrefix: "as-needed"`/`never` deva 307 cilpu uz `/`. */
@@ -76,6 +77,7 @@ export default function middleware(request: NextRequest) {
         dest.pathname.startsWith("/admin") ||
         dest.pathname.startsWith("/dev") ||
         dest.pathname.startsWith("/api") ||
+        isClientLinkPath(dest.pathname) ||
         isPartneriemPath(dest.pathname);
       if (!locale && !skipPrefix) {
         dest.pathname = dest.pathname === "/" ? `/${DEFAULT_LOCALE}` : `/${DEFAULT_LOCALE}${dest.pathname}`;
@@ -143,7 +145,19 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
+  if (isClientLinkPath(pathname)) {
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return res;
+  }
+
   const prefixed = parsePrefixedPath(pathname);
+  if (prefixed.locale && (prefixed.rest === "/s" || prefixed.rest.startsWith("/s/"))) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = prefixed.rest === "/s" ? "/s" : prefixed.rest;
+    return redirect307(redirectUrl);
+  }
+
   const requestLocale = prefixed.locale ?? DEFAULT_LOCALE;
   const localizedRequest = requestWithLocaleHeader(request, requestLocale);
   const crawler = isSearchCrawler(request.headers.get("user-agent"));
