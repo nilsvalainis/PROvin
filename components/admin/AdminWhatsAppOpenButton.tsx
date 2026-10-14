@@ -2,7 +2,10 @@
 
 import { useCallback, useMemo } from "react";
 import { adminCompactCopyBtnClass } from "@/components/admin/AdminClipboardButton";
-import { WHATSAPP_PREFILL_AUDIT } from "@/lib/admin-whatsapp-messages";
+import {
+  fetchAdminWhatsappPrefill,
+  type AdminWhatsappPrefillParams,
+} from "@/lib/admin-whatsapp-prefill-client";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import {
   ADMIN_WHATSAPP_COMPACT_BTN_CLASS,
@@ -22,23 +25,47 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
+type PrefillSource =
+  | { prefillMessage: string }
+  | { templateId: string; templateParams?: Omit<AdminWhatsappPrefillParams, "templateId"> };
+
 /** Blakus klienta tālrunim: atver WhatsApp sarunu (desktop app, tad wa.me). */
 export function AdminWhatsAppOpenButton({
   phone,
   variant = "icon",
   prefillMessage,
+  templateId = "wa.report_ready.audits",
+  templateParams,
 }: {
   phone: string;
   variant?: "icon" | "pill";
+  /** Pasūtījuma kontekstā: jau renderēts servera teksts. */
   prefillMessage?: string;
+  /** Ārpus pasūtījuma: šablons no Blob/koda caur API. */
+  templateId?: string;
+  templateParams?: Omit<AdminWhatsappPrefillParams, "templateId">;
 }) {
   const digits = useMemo(() => normalizeWhatsAppPhoneDigits(phone), [phone]);
-  const message = prefillMessage ?? WHATSAPP_PREFILL_AUDIT;
+  const prefillSource: PrefillSource = prefillMessage
+    ? { prefillMessage }
+    : { templateId, templateParams };
 
   const onClick = useCallback(() => {
     if (!digits) return;
-    openWhatsAppChat(digits, message);
-  }, [digits, message]);
+    void (async () => {
+      let message: string | null = null;
+      if ("prefillMessage" in prefillSource) {
+        message = prefillSource.prefillMessage;
+      } else {
+        message = await fetchAdminWhatsappPrefill({
+          templateId: prefillSource.templateId,
+          ...prefillSource.templateParams,
+        });
+      }
+      if (!message) return;
+      openWhatsAppChat(digits, message);
+    })();
+  }, [digits, prefillSource]);
 
   if (variant === "pill") {
     if (!digits) {

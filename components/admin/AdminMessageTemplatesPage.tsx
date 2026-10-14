@@ -10,6 +10,14 @@ type TemplateRow = MessageTemplateDef & {
   override: { subject?: string; body: string; updatedAt: string; updatedBy: string } | null;
 };
 
+type HistoryEntry = {
+  ts: number;
+  body: string;
+  subject?: string;
+  updatedAt: string;
+  updatedBy: string;
+};
+
 const CHANNELS: { key: MessageChannel; label: string }[] = [
   { key: "email", label: "E-pasts" },
   { key: "whatsapp", label: "WhatsApp" },
@@ -31,6 +39,8 @@ export function AdminMessageTemplatesPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyPreviewTs, setHistoryPreviewTs] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/message-templates", { credentials: "include", cache: "no-store" });
@@ -69,7 +79,27 @@ export function AdminMessageTemplatesPage() {
     setBody(o?.body ?? selected.body);
     setErr(null);
     setStatus(null);
+    setHistoryPreviewTs(null);
   }, [selected?.id]);
+
+  useEffect(() => {
+    if (!selected) {
+      setHistory([]);
+      return;
+    }
+    void (async () => {
+      const res = await fetch(`/api/admin/message-templates/${encodeURIComponent(selected.id)}/history`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        setHistory([]);
+        return;
+      }
+      const data = (await res.json()) as { history?: HistoryEntry[] };
+      setHistory(Array.isArray(data.history) ? data.history : []);
+    })();
+  }, [selected?.id, status]);
 
   const validation = useMemo(() => {
     if (!selected) return { ok: true as const, errors: [] as string[] };
@@ -131,6 +161,32 @@ export function AdminMessageTemplatesPage() {
       setBusy(false);
     }
   };
+
+  const restoreHistory = async (ts: number) => {
+    if (!selected) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(
+        `/api/admin/message-templates/${encodeURIComponent(selected.id)}/history/${ts}/restore`,
+        { method: "POST", credentials: "include" },
+      );
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErr(Array.isArray(data.details) ? data.details.join(" ") : data.error ?? "Atjaunošana neizdevās");
+        return;
+      }
+      setStatus("Versija atjaunota");
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const historyPreview = useMemo(
+    () => history.find((h) => h.ts === historyPreviewTs) ?? null,
+    [history, historyPreviewTs],
+  );
 
   const testSend = async () => {
     if (!selected || selected.channel !== "email") return;
@@ -289,12 +345,52 @@ export function AdminMessageTemplatesPage() {
               {err ? <p className="mt-2 text-[12px] text-red-600">{err}</p> : null}
               {selected.override ? (
                 <p className="mt-3 text-[12px] text-[#6e6e73]">
-                  Vēsture: pēdējoreiz {new Date(selected.override.updatedAt).toLocaleString("lv-LV")} ·{" "}
+                  Pēdējā saglabāšana: {new Date(selected.override.updatedAt).toLocaleString("lv-LV")} ·{" "}
                   {selected.override.updatedBy}
                 </p>
               ) : (
                 <p className="mt-3 text-[12px] text-[#6e6e73]">Noklusējums (kods)</p>
               )}
+              {history.length > 0 ? (
+                <div className="mt-4 rounded-[10px] border border-[#e5e5ea] bg-[#fbfbfd] p-3">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8e8e93]">
+                    Versiju vēsture (Blob)
+                  </p>
+                  <ul className="max-h-40 space-y-1 overflow-y-auto">
+                    {history.map((h) => (
+                      <li key={h.ts} className="flex flex-wrap items-center gap-2 text-[12px] text-[#3a3a3c]">
+                        <span className="tabular-nums">{new Date(h.ts).toLocaleString("lv-LV")}</span>
+                        <span className="text-[#8e8e93]">{h.updatedBy}</span>
+                        <button
+                          type="button"
+                          className="rounded-md border border-[#d2d2d7] px-2 py-0.5 text-[11px]"
+                          onClick={() => setHistoryPreviewTs(h.ts)}
+                        >
+                          Priekšskatīt
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          className="rounded-md border border-[#0a84ff] px-2 py-0.5 text-[11px] text-[#0a66d8]"
+                          onClick={() => void restoreHistory(h.ts)}
+                        >
+                          Atjaunot
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  {historyPreview ? (
+                    <div className="mt-3 rounded-lg border border-[#d2d2d7] bg-white p-2.5">
+                      <p className="mb-1 text-[11px] text-[#8e8e93]">
+                        Priekšskatījums ({new Date(historyPreview.ts).toLocaleString("lv-LV")})
+                      </p>
+                      <pre className="max-h-32 overflow-auto whitespace-pre-wrap text-[12px] leading-relaxed">
+                        {historyPreview.body}
+                      </pre>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </>
           ) : (
             <p className="text-[14px] text-[#8e8e93]">Izvēlies šablonu sarakstā.</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { fetchAdminWhatsappPrefill } from "@/lib/admin-whatsapp-prefill-client";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import { ADMIN_WHATSAPP_FILLED_ICON_BTN_CLASS } from "@/lib/admin-whatsapp-ui";
 
@@ -26,11 +27,14 @@ const btnDisabledClass =
 export function AdminWhatsAppPdfSendButton({
   phone,
   prefillMessage,
+  templateId = "wa.select_consultation",
   generatePdf,
   className,
 }: {
   phone: string | null | undefined;
-  prefillMessage: string;
+  /** Ja nav dots, teksts tiek ielādēts no šablona caur API. */
+  prefillMessage?: string;
+  templateId?: string;
   generatePdf: () => Promise<File | null>;
   className?: string;
 }) {
@@ -55,7 +59,15 @@ export function AdminWhatsAppPdfSendButton({
       a.remove();
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
 
-      openWhatsAppChat(phoneDigits, prefillMessage, chatWindow);
+      let message = prefillMessage ?? null;
+      if (!message) {
+        message = await fetchAdminWhatsappPrefill({ templateId });
+      }
+      if (!message) {
+        chatWindow?.close();
+        return;
+      }
+      openWhatsAppChat(phoneDigits, message, chatWindow);
       alert(
         "Atvērts WhatsApp čats. PDF konsultācija lejupielādēta automātiski — pievienojiet to kā pielikumu ziņai.",
       );
@@ -63,7 +75,7 @@ export function AdminWhatsAppPdfSendButton({
       chatWindow?.close();
       alert(error instanceof Error ? error.message.slice(0, 220) : "Neizdevās sagatavot PDF WhatsApp nosūtīšanai.");
     }
-  }, [generatePdf, phoneDigits, prefillMessage]);
+  }, [generatePdf, phoneDigits, prefillMessage, templateId]);
 
   if (!phoneDigits) {
     return (

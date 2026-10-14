@@ -1083,6 +1083,334 @@ Dzintarzeme Auto",
 }
 `;
 
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.check.factory_paint 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Krāsojums (rūpnīcas krāsa)",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.check.no_rust 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Rūsa (virsbūve bez rūsas)",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.check.second_wheels 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Otrs riteņu komplekts",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.check.service_history 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Vēsture (pilna servisa vēsture)",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.hero_sub 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "2026-04-22 14:30 · Auto pārbaude / piedāvājums",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.kv.client 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Klients",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.kv.email 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "E-pasts",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.kv.phone 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Tālrunis",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.price.car 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Automašīnas cena",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.price.commission 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Komisijas maksa",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.price.delivery 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Piegādes cena",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.price.total 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Kopā",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.price.valid_days 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Piedāvājums spēkā (dienas)",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.basic 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Pamatinformācija",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.client 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Klienta dati",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.eval_marks 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Novērtējuma atzīmes",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.photos 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Fotogrāfijas",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.pricing 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Cenas un piedāvājums",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.special 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Īpašas atzīmes",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.summary 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Kopsavilkums",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.technical 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Tehniskais novērtējums",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.technical_detail 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Detalizēts apraksts (tehniskais)",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.visual 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Vizuālais novērtējums",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.sec.visual_detail 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Detalizēts apraksts (vizuālais)",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.tile.location 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Atrašanās vieta",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.tile.odometer 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Nobraukums",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.tile.transmission 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Transmisija",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.offer.tile.year 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Gads",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.equip.desired 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Vēlamās prasības",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.equip.required 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Obligātās prasības",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.hero_sub 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "2026-04-22 14:30 · IRISS pasūtījums",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.kv.email 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "E-pasts",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.kv.first_name 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Vārds",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.kv.last_name 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Uzvārds",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.kv.order_date 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Pasūtījuma datums",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.kv.phone 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Tālrunis",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.sec.client 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Klienta dati",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.sec.deal 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Darījuma detaļas",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.sec.equipment 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Aprīkojums",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.sec.notes 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Piezīmes",
+}
+`;
+
+exports[`template snapshots (default text) > snapshot iriss.pdf.order.sec.vehicle 1`] = `
+{
+  "html": undefined,
+  "subject": undefined,
+  "text": "Transportlīdzekļa specifikācija",
+}
+`;
+
 exports[`template snapshots (default text) > snapshot wa.dealer.cancelled 1`] = `
 {
   "html": undefined,

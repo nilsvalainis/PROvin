@@ -71,11 +71,10 @@ export function whatsappPrefillForOrder(args: {
   });
 }
 
-/** Noklusējums vietām bez produkta konteksta (ātrie vērtējumi). */
-export const WHATSAPP_PREFILL_AUDIT = whatsappPrefillReportReady({ kind: "audits" });
-
-/** WhatsApp iepriekš aizpildītais teksts — PROVIN SELECT stratēģiskā konsultācija. */
-export const WHATSAPP_PREFILL_SELECT_CONSULTATION = `Sveiki!
+export function whatsappPrefillSelectConsultation(templatesDoc?: MessageTemplatesDoc | null): string {
+  const rendered = renderTemplateById("wa.select_consultation", {}, templatesDoc);
+  if (rendered?.text) return rendered.text;
+  return `Sveiki!
 
 Nosūtu Jums PROVIN SELECT stratēģisko konsultāciju. Visus papildu materiālus nosūtīju uz Jūsu e-pastu.
 
@@ -85,6 +84,7 @@ Ja rodas jautājumi par konsultācijas ieteikumiem vai vēlaties palīdzību aut
 
 Ar cieņu,
 PROVIN.LV`;
+}
 
 /**
  * OEM / dīlera datos nav ierakstu, nauda atgriezta.

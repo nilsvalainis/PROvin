@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { whatsappPrefillDealerNoDataRefunded, whatsappPrefillReportReady } from "@/lib/admin-whatsapp-messages";
+import {
+  whatsappPrefillDealerNoDataRefunded,
+  whatsappPrefillReportReady,
+  whatsappPrefillSelectConsultation,
+} from "@/lib/admin-whatsapp-messages";
 import { buildClientLinkEmailCopy, formatClientLinkExpiryLong, formatClientLinkAmount } from "@/lib/client-link";
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
 import {
@@ -27,7 +31,7 @@ import {
 describe("message template registry", () => {
   it("exports stable template id list (41 entries incl. B2B locales)", () => {
     expect(MESSAGE_TEMPLATE_IDS.length).toBe(MESSAGE_TEMPLATE_DEFS.length);
-    expect(MESSAGE_TEMPLATE_DEFS.length).toBeGreaterThanOrEqual(33);
+    expect(MESSAGE_TEMPLATE_DEFS.length).toBeGreaterThanOrEqual(70);
   });
 
   it("each template renders with sample vars", () => {
@@ -135,6 +139,10 @@ describe("template parity without overrides", () => {
 
     const legacyRefund = whatsappPrefillDealerNoDataRefunded("WVWZZZ1KZAW000123", "24,99 €");
     expect(previewMessage("wa.dealer.no_data_refunded")?.text).toBe(legacyRefund);
+  });
+
+  it("whatsapp select consultation matches template", () => {
+    expect(previewMessage("wa.select_consultation")?.text).toBe(whatsappPrefillSelectConsultation());
   });
 
   it("iriss listing offer uses template vars", () => {

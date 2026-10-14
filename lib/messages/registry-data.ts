@@ -1,4 +1,5 @@
 import { MINI_TO_AUDITS_APPROVED_TEXT } from "@/lib/email/mini-to-audits-approved-text";
+import { IRISS_PDF_TEMPLATE_DEFS } from "@/lib/messages/iriss-pdf-template-defs";
 import type { MessageTemplateDef } from "@/lib/messages/types";
 import {
   BLOCK_AUDITS_CTA_ID,
@@ -771,6 +772,7 @@ PROVIN.LV`,
     body: defaultEmailFooterPlain(),
     vars: [],
   },
+  ...IRISS_PDF_TEMPLATE_DEFS,
 ];
 
 export const MESSAGE_TEMPLATE_IDS = MESSAGE_TEMPLATE_DEFS.map((d) => d.id);

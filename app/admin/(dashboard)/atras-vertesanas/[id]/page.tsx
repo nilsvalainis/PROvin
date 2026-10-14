@@ -183,7 +183,9 @@ export default async function QuickEvalDetailPage({
             </div>
           </div>
           <div className="hidden flex-wrap items-center gap-1.5 md:flex lg:hidden">
-            {peek.phone ? <AdminWhatsAppOpenButton phone={peek.phone} variant="pill" /> : null}
+            {peek.phone ? (
+              <AdminWhatsAppOpenButton phone={peek.phone} variant="pill" templateId="wa.listing_peek" />
+            ) : null}
             <AdminCopyVinButton vin={vin} />
             <Suspense fallback={<span className={`${hdrBtn} opacity-60`}>Eksportēt…</span>}>
               <ExportSection peekId={peek.id} exports={doc?.exports ?? []} />
@@ -329,7 +331,7 @@ export default async function QuickEvalDetailPage({
             />
           </div>
           <div className="flex justify-center">
-            <AdminWhatsAppOpenButton phone={peek.phone ?? ""} />
+            <AdminWhatsAppOpenButton phone={peek.phone ?? ""} templateId="wa.listing_peek" />
           </div>
           {listingUrl ? (
             <a href={listingUrl} target="_blank" rel="noopener noreferrer" className={ADMIN_RAIL_BTN} title={listingUrl}>
@@ -381,7 +383,7 @@ export default async function QuickEvalDetailPage({
             </button>
             {peek.phone ? (
               <span className="flex items-center justify-center rounded-xl border border-slate-200">
-                <AdminWhatsAppOpenButton phone={peek.phone} variant="pill" />
+                <AdminWhatsAppOpenButton phone={peek.phone} variant="pill" templateId="wa.listing_peek" />
               </span>
             ) : (
               <span />

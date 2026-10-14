@@ -32,7 +32,6 @@ import {
 } from "@/lib/consultation-tab-status";
 import { workspaceWizardProgressPct } from "@/lib/admin-workspace-progress";
 import { AdminWhatsAppPdfSendButton } from "@/components/admin/AdminWhatsAppPdfSendButton";
-import { WHATSAPP_PREFILL_SELECT_CONSULTATION } from "@/lib/admin-whatsapp-messages";
 
 const ADMIN_CONTENT_MAX = "max-w-[min(76.8rem,calc(100vw-1.25rem))]";
 const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
@@ -695,7 +694,7 @@ export function ConsultationDetailWorkspace({
           <div className="flex shrink-0 items-center gap-1.5">
             <AdminWhatsAppPdfSendButton
               phone={payload.customerPhone}
-              prefillMessage={WHATSAPP_PREFILL_SELECT_CONSULTATION}
+              templateId="wa.select_consultation"
               generatePdf={generateConsultationPdfForWhatsApp}
             />
             <button

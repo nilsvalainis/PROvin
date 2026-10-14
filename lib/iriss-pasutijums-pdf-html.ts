@@ -1,5 +1,7 @@
 import { adminRichHtmlToPdfSafeHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
+import { resolveIrissOfferPdfLabels, resolveIrissOrderPdfLabels } from "@/lib/messages/iriss-pdf-labels";
+import type { MessageTemplatesDoc } from "@/lib/messages/types";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { PDF_TIGHT_RICH_BODY_RULES_CSS } from "@/lib/pdf-tight-comment-spacing";
 
@@ -451,8 +453,13 @@ function irissPrintShell(accent: string, title: string, body: string, opts?: { m
  * Dizaina loģika atbilst Tailwind utility principiem (slate-600, slate-50, tracking-wider, shadow-sm, rounded-xl).
  * Tukši lauki netiek iekļauti.
  */
-export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, generatedAtFormatted: string): string {
+export function buildIrissPasutijumsPrintHtml(
+  record: IrissPasutijumsRecord,
+  generatedAtFormatted: string,
+  templatesDoc?: MessageTemplatesDoc | null,
+): string {
   const accent = "#64748b";
+  const labels = resolveIrissOrderPdfLabels(templatesDoc);
 
   const heroModel = record.brandModel.trim() || "PASŪTĪJUMS";
 
@@ -460,16 +467,16 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
     <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">${esc(heroModel)}</p>
-      <p class="ipdf-hero-sub">${esc(generatedAtFormatted)} · IRISS pasūtījums</p>
+      <p class="ipdf-hero-sub">${esc(labels.heroSub(generatedAtFormatted))}</p>
     </div>
   </header>`;
 
   const clientRows =
-    rowIf("Vārds", record.clientFirstName) +
-    rowIf("Uzvārds", record.clientLastName) +
-    rowIf("Tālrunis", record.phone) +
-    rowIf("E-pasts", record.email) +
-    rowIf("Pasūtījuma datums", record.orderDate);
+    rowIf(labels.kvFirstName, record.clientFirstName) +
+    rowIf(labels.kvLastName, record.clientLastName) +
+    rowIf(labels.kvPhone, record.phone) +
+    rowIf(labels.kvEmail, record.email) +
+    rowIf(labels.kvOrderDate, record.orderDate);
   const clientTable = wrapTable(clientRows);
 
   const pamat = infoGrid4(
@@ -516,21 +523,21 @@ export function buildIrissPasutijumsPrintHtml(record: IrissPasutijumsRecord, gen
   const des = record.equipmentDesired.trim();
   const equipBoxes: string[] = [];
   if (req) {
-    equipBoxes.push(`<div class="ipdf-card"><h3>Obligātās prasības</h3><pre>${esc(req)}</pre></div>`);
+    equipBoxes.push(`<div class="ipdf-card"><h3>${esc(labels.equipRequired)}</h3><pre>${esc(req)}</pre></div>`);
   }
   if (des) {
-    equipBoxes.push(`<div class="ipdf-card"><h3>Vēlamās prasības</h3><pre>${esc(des)}</pre></div>`);
+    equipBoxes.push(`<div class="ipdf-card"><h3>${esc(labels.equipDesired)}</h3><pre>${esc(des)}</pre></div>`);
   }
   const equip = equipBoxes.length ? `<div class="ipdf-two">${equipBoxes.join("")}</div>` : "";
 
   const notes = record.notes.trim() ? `<div class="ipdf-notes"><pre>${esc(record.notes.trim())}</pre></div>` : "";
 
   const body = `${header}
-    ${blockIf("Klienta dati", clientTable)}
-    ${mergedVehicleSpecInner.trim() ? blockIf("Transportlīdzekļa specifikācija", mergedVehicleSpecInner) : ""}
-    ${blockIf("Darījuma detaļas", dealDetailsInner)}
-    ${blockIf("Aprīkojums", equip)}
-    ${blockIf("Piezīmes", notes)}
+    ${blockIf(labels.secClient, clientTable)}
+    ${mergedVehicleSpecInner.trim() ? blockIf(labels.secVehicle, mergedVehicleSpecInner) : ""}
+    ${blockIf(labels.secDeal, dealDetailsInner)}
+    ${blockIf(labels.secEquipment, equip)}
+    ${blockIf(labels.secNotes, notes)}
     ${buildIrissPrintFooterHtml(accent)}`;
 
   return irissPrintShell(accent, "PASŪTĪJUMS", body, { mutedSections: true });
@@ -540,8 +547,10 @@ export function buildIrissOfferPrintHtml(
   record: IrissPasutijumsRecord,
   offer: IrissOfferRecord,
   generatedAtFormatted: string,
+  templatesDoc?: MessageTemplatesDoc | null,
 ): string {
   const accent = IRISS_BRAND_ORANGE_HEX;
+  const labels = resolveIrissOfferPdfLabels(templatesDoc);
 
   const heroTitle = offer.brandModel.trim() || offer.title.trim() || "Piedāvājums";
 
@@ -549,29 +558,31 @@ export function buildIrissOfferPrintHtml(
     <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">${esc(heroTitle)}</p>
-      <p class="ipdf-hero-sub">${esc(generatedAtFormatted)} · Auto pārbaude / piedāvājums</p>
+      <p class="ipdf-hero-sub">${esc(labels.heroSub(generatedAtFormatted))}</p>
     </div>
   </header>`;
 
   const clientName = `${record.clientFirstName} ${record.clientLastName}`.trim();
   const clientRows =
-    (clientName ? rowIf("Klients", clientName) : "") + rowIf("Tālrunis", record.phone) + rowIf("E-pasts", record.email);
+    (clientName ? rowIf(labels.kvClient, clientName) : "") +
+    rowIf(labels.kvPhone, record.phone) +
+    rowIf(labels.kvEmail, record.email);
   const clientTable = wrapTable(clientRows);
 
   const firstRegistration = offer.firstRegistration?.trim() || offer.year.trim();
   const odometer = offer.odometerReading?.trim() || offer.mileage.trim();
   const pamatInner = infoGrid4(
-    infoTile("Gads", firstRegistration) +
-      infoTile("Nobraukums", odometer) +
-      infoTile("Transmisija", offer.transmission) +
-      infoTile("Atrašanās vieta", offer.location),
+    infoTile(labels.tileYear, firstRegistration) +
+      infoTile(labels.tileOdometer, odometer) +
+      infoTile(labels.tileTransmission, offer.transmission) +
+      infoTile(labels.tileLocation, offer.location),
   );
 
   const checklistHtml = `<div class="ipdf-eval-grid">
-    ${checklistRow(accent, offer.hasFullServiceHistory, "Vēsture (pilna servisa vēsture)")}
-    ${checklistRow(accent, offer.hasFactoryPaint, "Krāsojums (rūpnīcas krāsa)")}
-    ${checklistRow(accent, offer.hasNoRustBody, "Rūsa (virsbūve bez rūsas)")}
-    ${checklistRow(accent, offer.hasSecondWheelSet, "Otrs riteņu komplekts")}
+    ${checklistRow(accent, offer.hasFullServiceHistory, labels.checkServiceHistory)}
+    ${checklistRow(accent, offer.hasFactoryPaint, labels.checkFactoryPaint)}
+    ${checklistRow(accent, offer.hasNoRustBody, labels.checkNoRust)}
+    ${checklistRow(accent, offer.hasSecondWheelSet, labels.checkSecondWheels)}
   </div>`;
 
   const specialInner = richCommentCard(offer.specialNotes ?? "");
@@ -582,14 +593,14 @@ export function buildIrissOfferPrintHtml(
   const technicalRich = richCommentBody(offer.technicalAssessment ?? "");
   const visualHealthInner =
     visualPlain && parseScoreOutOf10(visualPlain) !== null
-      ? `<div class="ipdf-card">${healthScaleHtml(accent, "Vizuālais novērtējums", visualPlain, { omitHeading: true })}</div>`
+      ? `<div class="ipdf-card">${healthScaleHtml(accent, labels.secVisual, visualPlain, { omitHeading: true })}</div>`
       : "";
   const visualDetailInner = visualRich
     ? `<div class="ipdf-card"><div class="ipdf-rich-comment">${visualRich}</div></div>`
     : "";
   const technicalHealthInner =
     technicalPlain && parseScoreOutOf10(technicalPlain) !== null
-      ? `<div class="ipdf-card">${healthScaleHtml(accent, "Tehniskais novērtējums", technicalPlain, { omitHeading: true })}</div>`
+      ? `<div class="ipdf-card">${healthScaleHtml(accent, labels.secTechnical, technicalPlain, { omitHeading: true })}</div>`
       : "";
   const technicalDetailInner = technicalRich
     ? `<div class="ipdf-card"><div class="ipdf-rich-comment">${technicalRich}</div></div>`
@@ -598,13 +609,13 @@ export function buildIrissOfferPrintHtml(
   const summaryInner = richCommentSummary(offer.summary ?? "");
 
   const evalSections = [
-    blockIf("Novērtējuma atzīmes", checklistHtml),
-    blockIf("Īpašas atzīmes", specialInner),
-    blockIf("Vizuālais novērtējums", visualHealthInner),
-    blockIf("Detalizēts apraksts (vizuālais)", visualDetailInner),
-    blockIf("Tehniskais novērtējums", technicalHealthInner),
-    blockIf("Detalizēts apraksts (tehniskais)", technicalDetailInner),
-    blockIf("Kopsavilkums", summaryInner),
+    blockIf(labels.secEvalMarks, checklistHtml),
+    blockIf(labels.secSpecial, specialInner),
+    blockIf(labels.secVisual, visualHealthInner),
+    blockIf(labels.secVisualDetail, visualDetailInner),
+    blockIf(labels.secTechnical, technicalHealthInner),
+    blockIf(labels.secTechnicalDetail, technicalDetailInner),
+    blockIf(labels.secSummary, summaryInner),
   ]
     .filter(Boolean)
     .join("");
@@ -614,11 +625,11 @@ export function buildIrissOfferPrintHtml(
   const commissionFee = offer.commissionFee?.trim() || "";
   const totalValue = parseMoney(carPrice) + parseMoney(deliveryPrice) + parseMoney(commissionFee);
   const pricingRows =
-    rowIf("Automašīnas cena", carPrice) +
-    rowIf("Piegādes cena", deliveryPrice) +
-    rowIf("Komisijas maksa", commissionFee) +
-    rowIf("Kopā", totalValue > 0 ? fmtMoney(totalValue) : "") +
-    rowIf("Piedāvājums spēkā (dienas)", offer.offerValidDays);
+    rowIf(labels.priceCar, carPrice) +
+    rowIf(labels.priceDelivery, deliveryPrice) +
+    rowIf(labels.priceCommission, commissionFee) +
+    rowIf(labels.priceTotal, totalValue > 0 ? fmtMoney(totalValue) : "") +
+    rowIf(labels.priceValidDays, offer.offerValidDays);
   const pricingTable = wrapTable(pricingRows);
 
   const imageAttachments = offer.attachments.filter(
@@ -645,11 +656,11 @@ export function buildIrissOfferPrintHtml(
   const filesInner = [gallery, otherTable].filter(Boolean).join("");
 
   const body = `${header}
-    ${blockIf("Klienta dati", clientTable)}
-    ${pamatInner.trim() ? blockIf("Pamatinformācija", pamatInner) : ""}
+    ${blockIf(labels.secClient, clientTable)}
+    ${pamatInner.trim() ? blockIf(labels.secBasic, pamatInner) : ""}
     ${evalSections}
-    ${blockIf("Cenas un piedāvājums", pricingTable)}
-    ${blockIf("Fotogrāfijas", filesInner, "ipdf-blk--media")}
+    ${blockIf(labels.secPricing, pricingTable)}
+    ${blockIf(labels.secPhotos, filesInner, "ipdf-blk--media")}
     ${buildIrissPrintFooterHtml(accent)}`;
 
   return irissPrintShell(accent, heroTitle, body);
