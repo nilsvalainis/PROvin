@@ -10,7 +10,6 @@ import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 import { scanCaptchaTokenPlaceholder, scanChallengeReason, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
 import { fetchVinScanAuctionPage, isVinScanRelayUrl } from "@/lib/vin-scan/listings-page-relay";
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
-import { fetchSpeckrVehicleSpecs } from "@/lib/vin-scan/speckr-api";
 import {
   oemBrandForVin,
   parseAuctionArchive,
@@ -271,14 +270,6 @@ export async function probeNicb(ctx: VinScanContext): Promise<VinScanIndicator> 
     return done("nicb", ctx, parseNicbHtml(page.text, ctx.vin));
   } catch (e) {
     return failed("nicb", ctx, e);
-  }
-}
-
-export async function probeSpeckr(ctx: VinScanContext): Promise<VinScanIndicator> {
-  try {
-    return done("speckr", ctx, await fetchSpeckrVehicleSpecs(ctx.vin));
-  } catch (e) {
-    return failed("speckr", ctx, e);
   }
 }
 

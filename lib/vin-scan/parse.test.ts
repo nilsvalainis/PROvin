@@ -53,9 +53,8 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("listing_history");
     expect(VIN_SCAN_SOURCE_IDS).toContain("lt_itpr");
     expect(VIN_SCAN_SOURCE_IDS).toContain("joj_copart_iaai");
-    expect(VIN_SCAN_SOURCE_IDS).toContain("speckr");
-    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(34);
-    expect(VIN_SCAN_CATALOG).toHaveLength(34);
+    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(33);
+    expect(VIN_SCAN_CATALOG).toHaveLength(33);
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.needs).toEqual(["vin"]);
     expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873")).toBe(
       "https://www.traficom.fi/en/transport/road/vehicle-information?vin=WBA5R1C0XLFH42873",
@@ -69,9 +68,7 @@ describe("vin scan catalog", () => {
       "/stelnummer/wvwzzz7nzev015204.html",
     );
     expect(defaultVinScanSourceIds()).toEqual([...VIN_SCAN_SOURCE_IDS]);
-    expect(vinScanPipelineSourceIds()).toEqual(
-      VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai" && id !== "speckr"),
-    );
+    expect(vinScanPipelineSourceIds()).toEqual(VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai"));
     expect(vinScanFastSourceIds()).toEqual(vinScanPipelineSourceIds());
     for (const removed of VIN_SCAN_REMOVED_IDS) {
       expect(VIN_SCAN_SOURCE_IDS).not.toContain(removed);

@@ -21,6 +21,7 @@ import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 import { AdminDealerDataJobStrip } from "@/components/admin/AdminDealerDataJobStrip";
 import { AdminOneautoIngestBar } from "@/components/admin/AdminOneautoIngestBar";
+import { AdminSpeckrCompactBar } from "@/components/admin/AdminSpeckrCompactBar";
 import {
   AUTO_RECORDS_SERVICE_WORKS_LOCATION_MAX_LEN,
   AUTO_RECORDS_SERVICE_WORKS_MAX_LEN,
@@ -358,6 +359,12 @@ export function AdminAutoRecordsSourceBlock({
                   }
                 : undefined
             }
+          />
+          <AdminSpeckrCompactBar
+            orderVin={orderVin}
+            snapshot={value.speckrSnapshot}
+            editable={!readOnly && !disabled}
+            onSnapshotChange={(next) => onChange({ ...value, speckrSnapshot: next })}
           />
           <div className="mb-0.5 flex items-center gap-1">
           <label className="block text-[10px] font-medium text-[var(--color-provin-muted)]">
