@@ -40,6 +40,7 @@ import {
   probeStatVin,
   probeTraficom,
   probeVegvesen,
+  probeSpeckr,
   probeVinDecode,
 } from "@/lib/vin-scan/probes-extra";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
@@ -266,6 +267,7 @@ export async function probeCarinfo(ctx: VinScanContext): Promise<VinScanIndicato
 
 const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIndicator> | VinScanIndicator> = {
   vin_decode: probeVinDecode,
+  speckr: probeSpeckr,
   tjekbil: probeTjekbil,
   esyn: probeEsyn,
   dsb: probeDsb,
