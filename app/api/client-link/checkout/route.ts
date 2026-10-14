@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getStripe } from "@/lib/stripe";
+import { hashClientLinkToken } from "@/lib/client-link-crypto";
 import {
   buildClientLinkCheckoutSessionParams,
-  hashClientLinkToken,
   isClientLinkUsable,
   isSafeClientLinkToken,
   validateClientLinkSubmission,

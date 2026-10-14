@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { ClientLinkForm } from "@/components/client-link/ClientLinkForm";
 import { ClientLinkNeutralPage } from "@/components/client-link/ClientLinkNeutralPage";
+import { hashClientLinkToken } from "@/lib/client-link-crypto";
 import {
   clientLinkPublicView,
-  hashClientLinkToken,
   isClientLinkUsable,
   isSafeClientLinkToken,
 } from "@/lib/client-link";

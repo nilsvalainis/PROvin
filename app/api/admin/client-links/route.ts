@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { newClientLinkToken } from "@/lib/client-link-crypto";
 import {
   clientLinkAbsoluteUrl,
   isSafeClientLinkToken,
-  newClientLinkToken,
   normalizeClientLinkAdminInput,
 } from "@/lib/client-link";
 import { createClientLink, updateClientLink } from "@/lib/client-link-store";
