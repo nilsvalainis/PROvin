@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { warmMessageTemplatesCache } from "@/lib/messages/message-runtime";
 import { buildIrissPasutijumsPrintHtml } from "@/lib/iriss-pasutijums-pdf-html";
 import { buildIrissPasutijumsPdfBytes } from "@/lib/iriss-pasutijums-pdf";
 import { irissPasutijumsPdfContentDisposition } from "@/lib/iriss-pasutijumi-list-overview";
@@ -21,7 +22,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const pdfCache =
     "no-store, no-cache, must-revalidate, max-age=0, private" satisfies string;
   if (url.searchParams.get("format") === "html") {
-    const html = buildIrissPasutijumsPrintHtml(rec, generated);
+    const templatesDoc = await warmMessageTemplatesCache();
+    const html = buildIrissPasutijumsPrintHtml(rec, generated, templatesDoc);
     return new NextResponse(html, {
       status: 200,
       headers: {

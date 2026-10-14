@@ -1,0 +1,648 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`IRISS printable PDF HTML (template defaults) > offer print HTML matches snapshot without overrides 1`] = `
+"<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&display=swap" rel="stylesheet"/><title>BMW 320d</title><style>
+    @page { size: A4; margin: 11mm; }
+    * { box-sizing: border-box; }
+    html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      font-size: 10.5pt;
+      font-weight: 400;
+      line-height: 1.5;
+      letter-spacing: 0.011em;
+      color: #111827;
+      background: #fff;
+    }
+    .ipdf-root {
+      max-width: 190mm;
+      margin: 0 auto;
+      padding: 4mm 2mm 8mm;
+    }
+    .ipdf-header {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      align-items: center;
+      padding-bottom: 16px;
+      margin-bottom: 22px;
+      border-bottom: 1px solid #0f172a;
+    }
+    .ipdf-hero-model {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 900;
+      line-height: 1.15;
+      letter-spacing: 0.088em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+    .ipdf-hero-sub { margin: 6px 0 0; font-size: 0.72rem; font-weight: 400; color: #1F2937; letter-spacing: 0.044em; }
+    .ipdf-logo {
+      display: block;
+      height: 38px;
+      width: auto;
+      max-width: 160px;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+    }
+    .ipdf-sec-head { display: block; margin: 0 0 12px; }
+    .ipdf-sec-title {
+      margin: 0;
+      display: block;
+      width: 100%;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.154em;
+      text-transform: uppercase;
+      color: #111827;
+      background: #e9edf3;
+      border-radius: 8px;
+      border-left: 3px solid #F26522;
+      padding: 7px 11px 7px 10px;
+    }
+    .ipdf-root--muted .ipdf-sec-title {
+      border-left: none;
+      background: transparent;
+      border-radius: 0;
+      padding: 0 0 7px;
+      margin-bottom: 14px;
+      color: #64748b;
+      font-weight: 700;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .ipdf-blk {
+      margin-bottom: 22px;
+      page-break-inside: avoid;
+    }
+    .ipdf-blk-body {
+      border: 1px solid #0f172a;
+      border-radius: 12px;
+      padding: 12px 14px 14px;
+      background: #F8FAFC;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+    }
+    .ipdf-blk--media {
+      padding: 0;
+    }
+    .ipdf-blk--media .ipdf-blk-body {
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      padding: 0;
+    }
+    .ipdf-blk--media .ipdf-sec-head { margin-bottom: 12px; }
+    .ipdf-blk .ipdf-sec-head { margin-bottom: 12px; margin-top: 0; }
+    .ipdf-blk-body > table.ipdf-kv { border: none; box-shadow: none; background: transparent; }
+    .ipdf-blk-body > table.ipdf-kv th { background: #f8fafc; }
+    .ipdf-grid4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 640px) {
+      .ipdf-grid4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    .ipdf-tile {
+      background: #F8FAFC;
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .ipdf-tile-lbl {
+      margin: 0 0 4px;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #1F2937;
+    }
+    .ipdf-tile-val { margin: 0; font-size: 0.82rem; font-weight: 400; color: #111827; line-height: 1.35; letter-spacing: 0.011em; }
+    table.ipdf-kv { width: 100%; border-collapse: collapse; background: #F8FAFC; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+    table.ipdf-kv th {
+      text-align: left;
+      width: 30%;
+      padding: 8px 12px;
+      vertical-align: top;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #1F2937;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    table.ipdf-kv td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      white-space: pre-wrap;
+      font-weight: 400;
+      color: #111827;
+      letter-spacing: 0.011em;
+    }
+    table.ipdf-kv tr:last-child th, table.ipdf-kv tr:last-child td { border-bottom: none; }
+    .ipdf-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 560px) { .ipdf-two { grid-template-columns: 1fr; } }
+    .ipdf-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+    }
+    .ipdf-card h3 {
+      margin: 0 0 0.35em;
+      font-size: 0.58rem;
+      font-weight: 900;
+      letter-spacing: 0.132em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+    .ipdf-card pre { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; word-break: break-word; color: #1F2937; font-size: 0.78rem; letter-spacing: 0.011em; }
+    .ipdf-rich-comment { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; word-break: break-word; color: #1F2937; font-size: 0.78rem; line-height: 1.45; letter-spacing: 0.011em; }
+    .ipdf-rich-comment strong, .ipdf-rich-comment b { font-weight: 700; }
+    .ipdf-rich-comment em, .ipdf-rich-comment i { font-style: italic; }
+    .ipdf-rich-comment u { text-decoration: underline; }
+    .ipdf-rich-comment s, .ipdf-rich-comment del { text-decoration: line-through; }
+    /* Krāsas un marķiera izcēlums drukā pazūd bez print-color-adjust. */
+    .ipdf-rich-comment span, .ipdf-rich-comment mark { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .ipdf-rich-comment mark { background: #fde68a; color: inherit; }
+    .ipdf-rich-comment span[style*="background"] {
+      padding: 0 2px; border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+    }
+    .ipdf-eval-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    @media (max-width: 560px) { .ipdf-eval-grid { grid-template-columns: 1fr; } }
+    .ipdf-cl-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+    }
+    .ipdf-cl-item--off { opacity: 0.55; }
+    td.ipdf-check-end-cell {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #111827;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    td.ipdf-check-end-cell .ipdf-check { width: 16px; height: 16px; margin-top: 0; flex-shrink: 0; }
+    .ipdf-check { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+    .ipdf-check--off {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .ipdf-cl-txt { font-size: 0.78rem; font-weight: 400; color: #111827; line-height: 1.35; letter-spacing: 0.011em; }
+    .ipdf-health { margin-bottom: 10px; }
+    .ipdf-health-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .ipdf-health--bar-only .ipdf-health-top { justify-content: flex-end; }
+    .ipdf-health-lbl { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.11em; text-transform: uppercase; color: #111827; margin: 0; }
+    .ipdf-health-val { font-size: 0.72rem; font-weight: 700; color: #F26522; margin: 0; letter-spacing: 0.011em; }
+    .ipdf-bar-track {
+      height: 8px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+    .ipdf-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: #F26522;
+      transition: width 0.2s ease;
+    }
+    .ipdf-summary {
+      border: 2px solid #F26522;
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgb(242 101 34 / 0.12);
+    }
+    .ipdf-summary h3 {
+      margin: 0 0 8px;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+    .ipdf-summary pre { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; color: #1F2937; font-size: 0.82rem; letter-spacing: 0.011em; }
+    .ipdf-summary .ipdf-rich-comment { font-size: 0.82rem; }
+    .ipdf-notes { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; min-height: 48px; background: #F8FAFC; }
+    .ipdf-notes pre { margin: 0; font-weight: 400; letter-spacing: 0.011em; }
+    .ipdf-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 560px) { .ipdf-gallery { grid-template-columns: 1fr; } }
+    .ipdf-photo { margin: 0; border: none; border-radius: 10px; overflow: hidden; background: #f1f5f9; page-break-inside: avoid; box-shadow: none; }
+    .ipdf-photo img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: cover; }
+    .ipdf-meta { margin: 0; font-size: 0.68rem; font-weight: 500; color: #111827; line-height: 1.45; letter-spacing: 0.011em; }
+    .ipdf-footer { margin-top: 26px; }
+    .ipdf-footer-card {
+      position: relative;
+      border: 1px solid #0f172a;
+      border-radius: 12px;
+      padding: 14px 16px 14px 17px;
+      background: linear-gradient(165deg, #f8fafc 0%, #ffffff 58%);
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+      overflow: hidden;
+    }
+    .ipdf-footer-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: #0f172a !important; }
+    .ipdf-footer-brand {
+      margin: 0 0 10px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.132em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+    .ipdf-footer-body { display: flex; flex-direction: column; gap: 6px; }
+    .ipdf-ft-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      font-size: 0.62rem;
+      line-height: 1.45;
+      align-items: baseline;
+    }
+    .ipdf-ft-k { font-weight: 700; color: #111827; flex: 0 0 auto; min-width: 5.5rem; letter-spacing: 0.011em; }
+    .ipdf-ft-v { font-weight: 500; color: #111827; flex: 1 1 12rem; letter-spacing: 0.011em; }
+    .ipdf-ft-plain { margin: 0; font-size: 0.62rem; font-weight: 500; color: #111827; line-height: 1.45; letter-spacing: 0.011em; }
+    
+      .pdf-report-comment-note-body br + strong,
+      .pdf-incident-internal-note-body br + strong,
+      .pdf-mileage-comment-note-body br + strong,
+      .pdf-select-rich-body br + strong,
+      .ipdf-rich-comment br + strong{display:inline-block;margin-top:0;}
+      .pdf-select-rich-body,.ipdf-rich-comment,.ipdf-rich-comment p{margin:0;line-height:1.45;}
+      .pdf-select-rich-body p + p,.ipdf-rich-comment p + p{margin-top:1em;}
+      .pdf-select-slot-body{gap:1em;}
+      .pdf-select-csdd-stack{gap:1em;}
+      .pdf-select-subsection + .pdf-select-subsection{margin-top:1em;}
+      .ipdf-blk + .ipdf-blk{margin-top:1em;}
+      .oem-work,.oem-extra{line-height:1.45;}
+      .oem-extra{margin-top:0;}
+      .pdf-ccvin-flags{margin-bottom:1em;}
+  </style></head><body><div class="ipdf-root"><header class="ipdf-header">
+    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
+    <div>
+      <p class="ipdf-hero-model">BMW 320d</p>
+      <p class="ipdf-hero-sub">2026. gada 15. aprīlis · Auto pārbaude / piedāvājums</p>
+    </div>
+  </header>
+    <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Klienta dati</h2></div><div class="ipdf-blk-body"><table class="ipdf-kv"><tr><th>Klients</th><td>Jānis Bērziņš</td></tr><tr><th>Tālrunis</th><td>+37120000000</td></tr><tr><th>E-pasts</th><td>klients@example.com</td></tr></table></div></section>
+    <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Pamatinformācija</h2></div><div class="ipdf-blk-body"><div class="ipdf-grid4"><div class="ipdf-tile"><p class="ipdf-tile-lbl">Gads</p><p class="ipdf-tile-val">2018</p></div><div class="ipdf-tile"><p class="ipdf-tile-lbl">Nobraukums</p><p class="ipdf-tile-val">145 000 km</p></div><div class="ipdf-tile"><p class="ipdf-tile-lbl">Transmisija</p><p class="ipdf-tile-val">Automātiskā</p></div><div class="ipdf-tile"><p class="ipdf-tile-lbl">Atrašanās vieta</p><p class="ipdf-tile-val">Vācija</p></div></div></div></section>
+    <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Novērtējuma atzīmes</h2></div><div class="ipdf-blk-body"><div class="ipdf-eval-grid">
+    <div class="ipdf-cl-item ipdf-cl-item--on"><svg class="ipdf-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="#F26522" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ipdf-cl-txt">Vēsture (pilna servisa vēsture)</span></div>
+    <div class="ipdf-cl-item ipdf-cl-item--on"><svg class="ipdf-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="#F26522" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ipdf-cl-txt">Krāsojums (rūpnīcas krāsa)</span></div>
+    <div class="ipdf-cl-item ipdf-cl-item--off"><span class="ipdf-check ipdf-check--off" aria-hidden="true"></span><span class="ipdf-cl-txt">Rūsa (virsbūve bez rūsas)</span></div>
+    <div class="ipdf-cl-item ipdf-cl-item--on"><svg class="ipdf-check" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16.667 5L7.5 14.167 3.333 10" stroke="#F26522" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="ipdf-cl-txt">Otrs riteņu komplekts</span></div>
+  </div></div></section><section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Vizuālais novērtējums</h2></div><div class="ipdf-blk-body"><div class="ipdf-card"><div class="ipdf-health ipdf-health--bar-only">
+    <div class="ipdf-health-top"><span class="ipdf-health-val">8/10</span></div>
+    <div class="ipdf-bar-track" role="img" aria-label="Vizuālais novērtējums: 8/10"><div class="ipdf-bar-fill" style="width:80%"></div></div>
+  </div></div></div></section><section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Detalizēts apraksts (vizuālais)</h2></div><div class="ipdf-blk-body"><div class="ipdf-card"><div class="ipdf-rich-comment">8/10 labs stāvoklis</div></div></div></section><section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Tehniskais novērtējums</h2></div><div class="ipdf-blk-body"><div class="ipdf-card"><div class="ipdf-health ipdf-health--bar-only">
+    <div class="ipdf-health-top"><span class="ipdf-health-val">7/10</span></div>
+    <div class="ipdf-bar-track" role="img" aria-label="Tehniskais novērtējums: 7/10"><div class="ipdf-bar-fill" style="width:70%"></div></div>
+  </div></div></div></section><section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Detalizēts apraksts (tehniskais)</h2></div><div class="ipdf-blk-body"><div class="ipdf-card"><div class="ipdf-rich-comment">7/10</div></div></div></section><section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Kopsavilkums</h2></div><div class="ipdf-blk-body"><div class="ipdf-summary"><div class="ipdf-rich-comment">Kopsavilkuma teksts</div></div></div></section>
+    <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Cenas un piedāvājums</h2></div><div class="ipdf-blk-body"><table class="ipdf-kv"><tr><th>Automašīnas cena</th><td>12 500 €</td></tr><tr><th>Piegādes cena</th><td>800 €</td></tr><tr><th>Komisijas maksa</th><td>500 €</td></tr><tr><th>Kopā</th><td>13800</td></tr><tr><th>Piedāvājums spēkā (dienas)</th><td>7</td></tr></table></div></section>
+    
+    <footer class="ipdf-footer" role="contentinfo">
+    <div class="ipdf-footer-card">
+      <div class="ipdf-footer-accent" style="background:#F26522" aria-hidden="true"></div>
+      <p class="ipdf-footer-brand">SIA IRISS</p>
+      <div class="ipdf-footer-body"></div>
+    </div>
+  </footer></div></body></html>"
+`;
+
+exports[`IRISS printable PDF HTML (template defaults) > pasūtījuma print HTML matches snapshot without overrides 1`] = `
+"<!DOCTYPE html><html lang="lv"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600;800&display=swap" rel="stylesheet"/><title>PASŪTĪJUMS</title><style>
+    @page { size: A4; margin: 11mm; }
+    * { box-sizing: border-box; }
+    html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      font-size: 10.5pt;
+      font-weight: 400;
+      line-height: 1.5;
+      letter-spacing: 0.011em;
+      color: #111827;
+      background: #fff;
+    }
+    .ipdf-root {
+      max-width: 190mm;
+      margin: 0 auto;
+      padding: 4mm 2mm 8mm;
+    }
+    .ipdf-header {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      align-items: center;
+      padding-bottom: 16px;
+      margin-bottom: 22px;
+      border-bottom: 1px solid #0f172a;
+    }
+    .ipdf-hero-model {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 900;
+      line-height: 1.15;
+      letter-spacing: 0.088em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+    .ipdf-hero-sub { margin: 6px 0 0; font-size: 0.72rem; font-weight: 400; color: #1F2937; letter-spacing: 0.044em; }
+    .ipdf-logo {
+      display: block;
+      height: 38px;
+      width: auto;
+      max-width: 160px;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+    }
+    .ipdf-sec-head { display: block; margin: 0 0 12px; }
+    .ipdf-sec-title {
+      margin: 0;
+      display: block;
+      width: 100%;
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.154em;
+      text-transform: uppercase;
+      color: #111827;
+      background: #e9edf3;
+      border-radius: 8px;
+      border-left: 3px solid #64748b;
+      padding: 7px 11px 7px 10px;
+    }
+    .ipdf-root--muted .ipdf-sec-title {
+      border-left: none;
+      background: transparent;
+      border-radius: 0;
+      padding: 0 0 7px;
+      margin-bottom: 14px;
+      color: #64748b;
+      font-weight: 700;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .ipdf-blk {
+      margin-bottom: 22px;
+      page-break-inside: avoid;
+    }
+    .ipdf-blk-body {
+      border: 1px solid #0f172a;
+      border-radius: 12px;
+      padding: 12px 14px 14px;
+      background: #F8FAFC;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+    }
+    .ipdf-blk--media {
+      padding: 0;
+    }
+    .ipdf-blk--media .ipdf-blk-body {
+      border: none;
+      box-shadow: none;
+      background: transparent;
+      padding: 0;
+    }
+    .ipdf-blk--media .ipdf-sec-head { margin-bottom: 12px; }
+    .ipdf-blk .ipdf-sec-head { margin-bottom: 12px; margin-top: 0; }
+    .ipdf-blk-body > table.ipdf-kv { border: none; box-shadow: none; background: transparent; }
+    .ipdf-blk-body > table.ipdf-kv th { background: #f8fafc; }
+    .ipdf-grid4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 640px) {
+      .ipdf-grid4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    .ipdf-tile {
+      background: #F8FAFC;
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .ipdf-tile-lbl {
+      margin: 0 0 4px;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #1F2937;
+    }
+    .ipdf-tile-val { margin: 0; font-size: 0.82rem; font-weight: 400; color: #111827; line-height: 1.35; letter-spacing: 0.011em; }
+    table.ipdf-kv { width: 100%; border-collapse: collapse; background: #F8FAFC; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+    table.ipdf-kv th {
+      text-align: left;
+      width: 30%;
+      padding: 8px 12px;
+      vertical-align: top;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: #1F2937;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    table.ipdf-kv td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      white-space: pre-wrap;
+      font-weight: 400;
+      color: #111827;
+      letter-spacing: 0.011em;
+    }
+    table.ipdf-kv tr:last-child th, table.ipdf-kv tr:last-child td { border-bottom: none; }
+    .ipdf-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 560px) { .ipdf-two { grid-template-columns: 1fr; } }
+    .ipdf-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+    }
+    .ipdf-card h3 {
+      margin: 0 0 0.35em;
+      font-size: 0.58rem;
+      font-weight: 900;
+      letter-spacing: 0.132em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+    .ipdf-card pre { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; word-break: break-word; color: #1F2937; font-size: 0.78rem; letter-spacing: 0.011em; }
+    .ipdf-rich-comment { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; word-break: break-word; color: #1F2937; font-size: 0.78rem; line-height: 1.45; letter-spacing: 0.011em; }
+    .ipdf-rich-comment strong, .ipdf-rich-comment b { font-weight: 700; }
+    .ipdf-rich-comment em, .ipdf-rich-comment i { font-style: italic; }
+    .ipdf-rich-comment u { text-decoration: underline; }
+    .ipdf-rich-comment s, .ipdf-rich-comment del { text-decoration: line-through; }
+    /* Krāsas un marķiera izcēlums drukā pazūd bez print-color-adjust. */
+    .ipdf-rich-comment span, .ipdf-rich-comment mark { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .ipdf-rich-comment mark { background: #fde68a; color: inherit; }
+    .ipdf-rich-comment span[style*="background"] {
+      padding: 0 2px; border-radius: 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+    }
+    .ipdf-eval-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    @media (max-width: 560px) { .ipdf-eval-grid { grid-template-columns: 1fr; } }
+    .ipdf-cl-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+    }
+    .ipdf-cl-item--off { opacity: 0.55; }
+    td.ipdf-check-end-cell {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: #111827;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fff;
+    }
+    td.ipdf-check-end-cell .ipdf-check { width: 16px; height: 16px; margin-top: 0; flex-shrink: 0; }
+    .ipdf-check { width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+    .ipdf-check--off {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .ipdf-cl-txt { font-size: 0.78rem; font-weight: 400; color: #111827; line-height: 1.35; letter-spacing: 0.011em; }
+    .ipdf-health { margin-bottom: 10px; }
+    .ipdf-health-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .ipdf-health--bar-only .ipdf-health-top { justify-content: flex-end; }
+    .ipdf-health-lbl { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.11em; text-transform: uppercase; color: #111827; margin: 0; }
+    .ipdf-health-val { font-size: 0.72rem; font-weight: 700; color: #64748b; margin: 0; letter-spacing: 0.011em; }
+    .ipdf-bar-track {
+      height: 8px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+    .ipdf-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: #64748b;
+      transition: width 0.2s ease;
+    }
+    .ipdf-summary {
+      border: 2px solid #64748b;
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: #fff;
+      box-shadow: 0 1px 2px rgb(242 101 34 / 0.12);
+    }
+    .ipdf-summary h3 {
+      margin: 0 0 8px;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+    .ipdf-summary pre { margin: 0; font-family: inherit; font-weight: 400; white-space: pre-wrap; color: #1F2937; font-size: 0.82rem; letter-spacing: 0.011em; }
+    .ipdf-summary .ipdf-rich-comment { font-size: 0.82rem; }
+    .ipdf-notes { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; min-height: 48px; background: #F8FAFC; }
+    .ipdf-notes pre { margin: 0; font-weight: 400; letter-spacing: 0.011em; }
+    .ipdf-gallery { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 560px) { .ipdf-gallery { grid-template-columns: 1fr; } }
+    .ipdf-photo { margin: 0; border: none; border-radius: 10px; overflow: hidden; background: #f1f5f9; page-break-inside: avoid; box-shadow: none; }
+    .ipdf-photo img { display: block; width: 100%; height: auto; max-height: 220px; object-fit: cover; }
+    .ipdf-meta { margin: 0; font-size: 0.68rem; font-weight: 500; color: #111827; line-height: 1.45; letter-spacing: 0.011em; }
+    .ipdf-footer { margin-top: 26px; }
+    .ipdf-footer-card {
+      position: relative;
+      border: 1px solid #0f172a;
+      border-radius: 12px;
+      padding: 14px 16px 14px 17px;
+      background: linear-gradient(165deg, #f8fafc 0%, #ffffff 58%);
+      box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+      overflow: hidden;
+    }
+    .ipdf-footer-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: #0f172a !important; }
+    .ipdf-footer-brand {
+      margin: 0 0 10px;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.132em;
+      text-transform: uppercase;
+      color: #111827;
+    }
+    .ipdf-footer-body { display: flex; flex-direction: column; gap: 6px; }
+    .ipdf-ft-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      font-size: 0.62rem;
+      line-height: 1.45;
+      align-items: baseline;
+    }
+    .ipdf-ft-k { font-weight: 700; color: #111827; flex: 0 0 auto; min-width: 5.5rem; letter-spacing: 0.011em; }
+    .ipdf-ft-v { font-weight: 500; color: #111827; flex: 1 1 12rem; letter-spacing: 0.011em; }
+    .ipdf-ft-plain { margin: 0; font-size: 0.62rem; font-weight: 500; color: #111827; line-height: 1.45; letter-spacing: 0.011em; }
+    
+      .pdf-report-comment-note-body br + strong,
+      .pdf-incident-internal-note-body br + strong,
+      .pdf-mileage-comment-note-body br + strong,
+      .pdf-select-rich-body br + strong,
+      .ipdf-rich-comment br + strong{display:inline-block;margin-top:0;}
+      .pdf-select-rich-body,.ipdf-rich-comment,.ipdf-rich-comment p{margin:0;line-height:1.45;}
+      .pdf-select-rich-body p + p,.ipdf-rich-comment p + p{margin-top:1em;}
+      .pdf-select-slot-body{gap:1em;}
+      .pdf-select-csdd-stack{gap:1em;}
+      .pdf-select-subsection + .pdf-select-subsection{margin-top:1em;}
+      .ipdf-blk + .ipdf-blk{margin-top:1em;}
+      .oem-work,.oem-extra{line-height:1.45;}
+      .oem-extra{margin-top:0;}
+      .pdf-ccvin-flags{margin-bottom:1em;}
+  </style></head><body><div class="ipdf-root ipdf-root--muted"><header class="ipdf-header">
+    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
+    <div>
+      <p class="ipdf-hero-model">VW Golf</p>
+      <p class="ipdf-hero-sub">2026. gada 15. aprīlis · IRISS pasūtījums</p>
+    </div>
+  </header>
+    <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Klienta dati</h2></div><div class="ipdf-blk-body"><table class="ipdf-kv"><tr><th>Vārds</th><td>Anna</td></tr><tr><th>Uzvārds</th><td>Liepa</td></tr><tr><th>Tālrunis</th><td>+37121111111</td></tr><tr><th>E-pasts</th><td>anna@example.com</td></tr><tr><th>Pasūtījuma datums</th><td>2026-04-10</td></tr></table></div></section>
+    <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Transportlīdzekļa specifikācija</h2></div><div class="ipdf-blk-body"><table class="ipdf-kv"><tr><th>Marka / modelis</th><td>VW Golf</td></tr></table><div style="margin-top:10px"><div class="ipdf-grid4"><div class="ipdf-tile"><p class="ipdf-tile-lbl">Dzinēja tips</p><p class="ipdf-tile-val">Benzīns</p></div></div></div></div></section>
+    
+    <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Aprīkojums</h2></div><div class="ipdf-blk-body"><div class="ipdf-two"><div class="ipdf-card"><h3>Obligātās prasības</h3><pre>ACC</pre></div></div></div></section>
+    <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Piezīmes</h2></div><div class="ipdf-blk-body"><div class="ipdf-notes"><pre>Piezīme</pre></div></div></section>
+    <footer class="ipdf-footer" role="contentinfo">
+    <div class="ipdf-footer-card">
+      <div class="ipdf-footer-accent" style="background:#64748b" aria-hidden="true"></div>
+      <p class="ipdf-footer-brand">SIA IRISS</p>
+      <div class="ipdf-footer-body"></div>
+    </div>
+  </footer></div></body></html>"
+`;

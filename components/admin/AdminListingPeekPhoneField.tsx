@@ -23,7 +23,7 @@ export function AdminListingPeekPhoneField({ defaultValue }: { defaultValue: str
           placeholder="Nav tālruņa"
           className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-sm font-medium text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
         />
-        <AdminWhatsAppOpenButton phone={phone} />
+        <AdminWhatsAppOpenButton phone={phone} templateId="wa.listing_peek" />
       </div>
     </label>
   );

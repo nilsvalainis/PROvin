@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { copyTextToClipboard } from "@/components/admin/AdminClipboardButton";
-import { WHATSAPP_PREFILL_AUDIT } from "@/lib/admin-whatsapp-messages";
+import { fetchAdminWhatsappPrefill } from "@/lib/admin-whatsapp-prefill-client";
 import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import {
   defaultFlashMaxSelection,
@@ -290,7 +290,13 @@ export function AdminOrderMobileDock({
             title={whatsappDigits ? `Atvērt WhatsApp: ${(customerPhone ?? "").trim()}` : "Nav derīga tālruņa numura WhatsApp atvēršanai"}
             aria-label="Atvērt WhatsApp sarunu ar klientu"
             onClick={() => {
-              if (whatsappDigits) openWhatsAppChat(whatsappDigits, whatsappPrefill ?? WHATSAPP_PREFILL_AUDIT);
+              if (!whatsappDigits) return;
+              void (async () => {
+                const message =
+                  whatsappPrefill ??
+                  (await fetchAdminWhatsappPrefill({ templateId: "wa.report_ready.audits" }));
+                if (message) openWhatsAppChat(whatsappDigits, message);
+              })();
             }}
           >
             <MessageCircle className={dockIcon} strokeWidth={1.5} aria-hidden />
