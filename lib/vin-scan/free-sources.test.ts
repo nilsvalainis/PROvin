@@ -35,6 +35,7 @@ describe("free VIN SCAN avoti", () => {
   it("automātiskās plūsmas palaiž tikai freeVinScanSourceIds", () => {
     const run = readFileSync(path.join(ROOT, "lib/order-vin-scan-run.ts"), "utf8");
     expect(run).toContain("freeVinScanSourceIds");
+    expect(run).toContain("already_running");
     expect(run).not.toMatch(/carvertical/i);
     expect(run).not.toMatch(/purchaseCarVerticalReport/);
   });
@@ -45,5 +46,16 @@ describe("free VIN SCAN avoti", () => {
     expect(store).toContain("function extraDraftPersistFields");
     expect(store).toContain("withDraftWriteLock");
     expect(store).toContain("upsertOrderDraftVinScan");
+    const vinScanFn = store.slice(store.indexOf("async function upsertOrderDraftVinScanUnlocked"));
+    expect(vinScanFn).toContain("workspaceRevision: prev.workspaceRevision");
+    expect(vinScanFn.slice(0, 2500)).not.toContain("prevRev + 1");
+    const patch = readFileSync(path.join(ROOT, "app/api/admin/order-draft/route.ts"), "utf8");
+    expect(patch).toContain("shouldStartOrderVinScanOnDraftPatch");
+    const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
+    expect(card).toContain("VIN SCAN avoti");
+    expect(card).toContain("Ielikt AUCTION");
+    expect(card).toContain("Ielikt CSDD");
+    expect(card).toContain("Ielikt SLUDIN");
+    expect(card).not.toMatch(/paraugs/i);
   });
 });

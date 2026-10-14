@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
+import { emptyCsddFields, emptyListingAnalysisBlock } from "@/lib/admin-source-blocks";
+import { applyVinScanCsddToBlock, applyVinScanListingToBlock } from "@/lib/order-vin-scan-apply";
 import {
   applyVinScanAuctionsToCcVin,
   buildOrderVinScanSummary,
+  formatOrderVinScanClock,
+  mergeVinScanIndicators,
   orderVinScanCompactHint,
   parseOrderVinScanRecord,
+  shouldStartOrderVinScanOnDraftPatch,
   vinScanAuctionsToCcVinParsed,
 } from "@/lib/order-vin-scan";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
@@ -60,10 +65,52 @@ describe("pasūtījuma VIN SCAN ieraksts", () => {
     expect(sum?.found).toBe(1);
     expect(sum?.none).toBe(2);
     expect(sum?.error).toBe(1);
-    expect(sum?.noneCollapsedLabels).toEqual(["tjekbil.dk", "Regitra"]);
+    expect(sum?.noneCollapsedLabels).toEqual(["Regitra", "tjekbil.dk"]);
     const stat = sum?.rows.find((r) => r.id === "stat_vin");
-    expect(stat).toMatchObject({ state: "found", hint: "Copart 2025, 20 foto", valuable: true, canImportAuction: true, photoCount: 20 });
+    expect(stat).toMatchObject({
+      state: "found",
+      hint: "Copart 2025, 20 foto",
+      valuable: true,
+      canImportAuction: true,
+      photoCount: 20,
+      action: "import_auction",
+    });
+    expect(stat?.photoUrls).toContain("https://cs.copart.com/a.jpg");
+    expect(sum?.rows[0]?.id).toBe("stat_vin");
+    expect(sum?.noneRows.map((r) => r.id).sort()).toEqual(["regitra", "tjekbil"]);
     expect(orderVinScanCompactHint(sum)).toContain("Copart 2025, 20 foto");
+  });
+
+  it("CSDD un sludinājuma rindām ir Ielikt darbība", () => {
+    const rec = parseOrderVinScanRecord({
+      at: "2026-10-14T09:00:00.000Z",
+      vin: "WBA5R1C0XLFH42873",
+      status: "done",
+      indicators: [
+        STAT,
+        indicator({
+          id: "csdd",
+          label: "CSDD",
+          status: "found",
+          summary: "1. reģ. 29.09.2017",
+        }),
+        indicator({
+          id: "listing_history",
+          label: "ss.com",
+          status: "found",
+          summary: "Sludinājums · 21 foto",
+        }),
+      ],
+    });
+    const sum = buildOrderVinScanSummary(rec);
+    expect(sum?.rows.map((r) => r.id)).toEqual(["stat_vin", "csdd", "listing_history"]);
+    expect(sum?.rows.find((r) => r.id === "csdd")?.action).toBe("import_csdd");
+    expect(sum?.rows.find((r) => r.id === "listing_history")?.action).toBe("import_listing");
+  });
+
+  it("pulkstenis ir Rīgas HH:MM ar kolu", () => {
+    expect(formatOrderVinScanClock("2026-10-14T06:14:00.000Z")).toBe("09:14");
+    expect(formatOrderVinScanClock("nav")).toBe("");
   });
 
   it("kļūdas statusā rāda ieraksta ziņu, ne kļūdu skaitu", () => {
@@ -93,5 +140,63 @@ describe("VIN SCAN izsoles → AUCTION (cc_vin)", () => {
     expect(applied.block.sales.some((r) => r.venue === "Manheim")).toBe(true);
     expect(applied.block.sales.some((r) => r.venue === "Copart")).toBe(true);
     expect(applied.block.rawUnprocessedData).toContain("cs.copart.com");
+  });
+});
+
+describe("VIN SCAN ielikšana CSDD / sludinājumā", () => {
+  it("aizpilda tukšos CSDD laukus un nepārraksta aizpildītos", () => {
+    const empty = applyVinScanCsddToBlock(
+      emptyCsddFields(),
+      indicator({
+        id: "csdd",
+        status: "found",
+        summary: "1. reģ. 29.09.2017",
+        vehicle: { make: "Mercedes-Benz", model: "CLA 180", year: "2017" },
+      }),
+    );
+    expect(empty.makeModel).toBe("Mercedes-Benz CLA 180");
+    expect(empty.modelYear).toBe("2017");
+    const kept = applyVinScanCsddToBlock(
+      { ...emptyCsddFields(), makeModel: "Operatora marka", modelYear: "2016" },
+      indicator({
+        id: "csdd",
+        status: "found",
+        summary: "CSDD",
+        vehicle: { make: "Mercedes-Benz", model: "CLA 180", year: "2017" },
+      }),
+    );
+    expect(kept.makeModel).toBe("Operatora marka");
+    expect(kept.modelYear).toBe("2016");
+  });
+
+  it("ieliek sludinājuma rindas tukšā paste laukā", () => {
+    const next = applyVinScanListingToBlock(
+      emptyListingAnalysisBlock(),
+      indicator({
+        id: "listing_history",
+        status: "found",
+        summary: "Sludinājums",
+        listings: [{ date: "12.10.2026", price: "12 000 €", odometer: "185 389 km" }],
+      }),
+    );
+    expect(next.listingPasteRaw).toContain("12 000 €");
+    expect(next.listingPasteRaw).toContain("185 389 km");
+  });
+});
+
+describe("VIN SCAN palaišana no draft PATCH", () => {
+  it("nesāk skenēšanu, ja VIN nav mainījies (lapas atvēršana)", () => {
+    expect(shouldStartOrderVinScanOnDraftPatch("WBA5R1C0XLFH42873", "WBA5R1C0XLFH42873")).toBe(false);
+    expect(shouldStartOrderVinScanOnDraftPatch("", "WBA5R1C0XLFH42873")).toBe(true);
+    expect(shouldStartOrderVinScanOnDraftPatch("AAA", "WBA5R1C0XLFH42873")).toBe(true);
+  });
+
+  it("apvieno atkārtota avota rindu ar esošajām", () => {
+    const merged = mergeVinScanIndicators(
+      [STAT, indicator({ id: "bid_cars", status: "unknown", summary: "Cloudflare" })],
+      [indicator({ id: "bid_cars", status: "found", summary: "Ir izsoles ieraksts" })],
+    );
+    expect(merged.find((r) => r.id === "stat_vin")?.status).toBe("found");
+    expect(merged.find((r) => r.id === "bid_cars")?.status).toBe("found");
   });
 });

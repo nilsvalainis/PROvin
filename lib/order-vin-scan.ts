@@ -22,6 +22,8 @@ export type OrderVinScanRecord = {
 
 export type OrderVinScanSourceState = "found" | "none" | "error";
 
+export type OrderVinScanRowAction = "import_auction" | "import_csdd" | "import_listing" | "open" | "retry";
+
 export type OrderVinScanSourceRow = {
   id: string;
   label: string;
@@ -30,7 +32,9 @@ export type OrderVinScanSourceRow = {
   openUrl: string | null;
   valuable: boolean;
   photoCount: number;
+  photoUrls: string[];
   canImportAuction: boolean;
+  action: OrderVinScanRowAction;
 };
 
 export type OrderVinScanSummary = {
@@ -42,6 +46,7 @@ export type OrderVinScanSummary = {
   error: number;
   errorMessage?: string;
   rows: OrderVinScanSourceRow[];
+  noneRows: OrderVinScanSourceRow[];
   noneCollapsedLabels: string[];
 };
 
@@ -134,28 +139,68 @@ function photoCountOf(row: VinScanIndicator): number {
   return Math.max(fromMedia, fromFlags, fromAuctions);
 }
 
+function photoUrlsOf(row: VinScanIndicator): string[] {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  const push = (raw?: string) => {
+    const url = String(raw || "").trim();
+    if (!url || seen.has(url)) return;
+    seen.add(url);
+    urls.push(url);
+  };
+  push(row.media?.photoUrl);
+  for (const auction of row.auctions ?? []) push(auction.photoUrl);
+  return urls.slice(0, 8);
+}
+
 function canImportAuction(row: VinScanIndicator): boolean {
   if (row.status !== "found") return false;
   if ((row.auctions ?? []).length > 0) return true;
   return photoCountOf(row) > 0 || Boolean(row.media?.photoUrl);
 }
 
+function rowAction(row: VinScanIndicator, state: OrderVinScanSourceState): OrderVinScanRowAction {
+  if (state === "error") return "retry";
+  if (row.id === "stat_vin" && canImportAuction(row)) return "import_auction";
+  if (row.id === "csdd" && state === "found") return "import_csdd";
+  if (row.id === "listing_history" && state === "found") return "import_listing";
+  return "open";
+}
+
+function rowRank(row: OrderVinScanSourceRow): number {
+  if (row.id === "stat_vin" && row.state === "found") return 0;
+  if (row.id === "csdd" && row.state === "found") return 1;
+  if (row.id === "listing_history" && row.state === "found") return 2;
+  if (row.state === "found") return 3;
+  if (row.state === "error" && row.valuable) return 4;
+  if (row.state === "error") return 5;
+  return 6;
+}
+
 export function buildOrderVinScanSummary(record: OrderVinScanRecord | null | undefined): OrderVinScanSummary | null {
   if (!record) return null;
-  const rows: OrderVinScanSourceRow[] = record.indicators.map((row) => ({
-    id: row.id,
-    label: row.label,
-    state: sourceState(row.status),
-    hint: row.summary.trim(),
-    openUrl: row.openUrl,
-    valuable: isValuableVinScanSourceId(row.id),
-    photoCount: photoCountOf(row),
-    canImportAuction: canImportAuction(row),
-  }));
+  const rows: OrderVinScanSourceRow[] = record.indicators.map((row) => {
+    const state = sourceState(row.status);
+    return {
+      id: row.id,
+      label: row.label,
+      state,
+      hint: row.summary.trim(),
+      openUrl: row.openUrl,
+      valuable: isValuableVinScanSourceId(row.id),
+      photoCount: photoCountOf(row),
+      photoUrls: photoUrlsOf(row),
+      canImportAuction: canImportAuction(row),
+      action: rowAction(row, state),
+    };
+  });
   const found = rows.filter((r) => r.state === "found");
   const none = rows.filter((r) => r.state === "none");
   const error = rows.filter((r) => r.state === "error");
-  const visible = [...found, ...error.filter((r) => r.valuable), ...error.filter((r) => !r.valuable)];
+  const byRank = (a: OrderVinScanSourceRow, b: OrderVinScanSourceRow) =>
+    rowRank(a) - rowRank(b) || a.label.localeCompare(b.label, "lv");
+  const visible = [...found, ...error].sort(byRank);
+  const noneRows = [...none].sort((a, b) => a.label.localeCompare(b.label, "lv"));
   return {
     at: record.at,
     vin: record.vin,
@@ -165,7 +210,8 @@ export function buildOrderVinScanSummary(record: OrderVinScanRecord | null | und
     error: error.length,
     ...(record.error ? { errorMessage: record.error } : {}),
     rows: visible,
-    noneCollapsedLabels: none.map((r) => r.label),
+    noneRows,
+    noneCollapsedLabels: noneRows.map((r) => r.label),
   };
 }
 
@@ -237,6 +283,37 @@ export function applyVinScanAuctionsToCcVin(
     damages: parsed.damages.length,
     photoUrls,
   };
+}
+
+export function formatOrderVinScanClock(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Riga",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(d);
+  const hour = parts.find((p) => p.type === "hour")?.value ?? "";
+  const minute = parts.find((p) => p.type === "minute")?.value ?? "";
+  if (!hour || !minute) return "";
+  return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
+}
+
+export function shouldStartOrderVinScanOnDraftPatch(prevVin: string, incomingVin: string): boolean {
+  const prev = prevVin.trim().toUpperCase();
+  const next = incomingVin.trim().toUpperCase();
+  return Boolean(next) && next !== prev;
+}
+
+export function mergeVinScanIndicators(
+  prev: readonly VinScanIndicator[],
+  incoming: readonly VinScanIndicator[],
+): VinScanIndicator[] {
+  const map = new Map<string, VinScanIndicator>();
+  for (const row of prev) map.set(row.id, row);
+  for (const row of incoming) map.set(row.id, row);
+  return [...map.values()];
 }
 
 export function orderVinScanCompactHint(summary: OrderVinScanSummary | null | undefined): string {

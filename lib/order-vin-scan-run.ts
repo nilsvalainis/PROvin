@@ -3,9 +3,10 @@ import "server-only";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { isSafeOrderDraftSessionId, readOrderDraft, upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
 import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { parseOrderVinScanRecord, type OrderVinScanRecord } from "@/lib/order-vin-scan";
-import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
+import { mergeVinScanIndicators, parseOrderVinScanRecord, type OrderVinScanRecord } from "@/lib/order-vin-scan";
+import { freeVinScanSourceIds, isPaidVinScanSourceId } from "@/lib/vin-scan/free-sources";
 import { runVinScan } from "@/lib/vin-scan/run";
+import { isVinScanSourceId } from "@/lib/vin-scan/catalog";
 import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
 import { recordSourceOutcomes } from "@/lib/source-health-store";
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
@@ -15,6 +16,7 @@ export type RunOrderFreeVinScanInput = {
   vin?: string | null;
   listingUrl?: string | null;
   force?: boolean;
+  sourceIds?: readonly string[];
 };
 
 export type RunOrderFreeVinScanResult = {
@@ -43,7 +45,10 @@ export async function runOrderFreeVinScan(
   if (order?.checkoutLine === "provin_select") return skip("consultation");
 
   const prev = parseOrderVinScanRecord((await readOrderDraft(sessionId))?.vinScan);
-  if (!opts.force && prev?.status === "done" && prev.vin === vin && prev.indicators.length > 0) {
+  if (!opts.force && prev?.vin === vin && prev.status === "running") {
+    return skip("already_running");
+  }
+  if (!opts.force && prev?.status === "done" && prev.vin === vin && prev.indicators.length > 0 && !opts.sourceIds?.length) {
     return skip("already_done");
   }
 
@@ -56,11 +61,15 @@ export async function runOrderFreeVinScan(
   await upsertOrderDraftVinScan(sessionId, running).catch(() => null);
 
   try {
-    const indicators = await runVinScan({
+    const wanted = (opts.sourceIds ?? [])
+      .filter((id) => isVinScanSourceId(id) && !isPaidVinScanSourceId(id));
+    const sourceIds = wanted.length ? wanted : freeVinScanSourceIds();
+    const scanned = await runVinScan({
       vin,
       listingUrl: opts.listingUrl?.trim() || "",
-      sourceIds: freeVinScanSourceIds(),
+      sourceIds,
     });
+    const indicators = wanted.length ? mergeVinScanIndicators(prev?.vin === vin ? prev.indicators : [], scanned) : scanned;
     const scannedAt = new Date().toISOString();
     const done: OrderVinScanRecord = { at: scannedAt, vin, status: "done", indicators };
     await upsertOrderDraftVinScan(sessionId, done).catch((err) => {

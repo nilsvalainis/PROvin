@@ -21,6 +21,9 @@ import { AdminTirgusSourceBlock } from "@/components/admin/AdminTirgusSourceBloc
 import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListingAnalysisSourceBlock";
 import { AdminListingCoverPhoto } from "@/components/admin/AdminListingCoverPhoto";
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
+import { AdminOrderVinScanCard } from "@/components/admin/AdminOrderVinScanCard";
+import { applyVinScanAuctionsToCcVin, type OrderVinScanRecord } from "@/lib/order-vin-scan";
+import { applyVinScanCsddToBlock, applyVinScanListingToBlock } from "@/lib/order-vin-scan-apply";
 import {
   AdminEstoniaVinRegistryPair,
   AdminVinRegistrySourceBlock,
@@ -325,6 +328,7 @@ export type OrderWorkspacePayload = {
   serverInternalComment: string | null;
   serverAttachments: { label: string; fileName: string }[];
   autoIngest?: AutoIngestStatus | null;
+  vinScan?: OrderVinScanRecord | null;
 };
 
 type PortfolioEntry = {
@@ -4655,8 +4659,37 @@ export function OrderDetailWorkspace({
         ) : null}
         {showPortfolioInline ? portfolioSection : null}
 
-        {dashboardSlot ? (
-          <div className={wizardStep === 0 ? "space-y-3" : "hidden"} aria-hidden={wizardStep !== 0}>
+        {wizardStep === 0 ? (
+          <div className="space-y-3">
+            {payload.checkoutLine === "provin_select" ? null : (
+              <AdminOrderVinScanCard
+                sessionId={payload.sessionId}
+                vin={payload.vin ?? ""}
+                listingUrl={payload.listingUrl ?? ""}
+                initial={payload.vinScan ?? null}
+                onImportAuction={(scan) => {
+                  const applied = applyVinScanAuctionsToCcVin(wsPersistRef.current.sourceBlocks.cc_vin, scan.indicators);
+                  updateSourceBlock("cc_vin", applied.block);
+                }}
+                onImportCsdd={(scan) => {
+                  const row = scan.indicators.find((item) => item.id === "csdd");
+                  if (!row) return;
+                  updateSourceBlock("csdd", applyVinScanCsddToBlock(wsPersistRef.current.sourceBlocks.csdd, row));
+                }}
+                onImportListing={(scan) => {
+                  const row = scan.indicators.find((item) => item.id === "listing_history");
+                  if (!row) return;
+                  updateSourceBlock(
+                    "listing_analysis",
+                    applyVinScanListingToBlock(wsPersistRef.current.sourceBlocks.listing_analysis, row),
+                  );
+                }}
+              />
+            )}
+            {dashboardSlot}
+          </div>
+        ) : dashboardSlot ? (
+          <div className="hidden" aria-hidden>
             {dashboardSlot}
           </div>
         ) : null}

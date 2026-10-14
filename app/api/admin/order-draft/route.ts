@@ -7,7 +7,7 @@ import { NextResponse, after } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable } from "@/lib/admin-order-draft-store";
 import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { parseOrderVinScanRecord } from "@/lib/order-vin-scan";
+import { shouldStartOrderVinScanOnDraftPatch } from "@/lib/order-vin-scan";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
@@ -263,20 +263,23 @@ export async function PATCH(req: Request) {
     }
 
     const incomingVin = typeof patch.orderEdits?.vin === "string" ? normalizeVin(patch.orderEdits.vin) : "";
-    if (incomingVin && isValidVin(incomingVin) && !isPlaceholderVin(incomingVin)) {
-      const existing = parseOrderVinScanRecord(prevDraft?.vinScan);
-      if (!existing || existing.vin !== incomingVin) {
-        const listingUrl =
-          (typeof patch.orderEdits?.listingUrl === "string" && patch.orderEdits.listingUrl.trim()) ||
-          prevDraft?.orderEdits?.listingUrl ||
-          null;
-        after(() =>
-          runOrderFreeVinScan(sessionId, { vin: incomingVin, listingUrl }).then(
-            (r) => console.info("[order-draft] free VIN SCAN", { sessionId, ...r }),
-            (err) => console.error("[order-draft] free VIN SCAN:", err),
-          ),
-        );
-      }
+    const prevVin = normalizeVin(prevDraft?.orderEdits?.vin ?? "");
+    if (
+      incomingVin &&
+      isValidVin(incomingVin) &&
+      !isPlaceholderVin(incomingVin) &&
+      shouldStartOrderVinScanOnDraftPatch(prevVin, incomingVin)
+    ) {
+      const listingUrl =
+        (typeof patch.orderEdits?.listingUrl === "string" && patch.orderEdits.listingUrl.trim()) ||
+        prevDraft?.orderEdits?.listingUrl ||
+        null;
+      after(() =>
+        runOrderFreeVinScan(sessionId, { vin: incomingVin, listingUrl }).then(
+          (r) => console.info("[order-draft] free VIN SCAN", { sessionId, ...r }),
+          (err) => console.error("[order-draft] free VIN SCAN:", err),
+        ),
+      );
     }
 
     return NextResponse.json({
