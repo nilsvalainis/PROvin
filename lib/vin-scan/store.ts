@@ -10,6 +10,7 @@ import { get, put } from "@vercel/blob";
 
 import { VIN_SCAN_TTL_MS } from "@/lib/vin-scan/catalog";
 import { vinScanIndicatorsAreCacheable } from "@/lib/vin-scan/health";
+import type { JojNameDict } from "@/lib/vin-scan/joj-labels";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import type { VinScanIndicator, VinScanParse } from "@/lib/vin-scan/types";
 
@@ -33,6 +34,8 @@ const INDEX_KEY = "_history";
 const HISTORY_MAX = 40;
 /** JoJ /search-vin ir $0.50: kešs pēc VIN, 30 dienas. */
 export const JOJ_VIN_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+/** /usa/damages un /usa/titles: $0.01, gandrīz statiskas vārdnīcas. */
+export const JOJ_DICT_CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 type BlobConfig = { token: string; prefix: string };
 
@@ -183,4 +186,37 @@ export async function writeJojVinCache(vin: string, parse: VinScanParse): Promis
   if (key.length < 11) return;
   const body: JojVinCache = { vin: vin.trim().toUpperCase(), cachedAt: new Date().toISOString(), parse };
   await writeJson(jojCacheKey(vin), body);
+}
+
+const JOJ_DICT_KEY = "joj-dicts-usa";
+
+export type JojDictCache = {
+  cachedAt: string;
+  dict: JojNameDict;
+};
+
+function asJojDictCache(raw: unknown): JojDictCache | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const cachedAt = typeof o.cachedAt === "string" ? o.cachedAt : "";
+  const dict = o.dict && typeof o.dict === "object" ? (o.dict as JojNameDict) : null;
+  if (!cachedAt || !dict || typeof dict.damages !== "object" || typeof dict.titles !== "object") return null;
+  const t = Date.parse(cachedAt);
+  if (!Number.isFinite(t) || Date.now() - t >= JOJ_DICT_CACHE_TTL_MS) return null;
+  return {
+    cachedAt,
+    dict: {
+      damages: dict.damages && typeof dict.damages === "object" ? dict.damages : {},
+      titles: dict.titles && typeof dict.titles === "object" ? dict.titles : {},
+    },
+  };
+}
+
+export async function readJojDictCache(): Promise<JojDictCache | null> {
+  return asJojDictCache(await readJson(JOJ_DICT_KEY));
+}
+
+export async function writeJojDictCache(dict: JojNameDict): Promise<void> {
+  const body: JojDictCache = { cachedAt: new Date().toISOString(), dict };
+  await writeJson(JOJ_DICT_KEY, body);
 }

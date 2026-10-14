@@ -1,4 +1,5 @@
 import { vinScanCatalogItem, type VinScanSourceId } from "@/lib/vin-scan/catalog";
+import type { JojCcVinFacts } from "@/lib/vin-scan/joj-labels";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 
 /** found: ir dati. none: atbildēja, ieraksta nav. unknown: tīkls/captcha. manual: maksas solis. skipped: nav atslēgas. needs_input: vajag numuru vai VIN. */
@@ -84,6 +85,7 @@ export type VinScanIndicator = {
   incidents?: VinScanIncident[];
   auctions?: VinScanAuction[];
   listings?: VinScanListing[];
+  jojFacts?: JojCcVinFacts;
 };
 
 export type VinScanParse = {
@@ -100,6 +102,7 @@ export type VinScanParse = {
   incidents?: VinScanIncident[];
   auctions?: VinScanAuction[];
   listings?: VinScanListing[];
+  jojFacts?: JojCcVinFacts;
 };
 
 export type VinScanContext = {
@@ -132,6 +135,7 @@ export function buildVinScanIndicator(
     incidents: parsed.incidents,
     auctions: parsed.auctions,
     listings: parsed.listings,
+    jojFacts: parsed.jojFacts,
   };
 }
 

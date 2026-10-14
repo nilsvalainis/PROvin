@@ -28,7 +28,7 @@ export function configuredExtraAuctionVinProviders(
 
 export async function fetchAuctionVinLots(vin: string, deps: FetchJojSearchVinDeps = {}): Promise<VinScanParse> {
   const env = deps.env ?? process.env;
-  const parts: VinScanParse[] = [await fetchJojSearchVin(vin, deps)];
+  const parts: VinScanParse[] = [await fetchJojSearchVin(vin, { ...deps, env })];
   for (const extra of configuredExtraAuctionVinProviders(env)) {
     parts.push(await extra.searchVin(vin, deps));
   }

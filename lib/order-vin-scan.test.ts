@@ -165,6 +165,76 @@ describe("VIN SCAN izsoles → AUCTION (cc_vin)", () => {
     expect(applied.block.sales.some((r) => r.venue === "Copart")).toBe(true);
     expect(applied.block.rawUnprocessedData).toContain("cs.copart.com");
   });
+
+  it("JoJ fakti iet esošajā AUCTION (cc_vin) blokā, ne jaunā avotā", () => {
+    const prev = emptyCcVinBlock();
+    prev.sales = [{ date: "01.01.2020", venue: "Manheim", odometer: "10 000 km", price: "", status: "Pārdots" }];
+    const joj = indicator({
+      id: "joj_copart_iaai",
+      label: "Copart/IAAI (JoJ API)",
+      status: "found",
+      summary: "Copart 2026, 1 foto",
+      auctions: [{ title: "Copart · lots 94166665 · Side", date: "2026-03-25", venue: "Copart", price: "56 500 USD" }],
+      media: {
+        photoCount: 2,
+        photoUrl: "https://cars2.import-motor.com/a.webp",
+        photoUrls: ["https://cars2.import-motor.com/a.webp", "https://cs.copart.com/v1/ext.jpg"],
+      },
+      jojFacts: {
+        vehicleLine: "2023 BMW M8",
+        reportDate: "25.03.2026",
+        sales: [{ date: "25.03.2026", venue: "Copart", odometer: "28 218 km", price: "56 500 USD", status: "pārdots · lots 94166665" }],
+        damages: [{ date: "25.03.2026", region: "Los Angeles, CA", amount: "4 200 USD", description: "Side / Front End" }],
+        titles: [{ date: "25.03.2026", region: "Los Angeles, CA", odometer: "28 218 km", note: "Salvage" }],
+        insurance: [{ date: "25.03.2026", label: "Apdrošinātājs", detail: "GEICO" }],
+        mileage: [{ date: "25.03.2026", odometer: "28 218 km", country: "United States" }],
+        notes: ["Lots: 94166665\nBojājums (galvenais): Side"],
+      },
+    });
+    const parsed = vinScanAuctionsToCcVinParsed([joj]);
+    expect(parsed.sales[0]).toMatchObject({ venue: "Copart", odometer: "28 218 km" });
+    expect(parsed.damages[0]?.description).toContain("Side");
+    expect(parsed.titles[0]?.note).toBe("Salvage");
+    expect(parsed.insurance[0]?.label).toBe("Apdrošinātājs");
+    expect(parsed.mileage[0]?.odometer).toBe("28 218 km");
+    const applied = applyVinScanAuctionsToCcVin(prev, [joj]);
+    expect(applied.block.sales.some((r) => r.venue === "Manheim")).toBe(true);
+    expect(applied.block.sales.some((r) => r.venue === "Copart" && r.odometer.includes("28"))).toBe(true);
+    expect(applied.block.titles.some((r) => r.note === "Salvage")).toBe(true);
+    expect(applied.block.insurance.some((r) => r.detail === "GEICO")).toBe(true);
+    expect(applied.photoUrls).toContain("https://cars2.import-motor.com/a.webp");
+    expect(applied.photoUrls).toContain("https://cs.copart.com/v1/ext.jpg");
+    expect(applied.block.rawUnprocessedData).toContain("94166665");
+    expect(applied.block.aiContextRaw).toContain("94166665");
+  });
+
+  it("VIN SCAN persistē JoJ faktus (Ielikt AUCTION pēc pārlādes)", () => {
+    const rec = parseOrderVinScanRecord({
+      at: "2026-10-14T09:00:00.000Z",
+      vin: "WBA5R1C0XLFH42873",
+      status: "done",
+      indicators: [
+        {
+          id: "joj_copart_iaai",
+          label: "Copart/IAAI (JoJ API)",
+          status: "found",
+          summary: "Copart 2026",
+          jojFacts: {
+            vehicleLine: "2023 BMW M8",
+            reportDate: "25.03.2026",
+            sales: [{ date: "25.03.2026", venue: "Copart", odometer: "1 000 km", price: "1 USD", status: "pārdots" }],
+            damages: [],
+            titles: [],
+            insurance: [],
+            mileage: [],
+            notes: ["Lots: 94166665"],
+          },
+        },
+      ],
+    });
+    expect(rec?.indicators[0]?.jojFacts?.vehicleLine).toBe("2023 BMW M8");
+    expect(rec?.indicators[0]?.jojFacts?.notes).toContain("Lots: 94166665");
+  });
 });
 
 describe("VIN SCAN ielikšana CSDD / sludinājumā", () => {
