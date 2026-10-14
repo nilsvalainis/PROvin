@@ -28,6 +28,9 @@ import {
   buildReportReadySubject,
   type ReportReadyProductKind,
 } from "@/lib/email/report-ready-copy";
+import { getCachedMessageTemplatesDoc, warmMessageTemplatesCache } from "@/lib/messages/message-runtime";
+import { resolveMessageSync } from "@/lib/messages/resolve-message";
+import { buildReportReadyEmailVars, reportReadyTemplateId } from "@/lib/messages/template-vars";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
 export function isSmtpConfigured(): boolean {
@@ -289,26 +292,38 @@ export async function sendPaymentConfirmationEmail(opts: {
       ? `${opts.amountTotal} ${(opts.currency ?? "EUR").toUpperCase()}`
       : "-";
 
-  const html = paymentConfirmationHtml({
-    invoiceUrl,
-    amountLine,
+  await warmMessageTemplatesCache();
+  const doc = getCachedMessageTemplatesDoc();
+  const paymentVars = {
+    summa: amountLine,
     vin: opts.vin?.trim() || "-",
-  });
-
-  const text = [
-    "Paldies par pasūtījumu.",
-    "",
-    `Summa: ${amountLine}`,
-    `VIN: ${opts.vin ?? "-"}`,
-    "",
-    "Rēķins PDF ir pievienots šim e-pastam.",
-    `Rēķins (PDF): ${invoiceUrl}`,
-  ].join("\n");
+    rekins_saite: invoiceUrl,
+  };
+  const paymentRendered = resolveMessageSync("email.payment_confirmation", paymentVars, { doc });
+  const html =
+    paymentRendered?.html ??
+    paymentConfirmationHtml({
+      invoiceUrl,
+      amountLine,
+      vin: opts.vin?.trim() || "-",
+    });
+  const text =
+    paymentRendered?.text ??
+    [
+      "Paldies par pasūtījumu.",
+      "",
+      `Summa: ${amountLine}`,
+      `VIN: ${opts.vin ?? "-"}`,
+      "",
+      "Rēķins PDF ir pievienots šim e-pastam.",
+      `Rēķins (PDF): ${invoiceUrl}`,
+    ].join("\n");
+  const subject = paymentRendered?.subject ?? "PROVIN: maksājums saņemts, rēķins pielikumā";
 
   try {
     await sendSmtpMail({
       to: opts.to,
-      subject: "PROVIN: maksājums saņemts, rēķins pielikumā",
+      subject,
       text,
       html,
       ...(opts.invoiceAttachment
@@ -376,19 +391,40 @@ export async function sendReportReadyEmail(opts: {
   const carVin = hasRealVin ? normalizeVin(rawVin) : "";
   const productKind = opts.productKind ?? "audits";
   const includeGoogleReview = opts.includeGoogleReview === true;
-  const html = auditCompletedEmailHtml({
-    carVin: hasRealVin ? carVin : "-",
-    attachmentLines: deduped.map((a) => a.filename),
-    productKind,
-    includeGoogleReview,
-  });
-  const text = buildReportReadyPlainText({
+  await warmMessageTemplatesCache();
+  const doc = getCachedMessageTemplatesDoc();
+  const attachmentLines = deduped.map((a) => a.filename);
+  const vars = buildReportReadyEmailVars({
     kind: productKind,
     vin: carVin,
-    attachmentLines: deduped.map((a) => a.filename),
+    attachmentLines,
     includeGoogleReview,
   });
-  const subject = buildReportReadySubject(productKind, carVin);
+  const templateId = reportReadyTemplateId(productKind);
+  const rendered = resolveMessageSync(templateId, vars, {
+    doc,
+    htmlContext: { attachmentLines },
+  });
+  const html =
+    rendered?.html ??
+    auditCompletedEmailHtml({
+      carVin: hasRealVin ? carVin : "-",
+      attachmentLines,
+      productKind,
+      includeGoogleReview,
+    });
+  const text =
+    rendered?.text ??
+    buildReportReadyPlainText(
+      {
+        kind: productKind,
+        vin: carVin,
+        attachmentLines,
+        includeGoogleReview,
+      },
+      doc,
+    );
+  const subject = rendered?.subject ?? buildReportReadySubject(productKind, carVin);
 
   try {
     await sendSmtpMail({
@@ -517,27 +553,43 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
   const comment = opts.comment.trim();
   const listingUrl = (opts.listingUrl ?? "").trim();
   const photos = (opts.photos ?? []).filter((p) => p.id.trim() && p.jpeg.length > 0);
-  const subject = "PROVIN: īss komentārs par tavu sludinājumu";
-  const text = [
-    "Labdien!",
-    "",
-    "Īss skatījums uz tavu sludinājumu:",
-    ...(listingUrl ? ["", listingUrl] : []),
-    "",
-    comment,
-    ...(photos.length > 0 ? ["", `Pielikumā ${photos.length} fotogrāfijas.`] : []),
-    "",
-    "Noskaidro visu par savu topošo auto.",
-    "PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.",
-    "",
-    "Pasūtīt:",
-    auditsUrl,
-    "",
-    "Ar cieņu,",
-    "PROVIN.LV",
-  ].join("\n");
+  await warmMessageTemplatesCache();
+  const doc = getCachedMessageTemplatesDoc();
+  const fotoPiezime = photos.length > 0 ? `Pielikumā ${photos.length} fotogrāfijas.` : "";
+  const vars = {
+    komentars: comment,
+    sludinajuma_saite: listingUrl,
+    foto_piezime: fotoPiezime,
+    audits_cta_saite: auditsUrl,
+  };
+  const rendered = resolveMessageSync("email.listing_peek", vars, {
+    doc,
+    htmlContext: { photoCids: photos.map((p) => listingPeekPhotoCid(p.id)) },
+  });
+  const subject = rendered?.subject ?? "PROVIN: īss komentārs par tavu sludinājumu";
+  const text =
+    rendered?.text ??
+    [
+      "Labdien!",
+      "",
+      "Īss skatījums uz tavu sludinājumu:",
+      ...(listingUrl ? ["", listingUrl] : []),
+      "",
+      comment,
+      ...(photos.length > 0 ? ["", fotoPiezime] : []),
+      "",
+      "Noskaidro visu par savu topošo auto.",
+      "PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.",
+      "",
+      "Pasūtīt:",
+      auditsUrl,
+      "",
+      "Ar cieņu,",
+      "PROVIN.LV",
+    ].join("\n");
   const photoCids = photos.map((p) => listingPeekPhotoCid(p.id));
-  const html = listingPeekCustomerCommentHtml({ comment, auditsUrl, listingUrl, photoCids });
+  const html =
+    rendered?.html ?? listingPeekCustomerCommentHtml({ comment, auditsUrl, listingUrl, photoCids });
 
   await sendSmtpMail({
     to: opts.to,
@@ -592,15 +644,24 @@ export async function sendPartnerVerifyEmail(opts: {
     de: "Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
     ru: "Ссылка действует 24 часа и срабатывает только один раз.",
   }[loc];
-  const text = [lead, "", opts.verifyUrl, "", hint].join("\n");
-  const html = partnerVerifyEmailHtml({
-    verifyUrl: opts.verifyUrl,
-    locale: opts.locale,
-    purpose: opts.purpose,
-  });
+  await warmMessageTemplatesCache();
+  const doc = getCachedMessageTemplatesDoc();
+  const purposeKey = change ? "change" : "signup";
+  const templateId = `email.partner_verify.${purposeKey}.${loc}`;
+  const vars = { lead, verify_url: opts.verifyUrl, hint };
+  const rendered = resolveMessageSync(templateId, vars, { doc });
+  const text = rendered?.text ?? [lead, "", opts.verifyUrl, "", hint].join("\n");
+  const html =
+    rendered?.html ??
+    partnerVerifyEmailHtml({
+      verifyUrl: opts.verifyUrl,
+      locale: opts.locale,
+      purpose: opts.purpose,
+    });
+  const mailSubject = rendered?.subject ?? subject;
   await sendSmtpMail({
     to: opts.to,
-    subject,
+    subject: mailSubject,
     text,
     html,
   });
@@ -649,14 +710,22 @@ export async function sendPartnerPasswordResetEmail(opts: {
     de: "Der Link ist 24 Stunden gültig und nur einmal verwendbar.",
     ru: "Ссылка действует 24 часа и срабатывает только один раз.",
   }[loc];
-  const text = [lead, "", opts.resetUrl, "", hint].join("\n");
-  const html = partnerPasswordResetEmailHtml({
-    resetUrl: opts.resetUrl,
-    locale: opts.locale,
-  });
+  await warmMessageTemplatesCache();
+  const doc = getCachedMessageTemplatesDoc();
+  const templateId = `email.partner_password_reset.${loc}`;
+  const vars = { lead, reset_url: opts.resetUrl, hint };
+  const rendered = resolveMessageSync(templateId, vars, { doc });
+  const text = rendered?.text ?? [lead, "", opts.resetUrl, "", hint].join("\n");
+  const html =
+    rendered?.html ??
+    partnerPasswordResetEmailHtml({
+      resetUrl: opts.resetUrl,
+      locale: opts.locale,
+    });
+  const mailSubject = rendered?.subject ?? subject;
   await sendSmtpMail({
     to: opts.to,
-    subject,
+    subject: mailSubject,
     text,
     html,
   });
@@ -694,9 +763,11 @@ export async function sendDealerDataRefundEmail(opts: {
     ? "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts"
     : "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts";
   const amount = (opts.amountEur ?? "").trim() || "24,99 €";
+  await warmMessageTemplatesCache();
+  const doc = getCachedMessageTemplatesDoc();
   const text = opts.cancelled
-    ? buildDealerCancelledEmailDraft({ vin: opts.vin, amountEur: amount }).text
-    : buildDealerNoDataEmailDraft({ vin: opts.vin, amountEur: amount, refunded: true }).text;
+    ? buildDealerCancelledEmailDraft({ vin: opts.vin, amountEur: amount }, doc).text
+    : buildDealerNoDataEmailDraft({ vin: opts.vin, amountEur: amount, refunded: true }, doc).text;
 
   await sendSmtpMail({
     to: opts.to,

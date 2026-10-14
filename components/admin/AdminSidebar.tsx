@@ -11,6 +11,7 @@ import {
   FileText,
   Handshake,
   Home,
+  MessagesSquare,
   List,
   LogOut,
   MoreHorizontal,
@@ -57,6 +58,7 @@ export const ADMIN_NAV_LABELS = {
   blogs: "Blogs",
   aggregates: "Agregāti",
   stats: "Statistika",
+  templates: "Tekstu šabloni",
   invoices: "Rēķini",
   partners: "Partneri",
   logout: "Iziet",
@@ -92,6 +94,12 @@ export const ADMIN_NAV_GROUPS: Group[] = [
       { href: "/admin/blogs", label: L.blogs, icon: PenLine, match: starts("/admin/blogs") },
       { href: "/admin/agregatu-zinasanas", label: L.aggregates, icon: Cog, match: starts("/admin/agregatu-zinasanas") },
       { href: "/admin/statistika", label: L.stats, icon: BarChart3, match: starts("/admin/statistika") },
+      {
+        href: "/admin/teksti",
+        label: L.templates,
+        icon: MessagesSquare,
+        match: starts("/admin/teksti"),
+      },
     ],
   },
   {

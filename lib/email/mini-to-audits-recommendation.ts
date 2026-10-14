@@ -2,6 +2,10 @@
  * MINI → AUDITS ieteikuma e-pasta melnraksts (Nils apstiprinātais teksts).
  * Tīri stringi: der arī klienta komponentei, bez server-only.
  */
+import { MINI_TO_AUDITS_APPROVED_TEXT } from "@/lib/email/mini-to-audits-approved-text";
+import { renderTemplateById } from "@/lib/messages/render-template-id";
+import { miniToAuditsVarsFromDraftInput } from "@/lib/messages/template-vars";
+import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 export const MINI_TO_AUDITS_RECOMMENDATION_LABEL = "MINI → AUDITS ieteikums";
 
@@ -10,33 +14,7 @@ export const MINI_TO_AUDITS_NAME_PLACEHOLDER = "{vards}";
 export const MINI_TO_AUDITS_CAR_PLACEHOLDER = "{auto}";
 export const MINI_TO_AUDITS_VIN_PLACEHOLDER = "{vin}";
 
-/** Apstiprinātais klienta teksts. Vietturus aizpilda pirms sūtīšanas. */
-export const MINI_TO_AUDITS_APPROVED_TEXT = `Labdien, {vards}!
-
-Paldies par PROVIN MINI pasūtījumu {auto} (VIN {vin}).
-
-Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
-
-PROVIN MINI ietver:
-✓ Konsultāciju un ieteikumus klātienes apskatei
-✓ OCTA negadījumus un tehnisko apskašu vēsturi
-✓ Sludinājuma, pārdevēja un tehnisko risku analīzi
-
-Tikai PROVIN AUDITS ietver:
-✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus
-✓ Oficiālo dīleru un izsoļu portālu arhīva datus
-
-Tas nozīmē, ka tieši AUDITS parāda negadījumu vēsturi, nobraukuma vēsturi ārvalstīs un oficiālā dīlera servisa datus, kas ievestiem auto ir paši svarīgākie.
-
-Mēs iesakām pilno auditu. Starpību ({starpiba} €) varat apmaksāt šeit:
-{maksajuma_saite}
-
-Ja papildu dati nav vajadzīgi, turpināsim ar MINI.
-
-Ar cieņu,
-Nils
-PROVIN.LV
-T: 29502039`;
+export { MINI_TO_AUDITS_APPROVED_TEXT };
 
 export type MiniToAuditsRecommendationInput = {
   customerName?: string | null;
@@ -95,7 +73,21 @@ function amountWithoutEuro(price: string): string {
  */
 export function buildMiniToAuditsRecommendationDraft(
   opts: MiniToAuditsRecommendationInput,
+  templatesDoc?: MessageTemplatesDoc | null,
 ): MiniToAuditsRecommendationDraft {
+  const vars = miniToAuditsVarsFromDraftInput({
+    customerName: opts.customerName,
+    vin: opts.vin,
+    car: opts.car,
+    paymentUrl: opts.paymentUrl,
+    differencePrice: opts.differencePrice,
+  });
+  const emailRendered = renderTemplateById("email.upsell.mini_to_audit", vars, templatesDoc);
+  const waRendered = renderTemplateById("wa.upsell.mini_to_audit", vars, templatesDoc);
+  if (emailRendered?.subject && emailRendered.text && waRendered?.text) {
+    return { subject: emailRendered.subject, emailText: emailRendered.text, whatsappText: waRendered.text };
+  }
+
   const vards = latvianVocativeFirstName(opts.customerName) || MINI_TO_AUDITS_NAME_PLACEHOLDER;
   const auto = (opts.car ?? "").trim().replace(/\s+/g, " ") || MINI_TO_AUDITS_CAR_PLACEHOLDER;
   const vin = (opts.vin ?? "").trim().toUpperCase() || MINI_TO_AUDITS_VIN_PLACEHOLDER;

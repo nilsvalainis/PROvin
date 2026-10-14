@@ -8,6 +8,9 @@ import {
   resolveReportReadyProductKind,
   type ReportReadyProductKind,
 } from "@/lib/email/report-ready-copy";
+import { renderTemplateById } from "@/lib/messages/render-template-id";
+import { buildWaReportReadyVars, waReportReadyTemplateId } from "@/lib/messages/template-vars";
+import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 function vinPhrase(vin?: string | null): string {
   const v = (vin ?? "").trim().toUpperCase();
@@ -35,13 +38,16 @@ function whatsappQuestionsLine(kind: ReportReadyProductKind): string {
 }
 
 /** Gatavs ziņojums pēc e-pasta šablona (pielikumu sarakstu WA neiekļauj). */
-export function whatsappPrefillReportReady(opts: {
-  kind: ReportReadyProductKind;
-  vin?: string | null;
-}): string {
+export function whatsappPrefillReportReady(
+  opts: { kind: ReportReadyProductKind; vin?: string | null },
+  templatesDoc?: MessageTemplatesDoc | null,
+): string {
+  const vars = buildWaReportReadyVars(opts);
+  const rendered = renderTemplateById(waReportReadyTemplateId(opts.kind), vars, templatesDoc);
+  if (rendered?.text) return rendered.text;
+
   const vin = vinPhrase(opts.vin);
   const parts: string[] = ["Labdien!", ""];
-
   if (opts.kind === "dealer") {
     parts.push(`Jūsu pieprasītie oficiālā dīlera servisa vēstures dati${vin} ir sagatavoti.`);
   } else if (opts.kind === "mini") {
@@ -49,7 +55,6 @@ export function whatsappPrefillReportReady(opts: {
   } else {
     parts.push(`Jūsu pasūtītā PROVIN AUDITS atskaite${vin} ir sagatavota.`);
   }
-
   parts.push("", whatsappQuestionsLine(opts.kind), "", googleReviewPlainBlock(), "", clientMessageSignOff());
   return parts.join("\n");
 }
@@ -88,7 +93,18 @@ PROVIN.LV`;
 export function whatsappPrefillDealerNoDataRefunded(
   vin?: string | null,
   amountEur?: string | null,
+  templatesDoc?: MessageTemplatesDoc | null,
 ): string {
+  const vars = {
+    vin_line: vinLine(vin),
+    summa: amountLine(amountEur),
+    refund_piezime: "Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.",
+    audits_cta: `Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.\n\nPasūtīt: https://provin.lv`,
+    paraksts: clientMessageSignOff(),
+  };
+  const rendered = renderTemplateById("wa.dealer.no_data_refunded", vars, templatesDoc);
+  if (rendered?.text) return rendered.text;
+
   const amount = amountLine(amountEur);
   return `Labdien!
 
@@ -109,7 +125,11 @@ ${clientMessageSignOff()}`;
 }
 
 /** Apmaksa atcelta vai atgriezta pēc klienta lūguma, pirms darbs uzsākts. */
-export function whatsappPrefillDealerPaymentCancelled(vin?: string | null): string {
+export function whatsappPrefillDealerPaymentCancelled(vin?: string | null, templatesDoc?: MessageTemplatesDoc | null): string {
+  const vars = { vin_line: vinLine(vin), paraksts: clientMessageSignOff() };
+  const rendered = renderTemplateById("wa.dealer.cancelled", vars, templatesDoc);
+  if (rendered?.text) return rendered.text;
+
   return `Sveiki!
 
 Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts un maksājums atgriezts pilnā apmērā.${vinLine(vin)}

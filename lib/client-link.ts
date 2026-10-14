@@ -1,5 +1,7 @@
 import { canonicalizeListingUrl, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
 import { formatEurFromCents } from "@/lib/order-upsell";
+import { renderTemplateById } from "@/lib/messages/render-template-id";
+import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 const TOKEN_RE = /^[A-Za-z0-9_-]{20,32}$/;
 
@@ -306,9 +308,25 @@ export function buildClientLinkWhatsAppUrl(phone: string, text: string): string 
   return `https://wa.me/?text=${encoded}`;
 }
 
-export function buildClientLinkEmailCopy(opts: { url: string; productName: string; expiresAt: string; amountCents: number }): { subject: string; text: string } {
+export function buildClientLinkEmailCopy(
+  opts: { url: string; productName: string; expiresAt: string; amountCents: number },
+  templatesDoc?: MessageTemplatesDoc | null,
+): { subject: string; text: string } {
   const until = formatClientLinkExpiryLong(opts.expiresAt);
   const amount = formatClientLinkAmount(opts.amountCents);
+  const rendered = renderTemplateById(
+    "email.client_link",
+    {
+      produkts: opts.productName,
+      summa: amount,
+      derigs_lidz: until,
+      maksajuma_saite: opts.url,
+    },
+    templatesDoc,
+  );
+  if (rendered?.subject && rendered.text) {
+    return { subject: rendered.subject, text: rendered.text };
+  }
   return {
     subject: `${opts.productName}: jūsu apmaksas saite`,
     text: [
