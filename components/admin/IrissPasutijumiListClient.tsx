@@ -531,7 +531,7 @@ const IrissRowCard = memo(function IrissRowCard({
 
   const cardInner = (
     <div
-      className={`group relative overflow-visible rounded-lg border border-[#E5E7EB] bg-white shadow-none transition hover:border-slate-300 ${
+      className={`group relative overflow-visible rounded-lg border border-[#E5E7EB] bg-white shadow-none transition hover:border-slate-300 [content-visibility:auto] [contain-intrinsic-size:1px_92px] ${
         statusMenuOpen ? "z-40" : ""
       }`}
     >
