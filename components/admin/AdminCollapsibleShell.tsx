@@ -144,10 +144,10 @@ export function AdminCollapsibleShell({
   if (disableCollapse) {
     return (
       <div
-        className={`overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${strip} ${fullscreenShellClass} ${className}`}
+        className={`provin-card overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${strip} ${fullscreenShellClass} ${className}`}
       >
         <div
-          className={`flex min-w-0 flex-wrap items-start justify-between gap-2 px-2 py-2 ${
+          className={`provin-card-head flex min-w-0 flex-wrap items-start justify-between gap-2 px-2 py-2 ${
             fullscreen
               ? "max-md:sticky max-md:top-0 max-md:z-10 max-md:border-b max-md:border-[var(--admin-border-subtle)] max-md:bg-[var(--admin-surface-elevated)]"
               : ""
@@ -162,17 +162,17 @@ export function AdminCollapsibleShell({
             {fullscreenToggle}
           </div>
         </div>
-        <div className="border-t-0 px-2 pb-2 pt-0">{children}</div>
+        <div className="provin-card-body border-t-0 px-2 pb-2 pt-0">{children}</div>
       </div>
     );
   }
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${strip} ${fullscreenShellClass} ${className}`}
+      className={`provin-card overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${strip} ${fullscreenShellClass} ${className}`}
     >
       <div
-        className={`flex min-w-0 items-stretch gap-0 ${
+        className={`provin-card-head flex min-w-0 items-stretch gap-0 ${
           fullscreen
             ? "max-md:sticky max-md:top-0 max-md:z-10 max-md:border-b max-md:border-[var(--admin-border-subtle)] max-md:bg-[var(--admin-surface-elevated)]"
             : ""
@@ -219,7 +219,7 @@ export function AdminCollapsibleShell({
         </div>
       </div>
       {/* Pilnekrānā bloks vienmēr ir atvērts, citādi operators redzētu tukšu ekrānu. */}
-      {!collapsed || fullscreen ? <div className="border-t-0 pt-0">{children}</div> : null}
+      {!collapsed || fullscreen ? <div className="provin-card-body border-t-0 pt-0">{children}</div> : null}
     </div>
   );
 }

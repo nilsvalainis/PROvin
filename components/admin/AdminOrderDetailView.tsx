@@ -662,7 +662,7 @@ export function AdminOrderDetailView({
 
   return (
     <div
-      className={`admin-order-page min-h-screen bg-[var(--color-canvas)] text-[var(--color-apple-text)] transition-[background-color,color] duration-200 ${adminDark ? "dark" : ""}`}
+      className={`admin-order-page provin-pro min-h-screen bg-[var(--color-canvas)] text-[var(--color-apple-text)] transition-[background-color,color] duration-200 ${adminDark ? "dark" : ""}`}
     >
       <AdminVinHandoffBinder vin={mergedVin} />
       <div className="mx-auto w-full max-w-[min(76.8rem,calc(100vw-1.25rem))] px-3 pt-0 sm:px-5">

@@ -1,0 +1,574 @@
+/*
+ * PRO pasūtījuma skats (admin): tikai vizuālais slānis.
+ * Darbības sakne: `.provin-pro` (AdminOrderDetailView). Tumšais režīms (`.dark`) netiek aiztikts.
+ * Selektoros ir `.admin-ios-theme`, jo `admin-ios-theme.css` ar !important pārraksta laukus, pogas un span krāsu.
+ */
+
+.provin-pro:not(.dark) {
+  --pro-bg: #f5f5f7;
+  --pro-card: #ffffff;
+  --pro-text: #1d1d1f;
+  --pro-muted: #86868b;
+  --pro-faint: #aeaeb2;
+  --pro-line: rgba(60, 60, 67, 0.14);
+  --pro-field: #f5f5f7;
+  --pro-field-border: #e5e5ea;
+  --pro-focus: #0071e3;
+  --pro-radius-card: 12px;
+  --pro-radius: 8px;
+  --pro-violet: #7d3fa0;
+
+  --color-canvas: var(--pro-bg);
+  --color-provin-muted: var(--pro-muted);
+  --color-apple-text: var(--pro-text);
+  --admin-field-bg: var(--pro-field);
+  --admin-field-border: var(--pro-field-border);
+  --admin-border-subtle: var(--pro-line);
+  --admin-surface-elevated: var(--pro-card);
+  --admin-nav-bg: rgba(245, 245, 247, 0.9);
+  --admin-footer-bg: rgba(255, 255, 255, 0.92);
+
+  background: var(--pro-bg);
+  color: var(--pro-text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Teksta mērogs: bāze 13px, pārējais proporcionāli ---------- */
+.admin-ios-theme .provin-pro:not(.dark) [class~="text-[8px]"] { font-size: 10px; }
+.admin-ios-theme .provin-pro:not(.dark) [class~="text-[9px]"] { font-size: 10.5px; }
+.admin-ios-theme .provin-pro:not(.dark) [class~="text-[10px]"] { font-size: 11.5px; }
+.admin-ios-theme .provin-pro:not(.dark) [class~="text-[11px]"] { font-size: 13px; }
+.admin-ios-theme .provin-pro:not(.dark) :is([class~="text-[12px]"], .text-xs) { font-size: 13px; }
+
+/* Skaitļi (km, cenas, datumi) vienā platumā */
+.provin-pro :is(input, td, dd, time, .font-mono, .tabular-nums) {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sekundārais teksts: pelēks, nevis admin tēmas piespiestais melnais */
+.admin-ios-theme .provin-pro:not(.dark) :is([class*="text-[var(--color-provin-muted)]"], [class~="text-slate-400"], [class~="text-slate-500"]) {
+  color: var(--pro-muted) !important;
+}
+
+/* ---------- Kartes ---------- */
+.admin-ios-theme .provin-pro:not(.dark) .provin-card {
+  background: var(--pro-card) !important;
+  border-radius: var(--pro-radius-card) !important;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-card-head {
+  border-bottom: 1px solid var(--pro-line);
+  padding: 12px 14px 10px !important;
+  align-items: center !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-card-head :is(h2, h3) {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: var(--pro-text) !important;
+  letter-spacing: 0.03em;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-card-body {
+  padding: 12px 14px 14px !important;
+}
+
+/* Workspace sadaļu apvalki (Brīdinājumi, Pielikumi, avotu bloki) */
+.admin-ios-theme .provin-pro:not(.dark) :is(#admin-order-section-bridinajumi, #admin-order-section-pielikumi) {
+  background: var(--pro-card) !important;
+  border-radius: var(--pro-radius-card) !important;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.06) !important;
+  padding: 10px 14px !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) [id^="admin-order-block-"] > :is(div, section):first-child {
+  background: var(--pro-card);
+  border-radius: var(--pro-radius-card) !important;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Avota nosaukums (AutoDNA, CSDD …) */
+.admin-ios-theme .provin-pro:not(.dark) .provin-source-title {
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  color: var(--pro-text) !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-source-title span {
+  color: var(--pro-text) !important;
+}
+
+/* ---------- Sadaļu virsraksti avotu iekšienē: trekni, tumši, ar plānu līniju ---------- */
+.admin-ios-theme .provin-pro:not(.dark)
+  :is(p, h2, h3, h4)[class~="uppercase"][class~="tracking-wide"]:is([class~="text-[10px]"], [class~="text-[11px]"]):not([class*="bg-"]):not(.provin-card-head *) {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: var(--pro-text) !important;
+  letter-spacing: 0.03em;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--pro-line);
+  margin-top: 28px !important;
+  margin-bottom: 10px !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark)
+  :is(p, h2, h3, h4)[class~="uppercase"][class~="tracking-wide"]:is([class~="text-[10px]"], [class~="text-[11px]"]):not([class*="bg-"]):first-child {
+  margin-top: 4px !important;
+}
+
+/* Komentāru lauku virsraksti (adminCommentFieldLabel / AdminSourceCommentField) */
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich-head {
+  margin-top: 26px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--pro-line);
+  margin-bottom: 10px !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich-head span[class~="uppercase"],
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich-head > div:first-child > span > span:first-child {
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: var(--pro-text) !important;
+  letter-spacing: 0.03em;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich:first-child .provin-rich-head {
+  margin-top: 4px;
+}
+
+/* ---------- Bagātinātā teksta redaktors ---------- */
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich-card {
+  background: var(--pro-card);
+  border-radius: var(--pro-radius-card);
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  padding: 6px 10px 10px;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich-toolbar [data-rich-toolbar] button {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--pro-muted) !important;
+  backdrop-filter: none;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich-toolbar [data-rich-toolbar] button:hover {
+  background: rgba(118, 118, 128, 0.12) !important;
+  color: var(--pro-text) !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich-toolbar [data-rich-toolbar] button[aria-pressed="true"],
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich-toolbar [data-rich-toolbar] button[aria-expanded="true"] {
+  background: rgba(0, 113, 227, 0.1) !important;
+  color: #0066cc !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich-toolbar [data-rich-toolbar] button span {
+  color: inherit !important;
+}
+
+/* Krāsu palete: burti savā krāsā (inline stils) */
+.admin-ios-theme .provin-pro [data-rich-toolbar] .absolute button {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-rich-toolbar select {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--pro-muted) !important;
+  box-shadow: none !important;
+  font-size: 11.5px !important;
+}
+
+/* ---------- Ievades lauki: gaišs fons, maiga apmale, zils fokusa gredzens ---------- */
+.admin-ios-theme .provin-pro:not(.dark)
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
+    select,
+    textarea
+  ),
+.admin-ios-theme .provin-pro:not(.dark) [contenteditable="true"] {
+  background: var(--pro-field) !important;
+  border: 1px solid var(--pro-field-border) !important;
+  border-radius: var(--pro-radius) !important;
+  color: var(--pro-text) !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-ios-theme .provin-pro:not(.dark)
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="hidden"]),
+    select,
+    textarea
+  ):focus,
+.admin-ios-theme .provin-pro:not(.dark) [contenteditable="true"]:focus {
+  outline: none !important;
+  background: #ffffff !important;
+  border-color: var(--pro-focus) !important;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.22) !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) :is(input, textarea)::placeholder,
+.admin-ios-theme .provin-pro:not(.dark) [contenteditable="true"]:empty::before {
+  color: var(--pro-faint) !important;
+}
+
+/* ---------- Vienots stūra rādiuss ---------- */
+.admin-ios-theme .provin-pro:not(.dark) :is(button, a[class*="border"], label[class*="border"]):not(.rounded-full):not([role="switch"]) {
+  border-radius: var(--pro-radius);
+}
+
+.admin-ios-theme .provin-pro:not(.dark) :is(.rounded-xl, .rounded-2xl) {
+  border-radius: var(--pro-radius-card);
+}
+
+.admin-ios-theme .provin-pro:not(.dark) :is(.rounded, .rounded-md, .rounded-lg):not(button):not(input):not(select):not(textarea) {
+  border-radius: var(--pro-radius);
+}
+
+/* ---------- Tabulas: zebra rindas, klusas galvenes ---------- */
+.admin-ios-theme .provin-pro:not(.dark) div:has(> table) {
+  border-color: var(--pro-field-border) !important;
+  border-radius: var(--pro-radius-card) !important;
+  background: var(--pro-card);
+}
+
+.admin-ios-theme .provin-pro:not(.dark) thead tr {
+  background: var(--pro-card) !important;
+  border-color: var(--pro-line) !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) thead th {
+  font-size: 10.5px !important;
+  font-weight: 500 !important;
+  color: var(--pro-faint) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) tbody tr {
+  border-color: rgba(60, 60, 67, 0.1) !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) tbody tr:nth-child(even) > td {
+  background: #fafafc;
+}
+
+/* ---------- PDF slēdzis (AdminPdfIncludeToggle) ---------- */
+.provin-pro .provin-pdf-toggle {
+  opacity: 1 !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-pdf-toggle span {
+  color: var(--pro-muted) !important;
+}
+
+.provin-pro .provin-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 26px !important;
+  height: 15px !important;
+  border-radius: 999px !important;
+  border: 0 !important;
+  background: #d1d1d6 !important;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  flex: none;
+}
+
+.provin-pro .provin-switch::after {
+  content: "";
+  position: absolute;
+  top: 1.5px;
+  left: 1.5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+}
+
+.provin-pro .provin-switch:checked {
+  background: #34c759 !important;
+}
+
+.provin-pro .provin-switch:checked::after {
+  transform: translateX(11px);
+}
+
+.provin-pro .provin-switch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.25) !important;
+}
+
+/* ---------- AI pogas: klusas, violetas tikai hover / fokusā ---------- */
+.admin-ios-theme .provin-ai-btn {
+  border: 1px solid #d2d2d7 !important;
+  background: transparent !important;
+  color: #6e6e73 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.admin-ios-theme .provin-ai-btn:not(:disabled):hover,
+.admin-ios-theme .provin-ai-btn:focus-visible,
+.admin-ios-theme .provin-ai-btn[aria-expanded="true"] {
+  border-color: rgba(175, 82, 222, 0.45) !important;
+  background: rgba(175, 82, 222, 0.1) !important;
+  color: var(--pro-violet, #7d3fa0) !important;
+  outline: none;
+}
+
+.admin-ios-theme .provin-ai-btn :is(span, svg) {
+  color: inherit !important;
+}
+
+.admin-ios-theme .provin-ai-btn .provin-ai-badge {
+  background: #f2f2f7 !important;
+}
+
+.admin-ios-theme .provin-ai-btn:not(:disabled):hover .provin-ai-badge,
+.admin-ios-theme .provin-ai-btn:focus-visible .provin-ai-badge {
+  background: rgba(175, 82, 222, 0.18) !important;
+}
+
+/* ---------- Toņi: krāsa tikai nozīmei ---------- */
+.admin-ios-theme .provin-tone {
+  border-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+.admin-ios-theme .provin-tone :is(span, svg) {
+  color: inherit !important;
+}
+
+.admin-ios-theme .provin-tone-neutral { background: rgba(118, 118, 128, 0.12) !important; color: #1d1d1f !important; }
+.admin-ios-theme .provin-tone-neutral:not(:disabled):hover { background: rgba(118, 118, 128, 0.2) !important; }
+.admin-ios-theme .provin-tone-client { background: rgba(0, 113, 227, 0.1) !important; color: #0066cc !important; }
+.admin-ios-theme .provin-tone-client:not(:disabled):hover { background: rgba(0, 113, 227, 0.16) !important; }
+.admin-ios-theme .provin-tone-money { background: rgba(52, 199, 89, 0.14) !important; color: #1f8a3b !important; }
+.admin-ios-theme .provin-tone-money:not(:disabled):hover { background: rgba(52, 199, 89, 0.22) !important; }
+.admin-ios-theme .provin-tone-danger { background: rgba(255, 59, 48, 0.1) !important; color: #d70015 !important; }
+.admin-ios-theme .provin-tone-danger:not(:disabled):hover { background: rgba(255, 59, 48, 0.16) !important; }
+.admin-ios-theme .provin-tone-primary { background: #1d1d1f !important; color: #ffffff !important; }
+.admin-ios-theme .provin-tone-primary:not(:disabled):hover { background: #000000 !important; }
+
+/* ---------- Soļu cilnes: segmentu vadīkla bez statusa punktiem ---------- */
+.admin-ios-theme .provin-pro:not(.dark) .provin-tabs {
+  background: rgba(118, 118, 128, 0.12);
+  border-radius: 10px;
+  padding: 2px;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-tab {
+  border: 0 !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border-radius: var(--pro-radius) !important;
+  justify-content: center !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-tab span {
+  color: var(--pro-text) !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-tab[aria-current="step"] {
+  background: #ffffff !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12) !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-tab[aria-current="step"] span {
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .admin-ios-theme .provin-pro:not(.dark) .provin-tabs {
+    background: transparent;
+    padding: 0;
+  }
+
+  .admin-ios-theme .provin-pro:not(.dark) .provin-tab {
+    background: rgba(118, 118, 128, 0.12) !important;
+  }
+}
+
+/* ---------- Oficiālā dīlera dati: viens apvienots, viegli izcelts bloks ---------- */
+.admin-ios-theme .provin-pro:not(.dark) #admin-order-block-auto-records {
+  background: linear-gradient(180deg, rgba(0, 113, 227, 0.06), rgba(0, 113, 227, 0.02));
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 0.5px rgba(0, 113, 227, 0.25);
+  padding: 16px 18px 20px;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) #admin-order-block-auto-records > :is(div, section):first-child {
+  background: transparent;
+  box-shadow: none !important;
+}
+
+/* ---------- Labā sliede (desktop) ---------- */
+.admin-ios-theme .provin-pro:not(.dark) .provin-rail-box {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: transparent !important;
+  border-radius: var(--pro-radius-card) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08), 0 0 0 0.5px rgba(0, 0, 0, 0.08) !important;
+  padding: 8px 6px !important;
+  gap: 6px !important;
+}
+
+/* ---------- Brīdinājumu josla kompakti ---------- */
+.admin-ios-theme .provin-pro:not(.dark) #admin-order-section-bridinajumi {
+  margin-bottom: 0 !important;
+}
+
+/* ---------- Laika josla (visi avoti) ---------- */
+.provin-timeline-strip {
+  border-radius: 12px;
+  background: var(--admin-surface-elevated, #fff);
+  box-shadow: 0 0 0 0.5px var(--admin-border-subtle, rgba(60, 60, 67, 0.14));
+  padding: 10px 14px 12px;
+}
+
+.admin-ios-theme .provin-timeline-strip p.provin-timeline-label {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pro-muted, #86868b) !important;
+}
+
+.admin-ios-theme .provin-timeline-strip p.provin-timeline-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--pro-faint, #aeaeb2) !important;
+}
+
+.provin-timeline-track {
+  display: flex;
+  gap: 3px;
+  min-width: 0;
+}
+
+.provin-timeline-seg {
+  display: flex;
+  min-width: 56px;
+  flex-basis: 0;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.provin-timeline-bar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.provin-timeline-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.admin-ios-theme .provin-timeline-text .provin-timeline-country {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-apple-text, #1d1d1f) !important;
+}
+
+.admin-ios-theme .provin-timeline-text .provin-timeline-years {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--pro-muted, #86868b) !important;
+}
+
+.admin-order-page.dark .provin-timeline-bar {
+  filter: invert(1);
+}
+
+/* ---------- Vienots nobraukuma diapazons (visi avoti) ---------- */
+.provin-mileage-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.admin-ios-theme .provin-mileage-bar .provin-mileage-year,
+.admin-ios-theme .provin-mileage-bar .provin-mileage-count {
+  color: var(--pro-muted, #86868b) !important;
+}
+
+.admin-ios-theme .provin-mileage-bar .provin-mileage-km {
+  font-weight: 600;
+  color: var(--color-apple-text, #1d1d1f) !important;
+}
+
+.admin-ios-theme .provin-mileage-bar .provin-mileage-count {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.provin-mileage-track {
+  position: relative;
+  display: block;
+  height: 6px;
+  min-width: 48px;
+  flex: 1 1 auto;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgba(118, 118, 128, 0.14);
+}
+
+.provin-mileage-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #a1a1a6, #1d1d1f);
+}
+
+.admin-order-page.dark .provin-mileage-fill {
+  background: linear-gradient(90deg, #636366, #f5f5f7);
+}
+
+/* ---------- Telefona apakšējā josla ---------- */
+.admin-ios-theme .provin-pro .provin-dock .provin-dock-item {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 12px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.admin-ios-theme .provin-pro .provin-dock .provin-dock-item :is(span, svg) {
+  color: inherit !important;
+}
+
+.admin-ios-theme .provin-pro:not(.dark) .provin-dock .provin-dock-client {
+  color: #0066cc !important;
+}
+
+/* ---------- Saglabāts (neitrāls, bez zaļā) ---------- */
+.admin-ios-theme .provin-pro:not(.dark) .provin-save-saved {
+  border-color: #1d1d1f !important;
+}

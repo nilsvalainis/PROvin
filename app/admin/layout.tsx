@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { RootHtml } from "@/components/RootHtml";
 import "./admin-ios-theme.css";
+import "./admin-pro-order-theme.css";
 
 export const metadata: Metadata = {
   title: "Administrēšana | PROVIN",
