@@ -134,6 +134,7 @@ export function vehicleMatchesSearchFilter(v: ListingSearchVehicle, filter: Ecar
   if (!driveMatches(`${v.title ?? ""} ${v.bodyType ?? ""}`, filter.drives)) return false;
   if (!colorMatches(v.color ?? "", filter.colors, filter.excludeColors)) return false;
   if (!excludeMatches(hay, filter.excludeTokens)) return false;
+  // `iriss_need` paliek URL; kartītes virsrakstā aprīkojuma parasti nav, tādēļ nometšanu nē.
   return true;
 }
 
