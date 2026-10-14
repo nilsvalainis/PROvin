@@ -178,7 +178,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
                         {counts.length === 0 ? <span>Nav saišu</span> : null}
                         {counts.map((c) => (
                           <span key={c.key} className="inline-flex items-center gap-1" title={c.label}>
-                            <IrissAuctionLogo platform={c.logoKey} fallback={c.short} className="h-3 w-[24px]" />
+                            <IrissAuctionLogo platform={c.logoKey} fallback={c.short} size="sm" />
                             {c.count > 1 ? <span>{c.count}</span> : null}
                           </span>
                         ))}

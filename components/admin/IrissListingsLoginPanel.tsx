@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
 
 const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
@@ -157,8 +158,9 @@ function IrissListingsLoginDialog({
       >
         <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[#E5E7EB] px-4 py-3">
           <div>
-            <h2 id="iriss-login-title" className="text-[15px] font-semibold text-[var(--color-apple-text)]">
-              Ielogoties {label}
+            <h2 id="iriss-login-title" className="inline-flex items-center gap-2 text-[15px] font-semibold text-[var(--color-apple-text)]">
+              Ielogoties
+              <IrissAuctionLogo platform={platform} fallback={label} size="md" />
             </h2>
             <p className="mt-1 max-w-3xl text-[12px] leading-5 text-[var(--color-provin-muted)]">
               Zemāk ir servera pārlūks (ne tavs). Ieraksti paroli un, ja prasa, e-pasta vai 2FA kodu pats. Paroli

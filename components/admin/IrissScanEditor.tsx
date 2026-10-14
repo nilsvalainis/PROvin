@@ -13,6 +13,7 @@ import {
   removeIrissListingLinkRow,
   setIrissListingLinkRow,
 } from "@/lib/iriss-listing-link-lists";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import { IRISS_SCAN_SOURCES, type IrissScanLinkKey } from "@/lib/iriss-scan-sources";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
@@ -20,12 +21,12 @@ import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 /** min-7 stils: pelēks fons, baltas grupētas kartes, sīki pelēki virsraksti, akcenta teksts darbībām. */
 function SourceGroup({
   label,
-  color,
+  logoKey,
   links,
   onChange,
 }: {
   label: string;
-  color: string;
+  logoKey: import("@/lib/iriss-auction-logos").IrissAuctionLogoKey;
   links: readonly string[];
   onChange: (next: string[]) => void;
 }) {
@@ -35,8 +36,10 @@ function SourceGroup({
   return (
     <section>
       <div className="mb-1 flex items-center gap-1.5 px-1">
-        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} aria-hidden />
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">{label}</h2>
+        <h2 className="inline-flex items-center" title={label}>
+          <IrissAuctionLogo platform={logoKey} fallback={label} size="sm" />
+          <span className="sr-only">{label}</span>
+        </h2>
         <span className="text-[11px] text-[#aeaeb2]">{filled > 0 ? filled : ""}</span>
       </div>
       <div className="overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
@@ -246,7 +249,7 @@ export function IrissScanEditor({
         </div>
 
         {IRISS_SCAN_SOURCES.map((s) => (
-          <SourceGroup key={s.key} label={s.label} color={s.color} links={rec[s.key]} onChange={(next) => patchRecord({ [s.key]: next } as Pick<IrissScanRecord, IrissScanLinkKey>)} />
+          <SourceGroup key={s.key} label={s.label} logoKey={s.logoKey} links={rec[s.key]} onChange={(next) => patchRecord({ [s.key]: next } as Pick<IrissScanRecord, IrissScanLinkKey>)} />
         ))}
 
         <button

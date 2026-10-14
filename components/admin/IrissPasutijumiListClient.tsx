@@ -353,7 +353,7 @@ const IrissRowCard = memo(function IrissRowCard({
             className={LISTING_PLATFORM_CHIP_ANCHOR_COMPACT_CLASS}
             style={c.chipStyle}
           >
-            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} className="h-3 w-[26px]" />
+            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} size="sm" />
           </a>
         ))}
         <button

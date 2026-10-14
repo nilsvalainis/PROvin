@@ -1,15 +1,13 @@
-# IRISS auction marks
+# Official auction logos
 
-Original geometric letter marks for IRISS LIST (not vendor trademarks).
-Colours match the existing platform chips. Use these files in-repo only;
-do not present them as official Auto1 / Openlane / Autobid / eCarsTrade / Mobile.de logos.
+Downloaded from each company's own website or press/brand kit. Not redrawn.
 
-| File | Use |
+| File | Official source |
 | --- | --- |
-| `auto1.svg` | Auto1 |
-| `openlane.svg` | Openlane |
-| `autobid.svg` | Autobid |
-| `ecarstrade.svg` | eCarsTrade |
-| `mobile.svg` | Mobile.de |
+| `auto1.svg` | AUTO1.com homepage header, `https://auto1-homepage.prod.mp.auto1.cloud/.../images/logo.svg` |
+| `openlane.svg` | OPENLANE investor site, `https://s202.q4cdn.com/474948805/files/design/corp-logo.svg` |
+| `autobid.svg` | Autobid.de CMS header, `https://cms.autobid.de/uploads/Autobid_Logo_2eb5cbac95.svg` |
+| `ecarstrade.svg` | eCarsTrade schema.org / site logo, `https://ecarstrade.com/static/img/legacy/icons/logo-svg.svg` |
+| `mobile.svg` | mobile.de brand assets for integrations, `https://services.mobile.de/images/mobile-rebranding-logo.svg` |
 
-Fallback in UI is the short name / letter if the image fails to load.
+Trademarks remain the owners'. Used here only to identify the auction in IRISS admin.

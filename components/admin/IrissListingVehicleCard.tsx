@@ -357,13 +357,13 @@ export function IrissListingVehicleCard({
               title={`Atvērt ${PLATFORM_LABEL[v.platform]}`}
               className="inline-flex items-center gap-1.5 bg-transparent text-[10px] font-semibold text-[var(--color-apple-text)]"
             >
-              <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} />
+              <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} size="md" />
               {city ? <span>{city}</span> : null}
               <CountryFlag code={v.countryCode} />
             </IrissListingSourceOpen>
           ) : (
             <span className="inline-flex items-center gap-1.5 bg-transparent text-[10px] font-semibold text-[var(--color-apple-text)]">
-              <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} />
+              <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} size="md" />
               {city ? <span>{city}</span> : null}
               <CountryFlag code={v.countryCode} />
             </span>

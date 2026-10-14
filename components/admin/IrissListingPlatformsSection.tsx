@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
+import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import {
   buildListingPlatformChips,
   IR_LISTING_ALL_CHIP_STYLE,
@@ -47,7 +48,7 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
           className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
           style={c.chipStyle}
         >
-            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} className="h-4 w-[32px]" />
+            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} size="md" />
         </a>
       ))}
       <button
@@ -76,10 +77,12 @@ type LinkKey = keyof Pick<
 
 function SourceLinkList({
   label,
+  logoKey,
   links,
   onChange,
 }: {
   label: string;
+  logoKey?: IrissAuctionLogoKey;
   links: readonly string[];
   onChange: (next: string[]) => void;
 }) {
@@ -88,7 +91,14 @@ function SourceLinkList({
   return (
     <div className="min-w-0 space-y-1.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className={lbl}>{label}</span>
+        {logoKey ? (
+          <span className="inline-flex items-center" title={label}>
+            <IrissAuctionLogo platform={logoKey} fallback={label} size="md" />
+            <span className="sr-only">{label}</span>
+          </span>
+        ) : (
+          <span className={lbl}>{label}</span>
+        )}
         <button
           type="button"
           onClick={() => onChange(addIrissListingLinkRow(rows))}
@@ -168,26 +178,31 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <SourceLinkList
           label="Mobile"
+          logoKey="mobile"
           links={rec.listingLinkMobile}
           onChange={(next) => patchLinks("listingLinkMobile", next)}
         />
         <SourceLinkList
           label="Autobid"
+          logoKey="autobid"
           links={rec.listingLinkAutobid}
           onChange={(next) => patchLinks("listingLinkAutobid", next)}
         />
         <SourceLinkList
-          label="Openline"
+          label="Openlane"
+          logoKey="openline"
           links={rec.listingLinkOpenline}
           onChange={(next) => patchLinks("listingLinkOpenline", next)}
         />
         <SourceLinkList
           label="Auto1"
+          logoKey="auto1"
           links={rec.listingLinkAuto1}
           onChange={(next) => patchLinks("listingLinkAuto1", next)}
         />
         <SourceLinkList
           label="eCarsTrade"
+          logoKey="ecarstrade"
           links={rec.listingLinkEcarstrade}
           onChange={(next) => patchLinks("listingLinkEcarstrade", next)}
         />

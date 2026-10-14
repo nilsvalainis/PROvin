@@ -26,7 +26,7 @@ export function IrissListingPlatformChipsInline({ links }: { links: IrissListing
             className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
             style={c.chipStyle}
           >
-            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} className="h-3.5 w-[28px]" />
+            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} size="md" />
           </a>
         ))}
       </div>

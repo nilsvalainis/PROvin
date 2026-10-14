@@ -131,5 +131,9 @@ describe("preview labels and chips", () => {
       "ecarstrade",
       "citi",
     ]);
+    for (const c of chips.filter((x) => x.logoKey !== "citi")) {
+      expect(c.chipStyle.backgroundColor).toBe("transparent");
+      expect(c.chipStyle.border).toBe("none");
+    }
   });
 });
