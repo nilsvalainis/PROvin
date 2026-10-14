@@ -464,8 +464,12 @@ export async function sendListingPeekLeadEmail(opts: {
   id: string;
 }): Promise<void> {
   const subject = "PROVIN: bezmaksas sludinājuma komentārs";
+  // Tieša saite uz šo ātro vērtējumu; bez sesijas admin atver pieteikšanos un pēc tās atgriež šeit (?next=).
+  const adminUrl = `${getSiteOrigin()}/admin/atras-vertesanas/${encodeURIComponent(opts.id)}`;
   const text = [
     "Jauns bezmaksas sludinājuma komentāra pieprasījums.",
+    "",
+    `Atvērt admin: ${adminUrl}`,
     "",
     `ID: ${opts.id}`,
     `E-pasts: ${opts.email}`,
@@ -478,6 +482,7 @@ export async function sendListingPeekLeadEmail(opts: {
     "NESŪTI ar Gmail Reply: tur būs parasts teksts bez HTML CTA pogas.",
   ].join("\n");
   const html = `<p>Jauns <strong>bezmaksas sludinājuma komentāra</strong> pieprasījums.</p>
+<p style="margin:16px 0;"><a href="${escHtmlMail(adminUrl)}" style="display:inline-block;background:#1d1d1f;color:#ffffff;text-decoration:none;font-family:sans-serif;font-size:14px;font-weight:600;padding:12px 20px;border-radius:10px;">Atvērt ātro vērtējumu</a></p>
 <table cellpadding="8" style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
 <tr><td><strong>ID</strong></td><td>${escHtmlMail(opts.id)}</td></tr>
 <tr><td><strong>E-pasts</strong></td><td>${escHtmlMail(opts.email)}</td></tr>
