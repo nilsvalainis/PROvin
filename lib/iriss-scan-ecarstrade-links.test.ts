@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appendEcarstradeLinksToScan, previewEcarstradeLinksForScan } from "@/lib/iriss-scan-ecarstrade-links";
+import { appendEcarstradeLinksToScan, previewEcarstradeLinksForScan, replaceEcarstradeLinks } from "@/lib/iriss-scan-ecarstrade-links";
 import { emptyIrissScanRecord } from "@/lib/iriss-scan-types";
 
 function rec(patch: Partial<ReturnType<typeof emptyIrissScanRecord>> = {}) {
@@ -70,5 +70,24 @@ describe("iriss scan eCarsTrade link backfill", () => {
     );
     expect(preview.added.some((u) => u.includes("mark[]=5") && u.includes("mark[]=67") && u.includes("mark[]=54"))).toBe(true);
     expect(preview.added.some((u) => u.includes("power_from=176") && u.includes("power_to=176"))).toBe(true);
+  });
+
+  it("replace overwrites an old eCarsTrade URL instead of appending", () => {
+    const row = rec({
+      brandModel: "Volvo XC60",
+      listingLinkAuto1: [
+        "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&maxMileage=150000&fuelTypes=DIESEL",
+      ],
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68"],
+    });
+    const next = replaceEcarstradeLinks(row);
+    expect(next.preview.added).toHaveLength(1);
+    expect(next.record.listingLinkEcarstrade).toHaveLength(1);
+    expect(next.record.listingLinkEcarstrade[0]).toContain("year_from=2018");
+    expect(next.record.listingLinkEcarstrade[0]).toContain("mileage_to=150000");
+    expect(next.record.listingLinkEcarstrade[0]).not.toBe(row.listingLinkEcarstrade[0]);
+    const again = replaceEcarstradeLinks(next.record);
+    expect(again.preview.added).toEqual([]);
+    expect(again.record.listingLinkEcarstrade).toEqual(next.record.listingLinkEcarstrade);
   });
 });

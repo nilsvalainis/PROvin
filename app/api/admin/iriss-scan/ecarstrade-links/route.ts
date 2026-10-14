@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { isIrissScanStoreEnabled, isSafeIrissScanId, listIrissScan, readIrissScan, writeIrissScan } from "@/lib/iriss-scan-store";
 import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
-import { appendEcarstradeLinksToScan, previewEcarstradeLinksForScan } from "@/lib/iriss-scan-ecarstrade-links";
+import { appendEcarstradeLinksToScan, previewEcarstradeLinksForScan, replaceEcarstradeLinks } from "@/lib/iriss-scan-ecarstrade-links";
 import { emptyIrissScanRecord, type IrissScanRecord } from "@/lib/iriss-scan-types";
 
 export const runtime = "nodejs";
@@ -26,6 +26,10 @@ function recordFromBody(raw: unknown): IrissScanRecord | null {
   };
 }
 
+function previewOf(rec: IrissScanRecord, replace: boolean) {
+  return replace ? replaceEcarstradeLinks(rec).preview : previewEcarstradeLinksForScan(rec);
+}
+
 function summarize(previews: ReturnType<typeof previewEcarstradeLinksForScan>[]) {
   return {
     results: previews,
@@ -45,11 +49,11 @@ export async function GET(req: Request) {
     if (!isSafeIrissScanId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
     const rec = await readIrissScan(id);
     if (!rec) return NextResponse.json({ error: "not_found" }, { status: 404 });
-    return NextResponse.json({ applied: false, ...summarize([previewEcarstradeLinksForScan(rec)]) });
+    return NextResponse.json({ applied: false, ...summarize([previewOf(rec, false)]) });
   }
 
   const rows = await listIrissScan();
-  return NextResponse.json({ applied: false, ...summarize(rows.map((row) => previewEcarstradeLinksForScan(row))) });
+  return NextResponse.json({ applied: false, ...summarize(rows.map((row) => previewOf(row, false))) });
 }
 
 export async function POST(req: Request) {
@@ -66,14 +70,16 @@ export async function POST(req: Request) {
   }
 
   const apply = body.apply !== false;
+  const replace = body.replace === true;
+  const applyLinks = replace ? replaceEcarstradeLinks : appendEcarstradeLinksToScan;
   const id = typeof body.id === "string" ? body.id.trim() : "";
   const draft = recordFromBody(body.record);
   const rows: IrissScanRecord[] = [];
   if (draft && !id) {
     if (!apply) {
-      return NextResponse.json({ applied: false, ...summarize([previewEcarstradeLinksForScan(draft)]) });
+      return NextResponse.json({ applied: false, replace, ...summarize([previewOf(draft, replace)]) });
     }
-    const next = appendEcarstradeLinksToScan(draft);
+    const next = applyLinks(draft);
     return NextResponse.json({ applied: false, saved: [next.record], ...summarize([next.preview]) });
   }
   if (id) {
@@ -89,10 +95,10 @@ export async function POST(req: Request) {
   const saved: IrissScanRecord[] = [];
   for (const rec of rows) {
     if (!apply) {
-      previews.push(previewEcarstradeLinksForScan(rec));
+      previews.push(previewOf(rec, replace));
       continue;
     }
-    const next = appendEcarstradeLinksToScan(rec);
+    const next = applyLinks(rec);
     previews.push(next.preview);
     if (next.preview.added.length === 0) continue;
     const w = await writeIrissScan(next.record);

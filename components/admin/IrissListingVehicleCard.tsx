@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissListingBudgetBox } from "@/components/admin/IrissListingBudgetBox";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
 import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
@@ -54,18 +55,11 @@ function recentPriceChanges(v: IrissListingVehicle, nowMs: number | null): Iriss
   return v.priceHistory.filter((c) => isRealListingPriceChange(c) && hoursSince(c.at, nowMs) <= RECENT_WINDOW_HOURS);
 }
 
-function platformBadgeClass(platform: IrissListingPlatform): string {
-  if (platform === "autobid") return "bg-violet-50 text-violet-800 border-violet-200/80";
-  if (platform === "openline") return "bg-indigo-50 text-indigo-800 border-indigo-200/80";
-  if (platform === "ecarstrade") return "bg-emerald-50 text-emerald-800 border-emerald-200/80";
-  return "bg-amber-50 text-amber-800 border-amber-200/80";
-}
-
 function CountryFlag({ code }: { code: string }) {
   const f = countryFlagLabel(code);
   if (!f) return null;
   return (
-    <span title={f.title} aria-label={f.title}>
+    <span title={f.title} aria-label={f.title} className="text-[14px] leading-none">
       {f.flag}
     </span>
   );
@@ -86,7 +80,7 @@ function ListingPhoto({
 }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} loading="lazy" referrerPolicy={referrerPolicy} className={className} onError={onError} />
+    <img src={src} alt={alt} loading="lazy" decoding="async" referrerPolicy={referrerPolicy} className={className} onError={onError} />
   );
 }
 
@@ -361,17 +355,17 @@ export function IrissListingVehicleCard({
               v={v}
               mobile={mobile}
               title={`Atvērt ${PLATFORM_LABEL[v.platform]}`}
-              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${platformBadgeClass(v.platform)}`}
+              className="inline-flex items-center gap-1.5 bg-transparent text-[10px] font-semibold text-[var(--color-apple-text)]"
             >
-              {PLATFORM_LABEL[v.platform]}
-              <CountryFlag code={v.countryCode} />
+              <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} />
               {city ? <span>{city}</span> : null}
+              <CountryFlag code={v.countryCode} />
             </IrissListingSourceOpen>
           ) : (
-            <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${platformBadgeClass(v.platform)}`}>
-              {PLATFORM_LABEL[v.platform]}
-              <CountryFlag code={v.countryCode} />
+            <span className="inline-flex items-center gap-1.5 bg-transparent text-[10px] font-semibold text-[var(--color-apple-text)]">
+              <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} />
               {city ? <span>{city}</span> : null}
+              <CountryFlag code={v.countryCode} />
             </span>
           )}
           <IrissListingSourceExtras v={v} mobile={mobile} />

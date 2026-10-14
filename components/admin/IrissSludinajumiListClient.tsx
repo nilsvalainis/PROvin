@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
 import { IrissListingVehicleCard } from "@/components/admin/IrissListingVehicleCard";
+import { IrissListingVirtualList } from "@/components/admin/IrissListingVirtualList";
 import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
 import { type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useMobilePlatform } from "@/hooks/useMobilePlatform";
@@ -917,10 +918,11 @@ export function IrissSludinajumiListClient({
         </section>
       ) : null}
 
-      <div className="space-y-1.5 sm:space-y-2">
-        {sorted.map((v) => (
+      <IrissListingVirtualList
+        items={sorted}
+        getKey={(v) => v.id}
+        renderItem={(v) => (
           <IrissListingVehicleCard
-            key={v.id}
             v={v}
             nowMs={nowMs}
             prefs={prefs}
@@ -950,8 +952,8 @@ export function IrissSludinajumiListClient({
               router.refresh();
             }}
           />
-        ))}
-      </div>
+        )}
+      />
 
       {drawerVehicle ? (
         <>

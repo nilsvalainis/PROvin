@@ -1,3 +1,4 @@
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import {
   buildListingPlatformChips,
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
@@ -25,7 +26,7 @@ export function IrissListingPlatformChipsInline({ links }: { links: IrissListing
             className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
             style={c.chipStyle}
           >
-            {c.letter}
+            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} className="h-3.5 w-[28px]" />
           </a>
         ))}
       </div>

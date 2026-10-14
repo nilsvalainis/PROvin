@@ -3,6 +3,7 @@
 import { ChevronRight, MoreHorizontal, Pin, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import { irissScanSourceCounts } from "@/lib/iriss-scan-sources";
 import type { IrissScanListOrder, IrissScanListRow } from "@/lib/iriss-scan-types";
@@ -93,7 +94,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apply: true }),
+        body: JSON.stringify({ apply: true, replace: true }),
       });
       const data = (await res.json()) as {
         error?: string;
@@ -102,7 +103,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
         saved?: IrissScanListRow[];
       };
       if (!res.ok) {
-        setEctMsg(data.error === "store_disabled" ? "Krātuve nav pieejama" : "eCarsTrade saišu pievienošana neizdevās");
+        setEctMsg(data.error === "store_disabled" ? "Krātuve nav pieejama" : "eCarsTrade saišu atjaunošana neizdevās");
         return;
       }
       if (data.saved?.length) {
@@ -111,7 +112,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
       }
       const added = data.addedCount ?? 0;
       const updated = data.updatedCount ?? 0;
-      setEctMsg(added === 0 ? "Jaunu eCarsTrade saišu nav" : `Pievienotas ${added} eCarsTrade ${added === 1 ? "saite" : "saites"} (${updated} ieraksti)`);
+      setEctMsg(added === 0 ? "eCarsTrade saites jau ir aktuālas" : `Aizstātas eCarsTrade saites: ${updated} ieraksti`);
     } finally {
       setEctBusy(false);
     }
@@ -144,9 +145,9 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
               onClick={() => void appendEcarstradeLinks()}
               disabled={ectBusy}
               className="inline-flex h-9 items-center rounded-[10px] bg-[#e9e9ee] px-3 text-[13px] font-medium text-[#3a3a3c] disabled:opacity-40"
-              title="Pievienot eCarsTrade saites no Auto1 / Openlane / Autobid filtriem"
+              title="Aizstāt eCarsTrade saites ar jaunu filtru (ne pievienot klāt)"
             >
-              {ectBusy ? "ET…" : "eCarsTrade"}
+              {ectBusy ? "ET…" : "Atjaunot ET"}
             </button>
           </div>
           <p className="mt-0.5 text-[11.5px] text-[#8e8e93]">
@@ -177,8 +178,8 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
                         {counts.length === 0 ? <span>Nav saišu</span> : null}
                         {counts.map((c) => (
                           <span key={c.key} className="inline-flex items-center gap-1" title={c.label}>
-                            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: c.color }} aria-hidden />
-                            {c.label}{c.count > 1 ? ` ${c.count}` : ""}
+                            <IrissAuctionLogo platform={c.logoKey} fallback={c.short} className="h-3 w-[24px]" />
+                            {c.count > 1 ? <span>{c.count}</span> : null}
                           </span>
                         ))}
                       </div>

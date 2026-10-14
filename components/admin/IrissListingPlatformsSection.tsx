@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import {
   buildListingPlatformChips,
   IR_LISTING_ALL_CHIP_STYLE,
@@ -15,7 +16,7 @@ import {
   removeIrissListingLinkRow,
   setIrissListingLinkRow,
 } from "@/lib/iriss-listing-link-lists";
-import { appendEcarstradeLinksToPasutijums } from "@/lib/iriss-pasutijumi-ecarstrade-links";
+import { replaceEcarstradeLinksOnPasutijums } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 const inp =
@@ -46,7 +47,7 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
           className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
           style={c.chipStyle}
         >
-          {c.letter}
+            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} className="h-4 w-[32px]" />
         </a>
       ))}
       <button
@@ -144,8 +145,8 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
   };
 
   const generateEcarstrade = () => {
-    const next = appendEcarstradeLinksToPasutijums(rec);
-    if (next.preview.added.length === 0) return;
+    const next = replaceEcarstradeLinksOnPasutijums(rec);
+    if (next.preview.added.length === 0 && next.preview.skippedReason) return;
     onPatch({ listingLinkEcarstrade: next.record.listingLinkEcarstrade });
   };
 
@@ -159,9 +160,9 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
           type="button"
           onClick={generateEcarstrade}
           className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
-          title="Ģenerēt eCarsTrade saiti no Auto1 / Openlane / Autobid filtriem"
+          title="Aizstāt eCarsTrade saiti ar jaunu filtru no Auto1 / Openlane / Autobid"
         >
-          eCarsTrade no filtriem
+          Atjaunot eCarsTrade
         </button>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

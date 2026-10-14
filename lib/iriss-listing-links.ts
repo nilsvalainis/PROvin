@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 
 /** Droša saite — atvērt tikai http(s). */
@@ -58,6 +59,7 @@ export type ListingPlatformChipDisplay = {
   letter: string;
   title: string;
   chipStyle: CSSProperties;
+  logoKey: IrissAuctionLogoKey;
 };
 
 export function buildListingPlatformChips(
@@ -75,6 +77,7 @@ export function buildListingPlatformChips(
       letter: c.letter,
       title: c.title,
       chipStyle: IR_LISTING_PLATFORM_CHIP_STYLE[key],
+      logoKey: key,
     });
   };
   const pushAll = (raw: IrissListingLinkField, key: ListingPlatformChipKey) => {

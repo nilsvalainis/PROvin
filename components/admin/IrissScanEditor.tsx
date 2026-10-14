@@ -212,9 +212,9 @@ export function IrissScanEditor({
                       method: "POST",
                       credentials: "include",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify(persistId ? { apply: true, id: persistId } : { apply: false, record: rec }),
+                      body: JSON.stringify(persistId ? { apply: true, replace: true, id: persistId } : { apply: false, replace: true, record: rec }),
                     });
-                    const data = (await res.json()) as { saved?: IrissScanRecord[]; addedCount?: number; results?: Array<{ added?: string[] }> };
+                    const data = (await res.json()) as { saved?: IrissScanRecord[]; addedCount?: number; results?: Array<{ added?: string[]; generated?: string[] }> };
                     if (!res.ok) {
                       setSaveMsg("eCarsTrade ģenerēšana neizdevās");
                       return;
@@ -223,17 +223,16 @@ export function IrissScanEditor({
                     if (persistId && saved) {
                       setRec(saved);
                       setDirty(false);
-                      setSaveMsg(data.addedCount ? `Pievienotas ${data.addedCount} eCarsTrade saites` : "eCarsTrade saite jau ir");
+                      setSaveMsg(data.addedCount ? `Aizstātas eCarsTrade saites` : "eCarsTrade saite jau ir aktuāla");
                       return;
                     }
-                    const added = data.results?.[0]?.added ?? [];
-                    if (added.length === 0) {
+                    const generated = data.results?.[0]?.generated ?? data.results?.[0]?.added ?? [];
+                    if (generated.length === 0) {
                       setSaveMsg("Nav eCarsTrade filtra no markas vai Auto1/Openlane/Autobid");
                       return;
                     }
-                    const existing = rec.listingLinkEcarstrade.map((s) => s.trim()).filter(Boolean);
-                    patchRecord({ listingLinkEcarstrade: [...existing, ...added] });
-                    setSaveMsg(`Sagatavotas ${added.length} eCarsTrade saites. Saglabā.`);
+                    patchRecord({ listingLinkEcarstrade: generated });
+                    setSaveMsg(`Sagatavota eCarsTrade saite. Saglabā.`);
                   } finally {
                     setBusy(false);
                   }
@@ -241,7 +240,7 @@ export function IrissScanEditor({
               }}
               className="font-semibold text-[var(--color-provin-accent)] disabled:opacity-40"
             >
-              eCarsTrade no filtriem
+              Atjaunot eCarsTrade
             </button>
           </div>
         </div>

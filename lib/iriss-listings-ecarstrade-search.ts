@@ -367,6 +367,64 @@ export function filterFromBrandModel(brandModel: string): EcarstradeSearchFilter
 }
 
 /** Savieno URL markas ar brandModel (vairākas markas, jauda). Modeli tikai pie vienas markas. */
+function mergeBound(a: number | null, b: number | null, pick: "max" | "min"): number | null {
+  if (a == null) return b;
+  if (b == null) return a;
+  return pick === "max" ? Math.max(a, b) : Math.min(a, b);
+}
+
+function mergeTokens(a: string[], b: string[]): string[] {
+  if (a.length === 0) return [...b];
+  if (b.length === 0) return [...a];
+  const set = new Set(a);
+  const inter = b.filter((x) => set.has(x));
+  return inter.length > 0 ? inter : uniq([...a, ...b]);
+}
+
+/** Viena ieraksta filtri: marku savienojums, gadu/km/cenas/jaudas šaurākais pārklājums. */
+export function mergeEcarstradeFilters(a: EcarstradeSearchFilter, b: EcarstradeSearchFilter): EcarstradeSearchFilter {
+  const makeIds: number[] = [];
+  const makeNames: string[] = [];
+  for (const src of [a, b]) {
+    src.makeIds.forEach((id, i) => {
+      if (!makeIds.includes(id)) {
+        makeIds.push(id);
+        makeNames.push(src.makeNames[i] ?? "");
+      }
+    });
+  }
+  const multi = makeIds.length > 1;
+  let yearFrom = mergeBound(a.yearFrom, b.yearFrom, "max");
+  let yearTo = mergeBound(a.yearTo, b.yearTo, "min");
+  if (yearFrom != null && yearTo != null && yearFrom > yearTo) [yearFrom, yearTo] = [yearTo, yearFrom];
+  let mileageFrom = mergeBound(a.mileageFrom, b.mileageFrom, "max");
+  let mileageTo = mergeBound(a.mileageTo, b.mileageTo, "min");
+  if (mileageFrom != null && mileageTo != null && mileageFrom > mileageTo) [mileageFrom, mileageTo] = [mileageTo, mileageFrom];
+  let priceFrom = mergeBound(a.priceFrom, b.priceFrom, "max");
+  let priceTo = mergeBound(a.priceTo, b.priceTo, "min");
+  if (priceFrom != null && priceTo != null && priceFrom > priceTo) [priceFrom, priceTo] = [priceTo, priceFrom];
+  let powerFromKw = mergeBound(a.powerFromKw, b.powerFromKw, "max");
+  let powerToKw = mergeBound(a.powerToKw, b.powerToKw, "min");
+  if (powerFromKw != null && powerToKw != null && powerFromKw > powerToKw) [powerFromKw, powerToKw] = [powerToKw, powerFromKw];
+  return {
+    makeIds,
+    makeNames,
+    modelId: multi ? null : a.modelId ?? b.modelId,
+    modelName: multi ? "" : a.modelName || b.modelName,
+    yearFrom,
+    yearTo,
+    mileageFrom,
+    mileageTo,
+    priceFrom,
+    priceTo,
+    powerFromKw,
+    powerToKw,
+    fuels: mergeTokens(a.fuels, b.fuels),
+    gearboxes: mergeTokens(a.gearboxes, b.gearboxes),
+    bodies: mergeTokens(a.bodies, b.bodies),
+  };
+}
+
 export function fillMakeModelFromBrand(filter: EcarstradeSearchFilter, brandModel: string): EcarstradeSearchFilter {
   const fromBrand = filterFromBrandModel(brandModel);
   const makeIds = [...filter.makeIds];

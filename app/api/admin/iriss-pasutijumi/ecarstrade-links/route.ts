@@ -5,6 +5,7 @@ import {
   appendEcarstradeLinksToPasutijums,
   hasOtherAuctionListingLinks,
   previewEcarstradeLinksForPasutijums,
+  replaceEcarstradeLinksOnPasutijums,
 } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
 import { IRISS_STALE_REVISION } from "@/lib/iriss-pasutijumi-save-safety";
@@ -32,6 +33,10 @@ function recordFromBody(raw: unknown): IrissPasutijumsRecord | null {
     vin: str("vin"),
     ...parseIrissPasutijumsListingLinks(o),
   };
+}
+
+function previewOf(rec: IrissPasutijumsRecord, replace: boolean) {
+  return replace ? replaceEcarstradeLinksOnPasutijums(rec).preview : previewEcarstradeLinksForPasutijums(rec);
 }
 
 function summarize(previews: ReturnType<typeof previewEcarstradeLinksForPasutijums>[]) {
@@ -79,13 +84,15 @@ export async function POST(req: Request) {
   }
 
   const apply = body.apply !== false;
+  const replace = body.replace === true;
+  const applyLinks = replace ? replaceEcarstradeLinksOnPasutijums : appendEcarstradeLinksToPasutijums;
   const id = typeof body.id === "string" ? body.id.trim() : "";
   const draft = recordFromBody(body.record);
   if (draft && !id) {
     if (!apply) {
-      return NextResponse.json({ applied: false, ...summarize([previewEcarstradeLinksForPasutijums(draft)]) });
+      return NextResponse.json({ applied: false, replace, ...summarize([previewOf(draft, replace)]) });
     }
-    const next = appendEcarstradeLinksToPasutijums(draft);
+    const next = applyLinks(draft);
     return NextResponse.json({
       applied: false,
       saved: [irissPasutijumsToListRow(next.record)],
@@ -111,15 +118,15 @@ export async function POST(req: Request) {
   const saved = [];
   for (const rec of rows) {
     if (!hasOtherAuctionListingLinks(rec) && !rec.brandModel.trim()) {
-      const preview = previewEcarstradeLinksForPasutijums(rec);
+      const preview = previewOf(rec, replace);
       previews.push(preview);
       continue;
     }
     if (!apply) {
-      previews.push(previewEcarstradeLinksForPasutijums(rec));
+      previews.push(previewOf(rec, replace));
       continue;
     }
-    const next = appendEcarstradeLinksToPasutijums(rec);
+    const next = applyLinks(rec);
     previews.push(next.preview);
     if (next.preview.added.length === 0) continue;
     const w = await writeIrissPasutijums(next.record, { expectedWorkspaceRevision: rec.workspaceRevision });

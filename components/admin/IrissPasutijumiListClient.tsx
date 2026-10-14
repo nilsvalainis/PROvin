@@ -4,6 +4,7 @@ import { ChevronDown, Pin, Search, Trash2 } from "lucide-react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { AdminIrissOrdersExportButton } from "@/components/admin/AdminIrissOrdersExportButton";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import { IRISS_ORDER_SORT_EVENT, IRISS_ORDER_SORT_KEY, type IrissOrderSortMode } from "@/components/admin/IrissOrderSortSelect";
@@ -352,7 +353,7 @@ const IrissRowCard = memo(function IrissRowCard({
             className={LISTING_PLATFORM_CHIP_ANCHOR_COMPACT_CLASS}
             style={c.chipStyle}
           >
-            {c.letter}
+            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} className="h-3 w-[26px]" />
           </a>
         ))}
         <button
@@ -927,7 +928,7 @@ export function IrissPasutijumiListClient({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apply: true }),
+        body: JSON.stringify({ apply: true, replace: true }),
       });
       const data = (await res.json()) as {
         error?: string;
@@ -936,7 +937,7 @@ export function IrissPasutijumiListClient({
         saved?: IrissPasutijumsListRow[];
       };
       if (!res.ok) {
-        setEctMsg(data.error === "store_disabled" ? "Krātuve nav pieejama" : "eCarsTrade saišu pievienošana neizdevās");
+        setEctMsg(data.error === "store_disabled" ? "Krātuve nav pieejama" : "eCarsTrade saišu atjaunošana neizdevās");
         return;
       }
       if (data.saved?.length) {
@@ -945,7 +946,7 @@ export function IrissPasutijumiListClient({
       }
       const added = data.addedCount ?? 0;
       const updated = data.updatedCount ?? 0;
-      setEctMsg(added === 0 ? "Jaunu eCarsTrade saišu nav" : `Pievienotas ${added} eCarsTrade ${added === 1 ? "saite" : "saites"} (${updated} pasūtījumi)`);
+      setEctMsg(added === 0 ? "eCarsTrade saites jau ir aktuālas" : `Aizstātas eCarsTrade saites: ${updated} pasūtījumi`);
     } finally {
       setEctBusy(false);
     }
@@ -998,9 +999,9 @@ export function IrissPasutijumiListClient({
               onClick={() => void appendEcarstradeLinks()}
               disabled={ectBusy}
               className="inline-flex h-8 items-center rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm disabled:opacity-40"
-              title="Pievienot eCarsTrade saites no Auto1 / Openlane / Autobid filtriem visiem pasūtījumiem"
+              title="Aizstāt eCarsTrade saites visos pasūtījumos ar jaunu filtru (ne pievienot klāt)"
             >
-              {ectBusy ? "ET…" : "eCarsTrade"}
+              {ectBusy ? "ET…" : "Atjaunot ET"}
             </button>
             <Link
               href="/admin/iriss/atskaite"

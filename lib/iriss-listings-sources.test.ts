@@ -112,4 +112,30 @@ describe("buildIrissListingSources", () => {
     expect(sharedGroup.orders.map((o) => o.orderId).sort()).toEqual(["a", "b"]);
     expect(autobid.find((g) => g.orders.length === 1)!.orders[0]!.orderId).toBe("a");
   });
+
+  it("tightens unbounded Auto1/Openlane/Autobid URLs from brandModel so they do not share one all-stock fetch", () => {
+    const sources = buildIrissListingSources([
+      {
+        ...row("a", "active", {
+          auto1: "https://www.auto1.com/en/app/merchant/cars?channel=24h",
+          openline: "https://www.openlane.eu/en/findcar",
+          autobid: "https://autobid.de/en/search-results",
+        }),
+        brandModel: "LEXUS/TOYOTA",
+      },
+      {
+        ...row("b", "active", {
+          auto1: "https://www.auto1.com/en/app/merchant/cars?channel=24h",
+        }),
+        brandModel: "Audi/VW/Porsche 176kw",
+      },
+    ]);
+    const auto1 = sources.filter((s) => s.platform === "auto1");
+    expect(auto1).toHaveLength(2);
+    expect(auto1[0]!.sourceUrl).toMatch(/manufacturer=LEXUS/i);
+    expect(auto1[1]!.sourceUrl).toMatch(/manufacturer=AUDI/i);
+    expect(sources.find((s) => s.platform === "openline")!.sourceUrl).toMatch(/makes=lexus/i);
+    expect(sources.find((s) => s.platform === "autobid")!.sourceUrl).toMatch(/name-brand=LEXUS|name-brand=TOYOTA/i);
+    expect(groupIrissListingSources(auto1)).toHaveLength(2);
+  });
 });

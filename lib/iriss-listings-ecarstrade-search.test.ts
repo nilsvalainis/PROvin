@@ -4,6 +4,7 @@ import {
   ecarstradeSearchUrl,
   fillMakeModelFromBrand,
   filterFromBrandModel,
+  mergeEcarstradeFilters,
   parseListingSearchUrl,
   sameEcarstradeSearch,
 } from "@/lib/iriss-listings-ecarstrade-search";
@@ -137,6 +138,25 @@ describe("eCarsTrade search mapper", () => {
     expect(mobile.makeIds).toEqual([54]);
     expect(mobile.powerFromKw).toBe(176);
     expect(mobile.powerToKw).toBe(176);
+  });
+
+  it("merges two platform filters into one tight eCarsTrade search", () => {
+    const a = parseListingSearchUrl(
+      "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&maxMileage=180000&fuelTypes=DIESEL",
+    );
+    const b = parseListingSearchUrl(
+      "https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2019&mileageTo=150000&fuels=diesel",
+    );
+    const merged = mergeEcarstradeFilters(a, b);
+    expect(merged.makeIds).toEqual([68]);
+    expect(merged.modelId).toBe(1866);
+    expect(merged.yearFrom).toBe(2019);
+    expect(merged.mileageTo).toBe(150000);
+    expect(merged.fuels).toEqual(["Diesel"]);
+    const url = ecarstradeSearchUrl(merged)!;
+    expect(url).toContain("year_from=2019");
+    expect(url).toContain("mileage_to=150000");
+    expect(url).toContain("model[]=1866");
   });
 
   it("treats reordered country params as the same search", () => {
