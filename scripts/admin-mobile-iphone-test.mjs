@@ -2,10 +2,12 @@
  * iPhone 390×844: 24 rindu saraksts ritina līdz beigām; PTR uzliek data-admin-ptr=refreshing.
  *   ADMIN_MOBILE_TEST_URL=http://localhost:3040 node scripts/admin-mobile-iphone-test.mjs
  */
+import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 
 const base = process.env.ADMIN_MOBILE_TEST_URL ?? process.env.PREVIEW_URL ?? "http://localhost:3040";
 const url = `${base.replace(/\/$/, "")}/dev/admin-mobile-shell`;
+const shotDir = process.env.ADMIN_MOBILE_SHOT_DIR || "";
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROME_PATH || undefined,
@@ -23,9 +25,15 @@ const page = await browser.newPage({
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 
+if (shotDir) mkdirSync(shotDir, { recursive: true });
+
 await page.goto(url, { waitUntil: "networkidle", timeout: 120_000 });
 await page.waitForSelector("#admin-main-scroll");
 await page.waitForSelector('[data-testid="order-row-row-24"]');
+
+if (shotDir) {
+  await page.screenshot({ path: `${shotDir}/after-pasutijumi.png`, fullPage: false });
+}
 
 const scroll = await page.evaluate(() => {
   const el = document.getElementById("admin-main-scroll");
@@ -44,6 +52,10 @@ const scroll = await page.evaluate(() => {
   };
 });
 
+if (shotDir) {
+  await page.screenshot({ path: `${shotDir}/after-pasutijumi-end.png`, fullPage: false });
+}
+
 if (!scroll.ok) {
   await browser.close();
   console.error("SCROLL_FAIL", scroll);
@@ -59,7 +71,7 @@ await page.waitForTimeout(80);
 await page.evaluate(() => {
   const el = document.getElementById("admin-main-scroll");
   if (!el) return;
-  const fire = (type, y, extra = {}) => {
+  const fire = (type, y) => {
     const t = new Touch({
       identifier: 1,
       target: el,
@@ -74,17 +86,27 @@ await page.evaluate(() => {
         cancelable: true,
         touches: type === "touchend" ? [] : [t],
         changedTouches: [t],
-        ...extra,
       }),
     );
   };
-  fire("touchstart", 60);
-  fire("touchmove", 120);
-  fire("touchmove", 220);
-  fire("touchend", 220);
+  fire("touchstart", 40);
+  fire("touchmove", 160);
+  fire("touchmove", 280);
 });
 
-await page.waitForTimeout(120);
+if (shotDir) {
+  await page.waitForTimeout(80);
+  await page.screenshot({ path: `${shotDir}/after-ptr.png`, fullPage: false });
+}
+
+await page.evaluate(() => {
+  const el = document.getElementById("admin-main-scroll");
+  if (!el) return;
+  const t = new Touch({ identifier: 1, target: el, clientX: 180, clientY: 280, pageX: 180, pageY: 280 });
+  el.dispatchEvent(new TouchEvent("touchend", { bubbles: true, cancelable: true, touches: [], changedTouches: [t] }));
+});
+
+await page.waitForTimeout(160);
 const ptr = await page.getAttribute("#admin-ptr-indicator", "data-admin-ptr");
 if (ptr !== "refreshing" && ptr !== "pulling") {
   await browser.close();
@@ -92,43 +114,7 @@ if (ptr !== "refreshing" && ptr !== "pulling") {
   process.exit(1);
 }
 
-const shotDir = process.env.ADMIN_MOBILE_SHOT_DIR || "";
 if (shotDir) {
-  const { mkdirSync } = await import("node:fs");
-  mkdirSync(shotDir, { recursive: true });
-  await page.evaluate(() => {
-    const el = document.getElementById("admin-main-scroll");
-    if (el) el.scrollTop = 0;
-  });
-  await page.waitForTimeout(80);
-  await page.screenshot({ path: `${shotDir}/after-pasutijumi.png`, fullPage: false });
-  await page.evaluate(() => {
-    const el = document.getElementById("admin-main-scroll");
-    if (el) el.scrollTop = el.scrollHeight;
-  });
-  await page.screenshot({ path: `${shotDir}/after-pasutijumi-end.png`, fullPage: false });
-  await page.evaluate(() => {
-    const el = document.getElementById("admin-main-scroll");
-    if (el) el.scrollTop = 0;
-  });
-  await page.evaluate(() => {
-    const el = document.getElementById("admin-main-scroll");
-    if (!el) return;
-    const fire = (type, y) => {
-      const t = new Touch({ identifier: 1, target: el, clientX: 180, clientY: y, pageX: 180, pageY: y });
-      el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: type === "touchend" ? [] : [t], changedTouches: [t] }));
-    };
-    fire("touchstart", 60);
-    fire("touchmove", 220);
-  });
-  await page.waitForTimeout(80);
-  await page.screenshot({ path: `${shotDir}/after-ptr.png`, fullPage: false });
-  await page.evaluate(() => {
-    const el = document.getElementById("admin-main-scroll");
-    if (!el) return;
-    const t = new Touch({ identifier: 1, target: el, clientX: 180, clientY: 220, pageX: 180, pageY: 220 });
-    el.dispatchEvent(new TouchEvent("touchend", { bubbles: true, cancelable: true, touches: [], changedTouches: [t] }));
-  });
   await page.getByRole("button", { name: "Vairāk" }).click();
   await page.waitForTimeout(80);
   await page.screenshot({ path: `${shotDir}/after-vairak.png`, fullPage: false });

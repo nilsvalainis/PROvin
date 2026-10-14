@@ -74,6 +74,7 @@ export default function middleware(request: NextRequest) {
         dest.pathname === "/favicon.ico" ||
         dest.pathname === "/og.png" ||
         dest.pathname.startsWith("/admin") ||
+        dest.pathname.startsWith("/dev") ||
         dest.pathname.startsWith("/api") ||
         isPartneriemPath(dest.pathname);
       if (!locale && !skipPrefix) {
@@ -128,6 +129,10 @@ export default function middleware(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 365,
     });
     return res;
+  }
+
+  if (pathname.startsWith("/dev")) {
+    return NextResponse.next();
   }
 
   if (pathname.startsWith("/admin")) {
