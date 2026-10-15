@@ -1182,7 +1182,14 @@ export function IrissPasutijumsEditor({
     async (offerId: string) => {
       setOfferPdfBusy(true);
       try {
-        const blob = await generateOfferPdfBlob(offerId, !forceNoClientPdf);
+        const { blob, imagesOmitted } = await generateOfferPdfBlob(offerId, !forceNoClientPdf);
+        if (imagesOmitted > 0) {
+          const notice = irissOfferImagesOmittedNotice(imagesOmitted);
+          setOfferPdfNotice(notice);
+          setSaveMsg(notice);
+        } else {
+          setOfferPdfNotice(null);
+        }
         const pdfUrl = URL.createObjectURL(blob);
         window.open(pdfUrl, "_blank", "noopener,noreferrer");
         window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120_000);
