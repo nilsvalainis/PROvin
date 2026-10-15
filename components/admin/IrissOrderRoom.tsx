@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
+import { IrissOfferClientLinkBar } from "@/components/admin/IrissOfferClientLinkBar";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { listingBudgetFitPill, listingFmtEur } from "@/lib/iriss-listings-card";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
@@ -48,6 +49,7 @@ import {
   type IrissOrderRoomTab,
 } from "@/lib/iriss-order-room";
 import { parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
+import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import {
   IRISS_DEAL_DETAIL_OPTIONS,
   IRISS_PASUTIJUMS_LIST_STATUSES,
@@ -200,6 +202,7 @@ export function IrissOrderRoom({
   onOpenOfferPdf,
   onRestore,
   onDeleteOrder,
+  initialOfferLinks = [],
 }: {
   rec: IrissPasutijumsRecord;
   hits: IrissOrderRoomHit[];
@@ -233,6 +236,7 @@ export function IrissOrderRoom({
   onOpenOfferPdf: (offerId: string) => void;
   onRestore: () => void;
   onDeleteOrder: () => void;
+  initialOfferLinks?: IrissOfferClientLinkAdminView[];
 }) {
   const [tab, setTab] = useState<IrissOrderRoomTab>("overview");
   const [bucket, setBucket] = useState<IrissOrderRoomHitBucket>("new");
@@ -246,6 +250,8 @@ export function IrissOrderRoom({
   const [roomMsg, setRoomMsg] = useState<string | null>(null);
   const [composer, setComposer] = useState("");
   const [linksOpen, setLinksOpen] = useState(false);
+  const [offerLinks, setOfferLinks] = useState<IrissOfferClientLinkAdminView[]>(initialOfferLinks);
+  const [linkBusyId, setLinkBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     setDismissed(new Set(dismissedHitIds));
@@ -256,6 +262,62 @@ export function IrissOrderRoom({
     if (!storage) return;
     setFavIds(new Set(migrateIrissListPrefs(storage).fav));
   }, []);
+
+  useEffect(() => {
+    if (tab !== "offers") return;
+    let stop = false;
+    async function refreshOfferLinks() {
+      try {
+        const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/client-links`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!res.ok || stop) return;
+        const data = (await res.json()) as { links?: IrissOfferClientLinkAdminView[] };
+        if (!stop && Array.isArray(data.links)) setOfferLinks(data.links);
+      } catch {
+        /* statusa atsvaidzināšana ir klusa */
+      }
+    }
+    void refreshOfferLinks();
+    const timer = window.setInterval(() => void refreshOfferLinks(), 20000);
+    return () => {
+      stop = true;
+      window.clearInterval(timer);
+    };
+  }, [rec.id, tab]);
+
+  async function mutateOfferLink(offerId: string, body: { action: "create"; expiresInDays: number | null } | { action: "revoke" }) {
+    setLinkBusyId(offerId);
+    setRoomMsg(null);
+    try {
+      const res = await fetch(
+        `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerId)}/client-link`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
+      const data = (await res.json().catch(() => ({}))) as { error?: string; link?: IrissOfferClientLinkAdminView };
+      if (!res.ok || !data.link) {
+        setRoomMsg(
+          data.error === "save_first"
+            ? "Vispirms saglabājiet pasūtījumu un piedāvājumu."
+            : body.action === "revoke"
+              ? "Saiti neizdevās atsaukt."
+              : "Saiti neizdevās izveidot.",
+        );
+        return;
+      }
+      setOfferLinks((prev) => [...prev.filter((item) => item.offerId !== offerId), data.link!]);
+    } catch {
+      setRoomMsg(body.action === "revoke" ? "Saiti neizdevās atsaukt." : "Saiti neizdevās izveidot.");
+    } finally {
+      setLinkBusyId(null);
+    }
+  }
 
   const offeredIds = useMemo(() => {
     const ids = new Set<string>();
@@ -878,6 +940,16 @@ export function IrissOrderRoom({
                           WA
                         </button>
                       </div>
+                      <IrissOfferClientLinkBar
+                        offerId={offer.id}
+                        link={offerLinks.find((item) => item.offerId === offer.id) ?? null}
+                        phone={rec.phone}
+                        email={rec.email}
+                        vehicle={offer.brandModel.trim() || offer.title}
+                        busy={linkBusyId === offer.id}
+                        onCreate={(expiresInDays) => void mutateOfferLink(offer.id, { action: "create", expiresInDays })}
+                        onRevoke={() => void mutateOfferLink(offer.id, { action: "revoke" })}
+                      />
                     </div>
                   </li>
                 );

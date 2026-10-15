@@ -207,6 +207,13 @@ export function getIrissPasutijumiStorageDir(): string | null {
   return r.kind === "fs" ? r.dir : null;
 }
 
+/** Privātais Blob, kad IRISS pasūtījumi jau glabājas Blob. FS režīmā null. */
+export function getIrissPasutijumiBlobConfig(): { token: string; prefix: string } | null {
+  const r = resolveStorage();
+  if (r.kind !== "blob") return null;
+  return { token: r.token, prefix: r.prefix };
+}
+
 export function isIrissPasutijumiStoreEnabled(): boolean {
   return resolveStorage().kind !== "disabled";
 }
@@ -797,6 +804,36 @@ async function hydrateOneOfferImage(
   } catch (e) {
     console.error("[iriss offer image] hydrate failed, keep blobPath", e);
     return att;
+  }
+}
+
+/** Viena piedāvājuma pielikuma baiti. Ceļš paliek serverī, klientam netiek atdots. */
+export async function readIrissOfferAttachmentBytes(
+  att: Pick<IrissOfferAttachment, "dataUrl" | "blobPath" | "mimeType">,
+): Promise<{ mimeType: string; bytes: Buffer } | null> {
+  const fromData = att.dataUrl ? parseDataUrlPayload(att.dataUrl) : null;
+  if (fromData && fromData.bytes.length > 0) {
+    return { mimeType: fromData.mimeType || att.mimeType || "application/octet-stream", bytes: fromData.bytes };
+  }
+  if (!att.blobPath || att.blobPath.includes("..")) return null;
+  const r = resolveStorage();
+  if (r.kind === "disabled") return null;
+  try {
+    if (r.kind === "blob") {
+      const res = await get(att.blobPath, { access: "private", token: r.token, useCache: false });
+      if (!res || res.statusCode !== 200 || !res.stream) return null;
+      const bytes = Buffer.from(await new Response(res.stream).arrayBuffer());
+      if (bytes.length === 0) return null;
+      return { mimeType: att.mimeType || "application/octet-stream", bytes };
+    }
+    const root = path.resolve(r.dir);
+    const abs = path.resolve(path.isAbsolute(att.blobPath) ? att.blobPath : path.join(r.dir, att.blobPath));
+    if (abs !== root && !abs.startsWith(`${root}${path.sep}`)) return null;
+    const bytes = await fs.readFile(abs);
+    if (bytes.length === 0) return null;
+    return { mimeType: att.mimeType || "application/octet-stream", bytes };
+  } catch {
+    return null;
   }
 }
 
