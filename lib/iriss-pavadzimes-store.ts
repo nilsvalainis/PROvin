@@ -173,6 +173,24 @@ export type IrissPavadzimesListResult = {
   dropboxError: string | null;
 };
 
+export type IrissPavadzimesSyncResult = IrissPavadzimesListResult & {
+  ok: boolean;
+  updatedAt: string;
+  itemCount: number;
+  indexChanged: boolean;
+};
+
+function mergeRecordItems(stale: IrissPavadzimeRecord[], computed: IrissPavadzimeRecord[]): IrissPavadzimeRecord[] {
+  const map = new Map(stale.map((x) => [x.id, x]));
+  for (const item of computed) {
+    const prev = map.get(item.id);
+    map.set(item.id, prev ? { ...prev, ...item, blobPath: prev.blobPath || item.blobPath } : item);
+  }
+  return sortIrissPavadzimes([...map.values()]);
+}
+
+let syncInFlight: Promise<IrissPavadzimesSyncResult> | null = null;
+
 function recordFromDropboxFile(file: DropboxWaybillFile, existing: IrissPavadzimeRecord | undefined, nowIso: string): IrissPavadzimeRecord {
   const fromName = parseCsddWaybillFileName(file.name);
   const id = existing?.id || waybillIdFromNumber(fromName.number ?? "", file.id.replace(/^id:/, "").replace(/[^A-Za-z0-9._-]/g, "").slice(0, 24));
@@ -243,7 +261,7 @@ export async function readIrissPavadzimesCached(): Promise<IrissPavadzimeRecord[
   return sortIrissPavadzimes(index.items);
 }
 
-export async function listIrissPavadzimes(): Promise<IrissPavadzimesListResult> {
+async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSyncResult> {
   const dropboxConfigured = isDropboxConfigured();
   let dropboxError: string | null = null;
   const index = await readIndex();
@@ -255,18 +273,13 @@ export async function listIrissPavadzimes(): Promise<IrissPavadzimesListResult> 
     if (!listed.ok) {
       dropboxError = listed.error;
     } else {
-      const keepIds = new Set<string>();
       const dirty: { rec: IrissPavadzimeRecord; file: DropboxWaybillFile }[] = [];
       for (const file of listed.files) {
         if (!parseCsddWaybillFileName(file.name).number) continue;
         const existing = findExisting([...byKey.values()], file);
         const rec = recordFromDropboxFile(file, existing, nowIso);
         byKey.set(rec.id, rec);
-        keepIds.add(rec.id);
         if (needsParse(rec, file)) dirty.push({ rec, file });
-      }
-      for (const [id, rec] of [...byKey.entries()]) {
-        if (rec.source === "dropbox" && !keepIds.has(id)) byKey.delete(id);
       }
 
       const batch = dirty.slice(0, PARSE_BATCH);
@@ -288,20 +301,59 @@ export async function listIrissPavadzimes(): Promise<IrissPavadzimesListResult> 
         }
       });
 
-      const nextItems = sortIrissPavadzimes([...byKey.values()]);
-      const prevJson = JSON.stringify(index.items);
-      const nextJson = JSON.stringify(nextItems);
-      if (prevJson !== nextJson) {
+      const computedItems = sortIrissPavadzimes([...byKey.values()]);
+      const fresh = await readIndex();
+      const nextItems = mergeRecordItems(fresh.items, computedItems);
+      const indexChanged = JSON.stringify(fresh.items) !== JSON.stringify(nextItems);
+      if (indexChanged) {
         await writeIndex({ version: 1, updatedAt: nowIso, items: nextItems }).catch(() => undefined);
       }
 
       const pendingParse = Math.max(0, dirty.length - batch.length);
-      return { rows: nextItems, pendingParse, dropboxConfigured, dropboxError };
+      const updatedAt = indexChanged ? nowIso : fresh.updatedAt;
+      return {
+        ok: true,
+        rows: nextItems,
+        pendingParse,
+        dropboxConfigured,
+        dropboxError,
+        updatedAt,
+        itemCount: nextItems.length,
+        indexChanged,
+      };
     }
   }
 
   const rows = sortIrissPavadzimes([...byKey.values()]);
-  return { rows, pendingParse: 0, dropboxConfigured, dropboxError };
+  return {
+    ok: !dropboxError,
+    rows,
+    pendingParse: 0,
+    dropboxConfigured,
+    dropboxError,
+    updatedAt: index.updatedAt,
+    itemCount: rows.length,
+    indexChanged: false,
+  };
+}
+
+/** Dropbox → Blob/FS indekss; droši atkārtoti un paralēli (viena aktīva darba instancē). */
+export async function runIrissPavadzimesDropboxSync(): Promise<IrissPavadzimesSyncResult> {
+  if (syncInFlight) return syncInFlight;
+  syncInFlight = syncIrissPavadzimesFromDropboxOnce().finally(() => {
+    syncInFlight = null;
+  });
+  return syncInFlight;
+}
+
+export async function listIrissPavadzimes(): Promise<IrissPavadzimesListResult> {
+  const r = await runIrissPavadzimesDropboxSync();
+  return {
+    rows: r.rows,
+    pendingParse: r.pendingParse,
+    dropboxConfigured: r.dropboxConfigured,
+    dropboxError: r.dropboxError,
+  };
 }
 
 export async function getIrissPavadzime(id: string): Promise<IrissPavadzimeRecord | null> {
