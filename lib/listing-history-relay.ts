@@ -3,7 +3,9 @@
  * no Vercel funkcijas abi avoti atbild HTTP 403, no operatora tīkla 200.
  * Jina Reader (`r.jina.ai`) Adify arī neredz (atgriež to pašu Just a moment).
  * Tāpēc pēc HTTP relejiem lapu ielasa caur Hetzner Chrome (`POST /listings/page`),
- * kas jau strādā VIN SCAN (stat.vin, eCarsTrade). Parsē to pašu SSR HTML.
+ * kas jau strādā VIN SCAN (stat.vin, eCarsTrade) un live arī tirgusdati.lv.
+ * Adify.lv Chrome paliek CF managed challenge; Adify iet CapSolver + Fixie
+ * (`adify-listing-history-bypass.ts`) un Chrome rindu neatņem.
  */
 
 import { looksLikeListingHistoryCloudflareChallenge } from "@/lib/listing-history-cloudflare";
@@ -182,15 +184,28 @@ async function fetchViaChromeRelay(
   return { html: chrome.html, error: null };
 }
 
+export type ListingHistoryRelayOpts = {
+  timeoutMs?: number;
+  env?: RelayEnv;
+  retryDelayMs?: number;
+  fetchImpl?: FetchLike;
+  /**
+   * Hetzner Chrome (`POST /listings/page`). Noklusējums: jā.
+   * Adify.lv live paliek CF pēc 18 s; rinda ir viena, tāpēc Adify izlaiž Chrome.
+   */
+  chrome?: boolean;
+};
+
 /** Atgriež vēstures lapas HTML un kļūdas iemeslu, ja neizdevās. */
 export async function loadListingHistoryHtmlViaRelays(
   targetUrl: string,
-  opts: { timeoutMs?: number; env?: RelayEnv; retryDelayMs?: number; fetchImpl?: FetchLike } = {},
+  opts: ListingHistoryRelayOpts = {},
 ): Promise<ListingHistoryRelayFetch> {
   const env = opts.env ?? process.env;
   const timeoutMs = opts.timeoutMs ?? LISTING_HISTORY_RELAY_TIMEOUT_MS;
   const retryDelayMs = opts.retryDelayMs ?? 1_500;
   const fetchImpl = opts.fetchImpl ?? fetch;
+  const useChrome = opts.chrome !== false;
   const errors: string[] = [];
 
   for (const template of listingHistoryRelayTemplates(env)) {
@@ -209,9 +224,11 @@ export async function loadListingHistoryHtmlViaRelays(
     if (second.error) errors.push(`${label}: ${second.error}`);
   }
 
-  const chrome = await fetchViaChromeRelay(targetUrl, env, opts.fetchImpl);
-  if (chrome.html) return chrome;
-  if (chrome.error) errors.push(chrome.error);
+  if (useChrome) {
+    const chrome = await fetchViaChromeRelay(targetUrl, env, opts.fetchImpl);
+    if (chrome.html) return chrome;
+    if (chrome.error) errors.push(chrome.error);
+  }
 
   return { html: null, error: errors.filter(Boolean).join(" · ") || null };
 }
@@ -219,7 +236,7 @@ export async function loadListingHistoryHtmlViaRelays(
 /** Atgriež vēstures lapas HTML caur pirmo releju, kas atbild, vai `null`. */
 export async function fetchListingHistoryHtmlViaRelay(
   targetUrl: string,
-  opts: { timeoutMs?: number; env?: RelayEnv; retryDelayMs?: number; fetchImpl?: FetchLike } = {},
+  opts: ListingHistoryRelayOpts = {},
 ): Promise<string | null> {
   return (await loadListingHistoryHtmlViaRelays(targetUrl, opts)).html;
 }

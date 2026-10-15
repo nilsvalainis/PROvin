@@ -5,12 +5,12 @@ import {
   adifyHistoryPageLookupUrl,
   applyAdifyHistoryToTirgus,
   extractAdifyHistorySsrPayload,
-  fetchAdifyListingHistory,
   formatAdifyDurationLabel,
   formatAdifySignedEur,
   normalizeAdifyHistoryItems,
   parseAdifyHistoryUrl,
 } from "@/lib/adify-listing-history";
+import { fetchAdifyListingHistory } from "@/lib/adify-listing-history-fetch";
 import { createDefaultSourceBlocks, emptyTirgusFields } from "@/lib/admin-source-blocks";
 
 const Q7_URL = "https://www.ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html";
@@ -198,7 +198,26 @@ describe("fetchAdifyListingHistory", () => {
     expect(snap.message).toMatch(/Jina|Chrome relejs|HTTP/i);
   });
 
-  it("reads SSR HTML from the IRISS Chrome relay after Jina is also challenged", async () => {
+  it("reads SSR HTML from CapSolver + Fixie and does not queue Chrome", async () => {
+    const fetchMock = vi.fn(async (input: unknown) => {
+      if (String(input).startsWith("https://r.jina.ai/")) {
+        return { ok: true, status: 200, text: async () => "<title>Just a moment...</title>" };
+      }
+      return blocked();
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snap = await fetchAdifyListingHistory(Q7_URL, NOW, {
+      bypass: async () => ({ html: SSR_HTML, error: null }),
+    });
+
+    expect(snap.found).toBe(true);
+    expect(snap.source).toBe("adify");
+    expect(snap.priceChangeEur).toBe(-550);
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).includes("/listings/page"))).toBe(false);
+  });
+
+  it("does not call the Chrome relay for Adify when Jina is also challenged", async () => {
     const fetchMock = vi.fn(async (input: unknown) => {
       const url = String(input);
       if (url === "https://relay.test/listings/page") {
@@ -218,11 +237,13 @@ describe("fetchAdifyListingHistory", () => {
     vi.stubEnv("IRISS_LISTINGS_RELAY_URL", "https://relay.test/listings");
     vi.stubEnv("IRISS_LISTINGS_RELAY_TOKEN", "t0ken");
 
-    const snap = await fetchAdifyListingHistory(Q7_URL, NOW);
+    const snap = await fetchAdifyListingHistory(Q7_URL, NOW, {
+      bypass: async () => ({ html: null, error: "Adify CapSolver: nav CAPSOLVER_API_KEY" }),
+    });
 
-    expect(snap.found).toBe(true);
-    expect(snap.source).toBe("adify");
-    expect(snap.priceChangeEur).toBe(-550);
+    expect(snap.found).toBe(false);
+    expect(snap.blocked).toBe(true);
+    expect(fetchMock.mock.calls.some((c) => String(c[0]) === "https://relay.test/listings/page")).toBe(false);
   });
 
   it("fails fast on Cloudflare challenge HTML without treating it as data", async () => {

@@ -147,6 +147,37 @@ describe("fetchListingHistoryHtmlViaRelay", () => {
     expect(fetchMock.mock.calls.some((c) => String(c[0]) === "https://relay.test/listings/page")).toBe(true);
   });
 
+  it("skips Chrome when chrome: false (Adify must not block the queue)", async () => {
+    const fetchMock = vi.fn(async (input: unknown) => {
+      if (String(input) === "https://relay.test/listings/page") {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({
+              ok: true,
+              status: 200,
+              html: "<html>chrome</html>",
+              finalUrl: "https://adify.lv/history",
+            }),
+        };
+      }
+      return { ok: true, status: 200, text: async () => "<title>Just a moment...</title>" };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const out = await loadListingHistoryHtmlViaRelays("https://adify.lv/history?url=https://www.ss.lv/x", {
+      env: CHROME_ENV,
+      retryDelayMs: 0,
+      chrome: false,
+    });
+
+    expect(out.html).toBeNull();
+    expect(out.error).toMatch(/Jina: Cloudflare/i);
+    expect(out.error ?? "").not.toMatch(/Chrome/i);
+    expect(fetchMock.mock.calls.some((c) => String(c[0]) === "https://relay.test/listings/page")).toBe(false);
+  });
+
   it("surfaces Chrome relay error when Jina is also challenged", async () => {
     const fetchMock = vi.fn(async () => ({
       ok: true,
