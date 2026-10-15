@@ -190,3 +190,62 @@ describe("normalizeAsvBlock", () => {
     expect(b.damages).toHaveLength(1);
   });
 });
+
+describe("VHR Lite documented field names", () => {
+  it("maps Lite accident/salvage cost, mileage and airbag fields", () => {
+    const { block } = parseVinauditPayload({
+      success: true,
+      result: {
+        vehicle_data: { report_id: "oneautoapi.1", vehicle_identification_number: "4T1BK3DB5BU666666" },
+        salvage_data: [
+          {
+            salvage_auction_lot_date: "2020-10-21",
+            primary_damage_desc: "Front End",
+            estimated_damage_usd: 12010,
+            mileage_observed: 23762,
+            salvage_auction_location: "OH - Columbia Station",
+          },
+        ],
+        accidents: [
+          {
+            report_date: "2013-01-01",
+            damage_severity: "Property Damage Accident",
+            crash_severity: "Serious",
+            estimated_damage_cost: 1234,
+            airbags_deployed: "Yes",
+            estimated_speed: "35",
+            insurer_name: "Geico",
+            source: { state_code: "NY" },
+          },
+        ],
+        thefts: [{ stolen_date: "2014-03-02", stolen_status_desc: "Stolen", theft_reported_state: "NJ" }],
+      },
+    });
+    const acc = block.damages.find((d) => d.description.includes("Serious"))!;
+    expect(acc.amount).not.toBe("");
+    expect(acc.description).toContain("airbag: Yes");
+    expect(acc.description).toContain("smagums: Serious");
+    expect(acc.description).toContain("ātrums: 35");
+    expect(acc.description).toContain("avots: Geico");
+    expect(block.sales[0]!.odometer).not.toBe("");
+    expect(block.damages.find((d) => d.description.includes("Front End"))!.amount).not.toBe("");
+    expect(block.thefts.some((t) => t.detail.includes("Stolen"))).toBe(true);
+  });
+
+  it("falls back to salvage mileage_desc when observed miles are absent", () => {
+    const { block } = parseVinauditPayload({
+      success: true,
+      result: {
+        salvage_data: [
+          {
+            salvage_auction_lot_date: "2021-02-11",
+            primary_damage_desc: "Side",
+            mileage_desc: "44120",
+            salvage_auction_location: "TX - Dallas",
+          },
+        ],
+      },
+    });
+    expect(block.sales[0]!.odometer).not.toBe("");
+  });
+});
