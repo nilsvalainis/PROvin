@@ -8,6 +8,8 @@ import {
   vendorTimelineIsInformational,
 } from "@/lib/vehicle-lifecycle-timeline";
 import { simultaneousDeNlPlListingVendorBlock } from "@/lib/vendor-timeline-listing.fixture";
+import { emptyAsvBlock } from "@/lib/asv-report";
+import { countryLabelToIso2 } from "@/lib/country-names-lv";
 
 function minimalPayload(overrides: Partial<ClientReportPayload> = {}): ClientReportPayload {
   return {
@@ -250,6 +252,28 @@ describe("laikposma ieraksti ir informatīvi, nobraukums/negadījumi paliek stip
     expect(imports).toHaveLength(1);
     expect(imports[0]!.detail).toBe("Vācija → Latvija");
     expect(events.some((e) => e.kind === "incident")).toBe(true);
+  });
+
+  it("neģenerē importu starp neatpazītām valstīm un saplūdina to pašu datumu ar valsts piezīmi", () => {
+    const events = buildVehicleLifecycleEvents({
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.carvertical,
+          mileageRows: [{ date: "12.03.2023", odometer: "90900", country: "Kanāda" }],
+          incidentRows: [],
+          comments: "",
+        },
+      ],
+      asvBlock: {
+        ...emptyAsvBlock(),
+        mileage: [{ date: "12.03.2023", odometer: "91200", country: "Baton Rouge, LA" }],
+      },
+    });
+    const odo = events.filter((e) => e.kind === "odometer");
+    expect(odo.length).toBe(1);
+    expect(odo[0]?.detail).toMatch(/Avoti atšķiras valstī/);
+    expect(countryLabelToIso2(odo[0]!.country)).toBe("US");
+    expect(events.filter((e) => e.kind === "import")).toHaveLength(0);
   });
 
   it("reģistra hronoloģija joprojām dzen valsts maiņu", () => {

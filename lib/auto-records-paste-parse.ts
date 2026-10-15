@@ -16,6 +16,8 @@ export type AutoRecordsServiceRow = {
   date: string;
   odometer: string;
   country: string;
+  /** Avota mērvienība; `mi` pārrēķina uz km (× 1.609344) vienotajā tabulā. */
+  unit?: "km" | "mi";
 };
 
 /** Pēdējais vārds pēc pēdējā komata Event Location laukā (piem. „Germany”). */

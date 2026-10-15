@@ -6,6 +6,16 @@ import {
 } from "@/lib/pdf-dealer-service-visits";
 
 describe("PDF dīlera servisa vizītes", () => {
+  it("apvieno tās pašas dienas vizītes, ja odometrs atšķiras līdz 150 km", () => {
+    const html = buildDealerServiceVisitsHtml([
+      { date: "02.06.2018", odometer: "88200", location: "Baton Rouge, LA", works: "Eļļas maiņa" },
+      { date: "02.06.2018", odometer: "88310", location: "Baton Rouge, LA", works: "Bremžu pārbaude" },
+    ]);
+    expect(html.match(/pdf-svc-visit/g)?.length ?? 0).toBe(1);
+    expect(html).toContain("Eļļas maiņa");
+    expect(html).toContain("Bremžu pārbaude");
+  });
+
   it("ņem gadu no DD.MM.YYYY", () => {
     expect(serviceWorkYear("01.12.2023")).toBe("2023");
     expect(serviceWorkYear("")).toBe("");
