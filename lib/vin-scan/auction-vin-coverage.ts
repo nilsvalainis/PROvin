@@ -3,6 +3,7 @@
  * JoJ /search-vin is USA + Canada only. Copart FI (copart.fi) is a later provider slot.
  */
 
+import { AUCTION_LOT_MAX, AUCTION_PHOTO_BLOCK_MAX } from "@/lib/vin-scan/auction-photo-urls";
 import type { VinScanAuction, VinScanMileage, VinScanParse } from "@/lib/vin-scan/types";
 
 export type AuctionVinRegion = "us_ca" | "fi_eu";
@@ -48,21 +49,21 @@ export function jojSearchVinCoversCopartEu(): boolean {
   return false;
 }
 
-const PHOTO_MAX = 20;
-const AUCTION_MAX = 12;
-
 function photoUrlsOf(parse: VinScanParse): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
   const push = (url?: string) => {
     const u = String(url || "").trim();
-    if (!u.startsWith("https://") || seen.has(u) || out.length >= PHOTO_MAX) return;
+    if (!u.startsWith("https://") || seen.has(u) || out.length >= AUCTION_PHOTO_BLOCK_MAX) return;
     seen.add(u);
     out.push(u);
   };
   push(parse.media?.photoUrl);
   for (const url of parse.media?.photoUrls ?? []) push(url);
-  for (const row of parse.auctions ?? []) push(row.photoUrl);
+  for (const row of parse.auctions ?? []) {
+    push(row.photoUrl);
+    for (const extra of row.photoUrls ?? []) push(extra);
+  }
   return out;
 }
 
@@ -96,13 +97,13 @@ export function mergeAuctionVinParses(parts: readonly VinScanParse[]): VinScanPa
       if (seenLot.has(key)) continue;
       seenLot.add(key);
       auctions.push(row);
-      if (auctions.length >= AUCTION_MAX) break;
+      if (auctions.length >= AUCTION_LOT_MAX) break;
     }
     for (const row of part.mileage ?? []) {
       mileage.push(row);
     }
     for (const url of photoUrlsOf(part)) {
-      if (seenPhoto.has(url) || photos.length >= PHOTO_MAX) continue;
+      if (seenPhoto.has(url) || photos.length >= AUCTION_PHOTO_BLOCK_MAX) continue;
       seenPhoto.add(url);
       photos.push(url);
     }
@@ -126,8 +127,8 @@ export function mergeAuctionVinParses(parts: readonly VinScanParse[]): VinScanPa
     summary: bits.join(", ") || "Ir izsoles ieraksts",
     ...(detail ? { detail } : {}),
     vehicle,
-    auctions: auctions.slice(0, AUCTION_MAX),
-    mileage: mileage.slice(0, AUCTION_MAX),
+    auctions: auctions.slice(0, AUCTION_LOT_MAX),
+    mileage: mileage.slice(0, AUCTION_LOT_MAX),
     media: {
       photoUrl: photos[0],
       photoCount: photos.length,

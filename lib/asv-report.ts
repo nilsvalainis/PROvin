@@ -67,12 +67,25 @@ export type AsvTitleRow = CcVinTitleRow;
 export type AsvSaleRow = CcVinSaleRow;
 export type AsvPdfChecklist = CcVinPdfChecklist;
 
+export type AsvJojFailedPhotoGroup = {
+  title: string;
+  urls: string[];
+};
+
+export type AsvJojLotDomain = "copart_com" | "iaai_com";
+
 export type AsvJojIngest = {
   lastFetchedVin: string;
   fetchedAt: string;
   lastCostUsd: string;
   status: "found" | "none" | "skipped" | "unknown";
   summary: string;
+  failedPhotoGroups?: AsvJojFailedPhotoGroup[];
+  fromCache?: boolean;
+  cachedAt?: string;
+  httpStatus?: number;
+  lot?: string;
+  lotDomain?: AsvJojLotDomain;
 };
 
 export function emptyAsvJojIngest(): AsvJojIngest {
@@ -307,12 +320,43 @@ function normalizeAsvJojIngest(raw: unknown): AsvJojIngest {
     statusRaw === "found" || statusRaw === "none" || statusRaw === "skipped" || statusRaw === "unknown"
       ? statusRaw
       : e.status;
+  const failedPhotoGroups = Array.isArray(o.failedPhotoGroups)
+    ? o.failedPhotoGroups
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          const rec = item as { title?: unknown; urls?: unknown };
+          const title = typeof rec.title === "string" ? rec.title.trim().slice(0, 120) : "";
+          const urls = Array.isArray(rec.urls)
+            ? rec.urls
+                .filter((u): u is string => typeof u === "string" && u.trim().startsWith("https://"))
+                .map((u) => u.trim())
+                .slice(0, 200)
+            : [];
+          if (!title && urls.length === 0) return null;
+          return { title: title || "JoJ", urls };
+        })
+        .filter((row): row is { title: string; urls: string[] } => Boolean(row))
+        .slice(0, 40)
+    : [];
+  const httpStatus =
+    typeof o.httpStatus === "number" && Number.isFinite(o.httpStatus) ? o.httpStatus : undefined;
+  const lot = str(o.lot, 24);
+  const lotDomainRaw = str(o.lotDomain, 16);
+  const lotDomain: AsvJojIngest["lotDomain"] | undefined =
+    lotDomainRaw === "iaai_com" ? "iaai_com" : lotDomainRaw === "copart_com" ? "copart_com" : undefined;
+  const cachedAt = str(o.cachedAt, 40);
   return {
     lastFetchedVin: str(o.lastFetchedVin, 20),
     fetchedAt: str(o.fetchedAt, 40),
     lastCostUsd: str(o.lastCostUsd, 20),
     status,
     summary: str(o.summary, 400),
+    ...(o.fromCache === true ? { fromCache: true } : {}),
+    ...(cachedAt ? { cachedAt } : {}),
+    ...(httpStatus != null ? { httpStatus } : {}),
+    ...(lot ? { lot } : {}),
+    ...(lotDomain ? { lotDomain } : {}),
+    ...(failedPhotoGroups.length ? { failedPhotoGroups } : {}),
   };
 }
 
