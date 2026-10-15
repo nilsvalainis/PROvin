@@ -15,17 +15,21 @@ import { buildIrissListingSources } from "@/lib/iriss-listings-sources";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
 import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import {
+  isIrissListingHitStatus,
+  irissListingMatchKey,
+  type IrissListingHitStatus,
+  type IrissListingMatchNotice,
+} from "@/lib/iriss-listing-match-client";
 
-export const IRISS_LISTING_HIT_STATUSES = ["jauns", "skatits", "interesants", "piedavats", "noraidits"] as const;
-export type IrissListingHitStatus = (typeof IRISS_LISTING_HIT_STATUSES)[number];
-
-export const IRISS_LISTING_HIT_STATUS_LV: Record<IrissListingHitStatus, string> = {
-  jauns: "Jauns",
-  skatits: "Skatīts",
-  interesants: "Interesants",
-  piedavats: "Piedāvāts",
-  noraidits: "Noraidīts",
-};
+export {
+  IRISS_LISTING_HIT_STATUSES,
+  IRISS_LISTING_HIT_STATUS_LV,
+  isIrissListingHitStatus,
+  irissListingMatchKey,
+  type IrissListingHitStatus,
+  type IrissListingMatchNotice,
+} from "@/lib/iriss-listing-match-client";
 
 export const IRISS_LISTING_MATCH_MAX = 8_000;
 
@@ -67,16 +71,6 @@ export type IrissListingMatchOrder = {
   listingLinksOther?: unknown;
 };
 
-export type IrissListingMatchNotice = {
-  orderId: string;
-  listingId: string;
-  title: string;
-  clientName: string;
-  platform: string;
-  href: string;
-  matchedAt: string;
-};
-
 export type IrissListingMatchPatch = {
   listingId: string;
   orderId?: string;
@@ -87,14 +81,6 @@ export type IrissListingMatchPatch = {
 
 export function emptyIrissListingMatchState(): IrissListingMatchState {
   return { version: 1, updatedAt: "", seeded: false, unseenCount: 0, entries: [] };
-}
-
-export function isIrissListingHitStatus(v: string): v is IrissListingHitStatus {
-  return (IRISS_LISTING_HIT_STATUSES as readonly string[]).includes(v);
-}
-
-export function irissListingMatchKey(orderId: string, listingId: string): string {
-  return `${orderId}|${listingId}`;
 }
 
 function isObj(v: unknown): v is Record<string, unknown> {

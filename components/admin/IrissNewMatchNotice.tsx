@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { IrissListingMatchNotice } from "@/lib/iriss-listing-match";
+import type { IrissListingMatchNotice } from "@/lib/iriss-listing-match-client";
 
 export function IrissNewMatchNotice({
   notices,

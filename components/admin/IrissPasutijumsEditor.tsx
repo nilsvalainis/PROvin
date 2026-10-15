@@ -13,7 +13,7 @@ import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/com
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
-import type { IrissListingHitStatus } from "@/lib/iriss-listing-match";
+import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { appendIrissOrderRoomNote, irissOrderRoomOfferSeed, type IrissOrderRoomHit, type IrissOrderRoomTab } from "@/lib/iriss-order-room";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
