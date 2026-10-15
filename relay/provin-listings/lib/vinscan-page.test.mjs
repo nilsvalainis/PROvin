@@ -10,6 +10,16 @@ test("VIN SCAN page URL allowlist", () => {
   assert.equal(validVinScanPageUrl("https://bidfax.info/?s=WBA"), "https://bidfax.info/?s=WBA");
   assert.equal(validVinScanPageUrl("https://poctra.com/search/WBA"), "https://poctra.com/search/WBA");
   assert.equal(validVinScanPageUrl("https://plc.auction/?vin=WBA"), "https://plc.auction/?vin=WBA");
+  assert.equal(
+    validVinScanPageUrl("https://adify.lv/history?url=https://www.ss.lv/msg/x.html"),
+    "https://adify.lv/history?url=https://www.ss.lv/msg/x.html",
+  );
+  assert.equal(
+    validVinScanPageUrl("https://tirgusdati.lv/vesture?q=https://www.ss.lv/msg/x.html"),
+    "https://tirgusdati.lv/vesture?q=https://www.ss.lv/msg/x.html",
+  );
+  assert.equal(validVinScanPageUrl("https://www.ss.lv/msg/lv/x.html"), "https://www.ss.lv/msg/lv/x.html");
+  assert.equal(validVinScanPageUrl("https://www.ss.com/msg/lv/x.html"), "https://www.ss.com/msg/lv/x.html");
   assert.equal(validVinScanPageUrl("http://stat.vin/cars/WBA"), "");
   assert.equal(validVinScanPageUrl("https://openlane.eu/search"), "");
   assert.equal(validVinScanPageUrl("https://evil.example/stat.vin"), "");

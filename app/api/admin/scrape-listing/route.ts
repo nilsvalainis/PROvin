@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { fetchListingAiSnapshot } from "@/lib/listing-scrape";
+import { fetchListingAiSnapshot } from "@/lib/listing-scrape-server";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
 
 export async function POST(req: Request) {

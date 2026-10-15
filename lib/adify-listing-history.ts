@@ -1,11 +1,12 @@
 /**
  * adify.lv/history — publiskā sludinājuma cenu vēsture.
- * Kopš 2026. gada API `api.adify.lv/api/v1/history/...` atgriež HTTP 403.
- * Vēsture tiek lasīta no Next.js SSR lapas `/history?url=` (`__NEXT_DATA__`).
+ * Kopš 2026. gada API `api.adify.lv/api/v1/history/...` atgriež HTTP 403
+ * (nginx application/problem+json, nav Cloudflare). Vēsture tiek lasīta no
+ * Next.js SSR lapas `/history?url=` (`__NEXT_DATA__`). Servera ielase:
+ * `lib/adify-listing-history-fetch.ts`.
  */
 
 import { looksLikeListingHistoryCloudflareChallenge } from "@/lib/listing-history-cloudflare";
-import { fetchListingHistoryHtmlViaRelay } from "@/lib/listing-history-relay";
 
 export const ADIFY_HISTORY_PAGE_URL = "https://adify.lv/history";
 export const ADIFY_HISTORY_API_BASE = "https://api.adify.lv/api/v1";
@@ -285,7 +286,7 @@ type AdifyDirectPageResult =
   | { kind: "error"; message: string };
 
 /** Viena tiešā pieprasījuma ielāde (bez sākumlapas warm-up, lai neviļ CF 403 dubultā). */
-async function fetchAdifyHistoryPageDirect(listingUrl: string, signal: AbortSignal): Promise<AdifyDirectPageResult> {
+export async function fetchAdifyHistoryPageDirect(listingUrl: string, signal: AbortSignal): Promise<AdifyDirectPageResult> {
   try {
     const res = await fetch(adifyHistoryPageLookupUrl(listingUrl), {
       method: "GET",
@@ -313,7 +314,7 @@ async function fetchAdifyHistoryPageDirect(listingUrl: string, signal: AbortSign
   }
 }
 
-function adifyBlockedSnapshot(message: string): AdifyListingHistorySnapshot {
+export function adifyBlockedSnapshot(message: string): AdifyListingHistorySnapshot {
   return {
     found: false,
     blocked: true,
@@ -415,7 +416,7 @@ export function applyAdifyHistoryToTirgus<
 }
 
 /** `snapshot` != null nozīmē galīgu atbildi (vēsture vai apstiprināts „nav datu”). */
-function adifySnapshotFromHistoryHtml(
+export function adifySnapshotFromHistoryHtml(
   html: string,
   now: Date,
 ): { snapshot: AdifyListingHistorySnapshot | null; message: string } {
@@ -430,64 +431,8 @@ function adifySnapshotFromHistoryHtml(
   return { snapshot: snap.found ? { ...snap, source: "adify" } : snap, message: snap.message };
 }
 
-export async function fetchAdifyListingHistory(
-  listingUrl: string,
-  now: Date = new Date(),
-): Promise<AdifyListingHistorySnapshot> {
-  const url = listingUrl.trim();
-  if (!url) {
-    return {
-      found: false,
-      message: "Nav sludinājuma saites",
-      rows: [],
-      durationDays: 0,
-      oldestDate: "",
-      newestDate: "",
-      priceChangeEur: 0,
-      listingUrl: null,
-    };
-  }
-
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 8_000);
-  let message = "Neizdevās ielādēt Adify vēsturi";
-  let sawCloudflare = false;
-  try {
-    const direct = await fetchAdifyHistoryPageDirect(listingUrl, ctrl.signal);
-    if (direct.kind === "ok") {
-      const parsed = adifySnapshotFromHistoryHtml(direct.html, now);
-      if (parsed.snapshot) return parsed.snapshot;
-      message = parsed.message;
-    } else if (direct.kind === "cloudflare") {
-      sawCloudflare = true;
-      message = "Adify bloķēja pieprasījumu (Cloudflare)";
-    } else {
-      message = direct.message;
-    }
-  } finally {
-    clearTimeout(t);
-  }
-
-  // Cloudflare noraida Vercel IP; mēģinām vienu releja caurlaidi (bez atkārtojumu cilpas).
-  const relayed = await fetchListingHistoryHtmlViaRelay(adifyHistoryPageLookupUrl(listingUrl), {
-    timeoutMs: sawCloudflare ? 12_000 : undefined,
-    retryDelayMs: 0,
-  });
-  if (relayed) {
-    if (looksLikeListingHistoryCloudflareChallenge(relayed)) {
-      return adifyBlockedSnapshot(
-        "Cloudflare bloķēja Adify vēsturi no servera. Atver adify.lv/history pārlūkā un importē lapu (vai Tampermonkey).",
-      );
-    }
-    const parsed = adifySnapshotFromHistoryHtml(relayed, now);
-    if (parsed.snapshot) return parsed.snapshot;
-    message = parsed.message;
-  }
-
-  if (sawCloudflare) {
-    return adifyBlockedSnapshot(
-      "Cloudflare bloķēja Adify vēsturi no servera. Atver adify.lv/history pārlūkā un importē lapu (vai Tampermonkey).",
-    );
-  }
-  return { ...normalizeAdifyHistoryItems([], now), message };
+export function adifyBlockedMessage(relayError: string | null): string {
+  const base =
+    "Cloudflare bloķēja Adify vēsturi no servera. Atver adify.lv/history pārlūkā un importē lapu (vai Tampermonkey).";
+  return relayError ? `${base} ${relayError}` : base;
 }

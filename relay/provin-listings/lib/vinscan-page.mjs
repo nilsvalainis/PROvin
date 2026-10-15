@@ -10,9 +10,14 @@ export const VINSCAN_PAGE_HOSTS = [
   "bidfax.info",
   "poctra.com",
   "plc.auction",
+  "adify.lv",
+  "tirgusdati.lv",
+  "ss.lv",
+  "ss.com",
+  "city24.lv",
 ];
 
-const HTML_LIMIT = 400_000;
+const HTML_LIMIT = 900_000;
 const CHALLENGE_WAIT_MS = 18_000;
 const POLL_MS = 1_500;
 
