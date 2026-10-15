@@ -26,7 +26,14 @@ export type OrderVinScanRecord = {
   indicators: VinScanIndicator[];
 };
 
-export type OrderVinScanSourceState = "found" | "none" | "error";
+export type OrderVinScanSourceState =
+  | "found"
+  | "none"
+  | "error"
+  | "blocked"
+  | "timeout"
+  | "config_missing"
+  | "browser_only";
 
 export type OrderVinScanRowAction = "import_auction" | "import_csdd" | "import_listing" | "open" | "open_import" | "retry";
 
@@ -63,6 +70,10 @@ export type OrderVinScanSummary = {
   none: number;
   error: number;
   browser: number;
+  blocked: number;
+  timeout: number;
+  configMissing: number;
+  browserOnly: number;
   errorMessage?: string;
   rows: OrderVinScanSourceRow[];
   noneRows: OrderVinScanSourceRow[];
@@ -161,9 +172,22 @@ export function parseOrderVinScanRecord(raw: unknown): OrderVinScanRecord | null
   return { at, vin, status, ...(error ? { error } : {}), indicators };
 }
 
-function sourceState(status: string): OrderVinScanSourceState {
+function sourceState(status: string, summary: string): OrderVinScanSourceState {
   if (status === "found") return "found";
-  if (status === "none" || status === "needs_input" || status === "skipped") return "none";
+  if (status === "blocked") return "blocked";
+  if (status === "timeout") return "timeout";
+  if (status === "config_missing") return "config_missing";
+  if (status === "browser_only") return "browser_only";
+  if (status === "none" || status === "needs_input" || status === "manual") return "none";
+  if (status === "skipped") {
+    if (/nav\s+\S*API_KEY|nav konfigurēts|nav CAPSOLVER/i.test(summary)) return "config_missing";
+    return "none";
+  }
+  if (/neatbildēja laikā|\btimeout\b/i.test(summary)) return "timeout";
+  if (/nav VEGVESEN_API_KEY|nav CAPSOLVER_API_KEY|config_missing/i.test(summary)) return "config_missing";
+  if (/atver pārlūkā|prasa pārlūku|tikai pārlūkā/i.test(summary) && !/bloķ|cloudflare|\b403\b/i.test(summary)) {
+    return "browser_only";
+  }
   return "error";
 }
 
@@ -199,8 +223,9 @@ function canImportAuction(row: VinScanIndicator): boolean {
 }
 
 function rowAction(row: VinScanIndicator, state: OrderVinScanSourceState): OrderVinScanRowAction {
-  if (isOrderVinScanBrowserBlocked(row.id, state, row.summary ?? "")) return "open_import";
-  if (state === "error") return "retry";
+  if (isOrderVinScanBrowserBlocked(row.id, state === "blocked" ? "error" : state, row.summary ?? "")) return "open_import";
+  if (state === "blocked" || state === "browser_only") return "open_import";
+  if (state === "error" || state === "timeout") return "retry";
   if ((row.id === "stat_vin" || row.id === "joj_copart_iaai") && canImportAuction(row)) return "import_auction";
   if (row.id === "csdd" && state === "found") return "import_csdd";
   if (row.id === "listing_history" && state === "found") return "import_listing";
@@ -220,7 +245,10 @@ function rowRank(row: OrderVinScanSourceRow): number {
 export function buildOrderVinScanSummary(record: OrderVinScanRecord | null | undefined): OrderVinScanSummary | null {
   if (!record) return null;
   const rows: OrderVinScanSourceRow[] = record.indicators.map((row) => {
-    const state = sourceState(row.status);
+    let state = sourceState(row.status, row.summary ?? "");
+    const blocked =
+      state === "blocked" || isOrderVinScanBrowserBlocked(row.id, "error", row.summary ?? "");
+    if (blocked && state === "error") state = "blocked";
     return {
       id: row.id,
       label: row.label,
@@ -232,16 +260,19 @@ export function buildOrderVinScanSummary(record: OrderVinScanRecord | null | und
       photoUrls: photoUrlsOf(row),
       canImportAuction: canImportAuction(row),
       action: rowAction(row, state),
-      ...(isOrderVinScanBrowserBlocked(row.id, state, row.summary ?? "") ? { blocked: true } : {}),
+      ...(blocked ? { blocked: true } : {}),
     };
   });
   const found = rows.filter((r) => r.state === "found");
   const none = rows.filter((r) => r.state === "none");
-  const blocked = rows.filter((r) => r.blocked);
+  const blocked = rows.filter((r) => r.state === "blocked" || r.blocked);
+  const timeout = rows.filter((r) => r.state === "timeout");
+  const configMissing = rows.filter((r) => r.state === "config_missing");
+  const browserOnly = rows.filter((r) => r.state === "browser_only");
   const error = rows.filter((r) => r.state === "error" && !r.blocked);
   const byRank = (a: OrderVinScanSourceRow, b: OrderVinScanSourceRow) =>
     rowRank(a) - rowRank(b) || a.label.localeCompare(b.label, "lv");
-  const visible = [...found, ...error, ...blocked].sort(byRank);
+  const visible = [...found, ...error, ...timeout, ...blocked, ...configMissing, ...browserOnly].sort(byRank);
   const noneRows = [...none].sort((a, b) => a.label.localeCompare(b.label, "lv"));
   return {
     at: record.at,
@@ -250,7 +281,11 @@ export function buildOrderVinScanSummary(record: OrderVinScanRecord | null | und
     found: found.length,
     none: none.length,
     error: error.length,
-    browser: blocked.length,
+    browser: blocked.length + browserOnly.length,
+    blocked: blocked.length,
+    timeout: timeout.length,
+    configMissing: configMissing.length,
+    browserOnly: browserOnly.length,
     ...(record.error ? { errorMessage: record.error } : {}),
     rows: visible,
     noneRows,
@@ -388,6 +423,10 @@ export type OrderVinScanDashboardHint = {
   found: number;
   none: number;
   error: number;
+  blocked: number;
+  timeout: number;
+  configMissing: number;
+  browserOnly: number;
   foundLabels: string[];
   hint: string;
 };
@@ -400,7 +439,19 @@ export function orderVinScanDashboardHintFromRecord(
   const sum = buildOrderVinScanSummary(record);
   if (!sum || !record) return null;
   const foundLabels = sum.rows.filter((r) => r.state === "found").map((r) => r.label).slice(0, 8);
-  const hint = sum.rows.find((r) => r.valuable && r.state === "found")?.hint || foundLabels[0] || "";
+  const problem =
+    sum.error > 0
+      ? "Ir kļūdas"
+      : sum.timeout > 0
+        ? "Noildze"
+        : sum.blocked > 0
+          ? "Bloķē"
+          : sum.configMissing > 0
+            ? "Nav atslēgas"
+            : sum.browserOnly > 0
+              ? "Tikai pārlūkā"
+              : "";
+  const hint = sum.rows.find((r) => r.valuable && r.state === "found")?.hint || foundLabels[0] || problem;
   return {
     at: record.at,
     vin: record.vin,
@@ -408,9 +459,33 @@ export function orderVinScanDashboardHintFromRecord(
     found: sum.found,
     none: sum.none,
     error: sum.error,
+    blocked: sum.blocked,
+    timeout: sum.timeout,
+    configMissing: sum.configMissing,
+    browserOnly: sum.browserOnly,
     foundLabels,
     hint,
   };
+}
+
+export function orderVinScanDashboardSubtitle(card: {
+  status: string;
+  foundLabels: readonly string[];
+  hint: string;
+  error: number;
+  blocked?: number;
+  timeout?: number;
+  configMissing?: number;
+}): string {
+  if (card.status === "running") return "pārbauda bezmaksas avotus";
+  if (card.foundLabels.length) return card.foundLabels.join(" · ");
+  const problems = card.error + (card.blocked ?? 0) + (card.timeout ?? 0) + (card.configMissing ?? 0);
+  if (problems > 0) {
+    const hint = card.hint.trim();
+    if (hint && hint !== "Nav datu") return hint;
+    return "Ir kļūdas";
+  }
+  return card.hint || "Nav datu";
 }
 
 export function parseOrderVinScanDashboardHint(raw: unknown): OrderVinScanDashboardHint | null {
@@ -423,11 +498,15 @@ export function parseOrderVinScanDashboardHint(raw: unknown): OrderVinScanDashbo
   const found = Math.max(0, Math.floor(Number(o.found) || 0));
   const none = Math.max(0, Math.floor(Number(o.none) || 0));
   const error = Math.max(0, Math.floor(Number(o.error) || 0));
+  const blocked = Math.max(0, Math.floor(Number(o.blocked) || 0));
+  const timeout = Math.max(0, Math.floor(Number(o.timeout) || 0));
+  const configMissing = Math.max(0, Math.floor(Number(o.configMissing) || 0));
+  const browserOnly = Math.max(0, Math.floor(Number(o.browserOnly) || 0));
   const foundLabels = Array.isArray(o.foundLabels)
     ? o.foundLabels.filter((s): s is string => typeof s === "string" && s.trim() !== "").map((s) => s.trim()).slice(0, 8)
     : [];
   const hint = typeof o.hint === "string" ? o.hint.trim().slice(0, 160) : "";
-  return { at, vin, status: o.status, found, none, error, foundLabels, hint };
+  return { at, vin, status: o.status, found, none, error, blocked, timeout, configMissing, browserOnly, foundLabels, hint };
 }
 
 export function shouldShowVinScanDashboardCard(args: {
@@ -442,7 +521,7 @@ export function shouldShowVinScanDashboardCard(args: {
   const hint = args.hint;
   if (!hint) return false;
   if (hint.status === "running") return true;
-  return hint.found > 0 || hint.error > 0;
+  return hint.found > 0 || hint.error > 0 || hint.blocked > 0 || hint.timeout > 0 || hint.configMissing > 0;
 }
 
 export type OrderVinScanDashboardCard = {
@@ -454,6 +533,9 @@ export type OrderVinScanDashboardCard = {
   found: number;
   none: number;
   error: number;
+  blocked: number;
+  timeout: number;
+  configMissing: number;
   status: OrderVinScanRunStatus;
   hint: string;
 };
@@ -487,6 +569,9 @@ export function pickOrderVinScanDashboardCards(
       found: hint.found,
       none: hint.none,
       error: hint.error,
+      blocked: hint.blocked,
+      timeout: hint.timeout,
+      configMissing: hint.configMissing,
       status: hint.status,
       hint: hint.hint,
     });
@@ -503,7 +588,12 @@ export function orderVinScanCompactHint(summary: OrderVinScanSummary | null | un
   }
   const valuable = summary.rows.find((r) => r.valuable && r.state === "found");
   const hint = valuable?.hint || "";
-  const bits = [`${summary.found} ar datiem`, `${summary.none} nav`, `${summary.error} kļūda`];
-  if (summary.browser) bits.push(`${summary.browser} pārlūks`);
+  const bits = [`${summary.found} ar datiem`];
+  if (summary.none) bits.push(`${summary.none} nav`);
+  if (summary.error) bits.push(`${summary.error} kļūda`);
+  if (summary.blocked) bits.push(`${summary.blocked} bloķē`);
+  if (summary.timeout) bits.push(`${summary.timeout} noildze`);
+  if (summary.configMissing) bits.push(`${summary.configMissing} nav atslēgas`);
+  if (summary.browserOnly) bits.push(`${summary.browserOnly} pārlūks`);
   return hint ? `VIN SCAN: ${hint} · ${bits.join(", ")}` : `VIN SCAN: ${bits.join(", ")}`;
 }

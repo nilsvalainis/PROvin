@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import {
   defaultIrissTameCommissionSettings,
   parseIrissTameCommissionSettings,
@@ -66,7 +67,7 @@ export function IrissTameCommissionSettingsForm() {
 
   return (
     <section className="mt-4 max-w-xl rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
-      <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Tāmes komisija</h2>
+      <IrissSectionHeading>Tāmes komisija</IrissSectionHeading>
       <p className="mt-1 text-[13px] leading-snug text-[var(--color-provin-muted)]">
         A variants, B variants bāze un procenti no atlikuma. Noklusējums ir 1190 EUR, 990 EUR un 3,5 %. Tāme un
         pasūtījuma noteikumi lieto šos skaitļus.

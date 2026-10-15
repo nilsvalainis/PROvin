@@ -1,11 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
+import { setEcbDailyRatesForTests } from "@/lib/currency-eur-convert";
 import { buildCcVinPdfInnerHtml } from "@/lib/cc-vin-pdf-html";
 import { applyCcVinParsedReport } from "@/lib/cc-vin-report-apply";
 import { CC_VIN_PDF_SOURCE_LABEL, emptyCcVinBlock, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { parseCcVinReportText } from "@/lib/cc-vin-report-parse";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
+
+beforeEach(() => {
+  setEcbDailyRatesForTests({
+    date: "2026-10-15",
+    rates: { USD: 1.09, GBP: 0.85 },
+  });
+});
 
 const REPORT = [
   "Vehicle history report",

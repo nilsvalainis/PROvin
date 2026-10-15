@@ -134,5 +134,27 @@ describe("morningSummaryEmailHtml", () => {
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
     expect(html.toLowerCase()).not.toContain("eksperts");
+    expect(html).not.toContain("Avoti, kas krīt 3 reizes pēc kārtas");
+  });
+
+  it("rāda avotus, kas krīt 3 reizes pēc kārtas", () => {
+    const html = morningSummaryEmailHtml({
+      dateLabel: "15. oktobris",
+      pageUrl: "https://provin.lv/admin/kopsavilkums",
+      open: 1,
+      urgent: 0,
+      overdue: 0,
+      openAudits: 1,
+      openPeeks: 0,
+      newPeeksLast24h: 0,
+      overdueAudits: [],
+      dueTodayAudits: [],
+      newPeeks: [],
+      failingSources: [{ title: "stat.vin", detail: "3x: timeout" }],
+    });
+    expect(html).toContain("Avoti, kas krīt 3 reizes pēc kārtas");
+    expect(html).toContain("stat.vin");
+    expect(html).not.toContain("\u2014");
+    expect(html).not.toContain("\u2013");
   });
 });

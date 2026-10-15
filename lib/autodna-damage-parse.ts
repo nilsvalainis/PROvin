@@ -23,7 +23,7 @@ function clipAutodnaCountry(raw: string): string {
 
 /** Viens negadījums: datums (MM.YYYY) … Summa … EUR … Valsts … */
 const AUTODNA_DAMAGE_EVENT_RE =
-  /(\d{1,2})\.(\d{4})[\s\S]{0,200}?zaudējumu\s+apjoms[\s\S]{0,450}?Summa\s+([\d\s\u00A0]+(?:\s*[-–—]\s*[\d\s\u00A0]+)?)\s*EUR[\s\S]{0,180}?Valsts\s+([A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž][A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž\s-]{1,48})/gi;
+  /(\d{1,2})\.(\d{4})[\s\S]{0,200}?zaudējumu\s+apjoms[\s\S]{0,450}?Summa\s+([\d\s\u00A0]+(?:\s*[-–—]\s*[\d\s\u00A0]+)?)\s*EUR[\s\S]{0,180}?Valsts\s+([^\n]{2,80})/gi;
 
 const EVENT_START_RE = /(\d{1,2})\.(\d{4})[\s\S]{0,600}?zaudējumu\s+apjoms/gi;
 
@@ -119,7 +119,7 @@ export function parseAutodnaDamageDetails(raw: string): CarVerticalDamageDetailR
     const block = text.slice(start.index, end);
     const sumM = block.match(/Summa\s+([\d\s\u00A0]+(?:\s*[-–—]\s*[\d\s\u00A0]+)?)\s*EUR/i);
     const countryM = block.match(
-      /Valsts\s+([A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž][A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž\s-]{1,48})/i,
+      /Valsts\s+([^\n]{2,80})/i,
     );
     const sumRaw = (sumM?.[1] ?? "").replace(/\u00a0/g, " ").trim();
     const lossAmount = sumRaw ? normalizeLossAmountEurDisplay(`${sumRaw} EUR`) : "";

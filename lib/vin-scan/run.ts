@@ -5,6 +5,7 @@ import { freeVinScanSourceIds, isFreeVinScanSourceId } from "@/lib/vin-scan/free
 import { sourceNeedsInput, vinScanProbeFor } from "@/lib/vin-scan/probes";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
+import { runWithVinScanDeadline } from "@/lib/vin-scan/http";
 import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator } from "@/lib/vin-scan/types";
 
@@ -17,7 +18,7 @@ function withTimeout(id: VinScanSourceId, ctx: VinScanContext, job: Promise<VinS
   const ms = timeoutMsFor(id);
   return new Promise((resolve) => {
     const timer = setTimeout(() => {
-      resolve(buildVinScanIndicator(id, ctx.vin, { status: "unknown", summary: "Avots neatbildēja laikā" }, ctx.plates));
+      resolve(buildVinScanIndicator(id, ctx.vin, { status: "timeout", summary: "Avots neatbildēja laikā" }, ctx.plates));
     }, ms);
     run
       .then((row) => {
@@ -55,16 +56,30 @@ export async function runVinScan(
   const wanted = VIN_SCAN_CATALOG.filter((item) => ids.includes(item.id));
   const rows = await Promise.all(
     wanted.map(async (item) => {
+      const started = Date.now();
+      const finish = (row: VinScanIndicator): VinScanIndicator => {
+        console.info(
+          JSON.stringify({
+            id: row.id,
+            status: row.status,
+            reason: row.summary.slice(0, 240),
+            ms: Date.now() - started,
+          }),
+        );
+        return row;
+      };
       const missing = sourceNeedsInput(item.id, ctx);
-      if (missing) return missing;
+      if (missing) return finish(missing);
       const probe = vinScanProbeFor(item.id);
       if (!probe) {
-        return buildVinScanIndicator(item.id, ctx.vin, { status: "unknown", summary: "Zonde nav pieejama" }, ctx.plates);
+        return finish(buildVinScanIndicator(item.id, ctx.vin, { status: "unknown", summary: "Zonde nav pieejama" }, ctx.plates));
       }
+      const ms = timeoutMsFor(item.id);
       try {
-        return await withTimeout(item.id, ctx, probe(ctx));
+        const row = await runWithVinScanDeadline(Date.now() + ms, () => withTimeout(item.id, ctx, probe(ctx)));
+        return finish(row);
       } catch {
-        return buildVinScanIndicator(item.id, ctx.vin, { status: "unknown", summary: "Avotu neizdevās nolasīt" }, ctx.plates);
+        return finish(buildVinScanIndicator(item.id, ctx.vin, { status: "unknown", summary: "Avotu neizdevās nolasīt" }, ctx.plates));
       }
     }),
   );

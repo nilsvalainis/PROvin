@@ -93,6 +93,15 @@ export function buildMorningSummaryEmailText(
     lines.push("", "Nav kavētu auditu un jaunu vērtējumu pēdējās 24 h.");
   }
 
+  const failing = summary.failingSources ?? [];
+  if (failing.length > 0) {
+    lines.push("", "Avoti, kas krīt 3 reizes pēc kārtas");
+    for (const row of failing.slice(0, MORNING_SUMMARY_EMAIL_LIST_CAP)) {
+      const detail = row.msg ? `${row.streak}x, ${row.msg}` : `${row.streak}x`;
+      lines.push(`${row.id}: ${detail}`);
+    }
+  }
+
   lines.push("", "Atvērt kopsavilkumu:", opts.pageUrl);
   return lines.join("\n");
 }
@@ -114,6 +123,10 @@ export function buildMorningSummaryEmail(
     overdueAudits: capLines(summary.overdueAudits),
     dueTodayAudits: capLines(summary.dueTodayAudits),
     newPeeks: capLines(summary.newPeeksLast24h),
+    failingSources: (summary.failingSources ?? []).slice(0, MORNING_SUMMARY_EMAIL_LIST_CAP).map((row) => ({
+      title: row.id,
+      detail: row.msg ? `${row.streak}x, ${row.msg}` : `${row.streak}x`,
+    })),
   });
   return {
     subject: buildMorningSummaryEmailSubject(summary, opts.nowMs),

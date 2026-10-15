@@ -29,9 +29,11 @@ describe("VIN SCAN Cloudflare-blocked browser sources", () => {
     expect(s.error).toBe(1);
     expect(s.browser).toBe(4);
   });
-  it("non-block error on those sources stays retry", () => {
+  it("timeout text on those sources is timeout state, still retry", () => {
     const s = buildOrderVinScanSummary(rec([{ id: "stat_vin", status: "error", summary: "timeout" }]))!;
     expect(s.rows[0]!.action).toBe("retry");
-    expect(s.error).toBe(1);
+    expect(s.rows[0]!.state).toBe("timeout");
+    expect(s.timeout).toBe(1);
+    expect(s.error).toBe(0);
   });
 });

@@ -100,12 +100,22 @@ function plateQ(raw: string): string {
   return encodeURIComponent(raw.trim().toUpperCase());
 }
 
-/** Traficom VIN-only URL. Empty `plate=` 404s; only append plate when present. */
+/**
+ * Traficom publiskā lapa. Meklēšana ir Suomi.fi forma (bankas ID), ne GET ar VIN.
+ * `plate` paliek parakstā, lai izsaucēji nelūst; query vairs neliek, jo tukšs `plate=` deva 404.
+ */
 export function traficomVehicleInfoUrl(vin: string, plate = ""): string {
-  const p = plate.trim();
-  return `https://www.traficom.fi/en/transport/road/vehicle-information?vin=${vinQuery(vin)}${
-    p ? `&plate=${plateQ(p)}` : ""
-  }`;
+  void vin;
+  void plate;
+  return "https://www.traficom.fi/fi/autoilijat/ajoneuvon-osto-ja-myynti/tarkista-ajoneuvon-tiedot";
+}
+
+export function regitraVehicleCheckUrl(): string {
+  return "https://www.regitra.lt/paslaugos/transporto-priemones/pasitikrinkite-ar-transporto-priemone-neturi-apribojimu/";
+}
+
+export function poctraSearchUrl(vin: string): string {
+  return `https://poctra.com/search?q=${vinQuery(vin)}`;
 }
 
 export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
@@ -209,13 +219,13 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "rdw",
     label: "RDW",
     country: "NL",
-    hint: "Nīderlandes atvērtie dati: APK, NAP, atsaukumi",
-    needs: ["nl", "vin"],
-    needsAny: true,
+    hint: "Nīderlandes atvērtie dati: APK, NAP, atsaukumi. Vajag NL numuru",
+    needs: ["nl"],
     openUrl: (vin, plates) => {
+      void vin;
       const kenteken = plates?.nl ? plateQ(plates.nl) : "";
-      if (kenteken) return `https://ovi.rdw.nl/?kenteken=${kenteken}&vin=${vinQuery(vin)}`;
-      return `https://opendata.rdw.nl/resource/m9d7-ebf2.json?vin=${vinQuery(vin)}`;
+      if (kenteken) return `https://ovi.rdw.nl/?kenteken=${kenteken}`;
+      return "https://ovi.rdw.nl/";
     },
   },
   {
@@ -297,10 +307,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     country: "LT",
     hint: "Lietuvas reģistrs pēc LT numura",
     needs: ["lt"],
-    openUrl: (vin, plates) => {
-      const plate = plates?.lt ? plateQ(plates.lt) : "";
-      return `https://www.regitra.lt/lt/e-paslaugos/transporto-priemones-duomenu-patikra?vin=${vinQuery(vin)}${plate ? `&plate=${plate}` : ""}`;
-    },
+    openUrl: () => regitraVehicleCheckUrl(),
   },
   {
     id: "traficom",
@@ -388,7 +395,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     country: "US",
     hint: "Izsoles foto arhīvs",
     needs: ["vin"],
-    openUrl: (vin) => `https://poctra.com/search/${vinQuery(vin)}`,
+    openUrl: (vin) => poctraSearchUrl(vin),
   },
 ];
 
@@ -425,7 +432,7 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanCatalogItem[] = VIN_SCAN_
 );
 
 /** Minimālā Tampermonkey versija VIN SCAN dziļajām saitēm un aizpildei. */
-export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 18 } as const;
+export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 19 } as const;
 
 export function vinScanUserscriptMeetsMin(raw: string): boolean {
   const parts = raw.split(".").map((n) => Number.parseInt(n, 10));
