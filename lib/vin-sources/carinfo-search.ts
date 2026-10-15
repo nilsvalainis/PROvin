@@ -1,5 +1,8 @@
 /**
- * car.info super-search JSON (bez tīkla). Meklēšana: GET /{locale}/search/super/{VIN}?time=
+ * car.info adreses (bez tīkla).
+ * Dzīvā VIN lapa: GET /en-se/vin/S/{VIN}. Bez /S/ segments ir 404.
+ * GET /sv-se/search?q= ir 404. Numura lapa /en-se/license-plate/S/{nr} ir rezerve.
+ * Super-search JSON: GET /{locale}/search/super/{VIN}?time= atrod citu valstu identu.
  */
 export type CarinfoSearchHit = {
   href: string;
@@ -52,8 +55,22 @@ export function parseCarinfoSuperSearch(raw: unknown, vin: string): CarinfoSearc
   return { href: page, country, vin: hitVin, summary };
 }
 
+const CARINFO_ORIGIN = "https://www.car.info";
+
+/** Zviedrijas reģistra VIN lapa. Primārais ceļš, numurs nav vajadzīgs. */
+export function carinfoSwedenVinUrl(vin: string): string {
+  const v = vin.trim().toUpperCase();
+  return `${CARINFO_ORIGIN}/en-se/vin/S/${encodeURIComponent(v)}`;
+}
+
+/** Zviedrijas numura lapa (en-se, km). Tikai rezerve, ja VIN lapa auto neatrada. */
+export function carinfoSwedenPlateUrl(plate: string): string {
+  const p = plate.trim().toUpperCase().replace(/[\s.-]/g, "");
+  return `${CARINFO_ORIGIN}/en-se/license-plate/S/${encodeURIComponent(p)}`;
+}
+
 export function carinfoSuperSearchUrl(locale: string, vin: string, timeMs: number): string {
-  return `https://www.car.info/${locale}/search/super/${encodeURIComponent(vin)}?time=${timeMs}`;
+  return `${CARINFO_ORIGIN}/${locale}/search/super/${encodeURIComponent(vin.trim().toUpperCase())}?time=${timeMs}`;
 }
 
 export const CARINFO_SEARCH_LOCALES = ["en-se", "sv-se", "en-dk", "da-dk", "en-no", "nb-no", "en-fi"] as const;

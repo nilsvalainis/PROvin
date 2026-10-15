@@ -15,6 +15,7 @@ import { parseCarinfoExtract } from "@/lib/vin-sources/carinfo-parse";
 import {
   CARINFO_SEARCH_LOCALES,
   carinfoSuperSearchUrl,
+  carinfoSwedenVinUrl,
   parseCarinfoSearchBody,
   type CarinfoSearchHit,
 } from "@/lib/vin-sources/carinfo-search";
@@ -115,8 +116,38 @@ async function throughChallenge(
   return { res, session: next };
 }
 
+function resultFromPage(vin: string, href: string, pageText: string): VinSourceFetchResult | null {
+  if (/vin.{0,20}(not found|no result)|page not found/i.test(pageText)) return null;
+  const extracted = extractPageFromHtml(pageText);
+  const parsed = parseCarinfoExtract(extracted);
+  if (!parsed.found) return null;
+  return {
+    source: "carinfo",
+    vin,
+    found: true,
+    message: `Nolasīts no ${href} (${parsed.mileage.length} nobraukuma ieraksti)`,
+    mileage: parsed.mileage,
+    incidents: parsed.incidents,
+    timeline: [],
+    ownersSummary: parsed.ownersSummary,
+    statusRecords: parsed.statusRecords,
+    notes: parsed.notes,
+    raw: extracted.text.slice(0, 20_000),
+    fetchedAt: new Date().toISOString(),
+  };
+}
+
 export async function fetchCarinfoHttp(vin: string): Promise<VinSourceFetchResult> {
   let session: Session = { cookie: "", ua: VIN_HTTP_UA };
+  const directUrl = carinfoSwedenVinUrl(vin);
+  const directPass = await throughChallenge(directUrl, session, pageHeaders(session.ua), directUrl);
+  if (!("reason" in directPass)) {
+    session = directPass.session;
+    if (directPass.res.status === 200) {
+      const directHit = resultFromPage(vin, directUrl, directPass.res.text);
+      if (directHit) return directHit;
+    }
+  }
   const timeMs = Date.now();
   let hit: CarinfoSearchHit | null = null;
 

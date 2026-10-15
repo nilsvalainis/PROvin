@@ -20,6 +20,13 @@ describe("VIN SCAN numuri", () => {
     expect(isValidScanPlate("nl", "G-123-BB")).toBe(true);
     expect(isValidScanPlate("lt", "ABC123")).toBe(true);
     expect(isValidScanPlate("fi", "ABC-123")).toBe(true);
-    expect(parseVinScanPlates({ lv: "ng-8493", uk: "ab12 cde" })).toMatchObject({ lv: "NG8493", uk: "AB12CDE" });
+    expect(isValidScanPlate("se", "BMX837")).toBe(true);
+    expect(isValidScanPlate("se", "ABC12A")).toBe(true);
+    expect(isValidScanPlate("se", "AB12")).toBe(false);
+    expect(parseVinScanPlates({ lv: "ng-8493", uk: "ab12 cde", se: "bmx 837" })).toMatchObject({
+      lv: "NG8493",
+      uk: "AB12CDE",
+      se: "BMX837",
+    });
   });
 });

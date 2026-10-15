@@ -33,6 +33,7 @@ export const VIN_SCAN_RELAY_HOSTS = [
   "bidfax.info",
   "poctra.com",
   "plc.auction",
+  "car.info",
 ] as const;
 
 export function isVinScanRelayUrl(raw: string): boolean {
