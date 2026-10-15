@@ -101,15 +101,19 @@ describe("iriss pasūtījumu saraksta pārskats", () => {
     expect(irissPasutijumsPdfContentDisposition(r, false)).toContain("VW%20ID.3%20Aigars%202026-08-08.pdf");
   });
 
-  it("keeps only active records for the list PDF", () => {
+  it("keeps working statuses for the list PDF, not only active", () => {
     const active = rec("a", "2026-01-01T00:00:00.000Z", { brandModel: "A", listStatus: "active" });
+    const searching = rec("s", "2026-01-15T00:00:00.000Z", { brandModel: "S", listStatus: "searching" });
+    const offered = rec("o", "2026-01-16T00:00:00.000Z", { brandModel: "O", listStatus: "offered" });
+    const reserved = rec("r", "2026-01-17T00:00:00.000Z", { brandModel: "R", listStatus: "reserved" });
     const done = rec("b", "2026-02-01T00:00:00.000Z", { brandModel: "B", listStatus: "completed" });
     const off = rec("c", "2026-03-01T00:00:00.000Z", { brandModel: "C", listStatus: "inactive" });
     const legacy = rec("d", "2026-04-01T00:00:00.000Z", { brandModel: "D" });
-    const ordered = orderIrissRecordsForListPdf([active, done, off, legacy], {
-      pinnedOrder: ["c", "a"],
-      unpinnedOrder: ["b", "d"],
+    const trash = rec("t", "2026-05-01T00:00:00.000Z", { brandModel: "T", listStatus: "active", deletedAt: "2026-10-15T00:00:00.000Z" });
+    const ordered = orderIrissRecordsForListPdf([active, searching, offered, reserved, done, off, legacy, trash], {
+      pinnedOrder: ["c", "a", "s"],
+      unpinnedOrder: ["o", "r", "b", "d", "t"],
     });
-    expect(ordered.map((r) => r.id)).toEqual(["a", "d"]);
+    expect(ordered.map((r) => r.id)).toEqual(["a", "s", "o", "r", "d"]);
   });
 });

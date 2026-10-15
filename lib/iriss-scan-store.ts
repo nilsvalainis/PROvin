@@ -6,10 +6,12 @@ import os from "node:os";
 import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { normalizeIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
+import { IRISS_STALE_REVISION, parseExpectedIrissRevision, prepareIrissScanWrite } from "@/lib/iriss-scan-save-safety";
 import { emptyIrissScanRecord, type IrissScanListOrder, type IrissScanListRow, type IrissScanRecord } from "@/lib/iriss-scan-types";
 
 const DEFAULT_RELATIVE_DIR = ".data/iriss-scan";
 const BLOB_PREFIX = "iriss-scan/";
+export const IRISS_SCAN_BLOB_PREFIX = BLOB_PREFIX;
 const LIST_ORDER_FILENAME = "_list-order.json";
 const LIST_ROWS_FILENAME = "_list_rows.json";
 const BLOB_LIST_CACHE_TTL_MS = Math.max(
@@ -83,6 +85,11 @@ export type IrissScanStorageState =
   | { enabled: false; reason: "explicit_off" | "vercel_blob_token_missing" }
   | { enabled: true; persistence: "filesystem"; path: string }
   | { enabled: true; persistence: "vercel_blob" };
+
+export function getIrissScanStorageDir(): string | null {
+  const r = resolveStorage();
+  return r.kind === "fs" ? r.dir : null;
+}
 
 export function getIrissScanStorageState(): IrissScanStorageState {
   const r = resolveStorage();
@@ -199,6 +206,7 @@ function normalizeRecord(raw: unknown, id: string): IrissScanRecord | null {
     createdAt: str("createdAt") || base.createdAt,
     updatedAt: str("updatedAt") || base.updatedAt,
     pinnedAt: sanitizeDraftTextForStorage(str("pinnedAt"), 64),
+    workspaceRevision: parseExpectedIrissRevision(o.workspaceRevision) ?? 0,
     brandModel: sanitizeDraftTextForStorage(str("brandModel"), 400),
     vin: sanitizeDraftTextForStorage(str("vin"), 32),
     listingLinkMobile: normalizeLinks(o.listingLinkMobile),
@@ -338,18 +346,28 @@ export async function readIrissScan(id: string): Promise<IrissScanRecord | null>
   }
 }
 
-export async function writeIrissScan(record: IrissScanRecord): Promise<{ ok: true } | { ok: false; error: string }> {
+export type WriteIrissScanResult =
+  | { ok: true; record: IrissScanRecord }
+  | { ok: false; error: string; stale?: boolean; record?: IrissScanRecord };
+
+export async function writeIrissScan(
+  record: IrissScanRecord,
+  opts?: { expectedWorkspaceRevision?: number | null },
+): Promise<WriteIrissScanResult> {
   const r = resolveStorage();
   if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
   if (!isSafeIrissScanId(record.id)) return { ok: false, error: "invalid_id" };
   const normalized = normalizeRecord(record, record.id);
   if (!normalized) return { ok: false, error: "invalid_record" };
   const existing = await readIrissScan(record.id);
-  const out: IrissScanRecord = {
-    ...normalized,
-    createdAt: existing?.createdAt ?? normalized.createdAt,
-    updatedAt: new Date().toISOString(),
-  };
+  const prepared = prepareIrissScanWrite(
+    existing,
+    normalized,
+    opts?.expectedWorkspaceRevision ?? null,
+    new Date().toISOString(),
+  );
+  if (!prepared.ok) return { ok: false, error: prepared.error, stale: true, record: prepared.record };
+  const out = prepared.record;
 
   if (r.kind === "blob") {
     try {
@@ -361,7 +379,7 @@ export async function writeIrissScan(record: IrissScanRecord): Promise<{ ok: tru
         allowOverwrite: true,
       });
       await upsertListRowsIndex(r, out).catch(() => {});
-      return { ok: true };
+      return { ok: true, record: out };
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }
@@ -374,7 +392,7 @@ export async function writeIrissScan(record: IrissScanRecord): Promise<{ ok: tru
     await fs.writeFile(tmp, JSON.stringify(out, null, 2), "utf8");
     await fs.rename(tmp, fp);
     await upsertListRowsIndex(r, out).catch(() => {});
-    return { ok: true };
+    return { ok: true, record: out };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
@@ -388,9 +406,9 @@ export async function createIrissScan(
   const id = seed?.id && isSafeIrissScanId(seed.id) ? seed.id : crypto.randomUUID();
   const now = new Date().toISOString();
   const rec = { ...emptyIrissScanRecord(id, now), ...seed, id, createdAt: now, updatedAt: now };
-  const w = await writeIrissScan(rec);
+  const w = await writeIrissScan(rec, { expectedWorkspaceRevision: null });
   if (!w.ok) return { ok: false, error: w.error };
-  return { ok: true, id, record: rec };
+  return { ok: true, id, record: w.record };
 }
 
 export async function deleteIrissScan(id: string): Promise<{ ok: true } | { ok: false; error: string }> {

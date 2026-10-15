@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
+import { pickIrissPasutijumsAuditFields } from "@/lib/iriss-pasutijumi-audit-fields";
 import {
   IRISS_MAX_OFFER_ATTACHMENTS,
   normalizeIrissDzintarzemeTameDraft,
@@ -144,6 +145,7 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     ...parseIrissPasutijumsListingLinks(o),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: parseOffersFromBody(o),
+    ...pickIrissPasutijumsAuditFields(o),
   };
 }
 

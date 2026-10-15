@@ -25,7 +25,7 @@ export { irissOrdersBackupFilename, type IrissOrdersBackupPayload } from "@/lib/
 
 async function collectIrissDraftRecords(): Promise<Map<string, IrissPasutijumsRecord>> {
   const map = new Map<string, IrissPasutijumsRecord>();
-  const rows = await listIrissPasutijumi();
+  const rows = await listIrissPasutijumi({ includeDeleted: true });
   for (const row of rows) {
     const rec = await readIrissPasutijums(row.id);
     if (!rec) continue;
@@ -46,7 +46,7 @@ async function gatherBackupParts(opts?: { includeListPdf?: boolean }): Promise<G
   const includeListPdf = opts?.includeListPdf !== false;
   const storage = getIrissPasutijumiStorageState();
   const listOrder = await readIrissListOrder();
-  const listRows = storage.enabled ? await listIrissPasutijumi() : [];
+  const listRows = storage.enabled ? await listIrissPasutijumi({ includeDeleted: true }) : [];
   const records = storage.enabled ? await collectIrissDraftRecords() : new Map<string, IrissPasutijumsRecord>();
   let listPdf: Uint8Array | null = null;
   if (includeListPdf) {

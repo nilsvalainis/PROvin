@@ -18,6 +18,7 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     updatedAt: rec.updatedAt,
     pinnedAt: rec.pinnedAt,
     listStatus: rec.listStatus ?? "active",
+    deletedAt: rec.deletedAt?.trim() || undefined,
     clientFirstName: rec.clientFirstName.trim(),
     clientLastName: rec.clientLastName.trim(),
     orderDate: rec.orderDate.trim(),

@@ -7,11 +7,19 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
+import {
+  appendIrissStatusHistory,
+  applyIrissFieldEdit,
+  irissRequiredFieldWarnings,
+  isIrissRecordDeleted,
+  setIrissInactiveReason,
+} from "@/lib/iriss-pasutijumi-audit-fields";
 import {
   IRISS_STALE_REVISION,
   irissPasutijumsHasOperatorContent,
@@ -19,6 +27,9 @@ import {
   mergeIrissPasutijumsRecords,
   planSilentAutosave,
 } from "@/lib/iriss-pasutijumi-save-safety";
+import { inspectIrissPhone } from "@/lib/iriss-phone-normalize";
+import { irissPriceFormatWarning } from "@/lib/iriss-price-format";
+import { irissVinWarning } from "@/lib/iriss-vin-check";
 import {
   defaultIrissDzintarzemeTameDraft,
   IRISS_DEAL_DETAIL_OPTIONS,
@@ -57,21 +68,6 @@ const offerPChipButtonClass = `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} cursor
 
 const offerDialogMainBtnClass =
   "inline-flex min-h-[44px] min-w-[116px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50";
-
-function normalizePhoneForLv(raw: string): string {
-  const trimmed = raw.trim();
-  if (!trimmed) return "";
-  if (trimmed.startsWith("+")) {
-    const cleaned = `+${trimmed.slice(1).replace(/[^\d]/g, "")}`;
-    if (cleaned.startsWith("+371")) return cleaned;
-    return cleaned;
-  }
-  const digits = trimmed.replace(/[^\d]/g, "");
-  if (!digits) return "";
-  if (digits.startsWith("00371")) return `+${digits.slice(2)}`;
-  if (digits.startsWith("371")) return `+${digits}`;
-  return `+371${digits}`;
-}
 
 function parseRecordFromPatchResponse(data: unknown): IrissPasutijumsRecord | null {
   if (typeof data !== "object" || data === null) return null;
@@ -523,13 +519,26 @@ export function IrissPasutijumsEditor({
   const [pdfRetryBar, setPdfRetryBar] = useState<{ href: string; name: string } | null>(null);
   const [orderPdfRetryOpen, setOrderPdfRetryOpen] = useState(false);
   const [offerFilePrepare, setOfferFilePrepare] = useState<{ pct: number; label: string } | null>(null);
+  const [revisionConflict, setRevisionConflict] = useState<IrissPasutijumsRecord | null>(null);
+  const [conflictBusy, setConflictBusy] = useState(false);
 
   const patch = useCallback(<K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => {
-    setRec((r) => withAutoEcarstradeLinks({ ...r, [key]: value }));
+    setRec((r) => withAutoEcarstradeLinks(applyIrissFieldEdit(r, { [key]: value } as Partial<IrissPasutijumsRecord>, Date.now())));
   }, []);
 
   const patchRecord = useCallback((p: Partial<IrissPasutijumsRecord>) => {
-    setRec((r) => withAutoEcarstradeLinks({ ...r, ...p }));
+    setRec((r) => withAutoEcarstradeLinks(applyIrissFieldEdit(r, p, Date.now())));
+  }, []);
+
+  const setListStatus = useCallback((status: IrissPasutijumsListStatus) => {
+    setRec((r) =>
+      withAutoEcarstradeLinks(
+        appendIrissStatusHistory(r, status, {
+          at: new Date().toISOString(),
+          reason: status === "inactive" ? r.inactiveReason : undefined,
+        }),
+      ),
+    );
   }, []);
 
   const save = useCallback(
@@ -546,16 +555,20 @@ export function IrissPasutijumsEditor({
       const useXhr = Boolean(onUploadProgress) || !silent;
 
       if (silent) {
-        const plan = planSilentAutosave(autosaveInFlight.current);
+        const plan = planSilentAutosave(autosaveInFlight.current, imagesHydrating.current);
         if (plan.queue) {
           autosaveQueued.current = true;
           return { ok: false, error: "Saglabāšana rindā." };
         }
       }
-      if (imagesHydrating.current) return { ok: false, error: "Ielādē attēlus." };
+      if (imagesHydrating.current) {
+        autosaveQueued.current = true;
+        return { ok: false, error: "Ielādē attēlus." };
+      }
       if (!silent) {
         setBusy(true);
-        setSaveMsg(null);
+        const required = irissRequiredFieldWarnings(payload);
+        setSaveMsg(required.length ? required.join(" ") : null);
       }
       if (silent) autosaveInFlight.current = true;
 
@@ -582,19 +595,19 @@ export function IrissPasutijumsEditor({
           router.refresh();
           return { ok: true };
         }
-        if (!silent) setSaveMsg("Saglabāts.");
+        if (!silent) {
+          const required = irissRequiredFieldWarnings(payload);
+          setSaveMsg(required.length ? `Saglabāts. ${required.join(" ")}` : "Saglabāts.");
+        }
+        setRevisionConflict(null);
         return { ok: true };
       };
 
       const applyStale = (data: unknown): SaveResult => {
         const server = parseRecordFromPatchResponse(data);
         if (!server) return { ok: false, error: "Konflikts saglabājot. Pārlādē lapu." };
-        const merged = withAutoEcarstradeLinks(mergeIrissPasutijumsRecords(server, recRef.current));
-        merged.workspaceRevision = irissWorkspaceRevision(server);
-        setRec(merged);
-        recRef.current = merged;
-        lastSavedSnapshot.current = JSON.stringify(server);
-        if (!silent) setSaveMsg("Serverī bija jaunāka versija. Apvienots droši. Saglabā vēlreiz.");
+        setRevisionConflict(server);
+        if (!silent) setSaveMsg("Konflikts: cita cilne jau saglabāja jaunāku ierakstu.");
         return { ok: false, error: IRISS_STALE_REVISION };
       };
 
@@ -662,6 +675,58 @@ export function IrissPasutijumsEditor({
     return save();
   }, [save]);
 
+  const reloadConflict = useCallback(() => {
+    if (!revisionConflict) return;
+    setConflictBusy(true);
+    const fresh = withAutoEcarstradeLinks(revisionConflict);
+    setRec(fresh);
+    recRef.current = fresh;
+    lastSavedSnapshot.current = JSON.stringify(fresh);
+    setRevisionConflict(null);
+    setSaveMsg("Ielādēta servera versija.");
+    setConflictBusy(false);
+  }, [revisionConflict]);
+
+  const mergeConflict = useCallback(() => {
+    if (!revisionConflict) return;
+    setConflictBusy(true);
+    const merged = withAutoEcarstradeLinks(mergeIrissPasutijumsRecords(revisionConflict, recRef.current));
+    merged.workspaceRevision = irissWorkspaceRevision(revisionConflict);
+    setRec(merged);
+    recRef.current = merged;
+    lastSavedSnapshot.current = JSON.stringify(revisionConflict);
+    setRevisionConflict(null);
+    setSaveMsg("Apvienots droši. Saglabā vēlreiz.");
+    setConflictBusy(false);
+  }, [revisionConflict]);
+
+  const restoreDeleted = useCallback(async () => {
+    setBusy(true);
+    setSaveMsg(null);
+    try {
+      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/restore`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        setSaveMsg("Atjaunošana neizdevās.");
+        return;
+      }
+      const data = (await res.json()) as { record?: IrissPasutijumsRecord };
+      if (data.record) {
+        const next = withAutoEcarstradeLinks(data.record);
+        setRec(next);
+        recRef.current = next;
+        lastSavedSnapshot.current = JSON.stringify(next);
+      }
+      setSaveMsg("Atjaunots no miskastes.");
+    } catch {
+      setSaveMsg("Tīkla kļūda.");
+    } finally {
+      setBusy(false);
+    }
+  }, [rec.id]);
+
   useEffect(() => {
     if (!imagesHydrating.current) return;
     let cancelled = false;
@@ -681,13 +746,19 @@ export function IrissPasutijumsEditor({
         if (!cancelled) {
           imagesHydrating.current = false;
           setImagesReady(true);
+          if (autosaveQueued.current) {
+            autosaveQueued.current = false;
+            window.setTimeout(() => {
+              void save({ silent: true });
+            }, 0);
+          }
         }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [initialRecord.id]);
+  }, [initialRecord.id, save]);
 
   useEffect(() => {
     if (!imagesReady) return;
@@ -710,7 +781,7 @@ export function IrissPasutijumsEditor({
     try {
       const saved = await save({ silent: true });
       if (!saved.ok) {
-        alert(saved.error);
+        setSaveMsg(saved.error);
         return;
       }
       const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/print`, {
@@ -731,7 +802,7 @@ export function IrissPasutijumsEditor({
       }
       await downloadPdfBlobFromResponse(res, "pasutijums.pdf", (href, name) => setPdfRetryBar({ href, name }));
     } catch (e) {
-      alert(e instanceof Error ? e.message.slice(0, 220) : "Tīkla kļūda.");
+      setSaveMsg(e instanceof Error ? e.message.slice(0, 220) : "Tīkla kļūda.");
       setOrderPdfRetryOpen(true);
     } finally {
       setOrderPdfBusy(false);
@@ -1016,21 +1087,27 @@ export function IrissPasutijumsEditor({
     [],
   );
 
-  const normalizedPhone = useMemo(() => normalizePhoneForLv(rec.phone), [rec.phone]);
+  const phoneInspect = useMemo(() => inspectIrissPhone(rec.phone), [rec.phone]);
+  const normalizedPhone = phoneInspect.hrefValue;
+  const orderVinWarning = useMemo(() => irissVinWarning(rec.vin), [rec.vin]);
+  const offerVinWarning = useMemo(() => irissVinWarning(offerDraft.vin), [offerDraft.vin]);
+  const carPriceWarning = useMemo(() => irissPriceFormatWarning(offerDraft.carPrice), [offerDraft.carPrice]);
+  const deliveryPriceWarning = useMemo(() => irissPriceFormatWarning(offerDraft.deliveryPrice), [offerDraft.deliveryPrice]);
+  const commissionWarning = useMemo(() => irissPriceFormatWarning(offerDraft.commissionFee), [offerDraft.commissionFee]);
 
   const triggerCall = useCallback(() => {
     if (!normalizedPhone) return;
-    if (normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
+    if (phoneInspect.appliedLvPrefix && normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
     window.location.href = `tel:${normalizedPhone}`;
-  }, [normalizedPhone, patch, rec.phone]);
+  }, [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone]);
 
   const triggerWhatsapp = useCallback(() => {
     if (!normalizedPhone) return;
-    if (normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
+    if (phoneInspect.appliedLvPrefix && normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
     const digits = normalizedPhone.replace(/[^\d]/g, "");
     if (!digits) return;
     window.open(`https://wa.me/${digits}`, "_blank", "noopener,noreferrer");
-  }, [normalizedPhone, patch, rec.phone]);
+  }, [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone]);
 
   const generateOfferPdfBlob = useCallback(
     async (offerId: string, includeClientData = true): Promise<Blob> => {
@@ -1087,7 +1164,7 @@ export function IrissPasutijumsEditor({
     try {
       const { offer: offerOut, error: commitErr } = await commitOfferDraftToRecord();
       if (!offerOut) {
-        alert(commitErr ?? "Saglabāšana neizdevās.");
+        setSaveMsg(commitErr ?? "Saglabāšana neizdevās.");
         return null;
       }
       if (reason === "save") setSaveMsg("Saglabāts.");
@@ -1115,7 +1192,7 @@ export function IrissPasutijumsEditor({
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
       window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120_000);
     } catch (e) {
-      alert(e instanceof Error ? e.message.slice(0, 220) : "PDF ģenerēšana neizdevās.");
+      setSaveMsg(e instanceof Error ? e.message.slice(0, 220) : "PDF ģenerēšana neizdevās.");
     } finally {
       setOfferPdfBusy(false);
     }
@@ -1123,7 +1200,7 @@ export function IrissPasutijumsEditor({
 
   const openOfferShareWhatsApp = useCallback(async () => {
     if (!normalizedPhone) return;
-    if (normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
+    if (phoneInspect.appliedLvPrefix && normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
     const digits = normalizedPhone.replace(/[^\d]/g, "");
     if (!digits) return;
     setOfferWhatsappBusy(true);
@@ -1159,7 +1236,7 @@ export function IrissPasutijumsEditor({
       const waUrl = `https://wa.me/${digits}?text=${encodeURIComponent(shareText)}`;
       window.location.assign(waUrl);
     } catch (e) {
-      alert(e instanceof Error ? e.message.slice(0, 220) : "WhatsApp eksports neizdevās.");
+      setSaveMsg(e instanceof Error ? e.message.slice(0, 220) : "WhatsApp eksports neizdevās.");
     } finally {
       setOfferWhatsappBusy(false);
     }
@@ -1170,6 +1247,7 @@ export function IrissPasutijumsEditor({
     offerDraft,
     patch,
     persistOffer,
+    phoneInspect.appliedLvPrefix,
     rec.clientFirstName,
     rec.clientLastName,
     rec.phone,
@@ -1290,6 +1368,31 @@ export function IrissPasutijumsEditor({
         ) : null}
       </AdminDashboardHeaderWithMenu>
 
+      {revisionConflict ? (
+        <div className="mt-3">
+          <AdminWorkspaceRevisionConflictBanner
+            kind={IRISS_STALE_REVISION}
+            busy={conflictBusy || busy}
+            onReload={reloadConflict}
+            onSafeMerge={mergeConflict}
+          />
+        </div>
+      ) : null}
+
+      {isIrissRecordDeleted(rec) ? (
+        <div className="mt-3 rounded-lg border border-amber-400/70 bg-amber-50 px-3 py-2.5 text-amber-950" role="status">
+          <p className="text-[12px] font-semibold">Šis pasūtījums ir miskastē.</p>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void restoreDeleted()}
+            className="mt-2 inline-flex h-8 items-center rounded-lg border border-amber-400/80 bg-white px-2 text-[11px] font-semibold text-amber-950 disabled:opacity-50"
+          >
+            Atjaunot
+          </button>
+        </div>
+      ) : null}
+
       <div className="mt-3 space-y-4 sm:mt-4 sm:space-y-5">
         <section className={shellCard}>
           <IrissListingPlatformChipsRow rec={rec} />
@@ -1303,7 +1406,7 @@ export function IrissPasutijumsEditor({
               <select
                 className={fieldClass}
                 value={rec.listStatus}
-                onChange={(e) => patch("listStatus", parseIrissPasutijumsListStatus(e.target.value))}
+                onChange={(e) => setListStatus(parseIrissPasutijumsListStatus(e.target.value))}
                 aria-label="Pasūtījuma statuss"
               >
                 {IRISS_PASUTIJUMS_LIST_STATUSES.map((s: IrissPasutijumsListStatus) => (
@@ -1312,19 +1415,45 @@ export function IrissPasutijumsEditor({
                   </option>
                 ))}
               </select>
+              {rec.listStatus === "inactive" ? (
+                <input
+                  className={`${fieldClass} mt-1.5`}
+                  value={rec.inactiveReason ?? ""}
+                  onChange={(e) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, e.target.value)))}
+                  placeholder="Iemesls (neobligāti)"
+                  aria-label="Neaktīvs iemesls"
+                />
+              ) : null}
+              {(rec.statusHistory ?? []).length > 0 ? (
+                <ol className="mt-1.5 space-y-0.5">
+                  {[...(rec.statusHistory ?? [])].slice(-6).reverse().map((h) => (
+                    <li key={`${h.at}-${h.from}-${h.to}`} className="text-[11px] text-[var(--color-provin-muted)]">
+                      {h.at.slice(0, 16).replace("T", " ")}: {IRISS_PASUTIJUMS_LIST_STATUS_LV[h.from]} →{" "}
+                      {IRISS_PASUTIJUMS_LIST_STATUS_LV[h.to]}
+                      {h.reason ? ` (${h.reason})` : ""}
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
             </label>
             <LabeledInput
               label="Marka / modelis"
               value={rec.brandModel}
               onChange={(e) => patch("brandModel", e.target.value)}
             />
-            <LabeledInput
-              label="VIN"
-              value={rec.vin}
-              onChange={(e) => patch("vin", e.target.value.toUpperCase())}
-              autoComplete="off"
-              spellCheck={false}
-            />
+            <label className="block min-w-0">
+              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">VIN</span>
+              <input
+                className={fieldClass}
+                value={rec.vin}
+                onChange={(e) => patch("vin", e.target.value.toUpperCase())}
+                autoComplete="off"
+                spellCheck={false}
+                autoCapitalize="characters"
+                aria-label="VIN"
+              />
+              {orderVinWarning ? <p className="mt-1 text-[11px] text-amber-800">{orderVinWarning}</p> : null}
+            </label>
             <LabeledInput
               label="Ražošanas gadi"
               value={rec.productionYears}
@@ -1480,6 +1609,7 @@ export function IrissPasutijumsEditor({
                   </svg>
                 </button>
               </div>
+              {phoneInspect.warning ? <p className="mt-1 text-[11px] text-amber-800">{phoneInspect.warning}</p> : null}
             </label>
             <LabeledInput
               label="E-pasts"
@@ -1618,13 +1748,19 @@ export function IrissPasutijumsEditor({
                     value={offerDraft.brandModel}
                     onChange={(e) => setOfferDraft((d) => ({ ...d, brandModel: e.target.value }))}
                   />
-                  <LabeledInput
-                    label="VIN"
-                    value={offerDraft.vin}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, vin: e.target.value.toUpperCase() }))}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
+                  <label className="block min-w-0">
+                    <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">VIN</span>
+                    <input
+                      className={fieldClass}
+                      value={offerDraft.vin}
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, vin: e.target.value.toUpperCase() }))}
+                      autoComplete="off"
+                      spellCheck={false}
+                      autoCapitalize="characters"
+                      aria-label="VIN"
+                    />
+                    {offerVinWarning ? <p className="mt-1 text-[11px] text-amber-800">{offerVinWarning}</p> : null}
+                  </label>
                   <LabeledInput
                     label="Pirmā reģistrācija"
                     value={offerDraft.firstRegistration}
@@ -1721,21 +1857,36 @@ export function IrissPasutijumsEditor({
                   Cenas
                 </p>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <LabeledInput
-                    label="Automašīnas cena"
-                    value={offerDraft.carPrice}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, carPrice: e.target.value, priceGermany: e.target.value }))}
-                  />
-                  <LabeledInput
-                    label="Piegādes cena"
-                    value={offerDraft.deliveryPrice}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, deliveryPrice: e.target.value }))}
-                  />
-                  <LabeledInput
-                    label="Komisijas maksa"
-                    value={offerDraft.commissionFee}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, commissionFee: e.target.value }))}
-                  />
+                  <label className="block min-w-0">
+                    <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Automašīnas cena</span>
+                    <input
+                      className={fieldClass}
+                      value={offerDraft.carPrice}
+                      inputMode="decimal"
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, carPrice: e.target.value, priceGermany: e.target.value }))}
+                    />
+                    {carPriceWarning ? <p className="mt-1 text-[11px] text-amber-800">{carPriceWarning}</p> : null}
+                  </label>
+                  <label className="block min-w-0">
+                    <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Piegādes cena</span>
+                    <input
+                      className={fieldClass}
+                      value={offerDraft.deliveryPrice}
+                      inputMode="decimal"
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, deliveryPrice: e.target.value }))}
+                    />
+                    {deliveryPriceWarning ? <p className="mt-1 text-[11px] text-amber-800">{deliveryPriceWarning}</p> : null}
+                  </label>
+                  <label className="block min-w-0">
+                    <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Komisijas maksa</span>
+                    <input
+                      className={fieldClass}
+                      value={offerDraft.commissionFee}
+                      inputMode="decimal"
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, commissionFee: e.target.value }))}
+                    />
+                    {commissionWarning ? <p className="mt-1 text-[11px] text-amber-800">{commissionWarning}</p> : null}
+                  </label>
                   <LabeledInput label="Kopā" value={offerTotalPrice} readOnly />
                   <div className="sm:col-span-2">
                     <LabeledInput

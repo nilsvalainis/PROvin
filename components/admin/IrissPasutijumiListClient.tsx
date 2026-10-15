@@ -39,7 +39,13 @@ import {
   readIrissListStatusFilter,
   type IrissListStatusFilterState,
 } from "@/components/admin/IrissPasutijumiStatusFilter";
-import { dispatchIrissListStatusFilter, parseIrissListStatusFilter } from "@/lib/iriss-pasutijumi-status-filter";
+import {
+  dispatchIrissListStatusFilter,
+  IRISS_LIST_TRASH_EVENT,
+  parseIrissListStatusFilter,
+  readIrissListTrashFilter,
+} from "@/lib/iriss-pasutijumi-status-filter";
+import { appendIrissStatusHistory, isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 import { IrissOrderSortSelect } from "@/components/admin/IrissOrderSortSelect";
 import { AdminMobileSheet } from "@/components/admin/AdminMobileSheet";
 
@@ -171,7 +177,14 @@ function buildDefaultListOrder(rows: IrissPasutijumsListRow[], mode: SortMode): 
   return { pinnedOrder: pinned.map((r) => r.id), unpinnedOrder: unpinned.map((r) => r.id) };
 }
 
-function rowMatchesStatusFilter(row: IrissPasutijumsListRow, f: IrissListStatusFilterState): boolean {
+function rowMatchesStatusFilter(
+  row: IrissPasutijumsListRow,
+  f: IrissListStatusFilterState,
+  trashOn: boolean,
+): boolean {
+  const deleted = isIrissRecordDeleted(row);
+  if (trashOn) return deleted;
+  if (deleted) return false;
   const st = row.listStatus ?? "active";
   return Boolean(f[st]);
 }
@@ -215,6 +228,7 @@ const IrissRowCard = memo(function IrissRowCard({
   onPin,
   onAskDelete,
   onSetStatus,
+  onRestore,
   actionBusy,
   registerSwipeCloser,
   closeOtherSwipes,
@@ -225,6 +239,7 @@ const IrissRowCard = memo(function IrissRowCard({
   onPin: (id: string) => void;
   onAskDelete: (id: string) => void;
   onSetStatus: (id: string, status: IrissPasutijumsListStatus) => void;
+  onRestore?: (id: string) => void;
   actionBusy: string | null;
   registerSwipeCloser: (id: string, closer: (() => void) | null) => void;
   closeOtherSwipes: (exceptId: string) => void;
@@ -486,15 +501,26 @@ const IrissRowCard = memo(function IrissRowCard({
         >
           <Pin className="h-3.5 w-3.5" />
         </button>
-        <button
-          type="button"
-          onClick={() => onAskDelete(row.id)}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-700"
-          aria-label="Dzēst pasūtījumu"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        {isIrissRecordDeleted(row) && onRestore ? (
+          <button
+            type="button"
+            onClick={() => onRestore(row.id)}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="inline-flex h-7 items-center rounded-md px-1.5 text-[10px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-100"
+          >
+            Atjaunot
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onAskDelete(row.id)}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-700"
+            aria-label="Dzēst pasūtījumu"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -554,13 +580,14 @@ const IrissRowCard = memo(function IrissRowCard({
             type="button"
             onClick={() => {
               setIsOpen(false);
-              onAskDelete(row.id);
+              if (isIrissRecordDeleted(row) && onRestore) onRestore(row.id);
+              else onAskDelete(row.id);
             }}
-            className="flex h-full w-[72px] flex-col items-center justify-center gap-0.5 bg-[#FF3B30] text-white transition active:brightness-95"
-            aria-label="Dzēst pasūtījumu"
+            className={`flex h-full w-[72px] flex-col items-center justify-center gap-0.5 text-white transition active:brightness-95 ${isIrissRecordDeleted(row) ? "bg-[#34C759]" : "bg-[#FF3B30]"}`}
+            aria-label={isIrissRecordDeleted(row) ? "Atjaunot pasūtījumu" : "Dzēst pasūtījumu"}
           >
             <Trash2 className="h-5 w-5" />
-            <span className="text-[11px] font-semibold leading-none">Dzēst</span>
+            <span className="text-[11px] font-semibold leading-none">{isIrissRecordDeleted(row) ? "Atjaunot" : "Dzēst"}</span>
           </button>
         </div>
       ) : null}
@@ -664,6 +691,7 @@ export function IrissPasutijumiListClient({
   const [ectBusy, setEctBusy] = useState(false);
   const [ectMsg, setEctMsg] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
+  const [trashOn, setTrashOn] = useState(() => readIrissListTrashFilter());
   const narrowSwipeViewport = useNarrowIrissSwipeViewport();
   const swipeClosersRef = useRef<Map<string, () => void>>(new Map());
   const persistTimerRef = useRef<number | null>(null);
@@ -755,7 +783,15 @@ export function IrissPasutijumiListClient({
       setStatusFilter(parseIrissListStatusFilter(JSON.stringify(d)));
     };
     window.addEventListener(IRISS_LIST_STATUS_FILTER_EVENT, handler as EventListener);
-    return () => window.removeEventListener(IRISS_LIST_STATUS_FILTER_EVENT, handler as EventListener);
+    const onTrash = (e: Event) => {
+      const d = (e as CustomEvent<boolean>).detail;
+      if (typeof d === "boolean") setTrashOn(d);
+    };
+    window.addEventListener(IRISS_LIST_TRASH_EVENT, onTrash as EventListener);
+    return () => {
+      window.removeEventListener(IRISS_LIST_STATUS_FILTER_EVENT, handler as EventListener);
+      window.removeEventListener(IRISS_LIST_TRASH_EVENT, onTrash as EventListener);
+    };
   }, []);
 
   useEffect(() => {
@@ -793,7 +829,9 @@ export function IrissPasutijumiListClient({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const statusCounts = useMemo(() => countIrissListStatuses(localRows), [localRows]);
+  const liveRows = useMemo(() => localRows.filter((r) => !isIrissRecordDeleted(r)), [localRows]);
+  const trashCount = useMemo(() => localRows.filter((r) => isIrissRecordDeleted(r)).length, [localRows]);
+  const statusCounts = useMemo(() => countIrissListStatuses(liveRows), [liveRows]);
 
   const allStatusesInFilter = useMemo(
     () => statusFilter.active && statusFilter.completed && statusFilter.inactive,
@@ -804,8 +842,8 @@ export function IrissPasutijumiListClient({
 
   const visibleRows = useMemo(
     () =>
-      localRows.filter((r) => rowMatchesStatusFilter(r, statusFilter) && irissListRowMatchesQuery(r, searchQuery)),
-    [localRows, statusFilter, searchQuery],
+      localRows.filter((r) => rowMatchesStatusFilter(r, statusFilter, trashOn) && irissListRowMatchesQuery(r, searchQuery)),
+    [localRows, statusFilter, searchQuery, trashOn],
   );
 
   const dragReorderEnabled = allStatusesInFilter && !searching && !narrowSwipeViewport;
@@ -893,7 +931,9 @@ export function IrissPasutijumiListClient({
         dispatchIrissListStatusFilter(next);
         return next;
       });
-      void patchRow(id, (record) => ({ ...record, listStatus: status }));
+      void patchRow(id, (record) =>
+        appendIrissStatusHistory(record, status, { at: new Date().toISOString() }),
+      );
     },
     [patchRow],
   );
@@ -908,21 +948,35 @@ export function IrissPasutijumiListClient({
         credentials: "include",
       });
       if (!res.ok) return;
-      setLocalRows((prev) => prev.filter((r) => r.id !== id));
-      setListOrder((prev) => {
-        const next = {
-          pinnedOrder: prev.pinnedOrder.filter((x) => x !== id),
-          unpinnedOrder: prev.unpinnedOrder.filter((x) => x !== id),
-        };
-        schedulePersistListOrder(next);
-        return next;
-      });
+      setLocalRows((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, deletedAt: new Date().toISOString() } : r)),
+      );
       setDeleteTargetId(null);
       closeOtherSwipes("");
     } finally {
       setActionBusy(null);
     }
   }, [closeOtherSwipes, deleteTargetId, schedulePersistListOrder]);
+
+  const onRestore = useCallback(async (id: string) => {
+    setActionBusy(id);
+    try {
+      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}/restore`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { record?: IrissPasutijumsRecord };
+      if (data.record) {
+        const nextRow = irissPasutijumsToListRow(data.record);
+        setLocalRows((prev) => prev.map((r) => (r.id === id ? nextRow : r)));
+      } else {
+        setLocalRows((prev) => prev.map((r) => (r.id === id ? { ...r, deletedAt: "" } : r)));
+      }
+    } finally {
+      setActionBusy(null);
+    }
+  }, []);
 
   const onReorderPinned = useCallback((ids: string[]) => {
     setListOrder((prev) => {
@@ -978,6 +1032,7 @@ export function IrissPasutijumiListClient({
       onPin={onPin}
       onAskDelete={setDeleteTargetId}
       onSetStatus={onSetStatus}
+      onRestore={onRestore}
       actionBusy={actionBusy}
       registerSwipeCloser={registerSwipeCloser}
       closeOtherSwipes={closeOtherSwipes}
@@ -1006,7 +1061,7 @@ export function IrissPasutijumiListClient({
             />
           </label>
           <div className="hidden md:contents">
-            <IrissPasutijumiStatusFilter counts={statusCounts} />
+            <IrissPasutijumiStatusFilter counts={statusCounts} trashCount={trashCount} />
             <IrissOrderSortSelect compact />
           </div>
           <div className="ml-auto hidden items-center gap-1.5 md:flex">
@@ -1031,6 +1086,7 @@ export function IrissPasutijumiListClient({
         <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <IrissPasutijumiStatusFilter
             counts={statusCounts}
+            trashCount={trashCount}
             className="flex-nowrap [&_button]:h-8 [&_button]:rounded-full [&_button]:px-3 [&_button]:text-[13px]"
           />
           <button
@@ -1081,7 +1137,7 @@ export function IrissPasutijumiListClient({
           ))}
         </div>
         <div className="mb-3 overflow-hidden rounded-xl bg-white px-3 py-2">
-          <IrissPasutijumiStatusFilter counts={statusCounts} className="[&_button]:h-10 [&_button]:text-[15px]" />
+          <IrissPasutijumiStatusFilter counts={statusCounts} trashCount={trashCount} className="[&_button]:h-10 [&_button]:text-[15px]" />
         </div>
         <div className="overflow-hidden rounded-xl bg-white">
           <button

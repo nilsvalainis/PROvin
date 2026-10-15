@@ -39,6 +39,33 @@ describe("mergeIrissPasutijumsRecords", () => {
     expect(merged.workspaceRevision).toBe(4);
   });
 
+  it("lets a later cleared field win over a filled server value", () => {
+    const server = rec("a", { clientFirstName: "Anna", notes: "Serviss", fieldUpdatedAt: { clientFirstName: 10 } });
+    const local = rec("a", {
+      clientFirstName: "",
+      notes: "Serviss",
+      clearedFields: { clientFirstName: 20 },
+      fieldUpdatedAt: { clientFirstName: 20 },
+    });
+    const merged = mergeIrissPasutijumsRecords(server, local);
+    expect(merged.clientFirstName).toBe("");
+    expect(merged.clearedFields?.clientFirstName).toBe(20);
+  });
+
+  it("lets the later statusChangedAt win, not local || server", () => {
+    const server = rec("a", {
+      listStatus: "reserved",
+      statusChangedAt: "2026-10-15T12:00:00.000Z",
+    });
+    const local = rec("a", {
+      listStatus: "active",
+      statusChangedAt: "2026-10-15T10:00:00.000Z",
+    });
+    const merged = mergeIrissPasutijumsRecords(server, local);
+    expect(merged.listStatus).toBe("reserved");
+    expect(merged.statusChangedAt).toBe("2026-10-15T12:00:00.000Z");
+  });
+
   it("keeps both offers and both images when ids differ", () => {
     const att = (id: string, dataUrl: string) => ({
       id,
@@ -77,6 +104,7 @@ describe("planSilentAutosave", () => {
   it("queues a second silent save instead of skipping it", () => {
     expect(planSilentAutosave(false)).toEqual({ startNow: true, queue: false });
     expect(planSilentAutosave(true)).toEqual({ startNow: false, queue: true });
+    expect(planSilentAutosave(false, true)).toEqual({ startNow: false, queue: true });
   });
 });
 

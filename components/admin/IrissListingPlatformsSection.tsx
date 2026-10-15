@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import {
@@ -19,6 +19,7 @@ import {
 } from "@/lib/iriss-listing-link-lists";
 import { replaceEcarstradeLinksOnPasutijums } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import { nextStableRowKeys } from "@/lib/iriss-stable-row-keys";
 
 const inp =
   "min-h-[40px] w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[13px] text-[var(--color-apple-text)] shadow-sm outline-none focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
@@ -88,6 +89,8 @@ function SourceLinkList({
 }) {
   const rows = coerceIrissListingLinkList(links);
   const canAdd = rows.length < IRISS_LISTING_LINKS_PER_SOURCE_MAX;
+  const rowKeysRef = useRef<string[]>(nextStableRowKeys([], rows.length));
+  rowKeysRef.current = nextStableRowKeys(rowKeysRef.current, rows.length);
   return (
     <div className="min-w-0 space-y-1.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -112,7 +115,7 @@ function SourceLinkList({
       {rows.map((line, idx) => {
         const err = irissListingLinkUrlError(line);
         return (
-          <div key={idx} className="space-y-0.5">
+          <div key={rowKeysRef.current[idx] ?? `row-${idx}`} className="space-y-0.5">
             <div className="flex min-w-0 items-start gap-1.5">
               <input
                 className={`${err ? inpInvalid : inp} min-w-0 flex-1`}
@@ -127,7 +130,10 @@ function SourceLinkList({
               />
               <button
                 type="button"
-                onClick={() => onChange(removeIrissListingLinkRow(rows, idx))}
+                onClick={() => {
+                  rowKeysRef.current = nextStableRowKeys(rowKeysRef.current, rows.length - 1, idx);
+                  onChange(removeIrissListingLinkRow(rows, idx));
+                }}
                 disabled={rows.length <= 1 && !line.trim()}
                 className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200/90 bg-white text-[16px] leading-none text-slate-500 shadow-sm transition hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-35"
                 title="Noņemt saiti"

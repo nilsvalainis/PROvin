@@ -8,9 +8,12 @@ import {
 } from "@/lib/iriss-pasutijumi-types";
 import {
   dispatchIrissListStatusFilter,
+  dispatchIrissListTrashFilter,
   IRISS_LIST_STATUS_FILTER_ALL,
   IRISS_LIST_STATUS_FILTER_EVENT,
+  IRISS_LIST_TRASH_EVENT,
   readIrissListStatusFilter,
+  readIrissListTrashFilter,
   type IrissListStatusFilterState,
 } from "@/lib/iriss-pasutijumi-status-filter";
 
@@ -36,10 +39,12 @@ const CHIP_ON: Record<IrissPasutijumsListStatus, string> = {
 type Props = {
   className?: string;
   counts?: Record<IrissPasutijumsListStatus, number>;
+  trashCount?: number;
 };
 
-export function IrissPasutijumiStatusFilter({ className = "", counts }: Props) {
+export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount }: Props) {
   const [filter, setFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
+  const [trashOn, setTrashOn] = useState(() => readIrissListTrashFilter());
 
   useEffect(() => {
     setFilter(readIrissListStatusFilter());
@@ -52,7 +57,15 @@ export function IrissPasutijumiStatusFilter({ className = "", counts }: Props) {
       setFilter(readIrissListStatusFilter());
     };
     window.addEventListener(IRISS_LIST_STATUS_FILTER_EVENT, onEv as EventListener);
-    return () => window.removeEventListener(IRISS_LIST_STATUS_FILTER_EVENT, onEv as EventListener);
+    const onTrash = (e: Event) => {
+      const d = (e as CustomEvent<boolean>).detail;
+      if (typeof d === "boolean") setTrashOn(d);
+    };
+    window.addEventListener(IRISS_LIST_TRASH_EVENT, onTrash as EventListener);
+    return () => {
+      window.removeEventListener(IRISS_LIST_STATUS_FILTER_EVENT, onEv as EventListener);
+      window.removeEventListener(IRISS_LIST_TRASH_EVENT, onTrash as EventListener);
+    };
   }, []);
 
   const toggle = useCallback((key: IrissPasutijumsListStatus) => {
@@ -99,6 +112,21 @@ export function IrissPasutijumiStatusFilter({ className = "", counts }: Props) {
         className="inline-flex h-8 items-center rounded-md px-2 text-[11px] font-semibold text-black/60 transition hover:bg-black/[0.06] hover:text-black disabled:cursor-default disabled:opacity-40"
       >
         Visi
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          const next = !trashOn;
+          setTrashOn(next);
+          dispatchIrissListTrashFilter(next);
+        }}
+        aria-pressed={trashOn}
+        className={`inline-flex h-8 items-center rounded-md px-2 text-[11px] font-semibold tabular-nums transition ${
+          trashOn ? "bg-neutral-800 text-white" : "bg-black/[0.04] text-black/70 hover:bg-black/[0.08] hover:text-black"
+        }`}
+      >
+        Miskaste
+        {typeof trashCount === "number" ? <span className="ml-1 opacity-80">{trashCount}</span> : null}
       </button>
     </div>
   );

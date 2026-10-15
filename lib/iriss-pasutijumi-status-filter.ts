@@ -6,6 +6,8 @@ import {
 
 export const IRISS_LIST_STATUS_FILTER_KEY = "iriss-pasutijumi-list-status-filter-v2";
 export const IRISS_LIST_STATUS_FILTER_EVENT = "iriss-pasutijumi-list-status-filter-change";
+export const IRISS_LIST_TRASH_KEY = "iriss-pasutijumi-list-trash-v1";
+export const IRISS_LIST_TRASH_EVENT = "iriss-pasutijumi-list-trash-change";
 
 export type IrissListStatusFilterState = Record<IrissPasutijumsListStatus, boolean>;
 
@@ -70,4 +72,22 @@ export function irissStatusFilterKeys(): IrissPasutijumsListStatus[] {
 
 export function isKnownFilterStatus(v: string): v is IrissPasutijumsListStatus {
   return isIrissPasutijumsListStatus(v);
+}
+
+export function readIrissListTrashFilter(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(IRISS_LIST_TRASH_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function dispatchIrissListTrashFilter(next: boolean): void {
+  try {
+    localStorage.setItem(IRISS_LIST_TRASH_KEY, next ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(new CustomEvent(IRISS_LIST_TRASH_EVENT, { detail: next }));
 }
