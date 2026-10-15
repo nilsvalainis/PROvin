@@ -16,7 +16,7 @@ export type StatVinPageInput = {
 };
 
 const CF_RE =
-  /just a moment|security verification|checking your browser|verify you are human|attention required|cf-browser-verification|access blocked/i;
+  /just a moment|performing security verification|security verification|verifies you are not a bot|checking your browser|verify you are human|attention required|cf-browser-verification|access blocked|sorry, you have been blocked/i;
 const RATE_RE = /too many requests|rate limit(?:ed)?|try again later/i;
 const NONE_RE =
   /not found|page not found|car not found|car-not-found|no vehicle|nothing found|no results|no similar cars|were not found|no sale history|sale history\s*\(\s*0\s*\)|we couldn['’]?t find/i;
@@ -75,6 +75,7 @@ function kmLv(raw: string): string {
 function venueName(raw: string): string {
   const t = raw.trim();
   if (/iaai|iaa i/i.test(t)) return "IAAI";
+  if (/copart/i.test(t) && (/\bfi\b/i.test(t) || /finland|copart\.fi/i.test(t))) return "Copart FI";
   if (/copart/i.test(t)) return "Copart";
   if (/manheim/i.test(t)) return "Manheim";
   if (t) return t.slice(0, 40);
@@ -146,7 +147,10 @@ function walkAuctionRecords(node: unknown, vin: string, out: VinScanAuction[], d
   if (!Object.keys(rec).length) return;
 
   const lot = str(rec.lot || rec.lotNumber || rec.lot_number || rec.itemId || rec.item_id);
-  const venue = venueName(str(rec.auction || rec.auctionName || rec.site || rec.seller || rec.venue || rec.source));
+  const place = str(rec.country || rec.countryCode || rec.location || rec.yard || rec.saleCountry || rec.saleLocation);
+  const venue = venueName(
+    [str(rec.auction || rec.auctionName || rec.site || rec.seller || rec.venue || rec.source), place].filter(Boolean).join(" "),
+  );
   const date = str(rec.date || rec.saleDate || rec.sale_date || rec.auctionDate || rec.soldDate);
   const price = str(rec.price || rec.finalBid || rec.final_bid || rec.soldPrice || rec.highBid);
   const odometer = str(rec.odometer || rec.mileage || rec.odometerValue);
@@ -176,6 +180,7 @@ function auctionsFromText(text: string, vin: string): VinScanAuction[] {
   if (!hasVin(text, vin)) return [];
   const out: VinScanAuction[] = [];
   const copart = /copart/i.test(text);
+  const copartFi = copart && /copart\s*fi\b|copart\.fi|\bfinland\b/i.test(text);
   const iaai = /iaai|iaa i/i.test(text);
   const lot = /lot[:\s#№]*([0-9]{5,10})/i.exec(text)?.[1] ?? "";
   const odo = /(?:odometer|mileage|odometrs)[:\s]*([\d\s,]{3,12})/i.exec(text)?.[1] ?? "";
@@ -186,10 +191,11 @@ function auctionsFromText(text: string, vin: string): VinScanAuction[] {
   const photos = /(\d+)\s*(?:photos?|images?|pictures?|foto)/i.exec(text);
   const photoCount = photos ? Number(photos[1]) : 0;
   if (copart) {
+    const venue = copartFi ? "Copart FI" : "Copart";
     out.push({
-      title: ["Copart", year, lot ? `lots ${lot}` : "", damage].filter(Boolean).join(" · "),
+      title: [venue, year, lot ? `lots ${lot}` : "", damage].filter(Boolean).join(" · "),
       date: year || undefined,
-      venue: "Copart",
+      venue,
       photoCount: Number.isFinite(photoCount) && photoCount > 0 ? photoCount : undefined,
     });
   }
@@ -283,16 +289,31 @@ export function parseStatVinPage(input: StatVinPageInput): VinScanParse {
   if (CF_RE.test(text) && !hasVin(text, vin)) {
     return { status: "unknown", summary: "stat.vin: Cloudflare bloķē servera pārbaudi" };
   }
-  if (input.status === 403) {
-    return { status: "unknown", summary: "stat.vin: piekļuve bloķēta (HTTP 403)" };
-  }
   if (input.status === 404 || isStatVinNotFoundUrl(input.finalUrl)) {
     return { status: "none", summary: "Nav izsoles ieraksta" };
+  }
+
+  const found = buildStatVinFound(html, text, vin);
+  if (found) return found;
+
+  if (input.status === 403) {
+    return { status: "unknown", summary: "stat.vin: piekļuve bloķēta (HTTP 403)" };
   }
   if (input.status >= 400) {
     return { status: "unknown", summary: `stat.vin: HTTP ${input.status}` };
   }
+  if (NONE_RE.test(text)) {
+    return { status: "none", summary: "Nav izsoles ieraksta" };
+  }
+  if (!hasVin(text, vin)) {
+    return { status: "unknown", summary: "stat.vin: lapa bez VIN un bez „nav atrasts”" };
+  }
+  return { status: "unknown", summary: "stat.vin: lapa nav atpazīta" };
+}
 
+/** Izsoles HTML ir rezultāts arī tad, ja navigācijas atbilde palika 403 (Cloudflare izaicinājums). */
+function buildStatVinFound(html: string, text: string, vin: string): VinScanParse | null {
+  if (CF_RE.test(text) && !/sale history|\bcopart\b|\biaai\b/i.test(text)) return null;
   const photos = extractStatVinPhotoUrls(html);
   const fromJson: VinScanAuction[] = [];
   for (const blob of extractEmbeddedJson(html)) walkAuctionRecords(blob, vin, fromJson);
@@ -329,12 +350,5 @@ export function parseStatVinPage(input: StatVinPageInput): VinScanParse {
       auctions: auctions.length ? auctions : [{ title: "Izsoles ieraksts", photoUrl: firstPhoto || undefined, photoCount: photoCount || undefined }],
     };
   }
-
-  if (NONE_RE.test(text)) {
-    return { status: "none", summary: "Nav izsoles ieraksta" };
-  }
-  if (!hasVin(text, vin)) {
-    return { status: "unknown", summary: "stat.vin: lapa bez VIN un bez „nav atrasts”" };
-  }
-  return { status: "unknown", summary: "stat.vin: lapa nav atpazīta" };
+  return null;
 }

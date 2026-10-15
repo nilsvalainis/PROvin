@@ -95,6 +95,27 @@ describe("parseStatVinPage", () => {
     expect((r.media?.photoCount ?? 0) >= 1).toBe(true);
   });
 
+  it("WDD1173421N570488: Copart FI lots 50558298 un 20 foto, arī ja navigācija palika HTTP 403", () => {
+    const vin = "WDD1173421N570488";
+    const imgs = Array.from({ length: 20 }, (_, i) => `<img src="https://cs.copart.com/v1/auth/img/lot/50558298/${i + 1}.jpg">`).join("");
+    const html = `<!doctype html><html><body>
+      <h1>Mercedes-Benz CLA VIN: ${vin}</h1>
+      <p>Sale History Copart FI Finland</p>
+      <p>Lot: 50558298</p>
+      <p>20 photos</p>
+      ${imgs}
+    </body></html>`;
+    const r = parseStatVinPage({ status: 403, html, vin, finalUrl: `https://stat.vin/cars/${vin}` });
+    expect(r.status).toBe("found");
+    expect(r.summary).toContain("Copart FI");
+    expect(r.summary).toContain("20 foto");
+    expect(r.auctions?.[0]?.venue).toBe("Copart FI");
+    expect(r.auctions?.[0]?.title).toContain("50558298");
+    expect(r.media?.photoCount).toBe(20);
+    expect(r.media?.photoUrls).toHaveLength(20);
+    expect(r.summary).not.toMatch(/403/);
+  });
+
   it("nolasa Next.js __NEXT_DATA__ izsoles masīvu", () => {
     const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
       props: {

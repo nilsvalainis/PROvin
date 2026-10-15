@@ -14,8 +14,8 @@ const SLOW_SOURCES = new Set<VinScanSourceId>([
 const SLOW_TIMEOUT_MS = 45_000;
 const DEFAULT_TIMEOUT_MS = 14_000;
 const CAPTCHA_TIMEOUT_MS = 90_000;
-/** Tiešais HTTP + Hetzner Chrome `/listings/page` (goto ~45 s + CF gaidīšana). */
-export const VIN_SCAN_RELAY_PAGE_TIMEOUT_MS = 80_000;
+/** Hetzner Chrome `/listings/page`: palaišana + Cloudflare izaicinājuma gaidīšana un atkārtojums. */
+export const VIN_SCAN_RELAY_PAGE_TIMEOUT_MS = 100_000;
 
 const RELAY_PAGE_SOURCES = new Set<VinScanSourceId>([
   "stat_vin",
