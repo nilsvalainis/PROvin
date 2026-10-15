@@ -14,6 +14,7 @@ import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
+import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap, coerceIrissOrderRoomTab } from "@/lib/iriss-order-room-match-props";
 import { appendIrissOrderRoomNote, irissOrderRoomOfferSeed, type IrissOrderRoomHit, type IrissOrderRoomTab } from "@/lib/iriss-order-room";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
@@ -1721,9 +1722,9 @@ export function IrissPasutijumsEditor({
           hits={roomHits}
           dismissedHitIds={dismissedHitIds}
           listingsCache={listingsCache}
-          initialHitStatus={initialHitStatus}
-          duplicatesByListing={duplicatesByListing}
-          initialTab={initialRoomTab}
+          initialHitStatus={coerceIrissHitStatusMap(initialHitStatus)}
+          duplicatesByListing={coerceIrissDuplicatesByListing(duplicatesByListing)}
+          initialTab={coerceIrissOrderRoomTab(initialRoomTab)}
           busy={busy}
           orderPdfBusy={orderPdfBusy}
           saveMsg={saveMsg}

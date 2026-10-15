@@ -1,0 +1,50 @@
+{
+  "listingMatches": {
+    "valid": {
+      "version": 1,
+      "updatedAt": "2026-10-15T16:00:00.000Z",
+      "seeded": true,
+      "unseenCount": 1,
+      "entries": [
+        {
+          "orderId": "order-1",
+          "listingId": "listing-1",
+          "matchedAt": "2026-10-15T16:00:00.000Z",
+          "status": "jauns",
+          "statusAt": "2026-10-15T16:00:00.000Z"
+        }
+      ]
+    },
+    "empty": {},
+    "partial": {
+      "version": 1,
+      "seeded": true,
+      "entries": [{ "orderId": "order-1", "listingId": "listing-1" }]
+    },
+    "old": {
+      "updated": "2026-10-01",
+      "matches": [{ "orderId": "order-1", "id": "listing-1", "status": "new" }]
+    }
+  },
+  "vinAnchors": {
+    "valid": {
+      "version": 1,
+      "updatedAt": "2026-10-15T16:00:00.000Z",
+      "anchors": [
+        {
+          "vin": "WBA12345678901234",
+          "kind": "order",
+          "orderId": "order-9",
+          "label": "Cits klients: Audi A6",
+          "href": "/admin/iriss/pasutijumi/order-9"
+        }
+      ]
+    },
+    "empty": { "version": 1, "updatedAt": "", "anchors": [] },
+    "partial": {
+      "version": 1,
+      "anchors": [{ "vin": "WBA12345678901234", "kind": "order", "orderId": "order-9" }]
+    },
+    "old": [{ "vin": "WBA12345678901234", "orderId": "order-9", "name": "Cits" }]
+  }
+}
