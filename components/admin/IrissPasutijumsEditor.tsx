@@ -12,6 +12,7 @@ import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSectio
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import { appendIrissOrderRoomNote, irissOrderRoomOfferSeed, type IrissOrderRoomHit } from "@/lib/iriss-order-room";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
@@ -464,6 +465,7 @@ export function IrissPasutijumsEditor({
   roomHits = [],
   dismissedHitIds = [],
   listingsCache = "off",
+  initialOfferLinks = [],
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
@@ -473,6 +475,7 @@ export function IrissPasutijumsEditor({
   roomHits?: IrissOrderRoomHit[];
   dismissedHitIds?: string[];
   listingsCache?: "on" | "off";
+  initialOfferLinks?: IrissOfferClientLinkAdminView[];
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
@@ -1841,6 +1844,7 @@ export function IrissPasutijumsEditor({
           onPrepareOffer={openCreateOfferFromHit}
           onOpenOfferPdf={(offerId) => void openOfferPdfForId(offerId)}
           onRestore={() => void restoreDeleted()}
+          initialOfferLinks={initialOfferLinks}
           onDeleteOrder={() => {
             setOfferOpen(false);
             setDeleteConfirmOpen(true);

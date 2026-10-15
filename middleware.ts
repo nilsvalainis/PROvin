@@ -26,6 +26,7 @@ import {
 import { SEO_LOCALE_HEADER } from "./lib/seo-public-paths";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
 import { isClientLinkPath } from "./lib/client-link";
+import { isIrissOfferLinkPath } from "./lib/iriss-offer-client-link";
 import { decideB2bDemoHostRequest } from "./lib/b2b-demo-host";
 
 /* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
@@ -97,6 +98,7 @@ export default function middleware(request: NextRequest) {
         dest.pathname.startsWith("/dev") ||
         dest.pathname.startsWith("/api") ||
         isClientLinkPath(dest.pathname) ||
+        isIrissOfferLinkPath(dest.pathname) ||
         isPartneriemPath(dest.pathname);
       if (!locale && !skipPrefix) {
         dest.pathname = dest.pathname === "/" ? `/${DEFAULT_LOCALE}` : `/${DEFAULT_LOCALE}${dest.pathname}`;
@@ -164,6 +166,14 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
+  if (isIrissOfferLinkPath(pathname)) {
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    res.headers.set("Cache-Control", "private, no-store");
+    res.headers.set("Referrer-Policy", "no-referrer");
+    return res;
+  }
+
   if (isClientLinkPath(pathname)) {
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
@@ -171,9 +181,15 @@ export default function middleware(request: NextRequest) {
   }
 
   const prefixed = parsePrefixedPath(pathname);
-  if (prefixed.locale && (prefixed.rest === "/s" || prefixed.rest.startsWith("/s/"))) {
+  if (
+    prefixed.locale &&
+    (prefixed.rest === "/s" ||
+      prefixed.rest.startsWith("/s/") ||
+      prefixed.rest === "/p" ||
+      prefixed.rest.startsWith("/p/"))
+  ) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = prefixed.rest === "/s" ? "/s" : prefixed.rest;
+    redirectUrl.pathname = prefixed.rest;
     return redirect307(redirectUrl);
   }
 
