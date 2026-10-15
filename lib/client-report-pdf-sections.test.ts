@@ -88,7 +88,7 @@ describe("PDF design system", () => {
     );
     expect(html).toContain(".pdf-report-comment-note-body br + strong");
     expect(html).toMatch(
-      /\.pdf-report-comment-note-body br \+ strong[\s\S]*margin-top:0/,
+      /\.pdf-report-comment-note-body br \+ strong[\s\S]*margin-top:var\(--pdf-gap-block\)/,
     );
   });
 

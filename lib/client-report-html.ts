@@ -2690,7 +2690,7 @@ function clientReportPrintCss(): string {
       .pdf-report-comment-note-body br + strong,
       .pdf-incident-internal-note-body br + strong,
       .pdf-mileage-comment-note-body br + strong{
-        display:inline-block;margin-top:0;
+        display:inline-block;margin-top:var(--pdf-gap-block);
       }
       .pdf-report-comment-note-body,
       .pdf-incident-internal-note-body,

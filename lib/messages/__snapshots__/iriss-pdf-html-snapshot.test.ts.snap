@@ -287,7 +287,7 @@ exports[`IRISS printable PDF HTML (template defaults) > offer print HTML matches
       .pdf-incident-internal-note-body br + strong,
       .pdf-mileage-comment-note-body br + strong,
       .pdf-select-rich-body br + strong,
-      .ipdf-rich-comment br + strong{display:inline-block;margin-top:0;}
+      .ipdf-rich-comment br + strong{display:inline-block;margin-top:1em;}
       .pdf-select-rich-body,.ipdf-rich-comment,.ipdf-rich-comment p{margin:0;line-height:1.45;}
       .pdf-select-rich-body p + p,.ipdf-rich-comment p + p{margin-top:1em;}
       .pdf-select-slot-body{gap:1em;}
@@ -616,7 +616,7 @@ exports[`IRISS printable PDF HTML (template defaults) > pasūtījuma print HTML 
       .pdf-incident-internal-note-body br + strong,
       .pdf-mileage-comment-note-body br + strong,
       .pdf-select-rich-body br + strong,
-      .ipdf-rich-comment br + strong{display:inline-block;margin-top:0;}
+      .ipdf-rich-comment br + strong{display:inline-block;margin-top:1em;}
       .pdf-select-rich-body,.ipdf-rich-comment,.ipdf-rich-comment p{margin:0;line-height:1.45;}
       .pdf-select-rich-body p + p,.ipdf-rich-comment p + p{margin-top:1em;}
       .pdf-select-slot-body{gap:1em;}
