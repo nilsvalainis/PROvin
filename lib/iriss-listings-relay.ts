@@ -461,6 +461,24 @@ export function storedEcarstradeIdsNeedingPrice(
   return [...ids];
 }
 
+/** ET meklējumi ar saglabātiem auto bez cenas vispirms, lai pārlasīšana pārcenojotu vecās rindas. */
+export function preferEcarstradeGroupsNeedingPrice<T extends { platform: string; orders: Array<{ orderId: string }> }>(
+  groups: T[],
+  vehicles: readonly StoredEtPriceRow[],
+): T[] {
+  const need: T[] = [];
+  const rest: T[] = [];
+  for (const g of groups) {
+    const ids =
+      g.platform === "ecarstrade"
+        ? storedEcarstradeIdsNeedingPrice(vehicles, g.orders.map((o) => o.orderId))
+        : [];
+    if (ids.length) need.push(g);
+    else rest.push(g);
+  }
+  return [...need, ...rest];
+}
+
 export async function fetchViaIrissRelay(
   cfg: IrissRelayConfig,
   src: { platform: IrissListingPlatform; sourceUrl: string; orderId: string; orderBrandModel: string },

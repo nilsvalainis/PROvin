@@ -14,6 +14,7 @@ import {
   fetchViaIrissRelay,
   shouldUseEcarstradeVercelFallback,
   storedEcarstradeIdsNeedingPrice,
+  preferEcarstradeGroupsNeedingPrice,
   listingPlatformFromRelay,
   mapRelayFetchResponse,
   mergeListingPricesFromRelay,
@@ -481,6 +482,19 @@ describe("fetchViaIrissRelay", () => {
         ["o9"],
       ),
     ).toEqual(["11", "15"]);
+    expect(
+      preferEcarstradeGroupsNeedingPrice(
+        [
+          { platform: "ecarstrade", orders: [{ orderId: "priced" }], key: "et-priced" },
+          { platform: "openline", orders: [{ orderId: "o9" }], key: "ol" },
+          { platform: "ecarstrade", orders: [{ orderId: "o9" }], key: "et-need" },
+        ],
+        [
+          { platform: "ecarstrade", orderId: "o9", externalId: "11", priceBuyNow: null, priceCurrent: null },
+          { platform: "ecarstrade", orderId: "priced", externalId: "12", priceBuyNow: 27200, priceCurrent: null },
+        ],
+      ).map((g) => g.key),
+    ).toEqual(["et-need", "et-priced", "ol"]);
   });
 
   it("HTTP 401 / 429 / 503 become fetch_failed with Latvian notes", async () => {
