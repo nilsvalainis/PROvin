@@ -23,6 +23,7 @@ export type AutobidVehicle = {
   vatNote: string;
   imageUrl: string;
   imageUrls: string[];
+  thumbUrl?: string;
   firstRegistration: string;
   year: string;
   mileageKm: number | null;
@@ -169,24 +170,29 @@ function equipmentValue(equipments: unknown, key: string): string {
   return str(e.value) || str(e.rawValue);
 }
 
-function pickImages(imageGroups: unknown): string[] {
-  if (!isRec(imageGroups)) return [];
-  const out: string[] = [];
+export function autobidImageChoice(links: Rec): { imageUrl: string; thumbUrl: string } {
+  const imageUrl = str(links.m) || str(links.l) || str(links.s) || str(links.hd) || str(links.xs);
+  const thumbUrl = str(links.s) || str(links.xs) || str(links.m) || imageUrl;
+  return { imageUrl, thumbUrl };
+}
+
+function pickImageSet(imageGroups: unknown): { urls: string[]; thumbs: string[] } {
+  if (!isRec(imageGroups)) return { urls: [], thumbs: [] };
+  const urls: string[] = [];
+  const thumbs: string[] = [];
   for (const group of Object.values(imageGroups)) {
     if (!Array.isArray(group)) continue;
     for (const img of group) {
       if (!isRec(img) || !isRec(img.links)) continue;
-      const links = img.links as Rec;
-      const url = str(links.m) || str(links.l) || str(links.s) || str(links.hd) || str(links.xs);
-      if (url && !out.includes(url)) out.push(url);
-      if (out.length >= 40) return out;
+      const choice = autobidImageChoice(img.links as Rec);
+      if (choice.imageUrl && !urls.includes(choice.imageUrl)) {
+        urls.push(choice.imageUrl);
+        thumbs.push(choice.thumbUrl);
+      }
+      if (urls.length >= 40) return { urls, thumbs };
     }
   }
-  return out;
-}
-
-function pickImage(imageGroups: unknown): string {
-  return pickImages(imageGroups)[0] ?? "";
+  return { urls, thumbs };
 }
 
 function yearFromRegistration(reg: string): string {
@@ -210,6 +216,7 @@ export function mapAutobidVehicle(raw: Rec): AutobidVehicle | null {
   const firstRegistration = equipmentValue(raw.equipments, EQ_FIRST_REGISTRATION);
   const add = isRec(raw.additionalInformation) ? raw.additionalInformation : {};
   const country = isRec(add.itemLocationCountry) ? str(add.itemLocationCountry.isoCode) : "";
+  const images = pickImageSet(raw.imageGroups);
   return {
     externalId,
     auctionId: str(raw.auctionId),
@@ -224,8 +231,9 @@ export function mapAutobidVehicle(raw: Rec): AutobidVehicle | null {
     priceMinimal: price(p.minimal),
     priceCurrent: price(p.current),
     vatNote: str(raw.taxInformation),
-    imageUrl: pickImage(raw.imageGroups),
-    imageUrls: pickImages(raw.imageGroups),
+    imageUrl: images.urls[0] ?? "",
+    imageUrls: images.urls,
+    thumbUrl: images.thumbs[0] || undefined,
     firstRegistration,
     year: yearFromRegistration(firstRegistration),
     mileageKm: num(equipmentValue(raw.equipments, EQ_MILEAGE)),

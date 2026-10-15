@@ -9,6 +9,7 @@ import { listingAuctionTypeLabel, realListingPriceHistory } from "@/lib/iriss-li
 import { DEFAULT_LISTING_COSTS, listingBidPrice, listingCardPriceLabel, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
+import { listingDisplayImageUrl } from "@/lib/iriss-listing-image";
 import { listingYearLabel } from "@/lib/iriss-listings-list-view";
 import { listingOfferLeaks, listingOfferText } from "@/lib/iriss-listings-offer";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
@@ -79,6 +80,7 @@ export function IrissListDrawer({
   const auctionTypeLabel = listingAuctionTypeLabel(v.auctionType);
   const flag = countryFlagLabel(v.countryCode);
   const photos = [v.imageUrl, ...(v.imageUrls ?? [])].filter(Boolean).filter((u, i, a) => a.indexOf(u) === i);
+  const drawerPhoto = listingDisplayImageUrl({ url: photos[0], maxWidth: 960 });
 
   useEffect(() => {
     setBid(listingBidPrice(v) ?? 0);
@@ -326,11 +328,11 @@ export function IrissListDrawer({
         sourceHref ? (
           <IrissListingSourceOpen v={v} mobile={mobile ?? null}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photos[0]} alt="" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
+            <img src={drawerPhoto} alt="" loading="lazy" decoding="async" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
           </IrissListingSourceOpen>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={photos[0]} alt="" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
+          <img src={drawerPhoto} alt="" loading="lazy" decoding="async" referrerPolicy={v.platform === "openline" ? "no-referrer" : undefined} className="mt-3 w-full rounded-xl border object-cover" />
         )
       ) : null}
 

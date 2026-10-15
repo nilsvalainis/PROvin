@@ -2,7 +2,8 @@
 
 import { ChevronRight, FileDown, FileText, Mail, Pencil, Phone, Plus, Send, Star, Trash2, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from "react";
+import { IrissLazyImage } from "@/components/admin/IrissLazyImage";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
@@ -13,6 +14,7 @@ import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark"
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
 import { listingBudgetFitPill, listingFmtEur } from "@/lib/iriss-listings-card";
+import { listingDisplayImageUrl } from "@/lib/iriss-listing-image";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import { parseIrissOrderBudget, serializeListingOrderFilter } from "@/lib/iriss-listings-orders";
 import {
@@ -25,6 +27,7 @@ import {
 } from "@/lib/iriss-listings-operator-prefs";
 import type { IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import {
+  IRISS_ORDER_ROOM_TABS,
   IRISS_ORDER_ROOM_TEMPLATES,
   appendIrissOrderRoomNote,
   irissOrderRoomCommunicationCount,
@@ -57,6 +60,7 @@ import {
   IRISS_LISTING_HIT_STATUSES,
   type IrissListingHitStatus,
 } from "@/lib/iriss-listing-match-client";
+import { irissHorizontalSwipeDirection, irissTabAfterSwipe } from "@/lib/iriss-touch-swipe";
 import {
   coerceIrissDuplicatesByListing,
   coerceIrissHitStatusMap,
@@ -328,6 +332,7 @@ export function IrissOrderRoom({
   initialTab?: IrissOrderRoomTab;
 }) {
   const [tab, setTab] = useState<IrissOrderRoomTab>(coerceIrissOrderRoomTab(initialTab));
+  const tabSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [bucket, setBucket] = useState<IrissOrderRoomHitBucket>("new");
   const [criteriaOpen, setCriteriaOpen] = useState(false);
   const [criteriaOn, setCriteriaOn] = useState(false);
@@ -740,6 +745,28 @@ export function IrissOrderRoom({
         </div>
       ) : null}
 
+      <div
+        style={{ touchAction: "manipulation" }}
+        onTouchStart={(e: TouchEvent<HTMLDivElement>) => {
+          const target = e.target;
+          if (target instanceof Element && target.closest("a,button,input,textarea,select,label,[data-iriss-no-swipe]")) {
+            tabSwipeStartRef.current = null;
+            return;
+          }
+          const touch = e.touches[0];
+          tabSwipeStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+        }}
+        onTouchEnd={(e: TouchEvent<HTMLDivElement>) => {
+          const start = tabSwipeStartRef.current;
+          tabSwipeStartRef.current = null;
+          if (!start) return;
+          const touch = e.changedTouches[0];
+          if (!touch) return;
+          const direction = irissHorizontalSwipeDirection(touch.clientX - start.x, touch.clientY - start.y);
+          if (!direction) return;
+          setTab((current) => irissTabAfterSwipe(IRISS_ORDER_ROOM_TABS, current, direction));
+        }}
+      >
       {tab === "overview" ? (
         <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(240px,1fr)]">
           <div className="min-w-0 space-y-3">
@@ -1122,8 +1149,11 @@ export function IrissOrderRoom({
                     <div className="flex items-center gap-3 p-3 md:block md:p-0">
                       <div className="relative h-14 w-[70px] shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-slate-300 to-slate-500 md:h-[150px] md:w-full md:rounded-none">
                         {thumb ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={thumb} alt="" className="h-full w-full object-cover" />
+                          <IrissLazyImage
+                            src={listingDisplayImageUrl({ url: thumb, maxWidth: 480 })}
+                            alt=""
+                            sizes="(max-width: 767px) 70px, 320px"
+                          />
                         ) : null}
                       </div>
                       <div className="min-w-0 flex-1 md:p-3">
@@ -1356,6 +1386,7 @@ export function IrissOrderRoom({
           </section>
         </div>
       ) : null}
+      </div>
 
       <div className="fixed inset-x-0 bottom-[var(--admin-tabbar-h,0px)] z-[40] grid grid-cols-3 gap-2 border-t border-[#e5e7eb] bg-[#fffffff2] px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 md:hidden">
         <button type="button" disabled={orderPdfBusy} onClick={onPdf} className="flex h-11 min-w-0 items-center justify-center rounded-xl bg-white text-[14px] font-semibold text-[#1d4ed8] shadow-[inset_0_0_0_1px_#e5e7eb]">
@@ -1537,11 +1568,17 @@ function IrissOrderHitMatchChrome({
 
 function HitPhoto({ src, alt, count }: { src: string; alt: string; count: number }) {
   const [hidden, setHidden] = useState(false);
+  const display = listingDisplayImageUrl({ url: src, maxWidth: 480 });
   return (
     <div className="relative h-[130px] w-full shrink-0 overflow-hidden rounded-[10px] bg-gradient-to-br from-slate-300 to-slate-500 md:w-[200px]">
-      {src && !hidden ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={alt} referrerPolicy="no-referrer" className="h-full w-full object-cover" onError={() => setHidden(true)} />
+      {display && !hidden ? (
+        <IrissLazyImage
+          src={display}
+          alt={alt}
+          sizes="(max-width: 767px) 100vw, 200px"
+          referrerPolicy="no-referrer"
+          onError={() => setHidden(true)}
+        />
       ) : null}
       {count > 1 ? <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white">1/{count}</span> : null}
     </div>

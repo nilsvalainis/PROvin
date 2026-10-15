@@ -7,7 +7,8 @@ import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./Adm
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
 import { AdminVinHandoffProvider } from "./AdminVinHandoffContext";
-import { ADMIN_MOBILE_TABBAR_H_CSS } from "@/lib/admin-mobile-shell";
+import { IrissPavadzimesMobileBar } from "@/components/admin/IrissPavadzimesMobileBar";
+import { ADMIN_MOBILE_TABBAR_H_CSS, adminMobilePullToRefreshEnabled } from "@/lib/admin-mobile-shell";
 
 type AdminShellLayoutValue = {
   sidebarCollapsed: boolean;
@@ -39,6 +40,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
 
   const isProWorkspace = workspace === "pro";
   const isDetailScreen = /^\/admin\/(?:iriss\/pasutijumi|orders|konsultacijas|commission-invoice|partneri)\/[^/]+$/.test(pathname);
+  const pullToRefresh = adminMobilePullToRefreshEnabled(pathname);
   /** Detaļu lapām ar savu apakšējo joslu mobilajā cilņu joslu nerādām. */
   const hideTabBar = isDetailScreen || /^\/admin\/atras-vertesanas\/[^/]+$/.test(pathname);
   const { collapsed, toggle } = useAdminSidebarCollapsed();
@@ -55,7 +57,12 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
       <div className={`flex min-h-0 min-w-0 flex-1 flex-col max-md:h-full ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
         <AdminShellLayoutContext.Provider value={shellLayoutValue}>
           <AdminAuditDeadlineTickProvider>
-            <AdminShellMainWithMobilePull isDetailScreen={isDetailScreen} notice={notice}>
+            <AdminShellMainWithMobilePull
+              isDetailScreen={isDetailScreen}
+              pullToRefresh={pullToRefresh}
+              notice={notice}
+              topSlot={workspace === "iriss" ? <IrissPavadzimesMobileBar /> : null}
+            >
               {children}
             </AdminShellMainWithMobilePull>
           </AdminAuditDeadlineTickProvider>

@@ -25,6 +25,7 @@ import {
   irissPhoneTelHref,
 } from "@/lib/iriss-pasutijumi-list-row";
 import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
+import { IRISS_ORDERS_LIST_PAGE, irissNextWindowLimit, irissWindowSlice } from "@/lib/iriss-list-window";
 import {
   IRISS_PASUTIJUMS_LIST_STATUSES,
   IRISS_PASUTIJUMS_LIST_STATUS_LV,
@@ -429,6 +430,8 @@ const IrissRowCard = memo(function IrissRowCard({
             alt=""
             width={36}
             height={36}
+            loading="lazy"
+            decoding="async"
             className="mt-0.5 h-9 w-9 shrink-0 rounded-md border border-slate-200/90 bg-white object-contain p-[3px]"
           />
         ) : (
@@ -697,6 +700,8 @@ export function IrissPasutijumiListClient({
   const [ectMsg, setEctMsg] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
   const [trashOn, setTrashOn] = useState(() => readIrissListTrashFilter());
+  const [listLimit, setListLimit] = useState(IRISS_ORDERS_LIST_PAGE);
+  const listSentinelRef = useRef<HTMLDivElement>(null);
   const narrowSwipeViewport = useNarrowIrissSwipeViewport();
   const swipeClosersRef = useRef<Map<string, () => void>>(new Map());
   const persistTimerRef = useRef<number | null>(null);
@@ -861,6 +866,30 @@ export function IrissPasutijumiListClient({
       unpinnedRows: orderUnpinnedByIds(unpinned, listOrder.unpinnedOrder, sortMode),
     };
   }, [visibleRows, listOrder, sortMode]);
+
+  const orderedRows = useMemo(() => [...pinnedRows, ...unpinnedRows], [pinnedRows, unpinnedRows]);
+  const listWindow = irissWindowSlice(orderedRows, listLimit, !dragReorderEnabled);
+  const shownPinnedRows = dragReorderEnabled ? pinnedRows : listWindow.items.filter((r) => Boolean(r.pinnedAt));
+  const shownUnpinnedRows = dragReorderEnabled ? unpinnedRows : listWindow.items.filter((r) => !r.pinnedAt);
+
+  useEffect(() => {
+    setListLimit(IRISS_ORDERS_LIST_PAGE);
+  }, [searchQuery, statusFilter, trashOn, sortMode]);
+
+  useEffect(() => {
+    if (dragReorderEnabled || !listWindow.hasMore) return;
+    const el = listSentinelRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        setListLimit((current) => irissNextWindowLimit(current, orderedRows.length, IRISS_ORDERS_LIST_PAGE));
+      },
+      { root: null, rootMargin: "700px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [dragReorderEnabled, listWindow.hasMore, orderedRows.length]);
 
   useEffect(() => {
     setListOrder((prev) => {
@@ -1169,25 +1198,26 @@ export function IrissPasutijumiListClient({
           </p>
         ) : null}
 
-        {pinnedRows.length > 0 ? (
+        {shownPinnedRows.length > 0 ? (
           dragReorderEnabled ? (
-            <Reorder.Group axis="y" values={pinnedRows.map((r) => r.id)} onReorder={onReorderPinned} className="flex flex-col gap-2">
-              {pinnedRows.map(renderRow)}
+            <Reorder.Group axis="y" values={shownPinnedRows.map((r) => r.id)} onReorder={onReorderPinned} className="flex flex-col gap-2">
+              {shownPinnedRows.map(renderRow)}
             </Reorder.Group>
           ) : (
-            <div className="flex flex-col gap-2">{pinnedRows.map(renderRow)}</div>
+            <div className="flex flex-col gap-2">{shownPinnedRows.map(renderRow)}</div>
           )
         ) : null}
 
-        {unpinnedRows.length > 0 ? (
+        {shownUnpinnedRows.length > 0 ? (
           dragReorderEnabled ? (
-            <Reorder.Group axis="y" values={unpinnedRows.map((r) => r.id)} onReorder={onReorderUnpinned} className="flex flex-col gap-2">
-              {unpinnedRows.map(renderRow)}
+            <Reorder.Group axis="y" values={shownUnpinnedRows.map((r) => r.id)} onReorder={onReorderUnpinned} className="flex flex-col gap-2">
+              {shownUnpinnedRows.map(renderRow)}
             </Reorder.Group>
           ) : (
-            <div className="flex flex-col gap-2">{unpinnedRows.map(renderRow)}</div>
+            <div className="flex flex-col gap-2">{shownUnpinnedRows.map(renderRow)}</div>
           )
         ) : null}
+        {listWindow.hasMore ? <div ref={listSentinelRef} className="h-px w-full" aria-hidden /> : null}
       </div>
 
       {deleteTargetId ? (

@@ -349,9 +349,9 @@ const server = createServer(async (req, res) => {
     try {
       const out = await browserQueue.run("page:vinscan", async () => {
         const started = Date.now();
-        const { page, close } = await openProfile("vinscan");
+        const { page, context, close } = await openProfile("vinscan", { headless: false, timeoutMs: 55_000 });
         try {
-          const got = await fetchVinScanPageHtml(page, pageUrl);
+          const got = await fetchVinScanPageHtml(page, pageUrl, { context, timeoutMs: 52_000 });
           return { ok: true, ...got, elapsedMs: Date.now() - started };
         } finally {
           await close();

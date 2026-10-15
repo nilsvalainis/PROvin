@@ -344,12 +344,12 @@ describe("countVinScanStatuses", () => {
 
 describe("vinScanSourceTimeoutMs", () => {
   it("izsoļu avotiem (Chrome relejs) ir garāks timeouts nekā 14 s noklusējumam", () => {
-    expect(vinScanSourceTimeoutMs("stat_vin")).toBe(80_000);
-    expect(vinScanSourceTimeoutMs("bid_cars")).toBe(80_000);
-    expect(vinScanSourceTimeoutMs("plc_auction")).toBe(80_000);
-    expect(vinScanSourceTimeoutMs("checkcar_vin")).toBe(80_000);
-    expect(vinScanSourceTimeoutMs("bidfax")).toBe(80_000);
-    expect(vinScanSourceTimeoutMs("poctra")).toBe(80_000);
+    expect(vinScanSourceTimeoutMs("stat_vin")).toBe(100_000);
+    expect(vinScanSourceTimeoutMs("bid_cars")).toBe(100_000);
+    expect(vinScanSourceTimeoutMs("plc_auction")).toBe(100_000);
+    expect(vinScanSourceTimeoutMs("checkcar_vin")).toBe(100_000);
+    expect(vinScanSourceTimeoutMs("bidfax")).toBe(100_000);
+    expect(vinScanSourceTimeoutMs("poctra")).toBe(100_000);
     expect(vinScanSourceTimeoutMs("lt_itpr")).toBe(90_000);
     expect(vinScanSourceTimeoutMs("vin_decode")).toBe(14_000);
   });

@@ -131,13 +131,41 @@ vatNote, auctionId, auctionStartAt, auctionEndAt, auctionStage`.
 
 ## VIN SCAN `/listings/page` (stat.vin u.c.)
 
-Jauns ceļš. **Jāizvieto releja kods** (`tar` + `systemctl restart provin-listings`). Caddy `/listings/*` un Vercel
-`IRISS_LISTINGS_RELAY_URL` / `IRISS_LISTINGS_RELAY_TOKEN` paliek tie paši. Jaunu env uz Vercel nav.
+**Jāizvieto releja kods** (komandas zemāk). Caddy `/listings/*` un Vercel `IRISS_LISTINGS_RELAY_URL` /
+`IRISS_LISTINGS_RELAY_TOKEN` paliek tie paši. Jaunu env uz Vercel nav.
 
 Allowlist: `stat.vin`, `bid.cars`, `checkcar.vin`, `bidfax.info`, `poctra.com`, `plc.auction`,
 `adify.lv`, `tirgusdati.lv`, `ss.lv`, `ss.com`, `city24.lv`. Profils `vinscan`
-(nav Openlane/Auto1 sīkdatnes). stat.vin WAF (`Access blocked`) CapSolver nespēj; Chrome var.
-Adify / tirgusdati.lv no Vercel saņem Cloudflare 403; tas pats `/page` ceļš ielasa SSR HTML.
+(nav Openlane/Auto1 sīkdatnes). Adify / tirgusdati.lv no Vercel saņem Cloudflare 403; tas pats `/page` ceļš ielasa SSR HTML.
+
+stat.vin Cloudflare ("Just a moment" / "Performing security verification") bieži atbild **HTTP 403, pirms**
+izaicinājuma teksts ir DOM. Relejs to negaida kā gatavu lapu: headed Chrome (Xvfb, ne headless), stealth
+`navigator.webdriver`, `page.goto` (nevis `fetch`), gaida līdz ~24 s, ja parādās `cf_clearance` ielādē URL
+vēlreiz, otrais mēģinājums vispirms atver `https://stat.vin/` (sīkdatnes paliek profilā
+`/var/lib/provin-listings/profiles/vinscan`). Ja HTML jau ir izsole, atbilde ir status 200, nevis sākotnējais 403.
+CapSolver šim WAF netiek lietots.
+
+### Izvietošana pēc šī labojuma (no repo saknes)
+
+```bash
+tar -C relay/provin-listings --exclude node_modules --exclude .git -czf - . \
+| ssh root@37.27.149.106 'rm -rf /root/provin-listings-src && mkdir -p /root/provin-listings-src && tar -C /root/provin-listings-src -xzf - && bash /root/provin-listings-src/install.sh'
+```
+
+Tikai kods, ja `node_modules` jau ir un Playwright nav jāpārinstalē:
+
+```bash
+tar -C relay/provin-listings --exclude node_modules --exclude .git -czf - . \
+| ssh root@37.27.149.106 'rm -rf /tmp/provin-listings-src && mkdir -p /tmp/provin-listings-src && tar -C /tmp/provin-listings-src -xzf - && tar -C /tmp/provin-listings-src --exclude node_modules --exclude .git -cf - . | tar -C /opt/provin-listings -xf - && systemctl restart provin-listings'
+```
+
+Pārbaude uz servera (VIN `WDD1173421N570488`, Copart FI lots `50558298`, 20 foto). Atbilde var aizņemt līdz ~50 s:
+
+```bash
+ssh root@37.27.149.106 'systemctl is-active provin-listings; curl -sS -m 90 -H "Authorization: Bearer $(grep ^LISTINGS_RELAY_TOKEN= /etc/provin-listings.env | cut -d= -f2-)" -H "content-type: application/json" -d "{\"url\":\"https://stat.vin/cars/WDD1173421N570488\"}" http://127.0.0.1:8789/listings/page | head -c 400'
+```
+
+Profilu `vinscan` nedzēst: tur paliek `cf_clearance`.
 
 ## Servera env (`/etc/provin-listings.env`)
 

@@ -24,6 +24,27 @@ import {
 } from "@/lib/iriss-pasutijums-offer-images";
 
 describe("IRISS saraksta rinda", () => {
+  it("projekcija neņem piedāvājumu attēlus", () => {
+    const rec = emptyIrissPasutijums("abc", "2026-04-22T10:00:00.000Z");
+    rec.offers = [
+      {
+        ...emptyIrissOfferRecord("off", rec.createdAt),
+        attachments: [
+          {
+            id: "a",
+            name: "a.jpg",
+            mimeType: "image/jpeg",
+            size: 10,
+            dataUrl: "data:image/jpeg;base64,AAAA",
+          },
+        ],
+      },
+    ];
+    const row = irissPasutijumsToListRow(rec);
+    expect(row).not.toHaveProperty("offers");
+    expect(JSON.stringify(row)).not.toContain("base64");
+  });
+
   it("includes client name and order date", () => {
     const rec = emptyIrissPasutijums("abc", "2026-04-22T10:00:00.000Z");
     rec.clientFirstName = "Anna";

@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, ScanLine } from "lucide-react";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
+import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import { ORDER_VIN_SCAN_STUCK_MS } from "@/lib/order-vin-scan-run-decision";
 import {
@@ -51,6 +52,13 @@ function Counter({ state, count, label }: { state: DotState; count: number; labe
   );
 }
 
+function browserImportErrorLv(code: string | undefined): string {
+  if (code === "vin_mismatch") return "VIN lapā nesakrīt ar pasūtījumu";
+  if (code === "too_large") return "Lapa ir par lielu importam";
+  if (code === "page_not_ready") return "Lapa vēl nav gatava. Pagaidiet, kamēr ielādējas, un mēģiniet vēlreiz";
+  return "Importēšana neizdevās";
+}
+
 function actionLabel(action: OrderVinScanSourceRow["action"]): string {
   if (action === "import_auction") return "Ielikt AUCTION";
   if (action === "import_csdd") return "Ielikt CSDD";
@@ -82,6 +90,7 @@ export function AdminOrderVinScanCard({
   const [showNone, setShowNone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [listExpanded, setListExpanded] = useState(false);
+  const [importNote, setImportNote] = useState("");
   const [photoFail, setPhotoFail] = useState(0);
 
   useEffect(() => {
@@ -125,21 +134,43 @@ export function AdminOrderVinScanCard({
 
   useEffect(() => {
     const onResult = (ev: Event) => {
-      const d = (ev as CustomEvent).detail as { id?: string; vin?: string; status?: string; summary?: string } | null;
+      const d = (ev as CustomEvent).detail as {
+        id?: string;
+        vin?: string;
+        status?: string;
+        summary?: string;
+        html?: string;
+        pageUrl?: string;
+      } | null;
       if (!d?.id || String(d.vin || "").toUpperCase() !== vin.trim().toUpperCase()) return;
-      if (d.status !== "found" && d.status !== "none") return;
+      const html = typeof d.html === "string" ? d.html : "";
+      if (!html.trim() && d.status !== "found" && d.status !== "none") return;
+      setImportNote("");
       void fetch("/api/admin/order-vin-scan", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, vin, browserResult: { id: d.id, status: d.status, summary: d.summary ?? "" } }),
+        body: JSON.stringify({
+          sessionId,
+          vin,
+          browserResult: {
+            id: d.id,
+            status: d.status,
+            summary: d.summary ?? "",
+            ...(html.trim() ? { html, pageUrl: typeof d.pageUrl === "string" ? d.pageUrl : "" } : {}),
+          },
+        }),
       })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((json: { vinScan?: unknown } | null) => {
+        .then(async (r) => {
+          const json = (await r.json().catch(() => null)) as { vinScan?: unknown; error?: string } | null;
+          if (!r.ok) {
+            setImportNote(browserImportErrorLv(json?.error));
+            return;
+          }
           const next = parseOrderVinScanRecord(json?.vinScan);
           if (next) setRecord(next);
         })
-        .catch(() => undefined);
+        .catch(() => setImportNote("Importēšana neizdevās"));
     };
     document.addEventListener("provin-vin-scan-result", onResult);
     return () => document.removeEventListener("provin-vin-scan-result", onResult);
@@ -329,8 +360,11 @@ export function AdminOrderVinScanCard({
         />
       }
     >
+      <span hidden data-provin-order-vin={vin.trim().toUpperCase()} data-provin-order-session={sessionId} />
       {showFields ? (
         <div className="px-2 pb-2">
+          <AdminUserscriptUpdateHint />
+          {importNote ? <p className="mb-2 text-[11px] text-rose-700">{importNote}</p> : null}
           {!listExpanded ? (
             collapsedStrip
           ) : (

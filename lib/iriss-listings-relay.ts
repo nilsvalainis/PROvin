@@ -159,6 +159,9 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
     sourceCountry: str(item.sourceCountry) || undefined,
     owningCountry: str(item.owningCountry) || undefined,
     imageUrl: str(item.imageUrl),
+    ...(str(item.thumbUrl) || str(item.thumbnailUrl) || str(item.imageThumbUrl)
+      ? { thumbUrl: str(item.thumbUrl) || str(item.thumbnailUrl) || str(item.imageThumbUrl) }
+      : {}),
     imageUrls: Array.isArray(item.imageUrls) ? item.imageUrls.map(str).filter(Boolean).slice(0, 40) : undefined,
     documentImageUrls: Array.isArray(item.documentImageUrls)
       ? item.documentImageUrls.map(str).filter(Boolean).slice(0, 20)
@@ -335,6 +338,7 @@ function autobidVehiclesFromNuxt(nuxtPages: string[], orderId: string, orderBran
         location: v.location,
         countryCode: v.countryCode,
         imageUrl: v.imageUrl,
+        ...(v.thumbUrl ? { thumbUrl: v.thumbUrl } : {}),
         imageUrls: v.imageUrls,
         vin: v.vin || undefined,
         color: v.color || undefined,

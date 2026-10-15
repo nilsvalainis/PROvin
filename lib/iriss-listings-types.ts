@@ -80,6 +80,8 @@ export type IrissListingVehicle = {
   sourceCountry?: string;
   owningCountry?: string;
   imageUrl: string;
+  /** Mazākā avota bilde sarakstam (Autobid links.s, thumbnailUrl). Pilnā paliek imageUrl. */
+  thumbUrl?: string;
   /** Papildu bildes no avota (Auto1 images[], Autobid imageGroups). */
   imageUrls?: string[];
   /** VIN, ja avots to iedod (Openlane ChassisNumber, Autobid additionalInformation, Auto1 ja ir). */

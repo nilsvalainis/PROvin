@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   autobidDetailUrl,
+  autobidImageChoice,
   autobidPageUrl,
   extractNuxtDataJson,
   hydrateNuxtData,
@@ -146,6 +147,21 @@ describe("parseAutobidSearchPage", () => {
     const html = `<script id="__NUXT_DATA__" type="application/json">${JSON.stringify(flat)}</script>`;
     const page = parseAutobidSearchPage(html);
     expect(page).toEqual({ vehicles: [], pageCount: 0, pageNumber: 0 });
+  });
+});
+
+describe("autobid image choice", () => {
+  it("keeps the medium url for the record and the small url as thumb", () => {
+    expect(
+      autobidImageChoice({
+        m: "https://cdn.autobid.de/imagecache/m/a.jpg",
+        s: "https://cdn.autobid.de/imagecache/s/a.jpg",
+        l: "https://cdn.autobid.de/imagecache/l/a.jpg",
+      }),
+    ).toEqual({
+      imageUrl: "https://cdn.autobid.de/imagecache/m/a.jpg",
+      thumbUrl: "https://cdn.autobid.de/imagecache/s/a.jpg",
+    });
   });
 });
 
