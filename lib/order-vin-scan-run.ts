@@ -11,6 +11,7 @@ import {
   orderVinScanSourceNeedsRescan,
   takeOrderVinScanSlot,
 } from "@/lib/order-vin-scan-run-decision";
+import { preferBrowserArchiveImport } from "@/lib/order-vin-scan-browser-html";
 import { isPaidVinScanSourceId, vinScanAutoSourceIds } from "@/lib/vin-scan/free-sources";
 import { isVinScanSourceId } from "@/lib/vin-scan/catalog";
 import { runVinScan } from "@/lib/vin-scan/run";
@@ -38,6 +39,22 @@ export type RunOrderFreeVinScanResult = {
 
 function skip(reason: string): RunOrderFreeVinScanResult {
   return { ok: true, skipped: true, reason };
+}
+
+/** Pārlasa melnrakstu, lai nepārrakstītu pārlūka arhīva importu, kas ienāca skenēšanas laikā. */
+async function persistOrderVinScan(sessionId: string, next: OrderVinScanRecord): Promise<OrderVinScanRecord> {
+  try {
+    const latest = parseOrderVinScanRecord((await readOrderDraft(sessionId))?.vinScan);
+    const indicators =
+      latest?.vin === next.vin ? preferBrowserArchiveImport(latest.indicators, next.indicators) : next.indicators;
+    const record = { ...next, indicators };
+    const saved = await upsertOrderDraftVinScan(sessionId, record);
+    if (!saved.ok) console.error("[order-vin-scan] persist failed", sessionId, saved.error);
+    return record;
+  } catch (err) {
+    console.error("[order-vin-scan] persist failed", sessionId, err);
+    return next;
+  }
 }
 
 async function runOrderFreeVinScanOnce(
@@ -82,7 +99,7 @@ async function runOrderFreeVinScanOnce(
     status: "running",
     indicators: prev?.vin === vin ? prev.indicators : [],
   };
-  await upsertOrderDraftVinScan(sessionId, running).catch(() => null);
+  await persistOrderVinScan(sessionId, running);
 
   try {
     const wanted = (opts.sourceIds ?? []).filter(
@@ -96,34 +113,36 @@ async function runOrderFreeVinScanOnce(
       listingUrl: opts.listingUrl?.trim() || "",
       sourceIds,
     });
-    const indicators = wanted.length ? mergeVinScanIndicators(prev?.vin === vin ? prev.indicators : [], scanned) : scanned;
+    const base = prev?.vin === vin ? prev.indicators : [];
+    const indicators = wanted.length ? mergeVinScanIndicators(base, scanned) : scanned;
     const scannedAt = new Date().toISOString();
     const done: OrderVinScanRecord = { at: scannedAt, vin, status: "done", indicators };
-    await upsertOrderDraftVinScan(sessionId, done).catch((err) => {
-      console.error("[order-vin-scan] persist failed", sessionId, err);
-    });
-    await writeVinScanSnapshot({ vin, plates: emptyVinScanPlates(), scannedAt, indicators }).catch(
-      () => undefined,
-    );
-    await recordSourceOutcomes(vinScanSourceHealthOutcomes(indicators)).catch(() => undefined);
+    const saved = await persistOrderVinScan(sessionId, done);
+    await writeVinScanSnapshot({
+      vin,
+      plates: emptyVinScanPlates(),
+      scannedAt,
+      indicators: saved.indicators,
+    }).catch(() => undefined);
+    await recordSourceOutcomes(vinScanSourceHealthOutcomes(saved.indicators)).catch(() => undefined);
     return {
       ok: true,
       vin,
-      found: indicators.filter((r) => r.status === "found").length,
-      none: indicators.filter((r) => r.status === "none").length,
-      error: indicators.filter((r) => r.status === "unknown").length,
+      found: saved.indicators.filter((r) => r.status === "found").length,
+      none: saved.indicators.filter((r) => r.status === "none").length,
+      error: saved.indicators.filter((r) => r.status === "unknown").length,
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "scan_failed";
     console.error("[order-vin-scan] run failed", sessionId, msg);
     const keep = prev?.vin === vin && prev.indicators.length > 0 ? prev.indicators : [];
-    await upsertOrderDraftVinScan(sessionId, {
+    await persistOrderVinScan(sessionId, {
       at: new Date().toISOString(),
       vin,
       status: keep.length ? "done" : "error",
       error: msg.slice(0, 300),
       indicators: keep,
-    }).catch(() => null);
+    });
     return { ok: false, vin, reason: msg };
   }
 }

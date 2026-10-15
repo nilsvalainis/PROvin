@@ -23,10 +23,33 @@ const CHROME_ARGS = [
   "--disable-dev-shm-usage",
   "--disable-background-networking",
   "--disable-features=TranslateUI",
+  "--disable-infobars",
   `--lang=${LOCALE}`,
   "--window-size=1366,900",
   "--window-position=0,0",
 ];
+
+/** Pirms katras navigācijas: Cloudflare "Just a moment" krīt, ja navigator.webdriver ir true. */
+export const STEALTH_INIT_SOURCE = `(() => {
+  try {
+    Object.defineProperty(navigator, "webdriver", { get: () => undefined, configurable: true });
+  } catch (e) {}
+  try {
+    if (!window.chrome) window.chrome = { runtime: {}, app: {} };
+  } catch (e) {}
+  try {
+    Object.defineProperty(navigator, "languages", { get: () => ["en-GB", "en"], configurable: true });
+  } catch (e) {}
+  try {
+    const original = navigator.permissions && navigator.permissions.query;
+    if (original) {
+      navigator.permissions.query = (params) =>
+        params && params.name === "notifications"
+          ? Promise.resolve({ state: Notification.permission })
+          : original.call(navigator.permissions, params);
+    }
+  } catch (e) {}
+})();`;
 
 export function profileDir(platform) {
   return path.join(PROFILES_DIR, platform);
@@ -111,6 +134,7 @@ export async function openProfile(platform, opts = {}) {
     }
   }
   context.setDefaultTimeout(opts.timeoutMs ?? 45_000);
+  await context.addInitScript({ content: STEALTH_INIT_SOURCE }).catch(() => undefined);
   const page = context.pages()[0] ?? (await context.newPage());
   const close = async () => {
     await context.close().catch(() => undefined);

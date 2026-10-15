@@ -23,7 +23,7 @@ export type VinScanRelayPageOk = { ok: true; status: number; html: string; final
 export type VinScanRelayPageErr = { ok: false; reason: string };
 export type VinScanRelayPage = VinScanRelayPageOk | VinScanRelayPageErr;
 
-const DEFAULT_TIMEOUT_MS = 70_000;
+const DEFAULT_TIMEOUT_MS = 90_000;
 
 /** Tāds pats allowlist kā relay/provin-listings/lib/vinscan-page.mjs */
 export const VIN_SCAN_RELAY_HOSTS = [
@@ -33,6 +33,11 @@ export const VIN_SCAN_RELAY_HOSTS = [
   "bidfax.info",
   "poctra.com",
   "plc.auction",
+  "adify.lv",
+  "tirgusdati.lv",
+  "ss.lv",
+  "ss.com",
+  "city24.lv",
   "car.info",
 ] as const;
 
@@ -132,14 +137,27 @@ export async function applyVinScanRelayIfBlocked(
 }
 
 /**
- * Tiešais fetch (bez CapSolver). WAF / 403 / timeout -> Hetzner Chrome.
- * Ja relejs nav konfigurēts, atstāj sākotnējo lapu vai no jauna izmet kļūdu.
+ * Ja relejs ir konfigurēts, izsoļu hosts iet uz Hetzner Chrome (`page.goto`), nevis uz Vercel raw fetch.
+ * Raw fetch no datu centra saņem stat.vin 403, pirms pārlūks paspēj atrisināt Cloudflare.
+ * Bez releja paliek tiešais fetch. Ja relejs neceļas, tiešais fetch ir rezerve.
  */
 export async function fetchVinScanAuctionPage(
   url: string,
   directFetch: () => Promise<VinScanHttpLike>,
   deps: { fetchImpl?: FetchLike; env?: Record<string, string | undefined>; timeoutMs?: number } = {},
 ): Promise<VinScanHttpLike> {
+  const env = deps.env ?? process.env;
+  if (isVinScanRelayUrl(url) && readIrissRelayConfig(env)) {
+    const relayed = await fetchVinScanPageViaRelay(url, deps);
+    if (relayed.ok && relayed.html.trim()) {
+      return {
+        status: relayed.status || 200,
+        text: relayed.html,
+        cookie: "",
+        finalUrl: relayed.finalUrl,
+      };
+    }
+  }
   try {
     const direct = await directFetch();
     return await applyVinScanRelayIfBlocked(url, direct, deps);

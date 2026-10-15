@@ -134,6 +134,33 @@ describe("applyVinScanRelayIfBlocked", () => {
 });
 
 describe("fetchVinScanAuctionPage", () => {
+  it("ja relejs ir konfigurēts, stat.vin iet uz Chrome un raw fetch netiek saukts", async () => {
+    let direct = 0;
+    const fetchImpl = (async () =>
+      ({
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify({
+            ok: true,
+            status: 200,
+            html: "<html>Sale History Copart FI Lot 50558298</html>",
+            finalUrl: "https://stat.vin/cars/WDD1173421N570488",
+          }),
+      }) as Response) as typeof fetch;
+    const out = await fetchVinScanAuctionPage(
+      "https://stat.vin/cars/WDD1173421N570488",
+      async () => {
+        direct += 1;
+        return { status: 403, text: WAF, cookie: "" };
+      },
+      { fetchImpl, env: ENV },
+    );
+    expect(direct).toBe(0);
+    expect(out.status).toBe(200);
+    expect(out.text).toContain("50558298");
+  });
+
   it("timeout pēc tam Chrome HTML, CapSolver nav iesaistīts", async () => {
     const fetchImpl = (async () =>
       ({
