@@ -12,7 +12,8 @@ import {
   stripListingPeekMarkdown,
   type ListingPeekTopicId,
 } from "@/lib/listing-peek-comment-presets";
-import { fetchListingAiSnapshot, formatListingAiSnapshotForAi } from "@/lib/listing-scrape";
+import { formatListingAiSnapshotForAi } from "@/lib/listing-scrape";
+import { fetchListingAiSnapshot } from "@/lib/listing-scrape-server";
 import { applyProvinReportCopyVocabulary } from "@/lib/source-summary-comment-format";
 
 function listingPeekPhraseBank(): string {

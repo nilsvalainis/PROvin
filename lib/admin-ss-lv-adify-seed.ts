@@ -15,7 +15,7 @@ import {
   orderDraftWorkspaceToPersistBody,
 } from "@/lib/admin-order-draft-workspace-merge";
 import { createDefaultSourceBlocks, mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
-import { fetchListingMarketSnapshot } from "@/lib/listing-scrape";
+import { fetchListingMarketSnapshot } from "@/lib/listing-scrape-server";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 
 function emptyWorkspaceBody(): OrderDraftWorkspaceBody {

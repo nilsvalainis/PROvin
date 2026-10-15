@@ -120,7 +120,7 @@ export async function fetchAdifyHistoryHtmlViaCapsolver(
     return { html: null, error: "Adify Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" };
   }
 
-  let session: Session = {
+  const session: Session = {
     cookie: "",
     ua: VIN_HTTP_UA,
     proxyUrl: stickyProxyUrl() ?? httpProxyUrlFromCapsolver(proxy) ?? undefined,
