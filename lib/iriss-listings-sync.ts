@@ -16,7 +16,12 @@ import {
 } from "@/lib/iriss-listings-search-filter";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
-import { fetchViaIrissRelay, readIrissRelayConfig } from "@/lib/iriss-listings-relay";
+import {
+  fetchViaIrissRelay,
+  readIrissRelayConfig,
+  shouldUseEcarstradeVercelFallback,
+  storedEcarstradeIdsNeedingPrice,
+} from "@/lib/iriss-listings-relay";
 import { isIrissListingsAutomaticSlot, isIrissListingsContinuationWindow } from "@/lib/iriss-listings-schedule";
 import { buildIrissListingSources, groupIrissListingSources, irissListingVehicleId, type IrissListingSource, type IrissListingSourceGroup } from "@/lib/iriss-listings-sources";
 import {
@@ -107,7 +112,7 @@ function unboundedSearchSkip(src: IrissListingSource): SourceFetch | null {
   };
 }
 
-type ListingSyncFetchContext = { deadlineMs: number };
+type ListingSyncFetchContext = { deadlineMs: number; needPriceIds?: readonly string[] };
 
 function budgetSkipFetch(note = "Laika budžets beidzās pirms avota lasīšanas."): SourceFetch {
   return {
@@ -141,10 +146,11 @@ async function fetchSource(src: IrissListingSource, ctx?: ListingSyncFetchContex
       const rr = await fetchViaIrissRelay(relay, src, {
         maxPages: envInt("IRISS_LISTINGS_RELAY_MAX_PAGES", 5, 1, 25),
         ...(relayTimeout > 0 ? { timeoutMs: relayTimeout } : {}),
+        ...(ctx?.needPriceIds?.length ? { needPriceIds: ctx.needPriceIds } : {}),
       });
-      if (rr.vehicles.length > 0) {
+      if (!shouldUseEcarstradeVercelFallback(rr)) {
         return {
-          status: "ok",
+          status: rr.status,
           note: rr.note,
           vehicles: applyEntryFilter(rr.vehicles, src),
           rawPages: rr.rawPages,
@@ -471,7 +477,14 @@ export async function runIrissListingsDailySync(
       const lead = g.orders[0]!;
       let fetchResult: SourceFetch;
       try {
-        fetchResult = await fetchSource(lead, fetchCtx);
+        const needPriceIds =
+          g.platform === "ecarstrade"
+            ? storedEcarstradeIdsNeedingPrice(previous?.vehicles ?? [], g.orders.map((o) => o.orderId))
+            : [];
+        fetchResult = await fetchSource(
+          { ...lead, sourceUrl: g.sourceUrl },
+          { ...fetchCtx, ...(needPriceIds.length ? { needPriceIds } : {}) },
+        );
       } catch (e) {
         fetchResult = { status: "fetch_failed", note: formatFetchError(e, "fetch failed"), vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
       }
@@ -508,7 +521,10 @@ export async function runIrissListingsDailySync(
       if (hit.fetch.status === "ok") okSourceKeys.add(sourceKey(src.platform, src.orderId));
     }
     if (hit.fetch.status === "ok") {
-      fetched.push(...fanOutFetchedVehicles(rejectExcludedIrissListings(hit.fetch.vehicles), g.orders));
+      const kept = rejectExcludedIrissListings(hit.fetch.vehicles);
+      for (const src of g.orders) {
+        fetched.push(...fanOutFetchedVehicles(applyEntryFilter(kept, src), [src]));
+      }
     }
     if (hit.fetch.rawPages.length > 0) raw.sources.push({ platform: g.platform, sourceUrl: g.sourceUrl, pages: hit.fetch.rawPages });
   }

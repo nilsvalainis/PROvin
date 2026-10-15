@@ -81,6 +81,20 @@ export function ecarstradeCardNeedsPrice(htmlSlice) {
   return !/€\s*\d|\d[\d.\s]*\s*€/i.test(s);
 }
 
+export function ecarstradeItemNeedsPrice(item) {
+  return Boolean(item) && item.priceBuyNow == null && item.priceCurrent == null;
+}
+
+/** Viena kartīte līdz nākamajam data-itemId, lai nākamā auto € neaizēno šo. */
+export function ecarstradeIsolatedCardSlice(html, matchIndex) {
+  const text = String(html ?? "");
+  const idx = Math.max(0, matchIndex);
+  const nextRel = text.slice(idx + 1).search(/data-itemId=["']\d+["']/i);
+  const end = nextRel >= 0 ? idx + 1 + nextRel : Math.min(text.length, idx + 8_000);
+  const start = text.lastIndexOf("<div", idx);
+  return text.slice(Math.max(0, start), end);
+}
+
 export function idsNeedingDetailPrice(html) {
   const text = String(html ?? "");
   const missing = [];
@@ -89,11 +103,55 @@ export function idsNeedingDetailPrice(html) {
   while ((m = re.exec(text))) {
     const id = m[1];
     if (!id || missing.includes(id)) continue;
-    const start = text.lastIndexOf("<div", m.index);
-    const slice = text.slice(Math.max(0, start), m.index + 8_000);
-    if (ecarstradeCardNeedsPrice(slice)) missing.push(id);
+    if (ecarstradeCardNeedsPrice(ecarstradeIsolatedCardSlice(text, m.index))) missing.push(id);
   }
   return missing;
+}
+
+export function collectIdsNeedingPrice(items, html, extraIds = []) {
+  const ids = new Set();
+  for (const it of items ?? []) {
+    const id = it?.externalId ? String(it.externalId).replace(/\D/g, "") : "";
+    if (id && ecarstradeItemNeedsPrice(it)) ids.add(id);
+  }
+  for (const id of idsNeedingDetailPrice(html)) ids.add(id);
+  for (const raw of extraIds ?? []) {
+    const id = String(raw ?? "").replace(/\D/g, "");
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
+
+/** future_api 404 / tukšs inventārs. Nav CF/403 un nav parse kļūda. */
+export function isEcarstradeFutureApiTrulyEmpty(api) {
+  const status = Number(api?.status);
+  const text = String(api?.text ?? "").trim();
+  if (status === 404) return true;
+  if (status !== 200 && status !== 204) return false;
+  if (/cloudflare|cf-challenge|just a moment|attention required/i.test(text) && /<html/i.test(text)) return false;
+  if (collectEcarstradeCardIds(htmlFromEcarstradeApiBody(text)).length) return false;
+  if (itemsFromEcarstradeApiBody(text).length) return false;
+  if (!text || text === "{}" || text === "[]" || text === "null") return true;
+  if (/^\s*(\{\}\s*)+$/.test(text)) return true;
+  const objs = splitConcatenatedJsonObjects(text);
+  if (objs.length === 0) {
+    try {
+      const j = JSON.parse(text);
+      if (!j || typeof j !== "object") return false;
+      const st = j.status ?? j.code ?? j.error_code;
+      if (st === 404 || st === "404") return true;
+      if (j.error && /not found|no (?:cars|results|stock)/i.test(String(j.error))) return true;
+      if (Array.isArray(j.data) && j.data.length === 0) return true;
+      if (j.data == null && !j.result && !j.car_id) return true;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return objs.every((o) => {
+    const st = o.status ?? o.code;
+    return st === 404 || st === "404" || (!o.result && !o.data && !o.car_id);
+  });
 }
 
 function splitConcatenatedJsonObjects(raw) {
@@ -567,8 +625,9 @@ async function fetchApiInPage(page, apiUrl) {
     .catch(() => ({ status: 0, text: "" }));
 }
 
-async function fetchSource(page, sourceUrl, { maxPages, log }) {
+async function fetchSource(page, sourceUrl, { maxPages, log, needPriceIds }) {
   try {
+    const started = Date.now();
     await restoreAuthFromStorage(page);
     if (!/ecarstrade\.com/i.test(page.url())) {
       await page.goto(`${ORIGIN}${WARMUP_PATH}`, { waitUntil: "domcontentloaded", timeout: 45_000 });
@@ -581,6 +640,9 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
     let pageCount = 1;
     const missingIds = new Set();
     let usedApi = false;
+    const extraNeedIds = Array.isArray(needPriceIds) ? needPriceIds : [];
+    const detailMax = Math.max(1, Number(process.env.LISTINGS_ET_DETAIL_PRICE_MAX || 80));
+    const detailBudgetMs = Math.max(8_000, Number(process.env.LISTINGS_ET_DETAIL_BUDGET_MS || 120_000));
     for (let p = 1; p <= maxPages; p += 1) {
       if (p > 1) {
         if (p > pageCount) break;
@@ -588,6 +650,22 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
       }
       const start = p <= 1 ? 0 : (p - 1) * 20;
       const api = await fetchApiInPage(page, ecarstradeRelayApiUrl(sourceUrl, start));
+      if (isEcarstradeFutureApiTrulyEmpty(api)) {
+        if (p === 1 && items.length === 0) {
+          const loggedIn = await isLoggedIn(page);
+          log(`ecarstrade future_api ${api.status} tukšs, ok 0 (truly empty)`);
+          return {
+            status: "ok",
+            note: "ok 0 (truly empty)",
+            items: [],
+            raw: { kind: "ecarstrade-html", searchPages: [], detailPages: [], loggedIn },
+            pagesFetched: 1,
+            pageCount: 1,
+          };
+        }
+        pageCount = Math.max(1, p - 1);
+        break;
+      }
       let html = htmlFromEcarstradeApiBody(api.text);
       items = mergeEcarstradeRelayItems(items, itemsFromEcarstradeApiBody(api.text));
       if (collectEcarstradeCardIds(html).length) {
@@ -604,18 +682,13 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
         if (challenge) return fail("blocked", `eCarsTrade rāda ${challenge}.`);
         await waitForCards(page);
         const pageHtml = await page.content();
-        const api2 = await fetchApiInPage(page, ecarstradeRelayApiUrl(sourceUrl, start));
-        const apiHtml = htmlFromEcarstradeApiBody(api2.text);
-        items = mergeEcarstradeRelayItems(items, itemsFromEcarstradeApiBody(api2.text));
-        if (collectEcarstradeCardIds(apiHtml).length) usedApi = true;
-        html = [pageHtml, apiHtml].filter((h) => collectEcarstradeCardIds(h).length > 0).join("\n") || pageHtml;
+        html = pageHtml;
       }
       items = mergeEcarstradeRelayItems(items, extractEcarstradeRelayItems(html));
       searchPages.push(html.slice(0, 1_500_000));
       const ids = collectEcarstradeCardIds(html);
-      const priced = new Set(items.filter((it) => it.priceBuyNow != null || it.priceCurrent != null).map((it) => it.externalId));
-      for (const id of idsNeedingDetailPrice(html)) {
-        if (!priced.has(id)) missingIds.add(id);
+      for (const id of collectIdsNeedingPrice(items, html, p === 1 ? extraNeedIds : [])) {
+        missingIds.add(id);
       }
       if (ids.length === 0) {
         pageCount = p;
@@ -624,10 +697,17 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
       if (ids.length >= 20) pageCount = Math.max(pageCount, p + 1);
       else pageCount = p;
     }
-    const detailLimit = Math.min(20, missingIds.size);
+    const queued = [...missingIds].filter((id) => {
+      const it = items.find((row) => row.externalId === id);
+      return !it || ecarstradeItemNeedsPrice(it);
+    });
     let i = 0;
-    for (const id of missingIds) {
-      if (i >= detailLimit) break;
+    for (const id of queued) {
+      if (i >= detailMax) break;
+      if (Date.now() - started > detailBudgetMs) {
+        log(`ecarstrade detail budget ${detailBudgetMs}ms, enriched ${i}/${queued.length}`);
+        break;
+      }
       i += 1;
       await randomPause(1_000, 2_200);
       const url = ecarstradeRelayDetailUrl(id);
@@ -640,12 +720,16 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
       await page.waitForSelector("body", { timeout: 8_000 }).catch(() => undefined);
       const detailHtml = (await page.content()).slice(0, 800_000);
       detailPages.push({ id, html: detailHtml });
-      items = mergeEcarstradeRelayItems(items, extractEcarstradeRelayItems(detailHtml));
+      const fromDetail = extractEcarstradeRelayItem(detailHtml, { id });
+      items = mergeEcarstradeRelayItems(items, fromDetail ? [fromDetail] : extractEcarstradeRelayItems(detailHtml));
     }
     const loggedIn = await isLoggedIn(page);
     if (loggedIn) await persistProfileCookies(page);
     const cardCount = searchPages.reduce((n, html) => n + collectEcarstradeCardIds(html).length, 0);
-    log(`ecarstrade ${searchPages.length} meklēšanas, ${detailPages.length} detaļas, kartītes=${cardCount}, auto=${items.length}, api=${usedApi}, loggedIn=${loggedIn}`);
+    const stillMissing = items.filter(ecarstradeItemNeedsPrice).length;
+    log(
+      `ecarstrade ${searchPages.length} meklēšanas, ${detailPages.length} detaļas (trūka ${queued.length}), kartītes=${cardCount}, auto=${items.length}, bezCenas=${stillMissing}, api=${usedApi}, loggedIn=${loggedIn}`,
+    );
     const note = items.length
       ? `eCarsTrade ${items.length} auto no releja Chrome${usedApi ? " (future_api pārlūkā)" : " (/search)"}.`
       : loggedIn

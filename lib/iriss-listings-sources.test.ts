@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
-import { buildIrissListingSources, groupIrissListingSources } from "@/lib/iriss-listings-sources";
+import { buildIrissListingSources, groupIrissListingSources, listingFetchUrl } from "@/lib/iriss-listings-sources";
 import type { IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
 function row(
@@ -137,6 +137,20 @@ describe("buildIrissListingSources", () => {
     expect(sources.find((s) => s.platform === "openline")!.sourceUrl).toMatch(/makes=lexus/i);
     expect(sources.find((s) => s.platform === "autobid")!.sourceUrl).toMatch(/name-brand=LEXUS|name-brand=TOYOTA/i);
     expect(groupIrissListingSources(auto1)).toHaveLength(2);
+  });
+
+  it("groups eCarsTrade URLs that differ only by iriss_ post-filters", () => {
+    const a = "https://ecarstrade.com/search?mark[]=68&model[]=1866&iriss_drive=awd";
+    const b = "https://ecarstrade.com/search?model[]=1866&mark[]=68&iriss_need=led";
+    expect(listingFetchUrl(a)).toBe(listingFetchUrl(b));
+    const sources = buildIrissListingSources([
+      row("a", "active", { ecarstrade: a }),
+      row("b", "active", { ecarstrade: b }),
+    ]);
+    const groups = groupIrissListingSources(sources).filter((g) => g.platform === "ecarstrade");
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.orders.map((o) => o.orderId).sort()).toEqual(["a", "b"]);
+    expect(groups[0]!.sourceUrl).not.toMatch(/iriss_/);
   });
 
   it("skips Openlane auctionId single-car links that time out in ingest", () => {

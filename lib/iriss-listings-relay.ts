@@ -429,20 +429,49 @@ function httpFailure(status: number, bodyText: string): IrissRelayFetchResult {
   return { status: "fetch_failed", note: detail ? `${note} ${detail}` : note, vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0, elapsedMs: 0 };
 }
 
+/** Relejs ok ar 0 auto (tukšs inventārs) - Vercel future_api vairs nesauc. */
+export function shouldUseEcarstradeVercelFallback(rr: { status: IrissListingSourceStatus; vehicles: readonly unknown[] }): boolean {
+  if (rr.vehicles.length > 0) return false;
+  return rr.status !== "ok";
+}
+
+export function storedEcarstradeIdsNeedingPrice(
+  vehicles: readonly Pick<IrissFetchedVehicle, "platform" | "orderId" | "externalId" | "priceBuyNow" | "priceCurrent">[],
+  orderIds: readonly string[],
+): string[] {
+  const orders = new Set(orderIds.filter(Boolean));
+  const ids = new Set<string>();
+  for (const v of vehicles) {
+    if (v.platform !== "ecarstrade") continue;
+    if (orders.size && !orders.has(v.orderId)) continue;
+    if (v.priceBuyNow != null || v.priceCurrent != null) continue;
+    const id = String(v.externalId ?? "").replace(/\D/g, "");
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
+
 export async function fetchViaIrissRelay(
   cfg: IrissRelayConfig,
   src: { platform: IrissListingPlatform; sourceUrl: string; orderId: string; orderBrandModel: string },
-  opts: { maxPages?: number; fetchImpl?: FetchLike; timeoutMs?: number } = {},
+  opts: { maxPages?: number; fetchImpl?: FetchLike; timeoutMs?: number; needPriceIds?: readonly string[] } = {},
 ): Promise<IrissRelayFetchResult> {
   const fetchImpl = opts.fetchImpl ?? fetch;
   const timeoutMs = Math.max(1_000, opts.timeoutMs ?? cfg.timeoutMs);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const needPriceIds = (opts.needPriceIds ?? []).map((id) => String(id).replace(/\D/g, "")).filter(Boolean).slice(0, 200);
   try {
     const res = await fetchImpl(`${cfg.baseUrl}/fetch`, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${cfg.token}` },
-      body: JSON.stringify({ platform: relayPlatformFor(src.platform), sourceUrl: src.sourceUrl, orderId: src.orderId, maxPages: opts.maxPages }),
+      body: JSON.stringify({
+        platform: relayPlatformFor(src.platform),
+        sourceUrl: src.sourceUrl,
+        orderId: src.orderId,
+        maxPages: opts.maxPages,
+        ...(needPriceIds.length ? { needPriceIds } : {}),
+      }),
       signal: controller.signal,
       cache: "no-store",
     });

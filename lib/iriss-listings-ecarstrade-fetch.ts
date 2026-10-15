@@ -293,7 +293,7 @@ async function enrichMissingPrices(
   accessToken: string,
   timeoutMs: number,
 ): Promise<string> {
-  const missing = [...vehicles.values()].filter(vehicleNeedsPrice).slice(0, 30);
+  const missing = [...vehicles.values()].filter(vehicleNeedsPrice).slice(0, 80);
   if (missing.length === 0) return "";
   let enrichedJson = 0;
   let enrichedHtml = 0;
