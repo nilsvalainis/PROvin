@@ -1,67 +1,104 @@
 import "server-only";
 
-import {
-  ASV_PHOTO_MAX_BYTES,
-  makeAsvPhotoId,
-  writeAsvPhotoJpeg,
-} from "@/lib/admin-asv-photo-store";
-import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
-import { ASV_MAX_PHOTOS, makeAsvPhotoGroupId, type AsvPhotoGroup } from "@/lib/asv-photo-types";
-import type { AsvBlockState, AsvJojIngest } from "@/lib/asv-report";
+import { ASV_PHOTO_MAX_BYTES, makeAsvPhotoId, writeAsvPhotoJpeg } from "@/lib/admin-asv-photo-store";
+import { fetchAuctionPhotoJpegs } from "@/lib/auction-photo-fetch";
+import { ASV_MAX_PHOTOS, makeAsvPhotoGroupId, type AsvPhotoGroup, type AsvPhotoMeta } from "@/lib/asv-photo-types";
+import type { AsvBlockState, AsvJojFailedPhotoGroup, AsvJojIngest } from "@/lib/asv-report";
 import {
   appendAsvPhotoGroups,
   buildAsvJojIngest,
-  formatJojAsvCostUsd,
+  jojAsvCostUsd,
   jojAsvPhotoGroupTitle,
   mergeJojParseIntoAsvBlock,
 } from "@/lib/joj-asv-merge";
-import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
+import { isAllowedVinScanAuctionPhotoUrl, type VinScanAuctionPhotoGroupPlan } from "@/lib/order-vin-scan-photos";
 import { fetchJojSearchVin, jojApiConfigured } from "@/lib/vin-scan/joj-api";
-import { knownJojLotFromUrl } from "@/lib/vin-scan/parse-joj";
+import { knownJojLotFromUrl, normalizeJojKnownLot, type JojKnownLot } from "@/lib/vin-scan/parse-joj";
 import type { VinScanParse } from "@/lib/vin-scan/types";
 
-async function downloadAuctionJpeg(url: string): Promise<Buffer | null> {
-  if (!isAllowedVinScanAuctionPhotoUrl(url)) return null;
-  try {
-    const res = await fetch(url, { method: "GET", cache: "no-store", redirect: "follow" });
-    if (!res.ok) return null;
-    const ab = await res.arrayBuffer();
-    const normalized = await jpegFromAdminPhotoUpload(Buffer.from(ab), ASV_PHOTO_MAX_BYTES);
-    return normalized.ok ? normalized.jpeg : null;
-  } catch {
-    return null;
-  }
-}
+export type StoreJojPhotoGroupsResult = {
+  groups: AsvPhotoGroup[];
+  failedPhotoGroups: AsvJojFailedPhotoGroup[];
+};
 
-async function storeJojPhotoGroups(opts: {
-  sessionId: string;
-  parse: VinScanParse;
-  photoUrls: string[];
-  title: string;
-}): Promise<AsvPhotoGroup[]> {
-  const groups: AsvPhotoGroup[] = [];
-  if (!opts.sessionId || opts.photoUrls.length === 0) return groups;
-  const ids: string[] = [];
-  for (const url of opts.photoUrls.slice(0, ASV_MAX_PHOTOS)) {
-    if (ids.length >= 12) break;
-    const jpeg = await downloadAuctionJpeg(url);
-    if (!jpeg) continue;
-    const photoId = makeAsvPhotoId();
-    try {
-      await writeAsvPhotoJpeg(opts.sessionId, photoId, jpeg);
-      ids.push(photoId);
-    } catch {
-      /* skip */
+function existingAsvPhotoKeys(groups: AsvPhotoGroup[] | null | undefined): {
+  urls: Set<string>;
+  hashes: Set<string>;
+} {
+  const urls = new Set<string>();
+  const hashes = new Set<string>();
+  for (const group of groups ?? []) {
+    for (const photo of group.photos ?? []) {
+      if (photo.sourceUrl) urls.add(photo.sourceUrl);
+      if (photo.contentHash) hashes.add(photo.contentHash.toLowerCase());
     }
   }
-  if (ids.length > 0) {
-    groups.push({
-      id: makeAsvPhotoGroupId(),
-      title: opts.title.slice(0, 120),
-      photos: ids.map((id) => ({ id })),
-    });
+  return { urls, hashes };
+}
+
+export async function storeJojPhotoGroups(opts: {
+  sessionId: string;
+  photoGroups: readonly VinScanAuctionPhotoGroupPlan[];
+  existing?: AsvPhotoGroup[] | null;
+}): Promise<StoreJojPhotoGroupsResult> {
+  const groups: AsvPhotoGroup[] = [];
+  const failedPhotoGroups: AsvJojFailedPhotoGroup[] = [];
+  if (!opts.sessionId) return { groups, failedPhotoGroups };
+
+  const known = existingAsvPhotoKeys(opts.existing);
+  let used = countExistingAsvPhotos(opts.existing);
+
+  for (const plan of opts.photoGroups) {
+    const wanted = plan.urls.filter((u) => isAllowedVinScanAuctionPhotoUrl(u) && !known.urls.has(u));
+    if (wanted.length === 0) continue;
+    const room = Math.max(0, ASV_MAX_PHOTOS - used);
+    const toFetch = wanted.slice(0, room);
+    const skipped = wanted.length - toFetch.length;
+    if (toFetch.length === 0) {
+      if (skipped > 0) failedPhotoGroups.push({ title: plan.title, urls: wanted });
+      continue;
+    }
+
+    const fetched = await fetchAuctionPhotoJpegs(toFetch, ASV_PHOTO_MAX_BYTES);
+    const photos: AsvPhotoMeta[] = [];
+    const failedUrls: string[] = fetched.failed.map((row) => row.url);
+    for (const row of fetched.ok) {
+      if (used >= ASV_MAX_PHOTOS) {
+        failedUrls.push(row.url);
+        continue;
+      }
+      if (known.hashes.has(row.contentHash) || known.urls.has(row.url)) continue;
+      const photoId = makeAsvPhotoId();
+      try {
+        await writeAsvPhotoJpeg(opts.sessionId, photoId, row.jpeg);
+      } catch {
+        failedUrls.push(row.url);
+        continue;
+      }
+      known.urls.add(row.url);
+      known.hashes.add(row.contentHash);
+      used += 1;
+      photos.push({ id: photoId, sourceUrl: row.url, contentHash: row.contentHash });
+    }
+    if (photos.length > 0) {
+      groups.push({
+        id: makeAsvPhotoGroupId(),
+        title: plan.title.slice(0, 120),
+        photos,
+      });
+    }
+    if (failedUrls.length > 0) {
+      failedPhotoGroups.push({ title: plan.title, urls: failedUrls });
+    }
   }
-  return groups;
+
+  return { groups, failedPhotoGroups };
+}
+
+function countExistingAsvPhotos(groups: AsvPhotoGroup[] | null | undefined): number {
+  let n = 0;
+  for (const group of groups ?? []) n += group.photos?.length ?? 0;
+  return n;
 }
 
 export async function fetchJojAsvMerge(opts: {
@@ -70,14 +107,43 @@ export async function fetchJojAsvMerge(opts: {
   sessionId?: string;
   listingUrl?: string;
   skipCache?: boolean;
+  knownLot?: JojKnownLot | null;
+  retryPhotoGroups?: AsvJojFailedPhotoGroup[];
 }): Promise<{
   parse: VinScanParse;
   block: AsvBlockState;
   jojIngest: AsvJojIngest;
   storedPhotoGroups: AsvPhotoGroup[];
+  failedPhotoGroups: AsvJojFailedPhotoGroup[];
   costUsd: string;
   error?: string;
 }> {
+  if (opts.retryPhotoGroups?.length && opts.sessionId) {
+    const stored = await storeJojPhotoGroups({
+      sessionId: opts.sessionId,
+      photoGroups: opts.retryPhotoGroups.map((g) => ({
+        key: `retry|${g.title}`,
+        title: g.title || jojAsvPhotoGroupTitle({ status: "found", summary: "" }),
+        sourceId: "joj_copart_iaai",
+        urls: g.urls,
+      })),
+      existing: opts.prev.photoGroups,
+    });
+    const photoGroups = appendAsvPhotoGroups(opts.prev.photoGroups, stored.groups);
+    const jojIngest: AsvJojIngest = {
+      ...(opts.prev.jojIngest ?? buildAsvJojIngest(opts.vin, { status: "found", summary: "" }, new Date().toISOString())),
+      ...(stored.failedPhotoGroups.length ? { failedPhotoGroups: stored.failedPhotoGroups } : { failedPhotoGroups: undefined }),
+    };
+    return {
+      parse: { status: "found", summary: opts.prev.jojIngest?.summary || "JoJ foto atkārtošana" },
+      block: { ...opts.prev, jojIngest, photoGroups },
+      jojIngest,
+      storedPhotoGroups: stored.groups,
+      failedPhotoGroups: stored.failedPhotoGroups,
+      costUsd: "$0.00",
+    };
+  }
+
   if (!jojApiConfigured()) {
     const parse: VinScanParse = { status: "skipped", summary: "nav konfigurēts" };
     const fetchedAt = new Date().toISOString();
@@ -86,53 +152,65 @@ export async function fetchJojAsvMerge(opts: {
       block: opts.prev,
       jojIngest: buildAsvJojIngest(opts.vin, parse, fetchedAt),
       storedPhotoGroups: [],
+      failedPhotoGroups: [],
       costUsd: "$0.00",
       error: "missing_joj_credentials",
     };
   }
 
-  const knownLot = knownJojLotFromUrl(opts.listingUrl ?? "");
-  const parse = await fetchJojSearchVin(opts.vin, {
+  const knownLot =
+    normalizeJojKnownLot(opts.knownLot) ??
+    normalizeJojKnownLot({ lot: opts.prev.jojIngest?.lot, domain: opts.prev.jojIngest?.lotDomain }) ??
+    knownJojLotFromUrl(opts.listingUrl ?? "");
+  const result = await fetchJojSearchVin(opts.vin, {
     listingUrl: opts.listingUrl,
     knownLot,
     skipCache: opts.skipCache === true,
   });
+  const parse = result.parse;
   const fetchedAt = new Date().toISOString();
-  const jojIngest = buildAsvJojIngest(opts.vin, parse, fetchedAt);
-  const charged = parse.status === "found" || parse.status === "none";
-  const costUsd = charged ? formatJojAsvCostUsd() : "$0.00";
+  const costUsd = jojAsvCostUsd({ fromCache: result.fromCache, httpStatus: result.httpStatus });
+  const ingestExtra = {
+    fromCache: result.fromCache,
+    cachedAt: result.cachedAt ?? undefined,
+    httpStatus: result.httpStatus ?? undefined,
+    lot: knownLot?.lot,
+    lotDomain: knownLot?.domain,
+  };
 
   if (parse.status === "skipped") {
+    const jojIngest = buildAsvJojIngest(opts.vin, parse, fetchedAt, ingestExtra);
     return {
       parse,
       block: opts.prev,
       jojIngest,
       storedPhotoGroups: [],
+      failedPhotoGroups: [],
       costUsd,
       error: "missing_joj_credentials",
     };
   }
 
-  const { block: merged, photoUrls, photoGroupTitle } = mergeJojParseIntoAsvBlock(
-    opts.vin,
-    parse,
-    opts.prev,
-  );
-  const storedPhotoGroups = opts.sessionId
+  const { block: merged, photoGroups: plans } = mergeJojParseIntoAsvBlock(opts.vin, parse, opts.prev);
+  const stored = opts.sessionId
     ? await storeJojPhotoGroups({
         sessionId: opts.sessionId,
-        parse,
-        photoUrls,
-        title: photoGroupTitle || jojAsvPhotoGroupTitle(parse),
+        photoGroups: plans,
+        existing: opts.prev.photoGroups,
       })
-    : [];
-  const photoGroups = appendAsvPhotoGroups(merged.photoGroups, storedPhotoGroups);
+    : { groups: [] as AsvPhotoGroup[], failedPhotoGroups: [] as AsvJojFailedPhotoGroup[] };
+  const photoGroups = appendAsvPhotoGroups(merged.photoGroups, stored.groups);
+  const jojIngest = buildAsvJojIngest(opts.vin, parse, fetchedAt, {
+    ...ingestExtra,
+    failedPhotoGroups: stored.failedPhotoGroups,
+  });
 
   return {
     parse,
     block: { ...merged, jojIngest, photoGroups },
     jojIngest,
-    storedPhotoGroups,
+    storedPhotoGroups: stored.groups,
+    failedPhotoGroups: stored.failedPhotoGroups,
     costUsd,
   };
 }

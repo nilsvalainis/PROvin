@@ -32,8 +32,10 @@ const DEFAULT_RELATIVE_DIR = ".data/vin-scans";
 const DEFAULT_BLOB_SUBPREFIX = "vin-scans/";
 const INDEX_KEY = "_history";
 const HISTORY_MAX = 40;
-/** JoJ /search-vin ir $0.50: kešs pēc VIN, 30 dienas. */
+/** JoJ /search-vin ir $0.50: found kešs pēc VIN, 30 dienas. */
 export const JOJ_VIN_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+/** 404 / nav ierakstu: kešs max 7 dienas, tad atkārtots HTTP. */
+export const JOJ_VIN_NONE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 /** /usa/damages un /usa/titles: $0.01, gandrīz statiskas vārdnīcas. */
 export const JOJ_DICT_CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -156,35 +158,52 @@ export type JojVinCache = {
   vin: string;
   cachedAt: string;
   parse: VinScanParse;
+  httpStatus?: number;
 };
 
 function jojCacheKey(vin: string): string {
   return `joj-${snapshotKey(vin)}`;
 }
 
-function asJojCache(raw: unknown): JojVinCache | null {
+export function jojVinCacheTtlMs(parse: VinScanParse, httpStatus?: number): number {
+  if (parse.status === "none" || httpStatus === 404) return JOJ_VIN_NONE_CACHE_TTL_MS;
+  return JOJ_VIN_CACHE_TTL_MS;
+}
+
+export function asJojVinCache(raw: unknown, nowMs = Date.now()): JojVinCache | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   const vin = typeof o.vin === "string" ? o.vin : "";
   const cachedAt = typeof o.cachedAt === "string" ? o.cachedAt : "";
   if (!vin || !cachedAt || !o.parse || typeof o.parse !== "object") return null;
   const t = Date.parse(cachedAt);
-  if (!Number.isFinite(t) || Date.now() - t >= JOJ_VIN_CACHE_TTL_MS) return null;
   const parse = o.parse as VinScanParse;
   if (parse.status !== "found" && parse.status !== "none" && parse.status !== "unknown") return null;
-  return { vin, cachedAt, parse };
+  const httpStatus =
+    typeof o.httpStatus === "number" && Number.isFinite(o.httpStatus) ? o.httpStatus : undefined;
+  if (!Number.isFinite(t) || nowMs - t >= jojVinCacheTtlMs(parse, httpStatus)) return null;
+  return { vin, cachedAt, parse, ...(httpStatus != null ? { httpStatus } : {}) };
 }
 
 export async function readJojVinCache(vin: string): Promise<JojVinCache | null> {
   const key = snapshotKey(vin);
   if (key.length < 11) return null;
-  return asJojCache(await readJson(jojCacheKey(vin)));
+  return asJojVinCache(await readJson(jojCacheKey(vin)));
 }
 
-export async function writeJojVinCache(vin: string, parse: VinScanParse): Promise<void> {
+export async function writeJojVinCache(
+  vin: string,
+  parse: VinScanParse,
+  extra?: { httpStatus?: number; cachedAt?: string },
+): Promise<void> {
   const key = snapshotKey(vin);
   if (key.length < 11) return;
-  const body: JojVinCache = { vin: vin.trim().toUpperCase(), cachedAt: new Date().toISOString(), parse };
+  const body: JojVinCache = {
+    vin: vin.trim().toUpperCase(),
+    cachedAt: extra?.cachedAt ?? new Date().toISOString(),
+    parse,
+    ...(extra?.httpStatus != null ? { httpStatus: extra.httpStatus } : {}),
+  };
   await writeJson(jojCacheKey(vin), body);
 }
 

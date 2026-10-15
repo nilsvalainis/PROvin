@@ -89,15 +89,22 @@ function asAuction(v: unknown): VinScanAuction | null {
   const o = v as Record<string, unknown>;
   const photoCountRaw = o.photoCount;
   const photoCount = typeof photoCountRaw === "number" ? photoCountRaw : Number(photoCountRaw);
+  const photoUrls = Array.isArray(o.photoUrls)
+    ? o.photoUrls.filter((u): u is string => typeof u === "string" && u.trim().startsWith("http")).map((u) => u.trim())
+    : undefined;
   const row: VinScanAuction = {
     title: typeof o.title === "string" ? o.title.trim() : "",
     date: typeof o.date === "string" ? o.date.trim() : undefined,
     price: typeof o.price === "string" ? o.price.trim() : undefined,
     venue: typeof o.venue === "string" ? o.venue.trim() : undefined,
+    lot: typeof o.lot === "string" && o.lot.trim() ? o.lot.trim() : undefined,
     photoUrl: typeof o.photoUrl === "string" && o.photoUrl.trim() ? o.photoUrl.trim() : undefined,
     photoCount: Number.isFinite(photoCount) && photoCount > 0 ? photoCount : undefined,
+    ...(photoUrls?.length ? { photoUrls } : {}),
   };
-  if (!row.title && !row.date && !row.price && !row.venue && !row.photoUrl && !row.photoCount) return null;
+  if (!row.title && !row.date && !row.price && !row.venue && !row.lot && !row.photoUrl && !row.photoCount && !row.photoUrls?.length) {
+    return null;
+  }
   return row;
 }
 
@@ -140,7 +147,7 @@ export function parseVinScanIndicator(raw: unknown): VinScanIndicator | null {
               ? (o.media as { photoUrls: unknown[] })
                   .photoUrls.filter((u): u is string => typeof u === "string" && u.trim().startsWith("http"))
                   .map((u) => u.trim())
-                  .slice(0, 20)
+                  .slice(0, 500)
               : undefined,
           }
         : undefined,
@@ -202,8 +209,11 @@ function photoUrlsOf(row: VinScanIndicator): string[] {
   };
   push(row.media?.photoUrl);
   for (const extra of row.media?.photoUrls ?? []) push(extra);
-  for (const auction of row.auctions ?? []) push(auction.photoUrl);
-  return urls.slice(0, 20);
+  for (const auction of row.auctions ?? []) {
+    push(auction.photoUrl);
+    for (const extra of auction.photoUrls ?? []) push(extra);
+  }
+  return urls;
 }
 
 function canImportAuction(row: VinScanIndicator): boolean {
@@ -349,7 +359,7 @@ export function applyVinScanAuctionsToCcVin(
     for (const url of [
       src.media?.photoUrl,
       ...(src.media?.photoUrls ?? []),
-      ...(src.auctions ?? []).map((a) => a.photoUrl),
+      ...(src.auctions ?? []).flatMap((a) => [a.photoUrl, ...(a.photoUrls ?? [])]),
     ]) {
       const u = String(url || "").trim();
       if (!u || seen.has(u)) continue;
@@ -361,7 +371,7 @@ export function applyVinScanAuctionsToCcVin(
   const lines = [
     next.rawUnprocessedData.trim(),
     jojNotes,
-    photoUrls.length ? `VIN SCAN izsoles foto:\n${photoUrls.slice(0, 40).join("\n")}` : "",
+    photoUrls.length ? `VIN SCAN izsoles foto:\n${photoUrls.slice(0, 200).join("\n")}` : "",
   ].filter(Boolean);
   return {
     block: {

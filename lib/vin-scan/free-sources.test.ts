@@ -83,7 +83,7 @@ describe("free VIN SCAN avoti", () => {
     expect(dash).toContain("AdminOrderVinScanDashboardCards");
     expect(dash).toContain("pickOrderVinScanDashboardCards");
     const photos = readFileSync(path.join(ROOT, "app/api/admin/order-vin-scan-photos/route.ts"), "utf8");
-    expect(photos).toContain("importVinScanAuctionPhotosToCcVin");
+    expect(photos).toContain("importVinScanAuctionPhotoGroupsToCcVin");
     expect(photos).not.toMatch(/purchaseCarVerticalReport/);
     const table = readFileSync(path.join(ROOT, "components/admin/AdminOrdersTable.tsx"), "utf8");
     expect(table).toContain("h-[46px]");

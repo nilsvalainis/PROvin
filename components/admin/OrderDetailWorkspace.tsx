@@ -15,6 +15,7 @@ import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecords
 import { AdminCcVinSourceBlock } from "@/components/admin/AdminCcVinSourceBlock";
 import { AdminAsvSourceBlock } from "@/components/admin/AdminAsvSourceBlock";
 import { makeCcVinPhotoGroupId, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
+import { mergeImportedPhotoGroups } from "@/lib/auction-photo-group-merge";
 import { syncAsvPhotoGroupsAndFlat } from "@/lib/asv-photo-types";
 import { ccVinBlockToPlainText, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { asvBlockToPlainText, type AsvBlockState } from "@/lib/asv-report";
@@ -26,10 +27,7 @@ import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSour
 import { AdminOrderVinScanCard } from "@/components/admin/AdminOrderVinScanCard";
 import { applyVinScanAuctionsToCcVin, type OrderVinScanRecord } from "@/lib/order-vin-scan";
 import { applyVinScanCsddToBlock, applyVinScanListingToBlock } from "@/lib/order-vin-scan-apply";
-import {
-  ccVinHasVinScanPhotoGroup,
-  collectVinScanAuctionPhotoUrls,
-} from "@/lib/order-vin-scan-photos";
+import { collectVinScanAuctionPhotoGroups } from "@/lib/order-vin-scan-photos";
 import {
   AdminEstoniaVinRegistryPair,
   AdminVinRegistrySourceBlock,
@@ -4765,32 +4763,53 @@ export function OrderDetailWorkspace({
                 onImportAuction={async (scan) => {
                   const applied = applyVinScanAuctionsToCcVin(wsPersistRef.current.sourceBlocks.cc_vin, scan.indicators);
                   updateSourceBlock("cc_vin", applied.block);
-                  const urls = collectVinScanAuctionPhotoUrls(scan.indicators);
-                  if (!urls.length || ccVinHasVinScanPhotoGroup(wsPersistRef.current.sourceBlocks.cc_vin.photoGroups)) {
-                    return;
+                  const plans = collectVinScanAuctionPhotoGroups(scan.indicators);
+                  if (!plans.some((plan) => plan.urls.length > 0)) {
+                    return { failed: 0 };
                   }
                   try {
                     const res = await fetch("/api/admin/order-vin-scan-photos", {
                       method: "POST",
                       credentials: "include",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ sessionId: payload.sessionId, urls }),
+                      body: JSON.stringify({
+                        sessionId: payload.sessionId,
+                        groups: plans.map((plan) => ({ title: plan.title, urls: plan.urls })),
+                      }),
                     });
-                    if (!res.ok) return;
-                    const json = (await res.json()) as { photoIds?: string[]; title?: string };
-                    const photoIds = (json.photoIds ?? []).filter((id) => typeof id === "string" && id);
-                    if (!photoIds.length) return;
-                    const current = wsPersistRef.current.sourceBlocks.cc_vin;
-                    await commitCcVinPhotoGroupsStructural([
-                      ...(current.photoGroups ?? []),
-                      {
-                        id: makeCcVinPhotoGroupId(),
-                        title: json.title?.trim() || "VIN SCAN",
-                        photos: photoIds.map((id) => ({ id })),
-                      },
-                    ]);
+                    if (!res.ok) return { failed: plans.reduce((n, plan) => n + plan.urls.length, 0) };
+                    const json = (await res.json()) as {
+                      groups?: Array<{
+                        title?: string;
+                        photos?: Array<{ id?: string; sourceUrl?: string; contentHash?: string }>;
+                        failedUrls?: string[];
+                      }>;
+                      failed?: number;
+                      failedUrls?: string[];
+                    };
+                    const incoming = (json.groups ?? [])
+                      .map((group) => ({
+                        title: group.title?.trim() || "VIN SCAN",
+                        photos: (group.photos ?? [])
+                          .filter((p): p is { id: string; sourceUrl?: string; contentHash?: string } =>
+                            Boolean(p.id),
+                          )
+                          .map((p) => ({
+                            id: p.id,
+                            ...(p.sourceUrl ? { sourceUrl: p.sourceUrl } : {}),
+                            ...(p.contentHash ? { contentHash: p.contentHash } : {}),
+                          })),
+                      }))
+                      .filter((group) => group.photos.length > 0);
+                    if (incoming.length > 0) {
+                      const current = wsPersistRef.current.sourceBlocks.cc_vin;
+                      await commitCcVinPhotoGroupsStructural(
+                        mergeImportedPhotoGroups(current.photoGroups ?? [], incoming, makeCcVinPhotoGroupId),
+                      );
+                    }
+                    return { failed: json.failed ?? json.failedUrls?.length ?? 0 };
                   } catch {
-                    /* izsoļu rindas jau ieliktas */
+                    return { failed: plans.reduce((n, plan) => n + plan.urls.length, 0) };
                   }
                 }}
                 onImportCsdd={(scan) => {
