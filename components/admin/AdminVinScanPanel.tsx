@@ -12,6 +12,7 @@ const AdminVinScanResultCards = dynamic(
 );
 import { isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl } from "@/lib/vin-scan/catalog";
+import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
 import { applyFinlandLink } from "@/lib/vin-scan/finland-link";
 import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
 import {
@@ -84,12 +85,17 @@ export type VinScanPanelSnapshot = {
   busy?: boolean;
 };
 
-const CATALOG = VIN_SCAN_CATALOG;
+const FREE_VIN_SCAN_IDS = new Set(freeVinScanSourceIds());
+const CATALOG = VIN_SCAN_CATALOG.filter((item) => FREE_VIN_SCAN_IDS.has(item.id));
 
 const DOT: Record<VinScanStatus | "idle" | "checking", string> = {
   found: "bg-emerald-500",
   none: "bg-rose-500",
   unknown: "bg-slate-400",
+  blocked: "bg-orange-500",
+  timeout: "bg-amber-600",
+  config_missing: "bg-amber-400",
+  browser_only: "bg-sky-500",
   manual: "bg-amber-400",
   skipped: "bg-slate-300 dark:bg-slate-600",
   needs_input: "bg-amber-300",
@@ -101,6 +107,10 @@ const STATUS_LV: Record<VinScanStatus | "idle" | "checking", string> = {
   found: "Ir dati",
   none: "Nav",
   unknown: "Neizdevās",
+  blocked: "Bloķē",
+  timeout: "Noildze",
+  config_missing: "Nav atslēgas",
+  browser_only: "Tikai pārlūkā",
   manual: "Līdz pogai",
   skipped: "Nav atslēgas",
   needs_input: "Vajag ievadi",

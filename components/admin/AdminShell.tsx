@@ -47,7 +47,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
     <AdminVinHandoffProvider>
     <div
       className={`flex min-h-dvh bg-white max-md:h-dvh max-md:min-h-0 ${
-        hideTabBar ? "" : "max-md:pb-[calc(49px+env(safe-area-inset-bottom,0px))]"
+        hideTabBar ? "" : "max-md:pb-[var(--admin-tabbar-h)]"
       }`}
       style={{ ["--admin-tabbar-h" as string]: hideTabBar ? "0px" : ADMIN_MOBILE_TABBAR_H_CSS }}
     >

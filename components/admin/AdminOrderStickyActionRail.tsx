@@ -1,14 +1,27 @@
 "use client";
 
-import { AdminClipboardButton } from "@/components/admin/AdminClipboardButton";
+import { useCallback, useState } from "react";
 import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
-import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminOrderCopilotTrigger } from "@/components/admin/AdminOrderCopilotPanel";
+import {
+  AdminStickyRailV1Button,
+  AdminStickyRailV1Link,
+  AdminStickyRailV1Slot,
+} from "@/components/admin/AdminStickyRailV1Item";
+import {
+  RailCopilotGlyph,
+  RailFlashGlyph,
+  RailPlateLvGlyph,
+  RailSsLvLogoGlyph,
+  RailVinBarcodeGlyph,
+  RailWhatsAppGlyph,
+} from "@/components/admin/AdminStickyRailV1Glyphs";
+import { copyTextToClipboard } from "@/components/admin/AdminClipboardButton";
+import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
 import type { FlashMaxSelection } from "@/lib/admin-flash-max";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
-import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
+import { ADMIN_RAIL_V1_ASIDE, ADMIN_RAIL_V1_BOX } from "@/lib/admin-sticky-rail-v1-styles";
 import { isValidHttpUrl } from "@/lib/order-field-validation";
-import { ADMIN_RAIL_ASIDE, ADMIN_RAIL_BOX, ADMIN_RAIL_BTN } from "@/lib/admin-rail-styles";
 
 type Props = {
   vin: string;
@@ -31,15 +44,7 @@ type Props = {
   sourceBlocks?: WorkspaceSourceBlocks | null;
 };
 
-const railBtn = ADMIN_RAIL_BTN;
-
-function vinTail(vin: string): string {
-  const t = vin.trim();
-  if (!t) return "";
-  return t.slice(-6);
-}
-
-/** Darbvirsmas labā mala: VIN / reģ. nr. / ss.lv / Copilot / FLASH MAX. Mobilajā nav. */
+/** Darbvirsmas labā mala (variants 1): ikona + īss uzraksts. Mobilajā — apakšējā josla. */
 export function AdminOrderStickyActionRail({
   vin,
   plate,
@@ -61,69 +66,110 @@ export function AdminOrderStickyActionRail({
   sourceBlocks,
 }: Props) {
   const listingHref = listingUrl?.trim() && isValidHttpUrl(listingUrl.trim()) ? listingUrl.trim() : null;
-  const vinShort = vinTail(vin);
+  const vinTrim = vin.trim();
+  const plateTrim = plate.trim();
+  const whatsappDigits = normalizeWhatsAppPhoneDigits(customerPhone ?? "");
+  const waMessage = whatsappPrefill?.trim() ?? "";
+
+  const [vinCopied, setVinCopied] = useState(false);
+  const [plateCopied, setPlateCopied] = useState(false);
+
+  const copyVin = useCallback(async () => {
+    if (!vinTrim) return;
+    const ok = await copyTextToClipboard(vinTrim);
+    if (ok) {
+      onVinCopied();
+      setVinCopied(true);
+      window.setTimeout(() => setVinCopied(false), 2000);
+    }
+  }, [vinTrim, onVinCopied]);
+
+  const copyPlate = useCallback(async () => {
+    if (!plateTrim) return;
+    const ok = await copyTextToClipboard(plateTrim);
+    if (ok) {
+      setPlateCopied(true);
+      window.setTimeout(() => setPlateCopied(false), 2000);
+    }
+  }, [plateTrim]);
+
+  const openWhatsApp = useCallback(() => {
+    if (!whatsappDigits) return;
+    openWhatsAppChat(whatsappDigits, waMessage);
+  }, [whatsappDigits, waMessage]);
 
   return (
-    <aside
-      className={ADMIN_RAIL_ASIDE}
-      aria-label="Ātrās darbības"
-    >
-      <div className={ADMIN_RAIL_BOX}>
-        <div className="flex flex-col items-center gap-0.5 px-0.5">
-          <span className="font-mono text-[8px] leading-none tracking-tight" title={vin || "VIN"}>
-            {vinShort || "VIN"}
-          </span>
-          {vin ? <AdminVinCopyButton value={vin} onCopied={onVinCopied} /> : null}
-        </div>
-        <div className="flex flex-col items-center gap-0.5 px-0.5">
-          <span className="max-w-full truncate font-mono text-[8px] leading-none" title={plate || "Reģ. nr."}>
-            {plate || "Reģ."}
-          </span>
-          <AdminClipboardButton
-            value={plate}
-            titleReady="Kopēt reģistrācijas numuru"
-            titleCopied="Kopēts"
-            ariaReady="Kopēt reģistrācijas numuru starpliktuvē"
-            ariaCopied="Reģistrācijas numurs nokopēts"
-          />
-        </div>
-        <div className="flex justify-center">
-          <AdminWhatsAppOpenButton phone={customerPhone ?? ""} prefillMessage={whatsappPrefill} />
-        </div>
+    <aside className={ADMIN_RAIL_V1_ASIDE} aria-label="Ātrās darbības">
+      <div className={ADMIN_RAIL_V1_BOX}>
+        <AdminStickyRailV1Button
+          label="VIN"
+          title={vinCopied ? "Kopēts" : vinTrim || "Nav VIN"}
+          disabled={!vinTrim}
+          onClick={() => void copyVin()}
+          aria-label={vinCopied ? "VIN nokopēts" : "Kopēt VIN"}
+        >
+          <RailVinBarcodeGlyph />
+        </AdminStickyRailV1Button>
+
+        <AdminStickyRailV1Button
+          label="Reģ.nr."
+          title={plateCopied ? "Kopēts" : plateTrim || "Nav reģ. nr."}
+          disabled={!plateTrim}
+          onClick={() => void copyPlate()}
+          aria-label={plateCopied ? "Reģ. nr. nokopēts" : "Kopēt reģistrācijas numuru"}
+        >
+          <RailPlateLvGlyph />
+        </AdminStickyRailV1Button>
+
+        <AdminStickyRailV1Button
+          label="WhatsApp"
+          title={
+            whatsappDigits
+              ? `Atvērt WhatsApp: ${(customerPhone ?? "").trim()}`
+              : "Nav derīga tālruņa numura WhatsApp atvēršanai"
+          }
+          disabled={!whatsappDigits}
+          onClick={openWhatsApp}
+        >
+          <RailWhatsAppGlyph />
+        </AdminStickyRailV1Button>
+
         {listingHref ? (
-          <a
-            href={listingHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={railBtn}
-            title={listingHref}
-          >
-            ss.lv
-          </a>
+          <AdminStickyRailV1Link href={listingHref} title={listingHref}>
+            <RailSsLvLogoGlyph />
+          </AdminStickyRailV1Link>
         ) : (
-          <span className={`${railBtn} cursor-not-allowed opacity-40`} title="Nav sludinājuma saites">
-            ss.lv
-          </span>
+          <AdminStickyRailV1Slot title="Nav sludinājuma saites">
+            <span className="opacity-40">
+              <RailSsLvLogoGlyph />
+            </span>
+          </AdminStickyRailV1Slot>
         )}
-        <AdminOrderCopilotTrigger
-          compact
-          open={copilotOpen}
-          busy={copilotBusy}
-          disabled={!aiAllowed}
-          onOpen={onOpenCopilot}
-        />
-        {aiAllowed ? (
-          <AdminFlashMaxButton
-            compact
-            menuAlign="end"
-            disabled={!workspaceHydrated || prepareDraftBusy}
-            busy={flashMaxBusy}
-            phase={flashMaxPhase}
-            notice={flashMaxNotice}
-            error={flashMaxErr}
-            onRun={onFlashMax}
-            sourceBlocks={sourceBlocks}
+
+        <AdminStickyRailV1Slot label="Copilot">
+          <AdminOrderCopilotTrigger
+            rail
+            open={copilotOpen}
+            busy={copilotBusy}
+            disabled={!aiAllowed}
+            onOpen={onOpenCopilot}
           />
+        </AdminStickyRailV1Slot>
+
+        {aiAllowed ? (
+          <AdminStickyRailV1Slot label="Flash">
+            <AdminFlashMaxButton
+              rail
+              menuAlign="end"
+              disabled={!workspaceHydrated || prepareDraftBusy}
+              busy={flashMaxBusy}
+              phase={flashMaxPhase}
+              notice={flashMaxNotice}
+              error={flashMaxErr}
+              onRun={onFlashMax}
+              sourceBlocks={sourceBlocks}
+            />
+          </AdminStickyRailV1Slot>
         ) : null}
       </div>
     </aside>

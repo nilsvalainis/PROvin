@@ -1,5 +1,7 @@
 import "server-only";
 
+import { isDirectChildOfDropboxFolder } from "@/lib/iriss-pavadzimes-dropbox-path";
+
 export type DropboxWaybillFile = {
   id: string;
   name: string;
@@ -113,6 +115,7 @@ export async function listDropboxPavadzimes(): Promise<DropboxListResult> {
   const token = await getDropboxAccessToken();
   if (!token) return { ok: false, error: "dropbox_not_configured" };
 
+  const folderPath = dropboxPavadzimesPath();
   const files: DropboxWaybillFile[] = [];
   let cursor: string | null = null;
   let isContinue = false;
@@ -121,7 +124,12 @@ export async function listDropboxPavadzimes(): Promise<DropboxListResult> {
     const url = isContinue ? `${DROPBOX_API}/files/list_folder/continue` : `${DROPBOX_API}/files/list_folder`;
     const payload = isContinue
       ? { cursor }
-      : { path: dropboxPavadzimesPath(), limit: 2000, include_non_downloadable_files: false };
+      : {
+          path: folderPath,
+          recursive: false,
+          limit: 2000,
+          include_non_downloadable_files: false,
+        };
     const res = await fetch(url, {
       method: "POST",
       headers: {
@@ -142,7 +150,7 @@ export async function listDropboxPavadzimes(): Promise<DropboxListResult> {
     for (const e of entries) {
       if (!e || typeof e !== "object") continue;
       const file = asWaybillFile(e as ListFolderEntry);
-      if (file) files.push(file);
+      if (file && isDirectChildOfDropboxFolder(file.path, folderPath)) files.push(file);
     }
     if (!json.has_more || typeof json.cursor !== "string" || !json.cursor) break;
     cursor = json.cursor;

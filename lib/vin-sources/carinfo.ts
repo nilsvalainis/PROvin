@@ -2,7 +2,7 @@ import "server-only";
 
 /**
  * car.info - starptautisks agregators (Zviedrija un citi Nordics).
- * Primāri HTTP super-search + CapSolver Cloudflare. Redzams pārlūks paliek kā rezerve lokāli.
+ * Primāri publiskā VIN lapa /en-se/vin/S/{VIN}. Super-search un CapSolver paliek, ja lapa ir aizliegta.
  */
 import { CARINFO_HOME_URL } from "@/lib/admin-vin-urls";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/lib/vin-sources/browser";
 import { fetchCarinfoHttp } from "@/lib/vin-sources/carinfo-http";
 import { parseCarinfoExtract } from "@/lib/vin-sources/carinfo-parse";
+import { carinfoSwedenVinUrl } from "@/lib/vin-sources/carinfo-search";
 import { emptyVinSourceResult, type VinSourceFetchResult } from "@/lib/vin-sources/types";
 
 const LOCALES = ["en-se", "en-dk", "en-de"] as const;
@@ -25,7 +26,7 @@ async function fetchCarInfoBrowser(vin: string): Promise<VinSourceFetchResult> {
     let usedUrl = "";
 
     for (const locale of LOCALES) {
-      const url = `https://www.car.info/${locale}/vin/${encodeURIComponent(vin)}`;
+      const url = locale === "en-se" ? carinfoSwedenVinUrl(vin) : `https://www.car.info/${locale}/vin/${encodeURIComponent(vin)}`;
       const res = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 }).catch(() => null);
       await sleep(2500);
       const status = res?.status() ?? 0;

@@ -1,5 +1,19 @@
 import Image from "next/image";
 import type { BlogBlock } from "@/lib/blog/types";
+import { blogBlockTextHasInlineHtml, sanitizeBlogInlineHtml } from "@/lib/admin-tiptap/blog-inline-html";
+
+function BlogInlineText({ text, className }: { text: string; className?: string }) {
+  if (blogBlockTextHasInlineHtml(text)) {
+    const safe = sanitizeBlogInlineHtml(text);
+    return (
+      <div
+        className={`blog-inline-html [&_a]:text-provin-accent [&_a]:underline [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 ${className ?? ""}`}
+        dangerouslySetInnerHTML={{ __html: safe }}
+      />
+    );
+  }
+  return <span className={className}>{text}</span>;
+}
 
 export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
   return (
@@ -12,7 +26,7 @@ export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
               key={key}
               className="mt-4 text-balance text-[1.15rem] font-semibold tracking-tight text-white/[0.96] sm:mt-6 sm:text-[1.35rem]"
             >
-              {block.text}
+              <BlogInlineText text={block.text} />
             </h2>
           );
         }
@@ -22,7 +36,7 @@ export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
               key={key}
               className="border-l-2 border-provin-accent/80 bg-white/[0.04] px-4 py-3 text-[0.95em] leading-snug text-white/[0.92] sm:px-5 sm:py-4"
             >
-              {block.text}
+              <BlogInlineText text={block.text} />
             </aside>
           );
         }
@@ -69,7 +83,7 @@ export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
         }
         return (
           <p key={key} className="text-pretty">
-            {block.text}
+            <BlogInlineText text={block.text} />
           </p>
         );
       })}

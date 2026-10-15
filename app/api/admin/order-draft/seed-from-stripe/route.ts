@@ -7,6 +7,7 @@ import {
   readOrderDraft,
 } from "@/lib/admin-order-draft-store";
 import type { OrderDraftOrderEdits } from "@/lib/admin-order-draft-types";
+import { classifyOrderVinOrPlateInput } from "@/lib/order-vin-plate-resolution";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const runtime = "nodejs";
@@ -49,8 +50,10 @@ export async function POST(req: Request) {
   const prevTrim = (k: keyof OrderDraftOrderEdits) =>
     typeof prevEdits[k] === "string" ? (prevEdits[k] as string).trim() : "";
 
-  if (!prevTrim("vin") && order.vin?.trim() && isValidVin(order.vin)) {
-    orderEdits.vin = normalizeVin(order.vin);
+  if (!prevTrim("vin") && !prevTrim("licensePlate") && order.vin?.trim()) {
+    const intake = classifyOrderVinOrPlateInput(order.vin);
+    if (intake.kind === "vin") orderEdits.vin = intake.vin;
+    else if (intake.kind === "plate") orderEdits.licensePlate = intake.plate;
   }
   if (!prevTrim("listingUrl") && order.listingUrl?.trim()) {
     orderEdits.listingUrl = order.listingUrl.trim();

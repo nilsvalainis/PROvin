@@ -11,6 +11,11 @@ import {
   normalizeDismissedView,
   type IrissListingsDismissedView,
 } from "@/lib/iriss-listings-dismiss";
+import {
+  emptyIrissListingMatchState,
+  normalizeIrissListingMatchState,
+  type IrissListingMatchState,
+} from "@/lib/iriss-listing-match";
 import { computeListingVatHealth } from "@/lib/iriss-listings-vat";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { listingYearDigits } from "@/lib/iriss-listings-list-view";
@@ -35,6 +40,7 @@ const DEFAULT_RELATIVE_DIR = ".data/iriss-sludinajumi";
 const DEFAULT_BLOB_PREFIX = "iriss-sludinajumi/";
 const LATEST_FILENAME = "latest.json";
 const DISMISSED_FILENAME = "dismissed.json";
+const MATCH_FILENAME = "listing-matches.json";
 const SNAPSHOTS_DIRNAME = "snapshots";
 const RAW_DIRNAME = "raw";
 
@@ -116,7 +122,7 @@ function parseVinOcrAlts(v: unknown): string[] | undefined {
 
 const SOURCE_STATUSES = new Set(["ok", "login_required", "blocked_by_waf", "parse_failed", "fetch_failed", "relay_not_configured", "skipped"]);
 const CHANGES = new Set(["new", "price_changed", "unchanged", "gone"]);
-const PRICE_FIELDS = new Set(["start", "minimal", "current", "buy_now"]);
+const PRICE_FIELDS = new Set(["start", "minimal", "current", "buy_now", "estimate"]);
 
 function normalizePriceChange(v: unknown): IrissListingPriceChange | null {
   if (!isObj(v)) return null;
@@ -189,6 +195,8 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     priceMinimal: numOrNull(v.priceMinimal),
     priceCurrent: numOrNull(v.priceCurrent),
     priceBuyNow: numOrNull(v.priceBuyNow),
+    priceEstimate: numOrNull(v.priceEstimate),
+    priceTotal: numOrNull(v.priceTotal),
     vatNote: str(v.vatNote),
     auctionId,
     auctionStartAt: str(v.auctionStartAt),
@@ -370,6 +378,35 @@ export async function readIrissListingsDismissed(): Promise<IrissListingsDismiss
     return normalizeDismissedView(raw);
   } catch {
     return empty;
+  }
+}
+
+export async function readIrissListingMatchState(): Promise<IrissListingMatchState> {
+  const empty = emptyIrissListingMatchState();
+  const r = resolveStorage();
+  if (r.kind === "disabled") return empty;
+  try {
+    const raw =
+      r.kind === "blob"
+        ? await readBlobJson(`${r.prefix}${MATCH_FILENAME}`, r.token)
+        : (JSON.parse(await fs.readFile(path.join(r.dir, MATCH_FILENAME), "utf8")) as unknown);
+    return normalizeIrissListingMatchState(raw);
+  } catch {
+    return empty;
+  }
+}
+
+export async function writeIrissListingMatchState(
+  state: IrissListingMatchState,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const r = resolveStorage();
+    if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+    const clean = normalizeIrissListingMatchState(state);
+    await writeJson(r, MATCH_FILENAME, JSON.stringify(clean, null, 2));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
   }
 }
 

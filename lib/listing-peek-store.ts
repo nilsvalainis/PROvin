@@ -348,12 +348,17 @@ export async function listListingPeeks(limit = 100): Promise<ListingPeekEntry[]>
 }
 
 /** Snapshot for public homepage pause UI (and API). */
+/** Admin žetoni / saraksts — kopīgs kešs (~3 s), lai polling un lapas ielāde nedublētu Blob GET. */
+export async function readListingPeekDocForAdminRead(): Promise<ListingPeekDoc> {
+  return readDocCached();
+}
+
 export async function getListingPeekQueueSnapshot(): Promise<{
   openCount: number;
   limit: number;
   paused: boolean;
 }> {
-  const doc = await readDoc();
+  const doc = await readDocCached();
   const openCount = countOpenListingPeeks(doc.entries);
   const limit = getListingPeekQueueLimit();
   return {

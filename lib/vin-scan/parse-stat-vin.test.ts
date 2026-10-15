@@ -130,6 +130,9 @@ describe("classifyStatVinText", () => {
       status: "unknown",
       summary: "stat.vin: pieprasījumu limits",
     });
+    expect(
+      classifyStatVinText("Popular auction cars this week. Browse featured lots and photos from recent sales.", VIN),
+    ).toEqual({ status: "unknown", summary: "stat.vin: lapa bez VIN un bez „nav atrasts”" });
     expect(classifyStatVinText("Page not found", VIN)?.status).toBe("none");
     expect(classifyStatVinText("Car not found", VIN)?.status).toBe("none");
     expect(

@@ -29,6 +29,8 @@ import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { listingCostsFor, type IrissListPrefs } from "@/lib/iriss-listings-operator-prefs";
 import { listingTaxCostArgs, listingTaxResolved } from "@/lib/iriss-listings-vat";
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
+import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
+import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
 
 const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   autobid: "AUTOBID",
@@ -99,6 +101,8 @@ export function IrissListingVehicleCard({
   onVinPatch,
   onCreateOrder,
   onCreateOffer,
+  matchNew = false,
+  duplicates = [],
 }: {
   v: IrissListingVehicle;
   nowMs: number | null;
@@ -114,6 +118,8 @@ export function IrissListingVehicleCard({
   onVinPatch?: (id: string, patch: ListingVinOcrPatch) => void;
   onCreateOrder?: (v: IrissListingVehicle) => void | Promise<void>;
   onCreateOffer?: (v: IrissListingVehicle) => void | Promise<void>;
+  matchNew?: boolean;
+  duplicates?: readonly IrissVinDuplicateLink[];
 }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [vinCopied, setVinCopied] = useState(false);
@@ -388,11 +394,16 @@ export function IrissListingVehicleCard({
               PAZUDIS
             </span>
           ) : null}
-          {!gone && fresh ? (
+          {!gone && matchNew ? (
+            <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-900">
+              Jauns
+            </span>
+          ) : !gone && fresh ? (
             <span className="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
               JAUNS
             </span>
           ) : null}
+          {!gone && duplicates.length > 0 ? <IrissVinDuplicateMark links={duplicates} /> : null}
           {dmg.cats.map((c, i) => (
             <span key={c.name} className={`rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:text-[10px] ${i >= 2 ? "hidden sm:inline" : ""}`}>
               {c.name}
@@ -451,6 +462,9 @@ export function IrissListingVehicleCard({
             {v.priceBuyNow != null && v.priceBuyNow !== bid ? (
               <div className="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz {listingFmtEur(v.priceBuyNow)}</div>
             ) : null}
+            {v.priceTotal != null && v.priceTotal !== bid ? (
+              <div className="mt-0.5 text-[11px] text-slate-500">kopā {listingFmtEur(v.priceTotal)}</div>
+            ) : null}
             {cd.t || cd.end ? (
               <div className={`mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums ${cd.k}`}>
                 ⏱ {cd.t}
@@ -486,6 +500,9 @@ export function IrissListingVehicleCard({
           </div>
           {v.priceBuyNow != null && v.priceBuyNow !== bid ? (
             <div className="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz {listingFmtEur(v.priceBuyNow)}</div>
+          ) : null}
+          {v.priceTotal != null && v.priceTotal !== bid ? (
+            <div className="mt-0.5 text-[11px] text-slate-500">kopā {listingFmtEur(v.priceTotal)}</div>
           ) : null}
           {cd.t || cd.end ? (
             <div className={`mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums ${cd.k}`}>

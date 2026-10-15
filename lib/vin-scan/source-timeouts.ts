@@ -43,3 +43,17 @@ export function vinScanSourceTimeoutMs(id: VinScanSourceId): number {
   if (SLOW_SOURCES.has(id)) return SLOW_TIMEOUT_MS;
   return DEFAULT_TIMEOUT_MS;
 }
+
+/** CapSolver jābeidzas pirms avota ārējā timeout, lai pēc noildzes nepaliktu maksas poll. */
+export const CAPSOLVER_TIMEOUT_MARGIN_MS = 8_000;
+export const CAPSOLVER_MIN_TIMEOUT_MS = 4_000;
+
+export function capsolverTimeoutMs(outerTimeoutMs: number, elapsedMs = 0): number {
+  if (!Number.isFinite(outerTimeoutMs) || outerTimeoutMs <= 0) return 0;
+  const elapsed = Number.isFinite(elapsedMs) ? Math.max(0, elapsedMs) : 0;
+  return Math.max(0, Math.floor(outerTimeoutMs - elapsed - CAPSOLVER_TIMEOUT_MARGIN_MS));
+}
+
+export function capsolverMayStart(outerTimeoutMs: number, elapsedMs = 0): boolean {
+  return capsolverTimeoutMs(outerTimeoutMs, elapsedMs) >= CAPSOLVER_MIN_TIMEOUT_MS;
+}

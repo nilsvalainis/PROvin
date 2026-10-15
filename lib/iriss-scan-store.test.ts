@@ -1,0 +1,56 @@
+import { mkdtempSync, rmSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
+
+describe("IRISS SCAN store revision", () => {
+  const dirs: string[] = [];
+
+  afterEach(() => {
+    for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
+    dirs.length = 0;
+    vi.resetModules();
+    vi.unstubAllEnvs();
+  });
+
+  async function loadStore(dir: string) {
+    vi.unstubAllEnvs();
+    vi.stubEnv("ADMIN_IRISS_SCAN_DIR", dir);
+    vi.resetModules();
+    return import("@/lib/iriss-scan-store");
+  }
+
+  it("rejects a stale PATCH and keeps the server brand", async () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "iriss-scan-"));
+    dirs.push(dir);
+    const store = await loadStore(dir);
+    const created = await store.createIrissScan({
+      id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      brandModel: "Pirmais",
+      vin: "WVWZZZ",
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    expect(created.record.workspaceRevision).toBe(1);
+
+    const stale = await store.writeIrissScan(
+      { ...created.record, brandModel: "Lokālais", workspaceRevision: 0 },
+      { expectedWorkspaceRevision: 0 },
+    );
+    expect(stale.ok).toBe(false);
+    if (stale.ok) return;
+    expect(stale.stale).toBe(true);
+    expect(stale.record?.brandModel).toBe("Pirmais");
+
+    const ok = await store.writeIrissScan(
+      { ...created.record, brandModel: "Otrais" },
+      { expectedWorkspaceRevision: 1 },
+    );
+    expect(ok.ok).toBe(true);
+    if (!ok.ok) return;
+    expect(ok.record.workspaceRevision).toBe(2);
+    expect(ok.record.brandModel).toBe("Otrais");
+  });
+});

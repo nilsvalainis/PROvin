@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { deleteIrissScan, isSafeIrissScanId, readIrissScan, writeIrissScan } from "@/lib/iriss-scan-store";
 import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
+import { IRISS_STALE_REVISION, parseExpectedIrissRevision } from "@/lib/iriss-scan-save-safety";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 
 export const runtime = "nodejs";
@@ -19,6 +20,7 @@ function parseBodyRecord(id: string, body: unknown): IrissScanRecord | null {
     createdAt: str("createdAt"),
     updatedAt: str("updatedAt"),
     pinnedAt: str("pinnedAt"),
+    workspaceRevision: parseExpectedIrissRevision(o.workspaceRevision) ?? 0,
     brandModel: str("brandModel"),
     vin: str("vin"),
     listingLinkMobile: links(o, "listingLinkMobile"),
@@ -53,10 +55,21 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   }
   const rec = parseBodyRecord(id, body);
   if (!rec) return NextResponse.json({ error: "invalid_body" }, { status: 400 });
-  const w = await writeIrissScan(rec);
-  if (!w.ok) return NextResponse.json({ error: w.error }, { status: 500 });
-  const saved = await readIrissScan(id);
-  return NextResponse.json({ ok: true, record: saved });
+  const bodyObj = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+  const expected =
+    parseExpectedIrissRevision(bodyObj.expectedWorkspaceRevision) ??
+    parseExpectedIrissRevision(bodyObj.workspaceRevision);
+  const w = await writeIrissScan(rec, { expectedWorkspaceRevision: expected });
+  if (!w.ok) {
+    if (w.stale || w.error === IRISS_STALE_REVISION) {
+      return NextResponse.json(
+        { error: IRISS_STALE_REVISION, record: w.record, workspaceRevision: w.record?.workspaceRevision ?? 0 },
+        { status: 409 },
+      );
+    }
+    return NextResponse.json({ error: w.error }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true, record: w.record, workspaceRevision: w.record.workspaceRevision });
 }
 
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {

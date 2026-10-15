@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { setEcbDailyRatesForTests } from "@/lib/currency-eur-convert";
 import {
   createDefaultSourceBlocks,
   emptyAutoRecordsBlock,
@@ -26,6 +27,13 @@ import { PDF_HERO_BRAND_LOGO_DATA_URI } from "@/lib/pdf-hero-brand-logos";
 import { PDF_DEALER_LOGO_DATA_URI, PDF_SOURCE_LOGO_DATA_URI } from "@/lib/pdf-source-brand-logos";
 import { emptyLtabCertificate } from "@/lib/ltab-report-extract";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
+
+beforeEach(() => {
+  setEcbDailyRatesForTests({
+    date: "2026-10-15",
+    rates: { USD: 1.09, GBP: 0.85, PLN: 4.3, SEK: 11.3, CZK: 25 },
+  });
+});
 
 function minimalPayload(overrides: Partial<ClientReportPayload> = {}): ClientReportPayload {
   return {
@@ -88,7 +96,7 @@ describe("PDF design system", () => {
     );
     expect(html).toContain(".pdf-report-comment-note-body br + strong");
     expect(html).toMatch(
-      /\.pdf-report-comment-note-body br \+ strong[\s\S]*margin-top:0/,
+      /\.pdf-report-comment-note-body br \+ strong[\s\S]*margin-top:var\(--pdf-gap-block\)/,
     );
   });
 

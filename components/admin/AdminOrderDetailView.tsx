@@ -39,6 +39,8 @@ import { AdminAuditResultColorControl } from "@/components/admin/AdminAuditResul
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 import { AdminAuditSlaOrderBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
+import { AdminOrderVinPlateResolutionBanner } from "@/components/admin/AdminOrderVinPlateResolutionBanner";
+import { orderVinPlateResolutionIsFailed } from "@/lib/order-vin-plate-resolution";
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
 export type AdminOrderDetailClientModel = {
   id: string;
@@ -129,7 +131,7 @@ export function AdminOrderDetailView({
   auditResultColor = null,
 }: {
   order: AdminOrderDetailClientModel;
-  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest" | "vinScan"> | null;
+  serverOrderDraft: Pick<OrderDraftState, "orderEdits" | "autoIngest" | "vinScan" | "vinPlateResolution"> | null;
   serverWorkspaceJson: string | null;
   orderDraftPersistenceEnabled: boolean;
   aiAllowed: boolean;
@@ -321,7 +323,13 @@ export function AdminOrderDetailView({
 
   const formatOrderCreated = (createdSec: number): string => formatOrderTimestampSec(createdSec);
 
-  const mergedVin = edits.vin !== undefined ? editFieldStr(edits.vin) : editFieldStr(order.vin);
+  const vinPlateResolutionFailed = orderVinPlateResolutionIsFailed(serverOrderDraft?.vinPlateResolution);
+  const mergedVin =
+    edits.vin !== undefined
+      ? editFieldStr(edits.vin)
+      : vinPlateResolutionFailed
+        ? ""
+        : editFieldStr(order.vin);
   const mergedListing = edits.listingUrl !== undefined ? editFieldStr(edits.listingUrl) : editFieldStr(order.listingUrl);
   const mergedCustomerName = edits.customerName !== undefined ? editFieldStr(edits.customerName) : editFieldStr(order.customerName);
   const mergedCustomerEmail =
@@ -583,6 +591,11 @@ export function AdminOrderDetailView({
               }
             >
               <div className="space-y-1 px-2 pb-2">
+            <AdminOrderVinPlateResolutionBanner
+              sessionId={order.id}
+              resolution={serverOrderDraft?.vinPlateResolution}
+              licensePlate={serverOrderDraft?.orderEdits?.licensePlate}
+            />
             <div className="mt-0 flex min-h-0 min-w-0 max-w-full flex-col gap-2">
               <div
                 className={`min-w-0 max-w-full overflow-hidden rounded-md px-0.5 py-0.5 transition-[box-shadow,background-color] duration-500 ease-out ${

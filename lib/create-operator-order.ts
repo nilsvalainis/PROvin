@@ -3,7 +3,7 @@ import "server-only";
 import { createManualOrder } from "@/lib/admin-manual-orders";
 import { patchOrderDraft } from "@/lib/admin-order-draft-store";
 import type { OrderDraftOrderEdits } from "@/lib/admin-order-draft-types";
-import { normalizeVin } from "@/lib/order-field-validation";
+import { classifyOrderVinOrPlateInput } from "@/lib/order-vin-plate-resolution";
 
 export type OperatorOrderFields = {
   vin: string;
@@ -21,6 +21,9 @@ export type OperatorOrderFields = {
 export async function createOperatorOrderWithFields(
   fields: OperatorOrderFields,
 ): Promise<{ ok: true; orderId: string } | { ok: false; error: string }> {
+  const intake = classifyOrderVinOrPlateInput(fields.vin);
+  if (intake.kind === "invalid") return { ok: false, error: "invalid_vin" };
+
   const created = await createManualOrder({
     amountTotal: null,
     partnerId: fields.partnerId,
@@ -31,10 +34,15 @@ export async function createOperatorOrderWithFields(
   if (!created.ok) return created;
 
   const orderEdits: OrderDraftOrderEdits = {
-    vin: normalizeVin(fields.vin),
     customerEmail: fields.email.trim(),
     customerPhone: fields.phone.trim(),
   };
+  if (intake.kind === "vin") {
+    orderEdits.vin = intake.vin;
+  } else {
+    orderEdits.licensePlate = intake.plate;
+    orderEdits.vin = "";
+  }
   const listing = fields.listingUrl?.trim();
   if (listing) orderEdits.listingUrl = listing;
   const name = fields.name?.trim();

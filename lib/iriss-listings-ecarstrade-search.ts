@@ -974,7 +974,7 @@ export function filterFromBrandModel(brandModel: string): EcarstradeSearchFilter
 }
 
 function parseYearPeriod(raw: string): { from: number | null; to: number | null } {
-  const t = raw.trim();
+  const t = raw.replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-").trim();
   if (!t) return { from: null, to: null };
   const range = t.match(/(19|20)\d{2}\s*[-/]\s*(19|20)\d{2}/);
   if (range) {
@@ -1022,6 +1022,44 @@ export function filterFromOrderFields(fields: OrderSearchFields): EcarstradeSear
   filter.includeTokens = uniq(splitListTokens(fields.equipmentRequired ?? ""));
   if (fields.dealVat21Required) filter.vat = ["reclaimable"];
   return filter;
+}
+
+function intersectRange(
+  aFrom: number | null,
+  aTo: number | null,
+  bFrom: number | null,
+  bTo: number | null,
+): { from: number | null; to: number | null } {
+  const from = aFrom == null ? bFrom : bFrom == null ? aFrom : Math.max(aFrom, bFrom);
+  const to = aTo == null ? bTo : bTo == null ? aTo : Math.min(aTo, bTo);
+  if (from != null && to != null && from > to) return { from: bFrom ?? aFrom, to: bTo ?? aTo };
+  return { from, to };
+}
+
+/**
+ * Pasūtījuma gadi, km, cena, degviela un kārba nonāk ET vaicājumā.
+ * Izsoles URL sašaurina diapazonu; tukšu degvielu vai kārbu aizpilda no pasūtījuma.
+ * future_api.php: year_from/year_to (GGGG), mileage_from/mileage_to, price_from/price_to (veseli),
+ * fuel[] un gearbox[] (Diesel, Petrol, Automatic, Manual).
+ */
+export function applyEcarstradeOrderCriteria(
+  filter: EcarstradeSearchFilter,
+  order: EcarstradeSearchFilter,
+): EcarstradeSearchFilter {
+  const year = intersectRange(filter.yearFrom, filter.yearTo, order.yearFrom, order.yearTo);
+  const km = intersectRange(filter.mileageFrom, filter.mileageTo, order.mileageFrom, order.mileageTo);
+  const price = intersectRange(filter.priceFrom, filter.priceTo, order.priceFrom, order.priceTo);
+  return {
+    ...filter,
+    yearFrom: year.from,
+    yearTo: year.to,
+    mileageFrom: km.from,
+    mileageTo: km.to,
+    priceFrom: price.from,
+    priceTo: price.to,
+    fuels: filter.fuels.length ? [...filter.fuels] : [...order.fuels],
+    gearboxes: filter.gearboxes.length ? [...filter.gearboxes] : [...order.gearboxes],
+  };
 }
 
 /** Tukšos laukus aizpilda no `extra`; jau aizpildītie paliek (avota URL ir prioritāte). */

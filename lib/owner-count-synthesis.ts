@@ -245,6 +245,22 @@ export function formatOwnerCountAiContext(synthesis: OwnerCountSynthesis): strin
   return lines.join("\n");
 }
 
+const OWNER_CHANGE_EVENT_RE =
+  /main[īi]tas?\s+[īi]pa[sš]umties|[īi]pa[sš]nieka\s+mai[nņ]|ownership\s+change|owner\s+change/i;
+
+/** CarVertical / AutoDNA laikposma „Mainītas īpašumtiesības” - ja nav „N īpašnieki”. */
+export function countVendorOwnershipChangeEvents(
+  blocks: ClientManualVendorBlockPdf[] | null | undefined,
+): number {
+  let n = 0;
+  for (const b of blocks ?? []) {
+    for (const t of b.vehicleHistoryTimeline ?? []) {
+      if (OWNER_CHANGE_EVENT_RE.test(t.description ?? "")) n += 1;
+    }
+  }
+  return n;
+}
+
 function collectFromVendorPdf(
   blocks: ClientManualVendorBlockPdf[] | null | undefined,
 ): OwnerCountCandidate[] {
@@ -319,6 +335,10 @@ export function synthesizeOwnerCountsFromPdfInput(input: {
   if (asvCount != null) {
     pushCandidate(candidates, "other", asvCount, "ASV", 2);
   }
+  const changeCount = countVendorOwnershipChangeEvents(input.manualVendorBlocks);
+  if (changeCount > 0 && !candidates.some((c) => c.source === TITLE.carvertical || c.source === TITLE.autodna)) {
+    pushCandidate(candidates, "other", changeCount, TITLE.carvertical, 3);
+  }
   const chosen = choosePerCountry(candidates);
   return {
     chosen,
@@ -387,6 +407,25 @@ export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): 
   const asvCount = extractExplicitOwnerCount(asv.ownersCount) ?? extractExplicitOwnerCount(asv.comments);
   if (asvCount != null) {
     pushCandidate(candidates, "other", asvCount, "ASV", 2);
+  }
+  if (!candidates.some((c) => c.source === TITLE.carvertical || c.source === TITLE.autodna)) {
+    const changeCount = countVendorOwnershipChangeEvents([
+      {
+        title: TITLE.carvertical,
+        mileageRows: [],
+        incidentRows: [],
+        comments: "",
+        vehicleHistoryTimeline: blocks.carvertical.vehicleHistoryTimeline,
+      },
+      {
+        title: TITLE.autodna,
+        mileageRows: [],
+        incidentRows: [],
+        comments: "",
+        vehicleHistoryTimeline: blocks.autodna.vehicleHistoryTimeline,
+      },
+    ]);
+    if (changeCount > 0) pushCandidate(candidates, "other", changeCount, TITLE.carvertical, 3);
   }
 
   const chosen = choosePerCountry(candidates);

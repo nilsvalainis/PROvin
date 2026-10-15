@@ -1,8 +1,16 @@
 /**
  * IRISS pasūtījuma JSON PATCH: revīzija + sapludināšana, lai pēdējais
- * pilnais JSON nepārrakstītu otru saglabāšanu. Tukšais lauks neēd aizpildīto.
+ * pilnais JSON nepārrakstītu otru saglabāšanu. Iztukšots lauks uzvar pēc
+ * tombstone / fieldUpdatedAt; listStatus pēc statusChangedAt.
  */
 
+import {
+  fieldClearedAt,
+  fieldTimestamp,
+  mergeIrissStatusHistory,
+  statusChangedMs,
+} from "@/lib/iriss-pasutijumi-audit-fields";
+import { parseClearedFields } from "@/lib/admin-cleared-fields";
 import type { IrissOfferAttachment, IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 export const IRISS_STALE_REVISION = "stale_revision";
@@ -45,6 +53,9 @@ function mergeAttachment(local: IrissOfferAttachment, server: IrissOfferAttachme
     dataUrl: local.dataUrl || server.dataUrl,
     blobPath: preferFilledString(local.blobPath ?? "", server.blobPath ?? "") || undefined,
     blobUrl: preferFilledString(local.blobUrl ?? "", server.blobUrl ?? "") || undefined,
+    thumbDataUrl: local.thumbDataUrl || server.thumbDataUrl || undefined,
+    thumbBlobPath: preferFilledString(local.thumbBlobPath ?? "", server.thumbBlobPath ?? "") || undefined,
+    thumbUrl: preferFilledString(local.thumbUrl ?? "", server.thumbUrl ?? "") || undefined,
     size: local.size > 0 ? local.size : server.size,
   };
 }
@@ -81,6 +92,7 @@ function mergeOffer(local: IrissOfferRecord, server: IrissOfferRecord): IrissOff
     commissionFee: preferFilledString(local.commissionFee, server.commissionFee),
     offerValidDays: preferFilledString(local.offerValidDays, server.offerValidDays),
     validUntil: preferFilledString(local.validUntil, server.validUntil),
+    coverAttachmentId: preferFilledString(local.coverAttachmentId ?? "", server.coverAttachmentId ?? "") || undefined,
     attachments,
     createdAt: preferFilledString(local.createdAt, server.createdAt),
     updatedAt: preferFilledString(local.updatedAt, server.updatedAt),
@@ -118,26 +130,81 @@ function mergeLinkLists(local: string[], server: string[]): string[] {
   return server;
 }
 
+function mergeClearedMs(local: unknown, server: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const src of [parseClearedFields(server), parseClearedFields(local)]) {
+    for (const [k, v] of Object.entries(src)) out[k] = Math.max(out[k] ?? 0, v);
+  }
+  return out;
+}
+
+function mergeStringByTimestamp(
+  key: (typeof STRING_KEYS)[number],
+  local: IrissPasutijumsRecord,
+  server: IrissPasutijumsRecord,
+): string {
+  const l = typeof local[key] === "string" ? local[key] : "";
+  const s = typeof server[key] === "string" ? server[key] : "";
+  const lClear = fieldClearedAt(local, key);
+  const sClear = fieldClearedAt(server, key);
+  const lUp = fieldTimestamp(local, key);
+  const sUp = fieldTimestamp(server, key);
+  const lEmpty = !l.trim();
+  const sEmpty = !s.trim();
+  const lEvent = Math.max(lClear, lUp);
+  const sEvent = Math.max(sClear, sUp);
+
+  if (lEmpty && lClear > 0 && lClear >= sEvent) return l;
+  if (sEmpty && sClear > 0 && sClear >= lEvent) return s;
+  if (lEvent !== sEvent) return lEvent > sEvent ? l : s;
+  return preferFilledString(l, s);
+}
+
+function mergeListStatus(local: IrissPasutijumsRecord, server: IrissPasutijumsRecord): Pick<
+  IrissPasutijumsRecord,
+  "listStatus" | "statusChangedAt" | "inactiveReason"
+> {
+  const lAt = statusChangedMs(local);
+  const sAt = statusChangedMs(server);
+  if (sAt > lAt) {
+    return {
+      listStatus: server.listStatus || local.listStatus,
+      statusChangedAt: server.statusChangedAt || local.statusChangedAt,
+      inactiveReason: server.inactiveReason ?? local.inactiveReason,
+    };
+  }
+  return {
+    listStatus: local.listStatus || server.listStatus,
+    statusChangedAt: local.statusChangedAt || server.statusChangedAt,
+    inactiveReason: local.inactiveReason ?? server.inactiveReason,
+  };
+}
+
 /**
- * Konflikta sapludināšana: lokāli aizpildītais uzvar tukšo servera lauku un otrādi.
+ * Konflikta sapludināšana: iztukšots lauks un vēlākais statuss uzvar pēc laika.
  * Piedāvājumi pēc id. Esošie dati netiek izmesti.
  */
 export function mergeIrissPasutijumsRecords(
   server: IrissPasutijumsRecord,
   local: IrissPasutijumsRecord,
 ): IrissPasutijumsRecord {
+  const status = mergeListStatus(local, server);
   const next: IrissPasutijumsRecord = {
     ...server,
     ...local,
     id: server.id,
     createdAt: server.createdAt || local.createdAt,
     workspaceRevision: irissWorkspaceRevision(server),
-    listStatus: local.listStatus || server.listStatus,
+    listStatus: status.listStatus,
+    statusChangedAt: status.statusChangedAt,
+    inactiveReason: status.inactiveReason,
+    statusHistory: mergeIrissStatusHistory(local.statusHistory, server.statusHistory),
+    deletedAt: local.deletedAt || server.deletedAt,
+    clearedFields: mergeClearedMs(local.clearedFields, server.clearedFields),
+    fieldUpdatedAt: mergeClearedMs(local.fieldUpdatedAt, server.fieldUpdatedAt),
   };
   for (const key of STRING_KEYS) {
-    const l = typeof local[key] === "string" ? local[key] : "";
-    const s = typeof server[key] === "string" ? server[key] : "";
-    (next as unknown as Record<string, string>)[key] = preferFilledString(l, s);
+    (next as unknown as Record<string, string>)[key] = mergeStringByTimestamp(key, local, server);
   }
   next.listingLinkMobile = mergeLinkLists(local.listingLinkMobile, server.listingLinkMobile);
   next.listingLinkAutobid = mergeLinkLists(local.listingLinkAutobid, server.listingLinkAutobid);
@@ -158,8 +225,8 @@ export function mergeIrissPasutijumsRecords(
   return next;
 }
 
-export function planSilentAutosave(inFlight: boolean): { startNow: boolean; queue: boolean } {
-  if (inFlight) return { startNow: false, queue: true };
+export function planSilentAutosave(inFlight: boolean, imagesHydrating = false): { startNow: boolean; queue: boolean } {
+  if (imagesHydrating || inFlight) return { startNow: false, queue: true };
   return { startNow: true, queue: false };
 }
 

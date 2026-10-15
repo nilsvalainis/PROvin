@@ -71,11 +71,22 @@ const nextConfig: NextConfig = {
       { source: "/admin/pkd-rekins", destination: "/admin/commission-invoice", permanent: false },
       {
         source: "/",
+        has: [{ type: "host", value: "demo.provin.lv" }],
+        destination: "/b2b-demo",
+        permanent: false,
+      },
+      {
+        source: "/",
         has: [{ type: "host", value: "provin.lv" }],
         destination: "https://www.provin.lv/lv",
         permanent: true,
       },
-      { source: "/", destination: "/lv", permanent: true },
+      {
+        source: "/",
+        missing: [{ type: "host", value: "demo.provin.lv" }],
+        destination: "/lv",
+        permanent: true,
+      },
       { source: "/faq", destination: "/lv/biezi-jautajumi", permanent: true },
       { source: "/about", destination: "/lv/par-mums", permanent: true },
       { source: "/samples", destination: "/lv/pakalpojumi", permanent: true },
@@ -173,6 +184,36 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/s/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
+      {
+        source: "/p",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        source: "/p/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        source: "/b2b-demo",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+        ],
+      },
+      {
+        source: "/b2b-demo/:path*",
         headers: [
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
           { key: "Cache-Control", value: "private, no-store" },

@@ -5,10 +5,12 @@
  * līdz nākamajai palaišanai tajā pašā UTC dienā. Automātiskā slota sākums (09/13/17 Rīgā)
  * un poga „Nolasīt” sāk ciklu no jauna (`restart`); turpinājums (`restart: false`) iet no kursora.
  * Rinda: vispirms nekad nenolasītie, tad vecākais veiksmīgais fetchedAt; platformas pārmaiņus.
+ * ET caur releju: tukšs future_api ir 3-4 s; 1 meklējums / partija atstāja ~80 ET nenolasītus.
+ * Partiju griesti ir laika budžets, ne viens avots.
  */
 
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
-import { normalizeListingUrl, type IrissListingSource } from "@/lib/iriss-listings-sources";
+import { listingFetchUrl, type IrissListingSource } from "@/lib/iriss-listings-sources";
 import type { IrissListingPlatform, IrissListingSourceRun, IrissListingsSyncCursor } from "@/lib/iriss-listings-types";
 
 /** Vercel funkcijas griesti šiem diviem maršrutiem. Budžets (`IRISS_LISTINGS_TIME_BUDGET_MS`) ir zem tā. */
@@ -34,9 +36,10 @@ export function capListingJobTimeoutMs(deadlineMs: number, timeoutMs: number, re
 export const DIRECT_FETCH_HEADROOM_MS = 45_000;
 /** Releja fetch timeout ir līdz 180 s; nesākam jaunu, ja līdz 300 s griestiem nav 90 s. */
 export const RELAY_FETCH_HEADROOM_MS = 90_000;
-/** ET caur Chrome: future_api + /search. Viena meklēšana var aizņemt gandrīz visu maršruta laiku. */
-export const ECARSTRADE_RELAY_HEADROOM_MS = 180_000;
-export const ECARSTRADE_RELAY_PER_BATCH = 1;
+/** ET caur Chrome: tukšs 3-4 s, resns saraksts + detaļas līdz ~120 s. 180 s ļāva sākt tikai 1 ET. */
+export const ECARSTRADE_RELAY_HEADROOM_MS = 45_000;
+/** Dienas releja limits ir 300/platforma. 80 ietilpst 300 s budžetā ar 3-8 s vidējo ET. */
+export const ECARSTRADE_RELAY_PER_BATCH = 80;
 
 /** ET caur releju: vienā 300 s palaišanā ne vairāk par `maxPerBatch` meklējumiem (pārējie nākamajā partijā). */
 export function capEcarstradeRelayGroups<T extends { platform: IrissListingPlatform }>(
@@ -90,7 +93,7 @@ export function listingSyncProgress(total: number, doneKeys: readonly string[]):
 }
 
 export function listingSourceGroupKey(platform: IrissListingPlatform, sourceUrl: string): string {
-  return `${platform}|${normalizeListingUrl(sourceUrl)}`;
+  return `${platform}|${listingFetchUrl(sourceUrl)}`;
 }
 
 /** Vecākais veiksmīgais fetchedAt grupā; `null` = nekad nav bijis status ok. */

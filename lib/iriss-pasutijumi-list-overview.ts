@@ -3,9 +3,11 @@
  * Kopīgs ZIP/JSON eksportam un saraksta PDF (bez piedāvājumu attēliem).
  */
 
+import { isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 import {
   IRISS_DEAL_DETAIL_OPTIONS,
   IRISS_PASUTIJUMS_LIST_STATUS_LV,
+  isIrissPasutijumsWorkingStatus,
   type IrissPasutijumiListOrder,
   type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
@@ -64,9 +66,10 @@ export function irissPasutijumsPdfContentDisposition(record: IrissPasutijumsReco
   return `${type}; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }
 
-/** Saraksta PDF — tikai aktīvie; izpildītie un neaktīvie paliek ZIP/JSON kopijā. */
+/** Saraksta PDF: Aktīvs, Meklē, Piedāvāts, Rezervēts. Bez miskastes, izpildītajiem un neaktīvajiem. */
 export function isIrissRecordActiveForListPdf(record: IrissPasutijumsRecord): boolean {
-  return (record.listStatus ?? "active") === "active";
+  if (isIrissRecordDeleted(record)) return false;
+  return isIrissPasutijumsWorkingStatus(record.listStatus ?? "active");
 }
 
 export function orderIrissRecordsForListPdf(

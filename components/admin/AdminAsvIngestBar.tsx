@@ -10,37 +10,16 @@ import {
   type AsvProductId,
 } from "@/lib/asv-catalog";
 import type { AsvBlockState } from "@/lib/asv-report";
+import { asvFetchErrorLv } from "@/lib/asv-ingest-errors";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
-
-function asvFetchErrorLv(code: string): string {
-  switch (code) {
-    case "insufficient_balance":
-      return "Nepietiekams OneAutoAPI konta atlikums.";
-    case "invalid_vin":
-      return "Nederīgs VIN.";
-    case "missing_oneauto_credentials":
-      return "Serverī nav ONEAUTO_API_KEY.";
-    case "no_products_selected":
-      return "Atzīmē vismaz vienu produktu.";
-    case "unauthorized":
-      return "Admin sesija beigusies. Ielādē lapu no jauna.";
-    case "pending":
-      return "VIN Audit vēl apstrādā pieprasījumu. Pagaidi un spied Ielādēt vēlreiz.";
-    case "service_not_enabled":
-      return "One Auto šo produktu pazīst, bet slēdzis ir OFF. Dashboard → Your Plan ieslēdz Vehicle History Report (US) vai spied Request Access.";
-    case "api_unavailable":
-      return "One Auto šo US vēstures metodi vēl nav publicējis šai atslēgai. API licences logu nerāda. Dashboard → Your Plan pie VIN Audit spied Request Access un palūdz Markam precīzo API ceļu.";
-    default:
-      return "One Auto API neatbildēja. Mēģini vēlreiz.";
-  }
-}
 
 type Props = {
   orderVin: string;
   sessionId?: string;
   editable: boolean;
+  block: AsvBlockState;
   lastFetchedVin: string;
   lastReportId?: string;
   hasMappedData: boolean;
@@ -53,6 +32,7 @@ export function AdminAsvIngestBar({
   orderVin,
   sessionId = "",
   editable,
+  block: value,
   lastFetchedVin,
   lastReportId = "",
   hasMappedData,
@@ -100,6 +80,7 @@ export function AdminAsvIngestBar({
           sessionId: sessionId || undefined,
           reportId:
             lastReportId && cachedForVin ? lastReportId : undefined,
+          block: value,
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {
@@ -107,13 +88,29 @@ export function AdminAsvIngestBar({
         block?: AsvBlockState;
         costUsd?: string;
         storedPhotoGroups?: AsvBlockState["photoGroups"];
+        results?: Partial<Record<AsvProductId, { ok?: boolean; error?: string }>>;
       };
       if (!res.ok) {
-        setError(asvFetchErrorLv(body.error ?? "upstream_error"));
+        const code = body.error ?? "upstream_error";
+        const results = body.results;
+        const allNoData =
+          results &&
+          selectedProducts.length > 0 &&
+          selectedProducts.every((id) => results[id]?.error === "no_data");
+        setError(allNoData ? asvFetchErrorLv("no_data") : asvFetchErrorLv(code));
         return;
       }
       if (body.error === "pending" || res.status === 202) {
         setError(asvFetchErrorLv("pending"));
+        return;
+      }
+      const results = body.results;
+      const allNoData =
+        results &&
+        selectedProducts.length > 0 &&
+        selectedProducts.every((id) => results[id]?.ok === false && results[id]?.error === "no_data");
+      if (allNoData) {
+        setError(asvFetchErrorLv("no_data"));
         return;
       }
       if (body.block) onFetched(body.block);

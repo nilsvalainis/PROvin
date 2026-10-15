@@ -4,8 +4,9 @@
  */
 
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+import { maybeFormatUsHistoryDateTimeInRiga } from "@/lib/format-us-history-datetime";
 import { oneautoOdometerToKm } from "@/lib/oneauto-catalog";
-import { convertAmountTextToEur } from "@/lib/currency-eur-convert";
+import { convertAmountTextToEur, describeEurConversion } from "@/lib/currency-eur-convert";
 import {
   emptyAsvBlock,
   type AsvBlockState,
@@ -59,7 +60,7 @@ function toLvDate(raw: unknown): string {
   const t = stringifyVal(raw);
   if (!t) return "";
   const formatted = formatAutoRecordsDateForOutput(t);
-  return formatted || t.slice(0, 40);
+  return maybeFormatUsHistoryDateTimeInRiga(t, formatted || t.slice(0, 40));
 }
 
 function looksLikeMiles(unitRaw: string, contextMilesDefault: boolean): boolean {
@@ -79,12 +80,17 @@ function odometerKm(raw: unknown, unitRaw = "", milesDefault = true): string {
   return oneautoOdometerToKm(t, unit || "km");
 }
 
+const pendingEurNotes: string[] = [];
+
 function amountEur(raw: unknown): string {
   const t = stringifyVal(raw);
   if (!t) return "";
   const withUsd = /usd|\$/i.test(t) ? t : `${t} USD`;
   const conversion = convertAmountTextToEur(withUsd);
-  return conversion?.display ?? t;
+  if (!conversion) return t;
+  const note = describeEurConversion(withUsd, conversion);
+  if (note) pendingEurNotes.push(note);
+  return conversion.display;
 }
 
 function usRegion(stateRaw: unknown): string {
@@ -229,10 +235,13 @@ function parseAccidents(raw: unknown): AsvDamageRow[] {
     const description = [
       stringifyVal(o.collision ?? o.type ?? o.damage ?? o.damages ?? o.impact_point),
       stringifyVal(o.impact ?? o.severity ?? o.damage_severity),
+      stringifyVal(o.crash_severity) ? `smagums: ${stringifyVal(o.crash_severity)}` : "",
+      stringifyVal(o.estimated_speed) ? `ātrums: ${stringifyVal(o.estimated_speed)}` : "",
       stringifyVal(o.cause_of_damage),
       stringifyVal(o.object_struck),
       stringifyVal(o.light_condition) ? `gaisma: ${stringifyVal(o.light_condition)}` : "",
-      stringifyVal(o.airbag) ? `airbag: ${stringifyVal(o.airbag)}` : "",
+      stringifyVal(o.airbag ?? o.airbags_deployed) ? `airbag: ${stringifyVal(o.airbag ?? o.airbags_deployed)}` : "",
+      stringifyVal(o.insurer_name ?? source?.name) ? `avots: ${stringifyVal(o.insurer_name ?? source?.name)}` : "",
     ]
       .filter(Boolean)
       .join(". ")
@@ -240,7 +249,9 @@ function parseAccidents(raw: unknown): AsvDamageRow[] {
     out.push({
       date: toLvDate(o.date ?? o.report_date),
       region: usRegion(o.state ?? o.state_code ?? source?.state_code ?? o.region ?? o.city ?? o.location),
-      amount: amountEur(o.estimated_damage ?? o.damage_amount ?? o.amount ?? o.loss),
+      amount: amountEur(
+        o.estimated_damage ?? o.estimated_damage_cost ?? o.estimated_damage_usd ?? o.damage_amount ?? o.amount ?? o.loss,
+      ),
       description,
     });
   }
@@ -262,7 +273,7 @@ function parseSalvage(
     const location = stringifyVal(o.location ?? o.auction ?? o.seller ?? o.salvage_auction_location);
     const listingId = stringifyVal(o.listing_id ?? o.lot ?? o.lot_number ?? o.salvage_auction_record_id);
     const odometer = odometerKm(
-      o.odometer ?? o.meter ?? o.mileage,
+      o.odometer ?? o.meter ?? o.mileage ?? o.mileage_observed ?? o.mileage_desc,
       stringifyVal(o.meter_unit ?? o.mileage_unit),
       true,
     );
@@ -292,7 +303,7 @@ function parseSalvage(
       damages.push({
         date,
         region: location.slice(0, 120) || usRegion(o.state),
-        amount: amountEur(o.estimated_damage ?? o.sale_price),
+        amount: amountEur(o.estimated_damage ?? o.estimated_damage_usd ?? o.sale_price),
         description: damagesTxt.slice(0, 400),
       });
     }
@@ -347,7 +358,7 @@ function parseRecordList(raw: unknown, defaultLabel: string): AsvRecordRow[] {
       detail: [
         stringifyVal(o.state ?? o.state_code ?? o.region ?? o.theft_reported_state),
         stringifyVal(o.lienholder ?? o.holder ?? o.agency),
-        stringifyVal(o.stolen_status),
+        stringifyVal(o.stolen_status ?? o.stolen_status_desc),
         stringifyVal(o.recovery_date) ? `atgūts: ${toLvDate(o.recovery_date)}` : "",
         stringifyVal(o.note ?? o.detail ?? o.description ?? o.theft_report_id),
       ]
@@ -442,6 +453,7 @@ function deriveChecks(root: Record<string, unknown>): AsvCheckRow[] {
 }
 
 export function parseVinauditPayload(raw: unknown, meta?: { productUsed?: string; costUsd?: string; vin?: string }): AsvParseResult {
+  pendingEurNotes.length = 0;
   const root = unwrapVinaudit(raw);
   const empty = emptyAsvBlock();
   if (!root) return { block: empty, imageHints: [] };
@@ -499,6 +511,7 @@ export function parseVinauditPayload(raw: unknown, meta?: { productUsed?: string
     stringifyVal(root.clean) ? `clean: ${stringifyVal(root.clean)}` : "",
     meta?.productUsed ? `Ielādētais produkts: ${meta.productUsed}` : "",
     "Servisa apmeklējumi no ASV title/izsoļu datiem nav pieejami. Tie nav OEM apkopes.",
+    ...[...new Set(pendingEurNotes)],
   ].filter(Boolean);
 
   const imageHints = collectAsvImageHints(root);

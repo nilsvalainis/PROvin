@@ -77,8 +77,23 @@ export function collectEcarstradeCardIds(html) {
 export function ecarstradeCardNeedsPrice(htmlSlice) {
   const s = String(htmlSlice ?? "");
   if (/sign in to buy/i.test(s)) return true;
+  if (/aplēs|estimated price|estimate price|appraisal/i.test(s) && /€|eur/i.test(s)) return false;
   if (/\b(?:pirkt uzreiz|buy now|pirkt)\b/i.test(s) && /€|eur/i.test(s)) return false;
   return !/€\s*\d|\d[\d.\s]*\s*€/i.test(s);
+}
+
+export function ecarstradeItemNeedsPrice(item) {
+  return Boolean(item) && item.priceBuyNow == null && item.priceCurrent == null && item.priceEstimate == null;
+}
+
+/** Viena kartīte līdz nākamajam data-itemId, lai nākamā auto € neaizēno šo. */
+export function ecarstradeIsolatedCardSlice(html, matchIndex) {
+  const text = String(html ?? "");
+  const idx = Math.max(0, matchIndex);
+  const nextRel = text.slice(idx + 1).search(/data-itemId=["']\d+["']/i);
+  const end = nextRel >= 0 ? idx + 1 + nextRel : Math.min(text.length, idx + 8_000);
+  const start = text.lastIndexOf("<div", idx);
+  return text.slice(Math.max(0, start), end);
 }
 
 export function idsNeedingDetailPrice(html) {
@@ -89,11 +104,55 @@ export function idsNeedingDetailPrice(html) {
   while ((m = re.exec(text))) {
     const id = m[1];
     if (!id || missing.includes(id)) continue;
-    const start = text.lastIndexOf("<div", m.index);
-    const slice = text.slice(Math.max(0, start), m.index + 8_000);
-    if (ecarstradeCardNeedsPrice(slice)) missing.push(id);
+    if (ecarstradeCardNeedsPrice(ecarstradeIsolatedCardSlice(text, m.index))) missing.push(id);
   }
   return missing;
+}
+
+export function collectIdsNeedingPrice(items, html, extraIds = []) {
+  const ids = new Set();
+  for (const it of items ?? []) {
+    const id = it?.externalId ? String(it.externalId).replace(/\D/g, "") : "";
+    if (id && ecarstradeItemNeedsPrice(it)) ids.add(id);
+  }
+  for (const id of idsNeedingDetailPrice(html)) ids.add(id);
+  for (const raw of extraIds ?? []) {
+    const id = String(raw ?? "").replace(/\D/g, "");
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
+
+/** future_api 404 / tukšs inventārs. Nav CF/403 un nav parse kļūda. */
+export function isEcarstradeFutureApiTrulyEmpty(api) {
+  const status = Number(api?.status);
+  const text = String(api?.text ?? "").trim();
+  if (status === 404) return true;
+  if (status !== 200 && status !== 204) return false;
+  if (/cloudflare|cf-challenge|just a moment|attention required/i.test(text) && /<html/i.test(text)) return false;
+  if (collectEcarstradeCardIds(htmlFromEcarstradeApiBody(text)).length) return false;
+  if (itemsFromEcarstradeApiBody(text).length) return false;
+  if (!text || text === "{}" || text === "[]" || text === "null") return true;
+  if (/^\s*(\{\}\s*)+$/.test(text)) return true;
+  const objs = splitConcatenatedJsonObjects(text);
+  if (objs.length === 0) {
+    try {
+      const j = JSON.parse(text);
+      if (!j || typeof j !== "object") return false;
+      const st = j.status ?? j.code ?? j.error_code;
+      if (st === 404 || st === "404") return true;
+      if (j.error && /not found|no (?:cars|results|stock)/i.test(String(j.error))) return true;
+      if (Array.isArray(j.data) && j.data.length === 0) return true;
+      if (j.data == null && !j.result && !j.car_id) return true;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return objs.every((o) => {
+    const st = o.status ?? o.code;
+    return st === 404 || st === "404" || (!o.result && !o.data && !o.car_id);
+  });
 }
 
 function splitConcatenatedJsonObjects(raw) {
@@ -173,9 +232,83 @@ function euroAmounts(raw) {
 }
 
 function amountAfter(raw, label) {
-  const m = label.exec(raw);
-  if (!m) return null;
-  return euroAmounts(String(raw).slice(m.index, m.index + 180))[0] ?? null;
+  const flags = label.flags.includes("g") ? label.flags : `${label.flags}g`;
+  const re = new RegExp(label.source, flags);
+  const text = String(raw ?? "");
+  for (const m of text.matchAll(re)) {
+    const n = euroAmounts(text.slice(m.index, m.index + 180))[0];
+    if (n != null) return n;
+  }
+  return null;
+}
+
+function tagAttr(tag, name) {
+  return (new RegExp(`${name}=["']([^"']*)["']`, "i").exec(tag)?.[1] ?? "").trim();
+}
+
+function tagHasClass(tag, token) {
+  const cls = /class=["']([^"']*)["']/i.exec(tag)?.[1] ?? "";
+  return new RegExp(`(?:^|\\s)${token}(?:\\s|$)`, "i").test(cls);
+}
+
+function itemBidButtonTags(html) {
+  const out = [];
+  const re = /<(?:a|button)\b[^>]*\bitem-bid-button\b[^>]*>/gi;
+  let m;
+  while ((m = re.exec(String(html ?? "")))) out.push({ tag: m[0], index: m.index });
+  return out;
+}
+
+function inferAuctionTypeFromButtons(html) {
+  const tags = itemBidButtonTags(html);
+  if (tags.some((t) => tagHasClass(t.tag, "fix"))) return "fix";
+  if (tags.some((t) => tagHasClass(t.tag, "bid"))) return "bid";
+  return "";
+}
+
+/** Logged-in /cars/{id}: a.item-bid-button.fix[data-price], not nav „Buy”. */
+function buyNowFromFixButtons(html) {
+  const s = String(html ?? "");
+  for (const b of itemBidButtonTags(s)) {
+    if (!tagHasClass(b.tag, "fix")) continue;
+    const fromAttr = toPrice(tagAttr(b.tag, "data-price"));
+    if (fromAttr != null) return fromAttr;
+    const after = s.slice(b.index + b.tag.length);
+    const close = after.search(/<\/(?:a|button)>/i);
+    const inner = stripTags(after.slice(0, close >= 0 ? close : 200));
+    const fromText = euroAmounts(inner)[0] ?? toPrice(inner);
+    if (fromText != null) return fromText;
+  }
+  return null;
+}
+
+function buyNowFromBuyOrOfferHref(html) {
+  const m = /(?:data-href|href)=["'][^"']*buy_or_offer\?[^"']*\bbid=(\d+)/i.exec(String(html ?? ""));
+  return m ? toPrice(m[1]) : null;
+}
+
+function buyNowFromCalcBid(html) {
+  const s = String(html ?? "");
+  const input = /<input\b[^>]*\bid=["']calc_bid["'][^>]*>/i.exec(s);
+  if (input) {
+    const n = toPrice(tagAttr(input[0], "value"));
+    if (n != null) return n;
+  }
+  const wrap = /<(\w+)\b[^>]*\bid=["']calc_bid["'][^>]*>([\s\S]*?)<\/\1>/i.exec(s);
+  if (wrap) {
+    const n = toPrice(stripTags(wrap[2] ?? ""));
+    if (n != null) return n;
+  }
+  return null;
+}
+
+/** BID „Place a bid”, empty data-price: genuinely unpriced, not a parse miss. */
+export function isEcarstradeBidNoBidsHtml(html) {
+  const tags = itemBidButtonTags(html);
+  const fix = tags.some((t) => tagHasClass(t.tag, "fix"));
+  const bidOnly = tags.filter((t) => tagHasClass(t.tag, "bid") && !tagHasClass(t.tag, "fix"));
+  if (fix || bidOnly.length === 0) return false;
+  return bidOnly.every((t) => toPrice(tagAttr(t.tag, "data-price")) == null);
 }
 
 function amountInClass(html, cls) {
@@ -184,6 +317,60 @@ function amountInClass(html, cls) {
   if (!m) return null;
   const text = stripTags(m[1] ?? "");
   return euroAmounts(text)[0] ?? toPrice(text);
+}
+
+const ESTIMATE_LABEL = /Aplēses cena|Estimated price|Estimate price|Appraisal(?: price)?|Suggested price|Ieteicamā cena|Recommended bid|Min\.?\s*Market Price/i;
+const TOTAL_LABEL = /Kopējā cena|Total price|Total amount/i;
+const BUY_LABEL = /Pirkt uzreiz|Buy now|\bPIRKT\b|\bBUY\b/i;
+
+function dataPriceInClass(html, cls) {
+  const re = new RegExp(`<[^>]*class=["'][^"']*${cls}[^"']*["'][^>]*>`, "gi");
+  for (const m of String(html ?? "").matchAll(re)) {
+    const n = toPrice(tagAttr(m[0] ?? "", "data-price"));
+    if (n != null) return n;
+  }
+  return null;
+}
+
+function headLabelPrice(html) {
+  const label = stripTags(/class=["'][^"']*car-price__head-label__label[^"']*["'][^>]*>([\s\S]*?)<\/span>/i.exec(html)?.[1] ?? "");
+  const amount = amountInClass(html, "car-price__head-label__value");
+  if (!label && amount == null) return null;
+  return { label, amount };
+}
+
+function estimateFromHtml(html, bidNoBids) {
+  const labeled = amountAfter(html, ESTIMATE_LABEL);
+  if (labeled != null) return labeled;
+  const head = headLabelPrice(html);
+  if (head?.amount != null && ESTIMATE_LABEL.test(head.label)) return head.amount;
+  const fromData = dataPriceInClass(html, "recommended-bid") ?? dataPriceInClass(html, "min-market-price") ?? dataPriceInClass(html, "estimate");
+  if (fromData != null) return fromData;
+  if (bidNoBids) return buyNowFromCalcBid(html);
+  return null;
+}
+
+function totalFromHtml(html) {
+  return amountAfter(html, TOTAL_LABEL) ?? amountInClass(html, "car-price__calc");
+}
+
+function buyNowFromHeadLabel(html) {
+  const head = headLabelPrice(html);
+  if (!head?.amount || !BUY_LABEL.test(head.label) || ESTIMATE_LABEL.test(head.label)) return null;
+  if (/pirkt\s*\/\s*sol/i.test(head.label)) return null;
+  return head.amount;
+}
+
+function buyNowLabeledAmount(raw) {
+  const re = /PIRKT|BUY(?:\s+NOW)?|Buy now|Pirkt uzreiz/gi;
+  const text = String(raw ?? "");
+  for (const m of text.matchAll(re)) {
+    const around = text.slice(m.index, m.index + 18);
+    if (/pirkt\s*\/\s*sol/i.test(around)) continue;
+    const n = euroAmounts(text.slice(m.index, m.index + 180))[0];
+    if (n != null) return n;
+  }
+  return null;
 }
 
 function firstPrice(...vals) {
@@ -225,14 +412,23 @@ export function extractEcarstradeRelayItem(html, data = {}) {
     `#${id}`;
     const manufacturer = title.replace(/^#\d+\s*-?\s*/i, "").split(/\s+/).find((w) => /[a-z]/i.test(w)) || "";
   const signedOut = /Sign in to (?:buy|see)/i.test(s);
+  const bidNoBids = !signedOut && isEcarstradeBidNoBidsHtml(s);
+  const auctionTypeEarly = String(
+    d.auction_type || /data-auction-type=["']([^"']+)["']/i.exec(s)?.[1] || inferAuctionTypeFromButtons(s) || "",
+  ).toLowerCase();
+  const calcBidIsBuyNow = auctionTypeEarly !== "bid" && auctionTypeEarly !== "open";
   const buyNowFromHtml = signedOut
     ? null
-    : amountAfter(s, /PIRKT|BUY(?:\s+NOW)?|Buy now|Pirkt uzreiz/i) ??
-      amountInClass(s, "car-price__button") ??
-      amountInClass(s, "car-price__head-label__value");
+    : buyNowFromFixButtons(s) ??
+      buyNowFromBuyOrOfferHref(s) ??
+      buyNowFromHeadLabel(s) ??
+      (bidNoBids || !calcBidIsBuyNow ? null : buyNowFromCalcBid(s)) ??
+      (bidNoBids ? null : buyNowLabeledAmount(s)) ??
+      (bidNoBids ? null : amountInClass(s, "car-price__button"));
+  /** Live current bid is websocket; HTML also has the visible value when it exists. */
   const currentFromHtml = signedOut
     ? null
-    : amountAfter(s, /Current bid|Highest bid|Pašreizēj|Max\.?\s*bid|Solījums/i) ??
+    : amountAfter(s, /Current bid|Highest bid|Pašreizēj|Aktuālais solījums|Max\.?\s*bid|(?<!Aplēses )Solījums/i) ??
       amountInClass(s, "car-price__current-bid__value") ??
       amountInClass(s, "car-price__bid-value");
   const buyNow = firstPrice(
@@ -245,14 +441,32 @@ export function extractEcarstradeRelayItem(html, data = {}) {
     d.fix_price,
     buyNowFromHtml,
   );
-  const current = firstPrice(d.current_bid, d.currentBid, d.highest_bid, d.max_bid, d.maxBid, currentFromHtml);
+  const current = firstPrice(d.current_bid, d.currentBid, d.highest_bid, d.highestBid, d.max_bid, d.maxBid, currentFromHtml);
+  const estimate =
+    firstPrice(
+      d.estimate_price,
+      d.estimatePrice,
+      d.estimated_price,
+      d.estimatedPrice,
+      d.price_estimate,
+      d.priceEstimate,
+      d.appraisal_price,
+      d.suggested_price,
+    ) ?? (signedOut ? null : estimateFromHtml(s, bidNoBids));
+  const total =
+    firstPrice(d.total_price, d.totalPrice, d.price_total, d.priceTotal) ?? (signedOut ? null : totalFromHtml(s));
   const start = firstPrice(d.start_price, d.startPrice, d.min_bid);
-  const auctionType = String(d.auction_type || /data-auction-type=["']([^"']+)["']/i.exec(s)?.[1] || "").toLowerCase();
+  const auctionType = auctionTypeEarly;
   let priceCurrent = current;
   let priceBuyNow = buyNow;
+  const priceEstimate = estimate ?? null;
+  const priceTotal = total ?? null;
   if (auctionType === "stock" || auctionType === "fix") {
     priceCurrent = null;
     priceBuyNow = buyNow ?? current;
+  } else if (auctionType === "bid" || auctionType === "blind") {
+    const n = priceCurrent;
+    if (n != null && n <= 1000 && priceBuyNow == null) priceCurrent = null;
   } else if (auctionType === "bid_or_fix" && buyNow != null && current === buyNow) {
     priceCurrent = null;
   }
@@ -281,6 +495,8 @@ export function extractEcarstradeRelayItem(html, data = {}) {
     priceStart: start,
     priceCurrent,
     priceBuyNow,
+    priceEstimate,
+    priceTotal,
     auctionId: String(d.auction_id || /auction(\d+)/i.exec(s)?.[1] || ""),
     auctionStage: auctionType.toUpperCase(),
   });
@@ -336,6 +552,8 @@ export function mergeEcarstradeRelayItems(into, extra) {
       priceBuyNow: it.priceBuyNow ?? prev.priceBuyNow,
       priceCurrent: it.priceCurrent ?? prev.priceCurrent,
       priceStart: it.priceStart ?? prev.priceStart,
+      priceEstimate: it.priceEstimate ?? prev.priceEstimate,
+      priceTotal: it.priceTotal ?? prev.priceTotal,
     });
   }
   return [...map.values()];
@@ -567,8 +785,9 @@ async function fetchApiInPage(page, apiUrl) {
     .catch(() => ({ status: 0, text: "" }));
 }
 
-async function fetchSource(page, sourceUrl, { maxPages, log }) {
+async function fetchSource(page, sourceUrl, { maxPages, log, needPriceIds }) {
   try {
+    const started = Date.now();
     await restoreAuthFromStorage(page);
     if (!/ecarstrade\.com/i.test(page.url())) {
       await page.goto(`${ORIGIN}${WARMUP_PATH}`, { waitUntil: "domcontentloaded", timeout: 45_000 });
@@ -581,6 +800,9 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
     let pageCount = 1;
     const missingIds = new Set();
     let usedApi = false;
+    const extraNeedIds = Array.isArray(needPriceIds) ? needPriceIds : [];
+    const detailMax = Math.max(1, Number(process.env.LISTINGS_ET_DETAIL_PRICE_MAX || 80));
+    const detailBudgetMs = Math.max(8_000, Number(process.env.LISTINGS_ET_DETAIL_BUDGET_MS || 120_000));
     for (let p = 1; p <= maxPages; p += 1) {
       if (p > 1) {
         if (p > pageCount) break;
@@ -588,6 +810,22 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
       }
       const start = p <= 1 ? 0 : (p - 1) * 20;
       const api = await fetchApiInPage(page, ecarstradeRelayApiUrl(sourceUrl, start));
+      if (isEcarstradeFutureApiTrulyEmpty(api)) {
+        if (p === 1 && items.length === 0) {
+          const loggedIn = await isLoggedIn(page);
+          log(`ecarstrade future_api ${api.status} tukšs, ok 0 (truly empty)`);
+          return {
+            status: "ok",
+            note: "ok 0 (truly empty)",
+            items: [],
+            raw: { kind: "ecarstrade-html", searchPages: [], detailPages: [], loggedIn },
+            pagesFetched: 1,
+            pageCount: 1,
+          };
+        }
+        pageCount = Math.max(1, p - 1);
+        break;
+      }
       let html = htmlFromEcarstradeApiBody(api.text);
       items = mergeEcarstradeRelayItems(items, itemsFromEcarstradeApiBody(api.text));
       if (collectEcarstradeCardIds(html).length) {
@@ -604,18 +842,13 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
         if (challenge) return fail("blocked", `eCarsTrade rāda ${challenge}.`);
         await waitForCards(page);
         const pageHtml = await page.content();
-        const api2 = await fetchApiInPage(page, ecarstradeRelayApiUrl(sourceUrl, start));
-        const apiHtml = htmlFromEcarstradeApiBody(api2.text);
-        items = mergeEcarstradeRelayItems(items, itemsFromEcarstradeApiBody(api2.text));
-        if (collectEcarstradeCardIds(apiHtml).length) usedApi = true;
-        html = [pageHtml, apiHtml].filter((h) => collectEcarstradeCardIds(h).length > 0).join("\n") || pageHtml;
+        html = pageHtml;
       }
       items = mergeEcarstradeRelayItems(items, extractEcarstradeRelayItems(html));
       searchPages.push(html.slice(0, 1_500_000));
       const ids = collectEcarstradeCardIds(html);
-      const priced = new Set(items.filter((it) => it.priceBuyNow != null || it.priceCurrent != null).map((it) => it.externalId));
-      for (const id of idsNeedingDetailPrice(html)) {
-        if (!priced.has(id)) missingIds.add(id);
+      for (const id of collectIdsNeedingPrice(items, html, p === 1 ? extraNeedIds : [])) {
+        missingIds.add(id);
       }
       if (ids.length === 0) {
         pageCount = p;
@@ -624,10 +857,17 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
       if (ids.length >= 20) pageCount = Math.max(pageCount, p + 1);
       else pageCount = p;
     }
-    const detailLimit = Math.min(20, missingIds.size);
+    const queued = [...missingIds].filter((id) => {
+      const it = items.find((row) => row.externalId === id);
+      return !it || ecarstradeItemNeedsPrice(it);
+    });
     let i = 0;
-    for (const id of missingIds) {
-      if (i >= detailLimit) break;
+    for (const id of queued) {
+      if (i >= detailMax) break;
+      if (Date.now() - started > detailBudgetMs) {
+        log(`ecarstrade detail budget ${detailBudgetMs}ms, enriched ${i}/${queued.length}`);
+        break;
+      }
       i += 1;
       await randomPause(1_000, 2_200);
       const url = ecarstradeRelayDetailUrl(id);
@@ -640,12 +880,16 @@ async function fetchSource(page, sourceUrl, { maxPages, log }) {
       await page.waitForSelector("body", { timeout: 8_000 }).catch(() => undefined);
       const detailHtml = (await page.content()).slice(0, 800_000);
       detailPages.push({ id, html: detailHtml });
-      items = mergeEcarstradeRelayItems(items, extractEcarstradeRelayItems(detailHtml));
+      const fromDetail = extractEcarstradeRelayItem(detailHtml, { id });
+      items = mergeEcarstradeRelayItems(items, fromDetail ? [fromDetail] : extractEcarstradeRelayItems(detailHtml));
     }
     const loggedIn = await isLoggedIn(page);
     if (loggedIn) await persistProfileCookies(page);
     const cardCount = searchPages.reduce((n, html) => n + collectEcarstradeCardIds(html).length, 0);
-    log(`ecarstrade ${searchPages.length} meklēšanas, ${detailPages.length} detaļas, kartītes=${cardCount}, auto=${items.length}, api=${usedApi}, loggedIn=${loggedIn}`);
+    const stillMissing = items.filter(ecarstradeItemNeedsPrice).length;
+    log(
+      `ecarstrade ${searchPages.length} meklēšanas, ${detailPages.length} detaļas (trūka ${queued.length}), kartītes=${cardCount}, auto=${items.length}, bezCenas=${stillMissing}, api=${usedApi}, loggedIn=${loggedIn}`,
+    );
     const note = items.length
       ? `eCarsTrade ${items.length} auto no releja Chrome${usedApi ? " (future_api pārlūkā)" : " (/search)"}.`
       : loggedIn

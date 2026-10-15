@@ -54,6 +54,40 @@ describe("listing extras and v4 control numbers", () => {
     expect(listingBidPrice({ platform: "openline", priceCurrent: 10150, priceStart: null, priceMinimal: 12250, priceBuyNow: null })).toBe(12250);
     expect(listingCardPriceLabel({ platform: "ecarstrade", priceCurrent: null, priceStart: null, priceBuyNow: 16200 })).toBe("Pirkt uzreiz");
     expect(listingCardPriceLabel({ platform: "autobid", priceCurrent: 9000, priceStart: 8000, priceBuyNow: null })).toBe("Pašreizējā cena");
+    expect(
+      listingCardPriceLabel({
+        platform: "ecarstrade",
+        priceCurrent: null,
+        priceStart: null,
+        priceBuyNow: null,
+        auctionStage: "BLIND_AUCTION",
+      }),
+    ).toBe("nav cenas");
+    expect(
+      listingCardPriceLabel({
+        platform: "ecarstrade",
+        priceCurrent: null,
+        priceStart: null,
+        priceBuyNow: null,
+        priceEstimate: 17000,
+        auctionStage: "BID",
+      }),
+    ).toBe("Aplēse");
+    expect(listingComparisonPrice({ platform: "ecarstrade", priceCurrent: null, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe(17000);
+    expect(listingComparisonPrice({ platform: "ecarstrade", priceCurrent: 15100, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe(15100);
+    expect(listingComparisonPrice({ platform: "openline", priceCurrent: 15100, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe(19000);
+    expect(listingComparisonPrice({ platform: "auto1", priceCurrent: 12000, priceStart: 10000, priceBuyNow: 14900, priceEstimate: 17000 })).toBe(14900);
+    expect(listingComparisonPrice({ platform: "autobid", priceCurrent: 9000, priceStart: null, priceBuyNow: 11000, priceEstimate: 17000 })).toBe(11000);
+    expect(listingCardPriceLabel({ platform: "openline", priceCurrent: 15100, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe("Pirkt uzreiz");
+    expect(
+      listingCardPriceLabel({
+        platform: "ecarstrade",
+        priceCurrent: 15100,
+        priceStart: null,
+        priceBuyNow: null,
+        auctionStage: "BID",
+      }),
+    ).toBe("Solījums");
   });
 
   it("does not treat a low tender floor or Autobid reserve as an affordable price", () => {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { generateDzintarzemeTamePdfBytes } from "@/lib/dzintarzeme-tame-pdf";
 import { parseDzintarzemeTameBody } from "@/lib/dzintarzeme-tame-calculator";
+import { readIrissTameCommissionSettings } from "@/lib/iriss-tame-commission-store";
 import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 
@@ -26,7 +27,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const parsed = parseDzintarzemeTameBody(body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
-  const bytes = await generateDzintarzemeTamePdfBytes(parsed.value);
+  const rates = await readIrissTameCommissionSettings();
+  const bytes = await generateDzintarzemeTamePdfBytes(parsed.value, rates);
   const pdfCache = "no-store, no-cache, must-revalidate, max-age=0, private" satisfies string;
 
   return new NextResponse(Buffer.from(bytes), {

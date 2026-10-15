@@ -3,6 +3,8 @@ export type IrissScanRecord = {
   createdAt: string;
   updatedAt: string;
   pinnedAt: string;
+  /** Optimistic concurrency. Vecie JSON bez lauka = 0. */
+  workspaceRevision: number;
   brandModel: string;
   /** VIN, ja zināms. Tukšs vecajos JSON. */
   vin: string;
@@ -27,6 +29,7 @@ export function emptyIrissScanRecord(id: string, nowIso: string): IrissScanRecor
     createdAt: nowIso,
     updatedAt: nowIso,
     pinnedAt: "",
+    workspaceRevision: 0,
     brandModel: "",
     vin: "",
     listingLinkMobile: [""],

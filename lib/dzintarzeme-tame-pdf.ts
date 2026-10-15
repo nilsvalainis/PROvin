@@ -7,6 +7,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, type PDFFont, type PDFPage } from "pdf-lib";
 
 import { computeDzintarzemeTame, type DzintarzemeTameInput } from "@/lib/dzintarzeme-tame-calculator";
+import type { IrissTameCommissionRates } from "@/lib/iriss-tame-commission";
 import {
   drawRoundedRect,
   drawDzintarzemeTamePdfFooter,
@@ -105,8 +106,11 @@ async function createCtx(): Promise<PdfCtx> {
 }
 
 /** Dzintarzeme Auto tāmes PDF - viena A4 lapa, kājene ar logo un kontaktiem. */
-export async function generateDzintarzemeTamePdfBytes(input: DzintarzemeTameInput): Promise<Uint8Array> {
-  const c = computeDzintarzemeTame(input);
+export async function generateDzintarzemeTamePdfBytes(
+  input: DzintarzemeTameInput,
+  rates?: IrissTameCommissionRates,
+): Promise<Uint8Array> {
+  const c = computeDzintarzemeTame(input, rates);
   const ctx = await createCtx();
   const floorY = ctx.margin + TAME_FOOTER_BLOCK_H;
   const page = ctx.page;

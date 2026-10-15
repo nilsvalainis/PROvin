@@ -44,10 +44,12 @@ describe("listing sync capacity", () => {
     expect(canStartListingJob(200_000, 240_000, RELAY_FETCH_HEADROOM_MS)).toBe(true);
     expect(canStartListingJob(210_000, 240_000, RELAY_FETCH_HEADROOM_MS)).toBe(false);
     expect(canStartListingJob(0, 240_000, ECARSTRADE_RELAY_HEADROOM_MS)).toBe(true);
-    expect(canStartListingJob(120_000, 240_000, ECARSTRADE_RELAY_HEADROOM_MS)).toBe(false);
+    /** 120 s + 45 s headroom used to fail at 180 s and stall after Autobid/Openlane/Auto1. */
+    expect(canStartListingJob(120_000, 210_000, ECARSTRADE_RELAY_HEADROOM_MS)).toBe(true);
+    expect(canStartListingJob(210_000, 210_000, ECARSTRADE_RELAY_HEADROOM_MS)).toBe(false);
   });
 
-  it("keeps one ET search per relay batch and leaves the rest for the next run", () => {
+  it("keeps many ET searches in one relay batch; explicit 1 still leaves the rest", () => {
     const groups = [
       { platform: "openline" as const, key: "o1" },
       { platform: "ecarstrade" as const, key: "e1" },
@@ -55,9 +57,12 @@ describe("listing sync capacity", () => {
       { platform: "ecarstrade" as const, key: "e3" },
       { platform: "auto1" as const, key: "a1" },
     ];
-    const capped = capEcarstradeRelayGroups(groups, true, 1);
-    expect(capped.map((g) => g.key)).toEqual(["o1", "e1", "a1"]);
+    expect(capEcarstradeRelayGroups(groups, true).map((g) => g.key)).toEqual(["o1", "e1", "e2", "e3", "a1"]);
+    expect(capEcarstradeRelayGroups(groups, true, 1).map((g) => g.key)).toEqual(["o1", "e1", "a1"]);
     expect(capEcarstradeRelayGroups(groups, false, 1)).toHaveLength(5);
+    const many = Array.from({ length: 90 }, (_, i) => ({ platform: "ecarstrade" as const, key: `e${i}` }));
+    expect(capEcarstradeRelayGroups(many, true)).toHaveLength(80);
+    expect(capEcarstradeRelayGroups(many, true, 80)).toHaveLength(80);
   });
 });
 

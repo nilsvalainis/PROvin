@@ -172,6 +172,28 @@ describe("synthesizeOwnerCountsFromPdfInput", () => {
     expect(formatOwnerCountTileFacts(syn.chosen).value).not.toMatch(/Latvijā/);
   });
 
+  it("counts CarVertical ownership-change timeline events when no explicit N īpašnieki", () => {
+    const syn = synthesizeOwnerCountsFromPdfInput({
+      csddForm: { ...createDefaultSourceBlocks().csdd, comments: "Dati nav pieejami." },
+      ccVinBlock: emptyCcVinBlock(),
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.carvertical,
+          mileageRows: [],
+          incidentRows: [],
+          comments: "",
+          vehicleHistoryTimeline: [
+            { date: "01.06.2014", country: "Kanāda", description: "Mainītas īpašumtiesības" },
+            { date: "15.09.2017", country: "Kanāda", description: "Mainītas īpašumtiesības" },
+            { date: "10.03.2023", country: "Kanāda", description: "Mainītas īpašumtiesības" },
+          ],
+        },
+      ],
+    });
+    expect(syn.totalCount).toBe(3);
+    expect(formatOwnerCountTileFacts(syn.chosen).value).toMatch(/3/);
+  });
+
   it("does not print Zviedrijā from a vendor report that merely lists Sweden", () => {
     const syn = synthesizeOwnerCountsFromPdfInput({
       csddForm: { ...createDefaultSourceBlocks().csdd, comments: "Dati nav pieejami." },

@@ -29,6 +29,8 @@ import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { orderVinScanDashboardHintFromRecord, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
+import { parseOrderVinPlateResolution } from "@/lib/order-vin-plate-resolution";
+import { normalizePlateNumber } from "@/lib/order-field-validation";
 import { coalesceOrderDraftWorkspacePatch } from "@/lib/admin-order-draft-workspace-merge";
 import {
   nextWorkspaceRevisionAfterRestore,
@@ -154,6 +156,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
   if (o.orderEdits && typeof o.orderEdits === "object") {
     const e = o.orderEdits as Record<string, unknown>;
     if (typeof e.vin === "string") orderEdits.vin = e.vin;
+    if (typeof e.licensePlate === "string") orderEdits.licensePlate = e.licensePlate;
     if (typeof e.listingUrl === "string") orderEdits.listingUrl = e.listingUrl;
     if (typeof e.customerName === "string") orderEdits.customerName = e.customerName;
     if (typeof e.customerEmail === "string") orderEdits.customerEmail = e.customerEmail;
@@ -233,6 +236,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
       : undefined;
   const autoIngest = parseAutoIngestStatus(o.autoIngest);
   const vinScan = parseOrderVinScanRecord(o.vinScan);
+  const vinPlateResolution = parseOrderVinPlateResolution(o.vinPlateResolution);
   return {
     orderEdits,
     workspace,
@@ -248,6 +252,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
     ...(clientReportFilename ? { clientReportFilename } : {}),
     ...(autoIngest ? { autoIngest } : {}),
     ...(vinScan ? { vinScan } : {}),
+    ...(vinPlateResolution ? { vinPlateResolution } : {}),
   };
 }
 
@@ -261,6 +266,7 @@ function extraDraftPersistFields(prev: OrderDraftState | null | undefined) {
     ...(prev?.clientReportFilename != null ? { clientReportFilename: prev.clientReportFilename } : {}),
     ...(prev?.autoIngest ? { autoIngest: prev.autoIngest } : {}),
     ...(prev?.vinScan ? { vinScan: prev.vinScan } : {}),
+    ...(prev?.vinPlateResolution ? { vinPlateResolution: prev.vinPlateResolution } : {}),
   };
 }
 
@@ -600,6 +606,12 @@ async function patchOrderDraftUnlocked(
   if (patch.orderEdits !== undefined) {
     if (typeof patch.orderEdits.vin === "string") {
       sanitizedPatch.vin = sanitizeDraftTextForStorage(patch.orderEdits.vin, 64);
+    }
+    if (typeof patch.orderEdits.licensePlate === "string") {
+      sanitizedPatch.licensePlate = sanitizeDraftTextForStorage(
+        normalizePlateNumber(patch.orderEdits.licensePlate),
+        12,
+      );
     }
     if (typeof patch.orderEdits.listingUrl === "string") {
       sanitizedPatch.listingUrl = sanitizeDraftTextForStorage(patch.orderEdits.listingUrl, 8000);
@@ -1041,6 +1053,74 @@ async function upsertOrderDraftVinScanUnlocked(
   void upsertDashboardDraftIndexEntry(sessionId, {
     vinScan: orderVinScanDashboardHintFromRecord(parsed),
   }).catch(() => {});
+  return { ok: true, updatedAt };
+}
+
+export async function upsertOrderDraftVinPlateResolution(
+  sessionId: string,
+  vinPlateResolution: import("@/lib/order-vin-plate-resolution").OrderVinPlateResolution,
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
+  return withDraftWriteLock(sessionId, () =>
+    upsertOrderDraftVinPlateResolutionUnlocked(sessionId, vinPlateResolution),
+  );
+}
+
+async function upsertOrderDraftVinPlateResolutionUnlocked(
+  sessionId: string,
+  vinPlateResolution: import("@/lib/order-vin-plate-resolution").OrderVinPlateResolution,
+): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
+  const parsed = parseOrderVinPlateResolution(vinPlateResolution);
+  if (!parsed) return { ok: false, error: "invalid_vin_plate_resolution" };
+  const dir = resolveDraftDir();
+  const blob = resolveOrderDraftBlob();
+  if (!dir && !blob) return { ok: false, error: "store_disabled" };
+
+  const prev = await readOrderDraftUncached(sessionId);
+  const updatedAt = new Date().toISOString();
+  const orderEdits = { ...(prev?.orderEdits ?? {}) };
+  if (!orderEdits.licensePlate?.trim()) orderEdits.licensePlate = parsed.plate;
+
+  const doc = {
+    sessionId,
+    updatedAt,
+    orderEdits,
+    workspace: prev?.workspace ?? null,
+    ...(prev?.workspaceRevision != null ? { workspaceRevision: prev.workspaceRevision } : {}),
+    ...(prev?.workspaceChecksum != null ? { workspaceChecksum: prev.workspaceChecksum } : {}),
+    ...extraDraftPersistFields(prev),
+    vinPlateResolution: parsed,
+  };
+
+  let fsOk = false;
+  let blobOk = false;
+
+  if (dir) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const fp = draftFilePath(dir, sessionId);
+      const tmp = `${fp}.tmp`;
+      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
+      await fs.rename(tmp, fp);
+      fsOk = true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!blob) return { ok: false, error: `write_failed:${msg}` };
+    }
+  }
+
+  if (blob) {
+    try {
+      await writeOrderDraftJsonToBlob(sessionId, doc, blob);
+      blobOk = true;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!fsOk) return { ok: false, error: `blob_write_failed:${msg}` };
+    }
+  }
+
+  if (!fsOk && !blobOk) return { ok: false, error: "write_failed:no_backend" };
+  invalidateOrderDraftCache(sessionId);
   return { ok: true, updatedAt };
 }
 

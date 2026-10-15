@@ -69,11 +69,6 @@ export function listingMaxBid(kind: ListingTaxKind, foreignVatPct: number, budge
   return kind === "gross" ? net * (1 + grossRate(kind, foreignVatPct) / 100) : net;
 }
 
-/**
- * Salīdzināšanas cena: pirkt-uzreiz / fiksētā / asking, ja ir.
- * Citādi pašreizējais solījums ar sagaidāmo finālu. Zems starta solījums
- * (piem. 850 € tenders) nav „lēts auto”.
- */
 function positivePrice(n: number | null | undefined): number | null {
   return n != null && Number.isFinite(n) && n > 0 ? n : null;
 }
@@ -82,38 +77,75 @@ function isLowFloorBid(n: number): boolean {
   return n > 0 && n <= 1000;
 }
 
+export type ListingPriceKind = "bid" | "estimate" | "buy_now" | "other" | "none";
+
 export type ListingPriceFields = {
   platform?: string;
   priceCurrent: number | null;
   priceStart: number | null;
   priceMinimal?: number | null;
   priceBuyNow: number | null;
+  /** Aplēses cena, ja avots to dod. Nav Kopējā cena ar nodevām. */
+  priceEstimate?: number | null;
+  auctionStage?: string;
 };
 
-/**
- * Salīdzināšanas / kartītes cena: pirkt-uzreiz, fiksētā, asking.
- * Citādi solījums (Auto1: nākamais min. kā sagaidāmais fināls).
- * Autobid rezerve (minimal) nav asking. 850 € tenders nav „lēts auto”.
- */
-export function listingComparisonPrice(v: ListingPriceFields): number | null {
-  const buyNow = positivePrice(v.priceBuyNow);
-  if (buyNow != null) return buyNow;
+export type ListingPriceSelection = {
+  amount: number | null;
+  kind: ListingPriceKind;
+};
 
-  const asking = v.platform === "openline" || v.platform === "ecarstrade" ? positivePrice(v.priceMinimal) : null;
-  if (asking != null) return asking;
+function liveBid(auto1Next: number | null, current: number | null, start: number | null): number | null {
+  if (current == null) return null;
+  if (auto1Next != null && auto1Next > current) return auto1Next;
+  if (isLowFloorBid(current) && (start == null || current <= start)) return null;
+  return current;
+}
+
+/** eCarsTrade: solījums, tad Aplēses cena, tad Pirkt uzreiz. */
+function ecarstradePriceSelection(v: ListingPriceFields): ListingPriceSelection {
+  const buyNow = positivePrice(v.priceBuyNow);
+  const estimate = positivePrice(v.priceEstimate);
+  const asking = positivePrice(v.priceMinimal);
+  const current = positivePrice(v.priceCurrent);
+  const start = positivePrice(v.priceStart);
+  const bid = liveBid(null, current, start);
+  if (bid != null) return { amount: bid, kind: "bid" };
+  if (estimate != null) return { amount: estimate, kind: "estimate" };
+  if (buyNow != null) return { amount: buyNow, kind: "buy_now" };
+  if (asking != null) return { amount: asking, kind: "other" };
+  if (start != null && !isLowFloorBid(start)) return { amount: start, kind: "other" };
+  return { amount: null, kind: "none" };
+}
+
+/**
+ * Openlane, Autobid, Auto1 un pārējie: pirkt uzreiz, tad Openlane asking.
+ * Citādi solījums (Auto1: nākamais min., ja augstāks). Aplēse šiem nav.
+ */
+function otherPlatformPriceSelection(v: ListingPriceFields): ListingPriceSelection {
+  const buyNow = positivePrice(v.priceBuyNow);
+  if (buyNow != null) return { amount: buyNow, kind: "buy_now" };
+
+  const asking = v.platform === "openline" ? positivePrice(v.priceMinimal) : null;
+  if (asking != null) return { amount: asking, kind: "other" };
 
   const auto1Next = v.platform === "auto1" ? positivePrice(v.priceMinimal) : null;
   const current = positivePrice(v.priceCurrent);
   const start = positivePrice(v.priceStart);
+  const bid = liveBid(auto1Next, current, start);
+  if (bid != null) return { amount: bid, kind: "other" };
+  if (auto1Next != null) return { amount: auto1Next, kind: "other" };
+  if (start != null && !isLowFloorBid(start)) return { amount: start, kind: "other" };
+  return { amount: null, kind: "none" };
+}
 
-  if (current != null) {
-    if (auto1Next != null && auto1Next > current) return auto1Next;
-    if (isLowFloorBid(current) && (start == null || current <= start)) return null;
-    return current;
-  }
-  if (auto1Next != null) return auto1Next;
-  if (start != null && !isLowFloorBid(start)) return start;
-  return null;
+export function listingPriceSelection(v: ListingPriceFields): ListingPriceSelection {
+  if (v.platform === "ecarstrade") return ecarstradePriceSelection(v);
+  return otherPlatformPriceSelection(v);
+}
+
+export function listingComparisonPrice(v: ListingPriceFields): number | null {
+  return listingPriceSelection(v).amount;
 }
 
 /** Kartītes un budžeta bāze - tā pati salīdzināšanas cena. */
@@ -121,11 +153,22 @@ export function listingBidPrice(v: ListingPriceFields): number | null {
   return listingComparisonPrice(v);
 }
 
+const LISTING_PRICE_KIND_LABEL: Record<ListingPriceKind, string> = {
+  bid: "Solījums",
+  estimate: "Aplēse",
+  buy_now: "Pirkt uzreiz",
+  other: "Pašreizējā cena",
+  none: "nav cenas",
+};
+
 export function listingCardPriceLabel(v: ListingPriceFields): string {
-  const cmp = listingComparisonPrice(v);
-  const buyNow = positivePrice(v.priceBuyNow);
-  if (cmp != null && buyNow != null && cmp === buyNow) return "Pirkt uzreiz";
-  return "Pašreizējā cena";
+  if (v.platform !== "ecarstrade") {
+    const cmp = listingComparisonPrice(v);
+    const buyNow = positivePrice(v.priceBuyNow);
+    if (cmp != null && buyNow != null && cmp === buyNow) return "Pirkt uzreiz";
+    return "Pašreizējā cena";
+  }
+  return LISTING_PRICE_KIND_LABEL[listingPriceSelection(v).kind];
 }
 
 /** Margin: 21% no I. NETO / AR PVN: 21% no visas bāzes (solījums pēc ārvalstu PVN + I). */

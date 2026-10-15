@@ -116,6 +116,17 @@ Combined consumption: 6.1 l/100km
     expect(parsed.notes.some((n) => /6 īpašnieki/i.test(n))).toBe(true);
   });
 
+  it("reads a scrapping event from the vehicle history", () => {
+    const parsed = parseCarinfoPastedText(`
+Vehicle history
+2019-02-26
+Scrapping in Sweden
+Information from Transportstyrelsen
+Mileage 523,710 km
+`);
+    expect(parsed.notes.some((n) => n === "Norakstīts Zviedrijā (26.02.2019).")).toBe(true);
+  });
+
   it("returns empty when paste has no dates or odometer", () => {
     const parsed = parseCarinfoPastedText("Login / Signup\nCar.info Sweden");
     expect(parsed.found).toBe(false);

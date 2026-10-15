@@ -19,6 +19,7 @@ import {
   Plus,
   Radar,
   ScanLine,
+  Settings,
   Sun,
   Zap,
   type LucideIcon,
@@ -27,10 +28,16 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { IrissPavadzimesSidebarCard } from "@/components/admin/IrissPavadzimesSidebarCard";
+import { finiteBadgeCount } from "@/lib/admin-sidebar-badge";
+import {
+  ADMIN_MOBILE_TABBAR_DOCK_NAV,
+  ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
+} from "@/lib/admin-mobile-shell";
+import { ADMIN_RAIL_V1_GLYPH, ADMIN_RAIL_V1_GLYPH_INNER } from "@/lib/admin-sticky-rail-v1-styles";
 
 /** Variants A: grupēta kreisā sānjosla visiem admin paneļiem (PRO + IRISS). Mobilajā — apakšējā cilņu josla + „Vairāk”. */
 
-type Item = { href: string; label: string; icon: LucideIcon; badge?: "fast" | "partners" | "orders"; plus?: boolean; match: (p: string) => boolean };
+type Item = { href: string; label: string; icon: LucideIcon; badge?: "fast" | "partners" | "orders" | "irissMatches"; plus?: boolean; match: (p: string) => boolean };
 type Group = { title: string; items: Item[] };
 
 const starts = (prefix: string) => (p: string) => p.startsWith(prefix);
@@ -80,9 +87,9 @@ const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Hands
 const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, plus: true, match: starts("/admin/iriss/pasutijumi") };
 const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
 const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybills, icon: FileText, match: starts("/admin/iriss/pavadzimes") };
-const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, match: starts("/admin/iriss/sludinajumi") };
+const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, badge: "irissMatches", match: starts("/admin/iriss/sludinajumi") };
 const I_REPORT: Item = { href: "/admin/iriss/atskaite", label: L.irissReport, icon: CalendarRange, match: starts("/admin/iriss/atskaite") };
-const I_SETTINGS: Item = { href: "/admin/iriss/iestatijumi", label: L.irissSettings, icon: Cog, match: starts("/admin/iriss/iestatijumi") };
+const I_SETTINGS: Item = { href: "/admin/iriss/iestatijumi", label: L.irissSettings, icon: Settings, match: starts("/admin/iriss/iestatijumi") };
 
 /** Tā pati VIN pārbaudes lapa arī IRISS izvēlnē (dublēts ieraksts). */
 const I_VIN: Item = { ...VIN, label: L.vinScan };
@@ -220,34 +227,54 @@ function refreshCount(url: string): Promise<void> {
   return e.inflight;
 }
 
-function useCount(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount" | "urgentCount"): number {
-  const pathname = usePathname();
+const badgePollRefs = new Map<string, number>();
+
+function useCountValue(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount" | "urgentCount" | "irissMatchCount"): number {
   const [n, setN] = useState(0);
   useEffect(() => {
     const e = countEntry(url);
-    const sync = () => setN(e.data?.[key] ?? 0);
+    const sync = () => {
+      setN(finiteBadgeCount(e.data?.[key]));
+    };
     sync();
     e.subs.add(sync);
     return () => {
       e.subs.delete(sync);
     };
   }, [url, key]);
+  return n;
+}
+
+function useBadgeUrlPolling(url: string) {
+  const pathname = usePathname();
   useEffect(() => {
-    void refreshCount(url);
-    // Fona cilnē nepollējam (telefonā taupa tīklu/bateriju); atgriežoties — focus atjauno.
-    const t = window.setInterval(() => {
-      if (document.visibilityState === "visible") void refreshCount(url);
-    }, 45_000);
-    const onFocus = () => void refreshCount(url);
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("admin-orders-changed", onFocus);
+    const prev = badgePollRefs.get(url) ?? 0;
+    badgePollRefs.set(url, prev + 1);
+    if (prev === 0) {
+      void refreshCount(url);
+      const t = window.setInterval(() => {
+        if (document.visibilityState === "visible") void refreshCount(url);
+      }, 45_000);
+      const onFocus = () => void refreshCount(url);
+      window.addEventListener("focus", onFocus);
+      window.addEventListener("admin-orders-changed", onFocus);
+      window.addEventListener("admin-iriss-matches-changed", onFocus);
+      return () => {
+        window.clearInterval(t);
+        window.removeEventListener("focus", onFocus);
+        window.removeEventListener("admin-orders-changed", onFocus);
+        window.removeEventListener("admin-iriss-matches-changed", onFocus);
+        const left = (badgePollRefs.get(url) ?? 1) - 1;
+        if (left <= 0) badgePollRefs.delete(url);
+        else badgePollRefs.set(url, left);
+      };
+    }
     return () => {
-      window.clearInterval(t);
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("admin-orders-changed", onFocus);
+      const left = (badgePollRefs.get(url) ?? 1) - 1;
+      if (left <= 0) badgePollRefs.delete(url);
+      else badgePollRefs.set(url, left);
     };
   }, [pathname, url]);
-  return n;
 }
 
 function ordersBadgeTone(badges: { ordersOverdue: number; ordersUrgent: number }) {
@@ -257,16 +284,24 @@ function ordersBadgeTone(badges: { ordersOverdue: number; ordersUrgent: number }
   };
 }
 
+function navBadgeTone(kind: Item["badge"], badges: { ordersOverdue: number; ordersUrgent: number }) {
+  if (kind === "orders") return ordersBadgeTone(badges);
+  if (kind === "irissMatches") return { gray: true, warn: false };
+  return { gray: false, warn: false };
+}
+
 /** Visi žetoni vienā pieprasījumā (agrāk 3). */
 const BADGES_URL = "/api/admin/badges";
 
 function useBadges() {
-  const fast = useCount(BADGES_URL, "openCount");
-  const partners = useCount(BADGES_URL, "unseenCount");
-  const orders = useCount(BADGES_URL, "activeCount");
-  const ordersOverdue = useCount(BADGES_URL, "overdueCount");
-  const ordersUrgent = useCount(BADGES_URL, "urgentCount");
-  return { fast, partners, orders, ordersOverdue, ordersUrgent } as const;
+  useBadgeUrlPolling(BADGES_URL);
+  const fast = useCountValue(BADGES_URL, "openCount");
+  const partners = useCountValue(BADGES_URL, "unseenCount");
+  const orders = useCountValue(BADGES_URL, "activeCount");
+  const ordersOverdue = useCountValue(BADGES_URL, "overdueCount");
+  const ordersUrgent = useCountValue(BADGES_URL, "urgentCount");
+  const irissMatches = useCountValue(BADGES_URL, "irissMatchCount");
+  return { fast, partners, orders, ordersOverdue, ordersUrgent, irissMatches } as const;
 }
 
 /**
@@ -275,6 +310,29 @@ function useBadges() {
  * jo admin-ios-theme.css piespiež `span { color: #000 }`.
  * „Pasūtījumi” — pelēks, sarkans tikai ja kāds kavē termiņu.
  */
+/** Mobilās apakšējās joslas žetons: tumši sarkans / brīdinājums / pelēks, balti treknie cipari. */
+function MobileTabCountBadge({
+  n,
+  gray = false,
+  warn = false,
+}: {
+  n: number;
+  gray?: boolean;
+  warn?: boolean;
+}) {
+  if (n <= 0) return null;
+  const text = n > 99 ? "99+" : String(n);
+  const bg = gray ? "bg-[#9ca3af]" : warn ? "bg-[#d97706]" : "bg-[#b91c1c]";
+  return (
+    <span
+      className={`absolute -right-2 -top-1 inline-flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-bold leading-none text-white tabular-nums shadow-[0_0_0_1.5px_rgba(255,255,255,0.85)] ${bg}`}
+      aria-hidden
+    >
+      {text}
+    </span>
+  );
+}
+
 function Badge({
   n,
   dot = false,
@@ -378,7 +436,7 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
             {g.items.map((it) => {
               const on = it.match(pathname);
               const n = it.badge ? badges[it.badge] : 0;
-              const tone = it.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
+              const tone = navBadgeTone(it.badge, badges);
               const Icon = it.icon;
               return (
                 <div key={it.href} className="relative">
@@ -453,58 +511,62 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   const inTabs = tabs.some((t) => t.match(pathname));
   const moreBadge = workspace === "iriss" ? badges.fast + badges.partners + badges.orders : badges.partners + badges.fast;
 
+  const tabItemClass = (on: boolean) =>
+    `admin-nav-link relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] py-0.5 text-[10px] font-medium transition-opacity ${
+      on ? "text-[var(--color-provin-accent)] opacity-100" : "text-[#8e8e93] opacity-75"
+    }`;
+
   return (
     <>
-      <nav
-        className="fixed inset-x-0 bottom-0 z-[35] flex h-[calc(49px+env(safe-area-inset-bottom,0px))] border-t border-[#e5e5ea] bg-[rgba(249,249,249,0.94)] pb-[env(safe-area-inset-bottom,0px)] backdrop-blur md:hidden"
-        aria-label="Galvenā izvēlne"
-      >
-        {tabs.map((t) => {
-          const on = t.match(pathname) && !more;
-          const n = t.badge ? badges[t.badge] : 0;
-          const tone = t.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
-          const Icon = t.icon;
-          return (
-            <Link
-              key={t.href}
-              href={t.href}
-              aria-current={on ? "page" : undefined}
-              className={`admin-nav-link relative flex h-[49px] min-w-0 flex-1 flex-col items-center justify-center gap-[3px] pt-0.5 text-[10px] font-medium ${
-                on ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"
-              }`}
-            >
-              <span className="relative">
-                <Icon className="h-[26px] w-[26px]" strokeWidth={on ? 2.2 : 1.8} aria-hidden />
-                {n > 0 ? (
-                  <span className="absolute -right-3.5 -top-0.5">
-                    <Badge n={n} gray={tone.gray} warn={tone.warn} dot />
+      <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
+        <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
+          {tabs.map((t) => {
+            const on = t.match(pathname) && !more;
+            const n = t.badge ? badges[t.badge] : 0;
+            const tone = navBadgeTone(t.badge, badges);
+            const Icon = t.icon;
+            return (
+              <Link
+                key={t.href}
+                href={t.href}
+                aria-current={on ? "page" : undefined}
+                className={tabItemClass(on)}
+              >
+                <span className="relative">
+                  <span className={ADMIN_RAIL_V1_GLYPH}>
+                    <Icon
+                      className={`${ADMIN_RAIL_V1_GLYPH_INNER} ${on ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}
+                      strokeWidth={on ? 2.25 : 1.85}
+                      aria-hidden
+                    />
                   </span>
-                ) : null}
+                  {n > 0 ? <MobileTabCountBadge n={n} gray={tone.gray} warn={tone.warn} /> : null}
+                </span>
+                <span className="max-w-full truncate px-0.5 text-center leading-none">{t.label}</span>
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setMore((v) => !v)}
+            className={tabItemClass(!inTabs || more)}
+            aria-expanded={more}
+            aria-label="Vairāk"
+          >
+            <span className="relative">
+              <span className={ADMIN_RAIL_V1_GLYPH}>
+                <MoreHorizontal
+                  className={`${ADMIN_RAIL_V1_GLYPH_INNER} ${!inTabs || more ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}
+                  strokeWidth={!inTabs || more ? 2.25 : 1.85}
+                  aria-hidden
+                />
               </span>
-              <span className="max-w-full truncate px-0.5 leading-none">{t.label}</span>
-            </Link>
-          );
-        })}
-        <button
-          type="button"
-          onClick={() => setMore((v) => !v)}
-          className={`relative flex h-[49px] min-w-0 flex-1 flex-col items-center justify-center gap-[3px] pt-0.5 text-[10px] font-medium ${
-            !inTabs || more ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"
-          }`}
-          aria-expanded={more}
-          aria-label="Vairāk"
-        >
-          <span className="relative">
-            <MoreHorizontal className="h-[26px] w-[26px]" aria-hidden />
-            {moreBadge > 0 ? (
-              <span className="absolute -right-3.5 -top-0.5">
-                <Badge n={moreBadge} dot />
-              </span>
-            ) : null}
-          </span>
-          <span className="leading-none">Vairāk</span>
-        </button>
-      </nav>
+              {moreBadge > 0 ? <MobileTabCountBadge n={moreBadge} /> : null}
+            </span>
+            <span className="leading-none">Vairāk</span>
+          </button>
+        </nav>
+      </div>
       {more ? (
         <div
           className="fixed inset-x-0 top-0 z-[34] flex flex-col bg-[#f2f2f7] md:hidden"
@@ -530,7 +592,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                   {g.items.map((it) => {
                     const on = it.match(pathname);
                     const n = it.badge ? badges[it.badge] : 0;
-                    const tone = it.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
+                    const tone = navBadgeTone(it.badge, badges);
                     const Icon = it.icon;
                     return (
                       <div key={it.href} className="relative border-b border-[#e5e5ea] last:border-b-0">

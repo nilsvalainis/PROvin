@@ -8,6 +8,7 @@ export function isPublicSiteAnalyticsPath(pathname: string): boolean {
   const path = (pathname.split("?")[0] ?? pathname).trim() || "/";
   if (path.startsWith("/admin")) return false;
   if (path.startsWith("/api")) return false;
+  if (path === "/b2b-demo" || path.startsWith("/b2b-demo/")) return false;
 
   const rest = stripLocalePrefix(path);
   if (rest === "/demo" || rest.startsWith("/demo/")) return false;

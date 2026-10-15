@@ -28,6 +28,7 @@ import {
   parseVendorPdfLocal,
   vendorLocalParseHasData,
 } from "@/lib/vendor-pdf-local-parse";
+import { loadEcbDailyRates } from "@/lib/currency-eur-convert";
 
 function enrichCsddAiResult(result: CsddPdfParseResult): CsddPdfParseResult {
   return result;
@@ -216,6 +217,7 @@ export async function ingestSourcePdfFile(opts: {
 }> {
   const { target, buffer, fileName } = opts;
   const preferAi = opts.preferAi !== false;
+  await loadEcbDailyRates();
   const extract = await extractPdfTextDetailed(buffer, { fileName });
   const text = extract.text;
 

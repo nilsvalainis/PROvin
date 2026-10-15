@@ -1,6 +1,6 @@
 import "server-only";
 
-import { BlobNotFoundError, del, get, list, put } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
 import fs from "fs/promises";
 import os from "node:os";
 import path from "path";
@@ -9,7 +9,14 @@ import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
 import { attachmentAfterBlobPut, parseDataUrlPayload } from "@/lib/iriss-offer-attachment-blob";
+import { irissOfferThumbBlobPath, renderIrissOfferThumbJpeg } from "@/lib/iriss-offer-image-thumb";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
+import {
+  isIrissRecordDeleted,
+  markIrissRecordDeleted,
+  pickIrissPasutijumsAuditFields,
+  restoreIrissRecord,
+} from "@/lib/iriss-pasutijumi-audit-fields";
 import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
 import {
   irissRevisionMatches,
@@ -201,6 +208,13 @@ export function getIrissPasutijumiStorageDir(): string | null {
   return r.kind === "fs" ? r.dir : null;
 }
 
+/** Privātais Blob, kad IRISS pasūtījumi jau glabājas Blob. FS režīmā null. */
+export function getIrissPasutijumiBlobConfig(): { token: string; prefix: string } | null {
+  const r = resolveStorage();
+  if (r.kind !== "blob") return null;
+  return { token: r.token, prefix: r.prefix };
+}
+
 export function isIrissPasutijumiStoreEnabled(): boolean {
   return resolveStorage().kind !== "disabled";
 }
@@ -371,6 +385,9 @@ function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const dataUrl = sanitizeDraftTextForStorage(typeof o.dataUrl === "string" ? o.dataUrl : "", 15_000_000);
       const blobPath = sanitizeDraftTextForStorage(typeof o.blobPath === "string" ? o.blobPath : "", 400);
       const blobUrl = sanitizeDraftTextForStorage(typeof o.blobUrl === "string" ? o.blobUrl : "", 800);
+      const thumbDataUrl = sanitizeDraftTextForStorage(typeof o.thumbDataUrl === "string" ? o.thumbDataUrl : "", 500_000);
+      const thumbBlobPath = sanitizeDraftTextForStorage(typeof o.thumbBlobPath === "string" ? o.thumbBlobPath : "", 400);
+      const thumbUrl = sanitizeDraftTextForStorage(typeof o.thumbUrl === "string" ? o.thumbUrl : "", 800);
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? Math.max(0, Math.min(sizeRaw, 10_000_000)) : 0;
       if (!id || !name) return null;
@@ -383,6 +400,9 @@ function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
         dataUrl,
         ...(blobPath ? { blobPath } : {}),
         ...(blobUrl ? { blobUrl } : {}),
+        ...(thumbDataUrl ? { thumbDataUrl } : {}),
+        ...(thumbBlobPath ? { thumbBlobPath } : {}),
+        ...(thumbUrl ? { thumbUrl } : {}),
       };
     })
     .filter((x): x is IrissOfferAttachment => x !== null)
@@ -397,6 +417,10 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
       const o = item as Record<string, unknown>;
       const id = sanitizeDraftTextForStorage(typeof o.id === "string" ? o.id : "", 64);
       if (!id) return null;
+      const coverAttachmentId = sanitizeDraftTextForStorage(
+        typeof o.coverAttachmentId === "string" ? o.coverAttachmentId : "",
+        64,
+      );
       const title = sanitizeDraftTextForStorage(typeof o.title === "string" ? o.title : `Piedāvājums ${idx + 1}`, 80);
       const createdAt = sanitizeDraftTextForStorage(typeof o.createdAt === "string" ? o.createdAt : "", 64);
       const updatedAt = sanitizeDraftTextForStorage(typeof o.updatedAt === "string" ? o.updatedAt : "", 64);
@@ -427,6 +451,7 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
         offerValidDays: sanitizeDraftTextForStorage(typeof o.offerValidDays === "string" ? o.offerValidDays : "", 40),
         validUntil: sanitizeDraftTextForStorage(typeof o.validUntil === "string" ? o.validUntil : "", 16),
         attachments: normalizeOfferAttachments(o.attachments),
+        ...(coverAttachmentId ? { coverAttachmentId } : {}),
         createdAt,
         updatedAt,
       };
@@ -486,6 +511,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     ...sanitizeListingLinks(o),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: normalizeOffers(o.offers),
+    ...pickIrissPasutijumsAuditFields(o),
   };
 }
 
@@ -516,6 +542,7 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
       updatedAt: sanitizeDraftTextForStorage(typeof o.updatedAt === "string" ? o.updatedAt : "", 64),
       pinnedAt: sanitizeDraftTextForStorage(typeof o.pinnedAt === "string" ? o.pinnedAt : "", 64),
       listStatus: normalizeListStatus(o.listStatus),
+      deletedAt: typeof o.deletedAt === "string" ? sanitizeDraftTextForStorage(o.deletedAt, 64) : "",
       clientFirstName: sanitizeDraftTextForStorage(typeof o.clientFirstName === "string" ? o.clientFirstName : "", 120),
       clientLastName: sanitizeDraftTextForStorage(typeof o.clientLastName === "string" ? o.clientLastName : "", 120),
       orderDate: sanitizeDraftTextForStorage(typeof o.orderDate === "string" ? o.orderDate : "", 32),
@@ -665,12 +692,13 @@ async function removeFromListRowsIndex(
   await writeListRowsIndex(r, next);
 }
 
-export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
+export async function listIrissPasutijumi(opts?: { includeDeleted?: boolean }): Promise<IrissPasutijumsListRow[]> {
   const r = resolveStorage();
   if (r.kind === "disabled") return [];
 
   if (BLOB_LIST_CACHE_TTL_MS > 0 && blobListRowsCache && blobListRowsCache.expiresAt > Date.now()) {
-    return cloneRows(blobListRowsCache.rows);
+    const cached = cloneRows(blobListRowsCache.rows);
+    return opts?.includeDeleted ? cached : cached.filter((row) => !isIrissRecordDeleted(row));
   }
 
   let rows = await readListRowsIndex(r);
@@ -689,7 +717,8 @@ export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
       rows: cloneRows(rows),
     };
   }
-  return cloneRows(rows);
+  const cloned = cloneRows(rows);
+  return opts?.includeDeleted ? cloned : cloned.filter((row) => !isIrissRecordDeleted(row));
 }
 
 export async function readIrissPasutijums(id: string): Promise<IrissPasutijumsRecord | null> {
@@ -723,37 +752,91 @@ export type WriteIrissPasutijumsResult =
   | { ok: true; record: IrissPasutijumsRecord }
   | { ok: false; error: string; stale?: boolean; record?: IrissPasutijumsRecord };
 
+async function putOfferBytes(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  pathname: string,
+  bytes: Buffer,
+  contentType: string,
+): Promise<{ path: string; url?: string } | null> {
+  try {
+    if (r.kind === "blob") {
+      const putRes = await put(pathname, bytes, {
+        access: "private",
+        token: r.token,
+        contentType,
+        addRandomSuffix: false,
+        allowOverwrite: true,
+      });
+      return { path: pathname, url: putRes.url };
+    }
+    const abs = path.isAbsolute(pathname) ? pathname : path.join(r.dir, pathname);
+    await fs.mkdir(path.dirname(abs), { recursive: true });
+    await fs.writeFile(abs, bytes);
+    return { path: pathname };
+  } catch (e) {
+    console.error("[iriss offer image] byte write failed", e);
+    return null;
+  }
+}
+
+function fullOfferImagePath(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  orderId: string,
+  offerId: string,
+  attachmentId: string,
+): string {
+  if (r.kind === "blob") return `${r.prefix}offers/${orderId}/${offerId}/${attachmentId}`;
+  return `offers/${orderId}/${offerId}/${attachmentId}`;
+}
+
 async function persistOneOfferImage(
   r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
   orderId: string,
   offerId: string,
   att: IrissOfferAttachment,
 ): Promise<IrissOfferAttachment> {
-  if (att.blobPath && !att.dataUrl) return att;
-  if (!att.dataUrl) return att;
-  const parsed = parseDataUrlPayload(att.dataUrl);
-  if (!parsed) return att;
-  try {
-    if (r.kind === "blob") {
-      const pathname = `${r.prefix}offers/${orderId}/${offerId}/${att.id}`;
-      const putRes = await put(pathname, parsed.bytes, {
-        access: "private",
-        token: r.token,
-        contentType: parsed.mimeType || att.mimeType || "application/octet-stream",
-        addRandomSuffix: false,
-        allowOverwrite: true,
-      });
-      return attachmentAfterBlobPut(att, pathname, putRes.url);
-    }
-    const relFs = `offers/${orderId}/${offerId}/${att.id}`;
-    const dir = path.join(r.dir, "offers", orderId, offerId);
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(path.join(r.dir, relFs), parsed.bytes);
-    return attachmentAfterBlobPut(att, relFs);
-  } catch (e) {
-    console.error("[iriss offer image] keep dataUrl, blob write failed", e);
-    return att;
+  const fullReady = Boolean(att.blobPath) && !att.dataUrl;
+  if (fullReady && !att.mimeType.startsWith("image/")) return att;
+  if (fullReady && att.thumbBlobPath) {
+    return att.thumbDataUrl ? { ...att, thumbDataUrl: "" } : att;
   }
+
+  let next = att;
+  if (att.dataUrl) {
+    const parsed = parseDataUrlPayload(att.dataUrl);
+    if (!parsed) return att;
+    const pathname = att.blobPath || fullOfferImagePath(r, orderId, offerId, att.id);
+    const stored = await putOfferBytes(r, pathname, parsed.bytes, parsed.mimeType || att.mimeType || "application/octet-stream");
+    if (!stored) return att;
+    next = attachmentAfterBlobPut(att, stored.path, stored.url);
+  }
+
+  if (!next.blobPath || next.thumbBlobPath || !next.mimeType.startsWith("image/")) return next;
+
+  let thumbBytes: Buffer | null = null;
+  if (att.thumbDataUrl) {
+    const parsedThumb = parseDataUrlPayload(att.thumbDataUrl);
+    thumbBytes = parsedThumb?.bytes ?? null;
+  }
+  if (!thumbBytes) {
+    const full = await readIrissOfferAttachmentBytes({
+      dataUrl: next.dataUrl || att.dataUrl,
+      blobPath: next.blobPath,
+      mimeType: next.mimeType,
+    });
+    if (full) thumbBytes = await renderIrissOfferThumbJpeg(full.bytes);
+  }
+  if (!thumbBytes) return next;
+  const thumbPath = irissOfferThumbBlobPath(next.blobPath);
+  if (!thumbPath) return next;
+  const storedThumb = await putOfferBytes(r, thumbPath, thumbBytes, "image/jpeg");
+  if (!storedThumb) return { ...next, ...(att.thumbDataUrl ? { thumbDataUrl: att.thumbDataUrl } : {}) };
+  return {
+    ...next,
+    thumbBlobPath: storedThumb.path,
+    ...(storedThumb.url ? { thumbUrl: storedThumb.url } : {}),
+    thumbDataUrl: "",
+  };
 }
 
 async function persistOfferImages(
@@ -796,6 +879,36 @@ async function hydrateOneOfferImage(
   }
 }
 
+/** Viena piedāvājuma pielikuma baiti. Ceļš paliek serverī, klientam netiek atdots. */
+export async function readIrissOfferAttachmentBytes(
+  att: Pick<IrissOfferAttachment, "dataUrl" | "blobPath" | "mimeType">,
+): Promise<{ mimeType: string; bytes: Buffer } | null> {
+  const fromData = att.dataUrl ? parseDataUrlPayload(att.dataUrl) : null;
+  if (fromData && fromData.bytes.length > 0) {
+    return { mimeType: fromData.mimeType || att.mimeType || "application/octet-stream", bytes: fromData.bytes };
+  }
+  if (!att.blobPath || att.blobPath.includes("..")) return null;
+  const r = resolveStorage();
+  if (r.kind === "disabled") return null;
+  try {
+    if (r.kind === "blob") {
+      const res = await get(att.blobPath, { access: "private", token: r.token, useCache: false });
+      if (!res || res.statusCode !== 200 || !res.stream) return null;
+      const bytes = Buffer.from(await new Response(res.stream).arrayBuffer());
+      if (bytes.length === 0) return null;
+      return { mimeType: att.mimeType || "application/octet-stream", bytes };
+    }
+    const root = path.resolve(r.dir);
+    const abs = path.resolve(path.isAbsolute(att.blobPath) ? att.blobPath : path.join(r.dir, att.blobPath));
+    if (abs !== root && !abs.startsWith(`${root}${path.sep}`)) return null;
+    const bytes = await fs.readFile(abs);
+    if (bytes.length === 0) return null;
+    return { mimeType: att.mimeType || "application/octet-stream", bytes };
+  } catch {
+    return null;
+  }
+}
+
 export async function hydrateIrissPasutijumsImages(record: IrissPasutijumsRecord): Promise<IrissPasutijumsRecord> {
   const r = resolveStorage();
   if (r.kind === "disabled") return record;
@@ -804,6 +917,53 @@ export async function hydrateIrissPasutijumsImages(record: IrissPasutijumsRecord
     const attachments = [];
     for (const att of offer.attachments) {
       attachments.push(await hydrateOneOfferImage(r, att));
+    }
+    offers.push({ ...offer, attachments });
+  }
+  return { ...record, offers };
+}
+
+async function hydrateOneOfferThumb(
+  att: IrissOfferAttachment,
+): Promise<IrissOfferAttachment> {
+  if (att.thumbDataUrl?.startsWith("data:image")) {
+    return att.blobPath ? { ...att, dataUrl: "" } : att;
+  }
+  if (!att.mimeType.startsWith("image/")) return att;
+  if (att.thumbBlobPath) {
+    const thumb = await readIrissOfferAttachmentBytes({
+      dataUrl: "",
+      blobPath: att.thumbBlobPath,
+      mimeType: "image/jpeg",
+    });
+    if (thumb) {
+      return {
+        ...att,
+        dataUrl: att.blobPath ? "" : att.dataUrl,
+        thumbDataUrl: await bytesToDataUrl(thumb.bytes, "image/jpeg"),
+      };
+    }
+  }
+  const full = await readIrissOfferAttachmentBytes(att);
+  if (!full) return att;
+  const rendered = await renderIrissOfferThumbJpeg(full.bytes);
+  if (!rendered) return att.blobPath ? { ...att, dataUrl: "" } : att;
+  return {
+    ...att,
+    dataUrl: att.blobPath ? "" : att.dataUrl,
+    thumbDataUrl: await bytesToDataUrl(rendered, "image/jpeg"),
+  };
+}
+
+/** Admin režģim: tikai miniatūras. Pilnos baitus neatdod, ja tie jau ir Blob. */
+export async function hydrateIrissOfferImageThumbs(record: IrissPasutijumsRecord): Promise<IrissPasutijumsRecord> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return record;
+  const offers = [];
+  for (const offer of record.offers) {
+    const attachments = [];
+    for (const att of offer.attachments) {
+      attachments.push(await hydrateOneOfferThumb(att));
     }
     offers.push({ ...offer, attachments });
   }
@@ -828,11 +988,13 @@ export async function writeIrissPasutijums(
       return { ok: false, error: IRISS_STALE_REVISION, stale: true, record: existing };
     }
     const createdAt = existing?.createdAt ?? sanitized.createdAt ?? updatedAt;
+    const incomingDeletedAt = typeof record.deletedAt === "string" ? record.deletedAt : undefined;
     let out: IrissPasutijumsRecord = {
       ...sanitized,
       updatedAt,
       createdAt,
       workspaceRevision: existingRev,
+      deletedAt: incomingDeletedAt !== undefined ? incomingDeletedAt : existing?.deletedAt ?? sanitized.deletedAt ?? "",
     };
     out = await persistOfferImages(r, out);
     if (existing && !isMeaningfullyChanged(existing, out)) {
@@ -880,6 +1042,7 @@ export async function writeIrissPasutijums(
       }
       await writeLocalMirrorSnapshot(out).catch(() => undefined);
       await writeLocalMirrorFullBundle().catch(() => undefined);
+      await touchIrissVinAnchors(out);
       return { ok: true, record: out };
     }
 
@@ -902,10 +1065,20 @@ export async function writeIrissPasutijums(
     invalidateBlobListCache();
     await writeLocalMirrorSnapshot(out).catch(() => undefined);
     await writeLocalMirrorFullBundle().catch(() => undefined);
+    await touchIrissVinAnchors(out);
     return { ok: true, record: out };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg };
+  }
+}
+
+async function touchIrissVinAnchors(rec: IrissPasutijumsRecord): Promise<void> {
+  try {
+    const { upsertIrissVinAnchorsForRecord } = await import("@/lib/iriss-vin-anchor-store");
+    await upsertIrissVinAnchorsForRecord(rec);
+  } catch {
+    /* VIN indekss nav kritisks pasūtījuma saglabāšanai */
   }
 }
 
@@ -1047,48 +1220,25 @@ export async function deleteIrissPasutijums(id: string): Promise<{ ok: true } | 
     const r = resolveStorage();
     if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
     if (!isSafeIrissPasutijumsId(id)) return { ok: false, error: "invalid_id" };
-
-    if (r.kind === "blob") {
-      try {
-        await del(blobPathname(r.prefix, id), { token: r.token });
-      } catch (e) {
-        if (e instanceof BlobNotFoundError) {
-          try {
-            await removeFromListRowsIndex(r, id);
-          } catch {
-            /* ignore index sync errors */
-          }
-          invalidateBlobListCache();
-          invalidateBlobRecordCache(id);
-          return { ok: true };
-        }
-        throw e;
-      }
-      try {
-        await removeFromListRowsIndex(r, id);
-      } catch {
-        /* ignore index sync errors */
-      }
-      invalidateBlobListCache();
-      invalidateBlobRecordCache(id);
-      return { ok: true };
-    }
-
-    try {
-      await fs.unlink(filePath(r.dir, id));
-    } catch (e) {
-      const code = e && typeof e === "object" && "code" in e ? (e as NodeJS.ErrnoException).code : undefined;
-      if (code !== "ENOENT") throw e;
-    }
-    try {
-      await removeFromListRowsIndex(r, id);
-    } catch {
-      /* ignore index sync errors */
-    }
-    invalidateBlobListCache();
+    const existing = await readIrissPasutijums(id);
+    if (!existing) return { ok: true };
+    if (isIrissRecordDeleted(existing)) return { ok: true };
+    const next = markIrissRecordDeleted(existing, new Date().toISOString());
+    const w = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(existing) });
+    if (!w.ok) return { ok: false, error: w.error };
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg };
   }
+}
+
+export async function restoreIrissPasutijums(id: string): Promise<{ ok: true; record: IrissPasutijumsRecord } | { ok: false; error: string }> {
+  if (!isSafeIrissPasutijumsId(id)) return { ok: false, error: "invalid_id" };
+  const existing = await readIrissPasutijums(id);
+  if (!existing) return { ok: false, error: "not_found" };
+  const next = restoreIrissRecord(existing);
+  const w = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(existing) });
+  if (!w.ok) return { ok: false, error: w.error };
+  return { ok: true, record: w.record };
 }

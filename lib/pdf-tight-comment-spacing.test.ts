@@ -25,7 +25,7 @@ describe("pdf-tight-comment-spacing", () => {
     const css = getClientReportPrintCss();
     expect(css).toContain("--pdf-gap-section:1em");
     expect(css).toContain("--pdf-gap-block:1em");
-    expect(css).toMatch(/br \+ strong[\s\S]*margin-top:0/);
+    expect(css).toMatch(/br \+ strong[\s\S]*margin-top:var\(--pdf-gap-block\)/);
     expect(css).toContain("line-height:1.45");
   });
 

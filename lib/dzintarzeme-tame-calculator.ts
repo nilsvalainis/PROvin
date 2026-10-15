@@ -1,7 +1,14 @@
 /**
  * Dzintarzeme Auto pasūtījuma tāmes aprēķins (admin UI + PDF).
  * Neatkarīgs no publiskās vietnes maksājumu loģikas.
+ * Komisijas likmes nāk no IRISS iestatījumiem; bez tām paliek 1190 / 990 + 3,5 %.
  */
+
+import {
+  DEFAULT_IRISS_TAME_COMMISSION,
+  formatIrissTamePercent,
+  type IrissTameCommissionRates,
+} from "@/lib/iriss-tame-commission";
 
 export type DzintarzemeTameCommissionVariant = "A" | "B";
 
@@ -58,7 +65,19 @@ function roundMoney(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-export function computeDzintarzemeTame(raw: DzintarzemeTameInput): DzintarzemeTameComputed {
+function commissionRates(rates?: IrissTameCommissionRates): IrissTameCommissionRates {
+  const variantANet = clampMoney(rates?.variantANet ?? DEFAULT_IRISS_TAME_COMMISSION.variantANet);
+  const variantBBaseNet = clampMoney(rates?.variantBBaseNet ?? DEFAULT_IRISS_TAME_COMMISSION.variantBBaseNet);
+  const rawPct = rates?.variantBLoanPercent ?? DEFAULT_IRISS_TAME_COMMISSION.variantBLoanPercent;
+  const variantBLoanPercent = Number.isFinite(rawPct) ? Math.min(100, Math.max(0, rawPct)) : DEFAULT_IRISS_TAME_COMMISSION.variantBLoanPercent;
+  return { variantANet, variantBBaseNet, variantBLoanPercent };
+}
+
+export function computeDzintarzemeTame(
+  raw: DzintarzemeTameInput,
+  rates?: IrissTameCommissionRates,
+): DzintarzemeTameComputed {
+  const commission = commissionRates(rates);
   const autoCena = clampMoney(raw.autoPrice);
   const applyVat = Boolean(raw.applyVatToAutoPrice);
   const autoGala = roundMoney(applyVat ? autoCena * (1 + SERVICE_VAT) : autoCena);
@@ -70,10 +89,10 @@ export function computeDzintarzemeTame(raw: DzintarzemeTameInput): DzintarzemeTa
   let commissionNet = 0;
   let loanCommissionNetB = 0;
   if (raw.commissionVariant === "A") {
-    commissionNet = 1190;
+    commissionNet = roundMoney(commission.variantANet);
   } else {
-    loanCommissionNetB = roundMoney(atlikums * 0.035);
-    commissionNet = roundMoney(990 + loanCommissionNetB);
+    loanCommissionNetB = roundMoney(atlikums * (commission.variantBLoanPercent / 100));
+    commissionNet = roundMoney(commission.variantBBaseNet + loanCommissionNetB);
   }
 
   const transportNet = clampMoney(raw.transportNet);
@@ -105,10 +124,10 @@ export function computeDzintarzemeTame(raw: DzintarzemeTameInput): DzintarzemeTa
   } else {
     const partialPrepay = raw.depositPercent < 100;
     if (partialPrepay && loanCommissionNetB > 0) {
-      tableRows.push({ label: "Komisijas maksa", net: 990 });
+      tableRows.push({ label: "Komisijas maksa", net: roundMoney(commission.variantBBaseNet) });
       tableRows.push({
         label: "Aizdevuma komisija",
-        subtitle: "3,5 % no summas pēc priekšapmaksas",
+        subtitle: `${formatIrissTamePercent(commission.variantBLoanPercent)} % no summas pēc priekšapmaksas`,
         net: loanCommissionNetB,
       });
     } else {

@@ -9,6 +9,7 @@ import {
   type AsvProductId,
 } from "@/lib/asv-catalog";
 import { parseVinauditPayload, vinauditPayloadLooksEmpty, type AsvImageHint } from "@/lib/asv-vinaudit-parse";
+import { loadEcbDailyRates } from "@/lib/currency-eur-convert";
 import { ASV_MAX_PHOTOS, makeAsvPhotoGroupId } from "@/lib/asv-photo-types";
 import {
   ASV_PHOTO_MAX_BYTES,
@@ -26,6 +27,8 @@ import {
   oneautoPayloadIsPending,
   oneautoPayloadIsServiceNotEnabled,
 } from "@/lib/oneauto-catalog";
+import { appendAsvPhotoGroups } from "@/lib/joj-asv-merge";
+import { bundleFromAsvDisplay, setAsvOneautoSnapshot } from "@/lib/asv-source-merge";
 import { emptyAsvBlock, normalizeAsvBlock, type AsvBlockState } from "@/lib/asv-report";
 
 export type AsvProductResult = {
@@ -144,6 +147,7 @@ export async function fetchAsvProducts(opts: {
   products: readonly AsvProductId[];
   sessionId?: string;
   reportId?: string;
+  prev?: AsvBlockState;
 }): Promise<{
   source: typeof ASV_SOURCE_TAG;
   vin: string;
@@ -186,6 +190,7 @@ export async function fetchAsvProducts(opts: {
 
   const costUsdCents = asvProductsCostUsdCents(opts.products);
   const costUsd = formatAsvCostUsd(costUsdCents);
+  await loadEcbDailyRates();
   const parsed = parsedPayload
     ? parseVinauditPayload(parsedPayload, { productUsed, costUsd, vin: opts.vin })
     : { block: emptyAsvBlock(), imageHints: [] as AsvImageHint[] };
@@ -218,10 +223,30 @@ export async function fetchAsvProducts(opts: {
     }
   }
 
-  const block = normalizeAsvBlock({
+  const prev = opts.prev ?? emptyAsvBlock();
+  const oneautoBundle = bundleFromAsvDisplay({
     ...parsed.block,
-    photoGroups: storedPhotoGroups.length > 0 ? storedPhotoGroups : parsed.block.photoGroups,
+    lastFetchedVin: opts.vin,
+    fetchedAt: new Date().toISOString(),
+    lastCostUsd: costUsd,
+    productUsed,
+    reportId: opts.reportId?.trim() ?? parsed.block.reportId,
   });
+  let mergedBlock = setAsvOneautoSnapshot(prev, oneautoBundle);
+  mergedBlock = {
+    ...mergedBlock,
+    productUsed,
+    reportId: opts.reportId?.trim() ?? mergedBlock.reportId,
+    lastCostUsd: costUsd,
+    lastFetchedVin: opts.vin,
+    fetchedAt: new Date().toISOString(),
+    jojIngest: prev.jojIngest ?? mergedBlock.jojIngest,
+    photoGroups: appendAsvPhotoGroups(
+      prev.photoGroups,
+      storedPhotoGroups.length > 0 ? storedPhotoGroups : [],
+    ),
+  };
+  const block = normalizeAsvBlock(mergedBlock);
 
   return {
     source: ASV_SOURCE_TAG,

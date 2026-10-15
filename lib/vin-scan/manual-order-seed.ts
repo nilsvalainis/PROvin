@@ -57,7 +57,7 @@ export type VinScanManualOrderInput = {
   vin: string;
   plate?: string;
   plateStatus?: string;
-  plates?: { lv?: string; nl?: string; lt?: string; fi?: string; uk?: string };
+  plates?: { lv?: string; nl?: string; lt?: string; fi?: string; uk?: string; se?: string };
   csdd?: CsddTechData | null;
   vehicle?: VinScanVehicle | null;
   mileage?: VinScanMileage[];
@@ -105,6 +105,7 @@ export function parseVinScanManualOrderInput(raw: unknown): VinScanManualOrderIn
         lt: typeof platesRaw.lt === "string" ? normalizePlateNumber(platesRaw.lt) : "",
         fi: typeof platesRaw.fi === "string" ? normalizePlateNumber(platesRaw.fi) : "",
         uk: typeof platesRaw.uk === "string" ? normalizePlateNumber(platesRaw.uk) : "",
+        se: typeof platesRaw.se === "string" ? normalizePlateNumber(platesRaw.se) : "",
       }
     : undefined;
   const scannedAt = typeof o.scannedAt === "string" ? o.scannedAt.trim() : "";
@@ -117,7 +118,7 @@ export function parseVinScanManualOrderInput(raw: unknown): VinScanManualOrderIn
     vin,
     ...(plate ? { plate } : {}),
     ...(plateStatus ? { plateStatus } : {}),
-    ...(plates && (plates.lv || plates.nl || plates.lt || plates.fi || plates.uk) ? { plates } : {}),
+    ...(plates && (plates.lv || plates.nl || plates.lt || plates.fi || plates.uk || plates.se) ? { plates } : {}),
     ...(csdd ? { csdd } : {}),
     ...(vehicle ? { vehicle } : {}),
     ...(mileage.length ? { mileage } : {}),
@@ -252,6 +253,7 @@ export function buildVinScanManualOrderNotes(input: VinScanManualOrderInput): st
       input.plates.lt ? `LT ${input.plates.lt}` : "",
       input.plates.fi ? `FI ${input.plates.fi}` : "",
       input.plates.uk ? `UK ${input.plates.uk}` : "",
+      input.plates.se ? `SE ${input.plates.se}` : "",
     ].filter(Boolean);
     if (extra.length) lines.push(`Citu valstu numuri: ${extra.join(", ")}`);
   }

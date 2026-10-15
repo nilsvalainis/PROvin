@@ -1,10 +1,5 @@
 import "server-only";
 
-import {
-  buildIrissFooterLinesFromSettings,
-  type IrissCompanySettings,
-} from "@/lib/iriss-company-settings";
-
 /**
  * **Tikai** SIA IRISS piedāvājuma PDF un drukas HTML (`iriss-pasutijums-pdf*`).
  *
@@ -14,7 +9,10 @@ import {
  */
 export const IRISS_BRAND_ORANGE_HEX = "#F26522";
 
-const FOOTER_BRAND_ONLY = ["SIA IRISS"] as const;
+/** Juridiskā puse pasūtījuma PDF. Dzintarzeme Auto ir tikai zīmols un logo. */
+export const IRISS_LEGAL_PARTY_NAME = "SIA ĪRISS";
+
+const FOOTER_BRAND_ONLY = [IRISS_LEGAL_PARTY_NAME] as const;
 
 /**
  * IRISS PDF kājenes rindiņas — **tikai** no `IRISS_PDF_SUPPLIER_LINES_JSON` (JSON masīvs ar virknēm).
@@ -39,11 +37,4 @@ export function getIrissPdfSupplierFooterLines(): string[] {
     );
   }
   return [...FOOTER_BRAND_ONLY];
-}
-
-/** Iestatījumu kājene, ja operators to aizpildījis; citādi env / zīmols. */
-export function resolveIrissPdfSupplierFooterLines(settings?: IrissCompanySettings | null): string[] {
-  const fromSettings = settings ? buildIrissFooterLinesFromSettings(settings) : [];
-  if (fromSettings.length > 0) return fromSettings;
-  return getIrissPdfSupplierFooterLines();
 }
