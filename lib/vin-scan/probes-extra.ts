@@ -4,7 +4,7 @@ import { canonicalizeListingUrl } from "@/lib/order-field-validation";
 import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { vinScanParseFromListingHistory } from "@/lib/vin-scan/listing-history";
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
-import { traficomVehicleInfoUrl } from "@/lib/vin-scan/catalog";
+import { poctraSearchUrl } from "@/lib/vin-scan/catalog";
 import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
 import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 import { scanCaptchaTokenPlaceholder, scanChallengeReason, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
@@ -19,8 +19,6 @@ import {
   parseVpicMakeModelYear,
   parseOemRecallHtml,
   parseRdwOpenData,
-  parseRegitra,
-  parseTraficom,
   parseVegvesen,
   type OemRecallBrand,
 } from "@/lib/vin-scan/parse-extra";
@@ -38,7 +36,7 @@ function done(id: VinScanIndicator["id"], ctx: VinScanContext, parsed: VinScanPa
 function failed(id: VinScanIndicator["id"], ctx: VinScanContext, e: unknown): VinScanIndicator {
   const timedOut = e instanceof Error && e.message === "timeout";
   return done(id, ctx, {
-    status: "unknown",
+    status: timedOut ? "timeout" : "unknown",
     summary: timedOut ? "Avots neatbildēja laikā" : "Avotu neizdevās nolasīt",
   });
 }
@@ -62,19 +60,14 @@ async function getJson(url: string, timeoutMs = 12_000): Promise<{ status: numbe
 
 export async function probeRdw(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    const plate = ctx.plates.nl;
-    const vin = ctx.vin;
-    const vehicleUrl = plate
-      ? jsonUrl("https://opendata.rdw.nl/resource/m9d7-ebf2.json", { kenteken: plate })
-      : `https://opendata.rdw.nl/resource/m9d7-ebf2.json?$where=${encodeURIComponent(`upper(vin)='${vin}'`)}`;
+    const plate = ctx.plates.nl.replace(/[\s-]/g, "").toUpperCase();
+    if (!plate) return done("rdw", ctx, { status: "needs_input", summary: "Vajag NL numuru" });
+    const vehicleUrl = jsonUrl("https://opendata.rdw.nl/resource/m9d7-ebf2.json", { kenteken: plate });
     const kentekenAfter = async (rows: unknown): Promise<string> => {
       const first = Array.isArray(rows) && rows[0] && typeof rows[0] === "object" ? (rows[0] as { kenteken?: string }) : null;
       return String(first?.kenteken || plate || "").replace(/[\s-]/g, "").toUpperCase();
     };
     const vehicle = await getJson(vehicleUrl);
-    if (!plate && vehicle.status === 400) {
-      return done("rdw", ctx, { status: "needs_input", summary: "Vajag NL numuru" });
-    }
     if (vehicle.status !== 200) return done("rdw", ctx, { status: "unknown", summary: `RDW HTTP ${vehicle.status}` });
     const kenteken = await kentekenAfter(vehicle.data);
     const keuringP = kenteken
@@ -103,26 +96,26 @@ const VEGVESEN_URLS = (vin: string) => [
   `https://www.vegvesen.no/ws/no/vegvesen/kjoretoy/felles/datautlevering/enkeltoppslag/kjoretoydata?understellsnummer=${encodeURIComponent(vin)}`,
 ];
 
+function vegvesenApiKey(): string {
+  return process.env.VEGVESEN_API_KEY?.trim() ?? "";
+}
+
 export async function probeVegvesen(ctx: VinScanContext): Promise<VinScanIndicator> {
+  const key = vegvesenApiKey();
+  if (!key) {
+    return done("vegvesen", ctx, { status: "config_missing", summary: "vegvesen.no: nav VEGVESEN_API_KEY" });
+  }
   try {
     let last: VinScanParse | null = null;
     for (const url of VEGVESEN_URLS(ctx.vin)) {
-      const res = await scanFetch(url, { headers: { accept: "application/json" }, timeoutMs: 15_000 });
+      const res = await scanFetch(url, {
+        headers: { accept: "application/json", "SVV-Authorization": key },
+        timeoutMs: 15_000,
+      });
       last = parseVegvesen(res.status, res.text);
       if (last.status === "found" || last.status === "none") return done("vegvesen", ctx, last);
     }
-    const page = await scanFetchSmart(
-      `https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/?understellsnummer=${encodeURIComponent(ctx.vin)}`,
-      { timeoutMs: 20_000, sourceLabel: "vegvesen" },
-    );
-    last = parseVegvesen(page.status, page.text);
-    return done(
-      "vegvesen",
-      ctx,
-      last.status === "unknown"
-        ? { status: "unknown", summary: "vegvesen.no API prasa pilnvaru - atver pārlūkā" }
-        : last,
-    );
+    return done("vegvesen", ctx, last ?? { status: "unknown", summary: "vegvesen.no: tukša atbilde" });
   } catch (e) {
     return failed("vegvesen", ctx, e);
   }
@@ -297,24 +290,17 @@ export async function probeBiluppgifter(ctx: VinScanContext): Promise<VinScanInd
 }
 
 export async function probeRegitra(ctx: VinScanContext): Promise<VinScanIndicator> {
-  try {
-    const plate = ctx.plates.lt;
-    const url = `https://www.regitra.lt/lt/e-paslaugos/transporto-priemones-duomenu-patikra?plate=${encodeURIComponent(plate)}&vin=${encodeURIComponent(ctx.vin)}`;
-    const page = await scanFetchSmart(url, { timeoutMs: 25_000, sourceLabel: "Regitra" });
-    return done("regitra", ctx, parseRegitra(page.status, page.text));
-  } catch (e) {
-    return failed("regitra", ctx, e);
-  }
+  return done("regitra", ctx, {
+    status: "browser_only",
+    summary: "Regitra: pārbaude ir forma pārlūkā, serveris POST nesaņem",
+  });
 }
 
 export async function probeTraficom(ctx: VinScanContext): Promise<VinScanIndicator> {
-  try {
-    const url = traficomVehicleInfoUrl(ctx.vin, ctx.plates.fi);
-    const page = await scanFetchSmart(url, { timeoutMs: 25_000, sourceLabel: "Traficom" });
-    return done("traficom", ctx, parseTraficom(page.status, page.text));
-  } catch (e) {
-    return failed("traficom", ctx, e);
-  }
+  return done("traficom", ctx, {
+    status: "browser_only",
+    summary: "Traficom: Suomi.fi forma pārlūkā, serveris POST nesaņem",
+  });
 }
 
 const LT_POLICE_URL = "https://www.epolicija.lt/itpr_paieska/transportas_lt.php";
@@ -515,7 +501,7 @@ export async function probeBidfax(ctx: VinScanContext): Promise<VinScanIndicator
 }
 
 export async function probePoctra(ctx: VinScanContext): Promise<VinScanIndicator> {
-  const url = `https://poctra.com/search/${encodeURIComponent(ctx.vin)}`;
+  const url = poctraSearchUrl(ctx.vin);
   try {
     const page = await fetchAuctionHtml(url, "Poctra");
     const challenge = scanChallengeReason(page);

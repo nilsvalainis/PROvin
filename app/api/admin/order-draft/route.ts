@@ -5,9 +5,10 @@
  */
 import { NextResponse, after } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable } from "@/lib/admin-order-draft-store";
+import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable, upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
 import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { shouldStartOrderVinScanOnDraftPatch } from "@/lib/order-vin-scan";
+import { parseOrderVinScanRecord, shouldStartOrderVinScanOnDraftPatch } from "@/lib/order-vin-scan";
+import { orderVinScanRunningIsStuck } from "@/lib/order-vin-scan-run-decision";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 import type { OrderDraftOrderEdits, OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
@@ -17,7 +18,7 @@ import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
 import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
@@ -35,6 +36,17 @@ export async function GET(req: Request) {
     if (workspaceOnly) {
       const draft = await readOrderDraft(sessionId);
       const durable = isOrderDraftStorageDurable();
+      let vinScan = draft?.vinScan ?? null;
+      const running = parseOrderVinScanRecord(vinScan);
+      if (running?.status === "running" && orderVinScanRunningIsStuck(running.at)) {
+        const stuck = {
+          ...running,
+          status: "error" as const,
+          error: running.error || "Skenēšana apstājās (ilgāk par 10 min)",
+        };
+        vinScan = stuck;
+        after(() => upsertOrderDraftVinScan(sessionId, stuck).catch(() => null));
+      }
       return NextResponse.json({
         ok: true,
         workspace: draft?.workspace ?? null,
@@ -43,7 +55,7 @@ export async function GET(req: Request) {
         workspaceRevision: draft?.workspaceRevision ?? 0,
         workspaceChecksum: draft?.workspaceChecksum ?? null,
         autoIngest: draft?.autoIngest ?? null,
-        vinScan: draft?.vinScan ?? null,
+        vinScan,
         durable,
         storageBackend: durable ? (process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX?.trim() ? "blob" : "filesystem") : "none",
       });

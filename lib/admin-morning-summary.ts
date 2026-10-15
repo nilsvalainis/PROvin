@@ -59,6 +59,12 @@ export type MorningSummaryCounts = {
   newPeeksLast24h: number;
 };
 
+export type MorningFailingSource = {
+  id: string;
+  streak: number;
+  msg: string;
+};
+
 export type MorningSummary = {
   counts: MorningSummaryCounts;
   overdueAudits: MorningQueueItem[];
@@ -66,6 +72,8 @@ export type MorningSummary = {
   urgentAudits: MorningQueueItem[];
   unansweredPeeks: MorningQueueItem[];
   newPeeksLast24h: MorningQueueItem[];
+  /** VIN SCAN avoti, kas krīt vismaz 3 reizes pēc kārtas. */
+  failingSources: MorningFailingSource[];
 };
 
 function peekHost(url: string | undefined): string {
@@ -209,5 +217,6 @@ export function buildMorningSummary(
     urgentAudits,
     unansweredPeeks: peekItems,
     newPeeksLast24h,
+    failingSources: [],
   };
 }

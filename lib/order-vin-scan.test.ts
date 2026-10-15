@@ -10,6 +10,7 @@ import {
   mergeVinScanIndicators,
   orderVinScanCompactHint,
   orderVinScanDashboardHintFromRecord,
+  orderVinScanDashboardSubtitle,
   parseOrderVinScanDashboardHint,
   parseOrderVinScanRecord,
   pickOrderVinScanDashboardCards,
@@ -72,6 +73,7 @@ describe("pasūtījuma VIN SCAN ieraksts", () => {
     expect(sum?.error).toBe(0);
     expect(sum?.browser).toBe(1);
     expect(sum?.rows.find((r) => r.id === "bid_cars")).toMatchObject({ blocked: true, action: "open_import" });
+    expect(sum?.blocked).toBe(1);
     expect(sum?.noneCollapsedLabels).toEqual(["Regitra", "tjekbil.dk"]);
     const stat = sum?.rows.find((r) => r.id === "stat_vin");
     expect(stat).toMatchObject({
@@ -316,5 +318,28 @@ describe("VIN SCAN dashboard kartītes", () => {
     expect(cards).toHaveLength(1);
     expect(cards[0]?.href).toBe("/admin/orders/cs_new");
     expect(cards[0]?.foundLabels).toContain("stat.vin");
+  });
+
+  it("kļūdu, bloķējuma un noildzes gadījumā nesaka Nav datu", () => {
+    const rec = parseOrderVinScanRecord({
+      at: "2026-10-14T09:00:00.000Z",
+      vin: "WBA5R1C0XLFH42873",
+      status: "done",
+      indicators: [
+        indicator({ id: "tjekbil", label: "tjekbil.dk", status: "unknown", summary: "Avotu neizdevās nolasīt" }),
+        indicator({ id: "vegvesen", label: "vegvesen.no", status: "config_missing", summary: "vegvesen.no: nav VEGVESEN_API_KEY" }),
+        indicator({ id: "regitra", label: "Regitra", status: "browser_only", summary: "Regitra: tikai pārlūkā" }),
+        indicator({ id: "stat_vin", label: "stat.vin", status: "timeout", summary: "Avots neatbildēja laikā" }),
+      ],
+    });
+    const hint = orderVinScanDashboardHintFromRecord(rec);
+    expect(hint?.error).toBeGreaterThan(0);
+    expect(hint?.timeout).toBe(1);
+    expect(hint?.configMissing).toBe(1);
+    expect(hint?.browserOnly).toBe(1);
+    expect(orderVinScanDashboardSubtitle(hint!)).not.toBe("Nav datu");
+    expect(orderVinScanDashboardSubtitle({ status: "done", foundLabels: [], hint: "Nav datu", error: 2 })).toBe("Ir kļūdas");
+    expect(orderVinScanDashboardSubtitle({ status: "done", foundLabels: [], hint: "", error: 0 })).toBe("Nav datu");
+    expect(shouldShowVinScanDashboardCard({ hint, auditComplete: false })).toBe(true);
   });
 });

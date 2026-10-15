@@ -2,8 +2,21 @@ import { vinScanCatalogItem, type VinScanSourceId } from "@/lib/vin-scan/catalog
 import type { JojCcVinFacts } from "@/lib/vin-scan/joj-labels";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 
-/** found: ir dati. none: atbildēja, ieraksta nav. unknown: tīkls/captcha. manual: maksas solis. skipped: nav atslēgas. needs_input: vajag numuru vai VIN. */
-export const VIN_SCAN_STATUSES = ["found", "none", "unknown", "manual", "skipped", "needs_input"] as const;
+/** found: ir dati. none: atbildēja, ieraksta nav. unknown: tīkls/captcha.
+ *  blocked: avots bloķē serveri. timeout: noildze. config_missing: nav atslēgas.
+ *  browser_only: forma / POST tikai pārlūkā. manual: maksas solis. skipped: izlaists. needs_input: vajag numuru vai VIN. */
+export const VIN_SCAN_STATUSES = [
+  "found",
+  "none",
+  "unknown",
+  "blocked",
+  "timeout",
+  "config_missing",
+  "browser_only",
+  "manual",
+  "skipped",
+  "needs_input",
+] as const;
 export type VinScanStatus = (typeof VIN_SCAN_STATUSES)[number];
 
 export type VinScanVehicle = {
@@ -144,6 +157,10 @@ export function countVinScanStatuses(items: readonly { status: VinScanStatus }[]
     found: 0,
     none: 0,
     unknown: 0,
+    blocked: 0,
+    timeout: 0,
+    config_missing: 0,
+    browser_only: 0,
     manual: 0,
     skipped: 0,
     needs_input: 0,
@@ -154,9 +171,18 @@ export function countVinScanStatuses(items: readonly { status: VinScanStatus }[]
 
 /** Unknown that needs a browser, not a solver/network kļūda. */
 export function vinScanNeedsBrowser(status: string, summary = ""): boolean {
-  if (status === "found" || status === "none" || status === "skipped" || status === "needs_input" || status === "manual") {
+  if (
+    status === "found" ||
+    status === "none" ||
+    status === "skipped" ||
+    status === "needs_input" ||
+    status === "manual" ||
+    status === "browser_only" ||
+    status === "config_missing"
+  ) {
     return false;
   }
+  if (status === "blocked") return true;
   return /atver pārlūkā|atver saiti|prasa pārlūku|prasa pilnvaru|lapa nav atpazīta/i.test(summary);
 }
 
@@ -178,14 +204,21 @@ export function vinScanCountBreakdown(
       ok += 1;
       continue;
     }
-    if (item.status === "skipped" || item.status === "needs_input" || item.status === "manual") {
+    if (
+      item.status === "skipped" ||
+      item.status === "needs_input" ||
+      item.status === "manual" ||
+      item.status === "config_missing"
+    ) {
       continue;
     }
-    if (vinScanNeedsBrowser(item.status, item.summary ?? "")) {
+    if (item.status === "browser_only" || vinScanNeedsBrowser(item.status, item.summary ?? "")) {
       browser += 1;
       continue;
     }
-    if (item.status === "unknown" || item.status === "error") error += 1;
+    if (item.status === "unknown" || item.status === "error" || item.status === "timeout" || item.status === "blocked") {
+      error += 1;
+    }
   }
   return { total: items.length, ok, error, browser };
 }

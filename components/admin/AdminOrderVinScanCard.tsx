@@ -7,6 +7,7 @@ import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell"
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
+import { ORDER_VIN_SCAN_STUCK_MS } from "@/lib/order-vin-scan-run-decision";
 import {
   buildOrderVinScanSummary,
   formatOrderVinScanClock,
@@ -20,13 +21,27 @@ const BTN =
 const BTN_AUCTION =
   "inline-flex h-6 shrink-0 items-center rounded-md border border-teal-800/20 bg-[#0f766e] px-2 text-[10px] font-semibold text-white shadow-sm hover:bg-[#0d6962] disabled:opacity-50";
 
-function Dot({ state }: { state: "found" | "none" | "error" }) {
+type DotState = "found" | "none" | "error" | "blocked" | "timeout" | "config_missing" | "browser_only";
+
+function Dot({ state }: { state: DotState }) {
   const cls =
-    state === "found" ? "bg-emerald-500" : state === "error" ? "bg-rose-600" : "bg-slate-400";
+    state === "found"
+      ? "bg-emerald-500"
+      : state === "blocked"
+        ? "bg-orange-500"
+        : state === "timeout"
+          ? "bg-amber-600"
+          : state === "config_missing"
+            ? "bg-amber-400"
+            : state === "browser_only"
+              ? "bg-sky-500"
+              : state === "error"
+                ? "bg-rose-600"
+                : "bg-slate-400";
   return <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${cls}`} aria-hidden />;
 }
 
-function Counter({ state, count, label }: { state: "found" | "none" | "error"; count: number; label: string }) {
+function Counter({ state, count, label }: { state: DotState; count: number; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--admin-border-subtle)] px-2 py-0.5 text-[10.5px] text-[var(--color-apple-text)]">
       <Dot state={state} />
@@ -74,6 +89,12 @@ export function AdminOrderVinScanCard({
 
   useEffect(() => {
     if (record?.status !== "running") return;
+    const started = Date.parse(record.at);
+    const age = Number.isFinite(started) ? Date.now() - started : 0;
+    if (age >= ORDER_VIN_SCAN_STUCK_MS) {
+      setRecord({ ...record, status: "error", error: record.error || "Skenēšana apstājās" });
+      return;
+    }
     let stop = false;
     const tick = async () => {
       try {
@@ -89,11 +110,17 @@ export function AdminOrderVinScanCard({
       }
     };
     const timer = window.setInterval(() => void tick(), 4000);
+    const stopAt = window.setTimeout(() => {
+      setRecord((cur) =>
+        cur?.status === "running" ? { ...cur, status: "error", error: cur.error || "Skenēšana apstājās" } : cur,
+      );
+    }, ORDER_VIN_SCAN_STUCK_MS - age);
     return () => {
       stop = true;
       window.clearInterval(timer);
+      window.clearTimeout(stopAt);
     };
-  }, [sessionId, record?.status]);
+  }, [sessionId, record?.status, record?.at]);
 
   useEffect(() => {
     const onResult = (ev: Event) => {
@@ -131,7 +158,7 @@ export function AdminOrderVinScanCard({
     if (!summary) return [];
     const main = summary.rows.map((row) => ({
       id: row.id,
-      state: row.blocked ? "none" : row.state,
+      state: row.state,
       label: row.label,
     }));
     const none = summary.noneRows.map((row) => ({ id: row.id, state: "none" as const, label: row.label }));
@@ -216,14 +243,33 @@ export function AdminOrderVinScanCard({
             <Counter state="found" count={summary.found} label="atrasta info" />
             <Counter state="none" count={summary.none} label="nav datu" />
             <Counter state="error" count={summary.error} label="kļūda" />
-            {summary.browser > 0 ? <Counter state="none" count={summary.browser} label="pārlūks" /> : null}
+            {summary.blocked > 0 ? <Counter state="blocked" count={summary.blocked} label="bloķē" /> : null}
+            {summary.timeout > 0 ? <Counter state="timeout" count={summary.timeout} label="noildze" /> : null}
+            {summary.configMissing > 0 ? (
+              <Counter state="config_missing" count={summary.configMissing} label="nav atslēgas" />
+            ) : null}
+            {summary.browserOnly > 0 ? <Counter state="browser_only" count={summary.browserOnly} label="pārlūks" /> : null}
           </span>
           <span className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5" aria-label="Avotu indikatori">
             {dotRows.map((row) => (
               <span
                 key={row.id}
                 className="inline-flex p-0.5"
-                title={`${row.label}: ${row.state === "found" ? "atrasta info" : row.state === "error" ? "kļūda" : "nav datu"}`}
+                title={`${row.label}: ${
+                  row.state === "found"
+                    ? "atrasta info"
+                    : row.state === "blocked"
+                      ? "bloķē"
+                      : row.state === "timeout"
+                        ? "noildze"
+                        : row.state === "config_missing"
+                          ? "nav atslēgas"
+                          : row.state === "browser_only"
+                            ? "pārlūks"
+                            : row.state === "error"
+                              ? "kļūda"
+                              : "nav datu"
+                }`}
               >
                 <Dot state={row.state} />
               </span>
@@ -281,7 +327,14 @@ export function AdminOrderVinScanCard({
                     <Counter state="found" count={summary.found} label="atrasta info" />
                     <Counter state="none" count={summary.none} label="nav datu" />
                     <Counter state="error" count={summary.error} label="kļūda" />
-                    {summary.browser > 0 ? <Counter state="none" count={summary.browser} label="pārlūks" /> : null}
+                    {summary.blocked > 0 ? <Counter state="blocked" count={summary.blocked} label="bloķē" /> : null}
+                    {summary.timeout > 0 ? <Counter state="timeout" count={summary.timeout} label="noildze" /> : null}
+                    {summary.configMissing > 0 ? (
+                      <Counter state="config_missing" count={summary.configMissing} label="nav atslēgas" />
+                    ) : null}
+                    {summary.browserOnly > 0 ? (
+                      <Counter state="browser_only" count={summary.browserOnly} label="pārlūks" />
+                    ) : null}
                   </span>
                 ) : null}
                 <button
@@ -300,10 +353,16 @@ export function AdminOrderVinScanCard({
                   key={row.id}
                   className="grid grid-cols-[14px_minmax(5.5rem,7.5rem)_minmax(0,1fr)_auto] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] text-[var(--color-apple-text)]"
                 >
-                  <Dot state={row.blocked ? "none" : row.state} />
+                  <Dot state={row.state} />
                   <b className="truncate font-semibold">{rowLabel(row)}</b>
                   <span
-                    className={`min-w-0 truncate ${row.blocked ? "text-slate-500" : row.state === "error" ? "text-rose-700" : ""}`}
+                    className={`min-w-0 truncate ${
+                      row.state === "blocked"
+                        ? "text-orange-700"
+                        : row.state === "error" || row.state === "timeout"
+                          ? "text-rose-700"
+                          : ""
+                    }`}
                   >
                     {row.blocked
                       ? "Avots bloķē serveri - atver pārlūkā un importē"

@@ -324,8 +324,16 @@ function visibleText(html: string): string {
  * kopā ar lota datiem. Agrāk VIN no skripta (`current_url`) + „Featured cars” bloks + <img> skaits
  * deva viltus „ir izsole, N foto” (piem. AucHistory WAUZZZF50NA041246).
  */
+const AUCTION_NOT_FOUND_RE =
+  /not found|page not found|no vehicle|nothing found|no results|no similar cars|were not found|no (auction )?records|vehicle not found|0 vehicles|no cars found/i;
+
 export function parseAuctionArchive(status: number, html: string, vin: string, label: string): VinScanParse {
-  if (status === 404) return { status: "none", summary: `${label}: nav izsoles ieraksta` };
+  if (status === 404) {
+    if (label.trim().toLowerCase() === "poctra") {
+      return { status: "unknown", summary: "Poctra: lapa nav pieejama (HTTP 404)" };
+    }
+    return { status: "none", summary: `${label}: nav izsoles ieraksta` };
+  }
   if (status === 403 || status === 429) {
     return { status: "unknown", summary: `${label}: avots bloķē serveri - atver pārlūkā` };
   }
@@ -336,7 +344,10 @@ export function parseAuctionArchive(status: number, html: string, vin: string, l
   if (/just a moment|cf-browser|verify you are human/i.test(text) && !vinVisible) {
     return { status: "unknown", summary: `${label}: Cloudflare netika apieta` };
   }
-  if (!vinVisible) return { status: "none", summary: `${label}: nav izsoles ieraksta` };
+  if (!vinVisible) {
+    if (AUCTION_NOT_FOUND_RE.test(text)) return { status: "none", summary: `${label}: nav izsoles ieraksta` };
+    return { status: "unknown", summary: `${label}: lapa bez VIN un bez „nav atrasts”` };
+  }
   if (/\blot\b|auction|sold|\bbid\b|copart|iaai|damage/i.test(text)) {
     const photos = /(\d+)\s*(photos?|images?|pictures?|foto)/i.exec(text);
     const n = photos ? Number(photos[1]) : NaN;
