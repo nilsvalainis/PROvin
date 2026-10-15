@@ -36,11 +36,12 @@ export type ReconcileOutput = {
   goneCount: number;
 };
 
-const PRICE_FIELDS: Array<{ field: IrissListingPriceField; key: "priceStart" | "priceMinimal" | "priceCurrent" | "priceBuyNow" }> = [
+const PRICE_FIELDS: Array<{ field: IrissListingPriceField; key: "priceStart" | "priceMinimal" | "priceCurrent" | "priceBuyNow" | "priceEstimate" }> = [
   { field: "start", key: "priceStart" },
   { field: "minimal", key: "priceMinimal" },
   { field: "current", key: "priceCurrent" },
   { field: "buy_now", key: "priceBuyNow" },
+  { field: "estimate", key: "priceEstimate" },
 ];
 
 export function sourceKey(platform: IrissListingPlatform, orderId: string): string {
@@ -98,11 +99,11 @@ function priceChanges(prev: IrissListingVehicle, next: IrissFetchedVehicle, at: 
   if (isAuto1CentsRescale(prev, next)) return [];
   const out: IrissListingPriceChange[] = [];
   for (const { field, key } of PRICE_FIELDS) {
-    const from = prev[key];
-    const to = next[key];
+    const from = prev[key] ?? null;
+    const to = next[key] ?? null;
     if (from === to) continue;
     /** Pirmo reizi parādījusies cena (bija null) nav maiņa. */
-    if (from === null) continue;
+    if (from == null) continue;
     if (typeof from === "number" && typeof to === "number" && (isCentsEuroPair(from, to) || isCentsEuroPair(to, from))) continue;
     out.push({ at, field, from, to });
   }

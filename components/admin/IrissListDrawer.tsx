@@ -243,6 +243,9 @@ export function IrissListDrawer({
           {v.priceBuyNow != null && v.priceBuyNow !== listingBidPrice(v) ? (
             <div className="text-[11px] text-slate-500">pirkt uzreiz {eur(v.priceBuyNow)}</div>
           ) : null}
+          {v.priceTotal != null && v.priceTotal !== listingBidPrice(v) ? (
+            <div className="text-[11px] text-slate-500">kopā {eur(v.priceTotal)}</div>
+          ) : null}
         </div>
         <div className="rounded-xl border border-[#E5E7EB] p-2.5">
           <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Pie šīs cenas</div>
@@ -353,7 +356,7 @@ export function IrissListDrawer({
             priceHistory.map((h, i) => (
               <tr key={`${h.at}-${i}`} className="border-t border-slate-100">
                 <td className="py-1">{dt(h.at)}</td>
-                <td>{h.field === "buy_now" ? "Pirkt uzreiz" : h.field === "start" ? "Sākuma" : h.field === "minimal" ? "Minimālā" : "Pašreizējā"}</td>
+                <td>{h.field === "buy_now" ? "Pirkt uzreiz" : h.field === "estimate" ? "Aplēse" : h.field === "start" ? "Sākuma" : h.field === "minimal" ? "Minimālā" : "Pašreizējā"}</td>
                 <td className="text-right tabular-nums">{eur(h.from)}</td>
                 <td className={`text-right tabular-nums font-semibold ${h.from != null && h.to != null && h.to > h.from ? "text-red-600" : "text-emerald-700"}`}>{eur(h.to)}</td>
               </tr>

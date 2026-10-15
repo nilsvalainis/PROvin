@@ -1,9 +1,11 @@
 import { filledIrissListingLinks, IRISS_LISTING_LINKS_PER_SOURCE_MAX } from "@/lib/iriss-listing-link-lists";
 import { isMobileDeListingUrl, isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
+  applyEcarstradeOrderCriteria,
   describeEcarstradeFilter,
   ecarstradeSearchUrl,
   fillMissingModelFromBrand,
+  filterFromOrderFields,
   parseListingSearchDetailed,
   sameEcarstradeSearch,
   type EcarstradeSearchFilter,
@@ -68,19 +70,19 @@ function unmappedLines(filter: EcarstradeSearchFilter): string[] {
 
 const NO_AUCTION_ET_REASON = "nav izsoles saites ar marku (Auto1/Openlane/Autobid)";
 
-/** Tikai izsoles URL filtri. Formas lauki (gadi, km, kārba, brandModel kā avots) ET nerada. */
-function filterFromAuctionUrl(url: string, brandModel: string): EcarstradeSearchFilter {
+/** Izsoles URL marka un modelis. Gadi, km, cena, degviela un kārba arī no pasūtījuma, ja izsole tos nesatur vai ir platāka. */
+function filterFromAuctionUrl(url: string, rec: IrissEcarstradeLinkSource): EcarstradeSearchFilter {
   const parsed = parseListingSearchDetailed(url).filter;
   if (!parsed.makeIds.length) return parsed;
-  return fillMissingModelFromBrand(parsed, brandModel);
+  const withModel = fillMissingModelFromBrand(parsed, rec.brandModel.trim());
+  return applyEcarstradeOrderCriteria(withModel, filterFromOrderFields(rec));
 }
 
 export function planEcarstradeSearchUrls(rec: IrissEcarstradeLinkSource): IrissEcarstradeLinkPlan[] {
-  const brand = rec.brandModel.trim();
   const parsed = sourceUrls(rec)
     .map((url) => ({
       sourceUrl: url,
-      filter: filterFromAuctionUrl(url, brand),
+      filter: filterFromAuctionUrl(url, rec),
     }))
     .filter((row) => row.filter.makeIds.length > 0);
   const clusters = parsed.map((row) => ({ filter: row.filter, sourceUrls: [row.sourceUrl] }));

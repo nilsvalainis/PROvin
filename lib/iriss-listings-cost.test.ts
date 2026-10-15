@@ -51,9 +51,9 @@ describe("listing extras and v4 control numbers", () => {
     expect(listingComparisonPrice({ platform: "auto1", priceCurrent: null, priceStart: 4000, priceMinimal: 4100, priceBuyNow: 5000 })).toBe(5000);
     expect(listingComparisonPrice({ platform: "auto1", priceCurrent: 4000, priceStart: 4000, priceMinimal: 4100, priceBuyNow: null })).toBe(4100);
     expect(listingBidPrice({ platform: "openline", priceCurrent: null, priceStart: null, priceMinimal: 12250, priceBuyNow: 13300 })).toBe(13300);
-    expect(listingBidPrice({ platform: "openline", priceCurrent: 10150, priceStart: null, priceMinimal: 12250, priceBuyNow: null })).toBe(12250);
+    expect(listingBidPrice({ platform: "openline", priceCurrent: 10150, priceStart: null, priceMinimal: 12250, priceBuyNow: null })).toBe(10150);
     expect(listingCardPriceLabel({ platform: "ecarstrade", priceCurrent: null, priceStart: null, priceBuyNow: 16200 })).toBe("Pirkt uzreiz");
-    expect(listingCardPriceLabel({ platform: "autobid", priceCurrent: 9000, priceStart: 8000, priceBuyNow: null })).toBe("Pašreizējā cena");
+    expect(listingCardPriceLabel({ platform: "autobid", priceCurrent: 9000, priceStart: 8000, priceBuyNow: null })).toBe("Solījums");
     expect(
       listingCardPriceLabel({
         platform: "ecarstrade",
@@ -62,16 +62,20 @@ describe("listing extras and v4 control numbers", () => {
         priceBuyNow: null,
         auctionStage: "BLIND_AUCTION",
       }),
-    ).toBe("izsole, nav solījumu");
+    ).toBe("nav cenas");
     expect(
       listingCardPriceLabel({
         platform: "ecarstrade",
         priceCurrent: null,
         priceStart: null,
         priceBuyNow: null,
+        priceEstimate: 17000,
         auctionStage: "BID",
       }),
-    ).toBe("izsole, nav solījumu");
+    ).toBe("Aplēse");
+    expect(listingComparisonPrice({ platform: "ecarstrade", priceCurrent: null, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe(17000);
+    expect(listingComparisonPrice({ platform: "ecarstrade", priceCurrent: 15100, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe(15100);
+    expect(listingCardPriceLabel({ platform: "openline", priceCurrent: 15100, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe("Solījums");
     expect(
       listingCardPriceLabel({
         platform: "ecarstrade",
@@ -80,7 +84,7 @@ describe("listing extras and v4 control numbers", () => {
         priceBuyNow: null,
         auctionStage: "BID",
       }),
-    ).toBe("Pašreizējā cena");
+    ).toBe("Solījums");
   });
 
   it("does not treat a low tender floor or Autobid reserve as an affordable price", () => {

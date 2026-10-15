@@ -13,7 +13,7 @@ import { useMobilePlatform } from "@/hooks/useMobilePlatform";
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
 import { isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import { listingBidPrice, listingExtrasI, listingMaxBid, type ListingCostParts } from "@/lib/iriss-listings-cost";
-import { listingIsOverBudgetHidden, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
+import { listingExcludedForMissingPrice, listingIsOverBudgetHidden, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
 import { listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 import {
   LISTING_SORTS,
@@ -515,12 +515,14 @@ export function IrissSludinajumiListClient({
       if (!vehicleInPriceRange(v, priceMin, priceMax)) return false;
       const linked = linkedOrdersOf(v, prefs, orderById);
       if (!vehicleMatchesOrderFilter(linked, orderFilter)) return false;
+      const linkedBudget = listingBudgetForVehicle(null, linked);
+      if (listingExcludedForMissingPrice(v, linkedBudget, hideOverBudget)) return false;
       if (
         listingIsOverBudgetHidden(
           v,
           listingCostsFor(prefs, v.id),
           prefs.taxOv[v.id],
-          listingBudgetForVehicle(null, linked),
+          linkedBudget,
           hideOverBudget,
           overBudgetThreshold,
         )

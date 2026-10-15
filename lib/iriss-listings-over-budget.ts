@@ -45,3 +45,17 @@ export function listingIsOverBudgetHidden(
   if (!hide) return false;
   return listingExceedsBudgetBy(listingCardTotal(v, extras, taxOv), budget, thresholdEur);
 }
+
+/**
+ * Budžeta filtrs: auto bez nevienas cenas (solījums, aplēse, pirkt uzreiz) nav atbilstība.
+ * Kartītē paliek karogs „nav cenas”, kad filtrs ir izslēgts.
+ */
+export function listingExcludedForMissingPrice(
+  v: ListingCardTotalVehicle,
+  budget: number | null,
+  hide: boolean,
+): boolean {
+  if (!hide) return false;
+  if (budget == null || budget <= 0) return false;
+  return listingBidPrice(v) == null;
+}

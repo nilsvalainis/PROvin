@@ -5,6 +5,7 @@
 
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { listingFmtEur } from "@/lib/iriss-listings-card";
+import { listingComparisonPrice } from "@/lib/iriss-listings-cost";
 import { listingVehicleOrderIds } from "@/lib/iriss-listings-orders";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import type { IrissListingPlatform, IrissListingVehicleChange } from "@/lib/iriss-listings-types";
@@ -68,6 +69,7 @@ export type IrissOrderRoomHitSource = {
   priceMinimal?: number | null;
   priceCurrent?: number | null;
   priceBuyNow?: number | null;
+  priceEstimate?: number | null;
   change?: IrissListingVehicleChange;
   firstSeenAt?: string;
   location?: string;
@@ -133,18 +135,24 @@ function includesText(hay: string, needle: string): boolean {
   return h.includes(n) || n.includes(h);
 }
 
-function positivePrice(n: number | null | undefined): number | null {
-  if (typeof n !== "number" || !Number.isFinite(n) || n <= 0) return null;
-  return n;
-}
-
-export function irissOrderRoomHitPrice(v: Pick<IrissOrderRoomHitSource, "priceBuyNow" | "priceCurrent" | "priceStart" | "priceMinimal">): number | null {
-  return positivePrice(v.priceBuyNow) ?? positivePrice(v.priceCurrent) ?? positivePrice(v.priceStart) ?? positivePrice(v.priceMinimal);
+export function irissOrderRoomHitPrice(
+  v: Pick<IrissOrderRoomHitSource, "platform" | "priceBuyNow" | "priceCurrent" | "priceStart" | "priceMinimal" | "priceEstimate">,
+): number | null {
+  return listingComparisonPrice({
+    platform: v.platform,
+    priceCurrent: v.priceCurrent ?? null,
+    priceStart: v.priceStart ?? null,
+    priceMinimal: v.priceMinimal ?? null,
+    priceBuyNow: v.priceBuyNow ?? null,
+    priceEstimate: v.priceEstimate ?? null,
+  });
 }
 
 function listingYear(hit: Pick<IrissOrderRoomHit, "year" | "firstRegistration">): number | null {
-  const m = `${hit.year} ${hit.firstRegistration}`.match(/(?:19|20)\d{2}/);
-  return m ? Number(m[0]) : null;
+  const reg = hit.firstRegistration.match(/(?:19|20)\d{2}/);
+  if (reg) return Number(reg[0]);
+  const year = hit.year.match(/(?:19|20)\d{2}/);
+  return year ? Number(year[0]) : null;
 }
 
 export function parseIrissYearSpan(raw: string): { from: number | null; to: number | null } {
@@ -255,13 +263,16 @@ function driveHit(orderDrive: string, hay: string): boolean | null {
 export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderRoomHit): IrissOrderRoomMatch {
   const checks: IrissOrderRoomCheck[] = [];
   const budget = parseLooseNumber(rec.totalBudget);
-  if (budget != null && hit.price != null) {
-    checks.push({ id: "budget", label: "budžets", pass: hit.price <= budget });
+  if (budget != null) {
+    if (hit.price == null) checks.push({ id: "budget", label: "nav cenas", pass: false });
+    else checks.push({ id: "budget", label: "budžets", pass: hit.price <= budget });
   }
   const span = parseIrissYearSpan(rec.productionYears);
   const year = listingYear(hit);
-  if (span.from != null && span.to != null && year != null) {
-    checks.push({ id: "year", label: "gadi", pass: year >= span.from && year <= span.to });
+  if (span.from != null || span.to != null) {
+    const pass =
+      year != null && (span.from == null || year >= span.from) && (span.to == null || year <= span.to);
+    checks.push({ id: "year", label: "gadi", pass });
   }
   const maxKm = parseLooseNumber(rec.maxMileage);
   if (maxKm != null && hit.mileageKm != null) {
@@ -313,10 +324,10 @@ export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderR
   const percent = checks.length > 0 ? Math.round((checks.filter((c) => c.pass).length / checks.length) * 100) : null;
   const identity = new Set(["drive", "color", "gear", "body"]);
   const badges = [
+    ...checks.filter((c) => !c.pass),
     ...equipmentBadges,
     ...checks.filter((c) => c.pass && identity.has(c.id)),
     ...checks.filter((c) => c.pass && !identity.has(c.id)),
-    ...checks.filter((c) => !c.pass),
   ].slice(0, 4);
   return { percent, badges };
 }
@@ -324,9 +335,16 @@ export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderR
 export function irissOrderRoomHitPassesCriteria(rec: IrissPasutijumsRecord, hit: IrissOrderRoomHit): boolean {
   const span = parseIrissYearSpan(rec.productionYears);
   const year = listingYear(hit);
-  if (span.from != null && span.to != null && year != null && (year < span.from || year > span.to)) return false;
+  if (span.from != null || span.to != null) {
+    if (year == null) return false;
+    if (span.from != null && year < span.from) return false;
+    if (span.to != null && year > span.to) return false;
+  }
   const budget = parseLooseNumber(rec.totalBudget);
-  if (budget != null && hit.price != null && hit.price > budget) return false;
+  if (budget != null) {
+    if (hit.price == null) return false;
+    if (hit.price > budget) return false;
+  }
   const maxKm = parseLooseNumber(rec.maxMileage);
   if (maxKm != null && hit.mileageKm != null && hit.mileageKm > maxKm) return false;
   const banned = irissOrderRoomExcludeTokens(rec.nonPreferredColors);

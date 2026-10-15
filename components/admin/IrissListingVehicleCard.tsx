@@ -434,6 +434,9 @@ export function IrissListingVehicleCard({
             {v.priceBuyNow != null && v.priceBuyNow !== bid ? (
               <div className="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz {listingFmtEur(v.priceBuyNow)}</div>
             ) : null}
+            {v.priceTotal != null && v.priceTotal !== bid ? (
+              <div className="mt-0.5 text-[11px] text-slate-500">kopā {listingFmtEur(v.priceTotal)}</div>
+            ) : null}
             {cd.t || cd.end ? (
               <div className={`mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums ${cd.k}`}>
                 ⏱ {cd.t}
@@ -469,6 +472,9 @@ export function IrissListingVehicleCard({
           </div>
           {v.priceBuyNow != null && v.priceBuyNow !== bid ? (
             <div className="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz {listingFmtEur(v.priceBuyNow)}</div>
+          ) : null}
+          {v.priceTotal != null && v.priceTotal !== bid ? (
+            <div className="mt-0.5 text-[11px] text-slate-500">kopā {listingFmtEur(v.priceTotal)}</div>
           ) : null}
           {cd.t || cd.end ? (
             <div className={`mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums ${cd.k}`}>

@@ -83,9 +83,13 @@ describe("buildIrissOrderRoomHits", () => {
     expect(withPhoto[0]?.price).toBeNull();
   });
 
-  it("prefers buy-now price", () => {
-    const [row] = buildIrissOrderRoomHits([source({ id: "p", priceStart: 10000, priceCurrent: 12000, priceBuyNow: 14900 })], "order-1", {});
-    expect(row?.price).toBe(14900);
+  it("uses current bid, then estimate, then buy-now", () => {
+    const [bid] = buildIrissOrderRoomHits([source({ id: "p", priceStart: 10000, priceCurrent: 12000, priceEstimate: 17000, priceBuyNow: 14900 })], "order-1", {});
+    expect(bid?.price).toBe(12000);
+    const [estimate] = buildIrissOrderRoomHits([source({ id: "e", priceEstimate: 17000, priceBuyNow: 19000 })], "order-1", {});
+    expect(estimate?.price).toBe(17000);
+    const [buy] = buildIrissOrderRoomHits([source({ id: "b", priceBuyNow: 14900 })], "order-1", {});
+    expect(buy?.price).toBe(14900);
   });
 });
 
@@ -153,6 +157,11 @@ describe("criteria", () => {
     expect(match.badges.some((b) => b.label.toLowerCase().includes("quattro") && b.pass)).toBe(true);
     expect(irissOrderRoomHitPassesCriteria(rec, good)).toBe(true);
     expect(irissOrderRoomHitPassesCriteria(rec, hit({ id: "over", price: 19000 }))).toBe(false);
+    expect(irissOrderRoomHitPassesCriteria(rec, hit({ id: "blank", price: null }))).toBe(false);
+    expect(irissOrderRoomMatch(rec, hit({ id: "blank", price: null })).badges.find((b) => b.id === "budget")).toMatchObject({
+      label: "nav cenas",
+      pass: false,
+    });
     expect(irissOrderRoomHitPassesCriteria(rec, hit({ id: "grey", color: "pelēks" }))).toBe(false);
   });
 

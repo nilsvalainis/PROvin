@@ -79,12 +79,14 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     expect(preview.generated).toEqual([]);
   });
 
-  it("replace copies Auto1 filters and does not stack order-form years/km/price", () => {
+  it("replace copies Auto1 filters and adds order year, km, price, fuel and gearbox", () => {
     const row = rec({
       brandModel: "Volvo XC60",
       productionYears: "2019-2022",
       maxMileage: "140000",
       totalBudget: "26000",
+      engineType: "dīzelis",
+      transmission: "automāts",
       driveType: "AWD",
       listingLinkAuto1: [
         "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&fuelTypes=DIESEL",
@@ -92,14 +94,18 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
       listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68", "https://ecarstrade.com/search?mark[]=68&mark[]=7"],
     });
     const next = replaceEcarstradeLinksOnPasutijums(row);
+    const url = next.record.listingLinkEcarstrade[0] ?? "";
+    const params = new URL(url).searchParams;
     expect(next.record.clientFirstName).toBe("Anna");
     expect(next.record.listingLinkEcarstrade).toHaveLength(1);
-    expect(next.record.listingLinkEcarstrade[0]).toContain("fuel[]=Diesel");
-    expect(next.record.listingLinkEcarstrade[0]).toContain("model[]=1866");
-    expect(next.record.listingLinkEcarstrade[0]).not.toContain("year_from=2019");
-    expect(next.record.listingLinkEcarstrade[0]).not.toContain("mileage_to=140000");
-    expect(next.record.listingLinkEcarstrade[0]).not.toContain("price_to=26000");
-    expect(next.record.listingLinkEcarstrade[0]).not.toContain("iriss_drive=awd");
+    expect(params.get("fuel[]")).toBe("Diesel");
+    expect(params.get("gearbox[]")).toBe("Automatic");
+    expect(params.get("model[]")).toBe("1866");
+    expect(params.get("year_from")).toBe("2019");
+    expect(params.get("year_to")).toBe("2022");
+    expect(params.get("mileage_to")).toBe("140000");
+    expect(params.get("price_to")).toBe("26000");
+    expect(url).not.toContain("iriss_drive");
   });
 
   it("replace clears form-derived ET when the order has no auction links", () => {

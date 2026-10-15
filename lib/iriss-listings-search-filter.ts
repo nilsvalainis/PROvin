@@ -5,6 +5,7 @@ import {
   parseListingSearchUrl,
   type EcarstradeSearchFilter,
 } from "@/lib/iriss-listings-ecarstrade-search";
+import { listingComparisonPrice } from "@/lib/iriss-listings-cost";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
 
 export type ListingSearchVehicle = {
@@ -23,6 +24,8 @@ export type ListingSearchVehicle = {
   priceCurrent?: number | null;
   priceBuyNow?: number | null;
   priceMinimal?: number | null;
+  priceEstimate?: number | null;
+  platform?: string;
 };
 
 function norm(raw: string): string {
@@ -41,11 +44,16 @@ function includesToken(hay: string, needle: string): boolean {
   return h.includes(n) || n.includes(h);
 }
 
+function calendarYear(raw: string | undefined): number | null {
+  const m = (raw ?? "").match(/(?:19|20)\d{2}/);
+  if (!m) return null;
+  const n = Number.parseInt(m[0], 10);
+  return n >= 1980 && n <= 2035 ? n : null;
+}
+
+/** Pirmā reģistrācija (06/2021, 03.2018) ir ET gads. Tukšs gads nav atbilstība. */
 function yearOf(v: ListingSearchVehicle): number | null {
-  const fromYear = Number.parseInt((v.year ?? "").replace(/[^\d]/g, "").slice(0, 4), 10);
-  if (fromYear >= 1980 && fromYear <= 2035) return fromYear;
-  const fromReg = Number.parseInt((v.firstRegistration ?? "").replace(/[^\d]/g, "").slice(0, 4), 10);
-  return fromReg >= 1980 && fromReg <= 2035 ? fromReg : null;
+  return calendarYear(v.firstRegistration) ?? calendarYear(v.year);
 }
 
 function powerOf(v: ListingSearchVehicle): number | null {
@@ -54,10 +62,14 @@ function powerOf(v: ListingSearchVehicle): number | null {
 }
 
 function priceOf(v: ListingSearchVehicle): number | null {
-  for (const n of [v.priceCurrent, v.priceBuyNow, v.priceStart, v.priceMinimal]) {
-    if (typeof n === "number" && Number.isFinite(n) && n > 0) return n;
-  }
-  return null;
+  return listingComparisonPrice({
+    platform: v.platform,
+    priceCurrent: v.priceCurrent ?? null,
+    priceStart: v.priceStart ?? null,
+    priceMinimal: v.priceMinimal ?? null,
+    priceBuyNow: v.priceBuyNow ?? null,
+    priceEstimate: v.priceEstimate ?? null,
+  });
 }
 
 function doorsOf(v: ListingSearchVehicle): number | null {
@@ -123,7 +135,10 @@ export function vehicleMatchesSearchFilter(v: ListingSearchVehicle, filter: Ecar
   const hay = `${v.manufacturer ?? ""} ${v.title ?? ""}`;
   if (hay.trim() && filter.makeNames.length > 0 && !filter.makeNames.some((name) => makeMatchesHay(hay, name))) return false;
   if (hay.trim() && filter.makeIds.length === 1 && filter.modelName && !includesToken(hay, filter.modelName)) return false;
-  if (!inRange(yearOf(v), filter.yearFrom, filter.yearTo)) return false;
+  if (filter.yearFrom != null || filter.yearTo != null) {
+    const year = yearOf(v);
+    if (year == null || !inRange(year, filter.yearFrom, filter.yearTo)) return false;
+  }
   if (!inRange(v.mileageKm ?? null, filter.mileageFrom, filter.mileageTo)) return false;
   if (!inRange(priceOf(v), filter.priceFrom, filter.priceTo)) return false;
   if (!inRange(powerOf(v), filter.powerFromKw, filter.powerToKw)) return false;
@@ -242,10 +257,9 @@ export function filterForListingSource(sourceUrl: string, brandModel: string): E
 }
 
 /**
- * eCarsTrade future_api already applied mark/model/year/body. Catalog names
- * (`2 Series`, `E-Class`, `Estate Car`) are not in titles (`220d`, `E220`, `Avant`),
- * so re-matching them here dropped every found car and reconcile marked the store gone.
- * Ingest keeps only iriss_* post-filters that the API never received.
+ * eCarsTrade future_api bieži ignorē gadu. Kataloga nosaukumi (`2 Series`, `Estate Car`)
+ * nav virsrakstos (`220d`), tāpēc marku/modeli/virsbūvi šeit vairs nesalīdzina.
+ * Gads (pirmā reģistrācija), km, cena, degviela un kārba paliek: ārpus kritērija nav atbilstība.
  */
 export function ingestFilterForListingSource(
   platform: IrissListingPlatform | "mobile",
@@ -261,16 +275,8 @@ export function ingestFilterForListingSource(
     modelId: null,
     modelIds: [],
     modelName: "",
-    yearFrom: null,
-    yearTo: null,
-    mileageFrom: null,
-    mileageTo: null,
-    priceFrom: null,
-    priceTo: null,
     powerFromKw: null,
     powerToKw: null,
-    fuels: [],
-    gearboxes: [],
     bodies: [],
     colors: [],
     engineFromCc: null,

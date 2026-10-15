@@ -59,6 +59,8 @@ export function makeItem(platform, fields) {
     priceMinimal: fields.priceMinimal ?? null,
     priceCurrent: fields.priceCurrent ?? null,
     priceBuyNow: fields.priceBuyNow ?? null,
+    priceEstimate: fields.priceEstimate ?? null,
+    priceTotal: fields.priceTotal ?? null,
     vatNote: str(fields.vatNote),
     auctionId: str(fields.auctionId),
     auctionStartAt: str(fields.auctionStartAt),

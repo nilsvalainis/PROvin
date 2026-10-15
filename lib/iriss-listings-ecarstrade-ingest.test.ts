@@ -55,12 +55,59 @@ describe("eCarsTrade ingest persist after #147", () => {
       sourceUrl: MERCEDES_E_CLASS,
       orderBrandModel: "Mercedes E-Class",
     };
-    const bmw = { title: "BMW 220d Gran Tourer", manufacturer: "BMW" };
+    const bmw = {
+      title: "BMW 220d Gran Tourer",
+      manufacturer: "BMW",
+      year: "2018",
+      firstRegistration: "03.2018",
+      fuel: "Diesel",
+      transmission: "Automatic",
+    };
     const mercedes = { title: "Mercedes-Benz E220", manufacturer: "Mercedes" };
+    const tooNew = { ...bmw, title: "BMW 220d 2024", firstRegistration: "06/2024", year: "2024" };
+    const petrol = { ...bmw, title: "BMW 220i", fuel: "Petrol" };
 
     expect(applySearchFilterToVehicles([bmw], filterForListingSource(bmwSrc.sourceUrl, bmwSrc.orderBrandModel))).toEqual([]);
-    expect(applyListingEntryFilter([bmw], bmwSrc)).toEqual([bmw]);
+    expect(applyListingEntryFilter([bmw, tooNew, petrol], bmwSrc).map((v) => v.title)).toEqual([
+      "BMW 220d Gran Tourer",
+    ]);
     expect(applyListingEntryFilter([mercedes], mercedesSrc)).toEqual([mercedes]);
+  });
+
+  it("drops cars outside year, mileage, price, fuel and gearbox on ET ingest", () => {
+    const src = {
+      platform: "ecarstrade" as const,
+      sourceUrl:
+        "https://ecarstrade.com/search?mark[]=68&year_from=2018&year_to=2020&mileage_to=150000&price_to=28000&fuel[]=Diesel&gearbox[]=Automatic",
+      orderBrandModel: "Volvo XC60",
+    };
+    const ok = {
+      title: "Volvo XC60",
+      manufacturer: "Volvo",
+      year: "",
+      firstRegistration: "12/2019",
+      mileageKm: 80_000,
+      priceEstimate: 17_000,
+      platform: "ecarstrade",
+      fuel: "Diesel",
+      transmission: "Automatic",
+      priceCurrent: null,
+      priceBuyNow: null,
+      priceStart: null,
+    };
+    const kept = applyListingEntryFilter(
+      [
+        ok,
+        { ...ok, title: "newer", firstRegistration: "01/2023" },
+        { ...ok, title: "km", mileageKm: 180_000 },
+        { ...ok, title: "price", priceEstimate: 40_000 },
+        { ...ok, title: "fuel", fuel: "Petrol" },
+        { ...ok, title: "gear", transmission: "Manual" },
+        { ...ok, title: "noyear", firstRegistration: "", year: "" },
+      ],
+      src,
+    );
+    expect(kept.map((v) => v.title)).toEqual(["Volvo XC60"]);
   });
 
   it("still drops opposite drive and excluded colors on ET ingest", () => {

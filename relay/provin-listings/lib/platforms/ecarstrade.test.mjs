@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -200,4 +201,20 @@ test("BID Place a bid with empty data-price is unpriced; list max_bid survives d
   assert.equal(merged[0]?.priceCurrent, 15100);
   assert.equal(merged[0]?.priceBuyNow, null);
   assert.equal(merged[0]?.auctionStage, "BID");
+});
+
+test("Aplēses cena is the estimate, Kopējā cena is the total, calc_bid on a bid is not buy-now", () => {
+  const html = readFileSync(new URL("../../../../lib/__fixtures__/iriss-ecarstrade/detail-estimate-7693493.html", import.meta.url), "utf8");
+  const json = JSON.parse(
+    readFileSync(new URL("../../../../lib/__fixtures__/iriss-ecarstrade/detail-estimate-7693493.json", import.meta.url), "utf8"),
+  );
+  const item = extractEcarstradeRelayItem(html, { id: "7693493", auction_type: "bid" });
+  assert.equal(item?.priceEstimate, 17000);
+  assert.equal(item?.priceTotal, 17300);
+  assert.equal(item?.priceCurrent, null);
+  assert.equal(item?.priceBuyNow, null);
+  const fromJson = extractEcarstradeRelayItem(`<div data-itemId="7693493"></div>`, json.data);
+  assert.equal(fromJson?.priceEstimate, 17000);
+  assert.equal(fromJson?.priceTotal, 17300);
+  assert.equal(fromJson?.priceBuyNow, null);
 });

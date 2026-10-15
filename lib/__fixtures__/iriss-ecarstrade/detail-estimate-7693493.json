@@ -1,0 +1,14 @@
+{
+  "status": "101",
+  "car_id": "7693493",
+  "auction_type": "bid",
+  "data": {
+    "id": "7693493",
+    "auction_type": "bid",
+    "max_bid": null,
+    "estimate_price": 17000,
+    "total_price": 17300,
+    "close_date": "19 Oct 2026 10:10"
+  },
+  "result_note": "HTML is separate; result base64 is built in the test from detail-estimate-7693493.html"
+}
