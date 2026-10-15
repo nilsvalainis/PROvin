@@ -44,6 +44,8 @@ import {
   probeVinDecode,
 } from "@/lib/vin-scan/probes-extra";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
+import { runCarinfoLookup } from "@/lib/vin-scan/carinfo-lookup";
+import { applyVinScanRelayIfBlocked } from "@/lib/vin-scan/listings-page-relay";
 import { isValidScanPlate, vinScanPlateLabel, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 import { vinScanCatalogItem } from "@/lib/vin-scan/catalog";
@@ -257,7 +259,20 @@ export async function probeLkfEe(ctx: VinScanContext): Promise<VinScanIndicator>
 
 export async function probeCarinfo(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    return done("carinfo", ctx, parseVinSourceScan(await fetchVinSource("carinfo", ctx.vin)));
+    const parsed = await runCarinfoLookup(ctx.vin, ctx.plates.se, async (url) => {
+      const direct = await scanFetch(url, {
+        headers: {
+          accept: url.includes("/search/super/")
+            ? "application/json, text/javascript, */*; q=0.01"
+            : "text/html,application/xhtml+xml",
+          referer: "https://www.car.info/en-se/",
+        },
+        timeoutMs: 20_000,
+      });
+      const page = await applyVinScanRelayIfBlocked(url, direct);
+      return { status: page.status, text: page.text };
+    });
+    return done("carinfo", ctx, parsed);
   } catch (e) {
     return failed("carinfo", ctx, e);
   }

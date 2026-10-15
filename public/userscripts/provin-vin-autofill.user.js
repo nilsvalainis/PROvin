@@ -579,7 +579,7 @@
       csdd: "https://e.csdd.lv/tadati/?vin=" + v,
       mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf?vin=" + v,
       lkf_ee: "https://lkf.ee/et/kahjukontroll?vin=" + v,
-      carinfo: "https://www.car.info/en-se/vin/" + v,
+      carinfo: "https://www.car.info/en-se/vin/S/" + v,
       nummerplade: "https://www.nummerplade.net/stelnummer/" + String(vin || "").toLowerCase() + ".html",
       rdw: "https://ovi.rdw.nl/",
       vegvesen: "https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/?understellsnummer=" + v,

@@ -19,6 +19,7 @@ describe("isVinScanRelayUrl", () => {
   it("tikai izsoļu hosti (ne carfax, ne epolicija)", () => {
     expect(isVinScanRelayUrl("https://stat.vin/cars/WBA")).toBe(true);
     expect(isVinScanRelayUrl("https://www.bid.cars/en/search?q=1")).toBe(true);
+    expect(isVinScanRelayUrl("https://www.car.info/en-se/vin/S/YV1LW5522V2348444")).toBe(true);
     expect(isVinScanRelayUrl("https://www.carfax.eu/preview-page?vin=1")).toBe(false);
     expect(isVinScanRelayUrl("https://www.epolicija.lt/itpr_paieska/transportas_lt.php")).toBe(false);
   });
