@@ -323,7 +323,7 @@ exports[`IRISS printable PDF HTML (template defaults) > offer print HTML matches
     <footer class="ipdf-footer" role="contentinfo">
     <div class="ipdf-footer-card">
       <div class="ipdf-footer-accent" style="background:#F26522" aria-hidden="true"></div>
-      <p class="ipdf-footer-brand">SIA IRISS</p>
+      <p class="ipdf-footer-brand">SIA ĪRISS</p>
       <div class="ipdf-footer-body"></div>
     </div>
   </footer></div></body></html>"
@@ -641,7 +641,7 @@ exports[`IRISS printable PDF HTML (template defaults) > pasūtījuma print HTML 
     <footer class="ipdf-footer" role="contentinfo">
     <div class="ipdf-footer-card">
       <div class="ipdf-footer-accent" style="background:#64748b" aria-hidden="true"></div>
-      <p class="ipdf-footer-brand">SIA IRISS</p>
+      <p class="ipdf-footer-brand">SIA ĪRISS</p>
       <div class="ipdf-footer-body"></div>
     </div>
   </footer></div></body></html>"

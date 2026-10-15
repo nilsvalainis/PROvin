@@ -2,7 +2,7 @@ import "server-only";
 
 import { rgb, type PDFFont, type PDFPage } from "pdf-lib";
 
-import { IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
+import { IRISS_BRAND_ORANGE_HEX, IRISS_LEGAL_PARTY_NAME } from "@/lib/iriss-brand";
 import { drawRoundedRect, drawTrackedText, wrapText, type LogoPack } from "@/lib/dzintarzeme-pdf-layout";
 
 function hexToRgb(hex: string): ReturnType<typeof rgb> {
@@ -227,7 +227,7 @@ export function drawPremiumFooter3ColDz(
 }
 
 function splitIrissFooterIntoCols(lines: string[]): { c1: string; c2: string; c3: string } {
-  const brand = lines[0]?.trim() ?? "SIA IRISS";
+  const brand = lines[0]?.trim() ?? IRISS_LEGAL_PARTY_NAME;
   const phones: string[] = [];
   const addr: string[] = [];
   const web: string[] = [];
@@ -254,15 +254,25 @@ export function drawPremiumFooter3ColIriss(
   font: PDFFont,
   fontBold: PDFFont,
   lines: string[],
+  logo: LogoPack | null = null,
 ): void {
   const m = margin;
+  let logoW = 0;
+  let logoH = 0;
+  if (logo) {
+    const s = Math.min(88 / logo.dw, 26 / logo.dh, 1);
+    logoW = logo.dw * s;
+    logoH = logo.dh * s;
+  }
+  const textX = logoW > 0 ? m + logoW + 12 : m;
   const { c1, c2, c3 } = splitIrissFooterIntoCols(lines);
   const brandKey = lines[0]?.trim() ?? "";
   const fs = 7.5;
   const lh = premiumLineHeight(fs);
-  const cw = contentW / 3;
-  const x1 = m + cw;
-  const x2 = m + cw * 2;
+  const usableW = contentW - (textX - m);
+  const cw = usableW / 3;
+  const x1 = textX + cw;
+  const x2 = textX + cw * 2;
   const divColor = rgb(220 / 255, 226 / 255, 232 / 255);
 
   const colParts = (t: string) => t.split("\n").filter((x) => x.trim());
@@ -276,7 +286,7 @@ export function drawPremiumFooter3ColIriss(
     }
     return h;
   };
-  const bodyH = Math.max(lh, colStackH(c1), colStackH(c2), colStackH(c3));
+  const bodyH = Math.max(lh, logoH, colStackH(c1), colStackH(c2), colStackH(c3));
   const blockH = bodyH + 10;
 
   const drawCol = (text: string, x0: number) => {
@@ -302,7 +312,12 @@ export function drawPremiumFooter3ColIriss(
   const footerTop = m + 8 + blockH;
   const divY = footerTop - bodyH;
 
-  drawCol(c1, m);
+  if (logo && logoW > 0) {
+    const logoY = m + 8 + (blockH - logoH) / 2;
+    page.drawImage(logo.img, { x: m, y: logoY, width: logoW, height: logoH });
+  }
+
+  drawCol(c1, textX);
   page.drawRectangle({ x: x1, y: divY, width: 0.5, height: bodyH, color: divColor });
   drawCol(c2, x1);
   page.drawRectangle({ x: x2, y: divY, width: 0.5, height: bodyH, color: divColor });

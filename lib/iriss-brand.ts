@@ -9,7 +9,10 @@ import "server-only";
  */
 export const IRISS_BRAND_ORANGE_HEX = "#F26522";
 
-const FOOTER_BRAND_ONLY = ["SIA IRISS"] as const;
+/** Juridiskā puse pasūtījuma PDF. Dzintarzeme Auto ir tikai zīmols un logo. */
+export const IRISS_LEGAL_PARTY_NAME = "SIA ĪRISS";
+
+const FOOTER_BRAND_ONLY = [IRISS_LEGAL_PARTY_NAME] as const;
 
 /**
  * IRISS PDF kājenes rindiņas — **tikai** no `IRISS_PDF_SUPPLIER_LINES_JSON` (JSON masīvs ar virknēm).

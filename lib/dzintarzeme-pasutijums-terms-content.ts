@@ -1,6 +1,9 @@
 /**
- * Dzintarzeme Auto pasūtījuma PDF — 2. lapa: pakalpojuma nosacījumi (LV, koriģēts drukai).
+ * Dzintarzeme Auto pasūtījuma PDF, 2. lapa: pakalpojuma nosacījumi (LV, koriģēts drukai).
  */
+
+import { formatIrissTameMoney, formatIrissTamePercent, type IrissTameCommissionRates } from "@/lib/iriss-tame-commission";
+
 export type DzPasutijumsTermBlock =
   | { kind: "p"; text: string }
   | { kind: "h"; text: string }
@@ -129,3 +132,27 @@ export const DZ_PASUTIJUMS_TERMS_BLOCKS: readonly DzPasutijumsTermBlock[] = [
   },
   { kind: "p", text: "Visas cenas norādītas bez PVN (21 %)." },
 ];
+
+/** Ievieto saglabātās komisijas likmes. Noklusējuma skaitļi atstāj esošo teikumu. */
+export function dzPasutijumsTermsWithCommission(
+  rates: IrissTameCommissionRates,
+): readonly DzPasutijumsTermBlock[] {
+  const moneyA = formatIrissTameMoney(rates.variantANet);
+  const moneyB = formatIrissTameMoney(rates.variantBBaseNet);
+  const percent = formatIrissTamePercent(rates.variantBLoanPercent);
+  return DZ_PASUTIJUMS_TERMS_BLOCKS.map((block) => {
+    if (block.kind !== "p") return block;
+    if (block.text.includes("fiksēta komisijas maksa")) {
+      return { ...block, text: block.text.replace(/\d+(?:,\d{2})(?= EUR)/, moneyA) };
+    }
+    if (block.text.includes("daļēja priekšapmaksa")) {
+      return {
+        ...block,
+        text: block.text
+          .replace(/\d+(?:,\d{2})(?= EUR)/, moneyB)
+          .replace(/\d+(?:,\d+)? %/, `${percent} %`),
+      };
+    }
+    return block;
+  });
+}

@@ -19,6 +19,7 @@ import {
   Plus,
   Radar,
   ScanLine,
+  Settings,
   Sun,
   Zap,
   type LucideIcon,
@@ -60,6 +61,7 @@ export const ADMIN_NAV_LABELS = {
   irissList: "Klientu filtri",
   irissReport: "Mēneša atskaite",
   irissWaybills: "Pavadzīmes",
+  irissSettings: "Iestatījumi",
   blogs: "Blogs",
   aggregates: "Agregāti",
   stats: "Statistika",
@@ -86,13 +88,14 @@ const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Rada
 const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybills, icon: FileText, match: starts("/admin/iriss/pavadzimes") };
 const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, match: starts("/admin/iriss/sludinajumi") };
 const I_REPORT: Item = { href: "/admin/iriss/atskaite", label: L.irissReport, icon: CalendarRange, match: starts("/admin/iriss/atskaite") };
+const I_SETTINGS: Item = { href: "/admin/iriss/iestatijumi", label: L.irissSettings, icon: Settings, match: starts("/admin/iriss/iestatijumi") };
 
 /** Tā pati VIN pārbaudes lapa arī IRISS izvēlnē (dublēts ieraksts). */
 const I_VIN: Item = { ...VIN, label: L.vinScan };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
   { title: L.groupPro, items: [MORNING, SAKUMS, VIN, FAST] },
-  { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_VIN, I_REPORT, I_WAYBILLS] },
+  { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
   {
     title: L.groupWeb,
     items: [
