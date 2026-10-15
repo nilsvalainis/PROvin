@@ -70,11 +70,24 @@ function unmappedLines(filter: EcarstradeSearchFilter): string[] {
 
 const NO_AUCTION_ET_REASON = "nav izsoles saites ar marku (Auto1/Openlane/Autobid)";
 
-/** Izsoles URL marka un modelis. Gadi, km, cena, degviela un kārba arī no pasūtījuma, ja izsole tos nesatur vai ir platāka. */
+function isEcarstradeListingUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "ecarstrade.com" || host.endsWith(".ecarstrade.com");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Auto1 / Openlane / Autobid paliek kā izsoles URL. Pasūtījuma gadi, km, cena,
+ * degviela un kārba sašaurina tikai eCarsTrade saiti.
+ */
 function filterFromAuctionUrl(url: string, rec: IrissEcarstradeLinkSource): EcarstradeSearchFilter {
   const parsed = parseListingSearchDetailed(url).filter;
   if (!parsed.makeIds.length) return parsed;
   const withModel = fillMissingModelFromBrand(parsed, rec.brandModel.trim());
+  if (!isEcarstradeListingUrl(url)) return withModel;
   return applyEcarstradeOrderCriteria(withModel, filterFromOrderFields(rec));
 }
 

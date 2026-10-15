@@ -83,12 +83,29 @@ describe("buildIrissOrderRoomHits", () => {
     expect(withPhoto[0]?.price).toBeNull();
   });
 
-  it("uses current bid, then estimate, then buy-now", () => {
-    const [bid] = buildIrissOrderRoomHits([source({ id: "p", priceStart: 10000, priceCurrent: 12000, priceEstimate: 17000, priceBuyNow: 14900 })], "order-1", {});
+  it("uses eCarsTrade bid, then estimate, then buy-now", () => {
+    const [bid] = buildIrissOrderRoomHits(
+      [source({ id: "p", platform: "ecarstrade", priceStart: 10000, priceCurrent: 12000, priceEstimate: 17000, priceBuyNow: 14900 })],
+      "order-1",
+      {},
+    );
     expect(bid?.price).toBe(12000);
-    const [estimate] = buildIrissOrderRoomHits([source({ id: "e", priceEstimate: 17000, priceBuyNow: 19000 })], "order-1", {});
+    const [estimate] = buildIrissOrderRoomHits(
+      [source({ id: "e", platform: "ecarstrade", priceEstimate: 17000, priceBuyNow: 19000 })],
+      "order-1",
+      {},
+    );
     expect(estimate?.price).toBe(17000);
-    const [buy] = buildIrissOrderRoomHits([source({ id: "b", priceBuyNow: 14900 })], "order-1", {});
+    const [buy] = buildIrissOrderRoomHits([source({ id: "b", platform: "ecarstrade", priceBuyNow: 14900 })], "order-1", {});
+    expect(buy?.price).toBe(14900);
+  });
+
+  it("keeps buy-now ahead of the bid on Auto1", () => {
+    const [buy] = buildIrissOrderRoomHits(
+      [source({ id: "a", platform: "auto1", priceCurrent: 12000, priceEstimate: 17000, priceBuyNow: 14900 })],
+      "order-1",
+      {},
+    );
     expect(buy?.price).toBe(14900);
   });
 });

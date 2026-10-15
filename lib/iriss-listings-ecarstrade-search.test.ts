@@ -605,6 +605,37 @@ describe("eCarsTrade search mapper", () => {
     expect(url).not.toContain("color[]=Black");
   });
 
+  it("does not clamp Openlane or Autobid with the order mileage and price, so ET 3 stays", () => {
+    const plans = planEcarstradeSearchUrls({
+      id: "xc60-three",
+      brandModel: "Volvo XC60",
+      productionYears: "2018-2022",
+      maxMileage: "150000",
+      totalBudget: "28000",
+      engineType: "dīzelis",
+      transmission: "automāts",
+      listingLinkAuto1: [
+        "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&firstRegistrationTo=2022&fuelTypes=DIESEL&maxMileage=150000&maxPrice=28000",
+      ],
+      listingLinkOpenline: [
+        "https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2018&yearTo=2022&fuels=diesel&transmissions=automatic&mileageTo=180000",
+      ],
+      listingLinkAutobid: [
+        "https://autobid.de/en/search-results?brandId-brand=49&name-model=XC60&yearFrom-year=2018&mileageTo-mileage=160000&gearboxId-gearbox=Automatic",
+      ],
+      listingLinkMobile: [""],
+      listingLinkEcarstrade: [""],
+    });
+    expect(plans).toHaveLength(3);
+    const openlane = plans.find((p) => p.sourceUrls.some((u) => u.includes("openlane")));
+    const autobid = plans.find((p) => p.sourceUrls.some((u) => u.includes("autobid")));
+    expect(openlane?.url).toContain("mileage_to=180000");
+    expect(openlane?.url).not.toContain("price_to=");
+    expect(autobid?.url).toContain("mileage_to=160000");
+    expect(autobid?.url).not.toContain("price_to=");
+    expect(autobid?.url).not.toContain("year_to=");
+  });
+
   it("maps Autobid e70 / gearboxId gearbox and does not invent brandId 12 as Mercedes", () => {
     expect(AUTOBID_BRAND_ID_TO_NAME["12"]).toBeUndefined();
     expect(AUTOBID_BRAND_ID_TO_NAME["1"]).toBe("BMW");
