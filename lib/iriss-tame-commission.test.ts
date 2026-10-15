@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { dzPasutijumsTermsWithCommission } from "@/lib/dzintarzeme-pasutijums-terms-content";
-import { computeDzintarzemeTame } from "@/lib/dzintarzeme-tame-calculator";
+import { computeDzintarzemeTame, type DzintarzemeTameExtraLine } from "@/lib/dzintarzeme-tame-calculator";
 import {
   defaultIrissTameCommissionSettings,
   parseIrissTameCommissionSettings,
@@ -21,8 +21,8 @@ const tameBase = {
   chemicalCleaningNet: 0,
   polishingNet: 0,
   paintingNet: 0,
-  extraServices: [],
-} as const;
+  extraServices: [] as DzintarzemeTameExtraLine[],
+};
 
 describe("IRISS tame commission settings", () => {
   it("defaults to 1190 / 990 + 3,5 %", () => {
