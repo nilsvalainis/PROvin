@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildDealerServiceVisitsHtml,
+  buildPdfFirstLastReadingSpanHtml,
   formatDealerServicePlace,
   serviceWorkYear,
 } from "@/lib/pdf-dealer-service-visits";
@@ -14,6 +15,18 @@ describe("PDF dīlera servisa vizītes", () => {
     expect(html.match(/pdf-svc-visit/g)?.length ?? 0).toBe(1);
     expect(html).toContain("Eļļas maiņa");
     expect(html).toContain("Bremžu pārbaude");
+  });
+
+  it("does not print km nav when a chart reading is missing", () => {
+    const html = buildPdfFirstLastReadingSpanHtml({
+      firstKm: "",
+      lastKm: "47 521 km",
+      firstMeta: "2016",
+      lastMeta: "2023",
+    });
+    expect(html).not.toContain("km nav");
+    expect(html).toContain("47 521 km");
+    expect(buildPdfFirstLastReadingSpanHtml({ firstKm: "", lastKm: "", firstMeta: "", lastMeta: "" })).toBe("");
   });
 
   it("ņem gadu no DD.MM.YYYY", () => {
@@ -135,6 +148,7 @@ describe("PDF dīlera servisa vizītes", () => {
       },
     ]);
     expect(html).toContain("pdf-svc-year");
+    expect(html).toContain("pdf-keep-head");
     expect(html).toContain(">2023<");
     const visits = html.slice(html.indexOf("pdf-svc-year"));
     expect(visits.indexOf("01.12.2023")).toBeLessThan(visits.indexOf("01.06.2023"));

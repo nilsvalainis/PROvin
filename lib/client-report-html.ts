@@ -217,6 +217,14 @@ import {
   PDF_IRISS_SECTION_TECHNICAL_RISKS,
   PDF_MILEAGE_HISTORY_COMMENT_LABEL,
 } from "@/lib/admin-workspace-field-labels";
+import { buildPdfCommentBoxes } from "@/lib/pdf-comment-paragraphs";
+import { formatPdfOdometerDisplay, isPdfEmptyPlaceholder } from "@/lib/pdf-odometer-display";
+import { formatPdfPreparedByName } from "@/lib/pdf-prepared-by-name";
+import {
+  buildPdfRunningFooterLine,
+  buildPdfRunningHeaderLine,
+  clientReportRunningPageCss,
+} from "@/lib/pdf-running-page";
 import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
 import {
   buildPreviousInspectionBlockHtml,
@@ -243,7 +251,6 @@ function isAsvOnlyReport(p: ClientReportPayload): boolean {
 function isBusinessBrandReport(p: ClientReportPayload): boolean {
   return p.pdfReportKind === "business";
 }
-const PDF_APPROVED_BY_IRISS = "APPROVED BY IRISS";
 const PDF_INCIDENT_INTERNAL_COMMENT_LABEL = "Komentārs";
 /** Vienots komentāru bloka virsraksts visā PDF atskaitē (kā NEGADĪJUMU VĒSTURE). */
 const PDF_REPORT_COMMENT_LABEL = PDF_INCIDENT_INTERNAL_COMMENT_LABEL;
@@ -1022,7 +1029,8 @@ function pdfReportCommentBox(text: string, label = ""): string {
   if (!body) return "";
   const shownLabel = label.trim().toLowerCase() === PDF_REPORT_COMMENT_LABEL.toLowerCase() ? "" : label.trim();
   const head = shownLabel ? `<p class="pdf-subhead pdf-subhead--flush">${escapeHtml(shownLabel)}</p>` : "";
-  return `<div class="pdf-report-comment-note" role="note">${head}<div class="pdf-report-comment-note-body">${body}</div></div>`;
+  const boxes = buildPdfCommentBoxes(body, head);
+  return `${boxes.first}${boxes.rest}`;
 }
 
 /** Komentāru bloks zem avota (PDF). */
@@ -1091,7 +1099,7 @@ function buildUnifiedMileageTableRowHtml(
   staleDocumentSourceOrders: Set<number>,
 ): string {
   const flagCell = buildPdfCountryFlagCellHtml(r.country);
-  const odoEscaped = escapeHtml(r.odometer);
+  const odoEscaped = escapeHtml(formatPdfOdometerDisplay(r.odometer));
   const labels = r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel];
   const stripeSpan = buildPdfMileageSourceDotsHtml(labels);
   const anom = anomalyBySourceOrder.get(r.sourceOrder) === true;
@@ -1341,7 +1349,7 @@ export function buildCsddAvotuZoneHtml(
     // Īpašnieku skaits paliek laika joslā, ne kv tabulā.
     if (key === "ownerCountLatvia") continue;
     const v = (form[key] as string).trim();
-    if (!v) continue;
+    if (!v || isPdfEmptyPlaceholder(v)) continue;
     let flag: CsddFieldUiFlag = "none";
     if (key === "particulateMatter") flag = getParticulateMatterUiFlag(v);
     else if (key === "nextInspectionDate") flag = getNextInspectionDateUiFlag(v);
@@ -1389,9 +1397,11 @@ export function buildCsddAvotuZoneHtml(
       : "";
   const tableHtml = pairHtml || alertsHtml ? `${pairHtml}${alertsHtml}` : "";
 
+  const ownerCountLv = form.ownerCountLatvia.trim();
+  const ownerCountShown = ownerCountLv && !isPdfEmptyPlaceholder(ownerCountLv) ? ownerCountLv : "";
   const ownerTimelineHtml =
-    form.ownerCountLatvia.trim() || (form.ownerRegistrationEvents ?? []).some((e) => e.date.trim())
-      ? buildOwnerRegistrationTimelineHtml(form.ownerCountLatvia, form.ownerRegistrationEvents ?? [], {
+    ownerCountShown || (form.ownerRegistrationEvents ?? []).some((e) => e.date.trim())
+      ? buildOwnerRegistrationTimelineHtml(ownerCountShown, form.ownerRegistrationEvents ?? [], {
           compact: true,
         })
       : "";
@@ -1655,9 +1665,21 @@ function buildSourcePhotoGroupsPdfHtml(
     const titleHtml = group.title.trim()
       ? `<p class="pdf-subhead pdf-subhead--photo"><span class="pdf-subhead__ico" aria-hidden="true">${sectionIconPdfHtml("camera")}</span><span>${escapeHtml(group.title.trim())}</span></p>`
       : "";
-    sections.push(
-      `<section class="pdf-listing-photo-group">${titleHtml}<div class="${gridCls}">${figures.join("")}</div></section>`,
-    );
+    const perRow = useFull ? 1 : 2;
+    if (figures.length > perRow) {
+      const headFigs = figures.slice(0, perRow);
+      const restFigs = figures.slice(perRow);
+      sections.push(
+        `<section class="pdf-listing-photo-group pdf-photo-group--head"><div class="pdf-keep-head">${titleHtml}<div class="${gridCls}" style="margin-bottom:0">${headFigs.join("")}</div></div></section>`,
+      );
+      sections.push(
+        `<section class="pdf-listing-photo-group pdf-photo-group--cont"><div class="${gridCls}">${restFigs.join("")}</div></section>`,
+      );
+    } else {
+      sections.push(
+        `<section class="pdf-listing-photo-group"><div class="pdf-keep-head">${titleHtml}<div class="${gridCls}">${figures.join("")}</div></div></section>`,
+      );
+    }
   }
   return sections.join("");
 }
@@ -2115,32 +2137,27 @@ function buildAvotuDatiSectionHtml(
   return stack.join("\n");
 }
 
-/** Galvenais eksperta kopsavilkums - pilnā platumā, pēdējais lielais bloks pirms juridiskās piezīmes. */
+function buildExpertPdfSectionHtml(icon: string, title: string, html: string): string {
+  const body = adminRichHtmlToPdfSafeHtml(html).trim();
+  if (!body) return "";
+  const boxes = buildPdfCommentBoxes(body);
+  if (!boxes.first) return "";
+  const head = sectionHeadBrand(icon, title);
+  return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-listing-analysis-root pdf-expert-section" role="region"><div class="pdf-keep-head">${head}${boxes.first}</div>${boxes.rest}</div>`;
+}
+
+/** Eksperta sadaļas - trīs nenumurēti bloki, bez „Approved by IRISS” apvalka. */
 function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   const techHtml = vis.irissTechnicalRisks ? (p.tehniskoRiskuAnalize ?? "").trim() : "";
   const irissHtml = vis.irissSummary ? (p.iriss ?? "").trim() : "";
   const planHtml = vis.irissInspection ? (p.apskatesPlāns ?? "").trim() : "";
-  if (!irissHtml && !planHtml && !techHtml) return "";
-  const inner: string[] = [];
-  if (techHtml) {
-    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("wrench"), PDF_IRISS_SECTION_TECHNICAL_RISKS));
-    inner.push(pdfReportCommentBox(techHtml));
-  }
-  if (planHtml) {
-    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_INSPECTION));
-    inner.push(pdfReportCommentBox(planHtml));
-  }
-  if (irissHtml) {
-    inner.push(pdfFieldLabelWithIcon(sectionIconPdfHtml("fileSearch"), PDF_IRISS_SECTION_SUMMARY));
-    inner.push(pdfReportCommentBox(irissHtml));
-  }
-  if (inner.length === 0) return "";
-  const parts: string[] = [];
-  parts.push(`<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-listing-analysis-root pdf-iriss-approved" role="region">`);
-  parts.push(sectionHeadBrand(sectionIconPdfHtml("shieldCheck"), PDF_APPROVED_BY_IRISS));
-  parts.push(`<div class="pdf-source-section-body pdf-listing-analysis-stack">${inner.join("\n")}</div>`);
-  parts.push(`</div>`);
-  return parts.join("\n");
+  return [
+    techHtml ? buildExpertPdfSectionHtml(sectionIconPdfHtml("wrench"), PDF_IRISS_SECTION_TECHNICAL_RISKS, techHtml) : "",
+    planHtml ? buildExpertPdfSectionHtml(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_INSPECTION, planHtml) : "",
+    irissHtml ? buildExpertPdfSectionHtml(sectionIconPdfHtml("fileSearch"), PDF_IRISS_SECTION_SUMMARY, irissHtml) : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function reportFontGuardScript(): string {
@@ -2168,6 +2185,10 @@ export function getClientReportPrintCss(): string {
   return clientReportPrintCss();
 }
 
+function clientReportPageChromeCss(running?: { header?: string; footer?: string }): string {
+  return clientReportRunningPageCss(running);
+}
+
 /** Avotu krāsas vienā vietā: punkti + sadaļu augšmalas akcents. */
 function sourceDotColorCss(): string {
   return MILEAGE_PDF_SOURCE_LEGEND_ORDER.map((k) => {
@@ -2177,9 +2198,9 @@ function sourceDotColorCss(): string {
   }).join("\n");
 }
 
-function clientReportPrintCss(): string {
+function clientReportPrintCss(running?: { header?: string; footer?: string }): string {
   return `
-      @page{margin:0;size:auto;}
+${clientReportPageChromeCss(running)}
       :root{
         --pdf-radius-outer:12px;
         --pdf-radius-inner:8px;
@@ -2241,6 +2262,21 @@ function clientReportPrintCss(): string {
       }
       .provin-report-doc .pdf-report-comment-note{margin-top:var(--pdf-gap-block);}
       .sheet{background:#fff;padding:0;}
+      .pdf-sec-head,.pdf-subhead,.pdf-life-year,.pdf-svc-year,.pdf-csdd-ta-year-heading,.pdf-incident-dmg__lab{
+        break-after:avoid;page-break-after:avoid;
+      }
+      .pdf-keep-head{break-inside:avoid;page-break-inside:avoid;}
+      .pdf-sec-head + .pdf-unified-mileage-zone__body > :first-child,
+      .pdf-sec-head + .pdf-unified-incidents-zone__body > :first-child,
+      .pdf-sec-head + .pdf-source-section-body > :first-child,
+      .pdf-life-year + .pdf-life-item,
+      .pdf-life-year + .pdf-life-break,
+      .pdf-svc-year + .pdf-svc-visit,
+      .pdf-subhead + .pdf-v1-kv-pair,
+      .pdf-subhead + .pdf-v1-kv,
+      .pdf-subhead + .pdf-dealer-vehicle-kv{
+        break-before:avoid;page-break-before:avoid;
+      }
       .pdf-sec-head{display:flex;align-items:center;gap:10px;margin:0 0 14px;}
       .pdf-sec-head--nobar{margin-top:0;}
       .pdf-sec-head .pdf-ico{color:${PDF_BRAND_BLUE_HEX};width:16px;height:16px;flex-shrink:0;}
@@ -2260,7 +2296,7 @@ function clientReportPrintCss(): string {
       }
       .pdf-life-list{margin:0;padding:0;list-style:none;}
       .pdf-life-year{
-        display:block;margin:10px 0 8px;padding:7px 12px;border-radius:8px;background:#E8F1FC;
+        display:block;margin:8px 0 6px;padding:5px 12px;border-radius:8px;background:#E8F1FC;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-life-list > li:first-child.pdf-life-year{margin-top:0;}
@@ -2280,7 +2316,7 @@ function clientReportPrintCss(): string {
       }
       .pdf-life-item{break-inside:avoid;page-break-inside:avoid;}
       .pdf-life-dot{
-        position:absolute;left:50%;top:18px;width:9px;height:9px;margin-left:-4.5px;
+        position:absolute;left:50%;top:14px;width:9px;height:9px;margin-left:-4.5px;
         border-radius:999px;background:#fff;border:2px solid #93C5FD;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
@@ -2307,11 +2343,11 @@ function clientReportPrintCss(): string {
       }
       .pdf-life-item--alert .pdf-num-warn-digits{color:#B91C1C!important;font-weight:700;}
       .pdf-life-date{
-        padding:14px 0;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;white-space:nowrap;
+        padding:10px 0;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;white-space:nowrap;
         font-variant-numeric:tabular-nums;line-height:1.3;text-align:right;
       }
       .pdf-life-card{
-        margin:8px 0;padding:12px 14px;border:1px solid #E9EDF3;border-radius:10px;background:#fff;
+        margin:4px 0;padding:8px 12px;border:1px solid #E9EDF3;border-radius:10px;background:#fff;
         min-width:0;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
@@ -2497,9 +2533,12 @@ function clientReportPrintCss(): string {
       .pdf-listing-photo-group{
         margin:0 0 22px;padding:12px 12px 14px;
         border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc;
+        -webkit-box-decoration-break:clone;box-decoration-break:clone;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-photo-group:last-child{margin-bottom:0;}
+      .pdf-listing-photo-group.pdf-photo-group--head{margin-bottom:0;border-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;padding-bottom:10px;}
+      .provin-report-doc .pdf-listing-photo-group.pdf-photo-group--cont{margin-top:0 !important;border-top:0;border-top-left-radius:0;border-top-right-radius:0;padding-top:0;}
       .pdf-subhead--photo{
         margin:0 0 10px;font-size:13px;font-weight:750;letter-spacing:-0.015em;
         text-transform:none;color:#0f172a;
@@ -2549,8 +2588,7 @@ function clientReportPrintCss(): string {
       .pdf-dealer-cover .pdf-svc-span{margin:10px 0 0;background:#fff;}
       .provin-report-doc .pdf-listing-tint--auto24{background:linear-gradient(180deg,#E8F0FA 0%,#fff 42%)!important;}
       .provin-report-doc .pdf-listing-tint--mobilede{background:linear-gradient(180deg,#F3EAF8 0%,#fff 42%)!important;}
-      .provin-report-doc .pdf-hub-tint--mileage,
-      .provin-report-doc .pdf-iriss-approved{background:linear-gradient(180deg,#E8F1FC 0%,#fff 42%)!important;}
+      .provin-report-doc .pdf-hub-tint--mileage{background:linear-gradient(180deg,#E8F1FC 0%,#fff 42%)!important;}
       .provin-report-doc .pdf-hub-tint--incidents{background:linear-gradient(180deg,#FDECEC 0%,#fff 42%)!important;}
       .pdf-dealer-eq{display:flex;flex-wrap:wrap;gap:5px;margin:0;padding:0;list-style:none;}
       .pdf-dealer-eq li{
@@ -2559,7 +2597,7 @@ function clientReportPrintCss(): string {
       }
       .pdf-dealer-eq b{margin-right:6px;font-weight:750;color:${PDF_BRAND_BLUE_HEX};}
       .pdf-dealer-vehicle-kv{margin:0 0 8px;}
-      .pdf-dealer-vehicle-kv .pdf-v1-kv td{padding:8px 0;}
+      .pdf-dealer-vehicle-kv .pdf-v1-kv td{padding:5px 0;}
       .pdf-dealer-vehicle-kv .pdf-v1-kv td:first-child{width:34%;padding-right:18px;}
       .pdf-oil-int{margin:0 0 var(--pdf-gap-block);}
       .pdf-oil-int__kpis{
@@ -2685,9 +2723,17 @@ function clientReportPrintCss(): string {
       .pdf-mileage-comment-note{
         margin:var(--pdf-gap-block) 0 0;padding:var(--pdf-pad-inner);border:1px solid var(--pdf-comment-line);
         border-left:3px solid var(--pdf-comment-edge);border-radius:10px;background:var(--pdf-comment-bg);
+        box-decoration-break:clone;-webkit-box-decoration-break:clone;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-report-comment-note .pdf-subhead{margin:0 0 0.35em;}
+      .pdf-report-comment-note .pdf-subhead{margin:0 0 0.35em;break-after:avoid;}
+      .pdf-cmt-p{margin:0;break-inside:avoid;page-break-inside:avoid;orphans:3;widows:3;}
+      .pdf-cmt-p + .pdf-cmt-p{margin-top:var(--pdf-gap-block);}
+      .pdf-cmt-p--long{break-inside:auto;page-break-inside:auto;}
+      .pdf-cmt-h{display:block;font-weight:700;break-after:avoid;}
+      .pdf-cmt-lead{display:block;margin:0 0 var(--pdf-gap-block);}
+      .pdf-report-comment-note.pdf-cmt-split-a{border-bottom:0;border-bottom-left-radius:0;border-bottom-right-radius:0;padding-bottom:0;margin-bottom:0;}
+      .provin-report-doc .pdf-report-comment-note.pdf-cmt-split-b{margin-top:0!important;border-top:0;border-top-left-radius:0;border-top-right-radius:0;padding-top:var(--pdf-gap-block);}
       .pdf-report-comment-note-body br + strong,
       .pdf-incident-internal-note-body br + strong,
       .pdf-mileage-comment-note-body br + strong{
@@ -2846,7 +2892,7 @@ ${sourceDotColorCss()}
       .pdf-svc-span__pt i{display:block;margin-top:2px;font-style:normal;font-size:var(--pdf-fs-label);color:#64748b;}
       .pdf-svc-span__pt--end{text-align:right;}
       .pdf-svc-year{
-        margin:var(--pdf-gap-heading) 0 10px;padding:7px 12px;border-radius:8px;background:#E8F1FC;
+        margin:10px 0 6px;padding:5px 12px;border-radius:8px;background:#E8F1FC;
         font-size:13px;font-weight:700;color:${PDF_BRAND_BLUE_HEX};letter-spacing:0.04em;
         font-variant-numeric:tabular-nums;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -2858,7 +2904,7 @@ ${sourceDotColorCss()}
         break-inside:avoid;page-break-inside:avoid;
       }
       .pdf-svc-date{
-        padding:14px 0;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;
+        padding:9px 0;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;
         white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.3;text-align:right;
       }
       .pdf-svc-rail{
@@ -2866,12 +2912,12 @@ ${sourceDotColorCss()}
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-svc-dot{
-        position:absolute;left:50%;top:18px;width:9px;height:9px;margin-left:-4.5px;
+        position:absolute;left:50%;top:13px;width:9px;height:9px;margin-left:-4.5px;
         border-radius:999px;background:#fff;border:2px solid #93C5FD;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-svc-box{
-        margin:8px 0;padding:12px 14px;min-width:0;
+        margin:3px 0;padding:8px 12px;min-width:0;
       }
       .pdf-svc-box-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
       .pdf-svc-place{margin:0;font-size:var(--pdf-fs-base);font-weight:700;line-height:1.3;color:#0f172a;}
@@ -2881,7 +2927,7 @@ ${sourceDotColorCss()}
         font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-svc-works{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;}
+      .pdf-svc-works{margin:5px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px;}
       .pdf-svc-work{
         margin:0;padding:0;
         font-size:11px;font-weight:600;color:#334155;line-height:1.4;
@@ -3036,15 +3082,18 @@ ${sourceDotColorCss()}
         break-inside:avoid;page-break-inside:avoid;
       }
       .pdf-incident-history-card{padding:0;border:none;background:transparent;overflow:visible;}
-      .pdf-incident-card{padding:12px 14px;border:1px solid #E9EDF3;border-radius:10px;border-bottom:1px solid #E9EDF3;}
+      .pdf-incident-card{padding:12px 14px 12px 12px;border:1px solid #E9EDF3;border-radius:10px;border-bottom:1px solid #E9EDF3;border-left:3px solid #F87171!important;}
       .pdf-incident-card:last-of-type{border-bottom:1px solid #E9EDF3;}
       .pdf-incident-card__main{
-        display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:8px 14px;align-items:center;
+        display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:8px 14px;align-items:center;
       }
-      .pdf-incident-card__car .pdf-dmg-sil{width:72px;}
+      .pdf-incident-card__car{
+        display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #EEF2F7;border-radius:8px;padding:6px 4px;box-shadow:0 1px 2px rgba(15,23,42,.04);
+      }
+      .pdf-incident-card__car .pdf-dmg-sil{width:84px;}
       .pdf-incident-card__body{min-width:0;}
       .pdf-incident-card .pdf-life-card__kind{color:#B91C1C;}
-      .pdf-inc-amount{font-size:15px;padding:5px 10px;}
+      .pdf-inc-amount{font-size:15px;padding:5px 10px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       .pdf-inc-amount,
       .pdf-inc-amount .pdf-num-warn,
       .pdf-inc-amount .pdf-num-warn-digits{
@@ -3098,6 +3147,7 @@ ${sourceDotColorCss()}
         max-width:100%;
         margin:4px 0 0;
         padding:var(--pdf-pad-inner);
+        box-decoration-break:clone;-webkit-box-decoration-break:clone;
         border:1px solid var(--pdf-comment-line);
         border-left:3px solid var(--pdf-comment-edge);
         border-radius:10px;
@@ -3112,13 +3162,12 @@ ${sourceDotColorCss()}
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-listing-analysis-chunk .mirror-pre.pdf-manual-comment-body{margin-top:10px;}
-      .provin-report-doc .pdf-iriss-approved{
+      .provin-report-doc .pdf-expert-section{
         border:1px solid var(--pdf-line)!important;background:#fff!important;
         box-shadow:var(--pdf-shadow)!important;
       }
-      .pdf-iriss-approved .pdf-sec-head--brand{border-bottom-color:var(--pdf-line);}
-      .pdf-iriss-approved h2.pdf-sec{font-size:var(--pdf-fs-sec);}
-      .pdf-iriss-approved .pdf-subhead{color:#86868b;}
+      .pdf-expert-section .pdf-sec-head--brand{border-bottom-color:var(--pdf-line);}
+      .pdf-expert-section h2.pdf-sec{font-size:var(--pdf-fs-sec);}
       .mirror-line{font-size:0.72rem;margin:0.25rem 0;line-height:1.45;}
       /* Faktu saraksti (CSDD, dīleris, transportlīdzekļa dati) - viena režģa un tipogrāfijas valoda. */
       .mirror-table{width:100%;border-collapse:collapse;font-size:var(--pdf-fs-table);margin:0;}
@@ -3242,10 +3291,10 @@ ${pdfDocFooterCss()}
       .pdf-vin{font-family:Inter,sans-serif!important;font-variant-numeric:normal!important;font-size:0.72rem;background:transparent;padding:0;}
       .pdf-flag-num{font-weight:600;}
       @media print{
-        @page{margin:0;size:auto;}
         html,body{
           margin:0!important;
-          padding:10mm 11mm!important;
+          padding:0!important;
+          max-width:none!important;
           background:#fff!important;
           -webkit-print-color-adjust:exact!important;
           print-color-adjust:exact!important;
@@ -3494,11 +3543,19 @@ export function buildClientReportDocumentHtml(args: {
   const docTitle = `Atskaite_${vinForFile}.pdf`;
   const htmlClass = printInk ? ` class="${PROVIN_REPORT_PRINT_INK_CLASS}"` : "";
   const inkCss = printInk ? clientReportPrintInkCss() : "";
+  const runningCss = clientReportPrintCss({
+    header: buildPdfRunningHeaderLine(resolvePdfReportMakeModelFromPayload(p), p.vin ?? ""),
+    footer: buildPdfRunningFooterLine({
+      vin: p.vin ?? "",
+      dateLabel: dateFmt.format(new Date()),
+      preparedBy: formatPdfPreparedByName(p.customerName ?? ""),
+    }),
+  });
   const html = `<!DOCTYPE html><html lang="lv"${htmlClass}><head><meta charset="utf-8"/>
 <meta name="color-scheme" content="light"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-<title>${escapeHtml(docTitle)}</title><style>${clientReportPrintCss()}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<title>${escapeHtml(docTitle)}</title><style>${runningCss}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
   return applyClientReportStaticTranslations(html, lang);
 }
