@@ -5,6 +5,8 @@ import { ExternalLink } from "lucide-react";
 
 import dynamic from "next/dynamic";
 
+import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
+
 // Rezultātu kartītes vajag tikai pēc pārbaudes — atsevišķs gabals, nav sākuma JS.
 const AdminVinScanResultCards = dynamic(
   () => import("@/components/admin/AdminVinScanResultCards").then((m) => m.AdminVinScanResultCards),
@@ -511,6 +513,7 @@ export function AdminVinScanPanel({
 
   return (
     <section className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]" aria-busy={busy}>
+      <AdminUserscriptUpdateHint className="mx-2.5 mt-2" />
       {canRetry || rows.length > 0 || nordicLinks.length > 0 ? (
         <div className="flex flex-wrap items-center justify-end gap-1.5 px-2.5 py-2">
           {nordicLinks.map((link) => (
