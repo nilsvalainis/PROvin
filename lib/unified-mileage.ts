@@ -433,9 +433,26 @@ export type UnifiedMileageAnomalyAnalysis = {
 };
 
 /** Izolēts kritums starp diviem augstākiem kaimiņiem (A → zems → A+). */
-export function isIsolatedMileageDrop(currKm: number, prevKm: number | null, nextKm: number | null): boolean {
+export const ISOLATED_MILEAGE_DROP_MAX_RECOVERY_MS = 183 * 24 * 60 * 60 * 1000;
+
+export function isIsolatedMileageDrop(
+  currKm: number,
+  prevKm: number | null,
+  nextKm: number | null,
+  currTime?: number,
+  nextTime?: number,
+): boolean {
   if (prevKm == null || nextKm == null) return false;
   if (!(currKm < prevKm && nextKm >= prevKm)) return false;
+  if (
+    currTime != null &&
+    nextTime != null &&
+    Number.isFinite(currTime) &&
+    Number.isFinite(nextTime) &&
+    nextTime - currTime > ISOLATED_MILEAGE_DROP_MAX_RECOVERY_MS
+  ) {
+    return false;
+  }
   const drop = prevKm - currKm;
   return drop >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
 }
@@ -517,10 +534,10 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
   const chartExclude = new Set<number>();
   const dataEntryErrors = new Set<number>();
 
-  const pts: { sourceOrder: number; km: number }[] = [];
+  const pts: { sourceOrder: number; km: number; time: number }[] = [];
   for (const r of sorted) {
     const km = parseOdometerKm(r.odometer);
-    if (km !== null) pts.push({ sourceOrder: r.sourceOrder, km });
+    if (km !== null) pts.push({ sourceOrder: r.sourceOrder, km, time: r.sortableTime });
   }
 
   for (let i = 0; i < pts.length; i++) {
@@ -532,7 +549,11 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
       continue;
     }
     const src = sorted.find((r) => r.sourceOrder === curr.sourceOrder);
-    if (isIsolatedMileageDrop(curr.km, prev, next) && !(src && isListingMileageSource(src))) {
+    const nextTime = i < pts.length - 1 ? pts[i + 1]!.time : undefined;
+    if (
+      isIsolatedMileageDrop(curr.km, prev, next, curr.time, nextTime) &&
+      !(src && isListingMileageSource(src))
+    ) {
       dataEntryErrors.add(curr.sourceOrder);
       chartExclude.add(curr.sourceOrder);
       continue;
