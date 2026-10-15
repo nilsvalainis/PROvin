@@ -34,7 +34,7 @@ export type VinScanMileage = {
 export type VinScanMedia = {
   photoUrl?: string;
   photoCount?: number;
-  /** Izsoļu JPEG URL (stat.vin / Copart), līdz 20. */
+  /** Izsoļu JPEG URL (stat.vin / Copart / JoJ), visi lots. */
   photoUrls?: string[];
 };
 
@@ -59,8 +59,10 @@ export type VinScanAuction = {
   date?: string;
   price?: string;
   venue?: string;
+  lot?: string;
   photoUrl?: string;
   photoCount?: number;
+  photoUrls?: string[];
 };
 
 export type VinScanListing = {

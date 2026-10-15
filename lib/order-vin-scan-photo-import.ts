@@ -1,84 +1,151 @@
 import "server-only";
 
 import { CC_VIN_PHOTO_MAX_BYTES, makeCcVinPhotoId, writeCcVinPhotoJpeg } from "@/lib/admin-cc-vin-photo-store";
-import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
-import { CC_VIN_MAX_PHOTOS } from "@/lib/cc-vin-photo-types";
+import { CC_VIN_MAX_PHOTOS, type CcVinPhotoMeta } from "@/lib/cc-vin-photo-types";
+import { fetchAuctionPhotoJpegs } from "@/lib/auction-photo-fetch";
 import {
   ORDER_VIN_SCAN_PHOTO_IMPORT_MAX,
   isAllowedVinScanAuctionPhotoUrl,
+  type VinScanAuctionPhotoGroupPlan,
 } from "@/lib/order-vin-scan-photos";
 
-const FETCH_TIMEOUT_MS = 12_000;
-const RAW_MAX_BYTES = 3_500_000;
-const CONCURRENCY = 3;
+export type ImportVinScanAuctionPhotoGroupInput = {
+  title: string;
+  urls: readonly string[];
+};
+
+export type ImportedVinScanAuctionPhotoGroup = {
+  title: string;
+  photoIds: string[];
+  photos: CcVinPhotoMeta[];
+  failedUrls: string[];
+};
 
 export type ImportVinScanAuctionPhotosResult = {
+  groups: ImportedVinScanAuctionPhotoGroup[];
   photoIds: string[];
   imported: number;
   skipped: number;
   failed: number;
+  failedUrls: string[];
 };
 
-async function downloadAuctionJpeg(url: string): Promise<Buffer | null> {
-  if (!isAllowedVinScanAuctionPhotoUrl(url)) return null;
-  const host = new URL(url).hostname;
-  const referer = host.includes("copart.fi")
-    ? "https://www.copart.fi/"
-    : host.includes("copart")
-      ? "https://www.copart.com/"
-      : host.includes("iaai")
-        ? "https://www.iaai.com/"
-        : host.includes("stat.vin")
-          ? "https://stat.vin/"
-          : host.includes("import-motor.com")
-            ? "https://www.copart.com/"
-            : undefined;
-  const res = await fetch(url, {
-    cache: "no-store",
-    redirect: "follow",
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    headers: {
-      Accept: "image/jpeg,image/webp,image/png,image/*;q=0.8,*/*;q=0.5",
-      ...(referer ? { Referer: referer } : {}),
-    },
-  });
-  if (!res.ok) return null;
-  const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length === 0 || buf.length > RAW_MAX_BYTES) return null;
-  const normalized = await jpegFromAdminPhotoUpload(buf, CC_VIN_PHOTO_MAX_BYTES);
-  return normalized.ok ? normalized.jpeg : null;
+function uniqueAllowed(urls: readonly string[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of urls) {
+    const url = raw.trim();
+    if (!url || seen.has(url) || !isAllowedVinScanAuctionPhotoUrl(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
 }
 
+export async function importVinScanAuctionPhotoGroupsToCcVin(
+  sessionId: string,
+  groups: readonly ImportVinScanAuctionPhotoGroupInput[],
+  opts: {
+    existingCount: number;
+    existingSourceUrls?: readonly string[];
+    existingContentHashes?: readonly string[];
+  },
+): Promise<ImportVinScanAuctionPhotosResult> {
+  const room = Math.max(0, CC_VIN_MAX_PHOTOS - Math.max(0, opts.existingCount));
+  const knownUrls = new Set((opts.existingSourceUrls ?? []).map((u) => u.trim()).filter(Boolean));
+  const knownHashes = new Set((opts.existingContentHashes ?? []).map((h) => h.trim().toLowerCase()).filter(Boolean));
+  const outGroups: ImportedVinScanAuctionPhotoGroup[] = [];
+  const photoIds: string[] = [];
+  const failedUrls: string[] = [];
+  let skipped = 0;
+  let used = 0;
+
+  for (const group of groups) {
+    const title = group.title.trim().slice(0, 120) || "VIN SCAN";
+    const wanted = uniqueAllowed(group.urls).slice(0, ORDER_VIN_SCAN_PHOTO_IMPORT_MAX);
+    const toFetch: string[] = [];
+    for (const url of wanted) {
+      if (used >= room) {
+        skipped += 1;
+        continue;
+      }
+      if (knownUrls.has(url)) {
+        skipped += 1;
+        continue;
+      }
+      toFetch.push(url);
+    }
+    if (toFetch.length === 0) {
+      if (wanted.length > 0) {
+        outGroups.push({ title, photoIds: [], photos: [], failedUrls: [] });
+      }
+      continue;
+    }
+
+    const fetched = await fetchAuctionPhotoJpegs(toFetch, CC_VIN_PHOTO_MAX_BYTES);
+    const photos: CcVinPhotoMeta[] = [];
+    const groupFailed: string[] = [];
+    for (const row of fetched.ok) {
+      if (used >= room) {
+        skipped += 1;
+        continue;
+      }
+      if (knownHashes.has(row.contentHash) || knownUrls.has(row.url)) {
+        skipped += 1;
+        continue;
+      }
+      const photoId = makeCcVinPhotoId();
+      try {
+        await writeCcVinPhotoJpeg(sessionId, photoId, row.jpeg);
+      } catch {
+        groupFailed.push(row.url);
+        failedUrls.push(row.url);
+        continue;
+      }
+      knownUrls.add(row.url);
+      knownHashes.add(row.contentHash);
+      used += 1;
+      const meta: CcVinPhotoMeta = { id: photoId, sourceUrl: row.url, contentHash: row.contentHash };
+      photos.push(meta);
+      photoIds.push(photoId);
+    }
+    for (const row of fetched.failed) {
+      groupFailed.push(row.url);
+      failedUrls.push(row.url);
+    }
+    outGroups.push({ title, photoIds: photos.map((p) => p.id), photos, failedUrls: groupFailed });
+  }
+
+  return {
+    groups: outGroups,
+    photoIds,
+    imported: photoIds.length,
+    skipped,
+    failed: failedUrls.length,
+    failedUrls,
+  };
+}
+
+/** Vecais plakanais ceļš: viena grupa, visi URL. */
 export async function importVinScanAuctionPhotosToCcVin(
   sessionId: string,
   urls: readonly string[],
   existingCount: number,
+  opts?: { existingSourceUrls?: readonly string[]; existingContentHashes?: readonly string[] },
 ): Promise<ImportVinScanAuctionPhotosResult> {
-  const room = Math.max(0, Math.min(ORDER_VIN_SCAN_PHOTO_IMPORT_MAX, CC_VIN_MAX_PHOTOS - existingCount));
-  const wanted = [...new Set(urls.map((u) => u.trim()).filter(isAllowedVinScanAuctionPhotoUrl))].slice(0, room);
-  const photoIds: string[] = [];
-  const skipped = Math.max(0, urls.length - wanted.length);
-  let failed = 0;
-  let i = 0;
-  const workers = Array.from({ length: Math.min(CONCURRENCY, wanted.length) }, async () => {
-    while (i < wanted.length) {
-      const url = wanted[i];
-      i += 1;
-      if (!url) continue;
-      try {
-        const jpeg = await downloadAuctionJpeg(url);
-        if (!jpeg) {
-          failed += 1;
-          continue;
-        }
-        const photoId = makeCcVinPhotoId();
-        await writeCcVinPhotoJpeg(sessionId, photoId, jpeg);
-        photoIds.push(photoId);
-      } catch {
-        failed += 1;
-      }
-    }
-  });
-  await Promise.all(workers);
-  return { photoIds, imported: photoIds.length, skipped, failed };
+  return importVinScanAuctionPhotoGroupsToCcVin(
+    sessionId,
+    [{ title: "VIN SCAN", urls }],
+    {
+      existingCount,
+      existingSourceUrls: opts?.existingSourceUrls,
+      existingContentHashes: opts?.existingContentHashes,
+    },
+  );
+}
+
+export function plansToImportGroups(
+  plans: readonly VinScanAuctionPhotoGroupPlan[],
+): ImportVinScanAuctionPhotoGroupInput[] {
+  return plans.map((plan) => ({ title: plan.title, urls: plan.urls }));
 }

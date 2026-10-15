@@ -3,6 +3,7 @@
  * openUrl vienmēr ir dziļā saite ar VIN, lai cilne atver jau aizpildītu meklēšanu.
  */
 
+import { carinfoSwedenVinUrl } from "@/lib/vin-sources/carinfo-search";
 import { type VinScanPlateKind, type VinScanPlates, emptyVinScanPlates } from "@/lib/vin-scan/plates";
 
 export const VIN_SCAN_SOURCE_IDS = [
@@ -203,9 +204,9 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "carinfo",
     label: "car.info",
     country: "SE",
-    hint: "Zviedrijas un Nordics agregators",
+    hint: "Zviedrijas reģistrs pēc VIN. Numurs ir rezerve, ja VIN lapa auto neatrada",
     needs: ["vin"],
-    openUrl: (vin) => `https://www.car.info/en-se/vin/${vinQuery(vin)}`,
+    openUrl: (vin) => carinfoSwedenVinUrl(vin),
   },
   {
     id: "lkf_ee",

@@ -81,7 +81,7 @@ export function AdminOrderVinScanCard({
   vin: string;
   listingUrl: string;
   initial: OrderVinScanRecord | null;
-  onImportAuction: (record: OrderVinScanRecord) => void | Promise<void>;
+  onImportAuction: (record: OrderVinScanRecord) => void | Promise<void | { failed?: number }>;
   onImportCsdd: (record: OrderVinScanRecord) => void;
   onImportListing: (record: OrderVinScanRecord) => void;
 }) {
@@ -91,6 +91,7 @@ export function AdminOrderVinScanCard({
   const [busy, setBusy] = useState(false);
   const [listExpanded, setListExpanded] = useState(false);
   const [importNote, setImportNote] = useState("");
+  const [photoFail, setPhotoFail] = useState(0);
 
   useEffect(() => {
     setRecord(initial);
@@ -227,7 +228,8 @@ export function AdminOrderVinScanCard({
       void (async () => {
         setBusy(true);
         try {
-          await onImportAuction(record);
+          const result = await onImportAuction(record);
+          setPhotoFail(typeof result?.failed === "number" ? result.failed : 0);
         } finally {
           setBusy(false);
         }
@@ -318,6 +320,22 @@ export function AdminOrderVinScanCard({
         </>
       ) : null}
       {!record ? <span className="text-[11px]">VIN SCAN: vēl nav skenēts</span> : null}
+      {photoFail > 0 ? (
+        <span className="text-[10px] text-red-700">
+          {photoFail} foto neizdevās.{" "}
+          <button
+            type="button"
+            className={BTN}
+            disabled={busy || !record}
+            onClick={() => {
+              const row = summary?.rows.find((item) => item.action === "import_auction");
+              if (row) runAction(row);
+            }}
+          >
+            Atkārtot
+          </button>
+        </span>
+      ) : null}
     </div>
   );
 
@@ -456,6 +474,22 @@ export function AdminOrderVinScanCard({
 
               {!record ? (
                 <p className="text-[11px] text-[var(--color-provin-muted)]">VIN SCAN: vēl nav skenēts</p>
+              ) : null}
+              {photoFail > 0 ? (
+                <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-red-700">
+                  <span>{photoFail} foto neizdevās ielādēt.</span>
+                  <button
+                    type="button"
+                    className={BTN}
+                    disabled={busy || !record}
+                    onClick={() => {
+                      const row = summary?.rows.find((item) => item.action === "import_auction");
+                      if (row) runAction(row);
+                    }}
+                  >
+                    Atkārtot
+                  </button>
+                </p>
               ) : null}
             </>
           )}

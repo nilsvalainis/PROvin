@@ -15,6 +15,7 @@ export const VINSCAN_PAGE_HOSTS = [
   "ss.lv",
   "ss.com",
   "city24.lv",
+  "car.info",
 ];
 
 const HTML_LIMIT = 900_000;
