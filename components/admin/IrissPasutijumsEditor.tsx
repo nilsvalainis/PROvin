@@ -10,7 +10,9 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
+import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { appendIrissOrderRoomNote, irissOrderRoomOfferSeed, type IrissOrderRoomHit } from "@/lib/iriss-order-room";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import {
@@ -459,11 +461,18 @@ export function IrissPasutijumsEditor({
   autoOpenNewOffer = false,
   forceNoClientPdf = false,
   unsavedDraft = false,
+  roomHits = [],
+  dismissedHitIds = [],
+  listingsCache = "off",
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
   forceNoClientPdf?: boolean;
   unsavedDraft?: boolean;
+  /** Jau nolasītie Meklētāja auto šim pasūtījumam. Tukšs jaunam melnrakstam. */
+  roomHits?: IrissOrderRoomHit[];
+  dismissedHitIds?: string[];
+  listingsCache?: "on" | "off";
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
@@ -651,6 +660,16 @@ export function IrissPasutijumsEditor({
     return save();
   }, [save]);
 
+  const saveCriteria = useCallback(
+    async (partial: Partial<IrissPasutijumsRecord>): Promise<SaveResult> => {
+      const next = withAutoEcarstradeLinks(applyIrissFieldEdit(recRef.current, partial, Date.now()));
+      setRec(next);
+      recRef.current = next;
+      return save({ payload: next });
+    },
+    [save],
+  );
+
   const reloadConflict = useCallback(() => {
     if (!revisionConflict) return;
     setConflictBusy(true);
@@ -817,6 +836,27 @@ export function IrissPasutijumsEditor({
     setOfferDraft(newOfferDraft(rec.offers.length + 1));
     setOfferOpen(true);
   }, [rec.offers.length]);
+
+  const openCreateOfferFromHit = useCallback(
+    (hit: IrissOrderRoomHit) => {
+      const seed = irissOrderRoomOfferSeed(hit);
+      const draft = newOfferDraft(rec.offers.length + 1);
+      setOfferDraft({
+        ...draft,
+        brandModel: seed.brandModel,
+        vin: seed.vin,
+        year: seed.year,
+        mileage: seed.mileage,
+        priceGermany: seed.price,
+        firstRegistration: seed.firstRegistration,
+        odometerReading: seed.mileage,
+        transmission: seed.transmission,
+        carPrice: seed.price,
+      });
+      setOfferOpen(true);
+    },
+    [rec.offers.length],
+  );
 
   useEffect(() => {
     if (!autoOpenNewOffer || autoOpenOfferDone.current) return;
@@ -1085,6 +1125,26 @@ export function IrissPasutijumsEditor({
     window.open(`https://wa.me/${digits}`, "_blank", "noopener,noreferrer");
   }, [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone]);
 
+  const openWhatsappText = useCallback(
+    (text: string) => {
+      if (!normalizedPhone) return;
+      if (phoneInspect.appliedLvPrefix && normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
+      const digits = normalizedPhone.replace(/[^\d]/g, "");
+      if (!digits) return;
+      const body = text.trim();
+      const url = body ? `https://wa.me/${digits}?text=${encodeURIComponent(body)}` : `https://wa.me/${digits}`;
+      window.open(url, "_blank", "noopener,noreferrer");
+    },
+    [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone],
+  );
+
+  const appendRoomNote = useCallback(
+    (text: string) => {
+      patch("notes", appendIrissOrderRoomNote(recRef.current.notes, text, new Date().toISOString()));
+    },
+    [patch],
+  );
+
   const generateOfferPdfBlob = useCallback(
     async (
       offerId: string,
@@ -1116,6 +1176,23 @@ export function IrissPasutijumsEditor({
       return { blob, imagesOmitted };
     },
     [rec.id],
+  );
+
+  const openOfferPdfForId = useCallback(
+    async (offerId: string) => {
+      setOfferPdfBusy(true);
+      try {
+        const blob = await generateOfferPdfBlob(offerId, !forceNoClientPdf);
+        const pdfUrl = URL.createObjectURL(blob);
+        window.open(pdfUrl, "_blank", "noopener,noreferrer");
+        window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120_000);
+      } catch (e) {
+        setSaveMsg(e instanceof Error ? e.message.slice(0, 220) : "PDF ģenerēšana neizdevās.");
+      } finally {
+        setOfferPdfBusy(false);
+      }
+    },
+    [forceNoClientPdf, generateOfferPdfBlob],
   );
 
   const persistedOfferRecord = useMemo(() => rec.offers.find((o) => o.id === offerDraft.id) ?? null, [rec.offers, offerDraft.id]);
@@ -1255,7 +1332,15 @@ export function IrissPasutijumsEditor({
   ]);
 
   return (
-    <div className="mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 max-md:pb-28 sm:px-6 lg:px-10">
+    <div
+      className={
+        unsavedDraft
+          ? "mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 max-md:pb-28 sm:px-6 lg:px-10"
+          : "mx-auto w-full max-w-[1180px] bg-[#F8F8F9] px-3 pb-4 max-md:pb-28 sm:px-4 lg:px-6"
+      }
+    >
+      {unsavedDraft ? (
+      <>
       <AdminDashboardHeaderWithMenu>
         <div className="flex flex-col gap-2">
           <Link
@@ -1706,6 +1791,55 @@ export function IrissPasutijumsEditor({
           {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
         </button>
       </div>
+      </>
+      ) : (
+        <IrissOrderRoom
+          rec={rec}
+          hits={roomHits}
+          dismissedHitIds={dismissedHitIds}
+          listingsCache={listingsCache}
+          busy={busy}
+          orderPdfBusy={orderPdfBusy}
+          saveMsg={saveMsg}
+          orderPdfRetryOpen={orderPdfRetryOpen}
+          phoneWarning={phoneInspect.warning}
+          vinWarning={orderVinWarning}
+          canCall={Boolean(normalizedPhone)}
+          canEmail={Boolean(rec.email.trim())}
+          conflict={
+            revisionConflict ? (
+              <AdminWorkspaceRevisionConflictBanner
+                kind={IRISS_STALE_REVISION}
+                busy={conflictBusy || busy}
+                onReload={reloadConflict}
+                onSafeMerge={mergeConflict}
+              />
+            ) : null
+          }
+          deleted={isIrissRecordDeleted(rec)}
+          onPatch={patch}
+          onPatchRecord={patchRecord}
+          onInactiveReason={(value) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, value)))}
+          onSetStatus={setListStatus}
+          onSave={saveCurrentPage}
+          onSaveCriteria={saveCriteria}
+          onPdf={() => void openPdf()}
+          onRetryPdf={() => void retryOrderPdfOnly()}
+          onDismissPdfRetry={() => setOrderPdfRetryOpen(false)}
+          onCall={triggerCall}
+          onWhatsappText={openWhatsappText}
+          onAppendNote={appendRoomNote}
+          onCreateOffer={openCreateOffer}
+          onEditOffer={openEditOffer}
+          onPrepareOffer={openCreateOfferFromHit}
+          onOpenOfferPdf={(offerId) => void openOfferPdfForId(offerId)}
+          onRestore={() => void restoreDeleted()}
+          onDeleteOrder={() => {
+            setOfferOpen(false);
+            setDeleteConfirmOpen(true);
+          }}
+        />
+      )}
 
       {offerOpen ? (
         <div
