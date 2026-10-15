@@ -718,7 +718,7 @@ export function IrissOrderRoom({
       ) : null}
 
       {tab === "overview" ? (
-        <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(240px,1fr)]">
+        <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(240px,1fr)]">
           <div className="min-w-0 space-y-3">
             <section className={cardClass}>
               <CardTitle>Transportlīdzekļa specifikācija</CardTitle>
@@ -1194,7 +1194,7 @@ export function IrissOrderRoom({
       ) : null}
 
       {tab === "communication" ? (
-        <div className="mt-3 grid min-w-0 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(240px,1fr)]">
+        <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(240px,1fr)]">
           <section className={`${cardClass} space-y-2`}>
             {history.length === 0 && noteLines.length === 0 ? (
               <p className="text-[13px] leading-snug text-[#6b7280]">
