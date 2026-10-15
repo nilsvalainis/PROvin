@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef } from "react";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
+import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import {
   buildListingPlatformChips,
@@ -169,9 +170,7 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
   return (
     <div className="mt-3 border-t border-slate-200/80 pt-3">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[9px] font-bold uppercase tracking-[0.1em] text-[var(--color-provin-muted)]">
-          Sludinājumu platformas (saites)
-        </p>
+        <IrissSectionHeading className="mb-0">Sludinājumu platformas (saites)</IrissSectionHeading>
         <button
           type="button"
           onClick={generateEcarstrade}

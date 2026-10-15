@@ -84,11 +84,11 @@ export function buildCheckthisregVinCheckUrl(raw: string): string | null {
   return CHECKTHISREG_HOME_URL;
 }
 
-/** car.info — `/search?q=` ir 404; atveram EN/SE sākumu, VIN ieliek Tampermonkey header meklēšanā + Enter. */
+/** car.info VIN lapa. `/search?q=` un `/vin/{VIN}` bez /S/ ir 404. */
 export function buildCarinfoVinCheckUrl(raw: string): string | null {
   const v = normalizeVinForServiceUrls(raw);
   if (!v) return null;
-  return CARINFO_HOME_URL;
+  return `https://www.car.info/en-se/vin/S/${encodeURIComponent(v)}`;
 }
 
 export function buildCheckcarVinCheckUrl(raw: string): string | null {

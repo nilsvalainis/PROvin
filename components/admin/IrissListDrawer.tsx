@@ -302,7 +302,7 @@ export function IrissListDrawer({
         <textarea value={prefs.notes[v.id] ?? ""} onChange={(e) => setNote(e.target.value)} placeholder="Piezīme (tikai adminam)" className="mt-1 min-h-[64px] w-full rounded-lg border border-[#E5E7EB] p-2 text-base font-normal normal-case tracking-normal sm:text-[13px]" />
       </label>
 
-      <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Tehniskais stāvoklis</h3>
+      <h3 className="iriss-section-heading mt-4">Tehniskais stāvoklis</h3>
       {dmg.status === "nodata" ? (
         <p className="rounded-lg bg-slate-50 p-2 text-[13px] text-slate-500">Nav datu. Detaļu lapā stāvokļa teksta nav.</p>
       ) : (
@@ -336,7 +336,7 @@ export function IrissListDrawer({
         )
       ) : null}
 
-      <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Cenu vēsture</h3>
+      <h3 className="iriss-section-heading mt-4">Cenu vēsture</h3>
       <div className="-mx-1 overflow-x-auto">
       <table className="w-full min-w-[320px] text-[12px]">
         <thead>
@@ -368,7 +368,7 @@ export function IrissListDrawer({
       </table>
       </div>
 
-      <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">PVN režīms</h3>
+      <h3 className="iriss-section-heading mt-4">PVN režīms</h3>
       <div className="flex gap-2">
         <select
           value={ov?.kind ?? ""}
@@ -392,7 +392,7 @@ export function IrissListDrawer({
       {detected.flag ? <p className="mt-0.5 text-[11px] text-amber-800">⚠ {listingTaxFlagReason(detected)}</p> : null}
       {tax.manual ? <p className="mt-0.5 text-[11px] text-slate-500">PVN režīms (manuāli)</p> : null}
 
-      <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Izmaksas šim auto (neto)</h3>
+      <h3 className="iriss-section-heading mt-4">Izmaksas šim auto (neto)</h3>
       <div className="grid grid-cols-2 gap-2">
         {([
           ["fee", "Izsoles komisija"],
@@ -408,7 +408,7 @@ export function IrissListDrawer({
       </div>
       <p className="mt-1 text-[11px] text-slate-500">I = {eur(extras)} (noklusējums {eur(listingExtrasI(DEFAULT_LISTING_COSTS))})</p>
 
-      <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Kalkulators</h3>
+      <h3 className="iriss-section-heading mt-4">Kalkulators</h3>
       <div className="flex items-center gap-2">
         <span className="text-[12px] text-slate-500">Ja nosolām par</span>
         <input type="range" min={Math.round((bid0 ?? 5000) * 0.7)} max={Math.round((bid0 ?? 5000) * 1.4)} step={100} value={bid} onChange={(e) => setBid(Number(e.target.value))} className="h-11 grow accent-[var(--color-provin-accent)]" />

@@ -4,6 +4,13 @@ import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { isSafeOrderDraftSessionId, readOrderDraft, upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
 import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { mergeVinScanIndicators, parseOrderVinScanRecord, type OrderVinScanRecord } from "@/lib/order-vin-scan";
+import {
+  orderVinScanAlreadyDone,
+  orderVinScanDedupeKey,
+  orderVinScanRunningIsStuck,
+  orderVinScanSourceNeedsRescan,
+  takeOrderVinScanSlot,
+} from "@/lib/order-vin-scan-run-decision";
 import { isPaidVinScanSourceId, vinScanAutoSourceIds } from "@/lib/vin-scan/free-sources";
 import { isVinScanSourceId } from "@/lib/vin-scan/catalog";
 import { runVinScan } from "@/lib/vin-scan/run";
@@ -33,7 +40,7 @@ function skip(reason: string): RunOrderFreeVinScanResult {
   return { ok: true, skipped: true, reason };
 }
 
-export async function runOrderFreeVinScan(
+async function runOrderFreeVinScanOnce(
   sessionId: string,
   opts: RunOrderFreeVinScanInput,
 ): Promise<RunOrderFreeVinScanResult> {
@@ -45,10 +52,27 @@ export async function runOrderFreeVinScan(
   if (order?.checkoutLine === "provin_select") return skip("consultation");
 
   const prev = parseOrderVinScanRecord((await readOrderDraft(sessionId))?.vinScan);
-  if (!opts.force && prev?.vin === vin && prev.status === "running") {
+  if (prev?.vin === vin && prev.status === "running" && orderVinScanRunningIsStuck(prev.at)) {
+    const stuck: OrderVinScanRecord = {
+      ...prev,
+      at: new Date().toISOString(),
+      status: "error",
+      error: "Skenēšana apstājās (ilgāk par 10 min)",
+    };
+    await upsertOrderDraftVinScan(sessionId, stuck).catch(() => null);
+    if (!opts.force) return { ok: false, vin, reason: "stuck_running" };
+  } else if (!opts.force && prev?.vin === vin && prev.status === "running") {
     return skip("already_running");
   }
-  if (!opts.force && prev?.status === "done" && prev.vin === vin && prev.indicators.length > 0 && !opts.sourceIds?.length) {
+  const retryIds =
+    prev?.vin === vin ? prev.indicators.filter((row) => orderVinScanSourceNeedsRescan(row.status)).map((row) => row.id) : [];
+  if (
+    !opts.force &&
+    prev?.status === "done" &&
+    prev.vin === vin &&
+    !opts.sourceIds?.length &&
+    orderVinScanAlreadyDone(prev.indicators)
+  ) {
     return skip("already_done");
   }
 
@@ -64,7 +88,9 @@ export async function runOrderFreeVinScan(
     const wanted = (opts.sourceIds ?? []).filter(
       (id) => isVinScanSourceId(id) && !isPaidVinScanSourceId(id),
     );
-    const sourceIds = vinScanAutoSourceIds({ sourceIds: opts.sourceIds });
+    const sourceIds = vinScanAutoSourceIds({
+      sourceIds: opts.sourceIds?.length ? opts.sourceIds : retryIds.length && !opts.force ? retryIds : undefined,
+    });
     const scanned = await runVinScan({
       vin,
       listingUrl: opts.listingUrl?.trim() || "",
@@ -100,4 +126,15 @@ export async function runOrderFreeVinScan(
     }).catch(() => null);
     return { ok: false, vin, reason: msg };
   }
+}
+
+export function runOrderFreeVinScan(
+  sessionId: string,
+  opts: RunOrderFreeVinScanInput,
+): Promise<RunOrderFreeVinScanResult> {
+  const vin = normalizeVin(opts.vin ?? "");
+  if (!vin) return runOrderFreeVinScanOnce(sessionId, opts);
+  return takeOrderVinScanSlot(orderVinScanDedupeKey(sessionId, vin), opts.force === true, () =>
+    runOrderFreeVinScanOnce(sessionId, opts),
+  );
 }

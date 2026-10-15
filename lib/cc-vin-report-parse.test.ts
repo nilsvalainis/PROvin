@@ -1,7 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { looksLikeCcVinReport, parseCcVinReportText } from "@/lib/cc-vin-report-parse";
+import { setEcbDailyRatesForTests } from "@/lib/currency-eur-convert";
 import { normalizePdfExtractedText } from "@/lib/pdf-text-normalize";
+
+beforeEach(() => {
+  setEcbDailyRatesForTests({
+    date: "2026-10-15",
+    rates: { USD: 1.09, GBP: 0.85 },
+  });
+});
 
 /**
  * Fikstūra atkārto reālo PDF teksta slāni: salauztās ligatūras (`ti` → U+099E, `ft` → `[`),
@@ -225,7 +233,7 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
       },
     ]);
     // Izsoles cena „38 745 USD” tiek pārkonvertēta uz EUR — audita ieraksts operatoram.
-    expect(p.notes).toEqual(["38 745 USD → 35 550 € (1 EUR = 1.09 USD)"]);
+    expect(p.notes).toEqual(["38 745 USD → 35 550 € (ECB 15.10.2026, 1 EUR = 1.09 USD)"]);
   });
 
   it("nolasa title ierakstus un izsoļu pārdošanas", () => {

@@ -54,7 +54,7 @@ describe("nordicVinSearchLinks", () => {
     const links = nordicVinSearchLinks(VOLVO_SE);
     expect(links.map((l) => l.id)).toEqual(["biluppgifter", "carinfo"]);
     expect(links[0]?.href).toBe(`https://biluppgifter.se/${VOLVO_SE}`);
-    expect(links[1]?.href).toBe(`https://www.car.info/en-se/vin/${VOLVO_SE}`);
+    expect(links[1]?.href).toBe(`https://www.car.info/en-se/vin/S/${VOLVO_SE}`);
     expect(nordicVinSearchLinks("WBA5R1C0XLFH42873")).toEqual([]);
   });
 });

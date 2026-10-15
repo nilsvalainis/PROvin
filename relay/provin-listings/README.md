@@ -87,7 +87,7 @@ Visi ceļi zem `/listings`. `POST` prasa `Authorization: Bearer <LISTINGS_RELAY_
 | GET | `/listings/health` | bez auth: `platforms.{openlane,auto1,autobid,ecarstrade}.session` (`ok` / `login_required` / `unknown`), pēdējā nolasīšana, kļūda, dienas skaitītāji, rinda, profili, vai ir paroles, `auto1.discoveredApis`, `manualLogin` |
 | GET | `/listings/vnc/:token/...` | noVNC (īslaicīgs tokens ceļā, bez Bearer; tikai kamēr login atvērts) |
 | POST | `/listings/fetch` | `{platform, sourceUrl, orderId, maxPages?, needPriceIds?}` -> `{ok, status, note, items[], raw, pagesFetched, pageCount, orderId, elapsedMs}`. ET: future_api 404/tukšs = `ok 0 (truly empty)` bez `/search` gaidīšanas. Tas pats URL rindā tiek lasīts vienreiz. |
-| POST | `/listings/page` | `{url}` VIN SCAN izsole (stat.vin, bid.cars, checkcar.vin, bidfax.info, poctra.com, plc.auction) -> `{ok, status, finalUrl, html, elapsedMs}`. Īsts Chrome, profils `vinscan`. Caddy `/listings/*` jau der. Dienas limits atsevišķs: `LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY` (noklusējums 400). |
+| POST | `/listings/page` | `{url}` VIN SCAN izsole + Adify / Tirgus Dati / ss.lv (stat.vin, bid.cars, checkcar.vin, bidfax.info, poctra.com, plc.auction, adify.lv, tirgusdati.lv, ss.lv, ss.com, city24.lv) -> `{ok, status, finalUrl, html, elapsedMs}`. Īsts Chrome, profils `vinscan`. Caddy `/listings/*` jau der. Dienas limits atsevišķs: `LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY` (noklusējums 400). |
 | POST | `/listings/session/check` | `{platform}` -> sesijas pārbaude + auto-login, ja ir paroles |
 | POST | `/listings/login/:platform` | atver redzamu Chrome + atgriež `vncToken` adminam |
 | POST | `/listings/login/:platform/close` | aizver manuālo login un atgriež `{loggedIn, session}` |
@@ -134,8 +134,10 @@ vatNote, auctionId, auctionStartAt, auctionEndAt, auctionStage`.
 Jauns ceļš. **Jāizvieto releja kods** (`tar` + `systemctl restart provin-listings`). Caddy `/listings/*` un Vercel
 `IRISS_LISTINGS_RELAY_URL` / `IRISS_LISTINGS_RELAY_TOKEN` paliek tie paši. Jaunu env uz Vercel nav.
 
-Allowlist: `stat.vin`, `bid.cars`, `checkcar.vin`, `bidfax.info`, `poctra.com`, `plc.auction`. Profils `vinscan`
+Allowlist: `stat.vin`, `bid.cars`, `checkcar.vin`, `bidfax.info`, `poctra.com`, `plc.auction`,
+`adify.lv`, `tirgusdati.lv`, `ss.lv`, `ss.com`, `city24.lv`. Profils `vinscan`
 (nav Openlane/Auto1 sīkdatnes). stat.vin WAF (`Access blocked`) CapSolver nespēj; Chrome var.
+Adify / tirgusdati.lv no Vercel saņem Cloudflare 403; tas pats `/page` ceļš ielasa SSR HTML.
 
 ## Servera env (`/etc/provin-listings.env`)
 

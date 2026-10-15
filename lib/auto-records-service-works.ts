@@ -254,6 +254,53 @@ function mergeServiceWorkGroup(group: AutoRecordsServiceWorkRow[]): AutoRecordsS
  * Visi ieraksti ar vienādu nobraukumu → viena rinda.
  * Tukšs odometrs nesaista (neapvieno visus bez km).
  */
+/** Dīlera vizītes tajā pašā dienā ar odometru ±150 km ir viens apmeklējums. */
+export const DEALER_VISIT_SAME_DATE_MAX_KM_DIFF = 150;
+
+function parseServiceWorkKm(raw: string): number | null {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+  const n = Number.parseInt(digits, 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function mergeDealerVisitsSameDateNearOdometer(
+  rows: AutoRecordsServiceWorkRow[],
+): AutoRecordsServiceWorkRow[] {
+  const byDate = new Map<string, AutoRecordsServiceWorkRow[]>();
+  const undated: AutoRecordsServiceWorkRow[] = [];
+  for (const r of rows) {
+    const key = r.date.trim();
+    if (!key) {
+      undated.push(r);
+      continue;
+    }
+    const list = byDate.get(key) ?? [];
+    list.push(r);
+    byDate.set(key, list);
+  }
+  const out: AutoRecordsServiceWorkRow[] = [...undated];
+  for (const group of byDate.values()) {
+    const leftover = [...group];
+    while (leftover.length > 0) {
+      const first = leftover.shift()!;
+      const kmA = parseServiceWorkKm(first.odometer);
+      const pack = [first];
+      for (let i = leftover.length - 1; i >= 0; i--) {
+        const other = leftover[i]!;
+        const kmB = parseServiceWorkKm(other.odometer);
+        if (kmA == null || kmB == null) continue;
+        if (Math.abs(kmA - kmB) <= DEALER_VISIT_SAME_DATE_MAX_KM_DIFF) {
+          pack.push(other);
+          leftover.splice(i, 1);
+        }
+      }
+      out.push(pack.length === 1 ? first : mergeServiceWorkGroup(pack));
+    }
+  }
+  return sortAutoRecordsServiceWorkRows(out);
+}
+
 export function mergeAutoRecordsServiceWorksByOdometer(
   rows: AutoRecordsServiceWorkRow[],
 ): AutoRecordsServiceWorkRow[] {
@@ -272,7 +319,7 @@ export function mergeAutoRecordsServiceWorksByOdometer(
   const merged = [...byKm.values()].map((group) =>
     group.length === 1 ? group[0]! : mergeServiceWorkGroup(group),
   );
-  return sortAutoRecordsServiceWorkRows([...merged, ...emptyKm]);
+  return mergeDealerVisitsSameDateNearOdometer(sortAutoRecordsServiceWorkRows([...merged, ...emptyKm]));
 }
 
 function dedupeRows(rows: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRow[] {

@@ -62,7 +62,18 @@ export function buildVinScanHealthMatrix(
 
 const SCAN_ERR = new Set(["Avots neatbildēja laikā", "Avotu neizdevās nolasīt"]);
 
-/** Kešs nav svaigs, ja nav WMI dekodējuma vai visi īstie avoti ir unknown. */
+/** Kešā paliek tikai found/none. unknown, timeout un blocked jāskenē vēlreiz. */
+export function vinScanStatusIsCacheable(status: string): boolean {
+  return status === "found" || status === "none";
+}
+
+export function vinScanSourceNeedsRescan(status: string, summary = ""): boolean {
+  if (vinScanStatusIsCacheable(status)) return false;
+  if (status === "unknown" || status === "timeout" || status === "blocked" || status === "error") return true;
+  return SCAN_ERR.has(summary);
+}
+
+/** Kešs nav svaigs, ja nav WMI dekodējuma vai kāds avots ir unknown/timeout/blocked. */
 export function vinScanIndicatorsAreCacheable(
   indicators: readonly { id: string; status: VinScanStatus | string; summary?: string }[],
 ): boolean {
@@ -71,10 +82,5 @@ export function vinScanIndicatorsAreCacheable(
   if (!decode || decode.status !== "found") return false;
   const others = indicators.filter((row) => row.id !== "vin_decode");
   if (!others.length) return true;
-  const answered = others.filter((row) => row.status === "found" || row.status === "none").length;
-  const failed = others.filter(
-    (row) => row.status === "unknown" || SCAN_ERR.has(String(row.summary || "")),
-  ).length;
-  if (failed > 0 && answered === 0) return false;
-  return true;
+  return others.every((row) => !vinScanSourceNeedsRescan(row.status, row.summary ?? ""));
 }

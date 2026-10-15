@@ -29,6 +29,13 @@ function hasVin(text: string, vin: string): boolean {
   return text.toUpperCase().includes(vin.trim().toUpperCase());
 }
 
+/** Īss vai vēl ielādējas teksts paliek null (zonde gaida). Pilna lapa bez VIN un bez „nav atrasts” ir unknown. */
+function unknownPageWithoutVin(label: string, text: string): BrowserProbeRead | null {
+  if (browserProbeBlocker(text)) return null;
+  if (text.trim().length < 40) return null;
+  return { status: "unknown", summary: `${label}: lapa bez VIN un bez „nav atrasts”` };
+}
+
 /** null: lapa vēl nav gatava, zonde turpina gaidīt. */
 export function classifyBrowserProbe(id: VinScanBrowserId | string, text: string, vin: string): BrowserProbeRead | null {
   if (isBrowserChallenge(text)) return null;
@@ -39,16 +46,18 @@ export function classifyBrowserProbe(id: VinScanBrowserId | string, text: string
       if (/no results|0 vehicles|nothing found|no cars found/i.test(text)) {
         return { status: "none", summary: "Nav izsoles arhīvā" };
       }
-      return hasVin(text, vin) && /lot|bid|sold|auction|mileage/i.test(text)
-        ? { status: "found", summary: "Ir izsoles ieraksts" }
-        : null;
+      if (hasVin(text, vin) && /lot|bid|sold|auction|mileage/i.test(text)) {
+        return { status: "found", summary: "Ir izsoles ieraksts" };
+      }
+      return hasVin(text, vin) ? null : unknownPageWithoutVin("bid.cars", text);
     case "auchistory":
       if (/no (auction )?records|vehicle not found|nothing found/i.test(text)) {
         return { status: "none", summary: "Nav izsoles vēstures" };
       }
-      return hasVin(text, vin) && /damage|auction|sold for|\bbid\b/i.test(text)
-        ? { status: "found", summary: "Ir izsoles vēsture" }
-        : null;
+      if (hasVin(text, vin) && /damage|auction|sold for|\bbid\b/i.test(text)) {
+        return { status: "found", summary: "Ir izsoles vēsture" };
+      }
+      return hasVin(text, vin) ? null : unknownPageWithoutVin("AucHistory", text);
     case "carfax_eu": {
       const found = /we found\s+(\d+)\s+record/i.exec(text);
       if (found) return { status: "found", summary: `${found[1]} ieraksti CARFAX priekšskatījumā` };
@@ -91,7 +100,8 @@ function classifyAuction(text: string, vin: string, noneSummary: string, foundSu
     if (/not found|page not found|no vehicle|nothing found|no results|no similar cars|were not found/i.test(text)) {
       return { status: "none", summary: noneSummary };
     }
-    return null;
+    const label = noneSummary.split(":")[0]?.trim() || "Izsole";
+    return unknownPageWithoutVin(label, text);
   }
   if (/auction|sold|sale date|odometer|mileage|lot|bid/i.test(text)) return { status: "found", summary: foundSummary };
   return null;

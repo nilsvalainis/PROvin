@@ -32,6 +32,7 @@ const FOREIGN_FIELDS: { kind: Exclude<VinScanPlateKind, "lv">; label: string }[]
   { kind: "lt", label: "LT numurs" },
   { kind: "fi", label: "FI numurs" },
   { kind: "uk", label: "UK numurs" },
+  { kind: "se", label: "SE numurs" },
 ];
 
 type PlateView = { ok: boolean; vin: string; make: string; model: string; year: string; status: string };
@@ -84,6 +85,7 @@ export function AdminVinScanPageClient({
       lt: normalizeScanPlate(platesDraft.lt),
       fi: normalizeScanPlate(platesDraft.fi),
       uk: normalizeScanPlate(platesDraft.uk),
+      se: normalizeScanPlate(platesDraft.se),
     }),
     [platesDraft],
   );

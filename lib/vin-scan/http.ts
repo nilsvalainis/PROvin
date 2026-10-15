@@ -1,5 +1,7 @@
 import "server-only";
 
+import { AsyncLocalStorage } from "node:async_hooks";
+
 import {
   getCaptchaSolverProxy,
   hasCaptchaSolverKey,
@@ -7,6 +9,7 @@ import {
   solveCaptcha,
   vinStickyHttpProxyUrl,
 } from "@/lib/captcha-solver";
+import { CAPSOLVER_MIN_TIMEOUT_MS, capsolverTimeoutMs } from "@/lib/vin-scan/source-timeouts";
 import {
   cookiesRecordToHeader,
   extractInputValue,
@@ -27,6 +30,30 @@ export type ScanHttpResult = {
 };
 
 const DEFAULT_TIMEOUT_MS = 12_000;
+
+type VinScanDeadline = { deadlineMs: number };
+
+const vinScanDeadline = new AsyncLocalStorage<VinScanDeadline>();
+
+/** Avota ārējais timeout. CapSolver nedrīkst turpināties pēc šī brīža. */
+export function runWithVinScanDeadline<T>(deadlineMs: number, run: () => Promise<T>): Promise<T> {
+  return vinScanDeadline.run({ deadlineMs }, run);
+}
+
+function solverBudgetMs(localTimeoutMs: number, startedAt: number, now = Date.now()): number {
+  const localRemain = localTimeoutMs - (now - startedAt);
+  const slot = vinScanDeadline.getStore();
+  const outerRemain = slot ? slot.deadlineMs - now : localRemain;
+  const remain = Math.min(localRemain, outerRemain);
+  if (remain <= 0) return 0;
+  return capsolverTimeoutMs(remain, 0);
+}
+
+function solverCallOpts(localTimeoutMs: number, startedAt: number, sourceLabel: string): { timeoutMs: number; sourceLabel: string } | null {
+  const budget = solverBudgetMs(localTimeoutMs, startedAt);
+  if (budget < CAPSOLVER_MIN_TIMEOUT_MS) return null;
+  return { timeoutMs: budget, sourceLabel };
+}
 
 function recaptchaSiteKey(html: string): string {
   return (
@@ -77,9 +104,13 @@ export async function scanFetch(
   };
 }
 
-async function bypassCloudflare(websiteURL: string, challenged: VinHttpResult, ua: string): Promise<
-  { cookie: string; ua: string; proxyUrl?: string } | { reason: string }
-> {
+async function bypassCloudflare(
+  websiteURL: string,
+  challenged: VinHttpResult,
+  ua: string,
+  solver: { timeoutMs: number; sourceLabel: string } | null,
+): Promise<{ cookie: string; ua: string; proxyUrl?: string } | { reason: string }> {
+  if (!solver) return { reason: "CapSolver izlaists: avota laiks ir beidzies" };
   if (!hasCaptchaSolverKey()) return { reason: "Cloudflare: nav CAPSOLVER_API_KEY" };
   const proxy = getCaptchaSolverProxy();
   if (!proxy) return { reason: "Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" };
@@ -91,7 +122,7 @@ async function bypassCloudflare(websiteURL: string, challenged: VinHttpResult, u
       html: challenged.text.slice(0, 80_000),
       userAgent: ua,
     },
-    { timeoutMs: 90_000, sourceLabel: "vin-scan" },
+    solver,
   );
   if (!solved.ok) return { reason: solved.reason };
   const fromCookies = cookiesRecordToHeader(solved.cookies);
@@ -123,6 +154,8 @@ export async function scanFetchSmart(
   } = {},
 ): Promise<ScanHttpResult> {
   const timeoutMs = init.timeoutMs ?? 20_000;
+  const startedAt = Date.now();
+  const sourceLabel = init.sourceLabel || "vin-scan";
   const headers = init.headers ?? {};
   let cookie = init.cookie ?? "";
   let ua = init.userAgent || VIN_HTTP_UA;
@@ -138,7 +171,12 @@ export async function scanFetchSmart(
   cookie = mergeCookieHeader(cookie, first.cookie);
 
   if (isCloudflareChallengeHtml(first.text, first.status)) {
-    const bypassed = await bypassCloudflare(init.solveUrl || url, { ...first, cookie }, ua);
+    const bypassed = await bypassCloudflare(
+      init.solveUrl || url,
+      { ...first, cookie },
+      ua,
+      solverCallOpts(timeoutMs, startedAt, sourceLabel),
+    );
     if ("reason" in bypassed) {
       return {
         status: first.status,
@@ -177,7 +215,8 @@ export async function scanFetchSmart(
 
   const recaptchaKey = recaptchaSiteKey(first.text);
   const looksCaptcha = /recaptcha|hcaptcha|i['’]m not a robot|\bcaptcha\b/i.test(first.text);
-  if (looksCaptcha && recaptchaKey && hasCaptchaSolverKey()) {
+  const recaptchaBudget = solverCallOpts(timeoutMs, startedAt, sourceLabel);
+  if (looksCaptcha && recaptchaKey && hasCaptchaSolverKey() && recaptchaBudget) {
     const capProxy = getCaptchaSolverProxy();
     const solved = await solveCaptcha(
       {
@@ -186,7 +225,7 @@ export async function scanFetchSmart(
         websiteKey: recaptchaKey,
         proxy: capProxy || undefined,
       },
-      { timeoutMs: 90_000, sourceLabel: init.sourceLabel || "vin-scan" },
+      recaptchaBudget,
     );
     if (solved.ok) {
       return {
@@ -200,10 +239,11 @@ export async function scanFetchSmart(
   }
 
   const tsKey = turnstileSiteKey(first.text);
-  if (/turnstile/i.test(first.text) && tsKey && hasCaptchaSolverKey()) {
+  const turnstileBudget = solverCallOpts(timeoutMs, startedAt, sourceLabel);
+  if (/turnstile/i.test(first.text) && tsKey && hasCaptchaSolverKey() && turnstileBudget) {
     const solved = await solveCaptcha(
       { kind: "turnstile", websiteURL: init.solveUrl || url, websiteKey: tsKey },
-      { timeoutMs: 90_000, sourceLabel: init.sourceLabel || "vin-scan" },
+      turnstileBudget,
     );
     if (solved.ok) {
       return {
@@ -241,10 +281,14 @@ export async function solveScanRecaptcha(websiteURL: string, websiteKey: string,
   { ok: true; token: string; cookie: string; ua: string } | { ok: false; reason: string }
 > {
   if (!hasCaptchaSolverKey()) return { ok: false, reason: `${sourceLabel}: nav CAPSOLVER_API_KEY` };
+  const slot = vinScanDeadline.getStore();
+  const remain = slot ? slot.deadlineMs - Date.now() : 90_000;
+  const budget = capsolverTimeoutMs(remain, 0);
+  if (budget < CAPSOLVER_MIN_TIMEOUT_MS) return { ok: false, reason: `${sourceLabel}: CapSolver izlaists, avota laiks ir beidzies` };
   const capProxy = getCaptchaSolverProxy();
   const solved = await solveCaptcha(
     { kind: "recaptcha_v2", websiteURL, websiteKey, proxy: capProxy || undefined },
-    { timeoutMs: 90_000, sourceLabel },
+    { timeoutMs: budget, sourceLabel },
   );
   if (!solved.ok) return { ok: false, reason: solved.reason };
   return {

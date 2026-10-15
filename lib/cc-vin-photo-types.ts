@@ -1,8 +1,10 @@
-/** Starptautiskās vēstures avota fotogrāfijas — vizuālie pierādījumi PDF (līdz 50 gab.). */
-export const CC_VIN_MAX_PHOTOS = 50;
+/** Starptautiskās vēstures avota fotogrāfijas — vizuālie pierādījumi PDF. */
+export const CC_VIN_MAX_PHOTOS = 500;
 
 export type CcVinPhotoMeta = {
   id: string;
+  sourceUrl?: string;
+  contentHash?: string;
 };
 
 export type CcVinPhotoGroup = {
@@ -48,7 +50,19 @@ export function normalizeCcVinPhotos(raw: unknown): CcVinPhotoMeta[] {
     const id = typeof (item as { id?: unknown }).id === "string" ? (item as { id: string }).id.trim() : "";
     if (!isCcVinPhotoId(id)) continue;
     if (out.some((p) => p.id === id)) continue;
-    out.push({ id });
+    const sourceUrl =
+      typeof (item as { sourceUrl?: unknown }).sourceUrl === "string"
+        ? (item as { sourceUrl: string }).sourceUrl.trim()
+        : "";
+    const contentHash =
+      typeof (item as { contentHash?: unknown }).contentHash === "string"
+        ? (item as { contentHash: string }).contentHash.trim().toLowerCase()
+        : "";
+    out.push({
+      id,
+      ...(sourceUrl.startsWith("https://") ? { sourceUrl } : {}),
+      ...(contentHash && /^[a-f0-9]{64}$/.test(contentHash) ? { contentHash } : {}),
+    });
     if (out.length >= CC_VIN_MAX_PHOTOS) break;
   }
   return out;

@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 import { normalizeVin } from "@/lib/order-field-validation";
-import type { AsvBlockState, AsvJojIngest } from "@/lib/asv-report";
-import { appendAsvPhotoGroups, formatJojAsvCostUsd } from "@/lib/joj-asv-merge";
+import { emptyAsvJojIngest, type AsvBlockState, type AsvJojIngest, type AsvJojLotDomain } from "@/lib/asv-report";
+import {
+  appendAsvPhotoGroups,
+  formatJojAsvCostUsd,
+  formatJojFetchedAtRiga,
+  jojCacheHitLabel,
+  jojCacheNoneConfirmMessage,
+} from "@/lib/joj-asv-merge";
 import { syncAsvPhotoGroupsAndFlat } from "@/lib/asv-photo-types";
 
 const inp =
@@ -76,11 +82,97 @@ export function AdminJojIngestBar({
   const estimatedCost = formatJojAsvCostUsd();
   const cachedForVin =
     Boolean(ingest?.lastFetchedVin) && normalizeVin(ingest?.lastFetchedVin ?? "") === effectiveVin;
+  const cacheHoldsNone = cachedForVin && ingest?.fromCache === true && ingest.status === "none";
+  const lot = ingest?.lot ?? "";
+  const lotDomain: AsvJojLotDomain = ingest?.lotDomain === "iaai_com" ? "iaai_com" : "copart_com";
+  const lotClean = lot.trim().replace(/[^\dA-Za-z-]/g, "").slice(0, 24);
+  const knownLot = lotClean ? { lot: lotClean, domain: lotDomain } : undefined;
   const tone = jojIngestTone(ingest);
+  const failedCount = (ingest?.failedPhotoGroups ?? []).reduce((n, g) => n + (g.urls?.length ?? 0), 0);
+
+  const patchIngest = (partial: Partial<AsvJojIngest>) => {
+    onChange({
+      ...value,
+      jojIngest: { ...(ingest ?? emptyAsvJojIngest()), ...partial },
+    });
+  };
+
+  const applyJojBody = (
+    body: {
+      block?: AsvBlockState;
+      jojIngest?: AsvJojIngest;
+      storedPhotoGroups?: AsvBlockState["photoGroups"];
+      failedPhotoGroups?: AsvJojIngest["failedPhotoGroups"];
+    },
+    prev: AsvBlockState,
+  ) => {
+    if (!body.block) return;
+    const photoGroups = appendAsvPhotoGroups(prev.photoGroups, body.storedPhotoGroups);
+    const synced = syncAsvPhotoGroupsAndFlat(
+      photoGroups.length > 0 ? photoGroups : body.block.photoGroups,
+    );
+    const nextIngest = { ...(body.jojIngest ?? body.block.jojIngest ?? emptyAsvJojIngest()) };
+    if (body.failedPhotoGroups?.length) nextIngest.failedPhotoGroups = body.failedPhotoGroups;
+    else delete nextIngest.failedPhotoGroups;
+    if (!nextIngest.lot && prev.jojIngest?.lot) {
+      nextIngest.lot = prev.jojIngest.lot;
+      nextIngest.lotDomain = prev.jojIngest.lotDomain;
+    }
+    onChange({
+      ...body.block,
+      photoGroups: synced.photoGroups,
+      photos: synced.photos,
+      comments: prev.comments,
+      jojIngest: nextIngest,
+    });
+  };
+
+  const retryFailedPhotos = async () => {
+    if (!editable || busy || failedCount === 0) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/sources/joj", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vin: effectiveVin,
+          sessionId: sessionId || undefined,
+          listingUrl: listingUrl || undefined,
+          knownLot: knownLot ?? undefined,
+          block: value,
+          retryPhotoGroups: ingest?.failedPhotoGroups ?? [],
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        block?: AsvBlockState;
+        jojIngest?: AsvJojIngest;
+        storedPhotoGroups?: AsvBlockState["photoGroups"];
+        failedPhotoGroups?: AsvJojIngest["failedPhotoGroups"];
+        summary?: string;
+      };
+      if (!res.ok && !body.block) {
+        setError(jojFetchErrorLv(body.error ?? "upstream_error"));
+        return;
+      }
+      applyJojBody(body, value);
+    } catch {
+      setError(jojFetchErrorLv("upstream_error"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const fetchData = async () => {
     if (!editable || busy) return;
-    if (cachedForVin && ingest?.status === "found") {
+    if (cacheHoldsNone) {
+      const ok = window.confirm(
+        jojCacheNoneConfirmMessage(ingest?.cachedAt || ingest?.fetchedAt || ""),
+      );
+      if (!ok) return;
+    } else if (cachedForVin && ingest?.status === "found") {
       const ok = window.confirm(
         `Šim VIN jau ir ielādēti JoJ dati. Ielādēt no jauna? Tas atkārtoti iekasēs ${estimatedCost}.`,
       );
@@ -97,8 +189,9 @@ export function AdminJojIngestBar({
           vin: effectiveVin,
           sessionId: sessionId || undefined,
           listingUrl: listingUrl || undefined,
+          knownLot: knownLot ?? undefined,
           block: value,
-          skipCache: cachedForVin,
+          skipCache: cacheHoldsNone || (cachedForVin && ingest?.status === "found"),
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {
@@ -106,6 +199,8 @@ export function AdminJojIngestBar({
         block?: AsvBlockState;
         jojIngest?: AsvJojIngest;
         storedPhotoGroups?: AsvBlockState["photoGroups"];
+        failedPhotoGroups?: AsvJojIngest["failedPhotoGroups"];
+        failedPhotoCount?: number;
         costUsd?: string;
         summary?: string;
       };
@@ -119,19 +214,7 @@ export function AdminJojIngestBar({
         if (body.jojIngest) onChange({ ...value, jojIngest: body.jojIngest });
         return;
       }
-      if (body.block) {
-        const photoGroups = appendAsvPhotoGroups(value.photoGroups, body.storedPhotoGroups);
-        const synced = syncAsvPhotoGroupsAndFlat(
-          photoGroups.length > 0 ? photoGroups : body.block.photoGroups,
-        );
-        onChange({
-          ...body.block,
-          photoGroups: synced.photoGroups,
-          photos: synced.photos,
-          comments: value.comments,
-          jojIngest: body.jojIngest ?? body.block.jojIngest,
-        });
-      }
+      if (body.block) applyJojBody(body, value);
       if (body.error && res.status === 502) {
         setError(body.summary ? body.summary : jojFetchErrorLv("upstream_error"));
       }
@@ -166,6 +249,41 @@ export function AdminJojIngestBar({
             autoCapitalize="characters"
           />
         </label>
+        <label className="flex min-w-[160px] flex-1 flex-col gap-0.5">
+          <span className="text-[9px] font-medium uppercase tracking-wide text-slate-500">
+            Lota nr. + Copart/IAAI
+          </span>
+          <span className="flex gap-1">
+            <input
+              type="text"
+              className={inp}
+              value={lot}
+              disabled={!editable || busy}
+              placeholder="Lota nr."
+              onChange={(e) =>
+                patchIngest({
+                  lot: e.target.value,
+                  lotDomain,
+                })
+              }
+              spellCheck={false}
+            />
+            <select
+              className={`${inp} w-[88px] shrink-0`}
+              value={lotDomain}
+              disabled={!editable || busy}
+              onChange={(e) =>
+                patchIngest({
+                  lot,
+                  lotDomain: e.target.value === "iaai_com" ? "iaai_com" : "copart_com",
+                })
+              }
+            >
+              <option value="copart_com">Copart</option>
+              <option value="iaai_com">IAAI</option>
+            </select>
+          </span>
+        </label>
         <button
           type="button"
           className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] disabled:opacity-50"
@@ -180,14 +298,31 @@ export function AdminJojIngestBar({
           <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[tone]}`} aria-hidden />
           <span>
             {jojStatusLabel(ingest)}
-            {cachedForVin && ingest.fetchedAt
-              ? ` · ${ingest.fetchedAt.slice(0, 16).replace("T", " ")}`
-              : ""}
-            {ingest.lastCostUsd ? ` · ${ingest.lastCostUsd}` : ""}
+            {ingest.fromCache
+              ? ` · ${jojCacheHitLabel(ingest.cachedAt || ingest.fetchedAt)}`
+              : ingest.fetchedAt
+                ? ` · ${formatJojFetchedAtRiga(ingest.fetchedAt)}`
+                : ""}
+            {ingest.fromCache ? " · 0,00 $" : ingest.lastCostUsd ? ` · ${ingest.lastCostUsd}` : ""}
           </span>
         </p>
       ) : null}
       {error ? <p className="mt-1.5 text-[10px] text-red-700">{error}</p> : null}
+      {failedCount > 0 ? (
+        <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-red-700">
+          <span>
+            {failedCount} foto neizdevās ielādēt.
+          </span>
+          <button
+            type="button"
+            className="rounded-md border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--color-apple-text)] disabled:opacity-50"
+            disabled={!editable || busy}
+            onClick={() => void retryFailedPhotos()}
+          >
+            {busy ? "Atkārto…" : "Atkārtot"}
+          </button>
+        </p>
+      ) : null}
     </div>
   );
 }

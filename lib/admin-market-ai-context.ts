@@ -12,11 +12,8 @@ import {
   pickIrissListingComps,
 } from "@/lib/iriss-listings-ai-filter";
 import { readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
-import {
-  fetchListingAiSnapshot,
-  formatListingAiSnapshotForAi,
-  type ListingAiSnapshot,
-} from "@/lib/listing-scrape";
+import { formatListingAiSnapshotForAi, type ListingAiSnapshot } from "@/lib/listing-scrape";
+import { fetchListingAiSnapshot } from "@/lib/listing-scrape-server";
 import {
   outvinBundleHasStructuredContent,
   outvinDealerServiceRowHasData,

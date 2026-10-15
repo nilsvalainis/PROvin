@@ -152,6 +152,60 @@ describe("analyzeUnifiedMileageAnomalies", () => {
     expect(anomalyBySourceOrder.get(4)).toBe(false);
   });
 
+  it("treats A→low→A+ as a data-entry error, not a contradiction", () => {
+    const rows = [
+      row({ date: "01.01.2016", odometer: "50000", sourceLabel: "DEALER", sourceOrder: 0, sortableTime: Date.UTC(2016, 0, 1) }),
+      row({ date: "01.06.2016", odometer: "12000", sourceLabel: "CarVertical", sourceOrder: 1, sortableTime: Date.UTC(2016, 5, 1) }),
+      row({ date: "01.08.2016", odometer: "61000", sourceLabel: "CarVertical", sourceOrder: 2, sortableTime: Date.UTC(2016, 7, 1) }),
+    ];
+    const { anomalyBySourceOrder, dataEntryErrorSourceOrders } = analyzeUnifiedMileageAnomalies(rows);
+    expect(dataEntryErrorSourceOrders.has(1)).toBe(true);
+    expect(anomalyBySourceOrder.get(1)).toBe(false);
+    expect(anomalyBySourceOrder.get(2)).toBe(false);
+  });
+
+  it("does not compare CarVertical month-only 12.2013 as 01.12 against a same-month dealer reading", () => {
+    const rows = prepareUnifiedMileageDisplayRows([
+      row({
+        date: "12.2013",
+        odometer: "42080",
+        sourceLabel: "CarVertical",
+        sourceOrder: 0,
+        sortableTime: Date.UTC(2013, 11, 1),
+        datePrecision: "month",
+      }),
+      row({
+        date: "15.12.2013",
+        odometer: "42150",
+        sourceLabel: "DEALER",
+        sourceOrder: 1,
+        sortableTime: Date.UTC(2013, 11, 15),
+        datePrecision: "day",
+      }),
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.date).toBe("15.12.2013");
+    expect(rows[0]?.sourceLabels).toEqual(expect.arrayContaining(["DEALER", "CarVertical"]));
+    const { anomalyBySourceOrder } = analyzeUnifiedMileageAnomalies(rows);
+    expect(anomalyBySourceOrder.get(rows[0]!.sourceOrder)).toBe(false);
+  });
+
+  it("does not flag a listing reading at or below the newest verified km", () => {
+    const rows = [
+      row({ date: "02.06.2018", odometer: "88310", sourceLabel: "OFICIĀLĀ DĪLERA DATI", sourceOrder: 0, sortableTime: Date.UTC(2018, 5, 2) }),
+      row({
+        date: "01.04.2024",
+        odometer: "87000",
+        sourceLabel: "Sludinājums",
+        sourceOrder: 1,
+        sortableTime: Date.UTC(2024, 3, 1),
+        countryUnverified: true,
+      }),
+    ];
+    const { anomalyBySourceOrder } = analyzeUnifiedMileageAnomalies(rows);
+    expect(anomalyBySourceOrder.get(1)).toBe(false);
+  });
+
   it("still flags genuine odometer rollback", () => {
     const rows = [
       row({

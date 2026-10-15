@@ -363,16 +363,97 @@ export function aggregateUnifiedIncidents(
     const matched = damageDetails.filter((d) => damageDetailMatchesCluster(d, cluster));
     return { ...cluster, damage: mergeClusterDamage(matched) };
   });
-  clusters.sort((a, b) => {
+  const mergedAcrossCountry = mergeIncidentClustersSameAmountAndZones(clusters);
+  mergedAcrossCountry.sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
     return a.date.localeCompare(b.date, "lv");
   });
 
   return {
-    clusters,
-    uniqueCount: clusters.length,
+    clusters: mergedAcrossCountry,
+    uniqueCount: mergedAcrossCountry.length,
     rawCount: rows.length,
   };
+}
+
+const INCIDENT_MERGE_MAX_DAYS = 31;
+const INCIDENT_AMOUNT_MATCH_EUR = 10;
+
+function incidentZoneKey(c: UnifiedIncidentCluster): string {
+  return (c.damage?.zoneIds ?? []).slice().sort().join(",");
+}
+
+function incidentAmount(c: UnifiedIncidentCluster): number | null {
+  if (c.averageEur != null) return c.averageEur;
+  return parseIncidentAmountEur(c.displayAmount);
+}
+
+function amountsMatchForDedupe(a: number | null, b: number | null): boolean {
+  if (a == null || b == null) return false;
+  return Math.abs(a - b) <= INCIDENT_AMOUNT_MATCH_EUR;
+}
+
+function mergeTwoIncidentClusters(a: UnifiedIncidentCluster, b: UnifiedIncidentCluster): UnifiedIncidentCluster {
+  const newer = a.sortableTime >= b.sortableTime ? a : b;
+  const older = newer === a ? b : a;
+  const valuations = [...newer.sourceValuations];
+  for (const s of older.sourceValuations) {
+    if (!valuations.some((v) => v.sourceLabel === s.sourceLabel && v.displayAmount === s.displayAmount)) {
+      valuations.push(s);
+    }
+  }
+  const countries = [...new Set([newer.country, older.country].map((c) => c.trim()).filter(Boolean))];
+  const amounts = valuations.map((s) => s.amountEur).filter((n): n is number => n != null);
+  const avg = averageEur(amounts);
+  return {
+    ...newer,
+    country: countries.length === 1 ? countries[0]! : countries.join(" / "),
+    sourceValuations: valuations,
+    averageEur: avg,
+    averaged: valuations.length > 1 && avg != null,
+    displayAmount: roundLossAmountEurDisplayToTens(
+      avg != null ? formatLossEurWholeDisplay(avg) : newer.displayAmount,
+    ),
+    damage: mergeClusterDamageFromClusters(newer.damage, older.damage),
+  };
+}
+
+function mergeClusterDamageFromClusters(
+  a: UnifiedIncidentDamage | null,
+  b: UnifiedIncidentDamage | null,
+): UnifiedIncidentDamage | null {
+  if (!a) return b;
+  if (!b) return a;
+  const zoneIds = [...new Set([...a.zoneIds, ...b.zoneIds])];
+  const zoneLabels = [...new Set([...a.zoneLabels, ...b.zoneLabels])];
+  const partLabels = [...new Set([...a.partLabels, ...b.partLabels])];
+  const groupLabels = mergeSynonymDamageGroupLabels([...a.groupLabels, ...b.groupLabels]);
+  if (zoneIds.length === 0 && zoneLabels.length === 0 && partLabels.length === 0 && groupLabels.length === 0) {
+    return null;
+  }
+  return { zoneIds, zoneLabels, partLabels, groupLabels };
+}
+
+/** 1 mēneša logā, tās pašas zonas un summa (arī ja CarVertical saka Kanāda, Copart - ASV). */
+function mergeIncidentClustersSameAmountAndZones(clusters: UnifiedIncidentCluster[]): UnifiedIncidentCluster[] {
+  const out: UnifiedIncidentCluster[] = [];
+  for (const c of clusters) {
+    const idx = out.findIndex((prev) => {
+      const days =
+        prev.sortableTime > 0 && c.sortableTime > 0
+          ? Math.abs(prev.sortableTime - c.sortableTime) / 86_400_000
+          : 999;
+      if (days > INCIDENT_MERGE_MAX_DAYS) return false;
+      if (!amountsMatchForDedupe(incidentAmount(prev), incidentAmount(c))) return false;
+      return incidentZoneKey(prev) === incidentZoneKey(c);
+    });
+    if (idx < 0) {
+      out.push(c);
+      continue;
+    }
+    out[idx] = mergeTwoIncidentClusters(out[idx]!, c);
+  }
+  return out;
 }
 
 function countriesCompatible(a: string, b: string): boolean {

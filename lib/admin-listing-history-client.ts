@@ -67,18 +67,27 @@ async function postListingHistory(body: { url: string; html?: string }): Promise
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = (await res.json().catch(() => ({}))) as AdifyListingHistorySnapshot & { error?: string };
+  const data = (await res.json().catch(() => ({}))) as AdifyListingHistorySnapshot & {
+    error?: string;
+    detail?: string;
+  };
   if (!res.ok) {
-    const message =
+    const mapped =
       data.error === "invalid_url"
         ? "Nederīga sludinājuma saite"
         : data.error === "unauthorized"
           ? "Nav admin sesijas"
           : data.error === "html_too_large"
             ? "Vēstures lapa ir pārāk liela"
-            : "Neizdevās ielādēt sludinājuma vēsturi";
+            : "";
+    const message =
+      mapped ||
+      (typeof data.message === "string" && data.message.trim()) ||
+      (typeof data.detail === "string" && data.detail.trim()) ||
+      `Neizdevās ielādēt sludinājuma vēsturi (HTTP ${res.status})`;
     return {
       found: false,
+      blocked: res.status === 403 || res.status >= 500,
       message,
       rows: [],
       durationDays: 0,

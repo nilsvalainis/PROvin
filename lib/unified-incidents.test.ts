@@ -113,6 +113,29 @@ describe("aggregateUnifiedIncidents", () => {
     expect(autodna?.amountEur).toBe(2350);
   });
 
+  it("apvieno 1 mēneša logā to pašu summu un zonas pat ja valsts atšķiras", () => {
+    const agg = aggregateUnifiedIncidents([
+      row({
+        date: "10.03.2023",
+        lossAmount: "4 200 €",
+        country: "ASV",
+        sourceLabel: "ASV",
+        sortableTime: Date.UTC(2023, 2, 10),
+        sourceOrder: 0,
+      }),
+      row({
+        date: "18.03.2023",
+        lossAmount: "4 200 €",
+        country: "Kanāda",
+        sourceLabel: "CarVertical",
+        sortableTime: Date.UTC(2023, 2, 18),
+        sourceOrder: 1,
+      }),
+    ]);
+    expect(agg.uniqueCount).toBe(1);
+    expect(agg.clusters[0]?.sourceValuations).toHaveLength(2);
+  });
+
   it("nesapludina dažādu valstu ierakstus vienā mēnesī", () => {
     const t = Date.UTC(2022, 4, 27);
     const agg = aggregateUnifiedIncidents([

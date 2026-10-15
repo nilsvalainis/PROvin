@@ -253,7 +253,8 @@ export function classifyStatVinText(text: string, vin: string): { status: "found
   }
   if (!hasVin(text, vin)) {
     if (NONE_RE.test(text)) return { status: "none", summary: "Nav izsoles ieraksta" };
-    return null;
+    if (text.trim().length < 40) return null;
+    return { status: "unknown", summary: "stat.vin: lapa bez VIN un bez „nav atrasts”" };
   }
   if (AUCTION_RE.test(text)) {
     const auctions = auctionsFromText(text, vin);
@@ -321,7 +322,7 @@ export function parseStatVinPage(input: StatVinPageInput): VinScanParse {
           ? {
               photoUrl: firstPhoto || undefined,
               photoCount: photoCount || undefined,
-              photoUrls: photos.slice(0, 20),
+              photoUrls: photos.slice(0, 200),
             }
           : undefined,
       flags: photoCount > 0 ? { photoCount } : undefined,
@@ -329,8 +330,11 @@ export function parseStatVinPage(input: StatVinPageInput): VinScanParse {
     };
   }
 
-  if (NONE_RE.test(text) || !hasVin(text, vin)) {
+  if (NONE_RE.test(text)) {
     return { status: "none", summary: "Nav izsoles ieraksta" };
+  }
+  if (!hasVin(text, vin)) {
+    return { status: "unknown", summary: "stat.vin: lapa bez VIN un bez „nav atrasts”" };
   }
   return { status: "unknown", summary: "stat.vin: lapa nav atpazīta" };
 }
