@@ -1,5 +1,5 @@
 /**
- * Vienots PDF komentāru / rindkopu atstarpe: ne vairāk kā viena rindas augstums starp bloku rindām.
+ * Vienots PDF komentāru / rindkopu atstarpe: viena rindas augstums pirms katra virsraksta (izņemot pirmo).
  */
 
 export const PDF_TIGHT_GAP_SECTION = "1em";
@@ -18,7 +18,7 @@ export const PDF_TIGHT_RICH_BODY_RULES_CSS = `
       .pdf-incident-internal-note-body br + strong,
       .pdf-mileage-comment-note-body br + strong,
       .pdf-select-rich-body br + strong,
-      .ipdf-rich-comment br + strong{display:inline-block;margin-top:0;}
+      .ipdf-rich-comment br + strong{display:inline-block;margin-top:${PDF_TIGHT_GAP_BLOCK};}
       .pdf-select-rich-body,.ipdf-rich-comment,.ipdf-rich-comment p{margin:0;line-height:1.45;}
       .pdf-select-rich-body p + p,.ipdf-rich-comment p + p{margin-top:1em;}
       .pdf-select-slot-body{gap:1em;}
