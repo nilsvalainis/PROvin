@@ -1775,6 +1775,7 @@ export function IrissPasutijumsEditor({
             role="dialog"
             aria-modal="true"
             aria-labelledby="iriss-offer-dialog-title"
+            data-iriss-order-room="1"
             className="flex max-h-[min(92dvh,920px)] w-full max-w-6xl flex-col overflow-hidden rounded-[22px] border border-[#e5e7eb] bg-white shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >

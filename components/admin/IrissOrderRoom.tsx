@@ -575,7 +575,7 @@ export function IrissOrderRoom({
                   <label className="hidden items-center md:inline-flex">
                     <span className="sr-only">Statuss</span>
                     <select
-                      className="h-8 rounded-full border border-[#111827] bg-[#111827] px-2.5 text-[12px] font-semibold text-white outline-none"
+                      className="iriss-status-pill h-8 rounded-full border border-[#111827] bg-[#111827] px-2.5 text-[12px] font-semibold text-white outline-none"
                       value={rec.listStatus}
                       aria-label="Pasūtījuma statuss"
                       onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
@@ -588,7 +588,7 @@ export function IrissOrderRoom({
                     </select>
                   </label>
                   {dealPill ? (
-                    <span className="hidden h-8 items-center rounded-full border border-[#86efac] bg-[#dcfce7] px-2.5 text-[12px] font-semibold text-[#166534] md:inline-flex">
+                    <span className="iriss-deal-pill hidden h-8 items-center rounded-full border border-[#86efac] bg-[#dcfce7] px-2.5 text-[12px] font-semibold text-[#166534] md:inline-flex">
                       {dealPill}
                     </span>
                   ) : null}
@@ -722,7 +722,7 @@ export function IrissOrderRoom({
           <div className="min-w-0 space-y-3">
             <section className={cardClass}>
               <CardTitle>Transportlīdzekļa specifikācija</CardTitle>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="iriss-mobile-kv grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                 <label className="block min-w-0">
                   <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Statuss</span>
                   <select className={fieldClass} value={rec.listStatus} aria-label="Statuss specifikācijā" onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}>
@@ -1222,7 +1222,7 @@ export function IrissOrderRoom({
               </div>
             ))}
             <label className="mt-2 block">
-              <span className="sr-only">Piezīmes</span>
+              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6b7280]">Piezīmes</span>
               <textarea className={areaClass} aria-label="Piezīmes" value={rec.notes} onChange={(e) => onPatch("notes", e.target.value)} />
             </label>
             <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end">
