@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
 import {
   addIrissListingLinkRow,
   coerceIrissListingLinkList,
@@ -16,6 +17,8 @@ import {
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import { IRISS_SCAN_SOURCES, type IrissScanLinkKey } from "@/lib/iriss-scan-sources";
+import { IRISS_STALE_REVISION, irissScanWorkspaceRevision, mergeIrissScanRecords } from "@/lib/iriss-scan-save-safety";
+import { nextStableRowKeys } from "@/lib/iriss-stable-row-keys";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 
 /** min-7 stils: pelēks fons, baltas grupētas kartes, sīki pelēki virsraksti, akcenta teksts darbībām. */
@@ -33,6 +36,8 @@ function SourceGroup({
   const rows = coerceIrissListingLinkList(links);
   const filled = rows.filter((r) => r.trim()).length;
   const canAdd = rows.length < IRISS_LISTING_LINKS_PER_SOURCE_MAX;
+  const rowKeysRef = useRef<string[]>(nextStableRowKeys([], rows.length));
+  rowKeysRef.current = nextStableRowKeys(rowKeysRef.current, rows.length);
   return (
     <section>
       <div className="mb-1 flex items-center gap-1.5 px-1">
@@ -47,7 +52,7 @@ function SourceGroup({
           const err = irissListingLinkUrlError(line);
           const open = line.trim() && !err ? line.trim() : null;
           return (
-            <div key={idx} className="border-b border-[#e5e5ea] last:border-b-0">
+            <div key={rowKeysRef.current[idx] ?? `row-${idx}`} className="border-b border-[#e5e5ea] last:border-b-0">
               <div className="flex min-h-[44px] items-center gap-1 pl-3 pr-1">
                 <input
                   className={`min-w-0 flex-1 bg-transparent py-2.5 text-[15px] outline-none placeholder:text-[#c7c7cc] ${err ? "text-red-600" : "text-[var(--color-apple-text)]"}`}
@@ -67,7 +72,10 @@ function SourceGroup({
                 ) : null}
                 <button
                   type="button"
-                  onClick={() => onChange(removeIrissListingLinkRow(rows, idx))}
+                  onClick={() => {
+                    rowKeysRef.current = nextStableRowKeys(rowKeysRef.current, rows.length - 1, idx);
+                    onChange(removeIrissListingLinkRow(rows, idx));
+                  }}
                   disabled={rows.length <= 1 && !line.trim()}
                   className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#aeaeb2] transition hover:bg-red-50 hover:text-red-600 disabled:invisible"
                   title="Noņemt saiti"
@@ -106,6 +114,8 @@ export function IrissScanEditor({
   const [dirty, setDirty] = useState(Boolean(unsavedDraft && initialRecord.vin));
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [conflict, setConflict] = useState<{ server: IrissScanRecord } | null>(null);
+  const [conflictBusy, setConflictBusy] = useState(false);
   const persistedIdRef = useRef(unsavedDraft ? "" : initialRecord.id);
   const chips = useMemo(() => buildListingPlatformChips(rec, 50), [rec]);
 
@@ -122,12 +132,23 @@ export function IrissScanEditor({
       const persistId = persistedIdRef.current;
       const isCreate = !persistId;
       const url = isCreate ? "/api/admin/iriss-scan" : `/api/admin/iriss-scan/${encodeURIComponent(rec.id)}`;
+      const body = isCreate
+        ? { record: rec }
+        : { ...rec, expectedWorkspaceRevision: irissScanWorkspaceRevision(rec) };
       const res = await fetch(url, {
         method: isCreate ? "POST" : "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(isCreate ? { record: rec } : rec),
+        body: JSON.stringify(body),
       });
+      if (res.status === 409) {
+        const data = (await res.json().catch(() => ({}))) as { record?: IrissScanRecord; error?: string };
+        if (data.record) {
+          setConflict({ server: data.record });
+          setSaveMsg("Konflikts: cita cilne jau saglabāja jaunāku ierakstu.");
+          return;
+        }
+      }
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         setSaveMsg(data.error === "empty_record" ? "Nav ko saglabāt. Ieraksti VIN, marku vai saiti." : `Kļūda ${res.status}`);
@@ -143,6 +164,7 @@ export function IrissScanEditor({
         if (isCreate) router.replace(`/admin/iriss/scan/${encodeURIComponent(data.id)}`);
       }
       setDirty(false);
+      setConflict(null);
       setSaveMsg("Saglabāts");
     } catch {
       setSaveMsg("Tīkla kļūda");
@@ -150,6 +172,29 @@ export function IrissScanEditor({
       setBusy(false);
     }
   }, [rec, router]);
+
+  const reloadConflict = useCallback(() => {
+    if (!conflict) return;
+    setConflictBusy(true);
+    setRec(conflict.server);
+    persistedIdRef.current = conflict.server.id;
+    setDirty(false);
+    setConflict(null);
+    setSaveMsg("Ielādēta servera versija.");
+    setConflictBusy(false);
+  }, [conflict]);
+
+  const mergeConflict = useCallback(() => {
+    if (!conflict) return;
+    setConflictBusy(true);
+    const merged = mergeIrissScanRecords(conflict.server, rec);
+    merged.workspaceRevision = irissScanWorkspaceRevision(conflict.server);
+    setRec(merged);
+    setConflict(null);
+    setDirty(true);
+    setSaveMsg("Apvienots droši. Saglabā vēlreiz.");
+    setConflictBusy(false);
+  }, [conflict, rec]);
 
   return (
     <div className="mx-auto w-full max-w-[720px] px-3 pb-10 sm:px-6">
@@ -171,6 +216,17 @@ export function IrissScanEditor({
           </div>
         </div>
       </AdminDashboardHeaderWithMenu>
+
+      {conflict ? (
+        <div className="mt-2">
+          <AdminWorkspaceRevisionConflictBanner
+            kind={IRISS_STALE_REVISION}
+            busy={conflictBusy}
+            onReload={reloadConflict}
+            onSafeMerge={mergeConflict}
+          />
+        </div>
+      ) : null}
 
       <div className="mt-2 space-y-5">
         <div>

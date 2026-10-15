@@ -1,6 +1,6 @@
 import "server-only";
 
-import { BlobNotFoundError, del, get, list, put } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
 import fs from "fs/promises";
 import os from "node:os";
 import path from "path";
@@ -10,6 +10,12 @@ import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists
 import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
 import { attachmentAfterBlobPut, parseDataUrlPayload } from "@/lib/iriss-offer-attachment-blob";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
+import {
+  isIrissRecordDeleted,
+  markIrissRecordDeleted,
+  pickIrissPasutijumsAuditFields,
+  restoreIrissRecord,
+} from "@/lib/iriss-pasutijumi-audit-fields";
 import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
 import {
   irissRevisionMatches,
@@ -485,6 +491,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     ...sanitizeListingLinks(o),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: normalizeOffers(o.offers),
+    ...pickIrissPasutijumsAuditFields(o),
   };
 }
 
@@ -515,6 +522,7 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
       updatedAt: sanitizeDraftTextForStorage(typeof o.updatedAt === "string" ? o.updatedAt : "", 64),
       pinnedAt: sanitizeDraftTextForStorage(typeof o.pinnedAt === "string" ? o.pinnedAt : "", 64),
       listStatus: normalizeListStatus(o.listStatus),
+      deletedAt: typeof o.deletedAt === "string" ? sanitizeDraftTextForStorage(o.deletedAt, 64) : "",
       clientFirstName: sanitizeDraftTextForStorage(typeof o.clientFirstName === "string" ? o.clientFirstName : "", 120),
       clientLastName: sanitizeDraftTextForStorage(typeof o.clientLastName === "string" ? o.clientLastName : "", 120),
       orderDate: sanitizeDraftTextForStorage(typeof o.orderDate === "string" ? o.orderDate : "", 32),
@@ -659,12 +667,13 @@ async function removeFromListRowsIndex(
   await writeListRowsIndex(r, next);
 }
 
-export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
+export async function listIrissPasutijumi(opts?: { includeDeleted?: boolean }): Promise<IrissPasutijumsListRow[]> {
   const r = resolveStorage();
   if (r.kind === "disabled") return [];
 
   if (BLOB_LIST_CACHE_TTL_MS > 0 && blobListRowsCache && blobListRowsCache.expiresAt > Date.now()) {
-    return cloneRows(blobListRowsCache.rows);
+    const cached = cloneRows(blobListRowsCache.rows);
+    return opts?.includeDeleted ? cached : cached.filter((row) => !isIrissRecordDeleted(row));
   }
 
   let rows = await readListRowsIndex(r);
@@ -683,7 +692,8 @@ export async function listIrissPasutijumi(): Promise<IrissPasutijumsListRow[]> {
       rows: cloneRows(rows),
     };
   }
-  return cloneRows(rows);
+  const cloned = cloneRows(rows);
+  return opts?.includeDeleted ? cloned : cloned.filter((row) => !isIrissRecordDeleted(row));
 }
 
 export async function readIrissPasutijums(id: string): Promise<IrissPasutijumsRecord | null> {
@@ -822,11 +832,13 @@ export async function writeIrissPasutijums(
       return { ok: false, error: IRISS_STALE_REVISION, stale: true, record: existing };
     }
     const createdAt = existing?.createdAt ?? sanitized.createdAt ?? updatedAt;
+    const incomingDeletedAt = typeof record.deletedAt === "string" ? record.deletedAt : undefined;
     let out: IrissPasutijumsRecord = {
       ...sanitized,
       updatedAt,
       createdAt,
       workspaceRevision: existingRev,
+      deletedAt: incomingDeletedAt !== undefined ? incomingDeletedAt : existing?.deletedAt ?? sanitized.deletedAt ?? "",
     };
     out = await persistOfferImages(r, out);
     if (existing && !isMeaningfullyChanged(existing, out)) {
@@ -1041,48 +1053,25 @@ export async function deleteIrissPasutijums(id: string): Promise<{ ok: true } | 
     const r = resolveStorage();
     if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
     if (!isSafeIrissPasutijumsId(id)) return { ok: false, error: "invalid_id" };
-
-    if (r.kind === "blob") {
-      try {
-        await del(blobPathname(r.prefix, id), { token: r.token });
-      } catch (e) {
-        if (e instanceof BlobNotFoundError) {
-          try {
-            await removeFromListRowsIndex(r, id);
-          } catch {
-            /* ignore index sync errors */
-          }
-          invalidateBlobListCache();
-          invalidateBlobRecordCache(id);
-          return { ok: true };
-        }
-        throw e;
-      }
-      try {
-        await removeFromListRowsIndex(r, id);
-      } catch {
-        /* ignore index sync errors */
-      }
-      invalidateBlobListCache();
-      invalidateBlobRecordCache(id);
-      return { ok: true };
-    }
-
-    try {
-      await fs.unlink(filePath(r.dir, id));
-    } catch (e) {
-      const code = e && typeof e === "object" && "code" in e ? (e as NodeJS.ErrnoException).code : undefined;
-      if (code !== "ENOENT") throw e;
-    }
-    try {
-      await removeFromListRowsIndex(r, id);
-    } catch {
-      /* ignore index sync errors */
-    }
-    invalidateBlobListCache();
+    const existing = await readIrissPasutijums(id);
+    if (!existing) return { ok: true };
+    if (isIrissRecordDeleted(existing)) return { ok: true };
+    const next = markIrissRecordDeleted(existing, new Date().toISOString());
+    const w = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(existing) });
+    if (!w.ok) return { ok: false, error: w.error };
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg };
   }
+}
+
+export async function restoreIrissPasutijums(id: string): Promise<{ ok: true; record: IrissPasutijumsRecord } | { ok: false; error: string }> {
+  if (!isSafeIrissPasutijumsId(id)) return { ok: false, error: "invalid_id" };
+  const existing = await readIrissPasutijums(id);
+  if (!existing) return { ok: false, error: "not_found" };
+  const next = restoreIrissRecord(existing);
+  const w = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(existing) });
+  if (!w.ok) return { ok: false, error: w.error };
+  return { ok: true, record: w.record };
 }

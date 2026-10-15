@@ -79,7 +79,7 @@ export function irissListingVehicleId(platform: IrissListingPlatform, externalId
   return createHash("sha1").update(platform).update("|").update(externalId).digest("hex").slice(0, 20);
 }
 
-type SourceRow = Pick<IrissPasutijumsListRow, "id" | "brandModel" | "listStatus"> & {
+type SourceRow = Pick<IrissPasutijumsListRow, "id" | "brandModel" | "listStatus" | "deletedAt"> & {
   listingLinkAutobid?: unknown;
   listingLinkOpenline?: unknown;
   listingLinkAuto1?: unknown;
@@ -121,6 +121,7 @@ export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[
     for (const url of filledIrissListingLinks(raw)) push(row, platform, url);
   };
   for (const row of rows) {
+    if (row.deletedAt?.trim()) continue;
     if (!isIrissPasutijumsWorkingStatus(row.listStatus ?? "active")) continue;
     pushAll(row, "autobid", row.listingLinkAutobid);
     pushAll(row, "openline", row.listingLinkOpenline);

@@ -179,6 +179,14 @@ export function normalizeIrissDzintarzemeTameDraft(raw: unknown): IrissDzintarze
   };
 }
 
+export type IrissStatusHistoryEntry = {
+  from: IrissPasutijumsListStatus;
+  to: IrissPasutijumsListStatus;
+  at: string;
+  by: string;
+  reason?: string;
+};
+
 export type IrissPasutijumsRecord = {
   id: string;
   createdAt: string;
@@ -188,6 +196,18 @@ export type IrissPasutijumsRecord = {
   workspaceRevision: number;
   /** Saraksta / darba plūsmas statuss. */
   listStatus: IrissPasutijumsListStatus;
+  /** Kad listStatus pēdējoreiz mainīts (ISO). Vecie JSON var būt tukši. */
+  statusChangedAt?: string;
+  /** Statusu vēsture. Aditīvs lauks, vecie JSON bez tā. */
+  statusHistory?: IrissStatusHistoryEntry[];
+  /** Neaktīvs iemesls (neobligāts). */
+  inactiveReason?: string;
+  /** Mīkstā dzēšana. Tukšs / nav = redzams sarakstā. */
+  deletedAt?: string;
+  /** Tombstones: lauks → iztukšošanas laiks ms. Tukšais uzvar, ja jaunāks. */
+  clearedFields?: Record<string, number>;
+  /** Lauka pēdējās izmaiņas ms. Konflikta merge ņem jaunāko. */
+  fieldUpdatedAt?: Record<string, number>;
   clientFirstName: string;
   clientLastName: string;
   phone: string;
@@ -240,6 +260,8 @@ export type IrissPasutijumsListRow = {
   updatedAt: string;
   pinnedAt: string;
   listStatus: IrissPasutijumsListStatus;
+  /** Mīkstā dzēšana. Tukšs / nav = redzams parastajā sarakstā. */
+  deletedAt?: string;
   clientFirstName: string;
   clientLastName: string;
   orderDate: string;

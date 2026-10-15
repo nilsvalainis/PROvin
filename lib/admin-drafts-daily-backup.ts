@@ -8,6 +8,8 @@ import path from "node:path";
 import { getConsultationDraftStorageDir, isConsultationDraftStoreEnabled } from "@/lib/admin-consultation-draft-store";
 import { getOrderDraftStorageDir, isOrderDraftStoreEnabled } from "@/lib/admin-order-draft-store";
 import { getIrissPasutijumiStorageDir, getIrissPasutijumiStorageState } from "@/lib/iriss-pasutijumi-store";
+import { getIrissPavadzimesStorageDir, IRISS_PAVADZIMES_BLOB_PREFIX } from "@/lib/iriss-pavadzimes-store";
+import { getIrissScanStorageDir, getIrissScanStorageState, IRISS_SCAN_BLOB_PREFIX } from "@/lib/iriss-scan-store";
 
 type BackupSourceReport = {
   source: string;
@@ -48,9 +50,9 @@ function shouldIncludeOrderDraftsFromBlob(): boolean {
   return envFlag("ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB", false);
 }
 
-/** Noklusējums: false — izvairās no list+get pa visiem IRISS pasūtījumiem Blob (ļoti dārgi). Pilnu IRISS eksportu: admin UI vai `npm run iriss:merge-to-blob`. */
-function shouldIncludeIrissFromBlob(): boolean {
-  return envFlag("ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_IRISS_BLOB", false);
+/** Noklusējums: true — IRISS pasūtījumi, SCAN un pavadzīmes Blob iet dienas backupā. */
+export function shouldIncludeIrissFromBlob(): boolean {
+  return envFlag("ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_IRISS_BLOB", true);
 }
 
 function fsRetentionFolderCount(): number {
@@ -172,11 +174,19 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
   if (!irissState.enabled) warnings.push(`IRISS storage disabled: ${irissState.reason}.`);
   const irissDir = getIrissPasutijumiStorageDir();
   if (irissDir && isTmpPath(irissDir)) warnings.push(`IRISS data is in ephemeral tmp path: ${irissDir}`);
+  const irissScanDir = getIrissScanStorageDir();
+  if (irissScanDir && isTmpPath(irissScanDir)) warnings.push(`IRISS SCAN data is in ephemeral tmp path: ${irissScanDir}`);
+  const irissPavadzimesDir = getIrissPavadzimesStorageDir();
+  if (irissPavadzimesDir && isTmpPath(irissPavadzimesDir)) {
+    warnings.push(`IRISS pavadzīmes data is in ephemeral tmp path: ${irissPavadzimesDir}`);
+  }
 
   const fsSources: Array<{ label: string; dir: string | null }> = [
     { label: "order-drafts-fs", dir: orderDir },
     { label: "consultation-drafts-fs", dir: consultationDir },
     { label: "iriss-fs", dir: irissDir },
+    { label: "iriss-scan-fs", dir: irissScanDir },
+    { label: "iriss-pavadzimes-fs", dir: irissPavadzimesDir },
   ];
 
   const snapshotPayload: Record<string, Record<string, string>> = {};
@@ -204,13 +214,20 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
       reports.push({ source: "order-drafts-blob", files: files.size, bytes: sizeOfMap(files) });
     }
   }
-  if (token && irissState.enabled && irissState.persistence === "vercel_blob" && shouldIncludeIrissFromBlob()) {
-    const files = await readJsonFilesFromBlob(irissBlobPrefix, token);
-    if (files.size > 0) {
+  if (token && shouldIncludeIrissFromBlob()) {
+    const irissBlobSources: Array<{ label: string; prefix: string; include: boolean }> = [
+      { label: "iriss-blob", prefix: irissBlobPrefix, include: irissState.enabled && irissState.persistence === "vercel_blob" },
+      { label: "iriss-scan-blob", prefix: IRISS_SCAN_BLOB_PREFIX, include: getIrissScanStorageState().enabled },
+      { label: "iriss-pavadzimes-blob", prefix: IRISS_PAVADZIMES_BLOB_PREFIX, include: true },
+    ];
+    for (const src of irissBlobSources) {
+      if (!src.include) continue;
+      const files = await readJsonFilesFromBlob(src.prefix, token);
+      if (files.size === 0) continue;
       const relPayload: Record<string, string> = {};
       for (const [k, v] of files) relPayload[k] = v;
-      snapshotPayload["iriss-blob"] = relPayload;
-      reports.push({ source: "iriss-blob", files: files.size, bytes: sizeOfMap(files) });
+      snapshotPayload[src.label] = relPayload;
+      reports.push({ source: src.label, files: files.size, bytes: sizeOfMap(files) });
     }
   }
 

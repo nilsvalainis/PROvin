@@ -70,7 +70,7 @@
   "crons": [
     {
       "path": "/api/cron/admin-drafts-daily-backup",
-      "schedule": "0 2 * * 1,4"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/cron/iriss-listings-daily-sync",

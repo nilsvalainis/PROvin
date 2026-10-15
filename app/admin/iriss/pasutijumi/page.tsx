@@ -17,7 +17,7 @@ export default async function IrissPasutijumiListPage() {
   let loadError: string | null = null;
   if (storeEnabled) {
     try {
-      [rows, initialListOrder] = await Promise.all([listIrissPasutijumi(), readIrissListOrder()]);
+      [rows, initialListOrder] = await Promise.all([listIrissPasutijumi({ includeDeleted: true }), readIrissListOrder()]);
     } catch (e) {
       loadError = e instanceof Error ? e.message : "Neizdevās ielādēt pasūtījumus.";
       rows = [];
@@ -55,7 +55,7 @@ export default async function IrissPasutijumiListPage() {
         </div>
       ) : null}
 
-      {storeEnabled && !loadError && rows.length === 0 ? (
+      {storeEnabled && !loadError && rows.filter((r) => !r.deletedAt).length === 0 && rows.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
           <p className="font-medium text-black">Nav pasūtījumu</p>
           <p className="mt-2 text-sm text-black">Spied „+”, lai izveidotu pirmo ierakstu.</p>

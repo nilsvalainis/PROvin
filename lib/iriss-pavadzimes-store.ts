@@ -21,6 +21,7 @@ import {
 } from "@/lib/iriss-pavadzimes-types";
 
 const BLOB_PREFIX = "iriss-pavadzimes/";
+export const IRISS_PAVADZIMES_BLOB_PREFIX = BLOB_PREFIX;
 const INDEX_NAME = "index.json";
 const DEFAULT_FS_DIR = ".data/iriss-pavadzimes";
 const PARSE_BATCH = 8;
@@ -30,6 +31,11 @@ type ResolvedStorage = { kind: "fs"; dir: string } | { kind: "blob"; token: stri
 
 function blobToken(): string {
   return process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "";
+}
+
+export function getIrissPavadzimesStorageDir(): string | null {
+  const r = resolveStorage();
+  return r.kind === "fs" ? r.dir : null;
 }
 
 function resolveStorage(): ResolvedStorage {

@@ -12,7 +12,11 @@ import {
 import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
 import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
 
-import { parseIrissListStatusFilter, IRISS_LIST_STATUS_DEFAULT_FILTER } from "@/lib/iriss-pasutijumi-status-filter";
+import {
+  IRISS_LIST_STATUS_DEFAULT_FILTER,
+  IRISS_LIST_TRASH_KEY,
+  parseIrissListStatusFilter,
+} from "@/lib/iriss-pasutijumi-status-filter";
 import {
   mergeIrissOfferImageDataUrls,
   stripIrissOfferImageDataUrls,
@@ -95,6 +99,14 @@ describe("IRISS saraksta rinda", () => {
     expect(irissBrandFallbackLabel("Moskvitch 412")).toBe("MO");
   });
 
+  it("copies deletedAt onto the list row", () => {
+    const row = irissPasutijumsToListRow({
+      ...emptyIrissPasutijums("gone", "2026-01-01T00:00:00.000Z"),
+      deletedAt: "2026-10-15T12:00:00.000Z",
+    });
+    expect(row.deletedAt).toBe("2026-10-15T12:00:00.000Z");
+  });
+
   it("counts statuses", () => {
     const a = irissPasutijumsToListRow(emptyIrissPasutijums("a", "2026-01-01T00:00:00.000Z"));
     const b = irissPasutijumsToListRow({
@@ -127,6 +139,10 @@ describe("IRISS statusa filtrs", () => {
       completed: false,
       inactive: false,
     });
+  });
+
+  it("has a separate Miskaste key so existing status JSON stays valid", () => {
+    expect(IRISS_LIST_TRASH_KEY).toBe("iriss-pasutijumi-list-trash-v1");
   });
 
   it("keeps old v2 JSON and turns new statuses on so existing data stay visible", () => {

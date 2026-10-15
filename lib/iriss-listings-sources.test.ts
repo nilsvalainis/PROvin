@@ -43,6 +43,7 @@ describe("buildIrissListingSources", () => {
       row("r", "reserved", { autobid: "https://autobid.de/en/search-results?q=6" }),
       row("b", "completed", { autobid: "https://autobid.de/en/search-results?q=2" }),
       row("c", "inactive", { autobid: "https://autobid.de/en/search-results?q=3" }),
+      { ...row("t", "active", { autobid: "https://autobid.de/en/search-results?q=trash" }), deletedAt: "2026-10-15T00:00:00.000Z" },
     ]);
     expect(sources.map((s) => `${s.orderId}:${s.platform}`)).toEqual([
       "a:autobid",
