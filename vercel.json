@@ -29,6 +29,12 @@
     "app/api/admin/iriss-pavadzimes/**/*.ts": {
       "maxDuration": 120
     },
+    "app/api/iriss/pavadzimes/sync/route.ts": {
+      "maxDuration": 120
+    },
+    "app/api/webhooks/dropbox-pavadzimes/route.ts": {
+      "maxDuration": 120
+    },
     "app/api/cron/admin-drafts-daily-backup/route.ts": {
       "maxDuration": 120
     },
