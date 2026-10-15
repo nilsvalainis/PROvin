@@ -12,9 +12,29 @@ import {
   extractEcarstradeRelayItems,
   htmlFromEcarstradeApiBody,
   idsNeedingDetailPrice,
+  isEcarstradeBidNoBidsHtml,
   isEcarstradeFutureApiTrulyEmpty,
   itemsFromEcarstradeApiBody,
+  mergeEcarstradeRelayItems,
 } from "./ecarstrade.mjs";
+
+const DETAIL_FIX_7687027 = `
+<nav><a href="/search">Buy</a><a href="/account">My account</a></nav>
+<h1>BMW X5</h1>
+<a class="item-bid-button fix" data-price="27200" data-href="/bids/buy_or_offer?car_id=7687027&amp;bid=27200"> Buy<span> 27200€</span></a>
+<input type="text" id="calc_bid" value="27200,00" />
+<label>Price excl. VAT</label>`;
+
+const DETAIL_FIX_7694037 = `
+<nav><a href="/buy">Buy</a></nav>
+<a class="item-bid-button fix" data-price="22800" data-href="/bids/buy_or_offer?car_id=7694037&amp;bid=22800"> Buy<span> 22800€</span></a>
+<input id="calc_bid" value="22800,00" />`;
+
+const DETAIL_BID_7677985 = `
+<nav><a href="/buy">Buy</a></nav>
+<a class="item-bid-button bid">Place a bid</a>
+<div class="min-market-price d-none" data-price="">Min. Market Price</div>
+<div class="recommended-bid d-none" data-price="">Recommended bid</div>`;
 
 test("search page URL sets start for page 2+", () => {
   const src = "https://ecarstrade.com/search?mark[]=68&year_from=2018";
@@ -140,4 +160,44 @@ test("future_api JSON data.max_bid becomes current price on the item", () => {
   assert.equal(items.length, 1);
   assert.equal(items[0].priceCurrent, 25500);
   assert.equal(items[0].title, "Volvo XC60");
+});
+
+test("logged-in FIX detail: item-bid-button.fix data-price, not nav Buy", () => {
+  const x5 = extractEcarstradeRelayItem(DETAIL_FIX_7687027, { id: "7687027" });
+  assert.equal(x5?.externalId, "7687027");
+  assert.equal(x5?.priceBuyNow, 27200);
+  assert.equal(x5?.priceCurrent, null);
+  assert.equal(x5?.auctionStage, "FIX");
+  const second = extractEcarstradeRelayItem(DETAIL_FIX_7694037, { id: "7694037" });
+  assert.equal(second?.priceBuyNow, 22800);
+  const hrefOnly = extractEcarstradeRelayItem(
+    `<a class="item-bid-button fix" data-href="/bids/buy_or_offer?car_id=7687027&amp;bid=27200"> Buy</a>`,
+    { id: "7687027" },
+  );
+  assert.equal(hrefOnly?.priceBuyNow, 27200);
+  const calcOnly = extractEcarstradeRelayItem(
+    `<a class="item-bid-button fix">Buy</a><input id="calc_bid" value="27200,00" /><span>Price excl. VAT</span>`,
+    { id: "7687027" },
+  );
+  assert.equal(calcOnly?.priceBuyNow, 27200);
+});
+
+test("BID Place a bid with empty data-price is unpriced; list max_bid survives detail merge", () => {
+  assert.equal(isEcarstradeBidNoBidsHtml(DETAIL_BID_7677985), true);
+  const detail = extractEcarstradeRelayItem(DETAIL_BID_7677985, { id: "7677985" });
+  assert.equal(detail?.priceBuyNow, null);
+  assert.equal(detail?.priceCurrent, null);
+  assert.equal(detail?.auctionStage, "BID");
+  const card = '<div data-itemId="7677985"><div class="item-title"><span>Audi A4</span></div></div>';
+  const raw = JSON.stringify({
+    car_id: "7677985",
+    data: { id: "7677985", max_bid: "15100", auction_type: "bid" },
+    result: Buffer.from(card, "utf8").toString("base64"),
+  });
+  const list = itemsFromEcarstradeApiBody(raw);
+  assert.equal(list[0]?.priceCurrent, 15100);
+  const merged = mergeEcarstradeRelayItems(list, detail ? [detail] : []);
+  assert.equal(merged[0]?.priceCurrent, 15100);
+  assert.equal(merged[0]?.priceBuyNow, null);
+  assert.equal(merged[0]?.auctionStage, "BID");
 });

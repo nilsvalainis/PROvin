@@ -7,18 +7,41 @@ import { listingCardPriceLabel, listingComparisonPrice } from "@/lib/iriss-listi
 import {
   decodeEcarstradeCardHtml,
   ecarstradeApiUrl,
+  ecarstradeAuctionTypeFromHtml,
   ecarstradeCarJsonUrl,
   ecarstradeDetailUrl,
   ecarstradePageStart,
   ecarstradeSearchPageUrl,
+  isEcarstradeBidNoBidsHtml,
   mergeEcarstradeHtmlPrices,
   mergeEcarstradeJsonPrices,
   parseEcarstradeApiPage,
   parseEcarstradeCard,
+  parseEcarstradeCardPrices,
   parseEcarstradeSearchHtml,
   readEcarstradeAuth,
   splitConcatenatedJsonObjects,
 } from "@/lib/iriss-listings-ecarstrade";
+
+/** Logged-in /cars/{id} FIX (7687027 BMW X5). Nav „Buy” first so old PIRKT window failed. */
+const DETAIL_FIX_7687027 = `
+<nav><a href="/search">Buy</a><a href="/account">My account</a></nav>
+<h1>BMW X5</h1>
+<a class="item-bid-button fix" data-price="27200" data-href="/bids/buy_or_offer?car_id=7687027&amp;bid=27200"> Buy<span> 27200€</span></a>
+<input type="text" id="calc_bid" value="27200,00" />
+<label>Price excl. VAT</label>`;
+
+const DETAIL_FIX_7694037 = `
+<nav><a href="/buy">Buy</a></nav>
+<a class="item-bid-button fix" data-price="22800" data-href="/bids/buy_or_offer?car_id=7694037&amp;bid=22800"> Buy<span> 22800€</span></a>
+<input id="calc_bid" value="22800,00" />`;
+
+/** BID no bids (7677985). Empty data-price is real, not a parse miss. */
+const DETAIL_BID_7677985 = `
+<nav><a href="/buy">Buy</a></nav>
+<a class="item-bid-button bid">Place a bid</a>
+<div class="min-market-price d-none" data-price="">Min. Market Price</div>
+<div class="recommended-bid d-none" data-price="">Recommended bid</div>`;
 
 const FIX = join(dirname(fileURLToPath(import.meta.url)), "__fixtures__", "iriss-ecarstrade");
 
@@ -238,5 +261,63 @@ describe("eCarsTrade parser", () => {
     expect(vehicles).toHaveLength(1);
     expect(vehicles[0]).toMatchObject({ externalId: "7602956", priceBuyNow: 16200 });
     expect(parseEcarstradeSearchHtml("<html><title>Just a moment...</title></html>")).toEqual([]);
+  });
+
+  it("reads FIX buy-now from item-bid-button.fix data-price, not nav Buy", () => {
+    const x5 = parseEcarstradeCardPrices(DETAIL_FIX_7687027);
+    expect(x5.buyNow).toBe(27200);
+    expect(x5.current).toBeNull();
+    expect(ecarstradeAuctionTypeFromHtml(DETAIL_FIX_7687027)).toBe("fix");
+    const v = parseEcarstradeCard(DETAIL_FIX_7687027, { id: "7687027" });
+    expect(v).toMatchObject({
+      externalId: "7687027",
+      priceBuyNow: 27200,
+      priceCurrent: null,
+      auctionStage: "FIXED_PRICE",
+    });
+    expect(listingCardPriceLabel({ ...v!, platform: "ecarstrade" })).toBe("Pirkt uzreiz");
+    expect(parseEcarstradeCardPrices(DETAIL_FIX_7694037).buyNow).toBe(22800);
+    expect(parseEcarstradeCard(DETAIL_FIX_7694037, { id: "7694037" })?.priceBuyNow).toBe(22800);
+  });
+
+  it("treats BID Place a bid with empty data-price as unpriced; max_bid stays current", () => {
+    expect(isEcarstradeBidNoBidsHtml(DETAIL_BID_7677985)).toBe(true);
+    const parsed = parseEcarstradeCardPrices(DETAIL_BID_7677985);
+    expect(parsed).toEqual({ buyNow: null, current: null, start: null });
+    const v = parseEcarstradeCard(DETAIL_BID_7677985, { id: "7677985" });
+    expect(v).toMatchObject({
+      externalId: "7677985",
+      priceBuyNow: null,
+      priceCurrent: null,
+      auctionStage: "BLIND_AUCTION",
+    });
+    expect(listingCardPriceLabel({ ...v!, platform: "ecarstrade" })).toBe("izsole, nav solījumu");
+    const withListBid = parseEcarstradeCard(DETAIL_BID_7677985, {
+      id: "7677985",
+      auction_type: "bid",
+      max_bid: "15100",
+    });
+    expect(withListBid).toMatchObject({ priceBuyNow: null, priceCurrent: 15100, auctionStage: "BLIND_AUCTION" });
+    expect(listingCardPriceLabel({ ...withListBid!, platform: "ecarstrade" })).toBe("Pašreizējā cena");
+    const pub = parseEcarstradeCard(card("card-tucson-public.html"), {
+      id: "7602956",
+      max_bid: null,
+      close_date: "31 Dec 2036 23:59",
+    });
+    const merged = mergeEcarstradeHtmlPrices(pub!, DETAIL_BID_7677985);
+    expect(merged.priceBuyNow).toBeNull();
+    expect(merged.priceCurrent).toBeNull();
+  });
+
+  it("takes FIX buy-now from buy_or_offer bid= or #calc_bid when data-price is empty", () => {
+    const hrefOnly = `
+      <nav><a href="/buy">Buy</a></nav>
+      <a class="item-bid-button fix" data-href="/bids/buy_or_offer?car_id=7687027&amp;bid=27200"> Buy</a>`;
+    expect(parseEcarstradeCardPrices(hrefOnly).buyNow).toBe(27200);
+    const calcOnly = `
+      <a class="item-bid-button fix">Buy</a>
+      <input id="calc_bid" value="27200,00" />
+      <span>Price excl. VAT</span>`;
+    expect(parseEcarstradeCardPrices(calcOnly).buyNow).toBe(27200);
   });
 });

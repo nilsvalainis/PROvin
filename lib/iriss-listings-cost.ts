@@ -88,6 +88,7 @@ export type ListingPriceFields = {
   priceStart: number | null;
   priceMinimal?: number | null;
   priceBuyNow: number | null;
+  auctionStage?: string;
 };
 
 /**
@@ -121,10 +122,16 @@ export function listingBidPrice(v: ListingPriceFields): number | null {
   return listingComparisonPrice(v);
 }
 
+function isEcarstradeBidNoBidsLabel(v: ListingPriceFields): boolean {
+  if (v.platform && v.platform !== "ecarstrade") return false;
+  return /^(bid|blind_auction)$/i.test((v.auctionStage ?? "").trim());
+}
+
 export function listingCardPriceLabel(v: ListingPriceFields): string {
   const cmp = listingComparisonPrice(v);
   const buyNow = positivePrice(v.priceBuyNow);
   if (cmp != null && buyNow != null && cmp === buyNow) return "Pirkt uzreiz";
+  if (cmp == null && isEcarstradeBidNoBidsLabel(v)) return "izsole, nav solījumu";
   return "Pašreizējā cena";
 }
 
