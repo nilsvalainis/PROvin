@@ -17,7 +17,9 @@ import {
 
 type Props = {
   isDetailScreen: boolean;
+  pullToRefresh: boolean;
   notice: ReactNode;
+  topSlot?: ReactNode;
   children: ReactNode;
 };
 
@@ -32,7 +34,7 @@ function isCoarseMobileViewport() {
  * overflow:hidden uz html/body bloķēja pirksta ritināšanu; šeit touchmove ir
  * pasīvs. Detalizētās lapās PTR nav, bet tas pats native scroller paliek.
  */
-export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children }: Props) {
+export function AdminShellMainWithMobilePull({ isDetailScreen, pullToRefresh, notice, topSlot, children }: Props) {
   const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -69,7 +71,7 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
   }, [router]);
 
   useEffect(() => {
-    if (isDetailScreen) return;
+    if (!pullToRefresh) return;
 
     const el = scrollRef.current;
     if (!el) return;
@@ -145,7 +147,7 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
       el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("touchcancel", resetPull);
     };
-  }, [doRefresh, isDetailScreen, resetPull]);
+  }, [doRefresh, pullToRefresh, resetPull]);
 
   const mainPad = isDetailScreen
     ? "space-y-0 p-0"
@@ -161,7 +163,7 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
         ref={scrollRef}
         className="relative flex w-full min-w-0 min-h-0 flex-1 flex-col max-md:overflow-y-auto max-md:overscroll-y-contain max-md:[-webkit-overflow-scrolling:touch] md:overflow-visible"
       >
-        {!isDetailScreen ? (
+        {pullToRefresh ? (
           <div
             id="admin-ptr-indicator"
             data-admin-ptr={ptrState}
@@ -184,9 +186,10 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, notice, children 
         ) : null}
         <div
           className={`flex w-full min-w-0 max-w-none flex-col ${isDetailScreen ? "" : "gap-3"}`}
-          style={!isDetailScreen && pullPx > 0 ? { transform: `translateY(${Math.max(0, pullPx - 48)}px)` } : undefined}
+          style={pullToRefresh && pullPx > 0 ? { transform: `translateY(${Math.max(0, pullPx - 48)}px)` } : undefined}
         >
           {notice}
+          {topSlot}
           <div className="w-full min-w-0 max-w-none">{children}</div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { IRISS_LISTING_IMAGE_HOST_SUFFIXES } from "./lib/iriss-listing-image";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
@@ -55,6 +56,12 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: true,
+  images: {
+    remotePatterns: IRISS_LISTING_IMAGE_HOST_SUFFIXES.flatMap((suffix) => [
+      { protocol: "https" as const, hostname: suffix },
+      { protocol: "https" as const, hostname: `**.${suffix}` },
+    ]),
+  },
   /** Server Actions + App Router pieprasījumu ķermeņa limits (multipart uz API maršrutiem).
    * Next.js noklusējums ~10 MB (`middlewareClientMaxBodySize`) — ar to par agru 413 „Nosūtīt atskaiti”.
    * Salīdzini ar `NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES` (lib/notify-report-email-limits.ts).

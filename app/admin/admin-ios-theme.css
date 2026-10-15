@@ -68,7 +68,7 @@ body:has(.admin-ios-theme) {
   font-family: inherit;
 }
 
-.admin-ios-theme a:not(.iriss-listing-platform-chip):not(.admin-nav-link) {
+.admin-ios-theme a:not(.iriss-listing-platform-chip):not(.admin-nav-link):not(.iriss-waybill-chip) {
   color: #000000;
 }
 

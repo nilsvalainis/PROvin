@@ -2,7 +2,8 @@
 
 import { FileDown, Mail, Phone, Plus, Star, Trash2, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from "react";
+import { IrissLazyImage } from "@/components/admin/IrissLazyImage";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
@@ -10,6 +11,7 @@ import { IrissOfferClientLinkBar } from "@/components/admin/IrissOfferClientLink
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { listingBudgetFitPill, listingFmtEur } from "@/lib/iriss-listings-card";
+import { listingDisplayImageUrl } from "@/lib/iriss-listing-image";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import { serializeListingOrderFilter } from "@/lib/iriss-listings-orders";
 import {
@@ -22,6 +24,7 @@ import {
 } from "@/lib/iriss-listings-operator-prefs";
 import type { IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import {
+  IRISS_ORDER_ROOM_TABS,
   IRISS_ORDER_ROOM_TEMPLATES,
   appendIrissOrderRoomNote,
   irissOrderRoomClientLine,
@@ -55,6 +58,7 @@ import {
   type IrissListingHitStatus,
 } from "@/lib/iriss-listing-match-client";
 import { parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
+import { irissHorizontalSwipeDirection, irissTabAfterSwipe } from "@/lib/iriss-touch-swipe";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import {
@@ -252,6 +256,7 @@ export function IrissOrderRoom({
   initialTab?: IrissOrderRoomTab;
 }) {
   const [tab, setTab] = useState<IrissOrderRoomTab>(initialTab);
+  const tabSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [bucket, setBucket] = useState<IrissOrderRoomHitBucket>("new");
   const [criteriaOpen, setCriteriaOpen] = useState(false);
   const [criteriaOn, setCriteriaOn] = useState(false);
@@ -603,6 +608,28 @@ export function IrissOrderRoom({
         </div>
       ) : null}
 
+      <div
+        style={{ touchAction: "manipulation" }}
+        onTouchStart={(e: TouchEvent<HTMLDivElement>) => {
+          const target = e.target;
+          if (target instanceof Element && target.closest("a,button,input,textarea,select,label,[data-iriss-no-swipe]")) {
+            tabSwipeStartRef.current = null;
+            return;
+          }
+          const touch = e.touches[0];
+          tabSwipeStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+        }}
+        onTouchEnd={(e: TouchEvent<HTMLDivElement>) => {
+          const start = tabSwipeStartRef.current;
+          tabSwipeStartRef.current = null;
+          if (!start) return;
+          const touch = e.changedTouches[0];
+          if (!touch) return;
+          const direction = irissHorizontalSwipeDirection(touch.clientX - start.x, touch.clientY - start.y);
+          if (!direction) return;
+          setTab((current) => irissTabAfterSwipe(IRISS_ORDER_ROOM_TABS, current, direction));
+        }}
+      >
       {tab === "overview" ? (
         <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="space-y-3">
@@ -975,8 +1002,13 @@ export function IrissOrderRoom({
                 return (
                   <li key={offer.id} className="overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white shadow-sm">
                     {thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={thumb} alt="" className="h-36 w-full object-cover" />
+                      <div className="relative h-36 w-full">
+                        <IrissLazyImage
+                          src={listingDisplayImageUrl({ url: thumb, maxWidth: 480 })}
+                          alt=""
+                          sizes="(max-width: 639px) 100vw, 320px"
+                        />
+                      </div>
                     ) : (
                       <div className="h-36 bg-slate-200" />
                     )}
@@ -1151,6 +1183,7 @@ export function IrissOrderRoom({
           </ul>
         </div>
       ) : null}
+      </div>
 
       <div className="fixed inset-x-0 bottom-0 z-[40] flex gap-2 border-t border-[#e5e5ea] bg-[rgba(249,249,249,0.94)] px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2.5 backdrop-blur md:hidden">
         <button type="button" disabled={orderPdfBusy} onClick={onPdf} className="flex h-[50px] flex-1 items-center justify-center rounded-xl bg-white text-[15px] font-semibold text-[var(--color-provin-accent)] shadow-[inset_0_0_0_1px_#d1d1d6]">
@@ -1269,11 +1302,17 @@ export function IrissOrderRoom({
 
 function HitPhoto({ src, alt, count }: { src: string; alt: string; count: number }) {
   const [hidden, setHidden] = useState(false);
+  const display = listingDisplayImageUrl({ url: src, maxWidth: 480 });
   return (
     <div className="relative h-36 w-full shrink-0 overflow-hidden rounded-xl bg-slate-200 sm:h-28 sm:w-40">
-      {src && !hidden ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={alt} referrerPolicy="no-referrer" className="h-full w-full object-cover" onError={() => setHidden(true)} />
+      {display && !hidden ? (
+        <IrissLazyImage
+          src={display}
+          alt={alt}
+          sizes="(max-width: 639px) 100vw, 160px"
+          referrerPolicy="no-referrer"
+          onError={() => setHidden(true)}
+        />
       ) : null}
       {count > 1 ? <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white">1/{count}</span> : null}
     </div>
