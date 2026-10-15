@@ -180,13 +180,28 @@ export type IrissPavadzimesSyncResult = IrissPavadzimesListResult & {
   indexChanged: boolean;
 };
 
-function mergeRecordItems(stale: IrissPavadzimeRecord[], computed: IrissPavadzimeRecord[]): IrissPavadzimeRecord[] {
-  const map = new Map(stale.map((x) => [x.id, x]));
-  for (const item of computed) {
-    const prev = map.get(item.id);
-    map.set(item.id, prev ? { ...prev, ...item, blobPath: prev.blobPath || item.blobPath } : item);
+function backupIndexBlobName(now = new Date()): string {
+  const ts = now.toISOString().replace(/[:.]/g, "-");
+  return `index.backup-${ts}.json`;
+}
+
+async function backupIndexBeforeWrite(doc: IrissPavadzimesIndex): Promise<void> {
+  if (!doc.items.length && !doc.updatedAt) return;
+  const body = JSON.stringify(doc);
+  const r = resolveStorage();
+  const name = backupIndexBlobName();
+  if (r.kind === "blob") {
+    await put(`${BLOB_PREFIX}${name}`, body, {
+      access: "private",
+      token: r.token,
+      addRandomSuffix: false,
+      allowOverwrite: false,
+      contentType: "application/json",
+    });
+    return;
   }
-  return sortIrissPavadzimes([...map.values()]);
+  await fs.mkdir(r.dir, { recursive: true });
+  await fs.writeFile(path.join(r.dir, name), body, "utf8");
 }
 
 let syncInFlight: Promise<IrissPavadzimesSyncResult> | null = null;
@@ -265,7 +280,8 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
   const dropboxConfigured = isDropboxConfigured();
   let dropboxError: string | null = null;
   const index = await readIndex();
-  const byKey = new Map(index.items.map((x) => [x.id, x]));
+  const priorItems = index.items;
+  const byKey = new Map<string, IrissPavadzimeRecord>();
   const nowIso = new Date().toISOString();
 
   if (dropboxConfigured) {
@@ -276,7 +292,7 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
       const dirty: { rec: IrissPavadzimeRecord; file: DropboxWaybillFile }[] = [];
       for (const file of listed.files) {
         if (!parseCsddWaybillFileName(file.name).number) continue;
-        const existing = findExisting([...byKey.values()], file);
+        const existing = findExisting(priorItems, file);
         const rec = recordFromDropboxFile(file, existing, nowIso);
         byKey.set(rec.id, rec);
         if (needsParse(rec, file)) dirty.push({ rec, file });
@@ -301,11 +317,13 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
         }
       });
 
-      const computedItems = sortIrissPavadzimes([...byKey.values()]);
+      const nextItems = sortIrissPavadzimes([...byKey.values()]);
       const fresh = await readIndex();
-      const nextItems = mergeRecordItems(fresh.items, computedItems);
       const indexChanged = JSON.stringify(fresh.items) !== JSON.stringify(nextItems);
       if (indexChanged) {
+        await backupIndexBeforeWrite(fresh).catch((e) => {
+          console.error("[iriss pavadzimes] index backup failed", e instanceof Error ? e.message : e);
+        });
         await writeIndex({ version: 1, updatedAt: nowIso, items: nextItems }).catch(() => undefined);
       }
 
@@ -324,7 +342,7 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
     }
   }
 
-  const rows = sortIrissPavadzimes([...byKey.values()]);
+  const rows = sortIrissPavadzimes(priorItems);
   return {
     ok: !dropboxError,
     rows,
