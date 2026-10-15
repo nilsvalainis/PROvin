@@ -11,7 +11,7 @@
  *   LISTINGS_PROFILES_DIR       noklusējums /var/lib/provin-listings/profiles
  *   LISTINGS_STATE_FILE         noklusējums /var/lib/provin-listings/state.json
  *   LISTINGS_MAX_PAGES          noklusējums 5 (lapas vienam avotam)
- *   LISTINGS_MAX_FETCHES_PER_DAY noklusējums 150 uz platformu (1 pilna diena + Nolasīt tagad)
+ *   LISTINGS_MAX_FETCHES_PER_DAY noklusējums 300 uz platformu (1 pilna diena + Nolasīt tagad)
  *   LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY noklusējums 400 (POST /listings/page)
  *   LISTINGS_MAX_QUEUE          noklusējums 40 (garāka rinda -> 503)
  *   LISTINGS_MANUAL_LOGIN_MINUTES noklusējums 15
@@ -49,6 +49,7 @@ import { ecarstrade } from "./lib/platforms/ecarstrade.mjs";
 import { openlane } from "./lib/platforms/openlane.mjs";
 import { sanitizeAutobidRelayRaw } from "./lib/sanitize-autobid.mjs";
 import { PLATFORMS, RelayState } from "./lib/state.mjs";
+import { listingsFetchKey, listingsUrlLog } from "./lib/urls.mjs";
 import { fetchVinScanPageHtml, validVinScanPageUrl } from "./lib/vinscan-page.mjs";
 
 const HOST = process.env.LISTINGS_RELAY_HOST || "127.0.0.1";
@@ -56,7 +57,8 @@ const PORT = Number(process.env.LISTINGS_RELAY_PORT || 8789);
 const TOKEN = (process.env.LISTINGS_RELAY_TOKEN ?? "").trim();
 const STATE_FILE = process.env.LISTINGS_STATE_FILE || "/var/lib/provin-listings/state.json";
 const MAX_PAGES = Math.max(1, Number(process.env.LISTINGS_MAX_PAGES || 5));
-const MAX_FETCHES_PER_DAY = Math.max(1, Number(process.env.LISTINGS_MAX_FETCHES_PER_DAY || 150));
+const MAX_FETCHES_PER_DAY = Math.max(1, Number(process.env.LISTINGS_MAX_FETCHES_PER_DAY || 300));
+const inflightFetches = new Map();
 const VINSCAN_MAX_FETCHES_PER_DAY = Math.max(
   1,
   Number(process.env.LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY || 400),
@@ -167,7 +169,7 @@ async function ensureSession(platform, page) {
   }
 }
 
-async function runFetch({ platform, sourceUrl, orderId, maxPages }) {
+async function runFetch({ platform, sourceUrl, orderId, maxPages, needPriceIds }) {
   const started = Date.now();
   const p = platforms[platform];
   const { page, close } = await openProfile(platform);
@@ -180,7 +182,7 @@ async function runFetch({ platform, sourceUrl, orderId, maxPages }) {
       return { ok: false, status: session.status, note: session.note, items: [], raw: null, pagesFetched: 0, pageCount: 0, orderId, elapsedMs: Date.now() - started };
     }
     await randomPause(800, 1_800);
-    const r = await p.fetchSource(page, sourceUrl, { maxPages, log, state });
+    const r = await p.fetchSource(page, sourceUrl, { maxPages, log, state, needPriceIds });
     if (publicFallback && r.status === "ok") {
       r.note = `${session.note} ${r.note}`.trim();
       state.setFetch(platform, "ok", session.note);
@@ -343,7 +345,7 @@ const server = createServer(async (req, res) => {
     if (state.countFetch("vinscan", VINSCAN_MAX_FETCHES_PER_DAY)) {
       return sendJson(res, 429, { ok: false, error: `dienas limits ${VINSCAN_MAX_FETCHES_PER_DAY} nolasīšanas VIN SCAN` });
     }
-    log(`vinscan page ${pageUrl.slice(0, 120)} (rinda ${browserQueue.queueLength})`);
+    log(`vinscan page ${listingsUrlLog(pageUrl)} (rinda ${browserQueue.queueLength})`);
     try {
       const out = await browserQueue.run("page:vinscan", async () => {
         const started = Date.now();
@@ -355,7 +357,7 @@ const server = createServer(async (req, res) => {
           await close();
         }
       });
-      log(`vinscan page HTTP ${out.status} ${out.elapsedMs} ms ${out.finalUrl?.slice(0, 80) ?? ""}`);
+      log(`vinscan page HTTP ${out.status} ${out.elapsedMs} ms ${out.finalUrl ? listingsUrlLog(out.finalUrl) : ""}`);
       return sendJson(res, 200, out);
     } catch (e) {
       const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
@@ -396,13 +398,30 @@ const server = createServer(async (req, res) => {
     if (!sourceUrl) return sendJson(res, 400, { ok: false, error: "sourceUrl neatbilst platformas hostam" });
     const orderId = String(body.orderId ?? "").slice(0, 80);
     const maxPages = Math.min(MAX_PAGES, Math.max(1, Number(body.maxPages) || MAX_PAGES));
+    const needPriceIds = Array.isArray(body.needPriceIds)
+      ? body.needPriceIds.map((id) => String(id ?? "").replace(/\D/g, "")).filter(Boolean).slice(0, 200)
+      : [];
     if (browserQueue.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, error: "rinda pilna" });
+    const fetchKey = listingsFetchKey(platform, sourceUrl);
+    const reuse = inflightFetches.get(fetchKey);
+    if (reuse) {
+      log(`${platform} fetch ${orderId} ${listingsUrlLog(sourceUrl)} reuse in-flight (rinda ${browserQueue.queueLength})`);
+      try {
+        const out = await reuse;
+        return sendJson(res, 200, { ...out, orderId });
+      } catch (e) {
+        const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
+        return sendJson(res, 500, { ok: false, status: "error", note, items: [], orderId });
+      }
+    }
     if (state.countFetch(platform, MAX_FETCHES_PER_DAY)) {
       return sendJson(res, 429, { ok: false, status: "error", error: `dienas limits ${MAX_FETCHES_PER_DAY} nolasīšanas šai platformai` });
     }
-    log(`${platform} fetch ${orderId} ${sourceUrl.slice(0, 100)} (rinda ${browserQueue.queueLength})`);
+    log(`${platform} fetch ${orderId} ${listingsUrlLog(sourceUrl)} (rinda ${browserQueue.queueLength})`);
+    const job = browserQueue.run(`fetch:${platform}`, () => runFetch({ platform, sourceUrl, orderId, maxPages, needPriceIds }));
+    inflightFetches.set(fetchKey, job);
     try {
-      const out = await browserQueue.run(`fetch:${platform}`, () => runFetch({ platform, sourceUrl, orderId, maxPages }));
+      const out = await job;
       if (out.raw) out.raw = sanitizeAutobidRelayRaw(out.raw);
       log(`${platform} ${out.status} ${out.items.length} auto ${out.elapsedMs} ms ${out.note ?? ""}`);
       return sendJson(res, 200, out);
@@ -411,6 +430,8 @@ const server = createServer(async (req, res) => {
       state.setFetch(platform, "error", note);
       log(`${platform} kļūda: ${note}`);
       return sendJson(res, 500, { ok: false, status: "error", note, items: [], orderId });
+    } finally {
+      inflightFetches.delete(fetchKey);
     }
   }
 

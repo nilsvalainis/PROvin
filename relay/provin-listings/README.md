@@ -86,7 +86,7 @@ Visi ceļi zem `/listings`. `POST` prasa `Authorization: Bearer <LISTINGS_RELAY_
 | --- | --- | --- |
 | GET | `/listings/health` | bez auth: `platforms.{openlane,auto1,autobid,ecarstrade}.session` (`ok` / `login_required` / `unknown`), pēdējā nolasīšana, kļūda, dienas skaitītāji, rinda, profili, vai ir paroles, `auto1.discoveredApis`, `manualLogin` |
 | GET | `/listings/vnc/:token/...` | noVNC (īslaicīgs tokens ceļā, bez Bearer; tikai kamēr login atvērts) |
-| POST | `/listings/fetch` | `{platform, sourceUrl, orderId, maxPages?}` -> `{ok, status, note, items[], raw, pagesFetched, pageCount, orderId, elapsedMs}` |
+| POST | `/listings/fetch` | `{platform, sourceUrl, orderId, maxPages?, needPriceIds?}` -> `{ok, status, note, items[], raw, pagesFetched, pageCount, orderId, elapsedMs}`. ET: future_api 404/tukšs = `ok 0 (truly empty)` bez `/search` gaidīšanas. Tas pats URL rindā tiek lasīts vienreiz. |
 | POST | `/listings/page` | `{url}` VIN SCAN izsole (stat.vin, bid.cars, checkcar.vin, bidfax.info, poctra.com, plc.auction) -> `{ok, status, finalUrl, html, elapsedMs}`. Īsts Chrome, profils `vinscan`. Caddy `/listings/*` jau der. Dienas limits atsevišķs: `LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY` (noklusējums 400). |
 | POST | `/listings/session/check` | `{platform}` -> sesijas pārbaude + auto-login, ja ir paroles |
 | POST | `/listings/login/:platform` | atver redzamu Chrome + atgriež `vncToken` adminam |
@@ -141,7 +141,7 @@ Allowlist: `stat.vin`, `bid.cars`, `checkcar.vin`, `bidfax.info`, `poctra.com`, 
 
 Skat. `provin-listings.env.example`. Obligāti: `LISTINGS_RELAY_TOKEN`. Auto-login: `OPENLANE_USER`, `OPENLANE_PASS`,
 `AUTOBID_USER`, `AUTOBID_PASS`, `ECARSTRADE_USER`, `ECARSTRADE_PASS`. Pārējais ir noklusējumi.
-`LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY` (noklusējums 400) ir atsevišķs no IRISS 150/platforma.
+`LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY` (noklusējums 400) ir atsevišķs no IRISS 300/platforma.
 
 ## Žurnāls un stāvoklis
 

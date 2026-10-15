@@ -8,7 +8,7 @@
  */
 
 import type { IrissFetchedVehicle } from "@/lib/iriss-listings-reconcile";
-import { normalizeListingUrl, type IrissListingSource } from "@/lib/iriss-listings-sources";
+import { listingFetchUrl, type IrissListingSource } from "@/lib/iriss-listings-sources";
 import type { IrissListingPlatform, IrissListingSourceRun, IrissListingsSyncCursor } from "@/lib/iriss-listings-types";
 
 /** Vercel funkcijas griesti šiem diviem maršrutiem. Budžets (`IRISS_LISTINGS_TIME_BUDGET_MS`) ir zem tā. */
@@ -90,7 +90,7 @@ export function listingSyncProgress(total: number, doneKeys: readonly string[]):
 }
 
 export function listingSourceGroupKey(platform: IrissListingPlatform, sourceUrl: string): string {
-  return `${platform}|${normalizeListingUrl(sourceUrl)}`;
+  return `${platform}|${listingFetchUrl(sourceUrl)}`;
 }
 
 /** Vecākais veiksmīgais fetchedAt grupā; `null` = nekad nav bijis status ok. */

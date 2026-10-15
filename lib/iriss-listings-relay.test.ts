@@ -12,6 +12,8 @@ import {
   closeIrissRelayLogin,
   fetchIrissRelayHealth,
   fetchViaIrissRelay,
+  shouldUseEcarstradeVercelFallback,
+  storedEcarstradeIdsNeedingPrice,
   listingPlatformFromRelay,
   mapRelayFetchResponse,
   mergeListingPricesFromRelay,
@@ -446,6 +448,39 @@ describe("fetchViaIrissRelay", () => {
     expect(seen!.url).toBe("https://csdd-relay.provin.lv/listings/fetch");
     expect((seen!.init!.headers as Record<string, string>).authorization).toBe("Bearer t0ken-t0ken-t0ken-t0ken");
     expect(JSON.parse(String(seen!.init!.body))).toEqual({ platform: "openlane", sourceUrl: openlaneSrc.sourceUrl, orderId: "o1", maxPages: 3 });
+  });
+
+  it("posts needPriceIds for stored ET cars without price", async () => {
+    let body: Record<string, unknown> | null = null;
+    const r = await fetchViaIrissRelay(
+      cfg,
+      { platform: "ecarstrade", sourceUrl: "https://ecarstrade.com/search?mark[]=68", orderId: "o9", orderBrandModel: "Volvo" },
+      {
+        maxPages: 2,
+        needPriceIds: ["6752454", "x"],
+        fetchImpl: async (_url, init) => {
+          body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+          return jsonResponse(200, { status: "ok", note: "ok 0 (truly empty)", items: [] });
+        },
+      },
+    );
+    expect(r.status).toBe("ok");
+    expect(r.note).toContain("truly empty");
+    expect(body).toMatchObject({ platform: "ecarstrade", maxPages: 2, needPriceIds: ["6752454"] });
+    expect(shouldUseEcarstradeVercelFallback(r)).toBe(false);
+    expect(shouldUseEcarstradeVercelFallback({ status: "fetch_failed", vehicles: [] })).toBe(true);
+    expect(
+      storedEcarstradeIdsNeedingPrice(
+        [
+          { platform: "ecarstrade", orderId: "o9", externalId: "11", priceBuyNow: null, priceCurrent: null },
+          { platform: "ecarstrade", orderIds: ["o9"], externalId: "15", priceBuyNow: null, priceCurrent: null },
+          { platform: "ecarstrade", orderId: "o9", externalId: "12", priceBuyNow: 1000, priceCurrent: null },
+          { platform: "openline", orderId: "o9", externalId: "13", priceBuyNow: null, priceCurrent: null },
+          { platform: "ecarstrade", orderId: "other", externalId: "14", priceBuyNow: null, priceCurrent: null },
+        ],
+        ["o9"],
+      ),
+    ).toEqual(["11", "15"]);
   });
 
   it("HTTP 401 / 429 / 503 become fetch_failed with Latvian notes", async () => {
