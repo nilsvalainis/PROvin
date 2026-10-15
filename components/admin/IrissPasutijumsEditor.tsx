@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowLeft, FileDown, Loader2, Paperclip, Phone, Plus, Save, Trash2, X } from "lucide-react";
-import { Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -10,6 +9,7 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
+import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
@@ -190,6 +190,7 @@ type OfferDraft = {
   commissionFee: string;
   offerValidDays: string;
   attachments: IrissOfferAttachment[];
+  coverAttachmentId: string;
   createdAt: string;
 };
 
@@ -221,6 +222,7 @@ function newOfferDraft(nextNumber: number): OfferDraft {
     commissionFee: "",
     offerValidDays: "",
     attachments: [],
+    coverAttachmentId: "",
     createdAt: now,
   };
 }
@@ -277,6 +279,7 @@ function isOfferDraftSyncedWithRecord(draft: OfferDraft, offer: IrissOfferRecord
   if (draft.deliveryPrice !== (offer.deliveryPrice ?? "")) return false;
   if (draft.commissionFee !== (offer.commissionFee ?? "")) return false;
   if (draft.offerValidDays !== (offer.offerValidDays ?? "")) return false;
+  if ((draft.coverAttachmentId || "") !== (offer.coverAttachmentId || "")) return false;
   if (draft.attachments.length !== offer.attachments.length) return false;
   for (let i = 0; i < draft.attachments.length; i += 1) {
     const a = draft.attachments[i];
@@ -356,108 +359,6 @@ function LabeledOfferRichCommentField({
 
 const ADMIN_MAIN_SCROLL_ID = "admin-main-scroll";
 const ADMIN_SCROLL_LOCK_CLASS = "admin-scroll-locked";
-
-/** Mobilais pieskāriens: ātra ass noteikšana + īsāka ilgā piespiešana, lai vilkšana būtu atsaucīgāka. */
-function IrissOfferAttachmentReorderItem({
-  attachment: a,
-  onRemove,
-}: {
-  attachment: IrissOfferAttachment;
-  onRemove: () => void;
-}) {
-  const dragControls = useDragControls();
-  const longPressTimer = useRef<number | null>(null);
-  const pressOrigin = useRef<{ x: number; y: number } | null>(null);
-  const pointerAxis = useRef<"idle" | "vertical" | "horizontal">("idle");
-
-  const clearLongPress = useCallback(() => {
-    if (longPressTimer.current != null) {
-      window.clearTimeout(longPressTimer.current);
-    }
-    longPressTimer.current = null;
-    pressOrigin.current = null;
-    pointerAxis.current = "idle";
-  }, []);
-
-  const onThumbPointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      if (e.button !== 0) return;
-      pointerAxis.current = "idle";
-      pressOrigin.current = { x: e.clientX, y: e.clientY };
-      longPressTimer.current = window.setTimeout(() => {
-        longPressTimer.current = null;
-        dragControls.start(e.nativeEvent);
-      }, 220);
-    },
-    [dragControls],
-  );
-
-  const onThumbPointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      const o = pressOrigin.current;
-      if (o == null) return;
-      const dx = e.clientX - o.x;
-      const dy = e.clientY - o.y;
-      const absX = Math.abs(dx);
-      const absY = Math.abs(dy);
-      if (pointerAxis.current === "idle") {
-        if (absY > 8 && absY > absX + 4) {
-          pointerAxis.current = "vertical";
-        } else if (absX > 8 && absX > absY + 4) {
-          pointerAxis.current = "horizontal";
-        }
-      }
-      if (pointerAxis.current === "vertical") {
-        clearLongPress();
-        return;
-      }
-      if (pointerAxis.current === "horizontal" && longPressTimer.current != null && absX > 10) {
-        window.clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-        dragControls.start(e.nativeEvent);
-        return;
-      }
-      if (longPressTimer.current != null && Math.hypot(dx, dy) > 14) clearLongPress();
-    },
-    [clearLongPress, dragControls],
-  );
-
-  return (
-    <Reorder.Item
-      value={a}
-      dragListener={false}
-      dragControls={dragControls}
-      className="relative shrink-0 touch-pan-y"
-      style={{ WebkitTouchCallout: "none", touchAction: "pan-y pinch-zoom", transform: "translateZ(0)" }}
-    >
-      <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div
-          className="absolute inset-0 z-0 cursor-grab touch-none active:cursor-grabbing"
-          aria-hidden
-          onPointerDown={onThumbPointerDown}
-          onPointerMove={onThumbPointerMove}
-          onPointerUp={clearLongPress}
-          onPointerCancel={clearLongPress}
-          onPointerLeave={(ev) => {
-            if (ev.buttons === 0) clearLongPress();
-          }}
-        />
-        {/* eslint-disable-next-line @next/next/no-img-element -- data URL, nav next/image */}
-        <img src={a.dataUrl} alt="" className="pointer-events-none h-full w-full object-cover" draggable={false} />
-        <button
-          type="button"
-          title="Noņemt"
-          aria-label="Noņemt attēlu"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={onRemove}
-          className="pointer-events-auto absolute right-0.5 top-0.5 z-[1] inline-flex h-5 min-w-5 items-center justify-center rounded bg-black/55 px-1 text-[10px] font-bold text-white shadow-sm"
-        >
-          ×
-        </button>
-      </div>
-    </Reorder.Item>
-  );
-}
 
 export function IrissPasutijumsEditor({
   initialRecord,
@@ -739,7 +640,9 @@ export function IrissPasutijumsEditor({
     const id = initialRecord.id;
     void (async () => {
       try {
-        const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, { credentials: "include" });
+        const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}?images=thumbs`, {
+          credentials: "include",
+        });
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as { record?: IrissPasutijumsRecord };
         if (!data.record || cancelled) return;
@@ -902,6 +805,7 @@ export function IrissPasutijumsEditor({
       commissionFee: offer.commissionFee ?? "",
       offerValidDays: offer.offerValidDays ?? "",
       attachments: offer.attachments,
+      coverAttachmentId: offer.coverAttachmentId ?? "",
       createdAt: offer.createdAt || new Date().toISOString(),
     });
     setOfferOpen(true);
@@ -1010,6 +914,7 @@ export function IrissPasutijumsEditor({
         commissionFee: offerDraft.commissionFee,
         offerValidDays: offerDraft.offerValidDays,
         attachments: offerDraft.attachments,
+        ...(offerDraft.coverAttachmentId ? { coverAttachmentId: offerDraft.coverAttachmentId } : {}),
         createdAt: offerDraft.createdAt || now,
         updatedAt: now,
       };
@@ -2089,30 +1994,18 @@ export function IrissPasutijumsEditor({
                 <p className="mt-2 text-[10px] font-medium text-slate-500">
                   Līdz {IRISS_MAX_OFFER_ATTACHMENTS} attēliem ({offerDraft.attachments.length}/{IRISS_MAX_OFFER_ATTACHMENTS}).
                 </p>
-                {offerDraft.attachments.length > 0 ? (
-                  <div className="mt-3">
-                    <p className="text-[10px] font-medium text-slate-500">
-                      Turiet nospiestu uz attēla ~0,5 s, tad velciet, lai mainītu secību.
-                    </p>
-                    <Reorder.Group
-                      axis="x"
-                      values={offerDraft.attachments}
-                      onReorder={(next) => setOfferDraft((d) => ({ ...d, attachments: next }))}
-                      className="mt-2 flex list-none flex-row flex-nowrap gap-2 overflow-x-auto pb-1 [-webkit-overflow-scrolling:touch]"
-                      style={{ WebkitUserSelect: "none", userSelect: "none" }}
-                    >
-                      {offerDraft.attachments.map((a) => (
-                        <IrissOfferAttachmentReorderItem
-                          key={a.id}
-                          attachment={a}
-                          onRemove={() =>
-                            setOfferDraft((d) => ({ ...d, attachments: d.attachments.filter((x) => x.id !== a.id) }))
-                          }
-                        />
-                      ))}
-                    </Reorder.Group>
-                  </div>
-                ) : null}
+                <IrissOfferImageSorter
+                  attachments={offerDraft.attachments}
+                  coverId={offerDraft.coverAttachmentId}
+                  disabled={!!offerFilePrepare}
+                  onChange={(next) =>
+                    setOfferDraft((d) => ({
+                      ...d,
+                      attachments: next.attachments,
+                      coverAttachmentId: next.coverId,
+                    }))
+                  }
+                />
               </div>
             </div>
             <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 sm:px-5">
