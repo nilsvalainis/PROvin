@@ -3,6 +3,8 @@
  * ss.lv: strukturēta tabula. Citi portāli: virsraksts, apraksts, km/cena/datums no HTML.
  */
 
+import { fetchListingHtmlViaChromeRelay } from "@/lib/listing-history-relay";
+
 export type ListingPriceRow = {
   /** Datums (kā parādās sludinājumā). */
   date: string;
@@ -586,14 +588,23 @@ async function fetchListingPageHtml(listingUrl: string): Promise<
   }
 
   const relayed = await fetchListingHtmlViaJina(url);
-  if (relayed) return { ok: true, html: relayed, url, host };
+  if (relayed && !/just a moment|cf-browser-verification|attention required/i.test(relayed)) {
+    return { ok: true, html: relayed, url, host };
+  }
+
+  const chrome = await fetchListingHtmlViaChromeRelay(url);
+  if (chrome.html && !/just a moment|cf-browser-verification|attention required/i.test(chrome.html)) {
+    return { ok: true, html: chrome.html, url, host };
+  }
 
   return {
     ok: false,
     snapshot: failedListingSnapshot({
       host,
       url,
-      note: "Neizdevās ielādēt sludinājumu (tīkls, Cloudflare vai timeout).",
+      note: chrome.error
+        ? `Neizdevās ielādēt sludinājumu. ${chrome.error}`
+        : "Neizdevās ielādēt sludinājumu (tīkls, Cloudflare vai timeout).",
     }),
   };
 }

@@ -5,7 +5,7 @@
  */
 
 import { looksLikeListingHistoryCloudflareChallenge } from "@/lib/listing-history-cloudflare";
-import { fetchListingHistoryHtmlViaRelay } from "@/lib/listing-history-relay";
+import { loadListingHistoryHtmlViaRelays } from "@/lib/listing-history-relay";
 
 export const ADIFY_HISTORY_PAGE_URL = "https://adify.lv/history";
 export const ADIFY_HISTORY_API_BASE = "https://api.adify.lv/api/v1";
@@ -468,26 +468,32 @@ export async function fetchAdifyListingHistory(
     clearTimeout(t);
   }
 
-  // Cloudflare noraida Vercel IP; mēģinām vienu releja caurlaidi (bez atkārtojumu cilpas).
-  const relayed = await fetchListingHistoryHtmlViaRelay(adifyHistoryPageLookupUrl(listingUrl), {
+  // Cloudflare noraida Vercel IP. Jina bieži atgriež to pašu izaicinājumu;
+  // tālāk Hetzner Chrome relejs (tas pats, kas VIN SCAN / stat.vin).
+  const relayed = await loadListingHistoryHtmlViaRelays(adifyHistoryPageLookupUrl(listingUrl), {
     timeoutMs: sawCloudflare ? 12_000 : undefined,
     retryDelayMs: 0,
   });
-  if (relayed) {
-    if (looksLikeListingHistoryCloudflareChallenge(relayed)) {
-      return adifyBlockedSnapshot(
-        "Cloudflare bloķēja Adify vēsturi no servera. Atver adify.lv/history pārlūkā un importē lapu (vai Tampermonkey).",
-      );
+  if (relayed.html) {
+    if (looksLikeListingHistoryCloudflareChallenge(relayed.html)) {
+      return adifyBlockedSnapshot(adifyBlockedMessage(relayed.error));
     }
-    const parsed = adifySnapshotFromHistoryHtml(relayed, now);
+    const parsed = adifySnapshotFromHistoryHtml(relayed.html, now);
     if (parsed.snapshot) return parsed.snapshot;
     message = parsed.message;
   }
 
   if (sawCloudflare) {
-    return adifyBlockedSnapshot(
-      "Cloudflare bloķēja Adify vēsturi no servera. Atver adify.lv/history pārlūkā un importē lapu (vai Tampermonkey).",
-    );
+    return adifyBlockedSnapshot(adifyBlockedMessage(relayed.error));
   }
-  return { ...normalizeAdifyHistoryItems([], now), message };
+  return {
+    ...normalizeAdifyHistoryItems([], now),
+    message: relayed.error ? `${message}. ${relayed.error}` : message,
+  };
+}
+
+function adifyBlockedMessage(relayError: string | null): string {
+  const base =
+    "Cloudflare bloķēja Adify vēsturi no servera. Atver adify.lv/history pārlūkā un importē lapu (vai Tampermonkey).";
+  return relayError ? `${base} ${relayError}` : base;
 }

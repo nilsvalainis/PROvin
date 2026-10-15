@@ -169,6 +169,7 @@ describe("fetchAdifyListingHistory", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("reads the SSR page through the relay when the datacenter IP gets HTTP 403", async () => {
@@ -194,6 +195,34 @@ describe("fetchAdifyListingHistory", () => {
     expect(snap.found).toBe(false);
     expect(snap.blocked).toBe(true);
     expect(snap.message).toMatch(/Cloudflare bloķēja/i);
+    expect(snap.message).toMatch(/Jina|Chrome relejs|HTTP/i);
+  });
+
+  it("reads SSR HTML from the IRISS Chrome relay after Jina is also challenged", async () => {
+    const fetchMock = vi.fn(async (input: unknown) => {
+      const url = String(input);
+      if (url === "https://relay.test/listings/page") {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({ ok: true, status: 200, html: SSR_HTML, finalUrl: "https://adify.lv/history" }),
+        };
+      }
+      if (url.startsWith("https://r.jina.ai/")) {
+        return { ok: true, status: 200, text: async () => "<title>Just a moment...</title>" };
+      }
+      return blocked();
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("IRISS_LISTINGS_RELAY_URL", "https://relay.test/listings");
+    vi.stubEnv("IRISS_LISTINGS_RELAY_TOKEN", "t0ken");
+
+    const snap = await fetchAdifyListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(true);
+    expect(snap.source).toBe("adify");
+    expect(snap.priceChangeEur).toBe(-550);
   });
 
   it("fails fast on Cloudflare challenge HTML without treating it as data", async () => {

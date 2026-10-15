@@ -141,7 +141,11 @@ export function AdminTirgusSourceBlock({
       const [data, scrape] = await Promise.all([loadListingPriceHistorySnapshot(url), scrapePromise]);
 
       if (!data.found) {
-        setError(data.message || "Meklētais objekts netika atrasts");
+        const scrapeNote =
+          scrape && scrape.ok === false && typeof scrape.note === "string" && scrape.note.trim()
+            ? ` Sludinājuma lapa: ${scrape.note.trim()}`
+            : "";
+        setError(`${data.message || "Meklētais objekts netika atrasts"}${scrapeNote}`);
         if (scrape?.ok) {
           onChange(
             applyListingOdometerToTirgus(val, {
