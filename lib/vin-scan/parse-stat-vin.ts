@@ -321,7 +321,7 @@ export function parseStatVinPage(input: StatVinPageInput): VinScanParse {
           ? {
               photoUrl: firstPhoto || undefined,
               photoCount: photoCount || undefined,
-              photoUrls: photos.slice(0, 20),
+              photoUrls: photos.slice(0, 200),
             }
           : undefined,
       flags: photoCount > 0 ? { photoCount } : undefined,

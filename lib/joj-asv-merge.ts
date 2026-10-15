@@ -4,13 +4,19 @@
 
 import type { AsvBlockState, AsvJojIngest } from "@/lib/asv-report";
 import {
-  normalizeAsvPhotoGroups,
-  type AsvPhotoGroup,
   ASV_MAX_PHOTOS,
   countAsvPhotos,
+  makeAsvPhotoGroupId,
+  normalizeAsvPhotoGroups,
+  type AsvPhotoGroup,
 } from "@/lib/asv-photo-types";
+import { mergeImportedPhotoGroups } from "@/lib/auction-photo-group-merge";
 import { bundleFromJojVinScan, setAsvJojSnapshot } from "@/lib/asv-source-merge";
-import { collectVinScanAuctionPhotoUrls } from "@/lib/order-vin-scan-photos";
+import {
+  collectVinScanAuctionPhotoGroups,
+  vinScanAuctionPhotoGroupTitleForAuction,
+  type VinScanAuctionPhotoGroupPlan,
+} from "@/lib/order-vin-scan-photos";
 import { buildVinScanIndicator, type VinScanParse, type VinScanStatus } from "@/lib/vin-scan/types";
 
 const JOJ_ASV_SOURCE_ID = "joj_copart_iaai" as const;
@@ -28,7 +34,12 @@ function jojIngestStatusFromParse(status: VinScanStatus): AsvJojIngest["status"]
   return "unknown";
 }
 
-export function buildAsvJojIngest(vin: string, parse: VinScanParse, fetchedAt: string): AsvJojIngest {
+export function buildAsvJojIngest(
+  vin: string,
+  parse: VinScanParse,
+  fetchedAt: string,
+  extra?: Pick<AsvJojIngest, "failedPhotoGroups">,
+): AsvJojIngest {
   const charged = parse.status === "found" || parse.status === "none";
   return {
     lastFetchedVin: vin,
@@ -36,27 +47,35 @@ export function buildAsvJojIngest(vin: string, parse: VinScanParse, fetchedAt: s
     lastCostUsd: charged ? formatJojAsvCostUsd() : "$0.00",
     status: jojIngestStatusFromParse(parse.status),
     summary: parse.summary?.trim() || "",
+    ...(extra?.failedPhotoGroups?.length ? { failedPhotoGroups: extra.failedPhotoGroups } : {}),
   };
 }
 
 export function jojAsvPhotoGroupTitle(parse: VinScanParse): string {
-  const venue = parse.auctions?.[0]?.venue?.trim() || "Copart/IAAI";
-  return `JoJ · ${venue}`.slice(0, 120);
+  const first = parse.auctions?.[0];
+  if (first) return vinScanAuctionPhotoGroupTitleForAuction(JOJ_ASV_SOURCE_ID, first);
+  return "JoJ · Copart/IAAI";
+}
+
+export function jojAsvPhotoGroupPlans(parse: VinScanParse): VinScanAuctionPhotoGroupPlan[] {
+  const indicator = buildVinScanIndicator(JOJ_ASV_SOURCE_ID, "", parse);
+  return collectVinScanAuctionPhotoGroups([indicator]);
 }
 
 export function mergeJojParseIntoAsvBlock(
   vin: string,
   parse: VinScanParse,
   prev: AsvBlockState,
-): { block: AsvBlockState; photoUrls: string[]; photoGroupTitle: string } {
-  const indicator = buildVinScanIndicator(JOJ_ASV_SOURCE_ID, vin, parse);
-  const photoUrls = collectVinScanAuctionPhotoUrls([indicator]);
+): { block: AsvBlockState; photoUrls: string[]; photoGroups: VinScanAuctionPhotoGroupPlan[]; photoGroupTitle: string } {
+  const photoGroups = jojAsvPhotoGroupPlans(parse);
+  const photoUrls = photoGroups.flatMap((g) => g.urls);
   const jojBundle = bundleFromJojVinScan(vin, parse);
   const block = setAsvJojSnapshot(prev, jojBundle);
   return {
     block,
     photoUrls,
-    photoGroupTitle: jojAsvPhotoGroupTitle(parse),
+    photoGroups,
+    photoGroupTitle: photoGroups[0]?.title || jojAsvPhotoGroupTitle(parse),
   };
 }
 
@@ -67,11 +86,11 @@ export function appendAsvPhotoGroups(
   const base = normalizeAsvPhotoGroups(existing);
   const add = normalizeAsvPhotoGroups(incoming);
   if (add.length === 0) return base;
-  const merged = [...base];
-  for (const group of add) {
-    if ((group.photos?.length ?? 0) === 0) continue;
-    merged.push(group);
-  }
+  const merged = mergeImportedPhotoGroups(
+    base,
+    add.map((g) => ({ title: g.title, photos: g.photos })),
+    makeAsvPhotoGroupId,
+  );
   const normalized = normalizeAsvPhotoGroups(merged);
   if (countAsvPhotos(normalized) <= ASV_MAX_PHOTOS) return normalized;
   const out: AsvPhotoGroup[] = [];

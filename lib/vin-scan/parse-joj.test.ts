@@ -210,4 +210,45 @@ describe("parseJojSearchVin", () => {
     });
     expect(JOJ_NOT_CONFIGURED).toBe("nav konfigurēts");
   });
+
+  it("katram lotam visi foto (>20), labākā izšķirtspēja, bez kopīga 20 griesta", () => {
+    const lotA = Array.from({ length: 28 }, (_, i) => `https://cars2.import-motor.com/copart/a-${i}.webp`);
+    const lotB = Array.from({ length: 22 }, (_, i) => `https://vis.iaai.com/resizer?imageKeys=lotB-${i}&width=640`);
+    const r = parseJojSearchVin({
+      status: 200,
+      json: {
+        data: {
+          year: 2023,
+          manufacturer: { name: "BMW" },
+          model: { name: "M8" },
+          lots: [
+            {
+              lot: "94166665",
+              domain: { name: "copart_com", id: 3 },
+              sale_date: "2026-03-25T15:55:05.000000Z",
+              images: {
+                downloaded: lotA,
+                big: lotA.map((u) => u.replace("import-motor.com/copart", "cs.copart.com/v1/hrs")),
+                small: lotA.map((_, i) => `https://cs.copart.com/v1/thb/a-${i}.jpg`),
+              },
+            },
+            {
+              lot: "41872206",
+              domain: { name: "iaai_com", id: 1 },
+              sale_date: "2026-03-11T14:00:00.000000Z",
+              images: { normal: lotB },
+            },
+          ],
+        },
+      },
+      vin: VIN,
+    });
+    expect(r.auctions?.[0]?.photoUrls).toHaveLength(28);
+    expect(r.auctions?.[0]?.photoCount).toBe(28);
+    expect(r.auctions?.[0]?.lot).toBe("94166665");
+    expect(r.auctions?.[1]?.photoUrls).toHaveLength(22);
+    expect(r.auctions?.[1]?.photoUrls?.[0]).toContain("width=1920");
+    expect(r.media?.photoCount).toBe(50);
+    expect(r.media?.photoUrls).toHaveLength(50);
+  });
 });

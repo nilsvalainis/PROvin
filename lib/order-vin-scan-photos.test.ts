@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   ccVinHasVinScanPhotoGroup,
+  collectVinScanAuctionPhotoGroups,
   collectVinScanAuctionPhotoUrls,
   isAllowedVinScanAuctionPhotoUrl,
   ORDER_VIN_SCAN_PHOTO_IMPORT_MAX,
   vinScanAuctionPhotoGroupTitle,
+  vinScanAuctionPhotoGroupTitleForAuction,
 } from "@/lib/order-vin-scan-photos";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 
@@ -31,9 +33,10 @@ describe("VIN SCAN izsoļu foto URL", () => {
     expect(isAllowedVinScanAuctionPhotoUrl("https://evil.example/a.jpg")).toBe(false);
   });
 
-  it("stat.vin pirmie, līdz 20, bez dubultiem", () => {
+  it("stat.vin un JoJ nekonkurē: katrs lots savu grupu, visi >20 URL", () => {
     const extras = Array.from({ length: 30 }, (_, i) => `https://cs.copart.com/p/${i}.jpg`);
-    const urls = collectVinScanAuctionPhotoUrls([
+    const jojExtras = Array.from({ length: 25 }, (_, i) => `https://cars2.import-motor.com/copart/j-${i}.webp`);
+    const groups = collectVinScanAuctionPhotoGroups([
       indicator({
         id: "bid_cars",
         status: "found",
@@ -46,13 +49,41 @@ describe("VIN SCAN izsoļu foto URL", () => {
         media: { photoUrl: extras[0], photoUrls: extras },
         auctions: [{ venue: "Copart", date: "2025-09-02", photoUrl: extras[0] }],
       }),
+      indicator({
+        id: "joj_copart_iaai",
+        status: "found",
+        auctions: [
+          {
+            venue: "Copart",
+            date: "2026-03-25",
+            lot: "94166665",
+            photoUrl: jojExtras[0],
+            photoUrls: jojExtras,
+            photoCount: jojExtras.length,
+          },
+        ],
+      }),
     ]);
-    expect(urls[0]).toBe("https://cs.copart.com/p/0.jpg");
-    expect(urls).toHaveLength(ORDER_VIN_SCAN_PHOTO_IMPORT_MAX);
-    expect(urls).not.toContain("https://bid.cars/x.jpg");
+    const urls = collectVinScanAuctionPhotoUrls([
+      indicator({
+        id: "stat_vin",
+        status: "found",
+        media: { photoUrls: extras },
+      }),
+      indicator({
+        id: "joj_copart_iaai",
+        status: "found",
+        auctions: [{ venue: "Copart", lot: "94166665", date: "2026-03-25", photoUrls: jojExtras }],
+      }),
+    ]);
+    expect(urls.length).toBeGreaterThan(20);
+    expect(urls.length).toBeGreaterThan(ORDER_VIN_SCAN_PHOTO_IMPORT_MAX > 20 ? 20 : 0);
+    expect(groups.some((g) => g.sourceId === "joj_copart_iaai" && g.urls.length === 25)).toBe(true);
+    expect(groups.some((g) => g.sourceId === "stat_vin" && g.urls.length >= 29)).toBe(true);
+    expect(groups.find((g) => g.sourceId === "joj_copart_iaai")?.title).toContain("lots 94166665");
   });
 
-  it("JoJ import-motor foto iet AUCTION importā, pēc stat.vin", () => {
+  it("JoJ import-motor foto iet AUCTION importā, savā grupā", () => {
     const joj = "https://cars2.import-motor.com/copart/a.webp";
     const extra = "https://cs.copart.com/p/1.jpg";
     const urls = collectVinScanAuctionPhotoUrls([
@@ -60,7 +91,7 @@ describe("VIN SCAN izsoļu foto URL", () => {
         id: "joj_copart_iaai",
         status: "found",
         media: { photoUrl: joj, photoUrls: [joj, extra] },
-        auctions: [{ venue: "Copart", photoUrl: joj }],
+        auctions: [{ venue: "Copart", photoUrl: joj, photoUrls: [joj] }],
       }),
       indicator({
         id: "stat_vin",
@@ -68,7 +99,7 @@ describe("VIN SCAN izsoļu foto URL", () => {
         media: { photoUrl: extra, photoUrls: [extra] },
       }),
     ]);
-    expect(urls[0]).toBe(extra);
+    expect(urls).toContain(extra);
     expect(urls).toContain(joj);
   });
 
@@ -82,7 +113,15 @@ describe("VIN SCAN izsoļu foto URL", () => {
         }),
       ]),
     ).toBe("VIN SCAN · Copart · 2025");
+    expect(
+      vinScanAuctionPhotoGroupTitleForAuction("joj_copart_iaai", {
+        venue: "IAAI",
+        lot: "41872206",
+        date: "2026-03-11",
+      }),
+    ).toBe("JoJ · IAAI · lots 41872206 · 2026");
     expect(ccVinHasVinScanPhotoGroup([{ title: "VIN SCAN · Copart", photos: [{ id: "ih_ph_1" }] }])).toBe(true);
+    expect(ccVinHasVinScanPhotoGroup([{ title: "JoJ · Copart · lots 1", photos: [{ id: "x" }] }])).toBe(true);
     expect(ccVinHasVinScanPhotoGroup([{ title: "Citas", photos: [{ id: "x" }] }])).toBe(false);
   });
 });

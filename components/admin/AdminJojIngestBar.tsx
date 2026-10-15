@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { normalizeVin } from "@/lib/order-field-validation";
-import type { AsvBlockState, AsvJojIngest } from "@/lib/asv-report";
+import { emptyAsvJojIngest, type AsvBlockState, type AsvJojIngest } from "@/lib/asv-report";
 import { appendAsvPhotoGroups, formatJojAsvCostUsd } from "@/lib/joj-asv-merge";
 import { syncAsvPhotoGroupsAndFlat } from "@/lib/asv-photo-types";
 
@@ -77,6 +77,70 @@ export function AdminJojIngestBar({
   const cachedForVin =
     Boolean(ingest?.lastFetchedVin) && normalizeVin(ingest?.lastFetchedVin ?? "") === effectiveVin;
   const tone = jojIngestTone(ingest);
+  const failedCount = (ingest?.failedPhotoGroups ?? []).reduce((n, g) => n + (g.urls?.length ?? 0), 0);
+
+  const applyJojBody = (
+    body: {
+      block?: AsvBlockState;
+      jojIngest?: AsvJojIngest;
+      storedPhotoGroups?: AsvBlockState["photoGroups"];
+      failedPhotoGroups?: AsvJojIngest["failedPhotoGroups"];
+    },
+    prev: AsvBlockState,
+  ) => {
+    if (!body.block) return;
+    const photoGroups = appendAsvPhotoGroups(prev.photoGroups, body.storedPhotoGroups);
+    const synced = syncAsvPhotoGroupsAndFlat(
+      photoGroups.length > 0 ? photoGroups : body.block.photoGroups,
+    );
+    const nextIngest = { ...(body.jojIngest ?? body.block.jojIngest ?? emptyAsvJojIngest()) };
+    if (body.failedPhotoGroups?.length) nextIngest.failedPhotoGroups = body.failedPhotoGroups;
+    else delete nextIngest.failedPhotoGroups;
+    onChange({
+      ...body.block,
+      photoGroups: synced.photoGroups,
+      photos: synced.photos,
+      comments: prev.comments,
+      jojIngest: nextIngest,
+    });
+  };
+
+  const retryFailedPhotos = async () => {
+    if (!editable || busy || failedCount === 0) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/sources/joj", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vin: effectiveVin,
+          sessionId: sessionId || undefined,
+          listingUrl: listingUrl || undefined,
+          block: value,
+          retryPhotoGroups: ingest?.failedPhotoGroups ?? [],
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        block?: AsvBlockState;
+        jojIngest?: AsvJojIngest;
+        storedPhotoGroups?: AsvBlockState["photoGroups"];
+        failedPhotoGroups?: AsvJojIngest["failedPhotoGroups"];
+        summary?: string;
+      };
+      if (!res.ok && !body.block) {
+        setError(jojFetchErrorLv(body.error ?? "upstream_error"));
+        return;
+      }
+      applyJojBody(body, value);
+    } catch {
+      setError(jojFetchErrorLv("upstream_error"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const fetchData = async () => {
     if (!editable || busy) return;
@@ -106,6 +170,8 @@ export function AdminJojIngestBar({
         block?: AsvBlockState;
         jojIngest?: AsvJojIngest;
         storedPhotoGroups?: AsvBlockState["photoGroups"];
+        failedPhotoGroups?: AsvJojIngest["failedPhotoGroups"];
+        failedPhotoCount?: number;
         costUsd?: string;
         summary?: string;
       };
@@ -119,19 +185,7 @@ export function AdminJojIngestBar({
         if (body.jojIngest) onChange({ ...value, jojIngest: body.jojIngest });
         return;
       }
-      if (body.block) {
-        const photoGroups = appendAsvPhotoGroups(value.photoGroups, body.storedPhotoGroups);
-        const synced = syncAsvPhotoGroupsAndFlat(
-          photoGroups.length > 0 ? photoGroups : body.block.photoGroups,
-        );
-        onChange({
-          ...body.block,
-          photoGroups: synced.photoGroups,
-          photos: synced.photos,
-          comments: value.comments,
-          jojIngest: body.jojIngest ?? body.block.jojIngest,
-        });
-      }
+      if (body.block) applyJojBody(body, value);
       if (body.error && res.status === 502) {
         setError(body.summary ? body.summary : jojFetchErrorLv("upstream_error"));
       }
@@ -188,6 +242,21 @@ export function AdminJojIngestBar({
         </p>
       ) : null}
       {error ? <p className="mt-1.5 text-[10px] text-red-700">{error}</p> : null}
+      {failedCount > 0 ? (
+        <p className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px] text-red-700">
+          <span>
+            {failedCount} foto neizdevās ielādēt.
+          </span>
+          <button
+            type="button"
+            className="rounded-md border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--color-apple-text)] disabled:opacity-50"
+            disabled={!editable || busy}
+            onClick={() => void retryFailedPhotos()}
+          >
+            {busy ? "Atkārto…" : "Atkārtot"}
+          </button>
+        </p>
+      ) : null}
     </div>
   );
 }

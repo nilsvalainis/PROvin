@@ -13,13 +13,17 @@ import {
   type JojCcVinFacts,
   type JojNameDict,
 } from "@/lib/vin-scan/joj-labels";
+import {
+  AUCTION_LOT_MAX,
+  AUCTION_PHOTO_BLOCK_MAX,
+  AUCTION_PHOTO_PER_LOT_MAX,
+  collectBestAuctionPhotoUrls,
+} from "@/lib/vin-scan/auction-photo-urls";
 import type { VinScanAuction, VinScanMileage, VinScanParse, VinScanVehicle } from "@/lib/vin-scan/types";
 
 export const JOJ_NOT_CONFIGURED = "nav konfigurēts";
 export { JOJ_NONE_SUMMARY };
 export type { JojCcVinFacts };
-
-const PHOTO_MAX = 20;
 
 function asRecord(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
@@ -118,27 +122,8 @@ function lookupNamed(v: unknown, dict: Record<string, string>): string {
   return jojDictName(dict, id, name);
 }
 
-function pushHttps(out: string[], seen: Set<string>, raw: unknown) {
-  const add = (item: unknown) => {
-    const url = str(item);
-    if (!url.startsWith("https://") || seen.has(url) || out.length >= PHOTO_MAX) return;
-    seen.add(url);
-    out.push(url);
-  };
-  if (typeof raw === "string") add(raw);
-  else for (const item of asArray(raw)) add(item);
-}
-
 export function photoList(images: unknown): { photos: string[]; video: string } {
-  const rec = asRecord(images);
-  const out: string[] = [];
-  const seen = new Set<string>();
-  pushHttps(out, seen, rec.downloaded);
-  pushHttps(out, seen, rec.big);
-  pushHttps(out, seen, rec.exterior);
-  pushHttps(out, seen, rec.interior);
-  if (out.length < PHOTO_MAX) pushHttps(out, seen, rec.normal);
-  return { photos: out.slice(0, PHOTO_MAX), video: str(rec.video) || str(rec.external_panorama_url) };
+  return collectBestAuctionPhotoUrls(images, AUCTION_PHOTO_PER_LOT_MAX);
 }
 
 export function lotOpenUrl(venue: string, lot: string, vin: string): string {
@@ -348,7 +333,7 @@ export function parseJojSearchVinFull(input: {
     const price = formatMoney(lot.final_bid, currency) || formatMoney(lot.bid, currency);
     const { photos: lotPhotos, video } = photoList(lot.images);
     for (const url of lotPhotos) {
-      if (seenPhoto.has(url) || photos.length >= PHOTO_MAX) continue;
+      if (seenPhoto.has(url) || photos.length >= AUCTION_PHOTO_BLOCK_MAX) continue;
       seenPhoto.add(url);
       photos.push(url);
     }
@@ -424,8 +409,10 @@ export function parseJojSearchVinFull(input: {
       date: date || undefined,
       price: price || undefined,
       venue: venue || undefined,
+      lot: lotNo || undefined,
       photoUrl: lotPhotos[0],
       photoCount: lotPhotos.length || undefined,
+      photoUrls: lotPhotos.length ? lotPhotos : undefined,
     });
     const saleDateLv = date ? dateLv(date) : "";
     facts.sales.push({
@@ -487,8 +474,8 @@ export function parseJojSearchVinFull(input: {
       summary: bits.join(", ") || "Ir izsoles ieraksts",
       detail: detail.join("\n").slice(0, 12_000),
       vehicle,
-      auctions: auctions.slice(0, 12),
-      mileage: mileage.slice(0, 12),
+      auctions: auctions.slice(0, AUCTION_LOT_MAX),
+      mileage: mileage.slice(0, AUCTION_LOT_MAX),
       media: {
         photoUrl: photos[0],
         photoCount: photos.length,

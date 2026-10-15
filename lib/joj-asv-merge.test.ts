@@ -68,17 +68,29 @@ describe("joj-asv-merge", () => {
         mileage: [{ date: "25.03.2026", odometer: "1 000 km", country: "Copart" }],
         notes: ["Lots: 94166665"],
       },
-      auctions: [{ venue: "Copart", date: "2026-03-25", title: "Side", price: "56 500 USD" }],
+      auctions: [
+        {
+          venue: "Copart",
+          date: "2026-03-25",
+          title: "Side",
+          price: "56 500 USD",
+          lot: "94166665",
+          photoUrls: Array.from({ length: 25 }, (_, i) => `https://cars2.import-motor.com/copart/a-${i}.webp`),
+        },
+      ],
       media: {
-        photoUrl: "https://cars2.import-motor.com/copart/a.webp",
-        photoUrls: ["https://cars2.import-motor.com/copart/a.webp"],
+        photoUrl: "https://cars2.import-motor.com/copart/a-0.webp",
+        photoUrls: Array.from({ length: 25 }, (_, i) => `https://cars2.import-motor.com/copart/a-${i}.webp`),
       },
     };
-    const { block, photoUrls } = mergeJojParseIntoAsvBlock(VIN, parse, prev);
+    const { block, photoUrls, photoGroups } = mergeJojParseIntoAsvBlock(VIN, parse, prev);
     expect(block.sales.filter((s) => s.venue.trim()).length).toBe(1);
     expect(block.sales[0]?.venue).toBe("VIN Audit");
     expect(block.damages.some((d) => /side/i.test(d.description))).toBe(true);
-    expect(photoUrls).toContain("https://cars2.import-motor.com/copart/a.webp");
+    expect(photoUrls).toHaveLength(25);
+    expect(photoGroups).toHaveLength(1);
+    expect(photoGroups[0]?.title).toContain("lots 94166665");
+    expect(photoUrls).toContain("https://cars2.import-motor.com/copart/a-0.webp");
     expect(block.sources?.joj).toBeTruthy();
     const ingest = buildAsvJojIngest(VIN, parse, "2026-03-25T12:00:00.000Z");
     expect(ingest.status).toBe("found");
