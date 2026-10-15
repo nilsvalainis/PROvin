@@ -96,7 +96,7 @@
     },
     {
       "path": "/api/cron/vin-scan-canary",
-      "schedule": "30 4 * * *"
+      "schedule": "30 3 * * *"
     },
     {
       "path": "/api/cron/admin-audit-sla-warning",
