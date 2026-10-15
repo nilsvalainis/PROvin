@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.19.0
-// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
+// @version      1.20.0
+// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -59,6 +59,9 @@
 // @match        https://www.vegvesen.no/*
 // @match        https://vegvesen.no/*
 // @match        https://biluppgifter.se/*
+// @match        https://fu-regnr.transportstyrelsen.se/*
+// @match        https://carinfo.se/*
+// @match        https://www.carinfo.se/*
 // @match        https://www.regitra.lt/*
 // @match        https://www.traficom.fi/*
 // @match        https://www.nhtsa.gov/*
@@ -87,7 +90,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.19.0";
+  const SCRIPT_VERSION = "1.20.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -103,6 +106,7 @@
   const GM_CC_RESULT = "provin_cc_photo_result";
   const GM_SCAN_JOB = "provin_scan_job";
   const GM_SCAN_RESULT = "provin_scan_result";
+  const GM_SE_IMPORT = "provin_se_import";
   const GM_CV_PURCHASE = "provin_cv_purchase";
   const GM_CV_PURCHASE_VIN = "provin_cv_purchase_vin";
   const GM_CV_PURCHASE_RESULT = "provin_cv_purchase_result";
@@ -290,6 +294,7 @@
       }
       pollVinScan();
     });
+    pollSwedishImport();
     pollVinScan();
     return;
   }
@@ -614,11 +619,12 @@
     if (name.endsWith("e.csdd.lv")) return "csdd";
     if (name.endsWith("mnt.ee")) return "mnt_ee";
     if (name.endsWith("lkf.ee")) return "lkf_ee";
-    if (name.endsWith("car.info")) return "carinfo";
+    if (name.endsWith("car.info") || name === "carinfo.se" || name.endsWith(".carinfo.se")) return "carinfo";
     if (name.endsWith("nummerplade.net")) return "nummerplade";
     if (name.endsWith("rdw.nl")) return "rdw";
     if (name.endsWith("vegvesen.no")) return "vegvesen";
     if (name.endsWith("biluppgifter.se")) return "biluppgifter";
+    if (name === "fu-regnr.transportstyrelsen.se") return "transportstyrelsen";
     if (name.endsWith("regitra.lt")) return "regitra";
     if (name.endsWith("traficom.fi")) return "traficom";
     if (name.endsWith("tjekbil.dk")) return "tjekbil";
@@ -808,15 +814,173 @@
     badge.textContent = message;
   }
 
+  const ARCHIVE_HTML_IDS = {
+    stat_vin: 1,
+    bid_cars: 1,
+    bidfax: 1,
+    poctra: 1,
+    checkcar_vin: 1,
+    plc_auction: 1,
+    biluppgifter: 1,
+    carinfo: 1,
+  };
+  const ARCHIVE_HTML_MAX = 900000;
+
+  function pageHtmlForImport() {
+    let html = "";
+    try {
+      html = document.documentElement ? document.documentElement.outerHTML : "";
+    } catch (e) {
+      html = "";
+    }
+    if (!html || html.length <= ARCHIVE_HTML_MAX) return html;
+    const nextMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/i);
+    const next = nextMatch ? nextMatch[0].slice(0, 400000) : "";
+    const room = ARCHIVE_HTML_MAX - next.length;
+    return (html.slice(0, Math.max(0, room)) + next).slice(0, ARCHIVE_HTML_MAX);
+  }
+
+  function withArchiveHtml(payload) {
+    if (!payload || !ARCHIVE_HTML_IDS[payload.id]) return payload;
+    return Object.assign({}, payload, {
+      html: pageHtmlForImport(),
+      pageUrl: String(location.href || "").slice(0, 500),
+    });
+  }
+
   function publishScan(payload) {
     if (window.__provinScanPublished) return;
     window.__provinScanPublished = true;
+    const body = withArchiveHtml(Object.assign({ detail: "", at: Date.now() }, payload));
     try {
-      GM_setValue(GM_SCAN_RESULT, JSON.stringify(Object.assign({ detail: "", at: Date.now() }, payload)));
+      GM_setValue(GM_SCAN_RESULT, JSON.stringify(body));
     } catch (e) {
       console.warn("PROVIN skenēšana", e);
     }
-    showProvinBadge(payload.summary || payload.status || "");
+    showProvinBadge((body && body.summary) || payload.summary || payload.status || "");
+  }
+
+  function swedishPageId() {
+    const name = host;
+    const p = path || "/";
+    if (name === "biluppgifter.se" || name.endsWith(".biluppgifter.se")) {
+      if (/^\/fordon\/[^/]+/i.test(p)) return "biluppgifter";
+      if (/\/[A-HJ-NPR-Z0-9]{17}(?:\/|$)/i.test(p)) return "biluppgifter";
+      return "";
+    }
+    if (name === "fu-regnr.transportstyrelsen.se") return "transportstyrelsen";
+    if (name === "car.info" || name.endsWith(".car.info") || name === "carinfo.se" || name.endsWith(".carinfo.se")) {
+      if (/\/vin\/[A-HJ-NPR-Z0-9]{11,17}/i.test(p)) return "carinfo";
+      if (/\/(?:en-se|sv-se)\/[^/]+\/[^/]+/i.test(p)) return "carinfo";
+      if (/\/(?:fordon|vehicle|bil)\/[^/]+/i.test(p)) return "carinfo";
+      return "";
+    }
+    return "";
+  }
+
+  function swedishTextReady(text) {
+    if (isScanChallenge(text)) return false;
+    const vehicle = /chassinummer|registreringsnummer|fabrikat|märke|marke|handelsbeteckning|modellår|fordonsår|besiktning|fordonsstatus|mätarställning|vehicle info|mileage/i.test(
+      text,
+    );
+    if (/bankid|logga in|cloudflare|just a moment/i.test(text) && !vehicle) return false;
+    if (vehicle) return true;
+    if (/hittades inte|ingen träff|inga uppgifter|finns inte|not found|no vehicle/i.test(text)) return true;
+    return false;
+  }
+
+  function watchSwedishImport() {
+    const id = swedishPageId();
+    if (!id || activeScanOnThisHost()) return;
+    if (window.__provinSeWatch) return;
+    window.__provinSeWatch = true;
+    const started = Date.now();
+    const timer = window.setInterval(function () {
+      if (Date.now() - started > 180000) {
+        window.clearInterval(timer);
+        return;
+      }
+      const text = document.body ? document.body.innerText || "" : "";
+      if (!swedishTextReady(text)) return;
+      window.clearInterval(timer);
+      const html = pageHtmlForImport();
+      if (!html || html.length < 40) return;
+      try {
+        GM_setValue(
+          GM_SE_IMPORT,
+          JSON.stringify({
+            id: id,
+            html: html,
+            pageUrl: String(location.href || "").slice(0, 500),
+            at: Date.now(),
+          }),
+        );
+      } catch (e) {
+        console.warn("PROVIN Zviedrija", e);
+        return;
+      }
+      showProvinBadge("Zviedrijas dati nosūtīti uz PROVIN");
+    }, 800);
+  }
+
+  function pollSwedishImport() {
+    if (!/\/admin\/orders\//.test(path)) return;
+    if (window.__provinSePoll) return;
+    window.__provinSePoll = true;
+    const started = Date.now();
+    const timer = window.setInterval(function () {
+      if (Date.now() - started > 180000) {
+        window.clearInterval(timer);
+        window.__provinSePoll = false;
+        return;
+      }
+      const marker = document.querySelector("[data-provin-order-vin]");
+      if (!marker) return;
+      let raw = "";
+      try {
+        raw = String(GM_getValue(GM_SE_IMPORT, "") || "");
+      } catch {
+        raw = "";
+      }
+      if (!raw) return;
+      let data = null;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = null;
+      }
+      if (!data || !data.id || !data.html) return;
+      if (Date.now() - Number(data.at || 0) > 180000) {
+        try {
+          GM_deleteValue(GM_SE_IMPORT);
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
+      const orderVin = String(marker.getAttribute("data-provin-order-vin") || "")
+        .replace(/[\s-]/g, "")
+        .toUpperCase();
+      if (orderVin.length < 11) return;
+      try {
+        GM_deleteValue(GM_SE_IMPORT);
+      } catch {
+        /* ignore */
+      }
+      document.dispatchEvent(
+        new CustomEvent("provin-vin-scan-result", {
+          detail: {
+            id: String(data.id),
+            vin: orderVin,
+            status: "found",
+            summary: "",
+            html: String(data.html),
+            pageUrl: String(data.pageUrl || ""),
+            at: Date.now(),
+          },
+        }),
+      );
+    }, 700);
   }
 
   function advanceVinScan(job, result) {
@@ -1159,6 +1323,8 @@
   if (!vin && host.endsWith("carvertical.com") && carVerticalPurchaseFlagSet()) {
     vin = peekCarVerticalPurchaseVin();
   }
+
+  if (swedishPageId() && !activeScanOnThisHost()) watchSwedishImport();
 
   if (activeScanOnThisHost() && !(host.endsWith("carvertical.com") && carVerticalPurchaseFlagSet())) {
     watchBrowserProbe();

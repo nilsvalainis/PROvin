@@ -432,14 +432,21 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanCatalogItem[] = VIN_SCAN_
   isVinScanBrowserId(item.id),
 );
 
-/** Minimālā Tampermonkey versija VIN SCAN dziļajām saitēm un aizpildei. */
-export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 19 } as const;
+/** Minimālā Tampermonkey versija VIN SCAN dziļajām saitēm, aizpildei un arhīva HTML importam. */
+export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 20 } as const;
 
 export function vinScanUserscriptMeetsMin(raw: string): boolean {
   const parts = raw.split(".").map((n) => Number.parseInt(n, 10));
   const major = parts[0] ?? 0;
   const minor = parts[1] ?? 0;
   return major > VIN_SCAN_USERSCRIPT_MIN.major || (major === VIN_SCAN_USERSCRIPT_MIN.major && minor >= VIN_SCAN_USERSCRIPT_MIN.minor);
+}
+
+/** Tukša virkne (skripts nav ieslēgts) nav „vecāka versija”. */
+export function vinScanUserscriptUpdateNeeded(raw: string): boolean {
+  const version = raw.trim();
+  if (!version) return false;
+  return !vinScanUserscriptMeetsMin(version);
 }
 
 export function vinScanUserscriptMinLabel(): string {
