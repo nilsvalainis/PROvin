@@ -16,6 +16,7 @@ import {
 } from "@/lib/iriss-pasutijumi-save-safety";
 import {
   deleteIrissPasutijums,
+  hydrateIrissOfferImageThumbs,
   hydrateIrissPasutijumsImages,
   isSafeIrissPasutijumsId,
   readIrissPasutijums,
@@ -38,6 +39,9 @@ function parseOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const dataUrl = typeof o.dataUrl === "string" ? o.dataUrl : "";
       const blobPath = typeof o.blobPath === "string" ? o.blobPath : "";
       const blobUrl = typeof o.blobUrl === "string" ? o.blobUrl : "";
+      const thumbDataUrl = typeof o.thumbDataUrl === "string" ? o.thumbDataUrl : "";
+      const thumbBlobPath = typeof o.thumbBlobPath === "string" ? o.thumbBlobPath : "";
+      const thumbUrl = typeof o.thumbUrl === "string" ? o.thumbUrl : "";
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? sizeRaw : 0;
       if (!id || !name) return null;
@@ -50,6 +54,9 @@ function parseOfferAttachments(raw: unknown): IrissOfferAttachment[] {
         size,
         ...(blobPath ? { blobPath } : {}),
         ...(blobUrl ? { blobUrl } : {}),
+        ...(thumbDataUrl ? { thumbDataUrl } : {}),
+        ...(thumbBlobPath ? { thumbBlobPath } : {}),
+        ...(thumbUrl ? { thumbUrl } : {}),
       };
     })
     .filter((x): x is IrissOfferAttachment => x !== null)
@@ -91,6 +98,9 @@ function parseOffersFromBody(o: Record<string, unknown>): IrissOfferRecord[] {
         commissionFee: typeof r.commissionFee === "string" ? r.commissionFee : "",
         offerValidDays: typeof r.offerValidDays === "string" ? r.offerValidDays : "",
         attachments: parseOfferAttachments(r.attachments),
+        ...(typeof r.coverAttachmentId === "string" && r.coverAttachmentId.trim()
+          ? { coverAttachmentId: r.coverAttachmentId }
+          : {}),
         createdAt: typeof r.createdAt === "string" ? r.createdAt : "",
         updatedAt: typeof r.updatedAt === "string" ? r.updatedAt : "",
       };
@@ -149,14 +159,15 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
   };
 }
 
-export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const ok = await getAdminSession();
   if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const { id } = await ctx.params;
   if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   const rec = await readIrissPasutijums(id);
   if (!rec) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  const hydrated = await hydrateIrissPasutijumsImages(rec);
+  const thumbsOnly = new URL(req.url).searchParams.get("images") === "thumbs";
+  const hydrated = thumbsOnly ? await hydrateIrissOfferImageThumbs(rec) : await hydrateIrissPasutijumsImages(rec);
   return NextResponse.json({ record: hydrated, workspaceRevision: hydrated.workspaceRevision });
 }
 

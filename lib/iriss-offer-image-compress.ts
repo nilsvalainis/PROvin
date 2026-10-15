@@ -5,6 +5,7 @@ import type { IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
  * Šeit saspiežam pirms JSON (līdz ~60 attēliem vienā PATCH), lai ietilptu Next body limit (~12 MB).
  */
 const MAX_LONG_EDGE = 640;
+const THUMB_MAX_EDGE = 192;
 const TARGET_DECODED_BYTES = 110 * 1024;
 const HARD_MAX_DECODED_BYTES = 165 * 1024;
 const MAX_READ_BYTES = 12 * 1024 * 1024;
@@ -42,6 +43,19 @@ function encodeCanvasToJpegDataUrl(canvas: HTMLCanvasElement): string {
     if (decodedApproxFromDataUrl(url) <= HARD_MAX_DECODED_BYTES) return url;
   }
   return canvas.toDataURL("image/jpeg", 0.26);
+}
+
+function canvasThumbDataUrl(source: HTMLCanvasElement): string {
+  const scale = Math.min(1, THUMB_MAX_EDGE / Math.max(source.width, source.height, 1));
+  const w = Math.max(1, Math.round(source.width * scale));
+  const h = Math.max(1, Math.round(source.height * scale));
+  const thumb = document.createElement("canvas");
+  thumb.width = w;
+  thumb.height = h;
+  const ctx = thumb.getContext("2d");
+  if (!ctx) return "";
+  ctx.drawImage(source, 0, 0, w, h);
+  return thumb.toDataURL("image/jpeg", 0.62);
 }
 
 function shrinkAndEncodeUntilHardMax(initial: HTMLCanvasElement): string {
@@ -133,6 +147,7 @@ export async function fileToCompressedOfferAttachment(file: File): Promise<Iriss
     bmp.close();
 
     const dataUrl = shrinkAndEncodeUntilHardMax(canvas);
+    const thumbDataUrl = canvasThumbDataUrl(canvas);
     const approxSize = decodedApproxFromDataUrl(dataUrl);
     const baseName = file.name.replace(/\.[^.]+$/, "") || "image";
     return {
@@ -141,6 +156,7 @@ export async function fileToCompressedOfferAttachment(file: File): Promise<Iriss
       mimeType: "image/jpeg",
       size: approxSize,
       dataUrl,
+      ...(thumbDataUrl ? { thumbDataUrl } : {}),
     };
   } catch {
     try {

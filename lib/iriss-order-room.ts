@@ -3,6 +3,7 @@
  * Šis modulis neko neielādē no maksas avotiem un neizsauc sync.
  */
 
+import { offerImageGridSrc, orderOfferAttachmentsForPdf } from "@/lib/iriss-offer-image-sorter";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { listingFmtEur } from "@/lib/iriss-listings-card";
 import { listingComparisonPrice } from "@/lib/iriss-listings-cost";
@@ -419,10 +420,12 @@ export function irissOrderRoomOfferStatus(offer: Pick<IrissOfferRecord, "brandMo
   return "draft";
 }
 
-export function irissOrderRoomOfferThumb(offer: Pick<IrissOfferRecord, "attachments">): string {
-  for (const a of offer.attachments) {
-    if (a.dataUrl.startsWith("data:image")) return a.dataUrl;
-    if (a.blobUrl && /^https?:\/\//i.test(a.blobUrl)) return a.blobUrl;
+export function irissOrderRoomOfferThumb(
+  offer: Pick<IrissOfferRecord, "attachments" | "coverAttachmentId">,
+): string {
+  for (const a of orderOfferAttachmentsForPdf(offer)) {
+    const src = offerImageGridSrc(a);
+    if (src) return src;
   }
   return "";
 }

@@ -9,6 +9,7 @@ import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
 import { attachmentAfterBlobPut, parseDataUrlPayload } from "@/lib/iriss-offer-attachment-blob";
+import { irissOfferThumbBlobPath, renderIrissOfferThumbJpeg } from "@/lib/iriss-offer-image-thumb";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import {
   isIrissRecordDeleted,
@@ -384,6 +385,9 @@ function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const dataUrl = sanitizeDraftTextForStorage(typeof o.dataUrl === "string" ? o.dataUrl : "", 15_000_000);
       const blobPath = sanitizeDraftTextForStorage(typeof o.blobPath === "string" ? o.blobPath : "", 400);
       const blobUrl = sanitizeDraftTextForStorage(typeof o.blobUrl === "string" ? o.blobUrl : "", 800);
+      const thumbDataUrl = sanitizeDraftTextForStorage(typeof o.thumbDataUrl === "string" ? o.thumbDataUrl : "", 500_000);
+      const thumbBlobPath = sanitizeDraftTextForStorage(typeof o.thumbBlobPath === "string" ? o.thumbBlobPath : "", 400);
+      const thumbUrl = sanitizeDraftTextForStorage(typeof o.thumbUrl === "string" ? o.thumbUrl : "", 800);
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? Math.max(0, Math.min(sizeRaw, 10_000_000)) : 0;
       if (!id || !name) return null;
@@ -396,6 +400,9 @@ function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
         dataUrl,
         ...(blobPath ? { blobPath } : {}),
         ...(blobUrl ? { blobUrl } : {}),
+        ...(thumbDataUrl ? { thumbDataUrl } : {}),
+        ...(thumbBlobPath ? { thumbBlobPath } : {}),
+        ...(thumbUrl ? { thumbUrl } : {}),
       };
     })
     .filter((x): x is IrissOfferAttachment => x !== null)
@@ -410,6 +417,10 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
       const o = item as Record<string, unknown>;
       const id = sanitizeDraftTextForStorage(typeof o.id === "string" ? o.id : "", 64);
       if (!id) return null;
+      const coverAttachmentId = sanitizeDraftTextForStorage(
+        typeof o.coverAttachmentId === "string" ? o.coverAttachmentId : "",
+        64,
+      );
       const title = sanitizeDraftTextForStorage(typeof o.title === "string" ? o.title : `Piedāvājums ${idx + 1}`, 80);
       const createdAt = sanitizeDraftTextForStorage(typeof o.createdAt === "string" ? o.createdAt : "", 64);
       const updatedAt = sanitizeDraftTextForStorage(typeof o.updatedAt === "string" ? o.updatedAt : "", 64);
@@ -439,6 +450,7 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
         commissionFee: sanitizeDraftTextForStorage(typeof o.commissionFee === "string" ? o.commissionFee : "", 120),
         offerValidDays: sanitizeDraftTextForStorage(typeof o.offerValidDays === "string" ? o.offerValidDays : "", 40),
         attachments: normalizeOfferAttachments(o.attachments),
+        ...(coverAttachmentId ? { coverAttachmentId } : {}),
         createdAt,
         updatedAt,
       };
@@ -734,37 +746,91 @@ export type WriteIrissPasutijumsResult =
   | { ok: true; record: IrissPasutijumsRecord }
   | { ok: false; error: string; stale?: boolean; record?: IrissPasutijumsRecord };
 
+async function putOfferBytes(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  pathname: string,
+  bytes: Buffer,
+  contentType: string,
+): Promise<{ path: string; url?: string } | null> {
+  try {
+    if (r.kind === "blob") {
+      const putRes = await put(pathname, bytes, {
+        access: "private",
+        token: r.token,
+        contentType,
+        addRandomSuffix: false,
+        allowOverwrite: true,
+      });
+      return { path: pathname, url: putRes.url };
+    }
+    const abs = path.isAbsolute(pathname) ? pathname : path.join(r.dir, pathname);
+    await fs.mkdir(path.dirname(abs), { recursive: true });
+    await fs.writeFile(abs, bytes);
+    return { path: pathname };
+  } catch (e) {
+    console.error("[iriss offer image] byte write failed", e);
+    return null;
+  }
+}
+
+function fullOfferImagePath(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  orderId: string,
+  offerId: string,
+  attachmentId: string,
+): string {
+  if (r.kind === "blob") return `${r.prefix}offers/${orderId}/${offerId}/${attachmentId}`;
+  return `offers/${orderId}/${offerId}/${attachmentId}`;
+}
+
 async function persistOneOfferImage(
   r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
   orderId: string,
   offerId: string,
   att: IrissOfferAttachment,
 ): Promise<IrissOfferAttachment> {
-  if (att.blobPath && !att.dataUrl) return att;
-  if (!att.dataUrl) return att;
-  const parsed = parseDataUrlPayload(att.dataUrl);
-  if (!parsed) return att;
-  try {
-    if (r.kind === "blob") {
-      const pathname = `${r.prefix}offers/${orderId}/${offerId}/${att.id}`;
-      const putRes = await put(pathname, parsed.bytes, {
-        access: "private",
-        token: r.token,
-        contentType: parsed.mimeType || att.mimeType || "application/octet-stream",
-        addRandomSuffix: false,
-        allowOverwrite: true,
-      });
-      return attachmentAfterBlobPut(att, pathname, putRes.url);
-    }
-    const relFs = `offers/${orderId}/${offerId}/${att.id}`;
-    const dir = path.join(r.dir, "offers", orderId, offerId);
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(path.join(r.dir, relFs), parsed.bytes);
-    return attachmentAfterBlobPut(att, relFs);
-  } catch (e) {
-    console.error("[iriss offer image] keep dataUrl, blob write failed", e);
-    return att;
+  const fullReady = Boolean(att.blobPath) && !att.dataUrl;
+  if (fullReady && !att.mimeType.startsWith("image/")) return att;
+  if (fullReady && att.thumbBlobPath) {
+    return att.thumbDataUrl ? { ...att, thumbDataUrl: "" } : att;
   }
+
+  let next = att;
+  if (att.dataUrl) {
+    const parsed = parseDataUrlPayload(att.dataUrl);
+    if (!parsed) return att;
+    const pathname = att.blobPath || fullOfferImagePath(r, orderId, offerId, att.id);
+    const stored = await putOfferBytes(r, pathname, parsed.bytes, parsed.mimeType || att.mimeType || "application/octet-stream");
+    if (!stored) return att;
+    next = attachmentAfterBlobPut(att, stored.path, stored.url);
+  }
+
+  if (!next.blobPath || next.thumbBlobPath || !next.mimeType.startsWith("image/")) return next;
+
+  let thumbBytes: Buffer | null = null;
+  if (att.thumbDataUrl) {
+    const parsedThumb = parseDataUrlPayload(att.thumbDataUrl);
+    thumbBytes = parsedThumb?.bytes ?? null;
+  }
+  if (!thumbBytes) {
+    const full = await readIrissOfferAttachmentBytes({
+      dataUrl: next.dataUrl || att.dataUrl,
+      blobPath: next.blobPath,
+      mimeType: next.mimeType,
+    });
+    if (full) thumbBytes = await renderIrissOfferThumbJpeg(full.bytes);
+  }
+  if (!thumbBytes) return next;
+  const thumbPath = irissOfferThumbBlobPath(next.blobPath);
+  if (!thumbPath) return next;
+  const storedThumb = await putOfferBytes(r, thumbPath, thumbBytes, "image/jpeg");
+  if (!storedThumb) return { ...next, ...(att.thumbDataUrl ? { thumbDataUrl: att.thumbDataUrl } : {}) };
+  return {
+    ...next,
+    thumbBlobPath: storedThumb.path,
+    ...(storedThumb.url ? { thumbUrl: storedThumb.url } : {}),
+    thumbDataUrl: "",
+  };
 }
 
 async function persistOfferImages(
@@ -845,6 +911,53 @@ export async function hydrateIrissPasutijumsImages(record: IrissPasutijumsRecord
     const attachments = [];
     for (const att of offer.attachments) {
       attachments.push(await hydrateOneOfferImage(r, att));
+    }
+    offers.push({ ...offer, attachments });
+  }
+  return { ...record, offers };
+}
+
+async function hydrateOneOfferThumb(
+  att: IrissOfferAttachment,
+): Promise<IrissOfferAttachment> {
+  if (att.thumbDataUrl?.startsWith("data:image")) {
+    return att.blobPath ? { ...att, dataUrl: "" } : att;
+  }
+  if (!att.mimeType.startsWith("image/")) return att;
+  if (att.thumbBlobPath) {
+    const thumb = await readIrissOfferAttachmentBytes({
+      dataUrl: "",
+      blobPath: att.thumbBlobPath,
+      mimeType: "image/jpeg",
+    });
+    if (thumb) {
+      return {
+        ...att,
+        dataUrl: att.blobPath ? "" : att.dataUrl,
+        thumbDataUrl: await bytesToDataUrl(thumb.bytes, "image/jpeg"),
+      };
+    }
+  }
+  const full = await readIrissOfferAttachmentBytes(att);
+  if (!full) return att;
+  const rendered = await renderIrissOfferThumbJpeg(full.bytes);
+  if (!rendered) return att.blobPath ? { ...att, dataUrl: "" } : att;
+  return {
+    ...att,
+    dataUrl: att.blobPath ? "" : att.dataUrl,
+    thumbDataUrl: await bytesToDataUrl(rendered, "image/jpeg"),
+  };
+}
+
+/** Admin režģim: tikai miniatūras. Pilnos baitus neatdod, ja tie jau ir Blob. */
+export async function hydrateIrissOfferImageThumbs(record: IrissPasutijumsRecord): Promise<IrissPasutijumsRecord> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return record;
+  const offers = [];
+  for (const offer of record.offers) {
+    const attachments = [];
+    for (const att of offer.attachments) {
+      attachments.push(await hydrateOneOfferThumb(att));
     }
     offers.push({ ...offer, attachments });
   }

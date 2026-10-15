@@ -250,6 +250,32 @@ describe("IRISS offer public view", () => {
     expect(isSafeIrissOfferAttachmentId("../etc/passwd")).toBe(false);
     expect(isSafeIrissOfferAttachmentId("33333333-3333-4333-8333-333333333333")).toBe(true);
   });
+
+  it("puts the cover photo first in the public gallery", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.coverAttachmentId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    offer.attachments = [
+      {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        name: "a.jpg",
+        mimeType: "image/jpeg",
+        size: 10,
+        dataUrl: "data:image/jpeg;base64,QQ==",
+      },
+      {
+        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        name: "b.jpg",
+        mimeType: "image/jpeg",
+        size: 10,
+        dataUrl: "data:image/jpeg;base64,Qg==",
+      },
+    ];
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    expect(view.photos.map((photo) => photo.id)).toEqual([
+      "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    ]);
+  });
 });
 
 describe("IRISS offer client link share copy", () => {

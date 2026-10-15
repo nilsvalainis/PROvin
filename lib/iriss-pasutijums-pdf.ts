@@ -6,6 +6,7 @@ import path from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import sharp from "sharp";
+import { orderOfferAttachmentsForPdf } from "@/lib/iriss-offer-image-sorter";
 
 import {
   DZ_PASUTIJUMS_TERMS_BLOCKS,
@@ -1679,10 +1680,11 @@ export async function buildIrissOfferPdfBytes(
     });
   }
 
-  const imageAttachments = offer.attachments.filter(
+  const orderedAttachments = orderOfferAttachmentsForPdf(offer);
+  const imageAttachments = orderedAttachments.filter(
     (a) => a.mimeType.startsWith("image/") && a.dataUrl.startsWith("data:image/"),
   );
-  const other = offer.attachments.filter((a) => !imageAttachments.includes(a));
+  const other = orderedAttachments.filter((a) => !imageAttachments.includes(a));
 
   let imagesOmitted = 0;
   if (!embedImages && imageAttachments.length > 0) {

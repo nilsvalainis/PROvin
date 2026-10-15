@@ -12,6 +12,10 @@ export type IrissOfferAttachment = {
   /** Vercel Blob / FS ceļš. Migrācija atstāj dataUrl, ja augšupielāde neizdodas. */
   blobPath?: string;
   blobUrl?: string;
+  /** Mazā JPEG miniatūra režģim. Pilnais attēls paliek `blobPath` / `dataUrl`. */
+  thumbDataUrl?: string;
+  thumbBlobPath?: string;
+  thumbUrl?: string;
 };
 
 /** Maks. attēlu / pielikumu skaits vienā piedāvājumā (JSON PATCH ~12 MB ierobežojums). */
@@ -51,6 +55,8 @@ export type IrissOfferRecord = {
   commissionFee: string;
   offerValidDays: string;
   attachments: IrissOfferAttachment[];
+  /** Vāka foto id. Tukšs: pirmais attēls. */
+  coverAttachmentId?: string;
   createdAt: string;
   updatedAt: string;
 };
