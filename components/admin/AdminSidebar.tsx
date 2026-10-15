@@ -36,7 +36,7 @@ import { ADMIN_RAIL_V1_GLYPH, ADMIN_RAIL_V1_GLYPH_INNER } from "@/lib/admin-stic
 
 /** Variants A: grupēta kreisā sānjosla visiem admin paneļiem (PRO + IRISS). Mobilajā — apakšējā cilņu josla + „Vairāk”. */
 
-type Item = { href: string; label: string; icon: LucideIcon; badge?: "fast" | "partners" | "orders"; plus?: boolean; match: (p: string) => boolean };
+type Item = { href: string; label: string; icon: LucideIcon; badge?: "fast" | "partners" | "orders" | "irissMatches"; plus?: boolean; match: (p: string) => boolean };
 type Group = { title: string; items: Item[] };
 
 const starts = (prefix: string) => (p: string) => p.startsWith(prefix);
@@ -86,7 +86,7 @@ const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Hands
 const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, plus: true, match: starts("/admin/iriss/pasutijumi") };
 const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
 const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybills, icon: FileText, match: starts("/admin/iriss/pavadzimes") };
-const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, match: starts("/admin/iriss/sludinajumi") };
+const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, badge: "irissMatches", match: starts("/admin/iriss/sludinajumi") };
 const I_REPORT: Item = { href: "/admin/iriss/atskaite", label: L.irissReport, icon: CalendarRange, match: starts("/admin/iriss/atskaite") };
 const I_SETTINGS: Item = { href: "/admin/iriss/iestatijumi", label: L.irissSettings, icon: Settings, match: starts("/admin/iriss/iestatijumi") };
 
@@ -228,7 +228,7 @@ function refreshCount(url: string): Promise<void> {
 
 const badgePollRefs = new Map<string, number>();
 
-function useCountValue(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount" | "urgentCount"): number {
+function useCountValue(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount" | "urgentCount" | "irissMatchCount"): number {
   const [n, setN] = useState(0);
   useEffect(() => {
     const e = countEntry(url);
@@ -255,10 +255,12 @@ function useBadgeUrlPolling(url: string) {
       const onFocus = () => void refreshCount(url);
       window.addEventListener("focus", onFocus);
       window.addEventListener("admin-orders-changed", onFocus);
+      window.addEventListener("admin-iriss-matches-changed", onFocus);
       return () => {
         window.clearInterval(t);
         window.removeEventListener("focus", onFocus);
         window.removeEventListener("admin-orders-changed", onFocus);
+        window.removeEventListener("admin-iriss-matches-changed", onFocus);
         const left = (badgePollRefs.get(url) ?? 1) - 1;
         if (left <= 0) badgePollRefs.delete(url);
         else badgePollRefs.set(url, left);
@@ -279,6 +281,12 @@ function ordersBadgeTone(badges: { ordersOverdue: number; ordersUrgent: number }
   };
 }
 
+function navBadgeTone(kind: Item["badge"], badges: { ordersOverdue: number; ordersUrgent: number }) {
+  if (kind === "orders") return ordersBadgeTone(badges);
+  if (kind === "irissMatches") return { gray: true, warn: false };
+  return { gray: false, warn: false };
+}
+
 /** Visi žetoni vienā pieprasījumā (agrāk 3). */
 const BADGES_URL = "/api/admin/badges";
 
@@ -289,7 +297,8 @@ function useBadges() {
   const orders = useCountValue(BADGES_URL, "activeCount");
   const ordersOverdue = useCountValue(BADGES_URL, "overdueCount");
   const ordersUrgent = useCountValue(BADGES_URL, "urgentCount");
-  return { fast, partners, orders, ordersOverdue, ordersUrgent } as const;
+  const irissMatches = useCountValue(BADGES_URL, "irissMatchCount");
+  return { fast, partners, orders, ordersOverdue, ordersUrgent, irissMatches } as const;
 }
 
 /**
@@ -424,7 +433,7 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
             {g.items.map((it) => {
               const on = it.match(pathname);
               const n = it.badge ? badges[it.badge] : 0;
-              const tone = it.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
+              const tone = navBadgeTone(it.badge, badges);
               const Icon = it.icon;
               return (
                 <div key={it.href} className="relative">
@@ -511,7 +520,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
           {tabs.map((t) => {
             const on = t.match(pathname) && !more;
             const n = t.badge ? badges[t.badge] : 0;
-            const tone = t.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
+            const tone = navBadgeTone(t.badge, badges);
             const Icon = t.icon;
             return (
               <Link
@@ -580,7 +589,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                   {g.items.map((it) => {
                     const on = it.match(pathname);
                     const n = it.badge ? badges[it.badge] : 0;
-                    const tone = it.badge === "orders" ? ordersBadgeTone(badges) : { gray: false, warn: false };
+                    const tone = navBadgeTone(it.badge, badges);
                     const Icon = it.icon;
                     return (
                       <div key={it.href} className="relative border-b border-[#e5e5ea] last:border-b-0">

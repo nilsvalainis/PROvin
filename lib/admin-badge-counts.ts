@@ -17,6 +17,8 @@ export type AdminBadgeCounts = {
   activeCount: number;
   overdueCount: number;
   urgentCount: number;
+  /** IRISS jaunas sludinājumu atbilstības. 0, ja kešs nav vai lasīšana neizdodas. */
+  irissMatchCount: number;
 };
 
 /**
@@ -45,5 +47,13 @@ export async function loadAdminBadgeCounts(): Promise<AdminBadgeCounts> {
     Date.now(),
   );
 
-  return { openCount, unseenCount, activeCount, overdueCount, urgentCount };
+  let irissMatchCount = 0;
+  try {
+    const { loadIrissListingMatchState } = await import("@/lib/iriss-listing-match-store");
+    irissMatchCount = (await loadIrissListingMatchState()).unseenCount;
+  } catch {
+    irissMatchCount = 0;
+  }
+
+  return { openCount, unseenCount, activeCount, overdueCount, urgentCount, irissMatchCount };
 }

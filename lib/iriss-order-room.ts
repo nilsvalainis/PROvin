@@ -177,11 +177,14 @@ export function buildIrissOrderRoomHits(
   vehicles: readonly IrissOrderRoomHitSource[],
   orderId: string,
   orderOv: Record<string, string[]>,
+  extraListingIds?: ReadonlySet<string>,
 ): IrissOrderRoomHit[] {
   const out: IrissOrderRoomHit[] = [];
   for (const v of vehicles) {
-    const orderIds = listingVehicleOrderIds(v.id, v.orderIds, orderOv);
-    if (!orderIds.includes(orderId)) continue;
+    const linked = listingVehicleOrderIds(v.id, v.orderIds, orderOv);
+    const extra = extraListingIds?.has(v.id) ?? false;
+    if (!linked.includes(orderId) && !extra) continue;
+    const orderIds = linked.includes(orderId) ? linked : [...linked, orderId];
     const photos = [v.imageUrl ?? "", ...(v.imageUrls ?? [])].map((u) => u.trim()).filter(Boolean);
     const uniquePhotos: string[] = [];
     for (const u of photos) if (!uniquePhotos.includes(u)) uniquePhotos.push(u);

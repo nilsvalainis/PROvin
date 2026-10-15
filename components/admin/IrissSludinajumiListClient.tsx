@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
 import { IrissListingVehicleCard } from "@/components/admin/IrissListingVehicleCard";
+import { IrissNewMatchNotice } from "@/components/admin/IrissNewMatchNotice";
 import { IrissListingVirtualList } from "@/components/admin/IrissListingVirtualList";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
@@ -36,7 +37,9 @@ import {
   vehicleMatchesOrderFilter,
   type IrissListingOrderBrief,
 } from "@/lib/iriss-listings-orders";
+import { irissListingMatchKey, type IrissListingHitStatus, type IrissListingMatchNotice } from "@/lib/iriss-listing-match";
 import { mergeListingOrderOvMigration } from "@/lib/iriss-listing-order-ov";
+import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { irissPasutijumsSeedFromListing } from "@/lib/iriss-pasutijums-from-listing";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
@@ -165,20 +168,37 @@ function extrasOf(v: IrissListingVehicle, prefs: IrissListPrefs): number {
   return listingExtrasI(listingCostsFor(prefs, v.id));
 }
 
+function effectiveListingOrderIds(
+  v: Pick<IrissListingVehicle, "id" | "orderIds">,
+  prefs: IrissListPrefs,
+  extra: Record<string, string[]>,
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const id of [...listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv), ...(extra[v.id] ?? [])]) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
 function linkedOrdersOf(
   v: Pick<IrissListingVehicle, "id" | "orderIds">,
   prefs: IrissListPrefs,
   byId: ReadonlyMap<string, IrissListingOrderBrief>,
+  extra: Record<string, string[]>,
 ): IrissListingOrderBrief[] {
-  return listingLinkedOrders(listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv), byId);
+  return listingLinkedOrders(effectiveListingOrderIds(v, prefs, extra), byId);
 }
 
 function budgetOf(
   v: Pick<IrissListingVehicle, "id" | "orderIds">,
   prefs: IrissListPrefs,
   byId: ReadonlyMap<string, IrissListingOrderBrief>,
+  extra: Record<string, string[]>,
 ): number | null {
-  return listingBudgetForVehicle(null, linkedOrdersOf(v, prefs, byId));
+  return listingBudgetForVehicle(null, linkedOrdersOf(v, prefs, byId, extra));
 }
 
 function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs, budget: number | null): number | null {
@@ -200,6 +220,10 @@ type Props = {
   /** Servera `dismissed.json`: paliek pēc refresh, citā ierīcē un pēc sync. */
   dismissed?: IrissListingDismissedEntry[];
   initialOrderOv?: Record<string, string[]>;
+  matchNotices?: IrissListingMatchNotice[];
+  matchOrderIds?: Record<string, string[]>;
+  matchStatus?: Record<string, IrissListingHitStatus>;
+  duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
 };
 
 const DATASET_STORAGE_KEY = "iriss-list-dataset";
@@ -247,7 +271,13 @@ export function IrissSludinajumiListClient({
   scanOrders = [],
   dismissed = [],
   initialOrderOv = {},
+  matchNotices = [],
+  matchOrderIds = {},
+  matchStatus = {},
+  duplicatesByListing = {},
 }: Props) {
+  const [clearedMatches, setClearedMatches] = useState<Set<string>>(() => new Set());
+  const [notices, setNotices] = useState(matchNotices);
   const [dataset, setDatasetState] = useState<IrissListingDataset>("orders");
   useEffect(() => {
     try {
@@ -477,8 +507,8 @@ export function IrissSludinajumiListClient({
   );
   /** Divi datu kopumi: klientu pasūtījumu auto vai SCAN saraksta auto. Kartītes tās pašas. */
   const vehicles = useMemo(
-    () => allVehicles.filter((v) => vehicleInListingDataset(listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv), dataset)),
-    [allVehicles, dataset, prefs.orderOv],
+    () => allVehicles.filter((v) => vehicleInListingDataset(effectiveListingOrderIds(v, prefs, matchOrderIds), dataset)),
+    [allVehicles, dataset, prefs, matchOrderIds],
   );
 
   const counts = useMemo(() => {
@@ -513,7 +543,7 @@ export function IrissSludinajumiListClient({
       if (hideTech && listingHasHardTechDamage(v.damageRaw)) return false;
       if (!vehicleInSources(v.platform, sources)) return false;
       if (!vehicleInPriceRange(v, priceMin, priceMax)) return false;
-      const linked = linkedOrdersOf(v, prefs, orderById);
+      const linked = linkedOrdersOf(v, prefs, orderById, matchOrderIds);
       if (!vehicleMatchesOrderFilter(linked, orderFilter)) return false;
       const linkedBudget = listingBudgetForVehicle(null, linked);
       if (listingExcludedForMissingPrice(v, linkedBudget, hideOverBudget)) return false;
@@ -533,13 +563,13 @@ export function IrissSludinajumiListClient({
       const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.vin ?? ""} ${v.stockNumber ?? ""} ${v.orderBrandModels.join(" ")} ${linked.map((o) => `${o.clientName} ${o.brandModel} ${o.preferredColors} ${o.brief}`).join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, hideOverBudget, overBudgetThreshold, orderById, orderFilter]);
+  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, hideOverBudget, overBudgetThreshold, orderById, orderFilter, matchOrderIds]);
 
   const sorted = useMemo(() => {
-    const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs, budgetOf(v, prefs, orderById)) }));
+    const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs, budgetOf(v, prefs, orderById, matchOrderIds)) }));
     // Favorīts nepārvieto auto saraksta augšā (lai lapa nelec); favorīti ir cilnē „★ Favorīti”.
     return sortListingVehicles(withRoom, sort, nowMs ?? Number.POSITIVE_INFINITY);
-  }, [visible, sort, nowMs, prefs, orderById]);
+  }, [visible, sort, nowMs, prefs, orderById, matchOrderIds]);
 
   const vatHealth = useMemo(() => latest?.vatHealth ?? computeListingVatHealth(vehicles), [latest?.vatHealth, vehicles]);
   const drawerVehicle = useMemo(() => allVehicles.find((v) => v.id === drawerId) ?? null, [allVehicles, drawerId]);
@@ -552,12 +582,12 @@ export function IrissSludinajumiListClient({
           v,
           listingCostsFor(prefs, v.id),
           prefs.taxOv[v.id],
-          budgetOf(v, prefs, orderById),
+          budgetOf(v, prefs, orderById, matchOrderIds),
           true,
           overBudgetThreshold,
         );
       }).length,
-    [vehicles, prefs, orderById, overBudgetThreshold],
+    [vehicles, prefs, orderById, overBudgetThreshold, matchOrderIds],
   );
   const favCount = prefs.fav.filter((id) => vehicles.some((v) => v.id === id)).length;
   const hiddenCount = prefs.hidden.filter((id) => vehicles.some((v) => v.id === id)).length;
@@ -627,6 +657,15 @@ export function IrissSludinajumiListClient({
     void loadHealth();
   }, []);
 
+  useEffect(() => {
+    const id = searchParams.get("listing");
+    if (!id) return;
+    setDrawerId(id);
+    void markListingViewed(id);
+    // Atvērums no saites. markListingViewed ir stabils pēc slēguma.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const tabs: Array<{ id: Tab; label: string; count: number }> = [
     { id: "new", label: "Jauni", count: counts.fresh },
     { id: "price", label: "Cenu izmaiņas", count: counts.price },
@@ -642,11 +681,11 @@ export function IrissSludinajumiListClient({
         orders,
         (o) =>
           isIrissPasutijumsWorkingStatus(o.listStatus) ||
-          vehicles.some((v) => listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv).includes(o.id)),
+          vehicles.some((v) => effectiveListingOrderIds(v, prefs, matchOrderIds).includes(o.id)),
         serializeListingOrderFilter,
         fmtEur,
       ),
-    [orders, vehicles, prefs.orderOv],
+    [orders, vehicles, prefs, matchOrderIds],
   );
   const platformDots = (["auto1", "openline", "autobid", "ecarstrade"] as const).map((platform) => {
     const h = vatHealth[platform];
@@ -679,8 +718,57 @@ export function IrissSludinajumiListClient({
     setPrefs((p) => ({ ...p, costs: { ...p.costs, [part]: value } }));
   }
 
+  function listingIsMatchNew(id: string, linked: readonly IrissListingOrderBrief[]): boolean {
+    return linked.some((o) => {
+      const key = irissListingMatchKey(o.id, id);
+      return matchStatus[key] === "jauns" && !clearedMatches.has(key);
+    });
+  }
+
+  async function markListingViewed(listingId: string) {
+    const keys = Object.keys(matchStatus).filter((key) => key.endsWith(`|${listingId}`) && matchStatus[key] === "jauns" && !clearedMatches.has(key));
+    if (keys.length === 0) return;
+    setClearedMatches((prev) => {
+      const next = new Set(prev);
+      for (const key of keys) next.add(key);
+      return next;
+    });
+    setNotices((prev) => prev.filter((n) => n.listingId !== listingId));
+    try {
+      await fetch("/api/admin/iriss-listings/match-status", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId, status: "skatits", onlyIf: "jauns" }),
+      });
+      window.dispatchEvent(new Event("admin-iriss-matches-changed"));
+    } catch {
+      /* žetons paliek līdz nākamajai ielādei */
+    }
+  }
+
+  async function openMatchNotice(notice: IrissListingMatchNotice) {
+    setClearedMatches((prev) => new Set(prev).add(irissListingMatchKey(notice.orderId, notice.listingId)));
+    setNotices((prev) => prev.filter((n) => irissListingMatchKey(n.orderId, n.listingId) !== irissListingMatchKey(notice.orderId, notice.listingId)));
+    try {
+      await fetch("/api/admin/iriss-listings/match-status", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: [{ orderId: notice.orderId, listingId: notice.listingId, status: "skatits", onlyIf: "jauns" }],
+        }),
+      });
+      window.dispatchEvent(new Event("admin-iriss-matches-changed"));
+    } catch {
+      /* saite tik un tā atveras */
+    }
+    router.push(notice.href);
+  }
+
   return (
     <div className="mt-2 space-y-2 touch-manipulation sm:mt-3 sm:space-y-3">
+      <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
       {/* min-7: centrēta segmentu vadīkla + izvēršama meklēšana + filtri + „⋯”; zem tās sīka pelēka statusa rinda. */}
       <header className="sticky top-0 z-20 -mx-2 bg-[#F8F8F9]/95 px-2 pb-1.5 pt-1 backdrop-blur sm:mx-0 sm:px-0">
         <h1 className="mb-2 hidden text-[34px] font-bold leading-none tracking-tight text-[var(--color-apple-text)] max-md:block">
@@ -1005,11 +1093,16 @@ export function IrissSludinajumiListClient({
             nowMs={nowMs}
             prefs={prefs}
             onPrefs={applyPrefs}
-            linked={linkedOrdersOf(v, prefs, orderById)}
-            budget={budgetOf(v, prefs, orderById)}
-            onOpen={() => setDrawerId(v.id)}
+            linked={linkedOrdersOf(v, prefs, orderById, matchOrderIds)}
+            budget={budgetOf(v, prefs, orderById, matchOrderIds)}
+            matchNew={listingIsMatchNew(v.id, linkedOrdersOf(v, prefs, orderById, matchOrderIds))}
+            duplicates={duplicatesByListing[v.id] ?? []}
+            onOpen={() => {
+              setDrawerId(v.id);
+              void markListingViewed(v.id);
+            }}
             onPreviewOrder={(o) => {
-              const linked = linkedOrdersOf(v, prefs, orderById);
+              const linked = linkedOrdersOf(v, prefs, orderById, matchOrderIds);
               setPreviewOrders(linked.length > 0 ? linked : [o]);
             }}
             mobile={mobile}
@@ -1040,12 +1133,12 @@ export function IrissSludinajumiListClient({
             v={drawerVehicle}
             prefs={prefs}
             orders={orders}
-            linked={linkedOrdersOf(drawerVehicle, prefs, orderById)}
-            budget={budgetOf(drawerVehicle, prefs, orderById)}
+            linked={linkedOrdersOf(drawerVehicle, prefs, orderById, matchOrderIds)}
+            budget={budgetOf(drawerVehicle, prefs, orderById, matchOrderIds)}
             onClose={() => setDrawerId(null)}
             onPrefs={applyPrefs}
             onPreviewOrder={(o) => {
-              const linked = linkedOrdersOf(drawerVehicle, prefs, orderById);
+              const linked = linkedOrdersOf(drawerVehicle, prefs, orderById, matchOrderIds);
               setPreviewOrders(linked.length > 0 ? linked : [o]);
             }}
             mobile={mobile}
