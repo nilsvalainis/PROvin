@@ -53,6 +53,9 @@ function mergeAttachment(local: IrissOfferAttachment, server: IrissOfferAttachme
     dataUrl: local.dataUrl || server.dataUrl,
     blobPath: preferFilledString(local.blobPath ?? "", server.blobPath ?? "") || undefined,
     blobUrl: preferFilledString(local.blobUrl ?? "", server.blobUrl ?? "") || undefined,
+    thumbDataUrl: local.thumbDataUrl || server.thumbDataUrl || undefined,
+    thumbBlobPath: preferFilledString(local.thumbBlobPath ?? "", server.thumbBlobPath ?? "") || undefined,
+    thumbUrl: preferFilledString(local.thumbUrl ?? "", server.thumbUrl ?? "") || undefined,
     size: local.size > 0 ? local.size : server.size,
   };
 }
@@ -88,6 +91,7 @@ function mergeOffer(local: IrissOfferRecord, server: IrissOfferRecord): IrissOff
     deliveryPrice: preferFilledString(local.deliveryPrice, server.deliveryPrice),
     commissionFee: preferFilledString(local.commissionFee, server.commissionFee),
     offerValidDays: preferFilledString(local.offerValidDays, server.offerValidDays),
+    coverAttachmentId: preferFilledString(local.coverAttachmentId ?? "", server.coverAttachmentId ?? "") || undefined,
     attachments,
     createdAt: preferFilledString(local.createdAt, server.createdAt),
     updatedAt: preferFilledString(local.updatedAt, server.updatedAt),

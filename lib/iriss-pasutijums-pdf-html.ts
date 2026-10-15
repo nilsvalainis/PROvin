@@ -3,6 +3,7 @@ import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/ir
 import { parsePriceLike } from "@/lib/iriss-price-format";
 import { resolveIrissOfferPdfLabels, resolveIrissOrderPdfLabels } from "@/lib/messages/iriss-pdf-labels";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
+import { orderOfferAttachmentsForPdf } from "@/lib/iriss-offer-image-sorter";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { PDF_TIGHT_RICH_BODY_RULES_CSS } from "@/lib/pdf-tight-comment-spacing";
 
@@ -631,10 +632,11 @@ export function buildIrissOfferPrintHtml(
     rowIf(labels.priceValidDays, offer.offerValidDays);
   const pricingTable = wrapTable(pricingRows);
 
-  const imageAttachments = offer.attachments.filter(
+  const orderedAttachments = orderOfferAttachmentsForPdf(offer);
+  const imageAttachments = orderedAttachments.filter(
     (a) => a.mimeType.startsWith("image/") && a.dataUrl.startsWith("data:image/"),
   );
-  const otherAttachments = offer.attachments.filter(
+  const otherAttachments = orderedAttachments.filter(
     (a) => !a.mimeType.startsWith("image/") || !a.dataUrl.startsWith("data:image/"),
   );
 

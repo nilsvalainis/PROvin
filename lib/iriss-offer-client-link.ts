@@ -4,6 +4,7 @@
  * Zīmols: Dzintarzeme Auto, juridiski SIA ĪRISS.
  */
 
+import { orderOfferAttachmentsForPdf } from "@/lib/iriss-offer-image-sorter";
 import { parsePriceLike, irissPriceLooksNumeric } from "@/lib/iriss-price-format";
 import type { IrissOfferRecord } from "@/lib/iriss-pasutijumi-types";
 
@@ -420,7 +421,7 @@ export function buildIrissOfferPublicView(
     { label: IRISS_OFFER_PUBLIC_LABELS.commission, value: moneyLabel(offer.commissionFee) },
   ].filter((row) => row.value);
 
-  const photos = offer.attachments
+  const photos = orderOfferAttachmentsForPdf(offer)
     .filter((a) => isIrissOfferPublicImageMime(a.mimeType) && isSafeIrissOfferAttachmentId(a.id))
     .map((a) => ({ id: a.id }));
 
