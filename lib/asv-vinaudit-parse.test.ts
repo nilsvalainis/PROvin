@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { setEcbDailyRatesForTests } from "@/lib/currency-eur-convert";
 import { asvProductsCostUsdCents, asvProductPaths, formatAsvCostUsd, parseAsvProductIds } from "@/lib/asv-catalog";
 import { ASV_PRODUCTS } from "@/lib/asv-catalog";
 import { collectAsvImageHints, milesToKmRounded, parseVinauditPayload } from "@/lib/asv-vinaudit-parse";
@@ -58,6 +59,10 @@ describe("ASV catalog", () => {
 });
 
 describe("parseVinauditPayload", () => {
+  beforeEach(() => {
+    setEcbDailyRatesForTests({ date: "2026-10-15", rates: { USD: 1.09 } });
+  });
+
   it("converts title miles to km and keeps US region", () => {
     const { block, imageHints } = parseVinauditPayload(SAMPLE, {
       productUsed: "vhr_full",
@@ -71,6 +76,8 @@ describe("parseVinauditPayload", () => {
     expect(block.attentionMarks).toBe("1/6");
     expect(block.ownersCount).toBe("3");
     expect(block.damages.some((d) => /FRONT/i.test(d.description))).toBe(true);
+    expect(block.damages.find((d) => /FRONT/i.test(d.description))?.amount).toMatch(/€/);
+    expect(block.sales.some((s) => /€/.test(s.price))).toBe(true);
     expect(block.sales.some((s) => /COPART/i.test(s.venue))).toBe(true);
     expect(block.liens.some((r) => /ķīla|lien/i.test(`${r.label} ${r.detail}`))).toBe(true);
     expect(block.aiContextRaw).toContain("Servisa apmeklējumi");

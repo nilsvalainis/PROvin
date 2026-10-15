@@ -9,6 +9,7 @@ import {
   type AsvProductId,
 } from "@/lib/asv-catalog";
 import { parseVinauditPayload, vinauditPayloadLooksEmpty, type AsvImageHint } from "@/lib/asv-vinaudit-parse";
+import { loadEcbDailyRates } from "@/lib/currency-eur-convert";
 import { ASV_MAX_PHOTOS, makeAsvPhotoGroupId } from "@/lib/asv-photo-types";
 import {
   ASV_PHOTO_MAX_BYTES,
@@ -189,6 +190,7 @@ export async function fetchAsvProducts(opts: {
 
   const costUsdCents = asvProductsCostUsdCents(opts.products);
   const costUsd = formatAsvCostUsd(costUsdCents);
+  await loadEcbDailyRates();
   const parsed = parsedPayload
     ? parseVinauditPayload(parsedPayload, { productUsed, costUsd, vin: opts.vin })
     : { block: emptyAsvBlock(), imageHints: [] as AsvImageHint[] };

@@ -1,8 +1,10 @@
 /**
- * Valstu nosaukumi latviešu valodā — normalizācija no angļu / ISO / CSDD raw teksta.
+ * Valstu nosaukumi latviešu valodā. Atpazīst ISO2/ISO3 un LV/EN/LT/DE/FR/PL/RU
+ * (un citu Intl valodu) nosaukumus; izeja ir PROVIN LV forma + ISO2 karogam.
  */
 
 import { CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL } from "@/lib/admin-source-blocks";
+import { ISO3_TO_ISO2, iso3ToIso2 } from "@/lib/iso3166-alpha3";
 
 function normalizeCountryKey(raw: string): string {
   return raw
@@ -10,7 +12,7 @@ function normalizeCountryKey(raw: string): string {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]/g, "");
+    .replace(/[^\p{L}\p{N}]/gu, "");
 }
 
 /** ISO 3166-1 alpha-2 → latviski (oficiālais / PROVIN admin saraksts). */
@@ -85,7 +87,8 @@ const CA_PROVINCE_CODES = new Set([
 const US_STATE_NAME_KEYS = new Set(
   [
     "alabama", "alaska", "arizona", "arkansas", "california", "kalifornija", "colorado", "kolorado",
-    "connecticut", "konektikuta", "delaware", "delavera", "florida", "georgia", "dzordzija",
+    "connecticut", "konektikuta", "delaware", "delavera", "florida",
+    /* „Georgia” ir arī valsts (GE / Gruzija); štats paliek caur (GA) / pilsēta, GA. */
     "hawaii", "havajas", "idaho", "aidaho", "illinois", "ilinoisa", "indiana", "indiana",
     "iowa", "aiova", "kansas", "kanzasa", "kentucky", "kentuki", "louisiana", "luiziana",
     "maine", "meina", "maryland", "merilenda", "massachusetts", "masacusetas", "masacusetsa",
@@ -158,8 +161,26 @@ function iso2FromUsCaLocation(raw: string): string | null {
   return null;
 }
 
+function textLooksLikeUsTerritoryNotCountry(raw: string): boolean {
+  return /virgin|samoa|outlying|minor|aizjuras|virdzin|микронез/i.test(raw);
+}
+
 function textHasUnitedStatesMarker(raw: string): boolean {
-  return /\b(asv|usa|united\s*states)\b/i.test(raw) || /\(asv\)/i.test(raw);
+  if (textLooksLikeUsTerritoryNotCountry(raw)) return false;
+  if (/\(asv\)/i.test(raw)) return true;
+  if (/\b(asv|usa|united\s*states)\b/i.test(raw)) return true;
+  const key = normalizeCountryKey(raw);
+  return (
+    key.includes("amerikassavienotasvalst") ||
+    key.includes("jungtinesvalstij") ||
+    key.includes("jungtinesamerikosvalst") ||
+    key.includes("vereinigtestaat") ||
+    key.includes("etatsunis") ||
+    key.includes("stanyzjednoczone") ||
+    key.includes("soedinennyeshtat") ||
+    key.includes("соединенны") ||
+    key === "сша"
+  );
 }
 
 /** Normalizēti sinonīmi → ISO2 (paplašināts no PDF karogu kartes). */
@@ -317,7 +338,202 @@ const NAME_TO_ISO2: Record<string, string> = {
   monako: "MC",
   li: "LI",
   lihtensteina: "LI",
+  liechtenstein: "LI",
 };
+
+/** Oficiali gari / citu valodu īsie nosaukumi, ko Intl dažkārt neatgriež. */
+const EXTRA_ALIASES: Record<string, string> = {
+  amerikassavienotasvalstis: "US",
+  amerikassavienotasvalstisofamerica: "US",
+  unitedstatesofamerica: "US",
+  unitedstatesofamericathe: "US",
+  jungtinesvalstijos: "US",
+  jungtinesamerikosvalstijos: "US",
+  vereinigtestaten: "US",
+  vereinigtestaatenvonamerika: "US",
+  etatsunis: "US",
+  etatsunisdamerique: "US",
+  stanyzjednoczone: "US",
+  stanyzjednoczoneameryki: "US",
+  soedinennyeshtaty: "US",
+  soedinennyeshtatyameriki: "US",
+  соединенныештаты: "US",
+  соединенныештатыамерики: "US",
+  сша: "US",
+  usofa: "US",
+  usofamerica: "US",
+  канада: "CA",
+  lielbritanija: "GB",
+  lielbritanijaunziemenirija: "GB",
+  unitedkingdomofgreatbritainandnorthernireland: "GB",
+  jungtinekaralyste: "GB",
+  vereinigteskonigreich: "GB",
+  royaumeuni: "GB",
+  wielkabrytania: "GB",
+  великобритания: "GB",
+  southkorea: "KR",
+  korearepublicof: "KR",
+  republicofkorea: "KR",
+  dienvidkoreja: "KR",
+  northkorea: "KP",
+  koredpr: "KP",
+  ziemelkoreja: "KP",
+  ivorycoast: "CI",
+  cotedivoire: "CI",
+  kotdivuara: "CI",
+  burma: "MM",
+  mjanma: "MM",
+  swaziland: "SZ",
+  esvatini: "SZ",
+  persia: "IR",
+  iran: "IR",
+  gruzija: "GE",
+  sakartvelo: "GE",
+  georgiathecountry: "GE",
+  unitedstatesvirginislands: "VI",
+  usvirginislands: "VI",
+  virginislandsus: "VI",
+  americansamoa: "AS",
+  unitedstatesminoroutlyingislands: "UM",
+  usoutlyingislands: "UM",
+  vacijasfederativarepublika: "DE",
+  vokietija: "DE",
+  allemagne: "DE",
+  niemcy: "DE",
+  германия: "DE",
+  nyderlandai: "NL",
+  paysbas: "NL",
+  holandia: "NL",
+  нидерланды: "NL",
+  cehijasrepublika: "CZ",
+  tschechien: "CZ",
+  tschechischerepublik: "CZ",
+  tchequie: "CZ",
+  czechy: "CZ",
+  чехия: "CZ",
+  lietuvosrespublika: "LT",
+  litauen: "LT",
+  lituanie: "LT",
+  litwa: "LT",
+  литва: "LT",
+  igaunijasrepublika: "EE",
+  eesti: "EE",
+  estland: "EE",
+  estonie: "EE",
+  эстония: "EE",
+  latvijasrepublika: "LV",
+  lettland: "LV",
+  lettonie: "LV",
+  lotwa: "LV",
+  латвия: "LV",
+};
+
+const DISPLAY_NAME_LOCALES = [
+  "lv",
+  "en",
+  "lt",
+  "de",
+  "fr",
+  "pl",
+  "ru",
+  "es",
+  "it",
+  "nl",
+  "da",
+  "sv",
+  "fi",
+  "cs",
+  "sk",
+  "hu",
+  "ro",
+  "bg",
+  "uk",
+  "et",
+  "pt",
+  "el",
+  "tr",
+  "nb",
+  "hr",
+  "sl",
+] as const;
+
+function discoverIso2Codes(): string[] {
+  const out: string[] = [];
+  let dn: Intl.DisplayNames;
+  try {
+    dn = new Intl.DisplayNames(["en"], { type: "region" });
+  } catch {
+    return Object.keys(ISO2_TO_LV_NAME);
+  }
+  for (let a = 65; a <= 90; a++) {
+    for (let b = 65; b <= 90; b++) {
+      const iso = String.fromCharCode(a, b);
+      try {
+        const name = dn.of(iso);
+        if (name && name !== iso) out.push(iso);
+      } catch {
+        /* nav derīgs reģions */
+      }
+    }
+  }
+  return out;
+}
+
+let worldNameToIso2: Map<string, string> | null = null;
+let worldDisplayNames: string[] | null = null;
+
+function worldNameIndex(): Map<string, string> {
+  if (worldNameToIso2) return worldNameToIso2;
+  const map = new Map<string, string>();
+  const labels = new Set<string>();
+
+  const put = (raw: string, iso: string, asLabel = false) => {
+    const key = normalizeCountryKey(raw);
+    if (!key) return;
+    if (!map.has(key)) map.set(key, iso);
+    if (asLabel) labels.add(raw);
+  };
+
+  for (const [k, v] of Object.entries(NAME_TO_ISO2)) map.set(k, v);
+  for (const [iso3, iso2] of Object.entries(ISO3_TO_ISO2)) map.set(iso3.toLowerCase(), iso2);
+
+  for (const iso of discoverIso2Codes()) {
+    map.set(iso.toLowerCase(), iso);
+    const official = ISO2_TO_LV_NAME[iso];
+    if (official) labels.add(official);
+    for (const locale of DISPLAY_NAME_LOCALES) {
+      try {
+        const name = new Intl.DisplayNames([locale], { type: "region" }).of(iso);
+        if (!name || name === iso) continue;
+        put(name, iso, true);
+      } catch {
+        /* locale nav DisplayNames */
+      }
+    }
+  }
+
+  for (const [k, v] of Object.entries(EXTRA_ALIASES)) map.set(k, v);
+  worldNameToIso2 = map;
+  worldDisplayNames = [...labels];
+  return map;
+}
+
+function worldLeadingLabels(): string[] {
+  worldNameIndex();
+  return worldDisplayNames ?? [];
+}
+
+export function iso2ToLvDisplayName(iso: string): string {
+  const code = iso.toUpperCase();
+  if (ISO2_TO_LV_NAME[code]) return ISO2_TO_LV_NAME[code]!;
+  try {
+    const lv = new Intl.DisplayNames(["lv"], { type: "region" }).of(code);
+    if (lv && lv !== code) return lv;
+  } catch {
+    /* nav lv DisplayNames */
+  }
+  return code;
+}
 
 let unknownKeyCache: string | null = null;
 function unknownLabelKey(): string {
@@ -335,37 +551,45 @@ function iso2FromKnownTwoLetter(code: string): string | null {
   if (caProvinceCodeIsNotNamedCountry(lower)) return "CA";
   if (NAME_TO_ISO2[lower]) return NAME_TO_ISO2[lower]!.toUpperCase();
   if (ISO2_TO_LV_NAME[lower.toUpperCase()]) return lower.toUpperCase();
+  const world = worldNameIndex().get(lower);
+  if (world) return world;
   return null;
 }
 
-/** Atpazīst valsti no brīva teksta / ISO2 / angļu nosaukuma / ASV štata / Kanādas provinces. */
+/** Atpazīst valsti no brīva teksta / ISO2 / ISO3 / LV/EN/LT/DE/FR/PL/RU nosaukuma. */
 export function countryLabelToIso2(label: string): string | null {
   const t = label.trim();
   if (!t || t === "—" || t === "-") return null;
   const fromLocation = iso2FromUsCaLocation(t);
   if (fromLocation) return fromLocation;
-  if (textHasUnitedStatesMarker(t)) return "US";
   if (/^[A-Za-z]{2}$/.test(t)) return iso2FromKnownTwoLetter(t);
+  if (/^[A-Za-z]{3}$/.test(t)) {
+    const iso3 = iso3ToIso2(t);
+    if (iso3) return iso3;
+  }
   const key = normalizeCountryKey(t);
   if (!key || key === unknownLabelKey()) return null;
+  if (NAME_TO_ISO2[key]) return NAME_TO_ISO2[key]!.toUpperCase();
+  if (EXTRA_ALIASES[key]) return EXTRA_ALIASES[key]!;
+  const world = worldNameIndex().get(key);
+  if (world) return world;
   if (US_STATE_NAME_KEYS.has(key)) return "US";
   if (CA_PROVINCE_NAME_KEYS.has(key)) return "CA";
-  if (NAME_TO_ISO2[key]) return NAME_TO_ISO2[key]!.toUpperCase();
+  if (textHasUnitedStatesMarker(t)) return "US";
   if (key.length === 2) return iso2FromKnownTwoLetter(key);
+  if (key.length === 3) {
+    const iso3 = iso3ToIso2(key);
+    if (iso3) return iso3;
+  }
   return null;
 }
 
-/** Pārtulko / normalizē valsts nosaukumu latviski; nezināms → tukšs. */
+/** Pārtulko / normalizē valsts nosaukumu latviski; neatpazīts → sākotnējais teksts. */
 export function normalizeCountryNameLv(raw: string): string {
   const t = raw.trim();
   if (!t || t === "—" || t === "-") return "";
   const iso = countryLabelToIso2(t);
-  if (iso && ISO2_TO_LV_NAME[iso]) return ISO2_TO_LV_NAME[iso];
-  const key = normalizeCountryKey(t);
-  if (ISO2_TO_LV_NAME[t.toUpperCase()]) return ISO2_TO_LV_NAME[t.toUpperCase()];
-  if (key && NAME_TO_ISO2[key] && ISO2_TO_LV_NAME[NAME_TO_ISO2[key]]) {
-    return ISO2_TO_LV_NAME[NAME_TO_ISO2[key]];
-  }
+  if (iso) return iso2ToLvDisplayName(iso);
   return t.replace(/\s+/g, " ");
 }
 
@@ -375,7 +599,7 @@ export function isLatviaCountryName(raw: string): boolean {
 
 /**
  * Nosaukumi, ar kuriem atskaitēs sākas valsts kolonna (garākie vispirms).
- * Slinkā inicializācija — `admin-source-blocks` imports ir ciklisks.
+ * Slinkā inicializācija: `admin-source-blocks` imports ir ciklisks.
  */
 let leadingCountryLabelsCache: string[] | null = null;
 
@@ -388,9 +612,14 @@ function leadingCountryLabels(): string[] {
     "Čehijas republika",
     "Slovākijas Republika",
     "Vācijas Federatīvā Republika",
+    "Amerikas Savienotās Valstis",
+    "Jungtinės Valstijos",
+    "United States of America",
+    "United States",
     "Apvienotā Karaliste",
     "Bosnija un Hercegovina",
     ...Object.values(ISO2_TO_LV_NAME),
+    ...worldLeadingLabels(),
   ]
     .filter((label): label is string => Boolean(label))
     .sort((a, b) => b.length - a.length);

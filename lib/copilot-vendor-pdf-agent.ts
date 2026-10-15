@@ -55,6 +55,7 @@ import {
   type VendorReportVendor,
 } from "@/lib/vendor-report-extract";
 import { collectWorkspaceCountryTimeline } from "@/lib/workspace-country-timeline";
+import { loadEcbDailyRates } from "@/lib/currency-eur-convert";
 
 const LOG_PREFIX = "[copilot/vendor-pdf]";
 
@@ -164,6 +165,7 @@ export async function runVendorPdfAgent(opts: {
   /** `false` - izlaiž AI (tikai teksta slānis; testiem / atkāpes režīmam). */
   useAi?: boolean;
 }): Promise<VendorPdfAgentResult> {
+  await loadEcbDailyRates();
   const pdfText = await extractPdfTextDetailed(opts.buffer, { fileName: opts.fileName }).catch(() => ({
     text: "",
   }));
@@ -279,6 +281,7 @@ export async function runCcVinPdfAgent(opts: {
   buffer: ArrayBuffer;
   previous: CcVinBlockState | null | undefined;
 }): Promise<CcVinPdfAgentResult> {
+  await loadEcbDailyRates();
   const pdfText = await extractPdfTextDetailed(opts.buffer, { fileName: opts.fileName }).catch((e) => ({
     text: "",
     backend: "none" as const,

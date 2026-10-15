@@ -6,7 +6,7 @@
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import { maybeFormatUsHistoryDateTimeInRiga } from "@/lib/format-us-history-datetime";
 import { oneautoOdometerToKm } from "@/lib/oneauto-catalog";
-import { convertAmountTextToEur } from "@/lib/currency-eur-convert";
+import { convertAmountTextToEur, describeEurConversion } from "@/lib/currency-eur-convert";
 import {
   emptyAsvBlock,
   type AsvBlockState,
@@ -80,12 +80,17 @@ function odometerKm(raw: unknown, unitRaw = "", milesDefault = true): string {
   return oneautoOdometerToKm(t, unit || "km");
 }
 
+const pendingEurNotes: string[] = [];
+
 function amountEur(raw: unknown): string {
   const t = stringifyVal(raw);
   if (!t) return "";
   const withUsd = /usd|\$/i.test(t) ? t : `${t} USD`;
   const conversion = convertAmountTextToEur(withUsd);
-  return conversion?.display ?? t;
+  if (!conversion) return t;
+  const note = describeEurConversion(withUsd, conversion);
+  if (note) pendingEurNotes.push(note);
+  return conversion.display;
 }
 
 function usRegion(stateRaw: unknown): string {
@@ -448,6 +453,7 @@ function deriveChecks(root: Record<string, unknown>): AsvCheckRow[] {
 }
 
 export function parseVinauditPayload(raw: unknown, meta?: { productUsed?: string; costUsd?: string; vin?: string }): AsvParseResult {
+  pendingEurNotes.length = 0;
   const root = unwrapVinaudit(raw);
   const empty = emptyAsvBlock();
   if (!root) return { block: empty, imageHints: [] };
@@ -505,6 +511,7 @@ export function parseVinauditPayload(raw: unknown, meta?: { productUsed?: string
     stringifyVal(root.clean) ? `clean: ${stringifyVal(root.clean)}` : "",
     meta?.productUsed ? `Ielādētais produkts: ${meta.productUsed}` : "",
     "Servisa apmeklējumi no ASV title/izsoļu datiem nav pieejami. Tie nav OEM apkopes.",
+    ...[...new Set(pendingEurNotes)],
   ].filter(Boolean);
 
   const imageHints = collectAsvImageHints(root);

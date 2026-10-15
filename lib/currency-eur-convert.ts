@@ -1,32 +1,23 @@
 /**
- * Valūtas → EUR pārrēķins avotu atskaišu summām (AutoDNA CZK/PLN, CarVertical u.c.).
- *
- * Kursi ir fiksēti orientējoši (statiski) — atskaitēs summas pašas ir aptuvenas
- * (diapazoni), tāpēc ārējs kursu API nav vajadzīgs. Vērtība „cik valūtas vienību par 1 EUR”.
+ * Valūtas → EUR pēc šodienas ECB dienas kursa (kešots uz kalendāro dienu).
+ * Kursu neizdomā: ja ECB tabulas nav, paliek sākotnējā valūta ar atzīmi.
  */
 
-export const EUR_REFERENCE_RATES: Record<string, number> = {
-  EUR: 1,
-  CZK: 25,
-  PLN: 4.3,
-  SEK: 11.3,
-  NOK: 11.7,
-  DKK: 7.46,
-  CHF: 0.95,
-  GBP: 0.85,
-  USD: 1.09,
-  CAD: 1.48,
-  HUF: 395,
-  RON: 4.97,
-  BGN: 1.9558,
-  UAH: 45,
-  TRY: 38,
-  RSD: 117,
-  MDL: 19.5,
-  JPY: 165,
+export const ECB_DAILY_RATES_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
+export const ECB_RATE_MISSING_MARKER = "ECB kurss nav pieejams";
+
+export type EcbDailyRates = {
+  /** ECB Cube `time` (YYYY-MM-DD). */
+  date: string;
+  /** Cik valūtas vienību par 1 EUR. */
+  rates: Record<string, number>;
+  /** Kalendārā diena, kad tabula ielādēta (Europe/Riga). */
+  fetchedOn: string;
 };
 
-/** Teksta apzīmējumi → valūtas kods (garākie vārdi vispirms, lai „Kč” nesajaucas ar „K”). */
+/** @deprecated Tikai atpakaļsaderībai; konversija vairs nelieto fiksētus kursus. */
+export const EUR_REFERENCE_RATES: Record<string, number> = { EUR: 1 };
+
 const CURRENCY_TOKENS: { code: string; re: RegExp }[] = [
   { code: "EUR", re: /(?:\bEUR\b|€)/i },
   { code: "CZK", re: /(?:\bCZK\b|\bKč\b|\bKc\b|\bkorun)/i },
@@ -46,7 +37,93 @@ const CURRENCY_TOKENS: { code: string; re: RegExp }[] = [
   { code: "RSD", re: /\bRSD\b/i },
   { code: "MDL", re: /\bMDL\b/i },
   { code: "JPY", re: /(?:\bJPY\b|¥)/i },
+  { code: "AUD", re: /\bAUD\b/i },
+  { code: "CNY", re: /(?:\bCNY\b|¥|RMB)/i },
+  { code: "INR", re: /\bINR\b/i },
+  { code: "KRW", re: /\bKRW\b/i },
+  { code: "BRL", re: /\bBRL\b/i },
+  { code: "MXN", re: /\bMXN\b/i },
+  { code: "SGD", re: /\bSGD\b/i },
+  { code: "HKD", re: /\bHKD\b/i },
+  { code: "NZD", re: /\bNZD\b/i },
+  { code: "ZAR", re: /\bZAR\b/i },
+  { code: "ISK", re: /\bISK\b/i },
+  { code: "ILS", re: /\bILS\b/i },
+  { code: "THB", re: /\bTHB\b/i },
+  { code: "IDR", re: /\bIDR\b/i },
+  { code: "MYR", re: /\bMYR\b/i },
+  { code: "PHP", re: /\bPHP\b/i },
 ];
+
+let cachedRates: EcbDailyRates | null = null;
+let inflight: Promise<EcbDailyRates | null> | null = null;
+
+function todayRigaDate(): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Riga",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const y = parts.find((p) => p.type === "year")?.value ?? "";
+  const m = parts.find((p) => p.type === "month")?.value ?? "";
+  const d = parts.find((p) => p.type === "day")?.value ?? "";
+  return `${y}-${m}-${d}`;
+}
+
+function formatEcbDateLv(iso: string): string {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return iso;
+  return `${m[3]}.${m[2]}.${m[1]}`;
+}
+
+export function parseEcbEurofxXml(xml: string): EcbDailyRates | null {
+  const date = xml.match(/\btime="(\d{4}-\d{2}-\d{2})"/)?.[1];
+  if (!date) return null;
+  const rates: Record<string, number> = { EUR: 1 };
+  for (const m of xml.matchAll(/currency="([A-Z]{3})"\s+rate="([0-9.]+)"/g)) {
+    const n = Number.parseFloat(m[2]!);
+    if (Number.isFinite(n) && n > 0) rates[m[1]!] = n;
+  }
+  if (Object.keys(rates).length < 2) return null;
+  return { date, rates, fetchedOn: todayRigaDate() };
+}
+
+export function getCachedEcbDailyRates(): EcbDailyRates | null {
+  return cachedRates;
+}
+
+/** Testiem: iestata ECB tabulu. `null` notīra kešu. */
+export function setEcbDailyRatesForTests(table: Omit<EcbDailyRates, "fetchedOn"> | EcbDailyRates | null): void {
+  cachedRates = table
+    ? {
+        date: table.date,
+        rates: { EUR: 1, ...table.rates },
+        fetchedOn: "fetchedOn" in table && table.fetchedOn ? table.fetchedOn : todayRigaDate(),
+      }
+    : null;
+}
+
+export async function loadEcbDailyRates(fetcher: typeof fetch = fetch): Promise<EcbDailyRates | null> {
+  const today = todayRigaDate();
+  if (cachedRates && cachedRates.fetchedOn === today) return cachedRates;
+  if (inflight) return inflight;
+  inflight = (async () => {
+    try {
+      const res = await fetcher(ECB_DAILY_RATES_URL, { cache: "no-store" });
+      if (!res.ok) return cachedRates;
+      const xml = await res.text();
+      const parsed = parseEcbEurofxXml(xml);
+      if (parsed) cachedRates = parsed;
+      return cachedRates;
+    } catch {
+      return cachedRates;
+    } finally {
+      inflight = null;
+    }
+  })();
+  return inflight;
+}
 
 /** Atrod valūtas kodu summas tekstā („510 000 - 520 000 CZK” → CZK). Tukšs, ja nav apzīmējuma. */
 export function detectCurrencyCode(raw: string): string {
@@ -60,7 +137,6 @@ export function detectCurrencyCode(raw: string): string {
 
 function parseNumberToken(raw: string): number | null {
   const cleaned = raw.replace(/[\s\u00a0\u202f]/g, "");
-  // 1.234,56 → 1234.56; 1,234.56 → 1234.56; 1234 → 1234
   let normalized = cleaned;
   if (/,\d{1,2}$/.test(cleaned) && /[.\s]/.test(cleaned.slice(0, -3))) {
     normalized = cleaned.replace(/\./g, "").replace(",", ".");
@@ -102,18 +178,31 @@ function groupEur(value: number): string {
 }
 
 export type EurConversion = {
-  /** Attēlojums admin laukam, piem. „20 400 - 20 800 €”. */
+  /** Attēlojums admin/PDF laukam, piem. „20 400 - 20 800 €”. */
   display: string;
   /** Sākotnējā valūta („EUR”, ja jau eiro vai bez apzīmējuma). */
   fromCurrency: string;
-  /** Cik valūtas vienību par 1 EUR (1, ja EUR). */
+  /** Cik valūtas vienību par 1 EUR (1, ja EUR; 0, ja kursa nav). */
   ratePerEur: number;
+  /** ECB kursa datums (YYYY-MM-DD), ja konvertēts. */
+  rateDate?: string;
+  /** Sākotnējais noformējums pirms pārrēķina. */
+  originalDisplay?: string;
   /** `true`, ja summa tika pārrēķināta no citas valūtas. */
   converted: boolean;
+  /** `true`, ja valūta atpazīta, bet ECB kursa nav. */
+  rateMissing?: boolean;
 };
 
+function formatOriginalAmount(bounds: { lo: number; hi: number }, code: string): string {
+  const lo = groupEur(Math.round(bounds.lo));
+  const hi = groupEur(Math.round(bounds.hi));
+  const amount = lo === hi ? lo : `${lo} - ${hi}`;
+  return `${amount} ${code}`;
+}
+
 /**
- * Summas teksts (jebkurā valūtā) → EUR attēlojums admin „Zaudējumu summa” laukam.
+ * Summas teksts (jebkurā valūtā) → EUR, ja ir šodienas ECB kurss.
  * Nezināmu valūtu vai teksta bez cipariem neizdomā — atgriež `null`.
  */
 export function convertAmountTextToEur(raw: string): EurConversion | null {
@@ -124,24 +213,44 @@ export function convertAmountTextToEur(raw: string): EurConversion | null {
 
   const detected = detectCurrencyCode(text);
   const code = detected || "EUR";
-  const rate = EUR_REFERENCE_RATES[code];
-  if (!rate) return null;
+  if (code === "EUR") {
+    const lo = Math.round(bounds.lo);
+    const hi = Math.round(bounds.hi);
+    const display = lo === hi ? `${groupEur(lo)} €` : `${groupEur(lo)} - ${groupEur(hi)} €`;
+    return { display, fromCurrency: "EUR", ratePerEur: 1, converted: false };
+  }
 
-  // EUR summas atstājam tieši tā, kā atskaitē („8501 – 9000 €”); noapaļo tikai pārrēķinu.
-  const converted = code !== "EUR";
-  const lo = converted ? roundEur(bounds.lo / rate) : Math.round(bounds.lo);
-  const hi = converted ? roundEur(bounds.hi / rate) : Math.round(bounds.hi);
+  const rate = cachedRates?.rates[code];
+  const originalDisplay = formatOriginalAmount(bounds, code);
+  if (!(rate && rate > 0)) {
+    return {
+      display: `${originalDisplay} (${ECB_RATE_MISSING_MARKER})`,
+      fromCurrency: code,
+      ratePerEur: 0,
+      originalDisplay,
+      converted: false,
+      rateMissing: true,
+    };
+  }
+
+  const lo = roundEur(bounds.lo / rate);
+  const hi = roundEur(bounds.hi / rate);
   const display = lo === hi ? `${groupEur(lo)} €` : `${groupEur(lo)} - ${groupEur(hi)} €`;
   return {
     display,
     fromCurrency: code,
     ratePerEur: rate,
-    converted,
+    rateDate: cachedRates?.date,
+    originalDisplay,
+    converted: true,
   };
 }
 
-/** Īss audita ieraksts operatoram: „510 000 - 520 000 CZK → 20 400 - 20 800 € (1 EUR = 25 CZK)”. */
+/** Īss audita ieraksts: „38 745 USD → 35 550 € (ECB 15.10.2026, 1 EUR = 1.09 USD)”. */
 export function describeEurConversion(rawAmount: string, conversion: EurConversion): string {
+  const raw = rawAmount.replace(/\s+/g, " ").trim();
+  if (conversion.rateMissing) return `${raw} (${ECB_RATE_MISSING_MARKER})`;
   if (!conversion.converted) return "";
-  return `${rawAmount.replace(/\s+/g, " ").trim()} → ${conversion.display} (1 EUR = ${conversion.ratePerEur} ${conversion.fromCurrency})`;
+  const datePart = conversion.rateDate ? `ECB ${formatEcbDateLv(conversion.rateDate)}, ` : "";
+  return `${raw} → ${conversion.display} (${datePart}1 EUR = ${conversion.ratePerEur} ${conversion.fromCurrency})`;
 }
