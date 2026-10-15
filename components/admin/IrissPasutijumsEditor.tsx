@@ -13,7 +13,9 @@ import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter"
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
-import { appendIrissOrderRoomNote, irissOrderRoomOfferSeed, type IrissOrderRoomHit } from "@/lib/iriss-order-room";
+import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
+import { appendIrissOrderRoomNote, irissOrderRoomOfferSeed, type IrissOrderRoomHit, type IrissOrderRoomTab } from "@/lib/iriss-order-room";
+import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import {
@@ -367,6 +369,9 @@ export function IrissPasutijumsEditor({
   dismissedHitIds = [],
   listingsCache = "off",
   initialOfferLinks = [],
+  initialHitStatus = {},
+  duplicatesByListing = {},
+  initialRoomTab = "overview",
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
@@ -377,6 +382,9 @@ export function IrissPasutijumsEditor({
   dismissedHitIds?: string[];
   listingsCache?: "on" | "off";
   initialOfferLinks?: IrissOfferClientLinkAdminView[];
+  initialHitStatus?: Record<string, IrissListingHitStatus>;
+  duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
+  initialRoomTab?: IrissOrderRoomTab;
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
@@ -1713,6 +1721,9 @@ export function IrissPasutijumsEditor({
           hits={roomHits}
           dismissedHitIds={dismissedHitIds}
           listingsCache={listingsCache}
+          initialHitStatus={initialHitStatus}
+          duplicatesByListing={duplicatesByListing}
+          initialTab={initialRoomTab}
           busy={busy}
           orderPdfBusy={orderPdfBusy}
           saveMsg={saveMsg}

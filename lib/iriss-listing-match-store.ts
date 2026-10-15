@@ -1,0 +1,134 @@
+import "server-only";
+
+import {
+  applyListingMatchStatusPatches,
+  buildIrissListingMatchNotices,
+  discoverListingOrderMatches,
+  emptyIrissListingMatchState,
+  extraListingIdsForOrder,
+  listingHitStatusMap,
+  listingMatchOrderIdsByListing,
+  listingMatchStateUnchanged,
+  mergeListingOrderMatches,
+  nextUnseenCount,
+  normalizeIrissListingMatchState,
+  type IrissListingHitStatus,
+  type IrissListingMatchNotice,
+  type IrissListingMatchOrder,
+  type IrissListingMatchPatch,
+  type IrissListingMatchState,
+  type IrissListingMatchVehicle,
+} from "@/lib/iriss-listing-match";
+import { duplicateMapForListings, type IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
+import { listIrissVinAnchors } from "@/lib/iriss-vin-anchor-store";
+import {
+  getIrissListingsStorageState,
+  readIrissListingMatchState,
+  readIrissListingsLatestView,
+  writeIrissListingMatchState,
+} from "@/lib/iriss-listings-aggregate-store";
+import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+
+export async function loadIrissListingMatchState(): Promise<IrissListingMatchState> {
+  const storage = getIrissListingsStorageState();
+  if (!storage.enabled) return emptyIrissListingMatchState();
+  return readIrissListingMatchState();
+}
+
+/**
+ * Salīdzina jau saglabātos sludinājumus ar aktīvo pasūtījumu kritērijiem.
+ * Nelasa maksas avotus un neizsauc sync.
+ */
+export async function refreshIrissListingMatches(input?: {
+  vehicles?: readonly IrissListingMatchVehicle[];
+  now?: string;
+}): Promise<IrissListingMatchState> {
+  const storage = getIrissListingsStorageState();
+  if (!storage.enabled) return emptyIrissListingMatchState();
+  const now = input?.now ?? new Date().toISOString();
+  const vehicles =
+    input?.vehicles ??
+    ((await readIrissListingsLatestView().catch(() => null))?.vehicles ?? []);
+  const previous = await readIrissListingMatchState();
+  if (vehicles.length === 0 && !previous.seeded) return previous;
+  const orders = await listIrissPasutijumi().catch(() => []);
+  const matchOrders: IrissListingMatchOrder[] = orders.map((row) => ({
+    id: row.id,
+    brandModel: row.brandModel,
+    listStatus: row.listStatus,
+    deletedAt: row.deletedAt,
+    clientFirstName: row.clientFirstName,
+    clientLastName: row.clientLastName,
+    listingLinkAutobid: row.listingLinkAutobid,
+    listingLinkOpenline: row.listingLinkOpenline,
+    listingLinkAuto1: row.listingLinkAuto1,
+    listingLinkEcarstrade: row.listingLinkEcarstrade,
+    listingLinksOther: row.listingLinksOther,
+  }));
+  const found = discoverListingOrderMatches(vehicles, matchOrders);
+  const live = new Set(vehicles.filter((v) => v.id && v.change !== "gone").map((v) => v.id));
+  const active = new Set(
+    matchOrders
+      .filter((o) => isIrissPasutijumsWorkingStatus((o.listStatus ?? "active") as IrissPasutijumsListStatus) && !(o.deletedAt ?? "").trim())
+      .map((o) => o.id),
+  );
+  const next = mergeListingOrderMatches(previous, found, now, live, active);
+  if (listingMatchStateUnchanged(previous, next)) return previous;
+  const write = await writeIrissListingMatchState(next);
+  return write.ok ? normalizeIrissListingMatchState(next) : previous;
+}
+
+export type IrissListingMatchWorkspace = {
+  state: IrissListingMatchState;
+  notices: IrissListingMatchNotice[];
+  orderIdsByListing: Record<string, string[]>;
+  duplicatesByListing: Record<string, IrissVinDuplicateLink[]>;
+};
+
+/** Atjauno atbilstības no keša un sagatavo žetonus. Maksas avotus nelasa. */
+export async function prepareIrissListingMatchWorkspace(
+  vehicles: readonly IrissListingMatchVehicle[],
+  orders: readonly IrissListingMatchOrder[],
+): Promise<IrissListingMatchWorkspace> {
+  const state = await refreshIrissListingMatches({ vehicles });
+  const anchors = await listIrissVinAnchors().catch(() => []);
+  return {
+    state,
+    notices: buildIrissListingMatchNotices(state.entries, vehicles, orders),
+    orderIdsByListing: listingMatchOrderIdsByListing(state.entries),
+    duplicatesByListing: duplicateMapForListings(vehicles, anchors),
+  };
+}
+
+export function orderRoomMatchProps(
+  state: IrissListingMatchState,
+  orderId: string,
+  duplicatesByListing: Record<string, IrissVinDuplicateLink[]>,
+): { extraListingIds: string[]; hitStatus: Record<string, IrissListingHitStatus>; duplicates: Record<string, IrissVinDuplicateLink[]> } {
+  const extra = extraListingIdsForOrder(state.entries, orderId);
+  const hitStatus = listingHitStatusMap(state.entries, orderId);
+  const duplicates: Record<string, IrissVinDuplicateLink[]> = {};
+  for (const id of Object.keys(duplicatesByListing)) {
+    const links = duplicatesByListing[id]?.filter((link) => !(link.kind === "order" && link.orderId === orderId)) ?? [];
+    if (links.length > 0) duplicates[id] = links;
+  }
+  return { extraListingIds: [...extra], hitStatus, duplicates };
+}
+
+export async function patchIrissListingMatchStatus(patches: readonly IrissListingMatchPatch[], nowIso: string): Promise<IrissListingMatchState | null> {
+  const storage = getIrissListingsStorageState();
+  if (!storage.enabled) return null;
+  const previous = await readIrissListingMatchState();
+  const entries = applyListingMatchStatusPatches(previous.entries, patches, nowIso);
+  const next: IrissListingMatchState = {
+    ...previous,
+    updatedAt: nowIso,
+    seeded: previous.seeded || entries.length > 0,
+    entries,
+    unseenCount: nextUnseenCount(previous.unseenCount, previous.entries, entries),
+  };
+  const write = await writeIrissListingMatchState(next);
+  if (!write.ok) return null;
+  return next;
+}

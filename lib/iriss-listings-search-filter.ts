@@ -302,11 +302,9 @@ export function applyListingEntryFilter<T extends ListingSearchVehicle>(
   );
 }
 
-export function applySearchFilterToVehicles<T extends ListingSearchVehicle>(
-  vehicles: readonly T[],
-  filter: EcarstradeSearchFilter,
-): T[] {
-  const hasBound =
+/** Ir kāds reāls kritērijs. Tukšs URL nedrīkst pielīmēt visu inventāru. */
+export function listingSearchFilterHasBounds(filter: EcarstradeSearchFilter): boolean {
+  return (
     filter.makeNames.length > 0 ||
     filter.makeIds.length > 0 ||
     filter.yearFrom != null ||
@@ -326,8 +324,15 @@ export function applySearchFilterToVehicles<T extends ListingSearchVehicle>(
     filter.excludeTokens.length > 0 ||
     filter.excludeColors.length > 0 ||
     filter.doorsFrom != null ||
-    filter.doorsTo != null;
-  if (!hasBound) return [...vehicles];
+    filter.doorsTo != null
+  );
+}
+
+export function applySearchFilterToVehicles<T extends ListingSearchVehicle>(
+  vehicles: readonly T[],
+  filter: EcarstradeSearchFilter,
+): T[] {
+  if (!listingSearchFilterHasBounds(filter)) return [...vehicles];
   return vehicles.filter((v) => vehicleMatchesSearchFilter(v, filter));
 }
 

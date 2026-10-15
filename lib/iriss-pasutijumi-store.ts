@@ -1036,6 +1036,7 @@ export async function writeIrissPasutijums(
       }
       await writeLocalMirrorSnapshot(out).catch(() => undefined);
       await writeLocalMirrorFullBundle().catch(() => undefined);
+      await touchIrissVinAnchors(out);
       return { ok: true, record: out };
     }
 
@@ -1058,10 +1059,20 @@ export async function writeIrissPasutijums(
     invalidateBlobListCache();
     await writeLocalMirrorSnapshot(out).catch(() => undefined);
     await writeLocalMirrorFullBundle().catch(() => undefined);
+    await touchIrissVinAnchors(out);
     return { ok: true, record: out };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg };
+  }
+}
+
+async function touchIrissVinAnchors(rec: IrissPasutijumsRecord): Promise<void> {
+  try {
+    const { upsertIrissVinAnchorsForRecord } = await import("@/lib/iriss-vin-anchor-store");
+    await upsertIrissVinAnchorsForRecord(rec);
+  } catch {
+    /* VIN indekss nav kritisks pasūtījuma saglabāšanai */
   }
 }
 

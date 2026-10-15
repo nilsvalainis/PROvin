@@ -52,6 +52,7 @@ import type {
   IrissListingsSyncProgress,
 } from "@/lib/iriss-listings-types";
 import { computeListingVatHealth, logListingVatHealth } from "@/lib/iriss-listings-vat";
+import { refreshIrissListingMatches } from "@/lib/iriss-listing-match-store";
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { irissScanSourceRows } from "@/lib/iriss-scan-listings";
@@ -584,6 +585,13 @@ export async function runIrissListingsDailySync(
 
   const write = await writeIrissListingsRun(view);
   if (!write.ok) warnings.push(`Saglabāšana neizdevās: ${write.error}`);
+  if (write.ok) {
+    try {
+      await refreshIrissListingMatches({ vehicles: recVehicles, now: finishedAt });
+    } catch (e) {
+      warnings.push(`Atbilstību salīdzināšana neizdevās: ${e instanceof Error ? e.message.slice(0, 180) : "kļūda"}`);
+    }
+  }
   if (write.ok && isIrissListingsRawStoreEnabled() && raw.sources.length > 0) {
     const rawWrite = await writeIrissListingsRawBundle(raw);
     if (!rawWrite.ok) warnings.push(`Raw datu saglabāšana neizdevās: ${rawWrite.error}`);

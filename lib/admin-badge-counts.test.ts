@@ -34,6 +34,7 @@ describe("loadAdminBadgeCounts", () => {
       activeCount: 0,
       overdueCount: 0,
       urgentCount: 0,
+      irissMatchCount: 0,
     });
   });
 });

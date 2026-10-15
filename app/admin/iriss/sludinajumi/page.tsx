@@ -6,6 +6,8 @@ import {
   readIrissListingsLatestView,
 } from "@/lib/iriss-listings-aggregate-store";
 import { emptyIrissListingsDismissed } from "@/lib/iriss-listings-dismiss";
+import { irissListingMatchKey } from "@/lib/iriss-listing-match";
+import { prepareIrissListingMatchWorkspace } from "@/lib/iriss-listing-match-store";
 import { irissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { listIrissPasutijumi, readIrissListingOrderOv } from "@/lib/iriss-pasutijumi-store";
 import { irissScanOrderBrief } from "@/lib/iriss-scan-listings";
@@ -24,6 +26,17 @@ export default async function IrissSludinajumiPage() {
     readIrissListingOrderOv().catch(() => ({})),
   ]);
   const dismissed = dismissedView.entries;
+  const match = storage.enabled
+    ? await prepareIrissListingMatchWorkspace(
+        latest?.vehicles ?? [],
+        orders.map((o) => ({
+          id: o.id,
+          brandModel: o.brandModel,
+          listStatus: o.listStatus,
+          clientFirstName: o.clientName,
+        })),
+      ).catch(() => null)
+    : null;
 
   return (
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] pb-24 sm:pb-8">
@@ -53,6 +66,10 @@ export default async function IrissSludinajumiPage() {
             scanOrders={scanOrders}
             dismissed={dismissed}
             initialOrderOv={initialOrderOv}
+            matchNotices={match?.notices ?? []}
+            matchOrderIds={match?.orderIdsByListing ?? {}}
+            matchStatus={Object.fromEntries((match?.state.entries ?? []).map((e) => [irissListingMatchKey(e.orderId, e.listingId), e.status]))}
+            duplicatesByListing={match?.duplicatesByListing ?? {}}
           />
         </Suspense>
       ) : null}

@@ -78,6 +78,14 @@ describe("buildIrissOrderRoomHits", () => {
       { b: ["order-1"], a: ["someone-else"] },
     );
     expect(hits.map((h) => h.id)).toEqual(["b", "c"]);
+    const extra = buildIrissOrderRoomHits(
+      [source({ id: "cross", orderIds: ["someone"], title: "Volvo XC60", firstSeenAt: "2026-10-15T12:00:00.000Z" })],
+      "order-1",
+      {},
+      new Set(["cross"]),
+    );
+    expect(extra.map((h) => h.id)).toEqual(["cross"]);
+    expect(extra[0]?.orderIds).toContain("order-1");
     const withPhoto = buildIrissOrderRoomHits([source({ id: "a", imageUrl: "https://img/a.jpg", imageUrls: ["https://img/a.jpg", "https://img/b.jpg"] })], "order-1", {});
     expect(withPhoto[0]?.imageCount).toBe(2);
     expect(withPhoto[0]?.price).toBeNull();
