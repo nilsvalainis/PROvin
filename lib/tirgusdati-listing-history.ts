@@ -7,7 +7,7 @@
 
 import { type AdifyListingHistorySnapshot, normalizeAdifyHistoryItems } from "@/lib/adify-listing-history";
 import { looksLikeListingHistoryCloudflareChallenge } from "@/lib/listing-history-cloudflare";
-import { fetchListingHistoryHtmlViaRelay } from "@/lib/listing-history-relay";
+import { loadListingHistoryHtmlViaRelays } from "@/lib/listing-history-relay";
 
 export const TIRGUSDATI_HISTORY_PAGE_URL = "https://tirgusdati.lv/vesture";
 
@@ -148,8 +148,13 @@ async function loadTirgusDatiHistoryHtml(
     clearTimeout(t);
   }
 
-  const relayed = await fetchListingHistoryHtmlViaRelay(tirgusDatiHistoryPageLookupUrl(listingUrl));
-  if (relayed && !looksLikeTirgusDatiCloudflareChallenge(relayed)) return { html: relayed, message: "" };
+  const relayed = await loadListingHistoryHtmlViaRelays(tirgusDatiHistoryPageLookupUrl(listingUrl), {
+    retryDelayMs: 0,
+  });
+  if (relayed.html && !looksLikeTirgusDatiCloudflareChallenge(relayed.html)) {
+    return { html: relayed.html, message: "" };
+  }
+  if (relayed.error) return { html: null, message: `${message} · ${relayed.error}` };
   return { html: null, message };
 }
 
@@ -162,7 +167,10 @@ export async function fetchTirgusDatiListingHistory(
   }
 
   const { html, message } = await loadTirgusDatiHistoryHtml(listingUrl);
-  if (!html) return emptySnapshot(message);
+  if (!html) {
+    const blocked = /Cloudflare|HTTP 403/i.test(message);
+    return { ...emptySnapshot(message), blocked };
+  }
 
   const { items, listingUrl: resolvedUrl } = extractTirgusDatiHistoryFromHtml(html);
   if (items.length === 0) return emptySnapshot("Šim sludinājumam Tirgus Dati vēl nav vēstures");
