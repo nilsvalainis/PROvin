@@ -20,7 +20,7 @@ export function AdminUserscriptUpdateHint({ className = "" }: { className?: stri
   const min = vinScanUserscriptMinLabel();
   return (
     <p className={`mb-2 rounded-md border border-amber-700/30 bg-amber-500/10 px-2 py-1 text-[11px] leading-snug text-[var(--color-apple-text)] ${className}`}>
-      PROVIN skripts ir vecāks par {min} (tagad {version}). Atjauniniet Tampermonkey, lai izsoļu arhīvs importētos no pārlūka.{" "}
+      PROVIN skripts ir vecāks par {min} (tagad {version}). Atjauniniet Tampermonkey, lai izsoļu arhīvs un Zviedrijas reģistrs importētos no pārlūka.{" "}
       <a className="underline" href="/userscripts/provin-vin-autofill.user.js">
         Lejupielādēt {min}
       </a>

@@ -55,7 +55,7 @@ function Counter({ state, count, label }: { state: DotState; count: number; labe
 function browserImportErrorLv(code: string | undefined): string {
   if (code === "vin_mismatch") return "VIN lapā nesakrīt ar pasūtījumu";
   if (code === "too_large") return "Lapa ir par lielu importam";
-  if (code === "page_not_ready") return "Lapa vēl nav izsoļu arhīvs. Pagaidiet, kamēr ielādējas, un mēģiniet vēlreiz";
+  if (code === "page_not_ready") return "Lapa vēl nav gatava. Pagaidiet, kamēr ielādējas, un mēģiniet vēlreiz";
   return "Importēšana neizdevās";
 }
 
@@ -342,6 +342,7 @@ export function AdminOrderVinScanCard({
         />
       }
     >
+      <span hidden data-provin-order-vin={vin.trim().toUpperCase()} data-provin-order-session={sessionId} />
       {showFields ? (
         <div className="px-2 pb-2">
           <AdminUserscriptUpdateHint />

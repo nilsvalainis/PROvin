@@ -10,8 +10,10 @@ import {
   vinScanNeedsBrowser,
   type VinScanAuction,
   type VinScanIndicator,
+  type VinScanInspection,
   type VinScanStatus,
 } from "@/lib/vin-scan/types";
+import { SWEDISH_BROWSER_SOURCE_IDS } from "@/lib/vin-scan/parse-sweden";
 import { isValuableVinScanSourceId } from "@/lib/vin-scan/free-sources";
 import { vinScanCatalogItem, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 
@@ -45,6 +47,7 @@ export const ORDER_VIN_SCAN_BROWSER_IMPORT_IDS: readonly string[] = [
   "bidfax",
   "poctra",
   "plc_auction",
+  ...SWEDISH_BROWSER_SOURCE_IDS,
 ];
 const BLOCKED_HINT_RE = /cloudflare|\b403\b|captcha|challenge|bloķ|blocked|lapa nav atpazīta|just a moment/i;
 
@@ -108,6 +111,16 @@ function asAuction(v: unknown): VinScanAuction | null {
   return row;
 }
 
+function asInspection(v: unknown): VinScanInspection | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const date = typeof o.date === "string" ? o.date.trim().slice(0, 32) : "";
+  const result = typeof o.result === "string" ? o.result.trim().slice(0, 80) : "";
+  const odometer = typeof o.odometer === "string" ? o.odometer.trim().slice(0, 40) : "";
+  if (!date && !result && !odometer) return null;
+  return { date, ...(result ? { result } : {}), ...(odometer ? { odometer } : {}) };
+}
+
 export function parseVinScanIndicator(raw: unknown): VinScanIndicator | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
@@ -154,6 +167,9 @@ export function parseVinScanIndicator(raw: unknown): VinScanIndicator | null {
     flags: o.flags && typeof o.flags === "object" ? (o.flags as VinScanIndicator["flags"]) : undefined,
     vehicle: o.vehicle && typeof o.vehicle === "object" ? (o.vehicle as VinScanIndicator["vehicle"]) : undefined,
     mileage: Array.isArray(o.mileage) ? (o.mileage as VinScanIndicator["mileage"]) : undefined,
+    inspections: Array.isArray(o.inspections)
+      ? o.inspections.map(asInspection).filter((row): row is VinScanInspection => Boolean(row)).slice(0, 40)
+      : undefined,
   };
 }
 

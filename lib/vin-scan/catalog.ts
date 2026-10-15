@@ -432,7 +432,7 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanCatalogItem[] = VIN_SCAN_
 );
 
 /** Minimālā Tampermonkey versija VIN SCAN dziļajām saitēm, aizpildei un arhīva HTML importam. */
-export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 19 } as const;
+export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 20 } as const;
 
 export function vinScanUserscriptMeetsMin(raw: string): boolean {
   const parts = raw.split(".").map((n) => Number.parseInt(n, 10));

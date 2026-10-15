@@ -44,8 +44,8 @@ export async function POST(req: Request) {
       (typeof b.listingUrl === "string" && b.listingUrl.trim()) || draft?.orderEdits?.listingUrl || null;
     const sourceId = typeof b.sourceId === "string" ? b.sourceId.trim() : "";
 
-    // „Atvērt + importēt”: PROVIN skripts nolasīja bloķēto avotu pārlūkā.
-    // Ja ir lapas HTML, serveris parsē foto un izsoles. Bez HTML paliek tikai statuss.
+    // „Atvērt + importēt” un Zviedrijas reģistra cilne: skripts nolasīja lapu pārlūkā.
+    // Ja ir lapas HTML, serveris parsē foto, izsoles vai SE reģistru. Bez HTML paliek tikai statuss.
     const br = b.browserResult as Record<string, unknown> | undefined;
     if (br && typeof br === "object") {
       const id = typeof br.id === "string" ? br.id : "";
@@ -56,10 +56,16 @@ export async function POST(req: Request) {
       }
       if (html.trim()) {
         const applied = applyBrowserArchiveHtml({ record: existing, id, html, pageUrl, vin });
-        if (!applied.ok) return NextResponse.json({ error: applied.error }, { status: 400 });
-        const saved = await upsertOrderDraftVinScan(sessionId, applied.record);
-        if (!saved.ok) return NextResponse.json({ error: saved.error }, { status: 500 });
-        return NextResponse.json({ ok: true, vinScan: applied.record });
+        if (applied.ok) {
+          const saved = await upsertOrderDraftVinScan(sessionId, applied.record);
+          if (!saved.ok) return NextResponse.json({ error: saved.error }, { status: 500 });
+          return NextResponse.json({ ok: true, vinScan: applied.record });
+        }
+        const clientStatus = br.status === "found" || br.status === "none" ? br.status : "";
+        const hasRow = existing.indicators.some((row) => row.id === id);
+        if (applied.error !== "page_not_ready" || !clientStatus || !hasRow) {
+          return NextResponse.json({ error: applied.error }, { status: 400 });
+        }
       }
       const status: "found" | "none" | "" = br.status === "found" || br.status === "none" ? br.status : "";
       if (!status) {

@@ -9,6 +9,7 @@ import { isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog"
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
 import { parseAuctionArchive } from "@/lib/vin-scan/parse-extra";
 import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
+import { isSwedishBrowserSourceId, parseSwedishVehiclePage, swedishSourceLabel } from "@/lib/vin-scan/parse-sweden";
 import { buildVinScanIndicator, type VinScanAuction, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 
 /** Aptuveni 900 KB. Garāku lapu skripts saīsina, serveris noraida. */
@@ -148,7 +149,7 @@ function readyParse(parsed: VinScanParse | null): VinScanParse | BrowserArchiveH
   return parsed;
 }
 
-function parseArchiveHtml(id: VinScanSourceId, html: string, pageUrl: string, vin: string): VinScanParse | BrowserArchiveHtmlError {
+function parseArchiveHtml(id: string, html: string, pageUrl: string, vin: string): VinScanParse | BrowserArchiveHtmlError {
   if (id === "stat_vin") {
     return readyParse(parseStatVinPage({ status: 200, html, vin, finalUrl: pageUrl || null }));
   }
@@ -162,7 +163,39 @@ function parseArchiveHtml(id: VinScanSourceId, html: string, pageUrl: string, vi
   if (id === "checkcar_vin") {
     return readyParse(classifyCheckcarVinText(visibleText(html), vin));
   }
+  if (isSwedishBrowserSourceId(id)) {
+    const parsed = parseSwedishVehiclePage(html, pageUrl);
+    if (!parsed.ok) return parsed.error;
+    if (parsed.id !== id) return "unsupported";
+    return parsed.parsed;
+  }
   return "unsupported";
+}
+
+function indicatorFromParse(id: string, vin: string, parsed: VinScanParse, pageUrl: string): VinScanIndicator {
+  const summary = parsed.summary.slice(0, 300);
+  const detail = (parsed.detail || "").slice(0, 2000);
+  if (id === "transportstyrelsen") {
+    return {
+      id: "transportstyrelsen" as VinScanSourceId,
+      label: swedishSourceLabel("transportstyrelsen"),
+      country: "SE",
+      status: parsed.status,
+      summary,
+      detail,
+      openUrl: pageUrl || parsed.openUrl || null,
+      vehicle: parsed.vehicle,
+      mileage: (parsed.mileage ?? []).map((row) => ({ ...row, source: "Transportstyrelsen" })),
+      inspections: parsed.inspections,
+      flags: { ...parsed.flags, registrationCountry: "SE" },
+    };
+  }
+  return buildVinScanIndicator(id as VinScanSourceId, vin, {
+    ...parsed,
+    summary,
+    detail,
+    openUrl: pageUrl || parsed.openUrl || undefined,
+  });
 }
 
 function vinMatchesPage(html: string, pageUrl: string, vin: string): boolean {
@@ -173,13 +206,8 @@ function vinMatchesPage(html: string, pageUrl: string, vin: string): boolean {
   return true;
 }
 
-function mergeIndicator(prev: VinScanIndicator | undefined, id: VinScanSourceId, vin: string, parsed: VinScanParse, pageUrl: string): VinScanIndicator {
-  const built = buildVinScanIndicator(id, vin, {
-    ...parsed,
-    summary: parsed.summary.slice(0, 300),
-    detail: (parsed.detail || "").slice(0, 2000),
-    openUrl: pageUrl || parsed.openUrl || prev?.openUrl || undefined,
-  });
+function mergeIndicator(prev: VinScanIndicator | undefined, id: string, vin: string, parsed: VinScanParse, pageUrl: string): VinScanIndicator {
+  const built = indicatorFromParse(id, vin, parsed, pageUrl || prev?.openUrl || "");
   if (!prev) return built;
   const cleared = parsed.status === "none";
   return {
@@ -192,6 +220,7 @@ function mergeIndicator(prev: VinScanIndicator | undefined, id: VinScanSourceId,
     mileage: cleared ? prev.mileage : parsed.mileage?.length ? built.mileage : prev.mileage,
     media: cleared ? undefined : parsed.media ?? prev.media,
     flags: parsed.flags ?? prev.flags,
+    inspections: cleared ? [] : parsed.inspections?.length ? built.inspections : prev.inspections,
     auctions: cleared ? [] : parsed.auctions?.length ? parsed.auctions : prev.auctions,
   };
 }
@@ -213,12 +242,15 @@ export function preferBrowserArchiveImport(
       .map((row) => [row.id, row]),
   );
   if (browser.size === 0) return [...incoming];
-  return incoming.map((row) => {
+  const merged = incoming.map((row) => {
     const kept = browser.get(row.id);
     if (!kept) return row;
+    browser.delete(row.id);
     if (row.status === "found" || row.status === "none") return row;
     return kept;
   });
+  for (const kept of browser.values()) merged.push(kept);
+  return merged;
 }
 
 export function applyBrowserArchiveHtml(input: {
@@ -232,9 +264,8 @@ export function applyBrowserArchiveHtml(input: {
   const id = input.id.trim();
   const html = input.html || "";
   const pageUrl = (input.pageUrl || "").trim().slice(0, 500);
-  if (!ORDER_VIN_SCAN_BROWSER_IMPORT_IDS.includes(id) || !isVinScanSourceId(id)) {
-    return { ok: false, error: "unsupported" };
-  }
+  if (!ORDER_VIN_SCAN_BROWSER_IMPORT_IDS.includes(id)) return { ok: false, error: "unsupported" };
+  if (id !== "transportstyrelsen" && !isVinScanSourceId(id)) return { ok: false, error: "unsupported" };
   if (input.record.vin.trim().toUpperCase() !== vin) return { ok: false, error: "vin_mismatch" };
   if (html.length > ORDER_VIN_SCAN_BROWSER_HTML_MAX) return { ok: false, error: "too_large" };
   if (!html.trim()) return { ok: false, error: "page_not_ready" };
@@ -242,7 +273,7 @@ export function applyBrowserArchiveHtml(input: {
 
   const parsed = parseArchiveHtml(id, html, pageUrl, vin);
   if (typeof parsed === "string") return { ok: false, error: parsed };
-  const enriched = enrichFound(withPhotos(parsed, html), html);
+  const enriched = isSwedishBrowserSourceId(id) ? parsed : enrichFound(withPhotos(parsed, html), html);
   const prev = input.record.indicators.find((row) => row.id === id);
   const nextRow = mergeIndicator(prev, id, vin, enriched, pageUrl);
   const indicators = prev
