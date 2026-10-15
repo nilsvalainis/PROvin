@@ -113,4 +113,25 @@ describe("vehicleMatchesSearchFilter post-filter", () => {
     );
     expect(kept.map((v) => `${v.manufacturer} ${v.year}`)).toEqual(["Volvo 2020"]);
   });
+
+  it("reads first registration 06/2021 and 03.2018 and drops a missing year", () => {
+    const filter = parseListingSearchUrl(
+      "https://ecarstrade.com/search?mark[]=7&year_from=2016&year_to=2020",
+    );
+    expect(
+      vehicleMatchesSearchFilter(
+        { title: "BMW 220d", manufacturer: "BMW", firstRegistration: "03.2018", year: "" },
+        filter,
+      ),
+    ).toBe(true);
+    expect(
+      vehicleMatchesSearchFilter(
+        { title: "BMW 320d", manufacturer: "BMW", firstRegistration: "06/2021", year: "0620" },
+        filter,
+      ),
+    ).toBe(false);
+    expect(
+      vehicleMatchesSearchFilter({ title: "BMW 318d", manufacturer: "BMW", year: "", firstRegistration: "" }, filter),
+    ).toBe(false);
+  });
 });

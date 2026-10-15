@@ -782,7 +782,7 @@ export function IrissOrderRoom({
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-[18px] font-semibold text-[var(--color-apple-text)]">{hit.price != null ? listingFmtEur(hit.price) : "Cena nav"}</p>
+                            <p className="text-[18px] font-semibold text-[var(--color-apple-text)]">{hit.price != null ? listingFmtEur(hit.price) : "nav cenas"}</p>
                             {fit ? <p className={`text-[12px] font-medium ${fit.ok ? "text-emerald-700" : "text-rose-700"}`}>{fit.label}</p> : null}
                           </div>
                         </div>

@@ -62,16 +62,23 @@ describe("listing extras and v4 control numbers", () => {
         priceBuyNow: null,
         auctionStage: "BLIND_AUCTION",
       }),
-    ).toBe("izsole, nav solījumu");
+    ).toBe("nav cenas");
     expect(
       listingCardPriceLabel({
         platform: "ecarstrade",
         priceCurrent: null,
         priceStart: null,
         priceBuyNow: null,
+        priceEstimate: 17000,
         auctionStage: "BID",
       }),
-    ).toBe("izsole, nav solījumu");
+    ).toBe("Aplēse");
+    expect(listingComparisonPrice({ platform: "ecarstrade", priceCurrent: null, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe(17000);
+    expect(listingComparisonPrice({ platform: "ecarstrade", priceCurrent: 15100, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe(15100);
+    expect(listingComparisonPrice({ platform: "openline", priceCurrent: 15100, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe(19000);
+    expect(listingComparisonPrice({ platform: "auto1", priceCurrent: 12000, priceStart: 10000, priceBuyNow: 14900, priceEstimate: 17000 })).toBe(14900);
+    expect(listingComparisonPrice({ platform: "autobid", priceCurrent: 9000, priceStart: null, priceBuyNow: 11000, priceEstimate: 17000 })).toBe(11000);
+    expect(listingCardPriceLabel({ platform: "openline", priceCurrent: 15100, priceStart: null, priceBuyNow: 19000, priceEstimate: 17000 })).toBe("Pirkt uzreiz");
     expect(
       listingCardPriceLabel({
         platform: "ecarstrade",
@@ -80,7 +87,7 @@ describe("listing extras and v4 control numbers", () => {
         priceBuyNow: null,
         auctionStage: "BID",
       }),
-    ).toBe("Pašreizējā cena");
+    ).toBe("Solījums");
   });
 
   it("does not treat a low tender floor or Autobid reserve as an affordable price", () => {

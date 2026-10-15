@@ -181,6 +181,8 @@ export function mapRelayItem(item: unknown, platform: IrissListingPlatform, orde
     priceMinimal: numOrNull(item.priceMinimal),
     priceCurrent: numOrNull(item.priceCurrent),
     priceBuyNow: numOrNull(item.priceBuyNow),
+    priceEstimate: numOrNull(item.priceEstimate),
+    priceTotal: numOrNull(item.priceTotal),
     vatNote: str(item.vatNote),
     auctionId,
     auctionStartAt: str(item.auctionStartAt),
@@ -217,6 +219,8 @@ function mapEcarstradeRelayVehicle(v: EcarstradeVehicle, orderId: string, orderB
     priceMinimal: v.priceMinimal,
     priceCurrent: v.priceCurrent,
     priceBuyNow: v.priceBuyNow,
+    priceEstimate: v.priceEstimate,
+    priceTotal: v.priceTotal,
     vatNote: v.vatNote,
     auctionId: v.auctionId,
     auctionStartAt: v.auctionStartAt,
@@ -280,16 +284,18 @@ export function mergeListingPricesFromRelay(
       priceBuyNow: extra.priceBuyNow ?? v.priceBuyNow,
       priceCurrent: extra.priceCurrent ?? v.priceCurrent,
       priceStart: extra.priceStart ?? v.priceStart,
+      priceEstimate: extra.priceEstimate ?? v.priceEstimate,
+      priceTotal: extra.priceTotal ?? v.priceTotal,
     };
-    if (v.priceBuyNow == null && v.priceCurrent == null && (next.priceBuyNow != null || next.priceCurrent != null)) {
-      priced += 1;
-    }
+    const hadPrice = v.priceBuyNow != null || v.priceCurrent != null || v.priceEstimate != null;
+    const hasPrice = next.priceBuyNow != null || next.priceCurrent != null || next.priceEstimate != null;
+    if (!hadPrice && hasPrice) priced += 1;
     return next;
   });
   for (const extra of relayVehicles) {
     if (seen.has(extra.externalId)) continue;
     vehicles.push(extra);
-    if (extra.priceBuyNow != null || extra.priceCurrent != null) priced += 1;
+    if (extra.priceBuyNow != null || extra.priceCurrent != null || extra.priceEstimate != null) priced += 1;
   }
   return { vehicles, priced };
 }

@@ -116,7 +116,7 @@ function parseVinOcrAlts(v: unknown): string[] | undefined {
 
 const SOURCE_STATUSES = new Set(["ok", "login_required", "blocked_by_waf", "parse_failed", "fetch_failed", "relay_not_configured", "skipped"]);
 const CHANGES = new Set(["new", "price_changed", "unchanged", "gone"]);
-const PRICE_FIELDS = new Set(["start", "minimal", "current", "buy_now"]);
+const PRICE_FIELDS = new Set(["start", "minimal", "current", "buy_now", "estimate"]);
 
 function normalizePriceChange(v: unknown): IrissListingPriceChange | null {
   if (!isObj(v)) return null;
@@ -189,6 +189,8 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     priceMinimal: numOrNull(v.priceMinimal),
     priceCurrent: numOrNull(v.priceCurrent),
     priceBuyNow: numOrNull(v.priceBuyNow),
+    priceEstimate: numOrNull(v.priceEstimate),
+    priceTotal: numOrNull(v.priceTotal),
     vatNote: str(v.vatNote),
     auctionId,
     auctionStartAt: str(v.auctionStartAt),

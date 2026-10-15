@@ -77,12 +77,13 @@ export function collectEcarstradeCardIds(html) {
 export function ecarstradeCardNeedsPrice(htmlSlice) {
   const s = String(htmlSlice ?? "");
   if (/sign in to buy/i.test(s)) return true;
+  if (/aplēs|estimated price|estimate price|appraisal/i.test(s) && /€|eur/i.test(s)) return false;
   if (/\b(?:pirkt uzreiz|buy now|pirkt)\b/i.test(s) && /€|eur/i.test(s)) return false;
   return !/€\s*\d|\d[\d.\s]*\s*€/i.test(s);
 }
 
 export function ecarstradeItemNeedsPrice(item) {
-  return Boolean(item) && item.priceBuyNow == null && item.priceCurrent == null;
+  return Boolean(item) && item.priceBuyNow == null && item.priceCurrent == null && item.priceEstimate == null;
 }
 
 /** Viena kartīte līdz nākamajam data-itemId, lai nākamā auto € neaizēno šo. */
@@ -318,6 +319,60 @@ function amountInClass(html, cls) {
   return euroAmounts(text)[0] ?? toPrice(text);
 }
 
+const ESTIMATE_LABEL = /Aplēses cena|Estimated price|Estimate price|Appraisal(?: price)?|Suggested price|Ieteicamā cena|Recommended bid|Min\.?\s*Market Price/i;
+const TOTAL_LABEL = /Kopējā cena|Total price|Total amount/i;
+const BUY_LABEL = /Pirkt uzreiz|Buy now|\bPIRKT\b|\bBUY\b/i;
+
+function dataPriceInClass(html, cls) {
+  const re = new RegExp(`<[^>]*class=["'][^"']*${cls}[^"']*["'][^>]*>`, "gi");
+  for (const m of String(html ?? "").matchAll(re)) {
+    const n = toPrice(tagAttr(m[0] ?? "", "data-price"));
+    if (n != null) return n;
+  }
+  return null;
+}
+
+function headLabelPrice(html) {
+  const label = stripTags(/class=["'][^"']*car-price__head-label__label[^"']*["'][^>]*>([\s\S]*?)<\/span>/i.exec(html)?.[1] ?? "");
+  const amount = amountInClass(html, "car-price__head-label__value");
+  if (!label && amount == null) return null;
+  return { label, amount };
+}
+
+function estimateFromHtml(html, bidNoBids) {
+  const labeled = amountAfter(html, ESTIMATE_LABEL);
+  if (labeled != null) return labeled;
+  const head = headLabelPrice(html);
+  if (head?.amount != null && ESTIMATE_LABEL.test(head.label)) return head.amount;
+  const fromData = dataPriceInClass(html, "recommended-bid") ?? dataPriceInClass(html, "min-market-price") ?? dataPriceInClass(html, "estimate");
+  if (fromData != null) return fromData;
+  if (bidNoBids) return buyNowFromCalcBid(html);
+  return null;
+}
+
+function totalFromHtml(html) {
+  return amountAfter(html, TOTAL_LABEL) ?? amountInClass(html, "car-price__calc");
+}
+
+function buyNowFromHeadLabel(html) {
+  const head = headLabelPrice(html);
+  if (!head?.amount || !BUY_LABEL.test(head.label) || ESTIMATE_LABEL.test(head.label)) return null;
+  if (/pirkt\s*\/\s*sol/i.test(head.label)) return null;
+  return head.amount;
+}
+
+function buyNowLabeledAmount(raw) {
+  const re = /PIRKT|BUY(?:\s+NOW)?|Buy now|Pirkt uzreiz/gi;
+  const text = String(raw ?? "");
+  for (const m of text.matchAll(re)) {
+    const around = text.slice(m.index, m.index + 18);
+    if (/pirkt\s*\/\s*sol/i.test(around)) continue;
+    const n = euroAmounts(text.slice(m.index, m.index + 180))[0];
+    if (n != null) return n;
+  }
+  return null;
+}
+
 function firstPrice(...vals) {
   for (const v of vals) {
     const n = toPrice(v);
@@ -358,18 +413,22 @@ export function extractEcarstradeRelayItem(html, data = {}) {
     const manufacturer = title.replace(/^#\d+\s*-?\s*/i, "").split(/\s+/).find((w) => /[a-z]/i.test(w)) || "";
   const signedOut = /Sign in to (?:buy|see)/i.test(s);
   const bidNoBids = !signedOut && isEcarstradeBidNoBidsHtml(s);
+  const auctionTypeEarly = String(
+    d.auction_type || /data-auction-type=["']([^"']+)["']/i.exec(s)?.[1] || inferAuctionTypeFromButtons(s) || "",
+  ).toLowerCase();
+  const calcBidIsBuyNow = auctionTypeEarly !== "bid" && auctionTypeEarly !== "open";
   const buyNowFromHtml = signedOut
     ? null
     : buyNowFromFixButtons(s) ??
       buyNowFromBuyOrOfferHref(s) ??
-      (bidNoBids ? null : buyNowFromCalcBid(s)) ??
-      (bidNoBids ? null : amountAfter(s, /PIRKT|BUY(?:\s+NOW)?|Buy now|Pirkt uzreiz/i)) ??
-      (bidNoBids ? null : amountInClass(s, "car-price__button")) ??
-      (bidNoBids ? null : amountInClass(s, "car-price__head-label__value"));
-  /** Live current bid is websocket; HTML has none. List / future_api data.max_bid. */
-  const currentFromHtml = signedOut || bidNoBids
+      buyNowFromHeadLabel(s) ??
+      (bidNoBids || !calcBidIsBuyNow ? null : buyNowFromCalcBid(s)) ??
+      (bidNoBids ? null : buyNowLabeledAmount(s)) ??
+      (bidNoBids ? null : amountInClass(s, "car-price__button"));
+  /** Live current bid is websocket; HTML also has the visible value when it exists. */
+  const currentFromHtml = signedOut
     ? null
-    : amountAfter(s, /Current bid|Highest bid|Pašreizēj|Max\.?\s*bid|Solījums/i) ??
+    : amountAfter(s, /Current bid|Highest bid|Pašreizēj|Aktuālais solījums|Max\.?\s*bid|(?<!Aplēses )Solījums/i) ??
       amountInClass(s, "car-price__current-bid__value") ??
       amountInClass(s, "car-price__bid-value");
   const buyNow = firstPrice(
@@ -382,16 +441,32 @@ export function extractEcarstradeRelayItem(html, data = {}) {
     d.fix_price,
     buyNowFromHtml,
   );
-  const current = firstPrice(d.current_bid, d.currentBid, d.highest_bid, d.max_bid, d.maxBid, currentFromHtml);
+  const current = firstPrice(d.current_bid, d.currentBid, d.highest_bid, d.highestBid, d.max_bid, d.maxBid, currentFromHtml);
+  const estimate =
+    firstPrice(
+      d.estimate_price,
+      d.estimatePrice,
+      d.estimated_price,
+      d.estimatedPrice,
+      d.price_estimate,
+      d.priceEstimate,
+      d.appraisal_price,
+      d.suggested_price,
+    ) ?? (signedOut ? null : estimateFromHtml(s, bidNoBids));
+  const total =
+    firstPrice(d.total_price, d.totalPrice, d.price_total, d.priceTotal) ?? (signedOut ? null : totalFromHtml(s));
   const start = firstPrice(d.start_price, d.startPrice, d.min_bid);
-  const auctionType = String(
-    d.auction_type || /data-auction-type=["']([^"']+)["']/i.exec(s)?.[1] || inferAuctionTypeFromButtons(s) || "",
-  ).toLowerCase();
+  const auctionType = auctionTypeEarly;
   let priceCurrent = current;
   let priceBuyNow = buyNow;
+  const priceEstimate = estimate ?? null;
+  const priceTotal = total ?? null;
   if (auctionType === "stock" || auctionType === "fix") {
     priceCurrent = null;
     priceBuyNow = buyNow ?? current;
+  } else if (auctionType === "bid" || auctionType === "blind") {
+    const n = priceCurrent;
+    if (n != null && n <= 1000 && priceBuyNow == null) priceCurrent = null;
   } else if (auctionType === "bid_or_fix" && buyNow != null && current === buyNow) {
     priceCurrent = null;
   }
@@ -420,6 +495,8 @@ export function extractEcarstradeRelayItem(html, data = {}) {
     priceStart: start,
     priceCurrent,
     priceBuyNow,
+    priceEstimate,
+    priceTotal,
     auctionId: String(d.auction_id || /auction(\d+)/i.exec(s)?.[1] || ""),
     auctionStage: auctionType.toUpperCase(),
   });
@@ -475,6 +552,8 @@ export function mergeEcarstradeRelayItems(into, extra) {
       priceBuyNow: it.priceBuyNow ?? prev.priceBuyNow,
       priceCurrent: it.priceCurrent ?? prev.priceCurrent,
       priceStart: it.priceStart ?? prev.priceStart,
+      priceEstimate: it.priceEstimate ?? prev.priceEstimate,
+      priceTotal: it.priceTotal ?? prev.priceTotal,
     });
   }
   return [...map.values()];

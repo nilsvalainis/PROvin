@@ -159,7 +159,16 @@ describe("eCarsTrade parser", () => {
       powerKw: "169",
       mileageKm: 105926,
     });
-    expect(listingComparisonPrice({ ...v, platform: "ecarstrade" })).toBeNull();
+    expect(
+      listingComparisonPrice({
+        platform: "ecarstrade",
+        priceCurrent: v?.priceCurrent ?? null,
+        priceStart: v?.priceStart ?? null,
+        priceBuyNow: v?.priceBuyNow ?? null,
+        priceMinimal: v?.priceMinimal ?? null,
+        priceEstimate: v?.priceEstimate ?? null,
+      }),
+    ).toBeNull();
   });
 
   it("parses PIRKT 16200 from a logged-in stock card and ignores Kopējā 16500 and the 2036 placeholder", () => {
@@ -202,7 +211,8 @@ describe("eCarsTrade parser", () => {
     const logged = parseEcarstradeCard(card("card-bid-or-fix-loggedin.html"), { id: "6752454" });
     expect(logged?.priceBuyNow).toBe(45000);
     expect(logged?.priceCurrent).toBe(12000);
-    expect(listingComparisonPrice({ ...logged!, platform: "ecarstrade" })).toBe(45000);
+    expect(listingComparisonPrice({ ...logged!, platform: "ecarstrade" })).toBe(12000);
+    expect(listingCardPriceLabel({ ...logged!, platform: "ecarstrade" })).toBe("Solījums");
   });
 
   it("treats a 850 € public tender floor as start, not a live bid", () => {
@@ -283,22 +293,23 @@ describe("eCarsTrade parser", () => {
   it("treats BID Place a bid with empty data-price as unpriced; max_bid stays current", () => {
     expect(isEcarstradeBidNoBidsHtml(DETAIL_BID_7677985)).toBe(true);
     const parsed = parseEcarstradeCardPrices(DETAIL_BID_7677985);
-    expect(parsed).toEqual({ buyNow: null, current: null, start: null });
+    expect(parsed).toEqual({ buyNow: null, current: null, start: null, estimate: null, total: null });
     const v = parseEcarstradeCard(DETAIL_BID_7677985, { id: "7677985" });
     expect(v).toMatchObject({
       externalId: "7677985",
       priceBuyNow: null,
       priceCurrent: null,
+      priceEstimate: null,
       auctionStage: "BLIND_AUCTION",
     });
-    expect(listingCardPriceLabel({ ...v!, platform: "ecarstrade" })).toBe("izsole, nav solījumu");
+    expect(listingCardPriceLabel({ ...v!, platform: "ecarstrade" })).toBe("nav cenas");
     const withListBid = parseEcarstradeCard(DETAIL_BID_7677985, {
       id: "7677985",
       auction_type: "bid",
       max_bid: "15100",
     });
     expect(withListBid).toMatchObject({ priceBuyNow: null, priceCurrent: 15100, auctionStage: "BLIND_AUCTION" });
-    expect(listingCardPriceLabel({ ...withListBid!, platform: "ecarstrade" })).toBe("Pašreizējā cena");
+    expect(listingCardPriceLabel({ ...withListBid!, platform: "ecarstrade" })).toBe("Solījums");
     const pub = parseEcarstradeCard(card("card-tucson-public.html"), {
       id: "7602956",
       max_bid: null,
@@ -319,5 +330,35 @@ describe("eCarsTrade parser", () => {
       <input id="calc_bid" value="27200,00" />
       <span>Price excl. VAT</span>`;
     expect(parseEcarstradeCardPrices(calcOnly).buyNow).toBe(27200);
+  });
+
+  it("reads Aplēses cena before Kopējā and before buy-now, and keeps a live bid first", () => {
+    const html = card("detail-estimate-7693493.html");
+    const json = JSON.parse(card("detail-estimate-7693493.json")) as { data: Record<string, unknown> };
+    const fromHtml = parseEcarstradeCard(html, { id: "7693493", auction_type: "bid" });
+    expect(fromHtml).toMatchObject({
+      externalId: "7693493",
+      priceCurrent: null,
+      priceBuyNow: null,
+      priceEstimate: 17000,
+      priceTotal: 17300,
+      auctionStage: "BLIND_AUCTION",
+    });
+    expect(listingComparisonPrice({ ...fromHtml!, platform: "ecarstrade" })).toBe(17000);
+    expect(listingCardPriceLabel({ ...fromHtml!, platform: "ecarstrade" })).toBe("Aplēse");
+    const fromJson = parseEcarstradeCard(`<div data-itemId="7693493"></div>`, json.data);
+    expect(fromJson).toMatchObject({ priceEstimate: 17000, priceTotal: 17300, priceCurrent: null, priceBuyNow: null });
+    const withBid = parseEcarstradeCard(
+      html.replace('data-price=""', 'data-price="15100"').replace(
+        "Aplēses cena",
+        `Aktuālais solījums</span><span class="car-price__current-bid__value">€ 15100</span><span>Aplēses cena`,
+      ) + `<button class="car-price__button">PIRKT 19000€</button>`,
+      { id: "7693493", auction_type: "bid", max_bid: "15100" },
+    );
+    expect(withBid?.priceCurrent).toBe(15100);
+    expect(withBid?.priceEstimate).toBe(17000);
+    expect(withBid?.priceBuyNow).toBe(19000);
+    expect(listingComparisonPrice({ ...withBid!, platform: "ecarstrade" })).toBe(15100);
+    expect(listingCardPriceLabel({ ...withBid!, platform: "ecarstrade" })).toBe("Solījums");
   });
 });

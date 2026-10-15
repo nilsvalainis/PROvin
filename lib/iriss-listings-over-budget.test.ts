@@ -4,6 +4,7 @@ import {
   DEFAULT_OVER_BUDGET_THRESHOLD_EUR,
   listingCardTotal,
   listingExceedsBudgetBy,
+  listingExcludedForMissingPrice,
   listingIsOverBudgetHidden,
   parseOverBudgetThreshold,
 } from "@/lib/iriss-listings-over-budget";
@@ -70,5 +71,26 @@ describe("over-budget filter", () => {
     const total = listingCardTotal(v, extras);
     expect(total).toBe(listingFinalPrice({ kind: "net", rate: null }, 16200, I));
     expect(listingIsOverBudgetHidden(v, extras, undefined, 8000, true, 2000)).toBe(true);
+  });
+
+  it("does not count a listing with no price as a budget match", () => {
+    const v = {
+      platform: "ecarstrade" as const,
+      countryCode: "BE",
+      lastSeenAt: "",
+      priceCurrent: null,
+      priceStart: null,
+      priceBuyNow: null,
+      priceEstimate: null,
+      auctionStage: "BLIND_AUCTION",
+      taxDeduction: true,
+      vatNote: "",
+    };
+    expect(listingCardTotal(v, extras)).toBeNull();
+    expect(listingExcludedForMissingPrice(v, 18000, true)).toBe(true);
+    expect(listingExcludedForMissingPrice(v, 18000, false)).toBe(false);
+    expect(listingExcludedForMissingPrice(v, null, true)).toBe(false);
+    expect(listingExcludedForMissingPrice({ ...v, priceEstimate: 17000 }, 18000, true)).toBe(false);
+    expect(listingCardTotal({ ...v, priceEstimate: 17000 }, extras)).toBe(listingFinalPrice({ kind: "net", rate: null }, 17000, I));
   });
 });

@@ -65,9 +65,9 @@ function timeMs(iso: string): number | null {
   return Number.isFinite(t) ? t : null;
 }
 
-/** Salīdzināšanas cena (pirkt uzreiz / asking, citādi solījums). */
+/** Salīdzināšanas cena: solījums, citādi aplēse, citādi pirkt uzreiz. */
 export function listingSortPrice(
-  v: Pick<Sortable, "platform" | "priceCurrent" | "priceStart" | "priceBuyNow" | "priceMinimal">,
+  v: Pick<Sortable, "platform" | "priceCurrent" | "priceStart" | "priceBuyNow" | "priceMinimal"> & { priceEstimate?: number | null },
 ): number | null {
   return listingComparisonPrice({
     platform: v.platform,
@@ -75,6 +75,7 @@ export function listingSortPrice(
     priceStart: v.priceStart,
     priceMinimal: v.priceMinimal ?? null,
     priceBuyNow: v.priceBuyNow,
+    priceEstimate: v.priceEstimate ?? null,
   });
 }
 

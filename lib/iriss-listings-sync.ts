@@ -197,6 +197,8 @@ async function fetchSource(src: IrissListingSource, ctx?: ListingSyncFetchContex
       priceMinimal: v.priceMinimal,
       priceCurrent: v.priceCurrent,
       priceBuyNow: v.priceBuyNow,
+      priceEstimate: v.priceEstimate,
+      priceTotal: v.priceTotal,
       vatNote: v.vatNote,
       auctionId: v.auctionId,
       auctionStartAt: v.auctionStartAt,
