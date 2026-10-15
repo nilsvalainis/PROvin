@@ -11,10 +11,10 @@ import {
 } from "@/lib/adify-listing-history";
 import {
   extractTirgusDatiHistoryFromHtml,
-  fetchTirgusDatiListingHistory,
   looksLikeTirgusDatiCloudflareChallenge,
   tirgusDatiSupportsListingUrl,
 } from "@/lib/tirgusdati-listing-history";
+import { fetchTirgusDatiListingHistory } from "@/lib/tirgusdati-listing-history-server";
 
 export const LISTING_HISTORY_HTML_MAX_CHARS = 500_000;
 

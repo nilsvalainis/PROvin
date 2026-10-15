@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   extractTirgusDatiHistoryFromHtml,
-  fetchTirgusDatiListingHistory,
   looksLikeTirgusDatiCloudflareChallenge,
   tirgusDatiHistoryPageLookupUrl,
   tirgusDatiSupportsListingUrl,
 } from "@/lib/tirgusdati-listing-history";
+import { fetchTirgusDatiListingHistory } from "@/lib/tirgusdati-listing-history-server";
 
 const Q7_URL = "https://www.ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html";
 

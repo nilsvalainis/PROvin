@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * VIN SCAN izsoļu lapas caur Hetzner IRISS Chrome releju (`POST /listings/page`).
  * stat.vin WAF (plaintext Access blocked) CapSolver nespēj; īsts Chrome var.
