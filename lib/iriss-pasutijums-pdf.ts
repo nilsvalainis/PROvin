@@ -7,7 +7,11 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFImage, type PDFPage } from "pdf-lib";
 import sharp from "sharp";
 
-import { DZ_PASUTIJUMS_TERMS_BLOCKS } from "@/lib/dzintarzeme-pasutijums-terms-content";
+import {
+  DZ_PASUTIJUMS_TERMS_BLOCKS,
+  dzPasutijumsTermsWithCommission,
+  type DzPasutijumsTermBlock,
+} from "@/lib/dzintarzeme-pasutijums-terms-content";
 import {
   drawSectionCardWithShadow,
   drawSectionHeadInCard,
@@ -21,7 +25,10 @@ import {
   SECTION_GAP as DZ_SECTION_GAP,
   wrapText as dzWrapText,
 } from "@/lib/dzintarzeme-pdf-layout";
-import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
+import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX, IRISS_LEGAL_PARTY_NAME } from "@/lib/iriss-brand";
+import { irissOfferImagesOmittedNotice } from "@/lib/iriss-offer-share";
+import { readIrissTameCommissionSettings } from "@/lib/iriss-tame-commission-store";
+import { parsePriceLike } from "@/lib/iriss-price-format";
 import {
   drawImageInPremiumFrame,
   drawOfferMiniIcon,
@@ -545,9 +552,7 @@ function val(s: string | undefined): string | null {
 }
 
 function parseMoney(value: string | undefined): number {
-  const compact = (value ?? "").trim().replace(/\s+/g, "").replace(",", ".");
-  const n = Number.parseFloat(compact);
-  return Number.isFinite(n) ? n : 0;
+  return parsePriceLike(value ?? "");
 }
 
 const MAX_IMAGE_DATAURL_BASE64_CHARS = 1_800_000;
@@ -761,9 +766,17 @@ function stampListFooters(ctx: Ctx): void {
   }
 }
 
-function measureDzTermsHeight(contentW: number, font: PDFFont, fontBold: PDFFont, fsP: number, fsH: number, gap: number): number {
+function measureDzTermsHeight(
+  contentW: number,
+  font: PDFFont,
+  fontBold: PDFFont,
+  fsP: number,
+  fsH: number,
+  gap: number,
+  blocks: readonly DzPasutijumsTermBlock[] = DZ_PASUTIJUMS_TERMS_BLOCKS,
+): number {
   let h = 0;
-  for (const block of DZ_PASUTIJUMS_TERMS_BLOCKS) {
+  for (const block of blocks) {
     if (block.kind === "h") {
       h += dzWrapText(block.text, fontBold, fsH, contentW).length * dzLineHeight(fsH) + gap;
     } else if (block.kind === "p") {
@@ -778,17 +791,20 @@ function measureDzTermsHeight(contentW: number, font: PDFFont, fontBold: PDFFont
   return h;
 }
 
-function drawDzPasutijumsTermsPage(ctx: Ctx): void {
+function drawDzPasutijumsTermsPage(
+  ctx: Ctx,
+  blocks: readonly DzPasutijumsTermBlock[] = DZ_PASUTIJUMS_TERMS_BLOCKS,
+): void {
   const ix = ctx.margin;
   const iw = ctx.contentW;
   const avail = ctx.y - ctx.margin - Math.max(DZ_FOOTER_BLOCK_H, PREMIUM_FOOTER_BLOCK_H) - 12;
   let fsP = 6.55;
   let fsH = 7.35;
-  while (fsP >= 5.35 && measureDzTermsHeight(iw, ctx.font, ctx.fontBold, fsP, fsH, 2.5) > avail) {
+  while (fsP >= 5.35 && measureDzTermsHeight(iw, ctx.font, ctx.fontBold, fsP, fsH, 2.5, blocks) > avail) {
     fsP -= 0.1;
     fsH -= 0.1;
   }
-  for (const block of DZ_PASUTIJUMS_TERMS_BLOCKS) {
+  for (const block of blocks) {
     if (block.kind === "h") {
       for (const ln of dzWrapText(block.text, ctx.fontBold, fsH, iw)) {
         dzDrawTrackedText(ctx.page, ln, {
@@ -1217,7 +1233,11 @@ function drawPasutijumsSignatureStrip(ctx: Ctx, record: IrissPasutijumsRecord, y
   cy -= 20;
   const cols: { x: number; label: string; name: string }[] = [
     { x: ix, label: "Klienta paraksts", name: clientName },
-    { x: ix + colW + gap, label: "Pakalpojuma sniedzēja paraksts", name: "Dzintarzeme Auto" },
+    {
+      x: ix + colW + gap,
+      label: "Pakalpojuma sniedzēja paraksts",
+      name: getIrissPdfSupplierFooterLines()[0]?.trim() || IRISS_LEGAL_PARTY_NAME,
+    },
   ];
   for (const col of cols) {
     page.drawText(col.label, { x: col.x, y: cy - 8, size: 8, font: fontBold, color: INK });
@@ -1411,30 +1431,36 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
   ctx.y = margin + FOOTER_SAFE;
 }
 
+function drawPasutijumsLegalFooter(ctx: Ctx, page: PDFPage = ctx.page): void {
+  drawPremiumFooter3ColIriss(
+    page,
+    ctx.margin,
+    ctx.contentW,
+    ctx.font,
+    ctx.fontBold,
+    getIrissPdfSupplierFooterLines(),
+    ctx.offerLogo,
+  );
+}
+
 export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord): Promise<Uint8Array> {
   const ctx = await createPdfCtx();
+  const terms = dzPasutijumsTermsWithCommission(await readIrissTameCommissionSettings());
   ctx.pasutijumsDzLockPage1 = true;
   ctx.offerLogo = await dzLoadOfferLogoPack(ctx.pdfDoc);
 
   drawPasutijumsPage1Pro(ctx, record);
 
-  drawPremiumFooter3ColDz(
-    ctx.page,
-    ctx.margin,
-    ctx.contentW,
-    ctx.font,
-    ctx.fontBold,
-    ctx.offerLogo,
-  );
+  drawPasutijumsLegalFooter(ctx);
   drawPasutijumsPageIndex(ctx.page, ctx.pageW, ctx.margin, ctx.font, 1, 2);
 
   ctx.pasutijumsDzLockPage1 = false;
   ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
   ctx.y = ctx.pageH - ctx.margin;
 
-  drawDzPasutijumsTermsPage(ctx);
+  drawDzPasutijumsTermsPage(ctx, terms);
 
-  drawPremiumFooter3ColDz(ctx.page, ctx.margin, ctx.contentW, ctx.font, ctx.fontBold, ctx.offerLogo);
+  drawPasutijumsLegalFooter(ctx);
   drawPasutijumsPageIndex(ctx.page, ctx.pageW, ctx.margin, ctx.font, 2, 2);
 
   return ctx.pdfDoc.save();
@@ -1496,11 +1522,16 @@ export type BuildIrissOfferPdfOptions = {
   includeClientData?: boolean;
 };
 
+export type IrissOfferPdfBuild = {
+  bytes: Uint8Array;
+  imagesOmitted: number;
+};
+
 export async function buildIrissOfferPdfBytes(
   record: IrissPasutijumsRecord,
   offer: IrissOfferRecord,
   opts?: BuildIrissOfferPdfOptions,
-): Promise<Uint8Array> {
+): Promise<IrissOfferPdfBuild> {
   const embedImages = opts?.embedImages !== false;
   const includeClientData = opts?.includeClientData !== false;
   const ctx = await createPdfCtx();
@@ -1653,6 +1684,7 @@ export async function buildIrissOfferPdfBytes(
   );
   const other = offer.attachments.filter((a) => !imageAttachments.includes(a));
 
+  let imagesOmitted = 0;
   if (!embedImages && imageAttachments.length > 0) {
     drawIosCard(
       ctx,
@@ -1671,6 +1703,7 @@ export async function buildIrissOfferPdfBytes(
     for (const att of imageAttachments) {
       const emb = await tryEmbedOfferImage(ctx.pdfDoc, att.dataUrl);
       if (emb) pics.push(emb);
+      else imagesOmitted += 1;
     }
     if (pics.length > 0) {
       const COL_GAP = 12;
@@ -1713,6 +1746,17 @@ export async function buildIrissOfferPdfBytes(
         );
       }
     }
+    if (imagesOmitted > 0) {
+      const note = irissOfferImagesOmittedNotice(imagesOmitted);
+      drawIosCard(
+        ctx,
+        "Attēli",
+        (iw) => measureWrappedBlockHeight(note, ctx.font, 9, iw),
+        ({ x, w }) => {
+          drawParagraph(ctx, note, 9, MUTED, undefined, { x, maxW: w });
+        },
+      );
+    }
   }
 
   if (other.length > 0) {
@@ -1737,5 +1781,5 @@ export async function buildIrissOfferPdfBytes(
   }
 
   drawFooter(ctx);
-  return ctx.pdfDoc.save();
+  return { bytes: await ctx.pdfDoc.save(), imagesOmitted };
 }

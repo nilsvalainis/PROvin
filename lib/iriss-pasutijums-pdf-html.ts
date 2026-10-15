@@ -1,5 +1,6 @@
 import { adminRichHtmlToPdfSafeHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
+import { parsePriceLike } from "@/lib/iriss-price-format";
 import { resolveIrissOfferPdfLabels, resolveIrissOrderPdfLabels } from "@/lib/messages/iriss-pdf-labels";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -79,9 +80,7 @@ function buildIrissPrintFooterHtml(accent: string): string {
 }
 
 function parseMoney(value: string | undefined): number {
-  const compact = (value ?? "").trim().replace(/\s+/g, "").replace(",", ".");
-  const n = Number.parseFloat(compact);
-  return Number.isFinite(n) ? n : 0;
+  return parsePriceLike(value ?? "");
 }
 
 function fmtMoney(value: number): string {

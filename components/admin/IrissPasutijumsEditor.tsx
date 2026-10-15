@@ -28,7 +28,12 @@ import {
   planSilentAutosave,
 } from "@/lib/iriss-pasutijumi-save-safety";
 import { inspectIrissPhone } from "@/lib/iriss-phone-normalize";
-import { irissPriceFormatWarning } from "@/lib/iriss-price-format";
+import {
+  buildIrissOfferClientShareBody,
+  buildIrissOfferShareSubject,
+  irissOfferImagesOmittedNotice,
+} from "@/lib/iriss-offer-share";
+import { irissPriceFormatWarning, parsePriceLike } from "@/lib/iriss-price-format";
 import { irissVinWarning } from "@/lib/iriss-vin-check";
 import {
   defaultIrissDzintarzemeTameDraft,
@@ -213,37 +218,6 @@ function newOfferDraft(nextNumber: number): OfferDraft {
     attachments: [],
     createdAt: now,
   };
-}
-
-function buildIrissOfferClientShareBody(
-  draft: OfferDraft,
-  clientFirstName: string,
-  clientLastName: string,
-  pdfFileName: string,
-): string {
-  const name = [clientFirstName, clientLastName].map((s) => s.trim()).filter(Boolean).join(" ");
-  const greeting = name ? `Sveiki, ${name}!` : "Sveiki!";
-  const vehicle = [draft.brandModel.trim(), draft.firstRegistration.trim() || draft.year.trim()].filter(Boolean).join(", ");
-  return [
-    greeting,
-    "",
-    `PDF ar piedāvājumu tikko saglabāts tālrunī kā „${pdfFileName}”. Pievieno to šai sarunā: + → Dokuments → atrodi failu (piem. Lejupielādes).`,
-    ...(vehicle ? [`Objekts: ${vehicle}.`] : []),
-    "",
-    "Labu dienu,",
-    "PROVIN.LV",
-  ].join("\n");
-}
-
-function buildIrissOfferShareSubject(draft: OfferDraft): string {
-  const vehicle = [draft.brandModel.trim(), draft.firstRegistration.trim() || draft.year.trim()].filter(Boolean).join(", ");
-  return `PROVIN.LV — piedāvājums${vehicle ? `: ${vehicle}` : ""}`;
-}
-
-function parsePriceLike(input: string): number {
-  const compact = input.replace(/\s+/g, "").replace(",", ".");
-  const n = Number.parseFloat(compact);
-  return Number.isFinite(n) ? n : 0;
 }
 
 function formatPriceLike(value: number): string {
@@ -503,6 +477,8 @@ export function IrissPasutijumsEditor({
   const [offerDeleteBusy, setOfferDeleteBusy] = useState(false);
   const [orderPdfBusy, setOrderPdfBusy] = useState(false);
   const [offerPdfBusy, setOfferPdfBusy] = useState(false);
+  const [offerPdfNotice, setOfferPdfNotice] = useState<string | null>(null);
+  const [offerPdfAllowWithoutImages, setOfferPdfAllowWithoutImages] = useState(false);
   const [offerWhatsappBusy, setOfferWhatsappBusy] = useState(false);
   const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
   const autoOpenOfferDone = useRef(false);
@@ -1110,16 +1086,19 @@ export function IrissPasutijumsEditor({
   }, [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone]);
 
   const generateOfferPdfBlob = useCallback(
-    async (offerId: string, includeClientData = true): Promise<Blob> => {
-      const base = `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerId)}/print${
-        includeClientData ? "" : "?client=0"
+    async (
+      offerId: string,
+      includeClientData = true,
+      omitImages = false,
+    ): Promise<{ blob: Blob; imagesOmitted: number }> => {
+      const params = new URLSearchParams();
+      if (!includeClientData) params.set("client", "0");
+      if (omitImages) params.set("images", "0");
+      const qs = params.toString();
+      const url = `/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/offer/${encodeURIComponent(offerId)}/print${
+        qs ? `?${qs}` : ""
       }`;
-      let res = await fetch(base, { credentials: "include", cache: "no-store" });
-      if (!res.ok) {
-        await res.text().catch(() => "");
-        const sep = base.includes("?") ? "&" : "?";
-        res = await fetch(`${base}${sep}images=0`, { credentials: "include", cache: "no-store" });
-      }
+      const res = await fetch(url, { credentials: "include", cache: "no-store" });
       if (!res.ok) {
         const errBody = await res.text();
         let errData: unknown = {};
@@ -1132,7 +1111,9 @@ export function IrissPasutijumsEditor({
       }
       const blob = await res.blob();
       if (blob.size < 32) throw new Error("PDF ir tukšs vai bojāts.");
-      return blob;
+      const omittedRaw = Number(res.headers.get("X-Iriss-Offer-Images-Omitted") ?? "0");
+      const imagesOmitted = Number.isFinite(omittedRaw) && omittedRaw > 0 ? Math.trunc(omittedRaw) : 0;
+      return { blob, imagesOmitted };
     },
     [rec.id],
   );
@@ -1179,7 +1160,7 @@ export function IrissPasutijumsEditor({
     }
   }, [commitOfferDraftToRecord, offerReadyForPdfActions, persistedOfferRecord]);
 
-  const openOfferPdfInNewTab = useCallback(async () => {
+  const openOfferPdfInNewTab = useCallback(async (omitImages = false) => {
     setOfferPdfBusy(true);
     const offerOut = await persistOffer("pdf");
     if (!offerOut) {
@@ -1187,11 +1168,24 @@ export function IrissPasutijumsEditor({
       return;
     }
     try {
-      const blob = await generateOfferPdfBlob(offerOut.id, !forceNoClientPdf);
+      const { blob, imagesOmitted } = await generateOfferPdfBlob(offerOut.id, !forceNoClientPdf, omitImages);
+      if (omitImages) {
+        setOfferPdfNotice("PDF sagatavots bez attēliem.");
+        setOfferPdfAllowWithoutImages(false);
+      } else if (imagesOmitted > 0) {
+        setOfferPdfNotice(irissOfferImagesOmittedNotice(imagesOmitted));
+        setOfferPdfAllowWithoutImages(true);
+      } else {
+        setOfferPdfNotice(null);
+        setOfferPdfAllowWithoutImages(false);
+      }
       const pdfUrl = URL.createObjectURL(blob);
       window.open(pdfUrl, "_blank", "noopener,noreferrer");
       window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 120_000);
     } catch (e) {
+      const message = e instanceof Error ? e.message.slice(0, 180) : "PDF ar attēliem neizdevās.";
+      setOfferPdfNotice(`${message} Attēli nav izmesti.`);
+      setOfferPdfAllowWithoutImages(!omitImages);
       setSaveMsg(e instanceof Error ? e.message.slice(0, 220) : "PDF ģenerēšana neizdevās.");
     } finally {
       setOfferPdfBusy(false);
@@ -1210,7 +1204,11 @@ export function IrissPasutijumsEditor({
       return;
     }
     try {
-      const blob = await generateOfferPdfBlob(offerOut.id, !forceNoClientPdf);
+      const { blob, imagesOmitted } = await generateOfferPdfBlob(offerOut.id, !forceNoClientPdf);
+      if (imagesOmitted > 0) {
+        setOfferPdfNotice(irissOfferImagesOmittedNotice(imagesOmitted));
+        setOfferPdfAllowWithoutImages(true);
+      }
       const filenameBase = buildIrissOfferShareSubject(offerDraft).replace(/[^\p{L}\p{N}\-_. ]/gu, "").trim() || "piedavajums";
       const safeFileName = filenameBase.endsWith(".pdf") ? filenameBase : `${filenameBase}.pdf`;
       const shareText = buildIrissOfferClientShareBody(
@@ -1236,6 +1234,9 @@ export function IrissPasutijumsEditor({
       const waUrl = `https://wa.me/${digits}?text=${encodeURIComponent(shareText)}`;
       window.location.assign(waUrl);
     } catch (e) {
+      const message = e instanceof Error ? e.message.slice(0, 180) : "PDF ar attēliem neizdevās.";
+      setOfferPdfNotice(`${message} Attēli nav izmesti.`);
+      setOfferPdfAllowWithoutImages(true);
       setSaveMsg(e instanceof Error ? e.message.slice(0, 220) : "WhatsApp eksports neizdevās.");
     } finally {
       setOfferWhatsappBusy(false);
@@ -2011,6 +2012,24 @@ export function IrissPasutijumsEditor({
                   </button>
                 </div>
               </div>
+              {offerPdfNotice ? (
+                <div
+                  className="mt-3 rounded-lg border border-amber-200 bg-amber-50/90 px-3 py-2 text-[12px] leading-snug text-amber-950"
+                  role="status"
+                >
+                  <p>{offerPdfNotice}</p>
+                  {offerPdfAllowWithoutImages ? (
+                    <button
+                      type="button"
+                      disabled={offerBusy || !!offerFilePrepare || offerPdfBusy || offerWhatsappBusy}
+                      onClick={() => void openOfferPdfInNewTab(true)}
+                      className="mt-1.5 inline-flex min-h-9 items-center rounded-full border border-amber-300/90 bg-white px-3 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-amber-50 disabled:opacity-40"
+                    >
+                      PDF bez attēliem
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

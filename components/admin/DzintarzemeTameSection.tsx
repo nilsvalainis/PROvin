@@ -2,13 +2,21 @@
 
 import type { ReactNode } from "react";
 import { FileDown, Loader2, Plus, Trash2 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   computeDzintarzemeTame,
   type DzintarzemeTameCommissionVariant,
   type DzintarzemeTameExtraLine,
 } from "@/lib/dzintarzeme-tame-calculator";
+import { parsePriceLike } from "@/lib/iriss-price-format";
+import {
+  defaultIrissTameCommissionSettings,
+  formatIrissTameMoney,
+  formatIrissTamePercent,
+  parseIrissTameCommissionSettings,
+  type IrissTameCommissionRates,
+} from "@/lib/iriss-tame-commission";
 import {
   defaultIrissDzintarzemeTameDraft,
   type IrissDzintarzemeTameDraft,
@@ -30,9 +38,7 @@ function mergeDraft(d: IrissDzintarzemeTameDraft): IrissDzintarzemeTameDraft {
 }
 
 function parseEuroInput(s: string): number {
-  const compact = s.trim().replace(/\s+/g, "").replace(",", ".");
-  const n = Number.parseFloat(compact);
-  return Number.isFinite(n) ? Math.max(0, n) : 0;
+  return Math.max(0, parsePriceLike(s));
 }
 
 async function downloadPdfBlobFromResponse(res: Response, fallbackName: string): Promise<void> {
@@ -92,6 +98,23 @@ export function DzintarzemeTameSection({
 }) {
   const d = mergeDraft(draft);
   const set = useCallback((p: Partial<IrissDzintarzemeTameDraft>) => onDraftChange({ ...d, ...p }), [d, onDraftChange]);
+  const [rates, setRates] = useState<IrissTameCommissionRates>(() => defaultIrissTameCommissionSettings());
+
+  useEffect(() => {
+    let cancel = false;
+    void fetch("/api/admin/iriss-settings", { credentials: "include", cache: "no-store" })
+      .then(async (res) => (res.ok ? res.json() : null))
+      .then((body: unknown) => {
+        if (cancel || !body) return;
+        setRates(parseIrissTameCommissionSettings(body));
+      })
+      .catch(() => {
+        /* paliek noklusējums 1190 / 990 + 3,5 % */
+      });
+    return () => {
+      cancel = true;
+    };
+  }, []);
 
   const displayBrand = d.tameBrandModel.trim() !== "" ? d.tameBrandModel : orderBrandModel;
 
@@ -119,7 +142,7 @@ export function DzintarzemeTameSection({
       polishingNet: parseEuroInput(d.tamePolishingStr),
       paintingNet: parseEuroInput(d.tamePaintingStr),
       extraServices: extraLinesParsed,
-    });
+    }, rates);
   }, [
     displayBrand,
     d.tameApplyVatAuto,
@@ -131,6 +154,7 @@ export function DzintarzemeTameSection({
     d.tameTransportStr,
     d.tameVin,
     extraLinesParsed,
+    rates,
     variant,
   ]);
 
@@ -273,7 +297,7 @@ export function DzintarzemeTameSection({
               checked={d.tameCommissionVariant === "A"}
               onChange={() => set({ tameCommissionVariant: "A" })}
             />
-            A — 1&nbsp;190,00 EUR (neto)
+            A - {formatIrissTameMoney(rates.variantANet)} EUR (neto)
           </label>
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] shadow-sm">
             <input
@@ -282,7 +306,7 @@ export function DzintarzemeTameSection({
               checked={d.tameCommissionVariant === "B"}
               onChange={() => set({ tameCommissionVariant: "B" })}
             />
-            B — 990,00 EUR (neto) + 3,5 % no atlikuma
+            B - {formatIrissTameMoney(rates.variantBBaseNet)} EUR (neto) + {formatIrissTamePercent(rates.variantBLoanPercent)} % no atlikuma
           </label>
         </div>
       </div>

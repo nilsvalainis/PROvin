@@ -36,7 +36,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string; off
   }
   const embedImages = url.searchParams.get("images") !== "0";
   const includeClientData = url.searchParams.get("client") !== "0";
-  const bytes = await buildIrissOfferPdfBytes(rec, offer, { embedImages, includeClientData });
+  const built = await buildIrissOfferPdfBytes(rec, offer, { embedImages, includeClientData });
+  const bytes = built.bytes;
   const inline =
     url.searchParams.get("inline") === "1" ||
     url.searchParams.get("disposition") === "inline" ||
@@ -50,6 +51,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string; off
       "Content-Type": "application/pdf",
       "Content-Disposition": disposition,
       "Cache-Control": pdfCache,
+      "X-Iriss-Offer-Images-Omitted": String(built.imagesOmitted),
       Pragma: "no-cache",
       "X-Robots-Tag": "noindex, nofollow",
     },
