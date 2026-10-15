@@ -435,15 +435,25 @@ export function shouldUseEcarstradeVercelFallback(rr: { status: IrissListingSour
   return rr.status !== "ok";
 }
 
+type StoredEtPriceRow = {
+  platform: string;
+  externalId?: string;
+  priceBuyNow?: number | null;
+  priceCurrent?: number | null;
+  orderId?: string;
+  orderIds?: readonly string[];
+};
+
 export function storedEcarstradeIdsNeedingPrice(
-  vehicles: readonly Pick<IrissFetchedVehicle, "platform" | "orderId" | "externalId" | "priceBuyNow" | "priceCurrent">[],
+  vehicles: readonly StoredEtPriceRow[],
   orderIds: readonly string[],
 ): string[] {
   const orders = new Set(orderIds.filter(Boolean));
   const ids = new Set<string>();
   for (const v of vehicles) {
     if (v.platform !== "ecarstrade") continue;
-    if (orders.size && !orders.has(v.orderId)) continue;
+    const owners = v.orderIds?.length ? v.orderIds : v.orderId ? [v.orderId] : [];
+    if (orders.size && owners.length && !owners.some((id) => orders.has(id))) continue;
     if (v.priceBuyNow != null || v.priceCurrent != null) continue;
     const id = String(v.externalId ?? "").replace(/\D/g, "");
     if (id) ids.add(id);
