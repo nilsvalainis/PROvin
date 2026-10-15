@@ -38,7 +38,14 @@ export type OrderVinScanSourceState =
 export type OrderVinScanRowAction = "import_auction" | "import_csdd" | "import_listing" | "open" | "open_import" | "retry";
 
 /** Avoti, ko Cloudflare bieži bloķē serverim — tos atver pārlūkā un importē ar PROVIN skriptu / ielīmēšanu. */
-export const ORDER_VIN_SCAN_BROWSER_IMPORT_IDS: readonly string[] = ["stat_vin", "bid_cars", "checkcar_vin", "bidfax"];
+export const ORDER_VIN_SCAN_BROWSER_IMPORT_IDS: readonly string[] = [
+  "stat_vin",
+  "bid_cars",
+  "checkcar_vin",
+  "bidfax",
+  "poctra",
+  "plc_auction",
+];
 const BLOCKED_HINT_RE = /cloudflare|\b403\b|captcha|challenge|bloķ|blocked|lapa nav atpazīta|just a moment/i;
 
 export function isOrderVinScanBrowserBlocked(id: string, state: OrderVinScanSourceState, hint: string): boolean {

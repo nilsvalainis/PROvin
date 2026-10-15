@@ -10,6 +10,7 @@ import {
   VIN_SCAN_USERSCRIPT_MIN,
   vinScanUserscriptMeetsMin,
   vinScanUserscriptMinLabel,
+  vinScanUserscriptUpdateNeeded,
 } from "@/lib/vin-scan/catalog";
 import { VIN_SCAN_BROWSER_AUTO_CLICK_IDS } from "@/lib/vin-scan/browser-click-policy";
 
@@ -23,6 +24,12 @@ describe("userscript sync with VIN scan catalog", () => {
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
     expect(src).toMatch(/@version\s+1\.19\.0/);
     expect(src).toContain('const SCRIPT_VERSION = "1.19.0"');
+    expect(src).toContain("const ARCHIVE_HTML_MAX = 900000");
+    expect(src).toContain("function pageHtmlForImport()");
+    expect(src).toContain("function withArchiveHtml(");
+    expect(src).toContain("stat_vin: 1");
+    expect(src).toContain("plc_auction: 1");
+    expect(src).toContain("poctra: 1");
     expect(src).toContain("const SCAN_URLS = {");
     expect(src).toContain('plc_auction: "https://plc.auction/?vin="');
     expect(src).not.toContain("vp.gov.lv");
@@ -95,6 +102,9 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(vinScanUserscriptMeetsMin("1.18.0")).toBe(false);
     expect(vinScanUserscriptMeetsMin("1.19.0")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
+    expect(vinScanUserscriptUpdateNeeded("")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.18.0")).toBe(true);
+    expect(vinScanUserscriptUpdateNeeded("1.19.0")).toBe(false);
   });
 
   it("saknes kopija sakrīt ar public skriptu", () => {

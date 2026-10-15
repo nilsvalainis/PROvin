@@ -2,7 +2,7 @@
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
 // @version      1.19.0
-// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
+// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction) nosūta adminam. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -808,15 +808,48 @@
     badge.textContent = message;
   }
 
+  const ARCHIVE_HTML_IDS = {
+    stat_vin: 1,
+    bid_cars: 1,
+    bidfax: 1,
+    poctra: 1,
+    checkcar_vin: 1,
+    plc_auction: 1,
+  };
+  const ARCHIVE_HTML_MAX = 900000;
+
+  function pageHtmlForImport() {
+    let html = "";
+    try {
+      html = document.documentElement ? document.documentElement.outerHTML : "";
+    } catch (e) {
+      html = "";
+    }
+    if (!html || html.length <= ARCHIVE_HTML_MAX) return html;
+    const nextMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/i);
+    const next = nextMatch ? nextMatch[0].slice(0, 400000) : "";
+    const room = ARCHIVE_HTML_MAX - next.length;
+    return (html.slice(0, Math.max(0, room)) + next).slice(0, ARCHIVE_HTML_MAX);
+  }
+
+  function withArchiveHtml(payload) {
+    if (!payload || !ARCHIVE_HTML_IDS[payload.id]) return payload;
+    return Object.assign({}, payload, {
+      html: pageHtmlForImport(),
+      pageUrl: String(location.href || "").slice(0, 500),
+    });
+  }
+
   function publishScan(payload) {
     if (window.__provinScanPublished) return;
     window.__provinScanPublished = true;
+    const body = withArchiveHtml(Object.assign({ detail: "", at: Date.now() }, payload));
     try {
-      GM_setValue(GM_SCAN_RESULT, JSON.stringify(Object.assign({ detail: "", at: Date.now() }, payload)));
+      GM_setValue(GM_SCAN_RESULT, JSON.stringify(body));
     } catch (e) {
       console.warn("PROVIN skenēšana", e);
     }
-    showProvinBadge(payload.summary || payload.status || "");
+    showProvinBadge((body && body.summary) || payload.summary || payload.status || "");
   }
 
   function advanceVinScan(job, result) {
