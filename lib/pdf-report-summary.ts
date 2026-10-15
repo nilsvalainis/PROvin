@@ -47,6 +47,7 @@ import {
   analyzeUnifiedMileageAnomalies,
   collectUnifiedMileageRows,
   prepareUnifiedMileageDisplayRows,
+  selectNewestVerifiedMileageRow,
 } from "@/lib/unified-mileage";
 
 export type PdfSummaryTileTone = "ok" | "warn" | "alert" | "neutral";
@@ -144,7 +145,7 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
   }
   const { anomalyBySourceOrder } = analyzeUnifiedMileageAnomalies(rows);
   const anomalies = [...anomalyBySourceOrder.values()].filter(Boolean).length;
-  const newest = [...rows].sort((a, b) => b.sortableTime - a.sortableTime)[0]!;
+  const newest = selectNewestVerifiedMileageRow(rows) ?? [...rows].sort((a, b) => b.sortableTime - a.sortableTime)[0]!;
   const value = newest.odometer.trim() ? `${newest.odometer.trim()} km` : "Nav ierakstu";
   const note =
     anomalies > 0

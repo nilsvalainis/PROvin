@@ -4,6 +4,7 @@
  */
 
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+import { maybeFormatUsHistoryDateTimeInRiga } from "@/lib/format-us-history-datetime";
 import { oneautoOdometerToKm } from "@/lib/oneauto-catalog";
 import { convertAmountTextToEur } from "@/lib/currency-eur-convert";
 import {
@@ -59,7 +60,7 @@ function toLvDate(raw: unknown): string {
   const t = stringifyVal(raw);
   if (!t) return "";
   const formatted = formatAutoRecordsDateForOutput(t);
-  return formatted || t.slice(0, 40);
+  return maybeFormatUsHistoryDateTimeInRiga(t, formatted || t.slice(0, 40));
 }
 
 function looksLikeMiles(unitRaw: string, contextMilesDefault: boolean): boolean {

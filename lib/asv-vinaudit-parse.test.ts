@@ -158,6 +158,7 @@ describe("parseVinauditPayload", () => {
     expect(block.liens.some((r) => /Westlake/i.test(r.detail))).toBe(true);
     expect(block.thefts.some((r) => /Theft Recovery/i.test(r.label))).toBe(true);
     expect(block.checks.some((c) => c.severity === "alert" && /salvage/i.test(c.label))).toBe(true);
+    expect(block.reportDate).toBe("05.09.2026 16:09");
     expect(block.aiContextRaw).toMatch(/Honda Civic LX/);
     expect(asvBlockToPlainText(block)).not.toMatch(/VIN Audit|Carfax/i);
   });
