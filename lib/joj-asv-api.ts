@@ -7,13 +7,13 @@ import type { AsvBlockState, AsvJojFailedPhotoGroup, AsvJojIngest } from "@/lib/
 import {
   appendAsvPhotoGroups,
   buildAsvJojIngest,
-  formatJojAsvCostUsd,
+  jojAsvCostUsd,
   jojAsvPhotoGroupTitle,
   mergeJojParseIntoAsvBlock,
 } from "@/lib/joj-asv-merge";
 import { isAllowedVinScanAuctionPhotoUrl, type VinScanAuctionPhotoGroupPlan } from "@/lib/order-vin-scan-photos";
 import { fetchJojSearchVin, jojApiConfigured } from "@/lib/vin-scan/joj-api";
-import { knownJojLotFromUrl } from "@/lib/vin-scan/parse-joj";
+import { knownJojLotFromUrl, normalizeJojKnownLot, type JojKnownLot } from "@/lib/vin-scan/parse-joj";
 import type { VinScanParse } from "@/lib/vin-scan/types";
 
 export type StoreJojPhotoGroupsResult = {
@@ -107,6 +107,7 @@ export async function fetchJojAsvMerge(opts: {
   sessionId?: string;
   listingUrl?: string;
   skipCache?: boolean;
+  knownLot?: JojKnownLot | null;
   retryPhotoGroups?: AsvJojFailedPhotoGroup[];
 }): Promise<{
   parse: VinScanParse;
@@ -157,18 +158,28 @@ export async function fetchJojAsvMerge(opts: {
     };
   }
 
-  const knownLot = knownJojLotFromUrl(opts.listingUrl ?? "");
-  const parse = await fetchJojSearchVin(opts.vin, {
+  const knownLot =
+    normalizeJojKnownLot(opts.knownLot) ??
+    normalizeJojKnownLot({ lot: opts.prev.jojIngest?.lot, domain: opts.prev.jojIngest?.lotDomain }) ??
+    knownJojLotFromUrl(opts.listingUrl ?? "");
+  const result = await fetchJojSearchVin(opts.vin, {
     listingUrl: opts.listingUrl,
     knownLot,
     skipCache: opts.skipCache === true,
   });
+  const parse = result.parse;
   const fetchedAt = new Date().toISOString();
-  const charged = parse.status === "found" || parse.status === "none";
-  const costUsd = charged ? formatJojAsvCostUsd() : "$0.00";
+  const costUsd = jojAsvCostUsd({ fromCache: result.fromCache, httpStatus: result.httpStatus });
+  const ingestExtra = {
+    fromCache: result.fromCache,
+    cachedAt: result.cachedAt ?? undefined,
+    httpStatus: result.httpStatus ?? undefined,
+    lot: knownLot?.lot,
+    lotDomain: knownLot?.domain,
+  };
 
   if (parse.status === "skipped") {
-    const jojIngest = buildAsvJojIngest(opts.vin, parse, fetchedAt);
+    const jojIngest = buildAsvJojIngest(opts.vin, parse, fetchedAt, ingestExtra);
     return {
       parse,
       block: opts.prev,
@@ -190,6 +201,7 @@ export async function fetchJojAsvMerge(opts: {
     : { groups: [] as AsvPhotoGroup[], failedPhotoGroups: [] as AsvJojFailedPhotoGroup[] };
   const photoGroups = appendAsvPhotoGroups(merged.photoGroups, stored.groups);
   const jojIngest = buildAsvJojIngest(opts.vin, parse, fetchedAt, {
+    ...ingestExtra,
     failedPhotoGroups: stored.failedPhotoGroups,
   });
 

@@ -27,6 +27,45 @@ export function formatJojAsvCostUsd(): string {
   return `$${(JOJ_ASV_PRICE_USD_CENTS / 100).toFixed(2)}`;
 }
 
+/** Keša trāpījums nav rēķins. Rēķina tikai reālu HTTP 200 vai 404. */
+export function jojAsvCostUsd(opts: { fromCache?: boolean; httpStatus?: number | null }): string {
+  if (opts.fromCache) return "$0.00";
+  if (opts.httpStatus === 200 || opts.httpStatus === 404) return formatJojAsvCostUsd();
+  return "$0.00";
+}
+
+export function formatJojFetchedAtRiga(iso: string): string {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return "";
+  const parts = new Intl.DateTimeFormat("lv-LV", {
+    timeZone: "Europe/Riga",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(t));
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "";
+  const day = get("day");
+  const month = get("month");
+  const year = get("year");
+  const hour = get("hour");
+  const minute = get("minute");
+  if (!day || !month || !year) return "";
+  return `${day}.${month}.${year} ${hour}:${minute}`;
+}
+
+export function jojCacheHitLabel(cachedAtIso: string): string {
+  const date = formatJojFetchedAtRiga(cachedAtIso);
+  return date ? `no keša (${date})` : "no keša";
+}
+
+export function jojCacheNoneConfirmMessage(cachedAtIso: string): string {
+  const date = formatJojFetchedAtRiga(cachedAtIso);
+  return `Kešā: nav ierakstu (${date}). Pieprasīt vēlreiz par 0,50 $?`;
+}
+
 function jojIngestStatusFromParse(status: VinScanStatus): AsvJojIngest["status"] {
   if (status === "found") return "found";
   if (status === "none") return "none";
@@ -34,19 +73,30 @@ function jojIngestStatusFromParse(status: VinScanStatus): AsvJojIngest["status"]
   return "unknown";
 }
 
+export type BuildAsvJojIngestExtra = Pick<
+  AsvJojIngest,
+  "failedPhotoGroups" | "fromCache" | "cachedAt" | "httpStatus" | "lot" | "lotDomain"
+>;
+
 export function buildAsvJojIngest(
   vin: string,
   parse: VinScanParse,
   fetchedAt: string,
-  extra?: Pick<AsvJojIngest, "failedPhotoGroups">,
+  extra?: BuildAsvJojIngestExtra,
 ): AsvJojIngest {
-  const charged = parse.status === "found" || parse.status === "none";
+  const fromCache = extra?.fromCache === true;
+  const httpStatus = extra?.httpStatus;
   return {
     lastFetchedVin: vin,
     fetchedAt,
-    lastCostUsd: charged ? formatJojAsvCostUsd() : "$0.00",
+    lastCostUsd: jojAsvCostUsd({ fromCache, httpStatus }),
     status: jojIngestStatusFromParse(parse.status),
     summary: parse.summary?.trim() || "",
+    ...(fromCache ? { fromCache: true } : {}),
+    ...(extra?.cachedAt ? { cachedAt: extra.cachedAt } : {}),
+    ...(httpStatus != null ? { httpStatus } : {}),
+    ...(extra?.lot ? { lot: extra.lot } : {}),
+    ...(extra?.lotDomain ? { lotDomain: extra.lotDomain } : {}),
     ...(extra?.failedPhotoGroups?.length ? { failedPhotoGroups: extra.failedPhotoGroups } : {}),
   };
 }

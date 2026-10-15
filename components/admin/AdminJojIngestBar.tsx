@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 import { normalizeVin } from "@/lib/order-field-validation";
-import { emptyAsvJojIngest, type AsvBlockState, type AsvJojIngest } from "@/lib/asv-report";
-import { appendAsvPhotoGroups, formatJojAsvCostUsd } from "@/lib/joj-asv-merge";
+import { emptyAsvJojIngest, type AsvBlockState, type AsvJojIngest, type AsvJojLotDomain } from "@/lib/asv-report";
+import {
+  appendAsvPhotoGroups,
+  formatJojAsvCostUsd,
+  formatJojFetchedAtRiga,
+  jojCacheHitLabel,
+  jojCacheNoneConfirmMessage,
+} from "@/lib/joj-asv-merge";
 import { syncAsvPhotoGroupsAndFlat } from "@/lib/asv-photo-types";
 
 const inp =
@@ -76,8 +82,20 @@ export function AdminJojIngestBar({
   const estimatedCost = formatJojAsvCostUsd();
   const cachedForVin =
     Boolean(ingest?.lastFetchedVin) && normalizeVin(ingest?.lastFetchedVin ?? "") === effectiveVin;
+  const cacheHoldsNone = cachedForVin && ingest?.fromCache === true && ingest.status === "none";
+  const lot = ingest?.lot ?? "";
+  const lotDomain: AsvJojLotDomain = ingest?.lotDomain === "iaai_com" ? "iaai_com" : "copart_com";
+  const lotClean = lot.trim().replace(/[^\dA-Za-z-]/g, "").slice(0, 24);
+  const knownLot = lotClean ? { lot: lotClean, domain: lotDomain } : undefined;
   const tone = jojIngestTone(ingest);
   const failedCount = (ingest?.failedPhotoGroups ?? []).reduce((n, g) => n + (g.urls?.length ?? 0), 0);
+
+  const patchIngest = (partial: Partial<AsvJojIngest>) => {
+    onChange({
+      ...value,
+      jojIngest: { ...(ingest ?? emptyAsvJojIngest()), ...partial },
+    });
+  };
 
   const applyJojBody = (
     body: {
@@ -96,6 +114,10 @@ export function AdminJojIngestBar({
     const nextIngest = { ...(body.jojIngest ?? body.block.jojIngest ?? emptyAsvJojIngest()) };
     if (body.failedPhotoGroups?.length) nextIngest.failedPhotoGroups = body.failedPhotoGroups;
     else delete nextIngest.failedPhotoGroups;
+    if (!nextIngest.lot && prev.jojIngest?.lot) {
+      nextIngest.lot = prev.jojIngest.lot;
+      nextIngest.lotDomain = prev.jojIngest.lotDomain;
+    }
     onChange({
       ...body.block,
       photoGroups: synced.photoGroups,
@@ -118,6 +140,7 @@ export function AdminJojIngestBar({
           vin: effectiveVin,
           sessionId: sessionId || undefined,
           listingUrl: listingUrl || undefined,
+          knownLot: knownLot ?? undefined,
           block: value,
           retryPhotoGroups: ingest?.failedPhotoGroups ?? [],
         }),
@@ -144,7 +167,12 @@ export function AdminJojIngestBar({
 
   const fetchData = async () => {
     if (!editable || busy) return;
-    if (cachedForVin && ingest?.status === "found") {
+    if (cacheHoldsNone) {
+      const ok = window.confirm(
+        jojCacheNoneConfirmMessage(ingest?.cachedAt || ingest?.fetchedAt || ""),
+      );
+      if (!ok) return;
+    } else if (cachedForVin && ingest?.status === "found") {
       const ok = window.confirm(
         `Šim VIN jau ir ielādēti JoJ dati. Ielādēt no jauna? Tas atkārtoti iekasēs ${estimatedCost}.`,
       );
@@ -161,8 +189,9 @@ export function AdminJojIngestBar({
           vin: effectiveVin,
           sessionId: sessionId || undefined,
           listingUrl: listingUrl || undefined,
+          knownLot: knownLot ?? undefined,
           block: value,
-          skipCache: cachedForVin,
+          skipCache: cacheHoldsNone || (cachedForVin && ingest?.status === "found"),
         }),
       });
       const body = (await res.json().catch(() => ({}))) as {
@@ -220,6 +249,41 @@ export function AdminJojIngestBar({
             autoCapitalize="characters"
           />
         </label>
+        <label className="flex min-w-[160px] flex-1 flex-col gap-0.5">
+          <span className="text-[9px] font-medium uppercase tracking-wide text-slate-500">
+            Lota nr. + Copart/IAAI
+          </span>
+          <span className="flex gap-1">
+            <input
+              type="text"
+              className={inp}
+              value={lot}
+              disabled={!editable || busy}
+              placeholder="Lota nr."
+              onChange={(e) =>
+                patchIngest({
+                  lot: e.target.value,
+                  lotDomain,
+                })
+              }
+              spellCheck={false}
+            />
+            <select
+              className={`${inp} w-[88px] shrink-0`}
+              value={lotDomain}
+              disabled={!editable || busy}
+              onChange={(e) =>
+                patchIngest({
+                  lot,
+                  lotDomain: e.target.value === "iaai_com" ? "iaai_com" : "copart_com",
+                })
+              }
+            >
+              <option value="copart_com">Copart</option>
+              <option value="iaai_com">IAAI</option>
+            </select>
+          </span>
+        </label>
         <button
           type="button"
           className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] disabled:opacity-50"
@@ -234,10 +298,12 @@ export function AdminJojIngestBar({
           <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[tone]}`} aria-hidden />
           <span>
             {jojStatusLabel(ingest)}
-            {cachedForVin && ingest.fetchedAt
-              ? ` · ${ingest.fetchedAt.slice(0, 16).replace("T", " ")}`
-              : ""}
-            {ingest.lastCostUsd ? ` · ${ingest.lastCostUsd}` : ""}
+            {ingest.fromCache
+              ? ` · ${jojCacheHitLabel(ingest.cachedAt || ingest.fetchedAt)}`
+              : ingest.fetchedAt
+                ? ` · ${formatJojFetchedAtRiga(ingest.fetchedAt)}`
+                : ""}
+            {ingest.fromCache ? " · 0,00 $" : ingest.lastCostUsd ? ` · ${ingest.lastCostUsd}` : ""}
           </span>
         </p>
       ) : null}

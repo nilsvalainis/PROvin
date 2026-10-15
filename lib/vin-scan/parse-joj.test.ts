@@ -6,6 +6,7 @@ import {
   jojSearchVinUrl,
   jojUsaDamagesUrl,
   knownJojLotFromUrl,
+  normalizeJojKnownLot,
   parseJojDictPage,
   parseJojSearchVin,
   parseJojSearchVinFull,
@@ -201,6 +202,15 @@ describe("parseJojSearchVin", () => {
       lot: "94166665",
       domain: "copart_com",
     });
+    expect(normalizeJojKnownLot({ lot: "41872206", domain: "iaai_com" })).toEqual({
+      lot: "41872206",
+      domain: "iaai_com",
+    });
+    expect(normalizeJojKnownLot({ lot: "94166665", domain: "copart" })).toEqual({
+      lot: "94166665",
+      domain: "copart_com",
+    });
+    expect(normalizeJojKnownLot({ lot: "", domain: "copart_com" })).toBeNull();
     expect(jojUsaDamagesUrl("https://carstat-copart-iaai.jojapi.net", 2)).toBe(
       "https://carstat-copart-iaai.jojapi.net/usa/damages?page=2",
     );

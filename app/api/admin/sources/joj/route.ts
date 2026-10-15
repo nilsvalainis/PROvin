@@ -8,6 +8,7 @@ import { fetchJojAsvMerge } from "@/lib/joj-asv-api";
 import { normalizeAsvBlock } from "@/lib/asv-report";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
+import { normalizeJojKnownLot } from "@/lib/vin-scan/parse-joj";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,6 +35,9 @@ export async function POST(req: Request) {
   const listingUrl = typeof o.listingUrl === "string" ? o.listingUrl.trim().slice(0, 2000) : "";
   const skipCache = o.skipCache === true;
   const prev = normalizeAsvBlock(o.block);
+  const knownLot =
+    normalizeJojKnownLot(o.knownLot) ??
+    normalizeJojKnownLot({ lot: prev.jojIngest?.lot, domain: prev.jojIngest?.lotDomain });
   const retryPhotoGroups = Array.isArray(o.retryPhotoGroups)
     ? o.retryPhotoGroups
         .map((item) => {
@@ -56,6 +60,7 @@ export async function POST(req: Request) {
       sessionId,
       listingUrl: listingUrl || undefined,
       skipCache,
+      knownLot,
       retryPhotoGroups,
     });
     if (result.error === "missing_joj_credentials") {

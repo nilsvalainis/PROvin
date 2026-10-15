@@ -189,4 +189,30 @@ describe("normalizeAsvBlock", () => {
     expect(b.mileage).toHaveLength(1);
     expect(b.damages).toHaveLength(1);
   });
+
+  it("saglabā JoJ keša un lota laukus", () => {
+    const b = normalizeAsvBlock({
+      jojIngest: {
+        lastFetchedVin: "WBSAE0C06PCL70372",
+        fetchedAt: "2026-03-25T12:00:00.000Z",
+        lastCostUsd: "$0.00",
+        status: "none",
+        summary: "nav ierakstu",
+        fromCache: true,
+        cachedAt: "2026-03-25T12:00:00.000Z",
+        httpStatus: 404,
+        lot: "41872206",
+        lotDomain: "iaai_com",
+      },
+    });
+    expect(b.jojIngest).toMatchObject({
+      fromCache: true,
+      cachedAt: "2026-03-25T12:00:00.000Z",
+      httpStatus: 404,
+      lot: "41872206",
+      lotDomain: "iaai_com",
+      lastCostUsd: "$0.00",
+      status: "none",
+    });
+  });
 });

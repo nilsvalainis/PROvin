@@ -1,8 +1,9 @@
 /**
  * JoJ Copart/IAAI: GET /search-vin/{vin}?prices_history=1 ($0.50, 1 req/s).
  * Auth: X-JoJAPI-Key (keys start with jk_). Bearer also accepted.
- * 404 / empty lots are charged: cache as nav ierakstu (30d). 5xx / gateway errors are free: do not cache.
- * /search-lot only when VIN is 404 and a lot number is known.
+ * 404 / empty lots are charged: cache as nav ierakstu (7d). Found cache 30d.
+ * 5xx / gateway errors are free: do not cache. Bill only real HTTP 200/404, never cache hits.
+ * /search-lot when VIN is 404 and a lot number is known (listing URL or operator field).
  * Host: https://carstat-copart-iaai.jojapi.net
  */
 import "server-only";
@@ -15,6 +16,7 @@ import {
   jojSearchVinUrl,
   knownJojLotFromUrl,
   parseJojSearchVinFull,
+  type JojKnownLot,
 } from "@/lib/vin-scan/parse-joj";
 import { readJojVinCache, writeJojVinCache } from "@/lib/vin-scan/store";
 import type { VinScanParse } from "@/lib/vin-scan/types";
@@ -70,13 +72,23 @@ export type FetchJojSearchVinDeps = {
   skipDictCache?: boolean;
   skipDicts?: boolean;
   listingUrl?: string;
-  knownLot?: { lot: string; domain: "copart_com" | "iaai_com" } | null;
+  knownLot?: JojKnownLot | null;
+};
+
+export type JojSearchVinResult = {
+  parse: VinScanParse;
+  fromCache: boolean;
+  cachedAt: string | null;
+  httpStatus: number | null;
+  endpoint: string;
+  requestId: string | null;
+  lotsLength: number;
 };
 
 export async function jojApiGet(
   url: string,
   deps: FetchJojSearchVinDeps,
-): Promise<{ status: number; json: unknown }> {
+): Promise<{ status: number; json: unknown; requestId: string | null }> {
   const env = deps.env ?? process.env;
   if (!deps.skipRateLimit) await waitTurn();
   const fetchImpl = deps.fetchImpl ?? fetch;
@@ -97,39 +109,126 @@ export async function jojApiGet(
   } catch {
     json = null;
   }
-  return { status: res.status, json };
+  return { status: res.status, json, requestId: jojResponseRequestId(res) };
 }
 
-function resolveKnownLot(deps: FetchJojSearchVinDeps): { lot: string; domain: "copart_com" | "iaai_com" } | null {
+function jojResponseRequestId(res: Response): string | null {
+  return res.headers.get("x-request-id") || res.headers.get("x-joj-request-id") || null;
+}
+
+function jojEndpointLabel(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.pathname}${parsed.search}`;
+  } catch {
+    return url;
+  }
+}
+
+function resolveKnownLot(deps: FetchJojSearchVinDeps): JojKnownLot | null {
   if (deps.knownLot?.lot && deps.knownLot.domain) return deps.knownLot;
   return knownJojLotFromUrl(deps.listingUrl ?? "");
 }
 
-function jsonHasLots(json: unknown): boolean {
-  if (!json || typeof json !== "object") return false;
+function jsonLots(json: unknown): unknown[] {
+  if (!json || typeof json !== "object") return [];
   const root = json as Record<string, unknown>;
-  const data = root.data && typeof root.data === "object" && !Array.isArray(root.data) ? (root.data as Record<string, unknown>) : root;
-  return Array.isArray(data.lots) && data.lots.length > 0;
+  const data =
+    root.data && typeof root.data === "object" && !Array.isArray(root.data)
+      ? (root.data as Record<string, unknown>)
+      : root;
+  return Array.isArray(data.lots) ? data.lots : [];
 }
 
-export async function fetchJojSearchVin(vin: string, deps: FetchJojSearchVinDeps = {}): Promise<VinScanParse> {
+function jsonHasLots(json: unknown): boolean {
+  return jsonLots(json).length > 0;
+}
+
+function cachedHttpStatus(cached: { parse: VinScanParse; httpStatus?: number }): number | null {
+  if (typeof cached.httpStatus === "number") return cached.httpStatus;
+  if (cached.parse.status === "none") return 404;
+  if (cached.parse.status === "found") return 200;
+  return null;
+}
+
+export function logJojSearch(info: {
+  vin: string;
+  endpoint: string;
+  httpStatus: number | null;
+  lotsLength: number;
+  fromCache: boolean;
+  requestId: string | null;
+}): void {
+  console.info("[joj]", {
+    vin: info.vin,
+    endpoint: info.endpoint,
+    httpStatus: info.httpStatus,
+    lotsLength: info.lotsLength,
+    fromCache: info.fromCache,
+    requestId: info.requestId,
+  });
+}
+
+function finishJojSearch(vin: string, result: JojSearchVinResult): JojSearchVinResult {
+  logJojSearch({
+    vin,
+    endpoint: result.endpoint,
+    httpStatus: result.httpStatus,
+    lotsLength: result.lotsLength,
+    fromCache: result.fromCache,
+    requestId: result.requestId,
+  });
+  return result;
+}
+
+export async function fetchJojSearchVin(
+  vin: string,
+  deps: FetchJojSearchVinDeps = {},
+): Promise<JojSearchVinResult> {
   const env = deps.env ?? process.env;
-  if (!jojApiConfigured(env)) return jojNotConfiguredParse();
   const clean = vin.trim().toUpperCase();
+  const vinEndpoint = jojEndpointLabel(jojSearchVinUrl(clean, jojApiBaseUrl(env)));
+  if (!jojApiConfigured(env)) {
+    return finishJojSearch(clean, {
+      parse: jojNotConfiguredParse(),
+      fromCache: false,
+      cachedAt: null,
+      httpStatus: null,
+      endpoint: vinEndpoint,
+      requestId: null,
+      lotsLength: 0,
+    });
+  }
   if (!deps.skipCache) {
     const cached = await readJojVinCache(clean).catch(() => null);
-    if (cached) return cached.parse;
+    if (cached) {
+      return finishJojSearch(clean, {
+        parse: cached.parse,
+        fromCache: true,
+        cachedAt: cached.cachedAt,
+        httpStatus: cachedHttpStatus(cached),
+        endpoint: vinEndpoint,
+        requestId: null,
+        lotsLength: cached.parse.auctions?.length ?? 0,
+      });
+    }
   }
   const base = jojApiBaseUrl(env);
-  const vinRes = await jojApiGet(jojSearchVinUrl(clean, base), deps);
+  const vinUrl = jojSearchVinUrl(clean, base);
+  const vinRes = await jojApiGet(vinUrl, deps);
   let status = vinRes.status;
   let json = vinRes.json;
+  let requestId = vinRes.requestId;
+  let endpoint = jojEndpointLabel(vinUrl);
   if (status === 404) {
     const lot = resolveKnownLot(deps);
     if (lot) {
-      const lotRes = await jojApiGet(jojSearchLotUrl(lot.lot, lot.domain, base), deps);
+      const lotUrl = jojSearchLotUrl(lot.lot, lot.domain, base);
+      const lotRes = await jojApiGet(lotUrl, deps);
       status = lotRes.status;
       json = lotRes.json;
+      requestId = lotRes.requestId;
+      endpoint = jojEndpointLabel(lotUrl);
     }
   }
   let dict = EMPTY_JOJ_NAME_DICT;
@@ -141,6 +240,16 @@ export async function fetchJojSearchVin(vin: string, deps: FetchJojSearchVinDeps
     }).catch(() => EMPTY_JOJ_NAME_DICT);
   }
   const parsed = parseJojSearchVinFull({ status, json, vin: clean, dict }).parse;
-  if (jojParseIsCacheable(parsed, status)) await writeJojVinCache(clean, parsed).catch(() => undefined);
-  return parsed;
+  if (jojParseIsCacheable(parsed, status)) {
+    await writeJojVinCache(clean, parsed, { httpStatus: status }).catch(() => undefined);
+  }
+  return finishJojSearch(clean, {
+    parse: parsed,
+    fromCache: false,
+    cachedAt: null,
+    httpStatus: status,
+    endpoint,
+    requestId,
+    lotsLength: jsonLots(json).length || parsed.auctions?.length || 0,
+  });
 }

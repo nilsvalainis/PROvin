@@ -178,7 +178,9 @@ export function jojSearchLotUrl(
   return pricesHistory ? `${path}?prices_history=1` : path;
 }
 
-export function knownJojLotFromUrl(raw: string): { lot: string; domain: "copart_com" | "iaai_com" } | null {
+export type JojKnownLot = { lot: string; domain: "copart_com" | "iaai_com" };
+
+export function knownJojLotFromUrl(raw: string): JojKnownLot | null {
   const text = raw.trim();
   if (!text) return null;
   const copart = /copart\.com\/lot\/(\d+[A-Za-z]?)/i.exec(text);
@@ -186,6 +188,25 @@ export function knownJojLotFromUrl(raw: string): { lot: string; domain: "copart_
   const iaai = /iaai\.com\/.*?(?:vehicledetail|search).*?[/=](\d{5,})/i.exec(text);
   if (iaai?.[1]) return { lot: iaai[1], domain: "iaai_com" };
   return null;
+}
+
+/** Operatora ievadīts lots ASV blokā (arī ja sludinājums nav izsoles saite). */
+export function normalizeJojKnownLot(raw: unknown): JojKnownLot | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const lot = String(o.lot ?? "")
+    .trim()
+    .replace(/[^\dA-Za-z-]/g, "")
+    .slice(0, 24);
+  const domainRaw = String(o.domain ?? "").trim().toLowerCase();
+  const domain: JojKnownLot["domain"] | null =
+    domainRaw === "iaai_com" || domainRaw === "iaai"
+      ? "iaai_com"
+      : domainRaw === "copart_com" || domainRaw === "copart"
+        ? "copart_com"
+        : null;
+  if (!lot || !domain) return null;
+  return { lot, domain };
 }
 
 function kv(lines: string[], label: string, value: string) {

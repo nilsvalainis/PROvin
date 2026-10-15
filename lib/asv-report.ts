@@ -72,6 +72,8 @@ export type AsvJojFailedPhotoGroup = {
   urls: string[];
 };
 
+export type AsvJojLotDomain = "copart_com" | "iaai_com";
+
 export type AsvJojIngest = {
   lastFetchedVin: string;
   fetchedAt: string;
@@ -79,6 +81,11 @@ export type AsvJojIngest = {
   status: "found" | "none" | "skipped" | "unknown";
   summary: string;
   failedPhotoGroups?: AsvJojFailedPhotoGroup[];
+  fromCache?: boolean;
+  cachedAt?: string;
+  httpStatus?: number;
+  lot?: string;
+  lotDomain?: AsvJojLotDomain;
 };
 
 export function emptyAsvJojIngest(): AsvJojIngest {
@@ -331,12 +338,24 @@ function normalizeAsvJojIngest(raw: unknown): AsvJojIngest {
         .filter((row): row is { title: string; urls: string[] } => Boolean(row))
         .slice(0, 40)
     : [];
+  const httpStatus =
+    typeof o.httpStatus === "number" && Number.isFinite(o.httpStatus) ? o.httpStatus : undefined;
+  const lot = str(o.lot, 24);
+  const lotDomainRaw = str(o.lotDomain, 16);
+  const lotDomain: AsvJojIngest["lotDomain"] | undefined =
+    lotDomainRaw === "iaai_com" ? "iaai_com" : lotDomainRaw === "copart_com" ? "copart_com" : undefined;
+  const cachedAt = str(o.cachedAt, 40);
   return {
     lastFetchedVin: str(o.lastFetchedVin, 20),
     fetchedAt: str(o.fetchedAt, 40),
     lastCostUsd: str(o.lastCostUsd, 20),
     status,
     summary: str(o.summary, 400),
+    ...(o.fromCache === true ? { fromCache: true } : {}),
+    ...(cachedAt ? { cachedAt } : {}),
+    ...(httpStatus != null ? { httpStatus } : {}),
+    ...(lot ? { lot } : {}),
+    ...(lotDomain ? { lotDomain } : {}),
     ...(failedPhotoGroups.length ? { failedPhotoGroups } : {}),
   };
 }
