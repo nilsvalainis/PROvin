@@ -7,13 +7,14 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOfferClientLinkBar } from "@/components/admin/IrissOfferClientLinkBar";
+import { IrissOrderMatchBoundary, IrissOrderMatchFallback } from "@/components/admin/IrissOrderMatchBoundary";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
 import { listingBudgetFitPill, listingFmtEur } from "@/lib/iriss-listings-card";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
-import { serializeListingOrderFilter } from "@/lib/iriss-listings-orders";
+import { parseIrissOrderBudget, serializeListingOrderFilter } from "@/lib/iriss-listings-orders";
 import {
   IRISS_LIST_PREFS_KEY,
   irissListBrowserStorage,
@@ -56,7 +57,13 @@ import {
   IRISS_LISTING_HIT_STATUSES,
   type IrissListingHitStatus,
 } from "@/lib/iriss-listing-match-client";
-import { parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
+import {
+  coerceIrissDuplicatesByListing,
+  coerceIrissHitStatusMap,
+  coerceIrissOrderRoomTab,
+  irissHitStatusIsUnset,
+  irissHitStatusOf,
+} from "@/lib/iriss-order-room-match-props";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { formatIrissOfferLinkStamp, type IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import {
@@ -320,7 +327,7 @@ export function IrissOrderRoom({
   duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
   initialTab?: IrissOrderRoomTab;
 }) {
-  const [tab, setTab] = useState<IrissOrderRoomTab>(initialTab);
+  const [tab, setTab] = useState<IrissOrderRoomTab>(coerceIrissOrderRoomTab(initialTab));
   const [bucket, setBucket] = useState<IrissOrderRoomHitBucket>("new");
   const [criteriaOpen, setCriteriaOpen] = useState(false);
   const [criteriaOn, setCriteriaOn] = useState(false);
@@ -328,16 +335,18 @@ export function IrissOrderRoom({
   const [excludeDraft, setExcludeDraft] = useState("");
   const [criteriaBusy, setCriteriaBusy] = useState(false);
   const [favIds, setFavIds] = useState<Set<string>>(() => new Set());
-  const [dismissed, setDismissed] = useState<Set<string>>(() => new Set(dismissedHitIds));
+  const [dismissed, setDismissed] = useState<Set<string>>(() => new Set(stringList(dismissedHitIds)));
   const [roomMsg, setRoomMsg] = useState<string | null>(null);
   const [composer, setComposer] = useState("");
   const [linksOpen, setLinksOpen] = useState(false);
-  const [offerLinks, setOfferLinks] = useState<IrissOfferClientLinkAdminView[]>(initialOfferLinks);
+  const [offerLinks, setOfferLinks] = useState<IrissOfferClientLinkAdminView[]>(Array.isArray(initialOfferLinks) ? initialOfferLinks : []);
   const [linkBusyId, setLinkBusyId] = useState<string | null>(null);
-  const [hitStatus, setHitStatus] = useState<Record<string, IrissListingHitStatus>>(initialHitStatus);
+  const [hitStatus, setHitStatus] = useState<Record<string, IrissListingHitStatus>>(() => coerceIrissHitStatusMap(initialHitStatus));
+  const duplicates = coerceIrissDuplicatesByListing(duplicatesByListing);
+  const safeHits = (Array.isArray(hits) ? hits : []).filter((hit) => hit && typeof hit.id === "string");
 
   useEffect(() => {
-    setDismissed(new Set(dismissedHitIds));
+    setDismissed(new Set(stringList(dismissedHitIds)));
   }, [dismissedHitIds]);
 
   useEffect(() => {
@@ -404,18 +413,32 @@ export function IrissOrderRoom({
 
   const offeredIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const hit of hits) {
-      if (rec.offers.some((offer) => irissOrderRoomOfferMatchesHit(offer, hit))) ids.add(hit.id);
+    const offers = Array.isArray(rec.offers) ? rec.offers : [];
+    for (const hit of safeHits) {
+      try {
+        if (offers.some((offer) => offer && irissOrderRoomOfferMatchesHit(offer, hit))) ids.add(hit.id);
+      } catch {
+        /* bojāts trāpījums nepaliek visai istabai */
+      }
     }
     return ids;
-  }, [hits, rec.offers]);
+  }, [rec.offers, safeHits]);
 
   const visibleHits = useMemo(
-    () => irissOrderRoomVisibleHits(hits, dismissed, offeredIds),
-    [dismissed, hits, offeredIds],
+    () => irissOrderRoomVisibleHits(safeHits, dismissed, offeredIds),
+    [dismissed, offeredIds, safeHits],
   );
   const filteredHits = useMemo(
-    () => (criteriaOn ? visibleHits.filter((hit) => irissOrderRoomHitPassesCriteria(rec, hit)) : visibleHits),
+    () =>
+      criteriaOn
+        ? visibleHits.filter((hit) => {
+            try {
+              return irissOrderRoomHitPassesCriteria(rec, hit);
+            } catch {
+              return false;
+            }
+          })
+        : visibleHits,
     [criteriaOn, rec, visibleHits],
   );
 
@@ -489,13 +512,13 @@ export function IrissOrderRoom({
   }
 
   function statusOf(hitId: string): IrissListingHitStatus {
-    return hitStatus[hitId] ?? "skatits";
+    return irissHitStatusOf(hitStatus, hitId);
   }
 
   async function setListingStatus(hit: IrissOrderRoomHit, status: IrissListingHitStatus) {
     const prev = statusOf(hit.id);
     if (prev === status) return;
-    setHitStatus((map) => ({ ...map, [hit.id]: status }));
+    setHitStatus((map) => ({ ...coerceIrissHitStatusMap(map), [hit.id]: status }));
     setRoomMsg(null);
     try {
       const res = await fetch("/api/admin/iriss-listings/match-status", {
@@ -507,7 +530,7 @@ export function IrissOrderRoom({
       if (!res.ok) throw new Error("status");
       window.dispatchEvent(new Event("admin-iriss-matches-changed"));
     } catch {
-      setHitStatus((map) => ({ ...map, [hit.id]: prev }));
+      setHitStatus((map) => ({ ...coerceIrissHitStatusMap(map), [hit.id]: prev }));
       setRoomMsg("Sludinājuma statusu neizdevās saglabāt.");
     }
   }
@@ -998,23 +1021,24 @@ export function IrissOrderRoom({
           ) : (
             <ul className="space-y-3">
               {shownHits.map((hit) => {
-                const match = irissOrderRoomMatch(rec, hit);
-                const fit = budget != null && hit.price != null ? listingBudgetFitPill(budget, hit.price) : null;
+                const fit = budget != null && typeof hit.price === "number" ? listingBudgetFitPill(budget, hit.price) : null;
+                const photo = typeof hit.imageUrl === "string" ? hit.imageUrl : "";
+                const title = typeof hit.title === "string" ? hit.title : "";
                 return (
                   <li key={hit.id} className="min-w-0 rounded-2xl border border-[#e5e7eb] bg-white p-3 sm:p-4">
                     <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-start">
-                      <HitPhoto src={hit.imageUrl} alt={hit.title} count={hit.imageCount} />
+                      <HitPhoto src={photo} alt={title} count={typeof hit.imageCount === "number" ? hit.imageCount : 0} />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="text-[16px] font-semibold leading-snug text-[#111827]">{hit.title || "Sludinājums"}</p>
+                            <p className="text-[16px] font-semibold leading-snug text-[#111827]">{title || "Sludinājums"}</p>
                             <p className="mt-1 text-[12px] text-[#6b7280]">
                               {[
-                                hit.year || hit.firstRegistration,
-                                hit.mileageKm != null ? `${Math.round(hit.mileageKm).toLocaleString("lv-LV")} km` : "",
-                                hit.transmission,
-                                hit.fuel,
-                                hit.bodyType,
+                                typeof hit.year === "string" && hit.year ? hit.year : typeof hit.firstRegistration === "string" ? hit.firstRegistration : "",
+                                typeof hit.mileageKm === "number" ? `${Math.round(hit.mileageKm).toLocaleString("lv-LV")} km` : "",
+                                typeof hit.transmission === "string" ? hit.transmission : "",
+                                typeof hit.fuel === "string" ? hit.fuel : "",
+                                typeof hit.bodyType === "string" ? hit.bodyType : "",
                                 IRISS_LISTING_PLATFORM_LABEL[hit.platform],
                               ]
                                 .filter(Boolean)
@@ -1022,44 +1046,19 @@ export function IrissOrderRoom({
                             </p>
                           </div>
                           <div className="text-left md:text-right">
-                            <p className="text-[20px] font-extrabold text-[#111827]">{hit.price != null ? listingFmtEur(hit.price) : "nav cenas"}</p>
+                            <p className="text-[20px] font-extrabold text-[#111827]">{typeof hit.price === "number" ? listingFmtEur(hit.price) : "nav cenas"}</p>
                             {fit ? <p className={`text-[12px] font-medium ${fit.ok ? "text-emerald-700" : "text-rose-700"}`}>{fit.label}</p> : null}
                           </div>
                         </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          {statusOf(hit.id) === "jauns" || (!(hit.id in hitStatus) && hit.change === "new") ? (
-                            <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-900">Jauns</span>
-                          ) : null}
-                          <IrissVinDuplicateMark links={duplicatesByListing[hit.id] ?? []} />
-                          {hit.change === "price_changed" ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900">Cena</span> : null}
-                          {match.badges.map((badge) => (
-                            <span key={badge.id} className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${badge.pass ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>
-                              {badge.pass ? "✓ " : ""}
-                              {badge.label}
-                            </span>
-                          ))}
-                          {match.percent != null ? (
-                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">atbilst {match.percent}%</span>
-                          ) : null}
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-1" role="group" aria-label="Sludinājuma statuss">
-                          {IRISS_LISTING_HIT_STATUSES.map((status) => {
-                            const on = statusOf(hit.id) === status;
-                            return (
-                              <button
-                                key={status}
-                                type="button"
-                                aria-pressed={on}
-                                onClick={() => void setListingStatus(hit, status)}
-                                className={`min-h-11 rounded-full px-3 py-2 text-[13px] font-semibold ${
-                                  on ? "bg-[#111827] text-white" : "bg-white text-[#111827] ring-1 ring-[#e5e7eb]"
-                                }`}
-                              >
-                                {IRISS_LISTING_HIT_STATUS_LV[status]}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <IrissOrderMatchBoundary>
+                          <IrissOrderHitMatchChrome
+                            hit={hit}
+                            rec={rec}
+                            hitStatus={hitStatus}
+                            duplicateLinks={duplicates[hit.id] ?? []}
+                            onStatus={(status) => void setListingStatus(hit, status)}
+                          />
+                        </IrissOrderMatchBoundary>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <button type="button" onClick={() => onPrepareOffer(hit)} className={roomBtnPrimary}>
                             <Pencil className="h-3.5 w-3.5" aria-hidden />
@@ -1069,7 +1068,7 @@ export function IrissOrderRoom({
                             <Send className="h-3.5 w-3.5" aria-hidden />
                             Nosūtīt klientam
                           </button>
-                          {hit.detailUrl ? (
+                          {typeof hit.detailUrl === "string" && hit.detailUrl ? (
                             <a href={hit.detailUrl} target="_blank" rel="noopener noreferrer" className={roomBtn}>
                               Atvērt portālā
                             </a>
@@ -1470,6 +1469,69 @@ export function IrissOrderRoom({
         </div>
       ) : null}
     </div>
+  );
+}
+
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [];
+}
+
+function IrissOrderHitMatchChrome({
+  hit,
+  rec,
+  hitStatus,
+  duplicateLinks,
+  onStatus,
+}: {
+  hit: IrissOrderRoomHit;
+  rec: IrissPasutijumsRecord;
+  hitStatus: Record<string, IrissListingHitStatus>;
+  duplicateLinks: IrissVinDuplicateLink[];
+  onStatus: (status: IrissListingHitStatus) => void;
+}) {
+  let match: ReturnType<typeof irissOrderRoomMatch> | null = null;
+  try {
+    match = irissOrderRoomMatch(rec, hit);
+  } catch {
+    return <IrissOrderMatchFallback />;
+  }
+  const status = irissHitStatusOf(hitStatus, hit.id);
+  const showNew = status === "jauns" || (irissHitStatusIsUnset(hitStatus, hit.id) && hit.change === "new");
+  return (
+    <>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {showNew ? <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-900">Jauns</span> : null}
+        <IrissVinDuplicateMark links={duplicateLinks} />
+        {hit.change === "price_changed" ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900">Cena</span> : null}
+        {match.badges.map((badge) => (
+          <span key={badge.id} className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${badge.pass ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>
+            {badge.pass ? "✓ " : ""}
+            {badge.label}
+          </span>
+        ))}
+        {match.percent != null ? (
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">atbilst {match.percent}%</span>
+        ) : null}
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1" role="group" aria-label="Sludinājuma statuss">
+        {IRISS_LISTING_HIT_STATUSES.map((item) => {
+          const on = status === item;
+          return (
+            <button
+              key={item}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onStatus(item)}
+              className={`min-h-11 rounded-full px-3 py-2 text-[13px] font-semibold ${
+                on ? "bg-[#111827] text-white" : "bg-white text-[#111827] ring-1 ring-[#e5e7eb]"
+              }`}
+            >
+              {IRISS_LISTING_HIT_STATUS_LV[item]}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
 

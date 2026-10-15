@@ -1,3 +1,4 @@
+import "server-only";
 import { createHash } from "node:crypto";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";

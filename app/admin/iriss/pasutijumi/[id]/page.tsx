@@ -7,6 +7,7 @@ import {
 } from "@/lib/iriss-listings-aggregate-store";
 import { emptyIrissListingsDismissed, listingIsDismissed } from "@/lib/iriss-listings-dismiss";
 import { orderRoomMatchProps, prepareIrissListingMatchWorkspace } from "@/lib/iriss-listing-match-store";
+import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap } from "@/lib/iriss-order-room-match-props";
 import { buildIrissOrderRoomHits } from "@/lib/iriss-order-room";
 import { readIrissOfferClientLinksForOrder } from "@/lib/iriss-offer-client-link-store";
 import { isIrissPasutijumiStoreEnabled, isSafeIrissPasutijumsId, readIrissListingOrderOv, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
@@ -58,8 +59,8 @@ export default async function IrissPasutijumsDetailPage({
       dismissedHitIds={dismissedHitIds}
       listingsCache={storage.enabled ? "on" : "off"}
       initialOfferLinks={offerLinks}
-      initialHitStatus={roomMatch?.hitStatus ?? {}}
-      duplicatesByListing={roomMatch?.duplicates ?? {}}
+      initialHitStatus={coerceIrissHitStatusMap(roomMatch?.hitStatus)}
+      duplicatesByListing={coerceIrissDuplicatesByListing(roomMatch?.duplicates)}
       initialRoomTab={initialRoomTab}
     />
   );

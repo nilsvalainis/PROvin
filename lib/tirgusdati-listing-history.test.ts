@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   extractTirgusDatiHistoryFromHtml,
-  fetchTirgusDatiListingHistory,
   looksLikeTirgusDatiCloudflareChallenge,
   tirgusDatiHistoryPageLookupUrl,
   tirgusDatiSupportsListingUrl,
 } from "@/lib/tirgusdati-listing-history";
+import { fetchTirgusDatiListingHistory } from "@/lib/tirgusdati-listing-history-server";
 
 const Q7_URL = "https://www.ss.lv/msg/lv/transport/cars/audi/q7/bcdpnx.html";
 
@@ -122,6 +122,7 @@ describe("fetchTirgusDatiListingHistory", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("reads the page through the relay when the datacenter IP gets HTTP 403", async () => {
@@ -160,7 +161,36 @@ describe("fetchTirgusDatiListingHistory", () => {
     const snap = await fetchTirgusDatiListingHistory(Q7_URL, NOW);
 
     expect(snap.found).toBe(false);
-    expect(snap.message).toBe("Tirgus Dati neatbildēja (HTTP 403)");
+    expect(snap.blocked).toBe(true);
+    expect(snap.message).toMatch(/Tirgus Dati neatbildēja \(HTTP 403\)/);
+    expect(snap.message).toMatch(/Jina|Chrome relejs|HTTP/i);
+  });
+
+  it("reads the history table from the IRISS Chrome relay after Jina is challenged", async () => {
+    const fetchMock = vi.fn(async (input: unknown) => {
+      const url = String(input);
+      if (url === "https://relay.test/listings/page") {
+        return {
+          ok: true,
+          status: 200,
+          text: async () =>
+            JSON.stringify({ ok: true, status: 200, html: FOUND_HTML, finalUrl: "https://tirgusdati.lv/vesture" }),
+        };
+      }
+      if (url.startsWith("https://r.jina.ai/")) {
+        return { ok: true, status: 200, text: async () => "<html>Just a moment...</html>" };
+      }
+      return { ok: false, status: 403, text: async () => "" };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("IRISS_LISTINGS_RELAY_URL", "https://relay.test/listings");
+    vi.stubEnv("IRISS_LISTINGS_RELAY_TOKEN", "t0ken");
+
+    const snap = await fetchTirgusDatiListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(true);
+    expect(snap.source).toBe("tirgusdati");
+    expect(snap.rows).toHaveLength(5);
   });
 
   it("uses the relay when Cloudflare answers with the interstitial", async () => {

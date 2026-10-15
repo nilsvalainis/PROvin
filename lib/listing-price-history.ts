@@ -3,18 +3,18 @@
  * Adify un tirgusdati.lv tiek vaicāti paralēli; pietiek ar pirmo, kas atrod datus.
  */
 
+import { fetchAdifyListingHistory } from "@/lib/adify-listing-history-fetch";
 import {
   type AdifyListingHistorySnapshot,
   extractAdifyHistorySsrPayload,
-  fetchAdifyListingHistory,
   normalizeAdifyHistoryItems,
 } from "@/lib/adify-listing-history";
 import {
   extractTirgusDatiHistoryFromHtml,
-  fetchTirgusDatiListingHistory,
   looksLikeTirgusDatiCloudflareChallenge,
   tirgusDatiSupportsListingUrl,
 } from "@/lib/tirgusdati-listing-history";
+import { fetchTirgusDatiListingHistory } from "@/lib/tirgusdati-listing-history-server";
 
 export const LISTING_HISTORY_HTML_MAX_CHARS = 500_000;
 

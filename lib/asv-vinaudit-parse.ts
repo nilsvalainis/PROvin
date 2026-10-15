@@ -229,10 +229,13 @@ function parseAccidents(raw: unknown): AsvDamageRow[] {
     const description = [
       stringifyVal(o.collision ?? o.type ?? o.damage ?? o.damages ?? o.impact_point),
       stringifyVal(o.impact ?? o.severity ?? o.damage_severity),
+      stringifyVal(o.crash_severity) ? `smagums: ${stringifyVal(o.crash_severity)}` : "",
+      stringifyVal(o.estimated_speed) ? `ātrums: ${stringifyVal(o.estimated_speed)}` : "",
       stringifyVal(o.cause_of_damage),
       stringifyVal(o.object_struck),
       stringifyVal(o.light_condition) ? `gaisma: ${stringifyVal(o.light_condition)}` : "",
-      stringifyVal(o.airbag) ? `airbag: ${stringifyVal(o.airbag)}` : "",
+      stringifyVal(o.airbag ?? o.airbags_deployed) ? `airbag: ${stringifyVal(o.airbag ?? o.airbags_deployed)}` : "",
+      stringifyVal(o.insurer_name ?? source?.name) ? `avots: ${stringifyVal(o.insurer_name ?? source?.name)}` : "",
     ]
       .filter(Boolean)
       .join(". ")
@@ -240,7 +243,9 @@ function parseAccidents(raw: unknown): AsvDamageRow[] {
     out.push({
       date: toLvDate(o.date ?? o.report_date),
       region: usRegion(o.state ?? o.state_code ?? source?.state_code ?? o.region ?? o.city ?? o.location),
-      amount: amountEur(o.estimated_damage ?? o.damage_amount ?? o.amount ?? o.loss),
+      amount: amountEur(
+        o.estimated_damage ?? o.estimated_damage_cost ?? o.estimated_damage_usd ?? o.damage_amount ?? o.amount ?? o.loss,
+      ),
       description,
     });
   }
@@ -262,7 +267,7 @@ function parseSalvage(
     const location = stringifyVal(o.location ?? o.auction ?? o.seller ?? o.salvage_auction_location);
     const listingId = stringifyVal(o.listing_id ?? o.lot ?? o.lot_number ?? o.salvage_auction_record_id);
     const odometer = odometerKm(
-      o.odometer ?? o.meter ?? o.mileage,
+      o.odometer ?? o.meter ?? o.mileage ?? o.mileage_observed ?? o.mileage_desc,
       stringifyVal(o.meter_unit ?? o.mileage_unit),
       true,
     );
@@ -292,7 +297,7 @@ function parseSalvage(
       damages.push({
         date,
         region: location.slice(0, 120) || usRegion(o.state),
-        amount: amountEur(o.estimated_damage ?? o.sale_price),
+        amount: amountEur(o.estimated_damage ?? o.estimated_damage_usd ?? o.sale_price),
         description: damagesTxt.slice(0, 400),
       });
     }
@@ -347,7 +352,7 @@ function parseRecordList(raw: unknown, defaultLabel: string): AsvRecordRow[] {
       detail: [
         stringifyVal(o.state ?? o.state_code ?? o.region ?? o.theft_reported_state),
         stringifyVal(o.lienholder ?? o.holder ?? o.agency),
-        stringifyVal(o.stolen_status),
+        stringifyVal(o.stolen_status ?? o.stolen_status_desc),
         stringifyVal(o.recovery_date) ? `atgūts: ${toLvDate(o.recovery_date)}` : "",
         stringifyVal(o.note ?? o.detail ?? o.description ?? o.theft_report_id),
       ]
