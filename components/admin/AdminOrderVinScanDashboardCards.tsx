@@ -4,11 +4,18 @@ import Link from "next/link";
 import { ScanLine } from "lucide-react";
 
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
-import type { OrderVinScanDashboardCard } from "@/lib/order-vin-scan";
+import { orderVinScanDashboardSubtitle, type OrderVinScanDashboardCard } from "@/lib/order-vin-scan";
 
 function counts(card: OrderVinScanDashboardCard): string {
   if (card.status === "running") return "pārbauda…";
-  return `${card.found} info · ${card.none} nav · ${card.error} kļūda`;
+  const bits = [`${card.found} info`];
+  const problems = card.error + card.blocked + card.timeout + card.configMissing;
+  if (card.none > 0 && problems === 0) bits.push(`${card.none} nav`);
+  if (card.error) bits.push(`${card.error} kļūda`);
+  if (card.blocked) bits.push(`${card.blocked} bloķē`);
+  if (card.timeout) bits.push(`${card.timeout} noildze`);
+  if (card.configMissing) bits.push(`${card.configMissing} nav atslēgas`);
+  return bits.join(" · ");
 }
 
 export function AdminOrderVinScanDashboardCards({
@@ -32,13 +39,7 @@ export function AdminOrderVinScanDashboardCards({
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[12.5px] font-semibold text-[var(--color-apple-text)]">{card.title}</p>
-                <p className="mt-0.5 truncate text-[11px] text-[#8e8e93]">
-                  {card.status === "running"
-                    ? "pārbauda bezmaksas avotus"
-                    : card.foundLabels.length
-                      ? card.foundLabels.join(" · ")
-                      : card.hint || "Nav datu"}
-                </p>
+                <p className="mt-0.5 truncate text-[11px] text-[#8e8e93]">{orderVinScanDashboardSubtitle(card)}</p>
               </div>
               <span className="shrink-0 text-[11px] font-medium tabular-nums text-[#8e8e93]">{counts(card)}</span>
               <span className="shrink-0 text-[12px] font-semibold text-[var(--color-provin-accent)]">Atvērt</span>

@@ -20,7 +20,7 @@ vi.mock("@/lib/captcha-solver", () => ({
   solveCaptcha: (...args: unknown[]) => solveCaptcha(...args),
 }));
 
-import { scanChallengeReason, scanFetchSmart } from "@/lib/vin-scan/http";
+import { runWithVinScanDeadline, scanChallengeReason, scanFetchSmart } from "@/lib/vin-scan/http";
 import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 
 const VIN = "WBA5R1C0XLFH42873";
@@ -108,6 +108,9 @@ describe("scanFetchSmart - Cloudflare", () => {
       sourceLabel: "LT policija",
     });
     expect(solveCaptcha).toHaveBeenCalledTimes(1);
+    const opts = solveCaptcha.mock.calls[0]?.[1] as { timeoutMs?: number };
+    expect(opts.timeoutMs).toBeGreaterThanOrEqual(4_000);
+    expect(opts.timeoutMs).toBeLessThanOrEqual(12_000);
     const task = solveCaptcha.mock.calls[0]?.[0] as { html?: string; proxy?: string; type?: string };
     expect(task.html).toContain("Just a moment");
     expect(task.html).toContain("_cf_chl_opt");
@@ -131,5 +134,39 @@ describe("scanFetchSmart - Cloudflare", () => {
     });
     expect(solveCaptcha).not.toHaveBeenCalled();
     expect(page.challengeReason).toMatch(/FIXIE_URL|CAPSOLVER_PROXY/);
+  });
+
+  it("īsāks par 4 s budžetu nesauc CapSolver", async () => {
+    vinHttpFetch.mockResolvedValueOnce({
+      status: 403,
+      text: LT_CHALLENGE_HTML,
+      cookie: "",
+      finalUrl: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+    });
+    const page = await scanFetchSmart("https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=1", {
+      timeoutMs: 9_000,
+      solveUrl: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+      sourceLabel: "LT policija",
+    });
+    expect(solveCaptcha).not.toHaveBeenCalled();
+    expect(page.challengeReason).toMatch(/CapSolver izlaists/);
+  });
+
+  it("pēc avota ārējā timeout CapSolver vairs nesāk", async () => {
+    vinHttpFetch.mockResolvedValueOnce({
+      status: 403,
+      text: LT_CHALLENGE_HTML,
+      cookie: "",
+      finalUrl: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+    });
+    const page = await runWithVinScanDeadline(Date.now() - 1_000, () =>
+      scanFetchSmart("https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=1", {
+        timeoutMs: 45_000,
+        solveUrl: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php",
+        sourceLabel: "LT policija",
+      }),
+    );
+    expect(solveCaptcha).not.toHaveBeenCalled();
+    expect(page.challengeReason).toMatch(/CapSolver izlaists/);
   });
 });

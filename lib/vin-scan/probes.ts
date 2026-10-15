@@ -2,6 +2,7 @@ import "server-only";
 
 import { fetchCsddTechData } from "@/lib/csdd-tech-data";
 import { fetchVinSource } from "@/lib/vin-sources";
+import { fetchTjekbilDmrRaw } from "@/lib/vin-sources/tjekbil";
 import { mapNummerpladePayload, nummerpladeApiKey } from "@/lib/vin-sources/nummerplade";
 import { isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { scanChallengeReason, scanFetch, scanFetchSmart } from "@/lib/vin-scan/http";
@@ -54,7 +55,7 @@ function done(id: VinScanSourceId, ctx: VinScanContext, parsed: VinScanParse): V
 function failed(id: VinScanSourceId, ctx: VinScanContext, e: unknown): VinScanIndicator {
   const timedOut = e instanceof Error && e.message === "timeout";
   return done(id, ctx, {
-    status: "unknown",
+    status: timedOut ? "timeout" : "unknown",
     summary: timedOut ? "Avots neatbildēja laikā" : "Avotu neizdevās nolasīt",
   });
 }
@@ -81,9 +82,7 @@ export function sourceNeedsInput(id: VinScanSourceId, ctx: VinScanContext): VinS
 
 export async function probeTjekbil(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    const res = await scanFetch(`https://www.tjekbil.dk/api/v3/dmr/vin/${encodeURIComponent(ctx.vin)}`, {
-      headers: { accept: "application/json", referer: "https://www.tjekbil.dk/" },
-    });
+    const res = await fetchTjekbilDmrRaw(ctx.vin);
     return done("tjekbil", ctx, parseTjekbilProbe(res.status, res.text));
   } catch (e) {
     return failed("tjekbil", ctx, e);

@@ -11,8 +11,17 @@ const FAIL_RE =
   /http \d{3}|pieprasījumu limits|captcha|neatbildēja laikā|neizdevās nolasīt|zonde nav pieejama|capsolver|invalid task|websitekey|cloudflare|bloķē/i;
 
 export function isVinScanHealthFailure(status: string, summary = ""): boolean {
+  if (status === "timeout" || status === "blocked") return true;
   if (SCAN_ERR.has(summary)) return true;
-  if (status === "found" || status === "none" || status === "needs_input" || status === "skipped" || status === "manual") {
+  if (
+    status === "found" ||
+    status === "none" ||
+    status === "needs_input" ||
+    status === "skipped" ||
+    status === "manual" ||
+    status === "config_missing" ||
+    status === "browser_only"
+  ) {
     return false;
   }
   if (vinScanNeedsBrowser(status, summary)) return false;

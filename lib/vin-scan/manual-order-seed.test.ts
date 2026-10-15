@@ -36,10 +36,11 @@ describe("vin scan open URLs", () => {
     expect(catalog.length).toBe(VIN_SCAN_CATALOG.length);
     expect(VIN_SCAN_BROWSER_CATALOG.length).toBeGreaterThan(0);
     expect(VIN_SCAN_BROWSER_CATALOG.length).toBeLessThan(VIN_SCAN_CATALOG.length);
+    const formOnly = new Set(["traficom", "regitra", "rdw"]);
     for (const item of catalog) {
       const url = item.openUrl(VIN);
       expect(url).toMatch(/^https:\/\//);
-      if (item.id !== "listing_history") expect(url.toUpperCase()).toContain(VIN);
+      if (item.id !== "listing_history" && !formOnly.has(item.id)) expect(url.toUpperCase()).toContain(VIN);
       expect(resolveVinScanOpenUrl(item, VIN, null)).toBe(url);
     }
     expect(resolveVinScanOpenUrl(VIN_SCAN_CATALOG[0]!, VIN, "https://lot.example/abc")).toBe(

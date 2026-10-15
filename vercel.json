@@ -57,6 +57,12 @@
     "app/api/cron/morning-summary/route.ts": {
       "maxDuration": 60
     },
+    "app/api/cron/vin-scan-canary/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/admin/order-draft/route.ts": {
+      "maxDuration": 300
+    },
     "app/api/cron/admin-audit-sla-warning/route.ts": {
       "maxDuration": 120
     },
@@ -87,6 +93,10 @@
     {
       "path": "/api/cron/morning-summary",
       "schedule": "0 5,6 * * *"
+    },
+    {
+      "path": "/api/cron/vin-scan-canary",
+      "schedule": "30 4 * * *"
     },
     {
       "path": "/api/cron/admin-audit-sla-warning",

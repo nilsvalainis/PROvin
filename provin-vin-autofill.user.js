@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.18.0
+// @version      1.19.0
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -87,7 +87,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.18.0";
+  const SCRIPT_VERSION = "1.19.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -575,17 +575,17 @@
       lt_itpr: "https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=" + v,
       nicb: "https://www.nicb.org/vincheck?vin=" + v,
       bidfax: "https://bidfax.info/?s=" + v,
-      poctra: "https://poctra.com/search/" + v,
+      poctra: "https://poctra.com/search?q=" + v,
       csdd: "https://e.csdd.lv/tadati/?vin=" + v,
       mnt_ee: "https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf?vin=" + v,
       lkf_ee: "https://lkf.ee/et/kahjukontroll?vin=" + v,
       carinfo: "https://www.car.info/en-se/vin/" + v,
       nummerplade: "https://www.nummerplade.net/stelnummer/" + String(vin || "").toLowerCase() + ".html",
-      rdw: "https://opendata.rdw.nl/resource/m9d7-ebf2.json?vin=" + v,
+      rdw: "https://ovi.rdw.nl/",
       vegvesen: "https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/?understellsnummer=" + v,
       biluppgifter: "https://biluppgifter.se/" + v,
-      regitra: "https://www.regitra.lt/lt/e-paslaugos/transporto-priemones-duomenu-patikra?vin=" + v,
-      traficom: "https://www.traficom.fi/en/transport/road/vehicle-information?vin=" + v,
+      regitra: "https://www.regitra.lt/paslaugos/transporto-priemones/pasitikrinkite-ar-transporto-priemone-neturi-apribojimu/",
+      traficom: "https://www.traficom.fi/fi/autoilijat/ajoneuvon-osto-ja-myynti/tarkista-ajoneuvon-tiedot",
       tjekbil: "https://www.tjekbil.dk/?vin=" + v,
       esyn: "https://findsynsrapport.esyn.dk/?chassisNumber=" + v,
       dsb: "https://app.digitalservicebog.dk/search?vin=" + v + "&country=eu",

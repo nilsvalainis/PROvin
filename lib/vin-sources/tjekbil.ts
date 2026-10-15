@@ -2,6 +2,7 @@
  * tjekbil.dk — Dānijas Motorregister (DMR) + Færdselsstyrelsen synsrapport.
  * Publisks JSON bez autorizācijas. Nummerplade.net tiek pievienots, ja ir NUMMERPLADE_API_KEY.
  */
+import { dedupeAsync } from "@/lib/vin-fetch-dedupe";
 import { mergeDanishVinResults } from "@/lib/vin-sources/dk-merge";
 import { fetchNummerplade } from "@/lib/vin-sources/nummerplade";
 import { mapTjekbilPayload, tjekbilKid, tjekbilPlate, type TjekbilDmrResponse, type TjekbilMileageLog } from "@/lib/vin-sources/tjekbil-map";
@@ -29,8 +30,30 @@ async function getJson<T>(url: string): Promise<{ status: number; data: T | null
   }
 }
 
+export function tjekbilDmrUrl(vin: string): string {
+  return `${BASE}/dmr/vin/${encodeURIComponent(vin.trim().toUpperCase())}`;
+}
+
+/** Kopīgs ar VIN SCAN zondi, lai sēkla un skenējums neprasa DMR divreiz 60 s logā. */
+export function fetchTjekbilDmrRaw(vin: string): Promise<{ status: number; text: string }> {
+  const url = tjekbilDmrUrl(vin);
+  return dedupeAsync(`tjekbil-dmr:${url}`, async () => {
+    const res = await fetch(url, { headers: HEADERS, cache: "no-store" });
+    return { status: res.status, text: await res.text() };
+  });
+}
+
 export async function fetchTjekbil(vin: string): Promise<VinSourceFetchResult> {
-  const main = await getJson<TjekbilDmrResponse>(`${BASE}/dmr/vin/${encodeURIComponent(vin)}`);
+  const raw = await fetchTjekbilDmrRaw(vin);
+  let data: TjekbilDmrResponse | null = null;
+  if (raw.status === 200 && raw.text.trim()) {
+    try {
+      data = JSON.parse(raw.text) as TjekbilDmrResponse;
+    } catch {
+      data = null;
+    }
+  }
+  const main = { status: raw.status, data };
   if (!main.data) {
     return emptyVinSourceResult(
       "tjekbil",
