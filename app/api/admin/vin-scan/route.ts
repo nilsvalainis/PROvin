@@ -4,7 +4,9 @@ import { recordSourceOutcomes } from "@/lib/source-health-store";
 import { getAdminSession } from "@/lib/admin-auth";
 import { fetchCsddTechData } from "@/lib/csdd-tech-data";
 import { canonicalizeListingUrl, isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
+import { defaultVinScanSourceIds, VIN_SCAN_TTL_MS } from "@/lib/vin-scan/catalog";
+import { vinScanStatusIsCacheable } from "@/lib/vin-scan/health";
+import { mergeVinScanIndicators } from "@/lib/order-vin-scan";
 import {
   hasAnyVinScanPlate,
   isValidScanPlate,
@@ -100,10 +102,19 @@ export async function POST(req: Request) {
   }
 
   const requested = sanitizeVinScanSourceIds(body.sources) ?? defaultVinScanSourceIds();
-  const indicators = await runVinScan({ vin, plates, listingUrl, sourceIds: requested });
-  const scannedAt = new Date().toISOString();
-  after(() => recordSourceOutcomes(vinScanSourceHealthOutcomes(indicators)));
-  if (isValidVin(vin)) {
+  const prev = isValidVin(vin) ? await readVinScanSnapshot(vin).catch(() => null) : null;
+  const prevAge = prev ? Date.now() - Date.parse(prev.scannedAt) : Number.POSITIVE_INFINITY;
+  const prevUsable = Boolean(prev && prev.vin === vin && Number.isFinite(prevAge) && prevAge < VIN_SCAN_TTL_MS);
+  const cachedIds = new Set(
+    (prevUsable && !force ? prev!.indicators : []).filter((row) => vinScanStatusIsCacheable(row.status)).map((row) => row.id),
+  );
+  const toScan = requested.filter((id) => !cachedIds.has(id));
+  const scanned = toScan.length ? await runVinScan({ vin, plates, listingUrl, sourceIds: toScan }) : [];
+  const base = prev && prev.vin === vin ? prev.indicators : [];
+  const indicators = applyFinlandLinkToIndicators(mergeVinScanIndicators(base, scanned), plates);
+  const scannedAt = scanned.length ? new Date().toISOString() : prev?.scannedAt || new Date().toISOString();
+  after(() => recordSourceOutcomes(vinScanSourceHealthOutcomes(scanned)));
+  if (isValidVin(vin) && scanned.length) {
     await writeVinScanSnapshot({ vin, plates, scannedAt, indicators }).catch(() => undefined);
   }
   return NextResponse.json({

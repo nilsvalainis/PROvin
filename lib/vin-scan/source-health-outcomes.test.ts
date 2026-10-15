@@ -19,6 +19,10 @@ describe("VIN SCAN avotu veselības iznākumi", () => {
     expect(isVinScanHealthFailure("unknown", "Avots bloķē serveri - atver pārlūkā")).toBe(false);
     expect(isVinScanHealthFailure("unknown", "Lapa nav atpazīta")).toBe(false);
     expect(isVinScanHealthFailure("skipped", "nav konfigurēts")).toBe(false);
+    expect(isVinScanHealthFailure("timeout", "Avots neatbildēja laikā")).toBe(true);
+    expect(isVinScanHealthFailure("blocked", "Avots bloķē serveri - atver pārlūkā")).toBe(true);
+    expect(isVinScanHealthFailure("config_missing", "vegvesen.no: nav VEGVESEN_API_KEY")).toBe(false);
+    expect(isVinScanHealthFailure("browser_only", "Regitra: tikai pārlūkā")).toBe(false);
   });
 
   it("ieraksta tikai atbildes un bloķējumus", () => {

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { dedupeAsync } from "@/lib/vin-fetch-dedupe";
 import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
 import { isVinSourcesBrowserAllowed, VIN_SOURCES_BROWSER_UNAVAILABLE } from "@/lib/vin-sources/browser";
 import { fetchCarInfo } from "@/lib/vin-sources/carinfo";
@@ -24,7 +25,7 @@ export const VIN_SOURCE_NEEDS_BROWSER: Record<VinSourceId, boolean> = {
   carinfo: false,
 };
 
-export async function fetchVinSource(source: VinSourceId, vin: string, regMark = ""): Promise<VinSourceFetchResult> {
+async function fetchVinSourceOnce(source: VinSourceId, vin: string, regMark = ""): Promise<VinSourceFetchResult> {
   if (vinSourceNeedsBrowser(source) && !isVinSourcesBrowserAllowed()) {
     return emptyVinSourceResult(source, vin, VIN_SOURCES_BROWSER_UNAVAILABLE);
   }
@@ -38,4 +39,9 @@ export async function fetchVinSource(source: VinSourceId, vin: string, regMark =
     case "carinfo":
       return fetchCarInfo(vin);
   }
+}
+
+export function fetchVinSource(source: VinSourceId, vin: string, regMark = ""): Promise<VinSourceFetchResult> {
+  const key = `vin-source:${source}:${vin.trim().toUpperCase()}:${regMark.trim().toUpperCase()}`;
+  return dedupeAsync(key, () => fetchVinSourceOnce(source, vin, regMark));
 }

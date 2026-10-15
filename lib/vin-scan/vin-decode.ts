@@ -338,9 +338,11 @@ export function nordicVinSearchLinks(vin: string): NordicVinSearchLink[] {
   const v = encodeURIComponent(d.vin);
   const locale =
     d.countryCode === "DK" ? "en-dk" : d.countryCode === "NO" ? "en-no" : d.countryCode === "FI" ? "en-fi" : "en-se";
+  const carinfoHref =
+    d.countryCode === "SE" ? `https://www.car.info/en-se/vin/S/${v}` : `https://www.car.info/${locale}/vin/${v}`;
   return [
     { id: "biluppgifter", label: "biluppgifter.se", href: `https://biluppgifter.se/${v}` },
-    { id: "carinfo", label: "car.info", href: `https://www.car.info/${locale}/vin/${v}` },
+    { id: "carinfo", label: "car.info", href: carinfoHref },
   ];
 }
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
 import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
@@ -13,7 +13,7 @@ import {
 import { buildVehicleLifecycleEvents } from "@/lib/vehicle-lifecycle-timeline";
 import { extractAutodnaReport } from "@/lib/autodna-report-extract";
 import { extractCarverticalReport } from "@/lib/carvertical-report-extract";
-import { convertAmountTextToEur } from "@/lib/currency-eur-convert";
+import { convertAmountTextToEur, setEcbDailyRatesForTests } from "@/lib/currency-eur-convert";
 import { parseVendorPdfAgentPayload } from "@/lib/vendor-pdf-agent-payload";
 import {
   buildVendorCopilotActions,
@@ -25,6 +25,15 @@ import { emptyOutvinDataBundle } from "@/lib/outvin-data-bundle";
 import { emptyOutvinDealerReport, emptyOutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { formatVendorServiceHistoryText } from "@/lib/vendor-service-history";
 import { collectWorkspaceCountryTimeline } from "@/lib/workspace-country-timeline";
+
+const TEST_ECB_RATES = {
+  date: "2026-10-15",
+  rates: { CZK: 25, USD: 1.09, GBP: 0.85, PLN: 4.3, SEK: 11.3 },
+} as const;
+setEcbDailyRatesForTests(TEST_ECB_RATES);
+beforeEach(() => {
+  setEcbDailyRatesForTests(TEST_ECB_RATES);
+});
 
 const AUTODNA_TEXT = `Transportlīdzekļa vēsture
 13.10.2025

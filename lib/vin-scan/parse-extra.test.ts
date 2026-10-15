@@ -109,7 +109,11 @@ describe("izsoles arhīvs un nobraukuma rollback", () => {
     expect(parseAuctionArchive(200, `<html>VIN WBA5R1C0XLFH42873 copart lot sold 12 photos</html>`, "WBA5R1C0XLFH42873", "BidFax").status).toBe(
       "found",
     );
-    expect(parseAuctionArchive(404, "", "WBA5R1C0XLFH42873", "Poctra").status).toBe("none");
+    expect(parseAuctionArchive(404, "", "WBA5R1C0XLFH42873", "Poctra")).toMatchObject({
+      status: "unknown",
+      summary: "Poctra: lapa nav pieejama (HTTP 404)",
+    });
+    expect(parseAuctionArchive(404, "", "WBA5R1C0XLFH42873", "BidFax").status).toBe("none");
     expect(parseAuctionArchive(403, "", "WBA5R1C0XLFH42873", "Poctra").summary).toMatch(/atver pārlūkā/);
     expect(parseAuctionArchive(403, "", "WBA5R1C0XLFH42873", "BidFax").summary).toMatch(/atver pārlūkā/);
   });

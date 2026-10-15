@@ -1,3 +1,4 @@
+import "server-only";
 /**
  * VIN SCAN izsoļu lapas caur Hetzner IRISS Chrome releju (`POST /listings/page`).
  * stat.vin WAF (plaintext Access blocked) CapSolver nespēj; īsts Chrome var.
@@ -37,6 +38,7 @@ export const VIN_SCAN_RELAY_HOSTS = [
   "ss.lv",
   "ss.com",
   "city24.lv",
+  "car.info",
 ] as const;
 
 export function isVinScanRelayUrl(raw: string): boolean {

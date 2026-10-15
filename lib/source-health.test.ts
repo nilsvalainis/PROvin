@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applySourceOutcomes, emptySourceHealthDoc, sourceHealthColor } from "./source-health";
+import { applySourceOutcomes, emptySourceHealthDoc, sourceHealthColor, sourcesFailingInARow } from "./source-health";
 
 describe("source health", () => {
   it("krāsa pēc pēdējiem rezultātiem", () => {
@@ -12,5 +12,19 @@ describe("source health", () => {
     expect(sourceHealthColor(d.sources.csdd, now)).toBe("orange");
     expect(d.sources.csdd.errors[0]?.msg).toBe("timeout");
     expect(sourceHealthColor(undefined, now)).toBe("gray");
+  });
+
+  it("trīs kļūdas pēc kārtas; veiksmīgs zvans nullē sēriju", () => {
+    let d = applySourceOutcomes(emptySourceHealthDoc(), [
+      { id: "stat_vin", ok: false, msg: "timeout" },
+      { id: "csdd", ok: false, msg: "HTTP 500" },
+    ]);
+    d = applySourceOutcomes(d, [{ id: "stat_vin", ok: false, msg: "timeout" }]);
+    expect(sourcesFailingInARow(d, 3)).toEqual([]);
+    d = applySourceOutcomes(d, [{ id: "stat_vin", ok: false, msg: "timeout" }]);
+    expect(sourcesFailingInARow(d, 3)).toEqual([{ id: "stat_vin", streak: 3, msg: "timeout" }]);
+    d = applySourceOutcomes(d, [{ id: "stat_vin", ok: true }]);
+    expect(d.sources.stat_vin?.failStreak).toBe(0);
+    expect(sourcesFailingInARow(d, 3)).toEqual([]);
   });
 });

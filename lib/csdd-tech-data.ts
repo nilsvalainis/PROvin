@@ -1,3 +1,5 @@
+import { dedupeAsync } from "@/lib/vin-fetch-dedupe";
+
 /**
  * CSDD Transportlīdzekļu reģistra web serviss (līgums LĪG-ieņ/375/26, 1. pielikums).
  * `epak.tl_tehn_dati?nr1=` pieņem gan valsts numurzīmi, gan VIN, un atgriež XML `<TL_DATI>`.
@@ -207,7 +209,7 @@ export function buildCsddRelayUrl(relayBase: string, nr1: string): string {
 export const CSDD_TECH_DATA_TIMEOUT_MS = 20_000;
 
 /** Ielasa tehniskos datus caur releju CSDD tunelī. */
-export async function fetchCsddTechData(
+async function fetchCsddTechDataOnce(
   nr1: string,
   opts: { env?: CsddRelayEnv; timeoutMs?: number } = {},
 ): Promise<CsddTechDataResult> {
@@ -247,4 +249,13 @@ export async function fetchCsddTechData(
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Atkārtots zvans tam pašam nr1 60 s laikā (sēkla + VIN SCAN) iet vienu reizi. Testi ar `opts.env` kešu nelieto. */
+export function fetchCsddTechData(
+  nr1: string,
+  opts: { env?: CsddRelayEnv; timeoutMs?: number } = {},
+): Promise<CsddTechDataResult> {
+  if (opts.env) return fetchCsddTechDataOnce(nr1, opts);
+  return dedupeAsync(`csdd:${nr1.trim().toUpperCase()}`, () => fetchCsddTechDataOnce(nr1, opts));
 }

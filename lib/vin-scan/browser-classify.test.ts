@@ -53,6 +53,14 @@ describe("classifyBrowserProbe", () => {
   it("captcha paliek gaidīšana, CheckCar foto skaita atsevišķi", () => {
     expect(browserProbeBlocker("Please complete the reCAPTCHA")).toBe("captcha");
     expect(classifyBrowserProbe("auchistory", "I'm not a robot", VIN)).toBeNull();
+    expect(
+      classifyBrowserProbe(
+        "bid_cars",
+        "Welcome to the auction archive. Browse featured vehicles and recent sale photos from the last week.",
+        VIN,
+      ),
+    ).toMatchObject({ status: "unknown", summary: expect.stringMatching(/bez VIN/) });
+    expect(classifyBrowserProbe("poctra", "Search", VIN)).toBeNull();
     expect(classifyCheckcarPhotos(3, false)).toMatchObject({ status: "found", summary: "3 foto" });
     expect(classifyCheckcarPhotos(0, false)).toBeNull();
     expect(classifyCheckcarPhotos(0, true)?.status).toBe("none");

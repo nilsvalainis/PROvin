@@ -20,6 +20,7 @@ test("VIN SCAN page URL allowlist", () => {
   );
   assert.equal(validVinScanPageUrl("https://www.ss.lv/msg/lv/x.html"), "https://www.ss.lv/msg/lv/x.html");
   assert.equal(validVinScanPageUrl("https://www.ss.com/msg/lv/x.html"), "https://www.ss.com/msg/lv/x.html");
+  assert.equal(validVinScanPageUrl("https://www.car.info/en-se/vin/S/YV1LW5522V2348444"), "https://www.car.info/en-se/vin/S/YV1LW5522V2348444");
   assert.equal(validVinScanPageUrl("http://stat.vin/cars/WBA"), "");
   assert.equal(validVinScanPageUrl("https://openlane.eu/search"), "");
   assert.equal(validVinScanPageUrl("https://evil.example/stat.vin"), "");

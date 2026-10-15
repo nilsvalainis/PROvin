@@ -12,16 +12,35 @@ import {
   readOrderDraft,
 } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
-import { CC_VIN_MAX_PHOTOS } from "@/lib/cc-vin-photo-types";
-import { importVinScanAuctionPhotosToCcVin } from "@/lib/order-vin-scan-photo-import";
+import { CC_VIN_MAX_PHOTOS, normalizeCcVinPhotoGroups } from "@/lib/cc-vin-photo-types";
+import {
+  importVinScanAuctionPhotoGroupsToCcVin,
+  plansToImportGroups,
+} from "@/lib/order-vin-scan-photo-import";
 import { parseOrderVinScanRecord } from "@/lib/order-vin-scan";
 import {
-  collectVinScanAuctionPhotoUrls,
+  collectVinScanAuctionPhotoGroups,
   vinScanAuctionPhotoGroupTitle,
 } from "@/lib/order-vin-scan-photos";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 300;
+
+function parseGroupPayload(raw: unknown): { title: string; urls: string[] }[] {
+  if (!Array.isArray(raw)) return [];
+  const out: { title: string; urls: string[] }[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const rec = item as { title?: unknown; urls?: unknown };
+    const title = typeof rec.title === "string" ? rec.title.trim().slice(0, 120) : "";
+    const urls = Array.isArray(rec.urls)
+      ? rec.urls.filter((u): u is string => typeof u === "string" && u.trim().startsWith("https://"))
+      : [];
+    if (urls.length === 0) continue;
+    out.push({ title: title || "VIN SCAN", urls });
+  }
+  return out;
+}
 
 export async function POST(req: Request) {
   try {
@@ -53,24 +72,55 @@ export async function POST(req: Request) {
 
     const draft = await readOrderDraft(sessionId);
     const scan = parseOrderVinScanRecord(draft?.vinScan);
-    const fromBody = Array.isArray(b.urls)
+    const fromBodyGroups = parseGroupPayload(b.groups);
+    const fromBodyUrls = Array.isArray(b.urls)
       ? b.urls.filter((u): u is string => typeof u === "string")
       : [];
-    const urls = fromBody.length ? fromBody : collectVinScanAuctionPhotoUrls(scan?.indicators ?? []);
-    if (urls.length === 0) {
-      return NextResponse.json({ ok: true, photoIds: [], title: "", imported: 0, skipped: 0, failed: 0 });
+    const groups =
+      fromBodyGroups.length > 0
+        ? fromBodyGroups
+        : fromBodyUrls.length > 0
+          ? [{ title: vinScanAuctionPhotoGroupTitle(scan?.indicators ?? []), urls: fromBodyUrls }]
+          : plansToImportGroups(collectVinScanAuctionPhotoGroups(scan?.indicators ?? []));
+    if (groups.length === 0 || groups.every((g) => g.urls.length === 0)) {
+      return NextResponse.json({
+        ok: true,
+        photoIds: [],
+        groups: [],
+        title: "",
+        imported: 0,
+        skipped: 0,
+        failed: 0,
+        failedUrls: [],
+      });
     }
 
+    const existingGroups = normalizeCcVinPhotoGroups(
+      (draft?.workspace as { sourceBlocks?: { cc_vin?: { photoGroups?: unknown; photos?: unknown } } } | null)
+        ?.sourceBlocks?.cc_vin?.photoGroups,
+      (draft?.workspace as { sourceBlocks?: { cc_vin?: { photos?: unknown } } } | null)?.sourceBlocks?.cc_vin?.photos,
+    );
     const existing = collectCcVinPhotoIdsFromWorkspace(draft?.workspace ?? null).size;
     if (existing >= CC_VIN_MAX_PHOTOS) {
       return NextResponse.json({ error: "photo_limit" }, { status: 400 });
     }
 
-    const result = await importVinScanAuctionPhotosToCcVin(sessionId, urls, existing);
+    const existingSourceUrls = existingGroups.flatMap((g) =>
+      g.photos.map((p) => p.sourceUrl).filter((u): u is string => Boolean(u)),
+    );
+    const existingContentHashes = existingGroups.flatMap((g) =>
+      g.photos.map((p) => p.contentHash).filter((h): h is string => Boolean(h)),
+    );
+
+    const result = await importVinScanAuctionPhotoGroupsToCcVin(sessionId, groups, {
+      existingCount: existing,
+      existingSourceUrls,
+      existingContentHashes,
+    });
     return NextResponse.json({
       ok: true,
       ...result,
-      title: vinScanAuctionPhotoGroupTitle(scan?.indicators ?? []),
+      title: result.groups[0]?.title || vinScanAuctionPhotoGroupTitle(scan?.indicators ?? []),
     });
   } catch (e) {
     console.error("[order-vin-scan-photos] POST", e);

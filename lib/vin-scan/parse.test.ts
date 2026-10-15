@@ -5,6 +5,8 @@ import {
   VIN_SCAN_REMOVED_IDS,
   VIN_SCAN_SOURCE_IDS,
   defaultVinScanSourceIds,
+  poctraSearchUrl,
+  regitraVehicleCheckUrl,
   traficomVehicleInfoUrl,
   vinScanFastSourceIds,
   vinScanPipelineSourceIds,
@@ -31,7 +33,7 @@ import {
   parseVinSourceScan,
   vehicleFromPlcTitle,
 } from "@/lib/vin-scan/parse";
-import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
+import { capsolverMayStart, capsolverTimeoutMs, vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
 import { countVinScanStatuses, formatVinScanCountLine, vinScanCountBreakdown } from "@/lib/vin-scan/types";
 
 const DK_VIN = "VF12RFL1H49621453";
@@ -57,11 +59,25 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_CATALOG).toHaveLength(33);
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.needs).toEqual(["vin"]);
     expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873")).toBe(
-      "https://www.traficom.fi/en/transport/road/vehicle-information?vin=WBA5R1C0XLFH42873",
+      "https://www.traficom.fi/fi/autoilijat/ajoneuvon-osto-ja-myynti/tarkista-ajoneuvon-tiedot",
     );
-    expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873", "")).not.toContain("plate=");
-    expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873", "ABC-123")).toContain("plate=ABC-123");
-    expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.openUrl("WBA5R1C0XLFH42873")).not.toContain("plate=");
+    expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873", "ABC-123")).not.toContain("plate=");
+    expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.openUrl("WBA5R1C0XLFH42873")).toBe(
+      traficomVehicleInfoUrl("WBA5R1C0XLFH42873"),
+    );
+    expect(regitraVehicleCheckUrl()).toContain("/pasitikrinkite-ar-transporto-priemone-neturi-apribojimu/");
+    expect(poctraSearchUrl("WBA5R1C0XLFH42873")).toBe("https://poctra.com/search?q=WBA5R1C0XLFH42873");
+    expect(VIN_SCAN_CATALOG.find((s) => s.id === "rdw")?.needs).toEqual(["nl"]);
+    expect(VIN_SCAN_CATALOG.find((s) => s.id === "rdw")?.openUrl("WBA5R1C0XLFH42873")).toBe("https://ovi.rdw.nl/");
+    expect(
+      VIN_SCAN_CATALOG.find((s) => s.id === "rdw")?.openUrl("WBA5R1C0XLFH42873", {
+        lv: "",
+        nl: "AB-12-CD",
+        lt: "",
+        fi: "",
+        uk: "",
+      }),
+    ).toContain("kenteken=");
     expect(VIN_SCAN_SOURCE_IDS).not.toContain("vp_wanted");
     expect(VIN_SCAN_SOURCE_IDS).not.toContain("uk_mot");
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "nummerplade")?.openUrl("WVWZZZ7NZEV015204")).toContain(
@@ -77,10 +93,13 @@ describe("vin scan catalog", () => {
 
   it("katram servera avotam ir VIN meklēšanas URL", () => {
     const vin = "WBA5R1C0XLFH42873";
+    const formOnly = new Set(["traficom", "regitra", "rdw"]);
     for (const item of VIN_SCAN_CATALOG) {
       const url = item.openUrl(vin);
       expect(url).toMatch(/^https:\/\//);
+      if (formOnly.has(item.id)) continue;
       if (item.needs.includes("listing") && !item.needs.includes("vin")) continue;
+      if (!item.needs.includes("vin") && item.needs.length > 0) continue;
       expect(url.toUpperCase()).toContain(vin);
     }
   });
@@ -333,6 +352,15 @@ describe("vinScanSourceTimeoutMs", () => {
     expect(vinScanSourceTimeoutMs("poctra")).toBe(100_000);
     expect(vinScanSourceTimeoutMs("lt_itpr")).toBe(90_000);
     expect(vinScanSourceTimeoutMs("vin_decode")).toBe(14_000);
+  });
+
+  it("CapSolver budžets ir ārējais timeouts mīnus 8 s, un zem 4 s nesāk", () => {
+    expect(capsolverTimeoutMs(20_000, 0)).toBe(12_000);
+    expect(capsolverTimeoutMs(80_000, 10_000)).toBe(62_000);
+    expect(capsolverTimeoutMs(9_000, 0)).toBe(1_000);
+    expect(capsolverMayStart(20_000, 0)).toBe(true);
+    expect(capsolverMayStart(9_000, 0)).toBe(false);
+    expect(capsolverTimeoutMs(0, 0)).toBe(0);
   });
 });
 

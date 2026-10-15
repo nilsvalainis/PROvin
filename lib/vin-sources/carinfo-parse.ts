@@ -346,6 +346,20 @@ function parseClassifiedZeroKm(text: string): { date: string; price: string } | 
   return { date, price: euro.includes("EUR") ? euro : `${price} EUR` };
 }
 
+function scrappingNote(text: string): string {
+  const m =
+    /(?:^|\n)\s*(\d{4}-\d{2}-\d{2})\s*(?:\n\s*)?scrapping(?:\s+in\s+([A-Za-z]+))?/i.exec(text) ||
+    /(\d{4}-\d{2}-\d{2})\s+scrapping(?:\s+in\s+([A-Za-z]+))?/i.exec(text);
+  if (!m) return "";
+  const date = formatRegistryDateLv(m[1] ?? "");
+  const country = detectCountry([m[2] ?? ""]);
+  const where = country === "Zviedrija" ? "Zviedrijā" : country;
+  if (where && date) return `Norakstīts ${where} (${date}).`;
+  if (where) return `Norakstīts ${where}.`;
+  if (date) return `Norakstīts (${date}).`;
+  return "Norakstīts.";
+}
+
 function buildRedFlags(opts: {
   text: string;
   owners: number | null;
@@ -480,7 +494,9 @@ export function parseCarinfoExtract(loaded: CarinfoPageExtract): CarinfoParsed {
     specialUse.length > 0 ? `Īpašais statuss: ${specialUse.join(", ")}` : "",
   ].filter(Boolean);
 
+  const scrapped = scrappingNote(text);
   const notes = [
+    ...(scrapped ? [scrapped] : []),
     ...buildRedFlags({
       text,
       owners: ownersCount ? Number(ownersCount) : null,

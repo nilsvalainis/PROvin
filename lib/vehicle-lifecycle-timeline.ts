@@ -370,6 +370,53 @@ export function lifecycleEventProvidesCountryResidence(e: LifecycleEvent): boole
   return true;
 }
 
+function lifecycleSourceLooksInformationalVendor(source: string): boolean {
+  const t = source.trim();
+  if (!t) return false;
+  if (vendorTimelineIsInformational(t)) return true;
+  return /carvertical|autodna/i.test(t);
+}
+
+/** CarVertical „Kanāda” pret Copart / dīlera ASV nav robežšķērsošana. */
+function isDisputedUsCanadaCountryPair(
+  fromIso: string,
+  toIso: string,
+  caSide: LifecycleEvent | null,
+): boolean {
+  if (!((fromIso === "US" && toIso === "CA") || (fromIso === "CA" && toIso === "US"))) return false;
+  if (!caSide) return true;
+  const sources = caSide.sources.filter((s) => s.trim());
+  if (sources.length === 0) return true;
+  return sources.every((s) => lifecycleSourceLooksInformationalVendor(s));
+}
+
+function inputHasConfirmedUsResidence(input: LifecycleInput): boolean {
+  const texts: string[] = [];
+  const dealer = resolveDealerAutoRecords(
+    input.autoRecordsBlock,
+    input.oneautoBlock,
+    emptyAutoRecordsBlock(),
+  );
+  for (const r of dealer.serviceHistory ?? []) texts.push(r.country);
+  for (const w of dealer.serviceWorks ?? []) texts.push(w.location);
+  for (const r of input.asvBlock?.mileage ?? []) texts.push(r.country);
+  for (const r of input.asvBlock?.sales ?? []) texts.push(r.venue);
+  for (const r of input.asvBlock?.damages ?? []) texts.push(r.region);
+  for (const r of input.ccVinBlock?.mileage ?? []) texts.push(r.country);
+  return texts.some((t) => countryLabelToIso2(t) === "US");
+}
+
+function vendorCanadaDisputedAgainstUs(
+  country: string,
+  sourceLabels: string[],
+  confirmedUs: boolean,
+): boolean {
+  if (!confirmedUs || countryLabelToIso2(country) !== "CA") return false;
+  const labels = sourceLabels.filter((s) => s.trim());
+  if (labels.length === 0) return true;
+  return labels.every((s) => lifecycleSourceLooksInformationalVendor(s));
+}
+
 function listingHintKey(date: string, country: string, odometer?: string): string[] {
   const ms = parseLifecycleTimeMs(date);
   const c = normalizeCountryNameLv(country) || country.trim();
@@ -629,11 +676,21 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
     }),
   );
   if (rows.length === 0) return [];
-  const { anomalyBySourceOrder } = analyzeUnifiedMileageAnomalies(rows);
+  const { anomalyBySourceOrder, staleDocumentSourceOrders, dataEntryErrorSourceOrders } =
+    analyzeUnifiedMileageAnomalies(rows);
   const listingKeys = collectVendorListingHintKeys(input);
-  return rows.map((r) => {
+  const confirmedUs = inputHasConfirmedUsResidence(input);
+  return rows.flatMap((r) => {
+    if (staleDocumentSourceOrders.has(r.sourceOrder) || dataEntryErrorSourceOrders.has(r.sourceOrder)) {
+      return [];
+    }
     const anomaly = anomalyBySourceOrder.get(r.sourceOrder) === true;
     const listingCountry = odometerMatchesVendorListing(listingKeys, r.date, r.country, r.odometer);
+    const vendorCaDisputed = vendorCanadaDisputedAgainstUs(
+      r.country,
+      r.sourceLabels.length > 0 ? r.sourceLabels : [r.sourceLabel],
+      confirmedUs,
+    );
     const ev = makeEvent({
       kind: anomaly ? "anomaly" : "odometer",
       rawDate: r.date,
@@ -641,10 +698,10 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
       country: r.country,
       odometer: r.odometer,
       tone: anomaly ? "alert" : "info",
-      countryUnverified: r.countryUnverified === true || listingCountry,
+      countryUnverified: r.countryUnverified === true || listingCountry || vendorCaDisputed,
     });
-    ev.sources = [...r.sourceLabels];
-    return ev;
+    ev.sources = r.sourceLabels.length > 0 ? [...r.sourceLabels] : [r.sourceLabel || "Nezināms avots"];
+    return [ev];
   });
 }
 
@@ -676,6 +733,9 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
     if (o.kind === "anomaly" || !host) {
       kept.push(o);
       continue;
+    }
+    if (o.detail && !host.detail.includes(o.detail)) {
+      host.detail = [host.detail, o.detail].filter(Boolean).join(". ");
     }
     if (!host.odometer && o.odometer) host.odometer = o.odometer;
     if (!host.country && o.country) {
@@ -722,6 +782,69 @@ function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
   return out;
 }
 
+function eventDayKey(e: LifecycleEvent): string {
+  if (e.time > 0) {
+    const d = new Date(e.time);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+  }
+  return e.date.trim();
+}
+
+function preferMergedCountry(a: LifecycleEvent, b: LifecycleEvent): string {
+  const softA = lifecycleCountryIsSoft(a);
+  const softB = lifecycleCountryIsSoft(b);
+  if (!softA && softB && a.country) return a.country;
+  if (!softB && softA && b.country) return b.country;
+  const isoA = countryLabelToIso2(a.country);
+  const isoB = countryLabelToIso2(b.country);
+  if (isoA === "US" && isoB === "CA") return normalizeCountryNameLv(a.country) || "ASV";
+  if (isoB === "US" && isoA === "CA") return normalizeCountryNameLv(b.country) || "ASV";
+  return a.country || b.country;
+}
+
+/**
+ * Tas pats datums un veids no dažādiem avotiem, atšķiras tikai valsts (CarVertical „Kanāda”
+ * pret Copart Luiziānu) → viena rinda ar piezīmi, ne divas kartītes un ne robežšķērsošana.
+ */
+function mergeSameDateTypeCountryDisagreement(events: LifecycleEvent[]): LifecycleEvent[] {
+  const out: LifecycleEvent[] = [];
+  const byKey = new Map<string, LifecycleEvent>();
+  for (const e of events) {
+    if (e.kind === "import" || e.kind === "gap") {
+      out.push(e);
+      continue;
+    }
+    const key = `${eventDayKey(e)}|${e.kind}|${e.title.toLowerCase()}`;
+    const prev = byKey.get(key);
+    if (!prev) {
+      byKey.set(key, e);
+      out.push(e);
+      continue;
+    }
+    const sameCountry =
+      normalizeCountryNameLv(prev.country).toLowerCase() === normalizeCountryNameLv(e.country).toLowerCase();
+    if (sameCountry || !prev.country || !e.country) {
+      if (!prev.odometer && e.odometer) prev.odometer = e.odometer;
+      if (!prev.detail && e.detail) prev.detail = e.detail;
+      for (const s of e.sources) if (!prev.sources.includes(s)) prev.sources.push(s);
+      continue;
+    }
+    const note = `Avoti atšķiras valstī: ${prev.country} / ${e.country}`;
+    if (!prev.detail.includes(note)) {
+      prev.detail = [prev.detail, note].filter(Boolean).join(". ");
+    }
+    prev.country = preferMergedCountry(prev, e);
+    if (!prev.odometer && e.odometer) prev.odometer = e.odometer;
+    for (const s of e.sources) if (!prev.sources.includes(s)) prev.sources.push(s);
+    if (!lifecycleCountryIsSoft(e)) {
+      prev.countryUnverified = false;
+      prev.timelineInformational = false;
+    }
+    collapseCountryOnlyDetail(prev);
+  }
+  return out;
+}
+
 function monthsBetween(a: number, b: number): number {
   return Math.round((b - a) / (1000 * 60 * 60 * 24 * 30.44));
 }
@@ -730,6 +853,7 @@ function monthsBetween(a: number, b: number): number {
 function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
   const out: LifecycleEvent[] = [];
   let prevCountry = "";
+  let prevResidence: LifecycleEvent | null = null;
   for (const [i, e] of sorted.entries()) {
     const prev = i > 0 ? sorted[i - 1]! : null;
     if (prev && prev.time > 0 && e.time > 0) {
@@ -754,23 +878,33 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
       prevCountry &&
       e.country !== prevCountry
     ) {
-      out.push({
-        kind: "import",
-        date: e.date,
-        time: e.time > 0 ? e.time - 1 : 0,
-        year: e.year,
-        title: `${prevCountry} → ${e.country}`,
-        detail: `${prevCountry} → ${e.country}`,
-        country: e.country,
-        fromCountry: prevCountry,
-        odometer: "",
-        sources: [...e.sources],
-        tone: "warn",
-      });
+      const fromIso = countryLabelToIso2(prevCountry);
+      const toIso = countryLabelToIso2(e.country);
+      if (fromIso && toIso && fromIso !== toIso) {
+        const caSide = fromIso === "CA" ? prevResidence : toIso === "CA" ? e : null;
+        if (!isDisputedUsCanadaCountryPair(fromIso, toIso, caSide)) {
+          out.push({
+            kind: "import",
+            date: e.date,
+            time: e.time > 0 ? e.time - 1 : 0,
+            year: e.year,
+            title: `${prevCountry} → ${e.country}`,
+            detail: `${prevCountry} → ${e.country}`,
+            country: e.country,
+            fromCountry: prevCountry,
+            odometer: "",
+            sources: [...e.sources],
+            tone: "warn",
+          });
+        }
+      }
     }
     // Sludinājuma/tirgus valsts nekad nekļūst par jauno "zināmo" valsti: nākamais notikums
     // joprojām salīdzinās pret pēdējo oficiāli apstiprināto valsti, ne pret pārdevēja pieņēmumu.
-    if (lifecycleEventProvidesCountryResidence(e)) prevCountry = e.country;
+    if (lifecycleEventProvidesCountryResidence(e)) {
+      prevCountry = e.country;
+      prevResidence = e;
+    }
     out.push(e);
   }
   return out;
@@ -802,8 +936,9 @@ function sortAscending(events: LifecycleEvent[]): LifecycleEvent[] {
 /** Pilns dzīves cikls, vecākais notikums pirmais. */
 export function buildVehicleLifecycleEvents(input: LifecycleInput): LifecycleEvent[] {
   const facts = collectFactEvents(input);
-  const merged = mergeOdometerIntoFacts(facts, collectOdometerEvents(input));
-  const deduped = dedupeSameEvents(merged).filter((e) => e.time > 0);
+  const odo = mergeSameDateTypeCountryDisagreement(collectOdometerEvents(input));
+  const merged = mergeOdometerIntoFacts(facts, odo);
+  const deduped = mergeSameDateTypeCountryDisagreement(dedupeSameEvents(merged)).filter((e) => e.time > 0);
   if (deduped.length === 0) return [];
   for (const e of deduped) collapseCountryOnlyDetail(e);
   return addDerivedEvents(sortAscending(deduped));

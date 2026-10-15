@@ -1,9 +1,11 @@
-/** ASV vēstures fotogrāfijas (izsoles / negadījumi) — PDF, līdz 50 gab. */
+/** ASV vēstures fotogrāfijas (izsoles / negadījumi) — PDF. */
 
-export const ASV_MAX_PHOTOS = 50;
+export const ASV_MAX_PHOTOS = 500;
 
 export type AsvPhotoMeta = {
   id: string;
+  sourceUrl?: string;
+  contentHash?: string;
 };
 
 export type AsvPhotoGroup = {
@@ -49,7 +51,19 @@ export function normalizeAsvPhotos(raw: unknown): AsvPhotoMeta[] {
     const id = typeof (item as { id?: unknown }).id === "string" ? (item as { id: string }).id.trim() : "";
     if (!isAsvPhotoId(id)) continue;
     if (out.some((p) => p.id === id)) continue;
-    out.push({ id });
+    const sourceUrl =
+      typeof (item as { sourceUrl?: unknown }).sourceUrl === "string"
+        ? (item as { sourceUrl: string }).sourceUrl.trim()
+        : "";
+    const contentHash =
+      typeof (item as { contentHash?: unknown }).contentHash === "string"
+        ? (item as { contentHash: string }).contentHash.trim().toLowerCase()
+        : "";
+    out.push({
+      id,
+      ...(sourceUrl.startsWith("https://") ? { sourceUrl } : {}),
+      ...(contentHash && /^[a-f0-9]{64}$/.test(contentHash) ? { contentHash } : {}),
+    });
     if (out.length >= ASV_MAX_PHOTOS) break;
   }
   return out;

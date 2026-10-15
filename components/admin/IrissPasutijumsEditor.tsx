@@ -11,9 +11,11 @@ import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSectio
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
+import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
+import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap, coerceIrissOrderRoomTab } from "@/lib/iriss-order-room-match-props";
 import { appendIrissOrderRoomNote, irissOrderRoomOfferSeed, type IrissOrderRoomHit, type IrissOrderRoomTab } from "@/lib/iriss-order-room";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
@@ -304,11 +306,7 @@ function WhatsAppGlyphIcon({ className }: { className?: string }) {
 }
 
 function BlockTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="mb-3 border-l-4 border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)]/50 py-2 pl-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-provin-accent)]">
-      {children}
-    </h2>
-  );
+  return <IrissSectionHeading>{children}</IrissSectionHeading>;
 }
 
 function LabeledInput({
@@ -1259,7 +1257,7 @@ export function IrissPasutijumsEditor({
       className={
         unsavedDraft
           ? "mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 max-md:pb-28 sm:px-6 lg:px-10"
-          : "mx-auto w-full max-w-[1180px] bg-[#F8F8F9] px-3 pb-4 max-md:pb-28 sm:px-4 lg:px-6"
+          : "mx-auto w-full min-w-0 max-w-[1280px] overflow-x-hidden bg-[#f4f5f7] px-3 pb-4 max-md:pb-28 sm:px-4 lg:px-5"
       }
     >
       {unsavedDraft ? (
@@ -1384,6 +1382,7 @@ export function IrissPasutijumsEditor({
             busy={conflictBusy || busy}
             onReload={reloadConflict}
             onSafeMerge={mergeConflict}
+            layout="room"
           />
         </div>
       ) : null}
@@ -1525,9 +1524,7 @@ export function IrissPasutijumsEditor({
               />
             </div>
             <div className="sm:col-span-2">
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-                Darījuma detaļas
-              </p>
+              <IrissSectionHeading>Darījuma detaļas</IrissSectionHeading>
               <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                 {IRISS_DEAL_DETAIL_OPTIONS.map((opt) => (
                   <label key={opt.key} className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
@@ -1721,9 +1718,9 @@ export function IrissPasutijumsEditor({
           hits={roomHits}
           dismissedHitIds={dismissedHitIds}
           listingsCache={listingsCache}
-          initialHitStatus={initialHitStatus}
-          duplicatesByListing={duplicatesByListing}
-          initialTab={initialRoomTab}
+          initialHitStatus={coerceIrissHitStatusMap(initialHitStatus)}
+          duplicatesByListing={coerceIrissDuplicatesByListing(duplicatesByListing)}
+          initialTab={coerceIrissOrderRoomTab(initialRoomTab)}
           busy={busy}
           orderPdfBusy={orderPdfBusy}
           saveMsg={saveMsg}
@@ -1739,6 +1736,7 @@ export function IrissPasutijumsEditor({
                 busy={conflictBusy || busy}
                 onReload={reloadConflict}
                 onSafeMerge={mergeConflict}
+                layout="room"
               />
             ) : null
           }
@@ -1778,7 +1776,8 @@ export function IrissPasutijumsEditor({
             role="dialog"
             aria-modal="true"
             aria-labelledby="iriss-offer-dialog-title"
-            className="flex max-h-[min(92dvh,920px)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl"
+            data-iriss-order-room="1"
+            className="flex max-h-[min(92dvh,920px)] w-full max-w-6xl flex-col overflow-hidden rounded-[22px] border border-[#e5e7eb] bg-white shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 px-4 py-3 sm:px-5">
@@ -1800,10 +1799,10 @@ export function IrissPasutijumsEditor({
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 [-webkit-overflow-scrolling:touch] pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+              <div className="grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,1fr)]">
+              <div className="min-w-0 space-y-3">
               <div className="rounded-xl border border-slate-200/90 bg-white p-3">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-                  Pamatinformācija
-                </p>
+                <IrissSectionHeading>Pamatinformācija</IrissSectionHeading>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <LabeledInput
                     label="Marka, modelis"
@@ -1849,9 +1848,7 @@ export function IrissPasutijumsEditor({
               </div>
 
               <div className="mt-3 rounded-xl border border-slate-200/90 bg-white p-3">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-                  Vispārējais novērtējums
-                </p>
+                <IrissSectionHeading>Vispārējais novērtējums</IrissSectionHeading>
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   <label className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
                     <input
@@ -1915,9 +1912,7 @@ export function IrissPasutijumsEditor({
               </div>
 
               <div className="mt-3 rounded-xl border border-slate-200/90 bg-white p-3">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-                  Cenas
-                </p>
+                <IrissSectionHeading>Cenas</IrissSectionHeading>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <label className="block min-w-0">
                     <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Automašīnas cena</span>
@@ -1959,7 +1954,12 @@ export function IrissPasutijumsEditor({
                   </div>
                 </div>
               </div>
-              <div className="mt-3 rounded-xl border border-slate-200/90 bg-slate-50/50 p-3 select-none">
+              </div>
+              <div className="min-w-0 rounded-xl border border-[#e5e7eb] bg-white p-3">
+                <IrissSectionHeading>
+                  Bildes · {offerDraft.attachments.length}/{IRISS_MAX_OFFER_ATTACHMENTS}
+                </IrissSectionHeading>
+              <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-slate-50/50 p-3 select-none">
                 <label
                   className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 ${offerFilePrepare || offerDraft.attachments.length >= IRISS_MAX_OFFER_ATTACHMENTS ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
                 >
@@ -2006,6 +2006,8 @@ export function IrissPasutijumsEditor({
                     }))
                   }
                 />
+              </div>
+              </div>
               </div>
             </div>
             <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 sm:px-5">

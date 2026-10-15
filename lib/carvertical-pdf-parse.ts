@@ -12,7 +12,12 @@ import {
 } from "@/lib/auto-records-paste-parse";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL } from "@/lib/admin-source-blocks";
-import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import {
+  countryLabelToIso2,
+  iso2ToLvDisplayName,
+  matchLeadingCountryNameLv,
+} from "@/lib/country-names-lv";
+import { iso3ToIso2 } from "@/lib/iso3166-alpha3";
 import { clipVendorDamageField } from "@/lib/damage-zones";
 import { reattachLatvianPdfDiacritics } from "@/lib/pdf-text-normalize";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
@@ -337,37 +342,20 @@ function cleanTimelineDescription(raw: string): string {
   return stripCvEssayTail(t);
 }
 
-const TIMELINE_COUNTRY_NAMES = [
-  "Nezināma valsts",
-  "Latvija",
-  "Itālija",
-  "Šveice",
-  "Vācija",
-  "Polija",
-  "Lietuva",
-  "Igaunija",
-  "Francija",
-  "Spānija",
-  "Nīderlande",
-  "Beļģija",
-  "Austrija",
-  "Čehija",
-  "Slovākija",
-  "Ungārija",
-  "Rumānija",
-  "Slovēnija",
-  "Horvātija",
-  "Kanāda",
-];
-
 function splitTimelineCountryAndDescription(rest: string): { country: string; description: string } {
   const trimmed = rest.trim();
-  for (const name of TIMELINE_COUNTRY_NAMES.sort((a, b) => b.length - a.length)) {
-    if (trimmed.toLowerCase().startsWith(name.toLowerCase())) {
-      const tail = trimmed.slice(name.length).trim();
-      const country =
-        name.toLowerCase() === "nezināma valsts" ? "" : normalizeCountryNameLv(name) || name;
-      return { country, description: tail };
+  const hit = matchLeadingCountryNameLv(trimmed);
+  if (hit) {
+    return { country: hit.country, description: hit.rest };
+  }
+  const iso3m = trimmed.match(/^([A-Za-z]{3})(?=\s|$)/);
+  if (iso3m) {
+    const iso = iso3ToIso2(iso3m[1]!) ?? countryLabelToIso2(iso3m[1]!);
+    if (iso) {
+      return {
+        country: iso2ToLvDisplayName(iso),
+        description: trimmed.slice(iso3m[0].length).trim(),
+      };
     }
   }
   return { country: "", description: trimmed };

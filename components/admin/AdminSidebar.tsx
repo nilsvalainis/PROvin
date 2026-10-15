@@ -28,6 +28,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { IrissPavadzimesSidebarCard } from "@/components/admin/IrissPavadzimesSidebarCard";
+import { finiteBadgeCount } from "@/lib/admin-sidebar-badge";
 import {
   ADMIN_MOBILE_TABBAR_DOCK_NAV,
   ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
@@ -232,7 +233,9 @@ function useCountValue(url: string, key: "openCount" | "unseenCount" | "activeCo
   const [n, setN] = useState(0);
   useEffect(() => {
     const e = countEntry(url);
-    const sync = () => setN(e.data?.[key] ?? 0);
+    const sync = () => {
+      setN(finiteBadgeCount(e.data?.[key]));
+    };
     sync();
     e.subs.add(sync);
     return () => {

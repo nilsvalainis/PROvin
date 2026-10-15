@@ -4,6 +4,7 @@
  */
 
 import { fetchAdifyListingHistory } from "@/lib/adify-listing-history-fetch";
+import { dedupeAsync } from "@/lib/vin-fetch-dedupe";
 import {
   type AdifyListingHistorySnapshot,
   extractAdifyHistorySsrPayload,
@@ -11,10 +12,10 @@ import {
 } from "@/lib/adify-listing-history";
 import {
   extractTirgusDatiHistoryFromHtml,
-  fetchTirgusDatiListingHistory,
   looksLikeTirgusDatiCloudflareChallenge,
   tirgusDatiSupportsListingUrl,
 } from "@/lib/tirgusdati-listing-history";
+import { fetchTirgusDatiListingHistory } from "@/lib/tirgusdati-listing-history-server";
 
 export const LISTING_HISTORY_HTML_MAX_CHARS = 500_000;
 
@@ -76,7 +77,7 @@ export function pickListingPriceHistory(
   return { ...adify, message: `${adify.message} · Tirgus Dati: ${tirgusdati.message}` };
 }
 
-export async function fetchListingPriceHistory(
+async function fetchListingPriceHistoryOnce(
   listingUrl: string,
   now: Date = new Date(),
 ): Promise<AdifyListingHistorySnapshot> {
@@ -108,4 +109,12 @@ export async function fetchListingPriceHistory(
 
   const [adify, tirgusdati] = await Promise.all([adifyPromise, tirgusPromise]);
   return pickListingPriceHistory(adify, tirgusdati);
+}
+
+export function fetchListingPriceHistory(
+  listingUrl: string,
+  now: Date = new Date(),
+): Promise<AdifyListingHistorySnapshot> {
+  const key = `listing-history:${listingUrl.trim()}`;
+  return dedupeAsync(key, () => fetchListingPriceHistoryOnce(listingUrl, now));
 }

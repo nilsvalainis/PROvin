@@ -1083,7 +1083,7 @@ function buildPdfMileageSourceLegendHtml(mileageRows: UnifiedMileageDisplayRow[]
 
 /** Skaidrojums zem tabulas, ja kāds rādījums nāk no vēlāk datēta dokumenta. */
 const PDF_MILEAGE_STALE_DOCUMENT_NOTE =
-  "Ieraksts atspoguļo dokumenta grāmatošanas brīdi vai cilvēka kļūdu datu ievadē, radot mākslīgu nobraukuma kritumu. Tas nav nobraukuma viltojums, tāpēc grafikā netiek attēlots.";
+  "Ieraksts atspoguļo dokumenta grāmatošanas brīdi vai datu ievades kļūdu, radot mākslīgu nobraukuma kritumu. Tas nav nobraukuma viltojums, tāpēc grafikā netiek attēlots.";
 
 function buildUnifiedMileageTableRowHtml(
   r: UnifiedMileageDisplayRow,
@@ -1152,8 +1152,9 @@ export function buildUnifiedMileageTableHtml(
   const mileageRows = prepareUnifiedMileageDisplayRows(collected);
   if (mileageRows.length === 0) return "";
 
-  const { anomalyBySourceOrder, chartExcludeSourceOrders, staleDocumentSourceOrders } =
+  const { anomalyBySourceOrder, chartExcludeSourceOrders, staleDocumentSourceOrders, dataEntryErrorSourceOrders } =
     analyzeUnifiedMileageAnomalies(mileageRows);
+  const staleOrEntryError = new Set([...staleDocumentSourceOrders, ...dataEntryErrorSourceOrders]);
 
   const rows = [...mileageRows].sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
@@ -1173,14 +1174,14 @@ export function buildUnifiedMileageTableHtml(
     display.length === 0
       ? ""
       : display.length <= 4
-        ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder, staleDocumentSourceOrders)
-        : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder, staleDocumentSourceOrders)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder, staleDocumentSourceOrders)}</div></div>`;
+        ? buildMileageHistoryTableHtml(display, anomalyBySourceOrder, staleOrEntryError)
+        : `<div class="pdf-mileage-dual"><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(leftRows, anomalyBySourceOrder, staleOrEntryError)}</div><div class="pdf-mileage-dual__cell">${buildMileageHistoryTableHtml(rightRows, anomalyBySourceOrder, staleOrEntryError)}</div></div>`;
 
   const sourceCount = new Set(mileageRows.flatMap((r) => r.sourceLabels)).size;
   const legend = buildPdfMileageSourceLegendHtml(mileageRows);
   const sourceCountHtml = `<div class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${legend}</div>`;
   const staleNoteHtml =
-    staleDocumentSourceOrders.size > 0
+    staleOrEntryError.size > 0
       ? `<p class="pdf-mileage-smart-note"><span class="pdf-mileage-smart-note__ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow")}</span>${escapeHtml(PDF_MILEAGE_STALE_DOCUMENT_NOTE)}</p>`
       : "";
 
