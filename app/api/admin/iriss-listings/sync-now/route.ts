@@ -1,4 +1,4 @@
-import { NextResponse, after } from "next/server";
+import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { runIrissListingsDailySync } from "@/lib/iriss-listings-sync";
@@ -22,15 +22,6 @@ export async function POST(req: Request) {
   try {
     const out = await runIrissListingsDailySync({ restart });
     const continueSync = Boolean(out.continueSync) && out.skipped !== "already_done";
-    if (continueSync) {
-      after(async () => {
-        try {
-          await runIrissListingsDailySync({ restart: false });
-        } catch (e) {
-          console.error("[iriss-listings sync-now after]", e instanceof Error ? e.message : e);
-        }
-      });
-    }
     return NextResponse.json(
       {
         ok: out.ok,

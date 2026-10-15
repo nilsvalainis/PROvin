@@ -19,6 +19,7 @@ import { reconcileVehicles, sourceKey, type IrissFetchedVehicle } from "@/lib/ir
 import {
   fetchViaIrissRelay,
   readIrissRelayConfig,
+  preferEcarstradeGroupsNeedingPrice,
   shouldUseEcarstradeVercelFallback,
   storedEcarstradeIdsNeedingPrice,
 } from "@/lib/iriss-listings-relay";
@@ -30,6 +31,7 @@ import {
   capListingJobTimeoutMs,
   DIRECT_FETCH_HEADROOM_MS,
   ECARSTRADE_RELAY_HEADROOM_MS,
+  ECARSTRADE_RELAY_PER_BATCH,
   fanOutFetchedVehicles,
   IRISS_LISTINGS_ROUTE_MAX_DURATION_MS,
   listingSyncProgress,
@@ -58,7 +60,7 @@ import { listIrissScan } from "@/lib/iriss-scan-store";
 export type IrissListingsSyncResult = {
   ok: boolean;
   skipped?: "already_ran_this_hour" | "already_done" | "continuation_not_allowed";
-  /** Vēl ir nenolasīti meklējumi šajā dienas ciklā (nākamā partija vai `after()`). */
+  /** Vēl ir nenolasīti meklējumi šajā dienas ciklā (Nolasīt turpina no kursora). */
   continueSync?: boolean;
   warnings: string[];
   summary: IrissListingSyncRunSummary;
@@ -370,7 +372,8 @@ function emptySyncSummary(startedAt: string, runId: string): IrissListingSyncRun
  * Vienāds meklēšanas URL tiek lasīts vienreiz un piesaistīts visiem pasūtījumiem.
  * Slota sākums (09/13/17 Rīgā) un poga „Nolasīt” (`restart`) sāk ciklu no jauna.
  * Turpinājums (`restart: false` / cron pēc slota) iet no kursora, līdz visi unikālie meklējumi ir nolasīti.
- * Laika budžets: `IRISS_LISTINGS_TIME_BUDGET_MS` (noklusējums 240 s pie maršruta 300 s).
+ * Laika budžets: `IRISS_LISTINGS_TIME_BUDGET_MS` (noklusējums 210 s pie maršruta 300 s).
+ * ET caur releju: līdz 80 meklējumiem partijā, virknē (Chrome rinda), 45 s headroom.
  */
 export async function runIrissListingsDailySync(
   opts: { restart?: boolean; automaticSlot?: string; continuation?: boolean } = {},
@@ -442,55 +445,63 @@ export async function runIrissListingsDailySync(
   const autobidRelay = autobidViaRelay() && relayOn;
   const ecarstradeRelay = ecarstradeViaRelay() && relayOn;
   const fastOpts = { autobidRelay, ecarstradeRelay };
-  /** Tiešie Autobid/ET vispirms (ātri, paralēli). Relejs (t.sk. ET Chrome) pēc tam, ET max 1 partijā. */
+  const etRelayPerBatch = envInt("IRISS_LISTINGS_ET_RELAY_PER_BATCH", ECARSTRADE_RELAY_PER_BATCH, 1, 300);
+  const etRelayHeadroomMs = envInt("IRISS_LISTINGS_ET_RELAY_HEADROOM_MS", ECARSTRADE_RELAY_HEADROOM_MS, 15_000, 180_000);
+  const etQueue = preferEcarstradeGroupsNeedingPrice(
+    picked.queue.filter((g) => !isFastDirectFetch(g, fastOpts) && g.platform === "ecarstrade"),
+    previous?.vehicles ?? [],
+  );
+  /** Tiešie Autobid vispirms (ātri, paralēli). Openlane/Auto1 pēc tam. ET Chrome virknē, daudz meklējumu partijā. */
   const ordered = capEcarstradeRelayGroups(
     [
       ...picked.queue.filter((g) => isFastDirectFetch(g, fastOpts)),
       ...picked.queue.filter((g) => !isFastDirectFetch(g, fastOpts) && g.platform !== "ecarstrade"),
-      ...picked.queue.filter((g) => !isFastDirectFetch(g, fastOpts) && g.platform === "ecarstrade"),
+      ...etQueue,
     ],
     ecarstradeRelay,
+    etRelayPerBatch,
   );
+  const otherOrdered = ordered.filter((g) => !(g.platform === "ecarstrade" && ecarstradeRelay));
+  const etOrdered = ordered.filter((g) => g.platform === "ecarstrade" && ecarstradeRelay);
 
   const results = new Map<string, { at: string; fetch: SourceFetch }>();
-  const { started } = await runBounded(
-    ordered,
-    concurrency,
-    (g) => {
-      if (remainingListingSyncRouteMs(deadlineMs) < 8_000) return false;
-      const headroom =
-        g.platform === "ecarstrade" && ecarstradeRelay
-          ? ECARSTRADE_RELAY_HEADROOM_MS
-          : !isFastDirectFetch(g, fastOpts) && relayOn
-            ? RELAY_FETCH_HEADROOM_MS
-            : DIRECT_FETCH_HEADROOM_MS;
-      const cappedHeadroom = Math.min(
-        headroom,
-        capListingJobTimeoutMs(deadlineMs, headroom, 2_000) || headroom,
+  const canStart = (g: IrissListingSourceGroup) => {
+    if (remainingListingSyncRouteMs(deadlineMs) < 8_000) return false;
+    const headroom =
+      g.platform === "ecarstrade" && ecarstradeRelay
+        ? etRelayHeadroomMs
+        : !isFastDirectFetch(g, fastOpts) && relayOn
+          ? RELAY_FETCH_HEADROOM_MS
+          : DIRECT_FETCH_HEADROOM_MS;
+    const cappedHeadroom = Math.min(
+      headroom,
+      capListingJobTimeoutMs(deadlineMs, headroom, 2_000) || headroom,
+    );
+    return canStartListingJob(Date.now() - startedMs, timeBudgetMs, cappedHeadroom);
+  };
+  const worker = async (g: IrissListingSourceGroup) => {
+    const direct = isFastDirectFetch(g, fastOpts);
+    if (direct && concurrency > 1) await sleep(randomPauseMs(400, 900));
+    else if (direct && results.size > 0) await sleep(randomPauseMs(1_500, 4_000));
+    const lead = g.orders[0]!;
+    let fetchResult: SourceFetch;
+    try {
+      const needPriceIds =
+        g.platform === "ecarstrade"
+          ? storedEcarstradeIdsNeedingPrice(previous?.vehicles ?? [], g.orders.map((o) => o.orderId))
+          : [];
+      fetchResult = await fetchSource(
+        { ...lead, sourceUrl: g.sourceUrl },
+        { ...fetchCtx, ...(needPriceIds.length ? { needPriceIds } : {}) },
       );
-      return canStartListingJob(Date.now() - startedMs, timeBudgetMs, cappedHeadroom);
-    },
-    async (g) => {
-      const direct = isFastDirectFetch(g, fastOpts);
-      if (direct && concurrency > 1) await sleep(randomPauseMs(400, 900));
-      else if (direct && results.size > 0) await sleep(randomPauseMs(1_500, 4_000));
-      const lead = g.orders[0]!;
-      let fetchResult: SourceFetch;
-      try {
-        const needPriceIds =
-          g.platform === "ecarstrade"
-            ? storedEcarstradeIdsNeedingPrice(previous?.vehicles ?? [], g.orders.map((o) => o.orderId))
-            : [];
-        fetchResult = await fetchSource(
-          { ...lead, sourceUrl: g.sourceUrl },
-          { ...fetchCtx, ...(needPriceIds.length ? { needPriceIds } : {}) },
-        );
-      } catch (e) {
-        fetchResult = { status: "fetch_failed", note: formatFetchError(e, "fetch failed"), vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
-      }
-      results.set(g.key, { at: new Date().toISOString(), fetch: fetchResult });
-    },
-  );
+    } catch (e) {
+      fetchResult = { status: "fetch_failed", note: formatFetchError(e, "fetch failed"), vehicles: [], rawPages: [], pagesFetched: 0, pageCount: 0 };
+    }
+    results.set(g.key, { at: new Date().toISOString(), fetch: fetchResult });
+  };
+  const first = await runBounded(otherOrdered, concurrency, canStart, worker);
+  const second = await runBounded(etOrdered, 1, canStart, worker);
+  const started = first.started + second.started;
 
   const fetched: IrissFetchedVehicle[] = [];
   const okSourceKeys = new Set<string>();
