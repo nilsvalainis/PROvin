@@ -449,6 +449,7 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
         deliveryPrice: sanitizeDraftTextForStorage(typeof o.deliveryPrice === "string" ? o.deliveryPrice : "", 120),
         commissionFee: sanitizeDraftTextForStorage(typeof o.commissionFee === "string" ? o.commissionFee : "", 120),
         offerValidDays: sanitizeDraftTextForStorage(typeof o.offerValidDays === "string" ? o.offerValidDays : "", 40),
+        validUntil: sanitizeDraftTextForStorage(typeof o.validUntil === "string" ? o.validUntil : "", 16),
         attachments: normalizeOfferAttachments(o.attachments),
         ...(coverAttachmentId ? { coverAttachmentId } : {}),
         createdAt,
@@ -580,6 +581,11 @@ function parseListRows(raw: unknown): IrissPasutijumsListRow[] | null {
         24,
       ),
       ...sanitizeListingLinks(o),
+      latestOfferValidUntil: sanitizeDraftTextForStorage(
+        typeof o.latestOfferValidUntil === "string" ? o.latestOfferValidUntil : "",
+        16,
+      ),
+      hasExpiredOffer: Boolean(o.hasExpiredOffer),
     });
   }
   return rows;

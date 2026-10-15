@@ -178,6 +178,21 @@ describe("IRISS statusa filtrs", () => {
   });
 });
 
+describe("IRISS saraksta piedāvājuma derīgums", () => {
+  it("marks an expired offer on the list row", () => {
+    const rec = emptyIrissPasutijums("x", "2026-08-17T00:00:00.000Z");
+    rec.offers = [
+      {
+        ...emptyIrissOfferRecord("o1", "2026-08-01T00:00:00.000Z"),
+        validUntil: "2026-08-10",
+      },
+    ];
+    const row = irissPasutijumsToListRow(rec);
+    expect(row.latestOfferValidUntil).toBe("2026-08-10");
+    expect(row.hasExpiredOffer).toBe(true);
+  });
+});
+
 describe("IRISS piedāvājuma attēlu hidratācija", () => {
   it("strips dataUrl but keeps size so the editor can hydrate", () => {
     const rec = emptyIrissPasutijums("x", "2026-08-17T00:00:00.000Z");
@@ -207,6 +222,7 @@ describe("IRISS piedāvājuma attēlu hidratācija", () => {
         deliveryPrice: "",
         commissionFee: "",
         offerValidDays: "",
+        validUntil: "",
         attachments: [{ id: "a1", name: "p.jpg", mimeType: "image/jpeg", size: 1200, dataUrl: "data:image/jpeg;base64,abc" }],
         createdAt: rec.createdAt,
         updatedAt: rec.updatedAt,

@@ -1,5 +1,6 @@
 import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
+import { deriveOfferValidUntil, isIrissOfferExpired } from "@/lib/iriss-offer-valid-until";
 import { IRISS_DEAL_DETAIL_OPTIONS, type IrissPasutijumsListRow, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 const DEAL_LIST_LABEL: Record<(typeof IRISS_DEAL_DETAIL_OPTIONS)[number]["key"], string> = {
@@ -12,6 +13,7 @@ const DEAL_LIST_LABEL: Record<(typeof IRISS_DEAL_DETAIL_OPTIONS)[number]["key"],
 };
 
 export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasutijumsListRow {
+  const latest = latestOfferValidity(rec);
   return {
     id: rec.id,
     createdAt: rec.createdAt,
@@ -48,7 +50,17 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     email: rec.email.trim(),
     powerKwLabel: formatIrissOrderPowerKwLabel(rec),
     ...parseIrissPasutijumsListingLinks(rec),
+    latestOfferValidUntil: latest.validUntil,
+    hasExpiredOffer: latest.expired,
   };
+}
+
+function latestOfferValidity(rec: IrissPasutijumsRecord): { validUntil: string; expired: boolean } {
+  const offers = rec.offers ?? [];
+  if (offers.length === 0) return { validUntil: "", expired: false };
+  const last = offers[offers.length - 1]!;
+  const validUntil = deriveOfferValidUntil(last);
+  return { validUntil, expired: isIrissOfferExpired(last) };
 }
 
 /** Aizpildītie specifikācijas lauki sarakstam (bez markas — tā ir virsraksts). */

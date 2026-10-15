@@ -4,6 +4,7 @@
  * Pārbaudīts 2026-10: HTTP 200 bez login, bez captcha.
  */
 
+import { autobidAuctionEndAt } from "@/lib/iriss-listings-autobid-end";
 import { pickListingBodyType, pickListingColor, pickListingDoorCount, pickListingVin } from "@/lib/iriss-listings-extract";
 
 export type AutobidVehicle = {
@@ -15,6 +16,7 @@ export type AutobidVehicle = {
   detailUrl: string;
   auctionStage: string;
   auctionStartAt: string;
+  auctionEndAt: string;
   priceStart: number | null;
   priceMinimal: number | null;
   priceCurrent: number | null;
@@ -224,6 +226,7 @@ export function mapAutobidVehicle(raw: Rec): AutobidVehicle | null {
     detailUrl: autobidDetailUrl(slug, externalId),
     auctionStage: str(raw.stage),
     auctionStartAt: str(raw.auctionStartDate),
+    auctionEndAt: autobidAuctionEndAt(raw),
     priceStart: price(p.start),
     priceMinimal: price(p.minimal),
     priceCurrent: price(p.current),

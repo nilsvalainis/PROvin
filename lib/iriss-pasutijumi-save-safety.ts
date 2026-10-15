@@ -91,6 +91,7 @@ function mergeOffer(local: IrissOfferRecord, server: IrissOfferRecord): IrissOff
     deliveryPrice: preferFilledString(local.deliveryPrice, server.deliveryPrice),
     commissionFee: preferFilledString(local.commissionFee, server.commissionFee),
     offerValidDays: preferFilledString(local.offerValidDays, server.offerValidDays),
+    validUntil: preferFilledString(local.validUntil, server.validUntil),
     coverAttachmentId: preferFilledString(local.coverAttachmentId ?? "", server.coverAttachmentId ?? "") || undefined,
     attachments,
     createdAt: preferFilledString(local.createdAt, server.createdAt),

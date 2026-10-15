@@ -40,7 +40,7 @@ import {
 import { irissListingMatchKey, type IrissListingHitStatus, type IrissListingMatchNotice } from "@/lib/iriss-listing-match-client";
 import { mergeListingOrderOvMigration } from "@/lib/iriss-listing-order-ov";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
-import { irissPasutijumsSeedFromListing } from "@/lib/iriss-pasutijums-from-listing";
+import { irissPasutijumsOfferSeedFromListing, irissPasutijumsSeedFromListing } from "@/lib/iriss-pasutijums-from-listing";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
 import { irissListingPlatformIngestStats } from "@/lib/iriss-listings-ingest-stats";
@@ -361,7 +361,7 @@ export function IrissSludinajumiListClient({
         body: JSON.stringify({ orderOv: migrated.next }),
       });
     }
-    setPrefs({ ...loaded, hidden, tab: "new", listScope: "all", sort: null, budget: null, orderOv: migrated.next });
+    setPrefs({ ...loaded, costs: loaded.costs, hidden, tab: "new", listScope: "all", sort: null, budget: null, orderOv: migrated.next });
     setPrefsReady(true);
     setMounted(true);
     setNowMs(Date.now());
@@ -778,7 +778,7 @@ export function IrissSludinajumiListClient({
           <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[#e9e9ee] p-[2px] text-[12px]">
             {([
               ["orders", "Klientu pasūtījumi", clientOrders.length],
-              ["scan", "Radars", scanOrders.length],
+              ["scan", "Mūsu monitorings", scanOrders.length],
             ] as const).map(([id, label, n]) => (
               <button
                 key={id}
@@ -1051,14 +1051,14 @@ export function IrissSludinajumiListClient({
           </button>
           <span className="text-[#d1d1d6]">|</span>
           <label className="inline-flex max-w-[60vw] items-center gap-1">
-            <span>{dataset === "scan" ? "Radars" : "Klients"}</span>
+            <span>{dataset === "scan" ? "Monitorings" : "Klients"}</span>
             <select
-              aria-label={dataset === "scan" ? "Radara ieraksts" : "Klients un pasūtījums"}
+              aria-label={dataset === "scan" ? "Monitorētais ieraksts" : "Klients un pasūtījums"}
               value={serializeListingOrderFilter(orderFilter)}
               onChange={(e) => writeListQuery({ ord: e.target.value || null })}
               className="max-w-[48vw] bg-transparent text-[11.5px] font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-[260px]"
             >
-              <option value="">{dataset === "scan" ? "Visi radari" : "Visi klienti"}</option>
+              <option value="">{dataset === "scan" ? "Viss monitorings" : "Visi klienti"}</option>
               {clientOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.indent ? "\u00a0\u00a0\u00a0— " : ""}
@@ -1120,6 +1120,27 @@ export function IrissSludinajumiListClient({
               const data = (await res.json().catch(() => ({}))) as { id?: unknown };
               if (!res.ok || typeof data.id !== "string") return;
               router.push(`/admin/iriss/pasutijumi/${encodeURIComponent(data.id)}`);
+              router.refresh();
+            }}
+            onCreateOffer={async (vehicle) => {
+              const offerId = crypto.randomUUID();
+              const seed = irissPasutijumsOfferSeedFromListing(
+                vehicle,
+                crypto.randomUUID(),
+                new Date().toISOString(),
+                offerId,
+              );
+              const res = await fetch("/api/admin/iriss-pasutijumi", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify({ record: seed, listingVehicleId: vehicle.id }),
+              });
+              const data = (await res.json().catch(() => ({}))) as { id?: unknown };
+              if (!res.ok || typeof data.id !== "string") return;
+              router.push(
+                `/admin/iriss/pasutijumi/${encodeURIComponent(data.id)}?offer=${encodeURIComponent(offerId)}&noClientPdf=1`,
+              );
               router.refresh();
             }}
           />

@@ -59,6 +59,13 @@ import {
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
 } from "@/lib/iriss-listing-links";
 import { fileToCompressedOfferAttachment } from "@/lib/iriss-offer-image-compress";
+import {
+  defaultOfferValidUntilYmd,
+  deriveOfferValidUntil,
+  formatOfferValidUntilLv,
+  isIrissOfferExpired,
+  normalizeOfferValidUntil,
+} from "@/lib/iriss-offer-valid-until";
 import { patchJsonWithUploadProgress, type JsonPatchResult } from "@/lib/iriss-json-patch-upload";
 import {
   irissRecordNeedsOfferImageHydration,
@@ -191,6 +198,7 @@ type OfferDraft = {
   deliveryPrice: string;
   commissionFee: string;
   offerValidDays: string;
+  validUntil: string;
   attachments: IrissOfferAttachment[];
   coverAttachmentId: string;
   createdAt: string;
@@ -223,6 +231,7 @@ function newOfferDraft(nextNumber: number): OfferDraft {
     deliveryPrice: "",
     commissionFee: "",
     offerValidDays: "",
+    validUntil: defaultOfferValidUntilYmd(Date.parse(now) || Date.now()),
     attachments: [],
     coverAttachmentId: "",
     createdAt: now,
@@ -281,6 +290,7 @@ function isOfferDraftSyncedWithRecord(draft: OfferDraft, offer: IrissOfferRecord
   if (draft.deliveryPrice !== (offer.deliveryPrice ?? "")) return false;
   if (draft.commissionFee !== (offer.commissionFee ?? "")) return false;
   if (draft.offerValidDays !== (offer.offerValidDays ?? "")) return false;
+  if (deriveOfferValidUntil(draft) !== deriveOfferValidUntil(offer)) return false;
   if ((draft.coverAttachmentId || "") !== (offer.coverAttachmentId || "")) return false;
   if (draft.attachments.length !== offer.attachments.length) return false;
   for (let i = 0; i < draft.attachments.length; i += 1) {
@@ -361,6 +371,7 @@ const ADMIN_SCROLL_LOCK_CLASS = "admin-scroll-locked";
 export function IrissPasutijumsEditor({
   initialRecord,
   autoOpenNewOffer = false,
+  autoOpenOfferId = "",
   forceNoClientPdf = false,
   unsavedDraft = false,
   roomHits = [],
@@ -373,6 +384,7 @@ export function IrissPasutijumsEditor({
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
+  autoOpenOfferId?: string;
   forceNoClientPdf?: boolean;
   unsavedDraft?: boolean;
   /** Jau nolasītie Meklētāja auto šim pasūtījumam. Tukšs jaunam melnrakstam. */
@@ -770,12 +782,6 @@ export function IrissPasutijumsEditor({
     [rec.offers.length],
   );
 
-  useEffect(() => {
-    if (!autoOpenNewOffer || autoOpenOfferDone.current) return;
-    autoOpenOfferDone.current = true;
-    openCreateOffer();
-  }, [autoOpenNewOffer, openCreateOffer]);
-
   const openEditOffer = useCallback((offer: IrissOfferRecord) => {
     setOfferDraft({
       id: offer.id,
@@ -802,12 +808,28 @@ export function IrissPasutijumsEditor({
       deliveryPrice: offer.deliveryPrice ?? "",
       commissionFee: offer.commissionFee ?? "",
       offerValidDays: offer.offerValidDays ?? "",
+      validUntil: deriveOfferValidUntil(offer),
       attachments: offer.attachments,
       coverAttachmentId: offer.coverAttachmentId ?? "",
       createdAt: offer.createdAt || new Date().toISOString(),
     });
     setOfferOpen(true);
   }, []);
+
+  useEffect(() => {
+    if (autoOpenOfferDone.current) return;
+    if (autoOpenOfferId) {
+      const existing = rec.offers.find((o) => o.id === autoOpenOfferId);
+      if (existing) {
+        autoOpenOfferDone.current = true;
+        openEditOffer(existing);
+        return;
+      }
+    }
+    if (!autoOpenNewOffer) return;
+    autoOpenOfferDone.current = true;
+    openCreateOffer();
+  }, [autoOpenNewOffer, autoOpenOfferId, openCreateOffer, openEditOffer, rec.offers]);
 
   const offerAttachmentCount = offerDraft.attachments.length;
   const onOfferFilesPick = useCallback(
@@ -911,6 +933,7 @@ export function IrissPasutijumsEditor({
         deliveryPrice: offerDraft.deliveryPrice,
         commissionFee: offerDraft.commissionFee,
         offerValidDays: offerDraft.offerValidDays,
+        validUntil: normalizeOfferValidUntil(offerDraft.validUntil),
         attachments: offerDraft.attachments,
         ...(offerDraft.coverAttachmentId ? { coverAttachmentId: offerDraft.coverAttachmentId } : {}),
         createdAt: offerDraft.createdAt || now,
@@ -1288,10 +1311,18 @@ export function IrissPasutijumsEditor({
                     type="button"
                     onClick={() => openEditOffer(offer)}
                     className={offerPChipButtonClass}
-                    style={{ backgroundColor: "#34C759", color: "black", border: "1px solid #2AB650" }}
-                    title={offer.title}
+                    style={
+                      isIrissOfferExpired(offer)
+                        ? { backgroundColor: "#E5E7EB", color: "#6B7280", border: "1px solid #D1D5DB" }
+                        : { backgroundColor: "#34C759", color: "black", border: "1px solid #2AB650" }
+                    }
+                    title={
+                      isIrissOfferExpired(offer)
+                        ? `${offer.title} · beidzies ${formatOfferValidUntilLv(deriveOfferValidUntil(offer))}`
+                        : offer.title
+                    }
                   >
-                    P{idx + 1}
+                    {isIrissOfferExpired(offer) ? `P${idx + 1} beidzies` : `P${idx + 1}`}
                   </button>
                 ))}
               </div>
@@ -1303,10 +1334,18 @@ export function IrissPasutijumsEditor({
                   type="button"
                   onClick={() => openEditOffer(offer)}
                   className={offerPChipButtonClass}
-                  style={{ backgroundColor: "#34C759", color: "black", border: "1px solid #2AB650" }}
-                  title={offer.title}
+                  style={
+                    isIrissOfferExpired(offer)
+                      ? { backgroundColor: "#E5E7EB", color: "#6B7280", border: "1px solid #D1D5DB" }
+                      : { backgroundColor: "#34C759", color: "black", border: "1px solid #2AB650" }
+                  }
+                  title={
+                    isIrissOfferExpired(offer)
+                      ? `${offer.title} · beidzies ${formatOfferValidUntilLv(deriveOfferValidUntil(offer))}`
+                      : offer.title
+                  }
                 >
-                  P{idx + 1}
+                  {isIrissOfferExpired(offer) ? `P${idx + 1} beidzies` : `P${idx + 1}`}
                 </button>
               ))}
               <button
@@ -1781,12 +1820,17 @@ export function IrissPasutijumsEditor({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 px-4 py-3 sm:px-5">
-              <h2
-                id="iriss-offer-dialog-title"
-                className="min-w-0 flex-1 truncate pr-2 text-base font-semibold text-[var(--color-apple-text)]"
-              >
-                {offerDraft.title}
-              </h2>
+              <div className="min-w-0 flex-1 pr-2">
+                <h2
+                  id="iriss-offer-dialog-title"
+                  className="truncate text-base font-semibold text-[var(--color-apple-text)]"
+                >
+                  {offerDraft.title}
+                </h2>
+                {isIrissOfferExpired(offerDraft) ? (
+                  <p className="mt-0.5 text-[12px] font-semibold text-red-700">Piedāvājums beidzies</p>
+                ) : null}
+              </div>
               <button
                 type="button"
                 disabled={offerBusy || !!offerFilePrepare}
@@ -1947,10 +1991,20 @@ export function IrissPasutijumsEditor({
                   <LabeledInput label="Kopā" value={offerTotalPrice} readOnly />
                   <div className="sm:col-span-2">
                     <LabeledInput
-                      label="Piedāvājums spēkā (dienas)"
-                      value={offerDraft.offerValidDays}
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, offerValidDays: e.target.value }))}
+                      label="Piedāvājums spēkā līdz"
+                      type="date"
+                      value={offerDraft.validUntil}
+                      onChange={(e) =>
+                        setOfferDraft((d) => ({
+                          ...d,
+                          validUntil: normalizeOfferValidUntil(e.target.value),
+                          offerValidDays: d.offerValidDays,
+                        }))
+                      }
                     />
+                    {isIrissOfferExpired(offerDraft) ? (
+                      <p className="text-[12px] font-semibold text-red-700">Piedāvājums beidzies</p>
+                    ) : null}
                   </div>
                 </div>
               </div>

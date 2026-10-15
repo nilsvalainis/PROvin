@@ -299,7 +299,7 @@ async function fetchSource(src: IrissListingSource, ctx?: ListingSyncFetchContex
           vatNote: v.vatNote,
           auctionId: v.auctionId,
           auctionStartAt: v.auctionStartAt,
-          auctionEndAt: "",
+          auctionEndAt: v.auctionEndAt,
           auctionStage: v.auctionStage,
         })),
         src,

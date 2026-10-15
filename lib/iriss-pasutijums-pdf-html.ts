@@ -1,5 +1,6 @@
 import { adminRichHtmlToPdfSafeHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
+import { formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
 import { parsePriceLike } from "@/lib/iriss-price-format";
 import { resolveIrissOfferPdfLabels, resolveIrissOrderPdfLabels } from "@/lib/messages/iriss-pdf-labels";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
@@ -629,7 +630,12 @@ export function buildIrissOfferPrintHtml(
     rowIf(labels.priceDelivery, deliveryPrice) +
     rowIf(labels.priceCommission, commissionFee) +
     rowIf(labels.priceTotal, totalValue > 0 ? fmtMoney(totalValue) : "") +
-    rowIf(labels.priceValidDays, offer.offerValidDays);
+    rowIf(
+      labels.priceValidDays,
+      normalizeOfferValidUntil(offer.validUntil)
+        ? formatOfferValidUntilLv(offer.validUntil)
+        : offer.offerValidDays,
+    );
   const pricingTable = wrapTable(pricingRows);
 
   const orderedAttachments = orderOfferAttachmentsForPdf(offer);

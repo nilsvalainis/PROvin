@@ -3,7 +3,10 @@
  * vienmēr ir marka, saite un (ja ir) VIN.
  */
 
-import { emptyIrissPasutijums, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import { listingFmtEur } from "@/lib/iriss-listings-card";
+import { listingBidPrice } from "@/lib/iriss-listings-cost";
+import { defaultOfferValidUntilYmd } from "@/lib/iriss-offer-valid-until";
+import { emptyIrissOfferRecord, emptyIrissPasutijums, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
@@ -45,5 +48,39 @@ export function irissPasutijumsSeedFromListing(
   rec.listStatus = "active";
   const href = (v.detailUrl || "").trim();
   if (href) rec[listingLinkField(v.platform)] = [href];
+  return rec;
+}
+
+export function irissOfferSeedFromListing(
+  v: IrissListingOrderSeedInput & Pick<IrissListingVehicle, "priceCurrent" | "priceStart" | "priceBuyNow" | "priceMinimal" | "location">,
+  id: string,
+  nowIso: string,
+): IrissOfferRecord {
+  const offer = emptyIrissOfferRecord(id, nowIso, "Piedāvājums 1");
+  const rec = irissPasutijumsSeedFromListing(v, "tmp", nowIso);
+  const bid = listingBidPrice(v);
+  offer.brandModel = rec.brandModel;
+  offer.vin = rec.vin;
+  offer.year = rec.productionYears;
+  offer.firstRegistration = (v.firstRegistration || rec.productionYears || "").trim();
+  offer.mileage = rec.maxMileage;
+  offer.odometerReading = rec.maxMileage;
+  offer.transmission = rec.transmission;
+  offer.location = (v.location || "").trim();
+  offer.carPrice = bid != null ? listingFmtEur(bid) : "";
+  offer.priceGermany = offer.carPrice;
+  offer.validUntil = defaultOfferValidUntilYmd(Date.parse(nowIso) || Date.now());
+  return offer;
+}
+
+export function irissPasutijumsOfferSeedFromListing(
+  v: IrissListingOrderSeedInput & Pick<IrissListingVehicle, "priceCurrent" | "priceStart" | "priceBuyNow" | "priceMinimal" | "location">,
+  id: string,
+  nowIso: string,
+  offerId: string,
+): IrissPasutijumsRecord {
+  const rec = irissPasutijumsSeedFromListing(v, id, nowIso);
+  rec.listStatus = "offered";
+  rec.offers = [irissOfferSeedFromListing(v, offerId, nowIso)];
   return rec;
 }

@@ -45,6 +45,7 @@ describe("buildIrissOrdersBackupPayload", () => {
         deliveryPrice: "",
         commissionFee: "",
         offerValidDays: "",
+        validUntil: "",
         attachments: [
           {
             id: "img-1",

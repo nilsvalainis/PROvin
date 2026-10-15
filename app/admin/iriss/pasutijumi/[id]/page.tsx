@@ -20,7 +20,7 @@ type Props = { params: Promise<{ id: string }> };
 export default async function IrissPasutijumsDetailPage({
   params,
   searchParams,
-}: Props & { searchParams?: Promise<{ newOffer?: string; noClientPdf?: string; room?: string }> }) {
+}: Props & { searchParams?: Promise<{ newOffer?: string; noClientPdf?: string; offer?: string; room?: string }> }) {
   if (!isIrissPasutijumiStoreEnabled()) {
     redirect("/admin/iriss/pasutijumi");
   }
@@ -35,6 +35,7 @@ export default async function IrissPasutijumsDetailPage({
   const sp = (await searchParams) ?? {};
   const autoOpenNewOffer = sp.newOffer === "1";
   const forceNoClientPdf = sp.noClientPdf === "1";
+  const autoOpenOfferId = typeof sp.offer === "string" ? sp.offer.trim() : "";
   const initialRoomTab = sp.room === "search" ? "search" : "overview";
   // Tikai jau saglabātais Meklētāja kešs. Sync, VIN OCR un citi maksas avoti šeit netiek saukti.
   const storage = getIrissListingsStorageState();
@@ -54,6 +55,7 @@ export default async function IrissPasutijumsDetailPage({
     <IrissPasutijumsEditor
       initialRecord={stripIrissOfferImageDataUrls(rec)}
       autoOpenNewOffer={autoOpenNewOffer}
+      autoOpenOfferId={autoOpenOfferId}
       forceNoClientPdf={forceNoClientPdf}
       roomHits={roomHits}
       dismissedHitIds={dismissedHitIds}

@@ -66,8 +66,15 @@ export function irissScanOrderBrief(r: IrissScanListRow): IrissListingOrderBrief
   };
 }
 
-/** Vai auto pieder izvēlētajam datu kopumam. Klientu režīmā paliek arī nepiesaistītie (kā līdz šim). */
+/**
+ * Vai auto pieder izvēlētajam datu kopumam.
+ * SCAN (Mūsu monitorings) nekad neiejaucas klientu saraksta kārtošanā:
+ * klientu cilnē paliek tikai klientu (vai nepiesaistītie) auto.
+ */
 export function vehicleInListingDataset(orderIds: readonly string[], dataset: IrissListingDataset): boolean {
-  if (dataset === "scan") return orderIds.some(isIrissScanOrderId);
-  return orderIds.length === 0 || orderIds.some((id) => !isIrissScanOrderId(id));
+  const hasScan = orderIds.some(isIrissScanOrderId);
+  const hasCustomer = orderIds.some((id) => !isIrissScanOrderId(id));
+  if (dataset === "scan") return hasScan;
+  if (orderIds.length === 0) return true;
+  return hasCustomer;
 }
