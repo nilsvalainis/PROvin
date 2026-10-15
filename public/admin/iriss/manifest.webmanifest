@@ -1,0 +1,31 @@
+{
+  "name": "IRISS",
+  "short_name": "IRISS",
+  "description": "IRISS administrēšana",
+  "start_url": "/admin/iriss/pasutijumi",
+  "scope": "/admin/iriss/",
+  "display": "standalone",
+  "lang": "lv",
+  "background_color": "#F8F8F9",
+  "theme_color": "#F8F8F9",
+  "icons": [
+    {
+      "src": "/admin/iriss/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/admin/iriss/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/admin/iriss/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

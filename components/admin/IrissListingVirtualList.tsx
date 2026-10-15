@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
+import { IRISS_LISTINGS_MOBILE_PAGE, irissNextWindowLimit, irissWindowSlice } from "@/lib/iriss-list-window";
 
 export const IRISS_LISTING_PAGE_SIZE = 40;
 export const IRISS_LISTING_ROW_ESTIMATE_PX = 300;
@@ -12,13 +14,28 @@ type Props<T> = {
   renderItem: (item: T) => ReactNode;
 };
 
+function useIrissMobileViewport(): boolean {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const mq = window.matchMedia(ADMIN_MOBILE_MQ);
+      mq.addEventListener("change", onStoreChange);
+      return () => mq.removeEventListener("change", onStoreChange);
+    },
+    () => window.matchMedia(ADMIN_MOBILE_MQ).matches,
+    () => false,
+  );
+}
+
 /**
- * Logs only the visible window (~1 page + overscan). Off-screen cards unmount
- * so VIN OCR and images do not stay in Chrome memory with 1000+ listings.
+ * Desktop: lappuse + logs (kā iepriekš).
+ * Mobilajā: bez iekšējā ritinātāja, lai darbojas lapas pull-to-refresh, un porcijas aug ritinot.
  */
 export function IrissListingVirtualList<T>({ items, getKey, renderItem }: Props<T>) {
+  const mobile = useIrissMobileViewport();
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
+  const [mobileLimit, setMobileLimit] = useState(IRISS_LISTINGS_MOBILE_PAGE);
   const [win, setWin] = useState({ start: 0, end: Math.min(IRISS_LISTING_PAGE_SIZE, items.length) });
 
   const pageCount = Math.max(1, Math.ceil(items.length / IRISS_LISTING_PAGE_SIZE));
@@ -28,13 +45,16 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem }: Props<
     () => items.slice(pageStart, pageStart + IRISS_LISTING_PAGE_SIZE),
     [items, pageStart],
   );
+  const mobileWindow = irissWindowSlice(items, mobileLimit, true);
 
   const listSig = `${items.length}:${items[0] ? getKey(items[0]) : ""}:${items[items.length - 1] ? getKey(items[items.length - 1]!) : ""}`;
   useEffect(() => {
     setPage(0);
+    setMobileLimit(IRISS_LISTINGS_MOBILE_PAGE);
   }, [listSig]);
 
   useEffect(() => {
+    if (mobile) return;
     const el = scrollerRef.current;
     if (!el) return;
     const update = () => {
@@ -52,7 +72,43 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem }: Props<
       el.removeEventListener("scroll", update);
       ro?.disconnect();
     };
-  }, [pageItems.length, safePage]);
+  }, [mobile, pageItems.length, safePage]);
+
+  useEffect(() => {
+    if (!mobile || !mobileWindow.hasMore) return;
+    const el = sentinelRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        setMobileLimit((current) => irissNextWindowLimit(current, items.length, IRISS_LISTINGS_MOBILE_PAGE));
+      },
+      { root: null, rootMargin: "700px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [items.length, mobile, mobileWindow.hasMore]);
+
+  if (mobile) {
+    const shown = mobileWindow.items;
+    const from = items.length === 0 ? 0 : 1;
+    const to = shown.length;
+    return (
+      <div>
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#8e8e93]">
+          <span>
+            {from}-{to} no {items.length}
+          </span>
+        </div>
+        <div className="space-y-1.5">
+          {shown.map((item) => (
+            <div key={getKey(item)}>{renderItem(item)}</div>
+          ))}
+          {mobileWindow.hasMore ? <div ref={sentinelRef} className="h-px w-full" aria-hidden /> : null}
+        </div>
+      </div>
+    );
+  }
 
   const start = Math.min(win.start, pageItems.length);
   const end = Math.max(start, Math.min(win.end, pageItems.length));

@@ -170,6 +170,9 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     sourceCountry: str(v.sourceCountry) || undefined,
     owningCountry: str(v.owningCountry) || undefined,
     imageUrl: str(v.imageUrl),
+    ...(str(v.thumbUrl) || str(v.thumbnailUrl) || str(v.imageThumbUrl)
+      ? { thumbUrl: str(v.thumbUrl) || str(v.thumbnailUrl) || str(v.imageThumbUrl) }
+      : {}),
     imageUrls: Array.isArray(v.imageUrls) ? v.imageUrls.map(str).filter(Boolean).slice(0, 40) : undefined,
     documentImageUrls: Array.isArray(v.documentImageUrls)
       ? v.documentImageUrls.map(str).filter(Boolean).slice(0, 20)

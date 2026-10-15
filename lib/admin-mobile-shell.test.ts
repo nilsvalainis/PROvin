@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ADMIN_MOBILE_PTR_THRESHOLD_PX, adminMobilePtrLabel } from "@/lib/admin-mobile-shell";
+import { ADMIN_MOBILE_PTR_THRESHOLD_PX, adminMobilePtrLabel, adminMobilePullToRefreshEnabled } from "@/lib/admin-mobile-shell";
 
 describe("adminMobilePtrLabel", () => {
   it("rāda atjaunošanu, slieksni un vilkšanu", () => {
@@ -8,6 +8,15 @@ describe("adminMobilePtrLabel", () => {
     expect(adminMobilePtrLabel(false, ADMIN_MOBILE_PTR_THRESHOLD_PX)).toBe("Atlaid, lai atjaunotu");
     expect(adminMobilePtrLabel(false, 20)).toBe("Velc, lai atjaunotu");
     expect(adminMobilePtrLabel(false, 0)).toBe("");
+  });
+});
+
+describe("adminMobilePullToRefreshEnabled", () => {
+  it("ieslēdz vilkšanu pasūtījumu sarakstam, istabai un LIST", () => {
+    expect(adminMobilePullToRefreshEnabled("/admin/iriss/pasutijumi")).toBe(true);
+    expect(adminMobilePullToRefreshEnabled("/admin/iriss/pasutijumi/order-1")).toBe(true);
+    expect(adminMobilePullToRefreshEnabled("/admin/iriss/sludinajumi")).toBe(true);
+    expect(adminMobilePullToRefreshEnabled("/admin/orders/abc")).toBe(false);
   });
 });
 

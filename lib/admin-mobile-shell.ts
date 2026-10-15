@@ -28,6 +28,16 @@ export const ADMIN_MOBILE_MAX_PX = 767;
 
 export const ADMIN_MOBILE_MQ = `(max-width: ${ADMIN_MOBILE_MAX_PX}px)`;
 
+const ADMIN_DETAIL_PATH = /^\/admin\/(?:iriss\/pasutijumi|orders|konsultacijas|commission-invoice|partneri)\/[^/]+$/;
+const IRISS_ORDER_ROOM_PATH = /^\/admin\/iriss\/pasutijumi\/[^/]+$/;
+
+/** Sarakstiem PTR ir ieslēgts. Detaļu lapās tikai IRISS pasūtījuma istabai. */
+export function adminMobilePullToRefreshEnabled(pathname: string): boolean {
+  if (IRISS_ORDER_ROOM_PATH.test(pathname)) return true;
+  if (ADMIN_DETAIL_PATH.test(pathname)) return false;
+  return true;
+}
+
 export function adminMobilePtrLabel(refreshing: boolean, pullPx: number, threshold = ADMIN_MOBILE_PTR_THRESHOLD_PX): string {
   if (refreshing) return "Atjauno sarakstu…";
   if (pullPx >= threshold) return "Atlaid, lai atjaunotu";
