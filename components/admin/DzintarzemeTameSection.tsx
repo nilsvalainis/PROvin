@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { FileDown, Loader2, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -26,11 +27,7 @@ const fieldClass =
   "min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
 
 function BlockTitle({ children }: { children: ReactNode }) {
-  return (
-    <h2 className="mb-3 border-l-4 border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)]/50 py-2 pl-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--color-provin-accent)]">
-      {children}
-    </h2>
-  );
+  return <IrissSectionHeading>{children}</IrissSectionHeading>;
 }
 
 function mergeDraft(d: IrissDzintarzemeTameDraft): IrissDzintarzemeTameDraft {
@@ -286,9 +283,7 @@ export function DzintarzemeTameSection({
       </p>
 
       <div className="mt-5">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-          Komisijas variants
-        </p>
+        <IrissSectionHeading>Komisijas variants</IrissSectionHeading>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] shadow-sm">
             <input
@@ -313,9 +308,7 @@ export function DzintarzemeTameSection({
 
       {d.tameCommissionVariant === "B" ? (
         <div className="mt-4">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-            Iemaksas procents (B variants)
-          </p>
+          <IrissSectionHeading>Iemaksas procents (B variants)</IrissSectionHeading>
           <div className="flex flex-wrap gap-2">
             {[20, 40, 60].map((p) => (
               <button
@@ -357,9 +350,7 @@ export function DzintarzemeTameSection({
       ) : null}
 
       <div className="mt-6">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-          Papildus pakalpojumi (neto, EUR)
-        </p>
+        <IrissSectionHeading>Papildus pakalpojumi (neto, EUR)</IrissSectionHeading>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="block min-w-0">
             <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Transporta pakalpojumi</span>
@@ -460,9 +451,7 @@ export function DzintarzemeTameSection({
       </div>
 
       <div className="mt-6 rounded-xl border border-slate-200/90 bg-slate-50/80 p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--color-provin-muted)]">
-          Klientam redzamā gala summa
-        </p>
+        <IrissSectionHeading className="mb-2">Klientam redzamā gala summa</IrissSectionHeading>
         <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-apple-text)]">{fmt.format(computed.galaSumma)}</p>
         <dl className="mt-3 grid gap-1 text-[12px] text-[var(--color-provin-muted)]">
           <div className="flex justify-between gap-3">

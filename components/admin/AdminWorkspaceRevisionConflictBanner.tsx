@@ -8,6 +8,7 @@ export function AdminWorkspaceRevisionConflictBanner({
   onReload,
   onSafeMerge,
   inline = false,
+  layout = "default",
 }: {
   kind: WorkspaceRevisionConflictKind;
   busy: boolean;
@@ -15,12 +16,46 @@ export function AdminWorkspaceRevisionConflictBanner({
   onSafeMerge: () => void;
   /** Viena šaura rinda header joslā. */
   inline?: boolean;
+  /** IRISS pasūtījuma istabas dzeltenā josla. */
+  layout?: "default" | "room";
 }) {
   const title =
     kind === "overwrite_blocked"
       ? "Saglabāšana apturēta: šis melnraksts ir tukšāks par serverī esošo."
       : "Konflikts: cita cilne jau saglabāja jaunāku melnrakstu.";
   const hint = "Izmaiņas nav pārrakstītas.";
+
+  if (layout === "room") {
+    return (
+      <div
+        className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-[#fcd34d] bg-[#fffbeb] px-3.5 py-3 text-[13px] text-[#78350f]"
+        role="alert"
+      >
+        <span className="font-extrabold" aria-hidden>
+          !
+        </span>
+        <p className="min-w-0 flex-1 font-bold leading-snug">
+          {title} <span className="font-semibold">{hint}</span>
+        </p>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onSafeMerge}
+          className="inline-flex h-9 items-center rounded-[10px] border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-semibold text-[#111827] disabled:opacity-50"
+        >
+          Apvienot droši
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onReload}
+          className="inline-flex h-9 items-center rounded-[10px] border border-[#2563eb] bg-[#2563eb] px-3 text-[12.5px] font-semibold text-white disabled:opacity-50"
+        >
+          Ielādēt jaunāko
+        </button>
+      </div>
+    );
+  }
 
   if (inline) {
     return (
