@@ -150,8 +150,8 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, pullToRefresh, no
   }, [doRefresh, pullToRefresh, resetPull]);
 
   const mainPad = isDetailScreen
-    ? "admin-search-gutter space-y-0 p-0"
-    : "admin-search-gutter space-y-3 p-2 pt-2 sm:px-3 sm:pb-4 md:px-4 md:pb-5 lg:px-5 lg:pb-6";
+    ? "space-y-0 p-0"
+    : "space-y-3 p-2 pt-2 sm:px-3 sm:pb-4 md:px-4 md:pb-5 lg:px-5 lg:pb-6";
 
   const ptrLabel = adminMobilePtrLabel(refreshing, pullPx);
   const ptrState = refreshing ? "refreshing" : pullPx > 8 ? "pulling" : "idle";

@@ -194,9 +194,12 @@ describe("izmaiņu vēstures klienta robeža", () => {
     }
     expect(read("app/api/admin/change-history/route.ts")).toMatch(/getAdminSession/);
     expect(read("app/api/b2b-demo/orders/[id]/history/route.ts")).toMatch(/requireB2bDemoActor/);
-    expect(read("components/admin/AdminShellMainWithMobilePull.tsx")).toContain("admin-search-gutter");
-    expect(read("app/admin/admin-ios-theme.css")).toContain("padding-left: 3rem");
-    expect(read("components/admin/AdminGlobalSearch.tsx")).toContain("h-8 w-8");
-    expect(read("components/admin/AdminGlobalSearch.tsx")).toContain("left-2");
+    expect(read("components/admin/AdminShellMainWithMobilePull.tsx")).not.toContain("admin-search-gutter");
+    expect(read("app/admin/admin-ios-theme.css")).not.toContain("admin-search-gutter");
+    expect(read("components/admin/AdminGlobalSearch.tsx")).not.toContain("fixed left-2");
+    expect(read("components/admin/AdminGlobalSearch.tsx")).toContain("AdminMobileSearchButton");
+    expect(read("components/admin/AdminSidebar.tsx")).toMatch(/setMore\(false\);\s*requestAdminGlobalSearch\(\)/);
+    expect(read("components/admin/AdminShell.tsx")).toContain("<AdminMobileSearchButton />");
+    expect(read("components/admin/AdminShell.tsx")).not.toMatch(/AdminMobileSearchButton[\s\S]{0,180}fixed/);
   });
 });

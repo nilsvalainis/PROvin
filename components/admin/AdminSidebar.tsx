@@ -532,6 +532,20 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
     <>
       <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
         <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
+          <button
+            type="button"
+            onClick={() => {
+              setMore(false);
+              requestAdminGlobalSearch();
+            }}
+            className={tabItemClass(false)}
+            aria-label="Meklēt"
+          >
+            <span className={ADMIN_RAIL_V1_GLYPH}>
+              <Search className={`${ADMIN_RAIL_V1_GLYPH_INNER} text-[#8e8e93]`} strokeWidth={1.85} aria-hidden />
+            </span>
+            <span className="max-w-full truncate px-0.5 text-center leading-none">Meklēt</span>
+          </button>
           {tabs.map((t) => {
             const on = t.match(pathname) && !more;
             const n = t.badge ? badges[t.badge] : 0;

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { AdminGlobalSearch } from "./AdminGlobalSearch";
+import { AdminGlobalSearch, AdminMobileSearchButton } from "./AdminGlobalSearch";
 import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./AdminSidebar";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
@@ -56,6 +56,11 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
     >
       <AdminSidebar collapsed={collapsed} onToggle={toggle} />
       <div className={`flex min-h-0 min-w-0 flex-1 flex-col max-md:h-full ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
+        {hideTabBar ? (
+          <div className="flex shrink-0 items-center justify-end px-2 pt-[max(8px,env(safe-area-inset-top))] md:hidden">
+            <AdminMobileSearchButton />
+          </div>
+        ) : null}
         <AdminShellLayoutContext.Provider value={shellLayoutValue}>
           <AdminAuditDeadlineTickProvider>
             <AdminShellMainWithMobilePull

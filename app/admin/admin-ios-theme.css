@@ -129,11 +129,6 @@ body:has(.admin-ios-theme) {
   }
 
   /* Native pan on the iPhone-shell scroller. Nav preventDefault; nav overflow:hidden. */
-  /* Meklēšanas poga ir 32px ar 8px no kreisās. 48px atstarpe, lai tā neaizsedz atpakaļ pogu un virsrakstu. */
-  .admin-ios-theme main.admin-search-gutter {
-    padding-left: 3rem !important;
-  }
-
   #admin-main-scroll {
     overflow-y: auto !important;
     overflow-x: clip;
