@@ -1,21 +1,13 @@
 /**
- * IRISS LIST saite ar pasūtījumiem.
- * Kartīte rāda tikai darba pasūtījumus, kuru kritērijs (marka un meklēšanas robežas) atbilst šim auto.
- * `orderOv` ir manuāla piesaiste jebkuram pasūtījumam un pārraksta automātisko sarakstu.
+ * IRISS LIST saite ar pasūtījumiem: meklēšanas URL (~92) nāk no aktīvo pasūtījumu
+ * Autobid / Openlane / Auto1 laukiem. Viens URL var piederēt vairākiem pasūtījumiem
+ * (`groupIrissListingSources` + `fanOutFetchedVehicles`). Šis modulis rāda klientu,
+ * budžetu un ļauj operatoram pārrakstīt piesaisti konkrētam auto.
  */
 
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
-import type { EcarstradeSearchFilter } from "@/lib/iriss-listings-ecarstrade-search";
-import { detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
-import {
-  filterForListingSource,
-  listingSearchFilterHasBounds,
-  vehicleMatchesSearchFilter,
-  type ListingSearchVehicle,
-} from "@/lib/iriss-listings-search-filter";
-import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
 import { formatIrissClientName, formatIrissListSpecSummary, irissListRowPowerKwLabel } from "@/lib/iriss-pasutijumi-list-row";
-import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListRow, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import type { IrissPasutijumsListRow, IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
 export type IrissListingOrderBrief = {
   id: string;
@@ -106,77 +98,6 @@ export function irissListingOrderBrief(row: IrissPasutijumsListRow): IrissListin
 export function listingVehicleOrderIds(vehicleId: string, fallback: readonly string[], orderOv: Record<string, string[]>): string[] {
   const ov = orderOv[vehicleId];
   return ov && ov.length > 0 ? [...ov] : [...fallback];
-}
-
-/**
- * Kataloga modeļi ar atstarpi (`2 Series`) nav izsoles virsrakstā (`220d`).
- * Vienvārda modelis (`A4`, `Tucson`) paliek. Marka un gada/km/cenas/degvielas robežas paliek.
- */
-function cardCriteriaFilter(filter: EcarstradeSearchFilter): EcarstradeSearchFilter {
-  const modelName = filter.modelName.trim();
-  const keepModel = modelName.length > 0 && !/\s/.test(modelName);
-  return {
-    ...filter,
-    modelId: keepModel ? filter.modelId : null,
-    modelIds: keepModel ? filter.modelIds : [],
-    modelName: keepModel ? modelName : "",
-    bodies: [],
-  };
-}
-
-function orderSearchLinks(order: IrissListingOrderBrief): Array<{ platform: IrissListingPlatform; url: string }> {
-  const rows: Array<{ hinted: IrissListingPlatform; urls: readonly string[] }> = [
-    { hinted: "autobid", urls: order.listingLinkAutobid },
-    { hinted: "openline", urls: order.listingLinkOpenline },
-    { hinted: "auto1", urls: order.listingLinkAuto1 },
-    { hinted: "ecarstrade", urls: order.listingLinkEcarstrade },
-  ];
-  const out: Array<{ platform: IrissListingPlatform; url: string }> = [];
-  for (const row of rows) {
-    for (const url of row.urls) {
-      if (!url.trim()) continue;
-      out.push({ platform: detectIrissListingPlatform(url) ?? row.hinted, url });
-    }
-  }
-  for (const url of order.listingLinksOther) {
-    const platform = detectIrissListingPlatform(url);
-    if (platform && url.trim()) out.push({ platform, url });
-  }
-  return out;
-}
-
-/**
- * Pasūtījumi, kuru meklēšanas kritērijs atbilst šim auto.
- * Tukšs kritērijs (eCarsTrade saite bez markas un robežām) nepieskaita visus auto.
- * Saglabātie `orderIds` no kopīgas nolasīšanas šeit netiek izmantoti.
- */
-export function matchingListingOrderIds(
-  vehicle: ListingSearchVehicle & { platform?: string },
-  orders: readonly IrissListingOrderBrief[],
-): string[] {
-  const platform = (vehicle.platform ?? "").trim();
-  if (!platform) return [];
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const order of orders) {
-    if (!order.id || seen.has(order.id) || !isIrissPasutijumsWorkingStatus(order.listStatus)) continue;
-    const hit = orderSearchLinks(order).some((link) => {
-      if (link.platform !== platform) return false;
-      const filter = cardCriteriaFilter(filterForListingSource(link.url, order.brandModel));
-      if (!listingSearchFilterHasBounds(filter)) return false;
-      return vehicleMatchesSearchFilter({ ...vehicle, platform }, filter);
-    });
-    if (!hit) continue;
-    seen.add(order.id);
-    out.push(order.id);
-  }
-  return out;
-}
-
-/** Manuālā piesaiste pārraksta automātisko kritērija sarakstu. Tukšs override atgriež atbilstības. */
-export function listingCardOrderIds(manual: readonly string[] | undefined, matched: readonly string[]): string[] {
-  const picked = [...new Set((manual ?? []).map((id) => id.trim()).filter(Boolean))];
-  return picked.length > 0 ? picked : [...matched];
 }
 
 export function listingLinkedOrders(orderIds: readonly string[], byId: ReadonlyMap<string, IrissListingOrderBrief>): IrissListingOrderBrief[] {

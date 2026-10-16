@@ -28,10 +28,9 @@ import {
 } from "@/lib/iriss-listings-list-view";
 import {
   listingBudgetForVehicle,
-  listingCardOrderIds,
   listingLinkedOrders,
   listingOrdersById,
-  matchingListingOrderIds,
+  listingVehicleOrderIds,
   parseListingOrderFilter,
   buildListingClientOptions,
   serializeListingOrderFilter,
@@ -169,27 +168,37 @@ function extrasOf(v: IrissListingVehicle, prefs: IrissListPrefs): number {
   return listingExtrasI(listingCostsFor(prefs, v.id));
 }
 
-function datasetOrderIds(v: Pick<IrissListingVehicle, "id" | "orderIds">, prefs: IrissListPrefs): string[] {
-  const manual = prefs.orderOv[v.id];
-  return manual && manual.length > 0 ? [...manual] : [...v.orderIds];
+function effectiveListingOrderIds(
+  v: Pick<IrissListingVehicle, "id" | "orderIds">,
+  prefs: IrissListPrefs,
+  extra: Record<string, string[]>,
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const id of [...listingVehicleOrderIds(v.id, v.orderIds, prefs.orderOv), ...(extra[v.id] ?? [])]) {
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
 }
 
 function linkedOrdersOf(
-  v: IrissListingVehicle,
+  v: Pick<IrissListingVehicle, "id" | "orderIds">,
   prefs: IrissListPrefs,
   byId: ReadonlyMap<string, IrissListingOrderBrief>,
-  pool: readonly IrissListingOrderBrief[],
+  extra: Record<string, string[]>,
 ): IrissListingOrderBrief[] {
-  return listingLinkedOrders(listingCardOrderIds(prefs.orderOv[v.id], matchingListingOrderIds(v, pool)), byId);
+  return listingLinkedOrders(effectiveListingOrderIds(v, prefs, extra), byId);
 }
 
 function budgetOf(
-  v: IrissListingVehicle,
+  v: Pick<IrissListingVehicle, "id" | "orderIds">,
   prefs: IrissListPrefs,
   byId: ReadonlyMap<string, IrissListingOrderBrief>,
-  pool: readonly IrissListingOrderBrief[],
+  extra: Record<string, string[]>,
 ): number | null {
-  return listingBudgetForVehicle(null, linkedOrdersOf(v, prefs, byId, pool));
+  return listingBudgetForVehicle(null, linkedOrdersOf(v, prefs, byId, extra));
 }
 
 function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs, budget: number | null): number | null {
@@ -263,6 +272,7 @@ export function IrissSludinajumiListClient({
   dismissed = [],
   initialOrderOv = {},
   matchNotices = [],
+  matchOrderIds = {},
   matchStatus = {},
   duplicatesByListing = {},
 }: Props) {
@@ -497,8 +507,8 @@ export function IrissSludinajumiListClient({
   );
   /** Divi datu kopumi: klientu pasūtījumu auto vai SCAN saraksta auto. Kartītes tās pašas. */
   const vehicles = useMemo(
-    () => allVehicles.filter((v) => vehicleInListingDataset(datasetOrderIds(v, prefs), dataset)),
-    [allVehicles, dataset, prefs],
+    () => allVehicles.filter((v) => vehicleInListingDataset(effectiveListingOrderIds(v, prefs, matchOrderIds), dataset)),
+    [allVehicles, dataset, prefs, matchOrderIds],
   );
 
   const counts = useMemo(() => {
@@ -533,7 +543,7 @@ export function IrissSludinajumiListClient({
       if (hideTech && listingHasHardTechDamage(v.damageRaw)) return false;
       if (!vehicleInSources(v.platform, sources)) return false;
       if (!vehicleInPriceRange(v, priceMin, priceMax)) return false;
-      const linked = linkedOrdersOf(v, prefs, orderById, orders);
+      const linked = linkedOrdersOf(v, prefs, orderById, matchOrderIds);
       if (!vehicleMatchesOrderFilter(linked, orderFilter)) return false;
       const linkedBudget = listingBudgetForVehicle(null, linked);
       if (listingExcludedForMissingPrice(v, linkedBudget, hideOverBudget)) return false;
@@ -553,13 +563,13 @@ export function IrissSludinajumiListClient({
       const hay = `${v.title} ${v.manufacturer} ${v.year} ${v.location} ${v.vin ?? ""} ${v.stockNumber ?? ""} ${v.orderBrandModels.join(" ")} ${linked.map((o) => `${o.clientName} ${o.brandModel} ${o.preferredColors} ${o.brief}`).join(" ")} ${PLATFORM_LABEL_LONG[v.platform]}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, hideOverBudget, overBudgetThreshold, orderById, orderFilter, orders]);
+  }, [vehicles, tab, query, nowMs, sources, priceMin, priceMax, listScope, prefs, hideTech, hideOverBudget, overBudgetThreshold, orderById, orderFilter, matchOrderIds]);
 
   const sorted = useMemo(() => {
-    const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs, budgetOf(v, prefs, orderById, orders)) }));
+    const withRoom = visible.map((v) => ({ ...v, _room: roomOf(v, prefs, budgetOf(v, prefs, orderById, matchOrderIds)) }));
     // Favorīts nepārvieto auto saraksta augšā (lai lapa nelec); favorīti ir cilnē „★ Favorīti”.
     return sortListingVehicles(withRoom, sort, nowMs ?? Number.POSITIVE_INFINITY);
-  }, [visible, sort, nowMs, prefs, orderById, orders]);
+  }, [visible, sort, nowMs, prefs, orderById, matchOrderIds]);
 
   const vatHealth = useMemo(() => latest?.vatHealth ?? computeListingVatHealth(vehicles), [latest?.vatHealth, vehicles]);
   const drawerVehicle = useMemo(() => allVehicles.find((v) => v.id === drawerId) ?? null, [allVehicles, drawerId]);
@@ -572,12 +582,12 @@ export function IrissSludinajumiListClient({
           v,
           listingCostsFor(prefs, v.id),
           prefs.taxOv[v.id],
-          budgetOf(v, prefs, orderById, orders),
+          budgetOf(v, prefs, orderById, matchOrderIds),
           true,
           overBudgetThreshold,
         );
       }).length,
-    [vehicles, prefs, orderById, overBudgetThreshold, orders],
+    [vehicles, prefs, orderById, overBudgetThreshold, matchOrderIds],
   );
   const favCount = prefs.fav.filter((id) => vehicles.some((v) => v.id === id)).length;
   const hiddenCount = prefs.hidden.filter((id) => vehicles.some((v) => v.id === id)).length;
@@ -671,11 +681,11 @@ export function IrissSludinajumiListClient({
         orders,
         (o) =>
           isIrissPasutijumsWorkingStatus(o.listStatus) ||
-          vehicles.some((v) => listingCardOrderIds(prefs.orderOv[v.id], matchingListingOrderIds(v, orders)).includes(o.id)),
+          vehicles.some((v) => effectiveListingOrderIds(v, prefs, matchOrderIds).includes(o.id)),
         serializeListingOrderFilter,
         fmtEur,
       ),
-    [orders, vehicles, prefs],
+    [orders, vehicles, prefs, matchOrderIds],
   );
   const platformDots = (["auto1", "openline", "autobid", "ecarstrade"] as const).map((platform) => {
     const h = vatHealth[platform];
@@ -1088,16 +1098,16 @@ export function IrissSludinajumiListClient({
             nowMs={nowMs}
             prefs={prefs}
             onPrefs={applyPrefs}
-            linked={linkedOrdersOf(v, prefs, orderById, orders)}
-            budget={budgetOf(v, prefs, orderById, orders)}
-            matchNew={listingIsMatchNew(v.id, linkedOrdersOf(v, prefs, orderById, orders))}
+            linked={linkedOrdersOf(v, prefs, orderById, matchOrderIds)}
+            budget={budgetOf(v, prefs, orderById, matchOrderIds)}
+            matchNew={listingIsMatchNew(v.id, linkedOrdersOf(v, prefs, orderById, matchOrderIds))}
             duplicates={duplicatesByListing[v.id] ?? []}
             onOpen={() => {
               setDrawerId(v.id);
               void markListingViewed(v.id);
             }}
             onPreviewOrder={(o) => {
-              const linked = linkedOrdersOf(v, prefs, orderById, orders);
+              const linked = linkedOrdersOf(v, prefs, orderById, matchOrderIds);
               setPreviewOrders(linked.length > 0 ? linked : [o]);
             }}
             mobile={mobile}
@@ -1149,12 +1159,12 @@ export function IrissSludinajumiListClient({
             v={drawerVehicle}
             prefs={prefs}
             orders={orders}
-            linked={linkedOrdersOf(drawerVehicle, prefs, orderById, orders)}
-            budget={budgetOf(drawerVehicle, prefs, orderById, orders)}
+            linked={linkedOrdersOf(drawerVehicle, prefs, orderById, matchOrderIds)}
+            budget={budgetOf(drawerVehicle, prefs, orderById, matchOrderIds)}
             onClose={() => setDrawerId(null)}
             onPrefs={applyPrefs}
             onPreviewOrder={(o) => {
-              const linked = linkedOrdersOf(drawerVehicle, prefs, orderById, orders);
+              const linked = linkedOrdersOf(drawerVehicle, prefs, orderById, matchOrderIds);
               setPreviewOrders(linked.length > 0 ? linked : [o]);
             }}
             mobile={mobile}
