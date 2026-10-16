@@ -6,7 +6,7 @@ import { vinScanParseFromListingHistory } from "@/lib/vin-scan/listing-history";
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { poctraSearchUrl } from "@/lib/vin-scan/catalog";
 import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
-import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
+import { statVinBrowserLane } from "@/lib/vin-scan/stat-vin-browser";
 import { scanCaptchaTokenPlaceholder, scanChallengeReason, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
 import { fetchVinScanAuctionPage, isVinScanRelayUrl } from "@/lib/vin-scan/listings-page-relay";
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
@@ -402,19 +402,8 @@ export async function probeJojCopartIaai(ctx: VinScanContext): Promise<VinScanIn
 
 export async function probeStatVin(ctx: VinScanContext): Promise<VinScanIndicator> {
   const url = `https://stat.vin/cars/${encodeURIComponent(ctx.vin)}`;
-  try {
-    const page = await fetchAuctionHtml(url, "stat_vin");
-    const parsed = parseStatVinPage({
-      status: page.status,
-      html: page.text,
-      vin: ctx.vin,
-      challenge: scanChallengeReason(page),
-      finalUrl: page.finalUrl,
-    });
-    return done("stat_vin", ctx, { ...parsed, openUrl: url });
-  } catch (e) {
-    return failed("stat_vin", ctx, e);
-  }
+  // Datucentra IP (relejs, Fixie, Vercel) saņem HTTP 403 Code 007. Dati nāk no pārlūka.
+  return done("stat_vin", ctx, { ...statVinBrowserLane(), openUrl: url });
 }
 
 export async function probeBidCars(ctx: VinScanContext): Promise<VinScanIndicator> {

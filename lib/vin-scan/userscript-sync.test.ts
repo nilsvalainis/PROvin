@@ -22,8 +22,14 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.20\.0/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.20.0"');
+    expect(src).toMatch(/@version\s+1\.21\.0/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.21.0"');
+    expect(src).toContain("// @connect      stat.vin");
+    expect(src).toContain("function fetchStatVinInBrowser(");
+    expect(src).toContain("function watchStatVinBrowserFetch()");
+    expect(src).toContain("[data-provin-stat-vin-fetch]");
+    expect(src).toContain('const pageUrl = "https://stat.vin/cars/" + encodeURIComponent(vin)');
+    expect(src).toContain('id="__NEXT_DATA__"');
     expect(src).toContain("// @match        https://fu-regnr.transportstyrelsen.se/*");
     expect(src).toContain("// @match        https://carinfo.se/*");
     expect(src).toContain('const GM_SE_IMPORT = "provin_se_import"');
@@ -106,20 +112,23 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(src).toContain("https://checkcar.vin/report/check/");
   });
 
-  it("minimālā paneļa versija ir 1.20", () => {
-    expect(vinScanUserscriptMinLabel()).toBe("1.20");
-    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 20 });
-    expect(vinScanUserscriptMeetsMin("1.19.0")).toBe(false);
-    expect(vinScanUserscriptMeetsMin("1.20.0")).toBe(true);
+  it("minimālā paneļa versija ir 1.21", () => {
+    expect(vinScanUserscriptMinLabel()).toBe("1.21");
+    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 21 });
+    expect(vinScanUserscriptMeetsMin("1.20.0")).toBe(false);
+    expect(vinScanUserscriptMeetsMin("1.21.0")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
     expect(vinScanUserscriptUpdateNeeded("")).toBe(false);
-    expect(vinScanUserscriptUpdateNeeded("1.19.0")).toBe(true);
-    expect(vinScanUserscriptUpdateNeeded("1.20.0")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.20.0")).toBe(true);
+    expect(vinScanUserscriptUpdateNeeded("1.21.0")).toBe(false);
     const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
     const hint = readFileSync(path.join(ROOT, "components/admin/AdminUserscriptUpdateHint.tsx"), "utf8");
     expect(card).toContain("data-provin-order-vin");
     expect(card).toContain("Lapa vēl nav gatava");
     expect(hint).toContain("Zviedrijas reģistrs");
+    expect(hint).toContain("PROVIN skripts nav aktīvs");
+    expect(hint).toContain("stat.vin dati jāielādē no jūsu pārlūka");
+    expect(card).toContain("data-provin-stat-vin-fetch");
   });
 
   it("saknes kopija sakrīt ar public skriptu", () => {

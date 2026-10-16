@@ -121,6 +121,23 @@ describe("pārlūka arhīva HTML imports", () => {
     expect(applied).toEqual({ ok: false, error: "too_large" });
   });
 
+  it("stat.vin pieprasījumu limits paliek kopsavilkumā", () => {
+    const applied = applyBrowserArchiveHtml({
+      record: record([blockedStat]),
+      id: "stat_vin",
+      html: "<html><body>Too many requests. Try again later.</body></html>",
+      pageUrl: `https://stat.vin/cars/${VIN}`,
+      vin: VIN,
+      httpStatus: 429,
+    });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    const row = applied.record.indicators.find((item) => item.id === "stat_vin");
+    expect(row?.status).toBe("unknown");
+    expect(row?.summary).toMatch(/pieprasījumu limits/);
+    expect(row?.summary).not.toMatch(/403/);
+  });
+
   it("Cloudflare lapa nepaliek kā found vai none", () => {
     const applied = applyBrowserArchiveHtml({
       record: record([blockedStat]),

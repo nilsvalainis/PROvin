@@ -51,11 +51,12 @@ export async function POST(req: Request) {
       const id = typeof br.id === "string" ? br.id : "";
       const html = typeof br.html === "string" ? br.html : "";
       const pageUrl = typeof br.pageUrl === "string" ? br.pageUrl.trim().slice(0, 500) : "";
+      const httpStatus = typeof br.httpStatus === "number" && Number.isFinite(br.httpStatus) ? br.httpStatus : undefined;
       if (!existing || !ORDER_VIN_SCAN_BROWSER_IMPORT_IDS.includes(id) || existing.vin !== vin) {
         return NextResponse.json({ error: "invalid_browser_result" }, { status: 400 });
       }
       if (html.trim()) {
-        const applied = applyBrowserArchiveHtml({ record: existing, id, html, pageUrl, vin });
+        const applied = applyBrowserArchiveHtml({ record: existing, id, html, pageUrl, vin, httpStatus });
         if (applied.ok) {
           const saved = await upsertOrderDraftVinScan(sessionId, applied.record);
           if (!saved.ok) return NextResponse.json({ error: saved.error }, { status: 500 });

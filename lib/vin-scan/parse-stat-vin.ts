@@ -113,7 +113,7 @@ export function extractStatVinPhotoUrls(html: string): string[] {
   for (const m of html.matchAll(jsonUrlRe)) {
     push(m[0]!.replace(/\\\//g, "/"));
   }
-  return urls.slice(0, 80);
+  return urls.slice(0, 200);
 }
 
 function extractEmbeddedJson(html: string): unknown[] {
@@ -153,22 +153,30 @@ function walkAuctionRecords(node: unknown, vin: string, out: VinScanAuction[], d
   );
   const date = str(rec.date || rec.saleDate || rec.sale_date || rec.auctionDate || rec.soldDate);
   const price = str(rec.price || rec.finalBid || rec.final_bid || rec.soldPrice || rec.highBid);
-  const odometer = str(rec.odometer || rec.mileage || rec.odometerValue);
+  const odometerRaw = str(rec.odometer || rec.mileage || rec.odometerValue);
+  const odometer = odometerRaw ? kmLv(odometerRaw) : "";
   const damage = str(rec.damage || rec.primaryDamage || rec.primary_damage || rec.secondaryDamage);
+  const photoList = asArray(rec.photos || rec.images)
+    .map((item) => normalizePhotoUrl(typeof item === "string" ? item : str(asRecord(item).url || asRecord(item).src || asRecord(item).href)))
+    .filter(Boolean);
   const photo =
-    normalizePhotoUrl(str(rec.photo || rec.photoUrl || rec.image || rec.thumbnail || rec.imageUrl)) ||
-    normalizePhotoUrl(str(asArray(rec.photos || rec.images)[0]));
-  const photoCountRaw = Number(rec.photoCount ?? rec.photosCount ?? asArray(rec.photos || rec.images).length);
+    normalizePhotoUrl(str(rec.photo || rec.photoUrl || rec.image || rec.thumbnail || rec.imageUrl)) || photoList[0] || "";
+  const photos = [...new Set([photo, ...photoList].filter(Boolean))].slice(0, 200);
+  const photoCountRaw = Number(rec.photoCount ?? rec.photosCount ?? photos.length);
   const looksAuction = Boolean(lot || venue || damage || rec.auction || rec.saleDate || rec.sale_date);
   if (looksAuction && (lot || date || venue || damage)) {
-    const titleBits = [venue || "Izsole", lot ? `lots ${lot}` : "", damage].filter(Boolean);
+    const titleBits = [venue || "Izsole", lot ? `lots ${lot}` : "", damage, odometer].filter(Boolean);
     out.push({
-      title: titleBits.join(" · ").slice(0, 160),
+      title: titleBits.join(" · ").slice(0, 180),
       date: date.slice(0, 32) || undefined,
       price: price ? price.slice(0, 40) : undefined,
       venue: venue || undefined,
-      photoUrl: photo || undefined,
-      photoCount: Number.isFinite(photoCountRaw) && photoCountRaw > 0 ? photoCountRaw : undefined,
+      lot: lot || undefined,
+      odometer: odometer || undefined,
+      damage: damage || undefined,
+      photoUrl: photos[0] || undefined,
+      photoCount: Math.max(photos.length, Number.isFinite(photoCountRaw) && photoCountRaw > 0 ? photoCountRaw : 0) || undefined,
+      photoUrls: photos.length ? photos : undefined,
     });
   }
   for (const key of ["saleHistory", "sales", "auctions", "lots", "records", "history", "props", "pageProps", "data", "car"]) {
@@ -228,11 +236,104 @@ function vehicleFromText(text: string): VinScanVehicle | undefined {
   return { make, model, year };
 }
 
+function cutLabeled(text: string, labels: string): string {
+  const re = new RegExp(`(?:${labels})[:\\s]+([^\\n]{1,80})`, "i");
+  const raw = re.exec(text)?.[1] ?? "";
+  return (
+    raw
+      .split(/\s+(?=sale date\b|final bid\b|winning bid\b|odometer\b|mileage\b|lot\b|damage\b|primary damage\b|location\b|auction\b)/i)[0]
+      ?.replace(/\s+/g, " ")
+      .trim() ?? ""
+  );
+}
+
+function saleDateOf(text: string): string {
+  const iso = /sale(?:\s+date)?[:\s]+((?:19|20)\d{2}-\d{2}-\d{2})/i.exec(text)?.[1];
+  if (iso) return iso;
+  const loose = /sale(?:\s+date)?[:\s]+([0-9./-]{6,12})/i.exec(text)?.[1] ?? "";
+  return yearFromDate(loose) ? loose : yearFromDate(text);
+}
+
+function priceOf(text: string): string {
+  const labeled = cutLabeled(text, "final bid|winning bid|sold for|sold price|high bid");
+  if (labeled && /\d/.test(labeled)) return labeled.slice(0, 40);
+  const money = /(?:\$|€|£)\s?[\d][\d\s,.]{1,14}/.exec(text)?.[0]?.replace(/\s+/g, "") ?? "";
+  return money.slice(0, 40);
+}
+
+function lotMarks(html: string): { lot: string; index: number }[] {
+  const out: { lot: string; index: number }[] = [];
+  const re = /lot[:\s#№"']*([0-9]{5,10})|\/lot\/([0-9]{5,10})/gi;
+  for (const match of html.matchAll(re)) {
+    const lot = match[1] || match[2] || "";
+    if (!lot || out.some((row) => row.lot === lot)) continue;
+    out.push({ lot, index: match.index ?? 0 });
+  }
+  return out;
+}
+
+function auctionFromChunk(chunkHtml: string, lot: string, allPhotos: readonly string[], onlyLot: boolean): VinScanAuction | null {
+  const text = visibleText(chunkHtml).replace(/\b(copart(?:\s*fi)?|iaai|iaa i|manheim)\s*$/i, "").trim();
+  const venue = venueName(
+    /copart\s*fi\b|copart\.fi|\bfinland\b/i.test(text)
+      ? "Copart FI"
+      : /iaai|iaa i/i.test(text)
+        ? "IAAI"
+        : /copart/i.test(text)
+          ? "Copart"
+          : /manheim/i.test(text)
+            ? "Manheim"
+            : "",
+  );
+  if (!venue && !lot && !AUCTION_RE.test(text)) return null;
+  const damage = cutLabeled(text, "primary damage|damage|bojājums").replace(/[.,;]+$/, "");
+  const odoRaw = cutLabeled(text, "odometer|mileage|odometrs").replace(/[^\d\s,.]/g, "").trim();
+  const odometer = odoRaw ? kmLv(odoRaw) : "";
+  const location = cutLabeled(text, "location|sale location|branch|yard");
+  const date = saleDateOf(text);
+  const price = priceOf(text);
+  const byLot = lot ? allPhotos.filter((url) => url.includes(lot)) : [];
+  const inChunk = extractStatVinPhotoUrls(chunkHtml);
+  const photos = [...new Set(byLot.length ? byLot : onlyLot ? [...allPhotos] : inChunk)].slice(0, 200);
+  const title = [venue || "Izsole", lot ? `lots ${lot}` : "", damage, odometer, location].filter(Boolean).join(" · ").slice(0, 180);
+  if (!title && !date && !price) return null;
+  return {
+    title: title || "Izsoles ieraksts",
+    date: date || undefined,
+    price: price || undefined,
+    venue: venue || undefined,
+    lot: lot || undefined,
+    odometer: odometer || undefined,
+    damage: damage || undefined,
+    photoUrl: photos[0],
+    photoCount: photos.length || undefined,
+    photoUrls: photos.length ? photos : undefined,
+  };
+}
+
+/** Katra izsole atsevišķi: lots, datums, km, bojājums, cena, vieta un šī lota foto. */
+function auctionsFromSaleBlocks(html: string, text: string, vin: string): VinScanAuction[] {
+  if (!hasVin(text, vin) && !hasVin(html, vin)) return [];
+  const marks = lotMarks(html);
+  const allPhotos = extractStatVinPhotoUrls(html);
+  if (marks.length === 0) return auctionsFromText(text, vin);
+  const out: VinScanAuction[] = [];
+  for (let i = 0; i < marks.length && out.length < 12; i += 1) {
+    const prev = i === 0 ? 0 : marks[i - 1]!.index + 1;
+    const start = Math.max(prev, marks[i]!.index - 90);
+    const end = i + 1 < marks.length ? marks[i + 1]!.index : html.length;
+    const chunk = html.slice(start, end);
+    const row = auctionFromChunk(chunk, marks[i]!.lot, allPhotos, marks.length === 1);
+    if (row) out.push(row);
+  }
+  return out.length ? out : auctionsFromText(text, vin);
+}
+
 function uniqueAuctions(rows: VinScanAuction[]): VinScanAuction[] {
   const seen = new Set<string>();
   const out: VinScanAuction[] = [];
   for (const row of rows) {
-    const key = [row.venue, row.date, row.title, row.photoUrl].filter(Boolean).join("|").toLowerCase();
+    const key = [row.lot, row.venue, row.date, row.title, row.photoUrl].filter(Boolean).join("|").toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
     out.push(row);
@@ -317,7 +418,8 @@ function buildStatVinFound(html: string, text: string, vin: string): VinScanPars
   const photos = extractStatVinPhotoUrls(html);
   const fromJson: VinScanAuction[] = [];
   for (const blob of extractEmbeddedJson(html)) walkAuctionRecords(blob, vin, fromJson);
-  const auctions = uniqueAuctions([...fromJson, ...auctionsFromText(text, vin)]);
+  const fromPage = fromJson.length ? [] : auctionsFromSaleBlocks(html, text, vin);
+  const auctions = uniqueAuctions([...fromJson, ...fromPage]);
   const photoCount = Math.max(
     photos.length,
     ...auctions.map((row) => row.photoCount ?? 0),
@@ -327,6 +429,9 @@ function buildStatVinFound(html: string, text: string, vin: string): VinScanPars
   if (auctions[0] && !auctions[0].photoUrl && firstPhoto) {
     auctions[0] = { ...auctions[0], photoUrl: firstPhoto, photoCount: photoCount || auctions[0].photoCount };
   }
+  const mileage = auctions
+    .filter((row) => row.odometer)
+    .map((row) => ({ date: row.date || "", odometer: row.odometer || "" }));
 
   if (hasVin(text, vin) && (auctions.length > 0 || AUCTION_RE.test(text))) {
     const vehicle = vehicleFromText(text);
@@ -334,10 +439,11 @@ function buildStatVinFound(html: string, text: string, vin: string): VinScanPars
       status: "found",
       summary: formatStatVinFoundSummary(auctions, photoCount),
       detail: auctions
-        .map((row) => [row.title, row.date, row.venue].filter(Boolean).join(" · "))
+        .map((row) => [row.title, row.date, row.price, row.venue, row.lot ? `lots ${row.lot}` : "", row.odometer, row.damage].filter(Boolean).join(" · "))
         .filter(Boolean)
         .join("\n"),
       vehicle,
+      mileage: mileage.length ? mileage : undefined,
       media:
         firstPhoto || photoCount > 0 || photos.length
           ? {

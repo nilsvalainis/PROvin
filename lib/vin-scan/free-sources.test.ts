@@ -39,10 +39,11 @@ describe("free VIN SCAN avoti", () => {
     const probe = readFileSync(path.join(ROOT, "lib/vin-scan/probes-extra.ts"), "utf8");
     expect(probe).toContain('https://stat.vin/');
     expect(probe).toContain("fetchVinScanAuctionPage");
-    expect(probe).toContain("fetchAuctionHtml(url, \"stat_vin\")");
+    expect(probe).toContain("statVinBrowserLane");
+    expect(probe).not.toContain('fetchAuctionHtml(url, "stat_vin")');
     expect(probe).not.toContain("wafBypass");
     expect(probe).not.toContain("STAT_VIN_ORIGIN");
-    expect(probe).toContain("page.finalUrl");
+    expect(probe).toContain("Datucentra IP");
   });
 
   it("automātiskās plūsmas palaiž tikai freeVinScanSourceIds", () => {
