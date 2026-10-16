@@ -13,12 +13,14 @@ import {
   buildArtisMilicinsRecoveryWorkspace,
   RECOVERY_ARTIS_EMAIL,
 } from "@/lib/consultation-recovery-artis-milicins";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ sessionId: string }> };
 
 export default async function AdminConsultationDetailPage({ params }: Props) {
+  await requireAdminPage();
   const { sessionId } = await params;
   const order = await getConsultationSessionDetail(sessionId);
   if (!order) {

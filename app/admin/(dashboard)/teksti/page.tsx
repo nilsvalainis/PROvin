@@ -1,4 +1,5 @@
 import { AdminMessageTemplatesPage } from "@/components/admin/AdminMessageTemplatesPage";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Tekstu šabloni",
@@ -6,6 +7,7 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function AdminTekstiPage() {
+export default async function AdminTekstiPage() {
+  await requireAdminPage();
   return <AdminMessageTemplatesPage />;
 }

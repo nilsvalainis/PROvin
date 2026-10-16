@@ -1,4 +1,5 @@
 import { AdminAuditKnowledgePanel } from "@/components/admin/AdminAuditKnowledgePanel";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Agregātu zināšanas",
@@ -6,7 +7,8 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function AdminAgregatuZinasanasPage() {
+export default async function AdminAgregatuZinasanasPage() {
+  await requireAdminPage();
   return (
     <div className="w-full max-w-3xl space-y-4">
       <div>

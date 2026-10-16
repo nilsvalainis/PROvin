@@ -4,12 +4,14 @@ import { AdminOrderDetailPageClient } from "@/components/admin/AdminOrderDetailP
 import { AdminOrderDetailPageFallback } from "@/components/admin/AdminOrderDetailPageFallback";
 import { loadAdminOrderDetailPageData } from "@/lib/admin-order-detail-page-load";
 import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ sessionId: string }> };
 
 export default async function AdminOrderDetailPage({ params }: Props) {
+  await requireAdminPage();
   let sessionId = "";
   try {
     const resolved = await params;

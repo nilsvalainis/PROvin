@@ -1,6 +1,7 @@
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminMorningSummaryView } from "@/components/admin/AdminMorningSummaryView";
 import { loadMorningSummary } from "@/lib/admin-morning-summary-load";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Rīta kopsavilkums",
@@ -9,6 +10,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminMorningSummaryPage() {
+  await requireAdminPage();
   const { summary, stripeError } = await loadMorningSummary();
 
   return (

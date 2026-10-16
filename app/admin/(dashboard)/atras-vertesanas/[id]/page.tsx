@@ -27,6 +27,7 @@ import { readQuickEval } from "@/lib/quick-eval-store";
 import { heardAboutDisplayLabel } from "@/lib/stripe-session";
 import { findVinHistory } from "@/lib/vin-history";
 import { saveQuickEvalContact, setQuickEvalStatus } from "../actions";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +78,7 @@ export default async function QuickEvalDetailPage({
   params: Promise<{ id: string }>;
   searchParams?: Promise<{ contact?: string }>;
 }) {
+  await requireAdminPage();
   const { id } = await params;
   const sp = searchParams ? await searchParams : undefined;
   let peek = await getListingPeekById(decodeURIComponent(id));
