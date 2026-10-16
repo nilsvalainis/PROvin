@@ -10,7 +10,6 @@ import { orderOfferAttachmentsForPdf } from "@/lib/iriss-offer-image-sorter";
 
 import {
   DZ_PASUTIJUMS_TERMS_BLOCKS,
-  dzPasutijumsTermsWithCommission,
   type DzPasutijumsTermBlock,
 } from "@/lib/dzintarzeme-pasutijums-terms-content";
 import {
@@ -26,10 +25,9 @@ import {
   SECTION_GAP as DZ_SECTION_GAP,
   wrapText as dzWrapText,
 } from "@/lib/dzintarzeme-pdf-layout";
-import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX, IRISS_LEGAL_PARTY_NAME } from "@/lib/iriss-brand";
+import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
 import { formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
 import { irissOfferImagesOmittedNotice } from "@/lib/iriss-offer-share";
-import { readIrissTameCommissionSettings } from "@/lib/iriss-tame-commission-store";
 import { parsePriceLike } from "@/lib/iriss-price-format";
 import {
   drawImageInPremiumFrame,
@@ -1235,11 +1233,7 @@ function drawPasutijumsSignatureStrip(ctx: Ctx, record: IrissPasutijumsRecord, y
   cy -= 20;
   const cols: { x: number; label: string; name: string }[] = [
     { x: ix, label: "Klienta paraksts", name: clientName },
-    {
-      x: ix + colW + gap,
-      label: "Pakalpojuma sniedzēja paraksts",
-      name: getIrissPdfSupplierFooterLines()[0]?.trim() || IRISS_LEGAL_PARTY_NAME,
-    },
+    { x: ix + colW + gap, label: "Pakalpojuma sniedzēja paraksts", name: "Dzintarzeme Auto" },
   ];
   for (const col of cols) {
     page.drawText(col.label, { x: col.x, y: cy - 8, size: 8, font: fontBold, color: INK });
@@ -1433,36 +1427,23 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
   ctx.y = margin + FOOTER_SAFE;
 }
 
-function drawPasutijumsLegalFooter(ctx: Ctx, page: PDFPage = ctx.page): void {
-  drawPremiumFooter3ColIriss(
-    page,
-    ctx.margin,
-    ctx.contentW,
-    ctx.font,
-    ctx.fontBold,
-    getIrissPdfSupplierFooterLines(),
-    ctx.offerLogo,
-  );
-}
-
 export async function buildIrissPasutijumsPdfBytes(record: IrissPasutijumsRecord): Promise<Uint8Array> {
   const ctx = await createPdfCtx();
-  const terms = dzPasutijumsTermsWithCommission(await readIrissTameCommissionSettings());
   ctx.pasutijumsDzLockPage1 = true;
   ctx.offerLogo = await dzLoadOfferLogoPack(ctx.pdfDoc);
 
   drawPasutijumsPage1Pro(ctx, record);
 
-  drawPasutijumsLegalFooter(ctx);
+  drawPremiumFooter3ColDz(ctx.page, ctx.margin, ctx.contentW, ctx.font, ctx.fontBold, ctx.offerLogo);
   drawPasutijumsPageIndex(ctx.page, ctx.pageW, ctx.margin, ctx.font, 1, 2);
 
   ctx.pasutijumsDzLockPage1 = false;
   ctx.page = ctx.pdfDoc.addPage([ctx.pageW, ctx.pageH]);
   ctx.y = ctx.pageH - ctx.margin;
 
-  drawDzPasutijumsTermsPage(ctx, terms);
+  drawDzPasutijumsTermsPage(ctx);
 
-  drawPasutijumsLegalFooter(ctx);
+  drawPremiumFooter3ColDz(ctx.page, ctx.margin, ctx.contentW, ctx.font, ctx.fontBold, ctx.offerLogo);
   drawPasutijumsPageIndex(ctx.page, ctx.pageW, ctx.margin, ctx.font, 2, 2);
 
   return ctx.pdfDoc.save();
