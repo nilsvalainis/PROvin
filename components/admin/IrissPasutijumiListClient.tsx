@@ -3,6 +3,7 @@
 import { ArrowUpDown, ChevronDown, Pin, Search, Trash2 } from "lucide-react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { AdminIrissOrdersExportButton } from "@/components/admin/AdminIrissOrdersExportButton";
@@ -275,6 +276,14 @@ const IrissRowCard = memo(function IrissRowCard({
   const clientName = formatIrissClientName(row);
   const listDate = formatIrissListDate(row);
   const telHref = irissPhoneTelHref(row.phone);
+  const router = useRouter();
+  const href = `/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`;
+  const prefetchedRef = useRef(false);
+  const prefetchRow = useCallback(() => {
+    if (prefetchedRef.current) return;
+    prefetchedRef.current = true;
+    void router.prefetch(href);
+  }, [href, router]);
 
   const openAllListings = () => {
     for (const chip of chips) {
@@ -398,8 +407,11 @@ const IrissRowCard = memo(function IrissRowCard({
   const frontInner = (
     <div className="relative flex min-h-[88px] items-center gap-2.5 py-2.5 pl-3 pr-2 md:min-h-[82px]">
       <Link
-        href={`/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`}
-        prefetch
+        href={href}
+        prefetch={false}
+        onPointerEnter={prefetchRow}
+        onPointerDown={prefetchRow}
+        onFocus={prefetchRow}
         aria-label={`Atvērt pasūtījumu: ${row.brandModel}`}
         className="absolute inset-0 z-0 rounded-lg"
       />
