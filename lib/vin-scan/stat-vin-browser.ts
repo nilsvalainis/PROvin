@@ -3,23 +3,20 @@
  * Josla paliek „from browser”: HTML atnes Tampermonkey no operatora pārlūka.
  */
 
-export const STAT_VIN_FROM_BROWSER_SUMMARY = "stat.vin: no pārlūka (from browser)";
+import { browserFetchAwaiting, browserFetchLane, browserFetchSummary, browserFetchToken } from "@/lib/vin-scan/browser-fetch";
+
+export const STAT_VIN_FROM_BROWSER_SUMMARY = browserFetchSummary("stat_vin");
 
 export function statVinBrowserLane(): { status: "browser_only"; summary: string } {
-  return { status: "browser_only", summary: STAT_VIN_FROM_BROWSER_SUMMARY };
+  return browserFetchLane("stat_vin");
 }
 
 export function statVinAwaitingBrowserFetch(
   row: { id?: string; status?: string; summary?: string } | null | undefined,
 ): boolean {
-  if (!row || row.id !== "stat_vin") return false;
-  if (row.status === "found" || row.status === "none") return false;
-  return row.status === "browser_only" && /from browser/i.test(row.summary || "");
+  return Boolean(row?.id === "stat_vin" && browserFetchAwaiting(row));
 }
 
 export function statVinBrowserFetchToken(vin: string, at: string): string {
-  const v = vin.trim().toUpperCase();
-  const stamp = at.trim();
-  if (!v || !stamp) return "";
-  return `${v}:${stamp}`;
+  return browserFetchToken(vin, at);
 }

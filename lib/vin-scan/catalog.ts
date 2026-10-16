@@ -90,6 +90,8 @@ export type VinScanCatalogItem = {
   needs: readonly VinScanNeed[];
   /** true: der VIN vai norādītā numurzīme. */
   needsAny?: boolean;
+  /** true: avots paliek kodā, bet VIN SCAN sarakstā un automātiskajā skenēšanā nav redzams. */
+  disabled?: boolean;
   openUrl: (vin: string, plates?: VinScanPlates, listingUrl?: string) => string;
 };
 
@@ -235,6 +237,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     country: "NO",
     hint: "Norvēģijas reģistrs pēc VIN",
     needs: ["vin"],
+    disabled: true,
     openUrl: (vin) =>
       `https://www.vegvesen.no/kjoretoy/kjop-og-salg/kjoretoyopplysninger/?understellsnummer=${vinQuery(vin)}`,
   },
@@ -414,14 +417,18 @@ export function isVinScanBrowserId(v: string): v is VinScanBrowserId {
   return (VIN_SCAN_BROWSER_IDS as readonly string[]).includes(v);
 }
 
+export function vinScanSourceDisabled(id: string): boolean {
+  return VIN_SCAN_CATALOG.find((item) => item.id === id)?.disabled === true;
+}
+
 /** VIN SCAN UI un POST noklusējums: tikai bezmaksas avoti (bez JoJ / Speckr u.c. maksas API). */
 export function defaultVinScanSourceIds(): VinScanSourceId[] {
   return vinScanPipelineSourceIds();
 }
 
-/** Ātrie vērtējumi un bezmaksas auto-scan: bez JoJ $0.50. Speckr tikai manuāli auto_records blokā. */
+/** Ātrie vērtējumi un bezmaksas auto-scan: bez JoJ $0.50 un bez paslēptiem avotiem. Speckr tikai manuāli auto_records blokā. */
 export function vinScanPipelineSourceIds(): VinScanSourceId[] {
-  return VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai");
+  return VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai" && !vinScanSourceDisabled(id));
 }
 
 export function vinScanFastSourceIds(): VinScanSourceId[] {
@@ -432,8 +439,8 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanCatalogItem[] = VIN_SCAN_
   isVinScanBrowserId(item.id),
 );
 
-/** Minimālā Tampermonkey versija VIN SCAN dziļajām saitēm, aizpildei un arhīva HTML importam. */
-export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 21 } as const;
+/** Minimālā Tampermonkey versija VIN SCAN dziļajām saitēm, aizpildei un pārlūka HTML ielādei. */
+export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 22 } as const;
 
 export function vinScanUserscriptMeetsMin(raw: string): boolean {
   const parts = raw.split(".").map((n) => Number.parseInt(n, 10));

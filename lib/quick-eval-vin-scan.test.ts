@@ -27,7 +27,8 @@ describe("Ātrie vērtējumi VIN SCAN cauruļvads", () => {
     expect(ids).toContain("listing_history");
     expect(ids).toContain("nhtsa_recalls");
     expect(ids).toContain("rdw");
-    expect(ids.length).toBe(VIN_SCAN_SOURCE_IDS.length - 1);
+    expect(ids).not.toContain("vegvesen");
+    expect(ids.length).toBe(VIN_SCAN_SOURCE_IDS.length - 2);
   });
 
   it("nodod sludinājuma saiti un CSDD numuru VIN SCAN zondēm", () => {

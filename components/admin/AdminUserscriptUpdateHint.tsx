@@ -26,7 +26,7 @@ export function AdminUserscriptUpdateHint({ className = "" }: { className?: stri
   if (version && vinScanUserscriptUpdateNeeded(version)) {
     return (
       <p className={box}>
-        PROVIN skripts ir vecāks par {min} (tagad {version}). Atjauniniet Tampermonkey, lai stat.vin ielādētos no jūsu pārlūka un izsoļu arhīvs un Zviedrijas reģistrs importētos.{" "}
+        PROVIN skripts ir vecāks par {min} (tagad {version}). Atjauniniet Tampermonkey, lai stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādētos no jūsu pārlūka. Izsoļu arhīvs un Zviedrijas reģistrs joprojām importējas no atvērtās cilnes.{" "}
         <a className="underline" href="/userscripts/provin-vin-autofill.user.js">
           Lejupielādēt {min}
         </a>
@@ -36,7 +36,7 @@ export function AdminUserscriptUpdateHint({ className = "" }: { className?: stri
   if (settled && !version) {
     return (
       <p className={box}>
-        PROVIN skripts nav aktīvs. stat.vin dati jāielādē no jūsu pārlūka, serveris šo lapu vairs nesaņem. Ieslēdziet Tampermonkey un atsvaidziniet šo lapu.{" "}
+        PROVIN skripts nav aktīvs. stat.vin dati jāielādē no jūsu pārlūka, serveris šo lapu vairs nesaņem. Tas pats attiecas uz bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB. Ieslēdziet Tampermonkey un atsvaidziniet šo lapu.{" "}
         <a className="underline" href="/userscripts/provin-vin-autofill.user.js">
           Lejupielādēt {min}
         </a>
