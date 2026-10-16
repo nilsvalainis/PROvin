@@ -10,6 +10,7 @@ import {
 import {
   parseWorkspaceSnapshotSavedAtMs,
   pickNewestBackupSnapshotRaw,
+  workspaceHydrationFillScore,
 } from "@/lib/admin-order-workspace-persist";
 import {
   applyOrderPdfVisibilityDefaults,
@@ -84,12 +85,42 @@ export function resolveOrderWorkspaceHydration(args: {
       rank: 2,
     });
   }
-  candidates.sort((a, b) => b.savedAtMs - a.savedAtMs || a.rank - b.rank);
-  for (const c of candidates) {
-    const hydrated = hydrateWorkspaceFromStorage(c.raw);
-    if (hydrated) {
-      return { source: c.source, hydrated: withOrderDefaults(hydrated), workspaceRevision: revisionFromRaw(c.raw) };
+  const scored = candidates
+    .map((c) => {
+      const hydrated = hydrateWorkspaceFromStorage(c.raw);
+      if (!hydrated) return null;
+      const fillScore = workspaceHydrationFillScore({
+        sourceBlocks: hydrated.sourceBlocks,
+        iriss: hydrated.iriss,
+        apskatesPlāns: hydrated.apskatesPlāns,
+        tehniskoRiskuAnalize: hydrated.tehniskoRiskuAnalize,
+        cenasAtbilstiba: hydrated.cenasAtbilstiba,
+        previewConfirmed: hydrated.previewConfirmed,
+        vehicleAiExtraction: hydrated.vehicleAiExtraction ?? null,
+        vehicleAiExtractionMeta: hydrated.vehicleAiExtractionMeta ?? null,
+        incidentPhotoGroups: hydrated.incidentPhotoGroups ?? [],
+        incidentPhotos: hydrated.incidentPhotos ?? [],
+      });
+      return { ...c, hydrated, fillScore };
+    })
+    .filter((c): c is NonNullable<typeof c> => c != null);
+  scored.sort((a, b) => {
+    if (a.savedAtMs !== b.savedAtMs) {
+      const newer = a.savedAtMs > b.savedAtMs ? a : b;
+      const older = a.savedAtMs > b.savedAtMs ? b : a;
+      if (newer.fillScore >= older.fillScore) return b.savedAtMs - a.savedAtMs;
+      return b.fillScore - a.fillScore || b.savedAtMs - a.savedAtMs;
     }
+    if (b.fillScore !== a.fillScore) return b.fillScore - a.fillScore;
+    return a.rank - b.rank;
+  });
+  const winner = scored[0];
+  if (winner) {
+    return {
+      source: winner.source,
+      hydrated: withOrderDefaults(winner.hydrated),
+      workspaceRevision: revisionFromRaw(winner.raw),
+    };
   }
 
   const legacy = args.legacyInternalRaw?.trim();

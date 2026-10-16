@@ -4,6 +4,7 @@
  * 503 parasti nozīmē `store_disabled` vai rakstīšanas kļūdu (skat. `ADMIN_ORDER_DRAFT_DIR`).
  */
 import { NextResponse, after } from "next/server";
+import { isConditionalWriteConflict } from "@/lib/conditional-write";
 import { getAdminSession } from "@/lib/admin-auth";
 import { listOrderDraftRevisions, patchOrderDraft, readOrderDraft, restoreOrderDraftRevision, isOrderDraftStorageDurable, upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
 import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -254,7 +255,7 @@ export async function PATCH(req: Request) {
       if (err === "store_not_durable") {
         return NextResponse.json({ error: err, durable: false }, { status: 503 });
       }
-      if (err === "stale_revision" || err === "overwrite_blocked") {
+      if (err === "stale_revision" || err === "overwrite_blocked" || err === "write_conflict") {
         return NextResponse.json(
           { error: err, currentRevision: result.currentRevision, durable: false },
           { status: 409 },
@@ -309,6 +310,9 @@ export async function PATCH(req: Request) {
       verifyLatencyMs: result.verifyLatencyMs,
     });
   } catch (e) {
+    if (isConditionalWriteConflict(e)) {
+      return NextResponse.json({ error: "write_conflict", durable: false }, { status: 409 });
+    }
     console.error("[order-draft] PATCH", e);
     const msg = e instanceof Error ? e.message : "unknown";
     return NextResponse.json({ error: "server_error", detail: msg }, { status: 500 });

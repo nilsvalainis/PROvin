@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isStandaloneDisplayMode, openWindowSyncThen } from "@/lib/admin-open-window";
+import { isStandaloneDisplayMode, openPrintHtmlAfterReady, openWindowSyncThen, schedulePrintOnWindow } from "@/lib/admin-open-window";
 
 type FakeWindow = {
   closed: boolean;
@@ -9,6 +9,9 @@ type FakeWindow = {
   open: ReturnType<typeof vi.fn>;
   matchMedia: (q: string) => { matches: boolean };
   navigator: Navigator & { standalone?: boolean };
+  addEventListener?: ReturnType<typeof vi.fn>;
+  focus?: ReturnType<typeof vi.fn>;
+  print?: ReturnType<typeof vi.fn>;
 };
 
 function installWindow(opts: { popup: FakeWindow | null; standalone?: boolean }) {
@@ -108,5 +111,38 @@ describe("openWindowSyncThen", () => {
     expect(popup.document.html).toBe("<p>PDF</p>");
     opened.close();
     expect(popup.closed).toBe(true);
+  });
+});
+
+describe("openPrintHtmlAfterReady", () => {
+  it("atver logu tikai ar gatavu HTML, nevis tukšu about:blank pirms satura", () => {
+    const popup: FakeWindow = {
+      closed: false,
+      location: { href: "about:blank", assign: vi.fn() },
+      document: {
+        html: "",
+        open() {},
+        write(html: string) {
+          this.html = html;
+        },
+        close() {},
+      },
+      close: vi.fn(),
+      open: vi.fn(),
+      matchMedia: () => ({ matches: false }),
+      navigator: {} as Navigator,
+      addEventListener: vi.fn(),
+      focus: vi.fn(),
+      print: vi.fn(),
+    };
+    const { host } = installWindow({ popup });
+    host.open = vi.fn(() => popup);
+    const w = openPrintHtmlAfterReady("<p>Atskaite</p>");
+    expect(host.open).toHaveBeenCalledWith("", "_blank");
+    expect(host.open).not.toHaveBeenCalledWith("about:blank", "_blank");
+    expect(popup.document.html).toBe("<p>Atskaite</p>");
+    expect(w).toBe(popup);
+    schedulePrintOnWindow(w as unknown as Window, "Captur.pdf");
+    expect(popup.addEventListener).toHaveBeenCalled();
   });
 });

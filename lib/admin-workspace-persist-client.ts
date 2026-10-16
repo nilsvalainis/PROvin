@@ -211,6 +211,34 @@ export function isWorkspaceRevisionConflict(error: string | undefined | null): b
   return error === "stale_revision" || error === "overwrite_blocked";
 }
 
+export const WORKSPACE_SAVE_FAILED_ALERT =
+  "Saglabāšana neizdevās. Dati palika šajā pārlūkā, bet serveris tos nenorakstīja. Paliec lapā un spied Saglabāt vēlreiz.";
+
+export function isRetryableWorkspacePersistError(error: string | undefined | null): boolean {
+  return (
+    error === "stale_revision" ||
+    error === "write_conflict" ||
+    error === "server_error" ||
+    error === "http_409" ||
+    error === "http_500"
+  );
+}
+
+export function nextPersistAttemptAfterConflict(opts: {
+  error: string | undefined | null;
+  currentRevision?: number;
+  expectedWorkspaceRevision?: number;
+}): { retry: false } | { retry: true; expectedWorkspaceRevision?: number } {
+  if (!isRetryableWorkspacePersistError(opts.error)) return { retry: false };
+  if (opts.error === "stale_revision" && opts.currentRevision != null) {
+    return { retry: true, expectedWorkspaceRevision: opts.currentRevision };
+  }
+  return {
+    retry: true,
+    expectedWorkspaceRevision: opts.currentRevision ?? opts.expectedWorkspaceRevision,
+  };
+}
+
 /** Droša lauku apvienošana (tukšais neēd pilno). Operatoram jāapstiprina pirms PATCH. */
 export function buildSafeMergePersistBody(
   local: OrderWorkspacePersistBody,
@@ -235,7 +263,21 @@ export async function persistWorkspaceState(
     extra: { context: opts.logContext, generation: opts.saveGeneration },
   });
 
-  return enqueueWorkspacePersist(opts.sessionId, async () => patchWorkspaceOnce(opts));
+  return enqueueWorkspacePersist(opts.sessionId, async () => {
+    const first = await patchWorkspaceOnce(opts);
+    if (first.ok) return first;
+    const next = nextPersistAttemptAfterConflict({
+      error: first.error,
+      currentRevision: first.currentRevision,
+      expectedWorkspaceRevision: opts.expectedWorkspaceRevision,
+    });
+    if (!next.retry) return first;
+    return patchWorkspaceOnce({
+      ...opts,
+      expectedWorkspaceRevision: next.expectedWorkspaceRevision,
+      logContext: `${opts.logContext ?? "client"}_retry`,
+    });
+  });
 }
 
 /** Operatora apstiprināta droša apvienošana ar servera kanonu, tad PATCH ar svaigu revision. */

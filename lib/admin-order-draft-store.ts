@@ -6,7 +6,12 @@ import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { get, put } from "@vercel/blob";
-import { ConditionalWriteConflict, isConditionalWriteConflict } from "@/lib/conditional-write";
+import {
+  ConditionalWriteConflict,
+  blobPutOverwriteOptions,
+  casRetryDelayMs,
+  isConditionalWriteConflict,
+} from "@/lib/conditional-write";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { getStripeCheckoutSessionMeta } from "@/lib/admin-stripe-cache";
 import {
@@ -64,6 +69,19 @@ function blankDraftLease(): DraftLease {
   return { blobEtag: null, blobSeen: false, fsEtag: null, fsSeen: false };
 }
 
+async function withDraftWriteLockCatchConflict<T>(
+  sessionId: string,
+  fn: () => Promise<T>,
+  onConflict: () => T,
+): Promise<T> {
+  try {
+    return await withDraftWriteLock(sessionId, fn);
+  } catch (err) {
+    if (isConditionalWriteConflict(err)) return onConflict();
+    throw err;
+  }
+}
+
 function withDraftWriteLock<T>(sessionId: string, fn: () => Promise<T>): Promise<T> {
   const prev = draftWriteLocks.get(sessionId) ?? Promise.resolve();
   const next = prev.catch(() => undefined).then(async () => {
@@ -74,6 +92,7 @@ function withDraftWriteLock<T>(sessionId: string, fn: () => Promise<T>): Promise
       } catch (err) {
         last = err;
         if (!isConditionalWriteConflict(err) || attempt === DRAFT_CAS_ATTEMPTS - 1) throw err;
+        await new Promise((r) => setTimeout(r, casRetryDelayMs(attempt)));
       }
     }
     throw last instanceof Error ? last : new ConditionalWriteConflict();
@@ -165,15 +184,15 @@ async function writeOrderDraftJsonToBlob(
 ): Promise<void> {
   const lease = draftLeaseStorage.getStore();
   const etag = lease?.blobSeen ? lease.blobEtag : null;
-  const conditional = Boolean(lease?.blobSeen);
+  const overwrite = blobPutOverwriteOptions(etag);
   try {
     await put(orderDraftBlobPathname(blob.prefix, sessionId), JSON.stringify(doc), {
       access: "private",
       token: blob.token,
       addRandomSuffix: false,
-      allowOverwrite: conditional ? etag != null : true,
+      allowOverwrite: overwrite.allowOverwrite,
       contentType: "application/json",
-      ...(conditional && etag ? { ifMatch: etag } : {}),
+      ...(overwrite.ifMatch ? { ifMatch: overwrite.ifMatch } : {}),
     });
   } catch (err) {
     if (isConditionalWriteConflict(err)) throw new ConditionalWriteConflict();
@@ -587,7 +606,11 @@ export async function restoreOrderDraftRevision(
   revisionId: string,
 ): Promise<{ ok: true; updatedAt: string; workspaceRevision: number } | { ok: false; error: string }> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () => restoreOrderDraftRevisionUnlocked(sessionId, revisionId));
+  return withDraftWriteLockCatchConflict(
+    sessionId,
+    () => restoreOrderDraftRevisionUnlocked(sessionId, revisionId),
+    () => ({ ok: false, error: "write_conflict" }),
+  );
 }
 
 async function restoreOrderDraftRevisionUnlocked(
@@ -644,7 +667,11 @@ export async function patchOrderDraft(
   options: OrderDraftPatchOptions = {},
 ): Promise<OrderDraftPatchSuccess | OrderDraftPatchFailure> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () => patchOrderDraftUnlocked(sessionId, patch, options));
+  return withDraftWriteLockCatchConflict(
+    sessionId,
+    () => patchOrderDraftUnlocked(sessionId, patch, options),
+    () => ({ ok: false, error: "write_conflict" }),
+  );
 }
 
 async function patchOrderDraftUnlocked(
@@ -960,7 +987,11 @@ export async function upsertOrderDraftInvoiceFields(
   }>,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () => upsertOrderDraftInvoiceFieldsUnlocked(sessionId, fields));
+  return withDraftWriteLockCatchConflict(
+    sessionId,
+    () => upsertOrderDraftInvoiceFieldsUnlocked(sessionId, fields),
+    () => ({ ok: false, error: "write_conflict" }),
+  );
 }
 
 async function upsertOrderDraftInvoiceFieldsUnlocked(
@@ -1028,7 +1059,11 @@ export async function upsertOrderDraftAutoIngest(
   autoIngest: import("@/lib/admin-auto-ingest").AutoIngestStatus,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () => upsertOrderDraftAutoIngestUnlocked(sessionId, autoIngest));
+  return withDraftWriteLockCatchConflict(
+    sessionId,
+    () => upsertOrderDraftAutoIngestUnlocked(sessionId, autoIngest),
+    () => ({ ok: false, error: "write_conflict" }),
+  );
 }
 
 async function upsertOrderDraftAutoIngestUnlocked(
@@ -1076,7 +1111,11 @@ export async function upsertOrderDraftVinScan(
   vinScan: import("@/lib/order-vin-scan").OrderVinScanRecord,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () => upsertOrderDraftVinScanUnlocked(sessionId, vinScan));
+  return withDraftWriteLockCatchConflict(
+    sessionId,
+    () => upsertOrderDraftVinScanUnlocked(sessionId, vinScan),
+    () => ({ ok: false, error: "write_conflict" }),
+  );
 }
 
 async function upsertOrderDraftVinScanUnlocked(
@@ -1127,8 +1166,10 @@ export async function upsertOrderDraftVinPlateResolution(
   vinPlateResolution: import("@/lib/order-vin-plate-resolution").OrderVinPlateResolution,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () =>
-    upsertOrderDraftVinPlateResolutionUnlocked(sessionId, vinPlateResolution),
+  return withDraftWriteLockCatchConflict(
+    sessionId,
+    () => upsertOrderDraftVinPlateResolutionUnlocked(sessionId, vinPlateResolution),
+    () => ({ ok: false, error: "write_conflict" }),
   );
 }
 

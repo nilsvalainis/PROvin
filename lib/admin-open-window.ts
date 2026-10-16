@@ -60,3 +60,34 @@ export function openWindowSyncThen(): SyncOpenedWindow {
     },
   };
 }
+
+/**
+ * PDF / druka: logs tiek atvērts TIKAI pēc gatava HTML, ne pirms `await`.
+ * Sinhronais `about:blank` (#224) atstāja tukšu jaunu logu uz ģenerēšanas laiku.
+ */
+export function openPrintHtmlAfterReady(html: string): Window | null {
+  if (typeof window === "undefined") return null;
+  const w = window.open("", "_blank");
+  if (!w) return null;
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  return w;
+}
+
+export function schedulePrintOnWindow(w: Window, title: string): void {
+  let printed = false;
+  const run = () => {
+    if (printed || w.closed) return;
+    printed = true;
+    try {
+      w.document.title = title;
+      w.focus();
+      w.print();
+    } catch {
+      printed = false;
+    }
+  };
+  w.addEventListener("load", () => window.setTimeout(run, 450), { once: true });
+  window.setTimeout(run, 900);
+}

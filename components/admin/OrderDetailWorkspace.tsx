@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { openWindowSyncThen } from "@/lib/admin-open-window";
+import { openPrintHtmlAfterReady, schedulePrintOnWindow } from "@/lib/admin-open-window";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { flushSync } from "react-dom";
 import { createPortal } from "react-dom";
@@ -107,6 +107,7 @@ import {
   isWorkspaceRevisionConflict,
   persistWorkspaceSafeMerge,
   persistWorkspaceState,
+  WORKSPACE_SAVE_FAILED_ALERT,
   workspacePersistFromDraftWorkspace,
 } from "@/lib/admin-workspace-persist-client";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
@@ -2443,12 +2444,11 @@ export function OrderDetailWorkspace({
   ]);
 
   const persistWorkspaceSnapshot = useCallback(
-    async (opts?: { showFlash?: boolean; serverOnly?: boolean }): Promise<boolean> => {
+    async (opts?: { showFlash?: boolean; serverOnly?: boolean; silent?: boolean }): Promise<boolean> => {
       if (!workspaceHydrated) return false;
       const fromRef = normalizeOrderWorkspacePersistBody(workspaceToPersistBody(wsPersistRef.current));
       let localOk = true;
       if (!opts?.serverOnly) {
-        lastGoodPersistBodyRef.current = fromRef;
         const snapshot = serializeOrderWorkspaceSnapshotFromRef(
           fromRef,
           pdfVisibilityRef.current,
@@ -2470,6 +2470,11 @@ export function OrderDetailWorkspace({
       let serverOk = !orderDraftPersistenceEnabled;
       if (orderDraftPersistenceEnabled && workspaceHydratedOnceRef.current) {
         serverOk = await persistFullWorkspaceRef("manual_save");
+      }
+      if (serverOk) {
+        lastGoodPersistBodyRef.current = fromRef;
+      } else if (!opts?.silent) {
+        window.alert(WORKSPACE_SAVE_FAILED_ALERT);
       }
 
       if (opts?.showFlash !== false && serverOk) {
@@ -3248,15 +3253,17 @@ export function OrderDetailWorkspace({
     pdfBusyRef.current = true;
     pdfTargetRef.current = 8;
     setPdfJob({ key: pdfJobKey, pct: 1 });
-    const opened = openWindowSyncThen();
-    let reportWritten = false;
     const bumpPdf = (pct: number) => {
       pdfTargetRef.current = Math.max(pdfTargetRef.current, pct);
     };
     try {
     syncWsPersistRefFromState();
     if (orderDraftPersistenceEnabled) {
-      await flushWorkspaceServerPatch({ showFlash: false });
+      const saved = await persistWorkspaceSnapshot({ showFlash: false, silent: true });
+      if (!saved) {
+        window.alert(WORKSPACE_SAVE_FAILED_ALERT);
+        return;
+      }
     }
 
     const dealerOnly = opts?.dealerOnly === true;
@@ -3591,12 +3598,11 @@ export function OrderDetailWorkspace({
       }
     }
 
-    reportWritten = opened.writeHtml(translatedHtml);
-    if (!reportWritten) {
+    const w = openPrintHtmlAfterReady(translatedHtml);
+    if (!w) {
       alert("Atļauj uznirstošo logu, lai atvērtu druku.");
       return;
     }
-    const w = opened.window;
 
     const printTitle = dealerOnly
       ? buildProvinDilerisPdfFilename(payload.vin)
@@ -3614,25 +3620,9 @@ export function OrderDetailWorkspace({
       : langSuffix
         ? printTitle.replace(/\.pdf$/i, `${langSuffix}.pdf`)
         : printTitle;
-    if (w && !w.closed) {
-      let printed = false;
-      const schedulePrint = () => {
-        if (printed || w.closed) return;
-        printed = true;
-        try {
-          w.document.title = printFileTitle;
-          w.focus();
-          w.print();
-        } catch {
-          printed = false;
-        }
-      };
-      w.addEventListener("load", () => window.setTimeout(schedulePrint, 450), { once: true });
-      window.setTimeout(schedulePrint, 900);
-    }
+    schedulePrintOnWindow(w, printFileTitle);
     bumpPdf(100);
     } finally {
-      if (!reportWritten) opened.close();
       pdfTargetRef.current = 100;
       setPdfJob({ key: pdfJobKey, pct: 100 });
       window.setTimeout(() => {
@@ -3643,12 +3633,13 @@ export function OrderDetailWorkspace({
   };
 
   const openOemDealerReport = async () => {
-    const opened = openWindowSyncThen();
-    let reportWritten = false;
-    try {
     syncWsPersistRefFromState();
     if (orderDraftPersistenceEnabled) {
-      await flushWorkspaceServerPatch({ showFlash: false });
+      const saved = await persistWorkspaceSnapshot({ showFlash: false, silent: true });
+      if (!saved) {
+        window.alert(WORKSPACE_SAVE_FAILED_ALERT);
+        return;
+      }
     }
     const blocks = mergeSourceBlocksWithDefaults(wsPersistRef.current.sourceBlocks);
     const html = buildOemDealerDocumentHtml({
@@ -3658,31 +3649,12 @@ export function OrderDetailWorkspace({
       oneauto: blocks.oneauto,
       includeEquipment: pdfVisibility.autoRecordsEquipment !== false,
     });
-    reportWritten = opened.writeHtml(html);
-    if (!reportWritten) {
+    const w = openPrintHtmlAfterReady(html);
+    if (!w) {
       alert("Atļauj uznirstošo logu, lai atvērtu OEM dīlera PDF.");
       return;
     }
-    const w = opened.window;
-    if (!w || w.closed) return;
-    const printFileTitle = buildOemDealerPdfFilename(payload.vin);
-    let printed = false;
-    const schedulePrint = () => {
-      if (printed || w.closed) return;
-      printed = true;
-      try {
-        w.document.title = printFileTitle;
-        w.focus();
-        w.print();
-      } catch {
-        printed = false;
-      }
-    };
-    w.addEventListener("load", () => window.setTimeout(schedulePrint, 450), { once: true });
-    window.setTimeout(schedulePrint, 900);
-    } finally {
-      if (!reportWritten) opened.close();
-    }
+    schedulePrintOnWindow(w, buildOemDealerPdfFilename(payload.vin));
   };
 
   const previewBody = previewOpen ? (
@@ -4497,7 +4469,7 @@ export function OrderDetailWorkspace({
             {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
           </button>
           {workspaceAutosaveStatus === "error" ? (
-            <span className="max-w-[12rem] text-[10px] font-semibold leading-tight text-amber-800 max-md:hidden" role="status">
+            <span className="max-w-[12rem] text-[10px] font-semibold leading-tight text-amber-800" role="status">
               Kļūda saglabājot
             </span>
           ) : null}

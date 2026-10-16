@@ -20,6 +20,26 @@ export function isConditionalWriteConflict(err: unknown): boolean {
   return /precondition failed|etag mismatch|already exists/i.test(msg);
 }
 
+export type BlobPutOverwriteOptions = {
+  allowOverwrite: boolean;
+  ifMatch?: string;
+};
+
+/**
+ * Blob `put` opcijas. `ifMatch` tikai tad, ja etag tiešām ir.
+ * Bez etag `allowOverwrite: false` uz jau esoša faila dod „already exists”
+ * un pēc 6 mēģinājumiem PATCH kļūst par 500 (klients to var neredzēt).
+ */
+export function blobPutOverwriteOptions(etag: string | null | undefined): BlobPutOverwriteOptions {
+  const tag = typeof etag === "string" ? etag.trim() : "";
+  if (tag) return { allowOverwrite: true, ifMatch: tag };
+  return { allowOverwrite: true };
+}
+
+export function casRetryDelayMs(attempt: number): number {
+  return Math.min(400, 40 * (attempt + 1));
+}
+
 /**
  * Optimistiska rakstīšana: nolasa etag, aprēķina nākamo vērtību, raksta ar `ifMatch`.
  * Konflikta gadījumā nolasa vēlreiz. Vienas instances atmiņas slēdzene nav vajadzīga.

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  blobPutOverwriteOptions,
+  casRetryDelayMs,
   compareAndSwap,
   ConditionalWriteConflict,
   createMemoryConditionalStore,
@@ -73,6 +75,20 @@ describe("compareAndSwap", () => {
     });
     expect(second).toEqual({ ok: false, reason: "stale_revision", revision: 4 });
     expect(store.peek("s1")).toEqual({ revision: 4, note: "no telefona" });
+  });
+
+  it("ifMatch tikai ar etag, bez etag ļauj overwrite (nekad allowOverwrite:false)", () => {
+    expect(blobPutOverwriteOptions("W/\"abc\"")).toEqual({ allowOverwrite: true, ifMatch: "W/\"abc\"" });
+    expect(blobPutOverwriteOptions("  etag1  ")).toEqual({ allowOverwrite: true, ifMatch: "etag1" });
+    expect(blobPutOverwriteOptions(null)).toEqual({ allowOverwrite: true });
+    expect(blobPutOverwriteOptions("")).toEqual({ allowOverwrite: true });
+    expect(blobPutOverwriteOptions(undefined)).toEqual({ allowOverwrite: true });
+  });
+
+  it("CAS atkārtots mēģinājums gaida arvien ilgāk, bet ne ilgāk par 400ms", () => {
+    expect(casRetryDelayMs(0)).toBe(40);
+    expect(casRetryDelayMs(2)).toBe(120);
+    expect(casRetryDelayMs(20)).toBe(400);
   });
 
   it("atpazīst Blob nosacījuma kļūdu", () => {

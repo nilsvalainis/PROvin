@@ -33,6 +33,36 @@ describe("resolveOrderWorkspaceHydration", () => {
     expect(resolved.hydrated.sourceBlocks.autodna.comments).toContain("Servera");
   });
 
+  it("K3: jaunāks tukšāks serveris nepārraksta bagātīgāku local (zaudēts PATCH)", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.autodna = { ...emptyVendorAvotuBlock(), comments: "Pilns Captur komentārs no operatora" };
+    const local = serializeOrderWorkspaceSnapshotFromRef(
+      {
+        sourceBlocks: blocks,
+        iriss: "Kopsavilkums klientam",
+        apskatesPlāns: "Apskate servisā",
+        tehniskoRiskuAnalize: "Riski",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+      },
+      {},
+      {},
+      "2026-10-16T20:49:00.000Z",
+    );
+    const server = snapshotWithAutodnaComment("", "2026-10-16T20:51:00.000Z");
+    const resolved = resolveOrderWorkspaceHydration({
+      localRaw: local,
+      localRawLegacyV2: null,
+      backupRaw: null,
+      serverWorkspaceJson: server,
+    });
+    expect(resolved.source).toBe("local");
+    expect(resolved.hydrated.sourceBlocks.autodna.comments).toContain("Captur");
+    expect(resolved.hydrated.iriss).toContain("Kopsavilkums");
+  });
+
   it("K3: jaunāks local (nesaglabāts) uzvar vecāku serveri", () => {
     const local = snapshotWithAutodnaComment("Mans lokālais teksts", "2026-06-10T12:00:00.000Z");
     const server = snapshotWithAutodnaComment("Servera teksts", "2026-06-01T10:00:00.000Z");

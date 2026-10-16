@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   stableWorkspaceChecksum,
   verifyWorkspaceIntegrity,
@@ -11,7 +11,10 @@ import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { enqueueWorkspacePersist } from "@/lib/admin-workspace-persist-queue";
 import {
   buildSafeMergePersistBody,
+  isRetryableWorkspacePersistError,
   isWorkspaceRevisionConflict,
+  nextPersistAttemptAfterConflict,
+  persistWorkspaceState,
 } from "@/lib/admin-workspace-persist-client";
 import { nextWorkspaceRevisionAfterRestore } from "@/lib/admin-workspace-integrity";
 
@@ -189,6 +192,76 @@ describe("revision conflict contract", () => {
     expect(isWorkspaceRevisionConflict("overwrite_blocked")).toBe(true);
     expect(isWorkspaceRevisionConflict("store_not_durable")).toBe(false);
     expect(isWorkspaceRevisionConflict(undefined)).toBe(false);
+  });
+
+  it("retries stale_revision and write_conflict, not overwrite_blocked", () => {
+    expect(isRetryableWorkspacePersistError("stale_revision")).toBe(true);
+    expect(isRetryableWorkspacePersistError("write_conflict")).toBe(true);
+    expect(isRetryableWorkspacePersistError("http_409")).toBe(true);
+    expect(isRetryableWorkspacePersistError("overwrite_blocked")).toBe(false);
+    expect(isRetryableWorkspacePersistError("store_not_durable")).toBe(false);
+
+    expect(
+      nextPersistAttemptAfterConflict({
+        error: "stale_revision",
+        currentRevision: 7,
+        expectedWorkspaceRevision: 5,
+      }),
+    ).toEqual({ retry: true, expectedWorkspaceRevision: 7 });
+    expect(nextPersistAttemptAfterConflict({ error: "write_conflict", expectedWorkspaceRevision: 4 })).toEqual({
+      retry: true,
+      expectedWorkspaceRevision: 4,
+    });
+    expect(nextPersistAttemptAfterConflict({ error: "overwrite_blocked", currentRevision: 9 })).toEqual({
+      retry: false,
+    });
+  });
+
+  it("persistWorkspaceState retries once after write_conflict and then succeeds", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({ error: "write_conflict" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          ok: true,
+          updatedAt: "2026-10-16T21:00:00.000Z",
+          durable: true,
+          storageBackend: "blob",
+          workspaceRevision: 8,
+          workspaceChecksum: "abc",
+        }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const result = await persistWorkspaceState({
+        sessionId: "cs_test_retry",
+        body: {
+          sourceBlocks: createDefaultSourceBlocks(),
+          iriss: "Saglabāts",
+          apskatesPlāns: "",
+          tehniskoRiskuAnalize: "",
+          cenasAtbilstiba: "",
+          previewConfirmed: false,
+          vehicleAiExtraction: null,
+          vehicleAiExtractionMeta: null,
+        },
+        baseline: null,
+        pdfVisibility: {},
+        pdfBannerInclude: {},
+        expectedWorkspaceRevision: 7,
+        logContext: "manual_save",
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.workspaceRevision).toBe(8);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("safe merge keeps filled server fields when local is empty", () => {
