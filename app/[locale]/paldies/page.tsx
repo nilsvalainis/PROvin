@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Footer } from "@/components/Footer";
+import { GoogleAdsPurchaseConversion } from "@/components/GoogleAdsPurchaseConversion";
+import { getGoogleAdsPurchaseLabel } from "@/lib/google-ads";
+import { getPaidCheckoutConversion } from "@/lib/google-ads-purchase";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
@@ -25,6 +28,10 @@ export default async function ThanksPage({ searchParams, params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Thanks" });
   const sid = sp.session_id;
+  const conversion =
+    sid && getGoogleAdsPurchaseLabel()
+      ? await getPaidCheckoutConversion(sid)
+      : null;
 
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
@@ -59,6 +66,9 @@ export default async function ThanksPage({ searchParams, params }: Props) {
         </div>
         <Footer />
       </div>
+      {conversion ? (
+        <GoogleAdsPurchaseConversion transactionId={conversion.transactionId} value={conversion.value} />
+      ) : null}
     </div>
   );
 }

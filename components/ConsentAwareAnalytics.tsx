@@ -11,6 +11,7 @@ import {
   PROVIN_CONSENT_UPDATED_EVENT,
 } from "@/lib/cookie-consent";
 import { shouldEnablePublicSiteAnalytics } from "@/lib/analytics-public-scope";
+import { gtagConfigSnippet, gtagLoaderMeasurementId } from "@/lib/google-ads";
 
 function readAnalyticsAllowed(): boolean {
   if (typeof window === "undefined") return false;
@@ -25,6 +26,8 @@ function readAnalyticsAllowed(): boolean {
 type Props = {
   /** Derīgs `G-…` no servera (`getGaMeasurementId`); `null` — GA neielādē. */
   gaMeasurementId: string | null;
+  /** Google Ads `AW-…`; `null` — Ads config netiek pievienots. Viens gtag.js ar GA4. */
+  googleAdsId?: string | null;
   /** TikTok Pixel SDK ID; `null` — pixel neielādē. */
   tiktokPixelId: string | null;
   /** Hosts (bez porta). Ja nav dots — nolasa klientā (`window.location`), lai izkārtojums nelasa `headers()` un lapas paliek statiskas/CDN kešojamas. */
@@ -37,6 +40,7 @@ type Props = {
  */
 export function ConsentAwareAnalytics({
   gaMeasurementId,
+  googleAdsId = null,
   tiktokPixelId,
   requestHostname,
 }: Props) {
@@ -69,6 +73,8 @@ export function ConsentAwareAnalytics({
   }, [sync]);
 
   const id = gaMeasurementId;
+  const adsId = googleAdsId;
+  const gtagId = gtagLoaderMeasurementId(id, adsId);
   const ttPixel = tiktokPixelId;
 
   if (!analyticsEnabled) {
@@ -79,17 +85,14 @@ export function ConsentAwareAnalytics({
     <>
       <Analytics />
       <SpeedInsights />
-      {gaAllowed && id ? (
+      {gaAllowed && gtagId ? (
         <>
           <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`}
+            src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gtagId)}`}
             strategy="afterInteractive"
           />
           <Script id="ga4-gtag-config" strategy="afterInteractive">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
-gtag('consent','default',{analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
-gtag('js',new Date());
-gtag('config','${id}');`}
+            {gtagConfigSnippet(id, adsId)}
           </Script>
         </>
       ) : null}

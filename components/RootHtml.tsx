@@ -3,6 +3,7 @@ import Script from "next/script";
 import { Inter } from "next/font/google";
 import { ConsentAwareAnalytics } from "@/components/ConsentAwareAnalytics";
 import { getGaMeasurementId, getTikTokPixelId } from "@/lib/analytics-public";
+import { GOOGLE_ADS_ID, gtagConsentDefaultSnippet } from "@/lib/google-ads";
 import { htmlLangForLocale } from "@/lib/seo-public-metadata";
 import { SiteThemeProvider } from "@/components/providers/SiteThemeProvider";
 import { SITE_THEME_COOKIE_KEY, SITE_THEME_STORAGE_KEY } from "@/lib/site-theme";
@@ -21,7 +22,16 @@ const inter = Inter({
  * lapas padarīja dinamiskas (`cache-control: private, no-store`, CDN MISS). Tagad katrs saknes izkārtojums
  * ([locale], admin) padod `lang` pats — publiskās lapas paliek statiskas un CDN kešojamas.
  */
-export function RootHtml({ lang, children }: { lang: string; children: ReactNode }) {
+export function RootHtml({
+  lang,
+  children,
+  gtagConsentDefaults = false,
+}: {
+  lang: string;
+  children: ReactNode;
+  /** Consent Mode v2 default denied — tikai publiskais `[locale]` izkārtojums, ne /admin. */
+  gtagConsentDefaults?: boolean;
+}) {
   const gaMeasurementId = getGaMeasurementId();
   const tiktokPixelId = getTikTokPixelId();
   const htmlLang = htmlLangForLocale(lang);
@@ -40,10 +50,18 @@ export function RootHtml({ lang, children }: { lang: string; children: ReactNode
             __html: `(function(){try{var k=${JSON.stringify(SITE_THEME_STORAGE_KEY)};var c=${JSON.stringify(SITE_THEME_COOKIE_KEY)};document.documentElement.setAttribute("data-site-theme","dark");localStorage.setItem(k,"dark");document.cookie=c+"=dark; Path=/; Max-Age="+(60*60*24*365)+"; SameSite=Lax";}catch(e){}})();`,
           }}
         />
+        {gtagConsentDefaults ? (
+          <Script
+            id="gtag-consent-default"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{ __html: gtagConsentDefaultSnippet() }}
+          />
+        ) : null}
         <SiteThemeProvider>
           {children}
           <ConsentAwareAnalytics
             gaMeasurementId={gaMeasurementId}
+            googleAdsId={gtagConsentDefaults ? GOOGLE_ADS_ID : null}
             tiktokPixelId={tiktokPixelId}
           />
         </SiteThemeProvider>

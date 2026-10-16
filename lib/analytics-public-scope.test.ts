@@ -12,6 +12,7 @@ describe("isPublicSiteAnalyticsPath", () => {
     expect(isPublicSiteAnalyticsPath("/lv/pakalpojumi")).toBe(true);
     expect(isPublicSiteAnalyticsPath("/en/blog/foo")).toBe(true);
     expect(isPublicSiteAnalyticsPath("/lv/partneriem/konts")).toBe(true);
+    expect(isPublicSiteAnalyticsPath("/lv/paldies")).toBe(true);
   });
 
   it("izslēdz admin un demo", () => {
