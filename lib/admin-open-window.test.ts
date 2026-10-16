@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isStandaloneDisplayMode, openWindowSyncThen } from "@/lib/admin-open-window";
+import { isStandaloneDisplayMode, openPrintHtmlAfterReady, openWindowSyncThen } from "@/lib/admin-open-window";
 
 type FakeWindow = {
   closed: boolean;
@@ -108,5 +108,34 @@ describe("openWindowSyncThen", () => {
     expect(popup.document.html).toBe("<p>PDF</p>");
     opened.close();
     expect(popup.closed).toBe(true);
+  });
+});
+
+describe("openPrintHtmlAfterReady", () => {
+  it("opens a window only after HTML is ready and writes it immediately", () => {
+    const popup: FakeWindow = {
+      closed: false,
+      location: { href: "about:blank", assign: vi.fn() },
+      document: {
+        html: "",
+        open() {},
+        write(html: string) {
+          this.html = html;
+        },
+        close() {},
+      },
+      close() {
+        this.closed = true;
+      },
+      open: vi.fn(),
+      matchMedia: () => ({ matches: false }),
+      navigator: {} as Navigator,
+    };
+    const { host } = installWindow({ popup });
+    expect(host.open).not.toHaveBeenCalled();
+    const w = openPrintHtmlAfterReady("<p>Atskaite</p>");
+    expect(host.open).toHaveBeenCalledWith("about:blank", "_blank");
+    expect(popup.document.html).toBe("<p>Atskaite</p>");
+    expect(w).toBe(popup);
   });
 });

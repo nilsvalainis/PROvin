@@ -60,3 +60,41 @@ export function openWindowSyncThen(): SyncOpenedWindow {
     },
   };
 }
+
+/**
+ * PDF: atver logu tikai tad, kad HTML ir gatavs. #224 `openWindowSyncThen()`
+ * atvēra `about:blank` pirms ģenerēšanas un atstāja tukšu logu.
+ */
+export function openPrintHtmlAfterReady(html: string): Window | null {
+  if (typeof window === "undefined") return null;
+  const popup = window.open("about:blank", "_blank");
+  if (popup && !popup.closed) {
+    popup.document.open();
+    popup.document.write(html);
+    popup.document.close();
+    return popup;
+  }
+  if (isStandaloneDisplayMode()) {
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    window.location.assign(URL.createObjectURL(blob));
+  }
+  return null;
+}
+
+export function schedulePrintOnWindow(w: Window | null, title: string): void {
+  if (!w || w.closed) return;
+  let printed = false;
+  const schedulePrint = () => {
+    if (printed || w.closed) return;
+    printed = true;
+    try {
+      w.document.title = title;
+      w.focus();
+      w.print();
+    } catch {
+      printed = false;
+    }
+  };
+  w.addEventListener("load", () => window.setTimeout(schedulePrint, 450), { once: true });
+  window.setTimeout(schedulePrint, 900);
+}
