@@ -4,6 +4,7 @@ import { FileText, Loader2, Plus } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
@@ -54,6 +55,27 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   useEffect(() => {
     const t = window.setInterval(() => setNowMs(Date.now()), 30_000);
     return () => window.clearInterval(t);
+  }, []);
+
+  const applyWaybillRestore = useCallback((id: string, record: Record<string, unknown> | undefined) => {
+    if (!record) return;
+    setData((prev) => ({
+      ...prev,
+      rows: prev.rows.map((row) =>
+        row.id === id
+          ? {
+              ...row,
+              number: typeof record.number === "string" ? record.number : row.number,
+              brandModel: typeof record.brandModel === "string" ? record.brandModel : row.brandModel,
+              vin: typeof record.vin === "string" ? record.vin : row.vin,
+              plate: typeof record.plate === "string" ? record.plate : row.plate,
+              issuedAt: typeof record.issuedAt === "string" ? record.issuedAt : row.issuedAt,
+              validUntil: typeof record.validUntil === "string" ? record.validUntil : row.validUntil,
+              fileName: typeof record.fileName === "string" ? record.fileName : row.fileName,
+            }
+          : row,
+      ),
+    }));
   }, []);
 
   const refresh = useCallback(async () => {
@@ -190,6 +212,12 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                       >
                         <FileText className="h-4 w-4" strokeWidth={1.75} aria-hidden />
                       </a>
+                      <AdminChangeHistoryButton
+                        kind="iriss-waybill"
+                        recordId={row.id}
+                        endpoint="/api/admin/change-history"
+                        onRestored={(body) => applyWaybillRestore(row.id, body.record)}
+                      />
                       {orderHref ? (
                         <Link href={orderHref} className="inline-flex rounded-full bg-[#f2f2f7] px-3.5 py-2 text-xs font-semibold text-[#3a3a3c]">
                           Pasūtījums
@@ -253,14 +281,22 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                           {formatWaybillDateTime(row.issuedAt, now) || "—"}
                         </td>
                         <td className={`${hug} py-1 pr-4`}>
-                          <a
-                            href={pdfHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="admin-nav-link text-[13.5px] text-[#1d1d1f] hover:underline"
-                          >
-                            Atvērt PDF
-                          </a>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={pdfHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="admin-nav-link text-[13.5px] text-[#1d1d1f] hover:underline"
+                            >
+                              Atvērt PDF
+                            </a>
+                            <AdminChangeHistoryButton
+                              kind="iriss-waybill"
+                              recordId={row.id}
+                              endpoint="/api/admin/change-history"
+                              onRestored={(body) => applyWaybillRestore(row.id, body.record)}
+                            />
+                          </div>
                         </td>
                         <td className={`${hug} py-1 pr-4`}>
                           {orderHref ? (

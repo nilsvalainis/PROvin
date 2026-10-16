@@ -972,7 +972,11 @@ export async function hydrateIrissOfferImageThumbs(record: IrissPasutijumsRecord
 
 export async function writeIrissPasutijums(
   record: IrissPasutijumsRecord,
-  opts?: { expectedWorkspaceRevision?: number | null },
+  opts?: {
+    expectedWorkspaceRevision?: number | null;
+    historyBy?: string;
+    historyAction?: "save" | "restore";
+  },
 ): Promise<WriteIrissPasutijumsResult> {
   try {
     const r = resolveStorage();
@@ -1043,6 +1047,7 @@ export async function writeIrissPasutijums(
       await writeLocalMirrorSnapshot(out).catch(() => undefined);
       await writeLocalMirrorFullBundle().catch(() => undefined);
       await touchIrissVinAnchors(out);
+      await rememberIrissOrderHistory(existing, out, opts);
       return { ok: true, record: out };
     }
 
@@ -1066,10 +1071,39 @@ export async function writeIrissPasutijums(
     await writeLocalMirrorSnapshot(out).catch(() => undefined);
     await writeLocalMirrorFullBundle().catch(() => undefined);
     await touchIrissVinAnchors(out);
+    await rememberIrissOrderHistory(existing, out, opts);
     return { ok: true, record: out };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg };
+  }
+}
+
+async function rememberIrissOrderHistory(
+  existing: IrissPasutijumsRecord | null,
+  next: IrissPasutijumsRecord,
+  opts?: { historyBy?: string; historyAction?: "save" | "restore" },
+): Promise<void> {
+  if (!existing) return;
+  try {
+    const { diffAdminChangeFields, snapshotIrissOrder } = await import("@/lib/admin-change-history");
+    const { ADMIN_SEARCH_OPERATOR_TENANT } = await import("@/lib/admin-global-search");
+    const before = snapshotIrissOrder(existing);
+    const after = snapshotIrissOrder(next);
+    if (diffAdminChangeFields(before, after).length === 0) return;
+    const { recordAdminChangeHistory } = await import("@/lib/admin-change-history-store");
+    const { adminActorLabel } = await import("@/lib/admin-auth");
+    await recordAdminChangeHistory({
+      kind: "iriss-order",
+      recordId: next.id,
+      tenantId: ADMIN_SEARCH_OPERATOR_TENANT,
+      before,
+      after,
+      by: opts?.historyBy || adminActorLabel(),
+      action: opts?.historyAction ?? "save",
+    });
+  } catch (e) {
+    console.error("[change-history]", e instanceof Error ? e.message : e);
   }
 }
 

@@ -10,6 +10,7 @@ import {
   groupAdminSearchHits,
   parseAdminSearchRecent,
   pushAdminSearchRecent,
+  requestAdminGlobalSearch,
   type AdminSearchGroup,
   type AdminSearchHit,
 } from "@/lib/admin-global-search";
@@ -41,6 +42,20 @@ function HitButton({
     >
       <span className="w-full truncate text-[14px] font-medium text-[#1d1d1f]">{hit.title}</span>
       {hit.subtitle ? <span className="w-full truncate text-[12px] text-[#8e8e93]">{hit.subtitle}</span> : null}
+    </button>
+  );
+}
+
+/** Mobilā meklēšanas poga. Ieliek galvenē vai tab joslā, nevis virs satura. */
+export function AdminMobileSearchButton({ className = "" }: { className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => requestAdminGlobalSearch()}
+      aria-label="Meklēt"
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#e5e5ea] bg-white text-[#1d1d1f] ${className}`}
+    >
+      <Search className="h-4 w-4" strokeWidth={2} aria-hidden />
     </button>
   );
 }
@@ -185,14 +200,6 @@ export function AdminGlobalSearch() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Meklēt"
-        className="fixed left-2 top-[max(8px,env(safe-area-inset-top))] z-[32] inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5e5ea] bg-white text-[#1d1d1f] shadow-sm md:hidden"
-      >
-        <Search className="h-4 w-4" strokeWidth={2} aria-hidden />
-      </button>
       {open ? (
         <div
           className="fixed inset-0 z-[130] flex flex-col bg-white md:block md:bg-black/20 md:p-8"

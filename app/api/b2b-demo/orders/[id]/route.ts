@@ -27,13 +27,19 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "Nederīgs JSON." }, { status: 400 });
   }
   try {
-    const order = await patchB2bDemoTenantOrder(gate.actor.session.tenantId, id, {
-      clientName: typeof body.clientName === "string" ? body.clientName : undefined,
-      brandModel: typeof body.brandModel === "string" ? body.brandModel : undefined,
-      vin: typeof body.vin === "string" ? body.vin : undefined,
-      note: typeof body.note === "string" ? body.note : undefined,
-      status: isB2bDemoOrderStatus(body.status) ? body.status : undefined,
-    });
+    const order = await patchB2bDemoTenantOrder(
+      gate.actor.session.tenantId,
+      id,
+      {
+        clientName: typeof body.clientName === "string" ? body.clientName : undefined,
+        brandModel: typeof body.brandModel === "string" ? body.brandModel : undefined,
+        vin: typeof body.vin === "string" ? body.vin : undefined,
+        note: typeof body.note === "string" ? body.note : undefined,
+        status: isB2bDemoOrderStatus(body.status) ? body.status : undefined,
+      },
+      undefined,
+      { by: gate.actor.user.name || gate.actor.user.email },
+    );
     return NextResponse.json({ order });
   } catch (e) {
     return b2bDemoErrorResponse(e);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { adminActorLabel, getAdminSession } from "@/lib/admin-auth";
 import { parseListingMatchPatches } from "@/lib/iriss-listing-match";
 import { patchIrissListingMatchStatus } from "@/lib/iriss-listing-match-store";
 
@@ -20,7 +20,7 @@ export async function PATCH(req: Request) {
   const patches = parseListingMatchPatches(body);
   if (patches.length === 0) return NextResponse.json({ error: "invalid_patch" }, { status: 400 });
 
-  const next = await patchIrissListingMatchStatus(patches, new Date().toISOString());
+  const next = await patchIrissListingMatchStatus(patches, new Date().toISOString(), { by: adminActorLabel() });
   if (!next) return NextResponse.json({ error: "store_disabled" }, { status: 503 });
   return NextResponse.json({ ok: true, unseenCount: next.unseenCount });
 }

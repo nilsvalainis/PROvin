@@ -286,11 +286,33 @@ export async function addB2bDemoTenantOrder(
   });
 }
 
+async function rememberB2bOrderHistory(
+  previous: B2bDemoOrder,
+  next: B2bDemoOrder,
+  history?: { by?: string; action?: "save" | "restore" },
+): Promise<void> {
+  const { diffAdminChangeFields, snapshotB2bOrder } = await import("@/lib/admin-change-history");
+  const before = snapshotB2bOrder(previous);
+  const after = snapshotB2bOrder(next);
+  if (diffAdminChangeFields(before, after).length === 0) return;
+  const { recordAdminChangeHistory } = await import("@/lib/admin-change-history-store");
+  await recordAdminChangeHistory({
+    kind: "b2b-order",
+    recordId: next.orderId,
+    tenantId: next.tenantId,
+    before,
+    after,
+    by: history?.by,
+    action: history?.action ?? "save",
+  });
+}
+
 export async function patchB2bDemoTenantOrder(
   tenantId: string,
   orderId: string,
   patch: Partial<B2bDemoOrderInput>,
   r?: B2bDemoRepository,
+  history?: { by?: string; action?: "save" | "restore" },
 ): Promise<B2bDemoOrder> {
   return withLock(async () => {
     const store = repo(r);
@@ -298,10 +320,14 @@ export async function patchB2bDemoTenantOrder(
     if (!doc) throw new Error("Tenants nav atrasts.");
     const idx = doc.orders.findIndex((o) => o.orderId === orderId);
     if (idx < 0) throw new Error("Pasūtījums nav atrasts.");
-    const next = applyB2bDemoOrderPatch(doc.orders[idx]!, tenantId, patch);
+    const previous = doc.orders[idx]!;
+    const next = applyB2bDemoOrderPatch(previous, tenantId, patch);
     doc.orders[idx] = next;
     doc.tenant.updatedAt = next.updatedAt;
     await store.writeTenant(doc);
+    await rememberB2bOrderHistory(previous, next, history).catch((e) => {
+      console.error("[change-history]", e instanceof Error ? e.message : e);
+    });
     return next;
   });
 }

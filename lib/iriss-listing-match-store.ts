@@ -116,7 +116,11 @@ export function orderRoomMatchProps(
   return { extraListingIds: [...extra], hitStatus, duplicates };
 }
 
-export async function patchIrissListingMatchStatus(patches: readonly IrissListingMatchPatch[], nowIso: string): Promise<IrissListingMatchState | null> {
+export async function patchIrissListingMatchStatus(
+  patches: readonly IrissListingMatchPatch[],
+  nowIso: string,
+  history?: { by?: string; action?: "save" | "restore" },
+): Promise<IrissListingMatchState | null> {
   const storage = getIrissListingsStorageState();
   if (!storage.enabled) return null;
   const previous = await readIrissListingMatchState();
@@ -130,5 +134,37 @@ export async function patchIrissListingMatchStatus(patches: readonly IrissListin
   };
   const write = await writeIrissListingMatchState(next);
   if (!write.ok) return null;
+  await rememberListingStatusHistory(previous.entries, next.entries, history).catch((e) => {
+    console.error("[change-history]", e instanceof Error ? e.message : e);
+  });
   return next;
+}
+
+async function rememberListingStatusHistory(
+  before: readonly { orderId: string; listingId: string; status: string }[],
+  after: readonly { orderId: string; listingId: string; status: string }[],
+  history?: { by?: string; action?: "save" | "restore" },
+): Promise<void> {
+  const { diffAdminChangeFields, listingHistoryRecordId, snapshotListingStatus } = await import("@/lib/admin-change-history");
+  const { ADMIN_SEARCH_OPERATOR_TENANT } = await import("@/lib/admin-global-search");
+  const { recordAdminChangeHistory } = await import("@/lib/admin-change-history-store");
+  const { adminActorLabel } = await import("@/lib/admin-auth");
+  const prev = new Map(before.map((row) => [`${row.orderId}|${row.listingId}`, row.status]));
+  for (const row of after) {
+    const was = prev.get(`${row.orderId}|${row.listingId}`);
+    if (was == null || was === row.status) continue;
+    const left = snapshotListingStatus(was);
+    const right = snapshotListingStatus(row.status);
+    if (diffAdminChangeFields(left, right).length === 0) continue;
+    const recordId = listingHistoryRecordId(row.orderId, row.listingId);
+    await recordAdminChangeHistory({
+      kind: "iriss-listing",
+      recordId,
+      tenantId: ADMIN_SEARCH_OPERATOR_TENANT,
+      before: left,
+      after: right,
+      by: history?.by || adminActorLabel(),
+      action: history?.action ?? "save",
+    });
+  }
 }
