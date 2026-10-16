@@ -1,7 +1,7 @@
 /**
  * Kopīgs, tenant-agnostisks kritēriju adapteris.
  * Rezultāts ir atmiņā. To neraksta atpakaļ esošā pasūtījumā.
- * B2B demo to varēs saukt pēc tam, kad `B2bDemoOrder` dabūs `criteria?`.
+ * B2B demo `criteria?` ir tas pats tips. Forma ir `SharedOrderCriteriaForm`.
  * Šeit nav tīkla, nav Blob, nav tenant id un nav importa no `lib/b2b-demo-*`.
  */
 

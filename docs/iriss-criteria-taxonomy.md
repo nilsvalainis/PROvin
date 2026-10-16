@@ -217,7 +217,7 @@ Viena summa nobraukumā vai budžetā ir augšējā robeža, kā līdzšinējā 
 
 Esošie pasūtījuma lauki netiek dzēsti un netiek pārdēvēti. `criteria` ir neobligāts lauks uz `IrissPasutijumsRecord`. Vecs JSON bez šī lauka tāds arī paliek. `retainStoredIrissCriteria` saglabāšanā patur tikai jau ierakstīto shēmu un izmet atvasinājumu.
 
-`B2bDemoOrder` šajā paketē netiek mainīts. Lauks `criteria?` tur pienāks atsevišķi, kad melnraksts ar B2B pasūtījuma tipu ir sapludināts. Līdz tam `readSharedOrderCriteria` un `attachSharedOrderCriteria` pieņem parasto objektu ar tiem pašiem teksta laukiem un nesaista tenant id. Brīvā piezīme `note` netiek pārcelta uz kritērijiem.
+`B2bDemoOrder` var saturēt to pašu neobligāto `criteria?`. Vecs B2B JSON bez lauka paliek bez tā. `parseB2bDemoOrder` pieliek tikai jau saglabātu derīgu V1. `applyB2bDemoOrderPatch` izsauc `retainStoredIrissCriteria`, tāpēc atvasinājums netiek ierakstīts. `SharedOrderCriteriaForm` ir viena forma IRISS un demo. Tā rāda atmiņas aprēķinu un neko nesaglabā. `readSharedOrderCriteria` nesaista tenant id. Brīvā piezīme `note` netiek pārcelta uz kritērijiem.
 
 ## Projekcija uz esošo meklēšanu
 

@@ -1,3 +1,5 @@
+import type { IrissCriteriaV1 } from "@/lib/iriss-criteria-types";
+
 export const B2B_DEMO_ROLES = ["owner", "employee"] as const;
 export type B2bDemoRole = (typeof B2B_DEMO_ROLES)[number];
 
@@ -136,6 +138,11 @@ export type B2bDemoOrder = {
   note: string;
   status: B2bDemoOrderStatus;
   offers: B2bDemoOffer[];
+  /**
+   * Tā pati shēma kā IRISS. Vecs JSON šo lauku nesatur.
+   * Migrācija to neraksta. Teksta lauki paliek.
+   */
+  criteria?: IrissCriteriaV1;
   createdAt: string;
   updatedAt: string;
 };

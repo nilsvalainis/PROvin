@@ -13,6 +13,7 @@ import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter"
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap, coerceIrissOrderRoomTab } from "@/lib/iriss-order-room-match-props";
@@ -1580,6 +1581,8 @@ export function IrissPasutijumsEditor({
           </div>
           <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
+
+        <SharedOrderCriteriaForm source={rec} />
 
         <section className={shellCard}>
           <BlockTitle>Aprīkojums</BlockTitle>

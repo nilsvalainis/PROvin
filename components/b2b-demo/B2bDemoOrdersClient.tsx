@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
+import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import { B2B_DEMO_APP_PREFIX } from "@/lib/b2b-demo-host";
 import {
   B2B_DEMO_DEAL_DETAIL_OPTIONS,
@@ -361,6 +362,8 @@ export function B2bDemoOrderForm({
           ))}
         </div>
       </section>
+
+      <SharedOrderCriteriaForm source={order} />
 
       <section className={sectionClass}>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Aprīkojums un piezīmes</h2>
