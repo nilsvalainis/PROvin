@@ -6,6 +6,7 @@ import { sourceNeedsInput, vinScanProbeFor } from "@/lib/vin-scan/probes";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
 import { runWithVinScanDeadline } from "@/lib/vin-scan/http";
+import { withVinScanRelayDedupe } from "@/lib/vin-scan/listings-page-relay";
 import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator } from "@/lib/vin-scan/types";
 
@@ -54,6 +55,7 @@ export async function runVinScan(
     ? input.sourceIds.filter((id): id is VinScanSourceId => isVinScanSourceId(id) && isFreeVinScanSourceId(id))
     : freeVinScanSourceIds();
   const wanted = VIN_SCAN_CATALOG.filter((item) => ids.includes(item.id));
+  return withVinScanRelayDedupe(async () => {
   const rows = await Promise.all(
     wanted.map(async (item) => {
       const started = Date.now();
@@ -84,6 +86,7 @@ export async function runVinScan(
     }),
   );
   return applyFinlandLinkToIndicators(rows, ctx.plates);
+  });
 }
 
 export function sanitizeVinScanSourceIds(raw: unknown): VinScanSourceId[] | undefined {

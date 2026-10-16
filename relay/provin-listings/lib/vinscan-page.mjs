@@ -27,8 +27,18 @@ const HTML_LIMIT = 900_000;
 const POLL_MS = 750;
 const ATTEMPTS = 3;
 
-const BLOCK_RE =
-  /just a moment|cf-chl|challenge-platform|attention required|access blocked|access denied|enable javascript and cookies|performing security verification|security verification|verifies you are not a bot|checking your browser|verify you are human|sorry, you have been blocked|cf-turnstile|turnstile|cdn-cgi\/challenge|_cf_chl|cf-mitigated/i;
+/** JS izaicinājums, kas vēl var nokrist. To gaidām. */
+const CHALLENGE_WAIT_RE =
+  /just a moment|performing security verification|security verification|checking your browser|verify you are human|cf-browser-verification|cf-chl|challenge-platform|cf-turnstile|turnstile|cdn-cgi\/challenge|_cf_chl/i;
+
+/**
+ * Galīgs Cloudflare/WAF bloks. IP paliek 403 arī īstā Chrome.
+ * Pēc īsas apstiprināšanas (lapa nemainās) beidzam, nevis gaidām visu 52 s budžetu.
+ */
+const HARD_BLOCK_RE =
+  /sorry, you have been blocked|you have been blocked|access denied|attention required|access blocked|error code:\s*1020|cf-error-details|enable javascript and cookies/i;
+
+const HARD_BLOCK_CONFIRM_MS = 2_500;
 
 export function validVinScanPageUrl(raw) {
   try {
@@ -50,11 +60,12 @@ function looksLikeVehicle(html) {
   return sale || lot || json;
 }
 
-/** vehicle = izsoles lapa. challenge/pending = vēl jāgaida. clear = parasta lapa. */
+/** vehicle = izsoles lapa. challenge/pending = vēl jāgaida. blocked = galīgs 403. clear = parasta lapa. */
 export function classifyVinScanSnapshot(html, title, status) {
   if (looksLikeVehicle(html)) return "vehicle";
   const blob = `${title}\n${html}`.slice(0, 80_000);
-  if (BLOCK_RE.test(blob)) return "challenge";
+  if (CHALLENGE_WAIT_RE.test(blob)) return "challenge";
+  if (HARD_BLOCK_RE.test(blob)) return "blocked";
   if (status === 403 || status === 429 || status === 503 || status === 0) return "pending";
   if (String(html ?? "").trim().length < 400) return "pending";
   return "clear";
@@ -185,6 +196,7 @@ async function settle(page, url, context, navStatus, net, now, end, sleep) {
   let lastUrl = url;
   let polls = 0;
   let cookieNav = false;
+  let blockedAt = 0;
   while (now() < end && polls < 40) {
     polls += 1;
     const snap = await readSnap(page, body);
@@ -193,6 +205,14 @@ async function settle(page, url, context, navStatus, net, now, end, sleep) {
     const kind = classifyVinScanSnapshot(snap.html, snap.title, status);
     if (kind === "vehicle") return { done: true, status: 200, html: snap.html, finalUrl: lastUrl };
     if (kind === "clear") return { done: true, status: status >= 400 || status === 0 ? 200 : status, html: snap.html, finalUrl: lastUrl };
+    if (kind === "blocked") {
+      if (!blockedAt) blockedAt = now();
+      if (now() - blockedAt >= HARD_BLOCK_CONFIRM_MS) {
+        return { done: false, status: 403, html: snap.html || lastHtml, finalUrl: lastUrl, blocked: true };
+      }
+    } else {
+      blockedAt = 0;
+    }
     if (!cookieNav && polls >= 3 && (await hasClearance(context, url))) {
       cookieNav = true;
       const again = await navigate(page, url, Math.min(12_000, Math.max(3_000, end - now())));
@@ -236,7 +256,7 @@ export async function fetchVinScanPageHtml(page, url, opts = {}) {
     const end = Math.min(deadline, now() + attemptMs);
     const settled = await settle(page, url, context, navStatus, net, now, end, sleep);
     last = settled;
-    if (settled.done) return clip(settled);
+    if (settled.done || settled.blocked) return clip(settled);
   }
   return clip(last);
 }

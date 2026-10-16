@@ -51,7 +51,7 @@ export function classifyBrowserProbe(id: VinScanBrowserId | string, text: string
       }
       return hasVin(text, vin) ? null : unknownPageWithoutVin("bid.cars", text);
     case "auchistory":
-      if (/no (auction )?records|vehicle not found|nothing found/i.test(text)) {
+      if (/no (auction )?records|vehicle not found|nothing found|it seems we can['\u2019]t find what you['\u2019]re looking for/i.test(text)) {
         return { status: "none", summary: "Nav izsoles vēstures" };
       }
       if (hasVin(text, vin) && /damage|auction|sold for|\bbid\b/i.test(text)) {

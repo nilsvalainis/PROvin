@@ -14,6 +14,7 @@
  *   LISTINGS_MAX_FETCHES_PER_DAY noklusējums 300 uz platformu (1 pilna diena + Nolasīt tagad)
  *   LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY noklusējums 400 (POST /listings/page)
  *   LISTINGS_MAX_QUEUE          noklusējums 40 (garāka rinda -> 503)
+ *   LISTINGS_VINSCAN_CONCURRENCY noklusējums 2 (VIN SCAN Chrome joslas; car.info un bid.cars pirmie)
  *   LISTINGS_MANUAL_LOGIN_MINUTES noklusējums 15
  *   OPENLANE_USER / OPENLANE_PASS, AUTOBID_USER / AUTOBID_PASS, ECARSTRADE_USER / ECARSTRADE_PASS
  *   Auto1 tikai manuāli. eCarsTrade: cenas no logged-in /search (Vercel future_api paliek inventāram).
@@ -50,6 +51,7 @@ import { openlane } from "./lib/platforms/openlane.mjs";
 import { sanitizeAutobidRelayRaw } from "./lib/sanitize-autobid.mjs";
 import { PLATFORMS, RelayState } from "./lib/state.mjs";
 import { listingsFetchKey, listingsUrlLog } from "./lib/urls.mjs";
+import { createVinScanLanes, vinScanPageHost, vinScanProfileName } from "./lib/vinscan-lanes.mjs";
 import { fetchVinScanPageHtml, validVinScanPageUrl } from "./lib/vinscan-page.mjs";
 
 const HOST = process.env.LISTINGS_RELAY_HOST || "127.0.0.1";
@@ -64,6 +66,8 @@ const VINSCAN_MAX_FETCHES_PER_DAY = Math.max(
   Number(process.env.LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY || 400),
 );
 const MAX_QUEUE = Math.max(1, Number(process.env.LISTINGS_MAX_QUEUE || 40));
+const VINSCAN_CONCURRENCY = Math.max(1, Math.min(3, Number(process.env.LISTINGS_VINSCAN_CONCURRENCY || 2)));
+const vinScanLanes = createVinScanLanes({ limit: VINSCAN_CONCURRENCY });
 const MANUAL_LOGIN_MINUTES = Math.max(1, Number(process.env.LISTINGS_MANUAL_LOGIN_MINUTES || 15));
 const OPENLANE_PUBLIC_FALLBACK = /^(1|true|yes)$/i.test(process.env.OPENLANE_ALLOW_PUBLIC_FALLBACK ?? "");
 
@@ -320,6 +324,7 @@ const server = createServer(async (req, res) => {
         profiles,
         credentials: Object.fromEntries(PLATFORMS.map((p) => [p, platforms[p].hasCredentials()])),
         queue: { length: browserQueue.queueLength, current: browserQueue.current },
+        vinscan: { waiting: vinScanLanes.queueLength, running: vinScanLanes.runningCount, limit: VINSCAN_CONCURRENCY },
         manualLogin: manual.close
           ? { platform: manual.platform, startedAt: manual.startedAt, vncReady: manual.vncReady }
           : null,
@@ -341,15 +346,17 @@ const server = createServer(async (req, res) => {
   if (path === "/page") {
     const pageUrl = validVinScanPageUrl(body.url);
     if (!pageUrl) return sendJson(res, 400, { ok: false, error: "url nav atļauts VIN SCAN hosts" });
-    if (browserQueue.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, error: "rinda pilna" });
-    if (state.countFetch("vinscan", VINSCAN_MAX_FETCHES_PER_DAY)) {
+    const shared = vinScanLanes.peek(pageUrl);
+    if (!shared && vinScanLanes.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, error: "rinda pilna" });
+    if (!shared && state.countFetch("vinscan", VINSCAN_MAX_FETCHES_PER_DAY)) {
       return sendJson(res, 429, { ok: false, error: `dienas limits ${VINSCAN_MAX_FETCHES_PER_DAY} nolasīšanas VIN SCAN` });
     }
-    log(`vinscan page ${listingsUrlLog(pageUrl)} (rinda ${browserQueue.queueLength})`);
+    const pageHost = vinScanPageHost(pageUrl);
+    log(`vinscan page ${listingsUrlLog(pageUrl)} (rinda ${vinScanLanes.queueLength} host ${pageHost})`);
     try {
-      const out = await browserQueue.run("page:vinscan", async () => {
+      const out = await vinScanLanes.run(pageUrl, async () => {
         const started = Date.now();
-        const { page, context, close } = await openProfile("vinscan", { headless: false, timeoutMs: 55_000 });
+        const { page, context, close } = await openProfile(vinScanProfileName(pageHost), { headless: false, timeoutMs: 55_000 });
         try {
           const got = await fetchVinScanPageHtml(page, pageUrl, { context, timeoutMs: 52_000 });
           return { ok: true, ...got, elapsedMs: Date.now() - started };

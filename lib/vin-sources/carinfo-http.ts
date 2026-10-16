@@ -15,6 +15,7 @@ import { parseCarinfoExtract } from "@/lib/vin-sources/carinfo-parse";
 import {
   CARINFO_SEARCH_LOCALES,
   carinfoSuperSearchUrl,
+  carinfoSvVinUrl,
   carinfoSwedenVinUrl,
   parseCarinfoSearchBody,
   type CarinfoSearchHit,
@@ -139,6 +140,12 @@ function resultFromPage(vin: string, href: string, pageText: string): VinSourceF
 
 export async function fetchCarinfoHttp(vin: string): Promise<VinSourceFetchResult> {
   let session: Session = { cookie: "", ua: VIN_HTTP_UA };
+  const svUrl = carinfoSvVinUrl(vin);
+  const svDirect = await get(svUrl, session, pageHeaders(session.ua));
+  if (svDirect.status === 200 && !isCloudflareChallengeHtml(svDirect.text, svDirect.status)) {
+    const svHit = resultFromPage(vin, svUrl, svDirect.text);
+    if (svHit) return svHit;
+  }
   const directUrl = carinfoSwedenVinUrl(vin);
   const directPass = await throughChallenge(directUrl, session, pageHeaders(session.ua), directUrl);
   if (!("reason" in directPass)) {

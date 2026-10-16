@@ -1,11 +1,13 @@
 /**
- * car.info VIN SCAN: primāri /en-se/vin/S/{VIN}, numurs tikai ja VIN lapa auto neatrada.
- * Bez CapSolver un bez proxy. Bloķētu atbildi izsaucējs var aizstāt ar releju.
+ * car.info VIN SCAN: vispirms /sv-se/vin/S/{VIN} (tiešs JSON/HTML no servera),
+ * tad /en-se un super-search. Numurs tikai ja VIN lapas auto neatrada.
+ * Bez CapSolver un bez proxy. Relejs ir rezerve, ja visas tiešās lapas ir bloķētas.
  */
 import { extractPageFromHtml, isCloudflareChallengeHtml, looksLikeCloudflareWafBlock } from "@/lib/vin-sources/html-extract";
 import { parseCarinfoExtract } from "@/lib/vin-sources/carinfo-parse";
 import {
   carinfoSuperSearchUrl,
+  carinfoSvVinUrl,
   carinfoSwedenPlateUrl,
   carinfoSwedenVinUrl,
   parseCarinfoSearchBody,
@@ -30,9 +32,15 @@ function kmLv(raw: string): string {
 }
 
 function vehicleFromCarinfoText(text: string): VinScanVehicle | undefined {
-  const m = /\bis an?\s+(?:[a-z]+\s+)?([A-Z][A-Za-z0-9-]+)\s+([A-Z0-9][A-Za-z0-9-]*)\s+from\s+(\d{4})/i.exec(text);
-  if (!m) return undefined;
-  return { make: m[1] ?? "", model: m[2] ?? "", year: m[3] ?? "" };
+  const prose =
+    /\b(?:is an?|är en)\s+(?:[a-zåäö]+\s+)?([A-Z][A-Za-z0-9-]+)\s+([A-Z0-9][A-Za-z0-9-]*)\s+(?:from|från)\s+(\d{4})/i.exec(
+      text,
+    );
+  if (prose) return { make: prose[1] ?? "", model: prose[2] ?? "", year: prose[3] ?? "" };
+  const titled =
+    /\b([A-Z][A-Za-z0-9-]{2,})\s+([A-Z0-9][A-Za-z0-9-]*)\b[^\n]{0,48}?\b((?:19|20)\d{2})\b/.exec(text);
+  if (!titled) return undefined;
+  return { make: titled[1] ?? "", model: titled[2] ?? "", year: titled[3] ?? "" };
 }
 
 function summaryFromParsed(text: string, parsed: ReturnType<typeof parseCarinfoExtract>): string {
@@ -87,53 +95,62 @@ export function carinfoScanFromPage(status: number, html: string): VinScanParse 
   };
 }
 
-function sameCarinfoUrl(a: string, b: string): boolean {
-  try {
-    const left = new URL(a);
-    const right = new URL(b);
-    return left.origin === right.origin && left.pathname === right.pathname;
-  } catch {
-    return a === b;
-  }
-}
-
 /**
- * VIN lapa vispirms. Super-search tikai ja Zviedrijas VIN lapa ir 404 (citas Nordics).
- * Numura lapa tikai pēc tam, un tikai ja SE numurs ir derīgs.
+ * sv-se VIN lapa vispirms (no servera bieži 200, kamēr en-se ir nginx 403).
+ * Super-search JSON ir nākamais, ja VIN lapa auto neatrada vai bija bloķēta.
+ * Numura lapa tikai pēc tīras iztrūkuma atbildes, un tikai ja SE numurs ir derīgs.
+ * Bloķēts tiek atgriezts tikai tad, ja neviena lapa auto neatrada un neviena nebija tīrs "nav".
  */
 export async function runCarinfoLookup(
   vin: string,
   plate: string,
   fetchPage: (url: string) => Promise<CarinfoPageResponse>,
 ): Promise<VinScanParse> {
-  const vinUrl = carinfoSwedenVinUrl(vin);
-  const vinPage = await fetchPage(vinUrl);
-  const vinParsed = carinfoScanFromPage(vinPage.status, vinPage.text);
-  if (vinParsed.status === "found" || vinParsed.status === "unknown" || vinParsed.status === "blocked") {
-    return { ...vinParsed, openUrl: vinUrl };
-  }
+  const svUrl = carinfoSvVinUrl(vin);
+  const enUrl = carinfoSwedenVinUrl(vin);
+  const seen = new Set<string>();
+  let sawBlocked = false;
+  let sawMiss = false;
 
-  const searchUrl = carinfoSuperSearchUrl("en-se", vin, Date.now());
-  const search = await fetchPage(searchUrl);
-  if (!carinfoResponseBlocked(search.status, search.text)) {
-    const hit = parseCarinfoSearchBody(search.text, vin);
-    if (hit?.href && !sameCarinfoUrl(hit.href, vinUrl)) {
-      const page = await fetchPage(hit.href);
-      const parsed = carinfoScanFromPage(page.status, page.text);
-      if (parsed.status === "found" || parsed.status === "unknown" || parsed.status === "blocked") {
-        return { ...parsed, openUrl: hit.href };
-      }
-    }
-  }
-
-  if (isValidScanPlate("se", plate)) {
-    const plateUrl = carinfoSwedenPlateUrl(plate);
-    const page = await fetchPage(plateUrl);
+  async function read(url: string): Promise<VinScanParse | null> {
+    if (seen.has(url)) return null;
+    seen.add(url);
+    const page = await fetchPage(url);
     const parsed = carinfoScanFromPage(page.status, page.text);
-    if (parsed.status === "found" || parsed.status === "unknown" || parsed.status === "blocked") {
-      return { ...parsed, openUrl: plateUrl };
+    if (parsed.status === "blocked") {
+      sawBlocked = true;
+      return null;
     }
+    if (parsed.status === "found") return { ...parsed, openUrl: url };
+    if (parsed.status === "unknown" && page.status === 200) return { ...parsed, openUrl: url };
+    if (parsed.status === "none" || page.status === 404) sawMiss = true;
+    return null;
   }
 
-  return { status: "none", summary: NONE, openUrl: vinUrl };
+  for (const url of [svUrl, enUrl]) {
+    const parsed = await read(url);
+    if (parsed) return parsed;
+  }
+
+  for (const locale of ["sv-se", "en-se"] as const) {
+    const searchUrl = carinfoSuperSearchUrl(locale, vin, Date.now());
+    const search = await fetchPage(searchUrl);
+    if (carinfoResponseBlocked(search.status, search.text)) {
+      sawBlocked = true;
+      continue;
+    }
+    const hit = parseCarinfoSearchBody(search.text, vin);
+    if (!hit?.href) continue;
+    const parsed = await read(hit.href);
+    if (parsed) return parsed;
+  }
+
+  if (isValidScanPlate("se", plate) && sawMiss) {
+    const plateUrl = carinfoSwedenPlateUrl(plate);
+    const parsed = await read(plateUrl);
+    if (parsed) return parsed;
+  }
+
+  if (sawBlocked && !sawMiss) return { status: "blocked", summary: BLOCKED, openUrl: svUrl };
+  return { status: "none", summary: NONE, openUrl: sawMiss ? enUrl : svUrl };
 }

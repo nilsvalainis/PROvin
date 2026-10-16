@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { carinfoSwedenPlateUrl, carinfoSwedenVinUrl } from "@/lib/vin-sources/carinfo-search";
+import { carinfoSvVinUrl, carinfoSwedenPlateUrl, carinfoSwedenVinUrl } from "@/lib/vin-sources/carinfo-search";
 import { runCarinfoLookup } from "@/lib/vin-scan/carinfo-lookup";
 
 const VIN = "YV1LW5522V2348444";
@@ -36,24 +36,37 @@ const VOLVO_V70_HTML = `
 `;
 
 describe("car.info VIN adreses", () => {
-  it("primārā ir /en-se/vin/S/, ne search?q= un ne lapa bez /S/", () => {
+  it("servera ceļš ir /sv-se/vin/S/, operatora saite paliek /en-se/vin/S/", () => {
+    expect(carinfoSvVinUrl(VIN)).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
     expect(carinfoSwedenVinUrl(VIN)).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
     expect(carinfoSwedenVinUrl(VIN)).not.toContain("search?q=");
-    expect(carinfoSwedenVinUrl(` ${VIN.toLowerCase()} `)).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
+    expect(carinfoSvVinUrl(` ${VIN.toLowerCase()} `)).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
     expect(carinfoSwedenPlateUrl("bmx 837")).toBe("https://www.car.info/en-se/license-plate/S/BMX837");
   });
 });
 
+const SV_XC60_HTML = `
+<html><head><title>KWW569 - Volvo XC60 D3 Manuell, 163hk, 2011</title></head><body>
+<p>KWW569 är en svart Volvo XC60 från 2011 med en 163 hk dieselmotor och manuell växellåda. I trafik: Nej.</p>
+<div><span>Antal ägare</span> 7</div>
+<table>
+<tr><th>Händelse</th><th>Mil</th><th>Datum</th></tr>
+<tr><td>Kontrollbesiktning</td><td>47 732 mil</td><td>2026-01-08</td></tr>
+</table>
+<p>Information från Transportstyrelsen</p>
+</body></html>
+`;
+
 describe("runCarinfoLookup", () => {
-  it("VIN lapa pietiek, numuru neprasa", async () => {
+  it("sv-se VIN lapa pietiek, en-se un numuru neprasa", async () => {
     const calls: string[] = [];
     const parsed = await runCarinfoLookup(VIN, "", async (url) => {
       calls.push(url);
       return { status: 200, text: VOLVO_V70_HTML };
     });
-    expect(calls).toEqual([`https://www.car.info/en-se/vin/S/${VIN}`]);
+    expect(calls).toEqual([`https://www.car.info/sv-se/vin/S/${VIN}`]);
     expect(parsed.status).toBe("found");
-    expect(parsed.openUrl).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
+    expect(parsed.openUrl).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
     expect(parsed.summary).toBe("Volvo V70, 1997, 523 710 km, 12 īpašnieki");
     expect(parsed.vehicle).toEqual({ make: "Volvo", model: "V70", year: "1997" });
     expect(parsed.mileage).toEqual(
@@ -81,9 +94,11 @@ describe("runCarinfoLookup", () => {
       }
       return { status: 404, text: "not found" };
     });
-    expect(calls[0]).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
-    expect(calls[1]).toContain(`/en-se/search/super/${VIN}?time=`);
-    expect(calls[2]).toBe("https://www.car.info/en-se/license-plate/S/BMX837");
+    expect(calls[0]).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
+    expect(calls[1]).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
+    expect(calls[2]).toContain(`/sv-se/search/super/${VIN}?time=`);
+    expect(calls[3]).toContain(`/en-se/search/super/${VIN}?time=`);
+    expect(calls[4]).toBe("https://www.car.info/en-se/license-plate/S/BMX837");
     expect(calls.some((url) => url.includes("search?q="))).toBe(false);
     expect(calls.some((url) => url.includes("/sv-se/license-plate/"))).toBe(false);
     expect(parsed.status).toBe("found");
@@ -99,18 +114,54 @@ describe("runCarinfoLookup", () => {
       }
       return { status: 404, text: "" };
     });
-    expect(calls).toHaveLength(2);
+    expect(calls).toHaveLength(4);
     expect(parsed).toMatchObject({ status: "none", summary: "car.info šo VIN neatrada" });
   });
 
-  it("403 pēc tiešā pieprasījuma ir bloķēts, numuru vairs nemeklē", async () => {
+  it("403 uz visām tiešajām lapām ir bloķēts, numuru vairs nemeklē", async () => {
     const calls: string[] = [];
     const parsed = await runCarinfoLookup(VIN, "BMX837", async (url) => {
       calls.push(url);
       return { status: 403, text: "<html><title>403 Forbidden</title></html>" };
     });
-    expect(calls).toEqual([`https://www.car.info/en-se/vin/S/${VIN}`]);
+    expect(calls).toEqual([
+      `https://www.car.info/sv-se/vin/S/${VIN}`,
+      `https://www.car.info/en-se/vin/S/${VIN}`,
+      expect.stringContaining(`/sv-se/search/super/${VIN}?time=`),
+      expect.stringContaining(`/en-se/search/super/${VIN}?time=`),
+    ]);
     expect(parsed.status).toBe("blocked");
     expect(parsed.summary).toBe("car.info bloķē serveri - atver pārlūkā");
+    expect(parsed.openUrl).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
+  });
+
+  it("sv-se lapa ar mil nolasa km un auto, en-se netiek saukts", async () => {
+    const calls: string[] = [];
+    const parsed = await runCarinfoLookup("YV1DZ5251B2146640", "", async (url) => {
+      calls.push(url);
+      return { status: 200, text: SV_XC60_HTML };
+    });
+    expect(calls).toEqual(["https://www.car.info/sv-se/vin/S/YV1DZ5251B2146640"]);
+    expect(parsed.status).toBe("found");
+    expect(parsed.summary).toContain("Volvo XC60");
+    expect(parsed.summary).toContain("2011");
+    expect(parsed.summary).toContain("477 320 km");
+    expect(parsed.mileage?.[0]).toMatchObject({ date: "2026-01-08", odometer: "477320" });
+    expect(parsed.detail).toMatch(/Satiksmē: nē/);
+    expect(parsed.flags?.registrationCountry).toBe("SE");
+  });
+
+  it("sv-se 403 turpina uz en-se un neapstājas", async () => {
+    const calls: string[] = [];
+    const parsed = await runCarinfoLookup(VIN, "", async (url) => {
+      calls.push(url);
+      if (url.includes("/sv-se/")) return { status: 403, text: "<html><title>403 Forbidden</title></html>" };
+      return { status: 200, text: VOLVO_V70_HTML };
+    });
+    expect(calls[0]).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
+    expect(calls[1]).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
+    expect(calls.some((url) => url.includes("/search/super/"))).toBe(false);
+    expect(parsed.status).toBe("found");
+    expect(parsed.openUrl).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
   });
 });

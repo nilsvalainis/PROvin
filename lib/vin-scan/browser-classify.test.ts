@@ -55,6 +55,13 @@ describe("classifyBrowserProbe", () => {
     expect(classifyBrowserProbe("auchistory", "I'm not a robot", VIN)).toBeNull();
     expect(
       classifyBrowserProbe(
+        "auchistory",
+        `Search Results for: ${VIN} It seems we can\u2019t find what you\u2019re looking for. original auction photos, damage, bids`,
+        VIN,
+      )?.status,
+    ).toBe("none");
+    expect(
+      classifyBrowserProbe(
         "bid_cars",
         "Welcome to the auction archive. Browse featured vehicles and recent sale photos from the last week.",
         VIN,
