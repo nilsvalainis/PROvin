@@ -10,6 +10,12 @@ import type {
 } from "@/lib/admin-audit-knowledge-items-types";
 import { isKnowledgeItemStatus } from "@/lib/admin-audit-knowledge-items-types";
 import { findConflictClaim } from "@/lib/admin-audit-knowledge-claim-extract";
+import {
+  aggregatesMatchOwnerSeed,
+  mergeOwnerVerifiedKnowledge,
+  OWNER_VERIFIED_KNOWLEDGE_ITEMS,
+  restatesOwnerVerifiedClaim,
+} from "@/lib/admin-audit-knowledge-owner-seed";
 
 export type KnowledgeItemsDoc = {
   version: 1;
@@ -128,12 +134,12 @@ export function normalizeKnowledgeItemsDoc(raw: unknown): KnowledgeItemsDoc {
         : [],
     };
   }
-  return {
+  return mergeOwnerVerifiedKnowledge({
     version: 1,
     updatedAt: typeof o.updatedAt === "string" ? o.updatedAt : new Date(0).toISOString(),
     items,
     usageBySession,
-  };
+  });
 }
 
 export function listKnowledgeItems(
@@ -239,7 +245,20 @@ export function approvedClaimsForAggregate(doc: KnowledgeItemsDoc, aggregate: st
 }
 
 export function conflictWarningFor(doc: KnowledgeItemsDoc, item: KnowledgeItem): string | null {
-  const hit = findConflictClaim(item.claim, approvedClaimsForAggregate(doc, item.aggregate));
+  if (restatesOwnerVerifiedClaim(item.claim, item.aggregate)) return null;
+  const local = approvedClaimsForAggregate(doc, item.aggregate);
+  const related = Object.values(doc.items)
+    .filter(
+      (i) =>
+        i.status === "approved" &&
+        i.aggregate !== item.aggregate &&
+        aggregatesMatchOwnerSeed(i.aggregate, item.aggregate),
+    )
+    .map((i) => i.claim);
+  const owner = OWNER_VERIFIED_KNOWLEDGE_ITEMS.filter((s) =>
+    aggregatesMatchOwnerSeed(item.aggregate, s.aggregate),
+  ).map((s) => s.claim);
+  const hit = findConflictClaim(item.claim, [...local, ...related, ...owner]);
   return hit ? `pretrunā ar apstiprināto: ${hit}` : null;
 }
 

@@ -9,7 +9,7 @@ import type { KnowledgeHorizon, KnowledgeItem } from "@/lib/admin-audit-knowledg
 import { newKnowledgeItemId } from "@/lib/admin-audit-knowledge-items-types";
 
 const NODE_HINT_RE =
-  /ķēd|zobsiksn|kārba|turbo|EGR|DPF|mehatron|injektor|iesmidzin|hidrotransform|sūkn|termostat|sadales|piekar|rūs|AdBlue|elektroplāksn|divmasu|spararat|reduktor|sajūg|bloka|dzesēt/i;
+  /ķēd|zobsiksn|kārba|turbo|EGR|DPF|mehatron|injektor|iesmidzin|hidrotransform|sūkn|termostat|sadales|piekar|rūs|AdBlue|elektroplāksn|divmasu|spararat|reduktor|sajūg|bloka|dzesēt|šāl|klaņ|gultn/i;
 const NEXT_100K_RE = /nākamaj|nākamie|100\s*000\s*km|turpmāk/i;
 
 export function splitSentences(text: string): string[] {
@@ -90,7 +90,7 @@ export function distillLessonWithoutEur(plain: string, tag: string, max = 360): 
       .map((p) => p.replace(/\s+/g, " ").trim())
       .filter((p) => p.length > 80 && !sentenceHasEur(p));
     const scored = paras.filter((p) =>
-      /risks|ķēd|kārba|turbo|EGR|DPF|piekar|zobsiksn|elektroplāksn|dzesētāj|iesmidzin|hidrotransform|722\.|OM\d|N47|N57|M57|EA888/i.test(
+      /risks|ķēd|kārba|turbo|EGR|DPF|piekar|zobsiksn|elektroplāksn|dzesētāj|iesmidzin|hidrotransform|722\.|OM\d|N47|N57|M57|EA888|šāl|klaņ/i.test(
         p,
       ),
     );
@@ -169,7 +169,7 @@ export function claimsConflict(a: string, b: string): boolean {
   if (overlap < 3) return false;
   const negA = /\bnav\b/i.test(a);
   const negB = /\bnav\b/i.test(b);
-  return negA !== negB || overlap >= 5;
+  return negA !== negB;
 }
 
 export function findConflictClaim(candidate: string, approved: string[]): string | null {

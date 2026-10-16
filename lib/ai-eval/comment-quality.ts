@@ -6,6 +6,7 @@ import { findBannedVocabularyHits, findForbiddenPersonaNounHits } from "@/lib/pr
 import { findCopiedOtherAuditPhrases } from "@/lib/admin-ai-other-audit-style";
 import { COMMENT_LENGTH_BUDGET, commentQualityMaxChars } from "@/lib/ai-comment-length-budget";
 import { looksLikeLeakedAiPlanning } from "@/lib/source-summary-comment-format";
+import { isPraisingTechRisksIntro } from "@/lib/ai-praising-intro";
 import { evaluateLengthRulesV2 } from "@/lib/ai-length-rules-v2";
 
 export type CommentQualityIssue = {
@@ -228,6 +229,15 @@ export function evaluateExpertCommentQuality(
   }
 
   const field = opts.field ?? "generic";
+  if (field === "technical_risks" || field === "inspection" || field === "summary") {
+    const consultative = /\b(obligāt[aāiīeēm]?|netiek rekomendēt[aāuūs]?)\b/i.exec(t);
+    if (consultative) {
+      issues.push({
+        code: "consultative_wording",
+        message: `Aizstāj „${consultative[0]}” ar konsultatīvu formu (iesakām, ir vērts pārbaudīt, pēc datiem mūsu ieteikums būtu)`,
+      });
+    }
+  }
   const maxChars = commentQualityMaxChars(field, opts.sourcePrompt);
   if (maxChars != null && t.length > maxChars) {
     issues.push({
@@ -310,18 +320,11 @@ export function evaluateExpertCommentQuality(
         message: "Tehnisko risku analīzē jāidentificē agregāts (dzinējs/kārba/ķēde), ne vispārīgs dīzelis",
       });
     }
-    const firstPara = t.split(/\n\s*\n/)[0] ?? "";
-    const firstLine = firstPara.split("\n")[0] ?? "";
-    if (
-      /identifikācij/i.test(firstLine) ||
-      /\*\*[^*]*identifikācij[^*]*\*\*/i.test(firstPara) ||
-      /dzinēja konstrukcija|aprīkota ar|uzticamāk/i.test(firstLine) ||
-      (/\b(šis ir|šī ir|šī automašīna ir|šis auto ir)\b/i.test(firstPara) &&
-        /(bmw|audi|volkswagen|\bvw\b|mercedes|renault|volvo|škoda|toyota)/i.test(firstPara))
-    ) {
+    if (isPraisingTechRisksIntro(t)) {
       issues.push({
         code: "tech_risks_identity_intro",
-        message: "Pirmā rindkopa nedrīkst būt auto prezentācija — sāc ar riska faktu",
+        message:
+          "Pirmā rindkopa nedrīkst būt slavinoša auto prezentācija. Aprīkojums + šī mezgla risks ir atļauts.",
       });
     }
     if (TA_WEAR_AS_RISK_RE.test(t) || (opts.taCoverageLevel === "fresh" && /galvenais (?:pirkuma )?risks.{0,60}(?:svir|buš|lodbalst|bremž)/i.test(t))) {

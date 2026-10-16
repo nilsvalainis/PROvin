@@ -18,6 +18,7 @@ import {
   upsertCandidateItem,
   type KnowledgeItemsDoc,
 } from "@/lib/admin-audit-knowledge-items-logic";
+import { mergeOwnerVerifiedKnowledge } from "@/lib/admin-audit-knowledge-owner-seed";
 
 export type { KnowledgeItemsDoc };
 
@@ -60,7 +61,7 @@ async function readDoc(): Promise<KnowledgeItemsDoc> {
   const blob = getOrderDraftBlobConfig();
   const fromFs = dir ? await readFromFs(dir) : null;
   const fromBlob = blob ? await readFromBlob(blob) : null;
-  return pickNewer(fromFs, fromBlob) ?? emptyKnowledgeItemsDoc();
+  return mergeOwnerVerifiedKnowledge(pickNewer(fromFs, fromBlob) ?? emptyKnowledgeItemsDoc());
 }
 
 async function writeDoc(doc: KnowledgeItemsDoc): Promise<{ ok: true } | { ok: false; error: string }> {

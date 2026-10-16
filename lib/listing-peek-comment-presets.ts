@@ -137,7 +137,7 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "incidents-butiski",
         tone: "critical",
         label: "Būtiski bojājumi",
-        text: "Pieejamie dati norāda uz nopietnu negadījumu automašīnas vēsturē, tāpēc obligāti jāpārbauda remonta apjoms un skartie mezgli.",
+        text: "Pieejamie dati norāda uz nopietnu negadījumu automašīnas vēsturē, tāpēc ir vērts pārbaudīt remonta apjomu un skartos mezglus.",
       },
       {
         id: "incidents-octa",

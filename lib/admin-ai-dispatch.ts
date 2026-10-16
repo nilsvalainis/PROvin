@@ -83,6 +83,7 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "invented_repair_eur",
   "summary_price",
   "tech_risks_identity_intro",
+  "consultative_wording",
   "wrap_film_missing",
   "wrap_film_risk_incomplete",
   "wrap_film_invented",

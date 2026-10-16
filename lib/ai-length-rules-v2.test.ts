@@ -75,6 +75,20 @@ describe("length rules v2", () => {
     expect(issues.some((i) => i.code === "g4_imperative_wording")).toBe(true);
   });
 
+  it("consultative wording is always-on for TR even when G4 flag is off", () => {
+    const text = "Iegāde netiek rekomendēta. " + "ķēde ".repeat(40);
+    expect(
+      evaluateExpertCommentQuality(text, { field: "technical_risks" }).some(
+        (i) => i.code === "consultative_wording",
+      ),
+    ).toBe(true);
+    expect(
+      evaluateExpertCommentQuality("Virsbūve jāpārbauda klātienē ar krāsas biezuma mērītāju.", {
+        field: "inspection",
+      }).every((i) => i.code !== "consultative_wording"),
+    ).toBe(true);
+  });
+
   it("G4 is a cheap Gemini retry, G3 stays on the same model", () => {
     expect(LENGTH_RULES_V2_CHEAP_RETRY_CODES.has("g4_imperative_wording")).toBe(true);
     expect(LENGTH_RULES_V2_CRITICAL_RETRY_CODES.has("g3_missing_next_100k")).toBe(true);

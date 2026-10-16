@@ -7,7 +7,7 @@
 - **Arī automātiski**: pēc katras saglabāšanas `recordAuditAggregateLearningFromDraft` raksta fragmentus, ja melnraksts ir „pietiekami pilns” (`fill >= 5` vai fragments ≥120 zīmes). **Nav cilvēka apstiprinājuma.**
 - **AI izmanto šos fragmentus uzreiz**: līdz 5 atslēgām × 6 fragmentiem (≤10 500 zīmes) katrā tehnisko risku un citā ✨ ģenerēšanā.
 - **Promote** izveido Markdown sarakstu (angliski, izstrādātājam) ar kandidātiem, kuriem ir ≥3 fragmenti, un ieteikumu tos manuāli pārnest uz kodu (`provin-aggregate-case-rules.ts`). Panelī tas netiek rādīts kā saprotams saraksts.
-- **Atklāta kļūda**: `distillLesson` tehnikas fragmentam prioritāri izvēlas rindkopas, kas satur „€|EUR”. Tā sistēma iemācās tieši EUR tāmes, kas ir aizliegtas, un var pārnest arī kļūdas (piem. N57 šāles, kas ir 2 atskaitēs).
+- **Atklāta kļūda**: `distillLesson` tehnikas fragmentam prioritāri izvēlas rindkopas, kas satur „€|EUR”. Tā sistēma iemācās tieši EUR tāmes, kas ir aizliegtas, un var pārnest arī kļūdas (piem. nepareizu ķēdes pusi). N57 klaņu šāles nodilums NAV kļūda: tā ir apstiprināta tipiska kaite (avots: īpašnieks).
 
 ## Neskaidrie termini → jaunie latviskie
 | Tagad | Jaunais |
@@ -28,7 +28,7 @@ Panelis „Gaida apstiprinājumu” - Nils/IRISS: ✔ Apstiprināt | ✎ Labot |
         │                                    │
         ▼                                    ▼
     APSTIPRINĀTS (AI lieto kā faktu)      NORAIDĪTS → saraksts „Nepareizi apgalvojumi”
-                                          (AI saņem kā aizliegumu, piem. "N57 šāles: nav kaite")
+                                          (AI saņem kā aizliegumu, piem. "N57 ķēde priekšā")
 ```
 Noteikumi:
 - Kandidāti nāk tikai no atskaitēm ar statusu „nosūtīts klientam” (galīgā versija) un ar `data_quality != partial` faktiem. Stila paraugi drīkst nākt no visām.

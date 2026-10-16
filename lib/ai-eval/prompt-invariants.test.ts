@@ -248,7 +248,11 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Pirmā rindkopa/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/maksimāli 1–2/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/NOSACĪTA/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/aprīkojums \+ šī mezgla risks/i);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/veiksmīgākā konstrukcija/);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
+    expect(tech).toMatch(/slavinošu prezentāciju/);
+    expect(tech).toMatch(/nelieto „obligāti”/);
     expect(tech).toMatch(/buildAggregateIdentificationBrief/);
     expect(tech).toMatch(/Pirmā sadaļa/);
     expect(tech).toMatch(/Nepārspīlē/);
@@ -418,6 +422,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/50 līdz 150/);
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/iekšējās ailes/i);
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/krāsas biezuma mērītāj/);
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/Virsbūve jāpārbauda/);
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).not.toMatch(/Virsbūve obligāti/);
     expect(HYBRID_COMMENT_RULES).toMatch(/PAINT THICKNESS/);
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(
@@ -889,6 +895,9 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/g2_summary_length_regen/);
     expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/g3_missing_next_100k/);
     expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/g4_imperative_wording/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/consultative_wording/);
+    expect(readRepo("lib/provin-aggregate-case-rules.ts")).toMatch(/klaņu šāl/);
+    expect(readRepo("lib/admin-audit-knowledge-owner-seed.ts")).toMatch(/ki_owner_n57_conrod_bearings/);
     expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/Nākamajos 100 000 km/);
     expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/Mūsu ieteikums/);
     expect(readRepo("lib/admin-audit-learning-extract.ts")).toMatch(/isTrainingV2Enabled/);
