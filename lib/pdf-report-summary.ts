@@ -49,6 +49,7 @@ import {
   prepareUnifiedMileageDisplayRows,
   selectNewestVerifiedMileageRow,
 } from "@/lib/unified-mileage";
+import { formatPdfOdometerDisplay, isPdfEmptyPlaceholder } from "@/lib/pdf-odometer-display";
 
 export type PdfSummaryTileTone = "ok" | "warn" | "alert" | "neutral";
 
@@ -146,7 +147,9 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
   const { anomalyBySourceOrder } = analyzeUnifiedMileageAnomalies(rows);
   const anomalies = [...anomalyBySourceOrder.values()].filter(Boolean).length;
   const newest = selectNewestVerifiedMileageRow(rows) ?? [...rows].sort((a, b) => b.sortableTime - a.sortableTime)[0]!;
-  const value = newest.odometer.trim() ? `${newest.odometer.trim()} km` : "Nav ierakstu";
+  const value = newest.odometer.trim()
+    ? formatPdfOdometerDisplay(newest.odometer, true)
+    : "Nav ierakstu";
   const note =
     anomalies > 0
       ? pluralLv(anomalies, "iespējama pretruna", "iespējamas pretrunas")
@@ -240,7 +243,9 @@ export function buildPdfReportSummaryTiles(
   return computed.flatMap((tile) => {
     const kind = summaryTileBannerKind(tile.id as "incidents" | "mileage" | "owners" | "service");
     if (!isProvinBannerIncludedInPdf(kind, include)) return [];
-    return [applySummaryTileOverride(tile, provinBannerOverrideFor(manuals, kind))];
+    const applied = applySummaryTileOverride(tile, provinBannerOverrideFor(manuals, kind));
+    if (applied.id !== "incidents" && isPdfEmptyPlaceholder(applied.value)) return [];
+    return [applied];
   });
 }
 

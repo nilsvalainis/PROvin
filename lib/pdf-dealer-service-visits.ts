@@ -101,13 +101,16 @@ export function buildPdfFirstLastReadingSpanHtml(opts: {
   firstMeta: string;
   lastMeta: string;
 }): string {
-  const firstKm = opts.firstKm.trim() || "km nav";
-  const lastKm = opts.lastKm.trim() || "km nav";
-  if (firstKm === "km nav" && lastKm === "km nav") return "";
-  return `<div class="pdf-svc-span">
-    <div class="pdf-svc-span__pt"><b>${escapeHtml(firstKm)}</b><i>${escapeHtml(opts.firstMeta)}</i></div>
-    <div class="pdf-svc-span__pt pdf-svc-span__pt--end"><b>${escapeHtml(lastKm)}</b><i>${escapeHtml(opts.lastMeta)}</i></div>
-  </div>`;
+  const firstKm = opts.firstKm.trim();
+  const lastKm = opts.lastKm.trim();
+  if (!firstKm && !lastKm) return "";
+  const first = firstKm
+    ? `<div class="pdf-svc-span__pt"><b>${escapeHtml(firstKm)}</b><i>${escapeHtml(opts.firstMeta)}</i></div>`
+    : `<div class="pdf-svc-span__pt"></div>`;
+  const last = lastKm
+    ? `<div class="pdf-svc-span__pt pdf-svc-span__pt--end"><b>${escapeHtml(lastKm)}</b><i>${escapeHtml(opts.lastMeta)}</i></div>`
+    : `<div class="pdf-svc-span__pt pdf-svc-span__pt--end"></div>`;
+  return `<div class="pdf-svc-span">${first}${last}</div>`;
 }
 
 function spanHtml(rows: AutoRecordsServiceWorkRow[], opts?: { cover?: boolean }): string {
@@ -127,8 +130,8 @@ function spanHtml(rows: AutoRecordsServiceWorkRow[], opts?: { cover?: boolean })
     ? [lastDate, visitCount].filter(Boolean).join(" · ")
     : ["Pēdējais ieraksts", lastDate].filter(Boolean).join(" · ");
   return buildPdfFirstLastReadingSpanHtml({
-    firstKm: firstKm || "km nav",
-    lastKm: lastKm || "km nav",
+    firstKm,
+    lastKm,
     firstMeta,
     lastMeta,
   });
@@ -158,11 +161,13 @@ export function buildDealerServiceVisitsHtml(
   let lastYear = "";
   for (const row of printable) {
     const year = serviceWorkYear(row.date);
+    const visit = visitHtml(row);
     if (year && year !== lastYear) {
-      parts.push(`<p class="pdf-svc-year">${escapeHtml(year)}</p>`);
+      parts.push(`<div class="pdf-keep-head"><p class="pdf-svc-year">${escapeHtml(year)}</p>${visit}</div>`);
       lastYear = year;
+      continue;
     }
-    parts.push(visitHtml(row));
+    parts.push(visit);
   }
   return parts.join("\n");
 }

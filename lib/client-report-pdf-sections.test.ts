@@ -165,7 +165,7 @@ describe("PDF design system", () => {
     expect(html).toContain("pdf-summary-tile--alert");
     expect(html).toContain("Negadījumi un bojājumi");
     expect(html).toContain("1 negadījums");
-    expect(html).toContain("120000 km");
+    expect(html).toContain("120 000 km");
     expect(html).toContain("Īpašnieku skaits");
     expect(html).toContain("Latvijā 2");
     expect(html).not.toContain("Latvijā: 2");
@@ -204,7 +204,7 @@ describe("PDF design system", () => {
     expect(html).toContain(PDF_LIFECYCLE_TITLE);
     expect(html).toContain("NOBRAUKUMA VĒSTURE");
     expect(html).toContain("NEGADĪJUMU VĒSTURE");
-    expect(html).toContain("189858");
+    expect(html).toContain("189 858");
     expect(html).toContain("01.05.2023");
   });
 
@@ -2113,7 +2113,8 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain(">TRANSPORTLĪDZEKĻA AUDITS<");
     expect(doc).not.toContain(">PROVIN AUDITS<");
     expect(doc).not.toContain("PROVIN BUSINESS TRANSPORTLĪDZEKĻA AUDITS");
-    expect(doc).toContain("APPROVED BY IRISS");
+    expect(doc).not.toContain("APPROVED BY IRISS");
+    expect(doc).toContain("Kopsavilkums");
     expect(doc).toContain("Pilns kopsavilkums partnerim.");
   });
 
@@ -2452,14 +2453,14 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(3);
   });
 
-  it("outvin vehicle info uses a single-column kv table", () => {
+  it("outvin vehicle info uses two kv columns like CSDD", () => {
     const report = emptyOutvinDealerReport();
     report.vehicleInfo.vinCode = "WVWZZZ";
     report.vehicleInfo.model = "Golf";
     const html = buildOutvinDealerReportPdfInnerHtml(report);
     expect(html).toContain("pdf-dealer-vehicle-kv");
     expect(html).toContain("pdf-v1-kv");
-    expect(html).not.toContain("pdf-v1-kv-pair");
+    expect(html).toContain("pdf-v1-kv-pair");
     expect(html).not.toContain("mirror-table--outvin-vehicle");
     expect(html).not.toContain("pdf-outvin-equipment-grid");
   });
@@ -2549,7 +2550,7 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain("Aprīkojums");
   });
 
-  it("APPROVED BY IRISS prints technical risks before inspection and summary", () => {
+  it("prints unnumbered expert sections without an Approved by IRISS wrapper", () => {
     const doc = buildClientReportDocumentHtml({
       payload: minimalPayload({
         tehniskoRiskuAnalize: "<p>Tech risks body</p>",
@@ -2561,16 +2562,21 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    const iTech = doc.indexOf("1. Tehnisko risku analīze");
-    const iInsp = doc.indexOf("2. Ieteikumi klātienes apskatei");
-    const iSum = doc.indexOf("3. Kopsavilkums");
+    expect(doc).not.toContain("APPROVED BY IRISS");
+    expect(doc).not.toContain("1. Tehnisko risku analīze");
+    expect(doc).not.toContain("2. Ieteikumi klātienes apskatei");
+    expect(doc).not.toContain("3. Kopsavilkums");
+    const iTech = doc.indexOf("Tehnisko risku analīze");
+    const iInsp = doc.indexOf(">Ieteikumi<");
+    const iSum = doc.indexOf(">Kopsavilkums<");
     expect(iTech).toBeGreaterThan(-1);
     expect(iInsp).toBeGreaterThan(iTech);
     expect(iSum).toBeGreaterThan(iInsp);
     expect(doc).toContain("Tech risks body");
+    expect(doc).toContain("pdf-expert-section");
   });
 
-  it("omits individual APPROVED BY IRISS subsections when their PDF toggle is off", () => {
+  it("omits individual expert subsections when their PDF toggle is off", () => {
     const doc = buildClientReportDocumentHtml({
       payload: minimalPayload({
         tehniskoRiskuAnalize: "<p>Tech risks body</p>",
@@ -2587,11 +2593,11 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(doc).not.toContain("1. Tehnisko risku analīze");
+    expect(doc).not.toContain("Tehnisko risku analīze");
     expect(doc).not.toContain("Tech risks body");
-    expect(doc).toContain("2. Ieteikumi klātienes apskatei");
+    expect(doc).toContain(">Ieteikumi<");
     expect(doc).toContain("Inspection body");
-    expect(doc).not.toContain("3. Kopsavilkums");
+    expect(doc).not.toContain(">Kopsavilkums<");
     expect(doc).not.toContain("Summary body");
   });
 
@@ -2746,7 +2752,7 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
     const explicitLv = buildClientReportDocumentHtml({ ...args, lang: "lv" as const });
     expect(noLang).toBe(explicitLv);
     expect(noLang).toContain('<html lang="lv"');
-    expect(noLang).toContain("1. Tehnisko risku analīze");
+    expect(noLang).toContain("Tehnisko risku analīze");
   });
 
   it("translates the static IRISS section headings to English and swaps the html lang attribute", () => {
@@ -2763,10 +2769,11 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
       lang: "en",
     });
     expect(doc).toContain('<html lang="en"');
-    expect(doc).toContain("1. Technical Risk Analysis");
-    expect(doc).toContain("2. Recommendations for In-Person Inspection");
-    expect(doc).toContain("3. Summary");
-    expect(doc).not.toContain("1. Tehnisko risku analīze");
+    expect(doc).toContain("Technical Risk Analysis");
+    expect(doc).toContain("Recommendations");
+    expect(doc).toContain("Summary");
+    expect(doc).not.toContain("Tehnisko risku analīze");
+    expect(doc).not.toContain("APPROVED BY IRISS");
   });
 
   it("translates the static section headings to Russian", () => {
@@ -2792,7 +2799,7 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
       lang: "de",
     });
     expect(doc).toContain('<html lang="de"');
-    expect(doc).toContain("1. Analyse der technischen Risiken");
+    expect(doc).toContain("Analyse der technischen Risiken");
   });
 
   it("does not translate the dynamic ✨ comment text by itself - caller must translate the payload first", () => {
@@ -2805,7 +2812,7 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
       lang: "en",
     });
     // Statiskais virsraksts ir tulkots, bet operatora/AI tekstu build funkcija pati netulko.
-    expect(doc).toContain("1. Technical Risk Analysis");
+    expect(doc).toContain("Technical Risk Analysis");
     expect(doc).toContain("Auto ir bijis vieglā negadījumā.");
   });
 });
@@ -2838,5 +2845,91 @@ describe("K1: dzēsta bilde nenonāk PDF", () => {
     expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(1);
     expect(doc).toContain("/9j/KEEP");
     expect(doc).not.toContain("/9j/GONE");
+  });
+});
+
+describe("PDF v4 client report", () => {
+  it("uses A4 print margins, running header/footer, and page numbers on the right only", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        vin: "WBAPX51050CU09550",
+        customerName: "Jānis Bērziņš",
+        csddForm: { ...emptyCsddFields(), makeModel: "BMW 525d" },
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric" }),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("margin:16mm 12mm 18mm 12mm");
+    expect(html).toContain("PROVIN.LV · BMW 525d · VIN WBAPX51050CU09550");
+    expect(html).toContain("Sagatavots: Jānis B.");
+    expect(html).toContain('@bottom-center{content:none;}');
+    expect(html).toContain('content:"Lapa " counter(page) " / " counter(pages)');
+    expect(html).not.toMatch(/@media print\{[\s\S]*@page\{margin:0/);
+  });
+
+  it("hides order email, phone and payment status", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        customerName: "Jānis Bērziņš",
+        customerEmail: "janis@example.com",
+        customerPhone: "20000000",
+        paymentStatus: "unpaid",
+        notes: "Klienta piezīme",
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("PASŪTĪJUMA DATI");
+    expect(html).toContain("Jānis Bērziņš");
+    expect(html).not.toContain("janis@example.com");
+    expect(html).not.toContain("20000000");
+    expect(html).not.toContain("unpaid");
+    expect(html).not.toContain("<td>E-pasts</td>");
+    expect(html).not.toContain("<td>Tālrunis</td>");
+    expect(html).not.toContain("<td>Statuss</td>");
+  });
+
+  it("keeps data-source logos and comment heading spacing", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.autodna,
+            mileageRows: [{ date: "2020-07-01", odometer: "120000", country: "DE" }],
+            incidentRows: [],
+            comments: "<p><strong>Nobraukums</strong><br />Līkne ir korekta.</p>",
+          },
+          {
+            title: SOURCE_BLOCK_LABELS.carvertical,
+            mileageRows: [],
+            incidentRows: [],
+            comments: "CarVertical komentārs",
+          },
+        ],
+        csddForm: { ...emptyCsddFields(), makeModel: "BMW 525d", registrationStatus: "Reģistrēts" },
+        manualLtabBlock: { rows: [], comments: "", certificate: { ...emptyLtabCertificate(), accidentCount: "1" } },
+      } as Partial<ClientReportPayload>),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain(PDF_HERO_BRAND_LOGO_DATA_URI.autodna);
+    expect(html).toContain(PDF_HERO_BRAND_LOGO_DATA_URI.carvertical);
+    expect(html).toContain(PDF_SOURCE_LOGO_DATA_URI.csdd);
+    expect(html).toContain(PDF_SOURCE_LOGO_DATA_URI.ltab);
+    expect(html).toContain("pdf-cmt-h");
+    expect(html).toContain("pdf-cmt-p");
+    expect(html).toMatch(/\.pdf-cmt-p \+ \.pdf-cmt-p\{[\s\S]*margin-top:var\(--pdf-gap-block\)/);
+    expect(html).toContain(".pdf-src-zone--csdd .pdf-v1-kv-pair .pdf-v1-kv td:first-child{width:52%");
+    expect(html).toContain(".pdf-incident-card__car .pdf-dmg-sil{width:84px;}");
+    expect(html).toContain("border-left:3px solid #F87171");
+    expect(html).toContain("120 000");
+    expect(html).not.toContain("Īpašnieku skaits");
+    expect(html).not.toContain("km nav");
   });
 });

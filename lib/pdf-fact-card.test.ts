@@ -64,4 +64,14 @@ describe("pdf-fact-card", () => {
       polishPdfFactCardRows([{ k: "Īpašnieku skaits Dānijā", v: "2" }]),
     ).toEqual([{ k: "Īpašnieku skaits Dānijā", v: "2" }]);
   });
+
+  it("hides empty placeholder values instead of printing Nav ierakstu", () => {
+    expect(
+      polishPdfFactCardRows([
+        { k: "Īpašnieku skaits", v: "Nav ierakstu" },
+        { k: "Statuss", v: "-" },
+        { k: "Degviela", v: "dīzelis" },
+      ]),
+    ).toEqual([{ k: "Degviela", v: "Dīzelis" }]);
+  });
 });

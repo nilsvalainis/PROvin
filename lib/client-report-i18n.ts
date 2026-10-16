@@ -37,6 +37,8 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   },
   "3. Kopsavilkums": { en: "3. Summary", ru: "3. Итоги" },
   "Tehnisko risku analīze": { en: "Technical Risk Analysis", ru: "Анализ технических рисков" },
+  Ieteikumi: { en: "Recommendations", ru: "Рекомендации" },
+  Kopsavilkums: { en: "Summary", ru: "Итоги" },
 
   // Nobraukuma un negadījumu bloki
   "NOBRAUKUMA VĒSTURE": { en: "MILEAGE HISTORY", ru: "ИСТОРИЯ ПРОБЕГА" },
@@ -200,6 +202,8 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "2. Ieteikumi klātienes apskatei": "2. Empfehlungen für die Besichtigung vor Ort",
   "3. Kopsavilkums": "3. Zusammenfassung",
   "Tehnisko risku analīze": "Analyse der technischen Risiken",
+  Ieteikumi: "Empfehlungen",
+  Kopsavilkums: "Zusammenfassung",
   "NOBRAUKUMA VĒSTURE": "KILOMETERSTAND-HISTORIE",
   "NOBRAUKUMA VĒSTURES KOMENTĀRS": "KOMMENTAR ZUR KILOMETERSTAND-HISTORIE",
   "NEGADĪJUMU VĒSTURES KOPSAVILKUMS": "ZUSAMMENFASSUNG DER SCHADENSHISTORIE",

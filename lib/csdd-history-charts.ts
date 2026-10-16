@@ -3,6 +3,7 @@
  */
 
 import type { CsddOwnerChangeRow } from "@/lib/csdd-extended-parse";
+import { isPdfEmptyPlaceholder } from "@/lib/pdf-odometer-display";
 
 function escapeHtml(s: string): string {
   return s
@@ -19,11 +20,13 @@ export function buildOwnerRegistrationTimelineHtml(
   opts?: { compact?: boolean },
 ): string {
   const ev = events.filter((e) => e.date.trim() || e.label.trim());
-  if (!ownerCount.trim() && ev.length === 0) return "";
+  const count = ownerCount.trim();
+  const countShown = count && !isPdfEmptyPlaceholder(count) ? count : "";
+  if (!countShown && ev.length === 0) return "";
 
   const compact = opts?.compact === true;
-  const countHtml = ownerCount.trim()
-    ? `<p class="pdf-csdd-owner-count" style="margin:0 0 6px;font-size:11px;color:#1d1d1f;"><strong>${escapeHtml(ownerCount.trim())}</strong> īpašniek${ownerCount.trim() === "1" ? "s" : "i"} Latvijā</p>`
+  const countHtml = countShown
+    ? `<p class="pdf-csdd-owner-count" style="margin:0 0 6px;font-size:11px;color:#1d1d1f;"><strong>${escapeHtml(countShown)}</strong> īpašniek${countShown === "1" ? "s" : "i"} Latvijā</p>`
     : "";
 
   const rows = ev

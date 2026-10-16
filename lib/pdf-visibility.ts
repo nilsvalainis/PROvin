@@ -33,11 +33,11 @@ export type PdfVisibilitySettings = {
   citi_avoti: boolean;
   sludinajums: boolean;
   iriss: boolean;
-  /** APPROVED BY IRISS: 1. Tehnisko risku analīze. */
+  /** PDF: Tehnisko risku analīze. */
   irissTechnicalRisks: boolean;
-  /** APPROVED BY IRISS: 2. Ieteikumi klātienes apskatei. */
+  /** PDF: Ieteikumi. */
   irissInspection: boolean;
-  /** APPROVED BY IRISS: 3. Kopsavilkums. */
+  /** PDF: Kopsavilkums. */
   irissSummary: boolean;
   /** NOBRAUKUMA VĒSTURES KOMENTĀRS zem nobraukuma grafika. */
   mileageComment: boolean;

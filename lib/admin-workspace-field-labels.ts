@@ -9,10 +9,11 @@ export const ADMIN_MILEAGE_HISTORY_COMMENT_LABEL = "NOBRAUKUMA VĒSTURES KOMENT�
 /** Iekšējs avotu salīdzinājums — nav PDF; bloga / mārketinga materiāls. */
 export const ADMIN_SOURCES_COMPARISON_LABEL = "AVOTU SALĪDZINĀJUMS (iekšējs — nav PDF)";
 
-/** APPROVED BY IRISS — pirmā apakšsadaļa (admin + PDF). */
+/** Admin darba zona: tehnisko risku lauks (numurs paliek UI etiķetē). */
 export const ADMIN_TECHNICAL_RISKS_LABEL = "Tehnisko risku analīze";
-export const PDF_IRISS_SECTION_TECHNICAL_RISKS = "1. Tehnisko risku analīze";
-export const PDF_IRISS_SECTION_INSPECTION = "2. Ieteikumi klātienes apskatei";
-export const PDF_IRISS_SECTION_SUMMARY = "3. Kopsavilkums";
+/** Klienta PDF: trīs nenumurētas sadaļas, bez „Approved by IRISS” apvalka. */
+export const PDF_IRISS_SECTION_TECHNICAL_RISKS = "Tehnisko risku analīze";
+export const PDF_IRISS_SECTION_INSPECTION = "Ieteikumi";
+export const PDF_IRISS_SECTION_SUMMARY = "Kopsavilkums";
 
 export const PDF_MILEAGE_HISTORY_COMMENT_LABEL = "Komentārs";

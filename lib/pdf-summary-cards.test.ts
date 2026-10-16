@@ -283,11 +283,11 @@ describe("kopsavilkuma bāzes plāksnītes", () => {
       citiAvoti: null,
     };
     const all = buildPdfReportSummaryTiles(input);
-    expect(all.map((t) => t.id)).toEqual(["incidents", "mileage", "owners", "service"]);
+    expect(all.map((t) => t.id)).toEqual(["incidents"]);
     const hidden = buildPdfReportSummaryTiles(input, {
       pdfBannerInclude: { "summary:owners": false },
     });
-    expect(hidden.map((t) => t.id)).toEqual(["incidents", "mileage", "service"]);
+    expect(hidden.map((t) => t.id)).toEqual(["incidents"]);
     const edited = buildPdfReportSummaryTiles(input, {
       manualBanners: [
         {

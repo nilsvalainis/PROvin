@@ -111,6 +111,10 @@ export function pdfLayoutDraftExtraCss(): string {
       .pdf-v1-kv-pair{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start;}
       .pdf-v1-kv-pair .pdf-v1-kv td{padding:5px 0;}
       .pdf-v1-kv-pair .pdf-v1-kv td:first-child{width:44%;}
+      .pdf-src-zone--csdd .pdf-v1-kv-pair .pdf-v1-kv td:first-child{width:52%;padding-right:10px;}
+      .pdf-src-zone--csdd .pdf-v1-kv-pair{break-inside:avoid;page-break-inside:avoid;}
+      .pdf-dealer-vehicle-kv .pdf-v1-kv td{padding:5px 0;}
+      .pdf-dealer-vehicle-kv .pdf-v1-kv-pair .pdf-v1-kv td:first-child{width:44%;padding-right:10px;color:#86868b;}
       .pdf-v1-kv--outvin-log thead th{
         font-size:var(--pdf-fs-label);font-weight:600;color:#86868b;text-align:left;
         text-transform:uppercase;letter-spacing:0.06em;
@@ -250,15 +254,12 @@ export function buildPdfAboutReportBlock(args: {
     const rows: Row[] = [];
     if (money !== "-") rows.push({ k: "Summa", v: money });
     rows.push({ k: "Pasūtījums", v: dateFmt.format(new Date(o.created * 1000)) });
-    if (o.paymentStatus?.trim()) rows.push({ k: "Statuss", v: o.paymentStatus.trim() });
     groups.push({ title: "Maksājums", rows });
   }
 
   if (show.client) {
     const rows: Row[] = [];
     if (o.customerName?.trim()) rows.push({ k: "Vārds, uzvārds", v: o.customerName.trim() });
-    if (o.customerEmail?.trim()) rows.push({ k: "E-pasts", v: o.customerEmail.trim() });
-    if (o.customerPhone?.trim()) rows.push({ k: "Tālrunis", v: o.customerPhone.trim() });
     if (rows.length > 0) groups.push({ title: "Klients", rows });
   }
 

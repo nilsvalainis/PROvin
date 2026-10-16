@@ -2,6 +2,7 @@
  * PDF faktu karte - tas pats vizuālais kods kā dīlera „Transportlīdzekļa informācija”.
  */
 
+import { isPdfEmptyPlaceholder } from "@/lib/pdf-odometer-display";
 import { capitalizeFactValue } from "@/lib/vin-sources/translate-lv";
 
 function escapeHtml(s: string): string {
@@ -65,7 +66,7 @@ export function polishPdfFactCardRows(rows: readonly { k: string; v: string }[])
       v = "Privāti";
     }
     v = capitalizeFactValue(v);
-    if (!k || !v) continue;
+    if (!k || !v || isPdfEmptyPlaceholder(v)) continue;
     out.push({ k, v });
   }
   return out;

@@ -1,4 +1,5 @@
-import { buildPdfKvStackHtml } from "@/lib/pdf-fact-card";
+import { isPdfEmptyPlaceholder } from "@/lib/pdf-odometer-display";
+import { buildPdfKvPairHtml } from "@/lib/pdf-fact-card";
 import {
   OUTVIN_VEHICLE_INFO_ROWS,
   outvinDealerReportHasContent,
@@ -24,10 +25,10 @@ function vehicleInfoTable(vi: OutvinVehicleInfo): string {
   const rows: { k: string; v: string }[] = [];
   for (const { key, labelLv, labelEn } of OUTVIN_VEHICLE_INFO_ROWS) {
     const v = vi[key].trim();
-    if (!v) continue;
+    if (!v || isPdfEmptyPlaceholder(v)) continue;
     rows.push({ k: labelLv || labelEn, v: capitalizeFactValue(v) });
   }
-  const table = buildPdfKvStackHtml(rows);
+  const table = buildPdfKvPairHtml(rows);
   if (!table) return "";
   return `<div class="pdf-dealer-vehicle-kv">${table}</div>`;
 }
@@ -61,8 +62,9 @@ export function buildOutvinDealerReportPdfInnerHtml(
 
   const vehicleTable = vehicleInfoTable(vi);
   if (vehicleTable) {
-    parts.push(pdfSubLabel("Transportlīdzekļa informācija"));
-    parts.push(vehicleTable);
+    parts.push(
+      `<div class="pdf-keep-head">${pdfSubLabel("Transportlīdzekļa informācija")}${vehicleTable}</div>`,
+    );
   }
 
   if (!opts?.omitEquipment) {
