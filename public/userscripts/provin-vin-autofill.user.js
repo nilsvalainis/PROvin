@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.20.0
-// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
+// @version      1.21.0
+// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin lapu ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -84,13 +84,15 @@
 // @grant        GM_xmlhttpRequest
 // @connect      tirgusdati.lv
 // @connect      adify.lv
+// @connect      stat.vin
+// @connect      www.stat.vin
 // @run-at       document-idle
 // ==/UserScript==
 
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.20.0";
+  const SCRIPT_VERSION = "1.21.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -294,6 +296,105 @@
       }
       pollVinScan();
     });
+    function gmXhr() {
+      return typeof GM_xmlhttpRequest === "function"
+        ? GM_xmlhttpRequest
+        : typeof GM !== "undefined" && GM && typeof GM.xmlHttpRequest === "function"
+          ? GM.xmlHttpRequest.bind(GM)
+          : null;
+    }
+
+    const STAT_VIN_HTML_MAX = 900000;
+    const statVinFetched = Object.create(null);
+
+    function publishStatVinHtml(vin, pageUrl, httpStatus, html, summary) {
+      document.dispatchEvent(
+        new CustomEvent("provin-vin-scan-result", {
+          detail: {
+            id: "stat_vin",
+            vin: vin,
+            status: "unknown",
+            summary: summary || "",
+            html: html,
+            pageUrl: pageUrl,
+            httpStatus: httpStatus,
+            at: Date.now(),
+          },
+        }),
+      );
+    }
+
+    function fetchStatVinInBrowser(token) {
+      const raw = String(token || "");
+      if (!raw || statVinFetched[raw]) return;
+      const vin = raw.split(":")[0].replace(/[\s-]/g, "").toUpperCase();
+      if (!/^[A-HJ-NPR-Z0-9]{11,17}$/.test(vin)) return;
+      const xhr = gmXhr();
+      if (!xhr) return;
+      statVinFetched[raw] = 1;
+      const pageUrl = "https://stat.vin/cars/" + encodeURIComponent(vin);
+      xhr({
+        method: "GET",
+        url: pageUrl,
+        timeout: 25000,
+        headers: {
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9,lv;q=0.6",
+        },
+        onload: function (res) {
+          let html = String(res.responseText || "");
+          if (html.length > STAT_VIN_HTML_MAX) {
+            const nextMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/i);
+            const next = nextMatch ? nextMatch[0].slice(0, 400000) : "";
+            const room = STAT_VIN_HTML_MAX - next.length;
+            html = (html.slice(0, Math.max(0, room)) + next).slice(0, STAT_VIN_HTML_MAX);
+          }
+          const text = html.replace(/<[^>]+>/g, " ");
+          const limited =
+            res.status === 429 ||
+            (/too many requests|rate limit(?:ed)?|try again later/i.test(text) && text.toUpperCase().indexOf(vin) === -1);
+          publishStatVinHtml(
+            vin,
+            pageUrl,
+            res.status,
+            html,
+            limited ? "stat.vin: pieprasījumu limits" : "",
+          );
+        },
+        onerror: function () {
+          delete statVinFetched[raw];
+        },
+        ontimeout: function () {
+          delete statVinFetched[raw];
+        },
+      });
+    }
+
+    function statVinFetchToken() {
+      const el = document.querySelector("[data-provin-stat-vin-fetch]");
+      return el ? String(el.getAttribute("data-provin-stat-vin-fetch") || "") : "";
+    }
+
+    function watchStatVinBrowserFetch() {
+      const run = function () {
+        fetchStatVinInBrowser(statVinFetchToken());
+      };
+      const obs = new MutationObserver(run);
+      obs.observe(document.documentElement, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["data-provin-stat-vin-fetch"],
+      });
+      document.addEventListener("provin-stat-vin-fetch", function (ev) {
+        const detail = ev && ev.detail ? ev.detail : {};
+        const vin = String(detail.vin || "");
+        const at = String(detail.at || "");
+        fetchStatVinInBrowser(at ? vin + ":" + at : vin);
+      });
+      run();
+    }
+
+    watchStatVinBrowserFetch();
     pollSwedishImport();
     pollVinScan();
     return;

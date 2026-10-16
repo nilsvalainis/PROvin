@@ -60,6 +60,10 @@ export type VinScanAuction = {
   price?: string;
   venue?: string;
   lot?: string;
+  /** Nobraukums šajā izsolē, piem. "185 389 km". */
+  odometer?: string;
+  /** Primārais bojājums, piem. "Front End". */
+  damage?: string;
   photoUrl?: string;
   photoCount?: number;
   photoUrls?: string[];
