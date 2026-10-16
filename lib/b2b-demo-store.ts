@@ -7,12 +7,24 @@ import { B2bDemoIsolationError, assertSameTenant, rejectForeignTenantId } from "
 import {
   applyB2bDemoOrderPatch,
   createB2bDemoOrder,
+  parseB2bDemoOrder,
   type B2bDemoOrderInput,
 } from "@/lib/b2b-demo-orders";
+import {
+  b2bDemoOrderToListRow,
+  emptyB2bDemoOrdersIndex,
+  paginateB2bDemoOrderIndex,
+  parseB2bDemoOrdersIndex,
+  removeB2bDemoOrderListRow,
+  upsertB2bDemoOrderListRow,
+  type B2bDemoOrderListQuery,
+} from "@/lib/b2b-demo-order-list";
 import {
   B2B_DEMO_INDEX_PATH,
   assertB2bDemoStoragePath,
   b2bDemoTenantDataPath,
+  b2bDemoTenantOrderPath,
+  b2bDemoTenantOrdersIndexPath,
   b2bDemoTenantStoragePrefix,
   isB2bDemoPathUnderTenant,
 } from "@/lib/b2b-demo-paths";
@@ -34,8 +46,8 @@ import {
   newB2bDemoTenantId,
   resolveB2bDemoCreatePassword,
 } from "@/lib/b2b-demo-users";
-import { isSafeB2bDemoSlug, isSafeB2bDemoTenantId, normalizeB2bDemoEmail, normalizeB2bDemoSlug } from "@/lib/b2b-demo-ids";
-import { toPublicB2bDemoUser, type B2bDemoAdminTenantRow, type B2bDemoEncryptedAuctionSession, type B2bDemoIndex, type B2bDemoOrder, type B2bDemoRole, type B2bDemoSettings, type B2bDemoTenant, type B2bDemoTenantDocument, type B2bDemoUser, type B2bDemoUserPublic } from "@/lib/b2b-demo-types";
+import { isSafeB2bDemoOrderId, isSafeB2bDemoSlug, isSafeB2bDemoTenantId, normalizeB2bDemoEmail, normalizeB2bDemoSlug } from "@/lib/b2b-demo-ids";
+import { toPublicB2bDemoUser, type B2bDemoAdminTenantRow, type B2bDemoEncryptedAuctionSession, type B2bDemoIndex, type B2bDemoOrder, type B2bDemoOrderListPage, type B2bDemoOrdersIndex, type B2bDemoRole, type B2bDemoSettings, type B2bDemoTenant, type B2bDemoTenantDocument, type B2bDemoUser, type B2bDemoUserPublic } from "@/lib/b2b-demo-types";
 
 const RELATIVE_DIR = ".data/b2b-demo";
 
@@ -149,7 +161,82 @@ export function createFsBlobB2bDemoRepository(): B2bDemoRepository {
       }
       await deleteFsTenantDir(tenantId);
     },
+    async readOrdersIndex(tenantId) {
+      if (!isSafeB2bDemoTenantId(tenantId)) return null;
+      const pathname = b2bDemoTenantOrdersIndexPath(tenantId);
+      const raw = await readStoredText(pathname);
+      if (!raw) return null;
+      try {
+        return parseB2bDemoOrdersIndex(JSON.parse(raw) as unknown, tenantId);
+      } catch {
+        return null;
+      }
+    },
+    async writeOrdersIndex(tenantId, doc) {
+      if (doc.tenantId !== tenantId) throw new Error("orders-index tenant_id nesakrīt.");
+      const pathname = b2bDemoTenantOrdersIndexPath(tenantId);
+      await writeStoredText(pathname, JSON.stringify(doc));
+    },
+    async readOrderRecord(tenantId, orderId) {
+      if (!isSafeB2bDemoTenantId(tenantId) || !isSafeB2bDemoOrderId(orderId)) return null;
+      const pathname = b2bDemoTenantOrderPath(tenantId, orderId);
+      const raw = await readStoredText(pathname);
+      if (!raw) return null;
+      try {
+        return parseB2bDemoOrder(JSON.parse(raw) as unknown, tenantId);
+      } catch {
+        return null;
+      }
+    },
+    async writeOrderRecord(order) {
+      const pathname = b2bDemoTenantOrderPath(order.tenantId, order.orderId);
+      await writeStoredText(pathname, JSON.stringify(order));
+    },
+    async deleteOrderRecord(tenantId, orderId) {
+      const pathname = b2bDemoTenantOrderPath(tenantId, orderId);
+      await deleteStoredText(pathname);
+    },
   };
+}
+
+async function readStoredText(pathname: string): Promise<string | null> {
+  const token = blobToken();
+  if (token) {
+    const fromBlob = await readBlobText(pathname, token);
+    if (fromBlob) return fromBlob;
+  }
+  return readFsText(pathname);
+}
+
+async function writeStoredText(pathname: string, body: string): Promise<void> {
+  const token = blobToken();
+  if (token) {
+    await writeBlobText(pathname, token, body);
+    try {
+      await writeFsText(pathname, body);
+    } catch {
+      /* ignore local mirror */
+    }
+    return;
+  }
+  await writeFsText(pathname, body);
+}
+
+async function deleteStoredText(pathname: string): Promise<void> {
+  const token = blobToken();
+  if (token) {
+    try {
+      const safe = assertB2bDemoStoragePath(pathname);
+      await del(safe, { token });
+    } catch {
+      /* missing blob is fine */
+    }
+  }
+  try {
+    await fs.unlink(filesystemPath(pathname));
+  } catch {
+    /* missing file is fine */
+  }
 }
 
 async function deleteBlobTenantPrefix(tenantId: string, token: string): Promise<void> {
@@ -399,15 +486,43 @@ export async function deleteB2bDemoTenant(
   });
 }
 
+async function loadOrMigrateOrdersIndex(tenantId: string, r?: B2bDemoRepository): Promise<B2bDemoOrdersIndex> {
+  const store = repo(r);
+  const existing = await store.readOrdersIndex(tenantId);
+  if (existing) return existing;
+  const doc = await store.readTenant(tenantId);
+  const legacy = (doc?.orders ?? []).filter((o) => o.tenantId === tenantId);
+  const now = new Date().toISOString();
+  for (const order of legacy) {
+    await store.writeOrderRecord(order);
+  }
+  const next = emptyB2bDemoOrdersIndex(tenantId, now);
+  next.rows = legacy.map(b2bDemoOrderToListRow);
+  await store.writeOrdersIndex(tenantId, next);
+  if (doc && legacy.length > 0) {
+    doc.orders = [];
+    doc.tenant.updatedAt = now;
+    await store.writeTenant(doc);
+  }
+  return next;
+}
+
+export async function listB2bDemoTenantOrderPage(
+  tenantId: string,
+  query: B2bDemoOrderListQuery = {},
+  r?: B2bDemoRepository,
+): Promise<B2bDemoOrderListPage> {
+  const index = await loadOrMigrateOrdersIndex(tenantId, r);
+  return paginateB2bDemoOrderIndex(index, tenantId, query);
+}
+
+/** Light rows only. Does not open per-order JSON files. */
 export async function listB2bDemoTenantOrders(
   tenantId: string,
   r?: B2bDemoRepository,
-): Promise<B2bDemoOrder[]> {
-  const doc = await readB2bDemoTenant(tenantId, r);
-  if (!doc) return [];
-  return [...doc.orders]
-    .filter((o) => o.tenantId === tenantId)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+): Promise<B2bDemoOrderListPage["rows"]> {
+  const index = await loadOrMigrateOrdersIndex(tenantId, r);
+  return paginateB2bDemoOrderIndex(index, tenantId, { page: 1, limit: Math.max(index.rows.length, 1) }).rows;
 }
 
 export async function getB2bDemoTenantOrder(
@@ -415,11 +530,14 @@ export async function getB2bDemoTenantOrder(
   orderId: string,
   r?: B2bDemoRepository,
 ): Promise<B2bDemoOrder | null> {
-  const doc = await readB2bDemoTenant(tenantId, r);
-  if (!doc) return null;
-  const order = doc.orders.find((o) => o.orderId === orderId) ?? null;
-  if (!order) return null;
-  return assertSameTenant(order, tenantId);
+  if (!isSafeB2bDemoOrderId(orderId)) return null;
+  const store = repo(r);
+  const fromFile = await store.readOrderRecord(tenantId, orderId);
+  if (fromFile) return assertSameTenant(fromFile, tenantId);
+  const doc = await store.readTenant(tenantId);
+  const legacy = doc?.orders.find((o) => o.orderId === orderId) ?? null;
+  if (!legacy) return null;
+  return assertSameTenant(legacy, tenantId);
 }
 
 export async function addB2bDemoTenantOrder(
@@ -433,9 +551,9 @@ export async function addB2bDemoTenantOrder(
     if (!doc) throw new Error("Tenants nav atrasts.");
     assertSameTenant(doc.tenant, tenantId);
     const order = createB2bDemoOrder(tenantId, input);
-    doc.orders.push(order);
-    doc.tenant.updatedAt = order.updatedAt;
-    await store.writeTenant(doc);
+    await store.writeOrderRecord(order);
+    const index = (await store.readOrdersIndex(tenantId)) ?? emptyB2bDemoOrdersIndex(tenantId, order.updatedAt);
+    await store.writeOrdersIndex(tenantId, upsertB2bDemoOrderListRow(index, b2bDemoOrderToListRow(order), order.updatedAt));
     return order;
   });
 }
@@ -470,19 +588,32 @@ export async function patchB2bDemoTenantOrder(
 ): Promise<B2bDemoOrder> {
   return withLock(async () => {
     const store = repo(r);
-    const doc = await store.readTenant(tenantId);
-    if (!doc) throw new Error("Tenants nav atrasts.");
-    const idx = doc.orders.findIndex((o) => o.orderId === orderId);
-    if (idx < 0) throw new Error("Pasūtījums nav atrasts.");
-    const previous = doc.orders[idx]!;
+    const previous = await getB2bDemoTenantOrder(tenantId, orderId, store);
+    if (!previous) throw new Error("Pasūtījums nav atrasts.");
     const next = applyB2bDemoOrderPatch(previous, tenantId, patch);
-    doc.orders[idx] = next;
-    doc.tenant.updatedAt = next.updatedAt;
-    await store.writeTenant(doc);
+    await store.writeOrderRecord(next);
+    const index = (await store.readOrdersIndex(tenantId)) ?? emptyB2bDemoOrdersIndex(tenantId, next.updatedAt);
+    await store.writeOrdersIndex(tenantId, upsertB2bDemoOrderListRow(index, b2bDemoOrderToListRow(next), next.updatedAt));
     await rememberB2bOrderHistory(previous, next, history).catch((e) => {
       console.error("[change-history]", e instanceof Error ? e.message : e);
     });
     return next;
+  });
+}
+
+export async function deleteB2bDemoTenantOrder(
+  tenantId: string,
+  orderId: string,
+  r?: B2bDemoRepository,
+): Promise<void> {
+  return withLock(async () => {
+    const store = repo(r);
+    const existing = await getB2bDemoTenantOrder(tenantId, orderId, store);
+    if (!existing) throw new Error("Pasūtījums nav atrasts.");
+    assertSameTenant(existing, tenantId);
+    await store.deleteOrderRecord(tenantId, orderId);
+    const index = (await store.readOrdersIndex(tenantId)) ?? emptyB2bDemoOrdersIndex(tenantId);
+    await store.writeOrdersIndex(tenantId, removeB2bDemoOrderListRow(index, tenantId, orderId));
   });
 }
 

@@ -9,7 +9,6 @@ export default async function B2bDemoNewOrderPage() {
   return (
     <B2bDemoShell tenantName={actor.tenant.name} userName={actor.user.name} role={actor.session.role}>
       <h1 className="mb-4 text-xl font-semibold">Jauns pasūtījums</h1>
-      <p className="mb-4 text-sm text-slate-500">PDF piedāvājums no šī ieraksta būs nākamajā posmā. tenant_id tiek piešķirts automātiski.</p>
       <B2bDemoOrderForm mode="create" />
     </B2bDemoShell>
   );

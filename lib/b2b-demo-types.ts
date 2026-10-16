@@ -4,8 +4,33 @@ export type B2bDemoRole = (typeof B2B_DEMO_ROLES)[number];
 export const B2B_DEMO_VAT_MODES = ["none", "standard", "margin"] as const;
 export type B2bDemoVatMode = (typeof B2B_DEMO_VAT_MODES)[number];
 
-export const B2B_DEMO_ORDER_STATUSES = ["active", "completed", "inactive"] as const;
+export const B2B_DEMO_ORDER_STATUSES = [
+  "active",
+  "searching",
+  "offered",
+  "reserved",
+  "completed",
+  "inactive",
+] as const;
 export type B2bDemoOrderStatus = (typeof B2B_DEMO_ORDER_STATUSES)[number];
+
+export const B2B_DEMO_ORDER_STATUS_LV: Record<B2bDemoOrderStatus, string> = {
+  active: "Aktīvs",
+  searching: "Meklē",
+  offered: "Piedāvāts",
+  reserved: "Rezervēts",
+  completed: "Izpildīts",
+  inactive: "Neaktīvs",
+};
+
+export const B2B_DEMO_DEAL_DETAIL_OPTIONS = [
+  { key: "dealLeasingOrCredit", label: "Līzings, kredīts" },
+  { key: "dealClientFinancing100", label: "Klienta finansējums 100%" },
+  { key: "dealClientFinancing20", label: "Klienta finansējums 20%" },
+  { key: "dealVat21Required", label: "Obligāta cena ar PVN 21%" },
+  { key: "dealServiceStartDeposit", label: "Depozīts (pakalpojuma uzsākšanai)" },
+  { key: "dealEkki", label: "EKKI" },
+] as const;
 
 export const B2B_DEMO_AUCTION_PLATFORMS = ["openlane", "auto1", "autobid"] as const;
 export type B2bDemoAuctionPlatform = (typeof B2B_DEMO_AUCTION_PLATFORMS)[number];
@@ -52,16 +77,99 @@ export type B2bDemoSettings = {
   updatedAt: string;
 };
 
+export type B2bDemoOffer = {
+  offerId: string;
+  title: string;
+  brandModel: string;
+  vin: string;
+  firstRegistration: string;
+  odometerReading: string;
+  transmission: string;
+  location: string;
+  hasFullServiceHistory: boolean;
+  hasFactoryPaint: boolean;
+  hasNoRustBody: boolean;
+  hasSecondWheelSet: boolean;
+  specialNotes: string;
+  visualAssessment: string;
+  technicalAssessment: string;
+  summary: string;
+  carPrice: string;
+  deliveryPrice: string;
+  commissionFee: string;
+  offerValidDays: string;
+  validUntil: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type B2bDemoOrder = {
+  tenantId: string;
+  orderId: string;
+  clientName: string;
+  clientFirstName: string;
+  clientLastName: string;
+  phone: string;
+  email: string;
+  orderDate: string;
+  brandModel: string;
+  vin: string;
+  productionYears: string;
+  totalBudget: string;
+  engineType: string;
+  transmission: string;
+  bodyType: string;
+  driveType: string;
+  seatCount: string;
+  maxMileage: string;
+  preferredColors: string;
+  nonPreferredColors: string;
+  interiorFinish: string;
+  dealLeasingOrCredit: boolean;
+  dealClientFinancing100: boolean;
+  dealClientFinancing20: boolean;
+  dealVat21Required: boolean;
+  dealServiceStartDeposit: boolean;
+  dealEkki: boolean;
+  equipmentRequired: string;
+  equipmentDesired: string;
+  note: string;
+  status: B2bDemoOrderStatus;
+  offers: B2bDemoOffer[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** Light list row. Never includes offers or long notes. */
+export type B2bDemoOrderListRow = {
   tenantId: string;
   orderId: string;
   clientName: string;
   brandModel: string;
   vin: string;
-  note: string;
+  phone: string;
+  orderDate: string;
+  totalBudget: string;
   status: B2bDemoOrderStatus;
+  offerCount: number;
+  latestOfferValidUntil: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type B2bDemoOrdersIndex = {
+  version: 1;
+  tenantId: string;
+  updatedAt: string;
+  rows: B2bDemoOrderListRow[];
+};
+
+export type B2bDemoOrderListPage = {
+  tenantId: string;
+  page: number;
+  limit: number;
+  total: number;
+  rows: B2bDemoOrderListRow[];
 };
 
 /** Encrypted auction browser session. Never contains a password field. */
@@ -139,7 +247,7 @@ export function isB2bDemoVatMode(value: unknown): value is B2bDemoVatMode {
 }
 
 export function isB2bDemoOrderStatus(value: unknown): value is B2bDemoOrderStatus {
-  return value === "active" || value === "completed" || value === "inactive";
+  return typeof value === "string" && (B2B_DEMO_ORDER_STATUSES as readonly string[]).includes(value);
 }
 
 export function isB2bDemoAuctionPlatform(value: unknown): value is B2bDemoAuctionPlatform {

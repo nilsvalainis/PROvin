@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   canManageB2bDemoUsers,
+  canWriteB2bDemoOrders,
   canWriteB2bDemoSettings,
   createB2bDemoUser,
   generateB2bDemoPassword,
@@ -30,6 +31,8 @@ describe("b2b demo users", () => {
     expect(canManageB2bDemoUsers("employee")).toBe(false);
     expect(canWriteB2bDemoSettings("owner")).toBe(true);
     expect(canWriteB2bDemoSettings("employee")).toBe(false);
+    expect(canWriteB2bDemoOrders("owner")).toBe(true);
+    expect(canWriteB2bDemoOrders("employee")).toBe(true);
   });
 
   it("ģenerē paroli un hashē ar scrypt", () => {

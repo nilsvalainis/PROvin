@@ -542,11 +542,56 @@ export function applyIrissWaybillSnapshot<T extends IrissPavadzimeRecord>(rec: T
   };
 }
 
-export function snapshotB2bOrder(order: Pick<B2bDemoOrder, "clientName" | "brandModel" | "vin" | "note" | "status">): Record<string, string> {
+export function snapshotB2bOrder(
+  order: Pick<
+    B2bDemoOrder,
+    | "clientName"
+    | "clientFirstName"
+    | "clientLastName"
+    | "phone"
+    | "email"
+    | "orderDate"
+    | "brandModel"
+    | "vin"
+    | "productionYears"
+    | "totalBudget"
+    | "engineType"
+    | "transmission"
+    | "bodyType"
+    | "driveType"
+    | "seatCount"
+    | "maxMileage"
+    | "preferredColors"
+    | "nonPreferredColors"
+    | "interiorFinish"
+    | "equipmentRequired"
+    | "equipmentDesired"
+    | "note"
+    | "status"
+  >,
+): Record<string, string> {
   return {
     clientName: text(order.clientName),
+    clientFirstName: text(order.clientFirstName),
+    clientLastName: text(order.clientLastName),
+    phone: text(order.phone),
+    email: text(order.email),
+    orderDate: text(order.orderDate),
     brandModel: text(order.brandModel),
     vin: text(order.vin),
+    productionYears: text(order.productionYears),
+    totalBudget: text(order.totalBudget),
+    engineType: text(order.engineType),
+    transmission: text(order.transmission),
+    bodyType: text(order.bodyType),
+    driveType: text(order.driveType),
+    seatCount: text(order.seatCount),
+    maxMileage: text(order.maxMileage),
+    preferredColors: text(order.preferredColors),
+    nonPreferredColors: text(order.nonPreferredColors),
+    interiorFinish: text(order.interiorFinish),
+    equipmentRequired: text(order.equipmentRequired),
+    equipmentDesired: text(order.equipmentDesired),
     note: text(order.note),
     status: text(order.status),
   };
@@ -554,15 +599,51 @@ export function snapshotB2bOrder(order: Pick<B2bDemoOrder, "clientName" | "brand
 
 export function b2bOrderPatchFromSnapshot(snapshot: Record<string, string>): {
   clientName: string;
+  clientFirstName: string;
+  clientLastName: string;
+  phone: string;
+  email: string;
+  orderDate: string;
   brandModel: string;
   vin: string;
+  productionYears: string;
+  totalBudget: string;
+  engineType: string;
+  transmission: string;
+  bodyType: string;
+  driveType: string;
+  seatCount: string;
+  maxMileage: string;
+  preferredColors: string;
+  nonPreferredColors: string;
+  interiorFinish: string;
+  equipmentRequired: string;
+  equipmentDesired: string;
   note: string;
   status: B2bDemoOrderStatus;
 } {
   return {
     clientName: snapshot.clientName ?? "",
+    clientFirstName: snapshot.clientFirstName ?? "",
+    clientLastName: snapshot.clientLastName ?? "",
+    phone: snapshot.phone ?? "",
+    email: snapshot.email ?? "",
+    orderDate: snapshot.orderDate ?? "",
     brandModel: snapshot.brandModel ?? "",
     vin: snapshot.vin ?? "",
+    productionYears: snapshot.productionYears ?? "",
+    totalBudget: snapshot.totalBudget ?? "",
+    engineType: snapshot.engineType ?? "",
+    transmission: snapshot.transmission ?? "",
+    bodyType: snapshot.bodyType ?? "",
+    driveType: snapshot.driveType ?? "",
+    seatCount: snapshot.seatCount ?? "",
+    maxMileage: snapshot.maxMileage ?? "",
+    preferredColors: snapshot.preferredColors ?? "",
+    nonPreferredColors: snapshot.nonPreferredColors ?? "",
+    interiorFinish: snapshot.interiorFinish ?? "",
+    equipmentRequired: snapshot.equipmentRequired ?? "",
+    equipmentDesired: snapshot.equipmentDesired ?? "",
     note: snapshot.note ?? "",
     status: isB2bDemoOrderStatus(snapshot.status) ? snapshot.status : "active",
   };
