@@ -9,7 +9,7 @@ import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import { ORDER_VIN_SCAN_STUCK_MS } from "@/lib/order-vin-scan-run-decision";
-import { statVinAwaitingBrowserFetch, statVinBrowserFetchToken } from "@/lib/vin-scan/stat-vin-browser";
+import { browserFetchAwaiting, browserFetchToken } from "@/lib/vin-scan/browser-fetch";
 import {
   buildOrderVinScanSummary,
   formatOrderVinScanClock,
@@ -185,10 +185,12 @@ export function AdminOrderVinScanCard({
   }, [sessionId, vin]);
 
   const summary = useMemo(() => buildOrderVinScanSummary(record), [record]);
-  const statVinFetchToken = useMemo(() => {
-    const row = record?.indicators.find((item) => item.id === "stat_vin");
-    if (!record || record.status === "running" || !statVinAwaitingBrowserFetch(row)) return "";
-    return statVinBrowserFetchToken(vin, record.at);
+  const browserFetch = useMemo(() => {
+    if (!record || record.status === "running") return null;
+    const ids = record.indicators.filter((row) => browserFetchAwaiting(row)).map((row) => row.id);
+    if (!ids.length) return null;
+    const token = browserFetchToken(vin, record.at);
+    return token ? { token, ids } : null;
   }, [record, vin]);
   const sourceCount = record?.indicators.length ?? 0;
   const clock = record?.at ? formatOrderVinScanClock(record.at) : "";
@@ -377,7 +379,13 @@ export function AdminOrderVinScanCard({
         hidden
         data-provin-order-vin={vin.trim().toUpperCase()}
         data-provin-order-session={sessionId}
-        {...(statVinFetchToken ? { "data-provin-stat-vin-fetch": statVinFetchToken } : {})}
+        {...(browserFetch
+          ? {
+              "data-provin-browser-fetch": browserFetch.token,
+              "data-provin-browser-fetch-ids": browserFetch.ids.join(","),
+              ...(browserFetch.ids.includes("stat_vin") ? { "data-provin-stat-vin-fetch": browserFetch.token } : {}),
+            }
+          : {})}
       />
       {showFields ? (
         <div className="px-2 pb-2">

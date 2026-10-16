@@ -8,6 +8,7 @@ import {
 import { emptyIrissListingsDismissed } from "@/lib/iriss-listings-dismiss";
 import { irissListingMatchKey } from "@/lib/iriss-listing-match";
 import { prepareIrissListingMatchWorkspace } from "@/lib/iriss-listing-match-store";
+import { gateListingVehiclesForView, isEcarstradeNoPriceNoBid } from "@/lib/iriss-listing-order-gate";
 import { irissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { listIrissPasutijumi, readIrissListingOrderOv } from "@/lib/iriss-pasutijumi-store";
 import { irissScanOrderBrief } from "@/lib/iriss-scan-listings";
@@ -28,9 +29,10 @@ export default async function IrissSludinajumiPage() {
     readIrissListingOrderOv().catch(() => ({})),
   ]);
   const dismissed = dismissedView.entries;
+  const listable = (latest?.vehicles ?? []).filter((v) => !isEcarstradeNoPriceNoBid(v));
   const match = storage.enabled
     ? await prepareIrissListingMatchWorkspace(
-        latest?.vehicles ?? [],
+        listable,
         orders.map((o) => ({
           id: o.id,
           brandModel: o.brandModel,
@@ -38,6 +40,10 @@ export default async function IrissSludinajumiPage() {
           clientFirstName: o.clientName,
         })),
       ).catch(() => null)
+    : null;
+  const matchOrderIds = match?.orderIdsByListing ?? {};
+  const view = latest
+    ? { ...latest, vehicles: gateListingVehiclesForView(listable, orders, { orderOv: initialOrderOv, matchOrderIds }) }
     : null;
 
   return (
@@ -63,13 +69,13 @@ export default async function IrissSludinajumiPage() {
       {storage.enabled ? (
         <Suspense fallback={null}>
           <IrissSludinajumiListClient
-            latest={latest}
+            latest={view}
             orders={orders}
             scanOrders={scanOrders}
             dismissed={dismissed}
             initialOrderOv={initialOrderOv}
             matchNotices={match?.notices ?? []}
-            matchOrderIds={match?.orderIdsByListing ?? {}}
+            matchOrderIds={matchOrderIds}
             matchStatus={Object.fromEntries((match?.state.entries ?? []).map((e) => [irissListingMatchKey(e.orderId, e.listingId), e.status]))}
             duplicatesByListing={match?.duplicatesByListing ?? {}}
           />
