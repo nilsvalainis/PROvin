@@ -14,12 +14,16 @@ describe("IRISS listings toolbar", () => {
     expect(cls).not.toMatch(/(^|\s)sticky(\s|$)/);
   });
 
-  it("keeps the match notice inline with the same toggle labels", () => {
-    expect(listClient).toContain("<IrissNewMatchNotice");
+  it("keeps the match notice as a toolbar badge and the same list action", () => {
+    const toolsAt = listClient.indexOf('aria-label="Vairāk"');
+    const noticeAt = listClient.indexOf("<IrissNewMatchNotice");
+    expect(toolsAt).toBeGreaterThan(0);
+    expect(noticeAt).toBeGreaterThan(toolsAt);
     expect(notice).toContain("jaunas atbilstības");
     expect(notice).toContain("Saraksts");
     expect(notice).toContain("Aizvērt");
+    expect(notice).toContain("rounded-full");
     expect(notice).not.toContain("w-full");
-    expect(notice).toContain("absolute left-0 top-full");
+    expect(notice).toContain("absolute right-0 top-full");
   });
 });

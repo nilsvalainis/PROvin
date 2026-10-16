@@ -758,7 +758,7 @@ export function IrissSludinajumiListClient({
 
   return (
     <div className="mt-1 space-y-2 touch-manipulation sm:mt-1.5 sm:space-y-2">
-      {/* Web (md+): panelis nav lipīgs. Telefons: viena josla. Rindas: virsraksts + atbilstības + datu kopums, čipi + rīki, statuss. */}
+      {/* Web (md+): panelis nav lipīgs. Atbilstības ir žetons rīku rindā, ne atsevišķa josla. */}
       <header
         data-iriss-listings-toolbar=""
         className="relative z-20 -mx-2 bg-transparent px-2 pb-1 pt-0.5 max-md:sticky max-md:top-0 max-md:bg-[#F8F8F9]/95 max-md:backdrop-blur md:static md:z-auto md:mx-0 md:bg-transparent md:px-0 md:backdrop-blur-none"
@@ -767,7 +767,6 @@ export function IrissSludinajumiListClient({
           <h1 className="iriss-list-title shrink-0 text-[17px] font-semibold leading-none tracking-tight text-[var(--color-apple-text)] md:hidden">
             Sludinājumi
           </h1>
-          <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
           <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] md:flex-none md:overflow-visible [&::-webkit-scrollbar]:hidden">
             <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[#e9e9ee] p-[2px] text-[12px]">
               {([
@@ -1013,6 +1012,7 @@ export function IrissSludinajumiListClient({
               </>
             ) : null}
           </div>
+          <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
         </div>
         </div>
         <div className="mt-1 flex max-w-full flex-nowrap items-center gap-x-2 overflow-x-auto text-[11px] text-[#8e8e93] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
