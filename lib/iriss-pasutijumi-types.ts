@@ -2,6 +2,8 @@
  * IRISS admin — pasūtījumu ieraksti (JSON uz disku, neatkarīgi no PROVIN Stripe pasūtījumiem).
  */
 
+import type { IrissCriteriaV1 } from "@/lib/iriss-criteria-types";
+
 export type IrissOfferAttachment = {
   id: string;
   name: string;
@@ -260,6 +262,11 @@ export type IrissPasutijumsRecord = {
   dzintarzemeTameDraft: IrissDzintarzemeTameDraft;
   /** Piedāvājumi klientam (var būt vairāki). */
   offers: IrissOfferRecord[];
+  /**
+   * Aditīvi kritēriji ar vairākiem filtriem. Vecie JSON bez lauka.
+   * Teksta lauki un saišu masīvi paliek. Krāsa šajā shēmā nav.
+   */
+  criteria?: IrissCriteriaV1;
 };
 
 export type IrissPasutijumsListRow = {

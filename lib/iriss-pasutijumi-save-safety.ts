@@ -222,6 +222,7 @@ export function mergeIrissPasutijumsRecords(
     if (!offers.some((o) => o.id === s.id)) offers.push(s);
   }
   next.offers = offers;
+  next.criteria = local.criteria ?? server.criteria;
   return next;
 }
 

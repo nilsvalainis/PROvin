@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
+import { readIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
 import { attachmentAfterBlobPut, parseDataUrlPayload } from "@/lib/iriss-offer-attachment-blob";
@@ -471,7 +472,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
   const bool = (k: string) => Boolean(o[k]);
   if (str("id") !== id) return null;
   const base = emptyIrissPasutijums(id, new Date().toISOString());
-  return {
+  const record: IrissPasutijumsRecord = {
     ...base,
     id,
     createdAt: str("createdAt") || base.createdAt,
@@ -513,6 +514,8 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     offers: normalizeOffers(o.offers),
     ...pickIrissPasutijumsAuditFields(o),
   };
+  record.criteria = readIrissCriteria({ ...record, criteria: o.criteria });
+  return record;
 }
 
 function rowFromRecord(rec: IrissPasutijumsRecord): IrissPasutijumsListRow {

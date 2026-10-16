@@ -1,5 +1,5 @@
 import { resolveEcarstradeMake, resolveMakesFromBrand } from "@/lib/iriss-listings-ecarstrade-catalog";
-import { driveTokensForMatch, mapEcarstradeColor } from "@/lib/iriss-listings-ecarstrade-criteria";
+import { driveTokensForMatch } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
   fillMakeModelFromBrand,
   parseListingSearchUrl,
@@ -116,13 +116,12 @@ function driveMatches(hay: string, drives: EcarstradeSearchFilter["drives"]): bo
   return !hasOther;
 }
 
+/** Krāsa paliek nolasīta un attēlota. Filtrs pēc krāsas vairs neatmet auto. */
 function colorMatches(raw: string, wanted: string[], excluded: string[]): boolean {
-  if (!raw.trim()) return true;
-  const mapped = mapEcarstradeColor(raw);
-  const hay = mapped || raw;
-  if (excluded.some((c) => includesToken(hay, c))) return false;
-  if (wanted.length === 0) return true;
-  return wanted.some((c) => includesToken(hay, c));
+  void raw;
+  void wanted;
+  void excluded;
+  return true;
 }
 
 function excludeMatches(hay: string, tokens: string[]): boolean {
@@ -339,3 +338,5 @@ export function applySearchFilterToVehicles<T extends ListingSearchVehicle>(
 export function listingSearchNeedsMake(platform: IrissListingPlatform | "mobile"): boolean {
   return platform === "auto1" || platform === "openline" || platform === "autobid";
 }
+
+export { filterToSearchFilter } from "@/lib/iriss-criteria-shared/to-search-filter";

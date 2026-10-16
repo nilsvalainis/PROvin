@@ -110,7 +110,7 @@ describe("eCarsTrade ingest persist after #147", () => {
     expect(kept.map((v) => v.title)).toEqual(["Volvo XC60"]);
   });
 
-  it("still drops opposite drive and excluded colors on ET ingest", () => {
+  it("still drops opposite drive on ET ingest and keeps every colour", () => {
     const src = {
       platform: "ecarstrade" as const,
       sourceUrl: "https://ecarstrade.com/search?mark[]=5&model[]=55&iriss_drive=awd&iriss_exclude_color=Yellow",
@@ -125,7 +125,7 @@ describe("eCarsTrade ingest persist after #147", () => {
         ],
         src,
       ).map((v) => `${v.title} ${v.color}`),
-    ).toEqual(["Audi A6 3.0 TDI quattro Black"]);
+    ).toEqual(["Audi A6 3.0 TDI quattro Black", "Audi A6 3.0 TDI quattro Yellow"]);
   });
 
   it("persists found ET cars across two ok reads and does not mark them gone", () => {
