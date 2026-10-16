@@ -6,6 +6,7 @@ import {
   type IrissListingMatchOrder,
   type IrissListingMatchVehicle,
 } from "@/lib/iriss-listing-match";
+import { listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
 import { buildIrissListingSources } from "@/lib/iriss-listings-sources";
 import { isIrissScanOrderId } from "@/lib/iriss-scan-listings";
 import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
@@ -140,7 +141,12 @@ describe("discoverListingOrderMatches equivalence", () => {
   ])("same result as the previous implementation (%i vehicles, %i orders)", (nv, no) => {
     const vehicles = makeVehicles(nv, Math.max(no, 1));
     const orders = makeOrders(no);
-    expect(discoverListingOrderMatches(vehicles, orders)).toEqual(referenceDiscover(vehicles, orders));
+    const brandById = new Map(orders.map((o) => [o.id, o.brandModel]));
+    const byId = new Map(vehicles.map((v) => [v.id, v]));
+    const gated = referenceDiscover(vehicles, orders).filter((hit) =>
+      listingMatchesOrderMakeModel(byId.get(hit.listingId)!, brandById.get(hit.orderId) ?? ""),
+    );
+    expect(discoverListingOrderMatches(vehicles, orders)).toEqual(gated);
   }, 60_000);
 
   it("finds both criteria matches and pre-linked listings in the fixture", () => {
