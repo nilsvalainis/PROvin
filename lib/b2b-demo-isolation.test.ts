@@ -20,3 +20,15 @@ describe("b2b demo isolation", () => {
     expect(() => rejectForeignTenantId(b, a)).toThrow(B2bDemoIsolationError);
   });
 });
+
+describe("b2b demo order path isolation", () => {
+  const a = "tnt_aaaaaa";
+  const b = "tnt_bbbbbb";
+
+  it("order faili paliek zem sava tenanta", async () => {
+    const { b2bDemoTenantOrderPath, b2bDemoTenantOrdersIndexPath, isB2bDemoPathUnderTenant } = await import("./b2b-demo-paths");
+    expect(isB2bDemoPathUnderTenant(b2bDemoTenantOrderPath(a, "ord_abcdef"), a)).toBe(true);
+    expect(isB2bDemoPathUnderTenant(b2bDemoTenantOrderPath(a, "ord_abcdef"), b)).toBe(false);
+    expect(isB2bDemoPathUnderTenant(b2bDemoTenantOrdersIndexPath(a), b)).toBe(false);
+  });
+});

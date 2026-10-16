@@ -38,6 +38,8 @@ export default async function IrissPasutijumsDetailPage({
   const autoOpenOfferId = typeof sp.offer === "string" ? sp.offer.trim() : "";
   const initialRoomTab = sp.room === "search" ? "search" : "overview";
   // Tikai jau saglabātais Meklētāja kešs. Sync, VIN OCR un citi maksas avoti šeit netiek saukti.
+  // latest, dismissed un match darbavieta ir 45 s atmiņas kešs (IRISS_LISTINGS_READ_CACHE_TTL_MS).
+  // Šis lasījums neraksta latest.json: ne pilnā atvēršanā, ne prefetch.
   const storage = getIrissListingsStorageState();
   const [latest, dismissedView, orderOv, offerLinks] = await Promise.all([
     storage.enabled ? readIrissListingsLatestView() : Promise.resolve(null),
