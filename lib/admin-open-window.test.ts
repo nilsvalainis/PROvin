@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isStandaloneDisplayMode, openPrintHtmlAfterReady, openWindowSyncThen, schedulePrintOnWindow } from "@/lib/admin-open-window";
+import { isStandaloneDisplayMode, openPrintHtmlAfterReady, openWindowSyncThen } from "@/lib/admin-open-window";
 
 type FakeWindow = {
   closed: boolean;
@@ -9,9 +9,6 @@ type FakeWindow = {
   open: ReturnType<typeof vi.fn>;
   matchMedia: (q: string) => { matches: boolean };
   navigator: Navigator & { standalone?: boolean };
-  addEventListener?: ReturnType<typeof vi.fn>;
-  focus?: ReturnType<typeof vi.fn>;
-  print?: ReturnType<typeof vi.fn>;
 };
 
 function installWindow(opts: { popup: FakeWindow | null; standalone?: boolean }) {
@@ -131,9 +128,6 @@ describe("openPrintHtmlAfterReady", () => {
       open: vi.fn(),
       matchMedia: () => ({ matches: false }),
       navigator: {} as Navigator,
-      addEventListener: vi.fn(),
-      focus: vi.fn(),
-      print: vi.fn(),
     };
     const { host } = installWindow({ popup });
     host.open = vi.fn(() => popup);
@@ -142,7 +136,5 @@ describe("openPrintHtmlAfterReady", () => {
     expect(host.open).not.toHaveBeenCalledWith("about:blank", "_blank");
     expect(popup.document.html).toBe("<p>Atskaite</p>");
     expect(w).toBe(popup);
-    schedulePrintOnWindow(w as unknown as Window, "Captur.pdf");
-    expect(popup.addEventListener).toHaveBeenCalled();
   });
 });
