@@ -31,6 +31,8 @@ describe("b2b demo host", () => {
     expect(decideB2bDemoHostRequest("demo.provin.lv", "/admin/iriss")).toEqual({ action: "not_found" });
     expect(decideB2bDemoHostRequest("demo.provin.lv", "/admin/iriss/pasutijumi")).toEqual({ action: "not_found" });
     expect(decideB2bDemoHostRequest("demo.provin.lv", "/api/admin/iriss-pasutijumi")).toEqual({ action: "not_found" });
+    expect(decideB2bDemoHostRequest("demo.provin.lv", "/api/admin/b2b-demo/tenants")).toEqual({ action: "not_found" });
+    expect(decideB2bDemoHostRequest("demo.provin.lv", "/admin/b2b-demo")).toEqual({ action: "not_found" });
     expect(decideB2bDemoHostRequest("demo.provin.lv", "/lv")).toEqual({ action: "not_found" });
     expect(decideB2bDemoHostRequest("demo.provin.lv", "/api/checkout")).toEqual({ action: "not_found" });
   });

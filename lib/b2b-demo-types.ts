@@ -114,6 +114,15 @@ export type B2bDemoIndex = {
   emailIndex: Record<string, B2bDemoEmailIndexEntry>;
 };
 
+export type B2bDemoAdminTenantRow = {
+  tenantId: string;
+  slug: string;
+  name: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+  users: B2bDemoUserPublic[];
+};
+
 export type B2bDemoSession = {
   tenantId: string;
   userId: string;

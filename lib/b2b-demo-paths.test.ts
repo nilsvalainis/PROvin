@@ -6,7 +6,9 @@ import {
   assertB2bDemoStoragePath,
   b2bDemoTenantAssetPath,
   b2bDemoTenantDataPath,
+  b2bDemoTenantStoragePrefix,
   canB2bDemoAccessIrissOwnSessions,
+  isB2bDemoPathUnderTenant,
   isForbiddenIrissOwnPath,
 } from "./b2b-demo-paths";
 
@@ -14,6 +16,10 @@ describe("b2b demo storage paths", () => {
   it("liek visus failus zem tenants/{id}", () => {
     expect(b2bDemoTenantDataPath("tnt_abc123")).toBe("b2b-demo/tenants/tnt_abc123/data.json");
     expect(b2bDemoTenantAssetPath("tnt_abc123", "logo.png")).toBe("b2b-demo/tenants/tnt_abc123/assets/logo.png");
+    expect(b2bDemoTenantStoragePrefix("tnt_abc123")).toBe("b2b-demo/tenants/tnt_abc123/");
+    expect(isB2bDemoPathUnderTenant("b2b-demo/tenants/tnt_abc123/data.json", "tnt_abc123")).toBe(true);
+    expect(isB2bDemoPathUnderTenant("b2b-demo/tenants/tnt_abc1234/data.json", "tnt_abc123")).toBe(false);
+    expect(isB2bDemoPathUnderTenant("b2b-demo/index.json", "tnt_abc123")).toBe(false);
     expect(assertB2bDemoStoragePath(B2B_DEMO_INDEX_PATH)).toBe(B2B_DEMO_INDEX_PATH);
   });
 
