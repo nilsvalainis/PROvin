@@ -17,6 +17,11 @@ export type B2bCreditWallet = {
   version: 1;
   updatedAt: string;
   lots: B2bCreditLot[];
+  /**
+   * Jau piemērotas norakstīšanas atslēgas (idempotence).
+   * Nav pasūtījuma ieraksts. Veci maki bez lauka paliek derīgi.
+   */
+  debitKeys?: string[];
 };
 
 export type B2bCreditArchiveRow = {
@@ -90,7 +95,41 @@ export function parseB2bCreditWallet(raw: unknown): B2bCreditWallet {
   }
   const updatedAt =
     typeof o.updatedAt === "string" && o.updatedAt.trim() ? o.updatedAt.trim() : new Date(0).toISOString();
-  return { version: 1, updatedAt, lots };
+  const debitKeys = parseDebitKeys(o.debitKeys);
+  return { version: 1, updatedAt, lots, ...(debitKeys.length ? { debitKeys } : {}) };
+}
+
+function parseDebitKeys(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const item of raw) {
+    if (typeof item !== "string") continue;
+    const key = item.trim();
+    if (!key || key.length > 80 || out.includes(key)) continue;
+    out.push(key);
+  }
+  return out.slice(-40);
+}
+
+export function walletHasDebitKey(wallet: B2bCreditWallet, key: string | null | undefined): boolean {
+  const id = (key ?? "").trim();
+  if (!id) return false;
+  return (wallet.debitKeys ?? []).includes(id);
+}
+
+export function rememberB2bDebitKey(wallet: B2bCreditWallet, key: string | null | undefined): B2bCreditWallet {
+  const id = (key ?? "").trim();
+  if (!id || walletHasDebitKey(wallet, id)) return wallet;
+  const debitKeys = [...(wallet.debitKeys ?? []), id].slice(-40);
+  return { ...wallet, debitKeys };
+}
+
+export function forgetB2bDebitKeys(wallet: B2bCreditWallet, keys: readonly (string | null | undefined)[]): B2bCreditWallet {
+  const drop = new Set(keys.map((key) => (key ?? "").trim()).filter(Boolean));
+  if (drop.size === 0 || !wallet.debitKeys?.length) return wallet;
+  const debitKeys = wallet.debitKeys.filter((key) => !drop.has(key));
+  if (debitKeys.length === wallet.debitKeys.length) return wallet;
+  return { ...wallet, ...(debitKeys.length ? { debitKeys } : { debitKeys: undefined }) };
 }
 
 function newLotId(sku: B2bPartnerPlanId, now: Date): string {
@@ -125,6 +164,7 @@ export function grantB2bCredits(
     ...(source ? { sourceSessionId: source } : {}),
   };
   return {
+    ...wallet,
     version: 1,
     updatedAt: now.toISOString(),
     lots: [...wallet.lots, lot],
@@ -159,7 +199,7 @@ export function debitB2bCredit(
   return {
     ok: true,
     lotId: pick.lot.id,
-    wallet: { version: 1, updatedAt: now.toISOString(), lots },
+    wallet: { ...wallet, version: 1, updatedAt: now.toISOString(), lots },
   };
 }
 
@@ -176,7 +216,7 @@ export function restoreB2bCredit(
       const lots = wallet.lots.map((lot, i) =>
         i === idx ? { ...lot, remaining: lot.remaining + 1 } : lot,
       );
-      return { version: 1, updatedAt: now.toISOString(), lots };
+      return { ...wallet, version: 1, updatedAt: now.toISOString(), lots };
     }
   }
   return grantB2bCredits(wallet, sku, 1, now);

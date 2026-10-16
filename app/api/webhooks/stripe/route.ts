@@ -159,14 +159,13 @@ async function fulfillPaidCheckoutSession(
       after(async () => {
         try {
           const { grantB2bCredits, walletHasGrantedSession } = await import("@/lib/b2b-partner-credits");
-          const { readB2bCreditWallet, withB2bCreditLock, writeB2bCreditWallet } = await import(
-            "@/lib/b2b-partner-credit-store"
-          );
-          await withB2bCreditLock(partnerId, async () => {
-            const wallet = await readB2bCreditWallet(partnerId);
-            if (walletHasGrantedSession(wallet, session.id)) return;
-            const next = grantB2bCredits(wallet, checkoutLine, qty, new Date(), session.id);
-            await writeB2bCreditWallet(partnerId, next);
+          const { updateB2bCreditWallet } = await import("@/lib/b2b-partner-credit-store");
+          await updateB2bCreditWallet(partnerId, (wallet) => {
+            if (walletHasGrantedSession(wallet, session.id)) return { value: false };
+            return {
+              wallet: grantB2bCredits(wallet, checkoutLine, qty, new Date(), session.id),
+              value: true,
+            };
           });
           console.info("[stripe webhook] b2b pack credits granted", {
             sessionId: session.id,

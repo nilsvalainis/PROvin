@@ -1,9 +1,12 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+import { AsyncLocalStorage } from "node:async_hooks";
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { get, put } from "@vercel/blob";
+import { ConditionalWriteConflict, isConditionalWriteConflict } from "@/lib/conditional-write";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { getStripeCheckoutSessionMeta } from "@/lib/admin-stripe-cache";
 import {
@@ -43,17 +46,61 @@ const DEFAULT_RELATIVE_DIR = ".data/admin-order-drafts";
 const DRAFT_REVISIONS_DIRNAME = "_revisions";
 const MAX_DRAFT_REVISIONS_PER_SESSION = 40;
 
-/** Viena sesija: lasīšana+rakstīšana pēc kārtas, lai seed un VIN SCAN neizdzēš viens otru. */
+/** Viena sesija: lasīšana+rakstīšana pēc kārtas šajā instancē. Starp instancēm drošība ir Blob `ifMatch`. */
 const draftWriteLocks = new Map<string, Promise<unknown>>();
+
+type DraftLease = {
+  blobEtag: string | null;
+  blobSeen: boolean;
+  fsEtag: string | null;
+  fsSeen: boolean;
+};
+
+const draftLeaseStorage = new AsyncLocalStorage<DraftLease>();
+
+const DRAFT_CAS_ATTEMPTS = 6;
+
+function blankDraftLease(): DraftLease {
+  return { blobEtag: null, blobSeen: false, fsEtag: null, fsSeen: false };
+}
 
 function withDraftWriteLock<T>(sessionId: string, fn: () => Promise<T>): Promise<T> {
   const prev = draftWriteLocks.get(sessionId) ?? Promise.resolve();
-  const next = prev.catch(() => undefined).then(fn);
+  const next = prev.catch(() => undefined).then(async () => {
+    let last: unknown;
+    for (let attempt = 0; attempt < DRAFT_CAS_ATTEMPTS; attempt++) {
+      try {
+        return await draftLeaseStorage.run(blankDraftLease(), fn);
+      } catch (err) {
+        last = err;
+        if (!isConditionalWriteConflict(err) || attempt === DRAFT_CAS_ATTEMPTS - 1) throw err;
+      }
+    }
+    throw last instanceof Error ? last : new ConditionalWriteConflict();
+  });
   draftWriteLocks.set(sessionId, next);
   void next.finally(() => {
     if (draftWriteLocks.get(sessionId) === next) draftWriteLocks.delete(sessionId);
   });
   return next;
+}
+
+function noteBlobLease(etag: string | null): void {
+  const lease = draftLeaseStorage.getStore();
+  if (!lease) return;
+  lease.blobSeen = true;
+  lease.blobEtag = etag;
+}
+
+function noteFsLease(etag: string | null): void {
+  const lease = draftLeaseStorage.getStore();
+  if (!lease) return;
+  lease.fsSeen = true;
+  lease.fsEtag = etag;
+}
+
+function hashDraftBody(body: string): string {
+  return createHash("sha256").update(body).digest("hex");
 }
 
 type OrderDraftBlobConfig = { token: string; prefix: string };
@@ -98,8 +145,13 @@ async function readOrderDraftJsonFromBlob(
       /** Bez keša — citādi „Izpildīts” / workspace PATCH var nolasīt novecojušu JSON un pārrakstīt. */
       useCache: false,
     });
-    if (!res || res.statusCode !== 200 || !res.stream) return null;
+    if (!res || res.statusCode !== 200 || !res.stream) {
+      noteBlobLease(null);
+      return null;
+    }
     const text = await new Response(res.stream).text();
+    const etag = res.blob?.etag?.trim() ?? "";
+    noteBlobLease(etag || null);
     return JSON.parse(text) as unknown;
   } catch {
     return null;
@@ -111,13 +163,90 @@ async function writeOrderDraftJsonToBlob(
   doc: unknown,
   blob: OrderDraftBlobConfig,
 ): Promise<void> {
-  await put(orderDraftBlobPathname(blob.prefix, sessionId), JSON.stringify(doc), {
-    access: "private",
-    token: blob.token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-  });
+  const lease = draftLeaseStorage.getStore();
+  const etag = lease?.blobSeen ? lease.blobEtag : null;
+  const conditional = Boolean(lease?.blobSeen);
+  try {
+    await put(orderDraftBlobPathname(blob.prefix, sessionId), JSON.stringify(doc), {
+      access: "private",
+      token: blob.token,
+      addRandomSuffix: false,
+      allowOverwrite: conditional ? etag != null : true,
+      contentType: "application/json",
+      ...(conditional && etag ? { ifMatch: etag } : {}),
+    });
+  } catch (err) {
+    if (isConditionalWriteConflict(err)) throw new ConditionalWriteConflict();
+    throw err;
+  }
+}
+
+async function writeOrderDraftFileConditional(fp: string, body: string): Promise<void> {
+  const lease = draftLeaseStorage.getStore();
+  const conditional = Boolean(lease?.fsSeen);
+  const expected = conditional ? lease?.fsEtag ?? null : null;
+  if (conditional) {
+    let current: string | null = null;
+    try {
+      current = hashDraftBody(await fs.readFile(fp, "utf8"));
+    } catch {
+      current = null;
+    }
+    if (current !== expected) throw new ConditionalWriteConflict();
+  }
+  const tmp = `${fp}.${process.pid}.${Date.now()}.tmp`;
+  await fs.writeFile(tmp, body, "utf8");
+  if (conditional) {
+    let again: string | null = null;
+    try {
+      again = hashDraftBody(await fs.readFile(fp, "utf8"));
+    } catch {
+      again = null;
+    }
+    if (again !== expected) {
+      await fs.unlink(tmp).catch(() => undefined);
+      throw new ConditionalWriteConflict();
+    }
+  }
+  await fs.rename(tmp, fp);
+}
+
+async function commitOrderDraftDocument(
+  sessionId: string,
+  doc: unknown,
+  revision?: "patch" | "invoice",
+): Promise<{ fsOk: boolean; blobOk: boolean; dir: string | null }> {
+  const dir = resolveDraftDir();
+  const blob = resolveOrderDraftBlob();
+  let fsOk = false;
+  let blobOk = false;
+  const skipEphemeralFs = Boolean(process.env.VERCEL === "1" && blob && dir && isEphemeralDraftDir(dir));
+
+  if (blob) {
+    try {
+      await writeOrderDraftJsonToBlob(sessionId, doc, blob);
+      blobOk = true;
+    } catch (err) {
+      if (isConditionalWriteConflict(err)) throw err;
+      blobOk = false;
+    }
+  }
+
+  if (dir && !skipEphemeralFs) {
+    try {
+      await fs.mkdir(dir, { recursive: true });
+      const fp = draftFilePath(dir, sessionId);
+      await writeOrderDraftFileConditional(fp, JSON.stringify(doc));
+      if (revision) await writeOrderDraftRevision(dir, sessionId, doc, revision);
+      fsOk = true;
+    } catch (err) {
+      if (isConditionalWriteConflict(err) && !blobOk) throw err;
+      if (!blobOk) throw err;
+      fsOk = false;
+    }
+  }
+
+  return { fsOk, blobOk, dir };
 }
 
 /** Pasūtījuma JSON glabāšanas sakne (`.data/admin-order-drafts` vai `ADMIN_ORDER_DRAFT_DIR`). */
@@ -329,8 +458,15 @@ async function readOrderDraftFromFilesystem(
   sessionId: string,
   dir: string,
 ): Promise<OrderDraftState | null> {
+  let raw: string;
   try {
-    const raw = await fs.readFile(draftFilePath(dir, sessionId), "utf8");
+    raw = await fs.readFile(draftFilePath(dir, sessionId), "utf8");
+  } catch {
+    noteFsLease(null);
+    return null;
+  }
+  noteFsLease(hashDraftBody(raw));
+  try {
     const p = JSON.parse(raw) as unknown;
     return normalizeLoadedDraft(p, sessionId);
   } catch {
@@ -492,12 +628,11 @@ async function restoreOrderDraftRevisionUnlocked(
   try {
     await fs.mkdir(dir, { recursive: true });
     const fp = draftFilePath(dir, sessionId);
-    const tmp = `${fp}.tmp`;
-    await fs.writeFile(tmp, JSON.stringify(nextDoc), "utf8");
-    await fs.rename(tmp, fp);
+    await writeOrderDraftFileConditional(fp, JSON.stringify(nextDoc));
     await writeOrderDraftRevision(dir, sessionId, nextDoc, "restore");
     return { ok: true, updatedAt, workspaceRevision };
   } catch (e) {
+    if (isConditionalWriteConflict(e)) throw e;
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: `write_failed:${msg}` };
   }
@@ -690,34 +825,10 @@ async function patchOrderDraftUnlocked(
     ...extraDraftPersistFields(prev),
   };
 
-  let fsOk = false;
-  let blobOk = false;
-  const skipEphemeralFs = Boolean(process.env.VERCEL === "1" && blobCfg && dir && isEphemeralDraftDir(dir));
-
-  if (dir && !skipEphemeralFs) {
-    try {
-      await fs.mkdir(dir, { recursive: true });
-      const fp = draftFilePath(dir, sessionId);
-      const tmp = `${fp}.tmp`;
-      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
-      await fs.rename(tmp, fp);
-      await writeOrderDraftRevision(dir, sessionId, doc, "patch");
-      fsOk = true;
-    } catch {
-      fsOk = false;
-    }
-  }
-
-  if (blobCfg) {
-    try {
-      await writeOrderDraftJsonToBlob(sessionId, doc, blobCfg);
-      blobOk = true;
-    } catch {
-      blobOk = false;
-    }
-  }
-
-  const writeMeta = describeOrderDraftWriteResult(fsOk, blobOk, dir);
+  const committed = await commitOrderDraftDocument(sessionId, doc, "patch");
+  const fsOk = committed.fsOk;
+  const blobOk = committed.blobOk;
+  const writeMeta = describeOrderDraftWriteResult(fsOk, blobOk, committed.dir);
 
   if (!fsOk && !blobOk) {
     return { ok: false, error: "write_failed:fs_and_blob" };
@@ -831,6 +942,7 @@ async function patchOrderDraftUnlocked(
     verifyLatencyMs: 0,
   };
   } catch (e) {
+    if (isConditionalWriteConflict(e)) throw e;
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: `patch_failed:${msg}` };
   }
@@ -880,30 +992,14 @@ async function upsertOrderDraftInvoiceFieldsUnlocked(
 
   let fsOk = false;
   let blobOk = false;
-
-  if (dir) {
-    try {
-      await fs.mkdir(dir, { recursive: true });
-      const fp = draftFilePath(dir, sessionId);
-      const tmp = `${fp}.tmp`;
-      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
-      await fs.rename(tmp, fp);
-      await writeOrderDraftRevision(dir, sessionId, doc, "invoice");
-      fsOk = true;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!blob) return { ok: false, error: `write_failed:${msg}` };
-    }
-  }
-
-  if (blob) {
-    try {
-      await writeOrderDraftJsonToBlob(sessionId, doc, blob);
-      blobOk = true;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!fsOk) return { ok: false, error: `blob_write_failed:${msg}` };
-    }
+  try {
+    const committed = await commitOrderDraftDocument(sessionId, doc, "invoice");
+    fsOk = committed.fsOk;
+    blobOk = committed.blobOk;
+  } catch (e) {
+    if (isConditionalWriteConflict(e)) throw e;
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: `write_failed:${msg}` };
   }
 
   if (!fsOk && !blobOk) {
@@ -960,29 +1056,14 @@ async function upsertOrderDraftAutoIngestUnlocked(
 
   let fsOk = false;
   let blobOk = false;
-
-  if (dir) {
-    try {
-      await fs.mkdir(dir, { recursive: true });
-      const fp = draftFilePath(dir, sessionId);
-      const tmp = `${fp}.tmp`;
-      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
-      await fs.rename(tmp, fp);
-      fsOk = true;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!blob) return { ok: false, error: `write_failed:${msg}` };
-    }
-  }
-
-  if (blob) {
-    try {
-      await writeOrderDraftJsonToBlob(sessionId, doc, blob);
-      blobOk = true;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!fsOk) return { ok: false, error: `blob_write_failed:${msg}` };
-    }
+  try {
+    const committed = await commitOrderDraftDocument(sessionId, doc);
+    fsOk = committed.fsOk;
+    blobOk = committed.blobOk;
+  } catch (e) {
+    if (isConditionalWriteConflict(e)) throw e;
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: `write_failed:${msg}` };
   }
 
   if (!fsOk && !blobOk) return { ok: false, error: "write_failed:no_backend" };
@@ -1023,29 +1104,14 @@ async function upsertOrderDraftVinScanUnlocked(
 
   let fsOk = false;
   let blobOk = false;
-
-  if (dir) {
-    try {
-      await fs.mkdir(dir, { recursive: true });
-      const fp = draftFilePath(dir, sessionId);
-      const tmp = `${fp}.tmp`;
-      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
-      await fs.rename(tmp, fp);
-      fsOk = true;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!blob) return { ok: false, error: `write_failed:${msg}` };
-    }
-  }
-
-  if (blob) {
-    try {
-      await writeOrderDraftJsonToBlob(sessionId, doc, blob);
-      blobOk = true;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!fsOk) return { ok: false, error: `blob_write_failed:${msg}` };
-    }
+  try {
+    const committed = await commitOrderDraftDocument(sessionId, doc);
+    fsOk = committed.fsOk;
+    blobOk = committed.blobOk;
+  } catch (e) {
+    if (isConditionalWriteConflict(e)) throw e;
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: `write_failed:${msg}` };
   }
 
   if (!fsOk && !blobOk) return { ok: false, error: "write_failed:no_backend" };
@@ -1094,29 +1160,14 @@ async function upsertOrderDraftVinPlateResolutionUnlocked(
 
   let fsOk = false;
   let blobOk = false;
-
-  if (dir) {
-    try {
-      await fs.mkdir(dir, { recursive: true });
-      const fp = draftFilePath(dir, sessionId);
-      const tmp = `${fp}.tmp`;
-      await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
-      await fs.rename(tmp, fp);
-      fsOk = true;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!blob) return { ok: false, error: `write_failed:${msg}` };
-    }
-  }
-
-  if (blob) {
-    try {
-      await writeOrderDraftJsonToBlob(sessionId, doc, blob);
-      blobOk = true;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!fsOk) return { ok: false, error: `blob_write_failed:${msg}` };
-    }
+  try {
+    const committed = await commitOrderDraftDocument(sessionId, doc);
+    fsOk = committed.fsOk;
+    blobOk = committed.blobOk;
+  } catch (e) {
+    if (isConditionalWriteConflict(e)) throw e;
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: `write_failed:${msg}` };
   }
 
   if (!fsOk && !blobOk) return { ok: false, error: "write_failed:no_backend" };

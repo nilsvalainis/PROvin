@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import { isHttpUrlForOpen } from "@/lib/iriss-listing-links";
@@ -118,16 +119,14 @@ export function IrissListingOrderPreview({
   orders: readonly IrissListingOrderBrief[];
   onClose: () => void;
 }) {
+  useAdminScrollLock(true);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
     };
   }, [onClose]);
 

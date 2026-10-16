@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { BookText, X } from "lucide-react";
 import commonPhrases from "@/data/CommonPhrases.json";
 import { insertTextAtFocusedField } from "@/lib/insert-text-at-cursor";
@@ -57,6 +59,9 @@ export function AdminCommonPhrasesDrawer({
         .map((phrase) => ({ phrase, categoryLabel: c.label }));
     });
   }, [categories, query, categoryId]);
+
+  useAdminScrollLock(open);
+  useHoldAdminOverlayCover(open);
 
   if (!open) return null;
 

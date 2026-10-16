@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { openWindowSyncThen } from "@/lib/admin-open-window";
+import { useAdminOverlayCover } from "@/lib/admin-overlay-cover";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import {
   Bot,
   Check,
@@ -18,7 +21,7 @@ import {
 
 import { copyTextToClipboard } from "@/components/admin/AdminClipboardButton";
 import { fetchAdminWhatsappPrefill } from "@/lib/admin-whatsapp-prefill-client";
-import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
+import { normalizeWhatsAppPhoneDigits, whatsAppChatUrl } from "@/lib/admin-whatsapp-phone";
 import {
   defaultFlashMaxSelection,
   summaryOnlyFlashMaxSelection,
@@ -170,6 +173,7 @@ function Sheet({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  useAdminScrollLock(true);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -246,6 +250,10 @@ export function AdminOrderMobileDock({
   onVinCopied,
 }: Props) {
   const [sheet, setSheet] = useState<null | "flash" | "more" | "pdf">(null);
+  const dockCovered = useAdminOverlayCover();
+  useEffect(() => {
+    if (dockCovered) setSheet(null);
+  }, [dockCovered]);
   const listingHref = listingUrl?.trim() && isValidHttpUrl(listingUrl.trim()) ? listingUrl.trim() : null;
   const flashDisabled = !aiAllowed || !workspaceHydrated || prepareDraftBusy || flashMaxBusy;
   const whatsappDigits = useMemo(() => normalizeWhatsAppPhoneDigits(customerPhone ?? ""), [customerPhone]);
@@ -264,7 +272,8 @@ export function AdminOrderMobileDock({
     <>
       {/* Instagram-stila peldoša kapsula: paceļas virs drošās zonas, noapaļota. */}
       <nav
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:hidden"
+        inert={dockCovered}
+        className={`pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:hidden ${dockCovered ? "hidden" : ""}`}
         aria-label="Ātrās darbības"
       >
         <div className="provin-dock pointer-events-auto flex w-full max-w-lg items-stretch gap-0 rounded-[1.35rem] border border-black/10 bg-[var(--admin-surface-elevated)]/92 px-1 py-1 shadow-[0_8px_28px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:shadow-[0_8px_28px_rgba(0,0,0,0.45)]">
@@ -291,11 +300,13 @@ export function AdminOrderMobileDock({
             aria-label="Atvērt WhatsApp sarunu ar klientu"
             onClick={() => {
               if (!whatsappDigits) return;
+              const opened = openWindowSyncThen();
               void (async () => {
                 const message =
                   whatsappPrefill ??
                   (await fetchAdminWhatsappPrefill({ templateId: "wa.report_ready.audits" }));
-                if (message) openWhatsAppChat(whatsappDigits, message);
+                if (message) opened.navigate(whatsAppChatUrl(whatsappDigits, message));
+                else opened.close();
               })();
             }}
           >
@@ -357,7 +368,7 @@ export function AdminOrderMobileDock({
         </div>
       </nav>
 
-      {sheet === "flash" ? (
+      {sheet === "flash" && !dockCovered ? (
         <Sheet title="FLASH MAX" onClose={() => setSheet(null)}>
           <button type="button" className={sheetRow} onClick={() => runFlash(defaultFlashMaxSelection())}>
             <Sparkles className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
@@ -383,7 +394,7 @@ export function AdminOrderMobileDock({
         </Sheet>
       ) : null}
 
-      {sheet === "pdf" ? (
+      {sheet === "pdf" && !dockCovered ? (
         <Sheet title="Ģenerēt PDF" onClose={() => setSheet(null)}>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdf)}>
             <FileText className="h-4 w-4 shrink-0 text-[var(--color-apple-text)]" strokeWidth={1.5} aria-hidden />
@@ -464,7 +475,7 @@ export function AdminOrderMobileDock({
         </Sheet>
       ) : null}
 
-      {sheet === "more" ? (
+      {sheet === "more" && !dockCovered ? (
         <Sheet title="Vairāk" onClose={() => setSheet(null)}>
           <button
             type="button"

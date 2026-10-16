@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { TRAFFIC_HEADER_STRIP_CLASS, type TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 
@@ -72,16 +73,15 @@ export function AdminCollapsibleShell({
     const onResize = () => {
       if (window.innerWidth >= 768) setFullscreen(false);
     };
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
     window.addEventListener("resize", onResize);
     return () => {
-      document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("resize", onResize);
     };
   }, [fullscreen]);
+
+  useAdminScrollLock(fullscreen);
 
   const fullscreenShellClass = fullscreen
     ? "max-md:fixed max-md:inset-0 max-md:z-[65] max-md:m-0 max-md:overflow-y-auto max-md:rounded-none max-md:bg-[var(--admin-surface-elevated)] max-md:pb-28 max-md:shadow-none"

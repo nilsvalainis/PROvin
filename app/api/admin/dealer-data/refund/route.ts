@@ -9,8 +9,8 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { isManualOrderId } from "@/lib/admin-manual-orders";
-import { restoreB2bCredit } from "@/lib/b2b-partner-credits";
-import { readB2bCreditWallet, withB2bCreditLock, writeB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
+import { rememberB2bDebitKey, restoreB2bCredit, walletHasDebitKey } from "@/lib/b2b-partner-credits";
+import { updateB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import { readDealerDataJob, writeDealerDataJob } from "@/lib/dealer-data-job-store";
 import {
@@ -69,9 +69,13 @@ export async function POST(req: Request) {
     if (!partnerId) {
       return NextResponse.json({ error: "partner_missing" }, { status: 409 });
     }
-    await withB2bCreditLock(partnerId, async () => {
-      const wallet = await readB2bCreditWallet(partnerId);
-      await writeB2bCreditWallet(partnerId, restoreB2bCredit(wallet, "dealer", lotIdFromNotes(notes)));
+    const refundKey = `refund:${sessionId}`;
+    await updateB2bCreditWallet(partnerId, (wallet) => {
+      if (walletHasDebitKey(wallet, refundKey)) return { value: false };
+      return {
+        wallet: rememberB2bDebitKey(restoreB2bCredit(wallet, "dealer", lotIdFromNotes(notes)), refundKey),
+        value: true,
+      };
     });
     const now = new Date().toISOString();
     const record: DealerRefundRecord = {

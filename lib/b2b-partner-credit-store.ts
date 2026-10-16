@@ -1,5 +1,6 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -10,6 +11,12 @@ import {
   parseB2bCreditWallet,
   type B2bCreditWallet,
 } from "@/lib/b2b-partner-credits";
+import {
+  compareAndSwap,
+  ConditionalWriteConflict,
+  isConditionalWriteConflict,
+  type ConditionalSnapshot,
+} from "@/lib/conditional-write";
 
 const RELATIVE_DIR = ".data/b2b-partner-credits";
 const BLOB_PREFIX = "b2b-partner-credits/";
@@ -32,7 +39,14 @@ function blobKey(partnerId: string): string {
   return `${BLOB_PREFIX}${partnerId}.json`;
 }
 
-async function readFromBlob(partnerId: string, token: string): Promise<B2bCreditWallet | null> {
+function hashBody(body: string): string {
+  return createHash("sha256").update(body).digest("hex");
+}
+
+async function readFromBlob(
+  partnerId: string,
+  token: string,
+): Promise<{ wallet: B2bCreditWallet; etag: string } | null> {
   try {
     const res = await get(blobKey(partnerId), {
       access: "private",
@@ -41,63 +55,142 @@ async function readFromBlob(partnerId: string, token: string): Promise<B2bCredit
     });
     if (!res || res.statusCode !== 200 || !res.stream) return null;
     const text = await new Response(res.stream).text();
-    return parseB2bCreditWallet(JSON.parse(text) as unknown);
+    const etag = res.blob?.etag?.trim() ?? "";
+    if (!etag) return null;
+    return { wallet: parseB2bCreditWallet(JSON.parse(text) as unknown), etag };
   } catch {
     return null;
   }
 }
 
-async function writeToBlob(partnerId: string, token: string, wallet: B2bCreditWallet): Promise<void> {
-  await put(blobKey(partnerId), JSON.stringify(wallet), {
-    access: "private",
-    token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-  });
+async function writeToBlob(
+  partnerId: string,
+  token: string,
+  wallet: B2bCreditWallet,
+  etag: string | null,
+): Promise<void> {
+  try {
+    await put(blobKey(partnerId), JSON.stringify(wallet), {
+      access: "private",
+      token,
+      addRandomSuffix: false,
+      allowOverwrite: etag != null,
+      contentType: "application/json",
+      ...(etag ? { ifMatch: etag } : {}),
+    });
+  } catch (err) {
+    if (isConditionalWriteConflict(err)) throw new ConditionalWriteConflict();
+    throw err;
+  }
 }
 
-async function readFromFilesystem(partnerId: string): Promise<B2bCreditWallet | null> {
+async function readFromFilesystem(
+  partnerId: string,
+): Promise<{ wallet: B2bCreditWallet; etag: string } | null> {
   try {
     const raw = await fs.readFile(filePath(partnerId), "utf8");
-    return parseB2bCreditWallet(JSON.parse(raw) as unknown);
+    return { wallet: parseB2bCreditWallet(JSON.parse(raw) as unknown), etag: hashBody(raw) };
   } catch {
     return null;
   }
 }
 
-async function writeToFilesystem(partnerId: string, wallet: B2bCreditWallet): Promise<void> {
+async function writeToFilesystem(partnerId: string, wallet: B2bCreditWallet, etag: string | null): Promise<void> {
   const fp = filePath(partnerId);
+  let current: string | null = null;
+  try {
+    current = hashBody(await fs.readFile(fp, "utf8"));
+  } catch {
+    current = null;
+  }
+  if (current !== etag) throw new ConditionalWriteConflict();
   await fs.mkdir(path.dirname(fp), { recursive: true });
   const tmp = `${fp}.${process.pid}.${Date.now()}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(wallet), "utf8");
+  let again: string | null = null;
+  try {
+    again = hashBody(await fs.readFile(fp, "utf8"));
+  } catch {
+    again = null;
+  }
+  if (again !== etag) {
+    await fs.unlink(tmp).catch(() => undefined);
+    throw new ConditionalWriteConflict();
+  }
   await fs.rename(tmp, fp);
+}
+
+async function readCreditSnapshot(partnerId: string): Promise<ConditionalSnapshot<B2bCreditWallet>> {
+  const token = blobToken();
+  if (token) {
+    const fromBlob = await readFromBlob(partnerId, token);
+    if (fromBlob) return { value: fromBlob.wallet, etag: fromBlob.etag };
+  }
+  const fromFs = await readFromFilesystem(partnerId);
+  if (fromFs && !token) return { value: fromFs.wallet, etag: fromFs.etag };
+  if (fromFs && token) return { value: fromFs.wallet, etag: null };
+  return { value: emptyB2bCreditWallet(), etag: null };
+}
+
+async function writeCreditConditional(partnerId: string, wallet: B2bCreditWallet, etag: string | null): Promise<void> {
+  const token = blobToken();
+  if (token) {
+    await writeToBlob(partnerId, token, wallet, etag);
+    try {
+      const raw = JSON.stringify(wallet);
+      const fp = filePath(partnerId);
+      await fs.mkdir(path.dirname(fp), { recursive: true });
+      await fs.writeFile(fp, raw, "utf8");
+    } catch {
+      /* lokālais kešs nav avots */
+    }
+    return;
+  }
+  await writeToFilesystem(partnerId, wallet, etag);
 }
 
 export async function readB2bCreditWallet(partnerId: string): Promise<B2bCreditWallet> {
   if (!isSafeB2bPartnerId(partnerId)) return emptyB2bCreditWallet();
-  const token = blobToken();
-  if (token) {
-    const fromBlob = await readFromBlob(partnerId, token);
-    if (fromBlob) return fromBlob;
-  }
-  return (await readFromFilesystem(partnerId)) ?? emptyB2bCreditWallet();
+  const snap = await readCreditSnapshot(partnerId);
+  return snap.value ?? emptyB2bCreditWallet();
 }
 
+/**
+ * Pilna maka aizstāšana. Norakstīšanai un atgriešanai lietot `updateB2bCreditWallet`,
+ * kas raksta ar Blob `ifMatch`.
+ */
 export async function writeB2bCreditWallet(partnerId: string, wallet: B2bCreditWallet): Promise<boolean> {
   if (!isSafeB2bPartnerId(partnerId)) return false;
-  const token = blobToken();
-  if (token) {
-    await writeToBlob(partnerId, token, wallet);
-    try {
-      await writeToFilesystem(partnerId, wallet);
-    } catch {
-      /* ignore */
-    }
+  try {
+    await updateB2bCreditWallet(partnerId, (current) => ({
+      wallet: { ...wallet, debitKeys: wallet.debitKeys ?? current.debitKeys },
+      value: true,
+    }));
     return true;
+  } catch {
+    return false;
   }
-  await writeToFilesystem(partnerId, wallet);
-  return true;
+}
+
+export async function updateB2bCreditWallet<T>(
+  partnerId: string,
+  mutate: (
+    wallet: B2bCreditWallet,
+  ) => Promise<{ value: T; wallet?: B2bCreditWallet }> | { value: T; wallet?: B2bCreditWallet },
+): Promise<T> {
+  if (!isSafeB2bPartnerId(partnerId)) {
+    const decision = await mutate(emptyB2bCreditWallet());
+    return decision.value;
+  }
+  return compareAndSwap({
+    read: () => readCreditSnapshot(partnerId),
+    write: (next, etag) => writeCreditConditional(partnerId, next, etag),
+    update: async (current) => {
+      const decision = await mutate(current ?? emptyB2bCreditWallet());
+      if (!decision.wallet) return { result: decision.value };
+      return { next: decision.wallet, result: decision.value };
+    },
+  });
 }
 
 export async function deleteB2bCreditWallet(partnerId: string): Promise<void> {
@@ -119,6 +212,10 @@ export async function deleteB2bCreditWallet(partnerId: string): Promise<void> {
 
 const chains = new Map<string, Promise<unknown>>();
 
+/**
+ * Vienas instances rinda. Naudas drošība ir `updateB2bCreditWallet` (Blob `ifMatch`),
+ * nevis šī atmiņa: Vercel vienlaikus darbina vairākas instances.
+ */
 export function withB2bCreditLock<T>(partnerId: string, fn: () => Promise<T>): Promise<T> {
   const prev = chains.get(partnerId) ?? Promise.resolve();
   const run = prev.then(fn, fn);

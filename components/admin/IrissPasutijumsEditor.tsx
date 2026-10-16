@@ -4,6 +4,7 @@ import { ArrowLeft, FileDown, Loader2, Paperclip, Phone, Plus, Save, Trash2, X }
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
@@ -365,9 +366,6 @@ function LabeledOfferRichCommentField({
     </div>
   );
 }
-
-const ADMIN_MAIN_SCROLL_ID = "admin-main-scroll";
-const ADMIN_SCROLL_LOCK_CLASS = "admin-scroll-locked";
 
 export function IrissPasutijumsEditor({
   initialRecord,
@@ -953,21 +951,7 @@ export function IrissPasutijumsEditor({
     [offerDraft, rec, save],
   );
 
-  useEffect(() => {
-    const lock = offerOpen || deleteConfirmOpen || offerDeleteConfirmOpen;
-    if (!lock) return;
-    const html = document.documentElement;
-    const scrollEl = document.getElementById(ADMIN_MAIN_SCROLL_ID);
-    const prevBodyOverflow = document.body.style.overflow;
-    html.classList.add(ADMIN_SCROLL_LOCK_CLASS);
-    scrollEl?.classList.add(ADMIN_SCROLL_LOCK_CLASS);
-    document.body.style.overflow = "hidden";
-    return () => {
-      html.classList.remove(ADMIN_SCROLL_LOCK_CLASS);
-      scrollEl?.classList.remove(ADMIN_SCROLL_LOCK_CLASS);
-      document.body.style.overflow = prevBodyOverflow;
-    };
-  }, [offerOpen, deleteConfirmOpen, offerDeleteConfirmOpen]);
+  useAdminScrollLock(offerOpen || deleteConfirmOpen || offerDeleteConfirmOpen);
 
   const onConfirmDeleteOrder = useCallback(async () => {
     setDeleteBusy(true);
