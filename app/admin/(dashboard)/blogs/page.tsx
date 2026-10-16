@@ -4,6 +4,7 @@ import { CreateBlogPostButton } from "@/components/admin/CreateBlogPostButton";
 import { countBlogComments } from "@/lib/blog/comment-store";
 import { listStoredBlogPosts } from "@/lib/blog/post-store";
 import { getBlogViewCounts } from "@/lib/blog/view-store";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Blogs",
@@ -12,6 +13,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminBlogsPage() {
+  await requireAdminPage();
   const posts = await listStoredBlogPosts();
   const [viewCounts, commentCountEntries] = await Promise.all([
     getBlogViewCounts(),

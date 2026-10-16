@@ -1,5 +1,6 @@
 import { AdminB2bDemoTenantsPanel } from "@/components/admin/AdminB2bDemoTenantsPanel";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Demo dīleri",
@@ -7,7 +8,8 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function AdminB2bDemoTenantsPage() {
+export default async function AdminB2bDemoTenantsPage() {
+  await requireAdminPage();
   return (
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu>
