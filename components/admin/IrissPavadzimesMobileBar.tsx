@@ -41,13 +41,13 @@ export function IrissPavadzimesMobileBar() {
   const items = irissWaybillMobileBarItems(rows);
 
   return (
-    <div className="mb-2 max-w-full md:hidden" aria-label="Pavadzīmju derīgums">
-      <div className="flex max-w-full gap-1.5 overflow-x-auto pb-0.5">
+    <div className="mb-0 max-w-full md:hidden" aria-label="Pavadzīmju derīgums">
+      <div className="flex max-w-full gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {items.map((item) => (
           <Link
             key={item.id}
             href="/admin/iriss/pavadzimes"
-            className="iriss-waybill-chip inline-flex h-7 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-full bg-white px-2 text-[11px] font-semibold shadow-sm ring-1 ring-[#E5E7EB]"
+            className="iriss-waybill-chip inline-flex h-10 min-h-10 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-full bg-white px-2.5 text-[12px] font-semibold shadow-sm ring-1 ring-[#E5E7EB]"
             style={{ color: item.urgent ? "#b91c1c" : "#15803d" }}
           >
             <span className="truncate" style={{ color: "inherit" }}>

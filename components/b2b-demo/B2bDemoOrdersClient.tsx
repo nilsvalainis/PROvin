@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
+import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
 import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import { B2B_DEMO_APP_PREFIX } from "@/lib/b2b-demo-host";
 import {
@@ -80,27 +81,29 @@ export function B2bDemoOrdersList({ initial }: { initial: B2bDemoOrderListPage }
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-1.5">
-        <FilterChip
+      <StatusFilterChipRow layout="scroll">
+        <StatusFilterChip
           label="Visi"
-          active={!status}
+          tone="neutral"
+          pressed={!status}
           onClick={() => {
             setStatus("");
             void load(1, "");
           }}
         />
         {B2B_DEMO_ORDER_STATUSES.map((s) => (
-          <FilterChip
+          <StatusFilterChip
             key={s}
             label={B2B_DEMO_ORDER_STATUS_LV[s]}
-            active={status === s}
+            tone={s}
+            pressed={status === s}
             onClick={() => {
               setStatus(s);
               void load(1, s);
             }}
           />
         ))}
-      </div>
+      </StatusFilterChipRow>
       {page.rows.length === 0 ? (
         <p className="text-sm text-slate-500">Šim dīlerim vēl nav pasūtījumu. Citu tenantu dati šeit nav redzami.</p>
       ) : (
@@ -134,22 +137,6 @@ export function B2bDemoOrdersList({ initial }: { initial: B2bDemoOrderListPage }
         </div>
       </div>
     </div>
-  );
-}
-
-function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        active
-          ? "rounded-full bg-[#F26522] px-3 py-1 text-[12px] font-semibold text-white"
-          : "rounded-full bg-white px-3 py-1 text-[12px] font-semibold text-slate-600 shadow-sm ring-1 ring-slate-200"
-      }
-    >
-      {label}
-    </button>
   );
 }
 

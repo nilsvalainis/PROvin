@@ -767,41 +767,44 @@ export function IrissSludinajumiListClient({
   }
 
   return (
-    <div className="mt-2 space-y-2 touch-manipulation sm:mt-3 sm:space-y-3">
-      <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
-      {/* min-7: centrēta segmentu vadīkla + izvēršama meklēšana + filtri + „⋯”; zem tās sīka pelēka statusa rinda. */}
-      <header className="sticky top-0 z-20 -mx-2 bg-[#F8F8F9]/95 px-2 pb-1.5 pt-1 backdrop-blur sm:mx-0 sm:px-0">
-        <h1 className="mb-2 hidden text-[34px] font-bold leading-none tracking-tight text-[var(--color-apple-text)] max-md:block">
-          Sludinājumi
-        </h1>
-        <div className="mb-1.5 flex justify-center">
-          <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[#e9e9ee] p-[2px] text-[12px]">
-            {([
-              ["orders", "Klientu pasūtījumi", clientOrders.length],
-              ["scan", "Mūsu monitorings", scanOrders.length],
-            ] as const).map(([id, label, n]) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={dataset === id}
-                onClick={() => setDataset(id)}
-                className={`inline-flex h-8 items-center gap-1 rounded-full px-3.5 transition sm:h-7 ${dataset === id ? "bg-white font-semibold text-[var(--color-apple-text)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-[#3a3a3c]"}`}
-              >
-                {label}
-                <span className="text-[11px] font-normal text-[#8e8e93]">{n}</span>
-              </button>
-            ))}
+    <div className="mt-1 space-y-2 touch-manipulation sm:mt-1.5 sm:space-y-2">
+      {/* Web (md+): panelis nav lipīgs. Atbilstības ir žetons rīku rindā, ne atsevišķa josla. */}
+      <header
+        data-iriss-listings-toolbar=""
+        className="relative z-20 -mx-2 bg-transparent px-2 pb-1 pt-0.5 max-md:sticky max-md:top-0 max-md:bg-[#F8F8F9]/95 max-md:backdrop-blur md:static md:z-auto md:mx-0 md:bg-transparent md:px-0 md:backdrop-blur-none"
+      >
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+          <h1 className="iriss-list-title shrink-0 text-[17px] font-semibold leading-none tracking-tight text-[var(--color-apple-text)] md:hidden">
+            Sludinājumi
+          </h1>
+          <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] md:flex-none md:overflow-visible [&::-webkit-scrollbar]:hidden">
+            <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[#e9e9ee] p-[2px] text-[12px]">
+              {([
+                ["orders", "Klientu pasūtījumi", clientOrders.length],
+                ["scan", "Mūsu monitorings", scanOrders.length],
+              ] as const).map(([id, label, n]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={dataset === id}
+                  onClick={() => setDataset(id)}
+                  className={`inline-flex h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 transition sm:h-7 sm:px-3 ${dataset === id ? "bg-white font-semibold text-[var(--color-apple-text)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-[#3a3a3c]"}`}
+                >
+                  {label}
+                  <span className="text-[11px] font-normal text-[#8e8e93]">{n}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center justify-center gap-2 sm:gap-2.5">
-          <div className="flex min-w-0 max-w-full overflow-x-auto rounded-[10px] bg-[#e9e9ee] p-[2px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-full min-w-0 items-center gap-1 md:w-auto md:flex-1">
+          <div className="flex min-w-0 flex-1 overflow-x-auto rounded-[10px] bg-[#e9e9ee] p-[2px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tabs.map((t) => (
               <button
                 key={t.id}
                 type="button"
                 onClick={() => setPrefs((p) => ({ ...p, tab: t.id }))}
-                className={`inline-flex h-9 shrink-0 items-center gap-1 rounded-[8px] px-3 text-[12.5px] transition sm:h-7 ${
+                className={`inline-flex h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-[8px] px-2.5 text-[12.5px] transition sm:h-7 sm:px-3 ${
                   tab === t.id ? "bg-white font-semibold text-[var(--color-apple-text)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-[#3a3a3c]"
                 }`}
               >
@@ -818,10 +821,10 @@ export function IrissSludinajumiListClient({
               onChange={(e) => setQuery(e.target.value)}
               onBlur={() => { if (!query) setSearchOpen(false); }}
               placeholder="Meklēt marku, modeli, VIN"
-              className="h-9 w-40 shrink rounded-[9px] bg-[#e9e9ee] px-3 text-base text-[var(--color-apple-text)] outline-none placeholder:text-[#8e8e93] sm:h-7 sm:w-64 sm:text-[12.5px]"
+              className="h-10 w-36 shrink rounded-[9px] bg-[#e9e9ee] px-2.5 text-base text-[var(--color-apple-text)] outline-none placeholder:text-[#8e8e93] sm:h-7 sm:w-52 sm:text-[12.5px]"
             />
           ) : (
-            <button type="button" aria-label="Meklēt" onClick={() => setSearchOpen(true)} className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] font-medium text-[#3a3a3c] hover:bg-[#e9e9ee] sm:h-7">
+            <button type="button" aria-label="Meklēt" onClick={() => setSearchOpen(true)} className="inline-flex h-10 min-h-10 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] font-medium text-[#3a3a3c] hover:bg-[#e9e9ee] sm:h-7 sm:min-h-0">
               <Search className="h-4 w-4" aria-hidden />
               <span className="hidden min-[420px]:inline">Meklēt</span>
             </button>
@@ -832,7 +835,7 @@ export function IrissSludinajumiListClient({
               aria-label="Filtri"
               aria-expanded={filterOpen}
               onClick={() => { setFilterOpen((v) => !v); setMenuOpen(false); }}
-              className={`inline-flex h-9 items-center gap-1 rounded-full px-2 text-[12px] font-medium hover:bg-[#e9e9ee] sm:h-7 ${activeFilterCount > 0 ? "text-[var(--color-provin-accent)]" : "text-[#3a3a3c]"}`}
+              className={`inline-flex h-10 min-h-10 items-center gap-1 rounded-full px-2 text-[12px] font-medium hover:bg-[#e9e9ee] sm:h-7 sm:min-h-0 ${activeFilterCount > 0 ? "text-[var(--color-provin-accent)]" : "text-[#3a3a3c]"}`}
             >
               <SlidersHorizontal className="h-4 w-4" aria-hidden />
               <span className="hidden min-[420px]:inline">Filtri</span>
@@ -904,7 +907,7 @@ export function IrissSludinajumiListClient({
               </>
             ) : null}
           </div>
-          <label className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7">
+          <label className="inline-flex h-10 min-h-10 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:min-h-0">
             <ArrowUpDown className="h-3.5 w-3.5" aria-hidden />
             <span className="hidden sm:inline">Kārtot</span>
             <select
@@ -920,7 +923,7 @@ export function IrissSludinajumiListClient({
             </select>
           </label>
           <div ref={menuRef} className="relative shrink-0">
-            <button type="button" aria-label="Vairāk" aria-expanded={menuOpen} onClick={() => { setMenuOpen((v) => !v); setFilterOpen(false); }} className="grid h-9 w-9 place-items-center rounded-full text-[16px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:w-7">
+            <button type="button" aria-label="Vairāk" aria-expanded={menuOpen} onClick={() => { setMenuOpen((v) => !v); setFilterOpen(false); }} className="grid h-10 w-10 min-h-10 place-items-center rounded-full text-[16px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:w-7 sm:min-h-0">
               ⋯
             </button>
             {menuOpen ? (
@@ -1019,16 +1022,18 @@ export function IrissSludinajumiListClient({
               </>
             ) : null}
           </div>
+          <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
         </div>
-        <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[11px] text-[#8e8e93]">
-          <span className="inline-flex items-center gap-1.5">
+        </div>
+        <div className="mt-1 flex max-w-full flex-nowrap items-center gap-x-2 overflow-x-auto text-[11px] text-[#8e8e93] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="inline-flex shrink-0 items-center gap-1.5">
             {platformDots.map((d) => (
               <span key={d.platform} title={d.title} className="inline-flex items-center gap-1">
                 <IrissAuctionLogo platform={d.platform} fallback={d.label} size="sm" />
               </span>
             ))}
           </span>
-          <span>
+          <span className="shrink-0 whitespace-nowrap">
             Nolasīts {mounted && latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : latest?.summary.finishedAt ? "\u00a0" : "nav"}
             <span className="hidden sm:inline"> · nākamā {mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "\u00a0"}</span>
             {" "}· {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0} avoti OK
@@ -1046,11 +1051,11 @@ export function IrissSludinajumiListClient({
               </span>
             )}
           </span>
-          <button type="button" onClick={() => void syncNow()} disabled={syncBusy} className="font-semibold text-[var(--color-provin-accent)] disabled:opacity-55">
+          <button type="button" onClick={() => void syncNow()} disabled={syncBusy} className="shrink-0 font-semibold text-[var(--color-provin-accent)] disabled:opacity-55">
             {syncBusy ? (syncMsg && /\d+\/\d+/.test(syncMsg) ? syncMsg.replace(" meklējumi nolasīti", "") : "Nolasa…") : "Nolasīt"}
           </button>
-          <span className="text-[#d1d1d6]">|</span>
-          <label className="inline-flex max-w-[60vw] items-center gap-1">
+          <span className="shrink-0 text-[#d1d1d6]">|</span>
+          <label className="inline-flex max-w-[60vw] shrink-0 items-center gap-1">
             <span>{dataset === "scan" ? "Monitorings" : "Klients"}</span>
             <select
               aria-label={dataset === "scan" ? "Monitorētais ieraksts" : "Klients un pasūtījums"}

@@ -68,7 +68,7 @@ export function B2bDemoShell({ children, tenantName, userName, role }: Props) {
           ))}
         </nav>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-5xl px-3 py-3 sm:px-4 sm:py-6">{children}</main>
     </div>
   );
 }
