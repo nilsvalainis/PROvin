@@ -3,12 +3,19 @@ import { describe, expect, it } from "vitest";
 import { applyFinlandLink, detectFinlandLink, finlandLinkStatusLine, textMentionsFinland } from "@/lib/vin-scan/finland-link";
 
 describe("textMentionsFinland", () => {
-  it("atpazīst Somiju un neatpazīst Fiat", () => {
+  it("atpazīst Somiju un neatpazīst Fiat, Suomi.fi un mazos fi", () => {
     expect(textMentionsFinland("Iepriekšējā valsts: Somija")).toBe(true);
     expect(textMentionsFinland("Registered in Finland")).toBe(true);
-    expect(textMentionsFinland("en / fi")).toBe(true);
+    expect(textMentionsFinland("Iepriekšējā valsts: Suomi")).toBe(true);
+    expect(textMentionsFinland("en / FI")).toBe(true);
+    expect(textMentionsFinland("Valsts: FI")).toBe(true);
+    expect(textMentionsFinland("en / fi")).toBe(false);
+    expect(textMentionsFinland("Suomi.fi")).toBe(false);
+    expect(textMentionsFinland("Identify yourself Suomi.fi kirjaudu")).toBe(false);
+    expect(textMentionsFinland("www.traficom.fi")).toBe(false);
     expect(textMentionsFinland("FIAT Punto")).toBe(false);
     expect(textMentionsFinland("wifi adapter")).toBe(false);
+    expect(textMentionsFinland("WAUZZZ4F79N007217")).toBe(false);
   });
 });
 
@@ -17,10 +24,41 @@ describe("detectFinlandLink", () => {
     expect(detectFinlandLink([], { fi: "ABC123" })).toEqual({ linked: true, source: "FI numurs" });
   });
 
-  it("Traficom found ir jā", () => {
+  it("Traficom ir tikai manuāla norāde, nekad found", () => {
     expect(
       detectFinlandLink([{ id: "traficom", status: "found", summary: "VOLVO V70", flags: { registrationCountry: "FI" } }]),
-    ).toEqual({ linked: true, source: "Traficom" });
+    ).toEqual({ linked: null, source: "" });
+    expect(
+      detectFinlandLink([
+        {
+          id: "traficom",
+          status: "browser_only",
+          summary: "Traficom: Suomi.fi forma pārlūkā, serveris POST nesaņem",
+        },
+      ]),
+    ).toEqual({ linked: null, source: "" });
+  });
+
+  it("WAUZZZ4F79N007217 nav atrasts", () => {
+    const vin = "WAUZZZ4F79N007217";
+    expect(textMentionsFinland(vin)).toBe(false);
+    expect(textMentionsFinland(`Traficom: Suomi.fi forma pārlūkā ${vin}`)).toBe(false);
+    expect(
+      detectFinlandLink([
+        {
+          id: "traficom",
+          status: "browser_only",
+          summary: "Traficom: Suomi.fi forma pārlūkā, serveris POST nesaņem",
+          detail: vin,
+        },
+        { id: "carinfo", status: "found", summary: `${vin} Suomi.fi` },
+      ]),
+    ).toEqual({ linked: null, source: "" });
+    expect(
+      detectFinlandLink([
+        { id: "traficom", status: "found", summary: "VOLVO V70", detail: vin, flags: { registrationCountry: "FI" } },
+      ]).linked,
+    ).not.toBe(true);
   });
 
   it("car.info Somija ir jā, ja Traficom unknown", () => {

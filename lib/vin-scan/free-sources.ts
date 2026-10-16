@@ -8,6 +8,7 @@ import {
   isVinScanSourceId,
   VIN_SCAN_REMOVED_IDS,
   VIN_SCAN_SOURCE_IDS,
+  vinScanSourceDisabled,
   type VinScanSourceId,
 } from "@/lib/vin-scan/catalog";
 
@@ -44,7 +45,7 @@ export function isFreeVinScanSourceId(id: string): boolean {
 }
 
 export function freeVinScanSourceIds(): VinScanSourceId[] {
-  return VIN_SCAN_SOURCE_IDS.filter((id) => isFreeVinScanSourceId(id));
+  return VIN_SCAN_SOURCE_IDS.filter((id) => isFreeVinScanSourceId(id) && !vinScanSourceDisabled(id));
 }
 
 /** Automātiskais pasūtījuma / quick-eval / VIN SCAN (bez maksas) avotu saraksts. */
