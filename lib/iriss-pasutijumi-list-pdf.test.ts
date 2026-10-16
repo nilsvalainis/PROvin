@@ -3,6 +3,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  const core = (await import("pdf-parse/lib/pdf-parse.js")) as {
+    default?: (data: Buffer) => Promise<{ text?: unknown }>;
+  };
+  const pdfParse = core.default;
+  if (typeof pdfParse !== "function") throw new Error("pdf-parse missing");
+  const result = await pdfParse(buffer);
+  return typeof result.text === "string" ? result.text : "";
+}
+
 vi.mock("server-only", () => ({}));
 
 import { buildIrissPasutijumiListPdfBytes, buildIrissPasutijumsPdfBytes } from "@/lib/iriss-pasutijums-pdf";
@@ -61,5 +71,22 @@ describe("IRISS viena pasūtījuma PDF", () => {
     expect(Buffer.from(bytes.subarray(0, 5)).toString("latin1")).toBe("%PDF-");
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(2);
+  });
+
+  it("signs and foots the order PDF as Dzintarzeme Auto, with the fixed terms", async () => {
+    const rec = emptyIrissPasutijums("order-pdf-brand", "2026-08-17T12:00:00.000Z");
+    rec.clientFirstName = "Anna";
+    rec.clientLastName = "Bērziņa";
+    rec.brandModel = "VW Golf";
+    const bytes = await buildIrissPasutijumsPdfBytes(rec);
+    const text = await extractPdfText(Buffer.from(bytes));
+    expect(text).toContain("Dzintarzeme Auto");
+    expect(text).toContain("Pakalpojuma sniedzēja paraksts");
+    expect(text).toContain("info@dzintarzemeauto.lv");
+    expect(text).toContain("00 371 204 205 39");
+    expect(text).toContain("www.dzintarzemeauto.lv");
+    expect(text).toContain("1190,00 EUR");
+    expect(text).toContain("990,00 EUR + 3,5 %");
+    expect(text).not.toContain("SIA ĪRISS");
   });
 });
