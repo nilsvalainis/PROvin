@@ -58,6 +58,7 @@ import {
   type IncidentPhotoGroup,
   type IncidentPhotoMeta,
 } from "@/lib/incident-photo-types";
+import { overlayBulkyRawTextFields } from "@/lib/admin-workspace-persist-slim";
 
 export type OrderWorkspacePersistBody = {
   sourceBlocks: WorkspaceSourceBlocks;
@@ -286,6 +287,7 @@ export function coalesceOrderWorkspacePersistBody(
   }
   // K2: tikai ienākošā marķieri nozīmē „šī ierīce iztukšoja” — tie uzvar pār baseline.
   const cleared = parseClearedFields(incoming.clearedFields);
+  const bulkyBaselineBlocks = mergeSourceBlocksWithDefaults(baseline.sourceBlocks);
   const baselineBlocks = mergeSourceBlocksWithDefaults(baseline.sourceBlocks);
   for (const key of Object.keys(cleared)) {
     if (!key.startsWith("block:")) continue;
@@ -417,6 +419,15 @@ export function coalesceOrderWorkspacePersistBody(
           baselineBlocks.listing_analysis,
         ),
   };
+  const blocksWithBulky = { ...mergedBlocks };
+  for (const key of SOURCE_BLOCK_KEYS) {
+    if (wiped.has(key)) continue;
+    (blocksWithBulky as Record<string, unknown>)[key] = overlayBulkyRawTextFields(
+      incomingBlocks[key],
+      bulkyBaselineBlocks[key],
+      mergedBlocks[key],
+    );
+  }
   const incidentSynced = syncIncidentPhotoGroupsAndFlat(
     mergeIncidentPhotoGroups(
       incoming.incidentPhotoGroups,
@@ -428,7 +439,7 @@ export function coalesceOrderWorkspacePersistBody(
   const tombstones = mergeDeletedPhotoIds(incoming.deletedPhotoIds, baseline.deletedPhotoIds);
   const dead = new Set(tombstones);
   return {
-    sourceBlocks: stripDeletedPhotos(mergeSourceBlocksWithDefaults(mergedBlocks), dead),
+    sourceBlocks: stripDeletedPhotos(mergeSourceBlocksWithDefaults(blocksWithBulky), dead),
     iriss: cleared.iriss ? incoming.iriss ?? "" : pickRicherTextField(incoming.iriss, baseline.iriss),
     apskatesPlāns: cleared["apskatesPlāns"]
       ? incoming.apskatesPlāns ?? ""

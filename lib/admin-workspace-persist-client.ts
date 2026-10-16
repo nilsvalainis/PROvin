@@ -16,6 +16,12 @@ import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { workspaceDebugLog, workspaceDebugPayloadMeta } from "@/lib/admin-workspace-debug-log";
 import { stableWorkspaceChecksum } from "@/lib/admin-workspace-integrity";
 import { enqueueWorkspacePersist } from "@/lib/admin-workspace-persist-queue";
+import {
+  slimWorkspaceDraftForServerPersist,
+  workspaceJsonBytes,
+  WORKSPACE_PERSIST_JSON_SOFT_MAX_BYTES,
+  WORKSPACE_PERSIST_KEEPALIVE_MAX_BYTES,
+} from "@/lib/admin-workspace-persist-slim";
 
 export type CanonicalWorkspaceLoad = {
   workspace: OrderDraftWorkspaceBody | null;
@@ -115,12 +121,14 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
   const gen = opts.saveGeneration ?? bumpWorkspaceSaveGeneration();
   const normalized = normalizeOrderWorkspacePersistBody(opts.body);
   const merged = coalesceOrderWorkspacePersistBody(normalized, opts.baseline);
-  const draftBody = buildOrderDraftWorkspaceBody(
-    merged,
-    opts.pdfVisibility,
-    opts.pdfBannerInclude,
-    opts.baseline,
-    opts.manualBanners ?? [],
+  const draftBody = slimWorkspaceDraftForServerPersist(
+    buildOrderDraftWorkspaceBody(
+      merged,
+      opts.pdfVisibility,
+      opts.pdfBannerInclude,
+      opts.baseline,
+      opts.manualBanners ?? [],
+    ),
   );
   const expectedChecksum = stableWorkspaceChecksum(draftBody);
   const expectedFill = workspaceHydrationFillScore(merged);
@@ -132,7 +140,7 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
     checksum: expectedChecksum,
     revision: opts.expectedWorkspaceRevision,
     ...workspaceDebugPayloadMeta(draftBody),
-    extra: { context: opts.logContext ?? "client", generation: gen },
+    extra: { context: opts.logContext ?? "client", generation: gen, slimmed: true },
   });
 
   const patchBody: Record<string, unknown> = {
@@ -143,12 +151,23 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
   if (opts.expectedWorkspaceRevision != null && Number.isFinite(opts.expectedWorkspaceRevision)) {
     patchBody.expectedWorkspaceRevision = Math.max(0, Math.floor(opts.expectedWorkspaceRevision));
   }
+  const payloadJson = JSON.stringify(patchBody);
+  const payloadBytes = workspaceJsonBytes(patchBody);
+  if (payloadBytes > WORKSPACE_PERSIST_JSON_SOFT_MAX_BYTES) {
+    workspaceDebugLog("persist_failed", {
+      sessionId: opts.sessionId,
+      source: "client_patch",
+      error: "payload_too_large",
+      extra: { context: opts.logContext, payloadBytes },
+    });
+    return { ok: false, error: "payload_too_large", generation: gen };
+  }
   const res = await fetch("/api/admin/order-draft", {
     method: "PATCH",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    keepalive: opts.fetchKeepalive === true,
-    body: JSON.stringify(patchBody),
+    keepalive: opts.fetchKeepalive === true && payloadBytes <= WORKSPACE_PERSIST_KEEPALIVE_MAX_BYTES,
+    body: payloadJson,
   });
   const data = (await res.json().catch(() => ({}))) as {
     ok?: boolean;
@@ -213,6 +232,13 @@ export function isWorkspaceRevisionConflict(error: string | undefined | null): b
 
 export const WORKSPACE_SAVE_FAILED_ALERT =
   "Saglabāšana neizdevās. Dati palika šajā pārlūkā, bet serveris tos nenorakstīja. Paliec lapā un spied Saglabāt vēlreiz.";
+
+export function workspacePersistFailureAlert(error: string | undefined | null): string {
+  if (error === "http_413" || error === "payload_too_large") {
+    return "Saglabāšana neizdevās: pieprasījums pārāk liels hostingam. Paliec lapā un spied Saglabāt vēlreiz. AI konteksts un RAW atskaites vairs netiek sūtītas saglabāšanā.";
+  }
+  return WORKSPACE_SAVE_FAILED_ALERT;
+}
 
 export function isRetryableWorkspacePersistError(error: string | undefined | null): boolean {
   return (

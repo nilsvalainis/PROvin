@@ -18,6 +18,7 @@ import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-p
 import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
 import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
+import { slimUnknownForServerPersist } from "@/lib/admin-workspace-persist-slim";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -154,7 +155,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
   const { extraction: vehicleAiExtraction, meta: vehicleAiExtractionMeta } =
     parseVehicleAiFromWorkspaceRecord(o);
   return {
-    sourceBlocks: o.sourceBlocks,
+    sourceBlocks: slimUnknownForServerPersist(o.sourceBlocks),
     iriss: typeof o.iriss === "string" ? o.iriss : "",
     apskatesPlāns: typeof o.apskatesPlāns === "string" ? o.apskatesPlāns : "",
     tehniskoRiskuAnalize: typeof o.tehniskoRiskuAnalize === "string" ? o.tehniskoRiskuAnalize : "",

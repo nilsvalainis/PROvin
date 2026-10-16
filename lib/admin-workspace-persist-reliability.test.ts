@@ -17,6 +17,7 @@ import {
   isWorkspaceRevisionConflict,
   nextPersistAttemptAfterConflict,
   persistWorkspaceState,
+  workspacePersistFailureAlert,
 } from "@/lib/admin-workspace-persist-client";
 import { nextWorkspaceRevisionAfterRestore } from "@/lib/admin-workspace-integrity";
 
@@ -194,6 +195,14 @@ describe("revision conflict contract", () => {
     expect(isWorkspaceRevisionConflict("overwrite_blocked")).toBe(true);
     expect(isWorkspaceRevisionConflict("store_not_durable")).toBe(false);
     expect(isWorkspaceRevisionConflict(undefined)).toBe(false);
+  });
+
+  it("explains 413 / oversized payload separately from a generic save failure", () => {
+    expect(workspacePersistFailureAlert("http_413")).toMatch(/pārāk liels/);
+    expect(workspacePersistFailureAlert("payload_too_large")).toMatch(/pārāk liels/);
+    expect(workspacePersistFailureAlert("write_conflict")).toBe(
+      "Saglabāšana neizdevās. Dati palika šajā pārlūkā, bet serveris tos nenorakstīja. Paliec lapā un spied Saglabāt vēlreiz.",
+    );
   });
 
   it("retries stale_revision and write_conflict, not overwrite_blocked", () => {
