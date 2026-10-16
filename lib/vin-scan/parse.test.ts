@@ -84,7 +84,11 @@ describe("vin scan catalog", () => {
       "/stelnummer/wvwzzz7nzev015204.html",
     );
     expect(defaultVinScanSourceIds()).toEqual(vinScanPipelineSourceIds());
-    expect(vinScanPipelineSourceIds()).toEqual(VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai"));
+    expect(VIN_SCAN_CATALOG.find((s) => s.id === "vegvesen")?.disabled).toBe(true);
+    expect(vinScanPipelineSourceIds()).toEqual(
+      VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai" && id !== "vegvesen"),
+    );
+    expect(vinScanPipelineSourceIds()).not.toContain("vegvesen");
     expect(vinScanFastSourceIds()).toEqual(vinScanPipelineSourceIds());
     for (const removed of VIN_SCAN_REMOVED_IDS) {
       expect(VIN_SCAN_SOURCE_IDS).not.toContain(removed);

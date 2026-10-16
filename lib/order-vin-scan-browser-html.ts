@@ -5,12 +5,14 @@
  */
 
 import { ORDER_VIN_SCAN_BROWSER_IMPORT_IDS, type OrderVinScanRecord } from "@/lib/order-vin-scan";
+import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
-import { parseAuctionArchive } from "@/lib/vin-scan/parse-extra";
+import { parseAuctionArchive, parseNicbHtml } from "@/lib/vin-scan/parse-extra";
 import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 import { isSwedishBrowserSourceId, parseSwedishVehiclePage, swedishSourceLabel } from "@/lib/vin-scan/parse-sweden";
 import { buildVinScanIndicator, type VinScanAuction, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
+import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
 
 /** Aptuveni 900 KB. Garāku lapu skripts saīsina, serveris noraida. */
 export const ORDER_VIN_SCAN_BROWSER_HTML_MAX = 900_000;
@@ -164,13 +166,24 @@ function parseArchiveHtml(
   }
   if (id === "bid_cars" || id === "bidfax" || id === "poctra") {
     const label = ARCHIVE_LABEL[id] || id;
-    return readyParse(parseAuctionArchive(200, html, vin, label));
+    return readyParse(parseAuctionArchive(httpStatus > 0 ? httpStatus : 200, html, vin, label));
   }
   if (id === "plc_auction") {
     return readyParse(classifyPlcAuction(visibleText(html)));
   }
   if (id === "checkcar_vin") {
     return readyParse(classifyCheckcarVinText(visibleText(html), vin));
+  }
+  if (id === "carfax_eu") {
+    const read = classifyBrowserProbe("carfax_eu", visibleText(html), vin);
+    if (!read || (read.status !== "found" && read.status !== "none")) return "page_not_ready";
+    return { status: read.status, summary: read.summary };
+  }
+  if (id === "nicb") {
+    return readyParse(parseNicbHtml(html, vin));
+  }
+  if (id === "lt_itpr") {
+    return readyParse(classifyPoliceWanted("lt_itpr", visibleText(html), vin));
   }
   if (isSwedishBrowserSourceId(id)) {
     const parsed = parseSwedishVehiclePage(html, pageUrl);

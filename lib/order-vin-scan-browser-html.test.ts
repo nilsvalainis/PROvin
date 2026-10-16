@@ -243,6 +243,41 @@ describe("pārlūka arhīva HTML imports", () => {
     expect(none.record.indicators[0]?.status).toBe("none");
   });
 
+  it("CARFAX, NICB un epolicija HTML no pārlūka kļūst par found vai none", () => {
+    const carfax = applyBrowserArchiveHtml({
+      record: record([]),
+      id: "carfax_eu",
+      html: `<html><body>We found 3 records for ${VIN}</body></html>`,
+      pageUrl: `https://www.carfax.eu/preview-page?vin=${VIN}`,
+      vin: VIN,
+    });
+    expect(carfax.ok).toBe(true);
+    if (!carfax.ok) return;
+    expect(carfax.record.indicators[0]?.status).toBe("found");
+
+    const nicb = applyBrowserArchiveHtml({
+      record: record([]),
+      id: "nicb",
+      html: `<html><body>${VIN} clean record</body></html>`,
+      pageUrl: `https://www.nicb.org/vincheck?vin=${VIN}`,
+      vin: VIN,
+    });
+    expect(nicb.ok).toBe(true);
+    if (!nicb.ok) return;
+    expect(nicb.record.indicators[0]?.status).toBe("none");
+
+    const police = applyBrowserArchiveHtml({
+      record: record([]),
+      id: "lt_itpr",
+      html: `<html><body>Duomenų nerasta ${VIN}</body></html>`,
+      pageUrl: `https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=${VIN}`,
+      vin: VIN,
+    });
+    expect(police.ok).toBe(true);
+    if (!police.ok) return;
+    expect(police.record.indicators[0]?.status).toBe("none");
+  });
+
   it("servera unknown nepārraksta jau importētu pārlūka rezultātu", () => {
     const imported = {
       id: "stat_vin" as const,

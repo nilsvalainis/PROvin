@@ -47,6 +47,9 @@ export const ORDER_VIN_SCAN_BROWSER_IMPORT_IDS: readonly string[] = [
   "bidfax",
   "poctra",
   "plc_auction",
+  "carfax_eu",
+  "nicb",
+  "lt_itpr",
   ...SWEDISH_BROWSER_SOURCE_IDS,
 ];
 const BLOCKED_HINT_RE = /cloudflare|\b403\b|captcha|challenge|bloķ|blocked|lapa nav atpazīta|just a moment/i;

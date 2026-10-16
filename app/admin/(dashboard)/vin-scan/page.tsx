@@ -46,6 +46,6 @@ export default async function AdminVinScanPage({
 
 async function SourceHealthSection() {
   const health = await readSourceHealth();
-  const items: SourceHealthItem[] = VIN_SCAN_CATALOG.map((c) => ({ id: c.id, label: c.label }));
+  const items: SourceHealthItem[] = VIN_SCAN_CATALOG.filter((c) => !c.disabled).map((c) => ({ id: c.id, label: c.label }));
   return <AdminSourceHealthCompact doc={health} items={items} />;
 }
