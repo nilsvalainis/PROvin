@@ -20,9 +20,15 @@ describe("parseAiModelTier", () => {
     expect(parseAiModelTier("sonnet")).toBe("flash");
   });
 
-  it("defaults unknown values to opus/pro", () => {
+  it("maps only explicit pro/opus to pro", () => {
     expect(parseAiModelTier("pro")).toBe("pro");
     expect(parseAiModelTier("opus")).toBe("pro");
-    expect(parseAiModelTier(undefined)).toBe("pro");
+  });
+
+  it("defaults unknown values to gemini-flash, not opus", () => {
+    expect(parseAiModelTier(undefined)).toBe("gemini-flash");
+    expect(parseAiModelTier("")).toBe("gemini-flash");
+    expect(parseAiModelTier("unknown-tier")).toBe("gemini-flash");
+    expect(parseAiModelTier(123)).toBe("gemini-flash");
   });
 });

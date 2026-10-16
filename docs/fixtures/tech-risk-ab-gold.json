@@ -1,0 +1,31 @@
+{
+  "note": "20 zelta sloti IRISS A/B vērtējumam. id aizpilda tikai lasīšanai; harness neraksta melnrakstos. old/new ir paraugi offline skaitīšanai.",
+  "orders": [
+    {
+      "slot": 1,
+      "id": "",
+      "label": "MB V-klase OM651",
+      "old": "Šī automašīna ir aprīkota ar OM651. Remonts 800 EUR.\n\nKārba\n7G paliek uzturēšana.",
+      "new": "Sadales ķēde\nOM651 šajā posmā tipiski prasa klausīties auksto startu. Dīlera datos maiņa nav fiksēta.\n\nKārba\n7G paliek ierasta uzturēšanas izmaksa.\n\nEGR\nOglekļa nogulsnes ir tipiskas.\n\nStiprās puses\nKonstrukcija ir pazīstama servisiem."
+    },
+    { "slot": 2, "id": "", "label": "BMW X5 E70 M57" },
+    { "slot": 3, "id": "", "label": "BMW 525 N57" },
+    { "slot": 4, "id": "", "label": "BMW X1 xDrive20d" },
+    { "slot": 5, "id": "", "label": "Audi Q7 CASA" },
+    { "slot": 6, "id": "", "label": "Audi Q7 180 kW" },
+    { "slot": 7, "id": "", "label": "VW Caddy CFHF" },
+    { "slot": 8, "id": "", "label": "Škoda Superb DTUA" },
+    { "slot": 9, "id": "", "label": "Volvo XC60 D5244T15" },
+    { "slot": 10, "id": "", "label": "VW Tiguan DPCA" },
+    { "slot": 11, "id": "", "label": "MB CLA 180 Copart FI" },
+    { "slot": 12, "id": "", "label": "Lexus LS430" },
+    { "slot": 13, "id": "", "label": "Opel Zafira Tourer" },
+    { "slot": 14, "id": "", "label": "Toyota Corolla hibrīds" },
+    { "slot": 15, "id": "", "label": "Tesla Model 3" },
+    { "slot": 16, "id": "", "label": "VW ID.3" },
+    { "slot": 17, "id": "", "label": "BMW M340i B58" },
+    { "slot": 18, "id": "", "label": "Mitsubishi Outlander PHEV" },
+    { "slot": 19, "id": "", "label": "Ford Ranger" },
+    { "slot": 20, "id": "", "label": "Audi A6 Allroad" }
+  ]
+}

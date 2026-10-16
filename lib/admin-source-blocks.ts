@@ -96,6 +96,11 @@ import {
 } from "@/lib/source-block-photo-types";
 import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-parse";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
+import {
+  parseTechnicalRiskMap,
+  technicalRiskMapSnapshotField,
+  type TechnicalRiskMap,
+} from "@/lib/admin-ai-technical-risk-map-types";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
 import {
   autoRecordsRowHasData,
@@ -2822,6 +2827,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   sourceBlockWipes?: SourceBlockKey[];
   deletedPhotoIds?: string[];
   clearedFields?: Record<string, number>;
+  technicalRiskMap?: TechnicalRiskMap;
 } | null {
   if (!raw) return null;
   try {
@@ -2877,6 +2883,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
         }
         return Object.keys(out).length > 0 ? { clearedFields: out } : {};
       })(),
+      ...technicalRiskMapSnapshotField(parseTechnicalRiskMap(p.technicalRiskMap)),
     };
   } catch {
     return null;

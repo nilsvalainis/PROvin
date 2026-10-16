@@ -1,6 +1,6 @@
 import "server-only";
 
-import { adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
+import { adminGenerateExpertText, adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
 import { buildAggregateIdentificationBrief } from "@/lib/admin-ai-aggregate-identification";
 import { AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
@@ -19,29 +19,45 @@ import {
   normalizeProvinExpertAiComment,
   stripUnauthorizedEuroAmounts,
 } from "@/lib/source-summary-comment-format";
+import {
+  allowCostBands,
+  isTechRiskV2Enabled,
+  TECH_PIPELINE,
+} from "@/lib/admin-ai-tech-pipeline-config";
+import { identifyEngineGearboxPlatform } from "@/lib/admin-ai-engine-identification";
+import { generateTechnicalRiskMapWithAi } from "@/lib/admin-ai-technical-risk-map";
+import {
+  formatTechnicalRiskLintErrors,
+  lintTechnicalRiskText,
+} from "@/lib/admin-ai-technical-risk-lint";
+import { AI_TECH_RISK_V2_TEXT_SYSTEM } from "@/lib/admin-ai-tech-risk-v2-prompts";
+import { qaTechnicalRiskText } from "@/lib/admin-ai-technical-risk-qa";
+import {
+  buildTechRiskOperatorFlags,
+  stripTechnicalRiskEurSentences,
+  verifiedKbCostBandsFromMap,
+  type TechnicalRiskMap,
+} from "@/lib/admin-ai-technical-risk-map-types";
 
-export async function generateTechnicalRiskAnalysisWithAi(
-  input: AiOrderContextInput,
-): Promise<string> {
+export type TechnicalRiskAnalysisResult = {
+  text: string;
+  technicalRiskMap?: TechnicalRiskMap | null;
+  lintWarning?: string | null;
+  operatorFlags?: string[];
+};
+
+function finalizeText(raw: string, keepVerifiedEur = false): string {
+  const normalized = normalizeProvinExpertAiComment(raw);
+  const cleaned = keepVerifiedEur ? normalized : stripUnauthorizedEuroAmounts(normalized);
+  return throwIfBlankGeneratedComment(cleaned);
+}
+
+function buildLegacyUserPrompt(input: AiOrderContextInput, identificationBrief: string, orderContext: string): string {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
   const makeModel = blocks.csdd.makeModel.trim();
   const fuel = blocks.csdd.fuelType.trim();
   const vehicleHint = [makeModel, fuel].filter(Boolean).join(", ");
-
-  const orderContext = await buildFullAiOrderContextText({
-    ...input,
-    technicalRiskAnalysis: undefined,
-  });
-  if (!orderContext.trim()) {
-    throw new Error("empty_order_context");
-  }
-
-  const identificationBrief = buildAggregateIdentificationBrief({
-    sourceBlocks: blocks,
-    vin: input.vin,
-  });
-
-  const userPrompt = appendAiOperatorNotesSection(
+  return appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
 
@@ -54,7 +70,7 @@ ${orderContext}
 Sagatavo **tehniski izcilu, detalizētu** tehnisko risku analīzi laukam „${ADMIN_TECHNICAL_RISKS_LABEL}”. Šī ir atskaites svarīgākā komentāru sadaļa — īss vispārīgs teksts šeit ir kļūda.
 
 OBLIGĀTI:
-- Identificē agregātu **iekšēji** (tilpums, jauda kW, degviela, izmešu klase, gads, dzinēja kods, kārba, piedziņa). Ja koda NAV: tajā pašā markā un līdzīgā gadu joslā ņem **kW + cm³ + degvielu** kā 1. kandidātu (modeļi var atšķirties) un meklē to. IZVADĒ nesāc ar auto prezentāciju („Šī automašīna ir aprīkota ar…”, „Dzinēja konstrukcija un resurss”, „Agregātu identifikācija”, „uzticamākais”, „veiksmīgākā konstrukcija”) - marka/motors/kārba jau ir citās sadaļās. Pirmā sadaļa = konkrēts riska fakts, ar km un vecuma kalibrāciju tajā pašā sadaļā. Dzinēja/kārbas fakti tikai tad, kad tie izskaidro risku. Ja precīzs kods nav avotos - iekšēji turi 1–2 kandidātus; izvadē nosauc tos tikai pie attiecīgā riska, kā hipotēzi, ne kā reģistrā nolasītu faktu. **PACK RECONCILE:** pirms pakas apgalvojuma salīdzini ar šī auto kW/kodu (D5244T11 = ~158 kW biturbo, ne viens turbo).
+- Identificē agregātu **iekšēji** (tilpums, jauda kW, degviela, izmešu klase, gads, dzinēja kods, kārba, piedziņa). Ja koda NAV: tajā pašā markā un līdzīgā gadu joslā ņem **kW + cm³ + degvielu** kā 1. kandidātu (modeļi var atšķirties) un meklē to. IZVADĒ nesāc ar auto prezentāciju („Šī automašīna ir aprīkota ar…”, „Dzinēja konstrukcija un resurss”, „Agregātu identifikācija”, „uzticamākais”, „veiksmīgāka konstrukcija”) - marka/motors/kārba jau ir citās sadaļās. Pirmā sadaļa = konkrēts riska fakts, ar km un vecuma kalibrāciju tajā pašā sadaļā. Dzinēja/kārbas fakti tikai tad, kad tie izskaidro risku. Ja precīzs kods nav avotos - iekšēji turi 1–2 kandidātus; izvadē nosauc tos tikai pie attiecīgā riska, kā hipotēzi, ne kā reģistrā nolasītu faktu. **PACK RECONCILE:** pirms pakas apgalvojuma salīdzini ar šī auto kW/kodu (D5244T11 = ~158 kW biturbo, ne viens turbo).
 - Formāts: virsraksts savā rindā, tad 2-4 teikumi. NEKAD neizvadi *, ** vai citus Markdown simbolus.
 - **Kalibrē riskus pret šī auto aptuveno nobraukumu un vecumu:** kam resurss šajā posmā tipiski jau iztērēts (un tāpēc jābūt pierādītam servisa vēsturē), kas gaidāms nākamajos ~20–40 tūkst. km, un kas ir tikai tāla perspektīva. Sakārto pēc **varbūtības × ietekmes** (BEZ EUR). Piemērs: 300 tūkst. km M57 ar labu eļļu ir ierasts darba mūžs; tas pats km uz N57 ir pavisam cits stāsts; D5244T11 (~158 kW biturbo) - bloka/dzesēšanas risks, NE „viens turbo bez bloka plaisām”.
 - **Tikai aktuālie mezgli:** raksti TIKAI šim agregātam, šai kārbai un šim aprīkojumam. Citu kodu kaites NEMINI, pat lai tās noliegtu. Dārgo ekstraprīkojumu nosauc tikai ja SA/dīleris/operators to rāda šim auto. Ja paka konflikte ar kW/kodu - meklē un labo, nekopē paku.
@@ -81,24 +97,171 @@ OBLIGĀTI:
         undefined,
     },
   );
+}
 
+async function generateV1(input: AiOrderContextInput): Promise<TechnicalRiskAnalysisResult> {
+  const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
+  const orderContext = await buildFullAiOrderContextText({
+    ...input,
+    technicalRiskAnalysis: undefined,
+  });
+  if (!orderContext.trim()) {
+    throw new Error("empty_order_context");
+  }
+  const identificationBrief = buildAggregateIdentificationBrief({
+    sourceBlocks: blocks,
+    vin: input.vin,
+  });
   try {
     const raw = await adminGenerateTextWithWebSearch({
       modelTier: input.modelTier,
       systemInstruction: AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM,
-      userPrompt,
+      userPrompt: buildLegacyUserPrompt(input, identificationBrief, orderContext),
       qualityField: "technical_risks",
       temperature: 0.32,
       maxSearches: 6,
       maxTokens: 16_000,
       stream: input.stream,
     });
-    return throwIfBlankGeneratedComment(
-      stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(raw)),
-    );
+    return { text: finalizeText(raw) };
   } catch (e) {
     rethrowNormalizedIncompleteComment(e, (t) =>
       stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(t)),
     );
   }
+}
+
+function keepVerifiedEur(map: TechnicalRiskMap): boolean {
+  return (
+    allowCostBands() &&
+    map.hide_cost_bands !== true &&
+    verifiedKbCostBandsFromMap(map).length > 0
+  );
+}
+
+async function generateTextFromMap(
+  input: AiOrderContextInput,
+  map: TechnicalRiskMap,
+  orderContext: string,
+  lintErrors?: string,
+): Promise<string> {
+  const hideEur = map.hide_cost_bands === true || !allowCostBands();
+  const verified = verifiedKbCostBandsFromMap(map);
+  const costNote = hideEur
+    ? "EUR nav: slēdzis paslēpj joslas vai ALLOW_COST_BANDS=false."
+    : verified.length > 0
+      ? "EUR atļauts TIKAI kā atsevišķs teikums no verificētas KB joslas (KB: + dated). Maksas katalogi nav avots."
+      : "EUR nav: kartē nav verificētas KB joslas.";
+  const userPrompt = appendAiOperatorNotesSection(
+    `Pasūtījuma ID: ${input.sessionId}
+
+${costNote}
+
+Ja kartē unknowns[] vai confidence C, neraksti minējumu. Īsi: "Datos nav fiksēts."
+
+RISKA KARTE (JSON, raksti TIKAI no šīs kartes):
+${JSON.stringify(map)}
+
+${orderContext}
+
+${lintErrors ? `\n---\nVALIDATORA KĻŪDAS (labo TIKAI šīs, jaunus faktus nepievieno):\n${lintErrors}` : ""}
+
+Sagatavo sadaļu „${ADMIN_TECHNICAL_RISKS_LABEL}” latviski tikai no kartes.`,
+    {
+      operatorNotes: input.operatorNotes,
+      existingDraftPlain:
+        input.existingDraftPlain?.trim() ||
+        adminRichHtmlToPlainText(input.technicalRiskAnalysis ?? "").trim() ||
+        undefined,
+    },
+  );
+  const raw = await adminGenerateExpertText({
+    modelTier: TECH_PIPELINE.technical_risks.lv,
+    systemInstruction: AI_TECH_RISK_V2_TEXT_SYSTEM,
+    userPrompt,
+    qualityField: "technical_risks",
+    temperature: 0.3,
+    maxTokens: 16_000,
+    stream: input.stream,
+  });
+  let text = finalizeText(raw, keepVerifiedEur(map));
+  if (hideEur) text = finalizeText(stripTechnicalRiskEurSentences(text), false);
+  return text;
+}
+
+async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnalysisResult> {
+  const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
+  const orderContext = await buildFullAiOrderContextText({
+    ...input,
+    technicalRiskAnalysis: undefined,
+  });
+  if (!orderContext.trim()) {
+    throw new Error("empty_order_context");
+  }
+  const identificationBrief = buildAggregateIdentificationBrief({
+    sourceBlocks: blocks,
+    vin: input.vin,
+  });
+  const identification = identifyEngineGearboxPlatform({
+    sourceBlocks: blocks,
+    vin: input.vin,
+  });
+  try {
+    const map = {
+      ...(await generateTechnicalRiskMapWithAi({
+        modelTier: input.modelTier,
+        orderContext,
+        identification,
+        identificationBrief,
+      })),
+      ...(input.hideTechnicalRiskCostBands ? { hide_cost_bands: true as const } : {}),
+    };
+    let text = await generateTextFromMap(input, map, orderContext);
+    const qa = await qaTechnicalRiskText({ text, map });
+    if (qa.flagged.length > 0 && qa.rewritten_text.trim()) {
+      text = finalizeText(qa.rewritten_text, keepVerifiedEur(map));
+      if (map.hide_cost_bands === true || !allowCostBands()) {
+        text = finalizeText(stripTechnicalRiskEurSentences(text), false);
+      }
+    }
+    const first = lintTechnicalRiskText({
+      text,
+      identification: map.identification,
+      map,
+      allowCostBands: allowCostBands() && map.hide_cost_bands !== true,
+    });
+    if (first.errors.length > 0) {
+      text = await generateTextFromMap(
+        input,
+        map,
+        orderContext,
+        formatTechnicalRiskLintErrors(first.errors),
+      );
+      const second = lintTechnicalRiskText({
+        text,
+        identification: map.identification,
+        map,
+        allowCostBands: allowCostBands() && map.hide_cost_bands !== true,
+      });
+      if (second.errors.length > 0) {
+        return {
+          text,
+          technicalRiskMap: map,
+          lintWarning: `Tehnisko risku validators joprojām redz kļūdas pēc vienas pārģenerēšanas: ${formatTechnicalRiskLintErrors(second.errors)}`,
+          operatorFlags: buildTechRiskOperatorFlags(map),
+        };
+      }
+    }
+    return { text, technicalRiskMap: map, operatorFlags: buildTechRiskOperatorFlags(map) };
+  } catch (e) {
+    rethrowNormalizedIncompleteComment(e, (t) =>
+      stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(t)),
+    );
+  }
+}
+
+export async function generateTechnicalRiskAnalysisWithAi(
+  input: AiOrderContextInput,
+): Promise<TechnicalRiskAnalysisResult> {
+  return isTechRiskV2Enabled() ? generateV2(input) : generateV1(input);
 }

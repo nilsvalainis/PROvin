@@ -7,7 +7,7 @@ type LearningsSummary = {
   snippetTotal: number;
   updatedAt: string;
   engineKeys: Array<{ key: string; label: string; snippets: number }>;
-  topKeys: Array<{ key: string; label: string; snippets: number }>;
+  topKeys: Array<{ key: string; label: string; snippets: number; status?: string }>;
 };
 
 type BackfillResult = {
@@ -26,7 +26,10 @@ type PromoteResult = {
 const btnClass =
   "inline-flex min-h-[40px] items-center justify-center rounded-xl border border-slate-200/90 bg-white px-4 py-2 text-[13px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50";
 
-async function postAction(action: "status" | "backfill" | "promote", extra?: Record<string, unknown>) {
+async function postAction(
+  action: "status" | "backfill" | "promote" | "approve",
+  extra?: Record<string, unknown>,
+) {
   const res = await fetch("/api/admin/audit-knowledge", {
     method: "POST",
     credentials: "include",
@@ -55,7 +58,7 @@ function formatWhen(iso: string): string {
 /** Operatora panelis: agregātu atmiņas statuss + backfill / promote ar vienu klikšķi. */
 export function AdminAuditKnowledgePanel() {
   const [summary, setSummary] = useState<LearningsSummary | null>(null);
-  const [busy, setBusy] = useState<"status" | "backfill" | "promote" | null>(null);
+  const [busy, setBusy] = useState<"status" | "backfill" | "promote" | "approve" | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [lastBackfill, setLastBackfill] = useState<BackfillResult | null>(null);
@@ -71,7 +74,12 @@ export function AdminAuditKnowledgePanel() {
         snippetTotal: data.snippetTotal ?? 0,
         updatedAt: data.updatedAt ?? "",
         engineKeys: data.engineKeys ?? [],
-        topKeys: data.topKeys ?? [],
+        topKeys: (data.topKeys ?? []).map((k) => ({
+          key: k.key,
+          label: k.label,
+          snippets: k.snippets,
+          ...(k.status ? { status: k.status } : {}),
+        })),
       });
       setNotice("Statuss atjaunināts.");
     } catch (e) {
@@ -103,6 +111,26 @@ export function AdminAuditKnowledgePanel() {
       );
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Backfill neizdevās");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const runApprove = async (key: string) => {
+    setBusy("approve");
+    setErr(null);
+    setNotice(null);
+    try {
+      const data = (await postAction("approve", { key })) as {
+        ok?: boolean;
+        key?: string;
+        summary?: LearningsSummary;
+      };
+      if (data.summary) setSummary(data.summary);
+      else await loadStatus();
+      setNotice(`Apstiprināts: ${data.key ?? key}.`);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Apstiprināšana neizdevās");
     } finally {
       setBusy(null);
     }
@@ -191,11 +219,24 @@ export function AdminAuditKnowledgePanel() {
           <h2 className="text-[14px] font-semibold text-[var(--color-apple-text)]">Top atslēgas</h2>
           <ul className="mt-3 space-y-1.5 text-[12px]">
             {summary.topKeys.map((k) => (
-              <li key={k.key} className="flex justify-between gap-3 border-b border-slate-100 py-1.5 last:border-0">
+              <li key={k.key} className="flex items-center justify-between gap-3 border-b border-slate-100 py-1.5 last:border-0">
                 <span className="min-w-0 truncate font-mono text-[11px]" title={k.key}>
                   {k.label || k.key}
+                  {k.status ? ` (${k.status})` : ""}
                 </span>
-                <span className="shrink-0 tabular-nums text-[var(--color-provin-muted)]">{k.snippets}</span>
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="tabular-nums text-[var(--color-provin-muted)]">{k.snippets}</span>
+                  {k.status !== "approved" ? (
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-200 px-2 py-0.5 text-[11px] font-semibold"
+                      disabled={busy !== null}
+                      onClick={() => void runApprove(k.key)}
+                    >
+                      Apstiprināt
+                    </button>
+                  ) : null}
+                </span>
               </li>
             ))}
           </ul>

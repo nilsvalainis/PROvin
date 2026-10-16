@@ -84,6 +84,8 @@ export type AiOrderContextInput = {
   commentBreadth?: CommentBreadth | null;
   /** Dzīvais teksta priekšskatījums admin UI (SSE); nav gala teksts. */
   stream?: AiTextStream;
+  /** Operatora slēdzis: slēpt verificētās KB EUR joslas. */
+  hideTechnicalRiskCostBands?: boolean;
 };
 
 function block(label: string, body: string): string {

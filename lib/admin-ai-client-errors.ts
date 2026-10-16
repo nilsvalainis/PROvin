@@ -8,6 +8,9 @@ export type AdminAiApiErrorBody = {
   message?: string;
   text?: string;
   incomplete?: boolean;
+  technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
+  lintWarning?: string;
+  operatorFlags?: string[];
 };
 
 const ERROR_MESSAGES_LV: Record<string, string> = {
@@ -128,8 +131,21 @@ export function formatAdminAiFetchError(
 
 /** HTTP 200 ar tukšu `text` nozīmē, ka AI jau iekasēja tokenus, bet UI to klusi ignorēja. */
 export type GeneratedAdminAiText =
-  | { ok: true; text: string }
-  | { ok: false; error: string; text?: string };
+  | {
+      ok: true;
+      text: string;
+      technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
+      lintWarning?: string;
+      operatorFlags?: string[];
+    }
+  | {
+      ok: false;
+      error: string;
+      text?: string;
+      technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
+      lintWarning?: string;
+      operatorFlags?: string[];
+    };
 
 export function readGeneratedAdminAiText(
   res: Pick<Response, "ok" | "status">,
@@ -138,12 +154,22 @@ export function readGeneratedAdminAiText(
   httpFallback: string,
 ): GeneratedAdminAiText {
   const text = typeof data.text === "string" ? data.text.trim() : "";
+  const extras = {
+    ...(data.technicalRiskMap ? { technicalRiskMap: data.technicalRiskMap } : {}),
+    ...(typeof data.lintWarning === "string" && data.lintWarning.trim()
+      ? { lintWarning: data.lintWarning.trim() }
+      : {}),
+    ...(Array.isArray(data.operatorFlags) && data.operatorFlags.some((f) => typeof f === "string" && f.trim())
+      ? { operatorFlags: data.operatorFlags.filter((f): f is string => typeof f === "string" && Boolean(f.trim())) }
+      : {}),
+  };
   const incomplete = data.incomplete === true || data.error === "ai_incomplete_comment";
   if (incomplete) {
     return {
       ok: false,
       error: ERROR_MESSAGES_LV.ai_incomplete_comment,
       text: text || undefined,
+      ...extras,
     };
   }
   if (!res.ok) {
@@ -153,9 +179,10 @@ export function readGeneratedAdminAiText(
         ? `AI: servera atbilde nav lasāma (HTTP ${res.status})`
         : formatAdminAiFetchError(data, res, httpFallback),
       text: text || undefined,
+      ...extras,
     };
   }
-  if (text) return { ok: true, text };
+  if (text) return { ok: true, text, ...extras };
   return {
     ok: false,
     error: parseFailed

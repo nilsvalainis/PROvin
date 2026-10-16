@@ -17,6 +17,10 @@ import { parseVehicleAiFromWorkspaceRecord } from "@/lib/vehicle-ai-extraction-p
 import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
 import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
+import {
+  parseTechnicalRiskMap,
+  technicalRiskMapSnapshotField,
+} from "@/lib/admin-ai-technical-risk-map-types";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -169,6 +173,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     ...sourceBlockWipesSnapshotField(o.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(o.deletedPhotoIds),
     ...clearedFieldsSnapshotField(o.clearedFields),
+    ...technicalRiskMapSnapshotField(parseTechnicalRiskMap(o.technicalRiskMap)),
   };
 }
 

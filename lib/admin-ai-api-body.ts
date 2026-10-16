@@ -30,6 +30,7 @@ export function parseAiOrderContextFromBody(
     existingDraftPlain: strFromBody(b.existingDraftPlain),
     modelTier: parseAiModelTier(b.modelTier),
     commentBreadth: parseCommentBreadth(b.commentBreadth),
+    ...(b.hideTechnicalRiskCostBands === true ? { hideTechnicalRiskCostBands: true } : {}),
   };
 }
 
