@@ -130,6 +130,12 @@ function safeEqualUtf8(a: string, b: string): boolean {
   }
 }
 
+/** Vēstures lauks „kurš”. Parole netiek atgriezta. */
+export function adminActorLabel(): string {
+  const name = resolveUsername().trim();
+  return name ? name.slice(0, 80) : "operators";
+}
+
 export function verifyAdminCredentials(username: string, password: string): boolean {
   const u = resolveUsername();
   const p = resolvePassword();

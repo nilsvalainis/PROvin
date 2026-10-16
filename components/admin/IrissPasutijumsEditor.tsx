@@ -1797,6 +1797,7 @@ export function IrissPasutijumsEditor({
           onPrepareOffer={openCreateOfferFromHit}
           onOpenOfferPdf={(offerId) => void openOfferPdfForId(offerId)}
           onRestore={() => void restoreDeleted()}
+          onOrderRestored={(record) => setRec(withAutoEcarstradeLinks(record))}
           initialOfferLinks={initialOfferLinks}
           onDeleteOrder={() => {
             setOfferOpen(false);

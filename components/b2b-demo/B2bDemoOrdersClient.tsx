@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { B2B_DEMO_APP_PREFIX } from "@/lib/b2b-demo-host";
-import type { B2bDemoOrder, B2bDemoOrderStatus } from "@/lib/b2b-demo-types";
+import { isB2bDemoOrderStatus, type B2bDemoOrder, type B2bDemoOrderStatus } from "@/lib/b2b-demo-types";
 
 const fieldClass =
   "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[15px] outline-none focus:border-[#F26522] focus:ring-2 focus:ring-[#F26522]/25";
@@ -102,9 +103,27 @@ export function B2bDemoOrderForm({
         </select>
       </label>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      <button type="submit" disabled={loading} className="rounded-xl bg-[#F26522] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
-        {loading ? "Saglabā…" : "Saglabāt"}
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="submit" disabled={loading} className="rounded-xl bg-[#F26522] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+          {loading ? "Saglabā…" : "Saglabāt"}
+        </button>
+        {mode === "edit" && initial ? (
+          <AdminChangeHistoryButton
+            kind="b2b-order"
+            recordId={initial.orderId}
+            endpoint={`/api/b2b-demo/orders/${encodeURIComponent(initial.orderId)}/history`}
+            onRestored={(body) => {
+              const record = body.record;
+              if (!record) return;
+              if (typeof record.clientName === "string") setClientName(record.clientName);
+              if (typeof record.brandModel === "string") setBrandModel(record.brandModel);
+              if (typeof record.vin === "string") setVin(record.vin);
+              if (typeof record.note === "string") setNote(record.note);
+              if (isB2bDemoOrderStatus(record.status)) setStatus(record.status);
+            }}
+          />
+        ) : null}
+      </div>
     </form>
   );
 }

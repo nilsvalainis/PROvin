@@ -11,7 +11,9 @@ import { IrissOfferClientLinkBar } from "@/components/admin/IrissOfferClientLink
 import { IrissOrderMatchBoundary, IrissOrderMatchFallback } from "@/components/admin/IrissOrderMatchBoundary";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
+import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { listingHistoryRecordId } from "@/lib/admin-change-history";
 import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
 import { listingBudgetFitPill, listingFmtEur } from "@/lib/iriss-listings-card";
 import { listingDisplayImageUrl } from "@/lib/iriss-listing-image";
@@ -58,6 +60,7 @@ import {
 import {
   IRISS_LISTING_HIT_STATUS_LV,
   IRISS_LISTING_HIT_STATUSES,
+  isIrissListingHitStatus,
   type IrissListingHitStatus,
 } from "@/lib/iriss-listing-match-client";
 import { irissHorizontalSwipeDirection, irissTabAfterSwipe } from "@/lib/iriss-touch-swipe";
@@ -288,6 +291,7 @@ export function IrissOrderRoom({
   onPrepareOffer,
   onOpenOfferPdf,
   onRestore,
+  onOrderRestored,
   onDeleteOrder,
   initialOfferLinks = [],
   initialHitStatus = {},
@@ -325,6 +329,7 @@ export function IrissOrderRoom({
   onPrepareOffer: (hit: IrissOrderRoomHit) => void;
   onOpenOfferPdf: (offerId: string) => void;
   onRestore: () => void;
+  onOrderRestored: (record: IrissPasutijumsRecord) => void;
   onDeleteOrder: () => void;
   initialOfferLinks?: IrissOfferClientLinkAdminView[];
   initialHitStatus?: Record<string, IrissListingHitStatus>;
@@ -620,6 +625,16 @@ export function IrissOrderRoom({
                       {dealPill}
                     </span>
                   ) : null}
+                  <AdminChangeHistoryButton
+                    kind="iriss-order"
+                    recordId={rec.id}
+                    endpoint="/api/admin/change-history"
+                    className="ml-auto"
+                    onRestored={(body) => {
+                      const record = body.record;
+                      if (record && typeof record.id === "string") onOrderRestored(record as IrissPasutijumsRecord);
+                    }}
+                  />
                 </div>
                 <p className="mt-1 text-[12px] leading-snug text-[#6b7280] md:text-[13px]">
                   <span className="md:hidden">
@@ -1084,6 +1099,7 @@ export function IrissOrderRoom({
                             hitStatus={hitStatus}
                             duplicateLinks={duplicates[hit.id] ?? []}
                             onStatus={(status) => void setListingStatus(hit, status)}
+                            onStatusRestored={(status) => setHitStatus((prev) => ({ ...prev, [hit.id]: status }))}
                           />
                         </IrissOrderMatchBoundary>
                         <div className="mt-3 flex flex-wrap gap-2">
@@ -1513,12 +1529,14 @@ function IrissOrderHitMatchChrome({
   hitStatus,
   duplicateLinks,
   onStatus,
+  onStatusRestored,
 }: {
   hit: IrissOrderRoomHit;
   rec: IrissPasutijumsRecord;
   hitStatus: Record<string, IrissListingHitStatus>;
   duplicateLinks: IrissVinDuplicateLink[];
   onStatus: (status: IrissListingHitStatus) => void;
+  onStatusRestored: (status: IrissListingHitStatus) => void;
 }) {
   let match: ReturnType<typeof irissOrderRoomMatch> | null = null;
   try {
@@ -1562,6 +1580,16 @@ function IrissOrderHitMatchChrome({
           );
         })}
       </div>
+      <AdminChangeHistoryButton
+        kind="iriss-listing"
+        recordId={listingHistoryRecordId(rec.id, hit.id)}
+        endpoint="/api/admin/change-history"
+        className="mt-2"
+        onRestored={(body) => {
+          const status = body.record?.status;
+          if (typeof status === "string" && isIrissListingHitStatus(status)) onStatusRestored(status);
+        }}
+      />
     </>
   );
 }
