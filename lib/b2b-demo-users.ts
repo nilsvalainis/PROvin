@@ -111,6 +111,11 @@ export function canWriteB2bDemoSettings(role: B2bDemoRole): boolean {
   return role === "owner";
 }
 
+/** Owner and employee may create, edit and print this tenant's orders. */
+export function canWriteB2bDemoOrders(role: B2bDemoRole): boolean {
+  return role === "owner" || role === "employee";
+}
+
 export function listPublicB2bDemoUsers(users: readonly B2bDemoUser[], tenantId: string): B2bDemoUserPublic[] {
   return users
     .filter((u) => u.tenantId === tenantId)

@@ -9,7 +9,10 @@ import {
   createB2bDemoTenantWithOwner,
   createMemoryB2bDemoRepository,
   deleteB2bDemoTenant,
+  deleteB2bDemoTenantOrder,
+  getB2bDemoTenantOrder,
   listB2bDemoAdminTenants,
+  listB2bDemoTenantOrderPage,
   listB2bDemoTenantOrders,
   listB2bDemoTenantUsers,
   lookupB2bDemoUserByEmail,
@@ -17,6 +20,7 @@ import {
   readB2bDemoTenantSettings,
   writeB2bDemoTenantSettings,
 } from "./b2b-demo-store";
+import type { MemoryB2bDemoRepository } from "./b2b-demo-repository";
 import { verifyB2bDemoPassword } from "./b2b-demo-users";
 
 describe("b2b demo store isolation", () => {
@@ -42,8 +46,8 @@ describe("b2b demo store isolation", () => {
       },
       repo,
     );
-    await addB2bDemoTenantOrder(a.tenant.tenantId, { clientName: "Klients A", brandModel: "BMW" }, repo);
-    await addB2bDemoTenantOrder(b.tenant.tenantId, { clientName: "Klients B", brandModel: "Audi" }, repo);
+    const orderA = await addB2bDemoTenantOrder(a.tenant.tenantId, { clientName: "Klients A", brandModel: "BMW" }, repo);
+    const orderB = await addB2bDemoTenantOrder(b.tenant.tenantId, { clientName: "Klients B", brandModel: "Audi" }, repo);
 
     const aOrders = await listB2bDemoTenantOrders(a.tenant.tenantId, repo);
     const bOrders = await listB2bDemoTenantOrders(b.tenant.tenantId, repo);
@@ -52,6 +56,9 @@ describe("b2b demo store isolation", () => {
     expect(aOrders[0]?.tenantId).toBe(a.tenant.tenantId);
     expect(bOrders[0]?.clientName).toBe("Klients B");
     expect(aOrders.some((o) => o.tenantId === b.tenant.tenantId)).toBe(false);
+    expect(await getB2bDemoTenantOrder(a.tenant.tenantId, orderB.orderId, repo)).toBeNull();
+    expect(await getB2bDemoTenantOrder(b.tenant.tenantId, orderA.orderId, repo)).toBeNull();
+    expect((await getB2bDemoTenantOrder(a.tenant.tenantId, orderA.orderId, repo))?.brandModel).toBe("BMW");
 
     await expect(
       writeB2bDemoTenantSettings(a.tenant.tenantId, "owner", { companyName: "X" }, b.tenant.tenantId, repo),
@@ -181,5 +188,38 @@ describe("b2b demo store isolation", () => {
     expect(next.emailIndex).toEqual({
       "b@demo.lv": { tenantId: "tnt_bbbbbb", userId: "usr_bbbbbb" },
     });
+  });
+
+  it("sarakstu ielādē no vieglā indeksa, bez N+1 order JSON", async () => {
+    const repo = createMemoryB2bDemoRepository() as MemoryB2bDemoRepository;
+    const a = await createB2bDemoTenantWithOwner(
+      {
+        name: "A Auto",
+        slug: "a-fast",
+        ownerEmail: "fast@demo.lv",
+        ownerName: "A",
+        ownerPassword: "password1",
+      },
+      repo,
+    );
+    for (let i = 0; i < 12; i += 1) {
+      await addB2bDemoTenantOrder(a.tenant.tenantId, { clientName: `K${i}`, brandModel: "BMW", note: `gara piezīme ${i}` }, repo);
+    }
+    repo.stats.orderRecordReads = 0;
+    repo.stats.ordersIndexReads = 0;
+    repo.stats.tenantReads = 0;
+    const page = await listB2bDemoTenantOrderPage(a.tenant.tenantId, { page: 1, limit: 10 }, repo);
+    expect(page.total).toBe(12);
+    expect(page.rows).toHaveLength(10);
+    expect(page.rows.every((row) => row.tenantId === a.tenant.tenantId)).toBe(true);
+    expect(JSON.stringify(page.rows)).not.toContain("gara piezīme");
+    expect(repo.stats.ordersIndexReads).toBe(1);
+    expect(repo.stats.orderRecordReads).toBe(0);
+    expect(repo.stats.tenantReads).toBe(0);
+    const first = page.rows[0]!;
+    await deleteB2bDemoTenantOrder(a.tenant.tenantId, first.orderId, repo);
+    const after = await listB2bDemoTenantOrderPage(a.tenant.tenantId, { page: 1, limit: 20 }, repo);
+    expect(after.total).toBe(11);
+    expect(after.rows.some((row) => row.orderId === first.orderId)).toBe(false);
   });
 });

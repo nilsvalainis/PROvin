@@ -26,7 +26,8 @@ export function B2bDemoShell({ children, tenantName, userName, role }: Props) {
   const base = B2B_DEMO_APP_PREFIX;
   const items = [
     { href: `${base}/pasutijumi`, label: "Pasūtījumi", match: `${base}/pasutijumi` },
-    { href: `${base}/list`, label: "LIST", match: `${base}/list` },
+    { href: `${base}/list`, label: "Klientu filtri", match: `${base}/list` },
+    { href: `${base}/radars`, label: "Radars", match: `${base}/radars` },
     { href: `${base}/izsoles`, label: "Izsoļu sesijas", match: `${base}/izsoles` },
     { href: `${base}/settings`, label: "Iestatījumi", match: `${base}/settings` },
     ...(role === "owner" ? [{ href: `${base}/users`, label: "Lietotāji", match: `${base}/users` }] : []),

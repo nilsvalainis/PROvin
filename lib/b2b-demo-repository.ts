@@ -1,9 +1,23 @@
 import { emptyB2bDemoSettings, parseB2bDemoSettings } from "@/lib/b2b-demo-settings";
+import { parseB2bDemoOrdersIndex } from "@/lib/b2b-demo-order-list";
 import { parseB2bDemoOrder } from "@/lib/b2b-demo-orders";
 import { parseB2bDemoUser } from "@/lib/b2b-demo-users";
-import { assertB2bDemoStoragePath, b2bDemoTenantDataPath } from "@/lib/b2b-demo-paths";
-import { isSafeB2bDemoTenantId, isSafeB2bDemoUserId, normalizeB2bDemoEmail } from "@/lib/b2b-demo-ids";
-import { isB2bDemoAuctionPlatform, type B2bDemoEncryptedAuctionSession, type B2bDemoIndex, type B2bDemoTenant, type B2bDemoTenantDocument } from "@/lib/b2b-demo-types";
+import {
+  assertB2bDemoStoragePath,
+  b2bDemoTenantDataPath,
+  b2bDemoTenantOrderPath,
+  b2bDemoTenantOrdersIndexPath,
+} from "@/lib/b2b-demo-paths";
+import { isSafeB2bDemoOrderId, isSafeB2bDemoTenantId, isSafeB2bDemoUserId, normalizeB2bDemoEmail } from "@/lib/b2b-demo-ids";
+import {
+  isB2bDemoAuctionPlatform,
+  type B2bDemoEncryptedAuctionSession,
+  type B2bDemoIndex,
+  type B2bDemoOrder,
+  type B2bDemoOrdersIndex,
+  type B2bDemoTenant,
+  type B2bDemoTenantDocument,
+} from "@/lib/b2b-demo-types";
 
 export type B2bDemoRepository = {
   readIndex(): Promise<B2bDemoIndex>;
@@ -11,6 +25,19 @@ export type B2bDemoRepository = {
   readTenant(tenantId: string): Promise<B2bDemoTenantDocument | null>;
   writeTenant(doc: B2bDemoTenantDocument): Promise<void>;
   deleteTenantStorage(tenantId: string): Promise<void>;
+  readOrdersIndex(tenantId: string): Promise<B2bDemoOrdersIndex | null>;
+  writeOrdersIndex(tenantId: string, doc: B2bDemoOrdersIndex): Promise<void>;
+  readOrderRecord(tenantId: string, orderId: string): Promise<B2bDemoOrder | null>;
+  writeOrderRecord(order: B2bDemoOrder): Promise<void>;
+  deleteOrderRecord(tenantId: string, orderId: string): Promise<void>;
+};
+
+export type MemoryB2bDemoRepository = B2bDemoRepository & {
+  stats: {
+    tenantReads: number;
+    ordersIndexReads: number;
+    orderRecordReads: number;
+  };
 };
 
 export function removeTenantFromB2bDemoIndex(
@@ -146,10 +173,14 @@ export function parseB2bDemoTenantDocument(raw: string, tenantId: string): B2bDe
   }
 }
 
-export function createMemoryB2bDemoRepository(): B2bDemoRepository {
+export function createMemoryB2bDemoRepository(): MemoryB2bDemoRepository {
   let index = emptyB2bDemoIndex();
   const tenants = new Map<string, string>();
+  const ordersIndexes = new Map<string, string>();
+  const orders = new Map<string, string>();
+  const stats = { tenantReads: 0, ordersIndexReads: 0, orderRecordReads: 0 };
   return {
+    stats,
     async readIndex() {
       return structuredClone(index);
     },
@@ -157,6 +188,7 @@ export function createMemoryB2bDemoRepository(): B2bDemoRepository {
       index = structuredClone(doc);
     },
     async readTenant(tenantId) {
+      stats.tenantReads += 1;
       const raw = tenants.get(tenantId);
       if (!raw) return null;
       const path = b2bDemoTenantDataPath(tenantId);
@@ -172,6 +204,51 @@ export function createMemoryB2bDemoRepository(): B2bDemoRepository {
       const path = b2bDemoTenantDataPath(tenantId);
       assertB2bDemoStoragePath(path);
       tenants.delete(tenantId);
+      ordersIndexes.delete(tenantId);
+      for (const key of [...orders.keys()]) {
+        if (key.startsWith(`${tenantId}:`)) orders.delete(key);
+      }
+    },
+    async readOrdersIndex(tenantId) {
+      stats.ordersIndexReads += 1;
+      const pathname = b2bDemoTenantOrdersIndexPath(tenantId);
+      assertB2bDemoStoragePath(pathname);
+      const raw = ordersIndexes.get(tenantId);
+      if (!raw) return null;
+      try {
+        return parseB2bDemoOrdersIndex(JSON.parse(raw) as unknown, tenantId);
+      } catch {
+        return null;
+      }
+    },
+    async writeOrdersIndex(tenantId, doc) {
+      const pathname = b2bDemoTenantOrdersIndexPath(tenantId);
+      assertB2bDemoStoragePath(pathname);
+      if (doc.tenantId !== tenantId) throw new Error("orders-index tenant_id nesakrīt.");
+      ordersIndexes.set(tenantId, JSON.stringify(doc));
+    },
+    async readOrderRecord(tenantId, orderId) {
+      stats.orderRecordReads += 1;
+      if (!isSafeB2bDemoOrderId(orderId)) return null;
+      const pathname = b2bDemoTenantOrderPath(tenantId, orderId);
+      assertB2bDemoStoragePath(pathname);
+      const raw = orders.get(`${tenantId}:${orderId}`);
+      if (!raw) return null;
+      try {
+        return parseB2bDemoOrder(JSON.parse(raw) as unknown, tenantId);
+      } catch {
+        return null;
+      }
+    },
+    async writeOrderRecord(order) {
+      const pathname = b2bDemoTenantOrderPath(order.tenantId, order.orderId);
+      assertB2bDemoStoragePath(pathname);
+      orders.set(`${order.tenantId}:${order.orderId}`, JSON.stringify(order));
+    },
+    async deleteOrderRecord(tenantId, orderId) {
+      const pathname = b2bDemoTenantOrderPath(tenantId, orderId);
+      assertB2bDemoStoragePath(pathname);
+      orders.delete(`${tenantId}:${orderId}`);
     },
   };
 }

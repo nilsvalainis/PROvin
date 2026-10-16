@@ -1,4 +1,4 @@
-import { isSafeB2bDemoTenantId } from "@/lib/b2b-demo-ids";
+import { isSafeB2bDemoOrderId, isSafeB2bDemoTenantId } from "@/lib/b2b-demo-ids";
 
 /** B2B demo Blob / FS root. Never overlaps ĪRISS or PROVIN admin prefixes. */
 export const B2B_DEMO_STORAGE_ROOT = "b2b-demo";
@@ -55,6 +55,18 @@ export function b2bDemoTenantAssetPath(tenantId: string, filename: string): stri
     throw new B2bDemoPathError("Nederīgs faila nosaukums.");
   }
   return `${b2bDemoTenantDir(tenantId)}/assets/${safe}`;
+}
+
+/** Light list index. List endpoints must read this file, not each order JSON. */
+export function b2bDemoTenantOrdersIndexPath(tenantId: string): string {
+  return `${b2bDemoTenantDir(tenantId)}/orders-index.json`;
+}
+
+export function b2bDemoTenantOrderPath(tenantId: string, orderId: string): string {
+  if (!isSafeB2bDemoOrderId(orderId)) {
+    throw new B2bDemoPathError("Nederīgs order_id.");
+  }
+  return `${b2bDemoTenantDir(tenantId)}/orders/${orderId}.json`;
 }
 
 export function isForbiddenIrissOwnPath(pathname: string): boolean {
