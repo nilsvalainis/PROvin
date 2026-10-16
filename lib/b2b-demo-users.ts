@@ -16,6 +16,20 @@ export function isUsableB2bDemoPassword(password: string): boolean {
   return t.length >= 8 && t.length <= 200;
 }
 
+/** Random password for admin-created owners. Returned once; never stored in plaintext. */
+export function generateB2bDemoPassword(): string {
+  return `bp${randomBytes(12).toString("hex")}`;
+}
+
+export function resolveB2bDemoCreatePassword(password?: string | null): { password: string; generated: boolean } {
+  const given = typeof password === "string" ? password.trim() : "";
+  if (given) {
+    if (!isUsableB2bDemoPassword(given)) throw new Error("Parolei jābūt vismaz 8 rakstzīmes.");
+    return { password: given, generated: false };
+  }
+  return { password: generateB2bDemoPassword(), generated: true };
+}
+
 export function newB2bDemoUserId(): string {
   return `usr_${randomBytes(8).toString("hex")}`;
 }

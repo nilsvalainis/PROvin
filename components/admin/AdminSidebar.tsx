@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  Building2,
   CalendarRange,
   Car,
   ChevronsLeft,
@@ -71,6 +72,7 @@ export const ADMIN_NAV_LABELS = {
   templates: "Tekstu šabloni",
   invoices: "Rēķini",
   partners: "Partneri",
+  demoDealers: "Demo dīleri",
   logout: "Iziet",
 } as const;
 const L = ADMIN_NAV_LABELS;
@@ -86,6 +88,7 @@ const MORNING: Item = { href: "/admin/kopsavilkums", label: L.morning, icon: Sun
 const FAST: Item = { href: "/admin/atras-vertesanas", label: L.fast, icon: Zap, badge: "fast", match: starts("/admin/atras-vertesanas") };
 const VIN: Item = { href: "/admin/vin-scan", label: L.vinScan, icon: ScanLine, match: starts("/admin/vin-scan") };
 const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Handshake, badge: "partners", match: starts("/admin/partneri") };
+const DEMO_DILERI: Item = { href: "/admin/b2b-demo", label: L.demoDealers, icon: Building2, match: starts("/admin/b2b-demo") };
 const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, plus: true, match: starts("/admin/iriss/pasutijumi") };
 const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
 const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybills, icon: FileText, match: starts("/admin/iriss/pavadzimes") };
@@ -118,6 +121,7 @@ export const ADMIN_NAV_GROUPS: Group[] = [
     items: [
       { href: "/admin/commission-invoice", label: L.invoices, icon: Euro, match: starts("/admin/commission-invoice") },
       PARTNERI,
+      DEMO_DILERI,
     ],
   },
 ];

@@ -34,6 +34,17 @@ export function b2bDemoTenantDir(tenantId: string): string {
   return `${B2B_DEMO_STORAGE_ROOT}/tenants/${tenantId}`;
 }
 
+/** Trailing slash prefix for Blob list / FS rm. Never matches a sibling tenant id. */
+export function b2bDemoTenantStoragePrefix(tenantId: string): string {
+  return `${b2bDemoTenantDir(tenantId)}/`;
+}
+
+export function isB2bDemoPathUnderTenant(pathname: string, tenantId: string): boolean {
+  const p = pathname.replace(/^\/+/, "");
+  const prefix = b2bDemoTenantStoragePrefix(tenantId);
+  return p.startsWith(prefix) && !p.includes("..") && !p.includes("//");
+}
+
 export function b2bDemoTenantDataPath(tenantId: string): string {
   return `${b2bDemoTenantDir(tenantId)}/data.json`;
 }

@@ -2,7 +2,7 @@ import "server-only";
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import { get, put } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
 import { B2bDemoIsolationError, assertSameTenant, rejectForeignTenantId } from "@/lib/b2b-demo-isolation";
 import {
   applyB2bDemoOrderPatch,
@@ -13,6 +13,8 @@ import {
   B2B_DEMO_INDEX_PATH,
   assertB2bDemoStoragePath,
   b2bDemoTenantDataPath,
+  b2bDemoTenantStoragePrefix,
+  isB2bDemoPathUnderTenant,
 } from "@/lib/b2b-demo-paths";
 import {
   createMemoryB2bDemoRepository,
@@ -20,6 +22,7 @@ import {
   emptyB2bDemoTenantDocument,
   parseB2bDemoIndex,
   parseB2bDemoTenantDocument,
+  removeTenantFromB2bDemoIndex,
   type B2bDemoRepository,
 } from "@/lib/b2b-demo-repository";
 import { applyB2bDemoSettingsPatch, type B2bDemoSettingsPatch } from "@/lib/b2b-demo-settings";
@@ -29,9 +32,10 @@ import {
   createB2bDemoUser,
   listPublicB2bDemoUsers,
   newB2bDemoTenantId,
+  resolveB2bDemoCreatePassword,
 } from "@/lib/b2b-demo-users";
 import { isSafeB2bDemoSlug, isSafeB2bDemoTenantId, normalizeB2bDemoEmail, normalizeB2bDemoSlug } from "@/lib/b2b-demo-ids";
-import { toPublicB2bDemoUser, type B2bDemoEncryptedAuctionSession, type B2bDemoIndex, type B2bDemoOrder, type B2bDemoRole, type B2bDemoSettings, type B2bDemoTenant, type B2bDemoTenantDocument, type B2bDemoUser, type B2bDemoUserPublic } from "@/lib/b2b-demo-types";
+import { toPublicB2bDemoUser, type B2bDemoAdminTenantRow, type B2bDemoEncryptedAuctionSession, type B2bDemoIndex, type B2bDemoOrder, type B2bDemoRole, type B2bDemoSettings, type B2bDemoTenant, type B2bDemoTenantDocument, type B2bDemoUser, type B2bDemoUserPublic } from "@/lib/b2b-demo-types";
 
 const RELATIVE_DIR = ".data/b2b-demo";
 
@@ -135,7 +139,49 @@ export function createFsBlobB2bDemoRepository(): B2bDemoRepository {
       }
       await writeFsText(pathname, body);
     },
+    async deleteTenantStorage(tenantId) {
+      if (!isSafeB2bDemoTenantId(tenantId)) {
+        throw new Error("Nederīgs tenant_id.");
+      }
+      const token = blobToken();
+      if (token) {
+        await deleteBlobTenantPrefix(tenantId, token);
+      }
+      await deleteFsTenantDir(tenantId);
+    },
   };
+}
+
+async function deleteBlobTenantPrefix(tenantId: string, token: string): Promise<void> {
+  const prefix = b2bDemoTenantStoragePrefix(tenantId);
+  let cursor: string | undefined;
+  do {
+    const page = await list({ prefix, token, cursor, limit: 1000, mode: "expanded" });
+    const paths = page.blobs
+      .map((b) => b.pathname)
+      .filter((p) => {
+        try {
+          const safe = assertB2bDemoStoragePath(p);
+          return isB2bDemoPathUnderTenant(safe, tenantId);
+        } catch {
+          return false;
+        }
+      });
+    if (paths.length > 0) {
+      await del(paths, { token });
+    }
+    if (page.hasMore && !page.cursor) break;
+    cursor = page.hasMore && page.cursor ? page.cursor : undefined;
+  } while (cursor);
+}
+
+async function deleteFsTenantDir(tenantId: string): Promise<void> {
+  const prefix = b2bDemoTenantStoragePrefix(tenantId);
+  const dir = path.join(process.cwd(), RELATIVE_DIR, prefix);
+  if (!dir.includes(`${path.sep}${tenantId}${path.sep}`) && !dir.endsWith(`${path.sep}${tenantId}`)) {
+    throw new Error("Nederīgs tenant krātuves ceļš.");
+  }
+  await fs.rm(dir, { recursive: true, force: true });
 }
 
 let defaultRepo: B2bDemoRepository | null = null;
@@ -242,6 +288,114 @@ export async function createB2bDemoTenantWithOwner(
     };
     await store.writeIndex(nextIndex);
     return { tenant, owner };
+  });
+}
+
+export async function listB2bDemoAdminTenants(r?: B2bDemoRepository): Promise<B2bDemoAdminTenantRow[]> {
+  const index = await repo(r).readIndex();
+  const rows: B2bDemoAdminTenantRow[] = [];
+  for (const t of index.tenants) {
+    const doc = await readB2bDemoTenant(t.tenantId, r);
+    rows.push({
+      tenantId: t.tenantId,
+      slug: t.slug,
+      name: t.name,
+      createdAt: doc?.tenant.createdAt ?? null,
+      updatedAt: doc?.tenant.updatedAt ?? null,
+      users: doc ? listPublicB2bDemoUsers(doc.users, t.tenantId) : [],
+    });
+  }
+  return rows.sort((a, b) => a.name.localeCompare(b.name, "lv"));
+}
+
+export async function adminCreateB2bDemoTenant(
+  input: {
+    name: string;
+    slug?: string;
+    ownerEmail: string;
+    ownerName?: string;
+    ownerPassword?: string | null;
+  },
+  r?: B2bDemoRepository,
+): Promise<{ tenant: B2bDemoTenant; owner: B2bDemoUserPublic; generatedPassword: string | null }> {
+  if (!input.name.trim()) throw new Error("Nepieciešams uzņēmuma nosaukums.");
+  const resolved = resolveB2bDemoCreatePassword(input.ownerPassword);
+  const created = await createB2bDemoTenantWithOwner(
+    {
+      name: input.name,
+      slug: input.slug,
+      ownerEmail: input.ownerEmail,
+      ownerName: input.ownerName?.trim() || input.ownerEmail,
+      ownerPassword: resolved.password,
+    },
+    r,
+  );
+  return {
+    tenant: created.tenant,
+    owner: toPublicB2bDemoUser(created.owner),
+    generatedPassword: resolved.generated ? resolved.password : null,
+  };
+}
+
+export async function addB2bDemoTenantOwner(
+  tenantId: string,
+  input: { email: string; name?: string; password?: string | null },
+  r?: B2bDemoRepository,
+): Promise<{ user: B2bDemoUserPublic; generatedPassword: string | null }> {
+  if (!isSafeB2bDemoTenantId(tenantId)) throw new Error("Nederīgs tenant_id.");
+  const resolved = resolveB2bDemoCreatePassword(input.password);
+  return withLock(async () => {
+    const store = repo(r);
+    const index = await store.readIndex();
+    const email = normalizeB2bDemoEmail(input.email);
+    if (index.emailIndex[email]) throw new Error("Šis e-pasts jau ir reģistrēts.");
+    const doc = await store.readTenant(tenantId);
+    if (!doc) throw new Error("Tenants nav atrasts.");
+    assertSameTenant(doc.tenant, tenantId);
+    const user = createB2bDemoUser({
+      tenantId,
+      email,
+      name: input.name?.trim() || email,
+      role: "owner",
+      password: resolved.password,
+    });
+    doc.users.push(user);
+    doc.tenant.updatedAt = user.updatedAt;
+    await store.writeTenant(doc);
+    index.emailIndex[email] = { tenantId, userId: user.userId };
+    index.updatedAt = user.updatedAt;
+    await store.writeIndex(index);
+    return {
+      user: toPublicB2bDemoUser(user),
+      generatedPassword: resolved.generated ? resolved.password : null,
+    };
+  });
+}
+
+export async function deleteB2bDemoTenant(
+  tenantId: string,
+  r?: B2bDemoRepository,
+): Promise<{ tenantId: string; deletedEmails: string[] }> {
+  if (!isSafeB2bDemoTenantId(tenantId)) throw new Error("Nederīgs tenant_id.");
+  return withLock(async () => {
+    const store = repo(r);
+    const index = await store.readIndex();
+    const doc = await store.readTenant(tenantId);
+    if (doc) assertSameTenant(doc.tenant, tenantId);
+    const inIndex = index.tenants.some((t) => t.tenantId === tenantId);
+    if (!doc && !inIndex) throw new Error("Tenants nav atrasts.");
+    const emails = new Set<string>();
+    if (doc) {
+      for (const u of doc.users) {
+        if (u.tenantId === tenantId) emails.add(u.email);
+      }
+    }
+    for (const [email, entry] of Object.entries(index.emailIndex)) {
+      if (entry.tenantId === tenantId) emails.add(email);
+    }
+    await store.deleteTenantStorage(tenantId);
+    await store.writeIndex(removeTenantFromB2bDemoIndex(index, tenantId));
+    return { tenantId, deletedEmails: [...emails].sort((a, b) => a.localeCompare(b, "lv")) };
   });
 }
 

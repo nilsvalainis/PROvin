@@ -10,7 +10,29 @@ export type B2bDemoRepository = {
   writeIndex(doc: B2bDemoIndex): Promise<void>;
   readTenant(tenantId: string): Promise<B2bDemoTenantDocument | null>;
   writeTenant(doc: B2bDemoTenantDocument): Promise<void>;
+  deleteTenantStorage(tenantId: string): Promise<void>;
 };
+
+export function removeTenantFromB2bDemoIndex(
+  index: B2bDemoIndex,
+  tenantId: string,
+  now = new Date().toISOString(),
+): B2bDemoIndex {
+  if (!isSafeB2bDemoTenantId(tenantId)) {
+    throw new Error("Nederīgs tenant_id.");
+  }
+  const emailIndex: B2bDemoIndex["emailIndex"] = {};
+  for (const [email, entry] of Object.entries(index.emailIndex)) {
+    if (entry.tenantId === tenantId) continue;
+    emailIndex[email] = entry;
+  }
+  return {
+    version: 1,
+    updatedAt: now,
+    tenants: index.tenants.filter((t) => t.tenantId !== tenantId),
+    emailIndex,
+  };
+}
 
 export function emptyB2bDemoIndex(now = new Date().toISOString()): B2bDemoIndex {
   return { version: 1, updatedAt: now, tenants: [], emailIndex: {} };
@@ -145,6 +167,11 @@ export function createMemoryB2bDemoRepository(): B2bDemoRepository {
       const path = b2bDemoTenantDataPath(doc.tenant.tenantId);
       assertB2bDemoStoragePath(path);
       tenants.set(doc.tenant.tenantId, JSON.stringify(doc));
+    },
+    async deleteTenantStorage(tenantId) {
+      const path = b2bDemoTenantDataPath(tenantId);
+      assertB2bDemoStoragePath(path);
+      tenants.delete(tenantId);
     },
   };
 }
