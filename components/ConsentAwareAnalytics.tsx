@@ -11,6 +11,7 @@ import {
   PROVIN_CONSENT_UPDATED_EVENT,
 } from "@/lib/cookie-consent";
 import { shouldEnablePublicSiteAnalytics } from "@/lib/analytics-public-scope";
+import { buildGtagConfigSnippet, gtagScriptId } from "@/lib/google-ads";
 
 function readAnalyticsAllowed(): boolean {
   if (typeof window === "undefined") return false;
@@ -32,8 +33,9 @@ type Props = {
 };
 
 /**
- * Vercel Web Analytics — visiem apmeklējumiem (agregēti, pirmās puses mitināšanas statistika).
- * Google Analytics 4 un TikTok Pixel — tikai pēc sīkdatņu joslas piekrišanas „analītikai”.
+ * Vercel Web Analytics - visiem apmeklējumiem (agregēti, pirmās puses mitināšanas statistika).
+ * Google Analytics 4, Google Ads (AW) un TikTok Pixel - tikai pēc sīkdatņu joslas piekrišanas „analītikai”.
+ * Consent Mode v2 default ir denied (RootHtml); piekrišana dara gtag consent update granted.
  */
 export function ConsentAwareAnalytics({
   gaMeasurementId,
@@ -70,6 +72,7 @@ export function ConsentAwareAnalytics({
 
   const id = gaMeasurementId;
   const ttPixel = tiktokPixelId;
+  const loaderId = gtagScriptId(id);
 
   if (!analyticsEnabled) {
     return null;
@@ -79,17 +82,14 @@ export function ConsentAwareAnalytics({
     <>
       <Analytics />
       <SpeedInsights />
-      {gaAllowed && id ? (
+      {gaAllowed && loaderId ? (
         <>
           <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`}
+            src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(loaderId)}`}
             strategy="afterInteractive"
           />
           <Script id="ga4-gtag-config" strategy="afterInteractive">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
-gtag('consent','default',{analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
-gtag('js',new Date());
-gtag('config','${id}');`}
+            {buildGtagConfigSnippet(id)}
           </Script>
         </>
       ) : null}
