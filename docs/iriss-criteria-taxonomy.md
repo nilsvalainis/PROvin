@@ -213,9 +213,9 @@ Avots ir esošie teksta lauki: `brandModel`, `productionYears`, `maxMileage`, `t
 
 Viena summa nobraukumā vai budžetā ir augšējā robeža, kā līdzšinējā meklēšanā. Diapazons aizpilda abas robežas. Gads `2018+` ir tikai `yearFrom`. `dealVat21Required` true dod `vatRequired` true. Izslēgts ķeksis nav `false`, tas ir tukšs.
 
-Esošie pasūtījuma lauki netiek dzēsti un netiek pārdēvēti. `criteria` ir neobligāts lauks uz `IrissPasutijumsRecord` un uz `B2bDemoOrder`. Lasīšana pievieno shēmu atmiņā. Masveida pārrakstīšana netiek darīta.
+Esošie pasūtījuma lauki netiek dzēsti un netiek pārdēvēti. `criteria` ir neobligāts lauks uz `IrissPasutijumsRecord`. Lasīšana pievieno shēmu atmiņā. Masveida pārrakstīšana netiek darīta.
 
-B2B `note` netiek pārcelts uz kritērijiem. Adapteris `readSharedOrderCriteria` / `attachSharedOrderCriteria` nesaista tenant id.
+`B2bDemoOrder` šajā paketē netiek mainīts. Lauks `criteria?` tur pienāks atsevišķi, kad melnraksts ar B2B pasūtījuma tipu ir sapludināts. Līdz tam `readSharedOrderCriteria` un `attachSharedOrderCriteria` pieņem parasto objektu ar tiem pašiem teksta laukiem un nesaista tenant id. Brīvā piezīme `note` netiek pārcelta uz kritērijiem.
 
 ## Projekcija uz esošo meklēšanu
 

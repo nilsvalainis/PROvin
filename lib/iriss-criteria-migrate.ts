@@ -50,7 +50,7 @@ export type IrissCriteriaMigrationInput = {
   seatCount?: string;
   equipmentRequired?: string;
   equipmentDesired?: string;
-  /** B2B piezīme. Netiek pārcelta uz kritērijiem. */
+  /** Brīvā piezīme. Netiek pārcelta uz kritērijiem. */
   note?: string;
   dealVat21Required?: boolean;
   listingLinkAuto1?: readonly string[] | string;

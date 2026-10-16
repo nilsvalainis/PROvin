@@ -1,6 +1,7 @@
 /**
  * Kopīgs, tenant-agnostisks kritēriju adapteris.
- * To lieto IRISS pasūtījumi un B2B demo. Šeit nav tīkla, nav Blob un nav tenant id.
+ * IRISS to sauc lasot pasūtījumu. B2B demo to varēs saukt pēc tam, kad `B2bDemoOrder` dabūs `criteria?`.
+ * Šeit nav tīkla, nav Blob, nav tenant id un nav importa no `lib/b2b-demo-*`.
  */
 
 import { readIrissCriteria, type IrissCriteriaMigrationInput } from "@/lib/iriss-criteria-migrate";

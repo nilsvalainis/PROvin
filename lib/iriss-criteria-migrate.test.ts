@@ -157,7 +157,7 @@ describe("migrateIrissCriteria", () => {
 });
 
 describe("shared adapter", () => {
-  it("reads a B2B-shaped order without tenant fields", () => {
+  it("reads a plain order object with a brand and a note", () => {
     const criteria = readSharedOrderCriteria({ brandModel: "Audi A6", note: "klienta piezīme" });
     expect(criteria.filters[0]?.make.value).toContain("Audi");
     expect(JSON.stringify(criteria)).not.toContain("klienta piezīme");

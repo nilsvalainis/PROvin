@@ -1,5 +1,3 @@
-import type { IrissCriteriaV1 } from "@/lib/iriss-criteria-types";
-
 export const B2B_DEMO_ROLES = ["owner", "employee"] as const;
 export type B2bDemoRole = (typeof B2B_DEMO_ROLES)[number];
 
@@ -64,8 +62,6 @@ export type B2bDemoOrder = {
   status: B2bDemoOrderStatus;
   createdAt: string;
   updatedAt: string;
-  /** Aditīva kopīgā kritēriju shēma. Parsētājs šo lauku šajā pakā vēl neraksta. */
-  criteria?: IrissCriteriaV1;
 };
 
 /** Encrypted auction browser session. Never contains a password field. */
