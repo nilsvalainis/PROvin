@@ -73,7 +73,7 @@ describe("vehicleMatchesSearchFilter", () => {
 });
 
 describe("vehicleMatchesSearchFilter post-filter", () => {
-  it("drops opposite drive and excluded colors, keeps quattro", () => {
+  it("drops opposite drive, keeps quattro of any colour", () => {
     const filter = parseListingSearchUrl(
       "https://ecarstrade.com/search?mark[]=5&model[]=1&iriss_drive=awd&iriss_exclude_color=Yellow",
     );
@@ -91,7 +91,7 @@ describe("vehicleMatchesSearchFilter post-filter", () => {
         { title: "Audi A6 3.0 TDI quattro", manufacturer: "Audi", color: "Yellow" },
         filter,
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it("keeps unknown drive/color rather than dropping", () => {

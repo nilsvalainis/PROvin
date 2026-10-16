@@ -4,6 +4,7 @@
  * tombstone / fieldUpdatedAt; listStatus pēc statusChangedAt.
  */
 
+import { retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import {
   fieldClearedAt,
   fieldTimestamp,
@@ -222,7 +223,7 @@ export function mergeIrissPasutijumsRecords(
     if (!offers.some((o) => o.id === s.id)) offers.push(s);
   }
   next.offers = offers;
-  return next;
+  return retainStoredIrissCriteria(server, next);
 }
 
 export function planSilentAutosave(inFlight: boolean, imagesHydrating = false): { startNow: boolean; queue: boolean } {
