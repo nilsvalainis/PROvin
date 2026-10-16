@@ -30,7 +30,7 @@ describe("knowledge v2 claims", () => {
     process.env.TRAINING_V2 = "1";
     try {
       const lesson = distillLesson(
-        "Hidrotransformators paliek uzturēšanas punkts šajā posmā.\n\nRemonts 1200 EUR pie neatkarīgā servisa.\n\nEGR dzesētājs šim dzinējam ir tipiska kaite.",
+        "Hidrotransformators paliek uzturēšanas punkts šajā posmā, un slodzes maiņa to padara jūtamāku.\n\nRemonts 1200 EUR pie neatkarīgā servisa.\n\nEGR dzesētājs šim dzinējam ir tipiska kaite pēc 180 000 km, ja serviss to nav fiksējis.",
         "Tehnika",
       );
       expect(lesson).toBeTruthy();

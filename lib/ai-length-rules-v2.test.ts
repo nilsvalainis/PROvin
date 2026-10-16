@@ -65,7 +65,7 @@ describe("length rules v2", () => {
         sourcePrompt: "Dīzeļdegviela",
       }).some((i) => i.code === "g3_missing_next_100k"),
     ).toBe(false);
-    expect(isIceVehicleFromPrompt("BEV elektroauto bez dīzeļa")).toBe(false);
+    expect(isIceVehicleFromPrompt("BEV elektroauto, battery electric")).toBe(false);
   });
 
   it("G4 flags imperative wording", () => {

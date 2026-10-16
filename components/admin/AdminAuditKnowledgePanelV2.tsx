@@ -448,6 +448,15 @@ function AggregateCard(props: {
 }) {
   const now = props.items.filter((i) => i.status === "approved" && i.horizon !== "next100k");
   const next = props.items.filter((i) => i.status === "approved" && i.horizon === "next100k");
+  const sectionRest = {
+    busy: props.busy,
+    editId: props.editId,
+    editClaim: props.editClaim,
+    onEdit: props.onEdit,
+    onEditClaim: props.onEditClaim,
+    onSaveEdit: props.onSaveEdit,
+    onDelete: props.onDelete,
+  };
   return (
     <div className="space-y-3 rounded-2xl border border-slate-200/90 bg-white px-4 py-4 shadow-sm">
       <div className="flex items-center justify-between gap-2">
@@ -456,8 +465,8 @@ function AggregateCard(props: {
           Atpakaļ
         </button>
       </div>
-      <Section title="Tagad" items={now} {...props} />
-      <Section title="Nākamie 100 000 km" items={next} {...props} />
+      <Section title="Tagad" items={now} {...sectionRest} />
+      <Section title="Nākamie 100 000 km" items={next} {...sectionRest} />
     </div>
   );
 }

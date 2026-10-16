@@ -189,7 +189,7 @@ export function upsertCandidateItem(doc: KnowledgeItemsDoc, incoming: KnowledgeI
     updatedAt: now,
     history: [
       ...existing.history,
-      { at: now, action: "create", claim: incoming.claim },
+      { at: now, action: "create" as const, claim: incoming.claim },
     ].slice(-40),
   };
   doc.items[existing.id] = next;

@@ -166,7 +166,10 @@ export async function editKnowledgeItem(
     updatedAt: now,
     reviewedBy: opts.by,
     reviewedAt: now,
-    history: [...item.history, { at: now, action: "edit", by: opts.by, claim: claim.trim() }].slice(-40),
+    history: [
+      ...item.history,
+      { at: now, action: "edit" as const, by: opts.by, claim: claim.trim() },
+    ].slice(-40),
   };
   doc.items[id] = next;
   doc.updatedAt = now;
