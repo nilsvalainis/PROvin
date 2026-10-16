@@ -536,7 +536,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/Akumulators/);
     expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/Li-ion/);
     expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/NO SOURCE URLS|http/);
-    expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/eksperts/);
+    expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/persona noun|FORBIDDEN PERSONA/);
     expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/km nav|Nav ierakstu/);
     expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/150–200 tūkst|150-200/);
     expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/GPF|DPF/);

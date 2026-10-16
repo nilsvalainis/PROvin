@@ -773,7 +773,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **H5H / 1.3 TCe (sadarbība ar Mercedes-Benz M282):** sadales **ķēde** (ne siksna). Tiešā iesmidzināšana.
 
-**Eļļa (OEM, neizdomāt):** **30 000 km vai 1 gads**, kas pienāk pirmais. Smagos / pilsētas apstākļos uz pusi (~15 000 km vai 1 gads). Specifikācija **RN17** (parasti 0W-20), aptuveni 5,5 l ar filtru. „24 mēneši” šim kodam NAV ražotāja plānā, ja vien avots to nenosaka.
+**Eļļa (OEM, neizdomāt):** **30 000 km vai 1 gads**, kas pienāk pirmais. Smagos / pilsētas apstākļos uz pusi (~15 000 km vai 1 gads). Specifikācija **RN17** (parasti 0W-20), aptuveni 5,5 l ar filtru. Divu gadu laika intervāls šim kodam NAV ražotāja plānā, ja vien avots to nenosaka.
 
 **Šajā atskaitē VIENMĒR nosauc (H5H / TCe 140 klasē):** **GPF** (Otto-Partikelfilter / benzīna daļiņu filtrs) eļļas un risku kontekstā; **RN17**; kvēpi uz ieplūdes vārstiem pēc ~100 tūkst. km (tiešā iesmidzināšana); iespējama eļļas noplūde pie sadales vāka lielākā nobraukumā.
 

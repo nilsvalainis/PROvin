@@ -245,7 +245,7 @@ export const AI_SERVICE_RECORD_LITERAL_RULES = `SERVICE RECORD LITERAL READING (
 - STANDARD CHECKLIST ≠ DEFECT: a routine service row („Akumulators”, „Gaismas”, „Bremzes”) is a standard inspection item, not proof of a fault. Do not write that a system had a problem from the mere presence of the row.
 - CHEMISTRY / PART TYPE: do not assume battery chemistry (Li-ion vs AGM vs lead-acid) or a named hybrid battery family unless THIS order or a pack for THIS engine states it. A 12V micro-hybrid assist is energy recovery / start-stop help, not a diagnosed defect.
 - NO SOURCE URLS in client text. Never paste http/https links, forum URLs, or manual URLs into any comment field. Knowledge stays internal.
-- Never the word „eksperts” (or ekspertīze / expert / Experte / специалист) in client text. Canonical: stripForbiddenPersonaNouns / BANNED VOCABULARY.
+- Never a persona noun in client text. Canonical: buildForbiddenPersonaNounPromptRules / stripForbiddenPersonaNouns / BANNED VOCABULARY.
 - Do not write empty-field fillers for the PDF: standalone „km nav”, „Nav ierakstu”, „nav datu”. If a field has no fact, omit the sentence. Empty PDF rows are hidden in rendering; do not invent placeholders to fill them.
 `;
 

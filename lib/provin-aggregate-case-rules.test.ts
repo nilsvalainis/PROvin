@@ -382,6 +382,6 @@ describe("provin-aggregate-case-rules", () => {
     expect(h5h?.body).toMatch(/ieplūdes/);
     expect(h5h?.body).toMatch(/sadales vāka/);
     expect(h5h?.body).toMatch(/150-200/);
-    expect(h5h?.body).not.toMatch(/24 mēneši.*OEM|OEM.*24 mēneši/);
+    expect(h5h?.body).toMatch(/Divu gadu laika intervāls šim kodam NAV/);
   });
 });
