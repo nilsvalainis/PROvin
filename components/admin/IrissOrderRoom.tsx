@@ -4,6 +4,7 @@ import { ChevronRight, FileDown, FileText, Mail, Pencil, Phone, Plus, Send, Star
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from "react";
 import { IrissLazyImage } from "@/components/admin/IrissLazyImage";
+import { IrissOrderRoomHitCard } from "@/components/admin/IrissOrderRoomHitCard";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
@@ -15,7 +16,7 @@ import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryB
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { listingHistoryRecordId } from "@/lib/admin-change-history";
 import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
-import { listingBudgetFitPill, listingFmtEur } from "@/lib/iriss-listings-card";
+import { listingFmtEur } from "@/lib/iriss-listings-card";
 import { listingDisplayImageUrl } from "@/lib/iriss-listing-image";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import { parseIrissOrderBudget, serializeListingOrderFilter } from "@/lib/iriss-listings-orders";
@@ -1062,79 +1063,61 @@ export function IrissOrderRoom({
             </p>
           ) : (
             <ul className="space-y-3">
-              {shownHits.map((hit) => {
-                const fit = budget != null && typeof hit.price === "number" ? listingBudgetFitPill(budget, hit.price) : null;
-                const photo = typeof hit.imageUrl === "string" ? hit.imageUrl : "";
-                const title = typeof hit.title === "string" ? hit.title : "";
-                return (
-                  <li key={hit.id} className="min-w-0 rounded-2xl border border-[#e5e7eb] bg-white p-3 sm:p-4">
-                    <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-start">
-                      <HitPhoto src={photo} alt={title} count={typeof hit.imageCount === "number" ? hit.imageCount : 0} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-[16px] font-semibold leading-snug text-[#111827]">{title || "Sludinājums"}</p>
-                            <p className="mt-1 text-[12px] text-[#6b7280]">
-                              {[
-                                typeof hit.year === "string" && hit.year ? hit.year : typeof hit.firstRegistration === "string" ? hit.firstRegistration : "",
-                                typeof hit.mileageKm === "number" ? `${Math.round(hit.mileageKm).toLocaleString("lv-LV")} km` : "",
-                                typeof hit.transmission === "string" ? hit.transmission : "",
-                                typeof hit.fuel === "string" ? hit.fuel : "",
-                                typeof hit.bodyType === "string" ? hit.bodyType : "",
-                                IRISS_LISTING_PLATFORM_LABEL[hit.platform],
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                          </div>
-                          <div className="text-left md:text-right">
-                            <p className="text-[20px] font-extrabold text-[#111827]">{typeof hit.price === "number" ? listingFmtEur(hit.price) : "nav cenas"}</p>
-                            {fit ? <p className={`text-[12px] font-medium ${fit.ok ? "text-emerald-700" : "text-rose-700"}`}>{fit.label}</p> : null}
-                          </div>
-                        </div>
-                        <IrissOrderMatchBoundary>
-                          <IrissOrderHitMatchChrome
-                            hit={hit}
-                            rec={rec}
-                            hitStatus={hitStatus}
-                            duplicateLinks={duplicates[hit.id] ?? []}
-                            onStatus={(status) => void setListingStatus(hit, status)}
-                            onStatusRestored={(status) => setHitStatus((prev) => ({ ...prev, [hit.id]: status }))}
-                          />
-                        </IrissOrderMatchBoundary>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <button type="button" onClick={() => onPrepareOffer(hit)} className={roomBtnPrimary}>
-                            <Pencil className="h-3.5 w-3.5" aria-hidden />
-                            Sagatavot piedāvājumu
+              {shownHits.map((hit) => (
+                <li key={hit.id} className="min-w-0">
+                  <IrissOrderRoomHitCard
+                    hit={hit}
+                    budget={budget}
+                    isFav={favIds.has(hit.id)}
+                    dismissed={dismissed.has(hit.id)}
+                    onToggleFav={() => toggleFav(hit.id)}
+                    onDismiss={() => void setHitHidden(hit, true)}
+                    onRestore={() => void setHitHidden(hit, false)}
+                    matchSection={
+                      <IrissOrderMatchBoundary>
+                        <IrissOrderHitMatchChrome
+                          hit={hit}
+                          rec={rec}
+                          hitStatus={hitStatus}
+                          duplicateLinks={duplicates[hit.id] ?? []}
+                          onStatus={(status) => void setListingStatus(hit, status)}
+                          onStatusRestored={(status) => setHitStatus((prev) => ({ ...prev, [hit.id]: status }))}
+                        />
+                      </IrissOrderMatchBoundary>
+                    }
+                    actions={
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => onPrepareOffer(hit)} className={roomBtnPrimary}>
+                          <Pencil className="h-3.5 w-3.5" aria-hidden />
+                          Sagatavot piedāvājumu
+                        </button>
+                        <button type="button" disabled={!canCall} onClick={() => onWhatsappText(irissOrderRoomHitShareText(hit))} className={roomBtnDark}>
+                          <Send className="h-3.5 w-3.5" aria-hidden />
+                          Nosūtīt klientam
+                        </button>
+                        {typeof hit.detailUrl === "string" && hit.detailUrl ? (
+                          <a href={hit.detailUrl} target="_blank" rel="noopener noreferrer" className={roomBtn}>
+                            Atvērt portālā
+                          </a>
+                        ) : null}
+                        <button type="button" aria-pressed={favIds.has(hit.id)} aria-label={favIds.has(hit.id) ? "Noņemt no saglabātajiem" : "Saglabāt"} onClick={() => toggleFav(hit.id)} className={`${roomBtn} w-10 px-0`}>
+                          <Star className={`h-4 w-4 ${favIds.has(hit.id) ? "fill-amber-400 text-amber-500" : "text-slate-500"}`} aria-hidden />
+                        </button>
+                        {dismissed.has(hit.id) ? (
+                          <button type="button" onClick={() => void setHitHidden(hit, false)} className={roomBtn}>
+                            Atjaunot
                           </button>
-                          <button type="button" disabled={!canCall} onClick={() => onWhatsappText(irissOrderRoomHitShareText(hit))} className={roomBtnDark}>
-                            <Send className="h-3.5 w-3.5" aria-hidden />
-                            Nosūtīt klientam
+                        ) : (
+                          <button type="button" onClick={() => void setHitHidden(hit, true)} className={roomBtn}>
+                            <X className="h-3.5 w-3.5" aria-hidden />
+                            Neder
                           </button>
-                          {typeof hit.detailUrl === "string" && hit.detailUrl ? (
-                            <a href={hit.detailUrl} target="_blank" rel="noopener noreferrer" className={roomBtn}>
-                              Atvērt portālā
-                            </a>
-                          ) : null}
-                          <button type="button" aria-pressed={favIds.has(hit.id)} aria-label={favIds.has(hit.id) ? "Noņemt no saglabātajiem" : "Saglabāt"} onClick={() => toggleFav(hit.id)} className={`${roomBtn} w-10 px-0`}>
-                            <Star className={`h-4 w-4 ${favIds.has(hit.id) ? "fill-amber-400 text-amber-500" : "text-slate-500"}`} aria-hidden />
-                          </button>
-                          {dismissed.has(hit.id) ? (
-                            <button type="button" onClick={() => void setHitHidden(hit, false)} className={roomBtn}>
-                              Atjaunot
-                            </button>
-                          ) : (
-                            <button type="button" onClick={() => void setHitHidden(hit, true)} className={roomBtn}>
-                              <X className="h-3.5 w-3.5" aria-hidden />
-                              Neder
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
-                    </div>
-                  </li>
-                );
-              })}
+                    }
+                  />
+                </li>
+              ))}
             </ul>
           )}
         </div>
@@ -1594,21 +1577,3 @@ function IrissOrderHitMatchChrome({
   );
 }
 
-function HitPhoto({ src, alt, count }: { src: string; alt: string; count: number }) {
-  const [hidden, setHidden] = useState(false);
-  const display = listingDisplayImageUrl({ url: src, maxWidth: 480 });
-  return (
-    <div className="relative h-[130px] w-full shrink-0 overflow-hidden rounded-[10px] bg-gradient-to-br from-slate-300 to-slate-500 md:w-[200px]">
-      {display && !hidden ? (
-        <IrissLazyImage
-          src={display}
-          alt={alt}
-          sizes="(max-width: 767px) 100vw, 200px"
-          referrerPolicy="no-referrer"
-          onError={() => setHidden(true)}
-        />
-      ) : null}
-      {count > 1 ? <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white">1/{count}</span> : null}
-    </div>
-  );
-}

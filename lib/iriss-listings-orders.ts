@@ -6,6 +6,7 @@
  */
 
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
+import { splitBrandModel } from "@/lib/iriss-listings-ecarstrade-catalog";
 import { formatIrissClientName, formatIrissListSpecSummary, irissListRowPowerKwLabel } from "@/lib/iriss-pasutijumi-list-row";
 import type { IrissPasutijumsListRow, IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
@@ -162,13 +163,7 @@ export function listingOrdersById(orders: readonly IrissListingOrderBrief[]): Ma
 
 export type ListingClientOption = { value: string; label: string; indent: boolean };
 
-/**
- * Klientu filtra opcijas vienā plakanā sarakstā.
- * Agrāk `<optgroup label=klients>` + „Visi · klients” rādīja katru klientu divreiz
- * (grupas virsraksts + opcija), un viena klienta ar 1 pasūtījumu – pat trīs rindās.
- * Tagad: pasūtījumi bez dublikātiem pēc id, klienti grupēti pēc normalizēta vārda;
- * klients ar vienu pasūtījumu = viena rinda, ar vairākiem = „Vārds · visi (N)” + pasūtījumi ievilkti.
- */
+/** Marka · Modelis · Klients · gadi · budžets; kārtošana pēc markas, tad modeļa. */
 export function buildListingClientOptions(
   orders: readonly IrissListingOrderBrief[],
   include: (o: IrissListingOrderBrief) => boolean,
@@ -176,26 +171,34 @@ export function buildListingClientOptions(
   fmtBudget: (n: number) => string,
 ): ListingClientOption[] {
   const seen = new Set<string>();
-  const groups = new Map<string, { name: string; list: IrissListingOrderBrief[] }>();
+  const list: IrissListingOrderBrief[] = [];
   for (const o of orders) {
     if (!o.id || seen.has(o.id) || !include(o)) continue;
     seen.add(o.id);
-    const name = (o.clientName || "Bez vārda").replace(/\s+/g, " ").trim();
-    const key = name.toLocaleLowerCase("lv");
-    const g = groups.get(key) ?? { name, list: [] };
-    g.list.push(o);
-    groups.set(key, g);
+    list.push(o);
   }
-  const orderLabel = (o: IrissListingOrderBrief) =>
-    [o.brandModel || "Pasūtījums", o.productionYears, o.budget != null ? fmtBudget(o.budget) : "budžets nav"].filter(Boolean).join(" · ");
-  const out: ListingClientOption[] = [];
-  for (const g of [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, "lv"))) {
-    if (g.list.length === 1) {
-      out.push({ value: serialize({ kind: "order", id: g.list[0]!.id }), label: `${g.name} · ${orderLabel(g.list[0]!)}`, indent: false });
-      continue;
-    }
-    out.push({ value: serialize({ kind: "client", name: g.list[0]!.clientName }), label: `${g.name} · visi (${g.list.length})`, indent: false });
-    for (const o of g.list) out.push({ value: serialize({ kind: "order", id: o.id }), label: orderLabel(o), indent: true });
-  }
-  return out;
+  const sorted = [...list].sort((a, b) => {
+    const am = splitBrandModel(a.brandModel);
+    const bm = splitBrandModel(b.brandModel);
+    const byMake = am.make.localeCompare(bm.make, "lv", { sensitivity: "base" });
+    if (byMake !== 0) return byMake;
+    const byModel = am.model.localeCompare(bm.model, "lv", { sensitivity: "base" });
+    if (byModel !== 0) return byModel;
+    return a.clientName.localeCompare(b.clientName, "lv", { sensitivity: "base" });
+  });
+  return sorted.map((o) => {
+    const { make, model } = splitBrandModel(o.brandModel);
+    const marka = make || o.brandModel.trim() || "—";
+    const modelis = model || "—";
+    const label = [
+      marka,
+      modelis,
+      o.clientName,
+      o.productionYears,
+      o.budget != null ? fmtBudget(o.budget) : "budžets nav",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    return { value: serialize({ kind: "order", id: o.id }), label, indent: false };
+  });
 }
