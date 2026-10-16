@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { CreatePkdInvoiceButton } from "@/components/admin/CreatePkdInvoiceButton";
 import { listPkdCommissionInvoiceDrafts } from "@/lib/pkd-commission-invoice-store";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Rēķini",
@@ -10,6 +11,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CommissionInvoicePage() {
+  await requireAdminPage();
   const invoices = await listPkdCommissionInvoiceDrafts();
   return (
     <div className="w-full max-w-none">

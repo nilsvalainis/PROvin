@@ -116,6 +116,44 @@ describe("parseStatVinPage", () => {
     expect(r.summary).not.toMatch(/403/);
   });
 
+  it("katra izsole atsevišķi: datums, km, bojājums, cena, vieta, lots un foto", () => {
+    const html = `<html><body>
+      <h1>VIN: ${VIN}</h1>
+      <section>
+        Copart Lot: 11111111 Sale date: 2024-01-02 Final bid: $1,100 Odometer: 10000 Damage: Front End Location: Houston, TX
+        <img src="https://cs.copart.com/v1/auth/img/lot/11111111/1.jpg">
+        <img src="https://cs.copart.com/v1/auth/img/lot/11111111/2.jpg">
+      </section>
+      <section>
+        IAAI Lot: 22222222 Sale date: 2023-05-09 Final bid: $2,200 Odometer: 80000 Damage: Rear Location: Dallas, TX
+        <img src="https://vis.iaai.com/resizer?imageKeys=22222222~1&width=400">
+        <img src="https://vis.iaai.com/resizer?imageKeys=22222222~2&width=400">
+      </section>
+    </body></html>`;
+    const r = parseStatVinPage({ status: 200, html, vin: VIN });
+    expect(r.status).toBe("found");
+    expect(r.auctions).toHaveLength(2);
+    expect(r.auctions?.[0]).toMatchObject({
+      venue: "Copart",
+      lot: "11111111",
+      date: "2024-01-02",
+      damage: "Front End",
+    });
+    expect(r.auctions?.[0]?.price).toMatch(/1[,.]?100/);
+    expect(r.auctions?.[0]?.odometer).toMatch(/km/);
+    expect(r.auctions?.[0]?.photoUrls?.every((url) => url.includes("11111111"))).toBe(true);
+    expect(r.auctions?.[1]).toMatchObject({
+      venue: "IAAI",
+      lot: "22222222",
+      date: "2023-05-09",
+      damage: "Rear",
+    });
+    expect(r.auctions?.[1]?.price).toMatch(/2[,.]?200/);
+    expect(r.auctions?.[1]?.photoUrls?.every((url) => url.includes("22222222"))).toBe(true);
+    expect(r.mileage?.map((row) => row.odometer).every((km) => /km/.test(km))).toBe(true);
+    expect(r.media?.photoUrls?.length).toBe(4);
+  });
+
   it("nolasa Next.js __NEXT_DATA__ izsoles masīvu", () => {
     const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
       props: {

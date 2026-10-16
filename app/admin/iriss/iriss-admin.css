@@ -15,7 +15,7 @@
   display: block;
   margin: 0 0 12px;
   padding: 6px 10px;
-  border-left: 3px solid #4338ca;
+  border: 0;
   border-radius: 6px;
   background: #eef2ff;
   color: #1e293b;
@@ -93,7 +93,83 @@
 .admin-ios-theme [data-iriss-order-room="1"] .iriss-section-heading {
   color: #1e293b !important;
   background: #eef2ff !important;
-  border-left: 3px solid #4338ca !important;
+  border-left: 0 !important;
+}
+
+.admin-ios-theme h1.iriss-list-title {
+  margin: 0 !important;
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.02em;
+}
+
+/* Status chips stay transparent. iOS button chrome otherwise paints a grey blur panel. */
+.admin-ios-theme button.iriss-status-chip {
+  border-radius: 999px !important;
+  border-color: transparent !important;
+  background-color: transparent !important;
+  color: rgb(0 0 0 / 0.7) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.admin-ios-theme button.iriss-status-chip:hover {
+  background-color: rgb(0 0 0 / 0.04) !important;
+}
+
+.admin-ios-theme button.iriss-status-chip[aria-pressed="true"][data-tone="neutral"] {
+  border-color: #e2e8f0 !important;
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+.admin-ios-theme button.iriss-status-chip[aria-pressed="true"][data-tone="active"] {
+  border-color: #cbd5e1 !important;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.admin-ios-theme button.iriss-status-chip[aria-pressed="true"][data-tone="searching"] {
+  border-color: #bae6fd !important;
+  background-color: #f0f9ff !important;
+  color: #082f49 !important;
+}
+
+.admin-ios-theme button.iriss-status-chip[aria-pressed="true"][data-tone="offered"] {
+  border-color: #fde68a !important;
+  background-color: #fffbeb !important;
+  color: #451a03 !important;
+}
+
+.admin-ios-theme button.iriss-status-chip[aria-pressed="true"][data-tone="reserved"] {
+  border-color: #ddd6fe !important;
+  background-color: #f5f3ff !important;
+  color: #2e1065 !important;
+}
+
+.admin-ios-theme button.iriss-status-chip[aria-pressed="true"][data-tone="completed"] {
+  border-color: #a7f3d0 !important;
+  background-color: #ecfdf5 !important;
+  color: #022c22 !important;
+}
+
+.admin-ios-theme button.iriss-status-chip[aria-pressed="true"][data-tone="inactive"] {
+  border-color: #fecdd3 !important;
+  background-color: #fff1f2 !important;
+  color: #4c0519 !important;
+}
+
+.admin-ios-theme button.iriss-status-chip[aria-pressed="true"][data-tone="trash"] {
+  border-color: #d4d4d4 !important;
+  background-color: #f5f5f5 !important;
+  color: #171717 !important;
+}
+
+.admin-ios-theme button.iriss-status-chip .iriss-status-chip-count {
+  color: inherit !important;
+  background-color: rgb(0 0 0 / 0.08) !important;
 }
 
 .admin-ios-theme [data-iriss-order-room="1"] [class*="6b7280"] {

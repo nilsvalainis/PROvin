@@ -10,6 +10,9 @@ type LiveSource = {
   fetch: (vin: string) => Promise<{ status: string; summary: string }>;
 };
 
+/** RDW atvērtie dati (m9d7-ebf2) meklē pēc NL numura. Kolonnas vin nav. dsb paliek kā ir. */
+const RDW_PLATE = "1KGB84";
+
 async function httpGet(url: string, timeoutMs = 12_000): Promise<{ ok: boolean; status: number; text: string }> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -69,13 +72,14 @@ const LIVE_SOURCES: LiveSource[] = [
   },
   {
     id: "rdw",
-    fetch: async (vin) => {
+    fetch: async (_vin) => {
       const res = await httpGet(
-        `https://opendata.rdw.nl/resource/m9d7-ebf2.json?$where=${encodeURIComponent(`upper(vin)='${vin}'`)}`,
+        `https://opendata.rdw.nl/resource/m9d7-ebf2.json?kenteken=${encodeURIComponent(RDW_PLATE)}`,
       );
       let found = false;
       try {
-        found = Array.isArray(JSON.parse(res.text)) && (JSON.parse(res.text) as unknown[]).length > 0;
+        const rows = JSON.parse(res.text) as unknown;
+        found = Array.isArray(rows) && rows.length > 0;
       } catch {
         found = false;
       }
@@ -106,6 +110,12 @@ describe.skipIf(!live)("VIN SCAN live HTTP veselība", () => {
     async () => {
       const lines: string[] = ["source\tvin\tcell\treason"];
       for (const src of LIVE_SOURCES) {
+        if (src.id === "rdw") {
+          const hit = await src.fetch(RDW_PLATE);
+          const cell = classifyVinScanHealth(hit.status, hit.summary);
+          lines.push(`rdw\t${RDW_PLATE}\t${cell.cell}\t${cell.reason.replace(/\s+/g, " ").slice(0, 120)}`);
+          continue;
+        }
         for (const row of VIN_SCAN_HEALTH_VINS) {
           const hit = await src.fetch(row.vin);
           const cell = classifyVinScanHealth(hit.status, hit.summary);

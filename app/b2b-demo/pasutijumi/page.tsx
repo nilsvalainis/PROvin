@@ -16,9 +16,12 @@ export default async function B2bDemoOrdersPage() {
   });
   return (
     <B2bDemoShell tenantName={actor.tenant.name} userName={actor.user.name} role={actor.session.role}>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Pasūtījumi</h1>
-        <Link href={`${B2B_DEMO_APP_PREFIX}/pasutijumi/new`} className="rounded-xl bg-[#F26522] px-3 py-2 text-sm font-semibold text-white">
+      <div className="mb-2 flex items-center gap-2">
+        <h1 className="text-[17px] font-semibold leading-none tracking-tight">Pasūtījumi</h1>
+        <Link
+          href={`${B2B_DEMO_APP_PREFIX}/pasutijumi/new`}
+          className="ml-auto inline-flex h-10 min-h-10 items-center rounded-full bg-[#F26522] px-3 text-[13px] font-semibold text-white"
+        >
           Jauns
         </Link>
       </div>

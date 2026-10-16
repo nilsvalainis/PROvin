@@ -7,6 +7,7 @@ import { offerImageGridSrc, orderOfferAttachmentsForPdf } from "@/lib/iriss-offe
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { listingFmtEur } from "@/lib/iriss-listings-card";
 import { listingComparisonPrice } from "@/lib/iriss-listings-cost";
+import { listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
 import { listingVehicleOrderIds } from "@/lib/iriss-listings-orders";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import type { IrissListingPlatform, IrissListingVehicleChange } from "@/lib/iriss-listings-types";
@@ -40,11 +41,32 @@ export type IrissOrderRoomHit = {
   color: string;
   bodyType: string;
   imageUrl: string;
+  imageUrls: string[];
+  thumbUrl?: string;
   imageCount: number;
   vin: string;
   price: number | null;
+  priceStart: number | null;
+  priceMinimal: number | null;
+  priceCurrent: number | null;
+  priceBuyNow: number | null;
+  priceEstimate: number | null;
+  priceTotal: number | null;
+  stockNumber: string;
+  auctionId: string;
+  auctionStage: string;
+  auctionStartAt: string;
+  auctionEndAt: string;
+  countryCode: string;
+  vatNote: string;
+  salesVatType?: number | null;
+  isMargin?: boolean | null;
+  taxDeduction?: boolean | null;
+  vatRate?: number | null;
+  bidCount?: number | null;
   change: IrissListingVehicleChange;
   firstSeenAt: string;
+  lastSeenAt: string;
   location: string;
 };
 
@@ -55,6 +77,7 @@ export type IrissOrderRoomHitSource = {
   detailUrl: string;
   orderIds: readonly string[];
   title: string;
+  manufacturer?: string;
   year?: string;
   firstRegistration?: string;
   mileageKm?: number | null;
@@ -179,16 +202,21 @@ export function buildIrissOrderRoomHits(
   orderId: string,
   orderOv: Record<string, string[]>,
   extraListingIds?: ReadonlySet<string>,
+  /** Pasūtījuma marka/modelis: automātiskās piesaistes ar citu marku vai modeli netiek rādītas. */
+  orderBrandModel?: string,
 ): IrissOrderRoomHit[] {
   const out: IrissOrderRoomHit[] = [];
   for (const v of vehicles) {
     const linked = listingVehicleOrderIds(v.id, v.orderIds, orderOv);
     const extra = extraListingIds?.has(v.id) ?? false;
     if (!linked.includes(orderId) && !extra) continue;
+    const manual = orderOv[v.id]?.includes(orderId) ?? false;
+    if (!manual && orderBrandModel != null && !listingMatchesOrderMakeModel(v, orderBrandModel)) continue;
     const orderIds = linked.includes(orderId) ? linked : [...linked, orderId];
     const photos = [v.imageUrl ?? "", ...(v.imageUrls ?? [])].map((u) => u.trim()).filter(Boolean);
     const uniquePhotos: string[] = [];
     for (const u of photos) if (!uniquePhotos.includes(u)) uniquePhotos.push(u);
+    const row = v as IrissOrderRoomHitSource & Record<string, unknown>;
     out.push({
       id: v.id,
       platform: v.platform,
@@ -205,11 +233,32 @@ export function buildIrissOrderRoomHits(
       color: (v.color ?? "").trim(),
       bodyType: (v.bodyType ?? "").trim(),
       imageUrl: uniquePhotos[0] ?? "",
+      imageUrls: uniquePhotos,
+      thumbUrl: typeof row.thumbUrl === "string" ? row.thumbUrl.trim() : undefined,
       imageCount: uniquePhotos.length,
       vin: (v.vin ?? "").trim(),
       price: irissOrderRoomHitPrice(v),
+      priceStart: typeof row.priceStart === "number" ? row.priceStart : null,
+      priceMinimal: typeof row.priceMinimal === "number" ? row.priceMinimal : null,
+      priceCurrent: typeof row.priceCurrent === "number" ? row.priceCurrent : null,
+      priceBuyNow: typeof row.priceBuyNow === "number" ? row.priceBuyNow : null,
+      priceEstimate: typeof row.priceEstimate === "number" ? row.priceEstimate : null,
+      priceTotal: typeof row.priceTotal === "number" ? row.priceTotal : null,
+      stockNumber: typeof row.stockNumber === "string" ? row.stockNumber.trim() : "",
+      auctionId: typeof row.auctionId === "string" ? row.auctionId.trim() : "",
+      auctionStage: typeof row.auctionStage === "string" ? row.auctionStage.trim() : "",
+      auctionStartAt: typeof row.auctionStartAt === "string" ? row.auctionStartAt.trim() : "",
+      auctionEndAt: typeof row.auctionEndAt === "string" ? row.auctionEndAt.trim() : "",
+      countryCode: typeof row.countryCode === "string" ? row.countryCode.trim() : "",
+      vatNote: typeof row.vatNote === "string" ? row.vatNote.trim() : "",
+      salesVatType: typeof row.salesVatType === "number" ? row.salesVatType : null,
+      isMargin: typeof row.isMargin === "boolean" ? row.isMargin : null,
+      taxDeduction: typeof row.taxDeduction === "boolean" ? row.taxDeduction : null,
+      vatRate: typeof row.vatRate === "number" ? row.vatRate : null,
+      bidCount: typeof row.bidCount === "number" ? row.bidCount : null,
       change: v.change ?? "unchanged",
       firstSeenAt: (v.firstSeenAt ?? "").trim(),
+      lastSeenAt: typeof row.lastSeenAt === "string" ? row.lastSeenAt.trim() : "",
       location: (v.location ?? "").trim(),
     });
   }

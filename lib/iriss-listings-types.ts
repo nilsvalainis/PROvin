@@ -57,6 +57,10 @@ export const IRISS_LISTING_VIN_OCR_STATUSES: readonly IrissListingVinOcrStatus[]
   "found",
 ];
 
+export type IrissListingPriceState = "priced" | "no_bids" | "signed_out" | "unknown";
+
+export const IRISS_LISTING_PRICE_STATES: readonly IrissListingPriceState[] = ["priced", "no_bids", "signed_out", "unknown"];
+
 export type IrissListingVehicle = {
   /** sha1(platform|externalId), stabils starp nolasījumiem. */
   id: string;
@@ -119,6 +123,8 @@ export type IrissListingVehicle = {
   priceEstimate?: number | null;
   /** eCarsTrade Kopējā cena (ar nodevām). Rādīšanai, ne budžeta bāzei. */
   priceTotal?: number | null;
+  /** eCarsTrade: kāpēc cena ir vai nav (`no_bids` = pierādīts, ka nav ne cenas, ne solījuma). */
+  priceState?: IrissListingPriceState;
   vatNote: string;
   auctionId: string;
   auctionStartAt: string;

@@ -38,13 +38,16 @@ const SOURCE_LABEL: Record<(typeof FI_TEXT_SOURCES)[number], string> = {
 
 const FI_WORD =
   /(?:^|[^A-Za-zĀ-žÄÖäö])(?:somij[aāe]?|finland(?:e)?|suomi|finnish)(?:[^A-Za-zĀ-žÄÖäö]|$)/i;
-const FI_CODE = /(?:^|[^A-Za-z])FI(?:[^A-Za-z]|$)/i;
+/** FI tikai kā vesels, reģistrjutīgs tokens. Domēna gali (.fi) un VIN burti neskaitās. */
+const FI_CODE = /(?<![A-Za-z0-9.])FI(?![A-Za-z0-9])/;
 
 export function textMentionsFinland(raw: string): boolean {
-  const text = String(raw || "").replace(/\u00a0/g, " ");
+  const text = String(raw || "")
+    .replace(/\u00a0/g, " ")
+    .replace(/suomi\.fi/gi, " ");
   if (!text.trim()) return false;
   if (FI_WORD.test(text)) return true;
-  return FI_CODE.test(text) && !/\bfiat\b/i.test(text);
+  return FI_CODE.test(text);
 }
 
 function rowMentionsFinland(row: FinlandLinkRow): boolean {
@@ -60,16 +63,14 @@ export function detectFinlandLink(
     return { linked: true, source: "FI numurs" };
   }
   const byId = new Map(rows.map((row) => [row.id, row]));
-  const traficom = byId.get("traficom");
-  if (traficom?.status === "found" || (traficom && traficom.status !== "none" && rowMentionsFinland(traficom))) {
-    return { linked: true, source: SOURCE_LABEL.traficom };
-  }
   for (const id of FI_TEXT_SOURCES) {
     if (id === "traficom") continue;
     const row = byId.get(id);
     if (!row || row.status === "unknown" || row.status === "skipped" || row.status === "needs_input") continue;
     if (rowMentionsFinland(row)) return { linked: true, source: SOURCE_LABEL[id] };
   }
+  const traficom = byId.get("traficom");
+  // Traficom ir tikai manuāla saite (Suomi.fi forma). Tas nekad nav automātisks „atrasts”.
   if (traficom?.status === "none") {
     return { linked: false, source: SOURCE_LABEL.traficom };
   }

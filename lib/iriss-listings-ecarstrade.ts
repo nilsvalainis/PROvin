@@ -93,7 +93,44 @@ export type EcarstradeVehicle = {
   countryCode: string;
   color?: string;
   bodyType?: string;
+  priceState?: EcarstradePriceState;
 };
+
+/**
+ * Kāpēc cena ir / nav:
+ * `priced` = ir pirkt uzreiz, solījums, aplēse vai sākumcena virs 1000 € tendera grīdas.
+ * `no_bids` = pēc login „Place a bid” / „Iesniedziet piedāvājumu” ar tukšu data-price un nav nevienas cenas (pierādīts).
+ * `signed_out` = „Sign in to buy”: cenas slēptas, nezinām.
+ * `unknown` = cenas nav, bet HTML neko nepierāda (piem. saraksta kartīte bez pogas).
+ */
+export type EcarstradePriceState = "priced" | "no_bids" | "signed_out" | "unknown";
+
+const ECARSTRADE_TENDER_FLOOR_EUR = 1000;
+
+export function ecarstradeHasAnyPrice(v: {
+  priceBuyNow?: number | null;
+  priceCurrent?: number | null;
+  priceEstimate?: number | null;
+  priceStart?: number | null;
+}): boolean {
+  const pos = (n: number | null | undefined) => n != null && Number.isFinite(n) && n > 0;
+  return pos(v.priceBuyNow) || pos(v.priceCurrent) || pos(v.priceEstimate) || (pos(v.priceStart) && v.priceStart! > ECARSTRADE_TENDER_FLOOR_EUR);
+}
+
+function isEcarstradeSignedOutHtml(html: string): boolean {
+  return /Sign in to (?:buy|see)/i.test(html);
+}
+
+export function ecarstradePriceState(
+  html: string,
+  priced: Parameters<typeof ecarstradeHasAnyPrice>[0],
+  fallback: EcarstradePriceState = "unknown",
+): EcarstradePriceState {
+  if (ecarstradeHasAnyPrice(priced)) return "priced";
+  if (html && isEcarstradeSignedOutHtml(html)) return "signed_out";
+  if (html && isEcarstradeBidNoBidsHtml(html)) return "no_bids";
+  return fallback;
+}
 
 export type EcarstradeSearchPage = {
   vehicles: EcarstradeVehicle[];
@@ -632,7 +669,21 @@ export function parseEcarstradeCard(html: string, data: Rec = {}): EcarstradeVeh
     powerKw: powerKwFromText(powerRaw),
     location,
     countryCode,
+    priceState: ecarstradePriceState(html, priced),
   };
+}
+
+function nextEcarstradeCardStart(html: string, from: number, id: string): number {
+  const cap = from + 16_000;
+  const re = /data-itemId=["'](\d+)["']/gi;
+  re.lastIndex = from + 1;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) && m.index < cap) {
+    if (m[1] === id) continue;
+    const div = html.lastIndexOf("<div", m.index);
+    return div > from ? div : m.index;
+  }
+  return cap;
 }
 
 /** Meklēšanas HTML (ne future_api): kartītes ar data-itemId. */
@@ -651,7 +702,8 @@ export function parseEcarstradeSearchHtml(html: string): EcarstradeVehicle[] {
       const div = html.lastIndexOf("<div", marker + 1);
       if (div >= 0) start = div;
     }
-    const slice = html.slice(Math.max(0, start), m.index + 16_000);
+    // Kartīte beidzas, kur sākas nākamā; citādi kartīte bez cenas paņem nākamā auto PIRKT / solījumu.
+    const slice = html.slice(Math.max(0, start), nextEcarstradeCardStart(html, m.index, id));
     const v = parseEcarstradeCard(slice, { id });
     if (v && listingCountryAllowed(v.countryCode)) byId.set(id, v);
   }
@@ -765,6 +817,14 @@ export function mergeEcarstradeJsonPrices(v: EcarstradeVehicle, json: Rec): Ecar
     priceEstimate: priced.priceEstimate ?? v.priceEstimate,
     priceTotal: priced.priceTotal ?? v.priceTotal,
     auctionEndAt: v.auctionEndAt || ecarstradeAuctionEndAt("", data, sale),
+    priceState: ecarstradeHasAnyPrice({
+      priceBuyNow: priced.priceBuyNow ?? v.priceBuyNow,
+      priceCurrent: priced.priceCurrent ?? v.priceCurrent,
+      priceEstimate: priced.priceEstimate ?? v.priceEstimate,
+      priceStart: priced.priceStart ?? v.priceStart,
+    })
+      ? "priced"
+      : v.priceState,
   };
 }
 
@@ -781,13 +841,17 @@ export function mergeEcarstradeHtmlPrices(v: EcarstradeVehicle, html: string): E
     total: parsed.total ?? v.priceTotal,
   });
   const fromCard = parseEcarstradeCard(html, { id: v.externalId, auction_type: sale });
-  return {
-    ...v,
+  const next = {
     priceStart: priced.priceStart ?? v.priceStart,
     priceCurrent: priced.priceCurrent ?? v.priceCurrent,
     priceBuyNow: priced.priceBuyNow ?? v.priceBuyNow,
     priceEstimate: priced.priceEstimate ?? v.priceEstimate,
+  };
+  return {
+    ...v,
+    ...next,
     priceTotal: priced.priceTotal ?? v.priceTotal,
+    priceState: ecarstradePriceState(html, next, v.priceState),
     auctionEndAt: v.auctionEndAt || fromCard?.auctionEndAt || ecarstradeAuctionEndAt(html, {}, sale),
     auctionStage: v.auctionStage || fromCard?.auctionStage || "",
   };

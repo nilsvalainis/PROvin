@@ -4,18 +4,21 @@ import { AdminB2bPartnerEditForm } from "@/components/admin/AdminB2bPartnerEditF
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { isSafeB2bPartnerId, toPublicPartner } from "@/lib/b2b-partner-account";
 import { getB2bPartnerById, markB2bPartnerAdminSeen } from "@/lib/b2b-partner-store";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props) {
+  await requireAdminPage();
   const { id } = await params;
   const partner = isSafeB2bPartnerId(id) ? await getB2bPartnerById(id) : null;
   return { title: partner ? partner.companyName : "Partneris" };
 }
 
 export default async function AdminPartnerDetailPage({ params }: Props) {
+  await requireAdminPage();
   const { id } = await params;
   if (!isSafeB2bPartnerId(id)) notFound();
   const record = await getB2bPartnerById(id);

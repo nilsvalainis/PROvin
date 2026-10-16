@@ -6,24 +6,42 @@ import { vinScanUserscriptMinLabel, vinScanUserscriptUpdateNeeded } from "@/lib/
 
 /** Rāda brīdinājumu, ja admin lapā ieslēgtais PROVIN skripts ir vecāks par VIN SCAN minimumu. */
 export function AdminUserscriptUpdateHint({ className = "" }: { className?: string }) {
-  const [version, setVersion] = useState("");
+  const [version, setVersion] = useState<string | null>(null);
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
     const read = () => document.documentElement.getAttribute("data-provin-userscript") || "";
     setVersion(read());
     const obs = new MutationObserver(() => setVersion(read()));
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-provin-userscript"] });
-    return () => obs.disconnect();
+    const timer = window.setTimeout(() => setSettled(true), 1500);
+    return () => {
+      obs.disconnect();
+      window.clearTimeout(timer);
+    };
   }, []);
 
-  if (!vinScanUserscriptUpdateNeeded(version)) return null;
   const min = vinScanUserscriptMinLabel();
-  return (
-    <p className={`mb-2 rounded-md border border-amber-700/30 bg-amber-500/10 px-2 py-1 text-[11px] leading-snug text-[var(--color-apple-text)] ${className}`}>
-      PROVIN skripts ir vecāks par {min} (tagad {version}). Atjauniniet Tampermonkey, lai izsoļu arhīvs un Zviedrijas reģistrs importētos no pārlūka.{" "}
-      <a className="underline" href="/userscripts/provin-vin-autofill.user.js">
-        Lejupielādēt {min}
-      </a>
-    </p>
-  );
+  const box = `mb-2 rounded-md border border-amber-700/30 bg-amber-500/10 px-2 py-1 text-[11px] leading-snug text-[var(--color-apple-text)] ${className}`;
+  if (version && vinScanUserscriptUpdateNeeded(version)) {
+    return (
+      <p className={box}>
+        PROVIN skripts ir vecāks par {min} (tagad {version}). Atjauniniet Tampermonkey, lai stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādētos no jūsu pārlūka. Izsoļu arhīvs un Zviedrijas reģistrs joprojām importējas no atvērtās cilnes.{" "}
+        <a className="underline" href="/userscripts/provin-vin-autofill.user.js">
+          Lejupielādēt {min}
+        </a>
+      </p>
+    );
+  }
+  if (settled && !version) {
+    return (
+      <p className={box}>
+        PROVIN skripts nav aktīvs. stat.vin dati jāielādē no jūsu pārlūka, serveris šo lapu vairs nesaņem. Tas pats attiecas uz bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB. Ieslēdziet Tampermonkey un atsvaidziniet šo lapu.{" "}
+        <a className="underline" href="/userscripts/provin-vin-autofill.user.js">
+          Lejupielādēt {min}
+        </a>
+      </p>
+    );
+  }
+  return null;
 }

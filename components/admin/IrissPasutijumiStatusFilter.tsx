@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
 import {
   IRISS_PASUTIJUMS_LIST_STATUSES,
   IRISS_PASUTIJUMS_LIST_STATUS_LV,
   type IrissPasutijumsListStatus,
 } from "@/lib/iriss-pasutijumi-types";
+import type { StatusChipRowLayout } from "@/lib/iriss-status-chip";
 import {
   dispatchIrissListStatusFilter,
   dispatchIrissListTrashFilter,
@@ -27,22 +29,15 @@ export {
   type IrissListStatusFilterState,
 } from "@/lib/iriss-pasutijumi-status-filter";
 
-const CHIP_ON: Record<IrissPasutijumsListStatus, string> = {
-  active: "bg-slate-900 text-white",
-  searching: "bg-sky-100 text-sky-950 ring-1 ring-sky-700/30",
-  offered: "bg-amber-100 text-amber-950 ring-1 ring-amber-700/30",
-  reserved: "bg-violet-100 text-violet-950 ring-1 ring-violet-700/30",
-  completed: "bg-emerald-100 text-emerald-950 ring-1 ring-emerald-700/30",
-  inactive: "bg-red-100 text-red-950 ring-1 ring-red-700/30",
-};
-
 type Props = {
   className?: string;
   counts?: Record<IrissPasutijumsListStatus, number>;
   trashCount?: number;
+  /** scroll: one phone row. wrap: desktop toolbar and the filter sheet. */
+  layout?: StatusChipRowLayout;
 };
 
-export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount }: Props) {
+export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount, layout = "wrap" }: Props) {
   const [filter, setFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
   const [trashOn, setTrashOn] = useState(() => readIrissListTrashFilter());
 
@@ -86,48 +81,29 @@ export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount
   const isAllOn = IRISS_PASUTIJUMS_LIST_STATUSES.every((k) => filter[k]);
 
   return (
-    <div className={`flex flex-wrap items-center gap-1 ${className}`} role="group" aria-label="Statusa filtrs">
-      {IRISS_PASUTIJUMS_LIST_STATUSES.map((key) => {
-        const on = filter[key];
-        const n = counts?.[key];
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => toggle(key)}
-            aria-pressed={on}
-            className={`inline-flex h-8 items-center rounded-md px-2 text-[11px] font-semibold tabular-nums transition ${
-              on ? CHIP_ON[key] : "bg-black/[0.04] text-black/70 hover:bg-black/[0.08] hover:text-black"
-            }`}
-          >
-            {IRISS_PASUTIJUMS_LIST_STATUS_LV[key]}
-            {typeof n === "number" ? <span className="ml-1 opacity-80">{n}</span> : null}
-          </button>
-        );
-      })}
-      <button
-        type="button"
-        onClick={selectAll}
-        disabled={isAllOn}
-        className="inline-flex h-8 items-center rounded-md px-2 text-[11px] font-semibold text-black/60 transition hover:bg-black/[0.06] hover:text-black disabled:cursor-default disabled:opacity-40"
-      >
-        Visi
-      </button>
-      <button
-        type="button"
+    <StatusFilterChipRow layout={layout} className={className}>
+      {IRISS_PASUTIJUMS_LIST_STATUSES.map((key) => (
+        <StatusFilterChip
+          key={key}
+          label={IRISS_PASUTIJUMS_LIST_STATUS_LV[key]}
+          count={counts?.[key]}
+          pressed={filter[key]}
+          tone={key}
+          onClick={() => toggle(key)}
+        />
+      ))}
+      <StatusFilterChip label="Visi" pressed={isAllOn} tone="neutral" disabled={isAllOn} onClick={selectAll} />
+      <StatusFilterChip
+        label="Miskaste"
+        count={trashCount}
+        pressed={trashOn}
+        tone="trash"
         onClick={() => {
           const next = !trashOn;
           setTrashOn(next);
           dispatchIrissListTrashFilter(next);
         }}
-        aria-pressed={trashOn}
-        className={`inline-flex h-8 items-center rounded-md px-2 text-[11px] font-semibold tabular-nums transition ${
-          trashOn ? "bg-neutral-800 text-white" : "bg-black/[0.04] text-black/70 hover:bg-black/[0.08] hover:text-black"
-        }`}
-      >
-        Miskaste
-        {typeof trashCount === "number" ? <span className="ml-1 opacity-80">{trashCount}</span> : null}
-      </button>
-    </div>
+      />
+    </StatusFilterChipRow>
   );
 }

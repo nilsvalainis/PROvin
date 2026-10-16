@@ -9,6 +9,7 @@ import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import { ORDER_VIN_SCAN_STUCK_MS } from "@/lib/order-vin-scan-run-decision";
+import { browserFetchAwaiting, browserFetchToken } from "@/lib/vin-scan/browser-fetch";
 import {
   buildOrderVinScanSummary,
   formatOrderVinScanClock,
@@ -141,6 +142,7 @@ export function AdminOrderVinScanCard({
         summary?: string;
         html?: string;
         pageUrl?: string;
+        httpStatus?: number;
       } | null;
       if (!d?.id || String(d.vin || "").toUpperCase() !== vin.trim().toUpperCase()) return;
       const html = typeof d.html === "string" ? d.html : "";
@@ -157,7 +159,13 @@ export function AdminOrderVinScanCard({
             id: d.id,
             status: d.status,
             summary: d.summary ?? "",
-            ...(html.trim() ? { html, pageUrl: typeof d.pageUrl === "string" ? d.pageUrl : "" } : {}),
+            ...(html.trim()
+              ? {
+                  html,
+                  pageUrl: typeof d.pageUrl === "string" ? d.pageUrl : "",
+                  ...(typeof d.httpStatus === "number" ? { httpStatus: d.httpStatus } : {}),
+                }
+              : {}),
           },
         }),
       })
@@ -177,6 +185,13 @@ export function AdminOrderVinScanCard({
   }, [sessionId, vin]);
 
   const summary = useMemo(() => buildOrderVinScanSummary(record), [record]);
+  const browserFetch = useMemo(() => {
+    if (!record || record.status === "running") return null;
+    const ids = record.indicators.filter((row) => browserFetchAwaiting(row)).map((row) => row.id);
+    if (!ids.length) return null;
+    const token = browserFetchToken(vin, record.at);
+    return token ? { token, ids } : null;
+  }, [record, vin]);
   const sourceCount = record?.indicators.length ?? 0;
   const clock = record?.at ? formatOrderVinScanClock(record.at) : "";
   const meta =
@@ -360,7 +375,18 @@ export function AdminOrderVinScanCard({
         />
       }
     >
-      <span hidden data-provin-order-vin={vin.trim().toUpperCase()} data-provin-order-session={sessionId} />
+      <span
+        hidden
+        data-provin-order-vin={vin.trim().toUpperCase()}
+        data-provin-order-session={sessionId}
+        {...(browserFetch
+          ? {
+              "data-provin-browser-fetch": browserFetch.token,
+              "data-provin-browser-fetch-ids": browserFetch.ids.join(","),
+              ...(browserFetch.ids.includes("stat_vin") ? { "data-provin-stat-vin-fetch": browserFetch.token } : {}),
+            }
+          : {})}
+      />
       {showFields ? (
         <div className="px-2 pb-2">
           <AdminUserscriptUpdateHint />

@@ -1,23 +1,21 @@
 "use client";
 
-import { useRef, useState, type MouseEvent, type TouchEvent } from "react";
-import { IrissLazyImage } from "@/components/admin/IrissLazyImage";
+import { useState } from "react";
+import { IrissListingCardPhotoGallery } from "@/components/admin/IrissListingCardPhotoGallery";
+import { IrissListingCardPriceColumn, IrissListingCardPriceColumnMobile } from "@/components/admin/IrissListingCardPriceColumn";
+import { IrissListingCardSpecGrid } from "@/components/admin/IrissListingCardSpecGrid";
 import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
-import { IrissListingBudgetBox } from "@/components/admin/IrissListingBudgetBox";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
 import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
-import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
 import { listingAuctionTypeLabel, isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import {
   listingCardGallery,
   listingCountdown,
   listingDaysInAuctionLabel,
-  listingFmtEur,
   listingSpecCells,
   listingStockNo,
   listingSubtitleParts,
-  listingThumbOverflowLabel,
   listingVinCardState,
   listingVinShort,
 } from "@/lib/iriss-listings-card";
@@ -29,8 +27,6 @@ import type { IrissMobilePlatform } from "@/lib/iriss-listings-mobile-platform";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { listingCostsFor, type IrissListPrefs } from "@/lib/iriss-listings-operator-prefs";
 import { listingTaxCostArgs, listingTaxResolved } from "@/lib/iriss-listings-vat";
-import { listingDisplayImageUrl } from "@/lib/iriss-listing-image";
-import { irissGalleryIndexAfterSwipe, irissHorizontalSwipeDirection } from "@/lib/iriss-touch-swipe";
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
@@ -70,26 +66,6 @@ function CountryFlag({ code }: { code: string }) {
   );
 }
 
-function ListingPhoto({
-  src,
-  alt,
-  sizes,
-  referrerPolicy,
-  onError,
-}: {
-  src: string;
-  alt: string;
-  sizes: string;
-  referrerPolicy?: "no-referrer";
-  onError: () => void;
-}) {
-  return (
-    <span className="relative block h-full w-full">
-      <IrissLazyImage src={src} alt={alt} sizes={sizes} referrerPolicy={referrerPolicy} onError={onError} />
-    </span>
-  );
-}
-
 export function IrissListingVehicleCard({
   v,
   nowMs,
@@ -125,9 +101,6 @@ export function IrissListingVehicleCard({
   matchNew?: boolean;
   duplicates?: readonly IrissVinDuplicateLink[];
 }) {
-  const [photoIndex, setPhotoIndex] = useState(0);
-  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
-  const suppressPhotoClickRef = useRef(false);
   const [vinCopied, setVinCopied] = useState(false);
   const [createBusy, setCreateBusy] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
@@ -135,14 +108,6 @@ export function IrissListingVehicleCard({
   const gallery = listingCardGallery(v);
   const photos = imageHidden ? [] : gallery.photos;
   const interactive = gallery.interactive && photos.length > 1;
-  const idx = photos.length ? Math.min(photoIndex, photos.length - 1) : 0;
-  const currentPhoto = photos[idx] ?? "";
-  const heroSrc = listingDisplayImageUrl({
-    url: currentPhoto,
-    thumbUrl: idx === 0 ? v.thumbUrl : undefined,
-    maxWidth: 480,
-  });
-  const overflow = listingThumbOverflowLabel(photos.length);
   const fresh = isNew(v, nowMs);
   const changes = recentPriceChanges(v, nowMs);
   const gone = v.change === "gone";
@@ -168,7 +133,7 @@ export function IrissListingVehicleCard({
   const vin = vinUi?.vin ?? "";
   const days = listingDaysInAuctionLabel(v.auctionStartAt || v.firstSeenAt, nowMs);
   const referrerPolicy: "no-referrer" | undefined =
-    v.platform === "openline" || /images\.openlane\.eu/i.test(currentPhoto) ? "no-referrer" : undefined;
+    v.platform === "openline" || /images\.openlane\.eu/i.test(photos[0] ?? "") ? "no-referrer" : undefined;
   const border = gone
     ? "border-[#E5E7EB] opacity-70"
     : fav
@@ -186,11 +151,6 @@ export function IrissListingVehicleCard({
     onPrefs({ ...prefs, [list]: next });
   }
 
-  function step(delta: number) {
-    if (!photos.length) return;
-    setPhotoIndex((i) => (i + delta + photos.length) % photos.length);
-  }
-
   function copyVin() {
     if (!vin) return;
     void navigator.clipboard?.writeText(vin).then(
@@ -202,130 +162,25 @@ export function IrissListingVehicleCard({
     );
   }
 
-  function onPhotoTouchStart(e: TouchEvent<HTMLDivElement>) {
-    const target = e.target;
-    if (target instanceof Element && target.closest("button")) {
-      swipeStartRef.current = null;
-      return;
-    }
-    const touch = e.touches[0];
-    if (!touch) return;
-    swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
-  }
-
-  function onPhotoTouchEnd(e: TouchEvent<HTMLDivElement>) {
-    const start = swipeStartRef.current;
-    swipeStartRef.current = null;
-    if (!start || !interactive) return;
-    const touch = e.changedTouches[0];
-    if (!touch) return;
-    const direction = irissHorizontalSwipeDirection(touch.clientX - start.x, touch.clientY - start.y);
-    if (!direction) return;
-    suppressPhotoClickRef.current = true;
-    setPhotoIndex((i) => irissGalleryIndexAfterSwipe(photos.length, i, direction));
-  }
-
-  function onPhotoClickCapture(e: MouseEvent<HTMLDivElement>) {
-    if (!suppressPhotoClickRef.current) return;
-    suppressPhotoClickRef.current = false;
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
   const photoBlock = (
-    <div className="w-full shrink-0 space-y-1.5 sm:w-[300px]" onClick={(e) => sourceHref && e.stopPropagation()}>
-      <div
-        className="relative h-[220px] w-full overflow-hidden rounded-none border-0 sm:h-[200px] sm:rounded-lg sm:border sm:border-slate-200/90"
-        style={{ touchAction: "manipulation" }}
-        onTouchStart={onPhotoTouchStart}
-        onTouchEnd={onPhotoTouchEnd}
-        onClickCapture={onPhotoClickCapture}
-      >
-        {heroSrc ? (
+    <div className="w-full shrink-0 sm:w-[300px]" onClick={(e) => sourceHref && e.stopPropagation()}>
+      <IrissListingCardPhotoGallery
+        photos={photos}
+        thumbUrl={v.thumbUrl}
+        alt={v.title || "Auto foto"}
+        interactive={interactive}
+        referrerPolicy={referrerPolicy}
+        onImageError={onImageError}
+        wrapHero={(inner) =>
           sourceHref ? (
             <IrissListingSourceOpen v={v} mobile={mobile} title={`Atvērt ${PLATFORM_LABEL[v.platform]}`} className="block h-full w-full">
-              <ListingPhoto
-                src={heroSrc}
-                alt={v.title || "Auto foto"}
-                sizes="(max-width: 767px) 100vw, 300px"
-                referrerPolicy={referrerPolicy}
-                onError={onImageError}
-              />
+              {inner}
             </IrissListingSourceOpen>
           ) : (
-            <ListingPhoto
-              src={heroSrc}
-              alt={v.title || "Auto foto"}
-              sizes="(max-width: 767px) 100vw, 300px"
-              referrerPolicy={referrerPolicy}
-              onError={onImageError}
-            />
+            inner
           )
-        ) : (
-          <div className="h-full w-full bg-slate-50" />
-        )}
-        {photos.length > 0 ? (
-          <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 text-[10px] font-semibold text-white">
-            📷 {photos.length}
-          </span>
-        ) : null}
-        {interactive ? (
-          <>
-            <button
-              type="button"
-              aria-label="Iepriekšējā bilde"
-              className="absolute left-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow"
-              onClick={(e) => {
-                e.stopPropagation();
-                step(-1);
-              }}
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              aria-label="Nākamā bilde"
-              className="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow"
-              onClick={(e) => {
-                e.stopPropagation();
-                step(1);
-              }}
-            >
-              ›
-            </button>
-          </>
-        ) : null}
-      </div>
-      {interactive ? (
-        <div className="hidden gap-1.5 sm:flex">
-          {photos.slice(0, 4).map((src, i) => {
-            const last = i === 3 && overflow;
-            return (
-              <button
-                key={`${src}-${i}`}
-                type="button"
-                aria-label={last ? `${overflow} bildes` : `Bilde ${i + 1}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPhotoIndex(i);
-                }}
-                className={`relative h-[46px] flex-1 overflow-hidden rounded-md border border-slate-200/90 ${idx === i && !last ? "ring-2 ring-[var(--color-provin-accent)]" : ""}`}
-              >
-                <ListingPhoto
-                  src={listingDisplayImageUrl({ url: src, thumbUrl: i === 0 ? v.thumbUrl : undefined, maxWidth: 160 })}
-                  alt=""
-                  sizes="72px"
-                  referrerPolicy={referrerPolicy}
-                  onError={onImageError}
-                />
-                {last ? (
-                  <div className="absolute inset-0 grid place-items-center bg-black/45 text-[11px] font-bold text-white">{overflow}</div>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+        }
+      />
     </div>
   );
 
@@ -401,16 +256,7 @@ export function IrissListingVehicleCard({
           {v.title || v.orderBrandModels[0] || "-"}
         </div>
         {subtitle ? <div className="text-[12px] text-[var(--color-provin-muted)]">{subtitle}</div> : null}
-        {specs.length > 0 ? (
-          <div className="grid grid-cols-3 gap-2 border-y-0 py-0 sm:grid-cols-6 sm:border-y sm:border-dashed sm:border-[#E5E7EB] sm:py-2">
-            {specs.map((c) => (
-              <div key={c.label}>
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{c.label}</div>
-                <div className="text-[13px] font-semibold tabular-nums text-[var(--color-apple-text)]">{c.value}</div>
-              </div>
-            ))}
-          </div>
-        ) : null}
+        <IrissListingCardSpecGrid specs={specs} />
 
         <div className="flex flex-wrap items-center gap-1">
           {sourceHref ? (
@@ -498,34 +344,22 @@ export function IrissListingVehicleCard({
           ) : null}
         </div>
 
-        <div className="sm:hidden">
-          <div className="rounded-xl bg-[#f2f2f5] p-3">
-            <div className="flex items-start justify-between">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                {priceLabel}{v.bidCount != null ? ` · ${v.bidCount} solījumi` : ""}
-              </div>
-              <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-                {favHide}
-              </div>
-            </div>
-            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <span className="text-[26px] font-extrabold tabular-nums leading-none">{bid == null ? "-" : listingFmtEur(bid)}</span>
-              <IrissListTaxBadge tax={tax} size="md" quiet />
-            </div>
-            {v.priceBuyNow != null && v.priceBuyNow !== bid ? (
-              <div className="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz {listingFmtEur(v.priceBuyNow)}</div>
-            ) : null}
-            {v.priceTotal != null && v.priceTotal !== bid ? (
-              <div className="mt-0.5 text-[11px] text-slate-500">kopā {listingFmtEur(v.priceTotal)}</div>
-            ) : null}
-            {cd.t || cd.end ? (
-              <div className={`mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums ${cd.k}`}>
-                ⏱ {cd.t}
-                {cd.end ? <span className="font-semibold text-slate-500">· {cd.end}</span> : null}
-              </div>
-            ) : null}
-          </div>
-          <IrissListingBudgetBox budget={budget} gala={gala} real={real} maxBid={mb} room={room} priceMissing={bid == null} priceLabel={priceLabel} />
+        <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          <IrissListingCardPriceColumnMobile
+            priceLabel={priceLabel}
+            bid={bid}
+            bidCount={v.bidCount}
+            tax={tax}
+            countdown={cd}
+            priceBuyNow={v.priceBuyNow}
+            priceTotal={v.priceTotal}
+            budget={budget}
+            gala={gala}
+            real={real}
+            maxBid={mb}
+            room={room}
+            topActions={favHide}
+          />
         </div>
 
         <input
@@ -537,34 +371,22 @@ export function IrissListingVehicleCard({
         />
       </div>
 
-      <div className="hidden w-[260px] shrink-0 sm:block">
-        <div className="rounded-xl bg-[#f2f2f5] p-3">
-          <div className="flex items-start justify-between">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              {priceLabel}{v.bidCount != null ? ` · ${v.bidCount} solījumi` : ""}
-            </div>
-            <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-              {favHide}
-            </div>
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            <span className="text-[26px] font-extrabold tabular-nums leading-none">{bid == null ? "-" : listingFmtEur(bid)}</span>
-            <IrissListTaxBadge tax={tax} size="md" quiet />
-          </div>
-          {v.priceBuyNow != null && v.priceBuyNow !== bid ? (
-            <div className="mt-0.5 text-[11px] text-slate-500">pirkt uzreiz {listingFmtEur(v.priceBuyNow)}</div>
-          ) : null}
-          {v.priceTotal != null && v.priceTotal !== bid ? (
-            <div className="mt-0.5 text-[11px] text-slate-500">kopā {listingFmtEur(v.priceTotal)}</div>
-          ) : null}
-          {cd.t || cd.end ? (
-            <div className={`mt-2 flex flex-wrap items-center gap-1.5 text-[12px] font-extrabold tabular-nums ${cd.k}`}>
-              ⏱ {cd.t}
-              {cd.end ? <span className="font-semibold text-slate-500">· {cd.end}</span> : null}
-            </div>
-          ) : null}
-        </div>
-        <IrissListingBudgetBox budget={budget} gala={gala} real={real} maxBid={mb} room={room} priceMissing={bid == null} priceLabel={priceLabel} />
+      <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+        <IrissListingCardPriceColumn
+          priceLabel={priceLabel}
+          bid={bid}
+          bidCount={v.bidCount}
+          tax={tax}
+          countdown={cd}
+          priceBuyNow={v.priceBuyNow}
+          priceTotal={v.priceTotal}
+          budget={budget}
+          gala={gala}
+          real={real}
+          maxBid={mb}
+          room={room}
+          topActions={favHide}
+        />
       </div>
     </article>
   );

@@ -1,5 +1,6 @@
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissTameCommissionSettingsForm } from "@/components/admin/IrissTameCommissionSettingsForm";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Iestatījumi | IRISS",
@@ -7,7 +8,8 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function IrissSettingsPage() {
+export default async function IrissSettingsPage() {
+  await requireAdminPage();
   return (
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] px-3 pb-24 pt-3 sm:px-4 sm:pb-8">
       <AdminDashboardHeaderWithMenu>

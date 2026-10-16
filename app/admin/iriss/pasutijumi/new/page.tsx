@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { IrissPasutijumsEditor } from "@/components/admin/IrissPasutijumsEditor";
 import { isIrissPasutijumiStoreEnabled } from "@/lib/iriss-pasutijumi-store";
 import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export default async function IrissPasutijumsNewPage({
 }: {
   searchParams?: Promise<{ newOffer?: string; noClientPdf?: string }>;
 }) {
+  await requireAdminPage();
   if (!isIrissPasutijumiStoreEnabled()) {
     redirect("/admin/iriss/pasutijumi");
   }

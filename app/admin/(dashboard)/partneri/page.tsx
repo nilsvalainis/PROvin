@@ -4,6 +4,7 @@ import { AdminB2bPartnerCreateForm } from "@/components/admin/AdminB2bPartnerCre
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { listB2bPartners } from "@/lib/b2b-partner-store";
 import { loadCreditsForPartners, loadSpentCreditsForPartners } from "@/lib/b2b-partner-dashboard";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Partneri",
@@ -12,6 +13,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminPartnersPage() {
+  await requireAdminPage();
   const partners = await listB2bPartners();
   const [creditsById, spentById] = await Promise.all([
     loadCreditsForPartners(partners),
