@@ -4,17 +4,18 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { del, get, put } from "@vercel/blob";
+import { del, get } from "@vercel/blob";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import {
   emptyB2bCreditWallet,
   parseB2bCreditWallet,
   type B2bCreditWallet,
 } from "@/lib/b2b-partner-credits";
+import { normalizeBlobEtag } from "@/lib/blob-etag";
+import { putBlobBodyIfMatch } from "@/lib/blob-if-match-put";
 import {
   compareAndSwap,
   ConditionalWriteConflict,
-  isConditionalWriteConflict,
   type ConditionalSnapshot,
 } from "@/lib/conditional-write";
 
@@ -55,7 +56,7 @@ async function readFromBlob(
     });
     if (!res || res.statusCode !== 200 || !res.stream) return null;
     const text = await new Response(res.stream).text();
-    const etag = res.blob?.etag?.trim() ?? "";
+    const etag = normalizeBlobEtag(res.blob?.etag);
     if (!etag) return null;
     return { wallet: parseB2bCreditWallet(JSON.parse(text) as unknown), etag };
   } catch {
@@ -69,19 +70,13 @@ async function writeToBlob(
   wallet: B2bCreditWallet,
   etag: string | null,
 ): Promise<void> {
-  try {
-    await put(blobKey(partnerId), JSON.stringify(wallet), {
-      access: "private",
-      token,
-      addRandomSuffix: false,
-      allowOverwrite: etag != null,
-      contentType: "application/json",
-      ...(etag ? { ifMatch: etag } : {}),
-    });
-  } catch (err) {
-    if (isConditionalWriteConflict(err)) throw new ConditionalWriteConflict();
-    throw err;
-  }
+  await putBlobBodyIfMatch({
+    pathname: blobKey(partnerId),
+    body: JSON.stringify(wallet),
+    token,
+    etag: normalizeBlobEtag(etag),
+    seen: etag != null,
+  });
 }
 
 async function readFromFilesystem(

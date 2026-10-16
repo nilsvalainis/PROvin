@@ -260,6 +260,10 @@ export async function PATCH(req: Request) {
           { status: 409 },
         );
       }
+      if (err === "conditional_write_conflict") {
+        console.error("[order-draft] PATCH conflict retries exhausted", { sessionId });
+        return NextResponse.json({ error: err, ok: false }, { status: 409 });
+      }
       if (err === "persistence_verification_failed") {
         return NextResponse.json(
           { error: err, currentRevision: result.currentRevision, durable: false },

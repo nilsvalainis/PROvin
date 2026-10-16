@@ -5,7 +5,9 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import fs from "fs/promises";
 import os from "os";
 import path from "path";
-import { get, put } from "@vercel/blob";
+import { get } from "@vercel/blob";
+import { normalizeBlobEtag } from "@/lib/blob-etag";
+import { putBlobBodyIfMatch } from "@/lib/blob-if-match-put";
 import { ConditionalWriteConflict, isConditionalWriteConflict } from "@/lib/conditional-write";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { getStripeCheckoutSessionMeta } from "@/lib/admin-stripe-cache";
@@ -89,7 +91,7 @@ function noteBlobLease(etag: string | null): void {
   const lease = draftLeaseStorage.getStore();
   if (!lease) return;
   lease.blobSeen = true;
-  lease.blobEtag = etag;
+  lease.blobEtag = normalizeBlobEtag(etag);
 }
 
 function noteFsLease(etag: string | null): void {
@@ -150,8 +152,8 @@ async function readOrderDraftJsonFromBlob(
       return null;
     }
     const text = await new Response(res.stream).text();
-    const etag = res.blob?.etag?.trim() ?? "";
-    noteBlobLease(etag || null);
+    /** `get()` atgriež vāju ETag (`W/"…"`); `put({ ifMatch })` prasa stipro - citādi katrs saglabājums ir konflikts. */
+    noteBlobLease(normalizeBlobEtag(res.blob?.etag));
     return JSON.parse(text) as unknown;
   } catch {
     return null;
@@ -164,21 +166,14 @@ async function writeOrderDraftJsonToBlob(
   blob: OrderDraftBlobConfig,
 ): Promise<void> {
   const lease = draftLeaseStorage.getStore();
-  const etag = lease?.blobSeen ? lease.blobEtag : null;
-  const conditional = Boolean(lease?.blobSeen);
-  try {
-    await put(orderDraftBlobPathname(blob.prefix, sessionId), JSON.stringify(doc), {
-      access: "private",
-      token: blob.token,
-      addRandomSuffix: false,
-      allowOverwrite: conditional ? etag != null : true,
-      contentType: "application/json",
-      ...(conditional && etag ? { ifMatch: etag } : {}),
-    });
-  } catch (err) {
-    if (isConditionalWriteConflict(err)) throw new ConditionalWriteConflict();
-    throw err;
-  }
+  const etag = lease?.blobSeen ? normalizeBlobEtag(lease.blobEtag) : null;
+  await putBlobBodyIfMatch({
+    pathname: orderDraftBlobPathname(blob.prefix, sessionId),
+    body: JSON.stringify(doc),
+    token: blob.token,
+    etag,
+    seen: Boolean(lease?.blobSeen),
+  });
 }
 
 async function writeOrderDraftFileConditional(fp: string, body: string): Promise<void> {
@@ -228,6 +223,11 @@ async function commitOrderDraftDocument(
       blobOk = true;
     } catch (err) {
       if (isConditionalWriteConflict(err)) throw err;
+      console.error("[workspace:persist_failed]", {
+        sessionId,
+        error: "blob_write_failed",
+        detail: err instanceof Error ? err.message : String(err),
+      });
       blobOk = false;
     }
   }
@@ -587,7 +587,7 @@ export async function restoreOrderDraftRevision(
   revisionId: string,
 ): Promise<{ ok: true; updatedAt: string; workspaceRevision: number } | { ok: false; error: string }> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () => restoreOrderDraftRevisionUnlocked(sessionId, revisionId));
+  return withDraftWriteLockOrError(sessionId, () => restoreOrderDraftRevisionUnlocked(sessionId, revisionId));
 }
 
 async function restoreOrderDraftRevisionUnlocked(
@@ -638,13 +638,31 @@ async function restoreOrderDraftRevisionUnlocked(
   }
 }
 
+function withDraftWriteLockOrError<T extends { ok: boolean; error?: string }>(
+  sessionId: string,
+  fn: () => Promise<T>,
+): Promise<T | OrderDraftPatchFailure> {
+  return withDraftWriteLock(sessionId, fn).catch((err: unknown) => {
+    if (isConditionalWriteConflict(err)) {
+      console.error("[workspace:persist_failed]", {
+        sessionId,
+        error: "conditional_write_conflict",
+      });
+      return { ok: false as const, error: "conditional_write_conflict" };
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[workspace:persist_failed]", { sessionId, error: `patch_failed:${msg}` });
+    return { ok: false as const, error: `patch_failed:${msg}` };
+  });
+}
+
 export async function patchOrderDraft(
   sessionId: string,
   patch: { orderEdits?: OrderDraftOrderEdits; workspace?: OrderDraftWorkspaceBody | null },
   options: OrderDraftPatchOptions = {},
 ): Promise<OrderDraftPatchSuccess | OrderDraftPatchFailure> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () => patchOrderDraftUnlocked(sessionId, patch, options));
+  return withDraftWriteLockOrError(sessionId, () => patchOrderDraftUnlocked(sessionId, patch, options));
 }
 
 async function patchOrderDraftUnlocked(
@@ -960,7 +978,7 @@ export async function upsertOrderDraftInvoiceFields(
   }>,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () => upsertOrderDraftInvoiceFieldsUnlocked(sessionId, fields));
+  return withDraftWriteLockOrError(sessionId, () => upsertOrderDraftInvoiceFieldsUnlocked(sessionId, fields));
 }
 
 async function upsertOrderDraftInvoiceFieldsUnlocked(
@@ -1028,7 +1046,7 @@ export async function upsertOrderDraftAutoIngest(
   autoIngest: import("@/lib/admin-auto-ingest").AutoIngestStatus,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () => upsertOrderDraftAutoIngestUnlocked(sessionId, autoIngest));
+  return withDraftWriteLockOrError(sessionId, () => upsertOrderDraftAutoIngestUnlocked(sessionId, autoIngest));
 }
 
 async function upsertOrderDraftAutoIngestUnlocked(
@@ -1076,7 +1094,7 @@ export async function upsertOrderDraftVinScan(
   vinScan: import("@/lib/order-vin-scan").OrderVinScanRecord,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () => upsertOrderDraftVinScanUnlocked(sessionId, vinScan));
+  return withDraftWriteLockOrError(sessionId, () => upsertOrderDraftVinScanUnlocked(sessionId, vinScan));
 }
 
 async function upsertOrderDraftVinScanUnlocked(
@@ -1127,7 +1145,7 @@ export async function upsertOrderDraftVinPlateResolution(
   vinPlateResolution: import("@/lib/order-vin-plate-resolution").OrderVinPlateResolution,
 ): Promise<{ ok: true; updatedAt: string } | { ok: false; error: string }> {
   if (!isSafeOrderDraftSessionId(sessionId)) return { ok: false, error: "invalid_session" };
-  return withDraftWriteLock(sessionId, () =>
+  return withDraftWriteLockOrError(sessionId, () =>
     upsertOrderDraftVinPlateResolutionUnlocked(sessionId, vinPlateResolution),
   );
 }

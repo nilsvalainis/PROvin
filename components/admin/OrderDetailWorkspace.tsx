@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { openWindowSyncThen } from "@/lib/admin-open-window";
+import { openGeneratedHtmlDocument } from "@/lib/admin-open-window";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { flushSync } from "react-dom";
 import { createPortal } from "react-dom";
@@ -107,6 +107,7 @@ import {
   isWorkspaceRevisionConflict,
   persistWorkspaceSafeMerge,
   persistWorkspaceState,
+  WORKSPACE_SAVE_FAILED_LABEL,
   workspacePersistFromDraftWorkspace,
 } from "@/lib/admin-workspace-persist-client";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
@@ -1104,6 +1105,7 @@ export function OrderDetailWorkspace({
           error: e instanceof Error ? e.message : "persist_threw",
           extra: { context: logContext },
         });
+        commitWorkspaceLocalNow({ force: true });
         if (myGen === workspaceServerSaveGenRef.current) {
           setWorkspaceSaveServerOk(false);
           setWorkspaceAutosaveStatus("error");
@@ -1116,9 +1118,11 @@ export function OrderDetailWorkspace({
         }
       }
       if (result.generation !== workspaceServerSaveGenRef.current) {
+        if (!result.ok) commitWorkspaceLocalNow({ force: true });
         return result.ok;
       }
       if (!result.ok) {
+        commitWorkspaceLocalNow({ force: true });
         if (isWorkspaceRevisionConflict(result.error)) {
           workspaceRevisionConflictRef.current = true;
           setWorkspaceRevisionConflict(result.error === "overwrite_blocked" ? "overwrite_blocked" : "stale_revision");
@@ -3248,8 +3252,6 @@ export function OrderDetailWorkspace({
     pdfBusyRef.current = true;
     pdfTargetRef.current = 8;
     setPdfJob({ key: pdfJobKey, pct: 1 });
-    const opened = openWindowSyncThen();
-    let reportWritten = false;
     const bumpPdf = (pct: number) => {
       pdfTargetRef.current = Math.max(pdfTargetRef.current, pct);
     };
@@ -3591,13 +3593,6 @@ export function OrderDetailWorkspace({
       }
     }
 
-    reportWritten = opened.writeHtml(translatedHtml);
-    if (!reportWritten) {
-      alert("Atļauj uznirstošo logu, lai atvērtu druku.");
-      return;
-    }
-    const w = opened.window;
-
     const printTitle = dealerOnly
       ? buildProvinDilerisPdfFilename(payload.vin)
       : asvOnly
@@ -3614,6 +3609,12 @@ export function OrderDetailWorkspace({
       : langSuffix
         ? printTitle.replace(/\.pdf$/i, `${langSuffix}.pdf`)
         : printTitle;
+    const opened = openGeneratedHtmlDocument(translatedHtml, printFileTitle.replace(/\.pdf$/i, ".html"));
+    if (!opened.opened) {
+      alert("Atļauj uznirstošo logu, lai atvērtu druku, vai lejupielādē failu.");
+      return;
+    }
+    const w = opened.window;
     if (w && !w.closed) {
       let printed = false;
       const schedulePrint = () => {
@@ -3632,7 +3633,6 @@ export function OrderDetailWorkspace({
     }
     bumpPdf(100);
     } finally {
-      if (!reportWritten) opened.close();
       pdfTargetRef.current = 100;
       setPdfJob({ key: pdfJobKey, pct: 100 });
       window.setTimeout(() => {
@@ -3643,9 +3643,6 @@ export function OrderDetailWorkspace({
   };
 
   const openOemDealerReport = async () => {
-    const opened = openWindowSyncThen();
-    let reportWritten = false;
-    try {
     syncWsPersistRefFromState();
     if (orderDraftPersistenceEnabled) {
       await flushWorkspaceServerPatch({ showFlash: false });
@@ -3658,14 +3655,14 @@ export function OrderDetailWorkspace({
       oneauto: blocks.oneauto,
       includeEquipment: pdfVisibility.autoRecordsEquipment !== false,
     });
-    reportWritten = opened.writeHtml(html);
-    if (!reportWritten) {
-      alert("Atļauj uznirstošo logu, lai atvērtu OEM dīlera PDF.");
+    const printFileTitle = buildOemDealerPdfFilename(payload.vin);
+    const opened = openGeneratedHtmlDocument(html, printFileTitle.replace(/\.pdf$/i, ".html"));
+    if (!opened.opened) {
+      alert("Atļauj uznirstošo logu, lai atvērtu OEM dīlera PDF, vai lejupielādē failu.");
       return;
     }
     const w = opened.window;
     if (!w || w.closed) return;
-    const printFileTitle = buildOemDealerPdfFilename(payload.vin);
     let printed = false;
     const schedulePrint = () => {
       if (printed || w.closed) return;
@@ -3680,9 +3677,6 @@ export function OrderDetailWorkspace({
     };
     w.addEventListener("load", () => window.setTimeout(schedulePrint, 450), { once: true });
     window.setTimeout(schedulePrint, 900);
-    } finally {
-      if (!reportWritten) opened.close();
-    }
   };
 
   const previewBody = previewOpen ? (
@@ -4436,6 +4430,14 @@ export function OrderDetailWorkspace({
       ) : null}
 
       <AdminPersistenceHealthBanner durableConfigured={orderDraftPersistenceEnabled} />
+      {workspaceAutosaveStatus === "error" ? (
+        <p
+          className="mx-auto mb-3 max-w-2xl rounded-lg border border-red-500/50 bg-red-50 px-3 py-2 text-center text-sm font-bold leading-snug text-red-950 dark:border-red-500/40 dark:bg-red-950/50 dark:text-red-100"
+          role="alert"
+        >
+          {WORKSPACE_SAVE_FAILED_LABEL} Teksts paliek pārlūkā. Mēģini saglabāt vēlreiz.
+        </p>
+      ) : null}
       <nav
         className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
         aria-label="Soli pa solim"
@@ -4482,10 +4484,10 @@ export function OrderDetailWorkspace({
               workspaceSaveBusy
                 ? "Saglabā"
                 : workspaceAutosaveStatus === "error"
-                  ? "Saglabāt. Kļūda saglabājot"
+                  ? WORKSPACE_SAVE_FAILED_LABEL
                   : workspaceSaveFlash || workspaceAutosaveStatus === "saved"
                     ? orderDraftPersistenceEnabled && !workspaceSaveServerOk
-                      ? "Saglabāt. Saglabāts pārlūkā, servera melnraksts neizdevās"
+                      ? WORKSPACE_SAVE_FAILED_LABEL
                       : "Saglabāt. Saglabāts"
                     : "Saglabāt avotu datus"
             }
@@ -4494,11 +4496,15 @@ export function OrderDetailWorkspace({
               void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
             }}
           >
-            {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
+            {workspaceSaveBusy
+              ? "Saglabā…"
+              : workspaceAutosaveStatus === "error"
+                ? WORKSPACE_SAVE_FAILED_LABEL
+                : "Saglabāt"}
           </button>
           {workspaceAutosaveStatus === "error" ? (
-            <span className="max-w-[12rem] text-[10px] font-semibold leading-tight text-amber-800 max-md:hidden" role="status">
-              Kļūda saglabājot
+            <span className="max-w-[14rem] text-[11px] font-bold leading-tight text-red-800 dark:text-red-200" role="alert">
+              {WORKSPACE_SAVE_FAILED_LABEL}
             </span>
           ) : null}
           {payload.isDemo ? (
@@ -4690,6 +4696,7 @@ export function OrderDetailWorkspace({
           void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
         }}
         saveBusy={workspaceSaveBusy}
+        saveFailed={workspaceAutosaveStatus === "error"}
         onOpenPhrases={() => {
           setCopilotOpen(false);
           setPhrasesOpen(true);

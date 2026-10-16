@@ -41,6 +41,9 @@ export type PersistWorkspaceStateOptions = {
   fetchKeepalive?: boolean;
 };
 
+/** Redzama kļūda adminā, kad servera saglabāšana neizdodas. */
+export const WORKSPACE_SAVE_FAILED_LABEL = "Nav saglabāts!";
+
 export type PersistWorkspaceStateResult =
   | {
       ok: true;
@@ -209,6 +212,21 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
 
 export function isWorkspaceRevisionConflict(error: string | undefined | null): boolean {
   return error === "stale_revision" || error === "overwrite_blocked";
+}
+
+export function isWorkspacePersistHardFailure(error: string | undefined | null): boolean {
+  if (!error) return false;
+  return (
+    error === "conditional_write_conflict" ||
+    error === "store_not_durable" ||
+    error === "write_failed" ||
+    error.startsWith("write_failed") ||
+    error === "patch_failed" ||
+    error.startsWith("patch_failed") ||
+    error === "server_error" ||
+    error === "persistence_verification_failed" ||
+    error.startsWith("http_")
+  );
 }
 
 /** Droša lauku apvienošana (tukšais neēd pilno). Operatoram jāapstiprina pirms PATCH. */

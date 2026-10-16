@@ -7,7 +7,13 @@ type Health = {
   durable?: boolean;
   durableConfigured?: boolean;
   backend?: string;
-  blob?: { configured?: boolean; canWrite?: boolean; canRead?: boolean; error?: string | null };
+  blob?: {
+    configured?: boolean;
+    canWrite?: boolean;
+    canRead?: boolean;
+    canConditionalWrite?: boolean;
+    error?: string | null;
+  };
   checkedAt?: string;
 };
 
@@ -68,8 +74,12 @@ export function AdminPersistenceHealthBanner({ durableConfigured }: Props) {
       className="mx-auto mb-3 max-w-2xl rounded-lg border border-red-500/40 bg-red-50 px-3 py-2 text-center text-[11px] font-semibold leading-snug text-red-950"
       role="alert"
     >
-      Servera melnraksts nav pieejams — imports netiks saglabāts.
-      {blobErr ? ` ${blobErr}` : " Pārbaudi Vercel env un veic Redeploy."}
+      Servera melnraksts nav pieejams. Imports netiks saglabāts.
+      {health?.blob?.canConditionalWrite === false && health?.blob?.canWrite
+        ? " Liela objekta ifMatch rakstīšana neizdevās (vājš ETag)."
+        : blobErr
+          ? ` ${blobErr}`
+          : " Pārbaudi Vercel env un veic Redeploy."}
       {" "}
       <a href="/api/admin/debug/persistence" className="underline" target="_blank" rel="noreferrer">
         Diagnostika
