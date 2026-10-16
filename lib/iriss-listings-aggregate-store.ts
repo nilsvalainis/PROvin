@@ -22,9 +22,11 @@ import { listingYearDigits } from "@/lib/iriss-listings-list-view";
 import { isIrissListingsAutomaticSlot } from "@/lib/iriss-listings-schedule";
 import {
   IRISS_LISTING_PLATFORMS,
+  IRISS_LISTING_PRICE_STATES,
   IRISS_LISTING_VIN_OCR_STATUSES,
   type IrissListingPlatform,
   type IrissListingPriceChange,
+  type IrissListingPriceState,
   type IrissListingSourceRun,
   type IrissListingSyncRunSummary,
   type IrissListingVehicle,
@@ -249,6 +251,9 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     priceBuyNow: numOrNull(v.priceBuyNow),
     priceEstimate: numOrNull(v.priceEstimate),
     priceTotal: numOrNull(v.priceTotal),
+    ...((IRISS_LISTING_PRICE_STATES as readonly string[]).includes(str(v.priceState))
+      ? { priceState: str(v.priceState) as IrissListingPriceState }
+      : {}),
     vatNote: str(v.vatNote),
     auctionId,
     auctionStartAt: str(v.auctionStartAt),

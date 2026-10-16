@@ -8,7 +8,7 @@
 
 import { parseAutobidNuxtJson } from "@/lib/iriss-listings-autobid";
 import { sanitizeAutobidNuxtPages } from "@/lib/iriss-listings-autobid-sanitize";
-import { mergeEcarstradeHtmlPrices, parseEcarstradeSearchHtml, type EcarstradeVehicle } from "@/lib/iriss-listings-ecarstrade";
+import { ecarstradeHasAnyPrice, mergeEcarstradeHtmlPrices, parseEcarstradeSearchHtml, type EcarstradeVehicle } from "@/lib/iriss-listings-ecarstrade";
 import { fillListingPowerKwField } from "@/lib/iriss-listings-exclude-rules";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { applyAuto1VinHints } from "@/lib/iriss-listings-auto1-vin";
@@ -229,7 +229,17 @@ function mapEcarstradeRelayVehicle(v: EcarstradeVehicle, orderId: string, orderB
     auctionStartAt: v.auctionStartAt,
     auctionEndAt: v.auctionEndAt,
     auctionStage: v.auctionStage,
+    ...(v.priceState ? { priceState: v.priceState } : {}),
   };
+}
+
+/**
+ * Tas pats auto vairākās lapās: paturam kartīti ar cenu. Visas lapas HTML cenai nederīgs
+ * (tajā ir citu auto PIRKT pogas).
+ */
+function pickEcarstradeCard(prev: EcarstradeVehicle | undefined, next: EcarstradeVehicle): EcarstradeVehicle {
+  if (!prev) return next;
+  return !ecarstradeHasAnyPrice(prev) && ecarstradeHasAnyPrice(next) ? next : prev;
 }
 
 function ecarstradeVehiclesFromRelayHtml(
@@ -243,10 +253,7 @@ function ecarstradeVehiclesFromRelayHtml(
   for (const html of searchPages) {
     if (typeof html !== "string" || !html.trim()) continue;
     rawPages.push(html.slice(0, 1_500_000));
-    for (const v of parseEcarstradeSearchHtml(html)) {
-      const now = byId.get(v.externalId);
-      byId.set(v.externalId, now ? mergeEcarstradeHtmlPrices(now, html) : v);
-    }
+    for (const v of parseEcarstradeSearchHtml(html)) byId.set(v.externalId, pickEcarstradeCard(byId.get(v.externalId), v));
   }
   const detailPages = Array.isArray(raw.detailPages) ? raw.detailPages : [];
   for (const row of detailPages) {
@@ -259,10 +266,7 @@ function ecarstradeVehiclesFromRelayHtml(
       byId.set(now.externalId, mergeEcarstradeHtmlPrices(now, html));
       continue;
     }
-    for (const v of parseEcarstradeSearchHtml(html)) {
-      const prev = byId.get(v.externalId);
-      byId.set(v.externalId, prev ? mergeEcarstradeHtmlPrices(prev, html) : v);
-    }
+    for (const v of parseEcarstradeSearchHtml(html)) byId.set(v.externalId, pickEcarstradeCard(byId.get(v.externalId), v));
   }
   return {
     vehicles: [...byId.values()].map((v) => mapEcarstradeRelayVehicle(v, orderId, orderBrandModel)),
