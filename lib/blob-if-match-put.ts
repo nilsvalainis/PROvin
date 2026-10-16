@@ -27,9 +27,16 @@ export async function readBlobTextWithEtag(opts: {
   }
 }
 
+export type BlobPutEtagResult = {
+  /** Stiprais ETag no `put()` atbildes (`W/` noņemts). `null`, ja SDK to neatgrieza. */
+  etag: string | null;
+};
+
 /**
  * Raksta JSON (vai citu tekstu) ar `ifMatch`. ETag no `get()` tiek normalizēts
  * (noņem `W/`), lai vājais ETag noraidītu katru saglabājumu.
+ * Veiksmīga `put()` atbilde atgriež jauno ETag, lai nākamais raksts šajā nomas
+ * ciklā nelietotu veco `get()` vērtību.
  */
 export async function putBlobBodyIfMatch(opts: {
   pathname: string;
@@ -40,10 +47,10 @@ export async function putBlobBodyIfMatch(opts: {
   /** `true`, ja objekts jau tika nolasīts šajā mēģinājumā. */
   seen: boolean;
   contentType?: string;
-}): Promise<void> {
+}): Promise<BlobPutEtagResult> {
   const fields = opts.seen ? blobIfMatchPutFields(opts.etag) : { allowOverwrite: true };
   try {
-    await put(opts.pathname, opts.body, {
+    const written = await put(opts.pathname, opts.body, {
       access: "private",
       token: opts.token,
       addRandomSuffix: false,
@@ -51,6 +58,7 @@ export async function putBlobBodyIfMatch(opts: {
       contentType: opts.contentType ?? "application/json",
       ...(fields.ifMatch ? { ifMatch: fields.ifMatch } : {}),
     });
+    return { etag: normalizeBlobEtag(written?.etag) };
   } catch (err) {
     if (isConditionalWriteConflict(err)) throw new ConditionalWriteConflict();
     throw err;

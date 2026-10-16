@@ -167,13 +167,15 @@ async function writeOrderDraftJsonToBlob(
 ): Promise<void> {
   const lease = draftLeaseStorage.getStore();
   const etag = lease?.blobSeen ? normalizeBlobEtag(lease.blobEtag) : null;
-  await putBlobBodyIfMatch({
+  const written = await putBlobBodyIfMatch({
     pathname: orderDraftBlobPathname(blob.prefix, sessionId),
     body: JSON.stringify(doc),
     token: blob.token,
     etag,
     seen: Boolean(lease?.blobSeen),
   });
+  /** Nākamais raksts šajā nomas ciklā lieto `put()` ETag, ne veco `get()` vērtību. */
+  if (written.etag) noteBlobLease(written.etag);
 }
 
 async function writeOrderDraftFileConditional(fp: string, body: string): Promise<void> {

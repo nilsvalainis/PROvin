@@ -359,4 +359,29 @@ describe("provin-aggregate-case-rules", () => {
     expect(packs.some((p) => p.id === "volvo_d5244_single_turbo")).toBe(false);
     expect(packs.some((p) => p.id === "volvo_d5_biturbo_block")).toBe(false);
   });
+
+  it("selects H5H / 1.3 TCe pack for Renault Captur and keeps OEM 1 year not 24 months", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        makeModel: "Renault Captur",
+        fuelType: "Benzīns",
+        firstRegistration: "01.03.2021",
+        engineDisplacementCm3: "1332",
+        enginePowerKw: "103",
+        emissionStandard: "Euro 6",
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks, { vin: "VF1RJB00167547695" });
+    fp.engineCode = "H5H";
+    const packs = selectAggregateCasePacks(fp);
+    expect(packs.some((p) => p.id === "renault_h5h_tce")).toBe(true);
+    const h5h = packs.find((p) => p.id === "renault_h5h_tce");
+    expect(h5h?.body).toMatch(/30 000 km vai 1 gads/);
+    expect(h5h?.body).toMatch(/RN17/);
+    expect(h5h?.body).toMatch(/GPF/);
+    expect(h5h?.body).toMatch(/ieplūdes/);
+    expect(h5h?.body).toMatch(/sadales vāka/);
+    expect(h5h?.body).toMatch(/150-200/);
+    expect(h5h?.body).not.toMatch(/24 mēneši.*OEM|OEM.*24 mēneši/);
+  });
 });

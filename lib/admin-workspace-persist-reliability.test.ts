@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   stableWorkspaceChecksum,
   verifyWorkspaceIntegrity,
@@ -8,11 +8,19 @@ import {
 import { coalesceOrderWorkspacePersistBody, pickOrderWorkspaceHydrationServerFirst, workspaceHydrationFillScore } from "@/lib/admin-order-workspace-persist";
 import { createDefaultSourceBlocks, emptyVendorAvotuBlock } from "@/lib/admin-source-blocks";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
-import { enqueueWorkspacePersist } from "@/lib/admin-workspace-persist-queue";
+import { enqueueWorkspacePersist, clearWorkspacePersistQueue, clearAllWorkspacePersistQueues } from "@/lib/admin-workspace-persist-queue";
+import { mergePdfVisibility } from "@/lib/pdf-visibility";
+import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import {
   buildSafeMergePersistBody,
+  clearLastOkWorkspaceRevision,
+  isOwnWriteRevisionConflict,
   isWorkspacePersistHardFailure,
   isWorkspaceRevisionConflict,
+  persistWorkspaceState,
+  resolveExpectedWorkspaceRevision,
+  noteLastOkWorkspaceRevision,
+  getLastOkWorkspaceRevision,
   WORKSPACE_SAVE_FAILED_LABEL,
 } from "@/lib/admin-workspace-persist-client";
 import { nextWorkspaceRevisionAfterRestore } from "@/lib/admin-workspace-integrity";
@@ -182,6 +190,182 @@ describe("E2E persistence simulation", () => {
     const localStorageEmpty = null;
     expect(localStorageEmpty).toBeNull();
     expect(reloadFromServer?.iriss).toBe("Summary");
+  });
+});
+
+describe("own-write revision helpers", () => {
+  afterEach(() => {
+    clearLastOkWorkspaceRevision();
+    clearAllWorkspacePersistQueues();
+    vi.unstubAllGlobals();
+  });
+
+  it("raises expected revision to this tab's last successful write", () => {
+    expect(resolveExpectedWorkspaceRevision(5, null)).toBe(5);
+    expect(resolveExpectedWorkspaceRevision(5, 6)).toBe(6);
+    expect(resolveExpectedWorkspaceRevision(undefined, 4)).toBe(4);
+    expect(resolveExpectedWorkspaceRevision(7, 6)).toBe(7);
+  });
+
+  it("treats same-tab +1 stale_revision as own-write, not another tab", () => {
+    expect(
+      isOwnWriteRevisionConflict({
+        error: "stale_revision",
+        expectedRevision: 5,
+        currentRevision: 6,
+        lastOkRevision: null,
+      }),
+    ).toBe(true);
+    expect(
+      isOwnWriteRevisionConflict({
+        error: "stale_revision",
+        expectedRevision: 5,
+        currentRevision: 6,
+        lastOkRevision: 6,
+      }),
+    ).toBe(true);
+    expect(
+      isOwnWriteRevisionConflict({
+        error: "overwrite_blocked",
+        expectedRevision: 5,
+        currentRevision: 6,
+        lastOkRevision: 6,
+      }),
+    ).toBe(false);
+    expect(
+      isOwnWriteRevisionConflict({
+        error: "stale_revision",
+        expectedRevision: 5,
+        currentRevision: 9,
+        lastOkRevision: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("queued block saves reuse the previous put revision so one tab is not a conflict", async () => {
+    clearLastOkWorkspaceRevision("s-race");
+    clearWorkspacePersistQueue("s-race");
+    let serverRev = 5;
+    const seenExpected: number[] = [];
+    vi.stubGlobal(
+      "fetch",
+      async (_url: string, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body ?? "{}")) as {
+          expectedWorkspaceRevision?: number;
+        };
+        seenExpected.push(body.expectedWorkspaceRevision ?? -1);
+        if (body.expectedWorkspaceRevision !== serverRev) {
+          return new Response(
+            JSON.stringify({ ok: false, error: "stale_revision", currentRevision: serverRev }),
+            { status: 409, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        serverRev += 1;
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            updatedAt: new Date().toISOString(),
+            durable: true,
+            storageBackend: "blob",
+            workspaceRevision: serverRev,
+            workspaceChecksum: "x",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      },
+    );
+
+    const persistBody = {
+      sourceBlocks: createDefaultSourceBlocks(),
+      iriss: "",
+      apskatesPlāns: "",
+      tehniskoRiskuAnalize: "",
+      cenasAtbilstiba: "",
+      previewConfirmed: false,
+      vehicleAiExtraction: null,
+      vehicleAiExtractionMeta: null,
+    };
+    const common = {
+      sessionId: "s-race",
+      body: persistBody,
+      baseline: null,
+      pdfVisibility: mergePdfVisibility(undefined),
+      pdfBannerInclude: mergeProvinBannerPdfInclude(undefined),
+    };
+    const a = persistWorkspaceState({ ...common, expectedWorkspaceRevision: 5, logContext: "autodna" });
+    const b = persistWorkspaceState({ ...common, expectedWorkspaceRevision: 5, logContext: "dealer" });
+    const [ra, rb] = await Promise.all([a, b]);
+    expect(ra.ok).toBe(true);
+    expect(rb.ok).toBe(true);
+    expect(seenExpected).toEqual([5, 6]);
+    expect(getLastOkWorkspaceRevision("s-race")).toBe(7);
+  });
+
+  it("retries stale_revision once when the server is only one revision ahead of this tab", async () => {
+    clearLastOkWorkspaceRevision("s-own");
+    clearWorkspacePersistQueue("s-own");
+    let calls = 0;
+    vi.stubGlobal(
+      "fetch",
+      async (_url: string, init?: RequestInit) => {
+        calls += 1;
+        const body = JSON.parse(String(init?.body ?? "{}")) as {
+          expectedWorkspaceRevision?: number;
+        };
+        if (calls === 1) {
+          return new Response(
+            JSON.stringify({ ok: false, error: "stale_revision", currentRevision: 6 }),
+            { status: 409, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        expect(body.expectedWorkspaceRevision).toBe(6);
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            updatedAt: new Date().toISOString(),
+            durable: true,
+            storageBackend: "blob",
+            workspaceRevision: 7,
+            workspaceChecksum: "y",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      },
+    );
+    const result = await persistWorkspaceState({
+      sessionId: "s-own",
+      body: {
+        sourceBlocks: createDefaultSourceBlocks(),
+        iriss: "kopsavilkums",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+      },
+      baseline: null,
+      pdfVisibility: mergePdfVisibility(undefined),
+      pdfBannerInclude: mergeProvinBannerPdfInclude(undefined),
+      expectedWorkspaceRevision: 5,
+      logContext: "listing",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.workspaceRevision).toBe(7);
+    expect(calls).toBe(2);
+    expect(getLastOkWorkspaceRevision("s-own")).toBe(7);
+  });
+
+  it("does not treat a distant stale revision as own-write", async () => {
+    noteLastOkWorkspaceRevision("s-other", 3);
+    expect(
+      isOwnWriteRevisionConflict({
+        error: "stale_revision",
+        expectedRevision: 3,
+        currentRevision: 12,
+        lastOkRevision: 3,
+      }),
+    ).toBe(false);
   });
 });
 
