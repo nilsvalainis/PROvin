@@ -23,8 +23,10 @@ import { duplicateMapForListings, type IrissVinDuplicateLink } from "@/lib/iriss
 import { listIrissVinAnchors } from "@/lib/iriss-vin-anchor-store";
 import {
   getIrissListingsStorageState,
+  IRISS_LISTINGS_READ_CACHE_TTL_MS,
   readIrissListingMatchState,
   readIrissListingsLatestView,
+  subscribeIrissListingsLatestCacheInvalidate,
   writeIrissListingMatchState,
 } from "@/lib/iriss-listings-aggregate-store";
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
@@ -86,19 +88,72 @@ export type IrissListingMatchWorkspace = {
   duplicatesByListing: Record<string, IrissVinDuplicateLink[]>;
 };
 
+type WorkspaceCache = { at: number; key: string; value: IrissListingMatchWorkspace };
+
+let workspaceGen = 0;
+let workspaceCache: WorkspaceCache | null = null;
+let workspaceInflight: { key: string; promise: Promise<IrissListingMatchWorkspace> } | null = null;
+
+function invalidateIrissListingMatchWorkspaceCache(): void {
+  workspaceGen += 1;
+  workspaceCache = null;
+  workspaceInflight = null;
+}
+
+subscribeIrissListingsLatestCacheInvalidate(() => {
+  invalidateIrissListingMatchWorkspaceCache();
+});
+
+function workspaceCacheKey(
+  vehicles: readonly IrissListingMatchVehicle[],
+  orders: readonly IrissListingMatchOrder[],
+): string {
+  let h = 2166136261;
+  const mix = (s: string) => {
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+  };
+  mix(String(vehicles.length));
+  for (const vehicle of vehicles) mix(`|${vehicle.id}:${vehicle.change ?? ""}:${vehicle.priceCurrent ?? ""}`);
+  mix("#");
+  mix(String(orders.length));
+  for (const order of orders) mix(`|${order.id}:${order.listStatus ?? ""}`);
+  return (h >>> 0).toString(36);
+}
+
+function workspaceCacheFresh(entry: WorkspaceCache, key: string): boolean {
+  return entry.key === key && IRISS_LISTINGS_READ_CACHE_TTL_MS > 0 && Date.now() - entry.at < IRISS_LISTINGS_READ_CACHE_TTL_MS;
+}
+
 /** Atjauno atbilstības no keša un sagatavo žetonus. Maksas avotus nelasa. */
 export async function prepareIrissListingMatchWorkspace(
   vehicles: readonly IrissListingMatchVehicle[],
   orders: readonly IrissListingMatchOrder[],
 ): Promise<IrissListingMatchWorkspace> {
-  const state = await refreshIrissListingMatches({ vehicles });
-  const anchors = await listIrissVinAnchors().catch(() => []);
-  return {
-    state,
-    notices: buildIrissListingMatchNotices(state.entries, vehicles, orders),
-    orderIdsByListing: listingMatchOrderIdsByListing(state.entries),
-    duplicatesByListing: duplicateMapForListings(vehicles, anchors),
-  };
+  const key = workspaceCacheKey(vehicles, orders);
+  if (workspaceCache && workspaceCacheFresh(workspaceCache, key)) return workspaceCache.value;
+  if (workspaceInflight?.key === key) return workspaceInflight.promise;
+  const gen = workspaceGen;
+  const promise = (async () => {
+    const state = await refreshIrissListingMatches({ vehicles });
+    const anchors = await listIrissVinAnchors().catch(() => []);
+    const value: IrissListingMatchWorkspace = {
+      state,
+      notices: buildIrissListingMatchNotices(state.entries, vehicles, orders),
+      orderIdsByListing: listingMatchOrderIdsByListing(state.entries),
+      duplicatesByListing: duplicateMapForListings(vehicles, anchors),
+    };
+    if (gen === workspaceGen && IRISS_LISTINGS_READ_CACHE_TTL_MS > 0) {
+      workspaceCache = { at: Date.now(), key, value };
+    }
+    return value;
+  })().finally(() => {
+    if (workspaceInflight?.promise === promise) workspaceInflight = null;
+  });
+  workspaceInflight = { key, promise };
+  return promise;
 }
 
 export function orderRoomMatchProps(
@@ -134,6 +189,7 @@ export async function patchIrissListingMatchStatus(
   };
   const write = await writeIrissListingMatchState(next);
   if (!write.ok) return null;
+  invalidateIrissListingMatchWorkspaceCache();
   await rememberListingStatusHistory(previous.entries, next.entries, history).catch((e) => {
     console.error("[change-history]", e instanceof Error ? e.message : e);
   });

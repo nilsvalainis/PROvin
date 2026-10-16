@@ -51,6 +51,55 @@ type ResolvedStorage =
 
 let resolvedMemo: ResolvedStorage | null = null;
 
+/**
+ * Īss atmiņas kešs pasūtījuma detaļas kopīgajiem lasījumiem (latest, dismissed, match).
+ * Noklusējums 45 s. `0` izslēdz kešu. Paralēli prefetch vienā procesā dala vienu inflight lasījumu.
+ */
+export const IRISS_LISTINGS_READ_CACHE_TTL_MS = readIrissListingsReadCacheTtlMs();
+
+function readIrissListingsReadCacheTtlMs(): number {
+  const raw = process.env.IRISS_LISTINGS_READ_CACHE_TTL_MS;
+  if (raw === undefined || raw.trim() === "") return 45_000;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) ? Math.max(0, n) : 45_000;
+}
+
+type TimedCache<T> = { at: number; value: T };
+
+let latestGen = 0;
+let latestCache: TimedCache<IrissListingsLatestView | null> | null = null;
+let latestInflight: Promise<IrissListingsLatestView | null> | null = null;
+let latestPersistOnce: Promise<void> | null = null;
+
+let dismissedGen = 0;
+let dismissedCache: TimedCache<IrissListingsDismissedView> | null = null;
+let dismissedInflight: Promise<IrissListingsDismissedView> | null = null;
+
+const latestCacheListeners = new Set<() => void>();
+
+/** Match darbavieta klausās, lai pēc latest raksta neizmantotu vecu kešu. */
+export function subscribeIrissListingsLatestCacheInvalidate(listener: () => void): () => void {
+  latestCacheListeners.add(listener);
+  return () => latestCacheListeners.delete(listener);
+}
+
+function listingsReadCacheFresh(at: number): boolean {
+  return IRISS_LISTINGS_READ_CACHE_TTL_MS > 0 && Date.now() - at < IRISS_LISTINGS_READ_CACHE_TTL_MS;
+}
+
+function invalidateLatestViewCache(): void {
+  latestGen += 1;
+  latestCache = null;
+  latestInflight = null;
+  for (const listener of latestCacheListeners) listener();
+}
+
+function invalidateDismissedCache(): void {
+  dismissedGen += 1;
+  dismissedCache = null;
+  dismissedInflight = null;
+}
+
 function isNonVercelServerlessRuntime(): boolean {
   return Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
 }
@@ -341,17 +390,50 @@ export function getIrissListingsStorageState(): IrissListingsStorageState {
   return { enabled: true, persistence: "filesystem", path: r.dir };
 }
 
-async function persistLatestIfNeeded(r: Exclude<ResolvedStorage, { kind: "disabled" }>, parsed: { view: IrissListingsLatestView; persistCents: boolean }): Promise<IrissListingsLatestView> {
+/**
+ * Cents / izslēgto auto migrācija uz disku.
+ * Next lapas lasīšana un prefetch neraksta. Ārpus pieprasījuma raksta visvairāk vienu reizi procesā.
+ */
+async function persistLatestIfNeeded(
+  r: Exclude<ResolvedStorage, { kind: "disabled" }>,
+  parsed: { view: IrissListingsLatestView; persistCents: boolean },
+): Promise<IrissListingsLatestView> {
   if (!parsed.persistCents) return parsed.view;
+  if (await isNextReadOrPrefetchRequest()) return parsed.view;
+  if (latestPersistOnce) {
+    await latestPersistOnce;
+    return parsed.view;
+  }
+  let finish = () => {};
+  latestPersistOnce = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
   try {
     await writeJson(r, LATEST_FILENAME, JSON.stringify(parsed.view, null, 2));
   } catch {
     /* LIST rāda tīro skatu arī ja Blob rakstīšana šoreiz neizdodas */
+  } finally {
+    finish();
   }
   return parsed.view;
 }
 
-export async function readIrissListingsLatestView(): Promise<IrissListingsLatestView | null> {
+/** `headers()` izdodas tikai Next pieprasījumā: tā ir lapas vai prefetch lasīšana, ne rakstīšana. */
+async function isNextReadOrPrefetchRequest(): Promise<boolean> {
+  try {
+    const { headers } = await import("next/headers");
+    const h = await headers();
+    const purpose = `${h.get("purpose") ?? ""} ${h.get("sec-purpose") ?? ""}`.toLowerCase();
+    if (purpose.includes("prefetch")) return true;
+    if (h.get("next-router-prefetch") === "1" || h.get("x-middleware-prefetch") === "1") return true;
+    return true;
+  } catch (e) {
+    if (e && typeof e === "object" && "digest" in e && typeof e.digest === "string") throw e;
+    return false;
+  }
+}
+
+async function readLatestViewUncached(): Promise<IrissListingsLatestView | null> {
   const r = resolveStorage();
   if (r.kind === "disabled") return null;
   if (r.kind === "blob") {
@@ -369,7 +451,25 @@ export async function readIrissListingsLatestView(): Promise<IrissListingsLatest
   }
 }
 
-export async function readIrissListingsDismissed(): Promise<IrissListingsDismissedView> {
+export async function readIrissListingsLatestView(): Promise<IrissListingsLatestView | null> {
+  if (latestCache && listingsReadCacheFresh(latestCache.at)) return latestCache.value;
+  if (latestInflight) return latestInflight;
+  const gen = latestGen;
+  const promise = readLatestViewUncached()
+    .then((view) => {
+      if (gen === latestGen && IRISS_LISTINGS_READ_CACHE_TTL_MS > 0) {
+        latestCache = { at: Date.now(), value: view };
+      }
+      return view;
+    })
+    .finally(() => {
+      if (latestInflight === promise) latestInflight = null;
+    });
+  latestInflight = promise;
+  return promise;
+}
+
+async function readDismissedUncached(): Promise<IrissListingsDismissedView> {
   const empty = emptyIrissListingsDismissed();
   const r = resolveStorage();
   if (r.kind === "disabled") return empty;
@@ -377,11 +477,29 @@ export async function readIrissListingsDismissed(): Promise<IrissListingsDismiss
     const raw =
       r.kind === "blob"
         ? await readBlobJson(`${r.prefix}${DISMISSED_FILENAME}`, r.token)
-        : JSON.parse(await fs.readFile(path.join(r.dir, DISMISSED_FILENAME), "utf8")) as unknown;
+        : (JSON.parse(await fs.readFile(path.join(r.dir, DISMISSED_FILENAME), "utf8")) as unknown);
     return normalizeDismissedView(raw);
   } catch {
     return empty;
   }
+}
+
+export async function readIrissListingsDismissed(): Promise<IrissListingsDismissedView> {
+  if (dismissedCache && listingsReadCacheFresh(dismissedCache.at)) return dismissedCache.value;
+  if (dismissedInflight) return dismissedInflight;
+  const gen = dismissedGen;
+  const promise = readDismissedUncached()
+    .then((view) => {
+      if (gen === dismissedGen && IRISS_LISTINGS_READ_CACHE_TTL_MS > 0) {
+        dismissedCache = { at: Date.now(), value: view };
+      }
+      return view;
+    })
+    .finally(() => {
+      if (dismissedInflight === promise) dismissedInflight = null;
+    });
+  dismissedInflight = promise;
+  return promise;
 }
 
 export async function readIrissListingMatchState(): Promise<IrissListingMatchState> {
@@ -420,7 +538,9 @@ export async function writeIrissListingsDismissed(
     const r = resolveStorage();
     if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
     const clean = normalizeDismissedView(view);
+    invalidateDismissedCache();
     await writeJson(r, DISMISSED_FILENAME, JSON.stringify(clean, null, 2));
+    invalidateDismissedCache();
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
@@ -439,7 +559,9 @@ export async function writeIrissListingsRun(view: IrissListingsLatestView): Prom
     };
     const snapshot: IrissListingsSnapshot = clean;
     // Paslēptie auto ir dismissed.json; šis raksts to neaiztiek.
+    invalidateLatestViewCache();
     await writeJson(r, LATEST_FILENAME, JSON.stringify(clean, null, 2));
+    invalidateLatestViewCache();
     await writeJson(r, `${SNAPSHOTS_DIRNAME}/${clean.summary.runId}.json`, JSON.stringify(snapshot));
     return { ok: true };
   } catch (e) {
@@ -458,7 +580,13 @@ export async function saveIrissListingsLatestView(view: IrissListingsLatestView)
     const r = resolveStorage();
     if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
     const vehicles = rejectExcludedIrissListings(applyAuto1CentsMigration(view.vehicles).vehicles);
-    await writeJson(r, LATEST_FILENAME, JSON.stringify({ ...view, vehicles, summary: { ...view.summary, vehicleCount: vehicles.length } }, null, 2));
+    invalidateLatestViewCache();
+    await writeJson(
+      r,
+      LATEST_FILENAME,
+      JSON.stringify({ ...view, vehicles, summary: { ...view.summary, vehicleCount: vehicles.length } }, null, 2),
+    );
+    invalidateLatestViewCache();
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
