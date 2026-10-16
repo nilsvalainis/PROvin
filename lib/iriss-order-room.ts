@@ -65,6 +65,7 @@ export type IrissOrderRoomHit = {
   bidCount?: number | null;
   change: IrissListingVehicleChange;
   firstSeenAt: string;
+  lastSeenAt: string;
   location: string;
 };
 
@@ -251,6 +252,7 @@ export function buildIrissOrderRoomHits(
       bidCount: typeof row.bidCount === "number" ? row.bidCount : null,
       change: v.change ?? "unchanged",
       firstSeenAt: (v.firstSeenAt ?? "").trim(),
+      lastSeenAt: typeof row.lastSeenAt === "string" ? row.lastSeenAt.trim() : "",
       location: (v.location ?? "").trim(),
     });
   }

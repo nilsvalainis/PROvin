@@ -63,6 +63,7 @@ function hit(partial: Partial<IrissOrderRoomHit> & Pick<IrissOrderRoomHit, "id">
     vatNote: "",
     change: "unchanged",
     firstSeenAt: "",
+    lastSeenAt: "",
     location: "",
     ...partial,
   };
