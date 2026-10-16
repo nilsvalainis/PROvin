@@ -119,8 +119,8 @@ export function updateGtagConsent(granted: boolean): void {
   const w = window as Window & { dataLayer?: unknown[]; gtag?: (...args: unknown[]) => void };
   w.dataLayer = w.dataLayer || [];
   if (typeof w.gtag !== "function") {
-    w.gtag = function gtag() {
-      w.dataLayer!.push(arguments as unknown as never);
+    w.gtag = function gtag(...args: unknown[]) {
+      w.dataLayer!.push(args);
     };
   }
   w.gtag("consent", "update", consentModeUpdate(granted));
