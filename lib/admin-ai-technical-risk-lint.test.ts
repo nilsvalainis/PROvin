@@ -55,17 +55,54 @@ describe("lintTechnicalRiskText", () => {
     expect(r.errors).toHaveLength(0);
   });
 
-  it("L1 flags forbidden intro and flagship praise", () => {
-    const intro = lintTechnicalRiskText({
+  it("L1 flags only praising intros, not factual equipment plus risk", () => {
+    const praiseIntro = lintTechnicalRiskText({
+      text: "Šī automašīna ir aprīkota ar uzticamo N47 dīzeli.\n\n" + okText,
+      identification: id,
+    });
+    expect(praiseIntro.errors.some((e) => e.id === "L1")).toBe(true);
+    const emptyIntro = lintTechnicalRiskText({
       text: "Šī automašīna ir aprīkota ar N47 dīzeli.\n\n" + okText,
       identification: id,
     });
-    expect(intro.errors.some((e) => e.id === "L1")).toBe(true);
+    expect(emptyIntro.errors.some((e) => e.id === "L1")).toBe(true);
     const praise = lintTechnicalRiskText({
       text: `${okText}\n\nŠis ir viens no uzticamākajiem motoriem.`,
       identification: id,
     });
     expect(praise.errors.some((e) => e.id === "L1")).toBe(true);
+    const factual = lintTechnicalRiskText({
+      text: "Šī automašīna ir aprīkota ar N47, un ķēde šajā posmā ir galvenais risks.\n\n" + okText,
+      identification: id,
+    });
+    expect(factual.errors.some((e) => e.id === "L1")).toBe(false);
+  });
+
+  it("L13 warns on obligatory tone and never treats N57 conrod bearing as a lint error", () => {
+    const tone = lintTechnicalRiskText({
+      text: `${okText}\n\nĶēde obligāti jāmaina. Pirkums netiek rekomendēts.`,
+      identification: id,
+    });
+    expect(tone.warnings.some((w) => w.id === "L13")).toBe(true);
+    const n57 = lintTechnicalRiskText({
+      text: `Klaņa gultņi
+N57 šajā posmā tipiska ir klaņa gultņu noberze. Tas ir verificēts agregāta risks, ne minējums.
+
+Kārba
+Automātiskā kārba paliek ierasta uzturēšanas izmaksa. Klātienē jāpārbauda pārslēgšanās.
+
+EGR un ieplūde
+Šim agregātam oglekļa nogulsnes ir tipiskas. Tas nav pirkuma šķērslis, ja diagnostika ir tīra.
+
+Stiprās puses
+Konstrukcija ir pazīstama servisiem. Uzturēšana joprojām ir jāpierāda ar dokumentiem.`,
+      identification: {
+        ...id,
+        engine: { value: "N57D30", confidence: "A", evidence: "dīleris", candidates: ["N57D30"] },
+      },
+    });
+    expect(n57.ok).toBe(true);
+    expect(n57.errors).toHaveLength(0);
   });
 
   it("L2 flags invented experience", () => {

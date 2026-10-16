@@ -34,7 +34,25 @@ export type TechnicalRiskLintResult = {
 
 const INTRO_RE = /^(Šī|Šajā)\s+(automašīn\w+|auto)\s+(ir aprīkota|uzstādīt)/i;
 const FLAGSHIP_RE = /viens no\s+(veiksmīgāk|uzticamāk|pārbaudītāk)/i;
+const PRAISE_RE = /uzticam|veiksmīg|pārbaudītāk|izcil|slaven|labākaj|premium|legend/i;
+const RISK_FACT_RE = /risk|kļūm|ķēd|zobsiksn|noplūd|maiņ|noberz|gultn|tipiski|klātien|defekt|vāj|resur/i;
 const EXPERIENCE_RE = /manā\s+(pieredzē|praksē)|es esmu redzējis/i;
+const CONSULTATIVE_BAN_RE = /\bobligāti\b|\bkritiski\b|netiek rekomendēts/i;
+const N57_CONROD_RE = /\bN57\b/i;
+const CONROD_BEARING_RE = /kla[nņ]a\s+gultn|šatun|conrod|connecting.?rod/i;
+
+export function textMentionsN57ConrodBearing(text: string): boolean {
+  return N57_CONROD_RE.test(text) && CONROD_BEARING_RE.test(text);
+}
+
+function isPraisingIntro(text: string): boolean {
+  if (FLAGSHIP_RE.test(text)) return true;
+  const head = text.slice(0, 280).trim();
+  if (!INTRO_RE.test(head)) return false;
+  const first = head.split(/(?<=[.!?])\s+/)[0] ?? head;
+  if (PRAISE_RE.test(first)) return true;
+  return !RISK_FACT_RE.test(first);
+}
 const EUR_RE = /€|EUR|\beiro\b/i;
 const MARKDOWN_LINE_RE = /^(\s*[-*]\s|\s*#{1,6}\s)/m;
 const MARKDOWN_INLINE_RE = /\*\*|__|\*(?=\S)/;
@@ -120,13 +138,12 @@ function headingLines(text: string): string[] {
 export function lintTechnicalRiskText(input: TechnicalRiskLintInput): TechnicalRiskLintResult {
   const text = input.text ?? "";
   const issues: TechnicalRiskLintIssue[] = [];
-  const head = text.slice(0, 200);
 
-  if (INTRO_RE.test(head.trim()) || FLAGSHIP_RE.test(text)) {
+  if (isPraisingIntro(text)) {
     issues.push({
       id: "L1",
       level: "E",
-      message: "Aizliegts ievads (aprīkota ar / uzstādīt / viens no veiksmīgākajiem).",
+      message: "Aizliegts slavinājuma ievads (viens no uzticamākajiem / slavinājuma „aprīkota ar”).",
     });
   }
   if (EXPERIENCE_RE.test(text)) {
@@ -214,6 +231,14 @@ export function lintTechnicalRiskText(input: TechnicalRiskLintInput): TechnicalR
       id: "L8",
       level: "W",
       message: "Trauksmes vārdi (kritisk / katastrof / anomālij / !).",
+    });
+  }
+
+  if (CONSULTATIVE_BAN_RE.test(text)) {
+    issues.push({
+      id: "L13",
+      level: "W",
+      message: "Taisnā pavēle (obligāti / kritiski / netiek rekomendēts). Lietot konsultatīvu formulējumu.",
     });
   }
 

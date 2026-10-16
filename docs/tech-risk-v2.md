@@ -78,7 +78,7 @@ Skat. `AI_TECH_RISK_V2_QA_SYSTEM`. Flash atgriež `{flagged, rewritten_text}` un
 
 | ID | Līmenis | Noteikums |
 |---|---|---|
-| L1 | E | Aizliegts ievads: `^(Šī\|Šajā) (automašīn\w+\|auto) (ir aprīkota\|uzstādīt)`; `viens no (veiksmīgāk\|uzticamāk\|pārbaudītāk)` |
+| L1 | E | Tikai slavinājuma ievads: `viens no (veiksmīgāk\|uzticamāk\|pārbaudītāk)` vai slavinājuma „aprīkota ar” bez riska fakta |
 | L2 | E | `manā (pieredzē\|praksē)`, `es esmu redzējis` |
 | L3 | E | `€\|EUR\|eiro`, ja nav verificētas KB joslas (KB: + datums), summa nesakrīt, slēdzis slēpj, vai ALLOW_COST_BANDS=false |
 | L4 | E | Svešs dzinēja kods ∉ {identification.engine.value, candidates} |
@@ -90,6 +90,9 @@ Skat. `AI_TECH_RISK_V2_QA_SYSTEM`. Flash atgriež `{flagged, rewritten_text}` un
 | L10 | W | Nolieguma sadaļa |
 | L11 | W | Confidence C bez "marķējum" |
 | L12 | W | <4 vai >12 sadaļas |
+| L13 | W | `obligāti` / `kritiski` / `netiek rekomendēts` (jābūt konsultatīvam) |
+
+N57 klaņa gultņu noberze ir verificēta tipiska kaite: lint/QA to neatzīmē kā minējumu.
 
 ## Mācīšanās
 
