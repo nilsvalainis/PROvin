@@ -6,7 +6,8 @@ import os from "node:os";
 import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
-import { readIrissCriteria } from "@/lib/iriss-criteria-migrate";
+import { retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
+import { parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
 import { attachmentAfterBlobPut, parseDataUrlPayload } from "@/lib/iriss-offer-attachment-blob";
@@ -514,7 +515,8 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     offers: normalizeOffers(o.offers),
     ...pickIrissPasutijumsAuditFields(o),
   };
-  record.criteria = readIrissCriteria({ ...record, criteria: o.criteria });
+  const storedCriteria = parseIrissCriteriaV1(o.criteria);
+  if (storedCriteria) record.criteria = storedCriteria;
   return record;
 }
 
@@ -846,14 +848,24 @@ async function persistOfferImages(
   r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
   record: IrissPasutijumsRecord,
 ): Promise<IrissPasutijumsRecord> {
+  let changed = false;
   const offers = [];
   for (const offer of record.offers) {
     const attachments = [];
+    let offerChanged = false;
     for (const att of offer.attachments) {
-      attachments.push(await persistOneOfferImage(r, record.id, offer.id, att));
+      const next = await persistOneOfferImage(r, record.id, offer.id, att);
+      if (next !== att) offerChanged = true;
+      attachments.push(next);
     }
-    offers.push({ ...offer, attachments });
+    if (offerChanged) {
+      changed = true;
+      offers.push({ ...offer, attachments });
+    } else {
+      offers.push(offer);
+    }
   }
+  if (!changed) return record;
   return { ...record, offers };
 }
 
@@ -1001,9 +1013,18 @@ export async function writeIrissPasutijums(
       updatedAt,
       createdAt,
       workspaceRevision: existingRev,
-      deletedAt: incomingDeletedAt !== undefined ? incomingDeletedAt : existing?.deletedAt ?? sanitized.deletedAt ?? "",
     };
+    const deletedAt =
+      incomingDeletedAt !== undefined ? incomingDeletedAt : existing?.deletedAt ?? sanitized.deletedAt;
+    if (deletedAt) {
+      if (out.deletedAt !== deletedAt) out = { ...out, deletedAt };
+    } else if ("deletedAt" in out) {
+      const rest = { ...out };
+      delete rest.deletedAt;
+      out = rest;
+    }
     out = await persistOfferImages(r, out);
+    out = retainStoredIrissCriteria(existing, out);
     if (existing && !isMeaningfullyChanged(existing, out)) {
       if (r.kind === "blob" && BLOB_RECORD_CACHE_TTL_MS > 0) {
         cacheBlobRecord(out.id, existing);

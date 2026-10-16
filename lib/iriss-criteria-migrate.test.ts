@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ECARSTRADE_BODY, ECARSTRADE_FUEL, ECARSTRADE_GEARBOX } from "@/lib/iriss-listings-ecarstrade-search";
 import { emptyIrissCriteriaFilter, irissCriteriaMandatoryGaps, parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
-import { migrateIrissCriteria, readIrissCriteria } from "@/lib/iriss-criteria-migrate";
+import { attachIrissCriteria, migrateIrissCriteria, readIrissCriteria, retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import { filterToSearchFilter, readSharedOrderCriteria } from "@/lib/iriss-criteria-shared";
 import { filterToSearchFilter as filterToSearchFilterFromMatch } from "@/lib/iriss-listings-search-filter";
 
@@ -153,6 +153,71 @@ describe("migrateIrissCriteria", () => {
       "gearbox",
       "bodyTypes",
     ]);
+  });
+});
+
+describe("legacy order is not rewritten", () => {
+  const legacy = {
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    createdAt: "2024-03-01T10:00:00.000Z",
+    updatedAt: "2024-11-02T15:30:00.000Z",
+    workspaceRevision: 3,
+    clientFirstName: "Jānis",
+    clientLastName: "Bērziņš",
+    phone: "+37120000000",
+    brandModel: "Volvo XC60",
+    productionYears: "2018-2021",
+    totalBudget: "18000",
+    engineType: "dīzelis",
+    transmission: "automāts",
+    bodyType: "SUV",
+    driveType: "AWD",
+    seatCount: "5",
+    maxMileage: "150000",
+    preferredColors: "melna",
+    nonPreferredColors: "dzeltena",
+    notes: "Klients grib pilnu servisa vēsturi",
+    equipmentRequired: "navigācija",
+    legacyMarker: "do-not-drop",
+  };
+
+  it("round-trips a legacy record byte-identical when the user does not edit", () => {
+    const bytes = JSON.stringify(legacy);
+    const parsed = JSON.parse(bytes) as typeof legacy & { criteria?: unknown };
+    const derived = readIrissCriteria(parsed);
+    const attached = attachIrissCriteria(parsed);
+    expect(derived.filters[0]?.fuel.value).toEqual([{ group: "diesel" }]);
+    expect(derived.filters[0]?.make.value).toContain("Volvo");
+    expect(attached.criteria.filters[0]?.bodyTypes.value).toEqual(["suv"]);
+    expect(attached.preferredColors).toBe("melna");
+    expect(JSON.stringify(parsed)).toBe(bytes);
+    expect("criteria" in parsed).toBe(false);
+
+    const echoed = { ...parsed, criteria: derived };
+    const persisted = retainStoredIrissCriteria(parsed, echoed);
+    expect(JSON.stringify(persisted)).toBe(bytes);
+    expect(persisted.notes).toBe(legacy.notes);
+    expect(persisted.preferredColors).toBe("melna");
+    expect(persisted.legacyMarker).toBe("do-not-drop");
+    expect("criteria" in persisted).toBe(false);
+  });
+
+  it("keeps an edited legacy field and still does not store derived criteria", () => {
+    const bytes = JSON.stringify(legacy);
+    const parsed = JSON.parse(bytes) as typeof legacy & { criteria?: unknown };
+    const edited = {
+      ...parsed,
+      notes: "Zvani pēc 18",
+      criteria: readIrissCriteria(parsed),
+    };
+    const persisted = retainStoredIrissCriteria(parsed, edited);
+    expect(persisted.notes).toBe("Zvani pēc 18");
+    expect(persisted.brandModel).toBe("Volvo XC60");
+    expect(persisted.engineType).toBe("dīzelis");
+    expect(persisted.preferredColors).toBe("melna");
+    expect(persisted.equipmentRequired).toBe("navigācija");
+    expect("criteria" in persisted).toBe(false);
+    expect(JSON.stringify(parsed)).toBe(bytes);
   });
 });
 

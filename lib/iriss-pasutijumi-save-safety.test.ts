@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readIrissCriteria } from "@/lib/iriss-criteria-migrate";
+import { emptyIrissCriteria } from "@/lib/iriss-criteria-types";
 import { emptyIrissOfferRecord, emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
 import {
   IRISS_STALE_REVISION,
@@ -97,6 +99,41 @@ describe("mergeIrissPasutijumsRecords", () => {
     expect(merged.offers.map((o) => o.id).sort()).toEqual(["off-l", "off-s"]);
     const s = merged.offers.find((o) => o.id === "off-s");
     expect(s?.attachments[0]?.dataUrl).toContain("ss");
+  });
+
+  it("does not copy derived criteria onto a legacy record", () => {
+    const server = rec("a", {
+      engineType: "dīzelis",
+      preferredColors: "melna",
+      brandModel: "Volvo XC60",
+      notes: "Serviss",
+    });
+    const local = {
+      ...server,
+      notes: "Jauna piezīme",
+      criteria: readIrissCriteria(server),
+    };
+    const merged = mergeIrissPasutijumsRecords(server, local);
+    expect(merged.notes).toBe("Jauna piezīme");
+    expect(merged.engineType).toBe("dīzelis");
+    expect(merged.preferredColors).toBe("melna");
+    expect(merged.brandModel).toBe("Volvo XC60");
+    expect(merged.criteria).toBeUndefined();
+  });
+
+  it("keeps criteria that was already stored and ignores a fresh migration", () => {
+    const stored = emptyIrissCriteria();
+    stored.filters[0]!.label = "Jau saglabāts";
+    const server = rec("a", { engineType: "dīzelis", criteria: stored });
+    const local = {
+      ...server,
+      engineType: "benzīns",
+      criteria: readIrissCriteria({ engineType: "benzīns" }),
+    };
+    const merged = mergeIrissPasutijumsRecords(server, local);
+    expect(merged.criteria).toBe(stored);
+    expect(merged.criteria?.filters[0]?.label).toBe("Jau saglabāts");
+    expect(merged.engineType).toBe("benzīns");
   });
 });
 

@@ -263,8 +263,8 @@ export type IrissPasutijumsRecord = {
   /** Piedāvājumi klientam (var būt vairāki). */
   offers: IrissOfferRecord[];
   /**
-   * Aditīvi kritēriji ar vairākiem filtriem. Vecie JSON bez lauka.
-   * Teksta lauki un saišu masīvi paliek. Krāsa šajā shēmā nav.
+   * Aditīvi kritēriji ar vairākiem filtriem. Vecie JSON šo lauku nesatur.
+   * Migrācija to neraksta. Teksta lauki un saišu masīvi paliek. Krāsa šajā shēmā nav.
    */
   criteria?: IrissCriteriaV1;
 };

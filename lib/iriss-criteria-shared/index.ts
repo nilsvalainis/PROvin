@@ -1,6 +1,7 @@
 /**
  * Kopīgs, tenant-agnostisks kritēriju adapteris.
- * IRISS to sauc lasot pasūtījumu. B2B demo to varēs saukt pēc tam, kad `B2bDemoOrder` dabūs `criteria?`.
+ * Rezultāts ir atmiņā. To neraksta atpakaļ esošā pasūtījumā.
+ * B2B demo to varēs saukt pēc tam, kad `B2bDemoOrder` dabūs `criteria?`.
  * Šeit nav tīkla, nav Blob, nav tenant id un nav importa no `lib/b2b-demo-*`.
  */
 

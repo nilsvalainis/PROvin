@@ -205,7 +205,9 @@ Krāsas lauka filtrā nav. `preferredColors` un `nonPreferredColors` paliek veca
 
 ## Migrācija
 
-`readIrissCriteria` lasa jau saglabātu derīgu V1 dokumentu. Ja tā nav, `migrateIrissCriteria` uztaisa vienu filtru `flt-1` ar nosaukumu `Filtrs 1`.
+Migrācija ir tikai lasāma. Tā dzīvo atmiņā un neraksta esošos pasūtījumus. Nav masveida rakstīšanas un nav slinkas atpakaļrakstīšanas nākamajā saglabāšanā. Vecie aizpildītie lauki paliek redzami un labojami tāpat kā līdz šim.
+
+`readIrissCriteria` lasa jau saglabātu derīgu V1 dokumentu. Ja tā nav, `migrateIrissCriteria` uztaisa vienu filtru `flt-1` ar nosaukumu `Filtrs 1`. Ieejas objekts netiek mainīts.
 
 Avots ir esošie teksta lauki: `brandModel`, `productionYears`, `maxMileage`, `totalBudget`, `engineType`, `transmission`, `bodyType`, `driveType`, `seatCount`, `equipmentRequired`, `equipmentDesired`, `dealVat21Required`, saišu masīvi `listingLinkAuto1`, `listingLinkOpenline` (Openlane), `listingLinkAutobid`, `listingLinkEcarstrade`, `listingLinkMobile`, `listingLinksOther`.
 
@@ -213,7 +215,7 @@ Avots ir esošie teksta lauki: `brandModel`, `productionYears`, `maxMileage`, `t
 
 Viena summa nobraukumā vai budžetā ir augšējā robeža, kā līdzšinējā meklēšanā. Diapazons aizpilda abas robežas. Gads `2018+` ir tikai `yearFrom`. `dealVat21Required` true dod `vatRequired` true. Izslēgts ķeksis nav `false`, tas ir tukšs.
 
-Esošie pasūtījuma lauki netiek dzēsti un netiek pārdēvēti. `criteria` ir neobligāts lauks uz `IrissPasutijumsRecord`. Lasīšana pievieno shēmu atmiņā. Masveida pārrakstīšana netiek darīta.
+Esošie pasūtījuma lauki netiek dzēsti un netiek pārdēvēti. `criteria` ir neobligāts lauks uz `IrissPasutijumsRecord`. Vecs JSON bez šī lauka tāds arī paliek. `retainStoredIrissCriteria` saglabāšanā patur tikai jau ierakstīto shēmu un izmet atvasinājumu.
 
 `B2bDemoOrder` šajā paketē netiek mainīts. Lauks `criteria?` tur pienāks atsevišķi, kad melnraksts ar B2B pasūtījuma tipu ir sapludināts. Līdz tam `readSharedOrderCriteria` un `attachSharedOrderCriteria` pieņem parasto objektu ar tiem pašiem teksta laukiem un nesaista tenant id. Brīvā piezīme `note` netiek pārcelta uz kritērijiem.
 

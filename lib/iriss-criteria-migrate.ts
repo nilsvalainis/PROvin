@@ -1,7 +1,7 @@
 /**
- * Slinka migrācija no esošajiem pasūtījuma teksta laukiem uz `IrissCriteriaV1`.
- * Esošie lauki netiek dzēsti vai pārdēvēti. Nederīgs teksts paliek `manual`.
- * Ja `criteria` jau ir derīga V1 shēma, tā netiek pārrakstīta.
+ * Kritēriju atvasināšana no esošajiem pasūtījuma teksta laukiem.
+ * Tā ir tikai lasāma un dzīvo atmiņā. Tā neraksta ierakstu, nedzēš laukus un nepārdēvē tos.
+ * Nederīgs teksts paliek `manual`. Ja `criteria` jau ir derīga V1 shēma, lasītājs atgriež to.
  */
 
 import { mapEngineCc } from "@/lib/iriss-listings-ecarstrade-criteria";
@@ -351,8 +351,8 @@ export function migrateIrissCriteria(input: IrissCriteriaMigrationInput): IrissC
 }
 
 /**
- * Lasīšana: derīga saglabātā shēma paliek. Ja tās nav, tiek izveidota atmiņā.
- * Šī funkcija neko neraksta.
+ * Lasīšana: derīga saglabātā shēma paliek. Ja tās nav, shēma tiek izveidota atmiņā.
+ * Ieejas objekts netiek mainīts. Rezultātu nedrīkst rakstīt atpakaļ vecā pasūtījumā.
  */
 export function readIrissCriteria(input: IrissCriteriaMigrationInput): IrissCriteriaV1 {
   const parsed = parseIrissCriteriaV1(input.criteria);
@@ -360,6 +360,24 @@ export function readIrissCriteria(input: IrissCriteriaMigrationInput): IrissCrit
   return migrateIrissCriteria(input);
 }
 
+/** Kopija ar atmiņas shēmu. Avota ieraksts paliek bez jaunā lauka. */
 export function attachIrissCriteria<T extends IrissCriteriaMigrationInput>(record: T): T & { criteria: IrissCriteriaV1 } {
   return { ...record, criteria: readIrissCriteria(record) };
+}
+
+/**
+ * Saglabājamais `criteria`.
+ * Vecam ierakstam bez šī lauka atvasinājums tiek izmests.
+ * Ja lauks jau bija saglabāts, paliek tieši tas. Jauns ieraksts (stored nav) netiek aiztikts.
+ */
+export function retainStoredIrissCriteria<T extends { criteria?: IrissCriteriaV1 }>(
+  stored: { criteria?: IrissCriteriaV1 } | null | undefined,
+  incoming: T,
+): T {
+  if (!stored) return incoming;
+  if (stored.criteria) return { ...incoming, criteria: stored.criteria };
+  if (incoming.criteria === undefined) return incoming;
+  const next = { ...incoming };
+  delete next.criteria;
+  return next;
 }
