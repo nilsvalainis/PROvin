@@ -330,7 +330,14 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
         await backupIndexBeforeWrite(fresh).catch((e) => {
           console.error("[iriss pavadzimes] index backup failed", e instanceof Error ? e.message : e);
         });
-        await writeIndex({ version: 1, updatedAt: nowIso, items: nextItems }).catch(() => undefined);
+        const wrote = await writeIndex({ version: 1, updatedAt: nowIso, items: nextItems })
+          .then(() => true)
+          .catch(() => false);
+        if (wrote) {
+          await rememberWaybillChanges(priorItems, nextItems).catch((e) => {
+            console.error("[change-history]", e instanceof Error ? e.message : e);
+          });
+        }
       }
 
       const pendingParse = Math.max(0, dirty.length - batch.length);
@@ -435,5 +442,59 @@ export async function uploadIrissPavadzime(input: UploadWaybillInput): Promise<I
   );
   const nextItems = sortIrissPavadzimes([...index.items.filter((x) => x.id !== id), rec]);
   await writeIndex({ version: 1, updatedAt: nowIso, items: nextItems });
+  if (existing) {
+    await rememberWaybillChanges([existing], [rec]).catch((e) => {
+      console.error("[change-history]", e instanceof Error ? e.message : e);
+    });
+  }
   return rec;
+}
+
+export async function restoreIrissPavadzimeSnapshot(
+  id: string,
+  snapshot: Record<string, string>,
+  by: string,
+): Promise<IrissPavadzimeRecord | null> {
+  if (!isSafeIrissPavadzimeId(id)) return null;
+  const index = await readIndex();
+  const existing = index.items.find((row) => row.id === id);
+  if (!existing) return null;
+  const { applyIrissWaybillSnapshot } = await import("@/lib/admin-change-history");
+  const next = applyIrissWaybillSnapshot(existing, snapshot);
+  next.updatedAt = new Date().toISOString();
+  const items = sortIrissPavadzimes([...index.items.filter((row) => row.id !== id), next]);
+  await writeIndex({ version: 1, updatedAt: next.updatedAt, items });
+  await rememberWaybillChanges([existing], [next], "restore", by).catch((e) => {
+    console.error("[change-history]", e instanceof Error ? e.message : e);
+  });
+  return next;
+}
+
+async function rememberWaybillChanges(
+  beforeRows: readonly IrissPavadzimeRecord[],
+  afterRows: readonly IrissPavadzimeRecord[],
+  action: "save" | "restore" = "save",
+  by?: string,
+): Promise<void> {
+  const { diffAdminChangeFields, snapshotIrissWaybill } = await import("@/lib/admin-change-history");
+  const { ADMIN_SEARCH_OPERATOR_TENANT } = await import("@/lib/admin-global-search");
+  const { recordAdminChangeHistory } = await import("@/lib/admin-change-history-store");
+  const { adminActorLabel } = await import("@/lib/admin-auth");
+  const before = new Map(beforeRows.map((row) => [row.id, row]));
+  for (const row of afterRows) {
+    const prev = before.get(row.id);
+    if (!prev) continue;
+    const left = snapshotIrissWaybill(prev);
+    const right = snapshotIrissWaybill(row);
+    if (diffAdminChangeFields(left, right).length === 0) continue;
+    await recordAdminChangeHistory({
+      kind: "iriss-waybill",
+      recordId: row.id,
+      tenantId: ADMIN_SEARCH_OPERATOR_TENANT,
+      before: left,
+      after: right,
+      by: by || adminActorLabel(),
+      action,
+    });
+  }
 }
