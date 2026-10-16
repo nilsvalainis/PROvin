@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
 import { usePathname } from "next/navigation";
+import { AdminGlobalSearch } from "./AdminGlobalSearch";
 import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./AdminSidebar";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
@@ -69,6 +70,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
         </AdminShellLayoutContext.Provider>
       </div>
       {hideTabBar ? null : <AdminMobileTabBar workspace={workspace} />}
+      <AdminGlobalSearch />
     </div>
     </AdminVinHandoffProvider>
   );

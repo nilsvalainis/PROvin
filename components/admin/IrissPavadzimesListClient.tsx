@@ -2,7 +2,8 @@
 
 import { FileText, Loader2, Plus } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
@@ -24,6 +25,18 @@ function validityClass(tone: IrissPavadzimeValidityTone): string {
 
 function dash(v: string): string {
   return v.trim() || "—";
+}
+
+function PavadzimeSearchFocus({ rowCount }: { rowCount: number }) {
+  const sp = useSearchParams();
+  useEffect(() => {
+    const id = sp.get("wb")?.trim() ?? "";
+    if (!/^[A-Za-z0-9._-]{1,80}$/.test(id)) return;
+    const nodes = document.querySelectorAll<HTMLElement>(`[data-pavadzime="${id}"]`);
+    const visible = [...nodes].find((n) => n.getClientRects().length > 0);
+    visible?.scrollIntoView({ block: "center" });
+  }, [sp, rowCount]);
+  return null;
 }
 
 export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
@@ -95,6 +108,9 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
 
   return (
     <>
+      <Suspense fallback={null}>
+        <PavadzimeSearchFocus rowCount={rows.length} />
+      </Suspense>
       <div className="mt-2 flex items-center gap-2">
         {data.pendingParse > 0 ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#8e8e93]" aria-hidden /> : null}
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
@@ -144,7 +160,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
               const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
               const orderHref = row.order ? `/admin/iriss/pasutijumi/${encodeURIComponent(row.order.id)}` : null;
               return (
-                <li key={row.id} className="rounded-xl border border-[#ececee] bg-white p-3">
+                <li key={row.id} data-pavadzime={row.id} className="rounded-xl border border-[#ececee] bg-white p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className={`truncate text-[14px] font-semibold ${row.brandModel.trim() ? "text-[var(--color-apple-text)]" : "text-[#aeaeb2]"}`}>
@@ -207,7 +223,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                     const orderHref = row.order ? `/admin/iriss/pasutijumi/${encodeURIComponent(row.order.id)}` : null;
                     const vin = row.vin.trim();
                     return (
-                      <tr key={row.id} className="h-[46px] whitespace-nowrap border-t border-[#f0f0f2] transition-colors hover:bg-[#f7f7f8]">
+                      <tr key={row.id} data-pavadzime={row.id} className="h-[46px] whitespace-nowrap border-t border-[#f0f0f2] transition-colors hover:bg-[#f7f7f8]">
                         <td className={`${hug} py-1 pl-4 pr-4 font-mono text-[12px] tracking-wide text-[#3a3a3c]`}>{dash(row.number)}</td>
                         <td className="max-w-[300px] py-1 pr-4">
                           <span

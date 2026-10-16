@@ -19,6 +19,7 @@ import {
   Plus,
   Radar,
   ScanLine,
+  Search,
   Settings,
   Sun,
   Zap,
@@ -28,6 +29,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { IrissPavadzimesSidebarCard } from "@/components/admin/IrissPavadzimesSidebarCard";
+import { requestAdminGlobalSearch } from "@/lib/admin-global-search";
 import { finiteBadgeCount } from "@/lib/admin-sidebar-badge";
 import {
   ADMIN_MOBILE_TABBAR_DOCK_NAV,
@@ -426,6 +428,16 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
         </div>
       )}
       <nav className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-3 [scrollbar-width:thin]">
+        <button
+          type="button"
+          onClick={() => requestAdminGlobalSearch()}
+          title="Meklēt"
+          aria-label="Meklēt"
+          className={`admin-nav-link mb-1 flex h-9 w-full items-center gap-2.5 rounded-lg text-[13.5px] text-[var(--color-apple-text)] transition hover:bg-black/[0.04] ${collapsed ? "justify-center" : "px-2.5"}`}
+        >
+          <Search className="h-[17px] w-[17px] shrink-0 text-[#8e8e93]" strokeWidth={2} aria-hidden />
+          {collapsed ? null : <span className="min-w-0 flex-1 truncate">Meklēt</span>}
+        </button>
         {WS_GROUPS[ws].map((g) => (
           <div key={g.title} className="mt-2 first:mt-0">
             {collapsed ? (
