@@ -3,7 +3,7 @@
  * N57 klaņu šāles: apstiprināta tipiska kaite, ne kļūdains fragments.
  */
 import { claimsConflict, claimTokenSet } from "@/lib/admin-audit-knowledge-claim-extract";
-import type { KnowledgeItem } from "@/lib/admin-audit-knowledge-items-types";
+import type { KnowledgeItem, KnowledgeItemHistoryEntry } from "@/lib/admin-audit-knowledge-items-types";
 
 const OWNER_TS = "2026-10-16T00:00:00.000Z";
 
@@ -72,6 +72,13 @@ export function mergeOwnerVerifiedKnowledge<T extends { items: Record<string, Kn
       continue;
     }
     if (existing.status !== "approved") {
+      const restoreEntry: KnowledgeItemHistoryEntry = {
+        at: seed.reviewedAt ?? OWNER_TS,
+        by: "owner",
+        action: "approve",
+        claim: seed.claim,
+        reason: "avots: īpašnieks (atjaunots)",
+      };
       doc.items[seed.id] = {
         ...existing,
         claim: seed.claim,
@@ -80,16 +87,7 @@ export function mergeOwnerVerifiedKnowledge<T extends { items: Record<string, Kn
         sources: seed.sources.length > 0 ? [...seed.sources] : existing.sources,
         reviewedBy: seed.reviewedBy,
         reviewedAt: seed.reviewedAt,
-        history: [
-          ...existing.history,
-          {
-            at: seed.reviewedAt ?? OWNER_TS,
-            by: "owner",
-            action: "approve",
-            claim: seed.claim,
-            reason: "avots: īpašnieks (atjaunots)",
-          },
-        ].slice(-40),
+        history: [...existing.history, restoreEntry].slice(-40),
       };
     }
   }
