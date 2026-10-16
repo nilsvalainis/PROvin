@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.20.0
-// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
+// @version      1.22.0
+// @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @match        http://localhost:*/admin*
@@ -84,13 +84,33 @@
 // @grant        GM_xmlhttpRequest
 // @connect      tirgusdati.lv
 // @connect      adify.lv
+// @connect      stat.vin
+// @connect      www.stat.vin
+// @connect      bid.cars
+// @connect      www.bid.cars
+// @connect      bidfax.info
+// @connect      www.bidfax.info
+// @connect      checkcar.vin
+// @connect      www.checkcar.vin
+// @connect      plc.auction
+// @connect      www.plc.auction
+// @connect      www.carfax.eu
+// @connect      carfax.eu
+// @connect      poctra.com
+// @connect      www.poctra.com
+// @connect      www.epolicija.lt
+// @connect      epolicija.lt
+// @connect      biluppgifter.se
+// @connect      www.biluppgifter.se
+// @connect      www.nicb.org
+// @connect      nicb.org
 // @run-at       document-idle
 // ==/UserScript==
 
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.20.0";
+  const SCRIPT_VERSION = "1.22.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -294,6 +314,177 @@
       }
       pollVinScan();
     });
+    function gmXhr() {
+      return typeof GM_xmlhttpRequest === "function"
+        ? GM_xmlhttpRequest
+        : typeof GM !== "undefined" && GM && typeof GM.xmlHttpRequest === "function"
+          ? GM.xmlHttpRequest.bind(GM)
+          : null;
+    }
+
+    const STAT_VIN_HTML_MAX = 900000;
+    const browserFetched = Object.create(null);
+    const BROWSER_FETCH_URL = {
+      stat_vin: function (vin) {
+        return "https://stat.vin/cars/" + encodeURIComponent(vin);
+      },
+      bid_cars: function (vin) {
+        return "https://bid.cars/en/search?q=" + encodeURIComponent(vin);
+      },
+      bidfax: function (vin) {
+        return "https://bidfax.info/?s=" + encodeURIComponent(vin);
+      },
+      checkcar_vin: function (vin) {
+        return "https://checkcar.vin/report/check/" + encodeURIComponent(vin);
+      },
+      plc_auction: function (vin) {
+        return "https://plc.auction/?vin=" + encodeURIComponent(vin);
+      },
+      carfax_eu: function (vin) {
+        return "https://www.carfax.eu/preview-page?vin=" + encodeURIComponent(vin);
+      },
+      poctra: function (vin) {
+        return "https://poctra.com/search?q=" + encodeURIComponent(vin);
+      },
+      lt_itpr: function (vin) {
+        return "https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=" + encodeURIComponent(vin);
+      },
+      biluppgifter: function (vin) {
+        return "https://biluppgifter.se/" + encodeURIComponent(vin);
+      },
+      nicb: function (vin) {
+        return "https://www.nicb.org/vincheck?vin=" + encodeURIComponent(vin);
+      },
+    };
+    const BROWSER_FETCH_LABEL = {
+      stat_vin: "stat.vin",
+      bid_cars: "bid.cars",
+      bidfax: "BidFax",
+      checkcar_vin: "checkcar.vin",
+      plc_auction: "plc.auction",
+      carfax_eu: "CARFAX.eu",
+      poctra: "Poctra",
+      lt_itpr: "epolicija.lt",
+      biluppgifter: "biluppgifter.se",
+      nicb: "NICB",
+    };
+
+    function publishBrowserHtml(id, vin, pageUrl, httpStatus, html, summary) {
+      document.dispatchEvent(
+        new CustomEvent("provin-vin-scan-result", {
+          detail: {
+            id: id,
+            vin: vin,
+            status: "unknown",
+            summary: summary || "",
+            html: html,
+            pageUrl: pageUrl,
+            httpStatus: httpStatus,
+            at: Date.now(),
+          },
+        }),
+      );
+    }
+
+    function limitBrowserHtml(id, html) {
+      if (html.length <= STAT_VIN_HTML_MAX) return html;
+      if (id !== "stat_vin") return html.slice(0, STAT_VIN_HTML_MAX);
+      const nextMatch = html.match(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/i);
+      const next = nextMatch ? nextMatch[0].slice(0, 400000) : "";
+      const room = STAT_VIN_HTML_MAX - next.length;
+      return (html.slice(0, Math.max(0, room)) + next).slice(0, STAT_VIN_HTML_MAX);
+    }
+
+    function fetchBlockedSourceInBrowser(id, token) {
+      const specUrl = BROWSER_FETCH_URL[id];
+      if (!specUrl) return;
+      const raw = String(token || "");
+      const key = id + ":" + raw;
+      if (!raw || browserFetched[key]) return;
+      const vin = raw.split(":")[0].replace(/[\s-]/g, "").toUpperCase();
+      if (!/^[A-HJ-NPR-Z0-9]{11,17}$/.test(vin)) return;
+      const xhr = gmXhr();
+      if (!xhr) return;
+      browserFetched[key] = 1;
+      const pageUrl = specUrl(vin);
+      const label = BROWSER_FETCH_LABEL[id] || id;
+      xhr({
+        method: "GET",
+        url: pageUrl,
+        timeout: 25000,
+        headers: {
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.9,lv;q=0.6",
+        },
+        onload: function (res) {
+          const html = limitBrowserHtml(id, String(res.responseText || ""));
+          const text = html.replace(/<[^>]+>/g, " ");
+          const limited =
+            res.status === 429 ||
+            (/too many requests|rate limit(?:ed)?|try again later/i.test(text) && text.toUpperCase().indexOf(vin) === -1);
+          publishBrowserHtml(id, vin, pageUrl, res.status, html, limited ? label + ": pieprasījumu limits" : "");
+        },
+        onerror: function () {
+          delete browserFetched[key];
+        },
+        ontimeout: function () {
+          delete browserFetched[key];
+        },
+      });
+    }
+
+    function fetchStatVinInBrowser(token) {
+      fetchBlockedSourceInBrowser("stat_vin", token);
+    }
+
+    function readBrowserFetchRequest() {
+      const el = document.querySelector("[data-provin-browser-fetch], [data-provin-stat-vin-fetch]");
+      if (!el) return { token: "", ids: [] };
+      const token = String(el.getAttribute("data-provin-browser-fetch") || el.getAttribute("data-provin-stat-vin-fetch") || "");
+      const rawIds = String(el.getAttribute("data-provin-browser-fetch-ids") || "");
+      let ids = rawIds
+        .split(",")
+        .map(function (item) {
+          return item.trim();
+        })
+        .filter(Boolean);
+      if (!ids.length && el.getAttribute("data-provin-stat-vin-fetch")) ids = ["stat_vin"];
+      return { token: token, ids: ids };
+    }
+
+    function runBrowserFetches(token, ids) {
+      const list = ids && ids.length ? ids : [];
+      for (let i = 0; i < list.length; i += 1) fetchBlockedSourceInBrowser(list[i], token);
+    }
+
+    function watchStatVinBrowserFetch() {
+      const run = function () {
+        const pending = readBrowserFetchRequest();
+        runBrowserFetches(pending.token, pending.ids);
+      };
+      const obs = new MutationObserver(run);
+      obs.observe(document.documentElement, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["data-provin-stat-vin-fetch", "data-provin-browser-fetch", "data-provin-browser-fetch-ids"],
+      });
+      document.addEventListener("provin-stat-vin-fetch", function (ev) {
+        const detail = ev && ev.detail ? ev.detail : {};
+        const vin = String(detail.vin || "");
+        const at = String(detail.at || "");
+        fetchStatVinInBrowser(at ? vin + ":" + at : vin);
+      });
+      document.addEventListener("provin-browser-fetch", function (ev) {
+        const detail = ev && ev.detail ? ev.detail : {};
+        const vin = String(detail.vin || "");
+        const at = String(detail.at || "");
+        const ids = Array.isArray(detail.ids) ? detail.ids.map(function (id) { return String(id); }) : [];
+        runBrowserFetches(at ? vin + ":" + at : vin, ids);
+      });
+      run();
+    }
+
+    watchStatVinBrowserFetch();
     pollSwedishImport();
     pollVinScan();
     return;
@@ -821,6 +1012,9 @@
     poctra: 1,
     checkcar_vin: 1,
     plc_auction: 1,
+    carfax_eu: 1,
+    nicb: 1,
+    lt_itpr: 1,
     biluppgifter: 1,
     carinfo: 1,
   };

@@ -28,6 +28,7 @@ import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
 import { isClientLinkPath } from "./lib/client-link";
 import { isIrissOfferLinkPath } from "./lib/iriss-offer-client-link";
 import { decideB2bDemoHostRequest } from "./lib/b2b-demo-host";
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "./lib/admin-session-token";
 
 /* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
    papildu redirectus; next-intl ar vienu lokalizāciju un `localePrefix: "as-needed"`/`never` deva 307 cilpu uz `/`. */
@@ -59,7 +60,23 @@ function requestWithLocaleHeader(request: NextRequest, locale: string): NextRequ
   return new NextRequest(request, { headers });
 }
 
-export default function middleware(request: NextRequest) {
+function isAdminLoginPath(pathname: string): boolean {
+  return pathname === "/admin/login" || pathname.startsWith("/admin/login/");
+}
+
+/** Bez derīgas sesijas lapa netiek renderēta: tukša 307 atbilde, nekādu datu ķermenī. */
+function adminLoginRedirect(request: NextRequest): NextResponse {
+  const { pathname, search } = request.nextUrl;
+  const dest = request.nextUrl.clone();
+  dest.pathname = "/admin/login";
+  dest.search = `?next=${encodeURIComponent(`${pathname}${search}`)}`;
+  const res = redirect307(dest);
+  res.headers.set("Cache-Control", "private, no-store");
+  res.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return res;
+}
+
+export default async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const b2bDemo = decideB2bDemoHostRequest(request.headers.get("host"), pathname);
   if (b2bDemo.action === "redirect") {
@@ -160,7 +177,10 @@ export default function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/admin")) {
     const requestHeaders = new Headers(request.headers);
-    if (!pathname.startsWith("/admin/login")) {
+    if (!isAdminLoginPath(pathname)) {
+      if (!(await verifyAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value))) {
+        return adminLoginRedirect(request);
+      }
       requestHeaders.set("x-admin-intended-path", pathname);
     }
     return NextResponse.next({ request: { headers: requestHeaders } });

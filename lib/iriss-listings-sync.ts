@@ -55,7 +55,8 @@ import { computeListingVatHealth, logListingVatHealth } from "@/lib/iriss-listin
 import { refreshIrissListingMatches } from "@/lib/iriss-listing-match-store";
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
-import { irissScanSourceRows } from "@/lib/iriss-scan-listings";
+import { listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
+import { irissScanSourceRows, isIrissScanOrderId } from "@/lib/iriss-scan-listings";
 import { listIrissScan } from "@/lib/iriss-scan-store";
 
 export type IrissListingsSyncResult = {
@@ -101,6 +102,11 @@ function applyEntryFilter<T extends { title?: string; manufacturer?: string; yea
   src: IrissListingSource,
 ): T[] {
   return applyListingEntryFilter(vehicles, src);
+}
+
+/** Kopīgā meklējuma rezultāts pasūtījumam tikai ar tā marku un modeli (eCarsTrade ingest filtrs marku neņem). */
+function vehicleBelongsToSource(v: { title?: string; manufacturer?: string }, src: IrissListingSource): boolean {
+  return isIrissScanOrderId(src.orderId) || listingMatchesOrderMakeModel(v, src.orderBrandModel);
 }
 
 function unboundedSearchSkip(src: IrissListingSource): SourceFetch | null {
@@ -205,6 +211,7 @@ async function fetchSource(src: IrissListingSource, ctx?: ListingSyncFetchContex
       auctionStartAt: v.auctionStartAt,
       auctionEndAt: v.auctionEndAt,
       auctionStage: v.auctionStage,
+      ...(v.priceState ? { priceState: v.priceState } : {}),
     }));
     return {
       status: r.status,
@@ -537,7 +544,7 @@ export async function runIrissListingsDailySync(
     if (hit.fetch.status === "ok") {
       const kept = rejectExcludedIrissListings(hit.fetch.vehicles);
       for (const src of g.orders) {
-        fetched.push(...fanOutFetchedVehicles(applyEntryFilter(kept, src), [src]));
+        fetched.push(...fanOutFetchedVehicles(applyEntryFilter(kept, src).filter((v) => vehicleBelongsToSource(v, src)), [src]));
       }
     }
     if (hit.fetch.rawPages.length > 0) raw.sources.push({ platform: g.platform, sourceUrl: g.sourceUrl, pages: hit.fetch.rawPages });

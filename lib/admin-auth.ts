@@ -1,13 +1,13 @@
 import "server-only";
 
 import { createHmac, timingSafeEqual } from "crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { ADMIN_SESSION_COOKIE_NAME, resolveAdminSessionSecret } from "@/lib/admin-session-token";
 
-const COOKIE_NAME = "provin_admin_session";
+const COOKIE_NAME = ADMIN_SESSION_COOKIE_NAME;
 const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Tikai `next dev` — nekad netiek lietots, ja `NODE_ENV === "production"`. */
-const DEV_FALLBACK_SECRET = "provin-local-dev-secret-min-16-chars";
 const DEV_FALLBACK_USERNAME = "admin";
 const DEV_FALLBACK_PASSWORD = "provin-local-dev";
 
@@ -16,10 +16,7 @@ function isProduction(): boolean {
 }
 
 function resolveSecret(): string {
-  const v = process.env.ADMIN_SECRET?.trim() ?? "";
-  if (v) return v;
-  if (!isProduction()) return DEV_FALLBACK_SECRET;
-  return "";
+  return resolveAdminSessionSecret();
 }
 
 function resolveUsername(): string {
@@ -68,6 +65,17 @@ export async function getAdminSession(): Promise<boolean> {
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return false;
   return verifyToken(token);
+}
+
+/**
+ * Pirmā rinda katrā admin lapā. Next renderē lapu paralēli izkārtojumam, tāpēc izkārtojuma
+ * `redirect` neaptur lapas datu ielādi: bez šīs pārbaudes dati nonāk 307 atbildes ķermenī.
+ */
+export async function requireAdminPage(): Promise<void> {
+  if (await getAdminSession()) return;
+  const intended = (await headers()).get("x-admin-intended-path")?.trim() || "/admin";
+  const safe = intended.startsWith("/admin") && !intended.startsWith("/admin/login") ? intended : "/admin";
+  redirect(`/admin/login?next=${encodeURIComponent(safe)}`);
 }
 
 export function adminAuthConfigured(): boolean {

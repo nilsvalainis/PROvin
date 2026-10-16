@@ -14,6 +14,7 @@ import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { listAdminOrders } from "@/lib/admin-orders";
 import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
 import { getSampleReportClickStats } from "@/lib/sample-report-click-store";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Statistika",
@@ -56,6 +57,7 @@ function ToolLink({ href, label, hint }: { href: string; label: string; hint: st
 }
 
 export default async function AdminStatistikaPage() {
+  await requireAdminPage();
   const embedUrl = getAnalyticsEmbedUrl();
   const dashboardUrl = getAnalyticsDashboardUrl();
   const gaId = getGaMeasurementId();

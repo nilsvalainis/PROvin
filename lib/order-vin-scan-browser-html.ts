@@ -5,12 +5,14 @@
  */
 
 import { ORDER_VIN_SCAN_BROWSER_IMPORT_IDS, type OrderVinScanRecord } from "@/lib/order-vin-scan";
+import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
-import { parseAuctionArchive } from "@/lib/vin-scan/parse-extra";
+import { parseAuctionArchive, parseNicbHtml } from "@/lib/vin-scan/parse-extra";
 import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 import { isSwedishBrowserSourceId, parseSwedishVehiclePage, swedishSourceLabel } from "@/lib/vin-scan/parse-sweden";
 import { buildVinScanIndicator, type VinScanAuction, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
+import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
 
 /** Aptuveni 900 KB. Garāku lapu skripts saīsina, serveris noraida. */
 export const ORDER_VIN_SCAN_BROWSER_HTML_MAX = 900_000;
@@ -87,16 +89,17 @@ function htmlPhotoUrls(html: string): string[] {
   return out;
 }
 
-function withPhotos(parsed: VinScanParse, html: string): VinScanParse {
+function withPhotos(parsed: VinScanParse, html: string, limit = 20): VinScanParse {
   const extra = htmlPhotoUrls(html);
   if (!extra.length && !parsed.media?.photoUrl && !(parsed.media?.photoUrls?.length)) return parsed;
+  const cap = Math.max(limit, parsed.media?.photoUrls?.length ?? 0);
   const photoUrls = [...(parsed.media?.photoUrls ?? [])];
   const seen = new Set(photoUrls);
   for (const url of extra) {
     if (seen.has(url)) continue;
     seen.add(url);
     photoUrls.push(url);
-    if (photoUrls.length >= 20) break;
+    if (photoUrls.length >= cap) break;
   }
   const photoUrl = parsed.media?.photoUrl || photoUrls[0];
   const photoCount = Math.max(parsed.media?.photoCount ?? 0, photoUrls.length);
@@ -105,7 +108,7 @@ function withPhotos(parsed: VinScanParse, html: string): VinScanParse {
     media: {
       photoUrl: photoUrl || undefined,
       photoCount: photoCount > 0 ? photoCount : undefined,
-      photoUrls: photoUrls.slice(0, 20),
+      photoUrls: photoUrls.slice(0, cap),
     },
   };
 }
@@ -149,19 +152,38 @@ function readyParse(parsed: VinScanParse | null): VinScanParse | BrowserArchiveH
   return parsed;
 }
 
-function parseArchiveHtml(id: string, html: string, pageUrl: string, vin: string): VinScanParse | BrowserArchiveHtmlError {
+function parseArchiveHtml(
+  id: string,
+  html: string,
+  pageUrl: string,
+  vin: string,
+  httpStatus = 200,
+): VinScanParse | BrowserArchiveHtmlError {
   if (id === "stat_vin") {
-    return readyParse(parseStatVinPage({ status: 200, html, vin, finalUrl: pageUrl || null }));
+    const parsed = parseStatVinPage({ status: httpStatus, html, vin, finalUrl: pageUrl || null });
+    if (parsed.status === "unknown" && /pieprasījumu limits/i.test(parsed.summary)) return parsed;
+    return readyParse(parsed);
   }
   if (id === "bid_cars" || id === "bidfax" || id === "poctra") {
     const label = ARCHIVE_LABEL[id] || id;
-    return readyParse(parseAuctionArchive(200, html, vin, label));
+    return readyParse(parseAuctionArchive(httpStatus > 0 ? httpStatus : 200, html, vin, label));
   }
   if (id === "plc_auction") {
     return readyParse(classifyPlcAuction(visibleText(html)));
   }
   if (id === "checkcar_vin") {
     return readyParse(classifyCheckcarVinText(visibleText(html), vin));
+  }
+  if (id === "carfax_eu") {
+    const read = classifyBrowserProbe("carfax_eu", visibleText(html), vin);
+    if (!read || (read.status !== "found" && read.status !== "none")) return "page_not_ready";
+    return { status: read.status, summary: read.summary };
+  }
+  if (id === "nicb") {
+    return readyParse(parseNicbHtml(html, vin));
+  }
+  if (id === "lt_itpr") {
+    return readyParse(classifyPoliceWanted("lt_itpr", visibleText(html), vin));
   }
   if (isSwedishBrowserSourceId(id)) {
     const parsed = parseSwedishVehiclePage(html, pageUrl);
@@ -259,6 +281,8 @@ export function applyBrowserArchiveHtml(input: {
   html: string;
   pageUrl?: string;
   vin: string;
+  /** Pārlūka atbildes HTTP statuss. 429 patur pieprasījumu limita kopsavilkumu. */
+  httpStatus?: number;
 }): BrowserArchiveHtmlResult {
   const vin = input.vin.trim().toUpperCase();
   const id = input.id.trim();
@@ -271,9 +295,11 @@ export function applyBrowserArchiveHtml(input: {
   if (!html.trim()) return { ok: false, error: "page_not_ready" };
   if (!vinMatchesPage(html, pageUrl, vin)) return { ok: false, error: "vin_mismatch" };
 
-  const parsed = parseArchiveHtml(id, html, pageUrl, vin);
+  const parsed = parseArchiveHtml(id, html, pageUrl, vin, input.httpStatus);
   if (typeof parsed === "string") return { ok: false, error: parsed };
-  const enriched = isSwedishBrowserSourceId(id) ? parsed : enrichFound(withPhotos(parsed, html), html);
+  const enriched = isSwedishBrowserSourceId(id)
+    ? parsed
+    : enrichFound(withPhotos(parsed, html, id === "stat_vin" ? 200 : 20), html);
   const prev = input.record.indicators.find((row) => row.id === id);
   const nextRow = mergeIndicator(prev, id, vin, enriched, pageUrl);
   const indicators = prev

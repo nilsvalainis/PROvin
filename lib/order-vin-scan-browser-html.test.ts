@@ -121,6 +121,23 @@ describe("pārlūka arhīva HTML imports", () => {
     expect(applied).toEqual({ ok: false, error: "too_large" });
   });
 
+  it("stat.vin pieprasījumu limits paliek kopsavilkumā", () => {
+    const applied = applyBrowserArchiveHtml({
+      record: record([blockedStat]),
+      id: "stat_vin",
+      html: "<html><body>Too many requests. Try again later.</body></html>",
+      pageUrl: `https://stat.vin/cars/${VIN}`,
+      vin: VIN,
+      httpStatus: 429,
+    });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    const row = applied.record.indicators.find((item) => item.id === "stat_vin");
+    expect(row?.status).toBe("unknown");
+    expect(row?.summary).toMatch(/pieprasījumu limits/);
+    expect(row?.summary).not.toMatch(/403/);
+  });
+
   it("Cloudflare lapa nepaliek kā found vai none", () => {
     const applied = applyBrowserArchiveHtml({
       record: record([blockedStat]),
@@ -224,6 +241,41 @@ describe("pārlūka arhīva HTML imports", () => {
     expect(none.ok).toBe(true);
     if (!none.ok) return;
     expect(none.record.indicators[0]?.status).toBe("none");
+  });
+
+  it("CARFAX, NICB un epolicija HTML no pārlūka kļūst par found vai none", () => {
+    const carfax = applyBrowserArchiveHtml({
+      record: record([]),
+      id: "carfax_eu",
+      html: `<html><body>We found 3 records for ${VIN}</body></html>`,
+      pageUrl: `https://www.carfax.eu/preview-page?vin=${VIN}`,
+      vin: VIN,
+    });
+    expect(carfax.ok).toBe(true);
+    if (!carfax.ok) return;
+    expect(carfax.record.indicators[0]?.status).toBe("found");
+
+    const nicb = applyBrowserArchiveHtml({
+      record: record([]),
+      id: "nicb",
+      html: `<html><body>${VIN} clean record</body></html>`,
+      pageUrl: `https://www.nicb.org/vincheck?vin=${VIN}`,
+      vin: VIN,
+    });
+    expect(nicb.ok).toBe(true);
+    if (!nicb.ok) return;
+    expect(nicb.record.indicators[0]?.status).toBe("none");
+
+    const police = applyBrowserArchiveHtml({
+      record: record([]),
+      id: "lt_itpr",
+      html: `<html><body>Duomenų nerasta ${VIN}</body></html>`,
+      pageUrl: `https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=${VIN}`,
+      vin: VIN,
+    });
+    expect(police.ok).toBe(true);
+    if (!police.ok) return;
+    expect(police.record.indicators[0]?.status).toBe("none");
   });
 
   it("servera unknown nepārraksta jau importētu pārlūka rezultātu", () => {

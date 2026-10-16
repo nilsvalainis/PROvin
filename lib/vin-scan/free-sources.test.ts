@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { VIN_SCAN_REMOVED_IDS, VIN_SCAN_SOURCE_IDS } from "@/lib/vin-scan/catalog";
 import {
   freeVinScanSourceIds,
+  isFreeVinScanSourceId,
   isMeteredVinScanSourceId,
   isPaidVinScanSourceId,
   isValuableVinScanSourceId,
@@ -19,7 +20,9 @@ describe("free VIN SCAN avoti", () => {
     const free = freeVinScanSourceIds();
     expect(free).not.toContain("joj_copart_iaai");
     expect(free).not.toContain("speckr");
-    expect(free).toEqual(VIN_SCAN_SOURCE_IDS.filter((id) => !isPaidVinScanSourceId(id)));
+    expect(free).toEqual(VIN_SCAN_SOURCE_IDS.filter((id) => !isPaidVinScanSourceId(id) && id !== "vegvesen"));
+    expect(free).not.toContain("vegvesen");
+    expect(isFreeVinScanSourceId("vegvesen")).toBe(true);
     expect(free).toContain("stat_vin");
     expect(free).toContain("csdd");
     expect(isMeteredVinScanSourceId("joj_copart_iaai")).toBe(true);
@@ -38,11 +41,13 @@ describe("free VIN SCAN avoti", () => {
     expect(isValuableVinScanSourceId("carvertical")).toBe(false);
     const probe = readFileSync(path.join(ROOT, "lib/vin-scan/probes-extra.ts"), "utf8");
     expect(probe).toContain('https://stat.vin/');
-    expect(probe).toContain("fetchVinScanAuctionPage");
-    expect(probe).toContain("fetchAuctionHtml(url, \"stat_vin\")");
+    expect(probe).toContain("statVinBrowserLane");
+    expect(probe).toContain("browserFetchLane");
+    expect(probe).not.toContain("fetchVinScanAuctionPage");
+    expect(probe).not.toContain("fetchAuctionHtml");
     expect(probe).not.toContain("wafBypass");
     expect(probe).not.toContain("STAT_VIN_ORIGIN");
-    expect(probe).toContain("page.finalUrl");
+    expect(probe).toContain("Datucentra IP");
   });
 
   it("automātiskās plūsmas palaiž tikai freeVinScanSourceIds", () => {

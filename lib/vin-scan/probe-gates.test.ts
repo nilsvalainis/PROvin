@@ -3,7 +3,21 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
-import { probeRegitra, probeRdw, probeTraficom, probeVegvesen } from "@/lib/vin-scan/probes-extra";
+import {
+  probeBidCars,
+  probeBidfax,
+  probeBiluppgifter,
+  probeCarfaxEu,
+  probeCheckcarVin,
+  probeLtPolice,
+  probeNicb,
+  probePlcAuction,
+  probePoctra,
+  probeRegitra,
+  probeRdw,
+  probeTraficom,
+  probeVegvesen,
+} from "@/lib/vin-scan/probes-extra";
 
 const ctx = {
   vin: "WBA5R1C0XLFH42873",
@@ -31,6 +45,28 @@ describe("VIN SCAN avotu vārti bez tīkla", () => {
     expect(regitra.openUrl).toContain("pasitikrinkite-ar-transporto-priemone-neturi-apribojimu");
     expect(traficom.openUrl).toContain("tarkista-ajoneuvon-tiedot");
     expect(traficom.openUrl).not.toContain("vin=");
+  });
+
+  it("Cloudflare avoti ir from browser, bez servera 403", async () => {
+    delete process.env.BILUPPGIFTER_API_KEY;
+    const probes = [
+      probeBidCars,
+      probeBidfax,
+      probeBiluppgifter,
+      probeCarfaxEu,
+      probeCheckcarVin,
+      probeLtPolice,
+      probeNicb,
+      probePlcAuction,
+      probePoctra,
+    ];
+    for (const probe of probes) {
+      const row = await probe(ctx);
+      expect(row.status).toBe("browser_only");
+      expect(row.summary).toMatch(/from browser/);
+      expect(row.summary).not.toMatch(/403|cloudflare/i);
+      expect(row.openUrl).toMatch(/^https:\/\//);
+    }
   });
 
   it("vegvesen bez VEGVESEN_API_KEY ir config_missing", async () => {

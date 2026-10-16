@@ -91,7 +91,7 @@ function matchesAny(hay: string, tokens: string[]): boolean {
   return tokens.some((t) => includesToken(hay, t));
 }
 
-function makeMatchesHay(hay: string, name: string): boolean {
+export function makeMatchesHay(hay: string, name: string): boolean {
   if (includesToken(hay, name)) return true;
   const mark = resolveEcarstradeMake(name);
   if (mark && includesToken(hay, mark.name)) return true;

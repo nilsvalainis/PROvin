@@ -2,6 +2,7 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { IrissMonthlyReportView } from "@/components/admin/IrissMonthlyReportView";
 import { resolveIrissReportMonth } from "@/lib/iriss-monthly-report";
 import { loadIrissMonthlyReport } from "@/lib/iriss-monthly-report-load";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Mēneša atskaite | IRISS",
@@ -14,6 +15,7 @@ export default async function IrissMonthlyReportPage({
 }: {
   searchParams: Promise<{ month?: string }>;
 }) {
+  await requireAdminPage();
   const sp = await searchParams;
   const { year, month } = resolveIrissReportMonth(sp.month);
   const { report, storeEnabled, loadError } = await loadIrissMonthlyReport(year, month);

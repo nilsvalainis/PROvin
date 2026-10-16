@@ -142,7 +142,7 @@ export async function prepareIrissListingMatchWorkspace(
     const value: IrissListingMatchWorkspace = {
       state,
       notices: buildIrissListingMatchNotices(state.entries, vehicles, orders),
-      orderIdsByListing: listingMatchOrderIdsByListing(state.entries),
+      orderIdsByListing: listingMatchOrderIdsByListing(state.entries, vehicles, orders),
       duplicatesByListing: duplicateMapForListings(vehicles, anchors),
     };
     if (gen === workspaceGen && IRISS_LISTINGS_READ_CACHE_TTL_MS > 0) {

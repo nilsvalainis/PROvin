@@ -21,14 +21,25 @@ describe("VIN SCAN Cloudflare-blocked browser sources", () => {
       ]),
     )!;
     const by = Object.fromEntries(s.rows.map((r) => [r.id, r]));
-    for (const id of ["stat_vin", "bid_cars", "checkcar_vin", "bidfax"]) {
+    for (const id of ["stat_vin", "bid_cars", "checkcar_vin", "bidfax", "carfax_eu"]) {
       expect(by[id]!.action).toBe("open_import");
       expect(by[id]!.blocked).toBe(true);
     }
-    expect(by.carfax_eu!.action).toBe("retry");
-    expect(s.error).toBe(1);
-    expect(s.browser).toBe(4);
+    expect(s.error).toBe(0);
+    expect(s.browser).toBe(5);
   });
+  it("stat.vin from browser nav 403 kļūda", () => {
+    const s = buildOrderVinScanSummary(
+      rec([{ id: "stat_vin", status: "browser_only", summary: "stat.vin: no pārlūka (from browser)" }]),
+    )!;
+    expect(s.error).toBe(0);
+    expect(s.browserOnly).toBe(1);
+    expect(s.rows[0]?.state).toBe("browser_only");
+    expect(s.rows[0]?.hint).toBe("stat.vin: no pārlūka (from browser)");
+    expect(s.rows[0]?.hint).not.toMatch(/403/);
+    expect(s.rows[0]?.blocked).toBeUndefined();
+  });
+
   it("timeout text on those sources is timeout state, still retry", () => {
     const s = buildOrderVinScanSummary(rec([{ id: "stat_vin", status: "error", summary: "timeout" }]))!;
     expect(s.rows[0]!.action).toBe("retry");

@@ -4,6 +4,7 @@
  * Šis modulis neko neielādē no maksas avotiem un neizsauc sync.
  */
 
+import { gateListingOrderIds, listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
 import { isIrissScanOrderId } from "@/lib/iriss-scan-listings";
 import {
   ingestFilterForListingSource,
@@ -184,12 +185,22 @@ export function discoverListingOrderMatches(
       listingLinksOther: o.listingLinksOther,
     })),
   );
+  const brandById = new Map(active.map((o) => [o.id, o.brandModel ?? ""]));
   const byOrder = new Map<string, typeof sources>();
   for (const src of sources) {
     const list = byOrder.get(src.orderId) ?? [];
     list.push(src);
     byOrder.set(src.orderId, list);
   }
+  // Filtrs atkarīgs tikai no avota; URL parsēšana ~0,5 ms, tāpēc to nedrīkst atkārtot katram sludinājumam.
+  const boundedFilterBySource = new Map<(typeof sources)[number], ReturnType<typeof ingestFilterForListingSource> | null>();
+  const boundedFilterFor = (src: (typeof sources)[number]) => {
+    if (boundedFilterBySource.has(src)) return boundedFilterBySource.get(src)!;
+    const filter = ingestFilterForListingSource(src.platform, src.sourceUrl, src.orderBrandModel);
+    const bounded = listingSearchFilterHasBounds(filter) ? filter : null;
+    boundedFilterBySource.set(src, bounded);
+    return bounded;
+  };
   const out: Array<{ orderId: string; listingId: string }> = [];
   const seen = new Set<string>();
   for (const vehicle of vehicles) {
@@ -197,12 +208,12 @@ export function discoverListingOrderMatches(
     if (!listingId || vehicle.change === "gone") continue;
     const linked = new Set((vehicle.orderIds ?? []).map((id) => id.trim()).filter(Boolean));
     for (const [orderId, orderSources] of byOrder) {
+      if (!listingMatchesOrderMakeModel(vehicle, brandById.get(orderId) ?? "")) continue;
       const already = linked.has(orderId);
       const criteria = orderSources.some((src) => {
         if (src.platform !== vehicle.platform) return false;
-        const filter = ingestFilterForListingSource(src.platform, src.sourceUrl, src.orderBrandModel);
-        if (!listingSearchFilterHasBounds(filter)) return false;
-        return vehicleMatchesSearchFilter(vehicle, filter);
+        const filter = boundedFilterFor(src);
+        return filter ? vehicleMatchesSearchFilter(vehicle, filter) : false;
       });
       if (!already && !criteria) continue;
       const key = irissListingMatchKey(orderId, listingId);
@@ -346,15 +357,35 @@ export function listingHitStatusMap(entries: readonly IrissListingMatchEntry[], 
   return out;
 }
 
-export function listingMatchOrderIdsByListing(entries: readonly IrissListingMatchEntry[]): Record<string, string[]> {
+/**
+ * Ar `vehicles` + `orders` vecie ieraksti, kuru marka/modelis neatbilst, netiek atgriezti
+ * (paliek glabātuvē nemainīti).
+ */
+export function listingMatchOrderIdsByListing(
+  entries: readonly IrissListingMatchEntry[],
+  vehicles?: readonly ListingMatchGateVehicle[],
+  orders?: readonly Pick<IrissListingMatchOrder, "id" | "brandModel">[],
+): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const e of entries) {
     const list = out[e.listingId] ?? [];
     if (!list.includes(e.orderId)) list.push(e.orderId);
     out[e.listingId] = list;
   }
+  if (!vehicles || !orders) return out;
+  const byVehicle = new Map(vehicles.map((v) => [v.id, v]));
+  const brandById = new Map(orders.map((o) => [o.id, o.brandModel ?? ""]));
+  for (const [listingId, ids] of Object.entries(out)) {
+    const vehicle = byVehicle.get(listingId);
+    if (!vehicle) continue;
+    const kept = gateListingOrderIds(vehicle, ids, brandById);
+    if (kept.length > 0) out[listingId] = kept;
+    else delete out[listingId];
+  }
   return out;
 }
+
+type ListingMatchGateVehicle = { id: string; title?: string; manufacturer?: string };
 
 function clientLabel(order: IrissListingMatchOrder): string {
   const name = [order.clientFirstName ?? "", order.clientLastName ?? ""].map((s) => s.trim()).filter(Boolean).join(" ");
@@ -364,7 +395,7 @@ function clientLabel(order: IrissListingMatchOrder): string {
 
 export function buildIrissListingMatchNotices(
   entries: readonly IrissListingMatchEntry[],
-  vehicles: readonly { id: string; title?: string; platform?: string; change?: string }[],
+  vehicles: readonly { id: string; title?: string; manufacturer?: string; platform?: string; change?: string }[],
   orders: readonly IrissListingMatchOrder[],
   limit = 20,
 ): IrissListingMatchNotice[] {
@@ -379,6 +410,7 @@ export function buildIrissListingMatchNotices(
     if (!live.has(e.listingId) || !active.has(e.orderId)) continue;
     const vehicle = byVehicle.get(e.listingId);
     const order = byOrder.get(e.orderId);
+    if (vehicle && order && !listingMatchesOrderMakeModel(vehicle, order.brandModel ?? "")) continue;
     const platform = (vehicle?.platform ?? "") as IrissListingPlatform;
     notices.push({
       orderId: e.orderId,

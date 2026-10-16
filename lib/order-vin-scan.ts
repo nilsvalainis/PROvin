@@ -47,6 +47,9 @@ export const ORDER_VIN_SCAN_BROWSER_IMPORT_IDS: readonly string[] = [
   "bidfax",
   "poctra",
   "plc_auction",
+  "carfax_eu",
+  "nicb",
+  "lt_itpr",
   ...SWEDISH_BROWSER_SOURCE_IDS,
 ];
 const BLOCKED_HINT_RE = /cloudflare|\b403\b|captcha|challenge|bloķ|blocked|lapa nav atpazīta|just a moment/i;
@@ -102,17 +105,32 @@ function asAuction(v: unknown): VinScanAuction | null {
   const photoUrls = Array.isArray(o.photoUrls)
     ? o.photoUrls.filter((u): u is string => typeof u === "string" && u.trim().startsWith("http")).map((u) => u.trim())
     : undefined;
+  const odometer = typeof o.odometer === "string" ? o.odometer.trim().slice(0, 40) : "";
+  const damage = typeof o.damage === "string" ? o.damage.trim().slice(0, 80) : "";
   const row: VinScanAuction = {
     title: typeof o.title === "string" ? o.title.trim() : "",
     date: typeof o.date === "string" ? o.date.trim() : undefined,
     price: typeof o.price === "string" ? o.price.trim() : undefined,
     venue: typeof o.venue === "string" ? o.venue.trim() : undefined,
     lot: typeof o.lot === "string" && o.lot.trim() ? o.lot.trim() : undefined,
+    ...(odometer ? { odometer } : {}),
+    ...(damage ? { damage } : {}),
     photoUrl: typeof o.photoUrl === "string" && o.photoUrl.trim() ? o.photoUrl.trim() : undefined,
     photoCount: Number.isFinite(photoCount) && photoCount > 0 ? photoCount : undefined,
     ...(photoUrls?.length ? { photoUrls } : {}),
   };
-  if (!row.title && !row.date && !row.price && !row.venue && !row.lot && !row.photoUrl && !row.photoCount && !row.photoUrls?.length) {
+  if (
+    !row.title &&
+    !row.date &&
+    !row.price &&
+    !row.venue &&
+    !row.lot &&
+    !row.odometer &&
+    !row.damage &&
+    !row.photoUrl &&
+    !row.photoCount &&
+    !row.photoUrls?.length
+  ) {
     return null;
   }
   return row;
@@ -347,18 +365,19 @@ export function vinScanAuctionsToCcVinParsed(indicators: readonly VinScanIndicat
         out.sales.push({
           date,
           venue: auction.venue || src.label,
-          odometer: "",
+          odometer: auction.odometer || "",
           price: auction.price || "",
           status: auction.title || "Izsole",
         });
       }
-      const damage = /bojāj|damage|front|rear|side|hail|water|burn/i.exec(auction.title || "");
-      if (damage) {
+      const damageText = (auction.damage || "").trim();
+      const damageHit = damageText || (/bojāj|damage|front|rear|side|hail|water|burn/i.exec(auction.title || "")?.[0] ?? "");
+      if (damageHit) {
         out.damages.push({
           date,
           region: auction.venue || "",
           amount: "",
-          description: auction.title || src.summary,
+          description: damageText || auction.title || src.summary,
         });
       }
     }

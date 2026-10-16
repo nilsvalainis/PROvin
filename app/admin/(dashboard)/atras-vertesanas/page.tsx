@@ -12,6 +12,7 @@ import { csddCardFacts, listDots, QE_TONE_DOT } from "@/lib/quick-eval-cards";
 import { vehicleKey } from "@/lib/quick-eval-match";
 import { readQuickEval, type QuickEvalDoc } from "@/lib/quick-eval-store";
 import { setQuickEvalStatus } from "./actions";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,7 @@ export default async function AdminListingPeeksPage({
 }: {
   searchParams?: Promise<{ tab?: string; q?: string }>;
 }) {
+  await requireAdminPage();
   const sp = searchParams ? await searchParams : undefined;
   const tab: TabId = (TABS.find((t) => t.id === sp?.tab)?.id ?? "pending") as TabId;
   const q = (sp?.q ?? "").trim();
