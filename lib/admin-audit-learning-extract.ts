@@ -11,6 +11,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { workspaceFillScoreFromDraft } from "@/lib/admin-workspace-integrity";
 import { sanitizeOtherAuditSnippet } from "@/lib/admin-ai-other-audit-style";
+import { isTrainingV2Enabled } from "@/lib/feature-flags-v2";
 
 export const LEARNING_SNIPPET_MAX_LEN = 360;
 export const LEARNING_TECH_SNIPPET_MAX_LEN = 900;
@@ -33,19 +34,37 @@ export function clipLearningSnippet(text: string, max = LEARNING_SNIPPET_MAX_LEN
   return `${t.slice(0, max - 1).trim()}…`;
 }
 
-/** Īss „mācību” fragments — pirmās 1–2 teikuma daļas. Tehnika: veselas rindkopas ar EUR/mezgliem. */
+const EUR_SENTENCE_RE = /€|\bEUR\b|\beiro\b/i;
+
+export function sentenceHasEur(text: string): boolean {
+  return EUR_SENTENCE_RE.test(text);
+}
+
+export function dropEurSentences(text: string): string {
+  return text
+    .replace(/\s+/g, " ")
+    .split(/(?<=[.!?…])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && !EUR_SENTENCE_RE.test(s))
+    .join(" ")
+    .trim();
+}
+
+/** Īss „mācību” fragments — pirmās 1–2 teikuma daļas. Tehnika: veselas rindkopas ar mezgliem. */
 export function distillLesson(plain: string, tag: string, max = LEARNING_SNIPPET_MAX_LEN): string | null {
-  const cleaned = plain.replace(/\s+/g, " ").trim();
+  const dropEur = isTrainingV2Enabled();
+  const cleaned = (dropEur ? dropEurSentences(plain) : plain.replace(/\s+/g, " ")).trim();
   if (cleaned.length < 70) return null;
   if (tag === "Tehnika") {
     const paras = plain
       .split(/\n\s*\n/)
       .map((p) => p.replace(/\s+/g, " ").trim())
-      .filter((p) => p.length > 80);
+      .filter((p) => p.length > 80 && (!dropEur || !sentenceHasEur(p)));
     const scored = paras.filter((p) =>
-      /€|EUR|risks|ķēd|kārba|turbo|EGR|DPF|piekar|zobsiksn|elektroplāksn|dzesētāj|iesmidzin|hidrotransform|722\.|OM\d|N47|N57|M57|EA888|zobsiksn/i.test(
-        p,
-      ),
+      (dropEur
+        ? /risks|ķēd|kārba|turbo|EGR|DPF|piekar|zobsiksn|elektroplāksn|dzesētāj|iesmidzin|hidrotransform|722\.|OM\d|N47|N57|M57|EA888|zobsiksn/i
+        : /€|EUR|risks|ķēd|kārba|turbo|EGR|DPF|piekar|zobsiksn|elektroplāksn|dzesētāj|iesmidzin|hidrotransform|722\.|OM\d|N47|N57|M57|EA888|zobsiksn/i
+      ).test(p),
     );
     const pick = (scored.length > 0 ? scored : paras).slice(0, 4).join(" ");
     if (pick.length < 70) return null;

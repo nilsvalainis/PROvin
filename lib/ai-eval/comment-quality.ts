@@ -6,6 +6,7 @@ import { findBannedVocabularyHits, findForbiddenPersonaNounHits } from "@/lib/pr
 import { findCopiedOtherAuditPhrases } from "@/lib/admin-ai-other-audit-style";
 import { COMMENT_LENGTH_BUDGET, commentQualityMaxChars } from "@/lib/ai-comment-length-budget";
 import { looksLikeLeakedAiPlanning } from "@/lib/source-summary-comment-format";
+import { evaluateLengthRulesV2 } from "@/lib/ai-length-rules-v2";
 
 export type CommentQualityIssue = {
   code: string;
@@ -458,6 +459,10 @@ export function evaluateExpertCommentQuality(
       });
     }
   }
+
+  issues.push(
+    ...evaluateLengthRulesV2(t, field, { sourcePrompt: opts.sourcePrompt }),
+  );
 
   return issues;
 }

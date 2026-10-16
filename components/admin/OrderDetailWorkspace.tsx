@@ -27,6 +27,7 @@ import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListing
 import { AdminListingCoverPhoto } from "@/components/admin/AdminListingCoverPhoto";
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
 import { AdminOrderVinScanCard } from "@/components/admin/AdminOrderVinScanCard";
+import { AdminOrderAiKnowledgeUsed } from "@/components/admin/AdminOrderAiKnowledgeUsed";
 import { applyVinScanAuctionsToCcVin, type OrderVinScanRecord } from "@/lib/order-vin-scan";
 import { applyVinScanCsddToBlock, applyVinScanListingToBlock } from "@/lib/order-vin-scan-apply";
 import { collectVinScanAuctionPhotoGroups } from "@/lib/order-vin-scan-photos";
@@ -5418,6 +5419,7 @@ export function OrderDetailWorkspace({
                     }
                   />
                 </div>
+                <AdminOrderAiKnowledgeUsed sessionId={payload.sessionId} />
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiSourcesComparisonErr} />
                   <AdminAiPolishRichCommentShell

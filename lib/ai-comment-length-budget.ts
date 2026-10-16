@@ -18,6 +18,8 @@ import {
   parseCommentBreadthFromPrompt,
   type CommentBreadth,
 } from "@/lib/ai-comment-breadth";
+import { isLengthRulesV2Enabled } from "@/lib/feature-flags-v2";
+import { LENGTH_RULES_V2_SUMMARY, LENGTH_RULES_V2_TECHNICAL_RISKS } from "@/lib/ai-length-rules-v2";
 
 export type CommentLengthBudgetField =
   | "source"
@@ -79,6 +81,33 @@ export type CommentDataDensityAnalysis = {
   mileageRowCount: number;
 };
 
+/** LENGTH_RULES_V2: TR 1200-2500 (regen >3200), kopsavilkums 500-900. */
+export function commentLengthBudgetForField(field: CommentLengthBudgetField): CommentLengthBudget {
+  const base = COMMENT_LENGTH_BUDGET[field];
+  if (!base) return COMMENT_LENGTH_BUDGET.generic;
+  if (!isLengthRulesV2Enabled()) return base;
+  if (field === "technical_risks") {
+    return {
+      ...base,
+      targetChars: "1200-2500",
+      targetParas: "4-7",
+      maxChars: LENGTH_RULES_V2_TECHNICAL_RISKS.regenMax,
+      minChars: LENGTH_RULES_V2_TECHNICAL_RISKS.warnMin,
+      minParas: LENGTH_RULES_V2_TECHNICAL_RISKS.sectionsMin,
+    };
+  }
+  if (field === "summary") {
+    return {
+      ...base,
+      targetChars: "500-900",
+      targetParas: "Fakti + Mūsu ieteikums",
+      maxChars: LENGTH_RULES_V2_SUMMARY.regenMax,
+      minChars: LENGTH_RULES_V2_SUMMARY.targetMin,
+    };
+  }
+  return base;
+}
+
 export function analyzeCommentDataDensity(sourceBlocks: WorkspaceSourceBlocks): CommentDataDensityAnalysis {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
   const sourceCount = AI_SOURCE_COMMENT_BLOCK_KEYS.filter((key) =>
@@ -121,9 +150,9 @@ export function buildCommentLengthBudgetBrief(
     `- Avota komentārs: garums seko faktiem. 1 rindkopa, ja pietiek; ja šis avots dod daudz faktu - vairākas rindkopas. Tehniskais griests ${COMMENT_LENGTH_BUDGET.source.maxChars} rakstzīmes (runaway, ne kvota). Nesaīsini bagātīgu avotu līdz 1 rindkopai. IZŅĒMUMS: OFICIĀLĀ DĪLERA DATI „Komentārs” - bez fiksēta griesta, izskaidro visus iegūtos datus.`,
     `- Nobraukums: mērķis ${COMMENT_LENGTH_BUDGET.mileage.targetParas} rindkopas, griesti ${COMMENT_LENGTH_BUDGET.mileage.maxChars}.`,
     `- Negadījumi: mērķis ${COMMENT_LENGTH_BUDGET.incidents.targetParas} rindkopas, griesti ${COMMENT_LENGTH_BUDGET.incidents.maxChars}.`,
-    `- 1. Tehnisko risku analīze: flagship, griesti ${COMMENT_LENGTH_BUDGET.technical_risks.maxChars} (NEĪSINĀT līdz avota komentāra garumam).`,
+    `- 1. Tehnisko risku analīze: flagship, griesti ${commentLengthBudgetForField("technical_risks").maxChars} (NEĪSINĀT līdz avota komentāra garumam).`,
     `- 2. Ieteikumi: flagship, griesti ${COMMENT_LENGTH_BUDGET.inspection.maxChars}.`,
-    `- 3. Kopsavilkums: mērķis ${COMMENT_LENGTH_BUDGET.summary.targetParas} rindkopas, griesti ${COMMENT_LENGTH_BUDGET.summary.maxChars}.`,
+    `- 3. Kopsavilkums: mērķis ${commentLengthBudgetForField("summary").targetParas} rindkopas, griesti ${commentLengthBudgetForField("summary").maxChars}.`,
     `- Eļļas maiņas intervāli: pilna matemātika, ja dati ir; griesti ${COMMENT_LENGTH_BUDGET.oil.maxChars}.`,
     "- Tukši vai trūcīgi dati ≠ garāka eseja par to, ka datu nav.",
     "- Garums seko informācijai: ja datu ir MAZ, raksti ĪSI. Ja datu ir DAUDZ, raksti GARĀK un VAIRĀKĀS rindkopās. Neiespiest bagātīgu vēsturi 1-2 rindkopās tikai tāpēc, ka šeit ir rakstzīmju griesti.",
@@ -178,7 +207,9 @@ export function commentQualityMaxChars(
 ): number | null {
   if (commentLengthLimitsWaived(prompt)) return null;
   const key = field as CommentLengthBudgetField;
-  const base = COMMENT_LENGTH_BUDGET[key]?.maxChars ?? COMMENT_LENGTH_BUDGET.generic.maxChars;
+  const base =
+    commentLengthBudgetForField(key in COMMENT_LENGTH_BUDGET ? key : "generic").maxChars ??
+    COMMENT_LENGTH_BUDGET.generic.maxChars;
   const breadth = parseCommentBreadthFromPrompt(prompt);
   const capped = breadth ? commentBreadthMaxChars(field, breadth, base) : base;
   if (prompt && /Datu blīvums:\s*AUGSTS/i.test(prompt) && breadth !== "compact") {

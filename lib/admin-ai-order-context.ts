@@ -406,6 +406,7 @@ export async function buildFullAiOrderContextText(input: AiOrderContextInput): P
   const aggregateKnowledge = await buildAggregateKnowledgeAiContext({
     sourceBlocks: blocks,
     vin: input.vin,
+    sessionId: input.sessionId,
   });
   const styleCorpus = buildStyleCorpusAiContext();
   const sections = [base, styleCorpus, historical, aggregateKnowledge].filter((s) => s.trim());

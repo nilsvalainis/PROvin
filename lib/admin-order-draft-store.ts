@@ -893,7 +893,7 @@ async function patchOrderDraftUnlocked(
 
   void import("@/lib/admin-ai-aggregate-knowledge")
     .then(async (m) => {
-      await m.recordAuditAggregateLearningFromDraft(doc as OrderDraftState);
+      await m.recordAuditAggregateLearningFromDraft(doc as OrderDraftState, sessionId);
       m.invalidateAuditLearningsCache();
     })
     .catch(() => {});

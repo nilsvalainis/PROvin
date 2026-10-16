@@ -880,6 +880,26 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("components/admin/AdminAiFieldError.tsx")).toMatch(/role="alert"/);
   });
 
+  it("training panel v2 and length rules v2 stay behind flags", () => {
+    expect(readRepo("lib/feature-flags-v2.ts")).toMatch(/TRAINING_V2/);
+    expect(readRepo("lib/feature-flags-v2.ts")).toMatch(/LENGTH_RULES_V2/);
+    expect(readRepo("lib/admin-ai-aggregate-knowledge.ts")).toMatch(/isTrainingV2Enabled/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/appendLengthRulesV2ToSystem/);
+    expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/g1_tr_length_regen/);
+    expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/g2_summary_length_regen/);
+    expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/g3_missing_next_100k/);
+    expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/g4_imperative_wording/);
+    expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/Nākamajos 100 000 km/);
+    expect(readRepo("lib/ai-length-rules-v2.ts")).toMatch(/Mūsu ieteikums/);
+    expect(readRepo("lib/admin-audit-learning-extract.ts")).toMatch(/isTrainingV2Enabled/);
+    expect(readRepo("lib/admin-ai-draft-fields.ts")).toMatch(/workspace.aiDrafts/);
+    expect(readRepo("components/admin/AdminAuditKnowledgePanelV2.tsx")).toMatch(/Nolasīt vecās atskaites/);
+    expect(readRepo("components/admin/AdminAuditKnowledgePanelV2.tsx")).toMatch(/Gaida apstiprinājumu/);
+    expect(readRepo("components/admin/AdminAuditKnowledgePanelV2.tsx")).toMatch(/Ko AI zina/);
+    expect(readRepo("components/admin/AdminAuditKnowledgePanelV2.tsx")).toMatch(/Nepareizi apgalvojumi/);
+    expect(readRepo("components/admin/AdminOrderAiKnowledgeUsed.tsx")).toMatch(/Ko AI izmantoja šajā atskaitē/);
+  });
+
   it("comment AI routes use the 300s Fluid Compute ceiling", () => {
     for (const route of [
       "app/api/admin/ai/summary-analysis/route.ts",

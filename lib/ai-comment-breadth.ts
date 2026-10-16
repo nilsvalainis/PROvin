@@ -2,6 +2,7 @@
  * FLASH MAX komentāra platums — operators izvēlas, cik plaši rakstīt.
  * Noklusējums: kopsavilkuma trio plašs, pārējie kompakti (ikdienas stils).
  */
+import { isLengthRulesV2Enabled } from "@/lib/feature-flags-v2";
 
 export const COMMENT_BREADTH_LEVELS = ["compact", "standard", "wide"] as const;
 export type CommentBreadth = (typeof COMMENT_BREADTH_LEVELS)[number];
@@ -136,5 +137,10 @@ export function commentBreadthMaxChars(field: string, breadth: CommentBreadth, b
   if (breadth === "wide") return baseMax;
   const table = breadth === "compact" ? COMPACT_MAX : STANDARD_MAX;
   const cap = table[field] ?? (breadth === "compact" ? 900 : 1400);
-  return Math.min(baseMax, cap);
+  let out = Math.min(baseMax, cap);
+  if (isLengthRulesV2Enabled()) {
+    if (field === "technical_risks") out = Math.min(out, 3200);
+    if (field === "summary") out = Math.min(out, 900);
+  }
+  return out;
 }
