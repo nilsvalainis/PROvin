@@ -190,6 +190,15 @@ export function discoverListingOrderMatches(
     list.push(src);
     byOrder.set(src.orderId, list);
   }
+  // Filtrs atkarīgs tikai no avota; URL parsēšana ~0,5 ms, tāpēc to nedrīkst atkārtot katram sludinājumam.
+  const boundedFilterBySource = new Map<(typeof sources)[number], ReturnType<typeof ingestFilterForListingSource> | null>();
+  const boundedFilterFor = (src: (typeof sources)[number]) => {
+    if (boundedFilterBySource.has(src)) return boundedFilterBySource.get(src)!;
+    const filter = ingestFilterForListingSource(src.platform, src.sourceUrl, src.orderBrandModel);
+    const bounded = listingSearchFilterHasBounds(filter) ? filter : null;
+    boundedFilterBySource.set(src, bounded);
+    return bounded;
+  };
   const out: Array<{ orderId: string; listingId: string }> = [];
   const seen = new Set<string>();
   for (const vehicle of vehicles) {
@@ -200,9 +209,8 @@ export function discoverListingOrderMatches(
       const already = linked.has(orderId);
       const criteria = orderSources.some((src) => {
         if (src.platform !== vehicle.platform) return false;
-        const filter = ingestFilterForListingSource(src.platform, src.sourceUrl, src.orderBrandModel);
-        if (!listingSearchFilterHasBounds(filter)) return false;
-        return vehicleMatchesSearchFilter(vehicle, filter);
+        const filter = boundedFilterFor(src);
+        return filter ? vehicleMatchesSearchFilter(vehicle, filter) : false;
       });
       if (!already && !criteria) continue;
       const key = irissListingMatchKey(orderId, listingId);
