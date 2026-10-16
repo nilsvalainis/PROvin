@@ -1,4 +1,6 @@
 import { randomBytes } from "node:crypto";
+import { retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
+import { parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { assertSameTenant } from "@/lib/b2b-demo-isolation";
 import { isSafeB2bDemoOfferId, isSafeB2bDemoOrderId, isSafeB2bDemoTenantId } from "@/lib/b2b-demo-ids";
@@ -255,6 +257,8 @@ export function parseB2bDemoOrder(raw: unknown, tenantId: string): B2bDemoOrder 
     createdAt,
     updatedAt: typeof o.updatedAt === "string" && o.updatedAt.trim() ? o.updatedAt.trim() : createdAt,
   };
+  const storedCriteria = parseIrissCriteriaV1(o.criteria);
+  if (storedCriteria) order.criteria = storedCriteria;
   try {
     return assertSameTenant(order, tenantId);
   } catch {
@@ -291,7 +295,7 @@ export function applyB2bDemoOrderPatch(
           .filter((row): row is B2bDemoOffer => Boolean(row))
           .map((row, idx) => ({ ...row, title: row.title.trim() || `Piedāvājums ${idx + 1}` }))
       : current.offers;
-  return {
+  const next: B2bDemoOrder = {
     ...current,
     ...names,
     phone: patch.phone !== undefined ? clip(patch.phone, 40) : current.phone,
@@ -323,6 +327,7 @@ export function applyB2bDemoOrderPatch(
     offers,
     updatedAt: now,
   };
+  return retainStoredIrissCriteria(current, next);
 }
 
 export function findB2bDemoOffer(order: B2bDemoOrder, offerId: string): B2bDemoOffer | null {
