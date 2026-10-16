@@ -95,6 +95,31 @@ test("tukša HTTP 403 aina nav gatava lapa: gaida Just a moment un atdod 200", a
   assert.ok(t >= 1_007_000);
 });
 
+test("stabils Cloudflare Access blocked beidzas ātri, nevis pēc 52 s", async () => {
+  let t = 10_000_000;
+  let gotos = 0;
+  const page = {
+    goto: async () => {
+      gotos += 1;
+      return { status: () => 403, text: async () => "Access blocked, contact us at support@stat.vin A" };
+    },
+    content: async () => "Access blocked, contact us at support@stat.vin A",
+    title: async () => "Attention Required",
+    url: () => "https://stat.vin/cars/WBA",
+  };
+  const out = await fetchVinScanPageHtml(page, "https://stat.vin/cars/WBA", {
+    now: () => t,
+    sleep: async (ms) => {
+      t += ms;
+    },
+    timeoutMs: 52_000,
+  });
+  assert.equal(out.status, 403);
+  assert.match(out.html, /Access blocked/);
+  assert.equal(gotos, 1);
+  assert.ok(t < 10_008_000);
+});
+
 test("cf_clearance profilā izsauc otru navigāciju un tad atdod izsoles HTML", async () => {
   let gotos = 0;
   const page = {

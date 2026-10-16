@@ -19,6 +19,12 @@ describe("parseAuctionArchive", () => {
     expect(r.status).toBe("found");
     expect(r.summary).toContain("15 foto");
   });
+  it("meklēšana bez ieraksta ir none, kaut reklāmā ir auction", () => {
+    const html = `<html><h1>Search Results for: ${VIN}</h1><p>It seems we can\u2019t find what you\u2019re looking for.</p><p>original auction photos, damage, bids</p></html>`;
+    const r = parseAuctionArchive(200, html, VIN, "AucHistory");
+    expect(r.status).toBe("none");
+    expect(r.summary).toMatch(/nav izsoles ieraksta/);
+  });
   it("403 → unknown ar HTTP kodu", () => {
     expect(parseAuctionArchive(403, "", VIN, "BidFax").status).toBe("unknown");
   });

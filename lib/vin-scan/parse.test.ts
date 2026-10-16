@@ -196,6 +196,22 @@ describe("digital servicebook", () => {
     const search = { vehicle: "Bmw 330i", country: "Global.eu (EU)" };
     expect(parseDsbEntryCount("To view the 14 entries we found, you need to be logged in")).toBe(14);
     expect(parseDsbEntryCount("To view the <strong>0</strong> entries we found")).toBe(0);
+    expect(
+      parseDsbEntryCount(`To view the\n<span style="font-weight: bold">0</span> entries we found, you need to be logged in`),
+    ).toBe(0);
+    const liveShape = `
+      <h2 id="header-car-name">Audi A6, A7</h2>
+      <span>Result for <strong>Global.eu (EU)</strong></span>
+      url: '/Search/LoadServices?vin=WAUZZZF2XLN035613&country=eu',
+      <span style="font-weight: bold">0</span> entries we found
+    `;
+    expect(parseDsbSearchHtml(liveShape)).toMatchObject({
+      vehicle: "Audi A6, A7",
+      country: "Global.eu (EU)",
+      servicesPath: "/Search/LoadServices?vin=WAUZZZF2XLN035613&country=eu",
+    });
+    expect(parseDsbEntryCount(liveShape)).toBe(0);
+    expect(dsbScanFromParts(parseDsbSearchHtml(liveShape), parseDsbEntryCount(liveShape)).status).toBe("none");
     expect(dsbScanFromParts(search, 14).status).toBe("found");
     expect(dsbScanFromParts(search, 0)).toMatchObject({ status: "none", summary: expect.stringContaining("servisa ierakstu nav") });
     expect(dsbScanFromParts({ vehicle: "", country: "" }, 0).summary).toContain("nav Digital Servicebook");

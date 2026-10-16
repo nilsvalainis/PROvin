@@ -57,10 +57,16 @@ export function parseCarinfoSuperSearch(raw: unknown, vin: string): CarinfoSearc
 
 const CARINFO_ORIGIN = "https://www.car.info";
 
-/** Zviedrijas reģistra VIN lapa. Primārais ceļš, numurs nav vajadzīgs. */
+/** Zviedrijas reģistra VIN lapa angliski. Operatora saite. Datucentram bieži nginx 403. */
 export function carinfoSwedenVinUrl(vin: string): string {
   const v = vin.trim().toUpperCase();
   return `${CARINFO_ORIGIN}/en-se/vin/S/${encodeURIComponent(v)}`;
+}
+
+/** Zviedrijas VIN lapa zviedriski. Tiešais ceļš no servera, kad en-se atbild ar 403. */
+export function carinfoSvVinUrl(vin: string): string {
+  const v = vin.trim().toUpperCase();
+  return `${CARINFO_ORIGIN}/sv-se/vin/S/${encodeURIComponent(v)}`;
 }
 
 /** Zviedrijas numura lapa (en-se, km). Tikai rezerve, ja VIN lapa auto neatrada. */

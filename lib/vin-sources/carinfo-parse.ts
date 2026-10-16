@@ -98,11 +98,15 @@ function parseKm(cell: string): string {
     .replace(/\u00a0/g, " ")
     .replace(/\d{4}-\d{2}(?:-\d{2})?/g, " ")
     .replace(/\d{1,2}[./]\d{1,2}[./]\d{4}/g, " ");
-  const m = /(\d{1,3}(?:[\s.,]\d{3})+|\d{3,7})\s*(?:km|mil)\b/i.exec(stripped);
+  const m = /(\d{1,3}(?:[\s.,]\d{3})+|\d{3,7})\s*(km|mil)\b/i.exec(stripped);
   if (!m) return "";
   const digits = m[1]!.replace(/[^\d]/g, "");
   if (digits.length < 3 || digits.length > 7) return "";
-  return String(Number(digits));
+  let n = Number(digits);
+  if (!Number.isFinite(n) || n <= 0) return "";
+  // car.info Zviedrijā rāda zviedru jūdzi (1 mil = 10 km), nevis kilometrus.
+  if (m[2]!.toLowerCase() === "mil") n *= 10;
+  return String(n);
 }
 
 function looksLikeCurrentMileageLabel(line: string): boolean {
@@ -172,14 +176,21 @@ function colourLv(raw: string): string {
   const key = raw.trim().toLowerCase();
   const map: Record<string, string> = {
     black: "melna",
+    svart: "melna",
     white: "balta",
+    vit: "balta",
     grey: "pelēka",
     gray: "pelēka",
+    grå: "pelēka",
     silver: "sudraba",
     blue: "zila",
+    blå: "zila",
     red: "sarkana",
+    röd: "sarkana",
     brown: "brūna",
+    brun: "brūna",
     green: "zaļa",
+    grön: "zaļa",
     orange: "oranža",
     yellow: "dzeltena",
     beige: "bēša",
@@ -452,7 +463,8 @@ export function parseCarinfoExtract(loaded: CarinfoPageExtract): CarinfoParsed {
 
   const ownersCountRaw =
     gluedSimple(text, "Number of Owners", /\d{1,2}/) ||
-    pairs.find((p) => /number of owners|ägare|īpašniek/i.test(p.label))?.value ||
+    gluedSimple(text, "Antal ägare", /\d{1,2}/) ||
+    pairs.find((p) => /number of owners|antal ägare|ägare|īpašniek/i.test(p.label))?.value ||
     "";
   const ownersCount = /(\d{1,2})/.exec(ownersCountRaw)?.[1] ?? "";
   const ownerEvents = parseOwnerChangeEvents(text);
@@ -461,9 +473,12 @@ export function parseCarinfoExtract(loaded: CarinfoPageExtract): CarinfoParsed {
     ...ownerEvents,
   ].filter(Boolean);
 
-  const inTraffic = gluedSimple(text, "In Traffic", /Yes|No|Ja|Nej/i);
+  const inTraffic = gluedSimple(text, "In Traffic", /Yes|No|Ja|Nej/i) || gluedSimple(text, "I trafik", /Yes|No|Ja|Nej/i);
   const domestic = gluedSimple(text, "Domestic", /Yes|No|Ja|Nej/i);
-  const colour = gluedSimple(text, "Colour", /[A-Za-zÅÄÖåäö]+/) || gluedSimple(text, "Color", /[A-Za-z]+/);
+  const colour =
+    gluedSimple(text, "Colour", /[A-Za-zÅÄÖåäö]+/) ||
+    gluedSimple(text, "Color", /[A-Za-z]+/) ||
+    gluedSimple(text, "Färg", /[A-Za-zÅÄÖåäö]+/);
   const colourFinish = gluedSimple(text, "Finish", /Metallic|Solid|Pearl|Matt/i);
   const stolen = gluedSimple(text, "Reported stolen", /Yes|No|Ja|Nej|-|Log in/i);
   const engine = gluedSimple(text, "Engine", /(?:Diesel|Petrol|Gasoline|Electric|Hybrid)[^\n]{0,48}/i);

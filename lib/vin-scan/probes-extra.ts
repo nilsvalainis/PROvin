@@ -425,7 +425,7 @@ export async function probeBidCars(ctx: VinScanContext): Promise<VinScanIndicato
 }
 
 export async function probeAuchistory(ctx: VinScanContext): Promise<VinScanIndicator> {
-  const url = `https://auchistory.com/?vin=${encodeURIComponent(ctx.vin)}`;
+  const url = `https://auchistory.com/?s=${encodeURIComponent(ctx.vin)}`;
   try {
     const page = await scanFetchSmart(url, { timeoutMs: 25_000, solveUrl: "https://auchistory.com/", sourceLabel: "AucHistory" });
     const key = scanCaptchaTokenPlaceholder(page.text);

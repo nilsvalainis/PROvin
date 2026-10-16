@@ -339,6 +339,9 @@ export function parseAuctionArchive(status: number, html: string, vin: string, l
   }
   if (status >= 400) return { status: "unknown", summary: `${label} HTTP ${status}` };
   const text = visibleText(html);
+  if (/it seems we can['\u2019]t find what you['\u2019]re looking for/i.test(text)) {
+    return { status: "none", summary: `${label}: nav izsoles ieraksta` };
+  }
   const upperVin = vin.trim().toUpperCase();
   const vinVisible = Boolean(upperVin) && text.toUpperCase().includes(upperVin);
   if (/just a moment|cf-browser|verify you are human/i.test(text) && !vinVisible) {

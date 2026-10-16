@@ -3,7 +3,10 @@ import "server-only";
  * VIN SCAN izsoļu lapas caur Hetzner IRISS Chrome releju (`POST /listings/page`).
  * stat.vin WAF (plaintext Access blocked) CapSolver nespēj; īsts Chrome var.
  * Env: IRISS_LISTINGS_RELAY_URL + IRISS_LISTINGS_RELAY_TOKEN (tie paši, kas LIST).
+ * Vienā skenēšanā tas pats URL iet uz releju vienu reizi (`withVinScanRelayDedupe`).
  */
+
+import { AsyncLocalStorage } from "node:async_hooks";
 
 import { formatFetchError } from "@/lib/iriss-listings-fetch-error";
 import { readIrissRelayConfig } from "@/lib/iriss-listings-relay";
@@ -54,6 +57,23 @@ export function isVinScanRelayUrl(raw: string): boolean {
 
 type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
 
+const relayDedupe = new AsyncLocalStorage<Map<string, Promise<VinScanRelayPage>>>();
+
+/** Viena VIN SCAN palaišana dala releja atbildes: paralēli un atkārtoti pieprasījumi nesūta otru POST. */
+export function withVinScanRelayDedupe<T>(fn: () => Promise<T>): Promise<T> {
+  return relayDedupe.run(new Map(), fn);
+}
+
+function relayDedupeKey(url: string): string {
+  try {
+    const u = new URL(url);
+    u.hash = "";
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 export function vinScanPageNeedsRelay(page: VinScanHttpLike): boolean {
   if (page.challengeReason) return true;
   if (page.status === 0) return true;
@@ -63,6 +83,20 @@ export function vinScanPageNeedsRelay(page: VinScanHttpLike): boolean {
 }
 
 export async function fetchVinScanPageViaRelay(
+  url: string,
+  deps: { fetchImpl?: FetchLike; env?: Record<string, string | undefined>; timeoutMs?: number } = {},
+): Promise<VinScanRelayPage> {
+  const store = relayDedupe.getStore();
+  if (!store) return fetchVinScanPageViaRelayOnce(url, deps);
+  const key = relayDedupeKey(url);
+  const pending = store.get(key);
+  if (pending) return pending;
+  const job = fetchVinScanPageViaRelayOnce(url, deps);
+  store.set(key, job);
+  return job;
+}
+
+async function fetchVinScanPageViaRelayOnce(
   url: string,
   deps: { fetchImpl?: FetchLike; env?: Record<string, string | undefined>; timeoutMs?: number } = {},
 ): Promise<VinScanRelayPage> {
@@ -157,6 +191,13 @@ export async function fetchVinScanAuctionPage(
         finalUrl: relayed.finalUrl,
       };
     }
+    // Relejs jau mēģināts (kļūda vai noildze). Otrs POST tikai pagarina rindu.
+    try {
+      return await directFetch();
+    } catch (e) {
+      const reason = !relayed.ok ? relayed.reason : e instanceof Error ? e.message : "Relejs neatbildēja";
+      return { status: 0, text: "", cookie: "", challengeReason: reason };
+    }
   }
   try {
     const direct = await directFetch();
@@ -164,7 +205,7 @@ export async function fetchVinScanAuctionPage(
   } catch (e) {
     if (!isVinScanRelayUrl(url)) throw e;
     const relayed = await fetchVinScanPageViaRelay(url, deps);
-    if (relayed.ok) {
+    if (relayed.ok && relayed.html.trim()) {
       return {
         status: relayed.status || 200,
         text: relayed.html,

@@ -356,7 +356,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     country: "US",
     hint: "Izsoles foto un bojājumi",
     needs: ["vin"],
-    openUrl: (vin) => `https://auchistory.com/?vin=${vinQuery(vin)}`,
+    openUrl: (vin) => `https://auchistory.com/?s=${vinQuery(vin)}`,
   },
   {
     id: "carfax_eu",

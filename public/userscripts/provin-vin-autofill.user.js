@@ -573,7 +573,7 @@
     const SCAN_URLS = {
       stat_vin: "https://stat.vin/cars/" + v,
       bid_cars: "https://bid.cars/en/search?q=" + v,
-      auchistory: "https://auchistory.com/?vin=" + v,
+      auchistory: "https://auchistory.com/?s=" + v,
       carfax_eu: "https://www.carfax.eu/preview-page?vin=" + v,
       checkcar_vin: "https://checkcar.vin/report/check/" + v,
       plc_auction: "https://plc.auction/?vin=" + v,
@@ -688,7 +688,7 @@
       return null;
     }
     if (id === "auchistory") {
-      if (/no (auction )?records|vehicle not found|nothing found/i.test(text)) return { status: "none", summary: "Nav izsoles vēstures" };
+      if (/no (auction )?records|vehicle not found|nothing found|it seems we can['\u2019]t find what you['\u2019]re looking for/i.test(text)) return { status: "none", summary: "Nav izsoles vēstures" };
       if (hasVin && /damage|auction|sold for|\bbid\b/i.test(text)) return { status: "found", summary: "Ir izsoles vēsture" };
       return null;
     }

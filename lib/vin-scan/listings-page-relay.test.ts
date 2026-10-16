@@ -6,6 +6,7 @@ import {
   fetchVinScanPageViaRelay,
   isVinScanRelayUrl,
   vinScanPageNeedsRelay,
+  withVinScanRelayDedupe,
 } from "@/lib/vin-scan/listings-page-relay";
 
 const ENV = {
@@ -178,6 +179,54 @@ describe("fetchVinScanAuctionPage", () => {
     );
     expect(out.status).toBe(200);
     expect(out.text).toContain("Sale History");
+  });
+
+  it("releja kļūda neizsauc otru /page un atstāj tiešo atbildi", async () => {
+    let relayCalls = 0;
+    const fetchImpl = (async () => {
+      relayCalls += 1;
+      return {
+        ok: false,
+        status: 503,
+        text: async () => JSON.stringify({ error: "rinda pilna" }),
+      } as Response;
+    }) as typeof fetch;
+    const out = await fetchVinScanAuctionPage(
+      "https://stat.vin/cars/WBA",
+      async () => ({ status: 403, text: WAF, cookie: "" }),
+      { fetchImpl, env: ENV },
+    );
+    expect(relayCalls).toBe(1);
+    expect(out.status).toBe(403);
+    expect(out.text).toBe(WAF);
+  });
+
+  it("vienā skenēšanā tas pats URL iet uz releju vienreiz", async () => {
+    let n = 0;
+    const fetchImpl = (async () => {
+      n += 1;
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      return {
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify({
+            ok: true,
+            status: 200,
+            html: "<html>Sale History Copart</html>",
+            finalUrl: "https://stat.vin/cars/WBA",
+          }),
+      } as Response;
+    }) as typeof fetch;
+    const [a, b] = await withVinScanRelayDedupe(() =>
+      Promise.all([
+        fetchVinScanPageViaRelay("https://stat.vin/cars/WBA", { fetchImpl, env: ENV }),
+        fetchVinScanPageViaRelay("https://stat.vin/cars/WBA", { fetchImpl, env: ENV }),
+      ]),
+    );
+    expect(n).toBe(1);
+    expect(a).toEqual(b);
+    expect(a.ok).toBe(true);
   });
 
   it("timeout bez releja env paliek timeout", async () => {

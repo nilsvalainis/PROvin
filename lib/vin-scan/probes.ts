@@ -44,7 +44,7 @@ import {
   probeVinDecode,
 } from "@/lib/vin-scan/probes-extra";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
-import { runCarinfoLookup } from "@/lib/vin-scan/carinfo-lookup";
+import { carinfoScanFromPage, runCarinfoLookup } from "@/lib/vin-scan/carinfo-lookup";
 import { applyVinScanRelayIfBlocked } from "@/lib/vin-scan/listings-page-relay";
 import { isValidScanPlate, vinScanPlateLabel, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
@@ -182,6 +182,8 @@ export async function probeDsb(ctx: VinScanContext): Promise<VinScanIndicator> {
     }
     const search = parseDsbSearchHtml(page.text);
     if (!search.vehicle) return done("dsb", ctx, dsbScanFromParts(search, 0));
+    const inlineCount = parseDsbEntryCount(page.text);
+    if (inlineCount != null) return done("dsb", ctx, dsbScanFromParts(search, inlineCount));
     if (!search.servicesPath) return done("dsb", ctx, dsbScanFromParts(search, null));
     const services = await scanFetch(`https://app.digitalservicebog.dk${search.servicesPath}`, {
       headers: {
@@ -265,13 +267,23 @@ export async function probeCarinfo(ctx: VinScanContext): Promise<VinScanIndicato
           accept: url.includes("/search/super/")
             ? "application/json, text/javascript, */*; q=0.01"
             : "text/html,application/xhtml+xml",
-          referer: "https://www.car.info/en-se/",
+          referer: "https://www.car.info/sv-se/",
+          ...(url.includes("/search/super/") ? { "x-requested-with": "XMLHttpRequest" } : {}),
         },
-        timeoutMs: 20_000,
+        timeoutMs: 12_000,
       });
-      const page = await applyVinScanRelayIfBlocked(url, direct);
-      return { status: page.status, text: page.text };
+      return { status: direct.status, text: direct.text };
     });
+    if (parsed.status === "blocked" && parsed.openUrl) {
+      const relayed = await applyVinScanRelayIfBlocked(parsed.openUrl, {
+        status: 403,
+        text: "403 Forbidden",
+        cookie: "",
+      });
+      if (relayed.text && relayed.text !== "403 Forbidden") {
+        return done("carinfo", ctx, { ...carinfoScanFromPage(relayed.status, relayed.text), openUrl: parsed.openUrl });
+      }
+    }
     return done("carinfo", ctx, parsed);
   } catch (e) {
     return failed("carinfo", ctx, e);
