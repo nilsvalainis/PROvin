@@ -55,7 +55,8 @@ async function readFromBlob(
     });
     if (!res || res.statusCode !== 200 || !res.stream) return null;
     const text = await new Response(res.stream).text();
-    const etag = res.blob?.etag?.trim() ?? "";
+    // get() atgriež vāju ETag; put ifMatch prasa stipro
+    const etag = (res.blob?.etag?.trim() ?? "").replace(/^W\//i, "");
     if (!etag) return null;
     return { wallet: parseB2bCreditWallet(JSON.parse(text) as unknown), etag };
   } catch {

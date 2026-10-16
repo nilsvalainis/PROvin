@@ -2472,8 +2472,11 @@ export function OrderDetailWorkspace({
         serverOk = await persistFullWorkspaceRef("manual_save");
       }
 
-      if (opts?.showFlash !== false && serverOk) {
-        setWorkspaceSaveServerOk(serverOk);
+      if (!serverOk) {
+        setWorkspaceSaveServerOk(false);
+        setWorkspaceAutosaveStatus("error");
+      } else if (opts?.showFlash !== false) {
+        setWorkspaceSaveServerOk(true);
         setWorkspaceSaveFlash(true);
       }
       return localOk && serverOk;
@@ -4482,7 +4485,7 @@ export function OrderDetailWorkspace({
               workspaceSaveBusy
                 ? "Saglabā"
                 : workspaceAutosaveStatus === "error"
-                  ? "Saglabāt. Kļūda saglabājot"
+                  ? "Saglabāt. Nav saglabāts!"
                   : workspaceSaveFlash || workspaceAutosaveStatus === "saved"
                     ? orderDraftPersistenceEnabled && !workspaceSaveServerOk
                       ? "Saglabāt. Saglabāts pārlūkā, servera melnraksts neizdevās"
@@ -4494,11 +4497,11 @@ export function OrderDetailWorkspace({
               void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
             }}
           >
-            {workspaceSaveBusy ? "Saglabā…" : "Saglabāt"}
+            {workspaceSaveBusy ? "Saglabā…" : workspaceAutosaveStatus === "error" ? "Nav saglabāts!" : "Saglabāt"}
           </button>
           {workspaceAutosaveStatus === "error" ? (
-            <span className="max-w-[12rem] text-[10px] font-semibold leading-tight text-amber-800 max-md:hidden" role="status">
-              Kļūda saglabājot
+            <span className="max-w-[12rem] text-[10px] font-semibold leading-tight text-red-700 max-md:hidden" role="status">
+              Nav saglabāts!
             </span>
           ) : null}
           {payload.isDemo ? (
@@ -4690,6 +4693,7 @@ export function OrderDetailWorkspace({
           void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
         }}
         saveBusy={workspaceSaveBusy}
+        saveFailed={workspaceAutosaveStatus === "error"}
         onOpenPhrases={() => {
           setCopilotOpen(false);
           setPhrasesOpen(true);

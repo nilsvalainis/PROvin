@@ -150,7 +150,8 @@ async function readOrderDraftJsonFromBlob(
       return null;
     }
     const text = await new Response(res.stream).text();
-    const etag = res.blob?.etag?.trim() ?? "";
+    // get() atgriež vāju ETag; put ifMatch prasa stipro
+    const etag = (res.blob?.etag?.trim() ?? "").replace(/^W\//i, "");
     noteBlobLease(etag || null);
     return JSON.parse(text) as unknown;
   } catch {
