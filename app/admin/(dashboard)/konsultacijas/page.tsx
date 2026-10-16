@@ -4,10 +4,12 @@ import { readConsultationDraftSummaries } from "@/lib/admin-consultation-draft-s
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
 import { renderProvinText } from "@/lib/provin-wordmark";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminConsultationsPage() {
+  await requireAdminPage();
   const { rows: consultations, stripeError } = await listAdminConsultations();
   const draftSummaries = await readConsultationDraftSummaries(consultations.map((o) => o.id));
   const rowsWithDraft = consultations.map((o) => {

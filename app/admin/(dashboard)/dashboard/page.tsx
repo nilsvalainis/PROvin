@@ -28,6 +28,7 @@ import {
   parsePartnerCompanyFromNotes,
   parsePartnerIdFromNotes,
 } from "@/lib/b2b-partner-orders";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ export default async function AdminOrdersPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  await requireAdminPage();
   const sp = await searchParams;
   const showAll = sp.show_all === "1" || sp.show_all === "true";
   const ordersQuery = parseAdminOrdersQuery(sp);

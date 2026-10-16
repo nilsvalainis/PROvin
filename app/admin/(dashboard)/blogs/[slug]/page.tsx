@@ -3,18 +3,21 @@ import { AdminBlogPostEditor } from "@/components/admin/AdminBlogPostEditor";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { listAdminBlogComments } from "@/lib/blog/comment-store";
 import { getStoredBlogPost, normalizeBlogSlug } from "@/lib/blog/post-store";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props) {
+  await requireAdminPage();
   const { slug } = await params;
   const post = await getStoredBlogPost(slug);
   return { title: post ? `Blogs · ${post.lv.title}` : "Blogs" };
 }
 
 export default async function AdminBlogPostPage({ params }: Props) {
+  await requireAdminPage();
   const { slug: raw } = await params;
   const slug = normalizeBlogSlug(decodeURIComponent(raw));
   const post = await getStoredBlogPost(slug);

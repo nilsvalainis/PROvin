@@ -12,10 +12,12 @@ import { irissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { listIrissPasutijumi, readIrissListingOrderOv } from "@/lib/iriss-pasutijumi-store";
 import { irissScanOrderBrief } from "@/lib/iriss-scan-listings";
 import { listIrissScan } from "@/lib/iriss-scan-store";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function IrissSludinajumiPage() {
+  await requireAdminPage();
   const storage = getIrissListingsStorageState();
   // Abi datu kopumi (klientu pasūtījumi + SCAN) ielādējas paralēli; kļūda vienā neaptur otru.
   const [latest, dismissedView, orders, scanOrders, initialOrderOv] = await Promise.all([

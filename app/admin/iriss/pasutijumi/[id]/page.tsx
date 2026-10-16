@@ -12,6 +12,7 @@ import { buildIrissOrderRoomHits } from "@/lib/iriss-order-room";
 import { readIrissOfferClientLinksForOrder } from "@/lib/iriss-offer-client-link-store";
 import { isIrissPasutijumiStoreEnabled, isSafeIrissPasutijumsId, readIrissListingOrderOv, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { stripIrissOfferImageDataUrls } from "@/lib/iriss-pasutijums-offer-images";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export default async function IrissPasutijumsDetailPage({
   params,
   searchParams,
 }: Props & { searchParams?: Promise<{ newOffer?: string; noClientPdf?: string; offer?: string; room?: string }> }) {
+  await requireAdminPage();
   if (!isIrissPasutijumiStoreEnabled()) {
     redirect("/admin/iriss/pasutijumi");
   }

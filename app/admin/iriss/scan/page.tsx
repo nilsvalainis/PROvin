@@ -3,6 +3,7 @@ import { IrissScanListClient } from "@/components/admin/IrissScanListClient";
 import { IrissScanNewFab } from "@/components/admin/IrissScanNewFab";
 import { getIrissScanStorageState, listIrissScan, readIrissScanListOrder } from "@/lib/iriss-scan-store";
 import { irissScanVinFromQuery } from "@/lib/iriss-scan-vin";
+import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ export default async function IrissScanListPage({
 }: {
   searchParams?: Promise<{ vin?: string }>;
 }) {
+  await requireAdminPage();
   const sp = (await searchParams) ?? {};
   const vin = irissScanVinFromQuery(sp.vin);
   if (vin) {
