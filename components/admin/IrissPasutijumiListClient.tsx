@@ -191,17 +191,6 @@ function rowMatchesStatusFilter(
   return Boolean(f[st]);
 }
 
-function statusBarClass(row: IrissPasutijumsListRow): string {
-  const st = row.listStatus ?? "active";
-  if (st === "completed") return "bg-emerald-500";
-  if (st === "inactive") return "bg-red-500";
-  if (st === "searching") return "bg-sky-500";
-  if (st === "offered") return "bg-amber-500";
-  if (st === "reserved") return "bg-violet-500";
-  if (row.pinnedAt) return "bg-emerald-600";
-  return "bg-slate-400";
-}
-
 function statusBadgeClass(st: IrissPasutijumsListStatus): string {
   if (st === "completed") return "bg-emerald-100 text-emerald-950";
   if (st === "inactive") return "bg-red-100 text-red-950";
@@ -415,7 +404,6 @@ const IrissRowCard = memo(function IrissRowCard({
         aria-label={`Atvērt pasūtījumu: ${row.brandModel}`}
         className="absolute inset-0 z-0 rounded-lg"
       />
-      <span className={`absolute inset-y-0 left-0 z-10 w-[3px] ${statusBarClass(row)}`} aria-hidden />
       <div className="relative z-10 shrink-0" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
         <button
           ref={statusBtnRef}
@@ -1089,12 +1077,12 @@ export function IrissPasutijumiListClient({
 
   return (
     <>
-      <div className="sticky top-0 z-30 mb-2 border-b border-slate-200/80 bg-[#F8F8F9]/95 py-2 backdrop-blur-sm max-md:border-b-0">
-        <h1 className="mb-2 hidden px-0.5 text-[34px] font-bold leading-none tracking-tight text-[var(--color-apple-text)] max-md:block">
-          Pasūtījumi
-        </h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="relative min-w-[10rem] flex-1 sm:max-w-xs">
+      <div className="sticky top-0 z-30 mb-1.5 bg-[#F8F8F9] py-1 max-md:border-b-0 md:mb-2 md:border-b md:border-slate-200/80 md:bg-[#F8F8F9]/95 md:py-2 md:backdrop-blur-sm">
+        <div className="flex items-center gap-1.5 md:flex-wrap md:gap-2">
+          <h1 className="iriss-list-title shrink-0 text-[17px] font-semibold leading-none tracking-tight text-[var(--color-apple-text)] md:hidden">
+            Pasūtījumi
+          </h1>
+          <label className="relative min-w-0 flex-1 md:min-w-[10rem] md:max-w-xs">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 md:left-2 md:h-3.5 md:w-3.5" aria-hidden />
             <input
               ref={searchRef}
@@ -1103,11 +1091,20 @@ export function IrissPasutijumiListClient({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Vārds, tālrunis, marka"
               aria-label="Meklēt pasūtījumus"
-              className="h-9 w-full rounded-[10px] border-0 bg-[#e5e5ea] pl-9 pr-3 text-base text-black outline-none placeholder:text-[#8e8e93] md:h-8 md:rounded-md md:border md:border-slate-200 md:bg-white md:pl-7 md:pr-2 md:text-[12px] md:placeholder:text-slate-400 md:ring-[var(--color-provin-accent)]/25 md:focus:ring-2"
+              className="h-10 min-h-10 w-full rounded-[10px] border-0 bg-[#e5e5ea] pl-9 pr-3 text-base text-black outline-none placeholder:text-[#8e8e93] md:h-8 md:min-h-8 md:rounded-md md:border md:border-slate-200 md:bg-white md:pl-7 md:pr-2 md:text-[12px] md:placeholder:text-slate-400 md:ring-[var(--color-provin-accent)]/25 md:focus:ring-2"
             />
           </label>
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            aria-label={`Kārtot: ${SORT_LABEL[sortMode]}`}
+            title={SORT_LABEL[sortMode]}
+            className="inline-flex h-10 min-h-10 w-10 shrink-0 items-center justify-center rounded-full bg-transparent text-[var(--color-apple-text)] md:hidden"
+          >
+            <ArrowUpDown className="h-4 w-4" aria-hidden />
+          </button>
           <div className="hidden md:contents">
-            <IrissPasutijumiStatusFilter counts={statusCounts} trashCount={trashCount} />
+            <IrissPasutijumiStatusFilter layout="wrap" counts={statusCounts} trashCount={trashCount} />
             <IrissOrderSortSelect compact />
           </div>
           <div className="ml-auto hidden items-center gap-1.5 md:flex">
@@ -1129,20 +1126,8 @@ export function IrissPasutijumiListClient({
             <AdminIrissOrdersExportButton compact />
           </div>
         </div>
-        <div className="mt-2 flex gap-2 overflow-x-auto pb-0.5 md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <IrissPasutijumiStatusFilter
-            counts={statusCounts}
-            trashCount={trashCount}
-            className="flex-nowrap [&_button]:h-8 [&_button]:rounded-full [&_button]:px-3 [&_button]:text-[13px]"
-          />
-          <button
-            type="button"
-            onClick={() => setSheetOpen(true)}
-            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full bg-white px-3 text-[13px] font-semibold text-[var(--color-apple-text)]"
-          >
-            <ArrowUpDown className="h-3.5 w-3.5" aria-hidden />
-            {SORT_LABEL[sortMode]}
-          </button>
+        <div className="mt-1 bg-transparent md:hidden">
+          <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />
         </div>
         {ectMsg ? <p className="mt-1 text-[11px] text-[#8e8e93]">{ectMsg}</p> : null}
       </div>
@@ -1182,8 +1167,8 @@ export function IrissPasutijumiListClient({
             </button>
           ))}
         </div>
-        <div className="mb-3 overflow-hidden rounded-xl bg-white px-3 py-2">
-          <IrissPasutijumiStatusFilter counts={statusCounts} trashCount={trashCount} className="[&_button]:h-10 [&_button]:text-[15px]" />
+        <div className="mb-3 bg-transparent px-1 py-1">
+          <IrissPasutijumiStatusFilter layout="wrap" counts={statusCounts} trashCount={trashCount} />
         </div>
         <div className="overflow-hidden rounded-xl bg-white">
           <button
