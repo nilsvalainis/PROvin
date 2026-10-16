@@ -91,7 +91,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const tMetaDesc = await getTranslations({ locale, namespace: "Meta" });
 
   return (
-    <RootHtml lang={locale}>
+    <RootHtml lang={locale} consentModeDefaults>
     <NextIntlClientProvider locale={locale} messages={messages}>
       <SiteJsonLd locale={locale} description={tMetaDesc("description")} />
       <LenisProvider>

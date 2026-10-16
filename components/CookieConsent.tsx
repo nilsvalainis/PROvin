@@ -11,6 +11,7 @@ import {
   PROVIN_CONSENT_UPDATED_EVENT,
   type ConsentState,
 } from "@/lib/cookie-consent";
+import { applyGtagConsent } from "@/lib/google-consent";
 
 const ATTR_MAX_AGE = 180 * 24 * 60 * 60;
 
@@ -87,6 +88,7 @@ export function CookieConsent() {
         setVisible(true);
         return;
       }
+      applyGtagConsent(c.analytics);
       if (!c.analytics) {
         clearAttrCookie();
       }
@@ -102,6 +104,7 @@ export function CookieConsent() {
     } else {
       clearAttrCookie();
     }
+    applyGtagConsent(consent.analytics);
     setVisible(false);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent(PROVIN_CONSENT_UPDATED_EVENT));
