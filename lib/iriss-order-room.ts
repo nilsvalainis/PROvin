@@ -7,6 +7,7 @@ import { offerImageGridSrc, orderOfferAttachmentsForPdf } from "@/lib/iriss-offe
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { listingFmtEur } from "@/lib/iriss-listings-card";
 import { listingComparisonPrice } from "@/lib/iriss-listings-cost";
+import { listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
 import { listingVehicleOrderIds } from "@/lib/iriss-listings-orders";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import type { IrissListingPlatform, IrissListingVehicleChange } from "@/lib/iriss-listings-types";
@@ -76,6 +77,7 @@ export type IrissOrderRoomHitSource = {
   detailUrl: string;
   orderIds: readonly string[];
   title: string;
+  manufacturer?: string;
   year?: string;
   firstRegistration?: string;
   mileageKm?: number | null;
@@ -200,12 +202,16 @@ export function buildIrissOrderRoomHits(
   orderId: string,
   orderOv: Record<string, string[]>,
   extraListingIds?: ReadonlySet<string>,
+  /** Pasūtījuma marka/modelis: automātiskās piesaistes ar citu marku vai modeli netiek rādītas. */
+  orderBrandModel?: string,
 ): IrissOrderRoomHit[] {
   const out: IrissOrderRoomHit[] = [];
   for (const v of vehicles) {
     const linked = listingVehicleOrderIds(v.id, v.orderIds, orderOv);
     const extra = extraListingIds?.has(v.id) ?? false;
     if (!linked.includes(orderId) && !extra) continue;
+    const manual = orderOv[v.id]?.includes(orderId) ?? false;
+    if (!manual && orderBrandModel != null && !listingMatchesOrderMakeModel(v, orderBrandModel)) continue;
     const orderIds = linked.includes(orderId) ? linked : [...linked, orderId];
     const photos = [v.imageUrl ?? "", ...(v.imageUrls ?? [])].map((u) => u.trim()).filter(Boolean);
     const uniquePhotos: string[] = [];

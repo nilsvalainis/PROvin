@@ -9,6 +9,7 @@ import { emptyIrissListingsDismissed, listingIsDismissed } from "@/lib/iriss-lis
 import { orderRoomMatchProps, prepareIrissListingMatchWorkspace } from "@/lib/iriss-listing-match-store";
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap } from "@/lib/iriss-order-room-match-props";
 import { buildIrissOrderRoomHits } from "@/lib/iriss-order-room";
+import { isEcarstradeNoPriceNoBid } from "@/lib/iriss-listing-order-gate";
 import { readIrissOfferClientLinksForOrder } from "@/lib/iriss-offer-client-link-store";
 import { isIrissPasutijumiStoreEnabled, isSafeIrissPasutijumsId, readIrissListingOrderOv, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { stripIrissOfferImageDataUrls } from "@/lib/iriss-pasutijums-offer-images";
@@ -49,11 +50,12 @@ export default async function IrissPasutijumsDetailPage({
     readIrissListingOrderOv().catch(() => ({})),
     readIrissOfferClientLinksForOrder(id).catch(() => []),
   ]);
+  const listable = (latest?.vehicles ?? []).filter((v) => !isEcarstradeNoPriceNoBid(v));
   const match = storage.enabled
-    ? await prepareIrissListingMatchWorkspace(latest?.vehicles ?? [], []).catch(() => null)
+    ? await prepareIrissListingMatchWorkspace(listable, []).catch(() => null)
     : null;
   const roomMatch = match ? orderRoomMatchProps(match.state, id, match.duplicatesByListing) : null;
-  const roomHits = buildIrissOrderRoomHits(latest?.vehicles ?? [], id, orderOv, roomMatch ? new Set(roomMatch.extraListingIds) : undefined);
+  const roomHits = buildIrissOrderRoomHits(listable, id, orderOv, roomMatch ? new Set(roomMatch.extraListingIds) : undefined, rec.brandModel ?? "");
   const dismissedHitIds = roomHits.filter((hit) => listingIsDismissed(hit, dismissedView.entries)).map((hit) => hit.id);
   return (
     <IrissPasutijumsEditor

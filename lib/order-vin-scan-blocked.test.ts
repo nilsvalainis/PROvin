@@ -21,13 +21,12 @@ describe("VIN SCAN Cloudflare-blocked browser sources", () => {
       ]),
     )!;
     const by = Object.fromEntries(s.rows.map((r) => [r.id, r]));
-    for (const id of ["stat_vin", "bid_cars", "checkcar_vin", "bidfax"]) {
+    for (const id of ["stat_vin", "bid_cars", "checkcar_vin", "bidfax", "carfax_eu"]) {
       expect(by[id]!.action).toBe("open_import");
       expect(by[id]!.blocked).toBe(true);
     }
-    expect(by.carfax_eu!.action).toBe("retry");
-    expect(s.error).toBe(1);
-    expect(s.browser).toBe(4);
+    expect(s.error).toBe(0);
+    expect(s.browser).toBe(5);
   });
   it("stat.vin from browser nav 403 kļūda", () => {
     const s = buildOrderVinScanSummary(
