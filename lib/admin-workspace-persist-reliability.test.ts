@@ -9,6 +9,8 @@ import { coalesceOrderWorkspacePersistBody, pickOrderWorkspaceHydrationServerFir
 import { createDefaultSourceBlocks, emptyVendorAvotuBlock } from "@/lib/admin-source-blocks";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { enqueueWorkspacePersist } from "@/lib/admin-workspace-persist-queue";
+import { mergePdfVisibility } from "@/lib/pdf-visibility";
+import { mergeProvinBannerPdfInclude } from "@/lib/provin-alert-banners";
 import {
   buildSafeMergePersistBody,
   isRetryableWorkspacePersistError,
@@ -251,8 +253,8 @@ describe("revision conflict contract", () => {
           vehicleAiExtractionMeta: null,
         },
         baseline: null,
-        pdfVisibility: {},
-        pdfBannerInclude: {},
+        pdfVisibility: mergePdfVisibility(undefined),
+        pdfBannerInclude: mergeProvinBannerPdfInclude(undefined),
         expectedWorkspaceRevision: 7,
         logContext: "manual_save",
       });
