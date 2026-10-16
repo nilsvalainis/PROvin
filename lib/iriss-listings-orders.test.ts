@@ -4,9 +4,11 @@ import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
 import {
   irissListingOrderBrief,
   listingBudgetForVehicle,
+  listingCardOrderIds,
   listingLinkedOrders,
   listingOrderShortId,
   listingVehicleOrderIds,
+  matchingListingOrderIds,
   parseIrissOrderBudget,
   parseListingOrderFilter,
   serializeListingOrderFilter,
@@ -98,6 +100,71 @@ describe("order briefs and linking", () => {
     expect(listingVehicleOrderIds("car-1", ["o1", "o2"], {})).toEqual(["o1", "o2"]);
     expect(listingVehicleOrderIds("car-1", ["o1", "o2"], { "car-1": ["o9"] })).toEqual(["o9"]);
     expect(listingVehicleOrderIds("car-1", ["o1"], { "car-1": [] })).toEqual(["o1"]);
+  });
+});
+
+describe("listing card order chips", () => {
+  const audi = {
+    platform: "ecarstrade" as const,
+    title: "AUDI A4 Avant 2.0 TDi",
+    manufacturer: "Audi",
+    firstRegistration: "03.2019",
+    year: "2019",
+    mileageKm: 120_000,
+    fuel: "Diesel",
+    transmission: "Automatic",
+    priceCurrent: 15_000,
+  };
+  const bare = "https://ecarstrade.com/search";
+
+  it("keeps only orders whose make and search bounds match, not every order on the shared URL", () => {
+    const hyundai = order({
+      id: "hyundai",
+      clientFirstName: "Renārs",
+      clientLastName: "Gackis",
+      brandModel: "Hyundai Tucson",
+      listingLinkEcarstrade: [bare],
+    });
+    const jeep = order({
+      id: "jeep",
+      clientFirstName: "Guntis",
+      clientLastName: "Jaunbalodis",
+      brandModel: "Jeep Compass",
+      listingLinkEcarstrade: [bare],
+    });
+    const toyota = order({
+      id: "toyota",
+      clientFirstName: "Juris",
+      clientLastName: "Pakalns",
+      brandModel: "Toyota RAV4",
+      listingLinkEcarstrade: [bare],
+    });
+    const audiOrder = order({
+      id: "audi",
+      clientFirstName: "Anna",
+      clientLastName: "Berzina",
+      brandModel: "Audi A4",
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?year_from=2018&year_to=2020"],
+    });
+    const tooOld = order({
+      id: "old-audi",
+      brandModel: "Audi A4",
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?year_to=2016"],
+    });
+    const empty = order({ id: "empty", brandModel: "", listingLinkEcarstrade: [bare] });
+    const done = order({
+      id: "done",
+      brandModel: "Audi A4",
+      listStatus: "completed",
+      listingLinkEcarstrade: [bare],
+    });
+    expect(matchingListingOrderIds(audi, [hyundai, jeep, toyota, audiOrder, tooOld, empty, done])).toEqual(["audi"]);
+  });
+
+  it("lets a manual assignment replace the criteria list", () => {
+    expect(listingCardOrderIds(["jeep"], ["audi"])).toEqual(["jeep"]);
+    expect(listingCardOrderIds([], ["audi"])).toEqual(["audi"]);
+    expect(listingCardOrderIds(undefined, ["audi", "audi"])).toEqual(["audi", "audi"]);
   });
 });
 

@@ -73,8 +73,7 @@ export function IrissListDrawer({
   const sourceHref = resolveListingDetailUrl(v);
   const yearLabel = listingYearLabel(v);
   const powerKwLabel = formatListingPowerKwLabel(v.powerKw);
-  const reassigned = Boolean(prefs.orderOv[v.id]?.length);
-  const assignValue = linked.length === 1 ? linked[0]!.id : "";
+  const assignValue = prefs.orderOv[v.id]?.[0] ?? "";
   const assignChoices = orders.filter((o) => isIrissPasutijumsWorkingStatus(o.listStatus) || linked.some((l) => l.id === o.id));
   const priceHistory = realListingPriceHistory(v.priceHistory);
   const auctionTypeLabel = listingAuctionTypeLabel(v.auctionType);
@@ -225,7 +224,7 @@ export function IrissListDrawer({
             }}
             className="mt-1 h-11 w-full rounded-lg border border-[#E5E7EB] px-2 text-base font-normal normal-case tracking-normal sm:h-auto sm:py-1 sm:text-[13px]"
           >
-            <option value="">{reassigned ? "Automātiski no meklējuma" : "Automātiski no meklējuma (vairāki, ja URL kopīgs)"}</option>
+            <option value="">Automātiski pēc kritērija</option>
             {assignChoices.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.clientName} · {o.brandModel || "pasūtījums"} {o.productionYears ? `· ${o.productionYears}` : ""}
