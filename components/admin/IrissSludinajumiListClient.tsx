@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AdminAnchoredSheet } from "@/components/admin/AdminBodyPortal";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
 import { IrissListingVehicleCard } from "@/components/admin/IrissListingVehicleCard";
@@ -316,6 +317,7 @@ export function IrissSludinajumiListClient({
     if (!filterOpen && !menuOpen) return;
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node;
+      if (t instanceof Element && t.closest("[data-admin-list-sheet]")) return;
       if (filterOpen && filterRef.current && !filterRef.current.contains(t)) setFilterOpen(false);
       if (menuOpen && menuRef.current && !menuRef.current.contains(t)) setMenuOpen(false);
     };
@@ -412,11 +414,8 @@ export function IrissSludinajumiListClient({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setDrawerId(null);
     };
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
   }, [drawerId]);
@@ -841,10 +840,16 @@ export function IrissSludinajumiListClient({
               <span className="hidden min-[420px]:inline">Filtri</span>
               {activeFilterCount > 0 ? <span className="rounded-full bg-[var(--color-provin-accent)] px-1.5 text-[10px] font-semibold leading-4 text-white">{activeFilterCount}</span> : null}
             </button>
-            {filterOpen ? (
+            <AdminAnchoredSheet
+              open={filterOpen}
+              onClose={() => setFilterOpen(false)}
+              closeLabel="Aizvērt filtrus"
+              sheetId="list-filter"
+              mobileClassName="fixed inset-x-0 bottom-0 z-40 max-h-[85dvh] overflow-y-auto rounded-t-[14px] bg-[#f2f2f7] p-4 pb-[max(16px,env(safe-area-inset-bottom))] text-[15px] shadow-[0_10px_32px_rgba(0,0,0,0.16)]"
+              desktopClassName="hidden sm:absolute sm:right-0 sm:top-9 sm:z-40 sm:block sm:w-[300px] sm:rounded-xl sm:bg-white sm:p-3.5 sm:text-[12px] sm:shadow-[0_10px_32px_rgba(0,0,0,0.16)]"
+            >
+              {() => (
               <>
-              <button type="button" aria-label="Aizvērt filtrus" className="fixed inset-0 z-30 bg-black/38 sm:hidden" onClick={() => setFilterOpen(false)} />
-              <div className="fixed inset-x-0 bottom-0 z-40 rounded-t-[14px] bg-[#f2f2f7] p-4 pb-[max(16px,env(safe-area-inset-bottom))] text-[15px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-9 sm:w-[300px] sm:rounded-xl sm:bg-white sm:p-3.5 sm:text-[12px]">
                 <div className="mx-auto mb-3 h-1.5 w-9 rounded-full bg-[#c7c7cc] sm:hidden" aria-hidden />
                 <p className="mb-2 text-center text-[17px] font-semibold sm:hidden">Filtri</p>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Avots</p>
@@ -903,9 +908,9 @@ export function IrissSludinajumiListClient({
                 <button type="button" onClick={() => setFilterOpen(false)} className="mt-3 h-[50px] w-full rounded-xl bg-[var(--color-provin-accent)] text-[17px] font-semibold text-white sm:h-8 sm:rounded-lg sm:text-[12.5px]">
                   Rādīt {sorted.length} auto
                 </button>
-              </div>
               </>
-            ) : null}
+              )}
+            </AdminAnchoredSheet>
           </div>
           <label className="inline-flex h-10 min-h-10 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:min-h-0">
             <ArrowUpDown className="h-3.5 w-3.5" aria-hidden />
@@ -926,10 +931,16 @@ export function IrissSludinajumiListClient({
             <button type="button" aria-label="Vairāk" aria-expanded={menuOpen} onClick={() => { setMenuOpen((v) => !v); setFilterOpen(false); }} className="grid h-10 w-10 min-h-10 place-items-center rounded-full text-[16px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:w-7 sm:min-h-0">
               ⋯
             </button>
-            {menuOpen ? (
+            <AdminAnchoredSheet
+              open={menuOpen}
+              onClose={() => setMenuOpen(false)}
+              closeLabel="Aizvērt"
+              sheetId="list-more"
+              mobileClassName="fixed inset-x-0 bottom-0 z-40 max-h-[85dvh] overflow-y-auto rounded-t-[14px] bg-[#f2f2f7] p-4 pb-[max(16px,env(safe-area-inset-bottom))] text-[15px] shadow-[0_10px_32px_rgba(0,0,0,0.16)]"
+              desktopClassName="hidden sm:absolute sm:right-0 sm:top-9 sm:z-40 sm:block sm:w-[340px] sm:rounded-xl sm:bg-white sm:p-3.5 sm:text-[12px] sm:shadow-[0_10px_32px_rgba(0,0,0,0.16)]"
+            >
+              {() => (
               <>
-              <button type="button" aria-label="Aizvērt" className="fixed inset-0 z-30 bg-black/38 sm:hidden" onClick={() => setMenuOpen(false)} />
-              <div className="fixed inset-x-0 bottom-0 z-40 max-h-[80vh] overflow-y-auto rounded-t-[14px] bg-[#f2f2f7] p-4 pb-[max(16px,env(safe-area-inset-bottom))] text-[15px] shadow-[0_10px_32px_rgba(0,0,0,0.16)] sm:absolute sm:inset-auto sm:right-0 sm:top-9 sm:max-h-none sm:w-[340px] sm:rounded-xl sm:bg-white sm:p-3.5 sm:text-[12px]">
                 <div className="mx-auto mb-3 h-1.5 w-9 rounded-full bg-[#c7c7cc] sm:hidden" aria-hidden />
                 <p className="mb-2 text-center text-[17px] font-semibold sm:hidden">Vairāk</p>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Nolasīšana</p>
@@ -1018,9 +1029,9 @@ export function IrissSludinajumiListClient({
                 ) : null}
                 <p className="mt-1 text-[10.5px] text-[#8e8e93]">Budžets - no pasūtījumiem.</p>
                 <button type="button" onClick={() => setMenuOpen(false)} className="mt-3 h-[50px] w-full rounded-xl bg-white text-[17px] font-semibold sm:hidden sm:h-10 sm:rounded-lg sm:bg-[#f2f2f5] sm:text-[12.5px]">Aizvērt</button>
-              </div>
               </>
-            ) : null}
+              )}
+            </AdminAnchoredSheet>
           </div>
           <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
         </div>

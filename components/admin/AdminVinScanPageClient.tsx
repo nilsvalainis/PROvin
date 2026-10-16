@@ -275,7 +275,7 @@ export function AdminVinScanPageClient({
   );
 
   return (
-    <div className="mt-4 space-y-4 max-md:pb-[calc(8.5rem+env(safe-area-inset-bottom,0px))] md:mt-5">
+    <div className="mt-4 space-y-4 max-md:pb-[calc(var(--admin-tabbar-h,0px)+8.75rem)] md:mt-5">
       <AdminVinHandoffBinder vin={valid ? vin : ""} />
       {/* Galddators: viena rinda augšā. */}
       <div className="hidden md:block">
@@ -296,7 +296,7 @@ export function AdminVinScanPageClient({
         </div>
       </div>
       {/* Telefons: piestiprināts apakšā virs cilņu joslas. */}
-      <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-30 border-t border-[#e5e5ea] bg-white/95 px-4 pb-3 pt-3 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-[var(--admin-tabbar-h,0px)] z-[34] border-t border-[#e5e5ea] bg-white/95 px-4 pb-3 pt-3 backdrop-blur md:hidden">
         <div className="grid grid-cols-[1.6fr_1fr] gap-2">
           <label className="block min-w-0"><span className={lab}>VIN</span>{vinInput}</label>
           <label className="block min-w-0"><span className={lab}>LV numurs</span>{plateInput}</label>

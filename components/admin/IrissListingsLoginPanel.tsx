@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
 
@@ -74,6 +75,7 @@ function IrissListingsLoginDialog({
   const [msg, setMsg] = useState("Atveru servera pārlūku...");
   const [ok, setOk] = useState(false);
   const [vncReady, setVncReady] = useState(false);
+  useAdminScrollLock(true);
 
   async function start() {
     setBusy("start");

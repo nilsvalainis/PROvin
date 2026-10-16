@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
 import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
 import { classifyListingDamage, highlightListingDamage } from "@/lib/iriss-listings-damage";
@@ -53,6 +54,7 @@ export function IrissListDrawer({
   onPreviewOrder?: (order: IrissListingOrderBrief) => void;
   mobile?: IrissMobilePlatform | null;
 }) {
+  useAdminScrollLock(true);
   const detected = taxFromVehicle(v);
   const ov = prefs.taxOv[v.id];
   const tax = listingTaxResolved(v, ov);

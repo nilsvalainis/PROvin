@@ -6,7 +6,8 @@ import {
   fetchAdminWhatsappPrefill,
   type AdminWhatsappPrefillParams,
 } from "@/lib/admin-whatsapp-prefill-client";
-import { normalizeWhatsAppPhoneDigits, openWhatsAppChat } from "@/lib/admin-whatsapp-phone";
+import { openWindowSyncThen } from "@/lib/admin-open-window";
+import { normalizeWhatsAppPhoneDigits, whatsAppChatUrl } from "@/lib/admin-whatsapp-phone";
 import {
   ADMIN_WHATSAPP_COMPACT_BTN_CLASS,
   ADMIN_WHATSAPP_ICON_BTN_CLASS,
@@ -52,6 +53,7 @@ export function AdminWhatsAppOpenButton({
 
   const onClick = useCallback(() => {
     if (!digits) return;
+    const opened = openWindowSyncThen();
     void (async () => {
       let message: string | null = null;
       if ("prefillMessage" in prefillSource) {
@@ -62,8 +64,11 @@ export function AdminWhatsAppOpenButton({
           ...prefillSource.templateParams,
         });
       }
-      if (!message) return;
-      openWhatsAppChat(digits, message);
+      if (!message) {
+        opened.close();
+        return;
+      }
+      opened.navigate(whatsAppChatUrl(digits, message));
     })();
   }, [digits, prefillSource]);
 

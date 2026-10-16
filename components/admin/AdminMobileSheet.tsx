@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect } from "react";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 
 type Props = {
   open: boolean;
@@ -13,6 +14,8 @@ type Props = {
 
 /** Mobilā apakšējā lapa. Desktop neredz (`md:hidden`). */
 export function AdminMobileSheet({ open, title, onClose, children, action }: Props) {
+  useAdminScrollLock(open);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {

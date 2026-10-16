@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 export type AdminLightboxPhoto = {
@@ -50,13 +51,12 @@ export function AdminPhotoLightbox({ photos, index, onIndexChange, onClose }: Pr
       }
     };
     window.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
     };
   }, [onClose, open, step]);
+
+  useAdminScrollLock(open);
 
   if (!open) return null;
   const photo = photos[index]!;

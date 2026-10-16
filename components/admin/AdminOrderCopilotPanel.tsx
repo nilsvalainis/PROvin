@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { createPortal } from "react-dom";
 import { AlertTriangle, Bot, FileUp, GripVertical, Loader2, Minimize2, Send, Undo2, X } from "lucide-react";
 import { COPILOT_SOURCE_KEYS, type CopilotAction, type CopilotChatMessage, type CopilotSourceKey } from "@/lib/admin-copilot-types";
@@ -696,6 +698,10 @@ export function AdminOrderCopilotPanel({
     setUnreadDone(false);
   }, []);
 
+  const copilotCoversDock = mounted && open && !minimized;
+  useAdminScrollLock(copilotCoversDock && isPhone);
+  useHoldAdminOverlayCover(copilotCoversDock);
+
   if (!mounted || !open) return null;
 
   const posStyle: CSSProperties = {
@@ -710,7 +716,7 @@ export function AdminOrderCopilotPanel({
    * sarunu. Inline pozīcija tur jāatstāj tukša, citādi tā pārspēj klases.
    */
   const phonePanelClass =
-    "max-md:inset-0 max-md:h-[100dvh] max-md:w-full max-md:rounded-none max-md:border-0";
+    "max-md:inset-0 max-md:h-[100dvh] max-md:max-h-[100dvh] max-md:w-full max-md:rounded-none max-md:border-0 max-md:pb-[env(safe-area-inset-bottom)] max-md:pt-[env(safe-area-inset-top)]";
 
   const chip = (
     <div

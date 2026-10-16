@@ -3,6 +3,7 @@
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import {
   ADMIN_GLOBAL_SEARCH_OPEN,
   ADMIN_SEARCH_QUERY_MIN,
@@ -110,14 +111,13 @@ export function AdminGlobalSearch() {
     };
   }, []);
 
+  useAdminScrollLock(open);
+
   useEffect(() => {
     if (!open) return;
     setRecent(parseAdminSearchRecent(window.localStorage.getItem(ADMIN_SEARCH_RECENT_KEY)));
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const t = window.setTimeout(() => inputRef.current?.focus(), 0);
     return () => {
-      document.body.style.overflow = prev;
       window.clearTimeout(t);
     };
   }, [open]);

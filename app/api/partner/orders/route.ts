@@ -2,9 +2,16 @@ import { NextResponse } from "next/server";
 import { after } from "next/server";
 import { patchOrderDraft } from "@/lib/admin-order-draft-store";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
-import { debitB2bCredit, remainingB2bCredits, restoreB2bCredit } from "@/lib/b2b-partner-credits";
+import {
+  debitB2bCredit,
+  forgetB2bDebitKeys,
+  remainingB2bCredits,
+  rememberB2bDebitKey,
+  restoreB2bCredit,
+  walletHasDebitKey,
+} from "@/lib/b2b-partner-credits";
 import { resolvePartnerCreditRemaining, seedLotsFromRemaining } from "@/lib/b2b-partner-credit-seed";
-import { readB2bCreditWallet, withB2bCreditLock, writeB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
+import { updateB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
 import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import { buildPartnerOrderNotes, isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
 import { findRecentPartnerVinOrder } from "@/lib/b2b-partner-vin-dedup";
@@ -63,41 +70,56 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "dealer_disabled" }, { status: 403 });
   }
 
-  const consumed = await withB2bCreditLock(partner.id, async () => {
+  const idempotencyKey = (req.headers.get("idempotency-key") ?? "").trim().slice(0, 80);
+  const spendKey = `spend:${vin}:${planRaw}`;
+  type PartnerSpend =
+    | { ok: true; duplicate: true; orderId: string; lotId: string }
+    | { ok: false }
+    | { ok: true; duplicate: false; lotId: string };
+  const consumed = await updateB2bCreditWallet<PartnerSpend>(partner.id, async (wallet) => {
+    if (walletHasDebitKey(wallet, idempotencyKey) || walletHasDebitKey(wallet, spendKey)) {
+      return { value: { ok: true as const, duplicate: true as const, orderId: "", lotId: "" } };
+    }
     const existing = await findRecentPartnerVinOrder({ partnerId: partner.id, vin });
     if (existing) {
-      return { ok: true as const, duplicate: true as const, orderId: existing.id, lotId: "" };
+      return { value: { ok: true as const, duplicate: true as const, orderId: existing.id, lotId: "" } };
     }
-    let wallet = await readB2bCreditWallet(partner.id);
-    if (wallet.lots.length === 0) {
+    let next = wallet;
+    if (next.lots.length === 0) {
       const seed = resolvePartnerCreditRemaining([]);
       if (seed.business > 0 || seed.dealer > 0) {
-        wallet = {
+        next = {
+          ...next,
           version: 1,
           updatedAt: new Date().toISOString(),
           lots: seedLotsFromRemaining(seed),
         };
       }
     }
-    const remaining = remainingB2bCredits(wallet.lots, new Date());
-    if (remaining[planRaw] < 1) return { ok: false as const };
-    const debit = debitB2bCredit(wallet, planRaw);
-    if (!debit.ok) return { ok: false as const };
-    await writeB2bCreditWallet(partner.id, debit.wallet);
-    return { ok: true as const, duplicate: false as const, lotId: debit.lotId };
+    const remaining = remainingB2bCredits(next.lots, new Date());
+    if (remaining[planRaw] < 1) return { value: { ok: false as const } };
+    const debit = debitB2bCredit(next, planRaw);
+    if (!debit.ok) return { value: { ok: false as const } };
+    let saved = rememberB2bDebitKey(debit.wallet, spendKey);
+    if (idempotencyKey) saved = rememberB2bDebitKey(saved, idempotencyKey);
+    return { wallet: saved, value: { ok: true as const, duplicate: false as const, lotId: debit.lotId } };
   });
 
   if (!consumed.ok) {
     return NextResponse.json({ error: "no_credits" }, { status: 402 });
   }
   if (consumed.duplicate) {
+    const orderId =
+      consumed.orderId ||
+      (await findRecentPartnerVinOrder({ partnerId: partner.id, vin }))?.id ||
+      "";
     return NextResponse.json({
       ok: true,
       vin,
       plan: planRaw,
       queued: true,
       duplicate: true,
-      orderId: consumed.orderId,
+      ...(orderId ? { orderId } : {}),
     });
   }
 
@@ -122,10 +144,10 @@ export async function POST(req: Request) {
     ...(listingRaw ? { listingUrl: listingRaw } : {}),
   });
   if (!created.ok) {
-    await withB2bCreditLock(partner.id, async () => {
-      const wallet = await readB2bCreditWallet(partner.id);
-      await writeB2bCreditWallet(partner.id, restoreB2bCredit(wallet, planRaw, consumed.lotId));
-    });
+    await updateB2bCreditWallet(partner.id, (wallet) => ({
+      wallet: forgetB2bDebitKeys(restoreB2bCredit(wallet, planRaw, consumed.lotId), [spendKey, idempotencyKey]),
+      value: true,
+    }));
     return NextResponse.json({ error: "queue_failed" }, { status: 500 });
   }
 

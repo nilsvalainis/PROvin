@@ -3,6 +3,7 @@
 import { ChevronRight, FileDown, FileText, Mail, Pencil, Phone, Plus, Send, Star, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from "react";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissLazyImage } from "@/components/admin/IrissLazyImage";
 import { IrissOrderRoomHitCard } from "@/components/admin/IrissOrderRoomHitCard";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
@@ -355,6 +356,7 @@ export function IrissOrderRoom({
   const [hitStatus, setHitStatus] = useState<Record<string, IrissListingHitStatus>>(() => coerceIrissHitStatusMap(initialHitStatus));
   const duplicates = coerceIrissDuplicatesByListing(duplicatesByListing);
   const safeHits = (Array.isArray(hits) ? hits : []).filter((hit) => hit && typeof hit.id === "string");
+  useAdminScrollLock(criteriaOpen);
 
   useEffect(() => {
     setDismissed(new Set(stringList(dismissedHitIds)));

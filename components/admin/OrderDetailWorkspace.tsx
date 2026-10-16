@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { openWindowSyncThen } from "@/lib/admin-open-window";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { flushSync } from "react-dom";
 import { createPortal } from "react-dom";
 import { AdminSavablePortfolioFileRow } from "@/components/admin/AdminSavablePortfolioFileRow";
@@ -875,17 +877,16 @@ export function OrderDetailWorkspace({
     setAlertsPortalEl(document.getElementById(alertsPortalDomId));
   }, [alertsPortalDomId, payload.sessionId]);
 
+  useAdminScrollLock(portfolioAllFilesModalOpen);
+
   useEffect(() => {
     if (!portfolioAllFilesModalOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setPortfolioAllFilesModalOpen(false);
     };
     document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
     };
   }, [portfolioAllFilesModalOpen]);
 
@@ -3247,6 +3248,8 @@ export function OrderDetailWorkspace({
     pdfBusyRef.current = true;
     pdfTargetRef.current = 8;
     setPdfJob({ key: pdfJobKey, pct: 1 });
+    const opened = openWindowSyncThen();
+    let reportWritten = false;
     const bumpPdf = (pct: number) => {
       pdfTargetRef.current = Math.max(pdfTargetRef.current, pct);
     };
@@ -3588,14 +3591,12 @@ export function OrderDetailWorkspace({
       }
     }
 
-    const w = window.open("", "_blank");
-    if (!w) {
+    reportWritten = opened.writeHtml(translatedHtml);
+    if (!reportWritten) {
       alert("Atļauj uznirstošo logu, lai atvērtu druku.");
       return;
     }
-    w.document.open();
-    w.document.write(translatedHtml);
-    w.document.close();
+    const w = opened.window;
 
     const printTitle = dealerOnly
       ? buildProvinDilerisPdfFilename(payload.vin)
@@ -3613,22 +3614,25 @@ export function OrderDetailWorkspace({
       : langSuffix
         ? printTitle.replace(/\.pdf$/i, `${langSuffix}.pdf`)
         : printTitle;
-    let printed = false;
-    const schedulePrint = () => {
-      if (printed) return;
-      printed = true;
-      try {
-        w.document.title = printFileTitle;
-        w.focus();
-        w.print();
-      } catch {
-        printed = false;
-      }
-    };
-    w.addEventListener("load", () => window.setTimeout(schedulePrint, 450), { once: true });
-    window.setTimeout(schedulePrint, 900);
+    if (w && !w.closed) {
+      let printed = false;
+      const schedulePrint = () => {
+        if (printed || w.closed) return;
+        printed = true;
+        try {
+          w.document.title = printFileTitle;
+          w.focus();
+          w.print();
+        } catch {
+          printed = false;
+        }
+      };
+      w.addEventListener("load", () => window.setTimeout(schedulePrint, 450), { once: true });
+      window.setTimeout(schedulePrint, 900);
+    }
     bumpPdf(100);
     } finally {
+      if (!reportWritten) opened.close();
       pdfTargetRef.current = 100;
       setPdfJob({ key: pdfJobKey, pct: 100 });
       window.setTimeout(() => {
@@ -3639,6 +3643,9 @@ export function OrderDetailWorkspace({
   };
 
   const openOemDealerReport = async () => {
+    const opened = openWindowSyncThen();
+    let reportWritten = false;
+    try {
     syncWsPersistRefFromState();
     if (orderDraftPersistenceEnabled) {
       await flushWorkspaceServerPatch({ showFlash: false });
@@ -3651,18 +3658,17 @@ export function OrderDetailWorkspace({
       oneauto: blocks.oneauto,
       includeEquipment: pdfVisibility.autoRecordsEquipment !== false,
     });
-    const w = window.open("", "_blank");
-    if (!w) {
+    reportWritten = opened.writeHtml(html);
+    if (!reportWritten) {
       alert("Atļauj uznirstošo logu, lai atvērtu OEM dīlera PDF.");
       return;
     }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
+    const w = opened.window;
+    if (!w || w.closed) return;
     const printFileTitle = buildOemDealerPdfFilename(payload.vin);
     let printed = false;
     const schedulePrint = () => {
-      if (printed) return;
+      if (printed || w.closed) return;
       printed = true;
       try {
         w.document.title = printFileTitle;
@@ -3674,6 +3680,9 @@ export function OrderDetailWorkspace({
     };
     w.addEventListener("load", () => window.setTimeout(schedulePrint, 450), { once: true });
     window.setTimeout(schedulePrint, 900);
+    } finally {
+      if (!reportWritten) opened.close();
+    }
   };
 
   const previewBody = previewOpen ? (

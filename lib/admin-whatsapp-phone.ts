@@ -1,17 +1,26 @@
-/** Normalizē tālruni WhatsApp `phone` parametram (tikai cipari, LV prefikss 371). */
+/**
+ * WhatsApp `phone` cipari.
+ * `+` vai `00` ir starptautisks numurs un paliek ar savu valsts kodu.
+ * Bez prefiksa: 8 cipari ir Latvijas numurs (`371`), `371…` paliek, garāks numurs netiek pārrakstīts.
+ */
 export function normalizeWhatsAppPhoneDigits(raw: string | null | undefined): string | null {
   const t = (raw ?? "").trim();
   if (!t) return null;
   const compact = t.replace(/[\s\-().]/g, "");
-  let prefixed = compact;
-  if (!(prefixed.startsWith("+371") || prefixed.startsWith("00371") || prefixed.startsWith("371"))) {
-    prefixed = `+371${prefixed.replace(/\D/g, "")}`;
-  }
-  let digits = prefixed.replace(/\D/g, "");
-  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (!compact) return null;
+  const international = compact.startsWith("+") || compact.startsWith("00");
+  let digits = compact.replace(/\D/g, "");
+  if (international && digits.startsWith("00")) digits = digits.slice(2);
   if (!digits) return null;
-  if (!digits.startsWith("371")) digits = `371${digits}`;
-  return digits;
+  if (international) {
+    return digits.length >= 8 && digits.length <= 15 ? digits : null;
+  }
+  if (digits.startsWith("371")) {
+    return digits.length >= 11 && digits.length <= 15 ? digits : null;
+  }
+  if (digits.length === 8) return `371${digits}`;
+  if (digits.length >= 10 && digits.length <= 15) return digits;
+  return null;
 }
 
 function prefersWhatsAppAppOpen(): boolean {
