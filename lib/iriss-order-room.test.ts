@@ -56,11 +56,26 @@ function hit(partial: Partial<IrissOrderRoomHit> & Pick<IrissOrderRoomHit, "id">
     color: "melna",
     bodyType: "avant",
     imageUrl: "",
+    imageUrls: [],
     imageCount: 0,
     vin: "",
     price: 14900,
+    priceStart: null,
+    priceMinimal: null,
+    priceCurrent: null,
+    priceBuyNow: null,
+    priceEstimate: null,
+    priceTotal: null,
+    stockNumber: "",
+    auctionId: "",
+    auctionStage: "",
+    auctionStartAt: "",
+    auctionEndAt: "",
+    countryCode: "",
+    vatNote: "",
     change: "unchanged",
     firstSeenAt: "",
+    lastSeenAt: "",
     location: "",
     ...partial,
   };
@@ -88,6 +103,7 @@ describe("buildIrissOrderRoomHits", () => {
     expect(extra[0]?.orderIds).toContain("order-1");
     const withPhoto = buildIrissOrderRoomHits([source({ id: "a", imageUrl: "https://img/a.jpg", imageUrls: ["https://img/a.jpg", "https://img/b.jpg"] })], "order-1", {});
     expect(withPhoto[0]?.imageCount).toBe(2);
+    expect(withPhoto[0]?.imageUrls).toEqual(["https://img/a.jpg", "https://img/b.jpg"]);
     expect(withPhoto[0]?.price).toBeNull();
   });
 
