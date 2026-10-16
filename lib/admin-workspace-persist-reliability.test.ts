@@ -11,7 +11,9 @@ import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
 import { enqueueWorkspacePersist } from "@/lib/admin-workspace-persist-queue";
 import {
   buildSafeMergePersistBody,
+  isWorkspacePersistHardFailure,
   isWorkspaceRevisionConflict,
+  WORKSPACE_SAVE_FAILED_LABEL,
 } from "@/lib/admin-workspace-persist-client";
 import { nextWorkspaceRevisionAfterRestore } from "@/lib/admin-workspace-integrity";
 
@@ -188,7 +190,10 @@ describe("revision conflict contract", () => {
     expect(isWorkspaceRevisionConflict("stale_revision")).toBe(true);
     expect(isWorkspaceRevisionConflict("overwrite_blocked")).toBe(true);
     expect(isWorkspaceRevisionConflict("store_not_durable")).toBe(false);
+    expect(isWorkspaceRevisionConflict("conditional_write_conflict")).toBe(false);
     expect(isWorkspaceRevisionConflict(undefined)).toBe(false);
+    expect(isWorkspacePersistHardFailure("conditional_write_conflict")).toBe(true);
+    expect(WORKSPACE_SAVE_FAILED_LABEL).toBe("Nav saglabāts!");
   });
 
   it("safe merge keeps filled server fields when local is empty", () => {

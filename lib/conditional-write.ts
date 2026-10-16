@@ -1,3 +1,5 @@
+import { normalizeBlobEtag } from "@/lib/blob-etag";
+
 export class ConditionalWriteConflict extends Error {
   constructor() {
     super("conditional_write_conflict");
@@ -37,7 +39,7 @@ export async function compareAndSwap<T, R>(opts: {
     const decision = await opts.update(snap.value);
     if (!("next" in decision)) return decision.result;
     try {
-      await opts.write(decision.next, snap.etag);
+      await opts.write(decision.next, normalizeBlobEtag(snap.etag));
       return decision.result;
     } catch (err) {
       if (!isConditionalWriteConflict(err)) throw err;

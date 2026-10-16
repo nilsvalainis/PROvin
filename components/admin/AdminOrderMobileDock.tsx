@@ -45,6 +45,7 @@ type Props = {
   onOpenCopilot: () => void;
   onSave: () => void;
   saveBusy: boolean;
+  saveFailed?: boolean;
   onOpenPhrases: () => void;
   onGoSummary: () => void;
   onGeneratePdf: () => void;
@@ -220,6 +221,7 @@ export function AdminOrderMobileDock({
   onOpenCopilot,
   onSave,
   saveBusy,
+  saveFailed = false,
   onOpenPhrases,
   onGoSummary,
   onGeneratePdf,
@@ -487,7 +489,7 @@ export function AdminOrderMobileDock({
             }}
           >
             <Save className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
-            {saveBusy ? "Saglabā…" : "Saglabāt tagad"}
+            {saveBusy ? "Saglabā…" : saveFailed ? "Nav saglabāts!" : "Saglabāt tagad"}
           </button>
           <button
             type="button"

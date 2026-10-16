@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { openWindowSyncThen } from "@/lib/admin-open-window";
+import { openGeneratedFileUrl } from "@/lib/admin-open-window";
 
 const DEFAULT_SUPPLIER = {
   name: "Nils Valainis",
@@ -135,11 +135,9 @@ export function PkdCommissionInvoiceTool({ invoiceId, initialData }: Props) {
   }, [invoiceId, payload]);
 
   const openPdf = useCallback(async () => {
-    const opened = openWindowSyncThen();
     setErr(null);
     setOkMsg(null);
     setBusy(true);
-    let shown = false;
     try {
       const saved = await saveDraft();
       if (!saved) return;
@@ -155,13 +153,13 @@ export function PkdCommissionInvoiceTool({ invoiceId, initialData }: Props) {
       }
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
-      opened.navigate(url);
-      shown = true;
+      if (!openGeneratedFileUrl(url, "pkd-komisijas-rekins.pdf")) {
+        setErr("Neizdevās atvērt PDF.");
+      }
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch {
       setErr("Neizdevās ģenerēt PDF.");
     } finally {
-      if (!shown) opened.close();
       setBusy(false);
     }
   }, [
