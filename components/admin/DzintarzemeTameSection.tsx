@@ -125,6 +125,9 @@ export function DzintarzemeTameSection({
   );
 
   const variant = d.tameCommissionVariant as DzintarzemeTameCommissionVariant;
+  const manualNet = parseEuroInput(d.tameCommissionManualEurStr);
+  const manualPctRaw = parseEuroInput(d.tameCommissionManualPercentStr.replace(",", "."));
+  const manualPct = Number.isFinite(manualPctRaw) ? Math.min(100, Math.max(0, manualPctRaw)) : 0;
 
   const computed = useMemo(() => {
     return computeDzintarzemeTame({
@@ -133,7 +136,9 @@ export function DzintarzemeTameSection({
       autoPrice: parseEuroInput(d.tameAutoPriceStr),
       applyVatToAutoPrice: d.tameApplyVatAuto,
       commissionVariant: variant,
-      depositPercent: d.tameDepositPercent,
+      depositPercent: variant === "A" ? 20 : d.tameDepositPercent,
+      commissionManualNet: manualNet,
+      commissionManualPercent: manualPct,
       transportNet: parseEuroInput(d.tameTransportStr),
       chemicalCleaningNet: parseEuroInput(d.tameChemicalStr),
       polishingNet: parseEuroInput(d.tamePolishingStr),
@@ -151,8 +156,12 @@ export function DzintarzemeTameSection({
     d.tamePaintingStr,
     d.tamePolishingStr,
     d.tameTransportStr,
+    d.tameCommissionManualEurStr,
+    d.tameCommissionManualPercentStr,
     d.tameVin,
     extraLinesParsed,
+    manualNet,
+    manualPct,
     rates,
     variant,
   ]);
@@ -175,7 +184,9 @@ export function DzintarzemeTameSection({
       autoPrice: parseEuroInput(d.tameAutoPriceStr),
       applyVatToAutoPrice: d.tameApplyVatAuto,
       commissionVariant: variant,
-      depositPercent: variant === "B" ? d.tameDepositPercent : 20,
+      depositPercent: variant === "A" ? 20 : d.tameDepositPercent,
+      commissionManualNet: manualNet,
+      commissionManualPercent: manualPct,
       transportNet: parseEuroInput(d.tameTransportStr),
       chemicalCleaningNet: parseEuroInput(d.tameChemicalStr),
       polishingNet: parseEuroInput(d.tamePolishingStr),
@@ -193,8 +204,12 @@ export function DzintarzemeTameSection({
     d.tamePaintingStr,
     d.tamePolishingStr,
     d.tameTransportStr,
+    d.tameCommissionManualEurStr,
+    d.tameCommissionManualPercentStr,
     d.tameVin,
     extraLinesParsed,
+    manualNet,
+    manualPct,
     variant,
   ]);
 
@@ -278,31 +293,79 @@ export function DzintarzemeTameSection({
 
       <div className="mt-5">
         <IrissSectionHeading>Komisijas variants</IrissSectionHeading>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] shadow-sm">
+        <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-3">
+          <label
+            className={`cursor-pointer rounded-xl border bg-white p-3 text-[13px] shadow-sm ${
+              d.tameCommissionVariant === "A" ? "border-[#93c5fd] bg-[#eff6ff]/40" : "border-slate-200"
+            }`}
+          >
+            <span className="font-semibold">A · fiksēta</span>
+            <p className="mt-1 text-[12px] text-[var(--color-provin-muted)]">{formatIrissTameMoney(rates.variantANet)} EUR neto</p>
             <input
               type="radio"
+              className="mt-2"
               name="dz-tame-comm"
               checked={d.tameCommissionVariant === "A"}
               onChange={() => set({ tameCommissionVariant: "A" })}
             />
-            A - {formatIrissTameMoney(rates.variantANet)} EUR (neto)
           </label>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] shadow-sm">
+          <label
+            className={`cursor-pointer rounded-xl border bg-white p-3 text-[13px] shadow-sm ${
+              d.tameCommissionVariant === "B" ? "border-[#93c5fd] bg-[#eff6ff]/40" : "border-slate-200"
+            }`}
+          >
+            <span className="font-semibold">B · % no atlikuma</span>
+            <p className="mt-1 text-[12px] text-[var(--color-provin-muted)]">
+              {formatIrissTameMoney(rates.variantBBaseNet)} EUR + {formatIrissTamePercent(rates.variantBLoanPercent)} %
+            </p>
             <input
               type="radio"
+              className="mt-2"
               name="dz-tame-comm"
               checked={d.tameCommissionVariant === "B"}
               onChange={() => set({ tameCommissionVariant: "B" })}
             />
-            B - {formatIrissTameMoney(rates.variantBBaseNet)} EUR (neto) + {formatIrissTamePercent(rates.variantBLoanPercent)} % no atlikuma
           </label>
+          <div
+            className={`rounded-xl border bg-white p-3 text-[13px] shadow-sm ${
+              d.tameCommissionVariant === "C" ? "border-[#fcd34d] bg-[#fffbeb]/50" : "border-slate-200"
+            }`}
+          >
+            <span className="font-semibold">C · manuāli</span>
+            <label className="mt-2 block">
+              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Komisija EUR</span>
+              <input
+                className={fieldClass}
+                inputMode="decimal"
+                value={d.tameCommissionManualEurStr}
+                onChange={(e) => set({ tameCommissionManualEurStr: e.target.value, tameCommissionVariant: "C" })}
+              />
+            </label>
+            <label className="mt-2 block">
+              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Komisija %</span>
+              <input
+                className={fieldClass}
+                inputMode="decimal"
+                value={d.tameCommissionManualPercentStr}
+                onChange={(e) => set({ tameCommissionManualPercentStr: e.target.value, tameCommissionVariant: "C" })}
+              />
+            </label>
+            <label className="mt-2 inline-flex cursor-pointer items-center gap-2">
+              <input
+                type="radio"
+                name="dz-tame-comm"
+                checked={d.tameCommissionVariant === "C"}
+                onChange={() => set({ tameCommissionVariant: "C" })}
+              />
+              Izvēlēts
+            </label>
+          </div>
         </div>
       </div>
 
-      {d.tameCommissionVariant === "B" ? (
+      {d.tameCommissionVariant === "B" || d.tameCommissionVariant === "C" ? (
         <div className="mt-4">
-          <IrissSectionHeading>Iemaksas procents (B variants)</IrissSectionHeading>
+          <IrissSectionHeading>Iemaksas procents ({d.tameCommissionVariant} variants)</IrissSectionHeading>
           <div className="flex flex-wrap gap-2">
             {[20, 40, 60].map((p) => (
               <button

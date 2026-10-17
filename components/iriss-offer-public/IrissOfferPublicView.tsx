@@ -67,9 +67,9 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
   const thumbIds = view.photos.slice(1, 7);
 
   return (
-    <main className="mx-auto min-h-dvh max-w-[720px] bg-[#f4f4f5] px-4 pb-10 pt-7 text-[#111827] sm:px-7">
+    <main className="mx-auto min-h-dvh w-full max-w-[720px] bg-[#f4f4f5] px-4 pb-10 pt-7 text-[#111827] sm:px-7">
       <div className="flex items-start justify-between gap-3">
-        <DzintarzemeOfferBrandLogo className="h-10 w-auto" />
+        <DzintarzemeOfferBrandLogo />
         <p className="text-right text-[11px] leading-tight text-[#6e6e73]">
           {IRISS_OFFER_PUBLIC_BRAND}
           <br />

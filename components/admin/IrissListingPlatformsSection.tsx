@@ -93,7 +93,7 @@ function SourceLinkList({
   const rowKeysRef = useRef<string[]>(nextStableRowKeys([], rows.length));
   rowKeysRef.current = nextStableRowKeys(rowKeysRef.current, rows.length);
   return (
-    <div className="min-w-0 space-y-1.5">
+    <div className="min-w-0 space-y-1.5 rounded-xl border border-[#e5e7eb] bg-white p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         {logoKey ? (
           <span className="inline-flex items-center" title={label}>
@@ -180,7 +180,7 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
           Atjaunot eCarsTrade
         </button>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3.5">
         <SourceLinkList
           label="Mobile"
           logoKey="mobile"
