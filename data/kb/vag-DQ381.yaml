@@ -1,0 +1,13 @@
+code: DQ381
+aliases: [0GC]
+type: 7 pakāpju mitrā divsajūgu (DSG)
+status: draft
+eur_active: false
+provin_reports: 5
+faults:
+  - component: mehatronika
+    probability: low
+    impact: high
+  - component: eļļas un filtra maiņa (ik ~60000 km)
+    check: "servisā fiksēta maiņa; ja nav, tas ir pirkuma jautājums"
+strengths: ["mitrā konstrukcija izturīgāka par sauso DQ200"]

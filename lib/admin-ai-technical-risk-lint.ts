@@ -9,6 +9,7 @@ import {
   type TechnicalRiskIdentification,
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
+import { PROVIN_KB_EUR_ACTIVE } from "@/lib/provin-kb";
 
 export type TechnicalRiskLintLevel = "E" | "W";
 
@@ -167,12 +168,12 @@ export function lintTechnicalRiskText(input: TechnicalRiskLintInput): TechnicalR
         verifiedBands.some((b) => Number.isFinite(n) && n >= b.min && n <= b.max),
       );
     const bandOk = input.map?.risks.some((r) => isVerifiedKbCostBand(r.cost_band_eur)) === true;
-    if (hideEur || !allowEur || !bandOk || !amountOk) {
+    if (!PROVIN_KB_EUR_ACTIVE || hideEur || !allowEur || !bandOk || !amountOk) {
       issues.push({
         id: "L3",
         level: "E",
         message:
-          "EUR summa nav atļauta: vajag verificētu KB joslu (KB: + datums), slēdzis nedrīkst slēpt, summai jāsakrīt ar karti.",
+          "EUR summa nav atļauta: KB EUR joslas nav ieviestas, vajag KB: + datumu, slēdzis nedrīkst slēpt, summai jāsakrīt ar karti.",
       });
     }
   }

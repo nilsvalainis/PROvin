@@ -1,0 +1,22 @@
+code: OM651
+aliases: [OM651.913, "OM651 DE22LA"]
+fuel: diesel
+years: [2008, 2019]
+timing: {type: chain, position: rear}
+status: draft
+eur_active: false
+provin_reports: 3
+faults:
+  - component: eļļas sūkņa spiediena regulēšanas vārsts
+    probability: medium
+    impact: high
+  - component: agrīnās Delphi sprauslas (2008-2011), aizvietotas kampaņā
+    probability: medium
+    impact: high
+  - component: sadales ķēde (aizmugurē)
+    km_band: {apskatīt: 250000}
+    probability: low
+    impact: high
+  - component: plastmasas ieplūdes kolektors, EGR
+    probability: medium
+next_100k_focus: [eļļas spiediens, EGR, kārba 722.6/7G/9G eļļa]

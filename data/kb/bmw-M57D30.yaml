@@ -1,0 +1,22 @@
+code: M57D30
+aliases: [M57TU, M57TU2, "M57/T2"]
+fuel: diesel
+years: [1998, 2010]
+timing: {type: chain, position: front}
+status: draft
+eur_active: false
+provin_reports: 5
+faults:
+  - component: ieplūdes virpuļvārstiņi (swirl flaps), M57TU
+    probability: medium
+    impact: very_high
+    check: "vai noņemti vai nomainīti, rēķins; ja nav datu, jāpārbauda servisā"
+  - component: turbokompresors / VNT aktuators
+    km_band: {apskatīt: 200000}
+    probability: medium
+  - component: eļļas noplūdes, ventilācija (CCV)
+    probability: medium
+    impact: low
+  - component: DPF (no 2004 Euro 4)
+strengths: ["ķēde priekšā, 270-300 tūkst. km ar regulāru apkopi ir darba mūža vidusposms"]
+next_100k_focus: [turbo, virpuļvārstiņi, kārbas eļļa (ZF 6HP)]

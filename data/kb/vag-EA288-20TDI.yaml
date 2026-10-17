@@ -1,0 +1,22 @@
+code: EA288
+aliases: [CRLB, CUNA, DFGA, DFFA, DFSF, DTUA, "EA288 evo"]
+fuel: diesel
+years: [2012, 2026]
+timing: {type: belt, interval_km: 210000}
+status: draft
+eur_active: false
+provin_reports: 6
+faults:
+  - component: ūdens sūknis (pārslēdzamais)
+    probability: medium
+    impact: medium
+  - component: EGR dzesētājs (agrīnie EA288)
+    probability: medium
+    impact: medium
+  - component: AdBlue/SCR, NOx sensori (Euro 6/evo)
+    probability: medium
+    impact: medium
+  - component: DPF pilsētas ekspluatācijā
+    probability: medium
+strengths: ["salīdzinoši uzticama degvielas sistēma"]
+next_100k_focus: [zobsiksna+ūdens sūknis, AdBlue, DPF]

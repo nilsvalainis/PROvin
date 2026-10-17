@@ -18,9 +18,9 @@ Opus nav nevienā solī. Nezināms `modelTier` → `gemini-flash`.
 
 ## EUR politika
 
-EUR remonta josla atļauta **tikai** no verificēta KB ieraksta ar `source` (`KB:...`) un `dated`. Atsevišķs teikums: `Orientējoši remonts neatkarīgā servisā: X-Y EUR (PROVIN dati, {dated}).`
+EUR remonta joslas no `data/kb` **nav ieviestas** (`PROVIN_KB_EUR_ACTIVE = false`, Nils 17.10). Lint L3 un ģenerators failu KB EUR vērtības nelasa. Atsevišķs teikums ar EUR pagaidām nav.
 Maksas detaļu katalogi (Autodoc, RockAuto, PartsLink u.c.) nav avots.
-Lint L3 noraida jebkuru EUR, kas nav izsekojams šādam ierakstam, vai ja operators slēdzis `hide_cost_bands`.
+Lint L3 noraida EUR, kamēr KB joslas nav ieslēgtas, vai ja operators slēdzis `hide_cost_bands`.
 `ALLOW_COST_BANDS=1` ieslēdz ģenerēšanu; operators var slēpt joslas kartes panelī.
 
 ## Identifikācijas neskaidrību tabula

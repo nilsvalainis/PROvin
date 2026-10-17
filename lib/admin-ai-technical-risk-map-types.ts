@@ -49,7 +49,7 @@ export function isPaidPartsPriceSource(source: string): boolean {
   return PAID_PARTS_PRICE_RE.test(source);
 }
 
-/** EUR josla atļauta tikai no verificēta KB ieraksta ar avotu un datumu. */
+/** Formas pārbaude (KB: + datums). Failu KB: `isVerifiedFileKbCostBand` (`lib/provin-kb.ts`). */
 export function isVerifiedKbCostBand(
   band: { source?: string | null; dated?: string | null } | null | undefined,
 ): boolean {

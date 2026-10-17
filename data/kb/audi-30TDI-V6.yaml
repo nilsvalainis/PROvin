@@ -1,0 +1,15 @@
+code: "3.0 TDI V6"
+generations:
+  EA896_gen1: [BUG, CASA, CCWA, CDYA, CATA]
+  EA897_gen2: [CDUC, CRCA, CRTD, CVUB, CLAA, DDVE]
+timing: {type: chain, position: rear, note: "abām paaudzēm aizmugurē (pie kārbas)"}
+status: draft
+eur_active: false
+faults:
+  - component: ķēžu spriegotāji/vadotnes
+    probability: medium
+    impact: high
+  - component: ieplūdes kolektora virpuļvārstiņu motors/kolektors
+    probability: medium
+  - component: EGR dzesētājs, eļļas dzesētāja blīves
+    probability: medium

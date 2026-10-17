@@ -1,0 +1,32 @@
+code: N47D20
+aliases: [N47D20A, N47D20C, N47D20D, "N47T (neoficiāls)"]
+fuel: diesel
+power_kw: [85, 105, 120, 130, 135, 150]
+years: [2007, 2015]
+timing: {type: chain, position: rear}
+status: draft
+eur_active: false
+provin_reports: 9
+faults:
+  - component: sadales ķēde, spriegotājs, vadotnes
+    km_band: {apskatīt: 120000, paaugstināts: 180000}
+    probability: high
+    impact: high
+    check: "auksta palaišana, grabēšana 2-5 s; ISTA ķēdes izstiepuma/fāžu vērtības; servisā ķēdes maiņas rēķins"
+    already_done_if: "servisā ķēdes komplekta maiņa"
+  - component: eļļas noplūdes (vārstu vāka blīve, eļļas filtra korpusa pamatne)
+    km_band: {apskatīt: 150000}
+    probability: medium
+    impact: low
+  - component: EGR dzesētājs (atsaukuma kampaņa)
+    probability: medium
+    impact: high
+    check: "dīlerim pēc VIN, vai kampaņa izpildīta"
+  - component: plastmasas dzesēšanas detaļas, termostats
+    age_band: "12+ gadi"
+    probability: medium
+    impact: low
+  - component: divmasu spararats (manuālā kārba)
+    km_band: {apskatīt: 150000}
+next_100k_focus: [ķēde, EGR dzesētājs, DPF, iesmidzinātāji]
+sources_needed: [BMW atsaukums EGR dzesētājs 2018, specializēta servisa raksts par N47 ķēdi, ISTA SIB]
