@@ -3,7 +3,7 @@
  *
  * Galvenie principi:
  * - Nav trešo pušu zīmolu logotipu; tikai PROVIN identitāte.
- * - Eksperta bloki klienta PDF: nenumurētas sadaļas „Tehnisko risku analīze”, „Ieteikumi”, „Kopsavilkums”.
+ * - Eksperta bloki klienta PDF: nenumurētas sadaļas „Risku analīze”, „Ieteikumi klātienes apskatei”, „Kopsavilkums”.
  * - Datu avotu virsraksti PDF klientam - vispārināti, bez oficiālo institūciju precīziem nosaukumiem.
  * - Tekstā nelietot trešo pušu komerciālu pakalpojumu nosaukumus, kamēr nav līgumiskas tiesības tos piesaistīt.
  * - Krāsas / fonti saskaņā ar provin.lv (ne trešo pušu UI krāsas kā „oficiālas”).
