@@ -325,6 +325,51 @@ export function isNordicVinOrigin(vin: string): boolean {
   return decodeVinLocal(vin).nordic;
 }
 
+/** ISO 3780 Eiropas WMI valstis (ES + EEA + GB + CH), ko NHTSA modeļa vaicājums nesaista ar šo VIN. */
+const EU_WMI_COUNTRY = new Set([
+  "AT",
+  "BE",
+  "BG",
+  "CH",
+  "CZ",
+  "DE",
+  "DK",
+  "EE",
+  "ES",
+  "FI",
+  "FR",
+  "GB",
+  "GR",
+  "HR",
+  "HU",
+  "IE",
+  "IT",
+  "LT",
+  "LU",
+  "LV",
+  "MT",
+  "NL",
+  "NO",
+  "PL",
+  "PT",
+  "RO",
+  "SE",
+  "SI",
+  "SK",
+]);
+
+export function isUsWmiVin(vin: string): boolean {
+  return decodeVinLocal(vin).countryCode === "US";
+}
+
+/** Eiropas WMI: NHTSA / ASV OEM lapas nav šī VIN atsaukums. */
+export function isEuWmiVin(vin: string): boolean {
+  const d = decodeVinLocal(vin);
+  if (d.countryCode) return EU_WMI_COUNTRY.has(d.countryCode);
+  const w = (d.wmi || vin).trim().toUpperCase();
+  return /^[STUVWXYZ]/.test(w);
+}
+
 export type NordicVinSearchLink = {
   id: "biluppgifter" | "carinfo";
   label: string;

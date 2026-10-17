@@ -225,7 +225,10 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
     sourceBlocks: blocks,
     vin: input.vin,
   });
-  const dealerFacts = extractDealerFacts(blocks.oneauto);
+  const dealerFacts = extractDealerFacts({
+    oneauto: blocks.oneauto,
+    autoRecords: blocks.auto_records,
+  });
   const dealerFactsBrief = buildDealerFactsBrief(dealerFacts);
   // Modeli nosaka operatora selektors (✨ / FLASH MAX). Noklusējums 100% Gemini.
   const tiers = resolveTechRiskV2Tiers(input.modelTier);
