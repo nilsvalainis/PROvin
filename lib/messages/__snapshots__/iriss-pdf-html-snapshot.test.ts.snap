@@ -48,7 +48,6 @@ exports[`IRISS printable PDF HTML (template defaults) > offer print HTML matches
       width: auto;
       max-width: 160px;
       object-fit: contain;
-      mix-blend-mode: multiply;
     }
     .ipdf-sec-head { display: block; margin: 0 0 12px; }
     .ipdf-sec-title {
@@ -298,7 +297,7 @@ exports[`IRISS printable PDF HTML (template defaults) > offer print HTML matches
       .oem-extra{margin-top:0;}
       .pdf-ccvin-flags{margin-bottom:1em;}
   </style></head><body><div class="ipdf-root"><header class="ipdf-header">
-    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
+    <img class="ipdf-logo" src="/brands/dzintarzeme-auto-logo-original.png" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">BMW 320d</p>
       <p class="ipdf-hero-sub">2026. gada 15. aprīlis · Auto pārbaude / piedāvājums</p>
@@ -377,7 +376,6 @@ exports[`IRISS printable PDF HTML (template defaults) > pasūtījuma print HTML 
       width: auto;
       max-width: 160px;
       object-fit: contain;
-      mix-blend-mode: multiply;
     }
     .ipdf-sec-head { display: block; margin: 0 0 12px; }
     .ipdf-sec-title {
@@ -627,7 +625,7 @@ exports[`IRISS printable PDF HTML (template defaults) > pasūtījuma print HTML 
       .oem-extra{margin-top:0;}
       .pdf-ccvin-flags{margin-bottom:1em;}
   </style></head><body><div class="ipdf-root ipdf-root--muted"><header class="ipdf-header">
-    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
+    <img class="ipdf-logo" src="/brands/dzintarzeme-auto-logo-original.png" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">VW Golf</p>
       <p class="ipdf-hero-sub">2026. gada 15. aprīlis · IRISS pasūtījums</p>

@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { rgb, type PDFFont, type PDFDocument, type PDFImage, type PDFPage } from "pdf-lib";
-import sharp from "sharp";
+import { dzintarzemeAutoLogoFsPath } from "@/lib/dzintarzeme-logo";
 
 /** Kopīgs Dzintarzeme PDF (tāme, pasūtījums) - krāsas un kartīšu zīmēšana. */
 export const INK = rgb(17 / 255, 24 / 255, 39 / 255);
@@ -27,12 +27,7 @@ export const SECTION_GAP = 10;
 export const CARD_RADIUS = 6;
 export const SHADOW_OFFSET = 1.25;
 
-const DZINTARZEME_OFFER_LOGO_PATH = path.join(
-  process.cwd(),
-  "public",
-  "brands",
-  "dzintarzeme-iriss-offer-pdf-logo.png",
-);
+const DZINTARZEME_OFFER_LOGO_PATH = dzintarzemeAutoLogoFsPath();
 
 export type LogoPack = { img: PDFImage; dw: number; dh: number };
 
@@ -253,34 +248,15 @@ export function drawFittedOneLine(
   return lineHeight(minSize);
 }
 
-export async function loadOfferLogoPack(pdfDoc: PDFDocument): Promise<LogoPack | null> {
+export async function loadOfferLogoPack(
+  pdfDoc: PDFDocument,
+  opts?: { maxW?: number; maxH?: number },
+): Promise<LogoPack | null> {
   try {
     const sourceBuf = await fs.readFile(DZINTARZEME_OFFER_LOGO_PATH);
-    const { data, info } = await sharp(sourceBuf)
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    for (let i = 0; i < data.length; i += info.channels) {
-      const r = data[i] ?? 0;
-      const g = data[i + 1] ?? 0;
-      const b = data[i + 2] ?? 0;
-      if (r < 72 && g < 72 && b < 72) {
-        data[i + 3] = 0;
-      }
-    }
-    const buf = await sharp(data, {
-      raw: { width: info.width, height: info.height, channels: info.channels },
-    })
-      .png()
-      .toBuffer();
-    let img: PDFImage;
-    try {
-      img = await pdfDoc.embedPng(buf);
-    } catch {
-      img = await pdfDoc.embedJpg(buf);
-    }
-    const maxW = 160;
-    const maxH = 40;
+    const img = await pdfDoc.embedPng(sourceBuf);
+    const maxW = opts?.maxW ?? 160;
+    const maxH = opts?.maxH ?? 40;
     const s = Math.min(maxW / img.width, maxH / img.height, 1);
     return { img, dw: img.width * s, dh: img.height * s };
   } catch {

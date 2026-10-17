@@ -53,13 +53,6 @@ import { shrinkImageBytesForIrissPdf } from "@/lib/shrink-image-for-iriss-pdf";
 
 const INTER_REG_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Regular.ttf");
 const INTER_BOLD_PATH = path.join(process.cwd(), "public", "fonts", "invoice-inter", "Inter-Bold.ttf");
-const DZINTARZEME_OFFER_LOGO_PATH = path.join(
-  process.cwd(),
-  "public",
-  "brands",
-  "dzintarzeme-iriss-offer-pdf-logo.png",
-);
-
 let interFontBytesCache: Promise<{ reg: Uint8Array; bold: Uint8Array }> | null = null;
 
 async function loadInterFontBytes(): Promise<{ reg: Uint8Array; bold: Uint8Array }> {
@@ -915,42 +908,6 @@ function drawKopaHighlightBand(ctx: Ctx, boxX: number, boxW: number, totalPrice:
   ctx.y = yBottom - 10;
 }
 
-async function loadOfferLogoPack(pdfDoc: PDFDocument): Promise<LogoPack | null> {
-  try {
-    const sourceBuf = await fs.readFile(DZINTARZEME_OFFER_LOGO_PATH);
-    const { data, info } = await sharp(sourceBuf)
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    // Padara gandrīz melnu fonu caurspīdīgu, lai PDF vienmēr izskatās uz balta fona.
-    for (let i = 0; i < data.length; i += info.channels) {
-      const r = data[i] ?? 0;
-      const g = data[i + 1] ?? 0;
-      const b = data[i + 2] ?? 0;
-      if (r < 72 && g < 72 && b < 72) {
-        data[i + 3] = 0;
-      }
-    }
-    const buf = await sharp(data, {
-      raw: { width: info.width, height: info.height, channels: info.channels },
-    })
-      .png()
-      .toBuffer();
-    let img: PDFImage;
-    try {
-      img = await pdfDoc.embedPng(buf);
-    } catch {
-      img = await pdfDoc.embedJpg(buf);
-    }
-    const maxW = 56;
-    const maxH = 36;
-    const s = Math.min(maxW / img.width, maxH / img.height, 1);
-    return { img, dw: img.width * s, dh: img.height * s };
-  } catch {
-    return null;
-  }
-}
-
 async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void> {
   const rawTitle = val(offer.brandModel) ?? val(offer.title) ?? "Piedāvājums";
   const heroTitle = rawTitle.toLocaleUpperCase("lv-LV");
@@ -1518,7 +1475,7 @@ export async function buildIrissOfferPdfBytes(
   const embedImages = opts?.embedImages !== false;
   const includeClientData = opts?.includeClientData !== false;
   const ctx = await createPdfCtx();
-  ctx.offerLogo = await loadOfferLogoPack(ctx.pdfDoc);
+  ctx.offerLogo = await dzLoadOfferLogoPack(ctx.pdfDoc, { maxW: 56, maxH: 36 });
   ctx.logoOnlyBand = ctx.offerLogo ? Math.max(LOGO_ONLY_BAND, Math.ceil(ctx.offerLogo.dh + 20)) : LOGO_ONLY_BAND;
 
   await drawOfferPdfHero(ctx, offer);
