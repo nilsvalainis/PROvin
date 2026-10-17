@@ -7,7 +7,9 @@
  *   `thinkingBudget` is deprecated there and will 400 on upcoming models.
  * - Gemini 2.5: does **not** support `thinkingLevel` (400 INVALID_ARGUMENT).
  *   Use `thinkingBudget` (Flash: 0 disables thinking; Pro cannot fully disable).
- * - Gemini 2.0 Flash: no thinking config.
+ * - Gemini 3.8 Flash, Gemini 4 and 3.x Pro: lowest level is `low` (`minimal` → 400).
+ *   https://ai.google.dev/gemini-api/docs/thinking (Levels Supported table, 2026-10).
+ * - Gemini 2.0 Flash (izslēgts 2026-06-01) / nezināmi modeļi: no thinking config.
  *
  * Never send both fields. Never send temperature / topP / topK (Gemini 3.6+
  * ignores them; upcoming models error). Do not silently retarget 2.5 calls
@@ -21,8 +23,17 @@ export const GEMINI_25_THINKING_BUDGET_ENABLED = 512;
 /** 2.5 Flash: 0 disables thinking. 2.5 Pro cannot fully disable; 0 is the retry pass. */
 export const GEMINI_25_THINKING_BUDGET_DISABLED = 0;
 
+/** Gemini 3 un jaunāki (3.x, 4.x, …) — `thinkingLevel`, ne `thinkingBudget`. */
 function isGemini3Model(model: string): boolean {
-  return /gemini-3/i.test(model);
+  return /gemini-(?:[3-9]|\d{2,})(?:[.-]|$)/i.test(model);
+}
+
+/** Modeļi, kas neatbalsta `minimal` — zemākais ir `low`. */
+const GEMINI_NO_MINIMAL_THINKING_RE = /gemini-(?:3\.8-|4(?:[.-]|$)|3(?:\.\d+)?-pro)/i;
+
+/** Zemākais atbalstītais Gemini 3+ domāšanas līmenis šim modelim. */
+export function geminiLowestThinkingLevel(model: string): GeminiThinkingLevel {
+  return GEMINI_NO_MINIMAL_THINKING_RE.test(model) ? "low" : "minimal";
 }
 
 function isGemini25Model(model: string): boolean {
@@ -31,7 +42,7 @@ function isGemini25Model(model: string): boolean {
 
 /**
  * True when a same-model retry with thinking off is a different payload.
- * Gemini 3 is always `minimal`. 2.5 retries with budget 0 (Flash thinking off).
+ * Gemini 3+ is always its lowest level (`minimal`, or `low` on 3.8/4/Pro). 2.5 retries with budget 0 (Flash thinking off).
  */
 export function geminiWantsThinking(model: string): boolean {
   return isGemini25Model(model);
@@ -48,7 +59,7 @@ export type GeminiThinkingExtra =
  */
 export function geminiThinkingExtra(model: string, enabled: boolean): GeminiThinkingExtra {
   if (isGemini3Model(model)) {
-    return { thinkingConfig: { thinkingLevel: "minimal" } };
+    return { thinkingConfig: { thinkingLevel: geminiLowestThinkingLevel(model) } };
   }
   if (isGemini25Model(model)) {
     return {

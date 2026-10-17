@@ -4,11 +4,17 @@ export const GEMINI_MODEL_PRO = "gemini-2.5-pro";
 /** Primārais lētais līmenis — Pro inteliģence Flash cenā (preview; 404 → 2.5 Flash). */
 export const GEMINI_MODEL_FLASH = "gemini-3-flash-preview";
 export const GEMINI_MODEL_FLASH_25 = "gemini-2.5-flash";
-export const GEMINI_MODEL_LEGACY_FLASH = "gemini-2.0-flash";
+/**
+ * Pēdējais lētais failover solis. `gemini-2.0-flash` Google izslēdza 2026-06-01
+ * (deprecations lapa), tāpēc ķēde beidzās ar mirušu modeli. Nosaukums paliek
+ * saderībai; vērtība ir dzīvs Flash-Lite. Ne 2.5 Flash-Lite: Google 2.5 saimi
+ * dod tikai kontiem, kas to jau lietojuši (PROVIN atslēgai 2.5 Flash-Lite = 404).
+ */
+export const GEMINI_MODEL_LEGACY_FLASH = "gemini-3.5-flash-lite";
 
 /**
  * Failover tikai uz LĒTĀKIEM modeļiem — Flash 503/404 nedrīkst pāriet uz Pro.
- * Pro → 3 Flash → 2.5 Flash; 3 Flash → 2.5 Flash → 2.0 Flash.
+ * Pro → 3 Flash → 2.5 Flash; 3 Flash → 2.5 Flash → 3.5 Flash-Lite.
  */
 export function geminiFailoverModels(primary: string): string[] {
   const cheaper: Record<string, readonly string[]> = {

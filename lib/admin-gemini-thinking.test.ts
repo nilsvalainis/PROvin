@@ -71,9 +71,22 @@ describe("geminiThinkingExtra", () => {
   });
 
   it("sends no thinking config to models without thinking", () => {
-    expect(geminiWantsThinking(GEMINI_MODEL_LEGACY_FLASH)).toBe(false);
-    expect(geminiThinkingExtra(GEMINI_MODEL_LEGACY_FLASH, true)).toEqual({});
-    expect(geminiThinkingExtra(GEMINI_MODEL_LEGACY_FLASH, false)).toEqual({});
+    expect(geminiWantsThinking("gemini-2.0-flash")).toBe(false);
+    expect(geminiThinkingExtra("gemini-2.0-flash", true)).toEqual({});
+    expect(geminiThinkingExtra("gemini-2.0-flash", false)).toEqual({});
+  });
+
+  it("uses the lowest supported level per Gemini 3+ model (3.8 / 4 / Pro reject minimal)", () => {
+    expect(thinkingConfig("gemini-3.8-flash", true)).toEqual({ thinkingLevel: "low" });
+    expect(thinkingConfig("gemini-4-argon", false)).toEqual({ thinkingLevel: "low" });
+    expect(thinkingConfig("gemini-3.1-pro-preview", true)).toEqual({ thinkingLevel: "low" });
+    expect(thinkingConfig("gemini-3.5-flash-lite", true)).toEqual({ thinkingLevel: "minimal" });
+    expect(thinkingConfig("gemini-3.6-flash", true)).toEqual({ thinkingLevel: "minimal" });
+    expect(thinkingConfig("gemini-3-flash-preview", false)).toEqual({ thinkingLevel: "minimal" });
+  });
+
+  it("last failover step (3.5 Flash-Lite) gets thinkingLevel minimal, not a 2.5 budget", () => {
+    expect(thinkingConfig(GEMINI_MODEL_LEGACY_FLASH, false)).toEqual({ thinkingLevel: "minimal" });
   });
 });
 
@@ -121,7 +134,7 @@ describe("geminiGenerationConfigPayload per-model shape", () => {
   });
 
   it("gemini-2.0-flash: maxOutputTokens only (valid request, no thinking fields)", () => {
-    const payload = geminiGenerationConfigPayload(GEMINI_MODEL_LEGACY_FLASH, true, {
+    const payload = geminiGenerationConfigPayload("gemini-2.0-flash", true, {
       maxOutputTokens,
     });
     expect(payload).toEqual({ maxOutputTokens });
