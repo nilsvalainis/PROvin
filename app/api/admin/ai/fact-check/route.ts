@@ -11,6 +11,9 @@ import { nextJsonBodyWithAiUsage } from "@/lib/admin-ai-route-response";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
 import { buildAiOrderContextText } from "@/lib/admin-ai-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { collectFilledFactCheckFields } from "@/lib/admin-fact-check-client";
+import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
+import { checkCommentContradictions, mergeFactCheckFlags } from "@/lib/comment-contradiction-check";
 import { checkAiCommentFacts } from "@/lib/unit-facts/check";
 import { aiCheckAgainstUnitFacts, isUnitFactAiCheckEnabled } from "@/lib/unit-facts/ai-check";
 
@@ -53,8 +56,26 @@ export async function POST(req: Request) {
   };
 
   const result = checkAiCommentFacts(input);
+  const facts = buildCanonicalFacts(context);
+  const otherFieldTexts = collectFilledFactCheckFields({
+    tehniskoRiskuAnalize: context.technicalRiskAnalysis ?? "",
+    iriss: context.irissSummary ?? "",
+    apskatesPlāns: context.inspectionPlan ?? "",
+    mileageComment: context.mileageComment ?? "",
+    incidentsComment: context.internalComment ?? "",
+    sourcesComparisonComment: context.sourcesComparisonComment ?? "",
+    sourceBlocks,
+  }).map((f) => ({ field: f.field, label: f.label, text: f.text }));
+  const sheetFlags = checkCommentContradictions({
+    text,
+    field: input.field,
+    facts,
+    otherFieldTexts,
+  });
+  const mergedFlags = mergeFactCheckFlags(result.flags, sheetFlags);
+  const merged = { ...result, flags: mergedFlags };
   const wantAi = b.useAi === true && isUnitFactAiCheckEnabled();
-  if (!wantAi) return NextResponse.json({ ...result, aiUsed: false });
+  if (!wantAi) return NextResponse.json({ ...merged, aiUsed: false });
 
   // Maksas slānis (Gemini Flash): tā pati demo/sesijas aizsardzība kā citiem AI maršrutiem.
   const guard = await assertAiAllowedForSession(context.sessionId);
@@ -62,8 +83,8 @@ export async function POST(req: Request) {
 
   return nextJsonBodyWithAiUsage(async () => {
     const aiFlags = await aiCheckAgainstUnitFacts(input);
-    const seen = new Set(result.flags.map((f) => `${f.factId ?? ""}|${f.sentence}`));
-    const merged = [...result.flags, ...aiFlags.filter((f) => !seen.has(`${f.factId ?? ""}|${f.sentence}`))];
-    return { ...result, flags: merged, aiUsed: true };
+    const seen = new Set(merged.flags.map((f) => `${f.factId ?? ""}|${f.sentence}`));
+    const withAi = [...merged.flags, ...aiFlags.filter((f) => !seen.has(`${f.factId ?? ""}|${f.sentence}`))];
+    return { ...merged, flags: withAi, aiUsed: true };
   });
 }

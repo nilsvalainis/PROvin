@@ -55,6 +55,13 @@ import { buildMileageForensicsBrief } from "@/lib/admin-ai-mileage-forensics";
 import { buildCommentLengthBudgetBrief } from "@/lib/ai-comment-length-budget";
 import { buildListingNotCountryChangeBrief } from "@/lib/admin-ai-listing-country";
 import type { CommentBreadth } from "@/lib/ai-comment-breadth";
+import {
+  buildAllCommentsContext,
+  buildCanonicalFactsSheet,
+  buildOtherFieldVerdicts,
+} from "@/lib/canonical-facts-sheet";
+
+export type AiCommentPromptKind = "source" | "summary";
 
 export type AiOrderContextInput = {
   sessionId: string;
@@ -390,6 +397,73 @@ function orderContextCacheKey(input: AiOrderContextInput): string {
 /** Notīra konteksta kešu (tests / pēc masveida draft izmaiņām). */
 export function invalidateAiOrderContextCache(): void {
   orderContextCache.clear();
+}
+
+async function buildKnowledgePacks(input: AiOrderContextInput): Promise<string> {
+  const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
+  const historical = await buildHistoricalReportsAiContext({
+    sessionId: input.sessionId,
+    sourceBlocks: blocks,
+    vin: input.vin,
+  });
+  const aggregateKnowledge = await buildAggregateKnowledgeAiContext({
+    sourceBlocks: blocks,
+    vin: input.vin,
+    sessionId: input.sessionId,
+  });
+  const styleCorpus = buildStyleCorpusAiContext();
+  return [styleCorpus, historical, aggregateKnowledge].filter((s) => s.trim()).join("\n\n");
+}
+
+function instructionBriefs(input: AiOrderContextInput): string {
+  const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
+  return [
+    buildTechnicalInspectionCoverageBrief({ csdd: blocks.csdd, sourceBlocks: blocks }),
+    buildWinterSaltRustBrief({
+      csdd: blocks.csdd,
+      sourceBlocks: blocks,
+      extraHaystack: [input.notes, input.operatorNotes].filter(Boolean).join("\n"),
+    }),
+    buildSouthernEuropeVisualCautionBrief({
+      csdd: blocks.csdd,
+      sourceBlocks: blocks,
+      extraHaystack: [input.notes, input.operatorNotes].filter(Boolean).join("\n"),
+    }),
+    buildDealerIncidentLinkBrief(blocks),
+    buildListingNotCountryChangeBrief(blocks),
+    buildCommentLengthBudgetBrief(blocks, { breadth: input.commentBreadth }),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+/**
+ * Kompakts ✨ konteksts: kanoniskā lapa augšā, bez 2–3× komentāru dublikātiem.
+ * Avoti: lapa + citu lauku verdikti. Kopsavilkuma lauki: lapa + visi komentāri vienu reizi.
+ */
+export async function buildAiCommentGenerationContext(
+  input: AiOrderContextInput,
+  kind: AiCommentPromptKind,
+): Promise<string> {
+  const sheet = buildCanonicalFactsSheet(input);
+  const parts: string[] = [sheet];
+  if (kind === "source") {
+    const verdicts = buildOtherFieldVerdicts(input);
+    if (verdicts) parts.push(verdicts);
+    parts.push(
+      buildCommentLengthBudgetBrief(mergeSourceBlocksWithDefaults(input.sourceBlocks), {
+        breadth: input.commentBreadth,
+      }),
+    );
+  } else {
+    const comments = buildAllCommentsContext(input);
+    if (comments) parts.push(comments);
+    const briefs = instructionBriefs(input);
+    if (briefs) parts.push(briefs);
+    const knowledge = await buildKnowledgePacks(input);
+    if (knowledge) parts.push(knowledge);
+  }
+  return parts.filter((s) => s.trim()).join("\n\n");
 }
 
 /** Pilns pasūtījuma + vēsturisko auditu konteksts ✨ ģenerēšanai (īss TTL kešs). */

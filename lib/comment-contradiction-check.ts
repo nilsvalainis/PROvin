@@ -1,0 +1,370 @@
+/**
+ * Deterministiska pretrunu pārbaude pret KANONISKAJIEM FAKTIEM un starp laukiem.
+ * Tekstu nemaina; tikai karodziņi adminam (E/W). Nav maksas modeļa.
+ */
+import {
+  LARGE_ODOMETER_DROP_KM,
+  hasRollbackOrMileageWarning,
+  isMileageRelatedCommentField,
+  type CanonicalFacts,
+} from "@/lib/canonical-facts-sheet";
+import { formatForensicsInt } from "@/lib/admin-ai-mileage-forensics";
+import { extractCampaignCodes, splitSentences } from "@/lib/unit-facts/check";
+import type { FactCheckFlag, FactCheckLevel } from "@/lib/unit-facts/types";
+
+export type ContradictionCheckInput = {
+  text: string;
+  field?: string;
+  facts: CanonicalFacts;
+  /** Citu lauku teksti (plain) — km/datumiem starp laukiem. */
+  otherFieldTexts?: Array<{ field: string; label: string; text: string }>;
+};
+
+const ROLLBACK_MENTION_RE =
+  /odometr|kritum|atpakaļgait|rollback|neatbilstīb.{0,40}nobrauk|nobraukum.{0,40}neatbilst|korekcij|anomāl/i;
+const MINIMISING_RE =
+  /nelielas?\s+nobīd|niecīg\w*\s+(?:nobīd|atšķir|kritum)|minimāl\w*\s+(?:nobīd|atšķir)|sīkas?\s+atšķir|neliels\s+kritums/i;
+const NO_ACCIDENT_RE =
+  /\bnav\s+(fiksēt|reģistrēt|konstatēt|zinām)\w*.{0,40}(?:negadījum|csng|avārij)|(?:negadījum|avārij|csng)\w*.{0,30}\bnav\b/i;
+const NO_RECALL_RE =
+  /\bnav\s+(fiksēt|reģistrēt|konstatēt|atrast|zinām)\w*.{0,40}(?:atsaukum|kampaņ)|(?:atsaukum|kampaņ)\w*.{0,30}\bnav\b/i;
+const OWNER_COUNT_RE = /(\d{1,2})\s+īpašniek/gi;
+const OWNER_CHANGE_RE = /(\d{1,2})\s+īpašnieku\s+maiņ/gi;
+const FIRST_REG_LV_RE = /pirmā\s+reģistrācija.{0,40}latvij/i;
+const FIRST_REG_DE_RE = /pirmā\s+reģistrācija.{0,40}vācij|izcelsmes\s+valst.{0,20}vācij/i;
+const ATSAVINASANAI_RE = /atsavināšanai/i;
+const LEAK_PHRASES: Array<{ re: RegExp; id: string; label: string }> = [
+  { re: /operatora\s+norād/i, id: "leak_operator_notes", label: "operatora norādes" },
+  { re: /šajā\s+auditā/i, id: "leak_this_audit", label: "šajā auditā" },
+  {
+    re: /kā\s+minēts.{0,40}(?:sadaļ|komentār)|skat(?:īt|\.)\s+(?:1\.|2\.|3\.)|nobraukuma\s+vēstures\s+komentār|tehnisko\s+risku\s+analīzē\s+jau/i,
+    id: "leak_other_section",
+    label: "atsauce uz citu sadaļu",
+  },
+];
+
+const LV_MONTHS: Record<string, string> = {
+  janvār: "01",
+  februār: "02",
+  mart: "03",
+  aprīl: "04",
+  maij: "05",
+  jūnij: "06",
+  jūlij: "07",
+  august: "08",
+  septembr: "09",
+  oktobr: "10",
+  novembr: "11",
+  decembr: "12",
+};
+
+function normalizeDateToken(raw: string): string {
+  const t = raw.trim();
+  const dmy = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);
+  if (dmy) {
+    const y = dmy[3]!.length === 2 ? `20${dmy[3]}` : dmy[3]!;
+    return `${y}-${dmy[2]!.padStart(2, "0")}-${dmy[1]!.padStart(2, "0")}`;
+  }
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return t;
+  return t;
+}
+
+function haystackHasDate(haystack: string, token: string): boolean {
+  const n = normalizeDateToken(token);
+  const compact = haystack.replace(/[.\-/]/g, "");
+  const nCompact = n.replace(/-/g, "");
+  if (haystack.includes(token) || haystack.includes(n) || compact.includes(nCompact)) return true;
+  const parts = n.split("-");
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    if (haystack.includes(`${d}.${m}.${y}`) || haystack.includes(`${y}.${m}`)) return true;
+  }
+  return false;
+}
+
+function haystackHasMonthYear(haystack: string, year: string, month: string, monthLv: string): boolean {
+  const compact = haystack.replace(/[.\-/]/g, " ");
+  if (compact.includes(`${year} ${month}`) || haystack.includes(`${month}.${year}`) || haystack.includes(`${year}-${month}`)) {
+    return true;
+  }
+  return new RegExp(`${year}.{0,12}${monthLv}`, "i").test(haystack);
+}
+
+function kmNumbers(text: string): number[] {
+  const out: number[] = [];
+  const re = /\b(\d{1,3})(?:[\s\u00a0](\d{3})|\.(\d{3}))?\s*km\b/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    const head = Number(m[1]);
+    const tail = m[2] ?? m[3];
+    const n = tail ? head * 1000 + Number(tail) : head;
+    if (n >= 1000) out.push(n);
+  }
+  return out;
+}
+
+function flagKey(f: FactCheckFlag): string {
+  return `${f.id}|${f.sentence}`;
+}
+
+function firstMatchingSentence(sentences: string[], re: RegExp): string {
+  return sentences.find((s) => re.test(s)) ?? sentences[0] ?? "";
+}
+
+export function checkCommentContradictions(input: ContradictionCheckInput): FactCheckFlag[] {
+  const text = (input.text ?? "").trim();
+  if (!text) return [];
+  const facts = input.facts;
+  const field = input.field ?? "";
+  const sentences = splitSentences(text);
+  const flags: FactCheckFlag[] = [];
+  const seen = new Set<string>();
+  const push = (partial: Omit<FactCheckFlag, "level"> & { level?: FactCheckLevel }) => {
+    const f: FactCheckFlag = { ...partial, level: partial.level ?? "E" };
+    const k = flagKey(f);
+    if (seen.has(k)) return;
+    seen.add(k);
+    flags.push(f);
+  };
+
+  // 1) Odometra kritums / CarVertical brīdinājums jāpiemin.
+  if (hasRollbackOrMileageWarning(facts) && isMileageRelatedCommentField(field)) {
+    if (!ROLLBACK_MENTION_RE.test(text)) {
+      const drop = facts.maxRollbackDropKm;
+      push({
+        id: "rollback_omitted",
+        kind: "rollback_omitted",
+        level: "E",
+        message: `Nobraukuma datos ir odometra kritums${drop ? ` (${formatForensicsInt(drop)} km)` : ""}${facts.carverticalMileageWarning ? " un/vai CarVertical brīdinājums" : ""}, bet šis komentārs to nepiemin.`,
+        sentence: firstMatchingSentence(sentences, /nobrauk|odometr|km/i) || sentences[0]!,
+      });
+    }
+    if (facts.maxRollbackDropKm >= LARGE_ODOMETER_DROP_KM && MINIMISING_RE.test(text)) {
+      push({
+        id: "rollback_minimised",
+        kind: "rollback_minimised",
+        level: "E",
+        message: `Kritums ${formatForensicsInt(facts.maxRollbackDropKm)} km nav „nelielas nobīdes”.`,
+        sentence: firstMatchingSentence(sentences, MINIMISING_RE),
+      });
+    }
+  }
+
+  // 2) Īpašnieki vs maiņas; pirmā reģistrācijas valsts.
+  const ownerMentions = [...text.matchAll(OWNER_COUNT_RE)].map((m) => Number(m[1]));
+  const changeMentions = [...text.matchAll(OWNER_CHANGE_RE)].map((m) => Number(m[1]));
+  if (facts.owners.totalCount > 0) {
+    for (const n of ownerMentions) {
+      if (n !== facts.owners.totalCount && (facts.owners.latviaOwners == null || n !== facts.owners.latviaOwners)) {
+        push({
+          id: "owner_count",
+          kind: "owner_count",
+          level: "E",
+          message: `Teksts saka ${n} īpašniekus, kanoniskā lapa: ${facts.owners.totalCount}${facts.owners.latviaOwners != null ? ` (LV ${facts.owners.latviaOwners})` : ""}.`,
+          sentence: firstMatchingSentence(sentences, new RegExp(`${n}\\s+īpašniek`, "i")),
+        });
+      }
+    }
+    for (const n of changeMentions) {
+      const expectedTotal = facts.owners.changeCount;
+      const expectedLv = facts.owners.latviaChanges;
+      if (n !== expectedTotal && (expectedLv == null || n !== expectedLv)) {
+        push({
+          id: "owner_changes",
+          kind: "owner_changes",
+          level: "E",
+          message: `Teksts saka ${n} īpašnieku maiņas; N īpašnieki = N-1 maiņas (lapā maiņas: ${expectedTotal}${expectedLv != null ? `, LV ${expectedLv}` : ""}).`,
+          sentence: firstMatchingSentence(sentences, new RegExp(`${n}\\s+īpašnieku\\s+maiņ`, "i")),
+        });
+      }
+    }
+  }
+  for (const n of ownerMentions) {
+    if (changeMentions.includes(n) && n > 0) {
+      push({
+        id: "owner_changes_eq_owners",
+        kind: "owner_changes",
+        level: "E",
+        message: `${n} īpašnieki nevar būt ${n} maiņas (jābūt ${n - 1}).`,
+        sentence: firstMatchingSentence(sentences, new RegExp(`${n}\\s+īpašniek`, "i")),
+      });
+    }
+  }
+
+  const countryLv = facts.firstReg.countryLv.toLowerCase();
+  const iso = (facts.firstReg.countryIso || "").toUpperCase();
+  const originDe = countryLv.includes("vācij") || iso === "DE";
+  const originLv = countryLv.includes("latvij") || iso === "LV";
+  if (originDe && FIRST_REG_LV_RE.test(text)) {
+    push({
+      id: "first_reg_country",
+      kind: "first_reg_country",
+      level: "E",
+      message: `Pirmā reģistrācija / izcelsme lapā ir ${facts.firstReg.countryLv || "DE"}, teksts saka Latviju.`,
+      sentence: firstMatchingSentence(sentences, FIRST_REG_LV_RE),
+    });
+  }
+  if (originLv && !originDe && FIRST_REG_DE_RE.test(text) && !/pēc\s+importa|latvijā\s+reģistrēta/i.test(text)) {
+    push({
+      id: "first_reg_country",
+      kind: "first_reg_country",
+      level: "E",
+      message: `Pirmā reģistrācija lapā ir ${facts.firstReg.countryLv || "LV"}, teksts saka Vāciju kā pirmo reģistrāciju.`,
+      sentence: firstMatchingSentence(sentences, FIRST_REG_DE_RE),
+    });
+  }
+
+  // 3) Nav negadījumu / nav atsaukumu pret lapu.
+  if (facts.incidents.length > 0 && NO_ACCIDENT_RE.test(text) && !/neizslēdz|bez\s+fizisk/i.test(text)) {
+    push({
+      id: "no_accidents_claim",
+      kind: "no_accidents_claim",
+      level: "E",
+      message: `Teksts saka, ka negadījumu nav, bet lapā ir ${facts.incidents.length} rinda(-s).`,
+      sentence: firstMatchingSentence(sentences, NO_ACCIDENT_RE),
+    });
+  }
+  if (facts.recallCodes.length > 0 && NO_RECALL_RE.test(text) && !/jāpārbauda|izpild/i.test(text)) {
+    push({
+      id: "no_recalls_claim",
+      kind: "no_recalls_claim",
+      level: "E",
+      message: `Teksts saka, ka atsaukumu nav, bet datos ir: ${facts.recallCodes.join(", ")}.`,
+      sentence: firstMatchingSentence(sentences, NO_RECALL_RE),
+    });
+  }
+
+  // 4) Atsaukuma kodi, kuru nav datos / lapā.
+  const known = new Set(facts.recallCodes.map((c) => c.toUpperCase()));
+  for (const code of extractCampaignCodes(text)) {
+    if (known.has(code) || facts.sourceHaystack.toUpperCase().includes(code)) continue;
+    push({
+      id: "unsourced_recall_code",
+      kind: "unsourced",
+      level: "W",
+      message: `Atsaukuma/kampaņas kods ${code} nav pasūtījuma datos vai kanoniskajā lapā.`,
+      sentence: sentences.find((s) => s.toUpperCase().includes(code)) ?? code,
+    });
+  }
+
+  // 5) Iekšējās noplūdes frāzes.
+  for (const leak of LEAK_PHRASES) {
+    if (!leak.re.test(text)) continue;
+    push({
+      id: leak.id,
+      kind: "leak_phrase",
+      level: "W",
+      message: `Iekšēja frāze „${leak.label}” klienta tekstā.`,
+      sentence: firstMatchingSentence(sentences, leak.re),
+    });
+  }
+
+  // 6) atsavināšanai, ja nav avotā.
+  if (ATSAVINASANAI_RE.test(text) && !ATSAVINASANAI_RE.test(facts.sourceHaystack)) {
+    push({
+      id: "atsavinasanai",
+      kind: "atsavinasanai",
+      level: "W",
+      message: "Vārds „atsavināšanai” nav avota datos.",
+      sentence: firstMatchingSentence(sentences, ATSAVINASANAI_RE),
+    });
+  }
+
+  // 7) Precīzi datumi / mēneši, kuru nav datos.
+  const dayDates = text.match(/\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b/g) ?? [];
+  for (const d of dayDates) {
+    if (haystackHasDate(facts.dateHaystack, d)) continue;
+    push({
+      id: "unsourced_date",
+      kind: "unsourced_date",
+      level: "W",
+      message: `Datums ${d} nav avota datos / kanoniskajā lapā.`,
+      sentence: sentences.find((s) => s.includes(d)) ?? d,
+    });
+  }
+  const monthRe =
+    /(20\d{2})\.\s*gada\s+(?:(\d{1,2})\.\s*)?(janvār|februār|mart|aprīl|maij|jūnij|jūlij|august|septembr|oktobr|novembr|decembr)/gi;
+  let mm: RegExpExecArray | null;
+  while ((mm = monthRe.exec(text))) {
+    const year = mm[1]!;
+    const monthLv = mm[3]!;
+    const month = LV_MONTHS[monthLv] ?? "";
+    const day = mm[2];
+    if (day) {
+      const token = `${day}.${month}.${year}`;
+      if (haystackHasDate(facts.dateHaystack, token)) continue;
+    } else if (haystackHasMonthYear(facts.dateHaystack, year, month, monthLv)) {
+      continue;
+    }
+    push({
+      id: "unsourced_date",
+      kind: "unsourced_date",
+      level: "W",
+      message: `Laiks „${mm[0]}” nav avota datos / kanoniskajā lapā.`,
+      sentence: sentences.find((s) => s.includes(mm![0]!)) ?? mm[0]!,
+    });
+  }
+
+  // 8) Km pret lapu (liels delta pret jaunāko / krituma punktiem).
+  if (facts.latestKm != null) {
+    const allowed = new Set<number>([
+      facts.latestKm,
+      ...facts.rollbacks.flatMap((r) => [r.fromKm, r.toKm, r.minDropKm]),
+      ...facts.incidents
+        .map((r) => Number.parseInt(r.lossAmount.replace(/\s/g, ""), 10))
+        .filter((n) => Number.isFinite(n)),
+    ]);
+    for (const km of kmNumbers(text)) {
+      const close = [...allowed].some((a) => Math.abs(a - km) <= 1500);
+      if (close) continue;
+      if (km === facts.owners.totalCount) continue;
+      // Gadījuma km (intervāli u.c.) paliek W, ne E.
+      if (Math.abs(km - facts.latestKm) > 25_000 && km > 10_000) {
+        push({
+          id: "km_mismatch",
+          kind: "contradiction",
+          level: "W",
+          message: `Nobraukums ${formatForensicsInt(km)} km tālu no lapas jaunākā (${formatForensicsInt(facts.latestKm)} km).`,
+          sentence: sentences.find((s) => s.includes(String(km)) || s.includes(formatForensicsInt(km))) ?? sentences[0]!,
+        });
+      }
+    }
+  }
+
+  // 9) Starp laukiem: tas pats auto, dažādi īpašnieku skaiti / negadījumu skaiti.
+  for (const other of input.otherFieldTexts ?? []) {
+    if (!other.text.trim() || other.field === field) continue;
+    const otherOwners = [...other.text.matchAll(OWNER_COUNT_RE)].map((m) => Number(m[1]));
+    const theseOwners = ownerMentions;
+    if (theseOwners.length && otherOwners.length) {
+      const a = theseOwners[0]!;
+      const b = otherOwners[0]!;
+      if (a !== b && facts.owners.totalCount > 0) {
+        push({
+          id: "cross_field_owners",
+          kind: "owner_count",
+          level: "W",
+          message: `Šis lauks saka ${a} īpašniekus, „${other.label}” saka ${b}.`,
+          sentence: firstMatchingSentence(sentences, new RegExp(`${a}\\s+īpašniek`, "i")),
+        });
+      }
+    }
+  }
+
+  flags.sort((a, b) => (a.level === b.level ? 0 : a.level === "E" ? -1 : 1));
+  return flags;
+}
+
+export function mergeFactCheckFlags(primary: FactCheckFlag[], extra: FactCheckFlag[]): FactCheckFlag[] {
+  const seen = new Set(primary.map(flagKey));
+  const out = [...primary];
+  for (const f of extra) {
+    const k = flagKey(f);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(f);
+  }
+  out.sort((a, b) => (a.level === b.level ? 0 : a.level === "E" ? -1 : 1));
+  return out;
+}

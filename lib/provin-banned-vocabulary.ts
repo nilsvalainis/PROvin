@@ -205,6 +205,30 @@ export const PROVIN_INTERNAL_CLIENT_TERMS: readonly BannedVocabularyEntry[] = [
     replacement: "dzinēja kods",
     code: "internal_dzineja_identifikacija",
   },
+  {
+    label: "Dzinēja kods noteikts pēc jaudas",
+    pattern: /dzinēja\s+kods noteikts pēc jaudas/i,
+    replacement: "dzinēja kods datos nav fiksēts",
+    code: "internal_engine_code_guess",
+  },
+  {
+    label: "nav kartē / QA kartē",
+    pattern: /atzīmē teikumus|pārraksti tikai tos|(?:nav|ja)\s+kartē/i,
+    replacement: "datos",
+    code: "internal_karte",
+  },
+  {
+    label: "HECK",
+    pattern: /\bHECK\b/,
+    replacement: "aizmugures piedziņa",
+    code: "internal_heck",
+  },
+  {
+    label: "AGR-Kühler",
+    pattern: /AGR[-\s]?K(?:ü|ue|u)hler/i,
+    replacement: "EGR dzesētājs",
+    code: "internal_agr_kuhler",
+  },
 ];
 
 export function findInternalClientTermHits(text: string): BannedVocabularyEntry[] {

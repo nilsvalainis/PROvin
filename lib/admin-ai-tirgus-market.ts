@@ -4,13 +4,13 @@ import { adminGenerateJsonText } from "@/lib/admin-ai-dispatch";
 import { AI_TIRGUS_MARKET_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
-  buildFullAiOrderContextText,
+  buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
 import { buildMarketAnalysisAiContext } from "@/lib/admin-market-ai-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import type { TirgusFormFields } from "@/lib/admin-source-blocks";
-import { normalizeProvinExpertAiComment } from "@/lib/source-summary-comment-format";
+import { finalizeProvinExpertAiComment } from "@/lib/source-summary-comment-format";
 
 export type TirgusMarketAiResult = {
   listedForSale: string;
@@ -29,7 +29,7 @@ function parseTirgusMarketJson(raw: string): TirgusMarketAiResult {
     listedForSale: clipField(typeof payload.listedForSale === "string" ? payload.listedForSale : "", 32),
     listingCreated: clipField(typeof payload.listingCreated === "string" ? payload.listingCreated : "", 64),
     priceDrop: clipField(typeof payload.priceDrop === "string" ? payload.priceDrop : "", 32),
-    comments: normalizeProvinExpertAiComment(
+    comments: finalizeProvinExpertAiComment(
       typeof payload.comments === "string" ? payload.comments : "",
     ),
   };
@@ -38,7 +38,7 @@ function parseTirgusMarketJson(raw: string): TirgusMarketAiResult {
 export async function generateTirgusMarketWithAi(
   input: AiOrderContextInput,
 ): Promise<TirgusMarketAiResult> {
-  const orderContext = await buildFullAiOrderContextText(input);
+  const orderContext = await buildAiCommentGenerationContext(input, "summary");
   const { text: marketContext, listingSnapshot } = await buildMarketAnalysisAiContext({
     listingUrl: input.listingUrl,
     sourceBlocks: input.sourceBlocks,

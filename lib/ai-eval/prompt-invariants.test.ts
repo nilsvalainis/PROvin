@@ -422,6 +422,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/parseCommentBreadthFromPrompt/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/planning_leak/);
     expect(readRepo("lib/source-summary-comment-format.ts")).toMatch(/stripLeakedAiPlanningPreamble/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/i\.code\.startsWith\("internal_"\)/);
+    expect(readRepo("lib/source-summary-comment-format.ts")).toMatch(/stripInternalClientLeaks/);
+    expect(readRepo("lib/admin-ai-tirgus-market.ts")).toMatch(/finalizeProvinExpertAiComment/);
+    expect(readRepo("lib/admin-ai-listing-peek.ts")).toMatch(/finalizeProvinExpertAiComment/);
   });
 
   it("paint-gauge inspection is mandatory for every car in ieteikumi", () => {
@@ -785,6 +789,32 @@ describe("PROVIN AI prompt invariants", () => {
     const prep = readRepo("lib/admin-prepare-draft.ts");
     expect(prep).toMatch(/Promise\.all/);
     expect(prep).toMatch(/modelTier/);
+    expect(prep.lastIndexOf("generateMileageCommentWithAi")).toBeLessThan(
+      prep.lastIndexOf("AI_SOURCE_COMMENT_BLOCK_KEYS.map"),
+    );
+    expect(prep.lastIndexOf("generateIncidentsSummaryWithAi")).toBeLessThan(
+      prep.lastIndexOf("AI_SOURCE_COMMENT_BLOCK_KEYS.map"),
+    );
+    expect(prep).toMatch(/isAutoSourcesComparisonEnabled/);
+    expect(prep).toMatch(/izslēgts/);
+    expect(readRepo(".env.example")).toMatch(/PROVIN_AUTO_SOURCES_COMPARISON/);
+  });
+
+  it("comment generators prepend KANONISKIE FAKTI via compact context", () => {
+    expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildCanonicalFactsSheet/);
+    expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/AiCommentPromptKind/);
+    expect(readRepo("lib/canonical-facts-sheet.ts")).toMatch(/KANONISKIE FAKTI/);
+    expect(readRepo("lib/canonical-facts-sheet.ts")).toMatch(/N īpašnieki = N-1 maiņas/);
+    expect(readRepo("app/api/admin/ai/fact-check/route.ts")).toMatch(/checkCommentContradictions/);
+    for (const rel of [
+      "lib/admin-ai-source-comment.ts",
+      "lib/admin-ai-mileage-comment.ts",
+      "lib/admin-ai-incidents-summary.ts",
+      "lib/admin-ai-summary.ts",
+      "lib/admin-ai-technical-risks.ts",
+    ]) {
+      expect(readRepo(rel)).toMatch(/buildAiCommentGenerationContext/);
+    }
   });
 
   it("Gemini 3 uses minimal thinking so comments are not billed empty", () => {

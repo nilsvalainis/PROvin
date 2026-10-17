@@ -95,7 +95,21 @@ export type FactCheckLevel = "E" | "W";
 export type FactCheckFlag = {
   id: string;
   level: FactCheckLevel;
-  kind: "contradiction" | "unsourced" | "disputed" | "recall_denied";
+  kind:
+    | "contradiction"
+    | "unsourced"
+    | "disputed"
+    | "recall_denied"
+    | "rollback_omitted"
+    | "rollback_minimised"
+    | "owner_count"
+    | "owner_changes"
+    | "first_reg_country"
+    | "no_accidents_claim"
+    | "no_recalls_claim"
+    | "leak_phrase"
+    | "atsavinasanai"
+    | "unsourced_date";
   message: string;
   sentence: string;
   factId?: string;

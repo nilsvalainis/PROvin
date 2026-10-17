@@ -5,7 +5,7 @@ import { buildAggregateIdentificationBrief } from "@/lib/admin-ai-aggregate-iden
 import { AI_INSPECTION_RECOMMENDATIONS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
-  buildFullAiOrderContextText,
+  buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
@@ -27,7 +27,7 @@ function finalizeInspectionComment(text: string): string {
 export async function generateInspectionRecommendationsWithAi(
   input: AiOrderContextInput,
 ): Promise<string> {
-  const context = await buildFullAiOrderContextText(input);
+  const context = await buildAiCommentGenerationContext(input, "summary");
   if (!context.trim()) {
     throw new Error("empty_order_context");
   }

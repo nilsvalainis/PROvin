@@ -4,7 +4,7 @@ import { adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
 import { AI_SELLER_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
-  buildFullAiOrderContextText,
+  buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
@@ -25,10 +25,10 @@ export async function generateSellerAnalysisWithAi(input: AiOrderContextInput): 
     throw new Error("missing_seller_input");
   }
 
-  const context = await buildFullAiOrderContextText({
-    ...input,
-    extraSellerName: extraSeller || undefined,
-  });
+  const context = await buildAiCommentGenerationContext(
+    { ...input, extraSellerName: extraSeller || undefined },
+    "summary",
+  );
 
   const taskBlock = extraSeller
     ?         `Analīzes režīms: UZŅĒMUMS

@@ -424,6 +424,40 @@ export function stripUnauthorizedEuroAmounts(text: string): string {
     .join("\n\n");
 }
 
+/**
+ * Iekšējās noplūdes (QA instrukcija, D1–D25, kartē, PR kodi, HECK/AGR-Kühler,
+ * „Dzinēja kods noteikts pēc jaudas…”). Klienta tekstā paliek latvisks fakts.
+ */
+export function stripInternalClientLeaks(text: string): string {
+  if (!text) return text;
+  let out = text;
+  out = out.replace(/Atzīmē teikumus[^.!\n]*kartē[^.!\n]*[.!]?/gi, "");
+  out = out.replace(/Pārraksti tikai tos\.?/gi, "");
+  out = out.replace(
+    /Dzinēja kods noteikts pēc jaudas(?: un tilpuma)?(?:; to apstiprina marķējums uz bloka)?\.?/gi,
+    "",
+  );
+  out = out.replace(
+    /\(D(?:[1-9]|1\d|2[0-5])\)|\bD(?:[1-9]|1\d|2[0-5])(?=\s+\d{1,2}[./]|\s+\d{4}|\s*:)/g,
+    "",
+  );
+  out = out.replace(/\bHECK\b(?:\s*\(\s*aizmugures piedziņa\s*\))?/g, "aizmugures piedziņa");
+  out = out.replace(/AGR[-\s]?K(?:ü|ue|u)hler/gi, "EGR dzesētājs");
+  out = out.replace(/\bPR[-/\s][A-Z0-9]{2,4}\b/g, "");
+  out = out.replace(/\bSA\s?\d{3,4}[A-Z]?\b/g, "");
+  out = out.replace(/\bS\d{3,4}[A-Z]\b/g, "");
+  out = out.replace(/nav kartē/gi, "nav datos");
+  out = out.replace(/ja kartē/gi, "ja datos");
+  out = out.replace(/avoti kartē/gi, "avoti datos");
+  out = out.replace(/ieliec kartē/gi, "iekļauj datos");
+  out = out.replace(/\s*šajā auditā/gi, "");
+  out = out.replace(/operatora norād\w*/gi, "");
+  out = out.replace(/[ \t]{2,}/g, " ");
+  out = out.replace(/\n{3,}/g, "\n\n");
+  out = out.replace(/^[.,;:\s]+/gm, "");
+  return out.trim();
+}
+
 export function applyProvinReportCopyVocabulary(text: string): string {
   let out = applyProvinHumanDashes(text);
   const replacements: Array<[RegExp, string]> = [
@@ -469,6 +503,7 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     return offset === 0 || /[\n.!?]\s*$/.test(before) ? "Datos" : "datos";
   });
   out = replaceCrankshaftDamperWording(out);
+  out = stripInternalClientLeaks(out);
   return stripForbiddenPersonaNouns(out);
 }
 
@@ -755,7 +790,7 @@ Example 1 (CSDD — avota fokuss, nevis pilna nobraukuma eseja):
 CSDD datos automašīna Latvijā reģistrēta 2016. gada 22. janvārī, kā izcelsmes valsti norādot Vāciju; īpašnieku maiņu ķēde pēc importa ir īsa, bez ierobežojumu atzīmēm.
 
 Tehnisko apskašu tendence
-Pamata pārbaudi ar pirmo reizi nav izgājusi sešas reizes; atkārtojas korozija, eļļas noplūdes un priekšējā tilta brīvkustības. Šo atkārtoto defektu sēriju pārējie avoti nefiksē - tas ir CSDD ieguldījums šajā auditā."
+Pamata pārbaudi ar pirmo reizi nav izgājusi sešas reizes; atkārtojas korozija, eļļas noplūdes un priekšējā tilta brīvkustības. Šo atkārtoto defektu sēriju pārējie avoti nefiksē - tas ir CSDD ieguldījums šajā avotā."
 
 Example 2 (CSDD — novērsti veci defekti vs rūsa/atgāzes):
 "Tehnisko apskašu vēsture
@@ -797,7 +832,7 @@ Example 6 (AUTO RECORDS / dīlera dati):
 Dīlera datos automašīnai norādīts tipa kods, kas atbilst taksometra vai komerciālai ekspluatācijai (937), un servisa žurnālā redzamas apkopes ik 15 000-18 000 km Vācijā pirms ievešanas. Šo signālu CSDD un AutoDNA tabulas nesniedz.
 
 Km atskaites punkts
-Pēdējais dīlera fiksējums (198 420 km, 2023. gada augusts) sakrīt ar pārējo avotu līkni; detalizētā nobraukuma analīze ir „NOBRAUKUMA VĒSTURES KOMENTĀRĀ”."
+Pēdējais dīlera fiksējums (198 420 km, 2023. gada augusts) sakrīt ar pārējo avotu līkni."
 
 Example 7 (NOBRAUKUMA VĒSTURES KOMENTĀRS — vienīgā vieta pilnai apkopošanai):
 "Hronoloģija un lineārums

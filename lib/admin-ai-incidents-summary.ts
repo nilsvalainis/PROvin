@@ -4,7 +4,7 @@ import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_INCIDENTS_SUMMARY_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
-  buildFullAiOrderContextText,
+  buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
 import { orderHasIncidentDataForAi } from "@/lib/admin-ai-data-availability";
@@ -16,10 +16,10 @@ export async function generateIncidentsSummaryWithAi(input: AiOrderContextInput)
   const hasIncidents = orderHasIncidentDataForAi(input.sourceBlocks);
   const hasDealerBodyWork = orderHasDealerBodyOrGlassWork(input.sourceBlocks);
 
-  const orderContext = await buildFullAiOrderContextText({
-    ...input,
-    internalComment: undefined,
-  });
+  const orderContext = await buildAiCommentGenerationContext(
+    { ...input, internalComment: undefined },
+    "summary",
+  );
 
   const noIncidentHint = hasIncidents
     ? hasDealerBodyWork

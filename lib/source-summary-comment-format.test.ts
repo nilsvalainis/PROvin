@@ -7,6 +7,7 @@ import {
   normalizeProvinExpertAiComment,
   replaceCrankshaftDamperWording,
   splitDealerCommentRoleHeadings,
+  stripInternalClientLeaks,
   stripLeakedAiPlanningPreamble,
   toExpertHeadingBodyPlain,
 } from "@/lib/source-summary-comment-format";
@@ -258,5 +259,25 @@ describe("finalizeProvinExpertAiComment", () => {
     );
     expect(out).not.toMatch(/ekspert/i);
     expect(out).toMatch(/motors datos izskatās kārtībā/);
+  });
+
+  it("strips QA kartē instructions, D-markers, HECK/AGR-Kühler and engine-code template", () => {
+    const leaked = [
+      "Atzīmē teikumus, kas nav kartē vai satur kalkus. Pārraksti tikai tos.",
+      "Dzinēja kods noteikts pēc jaudas un tilpuma; to apstiprina marķējums uz bloka.",
+      "Piedziņa HECK, dzesētājs AGR-Kühler, kods PR-7L6.",
+      "D12 15.03.2020 120000 km: eļļas maiņa. N47 D20 C paliek.",
+    ].join(" ");
+    const out = stripInternalClientLeaks(leaked);
+    expect(out).not.toMatch(/Atzīmē teikumus|Pārraksti tikai|kartē/i);
+    expect(out).not.toMatch(/Dzinēja kods noteikts pēc jaudas/);
+    expect(out).not.toMatch(/\bHECK\b/);
+    expect(out).toMatch(/aizmugures piedziņa/);
+    expect(out).toMatch(/EGR dzesētājs/);
+    expect(out).not.toMatch(/PR-7L6/);
+    expect(out).toMatch(/N47 D20 C/);
+    expect(finalizeProvinExpertAiComment("operatora norādes šajā auditā. Ķēde ir aizmugurē.")).not.toMatch(
+      /operatora norād|šajā auditā/i,
+    );
   });
 });

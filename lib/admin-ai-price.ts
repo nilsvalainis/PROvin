@@ -4,14 +4,14 @@ import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_PRICE_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
-  buildFullAiOrderContextText,
+  buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { buildMarketAnalysisAiContext } from "@/lib/admin-market-ai-context";
 
 export async function generatePriceAnalysisWithAi(input: AiOrderContextInput): Promise<string> {
-  const context = await buildFullAiOrderContextText(input);
+  const context = await buildAiCommentGenerationContext(input, "summary");
   const { text: marketContext } = await buildMarketAnalysisAiContext({
     listingUrl: input.listingUrl,
     sourceBlocks: input.sourceBlocks,

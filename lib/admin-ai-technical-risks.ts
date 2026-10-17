@@ -5,7 +5,7 @@ import { buildAggregateIdentificationBrief } from "@/lib/admin-ai-aggregate-iden
 import { AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
-  buildFullAiOrderContextText,
+  buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
@@ -54,6 +54,7 @@ import {
 } from "@/lib/admin-ai-technical-risk-map-types";
 import { PROVIN_KB_EUR_ACTIVE } from "@/lib/provin-kb";
 import { formatApplicableUnitFactsForPrompt, parseVehicleYear } from "@/lib/unit-facts/check";
+import { buildCanonicalFactsSheet } from "@/lib/canonical-facts-sheet";
 
 function withDealerFlags(flags: string[], issues: DealerMapIssue[]): string[] {
   return [...flags, ...issues.map((i) => `${i.id}: ${i.message}`)];
@@ -136,10 +137,10 @@ OBLIGĀTI:
 
 async function generateV1(input: AiOrderContextInput): Promise<TechnicalRiskAnalysisResult> {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
-  const orderContext = await buildFullAiOrderContextText({
-    ...input,
-    technicalRiskAnalysis: undefined,
-  });
+  const orderContext = await buildAiCommentGenerationContext(
+    { ...input, technicalRiskAnalysis: undefined },
+    "summary",
+  );
   if (!orderContext.trim()) {
     throw new Error("empty_order_context");
   }
@@ -196,6 +197,8 @@ async function generateTextFromMap(
   const userPrompt = appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 
+${buildCanonicalFactsSheet(input)}
+
 ${costNote}
 
 Ja kartē unknowns[] vai confidence C, neraksti minējumu. Īsi: "Datos nav fiksēts."
@@ -232,10 +235,10 @@ Sagatavo sadaļu „${ADMIN_TECHNICAL_RISKS_LABEL}” latviski tikai no kartes.`
 
 async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnalysisResult> {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
-  const orderContext = await buildFullAiOrderContextText({
-    ...input,
-    technicalRiskAnalysis: undefined,
-  });
+  const orderContext = await buildAiCommentGenerationContext(
+    { ...input, technicalRiskAnalysis: undefined },
+    "summary",
+  );
   if (!orderContext.trim()) {
     throw new Error("empty_order_context");
   }

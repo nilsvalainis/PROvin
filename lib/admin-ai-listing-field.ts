@@ -7,12 +7,12 @@ import {
 } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
-  buildFullAiOrderContextText,
+  buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
 import { LISTING_ANALYSIS_SUBSECTIONS, mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
-import { applyProvinReportCopyVocabulary } from "@/lib/source-summary-comment-format";
+import { finalizeProvinExpertAiComment } from "@/lib/source-summary-comment-format";
 
 export const AI_LISTING_COMMENT_FIELDS = ["photoAnalysis", "listingSalesContext"] as const;
 export type AiListingCommentField = (typeof AI_LISTING_COMMENT_FIELDS)[number];
@@ -34,7 +34,7 @@ export async function generateListingFieldCommentWithAi(
     throw new Error("missing_listing_paste");
   }
 
-  const context = await buildFullAiOrderContextText(input);
+  const context = await buildAiCommentGenerationContext(input, "summary");
   const fieldLabel =
     input.field === "photoAnalysis"
       ? LISTING_ANALYSIS_SUBSECTIONS.photoAnalysis
@@ -79,5 +79,5 @@ ${focusBlock}`,
     userPrompt,
     temperature: 0.3,
   });
-  return applyProvinReportCopyVocabulary(raw);
+  return finalizeProvinExpertAiComment(raw);
 }
