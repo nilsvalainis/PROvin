@@ -7,7 +7,15 @@
  */
 import type { OneautoBlockState } from "@/lib/oneauto-block";
 import { oneautoDisplayToServiceWorks } from "@/lib/oneauto-dealer";
-import { filledOneautoKvRows } from "@/lib/oneauto-catalog";
+import {
+  filledOneautoKvRows,
+  filledOneautoServiceEvents,
+  type OneautoServiceEvent,
+} from "@/lib/oneauto-catalog";
+import {
+  autoRecordsServiceWorkRowHasData,
+  type AutoRecordsServiceWorkRow,
+} from "@/lib/auto-records-service-works";
 import type { TechnicalRiskMap } from "@/lib/admin-ai-technical-risk-map-types";
 
 export type DealerFactKind = "service" | "campaign";
@@ -38,6 +46,19 @@ export type DealerFact = {
   works: string;
   kind: DealerFactKind;
   components: DealerComponentId[];
+  /** Kampaņas / atsaukuma kods no oriģinālvalodas teksta, ja ir. */
+  campaignCode: string | null;
+};
+
+/** Draftos OneAuto `display.serviceTimeline` parasti ir tukšs; dati ir auto_records. */
+export type DealerFactsAutoRecords = {
+  serviceWorks?: AutoRecordsServiceWorkRow[] | null;
+  oneautoIngest?: { serviceTimelineOriginal?: OneautoServiceEvent[] | null } | null;
+};
+
+export type DealerFactsSource = {
+  oneauto?: OneautoBlockState | null;
+  autoRecords?: DealerFactsAutoRecords | null;
 };
 
 export type DealerVehicleFact = { label: string; value: string };
@@ -69,9 +90,37 @@ export const DEALER_COMPONENTS: readonly ComponentDef[] = [
   { id: "haldex", lv: "pilnpiedziņas sajūgs", re: /haldex|awd\s+coupling|allradkupplung|hidromuft/i },
 ];
 
-/** Kampaņu / atsaukumu / programmatūras akciju marķieri dīlera ierakstā. */
-const CAMPAIGN_RE =
-  /\b(recall|campaign|kampaņ|atsauk|r[üu]ckruf|aktion|actie|service\s+action|technische\s+aktion|field\s+fix|tsb|sib|servisa\s+akcij)\b/i;
+/**
+ * Kampaņu / atsaukumu / akciju marķieri oriģinālvalodas tekstā.
+ * Stumbriem (kampaņ / atsauk / servisa akcij) nav beigu `\b`: pēc `ņ`/`k`/`j`
+ * JS `\b` nestrādā un `kampaņa` / `atsaukums` / `akcija` neiekrīt.
+ */
+const CAMPAIGN_WORD_RE =
+  /(?:^|[^\p{L}\p{N}_])(?:recalls?|campaigns?|kampaņ\p{L}*|atsauk\p{L}*|r(?:ü|u)ckruf|aktion|actie|service\s+actions?|technische\s+aktion|field\s+fix|tsb|sib|servisa\s+akcij\p{L}*|safety\s+recall|recall\s+uitgevoerd(?:\s+volgens\s+qb)?|type:\s*(?:campaign|recall))/iu;
+
+const CAMPAIGN_CODE_PATTERNS: readonly RegExp[] = [
+  /\bType:\s*(?:Campaign|Recall)\b[\s:/,-]*([A-Z0-9]{3,10})\b/i,
+  /\bAktion\s+([A-Z0-9]{3,10})\b/i,
+  /\bQB\s*(R\d{4,6})\b/i,
+  /\bSafety\s+Recall\s+(P\d{1,3})\b/i,
+  /\b(S\d{5})\b/,
+  /\b(\d{3}[A-Z]\d{2})\b/,
+];
+
+export function extractDealerCampaignCode(text: string): string | null {
+  const t = text ?? "";
+  for (const re of CAMPAIGN_CODE_PATTERNS) {
+    const m = re.exec(t);
+    const code = (m?.[1] ?? "").trim().toUpperCase();
+    if (code) return code;
+  }
+  return null;
+}
+
+export function isDealerCampaignText(text: string): boolean {
+  const t = text ?? "";
+  return CAMPAIGN_WORD_RE.test(t) || extractDealerCampaignCode(t) != null;
+}
 
 const VEHICLE_FACT_LABEL_RE =
   /garant|warranty|garantie|first\s+registration|pirmreģ|erstzulassung|delivery|piegād|auslieferung|production|ražoš|produktion|build\s+date/i;
@@ -100,29 +149,67 @@ function parseKm(raw: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-export function extractDealerFacts(block: OneautoBlockState | null | undefined): DealerFacts {
-  if (!block) return { rows: [], vehicle: [] };
-  // ID hronoloģiski (vecākais = D1), neatkarīgi no tabulas kārtojuma.
-  const works = [...oneautoDisplayToServiceWorks(block.display)].sort(
+function isLegacyOneautoBlock(
+  input: DealerFactsSource | OneautoBlockState | null | undefined,
+): input is OneautoBlockState {
+  return !!input && typeof input === "object" && "display" in input && !("autoRecords" in input) && !("oneauto" in input);
+}
+
+function resolveDealerFactsSource(
+  input: DealerFactsSource | OneautoBlockState | null | undefined,
+): DealerFactsSource {
+  if (!input) return {};
+  if (isLegacyOneautoBlock(input)) return { oneauto: input };
+  return input;
+}
+
+/** Oriģinālvaloda no ingest, tad serviceWorks, tad vecais OneAuto display ceļš. */
+export function dealerServiceWorksFromSources(source: DealerFactsSource): AutoRecordsServiceWorkRow[] {
+  const original = filledOneautoServiceEvents(source.autoRecords?.oneautoIngest?.serviceTimelineOriginal);
+  if (original.length > 0) {
+    return oneautoDisplayToServiceWorks({
+      equipment: [],
+      powertrain: [],
+      serviceTimeline: original,
+    });
+  }
+  const works = (source.autoRecords?.serviceWorks ?? []).filter(autoRecordsServiceWorkRowHasData);
+  if (works.length > 0) return works;
+  return oneautoDisplayToServiceWorks(source.oneauto?.display);
+}
+
+function factFromServiceWork(w: AutoRecordsServiceWorkRow, id: string): DealerFact | null {
+  const text = (w.works ?? "").replace(/\s+/g, " ").trim();
+  if (!text && !(w.odometer ?? "").trim()) return null;
+  const campaignCode = extractDealerCampaignCode(text);
+  return {
+    id,
+    date: (w.date ?? "").trim(),
+    odometerKm: parseKm(w.odometer ?? ""),
+    place: (w.location ?? "").trim(),
+    works: text,
+    kind: isDealerCampaignText(text) ? "campaign" : "service",
+    components: detectDealerComponents(text),
+    campaignCode,
+  };
+}
+
+export function extractDealerFacts(
+  input: DealerFactsSource | OneautoBlockState | null | undefined,
+): DealerFacts {
+  const source = resolveDealerFactsSource(input);
+  const works = [...dealerServiceWorksFromSources(source)].sort(
     (a, b) => dateSortKey(a.date ?? "") - dateSortKey(b.date ?? ""),
   );
   const rows: DealerFact[] = [];
   for (const w of works) {
-    const text = (w.works ?? "").replace(/\s+/g, " ").trim();
-    if (!text && !(w.odometer ?? "").trim()) continue;
-    rows.push({
-      id: `D${rows.length + 1}`,
-      date: (w.date ?? "").trim(),
-      odometerKm: parseKm(w.odometer ?? ""),
-      place: (w.location ?? "").trim(),
-      works: text,
-      kind: CAMPAIGN_RE.test(text) ? "campaign" : "service",
-      components: detectDealerComponents(text),
-    });
+    const fact = factFromServiceWork(w, `D${rows.length + 1}`);
+    if (fact) rows.push(fact);
   }
+  const display = source.oneauto?.display;
   const vehicle = [
-    ...filledOneautoKvRows(block.display.powertrain ?? []),
-    ...filledOneautoKvRows(block.display.equipment ?? []),
+    ...filledOneautoKvRows(display?.powertrain ?? []),
+    ...filledOneautoKvRows(display?.equipment ?? []),
   ]
     .filter((r) => VEHICLE_FACT_LABEL_RE.test(r.label))
     .map((r) => ({ label: r.label.trim(), value: r.value.trim() }));
@@ -149,7 +236,8 @@ export function buildDealerFactsBrief(facts: DealerFacts): string {
   ];
   for (const r of facts.rows) {
     const comp = r.components.length ? ` [mezgli: ${r.components.map(dealerComponentLv).join(", ")}]` : "";
-    const kind = r.kind === "campaign" ? " [kampaņa]" : "";
+    const kind =
+      r.kind === "campaign" ? (r.campaignCode ? ` [kampaņa ${r.campaignCode}]` : " [kampaņa]") : "";
     lines.push(`- ${r.id} ${r.date || "datums nav"}, ${fmtKm(r.odometerKm)}${r.place ? `, ${r.place}` : ""}: ${r.works || "darbs nav norādīts"}${kind}${comp}`);
   }
   for (const v of facts.vehicle) {

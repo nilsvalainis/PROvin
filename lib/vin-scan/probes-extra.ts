@@ -21,7 +21,12 @@ import {
   type OemRecallBrand,
 } from "@/lib/vin-scan/parse-extra";
 import { parseNhtsaDecode } from "@/lib/vin-scan/parse";
-import { decodeVinLocal, mergeVinDecodeWithVpic, vinDecodeParseFromLocal } from "@/lib/vin-scan/vin-decode";
+import {
+  decodeVinLocal,
+  isUsWmiVin,
+  mergeVinDecodeWithVpic,
+  vinDecodeParseFromLocal,
+} from "@/lib/vin-scan/vin-decode";
 import { extractPageFromHtml, mergeCookieHeader } from "@/lib/vin-sources/html-extract";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 
@@ -152,7 +157,39 @@ async function nhtsaRecallsForVin(vin: string): Promise<VinScanParse> {
   return parsed;
 }
 
+/** ASV modeļa līmeņa atsaukumi / OEM lapas: operators atver saiti, tas nav šī VIN fakts. */
+export const ASV_MARKET_RECALL_LABEL = "ASV tirgus, var neattiekties";
+
+function isUsManufacturerRecallUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "www.bmwusa.com" || host === "bmwusa.com" || host === "www.mbusa.com" || host === "mbusa.com" || host === "www.toyota.com" || host === "toyota.com";
+  } catch {
+    return /bmwusa\.com|mbusa\.com|(?:^|\/\/)(?:www\.)?toyota\.com/i.test(url);
+  }
+}
+
+function asvMarketOperatorLink(
+  id: VinScanIndicator["id"],
+  ctx: VinScanContext,
+  url: string,
+): VinScanIndicator {
+  return done(id, ctx, {
+    status: "browser_only",
+    summary: ASV_MARKET_RECALL_LABEL,
+    openUrl: url,
+  });
+}
+
 export async function probeNhtsaRecalls(ctx: VinScanContext): Promise<VinScanIndicator> {
+  // Ne-ASV VIN (ES WMI u.c.): NHTSA ir modeļa, ne VIN vaicājums. Tas nav šī auto atsaukums.
+  if (!isUsWmiVin(ctx.vin)) {
+    return asvMarketOperatorLink(
+      "nhtsa_recalls",
+      ctx,
+      `https://www.nhtsa.gov/recalls?vin=${encodeURIComponent(ctx.vin)}`,
+    );
+  }
   try {
     return done("nhtsa_recalls", ctx, await nhtsaRecallsForVin(ctx.vin));
   } catch (e) {
@@ -209,15 +246,27 @@ export async function probeOemRecall(ctx: VinScanContext, brand: OemRecallBrand)
   if (match !== brand) {
     return done(meta.id, ctx, { status: "skipped", summary: "Cits ražotājs" });
   }
-  try {
-    const fromNhtsa = await nhtsaRecallsForVin(ctx.vin);
-    if (fromNhtsa.status === "found" || fromNhtsa.status === "none") {
-      return done(meta.id, ctx, {
-        ...fromNhtsa,
-        summary: fromNhtsa.status === "found" ? `${meta.label}: ${fromNhtsa.summary}` : `${meta.label}: NHTSA atsaukumu nav`,
-      });
+  const oemUrl = meta.url(ctx.vin);
+  // Ne-ASV VIN: NHTSA modeļa vaicājumu un ASV ražotāja lapas nerāda kā atsaukuma faktu.
+  if (!isUsWmiVin(ctx.vin)) {
+    if (isUsManufacturerRecallUrl(oemUrl)) {
+      return asvMarketOperatorLink(meta.id, ctx, oemUrl);
     }
-    const page = await scanFetchSmart(meta.url(ctx.vin), { timeoutMs: 20_000, sourceLabel: meta.label });
+  } else {
+    try {
+      const fromNhtsa = await nhtsaRecallsForVin(ctx.vin);
+      if (fromNhtsa.status === "found" || fromNhtsa.status === "none") {
+        return done(meta.id, ctx, {
+          ...fromNhtsa,
+          summary: fromNhtsa.status === "found" ? `${meta.label}: ${fromNhtsa.summary}` : `${meta.label}: NHTSA atsaukumu nav`,
+        });
+      }
+    } catch (e) {
+      return failed(meta.id, ctx, e);
+    }
+  }
+  try {
+    const page = await scanFetchSmart(oemUrl, { timeoutMs: 20_000, sourceLabel: meta.label });
     return done(meta.id, ctx, parseOemRecallHtml(page.status, page.text, ctx.vin, meta.label));
   } catch (e) {
     return failed(meta.id, ctx, e);

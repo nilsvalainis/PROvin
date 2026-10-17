@@ -43,6 +43,13 @@ describe("b2b partner prices", () => {
     expect(getB2bCatalog("ru").business.goal).toContain("PROVIN BUSINESS");
     expect(getB2bBusinessHeroFeatures("de")[0]).toBe("Offizielle Händlerdaten*");
     expect(getB2bCatalog("lv").dealer.title).toBe("DĪLERA DATI");
+    expect(getB2bCatalog("lv").dealer.goal).toContain("izpildītās kampaņas");
+    expect(getB2bCatalog("en").dealer.goal).toContain("executed recall campaigns");
+    expect(getB2bCatalog("de").dealer.goal).toContain("durchgeführte Rückrufaktionen");
+    expect(getB2bCatalog("ru").dealer.goal).toContain("выполненные отзывные кампании");
+    expect(getB2bCatalog("lv").dealer.goal).not.toMatch(/aktīvo kampaņ/i);
+    expect(getB2bCatalog("en").dealer.goal).not.toMatch(/active campaign/i);
+    expect(getB2bCatalog("de").dealer.goal).not.toMatch(/offene Rückruf/i);
   });
 
   it("adds mileage history so the login hero source list is 8 items", () => {

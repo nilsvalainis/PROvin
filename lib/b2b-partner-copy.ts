@@ -25,14 +25,14 @@ const B2B_BUSINESS_GOAL_RU =
   "PROVIN BUSINESS собирает данные официальных дилерских сетей, carVertical, AutoDNA и реестров Европы и США. В одном отчёте вы получаете хронологию пробега, историю ДТП и записи обслуживания: меньше риска и больше уверенности в каждой сделке.";
 
 export const B2B_DEALER_GOAL =
-  "DĪLERA DATI nodrošina padziļinātu oficiālo servisu ierakstu analīzi tieši no ražotāju datubāzēm. Vienā pārskatāmā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, veiktos remontus, apkopes un aktīvo kampaņu pārbaudi, sniedzot maksimālu pārredzamību un tiešu piekļuvi atbalstīto zīmolu sistēmām.";
+  "DĪLERA DATI nodrošina padziļinātu oficiālo servisu ierakstu analīzi tieši no ražotāju datubāzēm. Vienā pārskatāmā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, veiktos remontus, apkopes un izpildītās kampaņas no oficiālās dīlera servisa vēstures, sniedzot maksimālu pārredzamību un tiešu piekļuvi atbalstīto zīmolu sistēmām.";
 
 const B2B_DEALER_GOAL_EN =
-  "DEALER DATA provides in-depth analysis of official service records directly from manufacturer databases. In one clear report you get a full mileage timeline, repairs, maintenance and active campaign checks, with maximum transparency and direct access to supported brand systems.";
+  "DEALER DATA provides in-depth analysis of official service records directly from manufacturer databases. In one clear report you get a full mileage timeline, repairs, maintenance and executed recall campaigns from the official dealer service history, with maximum transparency and direct access to supported brand systems.";
 const B2B_DEALER_GOAL_DE =
-  "HÄNDLERDATEN liefern die Servicehistorie direkt aus den Herstellerdatenbanken. In einem Bericht sehen Sie Kilometerstände, Reparaturen, Wartungen und offene Rückrufaktionen, mit direktem Zugang zu den Systemen der unterstützten Marken.";
+  "HÄNDLERDATEN liefern die Servicehistorie direkt aus den Herstellerdatenbanken. In einem Bericht sehen Sie Kilometerstände, Reparaturen, Wartungen und durchgeführte Rückrufaktionen, mit direktem Zugang zu den Systemen der unterstützten Marken.";
 const B2B_DEALER_GOAL_RU =
-  "ДАННЫЕ ДИЛЕРА дают разбор официальных сервисных записей напрямую из баз производителя. В одном отчёте: пробег, ремонты, ТО и проверка активных кампаний, с прямым доступом к системам поддерживаемых марок.";
+  "ДАННЫЕ ДИЛЕРА дают разбор официальных сервисных записей напрямую из баз производителя. В одном отчёте: пробег, ремонты, ТО и выполненные отзывные кампании из официальной дилерской истории, с прямым доступом к системам поддерживаемых марок.";
 
 export const B2B_DEALER_GUARANTEE_TITLE = "100% Naudas atmaksas garantija";
 export const B2B_DEALER_GUARANTEE_BODY =

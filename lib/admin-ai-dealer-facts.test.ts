@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
+import { emptyAutoRecordsBlock } from "@/lib/admin-source-blocks";
 import { emptyOneautoBlock } from "@/lib/oneauto-block";
+import { emptyOneautoIngest } from "@/lib/oneauto-to-auto-records";
 import {
   buildDealerFactsBrief,
   checkMapAgainstDealerFacts,
   detectDealerComponents,
+  extractDealerCampaignCode,
   extractDealerFacts,
   fillAlreadyDoneEvidenceFromDealer,
   findTextContradictionsWithDealer,
+  isDealerCampaignText,
   textMentionsDealerCampaigns,
 } from "@/lib/admin-ai-dealer-facts";
 import { lintTechnicalRiskText } from "@/lib/admin-ai-technical-risk-lint";
@@ -66,7 +70,128 @@ describe("extractDealerFacts", () => {
     expect(f.rows[0]!.odometerKm).toBe(60120);
     expect(f.rows[1]!.components).toContain("timing_chain");
     expect(f.rows[2]!.kind).toBe("campaign");
+    expect(f.rows[2]!.campaignCode).toBe("0012345678");
     expect(f.vehicle).toEqual([{ label: "Warranty start", value: "2018-03-14" }]);
+  });
+
+  it("ņem oriģinālvalodu no auto_records, ne tukšo oneauto.display", () => {
+    const oneauto = emptyOneautoBlock();
+    expect(oneauto.display.serviceTimeline).toEqual([]);
+    const autoRecords = emptyAutoRecordsBlock();
+    autoRecords.serviceWorks = [
+      { date: "12.03.2024", odometer: "45210", location: "Kia Rīga", works: "Kampaņas LV tulkojums 240S09" },
+    ];
+    autoRecords.oneautoIngest = {
+      ...emptyOneautoIngest(),
+      serviceTimelineOriginal: [
+        {
+          date: "12.03.2024",
+          odometer: "45210",
+          place: "Kia Autohaus",
+          works: "Type: Campaign 240S09\nAirbag software update",
+        },
+      ],
+    };
+    const f = extractDealerFacts({ oneauto, autoRecords });
+    expect(f.rows).toHaveLength(1);
+    expect(f.rows[0]!.works).toMatch(/Type:\s*Campaign 240S09/i);
+    expect(f.rows[0]!.works).not.toMatch(/tulkojums/i);
+    expect(f.rows[0]!.kind).toBe("campaign");
+    expect(f.rows[0]!.campaignCode).toBe("240S09");
+    expect(f.rows[0]!.date).toBe("12.03.2024");
+    expect(f.rows[0]!.odometerKm).toBe(45210);
+  });
+
+  it("Kia, Volvo un VAG oriģinālvalodas paraugi dod kampaņas rindas ar kodu, datumu un km", () => {
+    const kia = extractDealerFacts({
+      autoRecords: {
+        serviceWorks: [],
+        oneautoIngest: {
+          serviceTimelineOriginal: [
+            {
+              date: "2024-03-12",
+              odometer: "45 210",
+              place: "Kia Motors",
+              works: "Type: Campaign\n240S09 Safety Recall airbag ECU",
+            },
+          ],
+        },
+      },
+    });
+    expect(kia.rows).toHaveLength(1);
+    expect(kia.rows[0]).toMatchObject({
+      kind: "campaign",
+      campaignCode: "240S09",
+      odometerKm: 45210,
+    });
+    expect(kia.rows[0]!.date).toMatch(/12\.03\.2024|2024-03-12/);
+
+    const volvo = extractDealerFacts({
+      autoRecords: {
+        serviceWorks: [],
+        oneautoIngest: {
+          serviceTimelineOriginal: [
+            {
+              date: "08.06.2021",
+              odometer: "87300",
+              place: "Volvo Partner",
+              works: "Recall uitgevoerd volgens QB R29904. Safety Recall P12. S29975 executed.",
+            },
+          ],
+        },
+      },
+    });
+    expect(volvo.rows).toHaveLength(1);
+    expect(volvo.rows[0]!.kind).toBe("campaign");
+    expect(volvo.rows[0]!.campaignCode).toBe("R29904");
+    expect(volvo.rows[0]!.odometerKm).toBe(87300);
+    expect(volvo.rows[0]!.date).toBe("08.06.2021");
+
+    const vag = extractDealerFacts({
+      autoRecords: {
+        serviceWorks: [],
+        oneautoIngest: {
+          serviceTimelineOriginal: [
+            {
+              date: "03.11.2020",
+              odometer: "61200",
+              place: "Volkswagen Zentrum",
+              works: "Aktion 23E7 software. Rückruf / Actie uitgevoerd.",
+            },
+          ],
+        },
+      },
+    });
+    expect(vag.rows).toHaveLength(1);
+    expect(vag.rows[0]).toMatchObject({
+      kind: "campaign",
+      campaignCode: "23E7",
+      date: "03.11.2020",
+      odometerKm: 61200,
+    });
+  });
+
+  it("ja oriģināls tukšs, ņem serviceWorks un atpazīst LV stumbrus bez \\b", () => {
+    const f = extractDealerFacts({
+      oneauto: emptyOneautoBlock(),
+      autoRecords: {
+        serviceWorks: [
+          {
+            date: "01.04.2023",
+            odometer: "99000",
+            location: "Dīleris",
+            works: "Servisa kampaņa izpildīta. Atsaukums un servisa akcija fiksēta.",
+          },
+        ],
+        oneautoIngest: { serviceTimelineOriginal: [] },
+      },
+    });
+    expect(f.rows).toHaveLength(1);
+    expect(f.rows[0]!.kind).toBe("campaign");
+    expect(isDealerCampaignText("kampaņa")).toBe(true);
+    expect(isDealerCampaignText("atsaukums")).toBe(true);
+    expect(isDealerCampaignText("servisa akcija")).toBe(true);
+    expect(extractDealerCampaignCode("Type: Recall 21C026")).toBe("21C026");
   });
 
   it("bez OneAuto datiem brīfs tukšs", () => {

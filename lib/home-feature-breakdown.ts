@@ -115,7 +115,7 @@ const DEALER_LV: HomeFeatureBreakdownPackage = {
   title: "DĪLERA DATI",
   buttonText: "PASŪTĪT DĪLERA DATUS 24,99 €",
   goal:
-    "Oficiālās dīleru servisa vēstures un ražotāju datubāzu analīze automašīnām. Pārbaude fokusējas uz autorizēto servisu ierakstiem, hronoloģisko nobraukumu, veiktajām apkopēm un rūpnīcas atsaukumiem, nodrošinot maksimālu pārredzamību par auto reālo ekspluatāciju.",
+    "Oficiālās dīleru servisa vēstures un ražotāju datubāzu analīze automašīnām. Pārbaude fokusējas uz autorizēto servisu ierakstiem, hronoloģisko nobraukumu, veiktajām apkopēm un izpildītajām kampaņām, nodrošinot maksimālu pārredzamību par auto reālo ekspluatāciju.",
   items: [
     {
       title: "Oficiālā servisa vēsture",
@@ -126,7 +126,7 @@ const DEALER_LV: HomeFeatureBreakdownPackage = {
     {
       title: "Odometra & kampaņu pārbaude",
       description:
-        "Nobraukuma hronoloģiskā izsekošana ražotāja sistēmā, kā arī aktīvo garantijas atsaukumu pārbaude.",
+        "Nobraukuma hronoloģiskā izsekošana ražotāja sistēmā, kā arī oficiālajā dīlera servisa vēsturē fiksētās izpildītās kampaņas.",
       icon: "odometer",
     },
     {
@@ -254,7 +254,7 @@ const DEALER_EN: HomeFeatureBreakdownPackage = {
   title: "DEALER DATA",
   buttonText: "ORDER DEALER DATA €24.99",
   goal:
-    "Official dealer service history and manufacturer database analysis for vehicles. The check focuses on authorised service records, chronological mileage, completed maintenance and factory recalls, providing maximum transparency into the car's real operating history.",
+    "Official dealer service history and manufacturer database analysis for vehicles. The check focuses on authorised service records, chronological mileage, completed maintenance and executed recall campaigns, providing maximum transparency into the car's real operating history.",
   items: [
     {
       title: "Official service history",
@@ -265,7 +265,7 @@ const DEALER_EN: HomeFeatureBreakdownPackage = {
     {
       title: "Odometer & campaign check",
       description:
-        "Chronological mileage tracking in the manufacturer system, plus checks for active warranty recalls.",
+        "Chronological mileage tracking in the manufacturer system, plus executed recall campaigns recorded in the official dealer service history.",
       icon: "odometer",
     },
     {
@@ -471,7 +471,7 @@ const DEALER_DE: HomeFeatureBreakdownPackage = {
   title: "HÄNDLERDATEN",
   buttonText: "HÄNDLERDATEN BESTELLEN 24,99 €",
   goal:
-    "Analyse der offiziellen Händler-Servicehistorie und der Herstellerdatenbanken. Die Prüfung konzentriert sich auf autorisierte Serviceeinträge, den chronologischen Kilometerstand, durchgeführte Wartungen und Werksrückrufe und macht die reale Nutzung des Autos nachvollziehbar.",
+    "Analyse der offiziellen Händler-Servicehistorie und der Herstellerdatenbanken. Die Prüfung konzentriert sich auf autorisierte Serviceeinträge, den chronologischen Kilometerstand, durchgeführte Wartungen und durchgeführte Rückrufaktionen und macht die reale Nutzung des Autos nachvollziehbar.",
   items: [
     {
       title: "Offizielle Servicehistorie",
@@ -480,7 +480,8 @@ const DEALER_DE: HomeFeatureBreakdownPackage = {
     },
     {
       title: "Kilometerstand und Rückrufaktionen",
-      description: "Chronologische Laufleistung im Herstellersystem plus Prüfung aktiver Garantierückrufe.",
+      description:
+        "Chronologische Laufleistung im Herstellersystem sowie durchgeführte Rückrufaktionen aus der offiziellen Händler-Servicehistorie.",
       icon: "odometer",
     },
     {
@@ -629,7 +630,7 @@ const DEALER_RU: HomeFeatureBreakdownPackage = {
   title: "ДАННЫЕ ДИЛЕРА",
   buttonText: "ЗАКАЗАТЬ ДАННЫЕ ДИЛЕРА 24,99 €",
   goal:
-    "Анализ официальной дилерской сервисной истории и баз производителя. Проверка охватывает записи авторизованных сервисов, хронологию пробега, выполненные обслуживания и заводские отзывные кампании и показывает, как автомобиль реально эксплуатировали.",
+    "Анализ официальной дилерской сервисной истории и баз производителя. Проверка охватывает записи авторизованных сервисов, хронологию пробега, выполненные обслуживания и выполненные отзывные кампании и показывает, как автомобиль реально эксплуатировали.",
   items: [
     {
       title: "Официальная сервисная история",
@@ -638,7 +639,8 @@ const DEALER_RU: HomeFeatureBreakdownPackage = {
     },
     {
       title: "Одометр и отзывные кампании",
-      description: "Хронология пробега в системе производителя и проверка действующих гарантийных отзывов.",
+      description:
+        "Хронология пробега в системе производителя и выполненные отзывные кампании из официальной дилерской сервисной истории.",
       icon: "odometer",
     },
     {

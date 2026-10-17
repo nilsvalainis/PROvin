@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   decodeVinLocal,
+  isEuWmiVin,
   isNordicVinOrigin,
+  isUsWmiVin,
   mergeVinDecodeWithVpic,
   nordicVinSearchLinks,
   vinDecodeParseFromLocal,
@@ -39,6 +41,12 @@ describe("decodeVinLocal", () => {
       make: "Honda",
       countryCode: "US",
     });
+    expect(isEuWmiVin("WBA5R1C0XLFH42873")).toBe(true);
+    expect(isEuWmiVin("YV1DZ5251B2146640")).toBe(true);
+    expect(isEuWmiVin("WVWZZZ7NZEV015204")).toBe(true);
+    expect(isEuWmiVin("1HGCM82633A004352")).toBe(false);
+    expect(isUsWmiVin("1HGCM82633A004352")).toBe(true);
+    expect(isUsWmiVin("WBA5R1C0XLFH42873")).toBe(false);
   });
 
   it("YS2 / YS3 / YV4 ir Ziemeļvalstis", () => {

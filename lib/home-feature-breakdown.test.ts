@@ -39,6 +39,19 @@ describe("pakalpojumi catalog", () => {
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.items).toHaveLength(4);
     expect(dealer.goal).toContain("autorizēto servisu");
+    expect(dealer.goal).toContain("izpildītajām kampaņām");
+    expect(dealer.goal).not.toMatch(/aktīvo garantijas atsaukumu/i);
+    const dealerCampaign = dealer.items.find((item) => item.icon === "odometer")!;
+    expect(dealerCampaign.description).toContain("izpildītās kampaņas");
+    expect(dealerCampaign.description).not.toMatch(/aktīvo garantijas atsaukumu/i);
+    for (const locale of ["en", "de", "ru"] as const) {
+      const locDealer = getHomeFeatureBreakdownPackages(locale).find((pkg) => pkg.id === "dealer")!;
+      const locCampaign = locDealer.items.find((item) => item.icon === "odometer")!;
+      expect(locCampaign.description).not.toMatch(/active warranty|aktiver Garantie|действующих гарантийных|offene Rückruf/i);
+      if (locale === "en") expect(locCampaign.description).toMatch(/executed recall campaigns/i);
+      if (locale === "de") expect(locCampaign.description).toContain("durchgeführte Rückrufaktionen");
+      if (locale === "ru") expect(locCampaign.description).toContain("выполненные отзывные кампании");
+    }
     expect(dealer.sampleReportHref).toContain("dilera");
     const mini = pkgs.find((p) => p.id === "mini")!;
     expect(mini.sampleReportHref).toContain("provin-mini-piemers");
