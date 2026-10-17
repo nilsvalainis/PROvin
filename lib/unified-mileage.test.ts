@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
+import { createDefaultSourceBlocks, emptyAutoRecordsBlock } from "@/lib/admin-source-blocks";
+import { analyzeVinAndKm } from "@/lib/admin-workspace-preview-format";
 import {
   analyzeUnifiedMileageAnomalies,
   collectUnifiedMileageRows,
+  DEALER_MILEAGE_TABLE_EMPTY_VISITS_WARNING,
+  dealerMileageTableEmptyButVisitsHaveOdometer,
   mergeUnifiedMileageRowsByOdometer,
   prepareUnifiedMileageDisplayRows,
+  selectNewestVerifiedMileageRow,
   type UnifiedMileageRow,
 } from "@/lib/unified-mileage";
 
@@ -330,6 +334,37 @@ describe("analyzeUnifiedMileageAnomalies", () => {
   });
 });
 
+describe("selectNewestVerifiedMileageRow", () => {
+  it("picks newer AutoDNA over older CSDD and ignores ss.lv", () => {
+    const rows = [
+      row({ date: "11.10.2025", odometer: "41568", sourceLabel: "CSDD", sourceOrder: 0, sortableTime: Date.UTC(2025, 9, 11) }),
+      row({ date: "01.07.2026", odometer: "49136", sourceLabel: "AutoDNA", sourceOrder: 1, sortableTime: Date.UTC(2026, 6, 1) }),
+      row({ date: "01.07.2026", odometer: "49096", sourceLabel: "CarVertical", sourceOrder: 2, sortableTime: Date.UTC(2026, 6, 1) }),
+      row({
+        date: "01.08.2026",
+        odometer: "50936",
+        sourceLabel: "ss.lv",
+        sourceOrder: 3,
+        sortableTime: Date.UTC(2026, 7, 1),
+        countryUnverified: true,
+      }),
+    ];
+    const newest = selectNewestVerifiedMileageRow(rows);
+    expect(newest?.odometer.replace(/\D/g, "")).toBe("49136");
+    expect(newest?.sourceLabel).toBe("AutoDNA");
+    const { anomalyBySourceOrder } = analyzeUnifiedMileageAnomalies(rows);
+    expect(anomalyBySourceOrder.get(3)).toBe(false);
+  });
+
+  it("keeps CSDD when it is the same date as AutoDNA", () => {
+    const rows = [
+      row({ date: "01.07.2026", odometer: "49050", sourceLabel: "CSDD", sourceOrder: 0, sortableTime: Date.UTC(2026, 6, 1) }),
+      row({ date: "01.07.2026", odometer: "49136", sourceLabel: "AutoDNA", sourceOrder: 1, sortableTime: Date.UTC(2026, 6, 1) }),
+    ];
+    expect(selectNewestVerifiedMileageRow(rows)?.sourceLabel).toBe("CSDD");
+  });
+});
+
 describe("collectUnifiedMileageRows — dokumenta rādījumi", () => {
   it("marks dealer mileage rows that come from a service/repair order", () => {
     const collected = collectUnifiedMileageRows({
@@ -369,6 +404,70 @@ describe("collectUnifiedMileageRows — dokumenta rādījumi", () => {
       documentValue: true,
     });
     expect(collected[0]?.odometer.replace(/\D/g, "")).toBe("142220");
+  });
+
+  it("adds dealer visit odometers when the mileage table is empty", () => {
+    const collected = collectUnifiedMileageRows({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceHistory: [{ date: "", odometer: "", country: "" }],
+        serviceWorks: [
+          { date: "15.05.2026", odometer: "45328", location: "Mārupe", works: "Apkope" },
+          { date: "01.07.2026", odometer: "49100", location: "Mārupe", works: "Eļļas maiņa" },
+        ],
+      },
+    });
+    expect(collected.map((r) => r.odometer.replace(/\D/g, ""))).toEqual(["45328", "49100"]);
+    expect(collected.every((r) => r.documentValue === true && r.visitOdometer === true && r.sourceLabel === "OFICIĀLĀ DĪLERA DATI")).toBe(true);
+  });
+
+  it("does not invent extra visit rows when the dealer mileage table already has data", () => {
+    const collected = collectUnifiedMileageRows({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceHistory: [{ date: "02.10.2014", odometer: "41874", country: "Vācija" }],
+        serviceWorks: [
+          { date: "02.10.2014", odometer: "41874", location: "Autohaus", works: "Apkope" },
+          { date: "09.01.2015", odometer: "33472", location: "Autohaus", works: "Pasūtījums" },
+        ],
+      },
+    });
+    expect(collected).toHaveLength(1);
+    expect(collected[0]?.odometer.replace(/\D/g, "")).toBe("41874");
+  });
+});
+
+describe("dealerMileageTableEmptyButVisitsHaveOdometer", () => {
+  it("warns only when the table is empty and visits have an odometer", () => {
+    expect(
+      dealerMileageTableEmptyButVisitsHaveOdometer({
+        serviceHistory: [{ date: "", odometer: "", country: "" }],
+        serviceWorks: [{ date: "15.05.2026", odometer: "45328", location: "Mārupe", works: "Apkope" }],
+      }),
+    ).toBe(true);
+    expect(
+      dealerMileageTableEmptyButVisitsHaveOdometer({
+        serviceHistory: [{ date: "15.05.2026", odometer: "45328", country: "Latvija" }],
+        serviceWorks: [{ date: "15.05.2026", odometer: "45328", location: "Mārupe", works: "Apkope" }],
+      }),
+    ).toBe(false);
+    expect(
+      dealerMileageTableEmptyButVisitsHaveOdometer({
+        serviceHistory: [{ date: "", odometer: "", country: "" }],
+        serviceWorks: [{ date: "15.05.2026", odometer: "", location: "Mārupe", works: "Apkope" }],
+      }),
+    ).toBe(false);
+
+    const analysis = analyzeVinAndKm({
+      orderVin: null,
+      blocks: [],
+      fileNames: [],
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceWorks: [{ date: "15.05.2026", odometer: "45328", location: "Mārupe", works: "Apkope" }],
+      },
+    });
+    expect(analysis.kmIssues).toContain(DEALER_MILEAGE_TABLE_EMPTY_VISITS_WARNING);
   });
 });
 

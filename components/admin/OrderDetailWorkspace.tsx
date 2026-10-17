@@ -919,6 +919,7 @@ export function OrderDetailWorkspace({
           text: orderSourceBlockPlainText(key, blocksDisplaySafe),
         })),
         fileNames: portfolio.map((p) => p.name),
+        autoRecordsBlock: blocksDisplaySafe.auto_records,
       });
     } catch {
       return { vins: [], vinIssues: [], kmByBlock: [], kmIssues: [] };
