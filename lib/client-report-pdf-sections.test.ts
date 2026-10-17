@@ -1871,6 +1871,10 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).toContain("<th>Intervāls</th><th>Periods</th>");
     expect(doc).toContain("Sākums");
     expect(doc).not.toContain("29 800 km, 23");
+    expect(doc).toContain(".pdf-oil-int__kpi b{display:block");
+    expect(doc).not.toContain("pdf-oil-int__note");
+    expect(doc).not.toMatch(/Vidējie rādītāji rēķināti/i);
+    expect(doc).not.toMatch(/Pēdējais solis.*īsāks par OEM/i);
   });
 
   it("counts Dzinēja eļļa from dealer works and original OneAuto timeline", () => {
