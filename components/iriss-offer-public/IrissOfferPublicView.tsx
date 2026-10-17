@@ -60,6 +60,8 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
     [IRISS_OFFER_PUBLIC_LABELS.odometer, view.odometer],
     [IRISS_OFFER_PUBLIC_LABELS.year, view.firstRegistration],
     [IRISS_OFFER_PUBLIC_LABELS.transmission, view.transmission],
+    [IRISS_OFFER_PUBLIC_LABELS.fuel, view.fuel],
+    [IRISS_OFFER_PUBLIC_LABELS.bodyType, view.bodyType],
   ] as const;
 
   const hasPhotos = view.photos.length > 0;
