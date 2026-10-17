@@ -13,8 +13,8 @@ import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import type { IrissListingPlatform, IrissListingVehicleChange } from "@/lib/iriss-listings-types";
 import { irissListingVin } from "@/lib/iriss-pasutijums-from-listing";
 import {
+  displayIrissPasutijumsListStatusLabel,
   IRISS_DEAL_DETAIL_OPTIONS,
-  IRISS_PASUTIJUMS_LIST_STATUS_LV,
   type IrissOfferRecord,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
@@ -611,5 +611,5 @@ export function appendIrissOrderRoomNote(prev: string, text: string, atIso: stri
 }
 
 export function irissOrderRoomStatusLabel(status: IrissPasutijumsRecord["listStatus"]): string {
-  return IRISS_PASUTIJUMS_LIST_STATUS_LV[status];
+  return displayIrissPasutijumsListStatusLabel(status);
 }

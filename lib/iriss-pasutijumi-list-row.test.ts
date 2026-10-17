@@ -140,8 +140,6 @@ describe("IRISS saraksta rinda", () => {
     });
     expect(countIrissListStatuses([a, b, c])).toEqual({
       active: 1,
-      searching: 0,
-      offered: 0,
       reserved: 0,
       completed: 1,
       inactive: 1,
@@ -154,8 +152,6 @@ describe("IRISS statusa filtrs", () => {
     expect(parseIrissListStatusFilter(null)).toEqual(IRISS_LIST_STATUS_DEFAULT_FILTER);
     expect(IRISS_LIST_STATUS_DEFAULT_FILTER).toEqual({
       active: true,
-      searching: true,
-      offered: true,
       reserved: true,
       completed: false,
       inactive: false,
@@ -169,8 +165,6 @@ describe("IRISS statusa filtrs", () => {
   it("keeps old v2 JSON and turns new statuses on so existing data stay visible", () => {
     expect(parseIrissListStatusFilter(JSON.stringify({ active: true, completed: false, inactive: false }))).toEqual({
       active: true,
-      searching: true,
-      offered: true,
       reserved: true,
       completed: false,
       inactive: false,

@@ -21,6 +21,7 @@ const tameBase = {
   chemicalCleaningNet: 0,
   polishingNet: 0,
   paintingNet: 0,
+  leasingValuationNet: 0,
   extraServices: [] as DzintarzemeTameExtraLine[],
 };
 

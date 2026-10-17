@@ -138,6 +138,7 @@ export function DzintarzemeTameSection({
       chemicalCleaningNet: parseEuroInput(d.tameChemicalStr),
       polishingNet: parseEuroInput(d.tamePolishingStr),
       paintingNet: parseEuroInput(d.tamePaintingStr),
+      leasingValuationNet: parseEuroInput(d.tameLeasingValuationStr),
       extraServices: extraLinesParsed,
     }, rates);
   }, [
@@ -146,6 +147,7 @@ export function DzintarzemeTameSection({
     d.tameAutoPriceStr,
     d.tameChemicalStr,
     d.tameDepositPercent,
+    d.tameLeasingValuationStr,
     d.tamePaintingStr,
     d.tamePolishingStr,
     d.tameTransportStr,
@@ -178,6 +180,7 @@ export function DzintarzemeTameSection({
       chemicalCleaningNet: parseEuroInput(d.tameChemicalStr),
       polishingNet: parseEuroInput(d.tamePolishingStr),
       paintingNet: parseEuroInput(d.tamePaintingStr),
+      leasingValuationNet: parseEuroInput(d.tameLeasingValuationStr),
       extraServices: extraLinesParsed,
     };
   }, [
@@ -186,6 +189,7 @@ export function DzintarzemeTameSection({
     d.tameAutoPriceStr,
     d.tameChemicalStr,
     d.tameDepositPercent,
+    d.tameLeasingValuationStr,
     d.tamePaintingStr,
     d.tamePolishingStr,
     d.tameTransportStr,
@@ -227,11 +231,6 @@ export function DzintarzemeTameSection({
   return (
     <section className={shellCard}>
       <BlockTitle>Izmaksu tāme (Dzintarzeme Auto)</BlockTitle>
-      <p className="mb-4 text-[12px] leading-snug text-[var(--color-provin-muted)]">
-        Šis bloks ģenerē atsevišķu Dzintarzeme Auto PDF tāmi — citas sistēmas rēķinu dati netiek izmantoti. Lauki saglabājas
-        automātiski ar pārējo pasūtījumu.
-      </p>
-
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block min-w-0">
           <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Marka / modelis</span>
@@ -274,13 +273,8 @@ export function DzintarzemeTameSection({
           checked={d.tameApplyVatAuto}
           onChange={(e) => set({ tameApplyVatAuto: e.target.checked })}
         />
-        <span>Piemērot PVN auto cenai (+21 % uz neto cenu)</span>
+        <span>Piemērot PVN 21%</span>
       </label>
-      <p className="mt-1.5 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-        {d.tameApplyVatAuto
-          ? "PDF: zem „Automašīnas cena” būs mazi burti „neto cena”; PVN tikai kopsavilkumā."
-          : "PDF: „Automašīnas cena” bez papildu apzīmējuma (ievadītā summa šai pozīcijai bez atsevišķa PVN rindas)."}
-      </p>
 
       <div className="mt-5">
         <IrissSectionHeading>Komisijas variants</IrissSectionHeading>
@@ -389,6 +383,16 @@ export function DzintarzemeTameSection({
               inputMode="decimal"
               value={d.tamePaintingStr}
               onChange={(e) => set({ tamePaintingStr: e.target.value })}
+              autoComplete="off"
+            />
+          </label>
+          <label className="block min-w-0">
+            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Vērtējums līzingam</span>
+            <input
+              className={fieldClass}
+              inputMode="decimal"
+              value={d.tameLeasingValuationStr}
+              onChange={(e) => set({ tameLeasingValuationStr: e.target.value })}
               autoComplete="off"
             />
           </label>

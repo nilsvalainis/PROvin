@@ -86,6 +86,28 @@ export const IRISS_PASUTIJUMS_LIST_STATUS_LV: Record<IrissPasutijumsListStatus, 
   inactive: "Neaktīvs",
 };
 
+/** Admin statusa izvēle un filtri — tikai šie četri (saglabātajos JSON var palikt searching/offered). */
+export const IRISS_PASUTIJUMS_PICKER_STATUSES = ["active", "reserved", "completed", "inactive"] as const;
+
+export type IrissPasutijumsPickerStatus = (typeof IRISS_PASUTIJUMS_PICKER_STATUSES)[number];
+
+export const IRISS_PASUTIJUMS_PICKER_STATUS_LV: Record<IrissPasutijumsPickerStatus, string> = {
+  active: "Aktīvs",
+  reserved: "Rezervēts",
+  completed: "Izpildīts",
+  inactive: "Neaktīvs",
+};
+
+/** Read-time: searching/offered → Aktīvs; pārējie 1:1. */
+export function canonicalIrissPasutijumsListStatus(st: IrissPasutijumsListStatus): IrissPasutijumsPickerStatus {
+  if (st === "reserved" || st === "completed" || st === "inactive") return st;
+  return "active";
+}
+
+export function displayIrissPasutijumsListStatusLabel(st: IrissPasutijumsListStatus): string {
+  return IRISS_PASUTIJUMS_PICKER_STATUS_LV[canonicalIrissPasutijumsListStatus(st)];
+}
+
 export const IRISS_PASUTIJUMS_WORKING_STATUSES: readonly IrissPasutijumsListStatus[] = [
   "active",
   "searching",
@@ -128,6 +150,7 @@ export type IrissDzintarzemeTameDraft = {
   tameChemicalStr: string;
   tamePolishingStr: string;
   tamePaintingStr: string;
+  tameLeasingValuationStr: string;
   tameExtras: IrissDzintarzemeTameExtraDraft[];
 };
 
@@ -143,6 +166,7 @@ export function defaultIrissDzintarzemeTameDraft(): IrissDzintarzemeTameDraft {
     tameChemicalStr: "",
     tamePolishingStr: "",
     tamePaintingStr: "",
+    tameLeasingValuationStr: "",
     tameExtras: [],
   };
 }
@@ -185,6 +209,7 @@ export function normalizeIrissDzintarzemeTameDraft(raw: unknown): IrissDzintarze
     tameChemicalStr: clipStr(o.tameChemicalStr, 32),
     tamePolishingStr: clipStr(o.tamePolishingStr, 32),
     tamePaintingStr: clipStr(o.tamePaintingStr, 32),
+    tameLeasingValuationStr: clipStr(o.tameLeasingValuationStr, 32),
     tameExtras: extras,
   };
 }

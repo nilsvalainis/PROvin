@@ -77,8 +77,9 @@ import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { formatIrissOfferLinkStamp, type IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import {
   IRISS_DEAL_DETAIL_OPTIONS,
-  IRISS_PASUTIJUMS_LIST_STATUSES,
-  IRISS_PASUTIJUMS_LIST_STATUS_LV,
+  canonicalIrissPasutijumsListStatus,
+  IRISS_PASUTIJUMS_PICKER_STATUSES,
+  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
   defaultIrissDzintarzemeTameDraft,
   type IrissOfferRecord,
   type IrissPasutijumsListStatus,
@@ -91,6 +92,9 @@ const fieldClass =
 const areaClass = `${fieldClass} min-h-[60px] resize-y py-2 leading-snug sm:min-h-[60px]`;
 
 const cardClass = "min-w-0 rounded-2xl border border-[#e5e7eb] bg-white p-4";
+
+/** Nils: pasūtījumu telpas augšējā „Vēsture” pagaidām izslēgta (kods paliek). */
+const IRISS_ORDER_ROOM_SHOW_CHANGE_HISTORY = false;
 
 const roomBtn =
   "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-semibold text-[#111827] shadow-[0_1px_2px_#0000000d] transition hover:bg-[#f9fafb] disabled:opacity-40";
@@ -612,13 +616,13 @@ export function IrissOrderRoom({
                     <span className="sr-only">Statuss</span>
                     <select
                       className="iriss-status-pill h-8 rounded-full border border-[#111827] bg-[#111827] px-2.5 text-[12px] font-semibold text-white outline-none"
-                      value={rec.listStatus}
+                      value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
                       aria-label="Pasūtījuma statuss"
                       onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
                     >
-                      {IRISS_PASUTIJUMS_LIST_STATUSES.map((status) => (
+                      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((status) => (
                         <option key={status} value={status}>
-                          {IRISS_PASUTIJUMS_LIST_STATUS_LV[status]}
+                          {IRISS_PASUTIJUMS_PICKER_STATUS_LV[status]}
                         </option>
                       ))}
                     </select>
@@ -628,16 +632,18 @@ export function IrissOrderRoom({
                       {dealPill}
                     </span>
                   ) : null}
-                  <AdminChangeHistoryButton
-                    kind="iriss-order"
-                    recordId={rec.id}
-                    endpoint="/api/admin/change-history"
-                    className="ml-auto"
-                    onRestored={(body) => {
-                      const record = body.record;
-                      if (record && typeof record.id === "string") onOrderRestored(record as IrissPasutijumsRecord);
-                    }}
-                  />
+                  {IRISS_ORDER_ROOM_SHOW_CHANGE_HISTORY ? (
+                    <AdminChangeHistoryButton
+                      kind="iriss-order"
+                      recordId={rec.id}
+                      endpoint="/api/admin/change-history"
+                      className="ml-auto"
+                      onRestored={(body) => {
+                        const record = body.record;
+                        if (record && typeof record.id === "string") onOrderRestored(record as IrissPasutijumsRecord);
+                      }}
+                    />
+                  ) : null}
                 </div>
                 <p className="mt-1 text-[12px] leading-snug text-[#6b7280] md:text-[13px]">
                   <span className="md:hidden">
@@ -793,10 +799,15 @@ export function IrissOrderRoom({
               <div className="iriss-mobile-kv grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
                 <label className="block min-w-0">
                   <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Statuss</span>
-                  <select className={fieldClass} value={rec.listStatus} aria-label="Statuss specifikācijā" onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}>
-                    {IRISS_PASUTIJUMS_LIST_STATUSES.map((status) => (
+                  <select
+                    className={fieldClass}
+                    value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
+                    aria-label="Statuss specifikācijā"
+                    onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
+                  >
+                    {IRISS_PASUTIJUMS_PICKER_STATUSES.map((status) => (
                       <option key={status} value={status}>
-                        {IRISS_PASUTIJUMS_LIST_STATUS_LV[status]}
+                        {IRISS_PASUTIJUMS_PICKER_STATUS_LV[status]}
                       </option>
                     ))}
                   </select>
@@ -910,10 +921,7 @@ export function IrissOrderRoom({
             </div>
 
             <section className={`${cardClass} border-red-100/80 bg-red-50/20`}>
-              <p className="text-[12px] leading-snug text-red-950/90">
-                Neatgriezeniski dzēst šo pasūtījumu un visus piedāvājumus. Pirms dzēšanas tiek prasīts apstiprinājums.
-              </p>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                 <button type="button" onClick={onCreateOffer} className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-provin-accent)]">
                   <Plus className="h-4 w-4" aria-hidden />
                   Izveidot piedāvājumu

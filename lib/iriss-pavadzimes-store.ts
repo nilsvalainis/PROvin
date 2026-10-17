@@ -14,6 +14,7 @@ import {
   sortIrissPavadzimes,
   waybillIdFromNumber,
 } from "@/lib/iriss-pavadzimes-parse";
+import { isIrissPavadzimeSyncBlocked } from "@/lib/iriss-pavadzimes-sync-blocklist";
 import {
   emptyIrissPavadzimeRecord,
   type IrissPavadzimeRecord,
@@ -68,7 +69,7 @@ function parseIndex(raw: string): IrissPavadzimesIndex {
   try {
     const o = JSON.parse(raw) as Partial<IrissPavadzimesIndex>;
     if (!o || typeof o !== "object") return emptyIndex();
-    const items = Array.isArray(o.items) ? o.items.filter(isRecord) : [];
+    const items = withoutSyncBlocked(Array.isArray(o.items) ? o.items.filter(isRecord) : []);
     return {
       version: 1,
       updatedAt: typeof o.updatedAt === "string" ? o.updatedAt : new Date().toISOString(),
@@ -83,6 +84,18 @@ function isRecord(v: unknown): v is IrissPavadzimeRecord {
   if (!v || typeof v !== "object") return false;
   const o = v as Record<string, unknown>;
   return typeof o.id === "string" && isSafeIrissPavadzimeId(o.id);
+}
+
+function withoutSyncBlocked(items: IrissPavadzimeRecord[]): IrissPavadzimeRecord[] {
+  return items.filter(
+    (rec) =>
+      !isIrissPavadzimeSyncBlocked({
+        id: rec.id,
+        number: rec.number,
+        plate: rec.plate,
+        fileName: rec.fileName,
+      }),
+  );
 }
 
 async function readIndex(): Promise<IrissPavadzimesIndex> {
@@ -283,7 +296,7 @@ async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise
 /** Tikai Blob/FS indekss. Bez Dropbox saraksta un PDF parsēšanas (sānjoslas karte). */
 export async function readIrissPavadzimesCached(): Promise<IrissPavadzimeRecord[]> {
   const index = await readIndex();
-  return sortIrissPavadzimes(index.items);
+  return sortIrissPavadzimes(withoutSyncBlocked(index.items));
 }
 
 async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSyncResult> {
@@ -302,12 +315,33 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
       const dirty: { rec: IrissPavadzimeRecord; file: DropboxWaybillFile }[] = [];
       // Nekad nezaudē ierakstus: pavadzīme, kas pārvietota uz Arhīvs/, augšupielādēta manuāli
       // vai vairs nav Dropbox, paliek indeksā (agrāk sync indeksu aizvietoja ar tikai virsmapes PDF).
-      for (const prior of priorItems) byKey.set(prior.id, prior);
+      for (const prior of priorItems) {
+        if (
+          !isIrissPavadzimeSyncBlocked({
+            id: prior.id,
+            number: prior.number,
+            plate: prior.plate,
+            fileName: prior.fileName,
+          })
+        ) {
+          byKey.set(prior.id, prior);
+        }
+      }
       const seen = new Set<string>();
       // Aktuālās (virsmapes) vispirms, lai tās tiktu parsētas pirmās.
       const files = [...listed.files].sort((a, b) => Number(a.archived) - Number(b.archived));
       for (const file of files) {
-        if (!parseCsddWaybillFileName(file.name).number) continue;
+        const fromName = parseCsddWaybillFileName(file.name);
+        if (!fromName.number) continue;
+        if (
+          isIrissPavadzimeSyncBlocked({
+            number: fromName.number,
+            plate: fromName.plate,
+            fileName: file.name,
+          })
+        ) {
+          continue;
+        }
         const existing = findExisting(priorItems, file);
         const rec = recordFromDropboxFile(file, existing, nowIso);
         if (seen.has(rec.id)) continue;
@@ -342,7 +376,7 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
       const fresh = await readIndex();
       // Paralēli (piem. manuāla augšupielāde) pievienoti ieraksti netiek pārrakstīti.
       for (const item of fresh.items) if (!byKey.has(item.id)) byKey.set(item.id, item);
-      const nextItems = sortIrissPavadzimes([...byKey.values()]);
+      const nextItems = sortIrissPavadzimes(withoutSyncBlocked([...byKey.values()]));
       const indexChanged = JSON.stringify(fresh.items) !== JSON.stringify(nextItems);
       if (indexChanged) {
         await backupIndexBeforeWrite(fresh).catch((e) => {
@@ -441,6 +475,16 @@ export async function uploadIrissPavadzime(input: UploadWaybillInput): Promise<I
   if (input.brandModel?.trim()) parsed.brandModel = input.brandModel.trim();
   if (input.plate?.trim()) parsed.plate = input.plate.trim().toUpperCase();
 
+  if (
+    isIrissPavadzimeSyncBlocked({
+      number: parsed.number,
+      plate: parsed.plate,
+      fileName: input.fileName,
+    })
+  ) {
+    throw new Error("pavadzime_blocked");
+  }
+
   const index = await readIndex();
   const existing = parsed.number
     ? index.items.find((x) => x.number.toUpperCase() === parsed.number.toUpperCase())
@@ -458,7 +502,7 @@ export async function uploadIrissPavadzime(input: UploadWaybillInput): Promise<I
     parsed,
     nowIso,
   );
-  const nextItems = sortIrissPavadzimes([...index.items.filter((x) => x.id !== id), rec]);
+  const nextItems = sortIrissPavadzimes(withoutSyncBlocked([...index.items.filter((x) => x.id !== id), rec]));
   await writeIndex({ version: 1, updatedAt: nowIso, items: nextItems });
   if (existing) {
     await rememberWaybillChanges([existing], [rec]).catch((e) => {

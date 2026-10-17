@@ -27,6 +27,7 @@ export type DzintarzemeTameInput = {
   chemicalCleaningNet: number;
   polishingNet: number;
   paintingNet: number;
+  leasingValuationNet: number;
   extraServices: DzintarzemeTameExtraLine[];
 };
 
@@ -99,9 +100,12 @@ export function computeDzintarzemeTame(
   const chemicalNet = clampMoney(raw.chemicalCleaningNet);
   const polishingNet = clampMoney(raw.polishingNet);
   const paintingNet = clampMoney(raw.paintingNet);
+  const leasingValuationNet = clampMoney(raw.leasingValuationNet);
   const extrasNet = (raw.extraServices ?? []).reduce((s, x) => s + clampMoney(x.net), 0);
 
-  const servicesNetTotal = roundMoney(transportNet + chemicalNet + polishingNet + paintingNet + extrasNet);
+  const servicesNetTotal = roundMoney(
+    transportNet + chemicalNet + polishingNet + paintingNet + leasingValuationNet + extrasNet,
+  );
 
   const summaBezPVN = roundMoney(autoCena + commissionNet + servicesNetTotal);
 
@@ -145,6 +149,7 @@ export function computeDzintarzemeTame(
   pushIf("Ķīmiskā tīrīšana", chemicalNet);
   pushIf("Pulēšana", polishingNet);
   pushIf("Krāsošana", paintingNet);
+  pushIf("Vērtējums līzingam", leasingValuationNet);
 
   for (const ex of raw.extraServices ?? []) {
     const label = (ex.label ?? "").trim();
@@ -194,11 +199,18 @@ export function parseDzintarzemeTameBody(body: unknown): { ok: true; value: Dzin
   const chemicalCleaningNet = num("chemicalCleaningNet");
   const polishingNet = num("polishingNet");
   const paintingNet = num("paintingNet");
+  const leasingValuationNet =
+    o.leasingValuationNet === undefined
+      ? 0
+      : typeof o.leasingValuationNet === "number" && Number.isFinite(o.leasingValuationNet)
+        ? o.leasingValuationNet
+        : Number.NaN;
   for (const [k, v] of [
     ["transportNet", transportNet],
     ["chemicalCleaningNet", chemicalCleaningNet],
     ["polishingNet", polishingNet],
     ["paintingNet", paintingNet],
+    ["leasingValuationNet", leasingValuationNet],
   ] as const) {
     if (!Number.isFinite(v) || v < 0) return { ok: false, error: `invalid_${k}` };
   }
@@ -234,6 +246,7 @@ export function parseDzintarzemeTameBody(body: unknown): { ok: true; value: Dzin
       chemicalCleaningNet,
       polishingNet,
       paintingNet,
+      leasingValuationNet,
       extraServices,
     },
   };

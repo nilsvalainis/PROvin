@@ -188,6 +188,7 @@ const FIELD_LABEL: Record<string, string> = {
   tameChemicalStr: "Ķīmija",
   tamePolishingStr: "Pulēšana",
   tamePaintingStr: "Krāsošana",
+  tameLeasingValuationStr: "Vērtējums līzingam",
   tameExtras: "Papildu pozīcijas",
   offerIds: "Piedāvājumi",
   title: "Nosaukums",
@@ -441,6 +442,7 @@ export function snapshotIrissOrder(rec: IrissPasutijumsRecord): Record<string, s
   out.tameChemicalStr = text(tame.tameChemicalStr);
   out.tamePolishingStr = text(tame.tamePolishingStr);
   out.tamePaintingStr = text(tame.tamePaintingStr);
+  out.tameLeasingValuationStr = text(tame.tameLeasingValuationStr);
   out.tameExtras = clip(
     tame.tameExtras.map((row) => `${row.id}\t${row.label}\t${row.netStr}`).join("\n"),
   );
@@ -480,6 +482,7 @@ function tameFromSnapshot(snapshot: Record<string, string>, prev: IrissDzintarze
     tameChemicalStr: snapshot.tameChemicalStr ?? prev.tameChemicalStr,
     tamePolishingStr: snapshot.tamePolishingStr ?? prev.tamePolishingStr,
     tamePaintingStr: snapshot.tamePaintingStr ?? prev.tamePaintingStr,
+    tameLeasingValuationStr: snapshot.tameLeasingValuationStr ?? prev.tameLeasingValuationStr,
     tameExtras: extras,
   };
 }
