@@ -7,8 +7,8 @@
  *    (kanons: apkope varēja būt ārpus dīlera), vai ja tas ir statistisks izlecējs
  *    pret pārējiem dīlera soļiem (≥ 1,8 × mediāna un > 20 000 km).
  * 3. Vidējais rāda tikai nepārtrauktos dīlera soļus.
- * 4. Zaļš: dīlera solis iekļaujas OEM. Sarkans: dīlera datos solis ir garāks
- *    par OEM km VAI mēnešiem. Sarkans nav apgalvojums, ka eļļa nav mainīta.
+ * 4. Zaļš: dīlera solis iekļaujas OEM. Neitrāls pelēks: dīlera datos solis ir
+ *    garāks par OEM km VAI mēnešiem. Tas nav apgalvojums, ka eļļa nav mainīta.
  * 5. Pelēks svītrojums: datu iztrūkums. Bez OEM nav zaļa/sarkana.
  */
 
@@ -28,8 +28,9 @@ import {
 
 /** Drukas tintes toņi: tumšs smaragds / oksasinis, ne UI „kļūdas” sarkans. */
 export const PDF_OIL_OK_HEX = "#0E4F42";
-export const PDF_OIL_OVER_HEX = "#6B2030";
-export const PDF_OIL_OVER_TEXT_HEX = "#5A1A26";
+/** OEM-garāks solis: neitrāls šīfera tonis, ne sarkans/burgundy. */
+export const PDF_OIL_OVER_HEX = "#7A828C";
+export const PDF_OIL_OVER_TEXT_HEX = "#475569";
 export const PDF_OIL_OK_WASH_HEX = "#E8EEEC";
 export const PDF_OIL_NEUTRAL_HEX = "#7A828C";
 export const PDF_OIL_HATCH_CSS =

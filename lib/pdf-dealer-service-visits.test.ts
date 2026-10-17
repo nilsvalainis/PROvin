@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { KEY_READ_HISTORY_LABEL } from "@/lib/vendor-service-history";
 import {
   buildDealerServiceVisitsHtml,
   buildPdfFirstLastReadingSpanHtml,
   formatDealerServicePlace,
   serviceWorkYear,
 } from "@/lib/pdf-dealer-service-visits";
+import { shouldCondenseDealerPdfRecords } from "@/lib/dealer-product-scope";
 
 describe("PDF dīlera servisa vizītes", () => {
   it("apvieno tās pašas dienas vizītes, ja odometrs atšķiras līdz 150 km", () => {
@@ -206,6 +208,44 @@ describe("PDF dīlera servisa vizītes", () => {
       },
     ]);
     expect(html).toContain("Navigācijas karšu atjaunināšana (DVD Road Map Europe Professional)");
+  });
+
+  it("dīlera-only atstāj Key Read un tukšo km punktu, AUDITS slēpj", () => {
+    const rows = [
+      { date: "01.04.2025", odometer: "88000", location: "BMW Bonn", works: KEY_READ_HISTORY_LABEL },
+      { date: "01.06.2023", odometer: "60000", location: "BMW Bonn", works: "Eļļas maiņa" },
+      { date: "01.02.2020", odometer: "12000", location: "", works: "" },
+    ];
+    const dealerOnly = buildDealerServiceVisitsHtml(rows, {
+      condenseRecords: shouldCondenseDealerPdfRecords({ checkoutLine: "dealer" }),
+    });
+    expect(dealerOnly).toContain(KEY_READ_HISTORY_LABEL);
+    expect(dealerOnly).toContain("12 000 km");
+    expect(dealerOnly).toContain("pdf-svc-tag--key_read");
+    expect(dealerOnly).toContain("pdf-svc-year-block");
+
+    const audit = buildDealerServiceVisitsHtml(rows, {
+      condenseRecords: shouldCondenseDealerPdfRecords({
+        checkoutLine: "audits",
+        amountTotalCents: 9999,
+      }),
+    });
+    expect(audit).not.toContain(KEY_READ_HISTORY_LABEL);
+    expect(audit).not.toContain("12 000 km");
+    expect(audit).toContain("Eļļas maiņa");
+  });
+
+  it("noņem detaļu kodus no darbu saraksta", () => {
+    const html = buildDealerServiceVisitsHtml([
+      {
+        date: "01.06.2023",
+        odometer: "26276",
+        location: "Bonn",
+        works: "Eļļas filtrs (11427508969)",
+      },
+    ]);
+    expect(html).toContain("Eļļas filtrs");
+    expect(html).not.toContain("11427508969");
   });
 
   it("tukšu kategoriju „Apkope” rāda kā darbu iztrūkumu, ne kā darbu rindu", () => {

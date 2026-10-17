@@ -4,6 +4,7 @@ import {
   formatServiceWorksLines,
   looksLikeNarrativeServiceWorkLine,
   mergeOverlappingServiceWorkLines,
+  stripPartNumbersFromWorkLine,
 } from "@/lib/service-works-lines";
 
 describe("service works lines", () => {
@@ -136,5 +137,10 @@ describe("service works lines", () => {
         "Degvielas filtra maiņa",
       ]),
     ).toEqual(["Eļļas filtra maiņa", "Gaisa filtra maiņa", "Degvielas filtra maiņa"]);
+  });
+
+  it("noņem OEM detaļu kodus no darba rindas", () => {
+    expect(stripPartNumbersFromWorkLine("Eļļas filtrs (11427508969)")).toBe("Eļļas filtrs");
+    expect(stripPartNumbersFromWorkLine("Set oil-filter 11427508969")).toBe("Set oil-filter");
   });
 });

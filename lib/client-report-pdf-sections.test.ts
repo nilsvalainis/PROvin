@@ -1430,6 +1430,49 @@ describe("Vēstures kopsavilkums", () => {
     expect(list).not.toContain("bremžu šķidrums");
   });
 
+  it("dealer-data-only PDF keeps Key Read and empty mileage; AUDITS condenses", () => {
+    const autoRecords = {
+      ...emptyAutoRecordsBlock(),
+      serviceWorks: [
+        { date: "01.04.2025", odometer: "88000", location: "BMW Bonn", works: KEY_READ_HISTORY_LABEL },
+        { date: "01.06.2023", odometer: "60000", location: "BMW Bonn", works: "Eļļas maiņa" },
+      ],
+      serviceHistory: [{ date: "01.02.2020", odometer: "12000", country: "DE" }],
+    };
+    const dealerOnly = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        pdfReportKind: "dealer",
+        checkoutLine: "dealer",
+        amountTotal: 2499,
+        autoRecordsBlock: autoRecords,
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(dealerOnly).toContain(KEY_READ_HISTORY_LABEL);
+    expect(dealerOnly).toMatch(/pdf-svc-date[^>]*>01\.02\.2020/);
+    expect(dealerOnly).toContain("pdf-svc-summary");
+    expect(dealerOnly).toContain("Vizītes");
+
+    const audit = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        pdfReportKind: "full",
+        checkoutLine: "audits",
+        amountTotal: 9999,
+        autoRecordsBlock: autoRecords,
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(audit).not.toContain(KEY_READ_HISTORY_LABEL);
+    expect(audit).not.toMatch(/pdf-svc-date[^>]*>01\.02\.2020/);
+    expect(audit).toContain("Eļļas maiņa");
+  });
+
   it("does not label Key Read snapshots as Apkope", () => {
     const events = buildVehicleLifecycleEvents({
       autoRecordsBlock: {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import {
   AdminSourceCommentField,
@@ -97,6 +98,16 @@ import {
   ADMIN_SOURCE_TABLE_CELL,
   ADMIN_SOURCE_TABLE_WRAP_CLASS,
 } from "@/lib/admin-source-data-table";
+import { extractDealerFactsFromServiceWorks } from "@/lib/admin-ai-dealer-facts";
+import type { TechnicalRiskMap } from "@/lib/admin-ai-technical-risk-map-types";
+import {
+  collectDealerAdminWarnings,
+  countUntranslatedDealerWorkRows,
+  dealerFactComponentLabels,
+  dealerFactForWorkRow,
+  dealerWorkRowNeedsLvTranslation,
+  originalDealerWorksForRow,
+} from "@/lib/dealer-admin-service-rows";
 
 const DEALER_ARIA = "Oficiālā dīlera dati";
 
@@ -144,6 +155,9 @@ type Props = {
   onAutoRecordsPhotoGroupsStructuralCommit?: (
     next: AutoRecordsBlockState["photoGroups"],
   ) => void | Promise<void>;
+  /** Tehnisko risku teksts / karte: DF1/DF2/L14/L15. Tukšs, ja audita nav. */
+  techRiskText?: string | null;
+  techRiskMap?: TechnicalRiskMap | null;
 };
 
 export function AdminAutoRecordsSourceBlock({
@@ -177,6 +191,8 @@ export function AdminAutoRecordsSourceBlock({
   aiOilChangeInterval,
   photosPersistenceEnabled = false,
   onAutoRecordsPhotoGroupsStructuralCommit,
+  techRiskText = null,
+  techRiskMap = null,
 }: Props) {
   const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
     const patch = parseOutvinVehicleInfoFromAutoRecordsText(raw);
@@ -246,10 +262,72 @@ export function AdminAutoRecordsSourceBlock({
     onChange({ ...value, serviceHistory: data.length > 0 ? next : [emptyAutoRecordsServiceRow()] });
   };
 
+  const [translateBusyIndex, setTranslateBusyIndex] = useState<number | null>(null);
+
   const workRows =
     (value.serviceWorks ?? []).length > 0
       ? (value.serviceWorks ?? [])
       : [emptyAutoRecordsServiceWorkRow()];
+
+  const dealerFacts = useMemo(
+    () => extractDealerFactsFromServiceWorks(workRows),
+    [workRows],
+  );
+  const untranslatedWorkCount = useMemo(
+    () => countUntranslatedDealerWorkRows(workRows),
+    [workRows],
+  );
+  const dealerWarnings = useMemo(
+    () =>
+      collectDealerAdminWarnings({
+        serviceWorks: workRows,
+        techRiskText,
+        techRiskMap,
+      }),
+    [workRows, techRiskText, techRiskMap],
+  );
+  const originalTimeline = value.oneautoIngest?.serviceTimelineOriginal ?? [];
+
+  const translateWorkRow = async (index: number) => {
+    if (readOnly || disabled || translateBusyIndex != null) return;
+    const row = workRows[index];
+    if (!row) return;
+    const sourceWorks = originalDealerWorksForRow(row, originalTimeline) || row.works;
+    if (!sourceWorks.trim()) return;
+    setTranslateBusyIndex(index);
+    try {
+      const res = await fetch("/api/admin/ai/oneauto-translate", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          scope: "works",
+          display: {
+            equipment: [],
+            powertrain: [],
+            serviceTimeline: [
+              {
+                date: row.date,
+                odometer: row.odometer,
+                place: row.location,
+                works: sourceWorks,
+              },
+            ],
+          },
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        display?: { serviceTimeline?: { works?: string }[] };
+        error?: string;
+      };
+      const translated = body.display?.serviceTimeline?.[0]?.works?.trim();
+      if (!res.ok || !translated) return;
+      setWorkRow(index, { works: translated });
+    } finally {
+      setTranslateBusyIndex(null);
+    }
+  };
 
   const setWorkRow = (index: number, patch: Partial<AutoRecordsServiceWorkRow>) => {
     const rows = [...workRows];
@@ -559,16 +637,36 @@ export function AdminAutoRecordsSourceBlock({
             </div>
           ) : null}
 
-          <p className="mb-1.5 mt-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          {dealerWarnings.length > 0 ? (
+            <div
+              className="mb-1.5 mt-3 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] leading-snug text-amber-900"
+              role="status"
+            >
+              <p className="font-medium uppercase tracking-wide">Dīlera / kartes brīdinājumi</p>
+              <ul className="mt-1 list-disc pl-4">
+                {dealerWarnings.map((w) => (
+                  <li key={`${w.id}-${w.message.slice(0, 40)}`}>
+                    <span className="font-semibold">{w.id}</span> {w.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <p className="mb-1.5 mt-3 flex flex-wrap items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-slate-500">
             <AdminProvinLucide icon={SUBHEADING_LUCIDE.serviceWorks} />
             {PROVIN_SERVICE_WORKS_TABLE_TITLE}
+            {untranslatedWorkCount > 0 ? (
+              <span className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 font-semibold normal-case tracking-normal text-amber-800">
+                {untranslatedWorkCount} nav pārtulkotas
+              </span>
+            ) : null}
           </p>
           <div
             className={ADMIN_SOURCE_TABLE_WRAP_CLASS}
             data-provin-mileage-table={PROVIN_SERVICE_WORKS_TABLE_DOM_KIND}
             data-provin-block="auto_records"
           >
-            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[460px]`}>
+            <table className={`${ADMIN_SOURCE_DATA_TABLE_CLASS} min-w-[620px]`}>
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/90 text-left text-[10px] font-medium text-[var(--color-provin-muted)]">
                   <th
@@ -586,15 +684,24 @@ export function AdminAutoRecordsSourceBlock({
                   <th className={mileCell} data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.vieta}>
                     {SERVICE_WORKS_LOCATION_LABEL}
                   </th>
+                  <th className={mileCell}>Oriģināls</th>
                   <th className={mileCell} data-provin-field={PROVIN_SERVICE_WORKS_TABLE_FIELD.darbi}>
-                    Veiktie darbi
+                    Veiktie darbi (LV)
                   </th>
                   {!readOnly ? <th className={`${mileCell} w-[28px]`} aria-label="Noņemt" /> : null}
                 </tr>
               </thead>
               <tbody>
-                {workRows.map((row, i) => (
-                  <tr key={i} className="border-b border-slate-100 last:border-b-0">
+                {workRows.map((row, i) => {
+                  const originalWorks = originalDealerWorksForRow(row, originalTimeline);
+                  const needsLv = dealerWorkRowNeedsLvTranslation(row.works);
+                  const fact = dealerFactForWorkRow(row, dealerFacts);
+                  const tags = dealerFactComponentLabels(fact);
+                  return (
+                  <tr
+                    key={i}
+                    className={`border-b border-slate-100 last:border-b-0 ${needsLv ? "bg-amber-50/70" : ""}`}
+                  >
                     <td className={`${mileCell} align-top`}>
                       {readOnly ? (
                         <span
@@ -682,6 +789,11 @@ export function AdminAutoRecordsSourceBlock({
                       )}
                     </td>
                     <td className={`${mileCell} align-top`}>
+                      <span className="block whitespace-pre-wrap text-[10px] text-slate-500">
+                        {originalWorks.trim() || "—"}
+                      </span>
+                    </td>
+                    <td className={`${mileCell} align-top`}>
                       {readOnly ? (
                         <span
                           className="block whitespace-pre-wrap text-[var(--color-provin-muted)]"
@@ -708,6 +820,31 @@ export function AdminAutoRecordsSourceBlock({
                           aria-label={`${DEALER_ARIA} veiktie darbi ${i + 1}`}
                         />
                       )}
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        {fact ? (
+                          <span className="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[9px] font-semibold text-slate-600">
+                            {fact.id}
+                          </span>
+                        ) : null}
+                        {tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded border border-slate-200 bg-white px-1 py-0.5 text-[9px] text-slate-500"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {!readOnly && (originalWorks.trim() || needsLv) ? (
+                          <button
+                            type="button"
+                            className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                            disabled={disabled || translateBusyIndex != null}
+                            onClick={() => void translateWorkRow(i)}
+                          >
+                            {translateBusyIndex === i ? "Tulko…" : "Pārtulkot šo rindu"}
+                          </button>
+                        ) : null}
+                      </div>
                     </td>
                     {!readOnly ? (
                       <td className={`${mileCell} align-top`}>
@@ -720,7 +857,8 @@ export function AdminAutoRecordsSourceBlock({
                       </td>
                     ) : null}
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

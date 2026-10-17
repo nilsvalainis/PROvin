@@ -202,5 +202,8 @@
  *   status verified). N57 šāles kā tipiska kaite. Gemini TR few-shot no 04.
  * - 2026-10-17.1 - KB EUR joslas izslēgtas (Nils 17.10). B1-B8 pretrunas
  *   nav KB/promptos, gaida Nila lēmumu.
+ * - 2026-10-17.2 - Dīlera-only produkts: komentāri tikai no dīlera datiem;
+ *   Key Read un tukšie km paliek PDF. Pēc jauninājuma uz auditu / MINI
+ *   izolācija krīt. OEM-garāks eļļas solis PDF neitrāls, ne sarkans.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.2";

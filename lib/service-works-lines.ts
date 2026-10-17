@@ -59,6 +59,20 @@ function hasPartNumber(text: string): boolean {
   return PART_NO_RE.test(text);
 }
 
+const STANDALONE_PART_CODE_RE = /\b(?:[A-Z]{1,6}\d{5,}[A-Z0-9]*|\d{8,})\b/g;
+const PAREN_PART_RE = /\(\s*(?:[A-Z]{0,6}\d{5,}|\d{8,})[^)]*\)/g;
+
+/** Noņem ETK / OEM detaļu kodus no darba rindas (PDF darbu sarakstam). */
+export function stripPartNumbersFromWorkLine(line: string): string {
+  return line
+    .replace(PAREN_PART_RE, " ")
+    .replace(STANDALONE_PART_CODE_RE, " ")
+    .replace(/\(\s*\)/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/[;,]+$/g, "")
+    .trim();
+}
+
 function looksLikeOemQualifier(part: string): boolean {
   const t = part.trim();
   if (!t) return false;

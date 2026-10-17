@@ -20,6 +20,10 @@ import { keepSourceCommentAfterExpansionStrip } from "@/lib/source-summary-comme
 import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { sourceCommentLengthLineForBreadth, type CommentBreadth } from "@/lib/ai-comment-breadth";
+import {
+  DEALER_ISOLATED_COMMENT_DIRECTIVE,
+  shouldIsolateDealerComments,
+} from "@/lib/dealer-product-scope";
 
 export type AiSourceCommentInput = {
   sessionId: string;
@@ -48,6 +52,13 @@ export type AiSourceCommentInput = {
    * lai atsevišķais „Eļļas maiņas intervāli” lauks paliktu tukšs.
    */
   includeOilIntervalSummary?: boolean;
+  checkoutLine?: string | null;
+  amountTotalCents?: number | null;
+  /**
+   * Dīlera-datu automātika: vienmēr izolē. Admin ✨ ņem checkout līniju.
+   * Pēc jauninājuma uz auditu paliek false.
+   */
+  isolateDealerComments?: boolean | null;
 };
 
 /** Avota komentāru ģenerēšana — Pro vai Flash (admin izvēle). */
@@ -65,6 +76,13 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
     input.citiAvotiSectionIndex,
   );
   const isOilInterval = isOfficialDealerBlock(input.blockKey) && targetField === "oilChangeIntervalNotes";
+  const isolateDealer =
+    isOfficialDealerBlock(input.blockKey) &&
+    shouldIsolateDealerComments({
+      checkoutLine: input.checkoutLine,
+      amountTotalCents: input.amountTotalCents,
+      isolateOverride: input.isolateDealerComments,
+    });
   const oilFingerprint = isOilInterval
     ? extractVehicleReportFingerprint(input.sourceBlocks, { vin: input.vin })
     : null;
@@ -81,22 +99,24 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
         .join("\n")
     : "";
 
-  const portfolioContext = await buildFullAiOrderContextText({
-    sessionId: input.sessionId,
-    vin: input.vin?.trim() || null,
-    listingUrl: input.listingUrl?.trim() || null,
-    customerName: input.customerName?.trim() || null,
-    notes: input.notes?.trim() || null,
-    sourceBlocks: input.sourceBlocks,
-    commentBreadth: input.commentBreadth,
-    irissSummary: input.iriss ?? undefined,
-    inspectionPlan: input.apskatesPlāns ?? undefined,
-    technicalRiskAnalysis: input.tehniskoRiskuAnalize ?? undefined,
-    priceFit: input.cenasAtbilstiba ?? undefined,
-    internalComment: input.internalComment ?? undefined,
-    mileageComment: input.mileageComment ?? undefined,
-    sourcesComparisonComment: input.sourcesComparisonComment ?? undefined,
-  });
+  const portfolioContext = isolateDealer
+    ? ""
+    : await buildFullAiOrderContextText({
+        sessionId: input.sessionId,
+        vin: input.vin?.trim() || null,
+        listingUrl: input.listingUrl?.trim() || null,
+        customerName: input.customerName?.trim() || null,
+        notes: input.notes?.trim() || null,
+        sourceBlocks: input.sourceBlocks,
+        commentBreadth: input.commentBreadth,
+        irissSummary: input.iriss ?? undefined,
+        inspectionPlan: input.apskatesPlāns ?? undefined,
+        technicalRiskAnalysis: input.tehniskoRiskuAnalize ?? undefined,
+        priceFit: input.cenasAtbilstiba ?? undefined,
+        internalComment: input.internalComment ?? undefined,
+        mileageComment: input.mileageComment ?? undefined,
+        sourcesComparisonComment: input.sourcesComparisonComment ?? undefined,
+      });
 
   if (isOilInterval) {
     if (!portfolioContext.trim() && !focusDataText && !orderHasOilIntervalDataForAi(input.sourceBlocks)) {
@@ -106,19 +126,22 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
     throw new Error("empty_source_data");
   }
 
-  const previousComments = buildPreviouslyGeneratedSourceCommentsContext(
-    input.blockKey,
-    input.sourceBlocks,
-    input.citiAvotiSectionIndex,
-    targetField,
-  );
+  const previousComments = isolateDealer
+    ? ""
+    : buildPreviouslyGeneratedSourceCommentsContext(
+        input.blockKey,
+        input.sourceBlocks,
+        input.citiAvotiSectionIndex,
+        targetField,
+      );
 
-  const chainingSection = previousComments.trim()
-    ? `=== Esošie komentāri citos avotos (JAU UZRAKSTĪTI — NEATKĀRTO; tikai īss delta / papildinājums) ===
+  const chainingSection =
+    isolateDealer || !previousComments.trim()
+      ? ""
+      : `=== Esošie komentāri citos avotos (JAU UZRAKSTĪTI - NEATKĀRTO; tikai īss delta / papildinājums) ===
 ${previousComments}
 
-`
-    : "";
+`;
 
   const mileageHint = input.mileageComment?.trim()
     ? `Esošais „NOBRAUKUMA VĒSTURES KOMENTĀRS” jau ir kontekstā — NEATKĀRTO tā nobraukuma forenziku; ja km sakrīt, pietiek ar vienu teikumu.
@@ -131,25 +154,36 @@ ${previousComments}
   const isDealerComments = isOfficialDealerBlock(input.blockKey) && targetField === "comments";
   const includeOilIntervalRole = isDealerComments && Boolean(input.includeOilIntervalSummary);
   const oilRoleHint = includeOilIntervalRole
-    ? `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu „<strong>Eļļas maiņas intervāli</strong><br>”, kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla. Pirmā teikuma formāts: „Ražotāja intervāls: X XXX km / Y mēn.” šim motora kodam (vai „nav droši zināms”). Izmanto VISUS iegūtos datus (dīlera tabula, AutoDNA/CarVertical/RAW, nobraukuma/motorstundu profils, OEM intervāls). Ja datu nav vai ir pārāk maz — tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
+    ? isolateDealer
+      ? `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu „<strong>Eļļas maiņas intervāli</strong><br>”, kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla. Pirmā teikuma formāts: „Ražotāja intervāls: X XXX km / Y mēn.” šim motora kodam (vai „nav droši zināms”). Rēķini TIKAI no oficiālā dīlera tabulas. Citus avotus ignorē. Ja datu nav vai ir pārāk maz - tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
+      : `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu „<strong>Eļļas maiņas intervāli</strong><br>”, kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla. Pirmā teikuma formāts: „Ražotāja intervāls: X XXX km / Y mēn.” šim motora kodam (vai „nav droši zināms”). Izmanto VISUS iegūtos datus (dīlera tabula, AutoDNA/CarVertical/RAW, nobraukuma/motorstundu profils, OEM intervāls). Ja datu nav vai ir pārāk maz - tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
     : "";
 
+  const isolateBanner = isolateDealer ? `${DEALER_ISOLATED_COMMENT_DIRECTIVE}\n\n` : "";
   const userPrompt = isOilInterval
     ? appendAiOperatorNotesSection(
         `Pasūtījuma ID: ${input.sessionId}
-Lauks: OFICIĀLĀ DĪLERA DATI — Eļļas maiņas intervāli (PDF)
-
-=== Pilns pasūtījuma konteksts (VISI avoti — rēķini no visa, kas iegūts) ===
+Lauks: OFICIĀLĀ DĪLERA DATI - Eļļas maiņas intervāli (PDF)
+${isolateBanner}${
+          isolateDealer
+            ? `=== Oficiālā dīlera dati (vienīgais avots šajā produktā) ===
+${focusDataText || "(dīlera tabulā nav atsevišķu rindu)"}`
+            : `=== Pilns pasūtījuma konteksts (VISI avoti - rēķini no visa, kas iegūts) ===
 ${portfolioContext}
 
 ${chainingSection}=== Oficiālā dīlera dati ===
-${focusDataText || "(dīlera tabulā nav atsevišķu rindu — rēķini no pārējiem avotiem)"}
+${focusDataText || "(dīlera tabulā nav atsevišķu rindu - rēķini no pārējiem avotiem)"}`
+        }
 
 === Identifikācija šim motoram (OEM intervālam) ===
 ${oilIdentityBlock || "(dzinēja kods / marka šajos datos nav fiksēti)"}
 
 Sagatavo lauku „Eļļas maiņas intervāli” klienta PDF.
-Uzdevums: ĪSI un PRECĪZI izrēķini un izanalizē ŠĪ auto eļļas maiņas intervālus no VISIEM iegūtajiem datiem (dīlera servisa tabula, AutoDNA/CarVertical/RAW servisa teksti, nobraukuma līkne, motorstundu / pilsētas–šosejas profils, ražotāja intervāls no konteksta vai agregātu pakas).
+Uzdevums: ĪSI un PRECĪZI izrēķini un izanalizē ŠĪ auto eļļas maiņas intervālus ${
+          isolateDealer
+            ? "TIKAI no oficiālā dīlera servisa tabulas (citi avoti šajā produktā nav)."
+            : "no VISIEM iegūtajiem datiem (dīlera servisa tabula, AutoDNA/CarVertical/RAW servisa teksti, nobraukuma līkne, motorstundu / pilsētas-šosejas profils, ražotāja intervāls no konteksta vai agregātu pakas)."
+        }
 PIRMĀ teikuma formāts (obligāti, lai PDF krāsotu pret OEM):
 Ražotāja intervāls: [km] km / [mēneši] mēn. ([motora kods], fiksēts vai Longlife/CBS maksimums)
 Piemēram N47 Longlife: 30 000 km / 24 mēn. Mainīgs CBS: 10 000 līdz 25 000 km / 12 mēn. Ja kods/intervāls nav drošs: „Ražotāja intervāls: nav droši zināms”. NEIZDOMĀ 15 000 km pēc noklusējuma.
@@ -157,7 +191,7 @@ Jāatbild tālāk:
 - cik bieži eļļa ir mainīta (datumi un/vai km starp secīgām eļļas maiņām);
 - kā dīlera soļi izskatās pret ražotāja intervālu (īsāks, atbilst, dīlera datos garāks);
 - ja pilsētas profils - praktiskie griesti ~10 000 km paliek KOMENTĀRĀ, ne OEM rindā; ja blīvi šosejas dati - 15 000-20 000 km var būt pieņemami.
-PDF krāsas (zaļa = dīlera solis iekļaujas OEM, sarkana = dīlera datos garāks, pelēka = datu iztrūkums) rēķina kods no pirmās rindas. Neraksti krāsu vārdus. Sarkans NAV apgalvojums, ka eļļa nav mainīta.
+PDF krāsas (zaļa = dīlera solis iekļaujas OEM, neitrāls pelēks = dīlera datos garāks, svītrojums = datu iztrūkums) rēķina kods no pirmās rindas. Neraksti krāsu vārdus. Garāks solis NAV apgalvojums, ka eļļa nav mainīta.
 Ja eļļas maiņu ierakstu nav vai to ir par maz - tā arī saki; NEIZDOMĀ apkopes.
 Ja oficiālajā dīlerī ir robs pret ražotāja intervālu vai dīlera solis datos ir garāks par OEM: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. Apkope var būt ārpus dīlera - jālūdz pārdevēja rēķins/apliecinājums. To pašu NESAUC par pirkuma risku un NEAPGALVO, ka intervāls ir pārkāpts.
 Neiekļauj remonta/apkopes EUR. Neatkārto pilnu nobraukuma eseju un neatkārto „Servisa vēsture” žurnālu vārds vārdā — šeit ir TIKAI intervālu analīze.
@@ -170,15 +204,22 @@ Garums: 2–4 īsas rindkopas. Virsraksts savā rindā, tad rindkopa. Bez *, **.
     : isServiceHistory
     ? appendAiOperatorNotesSection(
         `Pasūtījuma ID: ${input.sessionId}
-Lauks: OFICIĀLĀ DĪLERA DATI — Servisa vēsture (PDF)
-
-=== Pilns pasūtījuma konteksts ===
+Lauks: OFICIĀLĀ DĪLERA DATI - Servisa vēsture (PDF)
+${isolateBanner}${
+          isolateDealer
+            ? ""
+            : `=== Pilns pasūtījuma konteksts ===
 ${portfolioContext}
 
-=== Oficiālā dīlera dati ===
+`
+        }=== Oficiālā dīlera dati ===
 ${focusDataText}
 
-Sagatavo „Servisa vēsture” lauku klienta PDF — faktu saraksts no dīlera / AutoDNA / RAW / Outvin servisa ierakstiem.
+Sagatavo „Servisa vēsture” lauku klienta PDF - faktu saraksts ${
+          isolateDealer
+            ? "TIKAI no oficiālā dīlera ierakstiem."
+            : "no dīlera / AutoDNA / RAW / Outvin servisa ierakstiem."
+        }
 Formāts: katra rinda „DD.MM.YYYY | XXXXX km | darbi / komentārs” (ja km nav — izlaid km daļu).
 Tikai fakti no konteksta; neizdomā apkopes. Bez ievada, bez kopsavilkuma, bez bold virsrakstiem.`,
         {
@@ -189,34 +230,47 @@ Tikai fakti no konteksta; neizdomā apkopes. Bez ievada, bez kopsavilkuma, bez b
     : appendAiOperatorNotesSection(
         `Pasūtījuma ID: ${input.sessionId}
 Avota sadaļa (fokuss): ${blockLabel}
-
-=== Pilns pasūtījuma konteksts (visi avoti — salīdzināšanai) ===
+${isolateBanner}${
+          isolateDealer
+            ? ""
+            : `=== Pilns pasūtījuma konteksts (visi avoti - salīdzināšanai) ===
 ${portfolioContext}
 
-${chainingSection}=== Konkrētā avota „${blockLabel}” dati (bez esošajiem komentāriem) ===
+${chainingSection}`
+        }=== Konkrētā avota „${blockLabel}” dati (bez esošajiem komentāriem) ===
 ${focusDataText}
 
 Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
-Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” fiksē šajā auditā? To pasaki pirmajā rindkopā un apstājies pie fakta.
+Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” fiksē ${isolateDealer ? "šajā dīlera datu produktā" : "šajā auditā"}? To pasaki pirmajā rindkopā un apstājies pie fakta.
 Tikai fakti, ko ŠIS avots fiksējis. NEpapildini teikumus. NEraksti virsrakstu „Datu specifika”. NEraksti, ka ierakstu trūkums neizslēdz bojājumus vai remontu pirms importa. NEraksti krāsas biezuma mērītāju, mikronus vai virsbūves pārbaudi klātienē. Paplašinājumi un atrunas ir TIKAI kopsavilkuma sadaļās (3. Kopsavilkums, nobraukuma / negadījumu kopsavilkums) vai „2. Ieteikumos”.
 ${
-  isDealerComments
+  isDealerComments && !isolateDealer
     ? "IZŅĒMUMS - negadījumu sasaiste: ja kontekstā ir „Dīlera remonta un negadījumu sasaiste”, stikla / virsbūves / elementu remontu SASAISTI ar negadījumu tabulas datumu un avotu. Tas ir šī dīlera faktu konteksts, ne sveša avota eseja.\n"
     : ""
 }
 ${
   sourceCommentLengthLineForBreadth(input.commentBreadth ?? null, isDealerComments)
 } ${
-  isDealerComments
-    ? "Salīdzinājums ar citiem avotiem: stikla / virsbūves sasaiste ar negadījumu tabulu NAV 1 teikuma griestos. Pārējiem avotiem maksimums viens teikums, ja pretruna maina secinājumu."
-    : "Salīdzinājums ar citiem avotiem - maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”."
+  isolateDealer
+    ? "Citus avotus nesalīdzini. Raksti tikai to, ko fiksē oficiālā dīlera dati."
+    : isDealerComments
+      ? "Salīdzinājums ar citiem avotiem: stikla / virsbūves sasaiste ar negadījumu tabulu NAV 1 teikuma griestos. Pārējiem avotiem maksimums viens teikums, ja pretruna maina secinājumu."
+      : "Salīdzinājums ar citiem avotiem - maksimums VIENS teikums un tikai tad, ja pretruna maina secinājumu; plašo kopainu veidojam „3. Kopsavilkumā”."
 }
-Avotiem JĀPAPILDINA viens otru — NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
+${
+  isolateDealer
+    ? ""
+    : `Avotiem JĀPAPILDINA viens otru - NEKĀDĀ GADĪJUMĀ nepārraksti gandrīz to pašu eseju 4× (negadījums / km / īpašniecība), ja tas jau ir citā komentārā.
 Ja šis avots tikai apstiprina jau uzrakstīto: viens īss teikums.
-Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; raksti, ko dati uzrāda, nevis ko tie „pierāda” vai „neizslēdz”.
-${mileageHint}Ja OPERATORA KOMANDĀS ir plašs teksts — pārkārto PROVIN stilā, bet NEAPGRAIZI detalizāciju (datumi, km, servisi, intervāli).
-Ja OPERATORA KOMANDAS nosauc citu avotu vai lauku („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”, „pārdevēja portrets”) — tās rindkopas ŠEIT NEKOPĒ. Drīksti ņemt datumus/km kā kontekstu, bet neatkarīgu rindkopu no tā neraksti.
-Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.${oilRoleHint}`,
+`
+}Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls”; raksti, ko dati uzrāda, nevis ko tie „pierāda” vai „neizslēdz”.
+${isolateDealer ? "" : mileageHint}Ja OPERATORA KOMANDĀS ir plašs teksts - pārkārto PROVIN stilā, bet NEAPGRAIZI detalizāciju (datumi, km, servisi, intervāli).
+${
+  isolateDealer
+    ? ""
+    : `Ja OPERATORA KOMANDAS nosauc citu avotu vai lauku („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”, „pārdevēja portrets”) - tās rindkopas ŠEIT NEKOPĒ. Drīksti ņemt datumus/km kā kontekstu, bet neatkarīgu rindkopu no tā neraksti.
+`
+}Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.${oilRoleHint}`,
         {
           operatorNotes: input.operatorNotes,
           existingDraftPlain: input.existingDraftPlain,

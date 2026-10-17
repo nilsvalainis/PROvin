@@ -44,6 +44,9 @@ type BodyShape = {
   targetField?: unknown;
   modelTier?: unknown;
   commentBreadth?: unknown;
+  checkoutLine?: unknown;
+  amountTotalCents?: unknown;
+  isolateDealerComments?: unknown;
 };
 
 function str(v: unknown): string {
@@ -124,6 +127,13 @@ export async function POST(req: Request) {
       existingDraftPlain,
       modelTier: parseAiModelTier(b.modelTier),
       commentBreadth: parseCommentBreadth(b.commentBreadth),
+      checkoutLine: str(b.checkoutLine).trim() || null,
+      amountTotalCents:
+        typeof b.amountTotalCents === "number" && Number.isFinite(b.amountTotalCents)
+          ? b.amountTotalCents
+          : null,
+      isolateDealerComments:
+        typeof b.isolateDealerComments === "boolean" ? b.isolateDealerComments : null,
     }));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
