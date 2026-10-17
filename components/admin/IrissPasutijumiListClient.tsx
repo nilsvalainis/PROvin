@@ -25,12 +25,7 @@ import {
   irissPasutijumsToListRow,
   irissPhoneTelHref,
 } from "@/lib/iriss-pasutijumi-list-row";
-import {
-  BRAND_LOGO_ADMIN_SQUARE_PX,
-  BRAND_LOGO_ADMIN_WIDE_H_PX,
-  BRAND_LOGO_ADMIN_WIDE_MAX_W_PX,
-} from "@/lib/brand-logo-display";
-import { irissBrandFallbackLabel, irissBrandLogoSrc, irissBrandLogoUsesWideLayout } from "@/lib/iriss-brand-logo";
+import { IrissBrandLogoSlot } from "@/components/admin/IrissBrandLogoSlot";
 import { IRISS_ORDERS_LIST_PAGE, irissNextWindowLimit, irissWindowSlice } from "@/lib/iriss-list-window";
 import {
   canonicalIrissPasutijumsListStatus,
@@ -259,9 +254,6 @@ const IrissRowCard = memo(function IrissRowCard({
     listingLinkEcarstrade: row.listingLinkEcarstrade,
     listingLinksOther: row.listingLinksOther,
   });
-  const brandFallback = irissBrandFallbackLabel(row.brandModel);
-  const brandLogoSrc = irissBrandLogoSrc(row.brandModel);
-  const brandLogoWide = irissBrandLogoUsesWideLayout(row.brandModel);
   const specSummary = formatIrissListSpecSummary(row);
   const powerKwLabel = irissListRowPowerKwLabel(row);
   const equipmentRequired = (row.equipmentRequired ?? "").trim();
@@ -429,26 +421,7 @@ const IrissRowCard = memo(function IrissRowCard({
         </button>
       </div>
       <div className="pointer-events-none relative z-10 flex min-w-0 flex-1 items-start gap-2.5">
-        {brandLogoSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={brandLogoSrc}
-            alt=""
-            width={brandLogoWide ? BRAND_LOGO_ADMIN_WIDE_MAX_W_PX : BRAND_LOGO_ADMIN_SQUARE_PX}
-            height={brandLogoWide ? BRAND_LOGO_ADMIN_WIDE_H_PX : BRAND_LOGO_ADMIN_SQUARE_PX}
-            loading="lazy"
-            decoding="async"
-            className={
-              brandLogoWide
-                ? "mt-0.5 h-[34px] w-auto max-w-[92px] shrink-0 object-contain"
-                : "mt-0.5 h-[34px] w-[34px] shrink-0 object-contain"
-            }
-          />
-        ) : (
-          <span className="mt-0.5 inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center text-[11px] font-bold text-slate-600">
-            {brandFallback}
-          </span>
-        )}
+        <IrissBrandLogoSlot brandModel={row.brandModel} className="mt-0.5" />
         <span className="min-w-0 flex-1">
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-[16px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[17px]">
