@@ -21,6 +21,7 @@ import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-lin
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap, coerceIrissOrderRoomTab } from "@/lib/iriss-order-room-match-props";
 import { IrissOfferFieldTag } from "@/components/admin/IrissOfferFieldTag";
+import { irissSaveWirePayload, mergeServerAttachmentStorage } from "@/lib/iriss-pasutijumi-autosave-wire";
 import { attachmentsFromAuctionPhotoUrls, auctionPhotoUrlsFromHit } from "@/lib/iriss-auction-offer-photos";
 import {
   IRISS_GENERATED_DOCUMENT_HEADER,
@@ -587,8 +588,9 @@ export function IrissPasutijumsEditor({
       const url = isCreate
         ? "/api/admin/iriss-pasutijumi"
         : `/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`;
+      // Bez bildēm: jau saglabātās bildes (blobPath) netiek sūtītas atkārtoti.
       const body = {
-        ...payload,
+        ...irissSaveWirePayload(payload),
         expectedWorkspaceRevision: irissWorkspaceRevision(payload),
       };
 
@@ -600,15 +602,20 @@ export function IrissPasutijumsEditor({
         if (!silent) {
           setRec((current) => {
             const picked = pickRecordAfterOrderSave(current, payload, record);
-            const merged = mergeServerOwnedIrissFields(picked, record);
+            const merged = mergeServerAttachmentStorage(mergeServerOwnedIrissFields(picked, record), record);
             lastSavedSnapshot.current = JSON.stringify(merged);
             return merged;
           });
         } else {
           setRec((current) => {
             const concurrent = JSON.stringify(current) !== JSON.stringify(payload);
-            const merged = mergeServerOwnedIrissFields(concurrent ? current : payload, record);
-            lastSavedSnapshot.current = JSON.stringify(mergeServerOwnedIrissFields(payload, record));
+            const merged = mergeServerAttachmentStorage(
+              mergeServerOwnedIrissFields(concurrent ? current : payload, record),
+              record,
+            );
+            lastSavedSnapshot.current = JSON.stringify(
+              mergeServerAttachmentStorage(mergeServerOwnedIrissFields(payload, record), record),
+            );
             return merged;
           });
         }
