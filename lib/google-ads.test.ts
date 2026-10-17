@@ -98,12 +98,14 @@ describe("checkoutAmountCentsToEur", () => {
 });
 
 describe("gtag config snippet", () => {
-  it("configs GA4 and Google Ads on one gtag setup", () => {
+  it("configs GA4 and Google Ads on one gtag setup without granting consent", () => {
     const snippet = buildGtagConfigSnippet("G-EQ78SEVSZ8");
     expect(snippet).toContain("gtag('config','G-EQ78SEVSZ8')");
-    expect(snippet).toContain(`gtag('config','${GOOGLE_ADS_ID}')`);
-    expect(snippet).toContain("analytics_storage:'granted'");
-    expect(snippet).toContain("ad_storage:'granted'");
+    expect(snippet).toContain(`gtag('config','${GOOGLE_ADS_ID}');`);
+    expect(snippet).toContain("gtag('js',new Date())");
+    expect(snippet).not.toContain("consent");
+    expect(snippet).not.toContain("analytics_storage:'granted'");
+    expect(snippet).not.toContain("ad_storage:'granted'");
     expect(snippet).not.toContain("gtag/js");
     expect(gtagScriptId("G-EQ78SEVSZ8")).toBe("G-EQ78SEVSZ8");
     expect(gtagScriptId(null)).toBe(GOOGLE_ADS_ID);

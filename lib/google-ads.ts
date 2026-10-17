@@ -58,16 +58,10 @@ export function buildGoogleAdsConversionParams(args: {
   };
 }
 
-/** gtag.js config pēc analītikas piekrišanas: Consent Mode granted + GA4 + Google Ads. */
+/** gtag.js config (Consent Mode v2 ADVANCED): GA4 + Google Ads. Consent is default/update, not granted here. */
 export function buildGtagConfigSnippet(gaMeasurementId: string | null): string {
   const lines = [
     "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}",
-    "gtag('consent','update',{" +
-      "ad_storage:'granted'," +
-      "ad_user_data:'granted'," +
-      "ad_personalization:'granted'," +
-      "analytics_storage:'granted'" +
-      "});",
     "gtag('js',new Date());",
   ];
   if (gaMeasurementId) {
