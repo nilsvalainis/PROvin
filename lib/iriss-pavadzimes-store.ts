@@ -24,8 +24,8 @@ const BLOB_PREFIX = "iriss-pavadzimes/";
 export const IRISS_PAVADZIMES_BLOB_PREFIX = BLOB_PREFIX;
 const INDEX_NAME = "index.json";
 const DEFAULT_FS_DIR = ".data/iriss-pavadzimes";
-const PARSE_BATCH = 8;
-const PARSE_CONCURRENCY = 3;
+const PARSE_BATCH = 24;
+const PARSE_CONCURRENCY = 4;
 
 type ResolvedStorage = { kind: "fs"; dir: string } | { kind: "blob"; token: string };
 
@@ -225,6 +225,7 @@ function recordFromDropboxFile(file: DropboxWaybillFile, existing: IrissPavadzim
     dropboxPath: file.path,
     dropboxRev: existing?.dropboxRev ?? "",
     dropboxContentHash: existing?.dropboxContentHash ?? "",
+    archived: file.archived,
     number: base.number || fromName.number || "",
     brandModel: base.brandModel || fromName.brandModel || "",
     plate: base.plate || fromName.plate || "",
@@ -239,7 +240,10 @@ function findExisting(items: IrissPavadzimeRecord[], file: DropboxWaybillFile): 
   const fromName = parseCsddWaybillFileName(file.name);
   const number = (fromName.number ?? "").toUpperCase();
   if (!number) return undefined;
-  return items.find((x) => x.number.toUpperCase() === number && x.source === "dropbox");
+  return (
+    items.find((x) => x.number.toUpperCase() === number && x.source === "dropbox") ??
+    items.find((x) => x.number.toUpperCase() === number)
+  );
 }
 
 function needsParse(rec: IrissPavadzimeRecord, file: DropboxWaybillFile): boolean {
@@ -296,12 +300,24 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
       dropboxError = listed.error;
     } else {
       const dirty: { rec: IrissPavadzimeRecord; file: DropboxWaybillFile }[] = [];
-      for (const file of listed.files) {
+      // Nekad nezaudē ierakstus: pavadzīme, kas pārvietota uz Arhīvs/, augšupielādēta manuāli
+      // vai vairs nav Dropbox, paliek indeksā (agrāk sync indeksu aizvietoja ar tikai virsmapes PDF).
+      for (const prior of priorItems) byKey.set(prior.id, prior);
+      const seen = new Set<string>();
+      // Aktuālās (virsmapes) vispirms, lai tās tiktu parsētas pirmās.
+      const files = [...listed.files].sort((a, b) => Number(a.archived) - Number(b.archived));
+      for (const file of files) {
         if (!parseCsddWaybillFileName(file.name).number) continue;
         const existing = findExisting(priorItems, file);
         const rec = recordFromDropboxFile(file, existing, nowIso);
+        if (seen.has(rec.id)) continue;
+        seen.add(rec.id);
         byKey.set(rec.id, rec);
         if (needsParse(rec, file)) dirty.push({ rec, file });
+      }
+
+      for (const [id, rec] of byKey) {
+        if (rec.source === "dropbox" && !seen.has(id) && !rec.archived) byKey.set(id, { ...rec, archived: true });
       }
 
       const batch = dirty.slice(0, PARSE_BATCH);
@@ -323,8 +339,10 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
         }
       });
 
-      const nextItems = sortIrissPavadzimes([...byKey.values()]);
       const fresh = await readIndex();
+      // Paralēli (piem. manuāla augšupielāde) pievienoti ieraksti netiek pārrakstīti.
+      for (const item of fresh.items) if (!byKey.has(item.id)) byKey.set(item.id, item);
+      const nextItems = sortIrissPavadzimes([...byKey.values()]);
       const indexChanged = JSON.stringify(fresh.items) !== JSON.stringify(nextItems);
       if (indexChanged) {
         await backupIndexBeforeWrite(fresh).catch((e) => {

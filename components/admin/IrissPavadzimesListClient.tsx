@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import { waybillLifecycleLabel } from "@/lib/iriss-pavadzimes-lifecycle";
 import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
 
@@ -22,6 +23,44 @@ function validityClass(tone: IrissPavadzimeValidityTone): string {
   if (tone === "expired") return "font-semibold text-[#DC2626]";
   if (tone === "today") return "font-semibold text-[#D97706]";
   return "text-[#3a3a3c]";
+}
+
+type WaybillView = "all" | "current" | "archive";
+
+const VIEW_LABEL: Record<WaybillView, string> = { all: "Visas", current: "Aktuālās", archive: "Arhīvs" };
+
+function inView(row: IrissPavadzimeListRow, view: WaybillView): boolean {
+  if (view === "current") return !row.archived;
+  if (view === "archive") return Boolean(row.archived);
+  return true;
+}
+
+function WaybillStatusChip({ row }: { row: IrissPavadzimeListRow }) {
+  const label = waybillLifecycleLabel(row.lifecycle);
+  const chips: { text: string; cls: string; title?: string }[] = [];
+  if (row.lifecycle === "interrupted") {
+    chips.push({
+      text: label,
+      cls: "bg-[#FEF3C7] text-[#92400E]",
+      title: row.supersededBy ? `Aizstāta ar ${row.supersededBy}` : undefined,
+    });
+  }
+  if (row.archived) chips.push({ text: "Arhīvs", cls: "bg-[#f2f2f7] text-[#6e6e73]" });
+  if (chips.length === 0) return null;
+  return (
+    <>
+      {chips.map((c) => (
+        <span
+          key={c.text}
+          title={c.title}
+          className={`ml-1.5 inline-flex rounded-full px-1.5 py-[1px] align-middle font-sans text-[10.5px] font-semibold tracking-normal ${c.cls}`}
+        >
+          {c.text}
+          {c.text === "Pārtraukta" && row.supersededBy ? ` → ${row.supersededBy}` : ""}
+        </span>
+      ))}
+    </>
+  );
 }
 
 function dash(v: string): string {
@@ -45,6 +84,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<WaybillView>("all");
   const fileRef = useRef<HTMLInputElement>(null);
   const vinRef = useRef<HTMLInputElement>(null);
 
@@ -126,7 +166,8 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   );
 
   const now = new Date(nowMs);
-  const rows = data.rows;
+  const rows = data.rows.filter((row) => inView(row, view));
+  const viewCount = (v: WaybillView) => data.rows.filter((row) => inView(row, v)).length;
 
   return (
     <>
@@ -134,6 +175,22 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
         <PavadzimeSearchFocus rowCount={rows.length} />
       </Suspense>
       <div className="mt-2 flex items-center gap-2">
+        <div className="inline-flex shrink-0 rounded-lg bg-[#e9e9ee] p-0.5" role="tablist" aria-label="Pavadzīmju filtrs">
+          {(["all", "current", "archive"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={view === v}
+              onClick={() => setView(v)}
+              className={`h-6 rounded-md px-2 text-[12px] font-semibold transition ${
+                view === v ? "bg-white text-[#1d1d1f] shadow-sm" : "text-[#6e6e73] hover:text-[#1d1d1f]"
+              }`}
+            >
+              {VIEW_LABEL[v]} <span className="tabular-nums text-[#8e8e93]">{viewCount(v)}</span>
+            </button>
+          ))}
+        </div>
         {data.pendingParse > 0 ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#8e8e93]" aria-hidden /> : null}
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
           <input
@@ -191,9 +248,10 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                       <p className="mt-0.5 truncate text-[11px] text-[var(--color-provin-muted)]">
                         {dash(row.number)}
                         {row.plate.trim() ? ` · ${row.plate}` : ""}
+                        <WaybillStatusChip row={row} />
                       </p>
                     </div>
-                    <span className={`shrink-0 text-[12px] tabular-nums ${validityClass(row.validityTone)}`}>
+                    <span className={`shrink-0 text-[12px] tabular-nums ${validityClass(row.archived || row.lifecycle === "interrupted" ? "ok" : row.validityTone)}`}>
                       {formatWaybillDateTime(row.validUntil, now) || "—"}
                     </span>
                   </div>
@@ -252,7 +310,10 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                     const vin = row.vin.trim();
                     return (
                       <tr key={row.id} data-pavadzime={row.id} className="h-[46px] whitespace-nowrap border-t border-[#f0f0f2] transition-colors hover:bg-[#f7f7f8]">
-                        <td className={`${hug} py-1 pl-4 pr-4 font-mono text-[12px] tracking-wide text-[#3a3a3c]`}>{dash(row.number)}</td>
+                        <td className={`${hug} py-1 pl-4 pr-4 font-mono text-[12px] tracking-wide text-[#3a3a3c]`}>
+                          {dash(row.number)}
+                          <WaybillStatusChip row={row} />
+                        </td>
                         <td className="max-w-[300px] py-1 pr-4">
                           <span
                             className={`truncate text-[14px] ${row.brandModel.trim() ? "font-bold text-[#1d1d1f]" : "text-[#aeaeb2]"}`}
@@ -274,7 +335,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                           )}
                         </td>
                         <td className={`${hug} py-1 pr-4 text-[13.5px] text-[#1d1d1f]`}>{dash(row.plate)}</td>
-                        <td className={`${hug} py-1 pr-4 text-[13px] tabular-nums ${validityClass(row.validityTone)}`}>
+                        <td className={`${hug} py-1 pr-4 text-[13px] tabular-nums ${validityClass(row.archived || row.lifecycle === "interrupted" ? "ok" : row.validityTone)}`}>
                           {formatWaybillDateTime(row.validUntil, now) || "—"}
                         </td>
                         <td className={`${hug} py-1 pr-4 text-[13px] tabular-nums text-[#3a3a3c]`}>

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { isDirectChildOfDropboxFolder } from "@/lib/iriss-pavadzimes-dropbox-path";
+import { classifyDropboxWaybillPath } from "@/lib/iriss-pavadzimes-dropbox-path";
 
 export type DropboxWaybillFile = {
   id: string;
@@ -10,6 +10,8 @@ export type DropboxWaybillFile = {
   contentHash: string;
   serverModified: string;
   size: number;
+  /** true = fails ir `Arhīvs/` apakšmapē. */
+  archived: boolean;
 };
 
 export type DropboxListResult =
@@ -108,6 +110,7 @@ function asWaybillFile(e: ListFolderEntry): DropboxWaybillFile | null {
     contentHash: typeof e.content_hash === "string" ? e.content_hash : "",
     serverModified: typeof e.server_modified === "string" ? e.server_modified : "",
     size: typeof e.size === "number" ? e.size : 0,
+    archived: false,
   };
 }
 
@@ -126,7 +129,7 @@ export async function listDropboxPavadzimes(): Promise<DropboxListResult> {
       ? { cursor }
       : {
           path: folderPath,
-          recursive: false,
+          recursive: true,
           limit: 2000,
           include_non_downloadable_files: false,
         };
@@ -150,7 +153,9 @@ export async function listDropboxPavadzimes(): Promise<DropboxListResult> {
     for (const e of entries) {
       if (!e || typeof e !== "object") continue;
       const file = asWaybillFile(e as ListFolderEntry);
-      if (file && isDirectChildOfDropboxFolder(file.path, folderPath)) files.push(file);
+      if (!file) continue;
+      const placement = classifyDropboxWaybillPath(file.path, folderPath);
+      if (placement) files.push({ ...file, archived: placement === "archive" });
     }
     if (!json.has_more || typeof json.cursor !== "string" || !json.cursor) break;
     cursor = json.cursor;

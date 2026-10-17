@@ -27,7 +27,12 @@ export type IrissPavadzimeRecord = {
   blobPath: string;
   parsedAt: string;
   updatedAt: string;
+  /** Dropbox `Arhīvs/` (vai fails vairs nav Dropbox). Ieraksts paliek sarakstā. */
+  archived?: boolean;
 };
+
+/** active = derīga; expired = termiņš beidzies; interrupted = pārtraukta (tam pašam nr. izdota jaunāka pirms termiņa). */
+export type IrissPavadzimeLifecycle = "active" | "expired" | "interrupted" | "unknown";
 
 export type IrissPavadzimeOrderMatch = {
   id: string;
@@ -37,6 +42,9 @@ export type IrissPavadzimeOrderMatch = {
 export type IrissPavadzimeListRow = IrissPavadzimeRecord & {
   validityTone: IrissPavadzimeValidityTone;
   order: IrissPavadzimeOrderMatch | null;
+  lifecycle?: IrissPavadzimeLifecycle;
+  /** Pārtrauktai pavadzīmei: jaunākās pavadzīmes nr. */
+  supersededBy?: string;
 };
 
 export type IrissPavadzimesIndex = {
