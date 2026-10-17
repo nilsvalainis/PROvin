@@ -51,7 +51,7 @@ export { draftQualifiesForAggregateLearning, extractLearningSnippetsFromDraft };
 export const AI_AGGREGATE_KNOWLEDGE_RULES = `PROVIN AGGREGĀTU ZINĀŠANAS (statiskā bāze + mācījumi no iepriekšējām atskaitēm):
 - Kombinē zemāk esošās ražotāju/agregātu pakas ar AKTĪVĀ pasūtījuma datiem un (ja ir) vēsturisko auditu fragmentiem.
 - Katru agregāta risku klasificē: **galvenais pirkuma risks** / **ierasta uzturēšanas izmaksa** / **pārbaudāms klātienē, nav pirkuma šķērslis**.
-- **1. Tehnisko risku analīze** — detalizēta agregātu forenzika (nosacīts garums: tik sadaļu, cik ir konkrēta materiāla; 8–12 tikai ja katra sadaļa ir cits mezgls); **2. Ieteikumi** — pircēja soļi (redzēt/dzirdēt/izmērīt/vaicāt), ne risku spogulis; **3. Kopsavilkums** — 1–2 rindkopas bez garas tehniskās dublikācijas un BEZ cenu/EUR summām; **avotu/nobraukuma/negadījumu komentāri** — arī lieto šīs zināšanas, kur relevantas.
+- **1. Tehnisko risku analīze** - detalizēta agregātu forenzika (LENGTH CEILINGS: 4-7 sadaļas, tik, cik ir konkrēta materiāla); **2. Ieteikumi** - pircēja soļi (redzēt/dzirdēt/izmērīt/vaicāt), ne risku spogulis; **3. Kopsavilkums** - 1-2 rindkopas bez garas tehniskās dublikācijas un BEZ cenu/EUR summām; **avotu/nobraukuma/negadījumu komentāri** - arī lieto šīs zināšanas, kur relevantas.
 - Klientam raksti **TIKAI šim auto aktuālos mezglus**. Citu kodu vai paaudžu kaites NEMINI, pat lai tās noliegtu. Dārgo ekstraprīkojumu nosauc tikai ja tas ŠAJĀ auto datos ir.
 - Mācījumi no citām atskaitēm — tikai paraugi un forenzikas loģika; **nekopē** klienta VIN, km, datumus, EUR, pasūtījuma ID.
 - Ja statiskā paka un mācījumi konfliktē ar aktīvā auto datiem — uzvar aktīvā pasūtījuma fakti.

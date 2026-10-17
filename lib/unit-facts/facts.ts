@@ -719,6 +719,38 @@ export const UNIT_FACTS: readonly UnitFact[] = [
     addedAt: "2026-10-17",
   },
   {
+    id: "bmw_n57_conrod_bearings",
+    unitKind: "engine",
+    codes: ["N57", "N57D30"],
+    topic: "known_issue",
+    statementLv:
+      "BMW N57 dzinējiem klaņa gultņu noberze ir zināma tipiska kaite. Nav ražotāja TSB; avots ir īpašnieka apstiprinājums.",
+    status: "verified",
+    sources: [
+      {
+        kind: "nils",
+        title: "Nils 2026-10-17: N57 klaņa gultņu noberze ir apstiprināta tipiska kaite (īpašnieka apstiprinājums)",
+        accessed: "2026-10-17",
+      },
+      {
+        kind: "iriss",
+        title: "PROVIN owner seed ki_owner_n57_conrod_bearings",
+        accessed: "2026-10-17",
+      },
+    ],
+    appliesTo: { anyOf: ["\\bN57"] },
+    contradictions: [
+      {
+        subject: ["klaņ", "šāl", "gultņ"],
+        contradicts: ["nav tipisk", "nav sistēmisk", "neattiecas", "nav zinām"],
+        unless: ["M57"],
+        message: "N57 klaņa gultņu noberze ir apstiprināta tipiska kaite.",
+      },
+    ],
+    note: "Nav oficiāla ražotāja avota. Statuss paliek verified, jo Nils to apstiprināja kā tipisku kaiti (M14).",
+    addedAt: "2026-10-17",
+  },
+  {
     id: "bmw_m57_chain_front_swirl",
     unitKind: "engine",
     codes: ["M57", "M57TU", "M57TU2", "M57D30"],

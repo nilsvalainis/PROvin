@@ -27,6 +27,17 @@ describe("estimateAiUsd", () => {
     expect(cached).toBeLessThan(fresh * 0.2);
   });
 
+  it("uses published Smart/PRO meter rates", () => {
+    expect(estimateAiUsd({ model: "claude-opus-5-5", inputTokens: 1_000_000, outputTokens: 0 })).toBe(4);
+    expect(estimateAiUsd({ model: "claude-opus-5-5", inputTokens: 0, outputTokens: 1_000_000 })).toBe(20);
+    expect(estimateAiUsd({ model: "claude-opus-5", inputTokens: 1_000_000, outputTokens: 0 })).toBe(5);
+    expect(estimateAiUsd({ model: "claude-opus-5", inputTokens: 0, outputTokens: 1_000_000 })).toBe(25);
+    expect(estimateAiUsd({ model: "gemini-3.8-flash", inputTokens: 1_000_000, outputTokens: 0 })).toBe(0.75);
+    expect(estimateAiUsd({ model: "gemini-3.8-flash", inputTokens: 0, outputTokens: 1_000_000 })).toBe(3.75);
+    expect(estimateAiUsd({ model: "gemini-4-argon", inputTokens: 1_000_000, outputTokens: 0 })).toBe(2);
+    expect(estimateAiUsd({ model: "gemini-4-argon", inputTokens: 0, outputTokens: 1_000_000 })).toBe(10);
+  });
+
   it("uses Gemini 3 Flash rates below Sonnet", () => {
     const gemini = estimateAiUsd({
       model: "gemini-3-flash-preview",

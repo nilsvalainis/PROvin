@@ -1,11 +1,23 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyBannedVocabularyReplacements,
   findBannedVocabularyHits,
   findForbiddenPersonaNounHits,
   findInternalClientTermHits,
   stripForbiddenPersonaNouns,
   textHasForbiddenPersonaNoun,
 } from "@/lib/provin-banned-vocabulary";
+
+describe("safe vocabulary replacements without retry", () => {
+  it("fixes šim automašīnai and tipiski šim agregātam deterministically", () => {
+    expect(applyBannedVocabularyReplacements("šim automašīnai raksturīga ķēde")).toMatch(
+      /šai automašīnai/,
+    );
+    expect(applyBannedVocabularyReplacements("tipiski šim agregātam ir eļļas noplūde")).toMatch(
+      /šim dzinējam raksturīga/,
+    );
+  });
+});
 
 describe("internal client terms and damper wording", () => {
   it("flags Riska kartē and Dzinēja identifikācija", () => {

@@ -151,6 +151,19 @@ describe("forbidden persona nouns", () => {
   });
 });
 
+describe("dealer category is not a completed oil job", () => {
+  it("flags gearbox-oil claims when the dealer row is only Transmisijas apkope", () => {
+    const issues = evaluateExpertCommentQuality(
+      "Oficiālajā dīlerī kārbas eļļa mainīta 2022. gadā.",
+      {
+        field: "source_dealer",
+        sourcePrompt: "Veiktie darbi\n12.03.2022 180000 km Transmisijas apkope",
+      },
+    );
+    expect(issues.some((i) => i.code === "dealer_category_as_job")).toBe(true);
+  });
+});
+
 describe("planning leak", () => {
   it("flags an English Internal Analysis preamble", () => {
     const issues = evaluateExpertCommentQuality(

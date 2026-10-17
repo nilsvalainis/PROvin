@@ -5,8 +5,9 @@
  *
  * Noteikumi:
  * - Katram faktam ir vismaz viens avots ar datumu (`accessed`, YYYY-MM-DD).
- * - `verified` = ≥1 ražotāja/iestādes avots vai ≥2 neatkarīgi avoti. Tikai verified fakti
- *   ģenerē pretrunu karodziņus (E).
+ * - `verified` = ≥1 ražotāja/iestādes avots, ≥2 neatkarīgi avoti, vai Nila apstiprināta
+ *   tipiska kaite (`kind: "nils"`, `topic: "known_issue"`, piem. N57 klaņa gultņi).
+ *   Tikai verified fakti ģenerē pretrunu karodziņus (E).
  * - `disputed` = avoti savstarpēji nesakrīt vai IRISS labojums ir pretrunā ar ražotāja avotu.
  *   Pārbaude tikai brīdina (W) „strīdīgs fakts, pārbaudi manuāli”; nekad nesaka, kurš pareizs.
  * - `pending_nils` = skar B1-B8 vai citu jautājumu, kas jāizrunā ar Nilu. Pārbaude to ignorē.

@@ -289,11 +289,11 @@ export function lintTechnicalRiskText(input: TechnicalRiskLintInput): TechnicalR
   }
 
   const sections = countSections(text);
-  if (text.trim() && (sections < 4 || sections > 12)) {
+  if (text.trim() && (sections < 4 || sections > 7)) {
     issues.push({
       id: "L12",
       level: "W",
-      message: `Sadaļu skaits ${sections} (gaidīts 4-12).`,
+      message: `Sadaļu skaits ${sections} (gaidīts 4-7).`,
     });
   }
 

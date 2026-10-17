@@ -29,6 +29,8 @@ export const ADMIN_AI_USAGE_EVENT = "provin-admin-ai-usage";
 type Rate = { input: number; output: number };
 
 const MODEL_RATES: Array<{ test: RegExp; rate: Rate }> = [
+  { test: /claude-opus-5-5/i, rate: { input: 4, output: 20 } },
+  { test: /claude-opus-5(?![-.]5)/i, rate: { input: 5, output: 25 } },
   { test: /claude-opus/i, rate: { input: 15, output: 75 } },
   { test: /claude-sonnet/i, rate: { input: 3, output: 15 } },
   { test: /claude-haiku/i, rate: { input: 1, output: 5 } },

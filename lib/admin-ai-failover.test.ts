@@ -4,15 +4,18 @@ import {
   CLAUDE_MODEL_SONNET,
   CLAUDE_MODEL_HAIKU,
   CLAUDE_MODEL_OPUS,
+  CLAUDE_MODEL_OPUS_LEGACY,
   aiFailoverModels,
   isAiTransientError,
   shouldAiModelFailover,
 } from "@/lib/ai-model-failover";
 
 describe("aiFailoverModels", () => {
-  it("chains opus then sonnet then haiku", () => {
+  it("chains Opus 5.5 then Opus 5 then sonnet then haiku", () => {
+    expect(CLAUDE_MODEL_OPUS).toBe("claude-opus-5-5");
     expect(aiFailoverModels(CLAUDE_MODEL_OPUS)).toEqual([
       CLAUDE_MODEL_OPUS,
+      CLAUDE_MODEL_OPUS_LEGACY,
       CLAUDE_MODEL_SONNET,
       CLAUDE_MODEL_HAIKU,
     ]);

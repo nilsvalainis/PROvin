@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
-import { checkCommentContradictions, mergeFactCheckFlags } from "@/lib/comment-contradiction-check";
+import {
+  checkCommentContradictions,
+  extractCanonicalFactsFromPrompt,
+  mergeFactCheckFlags,
+} from "@/lib/comment-contradiction-check";
 
 function rollbackFacts() {
   const blocks = createDefaultSourceBlocks();
@@ -92,6 +96,15 @@ describe("comment contradiction check", () => {
       facts,
     });
     expect(ok.some((f) => f.kind === "unsourced_date")).toBe(false);
+  });
+
+  it("parses KANONISKIE FAKTI from a user prompt for post-generation check", () => {
+    const facts = rollbackFacts();
+    const parsed = extractCanonicalFactsFromPrompt(`cits teksts\n${facts.sheet}\n`);
+    expect(parsed).not.toBeNull();
+    expect(parsed?.owners.totalCount).toBe(facts.owners.totalCount);
+    expect(parsed?.owners.changeCount).toBe(facts.owners.changeCount);
+    expect(parsed?.rollbacks.length).toBeGreaterThan(0);
   });
 
   it("merges unit-fact flags with sheet flags without duplicating the same sentence", () => {

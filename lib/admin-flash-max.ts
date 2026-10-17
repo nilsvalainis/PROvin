@@ -191,7 +191,7 @@ export const FLASH_MAX_SUMMARY_ONLY_JOB_IDS: readonly string[] = [
   "summary",
 ];
 
-/** FLASH MAX: CSDD / AutoDNA / CarVertical / LTAB → Gemini Flash; pārējie avoti → Gemini. */
+/** FLASH MAX: visiem darbiem Smart (gemini-3.8-flash). PRO operators izvēlas pats. */
 export const FLASH_MAX_GEMINI_FLASH_SOURCE_IDS = new Set([
   "csdd",
   "autodna",
@@ -199,13 +199,9 @@ export const FLASH_MAX_GEMINI_FLASH_SOURCE_IDS = new Set([
   "ltab",
 ]);
 
-/** FLASH MAX noklusējums. Sonnet / Opus operators izvēlas pats. */
-export function flashMaxJobModelTier(job: FlashMaxJob): AiAdminModelTier {
-  if (job.kind === "source") {
-    return FLASH_MAX_GEMINI_FLASH_SOURCE_IDS.has(job.id) ? "gemini-flash" : "gemini";
-  }
-  if (job.id === "sources_comparison") return "flash";
-  return "gemini";
+/** FLASH MAX noklusējums: Smart visiem. PRO tikai ja operators nospiež. */
+export function flashMaxJobModelTier(_job: FlashMaxJob): AiAdminModelTier {
+  return "gemini-flash";
 }
 
 export const FLASH_MAX_OPERATOR_NOTES_MAX_LEN = 16000;
@@ -286,7 +282,8 @@ export function flashMaxSelectedJobs(selection: FlashMaxSelection): FlashMaxJob[
 }
 
 export function flashMaxJobTier(job: FlashMaxJob, selection: FlashMaxSelection): AiAdminModelTier {
-  return selection.tiers[job.id] ?? flashMaxJobModelTier(job);
+  const t = selection.tiers[job.id] ?? flashMaxJobModelTier(job);
+  return t === "pro" ? "pro" : "gemini-flash";
 }
 
 export type FlashMaxRunJob = FlashMaxJob & {

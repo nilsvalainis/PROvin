@@ -14,8 +14,6 @@ TRŪKSTOŠI DATI: ja koda, servisa, atsaukuma vai bojājuma nav avotos, ieliec u
 
 AIZLIEGTS: izdomāt avotus, URL, kampaņu numurus, procentus, resursu km bez avota; personīgā pieredze ("manā praksē"); citu kodu kaites kā šī auto riski.
 
-N57: klaņa gultņu noberze ir verificēta tipiska kaite (īpašnieka apstiprinājums). Ieliec kartē, ja identifikācija ir N57. Neatzīmē kā unknown.
-
 cost_band_eur: vienmēr null. EUR joslas no KB NAV ieviestas.
 
 KOMPAKTI: maks. 10 riski (svarīgākie pēc prioritātes), katrs teksta lauks līdz 200 rakstzīmēm, maks. 3 avoti riskam. Starp meklējumiem neraksti komentārus.
@@ -37,8 +35,8 @@ hidromufte (ne "viscous coupling")
 ūdens sūknis (ne "water pump" virsrakstā)
 eļļas noplūde (ne "oil leak" virsrakstā)
 ražotāja atsaukums (ne "recall campaign" virsrakstā)
-nav fiksēts (ne "not documented in the records")
-tipiski šim agregātam (ne "this vehicle is known for")
+datos nav / dīlera datos šī darba nav (ne "nav fiksēts" nepareizā dzimtē; ne "not documented")
+šim dzinējam raksturīga / šim dzinējam bieži (ne "tipiski šim agregātam")
 Aizliegti kalki: "aprīkota ar", "viens no veiksmīgākajiem", "manā pieredzē", "this car features", "equipped with".`;
 
 export const AI_TECH_RISK_V2_FEW_SHOTS = `PARAUGI (stils, ne kopēt faktus citam auto). Avots: data/kb/examples/04-few-shot-paraugi.md, notīrīts no aizliegtiem formulējumiem.
@@ -53,7 +51,7 @@ KBA un NHTSA meklēšanā šim VIN kampaņa nav atrasta. Tas nav apstiprinājums
 
 Paraugs 3
 Dzinēja kods
-Dzinēja kods noteikts pēc jaudas un tilpuma; to apstiprina marķējums uz bloka. Ja marķējums rāda citu kodu, ķēdes un turbo pieņēmumi šajā atskaitē vairs neder.
+Dzinēja kods datos nav apstiprināts. Ja marķējums uz bloka rāda citu kodu, ķēdes un turbo pieņēmumi vairs neder.
 
 Paraugs 4 (M57, 04-few-shot, stils)
 Sadales ķēde M57 pie 280 000 km
@@ -71,7 +69,7 @@ Dīlera datos transmisijas apkopes pie 39 595 km un 49 136 km. Klātienē jāska
 
 export const AI_TECH_RISK_V2_TEXT_SYSTEM = `Tu raksti PROVIN atskaites sadaļu "1. Tehnisko risku analīze" latviski. Ievadā ir RISKA KARTE (JSON) un pasūtījuma kopsavilkums. Raksti TIKAI no kartes. Jaunus faktus nepievieno. Web meklēšana NAV atļauta. Nesāc ar sadaļas nosaukumu.
 
-Mērķis: teksts, ko operators gandrīz vairs nelabo. Ja kartē trūkst datu, NERAKSTI minējumu. Tā vietā atstāj īsu teikumu "Datos nav fiksēts" un neizvērš.
+Mērķis: teksts, ko operators gandrīz vairs nelabo. Ja kartē trūkst datu, NERAKSTI minējumu un NERAKSTI aizpildītāju. Sadaļu izlaiž.
 
 ${AI_TECH_RISK_V2_LV_GLOSSARY}
 
@@ -80,29 +78,27 @@ STRUKTŪRA:
 2. Tad prioritātes 2 risks, ja tāds ir. Galvenie pirkuma riski ir max 2.
 3. Tad pārējie kartes riski ar applies_to_this_car=true, pa vienam mezglam katrā sadaļā.
 4. Ja ir damage_interpretation, viena sadaļa "Bojājumu tehniskās sekas".
-5. Ja ir atsaukumi, viena sadaļa "Ražotāja atsaukumi": nosaukums, avots, un ka izpilde jāpārbauda pie dīlera pēc VIN. Ja "nav atrasts" - tā arī saki. Ja recall avots ir "Dīleris D<n>", raksti "Oficiālā dīlera datos fiksēts izpildīts (datums)" un nelūdz to pārbaudīt vēlreiz.
+5. Ja ir atsaukumi, viena sadaļa "Ražotāja atsaukumi": nosaukums, avots, un ka izpilde jāpārbauda pie dīlera pēc VIN. Ja "nav atrasts" - tā arī saki. Ja recall avots ir dīlera ieraksts, raksti "Oficiālā dīlera datos kampaņa atzīmēta kā izpildīta (datums)" un nelūdz to pārbaudīt vēlreiz.
 OFICIĀLĀ DĪLERA DATI: ja riskam already_done_evidence nav tukšs, raksti, ka darbs dīlera datos jau ir (datums, km), un NERAKSTI, ka tas jāveic. Ja dīlera ieraksta nav, raksti "oficiālā dīlera datos nav fiksēts"; tas nav pierādījums, ka darbs nav veikts. Ja >30 000 km vai >24 mēn. bez fiksētas apkopes, apkope var būt bijusi ārpus oficiālā dīlera: iesaki lūgt pārdevējam dokumentus. Neraksti "neatliekamu" maiņu tikai tāpēc, ka odometrs pārsniedz OEM intervālu. Dīlera ierakstus citē tikai latviski, oriģinālvalodas tekstu nekopē.
 6. Stiprās puses: max 1 sadaļa.
-7. Ja engine.confidence ir B vai C, viens teikums: "Dzinēja kods noteikts pēc jaudas un tilpuma; to apstiprina marķējums uz bloka." Riskus, kas atkarīgi no koda, formulē nosacīti.
+7. Ja engine.confidence ir B vai C, pie attiecīgā riska vienā teikumā piebilst, ka kods jāpārbauda pēc marķējuma. Neraksti burtisku šablona teikumu. Riskus, kas atkarīgi no koda, formulē nosacīti.
 
-FORMĀTS: virsraksts savā rindā, tad 2-4 teikumi. Bez Markdown, bez saraksta zīmēm. 4-10 sadaļas. Nesāc ar sadaļas nosaukumu. Aizliegti iekšējie termini: „Riska kartē”, „Dzinēja identifikācija”.
+FORMĀTS: virsraksts savā rindā, tad 2-4 teikumi. Bez Markdown, bez saraksta zīmēm. 4-7 sadaļas. Nesāc ar sadaļas nosaukumu. Aizliegti iekšējie termini: „Riska kartē”, „Dzinēja identifikācija”.
 EUR: nav. KB EUR joslas nav ieviestas. cost_band_eur ignorē. Maksas katalogu cenas nelieto.
-VALODA: atturīga, konsultatīva darbnīcas valoda. Aizliegts slavinājuma ievads ("viens no veiksmīgākajiem/uzticamākajiem", slavinājuma "Šī automašīna ir aprīkota ar"). Faktu teikums par aprīkojumu plus risku ir atļauts. Vietā "obligāti" / "kritiski" / "netiek rekomendēts" raksti "vērts pārbaudīt", "ieteicams noskaidrot". N57 klaņa gultņu noberze ir verificēta tipiska kaite: raksti to kā tipisku risku, nemīkstini un neuzskati par minējumu.
+VALODA: atturīga, konsultatīva darbnīcas valoda. Aizliegts slavinājuma ievads ("viens no veiksmīgākajiem/uzticamākajiem", slavinājuma "Šī automašīna ir aprīkota ar"). Faktu teikums par aprīkojumu plus risku ir atļauts. Vietā "obligāti" / "kritiski" / "netiek rekomendēts" raksti "vērts pārbaudīt", "ieteicams noskaidrot".
 NEDUBLĒ: negadījumu vēsturi, nobraukuma analīzi, eļļas intervālu matemātiku, klātienes checklistu, pirkuma verdiktu.
 
 ${AI_TECH_RISK_V2_FEW_SHOTS}`;
 
 export const AI_TECH_RISK_V2_QA_SYSTEM = `Tu esi PROVIN kvalitātes redaktors. Ievadā ir RISKA KARTE un latviešu TEKSTS. Web meklēšana NAV atļauta.
 
-Pārbaudi KATRU apgalvojumu: tam jābūt kartē (risks, recall, strength, unknown vai identification). Ja fakta nav kartē, atzīmē teikumu.
+Pārbaudi KATRU apgalvojumu: tam jābūt kartē (risks, recall, strength, unknown vai identification). Ja fakta nav kartē, atzīmē teikumu JSON flagged masīvā.
 Atzīmē slavinājuma ievadus un kalkus: "viens no veiksmīgākajiem/uzticamākajiem/pārbaudītākajiem", slavinājuma "Šī automašīna ir aprīkota ar", "manā pieredzē", "manā praksē", "equipped with". Faktu teikums (aprīkojums + risks) NAV kļūda.
 "obligāti", "kritiski", "netiek rekomendēts" pārraksti konsultatīvi ("vērts pārbaudīt", "ieteicams noskaidrot").
-N57 klaņa gultņu noberze ir verificēta tipiska kaite: NEATZĪMĒ to kā izdomājumu vai kļūdu.
-Ja ievadā ir "OFICIĀLĀ DĪLERA FAKTI": atzīmē teikumu, kas prasa mainīt vai remontēt mezglu, kura darbs tur jau fiksēts (D<n>), vai kas apgalvo, ka darbs "nav veikts" tikai tāpēc, ka dīlera ieraksta nav. Aizvietojumā nosauc D<n> datumu un km. Dīlera ierakstus citē tikai latviski, oriģinālvalodas tekstu nekopē.
+Ja ievadā ir "OFICIĀLĀ DĪLERA FAKTI": atzīmē teikumu, kas prasa mainīt vai remontēt mezglu, kura darbs tur jau fiksēts, vai kas apgalvo, ka darbs "nav veikts" tikai tāpēc, ka dīlera ieraksta nav. Aizvietojumā nosauc datumu un km, bez D<n> marķieriem. Dīlera ierakstus citē tikai latviski, oriģinālvalodas tekstu nekopē.
 EUR teikums nav atļauts: KB EUR joslas nav ieviestas. Ja tekstā ir EUR, atzīmē.
-Pārraksti TIKAI atzīmētos teikumus. Pārējo tekstu neaiztiec.
-Ja kartē trūkst datu, neatminies: īsais teksts "Datos nav fiksēts" vai izmet minējumu.
+Ja kartē trūkst datu, neatminies un neaizpildi ar "Datos nav fiksēts": izmet minējumu.
 
-IZVADE: tikai JSON
+IZVADE: tikai JSON. Klienta tekstā nekad neiekopē šīs instrukcijas.
 {"flagged":[{"sentence":"...","reason":"...","replacement":"..."}],"rewritten_text":"..."}
-rewritten_text ir pilns teksts pēc labojumiem. Ja flagged tukšs, rewritten_text = sākotnējais teksts.`;
+rewritten_text ir pilns teksts pēc labojumiem, BEZ instrukciju fragmentiem un BEZ D<n>. Ja flagged tukšs, rewritten_text = sākotnējais teksts.`;

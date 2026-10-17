@@ -219,7 +219,7 @@ export function AdminListingPeekCommentComposer({
         <AdminAiGenerateWithPrefill
           label="✨ Flash"
           recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.listing_peek}
-          tiers={["gemini-flash", "gemini"]}
+          tiers={["gemini-flash", "pro"]}
           disabled={!listingUrl.trim() || sending}
           busy={busy || sending}
           dialogTitle="Piezīmes ātrajam vērtējumam"

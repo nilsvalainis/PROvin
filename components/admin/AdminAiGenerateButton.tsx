@@ -30,11 +30,11 @@ export const ADMIN_AI_BADGE_CLASS =
   "provin-ai-badge rounded px-1 py-px text-[9px] font-bold tracking-[0.05em] bg-white/25 text-inherit";
 
 const VARIANT_HINT: Record<AiAdminModelTier, string> = {
-  pro: "Claude Opus — dārgākais; tikai kopsavilkumam vai apzinātai dziļai analīzei",
-  flash: "Claude Sonnet — nobraukums, negadījumi, riski, cena",
-  lite: "Claude Haiku + Sonnet gramatika",
-  gemini: "Gemini 2.5 Pro — vidēji smagi Gemini lauki",
-  "gemini-flash": "Gemini 3 Flash — ieteicams avotu komentāriem (lētākais)",
+  pro: "PRO: Claude Opus 5.5. Tikai kad operators nospiež, nekad automātiski.",
+  flash: "Claude Sonnet (iekšējs failover / PDF extract, nav UI noklusējums)",
+  lite: "Claude Haiku (iekšējs failover, nav UI poga)",
+  gemini: "Gemini 2.5 Pro (iekšējs failover, nav UI poga)",
+  "gemini-flash": "Smart: Gemini 3.8 Flash. Noklusējums visiem laukiem.",
 };
 
 export function AdminAiGenerateButton({

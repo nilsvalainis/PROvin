@@ -226,7 +226,7 @@ ${portfolioContext}
 ${focusDataText}
 
 Sagatavo komentāru TIKAI šai avota sadaļai klienta atskaitei.
-Galvenais jautājums, uz ko atbildi: ko tieši „${blockLabel}” fiksē ${isolateDealer ? "šajā dīlera datu produktā" : "šajā auditā"}? To pasaki pirmajā rindkopā un apstājies pie fakta.
+Galvenais jautājums, uz ko atbildi: ko tieši šis avots fiksē? To pasaki pirmajā rindkopā un apstājies pie fakta.
 Tikai fakti, ko ŠIS avots fiksējis. NEpapildini teikumus. NEraksti virsrakstu „Datu specifika”. NEraksti, ka ierakstu trūkums neizslēdz bojājumus vai remontu pirms importa. NEraksti krāsas biezuma mērītāju, mikronus vai virsbūves pārbaudi klātienē. Paplašinājumi un atrunas ir TIKAI kopsavilkuma sadaļās (3. Kopsavilkums, nobraukuma / negadījumu kopsavilkums) vai „2. Ieteikumos”.
 ${
   isDealerComments && !isolateDealer
