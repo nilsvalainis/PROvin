@@ -1,8 +1,8 @@
 /** Shared optical sizes for OEM marks on light backgrounds (no plates or borders). */
 
-export const BRAND_LOGO_ADMIN_SQUARE_PX = 34;
-export const BRAND_LOGO_ADMIN_WIDE_H_PX = 34;
-export const BRAND_LOGO_ADMIN_WIDE_MAX_W_PX = 92;
+/** IRISS list / order header: fixed column width, mark centered inside. */
+export const BRAND_LOGO_ADMIN_LIST_SLOT_W_PX = 68;
+export const BRAND_LOGO_ADMIN_LIST_MARK_H_PX = 36;
 
 export const BRAND_LOGO_PDF_SECTION_PX = 22;
 export const BRAND_LOGO_PDF_LIFE_PX = 20;

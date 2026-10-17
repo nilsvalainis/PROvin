@@ -70,21 +70,18 @@ async function main() {
 <style>
 body{font-family:system-ui,sans-serif;background:#f5f5f7;padding:24px;margin:0;}
 .row{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;max-width:420px;}
-.row img{object-fit:contain;}
-.row img.mark-square{width:34px;height:34px;}
-.row img.mark-wide{height:34px;width:auto;max-width:92px;}
+.row+.row{margin-top:10px;}
+.logo-slot{display:inline-flex;width:68px;height:36px;flex-shrink:0;align-items:center;justify-content:center;}
+.logo-slot img{max-height:100%;width:100%;object-fit:contain;}
 .title{font-size:17px;font-weight:600;color:#111827;}
 .sub{font-size:13px;color:#6b7280;}
 </style></head><body>
-<p style="font-size:12px;color:#64748b;margin:0 0 12px;">IRISS pasūtījumu saraksta rinda (bez plate)</p>
-<div class="row">
-<img class="mark-square" src="/brand-logos/bmw.svg" alt="" width="34" height="34"/>
-<div><div class="title">BMW 840i</div><div class="sub">WBA12345678901234</div></div>
-</div>
-<div class="row" style="margin-top:12px;">
-<img class="mark-wide" src="/brand-logos/subaru-wide.svg" alt="" width="92" height="34"/>
-<div><div class="title">Subaru Forester</div><div class="sub">Wide mark demo</div></div>
-</div>
+<p style="font-size:12px;color:#64748b;margin:0 0 12px;">IRISS saraksts: fiksēts 68px logo slots</p>
+<div class="row"><span class="logo-slot"><img src="/brand-logos/bmw.svg" alt="" width="68" height="36"/></span><div><div class="title">BMW 840i</div><div class="sub">WBA12345678901234</div></div></div>
+<div class="row"><span class="logo-slot"><img src="/brand-logos/audi.svg" alt="" width="68" height="36"/></span><div><div class="title">Audi A6</div><div class="sub">WAUZZZ4G5DN123456</div></div></div>
+<div class="row"><span class="logo-slot"><img src="/brand-logos/subaru-wide.svg" alt="" width="68" height="36"/></span><div><div class="title">Subaru Forester</div><div class="sub">JF2SKAJC8KH123456</div></div></div>
+<div class="row"><span class="logo-slot"><img src="/brand-logos/mercedes.svg" alt="" width="68" height="36"/></span><div><div class="title">Mercedes-Benz E 220</div><div class="sub">WDD2130041A123456</div></div></div>
+<div class="row"><span class="logo-slot"><img src="/brand-logos/volkswagen.svg" alt="" width="68" height="36"/></span><div><div class="title">VW Golf</div><div class="sub">WVWZZZ1KZAW123456</div></div></div>
 </body></html>`;
 
   await writeFile(join(TMP, "oem-bmw.html"), oemHtml, "utf8");

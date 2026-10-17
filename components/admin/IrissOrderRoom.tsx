@@ -19,12 +19,7 @@ import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryB
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { listingHistoryRecordId } from "@/lib/admin-change-history";
-import {
-  BRAND_LOGO_ADMIN_SQUARE_PX,
-  BRAND_LOGO_ADMIN_WIDE_H_PX,
-  BRAND_LOGO_ADMIN_WIDE_MAX_W_PX,
-} from "@/lib/brand-logo-display";
-import { irissBrandFallbackLabel, irissBrandLogoSrc, irissBrandLogoUsesWideLayout } from "@/lib/iriss-brand-logo";
+import { IrissBrandLogoSlot } from "@/components/admin/IrissBrandLogoSlot";
 import { listingFmtEur } from "@/lib/iriss-listings-card";
 import { listingDisplayImageUrl } from "@/lib/iriss-listing-image";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
@@ -510,8 +505,6 @@ export function IrissOrderRoom({
   const clientName = [rec.clientFirstName, rec.clientLastName].map((part) => part.trim()).filter(Boolean).join(" ");
   const savedLabel = irissOrderRoomSavedLabel(rec.updatedAt);
   const refLabel = irissOrderRoomRef(rec.id);
-  const logoSrc = irissBrandLogoSrc(rec.brandModel);
-  const logoWide = irissBrandLogoUsesWideLayout(rec.brandModel);
   const linkCount = irissOrderRoomListingLinkCount(rec);
   const platforms = irissOrderRoomPlatformLabels(visibleHits);
   const platformKeys = [...new Set(visibleHits.map((hit) => hit.platform))];
@@ -632,25 +625,12 @@ export function IrissOrderRoom({
           </Link>
           <div className="rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 sm:px-[18px] sm:py-3.5">
             <div className="flex min-w-0 flex-wrap items-center gap-3.5">
-              <div className="hidden shrink-0 items-center justify-center md:flex">
-                {logoSrc ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={logoSrc}
-                    alt=""
-                    width={logoWide ? BRAND_LOGO_ADMIN_WIDE_MAX_W_PX : BRAND_LOGO_ADMIN_SQUARE_PX}
-                    height={logoWide ? BRAND_LOGO_ADMIN_WIDE_H_PX : BRAND_LOGO_ADMIN_SQUARE_PX}
-                    className={
-                      logoWide
-                        ? "h-[34px] w-auto max-w-[92px] object-contain"
-                        : "h-[34px] w-[34px] object-contain"
-                    }
-                  />
-                ) : (
-                  <span className="inline-flex h-[34px] w-[34px] items-center justify-center text-[11px] font-extrabold text-[#111827]">
-                    {irissBrandFallbackLabel(rec.brandModel)}
-                  </span>
-                )}
+              <div className="hidden md:block">
+                <IrissBrandLogoSlot
+                  brandModel={rec.brandModel}
+                  fallbackClassName="text-[#111827] font-extrabold"
+                  imgLoading="eager"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
