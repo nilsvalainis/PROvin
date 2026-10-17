@@ -36,6 +36,7 @@ export type AdsMetricRow = {
   tone: "green" | "amber" | "red" | "muted";
   campaigns?: AdsMetricRow[];
   keywords?: AdsMetricRow[];
+  contents?: AdsMetricRow[];
 };
 
 export type AdsTrendPoint = {
@@ -245,6 +246,7 @@ export function computeAdsAttributionStats(args: {
   const ordersByChannel = new Map<AdChannel, AdsAttributionOrder[]>();
   const ordersByCampaign = new Map<string, AdsAttributionOrder[]>();
   const ordersByKeyword = new Map<string, AdsAttributionOrder[]>();
+  const ordersByContent = new Map<string, AdsAttributionOrder[]>();
   for (const order of attributed) {
     const a = order.attribution!;
     const ch = a.channel ?? "direct";
@@ -256,6 +258,10 @@ export function computeAdsAttributionStats(args: {
     if (a.term) {
       const k = `${ch}|${norm(a.campaign)}|${norm(a.term)}`;
       ordersByKeyword.set(k, [...(ordersByKeyword.get(k) ?? []), order]);
+    }
+    if (a.content) {
+      const k = `${ch}|${norm(a.campaign)}|cnt:${norm(a.content)}`;
+      ordersByContent.set(k, [...(ordersByContent.get(k) ?? []), order]);
     }
   }
 
@@ -306,6 +312,22 @@ export function computeAdsAttributionStats(args: {
             });
           })
           .sort((a, b) => b.orders - a.orders || b.spendEur - a.spendEur);
+        const contentKeys = [...ordersByContent.keys()].filter((kk) => kk.startsWith(`${k}|cnt:`));
+        camp.contents = contentKeys
+          .map((kk) => {
+            const raw = kk.split("|cnt:").slice(-1)[0] ?? kk;
+            const sample = (ordersByContent.get(kk) ?? [])[0]?.attribution?.content?.trim();
+            return metric({
+              key: kk,
+              label: `Reklāma (utm_content) ${sample || raw}`,
+              channel: ch,
+              spendEur: 0,
+              orders: ordersByContent.get(kk) ?? [],
+              visits: 0,
+              clicks: null,
+            });
+          })
+          .sort((a, b) => b.orders - a.orders || a.label.localeCompare(b.label, "lv"));
         return camp;
       })
       .sort((a, b) => b.orders - a.orders || b.spendEur - a.spendEur);
@@ -448,6 +470,7 @@ export function adsAttributionExportCsv(stats: AdsAttributionStats, spend: reado
     for (const camp of ch.campaigns ?? []) {
       push("campaign", camp);
       for (const kw of camp.keywords ?? []) push("keyword", kw);
+      for (const cnt of camp.contents ?? []) push("content", cnt);
     }
   }
   lines.push("");

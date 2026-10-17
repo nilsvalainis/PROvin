@@ -10,6 +10,9 @@ import {
   parsePendingAttr,
   parseVisitFromSearch,
   serializeStripeAttr,
+  STRIPE_ATTR_FBCLID_KEY,
+  STRIPE_ATTR_LAND_FIRST_KEY,
+  STRIPE_ATTR_LAND_LAST_KEY,
   STRIPE_ATTR_METADATA_MAX,
   stripeAttributionMetadata,
   stripeAttributionMetadataFromRequest,
@@ -144,8 +147,10 @@ describe("Stripe metadata", () => {
       consentAt: "2026-04-01T00:00:00.000Z",
     });
     const meta = stripeAttributionMetadata(cookie);
-    expect(Object.keys(meta)).toEqual(["attr"]);
+    expect(meta.attr).toBeTruthy();
     expect(meta.attr.length).toBeLessThanOrEqual(STRIPE_ATTR_METADATA_MAX);
+    expect(meta[STRIPE_ATTR_LAND_FIRST_KEY]).toBeTruthy();
+    expect(meta[STRIPE_ATTR_LAND_LAST_KEY]).toBeTruthy();
     const admin = adminAttributionFromStripeMetadata(meta);
     expect(admin?.channel).toBe("google");
     expect(admin?.campaign).toBe("vin-audit");
@@ -188,5 +193,71 @@ describe("Stripe metadata", () => {
     });
     expect(json.length).toBeLessThanOrEqual(STRIPE_ATTR_METADATA_MAX);
     expect(json).toContain("G1");
+  });
+
+  it("keeps a realistic 120-char fbclid, utm_content and landings under Stripe limits", () => {
+    const fbclid = `IwY2xjegH3${"AbCdEfGhIj0123456789".repeat(6)}`.slice(0, 120);
+    expect(fbclid).toHaveLength(120);
+    const visit = parseVisitFromSearch({
+      pathname: "/lv",
+      search: `?utm_source=facebook&utm_medium=paid&utm_campaign=vin-audit&utm_term=audi&utm_content=reels-q4&fbclid=${fbclid}`,
+      referrer: "https://www.facebook.com/",
+    });
+    expect(visit.fbclid).toBe(fbclid);
+    expect(visit.cnt).toBe("reels-q4");
+    const cookie = mergeAttributionCookie({
+      existing: null,
+      pending: visit,
+      visit,
+      consentAt: "2026-10-17T00:00:00.000Z",
+    });
+    const meta = stripeAttributionMetadata(cookie);
+    for (const [key, value] of Object.entries(meta)) {
+      expect(value.length, key).toBeLessThanOrEqual(STRIPE_ATTR_METADATA_MAX);
+    }
+    expect(meta[STRIPE_ATTR_LAND_FIRST_KEY]).toContain("/lv");
+    expect(meta[STRIPE_ATTR_LAND_LAST_KEY]).toContain("/lv");
+    const packed = JSON.parse(meta.attr) as { last?: { cnt?: string; land?: string }; first?: { cnt?: string; land?: string } };
+    expect(packed.last?.cnt ?? packed.first?.cnt).toBe("reels-q4");
+    expect(packed.last?.land).toBeUndefined();
+    const admin = adminAttributionFromStripeMetadata(meta);
+    expect(admin?.channel).toBe("meta");
+    expect(admin?.fbclid).toBe(fbclid);
+    expect(admin?.content).toBe("reels-q4");
+    expect(admin?.campaign).toBe("vin-audit");
+    expect(admin?.firstLanding).toContain("/lv");
+    expect(admin?.lastLanding).toContain("/lv");
+  });
+
+  it("splits a long fbclid into attr_fbclid when both touches are full", () => {
+    const fbclid = `IwY2xjegH3${"XyZ9876543210AbCdEfGh".repeat(6)}`.slice(0, 120);
+    const fat = (id: string) => ({
+      src: "facebook".repeat(10).slice(0, 80),
+      med: "paidsocial".repeat(8).slice(0, 80),
+      cmp: "provin-vin-audit-meta-reels".repeat(4).slice(0, 80),
+      term: "audi-a4-used-latvia".repeat(4).slice(0, 80),
+      cnt: "carousel-october-2026-vin".repeat(4).slice(0, 80),
+      fbclid: id,
+      land: `/lv?utm_content=carousel&fbclid=${id}`,
+      ref: "https://www.facebook.com/ads/link/?foo=1".repeat(4).slice(0, 160),
+    });
+    const cookie = {
+      v: 1 as const,
+      consentAt: "2026-10-17T00:00:00.000Z",
+      first: fat(`${fbclid}a`.slice(0, 120)),
+      last: fat(fbclid),
+    };
+    const meta = stripeAttributionMetadata(cookie);
+    for (const [key, value] of Object.entries(meta)) {
+      expect(value.length, key).toBeLessThanOrEqual(STRIPE_ATTR_METADATA_MAX);
+    }
+    expect(meta[STRIPE_ATTR_FBCLID_KEY]).toBe(fbclid);
+    expect(meta[STRIPE_ATTR_LAND_FIRST_KEY]).toContain("fbclid=");
+    expect(meta[STRIPE_ATTR_LAND_LAST_KEY]).toContain(fbclid);
+    const admin = adminAttributionFromStripeMetadata(meta);
+    expect(admin?.fbclid).toBe(fbclid);
+    expect(admin?.content).toBe("carousel-october-2026-vin".repeat(4).slice(0, 80));
+    expect(admin?.firstLanding).toBeTruthy();
+    expect(admin?.lastLanding).toBeTruthy();
   });
 });
