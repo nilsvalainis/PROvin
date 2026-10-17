@@ -2,6 +2,11 @@
  * Tehnisko risku v2 karte - kopīgi tipi (klients + serveris, bez server-only).
  * Shēma: docs/tech-risk-v2.md
  */
+import {
+  dropEuroAmountSentences,
+  SENTENCE_HAS_EURO_RE,
+  splitIntoSentences,
+} from "@/lib/lv-sentences";
 
 export type IdentificationConfidence = "A" | "B" | "C";
 
@@ -72,17 +77,13 @@ export function verifiedKbCostBandsFromMap(
     );
 }
 
-const EUR_SENTENCE_RE = /€|EUR|\beiro\b/i;
-
 export function stripTechnicalRiskEurSentences(text: string): string {
   return text
     .split("\n")
     .map((line) => {
-      if (!EUR_SENTENCE_RE.test(line)) return line;
-      return line
-        .split(/(?<=[.!?])\s+/)
-        .filter((s) => !EUR_SENTENCE_RE.test(s))
-        .join(" ")
+      if (!SENTENCE_HAS_EURO_RE.test(line)) return line;
+      return dropEuroAmountSentences(splitIntoSentences(line))
+        .join("")
         .replace(/\s+/g, " ")
         .trim();
     })

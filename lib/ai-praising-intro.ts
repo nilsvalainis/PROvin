@@ -13,7 +13,7 @@ const RISK_FACT_RE =
 
 const BRAND_RE = /(bmw|audi|volkswagen|\bvw\b|mercedes|renault|volvo|škoda|toyota)/i;
 
-const IDENTITY_HEADING_RE = /identifikācij|dzinēja konstrukcija/i;
+const IDENTITY_HEADING_RE = /identifikācij|dzinēja konstrukcija|riska\s+kartē|dzinēja\s+identifikācij/i;
 
 function firstPara(text: string): string {
   return (text ?? "").trim().split(/\n\s*\n/)[0] ?? "";

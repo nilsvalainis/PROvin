@@ -11,6 +11,14 @@ describe("isPraisingTechRisksIntro", () => {
     ).toBe(true);
   });
 
+  it("bans Dzinēja identifikācija as the first heading", () => {
+    expect(
+      isPraisingTechRisksIntro(
+        "Dzinēja identifikācija\nDīlera datos dzinējs ir rindas sešinieka dīzelis.\n\nĶēde\nĶēde paliek pirkuma risks.",
+      ),
+    ).toBe(true);
+  });
+
   it("bans Agregātu identifikācija as the first heading", () => {
     expect(
       isPraisingTechRisksIntro(

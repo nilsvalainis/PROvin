@@ -176,7 +176,7 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   },
   {
     label: "svārstību slāpētājs",
-    pattern: /(?:vibrācij[au]|svārstību)\s+slāpētāj/i,
+    pattern: /(?:kloķvārpstas\s+)?(?:vibrācij[au]|svārstību)\s+slāpētāj/i,
     replacement: "kloķvārpstas skriemelis (demferis)",
     code: "vocabulary_vibraciju_slapetajs",
   },
@@ -187,6 +187,30 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     code: "vocabulary_eksperts",
   },
 ] as const;
+
+/**
+ * Iekšējie V2/pipeline termini, ko klients neredz. Nav PROVIN_BANNED_VOCABULARY,
+ * lai promptu avoti drīkstētu tos minēt kā aizliegumu.
+ */
+export const PROVIN_INTERNAL_CLIENT_TERMS: readonly BannedVocabularyEntry[] = [
+  {
+    label: "Riska kartē",
+    pattern: /riska\s+kartē/i,
+    replacement: "datos",
+    code: "internal_riska_karte",
+  },
+  {
+    label: "Dzinēja identifikācija",
+    pattern: /dzinēja\s+identifikācij/i,
+    replacement: "dzinēja kods",
+    code: "internal_dzineja_identifikacija",
+  },
+];
+
+export function findInternalClientTermHits(text: string): BannedVocabularyEntry[] {
+  if (!text) return [];
+  return PROVIN_INTERNAL_CLIENT_TERMS.filter((e) => e.pattern.test(text));
+}
 
 /** Ģenerē prompta bloku no vienotā saraksta — nekad nekopē manuāli citur. */
 export function buildBannedVocabularyPromptRules(): string {

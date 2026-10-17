@@ -10,10 +10,22 @@ import {
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
 import {
+  dropEuroAmountSentences,
+  isRealSentencePunctuation,
+  splitIntoSentences,
+} from "@/lib/lv-sentences";
+import {
   buildBannedVocabularyPromptRules,
   buildForbiddenPersonaNounPromptRules,
   stripForbiddenPersonaNouns,
 } from "@/lib/provin-banned-vocabulary";
+
+export {
+  dropEuroAmountSentences,
+  isRealSentencePunctuation,
+  SENTENCE_HAS_EURO_RE,
+  splitIntoSentences,
+} from "@/lib/lv-sentences";
 
 export const SOURCE_COMMENT_NO_ISSUES_LV = "Problēmas nav konstatētas.";
 
@@ -361,30 +373,6 @@ export function applyProvinHumanDashes(text: string): string {
 }
 
 /**
- * Teikumu robežas. Sadalījums ir bezzudumu: gabalu salikšana atpakaļ dod
- * sākotnējo tekstu. Punkts skaitās teikuma beigas tikai tad, ja tam seko
- * atstarpe vai teksta beigas — citādi „2.0 TDI” un „0.03” sadalītu ciparu vidū.
- */
-export function splitIntoSentences(text: string): string[] {
-  const out: string[] = [];
-  let start = 0;
-  for (let i = 0; i < text.length; i++) {
-    if (!".!?".includes(text[i]!)) continue;
-    let end = i + 1;
-    while (end < text.length && ".!?".includes(text[end]!)) end++;
-    if (end < text.length && !/\s/.test(text[end]!)) continue;
-    while (end < text.length && /\s/.test(text[end]!)) end++;
-    out.push(text.slice(start, end));
-    start = end;
-    i = end - 1;
-  }
-  if (start < text.length) out.push(text.slice(start));
-  return out.length > 0 ? out : [text];
-}
-
-const SENTENCE_HAS_EURO_RE = /€|\bEUR\b/;
-
-/**
  * Drošības tīkls priekš "1. Tehnisko risku analīze", apskates ieteikumiem un kopsavilkuma —
  * šiem laukiem AI_NO_ESTIMATED_REPAIR_EUR_RULES aizliedz PILNĪGI visas € / EUR summas, arī
  * tās, kas modelis var "nokopēt" no agregātu pakām (tur EUR ir tikai iekšējai kalibrācijai).
@@ -426,10 +414,7 @@ export function stripUnauthorizedEuroAmounts(text: string): string {
     .map((para) => {
       const lines = para.split("\n");
       const kept = lines.map((line) =>
-        splitIntoSentences(line)
-          .filter((s) => !SENTENCE_HAS_EURO_RE.test(s))
-          .join("")
-          .trim(),
+        dropEuroAmountSentences(splitIntoSentences(line)).join("").trim(),
       );
       // Rindkopa bez satura zem virsraksta vairs neko nedod — met ārā visu.
       if (lines.length > 1 && !kept.slice(1).some(Boolean)) return "";
@@ -471,15 +456,31 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/uzrāda\s+divējād\w*\s+ain\w*/gi, "datos redzama šāda aina"],
     [/Pozitīvā\s+puse\s+ir/gi, "Datos"],
     [/pozitīvā\s+puse\s+ir/gi, "datos"],
-    [/kloķvārpstas\s+(?:vibrācij[au]|svārstību)\s+slāpētāj\w*(?:\s*\(\s*skriemelis\s*\))?/gi, "kloķvārpstas skriemelis (demferis)"],
-    [/(?:vibrācij[au]|svārstību)\s+slāpētāj\w*/gi, "kloķvārpstas skriemelis (demferis)"],
+    [/Dzinēja\s+identifikācija/g, "Dzinēja kods"],
+    [/dzinēja\s+identifikācija/g, "dzinēja kods"],
     [/datu\s+vakuum\w*/gi, "datu neesamība"],
     [/informācijas\s+vakuum\w*/gi, "datu neesamība"],
     [/\bVakuums(?!ūkn)/g, "Trūkums"],
     [/\bvakuums(?!ūkn)/g, "trūkums"],
   ];
   for (const [re, rep] of replacements) out = out.replace(re, rep);
+  out = out.replace(/riska\s+kartē/gi, (match, offset: number, full: string) => {
+    const before = full.slice(Math.max(0, offset - 2), offset);
+    return offset === 0 || /[\n.!?]\s*$/.test(before) ? "Datos" : "datos";
+  });
+  out = replaceCrankshaftDamperWording(out);
   return stripForbiddenPersonaNouns(out);
+}
+
+const DAMPER_CANON = "kloķvārpstas skriemelis (demferis)";
+const DAMPER_SRC_RE =
+  /(?:kloķvārpstas\s+)?(?:vibrācij[au]|svārstību)\s+slāpētāj\w*(?:\s*\(\s*(?:skriemelis|demferis)\s*\))?/gi;
+const DAMPER_DOUBLE_RE = /(?:kloķvārpstas\s+skriemelis\s*\(\s*demferis\s*\)\s*){2,}/gi;
+
+/** Idempotents: jau kanoniskais „demferis” paliek viens. */
+export function replaceCrankshaftDamperWording(text: string): string {
+  if (!text) return text;
+  return text.replace(DAMPER_SRC_RE, DAMPER_CANON).replace(DAMPER_DOUBLE_RE, DAMPER_CANON);
 }
 
 function stripClientMarkdownMarkers(text: string): string {
@@ -502,12 +503,12 @@ function looksLikeLatvianDateOpener(line: string): boolean {
   return LV_DATE_OPENER_RE.test(line);
 }
 
-/** Pirmais teikuma punkts, kas nav LV kārtas skaitlis (2019. / 13.). */
+/** Pirmais teikuma punkts, kas nav LV kārtas skaitlis pirms mazā burta (2019. / 13.). */
 function firstRealSentenceEnd(text: string): number {
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     if (ch !== "." && ch !== "!" && ch !== "?") continue;
-    if (ch === "." && i > 0 && /\d/.test(text[i - 1]!)) continue;
+    if (!isRealSentencePunctuation(text, i)) continue;
     if (/^\s+\S/.test(text.slice(i + 1))) return i;
   }
   return -1;
@@ -540,7 +541,10 @@ export function splitDealerCommentRoleHeadings(raw: string): string {
   t = t.replace(/<br\s*\/?>/gi, "\n");
   const headings = [...DEALER_COMMENT_ROLE_HEADINGS].sort((a, b) => b.length - a.length);
   for (const heading of headings) {
-    const re = new RegExp(`${escapeRegExp(heading)}[ \\t]*`, "gi");
+    const re = new RegExp(
+      `(?:^|(?<=[.!?:]\\s)|(?<=\\n))${escapeRegExp(heading)}(?![\\p{L}])[ \\t]*`,
+      "gu",
+    );
     t = t.replace(re, (match, offset: number, full: string) => {
       const before = offset > 0 ? full[offset - 1]! : "";
       const after = full[offset + match.length] ?? "";
@@ -616,12 +620,18 @@ function convertExpertBlockToHeadingBody(block: string): string {
   return lines.map(lineToHeadingBody).join("\n\n");
 }
 
+export type ExpertCommentNormalizeOpts = {
+  /** Dīlera lomu virsraksti. Tehnisko risku laukam - false. */
+  splitDealerRoleHeadings?: boolean;
+};
+
 /**
  * Klienta komentārs: virsraksts savā rindā, tad rindkopa. Bez *, ** un citiem Markdown.
  * Veco „**Ievads.** teksts” formu pārveido; nenoslēgtus Gemini `** ` prefiksus noņem.
  */
-export function toExpertHeadingBodyPlain(raw: string): string {
-  const t = splitDealerCommentRoleHeadings(raw);
+export function toExpertHeadingBodyPlain(raw: string, opts?: ExpertCommentNormalizeOpts): string {
+  const source = (raw ?? "").replace(/\r\n/g, "\n");
+  const t = opts?.splitDealerRoleHeadings === false ? source : splitDealerCommentRoleHeadings(source);
   if (!t) return t;
   const blocks = t
     .split(/\n\n+/)
@@ -631,8 +641,8 @@ export function toExpertHeadingBodyPlain(raw: string): string {
   return stripClientMarkdownMarkers(blocks);
 }
 
-function formatExpertParagraphs(t: string): string[] {
-  const plain = toExpertHeadingBodyPlain(t);
+function formatExpertParagraphs(t: string, opts?: ExpertCommentNormalizeOpts): string[] {
+  const plain = toExpertHeadingBodyPlain(t, opts);
   return plain.split(/\n\n+/).filter(Boolean);
 }
 
@@ -640,10 +650,24 @@ function formatExpertParagraphs(t: string): string[] {
  * Komentāra forma (vārdu krājums, rindkopas) - bez garuma nogriešanas.
  * Nogriezts teksts pēc ģenerēšanas nozīmē, ka apmaksātais saturs tiek izmests.
  */
-export function normalizeProvinExpertAiComment(raw: string | undefined | null): string {
+export function normalizeProvinExpertAiComment(
+  raw: string | undefined | null,
+  opts?: ExpertCommentNormalizeOpts,
+): string {
   const t = applyProvinReportCopyVocabulary((raw ?? "").trim());
   if (!t) return t;
-  return formatExpertParagraphs(t).join("\n\n");
+  return formatExpertParagraphs(t, opts).join("\n\n");
+}
+
+const TECH_RISK_SECTION_TITLE_RE = /^(?:1\.\s*)?Tehnisko risku analīze\.?$/i;
+
+/** Noņem pirmo rindu, ja tā ir sadaļas nosaukums (ne mezgla virsraksts). */
+export function dropTechnicalRisksSectionTitle(text: string): string {
+  const t = (text ?? "").replace(/\r\n/g, "\n");
+  if (!t.trim()) return t;
+  const lines = t.split("\n");
+  if (!TECH_RISK_SECTION_TITLE_RE.test((lines[0] ?? "").trim())) return t;
+  return lines.slice(1).join("\n").replace(/^\n+/, "");
 }
 
 /**

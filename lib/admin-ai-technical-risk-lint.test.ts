@@ -186,6 +186,14 @@ Konstrukcija ir pazīstama servisiem. Uzturēšana joprojām ir jāpierāda ar d
     expect(r.errors.some((e) => e.id === "L6")).toBe(true);
   });
 
+  it("L16 warns on internal terms Riska kartē and Dzinēja identifikācija", () => {
+    const r = lintTechnicalRiskText({
+      text: `${okText}\n\nRiska kartē ķēde ir iekšā. Dzinēja identifikācija paliek iekšēja.`,
+      identification: id,
+    });
+    expect(r.warnings.some((w) => w.id === "L16")).toBe(true);
+  });
+
   it("L11 warns when confidence C has no marking caveat", () => {
     const cId: TechnicalRiskIdentification = {
       ...id,

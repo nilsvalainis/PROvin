@@ -16,6 +16,7 @@ import {
   rethrowNormalizedIncompleteComment,
 } from "@/lib/admin-ai-incomplete";
 import {
+  dropTechnicalRisksSectionTitle,
   normalizeProvinExpertAiComment,
   stripUnauthorizedEuroAmounts,
 } from "@/lib/source-summary-comment-format";
@@ -32,8 +33,11 @@ import { generateTechnicalRiskMapWithAi } from "@/lib/admin-ai-technical-risk-ma
 import {
   buildDealerFactsBrief,
   checkMapAgainstDealerFacts,
+  collectForeignDealerLanguageFlags,
   extractDealerFacts,
   fillAlreadyDoneEvidenceFromDealer,
+  redactDealerOriginalLanguage,
+  replaceForeignAlreadyDoneEvidenceFromDealer,
   type DealerMapIssue,
 } from "@/lib/admin-ai-dealer-facts";
 import {
@@ -61,8 +65,11 @@ export type TechnicalRiskAnalysisResult = {
   operatorFlags?: string[];
 };
 
+const TECH_RISK_COMMENT_OPTS = { splitDealerRoleHeadings: false } as const;
+
 function finalizeText(raw: string, keepVerifiedEur = false): string {
-  const normalized = normalizeProvinExpertAiComment(raw);
+  const withoutTitle = dropTechnicalRisksSectionTitle(raw);
+  const normalized = normalizeProvinExpertAiComment(withoutTitle, TECH_RISK_COMMENT_OPTS);
   const cleaned = keepVerifiedEur ? normalized : stripUnauthorizedEuroAmounts(normalized);
   return throwIfBlankGeneratedComment(cleaned);
 }
@@ -85,7 +92,7 @@ ${orderContext}
 Sagatavo **tehniski izcilu, detalizētu** tehnisko risku analīzi laukam „${ADMIN_TECHNICAL_RISKS_LABEL}”. Šī ir atskaites svarīgākā komentāru sadaļa — īss vispārīgs teksts šeit ir kļūda.
 
 OBLIGĀTI:
-- Identificē agregātu **iekšēji** (tilpums, jauda kW, degviela, izmešu klase, gads, dzinēja kods, kārba, piedziņa). Ja koda NAV: tajā pašā markā un līdzīgā gadu joslā ņem **kW + cm³ + degvielu** kā 1. kandidātu (modeļi var atšķirties) un meklē to. IZVADĒ nesāc ar slavinošu prezentāciju („viens no veiksmīgākajiem”, „uzticamākais”, „veiksmīgākā konstrukcija”, „Dzinēja konstrukcija un resurss”, „Agregātu identifikācija”). Faktu teikums par aprīkojumu + šī mezgla risku ir atļauts. Tīra markas tūre bez riska fakta - aizliegta. Pirmā sadaļa = konkrēts riska fakts, ar km un vecuma kalibrāciju tajā pašā sadaļā. Dzinēja/kārbas fakti tikai tad, kad tie izskaidro risku. Ja precīzs kods nav avotos - iekšēji turi 1–2 kandidātus; izvadē nosauc tos tikai pie attiecīgā riska, kā hipotēzi, ne kā reģistrā nolasītu faktu. **PACK RECONCILE:** pirms pakas apgalvojuma salīdzini ar šī auto kW/kodu (D5244T11 = ~158 kW biturbo, ne viens turbo). Konsultatīvi: nelieto „obligāti”, „kritiski”, „netiek rekomendēts”; vietā „iesakām”, „ir vērts pārbaudīt”, „pēc datiem mūsu ieteikums būtu”.
+- Identificē agregātu **iekšēji** (tilpums, jauda kW, degviela, izmešu klase, gads, dzinēja kods, kārba, piedziņa). Ja koda NAV: tajā pašā markā un līdzīgā gadu joslā ņem **kW + cm³ + degvielu** kā 1. kandidātu (modeļi var atšķirties) un meklē to. IZVADĒ nesāc ar sadaļas nosaukumu un nesāc ar slavinošu prezentāciju („viens no veiksmīgākajiem”, „uzticamākais”, „veiksmīgākā konstrukcija”, „Dzinēja konstrukcija un resurss”, „Agregātu identifikācija”, „Dzinēja identifikācija”, „Riska kartē”). Faktu teikums par aprīkojumu + šī mezgla risku ir atļauts. Tīra markas tūre bez riska fakta - aizliegta. Pirmā sadaļa = konkrēts riska fakts, ar km un vecuma kalibrāciju tajā pašā sadaļā. Dzinēja/kārbas fakti tikai tad, kad tie izskaidro risku. Ja precīzs kods nav avotos - iekšēji turi 1–2 kandidātus; izvadē nosauc tos tikai pie attiecīgā riska, kā hipotēzi, ne kā reģistrā nolasītu faktu. **PACK RECONCILE:** pirms pakas apgalvojuma salīdzini ar šī auto kW/kodu (D5244T11 = ~158 kW biturbo, ne viens turbo). Konsultatīvi: nelieto „obligāti”, „kritiski”, „netiek rekomendēts”; vietā „iesakām”, „ir vērts pārbaudīt”, „pēc datiem mūsu ieteikums būtu”.
 - Formāts: virsraksts savā rindā, tad 2-4 teikumi. NEKAD neizvadi *, ** vai citus Markdown simbolus.
 - **Kalibrē riskus pret šī auto aptuveno nobraukumu un vecumu:** kam resurss šajā posmā tipiski jau iztērēts (un tāpēc jābūt pierādītam servisa vēsturē), kas gaidāms nākamajos ~20–40 tūkst. km, un kas ir tikai tāla perspektīva. Sakārto pēc **varbūtības × ietekmes** (BEZ EUR). Piemērs: 300 tūkst. km M57 ar labu eļļu ir ierasts darba mūžs; tas pats km uz N57 ir pavisam cits stāsts; D5244T11 (~158 kW biturbo) - bloka/dzesēšanas risks, NE „viens turbo bez bloka plaisām”.
 - **Tikai aktuālie mezgli:** raksti TIKAI šim agregātam, šai kārbai un šim aprīkojumam. Citu kodu kaites NEMINI, pat lai tās noliegtu. Dārgo ekstraprīkojumu nosauc tikai ja SA/dīleris/operators to rāda šim auto. Ja paka konflikte ar kW/kodu - meklē un labo, nekopē paku.
@@ -141,7 +148,9 @@ async function generateV1(input: AiOrderContextInput): Promise<TechnicalRiskAnal
     return { text: finalizeText(raw) };
   } catch (e) {
     rethrowNormalizedIncompleteComment(e, (t) =>
-      stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(t)),
+      stripUnauthorizedEuroAmounts(
+        normalizeProvinExpertAiComment(dropTechnicalRisksSectionTitle(t), TECH_RISK_COMMENT_OPTS),
+      ),
     );
   }
 }
@@ -242,12 +251,14 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
     internalComment: input.internalComment,
     identificationBrief,
     sourceBlocks: blocks,
+    dealerFacts,
   });
+  const safeOrderContext = redactDealerOriginalLanguage(orderContext, dealerFacts);
   try {
     const rawMap = {
       ...(await generateTechnicalRiskMapWithAi({
         modelTier: input.modelTier,
-        orderContext,
+        orderContext: safeOrderContext,
         identification,
         identificationBrief,
         dealerFactsBrief,
@@ -257,7 +268,12 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
       ...(input.hideTechnicalRiskCostBands ? { hide_cost_bands: true as const } : {}),
     };
     const dealerMapIssues = checkMapAgainstDealerFacts(rawMap, dealerFacts);
-    const map = fillAlreadyDoneEvidenceFromDealer(rawMap, dealerFacts);
+    const filledMap = fillAlreadyDoneEvidenceFromDealer(rawMap, dealerFacts);
+    const foreignBefore = collectForeignDealerLanguageFlags(null, filledMap, {
+      briefs: [dealerFactsBrief, sourceFactsBrief],
+      facts: dealerFacts,
+    });
+    const map = replaceForeignAlreadyDoneEvidenceFromDealer(filledMap, dealerFacts);
     let text = await generateTextFromMap(input, map, sourceFactsBrief, tiers, undefined, dealerFactsBrief);
     const qa = await qaTechnicalRiskText({ text, map, dealerFactsBrief, modelTier: tiers.qa });
     if (qa.flagged.length > 0 && qa.rewritten_text.trim()) {
@@ -294,18 +310,34 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
           text,
           technicalRiskMap: map,
           lintWarning: `Tehnisko risku validators joprojām redz kļūdas pēc vienas pārģenerēšanas: ${formatTechnicalRiskLintErrors(second.errors)}`,
-          operatorFlags: withDealerFlags(buildTechRiskOperatorFlags(map), dealerMapIssues),
+          operatorFlags: withDealerFlags(buildTechRiskOperatorFlags(map), [
+            ...dealerMapIssues,
+            ...foreignBefore,
+            ...collectForeignDealerLanguageFlags(text, map, {
+              briefs: [dealerFactsBrief, sourceFactsBrief],
+              facts: dealerFacts,
+            }),
+          ]),
         };
       }
     }
     return {
       text,
       technicalRiskMap: map,
-      operatorFlags: withDealerFlags(buildTechRiskOperatorFlags(map), dealerMapIssues),
+      operatorFlags: withDealerFlags(buildTechRiskOperatorFlags(map), [
+        ...dealerMapIssues,
+        ...foreignBefore,
+        ...collectForeignDealerLanguageFlags(text, map, {
+          briefs: [dealerFactsBrief, sourceFactsBrief],
+          facts: dealerFacts,
+        }),
+      ]),
     };
   } catch (e) {
     rethrowNormalizedIncompleteComment(e, (t) =>
-      stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(t)),
+      stripUnauthorizedEuroAmounts(
+        normalizeProvinExpertAiComment(dropTechnicalRisksSectionTitle(t), TECH_RISK_COMMENT_OPTS),
+      ),
     );
   }
 }

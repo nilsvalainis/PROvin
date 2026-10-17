@@ -55,9 +55,18 @@ describe("tech-risk A/B harness: zelts", () => {
 
 describe("tech-risk v2 kartes prompts", () => {
   it("satur JSON atslēgas, ko parseris prasa (A/B 2026-10-17: 16/20 kartes bez riskiem)", async () => {
-    const { AI_TECH_RISK_V2_MAP_SYSTEM } = await import("@/lib/admin-ai-tech-risk-v2-prompts");
+    const { AI_TECH_RISK_V2_MAP_SYSTEM, AI_TECH_RISK_V2_TEXT_SYSTEM, AI_TECH_RISK_V2_QA_SYSTEM } =
+      await import("@/lib/admin-ai-tech-risk-v2-prompts");
     for (const k of ['"component"', '"failure_mode"', '"this_car_position"', '"recalls"', '"identification"']) {
       expect(AI_TECH_RISK_V2_MAP_SYSTEM).toContain(k);
     }
+    expect(AI_TECH_RISK_V2_MAP_SYSTEM).toContain("D<n> <datums> <km>: <darbs latviski>");
+    expect(AI_TECH_RISK_V2_TEXT_SYSTEM.toLowerCase()).toContain(
+      "dīlera ierakstus citē tikai latviski, oriģinālvalodas tekstu nekopē",
+    );
+    expect(AI_TECH_RISK_V2_TEXT_SYSTEM.toLowerCase()).toContain("nesāc ar sadaļas nosaukumu");
+    expect(AI_TECH_RISK_V2_QA_SYSTEM.toLowerCase()).toContain(
+      "dīlera ierakstus citē tikai latviski, oriģinālvalodas tekstu nekopē",
+    );
   });
 });

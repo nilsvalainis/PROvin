@@ -2,9 +2,24 @@ import { describe, expect, it } from "vitest";
 import {
   findBannedVocabularyHits,
   findForbiddenPersonaNounHits,
+  findInternalClientTermHits,
   stripForbiddenPersonaNouns,
   textHasForbiddenPersonaNoun,
 } from "@/lib/provin-banned-vocabulary";
+
+describe("internal client terms and damper wording", () => {
+  it("flags Riska kartē and Dzinēja identifikācija", () => {
+    expect(findInternalClientTermHits("Riska kartē ķēde ir iekšā.").some((h) => h.code === "internal_riska_karte")).toBe(
+      true,
+    );
+    expect(
+      findInternalClientTermHits("Dzinēja identifikācija paliek iekšēja.").some(
+        (h) => h.code === "internal_dzineja_identifikacija",
+      ),
+    ).toBe(true);
+    expect(findBannedVocabularyHits("kloķvārpstas skriemelis (demferis)")).toEqual([]);
+  });
+});
 
 describe("forbidden persona nouns", () => {
   it("flags Latvian e-word family and ekspertīze", () => {

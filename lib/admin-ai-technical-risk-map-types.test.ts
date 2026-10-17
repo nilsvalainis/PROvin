@@ -49,4 +49,12 @@ describe("parseTechnicalRiskMap", () => {
       stripTechnicalRiskEurSentences("Ķēde ir jāklausās. Orientējoši 400-800 EUR (PROVIN dati, 2026-09). Klātienē startu."),
     ).toBe("Ķēde ir jāklausās. Klātienē startu.");
   });
+
+  it("keeps 2013. gadā together and drops Šāda summa after a EUR sentence", () => {
+    expect(
+      stripTechnicalRiskEurSentences(
+        "Importēts 2013. gadā Vācijā. Orientējoši 800 EUR 2026. Šāda summa nav apstiprināta. Klātienē startu.",
+      ),
+    ).toBe("Importēts 2013. gadā Vācijā. Klātienē startu.");
+  });
 });
