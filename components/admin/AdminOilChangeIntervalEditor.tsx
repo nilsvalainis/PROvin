@@ -1,7 +1,7 @@
 "use client";
 
-import "./admin-oil-interval-preview.css";
 import { useMemo } from "react";
+import { oilChangeIntervalAdminPreviewCss } from "@/lib/oil-change-interval-pdf-styles";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
@@ -109,6 +109,7 @@ export function AdminOilChangeIntervalEditor({
 
   return (
     <div className="mb-2 min-w-0 rounded-lg border border-slate-200/90 bg-white p-2.5">
+      <style dangerouslySetInnerHTML={{ __html: oilChangeIntervalAdminPreviewCss() }} />
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-[11px] font-semibold text-[#1d1d1f]">Eļļas maiņas intervāli</p>
         {onPdfIncludeOilChange ? (
