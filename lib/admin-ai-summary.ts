@@ -4,12 +4,11 @@ import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_SUMMARY_ANALYSIS_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
-  buildFullAiOrderContextText,
+  buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
-import { buildPreviouslyGeneratedSourceCommentsContext } from "@/lib/admin-source-comment-blocks";
 import { ADMIN_TECHNICAL_RISKS_LABEL } from "@/lib/admin-workspace-field-labels";
 import {
   throwIfBlankGeneratedComment,
@@ -45,21 +44,17 @@ export async function generateSummaryAnalysisWithAi(input: AiOrderContextInput):
   const inspectionText = expertSection("2. Ieteikumi klātienes apskatei", inspectionPlan);
   const priceText = expertSection("Cenas atbilstība", priceFit);
 
-  const orderContext = await buildFullAiOrderContextText({
-    ...input,
-    irissSummary: undefined,
-    inspectionPlan: undefined,
-    technicalRiskAnalysis: undefined,
-    priceFit: undefined,
-  });
+  const orderContext = await buildAiCommentGenerationContext(
+    {
+      ...input,
+      irissSummary: undefined,
+    },
+    "summary",
+  );
 
   if (!orderContext.trim() && !sellerText && !techText && !inspectionText && !priceText) {
     throw new Error("empty_order_context");
   }
-
-  const expertBundle = [sellerText, techText, inspectionText, priceText].filter(Boolean).join("\n\n");
-
-  const sourceCommentsContext = buildPreviouslyGeneratedSourceCommentsContext(null, blocks).trim();
 
   const makeModel = blocks.csdd.makeModel.trim();
   const fuel = blocks.csdd.fuelType.trim();
@@ -69,15 +64,7 @@ export async function generateSummaryAnalysisWithAi(input: AiOrderContextInput):
     `Pasūtījuma ID: ${input.sessionId}
 ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
 
-${orderContext ? `${orderContext}\n\n---\n\n` : ""}${
-      sourceCommentsContext
-        ? `Esošie komentāri avotu sadaļās (TIKAI konteksts — NEATKĀRTO un neapkopo teikumus):\n\n${sourceCommentsContext}\n\n---\n\n`
-        : ""
-    }${
-      expertBundle
-        ? `Jau sagatavotās sadaļas (TIKAI konteksts — NEATKĀRTO detalizāciju):\n\n${expertBundle}\n\n---\n\n`
-        : ""
-    }Sagatavo gala kopsavilkumu klientam laukam „3. Kopsavilkums”.
+${orderContext ? `${orderContext}\n\n---\n\n` : ""}Sagatavo gala kopsavilkumu klientam laukam „3. Kopsavilkums”.
 
 Uzdevums: apspriestie **fakti** + **tikai ja vajag** slēdziens ar rekomendāciju uz **pārbaudi servisā**. Sāc ar faktu, ne ar vēstures vērtējumu. Bez dual-history ievada, bez on-one-hand pretstatījuma.
 

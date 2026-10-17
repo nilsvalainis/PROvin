@@ -108,6 +108,8 @@ export async function generateTechnicalRiskMapWithAi(input: {
   identificationBrief: string;
   /** OFICIĀLĀ DĪLERA FAKTI ar ID (D1…); tukšs, ja OneAuto datu nav. */
   dealerFactsBrief?: string;
+  /** Kompakts „Pārbaudīti fakti” bloks (tikai verificēti, kas attiecas uz šo auto). */
+  unitFactsBrief?: string;
   /** Operatora izvēlētie līmeņi (`resolveTechRiskV2Tiers`); ja nav, no `modelTier`. */
   tiers?: TechRiskV2Tiers;
   /** Manuāls Claude papildinājums tikai šiem agregātiem (operatora komanda `Claude: …`). */
@@ -128,7 +130,7 @@ ${input.identificationBrief}
 
 ${kbBlock}
 
-${input.dealerFactsBrief?.trim() ? `${input.dealerFactsBrief.trim()}\n\n` : ""}${input.orderContext}
+${input.unitFactsBrief?.trim() ? `${input.unitFactsBrief.trim()}\n\n` : ""}${input.dealerFactsBrief?.trim() ? `${input.dealerFactsBrief.trim()}\n\n` : ""}${input.orderContext}
 
 ---
 

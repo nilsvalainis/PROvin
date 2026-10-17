@@ -18,6 +18,11 @@ describe("internal client terms and damper wording", () => {
       ),
     ).toBe(true);
     expect(findBannedVocabularyHits("kloķvārpstas skriemelis (demferis)")).toEqual([]);
+    expect(findInternalClientTermHits("Dzinēja kods noteikts pēc jaudas un tilpuma.").some((h) => h.code === "internal_engine_code_guess")).toBe(
+      true,
+    );
+    expect(findInternalClientTermHits("Piedziņa HECK.").some((h) => h.code === "internal_heck")).toBe(true);
+    expect(findInternalClientTermHits("AGR-Kühler noplūst.").some((h) => h.code === "internal_agr_kuhler")).toBe(true);
   });
 });
 

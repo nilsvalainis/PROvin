@@ -7,9 +7,8 @@ import {
   aiSourceCommentSystemPrompt,
 } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
-import { buildFullAiOrderContextText } from "@/lib/admin-ai-order-context";
+import { buildAiCommentGenerationContext } from "@/lib/admin-ai-order-context";
 import {
-  buildPreviouslyGeneratedSourceCommentsContext,
   orderHasOilIntervalDataForAi,
   sourceBlockPlainTextForAi,
   type AiSourceCommentBlockKey,
@@ -101,22 +100,25 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
 
   const portfolioContext = isolateDealer
     ? ""
-    : await buildFullAiOrderContextText({
-        sessionId: input.sessionId,
-        vin: input.vin?.trim() || null,
-        listingUrl: input.listingUrl?.trim() || null,
-        customerName: input.customerName?.trim() || null,
-        notes: input.notes?.trim() || null,
-        sourceBlocks: input.sourceBlocks,
-        commentBreadth: input.commentBreadth,
-        irissSummary: input.iriss ?? undefined,
-        inspectionPlan: input.apskatesPlāns ?? undefined,
-        technicalRiskAnalysis: input.tehniskoRiskuAnalize ?? undefined,
-        priceFit: input.cenasAtbilstiba ?? undefined,
-        internalComment: input.internalComment ?? undefined,
-        mileageComment: input.mileageComment ?? undefined,
-        sourcesComparisonComment: input.sourcesComparisonComment ?? undefined,
-      });
+    : await buildAiCommentGenerationContext(
+        {
+          sessionId: input.sessionId,
+          vin: input.vin?.trim() || null,
+          listingUrl: input.listingUrl?.trim() || null,
+          customerName: input.customerName?.trim() || null,
+          notes: input.notes?.trim() || null,
+          sourceBlocks: input.sourceBlocks,
+          commentBreadth: input.commentBreadth,
+          irissSummary: input.iriss ?? undefined,
+          inspectionPlan: input.apskatesPlāns ?? undefined,
+          technicalRiskAnalysis: input.tehniskoRiskuAnalize ?? undefined,
+          priceFit: input.cenasAtbilstiba ?? undefined,
+          internalComment: input.internalComment ?? undefined,
+          mileageComment: input.mileageComment ?? undefined,
+          sourcesComparisonComment: input.sourcesComparisonComment ?? undefined,
+        },
+        isOilInterval ? "summary" : "source",
+      );
 
   if (isOilInterval) {
     if (!portfolioContext.trim() && !focusDataText && !orderHasOilIntervalDataForAi(input.sourceBlocks)) {
@@ -125,23 +127,6 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
   } else if (!focusDataText) {
     throw new Error("empty_source_data");
   }
-
-  const previousComments = isolateDealer
-    ? ""
-    : buildPreviouslyGeneratedSourceCommentsContext(
-        input.blockKey,
-        input.sourceBlocks,
-        input.citiAvotiSectionIndex,
-        targetField,
-      );
-
-  const chainingSection =
-    isolateDealer || !previousComments.trim()
-      ? ""
-      : `=== Esošie komentāri citos avotos (JAU UZRAKSTĪTI - NEATKĀRTO; tikai īss delta / papildinājums) ===
-${previousComments}
-
-`;
 
   const mileageHint = input.mileageComment?.trim()
     ? `Esošais „NOBRAUKUMA VĒSTURES KOMENTĀRS” jau ir kontekstā — NEATKĀRTO tā nobraukuma forenziku; ja km sakrīt, pietiek ar vienu teikumu.
@@ -171,7 +156,7 @@ ${focusDataText || "(dīlera tabulā nav atsevišķu rindu)"}`
             : `=== Pilns pasūtījuma konteksts (VISI avoti - rēķini no visa, kas iegūts) ===
 ${portfolioContext}
 
-${chainingSection}=== Oficiālā dīlera dati ===
+=== Oficiālā dīlera dati ===
 ${focusDataText || "(dīlera tabulā nav atsevišķu rindu - rēķini no pārējiem avotiem)"}`
         }
 
@@ -233,10 +218,10 @@ Avota sadaļa (fokuss): ${blockLabel}
 ${isolateBanner}${
           isolateDealer
             ? ""
-            : `=== Pilns pasūtījuma konteksts (visi avoti - salīdzināšanai) ===
+            : `=== Pasūtījuma konteksts (kanoniskie fakti + verdikti; NEATKĀRTO eseju) ===
 ${portfolioContext}
 
-${chainingSection}`
+`
         }=== Konkrētā avota „${blockLabel}” dati (bez esošajiem komentāriem) ===
 ${focusDataText}
 

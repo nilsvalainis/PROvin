@@ -52,6 +52,7 @@ vi.mock("@/lib/admin-ai-dispatch", () => ({
 
 vi.mock("@/lib/admin-ai-order-context", () => ({
   buildFullAiOrderContextText: vi.fn(async () => "PILNS KONTEKSTS ".repeat(50)),
+  buildAiCommentGenerationContext: vi.fn(async () => "PILNS KONTEKSTS ".repeat(50)),
 }));
 
 async function run(modelTier: string, operatorNotes = "") {

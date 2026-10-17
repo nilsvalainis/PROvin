@@ -97,6 +97,12 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "paint_gauge_incomplete",
   "source_field_expansion",
   "planning_leak",
+  "internal_riska_karte",
+  "internal_dzineja_identifikacija",
+  "internal_engine_code_guess",
+  "internal_karte",
+  "internal_heck",
+  "internal_agr_kuhler",
 ]);
 
 /** Lētais Gemini Flash piegājiens. Nav vērts atkārtot ar Opus/Sonnet. */
@@ -185,6 +191,7 @@ async function withSelfCorrection(
   const critical = allIssues.filter(
     (i) =>
       i.code.startsWith("vocabulary_") ||
+      i.code.startsWith("internal_") ||
       SELF_CORRECTION_RETRY_CODES.has(i.code) ||
       (lengthV2 && LENGTH_RULES_V2_CRITICAL_RETRY_CODES.has(i.code)),
   );

@@ -14,7 +14,7 @@ import {
 } from "@/lib/listing-peek-comment-presets";
 import { formatListingAiSnapshotForAi } from "@/lib/listing-scrape";
 import { fetchListingAiSnapshot } from "@/lib/listing-scrape-server";
-import { applyProvinReportCopyVocabulary } from "@/lib/source-summary-comment-format";
+import { finalizeProvinExpertAiComment } from "@/lib/source-summary-comment-format";
 
 function listingPeekPhraseBank(): string {
   return LISTING_PEEK_TOPICS.map((topic) => {
@@ -27,7 +27,7 @@ function polishPeekLines(lines: Record<ListingPeekTopicId, string>): Record<List
   const next = { ...lines };
   for (const id of Object.keys(next) as ListingPeekTopicId[]) {
     const t = next[id]?.trim();
-    next[id] = t ? applyProvinReportCopyVocabulary(stripListingPeekMarkdown(t)) : "";
+    next[id] = t ? finalizeProvinExpertAiComment(stripListingPeekMarkdown(t)) : "";
   }
   return next;
 }
@@ -91,8 +91,10 @@ export async function generateListingPeekCommentWithAi(input: {
 
   const closer = parsed.closer;
   const text = stripListingPeekCommentLeadingGreeting(
-    stripListingPeekMarkdown(
-      parsed.letter?.trim() || assembleListingPeekCustomerComment({ closer, lines }),
+    finalizeProvinExpertAiComment(
+      stripListingPeekMarkdown(
+        parsed.letter?.trim() || assembleListingPeekCustomerComment({ closer, lines }),
+      ),
     ),
   ).trim();
   if (!text) throw new Error("ai_invalid_json");

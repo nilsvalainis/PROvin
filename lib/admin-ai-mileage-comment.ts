@@ -4,7 +4,7 @@ import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_MILEAGE_COMMENT_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
-  buildFullAiOrderContextText,
+  buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
 import { orderHasMileageDataForAi } from "@/lib/admin-ai-data-availability";
@@ -16,10 +16,10 @@ export async function generateMileageCommentWithAi(input: AiOrderContextInput): 
     throw new Error("empty_mileage_data");
   }
 
-  const orderContext = await buildFullAiOrderContextText({
-    ...input,
-    mileageComment: undefined,
-  });
+  const orderContext = await buildAiCommentGenerationContext(
+    { ...input, mileageComment: undefined },
+    "summary",
+  );
 
   const userPrompt = appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}

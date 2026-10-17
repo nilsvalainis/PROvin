@@ -205,5 +205,10 @@
  * - 2026-10-17.2 - Dīlera-only produkts: komentāri tikai no dīlera datiem;
  *   Key Read un tukšie km paliek PDF. Pēc jauninājuma uz auditu / MINI
  *   izolācija krīt. OEM-garāks eļļas solis PDF neitrāls, ne sarkans.
+ * - 2026-10-17.3 - KANONISKIE FAKTI visos ✨ promptos; kompakts konteksts
+ *   (avoti: lapa + verdikti; kopsavilkums: lapa + komentāri vienu reizi).
+ *   Pretrunu pārbaude pret lapu (odometra kritums, īpašnieki/maiņas, DE/LV).
+ *   Iekšējo noplūžu filtrs. Prepare Draft: nobraukums/negadījumi pirms avotiem;
+ *   avotu salīdzinājums tikai ar PROVIN_AUTO_SOURCES_COMPARISON=1.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.2";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.3";

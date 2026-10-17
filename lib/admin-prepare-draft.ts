@@ -9,6 +9,10 @@ import { generateMileageCommentWithAi } from "@/lib/admin-ai-mileage-comment";
 import type { AiOrderContextInput } from "@/lib/admin-ai-order-context";
 import { generateSourceCommentWithAi } from "@/lib/admin-ai-source-comment";
 import { generateSourcesComparisonWithAi } from "@/lib/admin-ai-sources-comparison";
+import {
+  isAutoSourcesComparisonEnabled,
+  PREPARE_DRAFT_SOURCES_COMPARISON_OFF_DETAIL,
+} from "@/lib/admin-sources-comparison-config";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
 import {
   applySourceBlockGeneratedComment,
@@ -320,8 +324,46 @@ export async function runPrepareDraftPipeline(input: {
   const commentTier = AI_ADMIN_FIELD_DEFAULT_TIER.source_comment;
   const synthesisTier = AI_ADMIN_FIELD_DEFAULT_TIER.mileage;
   const ctxBase: AiOrderContextInput = { ...input.context, sourceBlocks: blocks, modelTier: commentTier };
+  const synthesisCtx: AiOrderContextInput = { ...ctxBase, modelTier: synthesisTier };
 
-  /** Avotu komentāri paralēli — sākuma Prepare Draft brīdī sibling komentāru vēl nav; mileage/negadījumi secīgi pēc tam. */
+  try {
+    const mileageText = await generateMileageCommentWithAi(synthesisCtx);
+    if (mileageText.trim()) {
+      orderEdits.mileageComment = mileageText.trim();
+      steps.push({ id: "comment:mileage", label: "Nobraukuma komentārs", status: "ok" });
+    } else {
+      steps.push({ id: "comment:mileage", label: "Nobraukuma komentārs", status: "skipped" });
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    steps.push({ id: "comment:mileage", label: "Nobraukuma komentārs", status: "error", detail: msg });
+    warnings.push(`Nobraukuma komentārs: ${msg}`);
+  }
+
+  try {
+    const incidentsText = await generateIncidentsSummaryWithAi({
+      ...synthesisCtx,
+      mileageComment: orderEdits.mileageComment ?? synthesisCtx.mileageComment,
+    });
+    if (incidentsText.trim()) {
+      orderEdits.internalComment = incidentsText.trim();
+      steps.push({ id: "comment:incidents", label: "Negadījumu kopsavilkums", status: "ok" });
+    } else {
+      steps.push({ id: "comment:incidents", label: "Negadījumu kopsavilkums", status: "skipped" });
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    steps.push({ id: "comment:incidents", label: "Negadījumu kopsavilkums", status: "error", detail: msg });
+    warnings.push(`Negadījumu kopsavilkums: ${msg}`);
+  }
+
+  const ctxAfterSynthesis: AiOrderContextInput = {
+    ...ctxBase,
+    mileageComment: orderEdits.mileageComment ?? ctxBase.mileageComment,
+    internalComment: orderEdits.internalComment ?? ctxBase.internalComment,
+  };
+
+  /** Avotu komentāri pēc nobraukuma/negadījumiem, lai verdiktos būtu kanoniskie fakti. */
   const commentJobs = AI_SOURCE_COMMENT_BLOCK_KEYS.map(async (blockKey) => {
     const stepId = `comment:${blockKey}`;
     if (!sourceBlockHasDataExcludingComments(blockKey, blocks)) {
@@ -341,15 +383,15 @@ export async function runPrepareDraftPipeline(input: {
         sourceBlockCommentsPlainForAi(blockKey, blocks),
       ).trim();
       const text = await generateSourceCommentWithAi({
-        sessionId: ctxBase.sessionId,
+        sessionId: ctxAfterSynthesis.sessionId,
         blockKey,
-        vin: ctxBase.vin,
-        listingUrl: ctxBase.listingUrl,
-        customerName: ctxBase.customerName,
-        notes: ctxBase.notes,
+        vin: ctxAfterSynthesis.vin,
+        listingUrl: ctxAfterSynthesis.listingUrl,
+        customerName: ctxAfterSynthesis.customerName,
+        notes: ctxAfterSynthesis.notes,
         sourceBlocks: blocks,
-        internalComment: ctxBase.internalComment,
-        mileageComment: ctxBase.mileageComment,
+        internalComment: ctxAfterSynthesis.internalComment,
+        mileageComment: ctxAfterSynthesis.mileageComment,
         existingDraftPlain: existingPlain,
         modelTier: commentTier,
       });
@@ -388,37 +430,20 @@ export async function runPrepareDraftPipeline(input: {
     }
   }
 
-  const ctxAfterComments: AiOrderContextInput = { ...ctxBase, sourceBlocks: blocks, modelTier: synthesisTier };
+  const ctxAfterComments: AiOrderContextInput = {
+    ...ctxAfterSynthesis,
+    sourceBlocks: blocks,
+    modelTier: synthesisTier,
+  };
 
-  try {
-    const mileageText = await generateMileageCommentWithAi(ctxAfterComments);
-    if (mileageText.trim()) {
-      orderEdits.mileageComment = mileageText.trim();
-      steps.push({ id: "comment:mileage", label: "Nobraukuma komentārs", status: "ok" });
-    } else {
-      steps.push({ id: "comment:mileage", label: "Nobraukuma komentārs", status: "skipped" });
-    }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    steps.push({ id: "comment:mileage", label: "Nobraukuma komentārs", status: "error", detail: msg });
-    warnings.push(`Nobraukuma komentārs: ${msg}`);
-  }
-
-  try {
-    const incidentsText = await generateIncidentsSummaryWithAi(ctxAfterComments);
-    if (incidentsText.trim()) {
-      orderEdits.internalComment = incidentsText.trim();
-      steps.push({ id: "comment:incidents", label: "Negadījumu kopsavilkums", status: "ok" });
-    } else {
-      steps.push({ id: "comment:incidents", label: "Negadījumu kopsavilkums", status: "skipped" });
-    }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    steps.push({ id: "comment:incidents", label: "Negadījumu kopsavilkums", status: "error", detail: msg });
-    warnings.push(`Negadījumu kopsavilkums: ${msg}`);
-  }
-
-  if (countSourcesWithData(blocks) >= 2) {
+  if (!isAutoSourcesComparisonEnabled()) {
+    steps.push({
+      id: "comment:sources-comparison",
+      label: "Avotu salīdzinājums",
+      status: "skipped",
+      detail: PREPARE_DRAFT_SOURCES_COMPARISON_OFF_DETAIL,
+    });
+  } else if (countSourcesWithData(blocks) >= 2) {
     try {
       const comparisonText = await generateSourcesComparisonWithAi(ctxAfterComments);
       if (comparisonText.trim()) {

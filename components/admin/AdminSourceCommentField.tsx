@@ -1,13 +1,23 @@
 "use client";
 
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
+import { AdminFactCheckButton, AdminFactCheckPanel } from "@/components/admin/AdminFactCheckPanel";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { LISTING_ANALYSIS_COMMENT_LABEL } from "@/lib/admin-source-blocks";
+import type { FactCheckFlag } from "@/lib/unit-facts/types";
 
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import type { ReactNode } from "react";
+
+export type AdminFactCheckSlot = {
+  busy: boolean;
+  flags: FactCheckFlag[];
+  dismissed: readonly string[];
+  onCheck: () => void;
+  onDismiss: (flag: FactCheckFlag) => void;
+};
 
 export type AdminAiSourceCommentSlot = {
   allowed: boolean;
@@ -15,6 +25,7 @@ export type AdminAiSourceCommentSlot = {
   error: string | null;
   hasSourceData: boolean;
   onGenerate: (operatorNotes: string, modelTier: AiAdminModelTier) => void;
+  factCheck?: AdminFactCheckSlot | null;
 };
 
 type Props = {
@@ -55,20 +66,31 @@ export function AdminSourceCommentField({
     ) : undefined;
   const generate =
     ai && !readOnly ? (
-      <AdminAiGenerateWithPrefill
-        label="Ģenerēt komentāru"
-        busy={ai.busy}
-        disabled={!ai.allowed || !ai.hasSourceData || disabled}
-        demoOnly={!ai.allowed}
-        title={
-          !ai.allowed
-            ? undefined
-            : !ai.hasSourceData
-              ? "Vispirms aizpildi šī avota datus (tabulas, laukus u.c.)"
-              : "No šī avota datiem ģenerē komentāru ar AI"
-        }
-        onGenerate={ai.onGenerate}
-      />
+      <span className="inline-flex flex-wrap items-center gap-1">
+        {ai ? (
+          <AdminAiGenerateWithPrefill
+            label="Ģenerēt komentāru"
+            busy={ai.busy}
+            disabled={!ai.allowed || !ai.hasSourceData || disabled}
+            demoOnly={!ai.allowed}
+            title={
+              !ai.allowed
+                ? undefined
+                : !ai.hasSourceData
+                  ? "Vispirms aizpildi šī avota datus (tabulas, laukus u.c.)"
+                  : "No šī avota datiem ģenerē komentāru ar AI"
+            }
+            onGenerate={ai.onGenerate}
+          />
+        ) : null}
+        {ai?.factCheck ? (
+          <AdminFactCheckButton
+            busy={ai.factCheck.busy}
+            disabled={disabled}
+            onClick={ai.factCheck.onCheck}
+          />
+        ) : null}
+      </span>
     ) : null;
 
   return (
@@ -90,6 +112,13 @@ export function AdminSourceCommentField({
           aria-label={ariaLabel}
         />
       )}
+      {ai?.factCheck ? (
+        <AdminFactCheckPanel
+          flags={ai.factCheck.flags}
+          dismissed={ai.factCheck.dismissed}
+          onDismiss={ai.factCheck.onDismiss}
+        />
+      ) : null}
     </div>
   );
 }

@@ -24,7 +24,8 @@ describe("FLASH MAX jobs", () => {
   it("uses per-field models matching standalone ✨ buttons", () => {
     expect(FLASH_MAX_DEFAULT_TIER).toBe("gemini-flash");
     expect(FLASH_MAX_DAILY_JOB_IDS).toEqual([
-      "sources_comparison",
+      "mileage",
+      "incidents",
       "csdd",
       "autodna",
       "carvertical",
@@ -34,11 +35,10 @@ describe("FLASH MAX jobs", () => {
       "tirgus",
       "seller",
       "photo",
-      "incidents",
-      "mileage",
       "technical_risks",
       "inspection",
       "summary",
+      "sources_comparison",
     ]);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "dealer_service")).toBe(false);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "sources_comparison" && j.group === "daily")).toBe(true);
@@ -90,7 +90,7 @@ describe("FLASH MAX jobs", () => {
       tiers: defaultFlashMaxSelection().tiers,
       breadths: defaultFlashMaxSelection().breadths,
     });
-    expect(picked.map((j) => j.id)).toEqual(["csdd", "summary", "ltab"]);
+    expect(picked.map((j) => j.id)).toEqual(["csdd", "ltab", "summary"]);
     expect(summaryOnlyFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_SUMMARY_ONLY_JOB_IDS]);
   });
 
@@ -156,6 +156,15 @@ describe("FLASH MAX jobs", () => {
         { id: "summary", label: "3. Kopsavilkums", status: "error", detail: "timeout" },
       ]),
     ).toMatch(/sagatavoti 1/);
+  });
+
+  it("runs mileage and incidents before sources, extras before tech, comparison last", () => {
+    const ids = FLASH_MAX_JOBS.map((j) => j.id);
+    expect(ids.indexOf("mileage")).toBeLessThan(ids.indexOf("csdd"));
+    expect(ids.indexOf("incidents")).toBeLessThan(ids.indexOf("csdd"));
+    expect(ids.indexOf("ltab")).toBeLessThan(ids.indexOf("technical_risks"));
+    expect(ids.indexOf("citi_avoti")).toBeLessThan(ids.indexOf("technical_risks"));
+    expect(ids.indexOf("summary")).toBeLessThan(ids.indexOf("sources_comparison"));
   });
 
   it("defaults summary trio to wide and other jobs to compact", () => {
