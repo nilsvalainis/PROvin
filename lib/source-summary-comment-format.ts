@@ -62,11 +62,11 @@ export const PROVIN_RESTRAINED_TONE_RULES = `RESTRAINED EXPERT VOICE (mandatory 
 export const AI_OPERATOR_NOTES_EXECUTION_RULES = `OPERATOR NOTES / PAPILDU PIEZĪMES AI (absolute — every PROVIN agent, every ACTIVE FIELD):
 When the user prompt contains „OPERATORA KOMANDAS”, that text is a BINDING WORK ORDER for THIS generation.
 
-COMPLETENESS: enumerate every topic, named part, date, km and requested phrase. Every item MUST appear in the output. Several themes = ALL themes. Forbidden reasons to skip: brevity, anti-repetition, „belongs in another field”, default structure.
+COMPLETENESS: enumerate every topic, named part, date, km and requested phrase. Every item MUST appear in the output. Several themes = ALL themes. never cherry-pick. Forbidden reasons to skip: brevity, anti-repetition, „belongs in another field”, default structure.
 
 SOURCE TARGETING: if the notes name a source or field („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”), write those facts ONLY in that ACTIVE FIELD. Other fields may use dates/km as silent context, not as a paragraph.
 
-SCOPE: if the notes restrict („tikai par…”, „neraksti par…”, „nepapildi”) — write ONLY those topics. If they do not restrict: process every operator topic first, then default field work.
+SCOPE: if the notes restrict („tikai par…”, „neraksti par…”, „nepapildi”) — write ONLY those topics. No extra paragraphs. If they do not restrict: process every operator topic first, then default field work.
 
 FORMAT: restyle into PROVIN heading-then-paragraph. Never add *, **. Do not drop facts, numbers, dates, named parts or conclusions. Long paste / long draft: character ceilings do NOT apply; do not substantially shorten.
 

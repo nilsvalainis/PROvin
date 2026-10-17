@@ -259,7 +259,7 @@ Strictly enforce heading-on-its-own-line then paragraph - never "- " or bullet l
 Always write in high-quality natural Latvian. Never invent facts absent from provided context.
 `;
 
-/** Pilnais eksperta prompts (eļļa, cena, iekšējie lauki, kas nav tīrs avota komentārs). */
+/** Pilnais CORE + extras prompts (eļļa, cena, iekšējie lauki, kas nav tīrs avota komentārs). */
 export const PROVIN_EXPERT_SYSTEM_PROMPT = `${PROVIN_EXPERT_CORE_SYSTEM}
 
 ${AI_WRAP_FILM_RULES}

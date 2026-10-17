@@ -285,7 +285,7 @@ const SAFE_VOCAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
   [/\bswirl\s+flap\w*/gi, "ieplūdes kolektors"],
   [/\bvirpuļvārst\w*/gi, "ieplūdes kolektors"],
   [/\bintegritāt\w*/gi, "stāvoklis"],
-  [/\bšim automašīn/gi, "šai automašīn"],
+  [/šim automašīn/gi, "šai automašīn"],
   [/tipiski šim agregātam ir/gi, "šim dzinējam raksturīga"],
   [/tipiski šim agregātam/gi, "šim dzinējam raksturīga"],
 ];

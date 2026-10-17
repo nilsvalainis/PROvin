@@ -164,7 +164,7 @@ describe("PROVIN AI prompt invariants", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(/AI_STYLE_CANON_SHARED/);
     expect(prompts).toMatch(/NOT.*physically inspected|fiziski nav apskatījis/i);
-    expect(prompts).toMatch(/tehniski perfekts/);
+    expect(readRepo("lib/provin-style-canon.ts")).toMatch(/tehniski perfekts/);
     expect(readRepo("lib/provin-style-canon.ts")).toMatch(/AI_TONE_PRINCIPLE_RULES/);
     expect(readRepo("lib/provin-style-canon.ts")).toMatch(/Nepārspīlē un nemīkstini/);
   });
@@ -627,7 +627,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/LENGTH CEILINGS/);
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/ONE short sentence/i);
     expect(PROVIN_COMMENT_BREVITY_RULES).not.toMatch(/FLAGSHIP EXCEPTION/);
-    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/flagship fields live only/);
+    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/flagship fields live only/i);
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/3\. Kopsavilkums/);
   });
 
@@ -636,9 +636,11 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_EXPERT_PARAGRAPH_PRESENTATION).toContain("BREVITY & FOCUS");
     expect(AI_EXPERT_PARAGRAPH_PRESENTATION).not.toMatch(/\*\*Anomālija:\*\*/);
     const prompts = readRepo("lib/admin-ai-prompts.ts");
-    expect(prompts).toContain("PROVIN_RESTRAINED_TONE_RULES");
-    expect(prompts).toContain("PROVIN_COMMENT_BREVITY_RULES");
+    expect(prompts).toContain("AI_EXPERT_PARAGRAPH_PRESENTATION");
+    expect(prompts).toContain("AI_STYLE_CANON_SHARED");
     expect(prompts).toMatch(/LENGTH CEILINGS/);
+    expect(readRepo("lib/source-summary-comment-format.ts")).toContain("PROVIN_RESTRAINED_TONE_RULES");
+    expect(readRepo("lib/source-summary-comment-format.ts")).toContain("PROVIN_COMMENT_BREVITY_RULES");
   });
 
   it("few-shot examples stay free of hyperbole", () => {

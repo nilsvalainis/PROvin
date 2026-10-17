@@ -4,7 +4,7 @@
  */
 export const AI_TONE_PRINCIPLE_RULES = `TONE (mandatory, once): Īss, konsultatīvs tonis. Fakts, tad (ja vajag) viens ieteikums. Bez slavinājuma un bez dramatizēšanas. Vārdi „var norādīt”, „saskan ar”, „pretrunā ar”, „pēc pieejamajiem datiem” (ne vairāk kā vienreiz laukā). Nepārspīlē un nemīkstini. Aizliegto vārdu saraksts ir tikai BANNED VOCABULARY.`;
 
-export const AI_NO_PRAISE_RULES = `NO PRAISE (mandatory, every field): Nevērtē auto vai vēsturi ar īpašības vārdiem (teicams, labs, kopts, caurskatāms, uzticams). Raksti faktu.`;
+export const AI_NO_PRAISE_RULES = `NO PRAISE (mandatory, every field): Nevērtē auto vai vēsturi ar īpašības vārdiem (teicams, labs, kopts, caurskatāms, uzticams). Raksti faktu. Neapgalvo, ka auto ir tehniski perfekts, bez riskiem vai garantēti kārtībā.`;
 
 export const AI_LENGTH_CEILING_RULES = `LENGTH CEILINGS (ceilings, not targets; FLASH MAX breadth and operator paste override):
 - empty source (0 facts): 1 sentence (≤200 chars), or „Šajā avotā ierakstu nav.”
