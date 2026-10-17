@@ -371,6 +371,9 @@ export function workspacePersistFromDraftWorkspace(
     ...(w.deletedPhotoIds?.length ? { deletedPhotoIds: w.deletedPhotoIds } : {}),
     ...(w.clearedFields && Object.keys(w.clearedFields).length ? { clearedFields: w.clearedFields } : {}),
     ...(w.technicalRiskMap ? { technicalRiskMap: w.technicalRiskMap } : {}),
+    ...(w.odometerAnomalyOverrides != null
+      ? { odometerAnomalyOverrides: w.odometerAnomalyOverrides }
+      : {}),
   });
   const h = hydrateWorkspaceFromStorage(json);
   if (!h) return null;
@@ -389,5 +392,8 @@ export function workspacePersistFromDraftWorkspace(
     ...(h.deletedPhotoIds?.length ? { deletedPhotoIds: h.deletedPhotoIds } : {}),
     ...(h.clearedFields && Object.keys(h.clearedFields).length ? { clearedFields: h.clearedFields } : {}),
     ...(h.technicalRiskMap ? { technicalRiskMap: h.technicalRiskMap } : {}),
+    ...(h.odometerAnomalyOverrides != null
+      ? { odometerAnomalyOverrides: h.odometerAnomalyOverrides }
+      : {}),
   };
 }

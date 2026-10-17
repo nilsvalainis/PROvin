@@ -28,6 +28,13 @@ describe("applyProvinReportCopyVocabulary", () => {
     expect(applyProvinReportCopyVocabulary("mums—labprāt")).toBe("mums - labprāt");
   });
 
+  it("rewrites pie X km and Statuss paid/unpaid", () => {
+    expect(applyProvinReportCopyVocabulary("Darbs pie 120000 km.")).toBe("Darbs ar nobraukumu 120000 km.");
+    expect(applyProvinReportCopyVocabulary("pie šī nobraukuma bieži")).toBe("ar šo nobraukumu bieži");
+    expect(applyProvinReportCopyVocabulary("Statuss paid")).toBe("Statuss: apmaksāts");
+    expect(applyProvinReportCopyVocabulary("Statuss unpaid")).toBe("Statuss: nav apmaksāts");
+  });
+
   it("replaces kancelejisku labvēlīgs-signāls wording", () => {
     expect(applyProvinReportCopyVocabulary("Salons ir kopts, tas ir labvēlīgs signāls.")).toBe(
       "Salons ir kopts, tas ir labs rādījums datos.",
@@ -274,7 +281,7 @@ describe("finalizeProvinExpertAiComment", () => {
     expect(out).not.toMatch(/Atzīmē teikumus|Pārraksti tikai|kartē/i);
     expect(out).not.toMatch(/Dzinēja kods noteikts pēc jaudas/);
     expect(out).not.toMatch(/\bHECK\b/);
-    expect(out).toMatch(/aizmugures piedziņa/);
+    expect(out).toMatch(/aizmugurējā piedziņa/);
     expect(out).toMatch(/EGR dzesētājs/);
     expect(out).not.toMatch(/PR-7L6/);
     expect(out).toMatch(/N47 D20 C/);

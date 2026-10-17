@@ -46,7 +46,7 @@ function buildDefectTableHtml(defects: CsddInspectionDefectRow[], historic: bool
             return `<tr><td class="pdf-csdd-defect-rating tabular ${rc}">${escapeHtml(d.rating)}</td><td class="pdf-csdd-defect-desc">${escapeHtml(d.description)}</td></tr>`;
           })
           .join("\n")
-      : `<tr><td colspan="2" class="pdf-csdd-defect-empty">Nav reģistrētu trūkumu vai bojājumi.</td></tr>`;
+      : `<tr><td colspan="2" class="pdf-csdd-defect-empty">Nav reģistrētu trūkumu vai bojājumu.</td></tr>`;
 
   return `<table class="${tableClass}" role="table">
 <colgroup><col class="pdf-csdd-defect-col-nov" /><col class="pdf-csdd-defect-col-desc" /></colgroup>

@@ -1,4 +1,5 @@
 import { adminRichHtmlToPlainText, aiExpertSourceCommentToRichHtml } from "@/lib/admin-rich-comment-html";
+import { SHARED_SOURCE_COMMENT_TEMPLATES } from "@/lib/admin-source-comment-presets";
 
 export const CSDD_COMMENT_EUCARIS_HEADING_AVAILABILITY = "Datu pieejamība un EUCARIS sistēma";
 export const CSDD_COMMENT_EUCARIS_HEADING_DOCS = "Dokumentu pārbaude";
@@ -29,6 +30,7 @@ export const CSDD_COMMENT_TEMPLATES: CsddCommentTemplate[] = [
     label: "EUCARIS",
     text: CSDD_COMMENT_EUCARIS_PLAIN,
   },
+  ...SHARED_SOURCE_COMMENT_TEMPLATES,
 ];
 
 export function csddEucarisCommentHtml(): string {

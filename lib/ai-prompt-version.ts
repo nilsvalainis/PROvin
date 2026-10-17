@@ -214,5 +214,7 @@
  *   Smart = gemini-3.8-flash noklusējums; PRO = claude-opus-5-5 tikai pēc pogas.
  * - 2026-10-17.5 - DASHES kanons: ģenerētajā tekstā tikai ASCII "-";
  *   applyProvinHumanDashes pirms saglabāšanas un PDF renderī.
+ * - 2026-10-17.6 - Krāsas biezums: viens statisks bloks (100 līdz 150 / 50 līdz 150 µm)
+ *   renderēšanas laikā; AI lekciju neģenerē.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.5";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.6";

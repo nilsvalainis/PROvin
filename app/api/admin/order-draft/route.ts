@@ -21,6 +21,10 @@ import {
   parseTechnicalRiskMap,
   technicalRiskMapSnapshotField,
 } from "@/lib/admin-ai-technical-risk-map-types";
+import {
+  odometerAnomalyOverridesSnapshotField,
+  parseOdometerAnomalyOverrides,
+} from "@/lib/odometer-anomaly-classify";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -174,6 +178,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     ...deletedPhotoIdsSnapshotField(o.deletedPhotoIds),
     ...clearedFieldsSnapshotField(o.clearedFields),
     ...technicalRiskMapSnapshotField(parseTechnicalRiskMap(o.technicalRiskMap)),
+    ...odometerAnomalyOverridesSnapshotField(parseOdometerAnomalyOverrides(o.odometerAnomalyOverrides)),
   };
 }
 

@@ -26,6 +26,9 @@ function toPersistBody(workspace: OrderDraftWorkspaceBody | OrderWorkspacePersis
     incidentPhotoGroups: w.incidentPhotoGroups,
     incidentPhotos: w.incidentPhotos,
     ...(w.technicalRiskMap ? { technicalRiskMap: w.technicalRiskMap } : {}),
+    ...(w.odometerAnomalyOverrides != null
+      ? { odometerAnomalyOverrides: w.odometerAnomalyOverrides }
+      : {}),
   });
 }
 
@@ -46,6 +49,9 @@ export function stableWorkspaceChecksum(
     incidentPhotoGroups: normalized.incidentPhotoGroups,
     incidentPhotos: normalized.incidentPhotos,
     ...(normalized.technicalRiskMap ? { technicalRiskMap: normalized.technicalRiskMap } : {}),
+    ...(normalized.odometerAnomalyOverrides != null
+      ? { odometerAnomalyOverrides: normalized.odometerAnomalyOverrides }
+      : {}),
   });
   let h = 5381;
   for (let i = 0; i < canonical.length; i++) {

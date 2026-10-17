@@ -79,7 +79,7 @@ export function buildOutvinBundleEquipmentPdfHtml(
 export function buildOutvinBundlePdfInnerHtml(
   bundle: OutvinDataBundle | undefined | null,
   toggles?: OutvinPdfSectionToggles,
-  opts?: { omitEquipment?: boolean },
+  opts?: { omitEquipment?: boolean; maskDemoVin?: boolean },
 ): string {
   if (!bundle) return "";
   const pdf = toggles ?? bundle.pdfSections;
@@ -88,6 +88,7 @@ export function buildOutvinBundlePdfInnerHtml(
   if (pdf.vehicleEquipment) {
     const dealerInner = buildOutvinDealerReportPdfInnerHtml(outvinBundleToDealerReport(bundle), {
       omitEquipment: opts?.omitEquipment === true,
+      maskDemoVin: opts?.maskDemoVin === true,
     });
     if (dealerInner.trim()) parts.push(dealerInner);
   }

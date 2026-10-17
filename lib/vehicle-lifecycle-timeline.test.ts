@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
+import { emptyCsddFields, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import { buildClientReportDocumentHtml, type ClientReportPayload } from "@/lib/client-report-html";
 import {
   buildVehicleLifecycleEvents,
@@ -296,5 +296,27 @@ describe("laikposma ieraksti ir informatīvi, nobraukums/negadījumi paliek stip
     const imports = events.filter((e) => e.kind === "import");
     expect(imports).toHaveLength(1);
     expect(imports[0]!.detail).toBe("Vācija → Dānija");
+  });
+
+  it("attaches same-day CSDD mileageHistory km to a TA event", () => {
+    const csdd = {
+      ...emptyCsddFields(),
+      mileageHistory: [{ date: "12.05.2024", odometer: "148200", country: "Latvija" }],
+      technicalInspectionHistory: [
+        {
+          date: "12.05.2024",
+          inspectionType: "TA",
+          ratingLabel: "1",
+          ratingLevel: 1 as const,
+          maxDefectLevel: null,
+          smokeCoefficient: "",
+          notes: "",
+          defects: [],
+        },
+      ],
+    };
+    const events = buildVehicleLifecycleEvents({ csddForm: csdd });
+    const ta = events.find((e) => e.kind === "inspection" && e.sources.includes("CSDD"));
+    expect(ta?.odometer).toBe("148200");
   });
 });

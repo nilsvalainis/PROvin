@@ -44,6 +44,19 @@ describe("PDF dīlera sadaļas vāks", () => {
     expect(html).not.toContain("\u2013");
   });
 
+  it("masks demo VIN last 6 characters on the dealer cover", () => {
+    const vehicle = emptyOutvinVehicleInfo();
+    vehicle.model = "BMW X1";
+    vehicle.vinCode = "WBAVL12090VX12345";
+    const html = buildDealerSectionCoverHtml({
+      vehicle,
+      serviceWorks: [],
+      maskDemoVin: true,
+    });
+    expect(html).toContain("WBAVL12090VXXXXXX");
+    expect(html).not.toContain("WBAVL12090VX12345");
+  });
+
   it("tukšus datus neatgriež", () => {
     expect(
       buildDealerSectionCoverHtml({

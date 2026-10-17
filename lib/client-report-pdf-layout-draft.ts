@@ -155,7 +155,12 @@ export function buildPdfAdminMirrorPaymentBlock(
   const rows: { k: string; v: string; html?: boolean }[] = [];
   if (money !== "-") rows.push({ k: "Summa", v: money });
   rows.push({ k: "Laiks", v: dateFmt.format(new Date(p.created * 1000)) });
-  if (p.paymentStatus?.trim()) rows.push({ k: "Statuss", v: p.paymentStatus });
+  if (p.paymentStatus?.trim()) {
+    const raw = p.paymentStatus.trim();
+    const lv =
+      /^paid$/i.test(raw) ? "Apmaksāts" : /^unpaid$/i.test(raw) ? "Nav apmaksāts" : raw;
+    rows.push({ k: "Statuss", v: lv });
+  }
   if (rows.length === 0) return "";
   const body = rows
     .map((r) => `<tr><td>${esc(r.k)}</td><td>${esc(r.v)}</td></tr>`)

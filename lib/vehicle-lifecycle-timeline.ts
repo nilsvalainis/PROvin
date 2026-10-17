@@ -493,6 +493,19 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   for (const r of csdd?.technicalInspectionHistory ?? []) {
     if (!r.date.trim()) continue;
     const failed = r.ratingLevel != null && r.ratingLevel > 1;
+    const sameDayKm = (csdd?.mileageHistory ?? []).find((m) => {
+      if (!m.date.trim() || !m.odometer.trim()) return false;
+      const a = parseLifecycleTimeMs(m.date);
+      const b = parseLifecycleTimeMs(r.date);
+      if (a <= 0 || b <= 0) return false;
+      const da = new Date(a);
+      const db = new Date(b);
+      return (
+        da.getUTCFullYear() === db.getUTCFullYear() &&
+        da.getUTCMonth() === db.getUTCMonth() &&
+        da.getUTCDate() === db.getUTCDate()
+      );
+    });
     out.push(
       makeEvent({
         kind: "inspection",
@@ -500,6 +513,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
         title: "Tehniskā apskate",
         detail: r.ratingLabel.trim(),
         country: "Latvija",
+        odometer: sameDayKm?.odometer ?? "",
         source: "CSDD",
         tone: failed ? "warn" : "info",
       }),
@@ -737,6 +751,7 @@ function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]):
     if (o.detail && !host.detail.includes(o.detail)) {
       host.detail = [host.detail, o.detail].filter(Boolean).join(". ");
     }
+    // CSDD TA jau ir piesaistīts tā paša datuma CSDD km - neaizstāt ar cita datuma mēneša rādījumu.
     if (!host.odometer && o.odometer) host.odometer = o.odometer;
     if (!host.country && o.country) {
       host.country = o.country;

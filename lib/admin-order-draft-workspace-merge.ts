@@ -15,6 +15,7 @@ import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
 import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
 import { technicalRiskMapSnapshotField } from "@/lib/admin-ai-technical-risk-map-types";
+import { odometerAnomalyOverridesSnapshotField } from "@/lib/odometer-anomaly-classify";
 
 export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): OrderWorkspacePersistBody {
   return normalizeOrderWorkspacePersistBody({
@@ -32,6 +33,7 @@ export function orderDraftWorkspaceToPersistBody(w: OrderDraftWorkspaceBody): Or
     ...deletedPhotoIdsSnapshotField(w.deletedPhotoIds),
     ...clearedFieldsSnapshotField(w.clearedFields),
     ...technicalRiskMapSnapshotField(w.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(w.odometerAnomalyOverrides),
   });
 }
 
@@ -59,6 +61,7 @@ export function persistBodyToOrderDraftWorkspace(
     ...deletedPhotoIdsSnapshotField(safe.deletedPhotoIds),
     ...clearedFieldsSnapshotField(safe.clearedFields),
     ...technicalRiskMapSnapshotField(safe.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
   };
 }
 

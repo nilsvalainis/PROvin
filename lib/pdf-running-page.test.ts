@@ -16,13 +16,13 @@ describe("PDF running header and footer", () => {
         dateLabel: "30.09.2026",
         preparedBy: "Jānis B.",
       }),
-    ).toBe("WBAPX51050CU09550 · 30.09.2026 · Sagatavots: Jānis B.");
+    ).toBe("WBAPX51050CU09550 · 30.09.2026 · Sagatavots klientam: Jānis B.");
   });
 
   it("puts page numbers only on the right and nothing in the middle", () => {
     const css = clientReportRunningPageCss({
       header: "PROVIN.LV · BMW 525d · VIN WBAPX51050CU09550",
-      footer: "WBAPX51050CU09550 · 30.09.2026 · Sagatavots: Jānis B.",
+      footer: "WBAPX51050CU09550 · 30.09.2026 · Sagatavots klientam: Jānis B.",
     });
     expect(css).toContain("margin:16mm 12mm 18mm 12mm");
     expect(css).toContain('@bottom-center{content:none;}');

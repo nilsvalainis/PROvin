@@ -439,6 +439,7 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("paint-gauge inspection is mandatory for every car in ieteikumi", () => {
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/PAINT THICKNESS/);
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/STATIC BLOCK/);
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/100 līdz 150/);
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/50 līdz 150/);
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/iekšējās ailes/i);
@@ -453,9 +454,9 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_PAINT_GAUGE_INSPECTION_RULES\}/);
     expect(HYBRID_COMMENT_RULES).not.toMatch(/PAINT THICKNESS/);
     expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?Virsbūves stāvoklis un krāsas biezums/);
-    expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?tipiski 6–12/);
+    expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?tipiski 6-12/);
     expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/Virsbūves stāvoklis un krāsas biezums/);
-    expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/tipiski 6–12/);
+    expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/tipiski 6-12/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/paint_gauge_missing/);
     expect(AI_SOURCE_FIELDS_FACTS_ONLY_RULES).toMatch(/FACTS ONLY/);
     expect(AI_SOURCE_FIELDS_FACTS_ONLY_RULES).toMatch(/Datu specifika/);

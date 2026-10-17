@@ -32,6 +32,7 @@ import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admi
 import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
 import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
 import { technicalRiskMapSnapshotField } from "@/lib/admin-ai-technical-risk-map-types";
+import { odometerAnomalyOverridesSnapshotField } from "@/lib/odometer-anomaly-classify";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { orderVinScanDashboardHintFromRecord, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
@@ -321,6 +322,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         incidentPhotoGroups: w.incidentPhotoGroups,
         incidentPhotos: w.incidentPhotos,
         technicalRiskMap: w.technicalRiskMap,
+        odometerAnomalyOverrides: w.odometerAnomalyOverrides,
       });
     } catch {
       json = null;
@@ -342,6 +344,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         incidentPhotoGroups: h.incidentPhotoGroups,
         incidentPhotos: h.incidentPhotos,
         ...technicalRiskMapSnapshotField(h.technicalRiskMap),
+        ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
       };
     }
   }
@@ -711,6 +714,7 @@ async function patchOrderDraftUnlocked(
       ...deletedPhotoIdsSnapshotField(workspacePatch.deletedPhotoIds),
       ...clearedFieldsSnapshotField(workspacePatch.clearedFields),
       ...technicalRiskMapSnapshotField(workspacePatch.technicalRiskMap),
+      ...odometerAnomalyOverridesSnapshotField(workspacePatch.odometerAnomalyOverrides),
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (!h) return { ok: false, error: "invalid_workspace" };
@@ -732,6 +736,7 @@ async function patchOrderDraftUnlocked(
       ...deletedPhotoIdsSnapshotField(h.deletedPhotoIds),
       ...clearedFieldsSnapshotField(h.clearedFields),
       ...technicalRiskMapSnapshotField(h.technicalRiskMap),
+      ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
     };
   }
 

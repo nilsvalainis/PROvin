@@ -101,6 +101,11 @@ import {
   technicalRiskMapSnapshotField,
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
+import {
+  odometerAnomalyOverridesSnapshotField,
+  parseOdometerAnomalyOverrides,
+  type OdometerAnomalyOverride,
+} from "@/lib/odometer-anomaly-classify";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
 import {
   autoRecordsRowHasData,
@@ -2835,6 +2840,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   deletedPhotoIds?: string[];
   clearedFields?: Record<string, number>;
   technicalRiskMap?: TechnicalRiskMap;
+  odometerAnomalyOverrides?: OdometerAnomalyOverride[];
 } | null {
   if (!raw) return null;
   try {
@@ -2891,6 +2897,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
         return Object.keys(out).length > 0 ? { clearedFields: out } : {};
       })(),
       ...technicalRiskMapSnapshotField(parseTechnicalRiskMap(p.technicalRiskMap)),
+      ...odometerAnomalyOverridesSnapshotField(parseOdometerAnomalyOverrides(p.odometerAnomalyOverrides)),
     };
   } catch {
     return null;

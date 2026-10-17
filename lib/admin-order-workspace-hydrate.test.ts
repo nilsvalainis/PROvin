@@ -136,5 +136,52 @@ describe("resolveOrderWorkspaceHydration", () => {
     expect(hydrated?.technicalRiskMap?.identification.engine.value).toBe("N47D20");
     expect(hydrated?.technicalRiskMap?.recalls[0]?.id_or_title).toBe("nav atrasts");
   });
+
+  it("round-trips optional odometerAnomalyOverrides and omits the field on old snapshots", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.autodna = { ...emptyVendorAvotuBlock(), comments: "AutoDNA komentārs" };
+    const withOverrides = serializeOrderWorkspaceSnapshotFromRef(
+      {
+        sourceBlocks: blocks,
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+        odometerAnomalyOverrides: [{ key: "01.06.2024|120000|CSDD|1", action: "dismiss" }],
+      },
+      DEFAULT_PDF_VISIBILITY,
+      {},
+      "2026-10-17T10:00:00.000Z",
+    );
+    const hydrated = hydrateWorkspaceFromStorage(withOverrides);
+    expect(hydrated?.sourceBlocks.autodna.comments).toBe("AutoDNA komentārs");
+    expect(hydrated?.odometerAnomalyOverrides).toEqual([
+      { key: "01.06.2024|120000|CSDD|1", action: "dismiss" },
+    ]);
+    expect(JSON.parse(withOverrides).odometerAnomalyOverrides).toEqual([
+      { key: "01.06.2024|120000|CSDD|1", action: "dismiss" },
+    ]);
+
+    const oldRaw = serializeOrderWorkspaceSnapshotFromRef(
+      {
+        sourceBlocks: blocks,
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+      },
+      DEFAULT_PDF_VISIBILITY,
+      {},
+      "2026-10-17T10:00:00.000Z",
+    );
+    expect(JSON.parse(oldRaw).odometerAnomalyOverrides).toBeUndefined();
+    expect(hydrateWorkspaceFromStorage(oldRaw)?.odometerAnomalyOverrides).toBeUndefined();
+  });
 });
 

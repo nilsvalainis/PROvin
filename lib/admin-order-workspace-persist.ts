@@ -19,6 +19,8 @@ import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admi
 import { deletedPhotoIdsSnapshotField, mergeDeletedPhotoIds, parseDeletedPhotoIds, stripDeletedPhotos } from "@/lib/admin-photo-tombstones";
 import { clearedFieldsSnapshotField, mergeClearedFields, parseClearedFields } from "@/lib/admin-cleared-fields";
 import { technicalRiskMapSnapshotField } from "@/lib/admin-ai-technical-risk-map-types";
+import { odometerAnomalyOverridesSnapshotField } from "@/lib/odometer-anomaly-classify";
+import type { OdometerAnomalyOverride } from "@/lib/odometer-anomaly-classify";
 import {
   autoRecordsTrafficLevel,
   ccVinTrafficLevel,
@@ -78,6 +80,8 @@ export type OrderWorkspacePersistBody = {
   /** K2: apzināti iztukšoti lauki (lauks → ms) — tukšais uzvar pār bagātāku baseline. */
   clearedFields?: Record<string, number>;
   technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
+  /** Operatora odometra karodziņu apstiprinājums / atcelšana. Nav vecos pasūtījumos. */
+  odometerAnomalyOverrides?: OdometerAnomalyOverride[];
 };
 
 export type WorkspaceHydrationSource = "local" | "backup" | "server";
@@ -450,6 +454,9 @@ export function coalesceOrderWorkspacePersistBody(
     ...deletedPhotoIdsSnapshotField(tombstones),
     ...clearedFieldsSnapshotField(mergeClearedFields(baseline.clearedFields, incoming.clearedFields)),
     ...technicalRiskMapSnapshotField(incoming.technicalRiskMap ?? baseline.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(
+      incoming.odometerAnomalyOverrides ?? baseline.odometerAnomalyOverrides,
+    ),
   };
 }
 
@@ -498,6 +505,7 @@ export function buildOrderDraftWorkspaceBody(
     ...deletedPhotoIdsSnapshotField(safe.deletedPhotoIds),
     ...clearedFieldsSnapshotField(safe.clearedFields),
     ...technicalRiskMapSnapshotField(safe.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
   };
 }
 
@@ -547,6 +555,7 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
     ...deletedPhotoIdsSnapshotField(tombstones),
     ...clearedFieldsSnapshotField(body.clearedFields),
     ...technicalRiskMapSnapshotField(body.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(body.odometerAnomalyOverrides),
   };
 }
 
@@ -577,6 +586,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     ...deletedPhotoIdsSnapshotField(normalized.deletedPhotoIds),
     ...clearedFieldsSnapshotField(normalized.clearedFields),
     ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
     savedAt,
   });
 }
@@ -608,6 +618,7 @@ export function serializeOrderWorkspaceSnapshot(
     ...deletedPhotoIdsSnapshotField(safe.deletedPhotoIds),
     ...clearedFieldsSnapshotField(safe.clearedFields),
     ...technicalRiskMapSnapshotField(safe.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
     savedAt,
   });
 }
@@ -763,6 +774,7 @@ type HydratedWorkspaceShape = {
   incidentPhotoGroups?: IncidentPhotoGroup[];
   incidentPhotos?: IncidentPhotoMeta[];
   technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
+  odometerAnomalyOverrides?: OdometerAnomalyOverride[];
 };
 
 function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersistBody {
@@ -779,6 +791,7 @@ function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersist
     incidentPhotoGroups: incident.incidentPhotoGroups,
     incidentPhotos: incident.incidentPhotos,
     ...technicalRiskMapSnapshotField(h.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
   };
 }
 
@@ -877,6 +890,7 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     incidentPhotoGroups: merged.incidentPhotoGroups,
     incidentPhotos: merged.incidentPhotos,
     ...technicalRiskMapSnapshotField(merged.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(merged.odometerAnomalyOverrides),
   } as T;
 
   const savedAtMs = Math.max(0, ...allPicks.map((p) => p.savedAtMs));

@@ -2910,7 +2910,7 @@ describe("PDF v4 client report", () => {
     });
     expect(html).toContain("margin:16mm 12mm 18mm 12mm");
     expect(html).toContain("PROVIN.LV · BMW 525d · VIN WBAPX51050CU09550");
-    expect(html).toContain("Sagatavots: Jānis B.");
+    expect(html).toContain("Sagatavots klientam: Jānis B.");
     expect(html).toContain('@bottom-center{content:none;}');
     expect(html).toContain('content:"Lapa " counter(page) " / " counter(pages)');
     expect(html).not.toMatch(/@media print\{[\s\S]*@page\{margin:0/);
@@ -2976,7 +2976,8 @@ describe("PDF v4 client report", () => {
     expect(html).toContain(".pdf-incident-card__car .pdf-dmg-sil{width:84px;}");
     expect(html).toContain("border-left:3px solid #F87171");
     expect(html).toContain("120 000");
-    expect(html).not.toContain("Īpašnieku skaits");
+    expect(html).toContain("Īpašnieku skaits");
+    expect(html).toContain("Skaits nav fiksēts");
     expect(html).not.toContain("km nav");
   });
 });

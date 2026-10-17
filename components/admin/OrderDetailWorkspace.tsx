@@ -153,6 +153,16 @@ import {
   ListingAnalysisSubsectionHeading,
 } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import { buildPdfReportSummaryTiles } from "@/lib/pdf-report-summary";
+import { checkPrePdfContradictions } from "@/lib/pre-pdf-contradiction-check";
+import {
+  collectUnifiedMileageRows,
+  prepareUnifiedMileageDisplayRows,
+} from "@/lib/unified-mileage";
+import {
+  odometerAnomalyOverridesSnapshotField,
+  type OdometerAnomalyOverride,
+} from "@/lib/odometer-anomaly-classify";
+import { AdminOdometerAnomalyPanel } from "@/components/admin/AdminOdometerAnomalyPanel";
 import { AdminManualBannersEditor } from "@/components/admin/AdminManualBannersEditor";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
 import { useAdminBannerCardsHidden } from "@/components/admin/use-admin-banner-cards-hidden";
@@ -394,6 +404,7 @@ type WorkspacePersist = {
   deletedPhotoIds?: string[];
   clearedFields?: Record<string, number>;
   technicalRiskMap?: TechnicalRiskMap;
+  odometerAnomalyOverrides?: OdometerAnomalyOverride[];
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -541,6 +552,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
   ...deletedPhotoIdsSnapshotField(ws.deletedPhotoIds),
   ...clearedFieldsSnapshotField(ws.clearedFields),
   ...technicalRiskMapSnapshotField(ws.technicalRiskMap),
+  ...odometerAnomalyOverridesSnapshotField(ws.odometerAnomalyOverrides),
   };
 }
 
@@ -909,6 +921,8 @@ export function OrderDetailWorkspace({
       /* kvota / privātais režīms */
     }
   }, [factCheckDismissed, payload.sessionId]);
+
+  const odometerAnomalyOverrides = ws.odometerAnomalyOverrides ?? [];
   const wsStateRef = useRef(ws);
   wsStateRef.current = ws;
   const orderEditsRef = useRef({
@@ -1088,6 +1102,7 @@ export function OrderDetailWorkspace({
     ...deletedPhotoIdsSnapshotField(normalized.deletedPhotoIds),
     ...clearedFieldsSnapshotField(normalized.clearedFields),
     ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
     };
     wsPersistRef.current = next;
     lastGoodPersistBodyRef.current = normalized;
@@ -1161,6 +1176,7 @@ export function OrderDetailWorkspace({
         ...deletedPhotoIdsSnapshotField(body.deletedPhotoIds),
         ...clearedFieldsSnapshotField(body.clearedFields),
         ...technicalRiskMapSnapshotField(body.technicalRiskMap),
+        ...odometerAnomalyOverridesSnapshotField(body.odometerAnomalyOverrides),
         };
         wsStateRef.current = wsPersistRef.current;
       }
@@ -2491,6 +2507,7 @@ export function OrderDetailWorkspace({
       ...deletedPhotoIdsSnapshotField(chosen.deletedPhotoIds),
       ...clearedFieldsSnapshotField(chosen.clearedFields),
       ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
+      ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
       };
 
       workspaceDebugLog("hydrate_source", {
@@ -2522,6 +2539,7 @@ export function OrderDetailWorkspace({
       ...deletedPhotoIdsSnapshotField(chosen.deletedPhotoIds),
       ...clearedFieldsSnapshotField(chosen.clearedFields),
       ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
+      ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
       };
       wsPersistRef.current = hydratedWs;
       wsStateRef.current = hydratedWs;
@@ -3286,12 +3304,34 @@ export function OrderDetailWorkspace({
         autoRecordsBlock: blocksDisplaySafe.auto_records,
         oneautoBlock: blocksDisplaySafe.oneauto,
         ccVinBlock: blocksDisplaySafe.cc_vin,
+        asvBlock: blocksDisplaySafe.asv,
         manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
         manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
         citiAvoti: blocksDisplaySafe.citi_avoti,
         tirgusForm: blocksDisplaySafe.tirgus,
         listingUrl: payload.listingUrl ?? null,
+        odometerAnomalyOverrides,
       });
+    } catch {
+      return [];
+    }
+  }, [blocksDisplaySafe, payload.listingUrl, odometerAnomalyOverrides]);
+
+  const unifiedMileageDisplayRows = useMemo(() => {
+    try {
+      return prepareUnifiedMileageDisplayRows(
+        collectUnifiedMileageRows({
+          csddForm: blocksDisplaySafe.csdd,
+          autoRecordsBlock: blocksDisplaySafe.auto_records,
+          oneautoBlock: blocksDisplaySafe.oneauto,
+          ccVinBlock: blocksDisplaySafe.cc_vin,
+          asvBlock: blocksDisplaySafe.asv,
+          manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
+          citiAvotiBlock: blocksDisplaySafe.citi_avoti,
+          tirgusForm: blocksDisplaySafe.tirgus,
+          listingUrl: payload.listingUrl ?? null,
+        }),
+      );
     } catch {
       return [];
     }
@@ -3461,6 +3501,29 @@ export function OrderDetailWorkspace({
           }
         }),
       );
+      const prePdfFlags = checkPrePdfContradictions({
+        summaryInput: {
+          csddForm: cur.sourceBlocks.csdd,
+          autoRecordsBlock: cur.sourceBlocks.auto_records,
+          oneautoBlock: cur.sourceBlocks.oneauto,
+          ccVinBlock: cur.sourceBlocks.cc_vin,
+          asvBlock: cur.sourceBlocks.asv,
+          manualVendorBlocks: toPdfManualVendorBlocks(cur.sourceBlocks),
+          manualLtabBlock: toPdfLtabManualBlock(cur.sourceBlocks.ltab),
+          citiAvoti: cur.sourceBlocks.citi_avoti,
+          tirgusForm: cur.sourceBlocks.tirgus,
+          listingUrl: payload.listingUrl ?? null,
+          odometerAnomalyOverrides,
+        },
+        overrides: odometerAnomalyOverrides,
+      });
+      for (const flag of openErrorFactCheckFlags(prePdfFlags, factCheckDismissed)) {
+        errorItems.push({
+          label: "Pirms PDF",
+          sentence: flag.sentence,
+          message: flag.message,
+        });
+      }
       if (errorItems.length > 0) {
         pendingPrintOptsRef.current = opts;
         setFactCheckPublishItems(errorItems);
@@ -3813,6 +3876,7 @@ export function OrderDetailWorkspace({
       mileageComment: isolate ? "" : mileageCommentDraft,
       incidentPhotoGroups: isolate ? [] : wsPersistRef.current.incidentPhotoGroups,
       incidentPhotos: isolate ? [] : wsPersistRef.current.incidentPhotos,
+      odometerAnomalyOverrides,
     };
 
     let finalPayload = reportPayload;
@@ -5613,6 +5677,18 @@ export function OrderDetailWorkspace({
                     flags={factCheckByField.mileage?.flags}
                     dismissed={factCheckDismissed}
                     onDismiss={dismissFactCheckFlag}
+                  />
+                  <AdminOdometerAnomalyPanel
+                    rows={unifiedMileageDisplayRows}
+                    overrides={odometerAnomalyOverrides}
+                    onOverride={(next) =>
+                      updateWs({
+                        odometerAnomalyOverrides: [
+                          ...odometerAnomalyOverrides.filter((o) => o.key !== next.key),
+                          next,
+                        ],
+                      })
+                    }
                   />
                 </div>
                 </div>

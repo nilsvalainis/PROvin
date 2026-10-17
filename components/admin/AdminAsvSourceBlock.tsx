@@ -19,6 +19,7 @@ import {
   AdminSourceCommentField,
   type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
+import { AdminSourceCommentTemplates } from "@/components/admin/AdminSourceCommentTemplates";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
@@ -590,6 +591,12 @@ export function AdminAsvSourceBlock({
               onHidePhotoWatermarksChange={(next) =>
                 onChange({ ...value, hidePhotoWatermarks: next })
               }
+            />
+          ) : null}
+          {!readOnly && !disabled ? (
+            <AdminSourceCommentTemplates
+              value={value.comments}
+              onChange={(next) => onChange({ ...value, comments: next })}
             />
           ) : null}
           <AdminSourceCommentField

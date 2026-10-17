@@ -91,8 +91,8 @@ describe("buildAggregateIdentificationBrief", () => {
       },
     });
     const brief = buildAggregateIdentificationBrief({ sourceBlocks: blocks, nowYear: 2026 });
-    expect(brief).toMatch(/Piedziņa \(dīleris\): HECK \(aizmugures piedziņa\)/);
-    expect(brief).toMatch(/Virsbūve \(dīleris\): TOU/);
+    expect(brief).toMatch(/Piedziņa \(dīleris\): aizmugurējā piedziņa/);
+    expect(brief).toMatch(/Virsbūve \(dīleris\): universālis/);
     expect(brief).toMatch(/0217 — Active steering/);
     expect(brief).toMatch(/Dārgas vecuma pozīcijas sarakstā: Active steering/);
     expect(brief).toMatch(/E60\/E61/);

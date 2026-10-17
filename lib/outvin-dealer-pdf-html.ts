@@ -8,6 +8,8 @@ import {
   type OutvinVehicleInfo,
 } from "@/lib/outvin-dealer-types";
 import { capitalizeFactValue } from "@/lib/vin-sources/translate-lv";
+import { translateDealerVehicleCodeLv } from "@/lib/dealer-vehicle-code-lv";
+import { maskVinForDemo } from "@/lib/demo-vin-mask";
 
 function escapeHtml(s: string): string {
   return s
@@ -21,11 +23,13 @@ function pdfSubLabel(title: string): string {
   return `<p class="pdf-subhead">${escapeHtml(title)}</p>`;
 }
 
-function vehicleInfoTable(vi: OutvinVehicleInfo): string {
+function vehicleInfoTable(vi: OutvinVehicleInfo, opts?: { maskDemoVin?: boolean }): string {
   const rows: { k: string; v: string }[] = [];
   for (const { key, labelLv, labelEn } of OUTVIN_VEHICLE_INFO_ROWS) {
-    const v = vi[key].trim();
+    let v = vi[key].trim();
     if (!v || isPdfEmptyPlaceholder(v)) continue;
+    if (key === "vinCode" && opts?.maskDemoVin) v = maskVinForDemo(v);
+    else v = translateDealerVehicleCodeLv(key, v);
     rows.push({ k: labelLv || labelEn, v: capitalizeFactValue(v) });
   }
   const table = buildPdfKvPairHtml(rows);
@@ -53,14 +57,14 @@ export function buildOutvinDealerEquipmentPdfHtml(report: OutvinDealerReport | u
 
 export function buildOutvinDealerReportPdfInnerHtml(
   report: OutvinDealerReport | undefined | null,
-  opts?: { omitEquipment?: boolean },
+  opts?: { omitEquipment?: boolean; maskDemoVin?: boolean },
 ): string {
   if (!outvinDealerReportHasContent(report) || !report) return "";
 
   const parts: string[] = [];
   const vi = report.vehicleInfo;
 
-  const vehicleTable = vehicleInfoTable(vi);
+  const vehicleTable = vehicleInfoTable(vi, { maskDemoVin: opts?.maskDemoVin });
   if (vehicleTable) {
     parts.push(
       `<div class="pdf-keep-head">${pdfSubLabel("Transportlīdzekļa informācija")}${vehicleTable}</div>`,

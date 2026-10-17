@@ -8,6 +8,7 @@ import {
   AdminSourceCommentField,
   type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
+import { AdminSourceCommentTemplates } from "@/components/admin/AdminSourceCommentTemplates";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminIncidentFieldFillOption } from "@/components/admin/AdminIncidentFieldFillOption";
@@ -705,6 +706,12 @@ export function AdminVendorAvotuSourceBlock({
             onCommit={onPhotoGroupsStructuralCommit}
             hidePhotoWatermarks={block.hidePhotoWatermarks === true}
             onHidePhotoWatermarksChange={(next) => onChange({ ...block, hidePhotoWatermarks: next })}
+          />
+        ) : null}
+        {!readOnly && !disabled ? (
+          <AdminSourceCommentTemplates
+            value={block.comments ?? ""}
+            onChange={(next) => onChange({ ...block, comments: next })}
           />
         ) : null}
         <AdminSourceCommentField

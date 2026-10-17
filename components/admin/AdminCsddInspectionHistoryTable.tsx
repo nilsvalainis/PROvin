@@ -56,7 +56,7 @@ function DefectTable({ defects }: { defects: CsddInspectionDefectRow[] }) {
         ) : (
           <tr>
             <td colSpan={2} className={`${mileCell} text-[var(--color-provin-muted)]`}>
-              Nav reģistrētu trūkumu vai bojājumi.
+              Nav reģistrētu trūkumu vai bojājumu.
             </td>
           </tr>
         )}

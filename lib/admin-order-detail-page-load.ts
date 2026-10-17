@@ -68,6 +68,9 @@ function buildServerWorkspaceJson(draft: OrderDraftState | null): string | null 
     incidentPhotoGroups: w.incidentPhotoGroups,
     incidentPhotos: w.incidentPhotos,
     ...(w.technicalRiskMap ? { technicalRiskMap: w.technicalRiskMap } : {}),
+    ...(w.odometerAnomalyOverrides != null
+      ? { odometerAnomalyOverrides: w.odometerAnomalyOverrides }
+      : {}),
     workspaceRevision: draft.workspaceRevision ?? 0,
     workspaceChecksum: draft.workspaceChecksum ?? null,
     savedAt: draft.workspaceSavedAt ?? draft.updatedAt,
@@ -90,6 +93,9 @@ function buildServerWorkspaceJson(draft: OrderDraftState | null): string | null 
     incidentPhotoGroups: hydrated.incidentPhotoGroups,
     incidentPhotos: hydrated.incidentPhotos,
     ...(hydrated.technicalRiskMap ? { technicalRiskMap: hydrated.technicalRiskMap } : {}),
+    ...(hydrated.odometerAnomalyOverrides != null
+      ? { odometerAnomalyOverrides: hydrated.odometerAnomalyOverrides }
+      : {}),
     workspaceRevision: draft.workspaceRevision ?? 0,
     workspaceChecksum: draft.workspaceChecksum ?? null,
     savedAt: draft.workspaceSavedAt ?? draft.updatedAt,

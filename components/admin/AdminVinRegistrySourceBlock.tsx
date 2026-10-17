@@ -12,6 +12,7 @@ import {
   AdminSourceCommentField,
   type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
+import { AdminSourceCommentTemplates } from "@/components/admin/AdminSourceCommentTemplates";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
 import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
@@ -919,6 +920,12 @@ Neviena periodiskā apskate nav izgāzta.`
             onCommit={onPhotoGroupsStructuralCommit}
             hidePhotoWatermarks={block.hidePhotoWatermarks === true}
             onHidePhotoWatermarksChange={(next) => onChange({ ...block, hidePhotoWatermarks: next })}
+          />
+        ) : null}
+        {!readOnly && !disabled ? (
+          <AdminSourceCommentTemplates
+            value={block.comments}
+            onChange={(next) => onChange({ ...block, comments: next })}
           />
         ) : null}
         <AdminSourceCommentField

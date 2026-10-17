@@ -69,6 +69,10 @@ import {
   CC_VIN_AUCTION_CHECK_HEADING,
   applyCcVinAuctionCheckTemplate,
 } from "@/lib/admin-cc-vin-comment-presets";
+import {
+  SHARED_SOURCE_COMMENT_TEMPLATES,
+  applySourceCommentTemplate,
+} from "@/lib/admin-source-comment-presets";
 
 const ARIA = "Starptautiskā vēsture";
 
@@ -1030,6 +1034,22 @@ export function AdminCcVinSourceBlock({
               >
                 {CC_VIN_AUCTION_CHECK_HEADING}
               </button>
+              {SHARED_SOURCE_COMMENT_TEMPLATES.map((template) => (
+                <button
+                  key={template.id}
+                  type="button"
+                  className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:border-[var(--color-provin-accent)]/40 hover:bg-slate-50"
+                  title={template.text}
+                  onClick={() =>
+                    onChange({
+                      ...value,
+                      comments: applySourceCommentTemplate(value.comments, template.text),
+                    })
+                  }
+                >
+                  {template.label}
+                </button>
+              ))}
             </div>
           ) : null}
           <AdminSourceCommentField
