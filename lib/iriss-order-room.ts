@@ -11,7 +11,7 @@ import { listingComparisonPrice } from "@/lib/iriss-listings-cost";
 import { listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
 import { listingVehicleOrderIds } from "@/lib/iriss-listings-orders";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
-import type { IrissListingPlatform, IrissListingVehicleChange } from "@/lib/iriss-listings-types";
+import type { IrissListingPlatform, IrissListingPriceChange, IrissListingVehicleChange } from "@/lib/iriss-listings-types";
 import { irissListingVin } from "@/lib/iriss-pasutijums-from-listing";
 import {
   displayIrissPasutijumsListStatusLabel,
@@ -69,6 +69,7 @@ export type IrissOrderRoomHit = {
   firstSeenAt: string;
   lastSeenAt: string;
   location: string;
+  priceHistory: IrissListingPriceChange[];
 };
 
 export type IrissOrderRoomHitSource = {
@@ -98,6 +99,7 @@ export type IrissOrderRoomHitSource = {
   change?: IrissListingVehicleChange;
   firstSeenAt?: string;
   location?: string;
+  priceHistory?: IrissListingPriceChange[];
 };
 
 export type IrissOrderRoomCheck = { id: string; label: string; pass: boolean };
@@ -262,6 +264,7 @@ export function buildIrissOrderRoomHits(
       firstSeenAt: (v.firstSeenAt ?? "").trim(),
       lastSeenAt: typeof row.lastSeenAt === "string" ? row.lastSeenAt.trim() : "",
       location: (v.location ?? "").trim(),
+      priceHistory: Array.isArray(row.priceHistory) ? (row.priceHistory as IrissListingPriceChange[]) : v.priceHistory ?? [],
     });
   }
   out.sort((a, b) => b.firstSeenAt.localeCompare(a.firstSeenAt) || a.title.localeCompare(b.title, "lv"));

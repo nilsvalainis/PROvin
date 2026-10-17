@@ -73,20 +73,26 @@ describe("IRISS viena pasūtījuma PDF", () => {
     expect(doc.getPageCount()).toBe(2);
   });
 
-  it("signs and foots the order PDF as Dzintarzeme Auto, with the fixed terms", async () => {
+  it("signs the order PDF as Nils Valainis with SIA IRISS details and short hyphens", async () => {
     const rec = emptyIrissPasutijums("order-pdf-brand", "2026-08-17T12:00:00.000Z");
     rec.clientFirstName = "Anna";
     rec.clientLastName = "Bērziņa";
     rec.brandModel = "VW Golf";
+    rec.advance = { amount: "200", paidAt: "2026-10-17", method: "transfer", invoiceNo: "" };
     const bytes = await buildIrissPasutijumsPdfBytes(rec);
     const text = await extractPdfText(Buffer.from(bytes));
     expect(text).toContain("Dzintarzeme Auto");
+    expect(text).toContain("SIA ĪRISS");
+    expect(text).toContain("59202001191");
+    expect(text).toContain("Nils Valainis");
     expect(text).toContain("Pakalpojuma sniedzēja paraksts");
     expect(text).toContain("info@dzintarzemeauto.lv");
     expect(text).toContain("00 371 204 205 39");
     expect(text).toContain("www.dzintarzemeauto.lv");
     expect(text).toContain("1190,00 EUR");
     expect(text).toContain("990,00 EUR + 3,5 %");
-    expect(text).not.toContain("SIA ĪRISS");
+    expect(text).toContain("Avanss");
+    expect(text).toContain("ieskaitāms komisijas maksā");
+    expect(text).not.toMatch(/[\u2013\u2014]/);
   });
 });

@@ -26,9 +26,16 @@ import {
   wrapText as dzWrapText,
 } from "@/lib/dzintarzeme-pdf-layout";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
+import {
+  irissContractAdvanceLines,
+  irissContractSellerPartyLines,
+  irissContractSignerName,
+} from "@/lib/iriss-contract-party";
+import { irissOfferCustomPdfBlocks, irissOfferPdfShows } from "@/lib/iriss-offer-blocks";
 import { formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
 import { irissOfferImagesOmittedNotice } from "@/lib/iriss-offer-share";
 import { parsePriceLike } from "@/lib/iriss-price-format";
+import { applyProvinHumanDashes } from "@/lib/source-summary-comment-format";
 import {
   drawImageInPremiumFrame,
   drawOfferMiniIcon,
@@ -93,8 +100,12 @@ const FOOTER_SAFE = Math.max(52, PREMIUM_FOOTER_BLOCK_H);
 /** Atkārtotai lapai - tikai logo josla no lapas augšas. */
 const LOGO_ONLY_BAND = 46;
 
+function pdfSafe(text: string): string {
+  return applyProvinHumanDashes(text);
+}
+
 function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
-  const words = text.split(/\s+/).filter(Boolean);
+  const words = pdfSafe(text).split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let line = "";
   for (const word of words) {
@@ -225,7 +236,7 @@ function drawTextLine(
   const c = opts?.color ?? INK;
   const x = opts?.x ?? ctx.margin;
   ensureSpace(ctx, lineHeight(size));
-  drawTrackedText(ctx.page, text, { x, y: ctx.y - size, size, font: f, color: c });
+  drawTrackedText(ctx.page, pdfSafe(text), { x, y: ctx.y - size, size, font: f, color: c });
   ctx.y -= lineHeight(size);
 }
 
@@ -771,12 +782,12 @@ function measureDzTermsHeight(
   let h = 0;
   for (const block of blocks) {
     if (block.kind === "h") {
-      h += dzWrapText(block.text, fontBold, fsH, contentW).length * dzLineHeight(fsH) + gap;
+      h += dzWrapText(pdfSafe(block.text), fontBold, fsH, contentW).length * dzLineHeight(fsH) + gap;
     } else if (block.kind === "p") {
-      h += dzWrapText(block.text, font, fsP, contentW).length * dzLineHeight(fsP) + gap * 0.45;
+      h += dzWrapText(pdfSafe(block.text), font, fsP, contentW).length * dzLineHeight(fsP) + gap * 0.45;
     } else {
       for (const it of block.items) {
-        h += dzWrapText(`• ${it}`, font, fsP, contentW - 10).length * dzLineHeight(fsP);
+        h += dzWrapText(pdfSafe(`• ${it}`), font, fsP, contentW - 10).length * dzLineHeight(fsP);
       }
       h += gap * 0.55;
     }
@@ -799,7 +810,7 @@ function drawDzPasutijumsTermsPage(
   }
   for (const block of blocks) {
     if (block.kind === "h") {
-      for (const ln of dzWrapText(block.text, ctx.fontBold, fsH, iw)) {
+      for (const ln of dzWrapText(pdfSafe(block.text), ctx.fontBold, fsH, iw)) {
         dzDrawTrackedText(ctx.page, ln, {
           x: ix,
           y: ctx.y - fsH,
@@ -812,7 +823,7 @@ function drawDzPasutijumsTermsPage(
       }
       ctx.y -= 2;
     } else if (block.kind === "p") {
-      for (const ln of dzWrapText(block.text, ctx.font, fsP, iw)) {
+      for (const ln of dzWrapText(pdfSafe(block.text), ctx.font, fsP, iw)) {
         dzDrawTrackedText(ctx.page, ln, {
           x: ix,
           y: ctx.y - fsP,
@@ -826,7 +837,7 @@ function drawDzPasutijumsTermsPage(
       ctx.y -= 1.5;
     } else {
       for (const it of block.items) {
-        const line = `• ${it}`;
+        const line = pdfSafe(`• ${it}`);
         for (const ln of dzWrapText(line, ctx.font, fsP, iw - 8)) {
           dzDrawTrackedText(ctx.page, ln, {
             x: ix + 4,
@@ -973,7 +984,7 @@ function drawPasutijumsPageIndex(
 }
 
 function wrapPage1(text: string, font: PDFFont, size: number, maxW: number): string[] {
-  const words = text.split(/\s+/).filter(Boolean);
+  const words = pdfSafe(text).split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let line = "";
   for (const word of words) {
@@ -1190,7 +1201,7 @@ function drawPasutijumsSignatureStrip(ctx: Ctx, record: IrissPasutijumsRecord, y
   cy -= 20;
   const cols: { x: number; label: string; name: string }[] = [
     { x: ix, label: "Klienta paraksts", name: clientName },
-    { x: ix + colW + gap, label: "Pakalpojuma sniedzēja paraksts", name: "Dzintarzeme Auto" },
+    { x: ix + colW + gap, label: "Pakalpojuma sniedzēja paraksts", name: irissContractSignerName() },
   ];
   for (const col of cols) {
     page.drawText(col.label, { x: col.x, y: cy - 8, size: 8, font: fontBold, color: INK });
@@ -1227,7 +1238,8 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
   const docDate = formatPasutijumsDocDate(record);
   const clientKv = overviewLinesToKv(overview.clientLines);
   const specKv = overviewLinesToKv(overview.specLines);
-  const dealKv = overviewLinesToKv(overview.dealLines);
+  const sellerKv = overviewLinesToKv(irissContractSellerPartyLines());
+  const dealKv = overviewLinesToKv([...overview.dealLines, ...irissContractAdvanceLines(record)]);
 
   if (ctx.offerLogo) {
     stampOfferLogoTopRight(page, pageW, pageH, margin, ctx.offerLogo, 8);
@@ -1269,6 +1281,11 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
     const leftBody = clientKv.length ? measurePage1KvHeight(clientKv, innerW, size, font, fontBold) : 0;
     const rightBody = specKv.length ? measurePage1KvHeight(specKv, innerW, size, font, fontBold) : 0;
     const pairH = clientKv.length || specKv.length ? cardChromeH(Math.max(leftBody, rightBody, 24)) : 0;
+    let sellerH = 0;
+    if (sellerKv.length) {
+      const sellerInner = contentW - PAGE1_PAD * 2;
+      sellerH = cardChromeH(measurePage1KvHeight(sellerKv, sellerInner, size, font, fontBold));
+    }
     let dealH = 0;
     if (dealKv.length) {
       const dealInner = contentW - PAGE1_PAD * 2;
@@ -1292,10 +1309,11 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
       notesH = cardChromeH(measurePage1Wrapped(overview.notes, nInner, size, font));
     }
     let total = pairH;
+    if (sellerH) total += PAGE1_GAP + sellerH;
     if (dealH) total += PAGE1_GAP + dealH;
     if (eqH) total += PAGE1_GAP + eqH;
     if (notesH) total += PAGE1_GAP + notesH;
-    return { pairH, dealH, eqH, notesH, total, leftBody, rightBody };
+    return { pairH, sellerH, dealH, eqH, notesH, total, leftBody, rightBody };
   };
 
   let layout = measureStack(fs);
@@ -1327,6 +1345,14 @@ function drawPasutijumsPage1Pro(ctx: Ctx, record: IrissPasutijumsRecord): void {
       });
     }
     y = startY - layout.pairH - PAGE1_GAP;
+  }
+
+  if (sellerKv.length && layout.sellerH > 0 && y - layout.sellerH >= floorY) {
+    const startY = y;
+    drawCard(margin, contentW, layout.sellerH, "Pakalpojuma sniedzējs", (ix, iy, iw) => {
+      drawPage1KvRows(page, sellerKv, ix, iy, iw, fs, font, fontBold, startY - layout.sellerH + PAGE1_PAD);
+    });
+    y -= layout.sellerH + PAGE1_GAP;
   }
 
   if (dealKv.length && layout.dealH > 0 && y - layout.dealH >= floorY) {
@@ -1506,7 +1532,16 @@ export async function buildIrissOfferPdfBytes(
   if (odometer) offerLines.push(`Odometra rādījums: ${odometer}`);
   if (val(offer.transmission)) offerLines.push(`Transmisija: ${val(offer.transmission)}`);
   if (val(offer.location)) offerLines.push(`Atrašanās vieta: ${val(offer.location)}`);
-  if (offerLines.length) {
+  if (offer.blocks?.length) {
+    const vehicle = offer.blocks.find((b) => b.kind === "vehicle");
+    for (const row of vehicle?.rows ?? []) {
+      const known = ["brandModel", "firstRegistration", "odometerReading", "fuel", "transmission", "powerKw", "color"];
+      if (!known.includes(row.id) && row.label.trim() && row.value.trim()) {
+        offerLines.push(`${row.label.trim()}: ${row.value.trim()}`);
+      }
+    }
+  }
+  if (irissOfferPdfShows(offer, "vehicle") && offerLines.length) {
     drawIosCard(
       ctx,
       "Pamatinformācija",
@@ -1527,7 +1562,7 @@ export async function buildIrissOfferPdfBytes(
   const technical = val(internalCommentHtmlToPdfPlain(offer.technicalAssessment ?? ""));
   const summary = val(internalCommentHtmlToPdfPlain(offer.summary ?? ""));
 
-  if (assessmentChecks.length) {
+  if (irissOfferPdfShows(offer, "assessment") && assessmentChecks.length) {
     drawIosCard(
       ctx,
       "Novērtējuma atzīmes",
@@ -1540,7 +1575,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (specialNotes) {
+  if (irissOfferPdfShows(offer, "warranty") && specialNotes) {
     drawIosCard(
       ctx,
       "Īpašas atzīmes",
@@ -1549,7 +1584,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (visual && parseScoreOutOf10(visual) !== null) {
+  if (irissOfferPdfShows(offer, "assessment") && visual && parseScoreOutOf10(visual) !== null) {
     drawIosCard(
       ctx,
       "Vizuālais novērtējums",
@@ -1558,7 +1593,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (visual) {
+  if (irissOfferPdfShows(offer, "assessment") && visual) {
     drawIosCard(
       ctx,
       "Detalizēts apraksts (vizuālais)",
@@ -1567,7 +1602,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (technical && parseScoreOutOf10(technical) !== null) {
+  if (irissOfferPdfShows(offer, "assessment") && technical && parseScoreOutOf10(technical) !== null) {
     drawIosCard(
       ctx,
       "Tehniskais novērtējums",
@@ -1576,7 +1611,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (technical) {
+  if (irissOfferPdfShows(offer, "assessment") && technical) {
     drawIosCard(
       ctx,
       "Detalizēts apraksts (tehniskais)",
@@ -1585,7 +1620,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (summary) {
+  if (irissOfferPdfShows(offer, "assessment") && summary) {
     drawOrangeSummaryCard(ctx, summary);
   }
 
@@ -1601,7 +1636,7 @@ export async function buildIrissOfferPdfBytes(
   if (commissionFee) pricingPlainLines.push(`Komisijas maksa: ${commissionFee}`);
   const hasPricing = pricingPlainLines.length > 0 || totalPrice > 0;
 
-  if (hasPricing) {
+  if (irissOfferPdfShows(offer, "pricing") && hasPricing) {
     drawIosCard(ctx, "Cenas un piedāvājums", (iw) => {
       let h = measureColonLabeledLinesHeight(pricingPlainLines, 10, iw, ctx);
       if (totalPrice > 0) {
@@ -1620,6 +1655,50 @@ export async function buildIrissOfferPdfBytes(
     });
   }
 
+  for (const block of irissOfferCustomPdfBlocks(offer)) {
+    if (block.kind === "table") {
+      const rows = (block.rows ?? []).filter((row) => row.label.trim() || row.value.trim());
+      if (!rows.length) continue;
+      const lines = rows.map((row) =>
+        row.label.trim() && row.value.trim() ? `${row.label.trim()}: ${row.value.trim()}` : row.label.trim() || row.value.trim(),
+      );
+      drawIosCard(
+        ctx,
+        block.title || "Tabula",
+        (iw) => measureColonLabeledLinesHeight(lines, 10, iw, ctx),
+        ({ x, w }) => {
+          for (const ln of lines) drawColonLabeledLine(ctx, ln, 10, x, w);
+        },
+      );
+      continue;
+    }
+    const html = val(internalCommentHtmlToPdfPlain(block.html ?? "")) ?? val(block.html);
+    if (!html) continue;
+    drawIosCard(
+      ctx,
+      block.title || "Teksts",
+      (iw) => measureWrappedBlockHeight(html, ctx.font, 10, iw),
+      ({ x, w }) => drawParagraph(ctx, html, 10, MUTED, ctx.font, { x, maxW: w }),
+    );
+  }
+
+  if (irissOfferPdfShows(offer, "auction")) {
+    const auctionLines: string[] = [];
+    if (val(offer.auctionPlatform)) auctionLines.push(`Izsole: ${val(offer.auctionPlatform)}`);
+    if (val(offer.auctionStockNumber)) auctionLines.push(`Stock nr.: ${val(offer.auctionStockNumber)}`);
+    if (val(offer.location)) auctionLines.push(`Atrašanās vieta: ${val(offer.location)}`);
+    if (auctionLines.length) {
+      drawIosCard(
+        ctx,
+        "Izsole",
+        (iw) => measureColonLabeledLinesHeight(auctionLines, 10, iw, ctx),
+        ({ x, w }) => {
+          for (const ln of auctionLines) drawColonLabeledLine(ctx, ln, 10, x, w);
+        },
+      );
+    }
+  }
+
   const orderedAttachments = orderOfferAttachmentsForPdf(offer);
   const imageAttachments = orderedAttachments.filter(
     (a) => a.mimeType.startsWith("image/") && a.dataUrl.startsWith("data:image/"),
@@ -1627,7 +1706,7 @@ export async function buildIrissOfferPdfBytes(
   const other = orderedAttachments.filter((a) => !imageAttachments.includes(a));
 
   let imagesOmitted = 0;
-  if (!embedImages && imageAttachments.length > 0) {
+  if (irissOfferPdfShows(offer, "photos") && !embedImages && imageAttachments.length > 0) {
     drawIosCard(
       ctx,
       "Pievienotie attēli",
@@ -1640,7 +1719,7 @@ export async function buildIrissOfferPdfBytes(
         });
       },
     );
-  } else if (embedImages && imageAttachments.length > 0) {
+  } else if (irissOfferPdfShows(offer, "photos") && embedImages && imageAttachments.length > 0) {
     const pics: EmbeddedPic[] = [];
     for (const att of imageAttachments) {
       const emb = await tryEmbedOfferImage(ctx.pdfDoc, att.dataUrl);
@@ -1701,7 +1780,7 @@ export async function buildIrissOfferPdfBytes(
     }
   }
 
-  if (other.length > 0) {
+  if (irissOfferPdfShows(offer, "photos") && other.length > 0) {
     const lines = other.map((a, i) => `${i + 1}. ${a.name}`);
     drawIosCard(
       ctx,

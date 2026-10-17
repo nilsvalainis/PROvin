@@ -20,6 +20,8 @@ import {
   parseIrissListPrefs,
   type IrissListPrefs,
 } from "@/lib/iriss-listings-operator-prefs";
+import { IrissPriceChangeChip, IrissPriceHistoryPanel } from "@/components/admin/IrissPriceChangeChip";
+import { irissPriceHistoryRows, latestIrissPriceChip } from "@/lib/iriss-listing-price-chips";
 import { orderRoomHitGallery, orderRoomHitPricing, orderRoomHitStockNo } from "@/lib/iriss-order-room-hit-pricing";
 import type { IrissOrderRoomHit } from "@/lib/iriss-order-room";
 
@@ -93,6 +95,8 @@ export function IrissOrderRoomHitCard({
   const pricing = orderRoomHitPricing(hit, prefs, budget);
   const cd = listingCountdown(hit.auctionEndAt, nowMs);
   const days = listingDaysInAuctionLabel(hit.auctionStartAt || hit.firstSeenAt, nowMs);
+  const priceChip = latestIrissPriceChip(hit.priceHistory);
+  const priceRows = irissPriceHistoryRows(hit.priceHistory);
   const city = hit.location.replace(/,\s*[A-Z]{2}$/i, "").trim();
   const referrerPolicy: "no-referrer" | undefined =
     hit.platform === "openline" || /images\.openlane\.eu/i.test(photos[0] ?? "") ? "no-referrer" : undefined;
@@ -174,7 +178,9 @@ export function IrissOrderRoomHitCard({
               {days}
             </span>
           ) : null}
+          {priceChip ? <IrissPriceChangeChip chip={priceChip} /> : null}
         </div>
+        <IrissPriceHistoryPanel rows={priceRows} />
         {matchSection}
         <IrissListingCardPriceColumnMobile {...priceProps} />
         {actions}

@@ -97,6 +97,7 @@ function mergeOffer(local: IrissOfferRecord, server: IrissOfferRecord): IrissOff
     attachments,
     createdAt: preferFilledString(local.createdAt, server.createdAt),
     updatedAt: preferFilledString(local.updatedAt, server.updatedAt),
+    ...(local.blocks?.length ? { blocks: local.blocks } : server.blocks?.length ? { blocks: server.blocks } : {}),
   };
 }
 
@@ -223,7 +224,31 @@ export function mergeIrissPasutijumsRecords(
     if (!offers.some((o) => o.id === s.id)) offers.push(s);
   }
   next.offers = offers;
+  next.advance = local.advance ?? server.advance;
+  next.communicationEvents = mergeCommunicationEvents(local.communicationEvents, server.communicationEvents);
+  next.inspectionPhotos = local.inspectionPhotos?.attachments.length
+    ? local.inspectionPhotos
+    : server.inspectionPhotos;
+  next.documentPhotos = local.documentPhotos?.attachments.length
+    ? local.documentPhotos
+    : server.documentPhotos;
   return retainStoredIrissCriteria(server, next);
+}
+
+function mergeCommunicationEvents(
+  local: IrissPasutijumsRecord["communicationEvents"],
+  server: IrissPasutijumsRecord["communicationEvents"],
+): IrissPasutijumsRecord["communicationEvents"] {
+  const seen = new Set<string>();
+  const out: NonNullable<IrissPasutijumsRecord["communicationEvents"]> = [];
+  for (const ev of [...(server ?? []), ...(local ?? [])]) {
+    if (seen.has(ev.id)) continue;
+    seen.add(ev.id);
+    out.push(ev);
+  }
+  if (out.length === 0) return undefined;
+  out.sort((a, b) => a.at.localeCompare(b.at));
+  return out.slice(-200);
 }
 
 export function planSilentAutosave(inFlight: boolean, imagesHydrating = false): { startNow: boolean; queue: boolean } {

@@ -7,7 +7,9 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, type PDFFont, type PDFPage } from "pdf-lib";
 
 import { computeDzintarzemeTame, type DzintarzemeTameInput } from "@/lib/dzintarzeme-tame-calculator";
+import { irissTameBalanceAfterAdvance } from "@/lib/iriss-advance";
 import type { IrissTameCommissionRates } from "@/lib/iriss-tame-commission";
+import { applyProvinHumanDashes } from "@/lib/source-summary-comment-format";
 import {
   drawRoundedRect,
   drawDzintarzemeTamePdfFooter,
@@ -109,6 +111,7 @@ async function createCtx(): Promise<PdfCtx> {
 export async function generateDzintarzemeTamePdfBytes(
   input: DzintarzemeTameInput,
   rates?: IrissTameCommissionRates,
+  opts?: { advancePaidEur?: number },
 ): Promise<Uint8Array> {
   const c = computeDzintarzemeTame(input, rates);
   const ctx = await createCtx();
@@ -176,7 +179,7 @@ export async function generateDzintarzemeTamePdfBytes(
   const hdrRowH = lineHeight(8) + 6;
   let frame2BodyH = innerPad + hdrRowH;
   for (const row of visibleRows) {
-    const labelLines = wrapText(row.label, ctx.font, fsRow, labelWrapW);
+    const labelLines = wrapText(applyProvinHumanDashes(row.label), ctx.font, fsRow, labelWrapW);
     const subH = row.subtitle ? lhSub : 0;
     frame2BodyH += Math.max(labelLines.length * lhRow, lhRow) + subH + 5;
   }
@@ -217,7 +220,7 @@ export async function generateDzintarzemeTamePdfBytes(
   cy -= hdrRowH;
 
   for (const row of visibleRows) {
-    const labelLines = wrapText(row.label, ctx.font, fsRow, labelWrapW);
+    const labelLines = wrapText(applyProvinHumanDashes(row.label), ctx.font, fsRow, labelWrapW);
     const subH = row.subtitle ? lhSub : 0;
     const rowH = Math.max(labelLines.length * lhRow, lhRow) + subH + 5;
     const rowTop = cy;
@@ -277,7 +280,11 @@ export async function generateDzintarzemeTamePdfBytes(
   const galaLh = premiumLineHeight(galaFs);
   const galaPad = 10;
   const galaBandH = galaLh + galaPad * 2;
-  const frame3H = innerPad + sumRowN * 2 + galaBandH + innerPad;
+  const advancePaid = Math.max(0, opts?.advancePaidEur ?? 0);
+  const showAdvance = advancePaid > 0;
+  const remainingDue = irissTameBalanceAfterAdvance(c.galaSumma, advancePaid);
+  const remainBandH = showAdvance ? galaBandH : 0;
+  const frame3H = innerPad + sumRowN * (showAdvance ? 3 : 2) + galaBandH + remainBandH + innerPad;
 
   const disclaimer = "Šis aprēķins ir informatīvs un nav uzskatāms par oficiālu rēķinu.";
   const discLines = wrapText(disclaimer, ctx.font, 7, ctx.contentW - 8);
@@ -285,7 +292,7 @@ export async function generateDzintarzemeTamePdfBytes(
 
   reserveVertical(ctx, sumHead + SECTION_HEAD_GAP + frame3H + SECTION_GAP + discH + 8, floorY);
   cy = ctx.y;
-  cy -= drawSectionHeadInCard(page, ix0, cy, "KOPĒJĀS IZMAKAS", ctx.fontBold, PREMIUM_ORANGE);
+  cy -= drawSectionHeadInCard(page, ix0, cy, "KOPĒJĀS IZMAKSAS", ctx.fontBold, PREMIUM_ORANGE);
   cy -= SECTION_HEAD_GAP;
   const f3Top = cy;
   const f3Bot = f3Top - frame3H;
@@ -349,6 +356,42 @@ export async function generateDzintarzemeTamePdfBytes(
     color: INK,
     tracking: 0.08,
   });
+  cy = bandBot;
+  if (showAdvance) {
+    drawSum("Avanss", `-${fmtMoneyEurLv(advancePaid)}`, false);
+    const remTop = cy;
+    const remBot = remTop - galaBandH;
+    drawRoundedRect(page, {
+      x: ix0,
+      y: remBot,
+      width: iw,
+      height: galaBandH,
+      radius: 5,
+      color: PREMIUM_HIGHLIGHT_FILL,
+      borderColor: PREMIUM_ORANGE,
+      borderWidth: 1.1,
+    });
+    const remLab = "Atlikums apmaksai";
+    const remVal = fmtMoneyEurLv(remainingDue);
+    drawTrackedText(page, remLab, {
+      x: ix0,
+      y: remTop - galaPad - galaFs,
+      size: galaFs,
+      font: ctx.fontBold,
+      color: INK,
+      tracking: 0.05,
+    });
+    const rvw = measureTrackedWidth(remVal, ctx.fontBold, galaFs, 0.08);
+    drawTrackedText(page, remVal, {
+      x: colRight - rvw,
+      y: remTop - galaPad - galaFs,
+      size: galaFs,
+      font: ctx.fontBold,
+      color: INK,
+      tracking: 0.08,
+    });
+    cy = remBot;
+  }
   ctx.y = f3Bot - SECTION_GAP;
 
   for (const ln of discLines) {

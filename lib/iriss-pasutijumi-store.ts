@@ -20,6 +20,10 @@ import {
 import { retainGoogleContactFields } from "@/lib/iriss-server-owned-fields";
 import { attachmentAfterBlobPut, parseDataUrlPayload } from "@/lib/iriss-offer-attachment-blob";
 import { irissOfferThumbBlobPath, renderIrissOfferThumbJpeg } from "@/lib/iriss-offer-image-thumb";
+import { normalizeIrissAdvanceDraft } from "@/lib/iriss-advance";
+import { normalizeIrissCommunicationEvents } from "@/lib/iriss-communication-timeline";
+import { normalizeIrissOfferBlocks } from "@/lib/iriss-offer-blocks";
+import { irissOrderPhotoAlbumOfferId, normalizeIrissOrderPhotoAlbum } from "@/lib/iriss-order-photos";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import {
   isIrissRecordDeleted,
@@ -438,7 +442,7 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
       const title = sanitizeDraftTextForStorage(typeof o.title === "string" ? o.title : `Piedāvājums ${idx + 1}`, 80);
       const createdAt = sanitizeDraftTextForStorage(typeof o.createdAt === "string" ? o.createdAt : "", 64);
       const updatedAt = sanitizeDraftTextForStorage(typeof o.updatedAt === "string" ? o.updatedAt : "", 64);
-      return {
+      const offer: IrissOfferRecord = {
         id,
         title: title || `Piedāvājums ${idx + 1}`,
         brandModel: sanitizeDraftTextForStorage(typeof o.brandModel === "string" ? o.brandModel : "", 320),
@@ -486,6 +490,9 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
         createdAt,
         updatedAt,
       };
+      const blocks = normalizeIrissOfferBlocks(o.blocks);
+      if (blocks) offer.blocks = blocks;
+      return offer;
     })
     .filter((x): x is IrissOfferRecord => x !== null)
     .slice(0, 30);
@@ -553,6 +560,14 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     generatedDocuments: normalizeGeneratedDocuments(o.generatedDocuments),
     ...pickIrissPasutijumsAuditFields(o),
   };
+  const advance = normalizeIrissAdvanceDraft(o.advance);
+  if (advance) record.advance = advance;
+  const communicationEvents = normalizeIrissCommunicationEvents(o.communicationEvents);
+  if (communicationEvents) record.communicationEvents = communicationEvents;
+  const inspectionPhotos = normalizeIrissOrderPhotoAlbum(o.inspectionPhotos, normalizeOfferAttachments);
+  if (inspectionPhotos) record.inspectionPhotos = inspectionPhotos;
+  const documentPhotos = normalizeIrissOrderPhotoAlbum(o.documentPhotos, normalizeOfferAttachments);
+  if (documentPhotos) record.documentPhotos = documentPhotos;
   const googleName = sanitizeDraftTextForStorage(str("googleContactResourceName"), 160);
   if (googleName) record.googleContactResourceName = googleName;
   const googleStatus = str("googleContactStatus");
@@ -931,6 +946,23 @@ async function persistOneOfferImage(
   };
 }
 
+async function persistPhotoAlbum(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  orderId: string,
+  albumId: "inspection" | "documents",
+  album: { attachments: IrissOfferAttachment[]; coverAttachmentId?: string } | undefined,
+): Promise<{ album?: { attachments: IrissOfferAttachment[]; coverAttachmentId?: string }; changed: boolean }> {
+  if (!album?.attachments.length) return { album, changed: false };
+  const attachments = [];
+  let changed = false;
+  for (const att of album.attachments) {
+    const next = await persistOneOfferImage(r, orderId, irissOrderPhotoAlbumOfferId(albumId), att);
+    if (next !== att) changed = true;
+    attachments.push(next);
+  }
+  return { album: { ...album, attachments }, changed };
+}
+
 async function persistOfferImages(
   r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
   record: IrissPasutijumsRecord,
@@ -952,8 +984,15 @@ async function persistOfferImages(
       offers.push(offer);
     }
   }
-  if (!changed) return record;
-  return { ...record, offers };
+  const inspection = await persistPhotoAlbum(r, record.id, "inspection", record.inspectionPhotos);
+  const documents = await persistPhotoAlbum(r, record.id, "documents", record.documentPhotos);
+  if (!changed && !inspection.changed && !documents.changed) return record;
+  return {
+    ...record,
+    offers,
+    ...(inspection.album ? { inspectionPhotos: inspection.album } : {}),
+    ...(documents.album ? { documentPhotos: documents.album } : {}),
+  };
 }
 
 async function bytesToDataUrl(bytes: Buffer, mimeType: string): Promise<string> {

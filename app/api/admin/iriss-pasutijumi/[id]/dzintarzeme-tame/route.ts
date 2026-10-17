@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { generateDzintarzemeTamePdfBytes } from "@/lib/dzintarzeme-tame-pdf";
 import { parseDzintarzemeTameBody } from "@/lib/dzintarzeme-tame-calculator";
+import { parseIrissAdvanceAmount } from "@/lib/iriss-advance";
 import { generatedDocumentResponseHeader } from "@/lib/iriss-generated-documents";
 import { readIrissTameCommissionSettings } from "@/lib/iriss-tame-commission-store";
 import { getAdminSession } from "@/lib/admin-auth";
@@ -29,7 +30,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const rates = await readIrissTameCommissionSettings();
-  const bytes = await generateDzintarzemeTamePdfBytes(parsed.value, rates);
+  const bytes = await generateDzintarzemeTamePdfBytes(parsed.value, rates, {
+    advancePaidEur: parseIrissAdvanceAmount(rec.advance?.amount ?? ""),
+  });
   const pdfCache = "no-store, no-cache, must-revalidate, max-age=0, private" satisfies string;
   const date = new Date().toISOString().slice(0, 10);
   const tameName = `dzintarzeme-auto-tame-${date}.pdf`;
