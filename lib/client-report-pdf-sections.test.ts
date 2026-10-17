@@ -320,7 +320,7 @@ describe("PDF design system", () => {
     expect(html).toContain(".pdf-src-zone--autodna{border-top-color:#1E3A8A;");
     expect(html).toContain("background:linear-gradient(180deg,#FFF1E8 0%,#fff 42%)");
     expect(html).toContain('class="pdf-ico pdf-ico--brand-logo"');
-    expect(html).toContain("pdf-sec-ico-wrap--brand-logo");
+    expect(html).toContain("pdf-sec-brand-mark");
     expect(html).toContain(PDF_HERO_BRAND_LOGO_DATA_URI.autodna);
   });
 

@@ -25,7 +25,12 @@ import {
   irissPasutijumsToListRow,
   irissPhoneTelHref,
 } from "@/lib/iriss-pasutijumi-list-row";
-import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
+import {
+  BRAND_LOGO_ADMIN_SQUARE_PX,
+  BRAND_LOGO_ADMIN_WIDE_H_PX,
+  BRAND_LOGO_ADMIN_WIDE_MAX_W_PX,
+} from "@/lib/brand-logo-display";
+import { irissBrandFallbackLabel, irissBrandLogoSrc, irissBrandLogoUsesWideLayout } from "@/lib/iriss-brand-logo";
 import { IRISS_ORDERS_LIST_PAGE, irissNextWindowLimit, irissWindowSlice } from "@/lib/iriss-list-window";
 import {
   canonicalIrissPasutijumsListStatus,
@@ -256,6 +261,7 @@ const IrissRowCard = memo(function IrissRowCard({
   });
   const brandFallback = irissBrandFallbackLabel(row.brandModel);
   const brandLogoSrc = irissBrandLogoSrc(row.brandModel);
+  const brandLogoWide = irissBrandLogoUsesWideLayout(row.brandModel);
   const specSummary = formatIrissListSpecSummary(row);
   const powerKwLabel = irissListRowPowerKwLabel(row);
   const equipmentRequired = (row.equipmentRequired ?? "").trim();
@@ -428,14 +434,18 @@ const IrissRowCard = memo(function IrissRowCard({
           <img
             src={brandLogoSrc}
             alt=""
-            width={36}
-            height={36}
+            width={brandLogoWide ? BRAND_LOGO_ADMIN_WIDE_MAX_W_PX : BRAND_LOGO_ADMIN_SQUARE_PX}
+            height={brandLogoWide ? BRAND_LOGO_ADMIN_WIDE_H_PX : BRAND_LOGO_ADMIN_SQUARE_PX}
             loading="lazy"
             decoding="async"
-            className="mt-0.5 h-9 w-9 shrink-0 rounded-md border border-slate-200/90 bg-white object-contain p-[3px]"
+            className={
+              brandLogoWide
+                ? "mt-0.5 h-[34px] w-auto max-w-[92px] shrink-0 object-contain"
+                : "mt-0.5 h-[34px] w-[34px] shrink-0 object-contain"
+            }
           />
         ) : (
-          <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200/90 bg-slate-50 text-[11px] font-bold text-slate-600">
+          <span className="mt-0.5 inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center text-[11px] font-bold text-slate-600">
             {brandFallback}
           </span>
         )}

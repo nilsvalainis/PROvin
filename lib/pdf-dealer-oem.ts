@@ -49,6 +49,11 @@ import {
   pdfDealerLogoIsMonogram,
   type PdfDealerLogoLayout,
 } from "@/lib/pdf-source-brand-logos";
+import {
+  BRAND_LOGO_OEM_SQUARE_PX,
+  BRAND_LOGO_OEM_WIDE_H_PX,
+  BRAND_LOGO_OEM_WIDE_W_PX,
+} from "@/lib/brand-logo-display";
 
 function escapeHtml(s: string): string {
   return s
@@ -577,9 +582,9 @@ const OEM_CSS = `
     padding-bottom:12px;border-bottom:1px solid #cbd5e1;margin:0 0 12px;
   }
   .oem-logo{
-    display:block;width:30px;height:30px;object-fit:contain;flex-shrink:0;
+    display:block;width:${BRAND_LOGO_OEM_SQUARE_PX}px;height:${BRAND_LOGO_OEM_SQUARE_PX}px;object-fit:contain;flex-shrink:0;
   }
-  .oem-logo--wide{width:80px;height:20px;}
+  .oem-logo--wide{width:${BRAND_LOGO_OEM_WIDE_W_PX}px;height:${BRAND_LOGO_OEM_WIDE_H_PX}px;}
   .oem-mid{min-width:0;}
   .oem-kicker{
     margin:0;font-size:8.5px;font-weight:650;letter-spacing:0.14em;
@@ -727,7 +732,7 @@ export function buildOemDealerDocumentHtml(args: {
     : `<p class="oem-empty">No dealer network records for this VIN.</p>`;
 
   const logoHtml = logoResolved
-    ? `<img class="oem-logo${logoIsWide ? " oem-logo--wide" : ""}${logoIsMono ? " oem-logo--mono" : ""}" src="${logoResolved.uri}" alt="" width="${logoIsWide ? 80 : 30}" height="${logoIsWide ? 20 : 30}"/>`
+    ? `<img class="oem-logo${logoIsWide ? " oem-logo--wide" : ""}${logoIsMono ? " oem-logo--mono" : ""}" src="${logoResolved.uri}" alt="" width="${logoIsWide ? BRAND_LOGO_OEM_WIDE_W_PX : BRAND_LOGO_OEM_SQUARE_PX}" height="${logoIsWide ? BRAND_LOGO_OEM_WIDE_H_PX : BRAND_LOGO_OEM_SQUARE_PX}"/>`
     : "";
 
   return `<!DOCTYPE html>

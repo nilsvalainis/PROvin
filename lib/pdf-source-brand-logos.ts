@@ -8,6 +8,7 @@ import {
   PDF_DEALER_LOGO_WIDE_DATA_URI,
   PDF_SOURCE_LOGO_DATA_URI,
 } from "@/lib/pdf-source-brand-logo-data";
+import { pdfBrandLogoSlotPx, type PdfBrandLogoSlot } from "@/lib/brand-logo-display";
 import { dealerBrandHasWideMark } from "@/lib/dealer-brand-logo-path";
 
 export type PdfListingPortalLogoId = "sslv" | "auto24" | "mobilede";
@@ -261,8 +262,9 @@ export function pdfListingPortalLogoDataUri(listingUrl: string | null | undefine
   return PDF_SOURCE_LOGO_DATA_URI[id];
 }
 
-export function pdfBrandLogoImgHtml(dataUri: string): string {
-  return `<img class="pdf-ico pdf-ico--brand-logo" src="${dataUri}" alt="" width="16" height="16"/>`;
+export function pdfBrandLogoImgHtml(dataUri: string, slot: PdfBrandLogoSlot = "section"): string {
+  const px = pdfBrandLogoSlotPx(slot);
+  return `<img class="pdf-ico pdf-ico--brand-logo" src="${dataUri}" alt="" width="${px}" height="${px}"/>`;
 }
 
 export { PDF_SOURCE_LOGO_DATA_URI, PDF_DEALER_LOGO_DATA_URI, PDF_DEALER_LOGO_WIDE_DATA_URI };

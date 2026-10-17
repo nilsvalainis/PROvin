@@ -1,5 +1,5 @@
 /** Local brand mark paths for IRISS list rows (no CDN). */
-import { dealerBrandLogoPublicPath } from "@/lib/dealer-brand-logo-path";
+import { dealerBrandHasWideMark, dealerBrandLogoPublicPath } from "@/lib/dealer-brand-logo-path";
 
 const IRISS_BRAND_SLUG: Record<string, string> = {
   audi: "audi",
@@ -61,12 +61,24 @@ const IRISS_BRAND_SLUG: Record<string, string> = {
   mg: "mg",
 };
 
-const IRISS_BRAND_LOGO: Record<string, string> = Object.fromEntries(
-  Object.entries(IRISS_BRAND_SLUG).map(([key, slug]) => [
-    key,
-    dealerBrandLogoPublicPath(slug, { cacheBust: false }),
-  ]),
-);
+function irissSlugForBrandModel(brandModel: string): string | null {
+  const token = irissBrandToken(brandModel);
+  if (!token) return null;
+  const normalized = brandModel
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_./]+/g, " ")
+    .replace(/\s+/g, " ");
+  for (const key of ["aston martin", "alfa romeo", "land rover", "mercedes-benz", "rolls-royce", "ds automobiles"]) {
+    if (normalized === key || normalized.startsWith(key + " ")) {
+      return IRISS_BRAND_SLUG[key] ?? IRISS_BRAND_SLUG[key.replace(/ /g, "-")] ?? null;
+    }
+  }
+  if (normalized.startsWith("land ")) return IRISS_BRAND_SLUG["land-rover"] ?? null;
+  return IRISS_BRAND_SLUG[token] ?? null;
+}
 
 export function irissBrandToken(brandModel: string): string {
   return (
@@ -80,24 +92,18 @@ export function irissBrandToken(brandModel: string): string {
   );
 }
 
+export function irissBrandLogoUsesWideLayout(brandModel: string): boolean {
+  const slug = irissSlugForBrandModel(brandModel);
+  return slug ? dealerBrandHasWideMark(slug) : false;
+}
+
 export function irissBrandLogoSrc(brandModel: string): string | null {
-  const token = irissBrandToken(brandModel);
-  if (!token) return null;
-  // Prefer multi-word keys (Land Rover, Alfa Romeo, Aston Martin) before first-token fallback.
-  const normalized = brandModel
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[_./]+/g, " ")
-    .replace(/\s+/g, " ");
-  for (const key of ["aston martin", "alfa romeo", "land rover", "mercedes-benz", "rolls-royce", "ds automobiles"]) {
-    if (normalized === key || normalized.startsWith(key + " ")) {
-      return IRISS_BRAND_LOGO[key] ?? IRISS_BRAND_LOGO[key.replace(/ /g, "-")] ?? null;
-    }
-  }
-  if (normalized.startsWith("land ")) return IRISS_BRAND_LOGO["land-rover"] ?? null;
-  return IRISS_BRAND_LOGO[token] ?? null;
+  const slug = irissSlugForBrandModel(brandModel);
+  if (!slug) return null;
+  return dealerBrandLogoPublicPath(slug, {
+    cacheBust: false,
+    variant: dealerBrandHasWideMark(slug) ? "wide" : "primary",
+  });
 }
 
 export function irissBrandFallbackLabel(brandModel: string): string {

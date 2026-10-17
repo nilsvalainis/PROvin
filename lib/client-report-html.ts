@@ -691,7 +691,7 @@ function buildPdfLifeCardItemHtml(e: LifecycleEvent, dealerMakeHint = ""): strin
     isAnomaly || isIncident
       ? `<span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span>`
       : dealerLogo
-        ? `<span class="pdf-life-ico pdf-life-ico--brand" aria-hidden="true">${pdfBrandLogoImgHtml(dealerLogo)}</span>`
+        ? `<span class="pdf-life-ico pdf-life-ico--brand" aria-hidden="true">${pdfBrandLogoImgHtml(dealerLogo, "life")}</span>`
         : `<span class="pdf-life-ico" aria-hidden="true">${sectionIconPdfHtml(LIFECYCLE_ICON_BY_KIND[e.kind])}</span>`;
   const itemTone = isIncident ? "incident" : e.tone;
   return `<li class="pdf-life-item pdf-life-item--${itemTone}"${isAnomaly ? ' role="alert"' : ""}>
@@ -855,8 +855,11 @@ function buildPdfLifeBreakHtml(e: LifecycleEvent): string {
 }
 
 function sectionHeadBrand(icon: string, title: string, badgeHtml = ""): string {
-  const brandWrap = icon.includes("pdf-ico--brand-logo") ? " pdf-sec-ico-wrap--brand-logo" : "";
-  return `<div class="pdf-sec-head pdf-sec-head--brand"><span class="pdf-sec-ico-wrap${brandWrap}" aria-hidden="true">${icon}</span><h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2>${badgeHtml}</div>`;
+  const isBrandMark = icon.includes("pdf-ico--brand-logo");
+  const iconWrap = isBrandMark
+    ? `<span class="pdf-sec-brand-mark" aria-hidden="true">${icon}</span>`
+    : `<span class="pdf-sec-ico-wrap" aria-hidden="true">${icon}</span>`;
+  return `<div class="pdf-sec-head pdf-sec-head--brand">${iconWrap}<h2 class="pdf-sec pdf-sec--nobar">${escapeHtml(title)}</h2>${badgeHtml}</div>`;
 }
 
 /** Avota sadaļas ārējā klase - augšmalas akcents avota krāsā (tā pati krāsa kā nobraukuma svītriņai). */
@@ -2328,7 +2331,7 @@ ${clientReportPageChromeCss(running)}
       }
       .pdf-life-ico{display:inline-flex;color:#64748b;flex-shrink:0;}
       .pdf-life-ico .pdf-ico{width:14px;height:14px;}
-      .pdf-life-ico--brand .pdf-ico--brand-logo{width:16px;height:16px;object-fit:contain;display:block;}
+      .pdf-life-ico--brand .pdf-ico--brand-logo{width:20px;height:20px;object-fit:contain;display:block;}
       .pdf-life-card__fact{min-width:0;}
       .pdf-life-card__sub{margin:0;font-size:var(--pdf-fs-table);color:#475569;line-height:1.4;}
       .pdf-life-price-delta{margin-left:0.35em;font-weight:700;font-variant-numeric:tabular-nums;}
@@ -2462,8 +2465,11 @@ ${clientReportPageChromeCss(running)}
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-sec-ico-wrap .pdf-ico{width:16px;height:16px;}
-      .pdf-sec-ico-wrap--brand-logo{background:#fff;}
-      .pdf-sec-ico-wrap .pdf-ico--brand-logo{width:16px;height:16px;object-fit:contain;display:block;}
+      .pdf-sec-brand-mark{
+        display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+        width:28px;height:28px;
+      }
+      .pdf-sec-brand-mark .pdf-ico--brand-logo{width:22px;height:22px;object-fit:contain;display:block;}
       .pdf-source-section-body{width:100%;margin:0;padding:0;}
       .pdf-ltab-izzi{
         margin:0;padding:12px 14px;border:1px solid var(--pdf-line);
