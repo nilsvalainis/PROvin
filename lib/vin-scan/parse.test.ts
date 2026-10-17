@@ -220,6 +220,23 @@ describe("digital servicebook", () => {
     expect(dsbScanFromParts(search, 0)).toMatchObject({ status: "none", summary: expect.stringContaining("servisa ierakstu nav") });
     expect(dsbScanFromParts({ vehicle: "", country: "" }, 0).summary).toContain("nav Digital Servicebook");
   });
+
+  it("dāņu poster vi fandt nolasa skaitu un 0 dod none", () => {
+    const search = { vehicle: "Renault Captur", country: "Denmark" };
+    expect(parseDsbEntryCount("For at se de 14 poster vi fandt, skal du være logget ind")).toBe(14);
+    expect(parseDsbEntryCount("For at se de <strong>0</strong> poster vi fandt")).toBe(0);
+    expect(parseDsbEntryCount("1 post vi fandt")).toBe(1);
+    const liveDa = `
+      <h2 id="header-car-name">Renault Captur</h2>
+      <span style="font-weight: bold">0</span>&nbsp;poster vi fandt
+    `;
+    expect(parseDsbEntryCount(liveDa)).toBe(0);
+    expect(dsbScanFromParts(search, parseDsbEntryCount(liveDa))).toMatchObject({
+      status: "none",
+      summary: expect.stringContaining("servisa ierakstu nav"),
+    });
+    expect(parseDsbEntryCount("To view the 2 entries we found")).toBe(2);
+  });
 });
 
 describe("car-pass", () => {

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { carinfoSvVinUrl, carinfoSwedenPlateUrl, carinfoSwedenVinUrl } from "@/lib/vin-sources/carinfo-search";
+import {
+  CARINFO_SEARCH_LOCALES,
+  carinfoSvVinUrl,
+  carinfoSwedenPlateUrl,
+  carinfoSwedenVinUrl,
+} from "@/lib/vin-sources/carinfo-search";
 import { runCarinfoLookup } from "@/lib/vin-scan/carinfo-lookup";
 
 const VIN = "YV1LW5522V2348444";
@@ -57,6 +62,14 @@ const SV_XC60_HTML = `
 </body></html>
 `;
 
+function superSearchLocales(calls: string[]): string[] {
+  return calls
+    .filter((url) => url.includes("/search/super/"))
+    .map((url) => /\/([a-z]{2}-[a-z]{2})\/search\/super\//.exec(url)?.[1] ?? "");
+}
+
+const EMPTY_SUPER = JSON.stringify({ hits: { idents: [] }, hits_html: "" });
+
 describe("runCarinfoLookup", () => {
   it("sv-se VIN lapa pietiek, en-se un numuru neprasa", async () => {
     const calls: string[] = [];
@@ -90,15 +103,14 @@ describe("runCarinfoLookup", () => {
       calls.push(url);
       if (url.includes("/license-plate/")) return { status: 200, text: VOLVO_V70_HTML };
       if (url.includes("/search/super/")) {
-        return { status: 200, text: JSON.stringify({ hits: { idents: [] }, hits_html: "" }) };
+        return { status: 200, text: EMPTY_SUPER };
       }
       return { status: 404, text: "not found" };
     });
     expect(calls[0]).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
     expect(calls[1]).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
-    expect(calls[2]).toContain(`/sv-se/search/super/${VIN}?time=`);
-    expect(calls[3]).toContain(`/en-se/search/super/${VIN}?time=`);
-    expect(calls[4]).toBe("https://www.car.info/en-se/license-plate/S/BMX837");
+    expect(superSearchLocales(calls)).toEqual([...CARINFO_SEARCH_LOCALES]);
+    expect(calls.at(-1)).toBe("https://www.car.info/en-se/license-plate/S/BMX837");
     expect(calls.some((url) => url.includes("search?q="))).toBe(false);
     expect(calls.some((url) => url.includes("/sv-se/license-plate/"))).toBe(false);
     expect(parsed.status).toBe("found");
@@ -110,11 +122,12 @@ describe("runCarinfoLookup", () => {
     const parsed = await runCarinfoLookup(VIN, "", async (url) => {
       calls.push(url);
       if (url.includes("/search/super/")) {
-        return { status: 200, text: JSON.stringify({ hits: { idents: [] }, hits_html: "" }) };
+        return { status: 200, text: EMPTY_SUPER };
       }
       return { status: 404, text: "" };
     });
-    expect(calls).toHaveLength(4);
+    expect(calls).toHaveLength(2 + CARINFO_SEARCH_LOCALES.length);
+    expect(superSearchLocales(calls)).toEqual([...CARINFO_SEARCH_LOCALES]);
     expect(parsed).toMatchObject({ status: "none", summary: "car.info šo VIN neatrada" });
   });
 
@@ -124,12 +137,12 @@ describe("runCarinfoLookup", () => {
       calls.push(url);
       return { status: 403, text: "<html><title>403 Forbidden</title></html>" };
     });
-    expect(calls).toEqual([
+    expect(calls.slice(0, 2)).toEqual([
       `https://www.car.info/sv-se/vin/S/${VIN}`,
       `https://www.car.info/en-se/vin/S/${VIN}`,
-      expect.stringContaining(`/sv-se/search/super/${VIN}?time=`),
-      expect.stringContaining(`/en-se/search/super/${VIN}?time=`),
     ]);
+    expect(superSearchLocales(calls)).toEqual([...CARINFO_SEARCH_LOCALES]);
+    expect(calls.some((url) => url.includes("/license-plate/"))).toBe(false);
     expect(parsed.status).toBe("blocked");
     expect(parsed.summary).toBe("car.info bloķē serveri - atver pārlūkā");
     expect(parsed.openUrl).toBe(`https://www.car.info/sv-se/vin/S/${VIN}`);
@@ -163,5 +176,56 @@ describe("runCarinfoLookup", () => {
     expect(calls.some((url) => url.includes("/search/super/"))).toBe(false);
     expect(parsed.status).toBe("found");
     expect(parsed.openUrl).toBe(`https://www.car.info/en-se/vin/S/${VIN}`);
+  });
+
+  it("DK super-search atrod VIN, ko Zviedrijas lapas neredz", async () => {
+    const dkVin = "VF12RFL1H49621453";
+    const dkPage = `https://www.car.info/en-dk/vin/DK/${dkVin}`;
+    const calls: string[] = [];
+    const parsed = await runCarinfoLookup(dkVin, "", async (url) => {
+      calls.push(url);
+      if (url.includes("/en-dk/search/super/")) {
+        return {
+          status: 200,
+          text: JSON.stringify({
+            hits: {
+              idents: [{ country: "DK", vin: dkVin, secondary_name_blurred: "Renault Captur" }],
+            },
+            hits_html: `<a href="${dkPage}">`,
+          }),
+        };
+      }
+      if (url === dkPage) {
+        return {
+          status: 200,
+          text: `
+            <html><body>
+            <p>AB12345 is a Renault Captur from 2014.</p>
+            <dl>
+            <dt>In Traffic</dt><dd>Yes</dd>
+            <dt>Number of Owners</dt><dd>3</dd>
+            <dt>Mileage</dt><dd>80,000 km</dd>
+            </dl>
+            <table>
+            <tr><th>Reported odometer readings</th><th></th></tr>
+            <tr><td>Inspection 80,000 km</td><td>2024-05-01</td></tr>
+            </table>
+            </body></html>
+          `,
+        };
+      }
+      if (url.includes("/search/super/")) return { status: 200, text: EMPTY_SUPER };
+      return { status: 404, text: "not found" };
+    });
+    expect(calls[0]).toBe(`https://www.car.info/sv-se/vin/S/${dkVin}`);
+    expect(calls[1]).toBe(`https://www.car.info/en-se/vin/S/${dkVin}`);
+    const dkLocaleAt = CARINFO_SEARCH_LOCALES.indexOf("en-dk");
+    expect(superSearchLocales(calls)).toEqual([...CARINFO_SEARCH_LOCALES].slice(0, dkLocaleAt + 1));
+    expect(calls.at(-1)).toBe(dkPage);
+    expect(parsed.status).toBe("found");
+    expect(parsed.openUrl).toBe(dkPage);
+    expect(parsed.summary).toContain("Renault Captur");
+    expect(parsed.summary).toContain("2014");
+    expect(parsed.flags?.registrationCountry).toBeUndefined();
   });
 });
