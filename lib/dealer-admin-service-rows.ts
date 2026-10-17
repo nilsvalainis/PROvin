@@ -6,9 +6,10 @@ import {
   checkMapAgainstDealerFacts,
   dealerComponentLv,
   extractDealerFactsFromServiceWorks,
+  findTextContradictionsWithDealer,
+  textMentionsDealerCampaigns,
   type DealerFact,
 } from "@/lib/admin-ai-dealer-facts";
-import { lintTechnicalRiskText } from "@/lib/admin-ai-technical-risk-lint";
 import type { TechnicalRiskMap } from "@/lib/admin-ai-technical-risk-map-types";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 import { oneautoWorksNeedLvTranslation } from "@/lib/oneauto-dealer";
@@ -82,14 +83,17 @@ export function collectDealerAdminWarnings(args: {
   }
   const text = (args.techRiskText ?? "").trim();
   if (text) {
-    const lint = lintTechnicalRiskText({
-      text,
-      map: args.techRiskMap ?? null,
-      dealerFacts: facts,
-    });
-    for (const issue of lint.issues) {
-      if (issue.id !== "L14" && issue.id !== "L15") continue;
-      out.push({ id: issue.id, message: issue.message });
+    for (const hit of findTextContradictionsWithDealer(text, facts)) {
+      out.push({
+        id: "L14",
+        message: `Pretruna ar oficiālā dīlera datiem: teksts prasa „${dealerComponentLv(hit.component)}” darbu, bet ${hit.fact.id} (${hit.fact.date}) tas jau fiksēts: „${hit.sentence.slice(0, 160)}”.`,
+      });
+    }
+    if (!textMentionsDealerCampaigns(text, facts)) {
+      out.push({
+        id: "L15",
+        message: "Dīlera datos ir kampaņa / servisa akcija, bet tekstā tā nav minēta (ID vai datums).",
+      });
     }
   }
   return out;

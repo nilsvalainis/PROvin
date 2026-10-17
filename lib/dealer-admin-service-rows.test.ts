@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   collectDealerAdminWarnings,
@@ -68,5 +69,11 @@ describe("collectDealerAdminWarnings", () => {
       techRiskText: "Sadales ķēde šajā nobraukumā ir uzmanības punkts.",
     });
     expect(warnings.some((w) => w.id === "L15")).toBe(true);
+  });
+
+  it("neievelk Node fs / KB lintu admin klienta paketē", () => {
+    const src = readFileSync(new URL("./dealer-admin-service-rows.ts", import.meta.url), "utf8");
+    expect(src).not.toMatch(/admin-ai-technical-risk-lint/);
+    expect(src).not.toMatch(/provin-kb/);
   });
 });
