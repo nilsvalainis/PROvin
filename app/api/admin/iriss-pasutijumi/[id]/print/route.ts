@@ -3,8 +3,14 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { warmMessageTemplatesCache } from "@/lib/messages/message-runtime";
 import { buildIrissPasutijumsPrintHtml } from "@/lib/iriss-pasutijums-pdf-html";
 import { buildIrissPasutijumsPdfBytes } from "@/lib/iriss-pasutijums-pdf";
-import { irissPasutijumsPdfContentDisposition } from "@/lib/iriss-pasutijumi-list-overview";
-import { hydrateIrissPasutijumsImages, isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
+import { generatedDocumentResponseHeader } from "@/lib/iriss-generated-documents";
+import { irissPasutijumsPdfContentDisposition, irissPasutijumsPdfFilename } from "@/lib/iriss-pasutijumi-list-overview";
+import {
+  hydrateIrissPasutijumsImages,
+  isSafeIrissPasutijumsId,
+  readIrissPasutijums,
+  storeIrissGeneratedPdf,
+} from "@/lib/iriss-pasutijumi-store";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -40,6 +46,18 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     url.searchParams.get("disposition") === "inline" ||
     url.searchParams.get("view") === "1";
   const disposition = irissPasutijumsPdfContentDisposition(rec, inline);
+  let storedHeader: Record<string, string> = {};
+  try {
+    const stored = await storeIrissGeneratedPdf({
+      orderId: rec.id,
+      kind: "contract",
+      name: irissPasutijumsPdfFilename(rec),
+      bytes,
+    });
+    if (stored) storedHeader = generatedDocumentResponseHeader(stored.document, stored.workspaceRevision);
+  } catch (e) {
+    console.error("[iriss print store]", e instanceof Error ? e.message : e);
+  }
   return new NextResponse(Buffer.from(bytes), {
     status: 200,
     headers: {
@@ -48,6 +66,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
       "Cache-Control": pdfCache,
       Pragma: "no-cache",
       "X-Robots-Tag": "noindex, nofollow",
+      ...storedHeader,
     },
   });
 }

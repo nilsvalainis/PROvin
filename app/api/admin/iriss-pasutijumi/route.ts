@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { readGoogleContactsConfig } from "@/lib/google-contacts";
+import { maybeSyncGoogleContact } from "@/lib/iriss-google-contact-sync";
 import { setListingOrderOvLink } from "@/lib/iriss-listing-order-ov";
 import { irissPasutijumsHasOperatorContent } from "@/lib/iriss-pasutijumi-save-safety";
 import {
@@ -64,6 +66,7 @@ export async function POST(req: Request) {
 
   const r = await createIrissPasutijums(seed);
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: 500 });
+  const synced = (await maybeSyncGoogleContact(r.record, null)) ?? r.record;
 
   const vehicleId = typeof o.listingVehicleId === "string" ? o.listingVehicleId.trim() : "";
   if (vehicleId) {
@@ -71,5 +74,9 @@ export async function POST(req: Request) {
     await writeIrissListingOrderOv(setListingOrderOvLink(ov, vehicleId, r.id));
   }
 
-  return NextResponse.json({ id: r.id, record: r.record });
+  return NextResponse.json({
+    id: synced.id,
+    record: synced,
+    googleContactsConfigured: Boolean(readGoogleContactsConfig()),
+  });
 }

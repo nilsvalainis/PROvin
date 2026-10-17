@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { readGoogleContactsConfig } from "@/lib/google-contacts";
+import { maybeSyncGoogleContact } from "@/lib/iriss-google-contact-sync";
+import { normalizeGeneratedDocuments } from "@/lib/iriss-generated-documents";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { pickIrissPasutijumsAuditFields } from "@/lib/iriss-pasutijumi-audit-fields";
 import {
@@ -45,7 +48,7 @@ function parseOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? sizeRaw : 0;
       if (!id || !name) return null;
-      if (!dataUrl && !blobPath) return null;
+      if (!dataUrl && !blobPath && !blobUrl) return null;
       return {
         id,
         name,
@@ -181,6 +184,7 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     ...parseIrissPasutijumsListingLinks(o),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: parseOffersFromBody(o),
+    generatedDocuments: normalizeGeneratedDocuments(o.generatedDocuments),
     ...pickIrissPasutijumsAuditFields(o),
   };
 }
@@ -194,7 +198,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   if (!rec) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const thumbsOnly = new URL(req.url).searchParams.get("images") === "thumbs";
   const hydrated = thumbsOnly ? await hydrateIrissOfferImageThumbs(rec) : await hydrateIrissPasutijumsImages(rec);
-  return NextResponse.json({ record: hydrated, workspaceRevision: hydrated.workspaceRevision });
+  return NextResponse.json({
+    record: hydrated,
+    workspaceRevision: hydrated.workspaceRevision,
+    googleContactsConfigured: Boolean(readGoogleContactsConfig()),
+  });
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -227,6 +235,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       parseExpectedIrissRevision(bodyObj.expectedWorkspaceRevision) ??
       parseExpectedIrissRevision(bodyObj.workspaceRevision);
 
+    const previous = await readIrissPasutijums(id);
+
     let w: Awaited<ReturnType<typeof writeIrissPasutijums>>;
     try {
       w = await writeIrissPasutijums(rec, { expectedWorkspaceRevision: expected });
@@ -257,8 +267,13 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       return NextResponse.json({ error: w.error }, { status: 500 });
     }
 
-    const saved = w.record ?? (await readIrissPasutijums(id));
-    return NextResponse.json({ ok: true, record: saved, workspaceRevision: saved?.workspaceRevision ?? 0 });
+    const saved = await maybeSyncGoogleContact(w.record ?? previous, previous);
+    return NextResponse.json({
+      ok: true,
+      record: saved,
+      workspaceRevision: saved?.workspaceRevision ?? 0,
+      googleContactsConfigured: Boolean(readGoogleContactsConfig()),
+    });
   } catch (e) {
     console.error("[iriss PATCH] unhandled", {
       id,

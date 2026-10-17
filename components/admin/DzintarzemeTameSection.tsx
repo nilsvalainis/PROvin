@@ -19,8 +19,13 @@ import {
   type IrissTameCommissionRates,
 } from "@/lib/iriss-tame-commission";
 import {
+  IRISS_GENERATED_DOCUMENT_HEADER,
+  readGeneratedDocumentFromResponseHeader,
+} from "@/lib/iriss-generated-documents";
+import {
   defaultIrissDzintarzemeTameDraft,
   type IrissDzintarzemeTameDraft,
+  type IrissGeneratedDocument,
 } from "@/lib/iriss-pasutijumi-types";
 
 const fieldClass =
@@ -84,6 +89,7 @@ export function DzintarzemeTameSection({
   draft,
   orderBrandModel,
   onDraftChange,
+  onGeneratedDocument,
   sectionSave,
 }: {
   orderId: string;
@@ -91,6 +97,7 @@ export function DzintarzemeTameSection({
   draft: IrissDzintarzemeTameDraft;
   orderBrandModel: string;
   onDraftChange: (next: IrissDzintarzemeTameDraft) => void;
+  onGeneratedDocument?: (doc: IrissGeneratedDocument, workspaceRevision?: number) => void;
   sectionSave?: ReactNode;
 }) {
   const d = mergeDraft(draft);
@@ -235,13 +242,15 @@ export function DzintarzemeTameSection({
         }
         throw new Error(msg);
       }
+      const stored = readGeneratedDocumentFromResponseHeader(res.headers.get(IRISS_GENERATED_DOCUMENT_HEADER));
+      if (stored) onGeneratedDocument?.(stored.doc, stored.workspaceRevision);
       await downloadPdfBlobFromResponse(res, "dzintarzeme-auto-tame.pdf");
     } catch (e) {
       setPdfErr(e instanceof Error ? e.message : "Neizdevās ģenerēt PDF.");
     } finally {
       setPdfBusy(false);
     }
-  }, [buildPayload, orderId]);
+  }, [buildPayload, onGeneratedDocument, orderId]);
 
   return (
     <section className={shellCard}>

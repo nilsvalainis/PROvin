@@ -23,6 +23,28 @@ export type IrissOfferAttachment = {
 /** Maks. attēlu / pielikumu skaits vienā piedāvājumā (JSON PATCH ~12 MB ierobežojums). */
 export const IRISS_MAX_OFFER_ATTACHMENTS = 60;
 
+export const IRISS_GENERATED_DOCUMENT_KINDS = ["contract", "cost_estimate"] as const;
+export type IrissGeneratedDocumentKind = (typeof IRISS_GENERATED_DOCUMENT_KINDS)[number];
+
+export const IRISS_GENERATED_DOCUMENT_KIND_LV: Record<IrissGeneratedDocumentKind, string> = {
+  contract: "Pasūtījuma līgums",
+  cost_estimate: "Izmaksu tāme",
+};
+
+export type IrissGeneratedDocument = {
+  id: string;
+  kind: IrissGeneratedDocumentKind;
+  name: string;
+  mimeType: string;
+  size: number;
+  createdAt: string;
+  blobPath: string;
+  blobUrl?: string;
+};
+
+export const IRISS_GOOGLE_CONTACT_STATUSES = ["saved", "error", "unconfigured"] as const;
+export type IrissGoogleContactStatus = (typeof IRISS_GOOGLE_CONTACT_STATUSES)[number];
+
 export type IrissOfferRecord = {
   id: string;
   title: string;
@@ -274,6 +296,11 @@ export type IrissPasutijumsRecord = {
   clientLastName: string;
   phone: string;
   email: string;
+  /** Google People API kontakts (idempotents). Tukšs, ja nav sinhronizēts. */
+  googleContactResourceName?: string;
+  googleContactStatus?: IrissGoogleContactStatus;
+  googleContactUpdatedAt?: string;
+  googleContactError?: string;
   orderDate: string;
   brandModel: string;
   /** VIN, ja zināms. Tukšs vecajos JSON. */
@@ -320,6 +347,8 @@ export type IrissPasutijumsRecord = {
   dzintarzemeTameDraft: IrissDzintarzemeTameDraft;
   /** Piedāvājumi klientam (var būt vairāki). */
   offers: IrissOfferRecord[];
+  /** Ģenerētie PDF (līgums, tāme). Jaunākie pirmie. */
+  generatedDocuments?: IrissGeneratedDocument[];
   /**
    * Aditīvi kritēriji ar vairākiem filtriem. Vecie JSON šo lauku nesatur.
    * Migrācija to neraksta. Teksta lauki un saišu masīvi paliek. Krāsa šajā shēmā nav.
@@ -488,5 +517,6 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     listingLinksOther: [""],
     dzintarzemeTameDraft: defaultIrissDzintarzemeTameDraft(),
     offers: [],
+    generatedDocuments: [],
   };
 }

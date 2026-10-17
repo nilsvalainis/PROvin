@@ -222,6 +222,43 @@ describe("IrissOrderRoom render", () => {
     expect(html).toContain("Avanss un darījums");
   });
 
+  it("lists generated documents newest first", async () => {
+    const { html, errors } = await renderHtml(
+      room({
+        initialTab: "documents",
+        rec: {
+          generatedDocuments: [
+            {
+              id: "d-new",
+              kind: "cost_estimate",
+              name: "tame.pdf",
+              mimeType: "application/pdf",
+              size: 2048,
+              createdAt: "2026-10-17T12:00:00.000Z",
+              blobPath: "docs/d-new.pdf",
+            },
+            {
+              id: "d-old",
+              kind: "contract",
+              name: "ligums.pdf",
+              mimeType: "application/pdf",
+              size: 1024,
+              createdAt: "2026-10-01T12:00:00.000Z",
+              blobPath: "docs/d-old.pdf",
+            },
+          ],
+        },
+      }),
+    );
+    expect(errors).toEqual([]);
+    expect(html).toContain("tame.pdf");
+    expect(html).toContain("ligums.pdf");
+    expect(html).toContain("Izmaksu tāme");
+    expect(html).toContain("Pasūtījuma līgums");
+    expect(html).toContain("Lejupielādēt");
+    expect(html.indexOf("tame.pdf")).toBeLessThan(html.indexOf("ligums.pdf"));
+  });
+
   it("shows Nolasīt on Piedāvājumi listing links", async () => {
     const { html, errors } = await renderHtml(
       room({

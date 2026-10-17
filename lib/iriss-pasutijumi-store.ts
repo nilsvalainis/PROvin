@@ -10,6 +10,14 @@ import { retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import { parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
+import {
+  generatedDocumentBlobPath,
+  generatedDocumentRelativePath,
+  mergeGeneratedDocuments,
+  newGeneratedDocument,
+  normalizeGeneratedDocuments,
+} from "@/lib/iriss-generated-documents";
+import { retainGoogleContactFields } from "@/lib/iriss-server-owned-fields";
 import { attachmentAfterBlobPut, parseDataUrlPayload } from "@/lib/iriss-offer-attachment-blob";
 import { irissOfferThumbBlobPath, renderIrissOfferThumbJpeg } from "@/lib/iriss-offer-image-thumb";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
@@ -29,9 +37,13 @@ import {
 } from "@/lib/iriss-pasutijumi-save-safety";
 import {
   emptyIrissPasutijums,
+  IRISS_GOOGLE_CONTACT_STATUSES,
   IRISS_MAX_OFFER_ATTACHMENTS,
   normalizeIrissDzintarzemeTameDraft,
   parseIrissPasutijumsListStatus,
+  type IrissGeneratedDocument,
+  type IrissGeneratedDocumentKind,
+  type IrissGoogleContactStatus,
   type IrissOfferAttachment,
   type IrissOfferRecord,
   type IrissPasutijumiListOrder,
@@ -393,7 +405,7 @@ function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? Math.max(0, Math.min(sizeRaw, 10_000_000)) : 0;
       if (!id || !name) return null;
-      if (!dataUrl && !blobPath) return null;
+      if (!dataUrl && !blobPath && !blobUrl) return null;
       return {
         id,
         name,
@@ -538,8 +550,19 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     ...sanitizeListingLinks(o),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: normalizeOffers(o.offers),
+    generatedDocuments: normalizeGeneratedDocuments(o.generatedDocuments),
     ...pickIrissPasutijumsAuditFields(o),
   };
+  const googleName = sanitizeDraftTextForStorage(str("googleContactResourceName"), 160);
+  if (googleName) record.googleContactResourceName = googleName;
+  const googleStatus = str("googleContactStatus");
+  if ((IRISS_GOOGLE_CONTACT_STATUSES as readonly string[]).includes(googleStatus)) {
+    record.googleContactStatus = googleStatus as IrissGoogleContactStatus;
+  }
+  const googleAt = sanitizeDraftTextForStorage(str("googleContactUpdatedAt"), 64);
+  if (googleAt) record.googleContactUpdatedAt = googleAt;
+  const googleErr = sanitizeDraftTextForStorage(str("googleContactError"), 240);
+  if (googleErr) record.googleContactError = googleErr;
   const storedCriteria = parseIrissCriteriaV1(o.criteria);
   if (storedCriteria) record.criteria = storedCriteria;
   return record;
@@ -819,6 +842,28 @@ function fullOfferImagePath(
   return `offers/${orderId}/${offerId}/${attachmentId}`;
 }
 
+async function fetchRemoteOfferImage(url: string): Promise<{ bytes: Buffer; mimeType: string } | null> {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 20_000);
+  try {
+    const res = await fetch(url, {
+      signal: ac.signal,
+      redirect: "follow",
+      headers: { Accept: "image/*,*/*;q=0.8" },
+    });
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length < 24 || buf.length > 10_000_000) return null;
+    const ct = (res.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase() ?? "";
+    const mimeType = ct.startsWith("image/") ? ct : "image/jpeg";
+    return { bytes: buf, mimeType };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function persistOneOfferImage(
   r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
   orderId: string,
@@ -832,6 +877,23 @@ async function persistOneOfferImage(
   }
 
   let next = att;
+  if (!att.dataUrl && !att.blobPath && att.blobUrl && /^https?:\/\//i.test(att.blobUrl)) {
+    const remote = await fetchRemoteOfferImage(att.blobUrl);
+    if (remote) {
+      const pathname = fullOfferImagePath(r, orderId, offerId, att.id);
+      const stored = await putOfferBytes(r, pathname, remote.bytes, remote.mimeType);
+      if (stored) {
+        next = {
+          ...att,
+          mimeType: remote.mimeType,
+          size: remote.bytes.length,
+          dataUrl: "",
+          blobPath: stored.path,
+          blobUrl: stored.url || att.blobUrl,
+        };
+      }
+    }
+  }
   if (att.dataUrl) {
     const parsed = parseDataUrlPayload(att.dataUrl);
     if (!parsed) return att;
@@ -1050,6 +1112,11 @@ export async function writeIrissPasutijums(
     }
     out = await persistOfferImages(r, out);
     out = retainStoredIrissCriteria(existing, out);
+    out = retainGoogleContactFields(existing, out);
+    out = {
+      ...out,
+      generatedDocuments: mergeGeneratedDocuments(out.generatedDocuments, existing?.generatedDocuments),
+    };
     if (existing && !isMeaningfullyChanged(existing, out)) {
       if (r.kind === "blob" && BLOB_RECORD_CACHE_TTL_MS > 0) {
         cacheBlobRecord(out.id, existing);
@@ -1296,6 +1363,67 @@ export async function writeIrissListOrder(
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg };
   }
+}
+
+export async function storeIrissGeneratedPdf(input: {
+  orderId: string;
+  kind: IrissGeneratedDocumentKind;
+  name: string;
+  bytes: Buffer | Uint8Array;
+}): Promise<{ document: IrissGeneratedDocument; workspaceRevision?: number } | null> {
+  try {
+    const r = resolveStorage();
+    if (r.kind === "disabled") return null;
+    if (!isSafeIrissPasutijumsId(input.orderId)) return null;
+    const bytes = Buffer.from(input.bytes);
+    if (bytes.length === 0) return null;
+    const docId = crypto.randomUUID();
+    const pathname =
+      r.kind === "blob"
+        ? generatedDocumentBlobPath(input.orderId, docId, r.prefix)
+        : generatedDocumentRelativePath(input.orderId, docId);
+    const stored = await putOfferBytes(r, pathname, bytes, "application/pdf");
+    if (!stored) return null;
+    const doc = newGeneratedDocument({
+      id: docId,
+      kind: input.kind,
+      name: input.name.slice(0, 180) || "dokuments.pdf",
+      size: bytes.length,
+      createdAt: new Date().toISOString(),
+      blobPath: stored.path,
+      blobUrl: stored.url,
+    });
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const existing = await readIrissPasutijums(input.orderId);
+      if (!existing) return { document: doc };
+      const next: IrissPasutijumsRecord = {
+        ...existing,
+        generatedDocuments: mergeGeneratedDocuments([doc], existing.generatedDocuments),
+      };
+      const w = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(existing) });
+      if (w.ok) return { document: doc, workspaceRevision: irissWorkspaceRevision(w.record) };
+      if (!w.stale) return { document: doc };
+    }
+    return { document: doc };
+  } catch (e) {
+    console.error("[iriss generated pdf]", e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
+export async function readIrissGeneratedDocumentBytes(
+  rec: IrissPasutijumsRecord,
+  docId: string,
+): Promise<{ mimeType: string; bytes: Buffer; name: string } | null> {
+  const doc = (rec.generatedDocuments ?? []).find((d) => d.id === docId);
+  if (!doc?.blobPath) return null;
+  const got = await readIrissOfferAttachmentBytes({
+    dataUrl: "",
+    blobPath: doc.blobPath,
+    mimeType: doc.mimeType || "application/pdf",
+  });
+  if (!got) return null;
+  return { ...got, name: doc.name };
 }
 
 export async function deleteIrissPasutijums(id: string): Promise<{ ok: true } | { ok: false; error: string }> {

@@ -225,11 +225,14 @@ describe("offers and client copy", () => {
         price: 14900,
         transmission: "automatic",
         detailUrl: "https://auto1.example/car",
+        imageUrl: "https://img.example/a.jpg",
+        imageUrls: ["https://img.example/a.jpg", "https://img.example/b.jpg"],
       }),
     );
     expect(seed.vin).toBe("WAUZZZ4G7EN123456");
     expect(seed.price).toBe("14900");
     expect(seed.mileage).toBe("212000");
+    expect(seed.photoUrls).toEqual(["https://img.example/a.jpg", "https://img.example/b.jpg"]);
     const offer = emptyIrissOfferRecord("o", "2026-10-15T00:00:00.000Z");
     offer.carPrice = "14000";
     offer.deliveryPrice = "500";
