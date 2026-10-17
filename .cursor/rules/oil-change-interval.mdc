@@ -7,7 +7,7 @@ alwaysApply: true
 
 Detalizēts aprēķins (cik bieži mainīta eļļa, km/laiks starp maiņām, nobīde no ražotāja intervāla) ir **tikai** laukā **Eļļas maiņas intervāli** (OFICIĀLĀ DĪLERA DATI).
 
-- Ņemt **visus** iegūtos datus: dīlera servisa tabulu, AutoDNA/CarVertical/RAW, nobraukumu, motorstundu / pilsētas–šosejas profilu, OEM intervālu no motora koda + markas/modeļa (pirmā rinda: `Ražotāja intervāls: X km / Y mēn.`).
+- Ņemt **visus** iegūtos datus: dīlera servisa tabulu, AutoDNA/CarVertical/RAW, nobraukumu, motorstundu / pilsētas–šosejas profilu, OEM intervālu no motora koda + markas/modeļa/gada + ražotāja plāna (pirmā rinda: `Ražotāja intervāls: X km / Y mēn.`). Laika vienību **neizdomāt**: ja plāns saka 30 000 km vai 1 gads, raksta 12 mēn., ne minētu 24 mēn. (H5H / 1.3 TCe: 30 000 km vai 1 gads, RN17 0W-20; pakā `renault_h5h_tce`).
 - PDF krāsas pret šo OEM: zaļa, ja dīlera solis iekļaujas intervālā (mainīgam: līdz augšējai robežai); sarkana, ja dīlera datos solis ir garāks km vai laikā. Sarkans nav apgalvojums, ka eļļa nav mainīta. Pelēks = datu iztrūkums. Pilsētas ~10 000 km paliek komentārā, ne krāsu OEM.
 - Ja ierakstu nav - tā arī teikt; neizdomāt maiņas.
 - Robs oficiālajā dīlerī pret ražotāja intervālu ir fakta iztrūkums, ne pierādīts risks. Ja >30 000 km vai >24 mēn. bez fiksētas apkopes - pieņem, ka apkope var būt bijusi ārpus dīlera. Klients pārbauda klātienē un lūdz pārdevējam dokumentus (ne „dokumentāri pierādījumi”).

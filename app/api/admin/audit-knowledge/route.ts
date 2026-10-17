@@ -1,5 +1,11 @@
 /**
- * Admin: audit knowledge pipeline — v1 backfill/promote + TRAINING_V2 zināšanu panelis.
+ * Admin: audit knowledge pipeline — v1 backfill/promote/approve + TRAINING_V2 zināšanu panelis.
+ *
+ * POST { action: "status" }
+ * POST { action: "backfill", limit?: number }
+ * POST { action: "promote", writeFile?: boolean }
+ * POST { action: "approve", key: string }   (v1 agregātu mācība)
+ * POST { action: "approve", id: string }    (TRAINING_V2 zināšanu vienība)
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
@@ -7,7 +13,7 @@ import {
   backfillAuditAggregateLearnings,
   promoteAuditKnowledgeCandidates,
 } from "@/lib/admin-ai-aggregate-knowledge";
-import { summarizeAuditLearnings } from "@/lib/admin-audit-learnings-store";
+import { approveAuditAggregateLearning, summarizeAuditLearnings } from "@/lib/admin-audit-learnings-store";
 import { isTrainingV2Enabled } from "@/lib/feature-flags-v2";
 import { conflictWarningFor } from "@/lib/admin-audit-knowledge-items-logic";
 import {
@@ -68,6 +74,16 @@ export async function POST(req: Request) {
     const summary = await summarizeAuditLearnings();
     const v2 = trainingV2 ? await summarizeKnowledgeStore() : null;
     return NextResponse.json({ ok: true, trainingV2, ...result, summary, knowledge: v2 });
+  }
+
+  if (action === "approve" && typeof b.key === "string" && !str(b.id)) {
+    const key = b.key;
+    const entry = await approveAuditAggregateLearning(key);
+    if (!entry) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    const summary = await summarizeAuditLearnings();
+    return NextResponse.json({ ok: true, key: entry.key, status: entry.status, summary });
   }
 
   if (action === "promote") {

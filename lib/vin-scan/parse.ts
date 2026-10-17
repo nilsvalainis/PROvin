@@ -158,9 +158,13 @@ export function parseDsbSearchHtml(html: string): { vehicle: string; country: st
   return { vehicle, country, servicesPath };
 }
 
+/**
+ * Servisa ierakstu skaits. scanFetch sūta Accept-Language ar da, tāpēc lapa
+ * var būt angļu ("entries we found") vai dāņu ("poster vi fandt").
+ */
 export function parseDsbEntryCount(html: string): number | null {
-  const text = html.replace(/<[^>]+>/g, " ").replace(/&#xA;|&#10;/g, " ");
-  const m = /(\d+)\s+entr(?:y|ies) we found/i.exec(text);
+  const text = decodeHtmlEntities(html.replace(/<[^>]+>/g, " "));
+  const m = /(\d+)\s+(?:entr(?:y|ies)\s+we\s+found|post(?:er)?\s+vi\s+fandt)/i.exec(text);
   if (!m) return null;
   const n = Number(m[1]);
   return Number.isFinite(n) ? n : null;

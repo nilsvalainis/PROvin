@@ -30,6 +30,7 @@ import {
   AI_CROSS_FIELD_PORTFOLIO_RULES,
   AI_DEALER_COMMENT_CONSTRUCTION_RULES,
   AI_OIL_CHANGE_INTERVAL_RULES,
+  AI_SERVICE_RECORD_LITERAL_RULES,
   AI_DOCUMENTED_SERVICE_WORK_RULES,
   AI_THIS_CAR_ONLY_LOGIC_RULES,
   HYBRID_COMMENT_RULES,
@@ -351,6 +352,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/ACTIVE FIELD: OFICIĀLĀ DĪLERA DATI — Eļļas maiņas intervāli/);
     expect(AI_OIL_CHANGE_INTERVAL_RULES).toMatch(/Ražotāja intervāls/);
     expect(AI_OIL_CHANGE_INTERVAL_RULES).toMatch(/not a claim the oil was skipped/);
+    expect(AI_OIL_CHANGE_INTERVAL_RULES).toMatch(/never a guessed 24 months|1 year|1 gads/);
     expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/oilChangeIntervalNotes/);
     expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/Dzinēja kods/);
   });
@@ -526,6 +528,26 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(
       /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_THIS_CAR_ONLY_LOGIC_RULES\}/,
     );
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_SERVICE_RECORD_LITERAL_RULES\}/,
+    );
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(
+      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_SERVICE_RECORD_LITERAL_RULES\}/,
+    );
+  });
+
+  it("service records stay literal and high-km outlook is mandatory", () => {
+    expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/SERVICE RECORD LITERAL READING/);
+    expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/Transmisijas apkope/);
+    expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/Akumulators/);
+    expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/Li-ion/);
+    expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/NO SOURCE URLS|http/);
+    expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/persona noun|FORBIDDEN PERSONA/);
+    expect(AI_SERVICE_RECORD_LITERAL_RULES).toMatch(/km nav|Nav ierakstu/);
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/150–200 tūkst|150-200/);
+    expect(AI_MILEAGE_BAND_RISK_RULES).toMatch(/GPF|DPF/);
+    expect(readRepo("lib/provin-aggregate-case-rules.ts")).toMatch(/renault_h5h_tce/);
+    expect(readRepo("lib/provin-aggregate-case-rules.ts")).toMatch(/RN17/);
   });
 
   it("resolved historical TA findings are not an in-person hunt list", () => {

@@ -98,4 +98,42 @@ describe("resolveOrderWorkspaceHydration", () => {
     expect(resolved.source).toBe("local");
     expect(resolved.hydrated.pdfVisibility.payment).toBe(false);
   });
+
+  it("round-trips an optional technicalRiskMap without dropping other fields", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.autodna = { ...emptyVendorAvotuBlock(), comments: "AutoDNA komentārs" };
+    const raw = serializeOrderWorkspaceSnapshotFromRef(
+      {
+        sourceBlocks: blocks,
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "Ķēde",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+        technicalRiskMap: {
+          identification: {
+            engine: { value: "N47D20", confidence: "A", evidence: "Outvin", candidates: ["N47D20"] },
+            gearbox: { value: "", confidence: "C", evidence: "", candidates: [] },
+            platform: { value: "E84", confidence: "B", evidence: "gads", candidates: ["E84"] },
+          },
+          risks: [],
+          damage_interpretation: [],
+          recalls: [{ id_or_title: "nav atrasts", source: "meklēšana", status_known: false }],
+          strengths: [],
+          unknowns: [],
+        },
+      },
+      {},
+      {},
+      "2026-10-17T10:00:00.000Z",
+    );
+    const hydrated = hydrateWorkspaceFromStorage(raw);
+    expect(hydrated?.tehniskoRiskuAnalize).toBe("Ķēde");
+    expect(hydrated?.sourceBlocks.autodna.comments).toBe("AutoDNA komentārs");
+    expect(hydrated?.technicalRiskMap?.identification.engine.value).toBe("N47D20");
+    expect(hydrated?.technicalRiskMap?.recalls[0]?.id_or_title).toBe("nav atrasts");
+  });
 });
+

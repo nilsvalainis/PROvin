@@ -29,7 +29,9 @@ import {
   upsertAuditAggregateLearning,
   type AuditAggregateLearningEntry,
 } from "@/lib/admin-audit-learnings-store";
+import { learningEntryIsInjectable } from "@/lib/admin-audit-learnings-types";
 import { engineFamilyLearningKeys } from "@/lib/admin-audit-learning-keys";
+import { isTechRiskV2Enabled } from "@/lib/admin-ai-tech-pipeline-config";
 import {
   buildPromotionCandidates,
   clipPromotionMarkdown,
@@ -92,6 +94,7 @@ export async function recordAuditAggregateLearningFromDraft(
     label: formatVehicleFingerprintLabel(fp),
     updatedAt: new Date().toISOString(),
     snippets,
+    ...(isTechRiskV2Enabled() ? { status: "candidate" as const } : {}),
   };
   await upsertAuditAggregateLearning(entry);
 
@@ -102,6 +105,7 @@ export async function recordAuditAggregateLearningFromDraft(
       label: `ENGINE ${fp.engineCode}`,
       updatedAt: new Date().toISOString(),
       snippets,
+      ...(isTechRiskV2Enabled() ? { status: "candidate" as const } : {}),
     });
   }
 
@@ -319,7 +323,9 @@ export async function buildAggregateKnowledgeAiContext(
   }
 
   const keys = await rankLearningKeysForFingerprint(fp);
-  const learnings = await getAuditLearningsForKeys(keys);
+  const learnings = (await getAuditLearningsForKeys(keys)).filter((e) =>
+    learningEntryIsInjectable(e, isTechRiskV2Enabled()),
+  );
   const maxSnippets = fp.engineCode
     ? AGGREGATE_CTX_MAX_SNIPPETS_WITH_ENGINE
     : AGGREGATE_CTX_MAX_SNIPPETS_PER_KEY;

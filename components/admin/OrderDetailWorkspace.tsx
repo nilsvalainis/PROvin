@@ -207,6 +207,7 @@ import {
 } from "lucide-react";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
+import { AdminTechnicalRiskMapPanel } from "@/components/admin/AdminTechnicalRiskMapPanel";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
@@ -281,6 +282,10 @@ import {
   readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
 import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
+import {
+  technicalRiskMapSnapshotField,
+  type TechnicalRiskMap,
+} from "@/lib/admin-ai-technical-risk-map-types";
 import {
   expandFlashMaxRunJobs,
   flashMaxJobBreadth,
@@ -367,6 +372,7 @@ type WorkspacePersist = {
   sourceBlockWipes?: SourceBlockKey[];
   deletedPhotoIds?: string[];
   clearedFields?: Record<string, number>;
+  technicalRiskMap?: TechnicalRiskMap;
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -513,6 +519,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
     ...sourceBlockWipesSnapshotField(ws.sourceBlockWipes),
   ...deletedPhotoIdsSnapshotField(ws.deletedPhotoIds),
   ...clearedFieldsSnapshotField(ws.clearedFields),
+  ...technicalRiskMapSnapshotField(ws.technicalRiskMap),
   };
 }
 
@@ -779,6 +786,8 @@ export function OrderDetailWorkspace({
   const [aiInspectionErr, setAiInspectionErr] = useState<string | null>(null);
   const [aiTechnicalRisksBusy, setAiTechnicalRisksBusy] = useState(false);
   const [aiTechnicalRisksErr, setAiTechnicalRisksErr] = useState<string | null>(null);
+  const [aiTechnicalRisksLintWarning, setAiTechnicalRisksLintWarning] = useState<string | null>(null);
+  const [aiTechnicalRisksOperatorFlags, setAiTechnicalRisksOperatorFlags] = useState<string[]>([]);
   const [aiTirgusMarketBusy, setAiTirgusMarketBusy] = useState(false);
   const [aiTirgusMarketErr, setAiTirgusMarketErr] = useState<string | null>(null);
   const [aiSummaryBusy, setAiSummaryBusy] = useState(false);
@@ -1010,6 +1019,7 @@ export function OrderDetailWorkspace({
       ...sourceBlockWipesSnapshotField(normalized.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(normalized.deletedPhotoIds),
     ...clearedFieldsSnapshotField(normalized.clearedFields),
+    ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
     };
     wsPersistRef.current = next;
     lastGoodPersistBodyRef.current = normalized;
@@ -1082,6 +1092,7 @@ export function OrderDetailWorkspace({
           ...sourceBlockWipesSnapshotField(body.sourceBlockWipes),
         ...deletedPhotoIdsSnapshotField(body.deletedPhotoIds),
         ...clearedFieldsSnapshotField(body.clearedFields),
+        ...technicalRiskMapSnapshotField(body.technicalRiskMap),
         };
         wsStateRef.current = wsPersistRef.current;
       }
@@ -1245,6 +1256,7 @@ export function OrderDetailWorkspace({
         sourcesComparisonComment: edits.sourcesComparison,
         operatorNotes: extra.operatorNotes,
         existingDraftPlain: extra.existingDraftPlain,
+        ...(cur.technicalRiskMap?.hide_cost_bands ? { hideTechnicalRiskCostBands: true } : {}),
       };
     },
     [payload.customerName, payload.listingUrl, payload.notes, payload.sessionId, payload.vin],
@@ -1278,9 +1290,24 @@ export function OrderDetailWorkspace({
       );
       applyGeneratedAdminAiText(
         generated,
-        (text) => updateWs({ tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(text) }),
+        (text) =>
+          updateWs({
+            tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(text),
+            ...technicalRiskMapSnapshotField(
+              generated.technicalRiskMap
+                ? {
+                    ...generated.technicalRiskMap,
+                    ...(wsPersistRef.current.technicalRiskMap?.hide_cost_bands
+                      ? { hide_cost_bands: true }
+                      : {}),
+                  }
+                : generated.technicalRiskMap,
+            ),
+          }),
         setAiTechnicalRisksErr,
       );
+      setAiTechnicalRisksLintWarning(generated.ok ? generated.lintWarning ?? null : null);
+      setAiTechnicalRisksOperatorFlags(generated.ok ? generated.operatorFlags ?? [] : []);
     } catch {
       setAiTechnicalRisksErr("AI: neizdevās savienoties");
     } finally {
@@ -2076,7 +2103,21 @@ export function OrderDetailWorkspace({
                   return;
                 }
                 if (job.id === "technical_risks") {
-                  updateWs({ tehniskoRiskuAnalize: html });
+                  updateWs({
+                    tehniskoRiskuAnalize: html,
+                    ...technicalRiskMapSnapshotField(
+                      generated.technicalRiskMap
+                        ? {
+                            ...generated.technicalRiskMap,
+                            ...(wsPersistRef.current.technicalRiskMap?.hide_cost_bands
+                              ? { hide_cost_bands: true }
+                              : {}),
+                          }
+                        : generated.technicalRiskMap,
+                    ),
+                  });
+                  setAiTechnicalRisksLintWarning(generated.ok ? generated.lintWarning ?? null : null);
+                  setAiTechnicalRisksOperatorFlags(generated.ok ? generated.operatorFlags ?? [] : []);
                   return;
                 }
                 if (job.id === "inspection") {
@@ -2298,6 +2339,7 @@ export function OrderDetailWorkspace({
         ...sourceBlockWipesSnapshotField(chosen.sourceBlockWipes),
       ...deletedPhotoIdsSnapshotField(chosen.deletedPhotoIds),
       ...clearedFieldsSnapshotField(chosen.clearedFields),
+      ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
       };
 
       workspaceDebugLog("hydrate_source", {
@@ -2328,6 +2370,7 @@ export function OrderDetailWorkspace({
         ...sourceBlockWipesSnapshotField(chosen.sourceBlockWipes),
       ...deletedPhotoIdsSnapshotField(chosen.deletedPhotoIds),
       ...clearedFieldsSnapshotField(chosen.clearedFields),
+      ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
       };
       wsPersistRef.current = hydratedWs;
       wsStateRef.current = hydratedWs;
@@ -5364,6 +5407,21 @@ export function OrderDetailWorkspace({
                           void runAiTechnicalRiskAnalysis(operatorNotes, modelTier)}
                       />
                     }
+                  />
+                  <AdminTechnicalRiskMapPanel
+                    sessionId={payload.sessionId}
+                    map={ws.technicalRiskMap}
+                    lintWarning={aiTechnicalRisksLintWarning}
+                    operatorFlags={aiTechnicalRisksOperatorFlags}
+                    onHideCostBandsChange={(hide) => {
+                      const current = wsPersistRef.current.technicalRiskMap;
+                      if (!current) return;
+                      updateWs({
+                        technicalRiskMap: hide
+                          ? { ...current, hide_cost_bands: true }
+                          : { ...current, hide_cost_bands: undefined },
+                      });
+                    }}
                   />
                 </div>
                 <div className="min-w-0">

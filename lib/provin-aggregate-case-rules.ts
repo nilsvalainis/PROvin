@@ -750,6 +750,42 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 **Klātienē:** eļļas krāsa/līmenis; servisa intervāli / siksnas rēķins; vibrācija un dūmi; auksts starts.`,
   },
   {
+    id: "renault_h5h_tce",
+    minScore: 18,
+    title: "Renault / Dacia / Nissan / Mercedes M282 — H5H 1.3 TCe",
+    score: (fp, hay) => {
+      let s = engineScore(fp, ["H5H"]);
+      if (/H5H/.test(hay) || /^H5H/.test(fp.engineCode || "")) s += 20;
+      if (/TCE|1\.3 TCE|CAPTUR|CLIO|MEGANE|ARKANA|SYMBIOZ/.test(hay)) s += 6;
+      s += powertrainProxyScore(fp, hay, {
+        kwMin: 96,
+        kwMax: 120,
+        cm3Min: 1289,
+        cm3Max: 1350,
+        yearMin: 2018,
+        yearMax: 2026,
+        fuelRe: /BENZ|PETROL|GASOLINE|TCE/,
+      });
+      if (s > 0) s += brandScore(fp, ["RENAULT", "DACIA", "NISSAN"], hay) > 0 ? 4 : 0;
+      return s;
+    },
+    body: `${PACK_BODY_HEADER}
+
+**H5H / 1.3 TCe (sadarbība ar Mercedes-Benz M282):** sadales **ķēde** (ne siksna). Tiešā iesmidzināšana.
+
+**Eļļa (OEM, neizdomāt):** **30 000 km vai 1 gads**, kas pienāk pirmais. Smagos / pilsētas apstākļos uz pusi (~15 000 km vai 1 gads). Specifikācija **RN17** (parasti 0W-20), aptuveni 5,5 l ar filtru. Divu gadu laika intervāls šim kodam NAV ražotāja plānā, ja vien avots to nenosaka.
+
+**Šajā atskaitē VIENMĒR nosauc (H5H / TCe 140 klasē):** **GPF** (Otto-Partikelfilter / benzīna daļiņu filtrs) eļļas un risku kontekstā; **RN17**; kvēpi uz ieplūdes vārstiem pēc ~100 tūkst. km (tiešā iesmidzināšana); iespējama eļļas noplūde pie sadales vāka lielākā nobraukumā.
+
+**Kārba:** Getrag / mitrie sajūgi šajā pāri parasti uzticamāki par sauso 6 pakāpju EDC. „Transmisijas apkope” dīlera kategorijā NAV kārbas eļļas maiņa, ja pozīcijas ir stūre / kolonna / pastiprinātājs. Eļļas maiņu kārba ieteikt tikai pēc rēķiniem; specializēti servisi bieži runā par 60 000-70 000 km.
+
+**Mikrohibrīds:** 12V enerģijas atgūšana / palīdzība startā. Ķīmiju (Li-ion) neapstiprināt bez avota. Standarta „Akumulators” rinda apkopē nav defekts.
+
+**Riski 150-200 tūkst. km (atsevišķa sadaļa, tikai šī auto mezgli):** ķēde, eļļas patēriņš, GPF, turbīna, EDC sajūgi/mehatronika ja datos ir EDC, mikrohibrīds ja datos ir, piekare.
+
+**Klātienē:** ieplūdes oglekļa pazīmes pēc ~100k; sadales vāka noplūde; GPF/eļļas specifikācija rēķinos; kārbas eļļa tikai ja pozīcijas to apstiprina.`,
+  },
+  {
     id: "renault_nissan",
     minScore: 10,
     title: "Renault / Dacia / Nissan — 1.5 dCi, CVT, hibrīdi",
