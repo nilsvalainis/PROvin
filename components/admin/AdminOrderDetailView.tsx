@@ -41,6 +41,42 @@ import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 import { AdminAuditSlaOrderBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
 import { AdminOrderVinPlateResolutionBanner } from "@/components/admin/AdminOrderVinPlateResolutionBanner";
 import { orderVinPlateResolutionIsFailed } from "@/lib/order-vin-plate-resolution";
+import { AD_CHANNEL_LABELS_LV, isAdChannel } from "@/lib/ad-attribution";
+
+export function AdminOrderAttributionLines({
+  attribution,
+}: {
+  attribution?: AdminOrderDetailClientModel["attribution"];
+}) {
+  if (!attribution) {
+    return (
+      <p className="px-0.5 text-[11px] text-[var(--color-provin-muted)]">
+        Reklāmas avots: <span className="font-medium text-[var(--color-apple-text)]">nav datu</span>
+        <span className="ml-1.5 text-[10px]">(tikai jaunie pasūtījumi pēc piekrišanas)</span>
+      </p>
+    );
+  }
+  const channelLabel =
+    attribution.channel && isAdChannel(attribution.channel)
+      ? AD_CHANNEL_LABELS_LV[attribution.channel]
+      : attribution.channel || "nav datu";
+  return (
+    <div className="space-y-0.5 px-0.5 text-[11px] text-[var(--color-provin-muted)]">
+      <p>
+        Reklāmas avots: <span className="font-medium text-[var(--color-apple-text)]">{channelLabel}</span>
+        {attribution.campaign ? ` · kampaņa ${attribution.campaign}` : ""}
+        {attribution.term ? ` · atslēgvārds ${attribution.term}` : ""}
+      </p>
+      <p className="break-all">
+        Pirmā lapa: {attribution.firstLanding || "nav datu"}
+      </p>
+      <p className="break-all">
+        Pēdējā lapa: {attribution.lastLanding || attribution.landing || "nav datu"}
+      </p>
+    </div>
+  );
+}
+
 /** Servera pasūtījums, serializējams uz klientu (bez server-only importiem). */
 export type AdminOrderDetailClientModel = {
   id: string;
@@ -59,6 +95,15 @@ export type AdminOrderDetailClientModel = {
   notes: string | null;
   /** Iekšēji: kur klients uzzināja par PROVIN. Nav PDF. */
   heardAbout?: string | null;
+  /** Jauns pasūtījums: first-party avots. Veciem: nav datu. */
+  attribution?: {
+    channel: string | null;
+    campaign: string | null;
+    term: string | null;
+    firstLanding: string | null;
+    lastLanding: string | null;
+    landing: string | null;
+  } | null;
   internalComment?: string | null;
   attachments?: { label: string; fileName: string }[];
   isDemo?: boolean;
@@ -431,6 +476,7 @@ export function AdminOrderDetailView({
                   <span className="ml-1.5 text-[10px]">(tikai admin, nav PDF)</span>
                 </p>
               ) : null}
+              <AdminOrderAttributionLines attribution={order.attribution} />
             </div>
           </AdminCollapsibleShell>
         </section>

@@ -14,6 +14,8 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
+import { stripeAttributionMetadataFromRequest } from "@/lib/ad-attribution";
+import { ATTR_COOKIE_NAME } from "@/lib/cookie-consent";
 import { getCheckoutIntakeCustomFields, stripeCheckoutLocale } from "@/lib/stripe-session";
 
 export const runtime = "nodejs";
@@ -157,6 +159,7 @@ export async function POST(req: Request) {
     custom_fields: getCheckoutIntakeCustomFields(locale),
     metadata: {
       checkout_line: "audit",
+      ...stripeAttributionMetadataFromRequest(req.headers.get("cookie"), ATTR_COOKIE_NAME),
       vin,
       listing_url: listingUrl || "",
       report_delivery: "email",

@@ -1,4 +1,5 @@
 import type { AdminOrderDetailClientModel } from "@/components/admin/AdminOrderDetailView";
+import { parseAdminOrderAttribution } from "@/lib/ad-attribution";
 import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
 
 function str(v: unknown): string {
@@ -47,6 +48,7 @@ export function toAdminOrderDetailClientModel(order: Record<string, unknown>): A
     listingUrl: str(order.listingUrl) || null,
     notes: stripHeardAboutFromClientNotes(str(order.notes) || null),
     heardAbout: str(order.heardAbout) || null,
+    attribution: parseAdminOrderAttribution(order.attribution),
     internalComment: str(order.internalComment) || null,
     attachments: attachmentList(order.attachments),
     isDemo: Boolean(order.isDemo),

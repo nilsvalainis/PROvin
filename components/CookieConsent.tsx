@@ -1,8 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import {
+  encodeAttrCookieValue,
+  mergeAttributionCookie,
+  parseAttrCookieValue,
+  parsePendingAttr,
+  parseVisitFromSearch,
+  type AdTouch,
+} from "@/lib/ad-attribution";
+import { reportConsentedAdVisit } from "@/lib/ad-visit-client";
 import {
   ATTR_COOKIE_NAME,
   CONSENT_STORAGE_KEY,
@@ -15,73 +25,74 @@ import { applyGtagConsent } from "@/lib/google-consent";
 
 const ATTR_MAX_AGE = 180 * 24 * 60 * 60;
 
-type PendingAttr = {
-  utm: Record<string, string>;
-  path: string;
-  t: number;
-};
+function currentVisit(): AdTouch {
+  return parseVisitFromSearch({
+    pathname: window.location.pathname,
+    search: window.location.search,
+    referrer: document.referrer || "",
+  });
+}
 
-function readPending(): PendingAttr | null {
+function readPending(): AdTouch | null {
   if (typeof sessionStorage === "undefined") return null;
   try {
-    const raw = sessionStorage.getItem(PENDING_ATTR_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as PendingAttr;
+    return parsePendingAttr(sessionStorage.getItem(PENDING_ATTR_KEY));
   } catch {
     return null;
   }
 }
 
-function writePendingFromUrl(): void {
-  if (typeof window === "undefined" || typeof sessionStorage === "undefined") return;
+function writePending(visit: AdTouch): void {
+  if (typeof sessionStorage === "undefined") return;
   if (sessionStorage.getItem("provin_pending_done")) return;
-  const params = new URLSearchParams(window.location.search);
-  const utm: Record<string, string> = {};
-  for (const key of [
-    "utm_source",
-    "utm_medium",
-    "utm_campaign",
-    "utm_term",
-    "utm_content",
-  ]) {
-    const v = params.get(key);
-    if (v) utm[key] = v;
-  }
-  const path = `${window.location.pathname}${window.location.search}`;
-  sessionStorage.setItem(
-    PENDING_ATTR_KEY,
-    JSON.stringify({ utm, path, t: Date.now() })
-  );
+  sessionStorage.setItem(PENDING_ATTR_KEY, JSON.stringify(visit));
   sessionStorage.setItem("provin_pending_done", "1");
 }
 
-function setAttrCookie(state: ConsentState): void {
-  const pending = readPending();
-  const payload = {
-    firstLanding: pending?.path ?? `${window.location.pathname}${window.location.search}`,
-    utm: pending?.utm ?? {},
-    referrer: typeof document !== "undefined" ? document.referrer || null : null,
-    consentAt: state.updatedAt,
-  };
-  const enc = encodeURIComponent(JSON.stringify(payload));
-  document.cookie = `${ATTR_COOKIE_NAME}=${enc}; Max-Age=${ATTR_MAX_AGE}; Path=/; SameSite=Lax${
-    window.location.protocol === "https:" ? "; Secure" : ""
-  }`;
+function readAttrCookie(): ReturnType<typeof parseAttrCookieValue> {
+  const match = document.cookie.split(";").map((p) => p.trim());
+  for (const part of match) {
+    if (part.startsWith(`${ATTR_COOKIE_NAME}=`)) {
+      return parseAttrCookieValue(part.slice(ATTR_COOKIE_NAME.length + 1));
+    }
+  }
+  return null;
+}
+
+function writeAttrCookie(consentAt: string, visit: AdTouch): ReturnType<typeof parseAttrCookieValue> {
+  const merged = mergeAttributionCookie({
+    existing: readAttrCookie(),
+    pending: readPending(),
+    visit,
+    consentAt,
+  });
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${ATTR_COOKIE_NAME}=${encodeAttrCookieValue(merged)}; Max-Age=${ATTR_MAX_AGE}; Path=/; SameSite=Lax${secure}`;
+  return merged;
 }
 
 function clearAttrCookie(): void {
   document.cookie = `${ATTR_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
 }
 
+function syncConsentedAttribution(consentAt: string): void {
+  const visit = currentVisit();
+  writePending(visit);
+  const cookie = writeAttrCookie(consentAt, visit);
+  reportConsentedAdVisit(cookie?.last ?? visit);
+}
+
 export function CookieConsent() {
   const t = useTranslations("Cookies");
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    writePendingFromUrl();
     try {
+      const visit = currentVisit();
+      writePending(visit);
       const raw = localStorage.getItem(CONSENT_STORAGE_KEY);
       const c = parseConsent(raw);
       if (c === null) {
@@ -91,16 +102,22 @@ export function CookieConsent() {
       applyGtagConsent(c.analytics);
       if (!c.analytics) {
         clearAttrCookie();
+        return;
       }
+      syncConsentedAttribution(c.updatedAt);
     } catch {
       setVisible(true);
     }
-  }, []);
+  }, [pathname]);
 
   function save(consent: ConsentState) {
     localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(consent));
     if (consent.analytics) {
-      setAttrCookie(consent);
+      try {
+        syncConsentedAttribution(consent.updatedAt);
+      } catch {
+        /* ignore */
+      }
     } else {
       clearAttrCookie();
     }

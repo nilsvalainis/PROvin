@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { AdminAdsAttributionCard } from "@/components/admin/AdminAdsAttributionCard";
 import { AdminHeardAboutCard } from "@/components/admin/AdminHeardAboutCard";
 import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
+import { emptyAdVisitDoc } from "@/lib/admin-ad-visits";
+import { readAdSpendRows } from "@/lib/admin-ad-spend-store";
+import { readAdVisitDoc } from "@/lib/admin-ad-visit-store";
 import {
   getAnalyticsDashboardUrl,
   getAnalyticsEmbedUrl,
   getGaMeasurementId,
   isVercelDeployment,
 } from "@/lib/analytics-public";
+import type { AdsAttributionOrder } from "@/lib/admin-ad-attribution-stats";
 import type { HeardAboutOrder } from "@/lib/admin-heard-about-stats";
 import { filterAdminOrdersForDashboard } from "@/lib/admin-order-amount-filter";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
@@ -22,20 +27,34 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-/** Tie paši pasūtījumi kā sarakstā pēc noklusējuma (summa > 10 €), avots no Stripe `heardAbout`. */
-async function loadHeardAboutOrders(): Promise<HeardAboutOrder[]> {
+/** Tie paši pasūtījumi kā sarakstā pēc noklusējuma (summa > 10 €). */
+async function loadStatistikaOrders(): Promise<{ heard: HeardAboutOrder[]; ads: AdsAttributionOrder[] }> {
   try {
     const { rows } = await listAdminOrders();
     const orders = filterAdminOrdersForDashboard(rows, false);
     const withSource = orders.filter((o) => o.heardAbout?.trim());
     const drafts = await readOrderDraftSummaries(withSource.map((o) => o.id));
-    return orders.map((o) => {
-      const d = drafts.get(o.id);
-      const label = [d?.customerName || o.companyName || d?.customerEmail || o.customerEmail || "Klients", d?.vin || o.vin].filter(Boolean).join(" · ");
-      return { id: o.id, created: o.created, heardAbout: o.heardAbout ?? null, label, amountTotal: o.amountTotal };
-    });
+    return {
+      heard: orders.map((o) => {
+        const d = drafts.get(o.id);
+        const label = [d?.customerName || o.companyName || d?.customerEmail || o.customerEmail || "Klients", d?.vin || o.vin]
+          .filter(Boolean)
+          .join(" · ");
+        return { id: o.id, created: o.created, heardAbout: o.heardAbout ?? null, label, amountTotal: o.amountTotal };
+      }),
+      ads: orders.map((o) => ({
+        id: o.id,
+        created: o.created,
+        amountTotal: o.amountTotal,
+        isDemo: o.isDemo,
+        isManual: o.isManual,
+        fulfillment: o.fulfillment ?? null,
+        heardAbout: o.heardAbout ?? null,
+        attribution: o.attribution ?? null,
+      })),
+    };
   } catch {
-    return [];
+    return { heard: [], ads: [] };
   }
 }
 
@@ -63,7 +82,13 @@ export default async function AdminStatistikaPage() {
   const gaId = getGaMeasurementId();
   const onVercel = isVercelDeployment();
   const sampleClicks = await getSampleReportClickStats();
-  const [peekConversion, heardOrders] = await Promise.all([loadListingPeekConversionStats(), loadHeardAboutOrders()]);
+  const [peekConversion, statOrders, adSpend, adVisits] = await Promise.all([
+    loadListingPeekConversionStats(),
+    loadStatistikaOrders(),
+    readAdSpendRows().catch(() => []),
+    readAdVisitDoc().catch(() => emptyAdVisitDoc()),
+  ]);
+  const heardOrders = statOrders.heard;
   const nowSec = Math.floor(Date.now() / 1000);
   const sampleLastLabel = sampleClicks.lastClickedAt
     ? new Date(sampleClicks.lastClickedAt).toLocaleString("lv-LV", {
@@ -89,6 +114,15 @@ export default async function AdminStatistikaPage() {
 
       <div className="mt-5">
         <AdminHeardAboutCard orders={heardOrders} nowSec={nowSec} />
+      </div>
+
+      <div className="mt-5">
+        <AdminAdsAttributionCard
+          orders={statOrders.ads}
+          initialSpend={adSpend}
+          visits={adVisits}
+          nowSec={nowSec}
+        />
       </div>
 
       <section className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6">

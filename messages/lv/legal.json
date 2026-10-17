@@ -3,7 +3,7 @@
     "privacyMetaTitle": "Privātuma politika",
     "privacyMetaDescription": "Kā PROVIN.LV apstrādā personas datus, sīkdatnes un analītiku pēc piekrišanas. GDPR ietvaros: pārskatāmi un skaidri.",
     "privacyTitle": "Privātuma politika",
-    "privacyLead": "Šajā dokumentā aprakstīts, kā pakalpojumu sniedzējs PROVIN.LV (turpmāk „mēs”, „pakalpojums”) apstrādā personas datus, kādas sīkdatnes tiek izmantotas un kā jūs varat piekrist vai noraidīt nebūtisko analītiku un pirmās izcelsmes (UTM) informācijas saglabāšanu. Juridiskā identitāte un pārzinātāja rekvizīti ir vietnes kājenē.",
+    "privacyLead": "Šajā dokumentā aprakstīts, kā pakalpojumu sniedzējs PROVIN.LV (turpmāk „mēs”, „pakalpojums”) apstrādā personas datus, kādas sīkdatnes tiek izmantotas un kā jūs varat piekrist vai noraidīt nebūtisko analītiku, pirmās un pēdējās izcelsmes (UTM) un reklāmas klikšķa identifikatoru saglabāšanu. Juridiskā identitāte un pārzinātāja rekvizīti ir vietnes kājenē.",
     "sections": [
       {
         "title": "1. Pārzinis",
@@ -15,7 +15,7 @@
       },
       {
         "title": "3. Mērķi un tiesiskais pamats",
-        "body": "Līguma izpilde un pasūtījuma apstrāde (GDPR 6. panta 1. punkta b) apakšpunkts). Likumīgās intereses: vietnes drošība, kļūdu novēršana (GDPR 6. panta 1. punkta f) apakšpunkts). Analītika un pirmās izcelsmes (UTM) datu saglabāšana tikai pēc jūsu brīvprātīgas piekrišanas, izmantojot sīkdatņu joslu (GDPR 6. panta 1. punkta a) apakšpunkts)."
+        "body": "Līguma izpilde un pasūtījuma apstrāde (GDPR 6. panta 1. punkta b) apakšpunkts). Likumīgās intereses: vietnes drošība, kļūdu novēršana (GDPR 6. panta 1. punkta f) apakšpunkts). Analītika, pirmās un pēdējās izcelsmes (UTM) un reklāmas klikšķa identifikatoru (piemēram, gclid, fbclid, ttclid) saglabāšana tikai pēc jūsu brīvprātīgas piekrišanas, izmantojot sīkdatņu joslu (GDPR 6. panta 1. punkta a) apakšpunkts)."
       },
       {
         "title": "4. Sīkdatnes un nepieciešamās funkcijas",
@@ -23,7 +23,7 @@
       },
       {
         "title": "5. Analītika un izcelsmes dati (pēc piekrišanas)",
-        "body": "Ja jūs sīkdatņu joslā piekrītat „analītikai”, mēs varam saglabāt ierobežotu informāciju par pirmo apmeklējumu: vietnes ceļu, HTTP novirzītāju (referrer), ja pieejams, un mārketinga parametrus no saites (UTM: source, medium, campaign utt.). Mērķis ir saprast, no kurienes lietotāji ierodas (piemēram, TikTok, YouTube, meklētājs), neizsekojot individuāli pāri visām trešo pušu platformām. Šie dati netiek pārdoti."
+        "body": "Ja jūs sīkdatņu joslā piekrītat „analītikai”, mēs varam saglabāt ierobežotu informāciju par pirmo un pēdējo mārketinga apmeklējumu: vietnes ceļu, HTTP novirzītāju (referrer), ja pieejams, mārketinga parametrus no saites (UTM: source, medium, campaign, term) un reklāmas klikšķa identifikatorus (gclid, gbraid, wbraid, fbclid, ttclid), ja tie ir adresē. Pēc piekrišanas varam arī skaitīt agregētus apmeklējumus pa kanālu un kampaņu (bez personas datiem). Ja pēc tam veicat pasūtījumu, šo izcelsmi varam piesaistīt maksājumam, lai saprastu, kura reklāma nesa pasūtījumu. Mērķis ir saprast, no kurienes lietotāji ierodas, neizsekojot individuāli pāri visām trešo pušu platformām. Šie dati netiek pārdoti. Bez piekrišanas šos datus nesaglabājam."
       },
       {
         "title": "6. Trešās puses",
@@ -31,7 +31,7 @@
       },
       {
         "title": "7. Glabāšanas termiņš",
-        "body": "Pasūtījuma un klientu dati tiek glabāti tik ilgi, cik nepieciešams pakalpojuma sniegšanai un juridiskajām prasībām (grāmatvedība, strīdi). Analītikas/izcelsmes sīkdatņu derīguma termiņš ir ierobežots (parasti līdz 180 dienām), ja nav norādīts citādi."
+        "body": "Pasūtījuma un klientu dati tiek glabāti tik ilgi, cik nepieciešams pakalpojuma sniegšanai un juridiskajām prasībām (grāmatvedība, strīdi). Analītikas un izcelsmes sīkdatņu (pirmā un pēdējā pieskāriena, UTM, klikšķa identifikatori) derīguma termiņš ir ierobežots (parasti līdz 180 dienām), ja nav norādīts citādi."
       },
       {
         "title": "8. Jūsu tiesības",
@@ -127,7 +127,7 @@
   },
   "Cookies": {
     "bannerTitle": "Sīkdatnes un privātums",
-    "bannerText": "Mēs izmantojam nepieciešamās sīkdatnes vietnes darbībai. Ja piekrītat analītikai, varam saglabāt anonīmu informāciju par pirmo lapu un mārketinga saites parametrus (UTM), kā arī ielādēt Google Analytics un/vai TikTok Pixel (ja konfigurēti), lai saprastu, no kurienes apmeklētāji ierodas.",
+    "bannerText": "Mēs izmantojam nepieciešamās sīkdatnes vietnes darbībai. Ja piekrītat analītikai, varam saglabāt pirmo un pēdējo mārketinga lapu, UTM parametrus un reklāmas klikšķa identifikatorus (gclid, fbclid, ttclid), skaitīt agregētus apmeklējumus, kā arī ielādēt Google Analytics un/vai TikTok Pixel (ja konfigurēti), lai saprastu, no kurienes apmeklētāji ierodas.",
     "reject": "Tikai nepieciešamās",
     "acceptAnalytics": "Piekrītu analītikai un saglabāšanai",
     "privacyLink": "Privātuma politika"

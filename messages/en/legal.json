@@ -3,7 +3,7 @@
     "privacyMetaTitle": "Privacy Policy",
     "privacyMetaDescription": "How PROVIN.LV processes personal data, cookies, and analytics after consent under GDPR. Clear and transparent.",
     "privacyTitle": "Privacy Policy",
-    "privacyLead": "This document describes how the service provider PROVIN.LV (\"we\", \"the service\") processes personal data, which cookies are used, and how you can accept or reject non-essential analytics and first-touch (UTM) data storage. Legal identity and controller details are in the website footer.",
+    "privacyLead": "This document describes how the service provider PROVIN.LV (\"we\", \"the service\") processes personal data, which cookies are used, and how you can accept or reject non-essential analytics and first- and last-touch (UTM and ad click ID) data storage. Legal identity and controller details are in the website footer.",
     "sections": [
       {
         "title": "1. Controller",
@@ -15,7 +15,7 @@
       },
       {
         "title": "3. Purposes and legal basis",
-        "body": "Performance of a contract and order processing (GDPR Art. 6(1)(b)). Legitimate interests: site security and error prevention (GDPR Art. 6(1)(f)). Analytics and first-touch (UTM) storage only after your voluntary consent via the cookie banner (GDPR Art. 6(1)(a))."
+        "body": "Performance of a contract and order processing (GDPR Art. 6(1)(b)). Legitimate interests: site security and error prevention (GDPR Art. 6(1)(f)). Analytics and first- and last-touch storage (UTM and ad click IDs such as gclid, fbclid, ttclid) only after your voluntary consent via the cookie banner (GDPR Art. 6(1)(a))."
       },
       {
         "title": "4. Cookies and essential functions",
@@ -23,7 +23,7 @@
       },
       {
         "title": "5. Analytics and first-touch data (after consent)",
-        "body": "If you accept \"analytics\" in the cookie banner, we may store limited first-visit information: site path, HTTP referrer if available, and marketing parameters from the link (UTM: source, medium, campaign, etc.). The goal is to understand where visitors come from (for example TikTok, YouTube, search), not to track individuals across all third-party platforms. This data is not sold."
+        "body": "If you accept \"analytics\" in the cookie banner, we may store limited first- and last-touch marketing information: site path, HTTP referrer if available, marketing parameters from the link (UTM: source, medium, campaign, term), and ad click IDs (gclid, gbraid, wbraid, fbclid, ttclid) when they are in the URL. After consent we may also count aggregated visits by channel and campaign (no personal data). If you later place an order, we may attach this source to the payment so we can see which ad led to the order. The goal is to understand where visitors come from, not to track individuals across all third-party platforms. This data is not sold. Without consent we do not store it."
       },
       {
         "title": "6. Third parties",
@@ -31,7 +31,7 @@
       },
       {
         "title": "7. Retention",
-        "body": "Order and customer data are kept as long as needed to deliver the service and meet legal requirements (accounting, disputes). The lifetime of analytics / first-touch cookies is limited (typically up to 180 days) unless stated otherwise."
+        "body": "Order and customer data are kept as long as needed to deliver the service and meet legal requirements (accounting, disputes). The lifetime of analytics and source cookies (first and last touch, UTM, click IDs) is limited (typically up to 180 days) unless stated otherwise."
       },
       {
         "title": "8. Your rights",
@@ -127,7 +127,7 @@
   },
   "Cookies": {
     "bannerTitle": "Cookies and privacy",
-    "bannerText": "We use essential cookies for the site to work. If you consent to analytics, we may store anonymous first-page and marketing link parameters (UTM), and load Google Analytics and/or TikTok Pixel (when configured), to understand where visitors come from.",
+    "bannerText": "We use essential cookies for the site to work. If you consent to analytics, we may store first and last marketing pages, UTM parameters and ad click IDs (gclid, fbclid, ttclid), count aggregated visits, and load Google Analytics and/or TikTok Pixel (when configured), to understand where visitors come from.",
     "reject": "Essential only",
     "acceptAnalytics": "Accept analytics and storage",
     "privacyLink": "Privacy Policy"
