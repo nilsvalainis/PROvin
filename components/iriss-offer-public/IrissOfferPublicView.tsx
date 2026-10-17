@@ -1,90 +1,170 @@
+import { DzintarzemeOfferBrandLogo } from "@/components/iriss-offer-public/DzintarzemeOfferBrandLogo";
 import { IrissOfferPublicActions } from "@/components/iriss-offer-public/IrissOfferPublicActions";
 import {
   IRISS_OFFER_PUBLIC_BRAND,
   IRISS_OFFER_PUBLIC_LABELS,
   IRISS_OFFER_PUBLIC_LEGAL,
-  type IrissOfferPublicView,
+  type IrissOfferPublicView as IrissOfferPublicViewModel,
 } from "@/lib/iriss-offer-client-link";
 
-function Row({ label, value }: { label: string; value: string }) {
+function cardClassName(extra = "") {
+  return `mt-3.5 rounded-2xl border border-[#e4e4e7] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${extra}`.trim();
+}
+
+function sectionTitle(children: string) {
+  return (
+    <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#52525b]">{children}</h2>
+  );
+}
+
+function SpecCell({ label, value }: { label: string; value: string }) {
   if (!value.trim()) return null;
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-[#eee] py-2 text-[15px] last:border-0">
-      <span className="text-[#6e6e73]">{label}</span>
-      <span className="text-right font-medium">{value}</span>
+    <div className="rounded-xl border border-[#e4e4e7] bg-[#fafafa] p-2.5">
+      <b className="block text-[10px] font-medium text-[#52525b]">{label}</b>
+      <span className="mt-1 block text-[13px] font-semibold leading-snug text-[#111827]">{value}</span>
     </div>
   );
 }
 
-export function IrissOfferPublicView({ token, view }: { token: string; view: IrissOfferPublicView }) {
+function PriceRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  if (!value.trim()) return null;
+  return (
+    <div
+      className={`flex items-baseline justify-between gap-3 border-b border-[#e4e4e7] py-2.5 text-[14px] last:border-0 ${
+        strong ? "border-0 pt-1 text-[16px] font-bold" : ""
+      }`}
+    >
+      <span className={strong ? "text-[#111827]" : "text-[#52525b]"}>{label}</span>
+      <span className="text-right">{value}</span>
+    </div>
+  );
+}
+
+function subtitleParts(view: IrissOfferPublicViewModel): string {
+  return [
+    view.firstRegistration ? `${IRISS_OFFER_PUBLIC_LABELS.year} ${view.firstRegistration}` : "",
+    view.odometer,
+    view.transmission,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+export function IrissOfferPublicView({ token, view }: { token: string; view: IrissOfferPublicViewModel }) {
   const title = view.brandModel || view.title || IRISS_OFFER_PUBLIC_BRAND;
-  const facts = [
-    [IRISS_OFFER_PUBLIC_LABELS.year, view.firstRegistration],
-    [IRISS_OFFER_PUBLIC_LABELS.odometer, view.odometer],
-    [IRISS_OFFER_PUBLIC_LABELS.transmission, view.transmission],
-    [IRISS_OFFER_PUBLIC_LABELS.location, view.location],
+  const subtitle = subtitleParts(view);
+  const specs = [
     [IRISS_OFFER_PUBLIC_LABELS.vin, view.vin],
+    [IRISS_OFFER_PUBLIC_LABELS.location, view.location],
+    [IRISS_OFFER_PUBLIC_LABELS.odometer, view.odometer],
+    [IRISS_OFFER_PUBLIC_LABELS.year, view.firstRegistration],
+    [IRISS_OFFER_PUBLIC_LABELS.transmission, view.transmission],
   ] as const;
 
+  const hasPhotos = view.photos.length > 0;
+  const heroId = view.photos[0]?.id;
+  const thumbIds = view.photos.slice(1, 7);
+
   return (
-    <main className="mx-auto min-h-dvh max-w-lg px-4 pb-8 pt-6">
-      <header className="flex items-center justify-between gap-3">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" alt={IRISS_OFFER_PUBLIC_BRAND} className="h-9 w-auto" />
+    <main className="mx-auto min-h-dvh max-w-[720px] bg-[#f4f4f5] px-4 pb-10 pt-7 text-[#111827] sm:px-7">
+      <div className="flex items-start justify-between gap-3">
+        <DzintarzemeOfferBrandLogo className="h-10 w-auto" />
         <p className="text-right text-[11px] leading-tight text-[#6e6e73]">
           {IRISS_OFFER_PUBLIC_BRAND}
           <br />
           {IRISS_OFFER_PUBLIC_LEGAL}
         </p>
-      </header>
-      <h1 className="mt-5 text-[28px] font-semibold leading-tight tracking-tight">{title}</h1>
-      {view.photos.length > 0 ? (
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          {view.photos.map((photo, index) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              key={photo.id}
-              src={`/p/${encodeURIComponent(token)}/photo/${encodeURIComponent(photo.id)}`}
-              alt={index === 0 ? title : ""}
-              className={`w-full rounded-2xl bg-[#e7e5e4] object-cover ${index === 0 ? "col-span-2 aspect-[16/10]" : "aspect-[4/3]"}`}
-            />
-          ))}
+      </div>
+
+      <h1 className="mt-4 text-[28px] font-semibold leading-[1.15] tracking-[-0.02em]">{title}</h1>
+      {subtitle ? <p className="mt-1.5 text-[13px] text-[#52525b]">{subtitle}</p> : null}
+
+      {hasPhotos && heroId ? (
+        <div className="mt-4 overflow-hidden rounded-2xl border border-[#e4e4e7]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`/p/${encodeURIComponent(token)}/photo/${encodeURIComponent(heroId)}`}
+            alt={title}
+            className="aspect-[16/10] w-full bg-[#e4e4e7] object-cover"
+          />
+          {thumbIds.length > 0 ? (
+            <div className="grid grid-cols-3 gap-1.5 bg-white p-2 sm:grid-cols-6">
+              {thumbIds.map((photo) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={photo.id}
+                  src={`/p/${encodeURIComponent(token)}/photo/${encodeURIComponent(photo.id)}`}
+                  alt=""
+                  className="aspect-[4/3] w-full rounded-lg border border-[#e4e4e7] bg-[#f4f4f5] object-cover"
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
-      <section className="mt-4 rounded-2xl bg-white px-4 py-1 shadow-sm">
-        {facts.map(([label, value]) => (
-          <Row key={label} label={label} value={value} />
-        ))}
-      </section>
-      {view.checks.length > 0 ? (
-        <ul className="mt-3 flex flex-wrap gap-2">
-          {view.checks.map((item) => (
-            <li key={item} className="rounded-full bg-white px-3 py-1 text-[13px] font-medium text-[#166534] shadow-sm">
-              {item}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {view.notes ? (
-        <section className="mt-4 whitespace-pre-wrap rounded-2xl bg-white px-4 py-3 text-[15px] leading-relaxed shadow-sm">
-          {view.notes}
+
+      {view.total ? (
+        <section className={cardClassName(hasPhotos ? "" : "mt-4")}>
+          <p className="text-[32px] font-bold tracking-[-0.02em]">{view.total}</p>
+          <p className="mt-1.5 text-[12px] text-[#52525b]">
+            {IRISS_OFFER_PUBLIC_LABELS.total} · piedāvājums sagatavots personīgi jums
+            {view.validDays ? ` · ${IRISS_OFFER_PUBLIC_LABELS.valid} ${view.validDays}` : ""}
+          </p>
         </section>
       ) : null}
-      {view.prices.length > 0 || view.total || view.validDays ? (
-        <section className="mt-4 rounded-2xl bg-white px-4 py-3 shadow-sm">
+
+      {specs.some(([, v]) => v.trim()) ? (
+        <section className={cardClassName()}>
+          {sectionTitle("Parametri")}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {specs.map(([label, value]) => (
+              <SpecCell key={label} label={label} value={value} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {view.checks.length > 0 || view.notes ? (
+        <section className={cardClassName()}>
+          {sectionTitle("Stāvoklis")}
+          {view.checks.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {view.checks.map((item) => (
+                <span
+                  key={item}
+                  className="inline-block rounded-full border border-[#e4e4e7] bg-[#f4f4f5] px-2.5 py-1 text-[11px] font-semibold text-[#52525b]"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {view.notes ? (
+            <p className={`whitespace-pre-wrap text-[13px] leading-relaxed text-[#52525b] ${view.checks.length > 0 ? "mt-3" : ""}`}>
+              {view.notes}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
+      {view.prices.length > 0 ? (
+        <section className={cardClassName()}>
+          {sectionTitle("Izmaksas")}
           {view.prices.map((row) => (
-            <Row key={row.label} label={row.label} value={row.value} />
+            <PriceRow key={row.label} label={row.label} value={row.value} />
           ))}
-          {view.total ? <Row label={IRISS_OFFER_PUBLIC_LABELS.total} value={view.total} /> : null}
-          {view.validDays ? <Row label={IRISS_OFFER_PUBLIC_LABELS.valid} value={view.validDays} /> : null}
+          {view.total ? <PriceRow label={IRISS_OFFER_PUBLIC_LABELS.total} value={view.total} strong /> : null}
         </section>
       ) : null}
-      <section className="mt-5">
+
+      <section className="mt-4">
         <IrissOfferPublicActions token={token} decision={view.decision} question={view.question} />
       </section>
-      <footer className="mt-8 pb-4 text-center text-[10px] leading-relaxed text-[#a1a1aa]">
-        <p>{IRISS_OFFER_PUBLIC_BRAND}</p>
-        <p>{IRISS_OFFER_PUBLIC_LEGAL}</p>
+
+      <footer className="mt-6 text-center text-[10px] leading-relaxed text-[#a1a1aa]">
+        <p>{IRISS_OFFER_PUBLIC_BRAND} · {IRISS_OFFER_PUBLIC_LEGAL}</p>
+        <p className="mt-0.5 truncate">provin.lv/p/{token.slice(0, 8)}…</p>
       </footer>
     </main>
   );
