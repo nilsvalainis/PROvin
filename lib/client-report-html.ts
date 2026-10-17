@@ -126,6 +126,11 @@ import {
   filterInfoBannersForPdf,
   mergeProvinManualBanners,
 } from "@/lib/provin-alert-banners";
+import {
+  BRAND_LOGO_PDF_LIFE_PX,
+  BRAND_LOGO_PDF_SECTION_PX,
+  BRAND_LOGO_PDF_SECTION_SLOT_PX,
+} from "@/lib/brand-logo-display";
 import { PDF_HERO_BRAND_LOGO_DATA_URI } from "@/lib/pdf-hero-brand-logos";
 import {
   pdfBrandLogoImgHtml,
@@ -2331,7 +2336,7 @@ ${clientReportPageChromeCss(running)}
       }
       .pdf-life-ico{display:inline-flex;color:#64748b;flex-shrink:0;}
       .pdf-life-ico .pdf-ico{width:14px;height:14px;}
-      .pdf-life-ico--brand .pdf-ico--brand-logo{width:20px;height:20px;object-fit:contain;display:block;}
+      .pdf-life-ico--brand .pdf-ico--brand-logo{width:${BRAND_LOGO_PDF_LIFE_PX}px;height:${BRAND_LOGO_PDF_LIFE_PX}px;object-fit:contain;display:block;}
       .pdf-life-card__fact{min-width:0;}
       .pdf-life-card__sub{margin:0;font-size:var(--pdf-fs-table);color:#475569;line-height:1.4;}
       .pdf-life-price-delta{margin-left:0.35em;font-weight:700;font-variant-numeric:tabular-nums;}
@@ -2467,9 +2472,9 @@ ${clientReportPageChromeCss(running)}
       .pdf-sec-ico-wrap .pdf-ico{width:16px;height:16px;}
       .pdf-sec-brand-mark{
         display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
-        width:28px;height:28px;
+        width:${BRAND_LOGO_PDF_SECTION_SLOT_PX}px;height:${BRAND_LOGO_PDF_SECTION_SLOT_PX}px;
       }
-      .pdf-sec-brand-mark .pdf-ico--brand-logo{width:22px;height:22px;object-fit:contain;display:block;}
+      .pdf-sec-brand-mark .pdf-ico--brand-logo{width:${BRAND_LOGO_PDF_SECTION_PX}px;height:${BRAND_LOGO_PDF_SECTION_PX}px;object-fit:contain;display:block;transform:scale(1.12);transform-origin:center;}
       .pdf-source-section-body{width:100%;margin:0;padding:0;}
       .pdf-ltab-izzi{
         margin:0;padding:12px 14px;border:1px solid var(--pdf-line);

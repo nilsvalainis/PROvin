@@ -1,12 +1,15 @@
 import {
-  BRAND_LOGO_ADMIN_LIST_MARK_H_PX,
+  BRAND_LOGO_ADMIN_LIST_SLOT_H_PX,
   BRAND_LOGO_ADMIN_LIST_SLOT_W_PX,
+  BRAND_LOGO_ADMIN_ROUND_SCALE,
+  BRAND_LOGO_ADMIN_ROUND_VISIBLE_H_PX,
+  BRAND_LOGO_ADMIN_WIDE_VISIBLE_W_PX,
 } from "@/lib/brand-logo-display";
-import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
+import { irissBrandFallbackLabel, irissBrandLogoSrc, irissBrandLogoUsesWideLayout } from "@/lib/iriss-brand-logo";
 
 const slotPx = {
   width: BRAND_LOGO_ADMIN_LIST_SLOT_W_PX,
-  height: BRAND_LOGO_ADMIN_LIST_MARK_H_PX,
+  height: BRAND_LOGO_ADMIN_LIST_SLOT_H_PX,
 };
 
 type Props = {
@@ -19,7 +22,8 @@ type Props = {
 /** Fixed-width OEM mark column so IRISS list rows and headers share one title alignment. */
 export function IrissBrandLogoSlot({ brandModel, className = "", fallbackClassName = "", imgLoading = "lazy" }: Props) {
   const src = irissBrandLogoSrc(brandModel);
-  const shell = `inline-flex shrink-0 items-center justify-center ${className}`.trim();
+  const wide = irissBrandLogoUsesWideLayout(brandModel);
+  const shell = `inline-flex shrink-0 items-center justify-center overflow-visible ${className}`.trim();
 
   if (!src) {
     return (
@@ -39,11 +43,21 @@ export function IrissBrandLogoSlot({ brandModel, className = "", fallbackClassNa
       <img
         src={src}
         alt=""
-        width={BRAND_LOGO_ADMIN_LIST_SLOT_W_PX}
-        height={BRAND_LOGO_ADMIN_LIST_MARK_H_PX}
+        width={wide ? BRAND_LOGO_ADMIN_WIDE_VISIBLE_W_PX : BRAND_LOGO_ADMIN_ROUND_VISIBLE_H_PX}
+        height={BRAND_LOGO_ADMIN_LIST_SLOT_H_PX}
         loading={imgLoading}
         decoding="async"
-        className="max-h-full w-full object-contain"
+        className="max-h-full object-contain"
+        style={
+          wide
+            ? { width: BRAND_LOGO_ADMIN_WIDE_VISIBLE_W_PX, maxWidth: "100%" }
+            : {
+                height: BRAND_LOGO_ADMIN_ROUND_VISIBLE_H_PX,
+                width: BRAND_LOGO_ADMIN_ROUND_VISIBLE_H_PX,
+                transform: `scale(${BRAND_LOGO_ADMIN_ROUND_SCALE})`,
+                transformOrigin: "center",
+              }
+        }
       />
     </span>
   );
