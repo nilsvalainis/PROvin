@@ -226,7 +226,7 @@ export const AI_TEST_DRIVE_GEARBOX_DMF_RULES = `TEST DRIVE: GEARBOX, DMF, COOLIN
  */
 export const AI_OIL_CHANGE_INTERVAL_RULES = `OIL CHANGE INTERVALS (mandatory — every agent):
 - Detailed oil-change interval math belongs ONLY in „Eļļas maiņas intervāli” (OFICIĀLĀ DĪLERA DATI): how often oil was changed on THIS car, km and/or months between successive oil services, and how far those gaps deviate from the manufacturer interval.
-- Identify the manufacturer interval from THIS engine code + make + model + year + fuel. Do not default to 15 000 km. CBS / Longlife: state the official maximum (often 30 000 km / 24 months), not a guessed 15 000. If the code is missing and the interval is not in packs/context, write „Ražotāja intervāls: nav droši zināms”. Never invent an OEM figure.
+- Identify the manufacturer interval from THIS engine code + make + model + year + fuel + the manufacturer's published plan. Look it up (packs, manuals, dealer plans). Do not default to 15 000 km. Do NOT invent the time unit: if the OEM / user manual says 30 000 km or 1 year (whichever first), write 12 months / 1 gads, never a guessed 24 months. CBS / Longlife: state the official maximum (often 30 000 km / 24 months) only when THAT engine's plan says so. If the code is missing and the interval is not in packs/context, write „Ražotāja intervāls: nav droši zināms”. Never invent an OEM figure.
 - In the oil field the FIRST sentence must be: „Ražotāja intervāls: 15 000 km / 12 mēn.” (or this car’s numbers, plus code in parentheses; variable: „10 000 līdz 25 000 km”). PDF colours are computed from that line: green if the dealer-to-dealer step is at or under OEM (variable: under the upper bound), red if the recorded dealer step is longer in km or months. Red is not a claim the oil was skipped: independent service may sit between dealer visits. Grey is only a data gap. Do not write the words zaļš/sarkans in the comment; the table paints them. Never claim an interval was exceeded unless the dealer record itself proves a single oil fill ran that long.
 - City / short-trip commentary (practical ~10 000 km ceiling, highway 15 000-20 000 km) stays in the PARAGRAPHS. It does not replace the manufacturer figure and must not be used as the colour OEM.
 - Use ALL obtained data: dealer service-works table, AutoDNA / CarVertical / RAW service narratives, mileage timeline, driving profile / motorstundas (city vs highway), and OEM interval from context or aggregate packs. Do not invent oil changes that are not in the data.
@@ -235,6 +235,19 @@ export const AI_OIL_CHANGE_INTERVAL_RULES = `OIL CHANGE INTERVALS (mandatory —
 - If oil-change records are thin or absent: say the interval cannot be calculated and what is missing — never invent a schedule.
 - Other ACTIVE FIELDS (tech risks, mileage, inspection, summary, per-source comments, incidents): at most ONE sentence if oil policy is a purchase risk. Do NOT reprint the interval table or re-run the math. Anti-repetition does not delete this one-sentence risk when it matters.
 - No estimated oil/service EUR. Canonical: AI_NO_ESTIMATED_REPAIR_EUR_RULES.`;
+
+/**
+ * Dīlera kategoriju nosaukumi, standarta apkopes rindas, URL un tukši PDF lauki.
+ * Modelim specifiskie fakti (H5H u.c.) dzīvo agregātu pakās, ne šeit.
+ */
+export const AI_SERVICE_RECORD_LITERAL_RULES = `SERVICE RECORD LITERAL READING (mandatory — every agent, every field):
+- DEALER CATEGORY NAMES are grouping labels, not a completed job. „Transmisijas apkope”, „Dzinēja apkope”, „Bremžu sistēma” do NOT mean gearbox oil, engine oil, or brake replacement unless the LINE ITEMS name that work (eļļa, filtrs, drain/fill, named part). Steering / column / mechanism / booster rows under „Transmisijas apkope” are steering work, not a gearbox oil change. If items do not confirm the job, say the heading is present and you cannot conclude the fluid was changed.
+- STANDARD CHECKLIST ≠ DEFECT: a routine service row („Akumulators”, „Gaismas”, „Bremzes”) is a standard inspection item, not proof of a fault. Do not write that a system had a problem from the mere presence of the row.
+- CHEMISTRY / PART TYPE: do not assume battery chemistry (Li-ion vs AGM vs lead-acid) or a named hybrid battery family unless THIS order or a pack for THIS engine states it. A 12V micro-hybrid assist is energy recovery / start-stop help, not a diagnosed defect.
+- NO SOURCE URLS in client text. Never paste http/https links, forum URLs, or manual URLs into any comment field. Knowledge stays internal.
+- Never a persona noun in client text. Canonical: buildForbiddenPersonaNounPromptRules / stripForbiddenPersonaNouns / BANNED VOCABULARY.
+- Do not write empty-field fillers for the PDF: standalone „km nav”, „Nav ierakstu”, „nav datu”. If a field has no fact, omit the sentence. Empty PDF rows are hidden in rendering; do not invent placeholders to fill them.
+`;
 
 /**
  * Dīlera „Veiktie darbi” / komentāri uzvar tipisko slimību sarakstu.
@@ -831,6 +844,7 @@ export const AI_MILEAGE_BAND_RISK_RULES = `NOBRAUKUMA UN VECUMA POSMA KALIBRĀCI
 - Katru agregāta risku sadali pēc posma: (1) **jau iztērēts resurss** — darbi, kas šim agregātam tipiski notiek līdz šim km un vecumam, tāpēc tiem jābūt pierādītiem servisa vēsturē; (2) **tuvākais logs** — kas tipiski gaidāms nākamajos ~20 000–40 000 km vai 1–2 gados (tas ir pircēja reālais izdevums); (3) **tālāks resurss** — piemin īsi vai nepiemin vispār.
 - **Nepārspīlē:** risku, kas šim agregātam tipiski parādās, piemēram, pie 250 000 km, nedrīkst pasniegt kā aktuālu draudu pie 90 000 km — tad tā ir tikai perspektīvas piezīme. Nekrauj kopā visus teorētiski iespējamos bojājumus; **galvenais pirkuma risks var būt tikai 1–2** pozīcijas, pārējais ir ierasta uzturēšanas izmaksa vai kaut kas, ko vienkārši jāpārbauda klātienē (nav pirkuma šķērslis).
 - **Vecums nav tas pats, kas nobraukums:** gumijas, plastmasas, dzesēšanas sistēmas, zobsiksnas un šļūteņu resurss iet pēc laika — vecs auto ar mazu nobraukumu var būt sliktākā stāvoklī nekā jaunāks auto ar lielu šosejas nobraukumu. Sasaisti ar motorstundu / pilsētas–šosejas loģiku, kad dati to atļauj.
+- **150-200 tūkst. km outlook (mandatory in „1. Tehnisko risku analīze”):** always include a short separate section on what typically becomes relevant at 150-200 thousand km for THIS car’s actual units only (timing chain or belt, oil consumption, GPF or DPF if fitted, turbo if fitted, this gearbox’s clutch/mechatronics, micro-hybrid / 12V assist if fitted, suspension). Do not copy another engine’s list. If the car is already past that band, write the next band instead. If it is far below, keep this as a later-horizon note, not a present threat.
 - **Pierādījumi maina risku:** ja servisa vēsturē ir attiecīgais darbs (ķēde, divsajūga eļļa, zobsiksna, ūdens sūknis, iesmidzinātāji), risks krīt — pasaki, ka darbs datos jau fiksēts. Ierakstu trūkums nav pierādījums, ka darbs nav veikts — formulē kā **nepierādītu**, kas jānoskaidro pie pārdevēja.
 - Izmaksas vērtē **varbūtības × ietekmes** griezumā: pirmais nāk tas, kam ir gan reāla varbūtība šajā posmā, gan būtiska naudas ietekme. NERAKSTI orientējošas EUR joslas — tikai kvalitatīvi (dārgs / vidējs / pārbaudes punkts).
 - Ja nobraukums, vecums un apkopes aina šim agregātam ir **relatīvi labvēlīga**, to ir atļauts un vajag pateikt — kalibrēti, ar atrunu, ka PROVIN auto fiziski nav apskatījis. Mākslīgi „sarkanie karogi” bez datu pamata ir tāda pati kļūda kā risku noklusēšana.`;
@@ -982,6 +996,7 @@ ${AI_WINTER_SALT_RUST_RULES}
 ${AI_SOUTHERN_EUROPE_VISUAL_CAUTION_RULES}
 ${AI_PAINT_GAUGE_INSPECTION_RULES}
 ${AI_OIL_CHANGE_INTERVAL_RULES}
+${AI_SERVICE_RECORD_LITERAL_RULES}
 ${AI_DOCUMENTED_SERVICE_WORK_RULES}
 ${AI_THIS_CAR_ONLY_LOGIC_RULES}
 ${AI_LISTING_IS_NOT_COUNTRY_CHANGE_RULES}

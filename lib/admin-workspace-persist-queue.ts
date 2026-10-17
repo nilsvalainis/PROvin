@@ -33,3 +33,7 @@ export function enqueueWorkspacePersist(
 export function clearWorkspacePersistQueue(sessionId: string): void {
   chains.delete(sessionId);
 }
+
+export function clearAllWorkspacePersistQueues(): void {
+  chains.clear();
+}

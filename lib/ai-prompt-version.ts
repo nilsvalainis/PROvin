@@ -185,5 +185,10 @@
  *   ekspluatācija (Zviedrija, Somija, Norvēģija, Dānija, Austrija, Polija,
  *   Vācijas lejasdaļa, Austrumvācija). Itālija/Francija: vizuāla piesardzība.
  *   Valsti neizdomā. Aizliegts datu „vakuums”; kloķvārpstas skriemelis (demferis).
+ * - 2026-10-16.1 - Servisa ierakstus lasa burtiski: eļļas OEM pēc koda/modeļa/gada
+ *   (neizdomāt 24 mēn., ja plāns ir 1 gads); dīlera kategorija nav kārbas eļļa;
+ *   standarta apkopes rinda nav defekts; bez avotu URL un „eksperts”; PDF
+ *   nerāda tukšus „km nav” / „Nav ierakstu”. Riskos 150-200 tūkst. km sadaļa
+ *   šī auto mezgliem. H5H/TCe paka: GPF, RN17, ieplūdes kvēpi, sadales vāks.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-14.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-16.1";

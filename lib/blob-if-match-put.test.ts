@@ -44,7 +44,8 @@ vi.mock("@vercel/blob", () => ({
       err.name = "BlobPreconditionFailedError";
       throw err;
     }
-    return { url: `https://blob.test/${pathname}` };
+    const next = putOpts.ifMatch ? putOpts.ifMatch.replace(/^W\//i, "") : '"fresh"';
+    return { url: `https://blob.test/${pathname}`, etag: `W/${next.replace(/^W\//i, "")}` };
   }),
 }));
 
@@ -66,7 +67,7 @@ describe("blob ifMatch save path", () => {
     blobState.getBody = large;
     blobState.rejectWeakIfMatch = true;
     const { putBlobBodyIfMatch } = await import("@/lib/blob-if-match-put");
-    await putBlobBodyIfMatch({
+    const written = await putBlobBodyIfMatch({
       pathname: "admin-order-drafts/cs_test.json",
       body: large,
       token: "tok",
@@ -77,6 +78,8 @@ describe("blob ifMatch save path", () => {
     expect(blobState.puts[0]?.ifMatch).toBe('"large-1"');
     expect(blobState.puts[0]?.ifMatch).not.toMatch(/^W\//i);
     expect(blobState.puts[0]?.body.length).toBeGreaterThan(64 * 1024);
+    expect(written.etag).toBe('"large-1"');
+    expect(written.etag).not.toMatch(/^W\//i);
   });
 
   it("tas pats vājais ETag bez normalizācijas tiktu noraidīts", async () => {

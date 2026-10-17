@@ -60,6 +60,9 @@ export type PersistWorkspaceStateResult =
 
 let globalSaveGeneration = 0;
 
+/** Šīs cilnes pēdējā veiksmīgā workspace revīzija pa sessionId (pašraksts). */
+const lastOkRevisionBySession = new Map<string, number>();
+
 export function bumpWorkspaceSaveGeneration(): number {
   globalSaveGeneration += 1;
   return globalSaveGeneration;
@@ -67,6 +70,49 @@ export function bumpWorkspaceSaveGeneration(): number {
 
 export function getWorkspaceSaveGeneration(): number {
   return globalSaveGeneration;
+}
+
+export function noteLastOkWorkspaceRevision(sessionId: string, revision: number): void {
+  const n = Math.max(0, Math.floor(revision));
+  const prev = lastOkRevisionBySession.get(sessionId) ?? 0;
+  if (n >= prev) lastOkRevisionBySession.set(sessionId, n);
+}
+
+export function getLastOkWorkspaceRevision(sessionId: string): number | null {
+  return lastOkRevisionBySession.has(sessionId) ? (lastOkRevisionBySession.get(sessionId) ?? 0) : null;
+}
+
+export function clearLastOkWorkspaceRevision(sessionId?: string): void {
+  if (sessionId) lastOkRevisionBySession.delete(sessionId);
+  else lastOkRevisionBySession.clear();
+}
+
+/** Rindā nākamais PATCH lieto max(ielasītā revīzija, pašu tikko saglabātais). */
+export function resolveExpectedWorkspaceRevision(
+  captured: number | undefined,
+  lastOk: number | null,
+): number | undefined {
+  if (lastOk == null) return captured;
+  if (captured == null || !Number.isFinite(captured)) return lastOk;
+  return Math.max(Math.floor(captured), lastOk);
+}
+
+/**
+ * Vienas cilnes secīgi saglabājumi: serveris jau ir uz mūsu pašu iepriekšējo rakstu.
+ * `overwrite_blocked` (regresīvs saturs) NAV pašraksts.
+ */
+export function isOwnWriteRevisionConflict(opts: {
+  error: string | undefined | null;
+  expectedRevision: number | undefined;
+  currentRevision: number | undefined;
+  lastOkRevision: number | null;
+}): boolean {
+  if (opts.error !== "stale_revision") return false;
+  const current = opts.currentRevision;
+  if (current == null || !Number.isFinite(current)) return false;
+  if (opts.lastOkRevision != null && current === opts.lastOkRevision) return true;
+  if (opts.expectedRevision != null && current === opts.expectedRevision + 1) return true;
+  return false;
 }
 
 export async function fetchCanonicalWorkspace(sessionId: string): Promise<CanonicalWorkspaceLoad> {
@@ -253,7 +299,39 @@ export async function persistWorkspaceState(
     extra: { context: opts.logContext, generation: opts.saveGeneration },
   });
 
-  return enqueueWorkspacePersist(opts.sessionId, async () => patchWorkspaceOnce(opts));
+  return enqueueWorkspacePersist(opts.sessionId, async () => {
+    const lastOk = getLastOkWorkspaceRevision(opts.sessionId);
+    const expected = resolveExpectedWorkspaceRevision(opts.expectedWorkspaceRevision, lastOk);
+    const first = await patchWorkspaceOnce({ ...opts, expectedWorkspaceRevision: expected });
+    if (first.ok) {
+      noteLastOkWorkspaceRevision(opts.sessionId, first.workspaceRevision);
+      return first;
+    }
+    if (
+      isOwnWriteRevisionConflict({
+        error: first.error,
+        expectedRevision: expected,
+        currentRevision: first.currentRevision,
+        lastOkRevision: lastOk,
+      })
+    ) {
+      const retryExpected = first.currentRevision ?? lastOk ?? expected;
+      workspaceDebugLog("persist_start", {
+        sessionId: opts.sessionId,
+        source: "client_patch",
+        revision: retryExpected,
+        extra: { context: `${opts.logContext ?? "client"}:own_write_retry`, generation: opts.saveGeneration },
+      });
+      const retry = await patchWorkspaceOnce({
+        ...opts,
+        expectedWorkspaceRevision: retryExpected,
+        logContext: `${opts.logContext ?? "client"}:own_write_retry`,
+      });
+      if (retry.ok) noteLastOkWorkspaceRevision(opts.sessionId, retry.workspaceRevision);
+      return retry;
+    }
+    return first;
+  });
 }
 
 /** Operatora apstiprināta droša apvienošana ar servera kanonu, tad PATCH ar svaigu revision. */
