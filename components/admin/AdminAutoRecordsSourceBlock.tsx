@@ -37,6 +37,10 @@ import {
   sortAutoRecordsServiceWorkRows,
 } from "@/lib/auto-records-service-works";
 import {
+  DEALER_MILEAGE_TABLE_EMPTY_VISITS_WARNING,
+  dealerMileageTableEmptyButVisitsHaveOdometer,
+} from "@/lib/unified-mileage";
+import {
   CSDD_MILEAGE_UNIFIED_TITLE,
   PROVIN_MILEAGE_TABLE_DOM_KIND,
   PROVIN_MILEAGE_TABLE_FIELD,
@@ -415,6 +419,11 @@ export function AdminAutoRecordsSourceBlock({
             <AdminProvinLucide icon={SUBHEADING_LUCIDE.mileage} />
             {CSDD_MILEAGE_UNIFIED_TITLE}
           </p>
+          {dealerMileageTableEmptyButVisitsHaveOdometer(value) ? (
+            <p className="mb-1.5 text-[10px] leading-snug text-amber-800" role="status">
+              {DEALER_MILEAGE_TABLE_EMPTY_VISITS_WARNING}
+            </p>
+          ) : null}
           <AdminMileageRangeBar rows={displayRows} />
           <div
             className={ADMIN_SOURCE_TABLE_WRAP_CLASS}

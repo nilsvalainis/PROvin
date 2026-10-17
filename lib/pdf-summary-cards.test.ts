@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { emptyCsddFields } from "@/lib/admin-source-blocks";
+import {
+  emptyAutoRecordsBlock,
+  emptyCsddFields,
+  emptyTirgusFields,
+  SOURCE_BLOCK_LABELS,
+} from "@/lib/admin-source-blocks";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import { buildPdfReportSummaryTiles, buildPdfSummaryBannerTiles } from "@/lib/pdf-report-summary";
 import {
@@ -274,6 +279,39 @@ describe("aprēķināto brīdinājumu labošana", () => {
 });
 
 describe("kopsavilkuma bāzes plāksnītes", () => {
+  it("Captur: NOBRAUKUMS takes AutoDNA 49 136, not older CSDD or ss.lv", () => {
+    const csdd = emptyCsddFields();
+    csdd.mileageHistory = [{ date: "11.10.2025", odometer: "41568", country: "Latvija" }];
+    const tiles = buildPdfReportSummaryTiles({
+      csddForm: csdd,
+      autoRecordsBlock: emptyAutoRecordsBlock(),
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.autodna,
+          mileageRows: [{ date: "01.07.2026", odometer: "49136", country: "Latvija" }],
+          incidentRows: [],
+          comments: "",
+        },
+        {
+          title: SOURCE_BLOCK_LABELS.carvertical,
+          mileageRows: [{ date: "01.07.2026", odometer: "49096", country: "Latvija" }],
+          incidentRows: [],
+          comments: "",
+        },
+      ],
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listingCreated: "01.08.2026",
+        listingMileageDate: "01.08.2026",
+        listingMileageOdometer: "50936",
+        listingMileageCountry: "Latvija",
+      },
+      listingUrl: "https://www.ss.lv/msg/lv/transport/cars/renault/captur/x.html",
+    });
+    const mileage = tiles.find((t) => t.id === "mileage");
+    expect(mileage?.value).toBe("49 136 km");
+  });
+
   it("ļauj slēpt un pārrakstīt īpašnieku kartīti", () => {
     const input = {
       csddForm: emptyCsddFields(),

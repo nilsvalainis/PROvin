@@ -3,6 +3,11 @@
  */
 
 import { cleanDateStr } from "@/lib/clean-date-str";
+import type { AutoRecordsBlockState } from "@/lib/admin-source-blocks";
+import {
+  DEALER_MILEAGE_TABLE_EMPTY_VISITS_WARNING,
+  dealerMileageTableEmptyButVisitsHaveOdometer,
+} from "@/lib/unified-mileage";
 
 export type PreviewSegment =
   | { type: "subheading"; title: string }
@@ -446,6 +451,7 @@ export function analyzeVinAndKm(args: {
   orderVin: string | null;
   blocks: { label: string; text: string }[];
   fileNames: string[];
+  autoRecordsBlock?: AutoRecordsBlockState | null;
 }): VinKmAnalysis {
   const orderNorm = args.orderVin?.trim().toUpperCase() ?? null;
 
@@ -490,9 +496,12 @@ export function analyzeVinAndKm(args: {
     const hi = Math.max(...allKm);
     if (hi - lo >= KM_DIFF_WARN) {
       kmIssues.push(
-        `Liela nobraukuma starpība starp avotiem (≈ ${lo.toLocaleString("lv-LV")}–${hi.toLocaleString("lv-LV")} km) — pārbaudi CSDD vs sludinājumu.`,
+        `Liela nobraukuma starpība starp avotiem (≈ ${lo.toLocaleString("lv-LV")}-${hi.toLocaleString("lv-LV")} km) - pārbaudi CSDD vs sludinājumu.`,
       );
     }
+  }
+  if (dealerMileageTableEmptyButVisitsHaveOdometer(args.autoRecordsBlock)) {
+    kmIssues.push(DEALER_MILEAGE_TABLE_EMPTY_VISITS_WARNING);
   }
 
   return { vins, vinIssues, kmByBlock, kmIssues };
