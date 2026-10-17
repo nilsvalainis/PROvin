@@ -3,6 +3,7 @@ import {
   checkAiCommentFacts,
   extractCampaignCodes,
   formatApplicableUnitFactsForPrompt,
+  parseVehicleYear,
   splitSentences,
 } from "@/lib/unit-facts/check";
 import { UNIT_FACTS } from "@/lib/unit-facts/facts";
@@ -127,17 +128,21 @@ describe("checkAiCommentFacts", () => {
     expect(r.flags.filter((f) => f.id === "recall_denied")).toEqual([]);
   });
 
-  it("flags 'no recalls' on Caddy with 48VS in data, and 48VS 'neattiecas' on Tiguan", () => {
+  it("flags 'no recalls' on Caddy with 48VS in data", () => {
     const r = checkAiCommentFacts({
       text: "Atsaukumu kampaņas šim auto nav.",
       contextText: "VW Caddy 2016 DFSF. Dīleris: kampaņa 48VS nav izpildīta.",
     });
     expect(ids(r)).toContain("E:recall_denied");
+  });
+
+  it("48VS Tiguan applicability is disputed: warn, never error", () => {
     const t = checkAiCommentFacts({
       text: "Atsaukums 48VS, visticamāk, uz šo Tiguan neattiecas.",
       contextText: "VW Tiguan 1.5 TSI 2022",
     });
-    expect(ids(t)).toContain("E:fact:vw_recall_48vs_scope");
+    expect(ids(t)).toEqual(["W:disputed:vw_recall_48vs_scope"]);
+    expect(t.flags.filter((f) => f.level === "E")).toEqual([]);
   });
 
   it("flags 48VS on a model outside the campaign", () => {
@@ -216,8 +221,33 @@ describe("checkAiCommentFacts", () => {
 
   it("formats verified facts for prompt", () => {
     const s = formatApplicableUnitFactsForPrompt({ contextText: "Tesla Model 3 2021" });
+    expect(s).toMatch(/^Pārbaudīti fakti/);
+    expect(s).toMatch(/nedrīkst būt pretrunā/);
     expect(s).toMatch(/Model S/);
     expect(formatApplicableUnitFactsForPrompt({ contextText: "Opel Zafira" })).toBe("");
+  });
+
+  it("prompt block excludes disputed and pending_nils facts", () => {
+    const claa = formatApplicableUnitFactsForPrompt({
+      contextText: "Audi A6 Allroad, dzinējs CLAA 150 kW, DL501",
+    });
+    expect(claa).not.toMatch(/STRĪDĪGS|ķēžu skaits/);
+    const bItem = formatApplicableUnitFactsForPrompt({ contextText: "Volvo S60 D5244T5" });
+    expect(bItem).not.toMatch(/D5244T5/);
+    const q7 = formatApplicableUnitFactsForPrompt({
+      contextText: "Audi Q7 4L CRCA",
+      year: 2014,
+    });
+    expect(q7).toMatch(/Aisin/);
+    expect(q7).not.toMatch(/STRĪDĪG/);
+  });
+});
+
+describe("parseVehicleYear", () => {
+  it("reads CSDD model year, then first registration", () => {
+    expect(parseVehicleYear("2014", "")).toBe(2014);
+    expect(parseVehicleYear("", "2016-03-12")).toBe(2016);
+    expect(parseVehicleYear("abc", "")).toBeNull();
   });
 });
 

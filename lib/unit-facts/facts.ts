@@ -275,8 +275,8 @@ export const UNIT_FACTS: readonly UnitFact[] = [
     codes: ["48VS"],
     topic: "recall_scope",
     statementLv:
-      "VW atsaukums 48VS (stūres mehānisma stiprinājuma skrūves korozija, skrūves maiņa): Tiguan, Touran, Golf un Caddy; piederība jāpārbauda pēc VIN pie VW dīlera.",
-    status: "verified",
+      "VW atsaukums 48VS (stūres mehānisma stiprinājuma skrūves korozija): VW DK nosauc Tiguan, Touran, Golf un Caddy, bet konkrēta VIN piederība STRĪDĪGA (IRISS: 2022 Tiguan visticamāk neattiecas). Piederību nosaka tikai pēc VIN pie VW dīlera.",
+    status: "disputed",
     sources: [
       {
         kind: "authority",
@@ -290,17 +290,19 @@ export const UNIT_FACTS: readonly UnitFact[] = [
         url: "https://fischer-auto.de/vw-rueckrufaktion-48vs",
         accessed: "2026-10-17",
       },
-    ],
-    appliesTo: { anyOf: ["Tiguan", "Touran", "Golf", "Caddy"] },
-    contradictions: [
       {
-        subject: ["48VS"],
-        contradicts: ["neattiecas", "nav\\s+attiecin", "attiecas\\s+tikai\\s+uz\\s+Caddy"],
-        unless: ["pēc\\s+VIN", "VIN"],
-        message: "48VS attiecas uz Tiguan, Touran, Golf un Caddy; piederību nosaka tikai pēc VIN, nevis pēc modeļa.",
+        kind: "iriss",
+        title: "IRISS A/B vērtējums r2, auto 12: „48VS, visticamāk, uz 2022 Tiguan neattiecas”",
+        accessed: "2026-10-17",
       },
     ],
-    note: "IRISS r2 auto 12 piezīme („48VS, visticamāk, uz 2022 Tiguan neattiecas”) ir pretrunā ar VW DK oficiālo lapu — jāizrunā ar Nilu/IRISS.",
+    appliesTo: { anyOf: ["Tiguan", "Touran", "Golf", "Caddy"] },
+    touches: [
+      "48VS[^.]{0,220}(neattiecas|nav\\s+attiecin)",
+      "(neattiecas|nav\\s+attiecin)[^.]{0,220}(48VS|Tiguan|Touran|Golf|Caddy)",
+      "attiecas\\s+tikai\\s+uz\\s+Caddy",
+    ],
+    note: "IRISS r2 auto 12 pret VW DK oficiālo lapu. Līdz Nila/IRISS lēmumam pārbaude tikai brīdina, nekad nesaka, kurš pareizs.",
     addedAt: "2026-10-17",
   },
   {

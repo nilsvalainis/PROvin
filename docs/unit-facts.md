@@ -5,7 +5,7 @@ Nils apstiprināja 17.10.2026. Kods: `lib/unit-facts/`, API: `POST /api/admin/ai
 ## Faktu bāze (`lib/unit-facts/facts.ts`)
 - Katrs fakts: `id`, kodi, tēma, kanonisks LV teikums, `status`, avoti (`kind`, `title`, `url`, `accessed`), `appliesTo` (kad attiecas uz auto), `contradictions` (deterministiski teikuma noteikumi).
 - `verified`: ≥1 ražotāja/iestādes avots vai ≥2 neatkarīgi avoti → ģenerē pretrunu karodziņus.
-- `disputed`: avoti nesakrīt (piem. IRISS pret Audi SSP) → tikai brīdinājums „pārbaudi manuāli”.
+- `disputed`: avoti nesakrīt (piem. IRISS pret Audi SSP; CLAA ķēžu skaits; 48VS piederība Tiguan) → tikai brīdinājums „pārbaudi manuāli”.
 - `pending_nils`: B1–B8 tēmas → pārbaude ignorē, līdz Nils izlemj.
 - `draft`: ignorē.
 - EUR summas faktu bāzē aizliegtas (tests).
@@ -24,8 +24,8 @@ Konteksts = tikai šī pasūtījuma dati (`buildAiOrderContextText`), bez stila 
 ## Neobligāts AI slānis
 `UNIT_FACT_CHECK_AI=1` + pieprasījumā `useAi: true` → Gemini Flash (`gemini-flash`) meklē pārfrāzētas pretrunas tikai pret šī auto verificētajiem faktiem. Tikai W. Citāti, kuru nav tekstā, tiek izmesti. Anthropic netiek lietots. Noklusējumā izslēgts.
 
-## Prompta ievade (novēršana)
-`formatApplicableUnitFactsForPrompt()` atgriež šī auto verificētos faktus īsā LV blokā ievadei ģenerēšanas promptā.
+## Prompta ievade
+`formatApplicableUnitFactsForPrompt()` atgriež šī auto **verificētos** faktus kompaktā blokā „Pārbaudīti fakti”. Ievadīts tehnisko risku v1 user promptā un v2 kartes promptā. Strīdīgie fakti un B tēmas (`pending_nils`) netiek iekļauti. Modelim jānesakrīt ar šiem faktiem.
 
 ## Fakta pievienošana
 Pievieno ierakstu `facts.ts` ar avotu un datumu; testi pārbauda avotu/datuma/EUR noteikumus. PROVIN ADMINS / IRISS labojumi: avots `iriss` + vismaz viens ārējs avots, lai būtu `verified`.

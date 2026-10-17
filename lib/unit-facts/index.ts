@@ -4,6 +4,7 @@ export {
   extractCampaignCodes,
   factAppliesToVehicle,
   formatApplicableUnitFactsForPrompt,
+  parseVehicleYear,
   splitSentences,
 } from "@/lib/unit-facts/check";
 export type * from "@/lib/unit-facts/types";

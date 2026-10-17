@@ -248,7 +248,18 @@ export function checkAiCommentFacts(
   };
 }
 
-/** Verificētie fakti, kas attiecas uz auto — ievadei ģenerēšanas promptā (novēršana, ne tikai pārbaude). */
+/** Izlaiduma gads no CSDD laukiem (neizdomā). */
+export function parseVehicleYear(modelYear?: string | null, firstRegistration?: string | null): number | null {
+  const y = Number.parseInt(String(modelYear ?? "").trim(), 10);
+  if (y > 1980 && y < 2100) return y;
+  const m = String(firstRegistration ?? "").match(/\b(19[89]\d|20[0-4]\d)\b/);
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * Verificētie fakti, kas attiecas uz šo auto: kompakts bloks ģenerēšanas promptam.
+ * Strīdīgie (`disputed`) un B tēmas (`pending_nils` / `draft`) netiek iekļauti.
+ */
 export function formatApplicableUnitFactsForPrompt(
   input: Pick<FactCheckInput, "contextText" | "vehicleLabel" | "year">,
   facts: readonly UnitFact[] = UNIT_FACTS,
@@ -258,5 +269,5 @@ export function formatApplicableUnitFactsForPrompt(
   const hits = facts.filter((f) => f.status === "verified" && factAppliesToVehicle(f, vehicleText, year));
   if (hits.length === 0) return "";
   const lines = hits.map((f) => `- ${f.statementLv}`);
-  return `PROVIN AGREGĀTU FAKTI (verificēti, ar avotiem; nedrīkst būt pretrunā):\n${lines.join("\n")}`;
+  return `Pārbaudīti fakti (verificēti, attiecas uz šo auto; nedrīkst būt pretrunā):\n${lines.join("\n")}`;
 }
