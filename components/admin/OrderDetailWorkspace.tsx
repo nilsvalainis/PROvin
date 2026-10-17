@@ -207,6 +207,11 @@ import {
 } from "lucide-react";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
+import {
+  AdminFactCheckButton,
+  AdminFactCheckPanel,
+  AdminFactCheckPublishConfirm,
+} from "@/components/admin/AdminFactCheckPanel";
 import { AdminTechnicalRiskMapPanel } from "@/components/admin/AdminTechnicalRiskMapPanel";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
@@ -318,6 +323,14 @@ import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenceHealthBanner";
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
+import {
+  collectFilledFactCheckFields,
+  factCheckDismissKey,
+  openErrorFactCheckFlags,
+  parseVehicleYear,
+  postAdminFactCheck,
+} from "@/lib/admin-fact-check-client";
+import type { FactCheckFlag, FactCheckResult } from "@/lib/unit-facts/types";
 
 function aiFetchErrorMessage(
   res: Response,
@@ -839,6 +852,23 @@ export function OrderDetailWorkspace({
   const pdfBusyRef = useRef(false);
   const pdfTargetRef = useRef(0);
   const [pdfJob, setPdfJob] = useState<{ key: string; pct: number } | null>(null);
+  const [factCheckByField, setFactCheckByField] = useState<Record<string, FactCheckResult>>({});
+  const [factCheckBusy, setFactCheckBusy] = useState<Record<string, boolean>>({});
+  const [factCheckDismissed, setFactCheckDismissed] = useState<string[]>([]);
+  const [factCheckPublishItems, setFactCheckPublishItems] = useState<
+    { label: string; sentence: string; message: string }[] | null
+  >(null);
+  const factCheckPdfSkipRef = useRef(false);
+  const pendingPrintOptsRef = useRef<
+    | {
+        printInk?: boolean;
+        dealerOnly?: boolean;
+        asvOnly?: boolean;
+        businessBrand?: boolean;
+        lang?: ClientReportLang;
+      }
+    | undefined
+  >(undefined);
 
   useEffect(() => {
     if (!pdfJob) return;
@@ -850,6 +880,35 @@ export function OrderDetailWorkspace({
     }, 140);
     return () => window.clearInterval(timer);
   }, [pdfJob?.key]);
+
+  const factCheckDismissedHydratedRef = useRef(false);
+  useEffect(() => {
+    factCheckDismissedHydratedRef.current = false;
+    try {
+      const raw = sessionStorage.getItem(`provin-fact-check-dismissed:${payload.sessionId}`);
+      if (!raw) {
+        setFactCheckDismissed([]);
+      } else {
+        const parsed = JSON.parse(raw) as unknown;
+        setFactCheckDismissed(Array.isArray(parsed) ? parsed.filter((x) => typeof x === "string") : []);
+      }
+    } catch {
+      setFactCheckDismissed([]);
+    }
+    factCheckDismissedHydratedRef.current = true;
+  }, [payload.sessionId]);
+
+  useEffect(() => {
+    if (!factCheckDismissedHydratedRef.current) return;
+    try {
+      sessionStorage.setItem(
+        `provin-fact-check-dismissed:${payload.sessionId}`,
+        JSON.stringify(factCheckDismissed),
+      );
+    } catch {
+      /* kvota / privātais režīms */
+    }
+  }, [factCheckDismissed, payload.sessionId]);
   const wsStateRef = useRef(ws);
   wsStateRef.current = ws;
   const orderEditsRef = useRef({
@@ -1283,6 +1342,57 @@ export function OrderDetailWorkspace({
 
   const buildAiListingPayload = useCallback(() => buildAiOrderPayload(), [buildAiOrderPayload]);
 
+  const runFactCheck = useCallback(
+    async (field: string, text: string): Promise<FactCheckResult> => {
+      const plain = adminRichHtmlToPlainText(text).trim();
+      if (!plain) {
+        const empty: FactCheckResult = { flags: [], appliedFactIds: [], checkedAt: new Date().toISOString() };
+        setFactCheckByField((prev) => ({ ...prev, [field]: empty }));
+        return empty;
+      }
+      setFactCheckBusy((prev) => ({ ...prev, [field]: true }));
+      try {
+        const csdd = wsPersistRef.current.sourceBlocks.csdd;
+        const result = await postAdminFactCheck({
+          ...buildAiOrderPayload(),
+          field,
+          text: plain,
+          vehicleLabel: csdd.makeModel.trim() || undefined,
+          year: parseVehicleYear(csdd.modelYear, csdd.firstRegistration),
+        });
+        setFactCheckByField((prev) => ({ ...prev, [field]: result }));
+        return result;
+      } catch {
+        const fallback: FactCheckResult = { flags: [], appliedFactIds: [], checkedAt: new Date().toISOString() };
+        setFactCheckByField((prev) => ({ ...prev, [field]: fallback }));
+        return fallback;
+      } finally {
+        setFactCheckBusy((prev) => {
+          const next = { ...prev };
+          delete next[field];
+          return next;
+        });
+      }
+    },
+    [buildAiOrderPayload],
+  );
+
+  const dismissFactCheckFlag = useCallback((flag: FactCheckFlag) => {
+    const key = factCheckDismissKey(flag);
+    setFactCheckDismissed((prev) => (prev.includes(key) ? prev : [...prev, key]));
+  }, []);
+
+  const factCheckSlotFor = useCallback(
+    (field: string, text: string) => ({
+      busy: Boolean(factCheckBusy[field]),
+      flags: factCheckByField[field]?.flags ?? [],
+      dismissed: factCheckDismissed,
+      onCheck: () => void runFactCheck(field, text),
+      onDismiss: dismissFactCheckFlag,
+    }),
+    [dismissFactCheckFlag, factCheckBusy, factCheckByField, factCheckDismissed, runFactCheck],
+  );
+
   const setIrissSummary = useCallback(
     (next: string) => {
       updateWs({ iriss: next });
@@ -1307,7 +1417,7 @@ export function OrderDetailWorkspace({
         },
         "AI: neizdevās ģenerēt tehnisko risku analīzi",
       );
-      applyGeneratedAdminAiText(
+      const applied = applyGeneratedAdminAiText(
         generated,
         (text) =>
           updateWs({
@@ -1327,12 +1437,13 @@ export function OrderDetailWorkspace({
       );
       setAiTechnicalRisksLintWarning(generated.ok ? generated.lintWarning ?? null : null);
       setAiTechnicalRisksOperatorFlags(generated.ok ? generated.operatorFlags ?? [] : []);
+      if (applied && generated.text) void runFactCheck("technical_risks", generated.text);
     } catch {
       setAiTechnicalRisksErr("AI: neizdevās savienoties");
     } finally {
       setAiTechnicalRisksBusy(false);
     }
-  }, [buildAiOrderPayload, aiTechnicalRisksBusy, payload.aiAllowed, updateWs]);
+  }, [buildAiOrderPayload, aiTechnicalRisksBusy, payload.aiAllowed, runFactCheck, updateWs]);
 
   const runAiInspectionRecommendations = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.inspection) => {
     if (!payload.aiAllowed || aiInspectionBusy) return;
@@ -1351,17 +1462,18 @@ export function OrderDetailWorkspace({
         },
         "AI: neizdevās ģenerēt",
       );
-      applyGeneratedAdminAiText(
+      const applied = applyGeneratedAdminAiText(
         generated,
         (text) => updateWs({ apskatesPlāns: aiExpertSourceCommentToRichHtml(text) }),
         setAiInspectionErr,
       );
+      if (applied && generated.text) void runFactCheck("inspection", generated.text);
     } catch {
       setAiInspectionErr("AI: neizdevās savienoties");
     } finally {
       setAiInspectionBusy(false);
     }
-  }, [buildAiOrderPayload, aiInspectionBusy, payload.aiAllowed, updateWs]);
+  }, [buildAiOrderPayload, aiInspectionBusy, payload.aiAllowed, runFactCheck, updateWs]);
 
   const runAiSummaryAnalysis = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.summary) => {
     if (!payload.aiAllowed || aiSummaryBusy) return;
@@ -1380,17 +1492,18 @@ export function OrderDetailWorkspace({
         },
         "AI: neizdevās sagatavot atbildi",
       );
-      applyGeneratedAdminAiText(
+      const applied = applyGeneratedAdminAiText(
         generated,
         (text) => setIrissSummary(aiExpertSourceCommentToRichHtml(text)),
         setAiSummaryErr,
       );
+      if (applied && generated.text) void runFactCheck("summary", generated.text);
     } catch {
       setAiSummaryErr("AI: neizdevās savienoties");
     } finally {
       setAiSummaryBusy(false);
     }
-  }, [buildAiOrderPayload, aiSummaryBusy, payload.aiAllowed, setIrissSummary]);
+  }, [buildAiOrderPayload, aiSummaryBusy, payload.aiAllowed, runFactCheck, setIrissSummary]);
 
   const runAiIncidentsSummary = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.incidents) => {
     if (!payload.aiAllowed || aiIncidentsSummaryBusy) return;
@@ -1425,6 +1538,7 @@ export function OrderDetailWorkspace({
       ) {
         return;
       }
+      if (generated.text) void runFactCheck("incidents", generated.text);
     } catch {
       setAiIncidentsSummaryErr("AI: neizdevās savienoties");
     } finally {
@@ -1436,6 +1550,7 @@ export function OrderDetailWorkspace({
     internalCommentDraft,
     onInternalCommentChange,
     payload.aiAllowed,
+    runFactCheck,
   ]);
 
   const runAiMileageComment = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.mileage) => {
@@ -1471,6 +1586,7 @@ export function OrderDetailWorkspace({
       ) {
         return;
       }
+      if (generated.text) void runFactCheck("mileage", generated.text);
     } catch {
       setAiMileageCommentErr("AI: neizdevās savienoties");
     } finally {
@@ -1482,6 +1598,7 @@ export function OrderDetailWorkspace({
     mileageCommentDraft,
     onMileageCommentChange,
     payload.aiAllowed,
+    runFactCheck,
   ]);
 
   const runAiSourcesComparison = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.sources_comparison) => {
@@ -1517,6 +1634,7 @@ export function OrderDetailWorkspace({
       ) {
         return;
       }
+      if (generated.text) void runFactCheck("sources_comparison", generated.text);
     } catch {
       setAiSourcesComparisonErr("AI: neizdevās savienoties");
     } finally {
@@ -1527,6 +1645,7 @@ export function OrderDetailWorkspace({
     aiSourcesComparisonBusy,
     onSourcesComparisonCommentChange,
     payload.aiAllowed,
+    runFactCheck,
     sourcesComparisonCommentDraft,
   ]);
 
@@ -1952,6 +2071,9 @@ export function OrderDetailWorkspace({
           );
         });
         if (!applied) return;
+        if (generated.text) {
+          void runFactCheck(busyKey, generated.text);
+        }
         if (orderDraftPersistenceEnabled) {
           await persistFullWorkspaceRef("source-comment", { showFlash: false });
         }
@@ -1964,7 +2086,7 @@ export function OrderDetailWorkspace({
         setAiSourceCommentBusy(cleared);
       }
     },
-    [buildAiOrderPayload, orderDraftPersistenceEnabled, payload.aiAllowed, persistFullWorkspaceRef, updateSourceBlock],
+    [buildAiOrderPayload, orderDraftPersistenceEnabled, payload.aiAllowed, persistFullWorkspaceRef, runFactCheck, updateSourceBlock],
   );
 
   const runFlashMax = useCallback(async (selection: FlashMaxSelection) => {
@@ -2150,6 +2272,15 @@ export function OrderDetailWorkspace({
           });
           if (applied) {
             results.push({ id: job.runId, label: job.runLabel, status: "ok" });
+            if (generated.text) {
+              const factField =
+                job.kind === "source"
+                  ? sourceCommentAiBusyKey(job.blockKey, job.targetField, job.citiAvotiSectionIndex)
+                  : job.kind === "summary"
+                    ? job.id
+                    : null;
+              if (factField) void runFactCheck(factField, generated.text);
+            }
           } else {
             results.push({
               id: job.runId,
@@ -2188,6 +2319,7 @@ export function OrderDetailWorkspace({
     orderDraftPersistenceEnabled,
     payload.aiAllowed,
     persistFullWorkspaceRef,
+    runFactCheck,
     updateSourceBlock,
     updateWs,
     workspaceHydrated,
@@ -3101,6 +3233,12 @@ export function OrderDetailWorkspace({
             blocksDisplaySafe.citi_avoti.sections[citiAvotiSectionIndex] ?? emptyCitiAvotiSection(),
           ).length > 0
         : sourceBlockHasDataExcludingComments(key, blocksDisplaySafe);
+      const currentText = sourceBlockCommentsPlainForAi(
+        key,
+        blocksDisplaySafe,
+        citiAvotiSectionIndex,
+        targetField,
+      );
       return {
         allowed: payload.aiAllowed,
         busy: aiSourceCommentBusy.has(busyKey),
@@ -3108,12 +3246,14 @@ export function OrderDetailWorkspace({
         hasSourceData,
         onGenerate: (operatorNotes, modelTier) =>
           void runAiSourceComment(key, operatorNotes, citiAvotiSectionIndex, modelTier, targetField),
+        factCheck: factCheckSlotFor(busyKey, currentText),
       };
     },
     [
       blocksDisplaySafe,
       aiSourceCommentBusy,
       aiSourceCommentErr,
+      factCheckSlotFor,
       payload.aiAllowed,
       runAiSourceComment,
     ],
@@ -3298,6 +3438,35 @@ export function OrderDetailWorkspace({
     lang?: ClientReportLang;
   }) => {
     if (pdfBusyRef.current) return;
+    if (factCheckPdfSkipRef.current) {
+      factCheckPdfSkipRef.current = false;
+    } else {
+      const cur = wsPersistRef.current;
+      const edits = orderEditsRef.current;
+      const fields = collectFilledFactCheckFields({
+        tehniskoRiskuAnalize: cur.tehniskoRiskuAnalize,
+        iriss: cur.iriss,
+        apskatesPlāns: cur.apskatesPlāns,
+        mileageComment: edits.mileage,
+        incidentsComment: edits.internal,
+        sourcesComparisonComment: edits.sourcesComparison,
+        sourceBlocks: cur.sourceBlocks,
+      });
+      const errorItems: { label: string; sentence: string; message: string }[] = [];
+      await Promise.all(
+        fields.map(async (f) => {
+          const result = await runFactCheck(f.field, f.text);
+          for (const flag of openErrorFactCheckFlags(result.flags, factCheckDismissed)) {
+            errorItems.push({ label: f.label, sentence: flag.sentence, message: flag.message });
+          }
+        }),
+      );
+      if (errorItems.length > 0) {
+        pendingPrintOptsRef.current = opts;
+        setFactCheckPublishItems(errorItems);
+        return;
+      }
+    }
     const pdfJobKey = [
       opts?.dealerOnly
         ? "dealer"
@@ -5378,16 +5547,27 @@ export function OrderDetailWorkspace({
                       />,
                     )}
                     actions={
-                      <AdminAiGenerateWithPrefill
-                        label="Sagatavot atbildi"
-                        busy={aiIncidentsSummaryBusy}
-                        disabled={!payload.aiAllowed}
-                        demoOnly={!payload.aiAllowed}
-                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.incidents}
-                        onGenerate={(operatorNotes, modelTier) =>
-                          void runAiIncidentsSummary(operatorNotes, modelTier)}
-                      />
+                      <span className="inline-flex flex-wrap items-center gap-1">
+                        <AdminAiGenerateWithPrefill
+                          label="Sagatavot atbildi"
+                          busy={aiIncidentsSummaryBusy}
+                          disabled={!payload.aiAllowed}
+                          demoOnly={!payload.aiAllowed}
+                          recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.incidents}
+                          onGenerate={(operatorNotes, modelTier) =>
+                            void runAiIncidentsSummary(operatorNotes, modelTier)}
+                        />
+                        <AdminFactCheckButton
+                          busy={Boolean(factCheckBusy.incidents)}
+                          onClick={() => void runFactCheck("incidents", internalCommentDraft)}
+                        />
+                      </span>
                     }
+                  />
+                  <AdminFactCheckPanel
+                    flags={factCheckByField.incidents?.flags}
+                    dismissed={factCheckDismissed}
+                    onDismiss={dismissFactCheckFlag}
                   />
                 </div>
                 <div className="min-h-0 min-w-0">
@@ -5406,22 +5586,33 @@ export function OrderDetailWorkspace({
                       />,
                     )}
                     actions={
-                      <AdminAiGenerateWithPrefill
-                        label="Sagatavot atbildi"
-                        busy={aiMileageCommentBusy}
-                        disabled={!payload.aiAllowed || !hasMileageDataForAi}
-                        demoOnly={!payload.aiAllowed}
-                        title={
-                          !payload.aiAllowed
-                            ? undefined
-                            : !hasMileageDataForAi
-                              ? "Vispirms aizpildi nobraukuma tabulas avotos"
-                              : undefined
-                        }
-                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.mileage}
-                        onGenerate={(operatorNotes, modelTier) => void runAiMileageComment(operatorNotes, modelTier)}
-                      />
+                      <span className="inline-flex flex-wrap items-center gap-1">
+                        <AdminAiGenerateWithPrefill
+                          label="Sagatavot atbildi"
+                          busy={aiMileageCommentBusy}
+                          disabled={!payload.aiAllowed || !hasMileageDataForAi}
+                          demoOnly={!payload.aiAllowed}
+                          title={
+                            !payload.aiAllowed
+                              ? undefined
+                              : !hasMileageDataForAi
+                                ? "Vispirms aizpildi nobraukuma tabulas avotos"
+                                : undefined
+                          }
+                          recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.mileage}
+                          onGenerate={(operatorNotes, modelTier) => void runAiMileageComment(operatorNotes, modelTier)}
+                        />
+                        <AdminFactCheckButton
+                          busy={Boolean(factCheckBusy.mileage)}
+                          onClick={() => void runFactCheck("mileage", mileageCommentDraft)}
+                        />
+                      </span>
                     }
+                  />
+                  <AdminFactCheckPanel
+                    flags={factCheckByField.mileage?.flags}
+                    dismissed={factCheckDismissed}
+                    onDismiss={dismissFactCheckFlag}
                   />
                 </div>
                 </div>
@@ -5459,16 +5650,27 @@ export function OrderDetailWorkspace({
                       />,
                     )}
                     actions={
-                      <AdminAiGenerateWithPrefill
-                        label="Ģenerēt analīzi"
-                        busy={aiTechnicalRisksBusy}
-                        disabled={!payload.aiAllowed}
-                        demoOnly={!payload.aiAllowed}
-                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.technical_risks}
-                        onGenerate={(operatorNotes, modelTier) =>
-                          void runAiTechnicalRiskAnalysis(operatorNotes, modelTier)}
-                      />
+                      <span className="inline-flex flex-wrap items-center gap-1">
+                        <AdminAiGenerateWithPrefill
+                          label="Ģenerēt analīzi"
+                          busy={aiTechnicalRisksBusy}
+                          disabled={!payload.aiAllowed}
+                          demoOnly={!payload.aiAllowed}
+                          recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.technical_risks}
+                          onGenerate={(operatorNotes, modelTier) =>
+                            void runAiTechnicalRiskAnalysis(operatorNotes, modelTier)}
+                        />
+                        <AdminFactCheckButton
+                          busy={Boolean(factCheckBusy.technical_risks)}
+                          onClick={() => void runFactCheck("technical_risks", ws.tehniskoRiskuAnalize ?? "")}
+                        />
+                      </span>
                     }
+                  />
+                  <AdminFactCheckPanel
+                    flags={factCheckByField.technical_risks?.flags}
+                    dismissed={factCheckDismissed}
+                    onDismiss={dismissFactCheckFlag}
                   />
                   <AdminTechnicalRiskMapPanel
                     sessionId={payload.sessionId}
@@ -5501,16 +5703,27 @@ export function OrderDetailWorkspace({
                       />,
                     )}
                     actions={
-                      <AdminAiGenerateWithPrefill
-                        label="Ģenerēt ieteikumus"
-                        busy={aiInspectionBusy}
-                        disabled={!payload.aiAllowed}
-                        demoOnly={!payload.aiAllowed}
-                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.inspection}
-                        onGenerate={(operatorNotes, modelTier) =>
-                          void runAiInspectionRecommendations(operatorNotes, modelTier)}
-                      />
+                      <span className="inline-flex flex-wrap items-center gap-1">
+                        <AdminAiGenerateWithPrefill
+                          label="Ģenerēt ieteikumus"
+                          busy={aiInspectionBusy}
+                          disabled={!payload.aiAllowed}
+                          demoOnly={!payload.aiAllowed}
+                          recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.inspection}
+                          onGenerate={(operatorNotes, modelTier) =>
+                            void runAiInspectionRecommendations(operatorNotes, modelTier)}
+                        />
+                        <AdminFactCheckButton
+                          busy={Boolean(factCheckBusy.inspection)}
+                          onClick={() => void runFactCheck("inspection", ws.apskatesPlāns ?? "")}
+                        />
+                      </span>
                     }
+                  />
+                  <AdminFactCheckPanel
+                    flags={factCheckByField.inspection?.flags}
+                    dismissed={factCheckDismissed}
+                    onDismiss={dismissFactCheckFlag}
                   />
                 </div>
                 <div className="min-w-0">
@@ -5528,15 +5741,26 @@ export function OrderDetailWorkspace({
                       />,
                     )}
                     actions={
-                      <AdminAiGenerateWithPrefill
-                        label="Sagatavot atbildi"
-                        busy={aiSummaryBusy}
-                        disabled={!payload.aiAllowed}
-                        demoOnly={!payload.aiAllowed}
-                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.summary}
-                        onGenerate={(operatorNotes, modelTier) => void runAiSummaryAnalysis(operatorNotes, modelTier)}
-                      />
+                      <span className="inline-flex flex-wrap items-center gap-1">
+                        <AdminAiGenerateWithPrefill
+                          label="Sagatavot atbildi"
+                          busy={aiSummaryBusy}
+                          disabled={!payload.aiAllowed}
+                          demoOnly={!payload.aiAllowed}
+                          recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.summary}
+                          onGenerate={(operatorNotes, modelTier) => void runAiSummaryAnalysis(operatorNotes, modelTier)}
+                        />
+                        <AdminFactCheckButton
+                          busy={Boolean(factCheckBusy.summary)}
+                          onClick={() => void runFactCheck("summary", ws.iriss ?? "")}
+                        />
+                      </span>
                     }
+                  />
+                  <AdminFactCheckPanel
+                    flags={factCheckByField.summary?.flags}
+                    dismissed={factCheckDismissed}
+                    onDismiss={dismissFactCheckFlag}
                   />
                 </div>
                 <AdminOrderAiKnowledgeUsed sessionId={payload.sessionId} />
@@ -5549,23 +5773,34 @@ export function OrderDetailWorkspace({
                     aria-label={ADMIN_SOURCES_COMPARISON_LABEL}
                     label={adminCommentFieldLabel(IRISS_CHROME_LUCIDE.sourcesComparison, ADMIN_SOURCES_COMPARISON_LABEL)}
                     actions={
-                      <AdminAiGenerateWithPrefill
-                        label="Salīdzināt avotus"
-                        busy={aiSourcesComparisonBusy}
-                        disabled={!payload.aiAllowed || !hasSourceDataForAi}
-                        demoOnly={!payload.aiAllowed}
-                        title={
-                          !payload.aiAllowed
-                            ? undefined
-                            : !hasSourceDataForAi
-                              ? "Vispirms aizpildi avotu sadaļas"
-                              : undefined
-                        }
-                        recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.sources_comparison}
-                        onGenerate={(operatorNotes, modelTier) =>
-                          void runAiSourcesComparison(operatorNotes, modelTier)}
-                      />
+                      <span className="inline-flex flex-wrap items-center gap-1">
+                        <AdminAiGenerateWithPrefill
+                          label="Salīdzināt avotus"
+                          busy={aiSourcesComparisonBusy}
+                          disabled={!payload.aiAllowed || !hasSourceDataForAi}
+                          demoOnly={!payload.aiAllowed}
+                          title={
+                            !payload.aiAllowed
+                              ? undefined
+                              : !hasSourceDataForAi
+                                ? "Vispirms aizpildi avotu sadaļas"
+                                : undefined
+                          }
+                          recommendedTier={AI_ADMIN_FIELD_DEFAULT_TIER.sources_comparison}
+                          onGenerate={(operatorNotes, modelTier) =>
+                            void runAiSourcesComparison(operatorNotes, modelTier)}
+                        />
+                        <AdminFactCheckButton
+                          busy={Boolean(factCheckBusy.sources_comparison)}
+                          onClick={() => void runFactCheck("sources_comparison", sourcesComparisonCommentDraft)}
+                        />
+                      </span>
                     }
+                  />
+                  <AdminFactCheckPanel
+                    flags={factCheckByField.sources_comparison?.flags}
+                    dismissed={factCheckDismissed}
+                    onDismiss={dismissFactCheckFlag}
                   />
                 </div>
               </div>
@@ -5623,6 +5858,25 @@ export function OrderDetailWorkspace({
           </button>
         </div>
       </div>
+      {factCheckPublishItems && typeof document !== "undefined"
+        ? createPortal(
+            <AdminFactCheckPublishConfirm
+              items={factCheckPublishItems}
+              onBack={() => {
+                pendingPrintOptsRef.current = undefined;
+                setFactCheckPublishItems(null);
+              }}
+              onContinue={() => {
+                const opts = pendingPrintOptsRef.current;
+                pendingPrintOptsRef.current = undefined;
+                setFactCheckPublishItems(null);
+                factCheckPdfSkipRef.current = true;
+                void openPrintReport(opts);
+              }}
+            />,
+            document.body,
+          )
+        : null}
     </div>
     </AdminAutoIngestChipProvider>
   );

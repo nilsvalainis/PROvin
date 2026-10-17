@@ -252,6 +252,9 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/aprīkojums \+ šī mezgla risks/i);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/veiksmīgākā konstrukcija/);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
+    expect(tech).toMatch(/formatApplicableUnitFactsForPrompt/);
+    expect(tech).toMatch(/unitFactsPromptBlock/);
+    expect(readRepo("lib/admin-ai-technical-risk-map.ts")).toMatch(/unitFactsBrief/);
     expect(tech).toMatch(/slavinošu prezentāciju/);
     expect(tech).toMatch(/nelieto „obligāti”/);
     expect(tech).toMatch(/buildAggregateIdentificationBrief/);

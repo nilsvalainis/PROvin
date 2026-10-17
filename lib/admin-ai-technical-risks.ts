@@ -53,6 +53,7 @@ import {
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
 import { PROVIN_KB_EUR_ACTIVE } from "@/lib/provin-kb";
+import { formatApplicableUnitFactsForPrompt, parseVehicleYear } from "@/lib/unit-facts/check";
 
 function withDealerFlags(flags: string[], issues: DealerMapIssue[]): string[] {
   return [...flags, ...issues.map((i) => `${i.id}: ${i.message}`)];
@@ -74,17 +75,29 @@ function finalizeText(raw: string, keepVerifiedEur = false): string {
   return throwIfBlankGeneratedComment(cleaned);
 }
 
+function unitFactsPromptBlock(input: AiOrderContextInput, identificationBrief: string): string {
+  const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
+  return formatApplicableUnitFactsForPrompt({
+    contextText: [identificationBrief, blocks.csdd.makeModel, blocks.csdd.fuelType, input.vin ?? ""]
+      .filter((s) => s.trim())
+      .join("\n"),
+    vehicleLabel: blocks.csdd.makeModel.trim() || undefined,
+    year: parseVehicleYear(blocks.csdd.modelYear, blocks.csdd.firstRegistration),
+  });
+}
+
 function buildLegacyUserPrompt(input: AiOrderContextInput, identificationBrief: string, orderContext: string): string {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
   const makeModel = blocks.csdd.makeModel.trim();
   const fuel = blocks.csdd.fuelType.trim();
   const vehicleHint = [makeModel, fuel].filter(Boolean).join(", ");
+  const verifiedFacts = unitFactsPromptBlock(input, identificationBrief);
   return appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
 
 ${identificationBrief}
-
+${verifiedFacts ? `\n${verifiedFacts}\n` : ""}
 ${orderContext}
 
 ---
@@ -244,15 +257,21 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
   const anthropicComponents = tiers.anthropicComponentsTier
     ? parseAnthropicComponentsFromOperatorNotes(input.operatorNotes)
     : [];
-  const sourceFactsBrief = buildTechRiskSourceFactsBrief({
-    vin: input.vin,
-    notes: input.notes,
-    mileageComment: input.mileageComment,
-    internalComment: input.internalComment,
-    identificationBrief,
-    sourceBlocks: blocks,
-    dealerFacts,
-  });
+  const verifiedFacts = unitFactsPromptBlock(input, identificationBrief);
+  const sourceFactsBrief = [
+    buildTechRiskSourceFactsBrief({
+      vin: input.vin,
+      notes: input.notes,
+      mileageComment: input.mileageComment,
+      internalComment: input.internalComment,
+      identificationBrief,
+      sourceBlocks: blocks,
+      dealerFacts,
+    }),
+    verifiedFacts,
+  ]
+    .filter((s) => s.trim())
+    .join("\n\n");
   const safeOrderContext = redactDealerOriginalLanguage(orderContext, dealerFacts);
   try {
     const rawMap = {
@@ -262,6 +281,7 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
         identification,
         identificationBrief,
         dealerFactsBrief,
+        unitFactsBrief: verifiedFacts,
         tiers,
         anthropicComponents,
       })),
