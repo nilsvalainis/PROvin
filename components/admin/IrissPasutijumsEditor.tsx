@@ -48,8 +48,10 @@ import {
   defaultIrissDzintarzemeTameDraft,
   IRISS_DEAL_DETAIL_OPTIONS,
   IRISS_MAX_OFFER_ATTACHMENTS,
-  IRISS_PASUTIJUMS_LIST_STATUSES,
-  IRISS_PASUTIJUMS_LIST_STATUS_LV,
+  canonicalIrissPasutijumsListStatus,
+  displayIrissPasutijumsListStatusLabel,
+  IRISS_PASUTIJUMS_PICKER_STATUSES,
+  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
   parseIrissPasutijumsListStatus,
   type IrissOfferAttachment,
   type IrissOfferRecord,
@@ -1437,13 +1439,13 @@ export function IrissPasutijumsEditor({
               <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Statuss</span>
               <select
                 className={fieldClass}
-                value={rec.listStatus}
+                value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
                 onChange={(e) => setListStatus(parseIrissPasutijumsListStatus(e.target.value))}
                 aria-label="Pasūtījuma statuss"
               >
-                {IRISS_PASUTIJUMS_LIST_STATUSES.map((s: IrissPasutijumsListStatus) => (
+                {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
                   <option key={s} value={s}>
-                    {IRISS_PASUTIJUMS_LIST_STATUS_LV[s]}
+                    {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
                   </option>
                 ))}
               </select>
@@ -1460,8 +1462,8 @@ export function IrissPasutijumsEditor({
                 <ol className="mt-1.5 space-y-0.5">
                   {[...(rec.statusHistory ?? [])].slice(-6).reverse().map((h) => (
                     <li key={`${h.at}-${h.from}-${h.to}`} className="text-[11px] text-[var(--color-provin-muted)]">
-                      {h.at.slice(0, 16).replace("T", " ")}: {IRISS_PASUTIJUMS_LIST_STATUS_LV[h.from]} →{" "}
-                      {IRISS_PASUTIJUMS_LIST_STATUS_LV[h.to]}
+                      {h.at.slice(0, 16).replace("T", " ")}: {displayIrissPasutijumsListStatusLabel(h.from)} →{" "}
+                      {displayIrissPasutijumsListStatusLabel(h.to)}
                       {h.reason ? ` (${h.reason})` : ""}
                     </li>
                   ))}
@@ -1676,10 +1678,7 @@ export function IrissPasutijumsEditor({
         />
 
         <section className={`${shellCard} border-red-100/80 bg-red-50/20`}>
-          <p className="text-[12px] leading-snug text-red-950/90">
-            Neatgriezeniski dzēst šo pasūtījumu un visus piedāvājumus. Pirms dzēšanas tiek prasīts apstiprinājums.
-          </p>
-          <div className="mt-3 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={openCreateOffer}

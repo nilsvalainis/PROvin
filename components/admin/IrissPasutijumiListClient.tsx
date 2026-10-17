@@ -28,8 +28,10 @@ import {
 import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
 import { IRISS_ORDERS_LIST_PAGE, irissNextWindowLimit, irissWindowSlice } from "@/lib/iriss-list-window";
 import {
-  IRISS_PASUTIJUMS_LIST_STATUSES,
-  IRISS_PASUTIJUMS_LIST_STATUS_LV,
+  canonicalIrissPasutijumsListStatus,
+  displayIrissPasutijumsListStatusLabel,
+  IRISS_PASUTIJUMS_PICKER_STATUSES,
+  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
   type IrissPasutijumiListOrder,
   type IrissPasutijumsListRow,
   type IrissPasutijumsListStatus,
@@ -88,7 +90,6 @@ const SWIPE_AXIS_MIN = 14;
 const SWIPE_AXIS_BIAS = 8;
 const LIST_ORDER_PERSIST_DEBOUNCE_MS = 380;
 
-const STATUS_LABEL: Record<IrissPasutijumsListStatus, string> = IRISS_PASUTIJUMS_LIST_STATUS_LV;
 
 function useNarrowIrissSwipeViewport(): boolean {
   return useSyncExternalStore(
@@ -187,16 +188,15 @@ function rowMatchesStatusFilter(
   const deleted = isIrissRecordDeleted(row);
   if (trashOn) return deleted;
   if (deleted) return false;
-  const st = row.listStatus ?? "active";
+  const st = canonicalIrissPasutijumsListStatus(row.listStatus ?? "active");
   return Boolean(f[st]);
 }
 
 function statusBadgeClass(st: IrissPasutijumsListStatus): string {
-  if (st === "completed") return "bg-emerald-100 text-emerald-950";
-  if (st === "inactive") return "bg-red-100 text-red-950";
-  if (st === "searching") return "bg-sky-100 text-sky-950";
-  if (st === "offered") return "bg-amber-100 text-amber-950";
-  if (st === "reserved") return "bg-violet-100 text-violet-950";
+  const canon = canonicalIrissPasutijumsListStatus(st);
+  if (canon === "completed") return "bg-emerald-100 text-emerald-950";
+  if (canon === "inactive") return "bg-red-100 text-red-950";
+  if (canon === "reserved") return "bg-violet-100 text-violet-950";
   return "bg-slate-100 text-slate-800";
 }
 
@@ -418,7 +418,7 @@ const IrissRowCard = memo(function IrissRowCard({
           aria-haspopup="menu"
           aria-expanded={statusMenuOpen}
         >
-          {STATUS_LABEL[curStatus]}
+          {displayIrissPasutijumsListStatusLabel(curStatus)}
           <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
         </button>
       </div>
@@ -541,7 +541,7 @@ const IrissRowCard = memo(function IrissRowCard({
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
-      {IRISS_PASUTIJUMS_LIST_STATUSES.map((s) => (
+      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
         <button
           key={s}
           type="button"
@@ -554,10 +554,10 @@ const IrissRowCard = memo(function IrissRowCard({
             onSetStatus(row.id, s);
           }}
           className={`flex w-full px-2.5 py-1.5 text-left text-[11px] font-semibold ${
-            curStatus === s ? "bg-slate-100 text-black" : "text-black/80 hover:bg-slate-50"
+            canonicalIrissPasutijumsListStatus(curStatus) === s ? "bg-slate-100 text-black" : "text-black/80 hover:bg-slate-50"
           }`}
         >
-          {STATUS_LABEL[s]}
+          {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
         </button>
       ))}
     </div>
@@ -959,9 +959,10 @@ export function IrissPasutijumiListClient({
 
   const onSetStatus = useCallback(
     (id: string, status: IrissPasutijumsListStatus) => {
+      const filterKey = canonicalIrissPasutijumsListStatus(status);
       setStatusFilter((prev) => {
-        if (prev[status]) return prev;
-        const next = { ...prev, [status]: true };
+        if (prev[filterKey]) return prev;
+        const next = { ...prev, [filterKey]: true };
         dispatchIrissListStatusFilter(next);
         return next;
       });

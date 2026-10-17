@@ -1,7 +1,12 @@
 import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { deriveOfferValidUntil, isIrissOfferExpired } from "@/lib/iriss-offer-valid-until";
-import { IRISS_DEAL_DETAIL_OPTIONS, type IrissPasutijumsListRow, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
+import {
+  canonicalIrissPasutijumsListStatus,
+  IRISS_DEAL_DETAIL_OPTIONS,
+  type IrissPasutijumsListRow,
+  type IrissPasutijumsRecord,
+} from "@/lib/iriss-pasutijumi-types";
 
 const DEAL_LIST_LABEL: Record<(typeof IRISS_DEAL_DETAIL_OPTIONS)[number]["key"], string> = {
   dealLeasingOrCredit: "Līzings",
@@ -144,19 +149,16 @@ export function irissListRowMatchesQuery(row: IrissPasutijumsListRow, query: str
 
 export function countIrissListStatuses(
   rows: readonly IrissPasutijumsListRow[],
-): Record<import("@/lib/iriss-pasutijumi-types").IrissPasutijumsListStatus, number> {
+): Record<import("@/lib/iriss-pasutijumi-types").IrissPasutijumsPickerStatus, number> {
   const counts = {
     active: 0,
-    searching: 0,
-    offered: 0,
     reserved: 0,
     completed: 0,
     inactive: 0,
   };
   for (const row of rows) {
     const st = row.listStatus ?? "active";
-    if (st in counts) counts[st] += 1;
-    else counts.active += 1;
+    counts[canonicalIrissPasutijumsListStatus(st)] += 1;
   }
   return counts;
 }

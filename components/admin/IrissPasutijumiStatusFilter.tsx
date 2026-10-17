@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
 import {
-  IRISS_PASUTIJUMS_LIST_STATUSES,
-  IRISS_PASUTIJUMS_LIST_STATUS_LV,
-  type IrissPasutijumsListStatus,
+  IRISS_PASUTIJUMS_PICKER_STATUSES,
+  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
+  type IrissPasutijumsPickerStatus,
 } from "@/lib/iriss-pasutijumi-types";
 import type { StatusChipRowLayout } from "@/lib/iriss-status-chip";
 import {
@@ -31,7 +31,7 @@ export {
 
 type Props = {
   className?: string;
-  counts?: Record<IrissPasutijumsListStatus, number>;
+  counts?: Record<IrissPasutijumsPickerStatus, number>;
   trashCount?: number;
   /** scroll: one phone row. wrap: desktop toolbar and the filter sheet. */
   layout?: StatusChipRowLayout;
@@ -63,10 +63,10 @@ export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount
     };
   }, []);
 
-  const toggle = useCallback((key: IrissPasutijumsListStatus) => {
+  const toggle = useCallback((key: IrissPasutijumsPickerStatus) => {
     setFilter((prev) => {
       const next = { ...prev, [key]: !prev[key] };
-      const countOn = IRISS_PASUTIJUMS_LIST_STATUSES.filter((k) => next[k]).length;
+      const countOn = IRISS_PASUTIJUMS_PICKER_STATUSES.filter((k) => next[k]).length;
       if (countOn === 0) return prev;
       dispatchIrissListStatusFilter(next);
       return next;
@@ -78,14 +78,14 @@ export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount
     setFilter(IRISS_LIST_STATUS_FILTER_ALL);
   }, []);
 
-  const isAllOn = IRISS_PASUTIJUMS_LIST_STATUSES.every((k) => filter[k]);
+  const isAllOn = IRISS_PASUTIJUMS_PICKER_STATUSES.every((k) => filter[k]);
 
   return (
     <StatusFilterChipRow layout={layout} className={className}>
-      {IRISS_PASUTIJUMS_LIST_STATUSES.map((key) => (
+      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((key) => (
         <StatusFilterChip
           key={key}
-          label={IRISS_PASUTIJUMS_LIST_STATUS_LV[key]}
+          label={IRISS_PASUTIJUMS_PICKER_STATUS_LV[key]}
           count={counts?.[key]}
           pressed={filter[key]}
           tone={key}
