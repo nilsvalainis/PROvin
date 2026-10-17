@@ -33,7 +33,7 @@ export default async function AdminBlogsPage() {
           Blogs
         </h1>
         <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-          Manuāli pārvaldi IRISS ierakstus: teksti, kategorijas, birkas un komentāri. Sarakstā — skatījumi
+          Manuāli pārvaldi IRISS ierakstus: teksti, kategorijas, birkas un komentāri. Sarakstā - skatījumi
           un komentāru skaits.
         </p>
       </AdminDashboardHeaderWithMenu>

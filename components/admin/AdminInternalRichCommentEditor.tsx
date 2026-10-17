@@ -67,7 +67,7 @@ export function AdminRichCommentReadonly({
   variant?: "card" | "inline";
 }) {
   const t = (typeof html === "string" ? html : "").trim();
-  if (!t) return <span className="text-slate-400">—</span>;
+  if (!t) return <span className="text-slate-400">-</span>;
   const safe = coerceAdminRichHtmlForDisplay(html);
   if (variant === "inline") {
     return (

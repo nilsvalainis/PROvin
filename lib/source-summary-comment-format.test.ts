@@ -24,6 +24,8 @@ describe("applyProvinReportCopyVocabulary", () => {
   it("replaces em and en dashes with ASCII hyphen", () => {
     expect(applyProvinReportCopyVocabulary("Labs auto — kopts.")).toBe("Labs auto - kopts.");
     expect(applyProvinReportCopyVocabulary("2007–2015, 300–400 €")).toBe("2007-2015, 300-400 €");
+    expect(applyProvinReportCopyVocabulary("1500–3000")).toBe("1500-3000");
+    expect(applyProvinReportCopyVocabulary("mums—labprāt")).toBe("mums - labprāt");
   });
 
   it("replaces kancelejisku labvēlīgs-signāls wording", () => {

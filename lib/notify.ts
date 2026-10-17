@@ -22,15 +22,15 @@ function formatMessage(p: OrderPayload): string {
     "🚗 <b>Jauns PROVIN pasūtījums</b>",
     "",
     `<b>Session:</b> <code>${escapeHtml(p.sessionId)}</code>`,
-    `<b>Vārds:</b> ${escapeHtml(p.customerName ?? "—")}`,
-    `<b>E-pasts:</b> ${escapeHtml(p.customerEmail ?? "—")}`,
-    `<b>Tālrunis:</b> ${escapeHtml(p.customerPhone ?? "—")}`,
-    `<b>VIN:</b> ${escapeHtml(p.vin ?? "—")}`,
-    `<b>Sludinājums:</b> ${escapeHtml(p.listingUrl ?? "—")}`,
+    `<b>Vārds:</b> ${escapeHtml(p.customerName ?? "-")}`,
+    `<b>E-pasts:</b> ${escapeHtml(p.customerEmail ?? "-")}`,
+    `<b>Tālrunis:</b> ${escapeHtml(p.customerPhone ?? "-")}`,
+    `<b>VIN:</b> ${escapeHtml(p.vin ?? "-")}`,
+    `<b>Sludinājums:</b> ${escapeHtml(p.listingUrl ?? "-")}`,
     deliveryLine,
     p.notes ? `<b>Piezīmes:</b> ${escapeHtml(p.notes)}` : "",
     p.heardAbout ? `<b>Kur uzzināja:</b> ${escapeHtml(p.heardAbout)}` : "",
-    `<b>Summa:</b> ${escapeHtml(p.amountTotal ?? "—")} ${escapeHtml(p.currency ?? "")}`,
+    `<b>Summa:</b> ${escapeHtml(p.amountTotal ?? "-")} ${escapeHtml(p.currency ?? "")}`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -39,7 +39,7 @@ function formatMessage(p: OrderPayload): string {
 function contactLabel(v: string | null): string {
   if (v === "whatsapp") return "WhatsApp";
   if (v === "telegram") return "Telegram";
-  return v ?? "—";
+  return v ?? "-";
 }
 
 export async function notifyAdminTelegram(payload: OrderPayload): Promise<void> {
@@ -80,7 +80,7 @@ export async function notifyAdminEmail(payload: OrderPayload): Promise<void> {
   const to = getAdminOrderNotifyEmail();
   if (!to) {
     console.warn(
-      "[notify] Nav ADMIN_NOTIFY_EMAIL un SMTP_USER nav derīgas e-pasta adreses — admin paziņojums par pasūtījumu netika nosūtīts.",
+      "[notify] Nav ADMIN_NOTIFY_EMAIL un SMTP_USER nav derīgas e-pasta adreses - admin paziņojums par pasūtījumu netika nosūtīts.",
     );
     return;
   }

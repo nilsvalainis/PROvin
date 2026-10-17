@@ -64,7 +64,7 @@ function WaybillStatusChip({ row }: { row: IrissPavadzimeListRow }) {
 }
 
 function dash(v: string): string {
-  return v.trim() || "—";
+  return v.trim() || "-";
 }
 
 function PavadzimeSearchFocus({ rowCount }: { rowCount: number }) {
@@ -252,13 +252,13 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                       </p>
                     </div>
                     <span className={`shrink-0 text-[12px] tabular-nums ${validityClass(row.archived || row.lifecycle === "interrupted" ? "ok" : row.validityTone)}`}>
-                      {formatWaybillDateTime(row.validUntil, now) || "—"}
+                      {formatWaybillDateTime(row.validUntil, now) || "-"}
                     </span>
                   </div>
                   <p className="mt-1.5 font-mono text-[12px] tracking-wide text-[#3a3a3c]">{dash(row.vin)}</p>
                   <div className="mt-2 flex items-center justify-between gap-2">
                     <span className="text-[11px] tabular-nums text-[var(--color-provin-muted)]">
-                      {formatWaybillDateTime(row.issuedAt, now) || "—"}
+                      {formatWaybillDateTime(row.issuedAt, now) || "-"}
                     </span>
                     <div className="flex shrink-0 items-center gap-1.5">
                       <a
@@ -331,15 +331,15 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                               <AdminVinCopyButton value={vin} />
                             </span>
                           ) : (
-                            <span className="text-[#c7c7cc]">—</span>
+                            <span className="text-[#c7c7cc]">-</span>
                           )}
                         </td>
                         <td className={`${hug} py-1 pr-4 text-[13.5px] text-[#1d1d1f]`}>{dash(row.plate)}</td>
                         <td className={`${hug} py-1 pr-4 text-[13px] tabular-nums ${validityClass(row.archived || row.lifecycle === "interrupted" ? "ok" : row.validityTone)}`}>
-                          {formatWaybillDateTime(row.validUntil, now) || "—"}
+                          {formatWaybillDateTime(row.validUntil, now) || "-"}
                         </td>
                         <td className={`${hug} py-1 pr-4 text-[13px] tabular-nums text-[#3a3a3c]`}>
-                          {formatWaybillDateTime(row.issuedAt, now) || "—"}
+                          {formatWaybillDateTime(row.issuedAt, now) || "-"}
                         </td>
                         <td className={`${hug} py-1 pr-4`}>
                           <div className="flex items-center gap-2">
@@ -365,7 +365,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                               {row.order?.label || "Pasūtījums"}
                             </Link>
                           ) : (
-                            <span className="text-[#c7c7cc]">—</span>
+                            <span className="text-[#c7c7cc]">-</span>
                           )}
                         </td>
                       </tr>

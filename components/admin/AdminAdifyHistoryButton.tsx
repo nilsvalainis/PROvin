@@ -193,13 +193,13 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
                   <div className="flex justify-between gap-2">
                     <dt className="text-[var(--color-provin-muted)]">Pirmais ieraksts</dt>
                     <dd className="font-medium tabular-nums text-[var(--color-apple-text)]">
-                      {snapshot.oldestDate || "—"}
+                      {snapshot.oldestDate || "-"}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-2">
                     <dt className="text-[var(--color-provin-muted)]">Pēdējais ieraksts</dt>
                     <dd className="font-medium tabular-nums text-[var(--color-apple-text)]">
-                      {snapshot.newestDate || "—"}
+                      {snapshot.newestDate || "-"}
                     </dd>
                   </div>
                 </dl>
@@ -243,7 +243,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
         disabled={!url}
         onClick={openDialog}
         className={adifyPillClass}
-        title="Adify (ar tirgusdati.lv fallback) — sludinājuma cenu vēsture un pārdošanas ilgums"
+        title="Adify (ar tirgusdati.lv fallback) - sludinājuma cenu vēsture un pārdošanas ilgums"
       >
         Adify
       </button>

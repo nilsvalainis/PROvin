@@ -16,9 +16,9 @@ const headerPill =
   "inline-flex h-8 min-w-[2.6rem] items-center justify-center rounded-lg border border-black/25 bg-white/80 px-2 text-[10px] font-semibold uppercase tracking-wide text-black shadow-sm transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-black/30";
 
 function serviceTitle(svc: VinAutofillService): string {
-  if (svc.key === "autodna") return "AutoDNA — autodna.lv /vin/{VIN} + Tampermonkey";
+  if (svc.key === "autodna") return "AutoDNA - autodna.lv /vin/{VIN} + Tampermonkey";
   if (svc.key === "carvertical") return "CarVertical: Manas atskaites, VIN aizpilde bez pirkuma. Pirkt tikai no CarVertical bloka pogas.";
-  if (svc.key === "auto_records") return "Auto-Records — ?vin= + Tampermonkey";
+  if (svc.key === "auto_records") return "Auto-Records - ?vin= + Tampermonkey";
   if (svc.key === "carinfo") return "car.info HTTP pēc VIN (CapSolver Cloudflare). MENU saite paliek, ja vajag ielīmēt RAW.";
   if (svc.key === "checkcar_vin") return "CheckCar.vin - sākumlapa + Tampermonkey VIN aizpilde (eksperimentāli)";
   return "CheckThisReg - VIN cilne + Tampermonkey aizpilda VIN";
@@ -90,7 +90,7 @@ export function AdminVinSourcesMenuBar({ vin }: { vin: string }) {
             target="_blank"
             rel="noopener noreferrer"
             className={`${headerPill} opacity-70`}
-            title={`${svc.title} — bez VIN (nav auto-aizpildes)`}
+            title={`${svc.title} - bez VIN (nav auto-aizpildes)`}
           >
             {svc.shortLabel}
           </a>

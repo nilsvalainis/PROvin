@@ -103,7 +103,7 @@ function PaymentStatusCalm({ status }: { status: string }) {
   return <span className={CALM_TAG}>{label}</span>;
 }
 
-/** Statuss tikai izņēmumiem — „Apmaksāts” nerādām. */
+/** Statuss tikai izņēmumiem - „Apmaksāts” nerādām. */
 function PaymentStatusException({ status }: { status: string }) {
   if (status.toLowerCase() === "paid") return null;
   return <PaymentStatusPill status={status} />;
@@ -187,7 +187,7 @@ function parseAmountInputToCents(raw: string): number | null | undefined {
   return Number.isFinite(cents) ? cents : undefined;
 }
 
-/** Manuālā pasūtījuma “Laiks” — skats + labošana (datetime-local). */
+/** Manuālā pasūtījuma “Laiks” - skats + labošana (datetime-local). */
 function ManualOrderDateCell({ id, created }: { id: string; created: number }) {
   const router = useRouter();
   const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
@@ -261,7 +261,7 @@ function ManualOrderDateCell({ id, created }: { id: string; created: number }) {
   );
 }
 
-/** Manuālā pasūtījuma “Summa” — skats + labošana (EUR). */
+/** Manuālā pasūtījuma “Summa” - skats + labošana (EUR). */
 function ManualOrderAmountCell({
   id,
   amountTotal,
@@ -453,7 +453,7 @@ function orderRowView(
     orderHref: `${detailBase}/${encodeURIComponent(o.id)}`,
     vin,
     hasVin: vin.length > 0,
-    primaryClient: partnerCompanyName || name || email || phone || "—",
+    primaryClient: partnerCompanyName || name || email || phone || "-",
     secondaryClient: [partnerCompanyName && name ? name : "", name && !partnerCompanyName ? email : "", phone]
       .filter(Boolean)
       .join(" · "),
@@ -493,7 +493,7 @@ export function AdminOrdersTable({
   /** Papildu vadīklas tās pašas rīkjoslas labajā pusē (PRO saraksts: summas slēdzis, „＋ Jauns”). */
   toolbarEnd?: ReactNode;
   orders: AdminOrdersTableRow[];
-  /** Piem. `/admin/konsultacijas` — saite „Atvērt”. */
+  /** Piem. `/admin/konsultacijas` - saite „Atvērt”. */
   orderDetailHrefBase?: string;
   /** Lokālā pārdefinēšana klienta laukiem tabulā (atšķirīgs prefikss konsultācijām). */
   orderEditsLocalStorageKeyPrefix?: string;
@@ -563,7 +563,7 @@ export function AdminOrdersTable({
 
   /**
    * NOTEIKUMS: visi aktīvie (neizpildītie) vienmēr augšā grupā „Aktīvie” (jaunākie ienākušie pirmie,
-   * kavētie netiek celti augšā — sk. partitionAdminOrdersActiveFirst); izpildītie zemāk pa dienām (Rīgas laikā).
+   * kavētie netiek celti augšā - sk. partitionAdminOrdersActiveFirst); izpildītie zemāk pa dienām (Rīgas laikā).
    */
   const dayGroups = useMemo(() => {
     const { active, done } = partitionAdminOrdersActiveFirst(displayedOrders);
@@ -619,7 +619,7 @@ export function AdminOrdersTable({
   return (
     <>
       <AdminAuditSlaListBanner urgentCount={slaCounts.urgentCount} overdueCount={slaCounts.overdueCount} />
-      {/* V1: viena slaida rinda — rezultāta segmenti kreisi, papildu vadīklas labi. */}
+      {/* V1: viena slaida rinda - rezultāta segmenti kreisi, papildu vadīklas labi. */}
       <div className="mt-2 flex items-center gap-2">
         <div role="tablist" aria-label="Rezultāts" className="flex min-w-0 overflow-x-auto rounded-[9px] bg-[#e9e9ee] p-[2px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {(["all", ...AUDIT_RESULT_COLORS, "none"] as const).map((c) => {
@@ -771,7 +771,7 @@ export function AdminOrdersTable({
                   <span className={MINI_PILL}>MINI</span>
                 ) : null}
                 {o.repeatVin ? (
-                  <span className={CALM_TAG} title={`Atkārtots VIN: šis VIN jau ir ${o.repeatVin} citā(-os) darbā(-os) — pirms pirkšanas pārbaudi, ko var izmantot atkārtoti`}>
+                  <span className={CALM_TAG} title={`Atkārtots VIN: šis VIN jau ir ${o.repeatVin} citā(-os) darbā(-os) - pirms pirkšanas pārbaudi, ko var izmantot atkārtoti`}>
                     ↻ Atkārtots VIN
                   </span>
                 ) : null}
@@ -900,7 +900,7 @@ export function AdminOrdersTable({
                 >
                   <td className={`${hug} py-1 pl-4 pr-4`}>
                     {isPack ? (
-                      <span className="text-[#c7c7cc]">—</span>
+                      <span className="text-[#c7c7cc]">-</span>
                     ) : (
                       <AdminAuditDeadlineCell
                         sessionId={o.id}
@@ -916,7 +916,7 @@ export function AdminOrdersTable({
                         className={`truncate text-[14px] ${mm ? "font-bold text-[#1d1d1f]" : "text-[#aeaeb2]"}`}
                         title={mm || undefined}
                       >
-                        {mm || "—"}
+                        {mm || "-"}
                       </span>
                       {miniHighlight ? <span className={MINI_PILL}>MINI</span> : null}
                     </span>
@@ -930,12 +930,12 @@ export function AdminOrdersTable({
                         <AdminVinCopyButton value={vin} />
                       </span>
                     ) : (
-                      <span className="text-[#c7c7cc]">—</span>
+                      <span className="text-[#c7c7cc]">-</span>
                     )}
                   </td>
                   <td className={`${hug} py-1 pr-4`}>
                     {isPack ? (
-                      <span className="text-[#c7c7cc]">—</span>
+                      <span className="text-[#c7c7cc]">-</span>
                     ) : (
                       <AdminAuditResultColorControl
                         sessionId={o.id}
@@ -957,7 +957,7 @@ export function AdminOrdersTable({
                       <SourceIcon source={o.heardAbout} />
                       {o.clientOrders?.length ? <AdminClientOrdersChip items={o.clientOrders.map((c) => ({ ...c, href: `${detailBaseNormalized}/${encodeURIComponent(c.id)}` }))} /> : null}
                       {o.repeatVin ? (
-                        <span className={CALM_TAG} title={`Atkārtots VIN: šis VIN jau ir ${o.repeatVin} citā(-os) darbā(-os) — pirms pirkšanas pārbaudi, ko var izmantot atkārtoti`}>
+                        <span className={CALM_TAG} title={`Atkārtots VIN: šis VIN jau ir ${o.repeatVin} citā(-os) darbā(-os) - pirms pirkšanas pārbaudi, ko var izmantot atkārtoti`}>
                           ↻ Atkārtots VIN
                         </span>
                       ) : null}

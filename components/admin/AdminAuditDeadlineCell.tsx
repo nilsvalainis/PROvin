@@ -72,7 +72,7 @@ export function AdminAuditDeadlineCell({
     } catch {
       setIsComplete(!next);
       onCompleteChange?.(!next);
-      window.alert("Tīkla kļūda — „Izpildīts” netika saglabāts.");
+      window.alert("Tīkla kļūda - „Izpildīts” netika saglabāts.");
     } finally {
       setSaving(false);
     }
@@ -91,7 +91,7 @@ export function AdminAuditDeadlineCell({
           : `${PILL_BASE} tabular-nums ${isComplete ? PILL_COMPLETED : PILL_BY_STATUS[status]}`
       }
       aria-pressed={isComplete}
-      title={isComplete ? "Izpildīts — klikšķis atceļ" : "Atzīmēt auditu kā izpildītu"}
+      title={isComplete ? "Izpildīts - klikšķis atceļ" : "Atzīmēt auditu kā izpildītu"}
     >
       {calm && !isComplete && status === "overdue" ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#ff3b30]" aria-hidden /> : null}
       {isComplete ? (calm ? "✓ Izpildīts" : "Izpildīts") : calm ? label.replace(/^Kavējas /, "Kavē ") : label}

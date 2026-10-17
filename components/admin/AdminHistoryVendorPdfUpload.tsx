@@ -91,15 +91,15 @@ const ERROR_LABELS: Record<string, string> = {
   not_found: "Pasūtījums nav atrasts Stripe",
   missing_session_id: "Trūkst pasūtījuma sessionId",
   missing_session: "Trūkst pasūtījuma sessionId",
-  missing_source_blocks: "Avotu bloki netika nosūtīti — pārlādē lapu",
+  missing_source_blocks: "Avotu bloki netika nosūtīti - pārlādē lapu",
   invalid_target: "Nepareizs avota bloks",
   missing_file: "Fails netika nosūtīts",
   invalid_file_type: "Tikai PDF",
   file_too_large: "PDF fails pārāk liels",
-  payload_too_large: "Pieprasījums pārāk liels — pārlādē lapu un mēģini vēlreiz",
+  payload_too_large: "Pieprasījums pārāk liels - pārlādē lapu un mēģini vēlreiz",
   extraction_failed: "Neizdevās nolasīt PDF",
   blob_fetch_failed: "Neizdevās nolasīt PDF no krātuves",
-  blob_token_missing: "Serverī nav BLOB_READ_WRITE_TOKEN — lielus PDF nevar apstrādāt",
+  blob_token_missing: "Serverī nav BLOB_READ_WRITE_TOKEN - lielus PDF nevar apstrādāt",
 };
 
 /** Kļūda vienmēr ir atpazīstama: apraksts + servera kods, lai nav „kaut kas nogāja greizi”. */
@@ -110,7 +110,7 @@ function describeUploadError(
   const code = (data.error ?? "").trim();
   const detail = (data.detail ?? "").trim();
   const label = ERROR_LABELS[code] ?? (code ? `Servera kļūda: ${code}` : `Servera kļūda (HTTP ${status})`);
-  return detail && detail !== label ? `${label} — ${detail}` : label;
+  return detail && detail !== label ? `${label} - ${detail}` : label;
 }
 
 export function AdminHistoryVendorPdfUpload({
@@ -144,7 +144,7 @@ export function AdminHistoryVendorPdfUpload({
         fd.set("sessionId", sessionId);
         fd.set("sourceBlocks", JSON.stringify(getSourceBlocks()));
         if (sourcePdfNeedsBlobUpload(file)) {
-          setNotice(`„${file.name}” (${Math.round(file.size / (1024 * 1024))} MB) — augšupielāde krātuvē…`);
+          setNotice(`„${file.name}” (${Math.round(file.size / (1024 * 1024))} MB) - augšupielāde krātuvē…`);
           const ref = await uploadSourcePdfToBlob(sessionId, file);
           fd.set("fileUrls", JSON.stringify([ref]));
           setNotice(null);
@@ -174,7 +174,7 @@ export function AdminHistoryVendorPdfUpload({
           data.summary?.trim() || `„${file.name}” apstrādāts.`,
           changedKeys.length > 0
             ? `Aizpildīts: ${changedKeys.join(", ")} (${data.applied?.length ?? 0} ieraksti).`
-            : "Jaunu rindu nebija — tabulas jau atbilst atskaitei.",
+            : "Jaunu rindu nebija - tabulas jau atbilst atskaitei.",
           dropped.length > 0
             ? `Neievietoti ${dropped.length}: ${dropped
                 .slice(0, 3)

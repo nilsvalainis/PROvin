@@ -55,10 +55,10 @@ function buildSlotPanelTitle(csdd: CsddFormFields, slotNumber: number): string {
   return mm ? `NR.${slotNumber} / ${mm}` : `NR.${slotNumber}`;
 }
 
-/** Pārdošanas cena PDF šūnai — piem. „11 000 €”. */
+/** Pārdošanas cena PDF šūnai - piem. „11 000 €”. */
 function formatSalePricePdfCell(salePrice: string): string {
   const t = salePrice.trim();
-  if (!t) return "—";
+  if (!t) return "-";
   if (/€/.test(t)) return t;
   if (/eiro/i.test(t)) {
     const digits = t.replace(/[^\d]/g, "");
@@ -104,7 +104,7 @@ function richCommentSubsection(title: string, html: string): string {
   return richBlockSubsection(title, safe);
 }
 
-/** CSDD + nobraukuma grafiks/tabulas — tāpat kā PROVIN audita PDF, iekļauts NR.N panelī. */
+/** CSDD + nobraukuma grafiks/tabulas - tāpat kā PROVIN audita PDF, iekļauts NR.N panelī. */
 function buildConsultationSlotCsddPdfBlocks(csdd: CsddFormFields, vis: PdfVisibilitySettings): string {
   const parts: string[] = [];
   if (vis.unifiedMileage && vis.csddMileageTable) {
@@ -176,7 +176,7 @@ function buildConsultationSlotPanel(
       `<tr><td>Sludinājuma links</td><td><a href="${u}" class="pdf-v1-listing-link">${u}</a></td></tr>`,
     );
   } else {
-    kv.push(`<tr><td>Sludinājuma links</td><td>—</td></tr>`);
+    kv.push(`<tr><td>Sludinājuma links</td><td>-</td></tr>`);
   }
   kv.push(`<tr><td>Pārdošanas cena</td><td>${esc(formatSalePricePdfCell(slot.salePrice))}</td></tr>`);
   inner.push(`<table class="pdf-v1-kv pdf-select-slot-kv"><tbody>${kv.join("")}</tbody></table>`);
@@ -231,7 +231,7 @@ export function buildSelectConsultationDocumentHtml(args: {
   const vis = mergePdfVisibility(w.pdfVisibility);
   const money =
     o.amountTotal == null
-      ? "—"
+      ? "-"
       : new Intl.NumberFormat("lv-LV", { style: "currency", currency: o.currency ?? "EUR" }).format(
           o.amountTotal / 100,
         );

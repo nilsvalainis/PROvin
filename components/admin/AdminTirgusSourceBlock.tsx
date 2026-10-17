@@ -267,7 +267,7 @@ export function AdminTirgusSourceBlock({
                         : "text-[var(--color-provin-muted)]"
                     }
                   >
-                    {val.listedForSale.trim() || "—"}
+                    {val.listedForSale.trim() || "-"}
                   </span>
                 ) : (
                   <input
@@ -284,7 +284,7 @@ export function AdminTirgusSourceBlock({
             </td>
             <td className={`${cellPad} align-top`}>
               {readOnly ? (
-                <span className="text-[var(--color-provin-muted)]">{val.listingCreated.trim() || "—"}</span>
+                <span className="text-[var(--color-provin-muted)]">{val.listingCreated.trim() || "-"}</span>
               ) : (
                 <input
                   type="text"
@@ -306,7 +306,7 @@ export function AdminTirgusSourceBlock({
                     {val.priceDrop.trim()}
                   </span>
                 ) : (
-                  <span className="text-[var(--color-provin-muted)]">—</span>
+                  <span className="text-[var(--color-provin-muted)]">-</span>
                 )
               ) : (
                 <span className="inline-flex w-full min-w-0 items-center gap-1.5">
@@ -361,7 +361,7 @@ export function AdminTirgusSourceBlock({
                   data-provin-block="tirgus"
                   data-row-index={0}
                 >
-                  {odoDate.trim() || "—"}
+                  {odoDate.trim() || "-"}
                 </span>
               ) : (
                 <input
@@ -376,7 +376,7 @@ export function AdminTirgusSourceBlock({
                   data-provin-block="tirgus"
                   data-row-index={0}
                   onChange={(e) => setField("listingMileageDate", e.target.value)}
-                  aria-label={`${TIRGUS_LABEL_LISTING_ODO_DATE} — sludinājuma odometrs`}
+                  aria-label={`${TIRGUS_LABEL_LISTING_ODO_DATE} - sludinājuma odometrs`}
                 />
               )}
             </td>
@@ -388,7 +388,7 @@ export function AdminTirgusSourceBlock({
                   data-provin-block="tirgus"
                   data-row-index={0}
                 >
-                  {val.listingMileageOdometer.trim() || "—"}
+                  {val.listingMileageOdometer.trim() || "-"}
                 </span>
               ) : (
                 <input
@@ -416,7 +416,7 @@ export function AdminTirgusSourceBlock({
                   data-provin-block="tirgus"
                   data-row-index={0}
                 >
-                  {odoCountry.trim() || "—"}
+                  {odoCountry.trim() || "-"}
                 </span>
               ) : (
                 <AdminCountryCombobox
@@ -470,14 +470,14 @@ export function AdminTirgusSourceBlock({
           compact={embDense}
           ai={aiComment}
           readonlyClassName={commentsReadonlyClassEmbedded}
-          aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+          aria-label={`${LISTING_HISTORY_SUBSECTION_TITLE} - ${LISTING_ANALYSIS_COMMENT_LABEL}`}
         />
         <AdminAiContextRawField
           value={val.aiContextRaw}
           onChange={(next) => setField("aiContextRaw", next)}
           readOnly={readOnly}
           disabled={disabled}
-          ariaLabel="Tirgus — AI papildu konteksts"
+          ariaLabel="Tirgus - AI papildu konteksts"
         />
       </>
     ) : (
@@ -490,14 +490,14 @@ export function AdminTirgusSourceBlock({
           disabled={disabled}
           ai={aiComment}
           readonlyClassName={commentsReadonlyClassDefault}
-          aria-label={`Tirgus — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+          aria-label={`Tirgus - ${LISTING_ANALYSIS_COMMENT_LABEL}`}
         />
         <AdminAiContextRawField
           value={val.aiContextRaw}
           onChange={(next) => setField("aiContextRaw", next)}
           readOnly={readOnly}
           disabled={disabled}
-          ariaLabel="Tirgus — AI papildu konteksts"
+          ariaLabel="Tirgus - AI papildu konteksts"
         />
       </div>
     );

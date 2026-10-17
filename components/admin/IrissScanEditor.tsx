@@ -62,7 +62,7 @@ function SourceGroup({
                   placeholder="https://…"
                   value={line}
                   onChange={(e) => onChange(setIrissListingLinkRow(rows, idx, e.target.value))}
-                  aria-label={`${label} — saite ${idx + 1}`}
+                  aria-label={`${label} - saite ${idx + 1}`}
                   aria-invalid={Boolean(err)}
                 />
                 {open ? (

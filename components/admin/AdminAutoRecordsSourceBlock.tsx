@@ -463,7 +463,7 @@ export function AdminAutoRecordsSourceBlock({
           </div>
           {readOnly ? (
             <div className="mb-2 min-h-[72px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
-              {value.rawUnprocessedData.trim() ? value.rawUnprocessedData : <span className="text-slate-400">—</span>}
+              {value.rawUnprocessedData.trim() ? value.rawUnprocessedData : <span className="text-slate-400">-</span>}
             </div>
           ) : (
             <AdminAiPolishTextareaShell
@@ -479,7 +479,7 @@ export function AdminAutoRecordsSourceBlock({
                 disabled={disabled}
                 placeholder="Ielīmē tekstu, kas sākas ar ODOMETER CHECK…"
                 onChange={(e) => handleRaw(e.target.value)}
-                aria-label={`${DEALER_ARIA} — neapstrādātie dati`}
+                aria-label={`${DEALER_ARIA} - neapstrādātie dati`}
               />
             </AdminAiPolishTextareaShell>
           )}
@@ -535,7 +535,7 @@ export function AdminAutoRecordsSourceBlock({
                           data-provin-block="auto_records"
                           data-row-index={i}
                         >
-                          {formatAutoRecordsDateForOutput(row.date).trim() || "—"}
+                          {formatAutoRecordsDateForOutput(row.date).trim() || "-"}
                         </span>
                       ) : (
                         <input
@@ -561,7 +561,7 @@ export function AdminAutoRecordsSourceBlock({
                           data-provin-block="auto_records"
                           data-row-index={i}
                         >
-                          {row.odometer.trim() || "—"}
+                          {row.odometer.trim() || "-"}
                         </span>
                       ) : (
                         <input
@@ -585,7 +585,7 @@ export function AdminAutoRecordsSourceBlock({
                     <td className={`${mileCell} align-top`}>
                       {readOnly ? (
                         <CountryFlagWithCode
-                          countryLabel={row.country.trim() || "—"}
+                          countryLabel={row.country.trim() || "-"}
                           data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
                           data-provin-block="auto_records"
                           data-row-index={i}
@@ -710,7 +710,7 @@ export function AdminAutoRecordsSourceBlock({
                           data-provin-block="auto_records"
                           data-row-index={i}
                         >
-                          {formatAutoRecordsDateForOutput(row.date).trim() || "—"}
+                          {formatAutoRecordsDateForOutput(row.date).trim() || "-"}
                         </span>
                       ) : (
                         <input
@@ -738,7 +738,7 @@ export function AdminAutoRecordsSourceBlock({
                           data-provin-block="auto_records"
                           data-row-index={i}
                         >
-                          {formatServiceWorkOdometer(row.odometer) || "—"}
+                          {formatServiceWorkOdometer(row.odometer) || "-"}
                         </span>
                       ) : (
                         <input
@@ -768,7 +768,7 @@ export function AdminAutoRecordsSourceBlock({
                           data-provin-block="auto_records"
                           data-row-index={i}
                         >
-                          {row.location.trim() || "—"}
+                          {row.location.trim() || "-"}
                         </span>
                       ) : (
                         <AdminAutoGrowTextarea
@@ -790,7 +790,7 @@ export function AdminAutoRecordsSourceBlock({
                     </td>
                     <td className={`${mileCell} align-top`}>
                       <span className="block whitespace-pre-wrap text-[10px] text-slate-500">
-                        {originalWorks.trim() || "—"}
+                        {originalWorks.trim() || "-"}
                       </span>
                     </td>
                     <td className={`${mileCell} align-top`}>
@@ -801,7 +801,7 @@ export function AdminAutoRecordsSourceBlock({
                           data-provin-block="auto_records"
                           data-row-index={i}
                         >
-                          {row.works.trim() || "—"}
+                          {row.works.trim() || "-"}
                         </span>
                       ) : (
                         <AdminAutoGrowTextarea
@@ -895,7 +895,7 @@ export function AdminAutoRecordsSourceBlock({
             compact
             ai={aiServiceHistory}
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-            aria-label={`${DEALER_ARIA} — Servisa vēsture`}
+            aria-label={`${DEALER_ARIA} - Servisa vēsture`}
           />
           <AdminOilChangeIntervalEditor
             value={value}
@@ -931,14 +931,14 @@ export function AdminAutoRecordsSourceBlock({
             compact
             ai={aiComment}
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-            aria-label={`${DEALER_ARIA} — komentāri`}
+            aria-label={`${DEALER_ARIA} - komentāri`}
           />
           <AdminAiContextRawField
             value={value.aiContextRaw}
             onChange={(next) => onChange({ ...value, aiContextRaw: next })}
             readOnly={readOnly}
             disabled={disabled}
-            ariaLabel={`${DEALER_ARIA} — AI papildu konteksts`}
+            ariaLabel={`${DEALER_ARIA} - AI papildu konteksts`}
           />
         </div>
       </div>

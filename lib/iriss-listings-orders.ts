@@ -188,8 +188,8 @@ export function buildListingClientOptions(
   });
   return sorted.map((o) => {
     const { make, model } = splitBrandModel(o.brandModel);
-    const marka = make || o.brandModel.trim() || "—";
-    const modelis = model || "—";
+    const marka = make || o.brandModel.trim() || "-";
+    const modelis = model || "-";
     const label = [
       marka,
       modelis,

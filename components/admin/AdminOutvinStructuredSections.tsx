@@ -127,7 +127,7 @@ export function AdminOutvinStructuredSections({ bundle, readOnly, disabled, onBu
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[10px] font-medium text-slate-600">
-          Servisa žurnāls (Type 1 — papildus piezīmes; km jau nobraukuma tabulā)
+          Servisa žurnāls (Type 1 - papildus piezīmes; km jau nobraukuma tabulā)
         </p>
         <div className="flex flex-wrap gap-2">
           <SectionToggle

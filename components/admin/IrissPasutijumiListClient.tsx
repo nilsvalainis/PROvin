@@ -447,7 +447,7 @@ const IrissRowCard = memo(function IrissRowCard({
               >
                 {row.phone}
               </a>
-            ) : row.phone && row.phone !== "—" ? (
+            ) : row.phone && row.phone !== "-" && row.phone !== "\u2014" ? (
               <span className="md:hidden">{row.phone}</span>
             ) : null}
           </span>
@@ -478,7 +478,7 @@ const IrissRowCard = memo(function IrissRowCard({
         >
           {row.phone}
         </a>
-      ) : row.phone && row.phone !== "—" ? (
+      ) : row.phone && row.phone !== "-" && row.phone !== "\u2014" ? (
         <span className="relative z-10 hidden shrink-0 text-[12px] text-[var(--color-provin-muted)] md:inline">{row.phone}</span>
       ) : null}
       {chipsRow ? <div className="relative z-10 hidden min-w-0 max-w-[11rem] shrink md:block">{chipsRow}</div> : null}

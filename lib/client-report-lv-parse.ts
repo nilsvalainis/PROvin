@@ -304,7 +304,7 @@ export function parseLvRegistryBasics(csdd: string): LvRegistryBasics {
     ) ?? firstMatch(t, /\b([A-Z]{1,2}\s?\d{3,4})\b/);
 
   const firstReg =
-    firstMatch(t, /(\d{1,2}[./]\d{1,2}[./]\d{2,4})\s*[-–—]\s*Pirm[āa]\s+reģistr[āa]cija\s+Latvijā/i) ??
+    firstMatch(t, /(\d{1,2}[./]\d{1,2}[./]\d{2,4})\s*[---]\s*Pirm[āa]\s+reģistr[āa]cija\s+Latvijā/i) ??
     firstMatch(t, /pirm[āa]\s+reģistr[āa]cij[as]*\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i) ??
     firstMatch(t, /pirm[āa]\s+reģistr[āa]cij[as]*\s*[:\-]?\s*(\d{4}-\d{2}-\d{2})/i);
 
@@ -355,8 +355,8 @@ export function parseBrakeAssPairs(csdd: string): { ass1: string; ass2: string }
   const m2 = t.match(/Ass\s*2\s*[:\-]\s*([^\n]{1,56})/i);
   if (!m1 && !m2) return null;
   return {
-    ass1: m1?.[1]?.trim() ?? "—",
-    ass2: m2?.[1]?.trim() ?? "—",
+    ass1: m1?.[1]?.trim() ?? "-",
+    ass2: m2?.[1]?.trim() ?? "-",
   };
 }
 
@@ -390,7 +390,7 @@ export function parseTaRating2DefectLines(csdd: string): string[] {
     if (capture && /(?:p[ēe]d[ēe]j[āa]\s+)?p[āa]rbaude|vērt[ēe]jums\s*[:\-]?\s*0\b|0\s*\/\s*5\b/i.test(line)) {
       break;
     }
-    if (capture && /^\d+\.\d+\.\d+[\s.\d\-–—]+/i.test(line)) {
+    if (capture && /^\d+\.\d+\.\d+[\s.\d\---]+/i.test(line)) {
       out.push(line);
     }
   }

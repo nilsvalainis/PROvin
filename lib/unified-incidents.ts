@@ -100,9 +100,9 @@ export function collectUnifiedIncidentRows(args: {
     if (!incidentRowHasLossAmount(r)) return;
     const d = r.csngDate.trim();
     out.push({
-      date: d || "—",
+      date: d || "-",
       lossAmount: normalizeLossAmountEurDisplay(r.lossAmount) || r.lossAmount.trim(),
-      country: r.incidentNo.trim() || "—",
+      country: r.incidentNo.trim() || "-",
       sortableTime: parseMileageDateForSort(d),
       sourceOrder: sourceOrder++,
       sourceLabel: sourceLabel.trim() || "Nezināms avots",
@@ -182,7 +182,7 @@ export function sortUnifiedIncidentsNewestFirst(rows: UnifiedIncidentRow[]): Uni
 function incidentCountryKey(raw: string): string {
   const lv = normalizeCountryNameLv(raw);
   const t = (lv || raw).trim();
-  if (!t || t === "—") return "?";
+  if (!t || t === "-" || t === "\u2014" || t === "\u2013") return "?";
   return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
@@ -253,7 +253,7 @@ function clusterDisplayDate(members: UnifiedIncidentRow[], ym: string | null): s
   }
   if (dayDates.size === 1) return [...dayDates][0]!;
   if (ym) return formatMonthYearDisplay(ym);
-  return sortUnifiedIncidentsNewestFirst(members)[0]?.date.trim() || "—";
+  return sortUnifiedIncidentsNewestFirst(members)[0]?.date.trim() || "-";
 }
 
 /**
@@ -287,7 +287,7 @@ function sourceValuation(label: string, rows: UnifiedIncidentRow[]): UnifiedInci
   const values = amountsOf(rows);
   const avg = averageEur(values);
   if (rows.length === 1) {
-    const display = rows[0]!.lossAmount.trim() || (avg != null ? formatLossEurWholeDisplay(avg) : "—");
+    const display = rows[0]!.lossAmount.trim() || (avg != null ? formatLossEurWholeDisplay(avg) : "-");
     return {
       sourceLabel: label,
       displayAmount: roundLossAmountEurDisplayToTens(display),
@@ -298,13 +298,13 @@ function sourceValuation(label: string, rows: UnifiedIncidentRow[]): UnifiedInci
     const sum = sumDistinctEur(rows);
     return {
       sourceLabel: label,
-      displayAmount: roundLossAmountEurDisplayToTens(sum != null ? formatLossEurWholeDisplay(sum) : "—"),
+      displayAmount: roundLossAmountEurDisplayToTens(sum != null ? formatLossEurWholeDisplay(sum) : "-"),
       amountEur: sum,
     };
   }
   return {
     sourceLabel: label,
-    displayAmount: roundLossAmountEurDisplayToTens(avg != null ? formatLossEurWholeDisplay(avg) : "—"),
+    displayAmount: roundLossAmountEurDisplayToTens(avg != null ? formatLossEurWholeDisplay(avg) : "-"),
     amountEur: avg,
   };
 }
@@ -324,9 +324,9 @@ function clusterFromMembers(members: UnifiedIncidentRow[]): UnifiedIncidentClust
   const displayAmount = roundLossAmountEurDisplayToTens(
     averaged
       ? formatLossEurWholeDisplay(avg)
-      : sourceValuations[0]?.displayAmount || newest.lossAmount.trim() || "—",
+      : sourceValuations[0]?.displayAmount || newest.lossAmount.trim() || "-",
   );
-  const country = normalizeCountryNameLv(newest.country) || newest.country.trim() || "—";
+  const country = normalizeCountryNameLv(newest.country) || newest.country.trim() || "-";
   const ym = incidentYearMonthKey(newest) ?? incidentYearMonthKey(members[0]!);
   return {
     date: clusterDisplayDate(members, ym),

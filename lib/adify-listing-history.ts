@@ -85,12 +85,12 @@ export function formatAdifyDeltaLabel(delta: number): string | null {
 }
 
 export function formatAdifyMileageLabel(km: number | null): string {
-  if (km == null || !Number.isFinite(km)) return "—";
+  if (km == null || !Number.isFinite(km)) return "-";
   return `${formatAdifyGroupedNumber(km)} km`;
 }
 
 export function formatAdifyYearLabel(year: number | null): string {
-  if (year == null || !Number.isFinite(year) || year <= 0) return "—";
+  if (year == null || !Number.isFinite(year) || year <= 0) return "-";
   return `${Math.round(year)} g.`;
 }
 
@@ -125,7 +125,7 @@ export function formatAdifyLvDate(raw: string): string {
 /** 1 diena, 11 dienas, 21 diena. */
 export function formatAdifyDurationLabel(days: number): string {
   const n = Math.round(days);
-  if (!Number.isFinite(n) || n <= 0) return "—";
+  if (!Number.isFinite(n) || n <= 0) return "-";
   const mod10 = n % 10;
   const mod100 = n % 100;
   const word = mod10 === 1 && mod100 !== 11 ? "diena" : "dienas";

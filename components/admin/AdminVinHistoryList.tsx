@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { VinHistoryEntry } from "@/lib/vin-history";
 
 function fmt(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
   if (!Number.isFinite(d.getTime())) return iso;
   return d.toLocaleDateString("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Riga" });
@@ -51,10 +51,10 @@ export function AdminVinHistoryList({
               {r.label} <span className="text-[#8e8e93]">({fmt(r.at)})</span>
             </span>
           ))}
-          <span className="text-[#8e8e93]"> — izmanto „Pārnest datus” zemāk.</span>
+          <span className="text-[#8e8e93]"> - izmanto „Pārnest datus” zemāk.</span>
         </p>
       ) : (
-        <p className="mt-1 text-[#8e8e93]">Nopirktu atskaišu nav — iepriekš izmantoti tikai bezmaksas avoti.</p>
+        <p className="mt-1 text-[#8e8e93]">Nopirktu atskaišu nav - iepriekš izmantoti tikai bezmaksas avoti.</p>
       )}
       <ul className="mt-2 divide-y divide-[#f0f0f2] border-t border-[#f0f0f2]">
         {entries.map((e) => (

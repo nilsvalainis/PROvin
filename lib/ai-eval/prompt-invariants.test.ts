@@ -80,7 +80,7 @@ describe("PROVIN AI prompt invariants", () => {
   it("few-shots include claim-context and mileage-only synthesis examples", () => {
     expect(PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES).toMatch(/Zaudējumu apjoms kontekstā/i);
     expect(PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES).toMatch(
-      /NOBRAUKUMA VĒSTURES KOMENTĀRS — vienīgā vieta/i,
+      /NOBRAUKUMA VĒSTURES KOMENTĀRS - vienīgā vieta/i,
     );
   });
 
@@ -167,6 +167,8 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/provin-style-canon.ts")).toMatch(/tehniski perfekts/);
     expect(readRepo("lib/provin-style-canon.ts")).toMatch(/AI_TONE_PRINCIPLE_RULES/);
     expect(readRepo("lib/provin-style-canon.ts")).toMatch(/Nepārspīlē un nemīkstini/);
+    expect(readRepo("lib/provin-style-canon.ts")).toMatch(/AI_HUMAN_DASH_RULES/);
+    expect(readRepo("lib/provin-style-canon.ts")).toMatch(/only the short ASCII hyphen/);
   });
 
   it("summary and inspection prompts require aggregate-specific technical risk analysis", () => {

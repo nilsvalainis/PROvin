@@ -277,7 +277,7 @@ export function AdminFlashMaxButton({
               Citas sadaļas
             </p>
             <p className="pb-0.5 text-[9px] leading-snug text-slate-400">
-              Parasti nav Flash Max — ieķeksē, kad vajag arī šos logus.
+              Parasti nav Flash Max - ieķeksē, kad vajag arī šos logus.
             </p>
             {extraJobs.map((job) => (
               <JobRow
@@ -299,7 +299,7 @@ export function AdminFlashMaxButton({
             </span>
             <span className="mb-1 block text-[9px] leading-snug text-slate-500">
               Iet visiem izvēlētajiem aģentiem. Apstrādā katru tēmu; ja saki „tikai par…”, pārējais netiek
-              papildināts. Jauns fakts — labo visus tekstus pēc tā.
+              papildināts. Jauns fakts - labo visus tekstus pēc tā.
             </span>
             <textarea
               className="min-h-[4.5rem] w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25"

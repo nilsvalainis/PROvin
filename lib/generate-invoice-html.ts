@@ -289,7 +289,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
   <div class="inv-grid">
     <section class="inv-panel" aria-labelledby="inv-seller">
       <h2 id="inv-seller">Pakalpojuma sniedzējs</h2>
-      ${supplierHtml || `<p>—</p>`}
+      ${supplierHtml || `<p>-</p>`}
     </section>
     <section class="inv-panel" aria-labelledby="inv-buyer">
       <h2 id="inv-buyer">Klients</h2>

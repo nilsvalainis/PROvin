@@ -55,7 +55,7 @@ export function AdminPersistenceHealthBanner({ durableConfigured }: Props) {
         className="mx-auto mb-3 max-w-2xl rounded-lg border border-amber-500/40 bg-amber-50 px-3 py-2 text-center text-[11px] font-semibold leading-snug text-amber-950"
         role="alert"
       >
-        Servera melnraksts nav ilgtermiņa — dati pazudīs pēc refresh/deploy. Vercel Production: iestati{" "}
+        Servera melnraksts nav ilgtermiņa - dati pazudīs pēc refresh/deploy. Vercel Production: iestati{" "}
         <code className="font-mono text-[10px]">ADMIN_ORDER_DRAFT_BLOB_PREFIX=admin-order-drafts/</code> un{" "}
         <code className="font-mono text-[10px]">BLOB_READ_WRITE_TOKEN</code>, pēc tam <strong>Redeploy</strong>.
       </p>

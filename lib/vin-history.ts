@@ -83,7 +83,7 @@ export async function findVinHistory(
           id: row.id,
           createdAt: new Date(createdMs).toISOString(),
           savedAt: draft?.workspaceSavedAt ?? draft?.updatedAt ?? null,
-          who: d?.customerName || row.customerEmail || "—",
+          who: d?.customerName || row.customerEmail || "-",
           status: d?.auditCompletedAt ? "Izpildīts" : null,
           dataKeys: k.all,
           purchasedKeys: k.purchased,

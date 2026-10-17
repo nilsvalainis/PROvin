@@ -279,7 +279,7 @@ export function B2bPartnerPricingCard({
         {unlocked ? (
           <button type="button" className={styles.liquidCta} onClick={submitPay}>
             <span className={styles.liquidCtaShimmer} aria-hidden />
-            <span className={styles.liquidCtaLabel}>Maksāt — {B2B_PARTNER_PRICE[plan]}</span>
+            <span className={styles.liquidCtaLabel}>Maksāt - {B2B_PARTNER_PRICE[plan]}</span>
           </button>
         ) : (
           <button type="button" className={styles.liquidCta} onClick={submitGate}>

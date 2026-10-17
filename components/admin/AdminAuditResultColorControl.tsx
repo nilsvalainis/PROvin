@@ -77,7 +77,7 @@ export function AdminAuditResultColorControl({
       } catch {
         setColor(prev);
         onColorChange?.(prev);
-        window.alert("Tīkla kļūda — audita krāsa netika saglabāta.");
+        window.alert("Tīkla kļūda - audita krāsa netika saglabāta.");
       } finally {
         setSaving(false);
       }
@@ -168,7 +168,7 @@ export function AdminAuditResultColorControl({
   );
 }
 
-/** Tikai indikators (bez klikšķa) — kad krāsa jau zināma no props. */
+/** Tikai indikators (bez klikšķa) - kad krāsa jau zināma no props. */
 export function AdminAuditResultColorDot({
   color,
   className = "",

@@ -33,7 +33,7 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported, onPa
       try {
         const fd = new FormData();
         fd.set("file", file);
-        setStatusLine("Apstrādājam PDF (ja vajag — AI, līdz ~1 min)…");
+        setStatusLine("Apstrādājam PDF (ja vajag - AI, līdz ~1 min)…");
         const res = await fetch("/api/admin/reports/parse-pdf", {
           method: "POST",
           body: fd,
@@ -68,7 +68,7 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported, onPa
             `Importētas ${rowN} nobraukuma rinda(s) no „${file.name}”${viaAi ? " (Plan B: AI)" : " (Plan A: lokāli)"}.`,
           );
         } else if ((data.rawUnprocessedData ?? "").trim()) {
-          setNotice(`Plan B — RAW teksts no „${file.name}”; pārbaudi tabulu.`);
+          setNotice(`Plan B - RAW teksts no „${file.name}”; pārbaudi tabulu.`);
         } else if (data.warnings?.[0]) {
           setNotice(data.warnings[0]);
         }
@@ -174,7 +174,7 @@ export function AdminAutoRecordsPdfUpload({ disabled, readOnly, onImported, onPa
           Augšupielādēt oficiālā dīlera PDF atskaiti
         </span>
         <span className="text-[9px] leading-snug text-[var(--color-provin-muted)]">
-          Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF — AI
+          Velc PDF šeit vai klikšķini · maks. 15 MB · skenētiem PDF - AI
         </span>
       </div>
       {statusLine && busy ? (

@@ -60,7 +60,7 @@ export function AdminCitiAvotiCopilotUpload({
         fd.set("allowedSources", JSON.stringify(["citi_avoti"]));
         fd.set("citiAvotiSectionIndex", String(sectionIndex));
         if (sourcePdfNeedsBlobUpload(file)) {
-          setNotice(`„${file.name}” (${Math.round(file.size / (1024 * 1024))} MB) — augšupielāde krātuvē…`);
+          setNotice(`„${file.name}” (${Math.round(file.size / (1024 * 1024))} MB) - augšupielāde krātuvē…`);
           const ref = await uploadSourcePdfToBlob(sessionId, file);
           fd.set("fileUrls", JSON.stringify([ref]));
           setNotice(null);

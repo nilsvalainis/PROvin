@@ -22,6 +22,14 @@ describe("normalizeAiClientPlainText", () => {
 });
 
 describe("adminRichHtmlToPdfSafeHtml", () => {
+  it("replaces Unicode dashes at PDF render without needing stored edits", () => {
+    const html = "<p>Labs auto — kopts. 1500–3000 km.</p>";
+    const out = adminRichHtmlToPdfSafeHtml(html);
+    expect(out).toContain("Labs auto - kopts.");
+    expect(out).toContain("1500-3000 km");
+    expect(out).not.toMatch(/[\u2013\u2014]/);
+  });
+
   it("preserves bold, italic, underline", () => {
     const html = "<p><strong>Trekns</strong> <em>kursīvs</em> <u>pasv.</u></p>";
     const out = adminRichHtmlToPdfSafeHtml(html);

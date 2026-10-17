@@ -50,7 +50,7 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
           <p className="mt-2 text-sm text-[var(--color-provin-muted)]">
             {configured
               ? devDefaults
-                ? "Lokālā izstrāde: ADMIN_* nav nepieciešami — vari uzreiz pieteikties (lauki aizpildīti)."
+                ? "Lokālā izstrāde: ADMIN_* nav nepieciešami - vari uzreiz pieteikties (lauki aizpildīti)."
                 : "Ievadi lietotājvārdu un paroli, lai skatītu pasūtījumus."
               : "Piekļuve pasūtījumu panelim ir iespējama pēc administratora vides iestatīšanas."}
           </p>
@@ -74,7 +74,7 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
               </p>
               <ul className="mt-3 list-disc space-y-1.5 pl-5 text-amber-950/95">
                 <li>
-                  <code className="rounded bg-amber-100/90 px-1 font-mono text-[13px]">ADMIN_SECRET</code> — vismaz
+                  <code className="rounded bg-amber-100/90 px-1 font-mono text-[13px]">ADMIN_SECRET</code> - vismaz
                   16 rakstzīmes (nejauša virkne)
                 </li>
                 <li>
@@ -85,7 +85,7 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
                 </li>
               </ul>
               <p className="mt-3 text-xs leading-relaxed text-amber-900/85">
-                Pēc izmaiņām .env — restartē{" "}
+                Pēc izmaiņām .env - restartē{" "}
                 <code className="rounded bg-amber-100/80 px-1 font-mono">npm run dev</code> vai veic jaunu deploy
                 (Vercel).
               </p>
@@ -103,7 +103,7 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
                 <p className="mt-2 text-[11px] leading-relaxed">
                   Izmanto pilnu adresi ar <code className="rounded bg-slate-200/80 px-1">http://</code> un portu, ko
                   rāda terminālis pēc <code className="rounded bg-slate-200/80 px-1">npm run dev</code> (ja 3000 ir
-                  aizņemts — bieži 3001, 3010 utt.).
+                  aizņemts - bieži 3001, 3010 utt.).
                 </p>
               </div>
             ) : null}

@@ -185,7 +185,7 @@ export function AdminWorkspaceRestoreMenu({
           ) : null}
           {!loading && !hasAny && !err ? (
             <p className="px-1 py-2 text-[10px] text-[var(--color-provin-muted)]">
-              Nav pieejamu rezerves kopiju. Saglabā darba zonu — pēc tam šeit parādīsies versijas.
+              Nav pieejamu rezerves kopiju. Saglabā darba zonu - pēc tam šeit parādīsies versijas.
             </p>
           ) : null}
           {localBackups.length > 0 ? (

@@ -21,9 +21,9 @@ const DOT: Record<SourceHealthColor, string> = {
 };
 
 function ago(iso: string | null, nowMs: number): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = nowMs - Date.parse(iso);
-  if (!Number.isFinite(d)) return "—";
+  if (!Number.isFinite(d)) return "-";
   const m = Math.round(d / 60000);
   if (m < 60) return `pirms ${Math.max(1, m)} min`;
   const h = Math.round(m / 60);
@@ -64,7 +64,7 @@ export function AdminSourceHealthStrip({ doc, items }: { doc: SourceHealthDoc; i
           ? "Manuāls avots (bez automātiskas ielādes)"
           : !e
             ? "Vēl nav ielādes datu"
-            : `Pēdējā veiksme: ${e.lastOkAt ? fullTime(e.lastOkAt) : "—"} · Pēdējā kļūda: ${e.lastErrAt ? fullTime(e.lastErrAt) : "—"}`;
+            : `Pēdējā veiksme: ${e.lastOkAt ? fullTime(e.lastOkAt) : "-"} · Pēdējā kļūda: ${e.lastErrAt ? fullTime(e.lastErrAt) : "-"}`;
         return (
           <div key={it.id} className="relative">
             <button
@@ -78,14 +78,14 @@ export function AdminSourceHealthStrip({ doc, items }: { doc: SourceHealthDoc; i
               <span className={`h-2 w-2 rounded-full ${DOT[color]}`} aria-hidden />
               <span className="font-medium text-[#1d1d1f]">{it.label}</span>
               <span className="text-[#8e8e93]">
-                {it.manual ? "manuāls" : !e ? "—" : color === "red" ? `kļūda ${ago(e.lastErrAt, now)}` : `ok ${ago(e.lastOkAt, now)}`}
+                {it.manual ? "manuāls" : !e ? "-" : color === "red" ? `kļūda ${ago(e.lastErrAt, now)}` : `ok ${ago(e.lastOkAt, now)}`}
               </span>
             </button>
             {open === it.id ? (
               <div className="absolute left-0 top-8 z-30 w-[300px] rounded-xl border border-[#e5e5ea] bg-white p-3 text-[12px] text-[#3a3a3c] shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
                 <p className="font-semibold text-[#1d1d1f]">{it.label}</p>
                 {it.manual ? (
-                  <p className="mt-1 text-[#8e8e93]">Dati tiek ievadīti manuāli — automātiskas ielādes žurnāla nav.</p>
+                  <p className="mt-1 text-[#8e8e93]">Dati tiek ievadīti manuāli - automātiskas ielādes žurnāla nav.</p>
                 ) : !e ? (
                   <p className="mt-1 text-[#8e8e93]">Vēl nav reģistrētu ielādes mēģinājumu.</p>
                 ) : (
@@ -93,12 +93,12 @@ export function AdminSourceHealthStrip({ doc, items }: { doc: SourceHealthDoc; i
                     <p className="mt-1 text-[#6e6e73]">
                       Veiksmīgi: {e.okCount} · Kļūdas: {e.errCount}
                     </p>
-                    <p className="text-[#6e6e73]">Pēdējā veiksme: {e.lastOkAt ? fullTime(e.lastOkAt) : "—"}</p>
+                    <p className="text-[#6e6e73]">Pēdējā veiksme: {e.lastOkAt ? fullTime(e.lastOkAt) : "-"}</p>
                     {e.errors.length > 0 ? (
                       <ul className="mt-2 space-y-1 border-t border-[#f0f0f2] pt-2">
                         {e.errors.map((x, i) => (
                           <li key={i}>
-                            <span className="tabular-nums text-[#8e8e93]">{fullTime(x.at)}</span> — {x.msg}
+                            <span className="tabular-nums text-[#8e8e93]">{fullTime(x.at)}</span> - {x.msg}
                           </li>
                         ))}
                       </ul>

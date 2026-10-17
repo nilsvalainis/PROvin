@@ -1,6 +1,9 @@
 import { sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { ADMIN_RICH_PDF_FONT_WHITELIST } from "@/lib/admin-rich-comment-fonts";
-import { toExpertHeadingBodyPlain } from "@/lib/source-summary-comment-format";
+import {
+  applyProvinHumanDashes,
+  toExpertHeadingBodyPlain,
+} from "@/lib/source-summary-comment-format";
 
 /**
  * Dekodē biežākos HTML entītiju fragmentus pēc tagu noņemšanas
@@ -33,6 +36,7 @@ function escapeHtmlPlain(s: string): string {
 /** No AI / Markdown atbildes — nekad neielikt `*` kā punktus vai treknraksta marķierus PDF laukā. */
 export function normalizeAiClientPlainText(text: string): string {
   let t = sanitizeDraftTextForStorage(text);
+  t = applyProvinHumanDashes(t);
   t = t.replace(/^\s*\*\s+/gm, "- ");
   t = t.replace(/^\s*•\s+/gm, "- ");
   t = t.replace(/\*\*([^*]+)\*\*/g, "$1");
@@ -64,6 +68,7 @@ export function ensureExpertBoldParagraphOpeners(text: string): string {
 /** Noņem sarakstu prefiksus un Markdown * no AI eksperta komentāra. */
 export function normalizeAiExpertParagraphText(text: string): string {
   let t = sanitizeDraftTextForStorage(text);
+  t = applyProvinHumanDashes(t);
   t = t.replace(/^(?:ANOMĀLIJA|NEATBILSTĪBA):\s*/gim, "Neatbilstība\n");
   t = t.replace(/\r\n/g, "\n");
   return toExpertHeadingBodyPlain(t.trim());
@@ -477,5 +482,5 @@ export function adminRichHtmlToPdfSafeHtml(html: string): string {
   s = s.replace(/\r?\n/g, "<br />");
   s = s.replace(/(<br\s*\/?>\s*){2,}/gi, "<br />");
   s = s.replace(/<p>(\s|&nbsp;|<br\s*\/?>)*<\/p>/gi, "");
-  return s.trim();
+  return applyProvinHumanDashes(s.trim());
 }

@@ -168,7 +168,7 @@ export function tirgusCardFacts(t: TirgusFormFields): CardFact[] {
     facts.push({ label: "Cena", value: rows.length > 1 ? `${priceFmt(oldest)} → ${priceFmt(newest)}` : priceFmt(newest) });
     const diff = newest - oldest;
     if (rows.length > 1 && diff !== 0) {
-      facts.push({ label: "Izmaiņa", value: `${diff > 0 ? "+" : "−"}${priceFmt(Math.abs(diff))}`, tone: diff < 0 ? "warn" : "ok" });
+      facts.push({ label: "Izmaiņa", value: `${diff > 0 ? "+" : "-"}${priceFmt(Math.abs(diff))}`, tone: diff < 0 ? "warn" : "ok" });
     }
   } else if (s(t.priceDrop)) {
     facts.push({ label: "Cenas izmaiņas", value: `${s(t.priceDrop)} €` });
@@ -347,7 +347,7 @@ export const QE_TONE_DOT: Record<CardTone, string> = {
 
 /** Datums lv-LV (der gan serverim, gan klientam). */
 export function fmtLv(iso: string | null | undefined, withTime = true): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
   if (!Number.isFinite(d.getTime())) return iso;
   return withTime

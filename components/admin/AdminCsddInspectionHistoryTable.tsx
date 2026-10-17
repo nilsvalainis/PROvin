@@ -46,10 +46,10 @@ function DefectTable({ defects }: { defects: CsddInspectionDefectRow[] }) {
           defects.map((d, i) => (
             <tr key={`${d.code}-${i}`} className="border-b border-slate-100 last:border-b-0">
               <td className={`${novCell} align-top ${ratingClass(d.rating)}`}>
-                {d.rating || "—"}
+                {d.rating || "-"}
               </td>
               <td className={`${descCell} align-top leading-snug text-[var(--color-apple-text)]`}>
-                {d.description || "—"}
+                {d.description || "-"}
               </td>
             </tr>
           ))

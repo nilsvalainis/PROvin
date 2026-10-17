@@ -212,5 +212,7 @@
  *   avotu salīdzinājums tikai ar PROVIN_AUTO_SOURCES_COMPARISON=1.
  * - 2026-10-17.4 - Stila kanons vienā vietā (A1-A12 bez A3, M1-M14, P1-P13).
  *   Smart = gemini-3.8-flash noklusējums; PRO = claude-opus-5-5 tikai pēc pogas.
+ * - 2026-10-17.5 - DASHES kanons: ģenerētajā tekstā tikai ASCII "-";
+ *   applyProvinHumanDashes pirms saglabāšanas un PDF renderī.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.4";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.5";

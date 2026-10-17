@@ -60,7 +60,7 @@ const WELCOME_MESSAGE: UiMessage = {
   id: "welcome",
   role: "system",
   content:
-    "Ieslēdz mērķa avotus. PDF, fotogrāfija vai ielīmēts car.info / tjekbil / mnt / lkf teksts — Copilot aizpilda tabulas un RED FLAG. Dzēšanu (rindas, lauka iztīrīšana) vari prasīt tieši; tā izpildās tikai pēc apstiprinājuma. Sarakste saglabājas šim pasūtījumam arī citā ierīcē.",
+    "Ieslēdz mērķa avotus. PDF, fotogrāfija vai ielīmēts car.info / tjekbil / mnt / lkf teksts - Copilot aizpilda tabulas un RED FLAG. Dzēšanu (rindas, lauka iztīrīšana) vari prasīt tieši; tā izpildās tikai pēc apstiprinājuma. Sarakste saglabājas šim pasūtījumam arī citā ierīcē.",
 };
 const SOURCE_TOGGLE_LABELS: Record<CopilotSourceKey, string> = {
   csdd: SOURCE_BLOCK_LABELS.csdd,
@@ -566,7 +566,7 @@ export function AdminOrderCopilotPanel({
         } else if (data.error === "blob_fetch_failed") {
           reason = `Neizdevās nolasīt PDF no krātuves${detail ? ` (${detail})` : ""}`;
         } else if (res.status === 413) {
-          reason = "Pieprasījums pārāk liels — pārlādē lapu un pievieno PDF vēlreiz";
+          reason = "Pieprasījums pārāk liels - pārlādē lapu un pievieno PDF vēlreiz";
         } else reason = detail || data.error || `Copilot kļūda (HTTP ${res.status})`;
         setError(reason);
         setMessages((prev) => [
@@ -661,7 +661,7 @@ export function AdminOrderCopilotPanel({
           {
             id: newId(),
             role: "assistant",
-            content: `Apstiprināts: ${(data.autoApplied ?? []).map((a) => a.label ?? a.type).join("; ") || "—"}`,
+            content: `Apstiprināts: ${(data.autoApplied ?? []).map((a) => a.label ?? a.type).join("; ") || "-"}`,
           },
         ]);
         setUnreadDone(true);
@@ -748,7 +748,7 @@ export function AdminOrderCopilotPanel({
           <Bot className="h-4 w-4 shrink-0" aria-hidden />
         )}
         <span className="min-w-0 truncate">
-          {busy ? "Copilot strādā… Turpini darbu" : unreadDone ? "Copilot gatavs — atver" : "Copilot (samazināts)"}
+          {busy ? "Copilot strādā… Turpini darbu" : unreadDone ? "Copilot gatavs - atver" : "Copilot (samazināts)"}
         </span>
         {unreadDone && !busy ? (
           <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-hidden />
@@ -788,7 +788,7 @@ export function AdminOrderCopilotPanel({
           <div className="min-w-0">
             <h2 className="text-sm font-semibold leading-tight text-[var(--color-apple-text)]">Order Copilot</h2>
             <p className="truncate text-[11px] text-[var(--color-provin-muted)]">
-              {busy ? "Strādā fonā — panelis nebloķē" : "Chat + PDF · tikai ieslēgtie avoti"}
+              {busy ? "Strādā fonā - panelis nebloķē" : "Chat + PDF · tikai ieslēgtie avoti"}
             </p>
           </div>
         </div>
@@ -807,7 +807,7 @@ export function AdminOrderCopilotPanel({
             type="button"
             className="rounded-md p-1.5 text-[var(--color-provin-muted)] hover:bg-black/5 dark:hover:bg-white/10"
             aria-label="Samazināt"
-            title="Samazināt — turpini darbu"
+            title="Samazināt - turpini darbu"
             onClick={() => setMinimized(true)}
           >
             <Minimize2 className="h-4 w-4" />
@@ -816,7 +816,7 @@ export function AdminOrderCopilotPanel({
             type="button"
             className="rounded-md p-1.5 text-[var(--color-provin-muted)] hover:bg-black/5 dark:hover:bg-white/10"
             aria-label={busy ? "Samazināt (Copilot vēl strādā)" : "Aizvērt"}
-            title={busy ? "Kamēr strādā — tikai samazina" : "Aizvērt"}
+            title={busy ? "Kamēr strādā - tikai samazina" : "Aizvērt"}
             onClick={requestClose}
           >
             <X className="h-4 w-4" />
@@ -1026,7 +1026,7 @@ export function AdminOrderCopilotPanel({
               disabled={busy || !aiAllowed || allowedSources.length === 0 || (!draft.trim() && files.length === 0)}
               onClick={() => void send()}
               aria-label="Sūtīt un turpināt darbu"
-              title="Sūtīt — logs samazinās, Tu turpini darbu"
+              title="Sūtīt - logs samazinās, Tu turpini darbu"
             >
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
               Sūtīt

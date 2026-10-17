@@ -56,9 +56,9 @@ export function AdminClientOrdersChip({ items }: { items: ClientOrdersChipItem[]
               className="admin-nav-link flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-[#f5f5f7]"
             >
               <span className="w-[74px] shrink-0 tabular-nums text-[#6e6e73]">{day(it.created)}</span>
-              <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-[#3a3a3c]">{it.vin || "—"}</span>
+              <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-[#3a3a3c]">{it.vin || "-"}</span>
               <span className="shrink-0 tabular-nums text-[#1d1d1f]">
-                {typeof it.amountTotal === "number" ? formatMoneyEur(it.amountTotal, "eur") : "—"}
+                {typeof it.amountTotal === "number" ? formatMoneyEur(it.amountTotal, "eur") : "-"}
               </span>
             </Link>
           ))}

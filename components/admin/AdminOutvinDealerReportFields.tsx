@@ -73,7 +73,7 @@ export function AdminOutvinDealerReportFields({
             <span className="text-[9px] font-medium text-[var(--color-provin-muted)]">{labelLv}</span>
             {readOnly ? (
               <span className="text-[11px] text-[var(--color-provin-muted)]">
-                {report.vehicleInfo[key].trim() || "—"}
+                {report.vehicleInfo[key].trim() || "-"}
               </span>
             ) : (
               <input
@@ -116,7 +116,7 @@ export function AdminOutvinDealerReportFields({
         </span>
       </div>
       {displayEquip.length === 0 && readOnly ? (
-        <p className="text-[11px] text-slate-400">—</p>
+        <p className="text-[11px] text-slate-400">-</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-200/90">
           <table className="w-full min-w-[240px] border-collapse text-[11px]">
@@ -131,7 +131,7 @@ export function AdminOutvinDealerReportFields({
                 <tr key={i} className="border-b border-slate-100 last:border-b-0">
                   <td className="px-1.5 py-0.5 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{line.code.trim() || "—"}</span>
+                      <span className="text-[var(--color-provin-muted)]">{line.code.trim() || "-"}</span>
                     ) : (
                       <input
                         type="text"
@@ -145,7 +145,7 @@ export function AdminOutvinDealerReportFields({
                   </td>
                   <td className="px-1.5 py-0.5 align-top">
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{line.description.trim() || "—"}</span>
+                      <span className="text-[var(--color-provin-muted)]">{line.description.trim() || "-"}</span>
                     ) : (
                       <input
                         type="text"

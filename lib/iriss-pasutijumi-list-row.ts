@@ -29,10 +29,10 @@ export function irissPasutijumsToListRow(rec: IrissPasutijumsRecord): IrissPasut
     clientFirstName: rec.clientFirstName.trim(),
     clientLastName: rec.clientLastName.trim(),
     orderDate: rec.orderDate.trim(),
-    brandModel: rec.brandModel.trim() || "—",
+    brandModel: rec.brandModel.trim() || "-",
     vin: rec.vin.trim(),
-    totalBudget: rec.totalBudget.trim() || "—",
-    phone: rec.phone.trim() || "—",
+    totalBudget: rec.totalBudget.trim() || "-",
+    phone: rec.phone.trim() || "-",
     productionYears: rec.productionYears.trim(),
     engineType: rec.engineType.trim(),
     transmission: rec.transmission.trim(),
@@ -100,7 +100,7 @@ export function irissListRowPowerKwLabel(row: Pick<IrissPasutijumsListRow, "engi
 
 export function formatIrissClientName(row: Pick<IrissPasutijumsListRow, "clientFirstName" | "clientLastName">): string {
   const name = [row.clientFirstName, row.clientLastName].map((s) => s.trim()).filter(Boolean).join(" ");
-  return name || "—";
+  return name || "-";
 }
 
 /** Īss datums sarakstam, piem. 22.04 */
@@ -114,12 +114,12 @@ export function formatIrissListDate(row: Pick<IrissPasutijumsListRow, "orderDate
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     return `${dd}.${mm}`;
   }
-  return raw.slice(0, 10) || "—";
+  return raw.slice(0, 10) || "-";
 }
 
 export function irissPhoneTelHref(phone: string): string | null {
   const t = phone.trim();
-  if (!t || t === "—") return null;
+  if (!t || t === "-" || t === "\u2014" || t === "\u2013") return null;
   const digits = t.replace(/\D/g, "");
   if (digits.length < 8) return null;
   if (digits.startsWith("371")) return `tel:+${digits}`;
