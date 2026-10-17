@@ -38,6 +38,7 @@ import {
   verifiedKbCostBandsFromMap,
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
+import { isVerifiedFileKbCostBand } from "@/lib/provin-kb";
 
 export type TechnicalRiskAnalysisResult = {
   text: string;
@@ -135,7 +136,7 @@ function keepVerifiedEur(map: TechnicalRiskMap): boolean {
   return (
     allowCostBands() &&
     map.hide_cost_bands !== true &&
-    verifiedKbCostBandsFromMap(map).length > 0
+    verifiedKbCostBandsFromMap(map).some((b) => isVerifiedFileKbCostBand(b))
   );
 }
 
@@ -146,11 +147,11 @@ async function generateTextFromMap(
   lintErrors?: string,
 ): Promise<string> {
   const hideEur = map.hide_cost_bands === true || !allowCostBands();
-  const verified = verifiedKbCostBandsFromMap(map);
+  const verified = verifiedKbCostBandsFromMap(map).filter((b) => isVerifiedFileKbCostBand(b));
   const costNote = hideEur
     ? "EUR nav: slēdzis paslēpj joslas vai ALLOW_COST_BANDS=false."
     : verified.length > 0
-      ? "EUR atļauts TIKAI kā atsevišķs teikums no verificētas KB joslas (KB: + dated). Maksas katalogi nav avots."
+      ? "EUR atļauts TIKAI kā atsevišķs teikums no verificētas data/kb joslas (KB: + dated + status verified). Draft KB nav avots."
       : "EUR nav: kartē nav verificētas KB joslas.";
   const userPrompt = appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}

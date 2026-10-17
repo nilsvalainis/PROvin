@@ -1,0 +1,26 @@
+code: N57D30
+aliases: [N57D30O0, N57D30O1, N57D30T0, N57Z, N57X]
+fuel: diesel
+years: [2008, 2018]
+timing: {type: chain, position: rear}
+status: draft
+provin_reports: 9
+faults:
+  - component: sadales ķēde
+    km_band: {apskatīt: 200000, paaugstināts: 280000}
+    probability: medium
+    impact: high
+  - component: EGR dzesētājs (atsaukuma kampaņa)
+    probability: medium
+    impact: high
+  - component: turbokompresors / N57X trīs turbo regulēšana
+    probability: medium
+    impact: high
+  - component: eļļas noplūdes, eļļas filtra korpuss
+    probability: medium
+    impact: low
+  - component: klaņu/kloķvārpstas šāles
+    probability: high
+    impact: high
+    note: "apstiprināta tipiska kaite (Nils lēmums, Andris pārstāstīja, 2026-10-17)"
+next_100k_focus: [ķēde, EGR, turbo, DPF, šāles]

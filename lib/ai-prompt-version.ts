@@ -190,5 +190,7 @@
  *   standarta apkopes rinda nav defekts; bez avotu URL un „eksperts”; PDF
  *   nerāda tukšus „km nav” / „Nav ierakstu”. Riskos 150-200 tūkst. km sadaļa
  *   šī auto mezgliem. H5H/TCe paka: GPF, RN17, ieplūdes kvēpi, sadales vāks.
+ * - 2026-10-17.0 - Draft KB data/kb/*.yaml; EUR lint lasa failus (tikai
+ *   status verified). N57 šāles kā tipiska kaite. Gemini TR few-shot no 04.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-16.1";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.0";

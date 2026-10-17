@@ -9,6 +9,7 @@ import {
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
 import { formatEngineIdentificationForPrompt } from "@/lib/admin-ai-engine-identification";
+import { formatMatchingProvinKbForPrompt } from "@/lib/provin-kb";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import type { AiTextStream } from "@/lib/ai-text-stream";
 
@@ -48,10 +49,18 @@ export async function generateTechnicalRiskMapWithAi(input: {
   identificationBrief: string;
   stream?: AiTextStream;
 }): Promise<TechnicalRiskMap> {
+  const kbBlock = formatMatchingProvinKbForPrompt([
+    input.identification.engine.value,
+    ...input.identification.engine.candidates,
+    input.identification.gearbox.value,
+    ...input.identification.gearbox.candidates,
+  ]);
   const userPrompt = `IDENTIFIKĀCIJA (jau noteikta, neizdomā citu kodu):
 ${formatEngineIdentificationForPrompt(input.identification)}
 
 ${input.identificationBrief}
+
+${kbBlock}
 
 ${input.orderContext}
 

@@ -130,11 +130,30 @@ Konstrukcija ir pazīstama servisiem. Uzturēšana joprojām ir jāpierāda ar d
         },
       ],
     });
+    const draftKb = lintTechnicalRiskText({
+      text: `${okText}\n\nOrientējoši 400-800 EUR.`,
+      identification: id,
+      map: mapWithCost,
+      allowCostBands: true,
+    });
+    expect(draftKb.errors.some((e) => e.id === "L3")).toBe(true);
+
     const allowed = lintTechnicalRiskText({
       text: `${okText}\n\nOrientējoši 400-800 EUR.`,
       identification: id,
       map: mapWithCost,
       allowCostBands: true,
+      kbCatalog: [
+        {
+          code: "N47D20",
+          aliases: ["N47"],
+          status: "verified",
+          faults: [],
+          not_typical: [],
+          sourceFile: "test.yaml",
+          raw: { code: "N47D20", status: "verified" },
+        },
+      ],
     });
     expect(allowed.errors.some((e) => e.id === "L3")).toBe(false);
 

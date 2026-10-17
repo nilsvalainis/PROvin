@@ -1,0 +1,20 @@
+code: EA189
+aliases: [CFFB, CFGB, CFGC, CGLC, CBAB, CBDB, CLJA]
+fuel: diesel
+years: [2007, 2015]
+timing: {type: belt, interval_km: "180000-210000 (pēc koda)"}
+status: draft
+provin_reports: 5
+faults:
+  - component: eļļas sūkņa piedziņas sešstūra ass (balansvārpstu modulis)
+    years: [2008, 2011]
+    probability: medium
+    impact: very_high
+  - component: augstspiediena sūknis CP4 / iesmidzinātāji
+    probability: medium
+    impact: high
+  - component: EGR, DPF
+    probability: medium
+  - component: dīzeļa skandāla programmatūras atjauninājums (kampaņa 23R7)
+    check: "pēc VIN dīlerim, vai izpildīts; pēc tā biežāk EGR/DPF sūdzības"
+next_100k_focus: [zobsiksna+sūknis, DPF, EGR]

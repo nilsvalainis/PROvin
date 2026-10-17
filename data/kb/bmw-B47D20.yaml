@@ -1,0 +1,21 @@
+code: B47D20
+aliases: [B47O, B47D20A, B47D20B]
+fuel: diesel
+years: [2014, 2026]
+timing: {type: chain, position: rear}
+status: draft
+provin_reports: 3
+faults:
+  - component: sadales ķēde (pārstrādāta, retāka kaite nekā N47)
+    km_band: {apskatīt: 200000}
+    probability: low
+    impact: high
+  - component: EGR vārsts/dzesētājs (atsaukums agrīnajiem)
+    probability: medium
+    impact: medium
+  - component: AdBlue/SCR, NOx sensori (Euro 6d)
+    probability: medium
+    impact: medium
+  - component: DPF pilsētas ekspluatācijā
+    probability: medium
+next_100k_focus: [AdBlue sistēma, EGR, DPF]
