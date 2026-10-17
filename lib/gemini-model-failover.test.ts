@@ -31,6 +31,8 @@ describe("shouldGeminiModelFailover", () => {
       true,
     );
     expect(GEMINI_MODEL_FLASH_25).toBe("gemini-2.5-flash");
-    expect(GEMINI_MODEL_LEGACY_FLASH).toBe("gemini-2.0-flash");
+    // 2.0 Flash izslēgts 2026-06-01: ķēde nedrīkst beigties ar mirušu modeli.
+    expect(GEMINI_MODEL_LEGACY_FLASH).toBe("gemini-3.5-flash-lite");
+    expect(GEMINI_MODEL_LEGACY_FLASH).not.toMatch(/gemini-2\.0/);
   });
 });

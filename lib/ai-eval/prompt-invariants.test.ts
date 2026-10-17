@@ -786,7 +786,9 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("Gemini 3 uses minimal thinking so comments are not billed empty", () => {
     const thinking = readRepo("lib/gemini-thinking-config.ts");
-    expect(thinking).toMatch(/thinkingLevel: "minimal"/);
+    // Zemākais atbalstītais līmenis pēc modeļa (3.8 / 4 / Pro: `low`, citi: `minimal`), nekad pēc `enabled`.
+    expect(thinking).toMatch(/thinkingLevel: geminiLowestThinkingLevel\(model\)/);
+    expect(thinking).toMatch(/\? "low" : "minimal"/);
     expect(thinking).not.toMatch(/thinkingLevel: enabled \? "low"/);
     expect(thinking).toMatch(/thinkingBudget: enabled \? GEMINI_25_THINKING_BUDGET_ENABLED : GEMINI_25_THINKING_BUDGET_DISABLED/);
     expect(thinking).toMatch(/return isGemini25Model\(model\)/);
@@ -809,7 +811,7 @@ describe("PROVIN AI prompt invariants", () => {
       const cfg = branch.slice(0, branch.indexOf("}"));
       expect(/thinkingLevel/.test(cfg) && /thinkingBudget/.test(cfg)).toBe(false);
     }
-    expect(thinking).toMatch(/thinkingLevel: "minimal"/);
+    expect(thinking).toMatch(/thinkingLevel: geminiLowestThinkingLevel\(model\)/);
     expect(thinking).toMatch(/thinkingBudget:/);
     const gemini = readRepo("lib/admin-gemini.ts");
     expect(gemini).not.toMatch(/\btemperature\s*:/);
