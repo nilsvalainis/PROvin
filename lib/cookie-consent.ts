@@ -11,7 +11,7 @@ export const PENDING_ATTR_KEY = "provin_pending_attr";
 export const ATTR_COOKIE_NAME = "provin_attr";
 
 export type ConsentState = {
-  /** Analītika, UTM un pirmās lapas saglabāšana */
+  /** Analītika, UTM, klikšķa ID un pirmās / pēdējās lapas saglabāšana */
   analytics: boolean;
   updatedAt: string;
 };

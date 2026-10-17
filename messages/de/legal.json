@@ -3,7 +3,7 @@
     "privacyMetaTitle": "Datenschutzerklärung",
     "privacyMetaDescription": "Wie PROVIN.LV personenbezogene Daten, Cookies und Analysen nach Einwilligung gemäß DSGVO verarbeitet. Klar und nachvollziehbar.",
     "privacyTitle": "Datenschutzerklärung",
-    "privacyLead": "Dieses Dokument beschreibt, wie der Diensteanbieter PROVIN.LV (nachfolgend „wir”, „der Dienst”) personenbezogene Daten verarbeitet, welche Cookies eingesetzt werden und wie Sie nicht erforderliche Analysen sowie die Speicherung von First-Touch-Daten (UTM) annehmen oder ablehnen können. Die rechtliche Identität und die Angaben zum Verantwortlichen stehen in der Fußzeile der Website.",
+    "privacyLead": "Dieses Dokument beschreibt, wie der Diensteanbieter PROVIN.LV (nachfolgend „wir”, „der Dienst”) personenbezogene Daten verarbeitet, welche Cookies eingesetzt werden und wie Sie nicht erforderliche Analysen sowie die Speicherung von First- und Last-Touch-Daten (UTM und Anzeigen-Klick-IDs) annehmen oder ablehnen können. Die rechtliche Identität und die Angaben zum Verantwortlichen stehen in der Fußzeile der Website.",
     "sections": [
       {
         "title": "1. Verantwortlicher",
@@ -15,7 +15,7 @@
       },
       {
         "title": "3. Zwecke und Rechtsgrundlage",
-        "body": "Vertragserfüllung und Bestellabwicklung (Art. 6 Abs. 1 lit. b DSGVO). Berechtigte Interessen: Sicherheit der Website und Fehlervermeidung (Art. 6 Abs. 1 lit. f DSGVO). Analysen und First-Touch-Speicherung (UTM) nur nach Ihrer freiwilligen Einwilligung über das Cookie-Banner (Art. 6 Abs. 1 lit. a DSGVO)."
+        "body": "Vertragserfüllung und Bestellabwicklung (Art. 6 Abs. 1 lit. b DSGVO). Berechtigte Interessen: Sicherheit der Website und Fehlervermeidung (Art. 6 Abs. 1 lit. f DSGVO). Analysen sowie First- und Last-Touch-Speicherung (UTM und Anzeigen-Klick-IDs wie gclid, fbclid, ttclid) nur nach Ihrer freiwilligen Einwilligung über das Cookie-Banner (Art. 6 Abs. 1 lit. a DSGVO)."
       },
       {
         "title": "4. Cookies und erforderliche Funktionen",
@@ -23,7 +23,7 @@
       },
       {
         "title": "5. Analysen und First-Touch-Daten (nach Einwilligung)",
-        "body": "Wenn Sie im Cookie-Banner „Analysen” annehmen, können wir begrenzte Daten zum ersten Besuch speichern: den Pfad auf der Website, den HTTP-Referrer soweit vorhanden und Marketingparameter aus dem Link (UTM: source, medium, campaign usw.). Ziel ist zu verstehen, woher Besucher kommen (zum Beispiel TikTok, YouTube, Suche), nicht Personen über alle Drittplattformen hinweg zu verfolgen. Diese Daten werden nicht verkauft."
+        "body": "Wenn Sie im Cookie-Banner „Analysen” annehmen, können wir begrenzte First- und Last-Touch-Marketingdaten speichern: den Pfad auf der Website, den HTTP-Referrer soweit vorhanden, Marketingparameter aus dem Link (UTM: source, medium, campaign, term) und Anzeigen-Klick-IDs (gclid, gbraid, wbraid, fbclid, ttclid), wenn sie in der Adresse stehen. Nach der Einwilligung können wir auch aggregierte Besuche nach Kanal und Kampagne zählen (ohne personenbezogene Daten). Wenn Sie später bestellen, können wir diese Herkunft der Zahlung zuordnen, um zu sehen, welche Anzeige zur Bestellung geführt hat. Ziel ist zu verstehen, woher Besucher kommen, nicht Personen über alle Drittplattformen hinweg zu verfolgen. Diese Daten werden nicht verkauft. Ohne Einwilligung speichern wir sie nicht."
       },
       {
         "title": "6. Dritte",
@@ -31,7 +31,7 @@
       },
       {
         "title": "7. Speicherdauer",
-        "body": "Bestell- und Kundendaten werden so lange aufbewahrt, wie es für die Leistung und gesetzliche Pflichten nötig ist (Buchhaltung, Streitigkeiten). Die Laufzeit von Analyse- und First-Touch-Cookies ist begrenzt (in der Regel bis 180 Tage), soweit nichts anderes angegeben ist."
+        "body": "Bestell- und Kundendaten werden so lange aufbewahrt, wie es für die Leistung und gesetzliche Pflichten nötig ist (Buchhaltung, Streitigkeiten). Die Laufzeit von Analyse- und Herkunfts-Cookies (erster und letzter Touch, UTM, Klick-IDs) ist begrenzt (in der Regel bis 180 Tage), soweit nichts anderes angegeben ist."
       },
       {
         "title": "8. Ihre Rechte",
@@ -127,7 +127,7 @@
   },
   "Cookies": {
     "bannerTitle": "Cookies und Datenschutz",
-    "bannerText": "Wir verwenden erforderliche Cookies, damit die Website funktioniert. Stimmen Sie Analysen zu, können wir anonyme Daten zur ersten Seite und Marketingparameter (UTM) speichern sowie Google Analytics und/oder TikTok Pixel laden (sofern konfiguriert), um zu verstehen, woher Besucher kommen.",
+    "bannerText": "Wir verwenden erforderliche Cookies, damit die Website funktioniert. Stimmen Sie Analysen zu, können wir erste und letzte Marketingseiten, UTM-Parameter und Anzeigen-Klick-IDs (gclid, fbclid, ttclid) speichern, aggregierte Besuche zählen sowie Google Analytics und/oder TikTok Pixel laden (sofern konfiguriert), um zu verstehen, woher Besucher kommen.",
     "reject": "Nur erforderliche",
     "acceptAnalytics": "Analysen und Speicherung zustimmen",
     "privacyLink": "Datenschutzerklärung"

@@ -53,4 +53,34 @@ describe("toAdminOrderDetailClientModel", () => {
     expect(model.partnerAuditPurpose).toBe("internal");
     expect(model.isManual).toBe(true);
   });
+
+  it("keeps first-party attribution for the order source block", () => {
+    const model = toAdminOrderDetailClientModel({
+      id: "cs_attr",
+      created: 1,
+      amountTotal: 7999,
+      currency: "EUR",
+      paymentStatus: "paid",
+      customerEmail: "a@b.lv",
+      vin: "WVWZZZ1JZXW000001",
+      listingUrl: null,
+      customerName: "Anna",
+      phone: null,
+      contactMethod: null,
+      notes: null,
+      customerDetailsEmail: null,
+      customerDetailsPhone: null,
+      attribution: {
+        channel: "google",
+        campaign: "vin-audit",
+        term: "bmw",
+        firstLanding: "/lv?gclid=1",
+        lastLanding: "/lv/pakalpojumi",
+        landing: "/lv/pakalpojumi",
+      },
+    } as never);
+    expect(model.attribution?.channel).toBe("google");
+    expect(model.attribution?.firstLanding).toBe("/lv?gclid=1");
+    expect(model.attribution?.lastLanding).toBe("/lv/pakalpojumi");
+  });
 });

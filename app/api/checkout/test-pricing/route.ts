@@ -11,6 +11,8 @@ import {
   getClientCommentCustomField,
   stripeCheckoutLocale,
 } from "@/lib/stripe-session";
+import { stripeAttributionMetadataFromRequest } from "@/lib/ad-attribution";
+import { ATTR_COOKIE_NAME } from "@/lib/cookie-consent";
 import { stripeCheckoutProductMetadata } from "@/lib/stripe-checkout-metadata";
 import {
   getTestPricingPlan,
@@ -221,6 +223,7 @@ export async function POST(req: Request) {
         }),
     metadata: {
       ...stripeCheckoutProductMetadata(plan.id),
+      ...stripeAttributionMetadataFromRequest(req.headers.get("cookie"), ATTR_COOKIE_NAME),
       listing_url: listingUrl,
       vin: vin || "",
       report_delivery: "email",

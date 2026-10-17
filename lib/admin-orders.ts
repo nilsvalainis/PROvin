@@ -26,6 +26,10 @@ import { parseB2bPackQty } from "@/lib/b2b-partner-orders";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import { isOrderUpsellFulfillment } from "@/lib/order-upsell";
 import {
+  adminAttributionFromStripeMetadata,
+  type AdminOrderAttribution,
+} from "@/lib/ad-attribution";
+import {
   getCheckoutLineFromSession,
   getOrderFieldsFromSession,
   getProvinSelectFieldsFromSession,
@@ -52,6 +56,8 @@ export type AdminOrderRow = {
   checkoutLine?: CheckoutLineKind;
   /** „Kur uzzināja” no Stripe. Tikai admin, ne klienta PDF. */
   heardAbout?: string | null;
+  /** First-party ads source on NEW sessions only. Old rows: missing / null = nav datu. */
+  attribution?: AdminOrderAttribution | null;
   /** Demonstrācijas pasūtījums (ADMIN_DEMO_ORDERS) */
   isDemo?: boolean;
   /** Admin panelī manuāli izveidots pasūtījums (ne no Stripe) — Summa/Laiks labojami. */
@@ -135,6 +141,7 @@ function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | nul
     vin: order.vin,
     checkoutLine: getCheckoutLineFromSession(s),
     heardAbout: order.heardAbout,
+    attribution: adminAttributionFromStripeMetadata(s.metadata),
     fulfillment: s.metadata?.fulfillment?.trim() || null,
     partnerId,
     packQty: parseB2bPackQty(s.metadata?.pack_qty),
@@ -374,6 +381,7 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
     phone,
     notes: order.notes,
     heardAbout: order.heardAbout,
+    attribution: adminAttributionFromStripeMetadata(session.metadata),
     customerDetailsEmail: session.customer_details?.email ?? null,
     customerDetailsPhone: session.customer_details?.phone ?? null,
     ...(select

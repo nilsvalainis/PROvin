@@ -3,6 +3,7 @@ import "server-only";
 import fs from "fs/promises";
 import path from "node:path";
 import { get, put } from "@vercel/blob";
+import { parseAdminOrderAttribution } from "@/lib/ad-attribution";
 import type { AdminOrderRow } from "@/lib/admin-orders";
 import { getOrderDraftBlobConfig, getOrderDraftStorageDir } from "@/lib/admin-order-draft-store";
 import { invalidateStripePaidListCache } from "@/lib/admin-stripe-cache";
@@ -48,6 +49,7 @@ function normalizeRow(raw: unknown): AdminOrderRow | null {
     vin: typeof o.vin === "string" ? o.vin : null,
     checkoutLine: typeof o.checkoutLine === "string" ? (o.checkoutLine as AdminOrderRow["checkoutLine"]) : undefined,
     heardAbout: typeof o.heardAbout === "string" && o.heardAbout.trim() ? o.heardAbout.trim() : null,
+    attribution: parseAdminOrderAttribution(o.attribution),
     isDemo: o.isDemo === true,
     isManual: o.isManual === true,
     fulfillment: typeof o.fulfillment === "string" && o.fulfillment.trim() ? o.fulfillment.trim() : null,

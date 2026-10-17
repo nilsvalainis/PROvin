@@ -15,7 +15,10 @@ import { formatMoneyEur } from "@/lib/format-money";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import type { ConsultationDraftState } from "@/lib/admin-consultation-draft-types";
 import { consultationDraftHasOrderEdits } from "@/lib/admin-consultation-draft-types";
-import type { AdminOrderDetailClientModel } from "@/components/admin/AdminOrderDetailView";
+import {
+  AdminOrderAttributionLines,
+  type AdminOrderDetailClientModel,
+} from "@/components/admin/AdminOrderDetailView";
 import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
 import { renderProvinText } from "@/lib/provin-wordmark";
 
@@ -411,6 +414,7 @@ export function AdminConsultationDetailView({
                 <span className="ml-1.5 text-[10px]">(tikai admin, nav PDF)</span>
               </p>
             ) : null}
+            <AdminOrderAttributionLines attribution={order.attribution} />
           </div>
         </AdminCollapsibleShell>
       </section>
