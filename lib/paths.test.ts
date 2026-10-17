@@ -29,7 +29,7 @@ describe("approved LV VIN-check copy", () => {
     expect(v.whyTitle).toBe("Kāpēc nepietiek ar vienu auto atskaiti?");
     expect(v.whyBody).toContain("Katrā atskaitē redzams tikai tas, kas iegūts no vienas konkrētas datubāzes");
     expect(v.howTitle).toBe("Kā notiek pārbaude PROVIN");
-    expect(v.howBody).toContain("24\u201372 stundu laikā");
+    expect(v.howBody).toContain("24-72 stundu laikā");
     expect(meta.Meta.servicesIntro).toContain("Izvēlies, cik padziļinātu VIN koda pārbaudi vēlies");
   });
 });
