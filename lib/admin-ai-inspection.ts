@@ -18,10 +18,11 @@ import {
   normalizeProvinExpertAiComment,
   stripUnauthorizedEuroAmounts,
 } from "@/lib/source-summary-comment-format";
+import { applyPaintGaugeStaticBlock } from "@/lib/paint-gauge-static-block";
 import { AI_ROUTE_BUDGET_MS, createAiRequestBudget } from "@/lib/ai-request-budget";
 
 function finalizeInspectionComment(text: string): string {
-  return stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(text));
+  return applyPaintGaugeStaticBlock(stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(text)));
 }
 
 export async function generateInspectionRecommendationsWithAi(
@@ -59,16 +60,16 @@ OBLIGĀTI sintezē no VISIEM pieejamajiem avotiem un konteksta blokiem augstāk:
 - nobraukums, negadījumi, TA, dīleris, pārdevējs, cena;
 - vēsturiskie līdzīgo auto auditi un agregātu mācījumi (ja ir).
 
-Katra rindkopa — konkrēta pārbaude + kāpēc šim auto. Garums: tik soļu, cik šim auto ir darāmu (tipiski 6–12; noklusējuma 350–800 NEATTIECAS). NE pa vienai rindkopai katram risku blokam — grupē pēc tā, ko pircējs redz, dzird, izmēra vai vaicā.
-OBLIGĀTI katram auto: viena sadaļa „Virsbūves stāvoklis un krāsas biezums” (virsraksts + viena rindkopa) — krāsas biezuma mērītājs; ārēji ap 100 līdz 150 µm; starpība 50 līdz 150 µm; iekšējās ailes aptuveni uz pusi mazāk = rūpnīca. Šī sadaļa neaizstāj citus soļus. Neizdomā, ka rūsa vai pārkrāsojums jau ir.
-Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI — extra sadaļa ar vietām no brīfa (arkas, sliekšņu apakšas, apakšdaļa; bagāžnieka vāks pie numura zīmes gaismām TIKAI ja brīfs saka tērauds). Nosauc tikai brīfa valstis. Ja bloka NAV, par Lietuvu/Igauniju/Zviedriju un „turpmāko sāli” NERAKSTI.
-Ja kontekstā ir „Itālija / Francija: vizuālā piesardzība” ar VIZUĀLA PIESARDZĪBA — īsa piezīme par pārkrāsotiem paneļiem un kosmētiku, ne rūsas joslas šablons. Ja bloka NAV, Itāliju/Franciju neizdomā.
-Ja aprīkojumā / sludinājumā / identifikācijas datos ir lūka vai panorāmas lūka — OBLIGĀTI atsevišķa rindkopa par grīdas paklājiem, mitrumu un iespējami cietām jumta lūkas drenāžām (VW grupā, īpaši Volkswagen, tas ir tipiski). Ja lūkas datos nav — šo tēmu neizdomā.
+Katra rindkopa - konkrēta pārbaude + kāpēc šim auto. Garums: tik soļu, cik šim auto ir darāmu (tipiski 6-12; noklusējuma 350-800 NEATTIECAS). NE pa vienai rindkopai katram risku blokam - grupē pēc tā, ko pircējs redz, dzird, izmēra vai vaicā.
+NERAKSTI krāsas biezuma lekciju un neizdomā citus mikronu diapazonus. Statiskais bloks „Virsbūves stāvoklis un krāsas biezums” (100 līdz 150 µm; starpība 50 līdz 150 µm; iekšējās ailes uz pusi mazāk) tiek pievienots renderēšanas laikā. Šis bloks neaizstāj citus soļus. Neizdomā, ka rūsa vai pārkrāsojums jau ir.
+Ja kontekstā ir „Ziemas sāls / rūsas ekspozīcija” ar OBLIGĀTI - extra sadaļa ar vietām no brīfa (arkas, sliekšņu apakšas, apakšdaļa; bagāžnieka vāks pie numura zīmes gaismām TIKAI ja brīfs saka tērauds). Nosauc tikai brīfa valstis. Ja bloka NAV, par Lietuvu/Igauniju/Zviedriju un „turpmāko sāli” NERAKSTI.
+Ja kontekstā ir „Itālija / Francija: vizuālā piesardzība” ar VIZUĀLA PIESARDZĪBA - īsa piezīme par pārkrāsotiem paneļiem un kosmētiku, ne rūsas joslas šablons. Ja bloka NAV, Itāliju/Franciju neizdomā.
+Ja aprīkojumā / sludinājumā / identifikācijas datos ir lūka vai panorāmas lūka - OBLIGĀTI atsevišķa rindkopa par grīdas paklājiem, mitrumu un iespējami cietām jumta lūkas drenāžām (VW grupā, īpaši Volkswagen, tas ir tipiski). Ja lūkas datos nav - šo tēmu neizdomā.
 Ja šim auto ir 7 pakāpju S-Tronic / divsajūgs: ieteikumos jābūt lēnai uzsākšanai pēc bremžu atlaišanas un vieglas gāzes, plus straujai apstāšanās pēc brauciena (bez grūdieniem). Ja ir divmasu spararats: graboņa pie kreisā priekšējā riteņa, aukstam un siltam, un vibrācija paātrinoties. Ja ir Audi/VW 3.0 V6 TDI no ~2012: dzesēšanas / termostata / starpdzesētāja noplūdes GAN pirms, GAN pēc dinamiska brauciena. Sajūga stāstu NEKOPĒ uz Tiptronic.
 PIRMS ieteikt zobsiksnas, ķēdes, ūdenssūkņa vai kārbas eļļas maiņu (jebkura marka): izlasi dīlera Veiktos darbus un Komentārus. Ja darbs jau fiksēts, to kā „jāmaina” NERAKSTI. Ķēde pret zobsiksnu - tikai pēc šī motora koda vai fiksētas maiņas.
-${!techPlain ? "Tehnisko risku sadaļas vēl nav — vispirms web meklēšana šīs paaudzes/motora tipiskajām kaitēm (Eiropas forumi), tad pārvērt tās par klātienes soļiem. Neizdomā defektus." : ""}
+${!techPlain ? "Tehnisko risku sadaļas vēl nav - vispirms web meklēšana šīs paaudzes/motora tipiskajām kaitēm (Eiropas forumi), tad pārvērt tās par klātienes soļiem. Neizdomā defektus." : ""}
 Tonis atturīgs: bez „kritisks”, „anomālija”, „katastrofāls” un bez izsaukuma zīmēm.
-NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/negadījumu tekstu vai kopsavilkuma verdiktu — tikai pārvērt signālus par klātienes soļiem.`,
+NEATKĀRTO jau uzrakstīto tehnisko risku eseju, avotu komentārus, nobraukuma/negadījumu tekstu vai kopsavilkuma verdiktu - tikai pārvērt signālus par klātienes soļiem.`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:

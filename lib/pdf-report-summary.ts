@@ -44,12 +44,20 @@ import {
   formatUnifiedIncidentCountLabel,
 } from "@/lib/unified-incidents";
 import {
-  analyzeUnifiedMileageAnomalies,
   collectUnifiedMileageRows,
+  isListingMileageSource,
+  parseOdometerKm,
   prepareUnifiedMileageDisplayRows,
-  selectNewestVerifiedMileageRow,
 } from "@/lib/unified-mileage";
+import {
+  countChartMileageReadings,
+  hasActiveRollbackAnomaly,
+  selectNewestChartMileageRow,
+  type OdometerAnomalyOverride,
+} from "@/lib/odometer-anomaly-classify";
 import { formatPdfOdometerDisplay, isPdfEmptyPlaceholder } from "@/lib/pdf-odometer-display";
+import { detectTotalLossFromPdfInput } from "@/lib/total-loss-detect";
+import { explainMissingOwnerCount } from "@/lib/owner-count-synthesis";
 
 export type PdfSummaryTileTone = "ok" | "warn" | "alert" | "neutral";
 
@@ -77,6 +85,7 @@ export type PdfSummaryInput = {
   citiAvoti?: CitiAvotiBlockState | null;
   tirgusForm?: TirgusFormFields | null;
   listingUrl?: string | null;
+  odometerAnomalyOverrides?: OdometerAnomalyOverride[] | null;
 };
 
 export const PDF_REPORT_SUMMARY_TITLE = "ATSKAITES KOPSAVILKUMS";
@@ -98,7 +107,17 @@ function buildIncidentsTile(input: PdfSummaryInput): PdfSummaryTile {
     collectUnifiedIncidentDamageDetails(input.manualVendorBlocks ?? null),
   );
   const count = agg.uniqueCount;
+  const loss = detectTotalLossFromPdfInput(input);
   if (count === 0) {
+    if (loss.found) {
+      return {
+        id: "incidents",
+        label: "Negadījumi un bojājumi",
+        value: "Pilnīgs zaudējums",
+        note: "Avotos fiksēts pilnīgs zaudējums",
+        tone: "alert",
+      };
+    }
     return {
       id: "incidents",
       label: "Negadījumi un bojājumi",
@@ -110,14 +129,15 @@ function buildIncidentsTile(input: PdfSummaryInput): PdfSummaryTile {
   const newest = agg.clusters[0];
   const withDamage = agg.clusters.filter((c) => c.damage && c.damage.zoneIds.length > 0).length;
   const noteParts: string[] = [];
-  if (newest?.date && newest.date !== "-") noteParts.push(`Jaunākais: ${newest.date}`);
+  if (loss.found) noteParts.push("Pilnīgs zaudējums");
+  if (newest?.date && !isPdfEmptyPlaceholder(newest.date)) noteParts.push(`Jaunākais: ${newest.date}`);
   if (withDamage > 0) noteParts.push(`${withDamage} ar bojājumu zonām`);
   return {
     id: "incidents",
     label: "Negadījumi un bojājumi",
     value: formatUnifiedIncidentCountLabel(count),
     note: noteParts.join(" · "),
-    tone: count > 1 ? "alert" : "warn",
+    tone: loss.found || count > 1 ? "alert" : "warn",
   };
 }
 
@@ -144,33 +164,45 @@ function buildMileageTile(input: PdfSummaryInput): PdfSummaryTile {
       tone: "neutral",
     };
   }
-  const { anomalyBySourceOrder } = analyzeUnifiedMileageAnomalies(rows);
-  const anomalies = [...anomalyBySourceOrder.values()].filter(Boolean).length;
-  const newest = selectNewestVerifiedMileageRow(rows) ?? [...rows].sort((a, b) => b.sortableTime - a.sortableTime)[0]!;
+  const newest =
+    selectNewestChartMileageRow(rows) ?? [...rows].sort((a, b) => b.sortableTime - a.sortableTime)[0]!;
   const value = newest.odometer.trim()
     ? formatPdfOdometerDisplay(newest.odometer, true)
     : "Nav ierakstu";
-  const note =
-    anomalies > 0
-      ? pluralLv(anomalies, "iespējama pretruna", "iespējamas pretrunas")
-      : `${pluralLv(rows.length, "ieraksts", "ieraksti")} bez pretrunām`;
+  const chartCount = countChartMileageReadings(rows);
+  const rollback = hasActiveRollbackAnomaly(rows, input.odometerAnomalyOverrides);
+  const note = rollback
+    ? pluralLv(1, "nobraukuma kritums", "nobraukuma kritumi")
+    : `${pluralLv(chartCount, "ieraksts", "ieraksti")} bez pretrunām`;
+  const listing = [...rows]
+    .filter((r) => isListingMileageSource(r) && parseOdometerKm(r.odometer) != null)
+    .sort((a, b) => a.sortableTime - b.sortableTime)
+    .at(-1);
+  const listingKm = listing ? parseOdometerKm(listing.odometer) : null;
+  const headerKm = parseOdometerKm(newest.odometer);
+  const noteSegments =
+    listing && listingKm != null && headerKm != null && Math.abs(listingKm - headerKm) > 50
+      ? [`sludinājumā ${formatPdfOdometerDisplay(listing.odometer, true)}`]
+      : undefined;
   return {
     id: "mileage",
     label: "Nobraukums",
     value,
     note,
-    tone: anomalies > 0 ? "alert" : "ok",
+    noteSegments,
+    tone: rollback ? "alert" : "ok",
   };
 }
 
 function buildOwnerCountTile(input: PdfSummaryInput): PdfSummaryTile {
   const syn = synthesizeOwnerCountsFromPdfInput(input);
   if (syn.totalCount === 0) {
+    const empty = explainMissingOwnerCount(input);
     return {
       id: "owners",
       label: "Īpašnieku skaits",
-      value: "Nav ierakstu",
-      note: "Avotos nav fiksēta īpašnieku skaita",
+      value: empty.value,
+      note: empty.note,
       tone: "neutral",
     };
   }

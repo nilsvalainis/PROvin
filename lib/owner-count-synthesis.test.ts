@@ -7,6 +7,7 @@ import {
 } from "@/lib/admin-source-blocks";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import {
+  explainMissingOwnerCount,
   extractExplicitOwnerCount,
   formatOwnerCountBannerNote,
   formatOwnerCountCountryStats,
@@ -210,5 +211,34 @@ describe("synthesizeOwnerCountsFromPdfInput", () => {
     });
     expect(syn.chosen.sweden).toBeUndefined();
     expect(formatOwnerCountTileFacts(syn.chosen).value).toBe("ārvalstīs 2");
+  });
+});
+
+describe("explainMissingOwnerCount", () => {
+  it("does not say Nav ierakstu when ownership changes exist", () => {
+    const empty = explainMissingOwnerCount({
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.carvertical,
+          mileageRows: [],
+          incidentRows: [],
+          comments: "",
+          vehicleHistoryTimeline: [
+            { date: "01.06.2014", country: "DE", description: "Ownership change" },
+          ],
+        },
+      ],
+    });
+    expect(empty.value).toBe("Skaits nav fiksēts");
+    expect(empty.note).toMatch(/reģistrāciju maiņas/);
+    expect(empty.value).not.toBe("Nav ierakstu");
+  });
+
+  it("says Nav LV reģistra when the car is not in CSDD", () => {
+    const empty = explainMissingOwnerCount({
+      csddForm: { ...createDefaultSourceBlocks().csdd, comments: "Dati nav pieejami." },
+    });
+    expect(empty.value).toBe("Nav LV reģistra");
+    expect(empty.note).toMatch(/nav reģistrēts Latvijā/);
   });
 });

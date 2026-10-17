@@ -44,7 +44,8 @@ export const PROVIN_REPORT_COPY_VOCABULARY = `LATVIAN VOCABULARY & PHRASING (man
 - Missing records: „trūkums”, „datu neesamība”, „iztrūkstoši dati”, „avotos nav fiksēts” - never a vacuum metaphor for gaps. Workshop term „vakuumsūknis” is allowed.
 - Crankshaft pulley / harmonic balancer: always „kloķvārpstas skriemelis (demferis)”.
 - ${buildBannedVocabularyPromptRules()}
-- ${buildForbiddenPersonaNounPromptRules()}`;
+- ${buildForbiddenPersonaNounPromptRules()}
+- Never write the calque „pie X km” or „pie nobraukuma”. Use „ar nobraukumu X km” or „X km atzīmē”.`;
 
 /** Atturīgs tonis — bez pārspīlējumiem un bez 100 % apgalvojumiem. */
 export const PROVIN_RESTRAINED_TONE_RULES = `RESTRAINED EXPERT VOICE (mandatory — PROVIN gives a documentary opinion, not a verdict):
@@ -170,16 +171,13 @@ export const AI_SOUTHERN_EUROPE_VISUAL_CAUTION_RULES = `ITALY / FRANCE VISUAL CA
  * Viena sadaļa (virsraksts + viena rindkopa), lai 3 tēmas neapēd 3 kvotas vietas.
  */
 export const AI_PAINT_GAUGE_INSPECTION_RULES = `
-PAINT THICKNESS / UNRECORDED BODY WORK (mandatory — every agent; default OUTPUT in „2. Ieteikumi klātienes apskatei” for EVERY car, regardless of TA / wrap / winter-salt brief):
+PAINT THICKNESS / UNRECORDED BODY WORK (mandatory for every agent; STATIC BLOCK - do not invent other micron ranges):
 - Digital records may omit painted panels if work was done in an independent workshop or to hide small defects. That is a reason to measure in person - not a claim that rust or a respray is already proven on THIS car.
-- „2. Ieteikumi” MUST include ONE combined section: heading „Virsbūves stāvoklis un krāsas biezums” plus a single paragraph covering all three points below. Do not split into three headings. Anti-repetition does not waive this. This section is extra to other checks and does not replace gearbox / test-drive / TA / wrap / winter-salt items - raise length instead of dropping them.
-- Client content of that one paragraph (adapt this wording, keep the numbers):
-  • Digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve jāpārbauda klātienē ar krāsas biezuma mērītāju.
-  • Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem.
-  • Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.
-- Other fields (especially AutoDNA, CarVertical, CSDD, LTAB, dealer, VIN registry, CC.VIN, ASV, mileage): do NOT write this paint-gauge essay, micron protocol, or the „records may omit painted panels / measure in person” caveat. Those fields extract THIS source’s unique facts (km, claims, TA, warnings) and stop. Unrecorded-body-work interpretation belongs in „3. Kopsavilkums” or one short sentence in tech risks only if it is a purchase-relevant unknown. Incidents may name recorded damage zones without repeating the micron protocol.
-- If THIS car is wrapped: still include this micron protocol in „2. Ieteikumi”; add that a gauge through film is limited (see WRAP / FILM).
-- OPERATORA KOMANDAS „tikai par…” still win if the operator excluded body work; otherwise this section is always on in inspection only.
+- Do NOT write a new paint-thickness lecture and do NOT invent other micron bands (50-100, 108-156, 150-170). A single static block is injected into „2. Ieteikumi” at render time with heading „Virsbūves stāvoklis un krāsas biezums” and ONE paragraph: Digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve jāpārbauda klātienē ar krāsas biezuma mērītāju. Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem. Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.
+- If you still write this section, use EXACTLY that heading and that paragraph (100 līdz 150 µm; 50 līdz 150 µm). No other numbers.
+- Other fields (especially AutoDNA, CarVertical, CSDD, LTAB, dealer, VIN registry, CC.VIN, ASV, mileage): do NOT write this paint-gauge essay, micron protocol, or the „records may omit painted panels / measure in person” caveat.
+- If THIS car is wrapped: the static block still applies; add that a gauge through film is limited (see WRAP / FILM).
+- OPERATORA KOMANDAS „tikai par…” still win if the operator excluded body work.
 - No repair EUR.
 `.trim();
 
@@ -437,7 +435,11 @@ export function stripInternalClientLeaks(text: string): string {
   );
   out = out.replace(/\(D(?:[1-9]|[1-9]\d)(?:\s[^)]*)?\)/g, "");
   out = out.replace(/\bD(?:[1-9]|[1-9]\d)(?=\s+\d{1,2}[./]|\s+\d{4}|\s*:)/g, "");
-  out = out.replace(/\bHECK\b(?:\s*\(\s*aizmugures piedziņa\s*\))?/g, "aizmugures piedziņa");
+  out = out.replace(/\bHECK\b(?:\s*\(\s*aizmugures piedziņa\s*\))?/g, "aizmugurējā piedziņa");
+  out = out.replace(/\bALLR\b/g, "pilnpiedziņa");
+  out = out.replace(/\bStūre\s+LL\b/g, "Stūre: kreisā stūre");
+  out = out.replace(/\bVirsbūve\s+TOU\b/g, "Virsbūve: universālis");
+  out = out.replace(/\bVirsbūve\s+SAV\b/g, "Virsbūve: apvidus");
   out = out.replace(/AGR[-\s]?K(?:ü|ue|u)hler/gi, "EGR dzesētājs");
   out = out.replace(/\bPR[-/\s][A-Z0-9]{2,4}\b/g, "");
   out = out.replace(/\bSA\s?\d{3,4}[A-Z]?\b/g, "");
@@ -497,8 +499,13 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/informācijas\s+vakuum\w*/gi, "datu neesamība"],
     [/\bVakuums(?!ūkn)/g, "Trūkums"],
     [/\bvakuums(?!ūkn)/g, "trūkums"],
+    [/\bpie\s+šī\s+nobraukuma\b/gi, "ar šo nobraukumu"],
+    [/\bpie\s+nobraukuma\b/gi, "ar nobraukumu"],
+    [/\bStatuss\s+unpaid\b/gi, "Statuss: nav apmaksāts"],
+    [/\bStatuss\s+paid\b/gi, "Statuss: apmaksāts"],
   ];
   for (const [re, rep] of replacements) out = out.replace(re, rep);
+  out = out.replace(/\bpie\s+(\d[\d\s.]*)\s*km\b/gi, "ar nobraukumu $1 km");
   out = out.replace(/riska\s+kartē/gi, (match, offset: number, full: string) => {
     const before = full.slice(Math.max(0, offset - 2), offset);
     return offset === 0 || /[\n.!?]\s*$/.test(before) ? "Datos" : "datos";

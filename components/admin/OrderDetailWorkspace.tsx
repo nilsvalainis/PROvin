@@ -153,6 +153,13 @@ import {
   ListingAnalysisSubsectionHeading,
 } from "@/components/admin/AdminListingAnalysisSectionChrome";
 import { buildPdfReportSummaryTiles } from "@/lib/pdf-report-summary";
+import { checkPrePdfContradictions } from "@/lib/pre-pdf-contradiction-check";
+import {
+  collectUnifiedMileageRows,
+  prepareUnifiedMileageDisplayRows,
+} from "@/lib/unified-mileage";
+import type { OdometerAnomalyOverride } from "@/lib/odometer-anomaly-classify";
+import { AdminOdometerAnomalyPanel } from "@/components/admin/AdminOdometerAnomalyPanel";
 import { AdminManualBannersEditor } from "@/components/admin/AdminManualBannersEditor";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
 import { useAdminBannerCardsHidden } from "@/components/admin/use-admin-banner-cards-hidden";
@@ -855,6 +862,7 @@ export function OrderDetailWorkspace({
   const [factCheckByField, setFactCheckByField] = useState<Record<string, FactCheckResult>>({});
   const [factCheckBusy, setFactCheckBusy] = useState<Record<string, boolean>>({});
   const [factCheckDismissed, setFactCheckDismissed] = useState<string[]>([]);
+  const [odometerAnomalyOverrides, setOdometerAnomalyOverrides] = useState<OdometerAnomalyOverride[]>([]);
   const [factCheckPublishItems, setFactCheckPublishItems] = useState<
     { label: string; sentence: string; message: string }[] | null
   >(null);
@@ -909,6 +917,46 @@ export function OrderDetailWorkspace({
       /* kvota / privātais režīms */
     }
   }, [factCheckDismissed, payload.sessionId]);
+
+  const odometerOverrideHydratedRef = useRef(false);
+  useEffect(() => {
+    odometerOverrideHydratedRef.current = false;
+    try {
+      const raw = sessionStorage.getItem(`provin-odometer-overrides:${payload.sessionId}`);
+      if (!raw) {
+        setOdometerAnomalyOverrides([]);
+      } else {
+        const parsed = JSON.parse(raw) as unknown;
+        setOdometerAnomalyOverrides(
+          Array.isArray(parsed)
+            ? parsed.filter(
+                (x): x is OdometerAnomalyOverride =>
+                  x &&
+                  typeof x === "object" &&
+                  typeof (x as OdometerAnomalyOverride).key === "string" &&
+                  ((x as OdometerAnomalyOverride).action === "confirm" ||
+                    (x as OdometerAnomalyOverride).action === "dismiss"),
+              )
+            : [],
+        );
+      }
+    } catch {
+      setOdometerAnomalyOverrides([]);
+    }
+    odometerOverrideHydratedRef.current = true;
+  }, [payload.sessionId]);
+
+  useEffect(() => {
+    if (!odometerOverrideHydratedRef.current) return;
+    try {
+      sessionStorage.setItem(
+        `provin-odometer-overrides:${payload.sessionId}`,
+        JSON.stringify(odometerAnomalyOverrides),
+      );
+    } catch {
+      /* kvota / privātais režīms */
+    }
+  }, [odometerAnomalyOverrides, payload.sessionId]);
   const wsStateRef = useRef(ws);
   wsStateRef.current = ws;
   const orderEditsRef = useRef({
@@ -3286,12 +3334,34 @@ export function OrderDetailWorkspace({
         autoRecordsBlock: blocksDisplaySafe.auto_records,
         oneautoBlock: blocksDisplaySafe.oneauto,
         ccVinBlock: blocksDisplaySafe.cc_vin,
+        asvBlock: blocksDisplaySafe.asv,
         manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
         manualLtabBlock: toPdfLtabManualBlock(blocksDisplaySafe.ltab),
         citiAvoti: blocksDisplaySafe.citi_avoti,
         tirgusForm: blocksDisplaySafe.tirgus,
         listingUrl: payload.listingUrl ?? null,
+        odometerAnomalyOverrides,
       });
+    } catch {
+      return [];
+    }
+  }, [blocksDisplaySafe, payload.listingUrl, odometerAnomalyOverrides]);
+
+  const unifiedMileageDisplayRows = useMemo(() => {
+    try {
+      return prepareUnifiedMileageDisplayRows(
+        collectUnifiedMileageRows({
+          csddForm: blocksDisplaySafe.csdd,
+          autoRecordsBlock: blocksDisplaySafe.auto_records,
+          oneautoBlock: blocksDisplaySafe.oneauto,
+          ccVinBlock: blocksDisplaySafe.cc_vin,
+          asvBlock: blocksDisplaySafe.asv,
+          manualVendorBlocks: toPdfManualVendorBlocks(blocksDisplaySafe),
+          citiAvotiBlock: blocksDisplaySafe.citi_avoti,
+          tirgusForm: blocksDisplaySafe.tirgus,
+          listingUrl: payload.listingUrl ?? null,
+        }),
+      );
     } catch {
       return [];
     }
@@ -3461,6 +3531,29 @@ export function OrderDetailWorkspace({
           }
         }),
       );
+      const prePdfFlags = checkPrePdfContradictions({
+        summaryInput: {
+          csddForm: cur.sourceBlocks.csdd,
+          autoRecordsBlock: cur.sourceBlocks.auto_records,
+          oneautoBlock: cur.sourceBlocks.oneauto,
+          ccVinBlock: cur.sourceBlocks.cc_vin,
+          asvBlock: cur.sourceBlocks.asv,
+          manualVendorBlocks: toPdfManualVendorBlocks(cur.sourceBlocks),
+          manualLtabBlock: toPdfLtabManualBlock(cur.sourceBlocks.ltab),
+          citiAvoti: cur.sourceBlocks.citi_avoti,
+          tirgusForm: cur.sourceBlocks.tirgus,
+          listingUrl: payload.listingUrl ?? null,
+          odometerAnomalyOverrides,
+        },
+        overrides: odometerAnomalyOverrides,
+      });
+      for (const flag of openErrorFactCheckFlags(prePdfFlags, factCheckDismissed)) {
+        errorItems.push({
+          label: "Pirms PDF",
+          sentence: flag.sentence,
+          message: flag.message,
+        });
+      }
       if (errorItems.length > 0) {
         pendingPrintOptsRef.current = opts;
         setFactCheckPublishItems(errorItems);
@@ -3813,6 +3906,7 @@ export function OrderDetailWorkspace({
       mileageComment: isolate ? "" : mileageCommentDraft,
       incidentPhotoGroups: isolate ? [] : wsPersistRef.current.incidentPhotoGroups,
       incidentPhotos: isolate ? [] : wsPersistRef.current.incidentPhotos,
+      odometerAnomalyOverrides,
     };
 
     let finalPayload = reportPayload;
@@ -5613,6 +5707,16 @@ export function OrderDetailWorkspace({
                     flags={factCheckByField.mileage?.flags}
                     dismissed={factCheckDismissed}
                     onDismiss={dismissFactCheckFlag}
+                  />
+                  <AdminOdometerAnomalyPanel
+                    rows={unifiedMileageDisplayRows}
+                    overrides={odometerAnomalyOverrides}
+                    onOverride={(next) =>
+                      setOdometerAnomalyOverrides((prev) => [
+                        ...prev.filter((o) => o.key !== next.key),
+                        next,
+                      ])
+                    }
                   />
                 </div>
                 </div>

@@ -27,7 +27,7 @@ export function buildPdfRunningFooterLine(opts: {
   const parts: string[] = [];
   if (vin) parts.push(vin);
   if (date) parts.push(date);
-  if (prepared) parts.push(`Sagatavots: ${prepared}`);
+  if (prepared) parts.push(`Sagatavots klientam: ${prepared}`);
   return parts.join(" · ");
 }
 

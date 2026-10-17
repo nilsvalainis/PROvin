@@ -222,6 +222,9 @@ import {
 } from "@/lib/admin-workspace-field-labels";
 import { buildPdfCommentBoxes } from "@/lib/pdf-comment-paragraphs";
 import { formatPdfOdometerDisplay, isPdfEmptyPlaceholder } from "@/lib/pdf-odometer-display";
+import { formatLvDayCount } from "@/lib/lv-day-plural";
+import { applyPaintGaugeStaticBlock } from "@/lib/paint-gauge-static-block";
+import { maskVinForDemo } from "@/lib/demo-vin-mask";
 import { formatPdfPreparedByName } from "@/lib/pdf-prepared-by-name";
 import {
   buildPdfRunningFooterLine,
@@ -372,6 +375,8 @@ export type ClientReportPayload = {
   incidentPhotos?: { id: string }[] | null;
   /** NOBRAUKUMA VĒSTURES KOMENTĀRS - PDF zem nobraukuma grafika. */
   mileageComment?: string | null;
+  /** Operatora apstiprinājums / atcelšana nobraukuma anomālijām (nav veco pasūtījumu datu pārraksts). */
+  odometerAnomalyOverrides?: import("@/lib/odometer-anomaly-classify").OdometerAnomalyOverride[] | null;
 };
 
 export type ClientReportPortfolioRow = { name: string; size: number };
@@ -794,6 +799,7 @@ function buildPdfReportSummaryHtml(p: ClientReportPayload, extraTiles: PdfSummar
         citiAvoti: p.citiAvoti ?? null,
         tirgusForm: p.tirgusForm ?? null,
         listingUrl: p.listingUrl ?? null,
+        odometerAnomalyOverrides: p.odometerAnomalyOverrides ?? null,
       },
       { pdfBannerInclude: p.pdfBannerInclude ?? null, manualBanners: p.manualBanners ?? null },
     ),
@@ -1507,7 +1513,7 @@ function buildTirgusPriceHistoryTableHtml(f: TirgusFormFields): string {
       </tr>`;
     })
     .join("\n");
-  const duration = days != null ? `${days} diena(s)` : "-";
+  const duration = days != null ? formatLvDayCount(days) : "-";
   const priceChangeTone =
     priceChange < 0 ? "pdf-stat-tone--down" : priceChange > 0 ? "pdf-stat-tone--up" : "";
   return `<div class="pdf-listing-price-history pdf-listing-price-history--tirgus">
@@ -1703,6 +1709,7 @@ function buildAutoRecordsAvotuSubsection(
   makeModel = "",
   sparkHtml = "",
   productScope?: DealerProductScopeArgs,
+  maskDemoVin = false,
 ): string {
   if (!vis.auto_records) return "";
   if ((!b || !autoRecordsBlockHasContent(b)) && !sparkHtml) return "";
@@ -1714,9 +1721,12 @@ function buildAutoRecordsAvotuSubsection(
   const bundle = getAutoRecordsOutvinBundle(b);
   const hasBundleStructured = outvinBundleHasStructuredContent(bundle);
   const bundleInner = hasBundleStructured
-    ? buildOutvinBundlePdfInnerHtml(bundle, undefined, { omitEquipment: true })
+    ? buildOutvinBundlePdfInnerHtml(bundle, undefined, { omitEquipment: true, maskDemoVin })
     : "";
-  const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport, { omitEquipment: true });
+  const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport, {
+    omitEquipment: true,
+    maskDemoVin,
+  });
   const outvinInner = bundleInner.trim() || legacyInner.trim();
   const showEquipment = vis.autoRecordsEquipment !== false;
   const equipmentHtml = showEquipment
@@ -1727,6 +1737,7 @@ function buildAutoRecordsAvotuSubsection(
     vehicle: resolveDealerCoverVehicle(bundle.vehicleInfo, b.outvinReport?.vehicleInfo),
     makeModel,
     serviceWorks: b.serviceWorks ?? [],
+    maskDemoVin,
   });
   const hasCover = coverHtml.length > 0;
   const condenseRecords = shouldCondenseDealerPdfRecords(productScope ?? {});
@@ -2126,6 +2137,7 @@ function buildAvotuDatiSectionHtml(
     reportVehicleMakeHint(p),
     spark("dealer"),
     dealerPdfProductScope(p),
+    p.isDemo === true,
   );
   const ccVin = buildCcVinAvotuSubsection(p.ccVinBlock ?? null, vis, ccVinPhotoDataUrls, spark("intl"));
   const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"));
@@ -2167,7 +2179,7 @@ function buildExpertPdfSectionHtml(icon: string, title: string, html: string): s
 function buildApprovedByIrissHtml(p: ClientReportPayload, vis: PdfVisibilitySettings): string {
   const techHtml = vis.irissTechnicalRisks ? (p.tehniskoRiskuAnalize ?? "").trim() : "";
   const irissHtml = vis.irissSummary ? (p.iriss ?? "").trim() : "";
-  const planHtml = vis.irissInspection ? (p.apskatesPlāns ?? "").trim() : "";
+  const planHtml = vis.irissInspection ? applyPaintGaugeStaticBlock((p.apskatesPlāns ?? "").trim()) : "";
   return [
     techHtml ? buildExpertPdfSectionHtml(sectionIconPdfHtml("wrench"), PDF_IRISS_SECTION_TECHNICAL_RISKS, techHtml) : "",
     planHtml ? buildExpertPdfSectionHtml(sectionIconPdfHtml("car"), PDF_IRISS_SECTION_INSPECTION, planHtml) : "",

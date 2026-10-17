@@ -7,6 +7,7 @@ import { AdminClearSourceBlockButton } from "@/components/admin/AdminClearSource
 import { AdminCountryCombobox } from "@/components/admin/AdminCountryCombobox";
 import { AdminListingPriceHistoryTable } from "@/components/admin/AdminListingPriceHistoryTable";
 import { AdminSourceCommentField, type AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
+import { AdminSourceCommentTemplates } from "@/components/admin/AdminSourceCommentTemplates";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
@@ -462,6 +463,12 @@ export function AdminTirgusSourceBlock({
     variant === "embedded" ? (
       <>
         {photosBlock}
+        {!readOnly && !disabled ? (
+          <AdminSourceCommentTemplates
+            value={val.comments}
+            onChange={(next) => setField("comments", next)}
+          />
+        ) : null}
         <AdminSourceCommentField
           value={val.comments}
           onChange={(next) => setField("comments", next)}
@@ -483,6 +490,12 @@ export function AdminTirgusSourceBlock({
     ) : (
       <div className="mt-auto w-full min-w-0 shrink-0 pt-2">
         {photosBlock}
+        {!readOnly && !disabled ? (
+          <AdminSourceCommentTemplates
+            value={val.comments}
+            onChange={(next) => setField("comments", next)}
+          />
+        ) : null}
         <AdminSourceCommentField
           value={val.comments}
           onChange={(next) => setField("comments", next)}

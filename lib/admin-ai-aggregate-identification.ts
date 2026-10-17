@@ -4,6 +4,7 @@
  * riskus pret aptuveno nobraukumu un vecumu (skat. AI_POWERTRAIN_IDENTIFICATION_RULES).
  */
 import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
+import { translateDealerVehicleCodeLv } from "@/lib/dealer-vehicle-code-lv";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
 import {
   outvinEquipmentLineHasData,
@@ -138,8 +139,10 @@ function formatDriveHint(raw: string): string {
   const t = raw.trim();
   if (!t) return "";
   const u = t.toUpperCase();
-  if (/HECK|RWD|REAR/.test(u)) return `${t} (aizmugures piedziņa)`;
-  if (/ALLRAD|AWD|4WD|XDRIVE|4MATIC|QUATTRO/.test(u)) return `${t} (pilnpiedziņa)`;
+  if (u === "HECK" || /^(RWD|REAR)$/.test(u)) return "aizmugurējā piedziņa";
+  if (u === "ALLR" || /ALLRAD|AWD|4WD|XDRIVE|4MATIC|QUATTRO/.test(u)) {
+    return u === "ALLR" ? "pilnpiedziņa" : `${t} (pilnpiedziņa)`;
+  }
   if (/FRONT|FWD|VORNE/.test(u)) return `${t} (priekšējā piedziņa)`;
   return t;
 }
@@ -214,7 +217,7 @@ export function buildAggregateIdentificationBrief(input: AggregateIdentification
   const body = (vi?.body || bundleVi.body || "").trim();
   const development = (vi?.developmentCode || bundleVi.developmentCode || "").trim();
   if (drive) lines.push(`- Piedziņa (dīleris): ${formatDriveHint(drive)}`);
-  if (body) lines.push(`- Virsbūve (dīleris): ${body}`);
+  if (body) lines.push(`- Virsbūve (dīleris): ${translateDealerVehicleCodeLv("body", body)}`);
   if (development) lines.push(`- Izstrādes kods / šasija: ${development}`);
   if (fp.transmission === "auto") lines.push("- Ātrumkārba pēc avotiem: automātiskā (precīzs tips jāizsecina)");
   else if (fp.transmission === "manual") lines.push("- Ātrumkārba pēc avotiem: mehāniskā");

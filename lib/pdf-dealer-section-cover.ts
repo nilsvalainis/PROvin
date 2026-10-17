@@ -79,19 +79,22 @@ export function resolveDealerCoverVehicle(
 }
 
 /** Tikai 17 zīmju VIN kods, bez vārda „VIN”. */
-export function formatDealerCoverVin(raw: string): string {
+export function formatDealerCoverVin(raw: string, opts?: { maskDemo?: boolean }): string {
   const compact = raw.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  return compact.length === 17 ? compact : "";
+  if (compact.length !== 17) return "";
+  if (opts?.maskDemo) return `${compact.slice(0, 11)}XXXXXX`;
+  return compact;
 }
 
 export function buildDealerSectionCoverHtml(args: {
   vehicle?: OutvinVehicleInfo | null;
   makeModel?: string;
   serviceWorks: AutoRecordsServiceWorkRow[];
+  maskDemoVin?: boolean;
 }): string {
   const vi = args.vehicle;
   const model = (vi?.model.trim() || args.makeModel?.trim() || "").trim();
-  const vin = formatDealerCoverVin(vi?.vinCode ?? "");
+  const vin = formatDealerCoverVin(vi?.vinCode ?? "", { maskDemo: args.maskDemoVin === true });
   const power = vi?.power.trim() ?? "";
   const span = buildDealerServiceSpanHtml(args.serviceWorks, { cover: true });
   const curve = buildDealerCoverBlendCurveHtml(args.serviceWorks);

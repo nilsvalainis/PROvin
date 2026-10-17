@@ -365,13 +365,13 @@ FORMĀTS (obligāti):
 - Virsraksts savā rindā (piem. Virsbūves pārbaude ar krāsas mērītāju), tad rindkopa nākamajā rindā. NEKAD *, **.
 - Formulējumi: Jāpārbauda…, Ieteicams…, Rūpīgi jāapskata… (ne „Pārbaudi”).
 - CLIENT VALUE DENSITY: katra rindkopa = konkrēta pārbaude + kāpēc tā svarīga šim auto; bez garas tehniskās esejas (tā ir 1. sadaļā). Noklusējuma 350–800 šim laukam NEATTIECAS.
-- Garums: tik pārbaužu, cik šim auto ir darāmu soļu (tipiski 6–12, ieskaitot obligāto krāsas-biezuma sadaļu). NE pa vienai rindkopai katram risku blokam — grupē pēc pircēja darbības (ko redzēt, dzirdēt, izmērīt, vaicāt). Īsāk, ja datu maz. Obligātā virsbūves sadaļa NEDRĪKST izstumt kārbu, testa braucienu vai citus soļus — palielini garumu, neizmet.
+- Garums: tik pārbaužu, cik šim auto ir darāmu soļu (tipiski 6-12). NE pa vienai rindkopai katram risku blokam - grupē pēc pircēja darbības (ko redzēt, dzirdēt, izmērīt, vaicāt). Īsāk, ja datu maz. Statiskā virsbūves sadaļa NEDRĪKST izstumt kārbu, testa braucienu vai citus soļus - palielini garumu, neizmet.
 
 Satura prasības (OBLIGĀTI sintezē no VISIEM avotiem, ne tikai no vienas sadaļas):
-- **Virsbūves stāvoklis un krāsas biezums** — KATRAM auto viena sadaļa (virsraksts + viena rindkopa, ne trīs): digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā; mērītājs klātienē; ārēji ap 100 līdz 150 µm, visiem paneļiem līdzīgi; starpība 50 līdz 150 µm var norādīt uz kosmētisku pārkrāsošanu; iekšējās ailes parasti aptuveni uz pusi mazāk = rūpnīca, ne remonts. Neizdomā, ka rūsa vai pārkrāsojums jau ir.
+- **Virsbūves stāvoklis un krāsas biezums** - NERAKSTI šo lekciju un neizdomā citus mikronu diapazonus. Renderēšanas laikā tiek pievienots viens statisks bloks ar 100 līdz 150 µm un starpību 50 līdz 150 µm. Ja tomēr raksti, lieto TIKAI šos skaitļus. Neizdomā, ka rūsa vai pārkrāsojums jau ir.
 - **Tehnisko risku analīze** (ja ir) — pārvērt par klātienes soļiem; nedublē visu eseju. Ja tās vēl nav, izsecini visticamāko dzinēja/kārbas/piedziņas salikumu pats (skat. AGREGĀTU IDENTIFIKĀCIJA) un veido pārbaudes tam salikumam un šim nobraukuma posmam — ne vispārīgu lietota auto sarakstu.
 - **Nobraukums / neatbilstības / datu trūkums** — konkrēti, ko mērīt/vaicāt klātienē (nevis atkārtot visu nobraukuma komentāru).
-- **Negadījumi / krāsojums / zaudējumi** — krāsas biezums, šuves, stikli, paneļi (nevis atkārtot visu negadījumu kopsavilkumu).
+- **Negadījumi / krāsojums / zaudējumi** - tikai klātienes soļi (šuves, stikli, paneļi). Negadījuma datums, summa un zonas paliek TIKAI negadījumu laukā; šeit viens teikums ar atsauci, ne pārstāsts.
 - **CSDD TA / defekti / īpašniecība** — klātienes sarakstā tikai atkārtoti VAI joprojām aktuāli aizrādījumi. Novērsti ~2+ gadus veci punkti, kuru nākamā/aiznākamā TA vairs nerāda, NAV jāmeklē klātienē. Izņēmums: rūsa/korozija un cietās daļiņas / dūmainība — paliek uzmanības punkts arī vēlāk.
 - **Ziemas sāls / rūsa** — ja kontekstā ir bloks ar Statuss: OBLIGĀTI, viena sadaļa ar vietām no brīfa (arkas zem oderēm, sliekšņu apakšas, apakšdaļa). Bagāžnieka vāka malu ap numura zīmes apgaismojumu nosauc TIKAI ja brīfs saka „Bagāžnieka vāks: tērauds”. Daudziem modeļiem vāks ir plastmasa vai stiklašķiedra - rūsa tur neaug. Svaiga TA un cinkojums to neatceļ. Neizdomā, ka rūsa jau ir. Nosauc tikai brīfa valstis (var būt arī Zviedrija, Somija, Dānija, Austrija, Polija, Vācijas lejasdaļa, Austrumvācija).
 - **Itālija / Francija** — ja kontekstā ir bloks ar VIZUĀLA PIESARDZĪBA: īsa piezīme par pārkrāsotiem paneļiem, kosmētiku un plānāku servisa vēsturi; rūsa parasti zemāka. Ja bloka NAV, šīs valstis NENOSAUK.
@@ -736,7 +736,8 @@ ${AI_CROSS_FIELD_PORTFOLIO_RULES}
 - Ja kontekstā jau ir avotu „Komentāri” vai foto analīze par to pašu incidentu — sintezē un izcel pretrunas; neparafrāzē katru avotu no jauna
 - Ja negadījumu nav — skaidri norādi, ka avotos nav fiksētu negadījumu vai apdrošināšanas izmaksu; piemin, kuri avoti pārbaudīti, un pievieno atrunu, ka tas neizslēdz nefiksētu negadījumu vai kosmētisku krāsojumu (neizdomā faktus)
 - NERAKSTI krāsas biezuma / mikronu protokolu šeit — tas ir „2. Ieteikumi”
-- GARUMS: **2–4 rindkopas** — fiksētie ieraksti, to nozīme pircējam un, ja ir, viena pretruna starp avotiem
+- GARUMS: **2-4 rindkopas** - fiksētie ieraksti, to nozīme pircējam un, ja ir, viena pretruna starp avotiem
+- Detaļas (datums, summa, zona) raksti TIKAI šeit. Citos laukos tas pats incidents ir viens teikums, ne atkārtots stāsts.
 - Bez virsraksta un bez meta-komentāriem par AI`,
 );
 

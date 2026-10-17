@@ -297,6 +297,51 @@ function collectFromVendorPdf(
   return out;
 }
 
+/** Tukšās kartītes iemesls - nekad „Nav ierakstu”, ja ir reģistrāciju maiņas. */
+export function explainMissingOwnerCount(input: {
+  csddForm?: CsddFormFields | null;
+  manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
+}): { value: string; note: string } {
+  const changes = countVendorOwnershipChangeEvents(input.manualVendorBlocks);
+  const lvEvents = (input.csddForm?.ownerRegistrationEvents ?? []).filter(
+    (e) => e.date.trim() || e.label.trim(),
+  ).length;
+  if (changes > 0) {
+    return {
+      value: "Skaits nav fiksēts",
+      note: `Avotos ir vismaz ${changes} reģistrāciju maiņas`,
+    };
+  }
+  if (lvEvents > 0) {
+    return {
+      value: "Skaits nav fiksēts",
+      note: "CSDD ir reģistrācijas ieraksti, bet īpašnieku skaits nav norādīts",
+    };
+  }
+  if (!csddHasLatvianRegistryRecord(input.csddForm)) {
+    const csdd = input.csddForm;
+    const namedAbsent = Boolean(
+      csdd?.comments.trim() ||
+        csdd?.rawUnprocessedData.trim() ||
+        /dati\s+nav\s+pieejami/i.test(csdd?.registrationStatus ?? ""),
+    );
+    if (namedAbsent) {
+      return {
+        value: "Nav LV reģistra",
+        note: "Auto nav reģistrēts Latvijā; ārvalstu īpašnieku skaits avotos nav norādīts",
+      };
+    }
+    return {
+      value: "Nav ierakstu",
+      note: "Avotos nav fiksēta īpašnieku skaita",
+    };
+  }
+  return {
+    value: "Skaits nav fiksēts",
+    note: "Avotos nav fiksēta īpašnieku skaita",
+  };
+}
+
 export function synthesizeOwnerCountsFromPdfInput(input: {
   csddForm?: CsddFormFields | null;
   ccVinBlock?: CcVinBlockState | null;
