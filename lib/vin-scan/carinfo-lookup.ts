@@ -1,11 +1,13 @@
 /**
  * car.info VIN SCAN: vispirms /sv-se/vin/S/{VIN} (tiešs JSON/HTML no servera),
- * tad /en-se un super-search. Numurs tikai ja VIN lapas auto neatrada.
+ * tad /en-se. Super-search iet pa CARINFO_SEARCH_LOCALES (SE, DK, NO, FI).
+ * Numurs tikai ja VIN lapas un super-search auto neatrada.
  * Bez CapSolver un bez proxy. Relejs ir rezerve, ja visas tiešās lapas ir bloķētas.
  */
 import { extractPageFromHtml, isCloudflareChallengeHtml, looksLikeCloudflareWafBlock } from "@/lib/vin-sources/html-extract";
 import { parseCarinfoExtract } from "@/lib/vin-sources/carinfo-parse";
 import {
+  CARINFO_SEARCH_LOCALES,
   carinfoSuperSearchUrl,
   carinfoSvVinUrl,
   carinfoSwedenPlateUrl,
@@ -96,8 +98,9 @@ export function carinfoScanFromPage(status: number, html: string): VinScanParse 
 }
 
 /**
- * sv-se VIN lapa vispirms (no servera bieži 200, kamēr en-se ir nginx 403).
+ * sv-se VIN lapa vispirms (no servera bieži 200, kamēr en-se ir nginx 403), tad en-se.
  * Super-search JSON ir nākamais, ja VIN lapa auto neatrada vai bija bloķēta.
+ * Lokāles ir tās pašas, ko car.info HTTP avots: SE, DK, NO, FI. Pirmais trāpījums apstājas.
  * Numura lapa tikai pēc tīras iztrūkuma atbildes, un tikai ja SE numurs ir derīgs.
  * Bloķēts tiek atgriezts tikai tad, ja neviena lapa auto neatrada un neviena nebija tīrs "nav".
  */
@@ -132,8 +135,9 @@ export async function runCarinfoLookup(
     if (parsed) return parsed;
   }
 
-  for (const locale of ["sv-se", "en-se"] as const) {
-    const searchUrl = carinfoSuperSearchUrl(locale, vin, Date.now());
+  const searchTime = Date.now();
+  for (const locale of CARINFO_SEARCH_LOCALES) {
+    const searchUrl = carinfoSuperSearchUrl(locale, vin, searchTime);
     const search = await fetchPage(searchUrl);
     if (carinfoResponseBlocked(search.status, search.text)) {
       sawBlocked = true;
