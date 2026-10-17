@@ -138,6 +138,7 @@ import {
   type OutvinDataBundle,
 } from "@/lib/outvin-data-bundle";
 import { getAutoRecordsOutvinBundle } from "@/lib/outvin-admin-sync";
+import { normalizeOilIntervalChart } from "@/lib/oil-change-interval-chart";
 import { outvinBundleToDealerReport } from "@/lib/outvin-purchase-map";
 import { backfillCsddExtendedFromRaw } from "@/lib/csdd-paste-parse";
 import type {
@@ -974,6 +975,8 @@ export type AutoRecordsBlockState = {
    * Admin lauks „Eļļas maiņas intervāli”; AI rēķina no visiem avotiem.
    */
   oilChangeIntervalNotes: string;
+  /** Strukturēts intervālu grafiks (tabula + OEM); ja nav, rindas no servisa tabulas. */
+  oilIntervalChart?: import("@/lib/oil-change-interval-chart").OilIntervalChartState;
   /** Fotogrāfiju vizuālie pierādījumi — PDF režģī (kā Sludinājuma analīzē). */
   photos: AutoRecordsPhotoMeta[];
   /** Fotogrāfiju grupas ar manuāli ievadāmiem virsrakstiem. */
@@ -2018,6 +2021,10 @@ function parseAutoRecordsBlockRaw(raw: Record<string, unknown>): AutoRecordsBloc
       ...(outvin ? { outvin } : {}),
       ...(outvinReport ? { outvinReport } : {}),
       ...("pdfChecklist" in raw ? { pdfChecklist: normalizeSourcePdfChecklist(raw.pdfChecklist) } : {}),
+      ...(() => {
+        const chart = normalizeOilIntervalChart(raw.oilIntervalChart);
+        return chart ? { oilIntervalChart: chart } : {};
+      })(),
     };
   }
   const legacy = parseStandardBlockRaw(raw);

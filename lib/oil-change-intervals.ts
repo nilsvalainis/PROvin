@@ -547,6 +547,5 @@ export function buildOilChangeIntervalPdfHtml(series: OilChangeIntervalSeries): 
       <tbody>${rows}</tbody>
     </table>
     ${oilClaimCautionHtml()}
-    <p class="pdf-oil-int__note">${escapeHtml(series.ringNote)}</p>
   </div>`;
 }

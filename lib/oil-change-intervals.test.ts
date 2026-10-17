@@ -248,6 +248,8 @@ describe("buildOilChangeIntervalPdfHtml", () => {
     expect(html).toContain("23 mēn.");
     expect(html).toContain("Datu iztrūkums");
     expect(html).toContain("Sākums");
+    expect(html).not.toContain("pdf-oil-int__note");
+    expect(html).not.toMatch(/Vidējie rādītāji rēķināti/i);
     expect(html).not.toContain("pdf-oil-int__ring");
     expect(html).not.toContain("29 800 km, 23");
     expect(html).not.toContain("\u2014");

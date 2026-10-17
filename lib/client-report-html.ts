@@ -79,9 +79,9 @@ import {
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
 import { buildDealerServiceVisitsHtml } from "@/lib/pdf-dealer-service-visits";
+import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
 import {
   buildOilChangeIntervalPdfHtml,
-  buildOilChangeIntervalSeries,
   PDF_OIL_HATCH_CSS,
   PDF_OIL_NEUTRAL_HEX,
   PDF_OIL_OK_HEX,
@@ -89,7 +89,6 @@ import {
   PDF_OIL_OVER_HEX,
   PDF_OIL_OVER_TEXT_HEX,
 } from "@/lib/oil-change-intervals";
-import { parseOemOilIntervalFromText } from "@/lib/oem-oil-interval";
 import { buildPdfFactCardHtml, buildPdfKvPairHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
 import { capitalizeFactValue } from "@/lib/vin-sources/translate-lv";
 import { formatPdfReportMakeModel, resolvePdfReportMakeModel } from "@/lib/pdf-report-vehicle-identity";
@@ -1582,25 +1581,6 @@ const PDF_AUTO_RECORDS_OIL_INTERVAL_LABEL = "Eļļas maiņas intervāli";
 const PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL = "Servisa un remontu vēsture";
 const PDF_AUTO_RECORDS_PHOTO_APPENDIX_LABEL = "Fotogrāfiju pielikums";
 
-/** OFICIĀLĀ DĪLERA DATI - servisa vizītes (datums, km, vieta, darbi). */
-/** Eļļas tabula: LV servisa rindas + OneAuto oriģināls + Outvin žurnāls. */
-function dealerOilIntervalSourceRows(b: AutoRecordsBlockState): AutoRecordsServiceWorkRow[] {
-  const original = oneautoDisplayToServiceWorks({
-    equipment: [],
-    powertrain: [],
-    serviceTimeline: b.oneautoIngest?.serviceTimelineOriginal ?? [],
-  });
-  const log = getAutoRecordsOutvinBundle(b)
-    .dealerServiceLog.filter(outvinDealerServiceRowHasData)
-    .map((r) => ({
-      date: r.date,
-      odometer: r.odometer,
-      location: r.country,
-      works: r.serviceNotes,
-    }));
-  return [...(b.serviceWorks ?? []), ...original, ...log];
-}
-
 function buildAutoRecordsServiceWorksTableHtml(
   rows: AutoRecordsServiceWorkRow[],
   omitSpan = false,
@@ -1724,13 +1704,8 @@ function buildAutoRecordsAvotuSubsection(
     : "";
   const oilChangeIntervalNotes = (b.oilChangeIntervalNotes ?? "").trim();
   const showOilInterval = vis.autoRecordsOilInterval !== false;
-  const oem = showOilInterval
-    ? parseOemOilIntervalFromText(
-        `${oilChangeIntervalNotes}\n${b.comments ?? ""}\n${b.serviceHistoryNotes ?? ""}`,
-      )
-    : null;
   const oilTableHtml = showOilInterval
-    ? buildOilChangeIntervalPdfHtml(buildOilChangeIntervalSeries(dealerOilIntervalSourceRows(b), oem))
+    ? buildOilChangeIntervalPdfHtml(buildOilIntervalSeriesForBlock(b))
     : "";
   const oilIntervalBox =
     showOilInterval && oilChangeIntervalNotes

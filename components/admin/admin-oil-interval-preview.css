@@ -1,0 +1,199 @@
+/* 1:1 ar klienta PDF .pdf-oil-int (kompakts priekšskatījums adminā). */
+.admin-oil-preview {
+  --pdf-line: #e2e8f0;
+  --pdf-line-soft: #eef1f4;
+  --pdf-fs-table: 11px;
+  font-size: 11px;
+  color: #0f172a;
+}
+.admin-oil-preview .pdf-subhead {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.admin-oil-preview .pdf-oil-int__kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0 0 10px;
+}
+.admin-oil-preview .pdf-oil-int__kpi {
+  padding: 7px 9px;
+  border: 1px solid var(--pdf-line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.admin-oil-preview .pdf-oil-int__kpi b {
+  display: block;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+.admin-oil-preview .pdf-oil-int__kpi span {
+  display: block;
+  margin-top: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.admin-oil-preview .pdf-oil-int__cov {
+  display: flex;
+  height: 18px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: #eef1f4;
+  margin: 0 0 6px;
+  box-shadow: inset 0 0 0 1px rgb(15 23 42 / 0.06);
+}
+.admin-oil-preview .pdf-oil-int__cov i {
+  display: block;
+  height: 100%;
+}
+.admin-oil-preview .pdf-oil-int__cov-ok {
+  background: linear-gradient(180deg, #1a6b57 0%, #0e4f42 100%);
+}
+.admin-oil-preview .pdf-oil-int__cov-over {
+  background: linear-gradient(180deg, #8a3342 0%, #6b2030 100%);
+}
+.admin-oil-preview .pdf-oil-int__cov-neutral {
+  background: #7a828c;
+}
+.admin-oil-preview .pdf-oil-int__cov-hatch {
+  background: repeating-linear-gradient(-55deg, #f3f4f6 0 3px, #c5cbd3 3px 4px);
+}
+.admin-oil-preview .pdf-oil-int__covkey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 10px;
+  color: #334155;
+  margin: 0 0 8px;
+}
+.admin-oil-preview .pdf-oil-int__covkey span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.admin-oil-preview .pdf-oil-int__sw {
+  display: inline-block;
+  width: 12px;
+  height: 6px;
+  border-radius: 99px;
+}
+.admin-oil-preview .pdf-oil-int__sw--ok {
+  background: #0e4f42;
+}
+.admin-oil-preview .pdf-oil-int__sw--over {
+  background: #6b2030;
+}
+.admin-oil-preview .pdf-oil-int__sw--neutral {
+  background: #7a828c;
+}
+.admin-oil-preview .pdf-oil-int__sw--hatch {
+  background: repeating-linear-gradient(-55deg, #c5cbd3, #c5cbd3 2px, #e8ebef 2px 4px);
+}
+.admin-oil-preview .pdf-oil-int__summary {
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+.admin-oil-preview .pdf-oil-int__summary span {
+  display: block;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #475569;
+}
+.admin-oil-preview .pdf-oil-int__ref {
+  margin: 0 0 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #334155;
+}
+.admin-oil-preview .pdf-oil-int__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--pdf-fs-table);
+}
+.admin-oil-preview .pdf-oil-int__table th {
+  padding: 5px 6px 5px 0;
+  text-align: left;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #64748b;
+  border-bottom: 1px solid var(--pdf-line);
+}
+.admin-oil-preview .pdf-oil-int__table td {
+  padding: 6px 6px 6px 0;
+  border-bottom: 1px solid var(--pdf-line-soft);
+  vertical-align: middle;
+}
+.admin-oil-preview .pdf-oil-int__table th:nth-child(5),
+.admin-oil-preview .pdf-oil-int__table td:nth-child(5) {
+  width: 30%;
+}
+.admin-oil-preview .pdf-oil-int__caution {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid #e4d9db;
+  border-radius: 8px;
+  background: #f7f3f3;
+  font-size: 9.5px;
+  line-height: 1.4;
+}
+.admin-oil-preview .pdf-oil-int__caution-title {
+  margin: 0 0 6px;
+  font-size: 10.5px;
+  font-weight: 750;
+}
+.admin-oil-preview .pdf-oil-int__bw {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 14px;
+  width: 100%;
+}
+.admin-oil-preview .pdf-oil-int__band {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  background: #e8eeec;
+  border-radius: 4px;
+}
+.admin-oil-preview .pdf-oil-int__tk {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 1.5px;
+  background: #0f172a;
+  opacity: 0.35;
+  z-index: 3;
+}
+.admin-oil-preview .pdf-oil-int__seg {
+  position: relative;
+  z-index: 2;
+  display: block;
+  height: 8px;
+}
+.admin-oil-preview .pdf-oil-int__seg--ok {
+  background: linear-gradient(180deg, #1a6b57 0%, #0e4f42 100%);
+}
+.admin-oil-preview .pdf-oil-int__seg--over {
+  background: linear-gradient(180deg, #8a3342 0%, #6b2030 100%);
+}
+.admin-oil-preview .pdf-oil-int__seg--hatch {
+  background: repeating-linear-gradient(-55deg, #c5cbd3, #c5cbd3 2px, #e8ebef 2px 4px);
+  width: 100%;
+}
+.admin-oil-preview .pdf-oil-int__seg--dot {
+  width: 8px !important;
+  border-radius: 99px;
+  background: #c5cbd3;
+}

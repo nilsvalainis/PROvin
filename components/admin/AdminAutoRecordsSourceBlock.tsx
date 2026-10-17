@@ -76,6 +76,7 @@ import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
 import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
+import { AdminOilChangeIntervalEditor } from "@/components/admin/AdminOilChangeIntervalEditor";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
 import {
@@ -758,26 +759,15 @@ export function AdminAutoRecordsSourceBlock({
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
             aria-label={`${DEALER_ARIA} — Servisa vēsture`}
           />
-          <AdminSourceCommentField
-            label="Eļļas maiņas intervāli"
-            value={value.oilChangeIntervalNotes ?? ""}
-            onChange={(next) => onChange({ ...value, oilChangeIntervalNotes: next })}
+          <AdminOilChangeIntervalEditor
+            value={value}
+            onChange={onChange}
             readOnly={readOnly}
             disabled={disabled}
-            compact
-            ai={aiOilChangeInterval}
-            headerExtra={
-              onPdfIncludeOilChange ? (
-                <AdminPdfIncludeToggle
-                  id="auto-records-oil-pdf"
-                  checked={pdfIncludeOil}
-                  onChange={onPdfIncludeOilChange}
-                  label="Rādīt PDF"
-                />
-              ) : undefined
-            }
-            readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-            aria-label={`${DEALER_ARIA} — Eļļas maiņas intervāli`}
+            pdfIncludeOil={pdfIncludeOil}
+            onPdfIncludeOilChange={onPdfIncludeOilChange}
+            aiOilChangeInterval={aiOilChangeInterval}
+            dealerAria={DEALER_ARIA}
           />
           {sessionId && onAutoRecordsPhotoGroupsStructuralCommit ? (
             <AdminListingAnalysisPhotos
