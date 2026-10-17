@@ -12,7 +12,11 @@ export function PasutitRedirect() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const q = searchParams.get("atcelts") === "1" ? "?atcelts=1" : "";
+    const params = new URLSearchParams();
+    if (searchParams.get("atcelts") === "1") params.set("atcelts", "1");
+    const vin = searchParams.get("vin");
+    if (vin?.trim()) params.set("vin", vin.trim());
+    const q = params.toString() ? `?${params.toString()}` : "";
     const base = homePath(locale);
     const path = base === "/" ? "/" : base;
     window.location.replace(`${path}${q}#home-hero`);
