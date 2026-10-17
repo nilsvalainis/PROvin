@@ -26,6 +26,17 @@ describe("unit facts base", () => {
       }
     }
   });
+
+  it("CLAA gen2 is verified; 48VS and DQ381 stay disputed; evo is draft", () => {
+    expect(UNIT_FACTS.find((f) => f.id === "vag_30tdi_gen2_chain_count")?.status).toBe("verified");
+    expect(UNIT_FACTS.find((f) => f.id === "vw_recall_48vs_scope")?.status).toBe("disputed");
+    const dq381 = UNIT_FACTS.find((f) => f.id === "vag_dq381_service_interval");
+    expect(dq381?.status).toBe("disputed");
+    expect(dq381?.statementLv).toMatch(/60 000 jūdzes/);
+    expect(dq381?.statementLv).toMatch(/96 500/);
+    expect(dq381?.statementLv).not.toMatch(/smagos apstākļos 60 000 km/);
+    expect(UNIT_FACTS.find((f) => f.id === "vag_30tdi_ea897evo_three_chains")?.status).toBe("draft");
+  });
 });
 
 describe("splitSentences", () => {
@@ -62,12 +73,18 @@ describe("checkAiCommentFacts", () => {
     expect(ids(bad)).toContain("E:fact:audi_q7_4m_gearbox_zf");
   });
 
-  it("CLAA chain count is disputed: warn, never error", () => {
-    const r = checkAiCommentFacts({
+  it("CLAA/CRCA two chains is verified: four chains is error, two chains is clean", () => {
+    const ok = checkAiCommentFacts({
       text: "CLAA dzinēja konstrukcijai ir divas sadales ķēdes.",
       contextText: "Audi A6 Allroad, dzinējs CLAA 150 kW, DL501",
     });
-    expect(ids(r)).toEqual(["W:disputed:vag_30tdi_gen2_chain_count"]);
+    expect(ok.flags.filter((f) => f.level === "E")).toEqual([]);
+    expect(ok.flags.filter((f) => f.factId === "vag_30tdi_gen2_chain_count")).toEqual([]);
+    const bad = checkAiCommentFacts({
+      text: "CLAA dzinēja konstrukcijai ir četras sadales ķēdes.",
+      contextText: "Audi A6 Allroad, dzinējs CLAA 150 kW, DL501",
+    });
+    expect(ids(bad)).toContain("E:fact:vag_30tdi_gen2_chain_count");
   });
 
   it("flags two chains on first-gen CASA", () => {
@@ -227,11 +244,12 @@ describe("checkAiCommentFacts", () => {
     expect(formatApplicableUnitFactsForPrompt({ contextText: "Opel Zafira" })).toBe("");
   });
 
-  it("prompt block excludes disputed and pending_nils facts", () => {
+  it("prompt block excludes disputed, pending_nils and draft facts", () => {
     const claa = formatApplicableUnitFactsForPrompt({
       contextText: "Audi A6 Allroad, dzinējs CLAA 150 kW, DL501",
     });
-    expect(claa).not.toMatch(/STRĪDĪGS|ķēžu skaits/);
+    expect(claa).toMatch(/divas ķēdes/);
+    expect(claa).not.toMatch(/STRĪDĪGS/);
     const bItem = formatApplicableUnitFactsForPrompt({ contextText: "Volvo S60 D5244T5" });
     expect(bItem).not.toMatch(/D5244T5/);
     const q7 = formatApplicableUnitFactsForPrompt({
@@ -239,7 +257,36 @@ describe("checkAiCommentFacts", () => {
       year: 2014,
     });
     expect(q7).toMatch(/Aisin/);
+    expect(q7).toMatch(/divas ķēdes/);
     expect(q7).not.toMatch(/STRĪDĪG/);
+    const evo = formatApplicableUnitFactsForPrompt({ contextText: "VW Touareg CR7 DEND EA897 evo" });
+    expect(evo).not.toMatch(/EA897 evo|DEND/);
+    const dq381 = formatApplicableUnitFactsForPrompt({ contextText: "VW Golf DQ381 0GC" });
+    expect(dq381).not.toMatch(/DQ381|STRĪDĪG|96 500/);
+  });
+
+  it("ignores draft facts (EA897 evo chain count)", () => {
+    const r = checkAiCommentFacts({
+      text: "DEND dzinējam ir četras ķēdes.",
+      contextText: "VW Touareg CR7 DEND",
+    });
+    expect(r.flags.filter((f) => f.factId === "vag_30tdi_ea897evo_three_chains")).toEqual([]);
+  });
+
+  it("flags N57 chain at front", () => {
+    const r = checkAiCommentFacts({
+      text: "Sadales ķēde atrodas dzinēja priekšpusē, maiņa vienkārša.",
+      contextText: "BMW 530d F10 N57D30 190 kW",
+    });
+    expect(ids(r)).toContain("E:fact:bmw_n57_b47_chain_rear");
+  });
+
+  it("warns on DQ200 scheduled oil change", () => {
+    const r = checkAiCommentFacts({
+      text: "DQ200 eļļas maiņa ik pēc 60 000 km.",
+      contextText: "VW Golf DQ200 0AM",
+    });
+    expect(ids(r)).toContain("W:fact:vag_dq200_no_oil_interval");
   });
 });
 
