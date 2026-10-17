@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { AdminIrissOrdersExportButton } from "@/components/admin/AdminIrissOrdersExportButton";
+import { IrissGoogleContactsBackfillButton } from "@/components/admin/IrissGoogleContactsBackfillButton";
 import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
 import { IRISS_ORDER_SORT_EVENT, IRISS_ORDER_SORT_KEY, type IrissOrderSortMode } from "@/components/admin/IrissOrderSortSelect";
 import {
@@ -1114,6 +1115,9 @@ export function IrissPasutijumiListClient({
           <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />
         </div>
         {ectMsg ? <p className="mt-1 text-[11px] text-[#8e8e93]">{ectMsg}</p> : null}
+        <div className="mt-1.5 flex justify-end">
+          <IrissGoogleContactsBackfillButton compact />
+        </div>
       </div>
 
       <AdminMobileSheet

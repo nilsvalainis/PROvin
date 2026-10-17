@@ -46,7 +46,7 @@ export type IrissGeneratedDocument = {
   blobUrl?: string;
 };
 
-export const IRISS_GOOGLE_CONTACT_STATUSES = ["saved", "error", "unconfigured"] as const;
+export const IRISS_GOOGLE_CONTACT_STATUSES = ["saved", "error", "unconfigured", "skipped"] as const;
 export type IrissGoogleContactStatus = (typeof IRISS_GOOGLE_CONTACT_STATUSES)[number];
 
 export type IrissOfferRecord = {

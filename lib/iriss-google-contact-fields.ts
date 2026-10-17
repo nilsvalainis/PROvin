@@ -1,9 +1,12 @@
+import { orderHasMatchableGoogleContact } from "@/lib/google-contact-match";
 import type { IrissGoogleContactStatus, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 export type IrissClientContactFields = Pick<
   IrissPasutijumsRecord,
   "clientFirstName" | "clientLastName" | "phone" | "email"
 >;
+
+export { orderHasMatchableGoogleContact };
 
 export function orderHasClientContact(rec: IrissClientContactFields): boolean {
   return Boolean(rec.clientFirstName.trim() || rec.clientLastName.trim() || rec.phone.trim() || rec.email.trim());
@@ -38,7 +41,7 @@ export function shouldSyncGoogleContact(
   existing: IrissPasutijumsRecord | null,
   saved: IrissPasutijumsRecord,
 ): boolean {
-  if (!orderHasClientContact(saved)) return false;
+  if (!orderHasMatchableGoogleContact(saved)) return false;
   if (!existing) return true;
   if (saved.googleContactStatus === "error") return true;
   if (!saved.googleContactResourceName) return true;
