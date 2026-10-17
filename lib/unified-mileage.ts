@@ -25,7 +25,7 @@ import {
 import { CC_VIN_PDF_SOURCE_LABEL, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { ASV_PDF_SOURCE_LABEL, type AsvBlockState } from "@/lib/asv-report";
 import { resolveListingMileageChartRow } from "@/lib/listing-odometer";
-import { normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
 
 export const MILES_TO_KM = 1.609344;
 
@@ -54,6 +54,11 @@ export type UnifiedMileageRow = {
   datePrecision?: MileageDatePrecision;
   /** Avota mērvienība pirms pārrēķina; tabulā odometrs vienmēr km. */
   unit?: MileageUnit;
+  /**
+   * Rinda nāk no dīlera vizītes, jo nobraukuma tabula bija tukša.
+   * Kartītei der; pretrunu ķēdē un līknē nav (vizīte jau ir servisa notikums).
+   */
+  visitOdometer?: boolean;
 };
 
 /** Tabulas rinda pēc km apvienošanas — vairāki avoti vienā „Avots” kolonnā. */
@@ -135,7 +140,7 @@ export function isListingMileageSource(r: Pick<UnifiedMileageRow, "sourceLabel" 
   );
 }
 
-/** CSDD / TA un oficiālais dīleris - kartītes „jaunākais” avots. */
+/** CSDD / TA un oficiālais dīleris - prioritāte tikai vienā datumā / nelielā starpībā. */
 export function isVerifiedMileageSource(
   r: Pick<UnifiedMileageRow, "sourceLabel" | "countryUnverified"> & { sourceLabels?: string[] },
 ): boolean {
@@ -154,18 +159,64 @@ export function isVerifiedMileageSource(
   });
 }
 
-export function selectNewestVerifiedMileageRow<T extends UnifiedMileageRow>(rows: T[]): T | null {
-  const verified = rows.filter(isVerifiedMileageSource);
-  const pool = verified.length > 0 ? verified : rows.filter((r) => !isListingMileageSource(r));
-  const use = pool.length > 0 ? pool : rows;
-  if (use.length === 0) return null;
-  return [...use].sort((a, b) => {
+function rankMileageRowsNewestFirst<T extends UnifiedMileageRow>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
     const kmA = parseOdometerKm(a.odometer) ?? -1;
     const kmB = parseOdometerKm(b.odometer) ?? -1;
     if (kmA !== kmB) return kmB - kmA;
     return a.sourceOrder - b.sourceOrder;
-  })[0] ?? null;
+  });
+}
+
+/** Viens datums vai ~2 mēneši un ≤150 km: verificētais avots pārspēj AutoDNA/CV. */
+export function mileageReadingsCloseForVerifiedPriority(
+  a: Pick<UnifiedMileageRow, "sortableTime" | "odometer">,
+  b: Pick<UnifiedMileageRow, "sortableTime" | "odometer">,
+): boolean {
+  if (a.sortableTime === Number.NEGATIVE_INFINITY || b.sortableTime === Number.NEGATIVE_INFINITY) {
+    return false;
+  }
+  if (a.sortableTime === b.sortableTime) return true;
+  const kmA = parseOdometerKm(a.odometer);
+  const kmB = parseOdometerKm(b.odometer);
+  if (kmA == null || kmB == null) return false;
+  return (
+    Math.abs(a.sortableTime - b.sortableTime) <= UNIFIED_MILEAGE_MERGE_MAX_DATE_SPAN_MS &&
+    Math.abs(kmA - kmB) <= UNIFIED_MILEAGE_CROSS_SOURCE_MERGE_MAX_KM_DIFF
+  );
+}
+
+/**
+ * Kartītes / anomāliju „jaunākais”: visi avoti bez sludinājumiem.
+ * CSDD/dīleris uzvar tikai tad, ja ir tas pats datums vai neliela starpība.
+ */
+export function selectNewestVerifiedMileageRow<T extends UnifiedMileageRow>(rows: T[]): T | null {
+  const nonListing = rows.filter((r) => !isListingMileageSource(r));
+  const pool = nonListing.length > 0 ? nonListing : rows;
+  if (pool.length === 0) return null;
+  const ranked = rankMileageRowsNewestFirst(pool);
+  const newest = ranked[0]!;
+  const verifiedClose = ranked.filter(
+    (r) => isVerifiedMileageSource(r) && mileageReadingsCloseForVerifiedPriority(r, newest),
+  );
+  return verifiedClose[0] ?? newest;
+}
+
+export const DEALER_MILEAGE_TABLE_EMPTY_VISITS_WARNING =
+  "dīlera nobraukuma tabula tukša, bet vizītēs ir odometrs";
+
+export function dealerMileageTableEmptyButVisitsHaveOdometer(
+  block: Pick<AutoRecordsBlockState, "serviceHistory" | "serviceWorks"> | null | undefined,
+): boolean {
+  if (!block) return false;
+  const tableEmpty = !(block.serviceHistory ?? []).some(autoRecordsRowHasData);
+  const visitsHaveOdo = (block.serviceWorks ?? []).some((w) => {
+    const digits = w.odometer.replace(/\D/g, "");
+    const date = formatAutoRecordsDateForOutput(w.date) || w.date.trim();
+    return Boolean(digits && date);
+  });
+  return tableEmpty && visitsHaveOdo;
 }
 
 export function parseOdometerKm(raw: string): number | null {
@@ -261,16 +312,24 @@ function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDispla
   // Valsts paliek nesertificēta tikai tad, ja pilnīgi visi avoti šajā km klasterī ir nesertificēti
   // (piem. tikai sludinājums) — ja klāt ir kaut viens oficiāls avots, valsts vairs nav tikai pieņēmums.
   const countryUnverified = cluster.every((r) => r.countryUnverified === true);
+  const visitOdometer = cluster.every((r) => r.visitOdometer === true);
   const datePrecision = cluster.every((r) => r.datePrecision === "month") ? "month" : "day";
+  const knownCountries = countries.filter((c) => c && c !== CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL);
   return {
     ...primary,
-    country: countries.length <= 1 ? (countries[0] ?? primary.country) : countries.join(" / "),
+    country:
+      knownCountries.length === 1
+        ? knownCountries[0]!
+        : knownCountries.length > 1
+          ? knownCountries.join(" / ")
+          : (countries[0] ?? primary.country),
     sourceOrder: Math.min(...cluster.map((r) => r.sourceOrder)),
     sourceLabel: filledLabels[0] ?? primary.sourceLabel,
     sourceLabels: filledLabels,
     datePrecision,
     ...(documentValue ? { documentValue: true } : { documentValue: undefined }),
     ...(countryUnverified ? { countryUnverified: true } : { countryUnverified: undefined }),
+    ...(visitOdometer ? { visitOdometer: true } : { visitOdometer: undefined }),
   };
 }
 
@@ -577,8 +636,9 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
       map.set(r.sourceOrder, false);
       continue;
     }
-    if (staleDocuments.has(r.sourceOrder) || dataEntryErrors.has(r.sourceOrder)) {
-      // Nav pretruna: dokumenta datums ≠ nolasījuma datums / datu ievades kļūda.
+    if (staleDocuments.has(r.sourceOrder) || dataEntryErrors.has(r.sourceOrder) || r.visitOdometer) {
+      // Nav pretruna: dokumenta datums ≠ nolasījuma datums / datu ievades kļūda /
+      // vizītes odometrs, kad dīlera nobraukuma tabula bija tukša.
       map.set(r.sourceOrder, false);
       chartExclude.add(r.sourceOrder);
       continue;
@@ -649,6 +709,13 @@ function dealerDocumentKey(dateRaw: string, odometerRaw: string): string {
   return `${dateRaw.trim()}|${odometerRaw.replace(/\D/g, "")}`;
 }
 
+function countryFromServiceWorkLocation(location: string): string {
+  const t = location.trim();
+  if (!t || /[,;/]/.test(t)) return "";
+  if (!countryLabelToIso2(t)) return "";
+  return normalizeCountryNameLv(t) || t;
+}
+
 /**
  * Dīlera remonta / apkopes pasūtījumu (datums + odometrs) atslēgas — pēc tām nobraukuma rinda
  * tiek atzīta par dokumenta rādījumu, nevis par faktisku odometra nolasījumu.
@@ -670,6 +737,7 @@ export function collectUnifiedMileageRows(
 ): UnifiedMileageRow[] {
   const rows: UnifiedMileageRow[] = [];
   let sourceOrder = 0;
+  let pendingVisitOdometers: { date: string; odometer: string; country: string; unit: string }[] = [];
   const pushRow = (
     dateRaw: string,
     odometerRaw: string,
@@ -678,6 +746,8 @@ export function collectUnifiedMileageRows(
     documentValue = false,
     countryUnverified = false,
     unitRaw?: string,
+    visitOdometer = false,
+    allowBlankCountry = false,
   ) => {
     const datePrecision = detectMileageDatePrecision(dateRaw);
     const date = formatAutoRecordsDateForOutput(dateRaw) || dateRaw.trim();
@@ -688,7 +758,7 @@ export function collectUnifiedMileageRows(
     rows.push({
       date,
       odometer,
-      country: countryNorm || CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL,
+      country: countryNorm || (allowBlankCountry ? "" : CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL),
       sortableTime: parseMileageDateForSort(date),
       sourceOrder,
       sourceLabel: sourceLabelRaw.trim() || "Nezināms avots",
@@ -696,6 +766,7 @@ export function collectUnifiedMileageRows(
       ...(unit ? { unit } : null),
       ...(documentValue ? { documentValue: true } : null),
       ...(countryUnverified ? { countryUnverified: true } : null),
+      ...(visitOdometer ? { visitOdometer: true } : null),
     });
     sourceOrder += 1;
   };
@@ -714,7 +785,18 @@ export function collectUnifiedMileageRows(
       emptyAutoRecordsBlock(),
     );
     const autoRows = (dealer.serviceHistory ?? []).filter(autoRecordsRowHasData);
-    const documentKeys = dealerDocumentOdometerKeys(dealer.serviceWorks);
+    const works = dealer.serviceWorks ?? [];
+    const documentKeys = dealerDocumentOdometerKeys(works);
+    if (autoRows.length === 0) {
+      pendingVisitOdometers = works
+        .map((w) => ({
+          date: w.date,
+          odometer: normalizeAutoRecordsOdometer(w.odometer) || w.odometer.replace(/\D/g, ""),
+          country: countryFromServiceWorkLocation(w.location),
+          unit: w.odometer,
+        }))
+        .filter((w) => (formatAutoRecordsDateForOutput(w.date) || w.date.trim()) && w.odometer);
+    }
     for (const r of autoRows) {
       const dateOut = formatAutoRecordsDateForOutput(r.date) || r.date.trim();
       const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
@@ -779,6 +861,19 @@ export function collectUnifiedMileageRows(
     if (listing) {
       // Sludinājuma valsts (piem. ss.lv → vienmēr "Latvija") ir pieņēmums, ne apstiprināts fakts.
       pushRow(listing.date, listing.odometer, listing.country, listing.sourceLabel, false, true);
+    }
+  }
+
+  if (pendingVisitOdometers.length > 0) {
+    const seen = new Set(
+      rows.map((r) => `${r.date.trim().toLowerCase()}|${r.odometer.replace(/\D/g, "")}`),
+    );
+    for (const w of pendingVisitOdometers) {
+      const dateOut = formatAutoRecordsDateForOutput(w.date) || w.date.trim();
+      const key = `${dateOut.toLowerCase()}|${w.odometer.replace(/\D/g, "")}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      pushRow(w.date, w.odometer, w.country, "OFICIĀLĀ DĪLERA DATI", true, false, w.unit, true, true);
     }
   }
 

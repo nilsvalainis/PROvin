@@ -170,11 +170,11 @@ describe("BMW 650i WBAYM9C55DDW20079 PDF audit regression", () => {
     expect(display[0]?.sourceLabels).toEqual([SOURCE_BLOCK_LABELS.carvertical]);
   });
 
-  it("takes the mileage tile from dealer, not the listing", () => {
+  it("takes the mileage tile from the newest non-listing reading, not Copart", () => {
     const tiles = buildPdfReportSummaryTiles(bmw650iShape());
     const mileage = tiles.find((t) => t.id === "mileage");
-    expect(mileage?.value).toMatch(/88\s*310|88310/);
-    expect(mileage?.value).not.toMatch(/90000/);
+    expect(mileage?.value).toMatch(/91\s*200|91200/);
+    expect(mileage?.value).not.toMatch(/87\s*000|87000/);
   });
 
   it("dedupes same-day dealer visits within 150 km", () => {
