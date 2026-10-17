@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { readGoogleContactsConfig, upsertGoogleContactForOrder } from "@/lib/google-contacts";
-import { applyGoogleContactSync, orderHasClientContact } from "@/lib/iriss-google-contact-fields";
+import { applyGoogleContactSync, orderHasMatchableGoogleContact } from "@/lib/iriss-google-contact-fields";
 import {
   isSafeIrissPasutijumsId,
   readIrissPasutijums,
@@ -28,10 +28,10 @@ export async function POST(_req: Request, ctx: { params: Promise<{ id: string }>
       record: rec,
     });
   }
-  if (!orderHasClientContact(rec)) {
+  if (!orderHasMatchableGoogleContact(rec)) {
     return NextResponse.json({
       ok: true,
-      status: rec.googleContactStatus ?? "unconfigured",
+      status: "skipped",
       googleContactsConfigured: true,
       record: rec,
     });

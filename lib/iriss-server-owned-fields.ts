@@ -25,7 +25,11 @@ export function mergeServerOwnedIrissFields<T extends ServerOwnedSlice>(local: T
   if (server.googleContactUpdatedAt) next.googleContactUpdatedAt = server.googleContactUpdatedAt;
   else if (local.googleContactUpdatedAt) next.googleContactUpdatedAt = local.googleContactUpdatedAt;
   if (server.googleContactError) next.googleContactError = server.googleContactError;
-  else if (server.googleContactStatus === "saved" || server.googleContactStatus === "unconfigured") {
+  else if (
+    server.googleContactStatus === "saved" ||
+    server.googleContactStatus === "unconfigured" ||
+    server.googleContactStatus === "skipped"
+  ) {
     delete next.googleContactError;
   } else if (local.googleContactError) {
     next.googleContactError = local.googleContactError;

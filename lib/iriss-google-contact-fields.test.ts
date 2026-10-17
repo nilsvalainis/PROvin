@@ -19,6 +19,9 @@ describe("google contact fields", () => {
     const saved = { ...withPhone, googleContactResourceName: "people/1", googleContactStatus: "saved" as const };
     expect(shouldSyncGoogleContact(saved, saved)).toBe(false);
     expect(shouldSyncGoogleContact(saved, { ...saved, phone: "+37121111111" })).toBe(true);
+    const nameOnly = { ...empty, clientFirstName: "Anna" };
+    expect(orderHasClientContact(nameOnly)).toBe(true);
+    expect(shouldSyncGoogleContact(empty, nameOnly)).toBe(false);
   });
 
   it("applies sync result without leftover error", () => {
@@ -38,5 +41,6 @@ describe("google contact fields", () => {
     expect(irissGoogleContactBadge({ configured: true, hasContact: true, status: "error" })?.text).toBe("Kļūda");
     expect(irissGoogleContactBadge({ configured: true, hasContact: true })).toBeNull();
     expect(irissGoogleContactBadge({ configured: true, hasContact: false })).toBeNull();
+    expect(irissGoogleContactBadge({ configured: true, hasContact: true, status: "skipped" })).toBeNull();
   });
 });

@@ -15,6 +15,7 @@ export function irissGoogleContactBadge(opts: {
   if (!opts.configured || opts.status === "unconfigured") return { text: "Nav konfigurēts", tone: "muted" };
   if (opts.status === "saved") return { text: "Saglabāts Google kontaktos", tone: "ok" };
   if (opts.status === "error") return { text: "Kļūda", tone: "err" };
+  if (opts.status === "skipped") return null;
   return null;
 }
 
