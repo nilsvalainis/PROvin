@@ -11,6 +11,7 @@ import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWo
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
+import { IrissOfferBlocksEditor } from "@/components/admin/IrissOfferBlocksEditor";
 import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
@@ -76,6 +77,8 @@ import {
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
 } from "@/lib/iriss-listing-links";
 import { fileToCompressedOfferAttachment } from "@/lib/iriss-offer-image-compress";
+import type { IrissOfferBlock } from "@/lib/iriss-offer-blocks";
+import type { IrissOrderPhotoAlbumId } from "@/lib/iriss-order-photos";
 import {
   defaultOfferValidUntilYmd,
   deriveOfferValidUntil,
@@ -135,7 +138,7 @@ function formatPatchFailureMessage(
     if (typeof o.detail === "string") parts.push(o.detail.slice(0, 220));
   }
   if (responseTextSnippet) parts.push(responseTextSnippet.slice(0, 180));
-  return parts.join(" — ");
+  return parts.join(" - ");
 }
 
 function formatXhrPatchFailure(result: Extract<JsonPatchResult, { ok: false }>): string {
@@ -236,6 +239,7 @@ type OfferDraft = {
   equipmentHighlights: string;
   estimatedTotalPrice: string;
   keyCount: string;
+  blocks?: IrissOfferBlock[];
 };
 
 const OFFER_AUTO_FIELD_KEYS = [
@@ -389,6 +393,7 @@ function isOfferDraftSyncedWithRecord(draft: OfferDraft, offer: IrissOfferRecord
   if (draft.offerValidDays !== (offer.offerValidDays ?? "")) return false;
   if (deriveOfferValidUntil(draft) !== deriveOfferValidUntil(offer)) return false;
   if ((draft.coverAttachmentId || "") !== (offer.coverAttachmentId || "")) return false;
+  if (JSON.stringify(draft.blocks ?? null) !== JSON.stringify(offer.blocks ?? null)) return false;
   if (draft.attachments.length !== offer.attachments.length) return false;
   for (let i = 0; i < draft.attachments.length; i += 1) {
     const a = draft.attachments[i];
@@ -1058,6 +1063,7 @@ export function IrissPasutijumsEditor({
       equipmentHighlights: offer.equipmentHighlights ?? "",
       estimatedTotalPrice: offer.estimatedTotalPrice ?? "",
       keyCount: offer.keyCount ?? "",
+      ...(offer.blocks?.length ? { blocks: offer.blocks } : {}),
     });
     setOfferAutoFields(new Set());
     setOfferOpen(true);
@@ -1144,6 +1150,35 @@ export function IrissPasutijumsEditor({
     [offerAttachmentCount, offerDraft.attachments],
   );
 
+  const [albumFileBusy, setAlbumFileBusy] = useState(false);
+  const onAlbumFiles = useCallback(
+    async (albumId: IrissOrderPhotoAlbumId, files: FileList | null) => {
+      if (!files || files.length === 0) return;
+      const current = albumId === "inspection" ? rec.inspectionPhotos : rec.documentPhotos;
+      const existing = current?.attachments ?? [];
+      const remaining = IRISS_MAX_OFFER_ATTACHMENTS - existing.length;
+      if (remaining <= 0) return;
+      const candidates = Array.from(files).slice(0, remaining);
+      setAlbumFileBusy(true);
+      try {
+        const loaded: IrissOfferAttachment[] = [];
+        for (const file of candidates) {
+          const att = await fileToCompressedOfferAttachment(file);
+          if (att) loaded.push(att);
+        }
+        if (loaded.length === 0) return;
+        const next = {
+          attachments: [...existing, ...loaded].slice(0, IRISS_MAX_OFFER_ATTACHMENTS),
+          ...(current?.coverAttachmentId ? { coverAttachmentId: current.coverAttachmentId } : {}),
+        };
+        patchRecord(albumId === "inspection" ? { inspectionPhotos: next } : { documentPhotos: next });
+      } finally {
+        setAlbumFileBusy(false);
+      }
+    },
+    [patchRecord, rec.documentPhotos, rec.inspectionPhotos],
+  );
+
   const commitOfferDraftToRecord = useCallback(
     async (
       onUploadProgress?: (loaded: number, total: number) => void,
@@ -1200,6 +1235,7 @@ export function IrissPasutijumsEditor({
         validUntil: normalizeOfferValidUntil(offerDraft.validUntil),
         attachments: offerDraft.attachments,
         ...(offerDraft.coverAttachmentId ? { coverAttachmentId: offerDraft.coverAttachmentId } : {}),
+        ...(offerDraft.blocks?.length ? { blocks: offerDraft.blocks } : {}),
         createdAt: offerDraft.createdAt || now,
         updatedAt: now,
       };
@@ -1756,7 +1792,7 @@ export function IrissPasutijumsEditor({
               label="Ražošanas gadi"
               value={rec.productionYears}
               onChange={(e) => patch("productionYears", e.target.value)}
-              placeholder="piem., 2018–2021"
+              placeholder="piem., 2018-2021"
             />
             <LabeledInput
               label="Kopējais budžets"
@@ -2067,6 +2103,8 @@ export function IrissPasutijumsEditor({
           onRetryGoogleContact={() => void retryGoogleContact()}
           onGeneratedDocument={ingestGeneratedDocument}
           onOpenOfferPdf={(offerId) => void openOfferPdfForId(offerId)}
+          onAlbumFiles={(album, files) => void onAlbumFiles(album, files)}
+          albumBusy={albumFileBusy}
           onRestore={() => void restoreDeleted()}
           onOrderRestored={(record) => setRec(withAutoEcarstradeLinks(record))}
           initialOfferLinks={initialOfferLinks}
@@ -2322,6 +2360,77 @@ export function IrissPasutijumsEditor({
                     ) : null}
                   </div>
                 </div>
+              </div>
+              <div className="mt-3">
+                <IrissOfferBlocksEditor
+                  offer={{
+                    id: offerDraft.id,
+                    title: offerDraft.title,
+                    brandModel: offerDraft.brandModel,
+                    vin: offerDraft.vin,
+                    year: offerDraft.year,
+                    mileage: offerDraft.mileage,
+                    priceGermany: offerDraft.priceGermany,
+                    comment: offerDraft.comment,
+                    firstRegistration: offerDraft.firstRegistration,
+                    odometerReading: offerDraft.odometerReading,
+                    transmission: offerDraft.transmission,
+                    location: offerDraft.location,
+                    fuel: offerDraft.fuel,
+                    driveType: offerDraft.driveType,
+                    powerKw: offerDraft.powerKw,
+                    engineDisplacement: offerDraft.engineDisplacement,
+                    color: offerDraft.color,
+                    bodyTypeOffer: offerDraft.bodyTypeOffer,
+                    doorCount: offerDraft.doorCount,
+                    emissionClass: offerDraft.emissionClass,
+                    originCountry: offerDraft.originCountry,
+                    auctionPlatform: offerDraft.auctionPlatform,
+                    auctionStockNumber: offerDraft.auctionStockNumber,
+                    auctionEndAt: offerDraft.auctionEndAt,
+                    vatStatus: offerDraft.vatStatus,
+                    damageGrade: offerDraft.damageGrade,
+                    equipmentHighlights: offerDraft.equipmentHighlights,
+                    estimatedTotalPrice: offerDraft.estimatedTotalPrice,
+                    keyCount: offerDraft.keyCount,
+                    hasFullServiceHistory: offerDraft.hasFullServiceHistory,
+                    hasFactoryPaint: offerDraft.hasFactoryPaint,
+                    hasNoRustBody: offerDraft.hasNoRustBody,
+                    hasSecondWheelSet: offerDraft.hasSecondWheelSet,
+                    specialNotes: offerDraft.specialNotes,
+                    visualAssessment: offerDraft.visualAssessment,
+                    technicalAssessment: offerDraft.technicalAssessment,
+                    summary: offerDraft.summary,
+                    carPrice: offerDraft.carPrice,
+                    deliveryPrice: offerDraft.deliveryPrice,
+                    commissionFee: offerDraft.commissionFee,
+                    offerValidDays: offerDraft.offerValidDays,
+                    validUntil: offerDraft.validUntil,
+                    attachments: offerDraft.attachments,
+                    ...(offerDraft.coverAttachmentId ? { coverAttachmentId: offerDraft.coverAttachmentId } : {}),
+                    ...(offerDraft.blocks?.length ? { blocks: offerDraft.blocks } : {}),
+                    createdAt: offerDraft.createdAt,
+                    updatedAt: offerDraft.createdAt,
+                  }}
+                  onChange={(next) =>
+                    setOfferDraft((d) => ({
+                      ...d,
+                      brandModel: next.brandModel,
+                      firstRegistration: next.firstRegistration,
+                      year: next.year,
+                      odometerReading: next.odometerReading,
+                      mileage: next.mileage,
+                      fuel: next.fuel,
+                      transmission: next.transmission,
+                      powerKw: next.powerKw,
+                      color: next.color,
+                      specialNotes: next.specialNotes,
+                      carPrice: next.carPrice,
+                      priceGermany: next.priceGermany,
+                      ...(next.blocks?.length ? { blocks: next.blocks } : {}),
+                    }))
+                  }
+                />
               </div>
               </div>
               <div className="min-w-0 rounded-xl border border-[#e5e7eb] bg-white p-3">

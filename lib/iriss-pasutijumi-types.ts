@@ -3,6 +3,10 @@
  */
 
 import type { IrissCriteriaV1 } from "@/lib/iriss-criteria-types";
+import type { IrissAdvanceDraft } from "@/lib/iriss-advance";
+import type { IrissCommunicationEvent } from "@/lib/iriss-communication-timeline";
+import type { IrissOfferBlock } from "@/lib/iriss-offer-blocks";
+import type { IrissOrderPhotoAlbum } from "@/lib/iriss-order-photos";
 
 export type IrissOfferAttachment = {
   id: string;
@@ -100,6 +104,8 @@ export type IrissOfferRecord = {
   attachments: IrissOfferAttachment[];
   /** Vāka foto id. Tukšs: pirmais attēls. */
   coverAttachmentId?: string;
+  /** Rediģējami PDF/UI bloki. Vecie JSON šo lauku nesatur. */
+  blocks?: IrissOfferBlock[];
   createdAt: string;
   updatedAt: string;
 };
@@ -345,6 +351,14 @@ export type IrissPasutijumsRecord = {
   listingLinksOther: string[];
   /** Dzintarzeme Auto izmaksu tāmes lauki (admin autosaglabāšana). */
   dzintarzemeTameDraft: IrissDzintarzemeTameDraft;
+  /** Avanss / depozīts. Vecie JSON šo lauku nesatur. */
+  advance?: IrissAdvanceDraft;
+  /** Operatora komunikācijas žurnāls. Vecie JSON šo lauku nesatur. */
+  communicationEvents?: IrissCommunicationEvent[];
+  /** Apskates foto. Vecie JSON šo lauku nesatur. */
+  inspectionPhotos?: IrissOrderPhotoAlbum;
+  /** Dokumentu foto. Vecie JSON šo lauku nesatur. */
+  documentPhotos?: IrissOrderPhotoAlbum;
   /** Piedāvājumi klientam (var būt vairāki). */
   offers: IrissOfferRecord[];
   /** Ģenerētie PDF (līgums, tāme). Jaunākie pirmie. */

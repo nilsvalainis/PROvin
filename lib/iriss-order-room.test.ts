@@ -77,6 +77,7 @@ function hit(partial: Partial<IrissOrderRoomHit> & Pick<IrissOrderRoomHit, "id">
     firstSeenAt: "",
     lastSeenAt: "",
     location: "",
+    priceHistory: [],
     ...partial,
   };
 }

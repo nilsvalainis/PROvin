@@ -8,7 +8,11 @@ import { IrissLazyImage } from "@/components/admin/IrissLazyImage";
 import { IrissOrderRoomHitCard } from "@/components/admin/IrissOrderRoomHitCard";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
+import { IrissAdvanceSection } from "@/components/admin/IrissAdvanceSection";
 import { IrissClientFinancingSection } from "@/components/admin/IrissClientFinancingSection";
+import { IrissCommunicationTimeline } from "@/components/admin/IrissCommunicationTimeline";
+import { IrissOrderPhotoAlbumSection } from "@/components/admin/IrissOrderPhotoAlbumSection";
+import { IrissPriceChangeChip, IrissPriceHistoryPanel } from "@/components/admin/IrissPriceChangeChip";
 import { IrissOrderRoomNextSteps } from "@/components/admin/IrissOrderRoomNextSteps";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOfferClientLinkBar } from "@/components/admin/IrissOfferClientLinkBar";
@@ -39,6 +43,13 @@ import {
   sortGeneratedDocumentsNewestFirst,
 } from "@/lib/iriss-generated-documents";
 import type { IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
+import { irissAdvanceHeaderChip } from "@/lib/iriss-advance";
+import {
+  newIrissCommunicationEvent,
+  timelineFromPasutijums,
+  type IrissCommFilter,
+} from "@/lib/iriss-communication-timeline";
+import { hitMatchesIrissPriceFilter, irissPriceChipFilterLabel, irissPriceHistoryRows, latestIrissPriceChip, type IrissPriceChipFilter } from "@/lib/iriss-listing-price-chips";
 import {
   IRISS_ORDER_ROOM_TABS,
   IRISS_ORDER_ROOM_TEMPLATES,
@@ -320,6 +331,8 @@ export function IrissOrderRoom({
   googleContactBusy = false,
   onRetryGoogleContact,
   onGeneratedDocument,
+  onAlbumFiles,
+  albumBusy = false,
 }: {
   rec: IrissPasutijumsRecord;
   hits: IrissOrderRoomHit[];
@@ -365,10 +378,14 @@ export function IrissOrderRoom({
   googleContactBusy?: boolean;
   onRetryGoogleContact?: () => void;
   onGeneratedDocument?: (doc: IrissGeneratedDocument, workspaceRevision?: number) => void;
+  onAlbumFiles?: (album: "inspection" | "documents", files: FileList | null) => void;
+  albumBusy?: boolean;
 }) {
   const [tab, setTab] = useState<IrissOrderRoomTab>(coerceIrissOrderRoomTab(initialTab));
   const tabSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [bucket, setBucket] = useState<IrissOrderRoomHitBucket>("new");
+  const [commFilter, setCommFilter] = useState<IrissCommFilter>("all");
+  const [priceFilter, setPriceFilter] = useState<IrissPriceChipFilter>("all");
   const [criteriaOpen, setCriteriaOpen] = useState(false);
   const [criteriaOn, setCriteriaOn] = useState(false);
   const [criteriaDraft, setCriteriaDraft] = useState<CriteriaDraft>(() => criteriaFrom(rec));
@@ -499,7 +516,9 @@ export function IrissOrderRoom({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dismissed, favIds, filteredHits, offeredIds]);
 
-  const shownHits = filteredHits.filter((hit) => bucketOf(hit) === bucket);
+  const shownHits = filteredHits.filter(
+    (hit) => bucketOf(hit) === bucket && hitMatchesIrissPriceFilter(hit.priceHistory, priceFilter),
+  );
   const chips = irissOrderRoomCriteriaChips(rec);
   const dealPill = irissOrderRoomDealPill(rec);
   const clientName = [rec.clientFirstName, rec.clientLastName].map((part) => part.trim()).filter(Boolean).join(" ");
@@ -516,7 +535,9 @@ export function IrissOrderRoom({
     hasPhone: canCall,
     hasVin: Boolean(rec.vin.trim()),
   });
-  const commCount = irissOrderRoomCommunicationCount((rec.statusHistory ?? []).length, Boolean(rec.notes.trim()));
+  const commTimeline = timelineFromPasutijums(rec, offerLinks);
+  const commCount = commTimeline.length || irissOrderRoomCommunicationCount((rec.statusHistory ?? []).length, Boolean(rec.notes.trim()));
+  const advanceChip = irissAdvanceHeaderChip(rec.advance);
   const generatedDocs = sortGeneratedDocumentsNewestFirst(rec.generatedDocuments ?? []);
   const docCount = irissOrderRoomDocumentCount(rec.offers.length, generatedDocs.length);
   const searchHref = `/admin/iriss/sludinajumi?ord=${encodeURIComponent(serializeListingOrderFilter({ kind: "order", id: rec.id }))}`;
@@ -653,6 +674,17 @@ export function IrissOrderRoom({
                   {dealPill ? (
                     <span className="iriss-deal-pill hidden h-8 items-center rounded-full border border-[#86efac] bg-[#dcfce7] px-2.5 text-[12px] font-semibold text-[#166534] md:inline-flex">
                       {dealPill}
+                    </span>
+                  ) : null}
+                  {advanceChip ? (
+                    <span
+                      className={`hidden h-8 items-center rounded-full border px-2.5 text-[12px] font-semibold md:inline-flex ${
+                        advanceChip.tone === "paid"
+                          ? "border-[#86efac] bg-[#dcfce7] text-[#166534]"
+                          : "border-[#fde68a] bg-[#fef9c3] text-[#854d0e]"
+                      }`}
+                    >
+                      {advanceChip.label}
                     </span>
                   ) : null}
                   {IRISS_ORDER_ROOM_SHOW_CHANGE_HISTORY ? (
@@ -890,6 +922,12 @@ export function IrissOrderRoom({
                 <Field label="Pasūtījuma datums" type="date" value={rec.orderDate} onChange={(value) => onPatch("orderDate", value)} />
                 <Field label="Klienta kopējais budžets" value={rec.totalBudget} onChange={(value) => onPatch("totalBudget", value)} />
               </div>
+              <IrissAdvanceSection
+                value={rec.advance}
+                onChange={(next) => onPatchRecord({ advance: next })}
+                onInvoicePdf={onPdf}
+                invoiceBusy={orderPdfBusy}
+              />
               <IrissClientFinancingSection rec={rec} onPatchRecord={onPatchRecord} />
               <div className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                 {IRISS_DEAL_DETAIL_OPTIONS.filter(
@@ -1084,6 +1122,22 @@ export function IrissOrderRoom({
               Sludinājumu kešs nav ieslēgts. Maksas avoti netiek prasīti.
             </p>
           ) : null}
+          <div className="flex max-w-full flex-wrap gap-1.5" role="tablist" aria-label="Cenas filtrs">
+            {(["all", "down", "up"] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setPriceFilter(id)}
+                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold ${
+                  priceFilter === id
+                    ? "border-[#111827] bg-[#111827] text-white"
+                    : "border-[#e5e7eb] bg-[#f3f4f6] text-[#374151]"
+                }`}
+              >
+                {id === "all" ? "Cenas visām" : irissPriceChipFilterLabel(id)}
+              </button>
+            ))}
+          </div>
           <div className="flex max-w-full flex-wrap gap-1.5" role="tablist" aria-label="Sludinājumu statuss">
             {BUCKETS.map((item) => (
               <button
@@ -1278,31 +1332,51 @@ export function IrissOrderRoom({
       {tab === "communication" ? (
         <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(240px,1fr)]">
           <section className={`${cardClass} space-y-2`}>
-            {history.length === 0 && noteLines.length === 0 ? (
-              <p className="text-[13px] leading-snug text-[#6b7280]">
-                Saglabātu ziņu arhīva vēl nav. Zvans, WhatsApp un e-pasts atveras ar pogām. Piezīmes paliek pasūtījumā.
-              </p>
-            ) : null}
-            {noteLines.map((line, index) => (
-              <div key={`note-${index}`} className="flex justify-start">
-                <div className="max-w-[85%] rounded-[14px] bg-[#f3f4f6] px-3 py-2.5 text-[13px] leading-snug text-[#111827] md:max-w-[70%]">
-                  <p className="text-[11px] text-[#6b7280]">Piezīme</p>
-                  {line}
-                </div>
-              </div>
-            ))}
-            {history.map((entry) => (
-              <div key={`${entry.at}-${entry.to}`} className="flex justify-end">
-                <div className="max-w-[85%] rounded-[14px] bg-[#dbeafe] px-3 py-2.5 text-[13px] leading-snug text-[#111827] md:max-w-[70%]">
-                  <p className="text-[11px] text-[#6b7280]">
-                    Statuss · {irissOrderRoomStamp(entry.at)}
-                    {entry.by ? ` · ${entry.by}` : ""}
-                  </p>
-                  {irissOrderRoomStatusLabel(entry.from)} uz {irissOrderRoomStatusLabel(entry.to)}
-                  {entry.reason ? ` (${entry.reason})` : ""}
-                </div>
-              </div>
-            ))}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className={actionBtn}
+                onClick={() =>
+                  onPatchRecord({
+                    communicationEvents: [
+                      ...(rec.communicationEvents ?? []),
+                      newIrissCommunicationEvent("whatsapp", "Nosūtīts WhatsApp", { status: "sent", body: composer }),
+                    ],
+                  })
+                }
+              >
+                Nosūtīts
+              </button>
+              <button
+                type="button"
+                className={actionBtn}
+                onClick={() =>
+                  onPatchRecord({
+                    communicationEvents: [
+                      ...(rec.communicationEvents ?? []),
+                      newIrissCommunicationEvent("call", "Klienta atbilde", { status: "answered", body: composer }),
+                    ],
+                  })
+                }
+              >
+                Klienta atbilde
+              </button>
+              <button
+                type="button"
+                className={actionBtn}
+                onClick={() =>
+                  onPatchRecord({
+                    communicationEvents: [
+                      ...(rec.communicationEvents ?? []),
+                      newIrissCommunicationEvent("call", "Neatzīmēts zvans", { status: "missed" }),
+                    ],
+                  })
+                }
+              >
+                Neatzīmēt
+              </button>
+            </div>
+            <IrissCommunicationTimeline items={commTimeline} filter={commFilter} onFilter={setCommFilter} />
             <label className="mt-2 block">
               <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6b7280]">Piezīmes</span>
               <textarea className={areaClass} aria-label="Piezīmes" value={rec.notes} onChange={(e) => onPatch("notes", e.target.value)} />
@@ -1463,6 +1537,42 @@ export function IrissOrderRoom({
               </button>
             </div>
           </section>
+          <IrissOrderPhotoAlbumSection
+            albumId="inspection"
+            album={rec.inspectionPhotos}
+            onChange={(next) => onPatchRecord({ inspectionPhotos: next })}
+            onFiles={(files) => onAlbumFiles?.("inspection", files)}
+            busy={albumBusy}
+            onCopyToOffer={() => {
+              const last = rec.offers[rec.offers.length - 1];
+              if (!last || !rec.inspectionPhotos?.attachments.length) return;
+              onPatchRecord({
+                offers: rec.offers.map((offer) =>
+                  offer.id === last.id
+                    ? { ...offer, attachments: [...offer.attachments, ...rec.inspectionPhotos!.attachments].slice(0, 60) }
+                    : offer,
+                ),
+              });
+            }}
+          />
+          <IrissOrderPhotoAlbumSection
+            albumId="documents"
+            album={rec.documentPhotos}
+            onChange={(next) => onPatchRecord({ documentPhotos: next })}
+            onFiles={(files) => onAlbumFiles?.("documents", files)}
+            busy={albumBusy}
+            onCopyToOffer={() => {
+              const last = rec.offers[rec.offers.length - 1];
+              if (!last || !rec.documentPhotos?.attachments.length) return;
+              onPatchRecord({
+                offers: rec.offers.map((offer) =>
+                  offer.id === last.id
+                    ? { ...offer, attachments: [...offer.attachments, ...rec.documentPhotos!.attachments].slice(0, 60) }
+                    : offer,
+                ),
+              });
+            }}
+          />
         </div>
       ) : null}
       </div>
