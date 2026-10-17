@@ -77,7 +77,10 @@ export function browserFetchHandoff(
   rows: readonly { id?: string; status?: string; summary?: string }[] | null | undefined,
 ): VinScanBrowserFetchHandoff | null {
   if (!rows?.length) return null;
-  const ids = rows.filter(browserFetchAwaiting).map((row) => row.id).filter(isVinScanBrowserFetchId);
+  const ids = rows
+    .filter(browserFetchAwaiting)
+    .map((row) => row.id)
+    .filter((id): id is VinScanBrowserFetchId => typeof id === "string" && isVinScanBrowserFetchId(id));
   if (!ids.length) return null;
   const token = browserFetchToken(vin, at);
   if (!token) return null;

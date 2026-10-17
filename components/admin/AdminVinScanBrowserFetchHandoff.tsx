@@ -26,7 +26,13 @@ export function AdminVinScanBrowserFetchHandoff({
       hidden
       data-provin-order-vin={cleanVin || undefined}
       {...(sessionId ? { "data-provin-order-session": sessionId } : {})}
-      {...(handoff?.attrs ?? {})}
+      {...(handoff
+        ? {
+            "data-provin-browser-fetch": handoff.token,
+            "data-provin-browser-fetch-ids": handoff.ids.join(","),
+            ...(handoff.ids.includes("stat_vin") ? { "data-provin-stat-vin-fetch": handoff.token } : {}),
+          }
+        : {})}
     />
   );
 }

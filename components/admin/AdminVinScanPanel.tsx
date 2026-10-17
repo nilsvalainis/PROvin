@@ -527,9 +527,10 @@ export function AdminVinScanPanel({
             setError(browserImportErrorLv(data?.error));
             return;
           }
-          if (!data || !Array.isArray(data.indicators)) return;
+          const indicators = data?.indicators;
+          if (!data || !Array.isArray(indicators)) return;
           if (typeof data.scannedAt === "string") setScannedAt(data.scannedAt);
-          setById((prev) => ({ ...prev, ...rowsFromIndicators(data.indicators, clean, plates, listing) }));
+          setById((prev) => ({ ...prev, ...rowsFromIndicators(indicators, clean, plates, listing) }));
           try {
             localStorage.setItem(
               cacheKey(typeof data.vin === "string" && data.vin ? data.vin : clean),
