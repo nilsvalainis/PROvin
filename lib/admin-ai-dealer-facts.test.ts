@@ -5,14 +5,19 @@ import { emptyOneautoIngest } from "@/lib/oneauto-to-auto-records";
 import {
   buildDealerFactsBrief,
   checkMapAgainstDealerFacts,
+  collectForeignDealerLanguageFlags,
   detectDealerComponents,
   extractDealerCampaignCode,
   extractDealerFacts,
+  extractDealerFactsFromServiceWorks,
   fillAlreadyDoneEvidenceFromDealer,
   findTextContradictionsWithDealer,
   isDealerCampaignText,
+  redactDealerOriginalLanguage,
   textMentionsDealerCampaigns,
 } from "@/lib/admin-ai-dealer-facts";
+import { buildTechRiskSourceFactsBrief } from "@/lib/admin-ai-tech-risk-source-facts";
+import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { lintTechnicalRiskText } from "@/lib/admin-ai-technical-risk-lint";
 import { scoreTechRiskAbPair } from "@/lib/admin-ai-tech-risk-ab-harness";
 import type { TechnicalRiskMap } from "@/lib/admin-ai-technical-risk-map-types";
@@ -94,12 +99,18 @@ describe("extractDealerFacts", () => {
     };
     const f = extractDealerFacts({ oneauto, autoRecords });
     expect(f.rows).toHaveLength(1);
+    expect(f.rows[0]!.id).toBe(extractDealerFactsFromServiceWorks(autoRecords.serviceWorks).rows[0]!.id);
     expect(f.rows[0]!.works).toMatch(/Type:\s*Campaign 240S09/i);
-    expect(f.rows[0]!.works).not.toMatch(/tulkojums/i);
+    expect(f.rows[0]!.worksOriginal).toMatch(/Airbag software update/i);
+    expect(f.rows[0]!.worksLv).toMatch(/tulkojums/i);
+    expect(f.rows[0]!.worksLv).not.toMatch(/Airbag software/i);
     expect(f.rows[0]!.kind).toBe("campaign");
     expect(f.rows[0]!.campaignCode).toBe("240S09");
     expect(f.rows[0]!.date).toBe("12.03.2024");
     expect(f.rows[0]!.odometerKm).toBe(45210);
+    const brief = buildDealerFactsBrief(f);
+    expect(brief).toContain("Kampaņas LV tulkojums 240S09");
+    expect(brief).not.toMatch(/Airbag software|Type:\s*Campaign/i);
   });
 
   it("Kia, Volvo un VAG oriģinālvalodas paraugi dod kampaņas rindas ar kodu, datumu un km", () => {
@@ -224,6 +235,8 @@ describe("karte pret dīlera faktiem", () => {
     const m = fillAlreadyDoneEvidenceFromDealer(map(), f);
     expect(m.risks).toHaveLength(1);
     expect(m.risks[0]!.already_done_evidence).toMatch(/^D2 /);
+    expect(m.risks[0]!.already_done_evidence).toMatch(/sadales ķēde/i);
+    expect(m.risks[0]!.already_done_evidence).not.toMatch(/Timing chain|Steuerkette/i);
     expect(checkMapAgainstDealerFacts(m, f).map((i) => i.id)).toEqual(["DF2"]);
   });
 });
@@ -255,5 +268,123 @@ describe("teksts pret dīlera faktiem", () => {
     expect(s.dealer.contradictionsOld).toBe(1);
     expect(s.dealer.contradictionsNew).toBe(0);
     expect(s.dealer.dealerRows).toBe(3);
+  });
+});
+
+describe("klienta izeja paliek latviski, D-ID kā admin", () => {
+  const serviceWorks = [
+    { date: "01.06.2023", odometer: "88000", location: "Volvo", works: "Pneimatiskā atspere aizmugurē" },
+    { date: "15.09.2023", odometer: "92000", location: "Volvo", works: "Gaisa ieplūdes caurule kreisā" },
+    { date: "03.01.2024", odometer: "98000", location: "Volvo", works: "HHC (hibrīda veselības pārbaude)" },
+  ];
+  const original = [
+    { date: "01.06.2023", odometer: "88000", place: "Volvo", works: "Pneumatic spring, rear" },
+    { date: "15.09.2023", odometer: "92000", place: "Volvo", works: "Air intake tube left" },
+    { date: "03.01.2024", odometer: "98000", place: "Volvo", works: "HHC (Hybrid Health Check)" },
+  ];
+
+  function facts() {
+    return extractDealerFacts({
+      autoRecords: {
+        serviceWorks,
+        oneautoIngest: { serviceTimelineOriginal: original },
+      },
+    });
+  }
+
+  it("D-ID sakrīt ar admin numerāciju no serviceWorks", () => {
+    const admin = extractDealerFactsFromServiceWorks(serviceWorks);
+    const v2 = facts();
+    expect(v2.rows.map((r) => r.id)).toEqual(admin.rows.map((r) => r.id));
+    expect(v2.rows.map((r) => r.id)).toEqual(["D1", "D2", "D3"]);
+  });
+
+  it("brīfs un evidence ir tikai latviski", () => {
+    const f = facts();
+    const brief = buildDealerFactsBrief(f);
+    expect(brief).toContain("Pneimatiskā atspere aizmugurē");
+    expect(brief).not.toMatch(/Pneumatic spring|Air intake tube|Hybrid Health Check/i);
+    const evidence = fillAlreadyDoneEvidenceFromDealer(map(), f);
+    for (const risk of evidence.risks) {
+      expect(risk.already_done_evidence ?? "").not.toMatch(/Pneumatic spring|Steuerkette|software update/i);
+    }
+  });
+
+  it("AVOTU FAKTI redigē EN komentāru un rāda LV dīlera rindas", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.auto_records.serviceWorks = serviceWorks;
+    blocks.auto_records.oneautoIngest = {
+      ...emptyOneautoIngest(),
+      serviceTimelineOriginal: original,
+    };
+    blocks.auto_records.comments =
+      "Servisā: Pneumatic spring, rear; Air intake tube left; HHC (Hybrid Health Check).";
+    const brief = buildTechRiskSourceFactsBrief({
+      vin: "YV1TEST",
+      sourceBlocks: blocks,
+      dealerFacts: facts(),
+    });
+    expect(brief).toContain("AVOTU FAKTI");
+    expect(brief).toContain("Pneimatiskā atspere aizmugurē");
+    expect(brief).not.toMatch(/Pneumatic spring, rear|Air intake tube left|Hybrid Health Check/i);
+    expect(redactDealerOriginalLanguage(blocks.auto_records.comments, facts())).not.toMatch(
+      /Pneumatic spring|Air intake tube|Hybrid Health Check/i,
+    );
+  });
+
+  it("DF3 karo oriģinālu AVOTU FAKTI / tekstā", () => {
+    const f = facts();
+    const leaked = "Klātienē jāskatās Pneumatic spring, rear un HHC (Hybrid Health Check).";
+    const flags = collectForeignDealerLanguageFlags(leaked, map(), {
+      briefs: ["AVOTU FAKTI: Air intake tube left"],
+      facts: f,
+    });
+    expect(flags.some((x) => x.id === "DF3")).toBe(true);
+  });
+
+  it("AVOTU FAKTI no netulkotām EN serviceWorks rāda LV fallback, ne oriģinālu", () => {
+    const enWorks = [
+      { date: "01.06.2023", odometer: "88000", location: "Volvo", works: "Pneumatic spring, rear" },
+      { date: "15.09.2023", odometer: "92000", location: "Volvo", works: "Air intake tube left" },
+    ];
+    const f = extractDealerFactsFromServiceWorks(enWorks);
+    const blocks = createDefaultSourceBlocks();
+    blocks.auto_records.serviceWorks = enWorks;
+    blocks.auto_records.comments = "Servisā: Pneumatic spring, rear; Air intake tube left.";
+    const brief = buildTechRiskSourceFactsBrief({
+      vin: "YV1TEST",
+      sourceBlocks: blocks,
+      dealerFacts: f,
+    });
+    expect(brief).toContain("AVOTU FAKTI");
+    expect(brief).not.toMatch(/Pneumatic spring, rear|Air intake tube left/i);
+    expect(f.rows.every((r) => r.worksLv && !/Pneumatic|Air intake/i.test(r.worksLv))).toBe(true);
+  });
+
+  it("AVOTU FAKTI izmet EN darbus no komentāra, pat ja oriģināla timeline nav", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.auto_records.serviceWorks = serviceWorks;
+    blocks.auto_records.comments =
+      "Operatora piezīme. Pneumatic spring, rear; HHC (Hybrid Health Check).";
+    const brief = buildTechRiskSourceFactsBrief({
+      vin: "YV1TEST",
+      sourceBlocks: blocks,
+      dealerFacts: facts(),
+    });
+    expect(brief).not.toMatch(/Pneumatic spring, rear|Hybrid Health Check/i);
+    expect(brief).toContain("Pneimatiskā atspere aizmugurē");
+  });
+
+  it("AVOTU FAKTI izmet EUR teikumus pirms prompta", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.auto_records.serviceWorks = serviceWorks;
+    blocks.auto_records.comments = "Apkope 800 EUR. Šāda summa ir kalibrācija. Eļļa mainīta.";
+    const brief = buildTechRiskSourceFactsBrief({
+      vin: "YV1TEST",
+      sourceBlocks: blocks,
+      dealerFacts: facts(),
+    });
+    expect(brief).not.toMatch(/800\s*EUR|Šāda summa/i);
+    expect(brief).toMatch(/Eļļa mainīta/);
   });
 });

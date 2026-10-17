@@ -88,6 +88,12 @@ describe("OneAuto → oficiālā dīlera forma", () => {
     expect(oneautoWorksNeedLvTranslation("Eļļas maiņa, salona filtrs")).toBe(false);
     expect(oneautoWorksNeedLvTranslation("PBM jauninājums")).toBe(false);
     expect(oneautoWorksNeedLvTranslation("Warranty inspection.")).toBe(true);
+    expect(oneautoWorksNeedLvTranslation("Pneumatic spring, rear")).toBe(true);
+    expect(oneautoWorksNeedLvTranslation("Air intake tube left")).toBe(true);
+    expect(oneautoWorksNeedLvTranslation("HHC (Hybrid Health Check)")).toBe(true);
+    expect(oneautoWorksNeedLvTranslation("Timing chain kit replaced")).toBe(true);
+    expect(oneautoWorksNeedLvTranslation("Gaisa filtrs")).toBe(false);
+    expect(oneautoWorksNeedLvTranslation("Akumulators")).toBe(false);
     expect(oneautoWorksNeedLvTranslation("")).toBe(false);
   });
 

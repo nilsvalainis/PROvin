@@ -9,6 +9,7 @@ import {
   type TechnicalRiskIdentification,
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
+import { findInternalClientTermHits } from "@/lib/provin-banned-vocabulary";
 import { PROVIN_KB_EUR_ACTIVE } from "@/lib/provin-kb";
 import {
   DEALER_WEAR_COMPONENTS,
@@ -257,6 +258,15 @@ export function lintTechnicalRiskText(input: TechnicalRiskLintInput): TechnicalR
       id: "L9",
       level: "W",
       message: "Sadaļu jaukšana (negadījumu vēsture / nobraukuma analīze / eļļas intervāli).",
+    });
+  }
+
+  const internalTerms = findInternalClientTermHits(text);
+  if (internalTerms.length > 0) {
+    issues.push({
+      id: "L16",
+      level: "W",
+      message: `Iekšējie termini klienta tekstā: ${internalTerms.map((t) => t.label).join(", ")}.`,
     });
   }
 

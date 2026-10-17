@@ -25,6 +25,16 @@ describe("splitIntoSentences", () => {
       "Nākamais.",
     ]);
   });
+
+  it("does not split after an ordinal year before a lowercase letter", () => {
+    expect(splitIntoSentences("Importēts 2013. gadā Vācijā. Nākamais.")).toEqual([
+      "Importēts 2013. gadā Vācijā. ",
+      "Nākamais.",
+    ]);
+    expect(splitIntoSentences("Importēts 2013. gadā Vācijā.").join("")).toBe(
+      "Importēts 2013. gadā Vācijā.",
+    );
+  });
 });
 
 describe("stripUnauthorizedEuroAmounts", () => {
@@ -59,6 +69,15 @@ describe("stripUnauthorizedEuroAmounts", () => {
 
   it("keeps a paragraph whose heading is the only line", () => {
     expect(stripUnauthorizedEuroAmounts("Tikai virsraksts")).toBe("Tikai virsraksts");
+  });
+
+  it("drops a follow-on Šāda summa sentence and treats eiro as a euro word", () => {
+    const out = stripUnauthorizedEuroAmounts(
+      "Ķēde ir jāklausās. Orientējoši 400-800 eiro 2026. Šāda summa ir tikai kalibrācija. Klātienē startu.",
+    );
+    expect(out).not.toMatch(/eiro|Šāda summa|400-800/i);
+    expect(out).toContain("Ķēde ir jāklausās.");
+    expect(out).toContain("Klātienē startu.");
   });
 });
 

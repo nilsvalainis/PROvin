@@ -38,12 +38,17 @@ export function oneautoDisplayToServiceWorks(
 const FOREIGN_WORKS_RE =
   /\b(the|and|acc\.?|according|software|download|install|sides|fitting|executed|upgrade|workshop|remark|remarks|warranty|inspection|engine|oil|filter|change|performed|latest|already|contained|bij|het|van|dat|aan|uitgevoerd|mvg|nieuwste|geeft|actie|acit|service)\b/i;
 
+/** A/B EN dīlera nosaukumi, ko parastais RE nepārtver (neķer LV bez diakritikas). */
+const EN_DEALER_TITLE_RE =
+  /\b(pneumatic|spring|intake|tube|hybrid|health|hhc|replaced|rear|front|left|right|timing|chain|kit|airbag|cabin|recall)\b/i;
+
 /** Vai „Darbi” teksts vēl jāpārtulko latviski. */
 export function oneautoWorksNeedLvTranslation(works: string): boolean {
   const t = works.replace(/\s+/g, " ").trim();
   if (t.length < 3) return false;
   if (FOREIGN_WORKS_RE.test(t)) return true;
-  return false;
+  if (/[āčēģīķļņšūž]/i.test(t)) return false;
+  return EN_DEALER_TITLE_RE.test(t);
 }
 
 export function oneautoDisplayWorksNeedLvTranslation(

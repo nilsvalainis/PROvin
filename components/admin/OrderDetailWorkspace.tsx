@@ -264,6 +264,11 @@ import {
   buildProvinDilerisPdfFilename,
 } from "@/lib/audit-report-pdf-filename";
 import { buildOemDealerDocumentHtml } from "@/lib/pdf-dealer-oem";
+import {
+  countUntranslatedDealerWorkRows,
+  shouldTranslateDealerWorksBeforePdf,
+} from "@/lib/dealer-admin-service-rows";
+import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 import { NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES } from "@/lib/notify-report-email-limits";
 import { isValidHttpUrl, isValidOrderEmail } from "@/lib/order-field-validation";
 import {
@@ -3323,6 +3328,46 @@ export function OrderDetailWorkspace({
     const asvOnly = opts?.asvOnly === true;
     const businessBrand = opts?.businessBrand === true;
     const isolate = dealerOnly || asvOnly;
+    const reportLangEarly: ClientReportLang = opts?.lang ?? "lv";
+    let lvServiceWorks: AutoRecordsServiceWorkRow[] | null = null;
+    if (
+      shouldTranslateDealerWorksBeforePdf({
+        dealerOnly,
+        asvOnly,
+        lang: reportLangEarly,
+      })
+    ) {
+      const arNow = mergeSourceBlocksWithDefaults(wsPersistRef.current.sourceBlocks).auto_records;
+      if (countUntranslatedDealerWorkRows(arNow.serviceWorks ?? []) > 0) {
+        try {
+          const res = await fetch("/api/admin/ai/oneauto-translate", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: payload.sessionId,
+              scope: "serviceWorks",
+              serviceWorks: arNow.serviceWorks,
+              originalTimeline: arNow.oneautoIngest?.serviceTimelineOriginal ?? [],
+            }),
+          });
+          const body = (await res.json().catch(() => ({}))) as {
+            serviceWorks?: AutoRecordsServiceWorkRow[];
+            warning?: string | null;
+          };
+          if (Array.isArray(body.serviceWorks)) {
+            lvServiceWorks = body.serviceWorks;
+            updateSourceBlock("auto_records", { ...arNow, serviceWorks: body.serviceWorks });
+            if (orderDraftPersistenceEnabled) {
+              await persistFullWorkspaceRef("dealer-works-lv", { showFlash: false });
+            }
+          }
+          if (body.warning) console.warn("[dealer-works-lv]", body.warning);
+        } catch (e) {
+          console.warn("[dealer-works-lv]", e instanceof Error ? e.message : e);
+        }
+      }
+    }
 
     let listingMarket: ListingMarketSnapshot | null = null;
     const listingUrl = payload.listingUrl?.trim();
@@ -3422,6 +3467,7 @@ export function OrderDetailWorkspace({
     }
     const autoRecordsForPdf = {
       ...blocksDisplaySafe.auto_records,
+      ...(lvServiceWorks ? { serviceWorks: lvServiceWorks } : {}),
       photos: resolvedAutoRecordsPhotoIds
         .filter((id) => autoRecordsPhotoDataUrls.has(id))
         .map((id) => ({ id })),

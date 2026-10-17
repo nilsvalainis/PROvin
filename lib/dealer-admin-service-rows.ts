@@ -7,38 +7,37 @@ import {
   dealerComponentLv,
   extractDealerFactsFromServiceWorks,
   findTextContradictionsWithDealer,
+  originalDealerWorksForRow,
   textMentionsDealerCampaigns,
   type DealerFact,
 } from "@/lib/admin-ai-dealer-facts";
 import type { TechnicalRiskMap } from "@/lib/admin-ai-technical-risk-map-types";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 import { oneautoWorksNeedLvTranslation } from "@/lib/oneauto-dealer";
-import { formatOneautoWorksText, type OneautoServiceEvent } from "@/lib/oneauto-catalog";
+
+export { originalDealerWorksForRow };
 
 function digits(raw: string): string {
   return (raw ?? "").replace(/\D/g, "");
 }
 
-export function originalDealerWorksForRow(
-  row: AutoRecordsServiceWorkRow,
-  original: readonly OneautoServiceEvent[] | null | undefined,
-): string {
-  const events = original ?? [];
-  if (events.length === 0) return "";
-  const date = row.date.trim();
-  const km = digits(row.odometer);
-  const exact = events.find(
-    (ev) => ev.date.trim() === date && (!km || digits(ev.odometer) === km),
-  );
-  if (exact) return formatOneautoWorksText(exact.works);
-  if (!date) return "";
-  const sameDate = events.filter((ev) => ev.date.trim() === date);
-  if (sameDate.length === 1) return formatOneautoWorksText(sameDate[0]!.works);
-  return "";
-}
-
 export function dealerWorkRowNeedsLvTranslation(works: string): boolean {
   return oneautoWorksNeedLvTranslation(works);
+}
+
+/** Vai pirms šīs PDF ģenerācijas jātulko serviceWorks latviski. OEM / ASV - nē. */
+export function shouldTranslateDealerWorksBeforePdf(opts: {
+  oem?: boolean;
+  dealerOnly?: boolean;
+  asvOnly?: boolean;
+  lang?: string | null;
+}): boolean {
+  if (opts.oem || opts.asvOnly) return false;
+  if (opts.dealerOnly) {
+    const lang = (opts.lang ?? "lv").trim().toLowerCase();
+    return lang === "lv" || lang === "";
+  }
+  return true;
 }
 
 export function countUntranslatedDealerWorkRows(

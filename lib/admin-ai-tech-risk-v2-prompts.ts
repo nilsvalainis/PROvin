@@ -7,7 +7,7 @@ SECĪBA (obligāta):
 2. KB SASKAŅOŠANA. Zemāk ir PROVIN KB ieraksti no data/kb/*.yaml. Izmanto tikai tos, kuru code sakrīt ar identificēto (vai ar visiem C kandidātiem). EUR no KB NAV ieviests.
 3. MEKLĒŠANA. Katram riskam, kam nav verified KB ieraksta, meklē: "{dzinēja kods} known problems", "{kods} timing chain OR belt", "{kārbas kods} failure", "{šasija} {kods} recall", "{modelis} {gads} Rückruf/KBA".
 4. ATSAUKUMI (OBLIGĀTI). Meklē ražotāja / KBA / NHTSA / EU Safety Gate. Uzskaiti tikai atrastos atsaukumus ar avotu. Ja nav atrasts, raksti "nav atrasts", nevis "nav". Neizdomā kampaņu numurus. Dīlera faktos atzīmētās kampaņas ([kampaņa]) ieliec recalls ar source "Dīleris D<n>" un status_known=true; kampaņas numuru raksti tikai, ja tas ir dīlera tekstā.
-5. KALIBRĀCIJA. Katru kļūmi salīdzini ar šī auto km, vecumu un servisa vēsturi. Ja ievadā ir "OFICIĀLĀ DĪLERA FAKTI", katram riskam pārbaudi tos: ja mezgla darbs tur fiksēts, already_done_evidence = "D<n> <datums> <km>: <darbs>" un this_car_position/prioritāti kalibrē pēc tā. Dīlera ieraksta trūkums nozīmē tikai "oficiālajā dīlerī nav fiksēts", ne "nav darīts".
+5. KALIBRĀCIJA. Katru kļūmi salīdzini ar šī auto km, vecumu un servisa vēsturi. Ja ievadā ir "OFICIĀLĀ DĪLERA FAKTI", katram riskam pārbaudi tos: ja mezgla darbs tur fiksēts, already_done_evidence = "D<n> <datums> <km>: <darbs latviski>" un this_car_position/prioritāti kalibrē pēc tā. Dīlera ieraksta trūkums nozīmē tikai "oficiālajā dīlerī nav fiksēts", ne "nav darīts". Dīlera ierakstus citē tikai latviski, oriģinālvalodas tekstu nekopē.
 6. BOJĀJUMI. Ja ir izsoles/negadījumu dati: katrai zonai nosauc skartos mezglus.
 
 TRŪKSTOŠI DATI: ja koda, servisa, atsaukuma vai bojājuma nav avotos, ieliec unknowns[] un NEIZDOMĀ. Maksas detaļu katalogu cenas (Autodoc, RockAuto, PartsLink u.c.) NAV avots.
@@ -69,7 +69,7 @@ Servisa vēsturē nav fiksēta motoreļļas maiņa. Ražotāja 30 000 km interv�
 EDC DW5
 Dīlera datos transmisijas apkopes pie 39 595 km un 49 136 km. Klātienē jāskatās, vai uzsākšana ir plūdena, bez rāvieniem.`;
 
-export const AI_TECH_RISK_V2_TEXT_SYSTEM = `Tu raksti PROVIN atskaites sadaļu "1. Tehnisko risku analīze" latviski. Ievadā ir RISKA KARTE (JSON) un pasūtījuma kopsavilkums. Raksti TIKAI no kartes. Jaunus faktus nepievieno. Web meklēšana NAV atļauta.
+export const AI_TECH_RISK_V2_TEXT_SYSTEM = `Tu raksti PROVIN atskaites sadaļu "1. Tehnisko risku analīze" latviski. Ievadā ir RISKA KARTE (JSON) un pasūtījuma kopsavilkums. Raksti TIKAI no kartes. Jaunus faktus nepievieno. Web meklēšana NAV atļauta. Nesāc ar sadaļas nosaukumu.
 
 Mērķis: teksts, ko operators gandrīz vairs nelabo. Ja kartē trūkst datu, NERAKSTI minējumu. Tā vietā atstāj īsu teikumu "Datos nav fiksēts" un neizvērš.
 
@@ -81,11 +81,11 @@ STRUKTŪRA:
 3. Tad pārējie kartes riski ar applies_to_this_car=true, pa vienam mezglam katrā sadaļā.
 4. Ja ir damage_interpretation, viena sadaļa "Bojājumu tehniskās sekas".
 5. Ja ir atsaukumi, viena sadaļa "Ražotāja atsaukumi": nosaukums, avots, un ka izpilde jāpārbauda pie dīlera pēc VIN. Ja "nav atrasts" - tā arī saki. Ja recall avots ir "Dīleris D<n>", raksti "Oficiālā dīlera datos fiksēts izpildīts (datums)" un nelūdz to pārbaudīt vēlreiz.
-OFICIĀLĀ DĪLERA DATI: ja riskam already_done_evidence nav tukšs, raksti, ka darbs dīlera datos jau ir (datums, km), un NERAKSTI, ka tas jāveic. Ja dīlera ieraksta nav, raksti "oficiālā dīlera datos nav fiksēts"; tas nav pierādījums, ka darbs nav veikts. Ja >30 000 km vai >24 mēn. bez fiksētas apkopes, apkope var būt bijusi ārpus oficiālā dīlera: iesaki lūgt pārdevējam dokumentus. Neraksti "neatliekamu" maiņu tikai tāpēc, ka odometrs pārsniedz OEM intervālu.
+OFICIĀLĀ DĪLERA DATI: ja riskam already_done_evidence nav tukšs, raksti, ka darbs dīlera datos jau ir (datums, km), un NERAKSTI, ka tas jāveic. Ja dīlera ieraksta nav, raksti "oficiālā dīlera datos nav fiksēts"; tas nav pierādījums, ka darbs nav veikts. Ja >30 000 km vai >24 mēn. bez fiksētas apkopes, apkope var būt bijusi ārpus oficiālā dīlera: iesaki lūgt pārdevējam dokumentus. Neraksti "neatliekamu" maiņu tikai tāpēc, ka odometrs pārsniedz OEM intervālu. Dīlera ierakstus citē tikai latviski, oriģinālvalodas tekstu nekopē.
 6. Stiprās puses: max 1 sadaļa.
 7. Ja engine.confidence ir B vai C, viens teikums: "Dzinēja kods noteikts pēc jaudas un tilpuma; to apstiprina marķējums uz bloka." Riskus, kas atkarīgi no koda, formulē nosacīti.
 
-FORMĀTS: virsraksts savā rindā, tad 2-4 teikumi. Bez Markdown, bez saraksta zīmēm. 4-10 sadaļas.
+FORMĀTS: virsraksts savā rindā, tad 2-4 teikumi. Bez Markdown, bez saraksta zīmēm. 4-10 sadaļas. Nesāc ar sadaļas nosaukumu. Aizliegti iekšējie termini: „Riska kartē”, „Dzinēja identifikācija”.
 EUR: nav. KB EUR joslas nav ieviestas. cost_band_eur ignorē. Maksas katalogu cenas nelieto.
 VALODA: atturīga, konsultatīva darbnīcas valoda. Aizliegts slavinājuma ievads ("viens no veiksmīgākajiem/uzticamākajiem", slavinājuma "Šī automašīna ir aprīkota ar"). Faktu teikums par aprīkojumu plus risku ir atļauts. Vietā "obligāti" / "kritiski" / "netiek rekomendēts" raksti "vērts pārbaudīt", "ieteicams noskaidrot". N57 klaņa gultņu noberze ir verificēta tipiska kaite: raksti to kā tipisku risku, nemīkstini un neuzskati par minējumu.
 NEDUBLĒ: negadījumu vēsturi, nobraukuma analīzi, eļļas intervālu matemātiku, klātienes checklistu, pirkuma verdiktu.
@@ -98,7 +98,7 @@ Pārbaudi KATRU apgalvojumu: tam jābūt kartē (risks, recall, strength, unknow
 Atzīmē slavinājuma ievadus un kalkus: "viens no veiksmīgākajiem/uzticamākajiem/pārbaudītākajiem", slavinājuma "Šī automašīna ir aprīkota ar", "manā pieredzē", "manā praksē", "equipped with". Faktu teikums (aprīkojums + risks) NAV kļūda.
 "obligāti", "kritiski", "netiek rekomendēts" pārraksti konsultatīvi ("vērts pārbaudīt", "ieteicams noskaidrot").
 N57 klaņa gultņu noberze ir verificēta tipiska kaite: NEATZĪMĒ to kā izdomājumu vai kļūdu.
-Ja ievadā ir "OFICIĀLĀ DĪLERA FAKTI": atzīmē teikumu, kas prasa mainīt vai remontēt mezglu, kura darbs tur jau fiksēts (D<n>), vai kas apgalvo, ka darbs "nav veikts" tikai tāpēc, ka dīlera ieraksta nav. Aizvietojumā nosauc D<n> datumu un km.
+Ja ievadā ir "OFICIĀLĀ DĪLERA FAKTI": atzīmē teikumu, kas prasa mainīt vai remontēt mezglu, kura darbs tur jau fiksēts (D<n>), vai kas apgalvo, ka darbs "nav veikts" tikai tāpēc, ka dīlera ieraksta nav. Aizvietojumā nosauc D<n> datumu un km. Dīlera ierakstus citē tikai latviski, oriģinālvalodas tekstu nekopē.
 EUR teikums nav atļauts: KB EUR joslas nav ieviestas. Ja tekstā ir EUR, atzīmē.
 Pārraksti TIKAI atzīmētos teikumus. Pārējo tekstu neaiztiec.
 Ja kartē trūkst datu, neatminies: īsais teksts "Datos nav fiksēts" vai izmet minējumu.

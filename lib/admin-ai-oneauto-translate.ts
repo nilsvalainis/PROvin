@@ -1,17 +1,26 @@
 import "server-only";
 
 import { adminGenerateJsonText, hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
+import { originalDealerWorksForRow } from "@/lib/admin-ai-dealer-facts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
+import { AI_ADMIN_MODEL_TIER_DEFAULT } from "@/lib/ai-admin-model-tier";
+import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
+import {
+  countUntranslatedDealerWorkRows,
+  dealerWorkRowNeedsLvTranslation,
+} from "@/lib/dealer-admin-service-rows";
 import {
   filledOneautoKvRows,
   filledOneautoServiceEvents,
   type OneautoDisplaySections,
+  type OneautoServiceEvent,
 } from "@/lib/oneauto-catalog";
 import {
   applyOneautoTranslatedDisplay,
   applyOneautoTranslatedWorks,
   oneautoDisplayWorksNeedLvTranslation,
+  oneautoWorksNeedLvTranslation,
   parseOneautoTranslateDisplay,
   parseOneautoWorksTranslatePayload,
 } from "@/lib/oneauto-dealer";
@@ -77,7 +86,7 @@ const ONEAUTO_WORKS_TRANSLATE_SYSTEM = `You translate OEM dealer service-work de
 RULES:
 - Output JSON only: { "works": ["...", "..."] }.
 - Same number of strings, same order as the input array.
-- Translate English, Dutch, German and other foreign work text into clear Latvian.
+- Translate English, Dutch, German and other foreign work text into clear Latvian by meaning in workshop context, not word-for-word calques.
 - Keep OEM codes, part numbers, software IDs (ECM, PBM, QB, VIDA) unchanged.
 - Do not invent jobs, dates or km.
 - No markdown. No em dash. No EUR.
@@ -105,7 +114,7 @@ Atbildi tikai ar JSON: { "works": ["..."] }.`,
   );
 
   const raw = await adminGenerateJsonText({
-    modelTier: input.modelTier ?? "gemini-flash",
+    modelTier: input.modelTier ?? AI_ADMIN_MODEL_TIER_DEFAULT,
     systemInstruction: ONEAUTO_WORKS_TRANSLATE_SYSTEM,
     userPrompt,
     temperature: 0.1,
@@ -129,9 +138,82 @@ export async function translateOneautoWorksOnIngest(
   if (!oneautoDisplayWorksNeedLvTranslation(display)) return display;
   if (!hasAnyAdminAiProviderKey()) return display;
   try {
-    return await translateOneautoWorksWithAi({ display, modelTier: "gemini-flash" });
+    return await translateOneautoWorksWithAi({ display, modelTier: AI_ADMIN_MODEL_TIER_DEFAULT });
   } catch (e) {
     console.error("[oneauto-works-ingest]", e instanceof Error ? e.message : e);
     return display;
+  }
+}
+
+export type EnsureDealerServiceWorksLvResult = {
+  serviceWorks: AutoRecordsServiceWorkRow[];
+  translatedCount: number;
+  warning: string | null;
+};
+
+/**
+ * Pirms PROVIN AUDITS / BUSINESS / dīlera LV PDF: ja rindas vēl svešvalodā,
+ * kontekstuali pārtulko ar Gemini (noklusējums, bez Anthropic) un raksta serviceWorks.
+ * Kļūda neatceļ ģenerāciju - atgriež brīdinājumu.
+ */
+export async function ensureDealerServiceWorksLatvian(args: {
+  serviceWorks: readonly AutoRecordsServiceWorkRow[] | null | undefined;
+  originalTimeline?: readonly OneautoServiceEvent[] | null;
+}): Promise<EnsureDealerServiceWorksLvResult> {
+  const serviceWorks = [...(args.serviceWorks ?? [])];
+  if (countUntranslatedDealerWorkRows(serviceWorks) === 0) {
+    return { serviceWorks, translatedCount: 0, warning: null };
+  }
+  if (!hasAnyAdminAiProviderKey()) {
+    const warning =
+      "Dīlera darbu automātiskais tulkojums izlaists: nav AI atslēgas. PDF ģenerēts ar esošajām rindām.";
+    console.warn("[dealer-works-lv]", warning);
+    return { serviceWorks, translatedCount: 0, warning };
+  }
+
+  const indices: number[] = [];
+  const timeline: OneautoServiceEvent[] = [];
+  serviceWorks.forEach((row, i) => {
+    if (!dealerWorkRowNeedsLvTranslation(row.works ?? "")) return;
+    const source = originalDealerWorksForRow(row, args.originalTimeline) || (row.works ?? "");
+    if (!source.trim()) return;
+    indices.push(i);
+    timeline.push({
+      date: row.date,
+      odometer: row.odometer,
+      place: row.location,
+      works: source,
+    });
+  });
+  if (timeline.length === 0) {
+    return { serviceWorks, translatedCount: 0, warning: null };
+  }
+
+  try {
+    const translated = await translateOneautoWorksWithAi({
+      display: { equipment: [], powertrain: [], serviceTimeline: timeline },
+      modelTier: AI_ADMIN_MODEL_TIER_DEFAULT,
+    });
+    const events = filledOneautoServiceEvents(translated.serviceTimeline);
+    const next = serviceWorks.map((row, i) => {
+      const slot = indices.indexOf(i);
+      if (slot < 0) return row;
+      const lv = (events[slot]?.works ?? "").replace(/\s+/g, " ").trim();
+      if (!lv || oneautoWorksNeedLvTranslation(lv)) return row;
+      return { ...row, works: lv };
+    });
+    const still = countUntranslatedDealerWorkRows(next);
+    const translatedCount = countUntranslatedDealerWorkRows(serviceWorks) - still;
+    const warning =
+      still > 0
+        ? `Daļa dīlera rindu palika netulkotas (${still}). PDF ģenerēts ar pieejamajām rindām.`
+        : null;
+    if (warning) console.warn("[dealer-works-lv]", warning);
+    return { serviceWorks: next, translatedCount, warning };
+  } catch (e) {
+    const warning =
+      "Dīlera darbu automātiskais tulkojums neizdevās. PDF ģenerēts ar esošajām rindām.";
+    console.warn("[dealer-works-lv]", e instanceof Error ? e.message : e);
+    return { serviceWorks, translatedCount: 0, warning };
   }
 }

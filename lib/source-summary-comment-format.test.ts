@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   applyProvinReportCopyVocabulary,
+  dropTechnicalRisksSectionTitle,
   finalizeProvinExpertAiComment,
   normalizeExpertSourcePdfComment,
   normalizeProvinExpertAiComment,
+  replaceCrankshaftDamperWording,
   splitDealerCommentRoleHeadings,
   stripLeakedAiPlanningPreamble,
   toExpertHeadingBodyPlain,
@@ -50,6 +52,19 @@ describe("applyProvinReportCopyVocabulary", () => {
     expect(applyProvinReportCopyVocabulary("vakuumsūknis ir mainīts")).toBe("vakuumsūknis ir mainīts");
     expect(applyProvinReportCopyVocabulary("kloķvārpstas svārstību slāpētājs (skriemelis)")).toBe(
       "kloķvārpstas skriemelis (demferis)",
+    );
+    expect(applyProvinReportCopyVocabulary("kloķvārpstas skriemelis (demferis)")).toBe(
+      "kloķvārpstas skriemelis (demferis)",
+    );
+    expect(replaceCrankshaftDamperWording("kloķvārpstas svārstību slāpētājs (demferis)")).toBe(
+      "kloķvārpstas skriemelis (demferis)",
+    );
+    expect(replaceCrankshaftDamperWording("kloķvārpstas skriemelis (demferis)")).toBe(
+      "kloķvārpstas skriemelis (demferis)",
+    );
+    expect(applyProvinReportCopyVocabulary("Riska kartē ķēde ir iekšā.")).toBe("Datos ķēde ir iekšā.");
+    expect(applyProvinReportCopyVocabulary("Dzinēja identifikācija paliek iekšēja.")).toBe(
+      "Dzinēja kods paliek iekšēja.",
     );
     expect(applyProvinReportCopyVocabulary("Foto un apraksta ekspertīze.")).toBe(
       "Foto un apraksta izvērtējums.",
@@ -178,6 +193,35 @@ describe("splitDealerCommentRoleHeadings", () => {
   it("leaves a CSDD comment without dealer role titles unchanged", () => {
     const csdd = "Pirmā reģistrācija Latvijā\nCSDD datos automašīna Latvijā reģistrēta 2016. gadā.";
     expect(toExpertHeadingBodyPlain(csdd)).toBe(csdd);
+  });
+
+  it("does not split a heading mid-word (eļļas maiņas intervāliem)", () => {
+    const raw =
+      "Pilsētas režīmā jāskatās eļļas maiņas intervāliem. Nākamais teikums paliek.";
+    const out = splitDealerCommentRoleHeadings(raw);
+    expect(out).toContain("eļļas maiņas intervāliem");
+    expect(out).not.toMatch(/Eļļas maiņas intervāli\nem/i);
+    expect(out).not.toMatch(/^Eļļas maiņas intervāli$/m);
+  });
+
+  it("skips dealer role headings for the technical-risks field", () => {
+    const raw =
+      "Sadales ķēde\nPilsētas režīmā jāskatās eļļas maiņas intervāliem. Klātienē klausies startu.";
+    expect(toExpertHeadingBodyPlain(raw, { splitDealerRoleHeadings: false })).toBe(raw);
+    expect(normalizeProvinExpertAiComment(raw, { splitDealerRoleHeadings: false })).toContain(
+      "eļļas maiņas intervāliem",
+    );
+  });
+});
+
+describe("dropTechnicalRisksSectionTitle", () => {
+  it("drops the first line when it is the section title", () => {
+    expect(
+      dropTechnicalRisksSectionTitle("Tehnisko risku analīze\nSadales ķēde\nN47 paliek pirkuma punkts."),
+    ).toBe("Sadales ķēde\nN47 paliek pirkuma punkts.");
+    expect(dropTechnicalRisksSectionTitle("1. Tehnisko risku analīze\nĶēde\nTeksts.")).toBe(
+      "Ķēde\nTeksts.",
+    );
   });
 });
 
