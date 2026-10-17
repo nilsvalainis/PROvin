@@ -34,8 +34,9 @@ type Props = {
 
 /**
  * Vercel Web Analytics - visiem apmeklējumiem (agregēti, pirmās puses mitināšanas statistika).
- * Google Analytics 4, Google Ads (AW) un TikTok Pixel - tikai pēc sīkdatņu joslas piekrišanas „analītikai”.
- * Consent Mode v2 default ir denied (RootHtml); piekrišana dara gtag consent update granted.
+ * Google tag (GA4 + Google Ads): Consent Mode v2 ADVANCED. gtag.js ielādējas vienmēr;
+ *   RootHtml liek default denied pirms taga, josla dara consent update.
+ * TikTok Pixel - tikai pēc sīkdatņu joslas piekrišanas analītikai.
  */
 export function ConsentAwareAnalytics({
   gaMeasurementId,
@@ -82,7 +83,7 @@ export function ConsentAwareAnalytics({
     <>
       <Analytics />
       <SpeedInsights />
-      {gaAllowed && loaderId ? (
+      {loaderId ? (
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(loaderId)}`}

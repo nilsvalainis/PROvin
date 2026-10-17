@@ -12,6 +12,7 @@ type Props = {
 
 /**
  * Stripe /paldies: viens `gtag('event','conversion')` uz sesijas/pasūtījuma id.
+ * Sūta vienmēr, kad gtag ir pieejams; Consent Mode v2 nosaka, vai ir sīkdatnes.
  * Nav UI. Bez `NEXT_PUBLIC_GADS_PURCHASE_LABEL` komponenti neliek.
  */
 export function GoogleAdsPurchaseConversion({ transactionId, value, label }: Props) {

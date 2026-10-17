@@ -29,7 +29,7 @@ export function RootHtml({
 }: {
   lang: string;
   children: ReactNode;
-  /** Publiskais front: Consent Mode v2 default denied (nav /admin). */
+  /** Publiskais front: Consent Mode v2 ADVANCED default denied pirms gtag.js (nav /admin). */
   consentModeDefaults?: boolean;
 }) {
   const gaMeasurementId = getGaMeasurementId();
