@@ -446,14 +446,12 @@ describe("OEM dealer PDF", () => {
     expect(html).toContain(PDF_DEALER_LOGO_DATA_URI.volvo!);
   });
 
-  it("uses a light silhouette BMW mark (not a solid disc under brightness(0))", () => {
+  it("embeds the white-background BMW mark without legacy light-grey silhouette fill", () => {
     const bmw = PDF_DEALER_LOGO_DATA_URI.bmw!;
-    expect(bmw).toMatch(/^data:image\/svg\+xml/);
+    expect(bmw).toMatch(/^data:image\/svg\+xml;base64,/);
     const decoded = Buffer.from(bmw.split(",")[1]!, "base64").toString("utf8");
-    expect(decoded).toContain('viewBox="0 0 24 24"');
-    expect(decoded).toContain("#E8EEF5");
-    expect(decoded).not.toMatch(/linearGradient|radialGradient/);
-    expect(decoded).not.toMatch(/fill="#333"/);
+    expect(decoded).toContain('viewBox="0 0 256 256"');
+    expect(decoded).not.toContain("#E8EEF5");
 
     const html = buildOemDealerDocumentHtml({
       vin: "WBA5K51060D083631",
@@ -463,6 +461,7 @@ describe("OEM dealer PDF", () => {
     });
     expect(html).toContain(bmw);
     expect(html).toMatch(/class="oem-logo"/);
+    expect(html).not.toMatch(/brightness\(0\)/);
     expect(html).not.toMatch(/class="oem-logo oem-logo--mono"/);
   });
 

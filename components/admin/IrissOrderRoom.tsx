@@ -604,7 +604,7 @@ export function IrissOrderRoom({
               <div className="hidden h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[10px] border border-[#e5e7eb] bg-white md:flex">
                 {logoSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={logoSrc} alt="" className="h-7 w-7 object-contain" />
+                  <img src={logoSrc} alt="" className="h-7 w-7 object-contain p-0.5" />
                 ) : (
                   <span className="text-[11px] font-extrabold text-[#111827]">{irissBrandFallbackLabel(rec.brandModel)}</span>
                 )}
