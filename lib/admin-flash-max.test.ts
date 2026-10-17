@@ -90,7 +90,7 @@ describe("FLASH MAX jobs", () => {
       tiers: defaultFlashMaxSelection().tiers,
       breadths: defaultFlashMaxSelection().breadths,
     });
-    expect(picked.map((j) => j.id)).toEqual(["csdd", "summary", "ltab"]);
+    expect(picked.map((j) => j.id)).toEqual(["csdd", "ltab", "summary"]);
     expect(summaryOnlyFlashMaxSelection().selectedIds).toEqual([...FLASH_MAX_SUMMARY_ONLY_JOB_IDS]);
   });
 

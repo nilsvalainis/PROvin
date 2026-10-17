@@ -454,7 +454,7 @@ export function stripInternalClientLeaks(text: string): string {
   out = out.replace(/operatora norād\w*/gi, "");
   out = out.replace(/[ \t]{2,}/g, " ");
   out = out.replace(/\n{3,}/g, "\n\n");
-  out = out.replace(/^[.,;:\s]+/gm, "");
+  out = out.replace(/^[.,;:\t ]+/gm, "");
   return out.trim();
 }
 

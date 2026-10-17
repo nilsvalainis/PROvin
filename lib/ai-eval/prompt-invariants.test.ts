@@ -796,7 +796,8 @@ describe("PROVIN AI prompt invariants", () => {
       prep.lastIndexOf("AI_SOURCE_COMMENT_BLOCK_KEYS.map"),
     );
     expect(prep).toMatch(/isAutoSourcesComparisonEnabled/);
-    expect(prep).toMatch(/izslēgts/);
+    expect(prep).toMatch(/PREPARE_DRAFT_SOURCES_COMPARISON_OFF_DETAIL/);
+    expect(readRepo("lib/admin-sources-comparison-config.ts")).toMatch(/izslēgts/);
     expect(readRepo(".env.example")).toMatch(/PROVIN_AUTO_SOURCES_COMPARISON/);
   });
 

@@ -65,6 +65,7 @@ describe("KANONISKIE FAKTI sheet", () => {
       firstRegistration: "10.03.2018",
       previousRegistrationCountry: "",
       ownerCountLatvia: "2",
+      registrationNumber: "AB1234",
     };
     const facts = buildCanonicalFacts({ sourceBlocks: blocks });
     expect(facts.firstReg.countryLv).toBe("Latvija");
