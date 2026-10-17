@@ -22,6 +22,9 @@ import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
   ADMIN_SOURCES_COMPARISON_LABEL,
+  ADMIN_SUMMARY_SECTION_INSPECTION_HEADING,
+  ADMIN_SUMMARY_SECTION_RISK_HEADING,
+  ADMIN_SUMMARY_SECTION_SUMMARY_HEADING,
   ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import { AI_ADMIN_FIELD_DEFAULT_TIER } from "@/lib/ai-admin-field-defaults";
@@ -142,21 +145,21 @@ export const FLASH_MAX_JOBS: readonly FlashMaxJob[] = [
   {
     kind: "summary",
     id: "technical_risks",
-    label: `1. ${ADMIN_TECHNICAL_RISKS_LABEL}`,
+    label: ADMIN_SUMMARY_SECTION_RISK_HEADING,
     group: "daily",
     endpoint: "/api/admin/ai/technical-risk-analysis",
   },
   {
     kind: "summary",
     id: "inspection",
-    label: "2. Ieteikumi klātienes apskatei",
+    label: ADMIN_SUMMARY_SECTION_INSPECTION_HEADING,
     group: "daily",
     endpoint: "/api/admin/ai/inspection-recommendations",
   },
   {
     kind: "summary",
     id: "summary",
-    label: "3. Kopsavilkums",
+    label: ADMIN_SUMMARY_SECTION_SUMMARY_HEADING,
     group: "daily",
     endpoint: "/api/admin/ai/summary-analysis",
   },

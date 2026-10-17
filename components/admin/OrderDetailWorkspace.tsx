@@ -246,6 +246,9 @@ import {
   ADMIN_INCIDENTS_SUMMARY_LABEL,
   ADMIN_MILEAGE_HISTORY_COMMENT_LABEL,
   ADMIN_SOURCES_COMPARISON_LABEL,
+  ADMIN_SUMMARY_SECTION_INSPECTION_HEADING,
+  ADMIN_SUMMARY_SECTION_RISK_HEADING,
+  ADMIN_SUMMARY_SECTION_SUMMARY_HEADING,
   ADMIN_TECHNICAL_RISKS_LABEL,
 } from "@/lib/admin-workspace-field-labels";
 import {
@@ -5390,7 +5393,7 @@ export function OrderDetailWorkspace({
                     aria-label={ADMIN_TECHNICAL_RISKS_LABEL}
                     label={adminCommentFieldLabel(
                       IRISS_CHROME_LUCIDE.technicalRisks,
-                      `1. ${ADMIN_TECHNICAL_RISKS_LABEL}`,
+                      ADMIN_SUMMARY_SECTION_RISK_HEADING,
                       <AdminPdfIncludeToggle
                         checked={pdfVisibility.irissTechnicalRisks}
                         onChange={(next) => onPdfVisibilityChange({ irissTechnicalRisks: next })}
@@ -5429,10 +5432,10 @@ export function OrderDetailWorkspace({
                   <AdminAiPolishRichCommentShell
                     value={ws.apskatesPlāns ?? ""}
                     onChange={(next) => updateWs({ apskatesPlāns: next })}
-                    aria-label="Ieteikumi klātienes apskatei"
+                    aria-label={ADMIN_SUMMARY_SECTION_INSPECTION_HEADING}
                     label={adminCommentFieldLabel(
                       IRISS_CHROME_LUCIDE.inspection,
-                      "2. Ieteikumi klātienes apskatei",
+                      ADMIN_SUMMARY_SECTION_INSPECTION_HEADING,
                       <AdminPdfIncludeToggle
                         checked={pdfVisibility.irissInspection}
                         onChange={(next) => onPdfVisibilityChange({ irissInspection: next })}
@@ -5459,7 +5462,7 @@ export function OrderDetailWorkspace({
                     aria-label="Galvenais kopsavilkums klientam"
                     label={adminCommentFieldLabel(
                       IRISS_CHROME_LUCIDE.summary,
-                      "3. Kopsavilkums",
+                      ADMIN_SUMMARY_SECTION_SUMMARY_HEADING,
                       <AdminPdfIncludeToggle
                         checked={pdfVisibility.irissSummary}
                         onChange={(next) => onPdfVisibilityChange({ irissSummary: next })}

@@ -2566,8 +2566,8 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain("1. Tehnisko risku analīze");
     expect(doc).not.toContain("2. Ieteikumi klātienes apskatei");
     expect(doc).not.toContain("3. Kopsavilkums");
-    const iTech = doc.indexOf("Tehnisko risku analīze");
-    const iInsp = doc.indexOf(">Ieteikumi<");
+    const iTech = doc.indexOf("Risku analīze");
+    const iInsp = doc.indexOf("Ieteikumi klātienes apskatei");
     const iSum = doc.indexOf(">Kopsavilkums<");
     expect(iTech).toBeGreaterThan(-1);
     expect(iInsp).toBeGreaterThan(iTech);
@@ -2593,9 +2593,9 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
       dateFmt: new Intl.DateTimeFormat("lv-LV"),
       formatBytes: () => "0 B",
     });
-    expect(doc).not.toContain("Tehnisko risku analīze");
+    expect(doc).not.toContain("Risku analīze");
     expect(doc).not.toContain("Tech risks body");
-    expect(doc).toContain(">Ieteikumi<");
+    expect(doc).toContain("Ieteikumi klātienes apskatei");
     expect(doc).toContain("Inspection body");
     expect(doc).not.toContain(">Kopsavilkums<");
     expect(doc).not.toContain("Summary body");
@@ -2752,7 +2752,7 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
     const explicitLv = buildClientReportDocumentHtml({ ...args, lang: "lv" as const });
     expect(noLang).toBe(explicitLv);
     expect(noLang).toContain('<html lang="lv"');
-    expect(noLang).toContain("Tehnisko risku analīze");
+    expect(noLang).toContain("Risku analīze");
   });
 
   it("translates the static IRISS section headings to English and swaps the html lang attribute", () => {
@@ -2769,10 +2769,10 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
       lang: "en",
     });
     expect(doc).toContain('<html lang="en"');
-    expect(doc).toContain("Technical Risk Analysis");
-    expect(doc).toContain("Recommendations");
+    expect(doc).toContain("Risk analysis");
+    expect(doc).toContain("Recommendations for in-person inspection");
     expect(doc).toContain("Summary");
-    expect(doc).not.toContain("Tehnisko risku analīze");
+    expect(doc).not.toContain("Risku analīze");
     expect(doc).not.toContain("APPROVED BY IRISS");
   });
 
@@ -2786,7 +2786,7 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
       lang: "ru",
     });
     expect(doc).toContain('<html lang="ru"');
-    expect(doc).toContain("Анализ технических рисков");
+    expect(doc).toContain("Анализ рисков");
   });
 
   it("translates the static section headings to German", () => {
@@ -2799,7 +2799,7 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
       lang: "de",
     });
     expect(doc).toContain('<html lang="de"');
-    expect(doc).toContain("Analyse der technischen Risiken");
+    expect(doc).toContain("Risikoanalyse");
   });
 
   it("does not translate the dynamic ✨ comment text by itself - caller must translate the payload first", () => {
@@ -2812,7 +2812,7 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
       lang: "en",
     });
     // Statiskais virsraksts ir tulkots, bet operatora/AI tekstu build funkcija pati netulko.
-    expect(doc).toContain("Technical Risk Analysis");
+    expect(doc).toContain("Risk analysis");
     expect(doc).toContain("Auto ir bijis vieglā negadījumā.");
   });
 });
