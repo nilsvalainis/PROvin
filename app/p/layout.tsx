@@ -19,8 +19,10 @@ export const metadata: Metadata = {
 
 export default function IrissOfferPublicLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="lv" data-site-theme="light" className="min-h-full bg-[#f4f4f5]">
-      <body className="min-h-dvh bg-[#f4f4f5] font-sans text-[#1d1d1f] antialiased">{children}</body>
+    <html lang="lv" data-site-theme="light" className="iriss-offer-public-root min-h-full bg-[#f4f4f5]">
+      <body className="iriss-offer-public-page min-h-dvh bg-[#f4f4f5] font-sans text-[#1d1d1f] antialiased">
+        <div className="min-h-dvh w-full bg-[#f4f4f5]">{children}</div>
+      </body>
     </html>
   );
 }

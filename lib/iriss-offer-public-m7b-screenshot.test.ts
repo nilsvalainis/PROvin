@@ -122,12 +122,45 @@ describe("IRISS offer M7b screenshots", () => {
         const naturalWidth = await logo.evaluate((el: HTMLImageElement) => el.naturalWidth);
         expect(naturalWidth).toBeGreaterThan(0);
 
+        const gutterBg = await page.evaluate(() => {
+          const body = getComputedStyle(document.body);
+          const html = getComputedStyle(document.documentElement);
+          return { body: body.backgroundColor, html: html.backgroundColor, bodyImage: body.backgroundImage };
+        });
+        expect(gutterBg.bodyImage).toBe("none");
+        for (const c of [gutterBg.body, gutterBg.html]) {
+          expect(c).toMatch(/244,\s*244,\s*245/);
+        }
+
         const out = path.join(OUT_DIR, `m7b-offer-${name}-${viewportName}.png`);
         await page.screenshot({ path: out, fullPage: true });
         await page.close();
       }
     }
 
+    await browser.close();
+  }, 180_000);
+
+  it("writes production PNGs when CAPTURE_IRISS_M7B_PROD=1", async () => {
+    if (process.env.CAPTURE_IRISS_M7B_PROD !== "1") return;
+    const url =
+      process.env.PROD_OFFER_URL?.trim() || "https://www.provin.lv/p/vo39bYp8IgbEBGfU11vdZrpd";
+    mkdirSync(OUT_DIR, { recursive: true });
+    const browser = await chromium.launch();
+    for (const [viewportName, viewport] of [
+      ["desktop-1280", { width: 1280, height: 900 }],
+      ["mobile-390", { width: 390, height: 844 }],
+    ] as const) {
+      const page = await browser.newPage({ viewport });
+      const res = await page.goto(url, { waitUntil: "networkidle", timeout: 120_000 });
+      expect(res?.ok()).toBe(true);
+      const gutterBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+      expect(gutterBg).toMatch(/244,\s*244,\s*245/);
+      await page.locator('img[alt="Dzintarzeme Auto"]').first().waitFor({ state: "visible", timeout: 30_000 });
+      const out = path.join(OUT_DIR, `m7b-prod-offer-${viewportName}.png`);
+      await page.screenshot({ path: out, fullPage: true });
+      await page.close();
+    }
     await browser.close();
   }, 180_000);
 });

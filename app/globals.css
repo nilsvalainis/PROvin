@@ -60,6 +60,21 @@
   );
 }
 
+/* M7b /p/[token]: pilns gaišs fons (bez tumšā body gradienta) */
+html[data-site-theme="light"] {
+  --site-html-bg: #f4f4f5;
+  --site-body-bg: #f4f4f5;
+  --site-body-gradient: none;
+  --site-body-fg: #1d1d1f;
+}
+
+html[data-site-theme="light"],
+html[data-site-theme="light"] body {
+  background-color: #f4f4f5;
+  background-image: none;
+  color: #1d1d1f;
+}
+
 html {
   /* Horizontālas pārvilkšanas „tukšums” — seko tēmai */
   background-color: var(--site-html-bg);
