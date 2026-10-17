@@ -11,6 +11,15 @@ import {
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
 import { countryFromDealerName } from "@/lib/dealer-report-extract";
+import {
+  buildDealerGapMarkerHtml,
+  classifyDealerVisitKind,
+  dealerPdfWorkLines,
+  dealerVisitKindLabel,
+  filterDealerPdfVisitRows,
+  isDealerServiceGap,
+  visitGapBetween,
+} from "@/lib/pdf-dealer-timeline";
 import { formatServiceWorksLines } from "@/lib/service-works-lines";
 import { isVendorServiceCategoryLine } from "@/lib/vendor-service-history";
 
@@ -52,15 +61,14 @@ export function formatDealerServicePlace(location: string): { place: string; cou
   return { place, country };
 }
 
-function workLines(raw: string): string[] {
-  return formatServiceWorksLines(raw)
-    .split("\n")
+function workLines(raw: string, hideKeyReadLines: boolean): string[] {
+  return dealerPdfWorkLines(formatServiceWorksLines(raw), { hideKeyReadLines })
     .map((line) => line.trim())
     .filter((line) => line && !PLACEHOLDER_WORKS_RE.test(line) && !isVendorServiceCategoryLine(line));
 }
 
-function visitWorksHtml(raw: string): string {
-  const lines = workLines(raw);
+function visitWorksHtml(raw: string, hideKeyReadLines: boolean): string {
+  const lines = workLines(raw, hideKeyReadLines);
   if (lines.length === 0) {
     return `<p class="pdf-svc-empty">${escapeHtml(EMPTY_WORKS_NOTE)}</p>`;
   }
@@ -78,7 +86,12 @@ function visitPlaceHtml(location: string): string {
   return `<p class="pdf-svc-place">${escapeHtml(place || country)}</p>`;
 }
 
-function visitHtml(row: AutoRecordsServiceWorkRow): string {
+function visitKindTagHtml(works: string): string {
+  const kind = classifyDealerVisitKind(works);
+  return `<span class="pdf-svc-tag pdf-svc-tag--${kind}">${escapeHtml(dealerVisitKindLabel(kind))}</span>`;
+}
+
+function visitHtml(row: AutoRecordsServiceWorkRow, hideKeyReadLines: boolean): string {
   const date = row.date.trim();
   const odo = formatServiceWorkOdometer(row.odometer);
   const dateHtml = date
@@ -86,11 +99,12 @@ function visitHtml(row: AutoRecordsServiceWorkRow): string {
     : `<span class="pdf-svc-date pdf-svc-date--empty"></span>`;
   const km = odo ? `<span class="pdf-svc-km">${escapeHtml(odo)}</span>` : "";
   const place = visitPlaceHtml(row.location);
-  const head = place || km ? `<div class="pdf-svc-box-top">${place}${km}</div>` : "";
-  return `<div class="pdf-svc-visit">
-    ${dateHtml}
+  const tag = visitKindTagHtml(row.works);
+  const head = `<div class="pdf-svc-box-top">${place}${tag}</div>`;
+  return `<div class="pdf-svc-visit pdf-svc-kind--${classifyDealerVisitKind(row.works)}">
+    <div class="pdf-svc-when">${dateHtml}${km}</div>
     <span class="pdf-svc-rail" aria-hidden="true"><span class="pdf-svc-dot"></span></span>
-    <article class="pdf-svc-box">${head}${visitWorksHtml(row.works)}</article>
+    <article class="pdf-svc-box">${head}${visitWorksHtml(row.works, hideKeyReadLines)}</article>
   </div>`;
 }
 
@@ -144,30 +158,78 @@ export function buildDealerServiceSpanHtml(
   return spanHtml(printableDealerServiceWorks(rows), opts);
 }
 
-export function printableDealerServiceWorks(rows: AutoRecordsServiceWorkRow[]): AutoRecordsServiceWorkRow[] {
-  return mergeAutoRecordsServiceWorksByOdometer(
-    (rows ?? []).map(normalizeAutoRecordsServiceWorkRow).filter(autoRecordsServiceWorkRowIsPrintable),
-  );
+function dealerRowHasDateOrKm(row: AutoRecordsServiceWorkRow): boolean {
+  return Boolean(row.date.trim() || row.odometer.trim());
+}
+
+export type DealerServiceVisitsPdfOpts = {
+  omitSpan?: boolean;
+  /** true = slēpt Key Read un tukšos km punktus (tikai kombinētam produktam). */
+  condenseRecords?: boolean;
+  extraMileageRows?: AutoRecordsServiceWorkRow[];
+};
+
+export function printableDealerServiceWorks(
+  rows: AutoRecordsServiceWorkRow[],
+  opts?: { includeKmOnly?: boolean },
+): AutoRecordsServiceWorkRow[] {
+  const includeKmOnly = opts?.includeKmOnly === true;
+  const normalized = (rows ?? []).map(normalizeAutoRecordsServiceWorkRow);
+  const filtered = includeKmOnly
+    ? normalized.filter(dealerRowHasDateOrKm)
+    : normalized.filter(autoRecordsServiceWorkRowIsPrintable);
+  return mergeAutoRecordsServiceWorksByOdometer(filtered);
 }
 
 export function buildDealerServiceVisitsHtml(
   rows: AutoRecordsServiceWorkRow[],
-  opts?: { omitSpan?: boolean },
+  opts?: DealerServiceVisitsPdfOpts,
 ): string {
-  const printable = printableDealerServiceWorks(rows);
+  const condense = opts?.condenseRecords === true;
+  const extra = opts?.extraMileageRows ?? [];
+  const printable = filterDealerPdfVisitRows(
+    printableDealerServiceWorks([...rows, ...extra], { includeKmOnly: !condense }),
+    condense,
+  );
   if (printable.length === 0) return "";
 
+  const hideKeyReadLines = condense;
   const parts: string[] = opts?.omitSpan ? [] : [spanHtml(printable)];
   let lastYear = "";
-  for (const row of printable) {
+  let yearOpen = false;
+
+  const closeYear = () => {
+    if (yearOpen) {
+      parts.push("</div>");
+      yearOpen = false;
+    }
+  };
+
+  for (let i = 0; i < printable.length; i++) {
+    const row = printable[i]!;
     const year = serviceWorkYear(row.date);
-    const visit = visitHtml(row);
+    const visit = visitHtml(row, hideKeyReadLines);
+    const older = printable[i + 1];
+    const gap =
+      older != null
+        ? visitGapBetween(
+            { ...older },
+            { ...row },
+          )
+        : null;
+    const gapHtml = isDealerServiceGap(gap) && gap ? buildDealerGapMarkerHtml(gap) : "";
+
     if (year && year !== lastYear) {
-      parts.push(`<div class="pdf-keep-head"><p class="pdf-svc-year">${escapeHtml(year)}</p>${visit}</div>`);
+      closeYear();
+      parts.push(
+        `<div class="pdf-svc-year-block"><div class="pdf-keep-head"><p class="pdf-svc-year">${escapeHtml(year)}</p>${visit}</div>${gapHtml}`,
+      );
       lastYear = year;
+      yearOpen = true;
       continue;
     }
-    parts.push(visit);
+    parts.push(`${visit}${gapHtml}`);
   }
+  closeYear();
   return parts.join("\n");
 }

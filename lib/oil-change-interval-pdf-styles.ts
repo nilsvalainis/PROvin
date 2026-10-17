@@ -30,7 +30,7 @@ export function oilChangeIntervalPdfBlockCss(): string {
       }
       .pdf-oil-int__cov i{display:block;height:100%;}
       .pdf-oil-int__cov-ok{background:linear-gradient(180deg,#1A6B57 0%,${PDF_OIL_OK_HEX} 100%);}
-      .pdf-oil-int__cov-over{background:linear-gradient(180deg,#8A3342 0%,${PDF_OIL_OVER_HEX} 100%);}
+      .pdf-oil-int__cov-over{background:${PDF_OIL_OVER_HEX};}
       .pdf-oil-int__cov-neutral{background:${PDF_OIL_NEUTRAL_HEX};}
       .pdf-oil-int__cov-hatch{background:${PDF_OIL_HATCH_CSS};}
       .pdf-oil-int__covkey{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:10.5px;color:#334155;margin:0 0 10px;}
@@ -62,7 +62,7 @@ export function oilChangeIntervalPdfBlockCss(): string {
         margin:10px 0 0;padding:10px 12px;border:1px solid var(--pdf-line-soft, #EEF1F4);border-radius:8px;background:#F8FAFC;
         font-size:10px;line-height:1.45;color:#334155;
       }
-      .pdf-oil-int__caution{border-color:#E4D9DB;background:#F7F3F3;}
+      .pdf-oil-int__caution{border-color:#E2E8F0;background:#F8FAFC;}
       .pdf-oil-int__caution-title{margin:0 0 8px;font-size:11px;font-weight:750;color:#0f172a;letter-spacing:-0.01em;}
       .pdf-oil-int__caution p{margin:0 0 7px;}
       .pdf-oil-int__caution p:last-of-type{margin-bottom:4px;}
@@ -80,7 +80,7 @@ export function oilChangeIntervalPdfBlockCss(): string {
       .pdf-oil-int__seg:last-of-type{border-radius:0 99px 99px 0;}
       .pdf-oil-int__seg:only-of-type{border-radius:99px;}
       .pdf-oil-int__seg--ok{background:linear-gradient(180deg,#1A6B57 0%,${PDF_OIL_OK_HEX} 100%);}
-      .pdf-oil-int__seg--over{background:linear-gradient(180deg,#8A3342 0%,${PDF_OIL_OVER_HEX} 100%);}
+      .pdf-oil-int__seg--over{background:${PDF_OIL_OVER_HEX};}
       .pdf-oil-int__seg--neutral{background:${PDF_OIL_NEUTRAL_HEX};}
       .pdf-oil-int__seg--hatch{background:${PDF_OIL_HATCH_CSS};width:100%;}
       .pdf-oil-int__seg--dot{width:8px!important;border-radius:99px;background:#C5CBD3;}

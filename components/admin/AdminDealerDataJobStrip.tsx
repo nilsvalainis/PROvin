@@ -94,6 +94,7 @@ export function AdminDealerDataJobStrip({
   const [mailSubject, setMailSubject] = useState("");
   const [mailText, setMailText] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!sessionId) return;
@@ -114,6 +115,16 @@ export function AdminDealerDataJobStrip({
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!pdfFile) {
+      setPdfPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(pdfFile);
+    setPdfPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pdfFile]);
 
   useEffect(() => {
     if (job?.status !== "pending" && job?.status !== "running") return;
@@ -515,8 +526,22 @@ export function AdminDealerDataJobStrip({
                   onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
                 />
                 <p className="mt-1 text-[10px] text-[var(--color-provin-muted)]">
-                  1) „Ģenerēt dīlera PDF” → Drukāt → Saglabāt kā PDF. 2) Izvēlies failu šeit. 3) Nosūti.
+                  1) „Ģenerēt dīlera PDF” - Drukāt - Saglabāt kā PDF. 2) Izvēlies failu šeit. 3) Nosūti.
                 </p>
+                {pdfPreviewUrl ? (
+                  <div className="mt-2">
+                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                      Mobilais priekšskatījums
+                    </p>
+                    <div className="mx-auto w-[390px] max-w-full overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+                      <iframe
+                        title="Dīlera PDF mobilais priekšskatījums"
+                        src={pdfPreviewUrl}
+                        className="h-[520px] w-full bg-white"
+                      />
+                    </div>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 

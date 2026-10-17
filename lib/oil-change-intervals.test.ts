@@ -4,7 +4,10 @@ import {
   buildOilChangeIntervalSeries,
   classifyOilIntervalKind,
   isEngineOilChangeWork,
+  PDF_OIL_OVER_HEX,
+  PDF_OIL_OVER_TEXT_HEX,
 } from "@/lib/oil-change-intervals";
+import { oilChangeIntervalPdfBlockCss } from "@/lib/oil-change-interval-pdf-styles";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 
 function row(
@@ -273,6 +276,16 @@ describe("buildOilChangeIntervalPdfHtml", () => {
     expect(html).not.toMatch(/intervāls tiešām ir pārsniegts/i);
     expect(html).toContain("vidējais laiks");
     expect(html).toContain("fiksētas maiņas");
+  });
+
+  it("OEM-garāku soli rāda neitrālā pelēkā, ne sarkanā", () => {
+    expect(PDF_OIL_OVER_HEX).toBe("#7A828C");
+    expect(PDF_OIL_OVER_TEXT_HEX).toBe("#475569");
+    const css = oilChangeIntervalPdfBlockCss();
+    expect(css).toContain("#7A828C");
+    expect(css).not.toContain("#6B2030");
+    expect(css).not.toContain("#8A3342");
+    expect(css).not.toContain("#5A1A26");
   });
 
   it("is empty when no oil changes exist", () => {

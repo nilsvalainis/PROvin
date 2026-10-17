@@ -194,11 +194,11 @@ function factFromServiceWork(w: AutoRecordsServiceWorkRow, id: string): DealerFa
   };
 }
 
-export function extractDealerFacts(
-  input: DealerFactsSource | OneautoBlockState | null | undefined,
+/** Stabils D-ID saraksts no servisa rindām (vecākais = D1). Dīlera PDF / admin neatkarīgi no audita. */
+export function extractDealerFactsFromServiceWorks(
+  serviceWorks: readonly AutoRecordsServiceWorkRow[] | null | undefined,
 ): DealerFacts {
-  const source = resolveDealerFactsSource(input);
-  const works = [...dealerServiceWorksFromSources(source)].sort(
+  const works = [...(serviceWorks ?? [])].sort(
     (a, b) => dateSortKey(a.date ?? "") - dateSortKey(b.date ?? ""),
   );
   const rows: DealerFact[] = [];
@@ -206,6 +206,14 @@ export function extractDealerFacts(
     const fact = factFromServiceWork(w, `D${rows.length + 1}`);
     if (fact) rows.push(fact);
   }
+  return { rows, vehicle: [] };
+}
+
+export function extractDealerFacts(
+  input: DealerFactsSource | OneautoBlockState | null | undefined,
+): DealerFacts {
+  const source = resolveDealerFactsSource(input);
+  const fromWorks = extractDealerFactsFromServiceWorks(dealerServiceWorksFromSources(source));
   const display = source.oneauto?.display;
   const vehicle = [
     ...filledOneautoKvRows(display?.powertrain ?? []),
@@ -213,7 +221,7 @@ export function extractDealerFacts(
   ]
     .filter((r) => VEHICLE_FACT_LABEL_RE.test(r.label))
     .map((r) => ({ label: r.label.trim(), value: r.value.trim() }));
-  return { rows, vehicle };
+  return { rows: fromWorks.rows, vehicle };
 }
 
 export function dealerFactsHaveData(facts: DealerFacts): boolean {

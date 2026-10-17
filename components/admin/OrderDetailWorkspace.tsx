@@ -1250,6 +1250,8 @@ export function OrderDetailWorkspace({
         listingUrl: payload.listingUrl,
         customerName: payload.customerName,
         notes: payload.notes,
+        checkoutLine: payload.checkoutLine ?? null,
+        amountTotalCents: payload.amountTotal,
         sourceBlocks: cur.sourceBlocks,
         iriss: cur.iriss,
         apskatesPlāns: cur.apskatesPlāns,
@@ -1263,7 +1265,15 @@ export function OrderDetailWorkspace({
         ...(cur.technicalRiskMap?.hide_cost_bands ? { hideTechnicalRiskCostBands: true } : {}),
       };
     },
-    [payload.customerName, payload.listingUrl, payload.notes, payload.sessionId, payload.vin],
+    [
+      payload.amountTotal,
+      payload.checkoutLine,
+      payload.customerName,
+      payload.listingUrl,
+      payload.notes,
+      payload.sessionId,
+      payload.vin,
+    ],
   );
 
   const buildAiListingPayload = useCallback(() => buildAiOrderPayload(), [buildAiOrderPayload]);
@@ -5020,6 +5030,8 @@ export function OrderDetailWorkspace({
               onGenerateDealerPdfDe={() => void openPrintReport({ dealerOnly: true, lang: "de" })}
               dealerPdfProgressKey={pdfJob?.key ?? null}
               dealerPdfProgressPct={pdfJob?.pct ?? null}
+              techRiskText={ws.tehniskoRiskuAnalize ?? ""}
+              techRiskMap={ws.technicalRiskMap ?? null}
             />
           </div>
         ) : null}

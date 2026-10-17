@@ -117,6 +117,7 @@ async function generateDealerNotes(sessionId: string, vin: string): Promise<bool
         internalComment: draft?.orderEdits?.internalComment ?? null,
         targetField: "comments",
         includeOilIntervalSummary: true,
+        isolateDealerComments: true,
         // Avota komentāri vienmēr ar Gemini, ne noklusējuma Claude ceļu.
         modelTier: "gemini-flash",
       })

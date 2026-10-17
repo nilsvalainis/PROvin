@@ -78,7 +78,13 @@ import {
   formatServiceWorkOdometer,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
+import { extractDealerFactsFromServiceWorks } from "@/lib/admin-ai-dealer-facts";
+import { shouldCondenseDealerPdfRecords, type DealerProductScopeArgs } from "@/lib/dealer-product-scope";
 import { buildDealerServiceVisitsHtml } from "@/lib/pdf-dealer-service-visits";
+import {
+  buildDealerMajorWorksHtml,
+  buildDealerVisitSummaryHtml,
+} from "@/lib/pdf-dealer-timeline";
 import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
 import { oilChangeIntervalPdfBlockCss } from "@/lib/oil-change-interval-pdf-styles";
 import { buildOilChangeIntervalPdfHtml } from "@/lib/oil-change-intervals";
@@ -353,6 +359,8 @@ export type ClientReportPayload = {
   pdfVisibility?: PdfVisibilitySettings | null;
   /** `dealer`: tikai OFICIĀLĀ DĪLERA DATI. `business`: pilna atskaite ar BUSINESS virsrakstu. */
   pdfReportKind?: "full" | "dealer" | "asv" | "business";
+  /** Stripe checkout līnija - dīlera-only pret AUDITS/MINI zarošanai. */
+  checkoutLine?: string | null;
   /** Atsevišķi brīdinājumu / info baneri PDF (noklusējums - visi ieslēgti). */
   pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude | null;
   /** Manuāli pievienoti augšējās joslas brīdinājumi. */
@@ -1585,8 +1593,13 @@ const PDF_AUTO_RECORDS_PHOTO_APPENDIX_LABEL = "Fotogrāfiju pielikums";
 function buildAutoRecordsServiceWorksTableHtml(
   rows: AutoRecordsServiceWorkRow[],
   omitSpan = false,
+  extra?: { condenseRecords?: boolean; extraMileageRows?: AutoRecordsServiceWorkRow[] },
 ): string {
-  const body = buildDealerServiceVisitsHtml(rows, { omitSpan });
+  const body = buildDealerServiceVisitsHtml(rows, {
+    omitSpan,
+    condenseRecords: extra?.condenseRecords,
+    extraMileageRows: extra?.extraMileageRows,
+  });
   if (!body) return "";
   const subheadHtml = pdfFieldLabelWithIcon(sectionIconPdfHtml("wrench"), PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL);
   return `<section class="pdf-service-works-zone">${subheadHtml}${body}</section>`;
@@ -1666,12 +1679,30 @@ function buildSourcePhotoGroupsPdfHtml(
 }
 
 /** AUTO RECORDS - Outvin dīlera dati PDF; nobraukums tikai vienotajā tabulā; servisa vēsture + komentāri atsevišķi. */
+function dealerPdfProductScope(p: ClientReportPayload): DealerProductScopeArgs {
+  return {
+    checkoutLine: p.checkoutLine,
+    amountTotalCents: p.amountTotal,
+    pdfReportKind: p.pdfReportKind,
+  };
+}
+
+function dealerExtraMileageRows(b: AutoRecordsBlockState): AutoRecordsServiceWorkRow[] {
+  return (b.serviceHistory ?? []).map((r) => ({
+    date: r.date,
+    odometer: r.odometer,
+    location: "",
+    works: "",
+  }));
+}
+
 function buildAutoRecordsAvotuSubsection(
   b: AutoRecordsBlockState | null | undefined,
   vis: PdfVisibilitySettings,
   autoRecordsPhotoDataUrls?: Map<string, string>,
   makeModel = "",
   sparkHtml = "",
+  productScope?: DealerProductScopeArgs,
 ): string {
   if (!vis.auto_records) return "";
   if ((!b || !autoRecordsBlockHasContent(b)) && !sparkHtml) return "";
@@ -1698,7 +1729,14 @@ function buildAutoRecordsAvotuSubsection(
     serviceWorks: b.serviceWorks ?? [],
   });
   const hasCover = coverHtml.length > 0;
-  const serviceWorksTable = buildAutoRecordsServiceWorksTableHtml(b.serviceWorks ?? [], hasCover);
+  const condenseRecords = shouldCondenseDealerPdfRecords(productScope ?? {});
+  const dealerFacts = extractDealerFactsFromServiceWorks(b.serviceWorks ?? []);
+  const serviceWorksTable = buildAutoRecordsServiceWorksTableHtml(b.serviceWorks ?? [], hasCover, {
+    condenseRecords,
+    extraMileageRows: condenseRecords ? [] : dealerExtraMileageRows(b),
+  });
+  const summaryHtml = buildDealerVisitSummaryHtml(b.serviceWorks ?? [], dealerFacts);
+  const majorHtml = buildDealerMajorWorksHtml(dealerFacts);
   const serviceHistoryNotes = (b.serviceHistoryNotes ?? "").trim();
   const serviceHistoryBox = serviceHistoryNotes
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
@@ -1755,6 +1793,8 @@ function buildAutoRecordsAvotuSubsection(
   );
   const bodyParts: string[] = [];
   if (hasCover) bodyParts.push(coverHtml);
+  if (summaryHtml) bodyParts.push(summaryHtml);
+  if (majorHtml) bodyParts.push(majorHtml);
   if (sparkHtml && !coverHtml.includes("pdf-dealer-cover-curve")) bodyParts.push(sparkHtml);
   if (hasOutvin) bodyParts.push(`<div class="pdf-outvin-dealer-stack">${outvinInner}</div>`);
   if (hasServiceWorks) bodyParts.push(serviceWorksTable);
@@ -2085,6 +2125,7 @@ function buildAvotuDatiSectionHtml(
     autoRecordsPhotoDataUrls,
     reportVehicleMakeHint(p),
     spark("dealer"),
+    dealerPdfProductScope(p),
   );
   const ccVin = buildCcVinAvotuSubsection(p.ccVinBlock ?? null, vis, ccVinPhotoDataUrls, spark("intl"));
   const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"));
@@ -2807,13 +2848,30 @@ ${sourceDotColorCss()}
       }
       .pdf-svc-year:first-child,
       .pdf-svc-span + .pdf-svc-year{margin-top:0;}
+      .pdf-svc-summary{
+        display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;
+        margin:10px 0 12px;padding:10px 12px;border-radius:8px;background:#FCFDFF;border:1px solid var(--pdf-line);
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-svc-summary__cell span{
+        display:block;font-size:9px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;
+      }
+      .pdf-svc-summary__cell b{display:block;margin-top:2px;font-size:12px;font-weight:750;color:#0f172a;line-height:1.3;}
+      .pdf-svc-major{margin:0 0 12px;padding:10px 12px;border:1px solid var(--pdf-line);border-radius:8px;background:#fff;}
+      .pdf-svc-major__list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;}
+      .pdf-svc-major__item{display:flex;justify-content:space-between;gap:10px;align-items:baseline;}
+      .pdf-svc-major__item b{font-size:12px;font-weight:750;color:#0f172a;}
+      .pdf-svc-major__item span{font-size:10.5px;color:#64748b;font-variant-numeric:tabular-nums;}
+      .pdf-svc-year-block{break-after:page;page-break-after:always;}
+      .pdf-svc-year-block:last-child{break-after:auto;page-break-after:auto;}
       .pdf-svc-visit{
-        display:grid;grid-template-columns:78px 18px minmax(0,1fr);gap:0 12px;align-items:stretch;
+        display:grid;grid-template-columns:88px 18px minmax(0,1fr);gap:0 12px;align-items:stretch;
         break-inside:avoid;page-break-inside:avoid;
       }
+      .pdf-svc-when{padding:9px 0;text-align:right;}
       .pdf-svc-date{
-        padding:9px 0;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;
-        white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.3;text-align:right;
+        display:block;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;
+        white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.3;
       }
       .pdf-svc-rail{
         position:relative;display:block;align-self:stretch;justify-self:center;width:2px;background:#D7E4F5;
@@ -2831,17 +2889,46 @@ ${sourceDotColorCss()}
       .pdf-svc-place{margin:0;font-size:var(--pdf-fs-base);font-weight:700;line-height:1.3;color:#0f172a;}
       .pdf-svc-place span{font-weight:500;color:#64748b;}
       .pdf-svc-km{
-        flex:none;margin-left:auto;padding:3px 8px;border-radius:6px;background:#F1F5F9;
+        display:inline-block;margin-top:4px;padding:3px 8px;border-radius:6px;background:#F1F5F9;
         font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-svc-tag{
+        flex:none;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:0.04em;
+        text-transform:uppercase;white-space:nowrap;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-svc-tag--maintenance{background:#E8F1FC;color:${PDF_BRAND_BLUE_HEX};}
+      .pdf-svc-tag--repair{background:#F1F5F9;color:#475569;}
+      .pdf-svc-tag--campaign{background:#E8EEEC;color:#0E4F42;}
+      .pdf-svc-tag--warranty{background:#F8FAFC;color:#334155;border:1px solid #E2E8F0;}
+      .pdf-svc-tag--key_read{background:#F8FAFC;color:#64748b;}
+      .pdf-svc-gap{
+        display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;
+        margin:4px 0 4px 106px;padding:6px 10px;border-radius:8px;background:#F8FAFC;border:1px dashed #C5CBD3;
+        color:#64748b;font-size:10.5px;line-height:1.35;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-svc-gap__tag{font-weight:700;letter-spacing:0.04em;text-transform:uppercase;font-size:9px;color:#7A828C;}
+      .pdf-svc-gap__val{font-weight:700;font-variant-numeric:tabular-nums;color:#334155;}
+      .pdf-svc-gap__note{color:#94a3b8;}
       .pdf-svc-works{margin:5px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px;}
       .pdf-svc-work{
-        margin:0;padding:0;
+        margin:0;padding:0 0 0 12px;position:relative;
         font-size:11px;font-weight:600;color:#334155;line-height:1.4;
         overflow-wrap:anywhere;word-break:break-word;white-space:normal;max-width:100%;
       }
+      .pdf-svc-work:before{content:"·";position:absolute;left:0;color:#94a3b8;}
       .pdf-svc-empty{margin:8px 0 0;font-size:var(--pdf-fs-table);color:#64748b;font-style:italic;line-height:1.4;}
+      @media screen and (max-width: 520px){
+        .pdf-svc-summary{grid-template-columns:1fr 1fr;}
+        .pdf-svc-visit{display:flex;flex-direction:column;gap:4px;margin:0 0 10px;padding:10px 12px;border:1px solid var(--pdf-line);border-radius:10px;background:#fff;}
+        .pdf-svc-when{text-align:left;padding:0;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;}
+        .pdf-svc-rail{display:none;}
+        .pdf-svc-box{margin:0;padding:0;}
+        .pdf-svc-gap{margin-left:0;}
+        .pdf-svc-year-block{break-after:page;page-break-after:always;}
+      }
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
       .pdf-country-flag-wrap{
         display:inline-flex;align-items:center;justify-content:flex-end;gap:8px;
