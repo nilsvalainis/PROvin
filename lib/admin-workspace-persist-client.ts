@@ -370,6 +370,7 @@ export function workspacePersistFromDraftWorkspace(
     ...(w.sourceBlockWipes?.length ? { sourceBlockWipes: w.sourceBlockWipes } : {}),
     ...(w.deletedPhotoIds?.length ? { deletedPhotoIds: w.deletedPhotoIds } : {}),
     ...(w.clearedFields && Object.keys(w.clearedFields).length ? { clearedFields: w.clearedFields } : {}),
+    ...(w.technicalRiskMap ? { technicalRiskMap: w.technicalRiskMap } : {}),
   });
   const h = hydrateWorkspaceFromStorage(json);
   if (!h) return null;
@@ -387,5 +388,6 @@ export function workspacePersistFromDraftWorkspace(
     ...(h.sourceBlockWipes?.length ? { sourceBlockWipes: h.sourceBlockWipes } : {}),
     ...(h.deletedPhotoIds?.length ? { deletedPhotoIds: h.deletedPhotoIds } : {}),
     ...(h.clearedFields && Object.keys(h.clearedFields).length ? { clearedFields: h.clearedFields } : {}),
+    ...(h.technicalRiskMap ? { technicalRiskMap: h.technicalRiskMap } : {}),
   };
 }

@@ -44,6 +44,8 @@ export type OrderDraftWorkspaceBody = {
   deletedPhotoIds?: string[];
   /** K2: apzināti iztukšoti lauki (lauks → ms). */
   clearedFields?: Record<string, number>;
+  /** Tehnisko risku v2 JSON karte (operatoram; nav PDF). */
+  technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
 };
 
 export type OrderDraftState = {

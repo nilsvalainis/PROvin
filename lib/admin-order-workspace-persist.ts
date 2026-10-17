@@ -18,6 +18,7 @@ import {
 import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField, mergeDeletedPhotoIds, parseDeletedPhotoIds, stripDeletedPhotos } from "@/lib/admin-photo-tombstones";
 import { clearedFieldsSnapshotField, mergeClearedFields, parseClearedFields } from "@/lib/admin-cleared-fields";
+import { technicalRiskMapSnapshotField } from "@/lib/admin-ai-technical-risk-map-types";
 import {
   autoRecordsTrafficLevel,
   ccVinTrafficLevel,
@@ -76,6 +77,7 @@ export type OrderWorkspacePersistBody = {
   deletedPhotoIds?: string[];
   /** K2: apzināti iztukšoti lauki (lauks → ms) — tukšais uzvar pār bagātāku baseline. */
   clearedFields?: Record<string, number>;
+  technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
 };
 
 export type WorkspaceHydrationSource = "local" | "backup" | "server";
@@ -447,6 +449,7 @@ export function coalesceOrderWorkspacePersistBody(
     ...sourceBlockWipesSnapshotField(wipes),
     ...deletedPhotoIdsSnapshotField(tombstones),
     ...clearedFieldsSnapshotField(mergeClearedFields(baseline.clearedFields, incoming.clearedFields)),
+    ...technicalRiskMapSnapshotField(incoming.technicalRiskMap ?? baseline.technicalRiskMap),
   };
 }
 
@@ -494,6 +497,7 @@ export function buildOrderDraftWorkspaceBody(
     ...sourceBlockWipesSnapshotField(safe.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(safe.deletedPhotoIds),
     ...clearedFieldsSnapshotField(safe.clearedFields),
+    ...technicalRiskMapSnapshotField(safe.technicalRiskMap),
   };
 }
 
@@ -542,6 +546,7 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
     ...sourceBlockWipesSnapshotField(body.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(tombstones),
     ...clearedFieldsSnapshotField(body.clearedFields),
+    ...technicalRiskMapSnapshotField(body.technicalRiskMap),
   };
 }
 
@@ -571,6 +576,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     ...sourceBlockWipesSnapshotField(normalized.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(normalized.deletedPhotoIds),
     ...clearedFieldsSnapshotField(normalized.clearedFields),
+    ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
     savedAt,
   });
 }
@@ -601,6 +607,7 @@ export function serializeOrderWorkspaceSnapshot(
     ...sourceBlockWipesSnapshotField(safe.sourceBlockWipes),
     ...deletedPhotoIdsSnapshotField(safe.deletedPhotoIds),
     ...clearedFieldsSnapshotField(safe.clearedFields),
+    ...technicalRiskMapSnapshotField(safe.technicalRiskMap),
     savedAt,
   });
 }
@@ -755,6 +762,7 @@ type HydratedWorkspaceShape = {
   vehicleAiExtractionMeta: VehicleAiExtractionMeta | null;
   incidentPhotoGroups?: IncidentPhotoGroup[];
   incidentPhotos?: IncidentPhotoMeta[];
+  technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
 };
 
 function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersistBody {
@@ -770,6 +778,7 @@ function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersist
     vehicleAiExtractionMeta: h.vehicleAiExtractionMeta ?? null,
     incidentPhotoGroups: incident.incidentPhotoGroups,
     incidentPhotos: incident.incidentPhotos,
+    ...technicalRiskMapSnapshotField(h.technicalRiskMap),
   };
 }
 
@@ -867,6 +876,7 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     vehicleAiExtractionMeta: merged.vehicleAiExtractionMeta,
     incidentPhotoGroups: merged.incidentPhotoGroups,
     incidentPhotos: merged.incidentPhotos,
+    ...technicalRiskMapSnapshotField(merged.technicalRiskMap),
   } as T;
 
   const savedAtMs = Math.max(0, ...allPicks.map((p) => p.savedAtMs));

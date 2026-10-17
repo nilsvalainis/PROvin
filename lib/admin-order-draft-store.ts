@@ -31,6 +31,7 @@ import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { parseSourceBlockWipes, sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
 import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
+import { technicalRiskMapSnapshotField } from "@/lib/admin-ai-technical-risk-map-types";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { parseAutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { orderVinScanDashboardHintFromRecord, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
@@ -319,6 +320,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         vehicleAiExtractionMeta: w.vehicleAiExtractionMeta,
         incidentPhotoGroups: w.incidentPhotoGroups,
         incidentPhotos: w.incidentPhotos,
+        technicalRiskMap: w.technicalRiskMap,
       });
     } catch {
       json = null;
@@ -339,6 +341,7 @@ function normalizeLoadedDraft(raw: unknown, sessionId: string): OrderDraftState 
         vehicleAiExtractionMeta: h.vehicleAiExtractionMeta,
         incidentPhotoGroups: h.incidentPhotoGroups,
         incidentPhotos: h.incidentPhotos,
+        ...technicalRiskMapSnapshotField(h.technicalRiskMap),
       };
     }
   }
@@ -707,6 +710,7 @@ async function patchOrderDraftUnlocked(
       ...sourceBlockWipesSnapshotField(incomingWipes),
       ...deletedPhotoIdsSnapshotField(workspacePatch.deletedPhotoIds),
       ...clearedFieldsSnapshotField(workspacePatch.clearedFields),
+      ...technicalRiskMapSnapshotField(workspacePatch.technicalRiskMap),
     });
     const h = hydrateWorkspaceFromStorage(json);
     if (!h) return { ok: false, error: "invalid_workspace" };
@@ -727,6 +731,7 @@ async function patchOrderDraftUnlocked(
       ...sourceBlockWipesSnapshotField(h.sourceBlockWipes ?? incomingWipes),
       ...deletedPhotoIdsSnapshotField(h.deletedPhotoIds),
       ...clearedFieldsSnapshotField(h.clearedFields),
+      ...technicalRiskMapSnapshotField(h.technicalRiskMap),
     };
   }
 

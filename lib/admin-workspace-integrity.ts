@@ -25,6 +25,7 @@ function toPersistBody(workspace: OrderDraftWorkspaceBody | OrderWorkspacePersis
     vehicleAiExtractionMeta: w.vehicleAiExtractionMeta ?? null,
     incidentPhotoGroups: w.incidentPhotoGroups,
     incidentPhotos: w.incidentPhotos,
+    ...(w.technicalRiskMap ? { technicalRiskMap: w.technicalRiskMap } : {}),
   });
 }
 
@@ -44,6 +45,7 @@ export function stableWorkspaceChecksum(
     vehicleAiExtractionMeta: normalized.vehicleAiExtractionMeta,
     incidentPhotoGroups: normalized.incidentPhotoGroups,
     incidentPhotos: normalized.incidentPhotos,
+    ...(normalized.technicalRiskMap ? { technicalRiskMap: normalized.technicalRiskMap } : {}),
   });
   let h = 5381;
   for (let i = 0; i < canonical.length; i++) {

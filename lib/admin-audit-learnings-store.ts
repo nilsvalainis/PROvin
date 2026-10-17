@@ -43,11 +43,13 @@ function normalizeDoc(raw: unknown): LearningsDoc | null {
       }
     }
     if (snippets.length === 0) continue;
+    const status = e.status === "approved" || e.status === "candidate" ? e.status : undefined;
     entries[key] = {
       key,
       label: typeof e.label === "string" ? e.label.slice(0, 120) : key,
       updatedAt: typeof e.updatedAt === "string" ? e.updatedAt : new Date(0).toISOString(),
       snippets: snippets.slice(0, MAX_SNIPPETS_PER_KEY),
+      ...(status ? { status } : {}),
     };
   }
   return {
@@ -169,6 +171,9 @@ export async function upsertAuditAggregateLearning(entry: AuditAggregateLearning
     label: entry.label || prev?.label || entry.key,
     updatedAt: new Date().toISOString(),
     snippets,
+    ...(entry.status || prev?.status
+      ? { status: entry.status ?? prev?.status }
+      : {}),
   };
   doc.updatedAt = new Date().toISOString();
   await writeLearningsDoc(doc);
@@ -183,6 +188,24 @@ export async function getAuditLearningsForKeys(keys: string[]): Promise<AuditAgg
     if (e) out.push(e);
   }
   return out;
+}
+
+export async function approveAuditAggregateLearning(key: string): Promise<AuditAggregateLearningEntry | null> {
+  const trimmed = key.trim();
+  if (!trimmed) return null;
+  const doc = await readLearningsDoc();
+  const prev = doc.entries[trimmed];
+  if (!prev) return null;
+  const next: AuditAggregateLearningEntry = {
+    ...prev,
+    status: "approved",
+    updatedAt: new Date().toISOString(),
+  };
+  doc.entries[trimmed] = next;
+  doc.updatedAt = new Date().toISOString();
+  await writeLearningsDoc(doc);
+  invalidateAuditLearningsCache();
+  return next;
 }
 
 export async function listAllAuditLearningKeys(): Promise<string[]> {
@@ -200,7 +223,7 @@ export type AuditLearningsSummary = {
   snippetTotal: number;
   updatedAt: string;
   engineKeys: Array<{ key: string; label: string; snippets: number }>;
-  topKeys: Array<{ key: string; label: string; snippets: number }>;
+  topKeys: Array<{ key: string; label: string; snippets: number; status?: string }>;
 };
 
 /** Operatora / CLI statuss — cik atmiņas jau ir. */
@@ -216,6 +239,7 @@ export async function summarizeAuditLearnings(): Promise<AuditLearningsSummary> 
     key: e.key,
     label: e.label,
     snippets: e.snippets.length,
+    ...(e.status ? { status: e.status } : {}),
   }));
   return {
     keyCount: entries.length,

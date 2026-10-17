@@ -17,7 +17,9 @@ export function parseAiModelTier(raw: unknown): AiAdminModelTier {
   if (v === "gemini" || v === "gemini-pro" || v === "gpro" || v === "gemini_pro") return "gemini";
   if (v === "lite" || v === "haiku" || v === "cheap" || v === "eco") return "lite";
   if (v === "flash" || v === "free" || v === "fast" || v === "sonnet") return "flash";
-  return "pro";
+  // Nezināma vērtība nedrīkst klusi kļūt par Opus (dārgi).
+  if (v === "pro" || v === "opus") return "pro";
+  return "gemini-flash";
 }
 
 export function isGeminiAdminTier(tier?: AiAdminModelTier | null): boolean {

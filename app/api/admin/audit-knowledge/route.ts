@@ -4,6 +4,7 @@
  * POST { action: "status" }
  * POST { action: "backfill", limit?: number }
  * POST { action: "promote", writeFile?: boolean }
+ * POST { action: "approve", key: string }
  */
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
@@ -11,7 +12,7 @@ import {
   backfillAuditAggregateLearnings,
   promoteAuditKnowledgeCandidates,
 } from "@/lib/admin-ai-aggregate-knowledge";
-import { summarizeAuditLearnings } from "@/lib/admin-audit-learnings-store";
+import { approveAuditAggregateLearning, summarizeAuditLearnings } from "@/lib/admin-audit-learnings-store";
 
 export const maxDuration = 120;
 export const runtime = "nodejs";
@@ -49,6 +50,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ...result, summary });
   }
 
+  if (action === "approve") {
+    const key = typeof (body as { key?: unknown }).key === "string" ? (body as { key: string }).key : "";
+    const entry = await approveAuditAggregateLearning(key);
+    if (!entry) {
+      return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
+    const summary = await summarizeAuditLearnings();
+    return NextResponse.json({ ok: true, key: entry.key, status: entry.status, summary });
+  }
+
   if (action === "promote") {
     const writeFile = (body as { writeFile?: unknown }).writeFile !== false;
     const result = await promoteAuditKnowledgeCandidates({ writeFile });
@@ -63,7 +74,7 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(
-    { error: "unknown_action", hint: "status | backfill | promote" },
+    { error: "unknown_action", hint: "status | backfill | promote | approve" },
     { status: 400 },
   );
 }

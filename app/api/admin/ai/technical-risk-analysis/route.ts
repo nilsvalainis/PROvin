@@ -2,7 +2,7 @@
  * Admin: AI — Tehnisko risku analīze (APPROVED BY IRISS, 1. sadaļa).
  */
 import { NextResponse } from "next/server";
-import { nextJsonWithAiUsage } from "@/lib/admin-ai-route-response";
+import { nextJsonBodyWithAiUsage } from "@/lib/admin-ai-route-response";
 import { aiStreamResponse, wantsAiStream } from "@/lib/admin-ai-stream-response";
 
 import { getAdminSession } from "@/lib/admin-auth";
@@ -10,6 +10,7 @@ import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
 import { generateTechnicalRiskAnalysisWithAi } from "@/lib/admin-ai-technical-risks";
 import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { mergeSourceBlocksFromBody, parseAiOrderContextFromBody } from "@/lib/admin-ai-api-body";
+import { isTechRiskV2Enabled } from "@/lib/admin-ai-tech-pipeline-config";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -66,19 +67,19 @@ export async function POST(req: Request) {
   const sourceBlocks = mergeSourceBlocksFromBody(b);
   const context = parseAiOrderContextFromBody(b, sourceBlocks);
 
-  if (wantsAiStream(req)) {
+  if (wantsAiStream(req) && !isTechRiskV2Enabled()) {
     return aiStreamResponse(
-      (stream) => generateTechnicalRiskAnalysisWithAi({ ...context, stream }),
+      async (stream) => (await generateTechnicalRiskAnalysisWithAi({ ...context, stream })).text,
       failureEvent,
     );
   }
 
   try {
-    return await nextJsonWithAiUsage(() => generateTechnicalRiskAnalysisWithAi(context));
+    return await nextJsonBodyWithAiUsage(() => generateTechnicalRiskAnalysisWithAi(context));
   } catch (e) {
     const { error, detail } = failureEvent(e);
     return NextResponse.json(
-      { error, ...(detail ? { detail } : {}) },
+      { error, ...(detail ? { detail: detail } : {}) },
       { status: error === "empty_order_context" ? 400 : 502 },
     );
   }
