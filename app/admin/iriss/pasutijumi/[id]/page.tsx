@@ -14,6 +14,7 @@ import { readIrissOfferClientLinksForOrder } from "@/lib/iriss-offer-client-link
 import { isIrissPasutijumiStoreEnabled, isSafeIrissPasutijumsId, readIrissListingOrderOv, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { stripIrissOfferImageDataUrls } from "@/lib/iriss-pasutijums-offer-images";
 import { requireAdminPage } from "@/lib/admin-auth";
+import { readGoogleContactsConfig } from "@/lib/google-contacts";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,7 @@ export default async function IrissPasutijumsDetailPage({
       initialHitStatus={coerceIrissHitStatusMap(roomMatch?.hitStatus)}
       duplicatesByListing={coerceIrissDuplicatesByListing(roomMatch?.duplicates)}
       initialRoomTab={initialRoomTab}
+      googleContactsConfigured={Boolean(readGoogleContactsConfig())}
     />
   );
 }

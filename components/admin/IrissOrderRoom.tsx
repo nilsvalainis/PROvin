@@ -17,6 +17,7 @@ import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { listingHistoryRecordId } from "@/lib/admin-change-history";
 import { irissBrandFallbackLabel, irissBrandLogoSrc } from "@/lib/iriss-brand-logo";
 import { listingFmtEur } from "@/lib/iriss-listings-card";
@@ -31,6 +32,12 @@ import {
   persistIrissListPrefs,
   safeStorageGet,
 } from "@/lib/iriss-listings-operator-prefs";
+import {
+  formatGeneratedDocumentSize,
+  formatGeneratedDocumentWhen,
+  generatedDocumentKindLabel,
+  sortGeneratedDocumentsNewestFirst,
+} from "@/lib/iriss-generated-documents";
 import type { IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import {
   IRISS_ORDER_ROOM_TABS,
@@ -83,6 +90,7 @@ import {
   IRISS_PASUTIJUMS_PICKER_STATUSES,
   IRISS_PASUTIJUMS_PICKER_STATUS_LV,
   defaultIrissDzintarzemeTameDraft,
+  type IrissGeneratedDocument,
   type IrissOfferRecord,
   type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
@@ -308,6 +316,10 @@ export function IrissOrderRoom({
   initialHitStatus = {},
   duplicatesByListing = {},
   initialTab = "overview",
+  googleContactsConfigured = false,
+  googleContactBusy = false,
+  onRetryGoogleContact,
+  onGeneratedDocument,
 }: {
   rec: IrissPasutijumsRecord;
   hits: IrissOrderRoomHit[];
@@ -349,6 +361,10 @@ export function IrissOrderRoom({
   initialHitStatus?: Record<string, IrissListingHitStatus>;
   duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
   initialTab?: IrissOrderRoomTab;
+  googleContactsConfigured?: boolean;
+  googleContactBusy?: boolean;
+  onRetryGoogleContact?: () => void;
+  onGeneratedDocument?: (doc: IrissGeneratedDocument, workspaceRevision?: number) => void;
 }) {
   const [tab, setTab] = useState<IrissOrderRoomTab>(coerceIrissOrderRoomTab(initialTab));
   const tabSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -502,7 +518,8 @@ export function IrissOrderRoom({
     hasVin: Boolean(rec.vin.trim()),
   });
   const commCount = irissOrderRoomCommunicationCount((rec.statusHistory ?? []).length, Boolean(rec.notes.trim()));
-  const docCount = irissOrderRoomDocumentCount(rec.offers.length);
+  const generatedDocs = sortGeneratedDocumentsNewestFirst(rec.generatedDocuments ?? []);
+  const docCount = irissOrderRoomDocumentCount(rec.offers.length, generatedDocs.length);
   const searchHref = `/admin/iriss/sludinajumi?ord=${encodeURIComponent(serializeListingOrderFilter({ kind: "order", id: rec.id }))}`;
   const history = [...(rec.statusHistory ?? [])].reverse();
   const noteLines = rec.notes
@@ -896,6 +913,7 @@ export function IrissOrderRoom({
                 draft={rec.dzintarzemeTameDraft ?? defaultIrissDzintarzemeTameDraft()}
                 orderBrandModel={rec.brandModel}
                 onDraftChange={(next) => onPatchRecord({ dzintarzemeTameDraft: next })}
+                onGeneratedDocument={onGeneratedDocument}
                 sectionSave={<IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />}
               />
             </div>
@@ -933,6 +951,13 @@ export function IrissOrderRoom({
                 <Field label="E-pasts" value={rec.email} inputMode="email" autoComplete="email" onChange={(value) => onPatch("email", value)} />
                 <Field id="iriss-room-vin" label="VIN (ja zināms)" value={rec.vin} warning={vinWarning} onChange={(value) => onPatch("vin", value.toUpperCase())} />
               </div>
+              <IrissGoogleContactStatusRow
+                rec={rec}
+                configured={googleContactsConfigured}
+                busy={googleContactBusy}
+                onRetry={onRetryGoogleContact}
+                buttonClass={roomBtn}
+              />
               <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
             </section>
 
@@ -1346,6 +1371,32 @@ export function IrissOrderRoom({
 
       {tab === "documents" ? (
         <div className="mt-3 min-w-0 space-y-3">
+          {generatedDocs.length > 0 ? (
+            <section className={cardClass}>
+              <CardTitle>Saglabātie dokumenti</CardTitle>
+              <ul className="divide-y divide-[#eee]">
+                {generatedDocs.map((doc) => (
+                  <li key={doc.id} className="flex flex-wrap items-center gap-2 py-2 first:pt-0 last:pb-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-[#111827]">{doc.name}</p>
+                      <p className="text-[11.5px] text-[#6b7280]">
+                        {generatedDocumentKindLabel(doc.kind)}
+                        {formatGeneratedDocumentWhen(doc.createdAt) ? ` · ${formatGeneratedDocumentWhen(doc.createdAt)}` : ""}
+                        {doc.size ? ` · ${formatGeneratedDocumentSize(doc.size)}` : ""}
+                      </p>
+                    </div>
+                    <a
+                      className={roomBtn}
+                      href={`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/generated-document/${encodeURIComponent(doc.id)}`}
+                    >
+                      <FileDown className="h-4 w-4" aria-hidden />
+                      Lejupielādēt
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
           <ul className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <li className={cardClass}>
               <FileText className="h-8 w-8 text-[#64748b]" aria-hidden />

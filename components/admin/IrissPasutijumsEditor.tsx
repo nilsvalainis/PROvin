@@ -9,6 +9,7 @@ import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishR
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
+import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
@@ -19,9 +20,16 @@ import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteria
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap, coerceIrissOrderRoomTab } from "@/lib/iriss-order-room-match-props";
+import { IrissOfferFieldTag } from "@/components/admin/IrissOfferFieldTag";
+import { attachmentsFromAuctionPhotoUrls, auctionPhotoUrlsFromHit } from "@/lib/iriss-auction-offer-photos";
+import {
+  IRISS_GENERATED_DOCUMENT_HEADER,
+  mergeGeneratedDocuments,
+  readGeneratedDocumentFromResponseHeader,
+} from "@/lib/iriss-generated-documents";
 import { irissOfferSeedFromHit } from "@/lib/iriss-order-offer-from-hit";
 import { appendIrissOrderRoomNote, type IrissOrderRoomHit, type IrissOrderRoomTab } from "@/lib/iriss-order-room";
-import { IrissOfferFieldTag } from "@/components/admin/IrissOfferFieldTag";
+import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
@@ -56,6 +64,7 @@ import {
   IRISS_PASUTIJUMS_PICKER_STATUSES,
   IRISS_PASUTIJUMS_PICKER_STATUS_LV,
   parseIrissPasutijumsListStatus,
+  type IrissGeneratedDocument,
   type IrissOfferAttachment,
   type IrissOfferRecord,
   type IrissPasutijumsListStatus,
@@ -466,6 +475,7 @@ export function IrissPasutijumsEditor({
   initialHitStatus = {},
   duplicatesByListing = {},
   initialRoomTab = "overview",
+  googleContactsConfigured: googleContactsConfiguredInitial = false,
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
@@ -480,6 +490,7 @@ export function IrissPasutijumsEditor({
   initialHitStatus?: Record<string, IrissListingHitStatus>;
   duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
   initialRoomTab?: IrissOrderRoomTab;
+  googleContactsConfigured?: boolean;
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
@@ -518,6 +529,8 @@ export function IrissPasutijumsEditor({
   const [roomHitsLive, setRoomHitsLive] = useState<IrissOrderRoomHit[]>(roomHits);
   const [readingListingUrl, setReadingListingUrl] = useState<string | null>(null);
   const [listingReadByUrl, setListingReadByUrl] = useState<Record<string, string>>({});
+  const [googleContactsConfigured, setGoogleContactsConfigured] = useState(googleContactsConfiguredInitial);
+  const [googleContactBusy, setGoogleContactBusy] = useState(false);
 
   const patch = useCallback(<K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => {
     setRec((r) => withAutoEcarstradeLinks(applyIrissFieldEdit(r, { [key]: value } as Partial<IrissPasutijumsRecord>, Date.now())));
@@ -579,13 +592,25 @@ export function IrissPasutijumsEditor({
         expectedWorkspaceRevision: irissWorkspaceRevision(payload),
       };
 
-      const finishOk = (record: IrissPasutijumsRecord | null): SaveResult => {
+      const finishOk = (record: IrissPasutijumsRecord | null, data?: unknown): SaveResult => {
         if (record?.id) persistedIdRef.current = record.id;
-        lastSavedSnapshot.current = JSON.stringify(record ?? payload);
+        if (data && typeof data === "object" && "googleContactsConfigured" in data) {
+          setGoogleContactsConfigured(Boolean((data as { googleContactsConfigured: unknown }).googleContactsConfigured));
+        }
         if (!silent) {
-          setRec((current) => pickRecordAfterOrderSave(current, payload, record));
-        } else if (record && irissWorkspaceRevision(record) !== irissWorkspaceRevision(payload)) {
-          setRec((current) => ({ ...current, workspaceRevision: record.workspaceRevision }));
+          setRec((current) => {
+            const picked = pickRecordAfterOrderSave(current, payload, record);
+            const merged = mergeServerOwnedIrissFields(picked, record);
+            lastSavedSnapshot.current = JSON.stringify(merged);
+            return merged;
+          });
+        } else {
+          setRec((current) => {
+            const concurrent = JSON.stringify(current) !== JSON.stringify(payload);
+            const merged = mergeServerOwnedIrissFields(concurrent ? current : payload, record);
+            lastSavedSnapshot.current = JSON.stringify(mergeServerOwnedIrissFields(payload, record));
+            return merged;
+          });
         }
         if (redirectToList) {
           router.push("/admin/iriss/pasutijumi");
@@ -619,7 +644,7 @@ export function IrissPasutijumsEditor({
             return { ok: false, error: err };
           }
           const record = parseRecordFromPatchResponse(result.data);
-          return finishOk(record);
+          return finishOk(record, result.data);
         }
 
         const res = await fetch(url, {
@@ -647,7 +672,7 @@ export function IrissPasutijumsEditor({
         } else if (isCreate && persistId === "" && payload.id) {
           router.replace(`/admin/iriss/pasutijumi/${encodeURIComponent(payload.id)}`);
         }
-        return finishOk(record);
+        return finishOk(record, data);
       } catch (e) {
         const err = `Tīkla kļūda: ${e instanceof Error ? e.message.slice(0, 200) : String(e).slice(0, 200)}`;
         if (!silent) setSaveMsg(err);
@@ -745,7 +770,10 @@ export function IrissPasutijumsEditor({
           credentials: "include",
         });
         if (!res.ok || cancelled) return;
-        const data = (await res.json()) as { record?: IrissPasutijumsRecord };
+        const data = (await res.json()) as { record?: IrissPasutijumsRecord; googleContactsConfigured?: boolean };
+        if (typeof data.googleContactsConfigured === "boolean") {
+          setGoogleContactsConfigured(data.googleContactsConfigured);
+        }
         if (!data.record || cancelled) return;
         setRec((prev) => {
           const merged = withAutoEcarstradeLinks(mergeIrissOfferImageDataUrls(prev, data.record!));
@@ -824,6 +852,28 @@ export function IrissPasutijumsEditor({
     [rec.id],
   );
 
+  const ingestGeneratedDocument = useCallback((doc: IrissGeneratedDocument, workspaceRevision?: number) => {
+    setRec((r) => {
+      const generatedDocuments = mergeGeneratedDocuments([doc], r.generatedDocuments);
+      const next = {
+        ...r,
+        generatedDocuments,
+        ...(typeof workspaceRevision === "number" ? { workspaceRevision } : {}),
+      };
+      try {
+        const snap = JSON.parse(lastSavedSnapshot.current) as IrissPasutijumsRecord;
+        lastSavedSnapshot.current = JSON.stringify({
+          ...snap,
+          generatedDocuments,
+          ...(typeof workspaceRevision === "number" ? { workspaceRevision } : {}),
+        });
+      } catch {
+        lastSavedSnapshot.current = JSON.stringify(next);
+      }
+      return next;
+    });
+  }, []);
+
   const openPdf = useCallback(async () => {
     setPdfRetryBar(null);
     setOrderPdfRetryOpen(false);
@@ -850,6 +900,8 @@ export function IrissPasutijumsEditor({
         setOrderPdfRetryOpen(true);
         return;
       }
+      const stored = readGeneratedDocumentFromResponseHeader(res.headers.get(IRISS_GENERATED_DOCUMENT_HEADER));
+      if (stored) ingestGeneratedDocument(stored.doc, stored.workspaceRevision);
       await downloadPdfBlobFromResponse(res, "pasutijums.pdf", (href, name) => setPdfRetryBar({ href, name }));
     } catch (e) {
       setSaveMsg(e instanceof Error ? e.message.slice(0, 220) : "Tīkla kļūda.");
@@ -857,7 +909,7 @@ export function IrissPasutijumsEditor({
     } finally {
       setOrderPdfBusy(false);
     }
-  }, [rec.id, save]);
+  }, [ingestGeneratedDocument, rec.id, save]);
 
   const retryOrderPdfOnly = useCallback(async () => {
     setPdfRetryBar(null);
@@ -878,6 +930,8 @@ export function IrissPasutijumsEditor({
         setSaveMsg(formatPatchFailureMessage(res.status, errData, errBody.slice(0, 240)));
         return;
       }
+      const stored = readGeneratedDocumentFromResponseHeader(res.headers.get(IRISS_GENERATED_DOCUMENT_HEADER));
+      if (stored) ingestGeneratedDocument(stored.doc, stored.workspaceRevision);
       await downloadPdfBlobFromResponse(res, "pasutijums.pdf", (href, name) => setPdfRetryBar({ href, name }));
       setOrderPdfRetryOpen(false);
     } catch (e) {
@@ -885,13 +939,45 @@ export function IrissPasutijumsEditor({
     } finally {
       setOrderPdfBusy(false);
     }
-  }, [rec.id]);
+  }, [ingestGeneratedDocument, rec.id]);
 
   const openCreateOffer = useCallback(() => {
     setOfferAutoFields(new Set());
     setOfferDraft(newOfferDraft(rec.offers.length + 1));
     setOfferOpen(true);
   }, [rec.offers.length]);
+
+  const retryGoogleContact = useCallback(async () => {
+    if (!persistedIdRef.current) return;
+    setGoogleContactBusy(true);
+    try {
+      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/google-contact`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        record?: IrissPasutijumsRecord;
+        googleContactsConfigured?: boolean;
+      };
+      if (typeof data.googleContactsConfigured === "boolean") {
+        setGoogleContactsConfigured(data.googleContactsConfigured);
+      }
+      if (data.record) {
+        setRec((current) => {
+          const merged = mergeServerOwnedIrissFields(current, data.record);
+          try {
+            const snap = JSON.parse(lastSavedSnapshot.current) as IrissPasutijumsRecord;
+            lastSavedSnapshot.current = JSON.stringify(mergeServerOwnedIrissFields(snap, data.record));
+          } catch {
+            /* keep */
+          }
+          return merged;
+        });
+      }
+    } finally {
+      setGoogleContactBusy(false);
+    }
+  }, [rec.id]);
 
   const openCreateOfferFromHit = useCallback(
     (hit: IrissOrderRoomHit) => {
@@ -911,6 +997,7 @@ export function IrissPasutijumsEditor({
         priceGermany: seed.priceGermany,
         odometerReading: seed.odometerReading || seed.mileage,
         comment: "",
+        attachments: attachmentsFromAuctionPhotoUrls(auctionPhotoUrlsFromHit(hit)),
       });
       setOfferOpen(true);
     },
@@ -1829,6 +1916,13 @@ export function IrissPasutijumsEditor({
               onChange={(e) => patch("orderDate", e.target.value)}
             />
           </div>
+          <IrissGoogleContactStatusRow
+            rec={rec}
+            configured={googleContactsConfigured}
+            busy={googleContactBusy}
+            onRetry={() => void retryGoogleContact()}
+            buttonClass="inline-flex h-10 min-h-10 items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[12.5px] font-semibold text-[var(--color-provin-accent)] shadow-sm"
+          />
           <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
 
@@ -1850,6 +1944,7 @@ export function IrissPasutijumsEditor({
           draft={rec.dzintarzemeTameDraft ?? defaultIrissDzintarzemeTameDraft()}
           orderBrandModel={rec.brandModel}
           onDraftChange={(next) => patchRecord({ dzintarzemeTameDraft: next })}
+          onGeneratedDocument={ingestGeneratedDocument}
           sectionSave={<IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />}
         />
 
@@ -1960,6 +2055,10 @@ export function IrissPasutijumsEditor({
           onCreateOffer={openCreateOffer}
           onEditOffer={openEditOffer}
           onPrepareOffer={openCreateOfferFromHit}
+          googleContactsConfigured={googleContactsConfigured}
+          googleContactBusy={googleContactBusy}
+          onRetryGoogleContact={() => void retryGoogleContact()}
+          onGeneratedDocument={ingestGeneratedDocument}
           onOpenOfferPdf={(offerId) => void openOfferPdfForId(offerId)}
           onRestore={() => void restoreDeleted()}
           onOrderRestored={(record) => setRec(withAutoEcarstradeLinks(record))}

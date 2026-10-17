@@ -3,6 +3,7 @@
  * Šis modulis neko neielādē no maksas avotiem un neizsauc sync.
  */
 
+import { auctionPhotoUrlsFromHit } from "@/lib/iriss-auction-offer-photos";
 import { offerImageGridSrc, orderOfferAttachmentsForPdf } from "@/lib/iriss-offer-image-sorter";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { listingFmtEur } from "@/lib/iriss-listings-card";
@@ -116,6 +117,7 @@ export type IrissOrderRoomOfferSeed = {
   price: string;
   transmission: string;
   firstRegistration: string;
+  photoUrls: string[];
 };
 
 export type IrissOrderRoomNextStep = { id: string; label: string; tab: IrissOrderRoomTab };
@@ -449,6 +451,7 @@ export function irissOrderRoomOfferSeed(hit: IrissOrderRoomHit): IrissOrderRoomO
     price,
     transmission: hit.transmission,
     firstRegistration: hit.firstRegistration || year,
+    photoUrls: auctionPhotoUrlsFromHit(hit),
   };
 }
 
@@ -597,8 +600,8 @@ export function irissOrderRoomCommunicationCount(historyLength: number, hasNotes
   return historyLength + (hasNotes ? 1 : 0);
 }
 
-export function irissOrderRoomDocumentCount(offerCount: number): number {
-  return 2 + Math.max(0, offerCount);
+export function irissOrderRoomDocumentCount(offerCount: number, generatedCount = 0): number {
+  return 2 + Math.max(0, offerCount) + Math.max(0, generatedCount);
 }
 
 export function appendIrissOrderRoomNote(prev: string, text: string, atIso: string): string {

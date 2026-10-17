@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 
 import { generateDzintarzemeTamePdfBytes } from "@/lib/dzintarzeme-tame-pdf";
 import { parseDzintarzemeTameBody } from "@/lib/dzintarzeme-tame-calculator";
+import { generatedDocumentResponseHeader } from "@/lib/iriss-generated-documents";
 import { readIrissTameCommissionSettings } from "@/lib/iriss-tame-commission-store";
 import { getAdminSession } from "@/lib/admin-auth";
-import { isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
+import { isSafeIrissPasutijumsId, readIrissPasutijums, storeIrissGeneratedPdf } from "@/lib/iriss-pasutijumi-store";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -30,15 +31,30 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const rates = await readIrissTameCommissionSettings();
   const bytes = await generateDzintarzemeTamePdfBytes(parsed.value, rates);
   const pdfCache = "no-store, no-cache, must-revalidate, max-age=0, private" satisfies string;
+  const date = new Date().toISOString().slice(0, 10);
+  const tameName = `dzintarzeme-auto-tame-${date}.pdf`;
+  let storedHeader: Record<string, string> = {};
+  try {
+    const stored = await storeIrissGeneratedPdf({
+      orderId: rec.id,
+      kind: "cost_estimate",
+      name: tameName,
+      bytes,
+    });
+    if (stored) storedHeader = generatedDocumentResponseHeader(stored.document, stored.workspaceRevision);
+  } catch (e) {
+    console.error("[iriss tame store]", e instanceof Error ? e.message : e);
+  }
 
   return new NextResponse(Buffer.from(bytes), {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="dzintarzeme-auto-tame.pdf"`,
+      "Content-Disposition": `attachment; filename="${tameName}"`,
       "Cache-Control": pdfCache,
       Pragma: "no-cache",
       "X-Robots-Tag": "noindex, nofollow",
+      ...storedHeader,
     },
   });
 }
