@@ -1,0 +1,973 @@
+{
+  "generated": "2026-10-17",
+  "generator": "Grok Bot (Dizaineris) for PROVIN.LV",
+  "brand_count": 48,
+  "artboards": {
+    "square": "256x256 viewBox, 20px min padding, optical size = min(fit 216px box, sqrt(w*h)=150)",
+    "wide": "512x128 viewBox, 12px padding, fit"
+  },
+  "repo_brand_list": "nilsvalainis/PROvin main: lib/dealer-brands.ts (TP5_DEALER_COVERAGE_FULL/WORKSHOP/LIMITED), public/brand-logos/*.svg (commit af86401a)",
+  "trademark_note": "All logos are trademarks of their respective owners. Use only to identify the brand whose dealer/service data is shown; do not alter, recolour beyond official mono/colour versions, or imply endorsement.",
+  "logos": [
+    {
+      "brand": "Abarth",
+      "slug": "abarth",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/abarth.svg",
+        "png_256": "png/abarth@256.png",
+        "png_512": "png/abarth@512.png"
+      },
+      "source_type": "Wikipedia (fr) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/fr/6/6b/Abarth_2007_Logo.svg?utm_source=fr.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://fr.wikipedia.org/wiki/Fichier:Abarth_2007_Logo.svg",
+      "source_file_licence": "marque déposée",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 0.924,
+      "notes": "Scorpion shield, 2007 version (still current). Full colour."
+    },
+    {
+      "brand": "Alfa Romeo",
+      "slug": "alfa-romeo",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/alfa-romeo.svg",
+        "png_256": "png/alfa-romeo@256.png",
+        "png_512": "png/alfa-romeo@512.png"
+      },
+      "source_type": "Official Alfa Romeo site (alfaromeousa.com, Stellantis)",
+      "source_url": "https://www.alfaromeousa.com/content/dam/alfa/2022/header/logoFooterWhite.svg",
+      "source_page": "https://www.alfaromeousa.com/content/dam/alfa/2022/header/logoFooterWhite.svg",
+      "source_file_licence": "Manufacturer website asset",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 1.0,
+      "notes": "Official monochrome badge (2015 design) from the Alfa Romeo site, recoloured from #F0F0F0 (white-on-dark) to black for white backgrounds. The full-colour badge is in svg/alt/alfa-romeo-colour.svg; that file contains embedded raster textures (not pure vector, 2.8 MB), so it is not the primary."
+    },
+    {
+      "brand": "Alpine",
+      "slug": "alpine",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/alpine.svg",
+        "png_256": "png/alpine@256.png",
+        "png_512": "png/alpine@512.png"
+      },
+      "source_type": "Official Alpine site (alpine-cars.co.uk)",
+      "source_url": "https://www.alpine-cars.co.uk/ (inline header logo, class MainHeader__logo)",
+      "source_page": "https://www.alpine-cars.co.uk/ (inline header logo, class MainHeader__logo)",
+      "source_file_licence": "Manufacturer website asset",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 2.0,
+      "notes": "Current Alpine \"A\" arrow mark (2017+). Taken from the official site where it is white; recoloured to black (official monochrome)."
+    },
+    {
+      "brand": "Aston Martin",
+      "slug": "aston-martin",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/aston-martin.svg",
+        "svg_wide": "svg/aston-martin-wide.svg",
+        "png_256": "png/aston-martin@256.png",
+        "png_512": "png/aston-martin@512.png",
+        "png_wide_512": "png/aston-martin-wide@512.png",
+        "png_wide_1024": "png/aston-martin-wide@1024.png"
+      },
+      "source_type": "Wikipedia (en) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/en/8/8f/Aston_Martin_Lagonda_brand_logo.svg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://en.wikipedia.org/wiki/File:Aston_Martin_Lagonda_brand_logo.svg",
+      "source_file_licence": "Fair use",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 4.348,
+      "notes": "Wings with wordmark (2022 brand refresh). Wide mark; see aston-martin-wide.svg."
+    },
+    {
+      "brand": "Audi",
+      "slug": "audi",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/audi.svg",
+        "svg_wide": "svg/audi-wide.svg",
+        "png_256": "png/audi@256.png",
+        "png_512": "png/audi@512.png",
+        "png_wide_512": "png/audi-wide@512.png",
+        "png_wide_1024": "png/audi-wide@1024.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Audi-Logo_2016.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Audi-Logo_2016.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 2.825,
+      "notes": "Flat four rings (2016 / 2D). Black."
+    },
+    {
+      "brand": "Bentley",
+      "slug": "bentley",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/bentley.svg",
+        "svg_wide": "svg/bentley-wide.svg",
+        "png_256": "png/bentley@256.png",
+        "png_512": "png/bentley@512.png",
+        "png_wide_512": "png/bentley-wide@512.png",
+        "png_wide_1024": "png/bentley-wide@1024.png"
+      },
+      "source_type": "Wikipedia (en) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/en/3/3e/Bentley_%28Logo_2025%29.svg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://en.wikipedia.org/wiki/File:Bentley_(Logo_2025).svg",
+      "source_file_licence": "Fair use",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 3.731,
+      "notes": "Winged B, 2025 redesign. Wide mark."
+    },
+    {
+      "brand": "BMW",
+      "slug": "bmw",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/bmw.svg",
+        "png_256": "png/bmw@256.png",
+        "png_512": "png/bmw@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/BMW_logo_%28gray%29.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:BMW_logo_(gray).svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.0,
+      "notes": "Flat 2020 roundel (grey ring, transparent background inside, as the official flat version)."
+    },
+    {
+      "brand": "Citroën",
+      "slug": "citroen",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/citroen.svg",
+        "png_256": "png/citroen@256.png",
+        "png_512": "png/citroen@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Citroen_2022.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Citroen_2022.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 0.808,
+      "notes": "2022 oval chevrons. Symbol only; the CITROËN wordmark below was cropped off."
+    },
+    {
+      "brand": "CUPRA",
+      "slug": "cupra",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/cupra.svg",
+        "png_256": "png/cupra@256.png",
+        "png_512": "png/cupra@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Cupra_symbol.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Cupra_symbol.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 1.302,
+      "notes": "Cupra symbol in black (official monochrome; Cupra also uses a copper version)."
+    },
+    {
+      "brand": "Dacia",
+      "slug": "dacia",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/dacia.svg",
+        "svg_wide": "svg/dacia-wide.svg",
+        "png_256": "png/dacia@256.png",
+        "png_512": "png/dacia@512.png",
+        "png_wide_512": "png/dacia-wide@512.png",
+        "png_wide_1024": "png/dacia-wide@1024.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Dacia_2021_logo_green.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Dacia_2021_logo_green.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 3.546,
+      "notes": "2021 Dacia Link \"DC\" symbol, khaki-green. The DACIA wordmark was cropped off; the full lockup is in the wide file only via the symbol."
+    },
+    {
+      "brand": "DS Automobiles",
+      "slug": "ds",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/ds.svg",
+        "png_256": "png/ds@256.png",
+        "png_512": "png/ds@512.png"
+      },
+      "source_type": "Wikipedia (en) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/en/9/90/DS_Automobiles_logo.svg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://en.wikipedia.org/wiki/File:DS_Automobiles_logo.svg",
+      "source_file_licence": "Fair use",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 0.829,
+      "notes": "DS monogram (silver gradient). The DS AUTOMOBILES wordmark was cropped off."
+    },
+    {
+      "brand": "Ferrari",
+      "slug": "ferrari",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/ferrari.svg",
+        "png_256": "png/ferrari@256.png",
+        "png_512": "png/ferrari@512.png"
+      },
+      "source_type": "Wikipedia (it) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/it/0/04/Logo_della_Ferrari_S.p.A..svg?utm_source=it.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://it.wikipedia.org/wiki/File:Logo_della_Ferrari_S.p.A..svg",
+      "source_file_licence": "Marchio",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 0.624,
+      "notes": "Scudetto shield (yellow shield, prancing horse, tricolour). Full colour."
+    },
+    {
+      "brand": "Fiat",
+      "slug": "fiat",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/fiat.svg",
+        "png_256": "png/fiat@256.png",
+        "png_512": "png/fiat@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/FIAT_logo_%282020%29.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:FIAT_logo_(2020).svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 1.319,
+      "notes": "2020+ FIAT wordmark in black (official mono). Multicolour 2022 version: svg/alt/fiat-colour.svg (low contrast on white)."
+    },
+    {
+      "brand": "Ford",
+      "slug": "ford",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/ford.svg",
+        "svg_wide": "svg/ford-wide.svg",
+        "png_256": "png/ford@256.png",
+        "png_512": "png/ford@512.png",
+        "png_wide_512": "png/ford-wide@512.png",
+        "png_wide_1024": "png/ford-wide@1024.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3e/Ford_logo_flat.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Ford_logo_flat.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 2.778,
+      "notes": "Blue oval, flat version."
+    },
+    {
+      "brand": "Genesis",
+      "slug": "genesis",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/genesis.svg",
+        "svg_wide": "svg/genesis-wide.svg",
+        "png_256": "png/genesis@256.png",
+        "png_512": "png/genesis@512.png",
+        "png_wide_512": "png/genesis-wide@512.png",
+        "png_wide_1024": "png/genesis-wide@1024.png"
+      },
+      "source_type": "Wikipedia (en) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/en/8/83/Genesis_division_emblem.svg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://en.wikipedia.org/wiki/File:Genesis_division_emblem.svg",
+      "source_file_licence": "PD",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 4.717,
+      "notes": "Genesis wings emblem. The GENESIS wordmark below was cropped off. Wide mark."
+    },
+    {
+      "brand": "Honda",
+      "slug": "honda",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/honda.svg",
+        "png_256": "png/honda@256.png",
+        "png_512": "png/honda@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/86/Honda_auto_logo.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Honda_auto_logo.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 1.41,
+      "notes": "New flat \"H mark\" (announced Jan 2026 for new-generation Honda cars), black. Note: the classic chrome-look H emblem is still on most cars on the road."
+    },
+    {
+      "brand": "Hyundai",
+      "slug": "hyundai",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/hyundai.svg",
+        "png_256": "png/hyundai@256.png",
+        "png_512": "png/hyundai@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b7/Hyundai_symbol.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Hyundai_symbol.svg",
+      "source_file_licence": "CC BY-SA 4.0",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.961,
+      "notes": "Stylised H symbol, Hyundai blue. Commons file is CC BY-SA 4.0 (the file itself). The trademark belongs to Hyundai."
+    },
+    {
+      "brand": "Infiniti",
+      "slug": "infiniti",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/infiniti.svg",
+        "svg_wide": "svg/infiniti-wide.svg",
+        "png_256": "png/infiniti@256.png",
+        "png_512": "png/infiniti@512.png",
+        "png_wide_512": "png/infiniti-wide@512.png",
+        "png_wide_1024": "png/infiniti-wide@1024.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Infiniti_logo_2023.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Infiniti_logo_2023.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 2.068,
+      "notes": "2023 Infiniti emblem. The INFINITI wordmark was cropped off. Wide mark."
+    },
+    {
+      "brand": "Jaguar",
+      "slug": "jaguar",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/jaguar.svg",
+        "svg_wide": "svg/jaguar-wide.svg",
+        "png_256": "png/jaguar@256.png",
+        "png_512": "png/jaguar@512.png",
+        "png_wide_512": "png/jaguar-wide@512.png",
+        "png_wide_1024": "png/jaguar-wide@1024.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/50/Jaguar_2024.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Jaguar_2024.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 8.065,
+      "notes": "2024 \"JaGUar\" wordmark (current official identity since Nov 2024), dark grey. Very thin and wide, so use jaguar-wide.svg where possible. The older leaper/growler is not included."
+    },
+    {
+      "brand": "Jeep",
+      "slug": "jeep",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/jeep.svg",
+        "svg_wide": "svg/jeep-wide.svg",
+        "png_256": "png/jeep@256.png",
+        "png_512": "png/jeep@512.png",
+        "png_wide_512": "png/jeep-wide@512.png",
+        "png_wide_1024": "png/jeep-wide@1024.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Jeep_wordmark.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Jeep_wordmark.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 2.5,
+      "notes": "Jeep wordmark, olive green (official). Wordmark-only brand."
+    },
+    {
+      "brand": "Kia",
+      "slug": "kia",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/kia.svg",
+        "svg_wide": "svg/kia-wide.svg",
+        "png_256": "png/kia@256.png",
+        "png_512": "png/kia@512.png",
+        "png_wide_512": "png/kia-wide@512.png",
+        "png_wide_1024": "png/kia-wide@1024.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b6/KIA_logo3.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:KIA_logo3.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 4.237,
+      "notes": "2021 Kia wordmark-logo, dark. Wordmark-only brand."
+    },
+    {
+      "brand": "Lamborghini",
+      "slug": "lamborghini",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/lamborghini.svg",
+        "png_256": "png/lamborghini@256.png",
+        "png_512": "png/lamborghini@512.png"
+      },
+      "source_type": "Official Lamborghini site (lamborghini.com, 2024 logo DAM)",
+      "source_url": "https://www.lamborghini.com/sites/it-en/files/DAM/lamborghini/logos/2024/03_26/logo_header_01.svg",
+      "source_page": "https://www.lamborghini.com/sites/it-en/files/DAM/lamborghini/logos/2024/03_26/logo_header_01.svg",
+      "source_file_licence": "Manufacturer website asset",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 0.857,
+      "notes": "Official 2024 bull mark (from the lamborghini.com header, white, recoloured black). The full shield as a flat 2024 vector was not obtainable. The classic gold/black 3D shield is in svg/alt/lamborghini-shield.svg (pre-2024 rendering, 2.7 MB)."
+    },
+    {
+      "brand": "Lancia",
+      "slug": "lancia",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/lancia.svg",
+        "svg_wide": "svg/lancia-wide.svg",
+        "png_256": "png/lancia@256.png",
+        "png_512": "png/lancia@512.png",
+        "png_wide_512": "png/lancia-wide@512.png",
+        "png_wide_1024": "png/lancia-wide@1024.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Lancia_Logo_2023.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Lancia_Logo_2023.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 9.615,
+      "notes": "2023 Lancia wordmark, black. Wordmark-only (thin). The 2023 shield emblem was not available as a clean vector."
+    },
+    {
+      "brand": "Land Rover",
+      "slug": "land-rover",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/land-rover.svg",
+        "png_256": "png/land-rover@256.png",
+        "png_512": "png/land-rover@512.png"
+      },
+      "source_type": "Wikipedia (en) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/en/4/4a/LandRover.svg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://en.wikipedia.org/wiki/File:LandRover.svg",
+      "source_file_licence": "PD",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.901,
+      "notes": "Green oval with LAND ROVER lettering."
+    },
+    {
+      "brand": "Lexus",
+      "slug": "lexus",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/lexus.svg",
+        "png_256": "png/lexus@256.png",
+        "png_512": "png/lexus@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/75/Lexus.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Lexus.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 1.358,
+      "notes": "L-in-ellipse symbol, black. The LEXUS wordmark was cropped off."
+    },
+    {
+      "brand": "Lotus",
+      "slug": "lotus",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/lotus.svg",
+        "png_256": "png/lotus@256.png",
+        "png_512": "png/lotus@512.png"
+      },
+      "source_type": "Wikipedia (en) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/en/2/2f/Lotus_Cars_logo.svg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://en.wikipedia.org/wiki/File:Lotus_Cars_logo.svg",
+      "source_file_licence": "PD",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.0,
+      "notes": "Yellow roundel (2019 design). Yellow disc is part of the official emblem, not a backing plate."
+    },
+    {
+      "brand": "Maserati",
+      "slug": "maserati",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/maserati.svg",
+        "png_256": "png/maserati@256.png",
+        "png_512": "png/maserati@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/78/Maserati_logo_2.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Maserati_logo_2.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 0.708,
+      "notes": "Trident symbol. The Maserati script was cropped off."
+    },
+    {
+      "brand": "Mazda",
+      "slug": "mazda",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/mazda.svg",
+        "png_256": "png/mazda@256.png",
+        "png_512": "png/mazda@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/43/Mazda_logo_2024_%28vertical%29.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Mazda_logo_2024_(vertical).svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.226,
+      "notes": "2024 flat \"wings\" M symbol. The MAZDA wordmark was cropped off."
+    },
+    {
+      "brand": "Mercedes-Benz",
+      "slug": "mercedes",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/mercedes.svg",
+        "png_256": "png/mercedes@256.png",
+        "png_512": "png/mercedes@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/98/Mercedes-Benz_Star_%281969-1986%2C_2025-%29.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Mercedes-Benz_Star_(1969-1986,_2025-).svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 1.0,
+      "notes": "Three-pointed star in ring (2025 flat star), black."
+    },
+    {
+      "brand": "MG",
+      "slug": "mg",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/mg.svg",
+        "png_256": "png/mg@256.png",
+        "png_512": "png/mg@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c8/MG_Motor_2021_logo.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:MG_Motor_2021_logo.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.002,
+      "notes": "MG octagon, 2021 version, red."
+    },
+    {
+      "brand": "MINI",
+      "slug": "mini",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/mini.svg",
+        "svg_wide": "svg/mini-wide.svg",
+        "png_256": "png/mini@256.png",
+        "png_512": "png/mini@512.png",
+        "png_wide_512": "png/mini-wide@512.png",
+        "png_wide_1024": "png/mini-wide@1024.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e9/MINI_logo.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:MINI_logo.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 2.273,
+      "notes": "2024 flat MINI wings, black. Wide mark."
+    },
+    {
+      "brand": "Mitsubishi",
+      "slug": "mitsubishi",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/mitsubishi.svg",
+        "png_256": "png/mitsubishi@256.png",
+        "png_512": "png/mitsubishi@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9a/Mitsubishi_motors_new_logo.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Mitsubishi_motors_new_logo.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.153,
+      "notes": "Three diamonds, red. The MITSUBISHI MOTORS wordmark was cropped off."
+    },
+    {
+      "brand": "Nissan",
+      "slug": "nissan",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/nissan.svg",
+        "png_256": "png/nissan@256.png",
+        "png_512": "png/nissan@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/23/Nissan_2020_logo.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Nissan_2020_logo.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 1.193,
+      "notes": "2020 flat Nissan badge, black."
+    },
+    {
+      "brand": "Opel",
+      "slug": "opel",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/opel.svg",
+        "png_256": "png/opel@256.png",
+        "png_512": "png/opel@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/2b/Opel_logo_2023.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Opel_logo_2023.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 1.61,
+      "notes": "2023 Opel Blitz in ring, black. The OPEL wordmark was cropped off."
+    },
+    {
+      "brand": "Peugeot",
+      "slug": "peugeot",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/peugeot.svg",
+        "png_256": "png/peugeot@256.png",
+        "png_512": "png/peugeot@512.png"
+      },
+      "source_type": "Wikipedia (en) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/en/9/9d/Peugeot_2021_Logo.svg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://en.wikipedia.org/wiki/File:Peugeot_2021_Logo.svg",
+      "source_file_licence": "Fair use",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 0.912,
+      "notes": "2021 lion shield, black."
+    },
+    {
+      "brand": "Polestar",
+      "slug": "polestar",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/polestar.svg",
+        "png_256": "png/polestar@256.png",
+        "png_512": "png/polestar@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/71/Polestar_logo_2020.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Polestar_logo_2020.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 0.986,
+      "notes": "Polestar star. Source had a dark square backing plate (#081822) which was removed; the star (white and grey arms on the plate) was recoloured to the brand dark #081822 so it reads on white (official dark-on-light usage)."
+    },
+    {
+      "brand": "Porsche",
+      "slug": "porsche",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/porsche.svg",
+        "png_256": "png/porsche@256.png",
+        "png_512": "png/porsche@512.png"
+      },
+      "source_type": "Wikipedia (de) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/de/2/2d/Porsche_Wappen.svg?utm_source=de.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://de.wikipedia.org/wiki/Datei:Porsche_Wappen.svg",
+      "source_file_licence": "Logo",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 0.776,
+      "notes": "Porsche crest, full colour. Vector is the classic crest; the 2023 refresh has only subtle differences."
+    },
+    {
+      "brand": "Renault",
+      "slug": "renault",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/renault.svg",
+        "png_256": "png/renault@256.png",
+        "png_512": "png/renault@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a5/Renault_2021.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Renault_2021.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 0.76,
+      "notes": "2021 flat diamond (Nouvel Air), black."
+    },
+    {
+      "brand": "Rolls-Royce",
+      "slug": "rolls-royce",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/rolls-royce.svg",
+        "png_256": "png/rolls-royce@256.png",
+        "png_512": "png/rolls-royce@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/52/Rolls-Royce_Motor_Cars_logo.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Rolls-Royce_Motor_Cars_logo.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 0.76,
+      "notes": "RR monogram, black."
+    },
+    {
+      "brand": "SEAT",
+      "slug": "seat",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/seat.svg",
+        "png_256": "png/seat@256.png",
+        "png_512": "png/seat@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/fc/SEAT_Logo_from_2017.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:SEAT_Logo_from_2017.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.121,
+      "notes": "SEAT \"S\" symbol (2017). The SEAT wordmark was cropped off."
+    },
+    {
+      "brand": "Škoda",
+      "slug": "skoda",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/skoda.svg",
+        "svg_wide": "svg/skoda-wide.svg",
+        "png_256": "png/skoda@256.png",
+        "png_512": "png/skoda@512.png",
+        "png_wide_512": "png/skoda-wide@512.png",
+        "png_wide_1024": "png/skoda-wide@1024.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/76/%C5%A0koda_Auto_2022_text_logo.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:%C5%A0koda_Auto_2022_text_logo.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 7.143,
+      "notes": "2022 ŠKODA wordmark, Electric/Emerald green. The 2022 flat winged-arrow emblem was not available as a clean vector. Wide."
+    },
+    {
+      "brand": "Smart",
+      "slug": "smart",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/smart.svg",
+        "png_256": "png/smart@256.png",
+        "png_512": "png/smart@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/79/Smart_2022.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Smart_2022.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 1.071,
+      "notes": "2022 smart symbol, black. The smart wordmark was cropped off."
+    },
+    {
+      "brand": "Subaru",
+      "slug": "subaru",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/subaru.svg",
+        "svg_wide": "svg/subaru-wide.svg",
+        "png_256": "png/subaru@256.png",
+        "png_512": "png/subaru@512.png",
+        "png_wide_512": "png/subaru-wide@512.png",
+        "png_wide_1024": "png/subaru-wide@1024.png"
+      },
+      "source_type": "Official Subaru Latvia distributor site (subaru.lv)",
+      "source_url": "https://www.subaru.lv/media/g0gfdtmz/subaru-logo-horisontal-black.svg",
+      "source_page": "https://www.subaru.lv/media/g0gfdtmz/subaru-logo-horisontal-black.svg",
+      "source_file_licence": "Manufacturer website asset",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 2.037,
+      "notes": "Six-star oval, official monochrome dark grey (#414042) from subaru.lv. The SUBARU wordmark was cropped off. The colour (blue) Wikimedia SVGs all contain embedded raster images, so they were rejected."
+    },
+    {
+      "brand": "Suzuki",
+      "slug": "suzuki",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/suzuki.svg",
+        "png_256": "png/suzuki@256.png",
+        "png_512": "png/suzuki@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ee/Suzuki_logo_2025_%28vertical%29.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Suzuki_logo_2025_(vertical).svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.002,
+      "notes": "2025 flat \"S\", red. The SUZUKI wordmark was cropped off."
+    },
+    {
+      "brand": "Toyota",
+      "slug": "toyota",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/toyota.svg",
+        "png_256": "png/toyota@256.png",
+        "png_512": "png/toyota@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Toyota_Symbol.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Toyota_Symbol.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.548,
+      "notes": "Three-ellipse Toyota symbol, red."
+    },
+    {
+      "brand": "Vauxhall",
+      "slug": "vauxhall",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/vauxhall.svg",
+        "png_256": "png/vauxhall@256.png",
+        "png_512": "png/vauxhall@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/43/Vauxhall_logo_2026.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Vauxhall_logo_2026.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 0.998,
+      "notes": "2026 Vauxhall griffin roundel. The VAUXHALL wordmark was cropped off."
+    },
+    {
+      "brand": "Volkswagen",
+      "slug": "volkswagen",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/volkswagen.svg",
+        "png_256": "png/volkswagen@256.png",
+        "png_512": "png/volkswagen@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Volkswagen_logo_2019.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Volkswagen_logo_2019.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.0,
+      "notes": "2019 flat VW roundel, dark blue."
+    },
+    {
+      "brand": "Volvo",
+      "slug": "volvo",
+      "variant": "primary",
+      "files": {
+        "svg": "svg/volvo.svg",
+        "png_256": "png/volvo@256.png",
+        "png_512": "png/volvo@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/29/Volvo-Iron-Mark-Black.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Volvo-Iron-Mark-Black.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "mono",
+      "aspect": 1.0,
+      "notes": "2021 flat iron mark, black."
+    },
+    {
+      "brand": "Alfa Romeo",
+      "slug": "alfa-romeo-colour",
+      "variant": "alternate",
+      "files": {
+        "svg": "svg/alt/alfa-romeo-colour.svg",
+        "png_256": "png/alt/alfa-romeo-colour@256.png",
+        "png_512": "png/alt/alfa-romeo-colour@512.png"
+      },
+      "source_type": "Wikipedia (fr) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/fr/1/16/Logo_Alfa_Romeo_%282015%29.svg?utm_source=fr.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://fr.wikipedia.org/wiki/Fichier:Logo_Alfa_Romeo_(2015).svg",
+      "source_file_licence": "marque déposée",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.0,
+      "notes": "Full-colour 2015 badge; contains embedded raster textures."
+    },
+    {
+      "brand": "Fiat",
+      "slug": "fiat-colour",
+      "variant": "alternate",
+      "files": {
+        "svg": "svg/alt/fiat-colour.svg",
+        "png_256": "png/alt/fiat-colour@256.png",
+        "png_512": "png/alt/fiat-colour@512.png"
+      },
+      "source_type": "Wikimedia Commons",
+      "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/05/FIAT_logo_coloured.svg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://commons.wikimedia.org/wiki/File:FIAT_logo_coloured.svg",
+      "source_file_licence": "Public domain",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 1.319,
+      "notes": "Multicolour 2022 FIAT wordmark."
+    },
+    {
+      "brand": "Lamborghini",
+      "slug": "lamborghini-shield",
+      "variant": "alternate",
+      "files": {
+        "svg": "svg/alt/lamborghini-shield.svg",
+        "png_256": "png/alt/lamborghini-shield@256.png",
+        "png_512": "png/alt/lamborghini-shield@512.png"
+      },
+      "source_type": "Wikipedia (en) non-free/logo file",
+      "source_url": "https://upload.wikimedia.org/wikipedia/en/d/df/Lamborghini_Logo.svg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original",
+      "source_page": "https://en.wikipedia.org/wiki/File:Lamborghini_Logo.svg",
+      "source_file_licence": "Fair use",
+      "licence_note": "Trademark of the respective manufacturer. Used only to identify the brand (nominative use); no endorsement implied. The SVG file licence above refers to the file on the source site, not the trademark.",
+      "colour": "colour",
+      "aspect": 0.89,
+      "notes": "Classic 3D gold/black shield (pre-2024), heavy file."
+    }
+  ]
+}

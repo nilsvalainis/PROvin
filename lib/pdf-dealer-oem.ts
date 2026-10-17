@@ -47,6 +47,7 @@ import {
   pdfDealerLogoDataUri,
   pdfDealerLogoDataUriFromVin,
   pdfDealerLogoIsMonogram,
+  type PdfDealerLogoLayout,
 } from "@/lib/pdf-source-brand-logos";
 
 function escapeHtml(s: string): string {
@@ -413,12 +414,14 @@ function brandDisplayName(makeModel: string, vi: OutvinVehicleInfo, vin: string,
   return key ? key.replace(/-/g, " ").toUpperCase() : "OEM";
 }
 
-function resolveOemLogoUri(args: {
+type OemResolvedLogo = { uri: string; layout: PdfDealerLogoLayout };
+
+function resolveOemLogo(args: {
   makeModel: string;
   title: string;
   vin: string;
   makeHint: string;
-}): string | null {
+}): OemResolvedLogo | null {
   const vinUpper = args.vin.trim().toUpperCase();
   const textCandidates = [args.makeModel, args.makeHint, args.title]
     .map((s) => s.trim())
@@ -426,19 +429,23 @@ function resolveOemLogoUri(args: {
       (s) => s && !/^vehicle$/i.test(s) && !/^oem$/i.test(s) && s.toUpperCase() !== vinUpper,
     );
 
-  for (const c of textCandidates) {
-    const uri = pdfDealerLogoDataUri(c);
-    if (uri && !pdfDealerLogoIsMonogram(uri)) return uri;
+  const layouts: PdfDealerLogoLayout[] = ["wide", "square"];
+
+  for (const layout of layouts) {
+    for (const c of textCandidates) {
+      const uri = pdfDealerLogoDataUri(c, layout);
+      if (uri && !pdfDealerLogoIsMonogram(uri)) return { uri, layout };
+    }
+    const fromVin = pdfDealerLogoDataUriFromVin(args.vin, layout);
+    if (fromVin && !pdfDealerLogoIsMonogram(fromVin)) return { uri: fromVin, layout };
   }
 
-  const fromVin = pdfDealerLogoDataUriFromVin(args.vin);
-  if (fromVin && !pdfDealerLogoIsMonogram(fromVin)) return fromVin;
-
   for (const c of textCandidates) {
-    const uri = pdfDealerLogoDataUri(c);
-    if (uri) return uri;
+    const uri = pdfDealerLogoDataUri(c, "square");
+    if (uri) return { uri, layout: "square" };
   }
-  return fromVin;
+  const fromVin = pdfDealerLogoDataUriFromVin(args.vin, "square");
+  return fromVin ? { uri: fromVin, layout: "square" } : null;
 }
 
 function humanizeSpecLabel(label: string): string {
@@ -571,9 +578,8 @@ const OEM_CSS = `
   }
   .oem-logo{
     display:block;width:30px;height:30px;object-fit:contain;flex-shrink:0;
-    filter:brightness(0) saturate(100%);
   }
-  .oem-logo--mono{filter:none;}
+  .oem-logo--wide{width:80px;height:20px;}
   .oem-mid{min-width:0;}
   .oem-kicker{
     margin:0;font-size:8.5px;font-weight:650;letter-spacing:0.14em;
@@ -675,8 +681,9 @@ export function buildOemDealerDocumentHtml(args: {
   const makeHint = manufacturerHintFromPowertrain(oneautoDisplay.powertrain);
   const title = (vi.model.trim() || makeModel || makeHint || vin || "Vehicle").trim();
   const brand = brandDisplayName(makeModel, vi, vin, makeHint);
-  const logoUri = resolveOemLogoUri({ makeModel, title, vin, makeHint });
-  const logoIsMono = logoUri ? pdfDealerLogoIsMonogram(logoUri) : false;
+  const logoResolved = resolveOemLogo({ makeModel, title, vin, makeHint });
+  const logoIsMono = logoResolved ? pdfDealerLogoIsMonogram(logoResolved.uri) : false;
+  const logoIsWide = logoResolved?.layout === "wide";
 
   const visits = collectOemDealerVisits(args.autoRecords, bundle, oneautoDisplay);
 
@@ -719,8 +726,8 @@ export function buildOemDealerDocumentHtml(args: {
     ? `${vehicleBlock}${serviceBlock}${equipmentBlock}`
     : `<p class="oem-empty">No dealer network records for this VIN.</p>`;
 
-  const logoHtml = logoUri
-    ? `<img class="oem-logo${logoIsMono ? " oem-logo--mono" : ""}" src="${logoUri}" alt="" width="30" height="30"/>`
+  const logoHtml = logoResolved
+    ? `<img class="oem-logo${logoIsWide ? " oem-logo--wide" : ""}${logoIsMono ? " oem-logo--mono" : ""}" src="${logoResolved.uri}" alt="" width="${logoIsWide ? 80 : 30}" height="${logoIsWide ? 20 : 30}"/>`
     : "";
 
   return `<!DOCTYPE html>

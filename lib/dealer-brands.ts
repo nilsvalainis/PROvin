@@ -106,7 +106,7 @@ export function requestDealerBrandsHud(): void {
   window.dispatchEvent(new Event(DEALER_BRANDS_HUD_EVENT));
 }
 
-const LOGO_V = "12";
+const LOGO_V = "13";
 
 /** Logo paths only where an SVG ships under /public/brand-logos. */
 export const TP5_DEALER_BRAND_LOGO_SRC: Partial<Record<Tp5DealerBrand, string>> = {

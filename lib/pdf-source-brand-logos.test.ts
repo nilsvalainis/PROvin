@@ -55,8 +55,8 @@ describe("pdfDealerBrandFileKey", () => {
     expect(uri).toMatch(/^data:image\/svg\+xml;base64,/);
     expect(pdfDealerLogoIsMonogram(uri)).toBe(false);
     const decoded = Buffer.from(uri.split(",")[1]!, "base64").toString("utf8");
-    expect(decoded).toContain('viewBox="0 0 24 24"');
-    // Solid dark plate becomes a black blob under OEM CSS filter:brightness(0).
+    expect(decoded).toContain('viewBox="0 0 256 256"');
+    // Solid dark plate becomes a black blob if forced through a legacy brightness(0) filter.
     expect(decoded).not.toMatch(/fill="#0b1220"|fill="#0f172a"|fill="#111"/i);
     expect(pdfDealerBrandFileKeyFromVin("WDC1671191A006856")).toBe("mercedes");
     expect(pdfDealerLogoIsMonogram(pdfDealerLogoDataUriFromVin("WDC1671191A006856")!)).toBe(false);

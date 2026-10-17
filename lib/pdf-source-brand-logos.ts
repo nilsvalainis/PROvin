@@ -3,7 +3,12 @@
  * Šis fails iet client bundle (admin PDF preview) - bez node:fs / node:path.
  */
 
-import { PDF_DEALER_LOGO_DATA_URI, PDF_SOURCE_LOGO_DATA_URI } from "@/lib/pdf-source-brand-logo-data";
+import {
+  PDF_DEALER_LOGO_DATA_URI,
+  PDF_DEALER_LOGO_WIDE_DATA_URI,
+  PDF_SOURCE_LOGO_DATA_URI,
+} from "@/lib/pdf-source-brand-logo-data";
+import { dealerBrandHasWideMark } from "@/lib/dealer-brand-logo-path";
 
 export type PdfListingPortalLogoId = "sslv" | "auto24" | "mobilede";
 
@@ -101,10 +106,20 @@ function dealerMonogramDataUri(fileKey: string): string {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-export function pdfDealerLogoDataUri(makeModel: string): string | null {
+export type PdfDealerLogoLayout = "square" | "wide";
+
+function pdfDealerLogoDataUriForKey(key: string, layout: PdfDealerLogoLayout): string | null {
+  if (layout === "wide") {
+    if (!dealerBrandHasWideMark(key)) return null;
+    return PDF_DEALER_LOGO_WIDE_DATA_URI[key] ?? PDF_DEALER_LOGO_DATA_URI[key] ?? dealerMonogramDataUri(key);
+  }
+  return PDF_DEALER_LOGO_DATA_URI[key] ?? dealerMonogramDataUri(key);
+}
+
+export function pdfDealerLogoDataUri(makeModel: string, layout: PdfDealerLogoLayout = "square"): string | null {
   const key = pdfDealerBrandFileKey(makeModel);
   if (!key) return null;
-  return PDF_DEALER_LOGO_DATA_URI[key] ?? dealerMonogramDataUri(key);
+  return pdfDealerLogoDataUriForKey(key, layout);
 }
 
 /** True when the URI is the generated letter tile (not a brand SVG asset). */
@@ -205,10 +220,13 @@ export function pdfDealerBrandFileKeyFromVin(vin: string): string | null {
   return null;
 }
 
-export function pdfDealerLogoDataUriFromVin(vin: string): string | null {
+export function pdfDealerLogoDataUriFromVin(
+  vin: string,
+  layout: PdfDealerLogoLayout = "square",
+): string | null {
   const key = pdfDealerBrandFileKeyFromVin(vin);
   if (!key) return null;
-  return PDF_DEALER_LOGO_DATA_URI[key] ?? dealerMonogramDataUri(key);
+  return pdfDealerLogoDataUriForKey(key, layout);
 }
 
 function listingHostname(url: string): string | null {
@@ -247,4 +265,4 @@ export function pdfBrandLogoImgHtml(dataUri: string): string {
   return `<img class="pdf-ico pdf-ico--brand-logo" src="${dataUri}" alt="" width="16" height="16"/>`;
 }
 
-export { PDF_SOURCE_LOGO_DATA_URI, PDF_DEALER_LOGO_DATA_URI };
+export { PDF_SOURCE_LOGO_DATA_URI, PDF_DEALER_LOGO_DATA_URI, PDF_DEALER_LOGO_WIDE_DATA_URI };
