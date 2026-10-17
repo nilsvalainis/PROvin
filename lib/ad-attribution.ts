@@ -434,15 +434,16 @@ export function stripeAttributionMetadataFromRequest(
 export function adminAttributionFromStripeMetadata(
   metadata: Record<string, string> | null | undefined,
 ): AdminOrderAttribution | null {
-  const raw = metadata?.attr?.trim();
+  const meta = metadata ?? {};
+  const raw = meta.attr?.trim();
   if (!raw) return null;
   try {
     const o = JSON.parse(raw) as Record<string, unknown>;
     const last = parseTouch(o.last);
     const first = parseTouch(o.first);
     const channel = isAdChannel(o.ch) ? o.ch : inferChannel(last) ?? inferChannel(first);
-    const lastLanding = pickStr(metadata[STRIPE_ATTR_LAND_LAST_KEY], last.land);
-    const firstLanding = pickStr(metadata[STRIPE_ATTR_LAND_FIRST_KEY], first.land, lastLanding);
+    const lastLanding = pickStr(meta[STRIPE_ATTR_LAND_LAST_KEY], last.land);
+    const firstLanding = pickStr(meta[STRIPE_ATTR_LAND_FIRST_KEY], first.land, lastLanding);
     const campaign = pickStr(last.cmp, first.cmp);
     const term = pickStr(last.term, first.term);
     const content = pickStr(last.cnt, first.cnt);
@@ -455,11 +456,11 @@ export function adminAttributionFromStripeMetadata(
       content,
       source,
       medium,
-      gclid: pickStr(metadata[STRIPE_ATTR_GCLID_KEY], last.gclid, first.gclid),
+      gclid: pickStr(meta[STRIPE_ATTR_GCLID_KEY], last.gclid, first.gclid),
       gbraid: pickStr(last.gbraid, first.gbraid),
       wbraid: pickStr(last.wbraid, first.wbraid),
-      fbclid: pickStr(metadata[STRIPE_ATTR_FBCLID_KEY], last.fbclid, first.fbclid),
-      ttclid: pickStr(metadata[STRIPE_ATTR_TTCLID_KEY], last.ttclid, first.ttclid),
+      fbclid: pickStr(meta[STRIPE_ATTR_FBCLID_KEY], last.fbclid, first.fbclid),
+      ttclid: pickStr(meta[STRIPE_ATTR_TTCLID_KEY], last.ttclid, first.ttclid),
       landing: lastLanding ?? firstLanding,
       firstLanding,
       lastLanding,
