@@ -6,6 +6,7 @@ import { ExternalLink } from "lucide-react";
 import dynamic from "next/dynamic";
 
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
+import { AdminVinScanBrowserFetchHandoff } from "@/components/admin/AdminVinScanBrowserFetchHandoff";
 
 // Rezultātu kartītes vajag tikai pēc pārbaudes — atsevišķs gabals, nav sākuma JS.
 const AdminVinScanResultCards = dynamic(
@@ -31,6 +32,10 @@ import {
   type VinScanIndicator,
   type VinScanStatus,
 } from "@/lib/vin-scan/types";
+import {
+  browserImportErrorLv,
+  parseVinScanBrowserEventDetail,
+} from "@/lib/vin-scan/browser-fetch";
 import {
   decodeVinLocal,
   nordicVinSearchLinks,
@@ -484,6 +489,64 @@ export function AdminVinScanPanel({
   }, [scanNonce]);
 
   useEffect(() => {
+    const onResult = (ev: Event) => {
+      const parsed = parseVinScanBrowserEventDetail((ev as CustomEvent).detail);
+      if (!parsed || parsed.vin !== clean) return;
+      const html = parsed.html;
+      setError("");
+      void fetch("/api/admin/vin-scan", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vin: clean,
+          plates,
+          listingUrl: listing,
+          browserResult: {
+            id: parsed.id,
+            status: parsed.status,
+            summary: parsed.summary,
+            ...(html.trim()
+              ? {
+                  html,
+                  pageUrl: parsed.pageUrl,
+                  ...(typeof parsed.httpStatus === "number" ? { httpStatus: parsed.httpStatus } : {}),
+                }
+              : {}),
+          },
+        }),
+      })
+        .then(async (r) => {
+          const data = (await r.json().catch(() => null)) as {
+            indicators?: unknown;
+            scannedAt?: string;
+            vin?: string;
+            error?: string;
+          } | null;
+          if (!r.ok) {
+            setError(browserImportErrorLv(data?.error));
+            return;
+          }
+          const indicators = data?.indicators;
+          if (!data || !Array.isArray(indicators)) return;
+          if (typeof data.scannedAt === "string") setScannedAt(data.scannedAt);
+          setById((prev) => ({ ...prev, ...rowsFromIndicators(indicators, clean, plates, listing) }));
+          try {
+            localStorage.setItem(
+              cacheKey(typeof data.vin === "string" && data.vin ? data.vin : clean),
+              JSON.stringify({ vin: data.vin || clean, scannedAt: data.scannedAt, indicators: data.indicators, plates }),
+            );
+          } catch {
+            /* ignore */
+          }
+        })
+        .catch(() => setError("Importēšana neizdevās"));
+    };
+    document.addEventListener("provin-vin-scan-result", onResult);
+    return () => document.removeEventListener("provin-vin-scan-result", onResult);
+  }, [clean, plates, listing]);
+
+  useEffect(() => {
     onSnapshot?.({
       scannedAt,
       busy,
@@ -513,6 +576,9 @@ export function AdminVinScanPanel({
 
   return (
     <section className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]" aria-busy={busy}>
+      {!busy && scannedAt ? (
+        <AdminVinScanBrowserFetchHandoff vin={clean} at={scannedAt} rows={Object.values(byId)} />
+      ) : null}
       <AdminUserscriptUpdateHint className="mx-2.5 mt-2" />
       {canRetry || rows.length > 0 || nordicLinks.length > 0 ? (
         <div className="flex flex-wrap items-center justify-end gap-1.5 px-2.5 py-2">

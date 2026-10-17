@@ -133,14 +133,20 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(vinScanUserscriptUpdateNeeded("1.21.0")).toBe(true);
     expect(vinScanUserscriptUpdateNeeded("1.22.0")).toBe(false);
     const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
+    const panel = readFileSync(path.join(ROOT, "components/admin/AdminVinScanPanel.tsx"), "utf8");
+    const handoff = readFileSync(path.join(ROOT, "components/admin/AdminVinScanBrowserFetchHandoff.tsx"), "utf8");
     const hint = readFileSync(path.join(ROOT, "components/admin/AdminUserscriptUpdateHint.tsx"), "utf8");
+    const errors = readFileSync(path.join(ROOT, "lib/vin-scan/browser-fetch.ts"), "utf8");
     expect(card).toContain("data-provin-order-vin");
-    expect(card).toContain("Lapa vēl nav gatava");
+    expect(card).toContain("AdminVinScanBrowserFetchHandoff");
+    expect(panel).toContain("AdminVinScanBrowserFetchHandoff");
+    expect(panel).toContain("provin-vin-scan-result");
+    expect(errors).toContain("Lapa vēl nav gatava");
     expect(hint).toContain("Zviedrijas reģistrs");
     expect(hint).toContain("PROVIN skripts nav aktīvs");
     expect(hint).toContain("stat.vin dati jāielādē no jūsu pārlūka");
-    expect(card).toContain("data-provin-stat-vin-fetch");
-    expect(card).toContain("data-provin-browser-fetch");
+    expect(handoff).toContain("data-provin-stat-vin-fetch");
+    expect(handoff).toContain("data-provin-browser-fetch");
   });
 
   it("saknes kopija sakrīt ar public skriptu", () => {
