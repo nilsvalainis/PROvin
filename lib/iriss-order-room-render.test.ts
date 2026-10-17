@@ -210,6 +210,7 @@ describe("IrissOrderRoom render", () => {
     const { html, errors } = await renderHtml(
       room({
         initialTab: "overview",
+        onReadLink: () => {},
         rec: {
           listingLinkAuto1: ["https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI"],
         },
@@ -225,6 +226,7 @@ describe("IrissOrderRoom render", () => {
     const { html, errors } = await renderHtml(
       room({
         initialTab: "offers",
+        onReadLink: () => {},
         rec: {
           listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makes=audi"],
         },
