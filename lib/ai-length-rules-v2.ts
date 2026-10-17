@@ -34,7 +34,7 @@ SATURS (tehniskie riski)
 4. Atsaukumi: viena rinda, ja atrasti vai "nav atrasti publiskajos avotos".
 
 FORMULĒJUMI (konsultatīvi, mēs auto neesam redzējuši)
-- Lieto: "iesakām", "ir vērts pārbaudīt", "pēc datiem", "tipiski šim dzinējam", "var norādīt", "pirms darījuma ieteicams".
+- Lieto: "iesakām", "ir vērts pārbaudīt", "pēc datiem", "šim dzinējam raksturīga", "var norādīt", "pirms darījuma ieteicams".
 - Nelieto: "obligāti", "noteikti", "kritiski", "jāmaina", "netiek rekomendēts", "auto ir bojāts", "garantēti", "ļoti bīstams".
 - Verdikts kopsavilkumā: "Pēc pieejamajiem datiem mūsu ieteikums būtu …", nevis "iegāde netiek rekomendēta".
 - Nekad nerakstīt kā PROVIN būtu auto redzējis, braucis vai diagnosticējis.`;

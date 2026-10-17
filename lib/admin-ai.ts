@@ -128,6 +128,10 @@ function claudeOutputControls(
   if (model.includes("haiku")) {
     return format ? { output_config: { format } } : {};
   }
+  // Opus 5.5: adaptive thinking. effort:low to salauž.
+  if (/opus-5-5/i.test(model)) {
+    return format ? { output_config: { format } } : {};
+  }
   return {
     output_config: {
       effort: "low",

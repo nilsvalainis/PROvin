@@ -50,6 +50,9 @@ function readRepo(rel: string): string {
 describe("PROVIN AI prompt invariants", () => {
   it("has a non-empty prompt version tag", () => {
     expect(PROVIN_AI_PROMPT_VERSION).toMatch(/^\d{4}-\d{2}-\d{2}\.\d+$/);
+    expect(readRepo("docs/style-examples-draft.md")).toMatch(/STATUSS: MELNRAKSTS/);
+    expect(readRepo("lib/admin-ai-prompts.ts")).not.toMatch(/style-examples-draft/);
+    expect(readRepo("lib/source-summary-comment-format.ts")).not.toMatch(/style-examples-draft/);
   });
 
   it("vocabulary forbids automobīlis", () => {
@@ -102,13 +105,13 @@ describe("PROVIN AI prompt invariants", () => {
     );
   });
 
-  it("inspection and seller prompts use expert markdown, not hyphen checklists", () => {
+  it("inspection and seller prompts use heading-then-paragraph, not hyphen checklists", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(
-      /AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES/,
+      /AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?NEKAD nesāc rindu ar "- "/,
     );
     expect(prompts).toMatch(
-      /AI_SELLER_ANALYSIS_SYSTEM[\s\S]*?AI_CLIENT_PDF_EXPERT_MARKDOWN_RULES/,
+      /AI_SELLER_ANALYSIS_SYSTEM[\s\S]*?Virsraksts savā rindā/,
     );
     expect(prompts).toMatch(/NEKAD nesāc rindu ar "- "/);
   });
@@ -157,14 +160,13 @@ describe("PROVIN AI prompt invariants", () => {
     expect(prompts).toMatch(/ASV FOCUS[\s\S]*?Lite pret Full/);
   });
 
-  it("field-agent prompts enforce epistemic hedging for digital-only audits", () => {
+  it("field-agent prompts enforce digital-only limits and the shared tone canon", () => {
     const prompts = readRepo("lib/admin-ai-prompts.ts");
-    expect(prompts).toMatch(/EPISTEMIC HEDGING/);
+    expect(prompts).toMatch(/AI_STYLE_CANON_SHARED/);
     expect(prompts).toMatch(/NOT.*physically inspected|fiziski nav apskatījis/i);
-    expect(prompts).toMatch(/visticamāk|ļoti iespējams|teorētiski/);
-    expect(prompts).toMatch(/tehniski perfekts/);
-    const vocab = readRepo("lib/source-summary-comment-format.ts");
-    expect(vocab).toMatch(/EPISTEMIC HEDGING/);
+    expect(readRepo("lib/provin-style-canon.ts")).toMatch(/tehniski perfekts/);
+    expect(readRepo("lib/provin-style-canon.ts")).toMatch(/AI_TONE_PRINCIPLE_RULES/);
+    expect(readRepo("lib/provin-style-canon.ts")).toMatch(/Nepārspīlē un nemīkstini/);
   });
 
   it("summary and inspection prompts require aggregate-specific technical risk analysis", () => {
@@ -206,7 +208,7 @@ describe("PROVIN AI prompt invariants", () => {
   });
 
   it("technical risks flagship rules demand detail and only-applicable units", () => {
-    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/8–12 rindkopas/);
+    expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/4-7 sadaļas/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Active Steering/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/M57/);
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Kas-NAV-dargs/);
@@ -223,7 +225,9 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/ENGINE CODE FIRST/);
     expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/Motor-Talk/);
     expect(AI_TECHNICAL_RISKS_RESEARCH_RULES).toMatch(/Neizdomā/);
-    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/Paraugs C/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/Paraugs A/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/Paraugs D/);
+    expect(AI_TECHNICAL_RISKS_FEW_SHOTS).toMatch(/4-7 sadaļas/);
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     const block = prompts.slice(
       prompts.indexOf("AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM"),
@@ -297,7 +301,7 @@ describe("PROVIN AI prompt invariants", () => {
       /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_OPERATOR_NOTES_EXECUTION_RULES\}/,
     );
     expect(prompts).toMatch(
-      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_OPERATOR_NOTES_EXECUTION_RULES\}/,
+      /PROVIN_EXPERT_CORE_SYSTEM[\s\S]*?\$\{AI_OPERATOR_NOTES_EXECUTION_RULES\}/,
     );
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/OPERATOR NOTES OVERRIDE/);
   });
@@ -324,7 +328,10 @@ describe("PROVIN AI prompt invariants", () => {
     );
     expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildTechnicalInspectionCoverageBrief/);
     expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildStyleCorpusAiContext/);
-    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/code\.startsWith\("vocabulary_"\)/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/code\.startsWith\("canonical_"\)/);
+    expect(readRepo("lib/admin-ai-dispatch.ts")).not.toMatch(
+      /i\.code\.startsWith\("vocabulary_"\)/,
+    );
     expect(readRepo("lib/admin-ai-historical-context.ts")).toMatch(/listNewestOrderDraftSessionIds/);
   });
 
@@ -408,7 +415,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildMileageForensicsBrief/);
     expect(readRepo("lib/admin-ai-order-context.ts")).toMatch(/buildCommentLengthBudgetBrief/);
     expect(readRepo("lib/admin-flash-max.ts")).toMatch(/id: "sources_comparison"/);
-    expect(readRepo("lib/admin-flash-max.ts")).toMatch(/sources_comparison[\s\S]*?return "flash"/);
+    expect(readRepo("lib/admin-flash-max.ts")).toMatch(/flashMaxJobModelTier[\s\S]*?return "gemini-flash"/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/CHEAP_CORRECTION_RETRY_CODES/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/CHEAP_LENGTH_SKIP_FIELDS/);
     expect(readRepo("lib/admin-ai-dispatch.ts")).toMatch(/too_long/);
@@ -436,12 +443,13 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/krāsas biezuma mērītāj/);
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/Virsbūve jāpārbauda/);
     expect(AI_PAINT_GAUGE_INSPECTION_RULES).not.toMatch(/Virsbūve obligāti/);
-    expect(HYBRID_COMMENT_RULES).toMatch(/PAINT THICKNESS/);
+    expect(AI_PAINT_GAUGE_INSPECTION_RULES).toMatch(/PAINT THICKNESS/);
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(
       /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_PAINT_GAUGE_INSPECTION_RULES\}/,
     );
     expect(prompts).toMatch(/PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_PAINT_GAUGE_INSPECTION_RULES\}/);
+    expect(HYBRID_COMMENT_RULES).not.toMatch(/PAINT THICKNESS/);
     expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?Virsbūves stāvoklis un krāsas biezums/);
     expect(prompts).toMatch(/AI_INSPECTION_RECOMMENDATIONS_SYSTEM[\s\S]*?tipiski 6–12/);
     expect(readRepo("lib/admin-ai-inspection.ts")).toMatch(/Virsbūves stāvoklis un krāsas biezums/);
@@ -542,7 +550,7 @@ describe("PROVIN AI prompt invariants", () => {
       /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_SERVICE_RECORD_LITERAL_RULES\}/,
     );
     expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(
-      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_SERVICE_RECORD_LITERAL_RULES\}/,
+      /PROVIN_EXPERT_CORE_SYSTEM[\s\S]*?\$\{AI_SERVICE_RECORD_LITERAL_RULES\}/,
     );
   });
 
@@ -574,7 +582,7 @@ describe("PROVIN AI prompt invariants", () => {
       /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_RESOLVED_HISTORICAL_FINDINGS_RULES\}/,
     );
     expect(prompts).toMatch(
-      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_RESOLVED_HISTORICAL_FINDINGS_RULES\}/,
+      /PROVIN_EXPERT_CORE_SYSTEM[\s\S]*?\$\{AI_RESOLVED_HISTORICAL_FINDINGS_RULES\}/,
     );
     expect(prompts).toMatch(/CSDD FOCUS:[\s\S]*?cietās daļiņas/);
   });
@@ -586,11 +594,12 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_TECHNICAL_RISKS_FLAGSHIP_RULES).toMatch(/Bez orientējošām EUR joslām/);
     const prompts = readRepo("lib/admin-ai-prompts.ts");
     expect(prompts).toMatch(
-      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_NO_ESTIMATED_REPAIR_EUR_RULES\}/,
+      /PROVIN_FIELD_AGENT_SYSTEM[\s\S]*?\$\{AI_STYLE_CANON_SHARED\}/,
     );
     expect(prompts).toMatch(
-      /PROVIN_EXPERT_SYSTEM_PROMPT[\s\S]*?\$\{AI_NO_ESTIMATED_REPAIR_EUR_RULES\}/,
+      /PROVIN_EXPERT_CORE_SYSTEM[\s\S]*?\$\{AI_STYLE_CANON_SHARED\}/,
     );
+    expect(readRepo("lib/provin-style-canon.ts")).toMatch(/AI_EUR_CANON_RULES/);
     expect(prompts).toMatch(/NERAKSTI aptuvenās remonta/);
     const tech = readRepo("lib/admin-ai-technical-risks.ts");
     expect(tech).toMatch(/NERAKSTI aptuvenās remonta izmaksas eiro/);
@@ -599,8 +608,8 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("hybrid comment rules waive short length when operator supplies detail", () => {
     expect(HYBRID_COMMENT_RULES).toMatch(/LENGTH OVERRIDE/i);
-    expect(HYBRID_COMMENT_RULES).toMatch(/IGNORE the 350–800/i);
-    expect(HYBRID_COMMENT_RULES).toMatch(/ONE paragraph|1 paragraph/i);
+    expect(HYBRID_COMMENT_RULES).toMatch(/IGNORE character\/paragraph ceilings/i);
+    expect(HYBRID_COMMENT_RULES).toMatch(/heading-then-paragraph/i);
     expect(HYBRID_COMMENT_RULES).toMatch(/do not substantially shorten/i);
     expect(HYBRID_COMMENT_RULES).toMatch(/Esošais melnraksts/);
   });
@@ -615,10 +624,10 @@ describe("PROVIN AI prompt invariants", () => {
 
   it("brevity rules keep fields short and move comparison to the summary", () => {
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/BREVITY & FOCUS/);
-    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/2–4 paragraphs/);
+    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/LENGTH CEILINGS/);
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/ONE short sentence/i);
     expect(PROVIN_COMMENT_BREVITY_RULES).not.toMatch(/FLAGSHIP EXCEPTION/);
-    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/flagship fields live only/);
+    expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/flagship fields live only/i);
     expect(PROVIN_COMMENT_BREVITY_RULES).toMatch(/3\. Kopsavilkums/);
   });
 
@@ -627,9 +636,11 @@ describe("PROVIN AI prompt invariants", () => {
     expect(AI_EXPERT_PARAGRAPH_PRESENTATION).toContain("BREVITY & FOCUS");
     expect(AI_EXPERT_PARAGRAPH_PRESENTATION).not.toMatch(/\*\*Anomālija:\*\*/);
     const prompts = readRepo("lib/admin-ai-prompts.ts");
-    expect(prompts).toContain("PROVIN_RESTRAINED_TONE_RULES");
-    expect(prompts).toContain("PROVIN_COMMENT_BREVITY_RULES");
-    expect(prompts).toMatch(/2–4 short paragraphs/);
+    expect(prompts).toContain("AI_EXPERT_PARAGRAPH_PRESENTATION");
+    expect(prompts).toContain("AI_STYLE_CANON_SHARED");
+    expect(prompts).toMatch(/LENGTH CEILINGS/);
+    expect(readRepo("lib/source-summary-comment-format.ts")).toContain("PROVIN_RESTRAINED_TONE_RULES");
+    expect(readRepo("lib/source-summary-comment-format.ts")).toContain("PROVIN_COMMENT_BREVITY_RULES");
   });
 
   it("few-shot examples stay free of hyperbole", () => {
@@ -680,6 +691,15 @@ describe("PROVIN AI prompt invariants", () => {
     expect(ui).toMatch(/recommendedTier/);
     expect(ui).toMatch(/aiAdminButtonOrder/);
     expect(ui).toMatch(/openDialog\(tier\)/);
+    expect(readRepo("lib/ai-admin-field-defaults.ts")).toMatch(
+      /AI_ADMIN_TIER_BUTTON_ORDER[^=]*= \["gemini-flash", "pro"\]/,
+    );
+    expect(readRepo("lib/ai-admin-model-tier.ts")).toMatch(/return "Smart"/);
+    expect(readRepo("lib/gemini-model-failover.ts")).toMatch(/gemini-3\.8-flash/);
+    expect(readRepo("lib/ai-model-failover.ts")).toMatch(/claude-opus-5-5/);
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(
+      /aiSourceCommentSystemPrompt[\s\S]*\$\{PROVIN_EXPERT_CORE_SYSTEM\}/,
+    );
   });
 
   it("Claude requests cache the stable system prompt", () => {
@@ -883,6 +903,8 @@ describe("PROVIN AI prompt invariants", () => {
   it("Claude text generation bounds thinking so comments are not billed empty", () => {
     const ai = readRepo("lib/admin-ai.ts");
     expect(ai).toMatch(/effort:\s*"low"/);
+    expect(ai).toMatch(/opus-5-5/i);
+    expect(ai).toMatch(/adaptive thinking/);
     expect(ai).toMatch(/MAX_TOKENS_TEXT = 32_000/);
     expect(ai).toMatch(/shouldAiModelFailover/);
     expect(ai).not.toMatch(/FAILOVER_BACKOFF_MS/);

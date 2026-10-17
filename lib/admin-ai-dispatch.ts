@@ -67,21 +67,15 @@ type GenerateOpts = {
 };
 
 /**
- * Self-correction: kritiskie pārkāpumi (aizliegts vārds, izdomāta EUR summa) izraisa
- * VIENU korekcijas pieprasījumu tam pašam modelim. Garuma piezīme (too_long)
- * iet caur lētu Gemini Flash piegājienu, ne caur to pašu dārgo modeli.
+ * Self-correction: faktu kļūdas, iekšējie marķieri un instrukciju noplūde
+ * izraisa VIENU korekcijas pieprasījumu. Aizliegtos vārdus, ko var droši
+ * aizstāt, labo kods (P13) - bez otra maksas izsaukuma.
  *
  * `markdown_asterisk` te apzināti NAV: `normalizeAiExpertParagraphText` izmet *
  * pirms teksts nonāk laukā, tāpēc otrā ģenerācija maksātu naudu un laiku par
  * simbolu, ko operators nekad neredz.
  */
 const SELF_CORRECTION_RETRY_CODES = new Set([
-  "vocabulary_automobilis",
-  "vocabulary_saime",
-  "vocabulary_baltija",
-  "vocabulary_injektori",
-  "vocabulary_videjs_risks",
-  "vocabulary_kontrolpunkts",
   "invented_repair_eur",
   "summary_price",
   "tech_risks_identity_intro",
@@ -97,6 +91,8 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "paint_gauge_incomplete",
   "source_field_expansion",
   "planning_leak",
+  "dealer_category_as_job",
+  "truncated_sentence",
   "internal_riska_karte",
   "internal_dzineja_identifikacija",
   "internal_engine_code_guess",
@@ -190,8 +186,8 @@ async function withSelfCorrection(
   });
   const critical = allIssues.filter(
     (i) =>
-      i.code.startsWith("vocabulary_") ||
       i.code.startsWith("internal_") ||
+      i.code.startsWith("canonical_") ||
       SELF_CORRECTION_RETRY_CODES.has(i.code) ||
       (lengthV2 && LENGTH_RULES_V2_CRITICAL_RETRY_CODES.has(i.code)),
   );

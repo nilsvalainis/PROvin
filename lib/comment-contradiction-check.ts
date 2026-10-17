@@ -3,6 +3,7 @@
  * Tekstu nemaina; tikai karodziņi adminam (E/W). Nav maksas modeļa.
  */
 import {
+  CANONICAL_FACTS_HEADER,
   LARGE_ODOMETER_DROP_KM,
   hasRollbackOrMileageWarning,
   isMileageRelatedCommentField,
@@ -367,4 +368,112 @@ export function mergeFactCheckFlags(primary: FactCheckFlag[], extra: FactCheckFl
   }
   out.sort((a, b) => (a.level === b.level ? 0 : a.level === "E" ? -1 : 1));
   return out;
+}
+
+function parseSpacedInt(raw: string): number {
+  return Number(raw.replace(/\s/g, "")) || 0;
+}
+
+const EMPTY_TA = {
+  level: "none" as const,
+  lastInspectionDate: null,
+  lastInspectionAgeDays: null,
+  nextInspectionDate: null,
+  nextInspectionValid: false,
+  kmSinceInspection: null,
+  ratingLevel: null,
+  maxDefectLevel: null,
+  ratingLabel: "",
+  vehicleAgeYears: null,
+  minorDefectOnOlderCar: false,
+  coveredGroups: [] as const,
+};
+
+/**
+ * Izvelk kanonisko lapu no ✨ user prompta (P12). Bez maksas.
+ */
+export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts | null {
+  const t = prompt ?? "";
+  const re = new RegExp(
+    `=== ${CANONICAL_FACTS_HEADER} ===([\\s\\S]*?)=== BEIGAS ${CANONICAL_FACTS_HEADER} ===`,
+  );
+  const m = t.match(re);
+  if (!m) return null;
+  const sheet = m[1] ?? "";
+  const totalCount = Number(sheet.match(/- Skaits:\s*(\d+)/)?.[1] ?? 0);
+  const changeCount = Number(sheet.match(/- Maiņas:\s*(\d+)/)?.[1] ?? 0);
+  const lv = sheet.match(/- Latvijā:\s*(\d+)\s+īpašniek/);
+  const firstRegLine = sheet.match(/Pirmā reģistrācija:\s*([^\n]+)/)?.[1] ?? "";
+  const date = firstRegLine.split("|")[0]?.trim() ?? "";
+  const countryLv =
+    firstRegLine.match(/izcelsmes valsts:\s*([^(|]+)/)?.[1]?.trim().replace(/\s+$/, "") ?? "";
+  const countryIso = firstRegLine.match(/\(([A-Z]{2})\)/)?.[1] ?? "";
+  const latestKmRaw = sheet.match(/Jaunākais rādījums:\s*([\d\s]+)\s*km/)?.[1];
+  const rollbacks = [...sheet.matchAll(
+    /- Kritums:\s+(\S+)\s+([\d\s]+?)\s+km\s+[→-]\s+(\S+)\s+([\d\s]+?)\s+km;\s+minimums\s+([\d\s]+?)\s+km/g,
+  )].map((row) => {
+    const minDropKm = parseSpacedInt(row[5] ?? "0");
+    return {
+      fromDate: row[1] ?? "",
+      toDate: row[3] ?? "",
+      fromKm: parseSpacedInt(row[2] ?? "0"),
+      toKm: parseSpacedInt(row[4] ?? "0"),
+      gapDays: 0,
+      minDropKm,
+      previousKmPerDay: null,
+      previousRateClass: null,
+      ceilingAdditionalKm: null,
+      maxDropKm: minDropKm,
+    };
+  });
+  const incidentCount = Number(sheet.match(/Negadījumi \/ zaudējumi:\s*(\d+)/)?.[1] ?? 0);
+  const recallLine = sheet.match(/Atsaukumi \/ kampaņu kodi datos:\s*([^\n]+)/)?.[1] ?? "";
+  const recallCodes = /nav fiksētu/i.test(recallLine)
+    ? []
+    : recallLine
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s && !/^nav/i.test(s));
+  const maxRollbackDropKm = rollbacks.reduce((n, b) => Math.max(n, b.minDropKm), 0);
+  const facts: CanonicalFacts = {
+    vin: sheet.match(/VIN:\s*(\S+)/)?.[1] ?? "",
+    makeModel: sheet.match(/Marka\/modelis:\s*([^|]+)/)?.[1]?.trim() ?? "",
+    year: sheet.match(/Gads:\s*(\S+)/)?.[1] ?? "",
+    owners: {
+      totalCount,
+      noteLine: "",
+      changeCount,
+      latviaOwners: lv ? Number(lv[1]) : null,
+      latviaChanges: lv ? Math.max(0, Number(lv[1]) - 1) : null,
+    },
+    firstReg: {
+      date: date === "datums nav" ? "" : date,
+      countryRaw: countryLv,
+      countryLv,
+      countryIso,
+    },
+    latestKm: latestKmRaw ? parseSpacedInt(latestKmRaw) : null,
+    rollbacks,
+    odometerAnomaly: /Forenzikas karogs[^:\n]*:\s*JĀ/i.test(sheet),
+    carverticalMileageWarning: /CarVertical nobraukuma brīdinājums:\s*JĀ/i.test(sheet),
+    maxRollbackDropKm,
+    incidents: Array.from({ length: incidentCount }, (_, i) => ({
+      date: "",
+      lossAmount: "",
+      country: "",
+      sortableTime: 0,
+      sourceOrder: i,
+      sourceLabel: `rinda ${i + 1}`,
+    })),
+    ta: EMPTY_TA,
+    dealerRowsLv: "",
+    dealerCampaigns: [],
+    recallCodes,
+    listingSummary: "",
+    photoSummary: "",
+    dateHaystack: sheet,
+    sourceHaystack: t,
+    sheet,
+  };
+  return facts;
 }

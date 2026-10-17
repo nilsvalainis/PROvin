@@ -210,5 +210,7 @@
  *   Pretrunu pārbaude pret lapu (odometra kritums, īpašnieki/maiņas, DE/LV).
  *   Iekšējo noplūžu filtrs. Prepare Draft: nobraukums/negadījumi pirms avotiem;
  *   avotu salīdzinājums tikai ar PROVIN_AUTO_SOURCES_COMPARISON=1.
+ * - 2026-10-17.4 - Stila kanons vienā vietā (A1-A12 bez A3, M1-M14, P1-P13).
+ *   Smart = gemini-3.8-flash noklusējums; PRO = claude-opus-5-5 tikai pēc pogas.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.3";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.4";

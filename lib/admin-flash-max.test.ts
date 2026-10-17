@@ -42,7 +42,7 @@ describe("FLASH MAX jobs", () => {
     ]);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "dealer_service")).toBe(false);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "sources_comparison" && j.group === "daily")).toBe(true);
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "sources_comparison")!)).toBe("flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "sources_comparison")!)).toBe("gemini-flash");
     expect(FLASH_MAX_JOBS.some((j) => j.id === "cc_vin" && j.group === "daily")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "asv" && j.group === "extra")).toBe(true);
     expect(FLASH_MAX_JOBS.some((j) => j.id === "finnik" && j.group === "extra")).toBe(true);
@@ -62,16 +62,16 @@ describe("FLASH MAX jobs", () => {
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "autodna")!)).toBe("gemini-flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "carvertical")!)).toBe("gemini-flash");
     expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "ltab")!)).toBe("gemini-flash");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "cc_vin")!)).toBe("gemini");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "asv")!)).toBe("gemini");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "dealer_comments")!)).toBe("gemini");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "dealer_oil")!)).toBe("gemini");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "mileage")!)).toBe("gemini");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "technical_risks")!)).toBe("gemini");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "inspection")!)).toBe("gemini");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "summary")!)).toBe("gemini");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "seller")!)).toBe("gemini");
-    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "photo")!)).toBe("gemini");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "cc_vin")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "asv")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "dealer_comments")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "dealer_oil")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "mileage")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "technical_risks")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "inspection")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "summary")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "seller")!)).toBe("gemini-flash");
+    expect(flashMaxJobModelTier(FLASH_MAX_JOBS.find((j) => j.id === "photo")!)).toBe("gemini-flash");
   });
 
   it("clips FLASH MAX operator notes for all selected agents", () => {

@@ -44,8 +44,8 @@ describe("geminiThinkingExtra", () => {
   });
 
   it("gives Gemini 3 a capped thinking level, never a budget or unlimited default", () => {
-    expect(thinkingConfig(GEMINI_MODEL_FLASH, true)).toEqual({ thinkingLevel: "minimal" });
-    expect(thinkingConfig(GEMINI_MODEL_FLASH, false)).toEqual({ thinkingLevel: "minimal" });
+    expect(thinkingConfig(GEMINI_MODEL_FLASH, true)).toEqual({ thinkingLevel: "low" });
+    expect(thinkingConfig(GEMINI_MODEL_FLASH, false)).toEqual({ thinkingLevel: "low" });
   });
 
   it("retries Gemini 2.5 with thinkingBudget 0; Gemini 3 has no second thinking pass", () => {
@@ -93,11 +93,11 @@ describe("geminiThinkingExtra", () => {
 describe("geminiGenerationConfigPayload per-model shape", () => {
   const maxOutputTokens = 32_000;
 
-  it("gemini-3-flash-preview: thinkingLevel minimal, no budget, no sampling", () => {
+  it("gemini-3.8-flash: thinkingLevel low, no budget, no sampling", () => {
     const payload = geminiGenerationConfigPayload(GEMINI_MODEL_FLASH, true, { maxOutputTokens });
     expect(payload).toEqual({
       maxOutputTokens,
-      thinkingConfig: { thinkingLevel: "minimal" },
+      thinkingConfig: { thinkingLevel: "low" },
     });
     expect(payload.thinkingConfig).not.toHaveProperty("thinkingBudget");
     assertNoSampling(payload);
@@ -152,7 +152,7 @@ describe("geminiGenerationConfigPayload per-model shape", () => {
       maxOutputTokens,
       responseMimeType: "application/json",
       responseSchema: { type: "object" },
-      thinkingConfig: { thinkingLevel: "minimal" },
+      thinkingConfig: { thinkingLevel: "low" },
     });
     assertNoSampling(payload);
   });

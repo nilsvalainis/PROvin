@@ -103,20 +103,20 @@ ${orderContext}
 
 ---
 
-Sagatavo **tehniski izcilu, detalizētu** tehnisko risku analīzi laukam „${ADMIN_TECHNICAL_RISKS_LABEL}”. Šī ir atskaites svarīgākā komentāru sadaļa — īss vispārīgs teksts šeit ir kļūda.
+Sagatavo tehnisko risku analīzi laukam „${ADMIN_TECHNICAL_RISKS_LABEL}”. Šī ir atskaites svarīgākā komentāru sadaļa. Garums seko datiem: 4-7 sadaļas, 1 200-2 500 rakstz. Īsāka analīze nav kļūda.
 
 OBLIGĀTI:
 - Identificē agregātu **iekšēji** (tilpums, jauda kW, degviela, izmešu klase, gads, dzinēja kods, kārba, piedziņa). Ja koda NAV: tajā pašā markā un līdzīgā gadu joslā ņem **kW + cm³ + degvielu** kā 1. kandidātu (modeļi var atšķirties) un meklē to. IZVADĒ nesāc ar sadaļas nosaukumu un nesāc ar slavinošu prezentāciju („viens no veiksmīgākajiem”, „uzticamākais”, „veiksmīgākā konstrukcija”, „Dzinēja konstrukcija un resurss”, „Agregātu identifikācija”, „Dzinēja identifikācija”, „Riska kartē”). Faktu teikums par aprīkojumu + šī mezgla risku ir atļauts. Tīra markas tūre bez riska fakta - aizliegta. Pirmā sadaļa = konkrēts riska fakts, ar km un vecuma kalibrāciju tajā pašā sadaļā. Dzinēja/kārbas fakti tikai tad, kad tie izskaidro risku. Ja precīzs kods nav avotos - iekšēji turi 1–2 kandidātus; izvadē nosauc tos tikai pie attiecīgā riska, kā hipotēzi, ne kā reģistrā nolasītu faktu. **PACK RECONCILE:** pirms pakas apgalvojuma salīdzini ar šī auto kW/kodu (D5244T11 = ~158 kW biturbo, ne viens turbo). Konsultatīvi: nelieto „obligāti”, „kritiski”, „netiek rekomendēts”; vietā „iesakām”, „ir vērts pārbaudīt”, „pēc datiem mūsu ieteikums būtu”.
 - Formāts: virsraksts savā rindā, tad 2-4 teikumi. NEKAD neizvadi *, ** vai citus Markdown simbolus.
 - **Kalibrē riskus pret šī auto aptuveno nobraukumu un vecumu:** kam resurss šajā posmā tipiski jau iztērēts (un tāpēc jābūt pierādītam servisa vēsturē), kas gaidāms nākamajos ~20–40 tūkst. km, un kas ir tikai tāla perspektīva. Sakārto pēc **varbūtības × ietekmes** (BEZ EUR). Piemērs: 300 tūkst. km M57 ar labu eļļu ir ierasts darba mūžs; tas pats km uz N57 ir pavisam cits stāsts; D5244T11 (~158 kW biturbo) - bloka/dzesēšanas risks, NE „viens turbo bez bloka plaisām”.
 - **Tikai aktuālie mezgli:** raksti TIKAI šim agregātam, šai kārbai un šim aprīkojumam. Citu kodu kaites NEMINI, pat lai tās noliegtu. Dārgo ekstraprīkojumu nosauc tikai ja SA/dīleris/operators to rāda šim auto. Ja paka konflikte ar kW/kodu - meklē un labo, nekopē paku.
-- **Nepārspīlē:** neuzskaiti visu, kas teorētiski var salūzt, un nepasniedz pie 250 000 km tipisku problēmu kā draudu pie 90 000 km. **Galvenais pirkuma risks — maksimāli 1–2 pozīcijas**; pārējais ir ierasta uzturēšanas izmaksa vai kaut kas, ko vienkārši jāpārbauda klātienē. Ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa kaprīzi (elektronika, eļļas noplūdes, hidromufte 15–20 gadu vecumā) nošķir no „šis auto tuvākajā laikā būs problemātisks”.
+- **Nepārspīlē:** neuzskaiti visu, kas teorētiski var salūzt, un nepasniedz pie 250 000 km tipisku problēmu kā draudu pie 90 000 km. **Galvenais pirkuma risks: maksimāli 1-2 pozīcijas**; pārējais ir ierasta uzturēšanas izmaksa vai kaut kas, ko vienkārši jāpārbauda klātienē. Ja aina pēc datiem ir relatīvi labvēlīga, to pasaki kalibrēti. Ilgtermiņa kaprīzi (elektronika, eļļas noplūdes, hidromufte 15-20 gadu vecumā) nošķir no „šis auto tuvākajā laikā būs problemātisks”.
 - SECĪBA visiem ražotājiem: vispirms ŠĪ auto dzinēja kods (vai 1-2 kandidāti no kW/cm³/gada), tad web meklēšana šim kodam (konstrukcija, ķēde/zobsiksna, tipiskās kaites), tad raksti. Pakas rindkopu lieto tikai ja tā nosauc to pašu kodu/joslu. Neizdomā citātus un kampaņu numurus.
-- Garums: tik sadaļu, cik ir atšķirīga agregāta materiāla (tipiski 4–10; 8–12 tikai ja katra sadaļa ir cits mezgls). Īsāka analīze nav kļūda. Noklusējuma 350–800 ŠEIT NEATTIECAS. Aizliegts aizpildīt ar TA nosegtiem nodiluma mezgliem. BEZ orientējošām EUR joslām. BEZ * / **.
-- Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm; tipiskās vājās vietas apraksti kā varbūtību („tipiski šim agregātam”, „var novest pie”).
+- Garums: tik sadaļu, cik ir atšķirīga agregāta materiāla (4-7; LENGTH CEILINGS). Īsāka analīze nav kļūda. Noklusējuma 350-800 ŠEIT NEATTIECAS. Aizliegts aizpildīt ar TA nosegtiem nodiluma mezgliem. BEZ orientējošām EUR joslām. BEZ * / **.
+- Tonis atturīgs un profesionāls: bez „kritisks”, „anomālija”, „katastrofāls”, bez izsaukuma zīmēm. Tipiskās vājās vietas: „šim dzinējam raksturīga”, „var novest pie”.
 - Konkrēti mezgli, ne kategorijas (ķēde/zobsiksna un tās puse, turbo/VGT aktuators, iesmidzinātāji (sprauslas), DPF/EGR/AdBlue, kārbas tips un mehatronika, divmasu spararats, ūdens sūknis/termostats/hidromufte, eļļas noplūdes, reduktors un pilnpiedziņas sajūgs (kardānvārpstas krustiņi, karājošais gultnis), gaisa balstiekārta pret Dynamic Drive, EV baterija) — tikai tie, kas šim salikumam relevanti. NERAKSTI aptuvenās remonta izmaksas eiro.
 - Izmanto PROVIN agregātu zināšanas un vēsturiskos auditus no konteksta; ja trūkst — web meklēšana tipiskajām vājajām vietām, tad pielāgo AKTĪVAJAM auto. Neizdomā kampaņu numurus, statistiku vai citātus.
-- Norādi arī stiprās puses; vienlaikus uzsver, ka arī labākie agregāti var būt slikti uzturēti — īpaši Latvijā ekspluatētiem auto.
+- Stiprās puses raksti tikai kā faktu par šo eksemplāru, bez slavinājuma un bez vispārīgas atrunas katrā rindkopā.
 - Ja servisa vēsturē attiecīgais darbs ir fiksēts (Veiktie darbi, Servisa vēsture, Komentāri), NEIEKĻAUJ to kā „jāmaina” — pasaki, ka darbs datos jau ir. Ierakstu trūkumu formulē kā nepierādītu; Neraksti „neatliekamu un obligātu” maiņu tikai tāpēc, ka odometrs pārsniedz OEM intervālu. Ja >30 000 km vai >24 mēn. bez fiksētas apkopes — pieņem, ka apkope var būt bijusi ārpus oficiālā dīlera; jālūdz pārdevējam uzrādīt dokumenti.
 - Neizdomā VIN/km/EUR no šī pasūtījuma. NERAKSTI orientējošas remonta/apkopes EUR joslas.
 - Ķēde pret zobsiksnu: tikai pēc šī motora koda vai pēc fiksētas siksnas/ķēdes maiņas šajā pasūtījumā. Nekad abus vienam dzinējam. Citas paaudzes vai cita koda kaites (jebkura marka) NELIEC, ja kods/tilpums nesakrīt.
@@ -201,7 +201,7 @@ ${buildCanonicalFactsSheet(input)}
 
 ${costNote}
 
-Ja kartē unknowns[] vai confidence C, neraksti minējumu. Īsi: "Datos nav fiksēts."
+Ja kartē unknowns[] vai confidence C, neraksti minējumu un NERAKSTI aizpildītāju. Sadaļu izlaiž.
 
 RISKA KARTE (JSON, raksti TIKAI no šīs kartes):
 ${JSON.stringify(map)}

@@ -1,9 +1,13 @@
 import { isAiEmptyGeneratedTextError, isAiIncompleteCommentError } from "@/lib/admin-ai-incomplete";
 
 export const GEMINI_MODEL_PRO = "gemini-2.5-pro";
-/** Primārais lētais līmenis — Pro inteliģence Flash cenā (preview; 404 → 2.5 Flash). */
-export const GEMINI_MODEL_FLASH = "gemini-3-flash-preview";
+/** Smart noklusējums visiem ✨ laukiem. Vecāki Gemini ID paliek tikai failover. */
+export const GEMINI_MODEL_FLASH = "gemini-3.8-flash";
+/** Failover, ja 3.8 nav pieejams (iepriekšējais UI primārais). */
+export const GEMINI_MODEL_FLASH_PREVIEW = "gemini-3-flash-preview";
 export const GEMINI_MODEL_FLASH_25 = "gemini-2.5-flash";
+/** Nav UI poga. Tikai failover, ja lētākie Flash ID nav pieejami. */
+export const GEMINI_MODEL_ARGON = "gemini-4-argon";
 /**
  * Pēdējais lētais failover solis. `gemini-2.0-flash` Google izslēdza 2026-06-01
  * (deprecations lapa), tāpēc ķēde beidzās ar mirušu modeli. Nosaukums paliek
@@ -13,13 +17,15 @@ export const GEMINI_MODEL_FLASH_25 = "gemini-2.5-flash";
 export const GEMINI_MODEL_LEGACY_FLASH = "gemini-3.5-flash-lite";
 
 /**
- * Failover tikai uz LĒTĀKIEM modeļiem — Flash 503/404 nedrīkst pāriet uz Pro.
- * Pro → 3 Flash → 2.5 Flash; 3 Flash → 2.5 Flash → 3.5 Flash-Lite.
+ * Failover tikai uz LĒTĀKIEM modeļiem — Flash 503/404 nedrīkst pāriet uz Pro/Argon.
+ * 3.8 Flash → 3 Flash preview → 2.5 Flash → 3.5 Flash-Lite.
  */
 export function geminiFailoverModels(primary: string): string[] {
   const cheaper: Record<string, readonly string[]> = {
+    [GEMINI_MODEL_FLASH]: [GEMINI_MODEL_FLASH_PREVIEW, GEMINI_MODEL_FLASH_25, GEMINI_MODEL_LEGACY_FLASH],
+    [GEMINI_MODEL_FLASH_PREVIEW]: [GEMINI_MODEL_FLASH_25, GEMINI_MODEL_LEGACY_FLASH],
     [GEMINI_MODEL_PRO]: [GEMINI_MODEL_FLASH, GEMINI_MODEL_FLASH_25],
-    [GEMINI_MODEL_FLASH]: [GEMINI_MODEL_FLASH_25, GEMINI_MODEL_LEGACY_FLASH],
+    [GEMINI_MODEL_ARGON]: [GEMINI_MODEL_FLASH, GEMINI_MODEL_FLASH_25],
     [GEMINI_MODEL_FLASH_25]: [GEMINI_MODEL_LEGACY_FLASH],
     [GEMINI_MODEL_LEGACY_FLASH]: [],
   };

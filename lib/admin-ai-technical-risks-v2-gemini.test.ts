@@ -98,7 +98,7 @@ describe("tech risk v2: Gemini-only pipeline", () => {
   it("Claude tier without a component command never calls Claude", async () => {
     await run("flash");
     expect(calls.map((c) => c.fn)).toEqual(["map", "text", "qa"]);
-    expect(calls.every((c) => c.tier === "gemini")).toBe(true);
+    expect(calls.every((c) => c.tier === "gemini-flash")).toBe(true);
   });
 
   it("Claude tier + `Claude: …` adds one Claude call only for those components", async () => {
@@ -107,7 +107,7 @@ describe("tech risk v2: Gemini-only pipeline", () => {
     expect(claude).toHaveLength(1);
     expect(claude[0]?.fn).toBe("map");
     expect(claude[0]?.prompt).toContain("TIKAI šie agregāti: klaņu gultņi");
-    expect(calls.filter((c) => c.fn !== "map").every((c) => c.tier === "gemini")).toBe(true);
+    expect(calls.filter((c) => c.fn !== "map").every((c) => c.tier === "gemini-flash")).toBe(true);
   });
 
   it("AVOTU FAKTI un dīlera brīfs tekstā ir latviski, EN darbus nekopē", async () => {

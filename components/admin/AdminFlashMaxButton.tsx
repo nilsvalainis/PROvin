@@ -54,10 +54,10 @@ function RailFlashLightningIcon({ className }: { className?: string }) {
 }
 
 const SHORT_TIER: Record<AiAdminModelTier, string> = {
-  "gemini-flash": "Flash",
+  "gemini-flash": "Smart",
   gemini: "Gemini",
   flash: "Sonnet",
-  pro: "Opus",
+  pro: "PRO",
   lite: "Haiku",
 };
 

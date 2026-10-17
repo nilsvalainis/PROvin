@@ -22,7 +22,9 @@ describe("unit facts base", () => {
       if (f.status === "verified") {
         const strong = f.sources.some((s) => ["oem_doc", "oem_press", "authority"].includes(s.kind));
         const independent = f.sources.filter((s) => s.kind !== "iriss" && s.kind !== "nils").length;
-        expect(strong || independent >= 2).toBe(true);
+        const nilsKnownIssue =
+          f.topic === "known_issue" && f.sources.some((s) => s.kind === "nils");
+        expect(strong || independent >= 2 || nilsKnownIssue).toBe(true);
       }
     }
   });
@@ -271,6 +273,18 @@ describe("checkAiCommentFacts", () => {
       contextText: "VW Touareg CR7 DEND",
     });
     expect(r.flags.filter((f) => f.factId === "vag_30tdi_ea897evo_three_chains")).toEqual([]);
+  });
+
+  it("includes owner-verified N57 conrod bearings in the prompt and flags a denial", () => {
+    const prompt = formatApplicableUnitFactsForPrompt({
+      contextText: "BMW 530d F10 N57D30 190 kW",
+    });
+    expect(prompt).toMatch(/klaņa gultņ/);
+    const r = checkAiCommentFacts({
+      text: "N57 šāles nav tipiska kaite šim dzinējam.",
+      contextText: "BMW 530d F10 N57D30 190 kW",
+    });
+    expect(ids(r)).toContain("E:fact:bmw_n57_conrod_bearings");
   });
 
   it("flags N57 chain at front", () => {

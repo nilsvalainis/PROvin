@@ -229,7 +229,73 @@ export const PROVIN_INTERNAL_CLIENT_TERMS: readonly BannedVocabularyEntry[] = [
     replacement: "EGR dzesētājs",
     code: "internal_agr_kuhler",
   },
+  {
+    label: "paka / pakā",
+    pattern: /\bpakā\b|\bpaka\b/i,
+    replacement: "agregātu zināšanas",
+    code: "internal_paka",
+  },
+  {
+    label: "brīfs",
+    pattern: /\bbrīf/i,
+    replacement: "kopsavilkums",
+    code: "internal_brifs",
+  },
+  {
+    label: "AVOTU FAKTI",
+    pattern: /AVOTU\s+FAKTI/,
+    replacement: "avota dati",
+    code: "internal_avotu_fakti",
+  },
+  {
+    label: "FLASH MAX",
+    pattern: /FLASH\s+MAX/,
+    replacement: "",
+    code: "internal_flash_max",
+  },
+  {
+    label: "KB:",
+    pattern: /\bKB:/,
+    replacement: "",
+    code: "internal_kb",
+  },
+  {
+    label: "operators / operatora norādes",
+    pattern: /operatora\s+(?:norād|piezīm)|saskaņā ar operator/i,
+    replacement: "",
+    code: "internal_operator",
+  },
+  {
+    label: "šajā auditā",
+    pattern: /šajā\s+auditā/i,
+    replacement: "",
+    code: "internal_this_audit",
+  },
+  {
+    label: "Rückruf",
+    pattern: /R(?:ü|ue)ckruf/i,
+    replacement: "ražotāja atsaukums",
+    code: "internal_ruckruf",
+  },
 ];
+
+/** Droši aizstājami vārdi bez otra maksas izsaukuma (P13). */
+const SAFE_VOCAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/\binjektor(?:i|iem|u|a)?\b/gi, "iesmidzinātāji"],
+  [/\bswirl\s+flap\w*/gi, "ieplūdes kolektors"],
+  [/\bvirpuļvārst\w*/gi, "ieplūdes kolektors"],
+  [/\bintegritāt\w*/gi, "stāvoklis"],
+  [/šim automašīn/gi, "šai automašīn"],
+  [/tipiski šim agregātam ir/gi, "šim dzinējam raksturīga"],
+  [/tipiski šim agregātam/gi, "šim dzinējam raksturīga"],
+];
+
+export function applyBannedVocabularyReplacements(text: string): string {
+  if (!text) return text;
+  let out = text;
+  for (const [re, rep] of SAFE_VOCAB_REPLACEMENTS) out = out.replace(re, rep);
+  return out;
+}
 
 export function findInternalClientTermHits(text: string): BannedVocabularyEntry[] {
   if (!text) return [];

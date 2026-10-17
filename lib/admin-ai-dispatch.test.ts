@@ -31,16 +31,30 @@ import { geminiGenerateExpertText, getGeminiApiKeyFromEnv } from "@/lib/admin-ge
 import { adminGenerateExpertText, adminGenerateTextWithVocabulary } from "@/lib/admin-ai-dispatch";
 
 describe("admin-ai-dispatch self-correction retry", () => {
-  it("retries once and returns the corrected text when banned vocabulary appears", async () => {
+  it("does not pay for a second generation when only banned vocabulary appears (P13)", async () => {
     const text = await adminGenerateExpertText({
       systemInstruction: "sys",
       userPrompt: "sākotnējais prompts",
       qualityField: "generic",
     });
-    expect(text).toBe("Šis agregāts ir tehniski uzticams pēc pieejamajiem datiem.");
+    expect(text).toBe("Šis auto pieder tai pašai saimei un ir kopts.");
+    expect(aiGenerateExpertText).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries once and returns the corrected text when an internal marker leaks", async () => {
+    vi.clearAllMocks();
+    vi.mocked(aiGenerateExpertText)
+      .mockResolvedValueOnce("Riska kartē ķēde ir iekšā.")
+      .mockResolvedValueOnce("Datos ķēde ir iekšā.");
+    const text = await adminGenerateExpertText({
+      systemInstruction: "sys",
+      userPrompt: "sākotnējais prompts",
+      qualityField: "generic",
+    });
+    expect(text).toBe("Datos ķēde ir iekšā.");
     expect(aiGenerateExpertText).toHaveBeenCalledTimes(2);
     expect((aiGenerateExpertText as ReturnType<typeof vi.fn>).mock.calls[1][0].userPrompt).toContain(
-      "saime",
+      "Riska kartē",
     );
   });
 

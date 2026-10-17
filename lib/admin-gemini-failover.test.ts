@@ -20,6 +20,7 @@ describe("geminiFailoverModels", () => {
   it("does not upgrade Flash to Pro", () => {
     expect(geminiFailoverModels(GEMINI_MODEL_FLASH)).toEqual([
       GEMINI_MODEL_FLASH,
+      "gemini-3-flash-preview",
       GEMINI_MODEL_FLASH_25,
       GEMINI_MODEL_LEGACY_FLASH,
     ]);

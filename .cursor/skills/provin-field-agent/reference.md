@@ -19,6 +19,7 @@ ${taskBlock}
 | `AI_TECHNICAL_RISKS_ANALYSIS_SYSTEM` | 1. Tehnisko risku analīze (flagship, nosacīts garums) |
 | `AI_INSPECTION_RECOMMENDATIONS_SYSTEM` | Ieteikumi klātienes apskatei (pircēja soļi, ne risku spogulis) |
 | `AI_SELLER_ANALYSIS_SYSTEM` | Pārdevēja portrets |
+| `PROVIN_EXPERT_CORE_SYSTEM` | Avota/cenas/eļļas kodols (bez citu lauku esejām) |
 | `AI_PRICE_ANALYSIS_SYSTEM` | Cenas vērtējums |
 | `AI_SUMMARY_ANALYSIS_SYSTEM` | 2. Kopsavilkums (+ email rules) |
 | `AI_MILEAGE_COMMENT_SYSTEM` | Nobraukuma vēstures komentārs |

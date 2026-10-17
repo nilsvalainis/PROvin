@@ -12,6 +12,10 @@ import { COMMENT_LENGTH_BUDGET, commentQualityMaxChars } from "@/lib/ai-comment-
 import { looksLikeLeakedAiPlanning } from "@/lib/source-summary-comment-format";
 import { isPraisingTechRisksIntro } from "@/lib/ai-praising-intro";
 import { evaluateLengthRulesV2 } from "@/lib/ai-length-rules-v2";
+import {
+  checkCommentContradictions,
+  extractCanonicalFactsFromPrompt,
+} from "@/lib/comment-contradiction-check";
 
 export type CommentQualityIssue = {
   code: string;
@@ -453,7 +457,53 @@ export function evaluateExpertCommentQuality(
     }
   }
 
+  if (
+    (field === "source" || field === "source_dealer") &&
+    opts.sourcePrompt &&
+    /(?:kārbas|transmisijas)\s+eļļ\w*.{0,40}(?:mainīt|mainīta|nomainīt)/i.test(t) &&
+    /Transmisijas apkope/i.test(opts.sourcePrompt) &&
+    !/(?:Getriebeöl|ATF|kārbas eļļ|transmisijas eļļ|gearbox oil|transmission oil)/i.test(
+      opts.sourcePrompt,
+    )
+  ) {
+    issues.push({
+      code: "dealer_category_as_job",
+      message:
+        "Dīlera kategorija „Transmisijas apkope” nav kārbas eļļas maiņa, ja pozīcijās eļļa nav nosaukta",
+    });
+  }
+
+  const lastBody = t.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).pop();
+  if (lastBody) {
+    const lastLine = lastBody.split("\n").pop()?.trim() ?? "";
+    if (
+      lastLine.length > 40 &&
+      !/[.!?…]"?$/.test(lastLine) &&
+      /\b(un|vai|ka|jo|bet|kā|lai)\s*$/i.test(lastLine)
+    ) {
+      issues.push({
+        code: "truncated_sentence",
+        message: "Rindkopa beidzas ar saikli vai bez teikuma beigām",
+      });
+    }
+  }
+
   if (opts.sourcePrompt != null) {
+    const facts = extractCanonicalFactsFromPrompt(opts.sourcePrompt);
+    if (facts) {
+      const factField = field === "source_dealer" ? "source" : field;
+      for (const flag of checkCommentContradictions({
+        text: t,
+        field: factField,
+        facts,
+      })) {
+        if (flag.level !== "E") continue;
+        issues.push({
+          code: `canonical_${flag.kind}`,
+          message: flag.message,
+        });
+      }
+    }
     if (mentionsVehicleWrap(t) && !mentionsVehicleWrapInOrderFacts(opts.sourcePrompt)) {
       issues.push({
         code: "wrap_film_invented",

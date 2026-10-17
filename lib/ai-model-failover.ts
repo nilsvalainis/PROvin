@@ -1,6 +1,9 @@
 /** Claude modeļi admin AI automatizācijai (Anthropic Messages API). */
 import { isAiIncompleteCommentError } from "@/lib/admin-ai-incomplete";
-export const CLAUDE_MODEL_OPUS = "claude-opus-5";
+/** PRO poga. Tikai kad operators to nospiež; nekad automātiski. */
+export const CLAUDE_MODEL_OPUS = "claude-opus-5-5";
+/** Failover, ja Opus 5.5 nav pieejams. */
+export const CLAUDE_MODEL_OPUS_LEGACY = "claude-opus-5";
 export const CLAUDE_MODEL_SONNET = "claude-sonnet-5";
 /** Datēts ID: /v1/models neuzskaita īso `claude-haiku-4-5` aliasu. */
 export const CLAUDE_MODEL_HAIKU = "claude-haiku-4-5-20251001";
@@ -8,11 +11,12 @@ export const CLAUDE_MODEL_HAIKU = "claude-haiku-4-5-20251001";
 /**
  * Failover tikai uz LĒTĀKIEM modeļiem — Sonnet kļūme nedrīkst pāriet uz Opus
  * (tas ir tas, kas 2 klikšķos sadedzina dolāru).
- * Opus → Sonnet → Haiku; Sonnet → Haiku; Haiku paliek Haiku.
+ * Opus 5.5 → Opus 5 → Sonnet → Haiku; Sonnet → Haiku; Haiku paliek Haiku.
  */
 export function aiFailoverModels(primary: string): string[] {
   const cheaper: Record<string, readonly string[]> = {
-    [CLAUDE_MODEL_OPUS]: [CLAUDE_MODEL_SONNET, CLAUDE_MODEL_HAIKU],
+    [CLAUDE_MODEL_OPUS]: [CLAUDE_MODEL_OPUS_LEGACY, CLAUDE_MODEL_SONNET, CLAUDE_MODEL_HAIKU],
+    [CLAUDE_MODEL_OPUS_LEGACY]: [CLAUDE_MODEL_SONNET, CLAUDE_MODEL_HAIKU],
     [CLAUDE_MODEL_SONNET]: [CLAUDE_MODEL_HAIKU],
     [CLAUDE_MODEL_HAIKU]: [],
   };

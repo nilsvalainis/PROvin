@@ -15,7 +15,7 @@ type Props = {
   title?: string;
   dialogTitle?: string;
   dialogHint?: string;
-  /** Ieteicamais līmenis šim laukam — pirmā poga; Opus paliek pieejams, bet nav noklusējums. */
+  /** Ieteicamais līmenis šim laukam. UI rāda tikai Smart un PRO. */
   recommendedTier?: AiAdminModelTier;
   /** Ja norādīts — rāda tikai šīs pogas (piem. ātrajiem vērtējumiem tikai Gemini + Flash). */
   tiers?: readonly AiAdminModelTier[];
@@ -31,10 +31,10 @@ const CONFIRM_CLASS: Record<AiAdminModelTier, string> = {
 };
 
 const SHORT_LABEL: Record<AiAdminModelTier, string> = {
-  "gemini-flash": "Flash",
+  "gemini-flash": "Smart",
   gemini: "Gemini",
   flash: "Sonnet",
-  pro: "Opus",
+  pro: "PRO",
   lite: "Haiku",
 };
 
@@ -99,7 +99,7 @@ export function AdminAiGenerateWithPrefill({
             title={
               title ??
               (tier === recommendedTier
-                ? `${aiAdminModelTierLabel(tier)} — ieteicams šim laukam`
+                ? `${aiAdminModelTierLabel(tier)}: ieteicams šim laukam`
                 : undefined)
             }
             onClick={() => openDialog(tier)}
@@ -128,8 +128,8 @@ export function AdminAiGenerateWithPrefill({
                 <p className="mt-1 text-[11px] leading-snug text-[var(--color-provin-muted)]">{dialogHint}</p>
                 <p className="mt-1 text-[10px] font-medium text-[var(--color-provin-muted)]">
                   Modelis: {aiAdminModelTierLabel(pendingTier)}
-                  {pendingTier === recommendedTier ? " — ieteicams šim laukam" : null}
-                  {pendingTier === "pro" ? " — dārgākais, tikai nopietnai analīzei" : null}
+                  {pendingTier === recommendedTier ? " (ieteicams šim laukam)" : null}
+                  {pendingTier === "pro" ? " (dārgākais, tikai kad nospiež)" : null}
                 </p>
               </div>
             </div>
