@@ -2,9 +2,11 @@
  * A/B: apvieno slotus + ģenerētos tekstus harness fikstūrā un sagatavo IRISS aklo vērtēšanas paku.
  * Viss tiek rakstīts ārpus repo (klientu dati).
  *
- * npx tsx scripts/tech-risk-ab-package.ts --slots=/abs/slots.json --generated=/abs/ab-generated.json --out-dir=/abs/iriss-pack
+ * npx tsx scripts/tech-risk-ab-package.ts --slots=/abs/slots.json --generated=/abs/ab-generated.json \
+ *   --out-dir=/abs/iriss-pack --private-dir=/abs/ab-private
  *
- * Izeja: ab-fixture.json (harness), vertesana.html + vertejumi.csv (IRISS), _atslega.json (NEDOT IRISS).
+ * IRISS pakā (--out-dir) tikai vertesana.html + vertejumi.csv + LASIMANI.txt.
+ * --private-dir (ne IRISS): ab-fixture.json (harness, ar zeltu) un atslega.json (kurš ir v2).
  */
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -22,14 +24,17 @@ type Arm = { text?: string; map?: unknown; error?: string };
 const slots = (JSON.parse(fs.readFileSync(arg("slots"), "utf8")) as { orders: Slot[] }).orders;
 const gen = JSON.parse(fs.readFileSync(arg("generated"), "utf8")) as { results?: Record<string, { old?: Arm; new?: Arm }> };
 const outDir = arg("out-dir");
+const privDir = arg("private-dir");
+if (!privDir || path.resolve(privDir) === path.resolve(outDir || "")) throw new Error("--private-dir jābūt atsevišķam no IRISS pakas");
 if (!outDir || path.resolve(outDir).startsWith(process.cwd() + path.sep)) throw new Error("--out-dir jābūt ārpus repo");
 fs.mkdirSync(outDir, { recursive: true });
+fs.mkdirSync(privDir, { recursive: true });
 
 const fixture = slots.map((s) => {
   const r = gen.results?.[String(s.slot)] ?? {};
   return { slot: s.slot, id: s.sessionId, label: s.label, old: r.old?.text ?? "", new: r.new?.text ?? "", map: r.new?.map ?? null, gold: s.gold ?? "" };
 });
-fs.writeFileSync(path.join(outDir, "ab-fixture.json"), JSON.stringify({ orders: fixture }, null, 1));
+fs.writeFileSync(path.join(privDir, "ab-fixture.json"), JSON.stringify({ orders: fixture }, null, 1));
 
 const key: Record<string, { A: "old" | "new"; B: "old" | "new"; sessionId: string }> = {};
 const order = [...fixture].filter((f) => f.old && f.new);
@@ -60,5 +65,9 @@ fs.writeFileSync(path.join(outDir, "vertesana.html"), html);
 const csv = ["paris,teksts,tehn_precizitate_1_5,valoda_tonis_1_5,publicejams_ja_ne,piezime"];
 for (let n = 1; n <= order.length; n++) for (const t of ["A", "B"]) csv.push(`${n},${t},,,,`);
 fs.writeFileSync(path.join(outDir, "vertejumi.csv"), csv.join("\n") + "\n");
-fs.writeFileSync(path.join(outDir, "_atslega.json"), JSON.stringify(key, null, 1));
-console.log(JSON.stringify({ outDir, pairs: order.length, missing: fixture.length - order.length }));
+fs.writeFileSync(path.join(privDir, "atslega.json"), JSON.stringify(key, null, 1));
+fs.writeFileSync(
+  path.join(outDir, "LASIMANI.txt"),
+  "PROVIN tehnisko risku akls A/B.\n1) Atver vertesana.html.\n2) Katram pārim novērtē A un B atsevišķi: tehn_precizitate 1-5, valoda_tonis 1-5, publicejams ja/ne, piezime.\n3) Aizpildi vertejumi.csv un atsūti atpakaļ. Nemēģini uzminēt, kurš ir jaunais.\n",
+);
+console.log(JSON.stringify({ outDir, privDir, pairs: order.length, missing: fixture.length - order.length }));

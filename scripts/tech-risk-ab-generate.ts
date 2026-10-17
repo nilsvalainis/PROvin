@@ -68,7 +68,20 @@ async function main() {
       else delete process.env.TECH_RISK_V2;
       const t0 = Date.now();
       try {
-        const { result, usage } = await withAiUsageMeter(() => generateTechnicalRiskAnalysisWithAi(ctx));
+        // Ārējais mērītājs saglabā izmaksas arī tad, ja ģenerēšana met kļūdu.
+        const { result: wrapped, usage } = await withAiUsageMeter(async () => {
+          try {
+            return { ok: await generateTechnicalRiskAnalysisWithAi(ctx) };
+          } catch (err) {
+            return { err };
+          }
+        });
+        if ("err" in wrapped) {
+          const m = wrapped.err instanceof Error ? wrapped.err.message : "unknown";
+          cur[arm] = { text: "", usd: usage.usdEstimate ?? 0, models: usage.models, calls: usage.calls, error: m.slice(0, 300), ms: Date.now() - t0 };
+          throw Object.assign(new Error(m), { recorded: true });
+        }
+        const result = wrapped.ok;
         const models = usage.models;
         const calls = usage.calls;
         if (models.some((m) => /opus/i.test(m))) throw new Error(`opus_used:${models.join(",")}`);
@@ -82,7 +95,7 @@ async function main() {
           ms: Date.now() - t0,
         };
       } catch (e) {
-        cur[arm] = { text: "", usd: 0, models: [], error: e instanceof Error ? e.message.slice(0, 300) : "unknown", ms: Date.now() - t0 };
+        if (!(e as { recorded?: boolean }).recorded) cur[arm] = { text: "", usd: 0, models: [], error: e instanceof Error ? e.message.slice(0, 300) : "unknown", ms: Date.now() - t0 };
       }
       delete process.env.TECH_RISK_V2;
       results[String(s.slot)] = cur;

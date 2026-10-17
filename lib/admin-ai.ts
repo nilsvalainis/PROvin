@@ -517,6 +517,8 @@ export type AiTextOptions = {
   maxTokens?: number;
   budget?: AiRequestBudget;
   stream?: AiTextStream;
+  /** JSON izejai (piem., riska karte) Sonnet latviešu slīpēšana nav vajadzīga un var sabojāt JSON. */
+  skipLatvianPolish?: boolean;
 };
 
 /** Brīva teksta ģenerēšana ar automātisku modeļu failover (529 u.c.). */
@@ -658,11 +660,9 @@ export async function aiGenerateTextWithWebSearch(
     primaryModel: opts.model,
     logLabel: "web_search",
     budget: opts.budget,
-    run: async (model) =>
-      polishHaikuLatvianProse(
-        model,
-        await aiGenerateTextWithWebSearchOnce(key, { ...opts, model }),
-        opts.budget,
-      ),
+    run: async (model) => {
+      const raw = await aiGenerateTextWithWebSearchOnce(key, { ...opts, model });
+      return opts.skipLatvianPolish ? raw : polishHaikuLatvianProse(model, raw, opts.budget);
+    },
   });
 }

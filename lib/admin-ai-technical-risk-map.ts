@@ -1,6 +1,7 @@
 import "server-only";
 
 import { adminGenerateTextWithWebSearch } from "@/lib/admin-ai-dispatch";
+import { isAiIncompleteCommentError } from "@/lib/admin-ai-incomplete";
 import { AI_TECH_RISK_V2_MAP_SYSTEM } from "@/lib/admin-ai-tech-risk-v2-prompts";
 import { TECH_PIPELINE, TECH_PIPELINE_DEEP_FACTS_TIER } from "@/lib/admin-ai-tech-pipeline-config";
 import {
@@ -42,6 +43,10 @@ export function mergeIdentificationIntoMap(
   };
 }
 
+/** Kartei vajag vietu meklējumu rezultātiem + JSON; 12k bija par maz (A/B 2026-10-17). */
+export const TECH_RISK_MAP_MAX_TOKENS = 20_000;
+export const TECH_RISK_MAP_RETRY_SEARCHES = 3;
+
 export async function generateTechnicalRiskMapWithAi(input: {
   modelTier?: AiAdminModelTier | null;
   orderContext: string;
@@ -78,16 +83,29 @@ Izeja: tikai JSON.`;
       ? TECH_PIPELINE_DEEP_FACTS_TIER
       : TECH_PIPELINE.technical_risks.facts;
 
-  const raw = await adminGenerateTextWithWebSearch({
-    modelTier: factsTier,
-    systemInstruction: AI_TECH_RISK_V2_MAP_SYSTEM,
-    userPrompt,
-    qualityField: "technical_risks",
-    temperature: 0.1,
-    maxSearches: TECH_PIPELINE.technical_risks.maxSearches,
-    maxTokens: 12_000,
-    stream: input.stream,
-  });
+  const run = (maxSearches: number, extra = "") =>
+    adminGenerateTextWithWebSearch({
+      modelTier: factsTier,
+      systemInstruction: AI_TECH_RISK_V2_MAP_SYSTEM,
+      userPrompt: extra ? `${userPrompt}\n\n${extra}` : userPrompt,
+      qualityField: "technical_risks",
+      temperature: 0.1,
+      maxSearches,
+      maxTokens: TECH_RISK_MAP_MAX_TOKENS,
+      stream: input.stream,
+      skipLatvianPolish: true,
+    });
+  let raw: string;
+  try {
+    raw = await run(TECH_PIPELINE.technical_risks.maxSearches);
+  } catch (e) {
+    // Karte pārsniedza max_tokens: viens kompakts atkārtojums ar mazāk meklējumiem.
+    if (!isAiIncompleteCommentError(e)) throw e;
+    raw = await run(
+      TECH_RISK_MAP_RETRY_SEARCHES,
+      "IEPRIEKŠĒJĀ KARTE BIJA PĀRĀK GARA. Tagad: maks. 8 riski, katrs teksta lauks līdz 160 rakstzīmēm, maks. 2 avoti riskam, bez teksta ārpus JSON.",
+    );
+  }
   const parsed = parseTechnicalRiskMapFromAiText(raw);
   if (!parsed) {
     throw new Error("ai_invalid_json");

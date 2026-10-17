@@ -52,3 +52,12 @@ describe("tech-risk A/B harness: zelts", () => {
     expect(r.summary.meanEditOldVsGold).toBeGreaterThan(0);
   });
 });
+
+describe("tech-risk v2 kartes prompts", () => {
+  it("satur JSON atslēgas, ko parseris prasa (A/B 2026-10-17: 16/20 kartes bez riskiem)", async () => {
+    const { AI_TECH_RISK_V2_MAP_SYSTEM } = await import("@/lib/admin-ai-tech-risk-v2-prompts");
+    for (const k of ['"component"', '"failure_mode"', '"this_car_position"', '"recalls"', '"identification"']) {
+      expect(AI_TECH_RISK_V2_MAP_SYSTEM).toContain(k);
+    }
+  });
+});

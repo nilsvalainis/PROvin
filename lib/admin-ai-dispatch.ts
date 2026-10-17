@@ -62,6 +62,8 @@ type GenerateOpts = {
   qualityField?: CommentQualityOptions["field"];
   budget?: AiRequestBudget;
   stream?: AiTextStream;
+  /** Claude Haiku: izlaist Sonnet LV slīpēšanu (JSON izeja). */
+  skipLatvianPolish?: boolean;
 };
 
 /**
@@ -316,6 +318,7 @@ async function generateTextWithWebSearchOnce(opts: GenerateOpts): Promise<string
     maxSearches: opts.maxSearches,
     budget: opts.budget,
     stream: opts.stream,
+    skipLatvianPolish: opts.skipLatvianPolish,
   });
 }
 

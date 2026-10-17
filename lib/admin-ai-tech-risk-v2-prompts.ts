@@ -18,7 +18,13 @@ N57: klaņa gultņu noberze ir verificēta tipiska kaite (īpašnieka apstiprin�
 
 cost_band_eur: vienmēr null. EUR joslas no KB NAV ieviestas.
 
-IZVADE: tikai derīgs JSON pēc shēmas docs/tech-risk-v2.md (identification, risks, damage_interpretation, recalls, strengths, unknowns).`;
+KOMPAKTI: maks. 10 riski (svarīgākie pēc prioritātes), katrs teksta lauks līdz 200 rakstzīmēm, maks. 3 avoti riskam. Starp meklējumiem neraksti komentārus.
+
+IZVADE: tikai derīgs JSON tieši ar šiem angļu atslēgu nosaukumiem (nemaini, netulko):
+{"identification":{"platform":{"value":"","confidence":"A|B|C","evidence":"","candidates":[]},"engine":{...tas pats},"gearbox":{...},"drive":{...}},
+"risks":[{"component":"sadales ķēde","failure_mode":"","typical_km_range":[150000,250000],"this_car_position":"pirms|iekšā|pēc|nezināms","already_done_evidence":null,"probability":"high|medium|low","impact":"high|medium|low","priority":1,"applies_to_this_car":true,"confidence":"high|medium|low","sources":[{"type":"kb|tsb|recall|specialist|forum","ref":"","accessed":"YYYY-MM-DD"}],"cost_band_eur":null,"inspection_hint":""}],
+"damage_interpretation":[],"recalls":[{"id_or_title":"nav atrasts","source":"KBA/NHTSA/EU Safety Gate","status_known":false}],"strengths":[{"text":"","source":""}],"unknowns":[]}
+Katram riskam "component" ir obligāts. Ja risku saraksts ir tukšs, karte nav derīga. Atsaukumi: Eiropas auto vispirms KBA / ražotājs / EU Safety Gate; NHTSA kampaņas tikai, ja tās attiecas uz šo VIN/tirgu.`;
 
 export const AI_TECH_RISK_V2_LV_GLOSSARY = `VĀRDNĪCA (lieto šos terminus, ne kalkas):
 sadales ķēde (ne "timing chain")
