@@ -1,4 +1,5 @@
 import { DzintarzemeOfferBrandLogo } from "@/components/iriss-offer-public/DzintarzemeOfferBrandLogo";
+import { IrissOfferProvinBusinessTile } from "@/components/iriss-offer-public/IrissOfferProvinBusinessTile";
 import { IrissOfferPublicActions } from "@/components/iriss-offer-public/IrissOfferPublicActions";
 import {
   IRISS_OFFER_PUBLIC_BRAND,
@@ -17,12 +18,24 @@ function sectionTitle(children: string) {
   );
 }
 
-function SpecCell({ label, value }: { label: string; value: string }) {
+function SpecCell({
+  label,
+  value,
+  className = "",
+  valueClassName = "",
+}: {
+  label: string;
+  value: string;
+  className?: string;
+  valueClassName?: string;
+}) {
   if (!value.trim()) return null;
   return (
-    <div className="rounded-xl border border-[#e4e4e7] bg-[#fafafa] p-2.5">
+    <div className={`rounded-xl border border-[#e4e4e7] bg-[#fafafa] p-2.5 ${className}`.trim()}>
       <b className="block text-[10px] font-medium text-[#52525b]">{label}</b>
-      <span className="mt-1 block text-[13px] font-semibold leading-snug text-[#111827]">{value}</span>
+      <span className={`mt-1 block text-[13px] font-semibold leading-snug text-[#111827] ${valueClassName}`.trim()}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -54,8 +67,8 @@ function subtitleParts(view: IrissOfferPublicViewModel): string {
 export function IrissOfferPublicView({ token, view }: { token: string; view: IrissOfferPublicViewModel }) {
   const title = view.brandModel || view.title || IRISS_OFFER_PUBLIC_BRAND;
   const subtitle = subtitleParts(view);
+  const vin = view.vin.trim();
   const specs = [
-    [IRISS_OFFER_PUBLIC_LABELS.vin, view.vin],
     [IRISS_OFFER_PUBLIC_LABELS.location, view.location],
     [IRISS_OFFER_PUBLIC_LABELS.odometer, view.odometer],
     [IRISS_OFFER_PUBLIC_LABELS.year, view.firstRegistration],
@@ -63,6 +76,7 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
     [IRISS_OFFER_PUBLIC_LABELS.fuel, view.fuel],
     [IRISS_OFFER_PUBLIC_LABELS.bodyType, view.bodyType],
   ] as const;
+  const hasParametri = vin.length > 0 || specs.some(([, v]) => v.trim());
 
   const hasPhotos = view.photos.length > 0;
   const heroId = view.photos[0]?.id;
@@ -116,10 +130,21 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
         </section>
       ) : null}
 
-      {specs.some(([, v]) => v.trim()) ? (
+      {hasParametri ? (
         <section className={cardClassName()}>
           {sectionTitle("Parametri")}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            {vin ? (
+              <>
+                <SpecCell
+                  label={IRISS_OFFER_PUBLIC_LABELS.vin}
+                  value={vin}
+                  className="sm:col-span-2"
+                  valueClassName="font-mono text-[12px] font-semibold tracking-wide break-all sm:text-[13px]"
+                />
+                <IrissOfferProvinBusinessTile vin={vin} />
+              </>
+            ) : null}
             {specs.map(([label, value]) => (
               <SpecCell key={label} label={label} value={value} />
             ))}

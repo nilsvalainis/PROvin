@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, type SyntheticEvent } from "react";
+import { useCallback, useEffect, useState, type SyntheticEvent } from "react";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
@@ -28,6 +28,7 @@ import { normalizeVin } from "@/lib/order-field-validation";
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 import { useTierSwipe } from "@/lib/use-test-pricing-tier-swipe";
 import { parseHeroPlanParam } from "@/lib/home-hero-plan";
+import { publicOrderVinFromQuery, PUBLIC_ORDER_VIN_QUERY } from "@/lib/public-order-vin-prefill";
 
 type Props = {
   checkoutSource: string;
@@ -76,6 +77,11 @@ export function ProvinPricingHero({
   } = useTierSwipe(desktopActiveId, setDesktopActiveId, desktopSwipeOrder);
 
   const cancelled = searchParams.get("atcelts") === "1";
+
+  useEffect(() => {
+    const prefilled = publicOrderVinFromQuery(searchParams.get(PUBLIC_ORDER_VIN_QUERY));
+    if (prefilled) setVin(prefilled);
+  }, [searchParams]);
 
   const submitCheckout = useCallback(
     async (planId: TestPricingPlanId) => {
