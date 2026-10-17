@@ -443,7 +443,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
   {
     id: "bmw_n57",
     minScore: 14,
-    title: "BMW — N57 3.0d (ķēde aizmugurē, eļļas sūknis)",
+    title: "BMW — N57 3.0d (ķēde aizmugurē, klaņu šāles, eļļas sūknis)",
     score: (fp, hay) => {
       if (/M57/.test(hay) || /^M57/.test(fp.engineCode || "")) return 0;
       if (/\bE60\b|\bE61\b/.test(hay)) return 0;
@@ -472,7 +472,7 @@ export const PROVIN_AGGREGATE_CASE_PACKS: AggregateCasePack[] = [
 
 **N57 (3.0d, ķēde aizmugurē) ≠ M57 (ķēde priekšā) ≠ N47 (2.0).** M57 „ierasts darba mūžs pie 300k” un N47 2.0 stāstus šeit NEDRĪKST kopēt.
 
-**Galvenais finansiālais bloķētājs:** ķēdes lūzums / gultņi. Pēc „ķēdes remonta” obligāti jautā: vai mainīts **eļļas sūknis** (nolietots sūknis pēc ķēdes darba = bloka bojāejuma risks). Ja datos ķēde+sūknis fiksēti - risks krīt; ja tikai „ķēde” - jautā dokumentus.
+**Galvenais finansiālais bloķētājs:** ķēdes lūzums un klaņu šāles (gultņi). Klaņu šāļu nodilums ir apstiprināta tipiska kaite šim dzinējam (avots: īpašnieks), ne kļūdains fragments. Pēc „ķēdes remonta” ir vērts jautāt: vai mainīts **eļļas sūknis** (nolietots sūknis pēc ķēdes darba = bloka bojāejas risks). Ja datos ķēde+sūknis fiksēti - risks krīt; ja tikai „ķēde” - jautā dokumentus.
 
 **Kalibrācija:** pie ~150–220k km ķēde jau var būt pirkuma risks; neraksti kā tālu perspektīvu. Twin-turbo / augstāka kW josla = lielāka termiskā slodze.
 

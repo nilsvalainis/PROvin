@@ -21,6 +21,10 @@ describe("provin-aggregate-case-rules", () => {
     expect(packs.some((p) => p.id === "bmw_n57")).toBe(true);
     expect(packs.some((p) => p.id === "bmw_n47")).toBe(false);
     expect(packs.some((p) => p.id === "bmw_m57_e60_e61")).toBe(false);
+    const n57 = packs.find((p) => p.id === "bmw_n57");
+    expect(n57?.body).toMatch(/klaņu šāl/i);
+    expect(n57?.body).toMatch(/avots: īpašnieks/);
+    expect(n57?.body).not.toMatch(/obligāti jautā/);
   });
 
   it("selects M57 E60/E61 pack and excludes N47/N57 chain pack", () => {

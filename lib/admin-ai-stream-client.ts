@@ -7,6 +7,7 @@ import {
 } from "@/lib/admin-ai-client-errors";
 import { AI_STREAM_CONTENT_TYPE, type AiStreamEvent } from "@/lib/ai-text-stream";
 import { emitAdminAiUsage, isAiUsageSummary } from "@/lib/ai-usage";
+import { rememberGeneratedAiDraft } from "@/lib/admin-ai-draft-client";
 
 export type AdminAiStreamOptions = {
   /** Dzīvais teksts, kamēr modelis raksta — tikai priekšskatījumam. */
@@ -51,7 +52,9 @@ export async function generateAdminAiText(
   const isStream = (res.headers.get("content-type") ?? "").includes(AI_STREAM_CONTENT_TYPE);
   if (!isStream || !res.body) {
     const { data, parseFailed } = await parseAdminAiResponse(res);
-    return readGeneratedAdminAiText(res, data, parseFailed, httpFallback);
+    const generated = readGeneratedAdminAiText(res, data, parseFailed, httpFallback);
+    if (generated.text) rememberGeneratedAiDraft(url, body, generated.text);
+    return generated;
   }
 
   const reader = res.body.getReader();
@@ -91,6 +94,7 @@ export async function generateAdminAiText(
 
   if (completed.type === "done") {
     if (isAiUsageSummary(completed.usage)) emitAdminAiUsage(completed.usage);
+    rememberGeneratedAiDraft(url, body, completed.text);
     return { ok: true, text: completed.text };
   }
 

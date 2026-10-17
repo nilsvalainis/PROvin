@@ -176,6 +176,14 @@
  *   neizdomā.
  * - 2026-10-08.2 - BMW E60/E61 dārgo slazdu saraksts (Active Steering u.c.)
  *   vairs netiek likts uz 3. sēriju (E90/F30 u.c.). E60 paka tikai E60/E61.
+ * - 2026-10-16.2 - Tehnisko risku ievads: aizliegts tikai slavinošs sākums
+ *   (veiksmīgākais / uzticamākais / Agregātu identifikācija); aprīkojums +
+ *   šī mezgla risks atļauts. Klienta tekstā vietā „obligāti / kritiski /
+ *   netiek rekomendēts” lieto konsultatīvu formu. N57 klaņu šāles: apstiprināta
+ *   tipiska kaite (avots: īpašnieks), KB verified, neflagot restatement.
+ * - 2026-10-16.1 - LENGTH_RULES_V2: TR 1200-2500 / 4-7 sadaļas un
+ *   „Nākamajos 100 000 km” (ICE); kopsavilkums 500-900 ar Fakti + Mūsu ieteikums;
+ *   konsultatīvi formulējumi; G1-G4 ar vienu pārģenerēšanu. Aiz karoga.
  * - 2026-10-14.1 - Laikposma sludinājumi (Pārdošanai piedāvātas u.c.) nav
  *   fiziska valstu maiņa; AI un PDF to neinterpretē kā imports DE/NL/PL.
  * - 2026-10-13.1 - Aizliegts personas lietvārds klienta tekstā (LV e-vārds
