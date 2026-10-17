@@ -1,5 +1,6 @@
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 import { toActiveWaybillRows } from "@/lib/iriss-pavadzimes-active";
+import { computeWaybillLifecycles, sortWaybillsNewestFirst } from "@/lib/iriss-pavadzimes-lifecycle";
 import { matchIrissPavadzimesToOrders } from "@/lib/iriss-pavadzimes-match";
 import { waybillValidityTone } from "@/lib/iriss-pavadzimes-parse";
 import { listIrissPavadzimes, readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
@@ -20,12 +21,19 @@ export async function loadIrissPavadzimesPageData(now = new Date()): Promise<Iri
   } catch {
     orders = [];
   }
-  const matched = matchIrissPavadzimesToOrders(listed.rows, orders);
-  return {
-    rows: matched.map((row) => ({
+  const lifecycles = computeWaybillLifecycles(listed.rows, now);
+  const matched = matchIrissPavadzimesToOrders(listed.rows, orders).map((row, i) => {
+    const src = listed.rows[i];
+    const info = src ? lifecycles.get(src) : undefined;
+    return {
       ...row,
       validityTone: waybillValidityTone(row.validUntil, now),
-    })),
+      lifecycle: info?.lifecycle ?? "unknown",
+      ...(info?.supersededBy ? { supersededBy: info.supersededBy } : {}),
+    };
+  });
+  return {
+    rows: sortWaybillsNewestFirst(matched),
     pendingParse: listed.pendingParse,
     dropboxConfigured: listed.dropboxConfigured,
     dropboxError: listed.dropboxError,
