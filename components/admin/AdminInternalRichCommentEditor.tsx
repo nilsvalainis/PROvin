@@ -11,7 +11,7 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import { Baseline, Highlighter, RemoveFormatting } from "lucide-react";
+import { Baseline, Highlighter, List, RemoveFormatting } from "lucide-react";
 import {
   coerceAdminRichHtmlForDisplay,
   normalizeEditorRichHtmlForStorage,
@@ -22,8 +22,10 @@ import {
 import {
   ADMIN_RICH_COMMENT_FONT_OPTIONS,
   ADMIN_RICH_COMMENT_HIGHLIGHT_OPTIONS,
+  ADMIN_RICH_COMMENT_SIMPLE_SIZE_OPTIONS,
   ADMIN_RICH_COMMENT_SIZE_OPTIONS,
   ADMIN_RICH_COMMENT_TEXT_COLOR_OPTIONS,
+  adminRichCommentCssOrInherit,
 } from "@/lib/admin-rich-comment-fonts";
 
 /** Pievienot read-only `className`, ja HTML rāda ar `AdminRichCommentReadonly`. */
@@ -98,6 +100,7 @@ type AdminInternalRichCommentEditorProps = {
   onChange: (html: string) => void;
   className?: string;
   variant?: "default" | "compact";
+  toolbar?: "full" | "simple";
   "aria-label"?: string;
   /** Virsraksts tajā pašā rindā ar formatēšanu / ✨. */
   label?: ReactNode;
@@ -121,6 +124,7 @@ export function AdminInternalRichCommentEditor({
   onChange,
   className = "",
   variant = "default",
+  toolbar = "full",
   "aria-label": ariaLabel = "Iekšējais komentārs",
   label,
   toolbarEnd,
@@ -234,10 +238,16 @@ export function AdminInternalRichCommentEditor({
       const el = ref.current;
       if (!el) return;
       el.focus();
-      const styleStr = Object.entries(style)
-        .filter(([, v]) => v.trim())
-        .map(([k, v]) => `${k}:${v}`)
-        .join(";");
+      const setEntries = Object.entries(style).filter(([, v]) => v.trim());
+      const clearProps = [
+        ...(opts?.clearDescendantProp ? [opts.clearDescendantProp] : []),
+        ...Object.entries(style)
+          .filter(([, v]) => !v.trim())
+          .map(([k]) => k),
+      ];
+      const styleStr =
+        setEntries.map(([k, v]) => `${k}:${v}`).join(";") ||
+        clearProps.map((prop) => `${prop}:inherit`).join(";");
       if (!styleStr) return;
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0) return;
@@ -257,15 +267,17 @@ export function AdminInternalRichCommentEditor({
         const span = document.createElement("span");
         span.setAttribute("style", styleStr);
         span.appendChild(contents);
-        const clearProp = opts?.clearDescendantProp;
-        if (clearProp) {
+        if (clearProps.length) {
           /** Iekšējie vecie stili citādi „uzvar” jauno (piem. sarkans → zils neko nemaina). */
           span.querySelectorAll<HTMLElement>("[style]").forEach((n) => {
-            n.style.removeProperty(clearProp);
+            for (const clearProp of clearProps) n.style.removeProperty(clearProp);
             if (!n.getAttribute("style")?.trim()) n.removeAttribute("style");
           });
-          if (clearProp === "color") {
+          if (clearProps.includes("color")) {
             span.querySelectorAll("font[color]").forEach((n) => n.removeAttribute("color"));
+          }
+          if (clearProps.includes("font-family")) {
+            span.querySelectorAll("font[face]").forEach((n) => n.removeAttribute("face"));
           }
         }
         range.insertNode(span);
@@ -338,9 +350,8 @@ export function AdminInternalRichCommentEditor({
   const onFontChange = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
       const opt = ADMIN_RICH_COMMENT_FONT_OPTIONS.find((f) => f.id === e.target.value);
-      e.target.value = "default";
-      if (!opt || !opt.css) return;
-      applySpanStyle({ "font-family": opt.css });
+      if (!opt) return;
+      applySpanStyle({ "font-family": adminRichCommentCssOrInherit(opt.css) }, { clearDescendantProp: "font-family" });
     },
     [applySpanStyle],
   );
@@ -348,9 +359,15 @@ export function AdminInternalRichCommentEditor({
   const onSizeChange = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
       const opt = ADMIN_RICH_COMMENT_SIZE_OPTIONS.find((s) => s.id === e.target.value);
-      e.target.value = "";
       if (!opt) return;
-      applySpanStyle({ "font-size": opt.css });
+      applySpanStyle({ "font-size": adminRichCommentCssOrInherit(opt.css) }, { clearDescendantProp: "font-size" });
+    },
+    [applySpanStyle],
+  );
+
+  const applySimpleSize = useCallback(
+    (css: string) => {
+      applySpanStyle({ "font-size": css }, { clearDescendantProp: "font-size" });
     },
     [applySpanStyle],
   );
@@ -440,6 +457,40 @@ export function AdminInternalRichCommentEditor({
       >
         {markBtn(marks.bold, "Treknraksts", "Treknraksts (⌘B)", "bold", <span className="font-bold">B</span>)}
         {markBtn(marks.italic, "Kursīvs", "Kursīvs (⌘I)", "italic", <span className="italic">I</span>)}
+        {toolbar === "simple" ? (
+          <>
+            {markBtn(
+              false,
+              "Saraksts",
+              "Saraksts",
+              "insertUnorderedList",
+              <List className="h-3.5 w-3.5" aria-hidden />,
+            )}
+            <span className={dividerClass} aria-hidden />
+            {ADMIN_RICH_COMMENT_SIMPLE_SIZE_OPTIONS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className={`${toolBtnBase} ${toolBtnIdle}`}
+                title={s.label}
+                aria-label={s.label}
+                onClick={() => applySimpleSize(s.css)}
+              >
+                {s.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-label="Notīrīt formatējumu"
+              className={`${toolBtnBase} ${toolBtnIdle}`}
+              onClick={() => runFormat("removeFormat")}
+              title="Notīrīt formatējumu"
+            >
+              <RemoveFormatting className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          </>
+        ) : (
+          <>
         {markBtn(marks.underline, "Pasvītrots", "Pasvītrots (⌘U)", "underline", <span className="underline">U</span>)}
         {markBtn(
           marks.strike,
@@ -501,22 +552,21 @@ export function AdminInternalRichCommentEditor({
         </select>
         <select
           className={toolSelectClass}
-          defaultValue=""
+          defaultValue="default"
           onChange={onSizeChange}
           title="Izmērs"
           aria-label="Burtu izmērs"
         >
-          <option value="" disabled>
-            Izm.
-          </option>
           {ADMIN_RICH_COMMENT_SIZE_OPTIONS.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.label}px
+              {s.css ? `${s.label}px` : s.label}
             </option>
           ))}
         </select>
+          </>
+        )}
 
-        {palette ? (
+        {toolbar === "full" && palette ? (
           <div className="absolute left-0 top-full z-30 mt-1 w-[min(19rem,90vw)] rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-2 shadow-lg">
             <p className="mb-1.5 text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
               {palette === "text" ? "Teksta krāsa" : "Izcēluma krāsa"}

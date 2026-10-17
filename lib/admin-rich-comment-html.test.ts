@@ -37,6 +37,11 @@ describe("adminRichHtmlToPdfSafeHtml", () => {
     expect(out).toContain("Sarkans");
   });
 
+  it("keeps simple offer sizes and drops inherit reset", () => {
+    expect(adminRichHtmlToPdfSafeHtml('<span style="font-size:20px">Liels</span>')).toContain("font-size:20px");
+    expect(adminRichHtmlToPdfSafeHtml('<span style="font-size:inherit">Parasts</span>')).not.toContain("font-size");
+  });
+
   it("does not double-space contentEditable div lines with trailing br", () => {
     const html =
       "<div><strong>11.2023</strong><br></div><div>Eļļas un eļļas filtru maiņa;<br></div><div>Ford Eļļas apkope (IOLM).<br></div>";

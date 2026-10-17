@@ -12,6 +12,7 @@ import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSectio
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
+import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
@@ -443,6 +444,7 @@ function LabeledOfferRichCommentField({
       <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">{label}</span>
       <AdminAiPolishRichCommentShell
         compact
+        toolbar="simple"
         value={value}
         onChange={onHtmlChange}
         aria-label={label}
@@ -512,6 +514,10 @@ export function IrissPasutijumsEditor({
   const [offerFilePrepare, setOfferFilePrepare] = useState<{ pct: number; label: string } | null>(null);
   const [revisionConflict, setRevisionConflict] = useState<IrissPasutijumsRecord | null>(null);
   const [conflictBusy, setConflictBusy] = useState(false);
+  const [dirty, setDirty] = useState(Boolean(unsavedDraft));
+  const [roomHitsLive, setRoomHitsLive] = useState<IrissOrderRoomHit[]>(roomHits);
+  const [readingListingUrl, setReadingListingUrl] = useState<string | null>(null);
+  const [listingReadByUrl, setListingReadByUrl] = useState<Record<string, string>>({});
 
   const patch = useCallback(<K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => {
     setRec((r) => withAutoEcarstradeLinks(applyIrissFieldEdit(r, { [key]: value } as Partial<IrissPasutijumsRecord>, Date.now())));
@@ -591,6 +597,7 @@ export function IrissPasutijumsEditor({
           setSaveMsg(required.length ? `Saglabāts. ${required.join(" ")}` : "Saglabāts.");
         }
         setRevisionConflict(null);
+        setDirty(JSON.stringify(recRef.current) !== lastSavedSnapshot.current);
         return { ok: true };
       };
 
@@ -764,9 +771,14 @@ export function IrissPasutijumsEditor({
   }, [initialRecord.id, save]);
 
   useEffect(() => {
+    setRoomHitsLive(roomHits);
+  }, [roomHits]);
+
+  useEffect(() => {
+    const snap = JSON.stringify(rec);
+    setDirty(snap !== lastSavedSnapshot.current);
     if (!imagesReady) return;
     if (!persistedIdRef.current && !irissPasutijumsHasOperatorContent(rec)) return;
-    const snap = JSON.stringify(rec);
     if (snap === lastSavedSnapshot.current) return;
     if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     autosaveTimer.current = window.setTimeout(() => {
@@ -776,6 +788,41 @@ export function IrissPasutijumsEditor({
       if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     };
   }, [rec, save, imagesReady]);
+
+  const readListingLink = useCallback(
+    async (sourceUrl: string) => {
+      const href = sourceUrl.trim();
+      if (!href || !persistedIdRef.current) return;
+      setReadingListingUrl(href);
+      try {
+        const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/read-listing`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sourceUrl: href }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          ok?: boolean;
+          note?: string;
+          vehicleCount?: number;
+          newCount?: number;
+          hits?: IrissOrderRoomHit[];
+        };
+        if (Array.isArray(data.hits)) setRoomHitsLive(data.hits);
+        const count = typeof data.vehicleCount === "number" ? data.vehicleCount : 0;
+        const added = typeof data.newCount === "number" ? data.newCount : 0;
+        const msg = data.ok
+          ? `${count} auto${added > 0 ? ` · ${added} jauni` : ""}`
+          : data.note?.trim() || "Nolasīšana neizdevās.";
+        setListingReadByUrl((prev) => ({ ...prev, [href]: msg }));
+      } catch {
+        setListingReadByUrl((prev) => ({ ...prev, [href]: "Tīkla kļūda." }));
+      } finally {
+        setReadingListingUrl(null);
+      }
+    },
+    [rec.id],
+  );
 
   const openPdf = useCallback(async () => {
     setPdfRetryBar(null);
@@ -1392,6 +1439,7 @@ export function IrissPasutijumsEditor({
           : "mx-auto w-full min-w-0 max-w-[1280px] overflow-x-hidden bg-[#f4f5f7] px-3 pb-4 max-md:pb-28 sm:px-4 lg:px-5"
       }
     >
+      <IrissUnsavedChangesGuard dirty={dirty} onSave={saveCurrentPage} />
       {unsavedDraft ? (
       <>
       <AdminDashboardHeaderWithMenu>
@@ -1786,7 +1834,13 @@ export function IrissPasutijumsEditor({
 
         <section className={shellCard}>
           <BlockTitle>Sludinājumu platformas (saites)</BlockTitle>
-          <IrissListingPlatformsFields rec={rec} onPatch={patchRecord} />
+          <IrissListingPlatformsFields
+            rec={rec}
+            onPatch={patchRecord}
+            onReadLink={(url) => void readListingLink(url)}
+            readingUrl={readingListingUrl}
+            readCountByUrl={listingReadByUrl}
+          />
           <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
 
@@ -1862,7 +1916,10 @@ export function IrissPasutijumsEditor({
       ) : (
         <IrissOrderRoom
           rec={rec}
-          hits={roomHits}
+          hits={roomHitsLive}
+          onReadLink={(url) => void readListingLink(url)}
+          readingUrl={readingListingUrl}
+          readCountByUrl={listingReadByUrl}
           dismissedHitIds={dismissedHitIds}
           listingsCache={listingsCache}
           initialHitStatus={coerceIrissHitStatusMap(initialHitStatus)}

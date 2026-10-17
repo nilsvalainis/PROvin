@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import {
   addIrissListingLinkRow,
+  appendIrissListingSearchUrl,
   coerceIrissListingLinkList,
   IRISS_LISTING_LINKS_PER_SOURCE_MAX,
   irissListingLinkUrlError,
@@ -85,6 +86,19 @@ describe("listing link row add/remove", () => {
   it("does not grow past the per-source cap", () => {
     const full = Array.from({ length: IRISS_LISTING_LINKS_PER_SOURCE_MAX }, (_, i) => `https://ex.example/${i}`);
     expect(addIrissListingLinkRow(full)).toHaveLength(IRISS_LISTING_LINKS_PER_SOURCE_MAX);
+  });
+
+  it("appends a generated search URL, replacing the empty first row and skipping duplicates", () => {
+    const url = "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60";
+    expect(appendIrissListingSearchUrl([""], url)).toEqual([url]);
+    expect(appendIrissListingSearchUrl([url], url)).toEqual([url]);
+    expect(appendIrissListingSearchUrl(["https://www.auto1.com/en/app/merchant/cars?model=XC60&manufacturer=VOLVO"], url)).toEqual([
+      "https://www.auto1.com/en/app/merchant/cars?model=XC60&manufacturer=VOLVO",
+    ]);
+    expect(appendIrissListingSearchUrl(["https://www.auto1.com/a"], "https://www.auto1.com/b")).toEqual([
+      "https://www.auto1.com/a",
+      "https://www.auto1.com/b",
+    ]);
   });
 });
 
