@@ -15,10 +15,12 @@ export { applySentenceRewrites, parseTechnicalRiskQaResult } from "@/lib/admin-a
 export async function qaTechnicalRiskText(input: {
   text: string;
   map: TechnicalRiskMap;
+  /** OFICIĀLĀ DĪLERA FAKTI ar ID; QA atzīmē teikumus, kas tiem ir pretrunā. */
+  dealerFactsBrief?: string;
 }): Promise<TechnicalRiskQaResult> {
   const userPrompt = `RISKA KARTE:
 ${JSON.stringify(input.map)}
-
+${input.dealerFactsBrief?.trim() ? `\n${input.dealerFactsBrief.trim()}\n` : ""}
 TEKSTS:
 ${input.text}
 

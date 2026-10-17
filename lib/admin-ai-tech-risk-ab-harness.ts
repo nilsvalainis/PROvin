@@ -4,6 +4,12 @@
  */
 import { lintTechnicalRiskText } from "@/lib/admin-ai-technical-risk-lint";
 import type { TechnicalRiskMap } from "@/lib/admin-ai-technical-risk-map-types";
+import {
+  checkMapAgainstDealerFacts,
+  findTextContradictionsWithDealer,
+  textMentionsDealerCampaigns,
+  type DealerFacts,
+} from "@/lib/admin-ai-dealer-facts";
 
 export type TechRiskAbSlot = {
   slot: number;
@@ -12,6 +18,16 @@ export type TechRiskAbSlot = {
   old?: string;
   new?: string;
   map?: TechnicalRiskMap | null;
+  /** OneAuto dīlera fakti šim pasūtījumam (dealer-consistency metrika). */
+  dealerFacts?: DealerFacts | null;
+};
+
+export type TechRiskAbDealerConsistency = {
+  dealerRows: number;
+  contradictionsOld: number;
+  contradictionsNew: number;
+  mapIssuesNew: number;
+  campaignsMentionedNew: boolean;
 };
 
 export type TechRiskAbSectionScore = {
@@ -30,6 +46,7 @@ export type TechRiskAbPairScore = {
   editDistance: number;
   correctionsNeeded: number;
   sections: TechRiskAbSectionScore[];
+  dealer: TechRiskAbDealerConsistency;
   blinded: { left: string; right: string; newIs: "left" | "right" };
   iriss: { techAccuracy: null; latvian: null };
 };
@@ -80,8 +97,16 @@ function seedFromLabel(label: string, slot: number): number {
 export function scoreTechRiskAbPair(slot: TechRiskAbSlot): TechRiskAbPairScore {
   const oldText = slot.old ?? "";
   const newText = slot.new ?? "";
-  const oldLint = lintTechnicalRiskText({ text: oldText, map: slot.map ?? null });
-  const newLint = lintTechnicalRiskText({ text: newText, map: slot.map ?? null });
+  const facts = slot.dealerFacts ?? null;
+  const oldLint = lintTechnicalRiskText({ text: oldText, map: slot.map ?? null, dealerFacts: facts });
+  const newLint = lintTechnicalRiskText({ text: newText, map: slot.map ?? null, dealerFacts: facts });
+  const dealer: TechRiskAbDealerConsistency = {
+    dealerRows: facts?.rows.length ?? 0,
+    contradictionsOld: facts ? findTextContradictionsWithDealer(oldText, facts).length : 0,
+    contradictionsNew: facts ? findTextContradictionsWithDealer(newText, facts).length : 0,
+    mapIssuesNew: facts ? checkMapAgainstDealerFacts(slot.map ?? null, facts).length : 0,
+    campaignsMentionedNew: facts ? textMentionsDealerCampaigns(newText, facts) : true,
+  };
   const oldSecs = splitTechRiskSections(oldText);
   const newSecs = splitTechRiskSections(newText);
   const max = Math.max(oldSecs.length, newSecs.length);
@@ -107,6 +132,7 @@ export function scoreTechRiskAbPair(slot: TechRiskAbSlot): TechRiskAbPairScore {
     editDistance: levenshtein(oldText, newText),
     correctionsNeeded: newLint.errors.length + newLint.warnings.length + sectionCorrections,
     sections,
+    dealer,
     blinded: {
       left: newIs === "left" ? newText : oldText,
       right: newIs === "right" ? newText : oldText,
@@ -124,6 +150,9 @@ export function scoreTechRiskAbHarness(slots: TechRiskAbSlot[]): {
     meanEditDistance: number;
     meanCorrectionsNeeded: number;
     lintErrorsNew: number;
+    slotsWithDealerData: number;
+    dealerContradictionsOld: number;
+    dealerContradictionsNew: number;
   };
 } {
   const pairs = slots.map(scoreTechRiskAbPair);
@@ -137,6 +166,9 @@ export function scoreTechRiskAbHarness(slots: TechRiskAbSlot[]): {
       meanEditDistance: Math.round(mean(both.map((p) => p.editDistance))),
       meanCorrectionsNeeded: Number(mean(both.map((p) => p.correctionsNeeded)).toFixed(2)),
       lintErrorsNew: pairs.reduce((n, p) => n + p.lintErrorsNew, 0),
+      slotsWithDealerData: pairs.filter((p) => p.dealer.dealerRows > 0).length,
+      dealerContradictionsOld: pairs.reduce((n, p) => n + p.dealer.contradictionsOld, 0),
+      dealerContradictionsNew: pairs.reduce((n, p) => n + p.dealer.contradictionsNew, 0),
     },
   };
 }

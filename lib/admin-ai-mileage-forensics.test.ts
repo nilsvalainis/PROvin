@@ -196,3 +196,30 @@ describe("formatForensicsInt", () => {
     expect(formatForensicsInt(27004)).toBe("27 004");
   });
 });
+
+describe("oficiālā dīlera odometra ticamība", () => {
+  it("atzīmē cita avota rādījumu zem agrāka dīlera rādījuma", async () => {
+    const { analyzeDealerOdometerConflicts, buildDealerOdometerReliabilityBrief } = await import(
+      "@/lib/admin-ai-mileage-forensics"
+    );
+    const rows = [
+      row({ date: "01.01.2020", odometer: "100000", sourceLabel: "OFICIĀLĀ DĪLERA DATI", sortableTime: Date.UTC(2020, 0, 1) }),
+      row({ date: "01.06.2021", odometer: "80000", sourceLabel: "AutoDNA", sortableTime: Date.UTC(2021, 5, 1) }),
+    ];
+    const c = analyzeDealerOdometerConflicts(rows);
+    expect(c).toHaveLength(1);
+    expect(c[0]!.diffKm).toBe(20000);
+    const brief = buildDealerOdometerReliabilityBrief(rows);
+    expect(brief).toContain("augstākās ticamības");
+    expect(brief).toContain("Pretruna");
+  });
+
+  it("bez dīlera rindām brīfs tukšs", async () => {
+    const { buildDealerOdometerReliabilityBrief } = await import("@/lib/admin-ai-mileage-forensics");
+    expect(
+      buildDealerOdometerReliabilityBrief([
+        row({ date: "01.01.2020", odometer: "100000", sourceLabel: "CSDD", sortableTime: Date.UTC(2020, 0, 1) }),
+      ]),
+    ).toBe("");
+  });
+});

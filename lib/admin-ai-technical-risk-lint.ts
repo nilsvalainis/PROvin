@@ -10,6 +10,13 @@ import {
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
 import { PROVIN_KB_EUR_ACTIVE } from "@/lib/provin-kb";
+import {
+  DEALER_WEAR_COMPONENTS,
+  dealerComponentLv,
+  findTextContradictionsWithDealer,
+  textMentionsDealerCampaigns,
+  type DealerFacts,
+} from "@/lib/admin-ai-dealer-facts";
 
 export type TechnicalRiskLintLevel = "E" | "W";
 
@@ -24,6 +31,8 @@ export type TechnicalRiskLintInput = {
   identification?: TechnicalRiskIdentification | null;
   map?: TechnicalRiskMap | null;
   allowCostBands?: boolean;
+  /** OneAuto dīlera fakti (L14/L15). Bez tiem šīs pārbaudes neizpildās. */
+  dealerFacts?: DealerFacts | null;
 };
 
 export type TechnicalRiskLintResult = {
@@ -276,6 +285,23 @@ export function lintTechnicalRiskText(input: TechnicalRiskLintInput): TechnicalR
       level: "W",
       message: `Sadaļu skaits ${sections} (gaidīts 4-12).`,
     });
+  }
+
+  if (input.dealerFacts && input.dealerFacts.rows.length > 0) {
+    for (const hit of findTextContradictionsWithDealer(text, input.dealerFacts)) {
+      issues.push({
+        id: "L14",
+        level: DEALER_WEAR_COMPONENTS.has(hit.component) ? "W" : "E",
+        message: `Pretruna ar oficiālā dīlera datiem: teksts prasa „${dealerComponentLv(hit.component)}” darbu, bet ${hit.fact.id} (${hit.fact.date}) tas jau fiksēts: „${hit.sentence.slice(0, 160)}”.`,
+      });
+    }
+    if (!textMentionsDealerCampaigns(text, input.dealerFacts)) {
+      issues.push({
+        id: "L15",
+        level: "W",
+        message: "Dīlera datos ir kampaņa / servisa akcija, bet tekstā tā nav minēta (ID vai datums).",
+      });
+    }
   }
 
   const errors = issues.filter((i) => i.level === "E");
