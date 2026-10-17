@@ -44,6 +44,7 @@ import {
   readOrderDraft,
 } from "@/lib/admin-order-draft-store";
 import { list } from "@vercel/blob";
+import { isTrainingV2Enabled } from "@/lib/feature-flags-v2";
 
 export { draftQualifiesForAggregateLearning, extractLearningSnippetsFromDraft };
 
@@ -70,7 +71,17 @@ const AGGREGATE_CTX_MAX_CHARS_WITH_ENGINE = 10_500;
 export { engineFamilyLearningKeys, engineLearningKey } from "@/lib/admin-audit-learning-keys";
 
 /** Pēc veiksmīgas atskaites saglabāšanas — papildina mācījumu indeksu (fire-and-forget). */
-export async function recordAuditAggregateLearningFromDraft(draft: OrderDraftState): Promise<void> {
+export async function recordAuditAggregateLearningFromDraft(
+  draft: OrderDraftState,
+  sessionId?: string,
+): Promise<void> {
+  if (isTrainingV2Enabled()) {
+    if (sessionId) {
+      const { recordTrainingV2FromDraftForSession } = await import("@/lib/admin-audit-knowledge-v2");
+      await recordTrainingV2FromDraftForSession(sessionId, draft);
+    }
+    return;
+  }
   if (!draftQualifiesForAggregateLearning(draft)) return;
   const ws = draft.workspace!;
   const vin = draft.orderEdits.vin?.trim() || null;
@@ -166,14 +177,26 @@ export async function backfillAuditAggregateLearnings(opts?: {
   let recorded = 0;
   let skipped = 0;
   let errors = 0;
+  const trainingV2 = isTrainingV2Enabled();
   for (const sessionId of ids) {
     try {
       const draft = await readOrderDraft(sessionId);
-      if (!draft || !draftQualifiesForAggregateLearning(draft)) {
+      if (!draft) {
         skipped += 1;
         continue;
       }
-      await recordAuditAggregateLearningFromDraft(draft);
+      if (trainingV2) {
+        const { recordTrainingV2FromDraftForSession } = await import("@/lib/admin-audit-knowledge-v2");
+        const saved = await recordTrainingV2FromDraftForSession(sessionId, draft);
+        if (saved.length === 0) skipped += 1;
+        else recorded += 1;
+        continue;
+      }
+      if (!draftQualifiesForAggregateLearning(draft)) {
+        skipped += 1;
+        continue;
+      }
+      await recordAuditAggregateLearningFromDraft(draft, sessionId);
       recorded += 1;
     } catch {
       errors += 1;
@@ -251,6 +274,7 @@ export type AggregateKnowledgeContextInput = {
   sourceBlocks: WorkspaceSourceBlocks;
   vin?: string | null;
   manufactureYear?: number | null;
+  sessionId?: string | null;
 };
 
 function clipAggregateContext(parts: string[], maxChars: number): string {
@@ -278,6 +302,26 @@ export async function buildAggregateKnowledgeAiContext(
 
   const packs = selectAggregateCasePacks(fp, { maxPacks: AGGREGATE_CTX_MAX_PACKS });
   const packText = formatAggregateCasePacksForAi(packs);
+
+  if (isTrainingV2Enabled()) {
+    const { buildTrainingV2KnowledgeContext } = await import("@/lib/admin-audit-knowledge-v2");
+    const v2 = await buildTrainingV2KnowledgeContext({
+      sourceBlocks: blocks,
+      vin: input.vin,
+      manufactureYear: input.manufactureYear,
+      sessionId: input.sessionId,
+    });
+    return clipAggregateContext(
+      [
+        AI_AGGREGATE_KNOWLEDGE_RULES,
+        `### Agregātu zināšanas šim auto (${formatVehicleFingerprintLabel(fp)})`,
+        packText,
+        v2,
+      ],
+      fp.engineCode ? AGGREGATE_CTX_MAX_CHARS_WITH_ENGINE : AGGREGATE_CTX_MAX_CHARS,
+    );
+  }
+
   const keys = await rankLearningKeysForFingerprint(fp);
   const learnings = (await getAuditLearningsForKeys(keys)).filter((e) =>
     learningEntryIsInjectable(e, isTechRiskV2Enabled()),

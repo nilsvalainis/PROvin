@@ -36,6 +36,12 @@ import {
 import type { AiTextStream } from "@/lib/ai-text-stream";
 import { commentLengthLimitsWaived } from "@/lib/ai-comment-length-budget";
 import { parseCommentBreadthFromPrompt } from "@/lib/ai-comment-breadth";
+import { isLengthRulesV2Enabled } from "@/lib/feature-flags-v2";
+import {
+  appendLengthRulesV2ToSystem,
+  LENGTH_RULES_V2_CHEAP_RETRY_CODES,
+  LENGTH_RULES_V2_CRITICAL_RETRY_CODES,
+} from "@/lib/ai-length-rules-v2";
 
 export { isGeminiAdminTier };
 
@@ -77,6 +83,7 @@ const SELF_CORRECTION_RETRY_CODES = new Set([
   "invented_repair_eur",
   "summary_price",
   "tech_risks_identity_intro",
+  "consultative_wording",
   "wrap_film_missing",
   "wrap_film_risk_incomplete",
   "wrap_film_invented",
@@ -158,8 +165,10 @@ async function withSelfCorrection(
   routeBudgetMs: number,
   generateOnce: (opts: GenerateOpts) => Promise<string>,
 ): Promise<string> {
+  const lengthV2 = isLengthRulesV2Enabled();
   const withBudget: GenerateOpts = {
     ...opts,
+    systemInstruction: appendLengthRulesV2ToSystem(opts.systemInstruction, opts.qualityField),
     budget: opts.budget ?? createAiRequestBudget(routeBudgetMs),
   };
   const raw = await generateOnce(withBudget);
@@ -172,13 +181,23 @@ async function withSelfCorrection(
     sourcePrompt: opts.userPrompt,
   });
   const critical = allIssues.filter(
-    (i) => i.code.startsWith("vocabulary_") || SELF_CORRECTION_RETRY_CODES.has(i.code),
+    (i) =>
+      i.code.startsWith("vocabulary_") ||
+      SELF_CORRECTION_RETRY_CODES.has(i.code) ||
+      (lengthV2 && LENGTH_RULES_V2_CRITICAL_RETRY_CODES.has(i.code)),
   );
+  const skipLegacyCheapLength =
+    CHEAP_LENGTH_SKIP_FIELDS.has(field) &&
+    parseCommentBreadthFromPrompt(opts.userPrompt) !== "compact" &&
+    !lengthV2;
   const cheap =
-    commentLengthLimitsWaived(opts.userPrompt) ||
-    (CHEAP_LENGTH_SKIP_FIELDS.has(field) && parseCommentBreadthFromPrompt(opts.userPrompt) !== "compact")
+    commentLengthLimitsWaived(opts.userPrompt) || skipLegacyCheapLength
       ? []
-      : allIssues.filter((i) => CHEAP_CORRECTION_RETRY_CODES.has(i.code));
+      : allIssues.filter(
+          (i) =>
+            CHEAP_CORRECTION_RETRY_CODES.has(i.code) ||
+            (lengthV2 && LENGTH_RULES_V2_CHEAP_RETRY_CODES.has(i.code)),
+        );
 
   if (critical.length === 0 && cheap.length === 0) return raw;
   if (!aiBudgetAllowsRetry(withBudget.budget)) {
