@@ -12,7 +12,9 @@ import {
   isValidScanPlate,
   parseVinScanPlates,
 } from "@/lib/vin-scan/plates";
+import { applyVinScanBrowserResultToSnapshot } from "@/lib/vin-scan/apply-browser-result";
 import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
+import { preferBrowserArchiveImport } from "@/lib/order-vin-scan-browser-html";
 import { runVinScan, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
@@ -57,6 +59,35 @@ export async function POST(req: Request) {
   const listingUrl = canonicalizeListingUrl(String(body.listingUrl ?? ""));
   if (!isValidVin(vin) && !hasAnyVinScanPlate(plates) && !isPlausibleListingUrl(listingUrl)) {
     return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
+  }
+
+  const br = body.browserResult as Record<string, unknown> | undefined;
+  if (br && typeof br === "object") {
+    if (!isValidVin(vin)) return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
+    const existing = await readVinScanSnapshot(vin).catch(() => null);
+    const applied = applyVinScanBrowserResultToSnapshot({
+      snapshot: existing,
+      vin,
+      plates,
+      browserResult: {
+        id: typeof br.id === "string" ? br.id : "",
+        status: typeof br.status === "string" ? br.status : "",
+        summary: typeof br.summary === "string" ? br.summary : "",
+        html: typeof br.html === "string" ? br.html : "",
+        pageUrl: typeof br.pageUrl === "string" ? br.pageUrl : "",
+        ...(typeof br.httpStatus === "number" && Number.isFinite(br.httpStatus) ? { httpStatus: br.httpStatus } : {}),
+      },
+    });
+    if (!applied.ok) return NextResponse.json({ error: applied.error }, { status: 400 });
+    await writeVinScanSnapshot(applied.snapshot).catch(() => undefined);
+    return NextResponse.json({
+      ok: true,
+      vin,
+      plates: applied.snapshot.plates,
+      scannedAt: applied.snapshot.scannedAt,
+      indicators: applyFinlandLinkToIndicators(applied.snapshot.indicators, plates),
+      cached: false,
+    });
   }
 
   const force = body.force === true;
@@ -111,7 +142,10 @@ export async function POST(req: Request) {
   const toScan = requested.filter((id) => !cachedIds.has(id));
   const scanned = toScan.length ? await runVinScan({ vin, plates, listingUrl, sourceIds: toScan }) : [];
   const base = prev && prev.vin === vin ? prev.indicators : [];
-  const indicators = applyFinlandLinkToIndicators(mergeVinScanIndicators(base, scanned), plates);
+  const indicators = applyFinlandLinkToIndicators(
+    preferBrowserArchiveImport(base, mergeVinScanIndicators(base, scanned)),
+    plates,
+  );
   const scannedAt = scanned.length ? new Date().toISOString() : prev?.scannedAt || new Date().toISOString();
   after(() => recordSourceOutcomes(vinScanSourceHealthOutcomes(scanned)));
   if (isValidVin(vin) && scanned.length) {

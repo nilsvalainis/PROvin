@@ -59,3 +59,73 @@ export function browserFetchToken(vin: string, at: string): string {
   if (!v || !stamp) return "";
   return `${v}:${stamp}`;
 }
+
+export type VinScanBrowserFetchHandoff = {
+  token: string;
+  ids: VinScanBrowserFetchId[];
+  attrs: {
+    "data-provin-browser-fetch": string;
+    "data-provin-browser-fetch-ids": string;
+    "data-provin-stat-vin-fetch"?: string;
+  };
+};
+
+/** Tampermonkey v1.22.0 lasa šos atribūtus uz `/admin` (pasūtījums un atsevišķais VIN SCAN). */
+export function browserFetchHandoff(
+  vin: string,
+  at: string,
+  rows: readonly { id?: string; status?: string; summary?: string }[] | null | undefined,
+): VinScanBrowserFetchHandoff | null {
+  if (!rows?.length) return null;
+  const ids = rows.filter(browserFetchAwaiting).map((row) => row.id).filter(isVinScanBrowserFetchId);
+  if (!ids.length) return null;
+  const token = browserFetchToken(vin, at);
+  if (!token) return null;
+  return {
+    token,
+    ids,
+    attrs: {
+      "data-provin-browser-fetch": token,
+      "data-provin-browser-fetch-ids": ids.join(","),
+      ...(ids.includes("stat_vin") ? { "data-provin-stat-vin-fetch": token } : {}),
+    },
+  };
+}
+
+export function browserImportErrorLv(code: string | undefined): string {
+  if (code === "vin_mismatch") return "VIN lapā nesakrīt ar pasūtījumu";
+  if (code === "too_large") return "Lapa ir par lielu importam";
+  if (code === "page_not_ready") return "Lapa vēl nav gatava. Pagaidiet, kamēr ielādējas, un mēģiniet vēlreiz";
+  return "Importēšana neizdevās";
+}
+
+export type VinScanBrowserEventDetail = {
+  id: string;
+  vin: string;
+  status: string;
+  summary: string;
+  html: string;
+  pageUrl: string;
+  httpStatus?: number;
+};
+
+/** `provin-vin-scan-result` no Tampermonkey: HTML vai jau found/none. */
+export function parseVinScanBrowserEventDetail(raw: unknown): VinScanBrowserEventDetail | null {
+  if (!raw || typeof raw !== "object") return null;
+  const d = raw as Record<string, unknown>;
+  const id = typeof d.id === "string" ? d.id.trim() : "";
+  const vin = typeof d.vin === "string" ? d.vin.replace(/[\s-]/g, "").toUpperCase() : "";
+  if (!id || !vin) return null;
+  const html = typeof d.html === "string" ? d.html : "";
+  const status = typeof d.status === "string" ? d.status : "";
+  if (!html.trim() && status !== "found" && status !== "none") return null;
+  return {
+    id,
+    vin,
+    status,
+    summary: typeof d.summary === "string" ? d.summary : "",
+    html,
+    pageUrl: typeof d.pageUrl === "string" ? d.pageUrl : "",
+    ...(typeof d.httpStatus === "number" && Number.isFinite(d.httpStatus) ? { httpStatus: d.httpStatus } : {}),
+  };
+}

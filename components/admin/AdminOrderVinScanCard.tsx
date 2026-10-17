@@ -7,9 +7,10 @@ import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell"
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
+import { AdminVinScanBrowserFetchHandoff } from "@/components/admin/AdminVinScanBrowserFetchHandoff";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
 import { ORDER_VIN_SCAN_STUCK_MS } from "@/lib/order-vin-scan-run-decision";
-import { browserFetchAwaiting, browserFetchToken } from "@/lib/vin-scan/browser-fetch";
+import { browserImportErrorLv, parseVinScanBrowserEventDetail } from "@/lib/vin-scan/browser-fetch";
 import {
   buildOrderVinScanSummary,
   formatOrderVinScanClock,
@@ -51,13 +52,6 @@ function Counter({ state, count, label }: { state: DotState; count: number; labe
       {label}
     </span>
   );
-}
-
-function browserImportErrorLv(code: string | undefined): string {
-  if (code === "vin_mismatch") return "VIN lapā nesakrīt ar pasūtījumu";
-  if (code === "too_large") return "Lapa ir par lielu importam";
-  if (code === "page_not_ready") return "Lapa vēl nav gatava. Pagaidiet, kamēr ielādējas, un mēģiniet vēlreiz";
-  return "Importēšana neizdevās";
 }
 
 function actionLabel(action: OrderVinScanSourceRow["action"]): string {
@@ -135,18 +129,9 @@ export function AdminOrderVinScanCard({
 
   useEffect(() => {
     const onResult = (ev: Event) => {
-      const d = (ev as CustomEvent).detail as {
-        id?: string;
-        vin?: string;
-        status?: string;
-        summary?: string;
-        html?: string;
-        pageUrl?: string;
-        httpStatus?: number;
-      } | null;
-      if (!d?.id || String(d.vin || "").toUpperCase() !== vin.trim().toUpperCase()) return;
-      const html = typeof d.html === "string" ? d.html : "";
-      if (!html.trim() && d.status !== "found" && d.status !== "none") return;
+      const d = parseVinScanBrowserEventDetail((ev as CustomEvent).detail);
+      if (!d || d.vin !== vin.trim().toUpperCase()) return;
+      const html = d.html;
       setImportNote("");
       void fetch("/api/admin/order-vin-scan", {
         method: "POST",
@@ -158,11 +143,11 @@ export function AdminOrderVinScanCard({
           browserResult: {
             id: d.id,
             status: d.status,
-            summary: d.summary ?? "",
+            summary: d.summary,
             ...(html.trim()
               ? {
                   html,
-                  pageUrl: typeof d.pageUrl === "string" ? d.pageUrl : "",
+                  pageUrl: d.pageUrl,
                   ...(typeof d.httpStatus === "number" ? { httpStatus: d.httpStatus } : {}),
                 }
               : {}),
@@ -185,13 +170,6 @@ export function AdminOrderVinScanCard({
   }, [sessionId, vin]);
 
   const summary = useMemo(() => buildOrderVinScanSummary(record), [record]);
-  const browserFetch = useMemo(() => {
-    if (!record || record.status === "running") return null;
-    const ids = record.indicators.filter((row) => browserFetchAwaiting(row)).map((row) => row.id);
-    if (!ids.length) return null;
-    const token = browserFetchToken(vin, record.at);
-    return token ? { token, ids } : null;
-  }, [record, vin]);
   const sourceCount = record?.indicators.length ?? 0;
   const clock = record?.at ? formatOrderVinScanClock(record.at) : "";
   const meta =
@@ -375,18 +353,16 @@ export function AdminOrderVinScanCard({
         />
       }
     >
-      <span
-        hidden
-        data-provin-order-vin={vin.trim().toUpperCase()}
-        data-provin-order-session={sessionId}
-        {...(browserFetch
-          ? {
-              "data-provin-browser-fetch": browserFetch.token,
-              "data-provin-browser-fetch-ids": browserFetch.ids.join(","),
-              ...(browserFetch.ids.includes("stat_vin") ? { "data-provin-stat-vin-fetch": browserFetch.token } : {}),
-            }
-          : {})}
-      />
+      {record && record.status !== "running" ? (
+        <AdminVinScanBrowserFetchHandoff
+          vin={vin}
+          at={record.at}
+          rows={record.indicators}
+          sessionId={sessionId}
+        />
+      ) : (
+        <span hidden data-provin-order-vin={vin.trim().toUpperCase()} data-provin-order-session={sessionId} />
+      )}
       {showFields ? (
         <div className="px-2 pb-2">
           <AdminUserscriptUpdateHint />
