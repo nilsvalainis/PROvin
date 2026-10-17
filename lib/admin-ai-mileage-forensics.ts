@@ -323,6 +323,68 @@ export function buildOdometerRollbackBoundsBrief(rows: UnifiedMileageRow[]): str
   return lines.join("\n");
 }
 
+export const OFFICIAL_DEALER_MILEAGE_LABEL = "OFICIĀLĀ DĪLERA DATI";
+/** Cita avota rādījums zem agrāka dīlera rādījuma par vismaz šo — pretruna ar dīleri. */
+export const DEALER_CONFLICT_MIN_KM = 1_000;
+
+function isOfficialDealerLabel(label: string): boolean {
+  return sourceKey(label) === sourceKey(OFFICIAL_DEALER_MILEAGE_LABEL);
+}
+
+export type DealerOdometerConflict = {
+  dealerDate: string;
+  dealerKm: number;
+  otherDate: string;
+  otherKm: number;
+  otherSource: string;
+  diffKm: number;
+};
+
+/**
+ * Oficiālā dīlera (OneAuto) rādījumi ir augstākās ticamības atskaites punkts.
+ * Atgriež citu avotu rādījumus, kas ir zemāki par AGRĀKU dīlera rādījumu.
+ */
+export function analyzeDealerOdometerConflicts(rows: UnifiedMileageRow[]): DealerOdometerConflict[] {
+  const points = datedKm(rows);
+  const out: DealerOdometerConflict[] = [];
+  let maxDealer: { date: string; km: number; t: number } | null = null;
+  for (const p of points) {
+    if (isOfficialDealerLabel(p.sourceLabel)) {
+      if (!maxDealer || p.km > maxDealer.km) maxDealer = { date: p.date, km: p.km, t: p.t };
+      continue;
+    }
+    if (maxDealer && p.t > maxDealer.t && maxDealer.km - p.km >= DEALER_CONFLICT_MIN_KM) {
+      out.push({
+        dealerDate: maxDealer.date,
+        dealerKm: maxDealer.km,
+        otherDate: p.date,
+        otherKm: p.km,
+        otherSource: p.sourceLabel,
+        diffKm: maxDealer.km - p.km,
+      });
+    }
+  }
+  return out;
+}
+
+export function buildDealerOdometerReliabilityBrief(rows: UnifiedMileageRow[]): string {
+  const dealerPoints = datedKm(rows).filter((p) => isOfficialDealerLabel(p.sourceLabel));
+  if (dealerPoints.length === 0) return "";
+  const lines = [
+    "### Oficiālā dīlera odometra rādījumi (augstākā ticamība - NEIZDOMĀ pretējo)",
+    `- ${dealerPoints.length} rādījumi no OFICIĀLĀ DĪLERA DATI (OneAuto). Tie ir augstākās ticamības atskaites punkts nobraukuma vēsturē. Pretrunā ar citu avotu par atskaiti ņem dīlera rādījumu un pretrunu nosauc ar abiem skaitļiem un datumiem.`,
+    "- Dīlera dokumentā rādījums var būt saglabāts no pasūtījuma atvēršanas brīža, tāpēc datums dažkārt ir vēlāks par nolasījumu. Tā nav manipulācija.",
+  ];
+  const last = dealerPoints[dealerPoints.length - 1]!;
+  lines.push(`- Pēdējais dīlera rādījums: ${last.date}, ${formatForensicsInt(last.km)} km.`);
+  for (const c of analyzeDealerOdometerConflicts(rows)) {
+    lines.push(
+      `- Pretruna: ${c.otherSource} ${c.otherDate} rāda ${formatForensicsInt(c.otherKm)} km, bet dīleris jau ${c.dealerDate} fiksēja ${formatForensicsInt(c.dealerKm)} km (starpība ${formatForensicsInt(c.diffKm)} km). Fakts, ne pierādīta manipulācija.`,
+    );
+  }
+  return lines.join("\n");
+}
+
 /** Visi trīs brīfi vienā blokā order-context. Tukšs, ja nav ko teikt. */
 export function buildMileageForensicsBrief(payload: UnifiedMileageSourcePayload): string {
   const raw = collectUnifiedMileageRows(payload);
@@ -331,6 +393,7 @@ export function buildMileageForensicsBrief(payload: UnifiedMileageSourcePayload)
     buildMileageRateBrief(raw),
     buildSourceIndependenceBrief(raw),
     buildOdometerRollbackBoundsBrief(raw),
+    buildDealerOdometerReliabilityBrief(raw),
   ]
     .filter(Boolean)
     .join("\n\n");

@@ -47,6 +47,8 @@ export async function generateTechnicalRiskMapWithAi(input: {
   orderContext: string;
   identification: TechnicalRiskIdentification;
   identificationBrief: string;
+  /** OFICIĀLĀ DĪLERA FAKTI ar ID (D1…); tukšs, ja OneAuto datu nav. */
+  dealerFactsBrief?: string;
   stream?: AiTextStream;
 }): Promise<TechnicalRiskMap> {
   const kbBlock = formatMatchingProvinKbForPrompt([
@@ -62,7 +64,7 @@ ${input.identificationBrief}
 
 ${kbBlock}
 
-${input.orderContext}
+${input.dealerFactsBrief?.trim() ? `${input.dealerFactsBrief.trim()}\n\n` : ""}${input.orderContext}
 
 ---
 

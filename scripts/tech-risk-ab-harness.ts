@@ -22,6 +22,7 @@ function loadSlots(): TechRiskAbSlot[] {
     old: o.old,
     new: o.new,
     map: o.map,
+    dealerFacts: o.dealerFacts ?? null,
   }));
 }
 

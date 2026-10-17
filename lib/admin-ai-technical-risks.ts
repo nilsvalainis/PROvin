@@ -27,6 +27,13 @@ import {
 import { identifyEngineGearboxPlatform } from "@/lib/admin-ai-engine-identification";
 import { generateTechnicalRiskMapWithAi } from "@/lib/admin-ai-technical-risk-map";
 import {
+  buildDealerFactsBrief,
+  checkMapAgainstDealerFacts,
+  extractDealerFacts,
+  fillAlreadyDoneEvidenceFromDealer,
+  type DealerMapIssue,
+} from "@/lib/admin-ai-dealer-facts";
+import {
   formatTechnicalRiskLintErrors,
   lintTechnicalRiskText,
 } from "@/lib/admin-ai-technical-risk-lint";
@@ -39,6 +46,10 @@ import {
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
 import { PROVIN_KB_EUR_ACTIVE } from "@/lib/provin-kb";
+
+function withDealerFlags(flags: string[], issues: DealerMapIssue[]): string[] {
+  return [...flags, ...issues.map((i) => `${i.id}: ${i.message}`)];
+}
 
 export type TechnicalRiskAnalysisResult = {
   text: string;
@@ -146,6 +157,7 @@ async function generateTextFromMap(
   map: TechnicalRiskMap,
   orderContext: string,
   lintErrors?: string,
+  dealerFactsBrief?: string,
 ): Promise<string> {
   const hideEur = map.hide_cost_bands === true || !allowCostBands() || !PROVIN_KB_EUR_ACTIVE;
   const verified = PROVIN_KB_EUR_ACTIVE ? verifiedKbCostBandsFromMap(map) : [];
@@ -163,7 +175,7 @@ Ja kartē unknowns[] vai confidence C, neraksti minējumu. Īsi: "Datos nav fiks
 
 RISKA KARTE (JSON, raksti TIKAI no šīs kartes):
 ${JSON.stringify(map)}
-
+${dealerFactsBrief?.trim() ? `\n${dealerFactsBrief.trim()}\n` : ""}
 ${orderContext}
 
 ${lintErrors ? `\n---\nVALIDATORA KĻŪDAS (labo TIKAI šīs, jaunus faktus nepievieno):\n${lintErrors}` : ""}
@@ -208,18 +220,23 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
     sourceBlocks: blocks,
     vin: input.vin,
   });
+  const dealerFacts = extractDealerFacts(blocks.oneauto);
+  const dealerFactsBrief = buildDealerFactsBrief(dealerFacts);
   try {
-    const map = {
+    const rawMap = {
       ...(await generateTechnicalRiskMapWithAi({
         modelTier: input.modelTier,
         orderContext,
         identification,
         identificationBrief,
+        dealerFactsBrief,
       })),
       ...(input.hideTechnicalRiskCostBands ? { hide_cost_bands: true as const } : {}),
     };
-    let text = await generateTextFromMap(input, map, orderContext);
-    const qa = await qaTechnicalRiskText({ text, map });
+    const dealerMapIssues = checkMapAgainstDealerFacts(rawMap, dealerFacts);
+    const map = fillAlreadyDoneEvidenceFromDealer(rawMap, dealerFacts);
+    let text = await generateTextFromMap(input, map, orderContext, undefined, dealerFactsBrief);
+    const qa = await qaTechnicalRiskText({ text, map, dealerFactsBrief });
     if (qa.flagged.length > 0 && qa.rewritten_text.trim()) {
       text = finalizeText(qa.rewritten_text, keepVerifiedEur(map));
       if (map.hide_cost_bands === true || !allowCostBands() || !PROVIN_KB_EUR_ACTIVE) {
@@ -231,6 +248,7 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
       identification: map.identification,
       map,
       allowCostBands: allowCostBands() && map.hide_cost_bands !== true,
+      dealerFacts,
     });
     if (first.errors.length > 0) {
       text = await generateTextFromMap(
@@ -238,23 +256,29 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
         map,
         orderContext,
         formatTechnicalRiskLintErrors(first.errors),
+        dealerFactsBrief,
       );
       const second = lintTechnicalRiskText({
         text,
         identification: map.identification,
         map,
         allowCostBands: allowCostBands() && map.hide_cost_bands !== true,
+        dealerFacts,
       });
       if (second.errors.length > 0) {
         return {
           text,
           technicalRiskMap: map,
           lintWarning: `Tehnisko risku validators joprojām redz kļūdas pēc vienas pārģenerēšanas: ${formatTechnicalRiskLintErrors(second.errors)}`,
-          operatorFlags: buildTechRiskOperatorFlags(map),
+          operatorFlags: withDealerFlags(buildTechRiskOperatorFlags(map), dealerMapIssues),
         };
       }
     }
-    return { text, technicalRiskMap: map, operatorFlags: buildTechRiskOperatorFlags(map) };
+    return {
+      text,
+      technicalRiskMap: map,
+      operatorFlags: withDealerFlags(buildTechRiskOperatorFlags(map), dealerMapIssues),
+    };
   } catch (e) {
     rethrowNormalizedIncompleteComment(e, (t) =>
       stripUnauthorizedEuroAmounts(normalizeProvinExpertAiComment(t)),

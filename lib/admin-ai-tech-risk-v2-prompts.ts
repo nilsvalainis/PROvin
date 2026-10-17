@@ -6,8 +6,8 @@ SECĪBA (obligāta):
 1. IDENTIFIKĀCIJA. Izmanto ievadā doto identifikāciju (engine / gearbox / platform ar A|B|C). Ja confidence C, uzskaiti kandidātus un ko klātienē nolasīt (dzinēja marķējums, kārbas plāksnīte).
 2. KB SASKAŅOŠANA. Zemāk ir PROVIN KB ieraksti no data/kb/*.yaml. Izmanto tikai tos, kuru code sakrīt ar identificēto (vai ar visiem C kandidātiem). EUR no KB NAV ieviests.
 3. MEKLĒŠANA. Katram riskam, kam nav verified KB ieraksta, meklē: "{dzinēja kods} known problems", "{kods} timing chain OR belt", "{kārbas kods} failure", "{šasija} {kods} recall", "{modelis} {gads} Rückruf/KBA".
-4. ATSAUKUMI (OBLIGĀTI). Meklē ražotāja / KBA / NHTSA / EU Safety Gate. Uzskaiti tikai atrastos atsaukumus ar avotu. Ja nav atrasts, raksti "nav atrasts", nevis "nav". Neizdomā kampaņu numurus.
-5. KALIBRĀCIJA. Katru kļūmi salīdzini ar šī auto km, vecumu un servisa vēsturi.
+4. ATSAUKUMI (OBLIGĀTI). Meklē ražotāja / KBA / NHTSA / EU Safety Gate. Uzskaiti tikai atrastos atsaukumus ar avotu. Ja nav atrasts, raksti "nav atrasts", nevis "nav". Neizdomā kampaņu numurus. Dīlera faktos atzīmētās kampaņas ([kampaņa]) ieliec recalls ar source "Dīleris D<n>" un status_known=true; kampaņas numuru raksti tikai, ja tas ir dīlera tekstā.
+5. KALIBRĀCIJA. Katru kļūmi salīdzini ar šī auto km, vecumu un servisa vēsturi. Ja ievadā ir "OFICIĀLĀ DĪLERA FAKTI", katram riskam pārbaudi tos: ja mezgla darbs tur fiksēts, already_done_evidence = "D<n> <datums> <km>: <darbs>" un this_car_position/prioritāti kalibrē pēc tā. Dīlera ieraksta trūkums nozīmē tikai "oficiālajā dīlerī nav fiksēts", ne "nav darīts".
 6. BOJĀJUMI. Ja ir izsoles/negadījumu dati: katrai zonai nosauc skartos mezglus.
 
 TRŪKSTOŠI DATI: ja koda, servisa, atsaukuma vai bojājuma nav avotos, ieliec unknowns[] un NEIZDOMĀ. Maksas detaļu katalogu cenas (Autodoc, RockAuto, PartsLink u.c.) NAV avots.
@@ -74,7 +74,8 @@ STRUKTŪRA:
 2. Tad prioritātes 2 risks, ja tāds ir. Galvenie pirkuma riski ir max 2.
 3. Tad pārējie kartes riski ar applies_to_this_car=true, pa vienam mezglam katrā sadaļā.
 4. Ja ir damage_interpretation, viena sadaļa "Bojājumu tehniskās sekas".
-5. Ja ir atsaukumi, viena sadaļa "Ražotāja atsaukumi": nosaukums, avots, un ka izpilde jāpārbauda pie dīlera pēc VIN. Ja "nav atrasts" - tā arī saki.
+5. Ja ir atsaukumi, viena sadaļa "Ražotāja atsaukumi": nosaukums, avots, un ka izpilde jāpārbauda pie dīlera pēc VIN. Ja "nav atrasts" - tā arī saki. Ja recall avots ir "Dīleris D<n>", raksti "Oficiālā dīlera datos fiksēts izpildīts (datums)" un nelūdz to pārbaudīt vēlreiz.
+OFICIĀLĀ DĪLERA DATI: ja riskam already_done_evidence nav tukšs, raksti, ka darbs dīlera datos jau ir (datums, km), un NERAKSTI, ka tas jāveic. Ja dīlera ieraksta nav, raksti "oficiālā dīlera datos nav fiksēts"; tas nav pierādījums, ka darbs nav veikts. Ja >30 000 km vai >24 mēn. bez fiksētas apkopes, apkope var būt bijusi ārpus oficiālā dīlera: iesaki lūgt pārdevējam dokumentus. Neraksti "neatliekamu" maiņu tikai tāpēc, ka odometrs pārsniedz OEM intervālu.
 6. Stiprās puses: max 1 sadaļa.
 7. Ja engine.confidence ir B vai C, viens teikums: "Dzinēja kods noteikts pēc jaudas un tilpuma; to apstiprina marķējums uz bloka." Riskus, kas atkarīgi no koda, formulē nosacīti.
 
@@ -91,6 +92,7 @@ Pārbaudi KATRU apgalvojumu: tam jābūt kartē (risks, recall, strength, unknow
 Atzīmē slavinājuma ievadus un kalkus: "viens no veiksmīgākajiem/uzticamākajiem/pārbaudītākajiem", slavinājuma "Šī automašīna ir aprīkota ar", "manā pieredzē", "manā praksē", "equipped with". Faktu teikums (aprīkojums + risks) NAV kļūda.
 "obligāti", "kritiski", "netiek rekomendēts" pārraksti konsultatīvi ("vērts pārbaudīt", "ieteicams noskaidrot").
 N57 klaņa gultņu noberze ir verificēta tipiska kaite: NEATZĪMĒ to kā izdomājumu vai kļūdu.
+Ja ievadā ir "OFICIĀLĀ DĪLERA FAKTI": atzīmē teikumu, kas prasa mainīt vai remontēt mezglu, kura darbs tur jau fiksēts (D<n>), vai kas apgalvo, ka darbs "nav veikts" tikai tāpēc, ka dīlera ieraksta nav. Aizvietojumā nosauc D<n> datumu un km.
 EUR teikums nav atļauts: KB EUR joslas nav ieviestas. Ja tekstā ir EUR, atzīmē.
 Pārraksti TIKAI atzīmētos teikumus. Pārējo tekstu neaiztiec.
 Ja kartē trūkst datu, neatminies: īsais teksts "Datos nav fiksēts" vai izmet minējumu.
