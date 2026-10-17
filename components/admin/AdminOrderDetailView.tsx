@@ -66,6 +66,7 @@ export function AdminOrderAttributionLines({
         Reklāmas avots: <span className="font-medium text-[var(--color-apple-text)]">{channelLabel}</span>
         {attribution.campaign ? ` · kampaņa ${attribution.campaign}` : ""}
         {attribution.term ? ` · atslēgvārds ${attribution.term}` : ""}
+        {attribution.content ? ` · Reklāma (utm_content) ${attribution.content}` : ""}
       </p>
       <p className="break-all">
         Pirmā lapa: {attribution.firstLanding || "nav datu"}
@@ -100,6 +101,7 @@ export type AdminOrderDetailClientModel = {
     channel: string | null;
     campaign: string | null;
     term: string | null;
+    content: string | null;
     firstLanding: string | null;
     lastLanding: string | null;
     landing: string | null;

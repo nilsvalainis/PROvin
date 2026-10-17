@@ -74,6 +74,7 @@ describe("toAdminOrderDetailClientModel", () => {
         channel: "google",
         campaign: "vin-audit",
         term: "bmw",
+        content: "reels-q4",
         firstLanding: "/lv?gclid=1",
         lastLanding: "/lv/pakalpojumi",
         landing: "/lv/pakalpojumi",
@@ -82,5 +83,6 @@ describe("toAdminOrderDetailClientModel", () => {
     expect(model.attribution?.channel).toBe("google");
     expect(model.attribution?.firstLanding).toBe("/lv?gclid=1");
     expect(model.attribution?.lastLanding).toBe("/lv/pakalpojumi");
+    expect(model.attribution?.content).toBe("reels-q4");
   });
 });

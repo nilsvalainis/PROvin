@@ -327,6 +327,12 @@ export function AdminAdsAttributionCard({
                                     <MetricCells row={kw} />
                                   </div>
                                 ))}
+                                {camp.contents?.map((cnt) => (
+                                  <div key={cnt.key} className="flex items-center gap-2 px-3 pb-2 pl-6 text-[12px] text-[#8e8e93]">
+                                    <span className="min-w-0 flex-1 truncate">{cnt.label}</span>
+                                    <MetricCells row={cnt} />
+                                  </div>
+                                ))}
                               </li>
                             ))}
                           </ul>

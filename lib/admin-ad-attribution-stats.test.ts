@@ -50,6 +50,7 @@ describe("computeAdsAttributionStats", () => {
             channel: "google",
             campaign: "vin-audit",
             term: "bmw",
+            content: "reels-q4",
             source: "google",
             medium: "cpc",
             gclid: "x",
@@ -82,6 +83,7 @@ describe("computeAdsAttributionStats", () => {
     expect(google?.orders).toBe(1);
     expect(google?.campaigns?.[0]?.label).toBe("vin-audit");
     expect(google?.campaigns?.[0]?.keywords?.[0]?.label).toBe("bmw");
+    expect(google?.campaigns?.[0]?.contents?.[0]?.label).toBe("Reklāma (utm_content) reels-q4");
     expect(stats.heardCrossCheck.some((r) => r.heard === "Google" && r.match)).toBe(true);
     expect(adsAttributionExportCsv(stats, []).startsWith("section,")).toBe(true);
   });

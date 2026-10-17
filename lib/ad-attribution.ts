@@ -36,12 +36,18 @@ export const CLICK_ID_KEYS = ["gclid", "gbraid", "wbraid", "fbclid", "ttclid"] a
 const CLIP = {
   clickId: 128,
   utm: 80,
-  landing: 180,
+  landing: 500,
   referrer: 160,
 } as const;
 
 /** Stripe Checkout metadata value limit. */
 export const STRIPE_ATTR_METADATA_MAX = 500;
+
+export const STRIPE_ATTR_LAND_FIRST_KEY = "attr_land_first";
+export const STRIPE_ATTR_LAND_LAST_KEY = "attr_land_last";
+export const STRIPE_ATTR_FBCLID_KEY = "attr_fbclid";
+export const STRIPE_ATTR_GCLID_KEY = "attr_gclid";
+export const STRIPE_ATTR_TTCLID_KEY = "attr_ttclid";
 
 export type AdTouch = {
   src?: string;
@@ -69,6 +75,7 @@ export type AdminOrderAttribution = {
   channel: AdChannel | null;
   campaign: string | null;
   term: string | null;
+  content: string | null;
   source: string | null;
   medium: string | null;
   gclid: string | null;
@@ -196,11 +203,26 @@ function slimTouch(touch: AdTouch): AdTouch {
   setIf(next, "med", touch.med);
   setIf(next, "cmp", touch.cmp);
   setIf(next, "term", touch.term);
+  setIf(next, "cnt", touch.cnt);
   setIf(next, "gclid", touch.gclid);
   setIf(next, "gbraid", touch.gbraid);
   setIf(next, "wbraid", touch.wbraid);
   setIf(next, "fbclid", touch.fbclid);
   setIf(next, "ttclid", touch.ttclid);
+  return next;
+}
+
+function omitLand(touch: AdTouch): AdTouch {
+  const next = { ...touch };
+  delete next.land;
+  return next;
+}
+
+function omitSplitClickIds(touch: AdTouch): AdTouch {
+  const next = { ...touch };
+  delete next.gclid;
+  delete next.fbclid;
+  delete next.ttclid;
   return next;
 }
 
@@ -340,23 +362,65 @@ export function readCookieValue(cookieHeader: string | null | undefined, name: s
   return null;
 }
 
+function packAttrJson(ch: AdChannel | null, last: AdTouch, first: AdTouch | undefined): string {
+  return first ? JSON.stringify({ v: 1, ch, last, first }) : JSON.stringify({ v: 1, ch, last });
+}
+
+function putExtra(target: Record<string, string>, key: string, value: string | null | undefined): void {
+  const clipped = clip(value, STRIPE_ATTR_METADATA_MAX);
+  if (clipped) target[key] = clipped;
+}
+
+function pickStr(...values: Array<string | null | undefined>): string | null {
+  for (const v of values) {
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return null;
+}
+
+export function buildStripeAttributionParts(cookie: AdAttributionCookie): {
+  attr: string;
+  extras: Record<string, string>;
+} {
+  const extras: Record<string, string> = {};
+  putExtra(extras, STRIPE_ATTR_LAND_FIRST_KEY, cookie.first.land);
+  putExtra(extras, STRIPE_ATTR_LAND_LAST_KEY, cookie.last.land);
+
+  const ch = inferChannel(cookie.last) ?? inferChannel(cookie.first);
+  let last = omitLand(cookie.last);
+  let first = omitLand(cookie.first);
+  let attr = packAttrJson(ch, last, first);
+  if (attr.length > STRIPE_ATTR_METADATA_MAX) {
+    last = slimTouch(last);
+    first = slimTouch(first);
+    attr = packAttrJson(ch, last, first);
+  }
+  if (attr.length > STRIPE_ATTR_METADATA_MAX) {
+    putExtra(extras, STRIPE_ATTR_FBCLID_KEY, pickStr(last.fbclid, first.fbclid));
+    putExtra(extras, STRIPE_ATTR_GCLID_KEY, pickStr(last.gclid, first.gclid));
+    putExtra(extras, STRIPE_ATTR_TTCLID_KEY, pickStr(last.ttclid, first.ttclid));
+    last = omitSplitClickIds(last);
+    first = omitSplitClickIds(first);
+    attr = packAttrJson(ch, last, first);
+  }
+  if (attr.length > STRIPE_ATTR_METADATA_MAX) {
+    attr = packAttrJson(ch, slimTouch(omitSplitClickIds(last)), undefined);
+  }
+  if (attr.length > STRIPE_ATTR_METADATA_MAX) {
+    attr = attr.slice(0, STRIPE_ATTR_METADATA_MAX);
+  }
+  return { attr, extras };
+}
+
 export function serializeStripeAttr(cookie: AdAttributionCookie): string {
-  const last = cookie.last;
-  const first = cookie.first;
-  const ch = inferChannel(last) ?? inferChannel(first);
-  const full = JSON.stringify({ v: 1, ch, last, first });
-  if (full.length <= STRIPE_ATTR_METADATA_MAX) return full;
-  const slim = JSON.stringify({ v: 1, ch, last: slimTouch(last), first: slimTouch(first) });
-  if (slim.length <= STRIPE_ATTR_METADATA_MAX) return slim;
-  const lastOnly = JSON.stringify({ v: 1, ch, last: slimTouch(last) });
-  if (lastOnly.length <= STRIPE_ATTR_METADATA_MAX) return lastOnly;
-  return lastOnly.slice(0, STRIPE_ATTR_METADATA_MAX);
+  return buildStripeAttributionParts(cookie).attr;
 }
 
 export function stripeAttributionMetadata(cookie: AdAttributionCookie | null): Record<string, string> {
   if (!cookie) return {};
   if (!touchHasAnyField(cookie.first) && !touchHasAnyField(cookie.last)) return {};
-  return { attr: serializeStripeAttr(cookie) };
+  const { attr, extras } = buildStripeAttributionParts(cookie);
+  return { attr, ...extras };
 }
 
 export function stripeAttributionMetadataFromRequest(
@@ -365,13 +429,6 @@ export function stripeAttributionMetadataFromRequest(
 ): Record<string, string> {
   const raw = readCookieValue(cookieHeader ?? null, cookieName);
   return stripeAttributionMetadata(parseAttrCookieValue(raw));
-}
-
-function pickStr(...values: Array<string | null | undefined>): string | null {
-  for (const v of values) {
-    if (typeof v === "string" && v.trim()) return v.trim();
-  }
-  return null;
 }
 
 export function adminAttributionFromStripeMetadata(
@@ -384,23 +441,25 @@ export function adminAttributionFromStripeMetadata(
     const last = parseTouch(o.last);
     const first = parseTouch(o.first);
     const channel = isAdChannel(o.ch) ? o.ch : inferChannel(last) ?? inferChannel(first);
-    const lastLanding = pickStr(last.land);
-    const firstLanding = pickStr(first.land, lastLanding);
+    const lastLanding = pickStr(metadata[STRIPE_ATTR_LAND_LAST_KEY], last.land);
+    const firstLanding = pickStr(metadata[STRIPE_ATTR_LAND_FIRST_KEY], first.land, lastLanding);
     const campaign = pickStr(last.cmp, first.cmp);
     const term = pickStr(last.term, first.term);
+    const content = pickStr(last.cnt, first.cnt);
     const source = pickStr(last.src, first.src);
     const medium = pickStr(last.med, first.med);
     return {
       channel,
       campaign,
       term,
+      content,
       source,
       medium,
-      gclid: pickStr(last.gclid, first.gclid),
+      gclid: pickStr(metadata[STRIPE_ATTR_GCLID_KEY], last.gclid, first.gclid),
       gbraid: pickStr(last.gbraid, first.gbraid),
       wbraid: pickStr(last.wbraid, first.wbraid),
-      fbclid: pickStr(last.fbclid, first.fbclid),
-      ttclid: pickStr(last.ttclid, first.ttclid),
+      fbclid: pickStr(metadata[STRIPE_ATTR_FBCLID_KEY], last.fbclid, first.fbclid),
+      ttclid: pickStr(metadata[STRIPE_ATTR_TTCLID_KEY], last.ttclid, first.ttclid),
       landing: lastLanding ?? firstLanding,
       firstLanding,
       lastLanding,
@@ -418,6 +477,7 @@ export function parseAdminOrderAttribution(raw: unknown): AdminOrderAttribution 
   const channel = isAdChannel(o.channel) ? o.channel : null;
   const campaign = str("campaign");
   const term = str("term");
+  const content = str("content");
   const gclid = str("gclid");
   const fbclid = str("fbclid");
   const ttclid = str("ttclid");
@@ -426,13 +486,26 @@ export function parseAdminOrderAttribution(raw: unknown): AdminOrderAttribution 
   const landing = str("landing");
   const firstLanding = str("firstLanding") ?? landing;
   const lastLanding = str("lastLanding") ?? landing;
-  if (!channel && !campaign && !term && !gclid && !fbclid && !ttclid && !gbraid && !wbraid && !landing && !firstLanding) {
+  if (
+    !channel &&
+    !campaign &&
+    !term &&
+    !content &&
+    !gclid &&
+    !fbclid &&
+    !ttclid &&
+    !gbraid &&
+    !wbraid &&
+    !landing &&
+    !firstLanding
+  ) {
     return null;
   }
   return {
     channel,
     campaign,
     term,
+    content,
     source: str("source"),
     medium: str("medium"),
     gclid,
@@ -452,6 +525,7 @@ export function orderHasAdAttribution(attr: AdminOrderAttribution | null | undef
     attr.channel ||
       attr.campaign ||
       attr.term ||
+      attr.content ||
       attr.gclid ||
       attr.gbraid ||
       attr.wbraid ||
