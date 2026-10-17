@@ -4,6 +4,7 @@ fuel: diesel
 years: [2008, 2018]
 timing: {type: chain, position: rear}
 status: draft
+eur_active: false
 provin_reports: 9
 faults:
   - component: sadales ķēde

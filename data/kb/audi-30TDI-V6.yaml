@@ -4,13 +4,12 @@ generations:
   EA897_gen2: [CDUC, CRCA, CRTD, CVUB, CLAA, DDVE]
 timing: {type: chain, position: rear, note: "abām paaudzēm aizmugurē (pie kārbas)"}
 status: draft
+eur_active: false
 faults:
   - component: ķēžu spriegotāji/vadotnes
-    applies: EA896_gen1
     probability: medium
     impact: high
   - component: ieplūdes kolektora virpuļvārstiņu motors/kolektors
     probability: medium
   - component: EGR dzesētājs, eļļas dzesētāja blīves
     probability: medium
-contradiction_note: "PROVIN atskaite 13.10 apgalvoja, ka gen1 ķēdes izturīgākas par CRCA: visticamāk otrādi, verificēt"

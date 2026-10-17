@@ -113,7 +113,7 @@ Konstrukcija ir pazīstama servisiem. Uzturēšana joprojām ir jāpierāda ar d
     expect(r.errors.some((e) => e.id === "L2")).toBe(true);
   });
 
-  it("L3 flags EUR unless allowed and present on the map", () => {
+  it("L3 flags EUR while KB EUR bands are inactive", () => {
     const banned = lintTechnicalRiskText({
       text: `${okText}\n\nRemonts 800 EUR.`,
       identification: id,
@@ -130,32 +130,13 @@ Konstrukcija ir pazīstama servisiem. Uzturēšana joprojām ir jāpierāda ar d
         },
       ],
     });
-    const draftKb = lintTechnicalRiskText({
+    const evenWithKbShape = lintTechnicalRiskText({
       text: `${okText}\n\nOrientējoši 400-800 EUR.`,
       identification: id,
       map: mapWithCost,
       allowCostBands: true,
     });
-    expect(draftKb.errors.some((e) => e.id === "L3")).toBe(true);
-
-    const allowed = lintTechnicalRiskText({
-      text: `${okText}\n\nOrientējoši 400-800 EUR.`,
-      identification: id,
-      map: mapWithCost,
-      allowCostBands: true,
-      kbCatalog: [
-        {
-          code: "N47D20",
-          aliases: ["N47"],
-          status: "verified",
-          faults: [],
-          not_typical: [],
-          sourceFile: "test.yaml",
-          raw: { code: "N47D20", status: "verified" },
-        },
-      ],
-    });
-    expect(allowed.errors.some((e) => e.id === "L3")).toBe(false);
+    expect(evenWithKbShape.errors.some((e) => e.id === "L3")).toBe(true);
 
     const unpaid = lintTechnicalRiskText({
       text: `${okText}\n\nOrientējoši 400-800 EUR.`,

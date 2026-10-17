@@ -5,6 +5,7 @@ power_kw: [85, 105, 120, 130, 135, 150]
 years: [2007, 2015]
 timing: {type: chain, position: rear}
 status: draft
+eur_active: false
 provin_reports: 9
 faults:
   - component: sadales ķēde, spriegotājs, vadotnes
@@ -29,4 +30,3 @@ faults:
     km_band: {apskatīt: 150000}
 next_100k_focus: [ķēde, EGR dzesētājs, DPF, iesmidzinātāji]
 sources_needed: [BMW atsaukums EGR dzesētājs 2018, specializēta servisa raksts par N47 ķēdi, ISTA SIB]
-notes: "Klientam rakstīt oficiālo kodu, ne 'N47T'. X1 135 kW: E84 līdz 2015 = N47D20C/D, F48 no 2015 = B47D20."

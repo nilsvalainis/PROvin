@@ -1,7 +1,5 @@
 # PROVIN draft knowledge base
 
-YAML ieraksti `data/kb/*.yaml` ir **draft** zināšanu bāze tehnisko risku v2 EUR pārbaudei (`isVerifiedFileKbCostBand`).
+YAML ieraksti `data/kb/*.yaml` ir **draft**. EUR cenas **nav ieviestas** (Nils 17.10): `eur_active: false`, `PROVIN_KB_EUR_ACTIVE = false`. Lint L3 un ģenerators KB EUR vērtības nelasa.
 
-- `status: draft` paliek, līdz operators pārcel uz `verified`.
-- Draft ieraksts **neautorizē** EUR joslu klientam. Lint L3 joprojām prasa `status: verified` plus `KB:` avotu un datumu.
-- N57 klaņu/kloķvārpstas šāles ir tipiska kaite (Nils lēmums, Andris pārstāstīja).
+B1-B8 pretrunas no zināšanu pētījuma **nav** iekļautas (gaida Nila lēmumu), izņemot N57 šāles: tipiska kaite (Nils / Andris, 2026-10-17).

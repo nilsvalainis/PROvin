@@ -1,5 +1,6 @@
 /**
- * Failu KB (`data/kb/*.yaml`). Draft = lasāms, EUR joslu neautorizē.
+ * Failu KB (`data/kb/*.yaml`). Draft = lasāms.
+ * EUR joslas NAV ieviestas (Nils 17.10): `PROVIN_KB_EUR_ACTIVE = false`.
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -31,8 +32,8 @@ export type ProvinKbCostBand = {
   max?: number;
 };
 
-const PAID_PARTS_PRICE_RE =
-  /autodoc|partslink|exist\.ua|partsouq|fcpeuro|rockauto|ecs\s*tuning|partsinmotion|mister-auto|auto-doc/i;
+/** Nils 17.10: EUR cenas KB vēl nav. Failu KB joslas L3 nelasa. */
+export const PROVIN_KB_EUR_ACTIVE = false;
 
 let catalogCache: ProvinKbEntry[] | null = null;
 
@@ -305,21 +306,14 @@ export function extractKbSourceCode(source: string): string | null {
   return null;
 }
 
-/** EUR atļauts tikai ja KB fails eksistē UN status ir verified (draft nelaiž). */
+/** Failu KB EUR: izslēgts, kamēr `PROVIN_KB_EUR_ACTIVE` ir false. */
 export function isVerifiedFileKbCostBand(
-  band: ProvinKbCostBand | null | undefined,
-  catalog: ProvinKbEntry[] = loadProvinKbCatalog(),
+  _band?: ProvinKbCostBand | null,
+  _catalog?: ProvinKbEntry[],
 ): boolean {
-  if (!band) return false;
-  const source = (band.source ?? "").trim();
-  const dated = (band.dated ?? "").trim();
-  if (!source || !dated) return false;
-  if (PAID_PARTS_PRICE_RE.test(source)) return false;
-  if (!/^(KB:|kb:)/.test(source) && !/^KB\b/i.test(source)) return false;
-  const code = extractKbSourceCode(source);
-  if (!code) return false;
-  const entry = findProvinKbEntry(code, catalog);
-  return entry?.status === "verified";
+  void _band;
+  void _catalog;
+  return false;
 }
 
 export function formatMatchingProvinKbForPrompt(
@@ -335,7 +329,7 @@ export function formatMatchingProvinKbForPrompt(
     hits.push(entry);
   }
   if (hits.length === 0) {
-    return "PROVIN KB: šim kodam draft ieraksta nav. EUR josla nav atļauta.";
+    return "PROVIN KB: šim kodam draft ieraksta nav. EUR no KB nav ieviests.";
   }
   const payload = hits.map((e) => ({
     code: e.code,
@@ -350,5 +344,5 @@ export function formatMatchingProvinKbForPrompt(
     not_typical: e.not_typical,
     next_100k_focus: e.raw.next_100k_focus ?? [],
   }));
-  return `PROVIN KB (status draft, ja nav verified; draft NEautorizē EUR):\n${JSON.stringify(payload)}`;
+  return `PROVIN KB (draft; EUR joslas NAV ieviestas, cost_band_eur = null):\n${JSON.stringify(payload)}`;
 }

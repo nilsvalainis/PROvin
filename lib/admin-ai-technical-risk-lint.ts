@@ -4,11 +4,12 @@
  */
 import {
   allowedEngineCodesFromIdentification,
+  isVerifiedKbCostBand,
   verifiedKbCostBandsFromMap,
   type TechnicalRiskIdentification,
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
-import { isVerifiedFileKbCostBand, type ProvinKbEntry } from "@/lib/provin-kb";
+import { PROVIN_KB_EUR_ACTIVE } from "@/lib/provin-kb";
 
 export type TechnicalRiskLintLevel = "E" | "W";
 
@@ -23,8 +24,6 @@ export type TechnicalRiskLintInput = {
   identification?: TechnicalRiskIdentification | null;
   map?: TechnicalRiskMap | null;
   allowCostBands?: boolean;
-  /** Testos: aizstāj data/kb/*.yaml katalogu. */
-  kbCatalog?: ProvinKbEntry[];
 };
 
 export type TechnicalRiskLintResult = {
@@ -158,10 +157,7 @@ export function lintTechnicalRiskText(input: TechnicalRiskLintInput): TechnicalR
 
   const allowEur = input.allowCostBands === true;
   const hideEur = input.map?.hide_cost_bands === true;
-  const catalog = input.kbCatalog;
-  const verifiedBands = verifiedKbCostBandsFromMap(input.map).filter((b) =>
-    isVerifiedFileKbCostBand(b, catalog),
-  );
+  const verifiedBands = verifiedKbCostBandsFromMap(input.map);
   if (EUR_RE.test(text)) {
     const amounts = [...text.matchAll(/\d[\d\s.,]{0,8}\d/g)].map((m) =>
       Number(String(m[0]).replace(/\s/g, "").replace(",", ".")),
@@ -171,14 +167,13 @@ export function lintTechnicalRiskText(input: TechnicalRiskLintInput): TechnicalR
       amounts.some((n) =>
         verifiedBands.some((b) => Number.isFinite(n) && n >= b.min && n <= b.max),
       );
-    const bandOk =
-      input.map?.risks.some((r) => isVerifiedFileKbCostBand(r.cost_band_eur, catalog)) === true;
-    if (hideEur || !allowEur || !bandOk || !amountOk) {
+    const bandOk = input.map?.risks.some((r) => isVerifiedKbCostBand(r.cost_band_eur)) === true;
+    if (!PROVIN_KB_EUR_ACTIVE || hideEur || !allowEur || !bandOk || !amountOk) {
       issues.push({
         id: "L3",
         level: "E",
         message:
-          "EUR summa nav atļauta: vajag verificētu KB joslu (KB: + datums), slēdzis nedrīkst slēpt, summai jāsakrīt ar karti.",
+          "EUR summa nav atļauta: KB EUR joslas nav ieviestas, vajag KB: + datumu, slēdzis nedrīkst slēpt, summai jāsakrīt ar karti.",
       });
     }
   }

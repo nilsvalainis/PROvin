@@ -2,6 +2,7 @@ code: DQ381
 aliases: [0GC]
 type: 7 pakāpju mitrā divsajūgu (DSG)
 status: draft
+eur_active: false
 provin_reports: 5
 faults:
   - component: mehatronika

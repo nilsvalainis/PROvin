@@ -6,6 +6,7 @@ import {
   isVerifiedFileKbCostBand,
   loadProvinKbCatalog,
   parseProvinKbYaml,
+  PROVIN_KB_EUR_ACTIVE,
 } from "@/lib/provin-kb";
 import { AI_TECH_RISK_V2_FEW_SHOTS } from "@/lib/admin-ai-tech-risk-v2-prompts";
 
@@ -43,10 +44,10 @@ faults:
     expect(volvo?.code).toBe("D5244");
   });
 
-  it("does not authorize EUR from draft KB even with KB: + dated", () => {
+  it("does not use file KB EUR values while the flag is off", () => {
+    expect(PROVIN_KB_EUR_ACTIVE).toBe(false);
     expect(extractKbSourceCode("KB:N47D20")).toBe("N47D20");
     expect(isVerifiedFileKbCostBand({ source: "KB:N47D20", dated: "2026-09" })).toBe(false);
-    expect(isVerifiedFileKbCostBand({ source: "KB:UNKNOWN", dated: "2026-09" })).toBe(false);
     expect(
       isVerifiedFileKbCostBand(
         { source: "KB:N47D20", dated: "2026-09" },
@@ -58,13 +59,19 @@ faults:
             faults: [],
             not_typical: [],
             sourceFile: "x.yaml",
-            raw: { code: "N47D20", status: "verified" },
+            raw: { code: "N47D20", status: "verified", cost_band_eur: { min: 400, max: 800 } },
           },
         ],
       ),
-    ).toBe(true);
-    expect(formatMatchingProvinKbForPrompt(["N57D30"])).toMatch(/draft/);
+    ).toBe(false);
+    const catalog = loadProvinKbCatalog();
+    expect(JSON.stringify(catalog)).not.toMatch(/€|cost_band_eur|\b\d+\s*EUR\b/i);
+    expect(formatMatchingProvinKbForPrompt(["N57D30"])).toMatch(/EUR joslas NAV ieviestas/);
     expect(formatMatchingProvinKbForPrompt(["N57D30"])).toMatch(/šāl/);
+    const audi = findProvinKbEntry("CRCA");
+    expect(audi?.raw.contradiction_note).toBeUndefined();
+    const volvo = findProvinKbEntry("D5244");
+    expect(volvo?.raw.correction).toBeUndefined();
   });
 
   it("Gemini writer few-shots include cleaned 04 examples without banned tone", () => {

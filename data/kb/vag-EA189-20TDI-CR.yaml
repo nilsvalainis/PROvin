@@ -4,6 +4,7 @@ fuel: diesel
 years: [2007, 2015]
 timing: {type: belt, interval_km: "180000-210000 (pēc koda)"}
 status: draft
+eur_active: false
 provin_reports: 5
 faults:
   - component: eļļas sūkņa piedziņas sešstūra ass (balansvārpstu modulis)

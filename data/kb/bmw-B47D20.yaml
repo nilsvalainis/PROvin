@@ -4,6 +4,7 @@ fuel: diesel
 years: [2014, 2026]
 timing: {type: chain, position: rear}
 status: draft
+eur_active: false
 provin_reports: 3
 faults:
   - component: sadales ķēde (pārstrādāta, retāka kaite nekā N47)

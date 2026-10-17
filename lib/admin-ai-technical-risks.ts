@@ -38,7 +38,7 @@ import {
   verifiedKbCostBandsFromMap,
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
-import { isVerifiedFileKbCostBand } from "@/lib/provin-kb";
+import { PROVIN_KB_EUR_ACTIVE } from "@/lib/provin-kb";
 
 export type TechnicalRiskAnalysisResult = {
   text: string;
@@ -133,10 +133,11 @@ async function generateV1(input: AiOrderContextInput): Promise<TechnicalRiskAnal
 }
 
 function keepVerifiedEur(map: TechnicalRiskMap): boolean {
+  if (!PROVIN_KB_EUR_ACTIVE) return false;
   return (
     allowCostBands() &&
     map.hide_cost_bands !== true &&
-    verifiedKbCostBandsFromMap(map).some((b) => isVerifiedFileKbCostBand(b))
+    verifiedKbCostBandsFromMap(map).length > 0
   );
 }
 
@@ -146,12 +147,12 @@ async function generateTextFromMap(
   orderContext: string,
   lintErrors?: string,
 ): Promise<string> {
-  const hideEur = map.hide_cost_bands === true || !allowCostBands();
-  const verified = verifiedKbCostBandsFromMap(map).filter((b) => isVerifiedFileKbCostBand(b));
+  const hideEur = map.hide_cost_bands === true || !allowCostBands() || !PROVIN_KB_EUR_ACTIVE;
+  const verified = PROVIN_KB_EUR_ACTIVE ? verifiedKbCostBandsFromMap(map) : [];
   const costNote = hideEur
-    ? "EUR nav: slēdzis paslēpj joslas vai ALLOW_COST_BANDS=false."
+    ? "EUR nav: KB EUR joslas nav ieviestas, slēdzis paslēpj, vai ALLOW_COST_BANDS=false."
     : verified.length > 0
-      ? "EUR atļauts TIKAI kā atsevišķs teikums no verificētas data/kb joslas (KB: + dated + status verified). Draft KB nav avots."
+      ? "EUR atļauts TIKAI kā atsevišķs teikums no verificētas KB joslas (KB: + dated). Maksas katalogi nav avots."
       : "EUR nav: kartē nav verificētas KB joslas.";
   const userPrompt = appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
@@ -221,7 +222,7 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
     const qa = await qaTechnicalRiskText({ text, map });
     if (qa.flagged.length > 0 && qa.rewritten_text.trim()) {
       text = finalizeText(qa.rewritten_text, keepVerifiedEur(map));
-      if (map.hide_cost_bands === true || !allowCostBands()) {
+      if (map.hide_cost_bands === true || !allowCostBands() || !PROVIN_KB_EUR_ACTIVE) {
         text = finalizeText(stripTechnicalRiskEurSentences(text), false);
       }
     }

@@ -4,6 +4,7 @@ fuel: diesel
 years: [2012, 2026]
 timing: {type: belt, interval_km: 210000}
 status: draft
+eur_active: false
 provin_reports: 6
 faults:
   - component: ūdens sūknis (pārslēdzamais)

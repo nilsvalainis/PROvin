@@ -4,6 +4,7 @@ fuel: diesel
 years: [1998, 2010]
 timing: {type: chain, position: front}
 status: draft
+eur_active: false
 provin_reports: 5
 faults:
   - component: ieplūdes virpuļvārstiņi (swirl flaps), M57TU
