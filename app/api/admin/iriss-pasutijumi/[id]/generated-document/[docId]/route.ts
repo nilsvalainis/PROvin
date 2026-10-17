@@ -21,7 +21,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string; do
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^\x20-\x7E]/g, "_")
     .replace(/["\\]/g, "_");
-  return new NextResponse(file.bytes, {
+  return new NextResponse(Uint8Array.from(file.bytes), {
     status: 200,
     headers: {
       "Content-Type": file.mimeType || "application/pdf",

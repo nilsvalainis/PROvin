@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
+import type { IrissGeneratedDocument, IrissGoogleContactStatus } from "@/lib/iriss-pasutijumi-types";
 
 describe("mergeServerOwnedIrissFields", () => {
   it("keeps server PDFs and google fields on the local draft", () => {
-    const local = {
+    const local: {
+      workspaceRevision: number;
+      generatedDocuments: IrissGeneratedDocument[];
+      brand: string;
+      googleContactStatus?: IrissGoogleContactStatus;
+      googleContactResourceName?: string;
+    } = {
       workspaceRevision: 1,
       generatedDocuments: [],
       brand: "x",
@@ -24,6 +31,7 @@ describe("mergeServerOwnedIrissFields", () => {
       googleContactStatus: "saved" as const,
       googleContactResourceName: "people/1",
       googleContactUpdatedAt: "2026-10-17T10:00:00.000Z",
+      brand: "x",
     };
     const merged = mergeServerOwnedIrissFields(local, server);
     expect(merged.workspaceRevision).toBe(4);

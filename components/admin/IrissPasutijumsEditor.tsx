@@ -852,6 +852,28 @@ export function IrissPasutijumsEditor({
     [rec.id],
   );
 
+  const ingestGeneratedDocument = useCallback((doc: IrissGeneratedDocument, workspaceRevision?: number) => {
+    setRec((r) => {
+      const generatedDocuments = mergeGeneratedDocuments([doc], r.generatedDocuments);
+      const next = {
+        ...r,
+        generatedDocuments,
+        ...(typeof workspaceRevision === "number" ? { workspaceRevision } : {}),
+      };
+      try {
+        const snap = JSON.parse(lastSavedSnapshot.current) as IrissPasutijumsRecord;
+        lastSavedSnapshot.current = JSON.stringify({
+          ...snap,
+          generatedDocuments,
+          ...(typeof workspaceRevision === "number" ? { workspaceRevision } : {}),
+        });
+      } catch {
+        lastSavedSnapshot.current = JSON.stringify(next);
+      }
+      return next;
+    });
+  }, []);
+
   const openPdf = useCallback(async () => {
     setPdfRetryBar(null);
     setOrderPdfRetryOpen(false);
@@ -924,28 +946,6 @@ export function IrissPasutijumsEditor({
     setOfferDraft(newOfferDraft(rec.offers.length + 1));
     setOfferOpen(true);
   }, [rec.offers.length]);
-
-  const ingestGeneratedDocument = useCallback((doc: IrissGeneratedDocument, workspaceRevision?: number) => {
-    setRec((r) => {
-      const generatedDocuments = mergeGeneratedDocuments([doc], r.generatedDocuments);
-      const next = {
-        ...r,
-        generatedDocuments,
-        ...(typeof workspaceRevision === "number" ? { workspaceRevision } : {}),
-      };
-      try {
-        const snap = JSON.parse(lastSavedSnapshot.current) as IrissPasutijumsRecord;
-        lastSavedSnapshot.current = JSON.stringify({
-          ...snap,
-          generatedDocuments,
-          ...(typeof workspaceRevision === "number" ? { workspaceRevision } : {}),
-        });
-      } catch {
-        lastSavedSnapshot.current = JSON.stringify(next);
-      }
-      return next;
-    });
-  }, []);
 
   const retryGoogleContact = useCallback(async () => {
     if (!persistedIdRef.current) return;
