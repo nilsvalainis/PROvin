@@ -26,6 +26,7 @@ export type AdminRichCommentSizeOption = {
 };
 
 export const ADMIN_RICH_COMMENT_SIZE_OPTIONS: readonly AdminRichCommentSizeOption[] = [
+  { id: "default", label: "Noklusējums", css: "" },
   { id: "10", label: "10", css: "10px" },
   { id: "11", label: "11", css: "11px" },
   { id: "12", label: "12", css: "12px" },
@@ -33,6 +34,18 @@ export const ADMIN_RICH_COMMENT_SIZE_OPTIONS: readonly AdminRichCommentSizeOptio
   { id: "14", label: "14", css: "14px" },
   { id: "16", label: "16", css: "16px" },
 ] as const;
+
+/** Piedāvājuma redaktors: mazs / parasts / liels. */
+export const ADMIN_RICH_COMMENT_SIMPLE_SIZE_OPTIONS: readonly AdminRichCommentSizeOption[] = [
+  { id: "small", label: "Mazs", css: "13px" },
+  { id: "normal", label: "Parasts", css: "16px" },
+  { id: "large", label: "Liels", css: "20px" },
+] as const;
+
+/** Tukšs css = lapas noklusējums; `inherit` noņem iepriekšējo span stilu. */
+export function adminRichCommentCssOrInherit(css: string): string {
+  return css.trim() || "inherit";
+}
 
 export type AdminRichCommentColorOption = {
   id: string;

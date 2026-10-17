@@ -24,7 +24,17 @@ import {
   storedEcarstradeIdsNeedingPrice,
 } from "@/lib/iriss-listings-relay";
 import { isIrissListingsAutomaticSlot, isIrissListingsContinuationWindow } from "@/lib/iriss-listings-schedule";
-import { buildIrissListingSources, groupIrissListingSources, irissListingVehicleId, type IrissListingSource, type IrissListingSourceGroup } from "@/lib/iriss-listings-sources";
+import { cleanHttpUrl, detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
+import { enrichListingSearchUrl } from "@/lib/iriss-listings-search-filter";
+import {
+  buildIrissListingSources,
+  groupIrissListingSources,
+  irissListingSourceId,
+  irissListingVehicleId,
+  listingFetchUrl,
+  type IrissListingSource,
+  type IrissListingSourceGroup,
+} from "@/lib/iriss-listings-sources";
 import {
   canStartListingJob,
   capEcarstradeRelayGroups,
@@ -53,7 +63,7 @@ import type {
 } from "@/lib/iriss-listings-types";
 import { computeListingVatHealth, logListingVatHealth } from "@/lib/iriss-listings-vat";
 import { refreshIrissListingMatches } from "@/lib/iriss-listing-match-store";
-import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import { listIrissPasutijumi, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
 import { irissScanSourceRows, isIrissScanOrderId } from "@/lib/iriss-scan-listings";
@@ -607,4 +617,148 @@ export async function runIrissListingsDailySync(
   const progress = listingSyncProgress(progressTotal, doneKeys);
   const continueSync = progress.total > 0 && progress.done < progress.total;
   return { ok: write.ok, warnings, summary, view, progress, continueSync };
+}
+
+export type IrissListingsOrderLinkSyncResult = {
+  ok: boolean;
+  status: IrissListingSourceStatus;
+  note: string;
+  vehicleCount: number;
+  newCount: number;
+  warnings: string[];
+};
+
+/**
+ * Vienas pasūtījuma meklēšanas saites nolasīšana pēc pieprasījuma.
+ * Dienas cikla kursoru un pārējos avotus neaiztiek; pazudušos no citām saitēm neskaita.
+ */
+export async function runIrissListingsOrderLinkSync(opts: {
+  orderId: string;
+  sourceUrl: string;
+}): Promise<IrissListingsOrderLinkSyncResult> {
+  const warnings: string[] = [];
+  const rec = await readIrissPasutijums(opts.orderId);
+  if (!rec || rec.deletedAt?.trim()) {
+    return { ok: false, status: "skipped", note: "Pasūtījums nav pieejams.", vehicleCount: 0, newCount: 0, warnings };
+  }
+  const cleaned = cleanHttpUrl(opts.sourceUrl);
+  if (!cleaned) {
+    return { ok: false, status: "skipped", note: "Nederīga saite.", vehicleCount: 0, newCount: 0, warnings };
+  }
+  const platform = detectIrissListingPlatform(cleaned);
+  if (!platform) {
+    return {
+      ok: false,
+      status: "skipped",
+      note: "Šo platformu nolasīšana neatbalsta (piemēram, Mobile.de).",
+      vehicleCount: 0,
+      newCount: 0,
+      warnings,
+    };
+  }
+  const sourceUrl = enrichListingSearchUrl(platform, cleaned, rec.brandModel.trim());
+  const src: IrissListingSource = {
+    id: irissListingSourceId(rec.id, sourceUrl),
+    orderId: rec.id,
+    orderBrandModel: rec.brandModel.trim(),
+    platform,
+    sourceUrl: listingFetchUrl(sourceUrl),
+  };
+
+  const previousRead = await readIrissListingsLatestView();
+  const previous = previousRead ? purgeExcludedFromLatestView(previousRead) : null;
+  const startedAt = new Date().toISOString();
+  const deadlineMs = listingSyncRouteDeadlineMs(Date.now());
+  let fetchResult: SourceFetch;
+  try {
+    fetchResult = await fetchSource(src, { deadlineMs });
+  } catch (e) {
+    fetchResult = {
+      status: "fetch_failed",
+      note: formatFetchError(e, "fetch failed"),
+      vehicles: [],
+      rawPages: [],
+      pagesFetched: 0,
+      pageCount: 0,
+    };
+  }
+  const fetchedAt = new Date().toISOString();
+  const currentRun: IrissListingSourceRun = {
+    id: src.id,
+    orderId: src.orderId,
+    orderBrandModel: src.orderBrandModel,
+    platform: src.platform,
+    sourceUrl: src.sourceUrl,
+    status: fetchResult.status,
+    note: fetchResult.note,
+    vehicleCount: fetchResult.vehicles.length,
+    pagesFetched: fetchResult.pagesFetched,
+    pageCount: fetchResult.pageCount,
+    fetchedAt,
+  };
+
+  const fetched: IrissFetchedVehicle[] = [];
+  if (fetchResult.status === "ok") {
+    const kept = rejectExcludedIrissListings(fetchResult.vehicles);
+    fetched.push(
+      ...fanOutFetchedVehicles(
+        applyEntryFilter(kept, src).filter((v) => vehicleBelongsToSource(v, src)),
+        [src],
+      ),
+    );
+  }
+
+  const recOut = reconcileVehicles({
+    previous: previous?.vehicles ?? [],
+    fetched,
+    okSourceKeys: new Set(),
+    activeOrderIds: new Set([rec.id, ...((previous?.vehicles ?? []).flatMap((v) => v.orderIds))]),
+    now: fetchedAt,
+    goneAfterMissingRuns: 2,
+  });
+  const recVehicles = rejectExcludedIrissListings(recOut.vehicles);
+  const prevSources = (previous?.sources ?? []).filter((s) => s.id !== src.id);
+  const vatHealth = computeListingVatHealth(recVehicles);
+  const view: IrissListingsLatestView = {
+    version: 2,
+    generatedAt: fetchedAt,
+    summary: previous?.summary
+      ? { ...previous.summary, vehicleCount: recVehicles.length }
+      : summarize(
+          [currentRun],
+          {
+            vehicleCount: recVehicles.length,
+            newCount: recOut.newCount,
+            priceChangedCount: recOut.priceChangedCount,
+            goneCount: recOut.goneCount,
+          },
+          startedAt,
+          fetchedAt,
+          `link-${fetchedAt.replace(/[:.]/g, "-")}`,
+        ),
+    sources: [...prevSources, currentRun],
+    vehicles: recVehicles,
+    cursor: previous?.cursor,
+    ...(previous?.lastAutomaticSlot ? { lastAutomaticSlot: previous.lastAutomaticSlot } : {}),
+    vatHealth,
+  };
+
+  const write = await writeIrissListingsRun(view);
+  if (!write.ok) warnings.push(`Saglabāšana neizdevās: ${write.error}`);
+  if (write.ok) {
+    try {
+      await refreshIrissListingMatches({ vehicles: recVehicles, now: fetchedAt });
+    } catch (e) {
+      warnings.push(`Atbilstību salīdzināšana neizdevās: ${e instanceof Error ? e.message.slice(0, 180) : "kļūda"}`);
+    }
+  }
+
+  return {
+    ok: write.ok && fetchResult.status === "ok",
+    status: fetchResult.status,
+    note: fetchResult.note,
+    vehicleCount: fetched.length,
+    newCount: recOut.newCount,
+    warnings,
+  };
 }

@@ -270,6 +270,9 @@ function replyHistoryRows(offers: IrissOfferRecord[], links: IrissOfferClientLin
 export function IrissOrderRoom({
   rec,
   hits,
+  onReadLink,
+  readingUrl = null,
+  readCountByUrl,
   dismissedHitIds,
   listingsCache,
   busy,
@@ -308,6 +311,9 @@ export function IrissOrderRoom({
 }: {
   rec: IrissPasutijumsRecord;
   hits: IrissOrderRoomHit[];
+  onReadLink?: (url: string) => void;
+  readingUrl?: string | null;
+  readCountByUrl?: Record<string, string>;
   dismissedHitIds: string[];
   listingsCache: "on" | "off";
   busy: boolean;
@@ -356,7 +362,7 @@ export function IrissOrderRoom({
   const [dismissed, setDismissed] = useState<Set<string>>(() => new Set(stringList(dismissedHitIds)));
   const [roomMsg, setRoomMsg] = useState<string | null>(null);
   const [composer, setComposer] = useState("");
-  const [linksOpen, setLinksOpen] = useState(false);
+  const [linksOpen, setLinksOpen] = useState(true);
   const [offerLinks, setOfferLinks] = useState<IrissOfferClientLinkAdminView[]>(Array.isArray(initialOfferLinks) ? initialOfferLinks : []);
   const [linkBusyId, setLinkBusyId] = useState<string | null>(null);
   const [hitStatus, setHitStatus] = useState<Record<string, IrissListingHitStatus>>(() => coerceIrissHitStatusMap(initialHitStatus));
@@ -1001,9 +1007,16 @@ export function IrissOrderRoom({
               </button>
               {linksOpen ? (
                 <div className="mt-3">
-                  <IrissListingPlatformsFields rec={rec} onPatch={onPatchRecord} />
+                  <IrissListingPlatformsFields
+                    rec={rec}
+                    onPatch={onPatchRecord}
+                    onReadLink={onReadLink}
+                    readingUrl={readingUrl}
+                    readCountByUrl={readCountByUrl}
+                  />
                 </div>
               ) : null}
+              <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
             </section>
           </aside>
         </div>
@@ -1132,6 +1145,17 @@ export function IrissOrderRoom({
 
       {tab === "offers" ? (
         <div className="mt-3 min-w-0 space-y-3">
+          <section className={cardClass}>
+            <CardTitle>Sludinājumu saites</CardTitle>
+            <IrissListingPlatformsFields
+              rec={rec}
+              onPatch={onPatchRecord}
+              onReadLink={onReadLink}
+              readingUrl={readingUrl}
+              readCountByUrl={readCountByUrl}
+            />
+            <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
+          </section>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-[13px] text-[#6b7280]">Klienta portfelis · {rec.offers.length} piedāvājumi</p>
             <button type="button" onClick={onCreateOffer} className={roomBtnPrimary}>

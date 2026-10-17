@@ -21,6 +21,8 @@ type Props = {
   onChange: (html: string) => void;
   disabled?: boolean;
   compact?: boolean;
+  /** Piedāvājuma lauki: trekns, kursīvs, saraksts, izmērs, notīrīt. */
+  toolbar?: "full" | "simple";
   /** False, ja × jau ir pie lauka etiķetes (piem. avota komentāri). */
   showReset?: boolean;
   "aria-label"?: string;
@@ -35,6 +37,7 @@ export function AdminAiPolishRichCommentShell({
   onChange,
   disabled,
   compact,
+  toolbar = "full",
   showReset = true,
   "aria-label": ariaLabel,
   label,
@@ -139,6 +142,7 @@ export function AdminAiPolishRichCommentShell({
     <div className="w-full min-w-0">
       <AdminRichCommentField
         variant={compact ? "compact" : "default"}
+        toolbar={toolbar}
         value={value}
         onChange={onChange}
         aria-label={ariaLabel}

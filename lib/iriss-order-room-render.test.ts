@@ -91,11 +91,17 @@ function anchorsFromFile(raw: unknown): IrissVinAnchor[] {
 }
 
 function room(extra: Record<string, unknown> = {}) {
+  const { rec: recPatchRaw, ...rest } = extra;
+  const recPatch =
+    recPatchRaw && typeof recPatchRaw === "object" && !Array.isArray(recPatchRaw)
+      ? (recPatchRaw as Record<string, unknown>)
+      : {};
   const rec = {
     ...emptyIrissPasutijums("order-1", "2026-10-15T11:31:00.000Z"),
     brandModel: "Audi A6",
     phone: "+37120000000",
     transmission: "automatic",
+    ...recPatch,
   };
   return createElement(IrissOrderRoom, {
     rec,
@@ -131,7 +137,7 @@ function room(extra: Record<string, unknown> = {}) {
     onRestore: () => {},
     onDeleteOrder: () => {},
     initialTab: "search",
-    ...extra,
+    ...rest,
   } as never);
 }
 
@@ -198,6 +204,35 @@ describe("IrissOrderRoom render", () => {
     );
     expect(errors).toEqual([]);
     assertOrderStaysOpen(html);
+  });
+
+  it("shows Nolasīt on Pārskats listing links", async () => {
+    const { html, errors } = await renderHtml(
+      room({
+        initialTab: "overview",
+        rec: {
+          listingLinkAuto1: ["https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI"],
+        },
+      }),
+    );
+    expect(errors).toEqual([]);
+    expect(html).toContain("Nolasīt");
+    expect(html).toContain("Izveidot filtru");
+    expect(html).toContain("Avanss un darījums");
+  });
+
+  it("shows Nolasīt on Piedāvājumi listing links", async () => {
+    const { html, errors } = await renderHtml(
+      room({
+        initialTab: "offers",
+        rec: {
+          listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makes=audi"],
+        },
+      }),
+    );
+    expect(errors).toEqual([]);
+    expect(html).toContain("Nolasīt");
+    expect(html).toContain("Sludinājumu saites");
   });
 
   it("keeps a valid duplicate and drops an empty href", async () => {

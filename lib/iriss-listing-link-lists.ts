@@ -61,6 +61,37 @@ export function filledIrissListingLinks(raw: unknown): string[] {
     .filter(Boolean);
 }
 
+function listingSearchKey(raw: string): string {
+  try {
+    const u = new URL(raw);
+    u.hash = "";
+    u.hostname = u.hostname.toLowerCase();
+    if (u.pathname.length > 1) u.pathname = u.pathname.replace(/\/+$/, "");
+    const pairs = [...u.searchParams.entries()].sort((a, b) =>
+      a[0] === b[0] ? a[1].localeCompare(b[1]) : a[0].localeCompare(b[0]),
+    );
+    u.search = "";
+    for (const [k, v] of pairs) u.searchParams.append(k, v);
+    return u.toString();
+  } catch {
+    return raw.trim();
+  }
+}
+
+/** Pievieno ģenerētu meklēšanas saiti; tukšo pirmo rindu aizstāj, dublikātus neliek. */
+export function appendIrissListingSearchUrl(links: readonly string[], url: string): string[] {
+  const next = url.trim();
+  if (!next) return coerceIrissListingLinkList(links);
+  const existing = coerceIrissListingLinkList(links);
+  const key = listingSearchKey(next);
+  if (filledIrissListingLinks(existing).some((u) => listingSearchKey(u) === key)) return existing;
+  if (existing.length === 1 && !existing[0]!.trim()) return [next];
+  if (existing.length >= IRISS_LISTING_LINKS_PER_SOURCE_MAX) return existing;
+  const filled = filledIrissListingLinks(existing);
+  if (filled.length >= IRISS_LISTING_LINKS_PER_SOURCE_MAX) return existing;
+  return [...filled, next];
+}
+
 export function isValidIrissListingLinkUrl(raw: string): boolean {
   const t = raw.trim();
   if (!t) return true;

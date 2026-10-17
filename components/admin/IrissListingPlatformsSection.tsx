@@ -1,5 +1,6 @@
 "use client";
 
+import { Filter, Loader2 } from "lucide-react";
 import { useCallback, useMemo, useRef } from "react";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
@@ -18,9 +19,16 @@ import {
   removeIrissListingLinkRow,
   setIrissListingLinkRow,
 } from "@/lib/iriss-listing-link-lists";
+import {
+  applyGeneratedPlatformSearchLink,
+  type IrissAuctionSearchPlatform,
+} from "@/lib/iriss-listings-platform-search";
 import { replaceEcarstradeLinksOnPasutijums } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { nextStableRowKeys } from "@/lib/iriss-stable-row-keys";
+
+const actionBtn =
+  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-semibold text-[#111827] shadow-[0_1px_2px_#0000000d] transition hover:bg-[#f9fafb] disabled:opacity-40";
 
 const inp =
   "min-h-[40px] w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[13px] text-[var(--color-apple-text)] shadow-sm outline-none focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
@@ -82,11 +90,19 @@ function SourceLinkList({
   logoKey,
   links,
   onChange,
+  onGenerateFilter,
+  onReadLink,
+  readingUrl,
+  readCountByUrl,
 }: {
   label: string;
   logoKey?: IrissAuctionLogoKey;
   links: readonly string[];
   onChange: (next: string[]) => void;
+  onGenerateFilter?: () => void;
+  onReadLink?: (url: string) => void;
+  readingUrl?: string | null;
+  readCountByUrl?: Record<string, string>;
 }) {
   const rows = coerceIrissListingLinkList(links);
   const canAdd = rows.length < IRISS_LISTING_LINKS_PER_SOURCE_MAX;
@@ -103,18 +119,33 @@ function SourceLinkList({
         ) : (
           <span className={lbl}>{label}</span>
         )}
-        <button
-          type="button"
-          onClick={() => onChange(addIrissListingLinkRow(rows))}
-          disabled={!canAdd}
-          className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-35"
-          title="Pievienot vēl vienu saites lauku"
-        >
-          + Pievienot saiti
-        </button>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {onGenerateFilter ? (
+            <button
+              type="button"
+              onClick={onGenerateFilter}
+              className={actionBtn}
+              title="Izveidot meklēšanas filtru no pasūtījuma specifikācijas"
+            >
+              <Filter className="h-4 w-4" aria-hidden />
+              Izveidot filtru
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onChange(addIrissListingLinkRow(rows))}
+            disabled={!canAdd}
+            className={actionBtn}
+            title="Pievienot vēl vienu saites lauku"
+          >
+            + Pievienot saiti
+          </button>
+        </div>
       </div>
       {rows.map((line, idx) => {
         const err = irissListingLinkUrlError(line);
+        const href = line.trim();
+        const reading = Boolean(href && readingUrl === href);
         return (
           <div key={rowKeysRef.current[idx] ?? `row-${idx}`} className="space-y-0.5">
             <div className="flex min-w-0 items-start gap-1.5">
@@ -126,9 +157,21 @@ function SourceLinkList({
                 placeholder="https://…"
                 value={line}
                 onChange={(e) => onChange(setIrissListingLinkRow(rows, idx, e.target.value))}
-                aria-label={`${label} — saite ${idx + 1}`}
+                aria-label={`${label} - saite ${idx + 1}`}
                 aria-invalid={Boolean(err)}
               />
+              {onReadLink && href && !err ? (
+                <button
+                  type="button"
+                  disabled={reading || Boolean(readingUrl)}
+                  onClick={() => onReadLink(href)}
+                  className={actionBtn}
+                  title="Nolasīt šo meklēšanas saiti"
+                >
+                  {reading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+                  {reading ? "Nolasa…" : "Nolasīt"}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => {
@@ -136,7 +179,7 @@ function SourceLinkList({
                   onChange(removeIrissListingLinkRow(rows, idx));
                 }}
                 disabled={rows.length <= 1 && !line.trim()}
-                className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200/90 bg-white text-[16px] leading-none text-slate-500 shadow-sm transition hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-35"
+                className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[#e5e7eb] bg-white text-[16px] leading-none text-slate-500 shadow-[0_1px_2px_#0000000d] transition hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-35"
                 title="Noņemt saiti"
                 aria-label="Noņemt saiti"
               >
@@ -144,6 +187,9 @@ function SourceLinkList({
               </button>
             </div>
             {err ? <p className="px-0.5 text-[11px] text-red-600">{err}</p> : null}
+            {href && readCountByUrl?.[href] ? (
+              <p className="px-0.5 text-[11px] text-[#6b7280]">{readCountByUrl[href]}</p>
+            ) : null}
           </div>
         );
       })}
@@ -154,11 +200,25 @@ function SourceLinkList({
 type Props = {
   rec: IrissPasutijumsRecord;
   onPatch: (patch: Partial<IrissPasutijumsRecord>) => void;
+  onReadLink?: (url: string) => void;
+  readingUrl?: string | null;
+  readCountByUrl?: Record<string, string>;
 };
 
-export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
+export function IrissListingPlatformsFields({ rec, onPatch, onReadLink, readingUrl, readCountByUrl }: Props) {
   const patchLinks = (key: LinkKey, next: string[]) => {
     onPatch({ [key]: next });
+  };
+
+  const generatePlatform = (platform: IrissAuctionSearchPlatform) => {
+    const next = applyGeneratedPlatformSearchLink(rec, platform);
+    if (!next.url) return;
+    onPatch({
+      listingLinkAuto1: next.record.listingLinkAuto1,
+      listingLinkOpenline: next.record.listingLinkOpenline,
+      listingLinkAutobid: next.record.listingLinkAutobid,
+      listingLinkEcarstrade: next.record.listingLinkEcarstrade,
+    });
   };
 
   const generateEcarstrade = () => {
@@ -174,7 +234,7 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
         <button
           type="button"
           onClick={generateEcarstrade}
-          className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-2.5 text-[10px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50"
+          className={actionBtn}
           title="Atjaunot eCarsTrade saiti tikai no Auto1 / Openlane / Autobid filtriem"
         >
           Atjaunot eCarsTrade
@@ -186,30 +246,49 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
           logoKey="mobile"
           links={rec.listingLinkMobile}
           onChange={(next) => patchLinks("listingLinkMobile", next)}
+          onReadLink={onReadLink}
+          readingUrl={readingUrl}
+          readCountByUrl={readCountByUrl}
         />
         <SourceLinkList
           label="Autobid"
           logoKey="autobid"
           links={rec.listingLinkAutobid}
           onChange={(next) => patchLinks("listingLinkAutobid", next)}
+          onGenerateFilter={() => generatePlatform("autobid")}
+          onReadLink={onReadLink}
+          readingUrl={readingUrl}
+          readCountByUrl={readCountByUrl}
         />
         <SourceLinkList
           label="Openlane"
           logoKey="openline"
           links={rec.listingLinkOpenline}
           onChange={(next) => patchLinks("listingLinkOpenline", next)}
+          onGenerateFilter={() => generatePlatform("openline")}
+          onReadLink={onReadLink}
+          readingUrl={readingUrl}
+          readCountByUrl={readCountByUrl}
         />
         <SourceLinkList
           label="Auto1"
           logoKey="auto1"
           links={rec.listingLinkAuto1}
           onChange={(next) => patchLinks("listingLinkAuto1", next)}
+          onGenerateFilter={() => generatePlatform("auto1")}
+          onReadLink={onReadLink}
+          readingUrl={readingUrl}
+          readCountByUrl={readCountByUrl}
         />
         <SourceLinkList
           label="eCarsTrade"
           logoKey="ecarstrade"
           links={rec.listingLinkEcarstrade}
           onChange={(next) => patchLinks("listingLinkEcarstrade", next)}
+          onGenerateFilter={() => generatePlatform("ecarstrade")}
+          onReadLink={onReadLink}
+          readingUrl={readingUrl}
+          readCountByUrl={readCountByUrl}
         />
       </div>
       <div className="mt-3">
@@ -217,6 +296,9 @@ export function IrissListingPlatformsFields({ rec, onPatch }: Props) {
           label="Citi"
           links={rec.listingLinksOther}
           onChange={(next) => patchLinks("listingLinksOther", next)}
+          onReadLink={onReadLink}
+          readingUrl={readingUrl}
+          readCountByUrl={readCountByUrl}
         />
       </div>
     </div>
