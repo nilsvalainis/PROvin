@@ -158,7 +158,10 @@ import {
   collectUnifiedMileageRows,
   prepareUnifiedMileageDisplayRows,
 } from "@/lib/unified-mileage";
-import type { OdometerAnomalyOverride } from "@/lib/odometer-anomaly-classify";
+import {
+  odometerAnomalyOverridesSnapshotField,
+  type OdometerAnomalyOverride,
+} from "@/lib/odometer-anomaly-classify";
 import { AdminOdometerAnomalyPanel } from "@/components/admin/AdminOdometerAnomalyPanel";
 import { AdminManualBannersEditor } from "@/components/admin/AdminManualBannersEditor";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
@@ -401,6 +404,7 @@ type WorkspacePersist = {
   deletedPhotoIds?: string[];
   clearedFields?: Record<string, number>;
   technicalRiskMap?: TechnicalRiskMap;
+  odometerAnomalyOverrides?: OdometerAnomalyOverride[];
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -548,6 +552,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
   ...deletedPhotoIdsSnapshotField(ws.deletedPhotoIds),
   ...clearedFieldsSnapshotField(ws.clearedFields),
   ...technicalRiskMapSnapshotField(ws.technicalRiskMap),
+  ...odometerAnomalyOverridesSnapshotField(ws.odometerAnomalyOverrides),
   };
 }
 
@@ -862,7 +867,6 @@ export function OrderDetailWorkspace({
   const [factCheckByField, setFactCheckByField] = useState<Record<string, FactCheckResult>>({});
   const [factCheckBusy, setFactCheckBusy] = useState<Record<string, boolean>>({});
   const [factCheckDismissed, setFactCheckDismissed] = useState<string[]>([]);
-  const [odometerAnomalyOverrides, setOdometerAnomalyOverrides] = useState<OdometerAnomalyOverride[]>([]);
   const [factCheckPublishItems, setFactCheckPublishItems] = useState<
     { label: string; sentence: string; message: string }[] | null
   >(null);
@@ -918,45 +922,7 @@ export function OrderDetailWorkspace({
     }
   }, [factCheckDismissed, payload.sessionId]);
 
-  const odometerOverrideHydratedRef = useRef(false);
-  useEffect(() => {
-    odometerOverrideHydratedRef.current = false;
-    try {
-      const raw = sessionStorage.getItem(`provin-odometer-overrides:${payload.sessionId}`);
-      if (!raw) {
-        setOdometerAnomalyOverrides([]);
-      } else {
-        const parsed = JSON.parse(raw) as unknown;
-        setOdometerAnomalyOverrides(
-          Array.isArray(parsed)
-            ? parsed.filter(
-                (x): x is OdometerAnomalyOverride =>
-                  x &&
-                  typeof x === "object" &&
-                  typeof (x as OdometerAnomalyOverride).key === "string" &&
-                  ((x as OdometerAnomalyOverride).action === "confirm" ||
-                    (x as OdometerAnomalyOverride).action === "dismiss"),
-              )
-            : [],
-        );
-      }
-    } catch {
-      setOdometerAnomalyOverrides([]);
-    }
-    odometerOverrideHydratedRef.current = true;
-  }, [payload.sessionId]);
-
-  useEffect(() => {
-    if (!odometerOverrideHydratedRef.current) return;
-    try {
-      sessionStorage.setItem(
-        `provin-odometer-overrides:${payload.sessionId}`,
-        JSON.stringify(odometerAnomalyOverrides),
-      );
-    } catch {
-      /* kvota / privātais režīms */
-    }
-  }, [odometerAnomalyOverrides, payload.sessionId]);
+  const odometerAnomalyOverrides = ws.odometerAnomalyOverrides ?? [];
   const wsStateRef = useRef(ws);
   wsStateRef.current = ws;
   const orderEditsRef = useRef({
@@ -1136,6 +1102,7 @@ export function OrderDetailWorkspace({
     ...deletedPhotoIdsSnapshotField(normalized.deletedPhotoIds),
     ...clearedFieldsSnapshotField(normalized.clearedFields),
     ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
+    ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
     };
     wsPersistRef.current = next;
     lastGoodPersistBodyRef.current = normalized;
@@ -1209,6 +1176,7 @@ export function OrderDetailWorkspace({
         ...deletedPhotoIdsSnapshotField(body.deletedPhotoIds),
         ...clearedFieldsSnapshotField(body.clearedFields),
         ...technicalRiskMapSnapshotField(body.technicalRiskMap),
+        ...odometerAnomalyOverridesSnapshotField(body.odometerAnomalyOverrides),
         };
         wsStateRef.current = wsPersistRef.current;
       }
@@ -2539,6 +2507,7 @@ export function OrderDetailWorkspace({
       ...deletedPhotoIdsSnapshotField(chosen.deletedPhotoIds),
       ...clearedFieldsSnapshotField(chosen.clearedFields),
       ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
+      ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
       };
 
       workspaceDebugLog("hydrate_source", {
@@ -2570,6 +2539,7 @@ export function OrderDetailWorkspace({
       ...deletedPhotoIdsSnapshotField(chosen.deletedPhotoIds),
       ...clearedFieldsSnapshotField(chosen.clearedFields),
       ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
+      ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
       };
       wsPersistRef.current = hydratedWs;
       wsStateRef.current = hydratedWs;
@@ -5712,10 +5682,12 @@ export function OrderDetailWorkspace({
                     rows={unifiedMileageDisplayRows}
                     overrides={odometerAnomalyOverrides}
                     onOverride={(next) =>
-                      setOdometerAnomalyOverrides((prev) => [
-                        ...prev.filter((o) => o.key !== next.key),
-                        next,
-                      ])
+                      updateWs({
+                        odometerAnomalyOverrides: [
+                          ...odometerAnomalyOverrides.filter((o) => o.key !== next.key),
+                          next,
+                        ],
+                      })
                     }
                   />
                 </div>

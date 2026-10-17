@@ -5,6 +5,8 @@ import {
   countChartMileageReadings,
   hasActiveRollbackAnomaly,
   looksArtificialMonthDay,
+  odometerAnomalyOverridesSnapshotField,
+  parseOdometerAnomalyOverrides,
   selectNewestChartMileageRow,
 } from "@/lib/odometer-anomaly-classify";
 import type { UnifiedMileageRow as MileageRow } from "@/lib/unified-mileage";
@@ -90,5 +92,33 @@ describe("classifyOdometerAnomalies", () => {
     ];
     expect(countChartMileageReadings(rows)).toBe(3);
     expect(selectNewestChartMileageRow(rows)?.odometer).toBe("110000");
+  });
+});
+
+describe("parseOdometerAnomalyOverrides", () => {
+  it("returns undefined for missing or non-array values so old orders stay untouched", () => {
+    expect(parseOdometerAnomalyOverrides(undefined)).toBeUndefined();
+    expect(parseOdometerAnomalyOverrides(null)).toBeUndefined();
+    expect(parseOdometerAnomalyOverrides({ key: "x", action: "dismiss" })).toBeUndefined();
+    expect(odometerAnomalyOverridesSnapshotField(undefined)).toEqual({});
+    expect(odometerAnomalyOverridesSnapshotField(null)).toEqual({});
+  });
+
+  it("keeps an empty array as a real clear and drops invalid items", () => {
+    expect(parseOdometerAnomalyOverrides([])).toEqual([]);
+    expect(odometerAnomalyOverridesSnapshotField([])).toEqual({ odometerAnomalyOverrides: [] });
+    expect(
+      parseOdometerAnomalyOverrides([
+        { key: "a|1", action: "dismiss" },
+        { key: "a|1", action: "confirm" },
+        { key: "", action: "dismiss" },
+        { key: "b|2", action: "skip" },
+        { key: "c|3", action: "confirm" },
+        null,
+      ]),
+    ).toEqual([
+      { key: "a|1", action: "dismiss" },
+      { key: "c|3", action: "confirm" },
+    ]);
   });
 });

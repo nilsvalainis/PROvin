@@ -39,6 +39,29 @@ export type OdometerAnomalyOverride = {
   action: OdometerAnomalyOverrideAction;
 };
 
+/** Vecie pasūtījumi bez lauka paliek `undefined` - netiek pārrakstīti. */
+export function parseOdometerAnomalyOverrides(raw: unknown): OdometerAnomalyOverride[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: OdometerAnomalyOverride[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const key = typeof (item as { key?: unknown }).key === "string" ? (item as { key: string }).key.trim() : "";
+    const action = (item as { action?: unknown }).action;
+    if (!key || (action !== "confirm" && action !== "dismiss") || seen.has(key)) continue;
+    seen.add(key);
+    out.push({ key, action });
+  }
+  return out;
+}
+
+/** Persistences lauks - tikai ja masīvs ir, lai esošie melnraksti paliek neskarti. */
+export function odometerAnomalyOverridesSnapshotField(
+  overrides: OdometerAnomalyOverride[] | null | undefined,
+): { odometerAnomalyOverrides?: OdometerAnomalyOverride[] } {
+  return overrides != null ? { odometerAnomalyOverrides: overrides } : {};
+}
+
 export function odometerAnomalyKey(row: Pick<UnifiedMileageRow, "date" | "odometer" | "sourceLabel" | "sourceOrder">): string {
   return `${row.date}|${row.odometer}|${row.sourceLabel}|${row.sourceOrder}`;
 }

@@ -103,6 +103,30 @@ describe("coalesceOrderWorkspacePersistBody", () => {
       "sbp_ph_0123456789abcdef01234567",
     ]);
   });
+
+  it("keeps baseline odometer overrides when incoming omits the field, and honors an empty clear", () => {
+    const baseline: OrderWorkspacePersistBody = {
+      ...bodyWithAutodnaComment("AutoDNA"),
+      odometerAnomalyOverrides: [{ key: "01.06.2024|120000|CSDD|1", action: "dismiss" }],
+    };
+    const omitted = coalesceOrderWorkspacePersistBody(bodyWithAutodnaComment("AutoDNA"), baseline);
+    expect(omitted.odometerAnomalyOverrides).toEqual([
+      { key: "01.06.2024|120000|CSDD|1", action: "dismiss" },
+    ]);
+    const cleared = coalesceOrderWorkspacePersistBody(
+      { ...bodyWithAutodnaComment("AutoDNA"), odometerAnomalyOverrides: [] },
+      baseline,
+    );
+    expect(cleared.odometerAnomalyOverrides).toEqual([]);
+    const incoming: OrderWorkspacePersistBody = {
+      ...bodyWithAutodnaComment("AutoDNA"),
+      odometerAnomalyOverrides: [{ key: "01.06.2024|120000|CSDD|1", action: "confirm" }],
+    };
+    expect(coalesceOrderWorkspacePersistBody(incoming, baseline).odometerAnomalyOverrides).toEqual([
+      { key: "01.06.2024|120000|CSDD|1", action: "confirm" },
+    ]);
+    expect(coalesceOrderWorkspacePersistBody(bodyWithAutodnaComment("AutoDNA"), bodyWithAutodnaComment("AutoDNA")).odometerAnomalyOverrides).toBeUndefined();
+  });
 });
 
 describe("pickOrderWorkspaceHydrationServerFirst", () => {

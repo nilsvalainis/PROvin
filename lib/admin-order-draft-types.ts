@@ -46,6 +46,8 @@ export type OrderDraftWorkspaceBody = {
   clearedFields?: Record<string, number>;
   /** Tehnisko risku v2 JSON karte (operatoram; nav PDF). */
   technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
+  /** Operatora odometra karodziņu apstiprinājums / atcelšana. Nav vecos pasūtījumos. */
+  odometerAnomalyOverrides?: import("@/lib/odometer-anomaly-classify").OdometerAnomalyOverride[];
 };
 
 export type OrderDraftState = {
