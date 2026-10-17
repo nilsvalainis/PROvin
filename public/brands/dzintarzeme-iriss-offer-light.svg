@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -30 320 150" role="img" aria-label="Dzintarzeme Auto">
-  <g fill="none" stroke="#f56a00" stroke-width="10" stroke-linecap="round">
-    <path d="M40 78 A100 100 0 0 1 280 78" />
-    <path d="M160 78 L210 28" stroke-width="12" />
-  </g>
-  <text x="160" y="98" text-anchor="middle" fill="#1d1d1f" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="0.12em">DZINTARZEME</text>
-  <text x="160" y="116" text-anchor="middle" fill="#1d1d1f" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="0.35em">AUTO</text>
-</svg>

@@ -1,4 +1,5 @@
 import { adminRichHtmlToPdfSafeHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { DZINTARZEME_AUTO_LOGO_PUBLIC_PATH } from "@/lib/dzintarzeme-logo";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
 import { formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
 import { parsePriceLike } from "@/lib/iriss-price-format";
@@ -204,7 +205,6 @@ function irissPrintShell(accent: string, title: string, body: string, opts?: { m
       width: auto;
       max-width: 160px;
       object-fit: contain;
-      mix-blend-mode: multiply;
     }
     .ipdf-sec-head { display: block; margin: 0 0 12px; }
     .ipdf-sec-title {
@@ -465,7 +465,7 @@ export function buildIrissPasutijumsPrintHtml(
   const heroModel = record.brandModel.trim() || "PASŪTĪJUMS";
 
   const header = `<header class="ipdf-header">
-    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
+    <img class="ipdf-logo" src="${DZINTARZEME_AUTO_LOGO_PUBLIC_PATH}" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">${esc(heroModel)}</p>
       <p class="ipdf-hero-sub">${esc(labels.heroSub(generatedAtFormatted))}</p>
@@ -556,7 +556,7 @@ export function buildIrissOfferPrintHtml(
   const heroTitle = offer.brandModel.trim() || offer.title.trim() || "Piedāvājums";
 
   const header = `<header class="ipdf-header">
-    <img class="ipdf-logo" src="/brands/dzintarzeme-iriss-offer-pdf-logo.png" width="160" height="40" alt="Dzintarzeme Auto"/>
+    <img class="ipdf-logo" src="${DZINTARZEME_AUTO_LOGO_PUBLIC_PATH}" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">${esc(heroTitle)}</p>
       <p class="ipdf-hero-sub">${esc(labels.heroSub(generatedAtFormatted))}</p>
