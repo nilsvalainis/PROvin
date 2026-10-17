@@ -4,6 +4,12 @@
  * Zīmols: Dzintarzeme Auto, juridiski SIA ĪRISS.
  */
 
+import {
+  formatIrissOfferPublicBodyType,
+  formatIrissOfferPublicFuel,
+  formatIrissOfferPublicOdometer,
+  formatIrissOfferPublicTransmission,
+} from "@/lib/iriss-offer-public-display";
 import { orderOfferAttachmentsForPdf } from "@/lib/iriss-offer-image-sorter";
 import { parsePriceLike, irissPriceLooksNumeric } from "@/lib/iriss-price-format";
 import type { IrissOfferRecord } from "@/lib/iriss-pasutijumi-types";
@@ -61,6 +67,8 @@ export type IrissOfferPublicView = {
   firstRegistration: string;
   odometer: string;
   transmission: string;
+  fuel: string;
+  bodyType: string;
   location: string;
   checks: string[];
   notes: string;
@@ -93,6 +101,8 @@ export const IRISS_OFFER_PUBLIC_LABELS = {
   year: "Pirmā reģistrācija",
   odometer: "Nobraukums",
   transmission: "Ātrumkārba",
+  fuel: "Degviela",
+  bodyType: "Virsbūve",
   location: "Atrašanās vieta",
   vin: "VIN",
   car: "Auto",
@@ -435,8 +445,10 @@ export function buildIrissOfferPublicView(
     brandModel: plainClientText(offer.brandModel).slice(0, 160),
     vin: offer.vin.trim().slice(0, 32),
     firstRegistration: plainClientText(offer.firstRegistration || offer.year).slice(0, 40),
-    odometer: plainClientText(offer.odometerReading || offer.mileage).slice(0, 40),
-    transmission: plainClientText(offer.transmission).slice(0, 40),
+    odometer: formatIrissOfferPublicOdometer(plainClientText(offer.odometerReading || offer.mileage)),
+    transmission: formatIrissOfferPublicTransmission(plainClientText(offer.transmission)),
+    fuel: formatIrissOfferPublicFuel(plainClientText(offer.fuel)),
+    bodyType: formatIrissOfferPublicBodyType(plainClientText(offer.bodyTypeOffer)),
     location: plainClientText(offer.location).slice(0, 80),
     checks,
     notes,
@@ -458,6 +470,8 @@ const PUBLIC_VIEW_KEYS = [
   "firstRegistration",
   "odometer",
   "transmission",
+  "fuel",
+  "bodyType",
   "location",
   "checks",
   "notes",

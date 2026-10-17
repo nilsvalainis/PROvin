@@ -5,13 +5,13 @@ export const DZINTARZEME_OFFER_LOGO_PATH = "/brands/dzintarzeme-iriss-offer-pdf-
 /** Publiskā /p/ lapa (gaišs fons): SVG, tumšs teksts + oranžs zīmols */
 export const DZINTARZEME_OFFER_PUBLIC_LOGO_PATH = "/brands/dzintarzeme-iriss-offer-light.svg";
 
-export function DzintarzemeOfferBrandLogo({ className = "h-auto w-[160px] max-w-[min(160px,42vw)] object-contain" }: { className?: string }) {
+export function DzintarzemeOfferBrandLogo({ className = "h-auto w-[160px] max-w-[min(160px,42vw)] object-contain pt-1" }: { className?: string }) {
   return (
     <Image
       src={DZINTARZEME_OFFER_PUBLIC_LOGO_PATH}
       alt="Dzintarzeme Auto"
       width={320}
-      height={120}
+      height={150}
       className={className}
       priority
       unoptimized
