@@ -38,7 +38,7 @@ export function AdminSourcePdfChecklist({ idPrefix, value, onChange, readOnly, d
             {lines}
           </pre>
         ) : (
-          <span className="text-[11px] text-slate-400">—</span>
+          <span className="text-[11px] text-slate-400">-</span>
         )}
       </div>
     );

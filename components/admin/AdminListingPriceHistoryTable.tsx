@@ -66,7 +66,7 @@ export function AdminListingPriceHistoryTable({
           Cenas izmaiņa: <strong>{formatAdifySignedEur(priceChangeEur)}</strong>
         </span>
         <span>
-          Ilgums: <strong>{durationDays != null ? `${durationDays} diena(s)` : "—"}</strong>
+          Ilgums: <strong>{durationDays != null ? `${durationDays} diena(s)` : "-"}</strong>
         </span>
       </div>
     </div>

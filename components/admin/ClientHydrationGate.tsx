@@ -8,7 +8,7 @@ import { useClientMounted } from "@/lib/use-client-mounted";
  * Lietot datumu / naudas formatējumam, lai servera HTML sakristu ar hidrāciju.
  */
 export function ClientHydrationGate({
-  fallback = "—",
+  fallback = "-",
   children,
 }: {
   fallback?: ReactNode;

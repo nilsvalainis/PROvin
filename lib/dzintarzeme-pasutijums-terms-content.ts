@@ -18,7 +18,7 @@ export const DZ_PASUTIJUMS_TERMS_BLOCKS: readonly DzPasutijumsTermBlock[] = [
   { kind: "h", text: "1. Komisijas maksa" },
   {
     kind: "p",
-    text: "A variants — 100% priekšapmaksa: fiksēta komisijas maksa 1190,00 EUR.",
+    text: "A variants - 100% priekšapmaksa: fiksēta komisijas maksa 1190,00 EUR.",
   },
   {
     kind: "p",
@@ -128,7 +128,7 @@ export const DZ_PASUTIJUMS_TERMS_BLOCKS: readonly DzPasutijumsTermBlock[] = [
   },
   {
     kind: "p",
-    text: "Ja Jums rodas papildu jautājumi par procesu, izmaksām vai transportēšanas iespējām, droši sazinieties ar mums — labprāt palīdzēsim.",
+    text: "Ja Jums rodas papildu jautājumi par procesu, izmaksām vai transportēšanas iespējām, droši sazinieties ar mums - labprāt palīdzēsim.",
   },
   { kind: "p", text: "Visas cenas norādītas bez PVN (21 %)." },
 ];

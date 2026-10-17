@@ -288,7 +288,7 @@ export function AdminOilChangeIntervalEditor({
             compact
             ai={aiOilChangeInterval}
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-            aria-label={`${dealerAria} — papildu komentārs eļļas intervāliem`}
+            aria-label={`${dealerAria} - papildu komentārs eļļas intervāliem`}
           />
         </div>
 

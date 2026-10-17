@@ -192,7 +192,7 @@ function ItemList({
               >
                 {row}
                 <span className={styles.b2bDealerAccordionMark} aria-hidden>
-                  {dealerOpen ? "−" : "+"}
+                  {dealerOpen ? "-" : "+"}
                 </span>
               </button>
               {dealerOpen ? (

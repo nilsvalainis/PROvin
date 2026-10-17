@@ -67,11 +67,11 @@ export function AdminSavableAttachmentRow({ index, row, onChangeRow, onRemove, r
         <div className="space-y-2 rounded-lg border border-slate-200/80 bg-white px-2.5 py-2 text-sm">
           <div>
             <span className="text-[10px] font-medium uppercase text-[var(--color-provin-muted)]">Apraksts</span>
-            <p className="mt-0.5 whitespace-pre-wrap text-[var(--color-apple-text)]">{row.label || "—"}</p>
+            <p className="mt-0.5 whitespace-pre-wrap text-[var(--color-apple-text)]">{row.label || "-"}</p>
           </div>
           <div>
             <span className="text-[10px] font-medium uppercase text-[var(--color-provin-muted)]">Fails</span>
-            <p className="mt-0.5 font-mono text-xs text-[var(--color-apple-text)]">{row.fileName || "—"}</p>
+            <p className="mt-0.5 font-mono text-xs text-[var(--color-apple-text)]">{row.fileName || "-"}</p>
           </div>
         </div>
       ) : (

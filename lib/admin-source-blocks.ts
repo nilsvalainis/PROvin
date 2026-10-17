@@ -211,8 +211,8 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   asv: ASV_ADMIN_LABEL,
   tjekbil: "DĀNIJAS REĢISTRI",
   finnik: "NĪDERLANDES REĢISTRI",
-  mnt_ee: "MNT.EE — Igaunijas reģistrs",
-  lkf_ee: "LKF.EE — Igaunijas OCTA",
+  mnt_ee: "MNT.EE - Igaunijas reģistrs",
+  lkf_ee: "LKF.EE - Igaunijas OCTA",
   carinfo: "ZVIEDRIJAS REĢISTRI",
   traficom_fi: "SOMIJAS REĢISTRI",
   ltab: "LTAB",
@@ -904,7 +904,7 @@ export function csddFormToPlainText(f: CsddFormFields): string {
   if (owners.length > 0) {
     lines.push("Īpašnieku maiņas Latvijā:");
     for (const row of owners) {
-      lines.push(`${row.date} — ${row.label}`);
+      lines.push(`${row.date} - ${row.label}`);
     }
   }
   const checklistTxt = formatSourcePdfChecklistForPdf(f.pdfChecklist);
@@ -1376,7 +1376,7 @@ export function citiAvotiSectionLabel(section: CitiAvotiSectionState, index: num
 export function citiAvotiSectionPdfTitle(section: CitiAvotiSectionState, index: number, total: number): string {
   const label = citiAvotiSectionLabel(section, index, total);
   if (label === SOURCE_BLOCK_LABELS.citi_avoti) return SOURCE_BLOCK_LABELS.citi_avoti;
-  return `${SOURCE_BLOCK_LABELS.citi_avoti} — ${label}`;
+  return `${SOURCE_BLOCK_LABELS.citi_avoti} - ${label}`;
 }
 
 export function citiAvotiSectionHasContent(section: CitiAvotiSectionState): boolean {

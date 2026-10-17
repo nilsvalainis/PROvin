@@ -1077,7 +1077,7 @@ export function IrissSludinajumiListClient({
               <option value="">{dataset === "scan" ? "Viss monitorings" : "Visi klienti"}</option>
               {clientOptions.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.indent ? "\u00a0\u00a0\u00a0— " : ""}
+                  {o.indent ? "\u00a0\u00a0\u00a0- " : ""}
                   {o.label}
                 </option>
               ))}

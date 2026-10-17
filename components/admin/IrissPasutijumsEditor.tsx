@@ -1536,7 +1536,7 @@ export function IrissPasutijumsEditor({
       document.body.removeChild(a);
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 120_000);
 
-      // Neizmantojam `navigator.share({ files })` — iOS atver visu sistēmas „Share” paneli, ne tikai WhatsApp.
+      // Neizmantojam `navigator.share({ files })` - iOS atver visu sistēmas „Share” paneli, ne tikai WhatsApp.
       // `wa.me` ar `text=` atver WhatsApp ar sarunu pasūtījuma tālruņa numuram; PDF jāpievieno manuāli pēc lejupielādes.
       const waUrl = `https://wa.me/${digits}?text=${encodeURIComponent(shareText)}`;
       window.location.assign(waUrl);

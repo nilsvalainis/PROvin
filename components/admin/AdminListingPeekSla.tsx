@@ -88,7 +88,7 @@ export function AdminListingPeekSla({
       ) : sla ? (
         <span
           className={`${PILL_BASE} ${PILL_BY_STATUS[sla.status]}`}
-          title="Atbildes termiņš — 24 h no iesūtīšanas"
+          title="Atbildes termiņš - 24 h no iesūtīšanas"
         >
           {sla.label}
         </span>

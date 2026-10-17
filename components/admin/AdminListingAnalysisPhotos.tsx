@@ -66,14 +66,14 @@ function uploadErrorMessage(error: string | undefined, maxPhotos: number, detail
   if (error === "photo_limit") return `Sasniegts limits (${maxPhotos} fotogrāfijas).`;
   if (error === "file_too_large") return "Fails pēc kompresijas joprojām pārāk liels.";
   if (error === "invalid_jpeg") return "Serveris pieņem tikai JPEG pēc kompresijas.";
-  if (error === "store_disabled") return "Servera glabātuve nav pieejama — pārbaudi ADMIN_ORDER_DRAFT_* / Blob env.";
+  if (error === "store_disabled") return "Servera glabātuve nav pieejama - pārbaudi ADMIN_ORDER_DRAFT_* / Blob env.";
   if (error === "write_failed") {
     return detail === "blob_write_failed"
-      ? "Neizdevās saglabāt Blob — pārbaudi BLOB_READ_WRITE_TOKEN."
+      ? "Neizdevās saglabāt Blob - pārbaudi BLOB_READ_WRITE_TOKEN."
       : "Neizdevās saglabāt failu serverī.";
   }
   if (error === "write_verify_failed") {
-    return "Fails augšupielādēts, bet neizdevās apstiprināt — mēģini vēlreiz.";
+    return "Fails augšupielādēts, bet neizdevās apstiprināt - mēģini vēlreiz.";
   }
   if (error === "not_found") return "Pasūtījums nav atrasts.";
   if (detail) return detail.slice(0, 180);
@@ -815,7 +815,7 @@ export function AdminListingAnalysisPhotos({
 
       {disabled ? (
         <p className="text-[10px] text-amber-700 dark:text-amber-300">
-          Melnraksta glabātuve izslēgta — fotogrāfijas nevar saglabāt serverī (Vercel: ADMIN_ORDER_DRAFT_BLOB_PREFIX +
+          Melnraksta glabātuve izslēgta - fotogrāfijas nevar saglabāt serverī (Vercel: ADMIN_ORDER_DRAFT_BLOB_PREFIX +
           BLOB_READ_WRITE_TOKEN).
         </p>
       ) : null}
@@ -846,7 +846,7 @@ export function AdminListingAnalysisPhotos({
             defaultGroupId,
             simple
               ? "Velc negadījuma fotogrāfijas šeit vai izmanto „Atvērt no datora…”."
-              : "Velc attēlus šeit vai izmanto „Atvērt no datora…” — tiks izveidota pirmā grupa. Pēc tam vari pievienot virsrakstu (datums, avots).",
+              : "Velc attēlus šeit vai izmanto „Atvērt no datora…” - tiks izveidota pirmā grupa. Pēc tam vari pievienot virsrakstu (datums, avots).",
           )
         : null}
 
@@ -884,7 +884,7 @@ export function AdminListingAnalysisPhotos({
                     defaultValue={group.title}
                     onBlur={(e) => updateGroupTitleOnBlur(group.id, e.target.value)}
                     disabled={disabled || busy}
-                    placeholder="piem. 2024-06-12 — ss.com sludinājums"
+                    placeholder="piem. 2024-06-12 - ss.com sludinājums"
                     className="w-full rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[11px] text-[var(--admin-field-text)] placeholder:text-[var(--admin-field-placeholder)] focus:border-[var(--color-provin-accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/20 disabled:opacity-45"
                   />
                 </div>

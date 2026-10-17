@@ -37,8 +37,8 @@ export function buildCarVerticalTimelineHtml(
 export function buildCarVerticalIncidentDamageSubHtml(
   detail: Pick<CarVerticalDamageDetailRow, "damagedSides" | "damageGroups">,
 ): string {
-  const sides = detail.damagedSides.trim() || "—";
-  const groups = detail.damageGroups.trim() || "—";
+  const sides = detail.damagedSides.trim() || "-";
+  const groups = detail.damageGroups.trim() || "-";
   return `<div class="pdf-cv-damage-sub"><div class="pdf-cv-damage-sub-head"><span>Bojātā puse</span><span>Bojājumu grupas</span></div><div class="pdf-cv-damage-sub-row"><span class="pdf-cv-damage-sides">${escapeHtml(sides)}</span><span class="pdf-cv-damage-groups">${escapeHtml(groups)}</span></div></div>`;
 }
 

@@ -189,7 +189,7 @@ export function AdminLtabSourceBlock({
                     <tr key={ri} className="border-b border-slate-100 last:border-b-0">
                       <td className={`${mileCell} align-top`}>
                         {readOnly ? (
-                          <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "—"}</span>
+                          <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "-"}</span>
                         ) : (
                           <div>
                             <input
@@ -219,7 +219,7 @@ export function AdminLtabSourceBlock({
                                   : "font-semibold"
                               }
                             >
-                              {row.lossAmount.trim() || "—"}
+                              {row.lossAmount.trim() || "-"}
                             </span>
                           ) : (
                             <div>
@@ -248,7 +248,7 @@ export function AdminLtabSourceBlock({
                       </td>
                       <td className={`${mileCell} align-top`}>
                         {readOnly ? (
-                          <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "—"} />
+                          <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "-"} />
                         ) : (
                           <div>
                             <AdminCountryCombobox
@@ -316,7 +316,7 @@ export function AdminLtabSourceBlock({
                       ) : null}
                       {cert.insuredFrom.trim() || cert.insuredTo.trim() || cert.insuredDays.trim() ? (
                         <p className="text-[11px] text-[var(--color-apple-text)]">
-                          Laikā no {cert.insuredFrom || "—"} līdz {cert.insuredTo || "—"}
+                          Laikā no {cert.insuredFrom || "-"} līdz {cert.insuredTo || "-"}
                           {cert.insuredDays.trim() ? ` apdrošināts ${cert.insuredDays} dienas.` : "."}
                         </p>
                       ) : null}
@@ -405,7 +405,7 @@ export function AdminLtabSourceBlock({
                       cert.claims.length > 0 ? cert.claims : [emptyLtabCertificateClaim()];
                     const filled = cert.claims.filter(ltabCertificateClaimHasData);
                     const totalCents = sumLtabCertificateAmountCents(filled);
-                    const totalLabel = totalCents > 0 ? formatLtabCentsAsEur(totalCents) : "—";
+                    const totalLabel = totalCents > 0 ? formatLtabCentsAsEur(totalCents) : "-";
                     return (
                       <div className="overflow-hidden rounded-lg border border-slate-200/90 bg-white shadow-sm">
                         <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-provin-muted)]">
@@ -423,7 +423,7 @@ export function AdminLtabSourceBlock({
                                 <div className="min-w-0">
                                   {readOnly ? (
                                     <span className="text-[12px] font-semibold tabular-nums text-[var(--color-apple-text)]">
-                                      {amt || "—"}
+                                      {amt || "-"}
                                     </span>
                                   ) : (
                                     <input
@@ -439,7 +439,7 @@ export function AdminLtabSourceBlock({
                                 <div className="min-w-0">
                                   {readOnly ? (
                                     <span className="block text-center text-[12px] font-medium text-[var(--color-apple-text)]">
-                                      {row.status.trim() || "—"}
+                                      {row.status.trim() || "-"}
                                     </span>
                                   ) : (
                                     <input
@@ -455,7 +455,7 @@ export function AdminLtabSourceBlock({
                                 <div className="min-w-0">
                                   {readOnly ? (
                                     <span className="block text-right text-[12px] font-medium tabular-nums text-[var(--color-provin-muted)]">
-                                      {formatLtabClaimWhen(row) || "—"}
+                                      {formatLtabClaimWhen(row) || "-"}
                                     </span>
                                   ) : (
                                     <div className="flex flex-col gap-0.5">
@@ -562,14 +562,14 @@ export function AdminLtabSourceBlock({
               disabled={disabled}
               compact
               ai={aiComment}
-              aria-label="LTAB — komentāri"
+              aria-label="LTAB - komentāri"
             />
             <AdminAiContextRawField
               value={value.aiContextRaw}
               onChange={(next) => onChange({ ...value, aiContextRaw: next })}
               readOnly={readOnly}
               disabled={disabled}
-              ariaLabel="LTAB — AI papildu konteksts"
+              ariaLabel="LTAB - AI papildu konteksts"
             />
           </div>
       </div>

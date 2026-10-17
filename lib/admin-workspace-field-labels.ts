@@ -7,7 +7,7 @@ export const ADMIN_INCIDENTS_SUMMARY_LABEL = "NEGADĪJUMU VĒSTURES KOPSAVILKUMS
 export const ADMIN_MILEAGE_HISTORY_COMMENT_LABEL = "NOBRAUKUMA VĒSTURES KOMENTĀRS";
 
 /** Iekšējs avotu salīdzinājums — nav PDF; bloga / mārketinga materiāls. */
-export const ADMIN_SOURCES_COMPARISON_LABEL = "AVOTU SALĪDZINĀJUMS (iekšējs — nav PDF)";
+export const ADMIN_SOURCES_COMPARISON_LABEL = "AVOTU SALĪDZINĀJUMS (iekšējs - nav PDF)";
 
 /** AI / iekšējie prompti — pilns lauka nosaukums. */
 export const ADMIN_TECHNICAL_RISKS_LABEL = "Tehnisko risku analīze";

@@ -166,7 +166,7 @@ export function AdminListingPeekCommentComposer({
         return;
       }
     } catch {
-      setAiError("AI: tīkla kļūda — mēģini vēlreiz");
+      setAiError("AI: tīkla kļūda - mēģini vēlreiz");
     } finally {
       setBusy(false);
     }
@@ -223,7 +223,7 @@ export function AdminListingPeekCommentComposer({
           disabled={!listingUrl.trim() || sending}
           busy={busy || sending}
           dialogTitle="Piezīmes ātrajam vērtējumam"
-          dialogHint="Apstrādā visu vēstules tekstu zemāk — sagataves + tavus specifiskos teikumus. Flash nolasīs ss.lv un pārkārtos PROVIN stilā, neizmetot tavas detaļas."
+          dialogHint="Apstrādā visu vēstules tekstu zemāk - sagataves + tavus specifiskos teikumus. Flash nolasīs ss.lv un pārkārtos PROVIN stilā, neizmetot tavas detaļas."
           onGenerate={(notes, tier) => void runAi(notes, tier)}
         />
       </div>
@@ -335,7 +335,7 @@ export function AdminListingPeekCommentComposer({
             setLetterTouched(true);
           }}
           rows={10}
-          placeholder="Izvēlies sagataves augšā — šeit parādīsies pilnā vēstule, ko vari papildināt."
+          placeholder="Izvēlies sagataves augšā - šeit parādīsies pilnā vēstule, ko vari papildināt."
           className="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2 text-[13px] leading-relaxed text-[var(--color-apple-text)] outline-none focus:border-[var(--color-provin-accent)]"
         />
       </div>

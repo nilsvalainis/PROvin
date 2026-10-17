@@ -296,7 +296,7 @@ function formatPurchaseFeedback(data: {
   return `Kļūda iegādē: ${failed
     .map((r) => {
       const status = r.httpStatus != null ? ` HTTP ${r.httpStatus}` : "";
-      return `Type ${r.type} — ${r.error ?? "nezināms"}${status}`;
+      return `Type ${r.type} - ${r.error ?? "nezināms"}${status}`;
     })
     .join("; ")}`;
 }

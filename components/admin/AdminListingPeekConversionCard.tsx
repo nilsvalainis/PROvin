@@ -9,7 +9,7 @@ function formatEurFromCents(cents: number): string {
 }
 
 function formatRate(pct: number | null): string {
-  if (pct == null) return "—";
+  if (pct == null) return "-";
   return `${pct.toLocaleString("lv-LV", { maximumFractionDigits: 1 })}%`;
 }
 

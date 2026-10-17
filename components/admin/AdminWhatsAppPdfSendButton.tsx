@@ -69,7 +69,7 @@ export function AdminWhatsAppPdfSendButton({
       }
       openWhatsAppChat(phoneDigits, message, chatWindow);
       alert(
-        "Atvērts WhatsApp čats. PDF konsultācija lejupielādēta automātiski — pievienojiet to kā pielikumu ziņai.",
+        "Atvērts WhatsApp čats. PDF konsultācija lejupielādēta automātiski - pievienojiet to kā pielikumu ziņai.",
       );
     } catch (error) {
       chatWindow?.close();

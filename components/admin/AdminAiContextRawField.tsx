@@ -42,7 +42,7 @@ export function AdminAiContextRawField({
       </div>
       {readOnly ? (
         <div className="whitespace-pre-wrap rounded-md border border-slate-200/90 bg-slate-50/70 px-2 py-1.5 text-[11px] text-[var(--color-apple-text)]">
-          {value.trim() ? value : <span className="text-slate-400">—</span>}
+          {value.trim() ? value : <span className="text-slate-400">-</span>}
         </div>
       ) : (
         <textarea
@@ -51,7 +51,7 @@ export function AdminAiContextRawField({
           value={value}
           disabled={disabled}
           maxLength={AI_CONTEXT_RAW_MAX_LEN}
-          placeholder="Papildu piezīmes, fragmenti, avotu atšķirības — tikai AI kontekstam…"
+          placeholder="Papildu piezīmes, fragmenti, avotu atšķirības - tikai AI kontekstam…"
           onChange={(e) => onChange(e.target.value.slice(0, AI_CONTEXT_RAW_MAX_LEN))}
           aria-label={ariaLabel ?? AI_CONTEXT_RAW_FIELD_LABEL}
         />

@@ -165,7 +165,7 @@ export function AdminSavableTextField({
         flexRowWithAdornment ? (
           <div className="flex min-w-0 items-center gap-1">
             <div className={viewBoxClassSized} id={`${id}-view`} aria-readonly>
-              {safeValue.trim() ? safeValue : <span className="text-slate-400">—</span>}
+              {safeValue.trim() ? safeValue : <span className="text-slate-400">-</span>}
             </div>
             {endAdornment}
           </div>
@@ -176,7 +176,7 @@ export function AdminSavableTextField({
             ) : safeValue.trim() ? (
               safeValue
             ) : (
-              <span className="text-slate-400">—</span>
+              <span className="text-slate-400">-</span>
             )}
           </div>
         )

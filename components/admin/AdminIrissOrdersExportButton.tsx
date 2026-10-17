@@ -47,7 +47,7 @@ export function AdminIrissOrdersExportButton({ compact = false }: { compact?: bo
         throw new Error(detail);
       }
       const blob = await res.blob();
-      if (blob.size < 32) throw new Error("Tukšs fails — eksports neizdevās.");
+      if (blob.size < 32) throw new Error("Tukšs fails - eksports neizdevās.");
       const fromHeader = parseFilenameFromDisposition(res.headers.get("Content-Disposition"));
       const filename = fromHeader || fallbackName(format);
       const url = URL.createObjectURL(blob);
@@ -83,7 +83,7 @@ export function AdminIrissOrdersExportButton({ compact = false }: { compact?: bo
           disabled={busy}
           onClick={() => void runExport("pdf")}
           className={btnClass}
-          title="PDF — tikai aktīvie pasūtījumi"
+          title="PDF - tikai aktīvie pasūtījumi"
         >
           {loadingFormat === "pdf" ? (
             <Loader2 className={`${iconClass} animate-spin text-[var(--color-provin-accent)]`} aria-hidden />
@@ -131,7 +131,7 @@ export function AdminIrissOrdersExportButton({ compact = false }: { compact?: bo
         </p>
       ) : compact ? null : (
         <p className="max-w-lg text-right text-[10px] leading-snug text-[var(--color-provin-muted)]">
-          PDF — tikai aktīvie pasūtījumi (klients, specifikācija, aprīkojums, piezīmes). ZIP/JSON — rezerves kopija
+          PDF - tikai aktīvie pasūtījumi (klients, specifikācija, aprīkojums, piezīmes). ZIP/JSON - rezerves kopija
           ar visiem melnrakstiem.
         </p>
       )}

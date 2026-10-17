@@ -173,7 +173,7 @@ export function PkdCommissionInvoiceTool({ invoiceId, initialData }: Props) {
         PKD komisijas rēķins
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-[var(--color-provin-muted)]">
-        Rēķins bez PROVIN zīmola — visi lauki ir brīvi labojami, ieskaitot piegādātāja un saņēmēja rekvizītus.
+        Rēķins bez PROVIN zīmola - visi lauki ir brīvi labojami, ieskaitot piegādātāja un saņēmēja rekvizītus.
         Noklusējumi ielikti pēc tava parauga.
       </p>
 

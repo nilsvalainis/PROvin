@@ -175,8 +175,8 @@ export function ltabCertificateToPlainText(c: LtabCertificate): string {
   }
   if (c.accidentCount.trim()) lines.push(`Negadījumu skaits: ${c.accidentCount.trim()}`);
   if (c.insuredFrom.trim() || c.insuredTo.trim() || c.insuredDays.trim()) {
-    const from = c.insuredFrom.trim() || "—";
-    const to = c.insuredTo.trim() || "—";
+    const from = c.insuredFrom.trim() || "-";
+    const to = c.insuredTo.trim() || "-";
     const days = c.insuredDays.trim();
     lines.push(
       days
@@ -211,7 +211,7 @@ function normalizePdfText(raw: string): string {
 const LTAB_CLAIM_AMOUNT_SRC = "\\d{1,3}(?:[ \\u00a0\\u202f]\\d{3})+[.,]\\d{2}|\\d+[.,]\\d{2}";
 
 /**
- * Statuss bez summas (`Atbildīgs`) — nākamā ieraksta datums `01.11.2023` izskatās pēc summas `01.11`.
+ * Statuss bez summas (`Atbildīgs`) - nākamā ieraksta datums `01.11.2023` izskatās pēc summas `01.11`.
  * Bez `(?!\.\d{4})` tas tiek apēsts kā summa un vesela CSNg rinda pazūd no izziņas.
  */
 const CLAIM_RE = new RegExp(

@@ -16,13 +16,13 @@ function orderDateTimeFormatter(): Intl.DateTimeFormat {
 }
 
 function formatDateFromMs(ms: number): string {
-  if (!Number.isFinite(ms) || ms <= 0) return "—";
+  if (!Number.isFinite(ms) || ms <= 0) return "-";
   const date = new Date(ms);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
   try {
     return orderDateTimeFormatter().format(date);
   } catch {
-    return "—";
+    return "-";
   }
 }
 
@@ -33,7 +33,7 @@ export function formatOrderTimestampSec(createdSec: unknown): string {
     return formatDateFromMs(ms);
   }
   if (typeof createdSec !== "number" || !Number.isFinite(createdSec) || createdSec <= 0) {
-    return "—";
+    return "-";
   }
   const ms = createdSec * 1000;
   return formatDateFromMs(ms);

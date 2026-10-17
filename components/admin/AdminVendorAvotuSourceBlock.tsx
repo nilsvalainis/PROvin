@@ -259,7 +259,7 @@ export function AdminVendorAvotuSourceBlock({
                         data-provin-block={blockKey}
                         data-row-index={i}
                       >
-                        {formatAutoRecordsDateForOutput(row.date).trim() || "—"}
+                        {formatAutoRecordsDateForOutput(row.date).trim() || "-"}
                       </span>
                     ) : (
                       <input
@@ -285,7 +285,7 @@ export function AdminVendorAvotuSourceBlock({
                         data-provin-block={blockKey}
                         data-row-index={i}
                       >
-                        {row.odometer.trim() || "—"}
+                        {row.odometer.trim() || "-"}
                       </span>
                     ) : (
                       <input
@@ -309,7 +309,7 @@ export function AdminVendorAvotuSourceBlock({
                   <td className={`${mileCell} align-top`}>
                     {readOnly ? (
                       <CountryFlagWithCode
-                        countryLabel={row.country.trim() || "—"}
+                        countryLabel={row.country.trim() || "-"}
                         data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
                         data-provin-block={blockKey}
                         data-row-index={i}
@@ -536,7 +536,7 @@ export function AdminVendorAvotuSourceBlock({
                       >
                     <td className={`${mileCell} align-top`}>
                       {readOnly ? (
-                        <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "—"}</span>
+                        <span className="text-[var(--color-provin-muted)]">{row.csngDate.trim() || "-"}</span>
                       ) : (
                         <div>
                           <input
@@ -570,7 +570,7 @@ export function AdminVendorAvotuSourceBlock({
                                 : "font-semibold"
                             }
                           >
-                            {row.lossAmount.trim() || "—"}
+                            {row.lossAmount.trim() || "-"}
                           </span>
                         ) : (
                           <div>
@@ -605,7 +605,7 @@ export function AdminVendorAvotuSourceBlock({
                     </td>
                     <td className={`${mileCell} align-top`}>
                       {readOnly ? (
-                        <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "—"} />
+                        <CountryFlagWithCode countryLabel={row.incidentNo.trim() || "-"} />
                       ) : (
                         <div>
                           <AdminCountryCombobox
@@ -649,10 +649,10 @@ export function AdminVendorAvotuSourceBlock({
                               </div>
                               <div className="grid grid-cols-2 gap-2 px-2 py-1 text-[11px]">
                                 <span className="font-medium text-[var(--color-apple-text)]">
-                                  {damageDetail!.damagedSides.trim() || "—"}
+                                  {damageDetail!.damagedSides.trim() || "-"}
                                 </span>
                                 <span className="text-[var(--color-provin-muted)]">
-                                  {damageDetail!.damageGroups.trim() || "—"}
+                                  {damageDetail!.damageGroups.trim() || "-"}
                                 </span>
                               </div>
                             </div>
@@ -721,7 +721,7 @@ export function AdminVendorAvotuSourceBlock({
           onChange={(next) => onChange({ ...block, aiContextRaw: next })}
           readOnly={readOnly}
           disabled={disabled}
-          ariaLabel="Avots — AI papildu konteksts"
+          ariaLabel="Avots - AI papildu konteksts"
         />
       </div>
     </div>

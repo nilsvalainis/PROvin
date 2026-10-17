@@ -84,7 +84,7 @@ export function AdminCustomerHistoryPanel({
                 <Badge tone="peek">
                   {data.flags.hasSentPeekComment
                     ? `Ātrais vērtējums (${data.peeks.length})`
-                    : "Ātrais vērtējums — atbilde nav saglabāta"}
+                    : "Ātrais vērtējums - atbilde nav saglabāta"}
                 </Badge>
               ) : null}
             </div>

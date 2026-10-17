@@ -88,7 +88,7 @@ export function AdminQuickEvalExportMenu({
                       <a href={`/admin/orders/${c.id}`} className="font-semibold text-[var(--color-provin-accent)] hover:underline">
                         {fmtLv(new Date(c.createdMs).toISOString(), false)}
                       </a>{" "}
-                      <span className="text-[var(--color-apple-text)]">{c.name || c.email || "—"}</span>
+                      <span className="text-[var(--color-apple-text)]">{c.name || c.email || "-"}</span>
                       <span className="block text-[10.5px] text-[var(--color-provin-muted)]">
                         {c.vin ? `${c.vin} · ` : ""}sakrīt: {c.matchedBy.join(", ")}
                         {prev ? ` · jau eksportēts ${fmtLv(prev.at)}` : ""}
@@ -246,7 +246,7 @@ type EmptyRow = {
 
 const QE_DOT_HEX: Record<CardTone, string> = { ok: "#34c759", warn: "#ff9f0a", bad: "#ff3b30", none: "#c7c7cc", pending: "#c7c7cc" };
 
-/** Variants A: vienāda kartīte — galvene (punkts + avots + laiks), līdz 6 rindām, „Detaļas” sakļauts. */
+/** Variants A: vienāda kartīte - galvene (punkts + avots + laiks), līdz 6 rindām, „Detaļas” sakļauts. */
 function QeCard({ c }: { c: GridCard }) {
   const shown = c.facts.slice(0, 6);
   const rest = c.facts.slice(6);
@@ -329,11 +329,11 @@ function EmptyRowItem({ r, peekId }: { r: EmptyRow; peekId: string }) {
 }
 
 /**
- * Avotu režģis (variants A): kartītes TIKAI avotiem ar datiem; tukšie / kļūdainie / „nav atrasts” —
+ * Avotu režģis (variants A): kartītes TIKAI avotiem ar datiem; tukšie / kļūdainie / „nav atrasts” -
  * vienā sakļautā rindā „Bez datiem (N)” ar atkārtošanu katram. VIN SCAN avoti (pilnais katalogs:
  * WMI dekodēšana, tjekbil.dk, esyn.dk, nummerplade.net u.c.) rādās kā parastas kartītes, ja atrada datus.
- * CC-VIN — sava kartīte (ir/nav dati, foto skaits, saite). Pēc atkārtotas ielādes jaunie dati parādās
- * automātiski (router.refresh, kamēr kāds avots vēl ielādējas — periodiski).
+ * CC-VIN - sava kartīte (ir/nav dati, foto skaits, saite). Pēc atkārtotas ielādes jaunie dati parādās
+ * automātiski (router.refresh, kamēr kāds avots vēl ielādējas - periodiski).
  */
 export function AdminQuickEvalSourceGrid({
   peekId,
@@ -375,10 +375,10 @@ export function AdminQuickEvalSourceGrid({
     meta: ccVin?.at ? fmtLv(ccVin.at) : "nav pārbaudīts",
     link: ccHref,
     facts: [
-      { label: "Dati", value: typeof ccVin?.count === "number" ? (ccHas ? "Ir" : "Nav") : "—", ...(ccHas ? { tone: "ok" as const } : {}) },
-      { label: "Foto", value: typeof ccVin?.count === "number" ? String(ccVin.count) : "—" },
+      { label: "Dati", value: typeof ccVin?.count === "number" ? (ccHas ? "Ir" : "Nav") : "-", ...(ccHas ? { tone: "ok" as const } : {}) },
+      { label: "Foto", value: typeof ccVin?.count === "number" ? String(ccVin.count) : "-" },
     ],
-    more: "checkcar.vin — atveras jaunā cilnē; foto skaitu nolasa PROVIN skripts.",
+    more: "checkcar.vin - atveras jaunā cilnē; foto skaitu nolasa PROVIN skripts.",
     extra: <CcVinChip peekId={peekId} vin={vin} count={ccVin?.count} at={ccVin?.at} />,
   });
   const nordic = quickEvalNordicSearchLinks(vin);

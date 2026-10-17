@@ -348,7 +348,7 @@ export function AdminCsddSourceBlock({
             {value.rawUnprocessedData.trim() ? (
               value.rawUnprocessedData
             ) : (
-              <span className="text-slate-400">—</span>
+              <span className="text-slate-400">-</span>
             )}
           </div>
         ) : (
@@ -434,7 +434,7 @@ export function AdminCsddSourceBlock({
                       <div className="min-w-0 flex-1">
                         {readOnly ? (
                           <div className="min-h-[20px] whitespace-pre-wrap text-[11px] text-[var(--color-apple-text)]">
-                            {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
+                            {strVal.trim() ? strVal : <span className="text-slate-400">-</span>}
                           </div>
                         ) : dateKeys.has(key) ? (
                           <input
@@ -465,7 +465,7 @@ export function AdminCsddSourceBlock({
                   {readOnly ? (
                     <>
                       <div className="min-h-[28px] whitespace-pre-wrap rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] text-[var(--color-provin-muted)]">
-                        {strVal.trim() ? strVal : <span className="text-slate-400">—</span>}
+                        {strVal.trim() ? strVal : <span className="text-slate-400">-</span>}
                       </div>
                       {isOwnerCountField &&
                       (value.ownerCountLatvia.trim() || value.ownerRegistrationEvents.length > 0) ? (
@@ -565,7 +565,7 @@ export function AdminCsddSourceBlock({
                         data-provin-block="csdd"
                         data-row-index={i}
                       >
-                        {row.date.trim() || "—"}
+                        {row.date.trim() || "-"}
                       </span>
                     ) : (
                       <input
@@ -591,7 +591,7 @@ export function AdminCsddSourceBlock({
                         data-provin-block="csdd"
                         data-row-index={i}
                       >
-                        {row.odometer.trim() || "—"}
+                        {row.odometer.trim() || "-"}
                       </span>
                     ) : (
                       <input
@@ -678,7 +678,7 @@ export function AdminCsddSourceBlock({
           />
         ) : !readOnly && !disabled ? null : (
           <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-2 py-2 text-[10px] text-slate-400">
-            Ielīmē pilnu CSDD raw tekstu — iepriekšējās apskates bloks (defektu tabula) aizpildīsies
+            Ielīmē pilnu CSDD raw tekstu - iepriekšējās apskates bloks (defektu tabula) aizpildīsies
             automātiski.
           </p>
         )}
@@ -693,7 +693,7 @@ export function AdminCsddSourceBlock({
           <AdminCsddInspectionHistoryTable rows={value.technicalInspectionHistory} />
         ) : !readOnly && !disabled ? null : (
           <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 px-2 py-2 text-[10px] text-slate-400">
-            Ielīmē pilnu CSDD raw tekstu — tehnisko apskašu tabula (pa gadiem, katrs aizrādījums atsevišķā rindā)
+            Ielīmē pilnu CSDD raw tekstu - tehnisko apskašu tabula (pa gadiem, katrs aizrādījums atsevišķā rindā)
             aizpildīsies automātiski.
           </p>
         )}
@@ -752,14 +752,14 @@ export function AdminCsddSourceBlock({
           disabled={disabled}
           compact
           ai={aiComment}
-          aria-label={`CSDD — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+          aria-label={`CSDD - ${LISTING_ANALYSIS_COMMENT_LABEL}`}
         />
         <AdminAiContextRawField
           value={value.aiContextRaw}
           onChange={(next) => onChange({ ...value, aiContextRaw: next })}
           readOnly={readOnly}
           disabled={disabled}
-          ariaLabel="CSDD — AI papildu konteksts"
+          ariaLabel="CSDD - AI papildu konteksts"
         />
       </div>
       </div>

@@ -171,7 +171,7 @@ export function AdminCitiAvotiSourceBlock({
                         placeholder="Avota nosaukums (neobligāti)"
                         value={section.label ?? ""}
                         onChange={(e) => updateSection(index, { label: e.target.value.slice(0, 120) })}
-                        aria-label={`Citi avoti — avota nosaukums ${index + 1}`}
+                        aria-label={`Citi avoti - avota nosaukums ${index + 1}`}
                       />
                     ) : section.label?.trim() ? (
                       <span className="text-[10px] font-medium text-slate-600">({section.label.trim()})</span>
@@ -241,7 +241,7 @@ export function AdminCitiAvotiSourceBlock({
                           Ielasīt tabulā
                         </button>
                         <span className="text-[10px] text-slate-400">
-                          Atpazīst „Mileage history” — odometrs (km) + datums (YYYY-MM-DD).
+                          Atpazīst „Mileage history” - odometrs (km) + datums (YYYY-MM-DD).
                         </span>
                       </div>
                     ) : null}

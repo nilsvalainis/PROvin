@@ -105,7 +105,7 @@ export function AdminCountryCombobox(props: Props) {
               </button>
             ))
           ) : (
-            <p className="px-2 py-1 text-[11px] text-slate-500">Nav sarakstā — vari ievadīt manuāli.</p>
+            <p className="px-2 py-1 text-[11px] text-slate-500">Nav sarakstā - vari ievadīt manuāli.</p>
           )}
         </div>
       ) : null}

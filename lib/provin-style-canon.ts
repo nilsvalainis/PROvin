@@ -36,6 +36,8 @@ export const AI_SOURCE_OFF_TOPIC_RULES = `SOURCE FIELD SCOPE: Apskates, tehnisko
 
 export const AI_NO_AUDIT_WORD_RULES = `WORDING: Vārdu „audits” / „šajā auditā” klienta tekstā un šajā uzdevumā neizmanto. Vaicā: ko tieši šis avots fiksē?`;
 
+export const AI_HUMAN_DASH_RULES = `DASHES (mandatory, once): Generated client text must use only the short ASCII hyphen "-". NEVER Unicode em dash (U+2014) or en dash (U+2013). Spaced pause: " - ". Ranges: 1500-3000, 2007-2015, 24-72h. Prefer a comma, colon, or a new sentence when a dash is not needed.`;
+
 export const AI_INTERNAL_MARKERS_RULES = `INTERNAL MARKERS never in client text: D1-D99 / D<n>, „kartē / riska karte”, „paka / pakā”, „brīfs”, „AVOTU FAKTI”, „FLASH MAX”, „KB:”, „confidence”, „unknowns”, operators / operatora norādes / piezīmes, „šajā auditā”, „šajā atskaitē” as a cross-section pointer, Audi/VW PR-Nr., German headings (HECK, AGR-Kühler, Rückruf), English headings.`;
 
 /** Vienreiz visos lauku promptos. Formāts (virsraksts + rindkopa) paliek lauka uzdevumā. */
@@ -52,4 +54,5 @@ export const AI_STYLE_CANON_SHARED = [
   AI_ODOMETER_DROP_RULES,
   AI_INTERNAL_MARKERS_RULES,
   AI_NO_AUDIT_WORD_RULES,
+  AI_HUMAN_DASH_RULES,
 ].join("\n\n");

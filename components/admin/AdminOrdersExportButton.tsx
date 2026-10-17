@@ -36,7 +36,7 @@ export function AdminOrdersExportButton() {
         throw new Error(detail);
       }
       const blob = await res.blob();
-      if (blob.size < 32) throw new Error("Tukšs fails — eksports neizdevās.");
+      if (blob.size < 32) throw new Error("Tukšs fails - eksports neizdevās.");
       const fromHeader = parseFilenameFromDisposition(res.headers.get("Content-Disposition"));
       const fallback =
         format === "zip"
@@ -91,7 +91,7 @@ export function AdminOrdersExportButton() {
         </p>
       ) : (
         <p className="max-w-md text-right text-[10px] leading-snug text-[var(--color-provin-muted)]">
-          Rezerves kopija: pasūtījumu melnraksti un indeksi. Stripe sesijas — ja paspēj ielādēties; rēķinu PDF ZIP
+          Rezerves kopija: pasūtījumu melnraksti un indeksi. Stripe sesijas - ja paspēj ielādēties; rēķinu PDF ZIP
           arhīvā, ja ir.
         </p>
       )}

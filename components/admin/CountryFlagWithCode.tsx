@@ -17,7 +17,7 @@ export function CountryFlagWithCode({
 }: CountryFlagWithCodeProps) {
   const flag = pdfCountryFlagEmoji(countryLabel);
   const code = pdfCountryCodeLetters(countryLabel);
-  const label = countryLabel.trim() || "—";
+  const label = countryLabel.trim() || "-";
   const base =
     "inline-flex items-center justify-end gap-2 text-[11px] font-medium text-[var(--color-provin-muted)]";
   return (

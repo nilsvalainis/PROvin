@@ -763,12 +763,12 @@ export function AdminOrderDetailView({
             {order.paymentStatus === "unpaid" ? (
               <>
                 Šis paraugs imitē klientu, kas vēl <strong className="font-semibold">nav pabeidzis maksājumu</strong>{" "}
-                Stripe Checkout — nav īsts neapmaksāts sesijas ieraksts, bet tā pati informācija (VIN, kontakti,
+                Stripe Checkout - nav īsts neapmaksāts sesijas ieraksts, bet tā pati informācija (VIN, kontakti,
                 komentāri, pielikumu saraksts), ko redzēsi pēc turpmākās integrācijas.
               </>
             ) : (
               <>
-                Šī ir parauga datu kopa — nav īsts Stripe maksājums. Tā parāda, kā izskatīsies tavi
+                Šī ir parauga datu kopa - nav īsts Stripe maksājums. Tā parāda, kā izskatīsies tavi
                 komentāri un pielikumu saraksts pēc turpmākās integrācijas.
               </>
             )}

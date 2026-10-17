@@ -16,14 +16,14 @@ export function AdminOrderDetailPageFallback({
     <div className="admin-order-page mx-auto min-h-[50vh] max-w-2xl px-4 py-8">
       <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-950 shadow-sm">
         <p className="text-[10px] font-semibold uppercase tracking-wide text-red-800/90">
-          Admin pasūtījums — servera kļūda
+          Admin pasūtījums - servera kļūda
         </p>
         <h1 className="mt-2 text-base font-semibold">Neizdevās ielādēt pasūtījuma lapu</h1>
         <p className="mt-2 leading-relaxed text-red-900/95">{message}</p>
         <dl className="mt-4 space-y-2 text-[12px]">
           <div>
             <dt className="font-medium text-red-800/80">Session ID</dt>
-            <dd className="mt-0.5 break-all font-mono text-[11px]">{sessionId || "—"}</dd>
+            <dd className="mt-0.5 break-all font-mono text-[11px]">{sessionId || "-"}</dd>
           </div>
           <div>
             <dt className="font-medium text-red-800/80">Fāze</dt>

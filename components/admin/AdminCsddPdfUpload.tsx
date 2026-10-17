@@ -60,7 +60,7 @@ export function AdminCsddPdfUpload({
           return;
         }
         if (!data.fields) {
-          setError("Nav strukturētu CSDD datu — izmanto raw lauku.");
+          setError("Nav strukturētu CSDD datu - izmanto raw lauku.");
           return;
         }
         const engine =

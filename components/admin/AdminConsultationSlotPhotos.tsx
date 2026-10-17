@@ -330,7 +330,7 @@ export function AdminConsultationSlotPhotos({
       />
       {disabled ? (
         <p className="text-[10px] text-amber-700 dark:text-amber-300">
-          Melnraksta glabātuve izslēgta — fotogrāfijas nevar saglabāt serverī.
+          Melnraksta glabātuve izslēgta - fotogrāfijas nevar saglabāt serverī.
         </p>
       ) : null}
 
@@ -367,7 +367,7 @@ export function AdminConsultationSlotPhotos({
               : "border-[var(--admin-field-border)] bg-black/[0.02] text-[var(--color-provin-muted)] dark:bg-white/[0.02]"
           } ${atLimit ? "opacity-45" : ""}`}
         >
-          Velc attēlus šeit vai izmanto „Pievienot”. JPEG tiek izveidots pirms augšupielādes (~līdz 200 KB); iPhone HEIC —
+          Velc attēlus šeit vai izmanto „Pievienot”. JPEG tiek izveidots pirms augšupielādes (~līdz 200 KB); iPhone HEIC -
           ja kļūda, mēģini Safari vai eksportē JPG.
         </div>
       ) : null}

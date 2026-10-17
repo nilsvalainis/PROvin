@@ -34,7 +34,7 @@ export function AdminListingUrlEndAdornment({ listingUrl, onCopySuccess }: Props
           target="_blank"
           rel="noopener noreferrer"
           className={tirgusPillClass}
-          title="Tirgus dati — Tampermonkey (GM_*) ieliek sludinājuma URL"
+          title="Tirgus dati - Tampermonkey (GM_*) ieliek sludinājuma URL"
           data-provin-handoff-listing-url={listingUrl.trim()}
         >
           Tirgus

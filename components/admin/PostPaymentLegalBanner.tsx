@@ -13,11 +13,11 @@ export function PostPaymentLegalBanner() {
       <p className="mt-1.5 text-sm leading-snug text-red-950/90">
         Stripe uzrāda vismaz vienu apmaksātu pasūtījumu, bet mājas lapā vēl nav pilnu distances līguma
         rekvizītu (tikai zīmols PROVIN.LV). Pirms mārketinga un reāliem Live maksājumiem izpildi
-        soļus — tas samazina chargeback risku un sakrīt ar Stripe verifikācijas prasībām.
+        soļus - tas samazina chargeback risku un sakrīt ar Stripe verifikācijas prasībām.
       </p>
       <ol className="mt-2.5 list-decimal space-y-1.5 pl-4 text-sm leading-snug text-red-950/95">
         <li>
-          <span className="font-medium text-red-950">Vercel (vai cits hosts)</span> — Environment
+          <span className="font-medium text-red-950">Vercel (vai cits hosts)</span> - Environment
           Variables:{" "}
           <code className="rounded bg-red-100/80 px-1.5 py-0.5 text-xs font-mono text-red-900">
             NEXT_PUBLIC_COMPANY_LEGAL_NAME
@@ -33,12 +33,12 @@ export function PostPaymentLegalBanner() {
           (saskan ar personu apliecinošu dokumentu / SDV).
         </li>
         <li>
-          <span className="font-medium text-red-950">Redeploy</span> — pārliecinies, ka publiskajā
+          <span className="font-medium text-red-950">Redeploy</span> - pārliecinies, ka publiskajā
           lapā kājenē parādās pilnais bloks: juridiskais nosaukums, reģ. nr., adrese (ne tikai
           PROVIN.LV).
         </li>
         <li>
-          <span className="font-medium text-red-950">Stripe Dashboard</span> — pabeidz konta /
+          <span className="font-medium text-red-950">Stripe Dashboard</span> - pabeidz konta /
           biznesa verifikāciju Live režīmā. Viņi salīdzinās mājas lapas URL ar redzamajiem
           rekvizītiem.
         </li>

@@ -736,7 +736,7 @@ export function ConsultationDetailWorkspace({
             <AdminAiPolishRichCommentShell
               value={ws.irissApproved}
               onChange={(next) => setWs((p) => ({ ...p, irissApproved: next }))}
-              aria-label="APPROVED BY IRISS — galīgais kopsavilkums"
+              aria-label="APPROVED BY IRISS - galīgais kopsavilkums"
               label={<h2 className={sectionTitle}>Approved by IRISS</h2>}
               actions={
                 <AdminPdfIncludeToggle

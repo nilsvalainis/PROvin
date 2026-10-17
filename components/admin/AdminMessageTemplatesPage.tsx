@@ -438,7 +438,7 @@ export function AdminMessageTemplatesPage() {
           {selected?.channel === "email" ? (
             <div className="overflow-hidden rounded-xl border border-[#e5e5ea]">
               <div className="border-b border-[#eee] bg-[#fafafa] px-3.5 py-2.5 text-[12px] text-[#6e6e73]">
-                Temats: <strong className="text-[#1d1d1f]">{previewRendered?.subject ?? preview?.subject ?? "—"}</strong>
+                Temats: <strong className="text-[#1d1d1f]">{previewRendered?.subject ?? preview?.subject ?? "-"}</strong>
               </div>
               <div className="whitespace-pre-wrap p-4 text-[13.5px] leading-relaxed text-[#1d1d1f]">
                 {previewRendered?.text ?? preview?.text ?? ""}

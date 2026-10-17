@@ -208,7 +208,7 @@ export function AdminVinRegistrySourceBlock({
     setStatus(null);
     const cleanVin = vin.trim();
     if (!cleanVin) {
-      setError("Pasūtījumā nav VIN — ievadi to pārskata sadaļā.");
+      setError("Pasūtījumā nav VIN - ievadi to pārskata sadaļā.");
       return;
     }
     if (blockKey === "finnik" || blockKey === "traficom_fi") return;
@@ -288,7 +288,7 @@ export function AdminVinRegistrySourceBlock({
     if (!parsed.found) {
       onChange({ ...block, rawUnprocessedData: clipped });
       setError(null);
-      setStatus("RAW saglabāts. Ja nav nobraukuma rindu — nokopē visu car.info rezultātu lapu (ne tikai izvēlni).");
+      setStatus("RAW saglabāts. Ja nav nobraukuma rindu - nokopē visu car.info rezultātu lapu (ne tikai izvēlni).");
       return;
     }
     onChange({
@@ -373,7 +373,7 @@ export function AdminVinRegistrySourceBlock({
       </div>
       {readOnly ? (
         <div className="min-h-[40px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
-          {block[key].trim() || "—"}
+          {block[key].trim() || "-"}
         </div>
       ) : (
         <textarea
@@ -496,7 +496,7 @@ export function AdminVinRegistrySourceBlock({
                 <tr key={i} className="border-b border-slate-100 last:border-b-0">
                   <td className={`${cell} align-top`}>
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.date.trim() || "—"}</span>
+                      <span className="text-[var(--color-provin-muted)]">{row.date.trim() || "-"}</span>
                     ) : (
                       <input
                         type="text"
@@ -511,7 +511,7 @@ export function AdminVinRegistrySourceBlock({
                   </td>
                   <td className={`${cell} align-top`}>
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.odometer.trim() || "—"}</span>
+                      <span className="text-[var(--color-provin-muted)]">{row.odometer.trim() || "-"}</span>
                     ) : (
                       <input
                         type="text"
@@ -526,7 +526,7 @@ export function AdminVinRegistrySourceBlock({
                   </td>
                   <td className={`${cell} align-top`}>
                     {readOnly ? (
-                      <CountryFlagWithCode countryLabel={row.country.trim() || "—"} />
+                      <CountryFlagWithCode countryLabel={row.country.trim() || "-"} />
                     ) : (
                       <AdminCountryCombobox
                         className={inp}
@@ -539,7 +539,7 @@ export function AdminVinRegistrySourceBlock({
                   </td>
                   <td className={`${cell} align-top`}>
                     {readOnly ? (
-                      <span className="text-[var(--color-provin-muted)]">{row.origin.trim() || "—"}</span>
+                      <span className="text-[var(--color-provin-muted)]">{row.origin.trim() || "-"}</span>
                     ) : (
                       <input
                         type="text"
@@ -608,7 +608,7 @@ export function AdminVinRegistrySourceBlock({
                   <tr key={i} className="border-b border-slate-100 last:border-b-0">
                     <td className={`${cell} align-top`}>
                       {readOnly ? (
-                        <span className="text-[var(--color-provin-muted)]">{row.date.trim() || "—"}</span>
+                        <span className="text-[var(--color-provin-muted)]">{row.date.trim() || "-"}</span>
                       ) : (
                         <input
                           type="text"
@@ -623,7 +623,7 @@ export function AdminVinRegistrySourceBlock({
                     </td>
                     <td className={`${cell} align-top`}>
                       {readOnly ? (
-                        <span className="text-[var(--color-provin-muted)]">{row.odometer.trim() || "—"}</span>
+                        <span className="text-[var(--color-provin-muted)]">{row.odometer.trim() || "-"}</span>
                       ) : (
                         <input
                           type="text"
@@ -638,7 +638,7 @@ export function AdminVinRegistrySourceBlock({
                     </td>
                     <td className={`${cell} align-top`}>
                       {readOnly ? (
-                        <CountryFlagWithCode countryLabel={row.country.trim() || "—"} />
+                        <CountryFlagWithCode countryLabel={row.country.trim() || "-"} />
                       ) : (
                         <AdminCountryCombobox
                           className={inp}
@@ -651,7 +651,7 @@ export function AdminVinRegistrySourceBlock({
                     </td>
                     <td className={`${cell} align-top`}>
                       {readOnly ? (
-                        <span className="text-[var(--color-provin-muted)]">{row.event.trim() || "—"}</span>
+                        <span className="text-[var(--color-provin-muted)]">{row.event.trim() || "-"}</span>
                       ) : (
                         <input
                           type="text"
@@ -711,7 +711,7 @@ export function AdminVinRegistrySourceBlock({
                   <tr key={i} className="border-b border-slate-100 last:border-b-0">
                     <td className={`${cell} align-top`}>
                       {readOnly ? (
-                        <span className="text-[var(--color-provin-muted)]">{row.date.trim() || "—"}</span>
+                        <span className="text-[var(--color-provin-muted)]">{row.date.trim() || "-"}</span>
                       ) : (
                         <input
                           type="text"
@@ -727,7 +727,7 @@ export function AdminVinRegistrySourceBlock({
                       <LossAmountFieldChrome value={row.amount}>
                         {readOnly ? (
                           <span className={row.amount.trim() ? "font-semibold" : "text-[var(--color-provin-muted)]"}>
-                            {row.amount.trim() || "—"}
+                            {row.amount.trim() || "-"}
                           </span>
                         ) : (
                           <input
@@ -748,7 +748,7 @@ export function AdminVinRegistrySourceBlock({
                     </td>
                     <td className={`${cell} align-top`}>
                       {readOnly ? (
-                        <CountryFlagWithCode countryLabel={row.country.trim() || "—"} />
+                        <CountryFlagWithCode countryLabel={row.country.trim() || "-"} />
                       ) : (
                         <AdminCountryCombobox
                           className={inp}
@@ -761,7 +761,7 @@ export function AdminVinRegistrySourceBlock({
                     </td>
                     <td className={`${cell} align-top`}>
                       {readOnly ? (
-                        <span className="text-[var(--color-provin-muted)]">{row.note.trim() || "—"}</span>
+                        <span className="text-[var(--color-provin-muted)]">{row.note.trim() || "-"}</span>
                       ) : (
                         <input
                           type="text"
@@ -844,7 +844,7 @@ export function AdminVinRegistrySourceBlock({
           </div>
           {readOnly ? (
             <div className="min-h-[40px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
-              {block.rawUnprocessedData.trim() || "—"}
+              {block.rawUnprocessedData.trim() || "-"}
             </div>
           ) : (
             <textarea
@@ -935,7 +935,7 @@ Neviena periodiskā apskate nav izgāzta.`
           onChange={(next) => onChange({ ...block, aiContextRaw: next })}
           readOnly={readOnly}
           disabled={disabled}
-          ariaLabel={`${label} — AI papildu konteksts`}
+          ariaLabel={`${label} - AI papildu konteksts`}
         />
       </div>
     </div>
@@ -1016,7 +1016,7 @@ export function AdminEstoniaVinRegistryPair({
   const loadBoth = async () => {
     const cleanVin = vin.trim();
     if (!cleanVin) {
-      setStatus("Pasūtījumā nav VIN — ievadi to pārskata sadaļā.");
+      setStatus("Pasūtījumā nav VIN - ievadi to pārskata sadaļā.");
       return;
     }
     setBusy(true);
@@ -1068,7 +1068,7 @@ export function AdminEstoniaVinRegistryPair({
           >
             {busy ? "Ielasu…" : "Ielasīt abus pēc VIN"}
           </button>
-          <span className="font-mono text-[10px] text-slate-500">{vin.trim() || "— nav VIN —"}</span>
+          <span className="font-mono text-[10px] text-slate-500">{vin.trim() || "- nav VIN -"}</span>
           {status ? (
             <span className="text-[10px] text-slate-600" role="status">
               {status}

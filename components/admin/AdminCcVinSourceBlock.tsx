@@ -175,7 +175,7 @@ export function AdminCcVinSourceBlock({
       </span>
       {readOnly ? (
         <span className="min-h-[24px] text-[11px] text-[var(--color-provin-muted)]">
-          {value[field].trim() || "—"}
+          {value[field].trim() || "-"}
         </span>
       ) : (
         <input
@@ -185,7 +185,7 @@ export function AdminCcVinSourceBlock({
           disabled={disabled}
           placeholder={placeholder}
           onChange={(e) => onChange({ ...value, [field]: e.target.value })}
-          aria-label={`${ARIA} — ${label}`}
+          aria-label={`${ARIA} - ${label}`}
         />
       )}
     </label>
@@ -201,7 +201,7 @@ export function AdminCcVinSourceBlock({
     <td className={`${cell} align-top`}>
       {readOnly ? (
         <span className="block whitespace-pre-wrap text-[var(--color-provin-muted)]">
-          {value_.trim() || "—"}
+          {value_.trim() || "-"}
         </span>
       ) : opts?.multiline ? (
         <AdminAutoGrowTextarea
@@ -211,7 +211,7 @@ export function AdminCcVinSourceBlock({
           disabled={disabled}
           placeholder={opts?.placeholder}
           onChange={(e) => onNext(e.target.value)}
-          aria-label={`${ARIA} — ${fieldLabel} ${index + 1}`}
+          aria-label={`${ARIA} - ${fieldLabel} ${index + 1}`}
         />
       ) : (
         <input
@@ -222,7 +222,7 @@ export function AdminCcVinSourceBlock({
           disabled={disabled}
           placeholder={opts?.placeholder}
           onChange={(e) => onNext(e.target.value)}
-          aria-label={`${ARIA} — ${fieldLabel} ${index + 1}`}
+          aria-label={`${ARIA} - ${fieldLabel} ${index + 1}`}
         />
       )}
     </td>
@@ -336,7 +336,7 @@ export function AdminCcVinSourceBlock({
                               }),
                             )
                           }
-                          aria-label={`${ARIA} — karogs ${i + 1}`}
+                          aria-label={`${ARIA} - karogs ${i + 1}`}
                         >
                           <option value="ok">Tīrs</option>
                           <option value="alert">Sarkans</option>
@@ -348,7 +348,7 @@ export function AdminCcVinSourceBlock({
                         {editable ? (
                           <AdminFieldResetButton
                             title="Nodzēst rindu"
-                            aria-label={`${ARIA} — nodzēst pārbaudi ${i + 1}`}
+                            aria-label={`${ARIA} - nodzēst pārbaudi ${i + 1}`}
                             onClick={() =>
                               setRows(
                                 "checks",
@@ -427,7 +427,7 @@ export function AdminCcVinSourceBlock({
                           data-row-index={i}
                         >
                           {formatAutoRecordsDateForOutput(row.date).trim() ||
-                            "—"}
+                            "-"}
                         </span>
                       ) : (
                         <input
@@ -462,7 +462,7 @@ export function AdminCcVinSourceBlock({
                           data-provin-block="cc_vin"
                           data-row-index={i}
                         >
-                          {row.odometer.trim() || "—"}
+                          {row.odometer.trim() || "-"}
                         </span>
                       ) : (
                         <input
@@ -495,7 +495,7 @@ export function AdminCcVinSourceBlock({
                     <td className={`${cell} align-top`}>
                       {readOnly ? (
                         <CountryFlagWithCode
-                          countryLabel={row.country.trim() || "—"}
+                          countryLabel={row.country.trim() || "-"}
                           data-provin-field={PROVIN_MILEAGE_TABLE_FIELD.valsts}
                           data-provin-block="cc_vin"
                           data-row-index={i}
@@ -527,7 +527,7 @@ export function AdminCcVinSourceBlock({
                         {editable ? (
                           <AdminFieldResetButton
                             title="Nodzēst odometra rindu"
-                            aria-label={`${ARIA} — nodzēst odometra rindu ${i + 1}`}
+                            aria-label={`${ARIA} - nodzēst odometra rindu ${i + 1}`}
                             onClick={() =>
                               setRows(
                                 "mileage",
@@ -637,7 +637,7 @@ export function AdminCcVinSourceBlock({
                         {editable ? (
                           <AdminFieldResetButton
                             title="Nodzēst rindu"
-                            aria-label={`${ARIA} — nodzēst bojājumu ${i + 1}`}
+                            aria-label={`${ARIA} - nodzēst bojājumu ${i + 1}`}
                             onClick={() =>
                               setRows(
                                 "damages",
@@ -737,7 +737,7 @@ export function AdminCcVinSourceBlock({
                             {editable ? (
                               <AdminFieldResetButton
                                 title="Nodzēst rindu"
-                                aria-label={`${ARIA} — nodzēst ierakstu ${i + 1}`}
+                                aria-label={`${ARIA} - nodzēst ierakstu ${i + 1}`}
                                 onClick={() =>
                                   setRows(
                                     key,
@@ -829,7 +829,7 @@ export function AdminCcVinSourceBlock({
                         {editable ? (
                           <AdminFieldResetButton
                             title="Nodzēst rindu"
-                            aria-label={`${ARIA} — nodzēst īpašumtiesības ${i + 1}`}
+                            aria-label={`${ARIA} - nodzēst īpašumtiesības ${i + 1}`}
                             onClick={() =>
                               setRows(
                                 "titles",
@@ -933,7 +933,7 @@ export function AdminCcVinSourceBlock({
                         {editable ? (
                           <AdminFieldResetButton
                             title="Nodzēst rindu"
-                            aria-label={`${ARIA} — nodzēst pārdošanu ${i + 1}`}
+                            aria-label={`${ARIA} - nodzēst pārdošanu ${i + 1}`}
                             onClick={() =>
                               setRows(
                                 "sales",
@@ -966,7 +966,7 @@ export function AdminCcVinSourceBlock({
           </p>
           {readOnly ? (
             <div className="mb-2 min-h-[48px] whitespace-pre-wrap rounded-lg border border-slate-200/90 bg-slate-100 px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]">
-              {value.rawUnprocessedData.trim() || "—"}
+              {value.rawUnprocessedData.trim() || "-"}
             </div>
           ) : (
             <AdminAiPolishTextareaShell
@@ -985,7 +985,7 @@ export function AdminCcVinSourceBlock({
                 onChange={(e) =>
                   onChange({ ...value, rawUnprocessedData: e.target.value })
                 }
-                aria-label={`${ARIA} — neapstrādātie dati`}
+                aria-label={`${ARIA} - neapstrādātie dati`}
               />
             </AdminAiPolishTextareaShell>
           )}
@@ -1040,14 +1040,14 @@ export function AdminCcVinSourceBlock({
             compact
             ai={aiComment}
             readonlyClassName="min-h-[36px] rounded-lg border border-slate-200/90 bg-white px-2 py-1.5 text-[11px] text-[var(--color-provin-muted)]"
-            aria-label={`${CC_VIN_ADMIN_LABEL} — komentāri`}
+            aria-label={`${CC_VIN_ADMIN_LABEL} - komentāri`}
           />
           <AdminAiContextRawField
             value={value.aiContextRaw}
             onChange={(next) => onChange({ ...value, aiContextRaw: next })}
             readOnly={readOnly}
             disabled={disabled}
-            ariaLabel={`${ARIA} — AI papildu konteksts`}
+            ariaLabel={`${ARIA} - AI papildu konteksts`}
           />
         </div>
       </div>

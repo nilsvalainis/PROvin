@@ -714,7 +714,7 @@ function KmMergeChart({ points }: { points: { km: number; label: string }[] }) {
         <line x1={padL} y1={padT + innerH} x2={padL + innerW} y2={padT + innerH} stroke="#d4d4d8" strokeWidth="1" />
         <polyline fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" points={poly} />
         <text x={padL} y={h - 6} fontSize="9" fill="#71717a">
-          min {minK.toLocaleString("lv-LV")} km — max {maxK.toLocaleString("lv-LV")} km
+          min {minK.toLocaleString("lv-LV")} km - max {maxK.toLocaleString("lv-LV")} km
         </text>
       </svg>
     </div>
@@ -2112,7 +2112,7 @@ export function OrderDetailWorkspace({
             status: "skipped",
             detail: formatFlashMaxSkipLabel(skip),
           });
-          setFlashMaxPhase(`${job.runLabel} — izlaists (${i + 1}/${total})`);
+          setFlashMaxPhase(`${job.runLabel} - izlaists (${i + 1}/${total})`);
           continue;
         }
 
@@ -2331,7 +2331,7 @@ export function OrderDetailWorkspace({
       (p) => p.mime === "application/pdf" || /\.pdf$/i.test(p.name),
     );
     if (pdfs.length === 0) {
-      setPrepareDraftErr("Portfelī nav PDF — vispirms pievieno avotu atskaites (CarVertical, AutoDNA u.c.).");
+      setPrepareDraftErr("Portfelī nav PDF - vispirms pievieno avotu atskaites (CarVertical, AutoDNA u.c.).");
       return;
     }
     setPrepareDraftBusy(true);
@@ -2410,7 +2410,7 @@ export function OrderDetailWorkspace({
       setPrepareDraftNotice(
         warn
           ? `Melnraksts sagatavots (${okSteps} soļi). ${warn}`
-          : `Melnraksts sagatavots (${okSteps} soļi) — pārskati avotu tabulas un komentārus.`,
+          : `Melnraksts sagatavots (${okSteps} soļi) - pārskati avotu tabulas un komentārus.`,
       );
       setWizardStep(1);
     } catch {
@@ -3135,7 +3135,7 @@ export function OrderDetailWorkspace({
           })();
       const message = typeof data.message === "string" ? data.message : null;
       const detail = typeof data.detail === "string" ? data.detail : null;
-      const composed = [message, detail].filter(Boolean).join(" — ") || null;
+      const composed = [message, detail].filter(Boolean).join(" - ") || null;
       if (!res.ok) {
         const fallback = typeof data.error === "string" ? data.error : "Neizdevās nosūtīt";
         setNotifyErr(composed ?? fallback);
@@ -3963,7 +3963,7 @@ export function OrderDetailWorkspace({
         className="max-h-[90vh] w-full max-w-[min(96rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-4 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-base font-semibold text-[var(--color-apple-text)]">Priekšskats — apkopota informācija</h3>
+        <h3 className="text-base font-semibold text-[var(--color-apple-text)]">Priekšskats - apkopota informācija</h3>
         <p className="mt-1.5 text-sm leading-snug text-[var(--color-provin-muted)]">
           Secība: <strong className="text-[var(--color-apple-text)]">1)</strong> pielikumu faili,{" "}
           <strong className="text-[var(--color-apple-text)]">2)</strong> piezīmju bloki pēc avota (tabulas tiek saliktas
@@ -4023,18 +4023,18 @@ export function OrderDetailWorkspace({
             )}
             {pdfScanning ? (
               <p className="mt-2 text-xs text-[var(--color-provin-muted)]">
-                PDF analīze (teksta slānis; ja vajag — OCR pirmajām lapām, var aizņemt līdz minūtei)…
+                PDF analīze (teksta slānis; ja vajag - OCR pirmajām lapām, var aizņemt līdz minūtei)…
               </p>
             ) : null}
             {pdfScanError ? <p className="mt-2 text-xs text-amber-800">{pdfScanError}</p> : null}
             {!pdfScanning && pdfInsights.length > 0 ? (
               <div className="mt-3 space-y-3 rounded-xl border border-slate-100 bg-slate-50/60 p-3 text-xs">
                 <p className="font-medium text-[var(--color-apple-text)]">
-                  No PDF automātiski (teksta slānis; skenētiem — OCR uz pārlūku)
+                  No PDF automātiski (teksta slānis; skenētiem - OCR uz pārlūku)
                 </p>
                 <p className="text-[var(--color-provin-muted)]">
                   Atslēgvārdi (negadījumi, atsaukumi, u.c.) un nobraukuma skaitļi. OCR pirmās līdz četrām lapām, ja teksts
-                  PDF ir īss. Salīdziniet ar oriģināļiem — tabulas atšķiras.
+                  PDF ir īss. Salīdziniet ar oriģināļiem - tabulas atšķiras.
                 </p>
                 {mergedKmPoints.length >= 2 ? <KmMergeChart points={mergedKmPoints} /> : null}
                 {pdfInsights.map((ins, fi) => (
@@ -4050,7 +4050,7 @@ export function OrderDetailWorkspace({
                     </p>
                     {ins.ocrPages ? (
                       <p className="mt-0.5 text-[11px] font-medium text-emerald-900">
-                        OCR: {ins.ocrPages} lapas — teksts papildināts no attēla (pirmoreiz jāielādē valodu dati no
+                        OCR: {ins.ocrPages} lapas - teksts papildināts no attēla (pirmoreiz jāielādē valodu dati no
                         tīkla).
                       </p>
                     ) : null}
@@ -4099,7 +4099,7 @@ export function OrderDetailWorkspace({
             }}
             className="rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-95"
           >
-            Apstiprinu — turpināt uz kopsavilkumu
+            Apstiprinu - turpināt uz kopsavilkumu
           </button>
         </div>
       </div>
@@ -4475,8 +4475,8 @@ export function OrderDetailWorkspace({
                     {notifyExtraPdfMeta ? " un papildu audita PDF" : ""}.{" "}
                     {isManualNotifyClientOrder(payload)
                       ? "Manuālam pasūtījumam rēķins netiek pievienots."
-                      : "Rēķins netiek sūtīts atkārtoti — klients to jau saņēma pēc apmaksas."}{" "}
-                    Kopējais pielikumu apjoms — līdz ~{formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}.
+                      : "Rēķins netiek sūtīts atkārtoti - klients to jau saņēma pēc apmaksas."}{" "}
+                    Kopējais pielikumu apjoms - līdz ~{formatBytes(NOTIFY_REPORT_MAX_ATTACHMENTS_BYTES)}.
                   </p>
                   <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
                     Saņēmējs
@@ -4504,7 +4504,7 @@ export function OrderDetailWorkspace({
 
                   {portfolio.length === 0 && !notifyExtraPdfMeta ? (
                     <p className="mt-2 rounded-lg border border-amber-200/80 bg-amber-50/90 px-2.5 py-2 text-[11px] leading-snug text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
-                      Portfelī nav failu. Pievieno failus sadaļā „1. Pielikumi” vai zemāk — papildu audita PDF,
+                      Portfelī nav failu. Pievieno failus sadaļā „1. Pielikumi” vai zemāk - papildu audita PDF,
                       pirms sūti e-pastu.
                     </p>
                   ) : (
@@ -4573,7 +4573,7 @@ export function OrderDetailWorkspace({
 
                   <div className="mt-3 border-t border-[var(--admin-border-subtle)] pt-3">
                     <label className="mb-1 block text-[10px] font-medium text-[var(--color-provin-muted)]">
-                      Papildu audita PDF (ja nav portfelī) — nosūtīts kā{" "}
+                      Papildu audita PDF (ja nav portfelī) - nosūtīts kā{" "}
                       <span className="font-mono">
                         {buildProvinAuditPdfFilename(payload.vin, {
                           checkoutLine: payload.checkoutLine,

@@ -1325,8 +1325,8 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
 
   const csdd = b.csdd;
   lines.push("CSDD (use for country timeline when unambiguous):");
-  lines.push(`  - Pirmā reģistrācija: ${csdd.firstRegistration || "—"}`);
-  lines.push(`  - Iepriekšējās reģistrācijas valsts: ${csdd.previousRegistrationCountry || "—"}`);
+  lines.push(`  - Pirmā reģistrācija: ${csdd.firstRegistration || "-"}`);
+  lines.push(`  - Iepriekšējās reģistrācijas valsts: ${csdd.previousRegistrationCountry || "-"}`);
   const csddMile = (csdd.mileageHistory ?? []).filter((r) => r.date.trim() || r.odometer.trim());
   if (csddMile.length > 0) {
     lines.push("CSDD mileage:");
@@ -1382,7 +1382,7 @@ export function buildCopilotBlocksSummary(blocks: WorkspaceSourceBlocks): string
   const dealerEquip = (dealerReport.equipment ?? []).filter(outvinEquipmentLineHasData);
   if (dealerEquip.length === 0) {
     lines.push(
-      "auto_records Komplektācija (Kods + Apraksts): (empty) — ja operators ielīmē VW PR / LastVIN / BMW SA sarakstu, aizpildi šo tabulu ar set_dealer_vehicle_info.equipment",
+      "auto_records Komplektācija (Kods + Apraksts): (empty) - ja operators ielīmē VW PR / LastVIN / BMW SA sarakstu, aizpildi šo tabulu ar set_dealer_vehicle_info.equipment",
     );
   } else {
     lines.push(`auto_records Komplektācija (${dealerEquip.length} pozīcijas):`);

@@ -355,9 +355,19 @@ export const PROVIN_COMMENT_BREVITY_RULES = `BREVITY & FOCUS (mandatory for ever
 - Cut: greetings, restating the section title, „kopumā var secināt”, „svarīgi atzīmēt”, „ko tas nozīmē šim darījumam”, „tomēr līdzās šim atrodama arī”, generic „jāpārbauda klātienē” without naming the component, closing paragraphs that repeat earlier content.
 - Write facts, then the buyer’s next step. Do not stretch a fact into a second sentence of atmosphere. A short, precise comment is the goal, not filling space.`;
 
+const UNICODE_DASH_CHAR_RE = /[\u2012\u2013\u2014\u2015\u2212]/g;
+
 /** Unicode em/en dashes look like AI; client copy uses ASCII hyphen. */
 export function applyProvinHumanDashes(text: string): string {
-  return text.replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-");
+  if (!text) return text;
+  return text.replace(UNICODE_DASH_CHAR_RE, (_ch, offset: number) => {
+    const prev = offset > 0 ? text[offset - 1] ?? "" : "";
+    const next = offset + 1 < text.length ? text[offset + 1] ?? "" : "";
+    if (/\d/.test(prev) && /\d/.test(next)) return "-";
+    if (/\s/.test(prev) && /\s/.test(next)) return "-";
+    if (/\p{L}/u.test(prev) && /\p{L}/u.test(next)) return " - ";
+    return "-";
+  });
 }
 
 /**
@@ -774,30 +784,30 @@ export function keepSourceCommentAfterExpansionStrip(generated: string): string 
 }
 
 /** Gatavo PROVIN audita atskaišu komentāru paraugi — few-shot stils ✨ ģeneratoram. */
-export const PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES = `FEW-SHOT STYLE EXAMPLES (match this heading-then-paragraph structure, restrained tone — and this LENGTH: these are complete comments, not excerpts). NEVER copy *, ** into the output.
+export const PROVIN_FINISHED_REPORT_FEW_SHOT_EXAMPLES = `FEW-SHOT STYLE EXAMPLES (match this heading-then-paragraph structure, restrained tone - and this LENGTH: these are complete comments, not excerpts). NEVER copy *, ** into the output.
 
-Example 1 (CSDD — avota fokuss, nevis pilna nobraukuma eseja):
+Example 1 (CSDD - avota fokuss, nevis pilna nobraukuma eseja):
 "Pirmā reģistrācija Latvijā
 CSDD datos automašīna Latvijā reģistrēta 2016. gada 22. janvārī, kā izcelsmes valsti norādot Vāciju; īpašnieku maiņu ķēde pēc importa ir īsa, bez ierobežojumu atzīmēm.
 
 Tehnisko apskašu tendence
 Pamata pārbaudi ar pirmo reizi nav izgājusi sešas reizes; atkārtojas korozija, eļļas noplūdes un priekšējā tilta brīvkustības. Šo atkārtoto defektu sēriju pārējie avoti nefiksē."
 
-Example 2 (CSDD — novērsti veci defekti vs rūsa/atgāzes):
+Example 2 (CSDD - novērsti veci defekti vs rūsa/atgāzes):
 "Tehnisko apskašu vēsture
 2023. gada apskatē fiksēta priekšējā tilta brīvkustība un nefunkcionējošs gabarītlukturis. Nākamajā un aiznākamajā apskatē šie punkti vairs nav atzīmēti.
 
 Rūsa un atgāzes
 Ja TA kādreiz fiksējusi nesošo elementu koroziju vai paaugstinātas cietās daļiņas / dūmainību, tas paliek uzmanības punkts arī vēlākos gados: kvalitatīvi novērst ir sarežģīti un dārgi, pat ja nākamā apskate ir tīra. Vēsturiski augsti dūmainības rādītāji (2.32, 2.95) pret pēdējo 0.58 paliek uzmanības punkts: tas nav pierādījums, ka DPF vai degvielas sistēma ir bez riska. Šie punkti datos jau novērstus defektus (tilta brīvkustība, lukturis) neatceļ."
 
-Example 3 (negadījumi — kontekstuāla summas interpretācija):
+Example 3 (negadījumi - kontekstuāla summas interpretācija):
 "Apdrošināšanas ieraksts
 CarVertical fiksē 2019. gada jūlijā Vācijā reģistrētu negadījumu ar zaudējumu diapazonu 5 001-10 000 €; LTAB un AutoDNA šim periodam summu neuzrāda. Automašīna tobrīd bija ~8 gadus vecs vidējā segmenta universālis, tāpēc šāda summa drīzāk liecina par būtisku, ne tikai kosmētisku remontu.
 
 Avotu sakritība
 LTAB un AutoDNA šim periodam summu neuzrāda. CarVertical nosauc datumu, valsti un zaudējumu diapazonu."
 
-Example 3b (KOPSAVILKUMAM / negadījumu kopsavilkumam — kontekstuāla interpretācija; AVOTA laukā, piem. AutoDNA komentārā, raksti TIKAI faktu daļu bez „tāpēc…” teikuma):
+Example 3b (KOPSAVILKUMAM / negadījumu kopsavilkumam - kontekstuāla interpretācija; AVOTA laukā, piem. AutoDNA komentārā, raksti TIKAI faktu daļu bez „tāpēc…” teikuma):
 "Zaudējumu apjoms kontekstā
 AutoDNA fiksē 2022. gada februārī Vācijā apdrošināšanas izmaksu 6 840 € ar bojātu priekšējo bamperi un labo priekšējo lukturi. Automašīnai tobrīd bija ~1 gads, tā ir premium klase ar adaptīvo apgaismojumu un sensoriem, tāpēc šāda summa bieži atspoguļo dārgas OEM detaļas un dīlera darbu, ne obligāti nesošo elementu bojājumu.
 
@@ -811,7 +821,7 @@ Sludinājuma cena 14 900 € atbilst vidējam ss.lv līmenim šim modeļa gadam 
 Importa konteksts
 IRISS dati rāda līdzīgus eksemplārus Vācijas wholesale segmentā 11 500-12 800 € apmērā; pēc loģiskā uzcenojuma un reģistrācijas izmaksām telpa cenas sarunām ir ierobežota."
 
-Example 5 (AutoDNA — bojājumi; viens teikums salīdzinājumam):
+Example 5 (AutoDNA - bojājumi; viens teikums salīdzinājumam):
 "Zaudējumu ieraksts
 AutoDNA fiksē 2018. gada martā Vācijā reģistrētu negadījumu ar zaudējumu 2 930 €, bojājot priekšējo labo sānu un priekšējo kreiso durvi; salīdzinājumā ar CarVertical datums sakrīt, bet šis avots dod precīzāku summu un bojājumu zonas.
 
@@ -825,7 +835,7 @@ Dīlera datos automašīnai norādīts tipa kods, kas atbilst taksometra vai kom
 Km atskaites punkts
 Pēdējais dīlera fiksējums (198 420 km, 2023. gada augusts) sakrīt ar pārējo avotu līkni."
 
-Example 7 (NOBRAUKUMA VĒSTURES KOMENTĀRS — vienīgā vieta pilnai apkopošanai):
+Example 7 (NOBRAUKUMA VĒSTURES KOMENTĀRS - vienīgā vieta pilnai apkopošanai):
 "Hronoloģija un lineārums
 Pieejamajos avotos nobraukuma līkne ir lineāra ar vidēji 22 000-24 000 km gadā pēc pirmās reģistrācijas Vācijā 2014. gadā; izteikti kritumi nav fiksēti. Ieraksti atbilst drīzāk šosejas režīmam ar zemāku motorstundu slodzi nekā tipiskam pilsētas auto.
 

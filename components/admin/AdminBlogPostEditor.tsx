@@ -201,7 +201,7 @@ export function AdminBlogPostEditor({ initialPost, initialComments }: Props) {
           />
         </label>
         <label className={`${labelClass} sm:col-span-2`}>
-          Cover attēls (src) — SEO / Open Graph
+          Cover attēls (src) - SEO / Open Graph
           <input
             className={fieldClass}
             placeholder="/blog/auto-vestures-parbaude.jpg"

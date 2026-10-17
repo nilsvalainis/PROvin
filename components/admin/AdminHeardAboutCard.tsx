@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { computeHeardAboutStats, HEARD_ABOUT_PERIODS, type HeardAboutOrder, type HeardAboutPeriod } from "@/lib/admin-heard-about-stats";
 
-const fmtEur = (cents: number | null) => (cents == null ? "—" : `${(cents / 100).toLocaleString("lv-LV", { maximumFractionDigits: 2 })} €`);
+const fmtEur = (cents: number | null) => (cents == null ? "-" : `${(cents / 100).toLocaleString("lv-LV", { maximumFractionDigits: 2 })} €`);
 const fmtDate = (sec: number) => new Date(sec * 1000).toLocaleDateString("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 export function AdminHeardAboutCard({ orders, nowSec }: { orders: HeardAboutOrder[]; nowSec: number }) {

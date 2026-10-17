@@ -603,7 +603,7 @@ export function AdminConsultationDetailView({
           <div className="mb-3 rounded-xl border border-amber-200/90 bg-gradient-to-br from-amber-50/95 to-white px-3 py-2.5 text-sm text-amber-950 shadow-sm ring-1 ring-amber-100/80">
             <p className="text-xs font-bold uppercase tracking-wide text-amber-800/90">Parauga konsultācija</p>
             <p className="mt-2 leading-relaxed text-amber-950/90">
-              {renderProvinText("Šī ir parauga PROVIN SELECT ieraksts — nav īsts Stripe maksājums.", {
+              {renderProvinText("Šī ir parauga PROVIN SELECT ieraksts - nav īsts Stripe maksājums.", {
                 proAndSuffixClassName: "provin-wordmark-pro--rail-inherit",
                 vinAmberOnlyBeforeSelect: true,
               })}

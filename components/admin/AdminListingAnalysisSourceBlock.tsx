@@ -321,7 +321,7 @@ export function AdminListingAnalysisSourceBlock({
               {LISTING_ANALYSIS_EXTRA_SELLER_LABEL}
             </span>
             {readOnly ? (
-              <div className={pri ? roBox(!!dense) : roDefault}>{v.extraSellerName.trim() || "—"}</div>
+              <div className={pri ? roBox(!!dense) : roDefault}>{v.extraSellerName.trim() || "-"}</div>
             ) : (
               <input
                 type="text"
@@ -344,7 +344,7 @@ export function AdminListingAnalysisSourceBlock({
               onChange={(next) => onChange({ ...v, sellerPortrait: next })}
               disabled={disabled}
               compact={pri && dense}
-              aria-label={`${L.sellerPortrait} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+              aria-label={`${L.sellerPortrait} - ${LISTING_ANALYSIS_COMMENT_LABEL}`}
             />
           )}
         </ListingAnalysisSubsectionHeading>
@@ -397,7 +397,7 @@ export function AdminListingAnalysisSourceBlock({
                 onChange={(next) => onChange({ ...v, photoAnalysis: next })}
                 disabled={disabled}
                 compact={pri && dense}
-                aria-label={`${L.photoAnalysis} — ${LISTING_ANALYSIS_COMMENT_LABEL}`}
+                aria-label={`${L.photoAnalysis} - ${LISTING_ANALYSIS_COMMENT_LABEL}`}
                 ai={{
                   allowed: aiAllowed,
                   busy: listingFieldBusy === "photoAnalysis",
@@ -436,7 +436,7 @@ export function AdminListingAnalysisSourceBlock({
                   : "min-h-[48px] whitespace-pre-wrap rounded-md border border-slate-200/40 bg-transparent px-2 py-1.5 text-[11px] text-slate-500"
               }
             >
-              {v.listingPasteRaw.trim() || "—"}
+              {v.listingPasteRaw.trim() || "-"}
             </div>
           ) : (
             <AdminAiPolishTextareaShell
@@ -460,7 +460,7 @@ export function AdminListingAnalysisSourceBlock({
                   })
                 }
                 placeholder=""
-                aria-label={`${LISTING_ANALYSIS_LISTING_PASTE_LABEL} — ievade analīzei (nav PDF)`}
+                aria-label={`${LISTING_ANALYSIS_LISTING_PASTE_LABEL} - ievade analīzei (nav PDF)`}
               />
             </AdminAiPolishTextareaShell>
           )}
@@ -474,7 +474,7 @@ export function AdminListingAnalysisSourceBlock({
         onChange={(next) => onChange({ ...v, aiContextRaw: next })}
         readOnly={readOnly}
         disabled={disabled}
-        ariaLabel="Sludinājuma analīze — AI papildu konteksts"
+        ariaLabel="Sludinājuma analīze - AI papildu konteksts"
       />
       ) : null}
     </div>
