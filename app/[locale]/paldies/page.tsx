@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { GoogleAdsPurchaseConversion } from "@/components/GoogleAdsPurchaseConversion";
 import { getGoogleAdsPurchaseLabel } from "@/lib/google-ads";
 import { getPaidCheckoutConversionValueEur } from "@/lib/google-ads-purchase-value";
+import { resolveThanksPageConversion } from "@/lib/google-ads-thanks-conversion";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
@@ -28,9 +29,12 @@ export default async function ThanksPage({ searchParams, params }: Props) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Thanks" });
   const sid = sp.session_id;
-  const purchaseLabel = getGoogleAdsPurchaseLabel();
-  const conversionValue =
-    sid && purchaseLabel ? ((await getPaidCheckoutConversionValueEur(sid)) ?? 0) : 0;
+  // Konversija tikai apmaksātai Stripe sesijai (neapmaksāta / viltota / Stripe kļūda = nekā).
+  const conversion = await resolveThanksPageConversion({
+    sessionId: sid,
+    label: getGoogleAdsPurchaseLabel(),
+    getPaidValueEur: getPaidCheckoutConversionValueEur,
+  });
 
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
@@ -65,11 +69,11 @@ export default async function ThanksPage({ searchParams, params }: Props) {
         </div>
         <Footer />
       </div>
-      {sid && purchaseLabel ? (
+      {conversion ? (
         <GoogleAdsPurchaseConversion
-          transactionId={sid}
-          value={conversionValue}
-          label={purchaseLabel}
+          transactionId={conversion.transactionId}
+          value={conversion.value}
+          label={conversion.label}
         />
       ) : null}
     </div>
