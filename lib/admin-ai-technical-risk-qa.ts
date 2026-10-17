@@ -1,11 +1,12 @@
 /**
- * Solis 3: Gemini Flash QA. Pārbauda, ka apgalvojumi ir kartē, un labo tikai atzīmētos teikumus.
+ * Solis 3: Gemini QA (operatora izvēlētais Gemini līmenis). Pārbauda, ka apgalvojumi ir kartē, un labo tikai atzīmētos teikumus.
  */
 import "server-only";
 
 import { adminGenerateExpertText } from "@/lib/admin-ai-dispatch";
 import { AI_TECH_RISK_V2_QA_SYSTEM } from "@/lib/admin-ai-tech-risk-v2-prompts";
-import { TECH_PIPELINE } from "@/lib/admin-ai-tech-pipeline-config";
+import { resolveTechRiskV2Tiers } from "@/lib/admin-ai-tech-pipeline-config";
+import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { extractJsonObject, type TechnicalRiskMap } from "@/lib/admin-ai-technical-risk-map-types";
 import { parseTechnicalRiskQaResult, type TechnicalRiskQaResult } from "@/lib/admin-ai-technical-risk-qa-parse";
 
@@ -17,6 +18,8 @@ export async function qaTechnicalRiskText(input: {
   map: TechnicalRiskMap;
   /** OFICIĀLĀ DĪLERA FAKTI ar ID; QA atzīmē teikumus, kas tiem ir pretrunā. */
   dealerFactsBrief?: string;
+  /** Operatora izvēlētais Gemini līmenis (no `resolveTechRiskV2Tiers`). */
+  modelTier?: AiAdminModelTier;
 }): Promise<TechnicalRiskQaResult> {
   const userPrompt = `RISKA KARTE:
 ${JSON.stringify(input.map)}
@@ -28,7 +31,7 @@ Atzīmē teikumus, kas nav kartē vai satur kalkus/aizliegtas frāzes. Pārrakst
 
   try {
     const raw = await adminGenerateExpertText({
-      modelTier: TECH_PIPELINE.technical_risks.qa,
+      modelTier: input.modelTier ?? resolveTechRiskV2Tiers(null).qa,
       systemInstruction: AI_TECH_RISK_V2_QA_SYSTEM,
       userPrompt,
       qualityField: "technical_risks",

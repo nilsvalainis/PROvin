@@ -7,7 +7,7 @@
  *   --slots=/abs/slots.json --drafts-dir=/abs/admin-order-drafts --out=/abs/ab-generated.json [--only=1,2]
  *
  * slots.json: { orders: [{ slot, label, sessionId, vin, notes?, gold? }] }
- * Modeļi: v1 = "gemini" (Gemini 2.5 Pro, kā adminā noklusējumā); v2 = karte "lite" + Gemini 2.5 Pro + Flash QA. Opus netiek lietots.
+ * Modeļi: abiem `--tier` (noklusējums "gemini" = admin noklusējums); v2 visi soļi Gemini. Opus netiek lietots.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -58,7 +58,7 @@ async function main() {
       sourceBlocks: w.sourceBlocks ?? {},
       internalComment: edits.internalComment ?? "",
       mileageComment: edits.mileageComment ?? "",
-      modelTier: "gemini",
+      modelTier: arg("tier") || "gemini",
     };
     const ctx = parseAiOrderContextFromBody(body, mergeSourceBlocksFromBody(body));
     const cur = results[String(s.slot)] ?? {};

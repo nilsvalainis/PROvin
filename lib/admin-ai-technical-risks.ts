@@ -22,8 +22,11 @@ import {
 import {
   allowCostBands,
   isTechRiskV2Enabled,
-  TECH_PIPELINE,
+  parseAnthropicComponentsFromOperatorNotes,
+  resolveTechRiskV2Tiers,
+  type TechRiskV2Tiers,
 } from "@/lib/admin-ai-tech-pipeline-config";
+import { buildTechRiskSourceFactsBrief } from "@/lib/admin-ai-tech-risk-source-facts";
 import { identifyEngineGearboxPlatform } from "@/lib/admin-ai-engine-identification";
 import { generateTechnicalRiskMapWithAi } from "@/lib/admin-ai-technical-risk-map";
 import {
@@ -155,7 +158,9 @@ function keepVerifiedEur(map: TechnicalRiskMap): boolean {
 async function generateTextFromMap(
   input: AiOrderContextInput,
   map: TechnicalRiskMap,
-  orderContext: string,
+  /** Kompakti AVOTU FAKTI (nevis viss konteksts) — teksta solis raksta no kartes. */
+  sourceFactsBrief: string,
+  tiers: TechRiskV2Tiers,
   lintErrors?: string,
   dealerFactsBrief?: string,
 ): Promise<string> {
@@ -176,7 +181,7 @@ Ja kartē unknowns[] vai confidence C, neraksti minējumu. Īsi: "Datos nav fiks
 RISKA KARTE (JSON, raksti TIKAI no šīs kartes):
 ${JSON.stringify(map)}
 ${dealerFactsBrief?.trim() ? `\n${dealerFactsBrief.trim()}\n` : ""}
-${orderContext}
+${sourceFactsBrief}
 
 ${lintErrors ? `\n---\nVALIDATORA KĻŪDAS (labo TIKAI šīs, jaunus faktus nepievieno):\n${lintErrors}` : ""}
 
@@ -190,7 +195,7 @@ Sagatavo sadaļu „${ADMIN_TECHNICAL_RISKS_LABEL}” latviski tikai no kartes.`
     },
   );
   const raw = await adminGenerateExpertText({
-    modelTier: TECH_PIPELINE.technical_risks.lv,
+    modelTier: tiers.lv,
     systemInstruction: AI_TECH_RISK_V2_TEXT_SYSTEM,
     userPrompt,
     qualityField: "technical_risks",
@@ -222,6 +227,19 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
   });
   const dealerFacts = extractDealerFacts(blocks.oneauto);
   const dealerFactsBrief = buildDealerFactsBrief(dealerFacts);
+  // Modeli nosaka operatora selektors (✨ / FLASH MAX). Noklusējums 100% Gemini.
+  const tiers = resolveTechRiskV2Tiers(input.modelTier);
+  const anthropicComponents = tiers.anthropicComponentsTier
+    ? parseAnthropicComponentsFromOperatorNotes(input.operatorNotes)
+    : [];
+  const sourceFactsBrief = buildTechRiskSourceFactsBrief({
+    vin: input.vin,
+    notes: input.notes,
+    mileageComment: input.mileageComment,
+    internalComment: input.internalComment,
+    identificationBrief,
+    sourceBlocks: blocks,
+  });
   try {
     const rawMap = {
       ...(await generateTechnicalRiskMapWithAi({
@@ -230,13 +248,15 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
         identification,
         identificationBrief,
         dealerFactsBrief,
+        tiers,
+        anthropicComponents,
       })),
       ...(input.hideTechnicalRiskCostBands ? { hide_cost_bands: true as const } : {}),
     };
     const dealerMapIssues = checkMapAgainstDealerFacts(rawMap, dealerFacts);
     const map = fillAlreadyDoneEvidenceFromDealer(rawMap, dealerFacts);
-    let text = await generateTextFromMap(input, map, orderContext, undefined, dealerFactsBrief);
-    const qa = await qaTechnicalRiskText({ text, map, dealerFactsBrief });
+    let text = await generateTextFromMap(input, map, sourceFactsBrief, tiers, undefined, dealerFactsBrief);
+    const qa = await qaTechnicalRiskText({ text, map, dealerFactsBrief, modelTier: tiers.qa });
     if (qa.flagged.length > 0 && qa.rewritten_text.trim()) {
       text = finalizeText(qa.rewritten_text, keepVerifiedEur(map));
       if (map.hide_cost_bands === true || !allowCostBands() || !PROVIN_KB_EUR_ACTIVE) {
@@ -254,7 +274,8 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
       text = await generateTextFromMap(
         input,
         map,
-        orderContext,
+        sourceFactsBrief,
+        tiers,
         formatTechnicalRiskLintErrors(first.errors),
         dealerFactsBrief,
       );

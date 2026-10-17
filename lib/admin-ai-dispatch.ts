@@ -322,6 +322,17 @@ async function generateTextWithWebSearchOnce(opts: GenerateOpts): Promise<string
   });
 }
 
+/**
+ * Viens meklēšanas izsaukums BEZ self-correction (JSON izejai, piem., tehnisko risku kartei):
+ * latviešu klienta teksta pārbaudes JSON nedrīkst "labot".
+ */
+export async function adminGenerateRawTextWithWebSearch(opts: GenerateOpts): Promise<string> {
+  return generateTextWithWebSearchOnce({
+    ...opts,
+    budget: opts.budget ?? createAiRequestBudget(AI_ROUTE_BUDGET_MS.webSearch),
+  });
+}
+
 export async function adminGenerateTextWithWebSearch(opts: GenerateOpts): Promise<string> {
   return withSelfCorrection(opts, AI_ROUTE_BUDGET_MS.webSearch, generateTextWithWebSearchOnce);
 }
