@@ -70,17 +70,19 @@ async function main() {
 <style>
 body{font-family:system-ui,sans-serif;background:#f5f5f7;padding:24px;margin:0;}
 .row{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;max-width:420px;}
-.row img{width:36px;height:36px;object-fit:contain;padding:3px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;}
+.row img{object-fit:contain;}
+.row img.mark-square{width:34px;height:34px;}
+.row img.mark-wide{height:34px;width:auto;max-width:92px;}
 .title{font-size:17px;font-weight:600;color:#111827;}
 .sub{font-size:13px;color:#6b7280;}
 </style></head><body>
-<p style="font-size:12px;color:#64748b;margin:0 0 12px;">IRISS pasūtījumu saraksta rinda (logo plate)</p>
+<p style="font-size:12px;color:#64748b;margin:0 0 12px;">IRISS pasūtījumu saraksta rinda (bez plate)</p>
 <div class="row">
-<img src="/brand-logos/bmw.svg" alt="" width="36" height="36"/>
+<img class="mark-square" src="/brand-logos/bmw.svg" alt="" width="34" height="34"/>
 <div><div class="title">BMW 840i</div><div class="sub">WBA12345678901234</div></div>
 </div>
 <div class="row" style="margin-top:12px;">
-<img src="/brand-logos/subaru-wide.svg" alt="" width="72" height="18" style="width:72px;height:28px;object-fit:contain"/>
+<img class="mark-wide" src="/brand-logos/subaru-wide.svg" alt="" width="92" height="34"/>
 <div><div class="title">Subaru Forester</div><div class="sub">Wide mark demo</div></div>
 </div>
 </body></html>`;

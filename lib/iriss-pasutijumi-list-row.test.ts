@@ -111,10 +111,10 @@ describe("IRISS saraksta rinda", () => {
 
   it("resolves local brand logos without a CDN", () => {
     expect(irissBrandLogoSrc("BMW 840i")).toBe("/brand-logos/bmw.svg");
-    expect(irissBrandLogoSrc("Škoda Kodiaq")).toBe("/brand-logos/skoda.svg");
+    expect(irissBrandLogoSrc("Škoda Kodiaq")).toBe("/brand-logos/skoda-wide.svg");
     expect(irissBrandLogoSrc("VW Golf")).toBe("/brand-logos/volkswagen.svg");
     expect(irissBrandLogoSrc("Rolls-Royce Ghost")).toBe("/brand-logos/rolls-royce.svg");
-    expect(irissBrandLogoSrc("Subaru Forester")).toBe("/brand-logos/subaru.svg");
+    expect(irissBrandLogoSrc("Subaru Forester")).toBe("/brand-logos/subaru-wide.svg");
     expect(irissBrandLogoSrc("Toyota Avensis")).toBe("/brand-logos/toyota.svg");
     expect(irissBrandLogoSrc("Moskvitch 412")).toBeNull();
     expect(irissBrandFallbackLabel("Moskvitch 412")).toBe("MO");
