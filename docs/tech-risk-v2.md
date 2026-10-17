@@ -106,6 +106,13 @@ Apstiprināšana: `POST /api/admin/audit-knowledge` `{ "action": "approve", "key
 Mēra edit distance un labojumu skaitu pa sadaļām; aklie pāri IRISS (tehniskā precizitāte + latviešu valoda).
 Neraksta pasūtījumu datus.
 
+### Reāls A/B (20 pasūtījumi)
+Dati (slotu karte ar Nila `_prov` zeltu, ģenerētie teksti, IRISS paka) glabājas TIKAI ārpus repo: tie satur klientu datus.
+1. `npx tsx --import ./scripts/stub-server-only.mjs scripts/tech-risk-ab-generate.ts --slots=/abs/slots.json --drafts-dir=/abs/backup/admin-order-drafts --out=/abs/ab-generated.json`
+   Lasa melnrakstus no lokāla Blob backup; Blob/DB env tiek izdzēsts procesa sākumā. v1 = `gemini`, v2 = `TECH_RISK_V2=1` tikai šim izsaukumam. Gala sadaļu teksti netiek doti (tie ir zelts). Opus izmantošana = kļūda. Vajag `GEMINI_API_KEY` + `ANTHROPIC_API_KEY` vidē.
+2. `npx tsx scripts/tech-risk-ab-package.ts --slots=… --generated=… --out-dir=/abs/iriss-pack` → `ab-fixture.json`, `vertesana.html`, `vertejumi.csv`, `_atslega.json` (nedot IRISS).
+3. `npx tsx --import ./scripts/stub-server-only.mjs scripts/tech-risk-ab-harness.ts --fixture=/abs/iriss-pack/ab-fixture.json --out=/abs/harness.json` (pievieno edit distance pret zeltu).
+
 ## Operatora checklist
 
 1. Dzinēja kods A vai skaidri B/C?

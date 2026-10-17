@@ -8,7 +8,10 @@ import path from "node:path";
 import { scoreTechRiskAbHarness, type TechRiskAbSlot } from "@/lib/admin-ai-tech-risk-ab-harness";
 
 const root = process.cwd();
-const fixturePath = path.join(root, "docs/fixtures/tech-risk-ab-gold.json");
+/** `--fixture=/abs/ab-fixture.json` (ārpus repo, ar zeltu) vai repo paraugs. */
+const fixtureArg = process.argv.find((a) => a.startsWith("--fixture="))?.slice("--fixture=".length);
+const fixturePath = fixtureArg || path.join(root, "docs/fixtures/tech-risk-ab-gold.json");
+const outArg = process.argv.find((a) => a.startsWith("--out="))?.slice("--out=".length);
 
 type Fixture = { orders?: TechRiskAbSlot[] };
 
@@ -23,14 +26,14 @@ function loadSlots(): TechRiskAbSlot[] {
     new: o.new,
     map: o.map,
     dealerFacts: o.dealerFacts ?? null,
+    gold: typeof o.gold === "string" ? o.gold : undefined,
   }));
 }
 
 const slots = loadSlots();
 const result = scoreTechRiskAbHarness(slots);
-const outDir = path.join(root, ".data");
-fs.mkdirSync(outDir, { recursive: true });
-const outFile = path.join(outDir, "tech-risk-ab-harness.json");
+const outFile = outArg || path.join(root, ".data", "tech-risk-ab-harness.json");
+fs.mkdirSync(path.dirname(outFile), { recursive: true });
 fs.writeFileSync(outFile, JSON.stringify(result, null, 2));
 console.log(
   JSON.stringify(

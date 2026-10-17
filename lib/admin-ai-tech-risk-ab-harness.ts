@@ -20,6 +20,8 @@ export type TechRiskAbSlot = {
   map?: TechnicalRiskMap | null;
   /** OneAuto dīlera fakti šim pasūtījumam (dealer-consistency metrika). */
   dealerFacts?: DealerFacts | null;
+  /** Nila pulētais `_prov` teksts (zelts). Nav repo fiksturā (klientu dati). */
+  gold?: string;
 };
 
 export type TechRiskAbDealerConsistency = {
@@ -44,6 +46,9 @@ export type TechRiskAbPairScore = {
   lintErrorsNew: number;
   lintWarningsNew: number;
   editDistance: number;
+  /** Levenšteins pret zeltu (atstarpes normalizētas); null, ja zelta nav. */
+  editDistanceOldVsGold: number | null;
+  editDistanceNewVsGold: number | null;
   correctionsNeeded: number;
   sections: TechRiskAbSectionScore[];
   dealer: TechRiskAbDealerConsistency;
@@ -88,6 +93,10 @@ export function splitTechRiskSections(text: string): Array<{ heading: string; bo
   });
 }
 
+function normWs(t: string): string {
+  return t.replace(/\s+/g, " ").trim();
+}
+
 function seedFromLabel(label: string, slot: number): number {
   let h = slot + 1;
   for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) >>> 0;
@@ -130,6 +139,8 @@ export function scoreTechRiskAbPair(slot: TechRiskAbSlot): TechRiskAbPairScore {
     lintErrorsNew: newLint.errors.length,
     lintWarningsNew: newLint.warnings.length,
     editDistance: levenshtein(oldText, newText),
+    editDistanceOldVsGold: slot.gold && oldText ? levenshtein(normWs(oldText), normWs(slot.gold)) : null,
+    editDistanceNewVsGold: slot.gold && newText ? levenshtein(normWs(newText), normWs(slot.gold)) : null,
     correctionsNeeded: newLint.errors.length + newLint.warnings.length + sectionCorrections,
     sections,
     dealer,
@@ -153,10 +164,18 @@ export function scoreTechRiskAbHarness(slots: TechRiskAbSlot[]): {
     slotsWithDealerData: number;
     dealerContradictionsOld: number;
     dealerContradictionsNew: number;
+    lintErrorsOld: number;
+    meanEditOldVsGold: number | null;
+    meanEditNewVsGold: number | null;
+    newCloserToGold: number;
   };
 } {
   const pairs = slots.map(scoreTechRiskAbPair);
   const both = pairs.filter((_, i) => (slots[i]?.old || slots[i]?.new) && slots[i]?.old && slots[i]?.new);
+  const goldMean = (xs: Array<number | null>): number | null => {
+    const v = xs.filter((x): x is number => x != null);
+    return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null;
+  };
   const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
   return {
     pairs,
@@ -169,6 +188,15 @@ export function scoreTechRiskAbHarness(slots: TechRiskAbSlot[]): {
       slotsWithDealerData: pairs.filter((p) => p.dealer.dealerRows > 0).length,
       dealerContradictionsOld: pairs.reduce((n, p) => n + p.dealer.contradictionsOld, 0),
       dealerContradictionsNew: pairs.reduce((n, p) => n + p.dealer.contradictionsNew, 0),
+      lintErrorsOld: pairs.reduce((n, p) => n + p.lintErrorsOld, 0),
+      meanEditOldVsGold: goldMean(both.map((p) => p.editDistanceOldVsGold)),
+      meanEditNewVsGold: goldMean(both.map((p) => p.editDistanceNewVsGold)),
+      newCloserToGold: both.filter(
+        (p) =>
+          p.editDistanceNewVsGold != null &&
+          p.editDistanceOldVsGold != null &&
+          p.editDistanceNewVsGold < p.editDistanceOldVsGold,
+      ).length,
     },
   };
 }

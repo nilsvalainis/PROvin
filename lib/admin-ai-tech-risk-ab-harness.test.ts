@@ -40,3 +40,15 @@ describe("tech risk A/B harness", () => {
     expect(scored.pairs[0]!.iriss.techAccuracy).toBeNull();
   });
 });
+
+describe("tech-risk A/B harness: zelts", () => {
+  it("salīdzina abus tekstus ar zeltu un skaita, kurš tuvāk", async () => {
+    const { scoreTechRiskAbHarness } = await import("@/lib/admin-ai-tech-risk-ab-harness");
+    const r = scoreTechRiskAbHarness([
+      { slot: 1, id: "x", label: "t", old: "Sadaļa\nviss slikti", new: "Sadaļa\nķēde ok", gold: "Sadaļa\n  ķēde  ok" },
+    ]);
+    expect(r.pairs[0]?.editDistanceNewVsGold).toBe(0);
+    expect(r.summary.newCloserToGold).toBe(1);
+    expect(r.summary.meanEditOldVsGold).toBeGreaterThan(0);
+  });
+});
