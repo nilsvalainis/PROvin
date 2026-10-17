@@ -40,3 +40,24 @@ describe("tech risk A/B harness", () => {
     expect(scored.pairs[0]!.iriss.techAccuracy).toBeNull();
   });
 });
+
+describe("tech-risk A/B harness: zelts", () => {
+  it("salīdzina abus tekstus ar zeltu un skaita, kurš tuvāk", async () => {
+    const { scoreTechRiskAbHarness } = await import("@/lib/admin-ai-tech-risk-ab-harness");
+    const r = scoreTechRiskAbHarness([
+      { slot: 1, id: "x", label: "t", old: "Sadaļa\nviss slikti", new: "Sadaļa\nķēde ok", gold: "Sadaļa\n  ķēde  ok" },
+    ]);
+    expect(r.pairs[0]?.editDistanceNewVsGold).toBe(0);
+    expect(r.summary.newCloserToGold).toBe(1);
+    expect(r.summary.meanEditOldVsGold).toBeGreaterThan(0);
+  });
+});
+
+describe("tech-risk v2 kartes prompts", () => {
+  it("satur JSON atslēgas, ko parseris prasa (A/B 2026-10-17: 16/20 kartes bez riskiem)", async () => {
+    const { AI_TECH_RISK_V2_MAP_SYSTEM } = await import("@/lib/admin-ai-tech-risk-v2-prompts");
+    for (const k of ['"component"', '"failure_mode"', '"this_car_position"', '"recalls"', '"identification"']) {
+      expect(AI_TECH_RISK_V2_MAP_SYSTEM).toContain(k);
+    }
+  });
+});

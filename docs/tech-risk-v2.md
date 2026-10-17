@@ -2,19 +2,26 @@
 
 Feature flag: `TECH_RISK_V2=1`. Noklusējumā izslēgts. `parseAiModelTier` labojums (nezināms → `gemini-flash`, nekad Opus) ir vienmēr.
 
-## Pipeline (3 soļi)
+## Pipeline (3 soļi, noklusējumā 100% Gemini)
 
-1. Identifikācija (`lib/admin-ai-engine-identification.ts`): `{engine, gearbox, platform}` ar `value`, `confidence` A|B|C, `evidence`, `candidates`.
-   - A = VIN dekoders / dīleris / Outvin / CSDD tieši
-   - B = izsecināts no markas + kW + cm³ + gada + tirgus / VIN
-   - C = vairāki kandidāti; tekstā obligāta nosacīta formulēšana
-2. Solis 1, karte (lētais modelis: Haiku / `lite`; dziļajā režīmā Sonnet tikai šim solim). JSON + web meklēšana. Atsaukumi obligāti (KBA / NHTSA / EU Safety Gate). Ja nav: `"nav atrasts"`. Trūkstošie dati → `unknowns[]` un operatora karogs, ne minējums.
-3. Karte saglabājas `workspace.technicalRiskMap` (nav PDF). Esošie melnraksti bez kartes paliek neskarti.
-4. Solis 2, latviešu teksts: **Gemini 2.5 Pro** (`gemini`, ne Opus). Tikai no kartes, bez web meklēšanas. Latviešu prompts + vārdnīca + 3 paraugi.
-5. Solis 3, QA: **Gemini Flash**. Katram apgalvojumam jābūt kartē; kalki / aizliegtās frāzes; pārraksta tikai atzīmētos teikumus.
-6. Validators (`lib/admin-ai-technical-risk-lint.ts`). Ja E kļūda: viena pārģenerēšana. Ja atkārtojas: teksts + operatora brīdinājums.
+Modeli izvēlas operators esošajā selektorā: lauka ✨ poga vai FLASH MAX rinda "1. Tehnisko risku analīze" (`modelTier`). Pipeline neko necieti iekodē (`resolveTechRiskV2Tiers`).
 
-Opus nav nevienā solī. Nezināms `modelTier` → `gemini-flash`.
+| Izvēle selektorā | Karte (fakti + Google Search) | LV teksts | QA |
+|---|---|---|---|
+| Gemini 2.5 Pro (`gemini`, admin noklusējums) | 2.5 Pro | 2.5 Pro | 2.5 Pro |
+| Gemini Flash (`gemini-flash`) | Flash | Flash | Flash |
+| Claude (`lite`/`flash`/`pro`) | Gemini noklusējums + Claude TIKAI agregātiem no komandas `Claude: N57, ZF 8HP` | Gemini | Gemini |
+
+Claude ir manuāls āķis: bez Claude līmeņa selektorā UN bez `Claude: …` rindas komandā Claude netiek izsaukts. Nav automātiska Claude/Opus ceļa (iepriekšējais "Dziļā analīze → Sonnet" izņemts).
+
+1. Identifikācija (`lib/admin-ai-engine-identification.ts`), A/B/C.
+2. Karte: Gemini grounding, viens izsaukums bez self-correction (JSON). JSON shēma ir promptā. Tukša/nederīga karte → viens kompakts atkārtojums. Ievade: identifikācija, KB, OFICIĀLĀ DĪLERA FAKTI (D1…, #250), pilns pasūtījuma konteksts.
+3. Karte saglabājas `workspace.technicalRiskMap`; dīlera fakti aizpilda `already_done_evidence`.
+4. LV teksts: no kartes + dīlera faktiem + kompaktiem AVOTU FAKTIEM (`lib/admin-ai-tech-risk-source-facts.ts`, ≤14k zīmes), nevis viss konteksts.
+5. QA: tas pats Gemini līmenis, labo tikai atzīmētos teikumus.
+6. Validators; ja E kļūda, viena pārģenerēšana.
+
+Aptuvenā cena (tokeni, bez grounding vaicājumu maksas): `gemini` ~0,13-0,20 USD; `gemini-flash` ~0,04-0,07 USD; v1 bija ~0,10-0,18 USD.
 
 ## EUR politika
 
@@ -105,6 +112,13 @@ Apstiprināšana: `POST /api/admin/audit-knowledge` `{ "action": "approve", "key
 `npx tsx scripts/tech-risk-ab-harness.ts` (offline, 20 sloti `docs/fixtures/tech-risk-ab-gold.json`).
 Mēra edit distance un labojumu skaitu pa sadaļām; aklie pāri IRISS (tehniskā precizitāte + latviešu valoda).
 Neraksta pasūtījumu datus.
+
+### Reāls A/B (20 pasūtījumi)
+Dati (slotu karte ar Nila `_prov` zeltu, ģenerētie teksti, IRISS paka) glabājas TIKAI ārpus repo: tie satur klientu datus.
+1. `npx tsx --import ./scripts/stub-server-only.mjs scripts/tech-risk-ab-generate.ts --slots=/abs/slots.json --drafts-dir=/abs/backup/admin-order-drafts --out=/abs/ab-generated.json`
+   Lasa melnrakstus no lokāla Blob backup; Blob/DB env tiek izdzēsts procesa sākumā. v1 = `gemini`, v2 = `TECH_RISK_V2=1` tikai šim izsaukumam. Gala sadaļu teksti netiek doti (tie ir zelts). Opus izmantošana = kļūda. Vajag `GEMINI_API_KEY` + `ANTHROPIC_API_KEY` vidē.
+2. `npx tsx scripts/tech-risk-ab-package.ts --slots=… --generated=… --out-dir=/abs/iriss-pack --private-dir=/abs/ab-private` → IRISS pakā tikai `vertesana.html`, `vertejumi.csv`, `LASIMANI.txt`; privātajā mapē `ab-fixture.json` un `atslega.json`.
+3. `npx tsx --import ./scripts/stub-server-only.mjs scripts/tech-risk-ab-harness.ts --fixture=/abs/ab-private/ab-fixture.json --out=/abs/harness.json` (pievieno edit distance pret zeltu).
 
 ## Operatora checklist
 

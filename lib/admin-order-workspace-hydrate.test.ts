@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { emptyVendorAvotuBlock, createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { serializeOrderWorkspaceSnapshotFromRef } from "@/lib/admin-order-workspace-persist";
 import { resolveOrderWorkspaceHydration } from "@/lib/admin-order-workspace-hydrate";
+import { DEFAULT_PDF_VISIBILITY } from "@/lib/pdf-visibility";
 
 function snapshotWithAutodnaComment(comment: string, savedAt: string): string {
   const blocks = createDefaultSourceBlocks();
@@ -18,7 +19,7 @@ function snapshotWithAutodnaComment(comment: string, savedAt: string): string {
       vehicleAiExtraction: null,
       vehicleAiExtractionMeta: null,
     },
-    {},
+    DEFAULT_PDF_VISIBILITY,
     {},
     savedAt,
   );
@@ -125,7 +126,7 @@ describe("resolveOrderWorkspaceHydration", () => {
           unknowns: [],
         },
       },
-      {},
+      DEFAULT_PDF_VISIBILITY,
       {},
       "2026-10-17T10:00:00.000Z",
     );
