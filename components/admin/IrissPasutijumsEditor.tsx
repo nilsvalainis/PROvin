@@ -18,7 +18,9 @@ import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteria
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap, coerceIrissOrderRoomTab } from "@/lib/iriss-order-room-match-props";
-import { appendIrissOrderRoomNote, irissOrderRoomOfferSeed, type IrissOrderRoomHit, type IrissOrderRoomTab } from "@/lib/iriss-order-room";
+import { irissOfferSeedFromHit } from "@/lib/iriss-order-offer-from-hit";
+import { appendIrissOrderRoomNote, type IrissOrderRoomHit, type IrissOrderRoomTab } from "@/lib/iriss-order-room";
+import { IrissOfferFieldTag } from "@/components/admin/IrissOfferFieldTag";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
@@ -206,7 +208,86 @@ type OfferDraft = {
   attachments: IrissOfferAttachment[];
   coverAttachmentId: string;
   createdAt: string;
+  fuel: string;
+  driveType: string;
+  powerKw: string;
+  engineDisplacement: string;
+  color: string;
+  bodyTypeOffer: string;
+  doorCount: string;
+  emissionClass: string;
+  originCountry: string;
+  auctionPlatform: string;
+  auctionStockNumber: string;
+  auctionEndAt: string;
+  vatStatus: string;
+  damageGrade: string;
+  equipmentHighlights: string;
+  estimatedTotalPrice: string;
+  keyCount: string;
 };
+
+const OFFER_AUTO_FIELD_KEYS = [
+  "brandModel",
+  "vin",
+  "firstRegistration",
+  "odometerReading",
+  "fuel",
+  "transmission",
+  "driveType",
+  "powerKw",
+  "bodyTypeOffer",
+  "color",
+  "originCountry",
+  "location",
+  "auctionPlatform",
+  "auctionStockNumber",
+  "auctionEndAt",
+  "vatStatus",
+  "carPrice",
+  "estimatedTotalPrice",
+] as const;
+
+function offerDraftVehicleExtras(): Pick<
+  OfferDraft,
+  | "fuel"
+  | "driveType"
+  | "powerKw"
+  | "engineDisplacement"
+  | "color"
+  | "bodyTypeOffer"
+  | "doorCount"
+  | "emissionClass"
+  | "originCountry"
+  | "auctionPlatform"
+  | "auctionStockNumber"
+  | "auctionEndAt"
+  | "vatStatus"
+  | "damageGrade"
+  | "equipmentHighlights"
+  | "estimatedTotalPrice"
+  | "keyCount"
+> {
+  return {
+    fuel: "",
+    driveType: "",
+    powerKw: "",
+    engineDisplacement: "",
+    color: "",
+    bodyTypeOffer: "",
+    doorCount: "",
+    emissionClass: "",
+    originCountry: "",
+    auctionPlatform: "",
+    auctionStockNumber: "",
+    auctionEndAt: "",
+    vatStatus: "",
+    damageGrade: "",
+    equipmentHighlights: "",
+    estimatedTotalPrice: "",
+    keyCount: "",
+  };
+}
 
 function newOfferDraft(nextNumber: number): OfferDraft {
   const now = new Date().toISOString();
@@ -239,6 +320,7 @@ function newOfferDraft(nextNumber: number): OfferDraft {
     attachments: [],
     coverAttachmentId: "",
     createdAt: now,
+    ...offerDraftVehicleExtras(),
   };
 }
 
@@ -402,6 +484,7 @@ export function IrissPasutijumsEditor({
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
+  const [offerAutoFields, setOfferAutoFields] = useState<ReadonlySet<string>>(() => new Set());
   const [offerBusy, setOfferBusy] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -758,25 +841,29 @@ export function IrissPasutijumsEditor({
   }, [rec.id]);
 
   const openCreateOffer = useCallback(() => {
+    setOfferAutoFields(new Set());
     setOfferDraft(newOfferDraft(rec.offers.length + 1));
     setOfferOpen(true);
   }, [rec.offers.length]);
 
   const openCreateOfferFromHit = useCallback(
     (hit: IrissOrderRoomHit) => {
-      const seed = irissOrderRoomOfferSeed(hit);
+      const seed = irissOfferSeedFromHit(hit);
       const draft = newOfferDraft(rec.offers.length + 1);
+      const auto = new Set<string>();
+      for (const key of OFFER_AUTO_FIELD_KEYS) {
+        const v = seed[key as keyof typeof seed];
+        if (typeof v === "string" && v.trim()) auto.add(key);
+      }
+      setOfferAutoFields(auto);
       setOfferDraft({
         ...draft,
-        brandModel: seed.brandModel,
-        vin: seed.vin,
+        ...seed,
         year: seed.year,
         mileage: seed.mileage,
-        priceGermany: seed.price,
-        firstRegistration: seed.firstRegistration,
-        odometerReading: seed.mileage,
-        transmission: seed.transmission,
-        carPrice: seed.price,
+        priceGermany: seed.priceGermany,
+        odometerReading: seed.odometerReading || seed.mileage,
+        comment: "",
       });
       setOfferOpen(true);
     },
@@ -813,7 +900,25 @@ export function IrissPasutijumsEditor({
       attachments: offer.attachments,
       coverAttachmentId: offer.coverAttachmentId ?? "",
       createdAt: offer.createdAt || new Date().toISOString(),
+      fuel: offer.fuel ?? "",
+      driveType: offer.driveType ?? "",
+      powerKw: offer.powerKw ?? "",
+      engineDisplacement: offer.engineDisplacement ?? "",
+      color: offer.color ?? "",
+      bodyTypeOffer: offer.bodyTypeOffer ?? "",
+      doorCount: offer.doorCount ?? "",
+      emissionClass: offer.emissionClass ?? "",
+      originCountry: offer.originCountry ?? "",
+      auctionPlatform: offer.auctionPlatform ?? "",
+      auctionStockNumber: offer.auctionStockNumber ?? "",
+      auctionEndAt: offer.auctionEndAt ?? "",
+      vatStatus: offer.vatStatus ?? "",
+      damageGrade: offer.damageGrade ?? "",
+      equipmentHighlights: offer.equipmentHighlights ?? "",
+      estimatedTotalPrice: offer.estimatedTotalPrice ?? "",
+      keyCount: offer.keyCount ?? "",
     });
+    setOfferAutoFields(new Set());
     setOfferOpen(true);
   }, []);
 
@@ -922,6 +1027,23 @@ export function IrissPasutijumsEditor({
         odometerReading: offerDraft.odometerReading,
         transmission: offerDraft.transmission,
         location: offerDraft.location,
+        fuel: offerDraft.fuel,
+        driveType: offerDraft.driveType,
+        powerKw: offerDraft.powerKw,
+        engineDisplacement: offerDraft.engineDisplacement,
+        color: offerDraft.color,
+        bodyTypeOffer: offerDraft.bodyTypeOffer,
+        doorCount: offerDraft.doorCount,
+        emissionClass: offerDraft.emissionClass,
+        originCountry: offerDraft.originCountry,
+        auctionPlatform: offerDraft.auctionPlatform,
+        auctionStockNumber: offerDraft.auctionStockNumber,
+        auctionEndAt: offerDraft.auctionEndAt,
+        vatStatus: offerDraft.vatStatus,
+        damageGrade: offerDraft.damageGrade,
+        equipmentHighlights: offerDraft.equipmentHighlights,
+        estimatedTotalPrice: offerDraft.estimatedTotalPrice,
+        keyCount: offerDraft.keyCount,
         hasFullServiceHistory: offerDraft.hasFullServiceHistory,
         hasFactoryPaint: offerDraft.hasFactoryPaint,
         hasNoRustBody: offerDraft.hasNoRustBody,
@@ -1814,6 +1936,9 @@ export function IrissPasutijumsEditor({
                 >
                   {offerDraft.title}
                 </h2>
+                {offerAutoFields.size > 0 ? (
+                  <p className="mt-0.5 text-[11px] text-[var(--color-provin-muted)]">Sagatavots no izsoles ieraksta</p>
+                ) : null}
                 {isIrissOfferExpired(offerDraft) ? (
                   <p className="mt-0.5 text-[12px] font-semibold text-red-700">Piedāvājums beidzies</p>
                 ) : null}
@@ -1833,53 +1958,93 @@ export function IrissPasutijumsEditor({
               <div className="grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,1fr)]">
               <div className="min-w-0 space-y-3">
               <div className="rounded-xl border border-slate-200/90 bg-white p-3">
-                <IrissSectionHeading>Pamatinformācija</IrissSectionHeading>
+                <IrissSectionHeading>Transportlīdzeklis</IrissSectionHeading>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {(
+                    [
+                      ["brandModel", "Marka, modelis", (v: string) => ({ brandModel: v })],
+                      ["vin", "VIN", (v: string) => ({ vin: v.toUpperCase() })],
+                      ["firstRegistration", "Pirmā reģistrācija", (v: string) => ({ firstRegistration: v, year: v })],
+                      ["odometerReading", "Nobraukums", (v: string) => ({ odometerReading: v, mileage: v })],
+                      ["fuel", "Degviela", (v: string) => ({ fuel: v })],
+                      ["transmission", "Ātrumkārba", (v: string) => ({ transmission: v })],
+                      ["driveType", "Piedziņa", (v: string) => ({ driveType: v })],
+                      ["powerKw", "Jauda", (v: string) => ({ powerKw: v })],
+                      ["engineDisplacement", "Dzinēja tilpums", (v: string) => ({ engineDisplacement: v })],
+                      ["bodyTypeOffer", "Virsbūve", (v: string) => ({ bodyTypeOffer: v })],
+                      ["color", "Krāsa", (v: string) => ({ color: v })],
+                      ["doorCount", "Durvis / vietas", (v: string) => ({ doorCount: v })],
+                      ["emissionClass", "Emisijas klase", (v: string) => ({ emissionClass: v })],
+                      ["originCountry", "Izcelsmes valsts", (v: string) => ({ originCountry: v })],
+                      ["location", "Atrašanās vieta", (v: string) => ({ location: v })],
+                    ] as const
+                  ).map(([key, label, patch]) => (
+                    <label key={key} className="block min-w-0">
+                      <span className="mb-1 flex items-center text-[11px] font-medium text-[var(--color-provin-muted)]">
+                        {label}
+                        <IrissOfferFieldTag source={offerAutoFields.has(key) ? "auto" : "manual"} />
+                      </span>
+                      <input
+                        className={fieldClass}
+                        value={offerDraft[key]}
+                        onChange={(e) => setOfferDraft((d) => ({ ...d, ...patch(e.target.value) }))}
+                        autoComplete="off"
+                      />
+                      {key === "vin" && offerVinWarning ? (
+                        <p className="mt-1 text-[11px] text-amber-800">{offerVinWarning}</p>
+                      ) : null}
+                    </label>
+                  ))}
+                </div>
+                <IrissSectionHeading className="mt-4">Izsole</IrissSectionHeading>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <LabeledInput
-                    label="Marka, modelis"
-                    value={offerDraft.brandModel}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, brandModel: e.target.value }))}
-                  />
-                  <label className="block min-w-0">
-                    <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">VIN</span>
-                    <input
-                      className={fieldClass}
-                      value={offerDraft.vin}
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, vin: e.target.value.toUpperCase() }))}
-                      autoComplete="off"
-                      spellCheck={false}
-                      autoCapitalize="characters"
-                      aria-label="VIN"
-                    />
-                    {offerVinWarning ? <p className="mt-1 text-[11px] text-amber-800">{offerVinWarning}</p> : null}
-                  </label>
-                  <LabeledInput
-                    label="Pirmā reģistrācija"
-                    value={offerDraft.firstRegistration}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, firstRegistration: e.target.value, year: e.target.value }))}
-                  />
-                  <LabeledInput
-                    label="Odometra rādījums"
-                    value={offerDraft.odometerReading}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, odometerReading: e.target.value, mileage: e.target.value }))}
-                  />
-                  <LabeledInput
-                    label="Transmisija"
-                    value={offerDraft.transmission}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, transmission: e.target.value }))}
-                  />
-                  <div className="sm:col-span-2">
-                    <LabeledInput
-                      label="Atrašanās vieta"
-                      value={offerDraft.location}
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, location: e.target.value }))}
-                    />
-                  </div>
+                  {(
+                    [
+                      ["auctionPlatform", "Platforma", (v: string) => ({ auctionPlatform: v })],
+                      ["auctionStockNumber", "Lot / stock nr.", (v: string) => ({ auctionStockNumber: v })],
+                      ["auctionEndAt", "Izsoles beigas", (v: string) => ({ auctionEndAt: v })],
+                      ["vatStatus", "PVN statuss", (v: string) => ({ vatStatus: v })],
+                      ["carPrice", "Izsoles cena", (v: string) => ({ carPrice: v, priceGermany: v })],
+                      ["estimatedTotalPrice", "Aplēstā kopsumma", (v: string) => ({ estimatedTotalPrice: v })],
+                    ] as const
+                  ).map(([key, label, patch]) => (
+                    <label key={key} className="block min-w-0">
+                      <span className="mb-1 flex items-center text-[11px] font-medium text-[var(--color-provin-muted)]">
+                        {label}
+                        <IrissOfferFieldTag source={offerAutoFields.has(key) ? "auto" : "manual"} />
+                      </span>
+                      <input
+                        className={fieldClass}
+                        value={offerDraft[key]}
+                        onChange={(e) => setOfferDraft((d) => ({ ...d, ...patch(e.target.value) }))}
+                        autoComplete="off"
+                      />
+                    </label>
+                  ))}
                 </div>
               </div>
 
               <div className="mt-3 rounded-xl border border-slate-200/90 bg-white p-3">
-                <IrissSectionHeading>Vispārējais novērtējums</IrissSectionHeading>
+                <IrissSectionHeading>Novērtējums klientam</IrissSectionHeading>
+                <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <LabeledInput
+                    label="Bojājumu pakāpe"
+                    value={offerDraft.damageGrade}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, damageGrade: e.target.value }))}
+                  />
+                  <LabeledInput
+                    label="Atslēgu skaits"
+                    value={offerDraft.keyCount}
+                    onChange={(e) => setOfferDraft((d) => ({ ...d, keyCount: e.target.value }))}
+                  />
+                  <div className="sm:col-span-2">
+                    <LabeledInput
+                      label="Aprīkojuma izcēlumi"
+                      value={offerDraft.equipmentHighlights}
+                      onChange={(e) => setOfferDraft((d) => ({ ...d, equipmentHighlights: e.target.value }))}
+                    />
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   <label className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
                     <input

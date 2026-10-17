@@ -10,7 +10,7 @@ import {
   type IrissTameCommissionRates,
 } from "@/lib/iriss-tame-commission";
 
-export type DzintarzemeTameCommissionVariant = "A" | "B";
+export type DzintarzemeTameCommissionVariant = "A" | "B" | "C";
 
 export type DzintarzemeTameExtraLine = { label: string; net: number };
 
@@ -21,8 +21,12 @@ export type DzintarzemeTameInput = {
   autoPrice: number;
   applyVatToAutoPrice: boolean;
   commissionVariant: DzintarzemeTameCommissionVariant;
-  /** B variants: iemaksa % */
+  /** B / C variants: iemaksa % */
   depositPercent: number;
+  /** C variants: fiksēta komisija EUR (neto). */
+  commissionManualNet: number;
+  /** C variants: % no atlikuma pēc iemaksas. */
+  commissionManualPercent: number;
   transportNet: number;
   chemicalCleaningNet: number;
   polishingNet: number;
@@ -89,8 +93,13 @@ export function computeDzintarzemeTame(
 
   let commissionNet = 0;
   let loanCommissionNetB = 0;
+  let loanCommissionNetC = 0;
   if (raw.commissionVariant === "A") {
     commissionNet = roundMoney(commission.variantANet);
+  } else if (raw.commissionVariant === "C") {
+    const manualBase = clampMoney(raw.commissionManualNet);
+    loanCommissionNetC = roundMoney(atlikums * (clampMoney(raw.commissionManualPercent) / 100));
+    commissionNet = roundMoney(manualBase + loanCommissionNetC);
   } else {
     loanCommissionNetB = roundMoney(atlikums * (commission.variantBLoanPercent / 100));
     commissionNet = roundMoney(commission.variantBBaseNet + loanCommissionNetB);
@@ -125,6 +134,19 @@ export function computeDzintarzemeTame(
   }
   if (raw.commissionVariant === "A") {
     tableRows.push({ label: "Komisijas maksa", net: roundMoney(commissionNet) });
+  } else if (raw.commissionVariant === "C") {
+    const manualBase = clampMoney(raw.commissionManualNet);
+    const manualPct = clampMoney(raw.commissionManualPercent);
+    if (manualBase > 0 && loanCommissionNetC > 0) {
+      tableRows.push({ label: "Komisijas maksa", net: roundMoney(manualBase) });
+      tableRows.push({
+        label: "Aizdevuma komisija",
+        subtitle: `${formatIrissTamePercent(manualPct)} % no summas pēc priekšapmaksas`,
+        net: loanCommissionNetC,
+      });
+    } else {
+      tableRows.push({ label: "Komisijas maksa", net: roundMoney(commissionNet) });
+    }
   } else {
     const partialPrepay = raw.depositPercent < 100;
     if (partialPrepay && loanCommissionNetB > 0) {
@@ -182,7 +204,17 @@ export function parseDzintarzemeTameBody(body: unknown): { ok: true; value: Dzin
   if (!Number.isFinite(autoPrice) || autoPrice < 0) return { ok: false, error: "invalid_autoPrice" };
 
   const applyVatToAutoPrice = o.applyVatToAutoPrice === true;
-  const variant = o.commissionVariant === "B" ? "B" : "A";
+  const variantRaw = o.commissionVariant;
+  const variant: DzintarzemeTameCommissionVariant =
+    variantRaw === "B" || variantRaw === "C" ? variantRaw : "A";
+  const commissionManualNet =
+    typeof o.commissionManualNet === "number" && Number.isFinite(o.commissionManualNet)
+      ? o.commissionManualNet
+      : 0;
+  const commissionManualPercent =
+    typeof o.commissionManualPercent === "number" && Number.isFinite(o.commissionManualPercent)
+      ? o.commissionManualPercent
+      : 0;
 
   const depositPercent = typeof o.depositPercent === "number" ? o.depositPercent : Number.NaN;
   if (!Number.isFinite(depositPercent) || depositPercent < 0 || depositPercent > 100) {
@@ -242,6 +274,8 @@ export function parseDzintarzemeTameBody(body: unknown): { ok: true; value: Dzin
       applyVatToAutoPrice,
       commissionVariant: variant,
       depositPercent,
+      commissionManualNet: Math.max(0, commissionManualNet),
+      commissionManualPercent: Math.min(100, Math.max(0, commissionManualPercent)),
       transportNet,
       chemicalCleaningNet,
       polishingNet,

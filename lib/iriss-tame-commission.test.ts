@@ -17,6 +17,8 @@ const tameBase = {
   autoPrice: 10000,
   applyVatToAutoPrice: false,
   depositPercent: 20,
+  commissionManualNet: 0,
+  commissionManualPercent: 0,
   transportNet: 0,
   chemicalCleaningNet: 0,
   polishingNet: 0,
@@ -35,6 +37,13 @@ describe("IRISS tame commission settings", () => {
     expect(a.commissionNet).toBe(1190);
     const b = computeDzintarzemeTame({ ...tameBase, commissionVariant: "B" });
     expect(b.commissionNet).toBe(1270);
+    const c = computeDzintarzemeTame({
+      ...tameBase,
+      commissionVariant: "C",
+      commissionManualNet: 850,
+      commissionManualPercent: 2.5,
+    });
+    expect(c.commissionNet).toBe(1050);
     expect(b.tableRows.find((row) => row.label === "Aizdevuma komisija")?.subtitle).toBe(
       "3,5 % no summas pēc priekšapmaksas",
     );

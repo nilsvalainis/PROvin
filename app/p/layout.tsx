@@ -5,7 +5,7 @@ import "@/app/globals.css";
 export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {
-  themeColor: "#f6f4f1",
+  themeColor: "#f4f4f5",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -19,8 +19,8 @@ export const metadata: Metadata = {
 
 export default function IrissOfferPublicLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="lv">
-      <body className="min-h-dvh bg-[#f6f4f1] font-sans text-[#1d1d1f] antialiased">{children}</body>
+    <html lang="lv" data-site-theme="light" className="min-h-full bg-[#f4f4f5]">
+      <body className="min-h-dvh bg-[#f4f4f5] font-sans text-[#1d1d1f] antialiased">{children}</body>
     </html>
   );
 }

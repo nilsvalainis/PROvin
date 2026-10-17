@@ -91,6 +91,9 @@ const ORDER_STRINGS = [
   "preferredColors",
   "nonPreferredColors",
   "interiorFinish",
+  "powerKw",
+  "damageTolerance",
+  "preferredCountries",
   "equipmentRequired",
   "equipmentDesired",
   "notes",
@@ -132,6 +135,23 @@ const OFFER_FIELDS = [
   "transmission",
   "validUntil",
   "offerValidDays",
+  "fuel",
+  "driveType",
+  "powerKw",
+  "engineDisplacement",
+  "color",
+  "bodyTypeOffer",
+  "doorCount",
+  "emissionClass",
+  "originCountry",
+  "auctionPlatform",
+  "auctionStockNumber",
+  "auctionEndAt",
+  "vatStatus",
+  "damageGrade",
+  "equipmentHighlights",
+  "estimatedTotalPrice",
+  "keyCount",
 ] as const;
 
 const FIELD_LABEL: Record<string, string> = {
@@ -436,8 +456,11 @@ export function snapshotIrissOrder(rec: IrissPasutijumsRecord): Record<string, s
   out.tameVin = text(tame.tameVin);
   out.tameAutoPriceStr = text(tame.tameAutoPriceStr);
   out.tameApplyVatAuto = yesNo(tame.tameApplyVatAuto);
-  out.tameCommissionVariant = tame.tameCommissionVariant === "B" ? "B" : "A";
+  out.tameCommissionVariant = tame.tameCommissionVariant === "B" || tame.tameCommissionVariant === "C" ? tame.tameCommissionVariant : "A";
+  out.tameCommissionManualEurStr = text(tame.tameCommissionManualEurStr);
+  out.tameCommissionManualPercentStr = text(tame.tameCommissionManualPercentStr);
   out.tameDepositPercent = String(tame.tameDepositPercent);
+  out.clientFinancingPercent = String(rec.clientFinancingPercent ?? 0);
   out.tameTransportStr = text(tame.tameTransportStr);
   out.tameChemicalStr = text(tame.tameChemicalStr);
   out.tamePolishingStr = text(tame.tamePolishingStr);
@@ -476,7 +499,12 @@ function tameFromSnapshot(snapshot: Record<string, string>, prev: IrissDzintarze
     tameVin: snapshot.tameVin ?? prev.tameVin,
     tameAutoPriceStr: snapshot.tameAutoPriceStr ?? prev.tameAutoPriceStr,
     tameApplyVatAuto: snapshot.tameApplyVatAuto === "Jā",
-    tameCommissionVariant: snapshot.tameCommissionVariant === "B" ? "B" : "A",
+    tameCommissionVariant:
+      snapshot.tameCommissionVariant === "B" || snapshot.tameCommissionVariant === "C"
+        ? snapshot.tameCommissionVariant
+        : "A",
+    tameCommissionManualEurStr: snapshot.tameCommissionManualEurStr ?? prev.tameCommissionManualEurStr,
+    tameCommissionManualPercentStr: snapshot.tameCommissionManualPercentStr ?? prev.tameCommissionManualPercentStr,
     tameDepositPercent: Number.isFinite(dep) ? Math.min(100, Math.max(0, dep)) : prev.tameDepositPercent,
     tameTransportStr: snapshot.tameTransportStr ?? prev.tameTransportStr,
     tameChemicalStr: snapshot.tameChemicalStr ?? prev.tameChemicalStr,
@@ -499,6 +527,10 @@ export function applyIrissOrderSnapshot(rec: IrissPasutijumsRecord, snapshot: Re
   }
   for (const key of ORDER_BOOLS) {
     if (key in snapshot) next[key] = snapshot[key] === "Jā";
+  }
+  if ("clientFinancingPercent" in snapshot) {
+    const n = Number.parseInt(snapshot.clientFinancingPercent ?? "", 10);
+    next.clientFinancingPercent = Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0;
   }
   for (const key of ORDER_LINKS) {
     if (key in snapshot) next[key] = splitLines(snapshot[key]);

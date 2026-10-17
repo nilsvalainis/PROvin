@@ -42,6 +42,23 @@ export type IrissOfferRecord = {
   odometerReading: string;
   transmission: string;
   location: string;
+  fuel: string;
+  driveType: string;
+  powerKw: string;
+  engineDisplacement: string;
+  color: string;
+  bodyTypeOffer: string;
+  doorCount: string;
+  emissionClass: string;
+  originCountry: string;
+  auctionPlatform: string;
+  auctionStockNumber: string;
+  auctionEndAt: string;
+  vatStatus: string;
+  damageGrade: string;
+  equipmentHighlights: string;
+  estimatedTotalPrice: string;
+  keyCount: string;
   /** Vispārējais novērtējums — checkbox lauki. */
   hasFullServiceHistory: boolean;
   hasFactoryPaint: boolean;
@@ -129,7 +146,7 @@ export function isIrissPasutijumsWorkingStatus(s: IrissPasutijumsListStatus): bo
   return (IRISS_PASUTIJUMS_WORKING_STATUSES as readonly string[]).includes(s);
 }
 
-export type IrissDzintarzemeTameCommissionVariant = "A" | "B";
+export type IrissDzintarzemeTameCommissionVariant = "A" | "B" | "C";
 
 export type IrissDzintarzemeTameExtraDraft = {
   id: string;
@@ -145,6 +162,10 @@ export type IrissDzintarzemeTameDraft = {
   tameAutoPriceStr: string;
   tameApplyVatAuto: boolean;
   tameCommissionVariant: IrissDzintarzemeTameCommissionVariant;
+  /** C variants: fiksēta komisija EUR (neto). */
+  tameCommissionManualEurStr: string;
+  /** C variants: papildu % no atlikuma pēc iemaksas. */
+  tameCommissionManualPercentStr: string;
   tameDepositPercent: number;
   tameTransportStr: string;
   tameChemicalStr: string;
@@ -161,6 +182,8 @@ export function defaultIrissDzintarzemeTameDraft(): IrissDzintarzemeTameDraft {
     tameAutoPriceStr: "",
     tameApplyVatAuto: false,
     tameCommissionVariant: "A",
+    tameCommissionManualEurStr: "",
+    tameCommissionManualPercentStr: "",
     tameDepositPercent: 20,
     tameTransportStr: "",
     tameChemicalStr: "",
@@ -182,7 +205,9 @@ export function normalizeIrissDzintarzemeTameDraft(raw: unknown): IrissDzintarze
   const o = raw as Record<string, unknown>;
   const depRaw = typeof o.tameDepositPercent === "number" ? o.tameDepositPercent : Number.parseInt(String(o.tameDepositPercent ?? ""), 10);
   const dep = Number.isFinite(depRaw) ? Math.min(100, Math.max(0, Math.round(depRaw))) : d.tameDepositPercent;
-  const variant = o.tameCommissionVariant === "B" ? "B" : "A";
+  const variantRaw = o.tameCommissionVariant;
+  const variant: IrissDzintarzemeTameCommissionVariant =
+    variantRaw === "B" || variantRaw === "C" ? variantRaw : "A";
   const extrasRaw = o.tameExtras;
   const extras: IrissDzintarzemeTameExtraDraft[] = [];
   if (Array.isArray(extrasRaw)) {
@@ -204,6 +229,8 @@ export function normalizeIrissDzintarzemeTameDraft(raw: unknown): IrissDzintarze
     tameAutoPriceStr: clipStr(o.tameAutoPriceStr, 32),
     tameApplyVatAuto: Boolean(o.tameApplyVatAuto),
     tameCommissionVariant: variant,
+    tameCommissionManualEurStr: clipStr(o.tameCommissionManualEurStr, 32),
+    tameCommissionManualPercentStr: clipStr(o.tameCommissionManualPercentStr, 32),
     tameDepositPercent: dep,
     tameTransportStr: clipStr(o.tameTransportStr, 32),
     tameChemicalStr: clipStr(o.tameChemicalStr, 32),
@@ -262,6 +289,12 @@ export type IrissPasutijumsRecord = {
   preferredColors: string;
   nonPreferredColors: string;
   interiorFinish: string;
+  /** Jauda (kW) specifikācijā, ne tikai no teksta. */
+  powerKw: string;
+  damageTolerance: string;
+  preferredCountries: string;
+  /** Klienta finansējuma % no kopējā budžeta (0 = nav izvēlēts). */
+  clientFinancingPercent: number;
   /** Darījuma detaļas — PDF attēlo tikai ieķeksētos (vērtība "Jā"). */
   dealLeasingOrCredit: boolean;
   dealClientFinancing100: boolean;
@@ -371,6 +404,23 @@ export function emptyIrissOfferRecord(id: string, nowIso: string, title = "Pied�
     odometerReading: "",
     transmission: "",
     location: "",
+    fuel: "",
+    driveType: "",
+    powerKw: "",
+    engineDisplacement: "",
+    color: "",
+    bodyTypeOffer: "",
+    doorCount: "",
+    emissionClass: "",
+    originCountry: "",
+    auctionPlatform: "",
+    auctionStockNumber: "",
+    auctionEndAt: "",
+    vatStatus: "",
+    damageGrade: "",
+    equipmentHighlights: "",
+    estimatedTotalPrice: "",
+    keyCount: "",
     hasFullServiceHistory: false,
     hasFactoryPaint: false,
     hasNoRustBody: false,
@@ -417,6 +467,10 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     preferredColors: "",
     nonPreferredColors: "",
     interiorFinish: "",
+    powerKw: "",
+    damageTolerance: "",
+    preferredCountries: "",
+    clientFinancingPercent: 0,
     dealLeasingOrCredit: false,
     dealClientFinancing100: false,
     dealClientFinancing20: false,

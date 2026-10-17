@@ -8,6 +8,8 @@ import { IrissLazyImage } from "@/components/admin/IrissLazyImage";
 import { IrissOrderRoomHitCard } from "@/components/admin/IrissOrderRoomHitCard";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
+import { IrissClientFinancingSection } from "@/components/admin/IrissClientFinancingSection";
+import { IrissOrderRoomNextSteps } from "@/components/admin/IrissOrderRoomNextSteps";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOfferClientLinkBar } from "@/components/admin/IrissOfferClientLinkBar";
 import { IrissOrderMatchBoundary, IrissOrderMatchFallback } from "@/components/admin/IrissOrderMatchBoundary";
@@ -822,7 +824,6 @@ export function IrissOrderRoom({
                   ) : null}
                 </label>
                 <Field label="Marka / modelis" value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
-                <Field id="iriss-room-vin" label="VIN" value={rec.vin} warning={vinWarning} onChange={(value) => onPatch("vin", value.toUpperCase())} />
                 <Field label="Kopējais budžets" value={rec.totalBudget} onChange={(value) => onPatch("totalBudget", value)} />
                 <Field label="Ražošanas gadi" value={rec.productionYears} placeholder="piem., 2018-2021" onChange={(value) => onPatch("productionYears", value)} />
                 <Field label="Dzinēja tips" value={rec.engineType} onChange={(value) => onPatch("engineType", value)} />
@@ -833,24 +834,12 @@ export function IrissOrderRoom({
                 <Field label="Maks. nobraukums" value={rec.maxMileage} onChange={(value) => onPatch("maxMileage", value)} />
                 <Field label="Vēlamās krāsas" value={rec.preferredColors} onChange={(value) => onPatch("preferredColors", value)} />
                 <Field label="Nevēlamās krāsas" value={rec.nonPreferredColors} onChange={(value) => onPatch("nonPreferredColors", value)} />
+                <Field label="Jauda (kW)" value={rec.powerKw} placeholder="piem., 180-245" onChange={(value) => onPatch("powerKw", value)} />
+                <Field label="Bojājumu tolerance" value={rec.damageTolerance} placeholder="piem., tikai kosmētika" onChange={(value) => onPatch("damageTolerance", value)} />
+                <Field label="Valstis" value={rec.preferredCountries} placeholder="piem., DE, NL, BE" onChange={(value) => onPatch("preferredCountries", value)} />
                 <Field label="Salona apdare" value={rec.interiorFinish} onChange={(value) => onPatch("interiorFinish", value)} />
               </div>
               <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
-            </section>
-
-            <section className={cardClass}>
-              <CardTitle>Avanss un darījums</CardTitle>
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-                <Field label="Pasūtījuma datums" type="date" value={rec.orderDate} onChange={(value) => onPatch("orderDate", value)} />
-              </div>
-              <div className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                {IRISS_DEAL_DETAIL_OPTIONS.map((opt) => (
-                  <label key={opt.key} className="inline-flex items-center gap-2 text-[13px] text-[var(--color-apple-text)]">
-                    <input type="checkbox" checked={Boolean(rec[opt.key])} onChange={(e) => onPatch(opt.key, e.target.checked)} />
-                    {opt.label}
-                  </label>
-                ))}
-              </div>
             </section>
 
             <section className={cardClass}>
@@ -873,6 +862,37 @@ export function IrissOrderRoom({
               <textarea className={areaClass} aria-label="Piezīmes" value={rec.notes} onChange={(e) => onPatch("notes", e.target.value)} />
               <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
             </section>
+
+            <section className={cardClass}>
+              <CardTitle>Avanss un darījums</CardTitle>
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                <Field label="Pasūtījuma datums" type="date" value={rec.orderDate} onChange={(value) => onPatch("orderDate", value)} />
+                <Field label="Klienta kopējais budžets" value={rec.totalBudget} onChange={(value) => onPatch("totalBudget", value)} />
+              </div>
+              <IrissClientFinancingSection rec={rec} onPatchRecord={onPatchRecord} />
+              <div className="mt-3 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                {IRISS_DEAL_DETAIL_OPTIONS.filter(
+                  (opt) => opt.key !== "dealClientFinancing100" && opt.key !== "dealClientFinancing20",
+                ).map((opt) => (
+                  <label key={opt.key} className="inline-flex items-center gap-2 text-[13px] text-[var(--color-apple-text)]">
+                    <input type="checkbox" checked={Boolean(rec[opt.key])} onChange={(e) => onPatch(opt.key, e.target.checked)} />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+              <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
+            </section>
+
+            <div id="iriss-room-tame">
+              <DzintarzemeTameSection
+                orderId={rec.id}
+                shellCard={cardClass}
+                draft={rec.dzintarzemeTameDraft ?? defaultIrissDzintarzemeTameDraft()}
+                orderBrandModel={rec.brandModel}
+                onDraftChange={(next) => onPatchRecord({ dzintarzemeTameDraft: next })}
+                sectionSave={<IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />}
+              />
+            </div>
 
             <section className={cardClass}>
               <CardTitle>Klienta dati</CardTitle>
@@ -905,20 +925,10 @@ export function IrissOrderRoom({
                   {phoneWarning ? <p className="mt-1 text-[11px] text-amber-800">{phoneWarning}</p> : null}
                 </label>
                 <Field label="E-pasts" value={rec.email} inputMode="email" autoComplete="email" onChange={(value) => onPatch("email", value)} />
+                <Field id="iriss-room-vin" label="VIN (ja zināms)" value={rec.vin} warning={vinWarning} onChange={(value) => onPatch("vin", value.toUpperCase())} />
               </div>
               <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
             </section>
-
-            <div id="iriss-room-tame">
-              <DzintarzemeTameSection
-                orderId={rec.id}
-                shellCard={cardClass}
-                draft={rec.dzintarzemeTameDraft ?? defaultIrissDzintarzemeTameDraft()}
-                orderBrandModel={rec.brandModel}
-                onDraftChange={(next) => onPatchRecord({ dzintarzemeTameDraft: next })}
-                sectionSave={<IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />}
-              />
-            </div>
 
             <section className={`${cardClass} border-red-100/80 bg-red-50/20`}>
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
@@ -962,26 +972,13 @@ export function IrissOrderRoom({
             </section>
             <section className={cardClass}>
               <CardTitle>Nākamie soļi</CardTitle>
-              {steps.length === 0 ? (
-                <p className="text-[13px] text-[#6b7280]">Šobrīd nav atsevišķu soļu.</p>
-              ) : (
-                <ul>
-                  {steps.map((step) => (
-                    <li key={step.id} className="border-b border-dashed border-[#eee] last:border-0">
-                      <button
-                        type="button"
-                        className="flex w-full items-start justify-between gap-3 py-1.5 text-left text-[13px] text-[#111827]"
-                        onClick={() => {
-                          setTab(step.tab);
-                          if (step.id === "vin") document.getElementById("iriss-room-vin")?.focus();
-                        }}
-                      >
-                        <span>☐ {step.label}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <IrissOrderRoomNextSteps
+                steps={steps}
+                onSelect={(step) => {
+                  setTab(step.tab);
+                  if (step.id === "vin") document.getElementById("iriss-room-vin")?.focus();
+                }}
+              />
             </section>
             <section className={cardClass}>
               <CardTitle>Platformas</CardTitle>

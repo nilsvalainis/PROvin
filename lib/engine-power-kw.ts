@@ -86,6 +86,7 @@ export function formatEnginePowerKwLabel(kw: number | null | undefined): string 
 }
 
 export type IrissOrderPowerKwSource = {
+  powerKw?: string;
   engineType?: string;
   equipmentRequired?: string;
   equipmentDesired?: string;
@@ -95,6 +96,10 @@ export type IrissOrderPowerKwSource = {
 
 /** IRISS pasūtījums: dzinēja tips, aprīkojums, piezīmes, marka/modelis. */
 export function formatIrissOrderPowerKwLabel(src: IrissOrderPowerKwSource): string {
+  const direct = (src.powerKw ?? "").trim();
+  if (direct) {
+    return direct.toLowerCase().includes("kw") ? direct : formatListingPowerKwLabel(direct);
+  }
   return formatEnginePowerKwLabel(
     parseEnginePowerKwFromTexts(
       [src.engineType, src.equipmentRequired, src.equipmentDesired, src.notes, src.brandModel],
