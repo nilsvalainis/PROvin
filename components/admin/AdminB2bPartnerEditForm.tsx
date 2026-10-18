@@ -111,7 +111,7 @@ export function AdminB2bPartnerEditForm({ partner }: { partner: B2bPartnerPublic
           <input className={ADMIN_PARTNER_INPUT_CLASS} value={form.companyName} onChange={set("companyName")} />
         </label>
         <label className="block min-w-0">
-          <span className={ADMIN_PARTNER_LABEL_CLASS}>Reģ. nr.</span>
+          <span className={ADMIN_PARTNER_LABEL_CLASS}>Reģ. Nr.</span>
           <input className={ADMIN_PARTNER_INPUT_CLASS} value={form.companyReg} onChange={set("companyReg")} />
         </label>
         <label className="block min-w-0 sm:col-span-2">
@@ -150,9 +150,9 @@ export function AdminB2bPartnerEditForm({ partner }: { partner: B2bPartnerPublic
       </div>
 
       <div className="mt-6 border-t border-slate-200/80 pt-5">
-        <h3 className="text-sm font-semibold text-slate-800">Pakalpojumi un cenas</h3>
+        <h3 className="text-sm font-semibold text-slate-800">Vecie kredītu iepakojumi (mantotie)</h3>
         <p className="mt-1 text-xs leading-relaxed text-slate-500">
-          Dīlera dati pēc noklusējuma izslēgti. Tukša cena = kataloga noklusējums (
+          Attiecas tikai uz agrāk pirktajiem kredītiem un vairāku VIN pasūtījumu ar kredītiem. Jaunie pirkumi notiek no konta atlikuma (skat. „Individuālās cenas”). Tukša cena = kataloga noklusējums (
           {formatB2bEuroFromCents(B2B_BUSINESS_PACKS[0]!.unitCents)} / {formatB2bEuroFromCents(B2B_BUSINESS_PACKS[1]!.unitCents)}{" "}
           Audits; {formatB2bEuroFromCents(B2B_DEALER_PACKS[0]!.unitCents)} /{" "}
           {formatB2bEuroFromCents(B2B_DEALER_PACKS[1]!.unitCents)} Dīlera).

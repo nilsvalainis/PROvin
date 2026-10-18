@@ -5,6 +5,9 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { isSafeB2bPartnerId, toPublicPartner } from "@/lib/b2b-partner-account";
 import { getB2bPartnerById, markB2bPartnerAdminSeen } from "@/lib/b2b-partner-store";
 import { requireAdminPage } from "@/lib/admin-auth";
+import { AdminB2bPartnerWallet } from "@/components/admin/AdminB2bPartnerWallet";
+import { readB2bWallet } from "@/lib/b2b-wallet-store";
+import { buildB2bWalletView } from "@/lib/b2b-wallet-view";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +30,7 @@ export default async function AdminPartnerDetailPage({ params }: Props) {
     await markB2bPartnerAdminSeen(id);
   }
   const partner = toPublicPartner(record);
+  const wallet = await readB2bWallet(id);
 
   return (
     <div className="w-full max-w-none">
@@ -45,6 +49,11 @@ export default async function AdminPartnerDetailPage({ params }: Props) {
           {partner.status === "active" ? "Aktīvs" : "Bloķēts"}
         </p>
       </AdminDashboardHeaderWithMenu>
+      <AdminB2bPartnerWallet
+        partnerId={partner.id}
+        initialWallet={buildB2bWalletView(wallet, record.walletPrices, 200)}
+        initialOverrides={record.walletPrices}
+      />
       <AdminB2bPartnerEditForm partner={partner} />
     </div>
   );
