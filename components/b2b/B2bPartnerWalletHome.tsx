@@ -161,7 +161,20 @@ function ProductCard({
       {product === "dealer_pro" ? (
         <div className="mt-4">
           <p className={B2B_LABEL_CLASS}>{t("walletReportLang")}</p>
-          <div className="flex rounded-full border border-white/12 p-0.5" role="radiogroup" aria-label={t("walletReportLang")}>
+          <div
+            className="inline-flex gap-0.5 rounded-lg border border-white/12 bg-white/[0.03] p-0.5"
+            role="radiogroup"
+            aria-label={t("walletReportLang")}
+            onKeyDown={(event) => {
+              const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
+              if (!step) return;
+              event.preventDefault();
+              const langs = B2B_WALLET_REPORT_LANGS;
+              const next = langs[(langs.indexOf(reportLang) + step + langs.length) % langs.length];
+              onReportLang(next);
+              event.currentTarget.querySelector<HTMLButtonElement>(`[data-lang="${next}"]`)?.focus();
+            }}
+          >
             {B2B_WALLET_REPORT_LANGS.map((lang) => {
               const active = lang === reportLang;
               return (
@@ -170,11 +183,11 @@ function ProductCard({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  className={
-                    active
-                      ? "flex-1 rounded-full bg-white/12 px-3 py-1.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-zinc-100"
-                      : "flex-1 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-zinc-500 transition-colors hover:text-zinc-200"
-                  }
+                  tabIndex={active ? 0 : -1}
+                  data-lang={lang}
+                  className={`h-7 w-11 rounded-md text-[0.66rem] font-semibold tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-300/70 ${
+                    active ? "bg-zinc-300/90 text-zinc-900" : "text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100"
+                  }`}
                   onClick={() => onReportLang(lang)}
                 >
                   {lang.toUpperCase()}
