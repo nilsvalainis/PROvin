@@ -3,14 +3,21 @@
  * un lielo darbu karte. Tikai fakti, bez verdikta un bez EUR.
  */
 import {
-  dealerComponentLv,
-  detectDealerComponents,
   extractDealerFactsFromServiceWorks,
   isDealerCampaignText,
-  type DealerComponentId,
   type DealerFact,
   type DealerFacts,
 } from "@/lib/admin-ai-dealer-facts";
+import {
+  hasAnyMajorAssemblyRepair,
+  hasNonCampaignRepairAction,
+  isCheckNoFaultWork,
+  isCourtesyCarWork,
+  isDealerSoftwareWork,
+  isMajorAssemblyRepairWork,
+  isRoutineMaintenanceWork,
+  MAJOR_ASSEMBLY_SPECS,
+} from "@/lib/dealer-major-works";
 import {
   translateClientReportNone,
   translateClientReportStatic,
@@ -59,18 +66,6 @@ export type DealerVisitSummary = {
 };
 
 const WARRANTY_RE = /garantij|warranty|garantie|warrenty|kulanc/i;
-const GEARBOX_RE =
-  /kārba|ātrumkār|gearbox|transmission|getriebe|versnellingsbak|växellåd|dsg\b|dct\b|cvt\b/i;
-const BODY_GLASS_RE =
-  /vējstikl|stikla\s+maiņ|bamper|spārn|durvju|panel|krāso|pārkrās|body\s+repair|windscreen|windshield|bumper|fender|lackier|karosser|scheibe/i;
-
-const MAJOR_COMPONENT_ORDER: { id: DealerComponentId | "gearbox" | "body_glass"; label: string }[] = [
-  { id: "timing_chain", label: "Sadales ķēde" },
-  { id: "gearbox", label: "Ātrumkārba" },
-  { id: "dual_mass_flywheel", label: "Divmasu spararats" },
-  { id: "turbo", label: "Turbokompresors" },
-  { id: "body_glass", label: "Virsbūve / stikls" },
-];
 
 function escapeHtml(s: string): string {
   return s
@@ -110,9 +105,16 @@ function chronoRows(rows: readonly AutoRecordsServiceWorkRow[]): AutoRecordsServ
 export function classifyDealerVisitKind(works: string): DealerVisitKind {
   const text = works ?? "";
   if (looksLikeCbsKeyReadWorks(text)) return "key_read";
-  if (isDealerCampaignText(text)) return "campaign";
   if (WARRANTY_RE.test(text)) return "warranty";
-  if (looksLikeIntervalMaintenanceWorks(text)) return "maintenance";
+  if (hasAnyMajorAssemblyRepair(text)) return "repair";
+  const independentRepair = hasNonCampaignRepairAction(text);
+  if (isDealerCampaignText(text) && !independentRepair) return "campaign";
+  if (isDealerSoftwareWork(text) && !independentRepair) return "campaign";
+  if (looksLikeIntervalMaintenanceWorks(text) || isRoutineMaintenanceWork(text)) return "maintenance";
+  if (isCheckNoFaultWork(text) && !independentRepair) return "maintenance";
+  if (isCourtesyCarWork(text) && !independentRepair) return "warranty";
+  if (independentRepair) return "repair";
+  if (isDealerCampaignText(text)) return "campaign";
   return "repair";
 }
 
@@ -207,24 +209,18 @@ function factKmLabel(fact: DealerFact): string {
   return `${groupDigits(fact.odometerKm)} km`;
 }
 
+function factSearchText(fact: DealerFact): string {
+  return [fact.works, fact.worksOriginal, fact.worksLv].filter(Boolean).join("\n");
+}
+
 function majorWorkHits(facts: DealerFacts): DealerMajorWorkHit[] {
   const out: DealerMajorWorkHit[] = [];
   const seen = new Set<string>();
-  for (const spec of MAJOR_COMPONENT_ORDER) {
+  for (const spec of MAJOR_ASSEMBLY_SPECS) {
     for (const fact of facts.rows) {
-      const text = `${fact.works} ${fact.components.map(dealerComponentLv).join(" ")}`;
-      let hit = false;
-      if (spec.id === "gearbox") {
-        hit = fact.components.includes("gearbox_oil") || GEARBOX_RE.test(text);
-      } else if (spec.id === "body_glass") {
-        hit = BODY_GLASS_RE.test(text);
-      } else {
-        hit = fact.components.includes(spec.id) || detectDealerComponents(text).includes(spec.id);
-      }
-      if (!hit) continue;
-      const key = spec.id;
-      if (seen.has(key)) continue;
-      seen.add(key);
+      if (!isMajorAssemblyRepairWork(factSearchText(fact), spec.id)) continue;
+      if (seen.has(spec.id)) continue;
+      seen.add(spec.id);
       out.push({
         id: spec.id,
         label: spec.label,
@@ -279,7 +275,7 @@ export function buildDealerVisitSummaryHtml(
   const campaigns = translateClientReportYesNo(summary.campaignsDone, lang);
   const major =
     summary.majorWorks.length > 0
-      ? summary.majorWorks.map((w) => `${t(w.label)} (${w.factId})`).join(", ")
+      ? summary.majorWorks.map((w) => t(w.label)).join(", ")
       : t("Nav fiksēts");
   const cells: { k: string; v: string }[] = [
     { k: t("Vizītes"), v: String(summary.visitCount) },
@@ -306,8 +302,8 @@ export function buildDealerMajorWorksHtml(facts: DealerFacts, lang: ClientReport
   const t = (lv: string) => translateClientReportStatic(lv, lang);
   const items = hits
     .map((w) => {
-      const meta = [w.factId, w.date, w.km].filter(Boolean).join(" · ");
-      return `<li class="pdf-svc-major__item"><b>${escapeHtml(t(w.label))}</b><span>${escapeHtml(meta)}</span></li>`;
+      const meta = [w.date, w.km].filter(Boolean).join(" · ");
+      return `<li class="pdf-svc-major__item"><b>${escapeHtml(t(w.label))}</b><span class="pdf-svc-major__meta">${escapeHtml(meta)}</span></li>`;
     })
     .join("");
   return `<aside class="pdf-svc-major">

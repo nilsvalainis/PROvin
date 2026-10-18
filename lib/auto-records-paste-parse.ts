@@ -48,6 +48,38 @@ export function sanitizeMileageCountryField(raw: string): string {
   return normalized;
 }
 
+/** Avots devis tikai mēnesi (`07.2026` / `2026-07`) - dienu neizdomā. */
+export function isMonthPrecisionDate(raw: string): boolean {
+  const t = raw.trim().replace(/\.$/, "");
+  return /^\d{1,2}\.\d{4}$/.test(t) || /^\d{4}-\d{2}$/.test(t);
+}
+
+/**
+ * MM.YYYY paliek MM.YYYY (neizdomā 01. dienu). DD.MM.YYYY / ISO paliek dienas datums.
+ * Nobraukuma apvienošanai joprojām lietot `formatAutoRecordsDateForOutput`.
+ */
+export function formatSourceDatePreservingMonth(raw: string): string {
+  const t = raw.trim().replace(/\.$/, "");
+  if (!t) return "";
+  const monthYear = t.match(/^(\d{1,2})\.(\d{4})$/);
+  if (monthYear) {
+    const m = Number(monthYear[1]);
+    const y = Number(monthYear[2]);
+    if (m >= 1 && m <= 12 && y >= 1900 && y <= 2100) {
+      return `${String(m).padStart(2, "0")}.${y}`;
+    }
+  }
+  const isoMonth = t.match(/^(\d{4})-(\d{2})$/);
+  if (isoMonth) {
+    const y = Number(isoMonth[1]);
+    const m = Number(isoMonth[2]);
+    if (m >= 1 && m <= 12 && y >= 1900 && y <= 2100) {
+      return `${String(m).padStart(2, "0")}.${y}`;
+    }
+  }
+  return formatAutoRecordsDateForOutput(raw);
+}
+
 /** ISO (YYYY-MM-DD) → DD.MM.YYYY; MM.YYYY → 01.MM.YYYY; jau DD.MM.YYYY → normalizē padding; nezināma diena `00.` → `01.`. */
 export function formatAutoRecordsDateForOutput(raw: string): string {
   const t = cleanDateStr(raw.trim());

@@ -34,6 +34,7 @@ import { clipAiContextRaw } from "@/lib/admin-ai-context-raw";
 import {
   autoRecordsMileageRowHasData,
   formatAutoRecordsDateForOutput,
+  formatSourceDatePreservingMonth,
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
@@ -100,7 +101,7 @@ export type CopilotApplyResult = {
 };
 
 function normalizeIncidentRow(a: CopilotIncidentAction): LtabIncidentRow | null {
-  const csngDate = formatAutoRecordsDateForOutput(a.date.trim());
+  const csngDate = formatSourceDatePreservingMonth(a.date.trim());
   const rawLoss = a.lossAmount.trim();
   const lossAmount = normalizeLossAmountEurDisplay(rawLoss) || rawLoss;
   const incidentNo = normalizeCountryNameLv(a.country.trim()) || a.country.trim();

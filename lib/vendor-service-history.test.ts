@@ -29,6 +29,10 @@ describe("dīlera vizītes virsraksts vēstures kopsavilkumā", () => {
     expect(lifecycleDealerVisitTitle("Apkope")).toBe("Servisa apmeklējums");
     expect(lifecycleDealerVisitTitle("Regulārā apkope", "Apkope")).toBe("Servisa apmeklējums");
     expect(lifecycleDealerVisitTitle("Update DVD Road Map Europe Professional")).toBe("Servisa apmeklējums");
+    expect(looksLikeIntervalMaintenanceWorks("Автоматическая коробка передач: замена масла и фильтра")).toBe(
+      true,
+    );
+    expect(lifecycleDealerVisitTitle("Automatic transmission: oil and filter change")).toBe("Apkope");
   });
 });
 

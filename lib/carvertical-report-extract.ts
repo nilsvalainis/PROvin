@@ -8,6 +8,7 @@
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import {
   formatAutoRecordsDateForOutput,
+  formatSourceDatePreservingMonth,
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
@@ -33,19 +34,25 @@ import { mergeVendorServiceEntries, type VendorServiceEntry } from "@/lib/vendor
 const DAMAGE_VALUE_LABEL_RE = /^Aptuven[āa]\s+iepriek[šs]\s+g[ūu]to\s+boj[āa]jumu\s+v[ēe]rt[īi]ba/i;
 const DAMAGE_HEADER_LOOKBACK = 40;
 
-type DatedCountryLine = { index: number; date: string; country: string };
+type DatedCountryLine = { index: number; date: string; incidentDate: string; country: string };
 
-function normalizeMonthDate(raw: string): string {
+function normalizeMonthDate(raw: string): { date: string; incidentDate: string } {
   const t = raw.trim().replace(/\.$/, "");
   const ddmm = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-  if (ddmm) return formatAutoRecordsDateForOutput(t);
+  if (ddmm) {
+    const date = formatAutoRecordsDateForOutput(t);
+    return { date, incidentDate: date };
+  }
   const mmYyyy = t.match(/^(\d{1,2})\.(\d{4})$/);
   if (mmYyyy) {
     const mo = Number.parseInt(mmYyyy[1]!, 10);
-    if (mo < 1 || mo > 12) return "";
-    return formatAutoRecordsDateForOutput(`${mmYyyy[1]}.${mmYyyy[2]}`);
+    if (mo < 1 || mo > 12) return { date: "", incidentDate: "" };
+    return {
+      date: formatAutoRecordsDateForOutput(`${mmYyyy[1]}.${mmYyyy[2]}`),
+      incidentDate: formatSourceDatePreservingMonth(`${mmYyyy[1]}.${mmYyyy[2]}`),
+    };
   }
-  return "";
+  return { date: "", incidentDate: "" };
 }
 
 /** „02.2019.Vācija” / „10.2025.Latvija” un datums atsevišķā rindā + valsts nākamajā. */
@@ -55,20 +62,20 @@ function collectDatedCountryLines(lines: string[]): DatedCountryLine[] {
     const line = lines[i]!.trim();
     const inline = line.match(/^(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.\s*(.+)$/);
     if (inline) {
-      const date = normalizeMonthDate(inline[1]!);
+      const { date, incidentDate } = normalizeMonthDate(inline[1]!);
       const match = matchLeadingCountryNameLv(inline[2]!);
       if (date && match) {
-        out.push({ index: i, date, country: match.country });
+        out.push({ index: i, date, incidentDate, country: match.country });
         continue;
       }
     }
     const bare = line.match(/^(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.?$/);
     if (bare) {
-      const date = normalizeMonthDate(bare[1]!);
+      const { date, incidentDate } = normalizeMonthDate(bare[1]!);
       const next = (lines[i + 1] ?? "").trim();
       const match = next ? matchLeadingCountryNameLv(next) : null;
       if (date && match && match.rest === "") {
-        out.push({ index: i, date, country: match.country });
+        out.push({ index: i, date, incidentDate, country: match.country });
       }
     }
   }
@@ -145,10 +152,10 @@ function parseOdometerRows(lines: string[]): AutoRecordsServiceRow[] {
     const line = raw.trim();
     const m = line.match(/^(\d{1,2}(?:\.\d{1,2})?\.\d{4})\.\s*([\d][\d\s]*)\s*km(?![a-zāčēģīķļņšūž])/i);
     if (!m) continue;
-    const date = normalizeMonthDate(m[1]!);
+    const parsed = normalizeMonthDate(m[1]!);
     const odometer = normalizeAutoRecordsOdometer(m[2]!);
-    if (!date || !odometer) continue;
-    rows.push({ date, odometer, country: "" });
+    if (!parsed.date || !odometer) continue;
+    rows.push({ date: parsed.date, odometer, country: "" });
   }
   return rows;
 }
@@ -175,7 +182,7 @@ function parseDamageRows(
     const conversion = convertAmountTextToEur(amountRaw);
     if (!conversion) continue;
     incidents.push({
-      csngDate: header.date,
+      csngDate: header.incidentDate || header.date,
       lossAmount: conversion.display,
       incidentNo: header.country,
     });

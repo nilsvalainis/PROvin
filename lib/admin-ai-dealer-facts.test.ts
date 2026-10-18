@@ -203,6 +203,12 @@ describe("extractDealerFacts", () => {
     expect(isDealerCampaignText("atsaukums")).toBe(true);
     expect(isDealerCampaignText("servisa akcija")).toBe(true);
     expect(extractDealerCampaignCode("Type: Recall 21C026")).toBe("21C026");
+    expect(extractDealerCampaignCode("acc. To QB S29975")).toBe("S29975");
+    expect(extractDealerCampaignCode("QB-29904")).toBe("29904");
+    expect(extractDealerCampaignCode("QB S 29846")).toBe("S29846");
+    expect(extractDealerCampaignCode("QB R29945")).toBe("R29945");
+    expect(isDealerCampaignText("Aktion:Ladeluftschlauch ersetzt")).toBe(false);
+    expect(isDealerCampaignText("Connector park acc. To QB S29975")).toBe(true);
   });
 
   it("bez OneAuto datiem brīfs tukšs", () => {

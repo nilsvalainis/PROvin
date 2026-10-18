@@ -3,7 +3,7 @@
  */
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import { ltabRowHasData } from "@/lib/admin-source-blocks";
-import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+import { formatSourceDatePreservingMonth } from "@/lib/auto-records-paste-parse";
 import type { CarVerticalDamageDetailRow } from "@/lib/carvertical-pdf-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { extractGroupListFromBlock, extractZoneListFromBlock } from "@/lib/damage-zones";
@@ -29,7 +29,7 @@ const EVENT_START_RE = /(\d{1,2})\.(\d{4})[\s\S]{0,600}?zaudējumu\s+apjoms/gi;
 
 function monthYearToDateDisplay(month: string, year: string): string {
   const mo = month.padStart(2, "0");
-  return formatAutoRecordsDateForOutput(`01.${mo}.${year}`);
+  return formatSourceDatePreservingMonth(`${mo}.${year}`);
 }
 
 function dedupeIncidents(rows: LtabIncidentRow[]): LtabIncidentRow[] {
