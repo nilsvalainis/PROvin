@@ -67,6 +67,22 @@ export type DealerVisitSummary = {
 
 const WARRANTY_RE = /garantij|warranty|garantie|warrenty|kulanc/i;
 
+/** Tukša rinda vai tikai vispārīgs servisa nosaukums, ne remonts. */
+const GENERIC_SERVICE_VISIT_RE =
+  /^(serviss|service|wartung|apkope|servisa(\s+apmekl[ēe]jums)?|service\s+visit|inspektion|сервис|обслуживание)$/iu;
+
+export function isGenericDealerServiceVisit(works: string): boolean {
+  const folded = (works ?? "")
+    .split(/\n+/)
+    .map((line) => line.replace(/[:.]+$/g, "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!folded) return false;
+  return GENERIC_SERVICE_VISIT_RE.test(folded);
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -111,6 +127,7 @@ export function classifyDealerVisitKind(works: string): DealerVisitKind {
   if (isDealerCampaignText(text) && !independentRepair) return "campaign";
   if (isDealerSoftwareWork(text) && !independentRepair) return "campaign";
   if (looksLikeIntervalMaintenanceWorks(text) || isRoutineMaintenanceWork(text)) return "maintenance";
+  if (isGenericDealerServiceVisit(text) && !independentRepair) return "maintenance";
   if (isCheckNoFaultWork(text) && !independentRepair) return "maintenance";
   if (isCourtesyCarWork(text) && !independentRepair) return "warranty";
   if (independentRepair) return "repair";

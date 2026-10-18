@@ -41,6 +41,17 @@ describe("dealer visit kind and gaps", () => {
     expect(classifyDealerVisitKind(KEY_READ_HISTORY_LABEL)).toBe("key_read");
   });
 
+  it("generic Serviss/Service/Wartung is Apkope, not Remonts", () => {
+    expect(classifyDealerVisitKind("Serviss")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Serviss.")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Service")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Wartung")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Apkope")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Сервис")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Serviss\nSadales ķēdes komplekta maiņa")).toBe("repair");
+    expect(classifyDealerVisitKind("Remonts")).toBe("repair");
+  });
+
   it("robs virs 24 mēn. vai 30 000 km ir fakts, ne verdikts", () => {
     const gap = visitGapBetween(
       row("01.01.2018", "40000", "Eļļa"),

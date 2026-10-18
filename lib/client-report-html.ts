@@ -2901,13 +2901,12 @@ ${sourceDotColorCss()}
       .pdf-svc-major__item span,.pdf-svc-major__meta{font-size:10.5px;color:#64748b;font-variant-numeric:tabular-nums;}
       .pdf-svc-year-block{break-before:auto;break-after:auto;page-break-after:auto;break-inside:auto;page-break-inside:auto;}
       .pdf-svc-visit{
-        display:grid;grid-template-columns:88px 18px minmax(0,1fr);gap:0 12px;align-items:stretch;
+        display:grid;grid-template-columns:78px 18px minmax(0,1fr);gap:0 12px;align-items:stretch;
         break-inside:avoid;page-break-inside:avoid;
       }
-      .pdf-svc-when{padding:9px 0;text-align:right;}
       .pdf-svc-date{
-        display:block;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;
-        white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.3;
+        padding:9px 0;font-size:var(--pdf-fs-base);font-weight:600;color:#0f172a;
+        white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.3;text-align:right;
       }
       .pdf-svc-rail{
         position:relative;display:block;align-self:stretch;justify-self:center;width:2px;background:#D7E4F5;
@@ -2925,7 +2924,7 @@ ${sourceDotColorCss()}
       .pdf-svc-place{margin:0;font-size:var(--pdf-fs-base);font-weight:700;line-height:1.3;color:#0f172a;}
       .pdf-svc-place span{font-weight:500;color:#64748b;}
       .pdf-svc-km{
-        display:inline-block;margin-top:4px;padding:3px 8px;border-radius:6px;background:#F1F5F9;
+        flex:none;margin-left:auto;padding:3px 8px;border-radius:6px;background:#F1F5F9;
         font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
@@ -2959,7 +2958,7 @@ ${sourceDotColorCss()}
       @media screen and (max-width: 520px){
         .pdf-svc-summary{grid-template-columns:1fr 1fr;}
         .pdf-svc-visit{display:flex;flex-direction:column;gap:4px;margin:0 0 10px;padding:10px 12px;border:1px solid var(--pdf-line);border-radius:10px;background:#fff;}
-        .pdf-svc-when{text-align:left;padding:0;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;}
+        .pdf-svc-date{text-align:left;padding:0;}
         .pdf-svc-rail{display:none;}
         .pdf-svc-box{margin:0;padding:0;}
         .pdf-svc-gap{margin-left:0;}
