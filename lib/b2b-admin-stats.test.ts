@@ -4,7 +4,7 @@ import { applyB2bWalletPurchase, applyB2bWalletRefund, applyB2bWalletTopup, empt
 
 describe("B2B admin stats", () => {
   it("counts revenue, orders and no-data rate per partner, product and month", () => {
-    let wallet = applyB2bWalletTopup(emptyB2bWallet(), {
+    const wallet = applyB2bWalletTopup(emptyB2bWallet(), {
       amountCents: 20_000,
       sessionId: "cs_s",
       now: new Date("2026-10-02T10:00:00.000Z"),
