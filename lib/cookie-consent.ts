@@ -10,6 +10,16 @@ export const PENDING_ATTR_KEY = "provin_pending_attr";
 /** Pirmās piekrišanas brīdī iestatāma sīkdatne (analītika/izcelsme). */
 export const ATTR_COOKIE_NAME = "provin_attr";
 
+/** Serverim lasāma piekrišanas karodziņa sīkdatne (localStorage nav pieejams checkout/webhook). */
+export const CONSENT_COOKIE_NAME = "provin_consent";
+
+export const CONSENT_COOKIE_MAX_AGE = 180 * 24 * 60 * 60;
+
+export function isConsentCookieGranted(raw: string | null | undefined): boolean {
+  const v = raw?.trim().toLowerCase();
+  return v === "1" || v === "true";
+}
+
 export type ConsentState = {
   /** Analītika, UTM, klikšķa ID un pirmās / pēdējās lapas saglabāšana */
   analytics: boolean;

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Script from "next/script";
 import { Inter } from "next/font/google";
 import { ConsentAwareAnalytics } from "@/components/ConsentAwareAnalytics";
-import { getGaMeasurementId, getTikTokPixelId } from "@/lib/analytics-public";
+import { getGaMeasurementId, getMetaPixelId, getTikTokPixelId } from "@/lib/analytics-public";
 import { GTAG_CONSENT_DEFAULT_SNIPPET } from "@/lib/google-consent";
 import { htmlLangForLocale } from "@/lib/seo-public-metadata";
 import { SiteThemeProvider } from "@/components/providers/SiteThemeProvider";
@@ -34,6 +34,7 @@ export function RootHtml({
 }) {
   const gaMeasurementId = getGaMeasurementId();
   const tiktokPixelId = getTikTokPixelId();
+  const metaPixelId = getMetaPixelId();
   const htmlLang = htmlLangForLocale(lang);
   return (
     <html
@@ -60,6 +61,7 @@ export function RootHtml({
           <ConsentAwareAnalytics
             gaMeasurementId={gaMeasurementId}
             tiktokPixelId={tiktokPixelId}
+            metaPixelId={metaPixelId}
           />
         </SiteThemeProvider>
       </body>

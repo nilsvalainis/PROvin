@@ -19,6 +19,7 @@ import {
   homeEditorialSectionTitleClass,
 } from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
+import { followStripeCheckoutUrl } from "@/lib/meta-pixel";
 
 const SELECT_CARD_ICONS: LucideIcon[] = [Layers, Filter, AlertTriangle, MessageSquare];
 
@@ -150,14 +151,19 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
           withdrawalConsent: true,
         }),
       });
-      const data = (await res.json()) as { url?: string; error?: string; errors?: string[] };
+      const data = (await res.json()) as {
+        url?: string;
+        eventId?: string;
+        value?: number;
+        error?: string;
+        errors?: string[];
+      };
       if (!res.ok) {
         const msg = data.errors?.[0] ?? data.error ?? tOrder("errors.checkoutFailed");
         setErrMsg(msg);
         return;
       }
-      if (data.url) {
-        window.location.href = data.url;
+      if (followStripeCheckoutUrl(data)) {
         return;
       }
       setErrMsg(tOrder("errors.noUrl"));

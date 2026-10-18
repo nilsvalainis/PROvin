@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Footer } from "@/components/Footer";
 import { GoogleAdsPurchaseConversion } from "@/components/GoogleAdsPurchaseConversion";
+import { MetaPurchaseConversion } from "@/components/MetaPurchaseConversion";
 import { getGoogleAdsPurchaseLabel } from "@/lib/google-ads";
 import { getPaidCheckoutConversionValueEur } from "@/lib/google-ads-purchase-value";
 import { resolveThanksPageConversion } from "@/lib/google-ads-thanks-conversion";
@@ -30,10 +31,11 @@ export default async function ThanksPage({ searchParams, params }: Props) {
   const t = await getTranslations({ locale, namespace: "Thanks" });
   const sid = sp.session_id;
   // Konversija tikai apmaksātai Stripe sesijai (neapmaksāta / viltota / Stripe kļūda = nekā).
+  const paidValue = sid ? await getPaidCheckoutConversionValueEur(sid) : null;
   const conversion = await resolveThanksPageConversion({
     sessionId: sid,
     label: getGoogleAdsPurchaseLabel(),
-    getPaidValueEur: getPaidCheckoutConversionValueEur,
+    getPaidValueEur: async () => paidValue,
   });
 
   return (
@@ -76,6 +78,7 @@ export default async function ThanksPage({ searchParams, params }: Props) {
           label={conversion.label}
         />
       ) : null}
+      {sid && paidValue != null ? <MetaPurchaseConversion transactionId={sid} value={paidValue} /> : null}
     </div>
   );
 }

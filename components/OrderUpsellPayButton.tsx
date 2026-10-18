@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { followStripeCheckoutUrl } from "@/lib/meta-pixel";
 
 export function OrderUpsellPayButton({ token, label }: { token: string; label: string }) {
   const [busy, setBusy] = useState(false);
@@ -21,13 +22,17 @@ export function OrderUpsellPayButton({ token, label }: { token: string; label: s
             body: JSON.stringify({ token }),
           })
             .then(async (res) => {
-              const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
-              if (!res.ok || !data.url) {
+              const data = (await res.json().catch(() => ({}))) as {
+                url?: string;
+                eventId?: string;
+                value?: number;
+                error?: string;
+              };
+              if (!res.ok || !followStripeCheckoutUrl(data)) {
                 setError("Apmaksas saiti šobrīd neizdevās atvērt. Uzrakstiet uz info@provin.lv.");
                 setBusy(false);
                 return;
               }
-              window.location.href = data.url;
             })
             .catch(() => {
               setError("Tīkla kļūda. Mēģiniet vēlreiz.");

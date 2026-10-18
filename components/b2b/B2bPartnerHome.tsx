@@ -9,6 +9,7 @@ import { getB2bCatalogPlan, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy
 import type { B2bPartnerPriceOverrides } from "@/lib/b2b-partner-account";
 import { emptyB2bCreditRemaining, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
 import { isPlausibleListingUrl, isValidVin } from "@/lib/order-field-validation";
+import { trackMetaLead } from "@/lib/meta-pixel";
 import {
   isPartnerAuditPurpose,
   type B2bPartnerAuditPurpose,
@@ -217,6 +218,7 @@ export function B2bPartnerHome({
 
     setSubmitting(true);
     try {
+      trackMetaLead();
       const res = await fetch("/api/partner/orders", {
         method: "POST",
         credentials: "include",

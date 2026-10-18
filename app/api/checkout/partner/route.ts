@@ -16,6 +16,13 @@ import { getRequestOrigin } from "@/lib/request-origin";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { getStripe } from "@/lib/stripe";
 import { getCheckoutIntakeCustomFields, stripeCheckoutLocale } from "@/lib/stripe-session";
+import { createMetaEventId } from "@/lib/meta-pixel";
+import {
+  checkoutMetaClientFields,
+  notifyMetaInitiateCheckout,
+  resolveInitiateCheckoutValueEur,
+  stripeMetaCapiMetadataFromRequest,
+} from "@/lib/meta-capi";
 
 export const runtime = "nodejs";
 
@@ -133,6 +140,7 @@ export async function POST(req: Request) {
     metadata: {
       checkout_line: planRaw,
       fulfillment: "b2b_pack",
+      ...stripeMetaCapiMetadataFromRequest(req),
       partner_id: partner.id,
       pack_qty: String(qtyN),
       report_delivery: "email",
@@ -153,5 +161,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: copy.errors.sessionFailed }, { status: 500 });
   }
 
-  return NextResponse.json({ url: session.url });
+  const eventId = createMetaEventId();
+  const value = resolveInitiateCheckoutValueEur(session.amount_total, unitCents * qtyN);
+  void notifyMetaInitiateCheckout({
+    req,
+    eventId,
+    value,
+    email: partner.email,
+    phone: partner.phone,
+  });
+
+  return NextResponse.json({ url: session.url, ...checkoutMetaClientFields(eventId, value) });
 }

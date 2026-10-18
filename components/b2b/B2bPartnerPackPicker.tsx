@@ -11,6 +11,7 @@ import {
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 import type { B2bPartnerPriceOverrides } from "@/lib/b2b-partner-account";
+import { followStripeCheckoutUrl } from "@/lib/meta-pixel";
 
 function packLines(plan: B2bPartnerPlanId, t: ReturnType<typeof useTranslations>): string[] {
   if (plan === "business") {
@@ -78,16 +79,20 @@ export function B2bPartnerPackPicker({
           withdrawalConsent,
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        eventId?: string;
+        value?: number;
+        error?: string;
+      };
       if (res.status === 401) {
         setPayError(t("payError"));
         return;
       }
-      if (!res.ok || !data.url) {
+      if (!res.ok || !followStripeCheckoutUrl(data)) {
         setPayError(data.error === "dealer_disabled" ? t("dealerDisabled") : t("payError"));
         return;
       }
-      window.location.assign(data.url);
     } catch {
       setPayError(t("payNetwork"));
     } finally {

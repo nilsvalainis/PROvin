@@ -27,7 +27,7 @@
       },
       {
         "title": "6. Dritte",
-        "body": "Zahlungen: Stripe. Hosting der Website: Ihr gewählter Anbieter (zum Beispiel Vercel). Vercel Web Analytics erfasst aggregierte Besuchszahlen und Seitenaufrufe (First-Party-Statistik im Hosting). Google Analytics 4 und TikTok Pixel laden nur, wenn Sie im Cookie-Banner „Analysen” zustimmen; fehlt die betreffende ID, werden die Skripte nicht geladen. Kontakt: E-Mail (Fußbereich) und WhatsApp (Fußbereich und Schaltfläche auf der Website)."
+        "body": "Zahlungen: Stripe. Hosting der Website: Ihr gewählter Anbieter (zum Beispiel Vercel). Vercel Web Analytics erfasst aggregierte Besuchszahlen und Seitenaufrufe (First-Party-Statistik im Hosting). Google Analytics 4, TikTok Pixel und Meta Pixel laden nur, wenn Sie im Cookie-Banner „Analysen” zustimmen; fehlt die betreffende ID, werden die Skripte nicht geladen. Nach der Einwilligung kann die Meta Conversions API dasselbe Kaufereignis vom Server senden (E-Mail und Telefon werden gehasht). Kontakt: E-Mail (Fußbereich) und WhatsApp (Fußbereich und Schaltfläche auf der Website)."
       },
       {
         "title": "7. Speicherdauer",
@@ -127,7 +127,7 @@
   },
   "Cookies": {
     "bannerTitle": "Cookies und Datenschutz",
-    "bannerText": "Wir verwenden erforderliche Cookies, damit die Website funktioniert. Stimmen Sie Analysen zu, können wir erste und letzte Marketingseiten, UTM-Parameter und Anzeigen-Klick-IDs (gclid, fbclid, ttclid) speichern, aggregierte Besuche zählen sowie Google Analytics und/oder TikTok Pixel laden (sofern konfiguriert), um zu verstehen, woher Besucher kommen.",
+    "bannerText": "Wir verwenden erforderliche Cookies, damit die Website funktioniert. Stimmen Sie Analysen zu, können wir erste und letzte Marketingseiten, UTM-Parameter und Anzeigen-Klick-IDs (gclid, fbclid, ttclid) speichern, aggregierte Besuche zählen sowie Google Analytics, TikTok Pixel und/oder Meta Pixel laden (sofern konfiguriert), um zu verstehen, woher Besucher kommen.",
     "reject": "Nur erforderliche",
     "acceptAnalytics": "Analysen und Speicherung zustimmen",
     "privacyLink": "Datenschutzerklärung"

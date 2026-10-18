@@ -1,4 +1,5 @@
 import "server-only";
+import { getMetaPixelId as readMetaPixelId } from "@/lib/meta-pixel";
 
 /**
  * Publiskās / admin statistikas saites no env — bez slepenām atslēgām.
@@ -45,4 +46,9 @@ export function getTikTokPixelId(): string | null {
   const raw = fromEnv || "D8CKFMRC77UA4F3IGKA0";
   if (!/^[A-Z0-9]{8,32}$/i.test(raw)) return null;
   return raw.toUpperCase();
+}
+
+/** Meta Pixel ID — publisks; tukšs = no-op. */
+export function getMetaPixelId(): string | null {
+  return readMetaPixelId();
 }

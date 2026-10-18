@@ -13,6 +13,13 @@ import {
 } from "@/lib/stripe-session";
 import { stripeAttributionMetadataFromRequest } from "@/lib/ad-attribution";
 import { ATTR_COOKIE_NAME } from "@/lib/cookie-consent";
+import { createMetaEventId } from "@/lib/meta-pixel";
+import {
+  checkoutMetaClientFields,
+  notifyMetaInitiateCheckout,
+  resolveInitiateCheckoutValueEur,
+  stripeMetaCapiMetadataFromRequest,
+} from "@/lib/meta-capi";
 import { stripeCheckoutProductMetadata } from "@/lib/stripe-checkout-metadata";
 import {
   getTestPricingPlan,
@@ -224,6 +231,7 @@ export async function POST(req: Request) {
     metadata: {
       ...stripeCheckoutProductMetadata(plan.id),
       ...stripeAttributionMetadataFromRequest(req.headers.get("cookie"), ATTR_COOKIE_NAME),
+      ...stripeMetaCapiMetadataFromRequest(req),
       listing_url: listingUrl,
       vin: vin || "",
       report_delivery: "email",
@@ -251,5 +259,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Neizdevās izveidot maksājuma sesiju." }, { status: 500 });
   }
 
-  return NextResponse.json({ url: session.url });
+  const eventId = createMetaEventId();
+  const value = resolveInitiateCheckoutValueEur(session.amount_total, tp5Product?.amountCents ?? plan.amountCents);
+  void notifyMetaInitiateCheckout({ req, eventId, value, email: null, phone: null });
+
+  return NextResponse.json({ url: session.url, ...checkoutMetaClientFields(eventId, value) });
 }
