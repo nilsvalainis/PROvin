@@ -72,6 +72,16 @@ describe("translateClientReportTexts", () => {
     expect(call.systemInstruction).toContain("Russian");
   });
 
+  it("includes the automotive glossary and only allows completed recall campaigns", async () => {
+    await translateClientReportTexts({ a: "Teksts" }, "ru");
+    const call = vi.mocked(geminiGenerateJsonText).mock.calls.at(-1)?.[0] as { systemInstruction: string };
+    expect(call.systemInstruction).toContain("odometer reading");
+    expect(call.systemInstruction).toContain("total loss");
+    expect(call.systemInstruction).toContain("completed recall campaigns");
+    expect(call.systemInstruction).toContain("выполненные отзывные кампании");
+    expect(call.systemInstruction).toContain("never add wording that PROVIN actively checks");
+  });
+
   it("passes a German system instruction naming the target language", async () => {
     await translateClientReportTexts({ a: "Teksts" }, "de");
     const call = vi.mocked(geminiGenerateJsonText).mock.calls.at(-1)?.[0] as { systemInstruction: string };

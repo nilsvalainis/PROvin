@@ -2817,7 +2817,7 @@ describe("buildClientReportDocumentHtml lang (multi-language export)", () => {
     });
     expect(doc).toContain('<html lang="en"');
     expect(doc).toContain("Risk analysis");
-    expect(doc).toContain("Recommendations for in-person inspection");
+    expect(doc).toContain("In-person inspection recommendations");
     expect(doc).toContain("Summary");
     expect(doc).not.toContain("Risku analīze");
     expect(doc).not.toContain("APPROVED BY IRISS");

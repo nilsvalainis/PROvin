@@ -6,10 +6,10 @@
  * (`applyClientReportStaticTranslations`), nevis stiept `lang` parametru
  * cauri desmitiem palīgfunkciju vairākos failos.
  *
- * Trūkstošs ieraksts NEKAD nenolūzt un nerāda tukšu lauku — vienkārši paliek
+ * Trūkstošs ieraksts NEKAD nenolūzt un nerāda tukšu lauku - vienkārši paliek
  * latviski, kamēr kāds pamana un pievieno tulkojumu.
  *
- * Zīmoli (AutoDNA, CarVertical, CSDD, LTAB, Tesla, Audi u.c.) NAV šeit —
+ * Zīmoli (AutoDNA, CarVertical, CSDD, LTAB, Tesla, Audi u.c.) NAV šeit -
  * tie paliek nemainīgi visās valodās.
  */
 
@@ -21,44 +21,44 @@ export type ClientReportTargetLang = Exclude<ClientReportLang, "lv">;
 
 type StaticTranslationEntry = { en: string; ru: string };
 
-/** Kārtībai nav nozīmes — garākās frāzes tiek meklētas pirmās (sk. sortētais saraksts zemāk). */
+/** Kārtībai nav nozīmes - garākās frāzes tiek meklētas pirmās (sk. sortētais saraksts zemāk). */
 const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   // Galvenie virsraksti
   "TRANSPORTLĪDZEKĻA AUDITS": { en: "VEHICLE HISTORY AUDIT", ru: "АУДИТ ИСТОРИИ АВТОМОБИЛЯ" },
-  "Business Datu atskaite": { en: "Business Data report", ru: "Business отчёт по данным" },
+  "Business Datu atskaite": { en: "Business data report", ru: "Отчёт по данным Business" },
   "Datu atskaite": { en: "Data report", ru: "Отчёт по данным" },
   "APPROVED BY IRISS": { en: "APPROVED BY IRISS", ru: "APPROVED BY IRISS" },
 
   // IRISS 1./2./3. sadaļa
-  "1. Tehnisko risku analīze": { en: "1. Technical Risk Analysis", ru: "1. Анализ технических рисков" },
+  "1. Tehnisko risku analīze": { en: "1. Technical risk analysis", ru: "1. Анализ технических рисков" },
   "2. Ieteikumi klātienes apskatei": {
-    en: "2. Recommendations for In-Person Inspection",
-    ru: "2. Рекомендации по личному осмотру",
+    en: "2. In-person inspection recommendations",
+    ru: "2. Рекомендации по осмотру на месте",
   },
-  "3. Kopsavilkums": { en: "3. Summary", ru: "3. Итоги" },
-  "Tehnisko risku analīze": { en: "Technical Risk Analysis", ru: "Анализ технических рисков" },
+  "3. Kopsavilkums": { en: "3. Summary", ru: "3. Заключение" },
+  "Tehnisko risku analīze": { en: "Technical risk analysis", ru: "Анализ технических рисков" },
   "Risku analīze": { en: "Risk analysis", ru: "Анализ рисков" },
   "Ieteikumi klātienes apskatei": {
-    en: "Recommendations for in-person inspection",
-    ru: "Рекомендации по личному осмотру",
+    en: "In-person inspection recommendations",
+    ru: "Рекомендации по осмотру на месте",
   },
   Ieteikumi: { en: "Recommendations", ru: "Рекомендации" },
-  Kopsavilkums: { en: "Summary", ru: "Итоги" },
+  Kopsavilkums: { en: "Summary", ru: "Заключение" },
 
   // Nobraukuma un negadījumu bloki
-  "NOBRAUKUMA VĒSTURE": { en: "MILEAGE HISTORY", ru: "ИСТОРИЯ ПРОБЕГА" },
-  "NOBRAUKUMA VĒSTURES KOMENTĀRS": { en: "MILEAGE HISTORY COMMENT", ru: "КОММЕНТАРИЙ К ИСТОРИИ ПРОБЕГА" },
+  "NOBRAUKUMA VĒSTURE": { en: "ODOMETER HISTORY", ru: "ИСТОРИЯ ПРОБЕГА" },
+  "NOBRAUKUMA VĒSTURES KOMENTĀRS": { en: "ODOMETER HISTORY NOTES", ru: "КОММЕНТАРИЙ К ИСТОРИИ ПРОБЕГА" },
   "NEGADĪJUMU VĒSTURES KOPSAVILKUMS": {
-    en: "INCIDENT HISTORY SUMMARY",
-    ru: "СВОДКА ПО ИСТОРИИ ПРОИСШЕСТВИЙ",
+    en: "ACCIDENT HISTORY SUMMARY",
+    ru: "СВОДКА ПО ИСТОРИИ ДТП",
   },
-  Negadījums: { en: "Incident", ru: "Происшествие" },
-  Zonas: { en: "Zones", ru: "Зоны" },
+  Negadījums: { en: "Accident", ru: "ДТП" },
+  Zonas: { en: "Damage areas", ru: "Зоны повреждений" },
   Detaļas: { en: "Parts", ru: "Детали" },
-  Grupas: { en: "Groups", ru: "Группы" },
-  "Negadījumi:": { en: "Incidents:", ru: "Происшествия:" },
-  "Negadījumu skaits:": { en: "Number of incidents:", ru: "Количество происшествий:" },
-  "Zaudējumu dati": { en: "Loss data", ru: "Данные об ущербе" },
+  Grupas: { en: "Part groups", ru: "Группы деталей" },
+  "Negadījumi:": { en: "Accidents:", ru: "ДТП:" },
+  "Negadījumu skaits:": { en: "Number of accidents:", ru: "Количество ДТП:" },
+  "Zaudējumu dati": { en: "Insurance claims", ru: "Страховые выплаты" },
 
   // Sludinājuma analīze / tirgus
   "SLUDINĀJUMA ANALĪZE": { en: "LISTING ANALYSIS", ru: "АНАЛИЗ ОБЪЯВЛЕНИЯ" },
@@ -68,125 +68,125 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
     ru: "Изменения цены в этом объявлении",
   },
   "Cenas izmaiņa:": { en: "Price change:", ru: "Изменение цены:" },
-  "Ilgums tirgū:": { en: "Time on market:", ru: "Время на рынке:" },
+  "Ilgums tirgū:": { en: "Time on market:", ru: "Время в продаже:" },
   "Tirgus dati": { en: "Market data", ru: "Рыночные данные" },
 
   // Avoti / reģistri
-  "OFICIĀLĀ DĪLERA DATI": { en: "OFFICIAL DEALER DATA", ru: "ОФИЦИАЛЬНЫЕ ДАННЫЕ ДИЛЕРА" },
-  "DĀNIJAS REĢISTRI": { en: "DANISH REGISTRIES", ru: "ДАТСКИЕ РЕЕСТРЫ" },
-  "NĪDERLANDES REĢISTRI": { en: "DUTCH REGISTRIES", ru: "НИДЕРЛАНДСКИЕ РЕЕСТРЫ" },
-  "ZVIEDRIJAS REĢISTRI": { en: "SWEDISH REGISTRIES", ru: "ШВЕДСКИЕ РЕЕСТРЫ" },
-  "Igaunijas reģistrs": { en: "Estonian registry", ru: "Эстонский реестр" },
-  "Igaunijas OCTA": { en: "Estonian OCTA", ru: "Эстонская OCTA" },
+  "OFICIĀLĀ DĪLERA DATI": { en: "OFFICIAL DEALER RECORDS", ru: "ДАННЫЕ ОФИЦИАЛЬНОГО ДИЛЕРА" },
+  "DĀNIJAS REĢISTRI": { en: "DANISH REGISTERS", ru: "РЕЕСТРЫ ДАНИИ" },
+  "NĪDERLANDES REĢISTRI": { en: "DUTCH REGISTERS", ru: "РЕЕСТРЫ НИДЕРЛАНДОВ" },
+  "ZVIEDRIJAS REĢISTRI": { en: "SWEDISH REGISTERS", ru: "РЕЕСТРЫ ШВЕЦИИ" },
+  "Igaunijas reģistrs": { en: "Estonian vehicle register", ru: "Реестр транспортных средств Эстонии" },
+  "Igaunijas OCTA": { en: "Estonian MTPL insurance", ru: "ОСАГО Эстонии" },
   "CITI AVOTI": { en: "OTHER SOURCES", ru: "ДРУГИЕ ИСТОЧНИКИ" },
-  "Servisa vēsture": { en: "Service history", ru: "История обслуживания" },
+  "Servisa vēsture": { en: "Service history", ru: "Сервисная история" },
   "Eļļas maiņas intervāli": { en: "Oil change intervals", ru: "Интервалы замены масла" },
-  "Servisa un remontu vēsture": { en: "Service and repair history", ru: "История обслуживания и ремонта" },
-  "Fotogrāfiju pielikums": { en: "Photo appendix", ru: "Приложение с фотографиями" },
+  "Servisa un remontu vēsture": { en: "Service and repair history", ru: "История обслуживания и ремонтов" },
+  "Fotogrāfiju pielikums": { en: "Photo appendix", ru: "Приложение: фотографии" },
 
   " atskaites ģenerēšanā izmantotie avoti": {
-    en: " sources used to generate this report",
-    ru: " источники, использованные при формировании отчёта",
+    en: " report data sources",
+    ru: ": источники данных для отчёта",
   },
-  "Maksas vēstures atskaites": { en: "Paid history reports", ru: "Платные отчёты об истории" },
-  "Publiskas Eiropas datubāzes": { en: "Public European databases", ru: "Публичные европейские базы данных" },
+  "Maksas vēstures atskaites": { en: "Paid vehicle history reports", ru: "Платные отчёты по истории автомобиля" },
+  "Publiskas Eiropas datubāzes": { en: "Public European databases", ru: "Открытые европейские базы данных" },
   "Citi avoti": { en: "Other sources", ru: "Другие источники" },
-  "Kas tika pārbaudīts": { en: "What was checked", ru: "Что было проверено" },
-  Kopā: { en: "Total", ru: "Всего" },
+  "Kas tika pārbaudīts": { en: "What we checked", ru: "Что мы проверили" },
+  Kopā: { en: "Total", ru: "Итого" },
 
   // Nobraukuma tabulas galviņas
   Datums: { en: "Date", ru: "Дата" },
-  "Odometrs (km)": { en: "Odometer (km)", ru: "Одометр (км)" },
+  "Odometrs (km)": { en: "Odometer reading (km)", ru: "Пробег (км)" },
   Avots: { en: "Source", ru: "Источник" },
   Valsts: { en: "Country", ru: "Страна" },
   Komentārs: { en: "Comment", ru: "Комментарий" },
 
   // CSDD strukturētie lauki
-  "Marka, modelis:": { en: "Make, model:", ru: "Марка, модель:" },
-  "Reģistrācijas numurs:": { en: "Registration number:", ru: "Регистрационный номер:" },
+  "Marka, modelis:": { en: "Make and model:", ru: "Марка, модель:" },
+  "Reģistrācijas numurs:": { en: "Registration number:", ru: "Госномер:" },
   "Pirmā reģistrācija:": { en: "First registration:", ru: "Первая регистрация:" },
-  "Nākamās apskates datums:": { en: "Next inspection date:", ru: "Дата следующего осмотра:" },
-  "Iepriekšējās apskates datums:": { en: "Previous inspection date:", ru: "Дата предыдущего осмотра:" },
-  "Motora tilpums (cm³):": { en: "Engine displacement (cm³):", ru: "Объём двигателя (см³):" },
-  "Motora maksimālā jauda (kW):": { en: "Max engine power (kW):", ru: "Макс. мощность двигателя (кВт):" },
+  "Nākamās apskates datums:": { en: "Next inspection due:", ru: "Следующий техосмотр:" },
+  "Iepriekšējās apskates datums:": { en: "Previous inspection:", ru: "Предыдущий техосмотр:" },
+  "Motora tilpums (cm³):": { en: "Engine capacity (cm³):", ru: "Объём двигателя (см³):" },
+  "Motora maksimālā jauda (kW):": { en: "Maximum power (kW):", ru: "Максимальная мощность (кВт):" },
   "Degvielas veids:": { en: "Fuel type:", ru: "Тип топлива:" },
-  "Emisiju standarts:": { en: "Emission standard:", ru: "Экологический стандарт:" },
-  "Pilna masa (kg):": { en: "Gross mass (kg):", ru: "Полная масса (кг):" },
-  "Pašmasa (kg):": { en: "Curb mass (kg):", ru: "Снаряжённая масса (кг):" },
-  "Ekspluatācijas nodoklis (EUR):": { en: "Road tax (EUR):", ru: "Дорожный налог (EUR):" },
+  "Emisiju standarts:": { en: "Emission standard:", ru: "Экологический класс:" },
+  "Pilna masa (kg):": { en: "Gross vehicle weight (kg):", ru: "Полная масса (кг):" },
+  "Pašmasa (kg):": { en: "Kerb weight (kg):", ru: "Снаряжённая масса (кг):" },
+  "Ekspluatācijas nodoklis (EUR):": { en: "Annual vehicle tax (EUR):", ru: "Транспортный налог (EUR):" },
   "Reģistrācijas statuss:": { en: "Registration status:", ru: "Статус регистрации:" },
-  "Dūmainības koeficients (m⁻¹):": { en: "Opacity coefficient (m⁻¹):", ru: "Коэффициент дымности (м⁻¹):" },
-  "Atgāzu cietās daļiņas:": { en: "Exhaust particulate matter:", ru: "Твёрдые частицы выхлопа:" },
+  "Dūmainības koeficients (m⁻¹):": { en: "Smoke opacity (m⁻¹):", ru: "Коэффициент дымности (м⁻¹):" },
+  "Atgāzu cietās daļiņas:": { en: "Exhaust particle count:", ru: "Твёрдые частицы в выхлопе:" },
   "Iepriekšējās reģistrācijas valsts:": {
-    en: "Previous registration country:",
+    en: "Previous country of registration:",
     ru: "Страна предыдущей регистрации:",
   },
-  "Īpašnieku skaits Latvijā:": { en: "Number of owners in Latvia:", ru: "Количество владельцев в Латвии:" },
-  "Tehnisko apskašu vēsture": { en: "Technical inspection history", ru: "История технических осмотров" },
-  "Iepriekšējās apskates dati": { en: "Previous inspection data", ru: "Данные предыдущего осмотра" },
+  "Īpašnieku skaits Latvijā:": { en: "Owners in Latvia:", ru: "Владельцев в Латвии:" },
+  "Tehnisko apskašu vēsture": { en: "Inspection history", ru: "История техосмотров" },
+  "Iepriekšējās apskates dati": { en: "Previous inspection results", ru: "Результаты предыдущего техосмотра" },
 
   // Tirgus lauki
-  "Auto pārdošanā (dienas):": { en: "Listed for sale (days):", ru: "В продаже (дней):" },
-  "Izveidots:": { en: "Created:", ru: "Создано:" },
+  "Auto pārdošanā (dienas):": { en: "Days on sale:", ru: "Дней в продаже:" },
+  "Izveidots:": { en: "Listed on:", ru: "Опубликовано:" },
   "Cenas izmaiņas (eiro):": { en: "Price changes (EUR):", ru: "Изменения цены (EUR):" },
-  "Odometrs, km:": { en: "Odometer, km:", ru: "Одометр, км:" },
+  "Odometrs, km:": { en: "Odometer reading, km:", ru: "Пробег, км:" },
 
   // Kājene / drukas rīki
   "Drukāt / PDF": { en: "Print / PDF", ru: "Печать / PDF" },
   "Drukāt (augsts kontrasts)": { en: "Print (high contrast)", ru: "Печать (высокий контраст)" },
   "Drukājamā versija - palielināts kontrasts papīram. Digitālajam PDF lietojiet „Ģenerēt PDF”.": {
-    en: "Print version - increased contrast for paper. For a digital PDF use \"Generate PDF\".",
-    ru: "Версия для печати - повышенный контраст для бумаги. Для цифрового PDF используйте «Сгенерировать PDF».",
+    en: "Print version with higher contrast for paper. For a digital PDF, use \"Generate PDF\".",
+    ru: "Версия для печати с повышенным контрастом. Для цифрового PDF используйте «Создать PDF».",
   },
   "Demonstrācijas dati": { en: "Demo data", ru: "Демонстрационные данные" },
-  Ģenerēts: { en: "Generated", ru: "Сформировано" },
+  Ģenerēts: { en: "Generated", ru: "Сформирован" },
 
   // Kopsavilkuma plāksnītes, laikposms, sludinājums, kājene
-  "ATSKAITES KOPSAVILKUMS": { en: "REPORT SUMMARY", ru: "СВОДКА ОТЧЁТА" },
-  "Vēstures kopsavilkums": { en: "History summary", ru: "Сводка истории" },
-  "NEGADĪJUMU VĒSTURE": { en: "INCIDENT HISTORY", ru: "ИСТОРИЯ ПРОИСШЕСТВИЙ" },
-  "Negadījumi un bojājumi": { en: "Incidents and damage", ru: "Происшествия и повреждения" },
+  "ATSKAITES KOPSAVILKUMS": { en: "REPORT SUMMARY", ru: "КРАТКАЯ СВОДКА" },
+  "Vēstures kopsavilkums": { en: "History overview", ru: "Обзор истории" },
+  "NEGADĪJUMU VĒSTURE": { en: "ACCIDENT HISTORY", ru: "ИСТОРИЯ ДТП" },
+  "Negadījumi un bojājumi": { en: "Accidents and damage", ru: "ДТП и повреждения" },
   "Avotos nav fiksētu negadījumu": {
     en: "No accidents recorded in the sources",
-    ru: "В источниках нет зафиксированных происшествий",
+    ru: "В источниках ДТП не зафиксированы",
   },
-  "Nav ierakstu": { en: "No records", ru: "Нет записей" },
+  "Nav ierakstu": { en: "No records", ru: "Записей нет" },
   "Īpašnieku skaits": { en: "Number of owners", ru: "Количество владельцев" },
-  "Reģistrācija Latvijā": { en: "Registration in Latvia", ru: "Регистрация в Латвии" },
+  "Reģistrācija Latvijā": { en: "Latvian registration", ru: "Регистрация в Латвии" },
   Nobraukums: { en: "Mileage", ru: "Пробег" },
-  "DĪLERA DATI": { en: "DEALER DATA", ru: "ДАННЫЕ ДИЛЕРА" },
-  "IZSOĻU PORTĀLU ARHĪVS": { en: "AUCTION ARCHIVE", ru: "АРХИВ АУКЦИОНОВ" },
+  "DĪLERA DATI": { en: "DEALER RECORDS", ru: "ДАННЫЕ ДИЛЕРА" },
+  "IZSOĻU PORTĀLU ARHĪVS": { en: "AUCTION PLATFORM ARCHIVE", ru: "АРХИВ АУКЦИОННЫХ ПЛОЩАДОК" },
   "Pirmā reģistrācija": { en: "First registration", ru: "Первая регистрация" },
   "Tehniskā apskate": { en: "Technical inspection", ru: "Техосмотр" },
-  "Īpašnieka maiņa": { en: "Change of owner", ru: "Смена владельца" },
-  "Servisa apmeklējums": { en: "Service visit", ru: "Визит на сервис" },
+  "Īpašnieka maiņa": { en: "Change of ownership", ru: "Смена владельца" },
+  "Servisa apmeklējums": { en: "Service visit", ru: "Посещение сервиса" },
   Sludinājums: { en: "Listing", ru: "Объявление" },
   "Sludinājuma cenas izmaiņa": { en: "Listing price change", ru: "Изменение цены в объявлении" },
-  "Izlikts pārdošanā": { en: "Listed for sale", ru: "Выставлено на продажу" },
+  "Izlikts pārdošanā": { en: "Listed for sale", ru: "Выставлен на продажу" },
   "(pēc sludinājuma, nav apstiprināts)": {
-    en: "(from the listing, not confirmed)",
-    ru: "(по объявлению, не подтверждено)",
+    en: "(per the listing, unverified)",
+    ru: "(по данным объявления, не подтверждено)",
   },
   "Sludinājuma vēsture": { en: "Listing history", ru: "История объявления" },
-  "Pārdevēja portrets": { en: "Seller profile", ru: "Портрет продавца" },
+  "Pārdevēja portrets": { en: "Seller profile", ru: "Профиль продавца" },
   "Fotogrāfiju analīze": { en: "Photo analysis", ru: "Анализ фотографий" },
-  "Pārdošanas sludinājuma konteksts": { en: "Sales listing context", ru: "Контекст объявления о продаже" },
+  "Pārdošanas sludinājuma konteksts": { en: "Listing context", ru: "Контекст объявления" },
   "Grafika ģenerēšanā izmantotais avotu skaits:": {
-    en: "Number of sources used to build the chart:",
-    ru: "Число источников, использованных для графика:",
+    en: "Sources used for this chart:",
+    ru: "Источников, использованных для графика:",
   },
   pārbaudīts: { en: "checked", ru: "проверено" },
-  Atruna: { en: "Disclaimer", ru: "Оговорка" },
+  Atruna: { en: "Disclaimer", ru: "Отказ от ответственности" },
   Konfidencialitāte: { en: "Confidentiality", ru: "Конфиденциальность" },
   "PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Šis ir digitāls datu apkopojums, nevis automašīnas tehniskā diagnostika, un tas nekādā veidā nevar aizvietot pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.":
     {
-      en: "PROVIN.LV provides a consulting service: an assessment of the available information about a vehicle and recommendations. This is a digital compilation of data, not a technical diagnosis of the car, and it cannot replace a full in-person inspection of the vehicle. The report is not an extract issued by a state authority, an independent technical examination, or a legal judgment. The client makes the final decision on whether to buy the vehicle.",
-      ru: "PROVIN.LV оказывает консультационную услугу: оценку доступной информации о транспортном средстве и рекомендации. Это цифровая сводка данных, а не техническая диагностика автомобиля, и она не заменяет полноценный личный осмотр транспортного средства. Отчёт не является выпиской государственного учреждения, независимой технической экспертизой или юридическим решением. Окончательное решение о покупке принимает клиент.",
+      en: "PROVIN.LV provides an advisory service: an assessment of the available information about the vehicle, with recommendations. This is a digital compilation of data, not a technical diagnosis of the car, and it can in no way replace a thorough in-person check and inspection of the vehicle. The report is not an official extract from a state authority, an independent technical appraisal or a legal ruling. The final decision to purchase the vehicle rests with the client.",
+      ru: "PROVIN.LV оказывает консультационную услугу: оценку доступной информации о транспортном средстве и рекомендации. Это цифровая подборка данных, а не техническая диагностика автомобиля, и она ни в коем случае не заменяет полноценную проверку и осмотр автомобиля на месте. Отчёт не является выпиской из государственного реестра, независимой технической экспертизой или юридическим заключением. Окончательное решение о покупке транспортного средства принимает клиент.",
     },
   "Šī atskaite ir sagatavota ekskluzīvi tās pasūtītājam un ir izmantojama tikai personīgām vajadzībām. Atskaiti un tajā ietverto informāciju ir kategoriski aizliegts pavairot, publiski reproducēt, nodot vai jebkādā citā veidā darīt pieejamu trešajām personām (tostarp transportlīdzekļa pārdevējam) bez saskaņošanas ar PROVIN.LV.":
     {
-      en: "This report was prepared exclusively for the customer who ordered it and may be used only for personal purposes. Copying the report or the information in it, reproducing it publicly, transferring it, or otherwise making it available to third parties (including the seller of the vehicle) without agreement from PROVIN.LV is strictly forbidden.",
-      ru: "Этот отчёт подготовлен исключительно для заказчика и предназначен только для личных целей. Копировать отчёт и содержащуюся в нём информацию, публично воспроизводить, передавать или иным образом делать доступной третьим лицам (включая продавца транспортного средства) без согласования с PROVIN.LV категорически запрещено.",
+      en: "This report has been prepared exclusively for the customer who ordered it and is for personal use only. Copying, publicly reproducing, passing on or otherwise making this report or the information in it available to third parties (including the seller of the vehicle) without the prior consent of PROVIN.LV is strictly prohibited.",
+      ru: "Этот отчёт подготовлен исключительно для заказчика и предназначен только для личного использования. Копирование, публичное воспроизведение, передача отчёта и содержащейся в нём информации или предоставление к ним доступа третьим лицам любым иным способом (включая продавца транспортного средства) без согласования с PROVIN.LV строго запрещены.",
     },
 };
 
@@ -323,7 +323,7 @@ export function translateClientReportStatic(lv: string, lang: ClientReportLang):
 }
 
 /**
- * "Sweep" pāri jau uzbūvētam PDF HTML — aizvieto zināmās latviešu frāzes ar
+ * "Sweep" pāri jau uzbūvētam PDF HTML - aizvieto zināmās latviešu frāzes ar
  * to EN/RU ekvivalentiem. Drošs, jo darbojas tikai ar iepriekš pārbaudītu,
  * daudzvārdu / unikālu frāžu sarakstu (nevis vispārīgiem vārdiem), tāpēc
  * praktiski neaizskar dinamisko (AI ģenerēto) tekstu, kas šajā brīdī jau ir
