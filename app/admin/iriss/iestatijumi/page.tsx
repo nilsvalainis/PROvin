@@ -13,7 +13,7 @@ export default async function IrissSettingsPage() {
   await requireAdminPage();
   return (
     <div className="relative min-h-full w-full max-w-none bg-[#F8F8F9] px-3 pb-24 pt-3 sm:px-4 sm:pb-8">
-      <AdminDashboardHeaderWithMenu>
+      <AdminDashboardHeaderWithMenu mobileTitle="Iestatījumi">
         <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Iestatījumi
         </h1>

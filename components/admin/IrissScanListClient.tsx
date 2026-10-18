@@ -8,6 +8,7 @@ import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import { irissScanSourceCounts } from "@/lib/iriss-scan-sources";
 import type { IrissScanListOrder, IrissScanListRow } from "@/lib/iriss-scan-types";
 import { IrissScanNewFab } from "@/components/admin/IrissScanNewFab";
+import { AdminMobileRoundBtn, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 
 function orderRows(rows: IrissScanListRow[], order: IrissScanListOrder | null): IrissScanListRow[] {
   if (!order) return [...rows].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
@@ -119,10 +120,33 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
   return (
     <>
       <div className="mx-auto w-full max-w-[860px] px-2 sm:px-0">
+        <div className="md:hidden">
+          <AdminMobileTopBar
+            title="Radars"
+            subtitle={`${localRows.length} ${localRows.length === 1 ? "ieraksts" : "ieraksti"}`}
+            trailing={
+              <>
+                <AdminMobileRoundBtn name="meklet" label="Meklēt" onClick={() => setSearchOpen(true)} />
+                <AdminMobileRoundBtn name="pievienot" label="Jauns ieraksts" href="/admin/iriss/scan/new" primary />
+              </>
+            }
+          >
+            {searchOpen || query ? (
+              <input
+                type="search"
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Meklēt marku…"
+                className="h-9 w-full rounded-full bg-[var(--am-fill)] px-3 text-[15px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
+              />
+            ) : null}
+          </AdminMobileTopBar>
+        </div>
         {/* min-7: virsraksts + skaits, meklēšana pa labi; zem tā sīka pelēka statusa rinda. */}
-        <header className="sticky top-0 z-20 -mx-2 bg-[#F8F8F9]/95 px-2 pb-1.5 pt-2 backdrop-blur sm:mx-0 sm:px-0">
+        <header className="sticky top-0 z-20 -mx-2 hidden bg-[#F8F8F9]/95 px-2 pb-1.5 pt-2 backdrop-blur md:block sm:mx-0 sm:px-0">
           <div className="flex items-center gap-2">
-            <h1 className="flex-1 text-[17px] font-semibold tracking-tight text-[var(--color-apple-text)] max-md:text-[34px] max-md:font-bold max-md:leading-none">Radars</h1>
+            <h1 className="flex-1 text-[17px] font-semibold tracking-tight text-[var(--color-apple-text)]">Radars</h1>
             {searchOpen || query ? (
               <input
                 type="search"

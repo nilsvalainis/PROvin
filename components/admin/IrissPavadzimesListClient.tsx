@@ -7,6 +7,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { formatIrissWaybillChip } from "@/lib/admin-mobile-ds";
+import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { waybillLifecycleLabel } from "@/lib/iriss-pavadzimes-lifecycle";
 import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
@@ -172,6 +173,9 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
 
   return (
     <>
+      <div className="md:hidden">
+        <AdminMobileTopBar title="Pavadzīmes" />
+      </div>
       <Suspense fallback={null}>
         <PavadzimeSearchFocus rowCount={rows.length} />
       </Suspense>
