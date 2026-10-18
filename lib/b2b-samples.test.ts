@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { B2B_WALLET_SAMPLES, resolveB2bWalletSampleUrl, type B2bWalletSampleConfig } from "@/lib/b2b-samples";
 import { B2B_WALLET_PRODUCT_IDS, B2B_WALLET_REPORT_LANGS, type B2bWalletProductId } from "@/lib/b2b-wallet";
@@ -32,5 +34,17 @@ describe("b2b wallet samples", () => {
       }
     }
     expect(Object.keys(B2B_WALLET_SAMPLES).sort()).toEqual([...B2B_WALLET_PRODUCT_IDS].sort());
+  });
+
+  it("every configured sample PDF exists in public/", () => {
+    for (const product of B2B_WALLET_PRODUCT_IDS) {
+      for (const lang of B2B_WALLET_REPORT_LANGS) {
+        const url = resolveB2bWalletSampleUrl(product, lang);
+        if (!url) continue;
+        const file = path.join(process.cwd(), "public", url);
+        expect(existsSync(file), url).toBe(true);
+        expect(readFileSync(file).subarray(0, 5).toString("latin1"), url).toBe("%PDF-");
+      }
+    }
   });
 });
