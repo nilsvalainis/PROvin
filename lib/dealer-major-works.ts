@@ -37,25 +37,25 @@ export const MAJOR_ASSEMBLY_SPECS: readonly DealerMajorAssemblySpec[] = [
 
 const ASSEMBLY_RE: Record<DealerMajorAssemblyId, RegExp> = {
   engine:
-    /\bengine\b|\bdzinej|двигател|motorwechsel|motorersatz|motortausch|\bmotor\b/u,
+    /\bengine\b|\bdzinej|двигател|motorwechsel|motorersatz|motortausch|\bmoteur\b|\bmotore\b|\bmotor\b/u,
   timing_chain:
-    /timing\s+chain|steuerkette|sadales\s+ked|kedes\s+(komplekt|spriegot|main)|distributieketting|kamkedja|цеп\p{L}*\s+(?:грм|газораспред)/u,
+    /timing\s+chain|steuerkette|sadales\s+ked|kedes\s+(komplekt|spriegot|main)|distributieketting|kamkedja|chaine\s+de\s+distribution|catena\s+di\s+distribuzione|cadena\s+de\s+distribucion|цеп\p{L}*\s+(?:грм|газораспред)/u,
   gearbox:
-    /atrumkar|parnesumkarb|transmisi|\bkarbas?\b|gearbox|\btransmission\b|getriebe(?!ol)|versnellingsbak|vaxellad|коробк\p{L}*(?:\s+передач)?|акпп|мкпп|\bdsg\b|\bdct\b|\bcvt\b|tiptronic|doppelkupplung|divsajug|mechatron|gidroblok|гидроблок|valve\s+body|torque\s+converter|hidrotransform|гидротрансформатор|getriebewechsel|getriebeersatz|getriebetausch/u,
+    /atrumkar|parnesumkarb|transmisi|\bkarbas?\b|gearbox|\btransmission\b|getriebe(?!ol)|versnellingsbak|vaxellad|boite(?:\s+de)?\s+vitesses|\bcambio\b|caja(?:\s+de)?\s+cambios|коробк\p{L}*(?:\s+передач)?|акпп|мкпп|\bdsg\b|\bdct\b|\bcvt\b|tiptronic|doppelkupplung|divsajug|mechatron|gidroblok|гидроблок|valve\s+body|torque\s+converter|hidrotransform|гидротрансформатор|getriebewechsel|getriebeersatz|getriebetausch/u,
   transfer_case:
-    /transfer(?:\s+case)?|verteilergetriebe|razdat|раздаточн|sadales\s+karb/u,
+    /transfer(?:\s+case)?|verteilergetriebe|razdat|раздаточн|sadales\s+karb|boite\s+de\s+transfert|caja\s+de\s+transferencia|tussenbak|fordelningslad/u,
   differential:
-    /differential|differenzial|diferencial|дифференциал|reduktor|редуктор|achsgetriebe(?!ol)|hinterachs(?!ol)|aizmugurej\p{L}*\s+tilt/u,
+    /differential|differenzial|diferencial|дифференциал|reduktor|редуктор|achsgetriebe(?!ol)|hinterachs(?!ol)|aizmugurej\p{L}*\s+tilt|differentiel|differenziale/u,
   dual_mass_flywheel:
-    /divmasu|spararat|dual[\s-]?mass|flywheel|zweimassen|schwungrad|маховик|vliegwiel|svanghjul/u,
-  turbo: /\bturbo(?:charger|lader)?\b|турбокомпрессор|turbokompresor/u,
+    /divmasu|spararat|dual[\s-]?mass|flywheel|zweimassen|schwungrad|маховик|vliegwiel|svanghjul|volant\s+bimasse|volano\s+bimassa/u,
+  turbo: /\bturbo(?:charger|lader|compresseur)?\b|турбокомпрессор|turbokompresor/u,
   body_glass:
-    /vejstikl|stikla\s+main|bamper|sparn|durvju|pankr|kraso|parkras|body\s+repair|windscreen|windshield|bumper|fender|lackier|karosser|scheibe|кузов|бампер|крыл|лобов\p{L}*\s+стекл/u,
+    /vejstikl|stikla\s+main|bamper|sparn|durvju|pankr|kraso|parkras|body\s+repair|windscreen|windshield|bumper|fender|lackier|karosser|scheibe|pare[- ]brise|parabrezza|parabrisas|кузов|бампер|крыл|лобов\p{L}*\s+стекл/u,
 };
 
 /** Eļļa / filtrs / šķidrums / sveces / pārbaude / skalošana / papildināšana. */
 const CONSUMABLE_RE =
-  /(?:motor|engine|getriebe|transmission|gearbox|karbas?|atrumkarb|parnesum|transfer(?:\s+case)?|differential|achs|razdat|раздаточн|reduktor|редуктор)?(?:\s|-)?(?:oil|ol\b|ellas?|масло|масла|маслу)|oil(?:\s+and\s+filter)?(?:\s+(?:change|service|replacement|filter))?|\bfilter\b|filtr\p{L}*|olwechsel|oilwechsel|filterwechsel|atf\b|dexron|mercon|fluid|skidrum|жидкост|coolant|kuhlmittel|antifreeze|dzesesan|антифриз|охлажд|brake\s+fluid|bremsfluss|bremzu\s+skidrum|тормозн\p{L}*\s+жидкост|spark\s*plugs?|zundkerz|aizdedzes\s+svec|свеч|inspection|inspektion|apskate|осмотр|fahrzeugcheck|wartung|\bcheck\b|prufung|parbaud|проверк|top[- ]?up|nachfull|papildin|долив|flush|spulung|skalos|промыв|диагност|diagnos|lube(?:\s+service)?|long[\s-]?life|pollen|cabin\s+filter|luftfilter|innenraumfilter|microfilter|gaisa\s+filtr|degvielas\s+filtr|fuel\s+filter|salona\s+gaisa/u;
+  /(?:motor|engine|getriebe|transmission|gearbox|karbas?|atrumkarb|parnesum|transfer(?:\s+case)?|differential|achs|razdat|раздаточн|reduktor|редуктор|boite|cambio)?(?:\s|-)?(?:oil|ol\b|\bellas?\b|huile|olio|aceite|\bolja\b|olie\b|масло|масла|маслу)|oil(?:\s+and\s+filter)?(?:\s+(?:change|service|replacement|filter))?|\bfilter\b|filtr\p{L}*|olwechsel|oilwechsel|filterwechsel|\bvidange\b|atf\b|dexron|mercon|fluid|skidrum|жидкост|coolant|kuhlmittel|antifreeze|dzesesan|антифриз|охлажд|brake\s+fluid|bremsfluss|bremzu\s+skidrum|тормозн\p{L}*\s+жидкост|spark\s*plugs?|zundkerz|aizdedzes\s+svec|свеч|inspection|inspektion|apskate|осмотр|fahrzeugcheck|wartung|\bcheck\b|prufung|parbaud|проверк|top[- ]?up|nachfull|papildin|долив|flush|spulung|skalos|промыв|диагност|diagnos|lube(?:\s+service)?|long[\s-]?life|pollen|cabin\s+filter|luftfilter|innenraumfilter|microfilter|gaisa\s+filtr|degvielas\s+filtr|fuel\s+filter|salona\s+gaisa/u;
 
 const CONSUMABLE_COMPOUND_RE =
   /getriebeol\p{L}*|motorol\p{L}*|achs(?:getriebe)?ol\p{L}*|haldexol\p{L}*|hinterachs\p{L}*\s+ol\p{L}*|ol[- ]und[- ]filter|масла?\s+и\s+фильтра?/u;
@@ -64,7 +64,7 @@ const OVERHAUL_RE =
   /overhaul|rebuild|rebuilt|instandgesetz|instandsetz|uberholt|generaluberhol|kapitalais\s+remont|капитальн\p{L}*\s+ремонт|переборк|recondition/u;
 
 const UNIT_REPAIR_VERB_RE =
-  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|\bchange\b|maina|\bremont|ремонт|repair(?:ed|s)?|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt|parkras|lackier/u;
+  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|\bchange\b|maina|\bremont|ремонт|repair(?:ed|s)?|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt|parkras|lackier|remplac\p{L}*|sostituit\p{L}*|sostituz\p{L}*|reemplaz\p{L}*|sustitu\p{L}*|cambiato/u;
 
 const CAMPAIGN_CLAUSE_RE =
   /\bqb\b|acc(?:ording)?\.?\s*to:?\s*qb|nach\s+qb|technische\s+aktion|safety\s+recall|\brecalls?\b|ruckruf|service\s+action|field\s+fix|\btsb\b|\bsib\b/u;
@@ -84,7 +84,7 @@ const ENGINE_NOT_THE_UNIT_RE =
   /motorleistung|motorol|olleckage|\bmotoren\b|schlauch|hose|dicht|seal|simmerring|kurbelwell|crankshaft|zahnriemen|timing\s+belt|cooling|kuhlsystem|ladeluft|charge\s+air|fuel\s+line|connector|sun\s*roof|dachkaset|schiebedach|upholstery|sitz|software|upgrade|downloading|ersatzwagen|courtesy/u;
 
 const ENGINE_UNIT_REPLACE_RE =
-  /(?:\bengine\b|dzinej\p{L}*|двигател\p{L}*)\s+(?:replac|erneuer|getauscht|ersetzt|nomain|maina|wechsel)|(?:replac\p{L}*|erneuer\p{L}*|замена|nomain)\s+(?:the\s+)?(?:engine|dzinej|двигател)|motorwechsel|motorersatz|motortausch|(?:^|[^\p{L}])motor\s+(?:erneuert|getauscht|ersetzt|ausgewechselt)|замена\s+двигател|капитальн\p{L}*\s+ремонт\s+двигател/u;
+  /(?:\bengine\b|dzinej\p{L}*|двигател\p{L}*|\bmoteur\b|\bmotore\b|\bmotor\b)\s+(?:replac|erneuer|getauscht|ersetzt|nomain|maina|wechsel|remplac|sostituit|sustitu|reemplaz)|(?:replac\p{L}*|erneuer\p{L}*|замена|nomain|remplac\p{L}*|sostituit\p{L}*|sustitu\p{L}*|reemplaz\p{L}*)\s+(?:the\s+|du\s+|de\s+(?:l[ae]\s+)?|del\s+|della\s+|el\s+)?(?:engine|dzinej|двигател|moteur|motore|\bmotor\b)|motorwechsel|motorersatz|motortausch|(?:^|[^\p{L}])motor\s+(?:erneuert|getauscht|ersetzt|ausgewechselt)|замена\s+двигател|капитальн\p{L}*\s+ремонт\s+двигател/u;
 
 const CHECK_NO_FAULT_RE = /ohne\s+befund|no\s+fault|bez\s+defekta|nav\s+konstatet/u;
 
