@@ -13,12 +13,15 @@ import {
   cheapestB2bWalletPriceCents,
   emptyB2bWallet,
   formatB2bWalletEuro,
+  isB2bWalletProductVisible,
   isB2bWalletReportLang,
   parseB2bWallet,
+  parseB2bWalletHiddenProducts,
   parseB2bWalletOrderMarks,
   resolveB2bWalletPrice,
   shouldAutoRefundB2bWalletOrder,
   validateB2bWalletPriceInput,
+  visibleB2bWalletProducts,
   type B2bWallet,
 } from "@/lib/b2b-wallet";
 import { buildB2bWalletView } from "@/lib/b2b-wallet-view";
@@ -196,5 +199,25 @@ describe("b2b wallet prices", () => {
     expect(view.balanceCents).toBe(4500);
     expect(view.txns[0]?.sessionId).toBe("cs_b");
     expect(view.cheapestCents).toBe(1599);
+    expect(view.products).toEqual(["business", "dealer_raw", "dealer_pro"]);
+  });
+
+  it("drops admin-hidden products from the view and the cheapest price", () => {
+    expect(parseB2bWalletHiddenProducts(undefined)).toEqual([]);
+    expect(parseB2bWalletHiddenProducts("dealer_raw")).toEqual([]);
+    expect(parseB2bWalletHiddenProducts(["dealer_pro", "x", "dealer_raw"])).toEqual(["dealer_raw", "dealer_pro"]);
+    expect(isB2bWalletProductVisible("business", [])).toBe(true);
+    expect(isB2bWalletProductVisible("dealer_raw", ["dealer_raw"])).toBe(false);
+    expect(visibleB2bWalletProducts(["business"])).toEqual(["dealer_raw", "dealer_pro"]);
+
+    const wallet = applyB2bWalletTopup(emptyB2bWallet(), { amountCents: 1700, sessionId: "cs_v" }).wallet;
+    const noRaw = buildB2bWalletView(wallet, null, 50, ["dealer_raw"]);
+    expect(noRaw.products).toEqual(["business", "dealer_pro"]);
+    expect(noRaw.cheapestCents).toBe(1999);
+    expect(canAffordCheapestB2bWalletProduct(1700, null, ["dealer_raw"])).toBe(false);
+
+    const none = buildB2bWalletView(wallet, null, 50, ["business", "dealer_raw", "dealer_pro"]);
+    expect(none.products).toEqual([]);
+    expect(none.cheapestCents).toBe(0);
   });
 });
