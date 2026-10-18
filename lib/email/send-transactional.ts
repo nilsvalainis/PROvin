@@ -2,11 +2,12 @@ import "server-only";
 
 import nodemailer from "nodemailer";
 import type { Attachment } from "nodemailer/lib/mailer";
-import { getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
+import { getB2bMailFromAddress, getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
 import {
   adminAuditSlaWarningHtml,
   adminNewOrderHtml,
   adminNewPartnerHtml,
+  b2bWalletRefundEmailHtml,
   auditCompletedEmailHtml,
   dealerDataNoDataRefundEmailHtml,
   dealerDataOperatorMessageEmailHtml,
@@ -104,13 +105,14 @@ async function sendSmtpMail(opts: {
   headers?: Record<string, string>;
   /** Ja nav: `getMailReplyTo()`. Pieteikumu vēstulēm: klienta e-pasts, lai admin var atbildēt tieši. */
   replyTo?: string;
+  from?: string;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
     throw new Error("SMTP_USER / SMTP_PASS nav iestatīti");
   }
   await transport.sendMail({
-    from: getMailFromAddress(),
+    from: opts.from?.trim() || getMailFromAddress(),
     to: opts.to,
     replyTo: opts.replyTo?.trim() || getMailReplyTo(),
     subject: opts.subject,
@@ -839,6 +841,40 @@ export async function trySendDealerDataRefundEmail(opts: {
     return true;
   } catch (err) {
     console.error("[dealer-data] atmaksas e-pasts neizdevās", err);
+    return false;
+  }
+}
+
+/** IRISS B2B: dīlera datu nav, summa atgriezta makā. Viens e-pasts uz atmaksu. */
+export async function sendB2bWalletRefundEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+}): Promise<void> {
+  const paragraphs = opts.text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  await sendSmtpMail({
+    to: opts.to,
+    from: getB2bMailFromAddress(),
+    subject: opts.subject,
+    text: opts.text,
+    html: b2bWalletRefundEmailHtml({ title: opts.subject, paragraphs }),
+  });
+}
+
+export async function trySendB2bWalletRefundEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+}): Promise<boolean> {
+  if (!isSmtpConfigured()) {
+    console.warn("[b2b] SMTP nav iestatīts, maka atmaksas e-pasts nav nosūtīts");
+    return false;
+  }
+  try {
+    await sendB2bWalletRefundEmail(opts);
+    return true;
+  } catch (err) {
+    console.error("[b2b] maka atmaksas e-pasts neizdevās", err);
     return false;
   }
 }

@@ -542,3 +542,32 @@ ${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}
 `;
   return shell(inner);
 }
+
+const IRISS_ORANGE = "#F26522";
+
+/** IRISS B2B maka atmaksa: nav PROVIN lentes, nav PROVIN teksta. */
+export function b2bWalletRefundEmailHtml(opts: { title: string; paragraphs: readonly string[] }): string {
+  const paras = opts.paragraphs
+    .map((p) => `<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">${esc(p).replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+  return `<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>IRISS</title>
+</head>
+<body style="margin:0;padding:0;background:${BG};font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:${INK};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};">
+<tr><td align="center" style="padding:48px 20px;">
+<table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+<tr><td>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${IRISS_ORANGE};font-weight:700;">IRISS</p>
+<p style="margin:0 0 16px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(opts.title)}</p>
+${paras}
+</td></tr></table>
+<p style="margin:28px 0 0;font-size:12px;color:${MUTED};text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+</td></tr></table>
+</body>
+</html>`;
+}

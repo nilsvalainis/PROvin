@@ -214,7 +214,17 @@ export async function upsertDealerDataJob(
     ...(patch.error ? { error: patch.error } : {}),
     ...(patch.trigger ?? current?.trigger ? { trigger: patch.trigger ?? current?.trigger } : {}),
     // Atmaksa ir neatgriezeniska: reizi ierakstītu ierakstu patch nedrīkst nomest.
-    ...(current?.refund ? { refund: current.refund } : patch.refund ? { refund: patch.refund } : {}),
+    // emailSentAt drīkst pievienot vēlāk (viens e-pasts uz atmaksu).
+    ...(current?.refund || patch.refund
+      ? {
+          refund: {
+            ...(current?.refund ?? patch.refund!),
+            ...(patch.refund?.emailSentAt && !current?.refund?.emailSentAt
+              ? { emailSentAt: patch.refund.emailSentAt }
+              : {}),
+          },
+        }
+      : {}),
   };
   const ok = await writeDealerDataJob(next);
   return ok ? next : null;

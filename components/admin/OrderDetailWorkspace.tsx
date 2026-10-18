@@ -5321,6 +5321,7 @@ export function OrderDetailWorkspace({
                 (payload.sessionId.startsWith("manual_order_") &&
                   (payload.notes ?? "").includes("partner_id="))
               }
+              walletRefund={(payload.notes ?? "").includes("wallet_txn=")}
               onGenerateDealerPdf={() => void openPrintReport({ dealerOnly: true })}
               onGenerateDealerPdfEn={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
               onGenerateDealerPdfRu={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}

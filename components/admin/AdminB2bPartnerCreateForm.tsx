@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type ChangeEvent } from "react";
+import { ADMIN_B2B_BTN_SOLID, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import {
   ADMIN_PARTNER_INPUT_CLASS,
   ADMIN_PARTNER_LABEL_CLASS,
@@ -20,6 +21,7 @@ const empty = {
 
 export function AdminB2bPartnerCreateForm() {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [form, setForm] = useState(empty);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -54,6 +56,16 @@ export function AdminB2bPartnerCreateForm() {
     }
   };
 
+  if (!open) {
+    return (
+      <div className="mt-6">
+        <button type="button" className={ADMIN_B2B_BTN_SOLID} onClick={() => setOpen(true)}>
+          <AdminB2bActionLabel>+ Jauns partneris</AdminB2bActionLabel>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <form
       className="mt-6 rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]"
@@ -62,7 +74,16 @@ export function AdminB2bPartnerCreateForm() {
         void onSubmit();
       }}
     >
-      <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Jauns partneris</h2>
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="text-sm font-semibold text-[var(--color-apple-text)]">Jauns partneris</h2>
+        <button
+          type="button"
+          className="text-[12px] font-semibold text-slate-500 hover:text-slate-800"
+          onClick={() => setOpen(false)}
+        >
+          Aizvērt
+        </button>
+      </div>
       <p className="mt-1 text-[13px] text-[var(--color-provin-muted)]">
         Paroli paziņo dīlerim pats. Ielūguma e-pasts šajā versijā netiek sūtīts.
       </p>
@@ -106,9 +127,9 @@ export function AdminB2bPartnerCreateForm() {
       <button
         type="submit"
         disabled={busy}
-        className="mt-4 inline-flex rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] disabled:opacity-60"
+        className={`${ADMIN_B2B_BTN_SOLID} mt-4`}
       >
-        {busy ? "Saglabā…" : "Izveidot partneri"}
+        <AdminB2bActionLabel>{busy ? "Saglabā…" : "Izveidot partneri"}</AdminB2bActionLabel>
       </button>
     </form>
   );

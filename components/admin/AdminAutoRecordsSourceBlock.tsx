@@ -127,6 +127,7 @@ type Props = {
   customerEmail?: string | null;
   /** Stripe cs_* sesijām true - manuāliem refund nerāda. */
   canDealerRefund?: boolean;
+  walletRefund?: boolean;
   onGenerateDealerPdf?: () => void;
   onGenerateDealerPdfEn?: () => void;
   onGenerateDealerPdfRu?: () => void;
@@ -170,6 +171,7 @@ export function AdminAutoRecordsSourceBlock({
   orderVin = "",
   customerEmail = null,
   canDealerRefund = false,
+  walletRefund = false,
   onGenerateDealerPdf,
   onGenerateDealerPdfEn,
   onGenerateDealerPdfRu,
@@ -455,6 +457,7 @@ export function AdminAutoRecordsSourceBlock({
               editable={!readOnly && !disabled}
               customerEmail={customerEmail}
               canRefund={canDealerRefund}
+              walletRefund={walletRefund}
               onGenerateDealerPdf={onGenerateDealerPdf}
               onGenerateDealerPdfEn={onGenerateDealerPdfEn}
               onGenerateDealerPdfRu={onGenerateDealerPdfRu}
