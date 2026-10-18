@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AdminClientOrdersChip } from "@/components/admin/AdminClientOrdersChip";
-import { Fragment, useCallback, useEffect, useMemo, useState, type MouseEvent, type ReactNode } from "react";
+import { AdminClientLinkButton } from "@/components/admin/AdminClientLinkButton";
+import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition, type MouseEvent, type ReactNode } from "react";
 import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
@@ -22,6 +24,17 @@ import {
   sortAdminOrdersIncompleteFirst,
 } from "@/lib/admin-audit-deadline-complete";
 import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCell";
+import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
+import {
+  AdminMobileChips,
+  AdminMobileSearchField,
+  AdminMobileStatusTag,
+  AdminMobileTopBar,
+} from "@/components/admin/mobile/AdminMobileChrome";
+import {
+  adminMobileAuditFilterLabel,
+  formatAdminMobileDeadlineHours,
+} from "@/lib/admin-mobile-ds";
 import { AdminAuditSlaListBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
 import { formatAuditDeadlineRemaining } from "@/lib/admin-audit-deadline";
 import { useAdminAuditDeadlineTick } from "@/components/admin/AdminAuditDeadlineTickProvider";
@@ -418,6 +431,90 @@ type ClientOverride = {
   vin?: string;
 };
 
+function AdminOrdersMobileChrome({
+  colorFilter,
+  onColorFilter,
+  filterCounts,
+}: {
+  colorFilter: AuditResultColor | "all" | "none";
+  onColorFilter: (c: AuditResultColor | "all" | "none") => void;
+  filterCounts: { all: number; green: number; orange: number; red: number; none: number };
+}) {
+  const router = useRouter();
+  const pathname = usePathname() || "/admin/dashboard";
+  const sp = useSearchParams();
+  const [q, setQ] = useState(sp.get("q") ?? "");
+  const [pending, startTransition] = useTransition();
+  const sort = sp.get("sort") === "oldest" ? "oldest" : "newest";
+  const first = useRef(true);
+
+  const push = (next: { q?: string; sort?: string }) => {
+    const p = new URLSearchParams(sp.toString());
+    const nq = next.q ?? q;
+    if (nq.trim()) p.set("q", nq.trim());
+    else p.delete("q");
+    const ns = next.sort ?? sort;
+    if (ns === "oldest") p.set("sort", "oldest");
+    else p.delete("sort");
+    p.delete("limit");
+    const qs = p.toString();
+    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
+  };
+
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    const t = window.setTimeout(() => push({ q }), 300);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
+
+  return (
+    <AdminMobileTopBar
+      title="Pasūtījumi"
+      trailing={
+        <>
+          <span className="max-md:[&_button]:h-9 max-md:[&_button]:w-9 max-md:[&_button]:rounded-full max-md:[&_button]:px-0 max-md:[&_button]:text-[0px] max-md:[&_svg]:h-[18px] max-md:[&_svg]:w-[18px]">
+            <AdminClientLinkButton />
+          </span>
+          <span className="max-md:[&_button]:h-9 max-md:[&_button]:w-9 max-md:[&_button]:rounded-full max-md:[&_button]:px-0 max-md:[&_button]:text-[0px]">
+            <AdminCreateManualOrderButton compact />
+          </span>
+        </>
+      }
+    >
+      <div className={`flex items-center gap-2 ${pending ? "opacity-60" : ""}`}>
+        <div className="min-w-0 flex-1">
+          <AdminMobileSearchField value={q} onChange={setQ} placeholder="Meklēt VIN, klientu" />
+        </div>
+        <button
+          type="button"
+          onClick={() => push({ sort: sort === "oldest" ? "newest" : "oldest" })}
+          className="am-press inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-[var(--am-fill)] px-3 text-[13px] font-medium text-[var(--am-ink)]"
+        >
+          <AdminMobileIcon name="kartot" className="h-4 w-4" />
+          {sort === "oldest" ? "Vecākie" : "Jaunākie"}
+        </button>
+      </div>
+      <div className="mt-3">
+        <AdminMobileChips
+          value={colorFilter}
+          onChange={(id) => onColorFilter(id as AuditResultColor | "all" | "none")}
+          items={[
+            { id: "all", label: adminMobileAuditFilterLabel("all"), count: filterCounts.all },
+            { id: "orange", label: adminMobileAuditFilterLabel("orange"), count: filterCounts.orange },
+            { id: "green", label: adminMobileAuditFilterLabel("green"), count: filterCounts.green },
+            { id: "red", label: adminMobileAuditFilterLabel("red"), count: filterCounts.red },
+            { id: "none", label: adminMobileAuditFilterLabel("none"), count: filterCounts.none },
+          ]}
+        />
+      </div>
+    </AdminMobileTopBar>
+  );
+}
+
 /** Viena rinda gan tabulai, gan telefona kartēm, lai abi skati nekad neatšķiras. */
 function orderRowView(
   o: AdminOrdersTableRow,
@@ -619,11 +716,26 @@ export function AdminOrdersTable({
   const hug = "w-[1%] whitespace-nowrap";
 
 
+  const filterCounts = useMemo(() => {
+    const withColor = orders.map((o) => ({
+      color: o.id in colorOverride ? colorOverride[o.id] : (o.auditResultColor ?? null),
+    }));
+    return {
+      all: withColor.length,
+      green: withColor.filter((o) => o.color === "green").length,
+      orange: withColor.filter((o) => o.color === "orange").length,
+      red: withColor.filter((o) => o.color === "red").length,
+      none: withColor.filter((o) => !o.color).length,
+    };
+  }, [orders, colorOverride]);
+
   return (
     <>
+      <div className="hidden md:block">
       <AdminAuditSlaListBanner urgentCount={slaCounts.urgentCount} overdueCount={slaCounts.overdueCount} />
+      </div>
       {/* V1: viena slaida rinda - rezultāta segmenti kreisi, papildu vadīklas labi. */}
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-2 hidden items-center gap-2 md:flex">
         <div role="tablist" aria-label="Rezultāts" className="flex min-w-0 overflow-x-auto rounded-[9px] bg-[#e9e9ee] p-[2px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {(["all", ...AUDIT_RESULT_COLORS, "none"] as const).map((c) => {
             const on = colorFilter === c;
@@ -652,15 +764,20 @@ export function AdminOrdersTable({
         {toolbarEnd ? <div className="ml-auto flex shrink-0 items-center gap-1.5">{toolbarEnd}</div> : null}
       </div>
 
-      {/* Telefonā deviņu kolonnu tabula nav lasāma, tāpēc tā pati rinda ir karte.
-          No 768 px uz augšu rāda tieši to pašu tabulu, kas bija līdz šim. */}
-      <ul className="mt-4 space-y-2 md:hidden">
+      {/* Telefonā: stikla josla + kartītes. Desktop tabula zemāk paliek neskarta. */}
+      <div className="md:hidden">
+        <AdminOrdersMobileChrome
+          colorFilter={colorFilter}
+          onColorFilter={setColorFilter}
+          filterCounts={filterCounts}
+        />
+      <ul className="mt-3 space-y-2.5">
         {dayGroups.map((g) => (
         <Fragment key={g.key}>
-          <li className="px-1 pt-2 text-[12px] font-semibold text-[#3a3a3c]">
-            {g.isActive ? "Aktīvie" : nowMs != null ? adminOrderDayLabel(g.key, nowMs) : g.key}
-            <span className="ml-2 font-normal text-[#aeaeb2]">
-              {g.list.length} pasūt. · {formatMoneyEur(g.sum, "eur")}
+          <li className="flex items-baseline justify-between px-1 pt-2 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">
+            <span>{g.isActive ? "Aktīvie" : nowMs != null ? adminOrderDayLabel(g.key, nowMs) : g.key}</span>
+            <span className="font-medium normal-case tracking-normal tabular-nums">
+              {g.isActive ? `${g.list.length}` : g.list.length} · {formatMoneyEur(g.sum, "eur")}
             </span>
           </li>
           {g.list.map((o) => {
@@ -680,12 +797,8 @@ export function AdminOrdersTable({
               key={o.id}
               role={v.isPack ? undefined : "link"}
               tabIndex={v.isPack ? undefined : 0}
-              className={`rounded-xl border border-[#ececee] p-3.5 ${accent} ${
-                v.isPack
-                  ? "cursor-default bg-violet-50/70"
-                  : v.partnerHighlight
-                    ? "cursor-pointer bg-violet-50/80 active:bg-slate-50"
-                    : "cursor-pointer bg-white active:bg-slate-50"
+              className={`am-row am-press relative rounded-[22px] bg-[var(--am-s1)] p-4 shadow-[var(--am-card-shadow)] ${accent} ${
+                v.isPack ? "cursor-default" : "cursor-pointer"
               }`}
               onClick={v.isPack ? undefined : openOrderFromCard}
               onAuxClick={
@@ -706,30 +819,26 @@ export function AdminOrdersTable({
                     }
               }
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="flex items-center gap-1.5 truncate text-[17px] font-semibold text-[var(--color-apple-text)]">
-                    {v.isPack ? null : (
-                      <AdminAuditResultColorControl
-                        sessionId={o.id}
-                        initialColor={o.auditResultColor ?? null}
-                        compact
-                        onColorChange={(c) => markColor(o.id, c)}
-                      />
+              {v.isPack ? null : (
+                <div
+                  className="absolute right-3 top-3"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  <AdminMobileStatusTag
+                    onClick={() => {
+                      const el = document.querySelector<HTMLButtonElement>(`[data-admin-audit-color="${o.id}"] button, [data-admin-audit-color="${o.id}"]`);
+                      el?.click();
+                    }}
+                  >
+                    {o.auditComplete ? null : (
+                      <>
+                        <AdminMobileIcon name="pulkstenis" className="h-3 w-3" />
+                        {formatAdminMobileDeadlineHours(o.deadlineFromUnix ?? o.created)}
+                      </>
                     )}
-                    {v.isPack ? v.packLabel : o.makeModel?.trim() || v.primaryClient}
-                  </p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-1.5 truncate text-[13px] text-[var(--color-provin-muted)]">
-                    {v.isPack
-                      ? v.primaryClient
-                      : v.hasVin
-                        ? v.vin
-                        : "VIN nav"}
-                    {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
-                  </p>
-                </div>
-                {v.isPack ? null : (
-                  <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+                  </AdminMobileStatusTag>
+                  <div className="sr-only" data-admin-audit-color={o.id}>
                     <AdminAuditDeadlineCell
                       sessionId={o.id}
                       createdUnixSec={o.deadlineFromUnix ?? o.created}
@@ -737,7 +846,18 @@ export function AdminOrdersTable({
                       onCompleteChange={(complete) => markComplete(o.id, complete)}
                     />
                   </div>
-                )}
+                </div>
+              )}
+              <div className="flex items-start justify-between gap-2 pr-16">
+                <div className="min-w-0">
+                  <p className="truncate text-[16px] font-semibold tracking-tight text-[var(--am-ink)]">
+                    {v.isPack ? v.packLabel : (o.makeModel?.trim() || v.primaryClient).toUpperCase()}
+                  </p>
+                  <p className="mt-0.5 truncate font-mono text-[12.5px] tracking-[0.01em] text-[var(--am-ink2)]">
+                    {v.isPack ? v.primaryClient : v.hasVin ? v.vin : "VIN nav"}
+                    {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
+                  </p>
+                </div>
               </div>
 
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -772,7 +892,7 @@ export function AdminOrdersTable({
                   </span>
                 ) : null}
                 {v.miniHighlight ? (
-                  <span className={MINI_PILL}>MINI</span>
+                  <span className={CALM_TAG}>MINI</span>
                 ) : null}
                 {o.repeatVin ? (
                   <span className={CALM_TAG} title={`Atkārtots VIN: šis VIN jau ir ${o.repeatVin} citā(-os) darbā(-os) - pirms pirkšanas pārbaudi, ko var izmantot atkārtoti`}>
@@ -788,40 +908,34 @@ export function AdminOrdersTable({
 
               <div className="mt-2 flex items-end justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="flex min-w-0 items-center gap-1.5 text-[12px] text-[var(--color-apple-text)]"><span className="truncate">{v.primaryClient}</span>{o.clientOrders?.length ? <AdminClientOrdersChip items={o.clientOrders.map((c) => ({ ...c, href: `${detailBaseNormalized}/${encodeURIComponent(c.id)}` }))} /> : null}<SourceIcon source={o.heardAbout} /></p>
-                  <p className="mt-0.5 truncate text-[11px] tabular-nums text-[var(--color-provin-muted)]">
+                  <p className="flex min-w-0 items-center gap-1.5 text-[14px] text-[var(--am-ink)]">
+                    <span className="truncate">{v.primaryClient}</span>
+                    {o.clientOrders?.length ? (
+                      <span className="text-[var(--am-ink2)]">{o.clientOrders.length + 1}×</span>
+                    ) : (
+                      <span className="text-[var(--am-ink2)]">1×</span>
+                    )}
+                  </p>
+                  <p className="mt-0.5 truncate text-[13px] tabular-nums text-[var(--am-ink2)]">
                     {dateFmt.format(new Date(o.created * 1000))} ·{" "}
                     {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
+                    {o.auditResultColor ? ` · ${adminMobileAuditFilterLabel(o.auditResultColor)}` : ""}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-1.5">
-                  {v.isPartnerVin ? (
-                    <span
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    >
-                      <AdminPartnerArchivePdfButton sessionId={o.id} compact />
-                    </span>
-                  ) : null}
+                <div className="flex shrink-0 items-center gap-1">
                   {v.pdfHref ? (
                     <a
                       href={v.pdfHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ececee] text-[#8e8e93]"
+                      className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--am-fill)] text-[var(--am-ink2)]"
                       aria-label="Atvērt rēķinu PDF"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <FileText className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                      <AdminMobileIcon name="pdf" className="h-4 w-4" />
                     </a>
                   ) : null}
-                  {v.isPack ? (
-                    <span className="text-[11px] font-medium text-[var(--color-provin-muted)]">Tikai info</span>
-                  ) : (
-                    <span className="inline-flex rounded-full bg-[#f2f2f7] px-3.5 py-2 text-xs font-semibold text-[#3a3a3c]">
-                      Atvērt
-                    </span>
-                  )}
+                  {v.isPack ? null : <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />}
                 </div>
               </div>
             </li>
@@ -830,6 +944,7 @@ export function AdminOrdersTable({
         </Fragment>
         ))}
       </ul>
+      </div>
 
       <div className="mt-3 hidden overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)] md:block">
         <div className="overflow-x-auto">

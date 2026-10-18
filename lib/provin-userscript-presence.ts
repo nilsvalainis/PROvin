@@ -20,14 +20,26 @@ export const PROVIN_USERSCRIPT_GUARD_SNIPPET = `(function(){try{var A=${JSON.str
   PROVIN_USERSCRIPT_ATTR,
 )},d=document.documentElement,w=window;function k(){var v=d.getAttribute(A);if(v){w.__provinUserscriptVersion=v;}else if(w.__provinUserscriptVersion){d.setAttribute(A,w.__provinUserscriptVersion);}}k();new MutationObserver(k).observe(d,{attributes:true,attributeFilter:[A]});}catch(e){}})();`;
 
+export const PROVIN_USERSCRIPT_SS_KEY = "provin-userscript-version";
+
 function cleanVersion(raw: unknown): string {
   return typeof raw === "string" ? raw.trim().slice(0, 32) : "";
+}
+
+function persistVersion(version: string) {
+  if (!version || typeof window === "undefined") return;
+  (window as PresenceWindow).__provinUserscriptVersion = version;
+  try {
+    window.sessionStorage?.setItem(PROVIN_USERSCRIPT_SS_KEY, version);
+  } catch {
+    /* ignore */
+  }
 }
 
 export function rememberProvinUserscriptVersion(raw: unknown): string {
   const version = cleanVersion(raw);
   if (!version || typeof window === "undefined") return version;
-  (window as PresenceWindow).__provinUserscriptVersion = version;
+  persistVersion(version);
   try {
     if (document.documentElement.getAttribute(PROVIN_USERSCRIPT_ATTR) !== version) {
       document.documentElement.setAttribute(PROVIN_USERSCRIPT_ATTR, version);
@@ -43,7 +55,15 @@ export function readProvinUserscriptVersion(): string {
   if (typeof document === "undefined") return "";
   const attr = cleanVersion(document.documentElement.getAttribute(PROVIN_USERSCRIPT_ATTR));
   if (attr) return rememberProvinUserscriptVersion(attr);
-  return cleanVersion((window as PresenceWindow).__provinUserscriptVersion);
+  const mem = cleanVersion((window as PresenceWindow).__provinUserscriptVersion);
+  if (mem) return rememberProvinUserscriptVersion(mem);
+  try {
+    const ss = cleanVersion(window.sessionStorage?.getItem(PROVIN_USERSCRIPT_SS_KEY));
+    if (ss) return rememberProvinUserscriptVersion(ss);
+  } catch {
+    /* ignore */
+  }
+  return "";
 }
 
 export function isProvinUserscriptPresent(): boolean {

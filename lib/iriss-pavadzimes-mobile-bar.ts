@@ -1,30 +1,31 @@
-import { waybillCountdownStatus } from "@/lib/iriss-pavadzimes-countdown";
+import { formatIrissWaybillChip, irissWaybillUrgent } from "@/lib/admin-mobile-ds";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
 
 export type IrissWaybillMobileBarItem = {
   id: string;
-  plate: string;
-  daysLabel: string;
+  label: string;
   urgent: boolean;
 };
 
-/** Kompakta mobilā josla: atlikušās dienas aktīvajām pavadzīmēm. Sarkans, ja drīz beidzas vai beigusies. */
+/** Kompakta mobilā josla: „B192-7 Audi 6 h”. Pildīts čips, ja mazāk par 24 h (bez sarkanas/zaļas). */
 export function irissWaybillMobileBarItems(
-  rows: readonly { id: string; plate: string; validUntil: string }[],
+  rows: readonly { id: string; plate?: string; number?: string; brandModel?: string; validUntil: string }[],
   now = new Date(),
 ): IrissWaybillMobileBarItem[] {
   return rows.map((row) => {
-    const status = waybillCountdownStatus(row.validUntil, now);
     const until = Date.parse(row.validUntil);
     const remaining = Number.isFinite(until) ? until - now.getTime() : -1;
-    const days = remaining <= 0 ? 0 : Math.ceil(remaining / DAY_MS);
-    const daysLabel = status === "expired" ? "0 d" : status === "soon" ? "šodien" : `${days} d`;
+    const hoursLeft = remaining <= 0 ? 0 : Math.max(0, Math.round(remaining / HOUR_MS));
+    const label = formatIrissWaybillChip({
+      code: (row.number ?? "").trim() || (row.plate ?? "").trim(),
+      makeModel: row.brandModel,
+      hoursLeft,
+    });
     return {
       id: row.id,
-      plate: row.plate.trim() || "Pavadzīme",
-      daysLabel,
-      urgent: status !== "ok",
+      label: label || "Pavadzīme",
+      urgent: irissWaybillUrgent(hoursLeft),
     };
   });
 }

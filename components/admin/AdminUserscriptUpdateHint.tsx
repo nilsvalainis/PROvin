@@ -9,14 +9,21 @@ import { vinScanUserscriptMinLabel, vinScanUserscriptUpdateNeeded } from "@/lib/
  * Rāda brīdinājumu, ja admin lapā ieslēgtais PROVIN skripts ir vecāks par VIN SCAN minimumu.
  * „Nav aktīvs” tikai pēc gaidīšanas loga ar ping, jo React var noņemt `<html>` atribūtu un Tampermonkey ienāk vēlu.
  */
-export function AdminUserscriptUpdateHint({ className = "" }: { className?: string }) {
+export function AdminUserscriptUpdateHint({
+  className = "",
+  showInactive = true,
+}: {
+  className?: string;
+  /** PRO pasūtījumā „nav aktīvs” ir kļūdains signāls - rāda tikai, ja versija ir vecāka. */
+  showInactive?: boolean;
+}) {
   const [version, setVersion] = useState<string | null>(null);
   const [settled, setSettled] = useState(false);
 
   useEffect(() => watchProvinUserscript(setVersion, () => setSettled(true)), []);
 
   const min = vinScanUserscriptMinLabel();
-  const box = `mb-2 rounded-md border border-amber-700/30 bg-amber-500/10 px-2 py-1 text-[11px] leading-snug text-[var(--color-apple-text)] ${className}`;
+  const box = `admin-userscript-hint mb-2 hidden rounded-md border border-amber-700/30 bg-amber-500/10 px-2 py-1 text-[11px] leading-snug text-[var(--color-apple-text)] md:block ${className}`;
   if (version && vinScanUserscriptUpdateNeeded(version)) {
     return (
       <p className={box}>
@@ -27,7 +34,7 @@ export function AdminUserscriptUpdateHint({ className = "" }: { className?: stri
       </p>
     );
   }
-  if (settled && !version) {
+  if (settled && !version && showInactive) {
     return (
       <p className={box}>
         PROVIN skripts nav aktīvs. stat.vin dati jāielādē no jūsu pārlūka, serveris šo lapu vairs nesaņem. Tas pats attiecas uz bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB. Ieslēdziet Tampermonkey un atsvaidziniet šo lapu. Chrome paplašinājuma iestatījumos jābūt ieslēgtam „Atļaut lietotāja skriptus”.{" "}

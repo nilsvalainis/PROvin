@@ -8,6 +8,7 @@ import {
   PROVIN_USERSCRIPT_SETTLE_MS,
   isProvinUserscriptPresent,
   readProvinUserscriptVersion,
+  rememberProvinUserscriptVersion,
   watchProvinUserscript,
 } from "@/lib/provin-userscript-presence";
 
@@ -54,11 +55,18 @@ function installFakeDom() {
       observers.delete(this.cb);
     }
   }
+  const store = new Map<string, string>();
   const win = {
     setTimeout: (fn: () => void, ms: number) => setTimeout(fn, ms),
     clearTimeout: (id: ReturnType<typeof setTimeout>) => clearTimeout(id),
     setInterval: (fn: () => void, ms: number) => setInterval(fn, ms),
     clearInterval: (id: ReturnType<typeof setInterval>) => clearInterval(id),
+    sessionStorage: {
+      getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+      setItem: (k: string, v: string) => {
+        store.set(k, String(v));
+      },
+    },
   } as Record<string, unknown>;
   vi.stubGlobal("document", document);
   vi.stubGlobal("window", win);
@@ -127,6 +135,16 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     expect(versions.at(-1)).toBe("1.24.1");
     expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.24.1");
     stop();
+  });
+
+  it("atjauno versiju no sessionStorage, ja React noņem html atribūtu", () => {
+    const dom = installFakeDom();
+    rememberProvinUserscriptVersion("1.24.1");
+    expect(dom.win.sessionStorage.getItem("provin-userscript-version")).toBe("1.24.1");
+    reactWipesHtml(dom);
+    (dom.win as { __provinUserscriptVersion?: string }).__provinUserscriptVersion = undefined;
+    expect(readProvinUserscriptVersion()).toBe("1.24.1");
+    expect(isProvinUserscriptPresent()).toBe(true);
   });
 
   it("bez skripta pēc loga versija paliek tukša", () => {

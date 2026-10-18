@@ -216,7 +216,7 @@ function AdminGlobalSearchPanel() {
     <>
       {open ? (
         <div
-          className="fixed inset-0 z-[130] flex flex-col bg-white md:block md:bg-black/20 md:p-8"
+          className="fixed inset-0 z-[130] flex flex-col bg-[var(--am-bg,#e9ecf1)] md:block md:bg-black/20 md:p-8"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) close();
           }}
@@ -226,7 +226,7 @@ function AdminGlobalSearchPanel() {
             aria-modal="true"
             aria-label="Meklēt"
             onKeyDown={onKeyDown}
-            className="flex min-h-0 flex-1 flex-col bg-white md:mx-auto md:mt-16 md:h-auto md:max-h-[min(32rem,70dvh)] md:w-full md:max-w-xl md:flex-none md:overflow-hidden md:rounded-2xl md:border md:border-[#e5e5ea] md:shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
+            className="am-glass flex min-h-0 flex-1 flex-col md:mx-auto md:mt-16 md:h-auto md:max-h-[min(32rem,70dvh)] md:w-full md:max-w-xl md:flex-none md:overflow-hidden md:rounded-2xl md:border md:border-[#e5e5ea] md:bg-white md:shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
           >
             <div className="flex items-center gap-2 border-b border-[#e5e5ea] px-3 pt-[max(10px,env(safe-area-inset-top))] md:pt-3">
               <Search className="h-4 w-4 shrink-0 text-[#8e8e93]" strokeWidth={2} aria-hidden />

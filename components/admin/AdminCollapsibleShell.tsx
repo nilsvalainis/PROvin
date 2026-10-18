@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { TRAFFIC_HEADER_STRIP_CLASS, type TrafficFillLevel } from "@/lib/admin-block-traffic-status";
@@ -56,9 +57,12 @@ export function AdminCollapsibleShell({
   children: React.ReactNode;
   className?: string;
 }) {
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
-  const [bodyMounted, setBodyMounted] = useState(!defaultCollapsed);
-  const [bodyOpen, setBodyOpen] = useState(!defaultCollapsed);
+  const phone = useAdminIsPhone();
+  const collapseLocked = phone ? false : disableCollapse;
+  const initiallyCollapsed = phone || defaultCollapsed;
+  const [collapsed, setCollapsed] = useState(initiallyCollapsed);
+  const [bodyMounted, setBodyMounted] = useState(!initiallyCollapsed);
+  const [bodyOpen, setBodyOpen] = useState(!initiallyCollapsed);
 
   /**
    * Telefonā bloku var izvērst pilnekrānā. Apzināti maināma tikai apvalka klase,
@@ -110,30 +114,30 @@ export function AdminCollapsibleShell({
   );
 
   useEffect(() => {
-    if (disableCollapse) return;
+    if (collapseLocked) return;
     try {
       const raw = localStorage.getItem(accordionStorageKey(sessionId, blockId));
       if (raw === "1") setCollapsed(true);
       else if (raw === "0") setCollapsed(false);
-      else setCollapsed(defaultCollapsed);
+      else setCollapsed(phone || defaultCollapsed);
     } catch {
-      setCollapsed(defaultCollapsed);
+      setCollapsed(phone || defaultCollapsed);
     }
-  }, [sessionId, blockId, defaultCollapsed, disableCollapse]);
+  }, [sessionId, blockId, defaultCollapsed, collapseLocked, phone]);
 
   useEffect(() => {
-    if (disableCollapse) return;
+    if (collapseLocked) return;
     try {
       localStorage.setItem(accordionStorageKey(sessionId, blockId), collapsed ? "1" : "0");
     } catch {
       /* quota */
     }
-  }, [sessionId, blockId, collapsed, disableCollapse]);
+  }, [sessionId, blockId, collapsed, collapseLocked]);
 
   const toggle = useCallback(() => setCollapsed((c) => !c), []);
 
   useEffect(() => {
-    if (disableCollapse) return;
+    if (collapseLocked) return;
     const show = !collapsed || fullscreen;
     if (show) {
       setBodyMounted(true);
@@ -146,7 +150,7 @@ export function AdminCollapsibleShell({
     const wait = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : 260;
     const t = window.setTimeout(() => setBodyMounted(false), wait);
     return () => window.clearTimeout(t);
-  }, [collapsed, fullscreen, disableCollapse]);
+  }, [collapsed, fullscreen, collapseLocked]);
 
   const onHeaderClick = useCallback(
     (e: React.MouseEvent) => {
@@ -159,7 +163,7 @@ export function AdminCollapsibleShell({
 
   const strip = trafficLevel ? TRAFFIC_HEADER_STRIP_CLASS[trafficLevel] : "";
 
-  if (disableCollapse) {
+  if (collapseLocked) {
     return (
       <div
         className={`provin-card overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${strip} ${fullscreenShellClass} ${className}`}

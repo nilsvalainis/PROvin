@@ -15,7 +15,7 @@ export default async function AdminMorningSummaryPage() {
 
   return (
     <div className="w-full max-w-none">
-      <AdminDashboardHeaderWithMenu>
+      <AdminDashboardHeaderWithMenu mobileTitle="Rīta kopsavilkums">
         <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Rīta kopsavilkums
         </h1>

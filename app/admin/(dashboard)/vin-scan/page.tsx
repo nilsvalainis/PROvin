@@ -26,7 +26,7 @@ export default async function AdminVinScanPage({
   const initialVin = normalizeVin(sp?.vin ?? "");
   return (
     <div className="w-full max-w-none">
-      <AdminDashboardHeaderWithMenu>
+      <AdminDashboardHeaderWithMenu hideOnPhone>
         <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           VIN pārbaude
         </h1>

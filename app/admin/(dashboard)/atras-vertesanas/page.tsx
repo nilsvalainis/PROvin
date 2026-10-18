@@ -91,7 +91,7 @@ export default async function AdminListingPeeksPage({
 
   return (
     <div className="w-full max-w-none">
-      <AdminDashboardHeaderWithMenu>
+      <AdminDashboardHeaderWithMenu mobileTitle="Ātrie vērtējumi">
         <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">Lead</p>
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Ātrie vērtējumi
@@ -173,7 +173,7 @@ export default async function AdminListingPeeksPage({
                     {e.email}
                     {e.phone ? ` · ${e.phone}` : ""}
                   </span>
-                  <span className="flex shrink-0 items-center gap-1" aria-label="Avoti">
+                  <span className="qe-source-dots flex shrink-0 items-center gap-1 max-md:hidden" aria-label="Avoti">
                     {dots.map((d) => (
                       <i key={d.id} className={`inline-block h-2.5 w-2.5 rounded-full ${QE_TONE_DOT[d.tone]}`} title={d.title} />
                     ))}
@@ -188,7 +188,7 @@ export default async function AdminListingPeeksPage({
                   </span>
                 </Link>
                 {pending ? (
-                  <form action={setQuickEvalStatus}>
+                  <form action={setQuickEvalStatus} className="qe-list-reject max-md:hidden">
                     <input type="hidden" name="id" value={e.id} />
                     <input type="hidden" name="status" value="rejected" />
                     <button type="submit" className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-semibold text-rose-700 hover:bg-rose-100 max-md:py-2">

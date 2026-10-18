@@ -51,15 +51,11 @@ export function IrissPavadzimesMobileBar() {
           <Link
             key={item.id}
             href="/admin/iriss/pavadzimes"
-            className="iriss-waybill-chip inline-flex h-10 min-h-10 max-w-[11rem] shrink-0 items-center gap-1.5 rounded-full bg-white px-2.5 text-[12px] font-semibold shadow-sm ring-1 ring-[#E5E7EB]"
-            style={{ color: item.urgent ? "#b91c1c" : "#15803d" }}
+            className={`iriss-waybill-chip inline-flex h-8 max-w-[16rem] shrink-0 items-center rounded-full px-2.5 text-[12px] font-medium text-[var(--am-ink)] ${
+              item.urgent ? "bg-[var(--am-ink)] text-[var(--am-s1)]" : "bg-[var(--am-fill)]"
+            }`}
           >
-            <span className="truncate" style={{ color: "inherit" }}>
-              {item.plate}
-            </span>
-            <span className="tabular-nums" style={{ color: "inherit" }}>
-              {item.daysLabel}
-            </span>
+            <span className="truncate">{item.label}</span>
           </Link>
         ))}
       </div>

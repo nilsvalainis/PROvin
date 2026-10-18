@@ -162,7 +162,8 @@ export function AdminAsvIngestBar({
         </label>
         <button
           type="button"
-          className="rounded-md bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-medium text-white disabled:opacity-50"
+          data-admin-paid="asv"
+          className="admin-paid-load rounded-md bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-medium text-white disabled:opacity-50"
           disabled={!editable || busy || !effectiveVin}
           onClick={() => void fetchData()}
         >

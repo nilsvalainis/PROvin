@@ -286,7 +286,8 @@ export function AdminJojIngestBar({
         </label>
         <button
           type="button"
-          className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] disabled:opacity-50"
+          data-admin-paid="joj"
+          className="admin-paid-load rounded-md border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] disabled:opacity-50"
           disabled={!editable || busy || !effectiveVin}
           onClick={() => void fetchData()}
         >

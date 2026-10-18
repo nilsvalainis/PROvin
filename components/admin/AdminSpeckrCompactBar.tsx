@@ -100,7 +100,8 @@ export function AdminSpeckrCompactBar({ orderVin, snapshot, editable, onSnapshot
             type="button"
             disabled={!vinOk || busy}
             onClick={() => void load()}
-            className="rounded border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-50 disabled:opacity-50"
+            data-admin-paid="speckr"
+            className="admin-paid-load rounded border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-50 disabled:opacity-50"
             title="1 Speckr kredīts par veiksmīgu pieprasījumu"
           >
             {busy ? "Ielādē…" : "Ielādēt (maksas)"}
