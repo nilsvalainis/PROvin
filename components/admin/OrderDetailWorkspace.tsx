@@ -27,6 +27,15 @@ import { AdminListingAnalysisSourceBlock } from "@/components/admin/AdminListing
 import { AdminListingCoverPhoto } from "@/components/admin/AdminListingCoverPhoto";
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
 import { AdminOrderVinScanCard } from "@/components/admin/AdminOrderVinScanCard";
+import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
+import { ADMIN_MOBILE_ORDER_SECTIONS, type AdminMobileOrderSectionId } from "@/lib/admin-mobile-ds";
+import {
+  AdminMobileRoundBtn,
+  AdminMobileSaveStatus,
+  AdminMobileSectionNav,
+  AdminMobileSheet,
+  AdminMobileTopBar,
+} from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminOrderAiKnowledgeUsed } from "@/components/admin/AdminOrderAiKnowledgeUsed";
 import { applyVinScanAuctionsToCcVin, type OrderVinScanRecord } from "@/lib/order-vin-scan";
 import { applyVinScanCsddToBlock, applyVinScanListingToBlock } from "@/lib/order-vin-scan-apply";
@@ -311,6 +320,7 @@ import {
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
 import {
+  defaultFlashMaxSelection,
   expandFlashMaxRunJobs,
   flashMaxJobBreadth,
   flashMaxJobTier,
@@ -802,6 +812,9 @@ export function OrderDetailWorkspace({
   const [pdfScanning, setPdfScanning] = useState(false);
   const [pdfScanError, setPdfScanError] = useState<string | null>(null);
   const [wizardStep, setWizardStep] = useState(0);
+  const phoneStack = useAdminIsPhone();
+  const [mobileMore, setMobileMore] = useState(false);
+  const [mobileSection, setMobileSection] = useState<AdminMobileOrderSectionId>(ADMIN_MOBILE_ORDER_SECTIONS[0].id);
   const [phrasesOpen, setPhrasesOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [copilotBusy, setCopilotBusy] = useState(false);
@@ -4793,8 +4806,76 @@ export function OrderDetailWorkspace({
           {WORKSPACE_SAVE_FAILED_LABEL} Teksts paliek pārlūkā. Mēģini saglabāt vēlreiz.
         </p>
       ) : null}
+      <div className="md:hidden">
+        <AdminMobileTopBar
+          title={(payload.customerName || "Pasūtījums").toUpperCase()}
+          subtitle={vinBar || undefined}
+          backHref="/admin/dashboard"
+          trailing={
+            <>
+              <AdminMobileSaveStatus
+                saved={workspaceAutosaveStatus !== "error" && (workspaceSaveFlash || workspaceAutosaveStatus === "saved") && !workspaceSaveBusy}
+                busy={workspaceSaveBusy}
+                onSave={() => {
+                  setWorkspaceSaveBusy(true);
+                  void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
+                }}
+              />
+              <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => setMobileMore(true)} />
+            </>
+          }
+        >
+          <AdminMobileSectionNav
+            items={ADMIN_MOBILE_ORDER_SECTIONS.map((s) => ({ id: s.id, label: s.label }))}
+            activeId={mobileSection}
+            onPick={(id) => {
+              const sec = ADMIN_MOBILE_ORDER_SECTIONS.find((s) => s.id === id);
+              if (!sec) return;
+              setMobileSection(sec.id);
+              goWizardStep(sec.wizard);
+              window.setTimeout(() => {
+                document.getElementById(sec.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }, 40);
+            }}
+          />
+        </AdminMobileTopBar>
+        <p className="px-4 pb-2 text-[13px] text-[var(--am-ink2)]">3 maksas avoti ir izvēlnē ⋯</p>
+        <AdminMobileSheet open={mobileMore} title="Darbības" onClose={() => setMobileMore(false)}>
+          <div className="overflow-hidden rounded-[18px] bg-[var(--am-s1)]">
+            <button type="button" className="flex h-[50px] w-full items-center px-4 text-[15px]" onClick={() => { setMobileMore(false); handleWhatsAppOpen(); }}>WhatsApp</button>
+            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); void navigator.clipboard.writeText(plateBar); }}>Kopēt reģ. numuru</button>
+            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); setPhrasesOpen(false); setCopilotOpen(true); }}>Copilot</button>
+            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); setCopilotOpen(false); setPhrasesOpen(true); }}>Biežās frāzes</button>
+            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); void runFlashMax(defaultFlashMaxSelection()); }}>FLASH MAX</button>
+            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); goWizardStep(WIZARD_SUMMARY_STEP); }}>Pāriet uz kopsavilkumu</button>
+          </div>
+          <p className="mt-4 px-1 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">Maksas avoti</p>
+          <p className="mt-1 mb-2 text-[13px] text-[var(--am-ink2)]">3 maksas avoti ir izvēlnē ⋯. Ielāde prasa apstiprinājumu un nekad nesākas pati.</p>
+          <div className="overflow-hidden rounded-[18px] bg-[var(--am-s1)]">
+            {[
+              { key: "oneauto", label: "OneAuto / dīlera dati" },
+              { key: "asv", label: "ASV vēsture" },
+              { key: "joj", label: "JoJ" },
+              { key: "speckr", label: "Speckr" },
+            ].map((src) => (
+              <button
+                key={src.key}
+                type="button"
+                className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-left text-[15px] first:border-t-0"
+                onClick={() => {
+                  if (!window.confirm(`Ielādēt ${src.label}? Maksas avots prasa apstiprinājumu.`)) return;
+                  setMobileMore(false);
+                  document.querySelector<HTMLButtonElement>(`.admin-paid-load[data-admin-paid="${src.key}"]`)?.click();
+                }}
+              >
+                {src.label}
+              </button>
+            ))}
+          </div>
+        </AdminMobileSheet>
+      </div>
       <nav
-        className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm"
+        className="sticky top-0 z-30 -mx-1 border-b border-[var(--admin-border-subtle)] bg-[var(--admin-nav-bg)] px-1 py-1.5 backdrop-blur-sm max-md:hidden"
         aria-label="Soli pa solim"
       >
         {/* Telefonā soļi ir pirmie (order-1); Saglabāt iet uz apakšējo doku. */}
@@ -5086,6 +5167,7 @@ export function OrderDetailWorkspace({
           setVinBarCopyFlash(true);
           window.setTimeout(() => setVinBarCopyFlash(false), 600);
         }}
+        onMore={() => setMobileMore(true)}
       />
 
       <AdminOrderStickyActionRail
@@ -5123,8 +5205,8 @@ export function OrderDetailWorkspace({
         ) : null}
         {showPortfolioInline ? portfolioSection : null}
 
-        {wizardStep === 0 ? (
-          <div className="space-y-6">
+        {(phoneStack || wizardStep === 0) ? (
+          <div id="admin-m-sec-kopsavilkums" className="space-y-6">
             {payload.checkoutLine === "provin_select" ? null : (
               <AdminOrderVinScanCard
                 sessionId={payload.sessionId}
@@ -5206,9 +5288,10 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 1 ? (
-          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
+        {(phoneStack || wizardStep === 1) ? (
+          <div id="admin-m-sec-avoti" className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
             <div id="admin-order-block-csdd" className="flex min-h-0 min-w-0 flex-col">
+              <div id="admin-m-sec-nobraukums" className="contents">
               <AdminCsddSourceBlock
                 value={blocksDisplaySafe.csdd}
                 readOnly={false}
@@ -5226,6 +5309,7 @@ export function OrderDetailWorkspace({
                   void commitGenericSourcePhotoGroups("csdd", next)
                 }
               />
+              </div>
             </div>
             <div id="admin-order-block-ltab" className="flex min-h-0 min-w-0 flex-col">
               <AdminLtabSourceBlock
@@ -5248,8 +5332,8 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 2 ? (
-          <div className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
+        {(phoneStack || wizardStep === 2) ? (
+          <div id="admin-m-sec-negadijumi" className="grid min-h-0 min-w-0 grid-cols-1 gap-5 lg:grid-cols-2">
             <div id="admin-order-block-autodna" className="flex min-h-0 min-w-0 flex-col">
               <AdminVendorAvotuSourceBlock
                 blockKey="autodna"
@@ -5291,7 +5375,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 3 ? (
+        {(phoneStack || wizardStep === 3) ? (
           <div id="admin-order-block-auto-records" className="min-w-0">
             <AdminAutoRecordsSourceBlock
               value={blocksDisplaySafe.auto_records}
@@ -5334,7 +5418,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 5 ? (
+        {(phoneStack || wizardStep === 5) ? (
           <div id="admin-order-block-citi-avoti" className="min-w-0">
             <AdminCitiAvotiSourceBlock
               value={blocksDisplaySafe.citi_avoti}
@@ -5355,7 +5439,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 4 ? (
+        {(phoneStack || wizardStep === 4) ? (
           <div id="admin-order-block-cc-vin" className="min-w-0">
             <AdminCcVinSourceBlock
               value={blocksDisplaySafe.cc_vin}
@@ -5374,7 +5458,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 11 ? (
+        {(phoneStack || wizardStep === 11) ? (
           <div id="admin-order-block-asv" className="min-w-0">
             <AdminAsvSourceBlock
               value={blocksDisplaySafe.asv}
@@ -5394,7 +5478,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 6 ? (
+        {(phoneStack || wizardStep === 6) ? (
           <div id="admin-order-block-tjekbil" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="tjekbil"
@@ -5415,7 +5499,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 10 ? (
+        {(phoneStack || wizardStep === 10) ? (
           <div id="admin-order-block-finnik" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="finnik"
@@ -5438,7 +5522,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 9 ? (
+        {(phoneStack || wizardStep === 9) ? (
           <div id="admin-order-block-estonia" className="min-w-0">
             <AdminEstoniaVinRegistryPair
               mnt={blocksDisplaySafe.mnt_ee}
@@ -5467,7 +5551,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 7 ? (
+        {(phoneStack || wizardStep === 7) ? (
           <div id="admin-order-block-carinfo" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="carinfo"
@@ -5488,7 +5572,7 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 8 ? (
+        {(phoneStack || wizardStep === 8) ? (
           <div id="admin-order-block-traficom-fi" className="min-w-0">
             <AdminVinRegistrySourceBlock
               blockKey="traficom_fi"
@@ -5511,8 +5595,8 @@ export function OrderDetailWorkspace({
           </div>
         ) : null}
 
-        {wizardStep === 12 ? (
-          <section id="admin-order-section-sludinajums" className="min-w-0">
+        {(phoneStack || wizardStep === 12) ? (
+          <section id="admin-m-sec-foto" className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
               <AdminPdfIncludeToggle
@@ -5597,8 +5681,8 @@ export function OrderDetailWorkspace({
           </section>
         ) : null}
 
-        {wizardStep === 13 ? (
-          <section id="admin-order-section-kopsavilkums" className="min-w-0">
+        {(phoneStack || wizardStep === 13) ? (
+          <section id="admin-m-sec-komentari" className="min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>

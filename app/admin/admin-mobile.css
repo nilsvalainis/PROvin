@@ -1,0 +1,295 @@
+/* PROVIN / IRISS admin phone UI (max 767px). Desktop classes stay untouched. */
+
+:root {
+  --d-micro: 120ms;
+  --d-std: 220ms;
+  --d-std-l: 250ms;
+  --d-sheet: 340ms;
+  --d-push: 340ms;
+  --d-stagger: 30ms;
+  --ease-std: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --spring-approx: cubic-bezier(0.34, 1.26, 0.64, 1);
+  --spring: linear(
+    0,
+    0.0493,
+    0.1643,
+    0.3072,
+    0.4536,
+    0.5887,
+    0.7049,
+    0.7997,
+    0.8732,
+    0.9277,
+    0.9662,
+    0.9917,
+    1.0074,
+    1.0159,
+    1.0194,
+    1.0198,
+    1.0181,
+    1.0156,
+    1.0126,
+    1.0098,
+    1.0072,
+    1.0051,
+    1.0034,
+    1.0021,
+    1.0011,
+    1.0004,
+    1,
+    0.9998,
+    0.9996,
+    0.9996,
+    0.9996,
+    0.9997,
+    1
+  );
+  --spring-snappy: linear(
+    0, 0.055, 0.1734, 0.3101, 0.4422, 0.5591, 0.6575, 0.7374, 0.8009, 0.8503, 0.8883, 0.9172, 0.9389, 0.9551, 0.9672,
+    0.9761, 0.9826, 0.9874, 0.9909, 0.9935, 0.9953, 0.9966, 0.9976, 0.9983, 0.9988, 0.9991, 0.9994, 0.9996, 0.9997,
+    0.9998, 0.9998, 0.9999, 1
+  );
+  --spring-bounce: linear(
+    0, 0.0588, 0.1954, 0.3631, 0.5313, 0.6814, 0.8047, 0.8987, 0.9653, 1.0084, 1.033, 1.044, 1.0458, 1.0418, 1.035,
+    1.0272, 1.0196, 1.013, 1.0077, 1.0037, 1.001, 0.9992, 0.9983, 0.9979, 0.9979, 0.9982, 0.9985, 0.9988, 0.9992,
+    0.9995, 0.9997, 0.9999, 1
+  );
+}
+
+@supports not (transition-timing-function: linear(0, 1)) {
+  :root {
+    --spring: var(--spring-approx);
+    --spring-snappy: var(--ease-out);
+    --spring-bounce: var(--spring-approx);
+  }
+}
+
+@media (max-width: 767px) {
+  .admin-m {
+    --am-bg: #e9ecf1;
+    --am-s1: #ffffff;
+    --am-s2: #f4f5f8;
+    --am-ink: #0b0c10;
+    --am-ink2: #5e636e;
+    --am-ink3: #9a9faa;
+    --am-fill: rgba(116, 120, 138, 0.11);
+    --am-fill2: rgba(116, 120, 138, 0.19);
+    --am-hair: rgba(17, 24, 39, 0.075);
+    --am-badge: #5e636e;
+    --am-badge-ink: #ffffff;
+    --am-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(243, 245, 250, 0.52));
+    --am-glass-edge: rgba(255, 255, 255, 0.85);
+    --am-scrim: rgba(20, 24, 35, 0.22);
+    --am-card-shadow: 0 0 0 0.5px rgba(17, 24, 39, 0.05), 0 1px 2px rgba(16, 24, 40, 0.04),
+      0 4px 14px rgba(16, 24, 40, 0.045);
+    --am-glass-shadow: 0 1px 1px rgba(16, 24, 40, 0.04), 0 8px 22px rgba(16, 24, 40, 0.08),
+      0 22px 44px rgba(16, 24, 40, 0.06);
+    color: var(--am-ink);
+    font-feature-settings: "cv11", "ss03", "tnum";
+    background-color: var(--am-bg);
+    background-image: radial-gradient(120% 80% at 10% -10%, rgba(186, 206, 232, 0.45), transparent 55%),
+      radial-gradient(90% 70% at 110% 0%, rgba(214, 198, 228, 0.32), transparent 50%),
+      radial-gradient(80% 60% at 50% 110%, rgba(176, 196, 216, 0.28), transparent 55%);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .admin-m {
+      --am-bg: #060607;
+      --am-s1: #161619;
+      --am-s2: #1f1f24;
+      --am-ink: #f3f3f5;
+      --am-ink2: #9c9da6;
+      --am-ink3: #64656d;
+      --am-fill: rgba(255, 255, 255, 0.075);
+      --am-fill2: rgba(255, 255, 255, 0.13);
+      --am-hair: rgba(255, 255, 255, 0.075);
+      --am-badge: #3a3b42;
+      --am-badge-ink: #f3f3f5;
+      --am-glass: linear-gradient(180deg, rgba(44, 44, 50, 0.7), rgba(26, 26, 30, 0.6));
+      --am-glass-edge: rgba(255, 255, 255, 0.13);
+      --am-scrim: rgba(0, 0, 0, 0.45);
+      --am-card-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+      --am-glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+      background-image: radial-gradient(90% 70% at 0% 0%, rgba(70, 78, 110, 0.28), transparent 50%),
+        radial-gradient(80% 60% at 100% 100%, rgba(40, 44, 60, 0.35), transparent 55%);
+    }
+  }
+
+  .admin-m.admin-ios-theme,
+  .admin-ios-theme.admin-m {
+    background: var(--am-bg);
+    color: var(--am-ink);
+    --admin-ios-bg: var(--am-bg);
+    --color-apple-text: var(--am-ink);
+    --color-provin-muted: var(--am-ink2);
+    --color-canvas: var(--am-bg);
+    --color-provin-surface: var(--am-bg);
+  }
+
+  .admin-m.admin-ios-theme :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd, a) {
+    color: inherit;
+  }
+
+  .admin-m.admin-ios-theme [class*="text-slate-"],
+  .admin-m.admin-ios-theme [class*="text-zinc-"],
+  .admin-m.admin-ios-theme [class*="text-neutral-"],
+  .admin-m.admin-ios-theme [class*="text-gray-"] {
+    color: inherit !important;
+  }
+
+  .admin-m.admin-ios-theme :is(input, select, textarea) {
+    border-radius: 14px !important;
+    border: 0.5px solid var(--am-hair) !important;
+    background: var(--am-s1) !important;
+    color: var(--am-ink) !important;
+    box-shadow: none;
+  }
+
+  .admin-m.admin-ios-theme :is(input, select, textarea)::placeholder {
+    color: var(--am-ink3) !important;
+  }
+
+  .admin-m.admin-ios-theme button,
+  .admin-m.admin-ios-theme .provin-btn,
+  .admin-m.admin-ios-theme .provin-btn-ghost {
+    border-radius: 999px;
+    border-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .am-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    background-color: currentColor;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+  }
+
+  .am-glass {
+    background: var(--am-glass);
+    backdrop-filter: blur(26px) saturate(185%);
+    -webkit-backdrop-filter: blur(26px) saturate(185%);
+    box-shadow: var(--am-glass-shadow), inset 0 1px 0 #fff, inset 0 -0.5px 0 rgba(17, 24, 39, 0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .am-glass {
+      box-shadow: var(--am-glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+  }
+
+  .am-press {
+    transition: transform var(--d-micro) var(--ease-std);
+  }
+  .am-press:active {
+    transform: scale(0.97);
+  }
+
+  .am-row {
+    content-visibility: auto;
+    contain: layout paint;
+  }
+
+  .admin-m [data-admin-source-logo],
+  .admin-m [data-admin-brand-logo],
+  .admin-m .iriss-auction-logo,
+  .admin-m img[alt*="logo" i],
+  .admin-m .admin-source-logo-row {
+    display: none !important;
+  }
+
+  .admin-m .admin-userscript-hint,
+  .admin-m [data-admin-userscript-hint] {
+    display: none !important;
+  }
+
+  .admin-m .admin-paid-load {
+    display: none !important;
+  }
+
+  .admin-m table.am-as-cards thead {
+    display: none;
+  }
+  .admin-m table.am-as-cards tbody,
+  .admin-m table.am-as-cards tr,
+  .admin-m table.am-as-cards td {
+    display: block;
+    width: 100%;
+  }
+  .admin-m table.am-as-cards tr {
+    margin-bottom: 8px;
+    border-radius: 18px;
+    background: var(--am-s1);
+    box-shadow: var(--am-card-shadow);
+    padding: 12px 16px;
+  }
+
+  .admin-m [id^="admin-m-sec-"] {
+    scroll-margin-top: 148px;
+  }
+
+  .admin-m .provin-pro-content table {
+    display: block;
+  }
+  .admin-m .provin-pro-content thead {
+    display: none;
+  }
+  .admin-m .provin-pro-content tbody,
+  .admin-m .provin-pro-content tr,
+  .admin-m .provin-pro-content td {
+    display: block;
+    width: 100%;
+  }
+  .admin-m .provin-pro-content tr {
+    margin-bottom: 8px;
+    border-radius: 18px;
+    background: var(--am-s1);
+    box-shadow: var(--am-card-shadow);
+    padding: 10px 14px;
+  }
+
+  .admin-m .iriss-new-fab {
+    display: none !important;
+  }
+
+  .admin-m [data-admin-brand-logo] {
+    display: none !important;
+  }
+
+  .admin-m .qe-source-dots,
+  .admin-m .qe-list-reject {
+    display: none !important;
+  }
+
+  .admin-m .iriss-row-status {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    z-index: 20;
+    height: 22px;
+    border-radius: 7px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-m *,
+  .admin-m *::before,
+  .admin-m *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

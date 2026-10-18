@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, ScanLine } from "lucide-react";
 
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
@@ -9,6 +9,7 @@ import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
 import { AdminVinScanBrowserFetchHandoff } from "@/components/admin/AdminVinScanBrowserFetchHandoff";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
+import { ADMIN_MOBILE_VIN_SCAN_EVENT } from "@/lib/admin-mobile-ds";
 import { ORDER_VIN_SCAN_STUCK_MS } from "@/lib/order-vin-scan-run-decision";
 import { browserImportErrorLv, parseVinScanBrowserEventDetail } from "@/lib/vin-scan/browser-fetch";
 import {
@@ -190,7 +191,7 @@ export function AdminOrderVinScanCard({
     return [...main, ...none];
   }, [summary]);
 
-  const startScan = async (sourceId?: string) => {
+  const startScan = useCallback(async (sourceId?: string) => {
     if (busy || !vin.trim()) return;
     setBusy(true);
     try {
@@ -213,7 +214,15 @@ export function AdminOrderVinScanCard({
     } finally {
       setBusy(false);
     }
-  };
+  }, [busy, listingUrl, sessionId, vin]);
+
+  useEffect(() => {
+    const onMobileScan = () => {
+      void startScan();
+    };
+    document.addEventListener(ADMIN_MOBILE_VIN_SCAN_EVENT, onMobileScan);
+    return () => document.removeEventListener(ADMIN_MOBILE_VIN_SCAN_EVENT, onMobileScan);
+  }, [startScan]);
 
   const runAction = (row: OrderVinScanSourceRow) => {
     if (!record) return;
@@ -365,7 +374,7 @@ export function AdminOrderVinScanCard({
       )}
       {showFields ? (
         <div className="px-2 pb-2">
-          <AdminUserscriptUpdateHint />
+          <AdminUserscriptUpdateHint showInactive={false} />
           {importNote ? <p className="mb-2 text-[11px] text-rose-700">{importNote}</p> : null}
           {!listExpanded ? (
             collapsedStrip

@@ -15,7 +15,6 @@ import {
   MessagesSquare,
   List,
   LogOut,
-  MoreHorizontal,
   PenLine,
   Plus,
   Radar,
@@ -28,8 +27,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AdminMotionPill } from "@/components/admin/AdminMotionPill";
+import { useCallback, useEffect, useState } from "react";
 import { IrissPavadzimesSidebarCard } from "@/components/admin/IrissPavadzimesSidebarCard";
 import { useAdminClientReady, useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
 import { isModifiedClick, startAdminViewTransition, viewTransitionDir } from "@/lib/admin-motion";
@@ -40,11 +38,10 @@ import {
   ADMIN_MOBILE_BADGE_POLL_MS,
   scheduleAdminIdleWork,
 } from "@/lib/admin-mobile-shell";
-import {
-  ADMIN_MOBILE_TABBAR_DOCK_NAV,
-  ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
-} from "@/lib/admin-mobile-shell";
-import { ADMIN_RAIL_V1_GLYPH, ADMIN_RAIL_V1_GLYPH_INNER } from "@/lib/admin-sticky-rail-v1-styles";
+import { ADMIN_MOBILE_TABBAR_DOCK_NAV } from "@/lib/admin-mobile-shell";
+import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
+import { AdminMobileCountBadge } from "@/components/admin/mobile/AdminMobileChrome";
+import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
 
 /** Variants A: grupēta kreisā sānjosla visiem admin paneļiem (PRO + IRISS). Mobilajā — apakšējā cilņu josla + „Vairāk”. */
 
@@ -333,29 +330,6 @@ function useBadges() {
  * jo admin-ios-theme.css piespiež `span { color: #000 }`.
  * „Pasūtījumi” — pelēks, sarkans tikai ja kāds kavē termiņu.
  */
-/** Mobilās apakšējās joslas žetons: tumši sarkans / brīdinājums / pelēks, balti treknie cipari. */
-function MobileTabCountBadge({
-  n,
-  gray = false,
-  warn = false,
-}: {
-  n: number;
-  gray?: boolean;
-  warn?: boolean;
-}) {
-  if (n <= 0) return null;
-  const text = n > 99 ? "99+" : String(n);
-  const bg = gray ? "bg-[#9ca3af]" : warn ? "bg-[#d97706]" : "bg-[#b91c1c]";
-  return (
-    <span
-      className={`absolute -right-2 -top-1 inline-flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-bold leading-none text-white tabular-nums shadow-[0_0_0_1.5px_rgba(255,255,255,0.85)] ${bg}`}
-      aria-hidden
-    >
-      {text}
-    </span>
-  );
-}
-
 function Badge({
   n,
   dot = false,
@@ -518,15 +492,42 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
   );
 }
 
-/** Mobilā apakšējā cilņu josla: 4 iPhone cilnes. PRO/IRISS centrs ir „Vairāk”. */
+const MOBILE_TAB_ICON: Record<string, AdminMobileIconName> = {
+  "/admin/dashboard": "pasutijumi",
+  "/admin/vin-scan": "vinParbaude",
+  "/admin/atras-vertesanas": "atrie",
+  "/admin/iriss/pasutijumi": "pasutijumi",
+  "/admin/iriss/sludinajumi": "sludinajums",
+  "/admin/iriss/scan": "radars",
+};
+
+const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
+  "/admin/kopsavilkums": "rits",
+  "/admin/dashboard": "pasutijumi",
+  "/admin/vin-scan": "vinParbaude",
+  "/admin/atras-vertesanas": "atrie",
+  "/admin/commission-invoice": "rekini",
+  "/admin/partneri": "partneri",
+  "/admin/b2b-demo": "dileri",
+  "/admin/blogs": "labot",
+  "/admin/agregatu-zinasanas": "iestatijumi",
+  "/admin/statistika": "statistika",
+  "/admin/teksti": "komentars",
+  "/admin/iriss/pasutijumi": "pasutijumi",
+  "/admin/iriss/sludinajumi": "sludinajums",
+  "/admin/iriss/scan": "radars",
+  "/admin/iriss/atskaite": "atskaite",
+  "/admin/iriss/pavadzimes": "pavadzimes",
+  "/admin/iriss/iestatijumi": "iestatijumi",
+};
+
+/** Mobilā apakšējā cilņu josla: 4 iPhone cilnes + atsevišķa meklēšana. PRO/IRISS centrs ir „Vairāk”. */
 export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: AdminWorkspace } = {}) {
   const pathname = usePathname() || "";
   const router = useRouter();
-  const navRef = useRef<HTMLElement>(null);
   const workspaceFromPath = useAdminWorkspace();
   const workspace = workspaceProp ?? workspaceFromPath;
   const badges = useBadges();
-  const offer = useNewIrissOffer();
   const [more, setMore] = useState(false);
 
   const goTab = useCallback(
@@ -545,19 +546,15 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
     return () => window.removeEventListener("keydown", onKey);
   }, [more]);
 
-  const irissTabs: Item[] = [
-    I_HOME,
-    { ...I_LIST, label: "Sludinājumi" },
-    I_SCAN,
-  ];
+  const irissTabs: Item[] = [I_HOME, { ...I_LIST, label: "Sludinājumi" }, I_SCAN];
   const proTabs: Item[] = [SAKUMS, VIN, { ...FAST, label: "Ātrie" }];
   const tabs: Item[] = workspace === "iriss" ? irissTabs : proTabs;
   const inTabs = tabs.some((t) => t.match(pathname));
   const moreBadge = workspace === "iriss" ? badges.fast + badges.partners + badges.orders : badges.partners + badges.fast;
 
-  const tabItemClass = (on: boolean) =>
-    `admin-nav-link admin-pr relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] py-0.5 text-[10px] font-medium transition-opacity ${
-      on ? "text-[var(--color-provin-accent)] opacity-100" : "text-[#8e8e93] opacity-75"
+  const tabClass = (on: boolean) =>
+    `admin-nav-link relative flex min-w-0 flex-[1_1_0] flex-col items-center justify-center gap-[2px] px-3 py-0.5 text-[10px] font-medium ${
+      on ? "font-semibold text-[var(--am-ink)]" : "text-[var(--am-ink2)]"
     }`;
 
   const selectedTabIndex = tabs.findIndex((t) => t.match(pathname));
@@ -565,126 +562,108 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
 
   return (
     <>
-      <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
-        <nav ref={navRef} className={`${ADMIN_MOBILE_TABBAR_DOCK_NAV} relative`} aria-label="Galvenā izvēlne">
-          <AdminMotionPill hostRef={navRef} activeIndex={pillIndex} height={44} top={4} />
-          <button
-            type="button"
-            onClick={() => {
-              setMore(false);
-              requestAdminGlobalSearch();
-            }}
-            className={tabItemClass(false)}
-            aria-label="Meklēt"
-          >
-            <span className={ADMIN_RAIL_V1_GLYPH}>
-              <Search className={`${ADMIN_RAIL_V1_GLYPH_INNER} text-[#8e8e93]`} strokeWidth={1.85} aria-hidden />
-            </span>
-            <span className="max-w-full truncate px-0.5 text-center leading-none">Meklēt</span>
-          </button>
+      <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
           {tabs.map((t) => {
             const on = t.match(pathname) && !more;
             const n = t.badge ? badges[t.badge] : 0;
-            const tone = navBadgeTone(t.badge, badges);
-            const Icon = t.icon;
+            const icon = MOBILE_TAB_ICON[t.href] ?? "pasutijumi";
             return (
-              <Link
-                key={t.href}
-                href={t.href}
-                aria-current={on ? "page" : undefined}
-                className={tabItemClass(on)}
-                onClick={(e) => {
-                  if (isModifiedClick(e)) return;
-                  e.preventDefault();
-                  setMore(false);
-                  goTab(t.href);
-                }}
-              >
+              <Link key={t.href} href={t.href} aria-current={on ? "page" : undefined} className={tabClass(on)}>
                 <span className="relative">
-                  <span className={ADMIN_RAIL_V1_GLYPH}>
-                    <Icon
-                      className={`${ADMIN_RAIL_V1_GLYPH_INNER} ${on ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}
-                      strokeWidth={on ? 2.25 : 1.85}
-                      aria-hidden
-                    />
+                  <span className={`grid h-[54px] w-full min-w-max place-items-center rounded-full px-3 ${on ? "bg-[var(--am-fill2)]" : ""}`}>
+                    <span className="flex flex-col items-center gap-[2px]">
+                      <AdminMobileIcon name={icon} className="h-5 w-5" />
+                      <span className="max-w-full truncate leading-none">{t.label}</span>
+                    </span>
                   </span>
-                  {n > 0 ? <MobileTabCountBadge n={n} gray={tone.gray} warn={tone.warn} /> : null}
+                  {n > 0 ? (
+                    <span className="absolute right-1 top-1">
+                      <AdminMobileCountBadge n={n} />
+                    </span>
+                  ) : null}
                 </span>
-                <span className="max-w-full truncate px-0.5 text-center leading-none">{t.label}</span>
               </Link>
             );
           })}
-          <button
-            type="button"
-            onClick={() => setMore((v) => !v)}
-            className={tabItemClass(!inTabs || more)}
-            aria-expanded={more}
-            aria-label="Vairāk"
-          >
+          <button type="button" onClick={() => setMore((v) => !v)} className={tabClass(!inTabs || more)} aria-expanded={more} aria-label="Vairāk">
             <span className="relative">
-              <span className={ADMIN_RAIL_V1_GLYPH}>
-                <MoreHorizontal
-                  className={`${ADMIN_RAIL_V1_GLYPH_INNER} ${!inTabs || more ? "text-[var(--color-provin-accent)]" : "text-[#8e8e93]"}`}
-                  strokeWidth={!inTabs || more ? 2.25 : 1.85}
-                  aria-hidden
-                />
+              <span className={`grid h-[54px] min-w-max place-items-center rounded-full px-3 ${!inTabs || more ? "bg-[var(--am-fill2)]" : ""}`}>
+                <span className="flex flex-col items-center gap-[2px]">
+                  <AdminMobileIcon name="vairak" className="h-5 w-5" />
+                  <span className="leading-none">Vairāk</span>
+                </span>
               </span>
-              {moreBadge > 0 ? <MobileTabCountBadge n={moreBadge} /> : null}
+              {moreBadge > 0 ? (
+                <span className="absolute right-1 top-1">
+                  <AdminMobileCountBadge n={moreBadge} />
+                </span>
+              ) : null}
             </span>
-            <span className="leading-none">Vairāk</span>
           </button>
-        </nav>
-      </div>
+      </nav>
       {more ? (
         <div
-          className="fixed inset-x-0 top-0 z-[34] flex flex-col bg-[#f2f2f7] md:hidden"
-          style={{ bottom: "var(--admin-tabbar-h, 49px)" }}
+          className="fixed inset-x-0 top-0 z-[34] flex flex-col md:hidden"
+          style={{ bottom: "var(--admin-tabbar-h, 74px)" }}
           role="dialog"
           aria-modal="true"
           aria-label="Vairāk"
         >
-          <div className="flex shrink-0 items-end justify-between px-4 pb-2 pt-[max(12px,env(safe-area-inset-top))]">
-            <h1 className="text-[34px] font-bold leading-none tracking-tight text-[var(--color-apple-text)]">Vairāk</h1>
-            <button type="button" onClick={() => setMore(false)} className="pb-1 text-[17px] font-medium text-[var(--color-provin-accent)]">
-              Aizvērt
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
-            <div className="mb-2">
-              <WorkspaceSwitch ws={workspace} />
+          <header className="am-glass rounded-b-[28px] px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))]">
+            <h1 className="text-[26px] font-bold tracking-tight text-[var(--am-ink)]">Vairāk</h1>
+            <div className="mt-3 flex h-8 rounded-full bg-[var(--am-fill)] p-0.5" role="tablist" aria-label="Darba zona">
+              <Link
+                href="/admin/dashboard"
+                onClick={() => writeWsCookie("pro")}
+                className={`flex h-full flex-1 items-center justify-center rounded-full text-[12px] font-semibold ${
+                  workspace === "pro" ? "bg-[var(--am-s1)] text-[var(--am-ink)] shadow-sm" : "text-[var(--am-ink2)]"
+                }`}
+              >
+                PRO
+              </Link>
+              <Link
+                href="/admin/iriss/pasutijumi"
+                onClick={() => writeWsCookie("iriss")}
+                className={`flex h-full flex-1 items-center justify-center rounded-full text-[12px] font-semibold ${
+                  workspace === "iriss" ? "bg-[var(--am-s1)] text-[var(--am-ink)] shadow-sm" : "text-[var(--am-ink2)]"
+                }`}
+              >
+                IRISS
+              </Link>
             </div>
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
             {WS_GROUPS[workspace].map((g) => (
               <div key={g.title}>
-                <p className="px-1 pb-1 pt-3 text-[13px] font-normal uppercase tracking-[0.04em] text-[#8e8e93]">{g.title}</p>
-                <div className="overflow-hidden rounded-xl bg-white">
+                <p className="px-1 pb-1 pt-4 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">{g.title}</p>
+                <div className="overflow-hidden rounded-[22px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)]">
                   {g.items.map((it) => {
-                    const on = it.match(pathname);
                     const n = it.badge ? badges[it.badge] : 0;
-                    const tone = navBadgeTone(it.badge, badges);
-                    const Icon = it.icon;
+                    const icon = MORE_ROW_ICON[it.href] ?? "uzPrieksu";
                     return (
-                      <div key={it.href} className="relative border-b border-[#e5e5ea] last:border-b-0">
-                      <Link href={it.href} onClick={() => setMore(false)} className={`admin-nav-link flex min-h-11 items-center gap-3 px-3 py-2 text-[17px] ${on ? "font-semibold text-[var(--color-provin-accent)]" : "text-[var(--color-apple-text)]"}`}>
-                        <span className="grid h-[29px] w-[29px] place-items-center rounded-[7px] bg-[#f2f2f7]">
-                          <Icon className={`h-[18px] w-[18px] ${on ? "" : "text-[#8e8e93]"}`} aria-hidden />
-                        </span>
-                        <span className="flex-1">{it.label}</span>
-                        <Badge n={n} gray={tone.gray} warn={tone.warn} />
-                        {it.plus ? <span className="w-8 shrink-0" aria-hidden /> : null}
+                      <Link
+                        key={it.href}
+                        href={it.href}
+                        onClick={() => setMore(false)}
+                        className="admin-nav-link flex min-h-[50px] items-center gap-3 border-b border-[var(--am-hair)] px-4 last:border-b-0"
+                      >
+                        <AdminMobileIcon name={icon} className="h-5 w-5 text-[var(--am-ink2)]" />
+                        <span className="min-w-0 flex-1 truncate text-[16px] text-[var(--am-ink)]">{it.label}</span>
+                        <AdminMobileCountBadge n={n} />
+                        <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
                       </Link>
-                        {it.plus ? (
-                          <button type="button" onClick={() => void offer.create()} disabled={offer.busy} aria-label={L.irissNew} className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[#3a3a3c] disabled:opacity-50">
-                            <Plus className="h-[18px] w-[18px]" aria-hidden />
-                          </button>
-                        ) : null}
-                      </div>
                     );
                   })}
                 </div>
               </div>
             ))}
-            <button type="button" onClick={() => void logout()} className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-[17px] text-red-600">
-              <LogOut className="h-4 w-4" aria-hidden /> {L.logout}
+            <button
+              type="button"
+              onClick={() => void logout()}
+              className="mt-4 flex h-[50px] w-full items-center gap-3 rounded-[22px] bg-[var(--am-s1)] px-4 text-[16px] text-[var(--am-ink)] shadow-[var(--am-card-shadow)]"
+            >
+              <AdminMobileIcon name="iziet" className="h-5 w-5 text-[var(--am-ink2)]" />
+              {L.logout}
             </button>
           </div>
         </div>

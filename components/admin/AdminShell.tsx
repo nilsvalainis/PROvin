@@ -10,7 +10,11 @@ import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider
 import { AdminVinHandoffProvider } from "./AdminVinHandoffContext";
 import { IrissPavadzimesMobileBar } from "@/components/admin/IrissPavadzimesMobileBar";
 import { useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
-import { ADMIN_MOBILE_TABBAR_H_CSS, adminMobilePullToRefreshEnabled } from "@/lib/admin-mobile-shell";
+import {
+  ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
+  ADMIN_MOBILE_TABBAR_H_CSS,
+  adminMobilePullToRefreshEnabled,
+} from "@/lib/admin-mobile-shell";
 
 type AdminShellLayoutValue = {
   sidebarCollapsed: boolean;
@@ -51,18 +55,14 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
   return (
     <AdminVinHandoffProvider>
     <div
-      className={`flex min-h-dvh bg-white max-md:h-dvh max-md:min-h-0 ${
+      className={`admin-m flex min-h-dvh bg-white max-md:h-dvh max-md:min-h-0 ${
         hideTabBar ? "" : "max-md:pb-[var(--admin-tabbar-h)]"
       }`}
       style={{ ["--admin-tabbar-h" as string]: hideTabBar ? "0px" : ADMIN_MOBILE_TABBAR_H_CSS }}
     >
       {mobile ? null : <AdminSidebar collapsed={collapsed} onToggle={toggle} />}
       <div className={`flex min-h-0 min-w-0 flex-1 flex-col max-md:h-full ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
-        {hideTabBar ? (
-          <div className="flex shrink-0 items-center justify-end px-2 pt-[max(8px,env(safe-area-inset-top))] md:hidden">
-            <AdminMobileSearchButton />
-          </div>
-        ) : null}
+        {null}
         <AdminShellLayoutContext.Provider value={shellLayoutValue}>
           <AdminAuditDeadlineTickProvider>
             <AdminShellMainWithMobilePull
@@ -76,7 +76,12 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
           </AdminAuditDeadlineTickProvider>
         </AdminShellLayoutContext.Provider>
       </div>
-      {hideTabBar ? null : <AdminMobileTabBar workspace={workspace} />}
+      {hideTabBar ? null : (
+        <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
+          <AdminMobileTabBar workspace={workspace} />
+          <AdminMobileSearchButton />
+        </div>
+      )}
       <AdminGlobalSearch />
     </div>
     </AdminVinHandoffProvider>

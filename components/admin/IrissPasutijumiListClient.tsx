@@ -53,6 +53,7 @@ import {
 import { appendIrissStatusHistory, isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 import { IrissOrderSortSelect } from "@/components/admin/IrissOrderSortSelect";
 import { AdminMobileSheet } from "@/components/admin/AdminMobileSheet";
+import { AdminMobileRoundBtn, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 
 type SortMode = IrissOrderSortMode;
 
@@ -413,7 +414,9 @@ const IrissRowCard = memo(function IrissRowCard({
             e.stopPropagation();
             setStatusMenuOpen((v) => !v);
           }}
-          className={`inline-flex h-8 items-center gap-0.5 rounded-md px-2 text-[13px] font-semibold md:h-7 md:rounded md:px-1.5 md:text-[11px] ${statusBadgeClass(curStatus)}`}
+          className={`iriss-row-status inline-flex h-8 items-center gap-0.5 rounded-md px-2 text-[13px] font-semibold md:h-7 md:rounded md:px-1.5 md:text-[11px] ${
+            narrowSwipeViewport ? "bg-[var(--am-fill)] font-medium text-[var(--am-ink2)]" : statusBadgeClass(curStatus)
+          }`}
           aria-haspopup="menu"
           aria-expanded={statusMenuOpen}
         >
@@ -624,7 +627,6 @@ const IrissRowCard = memo(function IrissRowCard({
           style={{ transform: "translateZ(0)", touchAction: "pan-y pinch-zoom" }}
         >
           {frontInner}
-          {chipsRow ? <div className="border-t border-slate-100 px-3 pb-1.5 pt-1 md:hidden">{chipsRow}</div> : null}
         </motion.div>
       ) : (
         <div
@@ -1062,11 +1064,40 @@ export function IrissPasutijumiListClient({
 
   return (
     <>
-      <div className="sticky top-0 z-30 mb-1.5 bg-[#F8F8F9] py-1 max-md:border-b-0 md:mb-2 md:border-b md:border-slate-200/80 md:bg-[#F8F8F9]/95 md:py-2 md:backdrop-blur-sm">
+      <div className="md:hidden">
+        <AdminMobileTopBar
+          title="Pasūtījumi"
+          trailing={<AdminMobileRoundBtn name="pievienot" label="Jauns pasūtījums" href="/admin/iriss/pasutijumi/new" primary />}
+        >
+          <div className="flex items-center gap-2">
+            <label className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--am-ink3)]" aria-hidden />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Vārds, tālrunis, marka"
+                aria-label="Meklēt pasūtījumus"
+                className="h-9 min-w-0 w-full rounded-full border-0 bg-[var(--am-fill)] pl-9 pr-3 text-[15px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              aria-label={`Kārtot: ${SORT_LABEL[sortMode]}`}
+              title={SORT_LABEL[sortMode]}
+              className="am-press inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-[var(--am-fill)] px-3 text-[13px] font-medium text-[var(--am-ink)]"
+            >
+              <ArrowUpDown className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+          <div className="mt-3">
+            <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />
+          </div>
+        </AdminMobileTopBar>
+      </div>
+      <div className="sticky top-0 z-30 mb-1.5 hidden bg-[#F8F8F9] py-1 md:mb-2 md:block md:border-b md:border-slate-200/80 md:bg-[#F8F8F9]/95 md:py-2 md:backdrop-blur-sm">
         <div className="flex items-center gap-1.5 md:flex-wrap md:gap-2">
-          <h1 className="iriss-list-title shrink-0 text-[17px] font-semibold leading-none tracking-tight text-[var(--color-apple-text)] md:hidden">
-            Pasūtījumi
-          </h1>
           <label className="relative min-w-0 flex-1 md:min-w-[10rem] md:max-w-xs">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 md:left-2 md:h-3.5 md:w-3.5" aria-hidden />
             <input

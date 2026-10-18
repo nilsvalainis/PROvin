@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import { formatIrissWaybillChip } from "@/lib/admin-mobile-ds";
 import { waybillLifecycleLabel } from "@/lib/iriss-pavadzimes-lifecycle";
 import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
@@ -242,12 +243,15 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                 <li key={row.id} data-pavadzime={row.id} className="rounded-xl border border-[#ececee] bg-white p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className={`truncate text-[14px] font-semibold ${row.brandModel.trim() ? "text-[var(--color-apple-text)]" : "text-[#aeaeb2]"}`}>
-                        {dash(row.brandModel)}
+                      <p className={`truncate text-[14px] font-semibold ${row.brandModel.trim() || row.number.trim() ? "text-[var(--color-apple-text)]" : "text-[#aeaeb2]"}`}>
+                        {formatIrissWaybillChip({
+                          code: row.number,
+                          makeModel: row.brandModel,
+                          label: dash(row.number),
+                        })}
                       </p>
                       <p className="mt-0.5 truncate text-[11px] text-[var(--color-provin-muted)]">
-                        {dash(row.number)}
-                        {row.plate.trim() ? ` · ${row.plate}` : ""}
+                        {row.plate.trim() ? `Tranzīta nr. ${row.plate}` : dash(row.plate)}
                         <WaybillStatusChip row={row} />
                       </p>
                     </div>

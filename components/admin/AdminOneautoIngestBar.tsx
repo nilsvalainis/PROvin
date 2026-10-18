@@ -335,7 +335,8 @@ export function AdminOneautoIngestBar({
           type="button"
           disabled={!editable || busy || imagesBusy || !effectiveVin}
           onClick={() => void fetchData()}
-          className="rounded-md bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-semibold text-white disabled:opacity-50"
+          data-admin-paid="oneauto"
+          className="admin-paid-load rounded-md bg-[var(--color-provin-accent)] px-2.5 py-1 text-[11px] font-semibold text-white disabled:opacity-50"
         >
           {busy ? "Ielādē…" : "Ielādēt datus"}
         </button>

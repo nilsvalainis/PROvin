@@ -575,7 +575,12 @@ export function AdminVinScanPanel({
   }, [displayById, scannedAt, busy, clean, onSnapshot, plates, listing]);
 
   return (
-    <section className="rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)]" aria-busy={busy}>
+    <section
+      className={`rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] ${
+        !busy && !scannedAt ? "max-md:hidden" : ""
+      }`}
+      aria-busy={busy}
+    >
       {!busy && scannedAt ? (
         <AdminVinScanBrowserFetchHandoff vin={clean} at={scannedAt} rows={Object.values(byId)} />
       ) : null}

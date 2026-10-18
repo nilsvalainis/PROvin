@@ -1,18 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { openWindowSyncThen } from "@/lib/admin-open-window";
 import { useAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import {
   Bot,
-  Check,
-  Copy,
-  ExternalLink,
   FileText,
   MessageCircle,
   MessageSquareText,
-  MoreHorizontal,
   Quote,
   Save,
   Sparkles,
@@ -20,7 +16,9 @@ import {
 } from "lucide-react";
 
 import { copyTextToClipboard } from "@/components/admin/AdminClipboardButton";
+import { AdminMobileActionDock } from "@/components/admin/mobile/AdminMobileChrome";
 import { fetchAdminWhatsappPrefill } from "@/lib/admin-whatsapp-prefill-client";
+import { ADMIN_MOBILE_VIN_SCAN_EVENT } from "@/lib/admin-mobile-ds";
 import { normalizeWhatsAppPhoneDigits, whatsAppChatUrl } from "@/lib/admin-whatsapp-phone";
 import {
   defaultFlashMaxSelection,
@@ -74,57 +72,8 @@ type Props = {
   customerPhone?: string | null;
   whatsappPrefill?: string;
   onVinCopied: () => void;
+  onMore?: () => void;
 };
-
-const dockItem =
-  "provin-dock-item flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[9px] font-medium tracking-wide transition active:opacity-70 disabled:opacity-35";
-
-const dockIcon = "h-[19px] w-[19px]";
-
-/** Doka kopēšanas poga: tās pašas etiķetes kā `AdminClipboardButton`, tikai doka izmērā. */
-function DockCopyItem({
-  value,
-  label,
-  titleReady,
-  ariaReady,
-  ariaCopied,
-  onCopied,
-}: {
-  value: string;
-  label: string;
-  titleReady: string;
-  ariaReady: string;
-  ariaCopied: string;
-  onCopied?: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  const v = value.trim();
-  const onClick = useCallback(async () => {
-    if (!v) return;
-    if (await copyTextToClipboard(v)) {
-      setCopied(true);
-      onCopied?.();
-      window.setTimeout(() => setCopied(false), 1600);
-    }
-  }, [v, onCopied]);
-  return (
-    <button
-      type="button"
-      className={`${dockItem} text-[var(--color-apple-text)]`}
-      disabled={!v}
-      title={copied ? "Kopēts" : titleReady}
-      aria-label={copied ? ariaCopied : ariaReady}
-      onClick={() => void onClick()}
-    >
-      {copied ? (
-        <Check className={dockIcon} strokeWidth={1.75} aria-hidden />
-      ) : (
-        <Copy className={dockIcon} strokeWidth={1.5} aria-hidden />
-      )}
-      {label}
-    </button>
-  );
-}
 
 const sheetRow =
   "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-[13px] font-medium text-[var(--color-apple-text)] transition hover:bg-black/[0.04] disabled:opacity-40 dark:hover:bg-white/[0.06]";
@@ -250,6 +199,7 @@ export function AdminOrderMobileDock({
   customerPhone,
   whatsappPrefill,
   onVinCopied,
+  onMore,
 }: Props) {
   const [sheet, setSheet] = useState<null | "flash" | "more" | "pdf">(null);
   const dockCovered = useAdminOverlayCover();
@@ -270,109 +220,52 @@ export function AdminOrderMobileDock({
     fn();
   };
 
+  const copyVin = async () => {
+    const v = vin.trim();
+    if (!v) return;
+    if (await copyTextToClipboard(v)) onVinCopied();
+  };
+
+  const runFreeVinScan = () => {
+    try {
+      document.dispatchEvent(new CustomEvent(ADMIN_MOBILE_VIN_SCAN_EVENT, { detail: { vin: vin.trim() } }));
+    } catch {
+      /* ignore */
+    }
+  };
+
   return (
     <>
-      {/* Instagram-stila peldoša kapsula: paceļas virs drošās zonas, noapaļota. */}
-      <nav
-        inert={dockCovered}
-        className={`pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 md:hidden ${dockCovered ? "hidden" : ""}`}
-        aria-label="Ātrās darbības"
-      >
-        <div className="provin-dock pointer-events-auto flex w-full max-w-lg items-stretch gap-0 rounded-[1.35rem] border border-black/10 bg-[var(--admin-surface-elevated)]/92 px-1 py-1 shadow-[0_8px_28px_rgba(15,23,42,0.18)] backdrop-blur-xl dark:border-white/10 dark:shadow-[0_8px_28px_rgba(0,0,0,0.45)]">
-          <DockCopyItem
-            value={vin}
-            label="VIN"
-            titleReady="Kopēt VIN"
-            ariaReady="Kopēt VIN starpliktuvē"
-            ariaCopied="VIN nokopēts starpliktuvē"
-            onCopied={onVinCopied}
-          />
-          <DockCopyItem
-            value={plate}
-            label="Reģ."
-            titleReady="Kopēt reģistrācijas numuru"
-            ariaReady="Kopēt reģistrācijas numuru starpliktuvē"
-            ariaCopied="Reģistrācijas numurs nokopēts"
-          />
-          <button
-            type="button"
-            className={`${dockItem} border-[#25D366]/30 bg-[#25D366]/12 text-[#128C7E] hover:bg-[#25D366]/20`}
-            disabled={!whatsappDigits}
-            title={whatsappDigits ? `Atvērt WhatsApp: ${(customerPhone ?? "").trim()}` : "Nav derīga tālruņa numura WhatsApp atvēršanai"}
-            aria-label="Atvērt WhatsApp sarunu ar klientu"
-            onClick={() => {
-              if (!whatsappDigits) return;
-              const opened = openWindowSyncThen();
-              void (async () => {
-                const message =
-                  whatsappPrefill ??
-                  (await fetchAdminWhatsappPrefill({ templateId: "wa.report_ready.audits" }));
-                if (message) opened.navigate(whatsAppChatUrl(whatsappDigits, message));
-                else opened.close();
-              })();
-            }}
-          >
-            <MessageCircle className={dockIcon} strokeWidth={1.5} aria-hidden />
-            WA
-          </button>
-          {listingHref ? (
-            <a
-              href={listingHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${dockItem} text-[var(--color-apple-text)]`}
-              title={listingHref}
-            >
-              <ExternalLink className={dockIcon} strokeWidth={1.5} aria-hidden />
-              ss.lv
-            </a>
-          ) : (
-            <span className={`${dockItem} cursor-not-allowed text-[var(--color-apple-text)] opacity-35`} title="Nav sludinājuma saites">
-              <ExternalLink className={dockIcon} strokeWidth={1.5} aria-hidden />
-              ss.lv
-            </span>
-          )}
-          <button
-            type="button"
-            className={`${dockItem} ${copilotOpen || copilotBusy ? "text-[#7d3fa0]" : "text-[var(--color-apple-text)]"}`}
-            disabled={!aiAllowed}
-            onClick={onOpenCopilot}
-          >
-            <Bot className={dockIcon} strokeWidth={1.5} aria-hidden />
-            Copilot
-          </button>
-          <button
-            type="button"
-            className={`${dockItem} ${flashMaxBusy ? "text-[#7d3fa0]" : "text-[var(--color-apple-text)]"}`}
-            disabled={flashDisabled}
-            onClick={() => setSheet("flash")}
-          >
-            <Sparkles className={dockIcon} strokeWidth={1.5} aria-hidden />
-            {flashMaxBusy ? "…" : "FLASH"}
-          </button>
-          <button
-            type="button"
-            className={`${dockItem} text-[var(--color-apple-text)]`}
-            disabled={pdfProgressKey !== null}
-            onClick={() => setSheet("pdf")}
-          >
-            <FileText className={dockIcon} strokeWidth={1.5} aria-hidden />
-            {pdfProgressKey ? `${pdfProgressPct ?? 0}%` : "PDF"}
-          </button>
-          <button
-            type="button"
-            className={`${dockItem} text-[var(--color-apple-text)]`}
-            onClick={() => setSheet("more")}
-          >
-            <MoreHorizontal className={dockIcon} strokeWidth={1.5} aria-hidden />
-            Vairāk
-          </button>
-        </div>
-      </nav>
+      {dockCovered ? null : (
+        <AdminMobileActionDock
+          actions={[
+            { id: "vin", label: "Kopēt VIN", icon: "kopet", onClick: () => void copyVin(), disabled: !vin.trim() },
+            { id: "scan", label: "VIN SCAN", icon: "vinParbaude", onClick: runFreeVinScan, disabled: !vin.trim() },
+            {
+              id: "pdf",
+              label: pdfProgressKey ? `${pdfProgressPct ?? 0}%` : "PDF",
+              icon: "pdf",
+              onClick: onGeneratePdf,
+              disabled: pdfProgressKey !== null,
+            },
+            {
+              id: "listing",
+              label: "Sludinājums",
+              icon: "sludinajums",
+              href: listingHref ?? undefined,
+              disabled: !listingHref,
+            },
+          ]}
+          more={() => {
+            if (onMore) onMore();
+            else setSheet("more");
+          }}
+        />
+      )}
 
       {sheet === "flash" && !dockCovered ? (
         <Sheet title="FLASH MAX" onClose={() => setSheet(null)}>
-          <button type="button" className={sheetRow} onClick={() => runFlash(defaultFlashMaxSelection())}>
+          <button type="button" className={sheetRow} disabled={flashDisabled} onClick={() => runFlash(defaultFlashMaxSelection())}>
             <Sparkles className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">Ikdienas komplekts</span>
@@ -479,6 +372,38 @@ export function AdminOrderMobileDock({
 
       {sheet === "more" && !dockCovered ? (
         <Sheet title="Vairāk" onClose={() => setSheet(null)}>
+          <button
+            type="button"
+            className={sheetRow}
+            disabled={!whatsappDigits}
+            onClick={() => {
+              if (!whatsappDigits) return;
+              setSheet(null);
+              const opened = openWindowSyncThen();
+              void (async () => {
+                const message =
+                  whatsappPrefill ??
+                  (await fetchAdminWhatsappPrefill({ templateId: "wa.report_ready.audits" }));
+                if (message) opened.navigate(whatsAppChatUrl(whatsappDigits, message));
+                else opened.close();
+              })();
+            }}
+          >
+            <MessageCircle className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
+            WhatsApp
+          </button>
+          <button
+            type="button"
+            className={sheetRow}
+            disabled={!aiAllowed}
+            onClick={() => {
+              setSheet(null);
+              onOpenCopilot();
+            }}
+          >
+            <Bot className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
+            Copilot{copilotOpen || copilotBusy ? "…" : ""}
+          </button>
           <button
             type="button"
             className={sheetRow}

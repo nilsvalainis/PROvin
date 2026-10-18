@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  AdminMobilePrimaryButton,
+  AdminMobileSecondaryButton,
+  AdminMobileSegments,
+  AdminMobileSheet,
+  AdminMobileTopBar,
+} from "@/components/admin/mobile/AdminMobileChrome";
+import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
+import { AdminMobileVinCameraSheet } from "@/components/admin/mobile/AdminMobileVinCameraSheet";
 import { useRouter } from "next/navigation";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import {
@@ -75,6 +84,8 @@ export function AdminVinScanPageClient({
   const [foreignOpen, setForeignOpen] = useState(false);
   const [listingDraft, setListingDraft] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [vinMode, setVinMode] = useState<"listing" | "vin">("listing");
+  const [cameraOpen, setCameraOpen] = useState(false);
   const vin = useMemo(() => normalizeVin(draft), [draft]);
   const valid = isValidVin(vin);
   const listingUrl = useMemo(() => canonicalizeListingUrl(listingDraft), [listingDraft]);
@@ -295,18 +306,94 @@ export function AdminVinScanPageClient({
           <div className="flex items-end">{scanButton}</div>
         </div>
       </div>
-      {/* Telefons: piestiprināts apakšā virs cilņu joslas. */}
-      <div className="fixed inset-x-0 bottom-[var(--admin-tabbar-h,0px)] z-[34] border-t border-[#e5e5ea] bg-white/95 px-4 pb-3 pt-3 backdrop-blur md:hidden">
-        <div className="grid grid-cols-[1.6fr_1fr] gap-2">
-          <label className="block min-w-0"><span className={lab}>VIN</span>{vinInput}</label>
-          <label className="block min-w-0"><span className={lab}>LV numurs</span>{plateInput}</label>
+      {/* Telefons: tikai ievade + kamera, līdz ielādei avoti paliek slēpti. */}
+      <div className="md:hidden">
+        <AdminMobileTopBar title="VIN pārbaude">
+          <AdminMobileSegments
+            value={vinMode}
+            onChange={(id) => {
+              setVinMode(id as "listing" | "vin");
+              setForeignOpen(id === "listing");
+            }}
+            items={[
+              { id: "listing", label: "Sludinājums un ārvalstu nr." },
+              { id: "vin", label: "Tikai VIN" },
+            ]}
+          />
+        </AdminMobileTopBar>
+        <div className="mt-3 overflow-hidden rounded-[18px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)]">
+          <label className="block border-b border-[var(--am-hair)] px-4 py-3">
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">VIN</span>
+            <input
+              type="text"
+              inputMode="text"
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+              className="mt-1 w-full bg-transparent font-mono text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value.toUpperCase())}
+              aria-label="VIN"
+            />
+          </label>
+          {vinMode === "listing" ? (
+            <>
+            <label className="block border-b border-[var(--am-hair)] px-4 py-3">
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">LV numurs</span>
+              <input
+                type="text"
+                inputMode="text"
+                autoCapitalize="characters"
+                autoComplete="off"
+                spellCheck={false}
+                className="mt-1 w-full bg-transparent font-mono text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
+                value={platesDraft.lv}
+                onChange={(e) => setPlatesDraft((prev) => ({ ...prev, lv: e.target.value.toUpperCase() }))}
+                aria-label="LV numurs"
+              />
+            </label>
+            <label className="block px-4 py-3">
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">Sludinājums</span>
+              <input
+                type="url"
+                inputMode="url"
+                autoComplete="off"
+                spellCheck={false}
+                className="mt-1 w-full bg-transparent text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
+                value={listingDraft}
+                onChange={(e) => setListingDraft(e.target.value)}
+                aria-label="Sludinājums"
+              />
+            </label>
+            </>
+          ) : null}
         </div>
-        <div className="mt-2 grid grid-cols-[2.75rem_1fr] gap-2">
-          {historyButton}
-          {scanButton}
+        <div className="mt-3 space-y-2">
+          <AdminMobilePrimaryButton disabled={!canScan || scanBusy || plateBusy} onClick={() => void runScan(false)}>
+            {scanBusy ? "Pārbauda…" : "Pārbaudīt"}
+          </AdminMobilePrimaryButton>
+          <AdminMobileSecondaryButton onClick={() => setCameraOpen(true)}>
+            <AdminMobileIcon name="kamera" className="h-5 w-5" />
+            Ieslēgt kameru
+          </AdminMobileSecondaryButton>
         </div>
+        {!hasScanResult ? (
+          <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[13px] text-[var(--am-ink3)]">
+            Rezultāti pēc pārbaudes
+          </p>
+        ) : (
+          <div className="mt-2">{historyButton}</div>
+        )}
+        <AdminMobileVinCameraSheet
+          open={cameraOpen}
+          onClose={() => setCameraOpen(false)}
+          onVin={(v) => {
+            setDraft(v);
+            setCameraOpen(false);
+          }}
+        />
       </div>
-      <div>
+      <div className="max-md:hidden">
         <button
           type="button"
           aria-expanded={foreignOpen}
@@ -407,7 +494,7 @@ export function AdminVinScanPageClient({
               : null
           }
         >
-          <div className="border-t border-[#e5e5ea] pt-3">{footer}</div>
+          <div className={`border-t border-[#e5e5ea] pt-3 ${hasScanResult ? "" : "max-md:hidden"}`}>{footer}</div>
         </VinScanLiveCountsContext.Provider>
       ) : null}
     </div>

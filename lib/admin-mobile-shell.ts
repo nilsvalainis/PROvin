@@ -2,21 +2,21 @@
 
 export const ADMIN_MAIN_SCROLL_ID = "admin-main-scroll";
 
-/** Peldošā docka iekšējā josla (px). */
-export const ADMIN_MOBILE_TABBAR_CONTENT_PX = 52;
+/** Peldošā docka iekšējā josla (px). Koncepts: 62 px kapsula. */
+export const ADMIN_MOBILE_TABBAR_CONTENT_PX = 62;
 
 /** Augšējā atkāpe (pt-2) + docka augstums; apakšā max(10px, safe-area). */
-export const ADMIN_MOBILE_TABBAR_DOCK_CHROME_PX = 60;
+export const ADMIN_MOBILE_TABBAR_DOCK_CHROME_PX = 74;
 
 export const ADMIN_MOBILE_TABBAR_H_CSS =
   `calc(${ADMIN_MOBILE_TABBAR_DOCK_CHROME_PX}px + max(10px, env(safe-area-inset-bottom, 0px)))` as const;
 
-/** Variants 2: peldošais stikla dokss (mockup). */
+/** iOS 26: stikla kapsula + atsevišķa meklēšanas poga. */
 export const ADMIN_MOBILE_TABBAR_DOCK_WRAPPER =
-  "pointer-events-none fixed inset-x-0 bottom-0 z-[35] flex justify-center px-3 pb-[max(10px,env(safe-area-inset-bottom,0px))] pt-2 md:hidden";
+  "pointer-events-none fixed inset-x-0 bottom-0 z-[35] flex items-end justify-center gap-2 px-3 pb-[max(10px,env(safe-area-inset-bottom,0px))] pt-2 md:hidden";
 
 export const ADMIN_MOBILE_TABBAR_DOCK_NAV =
-  "pointer-events-auto flex h-[52px] w-full max-w-[366px] items-stretch rounded-[1.15rem] bg-[rgba(255,255,255,0.72)] p-1 shadow-[0_6px_24px_rgba(15,23,42,0.12)] backdrop-blur-[14px]";
+  "am-glass pointer-events-auto flex h-[62px] min-w-0 flex-1 items-stretch rounded-full px-1.5";
 
 export const ADMIN_MOBILE_PTR_THRESHOLD_PX = 64;
 export const ADMIN_MOBILE_PTR_RUBBER = 0.35;

@@ -24,6 +24,7 @@ export function IrissBrandLogoSlot({ brandModel, className = "", fallbackClassNa
   const src = irissBrandLogoSrc(brandModel);
   const wide = irissBrandLogoUsesWideLayout(brandModel);
   const shell = `inline-flex shrink-0 items-center justify-center overflow-visible ${className}`.trim();
+  const brandLogoAttr = { "data-admin-brand-logo": "1" } as const;
 
   if (!src) {
     return (
@@ -31,6 +32,7 @@ export function IrissBrandLogoSlot({ brandModel, className = "", fallbackClassNa
         className={`${shell} text-[11px] font-bold text-slate-600 ${fallbackClassName}`.trim()}
         style={slotPx}
         aria-hidden
+        {...brandLogoAttr}
       >
         {irissBrandFallbackLabel(brandModel)}
       </span>
@@ -38,7 +40,7 @@ export function IrissBrandLogoSlot({ brandModel, className = "", fallbackClassNa
   }
 
   return (
-    <span className={shell} style={slotPx} aria-hidden>
+    <span className={shell} style={slotPx} aria-hidden {...brandLogoAttr}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
