@@ -18,6 +18,8 @@ import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL, contactEmail } from "@/lib/contact";
 import { getB2bHeroSourceItems, type B2bCatalogItem } from "@/lib/b2b-partner-copy";
 import { homeFooterColumnClass } from "@/lib/home-layout";
+import { renderProvinText } from "@/lib/provin-wordmark";
+import { renderB2bProvinBusinessName } from "@/components/b2b/b2b-provin-business-name";
 
 const SOURCE_ICON_CLASS = "h-4 w-4 shrink-0 [stroke-width:1.6] text-[#60a5fa]";
 
@@ -116,7 +118,7 @@ export function B2bPartnerHero({
               id="b2b-partner-hero-title"
               className={`${styles.heroTitleDesktop} text-[2rem] font-extrabold uppercase leading-[1.1] tracking-[-0.025em] text-white`}
             >
-              {t("titlePrefix")}
+              {renderProvinText(t("titlePrefix"), { proAndSuffixClassName: "provin-wordmark-pro--rail-inherit" })}
               <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>{t("titleAccent")}</span>
             </h1>
             <p className="mt-3 max-w-[32rem] text-[0.95rem] leading-[1.45] text-zinc-200 lg:mt-5 lg:text-[1.05rem]">
@@ -154,7 +156,7 @@ export function B2bPartnerHero({
         <div className={`${homeFooterColumnClass} relative z-[3] pb-10 lg:pb-14`}>
           <div>
             <h2 className="mb-4 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd] lg:mb-5">
-              {t("heroWhyHeading")}
+              {renderB2bProvinBusinessName(t("heroWhyHeading"))}
             </h2>
             <div className="grid grid-cols-1 items-start lg:grid-cols-3">
               {beats.map((beat) => (
@@ -166,7 +168,7 @@ export function B2bPartnerHero({
                     {beat.label}
                   </p>
                   <p className="mt-2.5 text-[0.84rem] font-normal leading-[1.58] text-zinc-300 lg:text-[0.88rem] lg:leading-[1.6]">
-                    {beat.body}
+                    {renderB2bProvinBusinessName(beat.body)}
                   </p>
                 </article>
               ))}

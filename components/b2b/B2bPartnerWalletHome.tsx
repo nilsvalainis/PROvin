@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { B2B_LABEL_CLASS, B2B_WALLET_PRODUCT_COPY } from "@/components/b2b/b2b-partner-ui";
 import { B2bPartnerDialog } from "@/components/b2b/B2bPartnerDialog";
+import { renderB2bProvinBusinessName } from "@/components/b2b/b2b-provin-business-name";
 import { B2bPartnerHome } from "@/components/b2b/B2bPartnerHome";
 import { B2bPartnerTopupDialog } from "@/components/b2b/B2bPartnerTopupDialog";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -161,7 +162,7 @@ function ProductCard({
         </p>
         {copy.tagSoon ? <SoonBadge /> : null}
       </div>
-      <h2 className="mt-4 text-[1.08rem] font-bold leading-snug tracking-[-0.01em] text-zinc-100">{t(copy.title)}</h2>
+      <h2 className="mt-4 text-[1.08rem] font-bold leading-snug tracking-[-0.01em] text-zinc-100">{renderB2bProvinBusinessName(t(copy.title))}</h2>
       <p className="mt-2 text-[0.82rem] leading-relaxed text-zinc-400">{t(copy.desc)}</p>
 
       {product === "dealer_pro" ? (
@@ -380,7 +381,7 @@ function PurchaseDialog({
     <B2bPartnerDialog
       open
       onClose={busy ? () => {} : onClose}
-      title={t(B2B_WALLET_PRODUCT_COPY[product].title)}
+      title={renderB2bProvinBusinessName(t(B2B_WALLET_PRODUCT_COPY[product].title))}
       closeLabel={t("buyCloseAria")}
     >
       <form

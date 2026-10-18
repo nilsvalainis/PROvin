@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string }> };
 
 const PRODUCT_LABEL_LV: Record<B2bWalletProductId, string> = {
-  business: "PROVIN Business data",
+  business: "PROVIN Business",
   dealer_raw: "Dīlera dati (RAW)",
   dealer_pro: "Dīlera dati (PRO)",
 };
