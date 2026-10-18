@@ -100,16 +100,42 @@ export function resolveB2bWalletPrices(
   };
 }
 
-export function cheapestB2bWalletPriceCents(overrides: B2bWalletPriceOverrides | null | undefined): number {
+/** Adminā paslēptie maka produkti. Tukšs saraksts = visi redzami (arī veciem ierakstiem). */
+export type B2bWalletHiddenProducts = readonly B2bWalletProductId[];
+
+export function parseB2bWalletHiddenProducts(raw: unknown): B2bWalletProductId[] {
+  if (!Array.isArray(raw)) return [];
+  return B2B_WALLET_PRODUCT_IDS.filter((id) => raw.includes(id));
+}
+
+export function isB2bWalletProductVisible(
+  product: B2bWalletProductId,
+  hidden: B2bWalletHiddenProducts | null | undefined,
+): boolean {
+  return !(hidden ?? []).includes(product);
+}
+
+export function visibleB2bWalletProducts(hidden: B2bWalletHiddenProducts | null | undefined): B2bWalletProductId[] {
+  return B2B_WALLET_PRODUCT_IDS.filter((id) => isB2bWalletProductVisible(id, hidden));
+}
+
+/** Lētākā redzamā produkta cena; 0, ja neviens produkts nav redzams. */
+export function cheapestB2bWalletPriceCents(
+  overrides: B2bWalletPriceOverrides | null | undefined,
+  hidden?: B2bWalletHiddenProducts | null,
+): number {
   const prices = resolveB2bWalletPrices(overrides);
-  return Math.min(...B2B_WALLET_PRODUCT_IDS.map((id) => prices[id].priceCents));
+  const visible = visibleB2bWalletProducts(hidden);
+  if (visible.length === 0) return 0;
+  return Math.min(...visible.map((id) => prices[id].priceCents));
 }
 
 export function canAffordCheapestB2bWalletProduct(
   balanceCents: number,
   overrides: B2bWalletPriceOverrides | null | undefined,
+  hidden?: B2bWalletHiddenProducts | null,
 ): boolean {
-  return balanceCents >= cheapestB2bWalletPriceCents(overrides);
+  return balanceCents >= cheapestB2bWalletPriceCents(overrides, hidden);
 }
 
 export function formatB2bWalletEuro(cents: number): string {

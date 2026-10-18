@@ -24,7 +24,13 @@ import {
 } from "@/lib/b2b-partner-account";
 import { hashB2bPartnerPassword, verifyB2bPartnerPassword } from "@/lib/b2b-partner-password";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
-import { emptyB2bWalletPrices, parseB2bWalletPrices, type B2bWalletPriceOverrides } from "@/lib/b2b-wallet";
+import {
+  emptyB2bWalletPrices,
+  parseB2bWalletHiddenProducts,
+  parseB2bWalletPrices,
+  type B2bWalletPriceOverrides,
+  type B2bWalletProductId,
+} from "@/lib/b2b-wallet";
 import {
   B2B_EMAIL_VERIFY_TTL_MS,
   B2B_PASSWORD_RESET_TTL_MS,
@@ -242,6 +248,7 @@ export async function createB2bPartner(
       dealerEnabled: false,
       prices: emptyB2bPartnerPrices(),
       walletPrices: emptyB2bWalletPrices(),
+      walletHiddenProducts: [],
       adminSeenAt: requireVerify ? null : now,
     };
     doc.partners.push(record);
@@ -280,6 +287,7 @@ export async function updateB2bPartner(
     dealerEnabled?: boolean;
     prices?: B2bPartnerPriceOverrides;
     walletPrices?: B2bWalletPriceOverrides;
+    walletHiddenProducts?: readonly B2bWalletProductId[];
   },
 ): Promise<UpdateB2bPartnerResult> {
   return withLock(async () => {
@@ -313,6 +321,9 @@ export async function updateB2bPartner(
       dealerEnabled: typeof patch.dealerEnabled === "boolean" ? patch.dealerEnabled : prev.dealerEnabled,
       prices: patch.prices ? parseB2bPartnerPrices(patch.prices) : prev.prices,
       walletPrices: patch.walletPrices ? parseB2bWalletPrices(patch.walletPrices) : prev.walletPrices,
+      walletHiddenProducts: patch.walletHiddenProducts
+        ? parseB2bWalletHiddenProducts(patch.walletHiddenProducts)
+        : (prev.walletHiddenProducts ?? []),
       passwordHash:
         patch.password != null && patch.password.trim()
           ? hashB2bPartnerPassword(patch.password.trim())

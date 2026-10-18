@@ -8,6 +8,7 @@ import {
   emptyB2bWalletPrices,
   formatB2bWalletEuro,
   parseB2bEuroInput,
+  parseB2bWalletHiddenProducts,
   validateB2bWalletPriceInput,
   type B2bWalletProductId,
 } from "@/lib/b2b-wallet";
@@ -37,12 +38,16 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (!partner) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const wallet = await readB2bWallet(partner.id);
   return NextResponse.json({
-    wallet: buildB2bWalletView(wallet, partner.walletPrices, 200),
+    wallet: buildB2bWalletView(wallet, partner.walletPrices, 200, partner.walletHiddenProducts),
     overrides: partner.walletPrices,
+    hidden: partner.walletHiddenProducts,
   });
 }
 
-/** Individuālās cenas. `{ reset: true }` = noklusējuma cenas. */
+/**
+ * Individuālās cenas: `{ prices }` vai `{ reset: true }` (noklusējuma cenas).
+ * Redzamība: `{ hidden: ["dealer_raw", ...] }` maina tikai paslēptos produktus.
+ */
 export async function PATCH(req: Request, ctx: Ctx) {
   if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const partner = await loadPartner(ctx);
@@ -53,6 +58,19 @@ export async function PATCH(req: Request, ctx: Ctx) {
     raw = (await req.json()) as Record<string, unknown>;
   } catch {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+  }
+
+  if ("hidden" in raw) {
+    if (!Array.isArray(raw.hidden)) return NextResponse.json({ error: "hidden" }, { status: 400 });
+    const hidden = parseB2bWalletHiddenProducts(raw.hidden);
+    const updated = await updateB2bPartner(partner.id, { walletHiddenProducts: hidden });
+    if (!updated.ok) return NextResponse.json({ error: updated.error }, { status: 400 });
+    const wallet = await readB2bWallet(partner.id);
+    return NextResponse.json({
+      wallet: buildB2bWalletView(wallet, partner.walletPrices, 200, hidden),
+      overrides: partner.walletPrices,
+      hidden,
+    });
   }
 
   let prices = emptyB2bWalletPrices();
@@ -85,8 +103,9 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 });
   const wallet = await readB2bWallet(partner.id);
   return NextResponse.json({
-    wallet: buildB2bWalletView(wallet, prices, 200),
+    wallet: buildB2bWalletView(wallet, prices, 200, partner.walletHiddenProducts),
     overrides: prices,
+    hidden: partner.walletHiddenProducts,
     defaults: Object.fromEntries(
       Object.values(B2B_WALLET_PRODUCTS).map((spec) => [spec.id, spec.defaultCents]),
     ),
@@ -133,5 +152,7 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: result.reason, message }, { status: 400 });
   }
   const wallet = await readB2bWallet(partner.id);
-  return NextResponse.json({ wallet: buildB2bWalletView(wallet, partner.walletPrices, 200) });
+  return NextResponse.json({
+    wallet: buildB2bWalletView(wallet, partner.walletPrices, 200, partner.walletHiddenProducts),
+  });
 }

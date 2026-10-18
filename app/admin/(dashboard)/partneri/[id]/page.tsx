@@ -51,8 +51,9 @@ export default async function AdminPartnerDetailPage({ params }: Props) {
       </AdminDashboardHeaderWithMenu>
       <AdminB2bPartnerWallet
         partnerId={partner.id}
-        initialWallet={buildB2bWalletView(wallet, record.walletPrices, 200)}
+        initialWallet={buildB2bWalletView(wallet, record.walletPrices, 200, record.walletHiddenProducts)}
         initialOverrides={record.walletPrices}
+        initialHidden={record.walletHiddenProducts}
       />
       <AdminB2bPartnerEditForm partner={partner} />
     </div>

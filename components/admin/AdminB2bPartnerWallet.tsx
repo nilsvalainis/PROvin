@@ -55,12 +55,18 @@ export function AdminB2bPartnerWallet({
   partnerId,
   initialWallet,
   initialOverrides,
+  initialHidden,
 }: {
   partnerId: string;
   initialWallet: B2bWalletView;
   initialOverrides: B2bWalletPriceOverrides;
+  initialHidden: readonly B2bWalletProductId[];
 }) {
   const [wallet, setWallet] = useState(initialWallet);
+  const [hidden, setHidden] = useState<B2bWalletProductId[]>([...initialHidden]);
+  const [visibilityBusy, setVisibilityBusy] = useState(false);
+  const [visibilityError, setVisibilityError] = useState("");
+  const [visibilitySaved, setVisibilitySaved] = useState("");
   const [prices, setPrices] = useState<Record<B2bWalletProductId, string>>({
     business: centsInput(initialOverrides.business),
     dealer_raw: centsInput(initialOverrides.dealer_raw),
@@ -112,6 +118,38 @@ export function AdminB2bPartnerWallet({
     }
   };
 
+  const toggleVisible = async (product: B2bWalletProductId, visible: boolean) => {
+    const next = B2B_WALLET_PRODUCT_IDS.filter((id) => (id === product ? !visible : hidden.includes(id)));
+    setVisibilityBusy(true);
+    setVisibilityError("");
+    setVisibilitySaved("");
+    try {
+      const res = await fetch(url, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hidden: next }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        wallet?: B2bWalletView;
+        hidden?: B2bWalletProductId[];
+      };
+      if (!res.ok || !data.wallet || !data.hidden) {
+        setVisibilityError("Neizdevās saglabāt redzamību.");
+        return;
+      }
+      setWallet(data.wallet);
+      setHidden(data.hidden);
+      setVisibilitySaved(
+        visible ? `${PRODUCT_LABEL[product]}: rāda partnerim.` : `${PRODUCT_LABEL[product]}: paslēpts partnerim.`,
+      );
+    } catch {
+      setVisibilityError("Neizdevās saglabāt redzamību.");
+    } finally {
+      setVisibilityBusy(false);
+    }
+  };
+
   const adjust = async () => {
     setAdjustBusy(true);
     setAdjustError("");
@@ -155,6 +193,32 @@ export function AdminB2bPartnerWallet({
           </div>
         ))}
       </dl>
+
+      <div className="mt-6 border-t border-slate-200/80 pt-5">
+        <h3 className="text-sm font-semibold text-slate-800">Pieejamie pakalpojumi</h3>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+          Paslēptu pakalpojumu partneris portālā neredz un nevar pasūtīt. Izmaiņas saglabājas uzreiz.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+          {B2B_WALLET_PRODUCT_IDS.map((product) => (
+            <label key={product} className="flex items-center gap-2.5 text-sm text-slate-800">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300 text-[var(--color-provin-accent)] focus:ring-[var(--color-provin-accent)]"
+                checked={!hidden.includes(product)}
+                disabled={visibilityBusy}
+                onChange={(event) => void toggleVisible(product, event.target.checked)}
+                data-product={product}
+              />
+              {PRODUCT_LABEL[product]}
+            </label>
+          ))}
+        </div>
+        {visibilityError ? <p className="mt-3 text-sm text-red-600">{visibilityError}</p> : null}
+        {visibilitySaved && !visibilityError ? (
+          <p className="mt-3 text-sm text-emerald-700">{visibilitySaved}</p>
+        ) : null}
+      </div>
 
       <div className="mt-6 border-t border-slate-200/80 pt-5">
         <h3 className="text-sm font-semibold text-slate-800">Individuālās cenas</h3>

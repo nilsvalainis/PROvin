@@ -10,5 +10,5 @@ export async function GET() {
   const partner = await resolveActiveB2bPartner();
   if (!partner) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const wallet = await readB2bWallet(partner.id);
-  return NextResponse.json({ wallet: buildB2bWalletView(wallet, partner.walletPrices) });
+  return NextResponse.json({ wallet: buildB2bWalletView(wallet, partner.walletPrices, 50, partner.walletHiddenProducts) });
 }

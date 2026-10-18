@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
 import { isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
-import { isB2bWalletProductId, isB2bWalletReportLang } from "@/lib/b2b-wallet";
+import { isB2bWalletProductId, isB2bWalletProductVisible, isB2bWalletReportLang } from "@/lib/b2b-wallet";
 import { purchaseB2bWalletProduct } from "@/lib/b2b-wallet-purchase";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import {
@@ -37,6 +37,9 @@ export async function POST(req: Request) {
 
   const product = raw.product;
   if (!isB2bWalletProductId(product)) return NextResponse.json({ error: "product" }, { status: 400 });
+  if (!isB2bWalletProductVisible(product, partner.walletHiddenProducts)) {
+    return NextResponse.json({ error: "product_hidden" }, { status: 403 });
+  }
 
   const vin = typeof raw.vin === "string" ? normalizeVin(raw.vin) : "";
   if (!vin || !isValidVin(vin)) return NextResponse.json({ error: "vin" }, { status: 400 });
@@ -74,7 +77,7 @@ export async function POST(req: Request) {
   });
 
   if (!result.ok) {
-    const status = result.error === "insufficient" ? 402 : 500;
+    const status = result.error === "insufficient" ? 402 : result.error === "product_hidden" ? 403 : 500;
     return NextResponse.json(
       { error: result.error, balanceCents: result.balanceCents, priceCents: result.priceCents },
       { status },

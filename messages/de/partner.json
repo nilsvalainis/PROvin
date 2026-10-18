@@ -282,6 +282,8 @@
     "walletSample": "Muster ansehen",
     "walletSampleSoon": "Bald",
     "walletSampleAria": "Öffnet das PDF-Muster in einem neuen Tab",
+    "walletNoProducts": "Für Ihr Konto sind derzeit keine Leistungen verfügbar. Bitte kontaktieren Sie PROVIN.",
+    "walletProductUnavailable": "Diese Leistung ist für Ihr Konto nicht verfügbar.",
     "walletDiscountAria": "Rabatt {pct}%",
     "walletOldPriceAria": "Vorheriger Preis {amount}",
     "walletLegacyCreditsHeading": "Zuvor gekaufte Credits",
