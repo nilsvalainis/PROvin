@@ -381,7 +381,7 @@ export function AdminVinScanPageClient({
         </div>
         {!hasScanResult ? (
           <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[13px] text-[var(--am-ink3)]">
-            Avoti parādīsies pēc pārbaudes
+            Rezultāti pēc pārbaudes
           </p>
         ) : (
           <div className="mt-2">{historyButton}</div>

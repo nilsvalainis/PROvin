@@ -19,6 +19,8 @@ export const ADMIN_MOBILE_ORDER_SECTIONS = [
   { id: "admin-m-sec-komentari", label: "Komentāri", wizard: 13 },
 ] as const;
 
+export type AdminMobileOrderSectionId = (typeof ADMIN_MOBILE_ORDER_SECTIONS)[number]["id"];
+
 /** Pasūtījuma doks: VIN SCAN tikai bezmaksas avoti (nekad auto-run maksas). */
 export const ADMIN_MOBILE_VIN_SCAN_EVENT = "provin-admin-mobile-vin-scan";
 

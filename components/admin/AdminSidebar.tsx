@@ -38,10 +38,7 @@ import {
   ADMIN_MOBILE_BADGE_POLL_MS,
   scheduleAdminIdleWork,
 } from "@/lib/admin-mobile-shell";
-import {
-  ADMIN_MOBILE_TABBAR_DOCK_NAV,
-  ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
-} from "@/lib/admin-mobile-shell";
+import { ADMIN_MOBILE_TABBAR_DOCK_NAV } from "@/lib/admin-mobile-shell";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import { AdminMobileCountBadge } from "@/components/admin/mobile/AdminMobileChrome";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
@@ -565,8 +562,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
 
   return (
     <>
-      <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
-        <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
+      <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
           {tabs.map((t) => {
             const on = t.match(pathname) && !more;
             const n = t.badge ? badges[t.badge] : 0;
@@ -604,19 +600,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
               ) : null}
             </span>
           </button>
-        </nav>
-        <button
-          type="button"
-          aria-label="Meklēt"
-          onClick={() => {
-            setMore(false);
-            requestAdminGlobalSearch();
-          }}
-          className="am-glass pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full text-[var(--am-ink)]"
-        >
-          <AdminMobileIcon name="meklet" className="h-5 w-5" />
-        </button>
-      </div>
+      </nav>
       {more ? (
         <div
           className="fixed inset-x-0 top-0 z-[34] flex flex-col md:hidden"

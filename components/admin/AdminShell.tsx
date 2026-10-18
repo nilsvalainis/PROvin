@@ -3,14 +3,18 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { AdminGlobalSearch } from "./AdminGlobalSearch";
+import { AdminGlobalSearch, AdminMobileSearchButton } from "./AdminGlobalSearch";
 import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./AdminSidebar";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
 import { AdminVinHandoffProvider } from "./AdminVinHandoffContext";
 import { IrissPavadzimesMobileBar } from "@/components/admin/IrissPavadzimesMobileBar";
 import { useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
-import { ADMIN_MOBILE_TABBAR_H_CSS, adminMobilePullToRefreshEnabled } from "@/lib/admin-mobile-shell";
+import {
+  ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
+  ADMIN_MOBILE_TABBAR_H_CSS,
+  adminMobilePullToRefreshEnabled,
+} from "@/lib/admin-mobile-shell";
 
 type AdminShellLayoutValue = {
   sidebarCollapsed: boolean;
@@ -72,7 +76,12 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
           </AdminAuditDeadlineTickProvider>
         </AdminShellLayoutContext.Provider>
       </div>
-      {hideTabBar ? null : <AdminMobileTabBar workspace={workspace} />}
+      {hideTabBar ? null : (
+        <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
+          <AdminMobileTabBar workspace={workspace} />
+          <AdminMobileSearchButton />
+        </div>
+      )}
       <AdminGlobalSearch />
     </div>
     </AdminVinHandoffProvider>

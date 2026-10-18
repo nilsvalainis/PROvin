@@ -55,7 +55,10 @@ export function AdminMobileSearchButton({ className = "" }: { className?: string
       type="button"
       onClick={() => requestAdminGlobalSearch()}
       aria-label="Meklēt"
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#e5e5ea] bg-white text-[#1d1d1f] ${className}`}
+      className={
+        className ||
+        "am-glass pointer-events-auto inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-[var(--am-ink)]"
+      }
     >
       <Search className="h-4 w-4" strokeWidth={2} aria-hidden />
     </button>

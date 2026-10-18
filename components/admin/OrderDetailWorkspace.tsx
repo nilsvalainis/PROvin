@@ -28,7 +28,7 @@ import { AdminListingCoverPhoto } from "@/components/admin/AdminListingCoverPhot
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
 import { AdminOrderVinScanCard } from "@/components/admin/AdminOrderVinScanCard";
 import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
-import { ADMIN_MOBILE_ORDER_SECTIONS } from "@/lib/admin-mobile-ds";
+import { ADMIN_MOBILE_ORDER_SECTIONS, type AdminMobileOrderSectionId } from "@/lib/admin-mobile-ds";
 import {
   AdminMobileRoundBtn,
   AdminMobileSaveStatus,
@@ -814,7 +814,7 @@ export function OrderDetailWorkspace({
   const [wizardStep, setWizardStep] = useState(0);
   const phoneStack = useAdminIsPhone();
   const [mobileMore, setMobileMore] = useState(false);
-  const [mobileSection, setMobileSection] = useState(ADMIN_MOBILE_ORDER_SECTIONS[0].id);
+  const [mobileSection, setMobileSection] = useState<AdminMobileOrderSectionId>(ADMIN_MOBILE_ORDER_SECTIONS[0].id);
   const [phrasesOpen, setPhrasesOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [copilotBusy, setCopilotBusy] = useState(false);
@@ -4829,11 +4829,12 @@ export function OrderDetailWorkspace({
             items={ADMIN_MOBILE_ORDER_SECTIONS.map((s) => ({ id: s.id, label: s.label }))}
             activeId={mobileSection}
             onPick={(id) => {
-              setMobileSection(id);
               const sec = ADMIN_MOBILE_ORDER_SECTIONS.find((s) => s.id === id);
-              if (sec) goWizardStep(sec.wizard);
+              if (!sec) return;
+              setMobileSection(sec.id);
+              goWizardStep(sec.wizard);
               window.setTimeout(() => {
-                document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                document.getElementById(sec.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
               }, 40);
             }}
           />
