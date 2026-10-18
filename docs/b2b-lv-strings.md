@@ -454,7 +454,7 @@ Publiskie teksti ir `messages/lv/partner.json` (namespace `Partner`). Admin un e
 | `components/admin/AdminB2bPartnerWallet.tsx:193` | Saglabāt cenas | apstiprināts |
 | `components/admin/AdminB2bPartnerWallet.tsx:196` | Atjaunot noklusējuma cenas | apstiprināts |
 | `components/admin/AdminB2bPartnerWallet.tsx:202` | Atlikuma korekcija | pārbaudīt |
-| `components/admin/AdminB2bPartnerWallet.tsx:204` | Piem. manuāla atmaksa: 15,99 (pieskaita) vai -15,99 (noņem). Piezīme ir obligāta un redzama darījumu vēsturē. | labots (bija: ... redzama virsgrāmatā.) |
+| `components/admin/AdminB2bPartnerWallet.tsx:204` | Piem. manuāla atmaksa: 19,99 (pieskaita) vai -19,99 (noņem). Piezīme ir obligāta un redzama darījumu vēsturē. | labots (bija: ... redzama virsgrāmatā.) |
 | `components/admin/AdminB2bPartnerWallet.tsx:208` | Summa (€) | pārbaudīt |
 | `components/admin/AdminB2bPartnerWallet.tsx:222` | Piezīme | pārbaudīt |
 | `components/admin/AdminB2bPartnerWallet.tsx:231` | Atmaksa par VIN ... | pārbaudīt |

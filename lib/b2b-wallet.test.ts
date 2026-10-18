@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { compareAndSwap, createMemoryConditionalStore } from "@/lib/conditional-write";
 import { CLIENT_REPORT_LANGS } from "@/lib/client-report-i18n";
 import {
+  B2B_WALLET_PRODUCTS,
   B2B_WALLET_REPORT_LANGS,
   applyB2bWalletAdjust,
   applyB2bWalletPurchase,
@@ -18,6 +19,7 @@ import {
   parseB2bWallet,
   parseB2bWalletHiddenProducts,
   parseB2bWalletOrderMarks,
+  parseB2bWalletPrices,
   resolveB2bWalletPrice,
   shouldAutoRefundB2bWalletOrder,
   validateB2bWalletPriceInput,
@@ -164,10 +166,35 @@ describe("b2b wallet prices", () => {
     });
   });
 
+  it("locks the default and minimum catalog prices", () => {
+    expect(B2B_WALLET_PRODUCTS.business).toMatchObject({ defaultCents: 7999, minCents: 6999 });
+    expect(B2B_WALLET_PRODUCTS.dealer_raw).toMatchObject({ defaultCents: 1999, minCents: 1199 });
+    expect(B2B_WALLET_PRODUCTS.dealer_pro).toMatchObject({ defaultCents: 2499, minCents: 1499 });
+  });
+
   it("empty override means the default price", () => {
     expect(resolveB2bWalletPrice("business", null)).toEqual({ product: "business", priceCents: 7999, defaultCents: 7999, discountPct: 0 });
-    expect(resolveB2bWalletPrice("dealer_raw", { business: null, dealer_raw: null, dealer_pro: null }).priceCents).toBe(1599);
-    expect(resolveB2bWalletPrice("dealer_pro", { business: null, dealer_raw: null, dealer_pro: 1999 }).discountPct).toBe(0);
+    expect(resolveB2bWalletPrice("dealer_raw", { business: null, dealer_raw: null, dealer_pro: null })).toEqual({
+      product: "dealer_raw",
+      priceCents: 1999,
+      defaultCents: 1999,
+      discountPct: 0,
+    });
+    expect(resolveB2bWalletPrice("dealer_pro", null)).toEqual({
+      product: "dealer_pro",
+      priceCents: 2499,
+      defaultCents: 2499,
+      discountPct: 0,
+    });
+  });
+
+  it("keeps stored partner prices and badges them against the new defaults", () => {
+    const stored = parseB2bWalletPrices({ business: 7199, dealer_raw: 1599, dealer_pro: 1999 });
+    expect(stored).toEqual({ business: 7199, dealer_raw: 1599, dealer_pro: 1999 });
+    expect(resolveB2bWalletPrice("dealer_raw", stored)).toMatchObject({ priceCents: 1599, defaultCents: 1999, discountPct: 20 });
+    expect(resolveB2bWalletPrice("dealer_pro", stored)).toMatchObject({ priceCents: 1999, defaultCents: 2499, discountPct: 20 });
+    expect(resolveB2bWalletPrice("dealer_raw", { business: null, dealer_raw: 1199, dealer_pro: null }).discountPct).toBe(40);
+    expect(resolveB2bWalletPrice("dealer_pro", { business: null, dealer_raw: null, dealer_pro: 1499 }).discountPct).toBe(40);
   });
 
   it("computes the discount badge percentage", () => {
@@ -178,7 +205,9 @@ describe("b2b wallet prices", () => {
   });
 
   it("uses the cheapest price for the low balance state", () => {
-    expect(cheapestB2bWalletPriceCents(null)).toBe(1599);
+    expect(cheapestB2bWalletPriceCents(null)).toBe(1999);
+    expect(canAffordCheapestB2bWalletProduct(1998, null)).toBe(false);
+    expect(canAffordCheapestB2bWalletProduct(1999, null)).toBe(true);
     expect(canAffordCheapestB2bWalletProduct(850, null)).toBe(false);
     expect(canAffordCheapestB2bWalletProduct(0, null)).toBe(false);
     expect(canAffordCheapestB2bWalletProduct(12000, null)).toBe(true);
@@ -198,7 +227,7 @@ describe("b2b wallet prices", () => {
     const view = buildB2bWalletView(b, null);
     expect(view.balanceCents).toBe(4500);
     expect(view.txns[0]?.sessionId).toBe("cs_b");
-    expect(view.cheapestCents).toBe(1599);
+    expect(view.cheapestCents).toBe(1999);
     expect(view.products).toEqual(["business", "dealer_raw", "dealer_pro"]);
   });
 
@@ -210,11 +239,11 @@ describe("b2b wallet prices", () => {
     expect(isB2bWalletProductVisible("dealer_raw", ["dealer_raw"])).toBe(false);
     expect(visibleB2bWalletProducts(["business"])).toEqual(["dealer_raw", "dealer_pro"]);
 
-    const wallet = applyB2bWalletTopup(emptyB2bWallet(), { amountCents: 1700, sessionId: "cs_v" }).wallet;
+    const wallet = applyB2bWalletTopup(emptyB2bWallet(), { amountCents: 2200, sessionId: "cs_v" }).wallet;
     const noRaw = buildB2bWalletView(wallet, null, 50, ["dealer_raw"]);
     expect(noRaw.products).toEqual(["business", "dealer_pro"]);
-    expect(noRaw.cheapestCents).toBe(1999);
-    expect(canAffordCheapestB2bWalletProduct(1700, null, ["dealer_raw"])).toBe(false);
+    expect(noRaw.cheapestCents).toBe(2499);
+    expect(canAffordCheapestB2bWalletProduct(2200, null, ["dealer_raw"])).toBe(false);
 
     const none = buildB2bWalletView(wallet, null, 50, ["business", "dealer_raw", "dealer_pro"]);
     expect(none.products).toEqual([]);
