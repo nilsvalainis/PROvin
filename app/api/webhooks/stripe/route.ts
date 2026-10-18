@@ -25,6 +25,10 @@ import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
 import { clientLinkHashFromStripeMetadata } from "@/lib/client-link";
 import { consumeClientLinkByHash } from "@/lib/client-link-store";
 import { notifyMetaPurchaseFromStripeSession } from "@/lib/meta-capi";
+import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
+import { isB2bWalletTopupFulfillment } from "@/lib/b2b-partner-orders";
+import { applyB2bWalletTopup } from "@/lib/b2b-wallet";
+import { updateB2bWallet } from "@/lib/b2b-wallet-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,6 +87,11 @@ async function fulfillPaidCheckoutSession(
       } catch (err) {
         console.warn("[stripe webhook] client link consume failed:", err);
       }
+    }
+
+    const isWalletTopup = isB2bWalletTopupFulfillment(session.metadata?.fulfillment);
+    if (isWalletTopup) {
+      await creditB2bWalletTopupFromSession(session);
     }
 
     const order = getOrderFieldsFromSession(session);
@@ -149,6 +158,7 @@ async function fulfillPaidCheckoutSession(
 
     console.info("PROVIN order:", payload);
     triggerInvoiceSequenceRepairInBackground();
+    if (isWalletTopup) return;
 
     const checkoutLine = getCheckoutLineFromSession(session);
     const fulfillment = session.metadata?.fulfillment?.trim() ?? "";
@@ -284,6 +294,21 @@ async function fulfillPaidCheckoutSession(
     releaseStripeEvent(fulfillDedupeKey(thinSession.id));
     throw e;
   }
+}
+
+/** Maka papildinājums: summa uz partnera atlikumu. Idempotents pēc Stripe sesijas id. */
+async function creditB2bWalletTopupFromSession(session: Stripe.Checkout.Session): Promise<void> {
+  const partnerId = session.metadata?.partner_id?.trim() ?? "";
+  const amountCents = session.amount_total ?? 0;
+  if (!isSafeB2bPartnerId(partnerId) || amountCents <= 0) {
+    console.error("[stripe webhook] wallet topup: invalid partner or amount", { sessionId: session.id });
+    return;
+  }
+  const applied = await updateB2bWallet(partnerId, (wallet) => {
+    const r = applyB2bWalletTopup(wallet, { amountCents, sessionId: session.id });
+    return r.applied ? { value: true, next: r.wallet } : { value: false };
+  });
+  console.info("[stripe webhook] wallet topup", { sessionId: session.id, partnerId, amountCents, applied });
 }
 
 export async function GET() {

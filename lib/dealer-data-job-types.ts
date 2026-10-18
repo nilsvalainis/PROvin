@@ -44,7 +44,7 @@ export type DealerRefundRecord = {
   /** Operatora e-pasts no admin sesijas. */
   by: string;
   reason: string;
-  kind?: "stripe" | "credit";
+  kind?: "stripe" | "credit" | "wallet";
 };
 
 export type DealerRefundDecision =
@@ -210,6 +210,16 @@ function normalizeRefund(raw: unknown): DealerRefundRecord | null {
       by: asStr(o.by, 320),
       reason: asStr(o.reason, 300),
       kind: "credit",
+    };
+  }
+  if (stripeRefundId.startsWith("wallet_") && amountCents > 0) {
+    return {
+      at: asStr(o.at, 40) || new Date().toISOString(),
+      amountCents,
+      stripeRefundId,
+      by: asStr(o.by, 320),
+      reason: asStr(o.reason, 300),
+      kind: "wallet",
     };
   }
   if (amountCents <= 0) return null;

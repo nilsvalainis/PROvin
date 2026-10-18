@@ -3,6 +3,7 @@
  *
  * B2C Stripe `cs_*`: nauda uz karti.
  * B2B manuālais VIN (manual_order_*): 1 kredīts atpakaļ partnera kontā.
+ * B2B maka pirkums (wallet_txn=): summa atpakaļ partnera atlikumā.
  */
 import { NextResponse } from "next/server";
 
@@ -12,6 +13,8 @@ import { isManualOrderId } from "@/lib/admin-manual-orders";
 import { rememberB2bDebitKey, restoreB2bCredit, walletHasDebitKey } from "@/lib/b2b-partner-credits";
 import { updateB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
+import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
+import { refundB2bWalletOrder } from "@/lib/b2b-wallet-refund";
 import { readDealerDataJob, writeDealerDataJob } from "@/lib/dealer-data-job-store";
 import {
   DEALER_REFUND_MAX_CENTS,
@@ -65,6 +68,25 @@ export async function POST(req: Request) {
     }
     const draft = await readOrderDraft(sessionId);
     const notes = draft?.orderEdits?.notes ?? "";
+    if (parseB2bWalletOrderMarks(notes)) {
+      const walletRefund = await refundB2bWalletOrder(sessionId, {
+        requireNoData: o.override !== true,
+        by: "admin",
+        reason: String(o.reason ?? "dealer_data_no_data_wallet").slice(0, REFUND_REASON_MAX),
+      });
+      if (!walletRefund.refunded) {
+        return NextResponse.json({ error: walletRefund.reason, job }, { status: 409 });
+      }
+      const refreshed = await readDealerDataJob(sessionId);
+      return NextResponse.json({
+        ok: true,
+        refund: refreshed?.refund ?? null,
+        kind: "wallet",
+        statePersisted: Boolean(refreshed?.refund),
+        emailSent: false,
+        job: refreshed,
+      });
+    }
     const partnerId = partnerIdFromNotes(notes);
     if (!partnerId) {
       return NextResponse.json({ error: "partner_missing" }, { status: 409 });

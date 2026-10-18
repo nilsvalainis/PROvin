@@ -7,6 +7,7 @@ import {
   type B2bPartnerArchiveStatus,
   type B2bPartnerOrderRow,
 } from "@/lib/b2b-partner-orders";
+import type { B2bWalletProductId } from "@/lib/b2b-wallet";
 import { normalizeVin } from "@/lib/order-field-validation";
 
 export const PARTNER_VIN_REORDER_LOCK_MS = 5_000;
@@ -64,7 +65,9 @@ export function resolvePartnerArchiveStatus(args: {
   reportReady: boolean;
   creditRestored: boolean;
   processing: boolean;
+  walletRefunded?: boolean;
 }): B2bPartnerArchiveStatus {
+  if (args.walletRefunded) return "wallet_refunded";
   if (args.creditRestored) return "credit_restored";
   if (args.reportReady) return "ready";
   if (args.processing) return "processing";
@@ -131,8 +134,35 @@ export function buildPartnerVinArchiveRow(args: {
   reportReady: boolean;
   creditRestored: boolean;
   processing: boolean;
+  wallet?: {
+    product: B2bWalletProductId;
+    priceCents: number | null;
+    refunded: boolean;
+    rawReady: boolean;
+  } | null;
 }): B2bPartnerOrderRow {
-  const status = resolvePartnerArchiveStatus(args);
+  const wallet = args.wallet ?? null;
+  const status = resolvePartnerArchiveStatus({ ...args, walletRefunded: wallet?.refunded ?? false });
+  if (wallet) {
+    const rawHref =
+      wallet.product === "dealer_raw" && wallet.rawReady && !wallet.refunded
+        ? partnerRawDataHref(args.id)
+        : null;
+    return {
+      id: args.id,
+      createdAt: args.createdAt,
+      vin: args.vin,
+      invoiceNumber: args.invoiceNumber?.trim() || "-",
+      amountLabel: formatB2bArchiveAmount(wallet.priceCents, "eur"),
+      amountKind: wallet.refunded ? "wallet_refunded" : "money",
+      plan: args.plan,
+      reportHref: rawHref ?? partnerArchiveReportHref(args.id, args.reportReady),
+      invoiceHref: null,
+      status: rawHref ? "ready" : status,
+      kind: "order",
+      walletProduct: wallet.product,
+    };
+  }
   const amountKind: B2bArchiveAmountKind = args.creditRestored ? "credit_restored" : "credit";
   return {
     id: args.id,
@@ -149,6 +179,11 @@ export function buildPartnerVinArchiveRow(args: {
   };
 }
 
+/** RAW dīlera dati partnera kabinetā (lapa, ne PDF). */
+export function partnerRawDataHref(orderId: string): string {
+  return `/partneriem/konts/dati/${encodeURIComponent(orderId)}`;
+}
+
 export function buildPartnerPackArchiveRow(args: {
   id: string;
   createdAt: string;
@@ -158,6 +193,7 @@ export function buildPartnerPackArchiveRow(args: {
   currency: string | null | undefined;
   plan: B2bPartnerPlanId;
   packQty?: number | null;
+  topup?: boolean;
 }): B2bPartnerOrderRow {
   return {
     id: args.id,
@@ -170,8 +206,8 @@ export function buildPartnerPackArchiveRow(args: {
     reportHref: null,
     invoiceHref: partnerArchiveInvoiceHref(args.id, args.invoicePdfUrl),
     status: "ready",
-    kind: "pack",
-    packQty: args.packQty && args.packQty > 0 ? args.packQty : 1,
+    kind: args.topup ? "topup" : "pack",
+    ...(args.topup ? {} : { packQty: args.packQty && args.packQty > 0 ? args.packQty : 1 }),
   };
 }
 

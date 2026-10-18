@@ -101,6 +101,9 @@ export function adminNewOrderHtml(lines: { label: string; value: string }[]): st
 export function adminNewPartnerHtml(opts: {
   lines: { label: string; value: string }[];
   adminUrl?: string;
+  title?: string;
+  lead?: string;
+  ctaLabel?: string;
 }): string {
   const rows = opts.lines
     .map(
@@ -108,10 +111,10 @@ export function adminNewPartnerHtml(opts: {
         `<tr><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;color:${MUTED};width:38%;">${esc(l.label)}</td><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;">${esc(l.value)}</td></tr>`,
     )
     .join("");
-  const cta = opts.adminUrl ? ctaButton(opts.adminUrl, "Atvērt partneri adminā") : "";
+  const cta = opts.adminUrl ? ctaButton(opts.adminUrl, opts.ctaLabel ?? "Atvērt partneri adminā") : "";
   const inner = `
-<p style="margin:0 0 8px;font-size:20px;font-weight:600;">Jauns B2B partneris</p>
-<p style="margin:0 0 24px;color:${MUTED};font-size:14px;">Partneris reģistrējies ar ielūguma saiti.</p>
+<p style="margin:0 0 8px;font-size:20px;font-weight:600;">${esc(opts.title ?? "Jauns B2B partneris")}</p>
+<p style="margin:0 0 24px;color:${MUTED};font-size:14px;">${esc(opts.lead ?? "Partneris reģistrējies ar ielūguma saiti.")}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
 ${cta}
 `;

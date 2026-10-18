@@ -1,3 +1,4 @@
+import { isB2bPackFulfillment } from "@/lib/b2b-partner-orders";
 import {
   AD_CHANNEL_LABELS_LV,
   AD_CHANNELS,
@@ -90,7 +91,7 @@ export function periodFromDay(period: HeardAboutPeriod, nowSec: number): string 
 
 export function isCountableAdsOrder(order: AdsAttributionOrder): boolean {
   if (order.isDemo || order.isManual) return false;
-  if ((order.fulfillment ?? "").trim() === "b2b_pack") return false;
+  if (isB2bPackFulfillment(order.fulfillment)) return false;
   return true;
 }
 

@@ -54,6 +54,7 @@ describe("b2b partner account", () => {
         dealer1: null,
         dealer10: null,
       },
+      walletPrices: { business: null, dealer_raw: null, dealer_pro: null },
       adminSeenAt: "2026-09-04T00:00:00.000Z",
     };
     const publicProfile = toPublicPartner(record);

@@ -1,4 +1,5 @@
 import { isValidOrderEmail, isValidOrderPhone } from "@/lib/order-field-validation";
+import { emptyB2bWalletPrices, parseB2bWalletPrices, type B2bWalletPriceOverrides } from "@/lib/b2b-wallet";
 
 export type B2bPartnerStatus = "active" | "disabled";
 
@@ -33,6 +34,8 @@ export type B2bPartnerRecord = {
   /** Atsevišķā Dīlera paka. Noklusējums false - ieslēdz admin pēc sarunas. */
   dealerEnabled: boolean;
   prices: B2bPartnerPriceOverrides;
+  /** Maka produktu individuālās cenas. `null` lauks = noklusējuma cena. */
+  walletPrices: B2bWalletPriceOverrides;
   /**
    * Kad operators atvēris partneri adminā. `null` = jauns, rāda badge.
    * Veciem ierakstiem parse aizpilda ar createdAt.
@@ -139,6 +142,7 @@ export function toPublicPartner(partner: B2bPartnerRecord): B2bPartnerPublicProf
     pendingEmail: partner.pendingEmail,
     dealerEnabled: partner.dealerEnabled,
     prices: partner.prices,
+    walletPrices: partner.walletPrices ?? emptyB2bWalletPrices(),
   };
 }
 
@@ -227,6 +231,7 @@ export function parsePartnerRecord(raw: unknown): B2bPartnerRecord | null {
         : null,
     dealerEnabled: o.dealerEnabled === true,
     prices: parseB2bPartnerPrices(o.prices),
+    walletPrices: parseB2bWalletPrices(o.walletPrices),
     adminSeenAt: parseAdminSeenAt(o, createdAt),
   };
 }

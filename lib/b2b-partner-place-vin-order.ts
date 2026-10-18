@@ -22,15 +22,17 @@ export async function createPartnerCreditVinOrder(args: {
   vin: string;
   plan: B2bPartnerPlanId;
   listingUrl: string;
-  auditPurpose: B2bPartnerAuditPurpose;
+  auditPurpose?: B2bPartnerAuditPurpose | null;
   lotId: string;
+  extraNoteParts?: readonly string[];
 }): Promise<{ ok: true; orderId: string; dealerQueued: boolean } | { ok: false }> {
   const notes = buildPartnerOrderNotes({
     plan: args.plan,
     partnerId: args.partner.id,
     lotId: args.lotId,
     companyName: args.partner.companyName,
-    auditPurpose: args.auditPurpose,
+    auditPurpose: args.auditPurpose ?? null,
+    extraParts: args.extraNoteParts,
   });
   const created = await createOperatorOrderWithFields({
     vin: args.vin,
@@ -41,7 +43,7 @@ export async function createPartnerCreditVinOrder(args: {
     partnerId: args.partner.id,
     companyName: args.partner.companyName,
     checkoutLine: args.plan,
-    auditPurpose: args.auditPurpose,
+    ...(args.auditPurpose ? { auditPurpose: args.auditPurpose } : {}),
     ...(args.listingUrl ? { listingUrl: args.listingUrl } : {}),
   });
   if (!created.ok) return { ok: false };
@@ -55,12 +57,31 @@ export async function createPartnerCreditVinOrder(args: {
   return { ok: true, orderId: created.orderId, dealerQueued };
 }
 
-export async function runPartnerCreditVinOrderFollowup(args: {
+export type PartnerVinOrderFollowup = {
   orderId: string;
   vin: string;
   listingUrl: string;
   dealerQueued: boolean;
-}): Promise<void> {
+  /** RAW dīlera dati: tikai OEM ielase, bez citiem avotiem un AI. */
+  dealerOnlyRaw?: boolean;
+};
+
+export async function runPartnerCreditVinOrderFollowup(args: PartnerVinOrderFollowup): Promise<void> {
+  if (args.dealerOnlyRaw) {
+    if (!args.dealerQueued) return;
+    try {
+      await runDealerDataJob({
+        sessionId: args.orderId,
+        vin: args.vin,
+        trigger: "webhook",
+        skipAi: true,
+        skipTranslate: true,
+      });
+    } catch (err) {
+      console.error("[partner/orders] dealer raw job:", err);
+    }
+    return;
+  }
   try {
     const [seedRes, scanRes] = await Promise.allSettled([
       seedPaidOrderAutoSources(args.orderId, {
@@ -90,14 +111,7 @@ export async function runPartnerCreditVinOrderFollowup(args: {
   }
 }
 
-export function schedulePartnerCreditVinOrderFollowups(
-  jobs: readonly {
-    orderId: string;
-    vin: string;
-    listingUrl: string;
-    dealerQueued: boolean;
-  }[],
-): void {
+export function schedulePartnerCreditVinOrderFollowups(jobs: readonly PartnerVinOrderFollowup[]): void {
   if (jobs.length === 0) return;
   after(async () => {
     for (const job of jobs) {
