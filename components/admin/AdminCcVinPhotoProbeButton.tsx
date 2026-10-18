@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { adminActionPillBase } from "@/components/admin/adminActionPill";
+import { isProvinUserscriptPresent } from "@/lib/provin-userscript-presence";
 import {
   CHECKCAR_VIN_HOME_URL,
   buildCheckcarVinReportUrl,
@@ -151,7 +152,7 @@ export function AdminCcVinPhotoProbeButton({
           } catch {
             /* pārlūks var tomēr pārslēgt cilni */
           }
-          const installed = document.documentElement.getAttribute("data-provin-userscript");
+          const installed = isProvinUserscriptPresent();
           if (!installed) {
             setAvailability("error");
             setErrorText("PROVIN skripts admin lapā nav ieslēgts.");

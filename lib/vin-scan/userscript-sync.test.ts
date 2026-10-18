@@ -22,8 +22,14 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.24\.0/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.24.0"');
+    expect(src).toMatch(/@version\s+1\.24\.1/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.24.1"');
+    expect(src).toContain("function stampUserscriptVersion()");
+    expect(src).toContain('document.addEventListener("provin-userscript-ping"');
+    expect(src).toContain('new CustomEvent("provin-userscript-pong", { detail: SCRIPT_VERSION })');
+    expect(src).toContain("childList: true,");
+    expect(src).toContain("window.setInterval(run, 5000);");
+    expect(src).toContain("const BROWSER_FETCH_MAX_TRIES = 3;");
     expect(src).toContain("// @connect      stat.vin");
     expect(src).toContain("// @connect      bid.cars");
     expect(src).toContain("// @connect      bidfax.info");
@@ -132,10 +138,13 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 24 });
     expect(vinScanUserscriptMeetsMin("1.23.0")).toBe(false);
     expect(vinScanUserscriptMeetsMin("1.24.0")).toBe(true);
+    expect(vinScanUserscriptMeetsMin("1.24.1")).toBe(true);
+    expect(vinScanUserscriptMeetsMin("1.24")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
     expect(vinScanUserscriptUpdateNeeded("")).toBe(false);
     expect(vinScanUserscriptUpdateNeeded("1.23.0")).toBe(true);
     expect(vinScanUserscriptUpdateNeeded("1.24.0")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.24.1")).toBe(false);
     const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
     const panel = readFileSync(path.join(ROOT, "components/admin/AdminVinScanPanel.tsx"), "utf8");
     const handoff = readFileSync(path.join(ROOT, "components/admin/AdminVinScanBrowserFetchHandoff.tsx"), "utf8");
@@ -149,6 +158,11 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(hint).toContain("Zviedrijas reģistrs");
     expect(hint).toContain("PROVIN skripts nav aktīvs");
     expect(hint).toContain("stat.vin dati jāielādē no jūsu pārlūka");
+    expect(hint).toContain("watchProvinUserscript(");
+    expect(hint).not.toContain("1500");
+    const layout = readFileSync(path.join(ROOT, "app/admin/layout.tsx"), "utf8");
+    expect(layout).toContain("PROVIN_USERSCRIPT_GUARD_SNIPPET");
+    expect(layout).toContain('strategy="beforeInteractive"');
     expect(handoff).toContain("data-provin-stat-vin-fetch");
     expect(handoff).toContain("data-provin-browser-fetch");
   });

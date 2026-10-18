@@ -10,6 +10,7 @@ import { AdminVinHistoryList } from "@/components/admin/AdminVinHistoryList";
 import { quickEvalNordicSearchLinks } from "@/lib/quick-eval-vin-scan";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 import { decodeVinLocal } from "@/lib/vin-scan/vin-decode";
+import { isProvinUserscriptPresent } from "@/lib/provin-userscript-presence";
 
 const FACT_TONE = { ok: "text-emerald-700", warn: "text-amber-700", bad: "text-rose-700" } as const;
 
@@ -206,7 +207,7 @@ function CcVinChip({ peekId, vin, count, at }: { peekId: string; vin: string; co
           setErr("pārlūks bloķēja cilni");
           return;
         }
-        if (!document.documentElement.getAttribute("data-provin-userscript")) {
+        if (!isProvinUserscriptPresent()) {
           setState("error");
           setErr("PROVIN skripts nav ieslēgts");
           return;

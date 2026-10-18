@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.24.0
+// @version      1.24.1
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -111,14 +111,43 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.24.0";
+  const SCRIPT_VERSION = "1.24.1";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
-  try {
-    document.documentElement.setAttribute("data-provin-userscript", SCRIPT_VERSION);
-  } catch {
-    /* ignore */
+  function stampUserscriptVersion() {
+    try {
+      if (document.documentElement.getAttribute("data-provin-userscript") !== SCRIPT_VERSION) {
+        document.documentElement.setAttribute("data-provin-userscript", SCRIPT_VERSION);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  stampUserscriptVersion();
+  if (path.includes("/admin")) {
+    /* React 19 noņem visus <html> atribūtus, kad saknes singletonu iegūst no jauna; tad admin rāda „nav aktīvs”. */
+    try {
+      new MutationObserver(stampUserscriptVersion).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-provin-userscript"],
+      });
+    } catch {
+      /* ignore */
+    }
+    document.addEventListener("provin-userscript-ping", function () {
+      stampUserscriptVersion();
+      try {
+        document.dispatchEvent(new CustomEvent("provin-userscript-pong", { detail: SCRIPT_VERSION }));
+      } catch {
+        /* ignore */
+      }
+    });
+    try {
+      document.dispatchEvent(new CustomEvent("provin-userscript-pong", { detail: SCRIPT_VERSION }));
+    } catch {
+      /* ignore */
+    }
   }
 
   const GM_PENDING_VIN = "provin_pending_vin";
@@ -330,6 +359,8 @@
 
     const STAT_VIN_HTML_MAX = 900000;
     const browserFetched = Object.create(null);
+    const browserFetchTries = Object.create(null);
+    const BROWSER_FETCH_MAX_TRIES = 3;
     const BROWSER_FETCH_URL = {
       stat_vin: function (vin) {
         return "https://stat.vin/cars/" + encodeURIComponent(vin);
@@ -411,6 +442,9 @@
       if (!/^[A-HJ-NPR-Z0-9]{11,17}$/.test(vin)) return;
       const xhr = gmXhr();
       if (!xhr) return;
+      const tries = browserFetchTries[key] || 0;
+      if (tries >= BROWSER_FETCH_MAX_TRIES) return;
+      browserFetchTries[key] = tries + 1;
       browserFetched[key] = 1;
       const pageUrl = specUrl(vin);
       const label = BROWSER_FETCH_LABEL[id] || id;
@@ -468,12 +502,24 @@
         const pending = readBrowserFetchRequest();
         runBrowserFetches(pending.token, pending.ids);
       };
-      const obs = new MutationObserver(run);
+      let queued = false;
+      const schedule = function () {
+        if (queued) return;
+        queued = true;
+        window.setTimeout(function () {
+          queued = false;
+          run();
+        }, 50);
+      };
+      /* childList: pasūtījuma kartīte pēc SPA pārejas ievieto jaunu <span>, nevis maina atribūtu. */
+      const obs = new MutationObserver(schedule);
       obs.observe(document.documentElement, {
         subtree: true,
+        childList: true,
         attributes: true,
         attributeFilter: ["data-provin-stat-vin-fetch", "data-provin-browser-fetch", "data-provin-browser-fetch-ids"],
       });
+      window.setInterval(run, 5000);
       document.addEventListener("provin-stat-vin-fetch", function (ev) {
         const detail = ev && ev.detail ? ev.detail : {};
         const vin = String(detail.vin || "");
