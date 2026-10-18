@@ -91,6 +91,50 @@ describe("kopsavilkums un lielie darbi", () => {
     expect(html).not.toMatch(/€|EUR/);
   });
 
+  it("ATF/filter change is Apkope, not Lielie darbi (EN/DE/LV/RU, BMW RU D6 case)", () => {
+    const bmwRuAtf = "Автоматическая коробка передач: замена масла и фильтра";
+    expect(classifyDealerVisitKind(bmwRuAtf)).toBe("maintenance");
+    expect(classifyDealerVisitKind("Automatic transmission: oil and filter change")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Automatikgetriebe: Öl- und Filterwechsel")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Ātrumkārbas eļļas un filtra maiņa")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Engine oil service")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Transfer case oil change")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Differential oil change")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Reduktora eļļas maiņa")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Gearbox replaced")).toBe("repair");
+    expect(classifyDealerVisitKind("Замена коробки передач")).toBe("repair");
+    expect(classifyDealerVisitKind("Engine replaced")).toBe("repair");
+    expect(classifyDealerVisitKind("Замена двигателя")).toBe("repair");
+
+    const filler = [
+      row("10.01.2018", "20100", "Engine oil service"),
+      row("12.06.2018", "35500", "Engine oil service"),
+      row("03.03.2019", "52000", "Cabin filter"),
+      row("18.11.2019", "71000", "Brake fluid"),
+      row("22.08.2020", "89000", "Spark plugs"),
+    ];
+    const atfRows = [...filler, row("05.08.2022", "122576", bmwRuAtf)];
+    const atfFacts = extractDealerFactsFromServiceWorks(atfRows);
+    expect(atfFacts.rows.at(-1)?.id).toBe("D6");
+    const atfSummary = buildDealerVisitSummary(atfRows, atfFacts);
+    expect(atfSummary?.majorWorks.some((w) => w.id === "gearbox")).toBe(false);
+    const atfHtml = buildDealerMajorWorksHtml(atfFacts, "ru");
+    expect(atfHtml).not.toMatch(/Коробка передач|Ātrumkārba|Getriebe|Transmission/);
+
+    const boxRows = [...filler, row("05.08.2022", "122576", "Gearbox replaced")];
+    const boxFacts = extractDealerFactsFromServiceWorks(boxRows);
+    const boxSummary = buildDealerVisitSummary(boxRows, boxFacts);
+    expect(boxSummary?.majorWorks.some((w) => w.id === "gearbox" && w.factId === "D6")).toBe(true);
+    const boxHtml = buildDealerMajorWorksHtml(boxFacts);
+    expect(boxHtml).toContain("<b>Ātrumkārba</b>");
+    expect(boxHtml).toContain("(D6)");
+    expect(boxHtml).not.toMatch(/ĀtrumkārbaD6|Ātrumkārba D6 ·/);
+    const boxHtmlRu = buildDealerMajorWorksHtml(boxFacts, "ru");
+    expect(boxHtmlRu).toContain("<b>Коробка передач</b>");
+    expect(boxHtmlRu).toContain("(D6)");
+    expect(boxHtmlRu).not.toMatch(/Коробка передачD6/);
+  });
+
   it("no darbu saraksta noņem detaļu kodus, bet atstāj darba nosaukumu", () => {
     expect(dealerPdfWorkLines("Eļļas filtrs (11427508969)\nSet oil-filter 11427508969")).toEqual([
       "Eļļas filtrs",

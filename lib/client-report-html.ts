@@ -2896,7 +2896,7 @@ ${sourceDotColorCss()}
       .pdf-svc-major__list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;}
       .pdf-svc-major__item{display:flex;justify-content:space-between;gap:10px;align-items:baseline;}
       .pdf-svc-major__item b{font-size:12px;font-weight:750;color:#0f172a;}
-      .pdf-svc-major__item span{font-size:10.5px;color:#64748b;font-variant-numeric:tabular-nums;}
+      .pdf-svc-major__item span,.pdf-svc-major__meta{font-size:10.5px;color:#64748b;font-variant-numeric:tabular-nums;}
       .pdf-svc-year-block{break-before:auto;break-after:auto;page-break-after:auto;break-inside:auto;page-break-inside:auto;}
       .pdf-svc-visit{
         display:grid;grid-template-columns:88px 18px minmax(0,1fr);gap:0 12px;align-items:stretch;
