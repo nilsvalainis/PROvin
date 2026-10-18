@@ -90,12 +90,82 @@ function repairCp1252Mojibake(text: string): string {
   return out;
 }
 
+/**
+ * Vācu darbnīcas / DMS celmi ar umlautu vai ß. „�” vietā liek to burtu, kura variants
+ * dod garāko celmu, kas pārklāj šo pozīciju. Ja neviens neder vai ir neizšķirts, „�” paliek.
+ */
+const GERMAN_UMLAUT_WORD_STEMS: readonly string[] = [
+  "durchführ", "durchgeführ", "ausführ", "ausgeführ", "geführ", "führ", "überführ",
+  "prüf", "geprüf", "überprüf", "nachprüf", "über", "überhol", "übernahm", "übergab", "für",
+  "änder", "geänder", "veränder", "abänder", "räder", "räd", "ersatzrad", "öl", "öls",
+  "schlüssel", "störung", "gestör", "geräusch", "gerät", "steuergerät", "tür", "türen",
+  "rück", "zurück", "händler", "lüfter", "flüssig", "kühl", "zünd", "dämpf", "stoßdämpf",
+  "glüh", "gemäß", "gemäss", "regelmäß", "ergänz", "läng", "gehäus", "häus", "schläuch",
+  "spül", "füll", "befüll", "nachfüll", "aufgefüll", "gefüll", "düse", "träger", "kürz",
+  "öffn", "geöffn", "zubehör", "hör", "lös", "gelös", "höhe", "erhöh", "größ", "groß",
+  "maß", "straß", "fuß", "schließ", "verschleiß", "heiß", "weiß", "schweiß", "außen",
+  "plätt", "blätt", "wischerblät", "bürst", "läuf", "anhäng", "häng", "sätz", "zusätz",
+  "früh", "kält", "wärm", "wärmetausch", "schäd", "beschädig", "gewähr", "wähl", "ausgewähl",
+  "nässe", "näh", "löch", "dröhn", "fänger", "hülse", "bügel", "müll", "verkürz", "säub",
+  "gesäub", "räum", "geräum", "präz", "übertrag", "überbrück", "brück", "rüttel", "drück",
+  "druckknöpf", "knöpf", "köpf", "schlöss", "zahnräd", "getriebeöl", "motoröl", "ölwechsel",
+  "ölfilter", "ölstand", "ölwanne", "ölverlust", "ölservice", "ölkühler", "bremsflüssig",
+  "kühlmittel", "kühler", "zündkerz", "glühkerz", "rückleucht", "rückfahr", "rückruf",
+  "türgriff", "türschloss", "kältemittel", "mängel", "mangelbeseitig", "beschläg",
+  "auslös", "ausgelös", "entlüft", "belüft", "lüftung", "gebläse", "gebläs", "gelände",
+];
+
+const UMLAUT_CANDIDATES = ["ü", "ä", "ö", "ß"] as const;
+
+function resolveWordUmlauts(word: string): string {
+  const chars = [...word];
+  for (let i = 0; i < chars.length; i++) {
+    if (chars[i] !== REPLACEMENT_CHAR) continue;
+    const lower = chars.map((c) => c.toLocaleLowerCase("de"));
+    let best: { cand: string; len: number } | null = null;
+    let tie = false;
+    for (const cand of UMLAUT_CANDIDATES) {
+      lower[i] = cand;
+      const w = lower.join("");
+      for (const stemText of GERMAN_UMLAUT_WORD_STEMS) {
+        for (let at = w.indexOf(stemText); at >= 0; at = w.indexOf(stemText, at + 1)) {
+          if (at > i || i >= at + stemText.length) continue;
+          if (!best || stemText.length > best.len) {
+            best = { cand, len: stemText.length };
+            tie = false;
+          } else if (stemText.length === best.len && best.cand !== cand) {
+            tie = true;
+          }
+        }
+      }
+    }
+    if (best && !tie) chars[i] = best.cand;
+  }
+  const original = [...word];
+  const letters = original.filter((c) => /\p{L}/u.test(c)).join("");
+  const upper = letters.length > 1 && letters === letters.toLocaleUpperCase("de");
+  return chars
+    .map((c, i) => {
+      if (original[i] !== REPLACEMENT_CHAR || c === REPLACEMENT_CHAR) return c;
+      if (upper) return c === "ß" ? "SS" : c.toLocaleUpperCase("de");
+      return i === 0 && c !== "ß" ? c.toLocaleUpperCase("de") : c;
+    })
+    .join("");
+}
+
+function repairGenericUmlauts(text: string): string {
+  if (!text.includes(REPLACEMENT_CHAR)) return text;
+  return text.replace(/[\p{L}\uFFFD]*\uFFFD[\p{L}\uFFFD]*/gu, (word) =>
+    /\p{L}/u.test(word) ? resolveWordUmlauts(word) : word,
+  );
+}
+
 function repairUmlautStems(text: string): string {
   let out = text;
   for (const fix of UMLAUT_STEMS) {
     out = out.replace(fix.re, (m) => matchCase(m, fix.lower, fix.upper));
   }
-  return out.replace(PARAGRAPH_SIGN_RE, "$1§ ");
+  return repairGenericUmlauts(out.replace(PARAGRAPH_SIGN_RE, "$1§ "));
 }
 
 /** „… _ _.” / „___” izvilkšanas atlikumi rindas beigās vai kā atsevišķa rinda. */
