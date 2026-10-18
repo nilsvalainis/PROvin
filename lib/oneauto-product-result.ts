@@ -2,6 +2,7 @@ import {
   oneautoPayloadIsApiUnavailable,
   oneautoPayloadIsNoData,
   oneautoPayloadIsPending,
+  oneautoPayloadIsServiceNotEnabled,
   oneautoPayloadPrimaryMessage,
 } from "@/lib/oneauto-catalog";
 import type { OneautoProductResult } from "@/lib/oneauto-block";
@@ -56,6 +57,9 @@ export function buildOneautoProductResult(fetched: {
   }
   if (oneautoPayloadIsApiUnavailable(fetched.payload, errText)) {
     return { ok: false, error: "api_unavailable", ...base };
+  }
+  if (oneautoPayloadIsServiceNotEnabled(fetched.payload, errText)) {
+    return { ok: false, error: "service_not_enabled", ...base };
   }
   if (!fetched.ok || successFlag(fetched.payload) === false) {
     return { ok: false, error: classifyOneautoError(fetched.status, errText), ...base };

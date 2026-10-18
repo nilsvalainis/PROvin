@@ -43,6 +43,18 @@ describe("buildOneautoProductResult", () => {
     expect(result).toMatchObject({ ok: false, error: "api_unavailable", httpStatus: 200 });
   });
 
+  it("Your Plan slēdzis OFF ir service_not_enabled, ne unauthorized_upstream", () => {
+    const payload = {
+      success: false,
+      result: {
+        error:
+          "The requested service has not been enabled. It can be enabled in the 'Your Plan' section when logged into the One Auto API website.",
+      },
+    };
+    const result = buildOneautoProductResult({ ok: false, status: 403, payload });
+    expect(result).toMatchObject({ ok: false, error: "service_not_enabled", httpStatus: 403 });
+  });
+
   it("pending 202 nav no-data", () => {
     const result = buildOneautoProductResult({
       ok: true,

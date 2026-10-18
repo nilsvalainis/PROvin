@@ -41,6 +41,8 @@ import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
 
 const DEFAULT_BASE_URL = "https://api.oneautoapi.com";
 
+const VIN_DECODER_PRODUCT_IDS: readonly OneautoProductId[] = ["vin_decoder", "oe_vin_lookup"];
+
 export type OneautoApiConfig = {
   apiKey: string;
   baseUrl: string;
@@ -214,11 +216,13 @@ export async function fetchOneautoProducts(opts: {
   }
 
   let display = buildOneautoDisplay(rawForDisplay);
-  const decoderResult = results.vin_decoder;
-  if (decoderResult && oneautoResultIsNoData(decoderResult)) {
+  const decoderIds = VIN_DECODER_PRODUCT_IDS.filter((id) => results[id] != null);
+  const noDataDecoders = decoderIds.filter((id) => oneautoResultIsNoData(results[id]!));
+  const anyDecoderOk = decoderIds.some((id) => results[id]?.ok === true);
+  if (noDataDecoders.length > 0 && !anyDecoderOk) {
     const fallbackRows = await fetchVinDecoderFallbackRows(opts.vin);
     if (fallbackRows.length > 0) {
-      results.vin_decoder = { ...decoderResult, fallback: "vin_scan" };
+      for (const id of noDataDecoders) results[id] = { ...results[id]!, fallback: "vin_scan" };
       display = {
         ...display,
         powertrain: mergeVinDecodeFallbackPowertrain(display.powertrain, fallbackRows),
