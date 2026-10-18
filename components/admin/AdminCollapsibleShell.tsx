@@ -20,7 +20,7 @@ function CaretIcon({ expanded }: { expanded: boolean }) {
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={`shrink-0 opacity-50 transition-opacity duration-200 hover:opacity-100 group-hover:opacity-100 ${expanded ? "rotate-0" : "-rotate-90"}`}
+      className={`admin-chev shrink-0 opacity-50 hover:opacity-100 group-hover:opacity-100 ${expanded ? "admin-chev-open" : "admin-chev-closed"}`}
       aria-hidden
     >
       <path d="m6 9 6 6 6-6" />
@@ -57,6 +57,8 @@ export function AdminCollapsibleShell({
   className?: string;
 }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [bodyMounted, setBodyMounted] = useState(!defaultCollapsed);
+  const [bodyOpen, setBodyOpen] = useState(!defaultCollapsed);
 
   /**
    * Telefonā bloku var izvērst pilnekrānā. Apzināti maināma tikai apvalka klase,
@@ -91,7 +93,7 @@ export function AdminCollapsibleShell({
     <button
       type="button"
       data-accordion-no-toggle
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-200/40 hover:text-slate-800 md:hidden"
+      className="admin-pr flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/40 hover:text-slate-800 md:hidden"
       aria-label={fullscreen ? "Aizvērt pilnekrānu" : "Atvērt bloku pilnekrānā"}
       aria-pressed={fullscreen}
       onClick={(e) => {
@@ -129,6 +131,22 @@ export function AdminCollapsibleShell({
   }, [sessionId, blockId, collapsed, disableCollapse]);
 
   const toggle = useCallback(() => setCollapsed((c) => !c), []);
+
+  useEffect(() => {
+    if (disableCollapse) return;
+    const show = !collapsed || fullscreen;
+    if (show) {
+      setBodyMounted(true);
+      const id = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setBodyOpen(true));
+      });
+      return () => cancelAnimationFrame(id);
+    }
+    setBodyOpen(false);
+    const wait = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 1 : 260;
+    const t = window.setTimeout(() => setBodyMounted(false), wait);
+    return () => window.clearTimeout(t);
+  }, [collapsed, fullscreen, disableCollapse]);
 
   const onHeaderClick = useCallback(
     (e: React.MouseEvent) => {
@@ -204,7 +222,7 @@ export function AdminCollapsibleShell({
           <button
             type="button"
             data-accordion-no-toggle
-            className={`flex h-7 w-full min-w-[1.75rem] items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-200/40 hover:text-slate-800 ${
+            className={`admin-pr flex h-7 w-full min-w-[1.75rem] items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/40 hover:text-slate-800 ${
               fullscreen ? "max-md:hidden" : ""
             }`}
             aria-expanded={!collapsed}
@@ -219,7 +237,13 @@ export function AdminCollapsibleShell({
         </div>
       </div>
       {/* Pilnekrānā bloks vienmēr ir atvērts, citādi operators redzētu tukšu ekrānu. */}
-      {!collapsed || fullscreen ? <div className="provin-card-body border-t-0 pt-0">{children}</div> : null}
+      {bodyMounted || fullscreen ? (
+        <div className="admin-exp" data-open={fullscreen || bodyOpen ? "true" : "false"}>
+          <div>
+            <div className="admin-exp-in provin-card-body border-t-0 pt-0">{children}</div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

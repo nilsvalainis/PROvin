@@ -5,7 +5,7 @@ export function AdminOrderDetailLoading() {
       <p className="text-sm text-[var(--color-provin-muted)]" role="status">
         Ielādē pasūtījuma darba zonu…
       </p>
-      <div className="mt-4 h-2 max-w-xs animate-pulse rounded-full bg-slate-200/90" aria-hidden />
+      <div className="admin-skel mt-4 h-2 max-w-xs" aria-hidden />
     </div>
   );
 }

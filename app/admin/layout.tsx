@@ -4,6 +4,7 @@ import Script from "next/script";
 import { RootHtml } from "@/components/RootHtml";
 import { PROVIN_USERSCRIPT_GUARD_SNIPPET } from "@/lib/provin-userscript-presence";
 import "./admin-ios-theme.css";
+import "./admin-motion.css";
 import "./admin-pro-order-theme.css";
 
 export const metadata: Metadata = {
