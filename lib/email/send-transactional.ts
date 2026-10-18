@@ -265,6 +265,52 @@ export async function trySendAdminNewPartnerNotificationEmail(
   }
 }
 
+export type AdminPartnerLeadEmailPayload = {
+  contactName: string;
+  companyName: string;
+  phone: string;
+  email: string;
+  message: string;
+  adminUrl: string;
+};
+
+/** Admin: jauns „Saņemt cenu piedāvājumu” pieteikums no partneru lapas. */
+export async function trySendAdminPartnerLeadEmail(payload: AdminPartnerLeadEmailPayload): Promise<boolean> {
+  const to = getAdminNewPartnerNotifyEmail();
+  const subject = `PROVIN: cenu piedāvājuma pieprasījums: ${payload.companyName}`;
+  const lines = [
+    { label: "Kontaktpersona", value: payload.contactName },
+    { label: "Uzņēmums", value: payload.companyName },
+    { label: "Tālrunis", value: payload.phone },
+    { label: "E-pasts", value: payload.email },
+    { label: "Ziņa", value: payload.message || "-" },
+  ];
+  const text = [
+    "Jauns cenu piedāvājuma pieprasījums (partneriem)",
+    "",
+    ...lines.map((line) => `${line.label}: ${line.value}`),
+    `Admin: ${payload.adminUrl}`,
+  ].join("\n");
+  const html = adminNewPartnerHtml({
+    adminUrl: payload.adminUrl,
+    lines,
+    title: "Cenu piedāvājuma pieprasījums",
+    lead: "Pieteikums no partneru lapas (provin.lv/partneriem).",
+    ctaLabel: "Atvērt pieteikumus adminā",
+  });
+  if (!isSmtpConfigured()) {
+    console.warn("[email] SMTP_USER/SMTP_PASS missing: piedāvājuma pieprasījuma e-pasts netika nosūtīts.");
+    return false;
+  }
+  try {
+    await sendSmtpMail({ to, subject, text, html, replyTo: payload.email });
+    return true;
+  } catch (e) {
+    console.error("[email] trySendAdminPartnerLeadEmail SMTP:", e);
+    return false;
+  }
+}
+
 /** Klients: apmaksa veiksmīga + rēķina PDF pielikumā. */
 export async function sendPaymentConfirmationEmail(opts: {
   to: string;

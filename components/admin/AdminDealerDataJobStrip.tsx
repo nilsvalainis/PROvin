@@ -52,6 +52,10 @@ const btn =
 
 function formatRefund(job: DealerDataJob): string {
   if (!job.refund) return "";
+  if (job.refund.kind === "wallet") {
+    const eur = (job.refund.amountCents / 100).toFixed(2).replace(".", ",");
+    return `Atgriezts partnera kontā ${eur} € · ${job.refund.at.slice(0, 16).replace("T", " ")}`;
+  }
   if (job.refund.kind === "credit" || job.refund.stripeRefundId.startsWith("credit_")) {
     return `Kredīts atgriezts · ${job.refund.at.slice(0, 16).replace("T", " ")}`;
   }

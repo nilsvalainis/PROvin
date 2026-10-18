@@ -72,7 +72,7 @@ export function AdminB2bPartnerCreateForm() {
           <input className={ADMIN_PARTNER_INPUT_CLASS} value={form.companyName} onChange={set("companyName")} />
         </label>
         <label className="block min-w-0">
-          <span className={ADMIN_PARTNER_LABEL_CLASS}>Reģ. nr.</span>
+          <span className={ADMIN_PARTNER_LABEL_CLASS}>Reģ. Nr.</span>
           <input className={ADMIN_PARTNER_INPUT_CLASS} value={form.companyReg} onChange={set("companyReg")} />
         </label>
         <label className="block min-w-0 sm:col-span-2">

@@ -9,8 +9,10 @@ import {
   dealerJobIndicatesProcessing,
 } from "@/lib/b2b-partner-archive-rows";
 import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
+import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import {
   isB2bPackAdminOrder,
+  isB2bWalletTopupFulfillment,
   partnerNotesMatchId,
   type B2bPartnerOrderRow,
 } from "@/lib/b2b-partner-orders";
@@ -58,6 +60,7 @@ export async function listPartnerArchiveRows(args: {
           currency: row.currency,
           plan: planFromCheckoutLine(row.checkoutLine),
           packQty: row.packQty,
+          topup: isB2bWalletTopupFulfillment(row.fulfillment),
         }),
       );
       continue;
@@ -83,6 +86,10 @@ export async function listPartnerArchiveRows(args: {
   const dealerIds = manuals
     .filter((rec) => !seen.has(rec.id) && rec.checkoutLine === "dealer")
     .map((rec) => rec.id);
+  for (const rec of manuals) {
+    if (seen.has(rec.id) || rec.checkoutLine === "dealer") continue;
+    if (parseB2bWalletOrderMarks(drafts.get(rec.id)?.notes)) dealerIds.push(rec.id);
+  }
   const dealerJobs = dealerIds.length > 0 ? await readDealerDataJobs(dealerIds) : new Map();
 
   for (const rec of manuals) {
@@ -104,6 +111,7 @@ export async function listPartnerArchiveRows(args: {
     const creditRestored = job?.refund?.kind === "credit";
     const processing =
       dealerJobIndicatesProcessing(job?.status) || Boolean(draft?.auditCompletedAt?.trim() || draft?.vinScan);
+    const marks = parseB2bWalletOrderMarks(notes);
     out.push(
       buildPartnerVinArchiveRow({
         id: rec.id,
@@ -117,6 +125,14 @@ export async function listPartnerArchiveRows(args: {
         reportReady,
         creditRestored,
         processing,
+        wallet: marks
+          ? {
+              product: marks.product,
+              priceCents: marks.priceCents,
+              refunded: job?.refund?.kind === "wallet",
+              rawReady: job?.status === "done",
+            }
+          : null,
       }),
     );
   }

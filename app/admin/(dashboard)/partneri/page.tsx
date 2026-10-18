@@ -5,6 +5,7 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { listB2bPartners } from "@/lib/b2b-partner-store";
 import { loadCreditsForPartners, loadSpentCreditsForPartners } from "@/lib/b2b-partner-dashboard";
 import { requireAdminPage } from "@/lib/admin-auth";
+import { countUnhandledB2bPartnerLeads } from "@/lib/b2b-partner-lead-store";
 
 export const metadata = {
   title: "Partneri",
@@ -15,9 +16,10 @@ export const dynamic = "force-dynamic";
 export default async function AdminPartnersPage() {
   await requireAdminPage();
   const partners = await listB2bPartners();
-  const [creditsById, spentById] = await Promise.all([
+  const [creditsById, spentById, unhandledLeads] = await Promise.all([
     loadCreditsForPartners(partners),
     loadSpentCreditsForPartners(partners),
+    countUnhandledB2bPartnerLeads().catch(() => 0),
   ]);
   return (
     <div className="w-full max-w-none">
@@ -30,6 +32,19 @@ export default async function AdminPartnersPage() {
         </h1>
         <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
           Reģistrē dīleri pats vai izveido unikālu ielūguma saiti, lai partneris reģistrētos pats. Publiska reģistrācija paliek slēgta.
+        </p>
+        <p className="mt-2 text-[13px]">
+          <Link
+            href="/admin/partneri/pieteikumi"
+            className="inline-flex items-center gap-2 font-medium text-[var(--color-provin-accent)] hover:underline"
+          >
+            Cenu piedāvājuma pieteikumi
+            {unhandledLeads > 0 ? (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-bold leading-none text-white">
+                {unhandledLeads}
+              </span>
+            ) : null}
+          </Link>
         </p>
       </AdminDashboardHeaderWithMenu>
 

@@ -476,7 +476,9 @@ function orderRowView(
     partnerCompanyName,
     partnerPurposeLabel: isPack ? "" : partnerAuditPurposeLabelLv(o.partnerAuditPurpose),
     isPack,
-    packLabel: isPack ? b2bPackInfoLabelLv({ checkoutLine: o.checkoutLine, packQty: o.packQty }) : "",
+    packLabel: isPack
+      ? b2bPackInfoLabelLv({ checkoutLine: o.checkoutLine, packQty: o.packQty, fulfillment: o.isB2bTopup ? "b2b_wallet_topup" : null })
+      : "",
     isPartnerVin,
   };
 }

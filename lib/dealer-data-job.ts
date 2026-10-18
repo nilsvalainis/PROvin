@@ -19,6 +19,7 @@ import {
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
 import { readDealerDataJob, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
+import { refundB2bWalletOrderIfNoData } from "@/lib/b2b-wallet-refund";
 import { fetchOneautoProducts, getOneautoApiConfig } from "@/lib/oneauto-api";
 import {
   buildOneautoDisplay,
@@ -170,6 +171,8 @@ export async function runDealerDataJob(args: {
   force?: boolean;
   /** Ielasa datus, bet AI melnrakstus neģenerē (ātrai atkārtotai palaišanai). */
   skipAi?: boolean;
+  /** RAW produkts: OEM ieraksti paliek oriģinālvalodā, bez AI tulkojuma. */
+  skipTranslate?: boolean;
 }): Promise<DealerDataRunResult> {
   const sessionId = args.sessionId;
   const vin = normalizeVin(args.vin ?? "");
@@ -238,10 +241,13 @@ export async function runDealerDataJob(args: {
       finishedAt: new Date().toISOString(),
       trigger: args.trigger,
     });
+    await refundB2bWalletOrderIfNoData(sessionId).catch((err) => {
+      console.error("[dealer-data-job] wallet refund failed", { sessionId, err });
+    });
     return { ok: true, status: "no_data", reason: "no_data", serviceEventCount: 0 };
   }
 
-  const display = await translateOneautoWorksOnIngest(fetched.display);
+  const display = args.skipTranslate ? fetched.display : await translateOneautoWorksOnIngest(fetched.display);
   const serviceEventCount = filledOneautoServiceEvents(fetched.display.serviceTimeline).length;
 
   const wrote = await writeAutoRecords(sessionId, (blocks) => {

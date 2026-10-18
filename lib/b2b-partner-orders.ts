@@ -1,9 +1,9 @@
 import { b2bDateLocale } from "@/i18n/locales";
 import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 
-export type B2bArchiveAmountKind = "money" | "credit" | "credit_restored";
-export type B2bPartnerArchiveStatus = "received" | "processing" | "ready" | "credit_restored";
-export type B2bPartnerArchiveKind = "order" | "pack";
+export type B2bArchiveAmountKind = "money" | "credit" | "credit_restored" | "wallet_refunded";
+export type B2bPartnerArchiveStatus = "received" | "processing" | "ready" | "credit_restored" | "wallet_refunded";
+export type B2bPartnerArchiveKind = "order" | "pack" | "topup";
 
 export type B2bPartnerOrderRow = {
   id: string;
@@ -19,6 +19,8 @@ export type B2bPartnerOrderRow = {
   status?: B2bPartnerArchiveStatus;
   kind?: B2bPartnerArchiveKind;
   packQty?: number;
+  /** Maka produkts (jaunais modelis). Vecajiem kredītu pasūtījumiem nav. */
+  walletProduct?: "business" | "dealer_raw" | "dealer_pro";
 };
 
 export function formatB2bArchiveAmount(cents: number | null | undefined, currency: string | null | undefined): string {
@@ -99,13 +101,30 @@ export function buildPartnerOrderNotes(args: {
   lotId: string;
   companyName?: string | null;
   auditPurpose?: B2bPartnerAuditPurpose | null;
+  extraParts?: readonly string[];
 }): string {
   const company = (args.companyName ?? "").trim().replace(/\s*·\s*/g, " ");
   const parts = [`B2B ${args.plan}`, `partner_id=${args.partnerId}`];
   if (company) parts.push(`partner_company=${company}`);
   if (args.auditPurpose) parts.push(`audit_purpose=${args.auditPurpose}`);
   parts.push(`lot=${args.lotId}`, `checkout_line=${args.plan}`);
+  for (const part of args.extraParts ?? []) {
+    const clean = part.trim().replace(/\s*·\s*/g, " ");
+    if (clean) parts.push(clean);
+  }
   return parts.join(" · ");
+}
+
+export const B2B_WALLET_TOPUP_FULFILLMENT = "b2b_wallet_topup";
+
+export function isB2bWalletTopupFulfillment(fulfillment: string | null | undefined): boolean {
+  return (fulfillment ?? "").trim().toLowerCase() === B2B_WALLET_TOPUP_FULFILLMENT;
+}
+
+/** Stripe apmaksa bez VIN darba: kredītu paka vai maka papildinājums. */
+export function isB2bPackFulfillment(fulfillment: string | null | undefined): boolean {
+  const f = (fulfillment ?? "").trim().toLowerCase();
+  return f === "b2b_pack" || f === B2B_WALLET_TOPUP_FULFILLMENT;
 }
 
 /** Kredītu paka (Stripe, bez VIN): sarakstā informatīva rinda, nav atverams VIN darbs. */
@@ -121,7 +140,7 @@ export function isB2bPackAdminOrder(row: {
 }): boolean {
   if (row.isB2bPack === true) return true;
   if (row.isManual || row.isDemo) return false;
-  if ((row.fulfillment ?? "").trim().toLowerCase() === "b2b_pack") return true;
+  if (isB2bPackFulfillment(row.fulfillment)) return true;
   if ((row.vin ?? "").trim()) return false;
   const line = (row.checkoutLine ?? "").trim().toLowerCase();
   if (line === "business") return true;
@@ -140,7 +159,9 @@ export function parseB2bPackQty(raw: unknown): number | null {
 export function b2bPackInfoLabelLv(args: {
   checkoutLine?: string | null;
   packQty?: number | null;
+  fulfillment?: string | null;
 }): string {
+  if (isB2bWalletTopupFulfillment(args.fulfillment)) return "Konta papildināšana";
   const line = (args.checkoutLine ?? "").trim().toLowerCase();
   const product = line === "dealer" ? "Dīlera dati" : "PROVIN BUSINESS";
   const qty = args.packQty && args.packQty > 0 ? args.packQty : 1;

@@ -44,8 +44,11 @@ function Field({
 
 export function B2bPartnerRequisites({
   embedded = false,
+  section = "all",
 }: {
   embedded?: boolean;
+  /** Rekvizīti = uzņēmuma dati, Profils = piekļuve un drošība. */
+  section?: "all" | "company" | "security";
 }) {
   const t = useTranslations("Partner");
   const locale = useLocale();
@@ -206,13 +209,14 @@ export function B2bPartnerRequisites({
   return (
     <section aria-labelledby="b2b-partner-requisites-title">
       <HeadingTag id="b2b-partner-requisites-title" className={headingClass}>
-        {t("requisitesTitle")}
+        {section === "security" ? t("profileTitle") : t("requisitesTitle")}
       </HeadingTag>
       <div className={TITLE_RULE_CLASS} aria-hidden />
       {!profile ? (
         <p className="mt-8 text-[0.8125rem] text-zinc-400 sm:text-[0.875rem]">{t("requisitesLoading")}</p>
       ) : (
         <div className="mt-7 flex flex-col gap-5">
+          {section === "security" ? null : (
           <div className={CARD_CLASS}>
             <p className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[#93c5fd]">
               {t("profileCompanyTitle")}
@@ -255,7 +259,9 @@ export function B2bPartnerRequisites({
               {profileBusy ? t("profileSaving") : t("profileSave")}
             </button>
           </div>
+          )}
 
+          {section === "company" ? null : (
           <div className={CARD_CLASS}>
             <p className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[#93c5fd]">
               {t("securityTitle")}
@@ -331,6 +337,7 @@ export function B2bPartnerRequisites({
               </button>
             </div>
           </div>
+          )}
         </div>
       )}
     </section>

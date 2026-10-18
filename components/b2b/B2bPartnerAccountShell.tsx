@@ -7,21 +7,14 @@ import { homeContentMaxClass } from "@/lib/home-layout";
 
 const NAV = [
   { href: "/partneriem/konts", key: "navHome" as const },
-  { href: "/partneriem/konts/pakas", key: "navPacks" as const },
+  { href: "/partneriem/konts/pasutijumi", key: "navArchive" as const },
   { href: "/partneriem/konts/profils", key: "navProfile" as const },
+  { href: "/partneriem/konts/rekviziti", key: "navRequisites" as const },
 ];
 
 function isNavActive(href: string, pathname: string): boolean {
-  if (href === "/partneriem/konts") return pathname === "/partneriem/konts";
-  if (href === "/partneriem/konts/profils") {
-    return (
-      pathname === href ||
-      pathname.startsWith(`${href}/`) ||
-      pathname === "/partneriem/konts/pasutijumi" ||
-      pathname.startsWith("/partneriem/konts/pasutijumi/") ||
-      pathname === "/partneriem/konts/rekviziti" ||
-      pathname.startsWith("/partneriem/konts/rekviziti/")
-    );
+  if (href === "/partneriem/konts") {
+    return pathname === "/partneriem/konts" || pathname.startsWith("/partneriem/konts/dati/");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
