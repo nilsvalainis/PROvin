@@ -282,6 +282,8 @@
     "walletSample": "Skatīt paraugu",
     "walletSampleSoon": "Drīzumā",
     "walletSampleAria": "Atver PDF paraugu jaunā cilnē",
+    "walletNoProducts": "Šobrīd jūsu kontam nav pieejamu pakalpojumu. Sazinieties ar PROVIN.",
+    "walletProductUnavailable": "Šis pakalpojums jūsu kontam nav pieejams.",
     "walletDiscountAria": "Atlaide {pct}%",
     "walletOldPriceAria": "Iepriekšējā cena {amount}",
     "walletLegacyCreditsHeading": "Iepriekš iegādātie kredīti",

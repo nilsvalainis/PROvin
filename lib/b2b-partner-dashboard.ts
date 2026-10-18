@@ -74,7 +74,7 @@ export async function loadB2bAccountDashboard(): Promise<B2bAccountDashboard | n
   const dealerEnabled = partner.dealerEnabled === true;
   return {
     dealerEnabled,
-    wallet: buildB2bWalletView(eurWallet, partner.walletPrices),
+    wallet: buildB2bWalletView(eurWallet, partner.walletPrices, 50, partner.walletHiddenProducts),
     prices: partner.prices ?? emptyB2bPartnerPrices(),
     credits: {
       business: Math.max(0, remaining.business ?? 0),

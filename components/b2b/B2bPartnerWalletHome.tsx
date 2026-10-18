@@ -33,6 +33,12 @@ export type B2bLegacyCredits = {
   prices: B2bPartnerPriceOverrides | null;
 };
 
+const PRODUCT_GRID_COLS: Record<number, string> = {
+  1: "md:mx-auto md:max-w-md md:grid-cols-1",
+  2: "md:grid-cols-2",
+  3: "md:grid-cols-3",
+};
+
 function newIdempotencyKey(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `buy_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -348,6 +354,10 @@ function PurchaseDialog({
         setPurposeError(t("auditPurposeError"));
         return;
       }
+      if (data.error === "product_hidden") {
+        setFormError(t("walletProductUnavailable"));
+        return;
+      }
       if (!res.ok || !data.ok || !data.orderId) {
         setFormError(t("buyError"));
         setIdempotencyKey(newIdempotencyKey());
@@ -504,6 +514,7 @@ export function B2bPartnerWalletHome({
   const [topupPaid, setTopupPaid] = useState(false);
   const [buyOk, setBuyOk] = useState("");
 
+  const products = view.products ?? B2B_WALLET_PRODUCT_IDS;
   const canAfford = view.balanceCents >= view.cheapestCents;
 
   const reload = useCallback(async (): Promise<B2bWalletView | null> => {
@@ -568,8 +579,17 @@ export function B2bPartnerWalletHome({
         </p>
       ) : null}
 
-      <section aria-label={t("walletProductsAria")} className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
-        {B2B_WALLET_PRODUCT_IDS.map((product) => (
+      {products.length === 0 ? (
+        <p className="rounded-[0.9rem] border border-white/10 bg-white/[0.03] p-5 text-[0.8125rem] leading-snug text-zinc-400">
+          {t("walletNoProducts")}
+        </p>
+      ) : null}
+      <section
+        aria-label={t("walletProductsAria")}
+        className={`grid grid-cols-1 gap-4 md:gap-5 ${PRODUCT_GRID_COLS[products.length] ?? "md:grid-cols-3"}`}
+        hidden={products.length === 0}
+      >
+        {products.map((product) => (
           <ProductCard
             key={product}
             product={product}

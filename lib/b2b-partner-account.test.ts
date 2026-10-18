@@ -55,9 +55,11 @@ describe("b2b partner account", () => {
         dealer10: null,
       },
       walletPrices: { business: null, dealer_raw: null, dealer_pro: null },
+      walletHiddenProducts: ["dealer_raw"],
       adminSeenAt: "2026-09-04T00:00:00.000Z",
     };
     const publicProfile = toPublicPartner(record);
+    expect(publicProfile.walletHiddenProducts).toEqual(["dealer_raw"]);
     expect(publicProfile).not.toHaveProperty("passwordHash");
     expect(publicProfile).not.toHaveProperty("emailVerifyHash");
     expect(publicProfile).not.toHaveProperty("passwordResetHash");
@@ -94,6 +96,21 @@ describe("b2b partner account", () => {
     expect(legacy?.dealerEnabled).toBe(false);
     expect(legacy?.prices.business1).toBeNull();
     expect(legacy?.passwordResetHash).toBeNull();
+    expect(legacy?.walletHiddenProducts).toEqual([]);
+  });
+
+  it("parses wallet hidden products, dropping unknown ids and duplicates", () => {
+    const parsed = parsePartnerRecord({
+      id: "ptr_0123456789abcdef",
+      ...validInput,
+      email: "demo@provin.lv",
+      passwordHash: "scrypt$salt$hash",
+      status: "active",
+      createdAt: "2026-09-04T00:00:00.000Z",
+      updatedAt: "2026-09-04T00:00:00.000Z",
+      walletHiddenProducts: ["dealer_pro", "nope", "business", "dealer_pro"],
+    });
+    expect(parsed?.walletHiddenProducts).toEqual(["business", "dealer_pro"]);
   });
 
   it("treats legacy records without emailVerifiedAt as already verified", () => {

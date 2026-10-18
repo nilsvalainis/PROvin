@@ -282,6 +282,8 @@
     "walletSample": "Посмотреть образец",
     "walletSampleSoon": "Скоро",
     "walletSampleAria": "Открывает PDF-образец в новой вкладке",
+    "walletNoProducts": "Сейчас для вашего аккаунта нет доступных услуг. Свяжитесь с PROVIN.",
+    "walletProductUnavailable": "Эта услуга недоступна для вашего аккаунта.",
     "walletDiscountAria": "Скидка {pct}%",
     "walletOldPriceAria": "Прежняя цена {amount}",
     "walletLegacyCreditsHeading": "Ранее купленные кредиты",

@@ -12,6 +12,7 @@ import {
   attachB2bWalletPurchaseOrder,
   B2B_WALLET_PRODUCTS,
   buildB2bWalletOrderNoteParts,
+  isB2bWalletProductVisible,
   resolveB2bWalletPrice,
   type B2bWalletProductId,
   type B2bWalletReportLang,
@@ -21,6 +22,7 @@ import { updateB2bWallet } from "@/lib/b2b-wallet-store";
 export type B2bWalletPurchaseOutcome =
   | { ok: true; duplicate: boolean; orderId: string | null; balanceCents: number; priceCents: number }
   | { ok: false; error: "insufficient"; balanceCents: number; priceCents: number }
+  | { ok: false; error: "product_hidden"; balanceCents: null; priceCents: number }
   | { ok: false; error: "queue_failed"; balanceCents: number; priceCents: number };
 
 /**
@@ -30,7 +32,7 @@ export type B2bWalletPurchaseOutcome =
 export async function purchaseB2bWalletProduct(args: {
   partner: Pick<
     B2bPartnerRecord,
-    "id" | "email" | "phone" | "contactName" | "companyName" | "walletPrices"
+    "id" | "email" | "phone" | "contactName" | "companyName" | "walletPrices" | "walletHiddenProducts"
   >;
   product: B2bWalletProductId;
   vin: string;
@@ -41,6 +43,9 @@ export async function purchaseB2bWalletProduct(args: {
 }): Promise<B2bWalletPurchaseOutcome> {
   const spec = B2B_WALLET_PRODUCTS[args.product];
   const priceCents = resolveB2bWalletPrice(args.product, args.partner.walletPrices).priceCents;
+  if (!isB2bWalletProductVisible(args.product, args.partner.walletHiddenProducts)) {
+    return { ok: false, error: "product_hidden", balanceCents: null, priceCents };
+  }
 
   const debit = await updateB2bWallet(args.partner.id, (wallet) => {
     const r = applyB2bWalletPurchase(wallet, {
