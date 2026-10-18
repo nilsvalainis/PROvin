@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { FileText, Plus, RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { B2B_LABEL_CLASS, B2B_WALLET_PRODUCT_COPY } from "@/components/b2b/b2b-partner-ui";
@@ -21,6 +21,7 @@ import {
   type B2bWalletProductId,
   type B2bWalletReportLang,
 } from "@/lib/b2b-wallet";
+import { resolveB2bWalletSampleUrl } from "@/lib/b2b-samples";
 import type { B2bWalletView } from "@/lib/b2b-wallet-view";
 import { trackMetaLead } from "@/lib/meta-pixel";
 import { isIncompleteVinLength, isPlausibleListingUrl, isValidVin, sanitizeVinInput } from "@/lib/order-field-validation";
@@ -88,6 +89,37 @@ function WalletHeader({
   );
 }
 
+function SampleLink({ product, reportLang }: { product: B2bWalletProductId; reportLang: B2bWalletReportLang }) {
+  const t = useTranslations("Partner");
+  const url = resolveB2bWalletSampleUrl(product, reportLang);
+  const langSuffix = product === "dealer_pro" ? ` (${reportLang.toUpperCase()})` : "";
+  const rowClass = "mt-2.5 inline-flex min-h-[22px] items-center gap-1.5 self-start text-[0.74rem] font-semibold";
+  if (!url) {
+    return (
+      <span className={`${rowClass} cursor-not-allowed text-zinc-600`} aria-disabled="true">
+        <FileText className="h-[15px] w-[15px] shrink-0" aria-hidden />
+        {t("walletSample")}
+        <span className="rounded-full border border-white/12 px-1.5 py-px text-[0.5rem] font-bold uppercase tracking-[0.14em] text-zinc-500">
+          {t("walletSampleSoon")}
+        </span>
+      </span>
+    );
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${rowClass} text-[#93c5fd] underline decoration-[#93c5fd]/35 underline-offset-[3px] transition-colors hover:text-white hover:decoration-white/60`}
+      title={t("walletSampleAria")}
+    >
+      <FileText className="h-[15px] w-[15px] shrink-0" aria-hidden />
+      {t("walletSample")}
+      {langSuffix} (PDF)
+    </a>
+  );
+}
+
 function ProductCard({
   product,
   view,
@@ -109,7 +141,7 @@ function ProductCard({
 
   return (
     <article className="flex min-w-0 flex-col rounded-[0.9rem] border border-white/10 bg-[rgb(20_20_20/0.72)] p-5 shadow-[0_18px_48px_-28px_rgba(0,0,0,0.8)]">
-      <p className="self-start rounded-full border border-[#2563EB]/50 px-2.5 py-1 text-[0.52rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd]">
+      <p className="self-start rounded-md bg-zinc-300/80 px-2 py-[0.3rem] text-[0.66rem] font-semibold leading-none tracking-[0.01em] text-zinc-800">
         {t(copy.tag)}
       </p>
       <h2 className="mt-4 text-[1.08rem] font-bold leading-snug tracking-[-0.01em] text-zinc-100">{t(copy.title)}</h2>
@@ -169,7 +201,15 @@ function ProductCard({
           )}
         </div>
         <p className="mt-1.5 text-[0.7rem] leading-snug text-zinc-500">{t("walletDeductNote")}</p>
-        <div className="mt-4">
+        <SampleLink product={product} reportLang={reportLang} />
+        <p
+          className={`mt-3 flex h-[18px] items-center gap-1.5 overflow-hidden whitespace-nowrap text-[0.7rem] leading-[18px] text-zinc-400${refundable ? "" : " invisible"}`}
+          aria-hidden={refundable ? undefined : true}
+        >
+          <RotateCcw className="h-3 w-3 shrink-0 text-emerald-300" aria-hidden />
+          <span className="truncate">{t("walletRefundNote")}</span>
+        </p>
+        <div className="mt-2.5">
           <button
             type="button"
             className={`${styles.liquidCta}${affordable ? "" : " opacity-45"}`}
@@ -180,9 +220,6 @@ function ProductCard({
             <span className={styles.liquidCtaLabel}>{affordable ? t("walletBuy") : t("walletInsufficient")}</span>
           </button>
         </div>
-        {refundable ? (
-          <p className="mt-3 text-[0.7rem] leading-snug text-zinc-400">{t("walletRefundNote")}</p>
-        ) : null}
       </div>
     </article>
   );
