@@ -61,7 +61,7 @@ describe("partner i18n", () => {
     expect(lv.bulkCheckCta).toBe("Pārbaudīt sarakstu");
     expect(lv.bulkChipInvalid).toBe("Nederīgs - {count} zīmes");
     expect(lv.bulkReorder).toBe("Pasūtīt jaunu atskaiti - izlietos 1 kredītu");
-    expect(lv.bulkShortfall).toBe("Trūkst {count} kredītu - Pirkt paku");
+    expect(lv.bulkShortfall).toBe("Trūkst {count} kredītu.");
     expect(lv.bulkCreditsLine).toContain("{from} → {to}");
     expect(lv.archiveStatusReceived).toBe("Saņemts");
     expect(lv.archiveStatusProcessing).toBe("Tiek apstrādāts");

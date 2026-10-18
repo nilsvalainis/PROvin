@@ -387,8 +387,6 @@ export function B2bPartnerHome({
               <B2bPartnerBulkVin
                 availablePlans={availablePlans}
                 credits={credits}
-                dealerEnabled={dealerEnabled}
-                prices={prices}
                 locale={locale}
                 service={service}
                 onPickService={pickService}

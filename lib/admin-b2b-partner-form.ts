@@ -23,3 +23,9 @@ export const ADMIN_PARTNER_INPUT_CLASS =
 
 export const ADMIN_PARTNER_LABEL_CLASS =
   "mb-1 block text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]";
+
+/** Veco kredītu sadaļa adminā vajadzīga tikai, kamēr partnerim vēl ir neizlietoti mantotie kredīti. */
+export function hasLegacyB2bCredits(credits: { business: number; dealer: number } | null | undefined): boolean {
+  if (!credits) return false;
+  return Math.max(0, credits.business) + Math.max(0, credits.dealer) > 0;
+}

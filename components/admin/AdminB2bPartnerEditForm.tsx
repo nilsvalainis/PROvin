@@ -6,6 +6,7 @@ import {
   ADMIN_PARTNER_INPUT_CLASS,
   ADMIN_PARTNER_LABEL_CLASS,
   adminPartnerApiError,
+  hasLegacyB2bCredits,
 } from "@/lib/admin-b2b-partner-form";
 import {
   centsToEuroInput,
@@ -14,7 +15,14 @@ import {
 } from "@/lib/b2b-partner-account";
 import { B2B_BUSINESS_PACKS, B2B_DEALER_PACKS, formatB2bEuroFromCents } from "@/lib/b2b-partner-copy";
 
-export function AdminB2bPartnerEditForm({ partner }: { partner: B2bPartnerPublicProfile }) {
+export function AdminB2bPartnerEditForm({
+  partner,
+  legacyCredits,
+}: {
+  partner: B2bPartnerPublicProfile;
+  /** Neizlietotie mantotie kredīti (Audits / Dīlera). 0 + 0 = sadaļu nerāda. */
+  legacyCredits: { business: number; dealer: number };
+}) {
   const router = useRouter();
   const [form, setForm] = useState({
     companyName: partner.companyName,
@@ -149,70 +157,76 @@ export function AdminB2bPartnerEditForm({ partner }: { partner: B2bPartnerPublic
         </label>
       </div>
 
-      <div className="mt-6 border-t border-slate-200/80 pt-5">
-        <h3 className="text-sm font-semibold text-slate-800">Vecie kredītu iepakojumi (mantotie)</h3>
-        <p className="mt-1 text-xs leading-relaxed text-slate-500">
-          Attiecas tikai uz agrāk pirktajiem kredītiem un vairāku VIN pasūtījumu ar kredītiem. Jaunie pirkumi notiek no konta atlikuma (skat. „Individuālās cenas”). Tukša cena = kataloga noklusējums (
-          {formatB2bEuroFromCents(B2B_BUSINESS_PACKS[0]!.unitCents)} / {formatB2bEuroFromCents(B2B_BUSINESS_PACKS[1]!.unitCents)}{" "}
-          Audits; {formatB2bEuroFromCents(B2B_DEALER_PACKS[0]!.unitCents)} /{" "}
-          {formatB2bEuroFromCents(B2B_DEALER_PACKS[1]!.unitCents)} Dīlera).
-        </p>
+      {hasLegacyB2bCredits(legacyCredits) ? (
+        <div className="mt-6 border-t border-slate-200/80 pt-5">
+          <h3 className="text-sm font-semibold text-slate-800">Vecie kredītu iepakojumi (mantotie)</h3>
+          <p className="mt-1 text-xs leading-relaxed text-slate-700">
+            Neizlietoti vecie kredīti: Audits {Math.max(0, legacyCredits.business)}, Dīlera{" "}
+            {Math.max(0, legacyCredits.dealer)}.
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-slate-500">
+            Attiecas tikai uz agrāk pirktajiem kredītiem. Jaunas pakas vairs nevar nopirkt, visi jaunie pirkumi (arī vairāki VIN) notiek no konta atlikuma (skat. „Individuālās cenas”). Sadaļa pazūd, kad kredīti izlietoti. Tukša cena = kataloga noklusējums (
+            {formatB2bEuroFromCents(B2B_BUSINESS_PACKS[0]!.unitCents)} / {formatB2bEuroFromCents(B2B_BUSINESS_PACKS[1]!.unitCents)}{" "}
+            Audits; {formatB2bEuroFromCents(B2B_DEALER_PACKS[0]!.unitCents)} /{" "}
+            {formatB2bEuroFromCents(B2B_DEALER_PACKS[1]!.unitCents)} Dīlera).
+          </p>
 
-        <label className="mt-4 flex items-center gap-2.5 text-sm text-slate-800">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-slate-300 text-[var(--color-provin-accent)] focus:ring-[var(--color-provin-accent)]"
-            checked={form.dealerEnabled}
-            onChange={set("dealerEnabled")}
-          />
-          Rādīt Dīlera datus šim partnerim
-        </label>
+          <label className="mt-4 flex items-center gap-2.5 text-sm text-slate-800">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300 text-[var(--color-provin-accent)] focus:ring-[var(--color-provin-accent)]"
+              checked={form.dealerEnabled}
+              onChange={set("dealerEnabled")}
+            />
+            Atļaut veco kredītu izlietošanu Dīlera datiem (tikai mantotie kredīti)
+          </label>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <label className="block min-w-0">
-            <span className={ADMIN_PARTNER_LABEL_CLASS}>Audits · 1 gab. (€)</span>
-            <input
-              className={ADMIN_PARTNER_INPUT_CLASS}
-              value={form.priceBusiness1}
-              onChange={set("priceBusiness1")}
-              placeholder={formatB2bEuroFromCents(B2B_BUSINESS_PACKS[0]!.unitCents).replace(" €", "")}
-              inputMode="decimal"
-            />
-          </label>
-          <label className="block min-w-0">
-            <span className={ADMIN_PARTNER_LABEL_CLASS}>Audits · 10 gab. (€ / gab.)</span>
-            <input
-              className={ADMIN_PARTNER_INPUT_CLASS}
-              value={form.priceBusiness10}
-              onChange={set("priceBusiness10")}
-              placeholder={formatB2bEuroFromCents(B2B_BUSINESS_PACKS[1]!.unitCents).replace(" €", "")}
-              inputMode="decimal"
-            />
-          </label>
-          <label className={`block min-w-0 ${form.dealerEnabled ? "" : "opacity-45"}`}>
-            <span className={ADMIN_PARTNER_LABEL_CLASS}>Dīlera · 1 gab. (€)</span>
-            <input
-              className={ADMIN_PARTNER_INPUT_CLASS}
-              value={form.priceDealer1}
-              onChange={set("priceDealer1")}
-              placeholder={formatB2bEuroFromCents(B2B_DEALER_PACKS[0]!.unitCents).replace(" €", "")}
-              inputMode="decimal"
-              disabled={!form.dealerEnabled}
-            />
-          </label>
-          <label className={`block min-w-0 ${form.dealerEnabled ? "" : "opacity-45"}`}>
-            <span className={ADMIN_PARTNER_LABEL_CLASS}>Dīlera · 10 gab. (€ / gab.)</span>
-            <input
-              className={ADMIN_PARTNER_INPUT_CLASS}
-              value={form.priceDealer10}
-              onChange={set("priceDealer10")}
-              placeholder={formatB2bEuroFromCents(B2B_DEALER_PACKS[1]!.unitCents).replace(" €", "")}
-              inputMode="decimal"
-              disabled={!form.dealerEnabled}
-            />
-          </label>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <label className="block min-w-0">
+              <span className={ADMIN_PARTNER_LABEL_CLASS}>Audits · 1 gab. (€)</span>
+              <input
+                className={ADMIN_PARTNER_INPUT_CLASS}
+                value={form.priceBusiness1}
+                onChange={set("priceBusiness1")}
+                placeholder={formatB2bEuroFromCents(B2B_BUSINESS_PACKS[0]!.unitCents).replace(" €", "")}
+                inputMode="decimal"
+              />
+            </label>
+            <label className="block min-w-0">
+              <span className={ADMIN_PARTNER_LABEL_CLASS}>Audits · 10 gab. (€ / gab.)</span>
+              <input
+                className={ADMIN_PARTNER_INPUT_CLASS}
+                value={form.priceBusiness10}
+                onChange={set("priceBusiness10")}
+                placeholder={formatB2bEuroFromCents(B2B_BUSINESS_PACKS[1]!.unitCents).replace(" €", "")}
+                inputMode="decimal"
+              />
+            </label>
+            <label className={`block min-w-0 ${form.dealerEnabled ? "" : "opacity-45"}`}>
+              <span className={ADMIN_PARTNER_LABEL_CLASS}>Dīlera · 1 gab. (€)</span>
+              <input
+                className={ADMIN_PARTNER_INPUT_CLASS}
+                value={form.priceDealer1}
+                onChange={set("priceDealer1")}
+                placeholder={formatB2bEuroFromCents(B2B_DEALER_PACKS[0]!.unitCents).replace(" €", "")}
+                inputMode="decimal"
+                disabled={!form.dealerEnabled}
+              />
+            </label>
+            <label className={`block min-w-0 ${form.dealerEnabled ? "" : "opacity-45"}`}>
+              <span className={ADMIN_PARTNER_LABEL_CLASS}>Dīlera · 10 gab. (€ / gab.)</span>
+              <input
+                className={ADMIN_PARTNER_INPUT_CLASS}
+                value={form.priceDealer10}
+                onChange={set("priceDealer10")}
+                placeholder={formatB2bEuroFromCents(B2B_DEALER_PACKS[1]!.unitCents).replace(" €", "")}
+                inputMode="decimal"
+                disabled={!form.dealerEnabled}
+              />
+            </label>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
       {saved && !error ? <p className="mt-3 text-sm text-emerald-700">Saglabāts.</p> : null}

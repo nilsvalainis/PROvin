@@ -5,6 +5,7 @@ import { FileText, Plus, RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { B2B_LABEL_CLASS, B2B_WALLET_PRODUCT_COPY } from "@/components/b2b/b2b-partner-ui";
+import { B2bPartnerBulkVin } from "@/components/b2b/B2bPartnerBulkVin";
 import { B2bPartnerDialog } from "@/components/b2b/B2bPartnerDialog";
 import { renderB2bProvinBusinessName } from "@/components/b2b/b2b-provin-business-name";
 import { B2bPartnerHome } from "@/components/b2b/B2bPartnerHome";
@@ -262,12 +263,18 @@ function PurchaseDialog({
   reportLang,
   onClose,
   onPurchased,
+  onBulkOrdered,
+  onTopup,
+  initialMode = "single",
 }: {
   product: B2bWalletProductId | null;
   view: B2bWalletView;
   reportLang: B2bWalletReportLang;
   onClose: () => void;
   onPurchased: (args: { product: B2bWalletProductId; orderId: string; vin: string; balanceCents: number }) => void;
+  onBulkOrdered: (args: { balanceCents: number | null; accepted: number }) => void;
+  onTopup: () => void;
+  initialMode?: "single" | "bulk";
 }) {
   const t = useTranslations("Partner");
   const router = useRouter();
@@ -280,6 +287,7 @@ function PurchaseDialog({
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState(newIdempotencyKey);
+  const [vinMode, setVinMode] = useState<"single" | "bulk">(initialMode);
 
   useEffect(() => {
     if (!product) return;
@@ -291,7 +299,8 @@ function PurchaseDialog({
     setPurposeError("");
     setFormError("");
     setIdempotencyKey(newIdempotencyKey());
-  }, [product]);
+    setVinMode(initialMode);
+  }, [product, initialMode]);
 
   if (!product) return null;
   const price = view.prices[product];
@@ -384,115 +393,167 @@ function PurchaseDialog({
       title={renderB2bProvinBusinessName(t(B2B_WALLET_PRODUCT_COPY[product].title))}
       closeLabel={t("buyCloseAria")}
     >
-      <form
-        className="flex flex-col gap-4"
-        noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!busy) void onSubmit();
-        }}
+      <div
+        className="mb-4 flex rounded-[0.35rem] border border-white/12 p-0.5"
+        role="tablist"
+        aria-label={t("bulkModeAria")}
       >
-        <div className="rounded-[0.6rem] border border-white/10 px-4 py-3 text-[0.82rem] text-zinc-300">
-          <p>{t("buyDialogPrice", { amount: formatB2bWalletEuro(price.priceCents) })}</p>
-          <p className="mt-0.5 text-zinc-500">
-            {t("buyBalanceAfter", { amount: formatB2bWalletEuro(Math.max(0, view.balanceCents - price.priceCents)) })}
-          </p>
-          {product === "dealer_pro" ? (
+        {(["single", "bulk"] as const).map((mode) => {
+          const active = vinMode === mode;
+          return (
+            <button
+              key={mode}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              disabled={busy}
+              className={
+                active
+                  ? "flex-1 rounded-[0.28rem] bg-white/10 px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-zinc-100"
+                  : "flex-1 rounded-[0.28rem] px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-zinc-500 transition-colors hover:text-zinc-200"
+              }
+              onClick={() => setVinMode(mode)}
+            >
+              {mode === "single" ? t("bulkModeSingle") : t("bulkModeMany")}
+            </button>
+          );
+        })}
+      </div>
+      {vinMode === "bulk" ? (
+        <>
+          <div className="rounded-[0.6rem] border border-white/10 px-4 py-3 text-[0.82rem] text-zinc-300">
+            <p>{t("bulkWalletPricePer", { amount: formatB2bWalletEuro(price.priceCents) })}</p>
             <p className="mt-0.5 text-zinc-500">
-              {t("walletReportLang")}: {reportLang.toUpperCase()}
+              {t("walletBalancePill", { amount: formatB2bWalletEuro(view.balanceCents) })}
             </p>
-          ) : null}
-        </div>
-
-        {isBusiness ? (
-          <fieldset className="min-w-0" disabled={busy}>
-            <legend className={B2B_LABEL_CLASS}>{t("auditPurposeLabel")}</legend>
-            <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("auditPurposeAria")}>
-              {(["client", "internal"] as const).map((purpose) => (
-                <label key={purpose} className="flex cursor-pointer items-center gap-3">
-                  <input
-                    type="radio"
-                    name="b2b-wallet-audit-purpose"
-                    checked={auditPurpose === purpose}
-                    onChange={() => {
-                      setAuditPurpose(purpose);
-                      setPurposeError("");
-                    }}
-                    className="h-4 w-4 shrink-0 border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
-                  />
-                  <span className="text-[0.9rem] font-medium text-zinc-100">
-                    {purpose === "client" ? t("auditPurposeClient") : t("auditPurposeInternal")}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        ) : null}
-
-        <label className="block min-w-0">
-          <span className={B2B_LABEL_CLASS}>{t("vinLabel")}</span>
-          <input
-            type="text"
-            className={`${styles.inlineInput} font-mono uppercase tracking-wide${vinError ? ` ${styles.inlineInputError}` : ""}`}
-            value={vin}
-            onChange={(event) => {
-              setVin(sanitizeVinInput(event.target.value));
-              setVinError("");
-              setFormError("");
+            {product === "dealer_pro" ? (
+              <p className="mt-0.5 text-zinc-500">
+                {t("walletReportLang")}: {reportLang.toUpperCase()}
+              </p>
+            ) : null}
+          </div>
+          <B2bPartnerBulkVin
+            wallet={{
+              product,
+              priceCents: price.priceCents,
+              balanceCents: view.balanceCents,
+              reportLang,
+              onTopup,
+              onOrdered: onBulkOrdered,
             }}
-            onPaste={(event) => {
-              event.preventDefault();
-              setVin(sanitizeVinInput(event.clipboardData.getData("text")));
-              setVinError("");
-            }}
-            autoComplete="off"
-            spellCheck={false}
-            autoCapitalize="characters"
-            placeholder={t("vinPlaceholder")}
-            aria-label={t("vinAria")}
-            aria-invalid={vinError ? true : undefined}
-            disabled={busy}
           />
-        </label>
+        </>
+      ) : (
+        <form
+          className="flex flex-col gap-4"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!busy) void onSubmit();
+          }}
+        >
+          <div className="rounded-[0.6rem] border border-white/10 px-4 py-3 text-[0.82rem] text-zinc-300">
+            <p>{t("buyDialogPrice", { amount: formatB2bWalletEuro(price.priceCents) })}</p>
+            <p className="mt-0.5 text-zinc-500">
+              {t("buyBalanceAfter", { amount: formatB2bWalletEuro(Math.max(0, view.balanceCents - price.priceCents)) })}
+            </p>
+            {product === "dealer_pro" ? (
+              <p className="mt-0.5 text-zinc-500">
+                {t("walletReportLang")}: {reportLang.toUpperCase()}
+              </p>
+            ) : null}
+          </div>
 
-        {isBusiness ? (
+          {isBusiness ? (
+            <fieldset className="min-w-0" disabled={busy}>
+              <legend className={B2B_LABEL_CLASS}>{t("auditPurposeLabel")}</legend>
+              <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("auditPurposeAria")}>
+                {(["client", "internal"] as const).map((purpose) => (
+                  <label key={purpose} className="flex cursor-pointer items-center gap-3">
+                    <input
+                      type="radio"
+                      name="b2b-wallet-audit-purpose"
+                      checked={auditPurpose === purpose}
+                      onChange={() => {
+                        setAuditPurpose(purpose);
+                        setPurposeError("");
+                      }}
+                      className="h-4 w-4 shrink-0 border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
+                    />
+                    <span className="text-[0.9rem] font-medium text-zinc-100">
+                      {purpose === "client" ? t("auditPurposeClient") : t("auditPurposeInternal")}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+
           <label className="block min-w-0">
-            <span className={B2B_LABEL_CLASS}>{t("listingLabel")}</span>
+            <span className={B2B_LABEL_CLASS}>{t("vinLabel")}</span>
             <input
-              type="url"
-              className={`${styles.inlineInput}${listingError ? ` ${styles.inlineInputError}` : ""}`}
-              value={listingUrl}
+              type="text"
+              className={`${styles.inlineInput} font-mono uppercase tracking-wide${vinError ? ` ${styles.inlineInputError}` : ""}`}
+              value={vin}
               onChange={(event) => {
-                setListingUrl(event.target.value);
-                setListingError("");
+                setVin(sanitizeVinInput(event.target.value));
+                setVinError("");
+                setFormError("");
+              }}
+              onPaste={(event) => {
+                event.preventDefault();
+                setVin(sanitizeVinInput(event.clipboardData.getData("text")));
+                setVinError("");
               }}
               autoComplete="off"
               spellCheck={false}
-              placeholder={t("listingPlaceholder")}
-              aria-label={t("listingAria")}
+              autoCapitalize="characters"
+              placeholder={t("vinPlaceholder")}
+              aria-label={t("vinAria")}
+              aria-invalid={vinError ? true : undefined}
               disabled={busy}
             />
           </label>
-        ) : null}
 
-        {purposeError ? <p className={styles.inlineFieldError}>{purposeError}</p> : null}
-        {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
-        {!vinError && vinNeedsCheckDigitWarning(vin) ? (
-          <p className={styles.inlineFieldError} role="status">
-            {t("vinCheckDigitWarning")}
-          </p>
-        ) : null}
-        {listingError ? <p className={styles.inlineFieldError}>{listingError}</p> : null}
-        {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
+          {isBusiness ? (
+            <label className="block min-w-0">
+              <span className={B2B_LABEL_CLASS}>{t("listingLabel")}</span>
+              <input
+                type="url"
+                className={`${styles.inlineInput}${listingError ? ` ${styles.inlineInputError}` : ""}`}
+                value={listingUrl}
+                onChange={(event) => {
+                  setListingUrl(event.target.value);
+                  setListingError("");
+                }}
+                autoComplete="off"
+                spellCheck={false}
+                placeholder={t("listingPlaceholder")}
+                aria-label={t("listingAria")}
+                disabled={busy}
+              />
+            </label>
+          ) : null}
 
-        <button type="submit" className={styles.liquidCta} disabled={busy}>
-          <span className={styles.liquidCtaShimmer} aria-hidden />
-          <span className={styles.liquidCtaLabel}>
-            {busy ? t("buyLoading") : t("buyConfirm", { amount: formatB2bWalletEuro(price.priceCents) })}
-          </span>
-        </button>
-        <p className="text-center text-[0.7rem] leading-snug text-zinc-500">{t("walletDeductNote")}</p>
-      </form>
+          {purposeError ? <p className={styles.inlineFieldError}>{purposeError}</p> : null}
+          {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
+          {!vinError && vinNeedsCheckDigitWarning(vin) ? (
+            <p className={styles.inlineFieldError} role="status">
+              {t("vinCheckDigitWarning")}
+            </p>
+          ) : null}
+          {listingError ? <p className={styles.inlineFieldError}>{listingError}</p> : null}
+          {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
+
+          <button type="submit" className={styles.liquidCta} disabled={busy}>
+            <span className={styles.liquidCtaShimmer} aria-hidden />
+            <span className={styles.liquidCtaLabel}>
+              {busy ? t("buyLoading") : t("buyConfirm", { amount: formatB2bWalletEuro(price.priceCents) })}
+            </span>
+          </button>
+          <p className="text-center text-[0.7rem] leading-snug text-zinc-500">{t("walletDeductNote")}</p>
+        </form>
+      )}
     </B2bPartnerDialog>
   );
 }
@@ -630,6 +691,14 @@ export function B2bPartnerWalletHome({
         view={view}
         reportLang={reportLang}
         onClose={() => setBuying(null)}
+        onTopup={() => {
+          setBuying(null);
+          setTopupOpen(true);
+        }}
+        onBulkOrdered={({ balanceCents }) => {
+          if (balanceCents != null) setView((prev) => ({ ...prev, balanceCents }));
+          void reload().catch(() => {});
+        }}
         onPurchased={({ product, orderId, vin, balanceCents }) => {
           setBuying(null);
           setView((prev) => ({ ...prev, balanceCents }));

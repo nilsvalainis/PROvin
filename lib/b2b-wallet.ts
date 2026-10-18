@@ -392,6 +392,79 @@ export function applyB2bWalletPurchase(
   };
 }
 
+/** Vairāku VIN pirkuma atslēga: katram VIN sava, lai atkārtots pieprasījums neiekasē otrreiz. */
+export function bulkPurchaseItemKey(bulkKey: string, vin: string): string {
+  return `${bulkKey.trim()}:${vin.trim().toUpperCase()}`;
+}
+
+export type B2bWalletBulkItem = {
+  vin: string;
+  /** Jau pasūtīts agrāk un partneris nav izvēlējies pasūtīt atkārtoti. */
+  skip?: boolean;
+};
+
+export type B2bWalletBulkPurchaseResult =
+  | {
+      ok: true;
+      wallet: B2bWallet;
+      charged: { vin: string; txn: B2bWalletTxn }[];
+      duplicates: { vin: string; txn: B2bWalletTxn }[];
+      skipped: string[];
+    }
+  | { ok: false; reason: "insufficient"; balanceCents: number; needCents: number; count: number };
+
+/**
+ * Noraksta cenu par katru jauno VIN vienā atomārā solī: vai nu visi jaunie, vai neviens.
+ * VIN, kuru atslēga jau ir makā, atgriež kā dublikātus (bez otrreizējas iekasēšanas).
+ */
+export function applyB2bWalletBulkPurchase(
+  wallet: B2bWallet,
+  args: {
+    product: B2bWalletProductId;
+    priceCents: number;
+    bulkKey: string;
+    items: readonly B2bWalletBulkItem[];
+    now?: Date;
+  },
+): B2bWalletBulkPurchaseResult {
+  const now = args.now ?? new Date();
+  const price = Math.round(args.priceCents);
+  const duplicates: { vin: string; txn: B2bWalletTxn }[] = [];
+  const skipped: string[] = [];
+  const fresh: string[] = [];
+  const seen = new Set<string>();
+  for (const item of args.items) {
+    const vin = item.vin.trim().toUpperCase();
+    if (!vin || seen.has(vin)) continue;
+    seen.add(vin);
+    const existing = findB2bWalletTxnByKey(wallet, purchaseKey(bulkPurchaseItemKey(args.bulkKey, vin)));
+    if (existing) duplicates.push({ vin, txn: existing });
+    else if (item.skip) skipped.push(vin);
+    else fresh.push(vin);
+  }
+  const needCents = price * fresh.length;
+  if (fresh.length > 0 && (!Number.isFinite(price) || price <= 0 || wallet.balanceCents < needCents)) {
+    return { ok: false, reason: "insufficient", balanceCents: wallet.balanceCents, needCents, count: fresh.length };
+  }
+  let next = wallet;
+  const charged: { vin: string; txn: B2bWalletTxn }[] = [];
+  for (const vin of fresh) {
+    const r = applyB2bWalletPurchase(next, {
+      product: args.product,
+      priceCents: price,
+      idempotencyKey: bulkPurchaseItemKey(args.bulkKey, vin),
+      vin,
+      now,
+    });
+    if (!r.ok) {
+      return { ok: false, reason: "insufficient", balanceCents: wallet.balanceCents, needCents, count: fresh.length };
+    }
+    next = r.wallet;
+    charged.push({ vin, txn: r.txn });
+  }
+  return { ok: true, wallet: next, charged, duplicates, skipped };
+}
+
 export function attachB2bWalletPurchaseOrder(wallet: B2bWallet, txnId: string, orderId: string): B2bWallet {
   let changed = false;
   const txns = wallet.txns.map((txn) => {
