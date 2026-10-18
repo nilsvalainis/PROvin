@@ -3,9 +3,7 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { B2bPartnerBuyReports } from "@/components/b2b/B2bPartnerBuyReports";
 import { Link } from "@/i18n/navigation";
-import type { B2bPartnerPriceOverrides } from "@/lib/b2b-partner-account";
 import { rememberPendingPartnerArchiveRow } from "@/lib/b2b-partner-archive-rows";
 import {
   BULK_VIN_MAX,
@@ -23,6 +21,12 @@ import type { B2bPartnerAuditPurpose, B2bPartnerOrderRow } from "@/lib/b2b-partn
 import { isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
 import { isPlausibleListingUrl, sanitizeVinInput } from "@/lib/order-field-validation";
 import { trackMetaLead } from "@/lib/meta-pixel";
+import {
+  B2B_WALLET_PRODUCTS,
+  formatB2bWalletEuro,
+  type B2bWalletProductId,
+  type B2bWalletReportLang,
+} from "@/lib/b2b-wallet";
 
 const LABEL_CLASS = "mb-1.5 block text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500";
 
@@ -39,6 +43,18 @@ type AcceptedRow = {
   orderId: string;
   order: B2bPartnerOrderRow;
 };
+
+/** Maka režīms: cena no partnera cenas, apmaksa no atlikuma (kredītu vietā). */
+export type B2bPartnerBulkVinWallet = {
+  product: B2bWalletProductId;
+  priceCents: number;
+  balanceCents: number;
+  reportLang: B2bWalletReportLang;
+  onTopup: () => void;
+  onOrdered: (args: { balanceCents: number | null; accepted: number }) => void;
+};
+
+const NO_CREDITS: B2bCreditRemaining = { business: 0, dealer: 0 };
 
 function PackageMark({ title }: { title: string }) {
   if (title !== "PROVIN BUSINESS") return <>{title}</>;
@@ -82,23 +98,21 @@ function toRows(classified: BulkVinClassified[], prev: readonly BulkRow[]): Bulk
 }
 
 export function B2bPartnerBulkVin({
-  availablePlans,
-  credits,
-  dealerEnabled,
-  prices,
-  locale,
-  service,
-  onPickService,
-  onCreditsReload,
+  availablePlans = [],
+  credits = NO_CREDITS,
+  locale = "lv",
+  service = null,
+  onPickService = () => {},
+  onCreditsReload = async () => null,
+  wallet,
 }: {
-  availablePlans: B2bPartnerPlanId[];
-  credits: B2bCreditRemaining;
-  dealerEnabled: boolean;
-  prices: B2bPartnerPriceOverrides | null;
-  locale: string;
-  service: B2bPartnerPlanId | null;
-  onPickService: (plan: B2bPartnerPlanId) => void;
-  onCreditsReload: () => Promise<B2bCreditRemaining | null>;
+  availablePlans?: B2bPartnerPlanId[];
+  credits?: B2bCreditRemaining;
+  locale?: string;
+  service?: B2bPartnerPlanId | null;
+  onPickService?: (plan: B2bPartnerPlanId) => void;
+  onCreditsReload?: () => Promise<B2bCreditRemaining | null>;
+  wallet?: B2bPartnerBulkVinWallet;
 }) {
   const t = useTranslations("Partner");
   const fileId = useId();
@@ -115,12 +129,20 @@ export function B2bPartnerBulkVin({
   const [addVin, setAddVin] = useState("");
   const [accepted, setAccepted] = useState<AcceptedRow[]>([]);
   const [skipped, setSkipped] = useState<BulkRow[]>([]);
+  const [failedVins, setFailedVins] = useState<{ vin: string; refunded: boolean }[]>([]);
+  const [chargedCents, setChargedCents] = useState(0);
   const pasteCount = Math.min(splitVinPaste(paste).length, BULK_VIN_MAX);
 
-  const plan = service ?? (availablePlans.length === 1 ? availablePlans[0]! : null);
+  const plan = wallet
+    ? B2B_WALLET_PRODUCTS[wallet.product].plan
+    : service ?? (availablePlans.length === 1 ? availablePlans[0]! : null);
   const remainingForPlan = plan ? credits[plan] : 0;
   const counts = useMemo(() => summarizeBulkVinKinds(rows), [rows]);
   const creditPlan = planBulkVinCredits(remainingForPlan, counts.orderable);
+  const needsPurpose = !wallet || wallet.product === "business";
+  const walletTotalCents = wallet ? wallet.priceCents * counts.orderable : 0;
+  const walletShortCents = wallet ? Math.max(0, walletTotalCents - wallet.balanceCents) : 0;
+  const canOrder = wallet ? counts.orderable > 0 && walletShortCents === 0 : creditPlan.canOrder;
 
   const setPurpose = (key: string, purpose: B2bPartnerAuditPurpose) => {
     setAllPurpose(purpose);
@@ -202,24 +224,105 @@ export function B2bPartnerBulkVin({
     }
   };
 
+  const onWalletOrder = async (cfg: B2bPartnerBulkVinWallet, orderable: BulkRow[]) => {
+    setSubmitting(true);
+    try {
+      trackMetaLead();
+      const idempotencyKey =
+        typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `bulk_${Date.now()}`;
+      const isBusiness = cfg.product === "business";
+      const res = await fetch("/api/partner/wallet/bulk", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+        body: JSON.stringify({
+          product: cfg.product,
+          ...(cfg.product === "dealer_pro" ? { reportLang: cfg.reportLang } : {}),
+          items: orderable.map((row) => ({
+            vin: row.vin,
+            ...(isBusiness ? { auditPurpose: row.purpose } : {}),
+            ...(isBusiness && row.listingUrl.trim() ? { listingUrl: row.listingUrl.trim() } : {}),
+            ...(row.reorder ? { reorder: true } : {}),
+          })),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        accepted?: AcceptedRow[];
+        failed?: { vin: string; refunded?: boolean }[];
+        balanceCents?: number;
+        chargedCents?: number;
+      };
+      if (res.status === 402 || data.error === "insufficient") {
+        setFormError(t("walletInsufficient"));
+        return;
+      }
+      if (res.status === 403 || data.error === "product_hidden") {
+        setFormError(t("walletProductUnavailable"));
+        return;
+      }
+      if (data.error === "listing") {
+        setFormError(t("listingError"));
+        return;
+      }
+      if (data.error === "audit_purpose") {
+        setFormError(t("bulkNeedPurpose"));
+        return;
+      }
+      if (!res.ok || !data.ok) {
+        setFormError(t("buyError"));
+        return;
+      }
+      const nextAccepted = Array.isArray(data.accepted) ? data.accepted : [];
+      for (const row of nextAccepted) {
+        if (row.order) rememberPendingPartnerArchiveRow(row.order);
+      }
+      const nextFailed = Array.isArray(data.failed)
+        ? data.failed.map((row) => ({ vin: row.vin, refunded: row.refunded === true }))
+        : [];
+      const handled = new Set([...nextAccepted.map((row) => row.vin), ...nextFailed.map((row) => row.vin)]);
+      setAccepted(nextAccepted);
+      setFailedVins(nextFailed);
+      setChargedCents(typeof data.chargedCents === "number" ? data.chargedCents : 0);
+      setSkipped(rows.filter((row) => !handled.has(row.vin)));
+      setPhase("result");
+      cfg.onOrdered({
+        balanceCents: typeof data.balanceCents === "number" ? data.balanceCents : null,
+        accepted: nextAccepted.length,
+      });
+    } catch {
+      setFormError(t("payNetwork"));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const onOrder = async () => {
     setFormError("");
-    if (!plan || !availablePlans.includes(plan)) {
+    if (!wallet && (!plan || !availablePlans.includes(plan))) {
       setFormError(t("needService"));
       return;
     }
     const orderable = rows.filter((row) => isBulkVinOrderable(row));
-    const missingPurpose = orderable.some((row) => !row.purpose || !isPartnerAuditPurpose(row.purpose));
+    const missingPurpose =
+      needsPurpose && orderable.some((row) => !row.purpose || !isPartnerAuditPurpose(row.purpose));
     if (missingPurpose) {
       setFormError(t("bulkNeedPurpose"));
       return;
     }
-    const badListing = orderable.find((row) => row.listingUrl.trim() && !isPlausibleListingUrl(row.listingUrl.trim()));
+    const badListing = needsPurpose
+      ? orderable.find((row) => row.listingUrl.trim() && !isPlausibleListingUrl(row.listingUrl.trim()))
+      : undefined;
     if (badListing) {
       setFormError(t("listingError"));
       return;
     }
-    if (!creditPlan.canOrder) return;
+    if (wallet) {
+      if (canOrder) await onWalletOrder(wallet, orderable);
+      return;
+    }
+    if (!plan || !creditPlan.canOrder) return;
 
     setSubmitting(true);
     try {
@@ -288,6 +391,8 @@ export function B2bPartnerBulkVin({
     setRows([]);
     setAccepted([]);
     setSkipped([]);
+    setFailedVins([]);
+    setChargedCents(0);
     setPaste("");
     setAddVin("");
     setFormError("");
@@ -302,6 +407,11 @@ export function B2bPartnerBulkVin({
         <p className="text-[0.8125rem] font-medium leading-snug text-emerald-300">
           {t("bulkResultOk", { count: accepted.length })}
         </p>
+        {wallet && chargedCents > 0 ? (
+          <p className="-mt-2 text-[0.78rem] leading-snug text-zinc-400">
+            {t("bulkWalletCharged", { amount: formatB2bWalletEuro(chargedCents) })}
+          </p>
+        ) : null}
         <ul className="flex flex-col gap-2">
           {accepted.map((row) => (
             <li
@@ -315,6 +425,24 @@ export function B2bPartnerBulkVin({
             </li>
           ))}
         </ul>
+        {failedVins.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            <p className={`${LABEL_CLASS} mb-0`}>{t("bulkWalletFailedHeading")}</p>
+            <ul className="flex flex-col gap-2">
+              {failedVins.map((row) => (
+                <li
+                  key={row.vin}
+                  className="flex items-center justify-between gap-3 rounded-[0.35rem] bg-white/[0.03] px-3 py-2.5"
+                >
+                  <span className="font-mono text-[0.78rem] tracking-wide text-zinc-300">{row.vin}</span>
+                  <Chip kind={row.refunded ? "duplicate" : "invalid"}>
+                    {row.refunded ? t("bulkWalletRefunded") : t("bulkWalletFailed")}
+                  </Chip>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {skipped.length > 0 ? (
           <div className="flex flex-col gap-2">
             <p className={`${LABEL_CLASS} mb-0`}>{t("bulkSkippedHeading")}</p>
@@ -346,7 +474,7 @@ export function B2bPartnerBulkVin({
             {t("bulkResultSubmitMore")}
           </button>
           <Link
-            href="/partneriem/konts/profils"
+            href={wallet ? "/partneriem/konts/pasutijumi" : "/partneriem/konts/profils"}
             className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-zinc-200 underline-offset-2 hover:text-white hover:underline"
           >
             {t("bulkResultOpenReports")}
@@ -360,24 +488,26 @@ export function B2bPartnerBulkVin({
     return (
       <div className="mt-6 flex flex-col gap-4">
         {truncated ? <p className="text-[0.78rem] text-zinc-400">{t("bulkTooMany")}</p> : null}
-        <label className="flex cursor-pointer items-center gap-2.5">
-          <input
-            type="checkbox"
-            className="h-4 w-4 shrink-0 border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
-            checked={applyAll}
-            onChange={(event) => {
-              const on = event.target.checked;
-              setApplyAll(on);
-              if (on && allPurpose) {
-                setRows((prev) =>
-                  prev.map((row) => (isBulkVinOrderable(row) ? { ...row, purpose: allPurpose } : row)),
-                );
-              }
-            }}
-          />
-          <span className="text-[0.9rem] font-medium text-zinc-100">{t("bulkPurposeAll")}</span>
-        </label>
-        {applyAll ? (
+        {needsPurpose ? (
+          <label className="flex cursor-pointer items-center gap-2.5">
+            <input
+              type="checkbox"
+              className="h-4 w-4 shrink-0 border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
+              checked={applyAll}
+              onChange={(event) => {
+                const on = event.target.checked;
+                setApplyAll(on);
+                if (on && allPurpose) {
+                  setRows((prev) =>
+                    prev.map((row) => (isBulkVinOrderable(row) ? { ...row, purpose: allPurpose } : row)),
+                  );
+                }
+              }}
+            />
+            <span className="text-[0.9rem] font-medium text-zinc-100">{t("bulkPurposeAll")}</span>
+          </label>
+        ) : null}
+        {needsPurpose && applyAll ? (
           <div className="flex flex-wrap gap-4" role="radiogroup" aria-label={t("auditPurposeAria")}>
             {(["client", "internal"] as const).map((purpose) => (
               <label key={purpose} className="flex cursor-pointer items-center gap-2">
@@ -444,7 +574,9 @@ export function B2bPartnerBulkVin({
                           ? t("bulkRowInvalidHint")
                           : row.kind === "duplicate"
                             ? t("bulkRowDuplicateHint")
-                            : t("bulkRowOrderedHint")}
+                            : wallet
+                              ? t("bulkRowOrderedHintWallet", { amount: formatB2bWalletEuro(wallet.priceCents) })
+                              : t("bulkRowOrderedHint")}
                       </p>
                     ) : null}
                     {row.kind === "already_ordered" && !row.reorder ? (
@@ -457,7 +589,9 @@ export function B2bPartnerBulkVin({
                           )
                         }
                       >
-                        {t("bulkReorder")}
+                        {wallet
+                          ? t("bulkReorderWallet", { amount: formatB2bWalletEuro(wallet.priceCents) })
+                          : t("bulkReorder")}
                       </button>
                     ) : null}
                   </div>
@@ -470,7 +604,7 @@ export function B2bPartnerBulkVin({
                     ×
                   </button>
                 </div>
-                {orderable && !applyAll ? (
+                {needsPurpose && orderable && !applyAll ? (
                   <div className="mt-3 flex flex-col gap-2" role="radiogroup" aria-label={t("auditPurposeAria")}>
                     {(["client", "internal"] as const).map((purpose) => (
                       <label key={purpose} className="flex cursor-pointer items-center gap-2">
@@ -488,7 +622,7 @@ export function B2bPartnerBulkVin({
                     ))}
                   </div>
                 ) : null}
-                {orderable ? (
+                {needsPurpose && orderable ? (
                   <div className="mt-2">
                     {row.listingOpen ? (
                       <input
@@ -556,7 +690,7 @@ export function B2bPartnerBulkVin({
           </div>
         </label>
 
-        {availablePlans.length > 1 ? (
+        {!wallet && availablePlans.length > 1 ? (
           <fieldset className="min-w-0" disabled={submitting}>
             <legend className={LABEL_CLASS}>{t("servicePick")}</legend>
             <div className="flex flex-col gap-3" role="radiogroup" aria-label={t("servicePick")}>
@@ -587,30 +721,61 @@ export function B2bPartnerBulkVin({
             ordered: counts.alreadyOrdered,
           })}
         </p>
-        <p className="text-[0.78rem] leading-snug text-zinc-300">
-          {t("bulkCreditsLine", { used: creditPlan.used, from: creditPlan.from, to: creditPlan.to })}
-        </p>
-        {creditPlan.shortfall > 0 ? (
-          <p className="text-[0.8125rem] font-medium leading-snug text-red-300">
-            {t("bulkShortfall", { count: creditPlan.shortfall })}
-          </p>
-        ) : null}
+        {wallet ? (
+          <>
+            <p className="text-[0.78rem] leading-snug text-zinc-300">
+              {t("bulkWalletLine", {
+                count: counts.orderable,
+                price: formatB2bWalletEuro(wallet.priceCents),
+                total: formatB2bWalletEuro(walletTotalCents),
+                from: formatB2bWalletEuro(wallet.balanceCents),
+                to: formatB2bWalletEuro(Math.max(0, wallet.balanceCents - walletTotalCents)),
+              })}
+            </p>
+            {walletShortCents > 0 ? (
+              <p className="text-[0.8125rem] font-medium leading-snug text-red-300">
+                {t("bulkWalletShortfall", { amount: formatB2bWalletEuro(walletShortCents) })}{" "}
+                <button
+                  type="button"
+                  className="font-semibold text-[#93c5fd] underline underline-offset-2 hover:text-white"
+                  onClick={wallet.onTopup}
+                >
+                  {t("walletTopupCta")}
+                </button>
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <p className="text-[0.78rem] leading-snug text-zinc-300">
+              {t("bulkCreditsLine", { used: creditPlan.used, from: creditPlan.from, to: creditPlan.to })}
+            </p>
+            {creditPlan.shortfall > 0 ? (
+              <p className="text-[0.8125rem] font-medium leading-snug text-red-300">
+                {t("bulkShortfall", { count: creditPlan.shortfall })}
+              </p>
+            ) : null}
+          </>
+        )}
         {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
 
         <button
           type="button"
           className={styles.liquidCta}
-          disabled={!creditPlan.canOrder || submitting}
+          disabled={!canOrder || submitting}
           onClick={() => {
             if (!submitting) void onOrder();
           }}
         >
           <span className={styles.liquidCtaShimmer} aria-hidden />
           <span className={styles.liquidCtaLabel}>
-            {submitting ? t("bulkOrderLoading") : t("bulkOrderCta", { count: counts.orderable })}
+            {submitting
+              ? t("bulkOrderLoading")
+              : wallet
+                ? t("bulkWalletOrderCta", { count: counts.orderable, amount: formatB2bWalletEuro(walletTotalCents) })
+                : t("bulkOrderCta", { count: counts.orderable })}
           </span>
         </button>
-        <B2bPartnerBuyReports mode="secondary" dealerEnabled={dealerEnabled} prices={prices} />
       </div>
     );
   }
