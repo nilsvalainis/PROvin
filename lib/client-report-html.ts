@@ -4,7 +4,11 @@
  */
 
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
-import { applyClientReportStaticTranslations, type ClientReportLang } from "@/lib/client-report-i18n";
+import {
+  applyClientReportStaticTranslations,
+  clientReportDateLocale,
+  type ClientReportLang,
+} from "@/lib/client-report-i18n";
 export type { ClientReportLang } from "@/lib/client-report-i18n";
 import {
   autoRecordsBlockHasContent,
@@ -1599,12 +1603,17 @@ const PDF_AUTO_RECORDS_PHOTO_APPENDIX_LABEL = "Fotogrāfiju pielikums";
 function buildAutoRecordsServiceWorksTableHtml(
   rows: AutoRecordsServiceWorkRow[],
   omitSpan = false,
-  extra?: { condenseRecords?: boolean; extraMileageRows?: AutoRecordsServiceWorkRow[] },
+  extra?: {
+    condenseRecords?: boolean;
+    extraMileageRows?: AutoRecordsServiceWorkRow[];
+    lang?: ClientReportLang;
+  },
 ): string {
   const body = buildDealerServiceVisitsHtml(rows, {
     omitSpan,
     condenseRecords: extra?.condenseRecords,
     extraMileageRows: extra?.extraMileageRows,
+    lang: extra?.lang,
   });
   if (!body) return "";
   const subheadHtml = pdfFieldLabelWithIcon(sectionIconPdfHtml("wrench"), PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL);
@@ -1710,6 +1719,7 @@ function buildAutoRecordsAvotuSubsection(
   sparkHtml = "",
   productScope?: DealerProductScopeArgs,
   maskDemoVin = false,
+  lang: ClientReportLang = "lv",
 ): string {
   if (!vis.auto_records) return "";
   if ((!b || !autoRecordsBlockHasContent(b)) && !sparkHtml) return "";
@@ -1721,23 +1731,25 @@ function buildAutoRecordsAvotuSubsection(
   const bundle = getAutoRecordsOutvinBundle(b);
   const hasBundleStructured = outvinBundleHasStructuredContent(bundle);
   const bundleInner = hasBundleStructured
-    ? buildOutvinBundlePdfInnerHtml(bundle, undefined, { omitEquipment: true, maskDemoVin })
+    ? buildOutvinBundlePdfInnerHtml(bundle, undefined, { omitEquipment: true, maskDemoVin, lang })
     : "";
   const legacyInner = buildOutvinDealerReportPdfInnerHtml(b.outvinReport, {
     omitEquipment: true,
     maskDemoVin,
+    lang,
   });
   const outvinInner = bundleInner.trim() || legacyInner.trim();
   const showEquipment = vis.autoRecordsEquipment !== false;
   const equipmentHtml = showEquipment
-    ? buildOutvinBundleEquipmentPdfHtml(bundle).trim() ||
-      buildOutvinDealerEquipmentPdfHtml(b.outvinReport).trim()
+    ? buildOutvinBundleEquipmentPdfHtml(bundle, undefined, { lang }).trim() ||
+      buildOutvinDealerEquipmentPdfHtml(b.outvinReport, { lang }).trim()
     : "";
   const coverHtml = buildDealerSectionCoverHtml({
     vehicle: resolveDealerCoverVehicle(bundle.vehicleInfo, b.outvinReport?.vehicleInfo),
     makeModel,
     serviceWorks: b.serviceWorks ?? [],
     maskDemoVin,
+    lang,
   });
   const hasCover = coverHtml.length > 0;
   const condenseRecords = shouldCondenseDealerPdfRecords(productScope ?? {});
@@ -1745,9 +1757,10 @@ function buildAutoRecordsAvotuSubsection(
   const serviceWorksTable = buildAutoRecordsServiceWorksTableHtml(b.serviceWorks ?? [], hasCover, {
     condenseRecords,
     extraMileageRows: condenseRecords ? [] : dealerExtraMileageRows(b),
+    lang,
   });
-  const summaryHtml = buildDealerVisitSummaryHtml(b.serviceWorks ?? [], dealerFacts);
-  const majorHtml = buildDealerMajorWorksHtml(dealerFacts);
+  const summaryHtml = buildDealerVisitSummaryHtml(b.serviceWorks ?? [], dealerFacts, lang);
+  const majorHtml = buildDealerMajorWorksHtml(dealerFacts, lang);
   const serviceHistoryNotes = (b.serviceHistoryNotes ?? "").trim();
   const serviceHistoryBox = serviceHistoryNotes
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
@@ -2112,6 +2125,7 @@ function buildAvotuDatiSectionHtml(
   ccVinPhotoDataUrls?: Map<string, string>,
   asvPhotoDataUrls?: Map<string, string>,
   sourceBlockPhotoDataUrls?: Map<string, string>,
+  lang: ClientReportLang = "lv",
 ): string {
   const sparkCtx = collectPdfMileageSparkContext(p, vis);
   const spark = (key: MileagePdfSourceKey) => sourceMileageSparkHtml(sparkCtx, key);
@@ -2138,6 +2152,7 @@ function buildAvotuDatiSectionHtml(
     spark("dealer"),
     dealerPdfProductScope(p),
     p.isDemo === true,
+    lang,
   );
   const ccVin = buildCcVinAvotuSubsection(p.ccVinBlock ?? null, vis, ccVinPhotoDataUrls, spark("intl"));
   const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"));
@@ -2214,7 +2229,11 @@ export function getClientReportPrintCss(): string {
   return clientReportPrintCss();
 }
 
-function clientReportPageChromeCss(running?: { header?: string; footer?: string }): string {
+function clientReportPageChromeCss(running?: {
+  header?: string;
+  footer?: string;
+  lang?: ClientReportLang;
+}): string {
   return clientReportRunningPageCss(running);
 }
 
@@ -2227,7 +2246,11 @@ function sourceDotColorCss(): string {
   }).join("\n");
 }
 
-function clientReportPrintCss(running?: { header?: string; footer?: string }): string {
+function clientReportPrintCss(running?: {
+  header?: string;
+  footer?: string;
+  lang?: ClientReportLang;
+}): string {
   return `
 ${clientReportPageChromeCss(running)}
       :root{
@@ -3375,9 +3398,10 @@ export function buildClientReportDocumentHtml(args: {
   const money =
     p.amountTotal == null
       ? "-"
-      : new Intl.NumberFormat("lv-LV", { style: "currency", currency: p.currency ?? "EUR" }).format(
-          p.amountTotal / 100,
-        );
+      : new Intl.NumberFormat(clientReportDateLocale(lang), {
+          style: "currency",
+          currency: p.currency ?? "EUR",
+        }).format(p.amountTotal / 100);
 
   const lines: string[] = [];
   lines.push('<div class="sheet">');
@@ -3502,6 +3526,7 @@ export function buildClientReportDocumentHtml(args: {
     ccVinPhotoDataUrls,
     asvPhotoDataUrls,
     sourceBlockPhotoDataUrls,
+    lang,
   );
   if (avotuHtml) lines.push(avotuHtml);
 
@@ -3554,7 +3579,9 @@ export function buildClientReportDocumentHtml(args: {
       vin: p.vin ?? "",
       dateLabel: dateFmt.format(new Date()),
       preparedBy: formatPdfPreparedByName(p.customerName ?? ""),
+      lang,
     }),
+    lang,
   });
   const html = `<!DOCTYPE html><html lang="lv"${htmlClass}><head><meta charset="utf-8"/>
 <meta name="color-scheme" content="light"/>

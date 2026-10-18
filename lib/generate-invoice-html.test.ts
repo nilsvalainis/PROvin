@@ -32,5 +32,13 @@ describe("invoice HTML buyer requisites", () => {
     expect(html).toContain("netiek piemērots");
     expect(html).not.toContain("nav reģistrēta PVN");
     expect(html).not.toContain("—");
+    expect(html).toContain("Starpsumma");
+    expect(html).toContain(">Kopā<");
+    expect(html).not.toContain("Sub Total");
+    expect(html).not.toContain(">Total<");
+    expect(html).toContain('lang="lv"');
+    expect(html).toContain("charset=\"utf-8\"");
+    expect(html).toContain("Rēķins");
+    expect(html).toContain("ā");
   });
 });
