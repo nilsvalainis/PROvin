@@ -5,7 +5,7 @@ import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { vinScanParseFromListingHistory } from "@/lib/vin-scan/listing-history";
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { browserFetchLane, type VinScanBrowserFetchId } from "@/lib/vin-scan/browser-fetch";
-import { vinScanCatalogItem } from "@/lib/vin-scan/catalog";
+import { vinScanCatalogItem, vwGroupRecallCheckUrl } from "@/lib/vin-scan/catalog";
 import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
 import { statVinBrowserLane } from "@/lib/vin-scan/stat-vin-browser";
 import { scanCaptchaTokenPlaceholder, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
@@ -160,6 +160,12 @@ async function nhtsaRecallsForVin(vin: string): Promise<VinScanParse> {
 /** ASV modeļa līmeņa atsaukumi / OEM lapas: operators atver saiti, tas nav šī VIN fakts. */
 export const ASV_MARKET_RECALL_LABEL = "ASV tirgus, var neattiekties";
 
+/**
+ * VW UK recalls.html ir 404. GOV.UK atsaukumu lapa atbild, bet VIN rezultātu serveris nenolasa.
+ * Tukša Austrālijas VIN pārbaude arī nav „atsaukumu nav” šim ES auto.
+ */
+export const VW_GROUP_RECALL_BROWSER_LABEL = "Lielbritānijas GOV.UK atsaukumu pārbaude pārlūkā";
+
 function isUsManufacturerRecallUrl(url: string): boolean {
   try {
     const host = new URL(url).hostname.toLowerCase();
@@ -177,6 +183,14 @@ function asvMarketOperatorLink(
   return done(id, ctx, {
     status: "browser_only",
     summary: ASV_MARKET_RECALL_LABEL,
+    openUrl: url,
+  });
+}
+
+function vwGroupRecallOperatorLink(ctx: VinScanContext, url: string): VinScanIndicator {
+  return done("recall_vw", ctx, {
+    status: "browser_only",
+    summary: VW_GROUP_RECALL_BROWSER_LABEL,
     openUrl: url,
   });
 }
@@ -216,7 +230,7 @@ const OEM_META: Record<OemRecallBrand, { id: VinScanIndicator["id"]; label: stri
   vw: {
     id: "recall_vw",
     label: "VW Group",
-    url: (vin) => `https://www.volkswagen.co.uk/en/owners-and-services/recalls.html?vin=${encodeURIComponent(vin)}`,
+    url: (vin) => vwGroupRecallCheckUrl(vin),
   },
   bmw: {
     id: "recall_bmw",
@@ -248,7 +262,9 @@ export async function probeOemRecall(ctx: VinScanContext, brand: OemRecallBrand)
   }
   const oemUrl = meta.url(ctx.vin);
   // Ne-ASV VIN: NHTSA modeļa vaicājumu un ASV ražotāja lapas nerāda kā atsaukuma faktu.
+  // VW Group: UK recalls.html ir 404, GOV.UK HTML nav šī VIN atsaukuma fakts.
   if (!isUsWmiVin(ctx.vin)) {
+    if (brand === "vw") return vwGroupRecallOperatorLink(ctx, oemUrl);
     if (isUsManufacturerRecallUrl(oemUrl)) {
       return asvMarketOperatorLink(meta.id, ctx, oemUrl);
     }
@@ -264,6 +280,7 @@ export async function probeOemRecall(ctx: VinScanContext, brand: OemRecallBrand)
     } catch (e) {
       return failed(meta.id, ctx, e);
     }
+    if (brand === "vw") return vwGroupRecallOperatorLink(ctx, oemUrl);
   }
   try {
     const page = await scanFetchSmart(oemUrl, { timeoutMs: 20_000, sourceLabel: meta.label });

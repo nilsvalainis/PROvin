@@ -44,7 +44,7 @@ import {
   probeVinDecode,
 } from "@/lib/vin-scan/probes-extra";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
-import { carinfoScanFromPage, runCarinfoLookup } from "@/lib/vin-scan/carinfo-lookup";
+import { carinfoResponseBlocked, runCarinfoLookup } from "@/lib/vin-scan/carinfo-lookup";
 import { applyVinScanRelayIfBlocked } from "@/lib/vin-scan/listings-page-relay";
 import { isValidScanPlate, vinScanPlateLabel, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
@@ -261,6 +261,8 @@ export async function probeLkfEe(ctx: VinScanContext): Promise<VinScanIndicator>
 
 export async function probeCarinfo(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
+    // Vercel tiešais fetch bieži ir 403. Relejs iet katrai bloķētai adresei, arī DK/NO/FI super-search.
+    // Agrāk relejs saņēma tikai VIN lapu un tukšu 200 pārvērta par „nav publisku datu”.
     const parsed = await runCarinfoLookup(ctx.vin, ctx.plates.se, async (url) => {
       const direct = await scanFetch(url, {
         headers: {
@@ -272,18 +274,20 @@ export async function probeCarinfo(ctx: VinScanContext): Promise<VinScanIndicato
         },
         timeoutMs: 12_000,
       });
+      if (!carinfoResponseBlocked(direct.status, direct.text)) {
+        return { status: direct.status, text: direct.text };
+      }
+      const relayed = await applyVinScanRelayIfBlocked(url, {
+        status: direct.status,
+        text: direct.text,
+        cookie: direct.cookie ?? "",
+      });
+      const relayDiffers = relayed.status !== direct.status || relayed.text !== direct.text;
+      if (relayed.text && relayDiffers && !carinfoResponseBlocked(relayed.status, relayed.text)) {
+        return { status: relayed.status, text: relayed.text };
+      }
       return { status: direct.status, text: direct.text };
     });
-    if (parsed.status === "blocked" && parsed.openUrl) {
-      const relayed = await applyVinScanRelayIfBlocked(parsed.openUrl, {
-        status: 403,
-        text: "403 Forbidden",
-        cookie: "",
-      });
-      if (relayed.text && relayed.text !== "403 Forbidden") {
-        return done("carinfo", ctx, { ...carinfoScanFromPage(relayed.status, relayed.text), openUrl: parsed.openUrl });
-      }
-    }
     return done("carinfo", ctx, parsed);
   } catch (e) {
     return failed("carinfo", ctx, e);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.22.0
+// @version      1.23.0
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -70,7 +70,8 @@
 // @match        https://findsynsrapport.esyn.dk/*
 // @match        https://app.digitalservicebog.dk/*
 // @match        https://public.car-pass.be/*
-// @match        https://www.volkswagen.co.uk/*
+// @match        https://www.gov.uk/check-vehicle-recall*
+// @match        https://gov.uk/check-vehicle-recall*
 // @match        https://www.bmwusa.com/*
 // @match        https://www.bmw.com/*
 // @match        https://www.mbusa.com/*
@@ -110,7 +111,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.22.0";
+  const SCRIPT_VERSION = "1.23.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -787,7 +788,7 @@
       dsb: "https://app.digitalservicebog.dk/search?vin=" + v + "&country=eu",
       carpass: "https://public.car-pass.be/recalls?vin=" + v,
       nhtsa_recalls: "https://www.nhtsa.gov/recalls?vin=" + v,
-      recall_vw: "https://www.volkswagen.co.uk/en/owners-and-services/recalls.html?vin=" + v,
+      recall_vw: "https://www.gov.uk/check-vehicle-recall?vin=" + v,
       recall_bmw: "https://www.bmwusa.com/recall.html?vin=" + v,
       recall_mercedes: "https://www.mbusa.com/en/recall?vin=" + v,
       recall_volvo: "https://www.volvocars.com/intl/support/car/recalls?vin=" + v,
@@ -823,7 +824,7 @@
     if (name.endsWith("digitalservicebog.dk")) return "dsb";
     if (name.endsWith("car-pass.be")) return "carpass";
     if (name.endsWith("nhtsa.gov")) return "nhtsa_recalls";
-    if (name.endsWith("volkswagen.co.uk")) return "recall_vw";
+    if (name === "gov.uk" && String(path || "").indexOf("/check-vehicle-recall") === 0) return "recall_vw";
     if (name.endsWith("bmwusa.com") || name.endsWith("bmw.com")) return "recall_bmw";
     if (name.endsWith("mbusa.com") || name.endsWith("mercedes-benz.com")) return "recall_mercedes";
     if (name.endsWith("volvocars.com")) return "recall_volvo";
@@ -1418,6 +1419,16 @@
       .replace(/[\s-]/g, "")
       .toUpperCase();
     if (!id || probeVin.length < 11) return;
+    if (id === "recall_vw") {
+      publishScan({
+        id: id,
+        vin: probeVin,
+        status: "browser_only",
+        summary: "Lielbritānijas GOV.UK atsaukumu pārbaude pārlūkā",
+        detail: "",
+      });
+      return;
+    }
     if (id === "checkcar_vin") {
       if (!vinFromCheckcarPath()) {
         location.assign("https://checkcar.vin/report/check/" + encodeURIComponent(probeVin));
