@@ -6,7 +6,7 @@
  * Avoti bieži EN/DE/RU/LV, ar saplēstiem umlautiem un TJ/Symptom/Diagnose/Aktion
  * veidni (Volvo RAW). Izeja jebkurā atskaites valodā.
  */
-import { foldOilWorkText } from "@/lib/oil-change-intervals";
+import { foldOilWorkText, isEngineOilChangeWork } from "@/lib/oil-change-intervals";
 
 export type DealerMajorAssemblyId =
   | "engine"
@@ -41,7 +41,7 @@ const ASSEMBLY_RE: Record<DealerMajorAssemblyId, RegExp> = {
   timing_chain:
     /timing\s+chain|steuerkette|sadales\s+ked|kedes\s+(komplekt|spriegot|main)|distributieketting|kamkedja|цеп\p{L}*\s+(?:грм|газораспред)/u,
   gearbox:
-    /atrumkar|parnesumkarb|\bkarbas?\b|gearbox|\btransmission\b|getriebe(?!ol)|versnellingsbak|vaxellad|коробк\p{L}*(?:\s+передач)?|акпп|мкпп|\bdsg\b|\bdct\b|\bcvt\b|tiptronic|doppelkupplung|divsajug|mechatron|gidroblok|гидроблок|valve\s+body|torque\s+converter|hidrotransform|гидротрансформатор|getriebewechsel|getriebeersatz|getriebetausch/u,
+    /atrumkar|parnesumkarb|transmisi|\bkarbas?\b|gearbox|\btransmission\b|getriebe(?!ol)|versnellingsbak|vaxellad|коробк\p{L}*(?:\s+передач)?|акпп|мкпп|\bdsg\b|\bdct\b|\bcvt\b|tiptronic|doppelkupplung|divsajug|mechatron|gidroblok|гидроблок|valve\s+body|torque\s+converter|hidrotransform|гидротрансформатор|getriebewechsel|getriebeersatz|getriebetausch/u,
   transfer_case:
     /transfer(?:\s+case)?|verteilergetriebe|razdat|раздаточн|sadales\s+karb/u,
   differential:
@@ -64,7 +64,7 @@ const OVERHAUL_RE =
   /overhaul|rebuild|rebuilt|instandgesetz|instandsetz|uberholt|generaluberhol|kapitalais\s+remont|капитальн\p{L}*\s+ремонт|переборк|recondition/u;
 
 const UNIT_REPAIR_VERB_RE =
-  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|\bchange\b|maina|ремонт|repair(?:ed|s)?|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt/u;
+  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|\bchange\b|maina|\bremont|ремонт|repair(?:ed|s)?|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt|parkras|lackier/u;
 
 const CAMPAIGN_CLAUSE_RE =
   /\bqb\b|acc(?:ording)?\.?\s*to:?\s*qb|nach\s+qb|technische\s+aktion|safety\s+recall|\brecalls?\b|ruckruf|service\s+action|field\s+fix|\btsb\b|\bsib\b/u;
@@ -185,7 +185,7 @@ export function isRoutineMaintenanceWork(works: string): boolean {
   const folded = foldDealerWorkText(works);
   if (!folded) return false;
   if (hasAnyMajorAssemblyRepair(works)) return false;
-  return hasConsumableSignal(folded);
+  return hasConsumableSignal(folded) || isEngineOilChangeWork(works);
 }
 
 export function isDealerSoftwareWork(works: string): boolean {

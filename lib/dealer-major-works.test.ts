@@ -111,6 +111,9 @@ describe("dealer major works vs routine maintenance", () => {
     ["DE Getriebe instandgesetzt", "Getriebe instandgesetzt", "gearbox"],
     ["LV ātrumkārbas nomaiņa", "Ātrumkārbas nomaiņa", "gearbox"],
     ["LV pārnesumkārbas kapitālais", "Pārnesumkārbas kapitālais remonts", "gearbox"],
+    ["LV transmisijas maiņa", "Automātiskā pārnesumkārba. Automātiskās transmisijas maiņa.", "gearbox"],
+    ["LV stikls un bamperis", "Stikla maiņa, priekšējā bampera remonts", "body_glass"],
+    ["LV spārna pārkrāsošana", "Kreisā spārna pārkrāsošana", "body_glass"],
     ["RU замена коробки", "Замена коробки передач", "gearbox"],
     ["EN engine replaced", "Engine replaced", "engine"],
     ["EN engine replacement", "Engine replacement", "engine"],
@@ -138,6 +141,16 @@ describe("dealer major works vs routine maintenance", () => {
   it("does not infer gearbox work from a Transmission MANUAL header", () => {
     expect(hasAnyMajorAssemblyRepair("Transmission MANUAL")).toBe(false);
     expect(hasAnyMajorAssemblyRepair(`${VOLVO_XC90_HEADER}\nEngine oil service`)).toBe(false);
+  });
+
+  it("Getriebeölverlust / TwinPower oil / inspect transmission are not major", () => {
+    expect(hasAnyMajorAssemblyRepair("Automatikgetriebe. Getriebeölverlust diagnostiziert.")).toBe(false);
+    expect(isMajorAssemblyRepairWork("BMW TwinPower Turbo LL-19FE 0W-30 (83215A65BF8)", "turbo")).toBe(false);
+    expect(isRoutineMaintenanceWork("BMW TwinPower Turbo LL-19FE 0W-30 (83215A65BF8)")).toBe(true);
+    expect(hasAnyMajorAssemblyRepair("Engine oil and filter change. Inspect transmission.")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair("Charge air cooler hose replacement.")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair("Turbocharger")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair("Timing chain")).toBe(false);
   });
 });
 

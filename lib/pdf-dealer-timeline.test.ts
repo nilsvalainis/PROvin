@@ -110,6 +110,8 @@ describe("kopsavilkums un lielie darbi", () => {
     expect(classifyDealerVisitKind("Automatikgetriebe: Öl- und Filterwechsel")).toBe("maintenance");
     expect(classifyDealerVisitKind("Ātrumkārbas eļļas un filtra maiņa")).toBe("maintenance");
     expect(classifyDealerVisitKind("Engine oil service")).toBe("maintenance");
+    expect(classifyDealerVisitKind("BMW TwinPower Turbo LL-19FE 0W-30 (83215A65BF8)")).toBe("maintenance");
+    expect(classifyDealerVisitKind("Automātiskā pārnesumkārba. Automātiskās transmisijas maiņa.")).toBe("repair");
     expect(classifyDealerVisitKind("Transfer case oil change")).toBe("maintenance");
     expect(classifyDealerVisitKind("Differential oil change")).toBe("maintenance");
     expect(classifyDealerVisitKind("Reduktora eļļas maiņa")).toBe("maintenance");
