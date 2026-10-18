@@ -6,6 +6,7 @@ import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishR
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
 import { LISTING_ANALYSIS_COMMENT_LABEL } from "@/lib/admin-source-blocks";
+import { applyFactCheckFixToField } from "@/lib/fact-check-suggested-fix";
 import type { FactCheckFlag } from "@/lib/unit-facts/types";
 
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
@@ -17,6 +18,7 @@ export type AdminFactCheckSlot = {
   dismissed: readonly string[];
   onCheck: () => void;
   onDismiss: (flag: FactCheckFlag) => void;
+  onApplyFix?: (flag: FactCheckFlag) => void;
 };
 
 export type AdminAiSourceCommentSlot = {
@@ -117,6 +119,13 @@ export function AdminSourceCommentField({
           flags={ai.factCheck.flags}
           dismissed={ai.factCheck.dismissed}
           onDismiss={ai.factCheck.onDismiss}
+          onApplyFix={
+            ai.factCheck.onApplyFix ??
+            ((flag) => {
+              onChange(applyFactCheckFixToField(value, flag));
+              ai.factCheck?.onDismiss(flag);
+            })
+          }
         />
       ) : null}
     </div>

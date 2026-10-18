@@ -4,6 +4,7 @@ import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
 import {
   checkCommentContradictions,
   extractCanonicalFactsFromPrompt,
+  extractOdometerReadingKms,
   mergeFactCheckFlags,
 } from "@/lib/comment-contradiction-check";
 
@@ -105,6 +106,45 @@ describe("comment contradiction check", () => {
     expect(parsed?.owners.totalCount).toBe(facts.owners.totalCount);
     expect(parsed?.owners.changeCount).toBe(facts.owners.changeCount);
     expect(parsed?.rollbacks.length).toBeGreaterThan(0);
+  });
+
+  it("does not treat interval / range / pēc / vairāk nekā km as odometer readings", () => {
+    const facts = rollbackFacts();
+    expect(facts.latestKm).toBeGreaterThan(100000);
+    const sentences = [
+      "intervals līdz 30 000 km",
+      "intervali no 26 500 līdz 31 425 km",
+      "apkope veikta pēc 31 443 km",
+      "veikti vairāk nekā 71 000 km",
+    ];
+    for (const sentence of sentences) {
+      expect(extractOdometerReadingKms(sentence)).toEqual([]);
+      const flags = checkCommentContradictions({
+        text: sentence,
+        field: "mileage",
+        facts,
+      });
+      expect(flags.filter((f) => f.id === "km_mismatch")).toEqual([]);
+    }
+  });
+
+  it("still compares pie / nobraukums / dated km against the latest page reading", () => {
+    const facts = rollbackFacts();
+    expect(extractOdometerReadingKms("Serviss pie 146 068 km.")).toEqual([146068]);
+    expect(extractOdometerReadingKms("Aktuālais nobraukums 80 000 km.")).toEqual([80000]);
+    expect(extractOdometerReadingKms("01.06.2024 80 000 km CSDD.")).toEqual([80000]);
+    const far = checkCommentContradictions({
+      text: "Aktuālais nobraukums 80 000 km.",
+      field: "summary",
+      facts,
+    });
+    expect(far.some((f) => f.id === "km_mismatch")).toBe(true);
+    const close = checkCommentContradictions({
+      text: `Pie ${facts.latestKm} km auto ir CSDD.`,
+      field: "summary",
+      facts,
+    });
+    expect(close.some((f) => f.id === "km_mismatch")).toBe(false);
   });
 
   it("merges unit-fact flags with sheet flags without duplicating the same sentence", () => {

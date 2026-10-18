@@ -340,6 +340,7 @@ import {
   parseVehicleYear,
   postAdminFactCheck,
 } from "@/lib/admin-fact-check-client";
+import { applyFactCheckFixToField } from "@/lib/fact-check-suggested-fix";
 import type { FactCheckFlag, FactCheckResult } from "@/lib/unit-facts/types";
 
 function aiFetchErrorMessage(
@@ -1399,12 +1400,18 @@ export function OrderDetailWorkspace({
   }, []);
 
   const factCheckSlotFor = useCallback(
-    (field: string, text: string) => ({
+    (field: string, text: string, applyHtml?: (next: string) => void) => ({
       busy: Boolean(factCheckBusy[field]),
       flags: factCheckByField[field]?.flags ?? [],
       dismissed: factCheckDismissed,
       onCheck: () => void runFactCheck(field, text),
       onDismiss: dismissFactCheckFlag,
+      onApplyFix: applyHtml
+        ? (flag: FactCheckFlag) => {
+            applyHtml(applyFactCheckFixToField(text, flag));
+            dismissFactCheckFlag(flag);
+          }
+        : undefined,
     }),
     [dismissFactCheckFlag, factCheckBusy, factCheckByField, factCheckDismissed, runFactCheck],
   );
@@ -5632,6 +5639,10 @@ export function OrderDetailWorkspace({
                     flags={factCheckByField.incidents?.flags}
                     dismissed={factCheckDismissed}
                     onDismiss={dismissFactCheckFlag}
+                    onApplyFix={(flag) => {
+                      onInternalCommentChange(applyFactCheckFixToField(internalCommentDraft, flag));
+                      dismissFactCheckFlag(flag);
+                    }}
                   />
                 </div>
                 <div className="min-h-0 min-w-0">
@@ -5677,6 +5688,10 @@ export function OrderDetailWorkspace({
                     flags={factCheckByField.mileage?.flags}
                     dismissed={factCheckDismissed}
                     onDismiss={dismissFactCheckFlag}
+                    onApplyFix={(flag) => {
+                      onMileageCommentChange(applyFactCheckFixToField(mileageCommentDraft, flag));
+                      dismissFactCheckFlag(flag);
+                    }}
                   />
                   <AdminOdometerAnomalyPanel
                     rows={unifiedMileageDisplayRows}
@@ -5747,6 +5762,12 @@ export function OrderDetailWorkspace({
                     flags={factCheckByField.technical_risks?.flags}
                     dismissed={factCheckDismissed}
                     onDismiss={dismissFactCheckFlag}
+                    onApplyFix={(flag) => {
+                      updateWs({
+                        tehniskoRiskuAnalize: applyFactCheckFixToField(ws.tehniskoRiskuAnalize ?? "", flag),
+                      });
+                      dismissFactCheckFlag(flag);
+                    }}
                   />
                   <AdminTechnicalRiskMapPanel
                     sessionId={payload.sessionId}
@@ -5800,6 +5821,12 @@ export function OrderDetailWorkspace({
                     flags={factCheckByField.inspection?.flags}
                     dismissed={factCheckDismissed}
                     onDismiss={dismissFactCheckFlag}
+                    onApplyFix={(flag) => {
+                      updateWs({
+                        apskatesPlāns: applyFactCheckFixToField(ws.apskatesPlāns ?? "", flag),
+                      });
+                      dismissFactCheckFlag(flag);
+                    }}
                   />
                 </div>
                 <div className="min-w-0">
@@ -5837,6 +5864,10 @@ export function OrderDetailWorkspace({
                     flags={factCheckByField.summary?.flags}
                     dismissed={factCheckDismissed}
                     onDismiss={dismissFactCheckFlag}
+                    onApplyFix={(flag) => {
+                      setIrissSummary(applyFactCheckFixToField(ws.iriss ?? "", flag));
+                      dismissFactCheckFlag(flag);
+                    }}
                   />
                 </div>
                 <AdminOrderAiKnowledgeUsed sessionId={payload.sessionId} />
@@ -5877,6 +5908,12 @@ export function OrderDetailWorkspace({
                     flags={factCheckByField.sources_comparison?.flags}
                     dismissed={factCheckDismissed}
                     onDismiss={dismissFactCheckFlag}
+                    onApplyFix={(flag) => {
+                      onSourcesComparisonCommentChange(
+                        applyFactCheckFixToField(sourcesComparisonCommentDraft, flag),
+                      );
+                      dismissFactCheckFlag(flag);
+                    }}
                   />
                 </div>
               </div>
