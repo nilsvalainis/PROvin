@@ -62,3 +62,18 @@ export const JEEP_LV_PROPSHAFT_TO_REAR_AXLE = "Transmisijas uz aizmugurējo asi 
 
 /** Stiklu mazgājamais Scheibenklar nekad nav virsbūve/stikls. */
 export const BMW_SCHEIBENKLAR_WASHER = "Scheibenklar nachfüllen. Windscreen washer fluid.";
+
+/** Vējstikla / loga stikla nomaiņa paliek Lielie darbi. */
+export const BMW_WINDSCREEN_REPLACED = "WINDSCREEN (51317401234) Windscreen replace.";
+export const DE_WINDSCREEN_ERNEUERT = "Windschutzscheibe erneuert";
+export const LV_WINDSCREEN_REPLACED = "Vējstikla maiņa";
+export const LV_SIDE_WINDOW_REPLACED = "Durvju stikla maiņa";
+export const DE_SIDE_WINDOW_ERNEUERT = "Seitenscheibe links ersetzt";
+export const EN_WINDOW_GLASS_REPLACED = "Side window glass replaced";
+export const RU_WINDSCREEN_REPLACED = "Замена лобового стекла";
+
+/** Čipa pārbaude / skaidas remonts nav stikla nomaiņa. */
+export const BMW_WINDSCREEN_CHIP_CHECK = "Windscreen chip check. Steinschlagprüfung.";
+export const DE_STONE_CHIP_REPAIR = "Windschutzscheibe Steinschlagreparatur";
+export const EN_STONE_CHIP_REPAIR = "Stone chip repair windscreen";
+export const DE_WIPER_BLADES = "Scheibenwischer erneuert";

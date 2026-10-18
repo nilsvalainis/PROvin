@@ -4,6 +4,8 @@
  * Apkope pie mezgla (eļļa, filtrs, ATF, šķidrumi, sveces, pārbaude, skalošana)
  * NAV agregāta maiņa. Tikai reāla nomaiņa, kapitālais remonts, REMAN/Austausch
  * vai lielā mezgla rinda detaļu sarakstā (CAPS + part number).
+ * Vējstikla / loga stikla nomaiņa paliek Lielie darbi; mazgājamais, apdare,
+ * čipa pārbaude/remonts un slotiņas neskaitās.
  * Avoti bieži EN/DE/RU/LV, ar saplēstiem umlautiem un TJ/Symptom/Diagnose/Aktion
  * veidni (Volvo RAW). Izeja jebkurā atskaites valodā.
  */
@@ -66,7 +68,7 @@ const ASSEMBLY_RE: Record<DealerMajorAssemblyId, RegExp> = {
     /divmasu|spararat|dual[\s-]?mass|twin\s+mass|flywheel|zweimassen|schwungrad|маховик|vliegwiel|svanghjul|volant\s+bimasse|volano\s+bimassa/u,
   turbo: /\bturbo(?:charger|lader|compresseur)?\b|турбокомпрессор|turbokompresor/u,
   body_glass:
-    /vejstikl|stikla\s+main|bamper|sparn|durvju|kraso|parkras|body\s+repair|windscreen|windshield|bumper|fender|lackier|karosser|scheibe|pare[- ]brise|parabrezza|parabrisas|кузов|бампер|крыл|лобов\p{L}*\s+стекл/u,
+    /vejstikl|stikla\s+main|loga\s+stikl|bamper|sparn|durvju|kraso|parkras|body\s+repair|windscreen|windshield|window\s+glass|side\s+window|door\s+(?:window|glass)|bumper|fender|lackier|karosser|(?:windschutz|seiten|heck|front)?scheibe(?!n(?:klar|wasch|wisch))|pare[- ]brise|parabrezza|parabrisas|кузов|бампер|крыл|(?:лобов|боков)\p{L}*\s+стекл/u,
 };
 
 const AXLE_DIFF_CONTEXT_RE =
@@ -88,6 +90,16 @@ const INTERIOR_TRIM_RE =
 
 const WASHER_FLUID_RE =
   /scheibenklar|scheibenwasch|washer\s+fluid|windscreen\s+washer|windshield\s+washer|stiklu\s+mazg/u;
+
+/** Akmens skaida / čipa pārbaude vai remonts nav stikla nomaiņa. */
+const GLASS_CHIP_CHECK_RE =
+  /steinschlag|stone\s+chip|chip\s+(?:repair|check|inspect)|glass\s+chip|stikla\s+(?:skabarg|skaid)|akmens\s+triecien|скол/u;
+
+const WIPER_NOT_GLASS_RE =
+  /scheibenwisch|wiper\s+blade|windscreen\s+wiper|windshield\s+wiper|logu\s+tiritaj|unterlegscheibe/u;
+
+const GLASS_UNIT_REPLACE_RE =
+  /(?:windscreen|windshield|vejstikl|windschutzscheibe|seitenscheibe|heckscheibe|frontscheibe|window\s+glass|side\s+window|door\s+(?:window|glass)|loga\s+stikl|(?:лобов|боков)\p{L}*\s+стекл|stikla)\p{L}*.{0,24}(?:replac|erneuer|ersetzt|getauscht|nomain|maina|wechsel|remplac|sostituit|sustitu|reemplaz|замена)|(?:replac|erneuer|замена|nomain|remplac|sostituit|sustitu|reemplaz)\p{L}*.{0,24}(?:windscreen|windshield|vejstikl|windschutzscheibe|seitenscheibe|window\s+glass|side\s+window|loga\s+stikl|стекл)/u;
 
 const CHARGE_AIR_MINOR_RE = /charge\s+air|ladeluft|intercooler/u;
 
@@ -211,6 +223,19 @@ function isWasherFluid(folded: string): boolean {
   return WASHER_FLUID_RE.test(folded);
 }
 
+function isWiperNotGlass(folded: string): boolean {
+  WIPER_NOT_GLASS_RE.lastIndex = 0;
+  return WIPER_NOT_GLASS_RE.test(folded);
+}
+
+/** Čipa/skaidas pārbaude vai remonts, ja nav pašas stikla vienības nomaiņas. */
+function isGlassChipCheckNotReplacement(folded: string): boolean {
+  GLASS_CHIP_CHECK_RE.lastIndex = 0;
+  if (!GLASS_CHIP_CHECK_RE.test(folded)) return false;
+  GLASS_UNIT_REPLACE_RE.lastIndex = 0;
+  return !GLASS_UNIT_REPLACE_RE.test(folded);
+}
+
 function isChargeAirMinor(folded: string): boolean {
   CHARGE_AIR_MINOR_RE.lastIndex = 0;
   return CHARGE_AIR_MINOR_RE.test(folded);
@@ -218,7 +243,15 @@ function isChargeAirMinor(folded: string): boolean {
 
 function mentionsAssembly(folded: string, assembly: DealerMajorAssemblyId): boolean {
   if (assembly === "turbo" && isTurboOilProduct(folded)) return false;
-  if (assembly === "body_glass" && (isWasherFluid(folded) || isInteriorTrim(folded))) return false;
+  if (
+    assembly === "body_glass" &&
+    (isWasherFluid(folded) ||
+      isInteriorTrim(folded) ||
+      isWiperNotGlass(folded) ||
+      isGlassChipCheckNotReplacement(folded))
+  ) {
+    return false;
+  }
   if (assembly === "gearbox" && PROPSHAFT_NOT_GEARBOX_RE.test(folded)) return false;
   if (assembly === "clutch") {
     const withoutDual = folded.replace(DUAL_CLUTCH_RE, " ");

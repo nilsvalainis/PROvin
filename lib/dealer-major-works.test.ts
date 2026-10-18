@@ -15,6 +15,17 @@ import {
   BMW_REMAN_GEARBOX_WITH_OIL_LINE,
   BMW_RP_REMAN_TRANSFER_BOX,
   BMW_SCHEIBENKLAR_WASHER,
+  BMW_WINDSCREEN_CHIP_CHECK,
+  BMW_WINDSCREEN_REPLACED,
+  DE_SIDE_WINDOW_ERNEUERT,
+  DE_STONE_CHIP_REPAIR,
+  DE_WINDSCREEN_ERNEUERT,
+  DE_WIPER_BLADES,
+  EN_STONE_CHIP_REPAIR,
+  EN_WINDOW_GLASS_REPLACED,
+  LV_SIDE_WINDOW_REPLACED,
+  LV_WINDSCREEN_REPLACED,
+  RU_WINDSCREEN_REPLACED,
   BMW_V99966_D15_TWINPOWER_OIL_REPAIR_KIT,
   JEEP_LV_DOOR_TRIM_AND_PROPSHAFT,
   JEEP_LV_DOOR_TRIM_PANEL,
@@ -339,3 +350,32 @@ describe("production corpus regressions (anonymized)", () => {
     expect(hasAnyMajorAssemblyRepair(BMW_SCHEIBENKLAR_WASHER)).toBe(false);
   });
 });
+
+describe("windscreen and window glass replacement stays in Lielie darbi", () => {
+  it.each([
+    ["EN windscreen part list", BMW_WINDSCREEN_REPLACED],
+    ["DE Windschutzscheibe erneuert", DE_WINDSCREEN_ERNEUERT],
+    ["LV vējstikla maiņa", LV_WINDSCREEN_REPLACED],
+    ["LV durvju stikla maiņa", LV_SIDE_WINDOW_REPLACED],
+    ["DE Seitenscheibe ersetzt", DE_SIDE_WINDOW_ERNEUERT],
+    ["EN side window glass", EN_WINDOW_GLASS_REPLACED],
+    ["RU лобовое стекло", RU_WINDSCREEN_REPLACED],
+  ])("real glass replacement is major: %s", (_label, works) => {
+    expect(isMajorAssemblyRepairWork(works, "body_glass")).toBe(true);
+    expect(dealerMajorAssembliesInWork(works)).toEqual(["body_glass"]);
+    expect(isRoutineMaintenanceWork(works)).toBe(false);
+  });
+
+  it.each([
+    ["washer Scheibenklar", BMW_SCHEIBENKLAR_WASHER],
+    ["door trim", JEEP_LV_DOOR_TRIM_PANEL],
+    ["chip check", BMW_WINDSCREEN_CHIP_CHECK],
+    ["DE Steinschlagreparatur", DE_STONE_CHIP_REPAIR],
+    ["EN stone chip repair", EN_STONE_CHIP_REPAIR],
+    ["wiper blades", DE_WIPER_BLADES],
+  ])("not glass replacement: %s", (_label, works) => {
+    expect(isMajorAssemblyRepairWork(works, "body_glass")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(works)).toBe(false);
+  });
+});
+
