@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import {
   AdminSourceCommentField,
@@ -263,6 +263,12 @@ export function AdminAutoRecordsSourceBlock({
   };
 
   const [translateBusyIndex, setTranslateBusyIndex] = useState<number | null>(null);
+  const [bulkTranslateBusy, setBulkTranslateBusy] = useState(false);
+  const [translateError, setTranslateError] = useState<string | null>(null);
+  const latestValueRef = useRef(value);
+  useEffect(() => {
+    latestValueRef.current = value;
+  }, [value]);
 
   const workRows =
     (value.serviceWorks ?? []).length > 0
@@ -288,6 +294,58 @@ export function AdminAutoRecordsSourceBlock({
   );
   const originalTimeline = value.oneautoIngest?.serviceTimelineOriginal ?? [];
 
+  /** Visas svešvalodas rindas latviski; rezultātu liek tikai tām rindām, kuras operators pa to laiku nav mainījis. */
+  const translateAllWorkRows = async (base: AutoRecordsBlockState) => {
+    if (readOnly || disabled || bulkTranslateBusy) return;
+    const sent = base.serviceWorks ?? [];
+    if (countUntranslatedDealerWorkRows(sent) === 0) return;
+    setBulkTranslateBusy(true);
+    setTranslateError(null);
+    try {
+      const res = await fetch("/api/admin/ai/oneauto-translate", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          scope: "serviceWorks",
+          serviceWorks: sent,
+          originalTimeline: base.oneautoIngest?.serviceTimelineOriginal ?? [],
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        serviceWorks?: AutoRecordsServiceWorkRow[];
+        translatedCount?: number;
+        warning?: string | null;
+        error?: string;
+      };
+      if (!res.ok || !Array.isArray(body.serviceWorks)) {
+        setTranslateError(`Tulkojums neizdevās (${body.error ?? `HTTP ${res.status}`}).`);
+        return;
+      }
+      if (body.warning) setTranslateError(body.warning);
+      const translated = body.serviceWorks;
+      const latest = latestValueRef.current;
+      const rows = [...(latest.serviceWorks ?? [])];
+      let changed = false;
+      sent.forEach((before, i) => {
+        const after = translated[i];
+        if (!after || after.works === before.works) return;
+        const at = rows.findIndex(
+          (r) => r.date === before.date && r.odometer === before.odometer && r.works === before.works,
+        );
+        if (at < 0) return;
+        rows[at] = { ...rows[at]!, works: after.works };
+        changed = true;
+      });
+      if (changed) onChange({ ...latest, serviceWorks: rows });
+    } catch (e) {
+      setTranslateError(`Tulkojums neizdevās (${e instanceof Error ? e.message : "tīkla kļūda"}).`);
+    } finally {
+      setBulkTranslateBusy(false);
+    }
+  };
+
   const translateWorkRow = async (index: number) => {
     if (readOnly || disabled || translateBusyIndex != null) return;
     const row = workRows[index];
@@ -295,6 +353,7 @@ export function AdminAutoRecordsSourceBlock({
     const sourceWorks = originalDealerWorksForRow(row, originalTimeline) || row.works;
     if (!sourceWorks.trim()) return;
     setTranslateBusyIndex(index);
+    setTranslateError(null);
     try {
       const res = await fetch("/api/admin/ai/oneauto-translate", {
         method: "POST",
@@ -322,8 +381,13 @@ export function AdminAutoRecordsSourceBlock({
         error?: string;
       };
       const translated = body.display?.serviceTimeline?.[0]?.works?.trim();
-      if (!res.ok || !translated) return;
+      if (!res.ok || !translated) {
+        setTranslateError(`Rindas tulkojums neizdevās (${body.error ?? `HTTP ${res.status}`}).`);
+        return;
+      }
       setWorkRow(index, { works: translated });
+    } catch (e) {
+      setTranslateError(`Rindas tulkojums neizdevās (${e instanceof Error ? e.message : "tīkla kļūda"}).`);
     } finally {
       setTranslateBusyIndex(null);
     }
@@ -420,15 +484,17 @@ export function AdminAutoRecordsSourceBlock({
               outvinDealerReportHasContent(value.outvinReport)
             }
             onIngestChange={(next) => onChange({ ...value, oneautoIngest: next })}
-            onFetched={(ingest, display) =>
-              onChange(
-                applyOneautoToAutoRecords(value, {
-                  display,
-                  ingest,
-                  vehicleOverride: true,
-                }),
-              )
-            }
+            onFetched={(ingest, display) => {
+              const applied = applyOneautoToAutoRecords(value, {
+                display,
+                ingest,
+                vehicleOverride: true,
+              });
+              onChange(applied);
+              if (countUntranslatedDealerWorkRows(applied.serviceWorks ?? []) > 0) {
+                void translateAllWorkRows(applied);
+              }
+            }}
             onImagesFetched={
               onAutoRecordsPhotoGroupsStructuralCommit
                 ? (photoIds, groupTitle) => {
@@ -660,7 +726,22 @@ export function AdminAutoRecordsSourceBlock({
                 {untranslatedWorkCount} nav pārtulkotas
               </span>
             ) : null}
+            {untranslatedWorkCount > 0 && !readOnly ? (
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-medium normal-case tracking-normal text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                disabled={disabled || bulkTranslateBusy || translateBusyIndex != null}
+                onClick={() => void translateAllWorkRows(value)}
+              >
+                {bulkTranslateBusy ? "Tulko…" : "Pārtulkot visas"}
+              </button>
+            ) : null}
           </p>
+          {translateError ? (
+            <p className="mb-1.5 text-[11px] text-rose-700" role="alert">
+              {translateError}
+            </p>
+          ) : null}
           <div
             className={ADMIN_SOURCE_TABLE_WRAP_CLASS}
             data-provin-mileage-table={PROVIN_SERVICE_WORKS_TABLE_DOM_KIND}
