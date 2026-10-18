@@ -80,6 +80,25 @@ describe("atkārtota OneAuto ielāde aizstāj vāciskās rindas ar LV", () => {
     expect(merged[0]!.works).toBe("Apkope\nEļļas maiņa");
   });
 
+  it("merge: vāciska rinda (vecā bloka fold) neatgriežas pārtulkotā vizītē", () => {
+    const lv = [{ date: "18.05.2026", odometer: "84310", location: "", works: "Sistemātiskie apkopes darbi" }];
+    const sameKey = mergeAutoRecordsServiceWorkRow(lv, {
+      date: "18.05.2026",
+      odometer: "84310",
+      location: "Germany",
+      works: "Systematische Wartungsarbeiten",
+    });
+    expect(sameKey).toEqual([{ ...lv[0], location: "Germany" }]);
+    const sameKm = mergeAutoRecordsServiceWorkRow(lv, {
+      date: "2026-05-18",
+      odometer: "84 310",
+      location: "",
+      works: `DURCHF${R}HREN`,
+    });
+    expect(sameKm).toEqual(lv);
+    expect(countUntranslatedDealerWorkRows(sameKm)).toBe(0);
+  });
+
   it("applyOneautoToAutoRecords ar tulkotu display: badge nav, Opel kļūda vairs neatkārtojas", () => {
     const current = { ...createDefaultSourceBlocks().auto_records, serviceWorks: germanRows };
     expect(countUntranslatedDealerWorkRows(current.serviceWorks)).toBe(2);

@@ -360,6 +360,15 @@ export function mergeAutoRecordsServiceWorkRow(
       withData = withData.filter((r) => !isStaleForeign(r));
       return mergeAutoRecordsServiceWorkRow(withData, { ...row, location: keptLocation });
     }
+  } else {
+    // Netulkota rinda (piem. vecā oneauto bloka fold) nedrīkst atgriezt vācisko tekstu jau pārtulkotā vizītē.
+    const isSameVisitLv = (r: AutoRecordsServiceWorkRow) =>
+      (rowKey(r) === key || (km !== "" && serviceWorkOdometerDigits(r) === km)) &&
+      !oneautoWorksNeedLvTranslation(r.works);
+    if (withData.some(isSameVisitLv)) {
+      if (!row.location.trim()) return existing;
+      return withData.map((r) => (isSameVisitLv(r) && !r.location.trim() ? { ...r, location: row.location } : r));
+    }
   }
   if (withData.some((r) => rowKey(r) === key)) {
     const incomingNarr =
