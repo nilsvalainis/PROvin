@@ -3,8 +3,36 @@
  * Lapas numurs tikai labajā pusē; vidū nekā.
  */
 
+export type PdfRunningLang = "lv" | "en" | "ru" | "de";
+
 function cssContentString(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+export function pdfRunningPageCounterLabel(lang: PdfRunningLang = "lv"): string {
+  switch (lang) {
+    case "en":
+      return "Page ";
+    case "ru":
+      return "Страница ";
+    case "de":
+      return "Seite ";
+    default:
+      return "Lapa ";
+  }
+}
+
+export function pdfPreparedForPrefix(lang: PdfRunningLang = "lv"): string {
+  switch (lang) {
+    case "en":
+      return "Prepared for: ";
+    case "ru":
+      return "Подготовлено для: ";
+    case "de":
+      return "Erstellt für: ";
+    default:
+      return "Sagatavots klientam: ";
+  }
 }
 
 export function buildPdfRunningHeaderLine(makeModel: string, vin: string): string {
@@ -20,6 +48,7 @@ export function buildPdfRunningFooterLine(opts: {
   vin: string;
   dateLabel: string;
   preparedBy: string;
+  lang?: PdfRunningLang;
 }): string {
   const vin = opts.vin.replace(/\s+/g, "").trim().toUpperCase();
   const date = opts.dateLabel.replace(/\s+/g, " ").trim();
@@ -27,13 +56,18 @@ export function buildPdfRunningFooterLine(opts: {
   const parts: string[] = [];
   if (vin) parts.push(vin);
   if (date) parts.push(date);
-  if (prepared) parts.push(`Sagatavots klientam: ${prepared}`);
+  if (prepared) parts.push(`${pdfPreparedForPrefix(opts.lang ?? "lv")}${prepared}`);
   return parts.join(" · ");
 }
 
-export function clientReportRunningPageCss(opts?: { header?: string; footer?: string }): string {
+export function clientReportRunningPageCss(opts?: {
+  header?: string;
+  footer?: string;
+  lang?: PdfRunningLang;
+}): string {
   const header = cssContentString((opts?.header ?? "PROVIN.LV").trim() || "PROVIN.LV");
   const footer = cssContentString((opts?.footer ?? "").trim());
+  const pageLabel = cssContentString(pdfRunningPageCounterLabel(opts?.lang ?? "lv"));
   const footerRule = footer
     ? `content:"${footer}";font:500 7pt Inter,sans-serif;color:#64748b;vertical-align:top;padding-top:5mm;`
     : "content:none;";
@@ -49,7 +83,7 @@ export function clientReportRunningPageCss(opts?: { header?: string; footer?: st
         @bottom-left{${footerRule}}
         @bottom-center{content:none;}
         @bottom-right{
-          content:"Lapa " counter(page) " / " counter(pages);
+          content:"${pageLabel}" counter(page) " / " counter(pages);
           font:600 7.5pt Inter,sans-serif;color:#334155;vertical-align:top;padding-top:5mm;
         }
       }

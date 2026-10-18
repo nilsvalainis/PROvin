@@ -2,7 +2,8 @@
  * OFICIĀLĀ DĪLERA DATI PDF: servisa vizītes (koncepts A), ne četru kolonnu tabula.
  */
 import { sanitizeMileageCountryField } from "@/lib/auto-records-paste-parse";
-import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { translateClientReportStatic, type ClientReportLang } from "@/lib/client-report-i18n";
+import { countryLabelToIso2, normalizeCountryName } from "@/lib/country-names-lv";
 import {
   autoRecordsServiceWorkRowIsPrintable,
   formatServiceWorkOdometer,
@@ -39,18 +40,22 @@ export function serviceWorkYear(date: string): string {
   return m?.[1] ?? "";
 }
 
-function knownCountryLv(raw: string): string {
+function knownCountry(raw: string, lang: ClientReportLang): string {
   const t = raw.trim();
   if (!t || !countryLabelToIso2(t)) return "";
-  return normalizeCountryNameLv(t);
+  return normalizeCountryName(t, lang);
 }
 
-export function formatDealerServicePlace(location: string): { place: string; country: string } {
+export function formatDealerServicePlace(
+  location: string,
+  lang: ClientReportLang = "lv",
+): { place: string; country: string } {
   const raw = location.replace(/\s+/g, " ").trim();
   if (!raw) return { place: "", country: "" };
   const lastComma = raw.lastIndexOf(",");
   const lastSeg = lastComma >= 0 ? raw.slice(lastComma + 1).trim() : "";
-  const country = countryFromDealerName(raw) || knownCountryLv(lastSeg);
+  const fromName = countryFromDealerName(raw);
+  const country = fromName ? normalizeCountryName(fromName, lang) : knownCountry(lastSeg, lang);
   let place = raw;
   if (country && lastComma >= 0) {
     const lastNorm = sanitizeMileageCountryField(lastSeg);
@@ -67,18 +72,18 @@ function workLines(raw: string, hideKeyReadLines: boolean): string[] {
     .filter((line) => line && !PLACEHOLDER_WORKS_RE.test(line) && !isVendorServiceCategoryLine(line));
 }
 
-function visitWorksHtml(raw: string, hideKeyReadLines: boolean): string {
+function visitWorksHtml(raw: string, hideKeyReadLines: boolean, lang: ClientReportLang): string {
   const lines = workLines(raw, hideKeyReadLines);
   if (lines.length === 0) {
-    return `<p class="pdf-svc-empty">${escapeHtml(EMPTY_WORKS_NOTE)}</p>`;
+    return `<p class="pdf-svc-empty">${escapeHtml(translateClientReportStatic(EMPTY_WORKS_NOTE, lang))}</p>`;
   }
   return `<ul class="pdf-svc-works">${lines
     .map((line) => `<li class="pdf-svc-work">${escapeHtml(line)}</li>`)
     .join("")}</ul>`;
 }
 
-function visitPlaceHtml(location: string): string {
-  const { place, country } = formatDealerServicePlace(location);
+function visitPlaceHtml(location: string, lang: ClientReportLang): string {
+  const { place, country } = formatDealerServicePlace(location, lang);
   if (!place && !country) return "";
   if (place && country && !place.toLowerCase().includes(country.toLowerCase())) {
     return `<p class="pdf-svc-place">${escapeHtml(place)} <span>· ${escapeHtml(country)}</span></p>`;
@@ -86,25 +91,25 @@ function visitPlaceHtml(location: string): string {
   return `<p class="pdf-svc-place">${escapeHtml(place || country)}</p>`;
 }
 
-function visitKindTagHtml(works: string): string {
+function visitKindTagHtml(works: string, lang: ClientReportLang): string {
   const kind = classifyDealerVisitKind(works);
-  return `<span class="pdf-svc-tag pdf-svc-tag--${kind}">${escapeHtml(dealerVisitKindLabel(kind))}</span>`;
+  return `<span class="pdf-svc-tag pdf-svc-tag--${kind}">${escapeHtml(translateClientReportStatic(dealerVisitKindLabel(kind), lang))}</span>`;
 }
 
-function visitHtml(row: AutoRecordsServiceWorkRow, hideKeyReadLines: boolean): string {
+function visitHtml(row: AutoRecordsServiceWorkRow, hideKeyReadLines: boolean, lang: ClientReportLang): string {
   const date = row.date.trim();
   const odo = formatServiceWorkOdometer(row.odometer);
   const dateHtml = date
     ? `<time class="pdf-svc-date">${escapeHtml(date)}</time>`
     : `<span class="pdf-svc-date pdf-svc-date--empty"></span>`;
   const km = odo ? `<span class="pdf-svc-km">${escapeHtml(odo)}</span>` : "";
-  const place = visitPlaceHtml(row.location);
-  const tag = visitKindTagHtml(row.works);
+  const place = visitPlaceHtml(row.location, lang);
+  const tag = visitKindTagHtml(row.works, lang);
   const head = `<div class="pdf-svc-box-top">${place}${tag}</div>`;
   return `<div class="pdf-svc-visit pdf-svc-kind--${classifyDealerVisitKind(row.works)}">
     <div class="pdf-svc-when">${dateHtml}${km}</div>
     <span class="pdf-svc-rail" aria-hidden="true"><span class="pdf-svc-dot"></span></span>
-    <article class="pdf-svc-box">${head}${visitWorksHtml(row.works, hideKeyReadLines)}</article>
+    <article class="pdf-svc-box">${head}${visitWorksHtml(row.works, hideKeyReadLines, lang)}</article>
   </div>`;
 }
 
@@ -127,7 +132,10 @@ export function buildPdfFirstLastReadingSpanHtml(opts: {
   return `<div class="pdf-svc-span">${first}${last}</div>`;
 }
 
-function spanHtml(rows: AutoRecordsServiceWorkRow[], opts?: { cover?: boolean }): string {
+function spanHtml(
+  rows: AutoRecordsServiceWorkRow[],
+  opts?: { cover?: boolean; lang?: ClientReportLang },
+): string {
   if (rows.length < 2) return "";
   const newest = rows[0]!;
   const oldest = rows[rows.length - 1]!;
@@ -136,13 +144,14 @@ function spanHtml(rows: AutoRecordsServiceWorkRow[], opts?: { cover?: boolean })
   if (!firstKm && !lastKm) return "";
   const firstDate = oldest.date.trim();
   const lastDate = newest.date.trim();
-  const visitCount = `${rows.length} vizītes`;
+  const lang = opts?.lang ?? "lv";
+  const visitCount = `${rows.length} ${translateClientReportStatic("vizītes", lang)}`;
   const firstMeta = opts?.cover
     ? firstDate
-    : ["Pirmais ieraksts", firstDate].filter(Boolean).join(" · ");
+    : [translateClientReportStatic("Pirmais ieraksts", lang), firstDate].filter(Boolean).join(" · ");
   const lastMeta = opts?.cover
     ? [lastDate, visitCount].filter(Boolean).join(" · ")
-    : ["Pēdējais ieraksts", lastDate].filter(Boolean).join(" · ");
+    : [translateClientReportStatic("Pēdējais ieraksts", lang), lastDate].filter(Boolean).join(" · ");
   return buildPdfFirstLastReadingSpanHtml({
     firstKm,
     lastKm,
@@ -153,7 +162,7 @@ function spanHtml(rows: AutoRecordsServiceWorkRow[], opts?: { cover?: boolean })
 
 export function buildDealerServiceSpanHtml(
   rows: AutoRecordsServiceWorkRow[],
-  opts?: { cover?: boolean },
+  opts?: { cover?: boolean; lang?: ClientReportLang },
 ): string {
   return spanHtml(printableDealerServiceWorks(rows), opts);
 }
@@ -167,6 +176,7 @@ export type DealerServiceVisitsPdfOpts = {
   /** true = slēpt Key Read un tukšos km punktus (tikai kombinētam produktam). */
   condenseRecords?: boolean;
   extraMileageRows?: AutoRecordsServiceWorkRow[];
+  lang?: ClientReportLang;
 };
 
 export function printableDealerServiceWorks(
@@ -194,7 +204,8 @@ export function buildDealerServiceVisitsHtml(
   if (printable.length === 0) return "";
 
   const hideKeyReadLines = condense;
-  const parts: string[] = opts?.omitSpan ? [] : [spanHtml(printable)];
+  const lang = opts?.lang ?? "lv";
+  const parts: string[] = opts?.omitSpan ? [] : [spanHtml(printable, { lang })];
   let lastYear = "";
   let yearOpen = false;
 
@@ -208,7 +219,7 @@ export function buildDealerServiceVisitsHtml(
   for (let i = 0; i < printable.length; i++) {
     const row = printable[i]!;
     const year = serviceWorkYear(row.date);
-    const visit = visitHtml(row, hideKeyReadLines);
+    const visit = visitHtml(row, hideKeyReadLines, lang);
     const older = printable[i + 1];
     const gap =
       older != null
@@ -217,7 +228,7 @@ export function buildDealerServiceVisitsHtml(
             { ...row },
           )
         : null;
-    const gapHtml = isDealerServiceGap(gap) && gap ? buildDealerGapMarkerHtml(gap) : "";
+    const gapHtml = isDealerServiceGap(gap) && gap ? buildDealerGapMarkerHtml(gap, lang) : "";
 
     if (year && year !== lastYear) {
       closeYear();

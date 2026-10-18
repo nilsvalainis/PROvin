@@ -3,6 +3,8 @@
  */
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 import { PDF_BRAND_BLUE_HEX } from "@/lib/client-report-pdf-layout-draft";
+import { translateClientReportStatic, type ClientReportLang } from "@/lib/client-report-i18n";
+import { translateDealerVehicleValue } from "@/lib/dealer-vehicle-value-i18n";
 import { buildDealerServiceSpanHtml, printableDealerServiceWorks } from "@/lib/pdf-dealer-service-visits";
 import { outvinVehicleInfoHasData, type OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { monotoneCubicSvgPath } from "@/lib/unified-mileage-chart";
@@ -31,7 +33,10 @@ function visitKm(odometer: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function buildDealerCoverBlendCurveHtml(serviceWorks: AutoRecordsServiceWorkRow[]): string {
+export function buildDealerCoverBlendCurveHtml(
+  serviceWorks: AutoRecordsServiceWorkRow[],
+  lang: ClientReportLang = "lv",
+): string {
   const pts = printableDealerServiceWorks(serviceWorks)
     .map((row) => ({ t: visitTimeMs(row.date), km: visitKm(row.odometer) }))
     .filter((p): p is { t: number; km: number } => p.t != null && p.km != null)
@@ -57,7 +62,7 @@ export function buildDealerCoverBlendCurveHtml(serviceWorks: AutoRecordsServiceW
   const last = xy[xy.length - 1]!;
   const first = xy[0]!;
   const area = `${d} L ${last.x.toFixed(1)} ${h} L ${first.x.toFixed(1)} ${h} Z`;
-  return `<svg class="pdf-dealer-cover-curve" viewBox="0 0 ${w} ${h}" role="img" aria-label="Nobraukuma līkne">
+  return `<svg class="pdf-dealer-cover-curve" viewBox="0 0 ${w} ${h}" role="img" aria-label="${escapeHtml(translateClientReportStatic("Nobraukuma līkne", lang))}">
     <defs>
       <linearGradient id="pdfDealerCoverFade" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="${PDF_BRAND_BLUE_HEX}" stop-opacity="0.22"/>
@@ -91,13 +96,16 @@ export function buildDealerSectionCoverHtml(args: {
   makeModel?: string;
   serviceWorks: AutoRecordsServiceWorkRow[];
   maskDemoVin?: boolean;
+  lang?: ClientReportLang;
 }): string {
+  const lang = args.lang ?? "lv";
   const vi = args.vehicle;
   const model = (vi?.model.trim() || args.makeModel?.trim() || "").trim();
   const vin = formatDealerCoverVin(vi?.vinCode ?? "", { maskDemo: args.maskDemoVin === true });
-  const power = vi?.power.trim() ?? "";
-  const span = buildDealerServiceSpanHtml(args.serviceWorks, { cover: true });
-  const curve = buildDealerCoverBlendCurveHtml(args.serviceWorks);
+  const powerRaw = vi?.power.trim() ?? "";
+  const power = powerRaw ? translateDealerVehicleValue("power", powerRaw, lang) : "";
+  const span = buildDealerServiceSpanHtml(args.serviceWorks, { cover: true, lang });
+  const curve = buildDealerCoverBlendCurveHtml(args.serviceWorks, lang);
   if (!model && !vin && !power && !span) return "";
 
   const metaParts = [vin, power].filter(Boolean);

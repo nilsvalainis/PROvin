@@ -9,7 +9,7 @@ const LV_DIACRITIC = /[āčēģīķļņšūžĀČĒĢĪĶĻŅŠŪŽ]/;
 
 /** Vārdi bez garumzīmēm, kas PDF paliek latviski (skaitļa formas, "nav ierakstu"). */
 const LV_PLAIN_WORD =
-  /\b(ieraksts|ieraksti|ierakstu|ierakstiem|diena|dienas|dienu|dienā|nav|latvija|latvijā|vācija|vācijā|benzīns|dīzelis|uzskaitē|nobraukums|apskate|īpašnieks|īpašnieki|reģistrācija|vizīte|vizītes|pārbaudīts|pamatpārbaude|atkārtota|novērtējums|trūkumi|bojājumi|korozija|sludinājums|grafika|apdrošināts|transportlīdzeklis|numura|zīme|izlaiduma|laikā)\b/i;
+  /\b(ieraksts|ieraksti|ierakstu|ierakstiem|diena|dienas|dienu|dienā|nav|latvija|latvijā|vācija|vācijā|benzīns|dīzelis|uzskaitē|nobraukums|nobraukuma|apskate|īpašnieks|īpašnieki|reģistrācija|vizīte|vizītes|pārbaudīts|pamatpārbaude|atkārtota|novērtējums|trūkumi|bojājumi|korozija|sludinājums|grafika|apdrošināts|transportlīdzeklis|numura|zīme|izlaiduma|laikā|modelis|jauda|degviela|interjers|aprikojums|periods|intervals|lauks|veids)\b/i;
 
 const PROTECTED_REGION = /<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi;
 

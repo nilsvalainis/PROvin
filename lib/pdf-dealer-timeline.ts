@@ -12,6 +12,12 @@ import {
   type DealerFacts,
 } from "@/lib/admin-ai-dealer-facts";
 import {
+  translateClientReportNone,
+  translateClientReportStatic,
+  translateClientReportYesNo,
+  type ClientReportLang,
+} from "@/lib/client-report-i18n";
+import {
   formatServiceWorkOdometer,
   type AutoRecordsServiceWorkRow,
 } from "@/lib/auto-records-service-works";
@@ -252,9 +258,9 @@ export function buildDealerVisitSummary(
   };
 }
 
-function gapLabel(gap: DealerVisitGap): string {
+function gapLabel(gap: DealerVisitGap, lang: ClientReportLang = "lv"): string {
   const parts: string[] = [];
-  if (gap.months != null) parts.push(`${gap.months} mēn.`);
+  if (gap.months != null) parts.push(`${gap.months} ${translateClientReportStatic("mēn.", lang)}`);
   if (gap.km != null) parts.push(`${groupDigits(gap.km)} km`);
   return parts.join(" / ");
 }
@@ -262,26 +268,29 @@ function gapLabel(gap: DealerVisitGap): string {
 export function buildDealerVisitSummaryHtml(
   rows: readonly AutoRecordsServiceWorkRow[],
   facts?: DealerFacts | null,
+  lang: ClientReportLang = "lv",
 ): string {
   const summary = buildDealerVisitSummary(rows, facts);
   if (!summary) return "";
+  const t = (lv: string) => translateClientReportStatic(lv, lang);
+  const none = translateClientReportNone(lang);
   const gap = summary.longestGap;
-  const gapText = gap ? gapLabel(gap) : "Nav";
-  const campaigns = summary.campaignsDone ? "Jā" : "Nē";
+  const gapText = gap ? gapLabel(gap, lang) : none;
+  const campaigns = translateClientReportYesNo(summary.campaignsDone, lang);
   const major =
     summary.majorWorks.length > 0
-      ? summary.majorWorks.map((w) => `${w.label} (${w.factId})`).join(", ")
-      : "Nav fiksēts";
+      ? summary.majorWorks.map((w) => `${t(w.label)} (${w.factId})`).join(", ")
+      : t("Nav fiksēts");
   const cells: { k: string; v: string }[] = [
-    { k: "Vizītes", v: String(summary.visitCount) },
-    { k: "Pirmā vizīte", v: summary.firstDate || "Nav" },
-    { k: "Pēdējā vizīte", v: summary.lastDate || "Nav" },
-    { k: "Pēdējais dīlera km", v: summary.lastKm || "Nav" },
-    { k: "Garākais robs", v: gapText },
-    { k: "Kampaņas veiktas", v: campaigns },
-    { k: "Lielie mezgli", v: major },
+    { k: t("Vizītes"), v: String(summary.visitCount) },
+    { k: t("Pirmā vizīte"), v: summary.firstDate || none },
+    { k: t("Pēdējā vizīte"), v: summary.lastDate || none },
+    { k: t("Pēdējais dīlera km"), v: summary.lastKm || none },
+    { k: t("Garākais robs"), v: gapText },
+    { k: t("Kampaņas veiktas"), v: campaigns },
+    { k: t("Lielie mezgli"), v: major },
   ];
-  return `<div class="pdf-svc-summary" role="region" aria-label="Dīlera kopsavilkums">
+  return `<div class="pdf-svc-summary" role="region" aria-label="${escapeHtml(t("Dīlera kopsavilkums"))}">
     ${cells
       .map(
         (c) =>
@@ -291,26 +300,28 @@ export function buildDealerVisitSummaryHtml(
   </div>`;
 }
 
-export function buildDealerMajorWorksHtml(facts: DealerFacts): string {
+export function buildDealerMajorWorksHtml(facts: DealerFacts, lang: ClientReportLang = "lv"): string {
   const hits = majorWorkHits(facts);
   if (hits.length === 0) return "";
+  const t = (lv: string) => translateClientReportStatic(lv, lang);
   const items = hits
     .map((w) => {
       const meta = [w.factId, w.date, w.km].filter(Boolean).join(" · ");
-      return `<li class="pdf-svc-major__item"><b>${escapeHtml(w.label)}</b><span>${escapeHtml(meta)}</span></li>`;
+      return `<li class="pdf-svc-major__item"><b>${escapeHtml(t(w.label))}</b><span>${escapeHtml(meta)}</span></li>`;
     })
     .join("");
   return `<aside class="pdf-svc-major">
-    <p class="pdf-subhead">Lielie darbi</p>
+    <p class="pdf-subhead">${escapeHtml(t("Lielie darbi"))}</p>
     <ul class="pdf-svc-major__list">${items}</ul>
   </aside>`;
 }
 
-export function buildDealerGapMarkerHtml(gap: DealerVisitGap): string {
+export function buildDealerGapMarkerHtml(gap: DealerVisitGap, lang: ClientReportLang = "lv"): string {
+  const t = (lv: string) => translateClientReportStatic(lv, lang);
   return `<div class="pdf-svc-gap" role="note">
-    <span class="pdf-svc-gap__tag">Robs datos</span>
-    <span class="pdf-svc-gap__val">${escapeHtml(gapLabel(gap))}</span>
-    <span class="pdf-svc-gap__note">Fakts no dīlera žurnāla, ne verdikts par izlaistu apkopi.</span>
+    <span class="pdf-svc-gap__tag">${escapeHtml(t("Robs datos"))}</span>
+    <span class="pdf-svc-gap__val">${escapeHtml(gapLabel(gap, lang))}</span>
+    <span class="pdf-svc-gap__note">${escapeHtml(t("Fakts no dīlera žurnāla, ne verdikts par izlaistu apkopi."))}</span>
   </div>`;
 }
 

@@ -246,7 +246,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   });
   const pad = 16;
   let sy = sumTop - 22;
-  ctx.page.drawText("Sub Total", { x: boxLeft + pad, y: sy, size: 11, font, color: MUTED });
+  ctx.page.drawText("Starpsumma", { x: boxLeft + pad, y: sy, size: 11, font, color: MUTED });
   ctx.page.drawText(money, {
     x: boxLeft + boxW - pad - font.widthOfTextAtSize(money, 11),
     y: sy,
@@ -265,7 +265,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
     color: INK,
   });
   sy -= 30;
-  ctx.page.drawText("Total", { x: boxLeft + pad, y: sy, size: 14, font: fontBold, color: INK });
+  ctx.page.drawText("Kopā", { x: boxLeft + pad, y: sy, size: 14, font: fontBold, color: INK });
   ctx.page.drawText(money, {
     x: boxLeft + boxW - pad - fontBold.widthOfTextAtSize(money, 14),
     y: sy,
