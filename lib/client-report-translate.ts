@@ -19,7 +19,19 @@ RULES:
 - No markdown formatting (no **, no #, no bullet dashes).
 - If an input value is an empty string, return it as an empty string.
 - Preserve paragraph breaks (\\n) from the source.
-- Do not add a translator's note, disclaimer, or any text about the translation itself.`;
+- Do not add a translator's note, disclaimer, or any text about the translation itself.
+
+TERMINOLOGY (write as a native-speaking used-car inspection professional, not a dictionary):
+- nobraukums / odometra rādījums: English "mileage" / "odometer reading"; Russian "пробег" / "показания одометра".
+- nobraukuma vēsture: "odometer history" / "история пробега". Odometra korekcija / atgriezts nobraukums: "odometer rollback" / "скрученный пробег".
+- servisa vēsture / apkopes: "service history" / "servicing"; Russian "сервисная история" / "техническое обслуживание (ТО)".
+- tehniskā apskate (CSDD TA): "technical inspection" / "техосмотр".
+- negadījums: "accident" (insurance context: "claim"); Russian "ДТП" (insurance context: "страховой случай").
+- bojāeja / pilnīga bojāeja / totāls: "total loss"; Russian "полная гибель (тотал)".
+- OCTA: "MTPL insurance" / "ОСАГО". KASKO: "comprehensive insurance (KASKO)" / "КАСКО".
+- īpašnieku skaits: "number of owners" / "количество владельцев". sludinājums: "listing" / "объявление".
+- klātienes apskate: "in-person inspection" / "осмотр на месте". krāsas biezuma mērītājs: "paint thickness gauge" / "толщиномер".
+- veiktas atsaukuma kampaņas: "completed recall campaigns" / "выполненные отзывные кампании". Translate recall facts exactly as recorded in the source; never add wording that PROVIN actively checks for open or outstanding recalls.`;
 
 export type ClientReportTranslateResult = {
   texts: TranslatableFieldMap;
