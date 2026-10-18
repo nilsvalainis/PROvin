@@ -6,6 +6,7 @@ import {
   ADMIN_MOTION_MOVING_CLASS,
   applyMorphPill,
   isModifiedClick,
+  sheetDragTranslateY,
   measureInteractionCost,
   morphPillParts,
   prefersReducedMotion,
@@ -118,6 +119,14 @@ describe("view transitions", () => {
       ran += 1;
     }, "tab", { getElementById: () => null, querySelector: () => null } as unknown as Document, () => ({ matches: false }));
     expect(ran).toBe(1);
+  });
+});
+
+describe("sheetDragTranslateY", () => {
+  it("tur 1:1 uz leju un 0.3 pretestību virs 0", () => {
+    expect(sheetDragTranslateY(40)).toBe(40);
+    expect(sheetDragTranslateY(-20)).toBe(-6);
+    expect(sheetDragTranslateY(0)).toBe(0);
   });
 });
 

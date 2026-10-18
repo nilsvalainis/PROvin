@@ -8,6 +8,7 @@ import {
   ADMIN_MOTION_WILL_CHANGE_MS,
   markMoving,
   prefersReducedMotion,
+  sheetDragTranslateY,
 } from "@/lib/admin-motion";
 
 type Props = {
@@ -84,8 +85,7 @@ export function AdminMobileSheet({ open, title, onClose, children, action }: Pro
     const drag = dragRef.current;
     const panel = panelRef.current;
     if (!drag || !panel) return;
-    const raw = e.clientY - drag.y;
-    const dy = raw > 0 ? raw : raw * 0.3;
+    const dy = sheetDragTranslateY(e.clientY - drag.y);
     drag.dy = dy;
     panel.style.transform = `translateY(${dy}px)`;
   };

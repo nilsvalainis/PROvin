@@ -87,6 +87,11 @@ export function viewTransitionDir(fromPath: string, toPath: string): AdminViewTr
   return "tab";
 }
 
+/** Vilkšana uz leju 1:1; virs 0 (uz augšu) pretestība 0.3. */
+export function sheetDragTranslateY(rawDy: number): number {
+  return rawDy > 0 ? rawDy : rawDy * 0.3;
+}
+
 export function isModifiedClick(e: { metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean; button: number }): boolean {
   return e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey;
 }
