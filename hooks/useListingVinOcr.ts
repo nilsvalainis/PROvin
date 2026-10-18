@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { listingVinOcrIsCrossChecked } from "@/lib/iriss-listings-vin-from-photos";
+import { shouldRequestListingVinOcr } from "@/lib/iriss-listings-vin-ocr-gate";
 import type { IrissListingVehicle, IrissListingVinOcrStatus } from "@/lib/iriss-listings-types";
 
 export type ListingVinOcrPatch = Pick<IrissListingVehicle, "vin" | "vinSource" | "vinOcrStatus" | "vinOcrAlts">;
@@ -86,16 +86,13 @@ export function useListingVinOcr(
     "id" | "platform" | "vin" | "vinSource" | "vinOcrStatus" | "imageUrl" | "imageUrls" | "documentImageUrls"
   >,
   onPatch: (id: string, patch: ListingVinOcrPatch) => void,
+  opts?: { enabled?: boolean },
 ) {
+  const enabled = opts?.enabled !== false;
   const onPatchRef = useRef(onPatch);
   onPatchRef.current = onPatch;
   useEffect(() => {
-    if (v.platform !== "auto1") return;
-    if (v.vin && v.vinSource !== "ocr_photo") return;
-    if (v.vinOcrStatus === "miss") return;
-    if (v.vin && listingVinOcrIsCrossChecked(v.vinOcrStatus)) return;
-    const hasPhotos = Boolean(v.imageUrl || (v.imageUrls && v.imageUrls.length) || (v.documentImageUrls && v.documentImageUrls.length));
-    if (!hasPhotos) return;
+    if (!enabled || !shouldRequestListingVinOcr(v)) return;
     let cancelled = false;
     enqueue(v.id, (patch) => {
       if (cancelled || !patch) return;
@@ -104,5 +101,5 @@ export function useListingVinOcr(
     return () => {
       cancelled = true;
     };
-  }, [v.documentImageUrls, v.id, v.imageUrl, v.imageUrls, v.platform, v.vin, v.vinOcrStatus, v.vinSource]);
+  }, [enabled, v.documentImageUrls, v.id, v.imageUrl, v.imageUrls, v.platform, v.vin, v.vinOcrStatus, v.vinSource]);
 }

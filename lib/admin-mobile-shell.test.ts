@@ -1,6 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ADMIN_MOBILE_PTR_THRESHOLD_PX, adminMobilePtrLabel, adminMobilePullToRefreshEnabled } from "@/lib/admin-mobile-shell";
+import {
+  ADMIN_MOBILE_BADGE_POLL_MS,
+  ADMIN_MOBILE_PTR_THRESHOLD_PX,
+  ADMIN_MOBILE_SECONDARY_DELAY_MS,
+  adminMobilePtrLabel,
+  adminMobilePullToRefreshEnabled,
+  scheduleAdminIdleWork,
+} from "@/lib/admin-mobile-shell";
 
 describe("adminMobilePtrLabel", () => {
   it("rāda atjaunošanu, slieksni un vilkšanu", () => {
@@ -17,6 +24,22 @@ describe("adminMobilePullToRefreshEnabled", () => {
     expect(adminMobilePullToRefreshEnabled("/admin/iriss/pasutijumi/order-1")).toBe(true);
     expect(adminMobilePullToRefreshEnabled("/admin/iriss/sludinajumi")).toBe(true);
     expect(adminMobilePullToRefreshEnabled("/admin/orders/abc")).toBe(false);
+  });
+});
+
+describe("admin mobile perf constants", () => {
+  it("keeps desktop badge poll faster than mobile", () => {
+    expect(ADMIN_MOBILE_BADGE_POLL_MS).toBeGreaterThan(45_000);
+    expect(ADMIN_MOBILE_SECONDARY_DELAY_MS).toBeGreaterThan(0);
+  });
+
+  it("scheduleAdminIdleWork atceļ timeout", () => {
+    let ran = false;
+    const cancel = scheduleAdminIdleWork(() => {
+      ran = true;
+    }, 20);
+    cancel();
+    expect(ran).toBe(false);
   });
 });
 

@@ -1179,6 +1179,7 @@ export function IrissSludinajumiListClient({
               setPreviewOrders(linked.length > 0 ? linked : [o]);
             }}
             mobile={mobile}
+            onVinPatch={(id, patch) => setVinPatch((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))}
           />
         </>
       ) : null}

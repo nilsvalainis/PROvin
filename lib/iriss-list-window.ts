@@ -2,7 +2,7 @@
 export const IRISS_ORDERS_LIST_PAGE = 24;
 
 /** LIST mobilajā: pirmā un nākamās porcijas. */
-export const IRISS_LISTINGS_MOBILE_PAGE = 16;
+export const IRISS_LISTINGS_MOBILE_PAGE = 8;
 
 export function irissWindowSlice<T>(items: readonly T[], limit: number, enabled: boolean): { items: T[]; hasMore: boolean } {
   if (!enabled) return { items: [...items], hasMore: false };

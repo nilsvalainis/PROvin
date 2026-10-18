@@ -30,8 +30,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { IrissPavadzimesSidebarCard } from "@/components/admin/IrissPavadzimesSidebarCard";
+import { useAdminClientReady, useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
 import { requestAdminGlobalSearch } from "@/lib/admin-global-search";
 import { finiteBadgeCount } from "@/lib/admin-sidebar-badge";
+import {
+  ADMIN_DESKTOP_BADGE_POLL_MS,
+  ADMIN_MOBILE_BADGE_POLL_MS,
+  scheduleAdminIdleWork,
+} from "@/lib/admin-mobile-shell";
 import {
   ADMIN_MOBILE_TABBAR_DOCK_NAV,
   ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
@@ -253,19 +259,28 @@ function useCountValue(url: string, key: "openCount" | "unseenCount" | "activeCo
 
 function useBadgeUrlPolling(url: string) {
   const pathname = usePathname();
+  const mobile = useAdminMobileViewport();
+  const ready = useAdminClientReady();
   useEffect(() => {
+    if (!ready) return;
     const prev = badgePollRefs.get(url) ?? 0;
     badgePollRefs.set(url, prev + 1);
     if (prev === 0) {
-      void refreshCount(url);
-      const t = window.setInterval(() => {
-        if (document.visibilityState === "visible") void refreshCount(url);
-      }, 45_000);
+      const pollMs = mobile ? ADMIN_MOBILE_BADGE_POLL_MS : ADMIN_DESKTOP_BADGE_POLL_MS;
+      let t = 0;
+      const startPolling = () => {
+        void refreshCount(url);
+        t = window.setInterval(() => {
+          if (document.visibilityState === "visible") void refreshCount(url);
+        }, pollMs);
+      };
+      const cancelIdle = mobile ? scheduleAdminIdleWork(startPolling) : (startPolling(), () => undefined);
       const onFocus = () => void refreshCount(url);
       window.addEventListener("focus", onFocus);
       window.addEventListener("admin-orders-changed", onFocus);
       window.addEventListener("admin-iriss-matches-changed", onFocus);
       return () => {
+        cancelIdle();
         window.clearInterval(t);
         window.removeEventListener("focus", onFocus);
         window.removeEventListener("admin-orders-changed", onFocus);
@@ -280,7 +295,7 @@ function useBadgeUrlPolling(url: string) {
       if (left <= 0) badgePollRefs.delete(url);
       else badgePollRefs.set(url, left);
     };
-  }, [pathname, url]);
+  }, [mobile, pathname, ready, url]);
 }
 
 function ordersBadgeTone(badges: { ordersOverdue: number; ordersUrgent: number }) {

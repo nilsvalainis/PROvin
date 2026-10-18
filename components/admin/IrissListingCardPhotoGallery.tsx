@@ -35,6 +35,7 @@ export function IrissListingCardPhotoGallery({
   onImageError,
   wrapHero,
   onHeroClick,
+  compactMobile = false,
 }: {
   photos: string[];
   thumbUrl?: string;
@@ -44,6 +45,8 @@ export function IrissListingCardPhotoGallery({
   onImageError?: () => void;
   wrapHero?: (image: ReactNode) => ReactNode;
   onHeroClick?: () => void;
+  /** Telefonā mazāks hero; desktop nemaina. */
+  compactMobile?: boolean;
 }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -53,7 +56,7 @@ export function IrissListingCardPhotoGallery({
   const heroSrc = listingDisplayImageUrl({
     url: currentPhoto,
     thumbUrl: idx === 0 ? thumbUrl : undefined,
-    maxWidth: 480,
+    maxWidth: compactMobile ? 320 : 480,
   });
   const overflow = listingThumbOverflowLabel(photos.length);
 
@@ -107,7 +110,7 @@ export function IrissListingCardPhotoGallery({
   return (
     <div className="w-full shrink-0 space-y-1.5 sm:w-[300px]">
       <div
-        className="relative h-[220px] w-full overflow-hidden rounded-none border-0 sm:h-[200px] sm:rounded-lg sm:border sm:border-slate-200/90"
+        className={`relative w-full overflow-hidden rounded-none border-0 sm:h-[200px] sm:rounded-lg sm:border sm:border-slate-200/90 ${compactMobile ? "h-[160px]" : "h-[220px]"}`}
         style={{ touchAction: "manipulation" }}
         onTouchStart={onPhotoTouchStart}
         onTouchEnd={onPhotoTouchEnd}

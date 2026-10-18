@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
 import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
@@ -43,6 +44,7 @@ export function IrissListDrawer({
   onPrefs,
   onPreviewOrder,
   mobile,
+  onVinPatch,
 }: {
   v: IrissListingVehicle;
   prefs: IrissListPrefs;
@@ -53,8 +55,10 @@ export function IrissListDrawer({
   onPrefs: (next: IrissListPrefs) => void;
   onPreviewOrder?: (order: IrissListingOrderBrief) => void;
   mobile?: IrissMobilePlatform | null;
+  onVinPatch?: (id: string, patch: ListingVinOcrPatch) => void;
 }) {
   useAdminScrollLock(true);
+  useListingVinOcr(v, (id, patch) => onVinPatch?.(id, patch));
   const detected = taxFromVehicle(v);
   const ov = prefs.taxOv[v.id];
   const tax = listingTaxResolved(v, ov);
