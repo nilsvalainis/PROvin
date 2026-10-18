@@ -7,6 +7,7 @@
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import {
   formatAutoRecordsDateForOutput,
+  formatSourceDatePreservingMonth,
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
@@ -47,14 +48,19 @@ function isNoiseLine(line: string): boolean {
   return false;
 }
 
-function isBareDateLine(line: string): string {
+function parseBareDateLine(line: string): { date: string; incidentDate: string } | null {
   const m = line.match(/^(\d{1,2}\.\d{1,2}\.\d{4}|\d{1,2}\.\d{4})\.?$/);
-  if (!m) return "";
-  return formatAutoRecordsDateForOutput(m[1]!);
+  if (!m) return null;
+  const token = m[1]!;
+  return {
+    date: formatAutoRecordsDateForOutput(token),
+    incidentDate: formatSourceDatePreservingMonth(token),
+  };
 }
 
 type HistoryEvent = {
   date: string;
+  incidentDate: string;
   lines: string[];
 };
 
@@ -82,9 +88,9 @@ function splitHistoryEvents(sectionLines: string[]): HistoryEvent[] {
   for (const raw of sectionLines) {
     const line = raw.replace(/\u00a0/g, " ").trim();
     if (isNoiseLine(line)) continue;
-    const date = isBareDateLine(line);
-    if (date) {
-      current = { date, lines: [] };
+    const parsed = parseBareDateLine(line);
+    if (parsed) {
+      current = { date: parsed.date, incidentDate: parsed.incidentDate, lines: [] };
       events.push(current);
       continue;
     }
@@ -277,7 +283,7 @@ export function extractAutodnaReport(rawText: string): VendorReportExtract {
       const conversion = convertAmountTextToEur(lossRaw);
       if (conversion) {
         incidents.push({
-          csngDate: event.date,
+          csngDate: event.incidentDate,
           lossAmount: conversion.display,
           incidentNo: country,
         });

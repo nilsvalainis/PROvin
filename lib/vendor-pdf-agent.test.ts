@@ -139,7 +139,7 @@ describe("AutoDNA deterministiskā ekstrakcija", () => {
 
   it("negadījuma summu pārrēķina uz EUR", () => {
     expect(extract.incidents).toEqual([
-      { csngDate: "01.06.2023", lossAmount: "20 400 - 20 800 €", incidentNo: "Čehija" },
+      { csngDate: "06.2023", lossAmount: "20 400 - 20 800 €", incidentNo: "Čehija" },
     ]);
   });
 
@@ -436,7 +436,7 @@ describe("AI payload → extract", () => {
       { date: "01.05.2021", odometer: "199163", country: "Čehija" },
     ]);
     expect(extract.incidents).toEqual([
-      { csngDate: "01.12.2022", lossAmount: "60 - 80 €", incidentNo: "" },
+      { csngDate: "12.2022", lossAmount: "60 - 80 €", incidentNo: "" },
     ]);
     expect(extract.countryTimeline).toEqual([{ date: "01.10.2025", country: "Latvija" }]);
     expect(extract.vehicleInfo).toEqual({ color: "Havana Black Metallic (LY8X)" });

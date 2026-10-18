@@ -11,6 +11,7 @@ import { JsonType, type AiJsonSchema } from "@/lib/ai-json-schema";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import {
   formatAutoRecordsDateForOutput,
+  formatSourceDatePreservingMonth,
   normalizeAutoRecordsOdometer,
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
@@ -42,8 +43,8 @@ ABSOLUTE RULES
 - Output language for countries: Latvian names (Latvija, Vācija, Čehija, Polija, Lietuva …). "Čehijas Republika" → "Čehija".
 
 1) DATES
-- Always DD.MM.YYYY. If the report shows only MM.YYYY (e.g. 06.2023), use day 01 → 01.06.2023.
-- Never output a year-only date. Never guess a day that is not printed - use 01.
+- If the source prints a day, use DD.MM.YYYY. If the report shows only MM.YYYY (e.g. 06.2023), keep MM.YYYY (06.2023). Never invent day 01.
+- Never output a year-only date. Never guess a day that is not printed.
 
 2) ODOMETER (mileage)
 - Sources: AutoDNA „TRANSPORTLĪDZEKĻA VĒSTURE” events with „Odometra rādījums … km”; CarVertical „Odometra rādījumu ieraksti” (both columns) and mileage chart table.
@@ -221,7 +222,7 @@ export function parseVendorPdfAgentPayload(
   for (const item of Array.isArray(payload.incidents) ? payload.incidents : []) {
     const o = asRecord(item);
     if (!o) continue;
-    const date = formatAutoRecordsDateForOutput(asString(o.date, 32));
+    const date = formatSourceDatePreservingMonth(asString(o.date, 32));
     const amount = amountWithCurrency(asString(o.amountRaw ?? o.amount, 80), asString(o.currency, 10));
     if (!date || !amount) continue;
     const conversion = convertAmountTextToEur(amount);

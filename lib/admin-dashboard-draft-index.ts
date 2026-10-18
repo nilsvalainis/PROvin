@@ -331,6 +331,14 @@ async function readDashboardDraftIndexDocCached(): Promise<DashboardDraftIndexDo
   return indexReadInflight;
 }
 
+/** Visi dashboard indekss ieraksti (pasūtījuma id = Stripe/session id). */
+export async function listAllDashboardDraftIndexEntries(): Promise<
+  Array<{ sessionId: string } & DashboardDraftIndexEntry>
+> {
+  const doc = await readDashboardDraftIndexDocCached();
+  return Object.entries(doc.entries).map(([sessionId, entry]) => ({ sessionId, ...entry }));
+}
+
 /** Viena JSON lasīšana visiem dashboard laukiem; trūkstošo makeModel aizpilda no melnraksta. */
 export async function readDashboardDraftSummaries(
   sessionIds: string[],

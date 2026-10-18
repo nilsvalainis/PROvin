@@ -171,6 +171,7 @@ import {
   collectUnifiedIncidentDamageDetails,
   collectUnifiedIncidentRows,
   formatUnifiedIncidentCountLabel,
+  unifiedIncidentCountKind,
   type UnifiedIncidentAggregation,
   type UnifiedIncidentCluster,
   type UnifiedIncidentDamage,
@@ -656,7 +657,7 @@ function buildPdfLifeKmHtml(e: LifecycleEvent): string {
   if (e.kind === "incident") {
     const raw = e.incident?.displayAmount.trim() ?? "";
     if (!raw || raw === "-") return "";
-    const inner = formatIncidentLossAmountHtml(raw, { approx: Boolean(e.incident?.averaged), ico: "lg" });
+    const inner = formatIncidentLossAmountHtml(raw, { ico: "lg" });
     if (!inner) return "";
     return `<span class="pdf-life-km pdf-life-km--loss">${inner}</span>`;
   }
@@ -1010,10 +1011,10 @@ function formatTirgusPriceDropCellHtml(raw: string): string {
   return `<span class="pdf-price-drop-wrap"><span class="pdf-price-drop-ico" aria-hidden="true">${pdfPriceDropDownArrowHtml()}</span><span class="tabular pdf-price-drop-val">${escapeHtml(t)}</span></span>`;
 }
 
-function formatLossAmountEurCell(raw: string, opts?: { approx?: boolean }): string {
+function formatLossAmountEurCell(raw: string, _opts?: { approx?: boolean }): string {
   const display = normalizeLossAmountEurDisplay(raw);
   const t = display || raw.trim();
-  const shown = opts?.approx && t ? `~${t}` : t;
+  const shown = t;
   const esc = escapeHtml(shown);
   if (!t) return esc;
   const flag = getLossAmountUiFlag(display || raw);
@@ -1028,7 +1029,7 @@ function formatIncidentLossAmountHtml(raw: string, opts?: { approx?: boolean; ic
   const display = normalizeLossAmountEurDisplay(raw);
   const t = display || raw.trim();
   if (!t || t === "-") return "";
-  const shown = opts?.approx ? `~${t}` : t;
+  const shown = t;
   const ico = pdfLossAmountAlertIconHtml("red", opts?.ico ?? "lg");
   return `<span class="pdf-data-alert-wrap pdf-num-warn pdf-num-warn--red"><span class="pdf-data-alert-ico" aria-hidden="true">${ico}</span><span class="tabular pdf-num-warn-digits">${escapeHtml(shown)}</span></span>`;
 }
@@ -1064,10 +1065,10 @@ function pdfSourceDotHtml(sourceLabel: string): string {
 }
 
 /** Punkts + avota nosaukums (+ neobligāta vērtība, piem. summa). */
-function pdfSourceTagHtml(sourceLabel: string, value = ""): string {
-  const name = sourceLabel.trim() || MILEAGE_PDF_SOURCE_LEGEND.cits.full;
+function pdfSourceTagHtml(sourceLabel: string, value = "", displayName = ""): string {
+  const name = (displayName || sourceLabel).trim() || MILEAGE_PDF_SOURCE_LEGEND.cits.full;
   const valueHtml = value.trim() ? `<span class="pdf-src-tag__val">${escapeHtml(value.trim())}</span>` : "";
-  return `<span class="pdf-src-tag">${pdfSourceDotHtml(name)}<span class="pdf-src-tag__name">${escapeHtml(name)}</span>${valueHtml}</span>`;
+  return `<span class="pdf-src-tag">${pdfSourceDotHtml(sourceLabel)}<span class="pdf-src-tag__name">${escapeHtml(name)}</span>${valueHtml}</span>`;
 }
 
 function uniqueSourceLabels(sourceLabels: string[]): string[] {
@@ -1221,20 +1222,21 @@ export function buildUnifiedMileageTableHtml(
 /** Avotu vērtējumi zem summas - punkts + avots + summa (tas pats kods kā „Kas tika pārbaudīts”). */
 function buildIncidentSourceTagsHtml(c: UnifiedIncidentCluster): string {
   if (c.sourceValuations.length === 0) return "";
-  // Viens avots - summa jau ir virsrakstā, tāpēc tikai punkts + nosaukums.
-  const withValues = c.sourceValuations.length > 1;
+  const showSourceAmounts =
+    c.sourceValuations.length > 1 || c.sourceValuations.some((s) => s.rowCount > 1);
   const items = c.sourceValuations
-    .map(
-      (s) =>
-        `<li class="pdf-src-tags__item">${pdfSourceTagHtml(s.sourceLabel, withValues ? s.displayAmount : "")}</li>`,
-    )
+    .map((s) => {
+      const name =
+        s.rowCount > 1 ? `${s.sourceLabel} (${s.rowCount} ieraksti)` : s.sourceLabel;
+      return `<li class="pdf-src-tags__item">${pdfSourceTagHtml(s.sourceLabel, showSourceAmounts ? s.displayAmount : "", name)}</li>`;
+    })
     .join("");
   return `<ul class="pdf-src-tags pdf-incident-card__srcs">${items}</ul>`;
 }
 
-function incidentCountBadgeHtml(n: number): string {
+function incidentCountBadgeHtml(n: number, kind: "accident" | "damage"): string {
   if (n <= 0) return "";
-  return `<span class="pdf-incident-count">${escapeHtml(formatUnifiedIncidentCountLabel(n))}</span>`;
+  return `<span class="pdf-incident-count">${escapeHtml(formatUnifiedIncidentCountLabel(n, kind))}</span>`;
 }
 
 function incidentChipListHtml(labels: string[], extraClass = ""): string {
@@ -1265,7 +1267,7 @@ function buildIncidentDamageChipsHtml(dmg: UnifiedIncidentDamage | null): string
 }
 
 function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number | string): string {
-  const lossCell = formatIncidentLossAmountHtml(c.displayAmount, { approx: c.averaged, ico: "lg" });
+  const lossCell = formatIncidentLossAmountHtml(c.displayAmount, { ico: "lg" });
   const sourceTags = buildIncidentSourceTagsHtml(c);
   const countryLabel = c.country.trim() || "-";
   const flag = pdfCountryFlagEmoji(countryLabel);
@@ -1287,7 +1289,7 @@ function buildIncidentClusterCardHtml(c: UnifiedIncidentCluster, index: number |
       <div class="pdf-incident-card__main">
         <div class="pdf-incident-card__car">${svg}</div>
         <div class="pdf-incident-card__body">
-          <p class="pdf-life-card__kind"><span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span><span>Negadījums</span></p>
+          <p class="pdf-life-card__kind"><span class="pdf-data-alert-ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("red")}</span><span>${escapeHtml(c.kindLabel)}</span></p>
           <p class="pdf-life-meta">${country}</p>
           ${chips}
           ${sourceTags}
@@ -1331,7 +1333,7 @@ export function buildUnifiedIncidentsTableHtml(
   const head = sectionHeadBrand(
     sectionIconPdfHtml("shield"),
     NEGADIJUMU_VESTURE_TITLE,
-    incidentCountBadgeHtml(agg.uniqueCount),
+    incidentCountBadgeHtml(agg.uniqueCount, unifiedIncidentCountKind(agg.clusters)),
   );
   const body = `${card}${adminNoteHtml}${photosBlock}`;
   return `<div class="pdf-page-flow-chunk pdf-unified-incidents-zone pdf-surface-card pdf-hub-tint--incidents" role="region">${head}<div class="pdf-unified-incidents-zone__body">${body}</div></div>`;

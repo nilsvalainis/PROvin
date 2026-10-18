@@ -164,7 +164,7 @@ describe("PDF design system", () => {
     expect(html).toContain("ATSKAITES KOPSAVILKUMS");
     expect(html).toContain("pdf-summary-tile--alert");
     expect(html).toContain("Negadījumi un bojājumi");
-    expect(html).toContain("1 negadījums");
+    expect(html).toContain("1 bojājumu ieraksts");
     expect(html).toContain("120 000 km");
     expect(html).toContain("Īpašnieku skaits");
     expect(html).toContain("Latvijā 2");
@@ -1223,7 +1223,7 @@ describe("Vēstures kopsavilkums", () => {
     expect(zone).toContain("pdf-num-warn--red");
     expect(zone).toContain("pdf-warn-tri-ico--lg");
     expect(zone).not.toContain("pdf-num-warn--yellow");
-    expect(zone).toContain("Negadījums");
+    expect(zone).toContain("Bojājumu ieraksts");
     expect(zone).toContain("Latvija");
     expect(zone).not.toContain("pdf-incident-card--hub");
     expect(zone).not.toContain("pdf-life-card--incident");
@@ -1664,7 +1664,7 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("pdf-inc-list");
     expect(html).toContain("pdf-inc-item");
     expect(html).toContain("pdf-incident-count");
-    expect(html).toContain("1 negadījums");
+    expect(html).toContain("1 bojājumu ieraksts");
     expect(html).not.toContain("Negadījumi:");
     expect(html.indexOf("pdf-incident-count")).toBeLessThan(html.indexOf("pdf-incident-card"));
     expect(html).not.toContain("Apvienotie negadījumi");
@@ -1727,7 +1727,8 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("pdf-src-dot--autodna");
     expect(html).toContain("pdf-src-dot--carvertical");
     expect(html).not.toContain("pdf-incident-source-vals");
-    expect(html).toMatch(/~[\d\s]+€/);
+    expect(html).not.toMatch(/~[\d\s]+€/);
+    expect(html).toContain("2 584 - 3 500 €");
     expect(html).not.toContain("vid.");
   });
 

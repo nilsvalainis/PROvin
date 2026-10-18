@@ -90,7 +90,27 @@ export type UnifiedMileageSourcePayload = {
 
 export function parseMileageDateForSort(raw: string): number {
   const ms = parseDotOrIsoDateToMs(raw);
-  return ms > 0 ? ms : Number.NEGATIVE_INFINITY;
+  if (ms > 0) return ms;
+  const t = raw.trim().replace(/\.$/, "");
+  const monthYear = t.match(/^(\d{1,2})\.(\d{4})$/);
+  if (monthYear) {
+    const m = Number(monthYear[1]);
+    const y = Number(monthYear[2]);
+    if (m >= 1 && m <= 12 && y >= 1900 && y <= 2100) {
+      const utc = Date.UTC(y, m - 1, 1);
+      return utc > 0 ? utc : Number.NEGATIVE_INFINITY;
+    }
+  }
+  const isoMonth = t.match(/^(\d{4})-(\d{2})$/);
+  if (isoMonth) {
+    const y = Number(isoMonth[1]);
+    const m = Number(isoMonth[2]);
+    if (m >= 1 && m <= 12 && y >= 1900 && y <= 2100) {
+      const utc = Date.UTC(y, m - 1, 1);
+      return utc > 0 ? utc : Number.NEGATIVE_INFINITY;
+    }
+  }
+  return Number.NEGATIVE_INFINITY;
 }
 
 /** `12.2013` / `2013-12` ir mēnesis, ne 1. diena. */
