@@ -345,6 +345,8 @@
     "ledgerTopup": "Пополнение",
     "ledgerPurchase": "Покупка",
     "ledgerRefund": "Возврат",
-    "ledgerAdjust": "Корректировка"
+    "ledgerAdjust": "Корректировка",
+    "ledgerInvoice": "Счёт",
+    "ledgerDownloadInvoice": "Скачать счёт"
   }
 }

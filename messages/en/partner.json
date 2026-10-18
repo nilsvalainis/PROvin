@@ -345,6 +345,8 @@
     "ledgerTopup": "Top-up",
     "ledgerPurchase": "Purchase",
     "ledgerRefund": "Refund",
-    "ledgerAdjust": "Adjustment"
+    "ledgerAdjust": "Adjustment",
+    "ledgerInvoice": "Invoice",
+    "ledgerDownloadInvoice": "Download invoice"
   }
 }

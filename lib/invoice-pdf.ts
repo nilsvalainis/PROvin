@@ -5,6 +5,11 @@ import path from "node:path";
 
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import {
+  B2B_TOPUP_INVOICE,
+  b2bTopupInvoiceSellerLines,
+  getB2bTopupInvoicePvnNote,
+} from "@/lib/b2b-topup-invoice";
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
 import {
   buildInvoiceServiceLineDescription,
@@ -59,7 +64,8 @@ function lineHeight(size: number): number {
   return Math.round(size * 1.38);
 }
 
-const ACCENT = rgb(0 / 255, 97 / 255, 210 / 255);
+const ACCENT_PROVIN = rgb(0 / 255, 97 / 255, 210 / 255);
+const ACCENT_IRISS = rgb(242 / 255, 101 / 255, 34 / 255);
 const INK = rgb(29 / 255, 29 / 255, 31 / 255);
 const MUTED = rgb(110 / 255, 110 / 255, 115 / 255);
 const LINE = rgb(0.91, 0.91, 0.93);
@@ -99,14 +105,16 @@ function drawParagraph(ctx: Ctx, text: string, size: number, color = INK, f?: PD
 }
 
 export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<Uint8Array> {
+  const topup = order.variant === "b2b_topup";
   const legal = getCompanyLegal();
-  const brand = getCompanyPublicBrand();
-  const lineDesc = buildInvoiceServiceLineDescription(order);
-  const pvnFooter = getInvoicePvnFooterText();
+  const brand = topup ? "IRISS" : getCompanyPublicBrand();
+  const lineDesc = topup ? B2B_TOPUP_INVOICE.serviceLine : buildInvoiceServiceLineDescription(order);
+  const pvnFooter = topup ? getB2bTopupInvoicePvnNote() : getInvoicePvnFooterText();
   const money = formatMoneyEur(order.amountTotal, order.currency);
   const vin = order.vin?.trim() || "-";
   const buyerLines = invoiceBuyerLines(invoiceBuyerFromOrder(order));
   const invoiceNo = order.invoiceNumber;
+  const accent = topup ? ACCENT_IRISS : ACCENT_PROVIN;
 
   const dateFmt = new Intl.DateTimeFormat("lv-LV", {
     dateStyle: "long",
@@ -139,7 +147,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
 
   drawTextLine(ctx, "RĒĶINS", 11, { font: fontBold, color: MUTED });
   ctx.y -= 2;
-  drawTextLine(ctx, brand, 20, { font: fontBold, color: ACCENT });
+  drawTextLine(ctx, brand, 20, { font: fontBold, color: accent });
   ctx.y -= 8;
   drawTextLine(ctx, `Rēķina Nr.: ${invoiceNo}`, 10);
   drawTextLine(ctx, `Datums: ${invoiceDate}`, 10);
@@ -149,15 +157,21 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
     start: { x: margin, y: ctx.y },
     end: { x: pageW - margin, y: ctx.y },
     thickness: 2,
-    color: ACCENT,
+    color: accent,
   });
   ctx.y -= 24;
 
   drawTextLine(ctx, "Pakalpojuma sniedzējs", 9, { font: fontBold, color: MUTED });
-  drawParagraph(ctx, brand, 10);
-  if (legal.legalName) drawParagraph(ctx, legal.legalName, 10);
-  if (legal.regNo) drawParagraph(ctx, `Reģ. Nr.: ${legal.regNo}`, 10);
-  if (legal.legalAddress) drawParagraph(ctx, legal.legalAddress, 10);
+  if (topup) {
+    for (const line of b2bTopupInvoiceSellerLines()) {
+      drawParagraph(ctx, line, 10);
+    }
+  } else {
+    drawParagraph(ctx, brand, 10);
+    if (legal.legalName) drawParagraph(ctx, legal.legalName, 10);
+    if (legal.regNo) drawParagraph(ctx, `Reģ. Nr.: ${legal.regNo}`, 10);
+    if (legal.legalAddress) drawParagraph(ctx, legal.legalAddress, 10);
+  }
   ctx.y -= 8;
 
   drawTextLine(ctx, "Klients", 9, { font: fontBold, color: MUTED });
@@ -168,7 +182,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   } else {
     drawParagraph(ctx, "-", 10);
   }
-  drawParagraph(ctx, `Transportlīdzekļa VIN: ${vin}`, 10);
+  if (!topup) drawParagraph(ctx, `Transportlīdzekļa VIN: ${vin}`, 10);
   ctx.y -= 12;
 
   drawTextLine(ctx, "Preces / pakalpojumi", 9, { font: fontBold, color: MUTED });
@@ -230,7 +244,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
 
   ctx.y = tableTop - rowTotalH - 8;
 
-  const boxH = 112;
+  const boxH = topup ? 86 : 112;
   const boxW = contentW * 0.52;
   const boxLeft = margin + contentW * 0.48;
   ensureSpace(ctx, boxH + 40);
@@ -254,16 +268,18 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
     font,
     color: INK,
   });
-  sy -= 26;
-  ctx.page.drawText("PVN likme", { x: boxLeft + pad, y: sy, size: 10, font, color: MUTED });
-  const pvnLab = "0%";
-  ctx.page.drawText(pvnLab, {
-    x: boxLeft + boxW - pad - font.widthOfTextAtSize(pvnLab, 10),
-    y: sy,
-    size: 10,
-    font,
-    color: INK,
-  });
+  if (!topup) {
+    sy -= 26;
+    ctx.page.drawText("PVN likme", { x: boxLeft + pad, y: sy, size: 10, font, color: MUTED });
+    const pvnLab = "0%";
+    ctx.page.drawText(pvnLab, {
+      x: boxLeft + boxW - pad - font.widthOfTextAtSize(pvnLab, 10),
+      y: sy,
+      size: 10,
+      font,
+      color: INK,
+    });
+  }
   sy -= 30;
   ctx.page.drawText("Kopā", { x: boxLeft + pad, y: sy, size: 14, font: fontBold, color: INK });
   ctx.page.drawText(money, {
@@ -271,7 +287,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
     y: sy,
     size: 14,
     font: fontBold,
-    color: ACCENT,
+    color: accent,
   });
   ctx.y = sumTop - boxH - 18;
 

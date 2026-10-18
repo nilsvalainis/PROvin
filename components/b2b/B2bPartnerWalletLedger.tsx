@@ -61,6 +61,7 @@ export function B2bPartnerWalletLedger() {
             <tr>
               <th className={TH}>{t("ledgerDate")}</th>
               <th className={TH}>{t("ledgerType")}</th>
+              <th className={TH}>{t("ledgerInvoice")}</th>
               <th className={`${TH} text-right`}>{t("ledgerAmount")}</th>
               <th className={`${TH} text-right`}>{t("ledgerBalance")}</th>
             </tr>
@@ -73,6 +74,18 @@ export function B2bPartnerWalletLedger() {
                   {t(KIND_KEY[txn.kind])}
                   {txn.product ? <span className="text-zinc-500"> · {t(B2B_WALLET_PRODUCT_COPY[txn.product].title)}</span> : null}
                   {txn.vin ? <span className="ml-1 font-mono text-[0.72rem] text-zinc-500">{txn.vin}</span> : null}
+                </td>
+                <td className="py-2.5 pr-3 text-zinc-300">
+                  {txn.kind === "topup" && txn.sessionId ? (
+                    <a
+                      href={`/api/partner/invoice/${encodeURIComponent(txn.sessionId)}`}
+                      className="font-medium text-[#F26522] hover:underline"
+                    >
+                      {txn.invoiceNumber || t("ledgerDownloadInvoice")}
+                    </a>
+                  ) : (
+                    <span className="text-zinc-600">-</span>
+                  )}
                 </td>
                 <td
                   className={`py-2.5 pr-3 text-right font-semibold ${txn.amountCents >= 0 ? "text-emerald-300" : "text-zinc-100"}`}

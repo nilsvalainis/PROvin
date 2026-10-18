@@ -1,3 +1,9 @@
+import {
+  B2B_TOPUP_INVOICE,
+  b2bTopupInvoiceSellerLines,
+  getB2bTopupInvoicePvnNote,
+  getB2bTopupInvoiceSeller,
+} from "@/lib/b2b-topup-invoice";
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
 import { formatMoneyEur } from "@/lib/format-money";
 import { provincLogoSvg } from "@/lib/client-report-pdf-layout-draft";
@@ -25,8 +31,10 @@ export type InvoiceOrderPayload = {
   companyName?: string | null;
   companyReg?: string | null;
   companyAddress?: string | null;
-  /** Formāts PRV-YYYY-XXXX */
+  /** Formāts PRV-YYYY-XXXX vai IRS-YYYY-XXXX (B2B top-up). */
   invoiceNumber: string;
+  /** IRISS maka papildināšana: bez VIN, bez PVN rindām. */
+  variant?: "b2b_topup";
 };
 
 export function toInvoiceOrderPayload(
@@ -46,6 +54,7 @@ export function toInvoiceOrderPayload(
     companyAddress?: string | null;
   },
   invoiceNumber: string,
+  variant?: "b2b_topup",
 ): InvoiceOrderPayload {
   if (order.amountTotal == null) {
     throw new Error("Rēķinam nav summas (amountTotal).");
@@ -64,6 +73,7 @@ export function toInvoiceOrderPayload(
     companyReg: order.companyReg ?? null,
     companyAddress: order.companyAddress ?? null,
     invoiceNumber,
+    ...(variant ? { variant } : {}),
   };
 }
 
@@ -98,10 +108,11 @@ export function getInvoicePvnFooterText(): string {
 }
 
 export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
+  const topup = order.variant === "b2b_topup";
   const legal = getCompanyLegal();
-  const brand = getCompanyPublicBrand();
-  const lineDesc = buildInvoiceServiceLineDescription(order);
-  const pvnFooter = getInvoicePvnFooterText();
+  const brand = topup ? getB2bTopupInvoiceSeller().brand : getCompanyPublicBrand();
+  const lineDesc = topup ? B2B_TOPUP_INVOICE.serviceLine : buildInvoiceServiceLineDescription(order);
+  const pvnFooter = topup ? getB2bTopupInvoicePvnNote() : getInvoicePvnFooterText();
 
   const money = formatMoneyEur(order.amountTotal, order.currency);
   const email = order.customerEmail ?? order.customerDetailsEmail ?? "-";
@@ -115,16 +126,18 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
   });
   const invoiceDate = dateFmt.format(new Date(order.created * 1000));
 
-  const supplierLines = [
-    brand,
-    legal.legalName || "-",
-    legal.regNo ? `Reģ. Nr.: ${legal.regNo}` : null,
-    legal.legalAddress || null,
-  ].filter(Boolean) as string[];
+  const supplierLines = topup
+    ? b2bTopupInvoiceSellerLines()
+    : ([
+        brand,
+        legal.legalName || "-",
+        legal.regNo ? `Reģ. Nr.: ${legal.regNo}` : null,
+        legal.legalAddress || null,
+      ].filter(Boolean) as string[]);
 
   const css = `
     :root{
-      --inv-accent:#0061d2;
+      --inv-accent:${topup ? "#F26522" : "#0061d2"};
       --inv-ink:#1d1d1f;
       --inv-muted:#86868b;
       --inv-line:#e8e8ed;
@@ -275,7 +288,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
 <body>
 <div class="inv-wrap">
   <header class="inv-hero">
-    <div>${provincLogoSvg()}</div>
+    <div>${topup ? `<p class="inv-doc-title" style="color:var(--inv-accent)">IRISS</p>` : provincLogoSvg()}</div>
     <div class="inv-hero-right">
       <p class="inv-doc-title">Rēķins</p>
       <p class="inv-brand-sub">${esc(brand)}</p>
@@ -298,7 +311,11 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
           ? buyerLines.map((line) => `<p>${esc(line)}</p>`).join("")
           : `<p>${esc(email)}</p>`
       }
-      <p style="margin-top:8px"><strong>Transportlīdzekļa VIN:</strong><br/><span class="inv-vin">${esc(vin)}</span></p>
+      ${
+        topup
+          ? ""
+          : `<p style="margin-top:8px"><strong>Transportlīdzekļa VIN:</strong><br/><span class="inv-vin">${esc(vin)}</span></p>`
+      }
     </section>
   </div>
 
@@ -326,15 +343,23 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
       <span class="inv-summary-label">Starpsumma</span>
       <span class="inv-summary-val">${esc(money)}</span>
     </div>
-    <div class="inv-summary-row inv-summary-row--muted">
+    ${
+      topup
+        ? ""
+        : `<div class="inv-summary-row inv-summary-row--muted">
       <span class="inv-summary-label">PVN likme</span>
       <span class="inv-summary-val">0%</span>
-    </div>
+    </div>`
+    }
     <div class="inv-summary-row inv-summary-row--emph">
       <span class="inv-summary-label">Kopā</span>
       <span class="inv-summary-val">${esc(money)}</span>
     </div>
-    <p class="inv-pvn-note">PVN likme 0%; pievienotās vērtības nodoklis netiek piemērots atsevišķi.</p>
+    ${
+      topup
+        ? ""
+        : `<p class="inv-pvn-note">PVN likme 0%; pievienotās vērtības nodoklis netiek piemērots atsevišķi.</p>`
+    }
   </div>
 
   <footer class="inv-foot">

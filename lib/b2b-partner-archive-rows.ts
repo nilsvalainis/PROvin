@@ -204,7 +204,9 @@ export function buildPartnerPackArchiveRow(args: {
     amountKind: "money",
     plan: args.plan,
     reportHref: null,
-    invoiceHref: partnerArchiveInvoiceHref(args.id, args.invoicePdfUrl),
+    invoiceHref: args.topup
+      ? `/api/partner/invoice/${encodeURIComponent(args.id)}`
+      : partnerArchiveInvoiceHref(args.id, args.invoicePdfUrl),
     status: "ready",
     kind: args.topup ? "topup" : "pack",
     ...(args.topup ? {} : { packQty: args.packQty && args.packQty > 0 ? args.packQty : 1 }),

@@ -345,6 +345,8 @@
     "ledgerTopup": "Papildinājums",
     "ledgerPurchase": "Pirkums",
     "ledgerRefund": "Atmaksa",
-    "ledgerAdjust": "Korekcija"
+    "ledgerAdjust": "Korekcija",
+    "ledgerInvoice": "Rēķins",
+    "ledgerDownloadInvoice": "Lejupielādēt rēķinu"
   }
 }

@@ -206,6 +206,8 @@ export type B2bWalletTxn = {
   vin?: string;
   orderId?: string;
   sessionId?: string;
+  /** Maka papildinājuma rēķina numurs (IRS-YYYY-XXXX). */
+  invoiceNumber?: string;
   note?: string;
   /** Atmaksai: pirkuma darījuma id. */
   refundOf?: string;
@@ -266,6 +268,7 @@ function parseTxn(raw: unknown): B2bWalletTxn | null {
     ...(str(o.vin, 24) ? { vin: str(o.vin, 24) } : {}),
     ...(str(o.orderId, 120) ? { orderId: str(o.orderId, 120) } : {}),
     ...(str(o.sessionId, 200) ? { sessionId: str(o.sessionId, 200) } : {}),
+    ...(str(o.invoiceNumber, 40) ? { invoiceNumber: str(o.invoiceNumber, 40) } : {}),
     ...(str(o.note, 300) ? { note: str(o.note, 300) } : {}),
     ...(str(o.refundOf, 80) ? { refundOf: str(o.refundOf, 80) } : {}),
   };
@@ -463,6 +466,22 @@ export function applyB2bWalletBulkPurchase(
     charged.push({ vin, txn: r.txn });
   }
   return { ok: true, wallet: next, charged, duplicates, skipped };
+}
+
+export function attachB2bWalletTopupInvoice(
+  wallet: B2bWallet,
+  args: { sessionId: string; invoiceNumber: string },
+): B2bWallet {
+  const sessionId = args.sessionId.trim();
+  const invoiceNumber = args.invoiceNumber.trim().slice(0, 40);
+  if (!sessionId || !invoiceNumber) return wallet;
+  let changed = false;
+  const txns = wallet.txns.map((txn) => {
+    if (txn.kind !== "topup" || txn.sessionId !== sessionId || txn.invoiceNumber === invoiceNumber) return txn;
+    changed = true;
+    return { ...txn, invoiceNumber };
+  });
+  return changed ? { ...wallet, txns } : wallet;
 }
 
 export function attachB2bWalletPurchaseOrder(wallet: B2bWallet, txnId: string, orderId: string): B2bWallet {
