@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       {
         price_data: {
           currency: "eur",
-          product_data: { name: `PROVIN.LV konta papildināšana ${formatB2bWalletEuro(amountCents)}` },
+          product_data: { name: `IRISS konta papildināšana ${formatB2bWalletEuro(amountCents)}` },
           unit_amount: amountCents,
         },
         quantity: 1,

@@ -12,9 +12,9 @@ const META_DIRNAME = "_meta";
 
 type CounterData = Record<string, number>;
 
-function counterBlobPathname(prefix: string): string {
+function counterBlobPathname(prefix: string, filename = COUNTER_FILENAME): string {
   const p = prefix.endsWith("/") ? prefix : `${prefix}/`;
-  return `${p}${META_DIRNAME}/${COUNTER_FILENAME}`;
+  return `${p}${META_DIRNAME}/${filename}`;
 }
 
 function repairFlagBlobPathname(prefix: string): string {
@@ -22,8 +22,8 @@ function repairFlagBlobPathname(prefix: string): string {
   return `${p}${META_DIRNAME}/${REPAIR_FLAG_FILENAME}`;
 }
 
-function counterFilesystemPath(base: string): string {
-  return path.join(base, META_DIRNAME, COUNTER_FILENAME);
+function counterFilesystemPath(base: string, filename = COUNTER_FILENAME): string {
+  return path.join(base, META_DIRNAME, filename);
 }
 
 function repairFlagFilesystemPath(base: string): string {
@@ -44,9 +44,9 @@ function parseCounterJson(raw: string): CounterData {
   }
 }
 
-async function readCounterFromBlob(prefix: string, token: string): Promise<CounterData> {
+async function readCounterFromBlob(prefix: string, token: string, filename = COUNTER_FILENAME): Promise<CounterData> {
   try {
-    const res = await get(counterBlobPathname(prefix), {
+    const res = await get(counterBlobPathname(prefix, filename), {
       access: "private",
       token,
       useCache: false,
@@ -59,8 +59,13 @@ async function readCounterFromBlob(prefix: string, token: string): Promise<Count
   }
 }
 
-async function writeCounterToBlob(prefix: string, token: string, data: CounterData): Promise<void> {
-  await put(counterBlobPathname(prefix), JSON.stringify(data), {
+async function writeCounterToBlob(
+  prefix: string,
+  token: string,
+  data: CounterData,
+  filename = COUNTER_FILENAME,
+): Promise<void> {
+  await put(counterBlobPathname(prefix, filename), JSON.stringify(data), {
     access: "private",
     token,
     addRandomSuffix: false,
@@ -177,15 +182,18 @@ function sleep(ms: number): Promise<void> {
  * Atomiski palielina gada secības skaitītāju un atgriež nākamo numuru (1…).
  * Produkcijā skaitītājs glabājas Vercel Blob (`_meta/invoice-year-sequence.json`), nevis /tmp.
  */
-export async function nextInvoiceSequenceForYear(year: number): Promise<number> {
+export async function nextInvoiceSequenceForYear(
+  year: number,
+  filename = COUNTER_FILENAME,
+): Promise<number> {
   const blob = getOrderDraftBlobConfig();
   if (blob) {
     for (let attempt = 0; attempt < 8; attempt++) {
-      const data = await readCounterFromBlob(blob.prefix, blob.token);
+      const data = await readCounterFromBlob(blob.prefix, blob.token, filename);
       const next = (data[String(year)] ?? 0) + 1;
       data[String(year)] = next;
       try {
-        await writeCounterToBlob(blob.prefix, blob.token, data);
+        await writeCounterToBlob(blob.prefix, blob.token, data, filename);
         return next;
       } catch (e) {
         if (attempt === 7) throw e;
@@ -200,7 +208,7 @@ export async function nextInvoiceSequenceForYear(year: number): Promise<number> 
     throw new Error("invoice_counter_no_storage");
   }
 
-  const fp = counterFilesystemPath(base);
+  const fp = counterFilesystemPath(base, filename);
   await fs.mkdir(path.dirname(fp), { recursive: true });
 
   let data: CounterData = {};

@@ -9,6 +9,7 @@ import {
   adminNewPartnerHtml,
   b2bWalletRefundEmailHtml,
   auditCompletedEmailHtml,
+  b2bIrissEmailHtml,
   dealerDataNoDataRefundEmailHtml,
   dealerDataOperatorMessageEmailHtml,
   listingPeekCustomerCommentHtml,
@@ -946,4 +947,59 @@ export async function sendMorningSummaryEmail(opts: {
     text: opts.text,
     html: opts.html,
   });
+}
+
+/** IRISS B2B: rēķins pēc maka papildināšanas. Bez PROVIN, bez VIN. */
+export async function sendB2bWalletTopupInvoiceEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  invoiceAttachment?: {
+    filename: string;
+    content: Buffer;
+    contentType: string;
+  } | null;
+}): Promise<void> {
+  const paragraphs = opts.text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  await sendSmtpMail({
+    to: opts.to,
+    from: getB2bMailFromAddress(),
+    subject: opts.subject,
+    text: opts.text,
+    html: b2bIrissEmailHtml({ title: opts.subject, paragraphs }),
+    ...(opts.invoiceAttachment
+      ? {
+          attachments: [
+            {
+              filename: opts.invoiceAttachment.filename,
+              content: opts.invoiceAttachment.content,
+              contentType: opts.invoiceAttachment.contentType,
+            },
+          ],
+        }
+      : {}),
+  });
+}
+
+export async function trySendB2bWalletTopupInvoiceEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+  invoiceAttachment?: {
+    filename: string;
+    content: Buffer;
+    contentType: string;
+  } | null;
+}): Promise<boolean> {
+  if (!isSmtpConfigured()) {
+    console.warn("[email] SMTP nav iestatīts, B2B rēķina e-pasts nav nosūtīts");
+    return false;
+  }
+  try {
+    await sendB2bWalletTopupInvoiceEmail(opts);
+    return true;
+  } catch (err) {
+    console.error("[email] B2B rēķina e-pasts neizdevās", err);
+    return false;
+  }
 }

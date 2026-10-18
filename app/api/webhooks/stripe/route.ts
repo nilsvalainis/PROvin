@@ -1,8 +1,12 @@
 import { headers } from "next/headers";
 import { NextResponse, after } from "next/server";
 import Stripe from "stripe";
-import { sendPaymentConfirmationEmail } from "@/lib/email/send-transactional";
+import { sendB2bWalletTopupInvoiceEmail, sendPaymentConfirmationEmail } from "@/lib/email/send-transactional";
 import { getInvoiceEmailAttachment } from "@/lib/email/invoice-email-attachment";
+import { renderB2bTopupInvoiceEmail } from "@/lib/b2b-topup-invoice";
+import { getB2bPartnerById } from "@/lib/b2b-partner-store";
+import { attachB2bWalletTopupInvoice, applyB2bWalletTopup, formatB2bWalletEuro } from "@/lib/b2b-wallet";
+import { readB2bWallet, updateB2bWallet } from "@/lib/b2b-wallet-store";
 import { notifyAdminEmail, notifyAdminTelegram } from "@/lib/notify";
 import { persistPaidOrderInvoice } from "@/lib/invoice-storage";
 import { triggerInvoiceSequenceRepairInBackground } from "@/lib/invoice-counter";
@@ -27,8 +31,6 @@ import { consumeClientLinkByHash } from "@/lib/client-link-store";
 import { notifyMetaPurchaseFromStripeSession } from "@/lib/meta-capi";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import { isB2bWalletTopupFulfillment } from "@/lib/b2b-partner-orders";
-import { applyB2bWalletTopup } from "@/lib/b2b-wallet";
-import { updateB2bWallet } from "@/lib/b2b-wallet-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -126,11 +128,25 @@ async function fulfillPaidCheckoutSession(
       console.error("Email notify:", e);
     }
 
+    let persistedInvoice: { invoiceNumber: string } | null = null;
     try {
-      await persistPaidOrderInvoice(session.id);
+      persistedInvoice = await persistPaidOrderInvoice(session.id);
     } catch (err) {
       console.error("invoice persist:", err);
       throw err;
+    }
+
+    if (isWalletTopup && persistedInvoice) {
+      const partnerId = session.metadata?.partner_id?.trim() ?? "";
+      if (isSafeB2bPartnerId(partnerId)) {
+        await updateB2bWallet(partnerId, (wallet) => ({
+          value: true,
+          next: attachB2bWalletTopupInvoice(wallet, {
+            sessionId: session.id,
+            invoiceNumber: persistedInvoice!.invoiceNumber,
+          }),
+        }));
+      }
     }
 
     if (email) {
@@ -139,15 +155,37 @@ async function fulfillPaidCheckoutSession(
         if (!invoiceAttachment) {
           throw new Error("invoice_attachment_missing");
         }
-        await sendPaymentConfirmationEmail({
-          to: email,
-          sessionId: session.id,
-          amountTotal: payload.amountTotal,
-          currency: payload.currency,
-          vin: payload.vin,
-          invoiceAttachment,
-        });
-        console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id, to: email });
+        if (isWalletTopup) {
+          const partnerId = session.metadata?.partner_id?.trim() ?? "";
+          const [partner, wallet] = await Promise.all([
+            isSafeB2bPartnerId(partnerId) ? getB2bPartnerById(partnerId) : Promise.resolve(null),
+            isSafeB2bPartnerId(partnerId) ? readB2bWallet(partnerId) : Promise.resolve(null),
+          ]);
+          const amountCents = session.amount_total ?? 0;
+          const rendered = renderB2bTopupInvoiceEmail({
+            summa: formatB2bWalletEuro(amountCents),
+            atlikums: formatB2bWalletEuro(wallet?.balanceCents ?? amountCents),
+            rekins: persistedInvoice?.invoiceNumber ?? "-",
+            uznemums: partner?.companyName ?? "",
+          });
+          await sendB2bWalletTopupInvoiceEmail({
+            to: email,
+            subject: rendered.subject,
+            text: rendered.text,
+            invoiceAttachment,
+          });
+          console.info("[stripe webhook] B2B top-up invoice email sent", { sessionId: session.id, to: email });
+        } else {
+          await sendPaymentConfirmationEmail({
+            to: email,
+            sessionId: session.id,
+            amountTotal: payload.amountTotal,
+            currency: payload.currency,
+            vin: payload.vin,
+            invoiceAttachment,
+          });
+          console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id, to: email });
+        }
       } catch (e) {
         console.error("[stripe webhook] Customer payment confirmation email failed:", e);
         throw e;

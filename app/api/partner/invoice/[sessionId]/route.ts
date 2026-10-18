@@ -3,7 +3,7 @@ import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-dra
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { partnerOwnsArchiveItem } from "@/lib/b2b-partner-archive-rows";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
-import { readInvoicePdfCached } from "@/lib/invoice-storage";
+import { getOrBuildInvoicePdfForSession, readInvoicePdfCached } from "@/lib/invoice-storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,12 +41,14 @@ export async function GET(_req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  const bytes = await readInvoicePdfCached(id);
-  if (!bytes) {
+  const cached = await readInvoicePdfCached(id);
+  const built = cached ? { bytes: cached, invoiceNumber: draft?.invoiceNumber?.trim() || "invoice" } : await getOrBuildInvoicePdfForSession(id);
+  if (!built) {
     return NextResponse.json({ error: "invoice_not_ready" }, { status: 404 });
   }
 
-  const invoiceNumber = draft?.invoiceNumber?.trim() || "invoice";
+  const invoiceNumber = built.invoiceNumber || draft?.invoiceNumber?.trim() || "invoice";
+  const bytes = built.bytes;
   const safeName = `invoice-${invoiceNumber.replace(/[^\w.-]+/g, "_")}.pdf`;
   return new NextResponse(Buffer.from(bytes), {
     status: 200,

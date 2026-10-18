@@ -1,10 +1,6 @@
 import "server-only";
 
-import { getCheckoutSessionDetail } from "@/lib/admin-orders";
-import { buildInvoicePdfBytes } from "@/lib/invoice-pdf";
-import { toInvoiceOrderPayload } from "@/lib/generate-invoice-html";
-import { getOrCreateInvoiceNumber } from "@/lib/invoice-number";
-import { readInvoicePdfCached } from "@/lib/invoice-storage";
+import { getOrBuildInvoicePdfForSession } from "@/lib/invoice-storage";
 
 export type InvoiceEmailAttachment = {
   filename: string;
@@ -16,29 +12,12 @@ export type InvoiceEmailAttachment = {
  * Apmaksātam pasūtījumam — rēķina PDF no diska vai ģenerēts uz vietas (kā /api/admin/invoice/.../pdf).
  */
 export async function getInvoiceEmailAttachment(sessionId: string): Promise<InvoiceEmailAttachment | null> {
-  const order = await getCheckoutSessionDetail(sessionId);
-  if (!order || order.paymentStatus !== "paid") return null;
-  if (order.amountTotal == null) {
-    throw new Error(
-      "Nav izdevies noteikt pasūtījuma summu no Stripe (amount_total / line_items). Pārbaudi sesiju Stripe Dashboard.",
-    );
-  }
-
-  const invoiceNumber = await getOrCreateInvoiceNumber(sessionId, order.created);
-  const safe = invoiceNumber.replace(/[^\w.-]+/g, "_") || "PRV";
-  const filename = `rekins_${safe}.pdf`;
-
-  const cached = await readInvoicePdfCached(sessionId);
-  let bytes: Uint8Array;
-  if (cached) {
-    bytes = cached;
-  } else {
-    bytes = await buildInvoicePdfBytes(toInvoiceOrderPayload(order, invoiceNumber));
-  }
-
+  const built = await getOrBuildInvoicePdfForSession(sessionId);
+  if (!built) return null;
+  const safe = built.invoiceNumber.replace(/[^\w.-]+/g, "_") || "rekins";
   return {
-    filename,
-    content: Buffer.from(bytes),
+    filename: `rekins_${safe}.pdf`,
+    content: Buffer.from(built.bytes),
     contentType: "application/pdf",
   };
 }

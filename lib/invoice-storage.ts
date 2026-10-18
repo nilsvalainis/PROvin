@@ -10,6 +10,8 @@ import {
   upsertOrderDraftInvoiceFields,
 } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+import { isB2bWalletTopupFulfillment } from "@/lib/b2b-partner-orders";
+import { getOrCreateB2bTopupInvoiceNumber } from "@/lib/b2b-topup-invoice-number";
 import { buildInvoicePdfBytes } from "@/lib/invoice-pdf";
 import { toInvoiceOrderPayload } from "@/lib/generate-invoice-html";
 import { getOrCreateInvoiceNumber } from "@/lib/invoice-number";
@@ -120,11 +122,14 @@ export async function getOrBuildInvoicePdfForSession(
   const order = await getCheckoutSessionDetail(sessionId);
   if (!order || order.paymentStatus !== "paid" || order.amountTotal == null) return null;
 
-  const invoiceNumber = await getOrCreateInvoiceNumber(sessionId, order.created);
+  const topup = isB2bWalletTopupFulfillment(order.fulfillment);
+  const invoiceNumber = topup
+    ? await getOrCreateB2bTopupInvoiceNumber(sessionId, order.created)
+    : await getOrCreateInvoiceNumber(sessionId, order.created);
   const cached = await readInvoicePdfCached(sessionId);
   if (cached) return { bytes: cached, invoiceNumber };
 
-  const bytes = await buildInvoicePdfBytes(toInvoiceOrderPayload(order, invoiceNumber));
+  const bytes = await buildInvoicePdfBytes(toInvoiceOrderPayload(order, invoiceNumber, topup ? "b2b_topup" : undefined));
 
   await writeInvoicePdfCached(sessionId, bytes);
   void upsertOrderDraftInvoiceFields(sessionId, {
@@ -138,11 +143,14 @@ export async function getOrBuildInvoicePdfForSession(
 /**
  * Pēc apmaksas (Stripe webhook): piešķir numuru un kešo PDF Blob + disk.
  */
-export async function persistPaidOrderInvoice(sessionId: string): Promise<void> {
+export async function persistPaidOrderInvoice(sessionId: string): Promise<{ invoiceNumber: string } | null> {
   try {
-    if (await readInvoicePdfCached(sessionId)) return;
+    const cachedNumber = (await readInvoicePdfCached(sessionId))
+      ? (await getOrBuildInvoicePdfForSession(sessionId))?.invoiceNumber
+      : null;
+    if (cachedNumber) return { invoiceNumber: cachedNumber };
     const built = await getOrBuildInvoicePdfForSession(sessionId);
-    if (!built) return;
+    if (!built) return null;
 
     const meta = await upsertOrderDraftInvoiceFields(sessionId, {
       invoicePdfUrl: `/api/admin/invoice/${encodeURIComponent(sessionId)}/pdf`,
@@ -151,6 +159,7 @@ export async function persistPaidOrderInvoice(sessionId: string): Promise<void> 
     if (!meta.ok) {
       throw new Error(meta.error ?? "upsertOrderDraftInvoiceFields failed");
     }
+    return { invoiceNumber: built.invoiceNumber };
   } catch (error) {
     console.error("[invoice-storage] Failed to persist invoice data:", error);
     throw error;

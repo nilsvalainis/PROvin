@@ -545,8 +545,8 @@ ${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}
 
 const IRISS_ORANGE = "#F26522";
 
-/** IRISS B2B maka atmaksa: nav PROVIN lentes, nav PROVIN teksta. */
-export function b2bWalletRefundEmailHtml(opts: { title: string; paragraphs: readonly string[] }): string {
+/** IRISS B2B e-pasts: nav PROVIN lentes, nav PROVIN teksta. */
+export function b2bIrissEmailHtml(opts: { title: string; paragraphs: readonly string[] }): string {
   const paras = opts.paragraphs
     .map((p) => `<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">${esc(p).replace(/\n/g, "<br/>")}</p>`)
     .join("");
@@ -571,3 +571,5 @@ ${paras}
 </body>
 </html>`;
 }
+
+export const b2bWalletRefundEmailHtml = b2bIrissEmailHtml;

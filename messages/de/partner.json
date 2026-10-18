@@ -345,6 +345,8 @@
     "ledgerTopup": "Aufladung",
     "ledgerPurchase": "Kauf",
     "ledgerRefund": "Erstattung",
-    "ledgerAdjust": "Korrektur"
+    "ledgerAdjust": "Korrektur",
+    "ledgerInvoice": "Rechnung",
+    "ledgerDownloadInvoice": "Rechnung herunterladen"
   }
 }
