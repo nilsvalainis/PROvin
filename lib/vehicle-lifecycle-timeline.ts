@@ -585,7 +585,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     const ev = makeEvent({
       kind: "incident",
       rawDate: c.date,
-      title: "Negadījums",
+      title: c.kindLabel,
       detail: "",
       country: c.country,
       tone: "alert",

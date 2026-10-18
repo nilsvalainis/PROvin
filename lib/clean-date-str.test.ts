@@ -5,7 +5,11 @@ import {
   parseDotOrIsoDateToMs,
   parseMileageSortTime,
 } from "@/lib/clean-date-str";
-import { autoRecordsDateSortKey, formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+import {
+  autoRecordsDateSortKey,
+  formatAutoRecordsDateForOutput,
+  formatSourceDatePreservingMonth,
+} from "@/lib/auto-records-paste-parse";
 import { parseMileageDateForSort } from "@/lib/unified-mileage";
 import { deepSanitizeDraftStrings } from "@/lib/admin-draft-sanitize";
 
@@ -40,6 +44,18 @@ describe("formatAutoRecordsDateForOutput", () => {
     expect(formatAutoRecordsDateForOutput("06.2020")).toBe("01.06.2020");
     expect(formatAutoRecordsDateForOutput("11.2019")).toBe("01.11.2019");
     expect(formatAutoRecordsDateForOutput("2020-06")).toBe("01.06.2020");
+  });
+});
+
+describe("formatSourceDatePreservingMonth", () => {
+  it("keeps MM.YYYY without inventing day 01", () => {
+    expect(formatSourceDatePreservingMonth("07.2026")).toBe("07.2026");
+    expect(formatSourceDatePreservingMonth("7.2026")).toBe("07.2026");
+    expect(formatSourceDatePreservingMonth("2026-07")).toBe("07.2026");
+  });
+
+  it("keeps a real day date", () => {
+    expect(formatSourceDatePreservingMonth("16.06.2021")).toBe("16.06.2021");
   });
 });
 
@@ -78,5 +94,9 @@ describe("date sort helpers", () => {
     expect(() => parseMileageDateForSort("00.08.2021")).not.toThrow();
     expect(parseMileageDateForSort("00.08.2021")).toBeGreaterThan(0);
     expect(parseMileageSortTime("00.08.2021")).toBe(parseMileageDateForSort("00.08.2021"));
+  });
+
+  it("parseMileageDateForSort sorts MM.YYYY as the first of that month", () => {
+    expect(parseMileageDateForSort("07.2026")).toBe(Date.UTC(2026, 6, 1));
   });
 });

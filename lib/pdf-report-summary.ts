@@ -42,6 +42,7 @@ import {
   collectUnifiedIncidentDamageDetails,
   collectUnifiedIncidentRows,
   formatUnifiedIncidentCountLabel,
+  unifiedIncidentCountKind,
 } from "@/lib/unified-incidents";
 import {
   collectUnifiedMileageRows,
@@ -135,7 +136,7 @@ function buildIncidentsTile(input: PdfSummaryInput): PdfSummaryTile {
   return {
     id: "incidents",
     label: "Negadījumi un bojājumi",
-    value: formatUnifiedIncidentCountLabel(count),
+    value: formatUnifiedIncidentCountLabel(count, unifiedIncidentCountKind(agg.clusters)),
     note: noteParts.join(" · "),
     tone: loss.found || count > 1 ? "alert" : "warn",
   };

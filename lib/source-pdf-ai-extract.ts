@@ -9,6 +9,7 @@ import type { SourcePdfChecklist } from "@/lib/admin-source-blocks";
 import {
   autoRecordsMileageRowHasData,
   formatAutoRecordsDateForOutput,
+  formatSourceDatePreservingMonth,
   normalizeAutoRecordsOdometer,
   sortAutoRecordsDescending,
   type AutoRecordsServiceRow,
@@ -82,7 +83,7 @@ function normalizeDamageDetailRow(raw: unknown): CarVerticalDamageDetailRow | nu
   const o = asRecord(raw);
   if (!o) return null;
   const row: CarVerticalDamageDetailRow = {
-    date: formatAutoRecordsDateForOutput(asString(o.date, 32)),
+    date: formatSourceDatePreservingMonth(asString(o.date, 32)),
     country: normalizeCountryNameLv(asString(o.country, 80)),
     lossAmount: asString(o.lossAmount ?? o.amount, 64),
     damagedSides: asString(o.damagedSides ?? o.sides, 500),
@@ -111,7 +112,7 @@ function normalizeIncidentRow(raw: unknown): LtabIncidentRow | null {
   const o = asRecord(raw);
   if (!o) return null;
   const row: LtabIncidentRow = {
-    csngDate: formatAutoRecordsDateForOutput(asString(o.csngDate ?? o.date, 32)),
+    csngDate: formatSourceDatePreservingMonth(asString(o.csngDate ?? o.date, 32)),
     lossAmount: normalizeLossAmountEurDisplay(asString(o.lossAmount ?? o.amount, 64)),
     incidentNo: normalizeCountryNameLv(asString(o.incidentNo ?? o.country, 80)),
   };
@@ -157,7 +158,7 @@ function dedupeIncidents(rows: LtabIncidentRow[]): LtabIncidentRow[] {
 const VENDOR_SYSTEM = `You are PROVIN.LV admin PDF data extractor. Read the attached vehicle history PDF (and optional text extract) for ONE vendor report.
 Return ONLY valid JSON - no markdown.
 
-Map every table and timeline you can find into structured fields. Dates as DD.MM.YYYY when possible. If the source shows only MM.YYYY / M.YYYY (e.g. 06.2020), always expand to 01.MM.YYYY (e.g. 01.06.2020). Odometer as digits only (no "km"). Country names in Latvian when known (e.g. Latvija, Vācija).
+Map every table and timeline you can find into structured fields. Dates as DD.MM.YYYY when the source prints a day. If the source shows only MM.YYYY / M.YYYY (e.g. 06.2020), keep MM.YYYY (e.g. 06.2020) and never invent day 01. Odometer as digits only (no "km"). Country names in Latvian when known (e.g. Latvija, Vācija).
 
 JSON schema:
 {
@@ -186,7 +187,7 @@ const TARGET_USER: Record<HistoryVendorPdfTarget, string> = {
   autodna: `TARGET: AutoDNA report (Latvian UI labels).
 CRITICAL terminology:
 - "TRANSPORTLĪDZEKĻA VĒSTURE" = odometer timeline → serviceHistory ONLY when km digits are shown next to the date.
-- "Transportlīdzekļa zaudējumu apjoms" / "Zaudējumu apjoms" = damage/insurance loss events → map EVERY row to incidents[] (csngDate: if source is MM.YYYY use 01.MM.YYYY e.g. 06.2020 → 01.06.2020; lossAmount as full EUR range e.g. "300 - 400 EUR" or "40 000 - 41 000 EUR", incidentNo=country from "Valsts …"). Also mirror into damageDetails when sides/zones are listed.
+- "Transportlīdzekļa zaudējumu apjoms" / "Zaudējumu apjoms" = damage/insurance loss events → map EVERY row to incidents[] (csngDate: if source is MM.YYYY keep MM.YYYY e.g. 06.2020; lossAmount as full EUR range e.g. "300 - 400 EUR" or "40 000 - 41 000 EUR", incidentNo=country from "Valsts …"). Also mirror into damageDetails when sides/zones are listed.
 - "Vērtība" / "Tirgus vērtība" / estimated market or sale price EUR = NOT an incident. Never put those amounts in incidents[].lossAmount. Mentions may go to comments as facts.
 - Year-only lines in history without km are NOT mileage rows.
 Extract: first registration, Status Center, average mileage text into comments.`,

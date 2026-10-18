@@ -107,7 +107,7 @@ If a PDF vendor is unclear, set clarificationNeeded (short Latvian) for that fil
 reply: short Latvian confirmation. No markdown fences.
 
 Rules:
-- Dates: always full DD.MM.YYYY in output. If the report shows only MM.YYYY / M.YYYY (e.g. 06.2020 or 11.2019), convert to 01.MM.YYYY (e.g. 01.06.2020). Never leave month-year-only dates.
+- Dates: DD.MM.YYYY when the source prints a day. If the report shows only MM.YYYY / M.YYYY (e.g. 06.2020 or 11.2019), keep MM.YYYY (e.g. 06.2020). Never invent day 01.
 - lossAmount: ONLY insurance/accident/damage payout or estimated damage cost (zaudējumu apjoms, claim amount, bojājumu vērtība after a damage event). Keep ranges like "300 - 400 EUR"; free text allowed if not a number.
   NEVER use vehicle valuation / sale price as lossAmount. Reject these as upsert_incident amounts:
   «Vērtība», «Tirgus vērtība», «Aptuvenā vērtība», «Novērtētā cena», market/estimated/appraised vehicle value, Kaufpreis, Fahrzeugwert, listing/sale price, Cena (when it is a price record, not a claim).

@@ -1,11 +1,15 @@
 /**
  * Vienota negadījumu tabula PDF — AutoDNA, CarVertical, LTAB, Citi avoti (tikai rindas ar aizpildītu „Zaudējumu summu”).
- * Loģiskais apkopojums: tas pats mēnesis + valsts (arī starp avotiem) → viens negadījums ar vidējo summu
- * un katra avota novērtējumu.
+ * Loģiskais apkopojums: tas pats mēnesis + valsts (arī starp avotiem) → viena karte ar katra avota
+ * precīzajām summām (bez vidējiem) un kopējo diapazonu.
  */
 
 import type { ClientManualLtabBlockPdf, ClientManualVendorBlockPdf, LtabIncidentRow } from "@/lib/admin-source-blocks";
-import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+import {
+  formatAutoRecordsDateForOutput,
+  formatSourceDatePreservingMonth,
+  isMonthPrecisionDate,
+} from "@/lib/auto-records-paste-parse";
 import { CC_VIN_PDF_SOURCE_LABEL, ccVinAmountToEurDisplay, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { ASV_PDF_SOURCE_LABEL, asvAmountToEurDisplay, type AsvBlockState } from "@/lib/asv-report";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
@@ -20,12 +24,14 @@ import {
 } from "@/lib/damage-zones";
 import { damageDetailRowHasZones, mergeDamageDetailRows, parseDamageDetailsForVendorTitle } from "@/lib/vendor-damage-hydrate";
 import {
-  formatLossEurWholeDisplay,
   normalizeLossAmountEurDisplay,
-  parseLossAmountEurComparable,
-  roundLossAmountEurDisplayToTens,
+  parseLossAmountEurBounds,
 } from "@/lib/loss-amount-format";
 import { parseMileageDateForSort } from "@/lib/unified-mileage";
+
+export type UnifiedIncidentAmountBounds = { lo: number; hi: number };
+
+export type UnifiedIncidentKindLabel = "Negadījums" | "Bojājumu ieraksts";
 
 export type UnifiedIncidentRow = {
   date: string;
@@ -39,16 +45,22 @@ export type UnifiedIncidentRow = {
 export type UnifiedIncidentSourceValuation = {
   sourceLabel: string;
   displayAmount: string;
+  /** Punktveida summa, ja lo === hi; diapazonam null (nekad nav vidējais). */
   amountEur: number | null;
+  amountBounds: UnifiedIncidentAmountBounds | null;
+  rowCount: number;
 };
 
-/** Viens loģisks negadījums (pēc apvienošanas starp avotiem tajā pašā mēnesī). */
+/** Viens loģisks ieraksts (pēc apvienošanas starp avotiem tajā pašā mēnesī). */
 export type UnifiedIncidentCluster = {
   date: string;
   country: string;
   displayAmount: string;
+  /** Vairs nerēķina vidējo; paliek API saderībai, vienmēr null. */
   averageEur: number | null;
+  /** Vairs nav vidējo; paliek API saderībai, vienmēr false (PDF neliek „~”). */
   averaged: boolean;
+  kindLabel: UnifiedIncidentKindLabel;
   sourceValuations: UnifiedIncidentSourceValuation[];
   sortableTime: number;
   damage: UnifiedIncidentDamage | null;
@@ -213,29 +225,46 @@ function incidentClusterKey(row: UnifiedIncidentRow): string {
   return `${ym}|${country}`;
 }
 
-function parseIncidentAmountEur(raw: string): number | null {
-  const n = parseLossAmountEurComparable(raw);
-  if (n != null) return n;
+function rowAmountBounds(raw: string): UnifiedIncidentAmountBounds | null {
+  const bounds = parseLossAmountEurBounds(raw);
+  if (bounds) return bounds;
   const collapsed = raw.replace(/EUR|€/gi, "").replace(/[\s\u00a0\u202f]/g, "").trim();
   if (/^\d+$/.test(collapsed)) {
     const v = Number.parseInt(collapsed, 10);
-    return Number.isNaN(v) ? null : v;
+    return Number.isNaN(v) ? null : { lo: v, hi: v };
   }
   return null;
 }
 
-function amountsOf(rows: UnifiedIncidentRow[]): number[] {
-  const out: number[] = [];
-  for (const r of rows) {
-    const n = parseIncidentAmountEur(r.lossAmount);
-    if (n != null) out.push(n);
-  }
-  return out;
+function unionAmountBounds(list: UnifiedIncidentAmountBounds[]): UnifiedIncidentAmountBounds | null {
+  if (list.length === 0) return null;
+  return {
+    lo: Math.min(...list.map((b) => b.lo)),
+    hi: Math.max(...list.map((b) => b.hi)),
+  };
 }
 
-function averageEur(values: number[]): number | null {
-  if (values.length === 0) return null;
-  return Math.round(values.reduce((s, n) => s + n, 0) / values.length);
+function formatAmountBoundsDisplay(bounds: UnifiedIncidentAmountBounds | null, fallback: string): string {
+  if (!bounds) return fallback.trim() || "-";
+  if (bounds.lo === bounds.hi) {
+    return normalizeLossAmountEurDisplay(`${bounds.lo} €`) || fallback.trim() || "-";
+  }
+  return (
+    normalizeLossAmountEurDisplay(`${bounds.lo} - ${bounds.hi} €`) ||
+    `${bounds.lo} - ${bounds.hi} €`
+  );
+}
+
+function dedupeSourceRows(rows: UnifiedIncidentRow[]): UnifiedIncidentRow[] {
+  const seen = new Set<string>();
+  const out: UnifiedIncidentRow[] = [];
+  for (const r of rows) {
+    const key = `${r.date.trim()}|${r.lossAmount.trim()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(r);
+  }
+  return out;
 }
 
 function formatMonthYearDisplay(ym: string): string {
@@ -247,65 +276,45 @@ function formatMonthYearDisplay(ym: string): string {
 function clusterDisplayDate(members: UnifiedIncidentRow[], ym: string | null): string {
   const dayDates = new Set<string>();
   for (const m of members) {
+    if (isMonthPrecisionDate(m.date)) continue;
     if (m.sortableTime === Number.NEGATIVE_INFINITY) continue;
     const lv = formatAutoRecordsDateForOutput(m.date) || m.date.trim();
     if (/^\d{2}\.\d{2}\.\d{4}$/.test(lv)) dayDates.add(lv);
   }
   if (dayDates.size === 1) return [...dayDates][0]!;
   if (ym) return formatMonthYearDisplay(ym);
-  return sortUnifiedIncidentsNewestFirst(members)[0]?.date.trim() || "-";
+  const first = sortUnifiedIncidentsNewestFirst(members)[0]?.date.trim() || "-";
+  return isMonthPrecisionDate(first) ? formatSourceDatePreservingMonth(first) : first;
 }
 
-/**
- * carVertical „Bojājumu ieraksti” vienā mēnesī ir atsevišķi bojājumi (piem. novērtējums + fiksēts bojājums),
- * tāpēc tos summējam. AutoDNA vairākas rindas parasti ir viena CSNg dažādi novērtējumi — tur paliek vidējais.
- */
-const SUMMED_SAME_MONTH_SOURCES = new Set(["carvertical"]);
-
-function sourceSumsSameMonthRows(label: string): boolean {
-  return SUMMED_SAME_MONTH_SOURCES.has(label.trim().toLowerCase());
+function sourceLooksLikeAccident(label: string): boolean {
+  return /\bltab\b/i.test(label.trim());
 }
 
-/** Identiska rinda (tas pats datums un summa) no viena avota netiek skaitīta divreiz. */
-function sumDistinctEur(rows: UnifiedIncidentRow[]): number | null {
-  const seen = new Set<string>();
-  let sum = 0;
-  let any = false;
-  for (const r of rows) {
-    const n = parseIncidentAmountEur(r.lossAmount);
-    if (n == null) continue;
-    const key = `${r.date.trim()}|${n}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    sum += n;
-    any = true;
-  }
-  return any ? sum : null;
+function clusterKindLabel(members: UnifiedIncidentRow[]): UnifiedIncidentKindLabel {
+  return members.some((m) => sourceLooksLikeAccident(m.sourceLabel)) ? "Negadījums" : "Bojājumu ieraksts";
 }
 
 function sourceValuation(label: string, rows: UnifiedIncidentRow[]): UnifiedIncidentSourceValuation {
-  const values = amountsOf(rows);
-  const avg = averageEur(values);
-  if (rows.length === 1) {
-    const display = rows[0]!.lossAmount.trim() || (avg != null ? formatLossEurWholeDisplay(avg) : "-");
-    return {
-      sourceLabel: label,
-      displayAmount: roundLossAmountEurDisplayToTens(display),
-      amountEur: avg,
-    };
-  }
-  if (sourceSumsSameMonthRows(label)) {
-    const sum = sumDistinctEur(rows);
-    return {
-      sourceLabel: label,
-      displayAmount: roundLossAmountEurDisplayToTens(sum != null ? formatLossEurWholeDisplay(sum) : "-"),
-      amountEur: sum,
-    };
-  }
+  const unique = dedupeSourceRows(rows);
+  unique.sort((a, b) => {
+    const ba = rowAmountBounds(a.lossAmount);
+    const bb = rowAmountBounds(b.lossAmount);
+    if (ba && bb) return ba.lo - bb.lo || ba.hi - bb.hi;
+    return a.lossAmount.localeCompare(b.lossAmount, "lv");
+  });
+  const displays = unique
+    .map((r) => normalizeLossAmountEurDisplay(r.lossAmount) || r.lossAmount.trim())
+    .filter(Boolean);
+  const bounds = unionAmountBounds(
+    unique.map((r) => rowAmountBounds(r.lossAmount)).filter((b): b is UnifiedIncidentAmountBounds => b != null),
+  );
   return {
     sourceLabel: label,
-    displayAmount: roundLossAmountEurDisplayToTens(avg != null ? formatLossEurWholeDisplay(avg) : "-"),
-    amountEur: avg,
+    displayAmount: displays.join("; ") || "-",
+    amountEur: bounds && bounds.lo === bounds.hi ? bounds.lo : null,
+    amountBounds: bounds,
+    rowCount: unique.length,
   };
 }
 
@@ -318,13 +327,12 @@ function clusterFromMembers(members: UnifiedIncidentRow[]): UnifiedIncidentClust
     bySource.set(m.sourceLabel, list);
   }
   const sourceValuations = [...bySource.entries()].map(([label, list]) => sourceValuation(label, list));
-  const sourceAmounts = sourceValuations.map((s) => s.amountEur).filter((n): n is number => n != null);
-  const avg = averageEur(sourceAmounts);
-  const averaged = sourceValuations.length > 1 && avg != null;
-  const displayAmount = roundLossAmountEurDisplayToTens(
-    averaged
-      ? formatLossEurWholeDisplay(avg)
-      : sourceValuations[0]?.displayAmount || newest.lossAmount.trim() || "-",
+  const bounds = unionAmountBounds(
+    sourceValuations.map((s) => s.amountBounds).filter((b): b is UnifiedIncidentAmountBounds => b != null),
+  );
+  const displayAmount = formatAmountBoundsDisplay(
+    bounds,
+    sourceValuations[0]?.displayAmount || newest.lossAmount.trim() || "-",
   );
   const country = normalizeCountryNameLv(newest.country) || newest.country.trim() || "-";
   const ym = incidentYearMonthKey(newest) ?? incidentYearMonthKey(members[0]!);
@@ -332,8 +340,9 @@ function clusterFromMembers(members: UnifiedIncidentRow[]): UnifiedIncidentClust
     date: clusterDisplayDate(members, ym),
     country,
     displayAmount,
-    averageEur: avg,
-    averaged,
+    averageEur: null,
+    averaged: false,
+    kindLabel: clusterKindLabel(members),
     sourceValuations,
     sortableTime: newest.sortableTime,
     damage: null,
@@ -341,9 +350,8 @@ function clusterFromMembers(members: UnifiedIncidentRow[]): UnifiedIncidentClust
 }
 
 /**
- * Apvieno to pašu mēnesi + valsti no visiem avotiem par vienu negadījumu.
- * Vidējā summa = vidējais no katra avota novērtējuma (nevis visu rindu aritmētiskais, lai AutoDNA
- * vairākas rindas par to pašu CSNg nepārsvarotu LTAB).
+ * Apvieno to pašu mēnesi + valsti no visiem avotiem par vienu karti.
+ * Kopējā summa = visu avotu diapazons (min lo - max hi), bez vidējiem.
  */
 export function aggregateUnifiedIncidents(
   rows: UnifiedIncidentRow[],
@@ -383,14 +391,20 @@ function incidentZoneKey(c: UnifiedIncidentCluster): string {
   return (c.damage?.zoneIds ?? []).slice().sort().join(",");
 }
 
-function incidentAmount(c: UnifiedIncidentCluster): number | null {
-  if (c.averageEur != null) return c.averageEur;
-  return parseIncidentAmountEur(c.displayAmount);
+function clusterAmountBounds(c: UnifiedIncidentCluster): UnifiedIncidentAmountBounds | null {
+  const fromSources = unionAmountBounds(
+    c.sourceValuations.map((s) => s.amountBounds).filter((b): b is UnifiedIncidentAmountBounds => b != null),
+  );
+  if (fromSources) return fromSources;
+  return rowAmountBounds(c.displayAmount);
 }
 
-function amountsMatchForDedupe(a: number | null, b: number | null): boolean {
-  if (a == null || b == null) return false;
-  return Math.abs(a - b) <= INCIDENT_AMOUNT_MATCH_EUR;
+function amountsOverlapForDedupe(a: UnifiedIncidentAmountBounds | null, b: UnifiedIncidentAmountBounds | null): boolean {
+  if (!a || !b) return false;
+  if (a.lo === a.hi && b.lo === b.hi) {
+    return Math.abs(a.lo - b.lo) <= INCIDENT_AMOUNT_MATCH_EUR;
+  }
+  return a.lo <= b.hi && b.lo <= a.hi;
 }
 
 function mergeTwoIncidentClusters(a: UnifiedIncidentCluster, b: UnifiedIncidentCluster): UnifiedIncidentCluster {
@@ -403,17 +417,18 @@ function mergeTwoIncidentClusters(a: UnifiedIncidentCluster, b: UnifiedIncidentC
     }
   }
   const countries = [...new Set([newer.country, older.country].map((c) => c.trim()).filter(Boolean))];
-  const amounts = valuations.map((s) => s.amountEur).filter((n): n is number => n != null);
-  const avg = averageEur(amounts);
+  const bounds = unionAmountBounds(
+    valuations.map((s) => s.amountBounds).filter((x): x is UnifiedIncidentAmountBounds => x != null),
+  );
   return {
     ...newer,
     country: countries.length === 1 ? countries[0]! : countries.join(" / "),
     sourceValuations: valuations,
-    averageEur: avg,
-    averaged: valuations.length > 1 && avg != null,
-    displayAmount: roundLossAmountEurDisplayToTens(
-      avg != null ? formatLossEurWholeDisplay(avg) : newer.displayAmount,
-    ),
+    averageEur: null,
+    averaged: false,
+    kindLabel:
+      newer.kindLabel === "Negadījums" || older.kindLabel === "Negadījums" ? "Negadījums" : "Bojājumu ieraksts",
+    displayAmount: formatAmountBoundsDisplay(bounds, newer.displayAmount),
     damage: mergeClusterDamageFromClusters(newer.damage, older.damage),
   };
 }
@@ -444,7 +459,7 @@ function mergeIncidentClustersSameAmountAndZones(clusters: UnifiedIncidentCluste
           ? Math.abs(prev.sortableTime - c.sortableTime) / 86_400_000
           : 999;
       if (days > INCIDENT_MERGE_MAX_DAYS) return false;
-      if (!amountsMatchForDedupe(incidentAmount(prev), incidentAmount(c))) return false;
+      if (!amountsOverlapForDedupe(clusterAmountBounds(prev), clusterAmountBounds(c))) return false;
       return incidentZoneKey(prev) === incidentZoneKey(c);
     });
     if (idx < 0) {
@@ -513,9 +528,18 @@ function mergeClusterDamage(details: UnifiedIncidentDamageInput[]): UnifiedIncid
   return { zoneIds, zoneLabels, partLabels, groupLabels };
 }
 
-export function formatUnifiedIncidentCountLabel(n: number): string {
-  if (n === 1) return "1 negadījums";
-  return `${n} negadījumi`;
+export function unifiedIncidentCountKind(clusters: UnifiedIncidentCluster[]): "accident" | "damage" {
+  if (clusters.length === 0) return "damage";
+  return clusters.every((c) => c.kindLabel === "Negadījums") ? "accident" : "damage";
+}
+
+export function formatUnifiedIncidentCountLabel(n: number, kind: "accident" | "damage" = "damage"): string {
+  if (kind === "accident") {
+    if (n === 1) return "1 negadījums";
+    return `${n} negadījumi`;
+  }
+  if (n === 1) return "1 bojājumu ieraksts";
+  return `${n} bojājumu ieraksti`;
 }
 
 export function formatIncidentSourceValuationsLine(c: UnifiedIncidentCluster): string {

@@ -72,10 +72,10 @@ Valsts Vācija
     const events = parseAutodnaDamageEvents(raw);
     const details = parseAutodnaDamageDetails(raw);
     expect(events).toHaveLength(2);
-    expect(details.find((d) => d.date === "01.07.2012")?.damagedSides).toMatch(/Labā sāna priekšpuse/i);
-    expect(details.find((d) => d.date === "01.07.2012")?.damagedSides).toMatch(/Labais sāns/i);
-    expect(details.find((d) => d.date === "01.07.2012")?.damageGroups).toMatch(/Virsbūves ārējās daļas/i);
-    expect(details.find((d) => d.date === "01.10.2015")?.damagedSides ?? "").toBe("");
+    expect(details.find((d) => d.date === "07.2012")?.damagedSides).toMatch(/Labā sāna priekšpuse/i);
+    expect(details.find((d) => d.date === "07.2012")?.damagedSides).toMatch(/Labais sāns/i);
+    expect(details.find((d) => d.date === "07.2012")?.damageGroups).toMatch(/Virsbūves ārējās daļas/i);
+    expect(details.find((d) => d.date === "10.2015")?.damagedSides ?? "").toBe("");
   });
 
   it("copies whatever AutoDNA lists under Bojājumu zona (rear, left side)", () => {
