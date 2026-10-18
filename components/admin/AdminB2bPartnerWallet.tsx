@@ -265,7 +265,7 @@ export function AdminB2bPartnerWallet({
       <div className="mt-6 border-t border-slate-200/80 pt-5">
         <h3 className="text-sm font-semibold text-slate-800">Atlikuma korekcija</h3>
         <p className="mt-1 text-xs leading-relaxed text-slate-500">
-          Piem. manuāla atmaksa: 15,99 (pieskaita) vai -15,99 (noņem). Piezīme ir obligāta un redzama darījumu vēsturē.
+          Piem. manuāla atmaksa: 19,99 (pieskaita) vai -19,99 (noņem). Piezīme ir obligāta un redzama darījumu vēsturē.
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-[10rem_1fr]">
           <label className="block min-w-0">
@@ -278,7 +278,7 @@ export function AdminB2bPartnerWallet({
                 setAdjustError("");
                 setAdjustSaved("");
               }}
-              placeholder="15,99"
+              placeholder="19,99"
               inputMode="decimal"
             />
           </label>

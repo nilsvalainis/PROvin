@@ -26,8 +26,8 @@ export type B2bWalletProductSpec = {
 
 export const B2B_WALLET_PRODUCTS: Record<B2bWalletProductId, B2bWalletProductSpec> = {
   business: { id: "business", defaultCents: 7999, minCents: 6999, plan: "business", refundOnNoData: false },
-  dealer_raw: { id: "dealer_raw", defaultCents: 1599, minCents: 1199, plan: "dealer", refundOnNoData: true },
-  dealer_pro: { id: "dealer_pro", defaultCents: 1999, minCents: 1499, plan: "dealer", refundOnNoData: true },
+  dealer_raw: { id: "dealer_raw", defaultCents: 1999, minCents: 1199, plan: "dealer", refundOnNoData: true },
+  dealer_pro: { id: "dealer_pro", defaultCents: 2499, minCents: 1499, plan: "dealer", refundOnNoData: true },
 };
 
 export function isB2bWalletProductId(value: unknown): value is B2bWalletProductId {
