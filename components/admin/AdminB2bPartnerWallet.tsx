@@ -13,7 +13,7 @@ import {
 import type { B2bWalletView } from "@/lib/b2b-wallet-view";
 
 const PRODUCT_LABEL: Record<B2bWalletProductId, string> = {
-  business: "PROVIN Business data",
+  business: "PROVIN Business",
   dealer_raw: "Dīlera dati (RAW)",
   dealer_pro: "Dīlera dati (PRO)",
 };

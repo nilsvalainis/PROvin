@@ -1,4 +1,4 @@
-# PROVIN Business data: LV teksti korektūrai
+# PROVIN Business: LV teksti korektūrai
 
 Visi partneru portāla LV teksti: pieteikšanās lapa, cenu piedāvājuma forma, Sākums, Pasūtījumi, Profils, Rekvizīti, papildināšanas un pirkuma logi, RAW dati, admin partnera profils un e-pasti.
 
@@ -15,15 +15,15 @@ Publiskie teksti ir `messages/lv/partner.json` (namespace `Partner`). Admin un e
 | Atslēga | Teksts | Statuss |
 |---|---|---|
 | `Partner.titlePrefix` | PROVIN  | apstiprināts |
-| `Partner.titleAccent` | Business data | apstiprināts |
-| `Partner.heroLead` | Risinājums izstrādāts auto tirdzniecības uzņēmumiem. Pārbaudiet auto pirms iegādes, pieņemšanas komisijā vai maiņas darījumā un samaziniet riskus, ko rada koriģēts nobraukums, slēpti negadījumi un neievēroti apkopes intervāli. PROVIN Business data atskaite aizsargā uzņēmumu no zaudējumiem iepirkumos un sargā tā reputāciju. | apstiprināts |
+| `Partner.titleAccent` | Business | apstiprināts |
+| `Partner.heroLead` | Risinājums izstrādāts auto tirdzniecības uzņēmumiem. Pārbaudiet auto pirms iegādes, pieņemšanas komisijā vai maiņas darījumā un samaziniet riskus, ko rada koriģēts nobraukums, slēpti negadījumi un neievēroti apkopes intervāli. PROVIN Business atskaite aizsargā uzņēmumu no zaudējumiem iepirkumos un sargā tā reputāciju. | apstiprināts |
 | `Partner.heroLeadProof` | Bieži vien iepriekšējie tirgotāji auto vēsturei nav pievērsuši uzmanību, ir apzināti slēpuši defektus vai pat koriģējuši odometra rādījumus. Pieņemot tādu auto savā klāstā vai kā pirmo iemaksu, atbildība gala pircēja priekšā gulstas uz jūsu uzņēmuma pleciem. Veicot pārbaudi pirms katra darījuma, jūs nodrošināt, ka jūsu zīmols tiek saistīts tikai ar pārbaudītiem un uzticamiem auto. | pārbaudīt |
 | `Partner.heroLeadTrust` | Klientiem šī atskaite sniedz nepārprotamus pierādījumus par auto faktisko vēsturi, un auto tirdzniecības nozarē tā kļūst par kvalitātes standartu, kas uzskatāmi demonstrē uzņēmuma atbildību un godprātību. Tas stiprina uzticēšanos, paaugstina jūsu piedāvājuma vērtību tirgū un atvieglo lēmuma pieņemšanu jebkurā darījuma veidā. | pārbaudīt |
 | `Partner.heroPhoneLabel` | Tālr. | pārbaudīt |
 | `Partner.heroPartnerEyebrow` | Partneriem | pārbaudīt |
 | `Partner.heroSubhead` | Novērš iepirkuma riskus un sargā uzņēmuma reputāciju. Visi dati vienā atskaitē. | pārbaudīt |
 | `Partner.heroCardTitle` | Partneru konts | pārbaudīt |
-| `Partner.heroWhyHeading` | Kāpēc PROVIN Business data | apstiprināts |
+| `Partner.heroWhyHeading` | Kāpēc PROVIN Business | apstiprināts |
 | `Partner.heroBeatRisk` | Riski | pārbaudīt |
 | `Partner.heroBeatReputation` | Reputācija | pārbaudīt |
 | `Partner.heroBeatSafety` | Drošība | pārbaudīt |
@@ -123,7 +123,7 @@ Publiskie teksti ir `messages/lv/partner.json` (namespace `Partner`). Admin un e
 | `Partner.walletInvoiceNote` | Rēķinu par konta papildināšanu nosūtām uz e-pastu. | apstiprināts |
 | `Partner.walletLoading` | Ielādē atlikumu… | pārbaudīt |
 | `Partner.walletProductsAria` | Pakalpojumi | pārbaudīt |
-| `Partner.walletProductBusinessTitle` | PROVIN Business data | apstiprināts |
+| `Partner.walletProductBusinessTitle` | PROVIN Business | apstiprināts |
 | `Partner.walletProductBusinessDesc` | Pilna auto vēstures atskaite: dīlera dati, carVertical, AutoDNA, reģistri un izsoļu arhīvs. | pārbaudīt |
 | `Partner.walletProductBusinessTag` | 12-24h | apstiprināts |
 | `Partner.walletProductRawTitle` | Dīlera dati (RAW) | apstiprināts |

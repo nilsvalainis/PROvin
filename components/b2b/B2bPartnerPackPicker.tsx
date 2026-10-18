@@ -12,6 +12,7 @@ import {
 } from "@/lib/b2b-partner-copy";
 import type { B2bPartnerPriceOverrides } from "@/lib/b2b-partner-account";
 import { followStripeCheckoutUrl } from "@/lib/meta-pixel";
+import { renderProvinText } from "@/lib/provin-wordmark";
 
 function packLines(plan: B2bPartnerPlanId, t: ReturnType<typeof useTranslations>): string[] {
   if (plan === "business") {
@@ -134,7 +135,7 @@ export function B2bPartnerPackPicker({
         </div>
       ) : (
         <h3 className="text-[0.95rem] font-semibold tracking-[-0.02em] text-zinc-100">
-          {t("titlePrefix")}
+          {renderProvinText(t("titlePrefix"), { proAndSuffixClassName: "provin-wordmark-pro--rail-inherit" })}
           <span className="text-[#2563EB]">{t("titleAccent")}</span>
         </h3>
       )}

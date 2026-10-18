@@ -14,7 +14,7 @@ export function B2bPartnerDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  title: string;
+  title: ReactNode;
   closeLabel: string;
   children: ReactNode;
 }) {
