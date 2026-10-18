@@ -17,6 +17,7 @@ import {
 } from "@/lib/order-field-validation";
 import { FREE_EVAL_SECTION_ID, FREE_EVAL_SECTION_ID_LEGACY } from "@/lib/paths";
 import { HEARD_ABOUT_OPTION_VALUES, isHeardAboutValue } from "@/lib/stripe-session";
+import { trackMetaLead } from "@/lib/meta-pixel";
 
 function safeTrack(event: string, data?: Record<string, string | number | boolean>) {
   try {
@@ -103,6 +104,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
     }
 
     startTransition(async () => {
+      trackMetaLead();
       safeTrack("risk_guide_free_submitted");
       try {
         const res = await fetch("/api/listing-peek", {

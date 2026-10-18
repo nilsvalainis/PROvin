@@ -5,6 +5,13 @@ import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { isOfferExpired, isUpsellToken } from "@/lib/order-upsell";
 import { createOrderUpsellCheckoutSession } from "@/lib/order-upsell-checkout";
 import { readUpsellByToken } from "@/lib/order-upsell-store";
+import { createMetaEventId } from "@/lib/meta-pixel";
+import {
+  checkoutMetaClientFields,
+  notifyMetaInitiateCheckout,
+  resolveInitiateCheckoutValueEur,
+  stripeMetaCapiMetadataFromRequest,
+} from "@/lib/meta-capi";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +19,7 @@ export const dynamic = "force-dynamic";
 const MAX_PER_WINDOW = 20;
 const WINDOW_MS = 10 * 60 * 1000;
 
-async function startUpsellCheckout(token: string): Promise<NextResponse> {
+async function startUpsellCheckout(req: Request, token: string): Promise<NextResponse> {
   if (!isUpsellToken(token)) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
@@ -42,8 +49,12 @@ async function startUpsellCheckout(token: string): Promise<NextResponse> {
       vin: parent.vin,
       phone: parent.phone,
       email,
+      trackingMetadata: stripeMetaCapiMetadataFromRequest(req),
     });
-    return NextResponse.json({ url: created.url });
+    const eventId = createMetaEventId();
+    const value = resolveInitiateCheckoutValueEur(created.amountTotal, found.offer.chargeCents);
+    void notifyMetaInitiateCheckout({ req, eventId, value, email, phone: parent.phone });
+    return NextResponse.json({ url: created.url, ...checkoutMetaClientFields(eventId, value) });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes("STRIPE_SECRET_KEY")) {
@@ -68,5 +79,5 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
-  return startUpsellCheckout(token);
+  return startUpsellCheckout(req, token);
 }

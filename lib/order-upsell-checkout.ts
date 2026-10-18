@@ -21,7 +21,8 @@ export async function createOrderUpsellCheckoutSession(opts: {
   vin?: string | null;
   phone?: string | null;
   email: string;
-}): Promise<{ url: string; stripeSessionId: string }> {
+  trackingMetadata?: Record<string, string>;
+}): Promise<{ url: string; stripeSessionId: string; amountTotal: number | null }> {
   const stripe = getStripe();
   const params = buildOrderUpsellCheckoutSessionParams({
     ...opts,
@@ -30,11 +31,19 @@ export async function createOrderUpsellCheckoutSession(opts: {
   const session = await stripe.checkout.sessions.create({
     ...params,
     locale: stripeCheckoutLocale("lv"),
+    metadata: {
+      ...params.metadata,
+      ...(opts.trackingMetadata ?? {}),
+    },
   });
   if (!session.url) {
     throw new Error("session_failed");
   }
-  return { url: session.url, stripeSessionId: session.id };
+  return {
+    url: session.url,
+    stripeSessionId: session.id,
+    amountTotal: typeof session.amount_total === "number" ? session.amount_total : null,
+  };
 }
 
 /**

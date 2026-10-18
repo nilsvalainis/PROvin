@@ -14,6 +14,7 @@ import {
   normalizeVin,
   validateOrderFields,
 } from "@/lib/order-field-validation";
+import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
@@ -135,6 +136,7 @@ export function OrderForm({
     if (vinOk && listingValidIfPresent) {
       setHeroStep1Errors({ vin: null, listing: null });
       setVin(vinNormalized);
+      trackMetaLead();
       setStep(2);
       return;
     }
@@ -247,14 +249,13 @@ export function OrderForm({
           withdrawalConsent: true,
         }),
       });
-      const data = (await res.json()) as { url?: string; error?: string; errors?: string[] };
+      const data = (await res.json()) as { url?: string; eventId?: string; value?: number; error?: string; errors?: string[] };
       if (!res.ok) {
         const msg = data.errors?.[0] ?? data.error ?? te("checkoutFailed");
         setError(msg);
         return;
       }
-      if (data.url) {
-        window.location.href = data.url;
+      if (followStripeCheckoutUrl(data)) {
         return;
       }
       setError(te("noUrl"));

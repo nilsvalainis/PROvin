@@ -15,6 +15,8 @@ import {
 import { reportConsentedAdVisit } from "@/lib/ad-visit-client";
 import {
   ATTR_COOKIE_NAME,
+  CONSENT_COOKIE_MAX_AGE,
+  CONSENT_COOKIE_NAME,
   CONSENT_STORAGE_KEY,
   PENDING_ATTR_KEY,
   parseConsent,
@@ -22,6 +24,7 @@ import {
   type ConsentState,
 } from "@/lib/cookie-consent";
 import { applyGtagConsent } from "@/lib/google-consent";
+import { applyMetaConsent } from "@/lib/meta-pixel";
 
 const ATTR_MAX_AGE = 180 * 24 * 60 * 60;
 
@@ -75,6 +78,15 @@ function clearAttrCookie(): void {
   document.cookie = `${ATTR_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
 }
 
+function writeConsentCookie(granted: boolean): void {
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  if (granted) {
+    document.cookie = `${CONSENT_COOKIE_NAME}=1; Max-Age=${CONSENT_COOKIE_MAX_AGE}; Path=/; SameSite=Lax${secure}`;
+    return;
+  }
+  document.cookie = `${CONSENT_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
+}
+
 function syncConsentedAttribution(consentAt: string): void {
   const visit = currentVisit();
   writePending(visit);
@@ -100,6 +112,8 @@ export function CookieConsent() {
         return;
       }
       applyGtagConsent(c.analytics);
+      applyMetaConsent(c.analytics);
+      writeConsentCookie(c.analytics);
       if (!c.analytics) {
         clearAttrCookie();
         return;
@@ -112,6 +126,7 @@ export function CookieConsent() {
 
   function save(consent: ConsentState) {
     localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(consent));
+    writeConsentCookie(consent.analytics);
     if (consent.analytics) {
       try {
         syncConsentedAttribution(consent.updatedAt);
@@ -122,6 +137,7 @@ export function CookieConsent() {
       clearAttrCookie();
     }
     applyGtagConsent(consent.analytics);
+    applyMetaConsent(consent.analytics);
     setVisible(false);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent(PROVIN_CONSENT_UPDATED_EVENT));

@@ -14,6 +14,7 @@ import {
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { trackMetaLead } from "@/lib/meta-pixel";
 import { TP5_DEALER_BRANDS, getTp5MobileService, getTp5MobileTurnaround } from "@/lib/test-pricing-5-mobile";
 import {
   getTp5UiCopy,
@@ -119,6 +120,7 @@ export function B2bPartnerPricingCard({
       return;
     }
     setVinError("");
+    trackMetaLead();
     onPay(normalizeVin(vin));
   };
 

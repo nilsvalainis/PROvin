@@ -11,6 +11,13 @@ import {
 } from "@/lib/client-link";
 import { attachClientLinkCheckoutSession, readClientLinkByToken } from "@/lib/client-link-store";
 import { getPublicSiteOrigin } from "@/lib/site-url";
+import { createMetaEventId } from "@/lib/meta-pixel";
+import {
+  checkoutMetaClientFields,
+  notifyMetaInitiateCheckout,
+  resolveInitiateCheckoutValueEur,
+  stripeMetaCapiMetadataFromRequest,
+} from "@/lib/meta-capi";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -86,12 +93,27 @@ export async function POST(req: Request) {
   });
 
   try {
-    const session = await stripe.checkout.sessions.create(params);
+    const session = await stripe.checkout.sessions.create({
+      ...params,
+      metadata: {
+        ...params.metadata,
+        ...stripeMetaCapiMetadataFromRequest(req),
+      },
+    });
     if (!session.url) {
       return NextResponse.json({ error: "session_failed" }, { status: 500 });
     }
     await attachClientLinkCheckoutSession(record.tokenHash, session.id).catch(() => undefined);
-    return NextResponse.json({ url: session.url });
+    const eventId = createMetaEventId();
+    const value = resolveInitiateCheckoutValueEur(session.amount_total, record.amountCents);
+    void notifyMetaInitiateCheckout({
+      req,
+      eventId,
+      value,
+      email: validated.resolved.email,
+      phone: validated.resolved.phone,
+    });
+    return NextResponse.json({ url: session.url, ...checkoutMetaClientFields(eventId, value) });
   } catch (e) {
     console.error("[client-link/checkout]", e);
     return NextResponse.json({ error: "session_failed" }, { status: 500 });

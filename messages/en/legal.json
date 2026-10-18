@@ -27,7 +27,7 @@
       },
       {
         "title": "6. Third parties",
-        "body": "Payments: Stripe. Website hosting: your chosen provider (for example Vercel). Vercel Web Analytics collects aggregated visit and page-view data for all visits (first-party hosting statistics). Google Analytics 4 and TikTok Pixel load only if you consent to \"analytics\" in the cookie banner; if the relevant ID is not configured, those scripts are not loaded. Contact: email (footer) and WhatsApp (footer and floating button on the site)."
+        "body": "Payments: Stripe. Website hosting: your chosen provider (for example Vercel). Vercel Web Analytics collects aggregated visit and page-view data for all visits (first-party hosting statistics). Google Analytics 4, TikTok Pixel and Meta Pixel load only if you consent to \"analytics\" in the cookie banner; if the relevant ID is not configured, those scripts are not loaded. After consent, the Meta Conversions API may send the same purchase event from the server (email and phone are hashed). Contact: email (footer) and WhatsApp (footer and floating button on the site)."
       },
       {
         "title": "7. Retention",
@@ -127,7 +127,7 @@
   },
   "Cookies": {
     "bannerTitle": "Cookies and privacy",
-    "bannerText": "We use essential cookies for the site to work. If you consent to analytics, we may store first and last marketing pages, UTM parameters and ad click IDs (gclid, fbclid, ttclid), count aggregated visits, and load Google Analytics and/or TikTok Pixel (when configured), to understand where visitors come from.",
+    "bannerText": "We use essential cookies for the site to work. If you consent to analytics, we may store first and last marketing pages, UTM parameters and ad click IDs (gclid, fbclid, ttclid), count aggregated visits, and load Google Analytics, TikTok Pixel and/or Meta Pixel (when configured), to understand where visitors come from.",
     "reject": "Essential only",
     "acceptAnalytics": "Accept analytics and storage",
     "privacyLink": "Privacy Policy"

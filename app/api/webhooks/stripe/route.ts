@@ -24,6 +24,7 @@ import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
 import { clientLinkHashFromStripeMetadata } from "@/lib/client-link";
 import { consumeClientLinkByHash } from "@/lib/client-link-store";
+import { notifyMetaPurchaseFromStripeSession } from "@/lib/meta-capi";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +53,10 @@ async function fulfillPaidCheckoutSession(
     });
     releaseStripeEvent(stripeEventId);
     return;
+  }
+
+  if (ps === "paid") {
+    void notifyMetaPurchaseFromStripeSession(session);
   }
 
   if (!tryBeginStripeEvent(fulfillDedupeKey(session.id))) {

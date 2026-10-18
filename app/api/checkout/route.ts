@@ -16,6 +16,13 @@ import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
 import { stripeAttributionMetadataFromRequest } from "@/lib/ad-attribution";
 import { ATTR_COOKIE_NAME } from "@/lib/cookie-consent";
+import { createMetaEventId } from "@/lib/meta-pixel";
+import {
+  checkoutMetaClientFields,
+  notifyMetaInitiateCheckout,
+  resolveInitiateCheckoutValueEur,
+  stripeMetaCapiMetadataFromRequest,
+} from "@/lib/meta-capi";
 import { getCheckoutIntakeCustomFields, stripeCheckoutLocale } from "@/lib/stripe-session";
 
 export const runtime = "nodejs";
@@ -160,6 +167,7 @@ export async function POST(req: Request) {
     metadata: {
       checkout_line: "audit",
       ...stripeAttributionMetadataFromRequest(req.headers.get("cookie"), ATTR_COOKIE_NAME),
+      ...stripeMetaCapiMetadataFromRequest(req),
       vin,
       listing_url: listingUrl || "",
       report_delivery: "email",
@@ -179,5 +187,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: copy.errors.sessionFailed }, { status: 500 });
   }
 
-  return NextResponse.json({ url: session.url });
+  const eventId = createMetaEventId();
+  const value = resolveInitiateCheckoutValueEur(session.amount_total, AUDIT_UNIT_AMOUNT_CENTS);
+  void notifyMetaInitiateCheckout({ req, eventId, value, email, phone });
+
+  return NextResponse.json({ url: session.url, ...checkoutMetaClientFields(eventId, value) });
 }

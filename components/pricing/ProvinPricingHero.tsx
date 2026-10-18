@@ -29,6 +29,7 @@ import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 import { useTierSwipe } from "@/lib/use-test-pricing-tier-swipe";
 import { parseHeroPlanParam } from "@/lib/home-hero-plan";
 import { publicOrderVinFromQuery, PUBLIC_ORDER_VIN_QUERY } from "@/lib/public-order-vin-prefill";
+import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 
 type Props = {
   checkoutSource: string;
@@ -94,6 +95,7 @@ export function ProvinPricingHero({
         return;
       }
       setErrors({});
+      trackMetaLead();
       setLoading(true);
       try {
         const res = await fetch("/api/checkout/test-pricing", {
@@ -110,13 +112,14 @@ export function ProvinPricingHero({
         });
         const data = (await res.json().catch(() => ({}))) as {
           url?: string;
+          eventId?: string;
+          value?: number;
           error?: string;
           errors?: string[];
         };
-        if (!res.ok || !data.url) {
+        if (!res.ok || !followStripeCheckoutUrl(data)) {
           throw new Error(data.errors?.[0] ?? data.error ?? uiCopy.checkoutErrorFallback);
         }
-        window.location.href = data.url;
       } catch (e) {
         setGlobalError(e instanceof Error ? e.message : uiCopy.checkoutErrorFallback);
       } finally {

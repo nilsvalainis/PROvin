@@ -27,7 +27,7 @@
       },
       {
         "title": "6. Trešās puses",
-        "body": "Maksājumi: Stripe. Vietnes mitināšana: jūsu izvēlētais pakalpojumu sniedzējs (piemēram, Vercel). Vercel Web Analytics apkopo agregētus apmeklējumu un lapu skatījumu datus visiem apmeklējumiem (pirmās puses statistika mitināšanas ietvaros). Google Analytics 4 un TikTok Pixel ielādējas tikai tad, ja sīkdatņu joslā piekrītat „analītikai”; ja attiecīgais identifikators nav konfigurēts, attiecīgie skripti netiek ielādēti. Saziņa: e-pasts (kājenē) un WhatsApp (kājene un peldošā poga vietnē)."
+        "body": "Maksājumi: Stripe. Vietnes mitināšana: jūsu izvēlētais pakalpojumu sniedzējs (piemēram, Vercel). Vercel Web Analytics apkopo agregētus apmeklējumu un lapu skatījumu datus visiem apmeklējumiem (pirmās puses statistika mitināšanas ietvaros). Google Analytics 4, TikTok Pixel un Meta Pixel ielādējas tikai tad, ja sīkdatņu joslā piekrītat „analītikai”; ja attiecīgais identifikators nav konfigurēts, attiecīgie skripti netiek ielādēti. Pēc piekrišanas Meta Conversions API var nosūtīt to pašu pirkuma notikumu no servera (e-pasts un tālrunis tiek hashēti). Saziņa: e-pasts (kājenē) un WhatsApp (kājene un peldošā poga vietnē)."
       },
       {
         "title": "7. Glabāšanas termiņš",
@@ -127,7 +127,7 @@
   },
   "Cookies": {
     "bannerTitle": "Sīkdatnes un privātums",
-    "bannerText": "Mēs izmantojam nepieciešamās sīkdatnes vietnes darbībai. Ja piekrītat analītikai, varam saglabāt pirmo un pēdējo mārketinga lapu, UTM parametrus un reklāmas klikšķa identifikatorus (gclid, fbclid, ttclid), skaitīt agregētus apmeklējumus, kā arī ielādēt Google Analytics un/vai TikTok Pixel (ja konfigurēti), lai saprastu, no kurienes apmeklētāji ierodas.",
+    "bannerText": "Mēs izmantojam nepieciešamās sīkdatnes vietnes darbībai. Ja piekrītat analītikai, varam saglabāt pirmo un pēdējo mārketinga lapu, UTM parametrus un reklāmas klikšķa identifikatorus (gclid, fbclid, ttclid), skaitīt agregētus apmeklējumus, kā arī ielādēt Google Analytics, TikTok Pixel un/vai Meta Pixel (ja konfigurēti), lai saprastu, no kurienes apmeklētāji ierodas.",
     "reject": "Tikai nepieciešamās",
     "acceptAnalytics": "Piekrītu analītikai un saglabāšanai",
     "privacyLink": "Privātuma politika"

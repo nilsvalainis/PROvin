@@ -10,6 +10,7 @@ import {
   parseConsent,
   PROVIN_CONSENT_UPDATED_EVENT,
 } from "@/lib/cookie-consent";
+import { MetaPixel } from "@/components/MetaPixel";
 import { shouldEnablePublicSiteAnalytics } from "@/lib/analytics-public-scope";
 import { buildGtagConfigSnippet, gtagScriptId } from "@/lib/google-ads";
 
@@ -28,6 +29,8 @@ type Props = {
   gaMeasurementId: string | null;
   /** TikTok Pixel SDK ID; `null` — pixel neielādē. */
   tiktokPixelId: string | null;
+  /** Meta Pixel ID; `null` — fbevents.js neielādē. */
+  metaPixelId: string | null;
   /** Hosts (bez porta). Ja nav dots — nolasa klientā (`window.location`), lai izkārtojums nelasa `headers()` un lapas paliek statiskas/CDN kešojamas. */
   requestHostname?: string | null;
 };
@@ -36,11 +39,12 @@ type Props = {
  * Vercel Web Analytics - visiem apmeklējumiem (agregēti, pirmās puses mitināšanas statistika).
  * Google tag (GA4 + Google Ads): Consent Mode v2 ADVANCED. gtag.js ielādējas vienmēr;
  *   RootHtml liek default denied pirms taga, josla dara consent update.
- * TikTok Pixel - tikai pēc sīkdatņu joslas piekrišanas analītikai.
+ * TikTok Pixel / Meta Pixel - tikai pēc sīkdatņu joslas piekrišanas analītikai.
  */
 export function ConsentAwareAnalytics({
   gaMeasurementId,
   tiktokPixelId,
+  metaPixelId,
   requestHostname,
 }: Props) {
   const pathname = usePathname() ?? "/";
@@ -73,6 +77,7 @@ export function ConsentAwareAnalytics({
 
   const id = gaMeasurementId;
   const ttPixel = tiktokPixelId;
+  const fbPixel = metaPixelId;
   const loaderId = gtagScriptId(id);
 
   if (!analyticsEnabled) {
@@ -94,6 +99,7 @@ export function ConsentAwareAnalytics({
           </Script>
         </>
       ) : null}
+      {gaAllowed && fbPixel ? <MetaPixel pixelId={fbPixel} /> : null}
       {gaAllowed && ttPixel ? (
         <Script id="tiktok-pixel" strategy="afterInteractive">
           {`!function (w, d, t) {

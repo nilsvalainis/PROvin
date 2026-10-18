@@ -9,6 +9,7 @@ import {
   type ClientLinkPublicView,
 } from "@/lib/client-link";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 
 const inputClass =
   "mt-1.5 min-h-12 w-full rounded-xl border border-[#e5e5ea] bg-[#f5f5f7] px-4 text-[16px] text-[#1d1d1f] outline-none placeholder:text-[#aeaeb2] focus:border-[#1d1d1f] focus:bg-white";
@@ -49,6 +50,8 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
     setLoading(true);
     setError(null);
     try {
+      const n = normalizeVin(vin);
+      if (isValidVin(n) || n.length >= 3) trackMetaLead();
       const res = await fetch("/api/client-link/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,12 +64,16 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
           withdrawalConsent: consent,
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
-      if (!res.ok || !data.url) {
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        eventId?: string;
+        value?: number;
+        error?: string;
+      };
+      if (!res.ok || !followStripeCheckoutUrl(data)) {
         setError(fieldError[data.error ?? ""] ?? fieldError.session_failed);
         return;
       }
-      window.location.href = data.url;
     } catch {
       setError(fieldError.network);
     } finally {
