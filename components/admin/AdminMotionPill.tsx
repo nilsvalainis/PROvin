@@ -8,6 +8,7 @@ type Props = {
   activeIndex: number;
   itemSelector?: string;
   height: number;
+  top?: number;
   className?: string;
 };
 
@@ -19,6 +20,7 @@ export function AdminMotionPill({
   activeIndex,
   itemSelector = ":scope > a, :scope > button",
   height,
+  top = 0,
   className = "",
 }: Props) {
   const pillRef = useRef<HTMLSpanElement>(null);
@@ -57,7 +59,7 @@ export function AdminMotionPill({
       ref={pillRef}
       className={`admin-mp ${className}`.trim()}
       aria-hidden
-      style={{ height, opacity: 0 }}
+      style={{ height, opacity: 0, top }}
     >
       <i className="l" />
       <i className="m" />

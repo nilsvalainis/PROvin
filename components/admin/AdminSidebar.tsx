@@ -567,7 +567,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
     <>
       <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
         <nav ref={navRef} className={`${ADMIN_MOBILE_TABBAR_DOCK_NAV} relative`} aria-label="Galvenā izvēlne">
-          <AdminMotionPill hostRef={navRef} activeIndex={pillIndex} height={44} className="top-1" />
+          <AdminMotionPill hostRef={navRef} activeIndex={pillIndex} height={44} top={4} />
           <button
             type="button"
             onClick={() => {
