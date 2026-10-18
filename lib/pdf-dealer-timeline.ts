@@ -10,6 +10,10 @@ import {
 } from "@/lib/admin-ai-dealer-facts";
 import {
   hasAnyMajorAssemblyRepair,
+  hasNonCampaignRepairAction,
+  isCheckNoFaultWork,
+  isCourtesyCarWork,
+  isDealerSoftwareWork,
   isMajorAssemblyRepairWork,
   isRoutineMaintenanceWork,
   MAJOR_ASSEMBLY_SPECS,
@@ -101,10 +105,16 @@ function chronoRows(rows: readonly AutoRecordsServiceWorkRow[]): AutoRecordsServ
 export function classifyDealerVisitKind(works: string): DealerVisitKind {
   const text = works ?? "";
   if (looksLikeCbsKeyReadWorks(text)) return "key_read";
-  if (isDealerCampaignText(text)) return "campaign";
   if (WARRANTY_RE.test(text)) return "warranty";
   if (hasAnyMajorAssemblyRepair(text)) return "repair";
+  const independentRepair = hasNonCampaignRepairAction(text);
+  if (isDealerCampaignText(text) && !independentRepair) return "campaign";
+  if (isDealerSoftwareWork(text) && !independentRepair) return "campaign";
   if (looksLikeIntervalMaintenanceWorks(text) || isRoutineMaintenanceWork(text)) return "maintenance";
+  if (isCheckNoFaultWork(text) && !independentRepair) return "maintenance";
+  if (isCourtesyCarWork(text) && !independentRepair) return "warranty";
+  if (independentRepair) return "repair";
+  if (isDealerCampaignText(text)) return "campaign";
   return "repair";
 }
 
@@ -265,7 +275,7 @@ export function buildDealerVisitSummaryHtml(
   const campaigns = translateClientReportYesNo(summary.campaignsDone, lang);
   const major =
     summary.majorWorks.length > 0
-      ? summary.majorWorks.map((w) => `${t(w.label)} (${w.factId})`).join(", ")
+      ? summary.majorWorks.map((w) => t(w.label)).join(", ")
       : t("Nav fiksēts");
   const cells: { k: string; v: string }[] = [
     { k: t("Vizītes"), v: String(summary.visitCount) },
@@ -292,8 +302,7 @@ export function buildDealerMajorWorksHtml(facts: DealerFacts, lang: ClientReport
   const t = (lv: string) => translateClientReportStatic(lv, lang);
   const items = hits
     .map((w) => {
-      const idPart = w.factId ? `(${w.factId})` : "";
-      const meta = [idPart, w.date, w.km].filter(Boolean).join(" · ");
+      const meta = [w.date, w.km].filter(Boolean).join(" · ");
       return `<li class="pdf-svc-major__item"><b>${escapeHtml(t(w.label))}</b><span class="pdf-svc-major__meta">${escapeHtml(meta)}</span></li>`;
     })
     .join("");

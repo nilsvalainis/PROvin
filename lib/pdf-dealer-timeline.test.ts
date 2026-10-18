@@ -12,6 +12,18 @@ import {
   visitGapBetween,
 } from "@/lib/pdf-dealer-timeline";
 import { shouldCondenseDealerPdfRecords } from "@/lib/dealer-product-scope";
+import {
+  VOLVO_XC90_CLIMATE_DRAIN_NO_FAULT,
+  VOLVO_XC90_QB_BLEED_AND_CHARGE_AIR_HOSE,
+  VOLVO_XC90_QB_COOLING,
+  VOLVO_XC90_QB_FUEL_LINE,
+  VOLVO_XC90_RAW_ROWS,
+  VOLVO_XC90_SOFTWARE_DOWNLOAD,
+  VOLVO_XC90_SUNROOF_MECHANISM,
+  VOLVO_XC90_TOTAL_UPGRADE,
+  VOLVO_XC90_VCM_UPGRADE,
+  VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT,
+} from "@/lib/dealer-major-works.volvo-xc90.fixture";
 
 const row = (
   date: string,
@@ -87,7 +99,7 @@ describe("kopsavilkums un lielie darbi", () => {
     expect(html).toContain("Vizītes");
     expect(html).toContain("Kampaņas veiktas");
     expect(html).toContain("Sadales ķēde");
-    expect(html).toContain("D2");
+    expect(html).not.toMatch(/Sadales ķēde D2|Ātrumkārba D6/);
     expect(html).not.toMatch(/€|EUR/);
   });
 
@@ -127,12 +139,12 @@ describe("kopsavilkums un lielie darbi", () => {
     expect(boxSummary?.majorWorks.some((w) => w.id === "gearbox" && w.factId === "D6")).toBe(true);
     const boxHtml = buildDealerMajorWorksHtml(boxFacts);
     expect(boxHtml).toContain("<b>Ātrumkārba</b>");
-    expect(boxHtml).toContain("(D6)");
-    expect(boxHtml).not.toMatch(/ĀtrumkārbaD6|Ātrumkārba D6 ·/);
+    expect(boxHtml).toContain("05.08.2022");
+    expect(boxHtml).toContain("122 576 km");
+    expect(boxHtml).not.toMatch(/D6/);
     const boxHtmlRu = buildDealerMajorWorksHtml(boxFacts, "ru");
     expect(boxHtmlRu).toContain("<b>Коробка передач</b>");
-    expect(boxHtmlRu).toContain("(D6)");
-    expect(boxHtmlRu).not.toMatch(/Коробка передачD6/);
+    expect(boxHtmlRu).not.toMatch(/Коробка передач D6|Коробка передачD6|\(D6\)/);
   });
 
   it("no darbu saraksta noņem detaļu kodus, bet atstāj darba nosaukumu", () => {
@@ -142,5 +154,36 @@ describe("kopsavilkums un lielie darbi", () => {
     ]);
     expect(dealerPdfWorkLines(KEY_READ_HISTORY_LABEL, { hideKeyReadLines: true })).toEqual([]);
     expect(dealerPdfWorkLines(KEY_READ_HISTORY_LABEL)).toEqual([KEY_READ_HISTORY_LABEL]);
+  });
+});
+
+describe("Volvo XC90 RAW visit kinds and Lielie darbi", () => {
+  it("categorizes QB, warranty, software, hose repair and checks", () => {
+    expect(classifyDealerVisitKind(VOLVO_XC90_QB_COOLING)).toBe("campaign");
+    expect(classifyDealerVisitKind(VOLVO_XC90_QB_FUEL_LINE)).toBe("campaign");
+    expect(classifyDealerVisitKind(VOLVO_XC90_QB_BLEED_AND_CHARGE_AIR_HOSE)).toBe("repair");
+    expect(classifyDealerVisitKind(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT)).toBe("warranty");
+    expect(classifyDealerVisitKind(VOLVO_XC90_SOFTWARE_DOWNLOAD)).toBe("campaign");
+    expect(classifyDealerVisitKind(VOLVO_XC90_TOTAL_UPGRADE)).toBe("campaign");
+    expect(classifyDealerVisitKind(VOLVO_XC90_VCM_UPGRADE)).toBe("campaign");
+    expect(classifyDealerVisitKind(VOLVO_XC90_SUNROOF_MECHANISM)).toBe("repair");
+    expect(classifyDealerVisitKind(VOLVO_XC90_CLIMATE_DRAIN_NO_FAULT)).toBe("maintenance");
+  });
+
+  it("journal has campaigns but no Lielie darbi and no D-id glued to labels", () => {
+    const rows = VOLVO_XC90_RAW_ROWS.map((r) => ({
+      date: r.date,
+      odometer: r.odometer,
+      location: "Volvo Partner",
+      works: r.works,
+    }));
+    const facts = extractDealerFactsFromServiceWorks(rows);
+    const summary = buildDealerVisitSummary(rows, facts);
+    expect(summary?.campaignsDone).toBe(true);
+    expect(summary?.majorWorks).toEqual([]);
+    expect(buildDealerMajorWorksHtml(facts)).toBe("");
+    const html = buildDealerVisitSummaryHtml(rows, facts, "en");
+    expect(html).toMatch(/None recorded|Nav fiksēts|Не зафиксировано|Nicht erfasst/);
+    expect(html).not.toMatch(/Engine replacement|Dzinējs|Transmission|Ātrumkārba D\d/);
   });
 });

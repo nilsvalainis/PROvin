@@ -2,9 +2,29 @@ import { describe, expect, it } from "vitest";
 import {
   dealerMajorAssembliesInWork,
   hasAnyMajorAssemblyRepair,
+  hasNonCampaignRepairAction,
+  isCheckNoFaultWork,
+  isCourtesyCarWork,
+  isDealerSoftwareWork,
   isMajorAssemblyRepairWork,
   isRoutineMaintenanceWork,
 } from "@/lib/dealer-major-works";
+import {
+  VOLVO_XC90_CLIMATE_DRAIN_NO_FAULT,
+  VOLVO_XC90_HEADER,
+  VOLVO_XC90_QB_BLEED_AND_CHARGE_AIR_HOSE,
+  VOLVO_XC90_QB_COOLING,
+  VOLVO_XC90_QB_FUEL_LINE,
+  VOLVO_XC90_RAW_ROWS,
+  VOLVO_XC90_SOFTWARE_DOWNLOAD,
+  VOLVO_XC90_SUNROOF_DEFLECTOR,
+  VOLVO_XC90_SUNROOF_MECHANISM,
+  VOLVO_XC90_TJ_BOILERPLATE,
+  VOLVO_XC90_TOTAL_UPGRADE,
+  VOLVO_XC90_UPHOLSTERY,
+  VOLVO_XC90_VCM_UPGRADE,
+  VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT,
+} from "@/lib/dealer-major-works.volvo-xc90.fixture";
 
 const BMW_RU_ATF =
   "Автоматическая коробка передач: замена масла и фильтра";
@@ -113,5 +133,69 @@ describe("dealer major works vs routine maintenance", () => {
     const works = "Gearbox replaced.\nEngine oil and filter change.";
     expect(isMajorAssemblyRepairWork(works, "gearbox")).toBe(true);
     expect(isMajorAssemblyRepairWork(works, "engine")).toBe(false);
+  });
+
+  it("does not infer gearbox work from a Transmission MANUAL header", () => {
+    expect(hasAnyMajorAssemblyRepair("Transmission MANUAL")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(`${VOLVO_XC90_HEADER}\nEngine oil service`)).toBe(false);
+  });
+});
+
+describe("Volvo XC90 RAW dealer journal (YV1LCA4BCG1067242)", () => {
+  it("QB cooling kit is a campaign, not a cooling-system / engine replacement", () => {
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_QB_COOLING)).toBe(false);
+    expect(isMajorAssemblyRepairWork(VOLVO_XC90_QB_COOLING, "engine")).toBe(false);
+  });
+
+  it("QB fuel line replace is a campaign, not a major assembly", () => {
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_QB_FUEL_LINE)).toBe(false);
+  });
+
+  it("charge-air hose replace is a real minor repair, not engine replacement", () => {
+    expect(isMajorAssemblyRepairWork(VOLVO_XC90_QB_BLEED_AND_CHARGE_AIR_HOSE, "engine")).toBe(false);
+    expect(isMajorAssemblyRepairWork(VOLVO_XC90_QB_BLEED_AND_CHARGE_AIR_HOSE, "turbo")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_QB_BLEED_AND_CHARGE_AIR_HOSE)).toBe(false);
+    expect(hasNonCampaignRepairAction(VOLVO_XC90_QB_BLEED_AND_CHARGE_AIR_HOSE)).toBe(true);
+  });
+
+  it("crankshaft seal + timing belt is significant, but not engine replacement", () => {
+    expect(isMajorAssemblyRepairWork(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT, "engine")).toBe(false);
+    expect(isMajorAssemblyRepairWork(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT, "timing_chain")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT)).toBe(false);
+    expect(isCourtesyCarWork(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT)).toBe(true);
+  });
+
+  it("software downloads and module upgrades are not major works", () => {
+    expect(isDealerSoftwareWork(VOLVO_XC90_SOFTWARE_DOWNLOAD)).toBe(true);
+    expect(isDealerSoftwareWork(VOLVO_XC90_TOTAL_UPGRADE)).toBe(true);
+    expect(isDealerSoftwareWork(VOLVO_XC90_VCM_UPGRADE)).toBe(true);
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_SOFTWARE_DOWNLOAD)).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_TOTAL_UPGRADE)).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_VCM_UPGRADE)).toBe(false);
+  });
+
+  it("sunroof and upholstery are body/comfort, not drivetrain", () => {
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_SUNROOF_DEFLECTOR)).toBe(false);
+    expect(isMajorAssemblyRepairWork(VOLVO_XC90_SUNROOF_MECHANISM, "engine")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_SUNROOF_MECHANISM)).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_UPHOLSTERY)).toBe(false);
+  });
+
+  it("climate drain Ohne Befund is a check, not a repair", () => {
+    expect(isCheckNoFaultWork(VOLVO_XC90_CLIMATE_DRAIN_NO_FAULT)).toBe(true);
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_CLIMATE_DRAIN_NO_FAULT)).toBe(false);
+  });
+
+  it("repeated TJ boilerplate does not invent a major assembly event", () => {
+    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_TJ_BOILERPLATE)).toBe(false);
+    expect(dealerMajorAssembliesInWork(VOLVO_XC90_TJ_BOILERPLATE + "\n" + VOLVO_XC90_TJ_BOILERPLATE)).toEqual(
+      [],
+    );
+  });
+
+  it("the full RAW journal has no Lielie darbi hits", () => {
+    for (const row of VOLVO_XC90_RAW_ROWS) {
+      expect(hasAnyMajorAssemblyRepair(row.works), row.date).toBe(false);
+    }
   });
 });

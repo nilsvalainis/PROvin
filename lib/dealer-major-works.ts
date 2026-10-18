@@ -3,7 +3,8 @@
  *
  * Apkope pie mezgla (eļļa, filtrs, ATF, šķidrumi, sveces, pārbaude, skalošana)
  * NAV agregāta maiņa. Tikai reāla nomaiņa, kapitālais remonts vai agregāta remonts.
- * Avoti bieži EN/DE/RU/LV; izeja jebkurā atskaites valodā.
+ * Avoti bieži EN/DE/RU/LV, ar saplēstiem umlautiem un TJ/Symptom/Diagnose/Aktion
+ * veidni (Volvo RAW). Izeja jebkurā atskaites valodā.
  */
 import { foldOilWorkText } from "@/lib/oil-change-intervals";
 
@@ -36,7 +37,7 @@ export const MAJOR_ASSEMBLY_SPECS: readonly DealerMajorAssemblySpec[] = [
 
 const ASSEMBLY_RE: Record<DealerMajorAssemblyId, RegExp> = {
   engine:
-    /\bengine\b|\bdzinej|двигател|мотор(?:а|е|ом|у|ы)?|\bmotor(?:en)?\b|motorwechsel|motorersatz|motortausch|motorinstandsetz/u,
+    /\bengine\b|\bdzinej|двигател|motorwechsel|motorersatz|motortausch|\bmotor\b/u,
   timing_chain:
     /timing\s+chain|steuerkette|sadales\s+ked|kedes\s+(komplekt|spriegot|main)|distributieketting|kamkedja|цеп\p{L}*\s+(?:грм|газораспред)/u,
   gearbox:
@@ -63,7 +64,29 @@ const OVERHAUL_RE =
   /overhaul|rebuild|rebuilt|instandgesetz|instandsetz|uberholt|generaluberhol|kapitalais\s+remont|капитальн\p{L}*\s+ремонт|переборк|recondition/u;
 
 const UNIT_REPAIR_VERB_RE =
-  /replac\p{L}*|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|\bchange\b|maina|ремонт|repair(?:ed|s)?|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt/u;
+  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|\bchange\b|maina|ремонт|repair(?:ed|s)?|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt/u;
+
+const CAMPAIGN_CLAUSE_RE =
+  /\bqb\b|acc(?:ording)?\.?\s*to:?\s*qb|nach\s+qb|technische\s+aktion|safety\s+recall|\brecalls?\b|ruckruf|service\s+action|field\s+fix|\btsb\b|\bsib\b/u;
+
+const SOFTWARE_RE =
+  /software\s+control\s+module|control\s+module\s+download|software\s+update|total\s+upgrade|vcm\s*\/?\s*cmq\s+upgrade|steuergerat|programmierung|codierung|downloading/u;
+
+const COURTESY_CAR_RE = /ersatzwagen|courtesy\s+car|replacement\s+vehicle|mainas\s+auto/u;
+
+const COMFORT_INTERIOR_RE =
+  /sun\s*roof|schiebedach|panoramadach|dachkaset|wind\s+deflector|upholstery|sitzkissen|sitzbezug|sitzkissenbezug|interior\s+trim/u;
+
+const MINOR_PART_RE =
+  /schlauch|hose|bleed|dicht(?:ung|ring)?|sealing\s+ring|simmerring|kurbelwell|crankshaft|drive\s+shaft|antriebswelle|fuel\s+line|kraftstoffleitung|connector|cooling\s+system|kuhlsystem|ladeluft|charge\s+air|zahnriemen|timing\s+belt|drain\s+hose|klima|climate\s+unit|ohne\s+befund|park\s+acc/u;
+
+const ENGINE_NOT_THE_UNIT_RE =
+  /motorleistung|motorol|olleckage|\bmotoren\b|schlauch|hose|dicht|seal|simmerring|kurbelwell|crankshaft|zahnriemen|timing\s+belt|cooling|kuhlsystem|ladeluft|charge\s+air|fuel\s+line|connector|sun\s*roof|dachkaset|schiebedach|upholstery|sitz|software|upgrade|downloading|ersatzwagen|courtesy/u;
+
+const ENGINE_UNIT_REPLACE_RE =
+  /(?:\bengine\b|dzinej\p{L}*|двигател\p{L}*)\s+(?:replac|erneuer|getauscht|ersetzt|nomain|maina|wechsel)|(?:replac\p{L}*|erneuer\p{L}*|замена|nomain)\s+(?:the\s+)?(?:engine|dzinej|двигател)|motorwechsel|motorersatz|motortausch|(?:^|[^\p{L}])motor\s+(?:erneuert|getauscht|ersetzt|ausgewechselt)|замена\s+двигател|капитальн\p{L}*\s+ремонт\s+двигател/u;
+
+const CHECK_NO_FAULT_RE = /ohne\s+befund|no\s+fault|bez\s+defekta|nav\s+konstatet/u;
 
 function uniqueNonEmpty(parts: readonly string[]): string[] {
   const seen = new Set<string>();
@@ -77,8 +100,26 @@ function uniqueNonEmpty(parts: readonly string[]): string[] {
   return out;
 }
 
+/** PDF/RAW bieži ieliek `?` vietā `ö/ü/ä`. `?l` = öl. */
+export function normalizeBrokenDealerUmlauts(raw: string): string {
+  return (raw ?? "").replace(/\?l/gi, "ol").replace(/(\p{L})\?(\p{L})/gu, "$1o$2");
+}
+
+function stripDealerTemplateNoise(text: string): string {
+  return text
+    .replace(/\btj\s*:/gi, " ")
+    .replace(/\bsymptom\s*:/gi, " ")
+    .replace(/\bdiagnose\s*:/gi, " ")
+    .replace(/\baktion\s*:/gi, " ");
+}
+
+export function foldDealerWorkText(raw: string): string {
+  return foldOilWorkText(stripDealerTemplateNoise(normalizeBrokenDealerUmlauts(raw)));
+}
+
 function splitClauses(folded: string): string[] {
-  return uniqueNonEmpty(folded.split(/[\n;/|]+|(?<=\w)[:.]\s+/));
+  const protectedAbbrev = folded.replace(/\bacc\./g, "acc");
+  return uniqueNonEmpty(protectedAbbrev.split(/[\n;/|]+|(?<=\w)[:.]\s+/));
 }
 
 function mentionsAssembly(folded: string, assembly: DealerMajorAssemblyId): boolean {
@@ -102,15 +143,75 @@ function hasUnitRepairVerb(folded: string): boolean {
   return UNIT_REPAIR_VERB_RE.test(folded);
 }
 
+function isCampaignClause(folded: string): boolean {
+  CAMPAIGN_CLAUSE_RE.lastIndex = 0;
+  return CAMPAIGN_CLAUSE_RE.test(folded);
+}
+
+function isSoftwareClause(folded: string): boolean {
+  SOFTWARE_RE.lastIndex = 0;
+  return SOFTWARE_RE.test(folded);
+}
+
+function isCourtesyCarClause(folded: string): boolean {
+  COURTESY_CAR_RE.lastIndex = 0;
+  return COURTESY_CAR_RE.test(folded);
+}
+
+function isComfortInteriorClause(folded: string): boolean {
+  COMFORT_INTERIOR_RE.lastIndex = 0;
+  return COMFORT_INTERIOR_RE.test(folded);
+}
+
+function isMinorPartClause(folded: string): boolean {
+  MINOR_PART_RE.lastIndex = 0;
+  return MINOR_PART_RE.test(folded);
+}
+
+function isEngineUnitReplacement(folded: string): boolean {
+  ENGINE_UNIT_REPLACE_RE.lastIndex = 0;
+  if (ENGINE_UNIT_REPLACE_RE.test(folded)) return true;
+  if (!mentionsAssembly(folded, "engine")) return false;
+  if (!isOverhaul(folded)) return false;
+  ENGINE_NOT_THE_UNIT_RE.lastIndex = 0;
+  return !ENGINE_NOT_THE_UNIT_RE.test(folded);
+}
+
 /**
  * Intervāla / ekspluatācijas materiālu apkope (ne agregāta maiņa).
  * Tukšs „Apkope” / „Service” bez eļļas, filtra vai šķidruma te NAV.
  */
 export function isRoutineMaintenanceWork(works: string): boolean {
-  const folded = foldOilWorkText(works);
+  const folded = foldDealerWorkText(works);
   if (!folded) return false;
   if (hasAnyMajorAssemblyRepair(works)) return false;
   return hasConsumableSignal(folded);
+}
+
+export function isDealerSoftwareWork(works: string): boolean {
+  return isSoftwareClause(foldDealerWorkText(works));
+}
+
+export function isCourtesyCarWork(works: string): boolean {
+  return isCourtesyCarClause(foldDealerWorkText(works));
+}
+
+export function isCheckNoFaultWork(works: string): boolean {
+  CHECK_NO_FAULT_RE.lastIndex = 0;
+  return CHECK_NO_FAULT_RE.test(foldDealerWorkText(works));
+}
+
+export function hasNonCampaignRepairAction(works: string): boolean {
+  const folded = foldDealerWorkText(works);
+  const withoutCampaignJobs = folded.replace(
+    /[^.?\n;]*\b(?:qb|acc(?:ording)?\.?\s*to:?\s*qb|nach\s+qb)[^.?\n;]*/gu,
+    " ",
+  );
+  for (const clause of splitClauses(withoutCampaignJobs)) {
+    if (isCampaignClause(clause) || isSoftwareClause(clause) || isCourtesyCarClause(clause)) continue;
+    if (hasUnitRepairVerb(clause) || isOverhaul(clause)) return true;
+  }
+  return false;
 }
 
 export function hasAnyMajorAssemblyRepair(works: string): boolean {
@@ -118,6 +219,12 @@ export function hasAnyMajorAssemblyRepair(works: string): boolean {
 }
 
 function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssemblyId): boolean {
+  if (isCampaignClause(foldedClause)) return false;
+  if (isSoftwareClause(foldedClause)) return false;
+  if (isCourtesyCarClause(foldedClause)) return false;
+  if (isComfortInteriorClause(foldedClause)) return false;
+  if (assembly === "engine") return isEngineUnitReplacement(foldedClause);
+  if (isMinorPartClause(foldedClause) && assembly !== "timing_chain") return false;
   if (!mentionsAssembly(foldedClause, assembly)) return false;
   if (isOverhaul(foldedClause)) return true;
   if (!hasUnitRepairVerb(foldedClause)) return false;
@@ -127,9 +234,9 @@ function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssembl
 
 /** Vai teksts fiksē šī mezgla nomaiņu / kapitālo remontu, ne eļļas-filtra apkopi. */
 export function isMajorAssemblyRepairWork(works: string, assembly: DealerMajorAssemblyId): boolean {
-  const folded = foldOilWorkText(works);
+  const folded = foldDealerWorkText(works);
   if (!folded) return false;
-  for (const clause of [folded, ...splitClauses(folded)]) {
+  for (const clause of splitClauses(folded)) {
     if (clauseIsUnitRepairOf(clause, assembly)) return true;
   }
   return false;
@@ -139,4 +246,8 @@ export function dealerMajorAssembliesInWork(works: string): DealerMajorAssemblyI
   return MAJOR_ASSEMBLY_SPECS.filter((spec) => isMajorAssemblyRepairWork(works, spec.id)).map(
     (spec) => spec.id,
   );
+}
+
+export function majorAssemblyLabel(id: DealerMajorAssemblyId): string {
+  return MAJOR_ASSEMBLY_SPECS.find((s) => s.id === id)?.label ?? id;
 }
