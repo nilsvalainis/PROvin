@@ -5,6 +5,7 @@
  * Formāts vienā rindā: `DD.MM.YYYY | 47 521 km | Regulārā apkope: eļļas maiņa, filtri`.
  */
 
+import { isRoutineMaintenanceWork } from "@/lib/dealer-major-works";
 import { looksLikeUntranslatedServiceWork } from "@/lib/service-work-term-lv";
 
 export type VendorServiceEntry = {
@@ -98,7 +99,7 @@ export function looksLikeIntervalMaintenanceWorks(works: string, category = ""):
     .filter((part) => !isVendorServiceCategoryLine(part))
     .join(" ");
   if (!substance) return false;
-  return INTERVAL_MAINTENANCE_RE.test(substance);
+  return INTERVAL_MAINTENANCE_RE.test(substance) || isRoutineMaintenanceWork(substance);
 }
 
 export const LIFECYCLE_DEALER_VISIT_TITLE = {

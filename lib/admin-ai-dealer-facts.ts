@@ -102,9 +102,10 @@ export const DEALER_COMPONENTS: readonly ComponentDef[] = [
  * JS `\b` nestrādā un `kampaņa` / `atsaukums` / `akcija` neiekrīt.
  */
 const CAMPAIGN_WORD_RE =
-  /(?:^|[^\p{L}\p{N}_])(?:recalls?|campaigns?|kampaņ\p{L}*|atsauk\p{L}*|r(?:ü|u)ckruf|aktion|actie|service\s+actions?|technische\s+aktion|field\s+fix|tsb|sib|servisa\s+akcij\p{L}*|safety\s+recall|recall\s+uitgevoerd(?:\s+volgens\s+qb)?|type:\s*(?:campaign|recall))/iu;
+  /(?:^|[^\p{L}\p{N}_])(?:recalls?|campaigns?|kampaņ\p{L}*|atsauk\p{L}*|r(?:ü|u)ckruf|technische\s+aktion|service\s+actions?|field\s+fix|tsb|sib|servisa\s+akcij\p{L}*|safety\s+recall|recall\s+uitgevoerd(?:\s+volgens\s+qb)?|actie\s+uitgevoerd|type:\s*(?:campaign|recall)|qb\b)/iu;
 
 const CAMPAIGN_CODE_PATTERNS: readonly RegExp[] = [
+  /\bQB[\s.:-]*((?:[RS]\s*)?\d{4,6})\b/i,
   /\bType:\s*(?:Campaign|Recall)\b[\s:/,-]*([A-Z0-9]{3,10})\b/i,
   /\bAktion\s+([A-Z0-9]{3,10})\b/i,
   /\bQB\s*(R\d{4,6})\b/i,
@@ -117,7 +118,7 @@ export function extractDealerCampaignCode(text: string): string | null {
   const t = text ?? "";
   for (const re of CAMPAIGN_CODE_PATTERNS) {
     const m = re.exec(t);
-    const code = (m?.[1] ?? "").trim().toUpperCase();
+    const code = (m?.[1] ?? "").replace(/\s+/g, "").trim().toUpperCase();
     if (code) return code;
   }
   return null;
