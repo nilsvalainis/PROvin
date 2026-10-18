@@ -332,7 +332,6 @@ export function AdminVinScanPageClient({
               spellCheck={false}
               className="mt-1 w-full bg-transparent font-mono text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
               value={draft}
-              placeholder="17 rakstzīmes"
               onChange={(e) => setDraft(e.target.value.toUpperCase())}
               aria-label="VIN"
             />
@@ -349,7 +348,6 @@ export function AdminVinScanPageClient({
                 spellCheck={false}
                 className="mt-1 w-full bg-transparent font-mono text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
                 value={platesDraft.lv}
-                placeholder="piem. AB1234"
                 onChange={(e) => setPlatesDraft((prev) => ({ ...prev, lv: e.target.value.toUpperCase() }))}
                 aria-label="LV numurs"
               />

@@ -5194,7 +5194,6 @@ export function OrderDetailWorkspace({
           setVinBarCopyFlash(true);
           window.setTimeout(() => setVinBarCopyFlash(false), 600);
         }}
-        onMore={() => setMobileMore(true)}
         sourceBlocks={ws.sourceBlocks}
       />
 
