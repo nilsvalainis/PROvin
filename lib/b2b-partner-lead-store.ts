@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createJsonDocStore } from "@/lib/b2b-json-doc-store";
+import type { CompanyVerifyDecision } from "@/lib/b2b-company-verify";
 import {
   B2B_PARTNER_LEADS_MAX,
   emptyB2bPartnerLeadsDoc,
@@ -33,18 +34,28 @@ export async function createB2bPartnerLead(input: B2bPartnerLeadInput, locale: s
     createdAt: now.toISOString(),
     contactName: input.contactName,
     companyName: input.companyName,
+    companyReg: input.companyReg,
+    companyAddress: input.companyAddress,
+    vatNumber: input.vatNumber,
     phone: input.phone,
     email: input.email,
     message: input.message,
     locale,
     consentAt: now.toISOString(),
     handledAt: null,
+    decision: "pending",
+    decidedAt: null,
   };
   await store.update(DOC_KEY, (doc) => ({
     value: true,
     next: { version: 1, leads: [...doc.leads, lead].slice(-B2B_PARTNER_LEADS_MAX) },
   }));
   return lead;
+}
+
+export async function getB2bPartnerLeadById(id: string): Promise<B2bPartnerLead | null> {
+  const doc = await store.read(DOC_KEY);
+  return doc.leads.find((lead) => lead.id === id) ?? null;
 }
 
 export async function setB2bPartnerLeadHandled(id: string, handled: boolean): Promise<boolean> {
@@ -58,7 +69,29 @@ export async function setB2bPartnerLeadHandled(id: string, handled: boolean): Pr
   });
 }
 
+export async function setB2bPartnerLeadDecision(
+  id: string,
+  decision: CompanyVerifyDecision,
+): Promise<B2bPartnerLead | null> {
+  return store.update(DOC_KEY, (doc) => {
+    const idx = doc.leads.findIndex((lead) => lead.id === id);
+    if (idx < 0) return { value: null };
+    const now = new Date().toISOString();
+    const leads = doc.leads.map((lead, i) =>
+      i === idx
+        ? {
+            ...lead,
+            decision,
+            decidedAt: decision === "pending" ? null : now,
+            handledAt: decision === "pending" ? null : now,
+          }
+        : lead,
+    );
+    return { value: leads[idx] ?? null, next: { version: 1, leads } };
+  });
+}
+
 export async function countUnhandledB2bPartnerLeads(): Promise<number> {
   const doc = await store.read(DOC_KEY);
-  return doc.leads.filter((lead) => !lead.handledAt).length;
+  return doc.leads.filter((lead) => lead.decision === "pending" && !lead.handledAt).length;
 }

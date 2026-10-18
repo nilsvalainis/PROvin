@@ -24,7 +24,16 @@ const FIELD_ERROR_KEY = {
 export function B2bPartnerQuoteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const t = useTranslations("Partner");
   const locale = useLocale();
-  const [form, setForm] = useState({ contactName: "", companyName: "", phone: "", email: "", message: "" });
+  const [form, setForm] = useState({
+    contactName: "",
+    companyName: "",
+    companyReg: "",
+    companyAddress: "",
+    vatNumber: "",
+    phone: "",
+    email: "",
+    message: "",
+  });
   const [consent, setConsent] = useState(false);
   const [fieldError, setFieldError] = useState<B2bPartnerLeadField | null>(null);
   const [formError, setFormError] = useState("");
@@ -35,7 +44,16 @@ export function B2bPartnerQuoteDialog({ open, onClose }: { open: boolean; onClos
     onClose();
     if (done) {
       setDone(false);
-      setForm({ contactName: "", companyName: "", phone: "", email: "", message: "" });
+      setForm({
+        contactName: "",
+        companyName: "",
+        companyReg: "",
+        companyAddress: "",
+        vatNumber: "",
+        phone: "",
+        email: "",
+        message: "",
+      });
       setConsent(false);
     }
     setFieldError(null);
@@ -80,10 +98,16 @@ export function B2bPartnerQuoteDialog({ open, onClose }: { open: boolean; onClos
     }
   };
 
-  const errorFor = (key: B2bPartnerLeadField) =>
-    fieldError === key ? <p className={`${styles.inlineFieldError} mt-1.5`}>{t(FIELD_ERROR_KEY[key])}</p> : null;
+  const errorFor = (key: keyof typeof form | "consent") => {
+    if (fieldError !== key || !(key in FIELD_ERROR_KEY)) return null;
+    return <p className={`${styles.inlineFieldError} mt-1.5`}>{t(FIELD_ERROR_KEY[key as B2bPartnerLeadField])}</p>;
+  };
 
-  const input = (key: "contactName" | "companyName" | "phone" | "email", label: string, extra: object) => (
+  const input = (
+    key: "contactName" | "companyName" | "companyReg" | "companyAddress" | "vatNumber" | "phone" | "email",
+    label: string,
+    extra: object,
+  ) => (
     <label className="block min-w-0">
       <span className={LABEL_CLASS}>{label}</span>
       <input
@@ -122,6 +146,9 @@ export function B2bPartnerQuoteDialog({ open, onClose }: { open: boolean; onClos
           <p className="text-[0.82rem] leading-relaxed text-zinc-400">{t("quoteLead")}</p>
           {input("contactName", t("quoteContact"), { autoComplete: "name" })}
           {input("companyName", t("quoteCompany"), { autoComplete: "organization" })}
+          {input("companyReg", t("quoteReg"), { autoComplete: "off", inputMode: "numeric" })}
+          {input("companyAddress", t("quoteAddress"), { autoComplete: "street-address" })}
+          {input("vatNumber", t("quoteVat"), { autoComplete: "off" })}
           {input("phone", t("quotePhone"), { type: "tel", autoComplete: "tel", inputMode: "tel" })}
           {input("email", t("quoteEmail"), {
             type: "email",

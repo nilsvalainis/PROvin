@@ -42,6 +42,9 @@ export async function POST(req: Request) {
   await trySendAdminPartnerLeadEmail({
     contactName: input.contactName,
     companyName: input.companyName,
+    companyReg: input.companyReg,
+    companyAddress: input.companyAddress,
+    vatNumber: input.vatNumber,
     phone: input.phone,
     email: input.email,
     message: input.message,

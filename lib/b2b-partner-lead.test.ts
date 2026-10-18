@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { b2bPartnerLeadFieldError, normalizeB2bPartnerLeadInput } from "@/lib/b2b-partner-lead";
+import { b2bPartnerLeadFieldError, normalizeB2bPartnerLeadInput, parseB2bPartnerLeadsDoc } from "@/lib/b2b-partner-lead";
 
 const valid = {
   contactName: " Jānis  Bērziņš ",
@@ -28,5 +28,23 @@ describe("b2b partner lead", () => {
 
   it("message is optional", () => {
     expect(b2bPartnerLeadFieldError(normalizeB2bPartnerLeadInput({ ...valid, message: "" }))).toBeNull();
+  });
+
+  it("reads legacy leads without reg, VAT or decision", () => {
+    const doc = parseB2bPartnerLeadsDoc({
+      version: 1,
+      leads: [
+        {
+          id: "lead_1_abc12",
+          createdAt: "2026-10-18T10:00:00.000Z",
+          contactName: "Jānis",
+          companyName: "Demo Auto",
+          email: "janis@demo-auto.lv",
+        },
+      ],
+    });
+    expect(doc.leads[0]?.companyReg).toBe("");
+    expect(doc.leads[0]?.decision).toBe("pending");
+    expect(doc.leads[0]?.vatNumber).toBe("");
   });
 });
