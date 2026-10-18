@@ -54,7 +54,10 @@ Pēdējā pārbaude pret kodu `components/admin` + `app/admin`. Atkārtotas „+
 
 | Etiķete | Lapa / sadaļa | Ko dara | Kad lietot |
 | --- | --- | --- | --- |
-| Izveidot partneri (B2B) | Partneru saraksts | Izveido jaunu B2B kontu | Jauns dīleris / partneris |
+| + Jauns partneris (B2B) | Partneru saraksts | Atver sakļauto izveides formu | Kad jāreģistrē jauns dīleris |
+| Aizvērt | Partneru saraksts, izveides forma | Sakļauj formu bez saglabāšanas | Ja forma atvērta kļūdas pēc |
+| Izveidot partneri (B2B) | Partneru saraksts, atvērta forma | Izveido jaunu B2B kontu | Pēc rekvizītu aizpildīšanas |
+| ← Atpakaļ uz partneriem | Partnera profils | Atver `/admin/partneri` | Atgriešanās no partnera lapas |
 | Saglabāt (B2B) | Partnera profils | Saglabā rekvizītus, `dealerEnabled`, paku cenas | Pēc rediģēšanas |
 | Dzēst partneri (B2B) | Partnera profils | Dzēš kontu (neatsaucami) | Tikai kļūdains / testa konts |
 | Saglabāt cenas (B2B) | Maka cenas | Ieraksta individuālās cenas | Atlaide konkrētam partnerim |
