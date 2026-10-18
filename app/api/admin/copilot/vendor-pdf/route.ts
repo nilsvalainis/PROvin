@@ -22,7 +22,8 @@ import { PDF_AI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limit
 import { fillVendorAiContextIfEmpty } from "@/lib/vendor-ai-context-fill";
 import type { VendorReportVendor } from "@/lib/vendor-report-extract";
 
-export const maxDuration = 120;
+/** Gemini lasījums (līdz 60 s) + Sonnet rezerve, ja `VENDOR_PDF_PRIMARY=gemini`. */
+export const maxDuration = 300;
 export const runtime = "nodejs";
 
 const LOG_PREFIX = "[admin/copilot/vendor-pdf]";

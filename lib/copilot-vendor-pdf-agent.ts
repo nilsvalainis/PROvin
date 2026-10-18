@@ -9,6 +9,7 @@ import "server-only";
 
 import { CLAUDE_MODEL_EXTRACT, aiGenerateJsonWithSchema, type AiUserPart } from "@/lib/admin-ai";
 import {
+  GEMINI_MODEL_FLASH,
   GEMINI_MODEL_PRO,
   geminiGenerateJsonWithSchema,
   type GeminiJsonSchema,
@@ -49,6 +50,14 @@ import {
   resolveExtractCountries,
 } from "@/lib/vendor-pdf-agent-merge";
 import {
+  resolveVendorPdfPrimary,
+  runVendorPdfExtractWithFallback,
+  toGeminiResponseSchema,
+  VENDOR_PDF_GEMINI_TIMEOUT_MS,
+  withTimeout,
+  type VendorPdfExtractOutcome,
+} from "@/lib/vendor-pdf-model-route";
+import {
   emptyVendorReportExtract,
   vendorSourceKey,
   type VendorReportExtract,
@@ -83,20 +92,22 @@ export function detectVendorFromReport(text: string, fileName: string): VendorRe
   return null;
 }
 
-function extractDeterministic(vendor: VendorReportVendor, text: string): VendorReportExtract {
+export function extractDeterministic(vendor: VendorReportVendor, text: string): VendorReportExtract {
   if (!text.trim()) return emptyVendorReportExtract(vendor);
   if (vendor === "autodna") return extractAutodnaReport(text);
   if (vendor === "carvertical") return extractCarverticalReport(text);
   return extractDealerReport(text);
 }
 
-async function runAiExtract(opts: {
+type VendorPdfAiExtractOpts = {
   vendor: VendorReportVendor;
   fileName: string;
   buffer: ArrayBuffer;
   local: VendorReportExtract;
-}): Promise<VendorReportExtract> {
-  const parts: AiUserPart[] = [
+};
+
+function vendorPdfAiParts(opts: VendorPdfAiExtractOpts): AiUserPart[] {
+  return [
     { inlineData: { mimeType: "application/pdf", data: Buffer.from(opts.buffer).toString("base64") } },
     {
       text: [
@@ -109,15 +120,44 @@ async function runAiExtract(opts: {
       ].join("\n"),
     },
   ];
+}
 
+export async function runSonnetVendorPdfExtract(opts: VendorPdfAiExtractOpts): Promise<VendorReportExtract> {
   const raw = await aiGenerateJsonWithSchema({
     model: CLAUDE_MODEL_EXTRACT,
     systemInstruction: VENDOR_PDF_AGENT_SYSTEM,
-    parts,
+    parts: vendorPdfAiParts(opts),
     responseSchema: VENDOR_PDF_AGENT_SCHEMA,
     temperature: 0,
   });
   return parseVendorPdfAgentPayload(raw, opts.vendor);
+}
+
+const VENDOR_PDF_GEMINI_SCHEMA = toGeminiResponseSchema(VENDOR_PDF_AGENT_SCHEMA) as unknown as GeminiJsonSchema;
+
+export async function runGeminiVendorPdfExtract(opts: VendorPdfAiExtractOpts): Promise<VendorReportExtract> {
+  const raw = await withTimeout(
+    geminiGenerateJsonWithSchema({
+      model: GEMINI_MODEL_FLASH,
+      systemInstruction: VENDOR_PDF_AGENT_SYSTEM,
+      parts: vendorPdfAiParts(opts),
+      responseSchema: VENDOR_PDF_GEMINI_SCHEMA,
+    }),
+    VENDOR_PDF_GEMINI_TIMEOUT_MS,
+    "gemini",
+  );
+  return parseVendorPdfAgentPayload(raw, opts.vendor);
+}
+
+async function runAiExtract(opts: VendorPdfAiExtractOpts): Promise<VendorPdfExtractOutcome> {
+  return runVendorPdfExtractWithFallback({
+    primary: resolveVendorPdfPrimary(process.env.VENDOR_PDF_PRIMARY),
+    local: opts.local,
+    runGemini: () => runGeminiVendorPdfExtract(opts),
+    runSonnet: () => runSonnetVendorPdfExtract(opts),
+    onFallback: (reason) =>
+      console.warn(`${LOG_PREFIX} gemini_fallback_sonnet`, { fileName: opts.fileName, reason: reason.slice(0, 240) }),
+  });
 }
 
 /**
@@ -188,9 +228,12 @@ export async function runVendorPdfAgent(opts: {
     vendor === "dealer" && (Object.keys(local.vehicleInfo).length > 0 || local.mileage.length > 0);
 
   let ai = emptyVendorReportExtract(vendor);
+  let aiModel = "";
   if (opts.useAi !== false && !dealerLocalIsEnough) {
     try {
-      ai = await runAiExtract({ vendor, fileName: opts.fileName, buffer: opts.buffer, local });
+      const outcome = await runAiExtract({ vendor, fileName: opts.fileName, buffer: opts.buffer, local });
+      ai = outcome.extract;
+      aiModel = outcome.fallbackReason ? `${outcome.used} (${outcome.fallbackReason.slice(0, 160)})` : outcome.used;
     } catch (e) {
       const detail = e instanceof Error ? e.message : "unknown";
       console.warn(`${LOG_PREFIX} ai_failed`, { fileName: opts.fileName, detail });
@@ -251,6 +294,7 @@ export async function runVendorPdfAgent(opts: {
     textChars: text.length,
     localMileage: local.mileage.length,
     aiMileage: ai.mileage.length,
+    aiModel,
     mileage: resolved.mileage.length,
     incidents: resolved.incidents.length,
     actions: actions.length,
