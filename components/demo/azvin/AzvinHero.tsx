@@ -31,7 +31,7 @@ import {
 } from "@/lib/azvin-mobile-services";
 import { getAzvinUiCopy } from "@/lib/azvin-ui-copy";
 import { readAzvinLocale, subscribeAzvinLocale } from "@/lib/azvin-locale";
-import { isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
+import { sanitizeVinInput, vinOrPlateErrorMessage } from "@/lib/order-field-validation";
 import { useTierSwipe } from "@/lib/use-test-pricing-tier-swipe";
 
 const ICON_BTN_BASE =
@@ -205,9 +205,13 @@ export function AzvinHero() {
       setDemoNote(null);
 
       const nextErrors: AzvinFieldErrors = {};
-      const normalized = normalizeVin(vin);
-      if (!isValidVinOrPlate(normalized)) {
-        nextErrors.vin = mobileCopy.vinInvalid;
+      const normalized = sanitizeVinInput(vin);
+      const vinMsg = vinOrPlateErrorMessage(normalized, {
+        vin: mobileCopy.vinInvalid,
+        vinLength: mobileCopy.vinLengthInvalid,
+      });
+      if (vinMsg) {
+        nextErrors.vin = vinMsg;
       }
       if (listingUrl.trim() && !/^https?:\/\//i.test(listingUrl.trim())) {
         nextErrors.listingUrl = mobileCopy.listingInvalid;
@@ -225,7 +229,7 @@ export function AzvinHero() {
         void activeId;
       }, 400);
     },
-    [listingUrl, mobileCopy.ctaDemoNote, mobileCopy.listingInvalid, mobileCopy.vinInvalid, vin],
+    [listingUrl, mobileCopy.ctaDemoNote, mobileCopy.listingInvalid, mobileCopy.vinInvalid, mobileCopy.vinLengthInvalid, vin],
   );
 
   const stopSwipePropagation = (event: SyntheticEvent) => {

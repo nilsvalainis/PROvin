@@ -14,7 +14,8 @@ import {
   rememberPendingPartnerArchiveRow,
 } from "@/lib/b2b-partner-archive-rows";
 import { emptyB2bCreditRemaining, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
-import { isPlausibleListingUrl, isValidVin } from "@/lib/order-field-validation";
+import { isIncompleteVinLength, isPlausibleListingUrl, isValidVin, sanitizeVinInput } from "@/lib/order-field-validation";
+import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { trackMetaLead } from "@/lib/meta-pixel";
 import {
   isPartnerAuditPurpose,
@@ -209,7 +210,7 @@ export function B2bPartnerHome({
       return;
     }
     if (!isValidVin(vin)) {
-      setVinError(t("vinError"));
+      setVinError(isIncompleteVinLength(vin) ? t("vinLengthError") : t("vinError"));
       return;
     }
     const listing = listingUrl.trim();
@@ -423,7 +424,14 @@ export function B2bPartnerHome({
                 className={`${styles.inlineInput} font-mono uppercase tracking-wide${vinError ? ` ${styles.inlineInputError}` : ""}`}
                 value={vin}
                 onChange={(event) => {
-                  setVin(event.target.value.toUpperCase());
+                  setVin(sanitizeVinInput(event.target.value));
+                  setVinError("");
+                  setSubmitOk("");
+                  setDuplicate(null);
+                }}
+                onPaste={(event) => {
+                  event.preventDefault();
+                  setVin(sanitizeVinInput(event.clipboardData.getData("text")));
                   setVinError("");
                   setSubmitOk("");
                   setDuplicate(null);
@@ -431,7 +439,6 @@ export function B2bPartnerHome({
                 autoComplete="off"
                 spellCheck={false}
                 autoCapitalize="characters"
-                maxLength={17}
                 placeholder={t("vinPlaceholder")}
                 aria-label={t("vinAria")}
                 aria-invalid={vinError ? true : undefined}
@@ -486,6 +493,11 @@ export function B2bPartnerHome({
 
             {auditPurposeError ? <p className={styles.inlineFieldError}>{auditPurposeError}</p> : null}
             {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
+            {!vinError && vinNeedsCheckDigitWarning(vin) ? (
+              <p className={styles.inlineFieldError} role="status">
+                {t("vinCheckDigitWarning")}
+              </p>
+            ) : null}
             {listingError ? <p className={styles.inlineFieldError}>{listingError}</p> : null}
             {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}
             {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}

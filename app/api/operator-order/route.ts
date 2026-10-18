@@ -6,8 +6,9 @@ import { getClientIpFromRequest } from "@/lib/client-ip";
 import {
   getOrderContactFieldErrors,
   isPlausibleListingUrl,
-  isValidVinOrPlate,
   normalizeVin,
+  VIN_INCOMPLETE_LENGTH_ERROR_LV,
+  vinOrPlateErrorMessage,
 } from "@/lib/order-field-validation";
 import { operatorOrderConfigured, verifyOperatorOrderKey } from "@/lib/operator-order-auth";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
@@ -79,8 +80,12 @@ export async function POST(req: Request) {
   const notes = notesRaw.slice(0, NOTES_MAX);
 
   const errors: string[] = [];
-  if (!vin || !isValidVinOrPlate(vin)) {
-    errors.push("Ievadi derīgu VIN kodu vai numurzīmi.");
+  const vinError = vinOrPlateErrorMessage(vin, {
+    vin: "Ievadi derīgu VIN kodu vai numurzīmi.",
+    vinLength: VIN_INCOMPLETE_LENGTH_ERROR_LV,
+  });
+  if (vinError) {
+    errors.push(vinError);
   }
   if (listingUrl && !isPlausibleListingUrl(listingUrl)) {
     errors.push("Norādi pilnu sludinājuma saiti (ne tikai vietnes sakni).");

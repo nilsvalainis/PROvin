@@ -8,7 +8,14 @@ import {
   formatClientLinkExpiryLong,
   type ClientLinkPublicView,
 } from "@/lib/client-link";
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import {
+  VIN_INCOMPLETE_LENGTH_ERROR_LV,
+  getVinOrPlateErrorKind,
+  isValidVin,
+  normalizeVin,
+  sanitizeVinInput,
+} from "@/lib/order-field-validation";
+import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 
 const inputClass =
@@ -17,6 +24,7 @@ const inputClass =
 const fieldError: Record<string, string> = {
   email: "Lauks nav aizpildīts pareizi.",
   vin: "Lūdzu, ievadiet derīgu VIN kodu (17 zīmes) vai valsts numurzīmi (3-6 zīmes).",
+  vin_length: VIN_INCOMPLETE_LENGTH_ERROR_LV,
   listing: "Lūdzu, ievadiet derīgu saiti uz sludinājumu.",
   phone: "Lūdzu, ievadiet tālruņa numuru ar vismaz 8 cipariem.",
   consent: "Lai turpinātu uz apmaksu, atzīmējiet apstiprinājumu (noteikumi, privātuma politika, pilnvarojums un atteikuma tiesības).",
@@ -50,7 +58,20 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
     setLoading(true);
     setError(null);
     try {
-      const n = normalizeVin(vin);
+      const n = sanitizeVinInput(vin);
+      if (view.require.vin || n) {
+        const kind = getVinOrPlateErrorKind(n);
+        if (kind === "vinLength") {
+          setError(VIN_INCOMPLETE_LENGTH_ERROR_LV);
+          setLoading(false);
+          return;
+        }
+        if (kind) {
+          setError(fieldError.vin);
+          setLoading(false);
+          return;
+        }
+      }
       if (isValidVin(n) || n.length >= 3) trackMetaLead();
       const res = await fetch("/api/client-link/checkout", {
         method: "POST",
@@ -58,7 +79,7 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
         body: JSON.stringify({
           token,
           email,
-          vin,
+          vin: n,
           listingUrl,
           phone,
           withdrawalConsent: consent,
@@ -119,10 +140,18 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
               spellCheck={false}
               placeholder="WBA..."
               value={vin}
-              onChange={(e) => setVin(e.target.value.toUpperCase())}
-              maxLength={17}
+              onChange={(e) => setVin(sanitizeVinInput(e.target.value))}
+              onPaste={(e) => {
+                e.preventDefault();
+                setVin(sanitizeVinInput(e.clipboardData.getData("text")));
+              }}
             />
             <span className="mt-1 block text-[12px] text-[#aeaeb2]">{vinHint}</span>
+            {vinNeedsCheckDigitWarning(vin) ? (
+              <span className="mt-1 block text-[12px] text-amber-800" role="status">
+                ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN numuru.
+              </span>
+            ) : null}
           </label>
         ) : null}
         {view.require.listingUrl ? (

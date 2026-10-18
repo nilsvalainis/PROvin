@@ -10,6 +10,9 @@ import { AdminListingUrlEndAdornment } from "@/components/admin/AdminListingUrlT
 import { AdminSavableTextField } from "@/components/admin/AdminSavableTextField";
 import { whatsappPrefillForOrder } from "@/lib/admin-whatsapp-messages";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
+import { AdminVinNotSeventeenFlag } from "@/components/admin/AdminVinNotSeventeenFlag";
+import { sanitizeVinInput } from "@/lib/order-field-validation";
+import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
@@ -656,8 +659,7 @@ export function AdminOrderDetailView({
                   id="edit-vin"
                   label="VIN"
                   value={mergedVin}
-                  onChange={(v) => persistEdits({ vin: v })}
-                  maxLength={17}
+                  onChange={(v) => persistEdits({ vin: sanitizeVinInput(v) })}
                   placeholder="17 zīmes…"
                   mono
                   compact
@@ -673,6 +675,12 @@ export function AdminOrderDetailView({
                     />
                   }
                 />
+                <AdminVinNotSeventeenFlag vin={mergedVin} />
+                {vinNeedsCheckDigitWarning(mergedVin) ? (
+                  <p className="mt-1 text-[11px] font-normal leading-snug text-amber-800" role="status">
+                    ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN numuru.
+                  </p>
+                ) : null}
                 <AdminVinServiceLinkRow vin={mergedVin} />
               </div>
               <div

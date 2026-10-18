@@ -12,9 +12,10 @@ import {
   isPlausibleListingUrl,
   isValidOrderEmail,
   isValidOrderPhone,
-  isValidVinOrPlate,
-  normalizeVin,
+  sanitizeVinInput,
+  vinOrPlateErrorMessage,
 } from "@/lib/order-field-validation";
+import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { FREE_EVAL_SECTION_ID, FREE_EVAL_SECTION_ID_LEGACY } from "@/lib/paths";
 import { HEARD_ABOUT_OPTION_VALUES, isHeardAboutValue } from "@/lib/stripe-session";
 import { trackMetaLead } from "@/lib/meta-pixel";
@@ -79,15 +80,19 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
     setRateLimited(false);
 
     const url = listingUrl.trim();
-    const vinCode = normalizeVin(vin);
+    const vinCode = sanitizeVinInput(vin);
     const mail = email.trim();
     const tel = phone.trim();
     if (!url || !isPlausibleListingUrl(url)) {
       setFormError(t("errors.listing"));
       return;
     }
-    if (!isValidVinOrPlate(vinCode)) {
-      setFormError(t("errors.vin"));
+    const vinMsg = vinOrPlateErrorMessage(vinCode, {
+      vin: t("errors.vin"),
+      vinLength: t("errors.vinLength"),
+    });
+    if (vinMsg) {
+      setFormError(vinMsg);
       return;
     }
     if (!isHeardAboutValue(heardAbout)) {
@@ -142,6 +147,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
         }
         if (!res.ok) {
           if (data?.error === "invalid_listing") setFormError(t("errors.listing"));
+          else if (data?.error === "vin_length") setFormError(t("errors.vinLength"));
           else if (data?.error === "invalid_vin") setFormError(t("errors.vin"));
           else if (data?.error === "invalid_heard") setFormError(t("errors.heard"));
           else if (data?.error === "invalid_email") setFormError(t("errors.email"));
@@ -304,13 +310,21 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
                               autoComplete="off"
                               spellCheck={false}
                               required
-                              maxLength={17}
                               placeholder={t("form.vinPlaceholder")}
                               aria-label={t("form.vinLabel")}
                               value={vin}
-                              onChange={(e) => setVin(e.target.value.toUpperCase())}
+                              onChange={(e) => setVin(sanitizeVinInput(e.target.value))}
+                              onPaste={(e) => {
+                                e.preventDefault();
+                                setVin(sanitizeVinInput(e.clipboardData.getData("text")));
+                              }}
                               className={`${tp5Styles.inlineInput} uppercase`}
                             />
+                            {vinNeedsCheckDigitWarning(vin) ? (
+                              <p className={tp5Styles.inlineFieldError} role="status">
+                                {t("errors.vinCheckDigit")}
+                              </p>
+                            ) : null}
                             <input
                               id={`${baseId}-email`}
                               type="email"

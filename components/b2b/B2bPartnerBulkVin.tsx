@@ -21,7 +21,7 @@ import { getB2bCatalogPlan, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy
 import type { B2bCreditRemaining } from "@/lib/b2b-partner-credits";
 import type { B2bPartnerAuditPurpose, B2bPartnerOrderRow } from "@/lib/b2b-partner-orders";
 import { isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
-import { isPlausibleListingUrl } from "@/lib/order-field-validation";
+import { isPlausibleListingUrl, sanitizeVinInput } from "@/lib/order-field-validation";
 import { trackMetaLead } from "@/lib/meta-pixel";
 
 const LABEL_CLASS = "mb-1.5 block text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500";
@@ -532,10 +532,13 @@ export function B2bPartnerBulkVin({
               type="text"
               className={`${styles.inlineInput} font-mono uppercase tracking-wide`}
               value={addVin}
-              onChange={(event) => setAddVin(event.target.value.toUpperCase())}
+              onChange={(event) => setAddVin(sanitizeVinInput(event.target.value))}
+              onPaste={(event) => {
+                event.preventDefault();
+                setAddVin(sanitizeVinInput(event.clipboardData.getData("text")));
+              }}
               autoComplete="off"
               spellCheck={false}
-              maxLength={17}
               aria-label={t("bulkAddMoreAria")}
             />
             <button

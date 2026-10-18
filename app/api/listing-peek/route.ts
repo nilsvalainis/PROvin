@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { isSmtpConfigured, sendListingPeekLeadEmail } from "@/lib/email/send-transactional";
-import { canonicalizeListingUrl, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
+import { canonicalizeListingUrl, getVinOrPlateErrorKind, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, normalizeVin } from "@/lib/order-field-validation";
 import { heardAboutDisplayLabel, isHeardAboutValue } from "@/lib/stripe-session";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   const phone = typeof o.phone === "string" ? clip(o.phone, 40) : "";
   const listingUrl =
     typeof o.listingUrl === "string" ? canonicalizeListingUrl(clip(o.listingUrl, 2000)) : "";
-  const vin = typeof o.vin === "string" ? normalizeVin(clip(o.vin, 17)) : "";
+  const vin = typeof o.vin === "string" ? normalizeVin(o.vin) : "";
   const heardAbout = typeof o.heardAbout === "string" ? clip(o.heardAbout, 40) : "";
 
   if (!email || !isValidOrderEmail(email)) {
@@ -59,8 +59,9 @@ export async function POST(req: Request) {
   if (!listingUrl || !isPlausibleListingUrl(listingUrl)) {
     return NextResponse.json({ error: "invalid_listing" }, { status: 400 });
   }
-  if (!isValidVinOrPlate(vin)) {
-    return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
+  const vinKind = getVinOrPlateErrorKind(vin);
+  if (vinKind) {
+    return NextResponse.json({ error: vinKind === "vinLength" ? "vin_length" : "invalid_vin" }, { status: 400 });
   }
   if (!isHeardAboutValue(heardAbout)) {
     return NextResponse.json({ error: "invalid_heard" }, { status: 400 });

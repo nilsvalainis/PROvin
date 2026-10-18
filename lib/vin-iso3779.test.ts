@@ -5,6 +5,7 @@ import {
   hasIso3779CheckDigit,
   iso3779CheckDigit,
   isIsoVinAlphabet17,
+  vinNeedsCheckDigitWarning,
   vinOcrAlphabetVariants,
 } from "@/lib/vin-iso3779";
 
@@ -22,6 +23,9 @@ describe("ISO 3779 check digit", () => {
   it("rejects a 17-char string with a wrong check digit", () => {
     expect(hasIso3779CheckDigit("WBAZZZ8V1K1237731")).toBe(false);
     expect(hasIso3779CheckDigit("1HGCM82633A004352".slice(0, 16))).toBe(false);
+    expect(vinNeedsCheckDigitWarning("WBAZZZ8V1K1237731")).toBe(true);
+    expect(vinNeedsCheckDigitWarning(HONDA)).toBe(false);
+    expect(vinNeedsCheckDigitWarning("W0VZCYHZXN684325")).toBe(false);
   });
 
   it("pulls a VIN from registration-like OCR text, including O/I noise", () => {

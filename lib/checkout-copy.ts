@@ -4,6 +4,8 @@ import { routing } from "@/i18n/routing";
 export type OrderCopy = {
   validation: {
     vin: string;
+    vinLength: string;
+    vinCheckDigit?: string;
     listing: string;
     email: string;
     phone: string;

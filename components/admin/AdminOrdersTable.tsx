@@ -29,6 +29,7 @@ import {
   AdminAuditResultColorControl,
 } from "@/components/admin/AdminAuditResultColorControl";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import { AdminVinNotSeventeenFlag } from "@/components/admin/AdminVinNotSeventeenFlag";
 import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
 import {
   AUDIT_RESULT_COLORS,
@@ -716,12 +717,13 @@ export function AdminOrdersTable({
                     )}
                     {v.isPack ? v.packLabel : o.makeModel?.trim() || v.primaryClient}
                   </p>
-                  <p className="mt-0.5 truncate text-[13px] text-[var(--color-provin-muted)]">
+                  <p className="mt-0.5 flex flex-wrap items-center gap-1.5 truncate text-[13px] text-[var(--color-provin-muted)]">
                     {v.isPack
                       ? v.primaryClient
                       : v.hasVin
                         ? v.vin
                         : "VIN nav"}
+                    {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
                   </p>
                 </div>
                 {v.isPack ? null : (
@@ -927,6 +929,7 @@ export function AdminOrdersTable({
                         <span className="font-mono text-[12px] tracking-wide text-[#3a3a3c]" title={vin}>
                           {vin}
                         </span>
+                        <AdminVinNotSeventeenFlag vin={vin} compact />
                         <AdminVinCopyButton value={vin} />
                       </span>
                     ) : (

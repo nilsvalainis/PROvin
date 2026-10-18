@@ -57,6 +57,8 @@
       "invalidFormat": "Ungültiges Format.",
       "step1Both": "Bitte geben Sie eine gültige VIN oder ein gültiges Kennzeichen ein.",
       "vin": "Bitte geben Sie eine gültige VIN (17 Zeichen) oder ein Kennzeichen (3-6 Zeichen) ein.",
+      "vinLength": "Die VIN muss 17 Zeichen haben, prüfen Sie die VIN-Nummer",
+      "vinCheckDigit": "Die ISO-3779-Prüfziffer stimmt nicht. In der EU ist sie nicht Pflicht, prüfen Sie die VIN-Nummer trotzdem.",
       "required": "Dieses Feld ist ein Pflichtfeld.",
       "url": "Bitte geben Sie eine gültige Inserat-URL ein.",
       "listing": "Bitte geben Sie eine gültige Inserat-URL ein.",

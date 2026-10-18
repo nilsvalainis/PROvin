@@ -42,19 +42,19 @@ describe("bulk VIN parse", () => {
 });
 
 describe("bulk VIN classify", () => {
-  it("accepts 17-char VIN with ISO 3779 check digit and 11-16 without it", () => {
+  it("accepts only a 17-char VIN alphabet (check digit is not required)", () => {
     expect(isBulkVinFormatValid(VALID_A)).toBe(true);
-    expect(isBulkVinFormatValid("WVWZZZ3HZHE70")).toBe(true);
+    expect(isBulkVinFormatValid("WVWZZZ3HZHE70")).toBe(false);
     expect(isBulkVinFormatValid("SHORT")).toBe(false);
     expect(isBulkVinFormatValid("WVWZZZ3HIHE703058")).toBe(false);
   });
 
-  it("marks bad checksum or length as invalid with character count", () => {
-    const badCheck = `${VALID_A.slice(0, 8)}0${VALID_A.slice(9)}`;
-    const { rows } = classifyBulkVinTokens(["ABC", badCheck, "WVWZZZ3HQHE703058"]);
+  it("marks short or illegal-alphabet VIN as invalid with character count", () => {
+    const { rows } = classifyBulkVinTokens(["ABC", "WVWZZZ3HQHE703058", "W0VZCYHZXN684325"]);
     expect(rows[0]).toMatchObject({ kind: "invalid", charCount: 3, vin: "ABC" });
     expect(rows[1]?.kind).toBe("invalid");
     expect(rows[1]?.charCount).toBe(17);
+    expect(rows[2]).toMatchObject({ kind: "invalid", charCount: 16 });
   });
 
   it("marks the second same VIN as a list duplicate", () => {

@@ -1,4 +1,4 @@
-import { canonicalizeListingUrl, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
+import { canonicalizeListingUrl, isIncompleteVinLength, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
 import { formatEurFromCents } from "@/lib/order-upsell";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
@@ -233,7 +233,7 @@ export type ClientLinkSubmitFields = {
   phone: string;
 };
 
-export type ClientLinkSubmitError = "email" | "vin" | "listing" | "phone" | "consent";
+export type ClientLinkSubmitError = "email" | "vin" | "vin_length" | "listing" | "phone" | "consent";
 
 export function validateClientLinkSubmission(
   record: Pick<ClientLinkRecord, "require" | "prefillVin" | "prefillListingUrl" | "recipientChannel" | "recipient">,
@@ -254,7 +254,10 @@ export function validateClientLinkSubmission(
   const vinRaw = normalizeVin(fields.vin);
   const vin = vinRaw || record.prefillVin;
   if (record.require.vin || vinRaw) {
-    if (!vin || !isValidVinOrPlate(vin)) return { ok: false, error: "vin" };
+    if (!vin || !isValidVinOrPlate(vin)) {
+      if (isIncompleteVinLength(vinRaw || vin)) return { ok: false, error: "vin_length" };
+      return { ok: false, error: "vin" };
+    }
   }
 
   const listingRaw = fields.listingUrl.trim() ? canonicalizeListingUrl(fields.listingUrl.trim()) : "";

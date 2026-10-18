@@ -3,15 +3,43 @@
  * E-pasts un tālrunis obligāti pirms Stripe sesijas (`getOrderContactFieldErrors`).
  */
 
+/** Tikai etiķete `VIN:` / `VIN ` - ne numurzīme, kas sākas ar VIN. */
+const VIN_LABEL_PREFIX = /^\s*VIN(?:\s*:\s*|\s+)/i;
+
+/** Klienta 12-16 zīmju VIN (bieži ielīmēšana ar atstarpi pirms normalize). */
+export const VIN_INCOMPLETE_LENGTH_ERROR_LV = "VIN jābūt 17 zīmēm, pārbaudiet VIN numuru";
+
+/**
+ * VIN normalizācija: noņem VIN: / VIN prefiksu, atstarpes, NBSP, tabus un jaunās rindas, tad uppercase.
+ * Garumu negriež - to dara `sanitizeVinInput` pēc normalizācijas.
+ */
 export function normalizeVin(s: string): string {
-  return s.trim().toUpperCase().replace(/\s/g, "");
+  const withoutPrefix = s.replace(VIN_LABEL_PREFIX, "");
+  return withoutPrefix.toUpperCase().replace(/[\s\u00A0\u202F\u2007\uFEFF]+/g, "");
 }
 
-/** VIN: 11–17 rakstzīmes, bez I, O, Q (standarta VIN alfabēts). */
+/** Formas ievade: normalizē, tad griež līdz 17 zīmēm (nekad pirms atstarpju noņemšanas). */
+export function sanitizeVinInput(s: string): string {
+  return normalizeVin(s).slice(0, 17);
+}
+
+/** VIN: tieši 17 rakstzīmes, bez I, O, Q (standarta VIN alfabēts). */
 export function isValidVin(v: string): boolean {
   const n = normalizeVin(v);
-  if (n.length < 11 || n.length > 17) return false;
-  return /^[A-HJ-NPR-Z0-9]+$/i.test(n);
+  if (n.length !== 17) return false;
+  return /^[A-HJ-NPR-Z0-9]{17}$/i.test(n);
+}
+
+/** Pēc normalizācijas 12-16 zīmes: tipisks nogriezts VIN, ne numurzīme. */
+export function isIncompleteVinLength(v: string): boolean {
+  const n = normalizeVin(v);
+  return n.length >= 12 && n.length <= 16;
+}
+
+/** Admin karogs: ir vērtība, bet tā nav 17 zīmju VIN (numurzīme vai nepilns kods). */
+export function orderVinIsNotSeventeen(v: string): boolean {
+  const n = normalizeVin(v);
+  return Boolean(n) && n.length !== 17;
 }
 
 /** Outvin API — tieši 17 rakstzīmes (Swagger pattern). */
@@ -41,9 +69,31 @@ export function isValidPlateNumber(v: string): boolean {
   return /^(?:[A-Z]{2}\d{1,4}|[A-Z]{3}\d{1,3})$/.test(n);
 }
 
-/** Pasūtījuma “VIN” lauks: pieņem VIN kodu (11–17) vai valsts numurzīmi (3–6 zīmes). */
+/** Pasūtījuma “VIN” lauks: pieņem 17 zīmju VIN vai valsts numurzīmi (3-6 zīmes). */
 export function isValidVinOrPlate(v: string): boolean {
   return isValidVin(v) || isValidPlateNumber(v);
+}
+
+export type VinOrPlateErrorKind = "empty" | "vinLength" | "vin";
+
+/** Klienta VIN lauka kļūdas veids pēc normalizācijas (12-16 = vinLength). */
+export function getVinOrPlateErrorKind(v: string): VinOrPlateErrorKind | null {
+  const n = normalizeVin(v);
+  if (!n) return "empty";
+  if (isValidVinOrPlate(n)) return null;
+  if (isIncompleteVinLength(n)) return "vinLength";
+  return "vin";
+}
+
+export function vinOrPlateErrorMessage(
+  v: string,
+  messages: { empty?: string; vinLength: string; vin: string },
+): string | null {
+  const kind = getVinOrPlateErrorKind(v);
+  if (kind === null) return null;
+  if (kind === "empty") return messages.empty ?? messages.vin;
+  if (kind === "vinLength") return messages.vinLength;
+  return messages.vin;
 }
 
 export function isValidHttpUrl(s: string): boolean {
@@ -117,7 +167,7 @@ export function isValidOrderPhone(s: string): boolean {
   return digits.length >= 8 && digits.length <= 15;
 }
 
-export type OrderFieldErrorKey = "vin" | "listing" | "email" | "phone";
+export type OrderFieldErrorKey = "vin" | "vinLength" | "listing" | "email" | "phone";
 
 export type OrderContactFieldErrors = {
   email?: string;
@@ -156,8 +206,9 @@ export function validateOrderFields(input: {
   email: string;
   phone: string;
 }): OrderFieldErrorKey | null {
-  const vin = normalizeVin(input.vin);
-  if (!vin || !isValidVinOrPlate(vin)) return "vin";
+  const vinKind = getVinOrPlateErrorKind(input.vin);
+  if (vinKind === "empty" || vinKind === "vin") return "vin";
+  if (vinKind === "vinLength") return "vinLength";
   const listingTrim = input.listingUrl.trim();
   if (listingTrim && !isPlausibleListingUrl(listingTrim)) return "listing";
   if (!input.email.trim() || !isValidOrderEmail(input.email)) return "email";

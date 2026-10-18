@@ -57,6 +57,8 @@
       "invalidFormat": "Invalid format.",
       "step1Both": "Please enter a valid VIN or licence plate number.",
       "vin": "Please enter a valid VIN (17 characters) or licence plate number (3-6 characters).",
+      "vinLength": "VIN must be 17 characters, check the VIN number",
+      "vinCheckDigit": "The ISO 3779 check digit does not match. It is not mandatory in the EU, but please check the VIN number.",
       "required": "This field is required.",
       "url": "Please enter a valid listing URL.",
       "listing": "Please enter a valid listing URL.",

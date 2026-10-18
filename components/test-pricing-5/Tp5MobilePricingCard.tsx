@@ -23,6 +23,7 @@ import {
   type Tp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { sanitizeVinInput } from "@/lib/order-field-validation";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5DealerRefundTip } from "@/components/test-pricing-5/Tp5DealerRefundTip";
 import { Tp5TurnaroundInfoTip } from "@/components/test-pricing-5/Tp5TurnaroundInfoTip";
@@ -182,13 +183,16 @@ function CheckoutFields({
         type="text"
         className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
         value={vin}
-        onChange={(event) => onVinChange(event.target.value.toUpperCase())}
+        onChange={(event) => onVinChange(sanitizeVinInput(event.target.value))}
+        onPaste={(event) => {
+          event.preventDefault();
+          onVinChange(sanitizeVinInput(event.clipboardData.getData("text")));
+        }}
         placeholder={uiCopy.vinPlaceholder}
         aria-label={uiCopy.vinAria}
         autoComplete="off"
         spellCheck={false}
         inputMode="text"
-        maxLength={17}
       />
       {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
       <input
