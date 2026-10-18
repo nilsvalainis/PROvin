@@ -72,6 +72,13 @@ export function buildCarverticalVinCheckUrl(raw: string): string | null {
   return CARVERTICAL_REPORTS_URL;
 }
 
+/** Bezmaksas priekšpārbaude ar VIN URL (maksas pirkuma plūsma pēc operatora apstiprinājuma). */
+export function buildCarverticalPrecheckPurchaseUrl(raw: string): string | null {
+  const v = normalizeVinForServiceUrls(raw);
+  if (!v) return null;
+  return `https://www.carvertical.com/lv/precheck/searching?identifier=${encodeURIComponent(v)}`;
+}
+
 export function buildAutorecordsVinCheckUrl(raw: string): string | null {
   const v = normalizeVinForServiceUrls(raw);
   if (!v) return null;
