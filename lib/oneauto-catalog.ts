@@ -1,5 +1,6 @@
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import { capitalizeServiceField, formatServiceWorksLines } from "@/lib/service-works-lines";
+import { repairDealerImportText } from "@/lib/dealer-text-repair";
 
 export const ONEAUTO_SOURCE_TAG = "oneautoapi" as const;
 
@@ -215,8 +216,8 @@ export function formatOneautoWorksText(raw: string): string {
 
 export function normalizeOneautoKvRow(row: OneautoKvRow): OneautoKvRow {
   return {
-    label: row.label.replace(/\s+/g, " ").trim().slice(0, 200),
-    value: row.value.replace(/\s+/g, " ").trim().slice(0, 2000),
+    label: repairDealerImportText(row.label).replace(/\s+/g, " ").trim().slice(0, 200),
+    value: repairDealerImportText(row.value).replace(/\s+/g, " ").trim().slice(0, 2000),
   };
 }
 

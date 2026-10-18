@@ -15,6 +15,7 @@ import {
   type AutoRecordsServiceRow,
 } from "@/lib/auto-records-paste-parse";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
+import { repairDealerImportText } from "@/lib/dealer-text-repair";
 import {
   buildHybridSourcePdfComments,
   extractBodyDamageSnippets,
@@ -136,7 +137,7 @@ function suggestPdfChecklist(text: string, rows: AutoRecordsServiceRow[]): Parti
  */
 export function parseAutoRecordsPdfText(text: string): AutoRecordsPdfParseResult {
   const warnings: string[] = [];
-  const trimmed = sanitizePdfTextForParsing(text).trim();
+  const trimmed = repairDealerImportText(sanitizePdfTextForParsing(text)).trim();
   const charCount = trimmed.length;
 
   if (!charCount) {

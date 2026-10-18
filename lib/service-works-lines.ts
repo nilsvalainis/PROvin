@@ -3,6 +3,7 @@
  * katrs darbs savā rindā, bez ikonām, pirmais burts liels, secība pēc konteksta.
  */
 
+import { repairDealerImportText } from "@/lib/dealer-text-repair";
 import { isVendorServiceCategoryLine } from "@/lib/vendor-service-history";
 
 const ICON_OR_EMOJI_RE =
@@ -28,7 +29,7 @@ function capitalizeFirstLetter(text: string): string {
 
 /** Pirmais burts liels (LV). Kategorija: arī darba daļa pēc kolona. */
 export function capitalizeServiceField(text: string): string {
-  const t = text.replace(/\u00a0/g, " ").replace(/[ \t]+/g, " ").trim();
+  const t = repairDealerImportText(text).replace(/\u00a0/g, " ").replace(/[ \t]+/g, " ").trim();
   if (!t) return "";
   const m = t.match(/^([^:]{2,48}):\s*(.+)$/);
   if (m && isVendorServiceCategoryLine(m[1]!.trim())) {
@@ -38,7 +39,7 @@ export function capitalizeServiceField(text: string): string {
 }
 
 function stripWorkDecorations(raw: string): string {
-  return raw
+  return repairDealerImportText(raw)
     .replace(/\u00a0/g, " ")
     .replace(ICON_OR_EMOJI_RE, "")
     .replace(LINE_BULLET_RE, "")
