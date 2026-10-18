@@ -17,6 +17,7 @@ import {
   mergeOverlappingServiceWorkLines,
 } from "@/lib/service-works-lines";
 import { isVendorServiceCategoryLine } from "@/lib/vendor-service-history";
+import { oneautoWorksNeedLvTranslation } from "@/lib/dealer-works-language";
 
 export type AutoRecordsServiceWorkRow = {
   /** DD.MM.YYYY (ja zināms tikai mēnesis — diena „01”). */
@@ -345,8 +346,21 @@ export function mergeAutoRecordsServiceWorkRow(
   const row = normalizeAutoRecordsServiceWorkRow(incoming);
   if (!autoRecordsServiceWorkRowHasData(row)) return existing;
 
-  const withData = existing.filter(autoRecordsServiceWorkRowHasData);
+  let withData = existing.filter(autoRecordsServiceWorkRowHasData);
   const key = rowKey(row);
+  const km = serviceWorkOdometerDigits(row);
+  if (!oneautoWorksNeedLvTranslation(row.works)) {
+    // Svaigs LV tulkojums aizstāj tās pašas vizītes svešvalodas tekstu, citādi atkārtota ielāde paliek vāciski.
+    const isStaleForeign = (r: AutoRecordsServiceWorkRow) =>
+      (rowKey(r) === key || (km !== "" && serviceWorkOdometerDigits(r) === km)) &&
+      oneautoWorksNeedLvTranslation(r.works);
+    const stale = withData.filter(isStaleForeign);
+    if (stale.length > 0) {
+      const keptLocation = row.location.trim() || stale.find((r) => r.location.trim())?.location || "";
+      withData = withData.filter((r) => !isStaleForeign(r));
+      return mergeAutoRecordsServiceWorkRow(withData, { ...row, location: keptLocation });
+    }
+  }
   if (withData.some((r) => rowKey(r) === key)) {
     const incomingNarr =
       looksLikeServiceWorksNarrative(incoming.works) ||
@@ -363,7 +377,6 @@ export function mergeAutoRecordsServiceWorkRow(
     });
     return sortAutoRecordsServiceWorkRows(filled.length > 0 ? filled : [row]);
   }
-  const km = serviceWorkOdometerDigits(row);
   if (km) {
     const sameKm = withData.filter((r) => serviceWorkOdometerDigits(r) === km);
     if (sameKm.length > 0) {
