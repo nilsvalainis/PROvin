@@ -3,6 +3,12 @@ import { after } from "next/server";
 import { patchOrderDraft } from "@/lib/admin-order-draft-store";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
 import {
+  buildSubmittedPartnerArchiveRow,
+  partnerArchiveReportHref,
+  partnerVinReorderLockKey,
+  partnerVinSpendKey,
+} from "@/lib/b2b-partner-archive-rows";
+import {
   debitB2bCredit,
   forgetB2bDebitKeys,
   remainingB2bCredits,
@@ -40,12 +46,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  let raw: { vin?: unknown; plan?: unknown; listingUrl?: unknown; auditPurpose?: unknown };
+  let raw: { vin?: unknown; plan?: unknown; listingUrl?: unknown; auditPurpose?: unknown; reorder?: unknown };
   try {
     raw = (await req.json()) as typeof raw;
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
+  const reorder = raw.reorder === true;
 
   const vin = typeof raw.vin === "string" ? normalizeVin(raw.vin) : "";
   const planRaw = typeof raw.plan === "string" ? raw.plan.trim() : "";
@@ -71,18 +78,24 @@ export async function POST(req: Request) {
   }
 
   const idempotencyKey = (req.headers.get("idempotency-key") ?? "").trim().slice(0, 80);
-  const spendKey = `spend:${vin}:${planRaw}`;
+  const nowMs = Date.now();
+  const spendKey = partnerVinSpendKey(vin, planRaw, nowMs);
+  const reorderKey = partnerVinReorderLockKey(vin, planRaw, nowMs);
+  type ExistingVin = { id: string; created: number; reportReady: boolean } | null;
   type PartnerSpend =
-    | { ok: true; duplicate: true; orderId: string; lotId: string }
+    | { ok: true; duplicate: true; existing: ExistingVin }
     | { ok: false }
     | { ok: true; duplicate: false; lotId: string };
   const consumed = await updateB2bCreditWallet<PartnerSpend>(partner.id, async (wallet) => {
-    if (walletHasDebitKey(wallet, idempotencyKey) || walletHasDebitKey(wallet, spendKey)) {
-      return { value: { ok: true as const, duplicate: true as const, orderId: "", lotId: "" } };
-    }
-    const existing = await findRecentPartnerVinOrder({ partnerId: partner.id, vin });
-    if (existing) {
-      return { value: { ok: true as const, duplicate: true as const, orderId: existing.id, lotId: "" } };
+    const duplicateFromKey =
+      (idempotencyKey && walletHasDebitKey(wallet, idempotencyKey)) ||
+      (!reorder && walletHasDebitKey(wallet, spendKey)) ||
+      (reorder && walletHasDebitKey(wallet, reorderKey));
+    if (duplicateFromKey || !reorder) {
+      const existing = await findRecentPartnerVinOrder({ partnerId: partner.id, vin });
+      if (duplicateFromKey || existing) {
+        return { value: { ok: true as const, duplicate: true as const, existing: existing ?? null } };
+      }
     }
     let next = wallet;
     if (next.lots.length === 0) {
@@ -102,6 +115,7 @@ export async function POST(req: Request) {
     if (!debit.ok) return { value: { ok: false as const } };
     let saved = rememberB2bDebitKey(debit.wallet, spendKey);
     if (idempotencyKey) saved = rememberB2bDebitKey(saved, idempotencyKey);
+    if (reorder) saved = rememberB2bDebitKey(saved, reorderKey);
     return { wallet: saved, value: { ok: true as const, duplicate: false as const, lotId: debit.lotId } };
   });
 
@@ -109,17 +123,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "no_credits" }, { status: 402 });
   }
   if (consumed.duplicate) {
-    const orderId =
-      consumed.orderId ||
-      (await findRecentPartnerVinOrder({ partnerId: partner.id, vin }))?.id ||
-      "";
+    const existing =
+      consumed.existing ?? (await findRecentPartnerVinOrder({ partnerId: partner.id, vin }));
+    const orderId = existing?.id ?? "";
+    const orderedAt = existing ? new Date(existing.created * 1000).toISOString() : "";
     return NextResponse.json({
       ok: true,
       vin,
       plan: planRaw,
-      queued: true,
+      queued: false,
       duplicate: true,
       ...(orderId ? { orderId } : {}),
+      ...(orderedAt ? { orderedAt } : {}),
+      reportHref: orderId ? partnerArchiveReportHref(orderId, existing?.reportReady === true) : null,
     });
   }
 
@@ -145,7 +161,11 @@ export async function POST(req: Request) {
   });
   if (!created.ok) {
     await updateB2bCreditWallet(partner.id, (wallet) => ({
-      wallet: forgetB2bDebitKeys(restoreB2bCredit(wallet, planRaw, consumed.lotId), [spendKey, idempotencyKey]),
+      wallet: forgetB2bDebitKeys(restoreB2bCredit(wallet, planRaw, consumed.lotId), [
+        spendKey,
+        idempotencyKey,
+        reorderKey,
+      ]),
       value: true,
     }));
     return NextResponse.json({ error: "queue_failed" }, { status: 500 });
@@ -192,11 +212,18 @@ export async function POST(req: Request) {
     }
   });
 
+  const order = buildSubmittedPartnerArchiveRow({
+    id: created.orderId,
+    vin,
+    plan: planRaw,
+  });
   return NextResponse.json({
     ok: true,
     vin,
     plan: planRaw,
     queued: true,
+    duplicate: false,
     orderId: created.orderId,
+    order,
   });
 }

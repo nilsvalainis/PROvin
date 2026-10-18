@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { FileText } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import {
+  mergePartnerArchiveRows,
+  readPendingPartnerArchiveRows,
+} from "@/lib/b2b-partner-archive-rows";
 import { formatB2bPartnerOrderDate, type B2bPartnerOrderRow } from "@/lib/b2b-partner-orders";
 
 const TITLE_CLASS = "text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl";
@@ -14,12 +18,35 @@ function archiveAmountText(
   row: B2bPartnerOrderRow,
   t: ReturnType<typeof useTranslations>,
 ): string {
-  if (row.amountKind === "credit_restored") return t("archiveCreditRestored");
-  if (row.amountKind === "credit") return t("archiveCreditUsed");
+  if (row.kind === "pack") return row.amountLabel;
+  if (row.amountKind === "credit" || row.amountKind === "credit_restored") return t("archiveCreditUsed");
   return row.amountLabel;
 }
 
-function ReportCell({ href, label }: { href: string | null | undefined; label: string }) {
+function archiveVinText(
+  row: B2bPartnerOrderRow,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  if (row.kind === "pack") {
+    return row.plan === "dealer"
+      ? t("archivePackDealer", { count: row.packQty ?? 1 })
+      : t("archivePackBusiness", { count: row.packQty ?? 1 });
+  }
+  return row.vin;
+}
+
+function archiveStatusText(
+  row: B2bPartnerOrderRow,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  if (row.kind === "pack") return "";
+  if (row.status === "credit_restored") return t("archiveCreditRestored");
+  if (row.status === "ready") return t("archiveStatusReady");
+  if (row.status === "processing") return t("archiveStatusProcessing");
+  return t("archiveStatusReceived");
+}
+
+function FileLink({ href, label }: { href: string | null | undefined; label: string }) {
   if (!href) return null;
   return (
     <a
@@ -34,6 +61,28 @@ function ReportCell({ href, label }: { href: string | null | undefined; label: s
   );
 }
 
+function StatusCell({
+  row,
+  t,
+}: {
+  row: B2bPartnerOrderRow;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const status = archiveStatusText(row, t);
+  const download =
+    row.kind === "pack" ? (
+      <FileLink href={row.invoiceHref} label={t("archiveOpenInvoice")} />
+    ) : (
+      <FileLink href={row.reportHref} label={t("archiveOpenReport")} />
+    );
+  return (
+    <span className="inline-flex items-center justify-end gap-2">
+      {status ? <span>{status}</span> : null}
+      {download}
+    </span>
+  );
+}
+
 export function B2bPartnerArchive({
   embedded = false,
 }: {
@@ -45,17 +94,20 @@ export function B2bPartnerArchive({
 
   useEffect(() => {
     let cancelled = false;
+    const pending = readPendingPartnerArchiveRows();
+    if (pending.length > 0) setRows(pending);
     void (async () => {
       try {
         const res = await fetch("/api/partner/archive", { credentials: "include" });
         if (!res.ok) {
-          if (!cancelled) setRows([]);
+          if (!cancelled) setRows(readPendingPartnerArchiveRows());
           return;
         }
         const data = (await res.json()) as { orders?: B2bPartnerOrderRow[] };
-        if (!cancelled) setRows(Array.isArray(data.orders) ? data.orders : []);
+        const server = Array.isArray(data.orders) ? data.orders : [];
+        if (!cancelled) setRows(mergePartnerArchiveRows(server, readPendingPartnerArchiveRows()));
       } catch {
-        if (!cancelled) setRows([]);
+        if (!cancelled) setRows(readPendingPartnerArchiveRows());
       }
     })();
     return () => {
@@ -91,18 +143,20 @@ export function B2bPartnerArchive({
                   <th className={TH_CLASS}>{t("archiveVin")}</th>
                   <th className={TH_CLASS}>{t("archiveInvoice")}</th>
                   <th className={`${TH_CLASS} text-right`}>{t("archiveAmount")}</th>
-                  <th className={`${TH_CLASS} w-14 text-right`}>{t("archiveReport")}</th>
+                  <th className={`${TH_CLASS} text-right`}>{t("archiveStatus")}</th>
                 </tr>
               </thead>
               <tbody>
                 {list.map((row) => (
                   <tr key={row.id} className="border-b border-white/[0.06]">
                     <td className={TD_CLASS}>{formatB2bPartnerOrderDate(row.createdAt, locale)}</td>
-                    <td className={`${TD_CLASS} font-mono tracking-wide`}>{row.vin}</td>
+                    <td className={`${TD_CLASS} ${row.kind === "pack" ? "" : "font-mono tracking-wide"}`}>
+                      {archiveVinText(row, t)}
+                    </td>
                     <td className={TD_CLASS}>{row.invoiceNumber}</td>
                     <td className={`${TD_CLASS} text-right tabular-nums`}>{archiveAmountText(row, t)}</td>
                     <td className={`${TD_CLASS} text-right`}>
-                      <ReportCell href={row.reportHref} label={t("archiveOpenReport")} />
+                      <StatusCell row={row} t={t} />
                     </td>
                   </tr>
                 ))}
@@ -114,12 +168,14 @@ export function B2bPartnerArchive({
             {list.map((row) => (
               <li key={row.id} className="rounded-[0.35rem] bg-white/[0.03] px-3 py-3">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="font-mono text-[0.8125rem] tracking-wide text-zinc-100">{row.vin}</span>
+                  <span className={row.kind === "pack" ? "text-[0.8125rem] text-zinc-100" : "font-mono text-[0.8125rem] tracking-wide text-zinc-100"}>
+                    {archiveVinText(row, t)}
+                  </span>
                   <span className="flex shrink-0 items-center gap-3">
                     <span className="text-[0.8125rem] font-medium tabular-nums text-zinc-100">
                       {archiveAmountText(row, t)}
                     </span>
-                    <ReportCell href={row.reportHref} label={t("archiveOpenReport")} />
+                    <StatusCell row={row} t={t} />
                   </span>
                 </div>
                 <p className="mt-1.5 text-[0.7rem] text-zinc-500">

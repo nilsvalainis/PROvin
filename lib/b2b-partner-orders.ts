@@ -2,6 +2,8 @@ import { b2bDateLocale } from "@/i18n/locales";
 import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 
 export type B2bArchiveAmountKind = "money" | "credit" | "credit_restored";
+export type B2bPartnerArchiveStatus = "received" | "processing" | "ready" | "credit_restored";
+export type B2bPartnerArchiveKind = "order" | "pack";
 
 export type B2bPartnerOrderRow = {
   id: string;
@@ -13,6 +15,10 @@ export type B2bPartnerOrderRow = {
   plan: B2bPartnerPlanId;
   /** Atskaite PDF. Tukšs, kamēr admin nav nosūtījis / saglabājis failu. */
   reportHref?: string | null;
+  invoiceHref?: string | null;
+  status?: B2bPartnerArchiveStatus;
+  kind?: B2bPartnerArchiveKind;
+  packQty?: number;
 };
 
 export function formatB2bArchiveAmount(cents: number | null | undefined, currency: string | null | undefined): string {

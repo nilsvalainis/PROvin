@@ -3,16 +3,22 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { B2bPartnerBuyReports } from "@/components/b2b/B2bPartnerBuyReports";
 import { getB2bCatalogPlan, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import type { B2bPartnerPriceOverrides } from "@/lib/b2b-partner-account";
+import {
+  buildSubmittedPartnerArchiveRow,
+  formatPartnerVinDuplicateDate,
+  rememberPendingPartnerArchiveRow,
+} from "@/lib/b2b-partner-archive-rows";
 import { emptyB2bCreditRemaining, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
 import { isPlausibleListingUrl, isValidVin } from "@/lib/order-field-validation";
 import { trackMetaLead } from "@/lib/meta-pixel";
 import {
   isPartnerAuditPurpose,
   type B2bPartnerAuditPurpose,
+  type B2bPartnerOrderRow,
 } from "@/lib/b2b-partner-orders";
 
 const LABEL_CLASS = "mb-1.5 block text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500";
@@ -100,6 +106,7 @@ export function B2bPartnerHome({
   const [serviceError, setServiceError] = useState("");
   const [formError, setFormError] = useState("");
   const [submitOk, setSubmitOk] = useState("");
+  const [duplicate, setDuplicate] = useState<{ date: string; reportHref: string | null } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [packPaidOk, setPackPaidOk] = useState(false);
 
@@ -184,15 +191,17 @@ export function B2bPartnerHome({
     setService(plan);
     setServiceError("");
     setSubmitOk("");
+    setDuplicate(null);
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (opts?: { reorder?: boolean }) => {
     setVinError("");
     setListingError("");
     setAuditPurposeError("");
     setServiceError("");
     setFormError("");
     setSubmitOk("");
+    setDuplicate(null);
     if (!auditPurpose || !isPartnerAuditPurpose(auditPurpose)) {
       setAuditPurposeError(t("auditPurposeError"));
       return;
@@ -219,18 +228,33 @@ export function B2bPartnerHome({
     setSubmitting(true);
     try {
       trackMetaLead();
+      const reorder = opts?.reorder === true;
+      const idempotencyKey =
+        typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `ord_${Date.now()}`;
       const res = await fetch("/api/partner/orders", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
         body: JSON.stringify({
           vin,
           plan,
           auditPurpose,
           ...(listing ? { listingUrl: listing } : {}),
+          ...(reorder ? { reorder: true } : {}),
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; ok?: boolean };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        ok?: boolean;
+        duplicate?: boolean;
+        orderedAt?: string;
+        reportHref?: string | null;
+        orderId?: string;
+        order?: B2bPartnerOrderRow;
+      };
       if (res.status === 401) {
         router.replace("/partneriem");
         return;
@@ -264,6 +288,19 @@ export function B2bPartnerHome({
         setFormError(t("payNetwork"));
         return;
       }
+      if (data.duplicate) {
+        setDuplicate({
+          date: formatPartnerVinDuplicateDate(data.orderedAt || Date.now() / 1000),
+          reportHref: typeof data.reportHref === "string" && data.reportHref.trim() ? data.reportHref : null,
+        });
+        return;
+      }
+      const pending =
+        data.order ??
+        (data.orderId
+          ? buildSubmittedPartnerArchiveRow({ id: data.orderId, vin, plan })
+          : null);
+      if (pending) rememberPendingPartnerArchiveRow(pending);
       setSubmitOk(t("vinSubmitOk"));
       setVin("");
       setListingUrl("");
@@ -327,6 +364,7 @@ export function B2bPartnerHome({
                         setAuditPurpose(purpose);
                         setAuditPurposeError("");
                         setSubmitOk("");
+                        setDuplicate(null);
                       }}
                       className="h-4 w-4 shrink-0 border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
                     />
@@ -348,6 +386,7 @@ export function B2bPartnerHome({
                   setVin(event.target.value.toUpperCase());
                   setVinError("");
                   setSubmitOk("");
+                  setDuplicate(null);
                 }}
                 autoComplete="off"
                 spellCheck={false}
@@ -371,6 +410,7 @@ export function B2bPartnerHome({
                   setListingUrl(event.target.value);
                   setListingError("");
                   setSubmitOk("");
+                  setDuplicate(null);
                 }}
                 autoComplete="off"
                 spellCheck={false}
@@ -409,6 +449,42 @@ export function B2bPartnerHome({
             {listingError ? <p className={styles.inlineFieldError}>{listingError}</p> : null}
             {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}
             {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
+            {duplicate ? (
+              <div className="flex flex-col gap-2.5 rounded-[0.35rem] bg-amber-400/10 px-3 py-3">
+                <p className="text-[0.8125rem] font-medium leading-snug text-amber-200">
+                  {t("vinDuplicateNotice", { date: duplicate.date })}
+                </p>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {duplicate.reportHref ? (
+                    <a
+                      href={duplicate.reportHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-zinc-200 underline-offset-2 hover:text-white hover:underline"
+                    >
+                      {t("vinDuplicateOpenReport")}
+                    </a>
+                  ) : (
+                    <Link
+                      href="/partneriem/konts/profils"
+                      className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-zinc-200 underline-offset-2 hover:text-white hover:underline"
+                    >
+                      {t("vinDuplicateOpenReport")}
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    className="text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-emerald-300 underline-offset-2 hover:text-emerald-200 hover:underline disabled:opacity-50"
+                    disabled={submitting}
+                    onClick={() => {
+                      if (!submitting) void onSubmit({ reorder: true });
+                    }}
+                  >
+                    {t("vinDuplicateReorder")}
+                  </button>
+                </div>
+              </div>
+            ) : null}
             {submitOk ? (
               <p className="text-[0.8125rem] font-medium leading-snug text-emerald-300">{submitOk}</p>
             ) : null}
