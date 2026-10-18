@@ -2,7 +2,8 @@
  * OFICIĀLĀ DĪLERA DATI: „Lielie darbi” / lielie mezgli.
  *
  * Apkope pie mezgla (eļļa, filtrs, ATF, šķidrumi, sveces, pārbaude, skalošana)
- * NAV agregāta maiņa. Tikai reāla nomaiņa, kapitālais remonts vai agregāta remonts.
+ * NAV agregāta maiņa. Tikai reāla nomaiņa, kapitālais remonts, REMAN/Austausch
+ * vai lielā mezgla rinda detaļu sarakstā (CAPS + part number).
  * Avoti bieži EN/DE/RU/LV, ar saplēstiem umlautiem un TJ/Symptom/Diagnose/Aktion
  * veidni (Volvo RAW). Izeja jebkurā atskaites valodā.
  */
@@ -14,8 +15,10 @@ export type DealerMajorAssemblyId =
   | "timing_belt"
   | "crankshaft_seal"
   | "gearbox"
+  | "clutch"
   | "transfer_case"
   | "differential"
+  | "propshaft"
   | "dual_mass_flywheel"
   | "turbo"
   | "body_glass";
@@ -32,8 +35,10 @@ export const MAJOR_ASSEMBLY_SPECS: readonly DealerMajorAssemblySpec[] = [
   { id: "timing_belt", label: "Zobsiksna" },
   { id: "crankshaft_seal", label: "Kloķvārpstas blīvslēgs" },
   { id: "gearbox", label: "Ātrumkārba" },
+  { id: "clutch", label: "Sajūgs" },
   { id: "transfer_case", label: "Sadales kārba" },
   { id: "differential", label: "Diferenciālis / reduktors" },
+  { id: "propshaft", label: "Kardāns" },
   { id: "dual_mass_flywheel", label: "Divmasu spararats" },
   { id: "turbo", label: "Turbokompresors" },
   { id: "body_glass", label: "Virsbūve / stikls" },
@@ -50,16 +55,51 @@ const ASSEMBLY_RE: Record<DealerMajorAssemblyId, RegExp> = {
     /kurbelwell(?:en)?(?:simmerring|dicht)|crankshaft\s+seal|klokvarpstas\s+bliv|сальник\s+колен|joint\s+(?:spi|de\s+)?vilebrequin|paraolio\s+albero/u,
   gearbox:
     /atrumkar|parnesumkarb|transmisi|\bkarbas?\b|gearbox|\btransmission\b|getriebe(?!ol)|versnellingsbak|vaxellad|boite(?:\s+de)?\s+vitesses|\bcambio\b|caja(?:\s+de)?\s+cambios|коробк\p{L}*(?:\s+передач)?|акпп|мкпп|\bdsg\b|\bdct\b|\bcvt\b|tiptronic|doppelkupplung|divsajug|mechatron|gidroblok|гидроблок|valve\s+body|torque\s+converter|hidrotransform|гидротрансформатор|getriebewechsel|getriebeersatz|getriebetausch/u,
+  clutch: /\bclutch(?:\s+kit)?\b|\bsajug|kupplungssatz|\bkupplung\b/u,
   transfer_case:
-    /transfer(?:\s+case)?|verteilergetriebe|razdat|раздаточн|sadales\s+karb|boite\s+de\s+transfert|caja\s+de\s+transferencia|tussenbak|fordelningslad/u,
+    /transfer(?:\s+case|\s+box)?|verteilergetriebe|razdat|раздаточн|sadales\s+karb|boite\s+de\s+transfert|caja\s+de\s+transferencia|tussenbak|fordelningslad/u,
   differential:
-    /differential|differenzial|diferencial|дифференциал|reduktor|редуктор|achsgetriebe(?!ol)|hinterachs(?!ol)|aizmugurej\p{L}*\s+tilt|differentiel|differenziale/u,
+    /differential|differenzial|diferencial|дифференциал|achsgetriebe(?!ol)|hinterachs(?!ol)|aizmugurej\p{L}*\s+tilt|differentiel|differenziale/u,
+  propshaft:
+    /kardan|prop[\s-]?shaft|kardanwelle|\bcardan\b|gelenkwelle|transmisij\p{L}*\s+uz\s+(?:aizmugurej|prieksej)\p{L}*\s+asi/u,
   dual_mass_flywheel:
-    /divmasu|spararat|dual[\s-]?mass|flywheel|zweimassen|schwungrad|маховик|vliegwiel|svanghjul|volant\s+bimasse|volano\s+bimassa/u,
+    /divmasu|spararat|dual[\s-]?mass|twin\s+mass|flywheel|zweimassen|schwungrad|маховик|vliegwiel|svanghjul|volant\s+bimasse|volano\s+bimassa/u,
   turbo: /\bturbo(?:charger|lader|compresseur)?\b|турбокомпрессор|turbokompresor/u,
   body_glass:
-    /vejstikl|stikla\s+main|bamper|sparn|durvju|pankr|kraso|parkras|body\s+repair|windscreen|windshield|bumper|fender|lackier|karosser|scheibe|pare[- ]brise|parabrezza|parabrisas|кузов|бампер|крыл|лобов\p{L}*\s+стекл/u,
+    /vejstikl|stikla\s+main|bamper|sparn|durvju|kraso|parkras|body\s+repair|windscreen|windshield|bumper|fender|lackier|karosser|scheibe|pare[- ]brise|parabrezza|parabrisas|кузов|бампер|крыл|лобов\p{L}*\s+стекл/u,
 };
+
+const AXLE_DIFF_CONTEXT_RE =
+  /diferencial|differenzial|differential|aizmugurej\p{L}*\s+(?:tilt|ass)|prieksej\p{L}*\s+(?:tilt|ass)|\btilt[au]?\b|achsgetriebe|hinterachs/u;
+
+const REDUKTORS_RE = /reduktor|редуктор/u;
+
+const ADBLUE_RE = /adblue|ad\s*blue|\bscr\b/u;
+
+const DUAL_CLUTCH_RE = /dual[\s-]+clutch|doppelkupplung|divsajug/u;
+
+const PROPSHAFT_NOT_GEARBOX_RE =
+  /transmisij\p{L}*\s+uz\s+(?:aizmugurej|prieksej)\p{L}*\s+asi|kardan|prop[\s-]?shaft|kardanwelle|gelenkwelle/u;
+
+const SHAFT_SEAL_RE = /dicht|seal|simmerring|sealing\s+ring/u;
+
+const INTERIOR_TRIM_RE =
+  /door\s+trim|trim\s+panel|interior\s+trim|durvju\s+apdar|apdares\s+panel|sitzkissen|upholstery/u;
+
+const WASHER_FLUID_RE =
+  /scheibenklar|scheibenwasch|washer\s+fluid|windscreen\s+washer|windshield\s+washer|stiklu\s+mazg/u;
+
+const CHARGE_AIR_MINOR_RE = /charge\s+air|ladeluft|intercooler/u;
+
+const TURBO_OIL_PRODUCT_RE =
+  /twinpower|\bturbo\b(?:\s+\w+){0,4}\s+\d{1,2}w\d{2,3}|\d{1,2}w\d{2,3}(?:\s+\w+){0,4}\s+\bturbo\b|\bturbo\b(?:\s+\w+){0,6}\s+\bll[- ]?\d|\bll[- ]?\d(?:\s+\w+){0,6}\s+\bturbo\b/u;
+
+const REMAN_EXCHANGE_RE =
+  /\breman(?:ufactured)?\b|\baustauschteil\b|\brp\s+reman\b|\baustausch(?:getriebe|motor|turbo)?\b/u;
+
+const DEALER_PART_NO_RE = /\(\s*\d{6,12}\s*\)/u;
+
+const REPAIR_KIT_RE = /repair\s+kit/u;
 
 /** Eļļa / filtrs / šķidrums / sveces / pārbaude / skalošana / papildināšana. */
 const CONSUMABLE_RE =
@@ -72,7 +112,7 @@ const OVERHAUL_RE =
   /overhaul|rebuild|rebuilt|instandgesetz|instandsetz|uberholt|generaluberhol|kapitalais\s+remont|капитальн\p{L}*\s+ремонт|переборк|recondition/u;
 
 const UNIT_REPAIR_VERB_RE =
-  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|\bchange\b|maina|\bremont|ремонт|repair(?:ed|s)?|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt|parkras|lackier|remplac\p{L}*|sostituit\p{L}*|sostituz\p{L}*|reemplaz\p{L}*|sustitu\p{L}*|cambiato/u;
+  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|\bchange\b|maina|\bremont|ремонт|repaired|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt|parkras|lackier|remplac\p{L}*|sostituit\p{L}*|sostituz\p{L}*|reemplaz\p{L}*|sustitu\p{L}*|cambiato/u;
 
 const CAMPAIGN_CLAUSE_RE =
   /\bqb\b|acc(?:ording)?\.?\s*to:?\s*qb|nach\s+qb|technische\s+aktion|safety\s+recall|\brecalls?\b|ruckruf|service\s+action|field\s+fix|\btsb\b|\bsib\b/u;
@@ -86,15 +126,21 @@ const COMFORT_INTERIOR_RE =
   /sun\s*roof|schiebedach|panoramadach|dachkaset|wind\s+deflector|upholstery|sitzkissen|sitzbezug|sitzkissenbezug|interior\s+trim/u;
 
 const MINOR_PART_RE =
-  /schlauch|hose|bleed|dicht(?:ung|ring)?|sealing\s+ring|simmerring|kurbelwell|crankshaft|drive\s+shaft|antriebswelle|fuel\s+line|kraftstoffleitung|connector|cooling\s+system|kuhlsystem|ladeluft|charge\s+air|zahnriemen|timing\s+belt|drain\s+hose|klima|climate\s+unit|ohne\s+befund|park\s+acc/u;
+  /schlauch|hose|bleed|dicht(?:ung|ring)?|sealing\s+ring|simmerring|kurbelwell|crankshaft|drive\s+shaft|antriebswelle|fuel\s+line|kraftstoffleitung|connector|cooling\s+system|kuhlsystem|ladeluft|charge\s+air|zahnriemen|timing\s+belt|drain\s+hose|klima|climate\s+unit|ohne\s+befund|park\s+acc|oil\s+line|olleitung/u;
 
 const ENGINE_NOT_THE_UNIT_RE =
   /motorleistung|motorol|olleckage|\bmotoren\b|schlauch|hose|dicht|seal|simmerring|kurbelwell|crankshaft|zahnriemen|timing\s+belt|cooling|kuhlsystem|ladeluft|charge\s+air|fuel\s+line|connector|sun\s*roof|dachkaset|schiebedach|upholstery|sitz|software|upgrade|downloading|ersatzwagen|courtesy/u;
 
 const ENGINE_UNIT_REPLACE_RE =
-  /(?:\bengine\b|dzinej\p{L}*|двигател\p{L}*|\bmoteur\b|\bmotore\b|\bmotor\b)\s+(?:replac|erneuer|getauscht|ersetzt|nomain|maina|wechsel|remplac|sostituit|sustitu|reemplaz)|(?:replac\p{L}*|erneuer\p{L}*|замена|nomain|remplac\p{L}*|sostituit\p{L}*|sustitu\p{L}*|reemplaz\p{L}*)\s+(?:the\s+|du\s+|de\s+(?:l[ae]\s+)?|del\s+|della\s+|el\s+)?(?:engine|dzinej|двигател|moteur|motore|\bmotor\b)|motorwechsel|motorersatz|motortausch|(?:^|[^\p{L}])motor\s+(?:erneuert|getauscht|ersetzt|ausgewechselt)|замена\s+двигател|капитальн\p{L}*\s+ремонт\s+двигател/u;
+  /(?:\bengine\b|dzinej\p{L}*|двигател\p{L}*|\bmoteur\b|\bmotore\b|\bmotor\b)(?:\s+and\s+turbo(?:charger|lader)?|\s+und\s+turbolader)?\s+(?:replac|erneuer|getauscht|ersetzt|nomain|maina|wechsel|remplac|sostituit|sustitu|reemplaz)|(?:replac\p{L}*|erneuer\p{L}*|замена|nomain|remplac\p{L}*|sostituit\p{L}*|sustitu\p{L}*|reemplaz\p{L}*)\s+(?:the\s+|du\s+|de\s+(?:l[ae]\s+)?|del\s+|della\s+|el\s+)?(?:engine|dzinej|двигател|moteur|motore|\bmotor\b)|motorwechsel|motorersatz|motortausch|(?:^|[^\p{L}])motor\s+(?:erneuert|getauscht|ersetzt|ausgewechselt)|замена\s+двигател|капитальн\p{L}*\s+ремонт\s+двигател/u;
 
 const CHECK_NO_FAULT_RE = /ohne\s+befund|no\s+fault|bez\s+defekta|nav\s+konstatet/u;
+
+const MINOR_SKIP_EXCEPT: ReadonlySet<DealerMajorAssemblyId> = new Set([
+  "timing_chain",
+  "timing_belt",
+  "crankshaft_seal",
+]);
 
 function uniqueNonEmpty(parts: readonly string[]): string[] {
   const seen = new Set<string>();
@@ -130,7 +176,69 @@ function splitClauses(folded: string): string[] {
   return uniqueNonEmpty(protectedAbbrev.split(/[\n;/|]+|(?<=\w)[:.]\s+/));
 }
 
+function isRemanOrExchange(folded: string): boolean {
+  REMAN_EXCHANGE_RE.lastIndex = 0;
+  return REMAN_EXCHANGE_RE.test(folded);
+}
+
+function hasDealerPartNumber(folded: string): boolean {
+  DEALER_PART_NO_RE.lastIndex = 0;
+  return DEALER_PART_NO_RE.test(folded);
+}
+
+function isTurboOilProduct(folded: string): boolean {
+  TURBO_OIL_PRODUCT_RE.lastIndex = 0;
+  if (TURBO_OIL_PRODUCT_RE.test(folded)) return true;
+  if (!/\bturbo\b/u.test(folded)) return false;
+  if (isEngineOilChangeWork(folded)) return true;
+  CONSUMABLE_RE.lastIndex = 0;
+  return CONSUMABLE_RE.test(folded) && !/turbo(?:charger|lader|kompresor)/u.test(folded);
+}
+
+function isAdBlueReducer(folded: string): boolean {
+  ADBLUE_RE.lastIndex = 0;
+  REDUKTORS_RE.lastIndex = 0;
+  return ADBLUE_RE.test(folded) && REDUKTORS_RE.test(folded);
+}
+
+function isInteriorTrim(folded: string): boolean {
+  INTERIOR_TRIM_RE.lastIndex = 0;
+  return INTERIOR_TRIM_RE.test(folded);
+}
+
+function isWasherFluid(folded: string): boolean {
+  WASHER_FLUID_RE.lastIndex = 0;
+  return WASHER_FLUID_RE.test(folded);
+}
+
+function isChargeAirMinor(folded: string): boolean {
+  CHARGE_AIR_MINOR_RE.lastIndex = 0;
+  return CHARGE_AIR_MINOR_RE.test(folded);
+}
+
 function mentionsAssembly(folded: string, assembly: DealerMajorAssemblyId): boolean {
+  if (assembly === "turbo" && isTurboOilProduct(folded)) return false;
+  if (assembly === "body_glass" && (isWasherFluid(folded) || isInteriorTrim(folded))) return false;
+  if (assembly === "gearbox" && PROPSHAFT_NOT_GEARBOX_RE.test(folded)) return false;
+  if (assembly === "clutch") {
+    const withoutDual = folded.replace(DUAL_CLUTCH_RE, " ");
+    ASSEMBLY_RE.clutch.lastIndex = 0;
+    return ASSEMBLY_RE.clutch.test(withoutDual);
+  }
+  if (assembly === "differential") {
+    if (isAdBlueReducer(folded)) return false;
+    ASSEMBLY_RE.differential.lastIndex = 0;
+    if (ASSEMBLY_RE.differential.test(folded)) return true;
+    REDUKTORS_RE.lastIndex = 0;
+    AXLE_DIFF_CONTEXT_RE.lastIndex = 0;
+    return REDUKTORS_RE.test(folded) && AXLE_DIFF_CONTEXT_RE.test(folded);
+  }
+  if (assembly === "propshaft") {
+    ASSEMBLY_RE.propshaft.lastIndex = 0;
+    if (!ASSEMBLY_RE.propshaft.test(folded)) return false;
+    SHAFT_SEAL_RE.lastIndex = 0;
+    return !SHAFT_SEAL_RE.test(folded);
+  }
   ASSEMBLY_RE[assembly].lastIndex = 0;
   return ASSEMBLY_RE[assembly].test(folded);
 }
@@ -147,8 +255,9 @@ function isOverhaul(folded: string): boolean {
 }
 
 function hasUnitRepairVerb(folded: string): boolean {
+  const withoutKits = folded.replace(REPAIR_KIT_RE, " ");
   UNIT_REPAIR_VERB_RE.lastIndex = 0;
-  return UNIT_REPAIR_VERB_RE.test(folded);
+  return UNIT_REPAIR_VERB_RE.test(withoutKits);
 }
 
 function isCampaignClause(folded: string): boolean {
@@ -176,10 +285,29 @@ function isMinorPartClause(folded: string): boolean {
   return MINOR_PART_RE.test(folded);
 }
 
+function isMajorPartListLine(folded: string, assembly: DealerMajorAssemblyId): boolean {
+  if (!hasDealerPartNumber(folded)) return false;
+  if (assembly === "turbo" && (isTurboOilProduct(folded) || isChargeAirMinor(folded))) return false;
+  if (hasConsumableSignal(folded) && !isRemanOrExchange(folded)) return false;
+  return mentionsAssembly(folded, assembly);
+}
+
+function isUnitReplacementSignal(folded: string, assembly: DealerMajorAssemblyId): boolean {
+  if (isOverhaul(folded)) return true;
+  if (isRemanOrExchange(folded)) return true;
+  if (isMajorPartListLine(folded, assembly)) return true;
+  return false;
+}
+
 function isEngineUnitReplacement(folded: string): boolean {
+  if (isTurboOilProduct(folded) && !ENGINE_UNIT_REPLACE_RE.test(folded)) return false;
   ENGINE_UNIT_REPLACE_RE.lastIndex = 0;
   if (ENGINE_UNIT_REPLACE_RE.test(folded)) return true;
   if (!mentionsAssembly(folded, "engine")) return false;
+  if (isRemanOrExchange(folded) || isMajorPartListLine(folded, "engine")) {
+    ENGINE_NOT_THE_UNIT_RE.lastIndex = 0;
+    return !ENGINE_NOT_THE_UNIT_RE.test(folded);
+  }
   if (!isOverhaul(folded)) return false;
   ENGINE_NOT_THE_UNIT_RE.lastIndex = 0;
   return !ENGINE_NOT_THE_UNIT_RE.test(folded);
@@ -217,7 +345,8 @@ export function hasNonCampaignRepairAction(works: string): boolean {
   );
   for (const clause of splitClauses(withoutCampaignJobs)) {
     if (isCampaignClause(clause) || isSoftwareClause(clause) || isCourtesyCarClause(clause)) continue;
-    if (hasUnitRepairVerb(clause) || isOverhaul(clause)) return true;
+    if (hasUnitRepairVerb(clause) || isOverhaul(clause) || isRemanOrExchange(clause)) return true;
+    if (hasDealerPartNumber(clause) && hasAnyMajorAssemblyRepair(clause)) return true;
   }
   return false;
 }
@@ -231,17 +360,15 @@ function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssembl
   if (isSoftwareClause(foldedClause)) return false;
   if (isCourtesyCarClause(foldedClause)) return false;
   if (isComfortInteriorClause(foldedClause)) return false;
+  if (assembly === "turbo" && isChargeAirMinor(foldedClause)) return false;
   if (assembly === "engine") return isEngineUnitReplacement(foldedClause);
-  if (
-    isMinorPartClause(foldedClause) &&
-    assembly !== "timing_chain" &&
-    assembly !== "timing_belt" &&
-    assembly !== "crankshaft_seal"
-  ) {
-    return false;
+  if (isMinorPartClause(foldedClause) && !MINOR_SKIP_EXCEPT.has(assembly)) {
+    if (!isRemanOrExchange(foldedClause) && !isMajorPartListLine(foldedClause, assembly)) {
+      return false;
+    }
   }
   if (!mentionsAssembly(foldedClause, assembly)) return false;
-  if (isOverhaul(foldedClause)) return true;
+  if (isUnitReplacementSignal(foldedClause, assembly)) return true;
   if (!hasUnitRepairVerb(foldedClause)) return false;
   if (hasConsumableSignal(foldedClause)) return false;
   return true;

@@ -10,6 +10,20 @@ import {
   isRoutineMaintenanceWork,
 } from "@/lib/dealer-major-works";
 import {
+  AUDI_LV_ADBLUE_REDUKTORS,
+  BMW_CLUTCH_KIT_TWIN_MASS_PART_LIST,
+  BMW_REMAN_GEARBOX_WITH_OIL_LINE,
+  BMW_RP_REMAN_TRANSFER_BOX,
+  BMW_SCHEIBENKLAR_WASHER,
+  BMW_V99966_D15_TWINPOWER_OIL_REPAIR_KIT,
+  JEEP_LV_DOOR_TRIM_AND_PROPSHAFT,
+  JEEP_LV_DOOR_TRIM_PANEL,
+  JEEP_LV_PROPSHAFT_TO_REAR_AXLE,
+  JEEP_PROPSHAFT_TRANSFER_CASE_PART_LIST,
+  VOLVO_D14_CHARGE_AIR_COOLER_HOSE,
+  VOLVO_D4_ENGINE_TURBO_WARRANTY,
+} from "@/lib/dealer-major-works.prod-corpus.fixture";
+import {
   VOLVO_XC90_CLIMATE_DRAIN_NO_FAULT,
   VOLVO_XC90_HEADER,
   VOLVO_XC90_QB_BLEED_AND_CHARGE_AIR_HOSE,
@@ -154,7 +168,7 @@ describe("dealer major works vs routine maintenance", () => {
     ["EN crankshaft seal", "Crankshaft seal front replace", "crankshaft_seal"],
     ["EN transfer case replaced", "Transfer case replaced", "transfer_case"],
     ["EN differential overhaul", "Differential overhaul", "differential"],
-    ["LV reduktora nomaiņa", "Reduktora nomaiņa", "differential"],
+    ["LV tilta reduktora nomaiņa", "Aizmugurējā tilta reduktora nomaiņa", "differential"],
   ] as const)("real unit repair is major: %s", (_label, works, id) => {
     expect(isMajorAssemblyRepairWork(works, id)).toBe(true);
     expect(hasAnyMajorAssemblyRepair(works)).toBe(true);
@@ -243,5 +257,85 @@ describe("Volvo XC90 RAW dealer journal (YV1LCA4BCG1067242)", () => {
   it("the full RAW journal only lists 20.02.2018 belt and crankshaft seal", () => {
     const withMajor = VOLVO_XC90_RAW_ROWS.filter((row) => hasAnyMajorAssemblyRepair(row.works));
     expect(withMajor.map((row) => row.date)).toEqual(["20.02.2018"]);
+  });
+});
+
+describe("production corpus regressions (anonymized)", () => {
+  it("1 BMW REMAN 6 Gang Getriebe is gearbox even with an oil line on the same visit", () => {
+    expect(isMajorAssemblyRepairWork(BMW_REMAN_GEARBOX_WITH_OIL_LINE, "gearbox")).toBe(true);
+    expect(isMajorAssemblyRepairWork(BMW_REMAN_GEARBOX_WITH_OIL_LINE, "engine")).toBe(false);
+    expect(dealerMajorAssembliesInWork(BMW_REMAN_GEARBOX_WITH_OIL_LINE)).toEqual(["gearbox"]);
+    expect(isRoutineMaintenanceWork(BMW_REMAN_GEARBOX_WITH_OIL_LINE)).toBe(false);
+  });
+
+  it("2 BMW clutch kit + Twin Mass Flywheel part list is clutch and DMF", () => {
+    expect(isMajorAssemblyRepairWork(BMW_CLUTCH_KIT_TWIN_MASS_PART_LIST, "clutch")).toBe(true);
+    expect(isMajorAssemblyRepairWork(BMW_CLUTCH_KIT_TWIN_MASS_PART_LIST, "dual_mass_flywheel")).toBe(
+      true,
+    );
+    expect(dealerMajorAssembliesInWork(BMW_CLUTCH_KIT_TWIN_MASS_PART_LIST)).toEqual([
+      "clutch",
+      "dual_mass_flywheel",
+    ]);
+  });
+
+  it("3 BMW RP REMAN Transfer box is transfer case replacement", () => {
+    expect(isMajorAssemblyRepairWork(BMW_RP_REMAN_TRANSFER_BOX, "transfer_case")).toBe(true);
+    expect(dealerMajorAssembliesInWork(BMW_RP_REMAN_TRANSFER_BOX)).toEqual(["transfer_case"]);
+  });
+
+  it("4 Volvo D4 warranty engine + turbo replacement", () => {
+    const works = VOLVO_D4_ENGINE_TURBO_WARRANTY.works;
+    expect(isMajorAssemblyRepairWork(works, "engine")).toBe(true);
+    expect(isMajorAssemblyRepairWork(works, "turbo")).toBe(true);
+    expect(dealerMajorAssembliesInWork(works)).toEqual(["engine", "turbo"]);
+  });
+
+  it("5 Jeep propshaft + transfer case part list", () => {
+    expect(isMajorAssemblyRepairWork(JEEP_PROPSHAFT_TRANSFER_CASE_PART_LIST, "propshaft")).toBe(true);
+    expect(isMajorAssemblyRepairWork(JEEP_PROPSHAFT_TRANSFER_CASE_PART_LIST, "transfer_case")).toBe(
+      true,
+    );
+    expect(isMajorAssemblyRepairWork(JEEP_PROPSHAFT_TRANSFER_CASE_PART_LIST, "gearbox")).toBe(false);
+    expect(dealerMajorAssembliesInWork(JEEP_PROPSHAFT_TRANSFER_CASE_PART_LIST)).toEqual([
+      "transfer_case",
+      "propshaft",
+    ]);
+  });
+
+  it("6 BMW TwinPower Turbo oil + brake Repair kit is not turbo", () => {
+    const works = BMW_V99966_D15_TWINPOWER_OIL_REPAIR_KIT.works;
+    expect(isMajorAssemblyRepairWork(works, "turbo")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(works)).toBe(false);
+    expect(isRoutineMaintenanceWork(works)).toBe(true);
+  });
+
+  it("7 Volvo charge air cooler hose is minor, not turbo", () => {
+    expect(isMajorAssemblyRepairWork(VOLVO_D14_CHARGE_AIR_COOLER_HOSE, "turbo")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(VOLVO_D14_CHARGE_AIR_COOLER_HOSE)).toBe(false);
+  });
+
+  it("8 Audi AdBlue reduktors is not a differential", () => {
+    expect(isMajorAssemblyRepairWork(AUDI_LV_ADBLUE_REDUKTORS, "differential")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(AUDI_LV_ADBLUE_REDUKTORS)).toBe(false);
+    expect(isMajorAssemblyRepairWork("Reduktora nomaiņa", "differential")).toBe(false);
+    expect(isMajorAssemblyRepairWork("Aizmugurējā tilta reduktora nomaiņa", "differential")).toBe(
+      true,
+    );
+  });
+
+  it("9 Jeep door trim is not body/glass; transmission to rear axle is Kardāns", () => {
+    expect(isMajorAssemblyRepairWork(JEEP_LV_DOOR_TRIM_PANEL, "body_glass")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(JEEP_LV_DOOR_TRIM_PANEL)).toBe(false);
+    expect(isMajorAssemblyRepairWork(JEEP_LV_PROPSHAFT_TO_REAR_AXLE, "gearbox")).toBe(false);
+    expect(isMajorAssemblyRepairWork(JEEP_LV_PROPSHAFT_TO_REAR_AXLE, "propshaft")).toBe(true);
+    expect(isMajorAssemblyRepairWork(JEEP_LV_DOOR_TRIM_AND_PROPSHAFT, "body_glass")).toBe(false);
+    expect(isMajorAssemblyRepairWork(JEEP_LV_DOOR_TRIM_AND_PROPSHAFT, "gearbox")).toBe(false);
+    expect(dealerMajorAssembliesInWork(JEEP_LV_DOOR_TRIM_AND_PROPSHAFT)).toEqual(["propshaft"]);
+  });
+
+  it("Scheibenklar washer fluid is never body/glass", () => {
+    expect(isMajorAssemblyRepairWork(BMW_SCHEIBENKLAR_WASHER, "body_glass")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(BMW_SCHEIBENKLAR_WASHER)).toBe(false);
   });
 });

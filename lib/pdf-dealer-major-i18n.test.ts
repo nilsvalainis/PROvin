@@ -16,6 +16,13 @@ import {
   buildDealerVisitSummary,
   buildDealerVisitSummaryHtml,
 } from "@/lib/pdf-dealer-timeline";
+import {
+  BMW_CLUTCH_KIT_TWIN_MASS_PART_LIST,
+  BMW_REMAN_GEARBOX_WITH_OIL_LINE,
+  BMW_V99966_D15_TWINPOWER_OIL_REPAIR_KIT,
+  JEEP_LV_DOOR_TRIM_AND_PROPSHAFT,
+  VOLVO_D4_ENGINE_TURBO_WARRANTY,
+} from "@/lib/dealer-major-works.prod-corpus.fixture";
 import { VOLVO_XC90_RAW_ROWS } from "@/lib/dealer-major-works.volvo-xc90.fixture";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
 
@@ -61,6 +68,41 @@ const CRANK_SEAL: Record<ClientReportLang, string> = {
   en: "Crankshaft seal",
   ru: "Сальник коленвала",
   de: "Kurbelwellendichtung",
+};
+
+const CLUTCH: Record<ClientReportLang, string> = {
+  lv: "Sajūgs",
+  en: "Clutch",
+  ru: "Сцепление",
+  de: "Kupplung",
+};
+
+const DMF: Record<ClientReportLang, string> = {
+  lv: "Divmasu spararats",
+  en: "Dual-mass flywheel",
+  ru: "Двухмассовый маховик",
+  de: "Zweimassenschwungrad",
+};
+
+const ENGINE: Record<ClientReportLang, string> = {
+  lv: "Dzinējs",
+  en: "Engine",
+  ru: "Двигатель",
+  de: "Motor",
+};
+
+const TURBO: Record<ClientReportLang, string> = {
+  lv: "Turbokompresors",
+  en: "Turbocharger",
+  ru: "Турбокомпрессор",
+  de: "Turbolader",
+};
+
+const PROPSHAFT: Record<ClientReportLang, string> = {
+  lv: "Kardāns",
+  en: "Propshaft",
+  ru: "Кардан",
+  de: "Gelenkwelle",
 };
 
 const ASSEMBLIES: Record<ClientReportLang, string> = {
@@ -241,4 +283,64 @@ describe("Lielie darbi labels in every PDF language", () => {
     expect(aside).toContain(GEARBOX[lang]);
     expect(aside).toContain(CHAIN[lang]);
   });
+
+  it.each(CLIENT_REPORT_LANGS)("BMW REMAN gearbox and TwinPower oil visit labels in %s", (lang) => {
+    const remanRows: AutoRecordsServiceWorkRow[] = [
+      {
+        date: "12.04.2021",
+        odometer: "98210",
+        location: "BMW Partner",
+        works: BMW_REMAN_GEARBOX_WITH_OIL_LINE,
+      },
+      {
+        date: BMW_V99966_D15_TWINPOWER_OIL_REPAIR_KIT.date,
+        odometer: BMW_V99966_D15_TWINPOWER_OIL_REPAIR_KIT.odometer,
+        location: "BMW Partner",
+        works: BMW_V99966_D15_TWINPOWER_OIL_REPAIR_KIT.works,
+      },
+    ];
+    const facts = extractDealerFactsFromServiceWorks(remanRows);
+    expect(buildDealerVisitSummary(remanRows, facts)?.majorWorks.map((w) => w.id)).toEqual(["gearbox"]);
+    const majorHtml = buildDealerMajorWorksHtml(facts, lang);
+    expect(majorHtml).toContain(`<b>${GEARBOX[lang]}</b>`);
+    expect(majorHtml).not.toContain(`<b>${TURBO[lang]}</b>`);
+  });
+
+  it.each(CLIENT_REPORT_LANGS)("clutch + DMF, Volvo engine/turbo, Jeep Kardāns labels in %s", (lang) => {
+    const rows: AutoRecordsServiceWorkRow[] = [
+      {
+        date: "03.06.2020",
+        odometer: "110400",
+        location: "BMW Partner",
+        works: BMW_CLUTCH_KIT_TWIN_MASS_PART_LIST,
+      },
+      {
+        date: VOLVO_D4_ENGINE_TURBO_WARRANTY.date,
+        odometer: VOLVO_D4_ENGINE_TURBO_WARRANTY.odometer,
+        location: "Volvo Partner",
+        works: VOLVO_D4_ENGINE_TURBO_WARRANTY.works,
+      },
+      {
+        date: "18.09.2019",
+        odometer: "87600",
+        location: "Jeep Partner",
+        works: JEEP_LV_DOOR_TRIM_AND_PROPSHAFT,
+      },
+    ];
+    const facts = extractDealerFactsFromServiceWorks(rows);
+    const ids = buildDealerVisitSummary(rows, facts)?.majorWorks.map((w) => w.id).sort();
+    expect(ids).toEqual(["clutch", "dual_mass_flywheel", "engine", "propshaft", "turbo"].sort());
+    const majorHtml = buildDealerMajorWorksHtml(facts, lang);
+    expect(majorHtml).toContain(`<b>${CLUTCH[lang]}</b>`);
+    expect(majorHtml).toContain(`<b>${DMF[lang]}</b>`);
+    expect(majorHtml).toContain(`<b>${ENGINE[lang]}</b>`);
+    expect(majorHtml).toContain(`<b>${TURBO[lang]}</b>`);
+    expect(majorHtml).toContain(`<b>${PROPSHAFT[lang]}</b>`);
+    expect(majorHtml).not.toContain(`<b>${GEARBOX[lang]}</b>`);
+    if (lang !== "lv") {
+      expect(majorHtml).not.toContain("Sajūgs");
+      expect(majorHtml).not.toContain("Kardāns");
+    }
+  });
 });
+
