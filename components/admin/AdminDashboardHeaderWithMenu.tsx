@@ -9,16 +9,27 @@ export function AdminDashboardHeaderWithMenu({
   children,
   mobileTitle,
   hideOnPhone = false,
+  mobileBackHref,
+  mobileSubtitle,
+  mobileTrailing,
 }: {
   children: ReactNode;
   mobileTitle?: string;
   hideOnPhone?: boolean;
+  mobileBackHref?: string;
+  mobileSubtitle?: string;
+  mobileTrailing?: ReactNode;
 }) {
   return (
     <>
       {mobileTitle && !hideOnPhone ? (
         <div className="md:hidden">
-          <AdminMobileTopBar title={mobileTitle} />
+          <AdminMobileTopBar
+            title={mobileTitle}
+            subtitle={mobileSubtitle}
+            backHref={mobileBackHref}
+            trailing={mobileTrailing}
+          />
         </div>
       ) : null}
       <header

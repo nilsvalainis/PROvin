@@ -13,6 +13,7 @@ import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginP
 import { type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useMobilePlatform } from "@/hooks/useMobilePlatform";
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
+import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import { listingBidPrice, listingExtrasI, listingMaxBid, type ListingCostParts } from "@/lib/iriss-listings-cost";
 import { listingExcludedForMissingPrice, listingIsOverBudgetHidden, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
@@ -767,15 +768,15 @@ export function IrissSludinajumiListClient({
 
   return (
     <div className="mt-1 space-y-2 touch-manipulation sm:mt-1.5 sm:space-y-2">
+      <div className="md:hidden">
+        <AdminMobileTopBar title="Sludinājumi" />
+      </div>
       {/* Web (md+): panelis nav lipīgs. Atbilstības ir žetons rīku rindā, ne atsevišķa josla. */}
       <header
         data-iriss-listings-toolbar=""
         className="relative z-20 -mx-2 bg-transparent px-2 pb-1 pt-0.5 max-md:sticky max-md:top-0 max-md:bg-[#F8F8F9]/95 max-md:backdrop-blur md:static md:z-auto md:mx-0 md:bg-transparent md:px-0 md:backdrop-blur-none"
       >
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-          <h1 className="iriss-list-title shrink-0 text-[17px] font-semibold leading-none tracking-tight text-[var(--color-apple-text)] md:hidden">
-            Sludinājumi
-          </h1>
           <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] md:flex-none md:overflow-visible [&::-webkit-scrollbar]:hidden">
             <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[#e9e9ee] p-[2px] text-[12px]">
               {([

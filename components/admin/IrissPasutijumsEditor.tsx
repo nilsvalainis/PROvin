@@ -1572,7 +1572,10 @@ export function IrissPasutijumsEditor({
       <IrissUnsavedChangesGuard dirty={dirty} onSave={saveCurrentPage} />
       {unsavedDraft ? (
       <>
-      <AdminDashboardHeaderWithMenu>
+      <AdminDashboardHeaderWithMenu
+        mobileTitle={rec.brandModel.trim() || "Pasūtījums"}
+        mobileBackHref="/admin/iriss/pasutijumi"
+      >
         <div className="flex flex-col gap-2">
           <Link
             href="/admin/iriss/pasutijumi"
@@ -1700,6 +1703,39 @@ export function IrissPasutijumsEditor({
           </div>
         ) : null}
       </AdminDashboardHeaderWithMenu>
+
+      <div className={`md:hidden min-w-0 w-full ${LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS}`}>
+        {rec.offers.map((offer, idx) => (
+          <button
+            key={offer.id}
+            type="button"
+            onClick={() => openEditOffer(offer)}
+            className={offerPChipButtonClass}
+            style={
+              isIrissOfferExpired(offer)
+                ? { backgroundColor: "#E5E7EB", color: "#6B7280", border: "1px solid #D1D5DB" }
+                : { backgroundColor: "#34C759", color: "black", border: "1px solid #2AB650" }
+            }
+            title={
+              isIrissOfferExpired(offer)
+                ? `${offer.title} · beidzies ${formatOfferValidUntilLv(deriveOfferValidUntil(offer))}`
+                : offer.title
+            }
+          >
+            {isIrissOfferExpired(offer) ? `P${idx + 1} beidzies` : `P${idx + 1}`}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={openCreateOffer}
+          className={offerPChipButtonClass}
+          style={{ backgroundColor: "#e5e5ea", color: "#3a3a3c", border: "1px solid #d1d1d6" }}
+          title="Jauns piedāvājums"
+          aria-label="Jauns piedāvājums"
+        >
+          +
+        </button>
+      </div>
 
       {revisionConflict ? (
         <div className="mt-3">

@@ -198,7 +198,20 @@ export function IrissScanEditor({
 
   return (
     <div className="mx-auto w-full max-w-[720px] px-3 pb-10 sm:px-6">
-      <AdminDashboardHeaderWithMenu>
+      <AdminDashboardHeaderWithMenu
+        mobileTitle="Radars"
+        mobileBackHref="/admin/iriss/scan"
+        mobileTrailing={
+          <button
+            type="button"
+            disabled={busy || !dirty}
+            onClick={() => void save()}
+            className="am-press inline-flex h-9 items-center rounded-full bg-[var(--am-ink)] px-3 text-[13px] font-semibold text-[var(--am-s1)] disabled:opacity-40"
+          >
+            {busy ? "Saglabā…" : "Saglabāt"}
+          </button>
+        }
+      >
         <div className="flex items-center justify-between gap-2">
           <Link href="/admin/iriss/scan" className="inline-flex min-h-10 items-center gap-0.5 text-[15px] font-medium text-[var(--color-provin-accent)]">
             <ChevronLeft className="h-5 w-5" strokeWidth={2.4} aria-hidden /> Radars
