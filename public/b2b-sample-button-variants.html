@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>B2B kartes: Skatīt paraugu (5 varianti)</title>
+<style>
+@font-face { font-family: "InterLocal"; src: url("fonts/invoice-inter/Inter-Regular.ttf"); font-weight: 400 500; }
+@font-face { font-family: "InterLocal"; src: url("fonts/invoice-inter/Inter-Bold.ttf"); font-weight: 600 900; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: "InterLocal", Inter, system-ui, sans-serif;
+  color: #e4e4e7;
+  background: #050505 url("textures/home-canvas-desktop.png") center top / cover no-repeat fixed;
+  min-height: 100vh;
+}
+@media (max-width: 640px) { body { background-image: url("textures/home-canvas-mobile.png"); } }
+button { font-family: inherit; }
+.top { border-bottom: 1px solid rgb(255 255 255 / 0.08); background: rgb(5 5 5 / 0.55); }
+.topIn { max-width: 1120px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; gap: 32px; }
+.logo { font-weight: 800; letter-spacing: 0.08em; font-size: 0.95rem; color: #fff; }
+.logo span { color: #60a5fa; font-weight: 600; letter-spacing: 0.14em; font-size: 0.62rem; margin-left: 8px; }
+.nav { display: flex; gap: 22px; font-size: 0.78rem; color: #a1a1aa; }
+.nav b { color: #fff; font-weight: 600; }
+.out { margin-left: auto; font-size: 0.72rem; color: #71717a; }
+@media (max-width: 640px) { .topIn { flex-wrap: wrap; gap: 12px 18px; padding: 14px 16px; } .nav { order: 3; width: 100%; gap: 18px; } }
+
+main { max-width: 1120px; margin: 0 auto; padding: 36px 24px 56px; }
+@media (max-width: 640px) { main { padding: 22px 16px 40px; } }
+.variantNote { display: inline-flex; gap: 10px; align-items: baseline; margin-bottom: 18px; font-size: 0.72rem; color: #a1a1aa; }
+.variantNote strong { color: #93c5fd; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+h1 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
+.pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgb(255 255 255 / 0.12); background: rgb(255 255 255 / 0.03); border-radius: 999px; padding: 4px 4px 4px 16px; font-size: 0.8rem; font-weight: 500; color: #e4e4e7; white-space: nowrap; }
+.pill i { display: inline-flex; width: 28px; height: 28px; border-radius: 999px; background: #2563EB; align-items: center; justify-content: center; color: #fff; font-style: normal; font-size: 1rem; }
+@media (max-width: 640px) { .head { flex-direction: column; align-items: flex-start; } }
+
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.card { position: relative; display: flex; flex-direction: column; min-width: 0; border: 1px solid rgb(255 255 255 / 0.1); background: rgb(20 20 20 / 0.72); border-radius: 0.9rem; padding: 20px; box-shadow: 0 18px 48px -28px rgba(0,0,0,0.8); }
+.tagRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; }
+.tag { border: 1px solid rgb(37 99 235 / 0.5); border-radius: 999px; padding: 4px 10px; font-size: 0.52rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #93c5fd; }
+h2 { margin: 16px 0 0; font-size: 1.08rem; font-weight: 700; line-height: 1.35; letter-spacing: -0.01em; color: #f4f4f5; }
+.desc { margin: 8px 0 0; font-size: 0.82rem; line-height: 1.6; color: #a1a1aa; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; }
+.chips li { display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgb(255 255 255 / 0.1); background: rgb(255 255 255 / 0.03); border-radius: 999px; padding: 4px 9px 4px 7px; font-size: 0.66rem; font-weight: 500; color: #d4d4d8; }
+.chips .ico { width: 11px; height: 11px; color: #60a5fa; }
+.label { display: block; margin-bottom: 6px; font-size: 0.56rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #71717a; }
+.langs { margin-top: 16px; }
+.seg { display: flex; border: 1px solid rgb(255 255 255 / 0.12); border-radius: 999px; padding: 2px; }
+.seg span { flex: 1; text-align: center; border-radius: 999px; padding: 6px 12px; font-size: 0.66rem; font-weight: 600; letter-spacing: 0.12em; color: #71717a; }
+.seg span.on { background: rgb(255 255 255 / 0.12); color: #f4f4f5; }
+.bottom { margin-top: auto; padding-top: 24px; }
+.priceRow { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 30px; }
+.price { font-size: 1.5rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; color: #fff; }
+.deduct { margin: 6px 0 0; font-size: 0.7rem; line-height: 1.35; color: #71717a; }
+.buyWrap { margin-top: 16px; }
+.liquid { position: relative; overflow: hidden; width: 100%; min-height: 54px; padding: 0.85rem 1rem; border: 1px solid rgb(255 255 255 / 0.12); border-radius: 999px; background: linear-gradient(180deg, #1a6fd4 0%, #1459ad 100%); color: #fff; font-size: 0.84rem; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.65); }
+.liquid::after { content: ""; position: absolute; inset: -40% -60%; background: linear-gradient(105deg, transparent 38%, rgb(255 255 255 / 0.14) 48%, transparent 58%); transform: translateX(-20%) rotate(8deg); }
+.liquid.off { opacity: 0.45; cursor: not-allowed; }
+.refund { display: flex; align-items: center; gap: 6px; height: 18px; margin: 12px 0 0; font-size: 0.7rem; line-height: 18px; color: #a1a1aa; white-space: nowrap; overflow: hidden; }
+.refund span { overflow: hidden; text-overflow: ellipsis; }
+.refund .ico { width: 13px; height: 13px; color: #6ee7b7; }
+.refund.empty { visibility: hidden; }
+.refund + .buyWrap { margin-top: 10px; }
+.ico { width: 15px; height: 15px; flex: none; }
+.soon { font-size: 0.5rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #71717a; border: 1px solid rgb(255 255 255 / 0.12); border-radius: 999px; padding: 2px 7px; }
+
+/* V1: full-width outline button above buy */
+.v1 { display: flex; width: 100%; min-height: 46px; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; border: 1px solid rgb(255 255 255 / 0.2); background: rgb(255 255 255 / 0.03); border-radius: 999px; color: #f4f4f5; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.v1 + .buyWrap { margin-top: 10px; }
+.v1.off { color: #71717a; border-color: rgb(255 255 255 / 0.1); background: transparent; cursor: not-allowed; }
+
+/* V2: small text link with PDF icon under the price */
+.v2 { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; min-height: 22px; font-size: 0.74rem; font-weight: 600; color: #93c5fd; text-decoration: underline; text-decoration-color: rgb(147 197 253 / 0.35); text-underline-offset: 3px; }
+.v2.off { color: #52525b; text-decoration: none; cursor: not-allowed; }
+
+/* V3: icon button in the top-right corner next to the tag */
+.v3 { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 8px; border: 1px solid rgb(255 255 255 / 0.16); border-radius: 999px; background: rgb(255 255 255 / 0.03); color: #e4e4e7; font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.v3.off { color: #52525b; border-color: rgb(255 255 255 / 0.08); background: transparent; }
+
+/* V4: ghost button beside the price */
+.v4 { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: rgb(255 255 255 / 0.06); color: #e4e4e7; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.v4.off { background: rgb(255 255 255 / 0.025); color: #52525b; }
+
+/* V5: thumbnail strip of the PDF first page */
+.v5 { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; padding: 10px; border: 1px solid rgb(255 255 255 / 0.1); border-radius: 0.7rem; background: rgb(255 255 255 / 0.025); color: inherit; text-align: left; width: 100%; }
+.v5 .page { position: relative; flex: none; width: 46px; height: 62px; border-radius: 4px; background: #f4f4f5; overflow: hidden; box-shadow: 0 6px 14px -8px rgb(0 0 0 / 0.8); }
+.v5 .page::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 11px; background: #1459ad; }
+.v5 .page i { position: absolute; left: 6px; height: 3px; border-radius: 2px; background: #d4d4d8; }
+.v5 .page b { position: absolute; right: 3px; top: 2px; font-size: 6px; color: #fff; font-weight: 700; letter-spacing: 0.06em; }
+.v5 .txt { min-width: 0; flex: 1; }
+.v5 .t1 { display: flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 600; color: #f4f4f5; }
+.v5 .t2 { margin-top: 3px; font-size: 0.66rem; color: #71717a; }
+.v5 .arrow { color: #93c5fd; }
+.v5.off { cursor: not-allowed; }
+.v5.off .page { filter: grayscale(1) brightness(0.45); }
+.v5.off .t1 { color: #71717a; }
+.v5.off .arrow { display: none; }
+</style>
+</head>
+<body>
+<header class="top"><div class="topIn">
+  <div class="logo">PROVIN<span>BUSINESS DATA</span></div>
+  <nav class="nav"><b>Sākums</b><span>Pasūtījumi</span><span>Profils</span><span>Rekvizīti</span></nav>
+  <div class="out">IRISS · Iziet</div>
+</div></header>
+<main>
+  <div class="variantNote"><strong id="vLabel"></strong><span id="vDesc"></span></div>
+  <div class="head">
+    <h1>Pakalpojumi</h1>
+    <div class="pill">Atlikums 50,00 € <i>+</i></div>
+  </div>
+  <section class="grid" id="grid"></section>
+</main>
+<script>
+const ICON_FILE = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>';
+const ICON_EYE = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICON_OUT = '<svg class="ico arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+
+const CHIPS_VARIANT = 2;
+const ICON_CHECK = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17 19 7"/></svg>';
+const ICON_INFO = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>';
+
+const PRODUCTS = [
+  { id: "business", tag: "PDF atskaite", title: "PROVIN Business data", desc: "Pilna auto vēstures atskaite: dīlera dati, carVertical, AutoDNA, reģistri un izsoļu arhīvs.", price: "79,99 €", refund: false, sample: false, affordable: false,
+    chips: ["Dīlera dati", "carVertical + AutoDNA", "Izsoļu arhīvs"] },
+  { id: "raw", tag: "Pieejami uzreiz (drīzumā)", title: "Dīlera dati (RAW)", desc: "Neapstrādāti dīlera servisa ieraksti oriģinālvalodā. Dati pieejami uzreiz (drīzumā).", price: "15,99 €", refund: true, sample: true, affordable: true,
+    chips: ["Servisa ieraksti", "Oriģinālvaloda", "Uzreiz (drīzumā)"] },
+  { id: "pro", tag: "PDF atskaite", title: "Dīlera dati (PRO)", desc: "Apstrādāta dīlera datu atskaite pircējam: apkopju un remontu vēsture, eļļas maiņas intervālu grafiks, nobraukuma pārbaude un kopsavilkums.", price: "19,99 €", refund: true, sample: true, langs: true, affordable: true,
+    chips: ["Intervālu grafiks", "Nobraukuma pārbaude", "Kopsavilkums"] },
+];
+
+const VARIANTS = {
+  1: "Pilna platuma kontūrpoga virs Pirkt pogas",
+  2: "Neliela teksta saite ar PDF ikonu zem cenas",
+  3: "Ikonpoga kartes augšējā labajā stūrī blakus birkai",
+  4: "Spoka poga vienā rindā ar cenu",
+  5: "PDF pirmās lapas sīktēla josla ar Skatīt paraugu",
+};
+
+function sampleBtn(v, p) {
+  const off = !p.sample;
+  const dis = off ? ' aria-disabled="true" title="Paraugs drīzumā"' : ' title="Atvērt paraugu jaunā cilnē"';
+  const soon = off ? '<span class="soon">Drīzumā</span>' : "";
+  const lang = p.langs ? " (LV)" : "";
+  if (v === 1) return `<button class="v1${off ? " off" : ""}"${dis}>${ICON_FILE}Skatīt paraugu${lang}${off ? " " + soon : ""}</button>`;
+  if (v === 2) return `<a class="v2${off ? " off" : ""}"${dis}>${ICON_FILE}Skatīt paraugu${lang}${off ? "" : " (PDF)"}${off ? " " + soon : ""}</a>`;
+  if (v === 3) return `<button class="v3${off ? " off" : ""}"${dis}>${ICON_EYE}${off ? "Drīzumā" : "Paraugs"}</button>`;
+  if (v === 4) return `<button class="v4${off ? " off" : ""}"${dis}>${ICON_EYE}${off ? "Paraugs drīzumā" : "Paraugs" + lang}</button>`;
+  if (v === 5) {
+    const lines = [18, 25, 32, 39, 46, 53].map((t, i) => `<i style="top:${t}px;width:${[30, 24, 33, 20, 28, 22][i]}px"></i>`).join("");
+    return `<button class="v5${off ? " off" : ""}"${dis}><span class="page"><b>${p.langs ? "LV" : "PDF"}</b>${lines}</span><span class="txt"><span class="t1">Skatīt paraugu${off ? " " + soon : ""}</span><span class="t2">${off ? "Paraugs tiks pievienots drīzumā" : "PDF paraugs atveras jaunā cilnē"}</span></span>${ICON_OUT}</button>`;
+  }
+  return "";
+}
+
+function card(v, p) {
+  const btn = sampleBtn(v, p);
+  const langs = p.langs
+    ? `<div class="langs"><span class="label">Atskaites valoda</span><div class="seg"><span class="on">LV</span><span>RU</span><span>EN</span></div></div>`
+    : "";
+  return `<article class="card">
+    <div class="tagRow"><span class="tag">${p.tag}</span>${v === 3 ? btn : ""}</div>
+    <h2>${p.title}</h2>
+    <p class="desc">${p.desc}</p>
+    ${v === CHIPS_VARIANT ? `<ul class="chips">${p.chips.map((c) => `<li>${ICON_CHECK}${c}</li>`).join("")}</ul>` : ""}
+    ${langs}
+    <div class="bottom">
+      ${v === 5 ? btn : ""}
+      <div class="priceRow"><span class="price">${p.price}</span>${v === 4 ? btn : ""}</div>
+      <p class="deduct">tiks noskaitīts no atlikuma</p>
+      ${v === 2 ? btn : ""}
+      ${v === 1 ? btn : ""}
+      <p class="refund${p.refund ? "" : " empty"}">${ICON_INFO}<span>Ja datu nav, summa tiek atgriezta kontā.</span></p>
+      <div class="buyWrap"><button class="liquid${p.affordable ? "" : " off"}">${p.affordable ? "Pirkt" : "Nepietiek atlikuma"}</button></div>
+    </div>
+  </article>`;
+}
+
+const v = Number((location.hash || "#1").slice(1)) || 1;
+document.getElementById("vLabel").textContent = "Variants " + v;
+document.getElementById("vDesc").textContent = VARIANTS[v];
+document.getElementById("grid").innerHTML = PRODUCTS.map((p) => card(v, p)).join("");
+const tops = (sel) => [...document.querySelectorAll(sel)].map((el) => Math.round(el.getBoundingClientRect().top)).join(",");
+document.body.dataset.alignBuy = tops(".liquid");
+document.body.dataset.alignSample = tops(".v1,.v2,.v3,.v4,.v5");
+</script>
+</body>
+</html>
