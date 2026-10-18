@@ -44,6 +44,37 @@ describe("OneAuto katalogs", () => {
     expect(ONEAUTO_DEFAULT_PRODUCT_IDS).toEqual(["oe_service_history"]);
   });
 
+  it("VIN Decoder (€0.18) sauc Cartell, Ezyvin OE VIN Lookup ir atsevišķs produkts", () => {
+    const decoder = ONEAUTO_PRODUCTS.find((p) => p.id === "vin_decoder");
+    expect(decoder?.path).toBe("/cartell/vindecoder");
+    expect(decoder?.priceCents).toBe(18);
+    const oeLookup = ONEAUTO_PRODUCTS.find((p) => p.id === "oe_vin_lookup");
+    expect(oeLookup?.path).toBe("/ezyvin/vinlookup/");
+    expect(oeLookup?.priceCents).toBe(36);
+    expect(ONEAUTO_DEFAULT_PRODUCT_IDS).not.toContain("vin_decoder");
+    expect(ONEAUTO_DEFAULT_PRODUCT_IDS).not.toContain("oe_vin_lookup");
+  });
+
+  it("Cartell VIN Decoder atbilde nonāk dzinēja / identifikācijas rindās", () => {
+    const display = buildOneautoDisplay({
+      vin_decoder: {
+        success: true,
+        result: {
+          manufacturer_desc: "VAUXHALL",
+          model_range_desc: "CROSSLAND",
+          derivative_desc: "1.2 TURBO SE 5dr",
+          fuel_type_desc: "PETROL",
+          transmission_desc: "MANUAL",
+          manufactured_year: 2022,
+        },
+      },
+    });
+    const text = display.powertrain.map((r) => `${r.label}: ${r.value}`).join("\n");
+    expect(text).toMatch(/manufacturer desc: VAUXHALL/);
+    expect(text).toMatch(/fuel type desc: PETROL/);
+    expect(text).toMatch(/manufactured year: 2022/);
+  });
+
   it("OE Build Sheet (Europe) sauc oficiālo asinhrono /v2 ceļu", () => {
     expect(ONEAUTO_PRODUCTS.find((p) => p.id === "oe_build_sheet")?.path).toBe(
       "/oneauto/oebuildsheeteuropefromvin/v2",
@@ -126,7 +157,7 @@ describe("OneAuto katalogs", () => {
     );
     expect(
       oneautoProductStatusLabel({ ok: false, error: "no_data", payload, fallback: "vin_scan" }),
-    ).toBe("nav datu (nav iekasēts) · fallback");
+    ).toBe("nav datu (nav iekasēts) · fallback: lokālais VIN dekodējums");
   });
 
   it("no_data un kļūdas produktus neiekasē un neslēpj sarkanajā kopsavilkumā", () => {

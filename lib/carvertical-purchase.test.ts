@@ -2,10 +2,12 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
-import { CARVERTICAL_REPORTS_URL } from "@/lib/admin-vin-urls";
+import { buildCarverticalPrecheckPurchaseUrl } from "@/lib/admin-vin-urls";
 import {
   CARVERTICAL_AUTOMATIC_FLOW_SOURCE_FILES,
+  CARVERTICAL_BUY_ONE_REPORT_RE,
   CARVERTICAL_CHECKOUT_HUMAN_STOP_LV,
+  CARVERTICAL_COUNTRY_STAY_LV_RE,
   CARVERTICAL_DISMISS_CLICK_RE,
   CARVERTICAL_PURPOSE_DEALER_RE,
   CARVERTICAL_PURPOSE_PREFERRED_RE,
@@ -14,9 +16,13 @@ import {
   CARVERTICAL_EXPLICIT_SAVED_PAY_RE,
   CARVERTICAL_SAVED_PAY_CLICK_RE,
   CARVERTICAL_3DS_PAGE_RE,
+  CARVERTICAL_VIN_INPUT_SELECTORS,
   buildCarVerticalPurchasedScanResult,
   carVerticalAutofillMayClick,
+  carVerticalPurchasedReportReady,
   classifyCarVerticalCheckoutStep,
+  isCarVerticalCheckoutFlowPage,
+  isCarVerticalClickablePurchaseLabel,
   isCarVerticalPurchasedScanSource,
   pickCarVerticalPurposeLabel,
   purchaseCarVerticalReport,
@@ -39,14 +45,17 @@ describe("purchaseCarVerticalReport", () => {
     });
   });
 
-  it("after confirm only returns the reports URL and does not fetch", () => {
+  it("after confirm opens precheck searching URL with VIN and does not fetch", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const expected = buildCarverticalPrecheckPurchaseUrl(VIN);
     expect(purchaseCarVerticalReport({ vin: VIN, explicitOperatorConfirm: true })).toEqual({
       ok: true,
       mode: "manual_browser",
-      href: CARVERTICAL_REPORTS_URL,
+      href: expected,
       vin: VIN,
     });
+    expect(expected).toContain("precheck/searching");
+    expect(expected).toContain(encodeURIComponent(VIN));
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
@@ -137,6 +146,62 @@ describe("CarVertical click policy", () => {
     expect(pickCarVerticalPurposeLabel(["Other", "I'm selling a car"])).toBe("");
   });
 
+  it("classifies LV purpose, Turpīnāt after choice, buy one pack, country stay", () => {
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Kādēļ vēlies pārbaudīt šo transportlīdzekli?",
+        labels: ["Es pērku transportlīdzekli", "Turpīnāt"],
+      }),
+    ).toMatchObject({ kind: "purpose", label: "Es pērku transportlīdzekli" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Kādēļ vēlies pārbaudīt",
+        labels: ["Es pērku transportlīdzekli", "Turpīnāt"],
+        purposeOptionChosen: true,
+      }),
+    ).toMatchObject({ kind: "continue", label: "Turpīnāt" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Izvēlies paketi",
+        href: "https://www.carvertical.com/lv/pricing",
+        labels: ["Pirkt 1 atskaiti", "Pirkt 3 atskaites", "Ietaupi 20%"],
+      }),
+    ).toMatchObject({ kind: "buy_one", label: "Pirkt 1 atskaiti" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Palikt valstī: Latvija",
+        labels: ["Palikt valstī: Latvija", "Mainīt valsti"],
+      }),
+    ).toMatchObject({ kind: "country_stay" });
+    expect(isCarVerticalClickablePurchaseLabel("39,99 €")).toBe(false);
+    expect(isCarVerticalClickablePurchaseLabel("Pirkt 3 atskaites")).toBe(false);
+    expect(carVerticalAutofillMayClick("Pirkt 1 atskaiti", true)).toBe(true);
+    expect(CARVERTICAL_BUY_ONE_REPORT_RE.test("Pirkt 1 atskaiti")).toBe(true);
+    expect(CARVERTICAL_COUNTRY_STAY_LV_RE.test("Palikt valstī: Latvija")).toBe(true);
+    expect(CARVERTICAL_VIN_INPUT_SELECTORS[0]).toBe('input[name="identifier"]');
+  });
+
+  it("does not treat precheck, pricing, checkout or reports list as purchased report", () => {
+    const vin = VIN;
+    const precheck = `https://www.carvertical.com/lv/precheck/searching?identifier=${vin}`;
+    const pricing = "https://www.carvertical.com/lv/pricing";
+    const checkout = "https://www.carvertical.com/lv/checkout?package=standard";
+    const reports = "https://www.carvertical.com/lv/user/reports";
+    const report = "https://www.carvertical.com/lv/report/abc";
+    const body =
+      `${vin} Pilnā atskaite odometer nobraukums vehicle history damage atskaite report ready your report `.repeat(4);
+    expect(isCarVerticalCheckoutFlowPage(precheck)).toBe(true);
+    expect(carVerticalPurchasedReportReady({ href: precheck, pageText: body, vin })).toBe(false);
+    expect(carVerticalPurchasedReportReady({ href: pricing, pageText: body, vin })).toBe(false);
+    expect(carVerticalPurchasedReportReady({ href: checkout, pageText: body, vin })).toBe(false);
+    expect(carVerticalPurchasedReportReady({ href: reports, pageText: body, vin })).toBe(false);
+    expect(carVerticalPurchasedReportReady({ href: report, pageText: body, vin })).toBe(true);
+  });
+
   it("after confirm classifies purpose, dismiss, saved pay and stops on 3-D Secure", () => {
     expect(
       classifyCarVerticalCheckoutStep({
@@ -209,7 +274,13 @@ describe("CarVertical click policy", () => {
 describe("userscript stays aligned with no auto-buy", () => {
   it("does not auto-click CarVertical preview and gates check behind purchase flag", () => {
     const src = readFileSync(path.join(ROOT, "public/userscripts/provin-vin-autofill.user.js"), "utf8");
-    expect(src).toMatch(/@version\s+1\.23\.0/);
+    expect(src).toMatch(/@version\s+1\.24\.0/);
+    expect(src).toContain('input[name="identifier"]');
+    expect(src).toContain("purposeOptionChosen");
+    expect(src).toContain("carVerticalPurchasedReportReady");
+    expect(src).toContain("isCarVerticalCheckoutFlowPage");
+    expect(src).toContain(CARVERTICAL_BUY_ONE_REPORT_RE.source);
+    expect(src).toContain(CARVERTICAL_COUNTRY_STAY_LV_RE.source);
     expect(src).toContain('id === "nicb"');
     expect(src).toContain('id === "plc_auction"');
     expect(src).not.toContain('id === "vp_wanted"');

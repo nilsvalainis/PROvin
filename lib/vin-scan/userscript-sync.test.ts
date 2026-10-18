@@ -22,8 +22,8 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.23\.0/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.23.0"');
+    expect(src).toMatch(/@version\s+1\.24\.0/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.24.0"');
     expect(src).toContain("// @connect      stat.vin");
     expect(src).toContain("// @connect      bid.cars");
     expect(src).toContain("// @connect      bidfax.info");
@@ -127,15 +127,15 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(src).not.toContain("volkswagen.co.uk");
   });
 
-  it("minimālā paneļa versija ir 1.23", () => {
-    expect(vinScanUserscriptMinLabel()).toBe("1.23");
-    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 23 });
-    expect(vinScanUserscriptMeetsMin("1.22.0")).toBe(false);
-    expect(vinScanUserscriptMeetsMin("1.23.0")).toBe(true);
+  it("minimālā paneļa versija ir 1.24", () => {
+    expect(vinScanUserscriptMinLabel()).toBe("1.24");
+    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 24 });
+    expect(vinScanUserscriptMeetsMin("1.23.0")).toBe(false);
+    expect(vinScanUserscriptMeetsMin("1.24.0")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
     expect(vinScanUserscriptUpdateNeeded("")).toBe(false);
-    expect(vinScanUserscriptUpdateNeeded("1.22.0")).toBe(true);
-    expect(vinScanUserscriptUpdateNeeded("1.23.0")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.23.0")).toBe(true);
+    expect(vinScanUserscriptUpdateNeeded("1.24.0")).toBe(false);
     const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
     const panel = readFileSync(path.join(ROOT, "components/admin/AdminVinScanPanel.tsx"), "utf8");
     const handoff = readFileSync(path.join(ROOT, "components/admin/AdminVinScanBrowserFetchHandoff.tsx"), "utf8");

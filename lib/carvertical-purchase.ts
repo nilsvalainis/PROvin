@@ -6,7 +6,7 @@
  * VIN scan, ātrais vērtējums, AutoDNA virsraksts) šo funkciju nedrīkst saukt
  * un nedrīkst pašas nospiest CarVertical pogas.
  */
-import { CARVERTICAL_REPORTS_URL, buildCarverticalVinCheckUrl } from "@/lib/admin-vin-urls";
+import { buildCarverticalPrecheckPurchaseUrl, buildCarverticalVinCheckUrl } from "@/lib/admin-vin-urls";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 export const CARVERTICAL_PURCHASE_CONFIRM_LV =
@@ -57,7 +57,8 @@ export function purchaseCarVerticalReport(req: CarVerticalPurchaseRequest): CarV
   }
   const vin = normalizeVin(req.vin);
   if (!isValidVin(vin)) return { ok: false, code: "invalid_vin" };
-  const href = buildCarverticalVinCheckUrl(vin) ?? CARVERTICAL_REPORTS_URL;
+  const href = buildCarverticalPrecheckPurchaseUrl(vin) ?? buildCarverticalVinCheckUrl(vin);
+  if (!href) return { ok: false, code: "invalid_vin" };
   return { ok: true, mode: "manual_browser", href, vin };
 }
 
@@ -73,10 +74,10 @@ export const CARVERTICAL_CHECKOUT_HUMAN_STOP_LV =
   "CarVertical: bankas 3-D Secure vai kartes apstiprinājums. Apstipriniet šajā cilnē. Skripts tālāk nespiedīs";
 
 export const CARVERTICAL_PURPOSE_SURVEY_RE =
-  /for what purpose|what (will you|do you) use this report|k[aā]p[eē]c (j[uū]s )?(p[eē]rc|vajag)|m[eē]r[kķ]im|purpose .{0,40}report|why (are you buying|do you need)/i;
+  /for what purpose|what (will you|do you) use this report|k[aā]d[eē][ļl].{0,12}vēlies pārbaudīt|vēlies pārbaudīt|k[aā]p[eē]c (j[uū]s )?(p[eē]rc|vajag)|m[eē]r[kķ]im|purpose .{0,40}report|why (are you buying|do you need)/i;
 
 export const CARVERTICAL_PURPOSE_PREFERRED_RE =
-  /buying a (used )?car|buy(ing)? a (used )?vehicle|i'?m buying|want to buy|p[eē]rku auto|ieg[aā]d[aā]jos|used car purchase/i;
+  /buying a (used )?car|buy(ing)? a (used )?vehicle|i'?m buying|want to buy|p[eē]rku auto|es pērku transportlīdzekli|pērku transportlīdzekli|ieg[aā]d[aā]jos|used car purchase/i;
 
 export const CARVERTICAL_PURPOSE_DEALER_RE =
   /professional|dealer|workshop|business use|i'?m a (dealer|professional)|komersant|d[iī]ler|profesion|autod[iī]ler|fleet/i;
@@ -88,7 +89,7 @@ export const CARVERTICAL_DISMISS_CLICK_RE =
   /no thanks|n[eē], paldies|skip\b|izlaist|maybe later|v[eē]l[aā]k|not now|nav tagad|continue without|turpin[aā]t bez|no, skip|close\b|aizv[eē]rt|reject|noraid[iī]t|accept all|piekrist vis|allow (all|cookies)|pieņem(t)? vis/i;
 
 export const CARVERTICAL_CONTINUE_CLICK_RE =
-  /continue|turpin[aā]t|next\b|n[aā]kamais|n[aā]kamo|proceed|confirm\b|apstiprin[aā]t/i;
+  /continue|turp[īi][nņ]āt|turpin[aā]t|next\b|n[aā]kamais|n[aā]kamo|proceed|confirm\b|apstiprin[aā]t/i;
 
 export const CARVERTICAL_EXPLICIT_SAVED_PAY_RE =
   /pay with (credits?|balance|wallet|saved)|use (your )?(credits?|balance|wallet)|izmantot (kred[iī]t|atlikum)|maks[aā]t ar (kred[iī]t|atlikum|saglab)/i;
@@ -102,6 +103,24 @@ export const CARVERTICAL_START_REPORT_CLICK_RE =
 
 export const CARVERTICAL_BUY_REPORT_CLICK_RE = /pirkt|buy report|get report|full report/i;
 
+/** Tikai vienas atskaites paka (ne 2/3 auto vai „Ietaupi %”). */
+export const CARVERTICAL_BUY_ONE_REPORT_RE = /pirkt\s+1\s+atskait|buy\s+1\s+report/i;
+
+export const CARVERTICAL_MULTI_PACK_CLICK_AVOID_RE =
+  /pirkt\s+[23]\b|pirkt\s+(div|trīs|two|three)\b|\b2\s+atskait|\b3\s+atskait|ietaup\s*%|save\s+\d+\s*%/i;
+
+export const CARVERTICAL_COUNTRY_STAY_LV_RE =
+  /palikt valstī|stay in (latvia|your country)|remain in latvia/i;
+
+export const CARVERTICAL_VIN_INPUT_SELECTORS = [
+  'input[name="identifier"]',
+  "#vin-input",
+  'input[name="vin"]',
+  'textarea[name="vin"]',
+] as const;
+
+export const CARVERTICAL_PRICE_CARD_LABEL_RE = /^\s*€|^\s*\d+[,.]?\d*\s*€/;
+
 const CARVERTICAL_LABEL_MAX = 160;
 
 export type CarVerticalCheckoutKind =
@@ -110,6 +129,8 @@ export type CarVerticalCheckoutKind =
   | "stop_3ds"
   | "purpose"
   | "dismiss"
+  | "country_stay"
+  | "buy_one"
   | "start_report"
   | "continue"
   | "pay_saved";
@@ -175,15 +196,62 @@ function firstAllowedLabel(labels: string[], re: RegExp): string {
 function isStartReportLabel(label: string): boolean {
   const t = label.trim();
   if (!t || CARVERTICAL_NEVER_CLICK_RE.test(t)) return false;
+  if (CARVERTICAL_PRICE_CARD_LABEL_RE.test(t)) return false;
+  if (CARVERTICAL_MULTI_PACK_CLICK_AVOID_RE.test(t) && !CARVERTICAL_BUY_ONE_REPORT_RE.test(t)) return false;
   if (CARVERTICAL_SAVED_PAY_CLICK_RE.test(t) && /checkout|pay now|maksāt|complete/i.test(t)) return false;
   return CARVERTICAL_START_REPORT_CLICK_RE.test(t) || CARVERTICAL_BUY_REPORT_CLICK_RE.test(t);
+}
+
+export function isCarVerticalClickablePurchaseLabel(label: string): boolean {
+  const t = label.trim();
+  if (!t || t.length > CARVERTICAL_LABEL_MAX) return false;
+  if (CARVERTICAL_NEVER_CLICK_RE.test(t)) return false;
+  if (CARVERTICAL_PRICE_CARD_LABEL_RE.test(t)) return false;
+  if (CARVERTICAL_MULTI_PACK_CLICK_AVOID_RE.test(t) && !CARVERTICAL_BUY_ONE_REPORT_RE.test(t)) return false;
+  return true;
+}
+
+export function isCarVerticalCheckoutFlowPage(href: string): boolean {
+  const p = String(href || "").toLowerCase();
+  return (
+    /\/precheck\b/.test(p) ||
+    /\/searching\b/.test(p) ||
+    /\/pricing\b/.test(p) ||
+    /\/checkout\b/.test(p) ||
+    /\/auth\b/.test(p) ||
+    /\/login\b/.test(p) ||
+    /\/user\/reports\b/.test(p) ||
+    /\/sign-?in\b/.test(p) ||
+    /\/register\b/.test(p)
+  );
+}
+
+export function carVerticalPurchasedReportReady(input: {
+  href?: string;
+  pageText: string;
+  vin: string;
+}): boolean {
+  const href = String(input.href || "");
+  if (isCarVerticalCheckoutFlowPage(href)) return false;
+  const t = String(input.pageText || "");
+  if (t.length < 200) return false;
+  const vin = normalizeVin(input.vin);
+  const hasVin = Boolean(vin) && t.toUpperCase().includes(vin);
+  if (/inform[aā]cija nav atrasta|no information found|couldn.t find any/i.test(t) && !hasVin) return false;
+  if (!hasVin) return false;
+  if (/\/user\/reports\b/i.test(href)) return false;
+  return /odometer|nobraukum|mileage|full report|piln[aā] atskaite|vehicle history|negadījum|damage|report ready|your report/i.test(
+    t,
+  );
 }
 
 export function carVerticalAutofillMayClick(label: string, purchaseConfirmed: boolean): boolean {
   const t = label.trim();
   if (!t || !purchaseConfirmed) return false;
-  if (CARVERTICAL_NEVER_CLICK_RE.test(t)) return false;
+  if (!isCarVerticalClickablePurchaseLabel(t)) return false;
   if (CARVERTICAL_3DS_PAGE_RE.test(t)) return false;
+  if (CARVERTICAL_BUY_ONE_REPORT_RE.test(t)) return true;
+  if (CARVERTICAL_COUNTRY_STAY_LV_RE.test(t)) return true;
   if (rankCarVerticalPurposeLabel(t) >= 2) return true;
   if (CARVERTICAL_DISMISS_CLICK_RE.test(t)) return true;
   if (CARVERTICAL_CONTINUE_CLICK_RE.test(t)) return true;
@@ -198,6 +266,7 @@ export function classifyCarVerticalCheckoutStep(input: {
   href?: string;
   has3dsFrame?: boolean;
   hasNewCardField?: boolean;
+  purposeOptionChosen?: boolean;
 }): CarVerticalCheckoutDecision {
   if (!input.purchaseConfirmed) {
     return { kind: "idle", label: "", log: "nav apstiprinājuma" };
@@ -208,9 +277,37 @@ export function classifyCarVerticalCheckoutStep(input: {
   }
 
   const labels = input.labels.map((item) => item.trim()).filter(Boolean);
-  const purpose = pickCarVerticalPurposeLabel(labels);
-  if (purpose && (CARVERTICAL_PURPOSE_SURVEY_RE.test(input.pageText) || rankCarVerticalPurposeLabel(purpose) >= 2)) {
-    return { kind: "purpose", label: purpose, log: `purpose ${purpose}` };
+  const href = String(input.href || "");
+
+  const countryStay = firstAllowedLabel(labels, CARVERTICAL_COUNTRY_STAY_LV_RE);
+  if (countryStay && /latvij|latvia/i.test(`${input.pageText} ${countryStay}`)) {
+    return { kind: "country_stay", label: countryStay, log: `country_stay ${countryStay}` };
+  }
+
+  const onPricing = /\/pricing\b|package=/i.test(href);
+  if (onPricing) {
+    const buyOne = labels.find(
+      (item) => isCarVerticalClickablePurchaseLabel(item) && CARVERTICAL_BUY_ONE_REPORT_RE.test(item),
+    );
+    if (buyOne) {
+      return { kind: "buy_one", label: buyOne.trim(), log: `buy_one ${buyOne.trim()}` };
+    }
+  }
+
+  const purposeSurvey =
+    CARVERTICAL_PURPOSE_SURVEY_RE.test(input.pageText) || /vēlies pārbaudīt/i.test(input.pageText);
+  if (purposeSurvey) {
+    if (!input.purposeOptionChosen) {
+      const purpose = pickCarVerticalPurposeLabel(labels);
+      if (purpose && rankCarVerticalPurposeLabel(purpose) >= 2) {
+        return { kind: "purpose", label: purpose, log: `purpose ${purpose}` };
+      }
+    }
+    const contAfterPurpose =
+      firstAllowedLabel(labels, /^turp[īi][nņ]āt$/i) || firstAllowedLabel(labels, CARVERTICAL_CONTINUE_CLICK_RE);
+    if (contAfterPurpose) {
+      return { kind: "continue", label: contAfterPurpose, log: `continue ${contAfterPurpose}` };
+    }
   }
 
   const dismiss = pickCarVerticalDismissLabel(labels);
