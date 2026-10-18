@@ -64,7 +64,7 @@ describe("partner i18n", () => {
     expect(lv.bulkShortfall).toBe("Trūkst {count} kredītu - Pirkt paku");
     expect(lv.bulkCreditsLine).toContain("{from} → {to}");
     expect(lv.archiveStatusReceived).toBe("Saņemts");
-    expect(lv.archiveStatusProcessing).toBe("Procesā");
+    expect(lv.archiveStatusProcessing).toBe("Tiek apstrādāts");
     expect(lv.archiveStatusReady).toBe("Gatavs");
     expect(lv.archiveCreditRestored).toBe("Kredīts atgriezts");
     for (const copy of [lv, en, de, ru]) {
