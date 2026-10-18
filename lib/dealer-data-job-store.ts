@@ -127,6 +127,18 @@ export async function readDealerDataJob(sessionId: string): Promise<DealerDataJo
   return raw ? normalizeDealerDataJob(raw, sessionId) : null;
 }
 
+export async function readDealerDataJobs(sessionIds: readonly string[]): Promise<Map<string, DealerDataJob>> {
+  const unique = [...new Set(sessionIds.filter((id) => isSafeDealerJobSessionId(id)))];
+  const out = new Map<string, DealerDataJob>();
+  await Promise.all(
+    unique.map(async (id) => {
+      const job = await readDealerDataJob(id);
+      if (job) out.set(id, job);
+    }),
+  );
+  return out;
+}
+
 /** Statusi, kas cron slaucītājam vēl jāpārņem. */
 const UNFINISHED: readonly DealerDataJobStatus[] = ["pending", "running", "failed"];
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
-import { emailsMatchForPartnerArchive } from "@/lib/partner-client-report";
+import { partnerOwnsArchiveItem } from "@/lib/b2b-partner-archive-rows";
 import { readClientReportPdf } from "@/lib/partner-client-report-storage";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
 
@@ -29,10 +29,15 @@ export async function GET(_req: Request, ctx: Ctx) {
   }
 
   const draft = await readOrderDraft(id);
-  const owns =
-    emailsMatchForPartnerArchive(order.customerEmail, email) ||
-    emailsMatchForPartnerArchive(order.customerDetailsEmail, email) ||
-    emailsMatchForPartnerArchive(draft?.orderEdits?.customerEmail, email);
+  const owns = partnerOwnsArchiveItem({
+    partnerId: partner.id,
+    partnerEmail: email,
+    orderPartnerId: order.partnerId,
+    orderEmail: order.customerEmail,
+    orderDetailsEmail: order.customerDetailsEmail,
+    draftEmail: draft?.orderEdits?.customerEmail,
+    notes: draft?.orderEdits?.notes,
+  });
   if (!owns) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }

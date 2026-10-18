@@ -19,6 +19,8 @@ export type DashboardDraftIndexEntry = {
   customerName: string | null;
   customerPhone: string | null;
   invoicePdfUrl: string | null;
+  invoiceNumber: string | null;
+  clientReportReadyAt: string | null;
   /** CSDD „Marka, modelis” — kad ievadīts darba zonā. */
   makeModel: string | null;
   /** 48 h termiņa manuāla „Izpildīts” atzīme (ISO laiks; `null` = nav atzīmēts). */
@@ -40,6 +42,8 @@ const EMPTY_ENTRY: DashboardDraftIndexEntry = {
   customerName: null,
   customerPhone: null,
   invoicePdfUrl: null,
+  invoiceNumber: null,
+  clientReportReadyAt: null,
   makeModel: null,
   auditCompletedAt: null,
   vin: null,
@@ -63,6 +67,11 @@ function normalizeEntry(raw: unknown): DashboardDraftIndexEntry | null {
     customerName: typeof o.customerName === "string" ? o.customerName : null,
     customerPhone: typeof o.customerPhone === "string" ? o.customerPhone : null,
     invoicePdfUrl: typeof o.invoicePdfUrl === "string" ? o.invoicePdfUrl : null,
+    invoiceNumber: typeof o.invoiceNumber === "string" && o.invoiceNumber.trim() ? o.invoiceNumber.trim() : null,
+    clientReportReadyAt:
+      typeof o.clientReportReadyAt === "string" && o.clientReportReadyAt.trim()
+        ? o.clientReportReadyAt.trim()
+        : null,
     makeModel: typeof o.makeModel === "string" && o.makeModel.trim() ? o.makeModel.trim() : null,
     auditCompletedAt:
       typeof o.auditCompletedAt === "string" && o.auditCompletedAt.trim()
@@ -176,6 +185,9 @@ export async function upsertDashboardDraftIndexEntry(
     customerName: patch.customerName !== undefined ? patch.customerName : prev.customerName,
     customerPhone: patch.customerPhone !== undefined ? patch.customerPhone : prev.customerPhone,
     invoicePdfUrl: patch.invoicePdfUrl !== undefined ? patch.invoicePdfUrl : prev.invoicePdfUrl,
+    invoiceNumber: patch.invoiceNumber !== undefined ? patch.invoiceNumber : prev.invoiceNumber,
+    clientReportReadyAt:
+      patch.clientReportReadyAt !== undefined ? patch.clientReportReadyAt : prev.clientReportReadyAt,
     makeModel: patch.makeModel !== undefined ? patch.makeModel : prev.makeModel,
     auditCompletedAt:
       patch.auditCompletedAt !== undefined ? patch.auditCompletedAt : prev.auditCompletedAt,
@@ -191,11 +203,17 @@ function summaryFieldsFromDraftRaw(raw: {
   workspace?: unknown;
   orderEdits?: { vin?: unknown; notes?: unknown };
   vinScan?: unknown;
+  invoiceNumber?: unknown;
+  invoicePdfUrl?: unknown;
+  clientReportReadyAt?: unknown;
 }): {
   makeModel: string | null;
   vin: string | null;
   notes: string | null;
   vinScan: OrderVinScanDashboardHint | null;
+  invoiceNumber: string | null;
+  invoicePdfUrl: string | null;
+  clientReportReadyAt: string | null;
 } {
   const vin = typeof raw.orderEdits?.vin === "string" && raw.orderEdits.vin.trim() ? raw.orderEdits.vin.trim() : null;
   const notes =
@@ -205,6 +223,12 @@ function summaryFieldsFromDraftRaw(raw: {
     vin,
     notes,
     vinScan: orderVinScanDashboardHintFromRecord(parseOrderVinScanRecord(raw.vinScan)),
+    invoiceNumber: typeof raw.invoiceNumber === "string" && raw.invoiceNumber.trim() ? raw.invoiceNumber.trim() : null,
+    invoicePdfUrl: typeof raw.invoicePdfUrl === "string" && raw.invoicePdfUrl.trim() ? raw.invoicePdfUrl.trim() : null,
+    clientReportReadyAt:
+      typeof raw.clientReportReadyAt === "string" && raw.clientReportReadyAt.trim()
+        ? raw.clientReportReadyAt.trim()
+        : null,
   };
 }
 
@@ -213,12 +237,18 @@ async function readDraftFileSummaryFields(sessionId: string): Promise<{
   vin: string | null;
   notes: string | null;
   vinScan: OrderVinScanDashboardHint | null;
+  invoiceNumber: string | null;
+  invoicePdfUrl: string | null;
+  clientReportReadyAt: string | null;
 }> {
   const empty = {
     makeModel: null as string | null,
     vin: null as string | null,
     notes: null as string | null,
     vinScan: null as OrderVinScanDashboardHint | null,
+    invoiceNumber: null as string | null,
+    invoicePdfUrl: null as string | null,
+    clientReportReadyAt: null as string | null,
   };
   const dir = getOrderDraftStorageDir();
   const blob = getOrderDraftBlobConfig();
@@ -229,9 +259,22 @@ async function readDraftFileSummaryFields(sessionId: string): Promise<{
         workspace?: unknown;
         orderEdits?: { vin?: unknown; notes?: unknown };
         vinScan?: unknown;
+        invoiceNumber?: unknown;
+        invoicePdfUrl?: unknown;
+        clientReportReadyAt?: unknown;
       };
       const fields = summaryFieldsFromDraftRaw(raw);
-      if (fields.makeModel || fields.vin || fields.notes || fields.vinScan) return fields;
+      if (
+        fields.makeModel ||
+        fields.vin ||
+        fields.notes ||
+        fields.vinScan ||
+        fields.invoiceNumber ||
+        fields.invoicePdfUrl ||
+        fields.clientReportReadyAt
+      ) {
+        return fields;
+      }
     } catch {
       /* try blob */
     }
@@ -249,6 +292,9 @@ async function readDraftFileSummaryFields(sessionId: string): Promise<{
         workspace?: unknown;
         orderEdits?: { vin?: unknown; notes?: unknown };
         vinScan?: unknown;
+        invoiceNumber?: unknown;
+        invoicePdfUrl?: unknown;
+        clientReportReadyAt?: unknown;
       };
       return summaryFieldsFromDraftRaw(raw);
     } catch {
@@ -311,6 +357,9 @@ export async function readDashboardDraftSummaries(
       vin: string | null;
       notes: string | null;
       vinScan: OrderVinScanDashboardHint | null;
+      invoiceNumber: string | null;
+      invoicePdfUrl: string | null;
+      clientReportReadyAt: string | null;
     }[] = [];
     await Promise.all(
       toFill.map(async (id) => {
@@ -324,12 +373,18 @@ export async function readDashboardDraftSummaries(
           vin: prev.vin || fromDraft.vin,
           notes: prev.notes || fromDraft.notes,
           vinScan: prev.vinScan || fromDraft.vinScan,
+          invoiceNumber: prev.invoiceNumber || fromDraft.invoiceNumber,
+          invoicePdfUrl: prev.invoicePdfUrl || fromDraft.invoicePdfUrl,
+          clientReportReadyAt: prev.clientReportReadyAt || fromDraft.clientReportReadyAt,
         };
         if (
           next.makeModel !== prev.makeModel ||
           next.vin !== prev.vin ||
           next.notes !== prev.notes ||
-          next.vinScan !== prev.vinScan
+          next.vinScan !== prev.vinScan ||
+          next.invoiceNumber !== prev.invoiceNumber ||
+          next.invoicePdfUrl !== prev.invoicePdfUrl ||
+          next.clientReportReadyAt !== prev.clientReportReadyAt
         ) {
           found.push({
             id,
@@ -337,6 +392,9 @@ export async function readDashboardDraftSummaries(
             vin: next.vin,
             notes: next.notes,
             vinScan: next.vinScan,
+            invoiceNumber: next.invoiceNumber,
+            invoicePdfUrl: next.invoicePdfUrl,
+            clientReportReadyAt: next.clientReportReadyAt,
           });
           out.set(id, next);
         }
@@ -354,6 +412,9 @@ export async function readDashboardDraftSummaries(
               vin: prev.vin || row.vin,
               notes: prev.notes || row.notes,
               vinScan: prev.vinScan || row.vinScan,
+              invoiceNumber: prev.invoiceNumber || row.invoiceNumber,
+              invoicePdfUrl: prev.invoicePdfUrl || row.invoicePdfUrl,
+              clientReportReadyAt: prev.clientReportReadyAt || row.clientReportReadyAt,
             };
           }
           latest.updatedAt = new Date().toISOString();
@@ -378,6 +439,10 @@ export function dashboardDraftEntryFromOrderEdits(
   } | null | undefined,
   invoicePdfUrl?: string | null,
   workspace?: unknown,
+  extras?: {
+    invoiceNumber?: string | null;
+    clientReportReadyAt?: string | null;
+  },
 ): Partial<DashboardDraftIndexEntry> {
   const email = orderEdits?.customerEmail?.trim();
   const name = orderEdits?.customerName?.trim();
@@ -392,5 +457,7 @@ export function dashboardDraftEntryFromOrderEdits(
     makeModel: extractCsddMakeModelFromWorkspace(workspace),
     vin: vin || null,
     notes: notes || null,
+    ...(extras?.invoiceNumber !== undefined ? { invoiceNumber: extras.invoiceNumber } : {}),
+    ...(extras?.clientReportReadyAt !== undefined ? { clientReportReadyAt: extras.clientReportReadyAt } : {}),
   };
 }

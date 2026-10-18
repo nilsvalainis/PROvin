@@ -892,6 +892,11 @@ async function patchOrderDraftUnlocked(
       nextOrderEdits,
       typeof doc.invoicePdfUrl === "string" ? doc.invoicePdfUrl : prev?.invoicePdfUrl ?? null,
       nextWorkspace,
+      {
+        invoiceNumber: typeof doc.invoiceNumber === "string" ? doc.invoiceNumber : prev?.invoiceNumber ?? null,
+        clientReportReadyAt:
+          typeof doc.clientReportReadyAt === "string" ? doc.clientReportReadyAt : prev?.clientReportReadyAt ?? null,
+      },
     ),
   ).catch(() => {});
 
@@ -1039,9 +1044,18 @@ async function upsertOrderDraftInvoiceFieldsUnlocked(
   invalidateOrderDraftCache(sessionId);
   const invoicePdfUrl =
     typeof fields.invoicePdfUrl === "string" ? fields.invoicePdfUrl : (prev?.invoicePdfUrl ?? null);
+  const invoiceNumber =
+    typeof fields.invoiceNumber === "string" ? fields.invoiceNumber : (prev?.invoiceNumber ?? null);
+  const clientReportReadyAt =
+    typeof fields.clientReportReadyAt === "string"
+      ? fields.clientReportReadyAt
+      : (prev?.clientReportReadyAt ?? null);
   void upsertDashboardDraftIndexEntry(
     sessionId,
-    dashboardDraftEntryFromOrderEdits(doc.orderEdits, invoicePdfUrl, doc.workspace),
+    dashboardDraftEntryFromOrderEdits(doc.orderEdits, invoicePdfUrl, doc.workspace, {
+      invoiceNumber,
+      clientReportReadyAt,
+    }),
   ).catch(() => {});
   return { ok: true, updatedAt };
 }

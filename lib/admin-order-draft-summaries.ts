@@ -8,6 +8,8 @@ export type OrderDraftDashboardSummary = {
   customerName: string | null;
   customerPhone: string | null;
   invoicePdfUrl: string | null;
+  invoiceNumber: string | null;
+  clientReportReadyAt: string | null;
   makeModel: string | null;
   auditCompletedAt: string | null;
   vin: string | null;
