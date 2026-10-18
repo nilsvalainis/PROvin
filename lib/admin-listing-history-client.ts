@@ -1,5 +1,6 @@
 "use client";
 
+import { isProvinUserscriptPresent, readProvinUserscriptVersion } from "@/lib/provin-userscript-presence";
 import { adifyHistoryPageLookupUrl, type AdifyListingHistorySnapshot } from "@/lib/adify-listing-history";
 import {
   tirgusDatiHistoryPageLookupUrl,
@@ -7,9 +8,7 @@ import {
 } from "@/lib/tirgusdati-listing-history";
 
 export function isProvinUserscriptInstalled(): boolean {
-  return (
-    typeof document !== "undefined" && Boolean(document.documentElement.getAttribute("data-provin-userscript"))
-  );
+  return isProvinUserscriptPresent();
 }
 
 /** Vēstures ielase caur GM_xmlhttpRequest ir no skripta 1.8.0. */
@@ -23,7 +22,7 @@ export function userscriptVersionAllowsListingHistoryFetch(raw: string): boolean
 export function userscriptCanFetchListingHistory(): boolean {
   if (typeof document === "undefined") return false;
   return userscriptVersionAllowsListingHistoryFetch(
-    document.documentElement.getAttribute("data-provin-userscript") || "",
+    readProvinUserscriptVersion(),
   );
 }
 
