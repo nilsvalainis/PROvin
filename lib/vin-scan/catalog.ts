@@ -99,6 +99,15 @@ function vinQuery(vin: string): string {
   return encodeURIComponent(vin.trim().toUpperCase());
 }
 
+/**
+ * Ne-ASV VW Group atsaukumi. Volkswagen UK vispārīgā recalls.html ir HTTP 404.
+ * GOV.UK lapa atbild 200. Tā nelasa VIN kā meklēšanas lauku (reģistrācija vai marka/modelis/gads),
+ * tāpēc VIN ir tikai saitē un serveris šo HTML neinterpretē kā found/none.
+ */
+export function vwGroupRecallCheckUrl(vin: string): string {
+  return `https://www.gov.uk/check-vehicle-recall?vin=${vinQuery(vin)}`;
+}
+
 function plateQ(raw: string): string {
   return encodeURIComponent(raw.trim().toUpperCase());
 }
@@ -261,9 +270,9 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     id: "recall_vw",
     label: "VW Group atsaukumi",
     country: "OEM",
-    hint: "Volkswagen, Audi, Škoda, SEAT, Cupra",
+    hint: "Volkswagen, Audi, Škoda, SEAT, Cupra. Ne-ASV VIN: GOV.UK pārbaude pārlūkā",
     needs: ["vin"],
-    openUrl: (vin) => `https://www.volkswagen.co.uk/en/owners-and-services/recalls.html?vin=${vinQuery(vin)}`,
+    openUrl: (vin) => vwGroupRecallCheckUrl(vin),
   },
   {
     id: "recall_bmw",
@@ -440,7 +449,7 @@ export const VIN_SCAN_BROWSER_CATALOG: readonly VinScanCatalogItem[] = VIN_SCAN_
 );
 
 /** Minimālā Tampermonkey versija VIN SCAN dziļajām saitēm, aizpildei un pārlūka HTML ielādei. */
-export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 22 } as const;
+export const VIN_SCAN_USERSCRIPT_MIN = { major: 1, minor: 23 } as const;
 
 export function vinScanUserscriptMeetsMin(raw: string): boolean {
   const parts = raw.split(".").map((n) => Number.parseInt(n, 10));

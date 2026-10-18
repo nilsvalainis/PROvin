@@ -22,8 +22,8 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.22\.0/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.22.0"');
+    expect(src).toMatch(/@version\s+1\.23\.0/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.23.0"');
     expect(src).toContain("// @connect      stat.vin");
     expect(src).toContain("// @connect      bid.cars");
     expect(src).toContain("// @connect      bidfax.info");
@@ -121,17 +121,21 @@ describe("userscript sync with VIN scan catalog", () => {
       `https://www.epolicija.lt/itpr_paieska/transportas_lt.php?knr=${vin}`,
     );
     expect(src).toContain("https://checkcar.vin/report/check/");
+    expect(src).toContain('recall_vw: "https://www.gov.uk/check-vehicle-recall?vin="');
+    expect(src).toContain("Lielbritānijas GOV.UK atsaukumu pārbaude pārlūkā");
+    expect(src).not.toContain("owners-and-services/recalls.html");
+    expect(src).not.toContain("volkswagen.co.uk");
   });
 
-  it("minimālā paneļa versija ir 1.22", () => {
-    expect(vinScanUserscriptMinLabel()).toBe("1.22");
-    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 22 });
-    expect(vinScanUserscriptMeetsMin("1.21.0")).toBe(false);
-    expect(vinScanUserscriptMeetsMin("1.22.0")).toBe(true);
+  it("minimālā paneļa versija ir 1.23", () => {
+    expect(vinScanUserscriptMinLabel()).toBe("1.23");
+    expect(VIN_SCAN_USERSCRIPT_MIN).toEqual({ major: 1, minor: 23 });
+    expect(vinScanUserscriptMeetsMin("1.22.0")).toBe(false);
+    expect(vinScanUserscriptMeetsMin("1.23.0")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
     expect(vinScanUserscriptUpdateNeeded("")).toBe(false);
-    expect(vinScanUserscriptUpdateNeeded("1.21.0")).toBe(true);
-    expect(vinScanUserscriptUpdateNeeded("1.22.0")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.22.0")).toBe(true);
+    expect(vinScanUserscriptUpdateNeeded("1.23.0")).toBe(false);
     const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
     const panel = readFileSync(path.join(ROOT, "components/admin/AdminVinScanPanel.tsx"), "utf8");
     const handoff = readFileSync(path.join(ROOT, "components/admin/AdminVinScanBrowserFetchHandoff.tsx"), "utf8");
