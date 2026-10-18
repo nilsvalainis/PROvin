@@ -25,8 +25,8 @@ export default async function AdminPartnerLeadsPage() {
           Cenu piedāvājuma pieteikumi
         </h1>
         <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
-          Pieteikumi no partneru lapas („Saņemt cenu piedāvājumu”). Katrs jauns pieteikums tiek nosūtīts arī uz
-          info@provin.lv.
+          Pieteikumi no partneru lapas („Saņemt cenu piedāvājumu”). Katrā kartītē UR, VIES un e-pasta pārbaude.
+          Apstiprināt vai noraidīt ar vienu klikšķi. Avota kļūme rāda „nepieejams”, pieteikumu nebloķē.
         </p>
       </AdminDashboardHeaderWithMenu>
       <AdminB2bPartnerLeadsList initialLeads={leads} />

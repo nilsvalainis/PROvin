@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { AdminB2bCompanyVerifyPanel } from "@/components/admin/AdminB2bCompanyVerifyPanel";
 import { AdminB2bPartnerBackLink } from "@/components/admin/AdminB2bPartnerBackLink";
 import { AdminB2bPartnerEditForm } from "@/components/admin/AdminB2bPartnerEditForm";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
@@ -55,6 +56,7 @@ export default async function AdminPartnerDetailPage({ params }: Props) {
           {partner.status === "active" ? "Aktīvs" : "Bloķēts"}
         </p>
       </AdminDashboardHeaderWithMenu>
+      <AdminB2bCompanyVerifyPanel kind="partner" id={partner.id} />
       <AdminB2bPartnerWallet
         partnerId={partner.id}
         initialWallet={buildB2bWalletView(wallet, record.walletPrices, 200, record.walletHiddenProducts)}

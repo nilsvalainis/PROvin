@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { AdminB2bCompanyVerifyPanel } from "@/components/admin/AdminB2bCompanyVerifyPanel";
 import type { B2bPartnerLead } from "@/lib/b2b-partner-lead";
+import { decisionLabel, type CompanyVerifyDecision } from "@/lib/b2b-company-verify";
 
 function formatAt(iso: string): string {
   const d = new Date(iso);
@@ -85,7 +87,13 @@ export function AdminB2bPartnerLeadsList({ initialLeads }: { initialLeads: B2bPa
               </p>
               <p className="mt-0.5 text-[12px] text-slate-500">
                 {formatAt(lead.createdAt)} · {lead.locale.toUpperCase()}
+                {lead.companyReg ? ` · Reģ. ${lead.companyReg}` : ""}
+                {lead.vatNumber ? ` · PVN ${lead.vatNumber}` : ""}
               </p>
+              {lead.companyAddress ? <p className="mt-0.5 text-[12px] text-slate-500">{lead.companyAddress}</p> : null}
+              {lead.decision !== "pending" ? (
+                <p className="mt-1 text-[12px] font-semibold text-slate-600">{decisionLabel(lead.decision)}</p>
+              ) : null}
             </div>
             <button
               type="button"
@@ -99,6 +107,24 @@ export function AdminB2bPartnerLeadsList({ initialLeads }: { initialLeads: B2bPa
           {lead.message ? (
             <p className="mt-3 whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-[13px] text-slate-700">{lead.message}</p>
           ) : null}
+          <AdminB2bCompanyVerifyPanel
+            kind="lead"
+            id={lead.id}
+            onDecision={(decision: CompanyVerifyDecision) => {
+              setLeads((prev) =>
+                prev.map((row) =>
+                  row.id === lead.id
+                    ? {
+                        ...row,
+                        decision,
+                        decidedAt: decision === "pending" ? null : new Date().toISOString(),
+                        handledAt: decision === "pending" ? null : new Date().toISOString(),
+                      }
+                    : row,
+                ),
+              );
+            }}
+          />
         </article>
       ))}
     </div>

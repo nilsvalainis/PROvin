@@ -271,6 +271,9 @@ export async function trySendAdminNewPartnerNotificationEmail(
 export type AdminPartnerLeadEmailPayload = {
   contactName: string;
   companyName: string;
+  companyReg?: string;
+  companyAddress?: string;
+  vatNumber?: string;
   phone: string;
   email: string;
   message: string;
@@ -284,6 +287,9 @@ export async function trySendAdminPartnerLeadEmail(payload: AdminPartnerLeadEmai
   const lines = [
     { label: "Kontaktpersona", value: payload.contactName },
     { label: "Uzņēmums", value: payload.companyName },
+    { label: "Reģ. nr.", value: payload.companyReg || "-" },
+    { label: "Adrese", value: payload.companyAddress || "-" },
+    { label: "PVN nr.", value: payload.vatNumber || "-" },
     { label: "Tālrunis", value: payload.phone },
     { label: "E-pasts", value: payload.email },
     { label: "Ziņa", value: payload.message || "-" },

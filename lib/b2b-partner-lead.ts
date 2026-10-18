@@ -1,11 +1,16 @@
 import { isValidOrderEmail, isValidOrderPhone } from "@/lib/order-field-validation";
 
+import type { CompanyVerifyDecision } from "@/lib/b2b-company-verify";
+
 /** „Saņemt cenu piedāvājumu” pieteikums no partneru pieteikšanās lapas. */
 export type B2bPartnerLead = {
   id: string;
   createdAt: string;
   contactName: string;
   companyName: string;
+  companyReg: string;
+  companyAddress: string;
+  vatNumber: string;
   phone: string;
   email: string;
   message: string;
@@ -13,11 +18,16 @@ export type B2bPartnerLead = {
   consentAt: string;
   /** Kad operators atzīmēja kā apstrādātu. */
   handledAt: string | null;
+  decision: CompanyVerifyDecision;
+  decidedAt: string | null;
 };
 
 export type B2bPartnerLeadInput = {
   contactName: string;
   companyName: string;
+  companyReg: string;
+  companyAddress: string;
+  vatNumber: string;
   phone: string;
   email: string;
   message: string;
@@ -38,6 +48,9 @@ export function normalizeB2bPartnerLeadInput(raw: Record<string, unknown>): B2bP
   return {
     contactName: clip(raw.contactName, 120),
     companyName: clip(raw.companyName, 200),
+    companyReg: clip(raw.companyReg, 32).replace(/\s+/g, ""),
+    companyAddress: clip(raw.companyAddress, 300),
+    vatNumber: clip(raw.vatNumber, 20).replace(/[\s.-]/g, "").toUpperCase(),
     phone: clip(raw.phone, 40),
     email: clip(raw.email, 254).toLowerCase(),
     message: typeof raw.message === "string" ? raw.message.trim().slice(0, 2000) : "",
@@ -71,12 +84,17 @@ function parseLead(raw: unknown): B2bPartnerLead | null {
     createdAt,
     contactName: clip(o.contactName, 120),
     companyName: clip(o.companyName, 200),
+    companyReg: clip(o.companyReg, 32),
+    companyAddress: clip(o.companyAddress, 300),
+    vatNumber: clip(o.vatNumber, 20),
     phone: clip(o.phone, 40),
     email,
     message: typeof o.message === "string" ? o.message.slice(0, 2000) : "",
     locale: clip(o.locale, 8) || "lv",
     consentAt: clip(o.consentAt, 40) || createdAt,
     handledAt: clip(o.handledAt, 40) || null,
+    decision: o.decision === "approved" || o.decision === "rejected" ? o.decision : "pending",
+    decidedAt: clip(o.decidedAt, 40) || null,
   };
 }
 
