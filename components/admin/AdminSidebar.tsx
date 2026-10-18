@@ -28,9 +28,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AdminMotionPill } from "@/components/admin/AdminMotionPill";
 import { IrissPavadzimesSidebarCard } from "@/components/admin/IrissPavadzimesSidebarCard";
 import { useAdminClientReady, useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
+import { isModifiedClick, startAdminViewTransition, viewTransitionDir } from "@/lib/admin-motion";
 import { requestAdminGlobalSearch } from "@/lib/admin-global-search";
 import { finiteBadgeCount } from "@/lib/admin-sidebar-badge";
 import {
@@ -519,11 +521,22 @@ export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onTo
 /** Mobilā apakšējā cilņu josla: 4 iPhone cilnes. PRO/IRISS centrs ir „Vairāk”. */
 export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: AdminWorkspace } = {}) {
   const pathname = usePathname() || "";
+  const router = useRouter();
+  const navRef = useRef<HTMLElement>(null);
   const workspaceFromPath = useAdminWorkspace();
   const workspace = workspaceProp ?? workspaceFromPath;
   const badges = useBadges();
   const offer = useNewIrissOffer();
   const [more, setMore] = useState(false);
+
+  const goTab = useCallback(
+    (href: string) => {
+      startAdminViewTransition(() => {
+        router.push(href);
+      }, viewTransitionDir(pathname, href));
+    },
+    [pathname, router],
+  );
   useEffect(() => setMore(false), [pathname]);
   useEffect(() => {
     if (!more) return;
@@ -543,14 +556,18 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   const moreBadge = workspace === "iriss" ? badges.fast + badges.partners + badges.orders : badges.partners + badges.fast;
 
   const tabItemClass = (on: boolean) =>
-    `admin-nav-link relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] py-0.5 text-[10px] font-medium transition-opacity ${
+    `admin-nav-link admin-pr relative flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] py-0.5 text-[10px] font-medium transition-opacity ${
       on ? "text-[var(--color-provin-accent)] opacity-100" : "text-[#8e8e93] opacity-75"
     }`;
+
+  const selectedTabIndex = tabs.findIndex((t) => t.match(pathname));
+  const pillIndex = more || selectedTabIndex < 0 ? 1 + tabs.length : 1 + selectedTabIndex;
 
   return (
     <>
       <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
-        <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
+        <nav ref={navRef} className={`${ADMIN_MOBILE_TABBAR_DOCK_NAV} relative`} aria-label="Galvenā izvēlne">
+          <AdminMotionPill hostRef={navRef} activeIndex={pillIndex} height={44} top={4} />
           <button
             type="button"
             onClick={() => {
@@ -576,6 +593,12 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                 href={t.href}
                 aria-current={on ? "page" : undefined}
                 className={tabItemClass(on)}
+                onClick={(e) => {
+                  if (isModifiedClick(e)) return;
+                  e.preventDefault();
+                  setMore(false);
+                  goTab(t.href);
+                }}
               >
                 <span className="relative">
                   <span className={ADMIN_RAIL_V1_GLYPH}>
