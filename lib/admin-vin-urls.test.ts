@@ -10,6 +10,7 @@ import {
   buildAutodnaVinCheckUrl,
   buildAutorecordsVinCheckUrl,
   buildCarinfoVinCheckUrl,
+  buildCarverticalPrecheckPurchaseUrl,
   buildCarverticalVinCheckUrl,
   buildCheckcarVinCheckUrl,
   buildCheckcarVinReportUrl,
@@ -38,6 +39,12 @@ describe("admin VIN service URLs", () => {
     expect(buildCarverticalVinCheckUrl(vin)).toBe(CARVERTICAL_REPORTS_URL);
     expect(buildCarverticalVinCheckUrl(vin)).toContain("carvertical.com/lv/user/reports");
     expect(buildCarverticalVinCheckUrl(vin)).not.toContain("carvertical.lv");
+  });
+
+  it("builds precheck purchase URL with identifier query", () => {
+    const url = buildCarverticalPrecheckPurchaseUrl(vin);
+    expect(url).toContain("carvertical.com/lv/precheck/searching");
+    expect(url).toContain(`identifier=${encodeURIComponent(vin)}`);
   });
 
   it("keeps Auto-Records ?vin= query", () => {
