@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { IrissListingCardPhotoGallery } from "@/components/admin/IrissListingCardPhotoGallery";
+import { useAdminClientReady, useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
 import { IrissListingCardPriceColumn, IrissListingCardPriceColumnMobile } from "@/components/admin/IrissListingCardPriceColumn";
 import { IrissListingCardSpecGrid } from "@/components/admin/IrissListingCardSpecGrid";
 import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
@@ -104,7 +105,10 @@ export function IrissListingVehicleCard({
   const [vinCopied, setVinCopied] = useState(false);
   const [createBusy, setCreateBusy] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
-  useListingVinOcr(v, (id, patch) => onVinPatch?.(id, patch));
+  const [noteOpen, setNoteOpen] = useState(false);
+  const phone = useAdminMobileViewport();
+  const clientReady = useAdminClientReady();
+  useListingVinOcr(v, (id, patch) => onVinPatch?.(id, patch), { enabled: clientReady && !phone });
   const gallery = listingCardGallery(v);
   const photos = imageHidden ? [] : gallery.photos;
   const interactive = gallery.interactive && photos.length > 1;
@@ -171,6 +175,7 @@ export function IrissListingVehicleCard({
         interactive={interactive}
         referrerPolicy={referrerPolicy}
         onImageError={onImageError}
+        compactMobile={phone}
         wrapHero={(inner) =>
           sourceHref ? (
             <IrissListingSourceOpen v={v} mobile={mobile} title={`Atvērt ${PLATFORM_LABEL[v.platform]}`} className="block h-full w-full">
@@ -362,15 +367,29 @@ export function IrissListingVehicleCard({
           />
         </div>
 
-        <input
-          className={`mt-auto w-full rounded-md border border-dashed px-2 py-1 text-[12px] outline-none ${prefs.notes[v.id] ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}
-          placeholder="Piezīme…"
-          value={prefs.notes[v.id] ?? ""}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => onPrefs({ ...prefs, notes: { ...prefs.notes, [v.id]: e.target.value } })}
-        />
+        {phone && !noteOpen && !(prefs.notes[v.id] ?? "").trim() ? (
+          <button
+            type="button"
+            className="mt-auto w-full rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 py-1 text-left text-[12px] text-slate-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              setNoteOpen(true);
+            }}
+          >
+            Piezīme
+          </button>
+        ) : (
+          <input
+            className={`mt-auto w-full rounded-md border border-dashed px-2 py-1 text-[12px] outline-none ${prefs.notes[v.id] ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-slate-50"}`}
+            placeholder="Piezīme…"
+            value={prefs.notes[v.id] ?? ""}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => onPrefs({ ...prefs, notes: { ...prefs.notes, [v.id]: e.target.value } })}
+          />
+        )}
       </div>
 
+      {phone ? null : (
       <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
         <IrissListingCardPriceColumn
           priceLabel={priceLabel}
@@ -388,6 +407,7 @@ export function IrissListingVehicleCard({
           topActions={favHide}
         />
       </div>
+      )}
     </article>
   );
 }

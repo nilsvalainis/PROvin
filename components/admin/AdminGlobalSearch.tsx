@@ -3,6 +3,7 @@
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import {
   ADMIN_GLOBAL_SEARCH_OPEN,
@@ -62,6 +63,19 @@ export function AdminMobileSearchButton({ className = "" }: { className?: string
 }
 
 export function AdminGlobalSearch() {
+  const mobile = useAdminMobileViewport();
+  const [mobileReady, setMobileReady] = useState(false);
+  useEffect(() => {
+    if (!mobile) return;
+    const onOpen = () => setMobileReady(true);
+    window.addEventListener(ADMIN_GLOBAL_SEARCH_OPEN, onOpen);
+    return () => window.removeEventListener(ADMIN_GLOBAL_SEARCH_OPEN, onOpen);
+  }, [mobile]);
+  if (mobile && !mobileReady) return null;
+  return <AdminGlobalSearchPanel />;
+}
+
+function AdminGlobalSearchPanel() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);

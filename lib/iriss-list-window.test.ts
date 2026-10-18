@@ -14,6 +14,6 @@ describe("IRISS list windows", () => {
     expect(first.hasMore).toBe(true);
     const next = irissNextWindowLimit(IRISS_ORDERS_LIST_PAGE, rows.length, IRISS_ORDERS_LIST_PAGE);
     expect(irissWindowSlice(rows, next, true).items).toHaveLength(IRISS_ORDERS_LIST_PAGE * 2);
-    expect(irissNextWindowLimit(40, 50, IRISS_LISTINGS_MOBILE_PAGE)).toBe(50);
+    expect(irissNextWindowLimit(40, 50, IRISS_LISTINGS_MOBILE_PAGE)).toBe(48);
   });
 });

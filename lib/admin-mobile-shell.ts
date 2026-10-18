@@ -28,6 +28,25 @@ export const ADMIN_MOBILE_MAX_PX = 767;
 
 export const ADMIN_MOBILE_MQ = `(max-width: ${ADMIN_MOBILE_MAX_PX}px)`;
 
+/** Desktop sānjoslas žetoni paliek 45 s. Mobilajā retāk, pēc idle. */
+export const ADMIN_DESKTOP_BADGE_POLL_MS = 45_000;
+export const ADMIN_MOBILE_BADGE_POLL_MS = 90_000;
+/** Pavadzīmes / citi sekundārie fetch pēc pirmā kadra. */
+export const ADMIN_MOBILE_SECONDARY_DELAY_MS = 1800;
+
+/** requestIdleCallback, ja ir; citādi timeout. Atgriež atcelšanas funkciju. */
+export function scheduleAdminIdleWork(run: () => void, delayMs = ADMIN_MOBILE_SECONDARY_DELAY_MS): () => void {
+  if (typeof window === "undefined") return () => undefined;
+  const ric = window.requestIdleCallback?.bind(window);
+  const cic = window.cancelIdleCallback?.bind(window);
+  if (ric && cic) {
+    const id = ric(() => run(), { timeout: delayMs });
+    return () => cic(id);
+  }
+  const t = window.setTimeout(run, delayMs);
+  return () => window.clearTimeout(t);
+}
+
 const ADMIN_DETAIL_PATH = /^\/admin\/(?:iriss\/pasutijumi|orders|konsultacijas|commission-invoice|partneri)\/[^/]+$/;
 const IRISS_ORDER_ROOM_PATH = /^\/admin\/iriss\/pasutijumi\/[^/]+$/;
 
