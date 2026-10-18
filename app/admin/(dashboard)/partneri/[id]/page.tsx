@@ -8,6 +8,7 @@ import { requireAdminPage } from "@/lib/admin-auth";
 import { AdminB2bPartnerWallet } from "@/components/admin/AdminB2bPartnerWallet";
 import { readB2bWallet } from "@/lib/b2b-wallet-store";
 import { buildB2bWalletView } from "@/lib/b2b-wallet-view";
+import { loadCreditsForPartners } from "@/lib/b2b-partner-dashboard";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,11 @@ export default async function AdminPartnerDetailPage({ params }: Props) {
     await markB2bPartnerAdminSeen(id);
   }
   const partner = toPublicPartner(record);
-  const wallet = await readB2bWallet(id);
+  const [wallet, legacyById] = await Promise.all([
+    readB2bWallet(id),
+    loadCreditsForPartners([{ id, dealerEnabled: true }]),
+  ]);
+  const legacyCredits = legacyById[id] ?? { business: 0, dealer: 0 };
 
   return (
     <div className="w-full max-w-none">
@@ -55,7 +60,7 @@ export default async function AdminPartnerDetailPage({ params }: Props) {
         initialOverrides={record.walletPrices}
         initialHidden={record.walletHiddenProducts}
       />
-      <AdminB2bPartnerEditForm partner={partner} />
+      <AdminB2bPartnerEditForm partner={partner} legacyCredits={legacyCredits} />
     </div>
   );
 }
