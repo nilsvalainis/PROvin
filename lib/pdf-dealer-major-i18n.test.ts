@@ -20,7 +20,11 @@ import {
   BMW_CLUTCH_KIT_TWIN_MASS_PART_LIST,
   BMW_REMAN_GEARBOX_WITH_OIL_LINE,
   BMW_V99966_D15_TWINPOWER_OIL_REPAIR_KIT,
+  BMW_WINDSCREEN_CHIP_CHECK,
+  BMW_WINDSCREEN_REPLACED,
+  DE_STONE_CHIP_REPAIR,
   JEEP_LV_DOOR_TRIM_AND_PROPSHAFT,
+  JEEP_LV_DOOR_TRIM_PANEL,
   VOLVO_D4_ENGINE_TURBO_WARRANTY,
 } from "@/lib/dealer-major-works.prod-corpus.fixture";
 import { VOLVO_XC90_RAW_ROWS } from "@/lib/dealer-major-works.volvo-xc90.fixture";
@@ -103,6 +107,13 @@ const PROPSHAFT: Record<ClientReportLang, string> = {
   en: "Propshaft",
   ru: "Кардан",
   de: "Gelenkwelle",
+};
+
+const BODY_GLASS: Record<ClientReportLang, string> = {
+  lv: "Virsbūve / stikls",
+  en: "Body / glass",
+  ru: "Кузов / стекло",
+  de: "Karosserie / Glas",
 };
 
 const ASSEMBLIES: Record<ClientReportLang, string> = {
@@ -342,5 +353,46 @@ describe("Lielie darbi labels in every PDF language", () => {
       expect(majorHtml).not.toContain("Kardāns");
     }
   });
+
+  it.each(CLIENT_REPORT_LANGS)("windscreen replacement is Lielie darbi in %s; chip/trim is not", (lang) => {
+    const replaceRows: AutoRecordsServiceWorkRow[] = [
+      {
+        date: "14.05.2021",
+        odometer: "73400",
+        location: "BMW Partner",
+        works: BMW_WINDSCREEN_REPLACED,
+      },
+    ];
+    const skipRows: AutoRecordsServiceWorkRow[] = [
+      {
+        date: "14.05.2021",
+        odometer: "73400",
+        location: "BMW Partner",
+        works: BMW_WINDSCREEN_CHIP_CHECK,
+      },
+      {
+        date: "02.06.2021",
+        odometer: "74100",
+        location: "BMW Partner",
+        works: DE_STONE_CHIP_REPAIR,
+      },
+      {
+        date: "18.09.2019",
+        odometer: "87600",
+        location: "Jeep Partner",
+        works: JEEP_LV_DOOR_TRIM_PANEL,
+      },
+    ];
+    const replaceFacts = extractDealerFactsFromServiceWorks(replaceRows);
+    expect(buildDealerVisitSummary(replaceRows, replaceFacts)?.majorWorks.map((w) => w.id)).toEqual([
+      "body_glass",
+    ]);
+    const majorHtml = buildDealerMajorWorksHtml(replaceFacts, lang);
+    expect(majorHtml).toContain(`<b>${BODY_GLASS[lang]}</b>`);
+    const skipFacts = extractDealerFactsFromServiceWorks(skipRows);
+    expect(buildDealerVisitSummary(skipRows, skipFacts)?.majorWorks).toEqual([]);
+    expect(buildDealerMajorWorksHtml(skipFacts, lang)).toBe("");
+  });
 });
+
 
