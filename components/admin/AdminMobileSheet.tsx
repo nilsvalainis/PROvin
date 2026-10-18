@@ -84,7 +84,8 @@ export function AdminMobileSheet({ open, title, onClose, children, action }: Pro
     const drag = dragRef.current;
     const panel = panelRef.current;
     if (!drag || !panel) return;
-    const dy = Math.max(0, e.clientY - drag.y);
+    const raw = e.clientY - drag.y;
+    const dy = raw > 0 ? raw : raw * 0.3;
     drag.dy = dy;
     panel.style.transform = `translateY(${dy}px)`;
   };
