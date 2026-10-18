@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FileText, MonitorSmartphone } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { B2B_WALLET_PRODUCT_COPY } from "@/components/b2b/b2b-partner-ui";
@@ -9,6 +9,11 @@ import {
   mergePartnerArchiveRows,
   readPendingPartnerArchiveRows,
 } from "@/lib/b2b-partner-archive-rows";
+import {
+  emptyPartnerArchiveSearch,
+  filterPartnerArchiveRows,
+  type PartnerArchiveSearch,
+} from "@/lib/b2b-partner-archive-search";
 import { formatB2bPartnerOrderDate, type B2bPartnerOrderRow } from "@/lib/b2b-partner-orders";
 
 const TITLE_CLASS = "text-balance text-lg font-bold leading-snug tracking-tight text-zinc-100 sm:text-xl";
@@ -83,14 +88,22 @@ function StatusCell({
   ) : internal ? (
     <Link
       href={internal}
-      className="inline-flex text-zinc-300 transition-colors hover:text-white"
-      aria-label={t("archiveOpenData")}
+      className="inline-flex items-center gap-1 text-[0.72rem] font-medium text-zinc-300 transition-colors hover:text-white"
     >
       <MonitorSmartphone className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+      {t("archiveDownloadReport")}
     </Link>
-  ) : (
-    <FileLink href={row.reportHref} label={t("archiveOpenReport")} />
-  );
+  ) : row.reportHref ? (
+    <a
+      href={row.reportHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 text-[0.72rem] font-medium text-zinc-300 transition-colors hover:text-white"
+    >
+      <FileText className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+      {t("archiveDownloadReport")}
+    </a>
+  ) : null;
   return (
     <span className="inline-flex items-center justify-end gap-2">
       {status ? <span>{status}</span> : null}
@@ -107,6 +120,7 @@ export function B2bPartnerArchive({
   const t = useTranslations("Partner");
   const locale = useLocale();
   const [rows, setRows] = useState<B2bPartnerOrderRow[] | null>(null);
+  const [search, setSearch] = useState<PartnerArchiveSearch>(emptyPartnerArchiveSearch);
 
   useEffect(() => {
     let cancelled = false;
@@ -131,7 +145,8 @@ export function B2bPartnerArchive({
     };
   }, []);
 
-  const list = rows ?? [];
+  const all = rows ?? [];
+  const list = useMemo(() => filterPartnerArchiveRows(all, search), [all, search]);
   const loading = rows === null;
   const HeadingTag = embedded ? "h2" : "h1";
   const headingClass = embedded
@@ -147,8 +162,67 @@ export function B2bPartnerArchive({
 
       {loading ? (
         <p className="mt-8 text-[0.8125rem] text-zinc-400 sm:text-[0.875rem]">{t("archiveLoading")}</p>
-      ) : list.length === 0 ? (
+      ) : all.length === 0 ? (
         <p className="mt-8 text-[0.8125rem] text-zinc-400 sm:text-[0.875rem]">{t("archiveEmpty")}</p>
+      ) : (
+        <>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="block min-w-0">
+              <span className="mb-1 block text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                {t("archiveSearchVin")}
+              </span>
+              <input
+                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 font-mono text-[0.8rem] text-zinc-100 outline-none focus:border-white/25"
+                value={search.vin}
+                onChange={(event) => setSearch((prev) => ({ ...prev, vin: event.target.value }))}
+                autoComplete="off"
+              />
+            </label>
+            <label className="block min-w-0">
+              <span className="mb-1 block text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                {t("archiveSearchDateFrom")}
+              </span>
+              <input
+                type="date"
+                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-[0.8rem] text-zinc-100 outline-none focus:border-white/25"
+                value={search.dateFrom}
+                onChange={(event) => setSearch((prev) => ({ ...prev, dateFrom: event.target.value }))}
+              />
+            </label>
+            <label className="block min-w-0">
+              <span className="mb-1 block text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                {t("archiveSearchDateTo")}
+              </span>
+              <input
+                type="date"
+                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-[0.8rem] text-zinc-100 outline-none focus:border-white/25"
+                value={search.dateTo}
+                onChange={(event) => setSearch((prev) => ({ ...prev, dateTo: event.target.value }))}
+              />
+            </label>
+            <label className="block min-w-0">
+              <span className="mb-1 block text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                {t("archiveSearchProduct")}
+              </span>
+              <select
+                className="w-full rounded-md border border-white/10 bg-white/[0.04] px-3 py-2 text-[0.8rem] text-zinc-100 outline-none focus:border-white/25"
+                value={search.product}
+                onChange={(event) =>
+                  setSearch((prev) => ({
+                    ...prev,
+                    product: event.target.value as PartnerArchiveSearch["product"],
+                  }))
+                }
+              >
+                <option value="">{t("archiveSearchAll")}</option>
+                <option value="business">{t(B2B_WALLET_PRODUCT_COPY.business.title)}</option>
+                <option value="dealer_raw">{t(B2B_WALLET_PRODUCT_COPY.dealer_raw.title)}</option>
+                <option value="dealer_pro">{t(B2B_WALLET_PRODUCT_COPY.dealer_pro.title)}</option>
+              </select>
+            </label>
+          </div>
+      {list.length === 0 ? (
+        <p className="mt-8 text-[0.8125rem] text-zinc-400 sm:text-[0.875rem]">{t("archiveSearchNoMatch")}</p>
       ) : (
         <>
           <div className="mt-8 overflow-x-auto max-lg:hidden">
@@ -208,6 +282,8 @@ export function B2bPartnerArchive({
               </li>
             ))}
           </ul>
+        </>
+      )}
         </>
       )}
     </section>
