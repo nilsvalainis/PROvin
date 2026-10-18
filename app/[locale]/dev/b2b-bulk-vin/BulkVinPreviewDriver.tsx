@@ -24,7 +24,7 @@ const ROWS = [
 
 const PRICES: Record<string, number> = { business: 7999, dealer_raw: 1999, dealer_pro: 2499 };
 
-function fakeFetch(original: typeof fetch): typeof fetch {
+function fakeFetch(original: typeof fetch, balanceCents: number): typeof fetch {
   return async (input, init) => {
     const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
     if (url.includes("/api/partner/orders/bulk-check")) {
@@ -55,7 +55,7 @@ function fakeFetch(original: typeof fetch): typeof fetch {
         accepted: items.slice(0, 1).map((item, i) => row(item.vin, i)),
         failed: items.slice(1).map((item) => ({ vin: item.vin, error: "queue_failed", refunded: true })),
         skipped: [],
-        balanceCents: 5000,
+        balanceCents: balanceCents - (PRICES[body.product ?? "business"] ?? 0),
         chargedCents: PRICES[body.product ?? "business"] ?? 0,
       });
     }
@@ -74,40 +74,58 @@ function setNativeValue(el: HTMLTextAreaElement, value: string) {
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
+async function waitFor<T>(probe: () => T, timeoutMs = 20_000): Promise<T | null> {
+  const end = Date.now() + timeoutMs;
+  while (Date.now() < end) {
+    const value = probe();
+    if (value) return value;
+    await wait(250);
+  }
+  return null;
+}
+
 /** Tikai lokālajam ekrānuzņēmumam: atver īsto pirkuma logu un izspēlē Vairāki VIN plūsmu ar viltotu API. */
-export function BulkVinPreviewDriver({ step, card }: { step: Step; card: number }) {
+export function BulkVinPreviewDriver({ step, card, balanceCents }: { step: Step; card: number; balanceCents: number }) {
   useEffect(() => {
     const original = window.fetch;
-    window.fetch = fakeFetch(original);
+    window.fetch = fakeFetch(original, balanceCents);
     let cancelled = false;
     void (async () => {
-      await wait(400);
-      const cards = document.querySelectorAll("article");
-      const buy = cards[card]?.querySelectorAll<HTMLButtonElement>("button");
-      buy?.[buy.length - 1]?.click();
-      await wait(300);
       const dialog = () => document.querySelector<HTMLElement>('[role="dialog"]');
-      dialog()?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[1]?.click();
-      await wait(300);
-      const area = dialog()?.querySelector("textarea");
+      const buttons = (root: ParentNode | null | undefined) => Array.from(root?.querySelectorAll<HTMLButtonElement>("button") ?? []);
+      const cta = () => buttons(dialog()).find((b) => b.className.includes("liquidCta") && !b.disabled);
+      await waitFor(() => document.querySelectorAll("article").length > card);
+      await wait(1500);
+      await waitFor(() => {
+        if (dialog()) return true;
+        const own = buttons(document.querySelectorAll("article")[card]);
+        own[own.length - 1]?.click();
+        return false;
+      });
+      await waitFor(() => {
+        const tab = dialog()?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[1];
+        if (tab?.getAttribute("aria-selected") === "true") return true;
+        tab?.click();
+        return false;
+      });
+      const area = await waitFor(() => dialog()?.querySelector("textarea") ?? null);
       if (area) setNativeValue(area, VINS.join("\n"));
       if (cancelled || step === "paste") return;
-      await wait(200);
-      const ctas = () => Array.from(dialog()?.querySelectorAll<HTMLButtonElement>("button") ?? []);
-      ctas().find((b) => b.className.includes("liquidCta"))?.click();
-      await wait(600);
-      const all = dialog()?.querySelector<HTMLInputElement>('input[type="checkbox"]');
-      all?.click();
-      await wait(200);
-      dialog()?.querySelector<HTMLInputElement>('input[type="radio"]')?.click();
+      (await waitFor(cta))?.click();
+      await waitFor(() => dialog()?.querySelectorAll("li").length);
+      if (card === 0) {
+        dialog()?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.click();
+        await wait(300);
+        dialog()?.querySelector<HTMLInputElement>('input[type="radio"]')?.click();
+        await wait(300);
+      }
       if (cancelled || step === "list") return;
-      await wait(300);
-      ctas().find((b) => b.className.includes("liquidCta"))?.click();
+      (await waitFor(cta))?.click();
     })();
     return () => {
       cancelled = true;
       window.fetch = original;
     };
-  }, [step, card]);
+  }, [step, card, balanceCents]);
   return null;
 }

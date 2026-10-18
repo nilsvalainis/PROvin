@@ -35,6 +35,7 @@ export default async function B2bBulkVinDevPreviewPage({
       <BulkVinPreviewDriver
         step={STEPS.find((s) => s === step) ?? "list"}
         card={Math.min(2, Math.max(0, Number(card ?? "0") || 0))}
+        balanceCents={balanceCents}
       />
     </div>
   );
