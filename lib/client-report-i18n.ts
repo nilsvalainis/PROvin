@@ -188,6 +188,151 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
       en: "This report has been prepared exclusively for the customer who ordered it and is for personal use only. Copying, publicly reproducing, passing on or otherwise making this report or the information in it available to third parties (including the seller of the vehicle) without the prior consent of PROVIN.LV is strictly prohibited.",
       ru: "Этот отчёт подготовлен исключительно для заказчика и предназначен только для личного использования. Копирование, публичное воспроизведение, передача отчёта и содержащейся в нём информации или предоставление к ним доступа третьим лицам любым иным способом (включая продавца транспортного средства) без согласования с PROVIN.LV строго запрещены.",
     },
+
+  // Dīlera / transportlīdzekļa informācija (etiķetes bez diakritikas arī, citādi residue tās izlaiž)
+  "Transportlīdzekļa informācija": { en: "Vehicle information", ru: "Информация об автомобиле" },
+  "Lielie darbi": { en: "Major work", ru: "Крупные работы" },
+  Aprīkojums: { en: "Equipment", ru: "Комплектация" },
+  Modelis: { en: "Model", ru: "Модель" },
+  "Modeļa sērija": { en: "Model series", ru: "Модельный ряд" },
+  "VIN kods": { en: "VIN code", ru: "VIN-код" },
+  "Transportlīdzekļa tips": { en: "Vehicle type", ru: "Тип транспортного средства" },
+  Ātrumkārba: { en: "Transmission", ru: "Коробка передач" },
+  Stūre: { en: "Steering", ru: "Руль" },
+  Dzinējs: { en: "Engine", ru: "Двигатель" },
+  "Dzinēja numurs": { en: "Engine number", ru: "Номер двигателя" },
+  Virsbūve: { en: "Body", ru: "Кузов" },
+  Piedziņa: { en: "Drive", ru: "Привод" },
+  Jauda: { en: "Power", ru: "Мощность" },
+  "Integrācijas līmenis": { en: "Integration level", ru: "Уровень интеграции" },
+  "Pašreizējais I-Level": { en: "Current I level", ru: "Текущий I-Level" },
+  "Izstrādes kods": { en: "Development code", ru: "Код разработки" },
+  "Modeļa kods": { en: "Model code", ru: "Код модели" },
+  "Ražošanas datums": { en: "Production date", ru: "Дата производства" },
+  "Garantijas sākums": { en: "Warranty start date", ru: "Начало гарантии" },
+  "Valsts / reģions": { en: "Country / region", ru: "Страна / регион" },
+  Krāsa: { en: "Colour", ru: "Цвет" },
+  "Krāsas kods": { en: "Colour code", ru: "Код краски" },
+  Interjers: { en: "Upholstery", ru: "Салон" },
+  "Interjera kods": { en: "Upholstery code", ru: "Код салона" },
+  Degviela: { en: "Fuel", ru: "Топливо" },
+  Tilpums: { en: "Displacement", ru: "Объём" },
+  "Dzinēja / kārbas specifikācija": { en: "Engine / gearbox specification", ru: "Спецификация двигателя / коробки" },
+  "Gatavā komplektācija": { en: "Factory equipment", ru: "Заводская комплектация" },
+  "Dīlera servisa žurnāls": { en: "Dealer service log", ru: "Сервисный журнал дилера" },
+  "ASV vēsture un bojājumi": { en: "US history and damage", ru: "История и повреждения в США" },
+  "Eiropas reģistru dati": { en: "European register data", ru: "Данные европейских реестров" },
+  "Servisa veids / Piezīmes": { en: "Service type / notes", ru: "Тип ТО / примечания" },
+  "Nobraukums, km": { en: "Mileage, km", ru: "Пробег, км" },
+  "Importa datums": { en: "Import date", ru: "Дата импорта" },
+  "Bojājumi / avārijas": { en: "Damage / accidents", ru: "Повреждения / аварии" },
+  "Izsoles dati": { en: "Auction data", ru: "Данные аукциона" },
+  "ASV odometrs": { en: "US odometer", ru: "Одометр США" },
+
+  // Vizīšu birkas un kopsavilkums
+  Apkope: { en: "Service", ru: "ТО" },
+  Remonts: { en: "Repair", ru: "Ремонт" },
+  Kampaņa: { en: "Campaign", ru: "Кампания" },
+  Garantija: { en: "Warranty", ru: "Гарантия" },
+  Nolasījums: { en: "Key read", ru: "Считывание" },
+  Vizītes: { en: "Visits", ru: "Визиты" },
+  "Pirmā vizīte": { en: "First visit", ru: "Первый визит" },
+  "Pēdējā vizīte": { en: "Last visit", ru: "Последний визит" },
+  "Pēdējais dīlera km": { en: "Latest dealer km", ru: "Последний пробег у дилера" },
+  "Garākais robs": { en: "Longest gap", ru: "Самый длинный пробел" },
+  "Kampaņas veiktas": { en: "Campaigns completed", ru: "Кампании выполнены" },
+  "Lielie mezgli": { en: "Major assemblies", ru: "Крупные узлы" },
+  "Nav fiksēts": { en: "None recorded", ru: "Не зафиксировано" },
+  "Robs datos": { en: "Gap in records", ru: "Пробел в данных" },
+  "Fakts no dīlera žurnāla, ne verdikts par izlaistu apkopi.": {
+    en: "A fact from the dealer log, not a verdict that servicing was skipped.",
+    ru: "Факт из журнала дилера, а не вывод о пропущенном ТО.",
+  },
+  "Detalizēts darbu saraksts atskaitē nav pieejams.": {
+    en: "A detailed list of work is not available in this report.",
+    ru: "Подробный перечень работ в отчёте недоступен.",
+  },
+  "Pirmais ieraksts": { en: "First record", ru: "Первая запись" },
+  "Pēdējais ieraksts": { en: "Latest record", ru: "Последняя запись" },
+  vizītes: { en: "visits", ru: "визитов" },
+  "Sadales ķēde": { en: "Timing chain", ru: "Цепь ГРМ" },
+  "Divmasu spararats": { en: "Dual-mass flywheel", ru: "Двухмассовый маховик" },
+  Turbokompresors: { en: "Turbocharger", ru: "Турбокомпрессор" },
+  "Virsbūve / stikls": { en: "Body / glass", ru: "Кузов / стекло" },
+  "Sagatavots klientam:": { en: "Prepared for: ", ru: "Подготовлено для: " },
+  "mēn.": { en: "mo.", ru: "мес." },
+
+  // Eļļas intervāli / ASV / CC.VIN / tabulu galviņas, kas paliek LV bez diakritikas
+  "fiksētas maiņas": { en: "recorded changes", ru: "зафиксированные замены" },
+  "vidējais intervāls": { en: "average interval", ru: "средний интервал" },
+  "vidējais laiks": { en: "average time", ru: "среднее время" },
+  Intervāls: { en: "Interval", ru: "Интервал" },
+  Periods: { en: "Period", ru: "Период" },
+  "Pret ražotāja intervālu": { en: "Against manufacturer interval", ru: "К интервалу производителя" },
+  "dīlera datos atbilst intervālam": {
+    en: "of dealer records are within the interval",
+    ru: "данных дилера в пределах интервала",
+  },
+  "dīlera datos virs intervāla": {
+    en: "of dealer records exceed the interval",
+    ru: "данных дилера сверх интервала",
+  },
+  "nav dīlera datu": { en: "no dealer records", ru: "нет данных дилера" },
+  "nobraukuma ar dīlera datiem": { en: "of mileage with dealer records", ru: "пробега с данными дилера" },
+  "Dīlera dati apliecina": { en: "Dealer records cover", ru: "Данные дилера подтверждают" },
+  "Ražotāja intervāls nav droši zināms. Ievērošanu nevērtējam. Joslas rāda tikai, cik kilometru dīlera dati apliecina.":
+    {
+      en: "The manufacturer interval is not known with certainty. We do not score compliance. The bars only show how many kilometres the dealer records cover.",
+      ru: "Интервал производителя достоверно неизвестен. Соответствие не оцениваем. Полосы показывают только, сколько километров покрывают данные дилера.",
+    },
+  " Gaišā zona ir pieļaujamās robežas, melnā atzīme ir augšējā robeža.": {
+    en: " The light band is the allowed range; the black mark is the upper limit.",
+    ru: " Светлая зона - допустимый диапазон, чёрная отметка - верхняя граница.",
+  },
+  " Melnā atzīme joslā ir šis intervāls.": {
+    en: " The black mark on the bar is this interval.",
+    ru: " Чёрная отметка на полосе - этот интервал.",
+  },
+  "Svarīga piezīme par apkopes datu interpretāciju": {
+    en: "Important note on how service data is interpreted",
+    ru: "Важное замечание по интерпретации данных обслуживания",
+  },
+  "Lūdzam ņemt vērā:": { en: "Please note:", ru: "Просим учесть:" },
+  "Ierakstu robežas.": { en: "Limits of the records.", ru: "Границы записей." },
+  "Neiztrūkstošas apkopes.": { en: "Missing services.", ru: "Пропущенные ТО." },
+  "Vispārīgi apmeklējumi.": { en: "Generic visits.", ru: "Общие визиты." },
+  "Secinājums.": { en: "Conclusion.", ru: "Вывод." },
+  "Rekomendācija pilnīgai pārbaudei.": {
+    en: "Recommendation for a complete check.",
+    ru: "Рекомендация для полной проверки.",
+  },
+  Veids: { en: "Type", ru: "Тип" },
+  Dati: { en: "Data", ru: "Данные" },
+  "ASV VĒSTURE": { en: "US HISTORY", ru: "ИСТОРИЯ США" },
+  "Pārbaudītie reģistri": { en: "Registers checked", ru: "Проверенные реестры" },
+  Brīdinājumi: { en: "Alerts", ru: "Предупреждения" },
+  "Fiksētie bojājumi": { en: "Recorded damage", ru: "Зафиксированные повреждения" },
+  "Apdrošinātāju un norakstīšanas ieraksti": {
+    en: "Insurer and write-off records",
+    ru: "Записи страховщиков и списаний",
+  },
+  "Īpašumtiesību atzīmes": { en: "Title brands", ru: "Отметки права собственности" },
+  "Īpašumtiesību (title) ieraksti": { en: "Title records", ru: "Записи о праве собственности (title)" },
+  "Pārdošanas un izsoļu vēsture": { en: "Sales and auction history", ru: "История продаж и аукционов" },
+  "Title atzīmes": { en: "Title brands", ru: "Отметки title" },
+  "Title (īpašumtiesību) ieraksti": { en: "Title (ownership) records", ru: "Записи title (право собственности)" },
+  "Ķīlas, aizturēšana, eksports": { en: "Liens, holds, export", ru: "Залоги, удержания, экспорт" },
+  Zādzības: { en: "Thefts", ru: "Кражи" },
+  Ieraksts: { en: "Record", ru: "Запись" },
+  "Avotu salīdzinājums (pārklājošie lauki)": {
+    en: "Source comparison (overlapping fields)",
+    ru: "Сравнение источников (пересекающиеся поля)",
+  },
+  Lauks: { en: "Field", ru: "Поле" },
+  Spēcīgākais: { en: "Stronger source", ru: "Более сильный источник" },
+  "atrasts ieraksts": { en: "record found", ru: "найдена запись" },
+  "Dīlera kopsavilkums": { en: "Dealer summary", ru: "Сводка дилера" },
+  "Nobraukuma līkne": { en: "Mileage curve", ru: "Кривая пробега" },
 };
 
 /** Sakārtots pēc garuma (garākais pirmais), lai īsāka frāze nesabojā garāku, kas to satur. */
@@ -309,6 +454,115 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
     "PROVIN.LV erbringt eine Beratungsleistung: eine Bewertung der verfügbaren Fahrzeuginformationen und Empfehlungen. Dies ist eine digitale Datenzusammenstellung, keine technische Diagnose des Fahrzeugs, und sie ersetzt keine vollständige Prüfung vor Ort. Der Bericht ist kein Behördenauszug, kein unabhängiges technisches Gutachten und kein Rechtsurteil. Die Kaufentscheidung trifft der Kunde.",
   "Šī atskaite ir sagatavota ekskluzīvi tās pasūtītājam un ir izmantojama tikai personīgām vajadzībām. Atskaiti un tajā ietverto informāciju ir kategoriski aizliegts pavairot, publiski reproducēt, nodot vai jebkādā citā veidā darīt pieejamu trešajām personām (tostarp transportlīdzekļa pārdevējam) bez saskaņošanas ar PROVIN.LV.":
     "Dieser Bericht wurde ausschließlich für den Auftraggeber erstellt und darf nur für private Zwecke verwendet werden. Den Bericht und die darin enthaltenen Informationen zu vervielfältigen, öffentlich wiederzugeben, weiterzugeben oder Dritten (einschließlich des Fahrzeugverkäufers) ohne Abstimmung mit PROVIN.LV zugänglich zu machen, ist untersagt.",
+  "Transportlīdzekļa informācija": "Fahrzeuginformationen",
+  "Lielie darbi": "Größere Arbeiten",
+  Aprīkojums: "Ausstattung",
+  Modelis: "Modell",
+  "Modeļa sērija": "Modellreihe",
+  "VIN kods": "VIN-Code",
+  "Transportlīdzekļa tips": "Fahrzeugtyp",
+  Ātrumkārba: "Getriebe",
+  Stūre: "Lenkung",
+  Dzinējs: "Motor",
+  "Dzinēja numurs": "Motornummer",
+  Virsbūve: "Karosserie",
+  Piedziņa: "Antrieb",
+  Jauda: "Leistung",
+  "Integrācijas līmenis": "Integrationsstand",
+  "Pašreizējais I-Level": "Aktueller I-Level",
+  "Izstrādes kods": "Entwicklungscode",
+  "Modeļa kods": "Modellcode",
+  "Ražošanas datums": "Produktionsdatum",
+  "Garantijas sākums": "Garantiebeginn",
+  "Valsts / reģions": "Land / Region",
+  Krāsa: "Farbe",
+  "Krāsas kods": "Farbcode",
+  Interjers: "Interieur",
+  "Interjera kods": "Interieurcode",
+  Degviela: "Kraftstoff",
+  Tilpums: "Hubraum",
+  "Dzinēja / kārbas specifikācija": "Motor- / Getriebespezifikation",
+  "Gatavā komplektācija": "Werksausstattung",
+  "Dīlera servisa žurnāls": "Händler-Serviceprotokoll",
+  "ASV vēsture un bojājumi": "US-Historie und Schäden",
+  "Eiropas reģistru dati": "Daten europäischer Register",
+  "Servisa veids / Piezīmes": "Serviceart / Hinweise",
+  "Nobraukums, km": "Kilometerstand, km",
+  "Importa datums": "Importdatum",
+  "Bojājumi / avārijas": "Schäden / Unfälle",
+  "Izsoles dati": "Auktionsdaten",
+  "ASV odometrs": "US-Kilometerstand",
+  Apkope: "Wartung",
+  Remonts: "Reparatur",
+  Kampaņa: "Aktion",
+  Garantija: "Garantie",
+  Nolasījums: "Schlüsselauslesung",
+  Vizītes: "Besuche",
+  "Pirmā vizīte": "Erster Besuch",
+  "Pēdējā vizīte": "Letzter Besuch",
+  "Pēdējais dīlera km": "Letzter Händler-km",
+  "Garākais robs": "Längste Lücke",
+  "Kampaņas veiktas": "Aktionen durchgeführt",
+  "Lielie mezgli": "Große Baugruppen",
+  "Nav fiksēts": "Nicht erfasst",
+  "Robs datos": "Lücke in den Daten",
+  "Fakts no dīlera žurnāla, ne verdikts par izlaistu apkopi.":
+    "Ein Fakt aus dem Händlerprotokoll, kein Urteil über ausgelassene Wartung.",
+  "Detalizēts darbu saraksts atskaitē nav pieejams.":
+    "Eine detaillierte Arbeitsliste liegt in diesem Bericht nicht vor.",
+  "Pirmais ieraksts": "Erster Eintrag",
+  "Pēdējais ieraksts": "Letzter Eintrag",
+  vizītes: "Besuche",
+  "Sadales ķēde": "Steuerkette",
+  "Divmasu spararats": "Zweimassenschwungrad",
+  Turbokompresors: "Turbolader",
+  "Virsbūve / stikls": "Karosserie / Glas",
+  "Sagatavots klientam:": "Erstellt für: ",
+  "mēn.": "Mon.",
+  "fiksētas maiņas": "erfasste Wechsel",
+  "vidējais intervāls": "durchschnittliches Intervall",
+  "vidējais laiks": "durchschnittliche Zeit",
+  Intervāls: "Intervall",
+  Periods: "Zeitraum",
+  "Pret ražotāja intervālu": "Gegen Herstellerintervall",
+  "dīlera datos atbilst intervālam": "der Händlerdaten liegen im Intervall",
+  "dīlera datos virs intervāla": "der Händlerdaten über dem Intervall",
+  "nav dīlera datu": "keine Händlerdaten",
+  "nobraukuma ar dīlera datiem": "der Laufleistung mit Händlerdaten",
+  "Dīlera dati apliecina": "Händlerdaten belegen",
+  "Ražotāja intervāls nav droši zināms. Ievērošanu nevērtējam. Joslas rāda tikai, cik kilometru dīlera dati apliecina.":
+    "Das Herstellerintervall ist nicht sicher bekannt. Die Einhaltung bewerten wir nicht. Die Balken zeigen nur, wie viele Kilometer die Händlerdaten belegen.",
+  " Gaišā zona ir pieļaujamās robežas, melnā atzīme ir augšējā robeža.":
+    " Die helle Zone ist der zulässige Bereich, die schwarze Markierung die Obergrenze.",
+  " Melnā atzīme joslā ir šis intervāls.": " Die schwarze Markierung auf dem Balken ist dieses Intervall.",
+  "Svarīga piezīme par apkopes datu interpretāciju": "Wichtiger Hinweis zur Auslegung der Servicedaten",
+  "Lūdzam ņemt vērā:": "Bitte beachten:",
+  "Ierakstu robežas.": "Grenzen der Einträge.",
+  "Neiztrūkstošas apkopes.": "Fehlende Wartungen.",
+  "Vispārīgi apmeklējumi.": "Allgemeine Besuche.",
+  "Secinājums.": "Schlussfolgerung.",
+  "Rekomendācija pilnīgai pārbaudei.": "Empfehlung für eine vollständige Prüfung.",
+  Veids: "Art",
+  Dati: "Daten",
+  "ASV VĒSTURE": "US-HISTORIE",
+  "Pārbaudītie reģistri": "Geprüfte Register",
+  Brīdinājumi: "Hinweise",
+  "Fiksētie bojājumi": "Erfasste Schäden",
+  "Apdrošinātāju un norakstīšanas ieraksti": "Versicherer- und Abschreibungseinträge",
+  "Īpašumtiesību atzīmes": "Eigentumskennzeichnungen",
+  "Īpašumtiesību (title) ieraksti": "Title-Einträge",
+  "Pārdošanas un izsoļu vēsture": "Verkaufs- und Auktionshistorie",
+  "Title atzīmes": "Title-Kennzeichnungen",
+  "Title (īpašumtiesību) ieraksti": "Title-Einträge (Eigentum)",
+  "Ķīlas, aizturēšana, eksports": "Pfandrechte, Sperren, Export",
+  Zādzības: "Diebstähle",
+  Ieraksts: "Eintrag",
+  "Avotu salīdzinājums (pārklājošie lauki)": "Quellenvergleich (überlappende Felder)",
+  Lauks: "Feld",
+  Spēcīgākais: "Stärkere Quelle",
+  "atrasts ieraksts": "Eintrag gefunden",
+  "Dīlera kopsavilkums": "Händlerübersicht",
+  "Nobraukuma līkne": "Kilometerstandkurve",
 };
 
 export function clientReportStaticKeys(): string[] {
@@ -320,6 +574,63 @@ export function translateClientReportStatic(lv: string, lang: ClientReportLang):
   if (lang === "lv") return lv;
   if (lang === "de") return CLIENT_REPORT_DE[lv] ?? lv;
   return STATIC_TRANSLATIONS[lv]?.[lang] ?? lv;
+}
+
+/** Datumu / naudas Intl locale atskaites valodai. */
+export function clientReportDateLocale(lang: ClientReportLang): string {
+  switch (lang) {
+    case "en":
+      return "en-GB";
+    case "ru":
+      return "ru-RU";
+    case "de":
+      return "de-DE";
+    default:
+      return "lv-LV";
+  }
+}
+
+/**
+ * Jā / Nē tikai renderēšanas laikā. Nav STATIC_TRANSLATIONS atslēga, lai sweep
+ * neaizvietotu šos vārdus AI komentāros.
+ */
+export function translateClientReportYesNo(value: boolean, lang: ClientReportLang): string {
+  if (value) {
+    switch (lang) {
+      case "en":
+        return "Yes";
+      case "ru":
+        return "Да";
+      case "de":
+        return "Ja";
+      default:
+        return "Jā";
+    }
+  }
+  switch (lang) {
+    case "en":
+      return "No";
+    case "ru":
+      return "Нет";
+    case "de":
+      return "Nein";
+    default:
+      return "Nē";
+  }
+}
+
+/** Tukša vērtība kopsavilkumā. Nav globālā sweep atslēga „Nav”. */
+export function translateClientReportNone(lang: ClientReportLang): string {
+  switch (lang) {
+    case "en":
+      return "None";
+    case "ru":
+      return "Нет данных";
+    case "de":
+      return "Keine";
+    default:
+      return "Nav";
+  }
 }
 
 /**

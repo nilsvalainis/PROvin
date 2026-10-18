@@ -48,6 +48,9 @@ export function collectClientReportTranslatableTexts(payload: ClientReportPayloa
     put(out, "autoRecordsBlock.comments", payload.autoRecordsBlock.comments);
     put(out, "autoRecordsBlock.serviceHistoryNotes", payload.autoRecordsBlock.serviceHistoryNotes);
     put(out, "autoRecordsBlock.oilChangeIntervalNotes", payload.autoRecordsBlock.oilChangeIntervalNotes);
+    (payload.autoRecordsBlock.serviceWorks ?? []).forEach((row, i) => {
+      put(out, `autoRecordsBlock.serviceWorks.${i}.works`, row.works);
+    });
   }
 
   if (payload.ccVinBlock) put(out, "ccVinBlock.comments", payload.ccVinBlock.comments);
@@ -119,6 +122,10 @@ export function applyClientReportTranslatedTexts(
         "autoRecordsBlock.oilChangeIntervalNotes",
         payload.autoRecordsBlock.oilChangeIntervalNotes,
       ),
+      serviceWorks: (payload.autoRecordsBlock.serviceWorks ?? []).map((row, i) => ({
+        ...row,
+        works: get(`autoRecordsBlock.serviceWorks.${i}.works`, row.works),
+      })),
     };
   }
 

@@ -29,4 +29,43 @@ describe("PDF running header and footer", () => {
     expect(css).toContain('content:"Lapa " counter(page) " / " counter(pages)');
     expect(css).toContain("@top-right{content:none;}");
   });
+
+  it("localizes the page counter and prepared-for prefix", () => {
+    expect(
+      buildPdfRunningFooterLine({
+        vin: "WBAPX51050CU09550",
+        dateLabel: "30.09.2026",
+        preparedBy: "Jānis B.",
+        lang: "en",
+      }),
+    ).toBe("WBAPX51050CU09550 · 30.09.2026 · Prepared for: Jānis B.");
+    expect(
+      buildPdfRunningFooterLine({
+        vin: "WBAPX51050CU09550",
+        dateLabel: "30.09.2026",
+        preparedBy: "Jānis B.",
+        lang: "ru",
+      }),
+    ).toBe("WBAPX51050CU09550 · 30.09.2026 · Подготовлено для: Jānis B.");
+    expect(
+      buildPdfRunningFooterLine({
+        vin: "WBAPX51050CU09550",
+        dateLabel: "30.09.2026",
+        preparedBy: "Jānis B.",
+        lang: "de",
+      }),
+    ).toBe("WBAPX51050CU09550 · 30.09.2026 · Erstellt für: Jānis B.");
+    expect(clientReportRunningPageCss({ lang: "en" })).toContain('content:"Page " counter(page)');
+    expect(clientReportRunningPageCss({ lang: "ru" })).toContain('content:"Страница " counter(page)');
+    expect(clientReportRunningPageCss({ lang: "de" })).toContain('content:"Seite " counter(page)');
+    expect(clientReportRunningPageCss({ lang: "en" })).not.toContain("Lapa ");
+    expect(
+      buildPdfRunningFooterLine({
+        vin: "WBAPX51050CU09550",
+        dateLabel: "18.10.2026",
+        preparedBy: "Jānis B.",
+        lang: "de",
+      }),
+    ).toContain("für");
+  });
 });

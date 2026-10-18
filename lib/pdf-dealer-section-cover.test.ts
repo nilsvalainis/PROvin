@@ -33,7 +33,7 @@ describe("PDF dīlera sadaļas vāks", () => {
     expect(html).not.toContain("VIN WBAVL12090VX12345");
     expect(html).not.toContain(">VIN<");
     expect(html).not.toContain("A96");
-    expect(html).toContain("135 kW (184 hp)");
+    expect(html).toContain("135 kW (184 ZS)");
     expect(html).toContain("31 400 km");
     expect(html).toContain("142 220 km");
     expect(html).toContain("2 vizītes");

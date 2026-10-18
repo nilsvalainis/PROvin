@@ -33,7 +33,7 @@ RULES:
 - Output JSON only: { "powertrain": [{"label","value"}], "serviceTimeline": [{"date","odometer","place","works"}] }.
 - Keep the same number of rows and the same order as the input.
 - NEVER translate Gatavā komplektācija / factory equipment lists. Those stay in the original language.
-- Translate English, Dutch, German and other foreign powertrain labels and work descriptions into clear Latvian.
+- Translate English, Dutch, German, Russian (Cyrillic) and other foreign powertrain labels and work descriptions into clear Latvian.
 - Keep OEM codes, part numbers, VIN fragments, software IDs (ECM, PBM, QB) unchanged.
 - German OEM exports may contain "\uFFFD" (shown as �) where an umlaut, ß or § was lost: MOTOR�L = Motoröl, R�DERWECHSEL = Räderwechsel, SICHERHEITSPR�FG / SICHERHEITSPRFG = Sicherheitsprüfung, "� 57" = § 57 (Austrian §57a periodic inspection). Infer the intended German word from workshop context and translate it. Never output � or raw German.
 - Do not invent facts, dates, km or extra rows.

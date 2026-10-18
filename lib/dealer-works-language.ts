@@ -4,7 +4,9 @@
  */
 
 const FOREIGN_WORKS_RE =
-  /\b(the|and|acc\.?|according|software|download|install|sides|fitting|executed|upgrade|workshop|remark|remarks|warranty|inspection|engine|oil|filter|change|performed|latest|already|contained|bij|het|van|dat|aan|uitgevoerd|mvg|nieuwste|geeft|actie|acit|service)\b/i;
+  /\b(the|and|acc\.?|according|software|download|install|sides|fitting|executed|upgrade|workshop|remark|remarks|warranty|inspection|engine|oil|filter|change|performed|latest|already|contained|bij|het|van|dat|aan|uitgevoerd|mvg|nieuwste|geeft|actie|acit|service|huolto|tarkastus|öljynvaihto)\b/i;
+
+const CYRILLIC_RE = /[\u0400-\u04FF]/;
 
 /** A/B EN dīlera nosaukumi, ko parastais RE nepārtver (neķer LV bez diakritikas). */
 const EN_DEALER_TITLE_RE =
@@ -25,6 +27,7 @@ export function oneautoWorksNeedLvTranslation(works: string): boolean {
     );
     return hits.size >= 2;
   }
+  if (CYRILLIC_RE.test(t)) return true;
   if (FOREIGN_WORKS_RE.test(t)) return true;
   if (/[äöüß\uFFFD]/i.test(t) || DE_DEALER_WORKS_RE.test(t)) return true;
   return EN_DEALER_TITLE_RE.test(t);

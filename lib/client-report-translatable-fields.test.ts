@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { emptyAutoRecordsBlock } from "@/lib/admin-source-blocks";
 import type { ClientReportPayload } from "@/lib/client-report-html";
 import {
   applyClientReportTranslatedTexts,
@@ -84,6 +85,30 @@ describe("collectClientReportTranslatableTexts", () => {
     expect(texts["listingAnalysis.sellerPortrait"]).toBe("Privātpersona.");
     expect(texts["listingAnalysis.listingSalesContext"]).toBe("Pārdod steidzami.");
     expect(texts["listingAnalysis.photoAnalysis"]).toBeUndefined();
+  });
+
+  it("collects dealer service work descriptions for EN/RU/DE reports, not addresses", () => {
+    const payload = basePayload({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceWorks: [
+          {
+            date: "01.06.2023",
+            odometer: "88000",
+            location: "BMW Bonn, DE-53113",
+            works: "Eļļas maiņa un filtra nomaiņa",
+          },
+        ],
+      },
+    });
+    const texts = collectClientReportTranslatableTexts(payload);
+    expect(texts["autoRecordsBlock.serviceWorks.0.works"]).toBe("Eļļas maiņa un filtra nomaiņa");
+    expect(Object.values(texts).join("\n")).not.toContain("BMW Bonn");
+    const out = applyClientReportTranslatedTexts(payload, {
+      "autoRecordsBlock.serviceWorks.0.works": "Oil change and filter replacement",
+    });
+    expect(out.autoRecordsBlock?.serviceWorks?.[0]?.works).toBe("Oil change and filter replacement");
+    expect(out.autoRecordsBlock?.serviceWorks?.[0]?.location).toBe("BMW Bonn, DE-53113");
   });
 });
 

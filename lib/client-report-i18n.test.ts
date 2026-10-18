@@ -36,9 +36,9 @@ describe("translateClientReportStatic", () => {
     expect(translateClientReportStatic("Pašmasa (kg):", "en")).toBe("Kerb weight (kg):");
   });
 
-  it("has non-empty EN and RU lines without long dashes for every static label", () => {
+  it("has non-empty EN, RU and DE lines without long dashes for every static label", () => {
     for (const key of clientReportStaticKeys()) {
-      for (const lang of ["en", "ru"] as const) {
+      for (const lang of ["en", "ru", "de"] as const) {
         const out = translateClientReportStatic(key, lang);
         expect(out.trim(), `${lang}: ${key}`).toBeTruthy();
         expect(LONG_DASHES.test(out), `${lang}: ${key}`).toBe(false);

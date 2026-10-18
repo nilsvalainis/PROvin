@@ -323,7 +323,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
 
   <div class="inv-summary" role="region" aria-label="Kopsavilkums">
     <div class="inv-summary-row">
-      <span class="inv-summary-label">Sub Total</span>
+      <span class="inv-summary-label">Starpsumma</span>
       <span class="inv-summary-val">${esc(money)}</span>
     </div>
     <div class="inv-summary-row inv-summary-row--muted">
@@ -331,7 +331,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
       <span class="inv-summary-val">0%</span>
     </div>
     <div class="inv-summary-row inv-summary-row--emph">
-      <span class="inv-summary-label">Total</span>
+      <span class="inv-summary-label">Kopā</span>
       <span class="inv-summary-val">${esc(money)}</span>
     </div>
     <p class="inv-pvn-note">PVN likme 0%; pievienotās vērtības nodoklis netiek piemērots atsevišķi.</p>

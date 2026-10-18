@@ -593,6 +593,29 @@ export function normalizeCountryNameLv(raw: string): string {
   return t.replace(/\s+/g, " ");
 }
 
+const COUNTRY_DISPLAY_LOCALE: Record<"lv" | "en" | "ru" | "de", string> = {
+  lv: "lv",
+  en: "en",
+  ru: "ru",
+  de: "de",
+};
+
+/** Valsts nosaukums atskaites valodā. Adresi neatskār. */
+export function normalizeCountryName(raw: string, lang: "lv" | "en" | "ru" | "de" = "lv"): string {
+  if (lang === "lv") return normalizeCountryNameLv(raw);
+  const t = raw.trim();
+  if (!t || t === "—" || t === "-") return "";
+  const iso = countryLabelToIso2(t);
+  if (!iso) return t.replace(/\s+/g, " ");
+  try {
+    const name = new Intl.DisplayNames([COUNTRY_DISPLAY_LOCALE[lang]], { type: "region" }).of(iso);
+    if (name && name !== iso) return name;
+  } catch {
+    /* nav DisplayNames */
+  }
+  return iso2ToLvDisplayName(iso);
+}
+
 export function isLatviaCountryName(raw: string): boolean {
   return countryLabelToIso2(raw) === "LV";
 }
