@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type ChangeEvent } from "react";
+import { ADMIN_B2B_BTN_SOLID, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import {
   ADMIN_PARTNER_INPUT_CLASS,
   ADMIN_PARTNER_LABEL_CLASS,
@@ -106,9 +107,9 @@ export function AdminB2bPartnerCreateForm() {
       <button
         type="submit"
         disabled={busy}
-        className="mt-4 inline-flex rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] disabled:opacity-60"
+        className={`${ADMIN_B2B_BTN_SOLID} mt-4`}
       >
-        {busy ? "Saglabā…" : "Izveidot partneri"}
+        <AdminB2bActionLabel>{busy ? "Saglabā…" : "Izveidot partneri"}</AdminB2bActionLabel>
       </button>
     </form>
   );

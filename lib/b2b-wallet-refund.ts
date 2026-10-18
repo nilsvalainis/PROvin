@@ -1,12 +1,23 @@
 import "server-only";
 
 import { readOrderDraft } from "@/lib/admin-order-draft-store";
+import { getB2bPartnerById } from "@/lib/b2b-partner-store";
 import { parsePartnerIdFromNotes } from "@/lib/b2b-partner-orders";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
-import { applyB2bWalletRefund, parseB2bWalletOrderMarks, shouldAutoRefundB2bWalletOrder } from "@/lib/b2b-wallet";
-import { updateB2bWallet } from "@/lib/b2b-wallet-store";
+import {
+  applyB2bWalletRefund,
+  formatB2bWalletEuro,
+  parseB2bWalletOrderMarks,
+  shouldAutoRefundB2bWalletOrder,
+} from "@/lib/b2b-wallet";
+import {
+  B2B_WALLET_REFUND_EMAIL_PRODUCT,
+  renderB2bWalletRefundEmail,
+} from "@/lib/b2b-wallet-refund-email";
+import { readB2bWallet, updateB2bWallet } from "@/lib/b2b-wallet-store";
 import { readDealerDataJob, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
 import type { DealerRefundRecord } from "@/lib/dealer-data-job-types";
+import { trySendB2bWalletRefundEmail } from "@/lib/email/send-transactional";
 
 export type B2bWalletOrderRefundResult =
   | { refunded: true; amountCents: number; partnerId: string }
@@ -63,4 +74,36 @@ export function refundB2bWalletOrderIfNoData(orderId: string): Promise<B2bWallet
     by: "auto",
     reason: "dealer_data_no_data_wallet",
   });
+}
+
+/**
+ * Viens IRISS e-pasts uz vienu maka atmaksu. Ja jau nosūtīts, otro reizi nesūta.
+ * Automātiskā ielase šo neizsauc: tikai admin poga.
+ */
+export async function notifyB2bWalletRefundEmail(orderId: string): Promise<boolean> {
+  const [draft, job] = await Promise.all([readOrderDraft(orderId), readDealerDataJob(orderId)]);
+  const refund = job?.refund;
+  if (!refund || refund.kind !== "wallet") return false;
+  if (refund.emailSentAt) return true;
+  const notes = draft?.orderEdits?.notes ?? "";
+  const marks = parseB2bWalletOrderMarks(notes);
+  const partnerId = parsePartnerIdFromNotes(notes);
+  if (!marks || !partnerId || !isSafeB2bPartnerId(partnerId)) return false;
+  const [partner, wallet] = await Promise.all([getB2bPartnerById(partnerId), readB2bWallet(partnerId)]);
+  const to = partner?.email?.trim() ?? "";
+  if (!to) return false;
+  const vin = (job.vin || draft?.orderEdits?.vin || "").trim().toUpperCase();
+  const rendered = renderB2bWalletRefundEmail({
+    vin: vin || "-",
+    summa: formatB2bWalletEuro(refund.amountCents),
+    atlikums: formatB2bWalletEuro(wallet.balanceCents),
+    produkts: B2B_WALLET_REFUND_EMAIL_PRODUCT[marks.product],
+  });
+  const sent = await trySendB2bWalletRefundEmail({ to, subject: rendered.subject, text: rendered.text });
+  if (!sent) return false;
+  await upsertDealerDataJob(orderId, {
+    vin: vin || job.vin,
+    refund: { ...refund, emailSentAt: new Date().toISOString() },
+  });
+  return true;
 }

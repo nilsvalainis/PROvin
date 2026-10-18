@@ -15,6 +15,7 @@ import {
 } from "@/lib/dealer-data-client-email";
 import { describeDealerDataJob, type DealerDataJob } from "@/lib/dealer-data-job-types";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
+import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
 import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel";
 
@@ -29,8 +30,10 @@ type Props = {
   editable: boolean;
   /** No klienta datiem - e-pasta dialoga sākuma vērtība. */
   customerEmail?: string | null;
-  /** true tikai Stripe Checkout sesijām (cs_…). Manuāliem refund pogu nerāda. */
+  /** true Stripe cs_* vai B2B manuālajam VIN (kredīts / maks). */
   canRefund?: boolean;
+  /** Maka pirkums: atgriež eiro, ne kredītu. */
+  walletRefund?: boolean;
   onGenerateDealerPdf?: () => void;
   onGenerateDealerPdfEn?: () => void;
   onGenerateDealerPdfRu?: () => void;
@@ -82,6 +85,7 @@ export function AdminDealerDataJobStrip({
   editable,
   customerEmail = "",
   canRefund = false,
+  walletRefund = false,
   onGenerateDealerPdf,
   onGenerateDealerPdfEn,
   onGenerateDealerPdfRu,
@@ -189,12 +193,14 @@ export function AdminDealerDataJobStrip({
 
   const refund = async () => {
     if (!editable || busy || !job || !canRefund) return;
-    const isCredit = sessionId.startsWith("manual_order_");
+    const isCredit = sessionId.startsWith("manual_order_") && !walletRefund;
     if (
       !window.confirm(
-        isCredit
-          ? "Atgriezt 1 dīlera kredītu partnera kontā? E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”."
-          : "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”.",
+        walletRefund
+          ? "Atgriezt summu partnera atlikumā? Partneris saņems IRISS e-pastu."
+          : isCredit
+            ? "Atgriezt 1 dīlera kredītu partnera kontā? E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”."
+            : "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”.",
       )
     ) {
       return;
@@ -211,14 +217,19 @@ export function AdminDealerDataJobStrip({
       const body = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         error?: string;
+        emailSent?: boolean;
         job?: DealerDataJob | null;
       };
       if (body.job) setJob(body.job);
       setNotice(
         body.ok
-          ? isCredit
-            ? "Kredīts atgriezts partnera kontā. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag."
-            : "Atmaksa veikta. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag."
+          ? walletRefund
+            ? body.emailSent
+              ? "Summa atgriezta partnera atlikumā. IRISS e-pasts nosūtīts."
+              : "Summa atgriezta partnera atlikumā. E-pastu nesanāca nosūtīt, mēģini pogu vēlreiz."
+            : isCredit
+              ? "Kredīts atgriezts partnera kontā. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag."
+              : "Atmaksa veikta. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag."
           : `Atmaksa neizdevās: ${body.error ?? "nezināma kļūda"}`,
       );
       if (body.ok) {
@@ -394,17 +405,23 @@ export function AdminDealerDataJobStrip({
         {showRefund ? (
           <button
             type="button"
-            className={`${btn} ${ADMIN_PRO_TONE.danger}`}
+            className={walletRefund || sessionId.startsWith("manual_order_") ? ADMIN_B2B_BTN : `${btn} ${ADMIN_PRO_TONE.danger}`}
             disabled={!editable || busy !== null}
             onClick={() => void refund()}
           >
-            {busy === "refund"
-              ? sessionId.startsWith("manual_order_")
-                ? "Atgriež…"
-                : "Atmaksā…"
-              : sessionId.startsWith("manual_order_")
-                ? "Atgriezt kredītu"
-                : "Atgriezt maksājumu"}
+            {walletRefund || sessionId.startsWith("manual_order_") ? (
+              <AdminB2bActionLabel>
+                {busy === "refund"
+                  ? "Atgriež…"
+                  : walletRefund
+                    ? "Datu nav, atmaksa uz atlikumu"
+                    : "Atgriezt kredītu"}
+              </AdminB2bActionLabel>
+            ) : busy === "refund" ? (
+              "Atmaksā…"
+            ) : (
+              "Atgriezt maksājumu"
+            )}
           </button>
         ) : null}
 

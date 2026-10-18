@@ -14,7 +14,7 @@ import { rememberB2bDebitKey, restoreB2bCredit, walletHasDebitKey } from "@/lib/
 import { updateB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
-import { refundB2bWalletOrder } from "@/lib/b2b-wallet-refund";
+import { notifyB2bWalletRefundEmail, refundB2bWalletOrder } from "@/lib/b2b-wallet-refund";
 import { readDealerDataJob, writeDealerDataJob } from "@/lib/dealer-data-job-store";
 import {
   DEALER_REFUND_MAX_CENTS,
@@ -74,16 +74,20 @@ export async function POST(req: Request) {
         by: "admin",
         reason: String(o.reason ?? "dealer_data_no_data_wallet").slice(0, REFUND_REASON_MAX),
       });
-      if (!walletRefund.refunded) {
+      if (!walletRefund.refunded && walletRefund.reason !== "already_refunded") {
         return NextResponse.json({ error: walletRefund.reason, job }, { status: 409 });
       }
+      const emailSent = await notifyB2bWalletRefundEmail(sessionId);
       const refreshed = await readDealerDataJob(sessionId);
+      if (!walletRefund.refunded && !refreshed?.refund) {
+        return NextResponse.json({ error: walletRefund.reason, job }, { status: 409 });
+      }
       return NextResponse.json({
         ok: true,
         refund: refreshed?.refund ?? null,
         kind: "wallet",
         statePersisted: Boolean(refreshed?.refund),
-        emailSent: false,
+        emailSent,
         job: refreshed,
       });
     }

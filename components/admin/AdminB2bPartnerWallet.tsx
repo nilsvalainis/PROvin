@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ADMIN_B2B_BTN, ADMIN_B2B_BTN_SOLID, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import { ADMIN_PARTNER_INPUT_CLASS, ADMIN_PARTNER_LABEL_CLASS } from "@/lib/admin-b2b-partner-form";
 import {
   B2B_WALLET_PRODUCT_IDS,
@@ -24,11 +25,6 @@ const KIND_LABEL: Record<B2bWalletTxnKind, string> = {
   refund: "Atmaksa",
   adjust: "Korekcija",
 };
-
-const BTN_PRIMARY =
-  "inline-flex rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] disabled:opacity-60";
-const BTN_SECONDARY =
-  "inline-flex rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60";
 
 function centsInput(cents: number | null): string {
   return cents == null ? "" : (cents / 100).toFixed(2).replace(".", ",");
@@ -253,11 +249,11 @@ export function AdminB2bPartnerWallet({
         {priceError ? <p className="mt-3 text-sm text-red-600">{priceError}</p> : null}
         {priceSaved && !priceError ? <p className="mt-3 text-sm text-emerald-700">{priceSaved}</p> : null}
         <div className="mt-4 flex flex-wrap gap-2">
-          <button type="button" className={BTN_PRIMARY} disabled={priceBusy} onClick={() => void savePrices(false)}>
-            {priceBusy ? "Saglabā…" : "Saglabāt cenas"}
+          <button type="button" className={ADMIN_B2B_BTN_SOLID} disabled={priceBusy} onClick={() => void savePrices(false)}>
+            <AdminB2bActionLabel>{priceBusy ? "Saglabā…" : "Saglabāt cenas"}</AdminB2bActionLabel>
           </button>
-          <button type="button" className={BTN_SECONDARY} disabled={priceBusy} onClick={() => void savePrices(true)}>
-            Atjaunot noklusējuma cenas
+          <button type="button" className={ADMIN_B2B_BTN} disabled={priceBusy} onClick={() => void savePrices(true)}>
+            <AdminB2bActionLabel>Atjaunot noklusējuma cenas</AdminB2bActionLabel>
           </button>
         </div>
       </div>
@@ -300,11 +296,11 @@ export function AdminB2bPartnerWallet({
         {adjustSaved && !adjustError ? <p className="mt-3 text-sm text-emerald-700">{adjustSaved}</p> : null}
         <button
           type="button"
-          className={`${BTN_PRIMARY} mt-4`}
+          className={`${ADMIN_B2B_BTN_SOLID} mt-4`}
           disabled={adjustBusy || !adjustAmount.trim() || !adjustNote.trim()}
           onClick={() => void adjust()}
         >
-          {adjustBusy ? "Saglabā…" : "Koriģēt atlikumu"}
+          <AdminB2bActionLabel>{adjustBusy ? "Saglabā…" : "Koriģēt atlikumu"}</AdminB2bActionLabel>
         </button>
       </div>
 

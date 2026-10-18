@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type ChangeEvent } from "react";
+import { ADMIN_B2B_BTN, ADMIN_B2B_BTN_SOLID, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import {
   ADMIN_PARTNER_INPUT_CLASS,
   ADMIN_PARTNER_LABEL_CLASS,
@@ -234,14 +235,14 @@ export function AdminB2bPartnerEditForm({
         <button
           type="submit"
           disabled={busy || deleting}
-          className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] disabled:opacity-60"
+          className={ADMIN_B2B_BTN_SOLID}
         >
-          {busy ? "Saglabā…" : "Saglabāt"}
+          <AdminB2bActionLabel>{busy ? "Saglabā…" : "Saglabāt"}</AdminB2bActionLabel>
         </button>
         <button
           type="button"
           disabled={busy || deleting}
-          className="inline-flex rounded-full border border-rose-300 bg-white px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-60"
+          className={ADMIN_B2B_BTN}
           onClick={() => {
             const name = partner.companyName.trim() || partner.email;
             if (
@@ -274,7 +275,7 @@ export function AdminB2bPartnerEditForm({
             })();
           }}
         >
-          {deleting ? "Dzēš…" : "Dzēst partneri"}
+          <AdminB2bActionLabel>{deleting ? "Dzēš…" : "Dzēst partneri"}</AdminB2bActionLabel>
         </button>
       </div>
     </form>

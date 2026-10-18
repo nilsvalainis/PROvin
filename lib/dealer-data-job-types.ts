@@ -45,6 +45,8 @@ export type DealerRefundRecord = {
   by: string;
   reason: string;
   kind?: "stripe" | "credit" | "wallet";
+  /** B2B maka atmaksas e-pasts nosūtīts (idempotence). */
+  emailSentAt?: string;
 };
 
 export type DealerRefundDecision =
