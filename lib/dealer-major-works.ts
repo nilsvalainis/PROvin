@@ -11,6 +11,8 @@ import { foldOilWorkText, isEngineOilChangeWork } from "@/lib/oil-change-interva
 export type DealerMajorAssemblyId =
   | "engine"
   | "timing_chain"
+  | "timing_belt"
+  | "crankshaft_seal"
   | "gearbox"
   | "transfer_case"
   | "differential"
@@ -27,6 +29,8 @@ export type DealerMajorAssemblySpec = {
 export const MAJOR_ASSEMBLY_SPECS: readonly DealerMajorAssemblySpec[] = [
   { id: "engine", label: "Dzinējs" },
   { id: "timing_chain", label: "Sadales ķēde" },
+  { id: "timing_belt", label: "Zobsiksna" },
+  { id: "crankshaft_seal", label: "Kloķvārpstas blīvslēgs" },
   { id: "gearbox", label: "Ātrumkārba" },
   { id: "transfer_case", label: "Sadales kārba" },
   { id: "differential", label: "Diferenciālis / reduktors" },
@@ -40,6 +44,10 @@ const ASSEMBLY_RE: Record<DealerMajorAssemblyId, RegExp> = {
     /\bengine\b|\bdzinej|двигател|motorwechsel|motorersatz|motortausch|\bmoteur\b|\bmotore\b|\bmotor\b/u,
   timing_chain:
     /timing\s+chain|steuerkette|sadales\s+ked|kedes\s+(komplekt|spriegot|main)|distributieketting|kamkedja|chaine\s+de\s+distribution|catena\s+di\s+distribuzione|cadena\s+de\s+distribucion|цеп\p{L}*\s+(?:грм|газораспред)/u,
+  timing_belt:
+    /zobsiksn|timing\s+belt|zahnriemen|distributieriem|kamrem|courroie\s+de\s+distribution|cinghia\s+di\s+distribuzione|correa\s+de\s+distribucion|ремень\s+грм/u,
+  crankshaft_seal:
+    /kurbelwell(?:en)?(?:simmerring|dicht)|crankshaft\s+seal|klokvarpstas\s+bliv|сальник\s+колен|joint\s+(?:spi|de\s+)?vilebrequin|paraolio\s+albero/u,
   gearbox:
     /atrumkar|parnesumkarb|transmisi|\bkarbas?\b|gearbox|\btransmission\b|getriebe(?!ol)|versnellingsbak|vaxellad|boite(?:\s+de)?\s+vitesses|\bcambio\b|caja(?:\s+de)?\s+cambios|коробк\p{L}*(?:\s+передач)?|акпп|мкпп|\bdsg\b|\bdct\b|\bcvt\b|tiptronic|doppelkupplung|divsajug|mechatron|gidroblok|гидроблок|valve\s+body|torque\s+converter|hidrotransform|гидротрансформатор|getriebewechsel|getriebeersatz|getriebetausch/u,
   transfer_case:
@@ -224,7 +232,14 @@ function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssembl
   if (isCourtesyCarClause(foldedClause)) return false;
   if (isComfortInteriorClause(foldedClause)) return false;
   if (assembly === "engine") return isEngineUnitReplacement(foldedClause);
-  if (isMinorPartClause(foldedClause) && assembly !== "timing_chain") return false;
+  if (
+    isMinorPartClause(foldedClause) &&
+    assembly !== "timing_chain" &&
+    assembly !== "timing_belt" &&
+    assembly !== "crankshaft_seal"
+  ) {
+    return false;
+  }
   if (!mentionsAssembly(foldedClause, assembly)) return false;
   if (isOverhaul(foldedClause)) return true;
   if (!hasUnitRepairVerb(foldedClause)) return false;

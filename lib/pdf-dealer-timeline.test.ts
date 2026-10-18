@@ -172,7 +172,7 @@ describe("Volvo XC90 RAW visit kinds and Lielie darbi", () => {
     expect(classifyDealerVisitKind(VOLVO_XC90_CLIMATE_DRAIN_NO_FAULT)).toBe("maintenance");
   });
 
-  it("journal has campaigns but no Lielie darbi and no D-id glued to labels", () => {
+  it("journal campaigns stay, and 20.02.2018 belt/seal are Lielie darbi without D-id glue", () => {
     const rows = VOLVO_XC90_RAW_ROWS.map((r) => ({
       date: r.date,
       odometer: r.odometer,
@@ -182,10 +182,14 @@ describe("Volvo XC90 RAW visit kinds and Lielie darbi", () => {
     const facts = extractDealerFactsFromServiceWorks(rows);
     const summary = buildDealerVisitSummary(rows, facts);
     expect(summary?.campaignsDone).toBe(true);
-    expect(summary?.majorWorks).toEqual([]);
-    expect(buildDealerMajorWorksHtml(facts)).toBe("");
-    const html = buildDealerVisitSummaryHtml(rows, facts, "en");
-    expect(html).toMatch(/None recorded|Nav fiksēts|Не зафиксировано|Nicht erfasst/);
-    expect(html).not.toMatch(/Engine replacement|Dzinējs|Transmission|Ātrumkārba D\d/);
+    expect(summary?.majorWorks.map((w) => w.id).sort()).toEqual(["crankshaft_seal", "timing_belt"]);
+    const html = buildDealerVisitSummaryHtml(rows, facts) + buildDealerMajorWorksHtml(facts);
+    expect(html).toContain("Zobsiksna");
+    expect(html).toContain("Kloķvārpstas blīvslēgs");
+    expect(html).not.toMatch(/Dzinējs|Ātrumkārba D\d|ZobsiksnaD\d/);
+    const htmlEn = buildDealerMajorWorksHtml(facts, "en");
+    expect(htmlEn).toContain("Timing belt");
+    expect(htmlEn).toContain("Crankshaft seal");
+    expect(htmlEn).not.toContain("Engine");
   });
 });

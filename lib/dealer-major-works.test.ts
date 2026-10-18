@@ -144,6 +144,14 @@ describe("dealer major works vs routine maintenance", () => {
     ["FR chaîne distribution", "Chaîne de distribution remplacée", "timing_chain"],
     ["IT catena distribuzione", "Catena di distribuzione sostituita", "timing_chain"],
     ["ES cadena distribución", "Cadena de distribución sustituida", "timing_chain"],
+    ["DE Zahnriemen erneuert", "Zahnriemen erneuert", "timing_belt"],
+    ["DE Zahnriemen ersetzt", "Zahnriemen ersetzt", "timing_belt"],
+    ["DE Zahnriemen gewechselt", "Zahnriemen gewechselt", "timing_belt"],
+    ["EN timing belt replace", "Timing belt replace", "timing_belt"],
+    ["EN timing belt replacement", "Timing belt replacement", "timing_belt"],
+    ["LV zobsiksnas maiņa", "Zobsiksnas maiņa", "timing_belt"],
+    ["DE Kurbelwellendichtung", "Kurbelwellendichtung erneuert", "crankshaft_seal"],
+    ["EN crankshaft seal", "Crankshaft seal front replace", "crankshaft_seal"],
     ["EN transfer case replaced", "Transfer case replaced", "transfer_case"],
     ["EN differential overhaul", "Differential overhaul", "differential"],
     ["LV reduktora nomaiņa", "Reduktora nomaiņa", "differential"],
@@ -192,10 +200,15 @@ describe("Volvo XC90 RAW dealer journal (YV1LCA4BCG1067242)", () => {
     expect(hasNonCampaignRepairAction(VOLVO_XC90_QB_BLEED_AND_CHARGE_AIR_HOSE)).toBe(true);
   });
 
-  it("crankshaft seal + timing belt is significant, but not engine replacement", () => {
+  it("crankshaft seal + timing belt is Lielie darbi, not an engine swap", () => {
     expect(isMajorAssemblyRepairWork(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT, "engine")).toBe(false);
     expect(isMajorAssemblyRepairWork(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT, "timing_chain")).toBe(false);
-    expect(hasAnyMajorAssemblyRepair(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT)).toBe(false);
+    expect(isMajorAssemblyRepairWork(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT, "timing_belt")).toBe(true);
+    expect(isMajorAssemblyRepairWork(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT, "crankshaft_seal")).toBe(true);
+    expect(dealerMajorAssembliesInWork(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT)).toEqual([
+      "timing_belt",
+      "crankshaft_seal",
+    ]);
     expect(isCourtesyCarWork(VOLVO_XC90_WARRANTY_SEAL_TIMING_BELT)).toBe(true);
   });
 
@@ -227,9 +240,8 @@ describe("Volvo XC90 RAW dealer journal (YV1LCA4BCG1067242)", () => {
     );
   });
 
-  it("the full RAW journal has no Lielie darbi hits", () => {
-    for (const row of VOLVO_XC90_RAW_ROWS) {
-      expect(hasAnyMajorAssemblyRepair(row.works), row.date).toBe(false);
-    }
+  it("the full RAW journal only lists 20.02.2018 belt and crankshaft seal", () => {
+    const withMajor = VOLVO_XC90_RAW_ROWS.filter((row) => hasAnyMajorAssemblyRepair(row.works));
+    expect(withMajor.map((row) => row.date)).toEqual(["20.02.2018"]);
   });
 });

@@ -49,6 +49,20 @@ const CHAIN: Record<ClientReportLang, string> = {
   de: "Steuerkette",
 };
 
+const BELT: Record<ClientReportLang, string> = {
+  lv: "Zobsiksna",
+  en: "Timing belt",
+  ru: "Ремень ГРМ",
+  de: "Zahnriemen",
+};
+
+const CRANK_SEAL: Record<ClientReportLang, string> = {
+  lv: "Kloķvārpstas blīvslēgs",
+  en: "Crankshaft seal",
+  ru: "Сальник коленвала",
+  de: "Kurbelwellendichtung",
+};
+
 const ASSEMBLIES: Record<ClientReportLang, string> = {
   lv: "Lielie mezgli",
   en: "Major assemblies",
@@ -172,21 +186,30 @@ describe("Lielie darbi labels in every PDF language", () => {
     expect(doc).not.toMatch(/Ātrumkārba D6|Коробка передач D6|Transmission D6|Getriebe D6/);
   });
 
-  it.each(CLIENT_REPORT_LANGS)("Volvo XC90 RAW has campaigns and no Lielie darbi in %s", (lang) => {
+  it.each(CLIENT_REPORT_LANGS)("Volvo XC90 RAW 20.02.2018 belt and seal in %s, not engine swap", (lang) => {
     const facts = extractDealerFactsFromServiceWorks(volvoRows);
     const summary = buildDealerVisitSummary(volvoRows, facts);
-    expect(summary?.majorWorks).toEqual([]);
     expect(summary?.campaignsDone).toBe(true);
-    expect(buildDealerMajorWorksHtml(facts, lang)).toBe("");
-    const summaryHtml = buildDealerVisitSummaryHtml(volvoRows, facts, lang);
-    expect(summaryHtml).toContain(NONE[lang]);
+    expect(summary?.majorWorks.map((w) => w.id).sort()).toEqual(["crankshaft_seal", "timing_belt"]);
+    const majorHtml = buildDealerMajorWorksHtml(facts, lang);
+    expect(majorHtml).toContain(MAJOR_HEAD[lang]);
+    expect(majorHtml).toContain(`<b>${BELT[lang]}</b>`);
+    expect(majorHtml).toContain(`<b>${CRANK_SEAL[lang]}</b>`);
+    expect(majorHtml).not.toContain(GEARBOX[lang]);
+    if (lang !== "lv") {
+      expect(majorHtml).not.toContain("Zobsiksna");
+      expect(majorHtml).not.toContain("Kloķvārpstas blīvslēgs");
+      expect(majorHtml).not.toContain("Dzinējs");
+    }
+    if (lang === "lv") expect(majorHtml).not.toContain("<b>Dzinējs</b>");
     const campaigns =
       lang === "lv" ? "Jā" : lang === "en" ? "Yes" : lang === "ru" ? "Да" : "Ja";
+    const summaryHtml = buildDealerVisitSummaryHtml(volvoRows, facts, lang);
     expect(summaryHtml).toContain(`>${campaigns}<`);
     const doc = render("YV1LCA4BCG1067242", "Volvo XC90", volvoRows, lang);
-    expect(section(doc, "pdf-svc-major")).toBe("");
-    expect(doc).toContain(NONE[lang]);
-    expect(doc).toContain(ASSEMBLIES[lang]);
+    const aside = section(doc, "pdf-svc-major");
+    expect(aside).toContain(BELT[lang]);
+    expect(aside).toContain(CRANK_SEAL[lang]);
     const dealerTitle =
       lang === "lv"
         ? "OFICIĀLĀ DĪLERA DATI"
