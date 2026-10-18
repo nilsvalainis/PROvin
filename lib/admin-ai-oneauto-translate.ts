@@ -1,11 +1,13 @@
 import "server-only";
 
+import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
 import { adminGenerateJsonText, hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { originalDealerWorksForRow } from "@/lib/admin-ai-dealer-facts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { AI_ADMIN_MODEL_TIER_DEFAULT } from "@/lib/ai-admin-model-tier";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
+import { repairDealerImportText } from "@/lib/dealer-text-repair";
 import {
   countUntranslatedDealerWorkRows,
   dealerWorkRowNeedsLvTranslation,
@@ -33,10 +35,56 @@ RULES:
 - NEVER translate Gatavā komplektācija / factory equipment lists. Those stay in the original language.
 - Translate English, Dutch, German and other foreign powertrain labels and work descriptions into clear Latvian.
 - Keep OEM codes, part numbers, VIN fragments, software IDs (ECM, PBM, QB) unchanged.
+- German OEM exports may contain "\uFFFD" (shown as �) where an umlaut, ß or § was lost: MOTOR�L = Motoröl, R�DERWECHSEL = Räderwechsel, SICHERHEITSPR�FG / SICHERHEITSPRFG = Sicherheitsprüfung, "� 57" = § 57 (Austrian §57a periodic inspection). Infer the intended German word from workshop context and translate it. Never output � or raw German.
 - Do not invent facts, dates, km or extra rows.
 - Dates and odometer values stay exactly as given.
 - No markdown. No em dash. No EUR repair estimates.
 - Latvian, client-readable, compact.`;
+
+/**
+ * Noklusējums Gemini (Smart). Ja Gemini nav pieejams vai atbilde neder, viens mēģinājums ar Claude Sonnet,
+ * lai dīlera rindas nepaliek svešvalodā.
+ */
+async function generateDealerTranslationJson(args: {
+  modelTier: AiAdminModelTier;
+  systemInstruction: string;
+  userPrompt: string;
+  temperature: number;
+  parse: (raw: string) => boolean;
+}): Promise<string> {
+  let primaryError: unknown = null;
+  try {
+    const raw = await adminGenerateJsonText({
+      modelTier: args.modelTier,
+      systemInstruction: args.systemInstruction,
+      userPrompt: args.userPrompt,
+      temperature: args.temperature,
+    });
+    if (args.parse(raw)) return raw;
+    primaryError = new Error("ai_invalid_json");
+  } catch (e) {
+    primaryError = e;
+  }
+  if (args.modelTier === "flash" || !getAnthropicApiKeyFromEnv()) throw primaryError;
+  console.warn(
+    "[dealer-translate] Gemini neizdevās, Sonnet rezerve:",
+    primaryError instanceof Error ? primaryError.message : primaryError,
+  );
+  return adminGenerateJsonText({
+    modelTier: "flash",
+    systemInstruction: args.systemInstruction,
+    userPrompt: args.userPrompt,
+    temperature: args.temperature,
+  });
+}
+
+function jsonParses(raw: string, check: (v: unknown) => unknown): boolean {
+  try {
+    return Boolean(check(JSON.parse(raw)));
+  } catch {
+    return false;
+  }
+}
 
 export async function translateOneautoDisplayWithAi(input: {
   display: OneautoDisplaySections;
@@ -46,7 +94,10 @@ export async function translateOneautoDisplayWithAi(input: {
   const current = {
     equipment: filledOneautoKvRows(input.display.equipment),
     powertrain: filledOneautoKvRows(input.display.powertrain),
-    serviceTimeline: filledOneautoServiceEvents(input.display.serviceTimeline),
+    serviceTimeline: filledOneautoServiceEvents(input.display.serviceTimeline).map((ev) => ({
+      ...ev,
+      works: repairDealerImportText(ev.works),
+    })),
   };
   if (current.powertrain.length === 0 && current.serviceTimeline.length === 0) {
     if (current.equipment.length === 0) throw new Error("empty_source_data");
@@ -63,11 +114,12 @@ Atbildi tikai ar JSON.`,
     { operatorNotes: input.operatorNotes },
   );
 
-  const raw = await adminGenerateJsonText({
+  const raw = await generateDealerTranslationJson({
     modelTier: input.modelTier ?? "gemini-flash",
     systemInstruction: ONEAUTO_TRANSLATE_SYSTEM,
     userPrompt,
     temperature: 0.15,
+    parse: (r) => jsonParses(r, parseOneautoTranslateDisplay),
   });
 
   let parsedJson: unknown;
@@ -88,6 +140,7 @@ RULES:
 - Same number of strings, same order as the input array.
 - Translate English, Dutch, German and other foreign work text into clear Latvian by meaning in workshop context, not word-for-word calques.
 - Keep OEM codes, part numbers, software IDs (ECM, PBM, QB, VIDA) unchanged.
+- German OEM exports may contain "\uFFFD" (shown as �) where an umlaut, ß or § was lost: MOTOR�L = Motoröl, R�DERWECHSEL = Räderwechsel, SICHERHEITSPR�FG / SICHERHEITSPRFG = Sicherheitsprüfung, "� 57" = § 57 (Austrian §57a periodic inspection). Infer the intended German word from workshop context and translate it. Never output � or raw German.
 - Do not invent jobs, dates or km.
 - No markdown. No em dash. No EUR.
 - Latvian, client-readable, compact.`;
@@ -104,7 +157,7 @@ export async function translateOneautoWorksWithAi(input: {
     `Iztulko TIKAI šos servisa darbu tekstus skaidrā latviešu valodā. Saglabā skaitu un kārtību.
 
 ${JSON.stringify(
-  events.map((ev) => ev.works),
+  events.map((ev) => repairDealerImportText(ev.works)),
   null,
   2,
 )}
@@ -113,11 +166,12 @@ Atbildi tikai ar JSON: { "works": ["..."] }.`,
     { operatorNotes: input.operatorNotes },
   );
 
-  const raw = await adminGenerateJsonText({
+  const raw = await generateDealerTranslationJson({
     modelTier: input.modelTier ?? AI_ADMIN_MODEL_TIER_DEFAULT,
     systemInstruction: ONEAUTO_WORKS_TRANSLATE_SYSTEM,
     userPrompt,
     temperature: 0.1,
+    parse: (r) => jsonParses(r, parseOneautoWorksTranslatePayload),
   });
 
   let parsedJson: unknown;

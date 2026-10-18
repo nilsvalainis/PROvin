@@ -38,6 +38,7 @@ import {
   writeAutoRecordsPhotoJpeg,
 } from "@/lib/admin-auto-records-photo-store";
 import { jpegFromAdminPhotoUpload } from "@/lib/admin-photo-normalize";
+import { decodeDealerResponseBytes } from "@/lib/dealer-text-repair";
 
 const DEFAULT_BASE_URL = "https://api.oneautoapi.com";
 
@@ -83,7 +84,7 @@ async function fetchVinDecoderFallbackRows(vin: string) {
 }
 
 async function readJson(res: Response): Promise<unknown> {
-  const text = await res.text();
+  const text = decodeDealerResponseBytes(await res.arrayBuffer(), res.headers.get("content-type"));
   if (!text.trim()) return null;
   try {
     return JSON.parse(text) as unknown;

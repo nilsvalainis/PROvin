@@ -2874,8 +2874,7 @@ ${sourceDotColorCss()}
       .pdf-svc-major__item{display:flex;justify-content:space-between;gap:10px;align-items:baseline;}
       .pdf-svc-major__item b{font-size:12px;font-weight:750;color:#0f172a;}
       .pdf-svc-major__item span{font-size:10.5px;color:#64748b;font-variant-numeric:tabular-nums;}
-      .pdf-svc-year-block{break-after:page;page-break-after:always;}
-      .pdf-svc-year-block:last-child{break-after:auto;page-break-after:auto;}
+      .pdf-svc-year-block{break-before:auto;break-after:auto;page-break-after:auto;break-inside:auto;page-break-inside:auto;}
       .pdf-svc-visit{
         display:grid;grid-template-columns:88px 18px minmax(0,1fr);gap:0 12px;align-items:stretch;
         break-inside:avoid;page-break-inside:avoid;
@@ -2939,7 +2938,6 @@ ${sourceDotColorCss()}
         .pdf-svc-rail{display:none;}
         .pdf-svc-box{margin:0;padding:0;}
         .pdf-svc-gap{margin-left:0;}
-        .pdf-svc-year-block{break-after:page;page-break-after:always;}
       }
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
       .pdf-country-flag-wrap{
