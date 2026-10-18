@@ -489,16 +489,18 @@ function PurchaseDialog({
 export function B2bPartnerWalletHome({
   initialWallet,
   legacy,
+  initialReportLang = "lv",
 }: {
   initialWallet: B2bWalletView;
   legacy: B2bLegacyCredits | null;
+  initialReportLang?: B2bWalletReportLang;
 }) {
   const t = useTranslations("Partner");
   const router = useRouter();
   const [view, setView] = useState<B2bWalletView>(initialWallet);
   const [topupOpen, setTopupOpen] = useState(false);
   const [buying, setBuying] = useState<B2bWalletProductId | null>(null);
-  const [reportLang, setReportLang] = useState<B2bWalletReportLang>("lv");
+  const [reportLang, setReportLang] = useState<B2bWalletReportLang>(initialReportLang);
   const [topupPaid, setTopupPaid] = useState(false);
   const [buyOk, setBuyOk] = useState("");
 
