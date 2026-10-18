@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { after } from "next/server";
-import { patchOrderDraft } from "@/lib/admin-order-draft-store";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
 import {
   buildSubmittedPartnerArchiveRow,
@@ -19,12 +17,12 @@ import {
 import { resolvePartnerCreditRemaining, seedLotsFromRemaining } from "@/lib/b2b-partner-credit-seed";
 import { updateB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
 import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
-import { buildPartnerOrderNotes, isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
+import { isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
+import {
+  createPartnerCreditVinOrder,
+  schedulePartnerCreditVinOrderFollowups,
+} from "@/lib/b2b-partner-place-vin-order";
 import { findRecentPartnerVinOrder } from "@/lib/b2b-partner-vin-dedup";
-import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
-import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
-import { createOperatorOrderWithFields } from "@/lib/create-operator-order";
-import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import {
   canonicalizeListingUrl,
   isPlausibleListingUrl,
@@ -139,25 +137,19 @@ export async function POST(req: Request) {
     });
   }
 
-  const notes = buildPartnerOrderNotes({
-    plan: planRaw,
-    partnerId: partner.id,
-    lotId: consumed.lotId,
-    companyName: partner.companyName,
-    auditPurpose: purposeRaw,
-  });
-
-  const created = await createOperatorOrderWithFields({
+  const created = await createPartnerCreditVinOrder({
+    partner: {
+      id: partner.id,
+      email: partner.email,
+      phone: partner.phone,
+      contactName: partner.contactName,
+      companyName: partner.companyName,
+    },
     vin,
-    email: partner.email,
-    phone: partner.phone,
-    name: partner.contactName,
-    notes,
-    partnerId: partner.id,
-    companyName: partner.companyName,
-    checkoutLine: planRaw,
+    plan: planRaw,
+    listingUrl: listingRaw,
     auditPurpose: purposeRaw,
-    ...(listingRaw ? { listingUrl: listingRaw } : {}),
+    lotId: consumed.lotId,
   });
   if (!created.ok) {
     await updateB2bCreditWallet(partner.id, (wallet) => ({
@@ -171,46 +163,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "queue_failed" }, { status: 500 });
   }
 
-  await patchOrderDraft(created.orderId, {
-    orderEdits: {
-      notes,
+  schedulePartnerCreditVinOrderFollowups([
+    {
+      orderId: created.orderId,
+      vin,
+      listingUrl: listingRaw,
+      dealerQueued: created.dealerQueued,
     },
-  });
-
-  const dealerQueued =
-    planRaw === "dealer"
-      ? await enqueueDealerDataJob({ sessionId: created.orderId, vin }).catch(() => false)
-      : false;
-
-  after(async () => {
-    try {
-      const [seedRes, scanRes] = await Promise.allSettled([
-        seedPaidOrderAutoSources(created.orderId, {
-          vin,
-          listingUrl: listingRaw || null,
-        }),
-        runOrderFreeVinScan(created.orderId, { vin, listingUrl: listingRaw || null }),
-      ]);
-      if (seedRes.status === "fulfilled") {
-        console.info("[partner/orders] paid order auto sources", { orderId: created.orderId, ...seedRes.value });
-      } else {
-        console.error("[partner/orders] auto sources:", seedRes.reason);
-      }
-      if (scanRes.status === "fulfilled") {
-        console.info("[partner/orders] free VIN SCAN", { orderId: created.orderId, ...scanRes.value });
-      } else {
-        console.error("[partner/orders] free VIN SCAN:", scanRes.reason);
-      }
-    } catch (err) {
-      console.error("[partner/orders] auto sources:", err);
-    }
-    if (!dealerQueued) return;
-    try {
-      await runDealerDataJob({ sessionId: created.orderId, vin, trigger: "webhook" });
-    } catch (err) {
-      console.error("[partner/orders] dealer data job:", err);
-    }
-  });
+  ]);
 
   const order = buildSubmittedPartnerArchiveRow({
     id: created.orderId,
