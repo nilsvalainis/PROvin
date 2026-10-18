@@ -44,19 +44,16 @@ describe("partner i18n", () => {
     }
   });
 
-  it("points VIN success copy to Profile, not Orders", () => {
+  it("points VIN success copy to the Orders tab", () => {
     const lv = partnerCopy("lv");
     const en = partnerCopy("en");
     const de = partnerCopy("de");
     const ru = partnerCopy("ru");
-    expect(lv.vinSubmitOk).toContain("Profils");
-    expect(lv.vinSubmitOk).not.toContain("Pasūtījumi");
-    expect(en.vinSubmitOk).toContain("Profile");
-    expect(en.vinSubmitOk).not.toMatch(/\bOrders\b/);
-    expect(de.vinSubmitOk).toContain("Profil");
-    expect(de.vinSubmitOk).not.toContain("Bestellungen");
-    expect(ru.vinSubmitOk).toContain("Профиль");
-    expect(ru.vinSubmitOk).not.toContain("Заказы");
+    expect(lv.vinSubmitOk).toContain(lv.navArchive);
+    expect(en.vinSubmitOk).toContain(en.navArchive);
+    expect(de.vinSubmitOk).toContain(de.navArchive);
+    expect(ru.vinSubmitOk).toContain(ru.navArchive);
+    expect(lv.buyOk).toContain(lv.navArchive);
     expect(lv.vinDuplicateNotice).toContain("{date}");
     expect(lv.vinDuplicateNotice).toBe("Šis VIN jau pasūtīts {date}");
     expect(lv.vinDuplicateReorder).toBe("Pasūtīt jaunu (1 kr.)");

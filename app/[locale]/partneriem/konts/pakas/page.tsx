@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { B2bPartnerReportsInfo } from "@/components/b2b/B2bPartnerReportsInfo";
-import { loadB2bAccountDashboard } from "@/lib/b2b-partner-dashboard";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "PROVIN partneriem",
   robots: { index: false, follow: false },
 };
 
-export default async function PartneriemPacksPage() {
-  const dashboard = await loadB2bAccountDashboard();
-  return <B2bPartnerReportsInfo dealerEnabled={dashboard?.dealerEnabled === true} />;
+type Props = { params: Promise<{ locale: string }> };
+
+export default async function PartneriemPacksRedirectPage({ params }: Props) {
+  const { locale } = await params;
+  redirect(`/${locale}/partneriem/konts`);
 }

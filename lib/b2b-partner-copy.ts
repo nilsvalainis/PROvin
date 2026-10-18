@@ -93,7 +93,7 @@ const B2B_BUSINESS_DESKTOP_FEATURES_RU: Tp5DesktopHeroFeature[] = [
 
 export const B2B_BUSINESS_HERO_FEATURES = [
   "Oficiālo dīleru dati*",
-  "CarVertical + AutoDNA",
+  "carVertical + AutoDNA",
   "Izcelsmes valsts reģistri",
   "Izsoļu portālu arhīva dati",
   "Apdrošinātāju dati",
@@ -103,7 +103,7 @@ export const B2B_BUSINESS_HERO_FEATURES = [
 
 const B2B_BUSINESS_HERO_FEATURES_EN = [
   "Official dealer data*",
-  "CarVertical + AutoDNA",
+  "carVertical + AutoDNA",
   "Origin-country registers",
   "Auction portal archive data",
   "Insurer data",
@@ -112,7 +112,7 @@ const B2B_BUSINESS_HERO_FEATURES_EN = [
 ] as const;
 const B2B_BUSINESS_HERO_FEATURES_DE = [
   "Offizielle Händlerdaten*",
-  "CarVertical + AutoDNA",
+  "carVertical + AutoDNA",
   "Register des Herkunftslandes",
   "Auktionsportal-Archiv",
   "Versichererdaten",
@@ -121,7 +121,7 @@ const B2B_BUSINESS_HERO_FEATURES_DE = [
 ] as const;
 const B2B_BUSINESS_HERO_FEATURES_RU = [
   "Официальные данные дилера*",
-  "CarVertical + AutoDNA",
+  "carVertical + AutoDNA",
   "Реестры страны происхождения",
   "Архив аукционов",
   "Данные страховщиков",
@@ -177,7 +177,7 @@ export const B2B_CATALOG: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
       },
       {
         icon: "logos" as const,
-        title: "CarVertical + AutoDNA",
+        title: "carVertical + AutoDNA",
       },
       {
         icon: "globe" as const,
@@ -227,7 +227,7 @@ const B2B_CATALOG_EN: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
       },
       {
         icon: "logos" as const,
-        title: "CarVertical + AutoDNA",
+        title: "carVertical + AutoDNA",
       },
       {
         icon: "globe" as const,
@@ -271,7 +271,7 @@ const B2B_CATALOG_DE: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
     goalDealerLink: "offiziellen Händlernetzen",
     items: [
       { icon: "store" as const, title: "Offizielle Händlerdaten*", opensDealer: true },
-      { icon: "logos" as const, title: "CarVertical + AutoDNA" },
+      { icon: "logos" as const, title: "carVertical + AutoDNA" },
       { icon: "globe" as const, title: "Register des Herkunftslandes" },
       { icon: "camera" as const, title: "Auktionsportal-Archiv" },
       { icon: "shield" as const, title: "Versichererdaten" },
@@ -299,7 +299,7 @@ const B2B_CATALOG_RU: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
     goalDealerLink: "официальных дилерских сетей",
     items: [
       { icon: "store" as const, title: "Официальные данные дилера*", opensDealer: true },
-      { icon: "logos" as const, title: "CarVertical + AutoDNA" },
+      { icon: "logos" as const, title: "carVertical + AutoDNA" },
       { icon: "globe" as const, title: "Реестры страны происхождения" },
       { icon: "camera" as const, title: "Архив аукционов" },
       { icon: "shield" as const, title: "Данные страховщиков" },

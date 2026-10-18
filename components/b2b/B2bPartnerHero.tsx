@@ -15,7 +15,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { B2bPartnerLogin } from "@/components/b2b/B2bPartnerLogin";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { CONTACT_PHONE_TEL, contactEmail } from "@/lib/contact";
+import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL, contactEmail } from "@/lib/contact";
 import { getB2bHeroSourceItems, type B2bCatalogItem } from "@/lib/b2b-partner-copy";
 import { homeFooterColumnClass } from "@/lib/home-layout";
 
@@ -32,21 +32,24 @@ function SourceGlyph({ icon }: { icon: B2bCatalogItem["icon"] }) {
   return <Layers className={SOURCE_ICON_CLASS} aria-hidden />;
 }
 
-function B2bHeroSourceList({ items }: { items: B2bCatalogItem[] }) {
+function B2bHeroSourceList({ items, note }: { items: B2bCatalogItem[]; note: string }) {
   return (
-    <ul className="mt-8 grid max-w-[34rem] grid-cols-1 sm:grid-cols-2 sm:gap-x-8">
-      {items.map((item) => (
-        <li
-          key={item.title}
-          className="flex items-center gap-2.5 border-b border-white/[0.08] py-[0.7rem]"
-        >
-          <SourceGlyph icon={item.icon} />
-          <span className="min-w-0 text-[0.74rem] font-semibold leading-snug text-zinc-100">
-            {item.title}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <div className="mt-8 max-w-[34rem]">
+      <ul className="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-8">
+        {items.map((item) => (
+          <li
+            key={item.title}
+            className="flex items-center gap-2.5 border-b border-white/[0.08] py-[0.7rem]"
+          >
+            <SourceGlyph icon={item.icon} />
+            <span className="min-w-0 text-[0.74rem] font-semibold leading-snug text-zinc-100">
+              {item.title}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-[0.68rem] leading-snug text-zinc-500">{note}</p>
+    </div>
   );
 }
 
@@ -64,7 +67,7 @@ function B2bHeroContactLinks({ email }: { email: string }) {
         href={`tel:${CONTACT_PHONE_TEL}`}
         className="text-[#93c5fd] underline-offset-2 transition-colors hover:text-[#bfdbfe] hover:underline"
       >
-        {CONTACT_PHONE_TEL}
+        {CONTACT_PHONE_DISPLAY}
       </a>
     </p>
   );
@@ -111,7 +114,7 @@ export function B2bPartnerHero({
             </p>
             <h1
               id="b2b-partner-hero-title"
-              className={`${styles.heroTitleDesktop} text-[2rem] font-extrabold leading-[1.1] tracking-[-0.025em] text-white`}
+              className={`${styles.heroTitleDesktop} text-[2rem] font-extrabold uppercase leading-[1.1] tracking-[-0.025em] text-white`}
             >
               {t("titlePrefix")}
               <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>{t("titleAccent")}</span>
@@ -123,7 +126,7 @@ export function B2bPartnerHero({
               <DiagnosticScanLine variant="rail" motion="sweepLtr" className="w-full" />
             </div>
             <div className="hidden lg:block">
-              <B2bHeroSourceList items={sources} />
+              <B2bHeroSourceList items={sources} note={t("heroSourcesNote")} />
             </div>
           </div>
 
@@ -143,9 +146,6 @@ export function B2bPartnerHero({
             {hideContact ? null : (
               <div className="mt-4 text-center">
                 <B2bHeroContactLinks email={email} />
-                <p className="mt-1.5 text-[0.68rem] leading-snug text-zinc-500">
-                  {t("heroContactLead")}
-                </p>
               </div>
             )}
           </div>
@@ -174,7 +174,7 @@ export function B2bPartnerHero({
             {afterContact ? <div className="mt-6">{afterContact}</div> : null}
           </div>
           <div className="lg:hidden">
-            <B2bHeroSourceList items={sources} />
+            <B2bHeroSourceList items={sources} note={t("heroSourcesNote")} />
           </div>
         </div>
       </section>

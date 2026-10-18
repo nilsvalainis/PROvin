@@ -11,6 +11,8 @@ const DEFAULT_CONTACT_EMAIL = "info@provin.lv" as const;
 /** LV lokālais numurs kājenē (bez +371). */
 export const CONTACT_PHONE_LOCAL = "29502039";
 export const CONTACT_PHONE_TEL = `+371${CONTACT_PHONE_LOCAL}`;
+/** Redzamais formāts ar atstarpēm; `tel:` saitē lieto `CONTACT_PHONE_TEL`. */
+export const CONTACT_PHONE_DISPLAY = "+371 29 502 039";
 
 /** WhatsApp tērzēšana (peldošā poga, kājene) */
 export function whatsappChatUrl(): string {

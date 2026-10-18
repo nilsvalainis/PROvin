@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, MonitorSmartphone } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { B2B_WALLET_PRODUCT_COPY } from "@/components/b2b/b2b-partner-ui";
+import { Link } from "@/i18n/navigation";
 import {
   mergePartnerArchiveRows,
   readPendingPartnerArchiveRows,
@@ -18,7 +20,7 @@ function archiveAmountText(
   row: B2bPartnerOrderRow,
   t: ReturnType<typeof useTranslations>,
 ): string {
-  if (row.kind === "pack") return row.amountLabel;
+  if (row.kind === "pack" || row.kind === "topup") return row.amountLabel;
   if (row.amountKind === "credit" || row.amountKind === "credit_restored") return t("archiveCreditUsed");
   return row.amountLabel;
 }
@@ -27,6 +29,7 @@ function archiveVinText(
   row: B2bPartnerOrderRow,
   t: ReturnType<typeof useTranslations>,
 ): string {
+  if (row.kind === "topup") return t("archiveTopup");
   if (row.kind === "pack") {
     return row.plan === "dealer"
       ? t("archivePackDealer", { count: row.packQty ?? 1 })
@@ -35,11 +38,16 @@ function archiveVinText(
   return row.vin;
 }
 
+function isInfoRow(row: B2bPartnerOrderRow): boolean {
+  return row.kind === "pack" || row.kind === "topup";
+}
+
 function archiveStatusText(
   row: B2bPartnerOrderRow,
   t: ReturnType<typeof useTranslations>,
 ): string {
-  if (row.kind === "pack") return "";
+  if (isInfoRow(row)) return "";
+  if (row.status === "wallet_refunded") return t("archiveStatusRefunded");
   if (row.status === "credit_restored") return t("archiveCreditRestored");
   if (row.status === "ready") return t("archiveStatusReady");
   if (row.status === "processing") return t("archiveStatusProcessing");
@@ -69,12 +77,20 @@ function StatusCell({
   t: ReturnType<typeof useTranslations>;
 }) {
   const status = archiveStatusText(row, t);
-  const download =
-    row.kind === "pack" ? (
-      <FileLink href={row.invoiceHref} label={t("archiveOpenInvoice")} />
-    ) : (
-      <FileLink href={row.reportHref} label={t("archiveOpenReport")} />
-    );
+  const internal = row.reportHref?.startsWith("/partneriem/") ? row.reportHref : null;
+  const download = isInfoRow(row) ? (
+    <FileLink href={row.invoiceHref} label={t("archiveOpenInvoice")} />
+  ) : internal ? (
+    <Link
+      href={internal}
+      className="inline-flex text-zinc-300 transition-colors hover:text-white"
+      aria-label={t("archiveOpenData")}
+    >
+      <MonitorSmartphone className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+    </Link>
+  ) : (
+    <FileLink href={row.reportHref} label={t("archiveOpenReport")} />
+  );
   return (
     <span className="inline-flex items-center justify-end gap-2">
       {status ? <span>{status}</span> : null}
@@ -150,8 +166,13 @@ export function B2bPartnerArchive({
                 {list.map((row) => (
                   <tr key={row.id} className="border-b border-white/[0.06]">
                     <td className={TD_CLASS}>{formatB2bPartnerOrderDate(row.createdAt, locale)}</td>
-                    <td className={`${TD_CLASS} ${row.kind === "pack" ? "" : "font-mono tracking-wide"}`}>
+                    <td className={`${TD_CLASS} ${isInfoRow(row) ? "" : "font-mono tracking-wide"}`}>
                       {archiveVinText(row, t)}
+                      {row.walletProduct ? (
+                        <span className="block font-sans text-[0.68rem] font-normal tracking-normal text-zinc-500">
+                          {t(B2B_WALLET_PRODUCT_COPY[row.walletProduct].title)}
+                        </span>
+                      ) : null}
                     </td>
                     <td className={TD_CLASS}>{row.invoiceNumber}</td>
                     <td className={`${TD_CLASS} text-right tabular-nums`}>{archiveAmountText(row, t)}</td>
@@ -168,7 +189,7 @@ export function B2bPartnerArchive({
             {list.map((row) => (
               <li key={row.id} className="rounded-[0.35rem] bg-white/[0.03] px-3 py-3">
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className={row.kind === "pack" ? "text-[0.8125rem] text-zinc-100" : "font-mono text-[0.8125rem] tracking-wide text-zinc-100"}>
+                  <span className={isInfoRow(row) ? "text-[0.8125rem] text-zinc-100" : "font-mono text-[0.8125rem] tracking-wide text-zinc-100"}>
                     {archiveVinText(row, t)}
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
@@ -179,6 +200,7 @@ export function B2bPartnerArchive({
                   </span>
                 </div>
                 <p className="mt-1.5 text-[0.7rem] text-zinc-500">
+                  {row.walletProduct ? `${t(B2B_WALLET_PRODUCT_COPY[row.walletProduct].title)} · ` : ""}
                   {formatB2bPartnerOrderDate(row.createdAt, locale)}
                   {" · "}
                   {row.invoiceNumber}

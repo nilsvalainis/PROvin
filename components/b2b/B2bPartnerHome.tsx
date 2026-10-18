@@ -87,10 +87,13 @@ export function B2bPartnerHome({
   initialCredits,
   initialDealerEnabled,
   initialPrices,
+  embedded = false,
 }: {
   initialCredits: B2bCreditRemaining;
   initialDealerEnabled: boolean;
   initialPrices: B2bPartnerPriceOverrides | null;
+  /** Zem maka kartēm: bez pilna ekrāna augstuma un bez kredītu pirkšanas. */
+  embedded?: boolean;
 }) {
   const t = useTranslations("Partner");
   const locale = useLocale();
@@ -324,7 +327,7 @@ export function B2bPartnerHome({
   return (
     <div>
       <section
-        className="mx-auto flex min-h-[calc(100svh-6.75rem)] w-full max-w-[22rem] flex-col lg:max-w-[45rem]"
+        className={`mx-auto flex w-full max-w-[22rem] flex-col lg:max-w-[45rem]${embedded ? "" : " min-h-[calc(100svh-6.75rem)]"}`}
         aria-labelledby="b2b-partner-home-title"
       >
         <StatusBar loaded={loaded} credits={credits} dealerEnabled={dealerEnabled} />
@@ -332,18 +335,25 @@ export function B2bPartnerHome({
           <p className="mb-4 text-[0.8125rem] font-medium leading-snug text-emerald-300">{t("packPaidOk")}</p>
         ) : null}
 
-        <h1
-          id="b2b-partner-home-title"
-          className="text-balance text-[1.25rem] font-semibold leading-snug tracking-[-0.02em] text-zinc-100"
-        >
-          {canSubmit ? t("vinSubmitTitle") : t("creditsHeading")}
-        </h1>
+        {(() => {
+          const Heading = embedded ? "h2" : "h1";
+          return (
+            <Heading
+              id="b2b-partner-home-title"
+              className="text-balance text-[1.25rem] font-semibold leading-snug tracking-[-0.02em] text-zinc-100"
+            >
+              {canSubmit ? t("vinSubmitTitle") : t("creditsHeading")}
+            </Heading>
+          );
+        })()}
 
         {!canSubmit ? (
           loaded ? (
             <div className="mt-5">
               <p className="text-[0.95rem] font-medium leading-snug text-zinc-100">{t("noCreditsLead")}</p>
-              <B2bPartnerBuyReports mode="primary" dealerEnabled={dealerEnabled} prices={prices} />
+              {embedded ? null : (
+                <B2bPartnerBuyReports mode="primary" dealerEnabled={dealerEnabled} prices={prices} />
+              )}
             </div>
           ) : null
         ) : (
@@ -547,7 +557,9 @@ export function B2bPartnerHome({
                 {submitting ? t("vinSubmitLoading") : t("vinSubmit")}
               </span>
             </button>
-            <B2bPartnerBuyReports mode="secondary" dealerEnabled={dealerEnabled} prices={prices} />
+            {embedded ? null : (
+              <B2bPartnerBuyReports mode="secondary" dealerEnabled={dealerEnabled} prices={prices} />
+            )}
           </form>
             )}
           </>

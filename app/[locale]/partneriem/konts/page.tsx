@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { B2bPartnerHome } from "@/components/b2b/B2bPartnerHome";
-import { emptyB2bPartnerPrices } from "@/lib/b2b-partner-account";
-import { emptyB2bCreditRemaining } from "@/lib/b2b-partner-credits";
+import { B2bPartnerWalletHome } from "@/components/b2b/B2bPartnerWalletHome";
+import { emptyB2bWallet, emptyB2bWalletPrices } from "@/lib/b2b-wallet";
+import { buildB2bWalletView } from "@/lib/b2b-wallet-view";
 import { loadB2bAccountDashboard } from "@/lib/b2b-partner-dashboard";
 
 export const metadata: Metadata = {
@@ -12,10 +12,13 @@ export const metadata: Metadata = {
 export default async function PartneriemAccountHomePage() {
   const dashboard = await loadB2bAccountDashboard();
   return (
-    <B2bPartnerHome
-      initialCredits={dashboard?.credits ?? emptyB2bCreditRemaining()}
-      initialDealerEnabled={dashboard?.dealerEnabled === true}
-      initialPrices={dashboard?.prices ?? emptyB2bPartnerPrices()}
+    <B2bPartnerWalletHome
+      initialWallet={dashboard?.wallet ?? buildB2bWalletView(emptyB2bWallet(), emptyB2bWalletPrices())}
+      legacy={
+        dashboard
+          ? { credits: dashboard.credits, dealerEnabled: dashboard.dealerEnabled, prices: dashboard.prices }
+          : null
+      }
     />
   );
 }

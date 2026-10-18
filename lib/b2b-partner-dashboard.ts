@@ -7,6 +7,8 @@ import { remainingB2bCredits, type B2bCreditRemaining } from "@/lib/b2b-partner-
 import { resolvePartnerCreditRemaining } from "@/lib/b2b-partner-credit-seed";
 import { readB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
+import { readB2bWallet } from "@/lib/b2b-wallet-store";
+import { buildB2bWalletView, type B2bWalletView } from "@/lib/b2b-wallet-view";
 import {
   normalizePartnerCompanyKey,
   tallyPartnerCreditSpend,
@@ -17,6 +19,7 @@ export type B2bAccountDashboard = {
   credits: B2bCreditRemaining;
   dealerEnabled: boolean;
   prices: B2bPartnerPriceOverrides;
+  wallet: B2bWalletView;
 };
 
 export async function loadCreditsForPartners(
@@ -63,7 +66,7 @@ export async function loadSpentCreditsForPartners(
 export async function loadB2bAccountDashboard(): Promise<B2bAccountDashboard | null> {
   const partner = await resolveActiveB2bPartner();
   if (!partner) return null;
-  const wallet = await readB2bCreditWallet(partner.id);
+  const [wallet, eurWallet] = await Promise.all([readB2bCreditWallet(partner.id), readB2bWallet(partner.id)]);
   const remaining =
     wallet.lots.length > 0
       ? remainingB2bCredits(wallet.lots, new Date())
@@ -71,6 +74,7 @@ export async function loadB2bAccountDashboard(): Promise<B2bAccountDashboard | n
   const dealerEnabled = partner.dealerEnabled === true;
   return {
     dealerEnabled,
+    wallet: buildB2bWalletView(eurWallet, partner.walletPrices),
     prices: partner.prices ?? emptyB2bPartnerPrices(),
     credits: {
       business: Math.max(0, remaining.business ?? 0),
