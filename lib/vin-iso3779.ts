@@ -1,7 +1,7 @@
 /**
  * ISO 3779 VIN check digit (position 9). Used when OCR or a noisy string
  * must not be accepted as a VIN just because it is 17 characters.
- * Order/CSDD `isValidVin` stays 11-17 without the check digit.
+ * Order/CSDD `isValidVin` is 17 zīmes without requiring the check digit.
  */
 
 import { isPlaceholderVin, normalizeVin } from "@/lib/order-field-validation";
@@ -74,6 +74,13 @@ export function hasIso3779CheckDigit(vin: string): boolean {
   const v = normalizeIsoVin(vin);
   if (!VIN17_RE.test(v)) return false;
   return iso3779CheckDigit(v) === v[8];
+}
+
+/** Eiropā kontrolcipars nav obligāts: tikai brīdinājums, ne bloķēšana. */
+export function vinNeedsCheckDigitWarning(vin: string): boolean {
+  const v = normalizeIsoVin(vin);
+  if (!VIN17_RE.test(v)) return false;
+  return !hasIso3779CheckDigit(v);
 }
 
 /**

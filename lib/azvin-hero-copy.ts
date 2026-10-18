@@ -10,6 +10,7 @@ export type AzvinHeroCopy = {
   titlePrefix: string;
   titleAccent: string;
   vinInvalid: string;
+  vinLengthInvalid: string;
   listingInvalid: string;
   ctaDemoNote: string;
   langSwitcherAria: string;
@@ -19,7 +20,8 @@ type AzvinHeroBase = Omit<AzvinHeroCopy, "titlePrefix" | "titleAccent">;
 
 const BASE_AZ: AzvinHeroBase = {
   brand: "AZ.VIN",
-  vinInvalid: "Düzgün VIN daxil edin (11-17 simvol).",
+  vinInvalid: "Düzgün VIN daxil edin (17 simvol).",
+  vinLengthInvalid: "VIN 17 simvol olmalıdır, VIN nömrəsini yoxlayın",
   listingInvalid: "Düzgün elan linki daxil edin.",
   ctaDemoNote: "Demo. Ödəniş tezliklə.",
   langSwitcherAria: "Dil",
@@ -27,7 +29,8 @@ const BASE_AZ: AzvinHeroBase = {
 
 const BASE_EN: AzvinHeroBase = {
   brand: "AZ.VIN",
-  vinInvalid: "Enter a valid VIN (11-17 characters).",
+  vinInvalid: "Enter a valid VIN (17 characters).",
+  vinLengthInvalid: "VIN must be 17 characters, check the VIN number",
   listingInvalid: "Enter a valid listing link.",
   ctaDemoNote: "Demo only. Checkout coming soon.",
   langSwitcherAria: "Language",
@@ -35,7 +38,8 @@ const BASE_EN: AzvinHeroBase = {
 
 const BASE_RU: AzvinHeroBase = {
   brand: "AZ.VIN",
-  vinInvalid: "Введите корректный VIN (11-17 символов).",
+  vinInvalid: "Введите корректный VIN (17 символов).",
+  vinLengthInvalid: "VIN должен содержать 17 знаков, проверьте VIN номер",
   listingInvalid: "Введите корректную ссылку на объявление.",
   ctaDemoNote: "Демо. Оплата скоро.",
   langSwitcherAria: "Язык",
@@ -43,7 +47,8 @@ const BASE_RU: AzvinHeroBase = {
 
 const BASE_LV: AzvinHeroBase = {
   brand: "AZ.VIN",
-  vinInvalid: "Ievadi derīgu VIN (11-17 rakstzīmes).",
+  vinInvalid: "Ievadi derīgu VIN (17 rakstzīmes).",
+  vinLengthInvalid: "VIN jābūt 17 zīmēm, pārbaudiet VIN numuru",
   listingInvalid: "Ievadi derīgu sludinājuma saiti.",
   ctaDemoNote: "Demo. Apmaksa drīzumā.",
   langSwitcherAria: "Valoda",

@@ -57,6 +57,8 @@
       "invalidFormat": "Nepareizs formāts.",
       "step1Both": "Lūdzu, aizpildiet derīgu VIN kodu vai numurzīmi.",
       "vin": "Lūdzu, ievadiet derīgu VIN kodu (17 zīmes) vai valsts numurzīmi (3-6 zīmes).",
+      "vinLength": "VIN jābūt 17 zīmēm, pārbaudiet VIN numuru",
+      "vinCheckDigit": "ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN numuru.",
       "required": "Šis lauks ir obligāts.",
       "url": "Lūdzu, ievadiet derīgu saiti uz sludinājumu.",
       "listing": "Lūdzu, ievadiet derīgu saiti uz sludinājumu.",

@@ -135,6 +135,13 @@ describe("admin input and submission", () => {
     if (!ok.ok) return;
     expect(ok.resolved.email).toBe("klients@piemers.lv");
     expect(ok.resolved.vin).toBe("WBAFF41030L065449");
+
+    const shortVin = validateClientLinkSubmission(
+      record,
+      { email: "klients@piemers.lv", vin: "W0VZCYHZXN684325", listingUrl: "", phone: "" },
+      true,
+    );
+    expect(shortVin).toMatchObject({ ok: false, error: "vin_length" });
   });
 
   it("requires withdrawal consent", () => {

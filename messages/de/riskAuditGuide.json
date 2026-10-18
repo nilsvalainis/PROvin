@@ -36,6 +36,8 @@
     "errors": {
       "listing": "Bitte fügen Sie einen gültigen Link zu einem konkreten Inserat ein.",
       "vin": "Bitte eine gültige VIN oder ein Kennzeichen eingeben (3-6 Zeichen).",
+      "vinLength": "Die VIN muss 17 Zeichen haben, prüfen Sie die VIN-Nummer",
+      "vinCheckDigit": "Die ISO-3779-Prüfziffer stimmt nicht. In der EU ist sie nicht Pflicht, prüfen Sie die VIN-Nummer trotzdem.",
       "heard": "Bitte angeben, wie Sie von uns erfahren haben.",
       "email": "Die E-Mail-Adresse ist ungültig.",
       "phone": "Die Telefonnummer ist ungültig.",

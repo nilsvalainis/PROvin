@@ -1,7 +1,6 @@
 import {
   isPlausibleListingUrl,
-  isValidVinOrPlate,
-  normalizeVin,
+  vinOrPlateErrorMessage,
 } from "@/lib/order-field-validation";
 import { HOME_PRICING_CHECKOUT_SOURCE } from "@/lib/home-pricing-checkout";
 import { TP5_CHECKOUT_SOURCE } from "@/lib/test-pricing-5-checkout-routing";
@@ -195,18 +194,22 @@ const TP5_INLINE_FIELD_MESSAGES = {
   lv: {
     listingUrl: "Saitei jābūt pilnai adresei uz konkrētu sludinājumu.",
     vin: "Ievadi derīgu VIN kodu vai valsts numurzīmi (3-6 zīmes).",
+    vinLength: "VIN jābūt 17 zīmēm, pārbaudiet VIN numuru",
   },
   en: {
     listingUrl: "Please enter the full link to a specific listing.",
     vin: "Enter a valid VIN or licence plate number (3-6 characters).",
+    vinLength: "VIN must be 17 characters, check the VIN number",
   },
   de: {
     listingUrl: "Bitte den vollständigen Link zu einem konkreten Inserat eingeben.",
     vin: "Bitte eine gültige VIN oder ein Kennzeichen eingeben (3-6 Zeichen).",
+    vinLength: "Die VIN muss 17 Zeichen haben, prüfen Sie die VIN-Nummer",
   },
   ru: {
     listingUrl: "Введите полную ссылку на конкретное объявление.",
     vin: "Введите корректный VIN или госномер (3-6 символов).",
+    vinLength: "VIN должен содержать 17 знаков, проверьте VIN номер",
   },
 } as const;
 
@@ -224,10 +227,11 @@ export function validateTp5InlineFields(
     errors.listingUrl = messages.listingUrl;
   }
 
-  const normalized = normalizeVin(vin.trim());
-  if (!normalized || !isValidVinOrPlate(normalized)) {
-    errors.vin = messages.vin;
-  }
+  const vinMsg = vinOrPlateErrorMessage(vin, {
+    vin: messages.vin,
+    vinLength: messages.vinLength,
+  });
+  if (vinMsg) errors.vin = vinMsg;
 
   if (Object.keys(errors).length > 0) return { ok: false, errors };
   return { ok: true };

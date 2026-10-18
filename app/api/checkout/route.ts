@@ -6,8 +6,8 @@ import { routing } from "@/i18n/routing";
 import {
   getOrderContactFieldErrors,
   isPlausibleListingUrl,
-  isValidVinOrPlate,
   normalizeVin,
+  vinOrPlateErrorMessage,
 } from "@/lib/order-field-validation";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
@@ -112,8 +112,13 @@ export async function POST(req: Request) {
   if (!withdrawalConsent) {
     errors.push(copy.errors.withdrawalRequired);
   }
-  if (!vin || !isValidVinOrPlate(vin)) {
-    errors.push(copy.validation.vin);
+  const vinError = vinOrPlateErrorMessage(vin, {
+    vin: copy.validation.vin,
+    vinLength: copy.validation.vinLength,
+    empty: copy.validation.fieldEmpty,
+  });
+  if (vinError) {
+    errors.push(vinError);
   }
   if (listingUrl && !isPlausibleListingUrl(listingUrl)) {
     errors.push(copy.validation.listing);

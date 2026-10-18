@@ -85,5 +85,10 @@ describe("test-pricing plans", () => {
     expect(validateTestPricingStep2(plus, "", "KG982", true).ok).toBe(true);
     expect(validateTestPricingStep2(plus, "", "KG982", false).ok).toBe(false);
     expect(validateTestPricingStep2(plus, "", "AB", true).ok).toBe(false);
+    const truncated = validateTestPricingStep2(plus, "", "W0VZCYHZXN684325", true);
+    expect(truncated.ok).toBe(false);
+    if (!truncated.ok) {
+      expect(truncated.errors.vin).toBe("VIN jābūt 17 zīmēm, pārbaudiet VIN numuru");
+    }
   });
 });

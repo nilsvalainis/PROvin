@@ -2,8 +2,7 @@
 
 import {
   isPlausibleListingUrl,
-  isValidVinOrPlate,
-  normalizeVin,
+  vinOrPlateErrorMessage,
 } from "@/lib/order-field-validation";
 
 export type TestPricingPlanId = "mini" | "plus" | "premium" | "dealer" | "koreaUsa";
@@ -166,21 +165,25 @@ const TEST_PRICING_STEP2_MESSAGES = {
   lv: {
     listingUrl: "Saitei jābūt pilnai adresei uz konkrētu sludinājumu.",
     vin: "Ievadi derīgu VIN kodu vai valsts numurzīmi (3-6 zīmes).",
+    vinLength: "VIN jābūt 17 zīmēm, pārbaudiet VIN numuru",
     consent: "Apstiprini noteikumus un digitālā satura izpildi.",
   },
   en: {
     listingUrl: "Please enter the full link to a specific listing.",
     vin: "Enter a valid VIN or licence plate number (3-6 characters).",
+    vinLength: "VIN must be 17 characters, check the VIN number",
     consent: "Please accept the terms and the digital content delivery conditions.",
   },
   de: {
     listingUrl: "Bitte den vollständigen Link zu einem konkreten Inserat eingeben.",
     vin: "Bitte eine gültige VIN oder ein Kennzeichen eingeben (3-6 Zeichen).",
+    vinLength: "Die VIN muss 17 Zeichen haben, prüfen Sie die VIN-Nummer",
     consent: "Bitte bestätigen Sie die Bedingungen und die Ausführung des digitalen Inhalts.",
   },
   ru: {
     listingUrl: "Введите полную ссылку на конкретное объявление.",
     vin: "Введите корректный VIN или госномер (3-6 знаков).",
+    vinLength: "VIN должен содержать 17 знаков, проверьте VIN номер",
     consent: "Подтвердите условия и исполнение цифрового содержания.",
   },
 } as const;
@@ -202,11 +205,11 @@ export function validateTestPricingStep2(
     errors.listingUrl = messages.listingUrl;
   }
 
-  const vinNorm = vin.trim();
-  const normalized = normalizeVin(vinNorm);
-  if (!normalized || !isValidVinOrPlate(normalized)) {
-    errors.vin = messages.vin;
-  }
+  const vinMsg = vinOrPlateErrorMessage(vin, {
+    vin: messages.vin,
+    vinLength: messages.vinLength,
+  });
+  if (vinMsg) errors.vin = vinMsg;
 
   if (!withdrawalConsent) {
     errors.consent = messages.consent;

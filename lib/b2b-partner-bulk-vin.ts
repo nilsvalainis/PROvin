@@ -4,7 +4,6 @@ import {
 } from "@/lib/b2b-partner-archive-rows";
 import type { B2bPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { vinCheckDigitOk } from "@/lib/vin-scan/vin-check";
 
 export const BULK_VIN_MAX = 20;
 
@@ -33,7 +32,7 @@ const HEADER_CELL =
 
 export function isBulkVinFormatValid(vin: string): boolean {
   const n = normalizeVin(vin);
-  return isValidVin(n) && vinCheckDigitOk(n);
+  return isValidVin(n);
 }
 
 export function splitVinPaste(text: string): string[] {

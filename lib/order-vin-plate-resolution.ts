@@ -38,7 +38,7 @@ export type OrderVinOrPlateIntake =
   | { kind: "plate"; plate: string }
   | { kind: "invalid" };
 
-/** Vispirms VIN (11–17), tad LV numurzīme. */
+/** Vispirms VIN (17 zīmes), tad LV numurzīme. */
 export function classifyOrderVinOrPlateInput(raw: string): OrderVinOrPlateIntake {
   const normalized = normalizeVin(raw);
   if (!normalized) return { kind: "invalid" };

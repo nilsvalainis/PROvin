@@ -13,7 +13,8 @@ import {
   isB2bPartnerCode,
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { isIncompleteVinLength, isValidVin, normalizeVin, sanitizeVinInput } from "@/lib/order-field-validation";
+import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { trackMetaLead } from "@/lib/meta-pixel";
 import { TP5_DEALER_BRANDS, getTp5MobileService, getTp5MobileTurnaround } from "@/lib/test-pricing-5-mobile";
 import {
@@ -116,7 +117,7 @@ export function B2bPartnerPricingCard({
 
   const submitPay = () => {
     if (!isValidVin(vin)) {
-      setVinError(vinFormatError);
+      setVinError(isIncompleteVinLength(vin) ? t("vinLengthError") : vinFormatError);
       return;
     }
     setVinError("");
@@ -231,16 +232,25 @@ export function B2bPartnerPricingCard({
                 className={`${styles.inlineInput} ${vinError ? styles.inlineInputError : ""}`}
                 value={vin}
                 onChange={(event) => {
-                  setVin(event.target.value.toUpperCase().replace(/\s/g, ""));
+                  setVin(sanitizeVinInput(event.target.value));
+                  setVinError("");
+                }}
+                onPaste={(event) => {
+                  event.preventDefault();
+                  setVin(sanitizeVinInput(event.clipboardData.getData("text")));
                   setVinError("");
                 }}
                 placeholder={uiCopy.vinPlaceholder}
                 aria-label={uiCopy.vinAria}
                 autoComplete="off"
                 spellCheck={false}
-                maxLength={17}
               />
               {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
+              {!vinError && vinNeedsCheckDigitWarning(vin) ? (
+                <p className={styles.inlineFieldError} role="status">
+                  {t("vinCheckDigitWarning")}
+                </p>
+              ) : null}
             </>
           ) : (
             <>

@@ -7,13 +7,14 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "@/i18n/navigation";
 import demoHeroFields from "@/app/[locale]/demo/page.module.css";
 import {
+  getVinOrPlateErrorKind,
   isPlausibleListingUrl,
   isValidOrderEmail,
   isValidOrderPhone,
-  isValidVinOrPlate,
-  normalizeVin,
+  sanitizeVinInput,
   validateOrderFields,
 } from "@/lib/order-field-validation";
+import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 
 const labelDefault =
@@ -33,8 +34,15 @@ function buildHeroStep2FieldMessages(
   phoneTrim: string,
   t: (key: string) => string,
 ): Record<HeroStep2FieldKey, string | null> {
-  const vn = normalizeVin(vinTrim);
-  const vinMsg = !vn || !isValidVinOrPlate(vn) ? (!vn ? t("validation.fieldEmpty") : t("validation.vin")) : null;
+  const vinKind = getVinOrPlateErrorKind(vinTrim);
+  const vinMsg =
+    vinKind === "empty"
+      ? t("validation.fieldEmpty")
+      : vinKind === "vinLength"
+        ? t("validation.vinLength")
+        : vinKind === "vin"
+          ? t("validation.vin")
+          : null;
   const listingMsg =
     listingTrim && !isPlausibleListingUrl(listingTrim) ? t("validation.listing") : null;
   const et = emailTrim.trim();
@@ -128,8 +136,9 @@ export function OrderForm({
   const inputBase = inputDefault;
 
   function goToStepTwo() {
-    const vinNormalized = normalizeVin(vin);
-    const vinOk = Boolean(vinNormalized && isValidVinOrPlate(vinNormalized));
+    const vinNormalized = sanitizeVinInput(vin);
+    const vinKind = getVinOrPlateErrorKind(vinNormalized);
+    const vinOk = vinKind === null;
     const listingTrim = listingUrl.trim();
     const listingValidIfPresent = !listingTrim || isPlausibleListingUrl(listingTrim);
 
@@ -141,7 +150,14 @@ export function OrderForm({
       return;
     }
 
-    const vinMsg = vinOk ? null : !vinNormalized ? t("validation.fieldEmpty") : t("validation.vin");
+    const vinMsg =
+      vinOk
+        ? null
+        : vinKind === "empty"
+          ? t("validation.fieldEmpty")
+          : vinKind === "vinLength"
+            ? t("validation.vinLength")
+            : t("validation.vin");
     const listingMsg =
       listingTrim && !isPlausibleListingUrl(listingTrim) ? t("validation.listing") : null;
 
@@ -190,7 +206,7 @@ export function OrderForm({
     } else {
       const fieldError = validateOrderFields({ vin: vinTrim, listingUrl: listingTrim, email: emailTrim, phone: phoneTrim });
       if (fieldError) {
-        setError(t(`validation.${fieldError}`));
+        setError(fieldError === "vinLength" ? t("validation.vinLength") : t(`validation.${fieldError}`));
         return;
       }
     }
@@ -215,7 +231,7 @@ export function OrderForm({
             name: nameTrim || undefined,
             email: emailTrim,
             phone: phoneTrim,
-            vin: normalizeVin(vinTrim),
+            vin: sanitizeVinInput(vinTrim),
             listingUrl: listingTrim,
             notes: notesTrim || undefined,
           }),
@@ -241,7 +257,7 @@ export function OrderForm({
           name: nameTrim || undefined,
           email: emailTrim,
           phone: phoneTrim,
-          vin: normalizeVin(vinTrim),
+          vin: sanitizeVinInput(vinTrim),
           listingUrl: listingTrim,
           notes: notesTrim || undefined,
           locale,
@@ -329,7 +345,6 @@ export function OrderForm({
                   name="vin"
                   type="text"
                   required
-                  maxLength={17}
                   spellCheck={false}
                   value={vin}
                   className={heroStep1InputClass}
@@ -340,11 +355,19 @@ export function OrderForm({
                   aria-describedby={
                     (step === 1 && heroStep1Errors.vin) || (step === 2 && heroStep2FieldErrors.vin)
                       ? "order-hero-vin-error"
-                      : undefined
+                      : vinNeedsCheckDigitWarning(vin)
+                        ? "order-hero-vin-checkdigit"
+                        : undefined
                   }
                   onChange={(e) => {
-                    const el = e.target;
-                    const value = normalizeVin(el.value).slice(0, 17);
+                    const value = sanitizeVinInput(e.target.value);
+                    setVin(value);
+                    if (step === 1) setHeroStep1Errors((p) => ({ ...p, vin: null }));
+                    if (step === 2) setHeroStep2FieldErrors((p) => ({ ...p, vin: null }));
+                  }}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const value = sanitizeVinInput(e.clipboardData.getData("text"));
                     setVin(value);
                     if (step === 1) setHeroStep1Errors((p) => ({ ...p, vin: null }));
                     if (step === 2) setHeroStep2FieldErrors((p) => ({ ...p, vin: null }));
@@ -358,6 +381,14 @@ export function OrderForm({
                   aria-live="polite"
                 >
                   {step === 1 ? heroStep1Errors.vin : heroStep2FieldErrors.vin}
+                </p>
+              ) : vinNeedsCheckDigitWarning(vin) ? (
+                <p
+                  id="order-hero-vin-checkdigit"
+                  className="order-form-hero-hint mt-1.5 px-0.5 text-left text-[12px] font-normal leading-snug text-amber-200/80 sm:text-[11px]"
+                  role="status"
+                >
+                  {t("validation.vinCheckDigit")}
                 </p>
               ) : null}
             </>
@@ -373,20 +404,25 @@ export function OrderForm({
                 name="vin"
                 type="text"
                 required
-                maxLength={17}
                 spellCheck={false}
                 value={vin}
                 className={step === 1 ? firstStepVinInputClassDefault : secondStepVinInputClassDefault}
                 placeholder={step === 1 ? t("vinPlaceholderStep1") : t("vinPlaceholder")}
                 onChange={(e) => {
-                  const el = e.target;
-                  const value = normalizeVin(el.value).slice(0, 17);
-                  setVin(value);
+                  setVin(sanitizeVinInput(e.target.value));
+                }}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  setVin(sanitizeVinInput(e.clipboardData.getData("text")));
                 }}
               />
             </>
           )}
-          {step === 2 ? (
+          {step === 2 && !hero && vinNeedsCheckDigitWarning(vin) ? (
+            <p className="mt-1 text-[11px] font-normal leading-snug text-amber-800" role="status">
+              {t("validation.vinCheckDigit")}
+            </p>
+          ) : step === 2 ? (
             <p className={hero ? hintClass : "mt-1 text-[11px] font-normal leading-snug text-[#aeaeb2]"}>
               {t("vinHint")}
             </p>

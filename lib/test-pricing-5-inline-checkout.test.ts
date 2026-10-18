@@ -27,6 +27,11 @@ describe("test-pricing-5 inline checkout", () => {
     expect(validateTp5InlineFields("", "1HGCM82633A004352").ok).toBe(true);
     expect(validateTp5InlineFields("", "KG982").ok).toBe(true);
     expect(validateTp5InlineFields("", "AB-1234").ok).toBe(true);
+    const truncated = validateTp5InlineFields("", "W0VZCYHZXN684325");
+    expect(truncated.ok).toBe(false);
+    if (!truncated.ok) {
+      expect(truncated.errors.vin).toBe("VIN jābūt 17 zīmēm, pārbaudiet VIN numuru");
+    }
     /** Numurzīme ārpus 3–6 zīmēm vai nepilns VIN — kļūda. */
     expect(validateTp5InlineFields("", "AB").ok).toBe(false);
     expect(validateTp5InlineFields("", "ABCD123").ok).toBe(false);
