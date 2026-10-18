@@ -33,7 +33,10 @@ export default async function AdminPartnersPage() {
         <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
           Reģistrē dīleri pats vai izveido unikālu ielūguma saiti, lai partneris reģistrētos pats. Publiska reģistrācija paliek slēgta.
         </p>
-        <p className="mt-2 text-[13px]">
+        <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
+          <Link href="/admin/partneri/statistika" className="font-medium text-[var(--color-provin-accent)] hover:underline">
+            B2B statistika
+          </Link>
           <Link
             href="/admin/partneri/pieteikumi"
             className="inline-flex items-center gap-2 font-medium text-[var(--color-provin-accent)] hover:underline"
