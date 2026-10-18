@@ -92,17 +92,46 @@ function haystackHasMonthYear(haystack: string, year: string, month: string, mon
   return new RegExp(`${year}.{0,12}${monthLv}`, "i").test(haystack);
 }
 
-function kmNumbers(text: string): number[] {
+const KM_READING_RE = /\b(\d{1,3})(?:[\s\u00a0](\d{3})|\.(\d{3}))?\s*km\b/gi;
+const KM_EXCLUDE_WINDOW_RE = /intervāl|interval|starpīb/i;
+const KM_EXCLUDE_IMMEDIATE_RE =
+  /(?:\bpēc|\blīdz|\bik|\bno\s+[\d\s.]{1,12}\s+līdz|\bvairāk\s+nekā|\bvairāk\s+kā|\bmazāk\s+nekā|\bmazāk\s+kā)\s*$/i;
+const KM_INCLUDE_RE = /\bpie\b|\bnobraukum|\bodometr|\brādījum/i;
+const KM_DATE_NEAR_RE = /\b\d{1,2}[./]\d{1,2}[./]\d{2,4}\b|\b20\d{2}\.\s*gada/i;
+
+function parseKmMatch(m: RegExpExecArray): number | null {
+  const head = Number(m[1]);
+  const tail = m[2] ?? m[3];
+  const n = tail ? head * 1000 + Number(tail) : head;
+  return n >= 1000 ? n : null;
+}
+
+/** Vai „X km” ir odometra rādījums, ne intervāls / diapazons / „pēc/līdz/ik”. */
+export function isOdometerReadingKmContext(text: string, matchIndex: number): boolean {
+  const before = text.slice(Math.max(0, matchIndex - 80), matchIndex);
+  const window = text.slice(Math.max(0, matchIndex - 80), matchIndex + 28);
+  if (KM_EXCLUDE_WINDOW_RE.test(window)) return false;
+  if (KM_EXCLUDE_IMMEDIATE_RE.test(before.replace(/\s+/g, " "))) return false;
+  if (KM_INCLUDE_RE.test(before)) return true;
+  if (KM_DATE_NEAR_RE.test(before)) return true;
+  return false;
+}
+
+/** Tikai odometra rādījumi (pie X km, nobraukums X km, datēts rādījums). */
+export function extractOdometerReadingKms(text: string): number[] {
   const out: number[] = [];
-  const re = /\b(\d{1,3})(?:[\s\u00a0](\d{3})|\.(\d{3}))?\s*km\b/gi;
+  const re = new RegExp(KM_READING_RE.source, "gi");
   let m: RegExpExecArray | null;
   while ((m = re.exec(text))) {
-    const head = Number(m[1]);
-    const tail = m[2] ?? m[3];
-    const n = tail ? head * 1000 + Number(tail) : head;
-    if (n >= 1000) out.push(n);
+    if (!isOdometerReadingKmContext(text, m.index)) continue;
+    const n = parseKmMatch(m);
+    if (n != null) out.push(n);
   }
   return out;
+}
+
+function kmNumbers(text: string): number[] {
+  return extractOdometerReadingKms(text);
 }
 
 function flagKey(f: FactCheckFlag): string {
