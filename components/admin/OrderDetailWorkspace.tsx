@@ -141,6 +141,7 @@ import type { ClientReportTranslationCache } from "@/lib/client-report-translate
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import { isPartnerOrderNotes } from "@/lib/b2b-partner-orders";
+import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import {
   applyOrderPdfVisibilityDefaults,
   ASV_ONLY_PDF_VISIBILITY,
@@ -4194,6 +4195,8 @@ export function OrderDetailWorkspace({
   const canSendNotifyToClient = canNotifyClientOrder(payload, notifyCustomerEmail);
   const notifySendBlockedReason = notifyClientSendBlockedReason(payload, notifyCustomerEmail);
 
+  const partnerReportLang = parseB2bWalletOrderMarks(payload.notes)?.reportLang ?? null;
+
   const portfolioSection = (
     <section id="admin-order-section-pielikumi" className={portfolioShellClass}>
       <div
@@ -4259,6 +4262,14 @@ export function OrderDetailWorkspace({
             </button>
             {payload.partnerCompanyName || payload.partnerId || isPartnerOrderNotes(payload.notes) ? (
               <AdminPartnerArchivePdfButton sessionId={payload.sessionId} />
+            ) : null}
+            {partnerReportLang ? (
+              <span
+                className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-700"
+                title="Partneris pirkumā izvēlējās šo PRO atskaites valodu. PDF ģenerē ar atbilstošo valodas pogu."
+              >
+                Partnera atskaites valoda: {partnerReportLang.toUpperCase()}
+              </span>
             ) : null}
             <AdminPdfIncludeToggle
               checked={pdfVisibility.portfolio}

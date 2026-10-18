@@ -19,6 +19,7 @@ export const B2B_WALLET_SAMPLES: Record<B2bWalletProductId, B2bWalletSampleConfi
       lv: "/samples/b2b/dilera-dati-pro-paraugs-lv.pdf",
       ru: "/samples/b2b/dilera-dati-pro-paraugs-ru.pdf",
       en: "/samples/b2b/dilera-dati-pro-paraugs-en.pdf",
+      de: "/samples/b2b/dilera-dati-pro-paraugs-de.pdf",
     },
   },
 };
