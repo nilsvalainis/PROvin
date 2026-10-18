@@ -5,6 +5,7 @@ export const ONEAUTO_SOURCE_TAG = "oneautoapi" as const;
 
 export const ONEAUTO_PRODUCT_IDS = [
   "vin_decoder",
+  "oe_vin_lookup",
   "oe_build_sheet",
   "oe_service_history",
 ] as const;
@@ -30,6 +31,14 @@ export const ONEAUTO_PRODUCTS: readonly OneautoProduct[] = [
     label: "VIN Decoder",
     hint: "",
     priceCents: 18,
+    // Cartell VIN Decoder (18c PAYG, visas markas). /ezyvin/vinlookup/ ir cits produkts (OE VIN Lookup).
+    path: "/cartell/vindecoder",
+  },
+  {
+    id: "oe_vin_lookup",
+    label: "OE VIN Lookup (Europe)",
+    hint: "OEM Engine, Trim, Colour",
+    priceCents: 36,
     path: "/ezyvin/vinlookup/",
   },
   {
@@ -127,10 +136,11 @@ export function oneautoProductStatusLabel(result: OneautoResultLike): string {
   if (oneautoResultIsPending(result)) return "gaida OEM";
   if (oneautoResultIsNoData(result)) {
     return result.fallback
-      ? "nav datu (nav iekasēts) · fallback"
+      ? "nav datu (nav iekasēts) · fallback: lokālais VIN dekodējums"
       : "nav datu (nav iekasēts)";
   }
   if (oneautoResultIsUnavailable(result)) return "API nav pieejams";
+  if (result.error === "service_not_enabled") return "Your Plan: slēdzis OFF (nav iekasēts)";
   if (oneautoResultTone(result) === "ok") return "ielādēts";
   return result.error?.trim() || "kļūda";
 }
@@ -627,12 +637,15 @@ export function buildOneautoDisplay(results: Partial<Record<OneautoProductId, un
   const ptSeen = new Set<string>();
 
   const decoder = unwrapResult(results.vin_decoder);
+  const oeLookup = unwrapResult(results.oe_vin_lookup);
   const build = unwrapResult(results.oe_build_sheet);
   const history = unwrapResult(results.oe_service_history);
 
   walkEquipment(build, equipment, eqSeen);
+  walkPowertrain(oeLookup, powertrain, ptSeen);
   walkPowertrain(decoder, powertrain, ptSeen);
   walkPowertrain(build, powertrain, ptSeen);
+  flattenScalars(oeLookup, powertrain, ptSeen);
   flattenScalars(decoder, powertrain, ptSeen);
   flattenScalars(build, powertrain, ptSeen);
   walkService(history, serviceTimeline);
