@@ -125,14 +125,17 @@ Publiskie teksti ir `messages/lv/partner.json` (namespace `Partner`). Admin un e
 | `Partner.walletProductsAria` | Pakalpojumi | pārbaudīt |
 | `Partner.walletProductBusinessTitle` | PROVIN Business data | apstiprināts |
 | `Partner.walletProductBusinessDesc` | Pilna auto vēstures atskaite: dīlera dati, carVertical, AutoDNA, reģistri un izsoļu arhīvs. | pārbaudīt |
-| `Partner.walletProductBusinessTag` | PDF atskaite | apstiprināts |
+| `Partner.walletProductBusinessTag` | 12-24h | apstiprināts |
 | `Partner.walletProductRawTitle` | Dīlera dati (RAW) | apstiprināts |
 | `Partner.walletProductRawDesc` | Neapstrādāti dīlera servisa ieraksti oriģinālvalodā. Dati pieejami uzreiz (drīzumā). | labots (bija: Neapstrādāti OEM dīlera servisa ieraksti. Uzreiz ekrānā.) |
-| `Partner.walletProductRawTag` | Pieejami uzreiz (drīzumā) | labots (bija: Pieejami uzreiz) |
+| `Partner.walletProductRawTag` | Pieejami uzreiz | pārbaudīt |
 | `Partner.walletProductProTitle` | Dīlera dati (PRO) | apstiprināts |
 | `Partner.walletProductProDesc` | Apstrādāta dīlera datu atskaite pircējam: apkopju un remontu vēsture, eļļas maiņas intervālu grafiks, nobraukuma pārbaude un kopsavilkums. | labots (bija: Apstrādāta un pārbaudīta dīlera datu PDF atskaite, ko varat nodot pircējam.) |
-| `Partner.walletProductProTag` | PDF atskaite | apstiprināts |
+| `Partner.walletProductProTag` | 12-24h | apstiprināts |
 | `Partner.walletReportLang` | Atskaites valoda | pārbaudīt |
+| `Partner.walletSample` | Skatīt paraugu | pārbaudīt |
+| `Partner.walletSampleSoon` | Drīzumā | pārbaudīt |
+| `Partner.walletSampleAria` | Atver PDF paraugu jaunā cilnē | pārbaudīt |
 | `Partner.walletDiscountAria` | Atlaide {pct}% | pārbaudīt |
 | `Partner.walletOldPriceAria` | Iepriekšējā cena {amount} | pārbaudīt |
 | `Partner.walletLegacyCreditsHeading` | Iepriekš iegādātie kredīti | pārbaudīt |

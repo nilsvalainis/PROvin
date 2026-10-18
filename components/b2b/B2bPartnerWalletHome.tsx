@@ -89,6 +89,16 @@ function WalletHeader({
   );
 }
 
+/** Tas pats izskats kā „Jaunums” mājas lapas katalogā. */
+function SoonBadge() {
+  const t = useTranslations("Partner");
+  return (
+    <span className={styles.catalogPopularBadgeHeader} style={{ display: "inline-block", margin: 0 }}>
+      {t("walletSampleSoon")}
+    </span>
+  );
+}
+
 function SampleLink({ product, reportLang }: { product: B2bWalletProductId; reportLang: B2bWalletReportLang }) {
   const t = useTranslations("Partner");
   const url = resolveB2bWalletSampleUrl(product, reportLang);
@@ -99,9 +109,7 @@ function SampleLink({ product, reportLang }: { product: B2bWalletProductId; repo
       <span className={`${rowClass} cursor-not-allowed text-zinc-600`} aria-disabled="true">
         <FileText className="h-[15px] w-[15px] shrink-0" aria-hidden />
         {t("walletSample")}
-        <span className="rounded-full border border-white/12 px-1.5 py-px text-[0.5rem] font-bold uppercase tracking-[0.14em] text-zinc-500">
-          {t("walletSampleSoon")}
-        </span>
+        <SoonBadge />
       </span>
     );
   }
@@ -141,9 +149,12 @@ function ProductCard({
 
   return (
     <article className="flex min-w-0 flex-col rounded-[0.9rem] border border-white/10 bg-[rgb(20_20_20/0.72)] p-5 shadow-[0_18px_48px_-28px_rgba(0,0,0,0.8)]">
-      <p className="self-start rounded-md bg-zinc-300/80 px-2 py-[0.3rem] text-[0.66rem] font-semibold leading-none tracking-[0.01em] text-zinc-800">
-        {t(copy.tag)}
-      </p>
+      <div className="flex min-h-[1.25rem] items-center gap-2.5">
+        <p className="rounded-md bg-zinc-300/80 px-2 py-[0.3rem] text-[0.66rem] font-semibold leading-none tracking-[0.01em] text-zinc-800">
+          {t(copy.tag)}
+        </p>
+        {copy.tagSoon ? <SoonBadge /> : null}
+      </div>
       <h2 className="mt-4 text-[1.08rem] font-bold leading-snug tracking-[-0.01em] text-zinc-100">{t(copy.title)}</h2>
       <p className="mt-2 text-[0.82rem] leading-relaxed text-zinc-400">{t(copy.desc)}</p>
 

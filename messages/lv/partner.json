@@ -274,7 +274,7 @@
     "walletProductBusinessTag": "12-24h",
     "walletProductRawTitle": "Dīlera dati (RAW)",
     "walletProductRawDesc": "Neapstrādāti dīlera servisa ieraksti oriģinālvalodā. Dati pieejami uzreiz (drīzumā).",
-    "walletProductRawTag": "Pieejami uzreiz (drīzumā)",
+    "walletProductRawTag": "Pieejami uzreiz",
     "walletProductProTitle": "Dīlera dati (PRO)",
     "walletProductProDesc": "Apstrādāta dīlera datu atskaite pircējam: apkopju un remontu vēsture, eļļas maiņas intervālu grafiks, nobraukuma pārbaude un kopsavilkums.",
     "walletProductProTag": "12-24h",

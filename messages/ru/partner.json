@@ -274,7 +274,7 @@
     "walletProductBusinessTag": "12-24h",
     "walletProductRawTitle": "Данные дилера (RAW)",
     "walletProductRawDesc": "Необработанные сервисные записи дилера на языке оригинала. Мгновенный доступ к данным (скоро).",
-    "walletProductRawTag": "Доступно сразу (скоро)",
+    "walletProductRawTag": "Доступно сразу",
     "walletProductProTitle": "Данные дилера (PRO)",
     "walletProductProDesc": "Обработанный отчёт по данным дилера для покупателя: история обслуживания и ремонтов, график интервалов замены масла, проверка пробега и резюме.",
     "walletProductProTag": "12-24h",
