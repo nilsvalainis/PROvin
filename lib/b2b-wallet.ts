@@ -10,9 +10,9 @@ export type B2bWalletProductId = "business" | "dealer_raw" | "dealer_pro";
 
 export const B2B_WALLET_PRODUCT_IDS: readonly B2bWalletProductId[] = ["business", "dealer_raw", "dealer_pro"];
 
-export type B2bWalletReportLang = "lv" | "ru" | "en";
+export type B2bWalletReportLang = "lv" | "ru" | "en" | "de";
 
-export const B2B_WALLET_REPORT_LANGS: readonly B2bWalletReportLang[] = ["lv", "ru", "en"];
+export const B2B_WALLET_REPORT_LANGS: readonly B2bWalletReportLang[] = ["lv", "ru", "en", "de"];
 
 export type B2bWalletProductSpec = {
   id: B2bWalletProductId;
@@ -35,7 +35,7 @@ export function isB2bWalletProductId(value: unknown): value is B2bWalletProductI
 }
 
 export function isB2bWalletReportLang(value: unknown): value is B2bWalletReportLang {
-  return value === "lv" || value === "ru" || value === "en";
+  return value === "lv" || value === "ru" || value === "en" || value === "de";
 }
 
 /** Individuālās cenas (centi). `null` = noklusējuma cena. */
@@ -461,7 +461,7 @@ export function summarizeB2bWallet(wallet: B2bWallet): B2bWalletSummary {
 const WALLET_TXN_RE = /wallet_txn=(wtx_[a-z0-9_]+)/i;
 const WALLET_PRODUCT_RE = /wallet_product=(business|dealer_raw|dealer_pro)/i;
 const WALLET_CENTS_RE = /wallet_cents=(\d{1,7})/i;
-const REPORT_LANG_RE = /report_lang=(lv|ru|en)/i;
+const REPORT_LANG_RE = /report_lang=(lv|ru|en|de)\b/i;
 
 export type B2bWalletOrderMarks = {
   txnId: string;

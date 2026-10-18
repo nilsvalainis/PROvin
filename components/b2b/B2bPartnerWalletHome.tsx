@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { FileText, Plus, RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { B2B_LABEL_CLASS, B2B_WALLET_PRODUCT_COPY } from "@/components/b2b/b2b-partner-ui";
@@ -21,6 +21,7 @@ import {
   type B2bWalletProductId,
   type B2bWalletReportLang,
 } from "@/lib/b2b-wallet";
+import { resolveB2bWalletSampleUrl } from "@/lib/b2b-samples";
 import type { B2bWalletView } from "@/lib/b2b-wallet-view";
 import { trackMetaLead } from "@/lib/meta-pixel";
 import { isIncompleteVinLength, isPlausibleListingUrl, isValidVin, sanitizeVinInput } from "@/lib/order-field-validation";
@@ -88,6 +89,45 @@ function WalletHeader({
   );
 }
 
+/** Tas pats izskats kā „Jaunums” mājas lapas katalogā. */
+function SoonBadge() {
+  const t = useTranslations("Partner");
+  return (
+    <span className={styles.catalogPopularBadgeHeader} style={{ display: "inline-block", margin: 0 }}>
+      {t("walletSampleSoon")}
+    </span>
+  );
+}
+
+function SampleLink({ product, reportLang }: { product: B2bWalletProductId; reportLang: B2bWalletReportLang }) {
+  const t = useTranslations("Partner");
+  const url = resolveB2bWalletSampleUrl(product, reportLang);
+  const langSuffix = product === "dealer_pro" ? ` (${reportLang.toUpperCase()})` : "";
+  const rowClass = "mt-2.5 inline-flex min-h-[22px] items-center gap-1.5 self-start text-[0.74rem] font-semibold";
+  if (!url) {
+    return (
+      <span className={`${rowClass} cursor-not-allowed text-zinc-600`} aria-disabled="true">
+        <FileText className="h-[15px] w-[15px] shrink-0" aria-hidden />
+        {t("walletSample")}
+        <SoonBadge />
+      </span>
+    );
+  }
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${rowClass} text-[#93c5fd] underline decoration-[#93c5fd]/35 underline-offset-[3px] transition-colors hover:text-white hover:decoration-white/60`}
+      title={t("walletSampleAria")}
+    >
+      <FileText className="h-[15px] w-[15px] shrink-0" aria-hidden />
+      {t("walletSample")}
+      {langSuffix} (PDF)
+    </a>
+  );
+}
+
 function ProductCard({
   product,
   view,
@@ -109,16 +149,32 @@ function ProductCard({
 
   return (
     <article className="flex min-w-0 flex-col rounded-[0.9rem] border border-white/10 bg-[rgb(20_20_20/0.72)] p-5 shadow-[0_18px_48px_-28px_rgba(0,0,0,0.8)]">
-      <p className="self-start rounded-full border border-[#2563EB]/50 px-2.5 py-1 text-[0.52rem] font-bold uppercase tracking-[0.14em] text-[#93c5fd]">
-        {t(copy.tag)}
-      </p>
+      <div className="flex min-h-[1.25rem] items-center gap-2.5">
+        <p className="rounded-md bg-zinc-300/80 px-2 py-[0.3rem] text-[0.66rem] font-semibold leading-none tracking-[0.01em] text-zinc-800">
+          {t(copy.tag)}
+        </p>
+        {copy.tagSoon ? <SoonBadge /> : null}
+      </div>
       <h2 className="mt-4 text-[1.08rem] font-bold leading-snug tracking-[-0.01em] text-zinc-100">{t(copy.title)}</h2>
       <p className="mt-2 text-[0.82rem] leading-relaxed text-zinc-400">{t(copy.desc)}</p>
 
       {product === "dealer_pro" ? (
         <div className="mt-4">
           <p className={B2B_LABEL_CLASS}>{t("walletReportLang")}</p>
-          <div className="flex rounded-full border border-white/12 p-0.5" role="radiogroup" aria-label={t("walletReportLang")}>
+          <div
+            className="inline-flex gap-0.5 rounded-lg border border-white/12 bg-white/[0.03] p-0.5"
+            role="radiogroup"
+            aria-label={t("walletReportLang")}
+            onKeyDown={(event) => {
+              const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
+              if (!step) return;
+              event.preventDefault();
+              const langs = B2B_WALLET_REPORT_LANGS;
+              const next = langs[(langs.indexOf(reportLang) + step + langs.length) % langs.length];
+              onReportLang(next);
+              event.currentTarget.querySelector<HTMLButtonElement>(`[data-lang="${next}"]`)?.focus();
+            }}
+          >
             {B2B_WALLET_REPORT_LANGS.map((lang) => {
               const active = lang === reportLang;
               return (
@@ -127,11 +183,11 @@ function ProductCard({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  className={
-                    active
-                      ? "flex-1 rounded-full bg-white/12 px-3 py-1.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-zinc-100"
-                      : "flex-1 rounded-full px-3 py-1.5 text-[0.66rem] font-semibold uppercase tracking-[0.12em] text-zinc-500 transition-colors hover:text-zinc-200"
-                  }
+                  tabIndex={active ? 0 : -1}
+                  data-lang={lang}
+                  className={`h-7 w-11 rounded-md text-[0.66rem] font-semibold tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-300/70 ${
+                    active ? "bg-zinc-300/90 text-zinc-900" : "text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100"
+                  }`}
                   onClick={() => onReportLang(lang)}
                 >
                   {lang.toUpperCase()}
@@ -169,7 +225,15 @@ function ProductCard({
           )}
         </div>
         <p className="mt-1.5 text-[0.7rem] leading-snug text-zinc-500">{t("walletDeductNote")}</p>
-        <div className="mt-4">
+        <SampleLink product={product} reportLang={reportLang} />
+        <p
+          className={`mt-3 flex h-[18px] items-center gap-1.5 overflow-hidden whitespace-nowrap text-[0.7rem] leading-[18px] text-zinc-400${refundable ? "" : " invisible"}`}
+          aria-hidden={refundable ? undefined : true}
+        >
+          <RotateCcw className="h-3 w-3 shrink-0 text-emerald-300" aria-hidden />
+          <span className="truncate">{t("walletRefundNote")}</span>
+        </p>
+        <div className="mt-2.5">
           <button
             type="button"
             className={`${styles.liquidCta}${affordable ? "" : " opacity-45"}`}
@@ -180,9 +244,6 @@ function ProductCard({
             <span className={styles.liquidCtaLabel}>{affordable ? t("walletBuy") : t("walletInsufficient")}</span>
           </button>
         </div>
-        {refundable ? (
-          <p className="mt-3 text-[0.7rem] leading-snug text-zinc-400">{t("walletRefundNote")}</p>
-        ) : null}
       </div>
     </article>
   );
@@ -428,16 +489,18 @@ function PurchaseDialog({
 export function B2bPartnerWalletHome({
   initialWallet,
   legacy,
+  initialReportLang = "lv",
 }: {
   initialWallet: B2bWalletView;
   legacy: B2bLegacyCredits | null;
+  initialReportLang?: B2bWalletReportLang;
 }) {
   const t = useTranslations("Partner");
   const router = useRouter();
   const [view, setView] = useState<B2bWalletView>(initialWallet);
   const [topupOpen, setTopupOpen] = useState(false);
   const [buying, setBuying] = useState<B2bWalletProductId | null>(null);
-  const [reportLang, setReportLang] = useState<B2bWalletReportLang>("lv");
+  const [reportLang, setReportLang] = useState<B2bWalletReportLang>(initialReportLang);
   const [topupPaid, setTopupPaid] = useState(false);
   const [buyOk, setBuyOk] = useState("");
 

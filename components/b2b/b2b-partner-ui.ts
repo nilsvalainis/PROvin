@@ -9,10 +9,12 @@ type ProductCopyKeys = {
   title: "walletProductBusinessTitle" | "walletProductRawTitle" | "walletProductProTitle";
   desc: "walletProductBusinessDesc" | "walletProductRawDesc" | "walletProductProDesc";
   tag: "walletProductBusinessTag" | "walletProductRawTag" | "walletProductProTag";
+  /** Atsevišķa „Drīzumā” nozīmīte blakus birkai. */
+  tagSoon?: boolean;
 };
 
 export const B2B_WALLET_PRODUCT_COPY: Record<B2bWalletProductId, ProductCopyKeys> = {
   business: { title: "walletProductBusinessTitle", desc: "walletProductBusinessDesc", tag: "walletProductBusinessTag" },
-  dealer_raw: { title: "walletProductRawTitle", desc: "walletProductRawDesc", tag: "walletProductRawTag" },
+  dealer_raw: { title: "walletProductRawTitle", desc: "walletProductRawDesc", tag: "walletProductRawTag", tagSoon: true },
   dealer_pro: { title: "walletProductProTitle", desc: "walletProductProDesc", tag: "walletProductProTag" },
 };

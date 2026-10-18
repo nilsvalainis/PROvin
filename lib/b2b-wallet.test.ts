@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { compareAndSwap, createMemoryConditionalStore } from "@/lib/conditional-write";
+import { CLIENT_REPORT_LANGS } from "@/lib/client-report-i18n";
 import {
+  B2B_WALLET_REPORT_LANGS,
   applyB2bWalletAdjust,
   applyB2bWalletPurchase,
   applyB2bWalletRefund,
@@ -11,6 +13,7 @@ import {
   cheapestB2bWalletPriceCents,
   emptyB2bWallet,
   formatB2bWalletEuro,
+  isB2bWalletReportLang,
   parseB2bWallet,
   parseB2bWalletOrderMarks,
   resolveB2bWalletPrice,
@@ -120,6 +123,16 @@ describe("b2b wallet auto refund on missing dealer data", () => {
       reportLang: "ru",
     });
     expect(parseB2bWalletOrderMarks("partner_id=ptr_0123456789abcdef lot=x")).toBeNull();
+  });
+
+  it("keeps German as a PRO report language from order notes to the PDF language", () => {
+    const de = buildB2bWalletOrderNoteParts({ txnId: "wtx_1_1_abc", product: "dealer_pro", priceCents: 1999, reportLang: "de" }).join(" · ");
+    expect(de).toContain("report_lang=de");
+    expect(parseB2bWalletOrderMarks(de)?.reportLang).toBe("de");
+    expect(isB2bWalletReportLang("de")).toBe(true);
+    expect(isB2bWalletReportLang("fr")).toBe(false);
+    expect(parseB2bWalletOrderMarks(`${de.replace("report_lang=de", "report_lang=dex")}`)?.reportLang).toBeNull();
+    for (const lang of B2B_WALLET_REPORT_LANGS) expect(CLIENT_REPORT_LANGS).toContain(lang);
   });
 
   it("refunds RAW and PRO only when the dealer job says no data", () => {
