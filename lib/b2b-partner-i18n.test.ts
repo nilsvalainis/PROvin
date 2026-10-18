@@ -60,14 +60,18 @@ describe("partner i18n", () => {
     expect(lv.vinDuplicateNotice).toContain("{date}");
     expect(lv.vinDuplicateNotice).toBe("Šis VIN jau pasūtīts {date}");
     expect(lv.vinDuplicateReorder).toBe("Pasūtīt jaunu (1 kr.)");
+    expect(lv.bulkModeMany).toBe("Vairāki VIN");
+    expect(lv.bulkCheckCta).toBe("Pārbaudīt sarakstu");
+    expect(lv.bulkChipInvalid).toBe("Nederīgs - {count} zīmes");
+    expect(lv.bulkReorder).toBe("Pasūtīt jaunu atskaiti - izlietos 1 kredītu");
+    expect(lv.bulkShortfall).toBe("Trūkst {count} kredītu - Pirkt paku");
+    expect(lv.bulkCreditsLine).toContain("{from} → {to}");
     expect(lv.archiveStatusReceived).toBe("Saņemts");
     expect(lv.archiveStatusProcessing).toBe("Procesā");
     expect(lv.archiveStatusReady).toBe("Gatavs");
     expect(lv.archiveCreditRestored).toBe("Kredīts atgriezts");
     for (const copy of [lv, en, de, ru]) {
-      expect(`${copy.vinSubmitOk}${copy.vinDuplicateNotice}${copy.archiveStatusReceived}`).not.toMatch(
-        /[\u2013\u2014]/,
-      );
+      expect(Object.values(copy).join("\n")).not.toMatch(/[\u2013\u2014]/);
     }
   });
 

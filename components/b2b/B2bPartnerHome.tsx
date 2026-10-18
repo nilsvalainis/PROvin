@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { Link, useRouter } from "@/i18n/navigation";
 import { B2bPartnerBuyReports } from "@/components/b2b/B2bPartnerBuyReports";
+import { B2bPartnerBulkVin } from "@/components/b2b/B2bPartnerBulkVin";
 import { getB2bCatalogPlan, type B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
 import type { B2bPartnerPriceOverrides } from "@/lib/b2b-partner-account";
 import {
@@ -109,6 +110,7 @@ export function B2bPartnerHome({
   const [duplicate, setDuplicate] = useState<{ date: string; reportHref: string | null } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [packPaidOk, setPackPaidOk] = useState(false);
+  const [vinMode, setVinMode] = useState<"single" | "bulk">("single");
 
   const loadCredits = useCallback(
     async (signal?: { cancelled: boolean }): Promise<B2bCreditRemaining | null> => {
@@ -344,6 +346,44 @@ export function B2bPartnerHome({
             </div>
           ) : null
         ) : (
+          <>
+            <div
+              className="mt-5 flex rounded-[0.35rem] border border-white/12 p-0.5"
+              role="tablist"
+              aria-label={t("bulkModeAria")}
+            >
+              {(["single", "bulk"] as const).map((mode) => {
+                const active = vinMode === mode;
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    className={
+                      active
+                        ? "flex-1 rounded-[0.28rem] bg-white/10 px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-zinc-100"
+                        : "flex-1 rounded-[0.28rem] px-3 py-2 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-zinc-500 transition-colors hover:text-zinc-200"
+                    }
+                    onClick={() => setVinMode(mode)}
+                  >
+                    {mode === "single" ? t("bulkModeSingle") : t("bulkModeMany")}
+                  </button>
+                );
+              })}
+            </div>
+            {vinMode === "bulk" ? (
+              <B2bPartnerBulkVin
+                availablePlans={availablePlans}
+                credits={credits}
+                dealerEnabled={dealerEnabled}
+                prices={prices}
+                locale={locale}
+                service={service}
+                onPickService={pickService}
+                onCreditsReload={loadCredits}
+              />
+            ) : (
           <form
             className="mt-6 flex flex-col gap-4"
             onSubmit={(event) => {
@@ -497,6 +537,8 @@ export function B2bPartnerHome({
             </button>
             <B2bPartnerBuyReports mode="secondary" dealerEnabled={dealerEnabled} prices={prices} />
           </form>
+            )}
+          </>
         )}
       </section>
     </div>

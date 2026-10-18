@@ -99,6 +99,9 @@ export function parseB2bCreditWallet(raw: unknown): B2bCreditWallet {
   return { version: 1, updatedAt, lots, ...(debitKeys.length ? { debitKeys } : {}) };
 }
 
+/** Bulk VIN (līdz 20) + spend/reorder atslēgas; vecais 40 griests nogrieztu norakstus. */
+export const B2B_DEBIT_KEYS_MAX = 160;
+
 function parseDebitKeys(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];
@@ -108,7 +111,7 @@ function parseDebitKeys(raw: unknown): string[] {
     if (!key || key.length > 80 || out.includes(key)) continue;
     out.push(key);
   }
-  return out.slice(-40);
+  return out.slice(-B2B_DEBIT_KEYS_MAX);
 }
 
 export function walletHasDebitKey(wallet: B2bCreditWallet, key: string | null | undefined): boolean {
@@ -120,8 +123,17 @@ export function walletHasDebitKey(wallet: B2bCreditWallet, key: string | null | 
 export function rememberB2bDebitKey(wallet: B2bCreditWallet, key: string | null | undefined): B2bCreditWallet {
   const id = (key ?? "").trim();
   if (!id || walletHasDebitKey(wallet, id)) return wallet;
-  const debitKeys = [...(wallet.debitKeys ?? []), id].slice(-40);
+  const debitKeys = [...(wallet.debitKeys ?? []), id].slice(-B2B_DEBIT_KEYS_MAX);
   return { ...wallet, debitKeys };
+}
+
+export function rememberB2bDebitKeys(
+  wallet: B2bCreditWallet,
+  keys: readonly (string | null | undefined)[],
+): B2bCreditWallet {
+  let next = wallet;
+  for (const key of keys) next = rememberB2bDebitKey(next, key);
+  return next;
 }
 
 export function forgetB2bDebitKeys(wallet: B2bCreditWallet, keys: readonly (string | null | undefined)[]): B2bCreditWallet {
@@ -182,6 +194,28 @@ export type DebitB2bCreditResult =
   | { ok: false; reason: "no_credits" };
 
 /** FIFO: vispirms vecākais dzīvais lots. */
+export function debitB2bCredits(
+  wallet: B2bCreditWallet,
+  sku: B2bPartnerPlanId,
+  qty: number,
+  now = new Date(),
+): { ok: true; wallet: B2bCreditWallet; lotIds: string[] } | { ok: false; reason: "no_credits" } {
+  const n = Math.max(0, Math.floor(qty));
+  if (n < 1) return { ok: true, wallet, lotIds: [] };
+  if (remainingB2bCredits(wallet.lots, now)[sku] < n) {
+    return { ok: false, reason: "no_credits" };
+  }
+  let next = wallet;
+  const lotIds: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const debit = debitB2bCredit(next, sku, now);
+    if (!debit.ok) return { ok: false, reason: "no_credits" };
+    next = debit.wallet;
+    lotIds.push(debit.lotId);
+  }
+  return { ok: true, wallet: next, lotIds };
+}
+
 export function debitB2bCredit(
   wallet: B2bCreditWallet,
   sku: B2bPartnerPlanId,
