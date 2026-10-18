@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  B2B_DEBIT_KEYS_MAX,
   b2bCreditExpiresAt,
   debitB2bCredit,
+  debitB2bCredits,
   emptyB2bCreditWallet,
   grantB2bCredits,
   hasAnyB2bCredit,
   isLiveB2bCreditLot,
   parseB2bCreditLot,
   remainingB2bCredits,
+  rememberB2bDebitKey,
   restoreB2bCredit,
   type B2bCreditLot,
 } from "@/lib/b2b-partner-credits";
@@ -78,6 +81,28 @@ describe("b2b partner credits", () => {
     const second = grantB2bCredits(first, "business", 10, now, sessionId);
     expect(second.lots).toHaveLength(1);
     expect(remainingB2bCredits(second.lots, now).business).toBe(10);
+  });
+
+  it("debits N credits atomically or leaves the wallet unchanged", () => {
+    const now = new Date("2026-09-14T10:00:00.000Z");
+    const wallet = grantB2bCredits(emptyB2bCreditWallet(), "business", 4, now);
+    const fail = debitB2bCredits(wallet, "business", 5, now);
+    expect(fail.ok).toBe(false);
+    expect(remainingB2bCredits(wallet.lots, now).business).toBe(4);
+    const ok = debitB2bCredits(wallet, "business", 3, now);
+    expect(ok.ok).toBe(true);
+    if (!ok.ok) return;
+    expect(ok.lotIds).toHaveLength(3);
+    expect(remainingB2bCredits(ok.wallet.lots, now).business).toBe(1);
+  });
+
+  it("keeps bulk debit keys beyond the old 40 cap", () => {
+    let wallet = emptyB2bCreditWallet();
+    for (let i = 0; i < 50; i += 1) {
+      wallet = rememberB2bDebitKey(wallet, `spend:VIN${i}:business:1`);
+    }
+    expect(wallet.debitKeys?.length).toBe(50);
+    expect(B2B_DEBIT_KEYS_MAX).toBeGreaterThanOrEqual(160);
   });
 
   it("keeps sourceSessionId when parsing a wallet lot", () => {

@@ -5,28 +5,28 @@ import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { isPartnerVinOrderMatch, pickLatestPartnerVinHit } from "@/lib/b2b-partner-archive-rows";
 import { normalizeVin } from "@/lib/order-field-validation";
 
-export async function findRecentPartnerVinOrder(args: {
+export type PartnerVinOrderHit = { id: string; created: number; reportReady: boolean };
+
+export async function findPartnerVinOrdersMap(args: {
   partnerId: string;
-  vin: string;
-  nowMs?: number;
-  windowMs?: number;
-}): Promise<{ id: string; created: number; reportReady: boolean } | null> {
+  vins: readonly string[];
+}): Promise<Map<string, PartnerVinOrderHit>> {
   const partnerId = args.partnerId.trim();
-  const vin = normalizeVin(args.vin);
-  if (!partnerId || !vin) return null;
-  const cutoffSec =
-    args.windowMs != null ? Math.floor(((args.nowMs ?? Date.now()) - args.windowMs) / 1000) : null;
+  const wanted = new Set(args.vins.map((vin) => normalizeVin(vin)).filter(Boolean));
+  const map = new Map<string, PartnerVinOrderHit>();
+  if (!partnerId || wanted.size === 0) return map;
 
   const manuals = await listManualOrders();
   const drafts = await readOrderDraftSummaries(manuals.map((rec) => rec.id));
-  const hits: { id: string; created: number; reportReady: boolean }[] = [];
+  const hitsByVin = new Map<string, PartnerVinOrderHit[]>();
   for (const rec of manuals) {
-    if (cutoffSec != null && rec.created < cutoffSec) continue;
     const draft = drafts.get(rec.id);
+    const draftVin = normalizeVin(draft?.vin ?? "");
+    if (!wanted.has(draftVin)) continue;
     if (
       !isPartnerVinOrderMatch({
         partnerId,
-        vin,
+        vin: draftVin,
         notes: draft?.notes,
         recordPartnerId: rec.partnerId,
         draftVin: draft?.vin,
@@ -34,11 +34,36 @@ export async function findRecentPartnerVinOrder(args: {
     ) {
       continue;
     }
-    hits.push({
+    const list = hitsByVin.get(draftVin) ?? [];
+    list.push({
       id: rec.id,
       created: rec.created,
       reportReady: Boolean(draft?.clientReportReadyAt?.trim()),
     });
+    hitsByVin.set(draftVin, list);
   }
-  return pickLatestPartnerVinHit(hits);
+  for (const [vin, hits] of hitsByVin) {
+    const latest = pickLatestPartnerVinHit(hits);
+    if (latest) map.set(vin, latest);
+  }
+  return map;
+}
+
+export async function findRecentPartnerVinOrder(args: {
+  partnerId: string;
+  vin: string;
+  nowMs?: number;
+  windowMs?: number;
+}): Promise<PartnerVinOrderHit | null> {
+  const partnerId = args.partnerId.trim();
+  const vin = normalizeVin(args.vin);
+  if (!partnerId || !vin) return null;
+  const map = await findPartnerVinOrdersMap({ partnerId, vins: [vin] });
+  const hit = map.get(vin);
+  if (!hit) return null;
+  if (args.windowMs != null) {
+    const cutoffSec = Math.floor(((args.nowMs ?? Date.now()) - args.windowMs) / 1000);
+    if (hit.created < cutoffSec) return null;
+  }
+  return hit;
 }
