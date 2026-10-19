@@ -86,6 +86,7 @@ export function IrissListingVehicleCard({
   onCreateOffer,
   matchNew = false,
   duplicates = [],
+  layout = "list",
 }: {
   v: IrissListingVehicle;
   nowMs: number | null;
@@ -103,6 +104,7 @@ export function IrissListingVehicleCard({
   onCreateOffer?: (v: IrissListingVehicle) => void | Promise<void>;
   matchNew?: boolean;
   duplicates?: readonly IrissVinDuplicateLink[];
+  layout?: "list" | "grid";
 }) {
   const [vinCopied, setVinCopied] = useState(false);
   const [createBusy, setCreateBusy] = useState(false);
@@ -168,8 +170,9 @@ export function IrissListingVehicleCard({
     );
   }
 
+  const grid = layout === "grid";
   const photoBlock = (
-    <div className="w-full shrink-0 sm:w-[300px]" onClick={(e) => sourceHref && e.stopPropagation()}>
+    <div className={`w-full shrink-0 ${grid ? "" : "sm:w-[300px]"}`} onClick={(e) => sourceHref && e.stopPropagation()}>
       <IrissListingCardPhotoGallery
         photos={photos}
         thumbUrl={v.thumbUrl}
@@ -223,7 +226,7 @@ export function IrissListingVehicleCard({
           onOpen();
         }
       }}
-      className={`flex cursor-pointer flex-col overflow-hidden rounded-xl border bg-white shadow-sm [content-visibility:auto] [contain-intrinsic-size:1px_220px] touch-manipulation hover:border-slate-300 sm:flex-row sm:items-stretch sm:gap-4 sm:overflow-visible sm:rounded-2xl sm:p-3.5 sm:[content-visibility:visible] ${border} ${fav ? "shadow-[0_0_0_2px_#fde68a]" : ""} ${hidden ? "opacity-50" : ""}`}
+      className={`flex cursor-pointer flex-col overflow-hidden rounded-xl border bg-white shadow-sm [content-visibility:auto] [contain-intrinsic-size:1px_220px] touch-manipulation hover:border-slate-300 ${grid ? "sm:flex-col sm:items-stretch sm:gap-3 sm:overflow-hidden sm:rounded-2xl sm:p-3" : "sm:flex-row sm:items-stretch sm:gap-4 sm:overflow-visible sm:rounded-2xl sm:p-3.5"} sm:[content-visibility:visible] ${border} ${fav ? "shadow-[0_0_0_2px_#fde68a]" : ""} ${hidden ? "opacity-50" : ""}`}
     >
       {photoBlock}
 
@@ -365,21 +368,40 @@ export function IrissListingVehicleCard({
         </div>
 
         <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-          <IrissListingCardPriceColumnMobile
-            priceLabel={priceLabel}
-            bid={bid}
-            bidCount={v.bidCount}
-            tax={tax}
-            countdown={cd}
-            priceBuyNow={v.priceBuyNow}
-            priceTotal={v.priceTotal}
-            budget={budget}
-            gala={gala}
-            real={real}
-            maxBid={mb}
-            room={room}
-            topActions={favHide}
-          />
+          {grid ? (
+            <IrissListingCardPriceColumn
+              priceLabel={priceLabel}
+              bid={bid}
+              bidCount={v.bidCount}
+              tax={tax}
+              countdown={cd}
+              priceBuyNow={v.priceBuyNow}
+              priceTotal={v.priceTotal}
+              budget={budget}
+              gala={gala}
+              real={real}
+              maxBid={mb}
+              room={room}
+              topActions={favHide}
+              className="w-full"
+            />
+          ) : (
+            <IrissListingCardPriceColumnMobile
+              priceLabel={priceLabel}
+              bid={bid}
+              bidCount={v.bidCount}
+              tax={tax}
+              countdown={cd}
+              priceBuyNow={v.priceBuyNow}
+              priceTotal={v.priceTotal}
+              budget={budget}
+              gala={gala}
+              real={real}
+              maxBid={mb}
+              room={room}
+              topActions={favHide}
+            />
+          )}
         </div>
 
         {phone && !noteOpen && !(prefs.notes[v.id] ?? "").trim() ? (
@@ -404,7 +426,7 @@ export function IrissListingVehicleCard({
         )}
       </div>
 
-      {phone ? null : (
+      {phone || grid ? null : (
       <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
         <IrissListingCardPriceColumn
           priceLabel={priceLabel}

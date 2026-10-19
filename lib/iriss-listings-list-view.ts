@@ -1,6 +1,6 @@
 /**
  * IRISS LIST kārtošana un filtri. Tīrs modulis, lai Vitest pārbauda null gadījumus bez pārlūka.
- * Noklusējums: beigu laiks, tuvākās vēl notiekošās izsoles vispirms. Bez vērtības vienmēr beigās.
+ * Joslas noklusējums: Jaunākie (`seen`). Beigu laiks: tuvākās vēl notiekošās vispirms. Bez vērtības beigās.
  */
 
 import { listingPriceChangeAbsReal } from "@/lib/iriss-listings-auto1-cents";
@@ -145,7 +145,133 @@ export function sortListingVehicles<T extends Sortable>(vehicles: readonly T[], 
   return [...vehicles].sort((a, b) => compare(a, b, sort, nowMs) || a.id.localeCompare(b.id));
 }
 
-const SOURCE_ORDER: readonly IrissListingPlatform[] = ["autobid", "openline", "auto1", "ecarstrade"];
+/** Noklusējums joslā: Jaunākie. Parametrs `sort` netiek rakstīts. */
+export const LISTING_DEFAULT_SORT: ListingSort = "seen";
+
+export type ListingListViewMode = "list" | "grid";
+
+/** Avotu pilles maketā (teksts, bez logo). */
+export const LISTING_SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> = [
+  { id: "auto1", label: "Auto1" },
+  { id: "openline", label: "Openlane" },
+  { id: "autobid", label: "Autobid" },
+  { id: "ecarstrade", label: "eCarsTrade" },
+  { id: "mobilede", label: "mobile.de" },
+  { id: "autoscout24", label: "AutoScout24" },
+];
+
+const SOURCE_ORDER: readonly IrissListingPlatform[] = LISTING_SOURCE_CHIPS.map((s) => s.id);
+
+export type ListingListQueryPatch = {
+  sort?: ListingSort;
+  sources?: IrissListingPlatform[];
+  min?: string | null;
+  max?: string | null;
+  ord?: string | null;
+  view?: ListingListViewMode;
+};
+
+/** Noklusējums saraksts; `view=grid` tikai ja režģis. */
+export function parseListingView(raw: string | null | undefined): ListingListViewMode {
+  return (raw ?? "").trim() === "grid" ? "grid" : "list";
+}
+
+/**
+ * URL `sort` / `src` / `min` / `max` / `ord` / `view`. Citi parametri (t.sk. `listing`) paliek.
+ * Noklusējumus (`sort=seen`, `view=list`) neraksta.
+ */
+export function applyListingListQuery(
+  current: URLSearchParams,
+  patch: ListingListQueryPatch,
+  ctx: { sort: ListingSort; view: ListingListViewMode; sourceChipCount: number },
+): URLSearchParams {
+  const params = new URLSearchParams(current.toString());
+  const sortNext = patch.sort ?? ctx.sort;
+  if (sortNext === LISTING_DEFAULT_SORT) params.delete("sort");
+  else params.set("sort", sortNext);
+  const viewNext = patch.view ?? ctx.view;
+  if (viewNext === "list") params.delete("view");
+  else params.set("view", "grid");
+  if (patch.sources) {
+    if (patch.sources.length === 0 || patch.sources.length === ctx.sourceChipCount) params.delete("src");
+    else params.set("src", patch.sources.join(","));
+  }
+  if (patch.min !== undefined) {
+    const n = parsePriceBound(patch.min);
+    if (n === null) params.delete("min");
+    else params.set("min", String(n));
+  }
+  if (patch.max !== undefined) {
+    const n = parsePriceBound(patch.max);
+    if (n === null) params.delete("max");
+    else params.set("max", String(n));
+  }
+  if (patch.ord !== undefined) {
+    const s = (patch.ord ?? "").trim();
+    if (!s) params.delete("ord");
+    else params.set("ord", s);
+  }
+  return params;
+}
+
+export function countActiveListingFilters(input: {
+  sources: readonly IrissListingPlatform[];
+  priceMin: number | null;
+  priceMax: number | null;
+  hideTech: boolean;
+  hideOverBudget: boolean;
+  listScope: "all" | "fav" | "hidden";
+}): number {
+  return (
+    (input.sources.length > 0 ? 1 : 0) +
+    (input.priceMin != null || input.priceMax != null ? 1 : 0) +
+    (input.hideTech ? 1 : 0) +
+    (input.hideOverBudget ? 1 : 0) +
+    (input.listScope === "hidden" ? 1 : 0)
+  );
+}
+
+export type ListingFilterPillId = "src" | "price" | "tech" | "budget" | "hidden";
+
+export type ListingFilterPill = { id: ListingFilterPillId; label: string };
+
+function fmtFilterEur(n: number): string {
+  const rounded = Math.round(n);
+  const grouped = String(Math.abs(rounded)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${rounded < 0 ? "-" : ""}${grouped} €`;
+}
+
+export function listingFilterPills(input: {
+  sources: readonly IrissListingPlatform[];
+  sourceLabels: Readonly<Record<IrissListingPlatform, string>>;
+  priceMin: number | null;
+  priceMax: number | null;
+  hideTech: boolean;
+  hideOverBudget: boolean;
+  overBudgetThreshold: number;
+  listScope: "all" | "fav" | "hidden";
+}): ListingFilterPill[] {
+  const pills: ListingFilterPill[] = [];
+  if (input.sources.length > 0) {
+    pills.push({
+      id: "src",
+      label: `Avoti: ${input.sources.map((id) => input.sourceLabels[id]).join(", ")}`,
+    });
+  }
+  if (input.priceMin != null && input.priceMax != null) {
+    pills.push({ id: "price", label: `Cena ${fmtFilterEur(input.priceMin)} - ${fmtFilterEur(input.priceMax)}` });
+  } else if (input.priceMin != null) {
+    pills.push({ id: "price", label: `Cena no ${fmtFilterEur(input.priceMin)}` });
+  } else if (input.priceMax != null) {
+    pills.push({ id: "price", label: `Cena līdz ${fmtFilterEur(input.priceMax)}` });
+  }
+  if (input.hideTech) pills.push({ id: "tech", label: "Slēpt ar motora vai kārbas bojājumiem" });
+  if (input.hideOverBudget) {
+    pills.push({ id: "budget", label: `Slēpt virs budžeta + ${fmtFilterEur(input.overBudgetThreshold)}` });
+  }
+  if (input.listScope === "hidden") pills.push({ id: "hidden", label: "Rādīt tikai paslēptos" });
+  return pills;
+}
 
 /** Tukšs saraksts nozīmē visus avotus. */
 export function parseListingSources(raw: string | null | undefined): IrissListingPlatform[] {
