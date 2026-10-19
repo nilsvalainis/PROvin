@@ -15,7 +15,6 @@ import {
   sanitizeVinInput,
   vinOrPlateErrorMessage,
 } from "@/lib/order-field-validation";
-import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { FREE_EVAL_SECTION_ID, FREE_EVAL_SECTION_ID_LEGACY } from "@/lib/paths";
 import { HEARD_ABOUT_OPTION_VALUES, isHeardAboutValue } from "@/lib/stripe-session";
 import { trackMetaLead } from "@/lib/meta-pixel";
@@ -320,11 +319,6 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
                               }}
                               className={`${tp5Styles.inlineInput} uppercase`}
                             />
-                            {vinNeedsCheckDigitWarning(vin) ? (
-                              <p className="mt-1 text-[11px] font-normal leading-snug opacity-70" role="status">
-                                {t("errors.vinCheckDigit")}
-                              </p>
-                            ) : null}
                             <input
                               id={`${baseId}-email`}
                               type="email"

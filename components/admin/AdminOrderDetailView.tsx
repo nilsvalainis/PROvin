@@ -12,7 +12,6 @@ import { whatsappPrefillForOrder } from "@/lib/admin-whatsapp-messages";
 import { AdminVinCopyButton, AdminVinServiceLinkRow } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminVinNotSeventeenFlag } from "@/components/admin/AdminVinNotSeventeenFlag";
 import { sanitizeVinInput } from "@/lib/order-field-validation";
-import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
@@ -676,11 +675,6 @@ export function AdminOrderDetailView({
                   }
                 />
                 <AdminVinNotSeventeenFlag vin={mergedVin} />
-                {vinNeedsCheckDigitWarning(mergedVin) ? (
-                  <p className="mt-1 text-[11px] font-normal leading-snug text-zinc-500" role="status">
-                    Kontrolcipars (9. zīme) neatbilst ISO 3779. Eiropas auto tas ir normāli, pasūtīt var.
-                  </p>
-                ) : null}
                 <AdminVinServiceLinkRow vin={mergedVin} />
               </div>
               <div
