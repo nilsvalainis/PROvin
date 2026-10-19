@@ -160,6 +160,8 @@ export type IrissListingVehicle = {
   priceHistory: IrissListingPriceChange[];
   /** Tirgus sludinājuma īss cenas salīdzinājums pret šīs ielādes kopu. */
   priceCompareNote?: string;
+  /** Citi avoti pēc kros-deduplikācijas (mobile.de + AutoScout24). */
+  sourceLinks?: Array<{ platform: IrissListingPlatform; url: string }>;
 };
 
 export type IrissListingSyncRunSummary = {

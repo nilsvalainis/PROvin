@@ -345,6 +345,7 @@ export function IrissOrderRoom({
   onGeneratedDocument,
   onAlbumFiles,
   albumBusy = false,
+  onMarketplaceLoaded,
 }: {
   rec: IrissPasutijumsRecord;
   hits: IrissOrderRoomHit[];
@@ -393,6 +394,7 @@ export function IrissOrderRoom({
   onGeneratedDocument?: (doc: IrissGeneratedDocument, workspaceRevision?: number) => void;
   onAlbumFiles?: (album: "inspection" | "documents", files: FileList | null) => void;
   albumBusy?: boolean;
+  onMarketplaceLoaded?: () => void | Promise<void>;
 }) {
   const [tab, setTab] = useState<IrissOrderRoomTab>(coerceIrissOrderRoomTab(initialTab));
   const tabSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -1136,7 +1138,7 @@ export function IrissOrderRoom({
           <p className="text-[12px] leading-snug text-[#6b7280]">
             Tie paši jau nolasītie auto, kas Klientu filtros ir piesaistīti šim pasūtījumam. Izsoles nāk no saišu nolasīšanas. mobile.de un AutoScout24 nāk no ielādes zemāk.
           </p>
-          <IrissMarketplaceLoadPanel orderId={rec.id} />
+          <IrissMarketplaceLoadPanel orderId={rec.id} onLoaded={onMarketplaceLoaded} />
           {listingsCache === "off" ? (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-950">
               Sludinājumu kešs nav ieslēgts. Maksas avoti netiek prasīti.
@@ -1214,9 +1216,20 @@ export function IrissOrderRoom({
                         </button>
                         {typeof hit.detailUrl === "string" && hit.detailUrl ? (
                           <a href={hit.detailUrl} target="_blank" rel="noopener noreferrer" className={roomBtn}>
-                            Atvērt portālā
+                            Atvērt {hit.platform === "mobilede" ? "mobile.de" : hit.platform === "autoscout24" ? "AutoScout24" : "portālā"}
                           </a>
                         ) : null}
+                        {(hit.sourceLinks ?? []).map((link) => (
+                          <a
+                            key={link.url}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={roomBtn}
+                          >
+                            Atvērt {link.platform === "mobilede" ? "mobile.de" : link.platform === "autoscout24" ? "AutoScout24" : "portālā"}
+                          </a>
+                        ))}
                         <button type="button" aria-pressed={favIds.has(hit.id)} aria-label={favIds.has(hit.id) ? "Noņemt no saglabātajiem" : "Saglabāt"} onClick={() => toggleFav(hit.id)} className={`${roomBtn} w-10 px-0`}>
                           <Star className={`h-4 w-4 ${favIds.has(hit.id) ? "fill-amber-400 text-amber-500" : "text-slate-500"}`} aria-hidden />
                         </button>

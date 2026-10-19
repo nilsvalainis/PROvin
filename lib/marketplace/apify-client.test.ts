@@ -18,6 +18,10 @@ function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
+function useFetch(fetchImpl: typeof fetch): void {
+  setMarketplaceApifyHttpHooks({ fetchImpl, sleep: async () => {} });
+}
+
 describe("marketplace Apify HTTP runner", () => {
   const prev: Record<string, string | undefined> = {};
   const keys = ["MARKETPLACE_LOADS_ENABLED", "APIFY_TOKEN", "MARKETPLACE_PER_RUN_USD_CAP", "MARKETPLACE_APIFY_WAIT_SECONDS"] as const;
@@ -55,8 +59,7 @@ describe("marketplace Apify HTTP runner", () => {
 
   it("POSTs actor run then reads dataset items and real usageTotalUsd", async () => {
     const calls: Array<{ url: string; method: string; body: string; auth: string }> = [];
-    setMarketplaceApifyHttpHooks({
-      fetchImpl: (async (input, init) => {
+    useFetch((async (input, init) => {
         const url = String(input);
         const method = init?.method ?? "GET";
         const body = typeof init?.body === "string" ? init.body : "";
@@ -75,13 +78,22 @@ describe("marketplace Apify HTTP runner", () => {
             },
           });
         }
+        if (url.includes("/actor-runs/run-1")) {
+          return jsonResponse({
+            data: {
+              id: "run-1",
+              status: "SUCCEEDED",
+              defaultDatasetId: "ds-1",
+              usageTotalUsd: 0.028,
+            },
+          });
+        }
         if (url.includes("/datasets/ds-1/items")) {
           expect(url).toContain("limit=40");
           return jsonResponse([{ canonicalUrl: "https://suchen.mobile.de/fahrzeuge/details.html?id=1", title: "Volvo" }]);
         }
         throw new Error(`unexpected fetch ${method} ${url}`);
-      }) as typeof fetch,
-    });
+      }) as typeof fetch);
 
     const q = emptyMarketplaceQuery();
     q.make = "Volvo";
@@ -121,8 +133,7 @@ describe("marketplace Apify HTTP runner", () => {
   });
 
   it("sends AutoScout24 searchUrls objects and drops webhook fields", async () => {
-    setMarketplaceApifyHttpHooks({
-      fetchImpl: (async (input, init) => {
+    useFetch((async (input, init) => {
         const url = String(input);
         if ((init?.method ?? "GET") === "POST") {
           const sent = JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>;
@@ -140,8 +151,7 @@ describe("marketplace Apify HTTP runner", () => {
           });
         }
         return jsonResponse([{ url: "https://www.autoscout24.de/angebote/x", title: "Volvo" }]);
-      }) as typeof fetch,
-    });
+      }) as typeof fetch);
     const q = emptyMarketplaceQuery();
     q.make = "Volvo";
     q.model = "XC60";
@@ -161,8 +171,7 @@ describe("marketplace Apify HTTP runner", () => {
   });
 
   it("returns chargedUsd, apifyRunId and error when the actor run is not ok", async () => {
-    setMarketplaceApifyHttpHooks({
-      fetchImpl: (async (input, init) => {
+    useFetch((async (input, init) => {
         if ((init?.method ?? "GET") === "POST") {
           return jsonResponse({
             data: {
@@ -174,8 +183,7 @@ describe("marketplace Apify HTTP runner", () => {
           });
         }
         throw new Error(`unexpected fetch ${String(input)}`);
-      }) as typeof fetch,
-    });
+      }) as typeof fetch);
     const out = await runMarketplaceApifyActor({
       actorId: MARKETPLACE_APIFY_MOBILEDE_ACTOR_DEFAULT,
       payload: marketplaceActorSearchInput("mobilede", emptyMarketplaceQuery(), { maxItems: 10 }),
@@ -203,7 +211,7 @@ describe("marketplace Apify HTTP runner", () => {
   it("does not fetch when MARKETPLACE_LOADS_ENABLED is not true", async () => {
     delete process.env.MARKETPLACE_LOADS_ENABLED;
     const fetchImpl = vi.fn();
-    setMarketplaceApifyHttpHooks({ fetchImpl: fetchImpl as unknown as typeof fetch });
+    useFetch(fetchImpl as unknown as typeof fetch);
     const out = await runMarketplaceApifyActor({
       actorId: MARKETPLACE_APIFY_MOBILEDE_ACTOR_DEFAULT,
       payload: { startUrls: ["https://suchen.mobile.de/x"] },
@@ -215,7 +223,22 @@ describe("marketplace Apify HTTP runner", () => {
   });
 
   it("uses chargedEventCounts when usageTotalUsd is missing", () => {
-    expect(apifyRunChargedUsd({ chargedEventCounts: { "actor-start": 1, "result-item": 40 } }, 0, 0.59)).toBe(0.029);
+    expect(apifyRunChargedUsd({ chargedEventCounts: { "actor-start": 1, "result-item": 40 } }, 0, 0.00059)).toBeCloseTo(
+      0.0286,
+      8,
+    );
+  });
+
+  it("takes max of reported start-only events and dataset items times per-result price", () => {
+    expect(
+      apifyRunChargedUsd({ chargedEventCounts: { "apify-actor-start": 1 } }, 0, 0.00059, 10),
+    ).toBeCloseTo(0.0109, 8);
+    expect(
+      apifyRunChargedUsd({ usageTotalUsd: 0.005, chargedEventCounts: { "apify-actor-start": 1 } }, 0, 0.00049, 10),
+    ).toBeCloseTo(0.0099, 8);
+    expect(
+      apifyRunChargedUsd({ usageTotalUsd: 0.05, chargedEventCounts: { "apify-actor-start": 1 } }, 0, 0.00059, 10),
+    ).toBe(0.05);
   });
 
   it("does not trust usageTotalUsd=0 on pay-per-event actors", () => {
@@ -226,9 +249,9 @@ describe("marketplace Apify HTTP runner", () => {
           chargedEventCounts: { "apify-actor-start": 1, "apify-default-dataset-item": 10 },
         },
         0,
-        0.59,
+        0.00059,
       ),
-    ).toBe(0.011);
+    ).toBeCloseTo(0.0109, 8);
     expect(
       apifyRunChargedUsd(
         {
@@ -237,7 +260,7 @@ describe("marketplace Apify HTTP runner", () => {
           chargedEventCounts: { "apify-actor-start": 1, "apify-default-dataset-item": 10 },
         },
         0,
-        0.59,
+        0.00059,
       ),
     ).toBe(0.042);
     expect(
@@ -247,9 +270,53 @@ describe("marketplace Apify HTTP runner", () => {
           chargedEventCounts: { "apify-actor-start": 1, "apify-default-dataset-item": 40 },
         },
         0,
-        0.59,
+        0.00059,
       ),
-    ).toBe(0.029);
+    ).toBeCloseTo(0.0286, 8);
+  });
+
+  it("re-fetches the run after SUCCEEDED before reading chargedEventCounts", async () => {
+    const calls: string[] = [];
+    useFetch((async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+      calls.push(`${method} ${url}`);
+      if (method === "POST") {
+        return jsonResponse({
+          data: {
+            id: "run-late",
+            status: "SUCCEEDED",
+            defaultDatasetId: "ds-late",
+            chargedEventCounts: { "apify-actor-start": 1 },
+          },
+        });
+      }
+      if (url.includes("/actor-runs/run-late")) {
+        return jsonResponse({
+          data: {
+            id: "run-late",
+            status: "SUCCEEDED",
+            defaultDatasetId: "ds-late",
+            chargedEventCounts: { "apify-actor-start": 1, "apify-default-dataset-item": 10 },
+          },
+        });
+      }
+      if (url.includes("/datasets/ds-late/items")) {
+        return jsonResponse(Array.from({ length: 10 }, (_, i) => ({ listingKey: String(i), url: `https://suchen.mobile.de/x?id=${i}`, title: "Audi A6" })));
+      }
+      throw new Error(`unexpected fetch ${method} ${url}`);
+    }) as typeof fetch);
+    const out = await runMarketplaceApifyActor({
+      actorId: MARKETPLACE_APIFY_MOBILEDE_ACTOR_DEFAULT,
+      payload: marketplaceActorSearchInput("mobilede", emptyMarketplaceQuery(), { maxItems: 10 }),
+      maxItems: 10,
+      maxUsd: 0.5,
+      usdPerResult: 0.00059,
+    });
+    expect(out.ok).toBe(true);
+    expect(out.items).toHaveLength(10);
+    expect(out.chargedUsd).toBeCloseTo(0.0109, 8);
+    expect(calls.some((c) => c.startsWith("GET ") && c.includes("/actor-runs/run-late"))).toBe(true);
   });
 
   it("defaults actor IDs to the Store scrapers from 19.10", () => {

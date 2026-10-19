@@ -93,7 +93,7 @@ describe("loadMarketplaceForOrder", () => {
       orderId: "00000000-0000-4000-8000-000000000001",
       order,
       explicit: true,
-      providers: [mockProvider("mobilede", RAW), mockProvider("autoscout24", [RAW[1]!])],
+      providers: [mockProvider("mobilede", [RAW[0]!]), mockProvider("autoscout24", [RAW[1]!])],
     });
     expect(blocked.ok).toBe(true);
     expect(blocked.added).toBeGreaterThan(0);
@@ -103,6 +103,25 @@ describe("loadMarketplaceForOrder", () => {
     expect(state.items.every((i) => i.listingUrl.startsWith("https://"))).toBe(true);
     expect(state.items.some((i) => i.platform === "mobilede")).toBe(true);
     expect(state.items.some((i) => i.platform === "autoscout24")).toBe(true);
+
+    const sameCar = {
+      ...RAW[0]!,
+      url: "https://www.autoscout24.de/angebote/same",
+      mileageKm: 90040,
+      priceEur: 18900,
+    };
+    const collapsed = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000002",
+      order,
+      explicit: true,
+      providers: [mockProvider("mobilede", [RAW[0]!]), mockProvider("autoscout24", [sameCar])],
+    });
+    expect(collapsed.ok).toBe(true);
+    const after = await readMarketplaceListingsState();
+    const order2 = after.items.filter((i) => i.orderId === "00000000-0000-4000-8000-000000000002");
+    expect(order2).toHaveLength(1);
+    expect(order2[0]?.platform).toBe("mobilede");
+    expect(order2[0]?.sourceLinks?.some((l) => l.platform === "autoscout24")).toBe(true);
   });
 
   it("allows an auto trigger without the operator explicit flag", async () => {

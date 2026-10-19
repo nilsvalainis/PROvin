@@ -90,6 +90,7 @@ export type ApifyActorRunner = (input: {
   maxItems: number;
   maxUsd: number;
   usdPerThousand?: number;
+  usdPerResult?: number;
 }) => Promise<ApifyRunResult>;
 
 export type ApifyHttpHooks = {
@@ -142,16 +143,15 @@ function finitePositiveUsd(value: unknown): number | null {
   return value;
 }
 
-/** Pay-per-event: start 0.005 $ + result items × per-result price. */
-export function apifyChargedEventsUsd(run: Record<string, unknown>, usdPerThousand = 0): number | null {
-  const named =
-    finitePositiveUsd(run.chargedEventUsd) ??
-    finitePositiveUsd(run.eventChargeUsd) ??
-    finitePositiveUsd(run.usageChargedUsd) ??
-    finitePositiveUsd(run.chargedEventTotalUsd);
-  if (named != null) return round3(named);
+export function marketplaceUsdPerResult(usdPerResult?: number, usdPerThousand?: number): number {
+  if (usdPerResult != null && Number.isFinite(usdPerResult) && usdPerResult >= 0) return usdPerResult;
+  if (usdPerThousand != null && Number.isFinite(usdPerThousand) && usdPerThousand >= 0) return usdPerThousand / 1000;
+  return 0;
+}
+
+function chargedEventStartAndItems(run: Record<string, unknown>): { starts: number; items: number } {
   const counts = run.chargedEventCounts;
-  if (!counts || typeof counts !== "object") return null;
+  if (!counts || typeof counts !== "object") return { starts: 0, items: 0 };
   let items = 0;
   let starts = 0;
   for (const [key, value] of Object.entries(counts as Record<string, unknown>)) {
@@ -160,16 +160,29 @@ export function apifyChargedEventsUsd(run: Record<string, unknown>, usdPerThousa
     if (/start/i.test(key)) starts += n;
     else if (/result|item|dataset|listing/i.test(key)) items += n;
   }
+  return { starts, items };
+}
+
+/** Pay-per-event: start 0.005 $ + result items × per-result price. */
+export function apifyChargedEventsUsd(run: Record<string, unknown>, usdPerResult = 0): number | null {
+  const named =
+    finitePositiveUsd(run.chargedEventUsd) ??
+    finitePositiveUsd(run.eventChargeUsd) ??
+    finitePositiveUsd(run.usageChargedUsd) ??
+    finitePositiveUsd(run.chargedEventTotalUsd);
+  if (named != null) return named;
+  const { starts, items } = chargedEventStartAndItems(run);
   if (starts === 0 && items === 0) return null;
-  return round3(starts * MARKETPLACE_APIFY_START_USD + (items * usdPerThousand) / 1000);
+  return starts * MARKETPLACE_APIFY_START_USD + items * usdPerResult;
 }
 
 export function apifyRunChargedUsd(
   run: Record<string, unknown>,
   fallbackUsd: number,
-  usdPerThousand = 0,
+  usdPerResult = 0,
+  datasetItemCount = 0,
 ): number {
-  const fromEvents = apifyChargedEventsUsd(run, usdPerThousand);
+  const fromEvents = apifyChargedEventsUsd(run, usdPerResult);
   const usage = finitePositiveUsd(run.usageTotalUsd);
   let statsCost: number | null = null;
   const stats = run.stats;
@@ -178,9 +191,11 @@ export function apifyRunChargedUsd(
     statsCost =
       finitePositiveUsd(row.chargedEventUsd) ?? finitePositiveUsd(row.costUsd) ?? finitePositiveUsd(row.usd);
   }
-  const candidates = [usage, statsCost, fromEvents].filter((n): n is number => n != null && n > 0);
-  if (candidates.length) return round3(Math.max(...candidates));
-  return round3(Math.max(0, fallbackUsd));
+  const { starts } = chargedEventStartAndItems(run);
+  const startCount = starts > 0 ? starts : datasetItemCount > 0 || fallbackUsd > 0 ? 1 : 0;
+  const fromDataset = startCount * MARKETPLACE_APIFY_START_USD + Math.max(0, datasetItemCount) * usdPerResult;
+  const reported = Math.max(usage ?? 0, statsCost ?? 0, fromEvents ?? 0);
+  return Math.max(reported, fromDataset, Math.max(0, fallbackUsd));
 }
 
 export function marketplaceApifyErrorLv(error?: string): string {
@@ -245,6 +260,7 @@ export async function defaultMarketplaceApifyRunner(input: {
   maxItems: number;
   maxUsd: number;
   usdPerThousand?: number;
+  usdPerResult?: number;
 }): Promise<ApifyRunResult> {
   const waitSec = marketplaceApifyWaitSeconds();
   const deadlineMs = nowMs() + waitSec * 1000;
@@ -257,13 +273,14 @@ export async function defaultMarketplaceApifyRunner(input: {
   } catch (e) {
     return { ok: false, items: [], chargedUsd: 0, error: e instanceof Error ? e.message : "apify_network" };
   }
+  const usdPerResult = marketplaceUsdPerResult(input.usdPerResult, input.usdPerThousand);
   const started = unwrapData(await readJson(res));
   const startedId = String(started.id ?? "");
   if (!res.ok) {
     return {
       ok: false,
       items: [],
-      chargedUsd: apifyRunChargedUsd(started, 0, input.usdPerThousand),
+      chargedUsd: apifyRunChargedUsd(started, 0, usdPerResult),
       error: `apify_http_${res.status}`,
       ...(startedId ? { apifyRunId: startedId } : {}),
     };
@@ -278,7 +295,7 @@ export async function defaultMarketplaceApifyRunner(input: {
   const apifyRunId = String(run.id ?? runId);
   const idField = apifyRunId ? { apifyRunId } : {};
   if (!TERMINAL_RUN.test(finalStatus) && finalStatus !== "SUCCEEDED") {
-    const chargedUsd = apifyRunChargedUsd(run, 0, input.usdPerThousand);
+    const chargedUsd = apifyRunChargedUsd(run, 0, usdPerResult);
     return {
       ok: false,
       items: [],
@@ -288,13 +305,22 @@ export async function defaultMarketplaceApifyRunner(input: {
     };
   }
   if (finalStatus !== "SUCCEEDED") {
-    const chargedUsd = apifyRunChargedUsd(run, 0, input.usdPerThousand);
+    const chargedUsd = apifyRunChargedUsd(run, 0, usdPerResult);
     return { ok: false, items: [], chargedUsd, error: `apify_${finalStatus.toLowerCase()}`, ...idField };
+  }
+  if (runId) {
+    await sleepMs(2000);
+    const refreshRes = await doFetch(`${APIFY_API_BASE}/actor-runs/${encodeURIComponent(runId)}`, {
+      method: "GET",
+      headers: authHeaders(input.token),
+    });
+    const refreshed = unwrapData(await readJson(refreshRes));
+    if (refreshed.id || refreshed.status || refreshed.chargedEventCounts) run = refreshed;
   }
   const datasetId = String(run.defaultDatasetId ?? "");
   const items = await readDatasetItems(datasetId, input.token, input.maxItems);
-  const fallbackUsd = MARKETPLACE_APIFY_START_USD + (items.length * (input.usdPerThousand ?? 0)) / 1000;
-  const chargedUsd = apifyRunChargedUsd(run, fallbackUsd, input.usdPerThousand);
+  const fallbackUsd = MARKETPLACE_APIFY_START_USD + items.length * usdPerResult;
+  const chargedUsd = apifyRunChargedUsd(run, fallbackUsd, usdPerResult, items.length);
   return { ok: true, items, chargedUsd, ...idField };
 }
 
@@ -304,6 +330,7 @@ export async function runMarketplaceApifyActor(input: {
   maxItems: number;
   maxUsd: number;
   usdPerThousand?: number;
+  usdPerResult?: number;
 }): Promise<ApifyRunResult> {
   if (!marketplaceLoadsEnabled()) {
     return { ok: false, items: [], chargedUsd: 0, error: "loads_disabled" };
@@ -318,6 +345,7 @@ export async function runMarketplaceApifyActor(input: {
     maxItems: input.maxItems,
     maxUsd: input.maxUsd,
     ...(input.usdPerThousand != null ? { usdPerThousand: input.usdPerThousand } : {}),
+    ...(input.usdPerResult != null ? { usdPerResult: input.usdPerResult } : {}),
   };
   const result = runnerOverride ? await runnerOverride(args) : await defaultMarketplaceApifyRunner(args);
   console.info("[marketplace]", {

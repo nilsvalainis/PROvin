@@ -6,12 +6,17 @@ import {
   readApifyToken,
   runMarketplaceApifyActor,
 } from "@/lib/marketplace/apify-client";
-import { marketplaceLoadsEnabled, marketplaceMaxItemsPerProvider, providerEstimate } from "@/lib/marketplace/cost-caps";
+import {
+  MARKETPLACE_APIFY_MOBILEDE_USD_PER_RESULT,
+  marketplaceLoadsEnabled,
+  marketplaceMaxItemsPerProvider,
+  providerEstimate,
+} from "@/lib/marketplace/cost-caps";
 import { marketplaceActorSearchInput } from "@/lib/marketplace/search-urls";
 import type { ListingProvider, MarketplaceSearchResult } from "@/lib/marketplace/types";
 import type { MarketplaceLimits, MarketplaceQuery, MarketplaceRawListing } from "@/lib/marketplace/types";
 
-export const APIFY_MOBILEDE_USD_PER_THOUSAND = 0.59;
+export const APIFY_MOBILEDE_USD_PER_THOUSAND = MARKETPLACE_APIFY_MOBILEDE_USD_PER_RESULT * 1000;
 
 const FIXTURES: MarketplaceRawListing[] = [
   {
@@ -85,6 +90,7 @@ export function createApifyMobiledeProvider(): ListingProvider {
         maxItems: limits.maxItems,
         maxUsd: limits.maxUsd,
         usdPerThousand: APIFY_MOBILEDE_USD_PER_THOUSAND,
+        usdPerResult: MARKETPLACE_APIFY_MOBILEDE_USD_PER_RESULT,
       });
       const items = run.items.filter((x): x is MarketplaceRawListing => Boolean(x) && typeof x === "object");
       if (!run.ok) {

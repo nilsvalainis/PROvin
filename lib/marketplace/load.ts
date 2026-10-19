@@ -1,4 +1,4 @@
-import { assignMarketplaceGroupIds } from "@/lib/marketplace/dedupe";
+import { assignMarketplaceGroupIds, collapseMarketplaceListings, collapseMarketplaceListingsByOrder } from "@/lib/marketplace/dedupe";
 import {
   decideMarketplaceBudget,
   marketplaceAutoMaxItemsPerProvider,
@@ -241,18 +241,17 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     }
   }
 
-  const grouped = assignMarketplaceGroupIds(collected);
+  const grouped = collapseMarketplaceListings(assignMarketplaceGroupIds(collected));
   const compared = attachMarketplacePriceCompare(grouped);
   const stored = compared.map((item) => storedFromNormalized(item, orderId));
   const previous = await readMarketplaceListingsState();
-  const nextItems = mergeStored(previous.items, stored);
+  const nextItems = collapseMarketplaceListingsByOrder(mergeStored(previous.items, stored));
   const runId = `mkt-${now.replace(/[:.]/g, "-")}-${orderId.slice(0, 8)}`;
   const usage = await readMarketplaceUsageMonth(marketplaceMonthKey(new Date(now)));
   usage.capUsd = marketplaceMonthlyUsdCap();
   let monthUsd = usageSpentUsd(usage);
-  const chargedRounded = Math.round(chargedUsd * 1000) / 1000;
   for (const charge of providerCharges) {
-    monthUsd = Math.round((monthUsd + charge.usd) * 1000) / 1000;
+    monthUsd += charge.usd;
     usage.entries.push({
       runId,
       orderId,
@@ -273,7 +272,7 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     maxItems: preview.maxItems,
     maxUsd: preview.budget.perRunCapUsd,
     estimatedUsd: preview.budget.estimatedUsd,
-    chargedUsd: chargedRounded,
+    chargedUsd,
     monthUsd,
     itemCount: collected.length,
     keptCount: stored.length,
@@ -313,8 +312,8 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     added: stored.length,
     grouped: stored.length - groupCount,
     estimatedUsd: preview.budget.estimatedUsd,
-    chargedUsd: chargedRounded,
+    chargedUsd,
     monthlyUsedUsd: monthUsd,
-    remainingMonthlyUsd: Math.round((preview.budget.remainingMonthlyUsd - chargedUsd) * 1000) / 1000,
+    remainingMonthlyUsd: preview.budget.remainingMonthlyUsd - chargedUsd,
   };
 }

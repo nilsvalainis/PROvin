@@ -60,10 +60,16 @@ export type MarketplaceSearchResult = {
 
 export type MarketplaceRawListing = {
   externalId?: unknown;
+  listingKey?: unknown;
+  listingId?: unknown;
   url?: unknown;
   canonicalUrl?: unknown;
   sourceUrl?: unknown;
   title?: unknown;
+  subTitle?: unknown;
+  subtitle?: unknown;
+  headline?: unknown;
+  makeModelDescription?: unknown;
   make?: unknown;
   model?: unknown;
   year?: unknown;
@@ -81,18 +87,25 @@ export type MarketplaceRawListing = {
   body?: unknown;
   country?: unknown;
   countryCode?: unknown;
+  sellerCountry?: unknown;
   location?: unknown;
   city?: unknown;
   vin?: unknown;
   /** Actor output (Dealer / Private Seller). Normalizācija privātos izmet. */
   sellerType?: unknown;
+  /** Dīlera nosaukums ir atļauts. Tālruni / e-pastu normalizācija izmet. */
+  sellerName?: unknown;
   /** Atļauts adapterim, bet normalizācija šos laukus izmet. */
   description?: unknown;
   images?: unknown;
   imageUrl?: unknown;
   sellerPhone?: unknown;
   sellerEmail?: unknown;
-  sellerName?: unknown;
+};
+
+export type MarketplaceSourceLink = {
+  platform: MarketplacePlatform;
+  url: string;
 };
 
 /**
@@ -115,6 +128,9 @@ export type MarketplaceNormalizedListing = {
   locationCountry: string;
   fetchedAt: string;
   vin?: string;
+  sellerName?: string;
+  location?: string;
+  sourceLinks?: MarketplaceSourceLink[];
 };
 
 export type MarketplacePriceCompare = {

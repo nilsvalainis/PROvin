@@ -16,7 +16,6 @@ const FORBIDDEN_KEYS = [
   "photo",
   "sellerPhone",
   "sellerEmail",
-  "sellerName",
   "phone",
   "email",
   "contact",
@@ -81,8 +80,36 @@ function listingUrl(raw: MarketplaceRawListing): string {
   }
 }
 
+function listingTitleOf(raw: MarketplaceRawListing, make: string, model: string): string {
+  const headline = str(raw.headline, 180);
+  if (headline) return headline;
+  const title = str(raw.title, 180);
+  const extra = str(raw.makeModelDescription ?? raw.subTitle ?? raw.subtitle, 180);
+  if (title && extra && !title.toLowerCase().includes(extra.toLowerCase())) {
+    return `${title} ${extra}`.trim().slice(0, 180);
+  }
+  return title || `${make} ${model}`.trim();
+}
+
+/** Tikai skaidrs country/countryCode/sellerCountry. Pilsēta vien neizslēdz. */
+export function marketplaceRawCountryCode(raw: MarketplaceRawListing): string {
+  for (const value of [raw.countryCode, raw.country, raw.sellerCountry]) {
+    const code = str(value, 40);
+    if (/^[A-Z]{2}$/i.test(code)) return code.toUpperCase();
+    if (/\bnether|holland|\bnl\b/i.test(code)) return "NL";
+    if (/\bgerman|deutsch|\bde\b/i.test(code)) return "DE";
+    if (/\bösterr|austria|\bat\b/i.test(code)) return "AT";
+  }
+  return "";
+}
+
+export function marketplaceRawIsNonDeWhenCountryKnown(raw: MarketplaceRawListing): boolean {
+  const code = marketplaceRawCountryCode(raw);
+  return Boolean(code) && code !== "DE";
+}
+
 function externalIdOf(platform: MarketplacePlatform, raw: MarketplaceRawListing, url: string): string {
-  const id = str(raw.externalId, 80);
+  const id = str(raw.listingKey, 80) || str(raw.listingId, 80) || str(raw.externalId, 80);
   if (id) return id;
   try {
     const u = new URL(url);
@@ -124,14 +151,17 @@ export function normalizeMarketplaceListing(
 ): MarketplaceNormalizedListing | null {
   if (!isMarketplacePlatform(platform) || !isMarketplaceProviderId(providerId)) return null;
   if (isClearlyPrivateSeller(raw)) return null;
+  if (marketplaceRawIsNonDeWhenCountryKnown(raw)) return null;
   const cleaned = stripForbidden(raw);
   const url = listingUrl(cleaned);
   if (!url) return null;
-  const title = str(cleaned.title, 180);
   const make = str(cleaned.make, 40);
   const model = str(cleaned.model, 60);
+  const title = listingTitleOf(cleaned, make, model);
   if (!title && !make) return null;
   const vin = str(cleaned.vin, 17).toUpperCase();
+  const sellerName = str(cleaned.sellerName, 80);
+  const location = str(cleaned.location ?? cleaned.city, 80);
   return {
     platform,
     providerId,
@@ -149,6 +179,8 @@ export function normalizeMarketplaceListing(
     locationCountry: countryOf(cleaned),
     fetchedAt,
     ...(vin.length === 17 ? { vin } : {}),
+    ...(sellerName ? { sellerName } : {}),
+    ...(location ? { location } : {}),
   };
 }
 

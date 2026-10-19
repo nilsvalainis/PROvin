@@ -37,6 +37,17 @@ describe("marketplaceListingToVehicle", () => {
     expect(v.priceCompareNote).toMatch(/mediān/);
   });
 
+  it("puts the dealer name on the card location and keeps extra source links", () => {
+    const v = marketplaceListingToVehicle({
+      ...item,
+      sellerName: "Autohaus Fulda",
+      location: "Fulda",
+      sourceLinks: [{ platform: "autoscout24", url: "https://www.autoscout24.de/angebote/x" }],
+    });
+    expect(v.location).toBe("Autohaus Fulda");
+    expect(v.sourceLinks).toEqual([{ platform: "autoscout24", url: "https://www.autoscout24.de/angebote/x" }]);
+  });
+
   it("expires after 30 days", () => {
     const exp = marketplaceListingExpiresAt("2026-10-01T00:00:00.000Z", 30);
     expect(marketplaceListingIsExpired(exp, Date.parse("2026-10-31T00:00:01.000Z"))).toBe(true);

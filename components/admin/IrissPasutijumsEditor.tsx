@@ -893,6 +893,21 @@ export function IrissPasutijumsEditor({
     [rec.id],
   );
 
+  const refreshRoomHits = useCallback(async () => {
+    const id = persistedIdRef.current || rec.id;
+    if (!id) return;
+    try {
+      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}/room-hits`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const data = (await res.json().catch(() => ({}))) as { hits?: IrissOrderRoomHit[] };
+      if (Array.isArray(data.hits)) setRoomHitsLive(data.hits);
+    } catch {
+      /* ignore: cards stay as they were */
+    }
+  }, [rec.id]);
+
   const ingestGeneratedDocument = useCallback((doc: IrissGeneratedDocument, workspaceRevision?: number) => {
     setRec((r) => {
       const generatedDocuments = mergeGeneratedDocuments([doc], r.generatedDocuments);
@@ -2114,6 +2129,7 @@ export function IrissPasutijumsEditor({
         <IrissOrderRoom
           rec={rec}
           hits={roomHitsLive}
+          onMarketplaceLoaded={() => void refreshRoomHits()}
           onReadLink={(url) => void readListingLink(url)}
           readingUrl={readingListingUrl}
           readCountByUrl={listingReadByUrl}
