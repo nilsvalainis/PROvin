@@ -76,6 +76,13 @@ describe("middleware admin gate", () => {
     expect(res.headers.get("location")).toBeNull();
   });
 
+  it("leaves unpaid payment short links without a locale prefix", async () => {
+    const res = await middleware(req("https://www.provin.lv/apmaksa/abcdefghij0123456789ab"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
+    expect(res.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  });
+
   it("does not touch public pages", async () => {
     const res = await middleware(req("https://www.provin.lv/lv"));
     expect(res.headers.get("location") ?? "").not.toContain("/admin/login");

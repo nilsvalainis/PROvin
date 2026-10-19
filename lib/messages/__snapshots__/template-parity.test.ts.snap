@@ -543,6 +543,29 @@ PROVIN.LV",
 }
 `;
 
+exports[`template snapshots (default text) > snapshot email.unpaid_reminder 1`] = `
+{
+  "html": "<!DOCTYPE html><html lang="lv"><body><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Redzēju, ka nesen sākāt pasūtīt auto vēstures pārbaudi, bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, droši zvaniet man: +371 29 502 039. Varat arī atbildēt uz šo e-pastu.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja pārbaude joprojām ir aktuāla, apmaksu varat pabeigt šeit:<br/>https://www.provin.lv/apmaksa/piemars</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Paldies, ka izvēlējāties Provin.lv, un veiksmi auto izvēlē!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils V. (IRISS)<br/>Provin.lv</p></body></html>",
+  "subject": "Par Jūsu auto pārbaudi (VIN WVWZZZ1KZAW000123)",
+  "text": "Labdien!
+
+Redzēju, ka nesen sākāt pasūtīt auto vēstures pārbaudi, bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, droši zvaniet man: +371 29 502 039. Varat arī atbildēt uz šo e-pastu.
+
+Ja pārbaude joprojām ir aktuāla, apmaksu varat pabeigt šeit:
+https://www.provin.lv/apmaksa/piemars
+
+Paldies, ka izvēlējāties Provin.lv, un veiksmi auto izvēlē!
+
+Ar cieņu,
+Nils V. (IRISS)
+Provin.lv",
+}
+`;
+
 exports[`template snapshots (default text) > snapshot email.upsell.dealer_to_audit 1`] = `
 {
   "html": "<!DOCTYPE html>

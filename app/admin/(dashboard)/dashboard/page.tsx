@@ -15,6 +15,9 @@ import { AdminClientLinkButton } from "@/components/admin/AdminClientLinkButton"
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminOrdersTable } from "@/components/admin/AdminOrdersTable";
+import { AdminUnpaidOrdersPanel } from "@/components/admin/AdminUnpaidOrdersPanel";
+import { AdminOrdersViewSwitch } from "@/components/admin/AdminOrdersViewSwitch";
+import { listUnpaidAdminOrders, stripeCheckoutSessionDashboardUrl } from "@/lib/admin-unpaid-orders";
 import { AdminOrderVinScanDashboardCards } from "@/components/admin/AdminOrderVinScanDashboardCards";
 import { pickOrderVinScanDashboardCards } from "@/lib/order-vin-scan";
 import { ORDERS_PAGE_SIZE, parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
@@ -40,6 +43,24 @@ export default async function AdminOrdersPage({
   await requireAdminPage();
   const sp = await searchParams;
   const showAll = sp.show_all === "1" || sp.show_all === "true";
+  const unpaidView = sp.view === "unpaid";
+  if (unpaidView) {
+    const unpaid = await listUnpaidAdminOrders().catch(() => ({
+      rows: [] as Awaited<ReturnType<typeof listUnpaidAdminOrders>>["rows"],
+      stripeError: "Neizdevās ielādēt neapmaksātos pasūtījumus.",
+    }));
+    return (
+      <div className="w-full max-w-none">
+        <AdminUnpaidOrdersPanel
+          stripeError={unpaid.stripeError}
+          orders={unpaid.rows.map((r) => ({
+            ...r,
+            stripeDashboardUrl: stripeCheckoutSessionDashboardUrl(r.sessionId),
+          }))}
+        />
+      </div>
+    );
+  }
   const ordersQuery = parseAdminOrdersQuery(sp);
   const [{ rows: allOrders, stripeError }, peeks] = await Promise.all([
     listAdminOrders(),
@@ -263,6 +284,7 @@ export default async function AdminOrdersPage({
           <AdminOrderVinScanDashboardCards cards={vinCards} surface="desktop" />
           <AdminOrdersTable
             orders={paged.rows}
+            showUnpaidViewSwitch
             doneOrder={ordersQuery.sort === "oldest" ? "asc" : "desc"}
             belowTopBar={<AdminOrderVinScanDashboardCards cards={vinCards} surface="mobile" />}
             toolbarEnd={
@@ -293,9 +315,12 @@ export default async function AdminOrdersPage({
           </div>
         </>
       ) : (
-        <div className="mt-4 flex items-center justify-end gap-1.5">
-          <AdminClientLinkButton />
-          {toolbarEnd}
+        <div className="mt-4 flex items-center justify-between gap-1.5">
+          <AdminOrdersViewSwitch />
+          <div className="flex items-center gap-1.5">
+            <AdminClientLinkButton />
+            {toolbarEnd}
+          </div>
         </div>
       )}
 

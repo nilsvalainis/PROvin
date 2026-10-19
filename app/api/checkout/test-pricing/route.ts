@@ -38,6 +38,7 @@ import {
   validateTp5InlineFields,
 } from "@/lib/test-pricing-5-inline-checkout";
 import { TP5_KOREA_USA_PUBLIC } from "@/lib/test-pricing-5-mobile";
+import { parseOptionalCheckoutEmail, stripeCheckoutEmailFields } from "@/lib/test-pricing-checkout-email";
 import { routing } from "@/i18n/routing";
 
 export const runtime = "nodejs";
@@ -109,6 +110,7 @@ export async function POST(req: Request) {
     locale?: unknown;
     listingUrl?: unknown;
     vin?: unknown;
+    customerEmail?: unknown;
     withdrawalConsent?: unknown;
     sourcePage?: unknown;
     companyName?: unknown;
@@ -143,6 +145,11 @@ export async function POST(req: Request) {
   const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim() : "";
   const vinInput = typeof raw.vin === "string" ? raw.vin : "";
   const vin = normalizeVin(vinInput);
+  const parsedEmail = parseOptionalCheckoutEmail(raw.customerEmail);
+  if (!parsedEmail.ok) {
+    return NextResponse.json({ error: parsedEmail.error }, { status: 400 });
+  }
+  const checkoutEmail = stripeCheckoutEmailFields(parsedEmail.email);
   const withdrawalConsent = raw.withdrawalConsent === true;
   const clientCollected = isTestPricingModalCheckoutPage(sourcePage);
 
@@ -219,6 +226,7 @@ export async function POST(req: Request) {
     customer_creation: "always",
     phone_number_collection: { enabled: true },
     billing_address_collection: "auto",
+    ...(checkoutEmail.customer_email ? { customer_email: checkoutEmail.customer_email } : {}),
     ...(clientCollected
       ? {
           /** VIN/saite jau savākti formā — Stripe lapā avots + komentārs. */
@@ -244,6 +252,7 @@ export async function POST(req: Request) {
           }
         : {}),
       ...invoiceBuyerMetadataFromUnknown(raw),
+      ...checkoutEmail.metadata,
     },
     locale: stripeCheckoutLocale(locale),
     ...(submitNote
@@ -261,7 +270,7 @@ export async function POST(req: Request) {
 
   const eventId = createMetaEventId();
   const value = resolveInitiateCheckoutValueEur(session.amount_total, tp5Product?.amountCents ?? plan.amountCents);
-  void notifyMetaInitiateCheckout({ req, eventId, value, email: null, phone: null });
+  void notifyMetaInitiateCheckout({ req, eventId, value, email: parsedEmail.email, phone: null });
 
   return NextResponse.json({ url: session.url, ...checkoutMetaClientFields(eventId, value) });
 }
