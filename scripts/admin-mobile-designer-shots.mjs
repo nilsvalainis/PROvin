@@ -29,11 +29,10 @@ const browser = await chromium.launch({
 });
 
 async function dismissNextOverlay(page) {
-  const overlay = page.locator("nextjs-portal, [data-nextjs-dialog-overlay]");
-  if (await overlay.first().isVisible().catch(() => false)) {
-    await page.keyboard.press("Escape").catch(() => {});
-    await page.locator("nextjs-portal").evaluateAll((nodes) => nodes.forEach((n) => n.remove())).catch(() => {});
-  }
+  await page.keyboard.press("Escape").catch(() => {});
+  await page.evaluate(() => {
+    document.querySelectorAll("nextjs-portal, [data-nextjs-dialog-overlay], [data-next-badge-root]").forEach((n) => n.remove());
+  }).catch(() => {});
 }
 
 async function settle(page) {

@@ -7,7 +7,7 @@ export const ADMIN_MOBILE_AUDIT_FILTER_LABEL: Record<AuditResultColor | "all" | 
   green: "Labi",
   orange: "Jāpēta",
   red: "Riski",
-  none: "Bez vērtējuma",
+  none: "Bez",
 };
 
 export const ADMIN_MOBILE_ORDER_SECTIONS = [

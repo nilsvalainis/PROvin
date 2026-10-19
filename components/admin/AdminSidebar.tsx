@@ -610,14 +610,14 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
       {more ? (
         <AdminBodyPortal>
           <div
-            className="admin-m pointer-events-auto fixed inset-x-0 top-0 z-[0] flex flex-col md:hidden"
+            className="admin-m pointer-events-auto fixed inset-x-0 top-0 z-[20] flex flex-col md:hidden"
             style={{ bottom: "calc(64px + 16px + env(safe-area-inset-bottom, 0px))" }}
             data-admin-theme={theme}
             role="dialog"
             aria-modal="true"
             aria-label="Vairāk"
           >
-            <div className="am-overlay relative z-[0] flex min-h-0 flex-1 flex-col bg-[var(--bg)]">
+            <div className="am-overlay relative z-[20] flex min-h-0 flex-1 flex-col bg-[var(--bg)]">
               <header className="am-topbar px-4 pb-3 pt-[max(10px,env(safe-area-inset-top))]">
                 <h1 className="text-[34px] font-bold leading-none tracking-tight text-[var(--label)]">Vairāk</h1>
                 <div className="relative mt-3 flex h-8 rounded-full bg-[var(--am-fill)] p-0.5" role="tablist" aria-label="Darba zona">

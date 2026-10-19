@@ -57,14 +57,7 @@ export default async function IrissPasutijumiListPage() {
         </div>
       ) : null}
 
-      {storeEnabled && !loadError && rows.filter((r) => !r.deletedAt).length === 0 && rows.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
-          <p className="font-medium text-black">Nav pasūtījumu</p>
-          <p className="mt-2 text-sm text-black">Spied „+”, lai izveidotu pirmo ierakstu.</p>
-        </div>
-      ) : null}
-
-      {storeEnabled && !loadError && rows.length > 0 ? (
+      {storeEnabled && !loadError ? (
         <IrissPasutijumiListClient rows={rows} initialListOrder={initialListOrder} />
       ) : null}
 

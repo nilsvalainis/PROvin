@@ -71,7 +71,7 @@ describe("admin mobile spec files", () => {
     const side = readFileSync(new URL("../components/admin/AdminSidebar.tsx", import.meta.url), "utf8");
     expect(side).toMatch(/\{\s*\.\.\.VIN,\s*label:\s*"VIN"\s*\}/);
     expect(side).toMatch(/floating/);
-    expect(side).toMatch(/z-\[0\]/);
+    expect(side).toMatch(/z-\[20\]/);
     expect(side).not.toMatch(/z-\[40\]/);
     expect(side).toMatch(/whitespace-nowrap leading-none/);
   });
