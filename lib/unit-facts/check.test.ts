@@ -34,10 +34,23 @@ describe("unit facts base", () => {
     expect(UNIT_FACTS.find((f) => f.id === "vw_recall_48vs_scope")?.status).toBe("disputed");
     const dq381 = UNIT_FACTS.find((f) => f.id === "vag_dq381_service_interval");
     expect(dq381?.status).toBe("disputed");
-    expect(dq381?.statementLv).toMatch(/60 000 jūdzes/);
-    expect(dq381?.statementLv).toMatch(/96 500/);
+    expect(dq381?.statementLv).toMatch(/128 748 km/);
+    expect(dq381?.statementLv).toMatch(/96 561 km/);
+    expect(dq381?.statementLv).not.toMatch(/jūdz|miles|\bmph\b|\bmi\b/i);
     expect(dq381?.statementLv).not.toMatch(/smagos apstākļos 60 000 km/);
     expect(UNIT_FACTS.find((f) => f.id === "vag_30tdi_ea897evo_three_chains")?.status).toBe("draft");
+  });
+
+  it("stores only km: no miles / mi / mph / jūdz in fact copy", () => {
+    const milesRe = /jūdz|miles|\bmph\b|\bmi\b/i;
+    for (const f of UNIT_FACTS) {
+      expect(`${f.id}:${f.statementLv}`).not.toMatch(milesRe);
+      expect(`${f.id}:${f.note ?? ""}`).not.toMatch(milesRe);
+      for (const s of f.sources) {
+        expect(`${f.id}:${s.title}`).not.toMatch(milesRe);
+        expect(`${f.id}:${s.note ?? ""}`).not.toMatch(milesRe);
+      }
+    }
   });
 });
 
@@ -264,7 +277,7 @@ describe("checkAiCommentFacts", () => {
     const evo = formatApplicableUnitFactsForPrompt({ contextText: "VW Touareg CR7 DEND EA897 evo" });
     expect(evo).not.toMatch(/EA897 evo|DEND/);
     const dq381 = formatApplicableUnitFactsForPrompt({ contextText: "VW Golf DQ381 0GC" });
-    expect(dq381).not.toMatch(/DQ381|STRĪDĪG|96 500/);
+    expect(dq381).not.toMatch(/DQ381|STRĪDĪG|96 561/);
   });
 
   it("ignores draft facts (EA897 evo chain count)", () => {

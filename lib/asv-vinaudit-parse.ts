@@ -17,8 +17,9 @@ import {
   type AsvTitleRow,
 } from "@/lib/asv-report";
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
+import { milesToKmRounded } from "@/lib/miles-to-km";
 
-const MILES_TO_KM = 1.609344;
+export { milesToKmRounded };
 
 export type AsvImageHint = {
   url: string;
@@ -539,10 +540,6 @@ export function parseVinauditPayload(raw: unknown, meta?: { productUsed?: string
   };
 
   return { block, imageHints };
-}
-
-export function milesToKmRounded(miles: number): number {
-  return Math.round(miles * MILES_TO_KM);
 }
 
 export function vinauditPayloadLooksEmpty(raw: unknown): boolean {

@@ -169,6 +169,7 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/provin-style-canon.ts")).toMatch(/Nepārspīlē un nemīkstini/);
     expect(readRepo("lib/provin-style-canon.ts")).toMatch(/AI_HUMAN_DASH_RULES/);
     expect(readRepo("lib/provin-style-canon.ts")).toMatch(/only the short ASCII hyphen/);
+    expect(readRepo("lib/provin-style-canon.ts")).toMatch(/Jūdzes \(mi, miles, mph\) PROVIN tekstā nelieto/);
   });
 
   it("summary and inspection prompts require aggregate-specific technical risk analysis", () => {

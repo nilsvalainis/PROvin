@@ -24,7 +24,7 @@ export const AI_EUR_CANON_RULES = `EUR (mandatory, once): Eiro drīkst rakstīt 
 
 export const AI_OWNER_COUNT_RULES = `OWNERS: N īpašnieki = N-1 maiņas. Skaitli ņem no kanoniskās faktu lapas, nepārrēķini.`;
 
-export const AI_MILES_KM_RULES = `MILES/KM: Ja avots dod jūdzes (mi), raksti „X jūdzes (~Y km)”. Nekad nelasi jūdzes kā km. Intervālus no ASV avotiem (jūdzēs) nejauc ar ES (km).`;
+export const AI_MILES_KM_RULES = `MILES/KM: Jūdzes (mi, miles, mph) PROVIN tekstā nelieto. Ja avots dod jūdzes, pārrēķini uz km (1 mi = 1.609344 km, noapaļo līdz veseliem km) un raksti tikai km; ātrumam km/h. Nekad nelasi jūdzes kā km. ASV un ES intervālus salīdzini tikai pēc pārrēķina uz km.`;
 
 export const AI_NO_CROSS_SECTION_REFS_RULES = `NO CROSS-SECTION REFS: Neraksti „kā minēts nobraukuma komentārā”, „skat. sadaļu…”, „detalizēti … KOMENTĀRĀ”.`;
 

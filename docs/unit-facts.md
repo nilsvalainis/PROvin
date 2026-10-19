@@ -10,6 +10,7 @@ Nils apstiprināja 17.10.2026. Kods: `lib/unit-facts/`, API: `POST /api/admin/ai
 - `draft`: ignorē (netiek ievadīts promptā un nepārbauda).
 - Nils 17.10.2026: `vag_30tdi_gen2_chain_count` (CLAA/CRCA, EA897) ir `verified`, 2 ķēdes (SSP 479, 9. lpp.; Touareg 2010+ RG15). Drīkst ievadīt promptā.
 - EUR summas faktu bāzē aizliegtas (tests).
+- Nils 19.10.2026: tikai km. Avota jūdzes pārrēķina (1 mi = 1.609344 km, veseli km). Jūdzes / mi / mph faktu tekstā nav.
 - Esošā `data/kb/*.yaml` (Andra draft KB) netiek mainīta; šī bāze ir stingrāka (tikai avototi fakti).
 
 ## Pārbaude (`checkAiCommentFacts`, bez maksas)
