@@ -387,7 +387,7 @@ export function IrissListDrawer({
         >
           <option value="">Automātiski: {listingTaxLabel(detected)}</option>
           <option value="net">NETO</option>
-          <option value="margin">Margin</option>
+          <option value="margin">Marža</option>
           <option value="gross">AR PVN x %</option>
         </select>
         {ov?.kind === "gross" ? (
