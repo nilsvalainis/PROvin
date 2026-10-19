@@ -3,6 +3,7 @@ import { emptyIrissCriteria, emptyIrissCriteriaFilter, irissCriteriaValue } from
 import {
   marketplaceOrderHasFetchBounds,
   marketplaceQueryFromOrder,
+  marketplaceStrictMissingFields,
   marketplaceVehicleMatchesOrder,
 } from "@/lib/marketplace/query-from-order";
 
@@ -53,9 +54,38 @@ describe("marketplaceQueryFromOrder", () => {
     });
   });
 
-  it("does not treat an empty order as fetchable", () => {
+  it("does not treat an empty or one-sided order as fetchable", () => {
     expect(marketplaceOrderHasFetchBounds({ brandModel: "" })).toBe(false);
-    expect(marketplaceOrderHasFetchBounds({ brandModel: "Volvo XC60" })).toBe(true);
+    expect(marketplaceOrderHasFetchBounds({ brandModel: "Volvo XC60" })).toBe(false);
+    expect(marketplaceStrictMissingFields({ brandModel: "Volvo XC60" })).toEqual(
+      expect.arrayContaining(["cena no", "cena līdz", "gads no", "gads līdz"]),
+    );
+  });
+
+  it("requires make, model, price from-to, years from-to and one extra range", () => {
+    const full = {
+      brandModel: "Volvo XC60",
+      productionYears: "2018-2020",
+      maxMileage: "150000",
+      totalBudget: "10000-25000",
+    };
+    expect(marketplaceOrderHasFetchBounds(full)).toBe(true);
+    expect(marketplaceStrictMissingFields(full)).toEqual([]);
+    expect(
+      marketplaceOrderHasFetchBounds({
+        brandModel: "Volvo XC60",
+        productionYears: "2018-2020",
+        totalBudget: "10000-25000",
+      }),
+    ).toBe(false);
+    expect(
+      marketplaceOrderHasFetchBounds({
+        brandModel: "Volvo XC60",
+        productionYears: "2018-2020",
+        totalBudget: "10000-25000",
+        engineType: "2.0 140 kW",
+      }),
+    ).toBe(true);
   });
 });
 
@@ -64,7 +94,7 @@ describe("marketplaceVehicleMatchesOrder", () => {
     brandModel: "Volvo XC60",
     productionYears: "2018-2020",
     maxMileage: "150000",
-    totalBudget: "25000",
+    totalBudget: "10000-25000",
     engineType: "diesel",
     transmission: "automatic",
   };

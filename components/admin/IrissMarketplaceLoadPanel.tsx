@@ -7,6 +7,8 @@ type EstimateResponse = {
   ok?: boolean;
   error?: string;
   queryReady?: boolean;
+  missingFields?: string[];
+  tooBroadReason?: string;
   estimatedUsd?: number;
   monthlyUsedUsd?: number;
   monthlyCapUsd?: number;
@@ -130,8 +132,11 @@ export function IrissMarketplaceLoadPanel({ orderId }: { orderId: string }) {
     }
   }
 
-  const allowed = estimate?.allowed !== false && estimate?.queryReady !== false;
+  const missingFields = estimate?.missingFields ?? [];
+  const queryReady = estimate?.queryReady !== false && missingFields.length === 0;
+  const allowed = estimate?.allowed !== false && queryReady;
   const maxUsd = estimate?.estimatedUsd ?? 0;
+  const missingText = missingFields.length ? `Ielādēt nav iespējams. Trūkst: ${missingFields.join(", ")}.` : "";
 
   return (
     <section className="rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3.5">
@@ -172,14 +177,13 @@ export function IrissMarketplaceLoadPanel({ orderId }: { orderId: string }) {
         <p className="mt-1 text-[12px] text-amber-900">Mēneša budžets ir virs 80%.</p>
       ) : null}
       {estimate?.reason ? <p className="mt-1 text-[12px] text-[#991b1b]">{estimate.reason}</p> : null}
-      {estimate?.queryReady === false ? (
-        <p className="mt-1 text-[12px] text-[#991b1b]">Vispirms aizpildiet marku, gadus, km vai budžetu.</p>
-      ) : null}
+      {missingText ? <p className="mt-1 text-[12px] text-[#991b1b]">{missingText}</p> : null}
       <button
         type="button"
         disabled={busy || !allowed}
         onClick={() => void loadNow()}
         className="mt-3 inline-flex h-10 items-center justify-center rounded-[10px] border border-[#111827] bg-[#111827] px-3 text-[12.5px] font-semibold text-white disabled:opacity-40"
+        title={missingText || undefined}
       >
         {busy ? "Ielādē…" : "Ielādēt"}
       </button>

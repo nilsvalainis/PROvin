@@ -78,7 +78,7 @@ describe("loadMarketplaceForOrder", () => {
     brandModel: "Volvo XC60",
     productionYears: "2018-2020",
     maxMileage: "150000",
-    totalBudget: "25000",
+    totalBudget: "10000-25000",
     engineType: "diesel",
     transmission: "automatic",
   };
@@ -128,7 +128,8 @@ describe("loadMarketplaceForOrder", () => {
       explicit: true,
       providers: [mockProvider("mobilede", RAW)],
     });
-    expect(empty.error).toBe("criteria_empty");
+    expect(empty.error).toBe("par plāši kritēriji");
+    expect(empty.missingFields?.length).toBeGreaterThan(0);
   });
 
   it("shows the estimated max cost before any paid call", async () => {

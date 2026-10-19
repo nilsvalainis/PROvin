@@ -58,6 +58,10 @@ function runRecord(partial: Partial<MarketplaceRunRecord> & Pick<MarketplaceRunR
       gearbox: "automatic",
       powerFromKw: null,
       powerToKw: null,
+      displacementFromCc: null,
+      displacementToCc: null,
+      body: "",
+      drive: "",
       countries: [],
     },
     maxItems: 40,
@@ -84,7 +88,7 @@ const ORDER = {
   brandModel: "Volvo XC60",
   productionYears: "2018-2020",
   maxMileage: "150000",
-  totalBudget: "25000",
+  totalBudget: "10000-25000",
 };
 
 function baseDeps(overrides: Partial<MarketplaceAutoSweepDeps> = {}): MarketplaceAutoSweepDeps {
@@ -273,6 +277,19 @@ describe("marketplace auto budget and skip", () => {
     );
     expect(seen[0]).toEqual({ sortNewest: false, maxItems: 40 });
     expect(seen[1]).toEqual({ sortNewest: true, maxItems: 40 });
+  });
+
+  it("skips an order without strict from-to ranges", async () => {
+    const loadForOrder = vi.fn(async () => okLoad(0.05));
+    const out = await runMarketplaceAutoSweep(
+      baseDeps({
+        readOrder: async () => ({ brandModel: "Volvo XC60", productionYears: "2018-2020" }),
+        loadForOrder,
+      }),
+    );
+    expect(loadForOrder).not.toHaveBeenCalled();
+    expect(out.skipped[0]?.reason).toMatch(/par plāši kritēriji/);
+    expect(out.skipped[0]?.reason).toMatch(/cena/);
   });
 
   it("leaves auction listing sync untouched", async () => {

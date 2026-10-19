@@ -17,6 +17,7 @@ import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { IrissRangeFromToField } from "@/components/admin/IrissRangeFromToField";
 import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
@@ -35,6 +36,16 @@ import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
+import {
+  applyIrissOrderRangeEdit,
+  applyIrissOrderSpecTextEdit,
+  irissOrderRangeErrorFor,
+  irissOrderRangeView,
+  isIrissOrderSpecTextKey,
+  syncIrissOrderRangesFromLegacy,
+  type IrissOrderRangeField,
+  type IrissOrderSpecTextKey,
+} from "@/lib/iriss-order-range-fields";
 import {
   appendIrissStatusHistory,
   applyIrissFieldEdit,
@@ -539,7 +550,16 @@ export function IrissPasutijumsEditor({
   const [googleContactBusy, setGoogleContactBusy] = useState(false);
 
   const patch = useCallback(<K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => {
-    setRec((r) => withAutoEcarstradeLinks(applyIrissFieldEdit(r, { [key]: value } as Partial<IrissPasutijumsRecord>, Date.now())));
+    setRec((r) => {
+      if (isIrissOrderSpecTextKey(String(key)) && typeof value === "string") {
+        return withAutoEcarstradeLinks(applyIrissOrderSpecTextEdit(r, key as IrissOrderSpecTextKey, value, Date.now()));
+      }
+      return withAutoEcarstradeLinks(applyIrissFieldEdit(r, { [key]: value } as Partial<IrissPasutijumsRecord>, Date.now()));
+    });
+  }, []);
+
+  const patchRange = useCallback((field: IrissOrderRangeField, raw: string) => {
+    setRec((r) => withAutoEcarstradeLinks(applyIrissOrderRangeEdit(r, field, raw, Date.now())));
   }, []);
 
   const patchRecord = useCallback((p: Partial<IrissPasutijumsRecord>) => {
@@ -712,7 +732,15 @@ export function IrissPasutijumsEditor({
 
   const saveCriteria = useCallback(
     async (partial: Partial<IrissPasutijumsRecord>): Promise<SaveResult> => {
-      const next = withAutoEcarstradeLinks(applyIrissFieldEdit(recRef.current, partial, Date.now()));
+      const now = Date.now();
+      let next = applyIrissFieldEdit(recRef.current, partial, now);
+      for (const key of ["engineType", "transmission", "bodyType", "driveType"] as const) {
+        if (typeof partial[key] === "string") {
+          next = applyIrissOrderSpecTextEdit(next, key, partial[key] as string, now);
+        }
+      }
+      next = syncIrissOrderRangesFromLegacy(next, now);
+      next = withAutoEcarstradeLinks(next);
       setRec(next);
       recRef.current = next;
       return save({ payload: next });
@@ -1329,6 +1357,7 @@ export function IrissPasutijumsEditor({
   const phoneInspect = useMemo(() => inspectIrissPhone(rec.phone), [rec.phone]);
   const normalizedPhone = phoneInspect.hrefValue;
   const orderVinWarning = useMemo(() => irissVinWarning(rec.vin), [rec.vin]);
+  const specRanges = irissOrderRangeView(rec);
   const offerVinWarning = useMemo(() => irissVinWarning(offerDraft.vin), [offerDraft.vin]);
   const carPriceWarning = useMemo(() => irissPriceFormatWarning(offerDraft.carPrice), [offerDraft.carPrice]);
   const deliveryPriceWarning = useMemo(() => irissPriceFormatWarning(offerDraft.deliveryPrice), [offerDraft.deliveryPrice]);
@@ -1824,16 +1853,62 @@ export function IrissPasutijumsEditor({
               />
               {orderVinWarning ? <p className="mt-1 text-[11px] text-amber-800">{orderVinWarning}</p> : null}
             </label>
-            <LabeledInput
-              label="Ražošanas gadi"
-              value={rec.productionYears}
-              onChange={(e) => patch("productionYears", e.target.value)}
-              placeholder="piem., 2018-2021"
+            <IrissRangeFromToField
+              label="Cena no-līdz (EUR)"
+              from={specRanges.budgetFrom}
+              to={specRanges.budgetTo}
+              onFrom={(v) => patchRange("budgetFrom", v)}
+              onTo={(v) => patchRange("budgetTo", v)}
+              error={irissOrderRangeErrorFor(rec, "budget")}
+              fromPlaceholder="no"
+              toPlaceholder="līdz"
+              inputClassName={fieldClass}
             />
-            <LabeledInput
-              label="Kopējais budžets"
-              value={rec.totalBudget}
-              onChange={(e) => patch("totalBudget", e.target.value)}
+            <IrissRangeFromToField
+              label="Gadi no-līdz"
+              from={specRanges.yearFrom}
+              to={specRanges.yearTo}
+              onFrom={(v) => patchRange("yearFrom", v)}
+              onTo={(v) => patchRange("yearTo", v)}
+              error={irissOrderRangeErrorFor(rec, "year")}
+              inputMode="numeric"
+              fromPlaceholder="no"
+              toPlaceholder="līdz"
+              inputClassName={fieldClass}
+            />
+            <IrissRangeFromToField
+              label="Nobraukums no-līdz (km)"
+              from={specRanges.mileageFrom}
+              to={specRanges.mileageTo}
+              onFrom={(v) => patchRange("mileageFrom", v)}
+              onTo={(v) => patchRange("mileageTo", v)}
+              error={irissOrderRangeErrorFor(rec, "mileage")}
+              inputMode="numeric"
+              fromPlaceholder="no"
+              toPlaceholder="līdz"
+              inputClassName={fieldClass}
+            />
+            <IrissRangeFromToField
+              label="Tilpums no-līdz (cm3 vai l)"
+              from={specRanges.ccFrom}
+              to={specRanges.ccTo}
+              onFrom={(v) => patchRange("ccFrom", v)}
+              onTo={(v) => patchRange("ccTo", v)}
+              error={irissOrderRangeErrorFor(rec, "cc")}
+              fromPlaceholder="no"
+              toPlaceholder="līdz"
+              inputClassName={fieldClass}
+            />
+            <IrissRangeFromToField
+              label="Jauda no-līdz (kW / ZS)"
+              from={specRanges.kwFrom}
+              to={specRanges.kwTo}
+              onFrom={(v) => patchRange("kwFrom", v)}
+              onTo={(v) => patchRange("kwTo", v)}
+              error={irissOrderRangeErrorFor(rec, "kw")}
+              fromPlaceholder="no"
+              toPlaceholder="līdz"
+              inputClassName={fieldClass}
             />
             <LabeledInput
               label="Dzinēja tips"
@@ -1855,18 +1930,13 @@ export function IrissPasutijumsEditor({
               label="Piedziņas tips"
               value={rec.driveType}
               onChange={(e) => patch("driveType", e.target.value)}
-              placeholder="piem., priekšējā, 4×4"
+              placeholder="piem., priekšējā, 4x4"
             />
             <LabeledInput
               label="Sēdvietu skaits"
               value={rec.seatCount}
               onChange={(e) => patch("seatCount", e.target.value)}
               placeholder="piem., 5"
-            />
-            <LabeledInput
-              label="Maks. nobraukums"
-              value={rec.maxMileage}
-              onChange={(e) => patch("maxMileage", e.target.value)}
             />
             <LabeledInput
               label="Vēlamās krāsas"
@@ -2120,6 +2190,7 @@ export function IrissPasutijumsEditor({
           }
           deleted={isIrissRecordDeleted(rec)}
           onPatch={patch}
+          onPatchRange={patchRange}
           onPatchRecord={patchRecord}
           onInactiveReason={(value) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, value)))}
           onSetStatus={setListStatus}

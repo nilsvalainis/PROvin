@@ -23,7 +23,18 @@ export function createCarapisProvider(platform: "mobilede" | "autoscout24" = "mo
         model: criteria.model,
         year_from: criteria.yearFrom,
         year_to: criteria.yearTo,
+        mileage_from: criteria.mileageFrom,
+        mileage_to: criteria.mileageTo,
+        price_from: criteria.priceFrom,
         price_to: criteria.priceTo,
+        fuel: criteria.fuel,
+        gearbox: criteria.gearbox,
+        power_from: criteria.powerFromKw,
+        power_to: criteria.powerToKw,
+        displacement_from: criteria.displacementFromCc,
+        displacement_to: criteria.displacementToCc,
+        body: criteria.body,
+        drive: criteria.drive,
       };
     },
     estimateCost(query, maxItems) {

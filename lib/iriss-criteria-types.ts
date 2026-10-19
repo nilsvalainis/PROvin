@@ -462,3 +462,39 @@ export function irissCriteriaHasColourField(raw: unknown): boolean {
   const json = JSON.stringify(raw ?? {});
   return /"(?:color|colour|colors|colours|preferredColors|nonPreferredColors)"\s*:/.test(json);
 }
+
+export function irissCriteriaSlotHasStoredValue(slot: IrissCriteriaValue<unknown> | undefined): boolean {
+  if (!slot) return false;
+  if (slot.manual.trim()) return true;
+  const value = slot.value;
+  if (Array.isArray(value)) return value.length > 0;
+  if (value && typeof value === "object") {
+    return Object.values(value).some((item) => Array.isArray(item) && item.length > 0);
+  }
+  return value != null;
+}
+
+/** Operatora aizpildīts filtrs (source form ar vērtību). Atvasinājums no teksta paliek migrated. */
+export function irissCriteriaIsOperatorAuthored(criteria: IrissCriteriaV1 | null | undefined): boolean {
+  if (!criteria?.filters?.length) return false;
+  return criteria.filters.some((filter) =>
+    [
+      filter.make,
+      filter.models,
+      filter.yearFrom,
+      filter.yearTo,
+      filter.mileageFrom,
+      filter.mileageTo,
+      filter.budgetFrom,
+      filter.budgetTo,
+      filter.fuel,
+      filter.gearbox,
+      filter.bodyTypes,
+      filter.ccFrom,
+      filter.ccTo,
+      filter.kwFrom,
+      filter.kwTo,
+      filter.drive,
+    ].some((slot) => slot.source === "form" && irissCriteriaSlotHasStoredValue(slot)),
+  );
+}

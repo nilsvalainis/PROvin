@@ -6,6 +6,7 @@ import {
   runMarketplaceApifyActor,
 } from "@/lib/marketplace/apify-client";
 import { marketplaceMaxItemsPerProvider, providerEstimate } from "@/lib/marketplace/cost-caps";
+import { marketplaceActorSearchInput } from "@/lib/marketplace/search-urls";
 import type { ListingProvider, MarketplaceLimits, MarketplaceQuery, MarketplaceRawListing } from "@/lib/marketplace/types";
 
 export const APIFY_AUTOSCOUT24_USD_PER_THOUSAND = 0.5;
@@ -53,19 +54,7 @@ export function createApifyAutoscout24Provider(): ListingProvider {
       return Boolean(readApifyToken() && marketplaceActorId("MARKETPLACE_APIFY_AUTOSCOUT24_ACTOR")) || marketplaceUseFixtures();
     },
     buildQuery(criteria) {
-      return {
-        make: criteria.make,
-        model: criteria.model,
-        yearFrom: criteria.yearFrom,
-        yearTo: criteria.yearTo,
-        mileageFrom: criteria.mileageFrom,
-        mileageTo: criteria.mileageTo,
-        priceFrom: criteria.priceFrom,
-        priceTo: criteria.priceTo,
-        fuel: criteria.fuel,
-        gearbox: criteria.gearbox,
-        maxItems: marketplaceMaxItemsPerProvider(),
-      };
+      return marketplaceActorSearchInput("autoscout24", criteria, { maxItems: marketplaceMaxItemsPerProvider() });
     },
     estimateCost(query, maxItems) {
       const configured = this.isConfigured();
@@ -84,7 +73,10 @@ export function createApifyAutoscout24Provider(): ListingProvider {
       const actorId = marketplaceActorId("MARKETPLACE_APIFY_AUTOSCOUT24_ACTOR");
       const run = await runMarketplaceApifyActor({
         actorId,
-        payload: marketplaceApifySearchPayload(this.buildQuery(query), limits),
+        payload: marketplaceApifySearchPayload(
+          marketplaceActorSearchInput("autoscout24", query, limits),
+          limits,
+        ),
         maxItems: limits.maxItems,
         maxUsd: limits.maxUsd,
       });

@@ -22,6 +22,7 @@ import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { IrissRangeFromToField } from "@/components/admin/IrissRangeFromToField";
 import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { listingHistoryRecordId } from "@/lib/admin-change-history";
 import { IrissBrandLogoSlot } from "@/components/admin/IrissBrandLogoSlot";
@@ -107,6 +108,11 @@ import {
   type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
+import {
+  irissOrderRangeErrorFor,
+  irissOrderRangeView,
+  type IrissOrderRangeField,
+} from "@/lib/iriss-order-range-fields";
 
 const fieldClass =
   "min-h-[44px] w-full min-w-0 rounded-[10px] border border-[#e5e7eb] bg-white px-2.5 py-2 text-[16px] text-[#111827] outline-none transition focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 sm:min-h-[38px] sm:text-[13px]";
@@ -308,6 +314,7 @@ export function IrissOrderRoom({
   conflict,
   deleted,
   onPatch,
+  onPatchRange,
   onPatchRecord,
   onInactiveReason,
   onSetStatus,
@@ -355,6 +362,7 @@ export function IrissOrderRoom({
   conflict: ReactNode;
   deleted: boolean;
   onPatch: <K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => void;
+  onPatchRange: (field: IrissOrderRangeField, raw: string) => void;
   onPatchRecord: (patch: Partial<IrissPasutijumsRecord>) => void;
   onInactiveReason: (value: string) => void;
   onSetStatus: (status: IrissPasutijumsListStatus) => void;
@@ -880,17 +888,60 @@ export function IrissOrderRoom({
                   ) : null}
                 </label>
                 <Field label="Marka / modelis" value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
-                <Field label="Kopējais budžets" value={rec.totalBudget} onChange={(value) => onPatch("totalBudget", value)} />
-                <Field label="Ražošanas gadi" value={rec.productionYears} placeholder="piem., 2018-2021" onChange={(value) => onPatch("productionYears", value)} />
+                <IrissRangeFromToField
+                  label="Cena no-līdz (EUR)"
+                  from={irissOrderRangeView(rec).budgetFrom}
+                  to={irissOrderRangeView(rec).budgetTo}
+                  onFrom={(value) => onPatchRange("budgetFrom", value)}
+                  onTo={(value) => onPatchRange("budgetTo", value)}
+                  error={irissOrderRangeErrorFor(rec, "budget")}
+                  inputClassName={fieldClass}
+                />
+                <IrissRangeFromToField
+                  label="Gadi no-līdz"
+                  from={irissOrderRangeView(rec).yearFrom}
+                  to={irissOrderRangeView(rec).yearTo}
+                  onFrom={(value) => onPatchRange("yearFrom", value)}
+                  onTo={(value) => onPatchRange("yearTo", value)}
+                  error={irissOrderRangeErrorFor(rec, "year")}
+                  inputMode="numeric"
+                  inputClassName={fieldClass}
+                />
+                <IrissRangeFromToField
+                  label="Nobraukums no-līdz (km)"
+                  from={irissOrderRangeView(rec).mileageFrom}
+                  to={irissOrderRangeView(rec).mileageTo}
+                  onFrom={(value) => onPatchRange("mileageFrom", value)}
+                  onTo={(value) => onPatchRange("mileageTo", value)}
+                  error={irissOrderRangeErrorFor(rec, "mileage")}
+                  inputMode="numeric"
+                  inputClassName={fieldClass}
+                />
+                <IrissRangeFromToField
+                  label="Tilpums no-līdz (cm3 vai l)"
+                  from={irissOrderRangeView(rec).ccFrom}
+                  to={irissOrderRangeView(rec).ccTo}
+                  onFrom={(value) => onPatchRange("ccFrom", value)}
+                  onTo={(value) => onPatchRange("ccTo", value)}
+                  error={irissOrderRangeErrorFor(rec, "cc")}
+                  inputClassName={fieldClass}
+                />
+                <IrissRangeFromToField
+                  label="Jauda no-līdz (kW / ZS)"
+                  from={irissOrderRangeView(rec).kwFrom}
+                  to={irissOrderRangeView(rec).kwTo}
+                  onFrom={(value) => onPatchRange("kwFrom", value)}
+                  onTo={(value) => onPatchRange("kwTo", value)}
+                  error={irissOrderRangeErrorFor(rec, "kw")}
+                  inputClassName={fieldClass}
+                />
                 <Field label="Dzinēja tips" value={rec.engineType} onChange={(value) => onPatch("engineType", value)} />
                 <Field label="Ātrumkārba" value={rec.transmission} onChange={(value) => onPatch("transmission", value)} />
                 <Field label="Virsbūves tips" value={rec.bodyType} placeholder="piem., hečbeks, SUV" onChange={(value) => onPatch("bodyType", value)} />
                 <Field label="Piedziņas tips" value={rec.driveType} placeholder="piem., priekšējā, 4x4" onChange={(value) => onPatch("driveType", value)} />
                 <Field label="Sēdvietu skaits" value={rec.seatCount} placeholder="piem., 5" onChange={(value) => onPatch("seatCount", value)} />
-                <Field label="Maks. nobraukums" value={rec.maxMileage} onChange={(value) => onPatch("maxMileage", value)} />
                 <Field label="Vēlamās krāsas" value={rec.preferredColors} onChange={(value) => onPatch("preferredColors", value)} />
                 <Field label="Nevēlamās krāsas" value={rec.nonPreferredColors} onChange={(value) => onPatch("nonPreferredColors", value)} />
-                <Field label="Jauda (kW)" value={rec.powerKw} placeholder="piem., 180-245" onChange={(value) => onPatch("powerKw", value)} />
                 <Field label="Bojājumu tolerance" value={rec.damageTolerance} placeholder="piem., tikai kosmētika" onChange={(value) => onPatch("damageTolerance", value)} />
                 <Field label="Valstis" value={rec.preferredCountries} placeholder="piem., DE, NL, BE" onChange={(value) => onPatch("preferredCountries", value)} />
                 <Field label="Salona apdare" value={rec.interiorFinish} onChange={(value) => onPatch("interiorFinish", value)} />

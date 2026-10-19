@@ -128,7 +128,13 @@ function parseRun(v: unknown): MarketplaceRunRecord | null {
       gearbox: str((v.query as { gearbox?: unknown } | undefined)?.gearbox, 40),
       powerFromKw: numOrNull((v.query as { powerFromKw?: unknown } | undefined)?.powerFromKw),
       powerToKw: numOrNull((v.query as { powerToKw?: unknown } | undefined)?.powerToKw),
-      countries: [],
+      displacementFromCc: numOrNull((v.query as { displacementFromCc?: unknown } | undefined)?.displacementFromCc),
+      displacementToCc: numOrNull((v.query as { displacementToCc?: unknown } | undefined)?.displacementToCc),
+      body: str((v.query as { body?: unknown } | undefined)?.body, 40),
+      drive: str((v.query as { drive?: unknown } | undefined)?.drive, 40),
+      countries: Array.isArray((v.query as { countries?: unknown } | undefined)?.countries)
+        ? ((v.query as { countries?: unknown[] }).countries ?? []).map((c) => str(c, 8)).filter(Boolean).slice(0, 8)
+        : [],
     },
     maxItems: typeof v.maxItems === "number" ? v.maxItems : 0,
     maxUsd: typeof v.maxUsd === "number" ? v.maxUsd : 0,

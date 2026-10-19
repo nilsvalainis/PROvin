@@ -32,7 +32,11 @@ import type {
   MarketplaceUsageMonth,
 } from "@/lib/marketplace/types";
 import { emptyMarketplaceAutoCronState } from "@/lib/marketplace/types";
-import { marketplaceOrderHasFetchBounds, type MarketplaceOrderCriteria } from "@/lib/marketplace/query-from-order";
+import {
+  marketplaceOrderHasFetchBounds,
+  marketplaceTooBroadSkipReason,
+  type MarketplaceOrderCriteria,
+} from "@/lib/marketplace/query-from-order";
 import {
   isIrissPasutijumsWorkingStatus,
   type IrissPasutijumsListStatus,
@@ -309,7 +313,7 @@ export async function runMarketplaceAutoSweep(deps: MarketplaceAutoSweepDeps): P
     const usage = await deps.readUsage();
     const order = await deps.readOrder(row.id);
     if (!order || !marketplaceOrderHasFetchBounds(order)) {
-      skipped.push({ orderId: row.id, reason: "nav kritēriju" });
+      skipped.push({ orderId: row.id, reason: marketplaceTooBroadSkipReason(order) });
       continue;
     }
     const prior = hasPriorMarketplaceLoad(runs, row.id);

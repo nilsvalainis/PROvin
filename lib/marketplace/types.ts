@@ -25,6 +25,10 @@ export type MarketplaceQuery = {
   gearbox: string;
   powerFromKw: number | null;
   powerToKw: number | null;
+  displacementFromCc: number | null;
+  displacementToCc: number | null;
+  body: string;
+  drive: string;
   countries: string[];
 };
 
@@ -188,6 +192,7 @@ export type MarketplaceLoadResult = {
   ok: boolean;
   blocked?: boolean;
   error?: string;
+  missingFields?: string[];
   run?: MarketplaceRunRecord;
   added: number;
   grouped: number;
@@ -228,6 +233,10 @@ export function emptyMarketplaceQuery(): MarketplaceQuery {
     gearbox: "",
     powerFromKw: null,
     powerToKw: null,
+    displacementFromCc: null,
+    displacementToCc: null,
+    body: "",
+    drive: "",
     countries: [],
   };
 }
@@ -253,19 +262,31 @@ export function emptyMarketplaceAutoCronState(): MarketplaceAutoCronState {
   };
 }
 
+export const MARKETPLACE_TOO_BROAD_ERROR = "par plāši kritēriji";
+
+function rangeOk(from: number | null, to: number | null, both: boolean): boolean {
+  if (both) {
+    if (from == null || to == null) return false;
+    return from <= to;
+  }
+  if (from != null && to != null && from > to) return false;
+  return to != null;
+}
+
+/**
+ * Stingrie vārti: marka + modelis + cena no-līdz + gadi no-līdz
+ * un vismaz viens no: nobraukums līdz, tilpums no-līdz, jauda no-līdz.
+ */
+export function marketplaceQueryHasStrictBounds(q: MarketplaceQuery): boolean {
+  if (!q.make.trim() || !q.model.trim()) return false;
+  if (!rangeOk(q.priceFrom, q.priceTo, true)) return false;
+  if (!rangeOk(q.yearFrom, q.yearTo, true)) return false;
+  const mileage = rangeOk(q.mileageFrom, q.mileageTo, false);
+  const cc = rangeOk(q.displacementFromCc, q.displacementToCc, true);
+  const power = rangeOk(q.powerFromKw, q.powerToKw, true);
+  return mileage || cc || power;
+}
+
 export function marketplaceQueryHasBounds(q: MarketplaceQuery): boolean {
-  return Boolean(
-    q.make.trim() ||
-      q.model.trim() ||
-      q.yearFrom != null ||
-      q.yearTo != null ||
-      q.mileageFrom != null ||
-      q.mileageTo != null ||
-      q.priceFrom != null ||
-      q.priceTo != null ||
-      q.fuel.trim() ||
-      q.gearbox.trim() ||
-      q.powerFromKw != null ||
-      q.powerToKw != null,
-  );
+  return marketplaceQueryHasStrictBounds(q);
 }

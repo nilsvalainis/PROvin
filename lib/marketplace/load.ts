@@ -12,7 +12,12 @@ import {
 import { normalizeMarketplaceListings } from "@/lib/marketplace/normalize";
 import { attachMarketplacePriceCompare } from "@/lib/marketplace/price-compare";
 import { marketplaceProviders } from "@/lib/marketplace/providers";
-import { marketplaceQueryFromOrder, marketplaceOrderHasFetchBounds, type MarketplaceOrderCriteria } from "@/lib/marketplace/query-from-order";
+import {
+  marketplaceQueryFromOrder,
+  marketplaceOrderHasFetchBounds,
+  marketplaceStrictMissingFields,
+  type MarketplaceOrderCriteria,
+} from "@/lib/marketplace/query-from-order";
 import {
   readMarketplaceListingsState,
   readMarketplaceUsageMonth,
@@ -21,6 +26,7 @@ import {
 } from "@/lib/marketplace/store";
 import { marketplaceListingExpiresAt, marketplaceListingVehicleId } from "@/lib/marketplace/to-listing-vehicle";
 import {
+  MARKETPLACE_TOO_BROAD_ERROR,
   MARKETPLACE_TTL_DAYS,
   type ListingProvider,
   type MarketplaceLoadResult,
@@ -77,6 +83,7 @@ export async function previewMarketplaceLoad(input: {
     ...preview,
     budget,
     queryReady: marketplaceOrderHasFetchBounds(input.order),
+    missingFields: marketplaceStrictMissingFields(input.order),
     usageMonth: usage.month,
   };
 }
@@ -118,7 +125,16 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     return { ok: false, error: "order_required", added: 0, grouped: 0, estimatedUsd: 0, remainingMonthlyUsd: 0 };
   }
   if (!marketplaceOrderHasFetchBounds(input.order)) {
-    return { ok: false, blocked: true, error: "criteria_empty", added: 0, grouped: 0, estimatedUsd: 0, remainingMonthlyUsd: 0 };
+    return {
+      ok: false,
+      blocked: true,
+      error: MARKETPLACE_TOO_BROAD_ERROR,
+      missingFields: marketplaceStrictMissingFields(input.order),
+      added: 0,
+      grouped: 0,
+      estimatedUsd: 0,
+      remainingMonthlyUsd: 0,
+    };
   }
   const maxItems =
     input.maxItems ?? (trigger === "auto" ? marketplaceAutoMaxItemsPerProvider() : marketplaceMaxItemsPerProvider());

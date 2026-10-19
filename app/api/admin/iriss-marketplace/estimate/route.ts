@@ -27,6 +27,10 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: true,
     queryReady: preview.queryReady,
+    missingFields: preview.missingFields,
+    tooBroadReason: preview.queryReady ? "" : preview.missingFields.length
+      ? `par plāši kritēriji (trūkst: ${preview.missingFields.join(", ")})`
+      : "",
     estimatedUsd: preview.budget.estimatedUsd,
     monthlyUsedUsd: preview.budget.monthlyUsedUsd,
     monthlyCapUsd: preview.budget.monthlyCapUsd,
