@@ -1,14 +1,35 @@
 /**
- * IRISS LIST (Sludinājumi) v2: viens ieraksts = viens konkrēts auto izsolē, nevis meklēšanas lapa.
- * Avoti nāk tikai no aktīvajiem IRISS pasūtījumiem. Mobile.de šajā fāzē nav.
+ * IRISS sludinājumi: viens ieraksts = viens konkrēts auto.
+ * Izsoles nāk no aktīvo pasūtījumu saitēm (cron / Nolasīt).
+ * mobile.de un AutoScout24 nāk tikai pēc pogas Ielādēt konkrētā pasūtījumā.
  */
 
-export type IrissListingPlatform = "autobid" | "openline" | "auto1" | "ecarstrade";
+export type IrissAuctionListingPlatform = "autobid" | "openline" | "auto1" | "ecarstrade";
+export type IrissMarketplaceListingPlatform = "mobilede" | "autoscout24";
+export type IrissListingPlatform = IrissAuctionListingPlatform | IrissMarketplaceListingPlatform;
 
-export const IRISS_LISTING_PLATFORMS: readonly IrissListingPlatform[] = ["autobid", "openline", "auto1", "ecarstrade"];
+export const IRISS_AUCTION_LISTING_PLATFORMS: readonly IrissAuctionListingPlatform[] = [
+  "autobid",
+  "openline",
+  "auto1",
+  "ecarstrade",
+];
+export const IRISS_MARKETPLACE_LISTING_PLATFORMS: readonly IrissMarketplaceListingPlatform[] = ["mobilede", "autoscout24"];
+export const IRISS_LISTING_PLATFORMS: readonly IrissListingPlatform[] = [
+  ...IRISS_AUCTION_LISTING_PLATFORMS,
+  ...IRISS_MARKETPLACE_LISTING_PLATFORMS,
+];
+
+export function isIrissAuctionListingPlatform(v: string): v is IrissAuctionListingPlatform {
+  return (IRISS_AUCTION_LISTING_PLATFORMS as readonly string[]).includes(v);
+}
+
+export function isIrissMarketplaceListingPlatform(v: string): v is IrissMarketplaceListingPlatform {
+  return (IRISS_MARKETPLACE_LISTING_PLATFORMS as readonly string[]).includes(v);
+}
 
 /** Platformas, ko lasa caur Hetzner releju (noVNC login). eCarsTrade iet tieši no Vercel. */
-export const IRISS_RELAY_LISTING_PLATFORMS: readonly IrissListingPlatform[] = ["autobid", "openline", "auto1"];
+export const IRISS_RELAY_LISTING_PLATFORMS: readonly IrissAuctionListingPlatform[] = ["autobid", "openline", "auto1"];
 
 /** Viena meklēšanas URL nolasīšanas iznākums. */
 export type IrissListingSourceStatus =
@@ -137,6 +158,8 @@ export type IrissListingVehicle = {
   missingRuns: number;
   change: IrissListingVehicleChange;
   priceHistory: IrissListingPriceChange[];
+  /** Tirgus sludinājuma īss cenas salīdzinājums pret šīs ielādes kopu. */
+  priceCompareNote?: string;
 };
 
 export type IrissListingSyncRunSummary = {
@@ -208,7 +231,7 @@ export type IrissPlatformHealthStatus =
   | "not_run";
 
 export type IrissPlatformHealthItem = {
-  platform: IrissListingPlatform;
+  platform: IrissAuctionListingPlatform;
   status: IrissPlatformHealthStatus;
   note: string;
   checkedAt: string;
@@ -218,5 +241,5 @@ export type IrissPlatformHealthReport = {
   checkedAt: string;
   items: IrissPlatformHealthItem[];
   relayReachable: boolean;
-  loginOpen: { platform: IrissListingPlatform; startedAt: string } | null;
+  loginOpen: { platform: IrissAuctionListingPlatform; startedAt: string } | null;
 };

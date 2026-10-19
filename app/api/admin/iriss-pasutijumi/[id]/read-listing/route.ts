@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
+import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
 import { isEcarstradeNoPriceNoBid } from "@/lib/iriss-listing-order-gate";
 import { runIrissListingsOrderLinkSync } from "@/lib/iriss-listings-sync";
 import { orderRoomMatchProps, prepareIrissListingMatchWorkspace } from "@/lib/iriss-listing-match-store";
@@ -27,7 +27,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const out = await runIrissListingsOrderLinkSync({ orderId: id, sourceUrl });
   const rec = await readIrissPasutijums(id);
-  const latest = await readIrissListingsLatestView();
+  const latest = await readIrissListingsLatestViewWithMarketplace();
   const listable = (latest?.vehicles ?? []).filter((v) => !isEcarstradeNoPriceNoBid(v));
   const orderOv = await readIrissListingOrderOv().catch(() => ({}));
   const match = await prepareIrissListingMatchWorkspace(listable, []).catch(() => null);

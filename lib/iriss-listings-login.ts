@@ -16,18 +16,18 @@ import {
   startIrissRelayLogin,
   type IrissRelayConfig,
 } from "@/lib/iriss-listings-relay";
-import type { IrissListingPlatform, IrissListingsLatestView } from "@/lib/iriss-listings-types";
+import type { IrissAuctionListingPlatform, IrissListingsLatestView } from "@/lib/iriss-listings-types";
 import { IRISS_RELAY_LISTING_PLATFORMS } from "@/lib/iriss-listings-types";
 
 export type IrissLoginAction = "start" | "close" | "verify";
 
 export type IrissLoginRequest = {
-  platform: IrissListingPlatform;
+  platform: IrissAuctionListingPlatform;
   action: IrissLoginAction;
 };
 
 /** Publiskie probe URL, ja pasūtījumos nav šīs platformas saites. Hosts der releja validācijai. */
-export const IRISS_LOGIN_PROBE_SOURCE: Record<IrissListingPlatform, string> = {
+export const IRISS_LOGIN_PROBE_SOURCE: Record<IrissAuctionListingPlatform, string> = {
   openline: "https://www.openlane.eu/en/findcar",
   auto1: "https://www.auto1.com/en/app/merchant/cars?channel=24h&page=1",
   autobid: "https://autobid.de/en/search-results",
@@ -39,19 +39,19 @@ export function parseIrissLoginRequest(body: unknown): IrissLoginRequest | { err
   const rec = body as Record<string, unknown>;
   const platform = typeof rec.platform === "string" ? rec.platform.trim() : "";
   const action = typeof rec.action === "string" ? rec.action.trim() : "";
-  if (!IRISS_RELAY_LISTING_PLATFORMS.includes(platform as IrissListingPlatform)) {
+  if (!(IRISS_RELAY_LISTING_PLATFORMS as readonly string[]).includes(platform)) {
     return { error: "platform: openline | auto1 | autobid" };
   }
   if (action !== "start" && action !== "close" && action !== "verify") {
     return { error: "action: start | close | verify" };
   }
-  return { platform: platform as IrissListingPlatform, action };
+  return { platform: platform as IrissAuctionListingPlatform, action };
 }
 
 export function pickTestReadSource(
   latest: IrissListingsLatestView | null,
-  platform: IrissListingPlatform,
-): { platform: IrissListingPlatform; sourceUrl: string; orderId: string; orderBrandModel: string } {
+  platform: IrissAuctionListingPlatform,
+): { platform: IrissAuctionListingPlatform; sourceUrl: string; orderId: string; orderBrandModel: string } {
   const hit = latest?.sources.find((s) => s.platform === platform && s.sourceUrl.startsWith("https://"));
   if (hit) {
     return { platform, sourceUrl: hit.sourceUrl, orderId: hit.orderId, orderBrandModel: hit.orderBrandModel || hit.orderId };
@@ -131,7 +131,7 @@ export async function handleIrissListingsLogin(
   return { status: 200, body: { ...verified, action: "verify", platform: req.platform } };
 }
 
-async function verifyAfterLogin(cfg: IrissRelayConfig, platform: IrissListingPlatform, deps: IrissLoginHandlerDeps) {
+async function verifyAfterLogin(cfg: IrissRelayConfig, platform: IrissAuctionListingPlatform, deps: IrissLoginHandlerDeps) {
   const fetchOpts = deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {};
   const check = await checkIrissRelaySession(cfg, relayPlatformFor(platform), fetchOpts);
   if (!check.ok) {

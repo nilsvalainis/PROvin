@@ -2,12 +2,13 @@ import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
 
 export type IrissAuctionLogoKey = IrissListingPlatform | "mobile" | "citi";
 
-export const IRISS_AUCTION_LOGO_SRC: Record<Exclude<IrissAuctionLogoKey, "citi">, string> = {
+export const IRISS_AUCTION_LOGO_SRC: Record<Exclude<IrissAuctionLogoKey, "citi" | "autoscout24">, string> = {
   auto1: "/brand/auction/auto1.svg",
   openline: "/brand/auction/openlane.svg",
   autobid: "/brand/auction/autobid.svg",
   ecarstrade: "/brand/auction/ecarstrade.svg",
   mobile: "/brand/auction/mobile.svg",
+  mobilede: "/brand/auction/mobile.svg",
 };
 
 export const IRISS_AUCTION_LOGO_LABEL: Record<IrissAuctionLogoKey, string> = {
@@ -16,11 +17,13 @@ export const IRISS_AUCTION_LOGO_LABEL: Record<IrissAuctionLogoKey, string> = {
   autobid: "Autobid",
   ecarstrade: "eCarsTrade",
   mobile: "Mobile",
+  mobilede: "mobile.de",
+  autoscout24: "AutoScout24",
   citi: "Citi",
 };
 
 export function irissAuctionLogoSrc(key: IrissAuctionLogoKey): string | null {
-  if (key === "citi") return null;
+  if (key === "citi" || key === "autoscout24") return null;
   return IRISS_AUCTION_LOGO_SRC[key];
 }
 

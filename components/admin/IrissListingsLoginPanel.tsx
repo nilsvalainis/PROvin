@@ -10,6 +10,8 @@ const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   openline: "Openlane",
   auto1: "Auto1",
   ecarstrade: "eCarsTrade",
+  mobilede: "mobile.de",
+  autoscout24: "AutoScout24",
 };
 
 type LoginResponse = {

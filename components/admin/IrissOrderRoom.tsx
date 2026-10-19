@@ -15,6 +15,7 @@ import { IrissOrderPhotoAlbumSection } from "@/components/admin/IrissOrderPhotoA
 import { IrissPriceChangeChip, IrissPriceHistoryPanel } from "@/components/admin/IrissPriceChangeChip";
 import { IrissOrderRoomNextSteps } from "@/components/admin/IrissOrderRoomNextSteps";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
+import { IrissMarketplaceLoadPanel } from "@/components/admin/IrissMarketplaceLoadPanel";
 import { IrissOfferClientLinkBar } from "@/components/admin/IrissOfferClientLinkBar";
 import { IrissOrderMatchBoundary, IrissOrderMatchFallback } from "@/components/admin/IrissOrderMatchBoundary";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
@@ -134,6 +135,8 @@ const PLATFORM_INK: Record<string, string> = {
   openline: "#0f172a",
   auto1: "#1d4ed8",
   ecarstrade: "#0f766e",
+  mobilede: "#ea580c",
+  autoscout24: "#1d4ed8",
 };
 
 const BUCKETS: ReadonlyArray<{ id: IrissOrderRoomHitBucket; label: string }> = [
@@ -1115,8 +1118,9 @@ export function IrissOrderRoom({
             </Link>
           </div>
           <p className="text-[12px] leading-snug text-[#6b7280]">
-            Tie paši jau nolasītie auto, kas Meklētājā ir piesaistīti šim pasūtījumam. Istaba pati nesāk jaunu nolasīšanu.
+            Tie paši jau nolasītie auto, kas Klientu filtros ir piesaistīti šim pasūtījumam. Izsoles nāk no saišu nolasīšanas. mobile.de un AutoScout24 tikai ar pogu Ielādēt.
           </p>
+          <IrissMarketplaceLoadPanel orderId={rec.id} />
           {listingsCache === "off" ? (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-950">
               Sludinājumu kešs nav ieslēgts. Maksas avoti netiek prasīti.

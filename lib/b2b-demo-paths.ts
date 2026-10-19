@@ -14,6 +14,7 @@ export const IRISS_OWN_STORAGE_PREFIXES = [
   "iriss-pasutijumi-backups/",
   "iriss-pavadzimes/",
   "iriss-listings/",
+  "iriss-marketplace/",
   "iriss-scan/",
 ] as const;
 

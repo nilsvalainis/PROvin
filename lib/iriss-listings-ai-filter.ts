@@ -5,6 +5,8 @@ const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   openline: "OpenLane (Eiropas izsoles)",
   auto1: "AUTO1.com (wholesale EU)",
   ecarstrade: "eCarsTrade (BE/NL/LU/DE izsoles)",
+  mobilede: "mobile.de (tirgus sludinājumi)",
+  autoscout24: "AutoScout24 (tirgus sludinājumi)",
 };
 
 export function irissListingPlatformLabel(platform: IrissListingPlatform): string {

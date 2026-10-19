@@ -3,8 +3,8 @@ import { IrissSludinajumiListClient } from "@/components/admin/IrissSludinajumiL
 import {
   getIrissListingsStorageState,
   readIrissListingsDismissed,
-  readIrissListingsLatestView,
 } from "@/lib/iriss-listings-aggregate-store";
+import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
 import { emptyIrissListingsDismissed } from "@/lib/iriss-listings-dismiss";
 import { irissListingMatchKey } from "@/lib/iriss-listing-match";
 import { prepareIrissListingMatchWorkspace } from "@/lib/iriss-listing-match-store";
@@ -22,7 +22,7 @@ export default async function IrissSludinajumiPage() {
   const storage = getIrissListingsStorageState();
   // Abi datu kopumi (klientu pasūtījumi + SCAN) ielādējas paralēli; kļūda vienā neaptur otru.
   const [latest, dismissedView, orders, scanOrders, initialOrderOv] = await Promise.all([
-    storage.enabled ? readIrissListingsLatestView() : Promise.resolve(null),
+    storage.enabled ? readIrissListingsLatestViewWithMarketplace() : Promise.resolve(null),
     storage.enabled ? readIrissListingsDismissed() : Promise.resolve(emptyIrissListingsDismissed()),
     listIrissPasutijumi().then((rows) => rows.map(irissListingOrderBrief)).catch(() => []),
     listIrissScan().then((rows) => rows.map(irissScanOrderBrief)).catch(() => []),
@@ -38,6 +38,10 @@ export default async function IrissSludinajumiPage() {
           brandModel: o.brandModel,
           listStatus: o.listStatus,
           clientFirstName: o.clientName,
+          productionYears: o.productionYears,
+          totalBudget: o.budgetRaw,
+          engineType: o.engineType,
+          transmission: o.transmission,
         })),
       ).catch(() => null)
     : null;

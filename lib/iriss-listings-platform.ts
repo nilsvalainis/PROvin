@@ -5,6 +5,8 @@ const HOSTS: Record<IrissListingPlatform, string[]> = {
   openline: ["openlane.eu", "openlane.com", "openline.eu"],
   auto1: ["auto1.com", "auto1.eu", "auto1-group.com"],
   ecarstrade: ["ecarstrade.com"],
+  mobilede: ["mobile.de"],
+  autoscout24: ["autoscout24.de", "autoscout24.com", "autoscout24.at", "autoscout24.nl", "autoscout24.be"],
 };
 
 export const IRISS_LISTING_PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
@@ -12,9 +14,11 @@ export const IRISS_LISTING_PLATFORM_LABEL: Record<IrissListingPlatform, string> 
   openline: "Openlane",
   auto1: "Auto1",
   ecarstrade: "eCarsTrade",
+  mobilede: "mobile.de",
+  autoscout24: "AutoScout24",
 };
 
-/** Mobile.de un nezināmi hosti dod `null`: šajā fāzē tos nelasa. */
+/** Hosts -> platforma. Izsoļu cron joprojām izlaiž mobile.de / AutoScout24. */
 export function detectIrissListingPlatform(url: string): IrissListingPlatform | null {
   let host = "";
   try {

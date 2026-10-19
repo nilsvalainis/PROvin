@@ -1,0 +1,87 @@
+import { describe, expect, it } from "vitest";
+import { emptyIrissCriteria, emptyIrissCriteriaFilter, irissCriteriaValue } from "@/lib/iriss-criteria-types";
+import {
+  marketplaceOrderHasFetchBounds,
+  marketplaceQueryFromOrder,
+  marketplaceVehicleMatchesOrder,
+} from "@/lib/marketplace/query-from-order";
+
+describe("marketplaceQueryFromOrder", () => {
+  it("reads make/model/years/km/price/fuel/gearbox from the order form", () => {
+    const q = marketplaceQueryFromOrder({
+      brandModel: "Volvo XC60",
+      productionYears: "2018-2020",
+      maxMileage: "140000",
+      totalBudget: "22000 €",
+      engineType: "Dīzelis",
+      transmission: "Automāts",
+    });
+    expect(q.make).toBe("Volvo");
+    expect(q.model).toBe("XC60");
+    expect(q.yearFrom).toBe(2018);
+    expect(q.yearTo).toBe(2020);
+    expect(q.mileageTo).toBe(140000);
+    expect(q.priceTo).toBe(22000);
+    expect(q.fuel).toMatch(/dīzel|diesel/i);
+    expect(q.gearbox).toMatch(/autom|automatic/i);
+  });
+
+  it("prefers structured IrissCriteriaV1 when the form filter is on", () => {
+    const filter = emptyIrissCriteriaFilter("flt-1", "Filtrs 1");
+    filter.enabled = true;
+    filter.useForm = true;
+    filter.make = irissCriteriaValue(["BMW"]);
+    filter.models = irissCriteriaValue(["X5"]);
+    filter.yearFrom = irissCriteriaValue(2017);
+    filter.yearTo = irissCriteriaValue(2019);
+    filter.mileageTo = irissCriteriaValue(160000);
+    filter.budgetTo = irissCriteriaValue(25000);
+    filter.fuel = irissCriteriaValue([{ group: "diesel" }]);
+    filter.gearbox = irissCriteriaValue([{ group: "automatic" }]);
+    const criteria = emptyIrissCriteria();
+    criteria.filters = [filter];
+    const q = marketplaceQueryFromOrder({ brandModel: "Ignored Car", criteria });
+    expect(q).toMatchObject({
+      make: "BMW",
+      model: "X5",
+      yearFrom: 2017,
+      yearTo: 2019,
+      mileageTo: 160000,
+      priceTo: 25000,
+      fuel: "diesel",
+      gearbox: "automatic",
+    });
+  });
+
+  it("does not treat an empty order as fetchable", () => {
+    expect(marketplaceOrderHasFetchBounds({ brandModel: "" })).toBe(false);
+    expect(marketplaceOrderHasFetchBounds({ brandModel: "Volvo XC60" })).toBe(true);
+  });
+});
+
+describe("marketplaceVehicleMatchesOrder", () => {
+  const order = {
+    brandModel: "Volvo XC60",
+    productionYears: "2018-2020",
+    maxMileage: "150000",
+    totalBudget: "25000",
+    engineType: "diesel",
+    transmission: "automatic",
+  };
+
+  it("keeps a fitting listing and drops year/price misses", () => {
+    const fit = {
+      title: "Volvo XC60 D4",
+      manufacturer: "Volvo",
+      year: "2019",
+      mileageKm: 90000,
+      fuel: "Diesel",
+      transmission: "Automatic",
+      priceCurrent: 18900,
+    };
+    expect(marketplaceVehicleMatchesOrder(fit, order)).toBe(true);
+    expect(marketplaceVehicleMatchesOrder({ ...fit, year: "2023" }, order)).toBe(false);
+    expect(marketplaceVehicleMatchesOrder({ ...fit, priceCurrent: 40000 }, order)).toBe(false);
+    expect(marketplaceVehicleMatchesOrder({ ...fit, title: "BMW X5", manufacturer: "BMW" }, order)).toBe(false);
+  });
+});

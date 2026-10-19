@@ -51,6 +51,12 @@
     "app/api/cron/iriss-listings-daily-sync/route.ts": {
       "maxDuration": 300
     },
+    "app/api/admin/iriss-marketplace/load/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/iriss-marketplace-ttl/route.ts": {
+      "maxDuration": 60
+    },
     "app/api/cron/dealer-data-sweep/route.ts": {
       "maxDuration": 300
     },
@@ -101,6 +107,10 @@
     {
       "path": "/api/cron/admin-audit-sla-warning",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/iriss-marketplace-ttl",
+      "schedule": "20 3 * * *"
     }
   ]
 }

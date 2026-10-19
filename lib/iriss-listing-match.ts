@@ -5,6 +5,8 @@
  */
 
 import { gateListingOrderIds, listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
+import { isIrissMarketplaceListingPlatform } from "@/lib/iriss-listings-types";
+import { marketplaceVehicleMatchesOrder } from "@/lib/marketplace/query-from-order";
 import { isIrissScanOrderId } from "@/lib/iriss-scan-listings";
 import {
   ingestFilterForListingSource,
@@ -70,6 +72,14 @@ export type IrissListingMatchOrder = {
   listingLinkAuto1?: unknown;
   listingLinkEcarstrade?: unknown;
   listingLinksOther?: unknown;
+  productionYears?: string;
+  maxMileage?: string;
+  totalBudget?: string;
+  engineType?: string;
+  transmission?: string;
+  powerKw?: string;
+  preferredCountries?: string;
+  criteria?: import("@/lib/iriss-criteria-types").IrissCriteriaV1 | null;
 };
 
 export type IrissListingMatchPatch = {
@@ -207,7 +217,9 @@ export function discoverListingOrderMatches(
     const listingId = vehicle.id.trim();
     if (!listingId || vehicle.change === "gone") continue;
     const linked = new Set((vehicle.orderIds ?? []).map((id) => id.trim()).filter(Boolean));
-    for (const [orderId, orderSources] of byOrder) {
+    for (const order of active) {
+      const orderId = order.id;
+      const orderSources = byOrder.get(orderId) ?? [];
       if (!listingMatchesOrderMakeModel(vehicle, brandById.get(orderId) ?? "")) continue;
       const already = linked.has(orderId);
       const criteria = orderSources.some((src) => {
@@ -215,7 +227,9 @@ export function discoverListingOrderMatches(
         const filter = boundedFilterFor(src);
         return filter ? vehicleMatchesSearchFilter(vehicle, filter) : false;
       });
-      if (!already && !criteria) continue;
+      const marketplaceHit =
+        isIrissMarketplaceListingPlatform(vehicle.platform) && marketplaceVehicleMatchesOrder(vehicle, order);
+      if (!already && !criteria && !marketplaceHit) continue;
       const key = irissListingMatchKey(orderId, listingId);
       if (seen.has(key)) continue;
       seen.add(key);
