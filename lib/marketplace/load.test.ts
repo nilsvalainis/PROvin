@@ -63,14 +63,17 @@ function mockProvider(platform: "mobilede" | "autoscout24", raw: MarketplaceRawL
 
 describe("loadMarketplaceForOrder", () => {
   let dir = "";
+  let info: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), "iriss-mkt-"));
     process.env.ADMIN_IRISS_MARKETPLACE_DIR = dir;
     process.env.MARKETPLACE_LOADS_ENABLED = "true";
+    info = vi.spyOn(console, "info").mockImplementation(() => {});
   });
 
   afterEach(async () => {
+    info.mockRestore();
     delete process.env.ADMIN_IRISS_MARKETPLACE_DIR;
     delete process.env.MARKETPLACE_LOADS_ENABLED;
     await rm(dir, { recursive: true, force: true });
@@ -175,7 +178,6 @@ describe("loadMarketplaceForOrder", () => {
   });
 
   it("marks the run failed and surfaces Avota kļūda when Apify is not ok", async () => {
-    const info = vi.spyOn(console, "info").mockImplementation(() => {});
     const provider: ListingProvider = {
       ...mockProvider("mobilede", []),
       search: async () => ({
@@ -210,7 +212,6 @@ describe("loadMarketplaceForOrder", () => {
         chargedUsd: 0.005,
       }),
     );
-    info.mockRestore();
   });
 
   it("keeps partial status when one source fails and another returns items", async () => {
