@@ -108,7 +108,7 @@ describe("Autobid publicLabelCatalogue", () => {
       const t = detectListingTax({ platform: "autobid", vatNote: row.taxInformation });
       expect(t.kind, row.taxInformation).toBe(row.expected.kind);
       expect(t.rate, row.taxInformation).toBe(row.expected.rate);
-      expect(listingTaxLabel(t), row.taxInformation).toBe(row.expected.label === "MARGIN" ? "Margin" : row.expected.label);
+      expect(listingTaxLabel(t), row.taxInformation).toBe(row.expected.label === "MARGIN" ? "Marža" : row.expected.label);
       expect(t.flag).toBeNull();
     }
   });
@@ -116,10 +116,10 @@ describe("Autobid publicLabelCatalogue", () => {
   it("empty taxInformation is silent margin; Exportfahrzeug is unrecognised margin", () => {
     const silent = detectListingTax({ platform: "autobid", vatNote: "" });
     expect(silent).toMatchObject({ kind: "margin", basis: "default_silent", flag: null });
-    expect(listingTaxLabel(silent)).toBe("Margin");
+    expect(listingTaxLabel(silent)).toBe("Marža");
     const unk = detectListingTax({ platform: "autobid", vatNote: "Exportfahrzeug" });
     expect(unk).toMatchObject({ kind: "margin", basis: "default_unrecognised", flag: "unrecognised_text" });
-    expect(listingTaxLabel(unk)).toBe("Margin");
+    expect(listingTaxLabel(unk)).toBe("Marža");
   });
 
   it("reads Latvian Iesk. 19% PVN and neto", () => {
@@ -139,10 +139,10 @@ describe("defaults and flags", () => {
     expect(t.kind).toBe("margin");
     expect(t.flag).toBe("missing_fields");
     expect(t.basis).toBe("default_missing_fields");
-    expect(listingTaxLabel(t)).toBe("Margin");
+    expect(listingTaxLabel(t)).toBe("Marža");
     const stale = detectListingTax({ platform: "auto1", ...sample.mapped, lastSeenAt: "2026-10-01T12:00:00.000Z" });
     expect(stale.flag).toBe("stale");
-    expect(listingTaxLabel(stale)).toBe("Margin");
+    expect(listingTaxLabel(stale)).toBe("Marža");
   });
 
   it("Auto1 conflict 1054 + taxDeduction false uses taxDeduction", () => {
@@ -160,7 +160,7 @@ describe("defaults and flags", () => {
   it("Openlane IsMargin null is margin with missing_fields", () => {
     const t = detectListingTax({ platform: "openline", isMargin: null, vatNote: "VAT excluded" });
     expect(t).toMatchObject({ kind: "margin", flag: "missing_fields", basis: "default_missing_fields" });
-    expect(listingTaxLabel(t)).toBe("Margin");
+    expect(listingTaxLabel(t)).toBe("Marža");
   });
 
   it("Openlane ignores vatNote when IsMargin is present", () => {

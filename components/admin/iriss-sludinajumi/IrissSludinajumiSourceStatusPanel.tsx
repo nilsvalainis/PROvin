@@ -92,14 +92,14 @@ export function IrissSludinajumiSourceStatusBody({
       <p className="mt-3 text-[14px] leading-6">{prose}</p>
 
       <p className="mt-5 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3)]">Nolasīšana pa avotiem</p>
-      <div className="mt-2 overflow-x-auto">
-        <table className="w-full border-collapse text-left text-[13px]">
+      <div className="mt-2 min-w-0 overflow-x-auto">
+        <table className="w-full min-w-[28rem] border-collapse text-left text-[13px]">
           <thead>
             <tr className="text-[12px] text-[var(--slud-ink3)]">
-              <th className="py-1.5 font-medium">Avots</th>
-              <th className="py-1.5 font-medium">Statuss</th>
-              <th className="py-1.5 text-right font-medium">Saites OK</th>
-              <th className="py-1.5 text-right font-medium">Auto</th>
+              <th className="py-1.5 pr-3 font-medium">Avots</th>
+              <th className="py-1.5 pr-3 font-medium">Statuss</th>
+              <th className="py-1.5 pr-3 text-right font-medium">Saites OK</th>
+              <th className="py-1.5 pl-2 text-right font-medium">Auto</th>
             </tr>
           </thead>
           <tbody>
@@ -107,19 +107,19 @@ export function IrissSludinajumiSourceStatusBody({
               const row = listingIngestRowStatus(s);
               return (
                 <tr key={s.platform} className="border-t border-[var(--slud-hair)]">
-                  <td className="py-2">{LISTING_PLATFORM_LABEL[s.platform]}</td>
-                  <td className="py-2">
+                  <td className="whitespace-nowrap py-2 pr-3">{LISTING_PLATFORM_LABEL[s.platform]}</td>
+                  <td className="whitespace-nowrap py-2 pr-3">
                     {row.label.startsWith("Daļēji") ? (
                       <span className="inline-flex items-center gap-1.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--slud-warn)]" aria-hidden />
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--slud-warn)]" aria-hidden />
                         {row.label}
                       </span>
                     ) : (
                       row.label
                     )}
                   </td>
-                  <td className="py-2 text-right tabular-nums">{row.okText}</td>
-                  <td className="py-2 text-right tabular-nums">{row.autoText}</td>
+                  <td className="whitespace-nowrap py-2 pr-3 text-right tabular-nums">{row.okText}</td>
+                  <td className="whitespace-nowrap py-2 pl-2 text-right tabular-nums">{row.autoText}</td>
                 </tr>
               );
             })}
@@ -128,15 +128,15 @@ export function IrissSludinajumiSourceStatusBody({
       </div>
 
       <p className="mt-5 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3)]">PVN režīms pa avotiem</p>
-      <div className="mt-2 overflow-x-auto">
-        <table className="w-full border-collapse text-left text-[13px]">
+      <div className="mt-2 min-w-0 overflow-x-auto">
+        <table className="w-full min-w-[28rem] border-collapse text-left text-[13px]">
           <thead>
             <tr className="text-[12px] text-[var(--slud-ink3)]">
-              <th className="py-1.5 font-medium">Avots</th>
-              <th className="py-1.5 text-right font-medium">Margin</th>
-              <th className="py-1.5 text-right font-medium">Ar ārvalstu PVN</th>
-              <th className="py-1.5 text-right font-medium">Bez PVN</th>
-              <th className="py-1.5 text-right font-medium">Jāpārbauda</th>
+              <th className="py-1.5 pr-3 font-medium">Avots</th>
+              <th className="py-1.5 pr-3 text-right font-medium">Marža</th>
+              <th className="py-1.5 pr-3 text-right font-medium">Ar ārvalstu PVN</th>
+              <th className="py-1.5 pr-3 text-right font-medium">Bez PVN</th>
+              <th className="whitespace-nowrap py-1.5 pl-2 text-right font-medium">Jāpārbauda</th>
             </tr>
           </thead>
           <tbody>
@@ -144,11 +144,11 @@ export function IrissSludinajumiSourceStatusBody({
               const h = vatHealth[platform];
               return (
                 <tr key={platform} className="border-t border-[var(--slud-hair)]">
-                  <td className="py-2">{LISTING_PLATFORM_LABEL[platform]}</td>
-                  <td className="py-2 text-right tabular-nums">{h.margin}</td>
-                  <td className="py-2 text-right tabular-nums">{h.gross || "-"}</td>
-                  <td className="py-2 text-right tabular-nums">{h.net || "-"}</td>
-                  <td className="py-2 text-right tabular-nums">{listingVatNeedsCheck(h)}</td>
+                  <td className="whitespace-nowrap py-2 pr-3">{LISTING_PLATFORM_LABEL[platform]}</td>
+                  <td className="py-2 pr-3 text-right tabular-nums">{h.margin}</td>
+                  <td className="py-2 pr-3 text-right tabular-nums">{h.gross || "-"}</td>
+                  <td className="py-2 pr-3 text-right tabular-nums">{h.net || "-"}</td>
+                  <td className="py-2 pl-2 text-right tabular-nums">{listingVatNeedsCheck(h)}</td>
                 </tr>
               );
             })}

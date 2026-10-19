@@ -308,7 +308,7 @@ function formatRate(rate: number | null): string {
 export function listingTaxLabel(t: ListingTax): string {
   if (t.kind === "gross") return `AR PVN ${formatRate(t.rate)} %`;
   if (t.kind === "net") return "NETO";
-  return "Margin";
+  return "Marža";
 }
 
 export function listingTaxFlagReason(t: ListingTax): string {
@@ -316,13 +316,13 @@ export function listingTaxFlagReason(t: ListingTax): string {
     const since = t.raw.match(/kopš\s+(.+)$/)?.[1];
     return since
       ? `PVN nav nolasīts (vecs ieraksts, meklējums nav pārlasīts kopš ${since})`
-      : "PVN nav nolasīts (vecs ieraksts, meklējums nav pārlasīts). Margin pēc noklusējuma.";
+      : "PVN nav nolasīts (vecs ieraksts, meklējums nav pārlasīts). Marža pēc noklusējuma.";
   }
   if (t.flag === "unrecognised_text") {
     const quoted = t.raw.match(/„([^”]*)”/)?.[1] ?? t.raw;
-    return `Autobid teksts nav atpazīts: «${quoted}» → Margin pēc noklusējuma`;
+    return `Autobid teksts nav atpazīts: «${quoted}» → Marža pēc noklusējuma`;
   }
-  if (t.flag === "missing_fields") return "PVN lauki nav. Margin pēc noklusējuma.";
+  if (t.flag === "missing_fields") return "PVN lauki nav. Marža pēc noklusējuma.";
   if (t.flag === "rate_missing") return "PVN likme nav. Gala cena rēķināta ar likmi 0.";
   if (t.flag === "conflict") return "salesVatType un taxDeduction nesakrīt. Ņemts taxDeduction.";
   return "";

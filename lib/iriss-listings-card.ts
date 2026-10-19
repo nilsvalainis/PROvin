@@ -170,7 +170,9 @@ export function listingSpecCells(v: {
   color?: string;
 }): ListingSpecCell[] {
   const km =
-    v.mileageKm != null && Number.isFinite(v.mileageKm) ? `${Math.round(v.mileageKm).toLocaleString("lv-LV")} km` : "";
+    v.mileageKm != null && Number.isFinite(v.mileageKm)
+      ? `${Math.round(v.mileageKm).toLocaleString("lv-LV").replace(/\s/g, "\u00a0")}\u00a0km`
+      : "";
   const cells: ListingSpecCell[] = [
     { label: "1. reģ.", value: listingFirstRegLabel(v.firstRegistration) },
     { label: "Nobraukums", value: km },

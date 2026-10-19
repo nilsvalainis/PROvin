@@ -9,6 +9,7 @@ import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVin
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
 import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
+import { LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-panel";
 import { listingAuctionTypeLabel, isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import {
   listingCardGallery,
@@ -28,18 +29,9 @@ import type { IrissMobilePlatform } from "@/lib/iriss-listings-mobile-platform";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { listingCostsFor, type IrissListPrefs } from "@/lib/iriss-listings-operator-prefs";
 import { listingTaxCostArgs, listingTaxResolved } from "@/lib/iriss-listings-vat";
-import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
+import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
-
-const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
-  autobid: "AUTOBID",
-  openline: "OPENLANE",
-  auto1: "AUTO1",
-  ecarstrade: "ECARSTRADE",
-  mobilede: "MOBILE.DE",
-  autoscout24: "AUTOSCOUT24",
-};
 
 const RECENT_WINDOW_HOURS = 36;
 
@@ -183,7 +175,7 @@ export function IrissListingVehicleCard({
         compactMobile={phone}
         wrapHero={(inner) =>
           sourceHref ? (
-            <IrissListingSourceOpen v={v} mobile={mobile} title={`Atvērt ${PLATFORM_LABEL[v.platform]}`} className="block h-full w-full">
+            <IrissListingSourceOpen v={v} mobile={mobile} title={`Atvērt ${LISTING_PLATFORM_LABEL[v.platform]}`} className="block h-full w-full">
               {inner}
             </IrissListingSourceOpen>
           ) : (
@@ -195,7 +187,7 @@ export function IrissListingVehicleCard({
   );
 
   const favHide = (
-    <div className="flex gap-1.5">
+    <div className="flex shrink-0 flex-nowrap items-center gap-1.5">
       <button
         type="button"
         title={fav ? "Noņemt no favorītiem" : "Favorīts"}
@@ -267,21 +259,21 @@ export function IrissListingVehicleCard({
         </div>
         {subtitle ? <div className="text-[12px] text-[var(--color-provin-muted)]">{subtitle}</div> : null}
         {v.priceCompareNote ? <div className="text-[12px] text-[var(--color-provin-muted)]">{v.priceCompareNote}</div> : null}
-        <IrissListingCardSpecGrid specs={specs} />
+        <IrissListingCardSpecGrid specs={specs} layout={layout} />
 
         <div className="flex flex-wrap items-center gap-1">
           {sourceHref ? (
             <IrissListingSourceOpen
               v={v}
               mobile={mobile}
-              title={`Atvērt ${PLATFORM_LABEL[v.platform]}`}
+              title={`Atvērt ${LISTING_PLATFORM_LABEL[v.platform]}`}
               className="inline-flex items-center gap-1.5 bg-transparent text-[10px] font-semibold text-[var(--color-apple-text)]"
             >
               <span className="hidden sm:inline-flex">
-                <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} size="md" />
+                <IrissAuctionLogo platform={v.platform} fallback={LISTING_PLATFORM_LABEL[v.platform]} size="md" />
               </span>
               <span className="text-[12px] font-medium text-[var(--label-secondary)] sm:hidden">
-                Avots: {PLATFORM_LABEL[v.platform]}
+                Avots: {LISTING_PLATFORM_LABEL[v.platform]}
                 {city ? ` · ${city}` : ""}
               </span>
               {city ? <span className="hidden sm:inline">{city}</span> : null}
@@ -290,10 +282,10 @@ export function IrissListingVehicleCard({
           ) : (
             <span className="inline-flex items-center gap-1.5 bg-transparent text-[10px] font-semibold text-[var(--color-apple-text)]">
               <span className="hidden sm:inline-flex">
-                <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} size="md" />
+                <IrissAuctionLogo platform={v.platform} fallback={LISTING_PLATFORM_LABEL[v.platform]} size="md" />
               </span>
               <span className="text-[12px] font-medium text-[var(--label-secondary)] sm:hidden">
-                Avots: {PLATFORM_LABEL[v.platform]}
+                Avots: {LISTING_PLATFORM_LABEL[v.platform]}
                 {city ? ` · ${city}` : ""}
               </span>
               {city ? <span className="hidden sm:inline">{city}</span> : null}
@@ -369,22 +361,24 @@ export function IrissListingVehicleCard({
 
         <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           {grid ? (
-            <IrissListingCardPriceColumn
-              priceLabel={priceLabel}
-              bid={bid}
-              bidCount={v.bidCount}
-              tax={tax}
-              countdown={cd}
-              priceBuyNow={v.priceBuyNow}
-              priceTotal={v.priceTotal}
-              budget={budget}
-              gala={gala}
-              real={real}
-              maxBid={mb}
-              room={room}
-              topActions={favHide}
-              className="w-full"
-            />
+            <>
+              <IrissListingCardPriceColumn
+                priceLabel={priceLabel}
+                bid={bid}
+                bidCount={v.bidCount}
+                tax={tax}
+                countdown={cd}
+                priceBuyNow={v.priceBuyNow}
+                priceTotal={v.priceTotal}
+                budget={budget}
+                gala={gala}
+                real={real}
+                maxBid={mb}
+                room={room}
+                className="w-full"
+              />
+              <div className="mt-2 flex flex-nowrap items-center justify-end gap-1.5">{favHide}</div>
+            </>
           ) : (
             <IrissListingCardPriceColumnMobile
               priceLabel={priceLabel}

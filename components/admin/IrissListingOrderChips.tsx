@@ -24,7 +24,7 @@ export function IrissListingOrderChips({
       {orders.map((o) => {
         const bits = [o.brandModel, fmtBudget(o.budget, o.budgetRaw), o.preferredColors].filter(Boolean);
         return (
-          <li key={o.id} className="flex min-w-0 items-start gap-1.5 text-[11px] leading-snug text-slate-600">
+          <li key={o.id} className="flex min-w-0 flex-col items-stretch gap-1 text-[11px] leading-snug text-slate-600 sm:flex-row sm:items-start sm:gap-1.5">
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-[var(--color-apple-text)]">{o.clientName}</div>
               <div className="truncate text-slate-500">{bits.join(" · ")}</div>
@@ -36,7 +36,7 @@ export function IrissListingOrderChips({
                   e.stopPropagation();
                   onPreview(o);
                 }}
-                className="inline-flex h-7 shrink-0 items-center rounded-full border border-slate-200 bg-white px-2 text-[10px] font-semibold text-slate-700 hover:bg-slate-50"
+                className="inline-flex h-7 w-fit shrink-0 items-center rounded-full border border-slate-200 bg-white px-2 text-[10px] font-semibold text-slate-700 hover:bg-slate-50"
               >
                 Pasūtījums
               </button>

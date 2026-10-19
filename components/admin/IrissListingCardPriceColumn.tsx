@@ -38,11 +38,11 @@ export function IrissListingCardPriceColumn({
 }) {
   const panel = (
     <div className="rounded-xl bg-[#f2f2f5] p-3">
-      <div className="flex items-start justify-between">
-        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+      <div className="flex flex-nowrap items-start justify-between gap-2">
+        <div className="min-w-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           {priceLabel}{bidCount != null ? ` · ${bidCount} solījumi` : ""}
         </div>
-        {topActions ? <div>{topActions}</div> : null}
+        {topActions ? <div className="flex shrink-0 flex-nowrap items-center gap-1.5">{topActions}</div> : null}
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-1.5">
         <span className="text-[26px] font-extrabold tabular-nums leading-none">{bid == null ? "-" : listingFmtEur(bid)}</span>

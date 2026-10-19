@@ -10,6 +10,10 @@ const moreMenu = readFileSync("components/admin/iriss-sludinajumi/IrissSludinaju
 const status = readFileSync("components/admin/iriss-sludinajumi/IrissSludinajumiSourceStatusPanel.tsx", "utf8");
 const panelLib = readFileSync("lib/iriss-listings-panel.ts", "utf8");
 const filters = readFileSync("components/admin/iriss-sludinajumi/IrissSludinajumiFiltersForm.tsx", "utf8");
+const overlay = readFileSync("components/admin/iriss-sludinajumi/IrissSludinajumiOverlay.tsx", "utf8");
+const card = readFileSync("components/admin/IrissListingVehicleCard.tsx", "utf8");
+const specGrid = readFileSync("components/admin/IrissListingCardSpecGrid.tsx", "utf8");
+const chips = readFileSync("components/admin/IrissListingOrderChips.tsx", "utf8");
 
 describe("IRISS listings toolbar", () => {
   it("uses collapsing TopBar on the phone and a static toolbar on web", () => {
@@ -33,6 +37,9 @@ describe("IRISS listings toolbar", () => {
     expect(notice).toContain("rounded-full");
     expect(notice).not.toContain("w-full");
     expect(notice).toContain("absolute right-0 top-full");
+    expect(notice).not.toContain("if (notices.length === 0) return null");
+    expect(notice).toContain("disabled={empty}");
+    expect(listClient).not.toMatch(/notices\.length > 0 \? \(/);
   });
 
   it("renames the view to Sludinājumi and keeps old search keywords", () => {
@@ -55,5 +62,20 @@ describe("IRISS listings toolbar", () => {
     expect(listClient).not.toContain("ECARSTRADE_USER");
     expect(listClient).toContain('writeListQuery({ view: "grid" })');
     expect(listClient).toContain("countActiveListingFilters");
+    expect(status).toContain("Marža");
+    expect(status).not.toMatch(/>Margin</);
+    expect(overlay).toContain("overflow-auto");
+    expect(status).toContain("min-w-[28rem]");
+  });
+
+  it("keeps grid specs, source labels and mobile order chips readable", () => {
+    expect(specGrid).toContain('layout === "grid"');
+    expect(specGrid).toContain("gap-x-4");
+    expect(specGrid).toContain("whitespace-nowrap");
+    expect(card).toContain("LISTING_PLATFORM_LABEL");
+    expect(card).not.toContain('ecarstrade: "ECARSTRADE"');
+    expect(card).toContain("flex-nowrap items-center justify-end");
+    expect(chips).toContain("flex-col");
+    expect(chips).toContain("sm:flex-row");
   });
 });

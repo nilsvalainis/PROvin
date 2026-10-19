@@ -802,14 +802,20 @@ export function IrissSludinajumiListClient({
           title="Sludinājumi"
           trailing={
             <>
-              {notices.length > 0 ? (
-                <AdminMobileRoundBtn
-                  name="atzime"
-                  label={`Jaunas atbilstības ${notices.length}`}
-                  badge={notices.length}
-                  onClick={() => { setMatchesOpen(true); setMenuOpen(false); setFilterOpen(false); setMobileSortOpen(false); setSourceStatusOpen(false); setCostsOpen(false); }}
-                />
-              ) : null}
+              <AdminMobileRoundBtn
+                name="atzime"
+                label={`Jaunas atbilstības ${notices.length}`}
+                badge={notices.length}
+                onClick={() => {
+                  if (notices.length === 0) return;
+                  setMatchesOpen(true);
+                  setMenuOpen(false);
+                  setFilterOpen(false);
+                  setMobileSortOpen(false);
+                  setSourceStatusOpen(false);
+                  setCostsOpen(false);
+                }}
+              />
               <AdminMobileRoundBtn
                 name="filtri"
                 label="Filtri"

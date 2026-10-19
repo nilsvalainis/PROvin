@@ -141,6 +141,11 @@ describe("listing thumbs / VIN / specs", () => {
     });
     expect(cells.map((c) => c.label)).toEqual(["1. reģ.", "Nobraukums", "Degviela", "Jauda", "Krāsa"]);
     expect(cells.find((c) => c.label === "Jauda")?.value).toBe("195 kW");
+    const km = cells.find((c) => c.label === "Nobraukums")?.value ?? "";
+    expect(km.replace(/\u00a0/g, " ")).toBe("142 300 km");
+    expect(km.includes(" ")).toBe(false);
+    const tight = listingSpecCells({ mileageKm: 80112 });
+    expect((tight.find((c) => c.label === "Nobraukums")?.value ?? "").replace(/\u00a0/g, " ")).toBe("80 112 km");
   });
 
   it("builds subtitle only from known body/doors", () => {

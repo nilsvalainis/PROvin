@@ -58,7 +58,7 @@ export function IrissSludinajumiScrimPanel({
               </button>
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">{children}</div>
+          <div className="min-h-0 min-w-0 flex-1 overflow-auto px-5 pb-6">{children}</div>
         </div>
       </div>
     </AdminBodyPortal>
