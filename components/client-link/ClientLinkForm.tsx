@@ -148,8 +148,8 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
             />
             <span className="mt-1 block text-[12px] text-[#aeaeb2]">{vinHint}</span>
             {vinNeedsCheckDigitWarning(vin) ? (
-              <span className="mt-1 block text-[12px] text-amber-800" role="status">
-                ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN numuru.
+              <span className="mt-1 block text-[12px] text-[#aeaeb2]" role="status" data-vin-hint="checkdigit">
+                Kontrolcipars (9. zīme) neatbilst ISO 3779. Eiropas auto tas ir normāli, pasūtīt var.
               </span>
             ) : null}
           </label>

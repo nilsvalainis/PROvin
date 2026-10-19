@@ -247,7 +247,7 @@ export function B2bPartnerPricingCard({
               />
               {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
               {!vinError && vinNeedsCheckDigitWarning(vin) ? (
-                <p className={styles.inlineFieldError} role="status">
+                <p className="mt-1 text-[0.72rem] font-normal leading-snug text-zinc-400" role="status" data-vin-hint="checkdigit">
                   {t("vinCheckDigitWarning")}
                 </p>
               ) : null}

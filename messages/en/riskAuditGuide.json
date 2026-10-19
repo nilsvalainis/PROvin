@@ -37,7 +37,7 @@
       "listing": "Paste a valid link to a specific listing.",
       "vin": "Enter a valid VIN or licence plate number (3-6 characters).",
       "vinLength": "VIN must be 17 characters, check the VIN number",
-      "vinCheckDigit": "The ISO 3779 check digit does not match. It is not mandatory in the EU, but please check the VIN number.",
+      "vinCheckDigit": "The 9th character does not match the ISO 3779 check digit. This is normal for European cars, you can still order.",
       "heard": "Please say how you heard about us.",
       "email": "Email address is not valid.",
       "phone": "Phone number is not valid.",

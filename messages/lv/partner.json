@@ -28,7 +28,7 @@
     "vinPlaceholder": "17 rakstzīmes",
     "vinError": "VIN: 17 rakstzīmes, bez I, O, Q.",
     "vinLengthError": "VIN kodā jābūt 17 rakstzīmēm. Pārbaudiet VIN kodu.",
-    "vinCheckDigitWarning": "ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN kodu.",
+    "vinCheckDigitWarning": "Kontrolcipars (9. zīme) neatbilst ISO 3779. Eiropas auto tas ir normāli, pasūtīt var.",
     "listingLabel": "Sludinājuma saite (neobligāti)",
     "listingAria": "Sludinājuma saite",
     "listingPlaceholder": "https://www.ss.lv/...",

@@ -321,7 +321,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
                               className={`${tp5Styles.inlineInput} uppercase`}
                             />
                             {vinNeedsCheckDigitWarning(vin) ? (
-                              <p className={tp5Styles.inlineFieldError} role="status">
+                              <p className="mt-1 text-[11px] font-normal leading-snug opacity-70" role="status">
                                 {t("errors.vinCheckDigit")}
                               </p>
                             ) : null}

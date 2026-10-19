@@ -28,7 +28,7 @@
     "vinPlaceholder": "17 символов",
     "vinError": "VIN: 17 символов, без I, O и Q.",
     "vinLengthError": "VIN должен содержать 17 знаков, проверьте VIN номер",
-    "vinCheckDigitWarning": "Контрольная цифра ISO 3779 не совпадает. В ЕС она не обязательна, но проверьте VIN номер.",
+    "vinCheckDigitWarning": "9-й символ не совпадает с контрольной цифрой ISO 3779. Для европейских авто это нормально, заказать можно.",
     "listingLabel": "Ссылка на объявление (необязательно)",
     "listingAria": "Ссылка на объявление",
     "listingPlaceholder": "https://www.ss.lv/...",

@@ -677,8 +677,8 @@ export function AdminOrderDetailView({
                 />
                 <AdminVinNotSeventeenFlag vin={mergedVin} />
                 {vinNeedsCheckDigitWarning(mergedVin) ? (
-                  <p className="mt-1 text-[11px] font-normal leading-snug text-amber-800" role="status">
-                    ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN numuru.
+                  <p className="mt-1 text-[11px] font-normal leading-snug text-zinc-500" role="status">
+                    Kontrolcipars (9. zīme) neatbilst ISO 3779. Eiropas auto tas ir normāli, pasūtīt var.
                   </p>
                 ) : null}
                 <AdminVinServiceLinkRow vin={mergedVin} />

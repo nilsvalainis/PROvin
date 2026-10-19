@@ -167,7 +167,7 @@ Publiskie teksti ir `messages/lv/partner.json` (namespace `Partner`). Admin un e
 | `Partner.vinPlaceholder` | 17 rakstzīmes | labots (bija: 17 zīmes) |
 | `Partner.vinError` | VIN: 17 rakstzīmes, bez I, O, Q. | labots (bija: VIN: 17 zīmes, bez I, O, Q.) |
 | `Partner.vinLengthError` | VIN kodā jābūt 17 rakstzīmēm. Pārbaudiet VIN kodu. | labots (bija: VIN jābūt 17 zīmēm, pārbaudiet VIN numuru) |
-| `Partner.vinCheckDigitWarning` | ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN kodu. | labots (bija: ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN numuru.) |
+| `Partner.vinCheckDigitWarning` | Kontrolcipars (9. zīme) neatbilst ISO 3779. Eiropas auto tas ir normāli, pasūtīt var. | labots (bija: ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN numuru.) |
 | `Partner.listingLabel` | Sludinājuma saite (neobligāti) | pārbaudīt |
 | `Partner.listingAria` | Sludinājuma saite | pārbaudīt |
 | `Partner.listingPlaceholder` | https://www.ss.lv/... | pārbaudīt |
