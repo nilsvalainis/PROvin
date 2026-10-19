@@ -45,7 +45,7 @@ export const STATUS_CHIP_COUNT_CLASS =
 export function statusChipRowClass(layout: StatusChipRowLayout): string {
   const base = "flex items-center gap-1 bg-transparent";
   if (layout === "scroll") {
-    return `${base} w-full max-w-full flex-nowrap overflow-x-auto overscroll-x-contain touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`;
+    return `${base} am-chip-fade w-full max-w-full flex-nowrap overflow-x-auto overscroll-x-contain touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`;
   }
   return `${base} flex-wrap`;
 }

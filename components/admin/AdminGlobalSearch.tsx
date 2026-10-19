@@ -57,7 +57,7 @@ export function AdminMobileSearchButton({ className = "" }: { className?: string
       aria-label="Meklēt"
       className={
         className ||
-        "am-glass pointer-events-auto inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-0 text-[var(--am-ink)]"
+        "am-glass pointer-events-auto inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-0 text-[var(--label)]"
       }
     >
       <Search className="h-4 w-4" strokeWidth={2} aria-hidden />

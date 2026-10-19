@@ -53,7 +53,7 @@ import {
 import { appendIrissStatusHistory, isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 import { IrissOrderSortSelect } from "@/components/admin/IrissOrderSortSelect";
 import { AdminMobileSheet } from "@/components/admin/AdminMobileSheet";
-import { AdminMobileRoundBtn, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
+import { AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 
 type SortMode = IrissOrderSortMode;
 
@@ -447,7 +447,7 @@ const IrissRowCard = memo(function IrissRowCard({
                 href={telHref}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="pointer-events-auto font-medium text-[var(--color-provin-accent)] hover:underline md:hidden"
+                className="pointer-events-auto font-normal text-[var(--label-secondary)] hover:underline md:hidden"
               >
                 {row.phone}
               </a>
@@ -1067,29 +1067,17 @@ export function IrissPasutijumiListClient({
       <div className="md:hidden">
         <AdminMobileTopBar
           title="Pasūtījumi"
-          trailing={<AdminMobileRoundBtn name="pievienot" label="Jauns pasūtījums" href="/admin/iriss/pasutijumi/new" primary />}
+          trailing={
+            <>
+              <AdminMobileRoundBtn name="kartot" label={`Kārtot: ${SORT_LABEL[sortMode]}`} onClick={() => setSheetOpen(true)} />
+              <AdminMobileRoundBtn name="pievienot" label="Jauns pasūtījums" href="/admin/iriss/pasutijumi/new" />
+            </>
+          }
         >
           <div className="flex items-center gap-2">
-            <label className="relative min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--am-ink3)]" aria-hidden />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Vārds, tālrunis, marka"
-                aria-label="Meklēt pasūtījumus"
-                className="h-9 min-w-0 w-full rounded-full border-0 bg-[var(--am-fill)] pl-9 pr-3 text-[15px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => setSheetOpen(true)}
-              aria-label={`Kārtot: ${SORT_LABEL[sortMode]}`}
-              title={SORT_LABEL[sortMode]}
-              className="am-press inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-[var(--am-fill)] px-3 text-[13px] font-medium text-[var(--am-ink)]"
-            >
-              <ArrowUpDown className="h-4 w-4" aria-hidden />
-            </button>
+            <div className="min-w-0 flex-1">
+              <AdminMobileSearchField value={searchQuery} onChange={setSearchQuery} placeholder="Vārds, tālrunis, marka" />
+            </div>
           </div>
           <div className="mt-3">
             <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />

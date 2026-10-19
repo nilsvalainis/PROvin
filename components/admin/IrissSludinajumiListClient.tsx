@@ -13,7 +13,12 @@ import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginP
 import { type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useMobilePlatform } from "@/hooks/useMobilePlatform";
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
-import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
+import {
+  AdminMobileRoundBtn,
+  AdminMobileSearchField,
+  AdminMobileSegments,
+  AdminMobileTopBar,
+} from "@/components/admin/mobile/AdminMobileChrome";
 import { isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import { listingBidPrice, listingExtrasI, listingMaxBid, type ListingCostParts } from "@/lib/iriss-listings-cost";
 import { listingExcludedForMissingPrice, listingIsOverBudgetHidden, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
@@ -769,12 +774,56 @@ export function IrissSludinajumiListClient({
   return (
     <div className="mt-1 space-y-2 touch-manipulation sm:mt-1.5 sm:space-y-2">
       <div className="md:hidden">
-        <AdminMobileTopBar title="Sludinājumi" />
+        <AdminMobileTopBar
+          title="Sludinājumi"
+          trailing={
+            <>
+              <AdminMobileRoundBtn name="filtri" label="Filtri" onClick={() => { setFilterOpen(true); setMenuOpen(false); }} />
+              <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => { setMenuOpen(true); setFilterOpen(false); }} />
+            </>
+          }
+        >
+          <AdminMobileSegments
+            value={dataset}
+            onChange={(id) => setDataset(id as typeof dataset)}
+            items={[
+              { id: "orders", label: `Klientu pasūtījumi ${clientOrders.length}` },
+              { id: "scan", label: `Mūsu monitorings ${scanOrders.length}` },
+            ]}
+          />
+          <div className="mt-2 flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <AdminMobileSearchField
+                value={query}
+                onChange={setQuery}
+                placeholder="Meklēt marku, modeli, VIN"
+              />
+            </div>
+            <label className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-[var(--fill-secondary)] px-3 text-[13px] font-medium text-[var(--label)]">
+              <span className="sr-only">Kārtot pēc</span>
+              <select
+                aria-label="Kārtot pēc"
+                value={sort}
+                onChange={(e) => {
+                  const next = parseListingSort(e.target.value);
+                  if (next) writeListQuery({ sort: next });
+                }}
+                className="max-w-[7.5rem] bg-transparent text-[13px] font-medium text-[var(--label)] outline-none"
+              >
+                {LISTING_SORTS.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </AdminMobileTopBar>
       </div>
       {/* Web (md+): panelis nav lipīgs. Atbilstības ir žetons rīku rindā, ne atsevišķa josla. */}
       <header
         data-iriss-listings-toolbar=""
-        className="relative z-20 -mx-2 bg-transparent px-2 pb-1 pt-0.5 max-md:sticky max-md:top-0 max-md:bg-[#F8F8F9]/95 max-md:backdrop-blur md:static md:z-auto md:mx-0 md:bg-transparent md:px-0 md:backdrop-blur-none"
+        className="relative z-20 -mx-2 hidden bg-transparent px-2 pb-1 pt-0.5 md:static md:z-auto md:mx-0 md:block md:bg-transparent md:px-0 md:backdrop-blur-none"
       >
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] md:flex-none md:overflow-visible [&::-webkit-scrollbar]:hidden">
@@ -1037,7 +1086,7 @@ export function IrissSludinajumiListClient({
           <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
         </div>
         </div>
-        <div className="mt-1 flex max-w-full flex-nowrap items-center gap-x-2 overflow-x-auto text-[11px] text-[#8e8e93] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="admin-source-logo-row mt-1 flex max-w-full flex-nowrap items-center gap-x-2 overflow-x-auto text-[11px] text-[#8e8e93] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <span className="inline-flex shrink-0 items-center gap-1.5">
             {platformDots.map((d) => (
               <span key={d.platform} title={d.title} className="inline-flex items-center gap-1">

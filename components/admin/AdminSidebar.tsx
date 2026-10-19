@@ -552,7 +552,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   }, [more]);
 
   const irissTabs: Item[] = [I_HOME, { ...I_LIST, label: "Sludinājumi" }, I_SCAN];
-  const proTabs: Item[] = [SAKUMS, VIN, { ...FAST, label: "Ātrie" }];
+  const proTabs: Item[] = [SAKUMS, { ...VIN, label: "VIN" }, { ...FAST, label: "Ātrie" }];
   const tabs: Item[] = workspace === "iriss" ? irissTabs : proTabs;
   const tabHrefs = new Set(tabs.map((t) => t.href));
   const inTabs = tabs.some((t) => t.match(pathname));
@@ -593,42 +593,33 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
               >
                 <span className="relative">
                   <AdminMobileIcon name={icon} className="h-5 w-5" />
-                  {n > 0 ? (
-                    <span className="absolute right-[-6px] top-[-4px]">
-                      <AdminMobileCountBadge n={n} />
-                    </span>
-                  ) : null}
+                  {n > 0 ? <AdminMobileCountBadge n={n} floating /> : null}
                 </span>
-                <span className="max-w-full truncate leading-none">{t.label}</span>
+                <span className="max-w-full whitespace-nowrap leading-none">{t.label}</span>
               </Link>
             );
           })}
           <button type="button" onClick={() => setMore((v) => !v)} className={tabClass(!inTabs || more)} aria-expanded={more} aria-label="Vairāk">
             <span className="relative">
               <AdminMobileIcon name="vairak" className="h-5 w-5" />
-              {moreBadge > 0 ? (
-                <span className="absolute right-[-6px] top-[-4px]">
-                  <AdminMobileCountBadge n={moreBadge} />
-                </span>
-              ) : null}
+              {moreBadge > 0 ? <AdminMobileCountBadge n={moreBadge} floating /> : null}
             </span>
-            <span className="leading-none">Vairāk</span>
+            <span className="whitespace-nowrap leading-none">Vairāk</span>
           </button>
       </nav>
       {more ? (
         <AdminBodyPortal>
           <div
-            className="admin-m pointer-events-auto fixed inset-x-0 top-0 z-[40] flex flex-col md:hidden"
-            style={{ bottom: "var(--admin-tabbar-h, 74px)" }}
+            className="admin-m pointer-events-auto fixed inset-x-0 top-0 z-[0] flex flex-col md:hidden"
+            style={{ bottom: "calc(64px + 16px + env(safe-area-inset-bottom, 0px))" }}
             data-admin-theme={theme}
             role="dialog"
             aria-modal="true"
             aria-label="Vairāk"
           >
-            <button type="button" aria-label="Aizvērt" className="absolute inset-0 bg-[var(--am-scrim)]" onClick={() => setMore(false)} />
-            <div className="am-overlay relative z-[50] flex min-h-0 flex-1 flex-col">
-              <header className="am-topbar px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))]">
-                <h1 className="text-[26px] font-bold tracking-tight text-[var(--am-ink)]">Vairāk</h1>
+            <div className="am-overlay relative z-[0] flex min-h-0 flex-1 flex-col bg-[var(--bg)]">
+              <header className="am-topbar px-4 pb-3 pt-[max(10px,env(safe-area-inset-top))]">
+                <h1 className="text-[34px] font-bold leading-none tracking-tight text-[var(--label)]">Vairāk</h1>
                 <div className="relative mt-3 flex h-8 rounded-full bg-[var(--am-fill)] p-0.5" role="tablist" aria-label="Darba zona">
                   <span
                     aria-hidden

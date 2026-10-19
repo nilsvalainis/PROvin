@@ -128,16 +128,17 @@ body:has(.admin-ios-theme) {
     -webkit-overflow-scrolling: touch;
   }
 
-  /* Native pan on the iPhone-shell scroller. Nav preventDefault; nav overflow:hidden. */
+  /* Dokuments ritina, ne iekšējais konteiners. */
   #admin-main-scroll {
-    overflow-y: auto !important;
-    overflow-x: clip;
-    overscroll-behavior-y: contain;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    overscroll-behavior-y: auto;
     -webkit-overflow-scrolling: touch !important;
     touch-action: pan-y pinch-zoom !important;
   }
 
-  .admin-ios-theme header:not(.am-topbar) h1 {
+  .admin-ios-theme header:not(.am-topbar):not(.am-topbar-sticky) h1 {
     font-size: 34px !important;
     line-height: 1.1 !important;
     letter-spacing: -0.03em;

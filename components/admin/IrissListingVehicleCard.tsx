@@ -271,15 +271,27 @@ export function IrissListingVehicleCard({
               title={`Atvērt ${PLATFORM_LABEL[v.platform]}`}
               className="inline-flex items-center gap-1.5 bg-transparent text-[10px] font-semibold text-[var(--color-apple-text)]"
             >
-              <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} size="md" />
-              {city ? <span>{city}</span> : null}
-              <CountryFlag code={v.countryCode} />
+              <span className="hidden sm:inline-flex">
+                <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} size="md" />
+              </span>
+              <span className="text-[12px] font-medium text-[var(--label-secondary)] sm:hidden">
+                Avots: {PLATFORM_LABEL[v.platform]}
+                {city ? ` · ${city}` : ""}
+              </span>
+              {city ? <span className="hidden sm:inline">{city}</span> : null}
+              <span className="hidden sm:inline"><CountryFlag code={v.countryCode} /></span>
             </IrissListingSourceOpen>
           ) : (
             <span className="inline-flex items-center gap-1.5 bg-transparent text-[10px] font-semibold text-[var(--color-apple-text)]">
-              <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} size="md" />
-              {city ? <span>{city}</span> : null}
-              <CountryFlag code={v.countryCode} />
+              <span className="hidden sm:inline-flex">
+                <IrissAuctionLogo platform={v.platform} fallback={PLATFORM_LABEL[v.platform]} size="md" />
+              </span>
+              <span className="text-[12px] font-medium text-[var(--label-secondary)] sm:hidden">
+                Avots: {PLATFORM_LABEL[v.platform]}
+                {city ? ` · ${city}` : ""}
+              </span>
+              {city ? <span className="hidden sm:inline">{city}</span> : null}
+              <span className="hidden sm:inline"><CountryFlag code={v.countryCode} /></span>
             </span>
           )}
           <IrissListingSourceExtras v={v} mobile={mobile} />
@@ -299,12 +311,12 @@ export function IrissListingVehicleCard({
             </span>
           ) : null}
           {!gone && matchNew ? (
-            <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-900">
+            <span className="inline-flex rounded-[7px] bg-[var(--fill-secondary)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--label-secondary)] sm:rounded-full sm:border sm:border-sky-200 sm:bg-sky-50 sm:font-semibold sm:text-sky-900">
               Jauns
             </span>
           ) : !gone && fresh ? (
-            <span className="inline-flex rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
-              JAUNS
+            <span className="inline-flex rounded-[7px] bg-[var(--fill-secondary)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--label-secondary)] sm:rounded-full sm:border sm:border-emerald-200/80 sm:bg-emerald-50 sm:font-semibold sm:text-emerald-800">
+              Jauns
             </span>
           ) : null}
           {!gone && duplicates.length > 0 ? <IrissVinDuplicateMark links={duplicates} /> : null}

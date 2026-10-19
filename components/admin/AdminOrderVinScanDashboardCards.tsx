@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
+import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
+import { formatAdminMobileBadgeCount } from "@/lib/admin-mobile-collapse";
 import { orderVinScanDashboardSubtitle, type OrderVinScanDashboardCard } from "@/lib/order-vin-scan";
 
 function counts(card: OrderVinScanDashboardCard): string {
@@ -28,33 +31,84 @@ export function AdminOrderVinScanDashboardCards({
   const timeoutN = cards.reduce((n, c) => n + c.timeout, 0);
   const showMobile = surface !== "desktop";
   const showDesktop = surface !== "mobile";
+  const [sheet, setSheet] = useState<null | "morning" | "vin">(null);
+  const vinBadge = formatAdminMobileBadgeCount(autoN);
   return (
     <>
       {showMobile ? (
-      <div className="overflow-hidden rounded-[18px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)] md:hidden">
-        <Link href="/admin/kopsavilkums" className="am-press flex min-h-[50px] items-center gap-3 px-4">
-          <AdminMobileIcon name="rits" className="h-5 w-5 text-[var(--am-ink2)]" />
-          <span className="min-w-0 flex-1">
-            <span className="block text-[16px] font-semibold text-[var(--am-ink)]">Rīta kopsavilkums</span>
-            <span className="block text-[13px] text-[var(--am-ink2)]">Termiņi šodien</span>
-          </span>
-          <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
-        </Link>
-        <Link href="/admin/vin-scan" className="am-press flex min-h-[50px] items-center gap-3 border-t border-[var(--am-hair)] px-4">
-          <AdminMobileIcon name="vinParbaude" className="h-5 w-5 text-[var(--am-ink2)]" />
-          <span className="min-w-0 flex-1">
-            <span className="block text-[16px] font-semibold text-[var(--am-ink)]">VIN SCAN</span>
-            <span className="block text-[13px] text-[var(--am-ink2)]">
-              {autoN} auto · {infoN} info{timeoutN ? ` · ${timeoutN} noildzes` : ""}
-            </span>
-          </span>
-          {autoN > 0 ? (
-            <span className="mr-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--am-badge)] px-1 text-[10px] font-semibold text-[var(--am-badge-ink)]">
-              {autoN}
-            </span>
-          ) : null}
-          <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
-        </Link>
+      <div className="md:hidden">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setSheet("morning")}
+            className="am-press flex h-9 min-w-0 flex-1 items-center gap-1.5 rounded-full bg-[var(--fill-secondary)] px-3 text-left text-[13px] font-medium text-[var(--label)]"
+          >
+            <AdminMobileIcon name="rits" className="h-4 w-4 text-[var(--label-secondary)]" />
+            <span className="min-w-0 flex-1 truncate">Rīta kopsavilkums</span>
+            <AdminMobileIcon name="uzPrieksu" className="h-3.5 w-3.5 text-[var(--label-secondary)]" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setSheet("vin")}
+            className="am-press relative flex h-9 min-w-0 flex-1 items-center gap-1.5 rounded-full bg-[var(--fill-secondary)] px-3 text-left text-[13px] font-medium text-[var(--label)]"
+          >
+            <AdminMobileIcon name="vinParbaude" className="h-4 w-4 text-[var(--label-secondary)]" />
+            <span className="min-w-0 flex-1 truncate">VIN SCAN{vinBadge ? ` ${vinBadge}` : ""}</span>
+            <AdminMobileIcon name="uzPrieksu" className="h-3.5 w-3.5 text-[var(--label-secondary)]" />
+          </button>
+        </div>
+        <AdminMobileSheet
+          open={sheet === "morning"}
+          title="Rīta kopsavilkums"
+          subtitle="Termiņi šodien"
+          onClose={() => setSheet(null)}
+        >
+          <Link
+            href="/admin/kopsavilkums"
+            className="am-press flex h-[50px] items-center justify-between rounded-[18px] bg-[var(--fill-secondary)] px-4 text-[16px] text-[var(--label)]"
+            onClick={() => setSheet(null)}
+          >
+            Atvērt rīta kopsavilkumu
+            <AdminMobileIcon name="uzPrieksu" className="h-4 w-4" />
+          </Link>
+        </AdminMobileSheet>
+        <AdminMobileSheet
+          open={sheet === "vin"}
+          title="VIN SCAN"
+          subtitle={`${autoN} auto · ${infoN} info${timeoutN ? ` · ${timeoutN} noildzes` : ""}`}
+          onClose={() => setSheet(null)}
+        >
+          <div className="space-y-2">
+            {cards.length === 0 ? (
+              <p className="text-[14px] text-[var(--label-secondary)]">Šobrīd nav aktīvu VIN SCAN darbu.</p>
+            ) : (
+              cards.map((card) => (
+                <Link
+                  key={card.sessionId}
+                  href={card.href}
+                  className="am-press flex min-h-[50px] items-center gap-3 rounded-[18px] bg-[var(--fill-secondary)] px-4"
+                  onClick={() => setSheet(null)}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-semibold text-[var(--label)]">{card.title}</span>
+                    <span className="block truncate text-[13px] text-[var(--label-secondary)]">
+                      {orderVinScanDashboardSubtitle(card)} · {counts(card)}
+                    </span>
+                  </span>
+                  <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--label-secondary)]" />
+                </Link>
+              ))
+            )}
+            <Link
+              href="/admin/vin-scan"
+              className="am-press flex h-[50px] items-center justify-between rounded-[18px] bg-[var(--fill-secondary)] px-4 text-[16px] text-[var(--label)]"
+              onClick={() => setSheet(null)}
+            >
+              Atvērt VIN pārbaudi
+              <AdminMobileIcon name="uzPrieksu" className="h-4 w-4" />
+            </Link>
+          </div>
+        </AdminMobileSheet>
       </div>
       ) : null}
       {showDesktop && cards.length > 0 ? (

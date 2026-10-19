@@ -29,10 +29,8 @@ function isCoarseMobileViewport() {
 }
 
 /**
- * iPhone shell (#125): tab bar + PTR paliek. Native pan uz `#admin-main-scroll`
- * (overflow-y: auto, -webkit-overflow-scrolling: touch). #125 preventDefault +
- * overflow:hidden uz html/body bloķēja pirksta ritināšanu; šeit touchmove ir
- * pasīvs. Detalizētās lapās PTR nav, bet tas pats native scroller paliek.
+ * iPhone: tab bar + PTR. Ritināšana ir dokumentam (html/body), ne iekšējam
+ * overflow konteinerim, lai Safari var saraut adreses joslu.
  */
 export function AdminShellMainWithMobilePull({ isDetailScreen, pullToRefresh, notice, topSlot, children }: Props) {
   const router = useRouter();
@@ -75,11 +73,12 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, pullToRefresh, no
 
     const el = scrollRef.current;
     if (!el) return;
+    const scrollerTop = () => (typeof window === "undefined" ? 0 : window.scrollY || document.documentElement.scrollTop || 0);
 
     const onTouchStart = (e: TouchEvent) => {
       if (!isCoarseMobileViewport()) return;
       if (refreshingRef.current) return;
-      if (el.scrollTop > ADMIN_MOBILE_PTR_IDLE_PX) return;
+      if (scrollerTop() > ADMIN_MOBILE_PTR_IDLE_PX) return;
       const t = e.touches[0];
       if (!t) return;
       startYRef.current = t.clientY;
@@ -91,7 +90,7 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, pullToRefresh, no
     const onTouchMove = (e: TouchEvent) => {
       if (!isCoarseMobileViewport()) return;
       if (!pullActiveRef.current || refreshingRef.current) return;
-      if (el.scrollTop > ADMIN_MOBILE_PTR_IDLE_PX) {
+      if (scrollerTop() > ADMIN_MOBILE_PTR_IDLE_PX) {
         resetPull();
         return;
       }
@@ -136,16 +135,16 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, pullToRefresh, no
       setPullPx(0);
     };
 
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
-    el.addEventListener("touchend", onTouchEnd);
-    el.addEventListener("touchcancel", resetPull);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("touchcancel", resetPull);
 
     return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("touchcancel", resetPull);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", resetPull);
     };
   }, [doRefresh, pullToRefresh, resetPull]);
 
@@ -157,11 +156,11 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, pullToRefresh, no
   const ptrState = refreshing ? "refreshing" : pullPx > 8 ? "pulling" : "idle";
 
   return (
-    <main className={`min-w-0 w-full max-w-none flex-1 max-md:flex max-md:h-full max-md:min-h-0 max-md:flex-col ${mainPad}`}>
+    <main className={`min-w-0 w-full max-w-none flex-1 ${mainPad}`}>
       <div
         id={ADMIN_MAIN_SCROLL_ID}
         ref={scrollRef}
-        className="relative flex w-full min-w-0 min-h-0 flex-1 flex-col max-md:overflow-y-auto max-md:overscroll-y-contain max-md:[-webkit-overflow-scrolling:touch] md:overflow-visible"
+        className="relative flex w-full min-w-0 flex-col md:overflow-visible"
       >
         {pullToRefresh ? (
           <div
