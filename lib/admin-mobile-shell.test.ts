@@ -43,6 +43,25 @@ describe("admin mobile perf constants", () => {
   });
 });
 
+describe("admin mobile css selectors", () => {
+  it("uses descendant .admin-ios-theme .admin-m, not a compound class", () => {
+    const css = readFileSync(new URL("../app/admin/admin-mobile.css", import.meta.url), "utf8");
+    expect(css).toMatch(/\.admin-ios-theme \.admin-m/);
+    expect(css).not.toMatch(/\.admin-m\.admin-ios-theme/);
+    expect(css).toMatch(/html:has\(\.admin-m\)/);
+    expect(css).toMatch(/\.admin-m\[data-admin-theme="dark"\]/);
+    expect(css).not.toMatch(/@media \(prefers-color-scheme: dark\)[\s\S]*\.admin-m \{/);
+  });
+
+  it("exports Safari theme-color for admin layout", () => {
+    const layout = readFileSync(new URL("../app/admin/layout.tsx", import.meta.url), "utf8");
+    expect(layout).toMatch(/themeColor:/);
+    expect(layout).toMatch(/#EEF0F3/);
+    expect(layout).toMatch(/viewportFit: "cover"/);
+    expect(layout).toMatch(/manifest.webmanifest/);
+  });
+});
+
 describe("admin mobile document scroll", () => {
   it("neaizslēdz html/body overflow mobilajā (pirksta ritināšana)", () => {
     const css = readFileSync(new URL("../app/admin/admin-ios-theme.css", import.meta.url), "utf8");

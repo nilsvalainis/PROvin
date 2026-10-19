@@ -1,7 +1,10 @@
 "use client";
 
-import { Check, Copy, Link2, Loader2, Mail } from "lucide-react";
+import { Check, Copy, Link2, Loader2, Mail, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import {
   buildClientLinkWhatsAppText,
   buildClientLinkWhatsAppUrl,
@@ -41,7 +44,9 @@ function validityLabel(h: number): string {
 }
 
 export function AdminClientLinkButton() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  useAdminScrollLock(open);
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +77,10 @@ export function AdminClientLinkButton() {
   useEffect(() => {
     tokenRef.current = token;
   }, [token]);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   const payload = useCallback(
     () => ({
@@ -188,7 +197,8 @@ export function AdminClientLinkButton() {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
+      void persist();
+      setOpen(false);
     } catch {
       setError("Neizdevās nokopēt");
     }
@@ -250,8 +260,9 @@ export function AdminClientLinkButton() {
       </button>
 
       {open ? (
+        <AdminBodyPortal>
         <div
-          className="fixed inset-0 z-[140] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
+          className="fixed inset-0 z-[50] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
           role="presentation"
           onClick={() => {
             void persist();
@@ -265,9 +276,22 @@ export function AdminClientLinkButton() {
             className="max-h-[92dvh] w-full max-w-[440px] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="flex items-start justify-between gap-3">
             <h2 id="client-link-title" className="text-[18px] font-semibold tracking-tight text-[#1d1d1f]">
               Jauna klienta saite
             </h2>
+            <button
+              type="button"
+              aria-label="Aizvērt"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f2f2f7] text-[#1d1d1f]"
+              onClick={() => {
+                void persist();
+                setOpen(false);
+              }}
+            >
+              <X className="h-4 w-4" strokeWidth={2} aria-hidden />
+            </button>
+            </div>
             <p className="mt-1 text-[13px] leading-relaxed text-[#6e6e73]">
               Sūtīt jebkuram - pasūtījums tiek izveidots tikai tad, kad klients aizpilda formu un samaksā.
             </p>
@@ -411,6 +435,7 @@ export function AdminClientLinkButton() {
             {saving ? <p className="mt-2 text-right text-[11px] text-[#aeaeb2]">Saglabā…</p> : null}
           </div>
         </div>
+        </AdminBodyPortal>
       ) : null}
     </>
   );

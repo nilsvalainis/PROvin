@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   LISTING_PEEK_REPLY_DEADLINE_MS,
+  formatListingPeekDeadlineHours,
   formatListingPeekDeadlineRemaining,
   formatListingPeekSubmittedAt,
 } from "@/lib/listing-peek-deadline";
@@ -28,6 +29,12 @@ describe("formatListingPeekDeadlineRemaining", () => {
     );
     expect(r?.status).toBe("overdue");
     expect(r?.label).toMatch(/Kavējas/);
+  });
+});
+
+describe("formatListingPeekDeadlineHours", () => {
+  it("returns compact hours for mobile tags", () => {
+    expect(formatListingPeekDeadlineHours(created, t0 + 4 * 60 * 60 * 1000)).toBe("20 h");
   });
 });
 

@@ -39,9 +39,12 @@ import {
   scheduleAdminIdleWork,
 } from "@/lib/admin-mobile-shell";
 import { ADMIN_MOBILE_TABBAR_DOCK_NAV } from "@/lib/admin-mobile-shell";
+import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
-import { AdminMobileCountBadge } from "@/components/admin/mobile/AdminMobileChrome";
+import { AdminMobileCountBadge, AdminMobileTabPill } from "@/components/admin/mobile/AdminMobileChrome";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
+import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
+import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
 
 /** Variants A: grupēta kreisā sānjosla visiem admin paneļiem (PRO + IRISS). Mobilajā — apakšējā cilņu josla + „Vairāk”. */
 
@@ -529,6 +532,8 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   const workspace = workspaceProp ?? workspaceFromPath;
   const badges = useBadges();
   const [more, setMore] = useState(false);
+  const theme = useAdminMobileColorScheme();
+  useAdminScrollLock(more);
 
   const goTab = useCallback(
     (href: string) => {
@@ -549,124 +554,149 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   const irissTabs: Item[] = [I_HOME, { ...I_LIST, label: "Sludinājumi" }, I_SCAN];
   const proTabs: Item[] = [SAKUMS, VIN, { ...FAST, label: "Ātrie" }];
   const tabs: Item[] = workspace === "iriss" ? irissTabs : proTabs;
+  const tabHrefs = new Set(tabs.map((t) => t.href));
   const inTabs = tabs.some((t) => t.match(pathname));
-  const moreBadge = workspace === "iriss" ? badges.fast + badges.partners + badges.orders : badges.partners + badges.fast;
+  const moreGroups = WS_GROUPS[workspace].map((g) => ({
+    ...g,
+    items: g.items.filter((it) => !tabHrefs.has(it.href)),
+  })).filter((g) => g.items.length > 0);
+  const moreBadge = moreGroups.reduce((sum, g) => sum + g.items.reduce((s, it) => s + (it.badge ? badges[it.badge] : 0), 0), 0);
 
   const tabClass = (on: boolean) =>
-    `admin-nav-link relative flex min-w-0 flex-[1_1_0] flex-col items-center justify-center gap-[2px] px-3 py-0.5 text-[10px] font-medium ${
+    `admin-nav-link relative z-[1] flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] px-1 py-0.5 text-[10px] font-medium ${
       on ? "font-semibold text-[var(--am-ink)]" : "text-[var(--am-ink2)]"
     }`;
 
   const selectedTabIndex = tabs.findIndex((t) => t.match(pathname));
-  const pillIndex = more || selectedTabIndex < 0 ? 1 + tabs.length : 1 + selectedTabIndex;
+  const pillIndex = more || selectedTabIndex < 0 ? tabs.length : selectedTabIndex;
+  const tabCount = tabs.length + 1;
 
   return (
     <>
       <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
+          <AdminMobileTabPill index={pillIndex} count={tabCount} />
           {tabs.map((t) => {
             const on = t.match(pathname) && !more;
             const n = t.badge ? badges[t.badge] : 0;
             const icon = MOBILE_TAB_ICON[t.href] ?? "pasutijumi";
             return (
-              <Link key={t.href} href={t.href} aria-current={on ? "page" : undefined} className={tabClass(on)}>
+              <Link
+                key={t.href}
+                href={t.href}
+                aria-current={on ? "page" : undefined}
+                className={tabClass(on)}
+                onClick={(e) => {
+                  if (isModifiedClick(e)) return;
+                  e.preventDefault();
+                  goTab(t.href);
+                }}
+              >
                 <span className="relative">
-                  <span className={`grid h-[54px] w-full min-w-max place-items-center rounded-full px-3 ${on ? "bg-[var(--am-fill2)]" : ""}`}>
-                    <span className="flex flex-col items-center gap-[2px]">
-                      <AdminMobileIcon name={icon} className="h-5 w-5" />
-                      <span className="max-w-full truncate leading-none">{t.label}</span>
-                    </span>
-                  </span>
+                  <AdminMobileIcon name={icon} className="h-5 w-5" />
                   {n > 0 ? (
-                    <span className="absolute right-1 top-1">
+                    <span className="absolute right-[-6px] top-[-4px]">
                       <AdminMobileCountBadge n={n} />
                     </span>
                   ) : null}
                 </span>
+                <span className="max-w-full truncate leading-none">{t.label}</span>
               </Link>
             );
           })}
           <button type="button" onClick={() => setMore((v) => !v)} className={tabClass(!inTabs || more)} aria-expanded={more} aria-label="Vairāk">
             <span className="relative">
-              <span className={`grid h-[54px] min-w-max place-items-center rounded-full px-3 ${!inTabs || more ? "bg-[var(--am-fill2)]" : ""}`}>
-                <span className="flex flex-col items-center gap-[2px]">
-                  <AdminMobileIcon name="vairak" className="h-5 w-5" />
-                  <span className="leading-none">Vairāk</span>
-                </span>
-              </span>
+              <AdminMobileIcon name="vairak" className="h-5 w-5" />
               {moreBadge > 0 ? (
-                <span className="absolute right-1 top-1">
+                <span className="absolute right-[-6px] top-[-4px]">
                   <AdminMobileCountBadge n={moreBadge} />
                 </span>
               ) : null}
             </span>
+            <span className="leading-none">Vairāk</span>
           </button>
       </nav>
       {more ? (
-        <div
-          className="fixed inset-x-0 top-0 z-[34] flex flex-col md:hidden"
-          style={{ bottom: "var(--admin-tabbar-h, 74px)" }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Vairāk"
-        >
-          <header className="am-glass rounded-b-[28px] px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))]">
-            <h1 className="text-[26px] font-bold tracking-tight text-[var(--am-ink)]">Vairāk</h1>
-            <div className="mt-3 flex h-8 rounded-full bg-[var(--am-fill)] p-0.5" role="tablist" aria-label="Darba zona">
-              <Link
-                href="/admin/dashboard"
-                onClick={() => writeWsCookie("pro")}
-                className={`flex h-full flex-1 items-center justify-center rounded-full text-[12px] font-semibold ${
-                  workspace === "pro" ? "bg-[var(--am-s1)] text-[var(--am-ink)] shadow-sm" : "text-[var(--am-ink2)]"
-                }`}
-              >
-                PRO
-              </Link>
-              <Link
-                href="/admin/iriss/pasutijumi"
-                onClick={() => writeWsCookie("iriss")}
-                className={`flex h-full flex-1 items-center justify-center rounded-full text-[12px] font-semibold ${
-                  workspace === "iriss" ? "bg-[var(--am-s1)] text-[var(--am-ink)] shadow-sm" : "text-[var(--am-ink2)]"
-                }`}
-              >
-                IRISS
-              </Link>
-            </div>
-          </header>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4">
-            {WS_GROUPS[workspace].map((g) => (
-              <div key={g.title}>
-                <p className="px-1 pb-1 pt-4 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">{g.title}</p>
-                <div className="overflow-hidden rounded-[22px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)]">
-                  {g.items.map((it) => {
-                    const n = it.badge ? badges[it.badge] : 0;
-                    const icon = MORE_ROW_ICON[it.href] ?? "uzPrieksu";
-                    return (
-                      <Link
-                        key={it.href}
-                        href={it.href}
-                        onClick={() => setMore(false)}
-                        className="admin-nav-link flex min-h-[50px] items-center gap-3 border-b border-[var(--am-hair)] px-4 last:border-b-0"
-                      >
-                        <AdminMobileIcon name={icon} className="h-5 w-5 text-[var(--am-ink2)]" />
-                        <span className="min-w-0 flex-1 truncate text-[16px] text-[var(--am-ink)]">{it.label}</span>
-                        <AdminMobileCountBadge n={n} />
-                        <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
-                      </Link>
-                    );
-                  })}
+        <AdminBodyPortal>
+          <div
+            className="admin-m pointer-events-auto fixed inset-x-0 top-0 z-[40] flex flex-col md:hidden"
+            style={{ bottom: "var(--admin-tabbar-h, 74px)" }}
+            data-admin-theme={theme}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Vairāk"
+          >
+            <button type="button" aria-label="Aizvērt" className="absolute inset-0 bg-[var(--am-scrim)]" onClick={() => setMore(false)} />
+            <div className="am-overlay relative z-[50] flex min-h-0 flex-1 flex-col">
+              <header className="am-topbar px-4 pb-3 pt-[max(12px,env(safe-area-inset-top))]">
+                <h1 className="text-[26px] font-bold tracking-tight text-[var(--am-ink)]">Vairāk</h1>
+                <div className="relative mt-3 flex h-8 rounded-full bg-[var(--am-fill)] p-0.5" role="tablist" aria-label="Darba zona">
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-[var(--am-s1)] shadow-sm"
+                    style={{
+                      transform: workspace === "iriss" ? "translateX(100%)" : "translateX(0)",
+                      transition: "transform var(--d-std) var(--ease-out)",
+                    }}
+                  />
+                  <Link
+                    href="/admin/dashboard"
+                    onClick={() => writeWsCookie("pro")}
+                    className={`relative z-[1] flex h-full flex-1 items-center justify-center rounded-full text-[12px] font-semibold ${
+                      workspace === "pro" ? "text-[var(--am-ink)]" : "text-[var(--am-ink2)]"
+                    }`}
+                  >
+                    PRO
+                  </Link>
+                  <Link
+                    href="/admin/iriss/pasutijumi"
+                    onClick={() => writeWsCookie("iriss")}
+                    className={`relative z-[1] flex h-full flex-1 items-center justify-center rounded-full text-[12px] font-semibold ${
+                      workspace === "iriss" ? "text-[var(--am-ink)]" : "text-[var(--am-ink2)]"
+                    }`}
+                  >
+                    IRISS
+                  </Link>
                 </div>
+              </header>
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-4">
+                {moreGroups.map((g) => (
+                  <div key={g.title}>
+                    {g.title === L.groupPro || g.title === L.groupIriss ? null : (
+                      <p className="px-1 pb-1 pt-4 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink2)]">{g.title}</p>
+                    )}
+                    <div className="overflow-hidden rounded-[22px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)]">
+                      {g.items.map((it) => {
+                        const n = it.badge ? badges[it.badge] : 0;
+                        const icon = MORE_ROW_ICON[it.href] ?? "uzPrieksu";
+                        return (
+                          <Link
+                            key={it.href}
+                            href={it.href}
+                            onClick={() => setMore(false)}
+                            className="admin-nav-link flex min-h-[50px] items-center gap-3 border-b border-[var(--am-hair)] px-4 last:border-b-0"
+                          >
+                            <AdminMobileIcon name={icon} className="h-5 w-5 text-[var(--am-ink2)]" />
+                            <span className="min-w-0 flex-1 truncate text-[16px] text-[var(--am-ink)]">{it.label}</span>
+                            <AdminMobileCountBadge n={n} />
+                            <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => void logout()}
+                  className="mt-4 flex h-[50px] w-full items-center gap-3 rounded-[22px] bg-[var(--am-s1)] px-4 text-[16px] text-[var(--am-ink)] shadow-[var(--am-card-shadow)]"
+                >
+                  <AdminMobileIcon name="iziet" className="h-5 w-5 text-[var(--am-ink2)]" />
+                  {L.logout}
+                </button>
               </div>
-            ))}
-            <button
-              type="button"
-              onClick={() => void logout()}
-              className="mt-4 flex h-[50px] w-full items-center gap-3 rounded-[22px] bg-[var(--am-s1)] px-4 text-[16px] text-[var(--am-ink)] shadow-[var(--am-card-shadow)]"
-            >
-              <AdminMobileIcon name="iziet" className="h-5 w-5 text-[var(--am-ink2)]" />
-              {L.logout}
-            </button>
+            </div>
           </div>
-        </div>
+        </AdminBodyPortal>
       ) : null}
     </>
   );

@@ -7,6 +7,8 @@ import {
   adminMobileIconUrl,
   adminMobileSourceStatusIcon,
   formatAdminMobileDeadlineHours,
+  formatAdminMobileHoursLabel,
+  formatAdminMobilePhone,
   formatIrissWaybillChip,
   irissWaybillUrgent,
   isAdminMobilePaidSourceKey,
@@ -37,5 +39,15 @@ describe("admin-mobile-ds", () => {
     expect(irissWaybillUrgent(6)).toBe(true);
     expect(irissWaybillUrgent(30)).toBe(false);
     expect(irissWaybillUrgent(null, "B1 6 h")).toBe(true);
+  });
+
+  it("formats mobile phone as grouped +371", () => {
+    expect(formatAdminMobilePhone("+3712878268")).toBe("+371 28 782 68");
+    expect(formatAdminMobilePhone("28782668")).toBe("+371 28 782 668");
+  });
+
+  it("formats compact hours", () => {
+    expect(formatAdminMobileHoursLabel(20 * 3600_000)).toBe("20 h");
+    expect(formatAdminMobileHoursLabel(-2 * 3600_000)).toBe("-2 h");
   });
 });

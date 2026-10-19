@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useAdminAuditDeadlineTick } from "@/components/admin/AdminAuditDeadlineTickProvider";
 import type { AuditDeadlineStatus } from "@/lib/admin-audit-deadline";
 import {
+  formatListingPeekDeadlineHours,
   formatListingPeekDeadlineRemaining,
   formatListingPeekSubmittedAt,
 } from "@/lib/listing-peek-deadline";
@@ -71,26 +72,33 @@ export function AdminListingPeekSla({
   const submitted = formatListingPeekSubmittedAt(createdAt);
   const sla = formatListingPeekDeadlineRemaining(createdAt);
 
+  const hours = formatListingPeekDeadlineHours(createdAt);
+
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <p className="text-[12px] text-[var(--color-provin-muted)]">
+      <p className="hidden text-[12px] text-[var(--color-provin-muted)] md:block">
         <span className="font-semibold uppercase tracking-[0.06em]">Iesūtīts</span>{" "}
         <time dateTime={createdAt}>{submitted}</time>
       </p>
       {complete ? (
-        <span className={`${PILL_BASE} bg-emerald-50 text-emerald-800 ring-emerald-200/80`}>
+        <span className={`${PILL_BASE} bg-emerald-50 text-emerald-800 ring-emerald-200/80 max-md:hidden`}>
           Atbildēts
         </span>
       ) : rejected ? (
-        <span className={`${PILL_BASE} bg-slate-200 text-slate-600 ring-slate-300/80`}>
+        <span className={`${PILL_BASE} bg-slate-200 text-slate-600 ring-slate-300/80 max-md:hidden`}>
           Noraidīts
         </span>
       ) : sla ? (
         <span
-          className={`${PILL_BASE} ${PILL_BY_STATUS[sla.status]}`}
+          className={`${PILL_BASE} ${PILL_BY_STATUS[sla.status]} max-md:hidden`}
           title="Atbildes termiņš - 24 h no iesūtīšanas"
         >
           {sla.label}
+        </span>
+      ) : null}
+      {hours ? (
+        <span className="inline-flex h-[22px] items-center rounded-[7px] bg-[var(--am-fill,#f2f2f7)] px-1.5 text-[11px] font-medium text-[var(--am-ink2,#5e636e)] md:hidden">
+          {hours}
         </span>
       ) : null}
     </div>

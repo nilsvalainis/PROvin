@@ -33,14 +33,10 @@ type Props = {
 
 export function AdminListingPeekConversionCard({ stats, variant = "full" }: Props) {
   const compact = variant === "compact";
-  const convLine = `Konversija ${formatRate(stats.conversionRatePct)} · ${stats.convertedPeople.toLocaleString("lv-LV")} no ${stats.uniquePeople.toLocaleString("lv-LV")} klientiem`;
 
   if (compact) {
     return (
       <section>
-        <div className="flex items-center justify-between gap-3 rounded-[18px] bg-[var(--am-s1,#fff)] px-4 py-3 shadow-[var(--am-card-shadow,0_1px_2px_rgba(16,24,40,0.04))] md:hidden">
-          <p className="min-w-0 truncate text-[13px] font-medium text-[var(--am-ink2,#5e636e)]">{convLine}</p>
-        </div>
         <div className="hidden rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 md:block">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">

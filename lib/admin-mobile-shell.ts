@@ -11,12 +11,20 @@ export const ADMIN_MOBILE_TABBAR_DOCK_CHROME_PX = 74;
 export const ADMIN_MOBILE_TABBAR_H_CSS =
   `calc(${ADMIN_MOBILE_TABBAR_DOCK_CHROME_PX}px + max(10px, env(safe-area-inset-bottom, 0px)))` as const;
 
-/** iOS 26: stikla kapsula + atsevišķa meklēšanas poga. */
+/** iOS 26: stikla kapsula + atsevišķa meklēšanas poga. z-index: tab bar 30. */
 export const ADMIN_MOBILE_TABBAR_DOCK_WRAPPER =
-  "pointer-events-none fixed inset-x-0 bottom-0 z-[35] flex items-end justify-center gap-2 px-3 pb-[max(10px,env(safe-area-inset-bottom,0px))] pt-2 md:hidden";
+  "pointer-events-none fixed inset-x-0 bottom-0 z-[30] flex items-center justify-center gap-[12pt] px-3 pb-[max(10px,env(safe-area-inset-bottom,0px))] pt-2 md:hidden";
 
 export const ADMIN_MOBILE_TABBAR_DOCK_NAV =
-  "am-glass pointer-events-auto flex h-[62px] min-w-0 flex-1 items-stretch rounded-full px-1.5";
+  "am-glass pointer-events-auto relative flex h-[62px] min-w-0 flex-1 items-stretch gap-[12pt] rounded-full px-1.5";
+
+export const ADMIN_MOBILE_Z = {
+  content: 0,
+  top: 20,
+  tab: 30,
+  scrim: 40,
+  sheet: 50,
+} as const;
 
 export const ADMIN_MOBILE_PTR_THRESHOLD_PX = 64;
 export const ADMIN_MOBILE_PTR_RUBBER = 0.35;

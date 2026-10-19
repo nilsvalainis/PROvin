@@ -141,3 +141,26 @@ export function irissWaybillUrgent(hoursLeft: number | null | undefined, label?:
   if (!m) return false;
   return Number.parseFloat(m[1].replace(",", ".")) < 24;
 }
+
+/** Telefona rādījums: `+371 28 782 68`. */
+export function formatAdminMobilePhone(raw: string | null | undefined): string {
+  const digits = (raw ?? "").replace(/\D+/g, "");
+  if (!digits) return (raw ?? "").trim();
+  const national = digits.startsWith("371") ? digits.slice(3) : digits.startsWith("0") ? digits.slice(1) : digits;
+  if (national.length < 7) return raw?.trim() || digits;
+  const a = national.slice(0, 2);
+  const b = national.slice(2, 5);
+  const c = national.slice(5);
+  return `+371 ${a} ${b} ${c}`.trim();
+}
+
+/** Ātro vērtējumu neitrālais laika tags: `20 h`. */
+export function formatAdminMobileHoursLabel(remainingMs: number): string {
+  if (!Number.isFinite(remainingMs)) return "0 h";
+  if (remainingMs <= 0) {
+    const overdueH = Math.max(1, Math.ceil(Math.abs(remainingMs) / (60 * 60 * 1000)));
+    return `-${overdueH} h`;
+  }
+  const h = Math.max(1, Math.round(remainingMs / (60 * 60 * 1000)));
+  return `${h} h`;
+}

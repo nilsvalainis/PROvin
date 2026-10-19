@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import Script from "next/script";
 import { RootHtml } from "@/components/RootHtml";
@@ -10,7 +10,25 @@ import "./admin-mobile.css";
 
 export const metadata: Metadata = {
   title: "Administrēšana | PROVIN",
+  applicationName: "PROVIN",
   robots: { index: false, follow: false },
+  manifest: "/admin/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "PROVIN",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#EEF0F3" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+  colorScheme: "light dark",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function AdminRootLayout({ children }: { children: ReactNode }) {
