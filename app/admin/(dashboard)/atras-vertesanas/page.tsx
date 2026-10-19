@@ -139,7 +139,7 @@ export default async function AdminListingPeeksPage({
       </div>
 
       {shown.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-10 text-center text-sm text-[var(--color-provin-muted)]">
+        <div className="mt-4 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-10 text-center text-sm text-[var(--color-provin-muted)] max-md:border-[var(--am-hair)] max-md:bg-[var(--am-s1)] max-md:text-[var(--am-ink2)]">
           {q ? "Nekas netika atrasts." : "Šeit nav ierakstu."}
         </div>
       ) : (

@@ -62,6 +62,14 @@ describe("admin mobile css selectors", () => {
   });
 });
 
+describe("admin mobile VIN SCAN row", () => {
+  it("keeps the VIN SCAN card under the title even with zero jobs", () => {
+    const src = readFileSync(new URL("../components/admin/AdminOrderVinScanDashboardCards.tsx", import.meta.url), "utf8");
+    expect(src).toMatch(/VIN SCAN/);
+    expect(src).not.toMatch(/\{cards\.length > 0 \? \(/);
+  });
+});
+
 describe("admin mobile document scroll", () => {
   it("neaizslēdz html/body overflow mobilajā (pirksta ritināšana)", () => {
     const css = readFileSync(new URL("../app/admin/admin-ios-theme.css", import.meta.url), "utf8");

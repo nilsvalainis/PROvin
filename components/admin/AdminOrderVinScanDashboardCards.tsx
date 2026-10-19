@@ -40,21 +40,21 @@ export function AdminOrderVinScanDashboardCards({
           </span>
           <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
         </Link>
-        {cards.length > 0 ? (
-          <Link href="/admin/vin-scan" className="am-press flex min-h-[50px] items-center gap-3 border-t border-[var(--am-hair)] px-4">
-            <AdminMobileIcon name="vinParbaude" className="h-5 w-5 text-[var(--am-ink2)]" />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[16px] font-semibold text-[var(--am-ink)]">VIN SCAN</span>
-              <span className="block text-[13px] text-[var(--am-ink2)]">
-                {autoN} auto · {infoN} info{timeoutN ? ` · ${timeoutN} noildzes` : ""}
-              </span>
+        <Link href="/admin/vin-scan" className="am-press flex min-h-[50px] items-center gap-3 border-t border-[var(--am-hair)] px-4">
+          <AdminMobileIcon name="vinParbaude" className="h-5 w-5 text-[var(--am-ink2)]" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[16px] font-semibold text-[var(--am-ink)]">VIN SCAN</span>
+            <span className="block text-[13px] text-[var(--am-ink2)]">
+              {autoN} auto · {infoN} info{timeoutN ? ` · ${timeoutN} noildzes` : ""}
             </span>
+          </span>
+          {autoN > 0 ? (
             <span className="mr-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--am-badge)] px-1 text-[10px] font-semibold text-[var(--am-badge-ink)]">
               {autoN}
             </span>
-            <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
-          </Link>
-        ) : null}
+          ) : null}
+          <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
+        </Link>
       </div>
       ) : null}
       {showDesktop && cards.length > 0 ? (
