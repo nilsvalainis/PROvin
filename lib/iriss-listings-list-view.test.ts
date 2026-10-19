@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyListingListQuery,
+  countActiveListingFilters,
+  listingFilterPills,
+  LISTING_DEFAULT_SORT,
+  LISTING_SOURCE_CHIPS,
   listingPriceChangeAbs,
   listingSortPrice,
   listingYear,
   listingYearLabel,
   parseListingSort,
   parseListingSources,
+  parseListingView,
   parsePriceBound,
   sortListingVehicles,
   vehicleInPriceRange,
@@ -133,7 +139,7 @@ describe("listing sort", () => {
 describe("listing filters", () => {
   it("treats an empty source list as all platforms", () => {
     expect(parseListingSources("")).toEqual([]);
-    expect(parseListingSources("auto1,nope,autobid")).toEqual(["autobid", "auto1"]);
+    expect(parseListingSources("auto1,nope,autobid")).toEqual(["auto1", "autobid"]);
     expect(parseListingSources("ecarstrade,auto1")).toEqual(["auto1", "ecarstrade"]);
     expect(vehicleInSources("openline", [])).toBe(true);
     expect(vehicleInSources("openline", ["autobid"])).toBe(false);
@@ -156,5 +162,87 @@ describe("listing filters", () => {
     expect(vehicleInPriceRange(none, null, null)).toBe(true);
     expect(vehicleInPriceRange(floor, 0, 5000)).toBe(false);
     expect(vehicleInPriceRange(buyNow, 10000, 20000)).toBe(true);
+  });
+
+  it("keeps mobile.de and AutoScout24 in src", () => {
+    expect(parseListingSources("mobilede,autoscout24,auto1")).toEqual(["auto1", "mobilede", "autoscout24"]);
+    expect(vehicleInSources("mobilede", ["mobilede"])).toBe(true);
+    expect(vehicleInSources("autoscout24", ["auto1"])).toBe(false);
+  });
+});
+
+describe("listing list query view and filters", () => {
+  it("parses view=grid and omits the default list param", () => {
+    expect(parseListingView(null)).toBe("list");
+    expect(parseListingView("")).toBe("list");
+    expect(parseListingView("grid")).toBe("grid");
+    expect(parseListingView("list")).toBe("list");
+    expect(LISTING_DEFAULT_SORT).toBe("seen");
+    const fromList = applyListingListQuery(new URLSearchParams("listing=abc&sort=ending"), { view: "list" }, {
+      sort: "ending",
+      view: "grid",
+      sourceChipCount: LISTING_SOURCE_CHIPS.length,
+    });
+    expect(fromList.get("listing")).toBe("abc");
+    expect(fromList.get("sort")).toBe("ending");
+    expect(fromList.has("view")).toBe(false);
+    const toGrid = applyListingListQuery(new URLSearchParams("ord=o:1"), { view: "grid" }, {
+      sort: LISTING_DEFAULT_SORT,
+      view: "list",
+      sourceChipCount: LISTING_SOURCE_CHIPS.length,
+    });
+    expect(toGrid.get("view")).toBe("grid");
+    expect(toGrid.has("sort")).toBe(false);
+    expect(toGrid.get("ord")).toBe("o:1");
+    const clearSrc = applyListingListQuery(new URLSearchParams("src=auto1"), { sources: [] }, {
+      sort: LISTING_DEFAULT_SORT,
+      view: "list",
+      sourceChipCount: LISTING_SOURCE_CHIPS.length,
+    });
+    expect(clearSrc.has("src")).toBe(false);
+  });
+
+  it("counts Slēpt virs budžeta in activeFilterCount and pills", () => {
+    expect(
+      countActiveListingFilters({
+        sources: [],
+        priceMin: null,
+        priceMax: null,
+        hideTech: false,
+        hideOverBudget: false,
+        listScope: "all",
+      }),
+    ).toBe(0);
+    expect(
+      countActiveListingFilters({
+        sources: ["auto1", "openline"],
+        priceMin: null,
+        priceMax: 18000,
+        hideTech: false,
+        hideOverBudget: true,
+        listScope: "all",
+      }),
+    ).toBe(3);
+    const pills = listingFilterPills({
+      sources: ["auto1", "openline"],
+      sourceLabels: {
+        auto1: "Auto1",
+        openline: "Openlane",
+        autobid: "Autobid",
+        ecarstrade: "eCarsTrade",
+        mobilede: "mobile.de",
+        autoscout24: "AutoScout24",
+      },
+      priceMin: null,
+      priceMax: 18000,
+      hideTech: false,
+      hideOverBudget: true,
+      overBudgetThreshold: 2000,
+      listScope: "all",
+    });
+    expect(pills.map((p) => p.id)).toEqual(["src", "price", "budget"]);
+    expect(pills[0]?.label).toBe("Avoti: Auto1, Openlane");
+    expect(pills[1]?.label).toBe("Cena līdz 18 000 €");
+    expect(pills[2]?.label).toBe("Slēpt virs budžeta + 2 000 €");
   });
 });

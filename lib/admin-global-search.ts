@@ -83,7 +83,7 @@ const ADMIN_SEARCH_SECTIONS: readonly SectionSeed[] = [
   { id: "fast", title: "Ātrie vērtējumi", subtitle: "PRO", href: "/admin/atras-vertesanas", text: "ātrie vērtējumi" },
   { id: "iriss-orders", title: "Pasūtījumi", subtitle: "IRISS", href: "/admin/iriss/pasutijumi", text: "IRISS pasūtījumi" },
   { id: "iriss-new", title: "Jauns pasūtījums", subtitle: "IRISS", href: "/admin/iriss/pasutijumi/new", text: "jauns pasūtījums" },
-  { id: "iriss-list", title: "Klientu filtri", subtitle: "IRISS", href: "/admin/iriss/sludinajumi", text: "klientu filtri sludinājumi IRISS LIST" },
+  { id: "iriss-list", title: "Sludinājumi", subtitle: "IRISS", href: "/admin/iriss/sludinajumi", text: "klientu filtri sludinājumi IRISS LIST" },
   { id: "iriss-scan", title: "Radars", subtitle: "IRISS", href: "/admin/iriss/scan", text: "radars" },
   { id: "iriss-report", title: "Mēneša atskaite", subtitle: "IRISS", href: "/admin/iriss/atskaite", text: "mēneša atskaite" },
   { id: "iriss-waybills", title: "Pavadzīmes", subtitle: "IRISS", href: "/admin/iriss/pavadzimes", text: "pavadzīmes" },

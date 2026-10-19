@@ -106,7 +106,8 @@ describe("admin mobile spec files", () => {
     const list = readFileSync(new URL("../components/admin/IrissSludinajumiListClient.tsx", import.meta.url), "utf8");
     expect(list).toMatch(/hidden/);
     expect(list).toMatch(/md:block/);
-    expect(list).toMatch(/admin-source-logo-row/);
+    expect(list).not.toMatch(/admin-source-logo-row/);
+    expect(list).not.toMatch(/IrissAuctionLogo/);
     expect(list).toMatch(/AdminMobileSegments/);
     const css = readFileSync(new URL("../app/admin/admin-mobile.css", import.meta.url), "utf8");
     expect(css).toMatch(/--bg:\s*#f2f2f7/i);
