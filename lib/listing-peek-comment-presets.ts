@@ -1,5 +1,5 @@
 /**
- * Ātrie vērtējumi — sagataves klientam. Operatora frāzes: īss vērtējums,
+ * Ātrie vērtējumi - sagataves klientam. Operatora frāzes: īss vērtējums,
  * vieta PROVIN AUDITS. Bez panikas un bez remonta EUR.
  * Vienā sadaļā drīkst atlasīt vairākas frāzes (secīgi, punkts + atstarpe).
  */
@@ -36,7 +36,19 @@ export function stripListingPeekCommentLeadingGreeting(text: string): string {
 }
 
 export const LISTING_PEEK_COMMENT_CLOSER =
+  "Šis ir sākotnējs, virspusējs vērtējums. PROVIN AUDITS dod pilnu ainu: nobraukuma hronoloģiju, negadījumu datus, dīleru vēsturi un šī modeļa tehniskos riskus. Tas palīdz pieņemt pārdomātu lēmumu un iegūt argumentus cenas sarunām.";
+
+/** Veco nosūtīto vēstuļu closer - tikai parsēšanai, jaunos melnrakstos neliek. */
+const LISTING_PEEK_COMMENT_CLOSER_LEGACY =
   "Šis ir virspusējs sākotnējais vērtējums. Pilnu auto analīzi ar nobraukuma hronoloģiju, negadījumu datiem, dīleru vēsturi un specifisko tehnisko risku analīzi nodrošina PROVIN AUDITS. Tas ir drošākais veids, kā pilnvērtīgi noskaidrot digitālo auto vēsturi, izvairīties no dārgiem remontiem un iegūt argumentus cenas apspriešanai.";
+
+function listingPeekCloserInText(text: string): { index: number; closer: string } | null {
+  const current = text.indexOf(LISTING_PEEK_COMMENT_CLOSER);
+  if (current >= 0) return { index: current, closer: LISTING_PEEK_COMMENT_CLOSER };
+  const legacy = text.indexOf(LISTING_PEEK_COMMENT_CLOSER_LEGACY);
+  if (legacy >= 0) return { index: legacy, closer: LISTING_PEEK_COMMENT_CLOSER_LEGACY };
+  return null;
+}
 
 export type ListingPeekTopicId =
   | "odometer"
@@ -83,25 +95,25 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "odometer-ncsdd",
         tone: "caution",
         label: "Nav CSDD",
-        text: "Tā kā automašīnai Latvijā vēl nav veikta agregātu numuru salīdzināšana, CSDD sistēmā ārvalstu tehniskajās apskatēs fiksētie odometra rādījumi (kas glabājas Eiropas EUCARIS datubāzē) šobrīd nav pieejami un uzrādīsies tikai pēc numuru salīdzināšanas. Pilnīgai pārliecībai nobraukuma hronoloģiju varam salīdzināt ar starptautiskajiem reģistriem PROVIN AUDITĀ.",
+        text: "Latvijā šim auto vēl nav veikta agregātu numuru salīdzināšana, tāpēc CSDD sistēmā pagaidām nav redzami nobraukuma rādījumi no ārvalstu tehniskajām apskatēm (tie glabājas Eiropas EUCARIS datubāzē). Tie parādīsies pēc numuru salīdzināšanas, un citos avotos tie nav pieejami. Ja pārdevējs nav gatavs numurus salīdzināt pirms auto iegādes, pārbaude starptautiskajos reģistros var būt vienīgais veids, kā pārliecināties par nobraukuma patiesumu.",
       },
       {
         id: "odometer-kritisks",
         tone: "critical",
         label: "Kritisks",
-        text: "Pieejamie dati norāda uz iespējamu odometra rādījumu manipulāciju. Lai to apstiprinātu, vēsturi nepieciešams pārbaudīt maksas datubāzēs.",
+        text: "Pieejamie dati liecina par iespējamām nobraukuma pretrunām auto vēsturē, taču droši to var apstiprināt tikai ar padziļinātu pārbaudi.",
       },
       {
         id: "odometer-ierobezoti",
         tone: "concern",
         label: "Ierobežoti dati",
-        text: "Pilnvērtīgu nobraukuma hronoloģiju no publiskajiem ārvalstu reģistriem šai automašīnai iegūt var būt sarežģīti.",
+        text: "Jāņem vērā, ka šim auto pilnu nobraukuma hronoloģiju no publiskajiem ārvalstu reģistriem iegūt var būt grūti: izcelsmes valsts un auto vecums var neļaut iegūt pietiekami daudz informācijas, lai izsekotu visam nobraukumam.",
       },
       {
         id: "odometer-tehniska-pase",
         tone: "info",
         label: "Tehniskā pase",
-        text: "Konkrētajai automašīnai datus no ārvalstu reģistriem iegūt var būt sarežģīti, tāpēc papildu vēstures datu iegūšanai jāpalūdz pārdevējam atsūtīt ārvalsts reģistrācijas apliecības (tehniskās pases) foto ar redzamu reģistrācijas valsts numurzīmi.",
+        text: "Šim auto datus no ārvalstu reģistriem iegūt var būt grūti. Pirms pasūtījuma palūdziet pārdevējam ārvalsts reģistrācijas apliecības (tehniskās pases) foto, kurā redzams reģistrācijas numurs. Tas var palīdzēt iegūt vairāk vēstures datu.",
       },
       {
         id: "odometer-dilera-dati",
@@ -119,7 +131,7 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "incidents-nav-redzams",
         tone: "positive",
         label: "Nav redzams",
-        text: "Sākotnējās bojājumu pazīmes negadījumu vēsturē šobrīd nav fiksētas, tomēr pilnvērtīgai pārbaudei nepieciešama padziļināta atskaite.",
+        text: "Sākotnēji bojājumu pazīmes negadījumu vēsturē nav redzamas.",
       },
       {
         id: "incidents-japeta",
@@ -155,19 +167,19 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "technical-merens",
         tone: "positive",
         label: "Mērens",
-        text: "Modelim kā tādam ir laba uzticamības reputācija, tomēr ir nianses, kuras noteikti būs jāņem vērā gan apskatot auto klātienē, gan turpmākās ekspluatācijas laikā.",
+        text: "Konceptuāli šis modelis ir uzticams, taču daudz ko noteiks konkrētā auto stāvoklis, vēsture un objektīvs novērtējums klātienē, jo, kā jau visiem auto, arī šim ir savas vājās vietas.",
       },
       {
         id: "technical-nianses",
         tone: "caution",
         label: "Nianses",
-        text: "Modelim ir zināmas ekspluatācijas nianses, tāpēc klātienes apskatē tām jāpievērš papildu uzmanība.",
+        text: "Šim modelim ir zināmas nianses, kurām jāpievērš uzmanība gan apskatot auto klātienē, gan turpmākajā ekspluatācijā.",
       },
       {
         id: "technical-problematisks",
         tone: "critical",
         label: "Problemātisks",
-        text: "Konkrētajam modelim piemīt zināmi riski, ko būs svarīgi pārbaudīt klātienē pirms pirkuma.",
+        text: "Šim modelim ir zināmi riski, kas noteikti jāņem vērā gan pirms pirkuma, gan pēc tā.",
       },
     ],
   },
@@ -229,12 +241,6 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         label: "Nianses",
         text: "Sludinājuma fotogrāfijās pamanītas atsevišķas zonas, kuras klātienē būs jāpārbauda īpaši uzmanīgi.",
       },
-      {
-        id: "photos-lenki",
-        tone: "info",
-        label: "Leņķi",
-        text: "Jāņem vērā, ka dažādu atspīdumu un leņķu dēļ pilnvērtīgu foto analīzi veikt nav iespējams.",
-      },
     ],
   },
   {
@@ -258,12 +264,6 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         tone: "concern",
         label: "Nezināms",
         text: "Prognozēt datu pieejamību oficiālā dīlera datubāzēs iepriekš nav iespējams, tāpēc to var pārbaudīt tikai nosūtot konkrētu pieprasījumu.",
-      },
-      {
-        id: "dealer-nav",
-        tone: "critical",
-        label: "Nav",
-        text: "Šim auto iegūt digitāli fiksētus starptautiskos datus no oficiālā dīlera datubāzes parasti nav iespējams.",
       },
       {
         id: "dealer-tikls-nezinams",
@@ -342,7 +342,7 @@ export function listingPeekSelectedPhraseIds(topicId: ListingPeekTopicId, fieldT
   return topic.phrases.filter((p) => fieldText.includes(p.text)).map((p) => p.id);
 }
 
-/** Klienta e-pasts ir parasts teksts — Gemini citādi atstāj field-agent `**bold**`. */
+/** Klienta e-pasts ir parasts teksts - Gemini citādi atstāj field-agent `**bold**`. */
 export function stripListingPeekMarkdown(text: string): string {
   return text
     .replace(/\r/g, "")
@@ -406,28 +406,29 @@ export function assembleListingPeekCustomerComment(input: {
   return blocks.join("\n\n").trim();
 }
 
-/** Ieliek teikumu vēstulē pirms AUDITS closer — tajā pašā rindkopā caur punktu un atstarpi. */
+/** Ieliek teikumu vēstulē pirms AUDITS closer - tajā pašā rindkopā caur punktu un atstarpi. */
 export function insertListingPeekLetterSentence(letter: string, sentence: string): string {
   const add = sentence.trim();
   const current = letter.replace(/\r/g, "").trim();
   if (!add) return current;
   if (current.includes(add)) return current;
-  if (current.includes(LISTING_PEEK_COMMENT_CLOSER)) {
-    const before = current.slice(0, current.indexOf(LISTING_PEEK_COMMENT_CLOSER)).trim();
+  const found = listingPeekCloserInText(current);
+  if (found) {
+    const before = current.slice(0, found.index).trim();
     const joined = joinListingPeekSentences(before, add);
-    return `${joined}\n\n${LISTING_PEEK_COMMENT_CLOSER}`.trim();
+    return `${joined}\n\n${found.closer}`.trim();
   }
   return joinListingPeekSentences(current, add);
 }
 
 export function applyListingPeekLetterCloser(letter: string, closer: boolean): string {
   const current = letter.replace(/\r/g, "").trim();
-  const has = current.includes(LISTING_PEEK_COMMENT_CLOSER);
-  if (closer && !has) {
+  const found = listingPeekCloserInText(current);
+  if (closer && !found) {
     return current ? `${current}\n\n${LISTING_PEEK_COMMENT_CLOSER}` : LISTING_PEEK_COMMENT_CLOSER;
   }
-  if (!closer && has) {
-    return current.replace(LISTING_PEEK_COMMENT_CLOSER, "").trim();
+  if (!closer && found) {
+    return current.replace(found.closer, "").trim();
   }
   return current;
 }
@@ -451,8 +452,9 @@ export function parseListingPeekCustomerComment(raw: string): {
   const t = raw.replace(/\r/g, "").trim();
   if (!t) return { closer: false, lines };
 
-  const closer = t.includes(LISTING_PEEK_COMMENT_CLOSER);
-  const withoutCloser = closer ? t.replace(LISTING_PEEK_COMMENT_CLOSER, "").trim() : t;
+  const foundCloser = listingPeekCloserInText(t);
+  const closer = Boolean(foundCloser);
+  const withoutCloser = foundCloser ? t.replace(foundCloser.closer, "").trim() : t;
   const numbered = [...withoutCloser.matchAll(/^\s*\d+\.\s+(.+?)\s*$/gm)].map((m) => (m[1] ?? "").trim());
 
   const unused = new Set(LISTING_PEEK_TOPIC_IDS);
@@ -540,7 +542,7 @@ export function parseListingPeekAiPayload(raw: unknown): {
   const letter = letterRaw ? stripListingPeekMarkdown(letterRaw) : "";
   if (!any && !letter && !("closer" in obj)) return null;
   return {
-    closer: obj.closer === true || obj.closer === "true" || letter.includes(LISTING_PEEK_COMMENT_CLOSER),
+    closer: obj.closer === true || obj.closer === "true" || Boolean(listingPeekCloserInText(letter)),
     lines,
     ...(letter ? { letter } : {}),
   };
