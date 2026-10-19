@@ -239,6 +239,7 @@ body:has(.admin-m[data-section="iriss"][data-admin-theme="dark"]) {
   letter-spacing: 0.08em;
   line-height: 1;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .iriss-proj::before {
