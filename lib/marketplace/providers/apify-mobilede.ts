@@ -1,6 +1,7 @@
 import {
   marketplaceActorId,
   marketplaceApifySearchPayload,
+  marketplaceSourceErrorNote,
   marketplaceUseFixtures,
   readApifyToken,
   runMarketplaceApifyActor,
@@ -86,7 +87,15 @@ export function createApifyMobiledeProvider(): ListingProvider {
         usdPerThousand: APIFY_MOBILEDE_USD_PER_THOUSAND,
       });
       const items = run.items.filter((x): x is MarketplaceRawListing => Boolean(x) && typeof x === "object");
-      return { items, chargedUsd: run.chargedUsd };
+      if (!run.ok) {
+        return {
+          items,
+          chargedUsd: run.chargedUsd,
+          error: marketplaceSourceErrorNote(this.label, run.error),
+          ...(run.apifyRunId ? { apifyRunId: run.apifyRunId } : {}),
+        };
+      }
+      return { items, chargedUsd: run.chargedUsd, ...(run.apifyRunId ? { apifyRunId: run.apifyRunId } : {}) };
     },
   };
 }

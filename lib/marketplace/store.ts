@@ -148,7 +148,10 @@ function parseRun(v: unknown): MarketplaceRunRecord | null {
     finishedAt: str(v.finishedAt, 40),
     status: v.status === "partial" || v.status === "blocked" || v.status === "failed" ? v.status : "ok",
     trigger: v.trigger === "auto" ? "auto" : "manual",
-    note: str(v.note, 240),
+    note: str(v.note, 500),
+    apifyRunIds: Array.isArray(v.apifyRunIds)
+      ? v.apifyRunIds.map((id) => str(id, 80)).filter(Boolean).slice(0, 12)
+      : [],
   };
 }
 

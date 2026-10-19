@@ -204,6 +204,7 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
   const collected = [];
   let chargedUsd = 0;
   const notes: string[] = [];
+  const apifyRunIds: string[] = [];
   const providerCharges: Array<{ providerId: MarketplaceProviderId; usd: number; items: number }> = [];
   for (const provider of preview.providers) {
     const estimate = preview.estimates.find((e) => e.providerId === provider.id && e.platform === provider.platform);
@@ -217,15 +218,24 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
         maxUsd: preview.budget.perRunCapUsd,
         ...(input.sortNewest ? { sortNewest: true } : {}),
       });
-      const normalized = normalizeMarketplaceListings(provider.platform, provider.id, found.items, now);
-      collected.push(...normalized);
       const actual = Number.isFinite(found.chargedUsd) ? found.chargedUsd : 0;
       chargedUsd += actual;
+      if (found.apifyRunId?.trim()) apifyRunIds.push(found.apifyRunId.trim());
+      const normalized = normalizeMarketplaceListings(provider.platform, provider.id, found.items, now);
+      collected.push(...normalized);
       providerCharges.push({
         providerId: provider.id,
         usd: actual,
         items: normalized.length,
       });
+      console.info("[marketplace]", {
+        provider: provider.id,
+        apifyRunId: found.apifyRunId ?? "",
+        status: found.error ? "failed" : "ok",
+        items: normalized.length,
+        chargedUsd: actual,
+      });
+      if (found.error) notes.push(found.error);
     } catch (e) {
       notes.push(`${provider.label}: ${e instanceof Error ? e.message : "kļūda"}`);
     }
@@ -273,6 +283,7 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     status: stored.length > 0 ? (notes.length ? "partial" : "ok") : notes.length ? "failed" : "ok",
     trigger,
     note: notes.join(" "),
+    apifyRunIds,
   };
   const write = await writeMarketplaceListingsState({
     version: 1,
@@ -294,8 +305,10 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
   await writeMarketplaceUsageMonth(usage);
 
   const groupCount = new Set(stored.map((s) => s.groupId)).size;
+  const failed = run.status === "failed";
   return {
-    ok: true,
+    ok: !failed,
+    ...(notes.length ? { error: notes.join(" ") } : {}),
     run,
     added: stored.length,
     grouped: stored.length - groupCount,

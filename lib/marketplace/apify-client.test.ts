@@ -12,6 +12,7 @@ import {
   setMarketplaceApifyHttpHooks,
   setMarketplaceApifyRunner,
 } from "@/lib/marketplace/apify-client";
+import { createApifyMobiledeProvider } from "@/lib/marketplace/providers/apify-mobilede";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -20,6 +21,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 describe("marketplace Apify HTTP runner", () => {
   const prev: Record<string, string | undefined> = {};
   const keys = ["MARKETPLACE_LOADS_ENABLED", "APIFY_TOKEN", "MARKETPLACE_PER_RUN_USD_CAP", "MARKETPLACE_APIFY_WAIT_SECONDS"] as const;
+  let info: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     for (const key of keys) prev[key] = process.env[key];
@@ -28,9 +30,11 @@ describe("marketplace Apify HTTP runner", () => {
     process.env.MARKETPLACE_PER_RUN_USD_CAP = "0.5";
     process.env.MARKETPLACE_APIFY_WAIT_SECONDS = "20";
     setMarketplaceApifyRunner(null);
+    info = vi.spyOn(console, "info").mockImplementation(() => {});
   });
 
   afterEach(() => {
+    info.mockRestore();
     setMarketplaceApifyHttpHooks(null);
     setMarketplaceApifyRunner(null);
     vi.unstubAllGlobals();
@@ -91,16 +95,28 @@ describe("marketplace Apify HTTP runner", () => {
     });
     expect(out.ok).toBe(true);
     expect(out.chargedUsd).toBe(0.028);
+    expect(out.apifyRunId).toBe("run-1");
     expect(out.items).toHaveLength(1);
+    expect(info).toHaveBeenCalledWith(
+      "[marketplace]",
+      expect.objectContaining({
+        provider: MARKETPLACE_APIFY_MOBILEDE_ACTOR_DEFAULT,
+        apifyRunId: "run-1",
+        status: "SUCCEEDED",
+        items: 1,
+        chargedUsd: 0.028,
+      }),
+    );
     const post = calls.find((c) => c.method === "POST");
     expect(post?.url).toContain(encodeURIComponent("blackfalcondata~mobile-de-scraper"));
     const sent = JSON.parse(post?.body ?? "{}") as Record<string, unknown>;
-    expect(Array.isArray(sent.startUrls)).toBe(true);
-    expect(typeof (sent.startUrls as string[])[0]).toBe("string");
+    expect(sent).not.toHaveProperty("startUrls");
+    expect(sent.make).toBe("Volvo");
+    expect(sent.model).toBe("XC60");
+    expect(sent.sellerType).toBe("DEALER");
     expect(sent.maxResults).toBe(40);
     expect(sent.damageStatus).toBe("EXCLUDE");
     expect(sent.includeDetails).toBe(false);
-    expect(sent).not.toHaveProperty("fuelType");
     expect(sent).not.toHaveProperty("webhook");
   });
 
@@ -144,6 +160,46 @@ describe("marketplace Apify HTTP runner", () => {
     expect(out.chargedUsd).toBe(0.019);
   });
 
+  it("returns chargedUsd, apifyRunId and error when the actor run is not ok", async () => {
+    setMarketplaceApifyHttpHooks({
+      fetchImpl: (async (input, init) => {
+        if ((init?.method ?? "GET") === "POST") {
+          return jsonResponse({
+            data: {
+              id: "run-fail",
+              status: "FAILED",
+              usageTotalUsd: 0,
+              chargedEventCounts: { "apify-actor-start": 1 },
+            },
+          });
+        }
+        throw new Error(`unexpected fetch ${String(input)}`);
+      }) as typeof fetch,
+    });
+    const out = await runMarketplaceApifyActor({
+      actorId: MARKETPLACE_APIFY_MOBILEDE_ACTOR_DEFAULT,
+      payload: marketplaceActorSearchInput("mobilede", emptyMarketplaceQuery(), { maxItems: 10 }),
+      maxItems: 10,
+      maxUsd: 0.5,
+      usdPerThousand: 0.59,
+    });
+    expect(out.ok).toBe(false);
+    expect(out.error).toBe("apify_failed");
+    expect(out.apifyRunId).toBe("run-fail");
+    expect(out.chargedUsd).toBe(0.005);
+    expect(out.items).toEqual([]);
+    expect(info).toHaveBeenCalledWith(
+      "[marketplace]",
+      expect.objectContaining({
+        provider: MARKETPLACE_APIFY_MOBILEDE_ACTOR_DEFAULT,
+        apifyRunId: "run-fail",
+        status: "apify_failed",
+        items: 0,
+        chargedUsd: 0.005,
+      }),
+    );
+  });
+
   it("does not fetch when MARKETPLACE_LOADS_ENABLED is not true", async () => {
     delete process.env.MARKETPLACE_LOADS_ENABLED;
     const fetchImpl = vi.fn();
@@ -162,10 +218,59 @@ describe("marketplace Apify HTTP runner", () => {
     expect(apifyRunChargedUsd({ chargedEventCounts: { "actor-start": 1, "result-item": 40 } }, 0, 0.59)).toBe(0.029);
   });
 
+  it("does not trust usageTotalUsd=0 on pay-per-event actors", () => {
+    expect(
+      apifyRunChargedUsd(
+        {
+          usageTotalUsd: 0,
+          chargedEventCounts: { "apify-actor-start": 1, "apify-default-dataset-item": 10 },
+        },
+        0,
+        0.59,
+      ),
+    ).toBe(0.011);
+    expect(
+      apifyRunChargedUsd(
+        {
+          usageTotalUsd: 0,
+          chargedEventUsd: 0.042,
+          chargedEventCounts: { "apify-actor-start": 1, "apify-default-dataset-item": 10 },
+        },
+        0,
+        0.59,
+      ),
+    ).toBe(0.042);
+    expect(
+      apifyRunChargedUsd(
+        {
+          usageTotalUsd: 0.008,
+          chargedEventCounts: { "apify-actor-start": 1, "apify-default-dataset-item": 40 },
+        },
+        0,
+        0.59,
+      ),
+    ).toBe(0.029);
+  });
+
   it("defaults actor IDs to the Store scrapers from 19.10", () => {
     delete process.env.MARKETPLACE_APIFY_MOBILEDE_ACTOR;
     delete process.env.MARKETPLACE_APIFY_AUTOSCOUT24_ACTOR;
     expect(marketplaceActorId("MARKETPLACE_APIFY_MOBILEDE_ACTOR")).toBe("blackfalcondata~mobile-de-scraper");
     expect(marketplaceActorId("MARKETPLACE_APIFY_AUTOSCOUT24_ACTOR")).toBe("blackfalcondata~autoscout24-scraper");
+  });
+
+  it("provider search returns Avota kļūda and chargedUsd when the Apify run is not ok", async () => {
+    setMarketplaceApifyRunner(async () => ({
+      ok: false,
+      items: [],
+      chargedUsd: 0.005,
+      error: "apify_failed",
+      apifyRunId: "run-err",
+    }));
+    const found = await createApifyMobiledeProvider().search(emptyMarketplaceQuery(), { maxItems: 10, maxUsd: 0.5 });
+    expect(found.items).toEqual([]);
+    expect(found.chargedUsd).toBe(0.005);
+    expect(found.apifyRunId).toBe("run-err");
+    expect(found.error).toBe("Avota kļūda: mobile.de: Apify failed");
   });
 });

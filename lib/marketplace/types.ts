@@ -54,6 +54,8 @@ export type MarketplaceLoadTrigger = "manual" | "auto";
 export type MarketplaceSearchResult = {
   items: MarketplaceRawListing[];
   chargedUsd: number;
+  error?: string;
+  apifyRunId?: string;
 };
 
 export type MarketplaceRawListing = {
@@ -152,6 +154,7 @@ export type MarketplaceRunRecord = {
   status: "ok" | "partial" | "blocked" | "failed";
   trigger: MarketplaceLoadTrigger;
   note: string;
+  apifyRunIds: string[];
 };
 
 export type MarketplaceUsageEntry = {

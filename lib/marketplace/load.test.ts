@@ -174,6 +174,68 @@ describe("loadMarketplaceForOrder", () => {
     expect(search).not.toHaveBeenCalled();
   });
 
+  it("marks the run failed and surfaces Avota kļūda when Apify is not ok", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const provider: ListingProvider = {
+      ...mockProvider("mobilede", []),
+      search: async () => ({
+        items: [],
+        chargedUsd: 0.005,
+        error: "Avota kļūda: mobile.de: Apify failed",
+        apifyRunId: "apify-run-9",
+      }),
+    };
+    const loaded = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order,
+      explicit: true,
+      providers: [provider],
+    });
+    expect(loaded.ok).toBe(false);
+    expect(loaded.error).toContain("Avota kļūda:");
+    expect(loaded.added).toBe(0);
+    expect(loaded.chargedUsd).toBe(0.005);
+    expect(loaded.run?.status).toBe("failed");
+    expect(loaded.run?.apifyRunIds).toEqual(["apify-run-9"]);
+    expect(loaded.run?.note).toContain("Avota kļūda:");
+    const state = await readMarketplaceListingsState();
+    expect(state.runs[0]?.status).toBe("failed");
+    expect(state.runs[0]?.itemCount).toBe(0);
+    expect(info).toHaveBeenCalledWith(
+      "[marketplace]",
+      expect.objectContaining({
+        provider: "apify-mobilede",
+        apifyRunId: "apify-run-9",
+        items: 0,
+        chargedUsd: 0.005,
+      }),
+    );
+    info.mockRestore();
+  });
+
+  it("keeps partial status when one source fails and another returns items", async () => {
+    const bad: ListingProvider = {
+      ...mockProvider("mobilede", []),
+      search: async () => ({
+        items: [],
+        chargedUsd: 0.005,
+        error: "Avota kļūda: mobile.de: Apify failed",
+        apifyRunId: "md-bad",
+      }),
+    };
+    const loaded = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order,
+      explicit: true,
+      providers: [bad, mockProvider("autoscout24", [RAW[1]!])],
+    });
+    expect(loaded.ok).toBe(true);
+    expect(loaded.added).toBeGreaterThan(0);
+    expect(loaded.run?.status).toBe("partial");
+    expect(loaded.error).toContain("Avota kļūda:");
+    expect(loaded.run?.apifyRunIds).toEqual(["md-bad"]);
+  });
+
   it("writes this run cost and the monthly total on the ledger and result", async () => {
     const loaded = await loadMarketplaceForOrder({
       orderId: "00000000-0000-4000-8000-000000000001",
