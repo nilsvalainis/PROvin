@@ -70,7 +70,7 @@ describe("PR #313 mobile perf stays intact", () => {
     expect(mobileHtmlBody).not.toMatch(/height:\s*100dvh/);
     expect(pullSrc).toContain("ADMIN_MOBILE_PTR_THRESHOLD_PX");
     expect(pullSrc).toContain("{ passive: true }");
-    expect(pullSrc).toContain("admin-main-scroll");
+    expect(pullSrc).toContain("ADMIN_MAIN_SCROLL_ID");
     expect(pullSrc).not.toContain("backdrop-filter");
     expect(pullSrc).not.toContain("startViewTransition");
   });
