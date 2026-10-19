@@ -17,7 +17,7 @@ import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
-import { IrissRangeFromToField } from "@/components/admin/IrissRangeFromToField";
+import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
 import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
@@ -434,10 +434,11 @@ function BlockTitle({ children }: { children: React.ReactNode }) {
 
 function LabeledInput({
   label,
+  wrapperClassName,
   ...rest
-}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+}: { label: string; wrapperClassName?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <label className="block min-w-0">
+    <label className={`block min-w-0${wrapperClassName ? ` ${wrapperClassName}` : ""}`}>
       <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">{label}</span>
       <input className={fieldClass} {...rest} />
     </label>
@@ -1799,175 +1800,127 @@ export function IrissPasutijumsEditor({
 
         <section className={shellCard}>
           <BlockTitle>Transportlīdzekļa specifikācija</BlockTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <label className="block min-w-0">
-              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Statuss</span>
-              <select
-                className={fieldClass}
-                value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
-                onChange={(e) => setListStatus(parseIrissPasutijumsListStatus(e.target.value))}
-                aria-label="Pasūtījuma statuss"
-              >
-                {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
-                  </option>
-                ))}
-              </select>
-              {rec.listStatus === "inactive" ? (
-                <input
-                  className={`${fieldClass} mt-1.5`}
-                  value={rec.inactiveReason ?? ""}
-                  onChange={(e) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, e.target.value)))}
-                  placeholder="Iemesls (neobligāti)"
-                  aria-label="Neaktīvs iemesls"
-                />
-              ) : null}
-              {(rec.statusHistory ?? []).length > 0 ? (
-                <ol className="mt-1.5 space-y-0.5">
-                  {[...(rec.statusHistory ?? [])].slice(-6).reverse().map((h) => (
-                    <li key={`${h.at}-${h.from}-${h.to}`} className="text-[11px] text-[var(--color-provin-muted)]">
-                      {h.at.slice(0, 16).replace("T", " ")}: {displayIrissPasutijumsListStatusLabel(h.from)} →{" "}
-                      {displayIrissPasutijumsListStatusLabel(h.to)}
-                      {h.reason ? ` (${h.reason})` : ""}
-                    </li>
+          <div className="iriss-mobile-kv iriss-spec-fields">
+            <div className="iriss-spec-top">
+              <label className="block min-w-0">
+                <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Statuss</span>
+                <select
+                  className={fieldClass}
+                  value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
+                  onChange={(e) => setListStatus(parseIrissPasutijumsListStatus(e.target.value))}
+                  aria-label="Pasūtījuma statuss"
+                >
+                  {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
+                    </option>
                   ))}
-                </ol>
-              ) : null}
-            </label>
-            <LabeledInput
-              label="Marka / modelis"
-              value={rec.brandModel}
-              onChange={(e) => patch("brandModel", e.target.value)}
-            />
-            <label className="block min-w-0">
-              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">VIN</span>
-              <input
-                className={fieldClass}
-                value={rec.vin}
-                onChange={(e) => patch("vin", e.target.value.toUpperCase())}
-                autoComplete="off"
-                spellCheck={false}
-                autoCapitalize="characters"
-                aria-label="VIN"
-              />
-              {orderVinWarning ? <p className="mt-1 text-[11px] text-amber-800">{orderVinWarning}</p> : null}
-            </label>
-            <IrissRangeFromToField
-              label="Cena no-līdz (EUR)"
-              from={specRanges.budgetFrom}
-              to={specRanges.budgetTo}
-              onFrom={(v) => patchRange("budgetFrom", v)}
-              onTo={(v) => patchRange("budgetTo", v)}
-              error={irissOrderRangeErrorFor(rec, "budget")}
-              fromPlaceholder="no"
-              toPlaceholder="līdz"
-              inputClassName={fieldClass}
-            />
-            <IrissRangeFromToField
-              label="Gadi no-līdz"
-              from={specRanges.yearFrom}
-              to={specRanges.yearTo}
-              onFrom={(v) => patchRange("yearFrom", v)}
-              onTo={(v) => patchRange("yearTo", v)}
-              error={irissOrderRangeErrorFor(rec, "year")}
-              inputMode="numeric"
-              fromPlaceholder="no"
-              toPlaceholder="līdz"
-              inputClassName={fieldClass}
-            />
-            <IrissRangeFromToField
-              label="Nobraukums no-līdz (km)"
-              from={specRanges.mileageFrom}
-              to={specRanges.mileageTo}
-              onFrom={(v) => patchRange("mileageFrom", v)}
-              onTo={(v) => patchRange("mileageTo", v)}
-              error={irissOrderRangeErrorFor(rec, "mileage")}
-              inputMode="numeric"
-              fromPlaceholder="no"
-              toPlaceholder="līdz"
-              inputClassName={fieldClass}
-            />
-            <IrissRangeFromToField
-              label="Tilpums no-līdz (cm3 vai l)"
-              from={specRanges.ccFrom}
-              to={specRanges.ccTo}
-              onFrom={(v) => patchRange("ccFrom", v)}
-              onTo={(v) => patchRange("ccTo", v)}
-              error={irissOrderRangeErrorFor(rec, "cc")}
-              fromPlaceholder="no"
-              toPlaceholder="līdz"
-              inputClassName={fieldClass}
-            />
-            <IrissRangeFromToField
-              label="Jauda no-līdz (kW / ZS)"
-              from={specRanges.kwFrom}
-              to={specRanges.kwTo}
-              onFrom={(v) => patchRange("kwFrom", v)}
-              onTo={(v) => patchRange("kwTo", v)}
-              error={irissOrderRangeErrorFor(rec, "kw")}
-              fromPlaceholder="no"
-              toPlaceholder="līdz"
-              inputClassName={fieldClass}
-            />
-            <LabeledInput
-              label="Dzinēja tips"
-              value={rec.engineType}
-              onChange={(e) => patch("engineType", e.target.value)}
-            />
-            <LabeledInput
-              label="Ātrumkārba"
-              value={rec.transmission}
-              onChange={(e) => patch("transmission", e.target.value)}
-            />
-            <LabeledInput
-              label="Virsbūves tips"
-              value={rec.bodyType}
-              onChange={(e) => patch("bodyType", e.target.value)}
-              placeholder="piem., hečbeks, SUV"
-            />
-            <LabeledInput
-              label="Piedziņas tips"
-              value={rec.driveType}
-              onChange={(e) => patch("driveType", e.target.value)}
-              placeholder="piem., priekšējā, 4x4"
-            />
-            <LabeledInput
-              label="Sēdvietu skaits"
-              value={rec.seatCount}
-              onChange={(e) => patch("seatCount", e.target.value)}
-              placeholder="piem., 5"
-            />
-            <LabeledInput
-              label="Vēlamās krāsas"
-              value={rec.preferredColors}
-              onChange={(e) => patch("preferredColors", e.target.value)}
-            />
-            <LabeledInput
-              label="Nevēlamās krāsas"
-              value={rec.nonPreferredColors}
-              onChange={(e) => patch("nonPreferredColors", e.target.value)}
-            />
-            <div className="sm:col-span-2">
+                </select>
+                {rec.listStatus === "inactive" ? (
+                  <input
+                    className={`${fieldClass} mt-1.5`}
+                    value={rec.inactiveReason ?? ""}
+                    onChange={(e) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, e.target.value)))}
+                    placeholder="Iemesls (neobligāti)"
+                    aria-label="Neaktīvs iemesls"
+                  />
+                ) : null}
+                {(rec.statusHistory ?? []).length > 0 ? (
+                  <ol className="mt-1.5 space-y-0.5">
+                    {[...(rec.statusHistory ?? [])].slice(-6).reverse().map((h) => (
+                      <li key={`${h.at}-${h.from}-${h.to}`} className="text-[11px] text-[var(--color-provin-muted)]">
+                        {h.at.slice(0, 16).replace("T", " ")}: {displayIrissPasutijumsListStatusLabel(h.from)} →{" "}
+                        {displayIrissPasutijumsListStatusLabel(h.to)}
+                        {h.reason ? ` (${h.reason})` : ""}
+                      </li>
+                    ))}
+                  </ol>
+                ) : null}
+              </label>
               <LabeledInput
+                label="Marka / modelis"
+                value={rec.brandModel}
+                onChange={(e) => patch("brandModel", e.target.value)}
+              />
+            </div>
+            <IrissSpecDiapazoniBlock
+              ranges={specRanges}
+              onPatchRange={patchRange}
+              rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
+              inputClassName={fieldClass}
+            />
+            <div className="iriss-spec-rest">
+              <label className="block min-w-0">
+                <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">VIN</span>
+                <input
+                  className={fieldClass}
+                  value={rec.vin}
+                  onChange={(e) => patch("vin", e.target.value.toUpperCase())}
+                  autoComplete="off"
+                  spellCheck={false}
+                  autoCapitalize="characters"
+                  aria-label="VIN"
+                />
+                {orderVinWarning ? <p className="mt-1 text-[11px] text-amber-800">{orderVinWarning}</p> : null}
+              </label>
+              <LabeledInput
+                label="Dzinēja tips"
+                value={rec.engineType}
+                onChange={(e) => patch("engineType", e.target.value)}
+              />
+              <LabeledInput
+                label="Ātrumkārba"
+                value={rec.transmission}
+                onChange={(e) => patch("transmission", e.target.value)}
+              />
+              <LabeledInput
+                label="Virsbūves tips"
+                value={rec.bodyType}
+                onChange={(e) => patch("bodyType", e.target.value)}
+                placeholder="piem., hečbeks, SUV"
+              />
+              <LabeledInput
+                label="Piedziņas tips"
+                value={rec.driveType}
+                onChange={(e) => patch("driveType", e.target.value)}
+                placeholder="piem., priekšējā, 4x4"
+              />
+              <LabeledInput
+                label="Sēdvietu skaits"
+                value={rec.seatCount}
+                onChange={(e) => patch("seatCount", e.target.value)}
+                placeholder="piem., 5"
+              />
+              <LabeledInput
+                label="Vēlamās krāsas"
+                value={rec.preferredColors}
+                onChange={(e) => patch("preferredColors", e.target.value)}
+              />
+              <LabeledInput
+                label="Nevēlamās krāsas"
+                value={rec.nonPreferredColors}
+                onChange={(e) => patch("nonPreferredColors", e.target.value)}
+              />
+              <LabeledInput
+                wrapperClassName="iriss-spec-full"
                 label="Salona apdare"
                 value={rec.interiorFinish}
                 onChange={(e) => patch("interiorFinish", e.target.value)}
               />
-            </div>
-            <div className="sm:col-span-2">
-              <IrissSectionHeading>Darījuma detaļas</IrissSectionHeading>
-              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                {IRISS_DEAL_DETAIL_OPTIONS.map((opt) => (
-                  <label key={opt.key} className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(rec[opt.key])}
-                      onChange={(e) => patch(opt.key, e.target.checked)}
-                    />
-                    {opt.label}
-                  </label>
-                ))}
+              <div className="iriss-spec-full">
+                <IrissSectionHeading>Darījuma detaļas</IrissSectionHeading>
+                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                  {IRISS_DEAL_DETAIL_OPTIONS.map((opt) => (
+                    <label key={opt.key} className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(rec[opt.key])}
+                        onChange={(e) => patch(opt.key, e.target.checked)}
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

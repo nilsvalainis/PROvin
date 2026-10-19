@@ -193,6 +193,7 @@ export type MarketplaceLoadResult = {
   blocked?: boolean;
   error?: string;
   missingFields?: string[];
+  needsOneOfExtra?: boolean;
   run?: MarketplaceRunRecord;
   added: number;
   grouped: number;
@@ -275,7 +276,7 @@ function rangeOk(from: number | null, to: number | null, both: boolean): boolean
 
 /**
  * Stingrie vārti: marka + modelis + cena no-līdz + gadi no-līdz
- * un vismaz viens no: nobraukums līdz, tilpums no-līdz, jauda no-līdz.
+ * un vismaz viens no: nobraukums līdz, tilpums, jauda.
  */
 export function marketplaceQueryHasStrictBounds(q: MarketplaceQuery): boolean {
   if (!q.make.trim() || !q.model.trim()) return false;

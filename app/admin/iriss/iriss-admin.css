@@ -230,12 +230,134 @@
   color: #111827 !important;
 }
 
+.iriss-spec-diapazoni-title,
+.iriss-spec-hint,
+.iriss-range-req,
+.iriss-range-sep,
+.iriss-range-unit,
+.iriss-range-unit-end {
+  color: #6b7280 !important;
+  font-weight: 400;
+}
+
+.iriss-spec-diapazoni-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700 !important;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.iriss-spec-hint {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.iriss-range-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #374151 !important;
+}
+
+.iriss-range-req {
+  font-size: 11px;
+  font-weight: 400 !important;
+}
+
+.iriss-range-pair {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.iriss-range-input-wrap {
+  position: relative;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.iriss-range-sep {
+  flex: 0 0 auto;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.iriss-range-unit {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 11.5px;
+}
+
+.iriss-range-unit-end {
+  display: none;
+}
+
+.iriss-range-input-has-unit {
+  padding-right: 2.4rem !important;
+}
+
+.iriss-spec-fields input.iriss-range-input-missing,
+.admin-ios-theme [data-iriss-order-room="1"] input.iriss-range-input-missing {
+  border-color: #fca5a5 !important;
+  background: #fffafa !important;
+}
+
+@media (min-width: 768px) {
+  .iriss-spec-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: 10px 16px;
+  }
+
+  .iriss-spec-diapazoni {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 16px;
+    row-gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .iriss-spec-diapazoni-title {
+    grid-column: 1 / -1;
+  }
+
+  .iriss-spec-hint {
+    align-self: end;
+  }
+
+  .iriss-spec-rest {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+  }
+
+  .iriss-spec-full {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 767px) {
-  .admin-ios-theme [data-iriss-order-room="1"] .iriss-mobile-kv {
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-mobile-kv,
+  .iriss-spec-fields {
     display: block;
   }
 
-  .admin-ios-theme [data-iriss-order-room="1"] .iriss-mobile-kv > label {
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-mobile-kv > label,
+  .iriss-spec-top > label,
+  .iriss-spec-rest > label,
+  .iriss-range-field {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -246,14 +368,18 @@
     border-bottom: 1px dashed #eee;
   }
 
-  .admin-ios-theme [data-iriss-order-room="1"] .iriss-mobile-kv > label > span {
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-mobile-kv > label > span,
+  .iriss-spec-top > label > span,
+  .iriss-spec-rest > label > span,
+  .iriss-range-label {
     margin: 0 !important;
     color: #6b7280 !important;
     font-size: 13px !important;
     font-weight: 500 !important;
   }
 
-  .admin-ios-theme [data-iriss-order-room="1"] .iriss-mobile-kv :is(input, select) {
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-mobile-kv :is(input, select):not([type="checkbox"]),
+  .iriss-spec-fields :is(input, select):not([type="checkbox"]) {
     width: auto;
     min-width: 0;
     flex: 1 1 120px;
@@ -269,9 +395,84 @@
     padding-bottom: 4px !important;
   }
 
-  .admin-ios-theme [data-iriss-order-room="1"] .iriss-mobile-kv > label > p {
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-mobile-kv > label > p,
+  .iriss-spec-top > label > p,
+  .iriss-spec-rest > label > p,
+  .iriss-range-field > p {
     flex: 1 0 100%;
     margin: 0;
     text-align: right;
+  }
+
+  .iriss-spec-top > label > ol {
+    flex: 1 0 100%;
+  }
+
+  .iriss-spec-diapazoni {
+    margin: 4px 0;
+  }
+
+  .iriss-spec-diapazoni-title {
+    margin: 8px 0 2px;
+    padding: 0;
+    border: 0;
+    font-size: 11px;
+  }
+
+  .iriss-spec-hint {
+    margin: 6px 0 8px;
+    padding: 0;
+    border: 0;
+  }
+
+  .iriss-range-label {
+    margin-bottom: 0;
+    flex: 0 0 auto;
+  }
+
+  .iriss-range-pair {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .iriss-range-input-wrap {
+    flex: 0 1 auto;
+    width: auto;
+  }
+
+  .iriss-range-field :is(input, select) {
+    flex: 0 1 auto !important;
+    width: 4.6rem;
+    max-width: 38vw;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .iriss-range-unit {
+    display: none;
+  }
+
+  .iriss-range-unit-end {
+    display: inline;
+    flex: 0 0 auto;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .iriss-range-sep {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .iriss-spec-fields input.iriss-range-input-missing,
+  .admin-ios-theme [data-iriss-order-room="1"] input.iriss-range-input-missing {
+    border-color: transparent !important;
+    background: transparent !important;
+  }
+
+  .iriss-spec-fields input.iriss-range-input-missing::placeholder,
+  .admin-ios-theme [data-iriss-order-room="1"] input.iriss-range-input-missing::placeholder {
+    color: #fca5a5 !important;
   }
 }

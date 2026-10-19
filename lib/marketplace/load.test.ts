@@ -130,6 +130,21 @@ describe("loadMarketplaceForOrder", () => {
     });
     expect(empty.error).toBe("par plāši kritēriji");
     expect(empty.missingFields?.length).toBeGreaterThan(0);
+    expect(empty.missingFields?.join(",")).not.toMatch(/nobraukums|tilpums|jauda/);
+    expect(empty.needsOneOfExtra).toBe(true);
+    const noExtra = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order: {
+        brandModel: "Volvo XC60",
+        productionYears: "2018-2020",
+        totalBudget: "10000-25000",
+      },
+      explicit: true,
+      providers: [mockProvider("mobilede", RAW)],
+    });
+    expect(noExtra.ok).toBe(false);
+    expect(noExtra.missingFields).toEqual([]);
+    expect(noExtra.needsOneOfExtra).toBe(true);
   });
 
   it("shows the estimated max cost before any paid call", async () => {

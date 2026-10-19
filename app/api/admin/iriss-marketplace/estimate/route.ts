@@ -3,6 +3,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { marketplaceWarningAt80 } from "@/lib/marketplace/cost-caps";
 import { previewMarketplaceLoad } from "@/lib/marketplace/load";
 import { MARKETPLACE_PLATFORM_LABEL } from "@/lib/marketplace/providers";
+import { marketplaceTooBroadSkipReason } from "@/lib/marketplace/query-from-order";
 import { isMarketplacePlatform } from "@/lib/marketplace/types";
 import { isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 
@@ -28,9 +29,8 @@ export async function GET(req: Request) {
     ok: true,
     queryReady: preview.queryReady,
     missingFields: preview.missingFields,
-    tooBroadReason: preview.queryReady ? "" : preview.missingFields.length
-      ? `par plāši kritēriji (trūkst: ${preview.missingFields.join(", ")})`
-      : "",
+    needsOneOfExtra: preview.needsOneOfExtra,
+    tooBroadReason: preview.queryReady ? "" : marketplaceTooBroadSkipReason(rec),
     estimatedUsd: preview.budget.estimatedUsd,
     monthlyUsedUsd: preview.budget.monthlyUsedUsd,
     monthlyCapUsd: preview.budget.monthlyCapUsd,

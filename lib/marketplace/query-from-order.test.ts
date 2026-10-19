@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { emptyIrissCriteria, emptyIrissCriteriaFilter, irissCriteriaValue } from "@/lib/iriss-criteria-types";
 import {
+  MARKETPLACE_EXTRA_RANGE_MESSAGE,
+  MARKETPLACE_STRICT_FIELD_LABELS,
+  marketplaceExtraRangeMissing,
+  marketplaceMissingExtraRangeMessage,
+  marketplaceMissingFieldsMessage,
   marketplaceOrderHasFetchBounds,
   marketplaceQueryFromOrder,
   marketplaceStrictMissingFields,
+  marketplaceTooBroadSkipReason,
   marketplaceVehicleMatchesOrder,
 } from "@/lib/marketplace/query-from-order";
 
@@ -57,9 +63,23 @@ describe("marketplaceQueryFromOrder", () => {
   it("does not treat an empty or one-sided order as fetchable", () => {
     expect(marketplaceOrderHasFetchBounds({ brandModel: "" })).toBe(false);
     expect(marketplaceOrderHasFetchBounds({ brandModel: "Volvo XC60" })).toBe(false);
+    expect(MARKETPLACE_STRICT_FIELD_LABELS).toMatchObject({
+      yearFrom: "gadi no",
+      yearTo: "gadi līdz",
+    });
     expect(marketplaceStrictMissingFields({ brandModel: "Volvo XC60" })).toEqual(
-      expect.arrayContaining(["cena no", "cena līdz", "gads no", "gads līdz"]),
+      expect.arrayContaining(["cena no", "cena līdz", "gadi no", "gadi līdz"]),
     );
+    expect(marketplaceStrictMissingFields({ brandModel: "Volvo XC60" }).join(",")).not.toMatch(
+      /nobraukums|tilpums|jauda/,
+    );
+    expect(marketplaceExtraRangeMissing({ brandModel: "Volvo XC60" })).toBe(true);
+    expect(marketplaceMissingFieldsMessage(["cena līdz", "gadi līdz"])).toBe(
+      "Ielādēt nav iespējams. Aizpildi: cena līdz, gadi līdz.",
+    );
+    expect(marketplaceMissingExtraRangeMessage(true)).toBe(MARKETPLACE_EXTRA_RANGE_MESSAGE);
+    expect(marketplaceTooBroadSkipReason({ brandModel: "Volvo XC60" })).toContain(MARKETPLACE_EXTRA_RANGE_MESSAGE);
+    expect(marketplaceTooBroadSkipReason({ brandModel: "Volvo XC60" })).toContain("gadi līdz");
   });
 
   it("requires make, model, price from-to, years from-to and one extra range", () => {
@@ -78,6 +98,27 @@ describe("marketplaceQueryFromOrder", () => {
         totalBudget: "10000-25000",
       }),
     ).toBe(false);
+    expect(
+      marketplaceStrictMissingFields({
+        brandModel: "Volvo XC60",
+        productionYears: "2018-2020",
+        totalBudget: "10000-25000",
+      }),
+    ).toEqual([]);
+    expect(
+      marketplaceExtraRangeMissing({
+        brandModel: "Volvo XC60",
+        productionYears: "2018-2020",
+        totalBudget: "10000-25000",
+      }),
+    ).toBe(true);
+    expect(
+      marketplaceTooBroadSkipReason({
+        brandModel: "Volvo XC60",
+        productionYears: "2018-2020",
+        totalBudget: "10000-25000",
+      }),
+    ).toBe(`par plāši kritēriji. ${MARKETPLACE_EXTRA_RANGE_MESSAGE}`);
     expect(
       marketplaceOrderHasFetchBounds({
         brandModel: "Volvo XC60",

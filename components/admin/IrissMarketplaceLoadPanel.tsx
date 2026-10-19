@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  marketplaceMissingExtraRangeMessage,
+  marketplaceMissingFieldsMessage,
+} from "@/lib/marketplace/query-from-order";
 import type { MarketplacePlatform } from "@/lib/marketplace/types";
 
 type EstimateResponse = {
@@ -8,6 +12,7 @@ type EstimateResponse = {
   error?: string;
   queryReady?: boolean;
   missingFields?: string[];
+  needsOneOfExtra?: boolean;
   tooBroadReason?: string;
   estimatedUsd?: number;
   monthlyUsedUsd?: number;
@@ -133,17 +138,19 @@ export function IrissMarketplaceLoadPanel({ orderId }: { orderId: string }) {
   }
 
   const missingFields = estimate?.missingFields ?? [];
-  const queryReady = estimate?.queryReady !== false && missingFields.length === 0;
+  const extraMissing = Boolean(estimate?.needsOneOfExtra);
+  const queryReady = estimate?.queryReady !== false && missingFields.length === 0 && !extraMissing;
   const allowed = estimate?.allowed !== false && queryReady;
   const maxUsd = estimate?.estimatedUsd ?? 0;
-  const missingText = missingFields.length ? `Ielādēt nav iespējams. Trūkst: ${missingFields.join(", ")}.` : "";
+  const missingText = marketplaceMissingFieldsMessage(missingFields);
+  const extraText = marketplaceMissingExtraRangeMessage(extraMissing);
 
   return (
     <section className="rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3.5">
       <p className="text-[13px] font-semibold text-[#111827]">mobile.de un AutoScout24</p>
       <p className="mt-1 text-[12px] leading-snug text-[#6b7280]">
-        Automātiskā ielāde ik pa {status?.intervalDays ?? 3} dienām aktīvajiem pasūtījumiem. Poga Ielādēt paliek
-        manuālai ielādei ar esošajiem griestiem.
+        Automātiska ielāde ik pa {status?.intervalDays ?? 3} dienām tikai jauniem sludinājumiem. Poga Ielādēt -
+        manuāla ielāde tagad.
       </p>
       <p className="mt-1 text-[12px] text-[#374151]">
         Pēdējā automātiskā ielāde: {formatLvDate(status?.lastAutoAt) || "vēl nav"}
@@ -178,12 +185,13 @@ export function IrissMarketplaceLoadPanel({ orderId }: { orderId: string }) {
       ) : null}
       {estimate?.reason ? <p className="mt-1 text-[12px] text-[#991b1b]">{estimate.reason}</p> : null}
       {missingText ? <p className="mt-1 text-[12px] text-[#991b1b]">{missingText}</p> : null}
+      {extraText ? <p className="mt-1 text-[12px] text-[#991b1b]">{extraText}</p> : null}
       <button
         type="button"
         disabled={busy || !allowed}
         onClick={() => void loadNow()}
         className="mt-3 inline-flex h-10 items-center justify-center rounded-[10px] border border-[#111827] bg-[#111827] px-3 text-[12.5px] font-semibold text-white disabled:opacity-40"
-        title={missingText || undefined}
+        title={missingText || extraText || undefined}
       >
         {busy ? "Ielādē…" : "Ielādēt"}
       </button>

@@ -97,11 +97,28 @@ export const MARKETPLACE_STRICT_FIELD_LABELS = {
   model: "modelis",
   priceFrom: "cena no",
   priceTo: "cena līdz",
-  yearFrom: "gads no",
-  yearTo: "gads līdz",
-  extra: "nobraukums līdz, tilpums no-līdz vai jauda no-līdz",
+  yearFrom: "gadi no",
+  yearTo: "gadi līdz",
 } as const;
 
+export const MARKETPLACE_EXTRA_RANGE_MESSAGE = "Vēl vajag vienu no: nobraukums līdz, tilpums vai jauda.";
+
+function extraRangeOk(order: MarketplaceOrderCriteria): boolean {
+  const q = marketplaceQueryFromOrder(order);
+  const mileageOk = q.mileageTo != null && (q.mileageFrom == null || q.mileageFrom <= q.mileageTo);
+  const ccOk =
+    q.displacementFromCc != null &&
+    q.displacementToCc != null &&
+    q.displacementFromCc <= q.displacementToCc;
+  const powerOk = q.powerFromKw != null && q.powerToKw != null && q.powerFromKw <= q.powerToKw;
+  return mileageOk || ccOk || powerOk;
+}
+
+export function marketplaceExtraRangeMissing(order: MarketplaceOrderCriteria): boolean {
+  return !extraRangeOk(order);
+}
+
+/** Tikai marka, modelis, cena, gadi. Extra “viens no” šeit nav. */
 export function marketplaceStrictMissingFields(order: MarketplaceOrderCriteria): string[] {
   const q = marketplaceQueryFromOrder(order);
   const missing: string[] = [];
@@ -119,26 +136,28 @@ export function marketplaceStrictMissingFields(order: MarketplaceOrderCriteria):
     if (!missing.includes(MARKETPLACE_STRICT_FIELD_LABELS.yearFrom)) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.yearFrom);
     if (!missing.includes(MARKETPLACE_STRICT_FIELD_LABELS.yearTo)) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.yearTo);
   }
-  const mileageOk = q.mileageTo != null && (q.mileageFrom == null || q.mileageFrom <= q.mileageTo);
-  const ccOk =
-    q.displacementFromCc != null &&
-    q.displacementToCc != null &&
-    q.displacementFromCc <= q.displacementToCc;
-  const powerOk = q.powerFromKw != null && q.powerToKw != null && q.powerFromKw <= q.powerToKw;
-  if (!mileageOk && !ccOk && !powerOk) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.extra);
   return missing;
 }
 
 export function marketplaceTooBroadSkipReason(order: MarketplaceOrderCriteria | null): string {
   if (!order) return "nav kritēriju";
   const missing = marketplaceStrictMissingFields(order);
-  if (!missing.length) return "";
-  return `${MARKETPLACE_TOO_BROAD_ERROR} (trūkst: ${missing.join(", ")})`;
+  const extra = marketplaceExtraRangeMissing(order);
+  if (!missing.length && !extra) return "";
+  if (missing.length && extra) {
+    return `${MARKETPLACE_TOO_BROAD_ERROR} (trūkst: ${missing.join(", ")}). ${MARKETPLACE_EXTRA_RANGE_MESSAGE}`;
+  }
+  if (missing.length) return `${MARKETPLACE_TOO_BROAD_ERROR} (trūkst: ${missing.join(", ")})`;
+  return `${MARKETPLACE_TOO_BROAD_ERROR}. ${MARKETPLACE_EXTRA_RANGE_MESSAGE}`;
 }
 
 export function marketplaceMissingFieldsMessage(missing: readonly string[]): string {
   if (!missing.length) return "";
-  return `Ielādēt nav iespējams. Trūkst: ${missing.join(", ")}.`;
+  return `Ielādēt nav iespējams. Aizpildi: ${missing.join(", ")}.`;
+}
+
+export function marketplaceMissingExtraRangeMessage(missing: boolean): string {
+  return missing ? MARKETPLACE_EXTRA_RANGE_MESSAGE : "";
 }
 
 export function marketplaceOrderHasFetchBounds(order: MarketplaceOrderCriteria): boolean {

@@ -15,6 +15,7 @@ import { marketplaceProviders } from "@/lib/marketplace/providers";
 import {
   marketplaceQueryFromOrder,
   marketplaceOrderHasFetchBounds,
+  marketplaceExtraRangeMissing,
   marketplaceStrictMissingFields,
   type MarketplaceOrderCriteria,
 } from "@/lib/marketplace/query-from-order";
@@ -84,6 +85,7 @@ export async function previewMarketplaceLoad(input: {
     budget,
     queryReady: marketplaceOrderHasFetchBounds(input.order),
     missingFields: marketplaceStrictMissingFields(input.order),
+    needsOneOfExtra: marketplaceExtraRangeMissing(input.order),
     usageMonth: usage.month,
   };
 }
@@ -130,6 +132,7 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
       blocked: true,
       error: MARKETPLACE_TOO_BROAD_ERROR,
       missingFields: marketplaceStrictMissingFields(input.order),
+      needsOneOfExtra: marketplaceExtraRangeMissing(input.order),
       added: 0,
       grouped: 0,
       estimatedUsd: 0,
