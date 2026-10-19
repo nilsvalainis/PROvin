@@ -229,7 +229,7 @@ export function IrissMarketplaceLoadPanel({
       </div>
       <p className="mt-2 text-[12px] text-[#374151]">
         Aprēķinātā maksimālā cena: {formatMarketplaceUsd(maxUsd)} (griests{" "}
-        {estimate?.perRunCapUsd != null ? formatMarketplaceUsd(estimate.perRunCapUsd) : "0.500 $"} šai ielādei,{" "}
+        {estimate?.perRunCapUsd != null ? formatMarketplaceUsd(estimate.perRunCapUsd) : formatMarketplaceUsd(0.5)} šai ielādei,{" "}
         {formatMarketplaceUsd(monthlyCapUsd)} mēnesī).
       </p>
       <p className="mt-1 text-[12px] text-[#374151]">
