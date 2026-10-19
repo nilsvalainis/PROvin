@@ -4,7 +4,7 @@ exports[`template snapshots (default text) > snapshot block.audits_cta 1`] = `
 {
   "html": undefined,
   "subject": undefined,
-  "text": "Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.
+  "text": "Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.
 
 Pasūtīt: https://provin.lv",
 }
@@ -15,8 +15,8 @@ exports[`template snapshots (default text) > snapshot block.email_footer_plain 1
   "html": undefined,
   "subject": undefined,
   "text": "Šis e-pasts nosūtīts automātiski.
-PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Šis ir digitāls datu apkopojums, nevis automašīnas tehniskā diagnostika, un tas nekādā veidā nevar aizvietot pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.
-Personas datu apstrāde notiek saskaņā ar piemērojamiem tiesību aktiem (GDPR).",
+PROVIN.LV pakalpojums ir konsultatīvs: mēs izvērtējam pieejamo informāciju par transportlīdzekli un sniedzam ieteikumus. Atskaite ir digitāls datu apkopojums, nevis tehniskā diagnostika. Tā nekādā gadījumā neaizstāj pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts iestādes izraksts, neatkarīga tehniskā ekspertīze vai juridisks atzinums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.
+Personas datus apstrādājam saskaņā ar piemērojamiem tiesību aktiem, tostarp Vispārīgo datu aizsardzības regulu (VDAR, angl. GDPR).",
 }
 `;
 
@@ -24,7 +24,7 @@ exports[`template snapshots (default text) > snapshot block.google_review 1`] = 
 {
   "html": undefined,
   "subject": undefined,
-  "text": "Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review",
+  "text": "Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review",
 }
 `;
 
@@ -41,23 +41,30 @@ exports[`template snapshots (default text) > snapshot block.sign_off 1`] = `
   "html": undefined,
   "subject": undefined,
   "text": "Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
 
 exports[`template snapshots (default text) > snapshot email.client_link 1`] = `
 {
-  "html": "<!DOCTYPE html><html lang="lv"><body><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Sveiki!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu personīgā PROVIN AUDITS saite (99,99 €). Derīga līdz 15. okt. 2026.<br/>Pasūtījums tiks izveidots pēc apmaksas.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">https://buy.stripe.com/…</p></body></html>",
-  "subject": "PROVIN AUDITS: jūsu apmaksas saite",
-  "text": "Sveiki!
+  "html": "<!DOCTYPE html><html lang="lv"><body><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Nosūtām Jūsu personīgo apmaksas saiti.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Produkts: PROVIN AUDITS<br/>Summa: 99,99 €<br/>Saite derīga līdz: 15. okt. 2026</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Pasūtījumu izveidosim, tiklīdz saņemsim apmaksu.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Apmaksāt: https://buy.stripe.com/…</p></body></html>",
+  "subject": "PROVIN AUDITS: Jūsu apmaksas saite",
+  "text": "Labdien!
 
-Jūsu personīgā PROVIN AUDITS saite (99,99 €). Derīga līdz 15. okt. 2026.
-Pasūtījums tiks izveidots pēc apmaksas.
+Nosūtām Jūsu personīgo apmaksas saiti.
 
-https://buy.stripe.com/…",
+Produkts: PROVIN AUDITS
+Summa: 99,99 €
+Saite derīga līdz: 15. okt. 2026
+
+Pasūtījumu izveidosim, tiklīdz saņemsim apmaksu.
+
+Apmaksāt: https://buy.stripe.com/…",
 }
 `;
 
@@ -75,24 +82,27 @@ exports[`template snapshots (default text) > snapshot email.dealer.cancelled 1`]
 <tr><td align="center" style="padding:48px 20px;">
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: pasūtījums atcelts un maksājums atgriezts</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Atmaksa 24,99 € veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: pasūtījums atcelts un maksājums atgriezts</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
 </td></tr></table>
 </body>
 </html>",
   "subject": "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts",
-  "text": "Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts.
+  "text": "Labdien!
 
-Atmaksa 24,99 € veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.
+Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
+
+Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.
 
 Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -112,16 +122,16 @@ exports[`template snapshots (default text) > snapshot email.dealer.no_data 1`] =
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: dīlera dati nav pieejami</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Dīlera servisa vēsture šim pasūtījumam nav pieejama.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Diemžēl oficiālā dīlera dati šim auto nav pieejami.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Summa: 24,99 € (atgriezīsim uz to pašu karti).</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
 <tr><td>
 <a href="https://provin.lv" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Pasūtīt PROVIN AUDITS</a>
 </td></tr></table>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jautājumi: info@provin.lv</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja rodas jautājumi, rakstiet uz info@provin.lv.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
 </td></tr></table>
@@ -130,20 +140,20 @@ exports[`template snapshots (default text) > snapshot email.dealer.no_data 1`] =
   "subject": "PROVIN.LV: dīlera dati nav pieejami",
   "text": "Labdien!
 
-Dīlera servisa vēsture šim pasūtījumam nav pieejama.
+Diemžēl oficiālā dīlera dati šim auto nav pieejami.
 
 Summa: 24,99 € (atgriezīsim uz to pašu karti).
 
 Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
 
-Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.
+Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.
 
 Pasūtīt: https://provin.lv
 
-Jautājumi: info@provin.lv
+Ja rodas jautājumi, rakstiet uz info@provin.lv.
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -163,9 +173,9 @@ exports[`template snapshots (default text) > snapshot email.dealer.ready_pdf 1`]
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: oficiālā dīlera dati pielikumā</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Dokuments pievienots PDF pielikumā.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Pielikumā nosūtām Jūsu pasūtītos oficiālā dīlera datus (PDF).</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
 </td></tr></table>
@@ -174,12 +184,12 @@ exports[`template snapshots (default text) > snapshot email.dealer.ready_pdf 1`]
   "subject": "PROVIN.LV: oficiālā dīlera dati pielikumā",
   "text": "Labdien!
 
-Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Dokuments pievienots PDF pielikumā.
+Pielikumā nosūtām Jūsu pasūtītos oficiālā dīlera datus (PDF).
 
 Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -200,12 +210,12 @@ exports[`template snapshots (default text) > snapshot email.listing_peek 1`] = `
 <tr><td>
 
 <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6b7280;font-weight:600;">PROVIN.LV · Bezmaksas komentārs</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;color:#1d1d1f;">Īss skatījums uz tavu sludinājumu</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;color:#1d1d1f;">Īss komentārs par sludinājumu</p>
 <p style="margin:0 0 18px;font-size:13px;line-height:1.5;color:#6b7280;">Sludinājums<br/>
 <a href="https://www.ss.lv/…" target="_blank" style="color:#0061D2;text-decoration:underline;word-break:break-all;">https://www.ss.lv/…</a></p>
 <p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:#1d1d1f;">Īss komentārs par sludinājumu.</p>
 
-<p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:#1d1d1f;">Noskaidro visu par savu topošo auto.</p>
+<p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:#1d1d1f;">Pirms pirkuma pārbaudiet pilnu auto vēsturi ar PROVIN AUDITS.</p>
 <p style="margin:0 0 4px;font-size:14px;line-height:1.55;color:#6b7280;">PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 10px;">
 <tr><td align="left" bgcolor="#0061D2" style="border-radius:9999px;background-color:#0061D2;">
@@ -220,7 +230,7 @@ exports[`template snapshots (default text) > snapshot email.listing_peek 1`] = `
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN: īss komentārs par tavu sludinājumu",
+  "subject": "PROVIN: īss komentārs par sludinājumu",
   "text": "Sveiki!
 
 
@@ -233,10 +243,10 @@ https://www.ss.lv/…
 Pielikumā 2 fotogrāfijas.
 
 
-PROVIN AUDITS: https://provin.lv/?plan=audits#home-hero
+Pirms pirkuma pārbaudiet pilnu auto vēsturi ar PROVIN AUDITS: https://provin.lv/?plan=audits#home-hero
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -371,7 +381,7 @@ exports[`template snapshots (default text) > snapshot email.payment_confirmation
 <p style="margin:0 0 20px;color:#6b7280;font-size:15px;">Maksājums ir saņemts. Jūsu pasūtījums tiek apstrādāts.</p>
 <p style="margin:0 0 6px;font-size:14px;"><strong>Summa:</strong> 99,99 EUR</p>
 <p style="margin:0 0 24px;font-size:14px;"><strong>VIN:</strong> -</p>
-<p style="margin:0 0 24px;font-size:14px;">Rēķins PDF ir pievienots šim e-pastam. To var arī lejupielādēt šeit.</p>
+<p style="margin:0 0 24px;font-size:14px;">Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
 <tr><td>
 <a href="https://provin.lv/api/invoice/download?session_id=…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Lejupielādēt rēķinu (PDF)</a>
@@ -383,12 +393,13 @@ exports[`template snapshots (default text) > snapshot email.payment_confirmation
 </body>
 </html>",
   "subject": "PROVIN: maksājums saņemts, rēķins pielikumā",
-  "text": "Paldies par pasūtījumu.
+  "text": "Labdien!
+
+Paldies par pasūtījumu. Maksājumu esam saņēmuši.
 
 Summa: 99,99 EUR
 
-Rēķins PDF ir pievienots šim e-pastam.
-Rēķins (PDF): https://provin.lv/api/invoice/download?session_id=…",
+Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit: https://provin.lv/api/invoice/download?session_id=…",
 }
 `;
 
@@ -408,15 +419,15 @@ exports[`template snapshots (default text) > snapshot email.report_ready.audits 
 <tr><td>
 
 <p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.</p>
-<p style="margin:0 0 4px;font-size:15px;color:#1d1d1f;line-height:1.6;">E-pasta pielikumā atradīsiet:</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN AUDITS atskaite ir gatava.</p>
+<p style="margin:0 0 4px;font-size:15px;color:#1d1d1f;line-height:1.6;">Pielikumā atradīsiet:</p>
 <ul style="margin:4px 0 16px;padding-left:22px;color:#1d1d1f;font-size:15px;line-height:1.45;">
 <li style="margin:4px 0;">Kopsavilkuma PDF atskaiti</li>
 <li style="margin:4px 0;">Papildu materiālus un pielikumus</li>
 </ul>
-<p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>, labprāt palīdzēsim!</p>
-<p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
-<p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>. Labprāt palīdzēsim.</p>
+<p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
+<p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
 </td></tr></table>
@@ -425,20 +436,20 @@ exports[`template snapshots (default text) > snapshot email.report_ready.audits 
   "subject": "PROVIN AUDITS atskaite ir gatava",
   "text": "Labdien!
 
-Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.
+Jūsu PROVIN AUDITS atskaite ir gatava.
 
-E-pasta pielikumā atradīsiet:
+Pielikumā atradīsiet:
 - Kopsavilkuma PDF atskaiti
 - Papildu materiālus un pielikumus
 
-Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz info@provin.lv, labprāt palīdzēsim!
+Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet uz info@provin.lv. Labprāt palīdzēsim.
 
 
-Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -459,33 +470,33 @@ exports[`template snapshots (default text) > snapshot email.report_ready.dealer 
 <tr><td>
 
 <p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pieprasītie oficiālā dīlera servisa vēstures dati ir sagatavoti.</p>
-<p style="margin:0 0 4px;font-size:15px;color:#1d1d1f;line-height:1.6;">Pielikumā atradīsiet šādus dokumentus:</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītie oficiālā dīlera dati ir gatavi.</p>
+<p style="margin:0 0 4px;font-size:15px;color:#1d1d1f;line-height:1.6;">Pielikumā atradīsiet:</p>
 <ul style="margin:4px 0 16px;padding-left:22px;color:#1d1d1f;font-size:15px;line-height:1.45;"><li style="margin:4px 0;">OFICIALA_DILERA_DATI.pdf</li></ul>
-<p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>.</p>
-<p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
-<p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja rodas jautājumi, rakstiet uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>. Labprāt palīdzēsim.</p>
+<p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
+<p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN servisa vēstures atskaite ir gatava",
+  "subject": "PROVIN: oficiālā dīlera dati ir gatavi",
   "text": "Labdien!
 
-Jūsu pieprasītie oficiālā dīlera servisa vēstures dati ir sagatavoti.
+Jūsu pasūtītie oficiālā dīlera dati ir gatavi.
 
-Pielikumā atradīsiet šādus dokumentus:
+Pielikumā atradīsiet:
 - OFICIALA_DILERA_DATI.pdf
 
-Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.
+Ja rodas jautājumi, rakstiet uz info@provin.lv. Labprāt palīdzēsim.
 
 
-Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -506,10 +517,10 @@ exports[`template snapshots (default text) > snapshot email.report_ready.mini 1`
 <tr><td>
 
 <p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītā PROVIN MINI atskaite ir sagatavota un pievienota šī e-pasta pielikumā.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja Jums rodas kādi jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>, labprāt palīdzēsim!</p>
-<p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
-<p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN MINI atskaite ir gatava. Tā pievienota šī e-pasta pielikumā.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja rodas jautājumi, rakstiet uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>. Labprāt palīdzēsim.</p>
+<p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
+<p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
 </td></tr></table>
@@ -518,16 +529,16 @@ exports[`template snapshots (default text) > snapshot email.report_ready.mini 1`
   "subject": "PROVIN MINI atskaite ir gatava",
   "text": "Labdien!
 
-Jūsu pasūtītā PROVIN MINI atskaite ir sagatavota un pievienota šī e-pasta pielikumā.
+Jūsu PROVIN MINI atskaite ir gatava. Tā pievienota šī e-pasta pielikumā.
 
-Ja Jums rodas kādi jautājumi, droši rakstiet mums uz info@provin.lv, labprāt palīdzēsim!
+Ja rodas jautājumi, rakstiet uz info@provin.lv. Labprāt palīdzēsim.
 
 
-Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -546,41 +557,38 @@ exports[`template snapshots (default text) > snapshot email.upsell.dealer_to_aud
 <tr><td align="center" style="padding:48px 20px;">
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: pilnais audits esošajam pasūtījumam</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu oficiālā dīlera datu pasūtījumam varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: PROVIN AUDITS Jūsu pasūtījumam</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtījumu varam papildināt līdz pilnai PROVIN AUDITS pārbaudei. Tad redzēsiet visu auto vēsturi, ne tikai dīlera ierakstus.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jau samaksāts: 24,99 €<br/>Papildu apmaksa: 75,00 €<br/>Kopā: 99,99 €</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Papildu apmaksa ir 75,00 €. Kopā sanāk pilnais audits.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jau ievadītie dati paliek. Pievienosim to, kā vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
 <tr><td>
 <a href="https://buy.stripe.com/…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Apmaksāt</a>
 </td></tr></table>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Saite derīga 30 dienas.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Saite ir derīga 30 dienas.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN.LV: pilnais audits esošajam pasūtījumam",
+  "subject": "PROVIN.LV: PROVIN AUDITS Jūsu pasūtījumam",
   "text": "Labdien!
 
-Jūsu oficiālā dīlera datu pasūtījumam varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.
+Jūsu pasūtījumu varam papildināt līdz pilnai PROVIN AUDITS pārbaudei. Tad redzēsiet visu auto vēsturi, ne tikai dīlera ierakstus.
 
 Jau samaksāts: 24,99 €
 Papildu apmaksa: 75,00 €
 Kopā: 99,99 €
 
-Papildu apmaksa ir 75,00 €. Kopā sanāk pilnais audits.
-
 Jau ievadītie dati paliek. Pievienosim to, kā vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.
 
 Apmaksāt: https://buy.stripe.com/…
 
-Saite derīga 30 dienas.
+Saite ir derīga 30 dienas.
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -588,20 +596,20 @@ PROVIN.LV",
 exports[`template snapshots (default text) > snapshot email.upsell.mini_to_audit 1`] = `
 {
   "html": "<!DOCTYPE html><html lang="lv"><body><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien, Jāni!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Paldies par PROVIN MINI pasūtījumu VW Golf.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Paldies par PROVIN MINI pasūtījumu (VW Golf).</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Izvērtējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai Jums būtu vieglāk izlemt, īsumā par atšķirību.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">PROVIN MINI ietver:<br/>✓ Konsultāciju un ieteikumus klātienes apskatei<br/>✓ OCTA negadījumus un tehnisko apskašu vēsturi<br/>✓ Sludinājuma, pārdevēja un tehnisko risku analīzi</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Tikai PROVIN AUDITS ietver:<br/>✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus<br/>✓ Oficiālo dīleru un izsoļu portālu arhīva datus</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Tas nozīmē, ka tieši AUDITS parāda negadījumu vēsturi, nobraukuma vēsturi ārvalstīs un oficiālā dīlera servisa datus, kas ievestiem auto ir paši svarīgākie.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Mēs iesakām pilno auditu. Starpību (60,00 €) varat apmaksāt šeit:<br/>https://buy.stripe.com/…</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja papildu dati nav vajadzīgi, turpināsim ar MINI.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV<br/>T: 29502039</p></body></html>",
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Tikai PROVIN AUDITS ietver:<br/>✓ carVertical, AutoDNA un izcelsmes valsts reģistru datus<br/>✓ Oficiālā dīlera datus un izsoļu arhīvus</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Tieši PROVIN AUDITS parāda negadījumu vēsturi, nobraukumu ārvalstīs un oficiālā dīlera datus. Ievestam auto tie ir svarīgākie dati.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Iesakām PROVIN AUDITS. Starpību (60,00 €) varat apmaksāt šeit:<br/>https://buy.stripe.com/…</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja papildu dati nav vajadzīgi, turpināsim ar PROVIN MINI.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p></body></html>",
   "subject": "VW Golf",
   "text": "Labdien, Jāni!
 
-Paldies par PROVIN MINI pasūtījumu VW Golf.
+Paldies par PROVIN MINI pasūtījumu (VW Golf).
 
-Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
+Izvērtējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai Jums būtu vieglāk izlemt, īsumā par atšķirību.
 
 PROVIN MINI ietver:
 ✓ Konsultāciju un ieteikumus klātienes apskatei
@@ -609,20 +617,19 @@ PROVIN MINI ietver:
 ✓ Sludinājuma, pārdevēja un tehnisko risku analīzi
 
 Tikai PROVIN AUDITS ietver:
-✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus
-✓ Oficiālo dīleru un izsoļu portālu arhīva datus
+✓ carVertical, AutoDNA un izcelsmes valsts reģistru datus
+✓ Oficiālā dīlera datus un izsoļu arhīvus
 
-Tas nozīmē, ka tieši AUDITS parāda negadījumu vēsturi, nobraukuma vēsturi ārvalstīs un oficiālā dīlera servisa datus, kas ievestiem auto ir paši svarīgākie.
+Tieši PROVIN AUDITS parāda negadījumu vēsturi, nobraukumu ārvalstīs un oficiālā dīlera datus. Ievestam auto tie ir svarīgākie dati.
 
-Mēs iesakām pilno auditu. Starpību (60,00 €) varat apmaksāt šeit:
+Iesakām PROVIN AUDITS. Starpību (60,00 €) varat apmaksāt šeit:
 https://buy.stripe.com/…
 
-Ja papildu dati nav vajadzīgi, turpināsim ar MINI.
+Ja papildu dati nav vajadzīgi, turpināsim ar PROVIN MINI.
 
 Ar cieņu,
 Nils
-PROVIN.LV
-T: 29502039",
+PROVIN.LV",
 }
 `;
 
@@ -641,15 +648,15 @@ exports[`template snapshots (default text) > snapshot email.upsell.mini_to_deale
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam</p><p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera servisa vēsturi.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Cena šim pasūtījumam: 19,99 € (atsevišķi dīlera dati maksā 24,99 €).</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Dati tiks pievienoti esošajam pasūtījumam. Jau ievadītā informācija paliek.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera datus. Tajos redzami auto servisa apmeklējumi pie oficiālā dīlera ar nobraukumu, kur dīleris to fiksējis.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu cena: 19,99 € (atsevišķi pasūtot: 24,99 €).</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Datus pievienosim esošajam pasūtījumam. Jau ievadītā informācija paliek.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 8px;">
 <tr><td>
 <a href="https://buy.stripe.com/…" style="display:inline-block;padding:14px 28px;background:#0061D2;color:#ffffff;text-decoration:none;border-radius:9999px;font-weight:600;font-size:14px;letter-spacing:0.02em;">Apmaksāt</a>
 </td></tr></table>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Saite derīga 30 dienas.</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Saite ir derīga 30 dienas.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>
 </td></tr></table>
 <p style="margin:28px 0 0;font-size:12px;color:#6b7280;text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
 </td></tr></table>
@@ -658,18 +665,18 @@ exports[`template snapshots (default text) > snapshot email.upsell.mini_to_deale
   "subject": "PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam",
   "text": "Labdien!
 
-Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera servisa vēsturi.
+Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera datus. Tajos redzami auto servisa apmeklējumi pie oficiālā dīlera ar nobraukumu, kur dīleris to fiksējis.
 
-Cena šim pasūtījumam: 19,99 € (atsevišķi dīlera dati maksā 24,99 €).
+Jūsu cena: 19,99 € (atsevišķi pasūtot: 24,99 €).
 
-Dati tiks pievienoti esošajam pasūtījumam. Jau ievadītā informācija paliek.
+Datus pievienosim esošajam pasūtījumam. Jau ievadītā informācija paliek.
 
 Apmaksāt: https://buy.stripe.com/…
 
-Saite derīga 30 dienas.
+Saite ir derīga 30 dienas.
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -999,16 +1006,16 @@ exports[`template snapshots (default text) > snapshot wa.dealer.cancelled 1`] = 
 {
   "html": undefined,
   "subject": undefined,
-  "text": "Sveiki!
+  "text": "Labdien!
 
-Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts un maksājums atgriezts pilnā apmērā.
+Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām visu summu.
 
-Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.
+Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.
 
-Ja vēlaties pasūtīt atkārtoti, droši rakstiet šeit.
+Ja vēlaties pasūtīt atkārtoti, rakstiet šeit.
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -1019,21 +1026,20 @@ exports[`template snapshots (default text) > snapshot wa.dealer.no_data_refunded
   "subject": undefined,
   "text": "Labdien!
 
-Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
+Pārbaudījām Jūsu auto. Diemžēl oficiālā dīlera dati par to nav pieejami.
 
-Informācija par naudas atmaksu:
-Summa: 24,99 € (veikta pilnā apmērā uz to pašu maksājumu karti).
+Atmaksājām 24,99 € pilnā apmērā uz karti, ar kuru maksājāt.
 
 Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
 
-Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.
+Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.
 
 Pasūtīt: https://provin.lv
 
 Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv.
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -1048,10 +1054,10 @@ exports[`template snapshots (default text) > snapshot wa.listing_peek 1`] = `
 
 Jautājumi: rakstiet šeit vai info@provin.lv.
 
-Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -1062,14 +1068,14 @@ exports[`template snapshots (default text) > snapshot wa.report_ready.audits 1`]
   "subject": undefined,
   "text": "Labdien!
 
-Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.
+Jūsu PROVIN AUDITS atskaite ir gatava.
 
-Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!
+Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim.
 
-Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -1080,14 +1086,14 @@ exports[`template snapshots (default text) > snapshot wa.report_ready.dealer 1`]
   "subject": undefined,
   "text": "Labdien!
 
-Jūsu pieprasītie oficiālā dīlera servisa vēstures dati ir sagatavoti.
+Jūsu pasūtītie oficiālā dīlera dati ir gatavi.
 
-Ja Jums rodas papildu jautājumi, droši rakstiet šeit vai uz info@provin.lv.
+Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim.
 
-Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -1098,14 +1104,14 @@ exports[`template snapshots (default text) > snapshot wa.report_ready.mini 1`] =
   "subject": undefined,
   "text": "Labdien!
 
-Jūsu pasūtītā PROVIN MINI atskaite ir sagatavota.
+Jūsu PROVIN MINI atskaite ir gatava.
 
-Ja Jums rodas kādi jautājumi, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!
+Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim.
 
-Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: https://g.page/r/CamRaT51IPQ_EBM/review
+Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: https://g.page/r/CamRaT51IPQ_EBM/review
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -1116,13 +1122,14 @@ exports[`template snapshots (default text) > snapshot wa.select_consultation 1`]
   "subject": undefined,
   "text": "Sveiki!
 
-Nosūtu Jums PROVIN SELECT stratēģisko konsultāciju. Visus papildu materiālus nosūtīju uz Jūsu e-pastu.
+Nosūtu Jums PROVIN SELECT stratēģisko konsultāciju. Papildu materiālus nosūtīju uz Jūsu e-pastu.
 
-⚠️ Svarīgi: Sakarā ar tehniskiem uzlabojumiem, e-pasts dažkārt mēdz nonākt Spam mapē. Lūdzu, pārbaudiet!
+Svarīgi: ja e-pastu neredzat, pārbaudiet arī mapi „Spam” (surogātpasts).
 
-Ja rodas jautājumi par konsultācijas ieteikumiem vai vēlaties palīdzību auto izvēlē, droši rakstiet šeit vai zvaniet. Labprāt palīdzēšu!
+Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstiet šeit vai zvaniet. Labprāt palīdzēšu.
 
 Ar cieņu,
+Nils
 PROVIN.LV",
 }
 `;
@@ -1144,7 +1151,7 @@ Jau ievadītie dati paliek.
 Apmaksāt: https://buy.stripe.com/…
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
@@ -1155,14 +1162,14 @@ exports[`template snapshots (default text) > snapshot wa.upsell.mini_to_dealer 1
   "subject": undefined,
   "text": "Labdien!
 
-Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera servisa vēsturi par 19,99 €.
+Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera datus par 19,99 €.
 
-Dati tiks pievienoti esošajam pasūtījumam.
+Dati papildinās esošo pasūtījumu.
 
 Apmaksāt: https://buy.stripe.com/…
 
 Ar cieņu,
-Nils / IRISS
+Nils
 PROVIN.LV",
 }
 `;
