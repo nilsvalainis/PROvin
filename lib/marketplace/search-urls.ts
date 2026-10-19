@@ -1,6 +1,7 @@
 /**
- * mobile.de / AutoScout24 meklēšanas URL no IRISS tirgus vaicājuma.
- * Actoram dodam tikai šī Store aktora ievadi: URL + maxResults. Raw fuelType/transmission/bodyType nesūtam.
+ * mobile.de / AutoScout24 meklēšanas ievade no IRISS tirgus vaicājuma.
+ * mobile.de: strukturētie Store lauki (make/model/diapazoni), ne startUrls.
+ * AutoScout24: meklēšanas URL (searchUrls) ar aktuālajiem /lst parametriem.
  * Automātiskie filtri vienmēr ir tikai dīleru sludinājumi (nav privāto pārdevēju).
  */
 
@@ -19,6 +20,20 @@ function slug(raw: string): string {
   return fold(raw)
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+/** URL / slug / actor modelis: tikai pirmais tokens ("A6 C7 BI-TURBO Sline" -> "A6"). */
+export function marketplaceModelSearchToken(model: string): string {
+  return model
+    .trim()
+    .split(/[\s,/|+]+/)
+    .map((part) => part.trim())
+    .find(Boolean) ?? "";
+}
+
+/** Actor powerMin/powerMax ir PS. 1 kW = 1.36 PS. */
+export function marketplaceKwToPs(kw: number): number {
+  return Math.round(kw * 1.36);
 }
 
 function mobileDeMakeId(make: string): string | null {
@@ -61,7 +76,7 @@ function isManualGear(t: string): boolean {
   return /manu|schalt|\bmt\b/.test(t);
 }
 
-function mobileGear(raw: string): string {
+function mobileGear(raw: string): "AUTOMATIC_GEAR" | "MANUAL_GEAR" | "" {
   const t = fold(raw);
   if (isAutomaticGear(t)) return "AUTOMATIC_GEAR";
   if (isManualGear(t)) return "MANUAL_GEAR";
@@ -75,7 +90,7 @@ function as24Gear(raw: string): string {
   return "";
 }
 
-function mobileBody(raw: string): string {
+function mobileUrlBody(raw: string): string {
   const t = fold(raw);
   if (/suv|offroad|gelande/.test(t)) return "SUV";
   if (/wagon|estate|kombi|universal/.test(t)) return "EstateCar";
@@ -87,15 +102,33 @@ function mobileBody(raw: string): string {
   return "";
 }
 
-function as24Body(raw: string): string {
+/** blackfalcondata~mobile-de-scraper bodyType enum. */
+export function mobileActorBody(raw: string): string {
   const t = fold(raw);
-  if (/suv|offroad/.test(t)) return "suv";
-  if (/wagon|estate|kombi|universal/.test(t)) return "estate";
-  if (/hatch|compact/.test(t)) return "compact";
-  if (/coupe/.test(t)) return "coupe";
-  if (/cabrio|convert/.test(t)) return "convertible";
-  if (/van|bus|mpv/.test(t)) return "van";
-  if (/sedan|limo|saloon/.test(t)) return "saloon";
+  if (/suv|offroad|gelande/.test(t)) return "SUV";
+  if (/wagon|estate|kombi|universal/.test(t)) return "KOMBI";
+  if (/hatch|compact|hecb|klein/.test(t)) return "KLEINWAGEN";
+  if (/coupe/.test(t)) return "COUPE";
+  if (/cabrio|convert/.test(t)) return "CABRIO";
+  if (/van|bus|mpv/.test(t)) return "VAN";
+  if (/pickup/.test(t)) return "PICKUP";
+  if (/sedan|limo|saloon/.test(t)) return "LIMOUSINE";
+  return "";
+}
+
+/**
+ * AutoScout24 /lst `body` numeric codes:
+ * compact 1, convertible 2, coupe 3, suv 4, estate 5, saloon 6, van 12.
+ */
+export function as24Body(raw: string): string {
+  const t = fold(raw);
+  if (/hatch|compact/.test(t)) return "1";
+  if (/cabrio|convert/.test(t)) return "2";
+  if (/coupe/.test(t)) return "3";
+  if (/suv|offroad/.test(t)) return "4";
+  if (/wagon|estate|kombi|universal/.test(t)) return "5";
+  if (/sedan|limo|saloon/.test(t)) return "6";
+  if (/van|bus|mpv/.test(t)) return "12";
   return "";
 }
 
@@ -114,19 +147,20 @@ function colonRange(from: number | null, to: number | null): string {
 
 export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false): string {
   const url = new URL("https://suchen.mobile.de/fahrzeuge/search.html");
+  const model = marketplaceModelSearchToken(q.model);
   url.searchParams.set("s", "Car");
   url.searchParams.set("vc", "Car");
   url.searchParams.set("isSearchRequest", "true");
-  url.searchParams.set("dam", "false");
+  url.searchParams.set("dam", "0");
   url.searchParams.set("cn", "DE");
-  // Anbieter: Händler. Current suchen.mobile.de param (ONLY_FSBO_ADS = Privatanbieter).
-  url.searchParams.set("adLimitation", "ONLY_DEALER_ADS");
+  // Anbieter: Händler. Aktuālais suchen.mobile.de param (st=PRIVATE = Privatanbieter).
+  url.searchParams.set("st", "DEALER");
   const makeId = mobileDeMakeId(q.make);
   if (makeId) {
-    url.searchParams.set("ms", q.model.trim() ? `${makeId};;;${q.model.trim()}` : `${makeId};;;`);
+    url.searchParams.set("ms", makeId);
   } else if (q.make.trim()) {
     url.searchParams.set("make", q.make.trim());
-    if (q.model.trim()) url.searchParams.set("model", q.model.trim());
+    if (model) url.searchParams.set("model", model);
   }
   const years = colonRange(q.yearFrom, q.yearTo);
   if (years) url.searchParams.set("fr", years);
@@ -136,13 +170,13 @@ export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false):
   if (price) url.searchParams.set("p", price);
   const cc = colonRange(q.displacementFromCc, q.displacementToCc);
   if (cc) url.searchParams.set("cc", cc);
-  if (q.powerFromKw != null) url.searchParams.set("minPowerAsArray", String(q.powerFromKw));
-  if (q.powerToKw != null) url.searchParams.set("maxPowerAsArray", String(q.powerToKw));
+  const power = colonRange(q.powerFromKw, q.powerToKw);
+  if (power) url.searchParams.set("pw", power);
   const fuel = mobileFuel(q.fuel);
   if (fuel) url.searchParams.set("ft", fuel);
   const gear = mobileGear(q.gearbox);
   if (gear) url.searchParams.set("tr", gear);
-  const body = mobileBody(q.body);
+  const body = mobileUrlBody(q.body);
   if (body) url.searchParams.set("c", body);
   const drive = mobileDrive(q.drive);
   if (drive) url.searchParams.set("dr", drive);
@@ -155,13 +189,13 @@ export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false):
 
 export function buildAutoscout24SearchUrl(q: MarketplaceQuery, sortNewest = false): string {
   const make = slug(q.make) || "auto";
-  const model = slug(q.model);
+  const model = slug(marketplaceModelSearchToken(q.model));
   const path = model ? `/lst/${make}/${model}` : `/lst/${make}`;
   const url = new URL(`https://www.autoscout24.de${path}`);
   url.searchParams.set("atype", "C");
   url.searchParams.set("cy", "D");
   url.searchParams.set("ustate", "N,U");
-  url.searchParams.set("damaged_listing", "0");
+  url.searchParams.set("damaged_listing", "exclude");
   // Anbieter: Händler. Current autoscout24.de /lst param (custtype=P = Privat).
   url.searchParams.set("custtype", "D");
   if (q.yearFrom != null) url.searchParams.set("fregfrom", String(q.yearFrom));
@@ -193,28 +227,49 @@ export function buildMarketplaceSearchUrl(
   return platform === "autoscout24" ? buildAutoscout24SearchUrl(q, sortNewest) : buildMobileDeSearchUrl(q, sortNewest);
 }
 
-/** Actor input: tikai šim Store aktoram. Filtri ir meklēšanas URL, ne raw string lauki. */
+function mobileDeActorInput(q: MarketplaceQuery, maxResults: number, sortNewest: boolean): Record<string, unknown> {
+  const model = marketplaceModelSearchToken(q.model);
+  const input: Record<string, unknown> = {
+    maxResults,
+    includeDetails: false,
+    category: "CAR",
+    sellerType: "DEALER",
+    damageStatus: "EXCLUDE",
+  };
+  if (q.make.trim()) input.make = q.make.trim();
+  if (model) input.model = model;
+  if (q.priceFrom != null) input.priceMin = q.priceFrom;
+  if (q.priceTo != null) input.priceMax = q.priceTo;
+  if (q.yearFrom != null) input.yearMin = q.yearFrom;
+  if (q.yearTo != null) input.yearMax = q.yearTo;
+  if (q.mileageFrom != null) input.mileageMin = q.mileageFrom;
+  if (q.mileageTo != null) input.mileageMax = q.mileageTo;
+  if (q.powerFromKw != null) input.powerMin = marketplaceKwToPs(q.powerFromKw);
+  if (q.powerToKw != null) input.powerMax = marketplaceKwToPs(q.powerToKw);
+  const gear = mobileGear(q.gearbox);
+  if (gear) input.transmission = [gear];
+  const body = mobileActorBody(q.body);
+  if (body) input.bodyType = [body];
+  const fuel = mobileFuel(q.fuel);
+  if (fuel) input.fuelType = [fuel];
+  if (sortNewest) input.sort = "newest";
+  return input;
+}
+
+/** Actor input: mobile.de strukturētie lauki; AutoScout24 searchUrls. */
 export function marketplaceActorSearchInput(
   platform: MarketplacePlatform,
   q: MarketplaceQuery,
   limits?: Pick<MarketplaceLimits, "maxItems" | "sortNewest">,
 ): Record<string, unknown> {
   const sortNewest = Boolean(limits?.sortNewest);
-  const searchUrl = buildMarketplaceSearchUrl(platform, q, sortNewest);
   const maxResults = Math.max(1, Math.floor(limits?.maxItems ?? 1));
   if (platform === "autoscout24") {
     return {
-      searchUrls: [{ url: searchUrl }],
+      searchUrls: [{ url: buildAutoscout24SearchUrl(q, sortNewest) }],
       maxResults,
       includeDetails: false,
     };
   }
-  return {
-    startUrls: [searchUrl],
-    maxResults,
-    damageStatus: "EXCLUDE",
-    includeDetails: false,
-    // blackfalcondata~mobile-de-scraper: sellerType "Dealer" / "Private Seller".
-    sellerType: "Dealer",
-  };
+  return mobileDeActorInput(q, maxResults, sortNewest);
 }

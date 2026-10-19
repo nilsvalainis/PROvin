@@ -80,6 +80,7 @@ export type ApifyRunResult = {
   items: unknown[];
   chargedUsd: number;
   error?: string;
+  apifyRunId?: string;
 };
 
 export type ApifyActorRunner = (input: {
@@ -136,32 +137,66 @@ function authHeaders(token: string): HeadersInit {
   };
 }
 
+function finitePositiveUsd(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return null;
+  return value;
+}
+
+/** Pay-per-event: start 0.005 $ + result items × per-result price. */
+export function apifyChargedEventsUsd(run: Record<string, unknown>, usdPerThousand = 0): number | null {
+  const named =
+    finitePositiveUsd(run.chargedEventUsd) ??
+    finitePositiveUsd(run.eventChargeUsd) ??
+    finitePositiveUsd(run.usageChargedUsd) ??
+    finitePositiveUsd(run.chargedEventTotalUsd);
+  if (named != null) return round3(named);
+  const counts = run.chargedEventCounts;
+  if (!counts || typeof counts !== "object") return null;
+  let items = 0;
+  let starts = 0;
+  for (const [key, value] of Object.entries(counts as Record<string, unknown>)) {
+    const n = typeof value === "number" && Number.isFinite(value) ? value : 0;
+    if (/checked/i.test(key)) continue;
+    if (/start/i.test(key)) starts += n;
+    else if (/result|item|dataset|listing/i.test(key)) items += n;
+  }
+  if (starts === 0 && items === 0) return null;
+  return round3(starts * MARKETPLACE_APIFY_START_USD + (items * usdPerThousand) / 1000);
+}
+
 export function apifyRunChargedUsd(
   run: Record<string, unknown>,
   fallbackUsd: number,
   usdPerThousand = 0,
 ): number {
-  const usage = run.usageTotalUsd;
-  if (typeof usage === "number" && Number.isFinite(usage) && usage >= 0) return round3(usage);
+  const fromEvents = apifyChargedEventsUsd(run, usdPerThousand);
+  const usage = finitePositiveUsd(run.usageTotalUsd);
+  let statsCost: number | null = null;
   const stats = run.stats;
   if (stats && typeof stats === "object") {
-    const cost = (stats as { costUsd?: unknown; usd?: unknown }).costUsd ?? (stats as { usd?: unknown }).usd;
-    if (typeof cost === "number" && Number.isFinite(cost) && cost >= 0) return round3(cost);
+    const row = stats as { costUsd?: unknown; usd?: unknown; chargedEventUsd?: unknown };
+    statsCost =
+      finitePositiveUsd(row.chargedEventUsd) ?? finitePositiveUsd(row.costUsd) ?? finitePositiveUsd(row.usd);
   }
-  const counts = run.chargedEventCounts;
-  if (counts && typeof counts === "object") {
-    let items = 0;
-    let starts = 0;
-    for (const [key, value] of Object.entries(counts as Record<string, unknown>)) {
-      const n = typeof value === "number" && Number.isFinite(value) ? value : 0;
-      if (/start/i.test(key)) starts += n;
-      else if (/result|item|dataset|listing/i.test(key)) items += n;
-    }
-    if (starts > 0 || items > 0) {
-      return round3(starts * MARKETPLACE_APIFY_START_USD + (items * usdPerThousand) / 1000);
-    }
-  }
+  const candidates = [usage, statsCost, fromEvents].filter((n): n is number => n != null && n > 0);
+  if (candidates.length) return round3(Math.max(...candidates));
   return round3(Math.max(0, fallbackUsd));
+}
+
+export function marketplaceApifyErrorLv(error?: string): string {
+  const code = (error ?? "").trim();
+  if (!code) return "nezināma kļūda";
+  if (code === "token_missing") return "nav APIFY_TOKEN";
+  if (code === "actor_not_configured") return "nav aktora identifikatora";
+  if (code === "loads_disabled") return "ielāde izslēgta (izmaksu kontrole)";
+  if (code === "apify_timeout" || code === "apify_timed-out") return "Apify taimauts";
+  if (code.startsWith("apify_http_")) return `Apify HTTP ${code.slice("apify_http_".length)}`;
+  if (code.startsWith("apify_")) return `Apify ${code.slice(6)}`;
+  return code;
+}
+
+export function marketplaceSourceErrorNote(label: string, error?: string): string {
+  return `Avota kļūda: ${label}: ${marketplaceApifyErrorLv(error)}`;
 }
 
 async function readJson(res: Response): Promise<unknown> {
@@ -223,31 +258,44 @@ export async function defaultMarketplaceApifyRunner(input: {
     return { ok: false, items: [], chargedUsd: 0, error: e instanceof Error ? e.message : "apify_network" };
   }
   const started = unwrapData(await readJson(res));
+  const startedId = String(started.id ?? "");
   if (!res.ok) {
     return {
       ok: false,
       items: [],
       chargedUsd: apifyRunChargedUsd(started, 0, input.usdPerThousand),
       error: `apify_http_${res.status}`,
+      ...(startedId ? { apifyRunId: startedId } : {}),
     };
   }
   let run = started;
   const status = String(run.status ?? "");
-  const runId = String(run.id ?? "");
+  const runId = startedId;
   if (runId && !TERMINAL_RUN.test(status) && nowMs() < deadlineMs) {
     run = await pollRun({ runId, token: input.token, deadlineMs });
   }
   const finalStatus = String(run.status ?? "");
-  const chargedUsd = apifyRunChargedUsd(run, 0, input.usdPerThousand);
+  const apifyRunId = String(run.id ?? runId);
+  const idField = apifyRunId ? { apifyRunId } : {};
   if (!TERMINAL_RUN.test(finalStatus) && finalStatus !== "SUCCEEDED") {
-    return { ok: false, items: [], chargedUsd, error: finalStatus ? `apify_${finalStatus.toLowerCase()}` : "apify_timeout" };
+    const chargedUsd = apifyRunChargedUsd(run, 0, input.usdPerThousand);
+    return {
+      ok: false,
+      items: [],
+      chargedUsd,
+      error: finalStatus ? `apify_${finalStatus.toLowerCase()}` : "apify_timeout",
+      ...idField,
+    };
   }
   if (finalStatus !== "SUCCEEDED") {
-    return { ok: false, items: [], chargedUsd, error: `apify_${finalStatus.toLowerCase()}` };
+    const chargedUsd = apifyRunChargedUsd(run, 0, input.usdPerThousand);
+    return { ok: false, items: [], chargedUsd, error: `apify_${finalStatus.toLowerCase()}`, ...idField };
   }
   const datasetId = String(run.defaultDatasetId ?? "");
   const items = await readDatasetItems(datasetId, input.token, input.maxItems);
-  return { ok: true, items, chargedUsd };
+  const fallbackUsd = MARKETPLACE_APIFY_START_USD + (items.length * (input.usdPerThousand ?? 0)) / 1000;
+  const chargedUsd = apifyRunChargedUsd(run, fallbackUsd, input.usdPerThousand);
+  return { ok: true, items, chargedUsd, ...idField };
 }
 
 export async function runMarketplaceApifyActor(input: {
@@ -271,6 +319,13 @@ export async function runMarketplaceApifyActor(input: {
     maxUsd: input.maxUsd,
     ...(input.usdPerThousand != null ? { usdPerThousand: input.usdPerThousand } : {}),
   };
-  if (runnerOverride) return runnerOverride(args);
-  return defaultMarketplaceApifyRunner(args);
+  const result = runnerOverride ? await runnerOverride(args) : await defaultMarketplaceApifyRunner(args);
+  console.info("[marketplace]", {
+    provider: input.actorId,
+    apifyRunId: result.apifyRunId ?? "",
+    status: result.ok ? "SUCCEEDED" : result.error ?? "failed",
+    items: result.items.length,
+    chargedUsd: result.chargedUsd,
+  });
+  return result;
 }
