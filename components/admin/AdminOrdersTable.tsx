@@ -45,6 +45,7 @@ import { useAdminAuditDeadlineTick } from "@/components/admin/AdminAuditDeadline
 import {
   AdminAuditResultColorControl,
 } from "@/components/admin/AdminAuditResultColorControl";
+import { AdminOrdersViewSwitch } from "@/components/admin/AdminOrdersViewSwitch";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminVinNotSeventeenFlag } from "@/components/admin/AdminVinNotSeventeenFlag";
 import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
@@ -442,11 +443,13 @@ function AdminOrdersMobileChrome({
   onColorFilter,
   filterCounts,
   belowTitle,
+  showUnpaidViewSwitch,
 }: {
   colorFilter: AuditResultColor | "all" | "none";
   onColorFilter: (c: AuditResultColor | "all" | "none") => void;
   filterCounts: { all: number; green: number; orange: number; red: number; none: number };
   belowTitle?: ReactNode;
+  showUnpaidViewSwitch?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname() || "/admin/dashboard";
@@ -503,7 +506,12 @@ function AdminOrdersMobileChrome({
           <AdminMobileSearchField value={q} onChange={setQ} placeholder="Meklēt VIN, klientu" />
         </div>
       </div>
-      <div className="mt-3">
+      {showUnpaidViewSwitch ? (
+        <div className="mt-3">
+          <AdminOrdersViewSwitch />
+        </div>
+      ) : null}
+      <div className={showUnpaidViewSwitch ? "mt-2" : "mt-3"}>
         <AdminMobileChips
           value={colorFilter}
           onChange={(id) => onColorFilter(id as AuditResultColor | "all" | "none")}
@@ -616,6 +624,7 @@ export function AdminOrdersTable({
   toolbarEnd,
   doneOrder = "desc",
   belowTopBar,
+  showUnpaidViewSwitch = false,
 }: {
   /** Izpildīto dienu secība (servera kārtošana „Vecākie” → asc). */
   doneOrder?: "desc" | "asc";
@@ -629,6 +638,8 @@ export function AdminOrdersTable({
   /** Saglabāts API savietojamībai (konsultāciju saraksta wrapperiem). */
   consultationList?: boolean;
   belowTopBar?: ReactNode;
+  /** Pasūtījumu saraksts: Visi | Neapmaksāti. Konsultācijās nē. */
+  showUnpaidViewSwitch?: boolean;
 }) {
   void consultationList;
   const router = useRouter();
@@ -769,6 +780,7 @@ export function AdminOrdersTable({
       </div>
       {/* V1: viena slaida rinda - rezultāta segmenti kreisi, papildu vadīklas labi. */}
       <div className="mt-2 hidden items-center gap-2 md:flex">
+        {showUnpaidViewSwitch ? <AdminOrdersViewSwitch /> : null}
         <div role="tablist" aria-label="Rezultāts" className="flex min-w-0 overflow-x-auto rounded-[9px] bg-[#e9e9ee] p-[2px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {(["all", ...AUDIT_RESULT_COLORS, "none"] as const).map((c) => {
             const on = colorFilter === c;
@@ -804,6 +816,7 @@ export function AdminOrdersTable({
           onColorFilter={setColorFilter}
           filterCounts={filterCounts}
           belowTitle={belowTopBar}
+          showUnpaidViewSwitch={showUnpaidViewSwitch}
         />
       <ul className="mt-2 space-y-2 px-4">
         {dayGroups.map((g) => (

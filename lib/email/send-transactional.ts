@@ -17,6 +17,7 @@ import {
   partnerVerifyEmailHtml,
   paymentConfirmationHtml,
 } from "@/lib/email/html-templates";
+import { unpaidReminderEmailHtml } from "@/lib/admin-unpaid-reminder-copy";
 import type { OrderEmailPayload } from "@/lib/email/types";
 import {
   buildDealerCancelledEmailDraft,
@@ -1017,6 +1018,45 @@ export async function trySendB2bWalletTopupInvoiceEmail(opts: {
     return true;
   } catch (err) {
     console.error("[email] B2B rēķina e-pasts neizdevās", err);
+    return false;
+  }
+}
+
+/**
+ * Neapmaksāta pasūtījuma atgādinājums. Tikai pēc admin klikšķa.
+ * Personīgs plain-text stils (bez zīmola HTML veidnes).
+ */
+export async function sendUnpaidOrderReminderEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+}): Promise<void> {
+  const subject = opts.subject.trim().slice(0, 180);
+  const text = opts.text.trim();
+  if (!subject || !text) throw new Error("missing_subject_or_text");
+  await sendSmtpMail({
+    to: opts.to,
+    subject,
+    text,
+    html: unpaidReminderEmailHtml(text),
+    headers: { "Auto-Submitted": "no" },
+  });
+}
+
+export async function trySendUnpaidOrderReminderEmail(opts: {
+  to: string;
+  subject: string;
+  text: string;
+}): Promise<boolean> {
+  if (!isSmtpConfigured()) {
+    console.warn("[email] SMTP nav iestatīts, neapmaksātā atgādinājums nav nosūtīts");
+    return false;
+  }
+  try {
+    await sendUnpaidOrderReminderEmail(opts);
+    return true;
+  } catch (err) {
+    console.error("[email] neapmaksātā atgādinājums neizdevās", err);
     return false;
   }
 }
