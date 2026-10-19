@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
 import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
 import {
+  IRISS_LISTING_CLIENT_NAME_MISSING,
   irissListingOrderBrief,
   listingBudgetForVehicle,
+  listingClientMatchRows,
   listingLinkedOrders,
+  listingOrderChipSubtitle,
   listingOrderShortId,
   listingVehicleOrderIds,
   parseIrissOrderBudget,
@@ -12,6 +15,8 @@ import {
   serializeListingOrderFilter,
   vehicleMatchesOrderFilter,
 } from "@/lib/iriss-listings-orders";
+import { irissScanOrderBrief } from "@/lib/iriss-scan-listings";
+import { emptyIrissScanRecord } from "@/lib/iriss-scan-types";
 
 function order(partial: Partial<ReturnType<typeof emptyIrissPasutijums>> & { id: string }) {
   const rec = emptyIrissPasutijums(partial.id, "2026-10-01T00:00:00.000Z");
@@ -92,6 +97,39 @@ describe("order briefs and linking", () => {
     expect(listingBudgetForVehicle(null, [])).toBeNull();
     expect(listingBudgetForVehicle(null, [order({ id: "x", totalBudget: "" })])).toBeNull();
     expect(order({ id: "y" }).clientName).toBe("Klients nav");
+  });
+
+  it("card client rows keep the real order and hide nameless, scan and duplicate ids", () => {
+    const nameless = order({ id: "n1", brandModel: "Volvo V60 B3 Nr. 7716846" });
+    const namelessDup = order({ id: "n2", brandModel: "Volvo V60 B3 Nr. 7716846" });
+    const real = order({
+      id: "r1",
+      clientFirstName: "Raimonda",
+      clientLastName: "Mangule",
+      brandModel: "Volvo V60",
+      totalBudget: "18 000",
+    });
+    const scan = irissScanOrderBrief({
+      ...emptyIrissScanRecord("scan-1", "2026-10-01T00:00:00.000Z"),
+      brandModel: "Volvo V60 B3 Nr. 7716846",
+    });
+    const byId = new Map([
+      [nameless.id, nameless],
+      [namelessDup.id, namelessDup],
+      [real.id, real],
+      [scan.id, scan],
+    ]);
+    const linked = listingLinkedOrders(["n1", "n1", "n2", "missing", scan.id, "r1", scan.id], byId);
+    expect(linked.map((x) => x.id)).toEqual(["n1", "n2", scan.id, "r1"]);
+    expect(nameless.clientName).toBe(IRISS_LISTING_CLIENT_NAME_MISSING);
+    expect(listingClientMatchRows(linked, "orders").map((x) => x.clientName)).toEqual(["Raimonda Mangule"]);
+    expect(listingClientMatchRows(linked, "orders")[0]).toMatchObject({
+      brandModel: "Volvo V60",
+      budget: 18000,
+    });
+    expect(listingOrderChipSubtitle(listingClientMatchRows(linked, "orders")[0]!)).toContain("Volvo V60");
+    expect(listingOrderChipSubtitle(listingClientMatchRows(linked, "orders")[0]!)).toContain("18");
+    expect(listingClientMatchRows(linked, "scan").map((x) => x.clientName)).toEqual(["Radars: Volvo V60 B3 Nr. 7716846"]);
   });
 
   it("manual reassignment replaces search-URL orders until cleared", () => {

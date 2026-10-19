@@ -79,11 +79,13 @@ describe("IRISS listings toolbar", () => {
     expect(chips).toContain("sm:flex-row");
   });
 
-  it("keeps listing card create actions on one nowrap row with Pievienot radaram", () => {
+  it("keeps listing card create actions on one nowrap row without Pievienot radaram", () => {
     expect(card).toContain("IrissListingCardActions");
     expect(card).not.toContain("Izveidot pasūtījumu");
+    expect(card).not.toContain("Pievienot radaram");
     expect(listClient).toContain("onCreateRadar");
     expect(listClient).toContain("irissScanSeedFromListing");
+    expect(listClient).toContain("listingClientMatchRows");
   });
 });
 

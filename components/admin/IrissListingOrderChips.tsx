@@ -1,13 +1,7 @@
 "use client";
 
-import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
-
-function fmtBudget(n: number | null, raw: string): string {
-  if (n != null) return `${Math.round(n).toLocaleString("lv-LV")} €`;
-  const t = raw.trim();
-  if (!t || t === "\u2014" || t === "-") return "";
-  return t;
-}
+import { IRISS_LISTING_CARD_ACTION_ORDER } from "@/lib/iriss-listing-card-actions";
+import { listingOrderChipSubtitle, type IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 
 export function IrissListingOrderChips({
   orders,
@@ -22,12 +16,12 @@ export function IrissListingOrderChips({
   return (
     <ul className={compact ? "space-y-0.5" : "space-y-1"}>
       {orders.map((o) => {
-        const bits = [o.brandModel, fmtBudget(o.budget, o.budgetRaw), o.preferredColors].filter(Boolean);
+        const bits = listingOrderChipSubtitle(o);
         return (
           <li key={o.id} className="flex min-w-0 flex-col items-stretch gap-1 text-[11px] leading-snug text-slate-600 sm:flex-row sm:items-start sm:gap-1.5">
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-[var(--color-apple-text)]">{o.clientName}</div>
-              <div className="truncate text-slate-500">{bits.join(" · ")}</div>
+              {bits ? <div className="truncate text-slate-500">{bits}</div> : null}
             </div>
             {onPreview ? (
               <button
@@ -38,7 +32,7 @@ export function IrissListingOrderChips({
                 }}
                 className="inline-flex h-7 w-fit shrink-0 items-center rounded-full border border-slate-200 bg-white px-2 text-[10px] font-semibold text-slate-700 hover:bg-slate-50"
               >
-                Pasūtījums
+                {IRISS_LISTING_CARD_ACTION_ORDER}
               </button>
             ) : null}
           </li>

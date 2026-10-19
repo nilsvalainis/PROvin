@@ -372,8 +372,8 @@ export function listingHitStatusMap(entries: readonly IrissListingMatchEntry[], 
 }
 
 /**
- * Ar `vehicles` + `orders` vecie ieraksti, kuru marka/modelis neatbilst, netiek atgriezti
- * (paliek glabātuvē nemainīti).
+ * Ar `vehicles` + `orders` vecie ieraksti, kuru marka/modelis neatbilst vai
+ * pasūtījums vairs nav sarakstā, netiek atgriezti (paliek glabātuvē nemainīti).
  */
 export function listingMatchOrderIdsByListing(
   entries: readonly IrissListingMatchEntry[],
@@ -389,10 +389,13 @@ export function listingMatchOrderIdsByListing(
   if (!vehicles || !orders) return out;
   const byVehicle = new Map(vehicles.map((v) => [v.id, v]));
   const brandById = new Map(orders.map((o) => [o.id, o.brandModel ?? ""]));
+  const knownIds = new Set(orders.map((o) => o.id));
   for (const [listingId, ids] of Object.entries(out)) {
     const vehicle = byVehicle.get(listingId);
     if (!vehicle) continue;
-    const kept = gateListingOrderIds(vehicle, ids, brandById);
+    const kept = gateListingOrderIds(vehicle, ids, brandById).filter(
+      (id) => knownIds.has(id) || isIrissScanOrderId(id),
+    );
     if (kept.length > 0) out[listingId] = kept;
     else delete out[listingId];
   }

@@ -143,6 +143,12 @@ describe("match store reads ignore old wrong-make entries", () => {
     expect(listingMatchOrderIdsByListing(entries).superb).toHaveLength(4);
   });
 
+  it("orderIdsByListing drops match ids whose order is gone", () => {
+    const withGhost = [...entries, { orderId: "ghost", listingId: "superb", matchedAt: "2026-10-16T10:00:00Z", status: "jauns" as const, statusAt: "" }];
+    expect(listingMatchOrderIdsByListing(withGhost, vehicles, ORDERS)).toEqual({ superb: ["o-skoda"] });
+    expect(listingMatchOrderIdsByListing(withGhost).superb).toHaveLength(5);
+  });
+
   it("notices skip wrong-make pairs", () => {
     const notices = buildIrissListingMatchNotices(entries, vehicles, ORDERS.map((o) => ({ ...o, listStatus: "active" })));
     expect(notices.map((n) => n.orderId)).toEqual(["o-skoda"]);

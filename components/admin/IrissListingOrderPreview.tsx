@@ -7,6 +7,7 @@ import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import { isHttpUrlForOpen } from "@/lib/iriss-listing-links";
 import { labelIrissListingLinkRows } from "@/lib/iriss-listing-link-lists";
+import { IRISS_LISTING_CARD_ACTION_ORDER } from "@/lib/iriss-listing-card-actions";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { IRISS_PASUTIJUMS_LIST_STATUS_LV } from "@/lib/iriss-pasutijumi-types";
 
@@ -138,7 +139,7 @@ export function IrissListingOrderPreview({
       <div className="relative z-[61] max-h-[88vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-[#E5E7EB] bg-[#F8F8F9] p-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:p-4">
         <div className="mb-3 flex items-center gap-2">
           <h2 id="iriss-order-preview-title" className="text-[14px] font-semibold text-[var(--color-apple-text)]">
-            Pasūtījums{orders.length > 1 ? ` (${orders.length})` : ""}
+            {IRISS_LISTING_CARD_ACTION_ORDER}{orders.length > 1 ? ` (${orders.length})` : ""}
           </h2>
           <span className="grow" />
           <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] bg-white text-lg" aria-label="Aizvērt">
