@@ -37,7 +37,7 @@
       "listing": "Ielīmē derīgu saiti uz konkrētu sludinājumu.",
       "vin": "Ievadi derīgu VIN kodu vai valsts numurzīmi (3-6 zīmes).",
       "vinLength": "VIN jābūt 17 zīmēm, pārbaudiet VIN numuru",
-      "vinCheckDigit": "ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN numuru.",
+      "vinCheckDigit": "Kontrolcipars (9. zīme) neatbilst ISO 3779. Eiropas auto tas ir normāli, pasūtīt var.",
       "heard": "Norādi, kur uzzināji par mums.",
       "email": "E-pasta adrese nav derīga.",
       "phone": "Tālruņa numurs nav derīgs.",

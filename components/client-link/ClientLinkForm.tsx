@@ -15,7 +15,6 @@ import {
   normalizeVin,
   sanitizeVinInput,
 } from "@/lib/order-field-validation";
-import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 
 const inputClass =
@@ -147,11 +146,6 @@ export function ClientLinkForm({ token, view }: { token: string; view: ClientLin
               }}
             />
             <span className="mt-1 block text-[12px] text-[#aeaeb2]">{vinHint}</span>
-            {vinNeedsCheckDigitWarning(vin) ? (
-              <span className="mt-1 block text-[12px] text-amber-800" role="status">
-                ISO 3779 kontrolcipars nesakrīt. Eiropā tas nav obligāts, bet pārbaudiet VIN numuru.
-              </span>
-            ) : null}
           </label>
         ) : null}
         {view.require.listingUrl ? (

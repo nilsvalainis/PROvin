@@ -27,7 +27,6 @@ import { resolveB2bWalletSampleUrl } from "@/lib/b2b-samples";
 import type { B2bWalletView } from "@/lib/b2b-wallet-view";
 import { trackMetaLead } from "@/lib/meta-pixel";
 import { isIncompleteVinLength, isPlausibleListingUrl, isValidVin, sanitizeVinInput } from "@/lib/order-field-validation";
-import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 
 export type B2bLegacyCredits = {
   credits: B2bCreditRemaining;
@@ -537,11 +536,6 @@ function PurchaseDialog({
 
           {purposeError ? <p className={styles.inlineFieldError}>{purposeError}</p> : null}
           {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
-          {!vinError && vinNeedsCheckDigitWarning(vin) ? (
-            <p className={styles.inlineFieldError} role="status">
-              {t("vinCheckDigitWarning")}
-            </p>
-          ) : null}
           {listingError ? <p className={styles.inlineFieldError}>{listingError}</p> : null}
           {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
 

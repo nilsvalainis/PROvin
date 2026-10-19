@@ -14,7 +14,6 @@ import {
   sanitizeVinInput,
   validateOrderFields,
 } from "@/lib/order-field-validation";
-import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 
 const labelDefault =
@@ -355,9 +354,7 @@ export function OrderForm({
                   aria-describedby={
                     (step === 1 && heroStep1Errors.vin) || (step === 2 && heroStep2FieldErrors.vin)
                       ? "order-hero-vin-error"
-                      : vinNeedsCheckDigitWarning(vin)
-                        ? "order-hero-vin-checkdigit"
-                        : undefined
+                      : undefined
                   }
                   onChange={(e) => {
                     const value = sanitizeVinInput(e.target.value);
@@ -381,14 +378,6 @@ export function OrderForm({
                   aria-live="polite"
                 >
                   {step === 1 ? heroStep1Errors.vin : heroStep2FieldErrors.vin}
-                </p>
-              ) : vinNeedsCheckDigitWarning(vin) ? (
-                <p
-                  id="order-hero-vin-checkdigit"
-                  className="order-form-hero-hint mt-1.5 px-0.5 text-left text-[12px] font-normal leading-snug text-amber-200/80 sm:text-[11px]"
-                  role="status"
-                >
-                  {t("validation.vinCheckDigit")}
                 </p>
               ) : null}
             </>
@@ -418,11 +407,7 @@ export function OrderForm({
               />
             </>
           )}
-          {step === 2 && !hero && vinNeedsCheckDigitWarning(vin) ? (
-            <p className="mt-1 text-[11px] font-normal leading-snug text-amber-800" role="status">
-              {t("validation.vinCheckDigit")}
-            </p>
-          ) : step === 2 ? (
+          {step === 2 ? (
             <p className={hero ? hintClass : "mt-1 text-[11px] font-normal leading-snug text-[#aeaeb2]"}>
               {t("vinHint")}
             </p>

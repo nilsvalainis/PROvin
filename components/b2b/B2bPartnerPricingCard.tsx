@@ -14,7 +14,6 @@ import {
   type B2bPartnerPlanId,
 } from "@/lib/b2b-partner-copy";
 import { isIncompleteVinLength, isValidVin, normalizeVin, sanitizeVinInput } from "@/lib/order-field-validation";
-import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { trackMetaLead } from "@/lib/meta-pixel";
 import { TP5_DEALER_BRANDS, getTp5MobileService, getTp5MobileTurnaround } from "@/lib/test-pricing-5-mobile";
 import {
@@ -246,11 +245,6 @@ export function B2bPartnerPricingCard({
                 spellCheck={false}
               />
               {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
-              {!vinError && vinNeedsCheckDigitWarning(vin) ? (
-                <p className={styles.inlineFieldError} role="status">
-                  {t("vinCheckDigitWarning")}
-                </p>
-              ) : null}
             </>
           ) : (
             <>

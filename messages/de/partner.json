@@ -28,7 +28,7 @@
     "vinPlaceholder": "17 Zeichen",
     "vinError": "VIN: 17 Zeichen, ohne I, O und Q.",
     "vinLengthError": "Die VIN muss 17 Zeichen haben, prüfen Sie die VIN-Nummer",
-    "vinCheckDigitWarning": "Die ISO-3779-Prüfziffer stimmt nicht. In der EU ist sie nicht Pflicht, prüfen Sie die VIN-Nummer trotzdem.",
+    "vinCheckDigitWarning": "Das 9. Zeichen stimmt nicht mit der ISO-3779-Prüfziffer überein. Bei europäischen Autos ist das normal, Sie können trotzdem bestellen.",
     "listingLabel": "Inseratlink (optional)",
     "listingAria": "Inseratlink",
     "listingPlaceholder": "https://www.ss.lv/...",

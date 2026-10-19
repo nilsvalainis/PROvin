@@ -15,7 +15,6 @@ import {
 } from "@/lib/b2b-partner-archive-rows";
 import { emptyB2bCreditRemaining, type B2bCreditRemaining } from "@/lib/b2b-partner-credits";
 import { isIncompleteVinLength, isPlausibleListingUrl, isValidVin, sanitizeVinInput } from "@/lib/order-field-validation";
-import { vinNeedsCheckDigitWarning } from "@/lib/vin-iso3779";
 import { trackMetaLead } from "@/lib/meta-pixel";
 import {
   isPartnerAuditPurpose,
@@ -501,11 +500,6 @@ export function B2bPartnerHome({
 
             {auditPurposeError ? <p className={styles.inlineFieldError}>{auditPurposeError}</p> : null}
             {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
-            {!vinError && vinNeedsCheckDigitWarning(vin) ? (
-              <p className={styles.inlineFieldError} role="status">
-                {t("vinCheckDigitWarning")}
-              </p>
-            ) : null}
             {listingError ? <p className={styles.inlineFieldError}>{listingError}</p> : null}
             {serviceError ? <p className={styles.inlineFieldError}>{serviceError}</p> : null}
             {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}

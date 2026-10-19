@@ -28,7 +28,7 @@
     "vinPlaceholder": "17 characters",
     "vinError": "VIN: 17 characters, no I, O or Q.",
     "vinLengthError": "VIN must be 17 characters, check the VIN number",
-    "vinCheckDigitWarning": "The ISO 3779 check digit does not match. It is not mandatory in the EU, but please check the VIN number.",
+    "vinCheckDigitWarning": "The 9th character does not match the ISO 3779 check digit. This is normal for European cars, you can still order.",
     "listingLabel": "Listing link (optional)",
     "listingAria": "Listing link",
     "listingPlaceholder": "https://www.ss.lv/...",
