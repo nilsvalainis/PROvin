@@ -4,6 +4,8 @@ import {
   ADMIN_MOBILE_BADGE_POLL_MS,
   ADMIN_MOBILE_PTR_THRESHOLD_PX,
   ADMIN_MOBILE_SECONDARY_DELAY_MS,
+  ADMIN_MOBILE_TABBAR_DOCK_NAV,
+  ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
   adminMobilePtrLabel,
   adminMobilePullToRefreshEnabled,
   scheduleAdminIdleWork,
@@ -59,6 +61,14 @@ describe("admin mobile css selectors", () => {
     expect(layout).toMatch(/#EEF0F3/);
     expect(layout).toMatch(/viewportFit: "cover"/);
     expect(layout).toMatch(/manifest.webmanifest/);
+  });
+});
+
+describe("admin mobile tab dock", () => {
+  it("keeps 12pt only between the glass capsule and search", () => {
+    expect(ADMIN_MOBILE_TABBAR_DOCK_WRAPPER).toMatch(/gap-\[12pt\]/);
+    expect(ADMIN_MOBILE_TABBAR_DOCK_NAV).toMatch(/gap-0/);
+    expect(ADMIN_MOBILE_TABBAR_DOCK_NAV).not.toMatch(/gap-\[12pt\]/);
   });
 });
 

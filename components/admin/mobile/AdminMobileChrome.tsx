@@ -440,8 +440,8 @@ export function AdminMobileSecondaryButton({ children, onClick, disabled }: { ch
 export function AdminMobileTabPill({ index, count }: { index: number; count: number }) {
   if (index < 0 || count <= 0) return null;
   const style: CSSProperties = {
-    width: `calc((100% - ${count - 1} * 12pt) / ${count})`,
-    transform: `translateX(calc(${index} * (100% + 12pt)))`,
+    width: `calc((100% - 12px) / ${count})`,
+    transform: `translateX(${index * 100}%)`,
     transition: "transform var(--d-std) var(--ease-out)",
   };
   return (
