@@ -20,6 +20,10 @@ import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fing
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { sourceCommentLengthLineForBreadth, type CommentBreadth } from "@/lib/ai-comment-breadth";
 import {
+  dealerCommentLanguageDirective,
+  type DealerCommentOutputLang,
+} from "@/lib/dealer-data-job-types";
+import {
   DEALER_ISOLATED_COMMENT_DIRECTIVE,
   shouldIsolateDealerComments,
 } from "@/lib/dealer-product-scope";
@@ -58,6 +62,8 @@ export type AiSourceCommentInput = {
    * Pēc jauninājuma uz auditu paliek false.
    */
   isolateDealerComments?: boolean | null;
+  /** B2B dīlera automātika: PRO = klienta valoda, RAW = OEM oriģināls. Admin ✨ atstāj tukšu = LV. */
+  outputLang?: DealerCommentOutputLang | null;
 };
 
 /** Avota komentāru ģenerēšana — Pro vai Flash (admin izvēle). */
@@ -255,7 +261,9 @@ ${
     ? ""
     : `Ja OPERATORA KOMANDAS nosauc citu avotu vai lauku („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”, „pārdevēja portrets”) - tās rindkopas ŠEIT NEKOPĒ. Drīksti ņemt datumus/km kā kontekstu, bet neatkarīgu rindkopu no tā neraksti.
 `
-}Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.${oilRoleHint}`,
+}Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.${oilRoleHint}${
+          input.outputLang ? `\n\n${dealerCommentLanguageDirective(input.outputLang)}` : ""
+        }`,
         {
           operatorNotes: input.operatorNotes,
           existingDraftPlain: input.existingDraftPlain,

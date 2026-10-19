@@ -6,6 +6,7 @@ import path from "path";
 import { get, put } from "@vercel/blob";
 
 import {
+  mergeDealerPaidOutcomes,
   normalizeDealerDataJob,
   type DealerDataJob,
   type DealerDataJobStatus,
@@ -211,8 +212,35 @@ export async function upsertDealerDataJob(
       : current?.aiGenerated !== undefined
         ? { aiGenerated: current.aiGenerated }
         : {}),
-    ...(patch.error ? { error: patch.error } : {}),
+    ...(patch.error
+      ? { error: patch.error }
+      : patch.status === "done" || patch.status === "no_data" || patch.status === "running"
+        ? {}
+        : current?.error
+          ? { error: current.error }
+          : {}),
     ...(patch.trigger ?? current?.trigger ? { trigger: patch.trigger ?? current?.trigger } : {}),
+    ...(patch.paidOutcomes || current?.paidOutcomes
+      ? {
+          paidOutcomes: mergeDealerPaidOutcomes(current?.paidOutcomes, patch.paidOutcomes),
+        }
+      : {}),
+    ...(patch.skipTranslate !== undefined
+      ? { skipTranslate: patch.skipTranslate }
+      : current?.skipTranslate !== undefined
+        ? { skipTranslate: current.skipTranslate }
+        : {}),
+    ...(patch.commentLang ?? current?.commentLang
+      ? { commentLang: patch.commentLang ?? current?.commentLang }
+      : {}),
+    ...(patch.oneautoResults || current?.oneautoResults
+      ? {
+          oneautoResults: {
+            ...(current?.oneautoResults ?? {}),
+            ...(patch.oneautoResults ?? {}),
+          },
+        }
+      : {}),
     // Atmaksa ir neatgriezeniska: reizi ierakstītu ierakstu patch nedrīkst nomest.
     // emailSentAt drīkst pievienot vēlāk (viens e-pasts uz atmaksu).
     ...(current?.refund || patch.refund

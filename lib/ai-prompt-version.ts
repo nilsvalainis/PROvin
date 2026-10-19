@@ -216,5 +216,7 @@
  *   applyProvinHumanDashes pirms saglabāšanas un PDF renderī.
  * - 2026-10-17.6 - Krāsas biezums: viens statisks bloks (100 līdz 150 / 50 līdz 150 µm)
  *   renderēšanas laikā; AI lekciju neģenerē.
+ * - 2026-10-19.0 - B2B dīlera automātika: VIN Decoder + OE vēsture; Gemini
+ *   komentārs PRO klienta valodā vai RAW oriģinālvalodā; zīmols PROVIN.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-17.6";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-19.0";
