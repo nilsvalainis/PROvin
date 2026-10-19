@@ -129,6 +129,13 @@ export function sortMarketplaceAutoOrders(rows: readonly MarketplaceAutoOrderBri
   });
 }
 
+/** Auto grafiku griež tikai veiksmīgas ielādes ar sludinājumiem, vai jebkura auto ielāde. */
+export function marketplaceRunCountsForAutoSchedule(run: MarketplaceRunRecord): boolean {
+  if (run.status === "blocked") return false;
+  if (run.trigger === "auto") return true;
+  return (run.status === "ok" || run.status === "partial") && run.itemCount > 0;
+}
+
 export function lastMarketplaceLoadAt(
   runs: readonly MarketplaceRunRecord[],
   orderId: string,
@@ -137,7 +144,7 @@ export function lastMarketplaceLoadAt(
   let latestMs = Number.NEGATIVE_INFINITY;
   for (const run of runs) {
     if (run.orderId !== orderId) continue;
-    if (run.status === "blocked") continue;
+    if (!marketplaceRunCountsForAutoSchedule(run)) continue;
     const at = run.finishedAt || run.startedAt;
     const ms = Date.parse(at);
     if (!Number.isFinite(ms)) continue;
@@ -170,7 +177,7 @@ export function lastMarketplaceAutoLoadAt(
 }
 
 export function hasPriorMarketplaceLoad(runs: readonly MarketplaceRunRecord[], orderId: string): boolean {
-  return runs.some((run) => run.orderId === orderId && run.status !== "blocked");
+  return runs.some((run) => run.orderId === orderId && marketplaceRunCountsForAutoSchedule(run));
 }
 
 export function orderDueForMarketplaceAuto(

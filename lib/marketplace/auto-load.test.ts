@@ -83,6 +83,7 @@ function runRecord(partial: Partial<MarketplaceRunRecord> & Pick<MarketplaceRunR
     status: "ok",
     trigger: "auto",
     note: "",
+    apifyRunIds: [],
     ...partial,
   };
 }
@@ -146,6 +147,45 @@ describe("marketplace auto interval", () => {
     expect(marketplaceAutoItemsForRun(false)).toEqual({ maxItems: 40, sortNewest: false });
     expect(marketplaceAutoItemsForRun(true)).toEqual({ maxItems: 40, sortNewest: true });
     expect(lastMarketplaceLoadAt([runRecord({ id: "r1", orderId: "o1" })], "o1")).toBe("2026-10-16T06:01:00.000Z");
+  });
+
+  it("does not let a manual empty or failed load push the next auto slot", () => {
+    const emptyManual = runRecord({
+      id: "empty",
+      orderId: "o1",
+      trigger: "manual",
+      status: "ok",
+      itemCount: 0,
+      keptCount: 0,
+      finishedAt: "2026-10-18T12:00:00.000Z",
+    });
+    const failedManual = runRecord({
+      id: "fail",
+      orderId: "o1",
+      trigger: "manual",
+      status: "failed",
+      itemCount: 0,
+      keptCount: 0,
+      finishedAt: "2026-10-18T18:00:00.000Z",
+      note: "Avota kļūda: mobile.de: Apify failed",
+    });
+    expect(lastMarketplaceLoadAt([emptyManual, failedManual], "o1")).toBeNull();
+    expect(orderDueForMarketplaceAuto(lastMarketplaceLoadAt([emptyManual, failedManual], "o1"), NOW, 3)).toBe(true);
+    expect(nextMarketplaceAutoAt(lastMarketplaceLoadAt([emptyManual, failedManual], "o1"), NOW, 3)).toBe(
+      "2026-10-19T06:00:00.000Z",
+    );
+    expect(hasPriorMarketplaceLoad([emptyManual, failedManual], "o1")).toBe(false);
+
+    const autoEmpty = runRecord({
+      id: "auto-empty",
+      orderId: "o1",
+      trigger: "auto",
+      status: "ok",
+      itemCount: 0,
+      finishedAt: "2026-10-18T06:00:00.000Z",
+    });
+    expect(lastMarketplaceLoadAt([autoEmpty, failedManual], "o1")).toBe("2026-10-18T06:00:00.000Z");
+    expect(orderDueForMarketplaceAuto(lastMarketplaceLoadAt([autoEmpty], "o1"), NOW, 3)).toBe(false);
   });
 });
 
@@ -235,6 +275,29 @@ describe("marketplace auto budget and skip", () => {
         usage,
       }).allowed,
     ).toBe(false);
+  });
+
+  it("still auto-loads after a manual empty failed fetch inside the interval", async () => {
+    const loadForOrder = vi.fn(async () => okLoad(0.05));
+    const out = await runMarketplaceAutoSweep(
+      baseDeps({
+        readListingsRuns: async () => [
+          runRecord({
+            id: "empty-manual",
+            orderId: "00000000-0000-4000-8000-000000000001",
+            finishedAt: "2026-10-18T06:00:00.000Z",
+            trigger: "manual",
+            status: "failed",
+            itemCount: 0,
+            keptCount: 0,
+            note: "Avota kļūda: mobile.de: Apify failed",
+          }),
+        ],
+        loadForOrder,
+      }),
+    );
+    expect(loadForOrder).toHaveBeenCalledTimes(1);
+    expect(out.loadedCount).toBe(1);
   });
 
   it("does not load an order whose last marketplace load is inside the interval", async () => {
