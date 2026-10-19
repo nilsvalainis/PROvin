@@ -406,8 +406,13 @@ ${ctaButton(opts.resetUrl, cta)}
  * Operatora rediģēts dīlera e-pasts (plain text → rindkopas).
  * Rinda `Pasūtīt: https://…` kļūst par CTA pogu.
  */
-export function dealerDataOperatorMessageEmailHtml(opts: { title?: string | null; text: string }): string {
+export function dealerDataOperatorMessageEmailHtml(opts: {
+  title?: string | null;
+  text: string;
+  b2bClient?: boolean;
+}): string {
   const title = (opts.title ?? "").trim();
+  const b2bClient = opts.b2bClient === true;
   const orderCta = /^(Pasūtīt|Apmaksāt):\s*(https?:\/\/\S+)\s*$/i;
   const paragraphs = opts.text
     .replace(/\r\n/g, "\n")
@@ -423,6 +428,10 @@ export function dealerDataOperatorMessageEmailHtml(opts: { title?: string | null
       }
       const lines = block.split("\n");
       const last = (lines[lines.length - 1] ?? "").trim();
+      if (b2bClient && last === "PROVIN" && lines.length >= 2) {
+        const head = lines.slice(0, -1).join("\n").trim();
+        return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">${esc(head).replace(/\n/g, "<br/>")}<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span></p>`;
+      }
       if (isValidHttpUrl(last) && lines.length === 1) {
         return ctaButton(last, "Apmaksāt");
       }
@@ -439,7 +448,7 @@ ${ctaButton(last, "Apmaksāt")}`;
   const titleBlock = title
     ? `<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>`
     : "";
-  return shell(`${titleBlock}${body}`, { omitBrandRibbon: true });
+  return shell(`${titleBlock}${body}`, b2bClient ? { b2bClient: true } : { omitBrandRibbon: true });
 }
 
 /**
