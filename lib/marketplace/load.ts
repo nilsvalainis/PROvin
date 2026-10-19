@@ -1,9 +1,13 @@
 import { assignMarketplaceGroupIds } from "@/lib/marketplace/dedupe";
 import {
   decideMarketplaceBudget,
+  marketplaceAutoMaxItemsPerProvider,
+  marketplaceAutoMonthlyUsdCap,
+  MARKETPLACE_RUNS_KEEP,
   marketplaceMaxItemsPerProvider,
   marketplaceMonthKey,
   marketplaceMonthlyUsdCap,
+  usageSpentUsdByTrigger,
 } from "@/lib/marketplace/cost-caps";
 import { normalizeMarketplaceListings } from "@/lib/marketplace/normalize";
 import { attachMarketplacePriceCompare } from "@/lib/marketplace/price-compare";
@@ -20,6 +24,7 @@ import {
   MARKETPLACE_TTL_DAYS,
   type ListingProvider,
   type MarketplaceLoadResult,
+  type MarketplaceLoadTrigger,
   type MarketplacePlatform,
   type MarketplaceProviderId,
   type MarketplaceQuery,
@@ -32,8 +37,11 @@ export type MarketplaceLoadInput = {
   order: MarketplaceOrderCriteria;
   platforms?: MarketplacePlatform[];
   maxItems?: number;
-  /** Obligāti: maksas avots tikai pēc operatora pogas. */
-  explicit: true;
+  sortNewest?: boolean;
+  /** auto: cron. manual: tikai pēc pogas (explicit: true). */
+  trigger?: MarketplaceLoadTrigger;
+  /** Manuālajai ielādei obligāti true. Cron to nesūta. */
+  explicit?: boolean;
   now?: string;
   providers?: ListingProvider[];
 };
@@ -93,11 +101,16 @@ function mergeStored(previous: readonly MarketplaceStoredListing[], incoming: re
   return [...map.values()];
 }
 
+function resolveLoadTrigger(input: MarketplaceLoadInput): MarketplaceLoadTrigger {
+  return input.trigger === "auto" ? "auto" : "manual";
+}
+
 /**
- * Ielādē tikai pēc explicit pogas. Nekad no cron / lapas atvēršanas.
+ * Manuāli: tikai pēc pogas (explicit: true). Auto: tikai no cron sweep.
  */
 export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Promise<MarketplaceLoadResult> {
-  if (input.explicit !== true) {
+  const trigger = resolveLoadTrigger(input);
+  if (trigger === "manual" && input.explicit !== true) {
     return { ok: false, blocked: true, error: "explicit_required", added: 0, grouped: 0, estimatedUsd: 0, remainingMonthlyUsd: 0 };
   }
   const orderId = input.orderId.trim();
@@ -107,7 +120,9 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
   if (!marketplaceOrderHasFetchBounds(input.order)) {
     return { ok: false, blocked: true, error: "criteria_empty", added: 0, grouped: 0, estimatedUsd: 0, remainingMonthlyUsd: 0 };
   }
-  const preview = await previewMarketplaceLoad(input);
+  const maxItems =
+    input.maxItems ?? (trigger === "auto" ? marketplaceAutoMaxItemsPerProvider() : marketplaceMaxItemsPerProvider());
+  const preview = await previewMarketplaceLoad({ ...input, maxItems });
   if (!preview.budget.allowed) {
     return {
       ok: false,
@@ -118,6 +133,22 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
       estimatedUsd: preview.budget.estimatedUsd,
       remainingMonthlyUsd: preview.budget.remainingMonthlyUsd,
     };
+  }
+  if (trigger === "auto") {
+    const autoCap = marketplaceAutoMonthlyUsdCap();
+    const autoUsed = usageSpentUsdByTrigger(await readMarketplaceUsageMonth(marketplaceMonthKey(new Date(input.now ?? Date.now()))), "auto");
+    const remainingAuto = Math.round((autoCap - autoUsed) * 1000) / 1000;
+    if (preview.budget.estimatedUsd > remainingAuto + 1e-9) {
+      return {
+        ok: false,
+        blocked: true,
+        error: "budžets sasniegts",
+        added: 0,
+        grouped: 0,
+        estimatedUsd: preview.budget.estimatedUsd,
+        remainingMonthlyUsd: preview.budget.remainingMonthlyUsd,
+      };
+    }
   }
   const unconfigured = preview.estimates.filter((e) => !e.configured);
   if (unconfigured.length === preview.estimates.length) {
@@ -145,7 +176,11 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
       continue;
     }
     try {
-      const raw = await provider.search(query, { maxItems: preview.maxItems, maxUsd: estimate.maxUsd });
+      const raw = await provider.search(query, {
+        maxItems: preview.maxItems,
+        maxUsd: estimate.maxUsd,
+        ...(input.sortNewest ? { sortNewest: true } : {}),
+      });
       const normalized = normalizeMarketplaceListings(provider.platform, provider.id, raw, now);
       collected.push(...normalized);
       chargedUsd += estimate.maxUsd;
@@ -176,13 +211,14 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     startedAt,
     finishedAt: new Date().toISOString(),
     status: stored.length > 0 ? (notes.length ? "partial" : "ok") : notes.length ? "failed" : "ok",
+    trigger,
     note: notes.join(" "),
   };
   const write = await writeMarketplaceListingsState({
     version: 1,
     updatedAt: run.finishedAt,
     items: nextItems,
-    runs: [...previous.runs, run].slice(-80),
+    runs: [...previous.runs, run].slice(-MARKETPLACE_RUNS_KEEP),
   });
   if (!write.ok) {
     return {
@@ -205,6 +241,7 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
       items: stored.filter((s) => s.providerId === estimate.providerId).length,
       usd: estimate.maxUsd,
       at: now,
+      trigger,
     });
   }
   await writeMarketplaceUsageMonth(usage);

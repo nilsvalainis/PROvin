@@ -37,10 +37,29 @@ type LoadResponse = {
   remainingMonthlyUsd?: number;
 };
 
+type StatusResponse = {
+  lastAutoAt?: string;
+  nextAutoAt?: string;
+  intervalDays?: number;
+};
+
+function formatLvDate(iso: string | undefined): string {
+  if (!iso?.trim()) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("lv-LV", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Europe/Riga",
+  });
+}
+
 const ALL_PLATFORMS: MarketplacePlatform[] = ["mobilede", "autoscout24"];
 
 export function IrissMarketplaceLoadPanel({ orderId }: { orderId: string }) {
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
+  const [status, setStatus] = useState<StatusResponse | null>(null);
   const [platforms, setPlatforms] = useState<MarketplacePlatform[]>(ALL_PLATFORMS);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -58,8 +77,22 @@ export function IrissMarketplaceLoadPanel({ orderId }: { orderId: string }) {
     }
   }
 
+  async function loadStatus() {
+    try {
+      const res = await fetch(`/api/admin/iriss-marketplace/status?orderId=${encodeURIComponent(orderId)}`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const body = (await res.json().catch(() => ({}))) as StatusResponse;
+      setStatus(body);
+    } catch {
+      setStatus(null);
+    }
+  }
+
   useEffect(() => {
     void loadEstimate();
+    void loadStatus();
   }, [orderId]);
 
   function toggle(platform: MarketplacePlatform) {
@@ -104,7 +137,14 @@ export function IrissMarketplaceLoadPanel({ orderId }: { orderId: string }) {
     <section className="rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3.5">
       <p className="text-[13px] font-semibold text-[#111827]">mobile.de un AutoScout24</p>
       <p className="mt-1 text-[12px] leading-snug text-[#6b7280]">
-        Maksas avoti netiek ielādēti automātiski. Ielāde tikai šim pasūtījumam pēc pogas Ielādēt.
+        Automātiskā ielāde ik pa {status?.intervalDays ?? 3} dienām aktīvajiem pasūtījumiem. Poga Ielādēt paliek
+        manuālai ielādei ar esošajiem griestiem.
+      </p>
+      <p className="mt-1 text-[12px] text-[#374151]">
+        Pēdējā automātiskā ielāde: {formatLvDate(status?.lastAutoAt) || "vēl nav"}
+      </p>
+      <p className="mt-0.5 text-[12px] text-[#374151]">
+        Nākamā: {formatLvDate(status?.nextAutoAt) || "pēc cron"}
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
         {ALL_PLATFORMS.map((platform) => {

@@ -1,4 +1,10 @@
-import { marketplaceActorId, marketplaceUseFixtures, readApifyToken, runMarketplaceApifyActor } from "@/lib/marketplace/apify-client";
+import {
+  marketplaceActorId,
+  marketplaceApifySearchPayload,
+  marketplaceUseFixtures,
+  readApifyToken,
+  runMarketplaceApifyActor,
+} from "@/lib/marketplace/apify-client";
 import { marketplaceMaxItemsPerProvider, providerEstimate } from "@/lib/marketplace/cost-caps";
 import type { ListingProvider } from "@/lib/marketplace/types";
 import type { MarketplaceLimits, MarketplaceQuery, MarketplaceRawListing } from "@/lib/marketplace/types";
@@ -81,7 +87,7 @@ export function createApifyMobiledeProvider(): ListingProvider {
       const actorId = marketplaceActorId("MARKETPLACE_APIFY_MOBILEDE_ACTOR");
       const run = await runMarketplaceApifyActor({
         actorId,
-        payload: { ...this.buildQuery(query), maxItems: limits.maxItems },
+        payload: marketplaceApifySearchPayload(this.buildQuery(query), limits),
         maxItems: limits.maxItems,
         maxUsd: limits.maxUsd,
       });

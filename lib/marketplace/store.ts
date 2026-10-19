@@ -4,13 +4,16 @@ import { get, put } from "@vercel/blob";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { marketplaceMonthKey, emptyMarketplaceUsageMonth } from "@/lib/marketplace/cost-caps";
+import { marketplaceMonthKey, emptyMarketplaceUsageMonth, MARKETPLACE_RUNS_KEEP } from "@/lib/marketplace/cost-caps";
 import { marketplaceListingExpiresAt, marketplaceListingIsExpired, marketplaceListingVehicleId } from "@/lib/marketplace/to-listing-vehicle";
 import {
+  emptyMarketplaceAutoCronState,
   emptyMarketplaceListingsState,
   isMarketplacePlatform,
   isMarketplaceProviderId,
   MARKETPLACE_TTL_DAYS,
+  type MarketplaceAutoCronState,
+  type MarketplaceAutoCronStatus,
   type MarketplaceListingsState,
   type MarketplaceRunRecord,
   type MarketplaceStoredListing,
@@ -20,6 +23,7 @@ import {
 
 const DEFAULT_RELATIVE_DIR = ".data/iriss-marketplace";
 const LISTINGS_FILENAME = "listings.json";
+const AUTO_CRON_FILENAME = "auto-cron.json";
 
 type ResolvedStorage =
   | { kind: "disabled" }
@@ -136,6 +140,7 @@ function parseRun(v: unknown): MarketplaceRunRecord | null {
     startedAt: str(v.startedAt, 40),
     finishedAt: str(v.finishedAt, 40),
     status: v.status === "partial" || v.status === "blocked" || v.status === "failed" ? v.status : "ok",
+    trigger: v.trigger === "auto" ? "auto" : "manual",
     note: str(v.note, 240),
   };
 }
@@ -150,7 +155,7 @@ export function normalizeMarketplaceListingsState(raw: unknown, nowMs = Date.now
     version: 1,
     updatedAt: str(raw.updatedAt, 40),
     items: items.filter((item) => !marketplaceListingIsExpired(item.expiresAt, nowMs)),
-    runs: runs.slice(-80),
+    runs: runs.slice(-MARKETPLACE_RUNS_KEEP),
   };
 }
 
@@ -228,6 +233,7 @@ export async function readMarketplaceUsageMonth(month = marketplaceMonthKey()): 
           items: typeof e.items === "number" ? e.items : 0,
           usd: typeof e.usd === "number" ? e.usd : 0,
           at: str(e.at, 40),
+          trigger: e.trigger === "auto" ? ("auto" as const) : ("manual" as const),
         }))
         .filter((e): e is MarketplaceUsageEntry => Boolean(e.runId) && isMarketplaceProviderId(e.providerId))
     : [];
@@ -241,6 +247,58 @@ export async function writeMarketplaceUsageMonth(
   if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
   try {
     await writeJson(r, `usage-${usage.month}.json`, JSON.stringify(usage, null, 2));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+function parseAutoCronStatus(v: unknown): MarketplaceAutoCronStatus {
+  if (v === "ok" || v === "skipped" || v === "budžets sasniegts" || v === "failed") return v;
+  return "skipped";
+}
+
+export function normalizeMarketplaceAutoCronState(raw: unknown): MarketplaceAutoCronState {
+  const empty = emptyMarketplaceAutoCronState();
+  if (!isObj(raw) || raw.version !== 1) return empty;
+  const skipped = Array.isArray(raw.skipped)
+    ? raw.skipped
+        .filter(isObj)
+        .map((s) => ({ orderId: str(s.orderId, 80), reason: str(s.reason, 180) }))
+        .filter((s) => s.orderId)
+    : [];
+  return {
+    version: 1,
+    updatedAt: str(raw.updatedAt, 40),
+    lastStartedAt: str(raw.lastStartedAt, 40),
+    lastFinishedAt: str(raw.lastFinishedAt, 40),
+    status: parseAutoCronStatus(raw.status),
+    reason: str(raw.reason, 240),
+    loadedOrderIds: Array.isArray(raw.loadedOrderIds)
+      ? raw.loadedOrderIds.map((id) => str(id, 80)).filter(Boolean).slice(0, 400)
+      : [],
+    skipped: skipped.slice(0, 400),
+    loadedCount: typeof raw.loadedCount === "number" ? raw.loadedCount : 0,
+    skippedCount: typeof raw.skippedCount === "number" ? raw.skippedCount : skipped.length,
+    estimatedUsd: typeof raw.estimatedUsd === "number" ? raw.estimatedUsd : 0,
+    chargedUsd: typeof raw.chargedUsd === "number" ? raw.chargedUsd : 0,
+  };
+}
+
+export async function readMarketplaceAutoCronState(): Promise<MarketplaceAutoCronState> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return emptyMarketplaceAutoCronState();
+  const raw = await readJson(r, AUTO_CRON_FILENAME);
+  return normalizeMarketplaceAutoCronState(raw);
+}
+
+export async function writeMarketplaceAutoCronState(
+  state: MarketplaceAutoCronState,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+  try {
+    await writeJson(r, AUTO_CRON_FILENAME, JSON.stringify(normalizeMarketplaceAutoCronState(state), null, 2));
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };

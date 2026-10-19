@@ -1,5 +1,7 @@
 /** Apify klients. Bez APIFY_TOKEN nedrīkst veikt tīkla izsaukumu. */
 
+import type { MarketplaceLimits } from "@/lib/marketplace/types";
+
 export function readApifyToken(): string | null {
   const token = process.env.APIFY_TOKEN?.trim() ?? "";
   return token || null;
@@ -11,6 +13,20 @@ export function marketplaceUseFixtures(): boolean {
 
 export function marketplaceActorId(envName: string): string {
   return process.env[envName]?.trim() ?? "";
+}
+
+/** Actoram: maxItems un, ja inkrementāli, sort pēc jaunākā (vairāki lauku vārdi, jo actoru shēmas atšķiras). */
+export function marketplaceApifySearchPayload(
+  queryPayload: Record<string, unknown>,
+  limits: MarketplaceLimits,
+): Record<string, unknown> {
+  const payload: Record<string, unknown> = { ...queryPayload, maxItems: limits.maxItems };
+  if (limits.sortNewest) {
+    payload.sort = "newest";
+    payload.sortBy = "newest";
+    payload.orderBy = "newest";
+  }
+  return payload;
 }
 
 export type ApifyRunResult = {

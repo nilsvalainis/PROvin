@@ -1,0 +1,306 @@
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { marketplaceApifySearchPayload } from "@/lib/marketplace/apify-client";
+import {
+  hasPriorMarketplaceLoad,
+  isMarketplaceAutoOrderActive,
+  lastMarketplaceLoadAt,
+  marketplaceAutoItemsForRun,
+  marketplaceAutoProvidersReady,
+  nextMarketplaceAutoAt,
+  orderDueForMarketplaceAuto,
+  runMarketplaceAutoSweep,
+  sortMarketplaceAutoOrders,
+  wouldExceedMarketplaceAutoBudget,
+  type MarketplaceAutoOrderBrief,
+  type MarketplaceAutoSweepDeps,
+} from "@/lib/marketplace/auto-load";
+import { emptyMarketplaceUsageMonth } from "@/lib/marketplace/cost-caps";
+import type { MarketplaceCostEstimate, MarketplaceLoadResult, MarketplaceRunRecord, MarketplaceUsageMonth } from "@/lib/marketplace/types";
+
+const NOW = new Date("2026-10-19T06:00:00.000Z");
+
+function brief(partial: Partial<MarketplaceAutoOrderBrief> & Pick<MarketplaceAutoOrderBrief, "id">): MarketplaceAutoOrderBrief {
+  return {
+    createdAt: "2026-10-01T00:00:00.000Z",
+    updatedAt: "2026-10-10T00:00:00.000Z",
+    listStatus: "active",
+    ...partial,
+  };
+}
+
+function estimate(maxUsd: number): MarketplaceCostEstimate {
+  return {
+    providerId: "apify-mobilede",
+    platform: "mobilede",
+    maxItems: 40,
+    maxUsd,
+    usdPerThousand: 50,
+    configured: true,
+  };
+}
+
+function runRecord(partial: Partial<MarketplaceRunRecord> & Pick<MarketplaceRunRecord, "id" | "orderId">): MarketplaceRunRecord {
+  return {
+    tenantScope: "iriss",
+    providers: ["apify-mobilede"],
+    query: {
+      make: "Volvo",
+      model: "XC60",
+      yearFrom: 2018,
+      yearTo: 2020,
+      mileageFrom: null,
+      mileageTo: 150000,
+      priceFrom: null,
+      priceTo: 25000,
+      fuel: "diesel",
+      gearbox: "automatic",
+      powerFromKw: null,
+      powerToKw: null,
+      countries: [],
+    },
+    maxItems: 40,
+    maxUsd: 1,
+    estimatedUsd: 0.05,
+    chargedUsd: 0.05,
+    itemCount: 2,
+    keptCount: 2,
+    rejectedCount: 0,
+    startedAt: "2026-10-16T06:00:00.000Z",
+    finishedAt: "2026-10-16T06:01:00.000Z",
+    status: "ok",
+    trigger: "auto",
+    note: "",
+    ...partial,
+  };
+}
+
+function okLoad(estimatedUsd: number): MarketplaceLoadResult {
+  return { ok: true, added: 2, grouped: 0, estimatedUsd, remainingMonthlyUsd: 20, run: runRecord({ id: "r", orderId: "x", chargedUsd: estimatedUsd }) };
+}
+
+const ORDER = {
+  brandModel: "Volvo XC60",
+  productionYears: "2018-2020",
+  maxMileage: "150000",
+  totalBudget: "25000",
+};
+
+function baseDeps(overrides: Partial<MarketplaceAutoSweepDeps> = {}): MarketplaceAutoSweepDeps {
+  return {
+    now: NOW,
+    listActiveOrders: async () => [brief({ id: "00000000-0000-4000-8000-000000000001" })],
+    readOrder: async () => ORDER,
+    readListingsRuns: async () => [],
+    readUsage: async () => emptyMarketplaceUsageMonth("2026-10"),
+    providersReady: () => ({ ok: true, reason: "" }),
+    loadForOrder: async () => okLoad(0.05),
+    estimateForOrder: () => ({ estimates: [estimate(0.05)] }),
+    ...overrides,
+  };
+}
+
+describe("marketplace auto interval", () => {
+  it("is due when never loaded or last load is at least 3 days ago", () => {
+    expect(orderDueForMarketplaceAuto(null, NOW, 3)).toBe(true);
+    expect(orderDueForMarketplaceAuto("2026-10-16T06:00:00.000Z", NOW, 3)).toBe(true);
+    expect(orderDueForMarketplaceAuto("2026-10-16T06:00:01.000Z", NOW, 3)).toBe(false);
+    expect(orderDueForMarketplaceAuto("2026-10-18T06:00:00.000Z", NOW, 3)).toBe(false);
+  });
+
+  it("computes next auto from last load plus interval, or next 06:00 UTC when due", () => {
+    expect(nextMarketplaceAutoAt("2026-10-18T06:00:00.000Z", NOW, 3)).toBe("2026-10-21T06:00:00.000Z");
+    expect(nextMarketplaceAutoAt(null, NOW, 3)).toBe("2026-10-19T06:00:00.000Z");
+    expect(nextMarketplaceAutoAt("2026-10-10T06:00:00.000Z", NOW, 3)).toBe("2026-10-19T06:00:00.000Z");
+  });
+
+  it("sorts newest and active orders first and keeps reserved after searching", () => {
+    const rows = [
+      brief({ id: "old", updatedAt: "2026-09-01T00:00:00.000Z", listStatus: "active" }),
+      brief({ id: "reserved", updatedAt: "2026-10-18T00:00:00.000Z", listStatus: "reserved" }),
+      brief({ id: "fresh", updatedAt: "2026-10-18T12:00:00.000Z", listStatus: "searching" }),
+      brief({ id: "done", listStatus: "completed" }),
+    ];
+    expect(isMarketplaceAutoOrderActive(rows[3]!)).toBe(false);
+    expect(sortMarketplaceAutoOrders(rows.filter(isMarketplaceAutoOrderActive)).map((r) => r.id)).toEqual([
+      "fresh",
+      "old",
+      "reserved",
+    ]);
+  });
+
+  it("uses newest sort only after a prior load", () => {
+    expect(hasPriorMarketplaceLoad([], "o1")).toBe(false);
+    expect(marketplaceAutoItemsForRun(false)).toEqual({ maxItems: 40, sortNewest: false });
+    expect(marketplaceAutoItemsForRun(true)).toEqual({ maxItems: 40, sortNewest: true });
+    expect(lastMarketplaceLoadAt([runRecord({ id: "r1", orderId: "o1" })], "o1")).toBe("2026-10-16T06:01:00.000Z");
+  });
+});
+
+describe("marketplace auto budget and skip", () => {
+  const envKeys = [
+    "APIFY_TOKEN",
+    "MARKETPLACE_APIFY_MOBILEDE_ACTOR",
+    "MARKETPLACE_APIFY_AUTOSCOUT24_ACTOR",
+    "MARKETPLACE_AUTO_MONTHLY_USD_CAP",
+    "MARKETPLACE_MONTHLY_USD_CAP",
+    "MARKETPLACE_PER_RUN_USD_CAP",
+  ] as const;
+  const prev: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    for (const key of envKeys) prev[key] = process.env[key];
+    process.env.MARKETPLACE_AUTO_MONTHLY_USD_CAP = "4.5";
+    process.env.MARKETPLACE_MONTHLY_USD_CAP = "30";
+    process.env.MARKETPLACE_PER_RUN_USD_CAP = "5";
+  });
+
+  afterEach(() => {
+    for (const key of envKeys) {
+      if (prev[key] == null) delete process.env[key];
+      else process.env[key] = prev[key];
+    }
+  });
+
+  it("skips the whole sweep without APIFY_TOKEN or actor ID and does not load", async () => {
+    delete process.env.APIFY_TOKEN;
+    delete process.env.MARKETPLACE_APIFY_MOBILEDE_ACTOR;
+    delete process.env.MARKETPLACE_APIFY_AUTOSCOUT24_ACTOR;
+    expect(marketplaceAutoProvidersReady()).toMatchObject({ ok: false, reason: "Nav APIFY_TOKEN." });
+    const loadForOrder = vi.fn(async () => okLoad(0.05));
+    const out = await runMarketplaceAutoSweep(
+      baseDeps({
+        providersReady: marketplaceAutoProvidersReady,
+        loadForOrder,
+      }),
+    );
+    expect(out.ok).toBe(true);
+    expect(out.status).toBe("skipped");
+    expect(out.reason).toMatch(/APIFY_TOKEN/);
+    expect(loadForOrder).not.toHaveBeenCalled();
+
+    process.env.APIFY_TOKEN = "token";
+    expect(marketplaceAutoProvidersReady().reason).toMatch(/actor ID/);
+  });
+
+  it("stops later orders when the next auto run would exceed 4.5 $ and records budžets sasniegts", async () => {
+    const usage: MarketplaceUsageMonth = emptyMarketplaceUsageMonth("2026-10", 30);
+    const loaded: string[] = [];
+    const orders = [
+      brief({ id: "00000000-0000-4000-8000-000000000001", updatedAt: "2026-10-19T00:00:00.000Z" }),
+      brief({ id: "00000000-0000-4000-8000-000000000002", updatedAt: "2026-10-18T00:00:00.000Z" }),
+      brief({ id: "00000000-0000-4000-8000-000000000003", updatedAt: "2026-10-17T00:00:00.000Z" }),
+    ];
+    const out = await runMarketplaceAutoSweep(
+      baseDeps({
+        listActiveOrders: async () => orders,
+        readUsage: async () => usage,
+        estimateForOrder: () => ({ estimates: [estimate(2)] }),
+        loadForOrder: async (input) => {
+          loaded.push(input.orderId);
+          usage.entries.push({
+            runId: `r-${input.orderId}`,
+            orderId: input.orderId,
+            providerId: "apify-mobilede",
+            items: 10,
+            usd: 2,
+            at: NOW.toISOString(),
+            trigger: "auto",
+          });
+          return okLoad(2);
+        },
+      }),
+    );
+    expect(loaded).toEqual([
+      "00000000-0000-4000-8000-000000000001",
+      "00000000-0000-4000-8000-000000000002",
+    ]);
+    expect(out.status).toBe("budžets sasniegts");
+    expect(out.skipped.some((s) => s.orderId.endsWith("0003") && s.reason === "budžets sasniegts")).toBe(true);
+    expect(
+      wouldExceedMarketplaceAutoBudget({
+        estimates: [estimate(2)],
+        usage,
+      }).allowed,
+    ).toBe(false);
+  });
+
+  it("does not load an order whose last marketplace load is inside the interval", async () => {
+    const loadForOrder = vi.fn(async () => okLoad(0.05));
+    const out = await runMarketplaceAutoSweep(
+      baseDeps({
+        readListingsRuns: async () => [
+          runRecord({
+            id: "prev",
+            orderId: "00000000-0000-4000-8000-000000000001",
+            finishedAt: "2026-10-18T06:00:00.000Z",
+            trigger: "manual",
+          }),
+        ],
+        loadForOrder,
+      }),
+    );
+    expect(loadForOrder).not.toHaveBeenCalled();
+    expect(out.loadedCount).toBe(0);
+  });
+
+  it("asks only for newest listings after the first load and keeps maxItems at the auto cap", async () => {
+    const seen: Array<{ sortNewest?: boolean; maxItems?: number }> = [];
+    await runMarketplaceAutoSweep(
+      baseDeps({
+        readListingsRuns: async () => [],
+        loadForOrder: async (input) => {
+          seen.push({ sortNewest: input.sortNewest, maxItems: input.maxItems });
+          return okLoad(0.05);
+        },
+      }),
+    );
+    await runMarketplaceAutoSweep(
+      baseDeps({
+        readListingsRuns: async () => [
+          runRecord({
+            id: "first",
+            orderId: "00000000-0000-4000-8000-000000000001",
+            finishedAt: "2026-10-15T06:00:00.000Z",
+          }),
+        ],
+        loadForOrder: async (input) => {
+          seen.push({ sortNewest: input.sortNewest, maxItems: input.maxItems });
+          return okLoad(0.05);
+        },
+      }),
+    );
+    expect(seen[0]).toEqual({ sortNewest: false, maxItems: 40 });
+    expect(seen[1]).toEqual({ sortNewest: true, maxItems: 40 });
+  });
+
+  it("leaves auction listing sync untouched", async () => {
+    const src = readFileSync(path.join(process.cwd(), "lib/marketplace/auto-load.ts"), "utf8");
+    expect(src).not.toMatch(/iriss-listings-sync|runIrissListingsDailySync/);
+    const cronSrc = readFileSync(path.join(process.cwd(), "app/api/cron/iriss-marketplace-auto/route.ts"), "utf8");
+    expect(cronSrc).not.toMatch(/iriss-listings-sync|runIrissListingsDailySync/);
+    const loadForOrder = vi.fn(async () => okLoad(0.05));
+    await runMarketplaceAutoSweep(baseDeps({ loadForOrder }));
+    expect(loadForOrder).toHaveBeenCalledTimes(1);
+    expect(loadForOrder).toHaveBeenCalledWith(expect.objectContaining({ trigger: "auto" }));
+  });
+});
+
+describe("apify incremental payload", () => {
+  it("adds newest sort keys when the actor run is incremental", () => {
+    const payload = marketplaceApifySearchPayload({ make: "Volvo" }, { maxItems: 40, maxUsd: 0.05, sortNewest: true });
+    expect(payload.maxItems).toBe(40);
+    expect(payload.sort).toBe("newest");
+    expect(payload.sortBy).toBe("newest");
+    const first = marketplaceApifySearchPayload({ make: "Volvo" }, { maxItems: 40, maxUsd: 0.05 });
+    expect(first.sort).toBeUndefined();
+  });
+});
+
+describe("auction sync module stays independent", () => {
+  it("does not import marketplace auto load from listings sync", () => {
+    const syncSrc = readFileSync(path.join(process.cwd(), "lib/iriss-listings-sync.ts"), "utf8");
+    expect(syncSrc).not.toMatch(/marketplace\/auto-load|runMarketplaceAuto/);
+  });
+});

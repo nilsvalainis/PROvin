@@ -100,11 +100,23 @@ describe("loadMarketplaceForOrder", () => {
     expect(state.items.some((i) => i.platform === "autoscout24")).toBe(true);
   });
 
+  it("allows an auto trigger without the operator explicit flag", async () => {
+    const loaded = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order,
+      trigger: "auto",
+      maxItems: 40,
+      providers: [mockProvider("mobilede", RAW)],
+    });
+    expect(loaded.ok).toBe(true);
+    const state = await readMarketplaceListingsState();
+    expect(state.runs.some((r) => r.trigger === "auto")).toBe(true);
+  });
+
   it("blocks an implicit call and an empty search", async () => {
     const implicit = await loadMarketplaceForOrder({
       orderId: "00000000-0000-4000-8000-000000000001",
       order,
-      // @ts-expect-error explicit is required
       explicit: false,
       providers: [mockProvider("mobilede", RAW)],
     });

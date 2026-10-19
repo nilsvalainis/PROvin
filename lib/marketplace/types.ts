@@ -1,6 +1,7 @@
 /**
  * Tirgus sludinājumu (mobile.de, AutoScout24) adapteru slānis.
- * Tikai iekšēji / B2B: nav publiska kataloga. Maksas avoti netiek ielādēti automātiski.
+ * Tikai iekšēji / B2B: nav publiska kataloga.
+ * Manuālā poga Ielādēt paliek. Automātiskā ielāde: cron ik pa dažām dienām ar atsevišķu auto budžetu.
  */
 
 export const MARKETPLACE_PLATFORMS = ["mobilede", "autoscout24"] as const;
@@ -40,7 +41,11 @@ export type MarketplaceCostEstimate = {
 export type MarketplaceLimits = {
   maxItems: number;
   maxUsd: number;
+  /** Pēc pirmās ielādes: lūgt actoram jaunākos sludinājumus. */
+  sortNewest?: boolean;
 };
+
+export type MarketplaceLoadTrigger = "manual" | "auto";
 
 export type MarketplaceRawListing = {
   externalId?: unknown;
@@ -129,6 +134,7 @@ export type MarketplaceRunRecord = {
   startedAt: string;
   finishedAt: string;
   status: "ok" | "partial" | "blocked" | "failed";
+  trigger: MarketplaceLoadTrigger;
   note: string;
 };
 
@@ -139,6 +145,29 @@ export type MarketplaceUsageEntry = {
   items: number;
   usd: number;
   at: string;
+  trigger: MarketplaceLoadTrigger;
+};
+
+export type MarketplaceAutoCronStatus = "ok" | "skipped" | "budžets sasniegts" | "failed";
+
+export type MarketplaceAutoSkip = {
+  orderId: string;
+  reason: string;
+};
+
+export type MarketplaceAutoCronState = {
+  version: 1;
+  updatedAt: string;
+  lastStartedAt: string;
+  lastFinishedAt: string;
+  status: MarketplaceAutoCronStatus;
+  reason: string;
+  loadedOrderIds: string[];
+  skipped: MarketplaceAutoSkip[];
+  loadedCount: number;
+  skippedCount: number;
+  estimatedUsd: number;
+  chargedUsd: number;
 };
 
 export type MarketplaceUsageMonth = {
@@ -205,6 +234,23 @@ export function emptyMarketplaceQuery(): MarketplaceQuery {
 
 export function emptyMarketplaceListingsState(): MarketplaceListingsState {
   return { version: 1, updatedAt: "", items: [], runs: [] };
+}
+
+export function emptyMarketplaceAutoCronState(): MarketplaceAutoCronState {
+  return {
+    version: 1,
+    updatedAt: "",
+    lastStartedAt: "",
+    lastFinishedAt: "",
+    status: "skipped",
+    reason: "",
+    loadedOrderIds: [],
+    skipped: [],
+    loadedCount: 0,
+    skippedCount: 0,
+    estimatedUsd: 0,
+    chargedUsd: 0,
+  };
 }
 
 export function marketplaceQueryHasBounds(q: MarketplaceQuery): boolean {

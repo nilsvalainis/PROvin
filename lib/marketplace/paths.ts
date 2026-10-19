@@ -16,3 +16,7 @@ export function marketplaceListingsFile(scope?: MarketplaceTenantScope): string 
 export function marketplaceUsageFile(month: string, scope?: MarketplaceTenantScope): string {
   return `${marketplaceStoragePrefix(scope)}usage-${month}.json`;
 }
+
+export function marketplaceAutoCronFile(scope?: MarketplaceTenantScope): string {
+  return `${marketplaceStoragePrefix(scope)}auto-cron.json`;
+}
