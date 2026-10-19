@@ -25,6 +25,7 @@
  *   GET  /listings/health                 bez auth: sesiju stāvoklis, rinda, dienas skaitītāji
  *   POST /listings/fetch                  {platform, sourceUrl, orderId, maxPages?}
  *   POST /listings/page                   {url}  VIN SCAN izsoļu HTML (stat.vin, bid.cars, …)
+ *   POST /listings/http                   {url}  car.info super-search JSON (plain HTTP, ne Chrome)
  *   POST /listings/session/check          {platform}
  *   POST /listings/login/:platform        atver redzamu Chrome + īslaicīgs noVNC tokens adminam
  *   POST /listings/login/:platform/close  aizver manuālo login un pārbauda sesiju
@@ -52,6 +53,7 @@ import { sanitizeAutobidRelayRaw } from "./lib/sanitize-autobid.mjs";
 import { PLATFORMS, RelayState } from "./lib/state.mjs";
 import { listingsFetchKey, listingsUrlLog } from "./lib/urls.mjs";
 import { createVinScanLanes, vinScanPageHost, vinScanProfileName } from "./lib/vinscan-lanes.mjs";
+import { fetchCarinfoSuperSearchHttp, validCarinfoSuperSearchUrl } from "./lib/vinscan-http.mjs";
 import { fetchVinScanPageHtml, validVinScanPageUrl } from "./lib/vinscan-page.mjs";
 
 const HOST = process.env.LISTINGS_RELAY_HOST || "127.0.0.1";
@@ -343,9 +345,26 @@ const server = createServer(async (req, res) => {
     return sendJson(res, 400, { ok: false, error: e instanceof Error ? e.message : "nederīgs JSON" });
   }
 
+  if (path === "/http") {
+    const superUrl = validCarinfoSuperSearchUrl(body.url);
+    if (!superUrl) return sendJson(res, 400, { ok: false, error: "url nav car.info super-search" });
+    log(`vinscan http ${listingsUrlLog(superUrl)}`);
+    const out = await fetchCarinfoSuperSearchHttp(superUrl);
+    log(`vinscan http ${out.ok ? `HTTP ${out.status}` : "kļūda"} ${out.elapsedMs ?? 0} ms`);
+    return sendJson(res, 200, out);
+  }
+
   if (path === "/page") {
     const pageUrl = validVinScanPageUrl(body.url);
     if (!pageUrl) return sendJson(res, 400, { ok: false, error: "url nav atļauts VIN SCAN hosts" });
+    const superUrl = validCarinfoSuperSearchUrl(pageUrl);
+    if (superUrl) {
+      // JSON XHR. Chrome page.goto te saņem 403 un gaida ~52 s. Plain HTTP atdod JSON.
+      log(`vinscan http (page) ${listingsUrlLog(superUrl)}`);
+      const out = await fetchCarinfoSuperSearchHttp(superUrl);
+      log(`vinscan http ${out.ok ? `HTTP ${out.status}` : "kļūda"} ${out.elapsedMs ?? 0} ms`);
+      return sendJson(res, 200, out);
+    }
     const shared = vinScanLanes.peek(pageUrl);
     if (!shared && vinScanLanes.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, error: "rinda pilna" });
     if (!shared && state.countFetch("vinscan", VINSCAN_MAX_FETCHES_PER_DAY)) {

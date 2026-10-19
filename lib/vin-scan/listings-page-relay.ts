@@ -148,6 +148,99 @@ async function fetchVinScanPageViaRelayOnce(
   }
 }
 
+/** car.info super-search ir XHR JSON, ne HTML lapa. Chrome page.goto to nesaņem. */
+export function validCarinfoSuperSearchUrl(raw: string): string {
+  try {
+    const u = new URL(String(raw ?? "").trim());
+    if (u.protocol !== "https:") return "";
+    const host = u.hostname.toLowerCase();
+    if (host !== "www.car.info" && host !== "car.info") return "";
+    if (!/^\/[a-z]{2}-[a-z]{2}\/search\/super\/[A-Z0-9]{11,17}$/i.test(u.pathname)) return "";
+    return u.toString();
+  } catch {
+    return "";
+  }
+}
+
+export function isCarinfoSuperSearchUrl(raw: string): boolean {
+  return validCarinfoSuperSearchUrl(raw) !== "";
+}
+
+/**
+ * Plain HTTP uz releja `POST /listings/http`. Nekad Chrome `/listings/page`.
+ * Vecs relejs šo ceļu nezina un atbild ātri ar 400, tāpēc skenēšana nekaras 52 s.
+ */
+export async function fetchCarinfoSuperSearchViaRelay(
+  url: string,
+  deps: { fetchImpl?: FetchLike; env?: Record<string, string | undefined>; timeoutMs?: number } = {},
+): Promise<VinScanRelayPage> {
+  const target = validCarinfoSuperSearchUrl(url);
+  if (!target) return { ok: false, reason: "url nav car.info super-search" };
+  const cfg = readIrissRelayConfig(deps.env ?? process.env);
+  if (!cfg) return { ok: false, reason: "Relejs nav konfigurēts (IRISS_LISTINGS_RELAY_URL)" };
+  const fetchImpl = deps.fetchImpl ?? fetch;
+  const timeoutMs = deps.timeoutMs ?? 8_000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetchImpl(`${cfg.baseUrl}/http`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${cfg.token}` },
+      body: JSON.stringify({ url: target }),
+      signal: controller.signal,
+      cache: "no-store",
+    });
+    const text = await res.text();
+    let body: unknown = null;
+    try {
+      body = JSON.parse(text) as unknown;
+    } catch {
+      body = null;
+    }
+    const rec = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+    if (!res.ok || rec.ok === false) {
+      const err = String(rec.error ?? rec.note ?? "").trim();
+      if (res.status === 401 || res.status === 403) {
+        return { ok: false, reason: "Relejs noraidīja tokenu (IRISS_LISTINGS_RELAY_TOKEN)" };
+      }
+      return { ok: false, reason: err || `Relejs atbildēja HTTP ${res.status}` };
+    }
+    const html = String(rec.html ?? "");
+    if (!html.trim()) return { ok: false, reason: "Relejs atgrieza tukšu atbildi" };
+    return {
+      ok: true,
+      status: typeof rec.status === "number" ? rec.status : 200,
+      html,
+      finalUrl: String(rec.finalUrl ?? target),
+    };
+  } catch (e) {
+    const aborted = e instanceof Error && e.name === "AbortError";
+    if (aborted) return { ok: false, reason: `Relejs neatbildēja ${Math.max(1, Math.round(timeoutMs / 1000))} s laikā` };
+    return { ok: false, reason: `Releja savienojums neizdevās: ${formatFetchError(e)}` };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Super-search rezerve. Ja relejā vēl nav `/http`, atstāj tiešo atbildi un neiet uz Chrome. */
+export async function applyCarinfoSuperSearchHttp(
+  url: string,
+  page: VinScanHttpLike,
+  deps: { fetchImpl?: FetchLike; env?: Record<string, string | undefined>; timeoutMs?: number } = {},
+): Promise<VinScanHttpLike> {
+  if (!isCarinfoSuperSearchUrl(url)) return page;
+  const relayed = await fetchCarinfoSuperSearchViaRelay(url, deps);
+  if (!relayed.ok) return page;
+  return {
+    status: relayed.status || 200,
+    text: relayed.html,
+    cookie: page.cookie ?? "",
+    ua: page.ua,
+    proxyUrl: page.proxyUrl,
+    finalUrl: relayed.finalUrl,
+  };
+}
+
 export async function applyVinScanRelayIfBlocked(
   url: string,
   page: VinScanHttpLike,
