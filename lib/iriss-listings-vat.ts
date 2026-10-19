@@ -6,7 +6,12 @@
  * `lib/__fixtures__/iriss-vat/`.
  */
 import { listingFinalPrice, listingRealCost, type ListingTaxKind } from "@/lib/iriss-listings-cost";
-import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
+import {
+  isIrissMarketplaceListingPlatform,
+  type IrissAuctionListingPlatform,
+  type IrissListingPlatform,
+  type IrissListingVehicle,
+} from "@/lib/iriss-listings-types";
 
 /** ES-27 standarta PVN likmes. Pēdējā pārbaude: 2026-10-09 (EE 24, FI 25.5). */
 export const EU_VAT: Record<string, number> = {
@@ -83,7 +88,7 @@ export type ListingVatHealth = {
   reason: string;
 };
 
-export type ListingVatHealthMap = Record<IrissListingPlatform, ListingVatHealth>;
+export type ListingVatHealthMap = Record<IrissAuctionListingPlatform, ListingVatHealth>;
 
 function countryVat(code: string | undefined): number | null {
   if (!code) return null;
@@ -257,6 +262,15 @@ function detectAutobidTax(input: ListingTaxInput): ListingTax {
 }
 
 export function detectListingTax(input: ListingTaxInput): ListingTax {
+  if (isIrissMarketplaceListingPlatform(input.platform)) {
+    return tax({
+      kind: "gross",
+      rate: input.countryCode === "DE" ? 19 : null,
+      basis: "default_silent",
+      raw: "Tirgus sludinājums. PVN no avota netiek glabāts.",
+      rateFrom: "",
+    });
+  }
   if (input.platform === "auto1") return detectAuto1Tax(input);
   if (input.platform === "openline") return detectOpenlaneTax(input);
   if (input.platform === "ecarstrade") return detectEcarstradeTax(input);
@@ -394,7 +408,7 @@ export function computeListingVatHealth(vehicles: readonly IrissListingVehicle[]
     autobid: emptyHealth(),
     ecarstrade: emptyHealth(),
   };
-  const texts: Record<IrissListingPlatform, Map<string, number>> = {
+  const texts: Record<IrissAuctionListingPlatform, Map<string, number>> = {
     auto1: new Map(),
     openline: new Map(),
     autobid: new Map(),
@@ -402,6 +416,7 @@ export function computeListingVatHealth(vehicles: readonly IrissListingVehicle[]
   };
   for (const v of vehicles) {
     if (v.change === "gone") continue;
+    if (isIrissMarketplaceListingPlatform(v.platform)) continue;
     const t = taxFromVehicle(v);
     const h = out[v.platform];
     h.total += 1;

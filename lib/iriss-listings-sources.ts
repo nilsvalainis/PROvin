@@ -4,7 +4,7 @@ import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
 import { cleanHttpUrl, detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
 import { enrichListingSearchUrl } from "@/lib/iriss-listings-search-filter";
-import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
+import { isIrissMarketplaceListingPlatform, type IrissListingPlatform } from "@/lib/iriss-listings-types";
 import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
 
 export type IrissListingSource = {
@@ -91,13 +91,13 @@ type SourceRow = Pick<IrissPasutijumsListRow, "id" | "brandModel" | "listStatus"
 /**
  * Avoti no darba statusiem (aktīvs, meklē, piedāvāts, rezervēts). Ņem visas Autobid / Openlane / Auto1 / eCarsTrade
  * (un „Citi”, ja hosts ir izsole) saites. Identisks URL starp pasūtījumiem paliek viena nolasīšana.
- * Mobile.de saites šeit neiekļaujam (tās glabā un rāda formā / priekšskatījumā, bet nelasām).
+ * mobile.de / AutoScout24 šeit neiekļaujam: maksas avoti tikai ar pogu Ielādēt.
  */
 export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[] {
   const out: IrissListingSource[] = [];
   const seen = new Set<string>();
   const push = (row: SourceRow, platform: IrissListingPlatform | null, raw: string) => {
-    if (!platform) return;
+    if (!platform || isIrissMarketplaceListingPlatform(platform)) return;
     const cleaned = cleanHttpUrl(raw);
     if (!cleaned) return;
     /** Openlane findcar?auctionId=... ir viena auto lapa un ingestā timeout. */

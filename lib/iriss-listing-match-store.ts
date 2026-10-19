@@ -25,10 +25,10 @@ import {
   getIrissListingsStorageState,
   IRISS_LISTINGS_READ_CACHE_TTL_MS,
   readIrissListingMatchState,
-  readIrissListingsLatestView,
   subscribeIrissListingsLatestCacheInvalidate,
   writeIrissListingMatchState,
 } from "@/lib/iriss-listings-aggregate-store";
+import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
 import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
@@ -51,7 +51,7 @@ export async function refreshIrissListingMatches(input?: {
   const now = input?.now ?? new Date().toISOString();
   const vehicles =
     input?.vehicles ??
-    ((await readIrissListingsLatestView().catch(() => null))?.vehicles ?? []);
+    ((await readIrissListingsLatestViewWithMarketplace().catch(() => null))?.vehicles ?? []);
   const previous = await readIrissListingMatchState();
   if (vehicles.length === 0 && !previous.seeded) return previous;
   const orders = await listIrissPasutijumi().catch(() => []);
@@ -67,6 +67,12 @@ export async function refreshIrissListingMatches(input?: {
     listingLinkAuto1: row.listingLinkAuto1,
     listingLinkEcarstrade: row.listingLinkEcarstrade,
     listingLinksOther: row.listingLinksOther,
+    productionYears: row.productionYears,
+    maxMileage: row.maxMileage,
+    totalBudget: row.totalBudget,
+    engineType: row.engineType,
+    transmission: row.transmission,
+    powerKw: row.powerKwLabel,
   }));
   const found = discoverListingOrderMatches(vehicles, matchOrders);
   const live = new Set(vehicles.filter((v) => v.id && v.change !== "gone").map((v) => v.id));

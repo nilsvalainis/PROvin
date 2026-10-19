@@ -30,6 +30,8 @@ const PLATFORM_LABEL: Record<string, string> = {
   openline: "OPENLANE",
   auto1: "AUTO1",
   ecarstrade: "ECARSTRADE",
+  mobilede: "MOBILE.DE",
+  autoscout24: "AUTOSCOUT24",
 };
 
 function CountryFlag({ code }: { code: string }) {

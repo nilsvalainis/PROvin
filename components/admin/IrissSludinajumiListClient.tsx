@@ -74,7 +74,7 @@ import {
   type ListingTax,
 } from "@/lib/iriss-listings-vat";
 import {
-  IRISS_LISTING_PLATFORMS,
+  IRISS_AUCTION_LISTING_PLATFORMS,
   IRISS_RELAY_LISTING_PLATFORMS,
   type IrissListingPlatform,
   type IrissListingSourceRun,
@@ -89,6 +89,8 @@ const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   openline: "OPENLANE",
   auto1: "AUTO1",
   ecarstrade: "ECARSTRADE",
+  mobilede: "MOBILE.DE",
+  autoscout24: "AUTOSCOUT24",
 };
 
 const PLATFORM_LABEL_LONG: Record<IrissListingPlatform, string> = {
@@ -96,6 +98,8 @@ const PLATFORM_LABEL_LONG: Record<IrissListingPlatform, string> = {
   openline: "Openlane",
   auto1: "Auto1",
   ecarstrade: "eCarsTrade",
+  mobilede: "mobile.de",
+  autoscout24: "AutoScout24",
 };
 
 /** „Jauns” un „cena mainīta” rāda pēc laika loga, ne tikai pēdējās palaišanas, lai atkārtots „Nolasīt tagad” tos neizdzēš. */
@@ -240,6 +244,8 @@ const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> =
   { id: "openline", label: "Openlane" },
   { id: "auto1", label: "Auto1" },
   { id: "ecarstrade", label: "eCarsTrade" },
+  { id: "mobilede", label: "mobile.de" },
+  { id: "autoscout24", label: "AutoScout24" },
 ];
 
 async function persistListingDismissItems(items: IrissListingDismissPatch[]): Promise<void> {
@@ -1008,9 +1014,13 @@ export function IrissSludinajumiListClient({
                       <IrissAuctionLogo platform={s.platform} fallback={PLATFORM_LABEL_LONG[s.platform]} size="sm" />
                     </span>
                     <span className="text-[#8e8e93]">
-                      {s.sourceCount === 0
-                        ? "nav saišu"
-                        : `${s.okCount}/${s.sourceCount} avoti · ${s.vehicleCount} auto${s.status !== "ok" && s.status !== "none" ? ` · ${sourceStatusLabel(s.status)}` : ""}`}
+                      {s.platform === "mobilede" || s.platform === "autoscout24"
+                        ? s.vehicleCount > 0
+                          ? `${s.vehicleCount} ielādēti (poga Ielādēt)`
+                          : "tikai ar pogu Ielādēt"
+                        : s.sourceCount === 0
+                          ? "nav saišu"
+                          : `${s.okCount}/${s.sourceCount} avoti · ${s.vehicleCount} auto${s.status !== "ok" && s.status !== "none" ? ` · ${sourceStatusLabel(s.status)}` : ""}`}
                     </span>
                   </div>
                 ))}
@@ -1024,7 +1034,7 @@ export function IrissSludinajumiListClient({
                   </div>
                 ))}
                 <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Pieslēgumi</p>
-                {(mounted && health?.items ? health.items : IRISS_LISTING_PLATFORMS.map((platform) => ({ platform, status: "not_run" as const, note: "", checkedAt: "" }))).map((item) => (
+                {(mounted && health?.items ? health.items : IRISS_AUCTION_LISTING_PLATFORMS.map((platform) => ({ platform, status: "not_run" as const, note: "", checkedAt: "" }))).map((item) => (
                   <div key={item.platform} className="flex items-center justify-between gap-2 py-0.5">
                     <span title={item.note} className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold">
                       <IrissAuctionLogo platform={item.platform} fallback={PLATFORM_LABEL_LONG[item.platform]} size="sm" />

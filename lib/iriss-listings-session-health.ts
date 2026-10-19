@@ -3,8 +3,9 @@ import "server-only";
 import { readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
 import { fetchIrissRelayHealth, listingPlatformFromRelay, readIrissRelayConfig, relayPlatformFor, type IrissRelayHealth } from "@/lib/iriss-listings-relay";
 import {
-  IRISS_LISTING_PLATFORMS,
-  type IrissListingPlatform,
+  IRISS_AUCTION_LISTING_PLATFORMS,
+  isIrissAuctionListingPlatform,
+  type IrissAuctionListingPlatform,
   type IrissListingsLatestView,
   type IrissPlatformHealthItem,
   type IrissPlatformHealthReport,
@@ -19,7 +20,7 @@ function parseIsoSafe(v: string): number {
 }
 
 export function platformHealthFromView(
-  platform: IrissListingPlatform,
+  platform: IrissAuctionListingPlatform,
   latest: IrissListingsLatestView | null,
   checkedAt: string,
 ): IrissPlatformHealthItem {
@@ -89,13 +90,14 @@ export async function getIrissPlatformHealthReport(): Promise<IrissPlatformHealt
   const [latest, relay] = await Promise.all([readIrissListingsLatestView(), cfg ? fetchIrissRelayHealth(cfg) : Promise.resolve(null)]);
   const autobidViaRelay = /^(1|true|yes)$/i.test(process.env.IRISS_LISTINGS_AUTOBID_VIA_RELAY ?? "");
   const ecarstradeViaRelay = /^(1|true|yes)$/i.test(process.env.IRISS_LISTINGS_ECARSTRADE_VIA_RELAY ?? "");
+  const loginPlatform = relay?.manualLogin ? listingPlatformFromRelay(relay.manualLogin.platform) : null;
   const loginOpen =
-    relay?.reachable && relay.manualLogin
-      ? { platform: listingPlatformFromRelay(relay.manualLogin.platform), startedAt: relay.manualLogin.startedAt }
+    relay?.reachable && relay.manualLogin && loginPlatform && isIrissAuctionListingPlatform(loginPlatform)
+      ? { platform: loginPlatform, startedAt: relay.manualLogin.startedAt }
       : null;
   return {
     checkedAt,
-    items: IRISS_LISTING_PLATFORMS.map((platform) =>
+    items: IRISS_AUCTION_LISTING_PLATFORMS.map((platform) =>
       mergeRelayHealth(platformHealthFromView(platform, latest, checkedAt), relay, { autobidViaRelay, ecarstradeViaRelay }),
     ),
     relayReachable: Boolean(cfg && relay?.reachable),

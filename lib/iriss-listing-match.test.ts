@@ -66,6 +66,37 @@ describe("discoverListingOrderMatches", () => {
     expect(found.map((m) => m.orderId).sort()).toEqual(["o-a", "o-b"]);
   });
 
+  it("matches marketplace listings against order criteria without auction URLs", () => {
+    const orders = [
+      order({
+        id: "o-m",
+        listingLinkEcarstrade: [],
+        productionYears: "2018-2020",
+        maxMileage: "150000",
+        totalBudget: "25000",
+        engineType: "diesel",
+        transmission: "automatic",
+      }),
+    ];
+    const fit = vehicle({
+      id: "md-1",
+      platform: "mobilede",
+      orderIds: [],
+      title: "Volvo XC60 D4",
+      manufacturer: "Volvo",
+      priceCurrent: 18000,
+    });
+    const miss = vehicle({
+      id: "md-2",
+      platform: "mobilede",
+      orderIds: [],
+      title: "BMW X5",
+      manufacturer: "BMW",
+      priceCurrent: 18000,
+    });
+    expect(discoverListingOrderMatches([fit, miss], orders).map((m) => m.listingId)).toEqual(["md-1"]);
+  });
+
   it("does not match a different platform or an empty search", () => {
     const orders = [
       order({ id: "o-et" }),

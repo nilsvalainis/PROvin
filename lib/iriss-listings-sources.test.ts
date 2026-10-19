@@ -23,13 +23,14 @@ function row(
 }
 
 describe("detectIrissListingPlatform", () => {
-  it("maps hosts and ignores mobile.de", () => {
+  it("maps hosts including marketplace, but buildIrissListingSources still skips them", () => {
     expect(detectIrissListingPlatform("https://autobid.de/en/search-results?x=1")).toBe("autobid");
     expect(detectIrissListingPlatform("https://www.openlane.eu/ru/findcar?y=2")).toBe("openline");
     expect(detectIrissListingPlatform("https://www.auto1.com/en/app/merchant/cars")).toBe("auto1");
     expect(detectIrissListingPlatform("https://ecarstrade.com/search?mark[]=68")).toBe("ecarstrade");
     expect(detectIrissListingPlatform("https://www.ecarstrade.com/search")).toBe("ecarstrade");
-    expect(detectIrissListingPlatform("https://suchen.mobile.de/fahrzeuge/search.html")).toBeNull();
+    expect(detectIrissListingPlatform("https://suchen.mobile.de/fahrzeuge/search.html")).toBe("mobilede");
+    expect(detectIrissListingPlatform("https://www.autoscout24.de/lst")).toBe("autoscout24");
     expect(detectIrissListingPlatform("not a url")).toBeNull();
   });
 });

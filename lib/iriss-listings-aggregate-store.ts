@@ -266,6 +266,7 @@ function normalizeVehicle(v: unknown): IrissListingVehicle | null {
     priceHistory: Array.isArray(v.priceHistory)
       ? v.priceHistory.map(normalizePriceChange).filter((x): x is IrissListingPriceChange => x !== null)
       : [],
+    ...(str(v.priceCompareNote) ? { priceCompareNote: str(v.priceCompareNote) } : {}),
   };
 }
 

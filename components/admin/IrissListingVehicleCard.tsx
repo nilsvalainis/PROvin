@@ -37,6 +37,8 @@ const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
   openline: "OPENLANE",
   auto1: "AUTO1",
   ecarstrade: "ECARSTRADE",
+  mobilede: "MOBILE.DE",
+  autoscout24: "AUTOSCOUT24",
 };
 
 const RECENT_WINDOW_HOURS = 36;
@@ -261,6 +263,7 @@ export function IrissListingVehicleCard({
           {v.title || v.orderBrandModels[0] || "-"}
         </div>
         {subtitle ? <div className="text-[12px] text-[var(--color-provin-muted)]">{subtitle}</div> : null}
+        {v.priceCompareNote ? <div className="text-[12px] text-[var(--color-provin-muted)]">{v.priceCompareNote}</div> : null}
         <IrissListingCardSpecGrid specs={specs} />
 
         <div className="flex flex-wrap items-center gap-1">

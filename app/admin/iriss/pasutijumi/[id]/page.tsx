@@ -3,8 +3,8 @@ import { IrissPasutijumsEditor } from "@/components/admin/IrissPasutijumsEditor"
 import {
   getIrissListingsStorageState,
   readIrissListingsDismissed,
-  readIrissListingsLatestView,
 } from "@/lib/iriss-listings-aggregate-store";
+import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
 import { emptyIrissListingsDismissed, listingIsDismissed } from "@/lib/iriss-listings-dismiss";
 import { orderRoomMatchProps, prepareIrissListingMatchWorkspace } from "@/lib/iriss-listing-match-store";
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap } from "@/lib/iriss-order-room-match-props";
@@ -46,7 +46,7 @@ export default async function IrissPasutijumsDetailPage({
   // Šis lasījums neraksta latest.json: ne pilnā atvēršanā, ne prefetch.
   const storage = getIrissListingsStorageState();
   const [latest, dismissedView, orderOv, offerLinks] = await Promise.all([
-    storage.enabled ? readIrissListingsLatestView() : Promise.resolve(null),
+    storage.enabled ? readIrissListingsLatestViewWithMarketplace() : Promise.resolve(null),
     storage.enabled ? readIrissListingsDismissed() : Promise.resolve(emptyIrissListingsDismissed()),
     readIrissListingOrderOv().catch(() => ({})),
     readIrissOfferClientLinksForOrder(id).catch(() => []),
