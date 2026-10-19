@@ -49,7 +49,7 @@ export function IrissAuctionLogo({
       title={label}
       height={16}
       decoding="async"
-      className={`${className ?? fit} w-auto object-contain object-left drop-shadow-[0_0_0.65px_rgba(255,255,255,0.95)]`}
+      className={`iriss-auction-logo ${className ?? fit} w-auto object-contain object-left drop-shadow-[0_0_0.65px_rgba(255,255,255,0.95)]`}
       onError={() => setBroken(true)}
     />
   );

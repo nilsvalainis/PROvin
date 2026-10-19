@@ -27,6 +27,7 @@ import { AdminAuditDeadlineCell } from "@/components/admin/AdminAuditDeadlineCel
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import {
   AdminMobileChips,
+  AdminMobileRoundBtn,
   AdminMobileSearchField,
   AdminMobileSheet,
   AdminMobileStatusTag,
@@ -448,6 +449,7 @@ function AdminOrdersMobileChrome({
   const sp = useSearchParams();
   const [q, setQ] = useState(sp.get("q") ?? "");
   const [pending, startTransition] = useTransition();
+  const [moreOpen, setMoreOpen] = useState(false);
   const sort = sp.get("sort") === "oldest" ? "oldest" : "newest";
   const first = useRef(true);
 
@@ -475,32 +477,27 @@ function AdminOrdersMobileChrome({
   }, [q]);
 
   return (
+    <>
     <AdminMobileTopBar
       title="Pasūtījumi"
       trailing={
         <>
-          <span className="max-md:[&>button]:h-9 max-md:[&>button]:w-9 max-md:[&>button]:rounded-full max-md:[&>button]:px-0 max-md:[&>button]:text-[0px] max-md:[&_svg]:h-[18px] max-md:[&_svg]:w-[18px]">
-            <AdminClientLinkButton />
-          </span>
-          <span className="max-md:[&>button]:h-9 max-md:[&>button]:w-9 max-md:[&>button]:rounded-full max-md:[&>button]:px-0 max-md:[&>button]:text-[0px]">
+          <AdminMobileRoundBtn
+            name="kartot"
+            label={sort === "oldest" ? "Vecākie" : "Jaunākie"}
+            onClick={() => push({ sort: sort === "oldest" ? "newest" : "oldest" })}
+          />
+          <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => setMoreOpen(true)} />
+          <span className="max-md:[&>button]:h-9 max-md:[&>button]:w-9 max-md:[&>button]:rounded-full max-md:[&>button]:bg-[var(--fill-secondary)] max-md:[&>button]:px-0 max-md:[&>button]:text-[0px] max-md:[&>button]:text-[var(--label)] max-md:[&>button]:shadow-none">
             <AdminCreateManualOrderButton compact />
           </span>
         </>
       }
     >
-      {belowTitle ? <div className="mb-3">{belowTitle}</div> : null}
       <div className={`flex items-center gap-2 ${pending ? "opacity-60" : ""}`}>
         <div className="min-w-0 flex-1">
           <AdminMobileSearchField value={q} onChange={setQ} placeholder="Meklēt VIN, klientu" />
         </div>
-        <button
-          type="button"
-          onClick={() => push({ sort: sort === "oldest" ? "newest" : "oldest" })}
-          className="am-press inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-[var(--am-fill)] px-3 text-[13px] font-medium text-[var(--am-ink)]"
-        >
-          <AdminMobileIcon name="kartot" className="h-4 w-4" />
-          {sort === "oldest" ? "Vecākie" : "Jaunākie"}
-        </button>
       </div>
       <div className="mt-3">
         <AdminMobileChips
@@ -516,6 +513,24 @@ function AdminOrdersMobileChrome({
         />
       </div>
     </AdminMobileTopBar>
+        {belowTitle ? <div className="mt-2 px-4 md:hidden">{belowTitle}</div> : null}
+    <AdminMobileSheet open={moreOpen} title="Darbības" onClose={() => setMoreOpen(false)}>
+      <div className="space-y-2">
+        <AdminClientLinkButton />
+        <button
+          type="button"
+          onClick={() => {
+            push({ sort: sort === "oldest" ? "newest" : "oldest" });
+            setMoreOpen(false);
+          }}
+          className="am-press flex h-[50px] w-full items-center gap-3 rounded-[18px] bg-[var(--fill-secondary)] px-4 text-[16px] text-[var(--label)]"
+        >
+          <AdminMobileIcon name="kartot" className="h-5 w-5" />
+          {sort === "oldest" ? "Rādīt jaunākos" : "Rādīt vecākos"}
+        </button>
+      </div>
+    </AdminMobileSheet>
+    </>
   );
 }
 
@@ -781,13 +796,13 @@ export function AdminOrdersTable({
           filterCounts={filterCounts}
           belowTitle={belowTopBar}
         />
-      <ul className="mt-3 space-y-2.5">
+      <ul className="mt-2 space-y-2 px-4">
         {dayGroups.map((g) => (
         <Fragment key={g.key}>
-          <li className="flex items-baseline justify-between px-1 pt-2 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">
+          <li className="flex items-baseline justify-between px-1 pt-1 text-[13px] font-medium text-[var(--label-secondary)]">
             <span>{g.isActive ? "Aktīvie" : nowMs != null ? adminOrderDayLabel(g.key, nowMs) : g.key}</span>
-            <span className="font-medium normal-case tracking-normal tabular-nums">
-              {g.isActive ? `${g.list.length}` : g.list.length} · {formatMoneyEur(g.sum, "eur")}
+            <span className="tabular-nums">
+              {g.list.length} · {formatMoneyEur(g.sum, "eur")}
             </span>
           </li>
           {g.list.map((o) => {
@@ -807,7 +822,7 @@ export function AdminOrdersTable({
               key={o.id}
               role={v.isPack ? undefined : "link"}
               tabIndex={v.isPack ? undefined : 0}
-              className={`am-row am-press relative rounded-[22px] bg-[var(--am-s1)] p-4 shadow-[var(--am-card-shadow)] ${accent} ${
+              className={`am-row am-press relative min-h-[96px] rounded-[18px] bg-[var(--surface)] p-3 shadow-[var(--am-card-shadow)] ${accent} ${
                 v.isPack ? "cursor-default" : "cursor-pointer"
               }`}
               onPointerDown={(e) => {
@@ -854,6 +869,10 @@ export function AdminOrdersTable({
                       openOrderFromCard(e);
                     }
               }
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setCardMenuId(o.id);
+              }}
               onKeyDown={
                 v.isPack
                   ? undefined
@@ -864,131 +883,55 @@ export function AdminOrdersTable({
                     }
               }
             >
-              {o.auditResultColor === "red" ? (
-                <span className="absolute left-3 top-3 rounded-[6px] bg-[var(--am-fill)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--am-ink2)]">
-                  Riski
-                </span>
-              ) : null}
               {v.isPack ? null : (
-                <div
-                  className={`absolute right-3 top-3 flex items-center gap-1 ${o.auditResultColor === "red" ? "" : ""}`}
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => e.stopPropagation()}
-                >
-                  <AdminMobileStatusTag>
-                    {formatAdminMobileDeadlineHours(o.deadlineFromUnix ?? o.created)}
-                  </AdminMobileStatusTag>
-                  <button
-                    type="button"
-                    aria-label="Termiņš"
-                    className="am-press grid h-[22px] w-[22px] place-items-center rounded-[7px] bg-[var(--am-fill)] text-[var(--am-ink2)]"
-                    onClick={() => {
-                      const el = document.querySelector<HTMLButtonElement>(`[data-admin-audit-color="${o.id}"] button, [data-admin-audit-color="${o.id}"]`);
-                      el?.click();
-                    }}
-                  >
-                    <AdminMobileIcon name="izverst" className="h-3 w-3" />
-                  </button>
-                  <div className="sr-only" data-admin-audit-color={o.id}>
-                    <AdminAuditDeadlineCell
-                      sessionId={o.id}
-                      createdUnixSec={o.deadlineFromUnix ?? o.created}
-                      initialComplete={Boolean(o.auditComplete)}
-                      onCompleteChange={(complete) => markComplete(o.id, complete)}
-                    />
-                  </div>
+                <div className="sr-only" data-admin-audit-color={o.id}>
+                  <AdminAuditDeadlineCell
+                    sessionId={o.id}
+                    createdUnixSec={o.deadlineFromUnix ?? o.created}
+                    initialComplete={Boolean(o.auditComplete)}
+                    onCompleteChange={(complete) => markComplete(o.id, complete)}
+                  />
                 </div>
               )}
-              <div className={`flex items-start justify-between gap-2 pr-16 ${o.auditResultColor === "red" ? "pt-5" : ""}`}>
-                <div className="min-w-0">
-                  <p className="truncate text-[16px] font-semibold tracking-tight text-[var(--am-ink)]">
-                    {v.isPack ? v.packLabel : (o.makeModel?.trim() || v.primaryClient).toUpperCase()}
-                  </p>
-                  <p className="mt-0.5 truncate font-mono text-[12.5px] tracking-[0.01em] text-[var(--am-ink2)]">
-                    {v.isPack ? v.primaryClient : v.hasVin ? v.vin : "VIN nav"}
-                    {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                {v.isPartnerVin ? (
-                  <span className={CALM_TAG}>
-                    {PARTNER_VIN_AMOUNT_LABEL_LV}
-                  </span>
-                ) : (
-                  <PaymentStatusException status={o.paymentStatus} />
+              <div className="flex items-start justify-between gap-2">
+                <p className="min-w-0 truncate text-[16px] font-semibold tracking-tight text-[var(--label)]">
+                  {v.isPack ? v.packLabel : (o.makeModel?.trim() || v.primaryClient).toUpperCase()}
+                </p>
+                {v.isPack ? null : (
+                  <AdminMobileStatusTag
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCardMenuId(o.id);
+                    }}
+                  >
+                    {formatAdminMobileDeadlineHours(o.deadlineFromUnix ?? o.created)}
+                  </AdminMobileStatusTag>
                 )}
-                {o.isDemo ? (
-                  <span className={CALM_TAG}>
-                    Paraugs
-                  </span>
-                ) : null}
-                {v.isPack ? (
-                  <span className={CALM_TAG}>
-                    Paka
-                  </span>
-                ) : v.partnerHighlight ? (
-                  <span className={CALM_TAG}>
-                    Partneris{v.partnerCompanyName ? ` · ${v.partnerCompanyName}` : ""}
-                  </span>
-                ) : o.isManual ? (
-                  <span className={CALM_TAG}>
-                    Manuāls
-                  </span>
-                ) : null}
-                {v.partnerPurposeLabel ? (
-                  <span className={CALM_TAG}>
-                    {v.partnerPurposeLabel}
-                  </span>
-                ) : null}
-                {v.miniHighlight ? (
-                  <span className={CALM_TAG}>MINI</span>
-                ) : null}
-                {o.repeatVin ? (
-                  <span className={CALM_TAG} title={`Atkārtots VIN: šis VIN jau ir ${o.repeatVin} citā(-os) darbā(-os) - pirms pirkšanas pārbaudi, ko var izmantot atkārtoti`}>
-                    ↻ Atkārtots VIN
-                  </span>
-                ) : null}
-                {o.upsellBadge ? (
-                  <span className={CALM_TAG}>
-                    {o.upsellBadge}
-                  </span>
-                ) : null}
               </div>
-
-              <div className="mt-2 flex items-end justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="flex min-w-0 items-center gap-1.5 text-[14px] text-[var(--am-ink)]">
-                    <span className="truncate">{v.primaryClient}</span>
-                    {o.clientOrders?.length ? (
-                      <span className="text-[var(--am-ink2)]">{o.clientOrders.length + 1}×</span>
-                    ) : (
-                      <span className="text-[var(--am-ink2)]">1×</span>
-                    )}
-                  </p>
-                  <p className="mt-0.5 truncate text-[13px] tabular-nums text-[var(--am-ink2)]">
-                    {dateFmt.format(new Date(o.created * 1000))} ·{" "}
-                    {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-1">
-                  {v.pdfHref ? (
-                    <button
-                      type="button"
-                      className="am-press grid h-9 w-9 place-items-center rounded-full text-[var(--am-ink2)]"
-                      aria-label="Vairāk"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setCardMenuId(o.id);
-                      }}
-                    >
-                      <AdminMobileIcon name="vairak" className="h-4 w-4" />
-                    </button>
-                  ) : null}
-                  {v.isPack ? null : <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />}
-                </div>
+              <p className="mt-0.5 truncate font-mono text-[13px] tracking-[0.01em] text-[var(--label-secondary)]">
+                {v.isPack ? v.primaryClient : v.hasVin ? v.vin : "VIN nav"}
+                {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
+              </p>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <p className="min-w-0 truncate text-[13px] tabular-nums text-[var(--label-secondary)]">
+                  <span>{v.primaryClient}</span>
+                  {o.clientOrders?.length ? <span> {o.clientOrders.length + 1}×</span> : null}
+                  {" · "}
+                  {dateFmt.format(new Date(o.created * 1000))}
+                  {" · "}
+                  {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
+                </p>
+                {v.isPack ? null : <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 shrink-0 text-[var(--label-secondary)]" />}
               </div>
+              <button
+                type="button"
+                className="sr-only"
+                aria-label="Kartītes darbības"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCardMenuId(o.id);
+                }}
+              />
             </li>
           );
         })}
@@ -1002,19 +945,47 @@ export function AdminOrdersTable({
       >
         {(() => {
           const row = displayedOrders.find((x) => x.id === cardMenuId);
-          const pdf = row ? invoicePdfHref(row) : null;
-          if (!pdf) return <p className="text-[14px] text-[var(--am-ink2)]">Nav pieejamu darbību.</p>;
+          if (!row) return <p className="text-[14px] text-[var(--label-secondary)]">Nav pieejamu darbību.</p>;
+          const view = orderRowView(row, clientOverrides[row.id], detailBaseNormalized);
+          const pdf = view.pdfHref;
           return (
-            <a
-              href={pdf}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="am-press flex h-[50px] items-center gap-3 rounded-[18px] bg-[var(--am-fill)] px-4 text-[16px] text-[var(--am-ink)]"
-              onClick={() => setCardMenuId(null)}
-            >
-              <AdminMobileIcon name="pdf" className="h-5 w-5" />
-              Atvērt PDF
-            </a>
+            <div className="space-y-2">
+              {pdf ? (
+                <a
+                  href={pdf}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="am-press flex h-[50px] items-center gap-3 rounded-[18px] bg-[var(--fill-secondary)] px-4 text-[16px] text-[var(--label)]"
+                  onClick={() => setCardMenuId(null)}
+                >
+                  <AdminMobileIcon name="pdf" className="h-5 w-5" />
+                  Atvērt PDF
+                </a>
+              ) : null}
+              <div className="flex flex-wrap gap-1.5 px-1">
+                {view.isPartnerVin ? <span className={CALM_TAG}>{PARTNER_VIN_AMOUNT_LABEL_LV}</span> : <PaymentStatusException status={row.paymentStatus} />}
+                {row.isDemo ? <span className={CALM_TAG}>Paraugs</span> : null}
+                {view.isPack ? <span className={CALM_TAG}>Paka</span> : view.partnerHighlight ? <span className={CALM_TAG}>Partneris{view.partnerCompanyName ? ` · ${view.partnerCompanyName}` : ""}</span> : row.isManual ? <span className={CALM_TAG}>Manuāls</span> : null}
+                {view.partnerPurposeLabel ? <span className={CALM_TAG}>{view.partnerPurposeLabel}</span> : null}
+                {view.miniHighlight ? <span className={CALM_TAG}>MINI</span> : null}
+                {row.repeatVin ? <span className={CALM_TAG}>Atkārtots VIN</span> : null}
+                {row.upsellBadge ? <span className={CALM_TAG}>{row.upsellBadge}</span> : null}
+              </div>
+              {view.isPack ? null : (
+                <div
+                  className="rounded-[18px] bg-[var(--fill-secondary)] px-3 py-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <p className="mb-1 text-[13px] text-[var(--label-secondary)]">Termiņš un rezultāts</p>
+                  <AdminAuditDeadlineCell
+                    sessionId={row.id}
+                    createdUnixSec={row.deadlineFromUnix ?? row.created}
+                    initialComplete={Boolean(row.auditComplete)}
+                    onCompleteChange={(complete) => markComplete(row.id, complete)}
+                  />
+                </div>
+              )}
+            </div>
           );
         })()}
       </AdminMobileSheet>

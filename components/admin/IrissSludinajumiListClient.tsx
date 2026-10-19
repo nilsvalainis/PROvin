@@ -13,7 +13,12 @@ import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginP
 import { type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useMobilePlatform } from "@/hooks/useMobilePlatform";
 import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
-import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
+import {
+  AdminMobileRoundBtn,
+  AdminMobileSearchField,
+  AdminMobileSegments,
+  AdminMobileTopBar,
+} from "@/components/admin/mobile/AdminMobileChrome";
 import { isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import { listingBidPrice, listingExtrasI, listingMaxBid, type ListingCostParts } from "@/lib/iriss-listings-cost";
 import { listingExcludedForMissingPrice, listingIsOverBudgetHidden, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
@@ -769,12 +774,41 @@ export function IrissSludinajumiListClient({
   return (
     <div className="mt-1 space-y-2 touch-manipulation sm:mt-1.5 sm:space-y-2">
       <div className="md:hidden">
-        <AdminMobileTopBar title="Sludinājumi" />
+        <AdminMobileTopBar
+          title="Sludinājumi"
+          trailing={
+            <>
+              <AdminMobileRoundBtn
+                name="kartot"
+                label={`Kārtot: ${LISTING_SORTS.find((x) => x.id === sort)?.label ?? "Jaunākie"}`}
+                onClick={() => { setMenuOpen(true); setFilterOpen(false); }}
+              />
+              <AdminMobileRoundBtn name="filtri" label="Filtri" onClick={() => { setFilterOpen(true); setMenuOpen(false); }} />
+              <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => { setMenuOpen(true); setFilterOpen(false); }} />
+            </>
+          }
+        >
+          <AdminMobileSegments
+            value={dataset}
+            onChange={(id) => setDataset(id as typeof dataset)}
+            items={[
+              { id: "orders", label: `Klientu pasūtījumi ${clientOrders.length}` },
+              { id: "scan", label: `Mūsu monitorings ${scanOrders.length}` },
+            ]}
+          />
+          <div className="mt-2">
+            <AdminMobileSearchField
+              value={query}
+              onChange={setQuery}
+              placeholder="Meklēt marku, modeli, VIN"
+            />
+          </div>
+        </AdminMobileTopBar>
       </div>
       {/* Web (md+): panelis nav lipīgs. Atbilstības ir žetons rīku rindā, ne atsevišķa josla. */}
       <header
         data-iriss-listings-toolbar=""
-        className="relative z-20 -mx-2 bg-transparent px-2 pb-1 pt-0.5 max-md:sticky max-md:top-0 max-md:bg-[#F8F8F9]/95 max-md:backdrop-blur md:static md:z-auto md:mx-0 md:bg-transparent md:px-0 md:backdrop-blur-none"
+        className="relative z-20 -mx-2 hidden bg-transparent px-2 pb-1 pt-0.5 md:static md:z-auto md:mx-0 md:block md:bg-transparent md:px-0 md:backdrop-blur-none"
       >
         <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
           <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] md:flex-none md:overflow-visible [&::-webkit-scrollbar]:hidden">
@@ -944,6 +978,23 @@ export function IrissSludinajumiListClient({
               <>
                 <div className="mx-auto mb-3 h-1.5 w-9 rounded-full bg-[#c7c7cc] sm:hidden" aria-hidden />
                 <p className="mb-2 text-center text-[17px] font-semibold sm:hidden">Vairāk</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93] sm:hidden">Kārtot</p>
+                <div className="mb-3 overflow-hidden rounded-xl bg-[var(--surface)] sm:hidden">
+                  {LISTING_SORTS.map((x) => (
+                    <button
+                      key={x.id}
+                      type="button"
+                      onClick={() => {
+                        writeListQuery({ sort: x.id });
+                        setMenuOpen(false);
+                      }}
+                      className="flex min-h-12 w-full items-center justify-between border-b border-[var(--separator)] px-4 text-[17px] last:border-b-0"
+                    >
+                      {x.label}
+                      {sort === x.id ? <span className="text-[var(--label-secondary)]">✓</span> : null}
+                    </button>
+                  ))}
+                </div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Nolasīšana</p>
                 <div className="mt-1 grid grid-cols-[1fr_auto] gap-y-0.5">
                   <span className="text-[#8e8e93]">Pēdējā</span><span>{mounted && latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : "nav veikta"}</span>
@@ -1037,7 +1088,7 @@ export function IrissSludinajumiListClient({
           <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
         </div>
         </div>
-        <div className="mt-1 flex max-w-full flex-nowrap items-center gap-x-2 overflow-x-auto text-[11px] text-[#8e8e93] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="admin-source-logo-row mt-1 flex max-w-full flex-nowrap items-center gap-x-2 overflow-x-auto text-[11px] text-[#8e8e93] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <span className="inline-flex shrink-0 items-center gap-1.5">
             {platformDots.map((d) => (
               <span key={d.platform} title={d.title} className="inline-flex items-center gap-1">
@@ -1089,8 +1140,8 @@ export function IrissSludinajumiListClient({
       </header>
 
       {visible.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-10 text-center shadow-sm">
-          <p className="text-sm font-medium text-black">
+        <section className="mx-4 rounded-2xl border border-dashed border-[var(--separator)] bg-[var(--surface)] px-6 py-10 text-center shadow-none max-md:mx-4">
+          <p className="text-sm font-medium text-[var(--label)]">
             {vehicles.length === 0 ? "Nav nolasītu auto" : "Šajā filtrā nav auto"}
           </p>
           <p className="mt-1.5 text-[12px] text-[var(--color-provin-muted)]">

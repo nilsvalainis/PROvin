@@ -19,6 +19,7 @@ describe("admin-mobile-ds", () => {
     expect(adminMobileAuditFilterLabel("green")).toBe("Labi");
     expect(adminMobileAuditFilterLabel("orange")).toBe("Jāpēta");
     expect(ADMIN_MOBILE_AUDIT_FILTER_LABEL.red).toBe("Riski");
+    expect(ADMIN_MOBILE_AUDIT_FILTER_LABEL.none).toBe("Bez");
     expect(isAdminMobilePaidSourceKey("carvertical")).toBe(true);
     expect(isAdminMobilePaidSourceKey("csdd")).toBe(false);
     expect(adminMobileSourceStatusIcon("loaded")).toBe("avotsIeladets");

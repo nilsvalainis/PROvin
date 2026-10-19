@@ -121,16 +121,26 @@ export function IrissListingCardPhotoGallery({
       >
         {wrapHero ? wrapHero(heroInner) : heroInner}
         {photos.length > 0 ? (
-          <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 text-[10px] font-semibold text-white">
+          <span className="absolute left-1.5 top-1.5 hidden rounded-full bg-black/55 px-1.5 text-[10px] font-semibold text-white sm:inline-flex">
             📷 {photos.length}
           </span>
+        ) : null}
+        {interactive && photos.length > 1 ? (
+          <div className="absolute inset-x-0 bottom-2 z-10 flex justify-center gap-1 sm:hidden">
+            {photos.slice(0, 6).map((src, i) => (
+              <span
+                key={`${src}-${i}`}
+                className={`h-1.5 w-1.5 rounded-full ${idx === i ? "bg-white" : "bg-white/40"}`}
+              />
+            ))}
+          </div>
         ) : null}
         {interactive ? (
           <>
             <button
               type="button"
               aria-label="Iepriekšējā bilde"
-              className="absolute left-1.5 top-1/2 z-10 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow"
+              className="absolute left-1.5 top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow sm:grid"
               onClick={(e) => {
                 e.stopPropagation();
                 step(-1);
@@ -141,7 +151,7 @@ export function IrissListingCardPhotoGallery({
             <button
               type="button"
               aria-label="Nākamā bilde"
-              className="absolute right-1.5 top-1/2 z-10 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow"
+              className="absolute right-1.5 top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow sm:grid"
               onClick={(e) => {
                 e.stopPropagation();
                 step(1);

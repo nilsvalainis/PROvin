@@ -95,12 +95,12 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem }: Props<
     const to = shown.length;
     return (
       <div>
-        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#8e8e93]">
+        <div className="mb-1 px-4 text-[13px] text-[var(--label-secondary)]">
           <span>
             {from}-{to} no {items.length}
           </span>
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 px-4">
           {shown.map((item) => (
             <div key={getKey(item)}>{renderItem(item)}</div>
           ))}

@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
-import { ADMIN_MAIN_SCROLL_ID } from "@/lib/admin-mobile-shell";
+import {
+  formatAdminMobileBadgeCount,
+  nextAdminMobileChromeMode,
+  type AdminMobileChromeMode,
+} from "@/lib/admin-mobile-collapse";
 
 export function AdminMobileTopBar({
   title,
@@ -24,50 +28,75 @@ export function AdminMobileTopBar({
   trailing?: ReactNode;
   children?: ReactNode;
 }) {
-  const [compact, setCompact] = useState(false);
+  const [mode, setMode] = useState<AdminMobileChromeMode>("expanded");
+  const [stuck, setStuck] = useState(false);
+  const modeRef = useRef<AdminMobileChromeMode>("expanded");
+  const lastYRef = useRef(0);
   useEffect(() => {
-    const scroller = document.getElementById(ADMIN_MAIN_SCROLL_ID);
-    const readY = () => (scroller ? scroller.scrollTop : window.scrollY);
-    const onScroll = () => setCompact(readY() > 18);
-    onScroll();
-    scroller?.addEventListener("scroll", onScroll, { passive: true });
+    lastYRef.current = window.scrollY || document.documentElement.scrollTop || 0;
+    let raf = 0;
+    const apply = () => {
+      raf = 0;
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      const next = nextAdminMobileChromeMode(y, y - lastYRef.current, modeRef.current);
+      lastYRef.current = y;
+      if (next !== modeRef.current) {
+        modeRef.current = next;
+        setMode(next);
+      }
+      setStuck(y > 10);
+    };
+    const onScroll = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(apply);
+    };
+    apply();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
-      scroller?.removeEventListener("scroll", onScroll);
       window.removeEventListener("scroll", onScroll);
+      if (raf) window.cancelAnimationFrame(raf);
     };
   }, []);
+  const collapsed = mode === "collapsed";
   const hasBack = Boolean(backHref || onBack);
   return (
-    <header className="am-glass am-topbar sticky top-0 z-[20] px-4 pb-3 pt-[max(10px,env(safe-area-inset-top))] md:hidden">
-      <div className="flex items-center gap-2">
-        {hasBack ? (
-          backHref ? (
-            <Link href={backHref} aria-label="Atpakaļ" className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--am-fill)] text-[var(--am-ink)]">
-              <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
-            </Link>
-          ) : (
-            <button type="button" aria-label="Atpakaļ" onClick={onBack} className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--am-fill)] text-[var(--am-ink)]">
-              <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
-            </button>
-          )
-        ) : null}
-        <div className="min-w-0 flex-1">
-          <h1
-            className={`origin-left truncate font-bold tracking-tight text-[var(--am-ink)] ${hasBack ? "text-[19px]" : "text-[26px]"}`}
-            style={{
-              transform: !hasBack && compact ? "scale(0.65)" : "scale(1)",
-              transition: "transform var(--d-std) var(--ease-out)",
-            }}
-          >
-            {title}
-          </h1>
-          {subtitle ? <p className="truncate text-[13px] text-[var(--am-ink2)]">{subtitle}</p> : null}
+    <>
+      <header
+        className="am-topbar-sticky px-4 pb-2 pt-[max(10px,env(safe-area-inset-top))] md:hidden"
+        data-stuck={stuck ? "true" : "false"}
+        data-collapsed={collapsed ? "true" : "false"}
+      >
+        <div className="flex h-11 items-center gap-2">
+          {hasBack ? (
+            backHref ? (
+              <Link href={backHref} aria-label="Atpakaļ" className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
+                <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
+              </Link>
+            ) : (
+              <button type="button" aria-label="Atpakaļ" onClick={onBack} className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
+                <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
+              </button>
+            )
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <h1
+              className={`truncate font-bold tracking-tight text-[var(--label)] ${
+                hasBack || collapsed ? "text-[17px] leading-none" : "text-[34px] leading-none"
+              }`}
+            >
+              {title}
+            </h1>
+            {subtitle && !collapsed ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
+          </div>
+          {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
         </div>
-        {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
-      </div>
-      {children ? <div className="mt-3">{children}</div> : null}
-    </header>
+      </header>
+      {children ? (
+        <div className="am-topbar-expand px-4 md:hidden" data-collapsed={collapsed ? "true" : "false"}>
+          {children}
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -85,7 +114,7 @@ export function AdminMobileRoundBtn({
   primary?: boolean;
 }) {
   const cls = `am-press grid h-9 w-9 place-items-center rounded-full ${
-    primary ? "bg-[var(--am-ink)] text-[var(--am-s1)]" : "bg-[var(--am-fill)] text-[var(--am-ink)]"
+    primary ? "bg-[var(--chip-active-bg)] text-[var(--chip-active-fg)]" : "bg-[var(--fill-secondary)] text-[var(--label)]"
   }`;
   if (href) {
     return (
@@ -142,13 +171,15 @@ export function AdminMobileChips({
             key={it.id}
             type="button"
             onClick={() => onChange(it.id)}
-            className={`am-press inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] ${
-              on ? "bg-[var(--am-ink)] font-semibold text-[var(--am-s1)]" : "bg-[var(--am-fill)] font-medium text-[var(--am-ink)]"
+            className={`am-press inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] ${
+              on
+                ? "bg-[var(--chip-active-bg)] font-semibold text-[var(--chip-active-fg)]"
+                : "bg-[var(--fill-secondary)] font-medium text-[var(--label)]"
             }`}
           >
             {it.label}
             {it.count != null ? (
-              <span className={on ? "text-[var(--am-s1)]/70" : "text-[var(--am-ink3)]"}>{it.count}</span>
+              <span className="tabular-nums opacity-60">{it.count}</span>
             ) : null}
           </button>
         );
@@ -217,9 +248,15 @@ export function AdminMobileCard({ children, href, onClick, className = "" }: { c
   return <div className={cls}>{children}</div>;
 }
 
-export function AdminMobileStatusTag({ children, onClick }: { children: ReactNode; onClick?: () => void }) {
+export function AdminMobileStatusTag({
+  children,
+  onClick,
+}: {
+  children: ReactNode;
+  onClick?: (e: { stopPropagation: () => void }) => void;
+}) {
   const cls =
-    "inline-flex h-[22px] items-center gap-0.5 rounded-[7px] bg-[var(--am-fill)] px-1.5 text-[11px] font-medium text-[var(--am-ink2)]";
+    "inline-flex h-[22px] items-center gap-0.5 rounded-[7px] bg-[var(--fill-secondary)] px-1.5 text-[11px] font-medium text-[var(--label-secondary)]";
   if (onClick) {
     return (
       <button type="button" className={cls} onClick={onClick}>
@@ -230,11 +267,15 @@ export function AdminMobileStatusTag({ children, onClick }: { children: ReactNod
   return <span className={cls}>{children}</span>;
 }
 
-export function AdminMobileCountBadge({ n }: { n: number }) {
-  if (n <= 0) return null;
+export function AdminMobileCountBadge({ n, floating = false }: { n: number; floating?: boolean }) {
+  const label = formatAdminMobileBadgeCount(n);
+  if (!label) return null;
+  if (floating) {
+    return <span className="am-badge">{label}</span>;
+  }
   return (
-    <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--am-badge)] px-0.5 text-[9px] font-semibold tabular-nums text-[var(--am-badge-ink)] ring-2 ring-[var(--am-bg,#eef0f3)]">
-      {n > 99 ? "99+" : n}
+    <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--badge-bg)] px-1 text-[11px] font-semibold tabular-nums text-[var(--badge-fg)]">
+      {label}
     </span>
   );
 }
@@ -321,8 +362,10 @@ export function AdminMobileSectionNav({
             key={it.id}
             type="button"
             onClick={() => onPick(it.id)}
-            className={`am-press inline-flex h-[30px] shrink-0 items-center rounded-full px-3 text-[13px] ${
-              on ? "bg-[var(--am-ink)] font-semibold text-[var(--am-s1)]" : "bg-[var(--am-fill)] text-[var(--am-ink)]"
+            className={`am-press inline-flex h-9 shrink-0 items-center rounded-full px-3 text-[13px] ${
+              on
+                ? "bg-[var(--chip-active-bg)] font-semibold text-[var(--chip-active-fg)]"
+                : "bg-[var(--fill-secondary)] text-[var(--label)]"
             }`}
           >
             {it.label}
@@ -391,7 +434,7 @@ export function AdminMobileSearchField({
   onSubmit?: () => void;
 }) {
   return (
-    <label className="flex h-9 items-center gap-2 px-1 text-[var(--am-ink2)]">
+    <label className="am-search text-[var(--label-secondary)]">
       <AdminMobileIcon name="meklet" className="h-4 w-4" />
       <input
         type="search"

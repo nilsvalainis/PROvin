@@ -1,4 +1,4 @@
-/** Mobilā admin čaula (iPhone tab bar + native `#admin-main-scroll` + PTR). Desktop nemaina. */
+/** Mobilā admin čaula (iPhone tab bar + dokumenta ritināšana + PTR). Desktop nemaina. */
 
 export const ADMIN_MAIN_SCROLL_ID = "admin-main-scroll";
 
@@ -9,11 +9,11 @@ export const ADMIN_MOBILE_TABBAR_CONTENT_PX = 62;
 export const ADMIN_MOBILE_TABBAR_DOCK_CHROME_PX = 74;
 
 export const ADMIN_MOBILE_TABBAR_H_CSS =
-  `calc(${ADMIN_MOBILE_TABBAR_DOCK_CHROME_PX}px + max(10px, env(safe-area-inset-bottom, 0px)))` as const;
+  "calc(64px + 16px + env(safe-area-inset-bottom, 0px))" as const;
 
 /** iOS 26: stikla kapsula + atsevišķa meklēšanas poga. z-index: tab bar 30. */
 export const ADMIN_MOBILE_TABBAR_DOCK_WRAPPER =
-  "pointer-events-none fixed inset-x-0 bottom-0 z-[30] flex items-center justify-center gap-[12pt] px-3 pb-[max(10px,env(safe-area-inset-bottom,0px))] pt-2 md:hidden";
+  "pointer-events-none fixed inset-x-0 bottom-0 z-[30] flex items-center justify-center gap-[12pt] px-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] pt-2 md:hidden";
 
 export const ADMIN_MOBILE_TABBAR_DOCK_NAV =
   "am-glass pointer-events-auto relative flex h-[62px] min-w-0 flex-1 items-stretch gap-0 rounded-full px-1.5";

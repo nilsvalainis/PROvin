@@ -58,7 +58,7 @@ describe("admin mobile css selectors", () => {
   it("exports Safari theme-color for admin layout", () => {
     const layout = readFileSync(new URL("../app/admin/layout.tsx", import.meta.url), "utf8");
     expect(layout).toMatch(/themeColor:/);
-    expect(layout).toMatch(/#EEF0F3/);
+    expect(layout).toMatch(/#F2F2F7/);
     expect(layout).toMatch(/viewportFit: "cover"/);
     expect(layout).toMatch(/manifest.webmanifest/);
   });
@@ -89,5 +89,14 @@ describe("admin mobile document scroll", () => {
     expect(mobileHtmlBody).not.toMatch(/overflow:\s*hidden/);
     expect(mobileHtmlBody).not.toMatch(/touch-action:\s*(?:none|manipulation)/);
     expect(mobileHtmlBody).not.toMatch(/height:\s*100dvh/);
+  });
+
+  it("ritina dokumentu, ne #admin-main-scroll", () => {
+    const css = readFileSync(new URL("../app/admin/admin-ios-theme.css", import.meta.url), "utf8");
+    expect(css).toMatch(/#admin-main-scroll \{[\s\S]*overflow:\s*visible !important/);
+    const shell = readFileSync(new URL("../components/admin/AdminShell.tsx", import.meta.url), "utf8");
+    expect(shell).not.toMatch(/max-md:h-dvh/);
+    const main = readFileSync(new URL("../components/admin/AdminShellMainWithMobilePull.tsx", import.meta.url), "utf8");
+    expect(main).toMatch(/max-md:p-0/);
   });
 });

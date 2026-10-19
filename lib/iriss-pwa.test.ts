@@ -69,8 +69,8 @@ describe("IRISS service worker policy", () => {
     expect(manifest.start_url).toBe(IRISS_PWA_START_URL);
     expect(manifest.scope).toBe(IRISS_PWA_SCOPE);
     expect(manifest.display).toBe("standalone");
-    expect(manifest.theme_color).toBe("#EEF0F3");
-    expect(manifest.background_color).toBe("#EEF0F3");
+    expect(manifest.theme_color).toBe("#F2F2F7");
+    expect(manifest.background_color).toBe("#F2F2F7");
     expect(manifest.icons.map((icon) => icon.sizes)).toEqual(["192x192", "512x512", "512x512"]);
     const sw = readFileSync(new URL("../public/admin/iriss/sw.js", import.meta.url), "utf8");
     expect(sw).toContain("network-only");

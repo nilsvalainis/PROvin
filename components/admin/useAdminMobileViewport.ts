@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { adminMobileThemeColor } from "@/lib/admin-mobile-collapse";
 import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
 
 function subscribeMobileViewport(onStoreChange: () => void): () => void {
@@ -41,4 +42,20 @@ export function useAdminMobileColorScheme(): "light" | "dark" {
     () => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"),
     () => "light",
   );
+}
+
+/** Safari theme-color seko admin tēmai (ne paliek pie pirmā meta). */
+export function useSyncAdminMobileThemeColor(theme: "light" | "dark"): void {
+  useEffect(() => {
+    const color = adminMobileThemeColor(theme);
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    if (metas.length === 0) {
+      const el = document.createElement("meta");
+      el.setAttribute("name", "theme-color");
+      el.setAttribute("content", color);
+      document.head.appendChild(el);
+      return;
+    }
+    metas.forEach((el) => el.setAttribute("content", color));
+  }, [theme]);
 }

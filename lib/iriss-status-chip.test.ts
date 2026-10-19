@@ -7,6 +7,7 @@ describe("status chips", () => {
     const row = statusChipRowClass("scroll");
     expect(row).toContain("flex-nowrap");
     expect(row).toContain("overflow-x-auto");
+    expect(row).toContain("am-chip-fade");
     expect(row).toContain("bg-transparent");
     expect(row).not.toMatch(/(^|\s)flex-wrap(\s|$)/);
     expect(row).not.toMatch(/bg-slate-|bg-neutral-|bg-black\/|bg-\[#/);

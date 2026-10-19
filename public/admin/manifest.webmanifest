@@ -6,8 +6,8 @@
   "scope": "/admin/",
   "display": "standalone",
   "lang": "lv",
-  "background_color": "#EEF0F3",
-  "theme_color": "#EEF0F3",
+  "background_color": "#F2F2F7",
+  "theme_color": "#F2F2F7",
   "icons": [
     {
       "src": "/icon",

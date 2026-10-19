@@ -1,8 +1,8 @@
 /**
- * iPhone 14 Pro 390×844 light/dark screenshots for the mobile admin designer pass.
+ * iPhone 14 Pro 390x844 light/dark screenshots after the 44-point mobile pass.
  *   ADMIN_MOBILE_SHOT_DIR=... ADMIN_MOBILE_TEST_URL=http://localhost:3040 node scripts/admin-mobile-designer-shots.mjs
  */
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
@@ -29,80 +29,113 @@ const browser = await chromium.launch({
 });
 
 async function dismissNextOverlay(page) {
-  const overlay = page.locator("nextjs-portal, [data-nextjs-dialog-overlay]");
-  if (await overlay.first().isVisible().catch(() => false)) {
-    await page.keyboard.press("Escape").catch(() => {});
-    await page.locator("nextjs-portal").evaluateAll((nodes) => nodes.forEach((n) => n.remove())).catch(() => {});
-  }
+  await page.keyboard.press("Escape").catch(() => {});
+  await page.evaluate(() => {
+    document.querySelectorAll("nextjs-portal, [data-nextjs-dialog-overlay], [data-next-badge-root]").forEach((n) => n.remove());
+  }).catch(() => {});
 }
 
 async function settle(page) {
-  await page.waitForSelector(".admin-m", { timeout: 30_000 });
+  await page.waitForSelector(".admin-m", { timeout: 60_000 });
   await dismissNextOverlay(page);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(800);
   await dismissNextOverlay(page);
+  await page.locator(".animate-pulse").first().waitFor({ state: "detached", timeout: 4_000 }).catch(() => {});
 }
 
-async function themeMeta(page) {
+async function metrics(page) {
   return page.evaluate(() => {
-    const tags = [...document.querySelectorAll('meta[name="theme-color"]')].map((el) => ({
-      media: el.getAttribute("media") || "",
-      color: el.getAttribute("content") || "",
-    }));
+    const cards = [...document.querySelectorAll(".admin-m .am-row, .admin-m li.am-row")];
+    const visibleCards = cards.filter((el) => {
+      const r = el.getBoundingClientRect();
+      return r.bottom > 0 && r.top < window.innerHeight - 80 && r.height > 40;
+    }).length;
+    const header = document.querySelector(".am-topbar-sticky");
+    const expand = document.querySelector(".am-topbar-expand");
+    const headerH = header ? header.getBoundingClientRect().height : 0;
+    const expandH = expand ? expand.getBoundingClientRect().height : 0;
     return {
+      scrollWidth: document.documentElement.scrollWidth,
+      innerWidth: window.innerWidth,
+      scrollY: window.scrollY,
+      visibleCards,
+      headerH: Math.round(headerH + expandH),
+      stickyH: Math.round(headerH),
+      collapsed: expand?.getAttribute("data-collapsed") || "",
+      theme: document.querySelector(".admin-m")?.getAttribute("data-admin-theme") || "",
       htmlBg: getComputedStyle(document.documentElement).backgroundColor,
-      bodyBg: getComputedStyle(document.body).backgroundColor,
-      themeColor: tags[0]?.color ?? "",
-      themeColors: tags,
-      adminTheme: document.querySelector(".admin-m")?.getAttribute("data-admin-theme") ?? "",
     };
   });
 }
 
-async function shot(colorScheme, suffix) {
-  const page = await browser.newPage({ ...IPHONE, colorScheme });
+async function shotPage(page, name) {
+  await page.screenshot({ path: join(shotDir, `${name}.png`), fullPage: false });
+}
 
+async function login(page) {
   const loginRes = await page.request.post(`${base}/api/admin/login`, {
     data: { username: adminUser, password: adminPass },
   });
   if (!loginRes.ok()) {
-    console.error("login failed", loginRes.status(), await loginRes.text().catch(() => ""));
-    await page.close();
-    return { suffix, loginOk: false };
+    throw new Error(`login failed ${loginRes.status()} ${await loginRes.text().catch(() => "")}`);
   }
+}
+
+async function shot(colorScheme, suffix) {
+  const page = await browser.newPage({ ...IPHONE, colorScheme });
+  await login(page);
+  const report = { suffix };
 
   await page.goto(`${base}/admin/dashboard`, { waitUntil: "domcontentloaded", timeout: 120_000 });
   await settle(page);
-  await page.screenshot({ path: join(shotDir, `after-pasutijumi-${suffix}.png`), fullPage: false });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(200);
+  report.proTop = await metrics(page);
+  await shotPage(page, `after-pro-pasutijumi-${suffix}`);
+
+  await page.evaluate(() => window.scrollTo(0, 420));
+  await page.waitForTimeout(350);
+  report.proDown = await metrics(page);
+  await shotPage(page, `after-pro-pasutijumi-scroll-${suffix}`);
+
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(350);
+  report.proUp = await metrics(page);
 
   const more = page.locator('nav[aria-label="Galvenā izvēlne"] button[aria-label="Vairāk"]');
   await more.click({ timeout: 10_000 });
   await page.waitForSelector('[role="dialog"][aria-label="Vairāk"]', { timeout: 10_000 });
-  await page.waitForTimeout(300);
-  await page.screenshot({ path: join(shotDir, `after-vairak-${suffix}.png`), fullPage: false });
-  await page.locator('button[aria-label="Aizvērt"]').first().click().catch(() => more.click().catch(() => {}));
   await page.waitForTimeout(250);
-
-  const share = page.getByRole("button", { name: "Jauna klienta saite" });
-  if (await share.isVisible().catch(() => false)) {
-    await share.click();
-    await page.waitForSelector('[role="dialog"][aria-labelledby="client-link-title"]', { timeout: 10_000 });
-    await page.waitForTimeout(250);
-    await page.screenshot({ path: join(shotDir, `after-share-${suffix}.png`), fullPage: false });
-    await page.locator('[role="dialog"][aria-labelledby="client-link-title"] button[aria-label="Aizvērt"]').click().catch(() => {});
-    await page.waitForTimeout(200);
-  }
+  await shotPage(page, `after-pro-vairak-${suffix}`);
+  await more.click().catch(() => {});
+  await page.waitForTimeout(200);
 
   await page.goto(`${base}/admin/atras-vertesanas`, { waitUntil: "domcontentloaded", timeout: 120_000 });
   await settle(page);
-  await page.screenshot({ path: join(shotDir, `after-atrie-${suffix}.png`), fullPage: false });
+  await shotPage(page, `after-pro-atrie-${suffix}`);
 
-  const colors = await themeMeta(page);
+  await page.goto(`${base}/admin/iriss/pasutijumi`, { waitUntil: "domcontentloaded", timeout: 120_000 });
+  await settle(page);
+  report.iriss = await metrics(page);
+  await shotPage(page, `after-iriss-pasutijumi-${suffix}`);
+
+  await page.goto(`${base}/admin/iriss/sludinajumi`, { waitUntil: "domcontentloaded", timeout: 120_000 });
+  await settle(page);
+  report.listings = await metrics(page);
+  await shotPage(page, `after-iriss-sludinajumi-${suffix}`);
+
+  const tabMore = page.locator('nav[aria-label="Galvenā izvēlne"] button[aria-label="Vairāk"]');
+  await tabMore.click({ timeout: 10_000, force: true });
+  await page.waitForSelector('[role="dialog"][aria-label="Vairāk"]', { timeout: 20_000 });
+  await page.waitForTimeout(250);
+  await shotPage(page, `after-iriss-vairak-${suffix}`);
+
   await page.close();
-  return { suffix, loginOk: true, ...colors };
+  return report;
 }
 
 const light = await shot("light", "light");
 const dark = await shot("dark", "dark");
 await browser.close();
+writeFileSync(join(shotDir, "metrics.json"), JSON.stringify({ light, dark }, null, 2));
 console.log("SHOTS", { shotDir, light, dark });

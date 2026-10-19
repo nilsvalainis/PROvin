@@ -70,9 +70,11 @@
 @media (max-width: 767px) {
   html:has(.admin-m),
   body:has(.admin-m) {
-    background-color: #eef0f3 !important;
+    background-color: #f2f2f7 !important;
     background-image: none !important;
     color-scheme: light;
+    min-height: 100dvh;
+    overflow-x: hidden !important;
   }
 
   html:has(.admin-m[data-admin-theme="dark"]),
@@ -83,57 +85,66 @@
   }
 
   .admin-m {
+    --bg: #f2f2f7;
+    --surface: #ffffff;
+    --fill-secondary: rgba(120, 120, 128, 0.16);
+    --fill-tertiary: rgba(120, 120, 128, 0.12);
+    --label: #000000;
+    --label-secondary: #6b6b70;
+    --separator: rgba(60, 60, 67, 0.18);
+    --glass: rgba(242, 242, 247, 0.72);
+    --badge-bg: #1c1c1e;
+    --badge-fg: #ffffff;
+    --chip-active-bg: #1c1c1e;
+    --chip-active-fg: #ffffff;
     --am-z-content: 0;
     --am-z-top: 20;
     --am-z-tab: 30;
     --am-z-scrim: 40;
     --am-z-sheet: 50;
-    --am-bg: #eef0f3;
-    --am-s1: #ffffff;
+    --am-bg: var(--bg);
+    --am-s1: var(--surface);
     --am-s2: #f4f5f8;
-    --am-ink: #0b0c10;
-    --am-ink2: #5e636e;
-    --am-ink3: #8a8a8e;
-    --am-fill: rgba(116, 120, 138, 0.11);
-    --am-fill2: rgba(116, 120, 138, 0.19);
-    --am-hair: rgba(17, 24, 39, 0.075);
-    --am-badge: #1c1c1e;
-    --am-badge-ink: #ffffff;
-    --am-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(243, 245, 250, 0.88));
+    --am-ink: var(--label);
+    --am-ink2: var(--label-secondary);
+    --am-ink3: #6b6b70;
+    --am-fill: var(--fill-tertiary);
+    --am-fill2: var(--fill-secondary);
+    --am-hair: var(--separator);
+    --am-badge: var(--badge-bg);
+    --am-badge-ink: var(--badge-fg);
+    --am-glass: var(--glass);
     --am-glass-edge: rgba(255, 255, 255, 0.85);
     --am-scrim: rgba(20, 24, 35, 0.45);
-    --am-overlay: color-mix(in srgb, var(--am-bg) 92%, transparent);
-    --am-card-shadow: 0 0 0 0.5px rgba(17, 24, 39, 0.05), 0 1px 2px rgba(16, 24, 40, 0.04),
-      0 4px 14px rgba(16, 24, 40, 0.045);
-    --am-glass-shadow: 0 1px 1px rgba(16, 24, 40, 0.04), 0 8px 22px rgba(16, 24, 40, 0.08),
-      0 22px 44px rgba(16, 24, 40, 0.06);
+    --am-overlay: var(--bg);
+    --am-card-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    --am-glass-shadow: none;
+    --tabbar-bg: var(--bg);
     color: var(--am-ink);
     font-feature-settings: "cv11", "ss03", "tnum";
     background-color: var(--am-bg);
-    background-image: radial-gradient(120% 80% at 10% -10%, rgba(186, 206, 232, 0.45), transparent 55%),
-      radial-gradient(90% 70% at 110% 0%, rgba(214, 198, 228, 0.32), transparent 50%),
-      radial-gradient(80% 60% at 50% 110%, rgba(176, 196, 216, 0.28), transparent 55%);
+    background-image: none;
+    overflow-x: hidden;
   }
 
   .admin-m[data-admin-theme="dark"] {
-    --am-bg: #000000;
-    --am-s1: #161619;
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --fill-secondary: rgba(120, 120, 128, 0.32);
+    --fill-tertiary: rgba(120, 120, 128, 0.24);
+    --label: #f2f2f7;
+    --label-secondary: #a1a1a6;
+    --separator: rgba(84, 84, 88, 0.65);
+    --glass: rgba(0, 0, 0, 0.62);
+    --badge-bg: #f2f2f7;
+    --badge-fg: #000000;
+    --chip-active-bg: #f2f2f7;
+    --chip-active-fg: #000000;
     --am-s2: #1f1f24;
-    --am-ink: #f3f3f5;
-    --am-ink2: #9c9da6;
-    --am-ink3: #8a8a8e;
-    --am-fill: rgba(255, 255, 255, 0.075);
-    --am-fill2: rgba(255, 255, 255, 0.13);
-    --am-hair: rgba(255, 255, 255, 0.075);
-    --am-badge: #ffffff;
-    --am-badge-ink: #1c1c1e;
-    --am-glass: linear-gradient(180deg, rgba(44, 44, 50, 0.92), rgba(26, 26, 30, 0.88));
-    --am-glass-edge: rgba(255, 255, 255, 0.13);
+    --am-ink3: #a1a1a6;
     --am-scrim: rgba(0, 0, 0, 0.55);
-    --am-card-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08);
-    --am-glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
-    background-image: radial-gradient(90% 70% at 0% 0%, rgba(70, 78, 110, 0.28), transparent 50%),
-      radial-gradient(80% 60% at 100% 100%, rgba(40, 44, 60, 0.35), transparent 55%);
+    --am-card-shadow: none;
+    background-image: none;
   }
 
   .admin-ios-theme .admin-m {
@@ -163,6 +174,14 @@
     background: var(--am-s1) !important;
     color: var(--am-ink) !important;
     box-shadow: none;
+    -webkit-appearance: none;
+  }
+
+  .admin-ios-theme .admin-m .am-search :is(input) {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
   }
 
   .admin-ios-theme .admin-m :is(input, select, textarea)::placeholder {
@@ -194,29 +213,136 @@
   }
 
   .am-glass {
-    background: var(--am-glass);
-    backdrop-filter: blur(24px) saturate(185%);
-    -webkit-backdrop-filter: blur(24px) saturate(185%);
-    box-shadow: var(--am-glass-shadow), inset 0 1px 0 #fff, inset 0 -0.5px 0 rgba(17, 24, 39, 0.06);
+    background: var(--glass);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: none;
   }
 
-  .admin-m[data-admin-theme="dark"] .am-glass {
-    box-shadow: var(--am-glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  .am-badge {
+    position: absolute;
+    top: -4px;
+    left: calc(50% + 6px);
+    display: inline-flex;
+    height: 16px;
+    min-width: 16px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--badge-bg);
+    color: var(--badge-fg);
+    font: 600 11px/16px inherit;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 0 0 2px var(--tabbar-bg);
   }
 
-  .am-overlay {
-    background: var(--am-overlay);
-    backdrop-filter: blur(24px) saturate(160%);
-    -webkit-backdrop-filter: blur(24px) saturate(160%);
+  .am-search {
+    display: flex;
+    height: 40px;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    background: var(--fill-tertiary);
+    padding: 0 12px;
   }
 
-  .am-chip-fade {
-    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent);
-    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 28px), transparent);
+  .am-search input {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .admin-m .iriss-waybill-chip {
+    background: var(--fill-secondary) !important;
+    color: var(--label) !important;
+  }
+
+  .admin-m [data-iriss-listings-toolbar] {
+    overflow-x: hidden;
   }
 
   .am-topbar {
     z-index: var(--am-z-top);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .am-topbar-sticky {
+    position: sticky;
+    top: 0;
+    z-index: var(--am-z-top);
+    background: transparent;
+  }
+
+  .am-topbar-sticky[data-stuck="true"] {
+    background: var(--glass);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 0.5px 0 var(--separator);
+  }
+
+  .am-topbar-expand {
+    transform: translateY(0);
+    opacity: 1;
+    transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .am-topbar-expand[data-collapsed="true"] {
+    transform: translateY(-100%);
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .am-topbar-expand {
+      transition: none;
+    }
+  }
+
+  .am-chip-fade {
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent);
+    scroll-padding-inline: 16px;
+  }
+
+  .am-chip-fade > :last-child {
+    margin-right: 16px;
+  }
+
+  .admin-ios-theme .admin-m button.iriss-status-chip,
+  .admin-ios-theme .admin-m button.iriss-status-chip[aria-pressed="true"][data-tone],
+  .admin-m .iriss-status-chip {
+    background: var(--fill-tertiary) !important;
+    background-color: var(--fill-tertiary) !important;
+    border-color: transparent !important;
+    color: var(--label) !important;
+  }
+
+  .admin-ios-theme .admin-m button.iriss-status-chip[aria-pressed="true"],
+  .admin-ios-theme .admin-m button.iriss-status-chip[aria-pressed="true"][data-tone],
+  .admin-m .iriss-status-chip[aria-pressed="true"] {
+    background: var(--chip-active-bg) !important;
+    background-color: var(--chip-active-bg) !important;
+    color: var(--chip-active-fg) !important;
+  }
+
+  .admin-ios-theme .admin-m button.iriss-status-chip .iriss-status-chip-count,
+  .admin-m .iriss-status-chip-count {
+    background: transparent !important;
+    background-color: transparent !important;
+    opacity: 0.6;
+    color: inherit !important;
+  }
+
+  .am-overlay {
+    background: var(--bg);
   }
 
   .am-press {
@@ -233,8 +359,6 @@
 
   .admin-m [data-admin-source-logo],
   .admin-m [data-admin-brand-logo],
-  .admin-m .iriss-auction-logo,
-  .admin-m img[alt*="logo" i],
   .admin-m .admin-source-logo-row {
     display: none !important;
   }
@@ -293,6 +417,32 @@
     display: none !important;
   }
 
+  .admin-m .rounded-2xl.border-dashed.bg-white,
+  .admin-m .rounded-xl.border-dashed.bg-white,
+  .admin-m .rounded-lg.border-dashed.bg-white {
+    background: var(--surface) !important;
+    border-color: var(--separator) !important;
+    color: var(--label) !important;
+  }
+
+  .admin-m .bg-\[\#F8F8F9\] {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .admin-m[data-admin-theme="dark"] .bg-white {
+    background: var(--surface) !important;
+    color: var(--label);
+  }
+
+  .admin-ios-theme:has(.admin-m) {
+    background: var(--bg, #f2f2f7) !important;
+  }
+
+  .admin-ios-theme:has(.admin-m[data-admin-theme="dark"]) {
+    background: #000000 !important;
+  }
+
   .admin-m [data-admin-brand-logo] {
     display: none !important;
   }
@@ -311,6 +461,14 @@
     border-radius: 7px;
     padding: 0 6px;
     font-size: 11px;
+    background: var(--fill-secondary) !important;
+    color: var(--label-secondary) !important;
+  }
+
+  .admin-m .iriss-status-chip {
+    height: 36px;
+    min-height: 36px;
+    white-space: nowrap;
   }
 }
 
