@@ -23,6 +23,15 @@ function volvoQuery() {
 }
 
 describe("marketplace search URLs", () => {
+  it("always restricts mobile.de and AutoScout24 to dealer ads", () => {
+    const mobile = buildMobileDeSearchUrl(emptyMarketplaceQuery());
+    const as24 = buildAutoscout24SearchUrl(emptyMarketplaceQuery());
+    expect(new URL(mobile).searchParams.get("adLimitation")).toBe("ONLY_DEALER_ADS");
+    expect(new URL(as24).searchParams.get("custtype")).toBe("D");
+    expect(marketplaceActorSearchInput("mobilede", emptyMarketplaceQuery()).sellerType).toBe("Dealer");
+    expect(marketplaceActorSearchInput("autoscout24", emptyMarketplaceQuery())).not.toHaveProperty("sellerType");
+  });
+
   it("puts all ranges on mobile.de search URL", () => {
     const url = buildMobileDeSearchUrl(volvoQuery());
     expect(url).toContain("suchen.mobile.de/fahrzeuge/search.html");
@@ -38,6 +47,7 @@ describe("marketplace search URLs", () => {
     expect(url).toContain("tr=AUTOMATIC_GEAR");
     expect(url).toContain("dam=false");
     expect(url).toContain("cn=DE");
+    expect(url).toContain("adLimitation=ONLY_DEALER_ADS");
   });
 
   it("puts all ranges on AutoScout24 search URL", () => {
@@ -54,6 +64,7 @@ describe("marketplace search URLs", () => {
     expect(url).toContain("sort=age");
     expect(url).toContain("damaged_listing=0");
     expect(url).toContain("cy=D");
+    expect(url).toContain("custtype=D");
     expect(url).toContain("powerto=180");
     expect(url).toContain("ccto=2000");
   });
@@ -65,6 +76,8 @@ describe("marketplace search URLs", () => {
     expect(input.maxResults).toBe(40);
     expect(input.damageStatus).toBe("EXCLUDE");
     expect(input.includeDetails).toBe(false);
+    expect(input.sellerType).toBe("Dealer");
+    expect((input.startUrls as string[])[0]).toContain("adLimitation=ONLY_DEALER_ADS");
     expect(input).not.toHaveProperty("fuelType");
     expect(input).not.toHaveProperty("transmission");
     expect(input).not.toHaveProperty("bodyType");
@@ -76,9 +89,39 @@ describe("marketplace search URLs", () => {
     const urls = input.searchUrls as { url: string }[];
     expect(urls[0]?.url).toContain("autoscout24.de/lst/volvo/xc60");
     expect(urls[0]?.url).toContain("damaged_listing=0");
+    expect(urls[0]?.url).toContain("custtype=D");
+    expect(input).not.toHaveProperty("sellerType");
     expect(input.maxResults).toBe(40);
     expect(input.includeDetails).toBe(false);
     expect(input).not.toHaveProperty("startUrls");
     expect(input).not.toHaveProperty("fuelType");
+  });
+
+  it("maps IRISS gearbox AT/MT and Latvian labels to automatic or manual", () => {
+    for (const gearbox of ["AT", "A/T", "automāts", "automats", "automatic"]) {
+      const q = emptyMarketplaceQuery();
+      q.gearbox = gearbox;
+      expect(new URL(buildMobileDeSearchUrl(q)).searchParams.get("tr"), gearbox).toBe("AUTOMATIC_GEAR");
+      expect(new URL(buildAutoscout24SearchUrl(q)).searchParams.get("gear"), gearbox).toBe("A");
+    }
+    for (const gearbox of ["MT", "manuāla"]) {
+      const q = emptyMarketplaceQuery();
+      q.gearbox = gearbox;
+      expect(new URL(buildMobileDeSearchUrl(q)).searchParams.get("tr"), gearbox).toBe("MANUAL_GEAR");
+      expect(new URL(buildAutoscout24SearchUrl(q)).searchParams.get("gear"), gearbox).toBe("M");
+    }
+    const seat = emptyMarketplaceQuery();
+    seat.gearbox = "SEAT";
+    expect(new URL(buildMobileDeSearchUrl(seat)).searchParams.get("tr")).toBeNull();
+    expect(new URL(buildAutoscout24SearchUrl(seat)).searchParams.get("gear")).toBeNull();
+  });
+
+  it("maps IRISS universal body to AutoScout24 estate", () => {
+    for (const body of ["universal", "universalis", "universāls"]) {
+      const q = emptyMarketplaceQuery();
+      q.body = body;
+      expect(new URL(buildAutoscout24SearchUrl(q)).searchParams.get("body"), body).toBe("estate");
+      expect(new URL(buildMobileDeSearchUrl(q)).searchParams.get("c"), body).toBe("EstateCar");
+    }
   });
 });

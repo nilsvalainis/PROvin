@@ -108,6 +108,14 @@ function stripForbidden(raw: MarketplaceRawListing): MarketplaceRawListing {
   return out as MarketplaceRawListing;
 }
 
+/** Tikai skaidri atzīmēts privātais pārdevējs. Tukšs / dīleris / nezināms paliek. */
+function isClearlyPrivateSeller(raw: MarketplaceRawListing): boolean {
+  const t = str(raw.sellerType, 80).toLowerCase().replace(/ä/g, "ae");
+  if (!t) return false;
+  if (/\b(dealer|haendler|commercial)\b/.test(t)) return false;
+  return /\b(private(\s+seller)?|privat(anbieter)?|fsbo)\b/.test(t);
+}
+
 export function normalizeMarketplaceListing(
   platform: MarketplacePlatform,
   providerId: MarketplaceProviderId,
@@ -115,6 +123,7 @@ export function normalizeMarketplaceListing(
   fetchedAt: string,
 ): MarketplaceNormalizedListing | null {
   if (!isMarketplacePlatform(platform) || !isMarketplaceProviderId(providerId)) return null;
+  if (isClearlyPrivateSeller(raw)) return null;
   const cleaned = stripForbidden(raw);
   const url = listingUrl(cleaned);
   if (!url) return null;

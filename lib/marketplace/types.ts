@@ -82,6 +82,8 @@ export type MarketplaceRawListing = {
   location?: unknown;
   city?: unknown;
   vin?: unknown;
+  /** Actor output (Dealer / Private Seller). Normalizācija privātos izmet. */
+  sellerType?: unknown;
   /** Atļauts adapterim, bet normalizācija šos laukus izmet. */
   description?: unknown;
   images?: unknown;
