@@ -38,9 +38,49 @@ export function isB2bWalletReportLang(value: unknown): value is B2bWalletReportL
   return value === "lv" || value === "ru" || value === "en" || value === "de";
 }
 
+export type B2bWalletReportLangMode = "required" | "default_lv" | "none";
+
+export const B2B_WALLET_DEFAULT_REPORT_LANG: B2bWalletReportLang = "lv";
+
+/**
+ * Valodas režīms partneru portālā:
+ * - dealer_pro: obligāta izvēle, bez noklusējuma
+ * - dealer_raw: oriģinālvaloda, bez izvēles
+ * - pārējie (PROVIN Business u.c.): noklusējums LV, var pārslēgt
+ */
+export function b2bWalletProductReportLangMode(product: B2bWalletProductId): B2bWalletReportLangMode {
+  if (product === "dealer_pro") return "required";
+  if (product === "dealer_raw") return "none";
+  return "default_lv";
+}
+
 /** Jauni pirkumi: valoda obligāta, bez noklusējuma. Vecos pasūtījumus neskār. */
 export function b2bWalletProductRequiresReportLang(product: B2bWalletProductId): boolean {
-  return product === "dealer_pro";
+  return b2bWalletProductReportLangMode(product) === "required";
+}
+
+export function b2bWalletProductShowsReportLang(product: B2bWalletProductId): boolean {
+  return b2bWalletProductReportLangMode(product) !== "none";
+}
+
+export function resolveB2bWalletPurchaseReportLang(
+  product: B2bWalletProductId,
+  lang: B2bWalletReportLang | null | undefined,
+): B2bWalletReportLang | null {
+  const mode = b2bWalletProductReportLangMode(product);
+  if (mode === "none") return null;
+  if (mode === "required") return isB2bWalletReportLang(lang) ? lang : null;
+  return isB2bWalletReportLang(lang) ? lang : B2B_WALLET_DEFAULT_REPORT_LANG;
+}
+
+export function b2bWalletInitialReportLangByProduct(
+  proLang: B2bWalletReportLang | null = null,
+): Record<B2bWalletProductId, B2bWalletReportLang | null> {
+  return {
+    business: B2B_WALLET_DEFAULT_REPORT_LANG,
+    dealer_raw: null,
+    dealer_pro: proLang,
+  };
 }
 
 /** Individuālās cenas (centi). `null` = noklusējuma cena. */

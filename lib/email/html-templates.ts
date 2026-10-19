@@ -16,10 +16,12 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function shell(inner: string, opts?: { omitBrandRibbon?: boolean }): string {
-  const brandRibbon = opts?.omitBrandRibbon
-    ? ""
-    : `<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:600;">PROVIN.LV</p>`;
+function shell(inner: string, opts?: { omitBrandRibbon?: boolean; b2bClient?: boolean }): string {
+  const brandRibbon = opts?.b2bClient
+    ? `<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${BRAND};font-weight:700;">PROVIN</p>`
+    : opts?.omitBrandRibbon
+      ? ""
+      : `<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:600;">PROVIN.LV</p>`;
   return `<!DOCTYPE html>
 <html lang="lv">
 <head>
@@ -214,7 +216,10 @@ function reportReadyVinHtml(vinRaw: string): string {
   return ` transportlīdzeklim ar VIN <strong>${esc(normalizeVin(vinRaw))}</strong>`;
 }
 
-function clientSignOffHtml(): string {
+function clientSignOffHtml(b2bClient?: boolean): string {
+  if (b2bClient) {
+    return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span></p>`;
+  }
   return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>`;
 }
 
@@ -223,11 +228,16 @@ function googleReviewHtml(): string {
   return `<p style="margin:0 0 20px;font-size:15px;color:${INK};line-height:1.6;">Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: <a href="${href}" style="color:${BRAND};text-decoration:none;font-weight:500;word-break:break-all;">${href}</a></p>`;
 }
 
-function reportReadyCloseHtml(questionsInner: string, includeGoogleReview?: boolean): string {
-  const qMargin = includeGoogleReview ? "12px" : "20px";
+function reportReadyCloseHtml(
+  questionsInner: string,
+  includeGoogleReview?: boolean,
+  b2bClient?: boolean,
+): string {
+  const showReview = includeGoogleReview && !b2bClient;
+  const qMargin = showReview ? "12px" : "20px";
   return `<p style="margin:0 0 ${qMargin};font-size:15px;color:${MUTED};line-height:1.55;">${questionsInner}</p>
-${includeGoogleReview ? googleReviewHtml() : ""}
-${clientSignOffHtml()}`;
+${showReview ? googleReviewHtml() : ""}
+${clientSignOffHtml(b2bClient)}`;
 }
 
 /** Klienta „atskaite gatava” e-pasts pēc produkta (dīleris / MINI / AUDITS). */
@@ -237,8 +247,10 @@ export function auditCompletedEmailHtml(opts: {
   siteOrigin?: string;
   productKind?: ReportReadyProductKind;
   includeGoogleReview?: boolean;
+  b2bClient?: boolean;
 }): string {
   const kind = opts.productKind ?? "audits";
+  const b2bClient = opts.b2bClient === true;
   const vinHtml = reportReadyVinHtml(opts.carVin);
   const files = opts.attachmentLines.map((l) => l.trim()).filter(Boolean);
   const fileList =
@@ -256,12 +268,12 @@ export function auditCompletedEmailHtml(opts: {
 <p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pieprasītie oficiālā dīlera servisa vēstures dati${vinHtml} ir sagatavoti.</p>
 <p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">Pielikumā atradīsiet šādus dokumentus:</p>
 ${fileList}
-${reportReadyCloseHtml(`Ja Jums rodas papildu jautājumi, droši rakstiet mums uz ${mailLink}.`, opts.includeGoogleReview)}`;
+${reportReadyCloseHtml(`Ja Jums rodas papildu jautājumi, droši rakstiet mums uz ${mailLink}.`, opts.includeGoogleReview, b2bClient)}`;
   } else if (kind === "mini") {
     body = `
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
 <p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtītā PROVIN MINI atskaite${vinHtml} ir sagatavota un pievienota šī e-pasta pielikumā.</p>
-${reportReadyCloseHtml(`Ja Jums rodas kādi jautājumi, droši rakstiet mums uz ${mailLink}, labprāt palīdzēsim!`, opts.includeGoogleReview)}`;
+${reportReadyCloseHtml(`Ja Jums rodas kādi jautājumi, droši rakstiet mums uz ${mailLink}, labprāt palīdzēsim!`, opts.includeGoogleReview, b2bClient)}`;
   } else {
     body = `
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
@@ -271,10 +283,10 @@ ${reportReadyCloseHtml(`Ja Jums rodas kādi jautājumi, droši rakstiet mums uz 
 <li style="margin:4px 0;">Kopsavilkuma PDF atskaiti</li>
 <li style="margin:4px 0;">Papildu materiālus un pielikumus</li>
 </ul>
-${reportReadyCloseHtml(`Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz ${mailLink}, labprāt palīdzēsim!`, opts.includeGoogleReview)}`;
+${reportReadyCloseHtml(`Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz ${mailLink}, labprāt palīdzēsim!`, opts.includeGoogleReview, b2bClient)}`;
   }
 
-  return shell(body, { omitBrandRibbon: true });
+  return shell(body, { omitBrandRibbon: !b2bClient, b2bClient });
 }
 
 type PartnerMailLocale = "lv" | "en" | "de" | "ru";

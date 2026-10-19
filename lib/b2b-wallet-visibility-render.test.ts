@@ -10,6 +10,16 @@ import {
   type B2bWalletPriceOverrides,
   type B2bWalletProductId,
 } from "@/lib/b2b-wallet";
+
+function articleHtml(html: string, product: B2bWalletProductId): string {
+  const marker = `data-wallet-product="${product}"`;
+  const start = html.indexOf(marker);
+  if (start < 0) return "";
+  const articleStart = html.lastIndexOf("<article", start);
+  const end = html.indexOf("</article>", start);
+  if (articleStart < 0 || end < 0) return "";
+  return html.slice(articleStart, end + "</article>".length);
+}
 import { buildB2bWalletView } from "@/lib/b2b-wallet-view";
 
 vi.mock("@/i18n/navigation", () => ({
@@ -62,6 +72,18 @@ describe("partner portal hides admin-hidden wallet cards", () => {
     expect(html).toContain(LANG_SWITCH);
     expect(html).toContain('aria-disabled="true"');
     expect(html.match(/<article/g)).toHaveLength(3);
+    const business = articleHtml(html, "business");
+    const raw = articleHtml(html, "dealer_raw");
+    const pro = articleHtml(html, "dealer_pro");
+    expect(business).toContain('value="lv"');
+    expect(business).toContain(LANG_SWITCH);
+    expect(business).not.toContain(t.walletReportLangPlaceholder);
+    expect(business).not.toContain(t.walletReportLangHint);
+    expect(raw).not.toContain(t.walletReportLang);
+    expect(raw).not.toContain(LANG_SWITCH);
+    expect(pro).toContain(t.walletReportLangPlaceholder);
+    expect(pro).toContain(t.walletReportLangHint);
+    expect(pro).toContain('value=""');
   });
 
   it("shows the matching PRO sample after a language is chosen", () => {
@@ -74,11 +96,13 @@ describe("partner portal hides admin-hidden wallet cards", () => {
   it("hides the PRO card together with its language switcher and sample link", () => {
     const html = render(["dealer_pro"]);
     expect(html).not.toContain(t.walletProductProTitle);
-    expect(html).not.toContain(LANG_SWITCH);
+    expect(articleHtml(html, "dealer_pro")).toBe("");
     expect(html).not.toContain(PRO_SAMPLE);
     expect(html).toContain(t.walletProductRawTitle);
     expect(html).toContain(RAW_SAMPLE);
     expect(html).toContain("md:grid-cols-2");
+    expect(articleHtml(html, "business")).toContain(LANG_SWITCH);
+    expect(articleHtml(html, "dealer_raw")).not.toContain(LANG_SWITCH);
   });
 
   it("hides the RAW card and its sample link", () => {

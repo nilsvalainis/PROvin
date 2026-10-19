@@ -14,6 +14,7 @@ import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { isValidOrderEmail, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { resolveReportReadyProductKind } from "@/lib/email/report-ready-copy";
+import { isB2bInternationalClientReport } from "@/lib/b2b-pdf-brand";
 
 /** Stripe metadata var būt tukšs; VIN bieži ir tikai admina melnrakstā (`orderEdits.vin`). */
 function resolveVinForNotify(sessionVin: string | null | undefined, draftVin: string | undefined): string {
@@ -269,6 +270,11 @@ export async function POST(req: Request) {
         amountTotalCents: order.amountTotal,
       }),
       includeGoogleReview,
+      b2bClient: isB2bInternationalClientReport({
+        notes: order.notes,
+        partnerId: order.partnerId,
+        partnerCompanyName: order.companyName,
+      }),
     });
     try {
       const stored = await persistClientReportFromNotify(sessionId, manualAttachments);

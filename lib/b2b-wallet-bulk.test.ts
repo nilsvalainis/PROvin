@@ -177,6 +177,33 @@ describe("POST /api/partner/wallet/bulk", () => {
     expect((state.followups.mock.calls[0]![0] as { dealerOnlyRaw: boolean }[])[0]!.dealerOnlyRaw).toBe(true);
   });
 
+  it("defaults business report language to lv when the client omits it", async () => {
+    const { status, body } = await post(bulkRequest("business", [{ vin: VIN_A }]));
+    expect(status).toBe(200);
+    expect(body).toMatchObject({ ok: true });
+    const parts = (state.createOrder.mock.calls[0]![0] as { extraNoteParts: string[] }).extraNoteParts;
+    expect(parts).toContain("report_lang=lv");
+    expect(parts).toContain("wallet_product=business");
+  });
+
+  it("ignores a language on dealer_raw", async () => {
+    const { status } = await post(
+      new Request("http://localhost/api/partner/wallet/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": "bulk_key_rawlang" },
+        body: JSON.stringify({
+          product: "dealer_raw",
+          reportLang: "en",
+          items: [{ vin: VIN_A }],
+        }),
+      }),
+    );
+    expect(status).toBe(200);
+    const parts = (state.createOrder.mock.calls[0]![0] as { extraNoteParts: string[] }).extraNoteParts;
+    expect(parts).toContain("wallet_product=dealer_raw");
+    expect(parts.join(" ")).not.toContain("report_lang=");
+  });
+
   it("rejects dealer_pro without reportLang", async () => {
     const req = new Request("http://localhost/api/partner/wallet/bulk", {
       method: "POST",

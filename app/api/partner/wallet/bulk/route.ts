@@ -7,6 +7,7 @@ import {
   isB2bWalletProductId,
   isB2bWalletProductVisible,
   isB2bWalletReportLang,
+  resolveB2bWalletPurchaseReportLang,
   type B2bWalletProductId,
 } from "@/lib/b2b-wallet";
 import { purchaseB2bWalletBulk, type B2bWalletBulkItemInput } from "@/lib/b2b-wallet-bulk-purchase";
@@ -77,7 +78,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "product_hidden" }, { status: 403 });
   }
 
-  const reportLang = isB2bWalletReportLang(raw.reportLang) ? raw.reportLang : null;
+  const reportLang = resolveB2bWalletPurchaseReportLang(
+    product,
+    isB2bWalletReportLang(raw.reportLang) ? raw.reportLang : null,
+  );
   if (b2bWalletProductRequiresReportLang(product) && !reportLang) {
     return NextResponse.json({ error: "report_lang" }, { status: 400 });
   }

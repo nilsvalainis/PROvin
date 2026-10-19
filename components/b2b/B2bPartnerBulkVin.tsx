@@ -24,6 +24,7 @@ import { trackMetaLead } from "@/lib/meta-pixel";
 import {
   B2B_WALLET_PRODUCTS,
   b2bWalletProductRequiresReportLang,
+  b2bWalletProductShowsReportLang,
   formatB2bWalletEuro,
   type B2bWalletProductId,
   type B2bWalletReportLang,
@@ -241,7 +242,7 @@ export function B2bPartnerBulkVin({
         headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
         body: JSON.stringify({
           product: cfg.product,
-          ...(b2bWalletProductRequiresReportLang(cfg.product) && cfg.reportLang
+          ...(b2bWalletProductShowsReportLang(cfg.product) && cfg.reportLang
             ? { reportLang: cfg.reportLang }
             : {}),
           items: orderable.map((row) => ({

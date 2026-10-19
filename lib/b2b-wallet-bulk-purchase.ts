@@ -17,8 +17,8 @@ import {
   applyB2bWalletRefund,
   attachB2bWalletPurchaseOrder,
   B2B_WALLET_PRODUCTS,
-  b2bWalletProductRequiresReportLang,
   buildB2bWalletOrderNoteParts,
+  resolveB2bWalletPurchaseReportLang,
   findB2bWalletTxnByKey,
   isB2bWalletProductVisible,
   refundKey,
@@ -190,7 +190,7 @@ export async function purchaseB2bWalletBulk(args: {
         txnId: txn.id,
         product,
         priceCents: paid,
-        reportLang: b2bWalletProductRequiresReportLang(product) ? args.reportLang : null,
+        reportLang: resolveB2bWalletPurchaseReportLang(product, args.reportLang),
       }),
     });
     if (!created.ok) {

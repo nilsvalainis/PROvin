@@ -12,9 +12,9 @@ import {
   attachB2bWalletPurchaseOrder,
   B2B_WALLET_PRODUCTS,
   buildB2bWalletOrderNoteParts,
-  b2bWalletProductRequiresReportLang,
   isB2bWalletProductVisible,
   resolveB2bWalletPrice,
+  resolveB2bWalletPurchaseReportLang,
   type B2bWalletProductId,
   type B2bWalletReportLang,
 } from "@/lib/b2b-wallet";
@@ -90,7 +90,7 @@ export async function purchaseB2bWalletProduct(args: {
       txnId: txn.id,
       product: args.product,
       priceCents: Math.abs(txn.amountCents),
-      reportLang: b2bWalletProductRequiresReportLang(args.product) ? args.reportLang : null,
+      reportLang: resolveB2bWalletPurchaseReportLang(args.product, args.reportLang),
     }),
   });
 

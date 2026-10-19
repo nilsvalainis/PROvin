@@ -9,7 +9,11 @@ import {
   applyB2bWalletRefund,
   applyB2bWalletTopup,
   b2bWalletDiscountPct,
+  b2bWalletInitialReportLangByProduct,
+  b2bWalletProductReportLangMode,
   b2bWalletProductRequiresReportLang,
+  b2bWalletProductShowsReportLang,
+  resolveB2bWalletPurchaseReportLang,
   buildB2bWalletOrderNoteParts,
   canAffordCheapestB2bWalletProduct,
   cheapestB2bWalletPriceCents,
@@ -255,5 +259,25 @@ describe("b2b wallet prices", () => {
     expect(b2bWalletProductRequiresReportLang("dealer_pro")).toBe(true);
     expect(b2bWalletProductRequiresReportLang("dealer_raw")).toBe(false);
     expect(b2bWalletProductRequiresReportLang("business")).toBe(false);
+  });
+
+  it("defaults Business to LV, leaves RAW without a language, and requires PRO", () => {
+    expect(b2bWalletProductReportLangMode("business")).toBe("default_lv");
+    expect(b2bWalletProductReportLangMode("dealer_raw")).toBe("none");
+    expect(b2bWalletProductReportLangMode("dealer_pro")).toBe("required");
+    expect(b2bWalletProductShowsReportLang("business")).toBe(true);
+    expect(b2bWalletProductShowsReportLang("dealer_raw")).toBe(false);
+    expect(b2bWalletProductShowsReportLang("dealer_pro")).toBe(true);
+    expect(resolveB2bWalletPurchaseReportLang("business", null)).toBe("lv");
+    expect(resolveB2bWalletPurchaseReportLang("business", "en")).toBe("en");
+    expect(resolveB2bWalletPurchaseReportLang("dealer_raw", "de")).toBeNull();
+    expect(resolveB2bWalletPurchaseReportLang("dealer_pro", null)).toBeNull();
+    expect(resolveB2bWalletPurchaseReportLang("dealer_pro", "ru")).toBe("ru");
+    expect(b2bWalletInitialReportLangByProduct()).toEqual({
+      business: "lv",
+      dealer_raw: null,
+      dealer_pro: null,
+    });
+    expect(b2bWalletInitialReportLangByProduct("de").dealer_pro).toBe("de");
   });
 });
