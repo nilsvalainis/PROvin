@@ -35,6 +35,17 @@ export type DealerDataJob = {
   trigger?: "webhook" | "cron" | "manual";
   /** Aizpildās tikai pēc veiksmīgas atmaksas; klāt esot, poga vairs nestrādā. */
   refund?: DealerRefundRecord;
+  /**
+   * Maksas OneAuto produktu iznākumi. `ok` / `no_data` nozīmē, ka šo produktu
+   * vairs nedrīkst izsaukt šim pasūtījumam (arī retry).
+   */
+  paidOutcomes?: Partial<Record<DealerAutoProductId, DealerPaidProductOutcome>>;
+  /** RAW: OEM rindas paliek oriģinālvalodā. Cron ņem no šī lauka, ja piezīmes nav. */
+  skipTranslate?: boolean;
+  /** Komentāra valoda, kurā Gemini jau uzrakstīja melnrakstu. */
+  commentLang?: DealerCommentOutputLang;
+  /** Saglabātie OneAuto rezultāti, lai retry varētu pārrakstīt melnrakstu bez jauna maksas zvana. */
+  oneautoResults?: Record<string, unknown>;
 };
 
 export type DealerRefundRecord = {
@@ -101,6 +112,113 @@ export const DEALER_DATA_STALE_RUNNING_MS = 10 * 60 * 1000;
 /** Pēc tik neveiksmēm automātika apstājas un gaida operatoru. */
 export const DEALER_DATA_MAX_AUTO_ATTEMPTS = 3;
 
+/**
+ * Automātiski ielasāmie OneAuto produkti pēc dīlera RAW/PRO apmaksas.
+ * VIN Decoder (€0.18) + OE Service History Europe (€3.00). Citi produkti paliek operatora rokās.
+ */
+export const DEALER_AUTO_PRODUCT_IDS = ["vin_decoder", "oe_service_history"] as const;
+export type DealerAutoProductId = (typeof DEALER_AUTO_PRODUCT_IDS)[number];
+
+export type DealerPaidProductOutcome = "ok" | "no_data" | "failed" | "pending";
+
+export type DealerCommentOutputLang = "lv" | "en" | "de" | "ru" | "source";
+
+export const DEALER_DATA_RETRY_NO_RECHARGE_HINT =
+  "Atkārtot ielasi? Jau saņemtie maksas avoti (VIN Decoder un OE Service History) netiks izsaukti vēlreiz.";
+
+export function dealerPaidOutcomeFromResult(
+  result: { ok?: boolean; error?: string } | null | undefined,
+): DealerPaidProductOutcome | null {
+  if (!result) return null;
+  if (result.error === "pending") return "pending";
+  if (result.error === "no_data") return "no_data";
+  if (result.ok === true) return "ok";
+  return "failed";
+}
+
+export function isDealerPaidProductSettled(
+  outcome: DealerPaidProductOutcome | null | undefined,
+): boolean {
+  return outcome === "ok" || outcome === "no_data";
+}
+
+export function mergeDealerPaidOutcomes(
+  previous: Partial<Record<DealerAutoProductId, DealerPaidProductOutcome>> | null | undefined,
+  incoming: Partial<Record<DealerAutoProductId, DealerPaidProductOutcome>> | null | undefined,
+): Partial<Record<DealerAutoProductId, DealerPaidProductOutcome>> {
+  const out: Partial<Record<DealerAutoProductId, DealerPaidProductOutcome>> = { ...(previous ?? {}) };
+  if (!incoming) return out;
+  for (const id of DEALER_AUTO_PRODUCT_IDS) {
+    const next = incoming[id];
+    if (!next) continue;
+    const cur = out[id];
+    if (cur === "ok") continue;
+    if (isDealerPaidProductSettled(cur) && next === "failed") continue;
+    if (isDealerPaidProductSettled(cur) && next === "pending") continue;
+    out[id] = next;
+  }
+  return out;
+}
+
+export function selectDealerAutoProductsToFetch(
+  existing: Partial<Record<DealerAutoProductId, DealerPaidProductOutcome | null | undefined>>,
+): DealerAutoProductId[] {
+  return DEALER_AUTO_PRODUCT_IDS.filter((id) => !isDealerPaidProductSettled(existing[id] ?? null));
+}
+
+export function dealerOeHistoryIsNoData(
+  outcome: DealerPaidProductOutcome | null | undefined,
+): boolean {
+  return outcome === "no_data";
+}
+
+export function dealerAutoFetchHasTechnicalFail(
+  outcomes: Partial<Record<DealerAutoProductId, DealerPaidProductOutcome | null | undefined>>,
+): DealerAutoProductId | null {
+  for (const id of DEALER_AUTO_PRODUCT_IDS) {
+    const o = outcomes[id];
+    if (o === "failed" || o === "pending") return id;
+  }
+  return null;
+}
+
+export function resolveDealerCommentOutputLang(args: {
+  walletProduct?: string | null;
+  reportLang?: string | null;
+  skipTranslate?: boolean;
+}): DealerCommentOutputLang {
+  if (args.skipTranslate || args.walletProduct === "dealer_raw") return "source";
+  if (args.walletProduct === "dealer_pro") {
+    const lang = (args.reportLang ?? "").trim().toLowerCase();
+    if (lang === "en" || lang === "de" || lang === "ru" || lang === "lv") return lang;
+  }
+  return "lv";
+}
+
+export function dealerCommentLanguageDirective(lang: DealerCommentOutputLang): string {
+  const brand =
+    "B2B client copy uses the brand PROVIN only. Do not present IRISS as the service brand.";
+  const dashes = 'Use only a plain ASCII hyphen "-". Never an em dash or en dash.';
+  if (lang === "source") {
+    return `OUTPUT LANGUAGE: write the entire comment in the same language as the OEM service records (do not translate into Latvian). ${brand} ${dashes}`;
+  }
+  const names: Record<Exclude<DealerCommentOutputLang, "source">, string> = {
+    lv: "Latvian",
+    en: "English",
+    de: "German",
+    ru: "Russian",
+  };
+  if (lang === "lv") {
+    return `OUTPUT LANGUAGE: Latvian. ${brand} ${dashes}`;
+  }
+  return `OUTPUT LANGUAGE: write the entire comment in ${names[lang]}. Keep the oil-interval first sentence in the exact Latvian machine format "Ražotāja intervāls: X XXX km / Y mēn." (or "nav droši zināms") so PDF colouring still works; all other sentences in ${names[lang]}. ${brand} ${dashes}`;
+}
+
+export function dealerDataRetryButtonLabel(job: DealerDataJob | null): string {
+  if (job?.status === "failed") return "Atkārtot";
+  return "Ielasīt vēlreiz";
+}
+
 /** Šīm līnijām dīlera avots nav cenā, tāpēc cenu josla tām nekad nav pamats. */
 const NON_DEALER_CHECKOUT_LINES = new Set([
   "provin_select",
@@ -137,14 +255,16 @@ export type DealerDataRunDecision =
   | { run: false; reason: "already_fetched" | "in_flight" | "too_many_attempts" | "vin_missing" };
 
 /**
- * Izmaksu aizsargs: katra ielase maksā €3, tāpēc to pašu VIN neielasām divreiz
- * un paralēlu darbu nepalaižam.
+ * Izmaksu aizsargs: VIN Decoder (€0.18) un OE Service History (€3.00) tam pašam
+ * pasūtījumam neizsaucam divreiz. Paralēlu darbu nepalaižam.
  */
 export function decideDealerDataRun(args: {
   job: DealerDataJob | null;
   vin: string;
   force?: boolean;
   nowMs?: number;
+  /** Operatora poga drīkst mēģināt pēc auto griestiem; maksas produkti joprojām ir settled. */
+  trigger?: DealerDataJob["trigger"];
 }): DealerDataRunDecision {
   const vin = args.vin.trim();
   if (!vin) return { run: false, reason: "vin_missing" };
@@ -166,7 +286,12 @@ export function decideDealerDataRun(args: {
   if (sameVin && (job.status === "done" || job.status === "no_data")) {
     return { run: false, reason: "already_fetched" };
   }
-  if (sameVin && job.status === "failed" && job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS) {
+  if (
+    sameVin &&
+    job.status === "failed" &&
+    job.attempts >= DEALER_DATA_MAX_AUTO_ATTEMPTS &&
+    args.trigger !== "manual"
+  ) {
     return { run: false, reason: "too_many_attempts" };
   }
   return { run: true };
@@ -189,6 +314,27 @@ function asStatus(v: unknown): DealerDataJobStatus {
   return typeof v === "string" && (STATUSES as readonly string[]).includes(v)
     ? (v as DealerDataJobStatus)
     : "pending";
+}
+
+function asPaidOutcomes(raw: unknown): Partial<Record<DealerAutoProductId, DealerPaidProductOutcome>> | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const out: Partial<Record<DealerAutoProductId, DealerPaidProductOutcome>> = {};
+  for (const id of DEALER_AUTO_PRODUCT_IDS) {
+    const v = o[id];
+    if (v === "ok" || v === "no_data" || v === "failed" || v === "pending") out[id] = v;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function asCommentLang(v: unknown): DealerCommentOutputLang | undefined {
+  if (v === "lv" || v === "en" || v === "de" || v === "ru" || v === "source") return v;
+  return undefined;
+}
+
+function asOneautoResults(raw: unknown): Record<string, unknown> | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  return raw as Record<string, unknown>;
 }
 
 function asStr(v: unknown, max = 200): string {
@@ -242,6 +388,9 @@ export function normalizeDealerDataJob(raw: unknown, sessionId: string): DealerD
   const now = new Date().toISOString();
   const attempts = typeof o.attempts === "number" && Number.isFinite(o.attempts) ? Math.max(0, Math.floor(o.attempts)) : 0;
   const trigger = asStr(o.trigger, 16);
+  const paidOutcomes = asPaidOutcomes(o.paidOutcomes);
+  const commentLang = asCommentLang(o.commentLang);
+  const oneautoResults = asOneautoResults(o.oneautoResults);
   return {
     sessionId: asStr(o.sessionId, 200) || sessionId,
     vin: asStr(o.vin, 24).toUpperCase(),
@@ -258,6 +407,10 @@ export function normalizeDealerDataJob(raw: unknown, sessionId: string): DealerD
     ...(asStr(o.error, 300) ? { error: asStr(o.error, 300) } : {}),
     ...(trigger === "webhook" || trigger === "cron" || trigger === "manual" ? { trigger } : {}),
     ...(refund ? { refund } : {}),
+    ...(paidOutcomes ? { paidOutcomes } : {}),
+    ...(typeof o.skipTranslate === "boolean" ? { skipTranslate: o.skipTranslate } : {}),
+    ...(commentLang ? { commentLang } : {}),
+    ...(oneautoResults ? { oneautoResults } : {}),
   };
 }
 
@@ -269,8 +422,16 @@ export function describeDealerDataJob(job: DealerDataJob | null): string {
       return "Gaida ielasi";
     case "running":
       return "Ielasa datus…";
-    case "done":
-      return `Ielasīts: ${job.serviceEventCount ?? 0} servisa ieraksti`;
+    case "done": {
+      const decoder = job.paidOutcomes?.vin_decoder;
+      const decoderBit =
+        decoder === "ok" ? "VIN Decoder" : decoder === "no_data" ? "VIN Decoder (nav datu)" : null;
+      const parts = [
+        decoderBit,
+        `${job.serviceEventCount ?? 0} servisa ieraksti`,
+      ].filter(Boolean);
+      return `Ielasīts: ${parts.join(", ")}`;
+    }
     case "no_data":
       return "Dīlera dati nav pieejami";
     case "failed":

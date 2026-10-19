@@ -1,12 +1,22 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  DEALER_AUTO_PRODUCT_IDS,
   DEALER_DATA_MAX_AUTO_ATTEMPTS,
+  DEALER_DATA_RETRY_NO_RECHARGE_HINT,
   DEALER_DATA_STALE_RUNNING_MS,
+  dealerAutoFetchHasTechnicalFail,
+  dealerCommentLanguageDirective,
+  dealerDataRetryButtonLabel,
+  dealerPaidOutcomeFromResult,
   decideDealerDataRun,
   decideDealerRefund,
   isDealerDataAutoFetchOrder,
+  isDealerPaidProductSettled,
+  mergeDealerPaidOutcomes,
   normalizeDealerDataJob,
+  resolveDealerCommentOutputLang,
+  selectDealerAutoProductsToFetch,
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
 
@@ -108,6 +118,11 @@ describe("decideDealerDataRun", () => {
       run: false,
       reason: "too_many_attempts",
     });
+    expect(decideDealerDataRun({ job: failed, vin, trigger: "cron" })).toEqual({
+      run: false,
+      reason: "too_many_attempts",
+    });
+    expect(decideDealerDataRun({ job: failed, vin, trigger: "manual" })).toEqual({ run: true });
   });
 
   it("operatora `force` pārvar jau ielasītu VIN, bet ne paralēlu izpildi", () => {
@@ -227,5 +242,88 @@ describe("normalizeDealerDataJob", () => {
     expect(parsed?.refund?.kind).toBe("credit");
     expect(parsed?.refund?.amountCents).toBe(0);
     expect(parsed?.refund?.stripeRefundId).toBe("credit_manual_order_abc");
+  });
+
+  it("patur settled maksas iznākumus un komentāra valodu", () => {
+    const parsed = normalizeDealerDataJob(
+      {
+        vin: "WAUZZZ4M0JD000001",
+        status: "failed",
+        paidOutcomes: { vin_decoder: "ok", oe_service_history: "failed" },
+        commentLang: "de",
+        skipTranslate: true,
+        oneautoResults: { vin_decoder: { ok: true, payload: { vin: "x" } } },
+      },
+      "cs_test_1",
+    );
+    expect(parsed?.paidOutcomes).toEqual({ vin_decoder: "ok", oe_service_history: "failed" });
+    expect(parsed?.commentLang).toBe("de");
+    expect(parsed?.skipTranslate).toBe(true);
+    expect(parsed?.oneautoResults?.vin_decoder).toMatchObject({ ok: true });
+  });
+});
+
+describe("dealer auto paid products", () => {
+  it("automātika iekasē VIN Decoder un OE Service History", () => {
+    expect(DEALER_AUTO_PRODUCT_IDS).toEqual(["vin_decoder", "oe_service_history"]);
+  });
+
+  it("neizsauc jau settled produktus, arī pēc kļūdas", () => {
+    expect(selectDealerAutoProductsToFetch({})).toEqual(["vin_decoder", "oe_service_history"]);
+    expect(selectDealerAutoProductsToFetch({ vin_decoder: "ok" })).toEqual(["oe_service_history"]);
+    expect(
+      selectDealerAutoProductsToFetch({ vin_decoder: "no_data", oe_service_history: "ok" }),
+    ).toEqual([]);
+    expect(
+      selectDealerAutoProductsToFetch({ vin_decoder: "failed", oe_service_history: "no_data" }),
+    ).toEqual(["vin_decoder"]);
+  });
+
+  it("settled iznākumu nevar pārrakstīt ar failed", () => {
+    expect(
+      mergeDealerPaidOutcomes(
+        { vin_decoder: "ok", oe_service_history: "no_data" },
+        { vin_decoder: "failed", oe_service_history: "failed" },
+      ),
+    ).toEqual({ vin_decoder: "ok", oe_service_history: "no_data" });
+    expect(isDealerPaidProductSettled("ok")).toBe(true);
+    expect(isDealerPaidProductSettled("failed")).toBe(false);
+    expect(dealerPaidOutcomeFromResult({ ok: true })).toBe("ok");
+    expect(dealerPaidOutcomeFromResult({ ok: false, error: "no_data" })).toBe("no_data");
+    expect(dealerPaidOutcomeFromResult({ ok: false, error: "api_unavailable" })).toBe("failed");
+    expect(dealerAutoFetchHasTechnicalFail({ vin_decoder: "ok", oe_service_history: "pending" })).toBe(
+      "oe_service_history",
+    );
+    expect(dealerAutoFetchHasTechnicalFail({ vin_decoder: "ok", oe_service_history: "no_data" })).toBeNull();
+  });
+});
+
+describe("dealer comment language", () => {
+  it("PRO lieto klienta valodu, RAW paliek oriģinālvalodā", () => {
+    expect(
+      resolveDealerCommentOutputLang({ walletProduct: "dealer_pro", reportLang: "en" }),
+    ).toBe("en");
+    expect(
+      resolveDealerCommentOutputLang({ walletProduct: "dealer_pro", reportLang: "ru" }),
+    ).toBe("ru");
+    expect(resolveDealerCommentOutputLang({ walletProduct: "dealer_raw" })).toBe("source");
+    expect(resolveDealerCommentOutputLang({ skipTranslate: true, walletProduct: "dealer_pro", reportLang: "de" })).toBe(
+      "source",
+    );
+    expect(resolveDealerCommentOutputLang({})).toBe("lv");
+  });
+
+  it("direktīva paliek pie PROVIN zīmola un īsajām defisēm", () => {
+    const en = dealerCommentLanguageDirective("en");
+    expect(en).toMatch(/English/);
+    expect(en).toMatch(/PROVIN/);
+    expect(en).toMatch(/Do not present IRISS as the service brand/);
+    expect(en).toMatch(/ASCII hyphen/);
+    expect(en).not.toMatch(/\u2014|\u2013/);
+    expect(dealerCommentLanguageDirective("source")).toMatch(/same language as the OEM/);
+    expect(DEALER_DATA_RETRY_NO_RECHARGE_HINT).toMatch(/netiks izsaukti vēlreiz/);
+    expect(DEALER_DATA_RETRY_NO_RECHARGE_HINT).not.toMatch(/\u2014|\u2013/);
+    expect(dealerDataRetryButtonLabel(job({ status: "failed" }))).toBe("Atkārtot");
+    expect(dealerDataRetryButtonLabel(job({ status: "done" }))).toBe("Ielasīt vēlreiz");
   });
 });

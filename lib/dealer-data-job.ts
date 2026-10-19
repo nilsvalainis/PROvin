@@ -14,9 +14,20 @@ import {
 } from "@/lib/admin-order-draft-workspace-merge";
 import { createDefaultSourceBlocks, mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import type { OrderDraftWorkspaceBody } from "@/lib/admin-order-draft-types";
+import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import {
+  DEALER_AUTO_PRODUCT_IDS,
+  dealerAutoFetchHasTechnicalFail,
+  dealerOeHistoryIsNoData,
+  dealerPaidOutcomeFromResult,
   decideDealerDataRun,
+  mergeDealerPaidOutcomes,
+  resolveDealerCommentOutputLang,
+  selectDealerAutoProductsToFetch,
+  type DealerAutoProductId,
+  type DealerCommentOutputLang,
   type DealerDataJob,
+  type DealerPaidProductOutcome,
 } from "@/lib/dealer-data-job-types";
 import { readDealerDataJob, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
 import { refundB2bWalletOrderIfNoData } from "@/lib/b2b-wallet-refund";
@@ -24,10 +35,10 @@ import { fetchOneautoProducts, getOneautoApiConfig } from "@/lib/oneauto-api";
 import {
   buildOneautoDisplay,
   filledOneautoServiceEvents,
-  oneautoDisplayHasRows,
   oneautoPayloadIsNoData,
   type OneautoProductId,
 } from "@/lib/oneauto-catalog";
+import { parseResultMap } from "@/lib/oneauto-block";
 import {
   applyOneautoToAutoRecords,
   emptyOneautoIngest,
@@ -37,13 +48,12 @@ import {
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 /**
- * Dīlera datu A-Z ķēde: pēc apmaksas ielasa OE servisa vēsturi, ieliek to
- * OFICIĀLĀ DĪLERA DATI avotā un sagatavo eļļas intervālu un komentāru melnrakstus.
- *
- * Automātika iekasē tikai vienu produktu. Pārējie OneAuto produkti paliek
- * operatora rokās, jo tie nav dīlera produkta cenā.
+ * Dīlera datu A-Z ķēde: pēc apmaksas ielasa VIN Decoder (€0.18) un
+ * OE Service History Europe (€3.00), ieliek OFICIĀLĀ DĪLERA DATI avotā
+ * un sagatavo Gemini komentāra melnrakstu. Citi OneAuto produkti paliek
+ * operatora rokās. Klientam nekas netiek nosūtīts.
  */
-const AUTO_PRODUCTS: readonly OneautoProductId[] = ["oe_service_history"];
+const AUTO_PRODUCTS: readonly OneautoProductId[] = [...DEALER_AUTO_PRODUCT_IDS];
 
 export type DealerDataRunResult = {
   ok: boolean;
@@ -92,7 +102,11 @@ async function writeAutoRecords(
  * lauku var vēlāk ģenerēt manuāli, ja vēlas atsevišķu versiju.
  * Ģenerē tikai tukšu lauku, lai atkārtota palaišana nepārrakstītu operatora tekstu.
  */
-async function generateDealerNotes(sessionId: string, vin: string): Promise<boolean> {
+async function generateDealerNotes(
+  sessionId: string,
+  vin: string,
+  commentLang: DealerCommentOutputLang,
+): Promise<boolean> {
   const draft = await readOrderDraft(sessionId);
   const baseline = draft?.workspace;
   if (!baseline) return false;
@@ -119,6 +133,8 @@ async function generateDealerNotes(sessionId: string, vin: string): Promise<bool
         targetField: "comments",
         includeOilIntervalSummary: true,
         isolateDealerComments: true,
+        checkoutLine: "dealer",
+        outputLang: commentLang,
         // Avota komentāri vienmēr ar Gemini, ne noklusējuma Claude ceļu.
         modelTier: "gemini-flash",
       })
@@ -164,6 +180,27 @@ export async function enqueueDealerDataJob(args: {
   return job !== null;
 }
 
+function outcomesFromResults(
+  results: Partial<Record<OneautoProductId, { ok?: boolean; error?: string }>>,
+): Partial<Record<DealerAutoProductId, DealerPaidProductOutcome>> {
+  const out: Partial<Record<DealerAutoProductId, DealerPaidProductOutcome>> = {};
+  for (const id of DEALER_AUTO_PRODUCT_IDS) {
+    const o = dealerPaidOutcomeFromResult(results[id]);
+    if (o) out[id] = o;
+  }
+  return out;
+}
+
+function resultsRecord(
+  results: Partial<Record<OneautoProductId, unknown>>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [id, row] of Object.entries(results)) {
+    if (row != null) out[id] = row;
+  }
+  return out;
+}
+
 export async function runDealerDataJob(args: {
   sessionId: string;
   vin: string;
@@ -171,7 +208,7 @@ export async function runDealerDataJob(args: {
   force?: boolean;
   /** Ielasa datus, bet AI melnrakstus neģenerē (ātrai atkārtotai palaišanai). */
   skipAi?: boolean;
-  /** RAW produkts: OEM ieraksti paliek oriģinālvalodā, bez AI tulkojuma. */
+  /** RAW produkts: OEM ieraksti paliek oriģinālvalodā, bez darbu tulkojuma uz LV. */
   skipTranslate?: boolean;
 }): Promise<DealerDataRunResult> {
   const sessionId = args.sessionId;
@@ -194,9 +231,48 @@ export async function runDealerDataJob(args: {
   }
 
   const existing = await readDealerDataJob(sessionId);
-  const decision = decideDealerDataRun({ job: existing, vin, force: args.force });
+  const decision = decideDealerDataRun({
+    job: existing,
+    vin,
+    force: args.force,
+    trigger: args.trigger,
+  });
   if (!decision.run) {
     return { ok: true, status: existing?.status ?? "pending", reason: decision.reason };
+  }
+
+  const draft = await readOrderDraft(sessionId);
+  const notes = draft?.orderEdits?.notes ?? "";
+  const marks = parseB2bWalletOrderMarks(notes);
+  const skipTranslate =
+    args.skipTranslate ?? existing?.skipTranslate ?? marks?.product === "dealer_raw";
+  const commentLang = resolveDealerCommentOutputLang({
+    walletProduct: marks?.product,
+    reportLang: marks?.reportLang,
+    skipTranslate,
+  });
+
+  const previousIngest = mergeSourceBlocksWithDefaults(
+    draft?.workspace?.sourceBlocks ?? emptyWorkspaceBody().sourceBlocks,
+  ).auto_records.oneautoIngest;
+  const storedResults = mergeOneautoProductResults(
+    parseResultMap(existing?.oneautoResults),
+    previousIngest?.results,
+  );
+  const storedOutcomes = mergeDealerPaidOutcomes(
+    existing?.paidOutcomes,
+    outcomesFromResults(storedResults),
+  );
+  let toFetch = selectDealerAutoProductsToFetch(storedOutcomes);
+  // Pabeigti vecie darbi (tikai OE vēsture): nepievieno VIN Decoder, lai nemainītu jau ielasītos pasūtījumus.
+  if (existing?.status === "done" || existing?.status === "no_data") {
+    const known = new Set<string>([
+      ...Object.keys(storedOutcomes),
+      ...(previousIngest?.selectedProducts ?? []),
+    ]);
+    if (!known.has("vin_decoder")) {
+      toFetch = toFetch.filter((id) => id !== "vin_decoder");
+    }
   }
 
   const attempts = (existing?.attempts ?? 0) + 1;
@@ -206,33 +282,69 @@ export async function runDealerDataJob(args: {
     attempts,
     startedAt: new Date().toISOString(),
     trigger: args.trigger,
+    skipTranslate,
+    commentLang,
+    paidOutcomes: storedOutcomes,
   });
 
-  let fetched: Awaited<ReturnType<typeof fetchOneautoProducts>>;
-  try {
-    fetched = await fetchOneautoProducts({ vin, products: AUTO_PRODUCTS });
-  } catch (e) {
-    const error = e instanceof Error ? e.message.slice(0, 200) : "network_error";
-    await upsertDealerDataJob(sessionId, { vin, status: "failed", attempts, error, trigger: args.trigger });
+  let mergedResults = storedResults;
+  let lastCostEur = previousIngest?.lastCostEur ?? "";
+  if (toFetch.length > 0) {
+    let fetched: Awaited<ReturnType<typeof fetchOneautoProducts>>;
+    try {
+      fetched = await fetchOneautoProducts({ vin, products: toFetch });
+    } catch (e) {
+      const error = e instanceof Error ? e.message.slice(0, 200) : "network_error";
+      await upsertDealerDataJob(sessionId, { vin, status: "failed", attempts, error, trigger: args.trigger });
+      return { ok: false, status: "failed", reason: error };
+    }
+    mergedResults = mergeOneautoProductResults(storedResults, fetched.results);
+    lastCostEur = fetched.costEur || lastCostEur;
+    const paidOutcomes = mergeDealerPaidOutcomes(storedOutcomes, outcomesFromResults(mergedResults));
+    // Saglabā rezultātus PIRMS melnraksta rakstīšanas, lai retry neiekasētu vēlreiz.
+    await upsertDealerDataJob(sessionId, {
+      vin,
+      status: "running",
+      attempts,
+      trigger: args.trigger,
+      skipTranslate,
+      commentLang,
+      paidOutcomes,
+      oneautoResults: resultsRecord(mergedResults),
+    });
+  }
+
+  const paidOutcomes = mergeDealerPaidOutcomes(storedOutcomes, outcomesFromResults(mergedResults));
+  const oeOutcome = paidOutcomes.oe_service_history ?? null;
+  const technical = dealerAutoFetchHasTechnicalFail(paidOutcomes);
+  if (technical) {
+    const error = String(mergedResults[technical]?.error ?? `${technical}_failed`).slice(0, 200);
+    await upsertDealerDataJob(sessionId, {
+      vin,
+      status: "failed",
+      attempts,
+      error,
+      trigger: args.trigger,
+      skipTranslate,
+      commentLang,
+      paidOutcomes,
+      oneautoResults: resultsRecord(mergedResults),
+    });
     return { ok: false, status: "failed", reason: error };
   }
 
-  const result = fetched.results.oe_service_history;
-  const noData =
-    !result ||
-    result.error === "no_data" ||
-    oneautoPayloadIsNoData(result.payload) ||
-    !oneautoDisplayHasRows(fetched.display);
-
-  if (result && result.ok === false && result.error !== "no_data") {
-    // `insufficient_balance` un `api_unavailable` ir mūsu puses problēma, ne klienta:
-    // atmaksu nepiedāvājam, operators mēģina vēlreiz.
-    const error = String(result.error ?? "upstream_error").slice(0, 200);
-    await upsertDealerDataJob(sessionId, { vin, status: "failed", attempts, error, trigger: args.trigger });
-    return { ok: false, status: "failed", reason: error };
+  const payloads: Partial<Record<OneautoProductId, unknown>> = {};
+  for (const id of Object.keys(mergedResults) as OneautoProductId[]) {
+    payloads[id] = mergedResults[id]?.payload;
   }
+  const originalDisplay = buildOneautoDisplay(payloads);
+  const oeNoData =
+    dealerOeHistoryIsNoData(oeOutcome) ||
+    !mergedResults.oe_service_history ||
+    oneautoPayloadIsNoData(mergedResults.oe_service_history.payload) ||
+    filledOneautoServiceEvents(originalDisplay.serviceTimeline).length === 0;
 
-  if (noData) {
+  if (oeNoData) {
     await upsertDealerDataJob(sessionId, {
       vin,
       status: "no_data",
@@ -240,6 +352,10 @@ export async function runDealerDataJob(args: {
       serviceEventCount: 0,
       finishedAt: new Date().toISOString(),
       trigger: args.trigger,
+      skipTranslate,
+      commentLang,
+      paidOutcomes,
+      oneautoResults: resultsRecord(mergedResults),
     });
     await refundB2bWalletOrderIfNoData(sessionId).catch((err) => {
       console.error("[dealer-data-job] wallet refund failed", { sessionId, err });
@@ -247,27 +363,27 @@ export async function runDealerDataJob(args: {
     return { ok: true, status: "no_data", reason: "no_data", serviceEventCount: 0 };
   }
 
-  const display = args.skipTranslate ? fetched.display : await translateOneautoWorksOnIngest(fetched.display);
-  const serviceEventCount = filledOneautoServiceEvents(fetched.display.serviceTimeline).length;
+  const display = skipTranslate ? originalDisplay : await translateOneautoWorksOnIngest(originalDisplay);
+  const serviceEventCount = filledOneautoServiceEvents(originalDisplay.serviceTimeline).length;
 
   const wrote = await writeAutoRecords(sessionId, (blocks) => {
-    const previousIngest = blocks.auto_records.oneautoIngest ?? emptyOneautoIngest();
-    const results = mergeOneautoProductResults(previousIngest.results, fetched.results);
-    const payloads: Partial<Record<OneautoProductId, unknown>> = {};
+    const prevIngest = blocks.auto_records.oneautoIngest ?? emptyOneautoIngest();
+    const results = mergeOneautoProductResults(prevIngest.results, mergedResults);
+    const rebuiltPayloads: Partial<Record<OneautoProductId, unknown>> = {};
     for (const id of Object.keys(results) as OneautoProductId[]) {
-      payloads[id] = results[id]?.payload;
+      rebuiltPayloads[id] = results[id]?.payload;
     }
-    const rebuiltOriginal = buildOneautoDisplay(payloads);
+    const rebuiltOriginal = buildOneautoDisplay(rebuiltPayloads);
     const freshOriginal = filledOneautoServiceEvents(rebuiltOriginal.serviceTimeline);
     const ingest: AutoRecordsOneautoIngest = {
-      ...previousIngest,
+      ...prevIngest,
       lastFetchedVin: vin,
       fetchedAt: new Date().toISOString(),
-      lastCostEur: fetched.costEur,
-      selectedProducts: Array.from(new Set([...previousIngest.selectedProducts, ...AUTO_PRODUCTS])),
+      lastCostEur: lastCostEur || prevIngest.lastCostEur,
+      selectedProducts: Array.from(new Set([...prevIngest.selectedProducts, ...AUTO_PRODUCTS])),
       results,
       serviceTimelineOriginal:
-        freshOriginal.length > 0 ? freshOriginal : previousIngest.serviceTimelineOriginal,
+        freshOriginal.length > 0 ? freshOriginal : prevIngest.serviceTimelineOriginal,
     };
     return {
       ...blocks,
@@ -282,11 +398,41 @@ export async function runDealerDataJob(args: {
       attempts,
       error: "draft_write_failed",
       trigger: args.trigger,
+      skipTranslate,
+      commentLang,
+      paidOutcomes,
+      oneautoResults: resultsRecord(mergedResults),
     });
     return { ok: false, status: "failed", reason: "draft_write_failed" };
   }
 
-  const aiGenerated = args.skipAi ? false : await generateDealerNotes(sessionId, vin);
+  const wroteNotes = args.skipAi ? false : await generateDealerNotes(sessionId, vin, commentLang);
+  const commentsAfter = args.skipAi
+    ? ""
+    : (
+        await readOrderDraft(sessionId).then((d) =>
+          d?.workspace
+            ? mergeSourceBlocksWithDefaults(d.workspace.sourceBlocks).auto_records.comments.trim()
+            : "",
+        )
+      );
+  const aiGenerated = Boolean(wroteNotes || commentsAfter);
+  if (!args.skipAi && !aiGenerated) {
+    await upsertDealerDataJob(sessionId, {
+      vin,
+      status: "failed",
+      attempts,
+      error: "ai_generation_failed",
+      trigger: args.trigger,
+      skipTranslate,
+      commentLang,
+      paidOutcomes,
+      oneautoResults: resultsRecord(mergedResults),
+      serviceEventCount,
+      aiGenerated: false,
+    });
+    return { ok: false, status: "failed", reason: "ai_generation_failed", serviceEventCount };
+  }
 
   await upsertDealerDataJob(sessionId, {
     vin,
@@ -296,6 +442,10 @@ export async function runDealerDataJob(args: {
     aiGenerated,
     finishedAt: new Date().toISOString(),
     trigger: args.trigger,
+    skipTranslate,
+    commentLang,
+    paidOutcomes,
+    oneautoResults: resultsRecord(mergedResults),
   });
 
   return { ok: true, status: "done", reason: "done", serviceEventCount };

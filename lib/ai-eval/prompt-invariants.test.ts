@@ -352,6 +352,10 @@ describe("PROVIN AI prompt invariants", () => {
     expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/shouldIsolateDealerComments/);
     expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/DEALER_ISOLATED_COMMENT_DIRECTIVE/);
     expect(readRepo("lib/dealer-data-job.ts")).toMatch(/isolateDealerComments: true/);
+    expect(readRepo("lib/dealer-data-job.ts")).toMatch(/vin_decoder/);
+    expect(readRepo("lib/dealer-data-job.ts")).toMatch(/oe_service_history/);
+    expect(readRepo("lib/dealer-data-job.ts")).toMatch(/outputLang: commentLang/);
+    expect(readRepo("lib/admin-ai-source-comment.ts")).toMatch(/dealerCommentLanguageDirective/);
   });
 
   it("oil-change interval math lives only in the dealer field", () => {

@@ -13,7 +13,12 @@ import {
   buildDealerReadyEmailDraft,
   type DealerClientEmailKind,
 } from "@/lib/dealer-data-client-email";
-import { describeDealerDataJob, type DealerDataJob } from "@/lib/dealer-data-job-types";
+import {
+  DEALER_DATA_RETRY_NO_RECHARGE_HINT,
+  dealerDataRetryButtonLabel,
+  describeDealerDataJob,
+  type DealerDataJob,
+} from "@/lib/dealer-data-job-types";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import { AdminPdfLangSplitButton, type PdfLockLang } from "@/components/admin/AdminPdfLangSplitButton";
@@ -170,7 +175,7 @@ export function AdminDealerDataJobStrip({
 
   const rerun = async (force: boolean) => {
     if (!editable || busy) return;
-    if (force && !window.confirm("Ielasīt OE servisa vēsturi vēlreiz? Tas atkārtoti iekasēs 3,00 €.")) {
+    if (force && !window.confirm(DEALER_DATA_RETRY_NO_RECHARGE_HINT)) {
       return;
     }
     setBusy("run");
@@ -381,7 +386,12 @@ export function AdminDealerDataJobStrip({
             {describeDealerDataJob(job)}
           </span>
           {job.aiGenerated ? (
-            <span className="text-[10px] text-[var(--color-provin-muted)]">AI melnraksti sagatavoti</span>
+            <span className="text-[10px] text-[var(--color-provin-muted)]">
+              AI melnraksti sagatavoti
+              {job.commentLang && job.commentLang !== "lv"
+                ? ` (${job.commentLang === "source" ? "oriģinālvaloda" : job.commentLang.toUpperCase()})`
+                : ""}
+            </span>
           ) : null}
           {refunded ? (
             <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] text-slate-600">
@@ -399,11 +409,11 @@ export function AdminDealerDataJobStrip({
         {job ? (
           <button
             type="button"
-            className={btn}
+            className={job.status === "failed" ? `${btn} ${ADMIN_PRO_TONE.danger}` : btn}
             disabled={!editable || busy !== null}
             onClick={() => void rerun(job.status === "done" || job.status === "no_data")}
           >
-            {busy === "run" ? "Ielasa…" : "Ielasīt vēlreiz"}
+            {busy === "run" ? "Ielasa…" : dealerDataRetryButtonLabel(job)}
           </button>
         ) : null}
         {showRefund ? (

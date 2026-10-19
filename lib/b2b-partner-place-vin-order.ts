@@ -62,7 +62,7 @@ export type PartnerVinOrderFollowup = {
   vin: string;
   listingUrl: string;
   dealerQueued: boolean;
-  /** RAW dīlera dati: tikai OEM ielase, bez citiem avotiem un AI. */
+  /** RAW dīlera dati: OEM oriģinālvalodā, bez citiem avotiem. Gemini komentārs paliek. */
   dealerOnlyRaw?: boolean;
 };
 
@@ -74,7 +74,6 @@ export async function runPartnerCreditVinOrderFollowup(args: PartnerVinOrderFoll
         sessionId: args.orderId,
         vin: args.vin,
         trigger: "webhook",
-        skipAi: true,
         skipTranslate: true,
       });
     } catch (err) {
