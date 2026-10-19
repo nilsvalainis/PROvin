@@ -6,6 +6,7 @@ import {
   isB2bWalletProductId,
   isB2bWalletProductVisible,
   isB2bWalletReportLang,
+  resolveB2bWalletPurchaseReportLang,
 } from "@/lib/b2b-wallet";
 import { purchaseB2bWalletProduct } from "@/lib/b2b-wallet-purchase";
 import { getClientIpFromRequest } from "@/lib/client-ip";
@@ -61,7 +62,10 @@ export async function POST(req: Request) {
   if (product === "business" && !isPartnerAuditPurpose(purposeRaw)) {
     return NextResponse.json({ error: "audit_purpose" }, { status: 400 });
   }
-  const reportLang = isB2bWalletReportLang(raw.reportLang) ? raw.reportLang : null;
+  const reportLang = resolveB2bWalletPurchaseReportLang(
+    product,
+    isB2bWalletReportLang(raw.reportLang) ? raw.reportLang : null,
+  );
   if (b2bWalletProductRequiresReportLang(product) && !reportLang) {
     return NextResponse.json({ error: "report_lang" }, { status: 400 });
   }

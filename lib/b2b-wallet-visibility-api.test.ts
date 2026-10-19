@@ -66,6 +66,14 @@ describe("hidden wallet products cannot be ordered", () => {
     expect(state.updateWallet).toHaveBeenCalledTimes(1);
   });
 
+  it("does not reject business without reportLang", async () => {
+    state.updateWallet.mockResolvedValueOnce({ ok: false, balanceCents: 0 });
+    const { POST } = await import("@/app/api/partner/wallet/purchase/route");
+    const res = await POST(buyRequest("business"));
+    expect(res.status).toBe(402);
+    expect(state.updateWallet).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects dealer_pro without reportLang", async () => {
     const { POST } = await import("@/app/api/partner/wallet/purchase/route");
     const res = await POST(

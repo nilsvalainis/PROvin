@@ -75,6 +75,45 @@ describe("report-ready product emails", () => {
     expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
   });
 
+  it("rebrands B2B client report-ready mail to PROVIN without Nils or IRISS", () => {
+    const text = buildReportReadyPlainText({
+      kind: "audits",
+      vin: "WVWZZZ3HZHE703058",
+      attachmentLines: ["PROVIN_atskaite.pdf"],
+      includeGoogleReview: true,
+      b2bClient: true,
+    });
+    expect(text).toContain("PROVIN AUDITS atskaite");
+    expect(text).toContain("Ar cieņu,\nPROVIN");
+    expect(text).not.toContain("Nils");
+    expect(text).not.toContain("IRISS");
+    expect(text).not.toContain("PROVIN.LV");
+    expect(text).not.toContain("g.page");
+    expect(text).not.toMatch(/[–—]/);
+
+    const html = auditCompletedEmailHtml({
+      carVin: "WVWZZZ3HZHE703058",
+      attachmentLines: ["PROVIN_atskaite.pdf"],
+      productKind: "audits",
+      includeGoogleReview: true,
+      b2bClient: true,
+    });
+    expect(html).toContain("#0061D2");
+    expect(html).toContain("Ar cieņu,<br/><span style=\"color:#0061D2;font-weight:600;\">PROVIN</span>");
+    expect(html).not.toContain("Nils / IRISS");
+    expect(html).not.toContain("PROVIN.LV");
+    expect(html).not.toContain("g.page");
+    expect(html).not.toMatch(/[–—]/);
+
+    const retail = auditCompletedEmailHtml({
+      carVin: "WVWZZZ3HZHE703058",
+      attachmentLines: ["PROVIN_atskaite.pdf"],
+      productKind: "audits",
+    });
+    expect(retail).toContain("Nils / IRISS");
+    expect(retail).toContain("PROVIN.LV");
+  });
+
   it("adds Google review only when asked", () => {
     const off = buildReportReadyPlainText({
       kind: "mini",

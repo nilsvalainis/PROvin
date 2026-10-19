@@ -27,6 +27,12 @@ export function clientMessageSignOff(): string {
   return defaultSignOffBlock();
 }
 
+export const B2B_CLIENT_MESSAGE_SIGN_OFF_LINES = ["Ar cieņu,", "PROVIN"] as const;
+
+export function b2bClientMessageSignOff(): string {
+  return B2B_CLIENT_MESSAGE_SIGN_OFF_LINES.join("\n");
+}
+
 export type ReportReadyProductKind = "dealer" | "mini" | "audits";
 
 export function resolveReportReadyProductKind(args: {
@@ -44,12 +50,12 @@ export function buildReportReadySubject(kind: ReportReadyProductKind, _vin?: str
   return "PROVIN AUDITS atskaite ir gatava";
 }
 
-function reportReadyClosingLines(includeGoogleReview?: boolean): string[] {
+function reportReadyClosingLines(includeGoogleReview?: boolean, b2bClient?: boolean): string[] {
   const lines: string[] = [];
-  if (includeGoogleReview) {
+  if (includeGoogleReview && !b2bClient) {
     lines.push(googleReviewPlainBlock(), "");
   }
-  lines.push(...CLIENT_MESSAGE_SIGN_OFF_LINES);
+  lines.push(...(b2bClient ? B2B_CLIENT_MESSAGE_SIGN_OFF_LINES : CLIENT_MESSAGE_SIGN_OFF_LINES));
   return lines;
 }
 
@@ -59,15 +65,19 @@ export function buildReportReadyPlainText(
     vin: string;
     attachmentLines: string[];
     includeGoogleReview?: boolean;
+    b2bClient?: boolean;
   },
   templatesDoc?: MessageTemplatesDoc | null,
 ): string {
-  const vars = buildReportReadyEmailVars(opts);
-  const rendered = resolveMessageSync(reportReadyTemplateId(opts.kind), vars, { doc: templatesDoc });
-  if (rendered?.text) return rendered.text;
+  const b2bClient = opts.b2bClient === true;
+  if (!b2bClient) {
+    const vars = buildReportReadyEmailVars(opts);
+    const rendered = resolveMessageSync(reportReadyTemplateId(opts.kind), vars, { doc: templatesDoc });
+    if (rendered?.text) return rendered.text;
+  }
 
   const files = opts.attachmentLines.filter((n) => n.trim());
-  const closing = reportReadyClosingLines(opts.includeGoogleReview);
+  const closing = reportReadyClosingLines(opts.includeGoogleReview, b2bClient);
 
   if (opts.kind === "dealer") {
     const parts = [

@@ -425,6 +425,7 @@ export async function sendReportReadyEmail(opts: {
   attachments: ReportReadyMailAttachment[];
   productKind?: ReportReadyProductKind;
   includeGoogleReview?: boolean;
+  b2bClient?: boolean;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -444,9 +445,10 @@ export async function sendReportReadyEmail(opts: {
   const hasRealVin = isValidVin(rawVin);
   const carVin = hasRealVin ? normalizeVin(rawVin) : "";
   const productKind = opts.productKind ?? "audits";
-  const includeGoogleReview = opts.includeGoogleReview === true;
+  const b2bClient = opts.b2bClient === true;
+  const includeGoogleReview = opts.includeGoogleReview === true && !b2bClient;
   await warmMessageTemplatesCache();
-  const doc = getCachedMessageTemplatesDoc();
+  const doc = b2bClient ? null : getCachedMessageTemplatesDoc();
   const attachmentLines = deduped.map((a) => a.filename);
   const vars = buildReportReadyEmailVars({
     kind: productKind,
@@ -455,10 +457,12 @@ export async function sendReportReadyEmail(opts: {
     includeGoogleReview,
   });
   const templateId = reportReadyTemplateId(productKind);
-  const rendered = resolveMessageSync(templateId, vars, {
-    doc,
-    htmlContext: { attachmentLines },
-  });
+  const rendered = b2bClient
+    ? null
+    : resolveMessageSync(templateId, vars, {
+        doc,
+        htmlContext: { attachmentLines },
+      });
   const html =
     rendered?.html ??
     auditCompletedEmailHtml({
@@ -466,6 +470,7 @@ export async function sendReportReadyEmail(opts: {
       attachmentLines,
       productKind,
       includeGoogleReview,
+      b2bClient,
     });
   const text =
     rendered?.text ??
@@ -475,6 +480,7 @@ export async function sendReportReadyEmail(opts: {
         vin: carVin,
         attachmentLines,
         includeGoogleReview,
+        b2bClient,
       },
       doc,
     );
@@ -486,6 +492,7 @@ export async function sendReportReadyEmail(opts: {
       subject,
       text,
       html,
+      from: b2bClient ? getB2bMailFromAddress() : undefined,
       attachments: deduped.map((a) => ({
         filename: a.filename,
         content: a.content,
