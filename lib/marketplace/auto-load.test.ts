@@ -1,7 +1,13 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
-import { marketplaceApifySearchPayload } from "@/lib/marketplace/apify-client";
+import {
+  marketplaceApifySearchPayload,
+  runMarketplaceApifyActor,
+  setMarketplaceApifyRunner,
+} from "@/lib/marketplace/apify-client";
 import {
   hasPriorMarketplaceLoad,
   isMarketplaceAutoOrderActive,
@@ -10,6 +16,7 @@ import {
   marketplaceAutoProvidersReady,
   nextMarketplaceAutoAt,
   orderDueForMarketplaceAuto,
+  runMarketplaceAutoLoadNow,
   runMarketplaceAutoSweep,
   sortMarketplaceAutoOrders,
   wouldExceedMarketplaceAutoBudget,
@@ -319,5 +326,61 @@ describe("auction sync module stays independent", () => {
   it("does not import marketplace auto load from listings sync", () => {
     const syncSrc = readFileSync(path.join(process.cwd(), "lib/iriss-listings-sync.ts"), "utf8");
     expect(syncSrc).not.toMatch(/marketplace\/auto-load|runMarketplaceAuto/);
+  });
+});
+
+describe("marketplace cost-control switches", () => {
+  let dir = "";
+  const prev: Record<string, string | undefined> = {};
+  const keys = ["ADMIN_IRISS_MARKETPLACE_DIR", "MARKETPLACE_AUTO_ENABLED", "MARKETPLACE_LOADS_ENABLED", "APIFY_TOKEN"] as const;
+
+  beforeEach(async () => {
+    for (const key of keys) prev[key] = process.env[key];
+    dir = await mkdtemp(path.join(os.tmpdir(), "iriss-mkt-auto-"));
+    process.env.ADMIN_IRISS_MARKETPLACE_DIR = dir;
+    delete process.env.MARKETPLACE_AUTO_ENABLED;
+    delete process.env.MARKETPLACE_LOADS_ENABLED;
+  });
+
+  afterEach(async () => {
+    setMarketplaceApifyRunner(null);
+    for (const key of keys) {
+      if (prev[key] == null) delete process.env[key];
+      else process.env[key] = prev[key];
+    }
+    await rm(dir, { recursive: true, force: true });
+  });
+
+  it("skips cron auto-load when MARKETPLACE_AUTO_ENABLED is not true", async () => {
+    process.env.MARKETPLACE_LOADS_ENABLED = "true";
+    const out = await runMarketplaceAutoLoadNow(NOW);
+    expect(out.status).toBe("skipped");
+    expect(out.reason).toBe("Automātiskā ielāde izslēgta (izmaksu kontrole)");
+    expect(out.loadedCount).toBe(0);
+  });
+
+  it("skips cron auto-load when loads are disabled even if auto is on", async () => {
+    process.env.MARKETPLACE_AUTO_ENABLED = "true";
+    delete process.env.MARKETPLACE_LOADS_ENABLED;
+    const out = await runMarketplaceAutoLoadNow(NOW);
+    expect(out.status).toBe("skipped");
+    expect(out.reason).toBe("Ielāde izslēgta (izmaksu kontrole)");
+  });
+
+  it("does not call the Apify runner without MARKETPLACE_LOADS_ENABLED=true", async () => {
+    process.env.APIFY_TOKEN = "not-a-real-token";
+    delete process.env.MARKETPLACE_LOADS_ENABLED;
+    const runner = vi.fn(async () => ({ ok: true, items: [{ id: "x" }], chargedUsd: 1 }));
+    setMarketplaceApifyRunner(runner);
+    const out = await runMarketplaceApifyActor({
+      actorId: "actor",
+      payload: { make: "Volvo" },
+      maxItems: 10,
+      maxUsd: 1,
+    });
+    expect(out.ok).toBe(false);
+    expect(out.error).toBe("loads_disabled");
+    expect(out.items).toEqual([]);
+    expect(runner).not.toHaveBeenCalled();
   });
 });

@@ -1,9 +1,9 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadMarketplaceForOrder, previewMarketplaceLoad } from "@/lib/marketplace/load";
-import { readMarketplaceListingsState } from "@/lib/marketplace/store";
+import { readMarketplaceListingsState, readMarketplaceUsageMonth } from "@/lib/marketplace/store";
 import type { ListingProvider, MarketplaceRawListing } from "@/lib/marketplace/types";
 
 const RAW: MarketplaceRawListing[] = [
@@ -67,10 +67,12 @@ describe("loadMarketplaceForOrder", () => {
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), "iriss-mkt-"));
     process.env.ADMIN_IRISS_MARKETPLACE_DIR = dir;
+    process.env.MARKETPLACE_LOADS_ENABLED = "true";
   });
 
   afterEach(async () => {
     delete process.env.ADMIN_IRISS_MARKETPLACE_DIR;
+    delete process.env.MARKETPLACE_LOADS_ENABLED;
     await rm(dir, { recursive: true, force: true });
   });
 
@@ -154,5 +156,40 @@ describe("loadMarketplaceForOrder", () => {
     });
     expect(preview.budget.estimatedUsd).toBeGreaterThan(0);
     expect(preview.queryReady).toBe(true);
+  });
+
+  it("does not call provider search when MARKETPLACE_LOADS_ENABLED is not true", async () => {
+    delete process.env.MARKETPLACE_LOADS_ENABLED;
+    const search = vi.fn(async () => RAW);
+    const provider = { ...mockProvider("mobilede", RAW), search };
+    const out = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order,
+      explicit: true,
+      providers: [provider],
+    });
+    expect(out.ok).toBe(false);
+    expect(out.blocked).toBe(true);
+    expect(out.error).toBe("Ielāde izslēgta (izmaksu kontrole)");
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it("writes this run cost and the monthly total on the ledger and result", async () => {
+    const loaded = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order,
+      explicit: true,
+      providers: [mockProvider("mobilede", RAW)],
+    });
+    expect(loaded.ok).toBe(true);
+    expect(loaded.chargedUsd).toBeGreaterThan(0);
+    expect(loaded.monthlyUsedUsd).toBe(loaded.chargedUsd);
+    expect(loaded.run?.monthUsd).toBe(loaded.monthlyUsedUsd);
+    const state = await readMarketplaceListingsState();
+    expect(state.runs[0]?.chargedUsd).toBe(loaded.chargedUsd);
+    expect(state.runs[0]?.monthUsd).toBe(loaded.monthlyUsedUsd);
+    const usage = await readMarketplaceUsageMonth();
+    expect(usage.entries[0]?.usd).toBe(loaded.chargedUsd);
+    expect(usage.entries.at(-1)?.monthUsd).toBe(loaded.monthlyUsedUsd);
   });
 });

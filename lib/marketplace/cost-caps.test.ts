@@ -3,9 +3,13 @@ import {
   decideMarketplaceBudget,
   emptyMarketplaceUsageMonth,
   estimateProviderUsd,
+  marketplaceAutoEnabled,
   marketplaceAutoIntervalDays,
   marketplaceAutoMaxItemsPerProvider,
   marketplaceAutoMonthlyUsdCap,
+  marketplaceLoadsEnabled,
+  marketplaceMonthlyUsdCap,
+  marketplacePerRunUsdCap,
   marketplaceWarningAt80,
   usageSpentUsdByTrigger,
 } from "@/lib/marketplace/cost-caps";
@@ -41,9 +45,12 @@ describe("marketplace cost caps", () => {
     delete process.env.MARKETPLACE_AUTO_MONTHLY_USD_CAP;
     delete process.env.MARKETPLACE_MAX_ITEMS_PER_PROVIDER;
     delete process.env.MARKETPLACE_MONTHLY_USD_CAP;
+    delete process.env.MARKETPLACE_PER_RUN_USD_CAP;
     expect(marketplaceAutoIntervalDays()).toBe(3);
     expect(marketplaceAutoMaxItemsPerProvider()).toBe(40);
     expect(marketplaceAutoMonthlyUsdCap()).toBe(4.5);
+    expect(marketplaceMonthlyUsdCap()).toBe(4.5);
+    expect(marketplacePerRunUsdCap()).toBe(0.5);
     const used = emptyMarketplaceUsageMonth("2026-10", 30);
     used.entries.push(
       { runId: "m", orderId: "o", providerId: "apify-mobilede", items: 10, usd: 1.2, at: "2026-10-01T00:00:00.000Z", trigger: "manual" },
@@ -51,5 +58,29 @@ describe("marketplace cost caps", () => {
     );
     expect(usageSpentUsdByTrigger(used, "auto")).toBeCloseTo(0.4, 5);
     expect(usageSpentUsdByTrigger(used, "manual")).toBeCloseTo(1.2, 5);
+  });
+
+  it("treats only exact true as enabled for loads and auto", () => {
+    const prevLoads = process.env.MARKETPLACE_LOADS_ENABLED;
+    const prevAuto = process.env.MARKETPLACE_AUTO_ENABLED;
+    try {
+      delete process.env.MARKETPLACE_LOADS_ENABLED;
+      delete process.env.MARKETPLACE_AUTO_ENABLED;
+      expect(marketplaceLoadsEnabled()).toBe(false);
+      expect(marketplaceAutoEnabled()).toBe(false);
+      process.env.MARKETPLACE_LOADS_ENABLED = "1";
+      process.env.MARKETPLACE_AUTO_ENABLED = "TRUE";
+      expect(marketplaceLoadsEnabled()).toBe(false);
+      expect(marketplaceAutoEnabled()).toBe(false);
+      process.env.MARKETPLACE_LOADS_ENABLED = "true";
+      process.env.MARKETPLACE_AUTO_ENABLED = "true";
+      expect(marketplaceLoadsEnabled()).toBe(true);
+      expect(marketplaceAutoEnabled()).toBe(true);
+    } finally {
+      if (prevLoads == null) delete process.env.MARKETPLACE_LOADS_ENABLED;
+      else process.env.MARKETPLACE_LOADS_ENABLED = prevLoads;
+      if (prevAuto == null) delete process.env.MARKETPLACE_AUTO_ENABLED;
+      else process.env.MARKETPLACE_AUTO_ENABLED = prevAuto;
+    }
   });
 });

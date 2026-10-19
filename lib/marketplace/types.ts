@@ -132,6 +132,7 @@ export type MarketplaceRunRecord = {
   maxUsd: number;
   estimatedUsd: number;
   chargedUsd: number;
+  monthUsd?: number;
   itemCount: number;
   keptCount: number;
   rejectedCount: number;
@@ -148,6 +149,7 @@ export type MarketplaceUsageEntry = {
   providerId: MarketplaceProviderId;
   items: number;
   usd: number;
+  monthUsd?: number;
   at: string;
   trigger: MarketplaceLoadTrigger;
 };
@@ -198,6 +200,8 @@ export type MarketplaceLoadResult = {
   added: number;
   grouped: number;
   estimatedUsd: number;
+  chargedUsd?: number;
+  monthlyUsedUsd?: number;
   remainingMonthlyUsd: number;
 };
 

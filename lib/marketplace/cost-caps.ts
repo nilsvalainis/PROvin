@@ -6,8 +6,8 @@ import type {
   MarketplaceUsageMonth,
 } from "@/lib/marketplace/types";
 
-export const MARKETPLACE_DEFAULT_MONTHLY_USD_CAP = 30;
-export const MARKETPLACE_DEFAULT_PER_RUN_USD_CAP = 1;
+export const MARKETPLACE_DEFAULT_MONTHLY_USD_CAP = 4.5;
+export const MARKETPLACE_DEFAULT_PER_RUN_USD_CAP = 0.5;
 export const MARKETPLACE_DEFAULT_MAX_ITEMS = 150;
 export const MARKETPLACE_DEFAULT_AUTO_INTERVAL_DAYS = 3;
 export const MARKETPLACE_DEFAULT_AUTO_MAX_ITEMS = 40;
@@ -21,6 +21,19 @@ function envNumber(name: string, fallback: number, min: number, max: number): nu
   const n = Number.parseFloat(raw);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, n));
+}
+
+export const MARKETPLACE_LOADS_DISABLED_REASON = "Ielāde izslēgta (izmaksu kontrole)";
+export const MARKETPLACE_AUTO_DISABLED_REASON = "Automātiskā ielāde izslēgta (izmaksu kontrole)";
+
+/** Tikai precīza vērtība `true`. Tukšs, 1, yes, TRUE = izslēgts. */
+export function marketplaceLoadsEnabled(): boolean {
+  return process.env.MARKETPLACE_LOADS_ENABLED === "true";
+}
+
+/** Tikai precīza vērtība `true`. Noklusējums izslēgts. */
+export function marketplaceAutoEnabled(): boolean {
+  return process.env.MARKETPLACE_AUTO_ENABLED === "true";
 }
 
 export function marketplaceMonthlyUsdCap(): number {

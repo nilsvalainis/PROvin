@@ -1,5 +1,6 @@
-/** Apify klients. Bez APIFY_TOKEN nedrīkst veikt tīkla izsaukumu. */
+/** Apify klients. Bez APIFY_TOKEN un bez MARKETPLACE_LOADS_ENABLED=true nedrīkst veikt tīkla izsaukumu. */
 
+import { marketplaceLoadsEnabled } from "@/lib/marketplace/cost-caps";
 import type { MarketplaceLimits } from "@/lib/marketplace/types";
 
 export function readApifyToken(): string | null {
@@ -57,6 +58,9 @@ export async function runMarketplaceApifyActor(input: {
   maxItems: number;
   maxUsd: number;
 }): Promise<ApifyRunResult> {
+  if (!marketplaceLoadsEnabled()) {
+    return { ok: false, items: [], chargedUsd: 0, error: "loads_disabled" };
+  }
   const token = readApifyToken();
   if (!token) return { ok: false, items: [], chargedUsd: 0, error: "token_missing" };
   if (!input.actorId.trim()) return { ok: false, items: [], chargedUsd: 0, error: "actor_not_configured" };

@@ -140,6 +140,7 @@ function parseRun(v: unknown): MarketplaceRunRecord | null {
     maxUsd: typeof v.maxUsd === "number" ? v.maxUsd : 0,
     estimatedUsd: typeof v.estimatedUsd === "number" ? v.estimatedUsd : 0,
     chargedUsd: typeof v.chargedUsd === "number" ? v.chargedUsd : 0,
+    monthUsd: typeof v.monthUsd === "number" ? v.monthUsd : 0,
     itemCount: typeof v.itemCount === "number" ? v.itemCount : 0,
     keptCount: typeof v.keptCount === "number" ? v.keptCount : 0,
     rejectedCount: typeof v.rejectedCount === "number" ? v.rejectedCount : 0,
@@ -238,6 +239,7 @@ export async function readMarketplaceUsageMonth(month = marketplaceMonthKey()): 
           providerId: str(e.providerId, 40),
           items: typeof e.items === "number" ? e.items : 0,
           usd: typeof e.usd === "number" ? e.usd : 0,
+          monthUsd: typeof e.monthUsd === "number" ? e.monthUsd : 0,
           at: str(e.at, 40),
           trigger: e.trigger === "auto" ? ("auto" as const) : ("manual" as const),
         }))

@@ -3,10 +3,13 @@ import {
   decideMarketplaceBudget,
   marketplaceAutoMaxItemsPerProvider,
   marketplaceAutoMonthlyUsdCap,
+  MARKETPLACE_LOADS_DISABLED_REASON,
+  marketplaceLoadsEnabled,
   MARKETPLACE_RUNS_KEEP,
   marketplaceMaxItemsPerProvider,
   marketplaceMonthKey,
   marketplaceMonthlyUsdCap,
+  usageSpentUsd,
   usageSpentUsdByTrigger,
 } from "@/lib/marketplace/cost-caps";
 import { normalizeMarketplaceListings } from "@/lib/marketplace/normalize";
@@ -139,6 +142,19 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
       remainingMonthlyUsd: 0,
     };
   }
+  if (!marketplaceLoadsEnabled()) {
+    return {
+      ok: false,
+      blocked: true,
+      error: MARKETPLACE_LOADS_DISABLED_REASON,
+      added: 0,
+      grouped: 0,
+      estimatedUsd: 0,
+      remainingMonthlyUsd: 0,
+      chargedUsd: 0,
+      monthlyUsedUsd: 0,
+    };
+  }
   const maxItems =
     input.maxItems ?? (trigger === "auto" ? marketplaceAutoMaxItemsPerProvider() : marketplaceMaxItemsPerProvider());
   const preview = await previewMarketplaceLoad({ ...input, maxItems });
@@ -214,6 +230,23 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
   const previous = await readMarketplaceListingsState();
   const nextItems = mergeStored(previous.items, stored);
   const runId = `mkt-${now.replace(/[:.]/g, "-")}-${orderId.slice(0, 8)}`;
+  const usage = await readMarketplaceUsageMonth(marketplaceMonthKey(new Date(now)));
+  usage.capUsd = marketplaceMonthlyUsdCap();
+  let monthUsd = usageSpentUsd(usage);
+  const chargedRounded = Math.round(chargedUsd * 1000) / 1000;
+  for (const estimate of preview.estimates.filter((e) => e.configured)) {
+    monthUsd = Math.round((monthUsd + estimate.maxUsd) * 1000) / 1000;
+    usage.entries.push({
+      runId,
+      orderId,
+      providerId: estimate.providerId,
+      items: stored.filter((s) => s.providerId === estimate.providerId).length,
+      usd: estimate.maxUsd,
+      monthUsd,
+      at: now,
+      trigger,
+    });
+  }
   const run: MarketplaceRunRecord = {
     id: runId,
     orderId,
@@ -223,7 +256,8 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     maxItems: preview.maxItems,
     maxUsd: preview.budget.perRunCapUsd,
     estimatedUsd: preview.budget.estimatedUsd,
-    chargedUsd: Math.round(chargedUsd * 1000) / 1000,
+    chargedUsd: chargedRounded,
+    monthUsd,
     itemCount: collected.length,
     keptCount: stored.length,
     rejectedCount: Math.max(0, collected.length - stored.length),
@@ -250,19 +284,6 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     };
   }
 
-  const usage = await readMarketplaceUsageMonth(marketplaceMonthKey(new Date(now)));
-  usage.capUsd = marketplaceMonthlyUsdCap();
-  for (const estimate of preview.estimates.filter((e) => e.configured)) {
-    usage.entries.push({
-      runId,
-      orderId,
-      providerId: estimate.providerId,
-      items: stored.filter((s) => s.providerId === estimate.providerId).length,
-      usd: estimate.maxUsd,
-      at: now,
-      trigger,
-    });
-  }
   await writeMarketplaceUsageMonth(usage);
 
   const groupCount = new Set(stored.map((s) => s.groupId)).size;
@@ -272,6 +293,8 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     added: stored.length,
     grouped: stored.length - groupCount,
     estimatedUsd: preview.budget.estimatedUsd,
+    chargedUsd: chargedRounded,
+    monthlyUsedUsd: monthUsd,
     remainingMonthlyUsd: Math.round((preview.budget.remainingMonthlyUsd - chargedUsd) * 1000) / 1000,
   };
 }

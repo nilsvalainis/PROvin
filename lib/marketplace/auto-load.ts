@@ -5,9 +5,13 @@
 import { marketplaceActorId, readApifyToken } from "@/lib/marketplace/apify-client";
 import {
   decideMarketplaceBudget,
+  MARKETPLACE_AUTO_DISABLED_REASON,
+  MARKETPLACE_LOADS_DISABLED_REASON,
+  marketplaceAutoEnabled,
   marketplaceAutoIntervalDays,
   marketplaceAutoMaxItemsPerProvider,
   marketplaceAutoMonthlyUsdCap,
+  marketplaceLoadsEnabled,
   marketplaceMonthKey,
   marketplaceMonthlyUsdCap,
   marketplacePerRunUsdCap,
@@ -392,6 +396,32 @@ export async function runMarketplaceAutoSweep(deps: MarketplaceAutoSweepDeps): P
 }
 
 export async function runMarketplaceAutoLoadNow(now = new Date()): Promise<MarketplaceAutoSweepResult> {
+  const skipReason = !marketplaceAutoEnabled()
+    ? MARKETPLACE_AUTO_DISABLED_REASON
+    : !marketplaceLoadsEnabled()
+      ? MARKETPLACE_LOADS_DISABLED_REASON
+      : "";
+  if (skipReason) {
+    const startedAt = now.toISOString();
+    const state = finishState(startedAt, startedAt, "skipped", skipReason, [], [], 0, 0);
+    await writeMarketplaceAutoCronState(state);
+    const usage = await readMarketplaceUsageMonth().catch(() => null);
+    return {
+      ok: true,
+      status: "skipped",
+      reason: skipReason,
+      loadedCount: 0,
+      skippedCount: 0,
+      loadedOrderIds: [],
+      skipped: [],
+      estimatedUsd: 0,
+      chargedUsd: 0,
+      autoSpentUsd: usageSpentUsdByTrigger(usage, "auto"),
+      autoCapUsd: marketplaceAutoMonthlyUsdCap(),
+      monthlySpentUsd: usageSpentUsd(usage),
+      monthlyCapUsd: marketplaceMonthlyUsdCap(),
+    };
+  }
   const { listIrissPasutijumi, readIrissPasutijums } = await import("@/lib/iriss-pasutijumi-store");
   return runMarketplaceAutoSweep({
     now,
@@ -431,12 +461,16 @@ export type MarketplaceUsageSummary = {
   autoMonthlyCapUsd: number;
   remainingMonthlyUsd: number;
   remainingAutoUsd: number;
+  lastChargedUsd: number;
+  lastMonthUsd: number;
   runCount: number;
   autoRunCount: number;
   lastAutoAt: string;
   lastAutoStatus: MarketplaceAutoCronStatus | "";
   intervalDays: number;
   autoMaxItemsPerProvider: number;
+  loadsEnabled: boolean;
+  autoEnabled: boolean;
 };
 
 export async function buildMarketplaceUsageSummary(now = new Date()): Promise<MarketplaceUsageSummary> {
@@ -464,6 +498,8 @@ export async function buildMarketplaceUsageSummary(now = new Date()): Promise<Ma
   }
   const runIds = new Set(usage.entries.map((e) => e.runId));
   const autoRunIds = new Set(usage.entries.filter((e) => e.trigger === "auto").map((e) => e.runId));
+  const lastRun = listings.runs.length ? listings.runs[listings.runs.length - 1] : null;
+  const lastEntry = usage.entries.length ? usage.entries[usage.entries.length - 1] : null;
   return {
     ok: true,
     month,
@@ -473,11 +509,15 @@ export async function buildMarketplaceUsageSummary(now = new Date()): Promise<Ma
     autoMonthlyCapUsd,
     remainingMonthlyUsd: round3(monthlyCapUsd - spentUsd),
     remainingAutoUsd: round3(autoMonthlyCapUsd - autoSpentUsd),
+    lastChargedUsd: lastRun?.chargedUsd ?? 0,
+    lastMonthUsd: lastRun?.monthUsd ?? lastEntry?.monthUsd ?? spentUsd,
     runCount: runIds.size,
     autoRunCount: autoRunIds.size,
     lastAutoAt,
     lastAutoStatus: auto.status || "",
     intervalDays: marketplaceAutoIntervalDays(),
     autoMaxItemsPerProvider: marketplaceAutoMaxItemsPerProvider(),
+    loadsEnabled: marketplaceLoadsEnabled(),
+    autoEnabled: marketplaceAutoEnabled(),
   };
 }

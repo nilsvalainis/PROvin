@@ -1,5 +1,5 @@
 import { marketplaceUseFixtures } from "@/lib/marketplace/apify-client";
-import { providerEstimate } from "@/lib/marketplace/cost-caps";
+import { marketplaceLoadsEnabled, providerEstimate } from "@/lib/marketplace/cost-caps";
 import type { ListingProvider, MarketplaceLimits, MarketplaceQuery, MarketplaceRawListing } from "@/lib/marketplace/types";
 
 function carapisKey(): string {
@@ -50,6 +50,7 @@ export function createCarapisProvider(platform: "mobilede" | "autoscout24" = "mo
       );
     },
     async search(_query: MarketplaceQuery, _limits: MarketplaceLimits): Promise<MarketplaceRawListing[]> {
+      if (!marketplaceLoadsEnabled()) return [];
       if (marketplaceUseFixtures()) return [];
       return [];
     },

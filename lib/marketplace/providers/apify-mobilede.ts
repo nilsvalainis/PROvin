@@ -5,7 +5,7 @@ import {
   readApifyToken,
   runMarketplaceApifyActor,
 } from "@/lib/marketplace/apify-client";
-import { marketplaceMaxItemsPerProvider, providerEstimate } from "@/lib/marketplace/cost-caps";
+import { marketplaceLoadsEnabled, marketplaceMaxItemsPerProvider, providerEstimate } from "@/lib/marketplace/cost-caps";
 import { marketplaceActorSearchInput } from "@/lib/marketplace/search-urls";
 import type { ListingProvider } from "@/lib/marketplace/types";
 import type { MarketplaceLimits, MarketplaceQuery, MarketplaceRawListing } from "@/lib/marketplace/types";
@@ -72,6 +72,7 @@ export function createApifyMobiledeProvider(): ListingProvider {
       );
     },
     async search(query: MarketplaceQuery, limits: MarketplaceLimits): Promise<MarketplaceRawListing[]> {
+      if (!marketplaceLoadsEnabled()) return [];
       if (marketplaceUseFixtures()) return FIXTURES.slice(0, limits.maxItems);
       const actorId = marketplaceActorId("MARKETPLACE_APIFY_MOBILEDE_ACTOR");
       const run = await runMarketplaceApifyActor({

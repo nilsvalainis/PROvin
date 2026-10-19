@@ -36,6 +36,9 @@ describe("IRISS DIAPAZONI mockup v2", () => {
     expect(panel).toContain("tikai jauniem sludinājumiem");
     expect(panel).toContain("Poga Ielādēt -");
     expect(panel).toContain("manuāla ielāde tagad");
+    expect(panel).toContain("Ielāde izslēgta (izmaksu kontrole)");
+    expect(panel).toContain("mēneša kopsumma");
+    expect(panel).toContain("/api/admin/iriss-marketplace/usage");
     expect(sources["components/admin/IrissOrderRoom.tsx"]).toContain(
       "mobile.de un AutoScout24 nāk no ielādes zemāk",
     );
