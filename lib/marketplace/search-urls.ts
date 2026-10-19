@@ -1,6 +1,6 @@
 /**
  * mobile.de / AutoScout24 meklēšanas URL no IRISS tirgus vaicājuma.
- * Actoram dodam startUrls plus strukturētos filtrus. Nezināmus laukus actor var ignorēt.
+ * Actoram dodam tikai šī Store aktora ievadi: URL + maxResults. Raw fuelType/transmission/bodyType nesūtam.
  */
 
 import { MOBILE_DE_MAKE_ID_TO_NAME } from "@/lib/iriss-listings-ecarstrade-criteria";
@@ -179,7 +179,7 @@ export function buildMarketplaceSearchUrl(
   return platform === "autoscout24" ? buildAutoscout24SearchUrl(q, sortNewest) : buildMobileDeSearchUrl(q, sortNewest);
 }
 
-/** Actor input: meklēšanas URL + visi diapazoni (actor ņem tos, ko atbalsta). */
+/** Actor input: tikai šim Store aktoram. Filtri ir meklēšanas URL, ne raw string lauki. */
 export function marketplaceActorSearchInput(
   platform: MarketplacePlatform,
   q: MarketplaceQuery,
@@ -187,45 +187,18 @@ export function marketplaceActorSearchInput(
 ): Record<string, unknown> {
   const sortNewest = Boolean(limits?.sortNewest);
   const searchUrl = buildMarketplaceSearchUrl(platform, q, sortNewest);
+  const maxResults = Math.max(1, Math.floor(limits?.maxItems ?? 1));
+  if (platform === "autoscout24") {
+    return {
+      searchUrls: [{ url: searchUrl }],
+      maxResults,
+      includeDetails: false,
+    };
+  }
   return {
-    startUrls: [{ url: searchUrl }],
-    startUrl: searchUrl,
-    searchUrl,
-    make: q.make,
-    model: q.model,
-    yearFrom: q.yearFrom,
-    yearTo: q.yearTo,
-    firstRegistrationFrom: q.yearFrom,
-    firstRegistrationTo: q.yearTo,
-    mileageFrom: q.mileageFrom,
-    mileageTo: q.mileageTo,
-    kmFrom: q.mileageFrom,
-    kmTo: q.mileageTo,
-    priceFrom: q.priceFrom,
-    priceTo: q.priceTo,
-    fuel: q.fuel,
-    gearbox: q.gearbox,
-    transmission: q.gearbox,
-    powerFrom: q.powerFromKw,
-    powerTo: q.powerToKw,
-    powerFromKw: q.powerFromKw,
-    powerToKw: q.powerToKw,
-    displacementFrom: q.displacementFromCc,
-    displacementTo: q.displacementToCc,
-    cubicCapacityFrom: q.displacementFromCc,
-    cubicCapacityTo: q.displacementToCc,
-    ccFrom: q.displacementFromCc,
-    ccTo: q.displacementToCc,
-    body: q.body,
-    bodyType: q.body,
-    drive: q.drive,
-    driveType: q.drive,
-    country: "DE",
-    countries: q.countries.length ? q.countries : ["DE"],
-    accidentFree: true,
-    unfallfrei: true,
-    damaged: false,
-    driveable: true,
-    ...(limits?.maxItems ? { maxItems: limits.maxItems } : {}),
+    startUrls: [searchUrl],
+    maxResults,
+    damageStatus: "EXCLUDE",
+    includeDetails: false,
   };
 }

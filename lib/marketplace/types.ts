@@ -51,18 +51,27 @@ export type MarketplaceLimits = {
 
 export type MarketplaceLoadTrigger = "manual" | "auto";
 
+export type MarketplaceSearchResult = {
+  items: MarketplaceRawListing[];
+  chargedUsd: number;
+};
+
 export type MarketplaceRawListing = {
   externalId?: unknown;
   url?: unknown;
+  canonicalUrl?: unknown;
+  sourceUrl?: unknown;
   title?: unknown;
   make?: unknown;
   model?: unknown;
   year?: unknown;
   firstReg?: unknown;
+  firstRegistration?: unknown;
   mileageKm?: unknown;
   price?: unknown;
   priceEur?: unknown;
   fuel?: unknown;
+  fuelType?: unknown;
   gearbox?: unknown;
   transmission?: unknown;
   powerKw?: unknown;
@@ -213,7 +222,7 @@ export interface ListingProvider {
   isConfigured(): boolean;
   buildQuery(criteria: MarketplaceQuery): Record<string, unknown>;
   estimateCost(query: MarketplaceQuery, maxItems: number): MarketplaceCostEstimate;
-  search(query: MarketplaceQuery, limits: MarketplaceLimits): Promise<MarketplaceRawListing[]>;
+  search(query: MarketplaceQuery, limits: MarketplaceLimits): Promise<MarketplaceSearchResult>;
 }
 
 export function isMarketplacePlatform(v: string): v is MarketplacePlatform {

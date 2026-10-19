@@ -7,10 +7,10 @@ import {
 } from "@/lib/marketplace/apify-client";
 import { marketplaceLoadsEnabled, marketplaceMaxItemsPerProvider, providerEstimate } from "@/lib/marketplace/cost-caps";
 import { marketplaceActorSearchInput } from "@/lib/marketplace/search-urls";
-import type { ListingProvider } from "@/lib/marketplace/types";
+import type { ListingProvider, MarketplaceSearchResult } from "@/lib/marketplace/types";
 import type { MarketplaceLimits, MarketplaceQuery, MarketplaceRawListing } from "@/lib/marketplace/types";
 
-export const APIFY_MOBILEDE_USD_PER_THOUSAND = 0.8;
+export const APIFY_MOBILEDE_USD_PER_THOUSAND = 0.59;
 
 const FIXTURES: MarketplaceRawListing[] = [
   {
@@ -71,9 +71,9 @@ export function createApifyMobiledeProvider(): ListingProvider {
         configured ? undefined : readApifyToken() ? "Nav MARKETPLACE_APIFY_MOBILEDE_ACTOR." : "Nav APIFY_TOKEN.",
       );
     },
-    async search(query: MarketplaceQuery, limits: MarketplaceLimits): Promise<MarketplaceRawListing[]> {
-      if (!marketplaceLoadsEnabled()) return [];
-      if (marketplaceUseFixtures()) return FIXTURES.slice(0, limits.maxItems);
+    async search(query: MarketplaceQuery, limits: MarketplaceLimits): Promise<MarketplaceSearchResult> {
+      if (!marketplaceLoadsEnabled()) return { items: [], chargedUsd: 0 };
+      if (marketplaceUseFixtures()) return { items: FIXTURES.slice(0, limits.maxItems), chargedUsd: 0 };
       const actorId = marketplaceActorId("MARKETPLACE_APIFY_MOBILEDE_ACTOR");
       const run = await runMarketplaceApifyActor({
         actorId,
@@ -83,9 +83,10 @@ export function createApifyMobiledeProvider(): ListingProvider {
         ),
         maxItems: limits.maxItems,
         maxUsd: limits.maxUsd,
+        usdPerThousand: APIFY_MOBILEDE_USD_PER_THOUSAND,
       });
-      if (!run.ok) return [];
-      return run.items.filter((x): x is MarketplaceRawListing => Boolean(x) && typeof x === "object");
+      const items = run.items.filter((x): x is MarketplaceRawListing => Boolean(x) && typeof x === "object");
+      return { items, chargedUsd: run.chargedUsd };
     },
   };
 }

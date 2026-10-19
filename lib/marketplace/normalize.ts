@@ -38,7 +38,7 @@ function num(v: unknown): number | null {
 function yearOf(raw: MarketplaceRawListing): string {
   const direct = str(raw.year, 8);
   if (/(?:19|20)\d{2}/.test(direct)) return direct.match(/(?:19|20)\d{2}/)![0]!;
-  const first = str(raw.firstReg, 20);
+  const first = str(raw.firstReg ?? raw.firstRegistration, 20);
   const m = first.match(/(?:19|20)\d{2}/);
   return m ? m[0]! : "";
 }
@@ -71,7 +71,7 @@ function countryOf(raw: MarketplaceRawListing): string {
 }
 
 function listingUrl(raw: MarketplaceRawListing): string {
-  const url = str(raw.url, 500);
+  const url = str(raw.url, 500) || str(raw.canonicalUrl, 500) || str(raw.sourceUrl, 500);
   try {
     const u = new URL(url);
     if (u.protocol !== "http:" && u.protocol !== "https:") return "";
@@ -134,7 +134,7 @@ export function normalizeMarketplaceListing(
     year: yearOf(cleaned),
     mileageKm: mileageOf(cleaned),
     priceEur: priceOf(cleaned),
-    fuel: str(cleaned.fuel, 40),
+    fuel: str(cleaned.fuel ?? cleaned.fuelType, 40),
     gearbox: str(cleaned.gearbox || cleaned.transmission, 40),
     powerKw: powerOf(cleaned),
     locationCountry: countryOf(cleaned),

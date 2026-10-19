@@ -3,6 +3,7 @@ import {
   decideMarketplaceBudget,
   emptyMarketplaceUsageMonth,
   estimateProviderUsd,
+  MARKETPLACE_APIFY_START_USD,
   marketplaceAutoEnabled,
   marketplaceAutoIntervalDays,
   marketplaceAutoMaxItemsPerProvider,
@@ -11,12 +12,17 @@ import {
   marketplaceMonthlyUsdCap,
   marketplacePerRunUsdCap,
   marketplaceWarningAt80,
+  providerEstimate,
   usageSpentUsdByTrigger,
 } from "@/lib/marketplace/cost-caps";
+import { emptyMarketplaceQuery } from "@/lib/marketplace/types";
 
 describe("marketplace cost caps", () => {
   it("estimates usd from items and blocks over the per-run or monthly cap", () => {
-    expect(estimateProviderUsd(0.8, 150)).toBeCloseTo(0.12, 5);
+    expect(estimateProviderUsd(0.59, 150)).toBe(0.089);
+    expect(estimateProviderUsd(0.59, 150, MARKETPLACE_APIFY_START_USD)).toBe(0.094);
+    expect(estimateProviderUsd(0.49, 150, MARKETPLACE_APIFY_START_USD)).toBe(0.079);
+    expect(providerEstimate("apify-mobilede", "mobilede", 0.59, emptyMarketplaceQuery(), 150, true).maxUsd).toBe(0.094);
     const estimates = [
       { providerId: "apify-mobilede" as const, platform: "mobilede" as const, maxItems: 150, maxUsd: 0.12, usdPerThousand: 0.8, configured: true },
       { providerId: "apify-autoscout24" as const, platform: "autoscout24" as const, maxItems: 150, maxUsd: 0.075, usdPerThousand: 0.5, configured: true },

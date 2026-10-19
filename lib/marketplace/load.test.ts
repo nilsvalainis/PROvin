@@ -57,7 +57,7 @@ function mockProvider(platform: "mobilede" | "autoscout24", raw: MarketplaceRawL
       usdPerThousand: 0.1,
       configured: true,
     }),
-    search: async () => raw,
+    search: async () => ({ items: raw, chargedUsd: 0.01 }),
   };
 }
 
@@ -160,7 +160,7 @@ describe("loadMarketplaceForOrder", () => {
 
   it("does not call provider search when MARKETPLACE_LOADS_ENABLED is not true", async () => {
     delete process.env.MARKETPLACE_LOADS_ENABLED;
-    const search = vi.fn(async () => RAW);
+    const search = vi.fn(async () => ({ items: RAW, chargedUsd: 0 }));
     const provider = { ...mockProvider("mobilede", RAW), search };
     const out = await loadMarketplaceForOrder({
       orderId: "00000000-0000-4000-8000-000000000001",

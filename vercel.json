@@ -52,7 +52,7 @@
       "maxDuration": 300
     },
     "app/api/admin/iriss-marketplace/load/route.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
     },
     "app/api/cron/iriss-marketplace-ttl/route.ts": {
       "maxDuration": 60

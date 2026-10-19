@@ -192,7 +192,7 @@ describe("marketplace auto budget and skip", () => {
     expect(loadForOrder).not.toHaveBeenCalled();
 
     process.env.APIFY_TOKEN = "token";
-    expect(marketplaceAutoProvidersReady().reason).toMatch(/actor ID/);
+    expect(marketplaceAutoProvidersReady()).toMatchObject({ ok: true, reason: "" });
   });
 
   it("stops later orders when the next auto run would exceed 4.5 $ and records budžets sasniegts", async () => {
@@ -312,13 +312,15 @@ describe("marketplace auto budget and skip", () => {
 });
 
 describe("apify incremental payload", () => {
-  it("adds newest sort keys when the actor run is incremental", () => {
-    const payload = marketplaceApifySearchPayload({ make: "Volvo" }, { maxItems: 40, maxUsd: 0.05, sortNewest: true });
-    expect(payload.maxItems).toBe(40);
-    expect(payload.sort).toBe("newest");
-    expect(payload.sortBy).toBe("newest");
-    const first = marketplaceApifySearchPayload({ make: "Volvo" }, { maxItems: 40, maxUsd: 0.05 });
-    expect(first.sort).toBeUndefined();
+  it("keeps sort on the search URL and does not add webhook aliases to actor input", () => {
+    const payload = marketplaceApifySearchPayload(
+      { startUrls: ["https://suchen.mobile.de/x"], webhook: "no", telegram: 1 },
+      { maxItems: 40, maxUsd: 0.5, sortNewest: true },
+    );
+    expect(payload.startUrls).toEqual(["https://suchen.mobile.de/x"]);
+    expect(payload.webhook).toBeUndefined();
+    expect(payload.telegram).toBeUndefined();
+    expect(payload.sort).toBeUndefined();
   });
 });
 

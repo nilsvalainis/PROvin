@@ -1,6 +1,11 @@
 import { marketplaceUseFixtures } from "@/lib/marketplace/apify-client";
 import { marketplaceLoadsEnabled, providerEstimate } from "@/lib/marketplace/cost-caps";
-import type { ListingProvider, MarketplaceLimits, MarketplaceQuery, MarketplaceRawListing } from "@/lib/marketplace/types";
+import type {
+  ListingProvider,
+  MarketplaceLimits,
+  MarketplaceQuery,
+  MarketplaceSearchResult,
+} from "@/lib/marketplace/types";
 
 function carapisKey(): string {
   return process.env.CARAPIS_API_KEY?.trim() ?? "";
@@ -49,10 +54,9 @@ export function createCarapisProvider(platform: "mobilede" | "autoscout24" = "mo
         configured ? undefined : "Nav CARAPIS_API_KEY.",
       );
     },
-    async search(_query: MarketplaceQuery, _limits: MarketplaceLimits): Promise<MarketplaceRawListing[]> {
-      if (!marketplaceLoadsEnabled()) return [];
-      if (marketplaceUseFixtures()) return [];
-      return [];
+    async search(_query: MarketplaceQuery, _limits: MarketplaceLimits): Promise<MarketplaceSearchResult> {
+      if (!marketplaceLoadsEnabled()) return { items: [], chargedUsd: 0 };
+      return { items: [], chargedUsd: 0 };
     },
   };
 }

@@ -204,6 +204,7 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
   const collected = [];
   let chargedUsd = 0;
   const notes: string[] = [];
+  const providerCharges: Array<{ providerId: MarketplaceProviderId; usd: number; items: number }> = [];
   for (const provider of preview.providers) {
     const estimate = preview.estimates.find((e) => e.providerId === provider.id && e.platform === provider.platform);
     if (!estimate?.configured) {
@@ -211,14 +212,20 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
       continue;
     }
     try {
-      const raw = await provider.search(query, {
+      const found = await provider.search(query, {
         maxItems: preview.maxItems,
-        maxUsd: estimate.maxUsd,
+        maxUsd: preview.budget.perRunCapUsd,
         ...(input.sortNewest ? { sortNewest: true } : {}),
       });
-      const normalized = normalizeMarketplaceListings(provider.platform, provider.id, raw, now);
+      const normalized = normalizeMarketplaceListings(provider.platform, provider.id, found.items, now);
       collected.push(...normalized);
-      chargedUsd += estimate.maxUsd;
+      const actual = Number.isFinite(found.chargedUsd) ? found.chargedUsd : 0;
+      chargedUsd += actual;
+      providerCharges.push({
+        providerId: provider.id,
+        usd: actual,
+        items: normalized.length,
+      });
     } catch (e) {
       notes.push(`${provider.label}: ${e instanceof Error ? e.message : "kļūda"}`);
     }
@@ -234,14 +241,14 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
   usage.capUsd = marketplaceMonthlyUsdCap();
   let monthUsd = usageSpentUsd(usage);
   const chargedRounded = Math.round(chargedUsd * 1000) / 1000;
-  for (const estimate of preview.estimates.filter((e) => e.configured)) {
-    monthUsd = Math.round((monthUsd + estimate.maxUsd) * 1000) / 1000;
+  for (const charge of providerCharges) {
+    monthUsd = Math.round((monthUsd + charge.usd) * 1000) / 1000;
     usage.entries.push({
       runId,
       orderId,
-      providerId: estimate.providerId,
-      items: stored.filter((s) => s.providerId === estimate.providerId).length,
-      usd: estimate.maxUsd,
+      providerId: charge.providerId,
+      items: stored.filter((s) => s.providerId === charge.providerId).length,
+      usd: charge.usd,
       monthUsd,
       at: now,
       trigger,

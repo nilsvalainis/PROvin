@@ -14,6 +14,7 @@ export const MARKETPLACE_DEFAULT_AUTO_MAX_ITEMS = 40;
 export const MARKETPLACE_DEFAULT_AUTO_MONTHLY_USD_CAP = 4.5;
 export const MARKETPLACE_HARD_MAX_ITEMS = 300;
 export const MARKETPLACE_RUNS_KEEP = 300;
+export const MARKETPLACE_APIFY_START_USD = 0.005;
 
 function envNumber(name: string, fallback: number, min: number, max: number): number {
   const raw = process.env[name]?.trim() ?? "";
@@ -62,9 +63,9 @@ export function marketplaceAutoMonthlyUsdCap(): number {
   return envNumber("MARKETPLACE_AUTO_MONTHLY_USD_CAP", MARKETPLACE_DEFAULT_AUTO_MONTHLY_USD_CAP, 0, marketplaceMonthlyUsdCap());
 }
 
-export function estimateProviderUsd(usdPerThousand: number, maxItems: number): number {
+export function estimateProviderUsd(usdPerThousand: number, maxItems: number, startUsd = 0): number {
   const items = Math.max(0, Math.min(MARKETPLACE_HARD_MAX_ITEMS, Math.floor(maxItems)));
-  return Math.round(((usdPerThousand * items) / 1000) * 1000) / 1000;
+  return Math.round(((usdPerThousand * items) / 1000 + startUsd) * 1000) / 1000;
 }
 
 export function usageSpentUsd(month: MarketplaceUsageMonth | null | undefined): number {
@@ -170,7 +171,7 @@ export function providerEstimate(
     providerId,
     platform,
     maxItems: items,
-    maxUsd: estimateProviderUsd(usdPerThousand, items),
+    maxUsd: estimateProviderUsd(usdPerThousand, items, MARKETPLACE_APIFY_START_USD),
     usdPerThousand,
     configured,
     ...(reason ? { reason } : {}),
