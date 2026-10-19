@@ -1,6 +1,6 @@
 /**
  * B2B maka papildināšanas rēķins.
- * PDF/HTML: PROVIN zīmols (bez .LV), zilā tēma, bez PVN numura un piezīmēm.
+ * PDF/HTML: PROVIN zīmols (bez .LV), zilā tēma, bez PVN numura; pelēka PVN piezīme.
  * E-pasts: PROVIN, zils #0061D2.
  */
 
@@ -37,6 +37,9 @@ export function fallbackB2bTopupInvoiceNumber(sessionId: string, created: number
 
 export const B2B_TOPUP_INVOICE = {
   serviceLine: "Konta papildināšana",
+  /** Juridiskā piezīme pārskatīšanai: pārdevējs nav PVN maksātājs. */
+  pvnNote:
+    "Pakalpojuma sniedzējs nav PVN maksātājs. Pievienotās vērtības nodoklis netiek piemērots.",
   email: {
     subject: "PROVIN: rēķins par konta papildināšanu {{summa}}",
     body: [
@@ -60,6 +63,10 @@ export type B2bTopupInvoiceSeller = {
   address: string;
   bank?: string;
 };
+
+export function getB2bTopupInvoicePvnNote(): string {
+  return process.env.B2B_INVOICE_PVN_NOTE?.trim() || B2B_TOPUP_INVOICE.pvnNote;
+}
 
 export function getB2bTopupInvoiceSeller(): B2bTopupInvoiceSeller {
   const legal = getCompanyLegal();
@@ -147,6 +154,7 @@ export function buildB2bTopupInvoiceHtml(order: InvoiceOrderPayload): string {
     dateStyle: "long",
     timeStyle: "short",
   }).format(new Date(order.created * 1000));
+  const pvnNote = getB2bTopupInvoicePvnNote();
 
   return `<!DOCTYPE html>
 <html lang="lv">
@@ -169,6 +177,7 @@ ${buyerLines.length ? buyerLines.map((line) => `<p>${esc(line)}</p>`).join("") :
 <tr><td>${esc(B2B_TOPUP_INVOICE.serviceLine)}</td><td>1</td><td>${esc(money)}</td></tr>
 </table>
 <p>Kopā ${esc(money)}</p>
+<p style="font-size:8pt;color:#6e6e73">${esc(pvnNote)}</p>
 </body>
 </html>`;
 }

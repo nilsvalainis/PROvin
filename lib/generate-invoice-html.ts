@@ -3,6 +3,7 @@ import {
   B2B_TOPUP_INVOICE_PDF_BRAND,
   b2bTopupInvoiceProviderLine,
   b2bTopupInvoiceSellerExtraLines,
+  getB2bTopupInvoicePvnNote,
 } from "@/lib/b2b-topup-invoice";
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
 import { formatMoneyEur } from "@/lib/format-money";
@@ -358,7 +359,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
     </div>
     ${
       topup
-        ? ""
+        ? `<p class="inv-pvn-note">${esc(getB2bTopupInvoicePvnNote())}</p>`
         : `<p class="inv-pvn-note">PVN likme 0%; pievienotās vērtības nodoklis netiek piemērots atsevišķi.</p>`
     }
   </div>

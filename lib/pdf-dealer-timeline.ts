@@ -317,7 +317,6 @@ export function buildDealerGapMarkerHtml(gap: DealerVisitGap, lang: ClientReport
   return `<div class="pdf-svc-gap" role="note">
     <span class="pdf-svc-gap__tag">${escapeHtml(t("Robs datos"))}</span>
     <span class="pdf-svc-gap__val">${escapeHtml(gapLabel(gap, lang))}</span>
-    <span class="pdf-svc-gap__note">${escapeHtml(t("Fakts no dīlera žurnāla, ne verdikts par izlaistu apkopi."))}</span>
   </div>`;
 }
 

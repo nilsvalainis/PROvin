@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { extractDealerFactsFromServiceWorks } from "@/lib/admin-ai-dealer-facts";
 import { KEY_READ_HISTORY_LABEL } from "@/lib/vendor-service-history";
 import {
+  buildDealerGapMarkerHtml,
   buildDealerMajorWorksHtml,
   buildDealerVisitSummary,
   buildDealerVisitSummaryHtml,
@@ -55,6 +56,9 @@ describe("dealer visit kind and gaps", () => {
     ]);
     expect(summaryHtml).toContain("Garākais robs");
     expect(summaryHtml).not.toMatch(/izlaist|kavēt|risk/i);
+    const gapHtml = buildDealerGapMarkerHtml(gap!);
+    expect(gapHtml).toContain("Robs datos");
+    expect(gapHtml).not.toMatch(/verdikts|žurnāla|verdict|dealer log|Händlerprotokoll|журнала дилера/i);
   });
 });
 

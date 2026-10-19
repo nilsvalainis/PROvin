@@ -9,6 +9,7 @@ import {
   B2B_TOPUP_INVOICE,
   b2bTopupInvoiceProviderLine,
   b2bTopupInvoiceSellerExtraLines,
+  getB2bTopupInvoicePvnNote,
 } from "@/lib/b2b-topup-invoice";
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
 import {
@@ -125,7 +126,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   const legal = getCompanyLegal();
   const brand = getCompanyPublicBrand();
   const lineDesc = topup ? B2B_TOPUP_INVOICE.serviceLine : buildInvoiceServiceLineDescription(order);
-  const pvnFooter = topup ? "" : getInvoicePvnFooterText();
+  const pvnFooter = topup ? getB2bTopupInvoicePvnNote() : getInvoicePvnFooterText();
   const money = formatMoneyEur(order.amountTotal, order.currency);
   const vin = order.vin?.trim() || "-";
   const buyerLines = invoiceBuyerLines(invoiceBuyerFromOrder(order));

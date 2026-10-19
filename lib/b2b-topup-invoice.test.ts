@@ -3,6 +3,7 @@ import { applyB2bWalletTopup, attachB2bWalletTopupInvoice, emptyB2bWallet } from
 import {
   B2B_TOPUP_INVOICE,
   b2bTopupInvoiceProviderLine,
+  getB2bTopupInvoicePvnNote,
   buildB2bTopupInvoiceHtml,
   fallbackB2bTopupInvoiceNumber,
   fillB2bTopupInvoiceEmailTemplate,
@@ -93,8 +94,17 @@ describe("B2B top-up invoice", () => {
     expect(styled).toContain('id="inv-seller">Pakalpojuma sniedzējs</h2>');
     expect(styled).toContain("<p>Nils Valainis, Reg.nr. 09118711109</p>");
     expect(styled).not.toContain("Pakalpojuma sniedzējs:");
-    expect(html).not.toContain("PVN");
+    const pvnNote = getB2bTopupInvoicePvnNote();
+    expect(pvnNote).toBe(
+      "Pakalpojuma sniedzējs nav PVN maksātājs. Pievienotās vērtības nodoklis netiek piemērots.",
+    );
+    expect(html).toContain(pvnNote);
+    expect(styled).toContain(`class="inv-pvn-note">${pvnNote}</p>`);
     expect(html).not.toContain("PVN likme");
+    expect(styled).not.toContain("PVN likme");
+    expect(html).not.toContain("139.");
+    expect(styled).not.toContain("139.");
+    expect(html).not.toMatch(/PVN\s*(nr|num|ID)/i);
     expect(html).not.toContain("Transportlīdzekļa VIN");
     expect(html).not.toContain("WVWZZZ3HZHE703058");
     expect(html).not.toMatch(/[–—]/);
