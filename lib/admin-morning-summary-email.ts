@@ -67,7 +67,7 @@ export function buildMorningSummaryEmailText(
     `Atvērti: ${counts.open}`,
     `Steidzami: ${counts.urgent}`,
     `Kavēti: ${counts.overdue}`,
-    `Auditi ${counts.openAudits} · vērtējumi ${counts.openPeeks} · jauni 24 h: ${counts.newPeeksLast24h}`,
+    `Atvērtie auditi: ${counts.openAudits} · ātrie vērtējumi: ${counts.openPeeks} · jauni pēdējās 24 h: ${counts.newPeeksLast24h}`,
   ];
 
   const pushSection = (title: string, items: readonly MorningQueueItem[]) => {
@@ -90,14 +90,14 @@ export function buildMorningSummaryEmailText(
     summary.overdueAudits.length + summary.dueTodayAudits.length + summary.newPeeksLast24h.length ===
     0
   ) {
-    lines.push("", "Nav kavētu auditu un jaunu vērtējumu pēdējās 24 h.");
+    lines.push("", "Kavētu auditu nav, un pēdējās 24 h nav jaunu vērtējumu.");
   }
 
   const failing = summary.failingSources ?? [];
   if (failing.length > 0) {
-    lines.push("", "Avoti, kas krīt 3 reizes pēc kārtas");
+    lines.push("", "Datu avoti ar kļūdām 3 reizes pēc kārtas (pārbaudi piekļuvi):");
     for (const row of failing.slice(0, MORNING_SUMMARY_EMAIL_LIST_CAP)) {
-      const detail = row.msg ? `${row.streak}x, ${row.msg}` : `${row.streak}x`;
+      const detail = row.msg ? `${row.streak} reizes pēc kārtas, ${row.msg}` : `${row.streak} reizes pēc kārtas`;
       lines.push(`${row.id}: ${detail}`);
     }
   }
@@ -125,7 +125,7 @@ export function buildMorningSummaryEmail(
     newPeeks: capLines(summary.newPeeksLast24h),
     failingSources: (summary.failingSources ?? []).slice(0, MORNING_SUMMARY_EMAIL_LIST_CAP).map((row) => ({
       title: row.id,
-      detail: row.msg ? `${row.streak}x, ${row.msg}` : `${row.streak}x`,
+      detail: row.msg ? `${row.streak} reizes pēc kārtas, ${row.msg}` : `${row.streak} reizes pēc kārtas`,
     })),
   });
   return {

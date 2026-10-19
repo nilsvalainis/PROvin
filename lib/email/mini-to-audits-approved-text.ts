@@ -2,11 +2,12 @@
 export const MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER = "{maksajuma_saite}";
 export const MINI_TO_AUDITS_NAME_PLACEHOLDER = "{vards}";
 export const MINI_TO_AUDITS_CAR_PLACEHOLDER = "{auto}";
+export const MINI_TO_AUDITS_SIGN_OFF_PLACEHOLDER = "{paraksts}";
 export const MINI_TO_AUDITS_APPROVED_TEXT = `Labdien, {vards}!
 
-Paldies par PROVIN MINI pasūtījumu {auto}.
+Paldies par PROVIN MINI pasūtījumu ({auto}).
 
-Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai varat izlemt, īsi par atšķirību:
+Izvērtējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS. Lai Jums būtu vieglāk izlemt, īsumā par atšķirību.
 
 PROVIN MINI ietver:
 ✓ Konsultāciju un ieteikumus klātienes apskatei
@@ -14,17 +15,14 @@ PROVIN MINI ietver:
 ✓ Sludinājuma, pārdevēja un tehnisko risku analīzi
 
 Tikai PROVIN AUDITS ietver:
-✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus
-✓ Oficiālo dīleru un izsoļu portālu arhīva datus
+✓ carVertical, AutoDNA un izcelsmes valsts reģistru datus
+✓ Oficiālā dīlera datus un izsoļu arhīvus
 
-Tas nozīmē, ka tieši AUDITS parāda negadījumu vēsturi, nobraukuma vēsturi ārvalstīs un oficiālā dīlera servisa datus, kas ievestiem auto ir paši svarīgākie.
+Tieši PROVIN AUDITS parāda negadījumu vēsturi, nobraukumu ārvalstīs un oficiālā dīlera datus. Ievestam auto tie ir svarīgākie dati.
 
-Mēs iesakām pilno auditu. Starpību ({starpiba} €) varat apmaksāt šeit:
+Iesakām PROVIN AUDITS. Starpību ({starpiba} €) varat apmaksāt šeit:
 {maksajuma_saite}
 
-Ja papildu dati nav vajadzīgi, turpināsim ar MINI.
+Ja papildu dati nav vajadzīgi, turpināsim ar PROVIN MINI.
 
-Ar cieņu,
-Nils
-PROVIN.LV
-T: 29502039`;
+{paraksts}`;

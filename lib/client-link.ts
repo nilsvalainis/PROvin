@@ -331,14 +331,19 @@ export function buildClientLinkEmailCopy(
     return { subject: rendered.subject, text: rendered.text };
   }
   return {
-    subject: `${opts.productName}: jūsu apmaksas saite`,
+    subject: `${opts.productName}: Jūsu apmaksas saite`,
     text: [
-      "Sveiki!",
+      "Labdien!",
       "",
-      `Jūsu personīgā ${opts.productName} saite (${amount}). Derīga līdz ${until}.`,
-      "Pasūtījums tiks izveidots pēc apmaksas.",
+      "Nosūtām Jūsu personīgo apmaksas saiti.",
       "",
-      opts.url,
+      `Produkts: ${opts.productName}`,
+      `Summa: ${amount}`,
+      `Saite derīga līdz: ${until}`,
+      "",
+      "Pasūtījumu izveidosim, tiklīdz saņemsim apmaksu.",
+      "",
+      `Apmaksāt: ${opts.url}`,
     ].join("\n"),
   };
 }

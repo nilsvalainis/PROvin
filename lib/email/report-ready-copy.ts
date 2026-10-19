@@ -45,7 +45,7 @@ export function resolveReportReadyProductKind(args: {
 }
 
 export function buildReportReadySubject(kind: ReportReadyProductKind, _vin?: string): string {
-  if (kind === "dealer") return "PROVIN servisa vēstures atskaite ir gatava";
+  if (kind === "dealer") return "PROVIN: oficiālā dīlera dati ir gatavi";
   if (kind === "mini") return "PROVIN MINI atskaite ir gatava";
   return "PROVIN AUDITS atskaite ir gatava";
 }
@@ -83,16 +83,16 @@ export function buildReportReadyPlainText(
     const parts = [
       "Labdien!",
       "",
-      "Jūsu pieprasītie oficiālā dīlera servisa vēstures dati ir sagatavoti.",
+      "Jūsu pasūtītie oficiālā dīlera dati ir gatavi.",
       "",
-      "Pielikumā atradīsiet šādus dokumentus:",
+      "Pielikumā atradīsiet:",
     ];
     if (files.length > 0) {
       parts.push("", ...files.map((n) => `- ${n}`));
     }
     parts.push(
       "",
-      "Ja Jums rodas papildu jautājumi, droši rakstiet mums uz info@provin.lv.",
+      "Ja rodas jautājumi, rakstiet uz info@provin.lv. Labprāt palīdzēsim.",
       "",
       ...closing,
     );
@@ -103,9 +103,9 @@ export function buildReportReadyPlainText(
     return [
       "Labdien!",
       "",
-      "Jūsu pasūtītā PROVIN MINI atskaite ir sagatavota un pievienota šī e-pasta pielikumā.",
+      "Jūsu PROVIN MINI atskaite ir gatava. Tā pievienota šī e-pasta pielikumā.",
       "",
-      "Ja Jums rodas kādi jautājumi, droši rakstiet mums uz info@provin.lv, labprāt palīdzēsim!",
+      "Ja rodas jautājumi, rakstiet uz info@provin.lv. Labprāt palīdzēsim.",
       "",
       ...closing,
     ].join("\n");
@@ -114,14 +114,14 @@ export function buildReportReadyPlainText(
   return [
     "Labdien!",
     "",
-    "Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.",
+    "Jūsu PROVIN AUDITS atskaite ir gatava.",
     "",
-    "E-pasta pielikumā atradīsiet:",
+    "Pielikumā atradīsiet:",
     "",
     "- Kopsavilkuma PDF atskaiti",
     "- Papildu materiālus un pielikumus",
     "",
-    "Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz info@provin.lv, labprāt palīdzēsim!",
+    "Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet uz info@provin.lv. Labprāt palīdzēsim.",
     "",
     ...closing,
   ].join("\n");

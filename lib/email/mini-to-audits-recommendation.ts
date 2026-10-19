@@ -7,7 +7,9 @@ import {
   MINI_TO_AUDITS_CAR_PLACEHOLDER,
   MINI_TO_AUDITS_NAME_PLACEHOLDER,
   MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER,
+  MINI_TO_AUDITS_SIGN_OFF_PLACEHOLDER,
 } from "@/lib/email/mini-to-audits-approved-text";
+import { defaultSignOffBlock } from "@/lib/messages/shared-blocks";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import { MINI_TO_AUDITS_MESSAGE_TEMPLATE_ID } from "@/lib/messages/template-aliases";
 import { miniToAuditsVarsFromDraftInput } from "@/lib/messages/template-vars";
@@ -89,7 +91,8 @@ export function buildMiniToAuditsRecommendationDraft(
   const text = MINI_TO_AUDITS_APPROVED_TEXT.replaceAll("{vards}", vards)
     .replaceAll("{auto}", auto)
     .replaceAll("{starpiba}", starpiba)
-    .replaceAll("{maksajuma_saite}", pay);
+    .replaceAll("{maksajuma_saite}", pay)
+    .replaceAll(MINI_TO_AUDITS_SIGN_OFF_PLACEHOLDER, defaultSignOffBlock());
   const carForSubject = (opts.car ?? "").trim().replace(/\s+/g, " ");
   const subject = carForSubject
     ? `Jūsu PROVIN MINI pasūtījums: ${carForSubject}`

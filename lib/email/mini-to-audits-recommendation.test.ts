@@ -8,6 +8,7 @@ import {
   MINI_TO_AUDITS_RECOMMENDATION_LABEL,
   miniToAuditsGreeting,
 } from "@/lib/email/mini-to-audits-recommendation";
+import { defaultSignOffBlock } from "@/lib/messages/shared-blocks";
 import { AUDIT_PRICE_CENTS, formatEurFromCents, MINI_CATALOG_CENTS } from "@/lib/order-upsell";
 
 const DIFF = formatEurFromCents(AUDIT_PRICE_CENTS - MINI_CATALOG_CENTS);
@@ -60,14 +61,15 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
       MINI_TO_AUDITS_APPROVED_TEXT.replaceAll("{vards}", "Jāni")
         .replaceAll("{auto}", "VW Passat")
         .replaceAll("{starpiba}", "60,00")
-        .replaceAll("{maksajuma_saite}", PAY_URL),
+        .replaceAll("{maksajuma_saite}", PAY_URL)
+        .replaceAll("{paraksts}", defaultSignOffBlock()),
     );
     expect(d.whatsappText).toBe(d.emailText);
     expect(d.emailText).toContain("Labdien, Jāni!");
-    expect(d.emailText).toContain("Paldies par PROVIN MINI pasūtījumu VW Passat.");
+    expect(d.emailText).toContain("Paldies par PROVIN MINI pasūtījumu (VW Passat).");
     expect(d.emailText).not.toMatch(/\(VIN\s/i);
     expect(d.emailText).toContain(`Starpību (60,00 €) varat apmaksāt šeit:\n${PAY_URL}`);
-    expect(d.emailText).toContain("T: 29502039");
+    expect(d.emailText).toContain(defaultSignOffBlock());
   });
 
   it("computes the catalog difference from package prices", () => {
@@ -80,17 +82,17 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
 
   it("keeps the approved MINI and AUDITS bullets", () => {
     const d = draft();
-    expect(d.emailText).toContain("Izanalizējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS.");
+    expect(d.emailText).toContain("Izvērtējot datus, redzam, ka šim auto vairāk atbilst PROVIN AUDITS.");
     expect(d.emailText).not.toContain("Pārskatot auto");
     expect(d.emailText).toContain("✓ Konsultāciju un ieteikumus klātienes apskatei");
     expect(d.emailText).toContain("✓ OCTA negadījumus un tehnisko apskašu vēsturi");
     expect(d.emailText).toContain("✓ Sludinājuma, pārdevēja un tehnisko risku analīzi");
-    expect(d.emailText).toContain("✓ CarVertical + AutoDNA + izcelsmes valsts reģistrus");
-    expect(d.emailText).toContain("✓ Oficiālo dīleru un izsoļu portālu arhīva datus");
-    expect(d.emailText).toContain("negadījumu vēsturi, nobraukuma vēsturi ārvalstīs");
-    expect(d.emailText).toContain("kas ievestiem auto ir paši svarīgākie.");
-    expect(d.emailText).toContain("Mēs iesakām pilno auditu");
-    expect(d.emailText).toContain("turpināsim ar MINI");
+    expect(d.emailText).toContain("✓ carVertical, AutoDNA un izcelsmes valsts reģistru datus");
+    expect(d.emailText).toContain("✓ Oficiālā dīlera datus un izsoļu arhīvus");
+    expect(d.emailText).toContain("negadījumu vēsturi, nobraukumu ārvalstīs");
+    expect(d.emailText).toContain("Ievestam auto tie ir svarīgākie dati.");
+    expect(d.emailText).toContain("Iesakām PROVIN AUDITS");
+    expect(d.emailText).toContain("turpināsim ar PROVIN MINI");
     expect(d.emailText).not.toContain("atbilstu");
     expect(d.emailText).not.toContain("pie ievestiem");
     expect(d.emailText).not.toContain("oficiālā dīlera datiem un tālāk lemt");
@@ -99,7 +101,7 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
   it("keeps placeholders when name, car or payment URL are missing", () => {
     const d = draft({ paymentUrl: "", customerName: "", car: "", vin: "" });
     expect(d.emailText).toContain("Labdien, {vards}!");
-    expect(d.emailText).toContain("pasūtījumu {auto}.");
+    expect(d.emailText).toContain("pasūtījumu ({auto}).");
     expect(d.emailText).toContain(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER);
     expect(d.subject).toBe("Jūsu PROVIN MINI pasūtījums");
   });

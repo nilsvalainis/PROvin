@@ -79,7 +79,7 @@ export const CLIENT_REPORT_SECTION_LABELS = {
 
 /** Vienota juridiskā atruna - PDF kolofons un e-pasta kājene. */
 export const CLIENT_REPORT_FOOTER_DISCLAIMER =
-  "PROVIN.LV sniedz konsultatīvu pakalpojumu: transportlīdzekļa pieejamās informācijas izvērtējumu un ieteikumus. Šis ir digitāls datu apkopojums, nevis automašīnas tehniskā diagnostika, un tas nekādā veidā nevar aizvietot pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts institūcijas izraksts, neatkarīga tehniskā ekspertīze vai juridisks spriedums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
+  "PROVIN.LV pakalpojums ir konsultatīvs: mēs izvērtējam pieejamo informāciju par transportlīdzekli un sniedzam ieteikumus. Atskaite ir digitāls datu apkopojums, nevis tehniskā diagnostika. Tā nekādā gadījumā neaizstāj pilnvērtīgu transportlīdzekļa pārbaudi un apskati klātienē. Atskaite nav valsts iestādes izraksts, neatkarīga tehniskā ekspertīze vai juridisks atzinums. Gala lēmumu par transportlīdzekļa iegādi pieņem klients.";
 
 /** Konfidencialitāte un aizliegums nodot trešajām personām - treknrakstā PDF kājenē. */
 export const PDF_SITE_FOOTER_CONFIDENTIALITY_NOTICE =
@@ -106,7 +106,7 @@ export const PDF_SITE_FOOTER_LEGAL_LABELS_STATIC = "Lietošanas noteikumi · Pri
 
 /** Mazais GDPR / apstrādes teikums zem autortiesībām. */
 export const PDF_SITE_FOOTER_GDPR_LINE =
-  "Personas datu apstrāde notiek saskaņā ar piemērojamiem tiesību aktiem (GDPR).";
+  "Personas datus apstrādājam saskaņā ar piemērojamiem tiesību aktiem, tostarp Vispārīgo datu aizsardzības regulu (VDAR, angl. GDPR).";
 
 /** Vienots juridiskās kājenes saturs - e-pasts un citi klienta paziņojumi. */
 export type ClientReportLegalFooterBlocks = {

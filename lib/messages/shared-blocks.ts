@@ -3,7 +3,7 @@ import { getClientReportLegalFooterBlocks } from "@/lib/report-pdf-standards";
 export const DEALER_NO_DATA_AUDIT_CTA_URL = "https://provin.lv";
 
 export const GOOGLE_REVIEW_URL = "https://g.page/r/CamRaT51IPQ_EBM/review";
-export const CLIENT_MESSAGE_SIGN_OFF_LINES = ["Ar cieņu,", "Nils / IRISS", "PROVIN.LV"] as const;
+export const CLIENT_MESSAGE_SIGN_OFF_LINES = ["Ar cieņu,", "Nils", "PROVIN.LV"] as const;
 
 export const BLOCK_SIGN_OFF_ID = "block.sign_off";
 export const BLOCK_GOOGLE_REVIEW_ID = "block.google_review";
@@ -16,12 +16,12 @@ export function defaultSignOffBlock(): string {
 }
 
 export function defaultGoogleReviewBlock(): string {
-  return `Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: ${GOOGLE_REVIEW_URL}`;
+  return `Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: ${GOOGLE_REVIEW_URL}`;
 }
 
 export function defaultAuditsCtaBlock(): string {
   return [
-    "Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.",
+    "Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.",
     "",
     `Pasūtīt: ${DEALER_NO_DATA_AUDIT_CTA_URL}`,
   ].join("\n");

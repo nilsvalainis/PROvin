@@ -36,7 +36,7 @@ export type DealerClientEmailDraft = {
 /** Soft CTA bloks (pirms auto iegādes → PROVIN AUDITS). */
 export function dealerNoDataAuditCtaBlock(): string {
   return [
-    "Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.",
+    "Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.",
     "",
     `Pasūtīt: ${DEALER_NO_DATA_AUDIT_CTA_URL}`,
   ].join("\n");
@@ -68,13 +68,13 @@ export function buildDealerNoDataEmailDraft(
   const text = [
     "Labdien!",
     "",
-    "Dīlera servisa vēsture šim pasūtījumam nav pieejama.",
+    "Diemžēl oficiālā dīlera dati šim auto nav pieejami.",
     "",
     varsFallback.atmaksa_rinda,
     "",
     dealerNoDataAuditCtaBlock(),
     "",
-    "Jautājumi: info@provin.lv",
+    "Ja rodas jautājumi, rakstiet uz info@provin.lv.",
     "",
     clientMessageSignOff(),
   ].join("\n");
@@ -96,9 +96,11 @@ export function buildDealerCancelledEmailDraft(
     kind: "cancelled",
     subject: "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts",
     text: [
-      "Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts.",
+      "Labdien!",
       "",
-      `Atmaksa ${amount} veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.`,
+      `Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām ${amount} pilnā apmērā uz karti, ar kuru maksājāt.`,
+      "",
+      "Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.",
       "",
       "Ja vēlaties pasūtīt atkārtoti, atbildiet uz šo e-pastu.",
       "",
@@ -202,7 +204,7 @@ export function buildDealerReadyEmailDraft(
     text: [
       `Labdien!`,
       "",
-      "Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Dokuments pievienots PDF pielikumā.",
+      "Pielikumā nosūtām Jūsu pasūtītos oficiālā dīlera datus (PDF).",
       "",
       "Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).",
       "",

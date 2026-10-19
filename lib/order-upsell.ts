@@ -347,7 +347,7 @@ export function buildUpsellDraft(
   const charge = formatEurFromCents(opts.chargeCents);
   const total = formatEurFromCents(opts.targetCents);
   const pay = `Apmaksāt: ${opts.url}`;
-  const ttl = "Saite derīga 30 dienas.";
+  const ttl = "Saite ir derīga 30 dienas.";
   const sign = clientMessageSignOff();
 
   if (opts.kind === "mini_to_audit") {
@@ -367,11 +367,11 @@ export function buildUpsellDraft(
     const emailText = [
       "Labdien!",
       "",
-      "Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera servisa vēsturi.",
+      "Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera datus. Tajos redzami auto servisa apmeklējumi pie oficiālā dīlera ar nobraukumu, kur dīleris to fiksējis.",
       "",
-      `Cena šim pasūtījumam: ${charge} (atsevišķi dīlera dati maksā ${formatEurFromCents(DEALER_CATALOG_CENTS)}).`,
+      `Jūsu cena: ${charge} (atsevišķi pasūtot: ${formatEurFromCents(DEALER_CATALOG_CENTS)}).`,
       "",
-      "Dati tiks pievienoti esošajam pasūtījumam. Jau ievadītā informācija paliek.",
+      "Datus pievienosim esošajam pasūtījumam. Jau ievadītā informācija paliek.",
       "",
       pay,
       "",
@@ -382,9 +382,9 @@ export function buildUpsellDraft(
     const whatsappText = [
       "Labdien!",
       "",
-      `Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera servisa vēsturi par ${charge}.`,
+      `Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera datus par ${charge}.`,
       "",
-      "Dati tiks pievienoti esošajam pasūtījumam.",
+      "Dati papildinās esošo pasūtījumu.",
       "",
       pay,
       "",
@@ -397,20 +397,19 @@ export function buildUpsellDraft(
     };
   }
 
-  const lead =
+  const emailLead =
+    "Jūsu pasūtījumu varam papildināt līdz pilnai PROVIN AUDITS pārbaudei. Tad redzēsiet visu auto vēsturi, ne tikai dīlera ierakstus.";
+  const waLead =
     "Jūsu oficiālā dīlera datu pasūtījumam varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.";
-  const priceNote = "Papildu apmaksa ir 75,00 €. Kopā sanāk pilnais audits.";
 
   const emailText = [
     "Labdien!",
     "",
-    lead,
+    emailLead,
     "",
     `Jau samaksāts: ${prior}`,
     `Papildu apmaksa: ${charge}`,
     `Kopā: ${total}`,
-    "",
-    priceNote,
     "",
     "Jau ievadītie dati paliek. Pievienosim to, kā vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.",
     "",
@@ -424,7 +423,7 @@ export function buildUpsellDraft(
   const whatsappText = [
     "Labdien!",
     "",
-    lead,
+    waLead,
     "",
     `Jau samaksāts: ${prior}`,
     `Papildu apmaksa: ${charge}`,
@@ -438,7 +437,7 @@ export function buildUpsellDraft(
   ].join("\n");
 
   return {
-    subject: "PROVIN.LV: pilnais audits esošajam pasūtījumam",
+    subject: "PROVIN.LV: PROVIN AUDITS Jūsu pasūtījumam",
     emailText,
     whatsappText,
   };
@@ -462,9 +461,9 @@ export function buildUpsellPaidEmail(opts: {
     text: [
       "Labdien!",
       "",
-      `Esam saņēmuši papildu apmaksu ${formatEurFromCents(opts.chargeCents)} par Jūsu pasūtījumu.`,
+      `Paldies, saņēmām papildu apmaksu ${formatEurFromCents(opts.chargeCents)} par Jūsu pasūtījumu.`,
       "",
-      "Pilno darbu sagatavosim 48 stundu laikā. Jau nosūtītie materiāli un ievadītie dati paliek spēkā.",
+      "Papildināto atskaiti sagatavosim 48 stundu laikā. Jau nosūtītie materiāli un ievadītie dati paliek spēkā.",
       "",
       clientMessageSignOff(),
     ].join("\n"),
