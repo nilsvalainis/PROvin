@@ -3,7 +3,15 @@
  * Tīri stringi - der arī klienta komponentei, bez server-only.
  */
 
-import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
+import { isB2bInternationalClientReport } from "@/lib/b2b-pdf-brand";
+import {
+  B2B_WALLET_DEFAULT_REPORT_LANG,
+  isB2bWalletProductId,
+  isB2bWalletReportLang,
+  resolveB2bWalletPurchaseReportLang,
+  type B2bWalletReportLang,
+} from "@/lib/b2b-wallet";
+import { b2bClientMessageSignOff, clientMessageSignOff } from "@/lib/email/report-ready-copy";
 import { resolveMessageSync } from "@/lib/messages/resolve-message";
 import { buildDealerNoDataVars } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
@@ -99,11 +107,90 @@ export function buildDealerCancelledEmailDraft(
   };
 }
 
+export const B2B_DEALER_READY_SUBJECT: Record<B2bWalletReportLang, string> = {
+  lv: "PROVIN: oficiālā dīlera dati pielikumā",
+  en: "PROVIN: official dealer data attached",
+  de: "PROVIN: offizielle Händlerdaten im Anhang",
+  ru: "PROVIN: данные официального дилера во вложении",
+};
+
+const B2B_DEALER_READY_BODY: Record<B2bWalletReportLang, readonly string[]> = {
+  lv: [
+    "Labdien!",
+    "",
+    "Nosūtam oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Dokuments pievienots PDF pielikumā.",
+    "",
+    "Ja rodas jautājumi, atbildiet uz šo e-pastu.",
+  ],
+  en: [
+    "Hello!",
+    "",
+    "We are sending the official dealer service history for your order. The document is attached as a PDF.",
+    "",
+    "If you have any questions, please reply to this email.",
+  ],
+  de: [
+    "Guten Tag!",
+    "",
+    "Wir senden Ihnen die offizielle Händlerservicehistorie zu Ihrer Bestellung. Das Dokument ist als PDF angehängt.",
+    "",
+    "Bei Fragen antworten Sie bitte auf diese E-Mail.",
+  ],
+  ru: [
+    "Здравствуйте!",
+    "",
+    "Направляем официальную сервисную историю дилера по вашему заказу. Документ приложен в формате PDF.",
+    "",
+    "Если возникнут вопросы, ответьте на это письмо.",
+  ],
+};
+
+/**
+ * B2B dīlera PDF e-pasta valoda: tā pati maka loģika kā #323, pēc tam LV.
+ * dealer_raw / tukša dealer_pro izvēle → lv.
+ */
+export function resolveB2bDealerReadyEmailLang(args: {
+  reportLang?: string | null;
+  walletProduct?: string | null;
+}): B2bWalletReportLang {
+  const raw = (args.reportLang ?? "").trim().toLowerCase();
+  const lang = isB2bWalletReportLang(raw) ? raw : null;
+  const product = (args.walletProduct ?? "").trim().toLowerCase();
+  if (isB2bWalletProductId(product)) {
+    return resolveB2bWalletPurchaseReportLang(product, lang) ?? B2B_WALLET_DEFAULT_REPORT_LANG;
+  }
+  return lang ?? B2B_WALLET_DEFAULT_REPORT_LANG;
+}
+
+/** Tas pats B2B partnera tests kā Atskaite gatava (#323). */
+export function isB2bDealerReadyEmailOrder(args: {
+  notes?: string | null;
+  partnerId?: string | null;
+  partnerCompanyName?: string | null;
+}): boolean {
+  return isB2bInternationalClientReport(args);
+}
+
+function buildB2bDealerReadyEmailDraft(lang: B2bWalletReportLang): DealerClientEmailDraft {
+  return {
+    kind: "ready",
+    subject: B2B_DEALER_READY_SUBJECT[lang],
+    text: [...B2B_DEALER_READY_BODY[lang], "", b2bClientMessageSignOff()].join("\n"),
+  };
+}
+
 /** E-pasts ar dīlera PDF pielikumu - operators rediģē pirms sūtīšanas. */
 export function buildDealerReadyEmailDraft(
-  opts: { vin?: string | null },
+  opts: { vin?: string | null; b2bClient?: boolean; lang?: string | null; walletProduct?: string | null },
   templatesDoc?: MessageTemplatesDoc | null,
 ): DealerClientEmailDraft {
+  if (opts.b2bClient === true) {
+    const lang = resolveB2bDealerReadyEmailLang({
+      reportLang: opts.lang,
+      walletProduct: opts.walletProduct,
+    });
+    return buildB2bDealerReadyEmailDraft(lang);
+  }
   const id = "email.dealer.ready_pdf";
   const rendered = resolveMessageSync(id, {}, { doc: templatesDoc });
   if (rendered?.subject && rendered.text) {

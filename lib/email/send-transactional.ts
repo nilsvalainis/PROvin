@@ -901,6 +901,7 @@ export async function sendDealerDataOperatorEmail(opts: {
   subject: string;
   text: string;
   attachments?: ReportReadyMailAttachment[];
+  b2bClient?: boolean;
 }): Promise<void> {
   const subject = opts.subject.trim().slice(0, 180);
   const text = opts.text.trim();
@@ -908,11 +909,13 @@ export async function sendDealerDataOperatorEmail(opts: {
     throw new Error("missing_subject_or_text");
   }
   const attachments = dedupeAttachmentFilenames(opts.attachments ?? []);
+  const b2bClient = opts.b2bClient === true;
   await sendSmtpMail({
     to: opts.to,
     subject,
     text,
-    html: dealerDataOperatorMessageEmailHtml({ text }),
+    html: dealerDataOperatorMessageEmailHtml({ text, b2bClient }),
+    ...(b2bClient ? { from: getB2bMailFromAddress() } : {}),
     ...(attachments.length > 0
       ? {
           attachments: attachments.map((a) => ({
@@ -930,6 +933,7 @@ export async function trySendDealerDataOperatorEmail(opts: {
   subject: string;
   text: string;
   attachments?: ReportReadyMailAttachment[];
+  b2bClient?: boolean;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[dealer-data] SMTP nav iestatīts, operatora e-pasts nav nosūtīts");

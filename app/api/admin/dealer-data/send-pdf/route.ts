@@ -9,6 +9,8 @@ import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-dra
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { buildProvinDilerisPdfFilename } from "@/lib/audit-report-pdf-filename";
+import { parsePartnerCompanyFromNotes, parsePartnerIdFromNotes } from "@/lib/b2b-partner-orders";
+import { isB2bDealerReadyEmailOrder } from "@/lib/dealer-data-client-email";
 import { trySendDealerDataOperatorEmail, type ReportReadyMailAttachment } from "@/lib/email/send-transactional";
 import { isValidOrderEmail, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
@@ -84,7 +86,20 @@ export async function POST(req: Request) {
     { filename, content: buf, contentType: "application/pdf" },
   ];
 
-  const emailSent = await trySendDealerDataOperatorEmail({ to, subject, text, attachments });
+  const mergedNotes = draft?.orderEdits?.notes || order.notes || "";
+  const b2bClient = isB2bDealerReadyEmailOrder({
+    notes: mergedNotes,
+    partnerId: order.partnerId || parsePartnerIdFromNotes(mergedNotes),
+    partnerCompanyName: parsePartnerCompanyFromNotes(mergedNotes) || order.companyName,
+  });
+
+  const emailSent = await trySendDealerDataOperatorEmail({
+    to,
+    subject,
+    text,
+    attachments,
+    b2bClient,
+  });
   if (!emailSent) {
     return NextResponse.json({ error: "email_failed", to }, { status: 502 });
   }

@@ -150,6 +150,7 @@ import type { ClientReportTranslationCache } from "@/lib/client-report-translate
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import { isPartnerOrderNotes } from "@/lib/b2b-partner-orders";
+import { isB2bInternationalClientReport } from "@/lib/b2b-pdf-brand";
 import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import { confirmUnlockB2bReportLang } from "@/lib/b2b-report-lang-lock";
 import {
@@ -4211,7 +4212,13 @@ export function OrderDetailWorkspace({
   const canSendNotifyToClient = canNotifyClientOrder(payload, notifyCustomerEmail);
   const notifySendBlockedReason = notifyClientSendBlockedReason(payload, notifyCustomerEmail);
 
-  const partnerReportLang = parseB2bWalletOrderMarks(payload.notes)?.reportLang ?? null;
+  const walletMarks = parseB2bWalletOrderMarks(payload.notes);
+  const partnerReportLang = walletMarks?.reportLang ?? null;
+  const b2bClientOrder = isB2bInternationalClientReport({
+    notes: payload.notes,
+    partnerId: payload.partnerId,
+    partnerCompanyName: payload.partnerCompanyName,
+  });
   const pdfLangLock = pdfLangUnlocked ? null : partnerReportLang;
   const unlockPdfLang = () => {
     if (!partnerReportLang) return;
@@ -5422,6 +5429,9 @@ export function OrderDetailWorkspace({
               onGenerateDealerPdfDe={() => void openPrintReport({ dealerOnly: true, lang: "de" })}
               pdfLangLock={pdfLangLock}
               onUnlockPdfLang={unlockPdfLang}
+              b2bClient={b2bClientOrder}
+              reportLang={partnerReportLang}
+              walletProduct={walletMarks?.product ?? null}
               dealerPdfProgressKey={pdfJob?.key ?? null}
               dealerPdfProgressPct={pdfJob?.pct ?? null}
               techRiskText={ws.tehniskoRiskuAnalize ?? ""}

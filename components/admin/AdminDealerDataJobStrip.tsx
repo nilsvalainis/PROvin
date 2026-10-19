@@ -47,6 +47,10 @@ type Props = {
   onUnlockPdfLang?: () => void;
   pdfProgressKey?: string | null;
   pdfProgressPct?: number | null;
+  /** B2B partnera pasūtījums: dīlera PDF e-pasts kā #323 (PROVIN, bez .LV / IRISS). */
+  b2bClient?: boolean;
+  reportLang?: string | null;
+  walletProduct?: string | null;
 };
 
 const STATUS_TONE: Record<DealerDataJob["status"], string> = {
@@ -101,6 +105,9 @@ export function AdminDealerDataJobStrip({
   onUnlockPdfLang,
   pdfProgressKey = null,
   pdfProgressPct = null,
+  b2bClient = false,
+  reportLang = null,
+  walletProduct = null,
 }: Props) {
   const [job, setJob] = useState<DealerDataJob | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -159,7 +166,7 @@ export function AdminDealerDataJobStrip({
       kind === "cancelled"
         ? buildDealerCancelledEmailDraft({ vin, amountEur: refundAmountEur(job) })
         : kind === "ready"
-          ? buildDealerReadyEmailDraft({ vin })
+          ? buildDealerReadyEmailDraft({ vin, b2bClient, lang: reportLang, walletProduct })
           : buildDealerNoDataEmailDraft({
               vin,
               amountEur: refundAmountEur(job),
