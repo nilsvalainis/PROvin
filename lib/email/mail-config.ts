@@ -17,15 +17,15 @@ export function getMailFromAddress(): string {
   return "PROVIN.LV <info@provin.lv>";
 }
 
-/** IRISS / B2B sūtītājs: vārds IRISS, tā pati SMTP adrese (vai SMTP_FROM_B2B). Bez PROVIN. */
+/** B2B sūtītājs: vārds PROVIN (bez .LV), tā pati SMTP adrese (vai SMTP_FROM_B2B). */
 export function getB2bMailFromAddress(): string {
   const dedicated = process.env.SMTP_FROM_B2B?.trim();
-  if (dedicated) return dedicated;
+  if (dedicated) return dedicated.replace(/^IRISS(\s|<)/, "PROVIN$1");
   const user = process.env.SMTP_USER?.trim();
-  if (user) return `IRISS <${user}>`;
+  if (user) return `PROVIN <${user}>`;
   const from = getMailFromAddress();
   const addr = from.match(/<([^>]+)>/)?.[1] ?? from;
-  return `IRISS <${addr}>`;
+  return `PROVIN <${addr}>`;
 }
 
 /** Reply-To klientu atbildēm. */

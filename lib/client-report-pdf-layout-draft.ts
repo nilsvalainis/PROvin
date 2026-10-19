@@ -35,10 +35,13 @@ export function pdfV1PanelHead(title: string, titleIconHtml = ""): string {
 }
 
 /** Vārda zīme PDF galvenē - tumšs teksts uz baltas lapas, bez krāsaina logo fona. */
-export function provincLogoSvg(): string {
-  return `<svg class="pdf-v1-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 48" role="img" aria-label="PROVIN.LV">
+export function provincLogoSvg(opts?: { includeLvSuffix?: boolean }): string {
+  const includeLvSuffix = opts?.includeLvSuffix !== false;
+  const label = includeLvSuffix ? "PROVIN.LV" : "PROVIN";
+  const suffix = includeLvSuffix ? `<tspan fill="#000000">.LV</tspan>` : "";
+  return `<svg class="pdf-v1-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 48" role="img" aria-label="${label}">
   <text font-family="Inter, sans-serif" font-size="28" font-weight="800" letter-spacing="-0.02em">
-    <tspan x="0" y="34" fill="#000000">PRO</tspan><tspan fill="${PDF_BRAND_BLUE_HEX}">VIN</tspan><tspan fill="#000000">.LV</tspan>
+    <tspan x="0" y="34" fill="#000000">PRO</tspan><tspan fill="${PDF_BRAND_BLUE_HEX}">VIN</tspan>${suffix}
   </text>
 </svg>`;
 }

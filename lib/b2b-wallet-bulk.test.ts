@@ -177,6 +177,18 @@ describe("POST /api/partner/wallet/bulk", () => {
     expect((state.followups.mock.calls[0]![0] as { dealerOnlyRaw: boolean }[])[0]!.dealerOnlyRaw).toBe(true);
   });
 
+  it("rejects dealer_pro without reportLang", async () => {
+    const req = new Request("http://localhost/api/partner/wallet/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Idempotency-Key": "bulk_key_nolan" },
+      body: JSON.stringify({ product: "dealer_pro", items: [{ vin: VIN_A }] }),
+    });
+    const { status, body } = await post(req);
+    expect(status).toBe(400);
+    expect(body).toEqual({ error: "report_lang" });
+    expect(state.writes).toBe(0);
+  });
+
   it("uses the default price when there is no custom price", async () => {
     const { body } = await post(bulkRequest("dealer_pro", [{ vin: VIN_A }]));
     expect(body).toMatchObject({ priceCents: 2499, chargedCents: 2499, balanceCents: 10_000 - 2499 });

@@ -132,6 +132,8 @@ type Props = {
   onGenerateDealerPdfEn?: () => void;
   onGenerateDealerPdfRu?: () => void;
   onGenerateDealerPdfDe?: () => void;
+  pdfLangLock?: "lv" | "en" | "ru" | "de" | null;
+  onUnlockPdfLang?: () => void;
   dealerPdfProgressKey?: string | null;
   dealerPdfProgressPct?: number | null;
   /** Copilot dīlera PDF aģentam vajag visus avotu blokus (valstu noteikšanai). */
@@ -176,6 +178,8 @@ export function AdminAutoRecordsSourceBlock({
   onGenerateDealerPdfEn,
   onGenerateDealerPdfRu,
   onGenerateDealerPdfDe,
+  pdfLangLock = null,
+  onUnlockPdfLang,
   dealerPdfProgressKey = null,
   dealerPdfProgressPct = null,
   getSourceBlocks,
@@ -462,6 +466,8 @@ export function AdminAutoRecordsSourceBlock({
               onGenerateDealerPdfEn={onGenerateDealerPdfEn}
               onGenerateDealerPdfRu={onGenerateDealerPdfRu}
               onGenerateDealerPdfDe={onGenerateDealerPdfDe}
+              pdfLangLock={pdfLangLock}
+              onUnlockPdfLang={onUnlockPdfLang}
               pdfProgressKey={dealerPdfProgressKey}
               pdfProgressPct={dealerPdfProgressPct}
             />

@@ -18,6 +18,8 @@ import {
   PARTNER_VIN_AMOUNT_LABEL_LV,
   partnerAuditPurposeLabelLv,
 } from "@/lib/b2b-partner-orders";
+import { b2bPaidServiceLabelLv } from "@/lib/b2b-paid-service-label";
+import { b2bChosenReportLangLabel } from "@/lib/b2b-report-lang-lock";
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import {
   partitionAdminOrdersActiveFirst,
@@ -421,6 +423,8 @@ type OrderRowView = {
   partnerHighlight: boolean;
   partnerCompanyName: string;
   partnerPurposeLabel: string;
+  paidServiceLabel: string;
+  reportLangLabel: string;
   isPack: boolean;
   packLabel: string;
   isPartnerVin: boolean;
@@ -591,6 +595,11 @@ function orderRowView(
     partnerHighlight,
     partnerCompanyName,
     partnerPurposeLabel: isPack ? "" : partnerAuditPurposeLabelLv(o.partnerAuditPurpose),
+    paidServiceLabel:
+      !isPack && partnerHighlight
+        ? b2bPaidServiceLabelLv({ notes: o.notes, checkoutLine: o.checkoutLine }) ?? ""
+        : "",
+    reportLangLabel: !isPack && partnerHighlight ? b2bChosenReportLangLabel(o.notes) ?? "" : "",
     isPack,
     packLabel: isPack
       ? b2bPackInfoLabelLv({ checkoutLine: o.checkoutLine, packQty: o.packQty, fulfillment: o.isB2bTopup ? "b2b_wallet_topup" : null })
@@ -967,6 +976,8 @@ export function AdminOrdersTable({
                 {row.isDemo ? <span className={CALM_TAG}>Paraugs</span> : null}
                 {view.isPack ? <span className={CALM_TAG}>Paka</span> : view.partnerHighlight ? <span className={CALM_TAG}>Partneris{view.partnerCompanyName ? ` · ${view.partnerCompanyName}` : ""}</span> : row.isManual ? <span className={CALM_TAG}>Manuāls</span> : null}
                 {view.partnerPurposeLabel ? <span className={CALM_TAG}>{view.partnerPurposeLabel}</span> : null}
+                {view.paidServiceLabel ? <span className={CALM_TAG}>{view.paidServiceLabel}</span> : null}
+                {view.reportLangLabel ? <span className={CALM_TAG}>{view.reportLangLabel}</span> : null}
                 {view.miniHighlight ? <span className={CALM_TAG}>MINI</span> : null}
                 {row.repeatVin ? <span className={CALM_TAG}>Atkārtots VIN</span> : null}
                 {row.upsellBadge ? <span className={CALM_TAG}>{row.upsellBadge}</span> : null}
@@ -1026,6 +1037,8 @@ export function AdminOrdersTable({
                 partnerHighlight,
                 partnerCompanyName,
                 partnerPurposeLabel,
+                paidServiceLabel,
+                reportLangLabel,
                 isPack,
                 packLabel,
                 isPartnerVin,
@@ -1135,6 +1148,8 @@ export function AdminOrdersTable({
                         <span className={CALM_TAG}>Manuāls</span>
                       ) : null}
                       {partnerPurposeLabel ? <span className={CALM_TAG}>{partnerPurposeLabel}</span> : null}
+                      {paidServiceLabel ? <span className={CALM_TAG}>{paidServiceLabel}</span> : null}
+                      {reportLangLabel ? <span className={CALM_TAG}>{reportLangLabel}</span> : null}
                       {o.upsellBadge ? <span className={CALM_TAG}>{o.upsellBadge}</span> : null}
                     </span>
                   </td>

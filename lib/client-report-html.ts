@@ -122,6 +122,11 @@ import {
   type AsvBlockState,
 } from "@/lib/asv-report";
 import {
+  applyB2bInternationalReportChrome,
+  B2B_CLIENT_BRAND,
+  isB2bInternationalClientReport,
+} from "@/lib/b2b-pdf-brand";
+import {
   buildPdfAboutReportBlock,
   pdfLayoutDraftExtraCss,
   pdfProvinWordmarkHtml,
@@ -369,6 +374,8 @@ export type ClientReportPayload = {
   pdfReportKind?: "full" | "dealer" | "asv" | "business";
   /** Stripe checkout līnija - dīlera-only pret AUDITS/MINI zarošanai. */
   checkoutLine?: string | null;
+  partnerId?: string | null;
+  partnerCompanyName?: string | null;
   /** Atsevišķi brīdinājumu / info baneri PDF (noklusējums - visi ieslēgti). */
   pdfBannerInclude?: import("@/lib/provin-alert-banners").ProvinBannerPdfInclude | null;
   /** Manuāli pievienoti augšējās joslas brīdinājumi. */
@@ -2920,18 +2927,23 @@ ${sourceDotColorCss()}
       .pdf-svc-box{
         margin:3px 0;padding:8px 12px;min-width:0;
       }
-      .pdf-svc-box-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
-      .pdf-svc-place{margin:0;font-size:var(--pdf-fs-base);font-weight:700;line-height:1.3;color:#0f172a;}
+      .pdf-svc-box-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px;}
+      .pdf-svc-place{margin:0;min-width:0;font-size:var(--pdf-fs-base);font-weight:700;line-height:1.3;color:#0f172a;}
       .pdf-svc-place span{font-weight:500;color:#64748b;}
-      .pdf-svc-km{
-        flex:none;margin-left:auto;padding:3px 8px;border-radius:6px;background:#F1F5F9;
-        font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;white-space:nowrap;
+      .pdf-svc-chips{
+        display:flex;flex:none;align-items:center;justify-content:flex-end;gap:6px;margin-left:auto;height:22px;
+      }
+      .pdf-svc-km,.pdf-svc-tag{
+        display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:22px;margin:0;
+        line-height:1;white-space:nowrap;vertical-align:middle;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-svc-km{
+        padding:0 8px;border-radius:6px;background:#F1F5F9;
+        font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;color:#0f172a;
+      }
       .pdf-svc-tag{
-        flex:none;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:0.04em;
-        text-transform:uppercase;white-space:nowrap;
-        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+        padding:0 8px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;
       }
       .pdf-svc-tag--maintenance{background:#E8F1FC;color:${PDF_BRAND_BLUE_HEX};}
       .pdf-svc-tag--repair{background:#F1F5F9;color:#475569;}
@@ -3385,6 +3397,9 @@ export function buildClientReportDocumentHtml(args: {
   const dealerOnly = isDealerOnlyReport(p);
   const asvOnly = isAsvOnlyReport(p);
   const businessBrand = isBusinessBrandReport(p);
+  const b2bInternational = isB2bInternationalClientReport(p);
+  const includeLvSuffix = !b2bInternational;
+  const logoSvg = provincLogoSvg({ includeLvSuffix });
   const savedVis = mergePdfVisibility(p.pdfVisibility);
   const vis = dealerOnly
     ? {
@@ -3416,7 +3431,7 @@ export function buildClientReportDocumentHtml(args: {
       lines.push('<header class="pdf-v1-hero pdf-v1-hero--business">');
       lines.push('<div class="pdf-v1-hero-inner">');
       lines.push('<div class="pdf-v1-hero-brand">');
-      lines.push(provincLogoSvg());
+      lines.push(logoSvg);
       lines.push(generatedMeta);
       lines.push("</div>");
       lines.push('<div class="pdf-v1-hero-text">');
@@ -3426,7 +3441,7 @@ export function buildClientReportDocumentHtml(args: {
     } else {
       lines.push('<header class="pdf-v1-hero">');
       lines.push('<div class="pdf-v1-hero-inner">');
-      lines.push(provincLogoSvg());
+      lines.push(logoSvg);
       lines.push('<div class="pdf-v1-hero-text">');
       lines.push(
         `<h1 class="pdf-v1-doc-title">${escapeHtml(
@@ -3554,6 +3569,7 @@ export function buildClientReportDocumentHtml(args: {
       amountTotalCents: p.amountTotal,
       generatedLabel: `Ģenerēts ${dateFmt.format(new Date())}`,
       productBrand: dealerOnly ? "PROVIN_DILERIS" : businessBrand ? "PROVIN_BUSINESS" : undefined,
+      includeLvSuffix,
     }),
   );
   lines.push("</div>");
@@ -3575,7 +3591,11 @@ export function buildClientReportDocumentHtml(args: {
   const htmlClass = printInk ? ` class="${PROVIN_REPORT_PRINT_INK_CLASS}"` : "";
   const inkCss = printInk ? clientReportPrintInkCss() : "";
   const runningCss = clientReportPrintCss({
-    header: buildPdfRunningHeaderLine(resolvePdfReportMakeModelFromPayload(p), p.vin ?? ""),
+    header: buildPdfRunningHeaderLine(
+      resolvePdfReportMakeModelFromPayload(p),
+      p.vin ?? "",
+      b2bInternational ? B2B_CLIENT_BRAND : "PROVIN.LV",
+    ),
     footer: buildPdfRunningFooterLine({
       vin: p.vin ?? "",
       dateLabel: dateFmt.format(new Date()),
@@ -3590,5 +3610,6 @@ export function buildClientReportDocumentHtml(args: {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <title>${escapeHtml(docTitle)}</title><style>${runningCss}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
-  return applyClientReportStaticTranslations(html, lang);
+  const translated = applyClientReportStaticTranslations(html, lang);
+  return b2bInternational ? applyB2bInternationalReportChrome(translated) : translated;
 }

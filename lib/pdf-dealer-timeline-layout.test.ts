@@ -22,30 +22,44 @@ describe("dealer PDF timeline mileage layout", () => {
     expect(html).not.toMatch(/pdf-svc-when/);
     expect(html).toMatch(/<time class="pdf-svc-date">31\.03\.2026<\/time>/);
     expect(html).toMatch(
-      /<div class="pdf-svc-box-top">[\s\S]*<span class="pdf-svc-km">214 259 km<\/span>/,
+      /<div class="pdf-svc-chips"><span class="pdf-svc-km">214 259 km<\/span><span class="pdf-svc-tag /,
     );
     const dateIdx = html.indexOf('class="pdf-svc-date"');
     const kmIdx = html.indexOf('class="pdf-svc-km"');
+    const tagIdx = html.indexOf('class="pdf-svc-tag');
+    const chipsIdx = html.indexOf('class="pdf-svc-chips"');
     const boxTopIdx = html.indexOf('class="pdf-svc-box-top"');
     expect(dateIdx).toBeGreaterThanOrEqual(0);
     expect(kmIdx).toBeGreaterThan(dateIdx);
     expect(boxTopIdx).toBeGreaterThan(dateIdx);
-    expect(kmIdx).toBeGreaterThan(boxTopIdx);
+    expect(chipsIdx).toBeGreaterThan(boxTopIdx);
+    expect(kmIdx).toBeGreaterThan(chipsIdx);
+    expect(tagIdx).toBeGreaterThan(kmIdx);
     expect(html).toMatchSnapshot();
   });
 
-  it("print CSS matches the pre-#268 date column: 78px, date not block, km flex chip", () => {
+  it("print CSS right-aligns km+tag chips on one 22px row", () => {
     const css = getClientReportPrintCss();
     const visit = cssRulesFor(css, ".pdf-svc-visit").find((r) => r.includes("grid-template-columns")) ?? "";
     const date = cssRulesFor(css, ".pdf-svc-date").find((r) => r.includes("padding:9px 0")) ?? "";
-    const km = cssRulesFor(css, ".pdf-svc-km")[0] ?? "";
+    const top = cssRulesFor(css, ".pdf-svc-box-top")[0] ?? "";
+    const chips = cssRulesFor(css, ".pdf-svc-chips")[0] ?? "";
+    const km = cssRulesFor(css, ".pdf-svc-km").find((r) => r.includes("background:#F1F5F9")) ?? "";
+    const tag = cssRulesFor(css, ".pdf-svc-tag").find((r) => r.includes("text-transform")) ?? "";
+    const shared = cssRulesFor(css, ".pdf-svc-km,.pdf-svc-tag")[0] ?? "";
     expect(visit).toMatch(/grid-template-columns:\s*78px 18px minmax\(0,1fr\)/);
     expect(date).not.toMatch(/display:\s*block/);
     expect(date).toMatch(/text-align:\s*right/);
-    expect(km).toMatch(/flex:\s*none/);
-    expect(km).toMatch(/margin-left:\s*auto/);
+    expect(top).toMatch(/align-items:\s*center/);
+    expect(chips).toMatch(/margin-left:\s*auto/);
+    expect(chips).toMatch(/align-items:\s*center/);
+    expect(chips).toMatch(/height:\s*22px/);
+    expect(shared).toMatch(/height:\s*22px/);
+    expect(shared).toMatch(/align-items:\s*center/);
+    expect(km).not.toMatch(/margin-left:\s*auto/);
     expect(km).not.toMatch(/margin-top:\s*4px/);
     expect(km).toMatch(/background:#F1F5F9/);
-    expect({ visit, date, km }).toMatchSnapshot();
+    expect(tag).toMatch(/text-transform:\s*uppercase/);
+    expect({ visit, date, top, chips, km, tag, shared }).toMatchSnapshot();
   });
 });

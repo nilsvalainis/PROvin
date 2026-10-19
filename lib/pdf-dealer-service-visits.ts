@@ -105,7 +105,8 @@ function visitHtml(row: AutoRecordsServiceWorkRow, hideKeyReadLines: boolean, la
   const km = odo ? `<span class="pdf-svc-km">${escapeHtml(odo)}</span>` : "";
   const place = visitPlaceHtml(row.location, lang);
   const tag = visitKindTagHtml(row.works, lang);
-  const head = `<div class="pdf-svc-box-top">${place}${km}${tag}</div>`;
+  const chips = `<div class="pdf-svc-chips">${km}${tag}</div>`;
+  const head = `<div class="pdf-svc-box-top">${place}${chips}</div>`;
   return `<div class="pdf-svc-visit pdf-svc-kind--${classifyDealerVisitKind(row.works)}">
     ${dateHtml}
     <span class="pdf-svc-rail" aria-hidden="true"><span class="pdf-svc-dot"></span></span>

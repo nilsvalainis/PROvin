@@ -543,10 +543,8 @@ ${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}
   return shell(inner);
 }
 
-const IRISS_ORANGE = "#F26522";
-
-/** IRISS B2B e-pasts: nav PROVIN lentes, nav PROVIN teksta. */
-export function b2bIrissEmailHtml(opts: { title: string; paragraphs: readonly string[] }): string {
+/** B2B klienta e-pasts: zīmols PROVIN, zils #0061D2, bez .LV. */
+export function b2bProvinEmailHtml(opts: { title: string; paragraphs: readonly string[] }): string {
   const paras = opts.paragraphs
     .map((p) => `<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">${esc(p).replace(/\n/g, "<br/>")}</p>`)
     .join("");
@@ -555,14 +553,14 @@ export function b2bIrissEmailHtml(opts: { title: string; paragraphs: readonly st
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>IRISS</title>
+<title>PROVIN</title>
 </head>
 <body style="margin:0;padding:0;background:${BG};font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.55;color:${INK};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};">
 <tr><td align="center" style="padding:48px 20px;">
 <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border-radius:14px;padding:44px 40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
 <tr><td>
-<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${IRISS_ORANGE};font-weight:700;">IRISS</p>
+<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${BRAND};font-weight:700;">PROVIN</p>
 <p style="margin:0 0 16px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(opts.title)}</p>
 ${paras}
 </td></tr></table>
@@ -572,4 +570,6 @@ ${paras}
 </html>`;
 }
 
-export const b2bWalletRefundEmailHtml = b2bIrissEmailHtml;
+/** @deprecated B2B klients redz PROVIN. */
+export const b2bIrissEmailHtml = b2bProvinEmailHtml;
+export const b2bWalletRefundEmailHtml = b2bProvinEmailHtml;

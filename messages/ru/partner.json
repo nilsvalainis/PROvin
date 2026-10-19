@@ -299,6 +299,8 @@
     "walletProductProDesc": "Обработанный отчёт по данным дилера для покупателя: история обслуживания и ремонтов, график интервалов замены масла, проверка пробега и резюме.",
     "walletProductProTag": "12-24h",
     "walletReportLang": "Язык отчёта",
+    "walletReportLangPlaceholder": "Выберите язык",
+    "walletReportLangHint": "Сначала выберите язык отчёта.",
     "walletSample": "Посмотреть образец",
     "walletSampleSoon": "Скоро",
     "walletSampleAria": "Открывает PDF-образец в новой вкладке",

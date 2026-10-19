@@ -26,11 +26,13 @@ export const B2B_WALLET_SAMPLES: Record<B2bWalletProductId, B2bWalletSampleConfi
 
 export function resolveB2bWalletSampleUrl(
   product: B2bWalletProductId,
-  lang: B2bWalletReportLang,
+  lang?: B2bWalletReportLang | null,
   samples: Record<B2bWalletProductId, B2bWalletSampleConfig> = B2B_WALLET_SAMPLES,
 ): string | null {
   const config = samples[product];
-  const byLang = config.byLang?.[lang];
-  if (byLang !== undefined) return byLang?.trim() || null;
+  if (lang && config.byLang && Object.prototype.hasOwnProperty.call(config.byLang, lang)) {
+    const byLang = config.byLang[lang];
+    if (byLang !== undefined) return byLang?.trim() || null;
+  }
   return config.default?.trim() || null;
 }

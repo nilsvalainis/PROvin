@@ -151,6 +151,7 @@ import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle"
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import { isPartnerOrderNotes } from "@/lib/b2b-partner-orders";
 import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
+import { confirmUnlockB2bReportLang } from "@/lib/b2b-report-lang-lock";
 import {
   applyOrderPdfVisibilityDefaults,
   ASV_ONLY_PDF_VISIBILITY,
@@ -826,6 +827,7 @@ export function OrderDetailWorkspace({
   const [portfolioPersistFlash, setPortfolioPersistFlash] = useState(false);
   const [portfolioUploadNotice, setPortfolioUploadNotice] = useState<string | null>(null);
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
+  const [pdfLangUnlocked, setPdfLangUnlocked] = useState(false);
   const [notifyIncludeGoogleReview, setNotifyIncludeGoogleReview] = useState(false);
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
@@ -923,6 +925,7 @@ export function OrderDetailWorkspace({
       setFactCheckDismissed([]);
     }
     factCheckDismissedHydratedRef.current = true;
+    setPdfLangUnlocked(false);
   }, [payload.sessionId]);
 
   useEffect(() => {
@@ -4209,6 +4212,11 @@ export function OrderDetailWorkspace({
   const notifySendBlockedReason = notifyClientSendBlockedReason(payload, notifyCustomerEmail);
 
   const partnerReportLang = parseB2bWalletOrderMarks(payload.notes)?.reportLang ?? null;
+  const pdfLangLock = pdfLangUnlocked ? null : partnerReportLang;
+  const unlockPdfLang = () => {
+    if (!partnerReportLang) return;
+    if (confirmUnlockB2bReportLang(partnerReportLang)) setPdfLangUnlocked(true);
+  };
 
   const portfolioSection = (
     <section id="admin-order-section-pielikumi" className={portfolioShellClass}>
@@ -5156,6 +5164,8 @@ export function OrderDetailWorkspace({
         onGenerateAsvPdfEn={() => void openPrintReport({ asvOnly: true, lang: "en" })}
         onGenerateAsvPdfRu={() => void openPrintReport({ asvOnly: true, lang: "ru" })}
         onGenerateAsvPdfDe={() => void openPrintReport({ asvOnly: true, lang: "de" })}
+        pdfLangLock={pdfLangLock}
+        onUnlockPdfLang={unlockPdfLang}
         onGenerateOemPdf={() => void openOemDealerReport()}
         onGeneratePrintInkPdf={() => void openPrintReport({ printInk: true })}
         vin={vinBar}
@@ -5410,6 +5420,8 @@ export function OrderDetailWorkspace({
               onGenerateDealerPdfEn={() => void openPrintReport({ dealerOnly: true, lang: "en" })}
               onGenerateDealerPdfRu={() => void openPrintReport({ dealerOnly: true, lang: "ru" })}
               onGenerateDealerPdfDe={() => void openPrintReport({ dealerOnly: true, lang: "de" })}
+              pdfLangLock={pdfLangLock}
+              onUnlockPdfLang={unlockPdfLang}
               dealerPdfProgressKey={pdfJob?.key ?? null}
               dealerPdfProgressPct={pdfJob?.pct ?? null}
               techRiskText={ws.tehniskoRiskuAnalize ?? ""}
@@ -6025,6 +6037,8 @@ export function OrderDetailWorkspace({
             label="Ģenerēt PDF"
             busyLabel={pdfFamilyBusy("pdf")}
             disabled={pdfJob !== null}
+            lockLang={pdfLangLock}
+            onUnlockLang={unlockPdfLang}
             toneClass="provin-tone provin-tone-primary border border-[#1d1d1f] bg-[#1d1d1f] text-white shadow-sm hover:bg-black"
             onPrimary={() => void openPrintReport()}
             onLang={(lang) => void openPrintReport({ lang })}
@@ -6034,6 +6048,8 @@ export function OrderDetailWorkspace({
             title="Tā pati atskaite ar virsrakstu Business Datu atskaite."
             busyLabel={pdfFamilyBusy("business")}
             disabled={pdfJob !== null}
+            lockLang={pdfLangLock}
+            onUnlockLang={unlockPdfLang}
             toneClass={PDF_FOOTER_NEUTRAL_TONE}
             dividerClass="border-[var(--admin-border-subtle)]"
             onPrimary={() => void openPrintReport({ businessBrand: true })}
@@ -6044,6 +6060,8 @@ export function OrderDetailWorkspace({
             title="Tikai OFICIĀLĀ DĪLERA DATI. Citi avoti netiek iekļauti."
             busyLabel={pdfFamilyBusy("dealer")}
             disabled={pdfJob !== null}
+            lockLang={pdfLangLock}
+            onUnlockLang={unlockPdfLang}
             toneClass={PDF_FOOTER_NEUTRAL_TONE}
             dividerClass="border-[var(--admin-border-subtle)]"
             onPrimary={() => void openPrintReport({ dealerOnly: true })}
@@ -6054,6 +6072,8 @@ export function OrderDetailWorkspace({
             title="Tikai ASV vēsture. Citi avoti netiek iekļauti."
             busyLabel={pdfFamilyBusy("asv")}
             disabled={pdfJob !== null}
+            lockLang={pdfLangLock}
+            onUnlockLang={unlockPdfLang}
             toneClass={PDF_FOOTER_NEUTRAL_TONE}
             dividerClass="border-[var(--admin-border-subtle)]"
             onPrimary={() => void openPrintReport({ asvOnly: true })}

@@ -17,6 +17,7 @@ import {
   applyB2bWalletRefund,
   attachB2bWalletPurchaseOrder,
   B2B_WALLET_PRODUCTS,
+  b2bWalletProductRequiresReportLang,
   buildB2bWalletOrderNoteParts,
   findB2bWalletTxnByKey,
   isB2bWalletProductVisible,
@@ -189,7 +190,7 @@ export async function purchaseB2bWalletBulk(args: {
         txnId: txn.id,
         product,
         priceCents: paid,
-        reportLang: product === "dealer_pro" ? args.reportLang ?? "lv" : null,
+        reportLang: b2bWalletProductRequiresReportLang(product) ? args.reportLang : null,
       }),
     });
     if (!created.ok) {

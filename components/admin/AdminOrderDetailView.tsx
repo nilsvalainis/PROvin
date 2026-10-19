@@ -23,6 +23,8 @@ import { AdminOrderVinHistoryPanel } from "@/components/admin/AdminOrderVinHisto
 import { ClientHydrationGate } from "@/components/admin/ClientHydrationGate";
 import { formatMoneyEur } from "@/lib/format-money";
 import { isMiniHighlightAdminOrder, paidProductLabel } from "@/lib/admin-customer-identity";
+import { b2bPaidServiceLabelLv } from "@/lib/b2b-paid-service-label";
+import { b2bChosenReportLangLabel } from "@/lib/b2b-report-lang-lock";
 import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel";
 import {
   isPartnerVinAdminOrder,
@@ -411,6 +413,8 @@ export function AdminOrderDetailView({
     partnerId: order.partnerId,
     notes: mergedNotes,
   });
+  const partnerPaidLabel = b2bPaidServiceLabelLv({ notes: mergedNotes, checkoutLine: order.checkoutLine });
+  const partnerReportLangLabel = b2bChosenReportLangLabel(mergedNotes);
 
   const orderFieldResetKey = `${order.id}-${hydrated ? 1 : 0}`;
 
@@ -791,11 +795,17 @@ export function AdminOrderDetailView({
         </h1>
         <p className="text-[11px] font-semibold text-[var(--color-provin-muted)]" title="Pasūtītais produkts">
           <span className="uppercase tracking-wide text-[var(--color-apple-text)]">
-            {paidProductLabel({
-              checkoutLine: order.checkoutLine,
-              amountTotalCents: order.amountTotal,
-            })}
+            {partnerPaidLabel ??
+              paidProductLabel({
+                checkoutLine: order.checkoutLine,
+                amountTotalCents: order.amountTotal,
+              })}
           </span>
+          {partnerReportLangLabel ? (
+            <span className="ml-1.5 inline-flex items-center rounded-[5px] border border-[#e5e5ea] px-1.5 py-px text-[11px] font-medium normal-case tracking-normal text-[#8e8e93]">
+              {partnerReportLangLabel}
+            </span>
+          ) : null}
           {isPartnerVin ? (
             <span className="ml-1.5 font-bold text-violet-900">{PARTNER_VIN_AMOUNT_LABEL_LV}</span>
           ) : order.amountTotal != null && order.amountTotal > 0 ? (

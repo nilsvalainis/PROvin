@@ -65,6 +65,8 @@ type Props = {
   onGenerateAsvPdfDe: () => void;
   onGenerateOemPdf: () => void;
   onGeneratePrintInkPdf: () => void;
+  pdfLangLock?: "lv" | "en" | "ru" | "de" | null;
+  onUnlockPdfLang?: () => void;
   vin: string;
   plate: string;
   listingUrl: string | null;
@@ -84,6 +86,7 @@ function PdfLangRow({
   onEn,
   onRu,
   onDe,
+  lockLang = null,
 }: {
   progressKey?: string | null;
   progressPct?: number | null;
@@ -91,23 +94,28 @@ function PdfLangRow({
   onEn: () => void;
   onRu: () => void;
   onDe: () => void;
+  lockLang?: "lv" | "en" | "ru" | "de" | null;
 }) {
-  const chip = (key: string, label: string, onClick: () => void) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-full border border-[var(--admin-border-subtle)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-provin-muted)]"
-    >
-      {progressKey === key ? `${progressPct ?? 0}%` : label}
-    </button>
-  );
+  const chip = (key: string, label: string, lang: "en" | "ru" | "de", onClick: () => void) => {
+    const lockedOut = Boolean(lockLang) && lockLang !== lang;
+    return (
+      <button
+        type="button"
+        disabled={lockedOut}
+        onClick={onClick}
+        className="rounded-full border border-[var(--admin-border-subtle)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-provin-muted)] disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {progressKey === key ? `${progressPct ?? 0}%` : label}
+      </button>
+    );
+  };
   return (
     <details className="mb-1 px-3 pb-1">
       <summary className="cursor-pointer text-[11px] font-medium text-[var(--color-provin-muted)]">EN, RU, DE</summary>
       <div className="mt-1 flex items-center gap-1.5">
-        {chip(keys.en, "EN", onEn)}
-        {chip(keys.ru, "RU", onRu)}
-        {chip(keys.de, "DE", onDe)}
+        {chip(keys.en, "EN", "en", onEn)}
+        {chip(keys.ru, "RU", "ru", onRu)}
+        {chip(keys.de, "DE", "de", onDe)}
       </div>
     </details>
   );
@@ -147,6 +155,8 @@ export function AdminOrderMobileDock({
   onGenerateAsvPdfDe,
   onGenerateOemPdf,
   onGeneratePrintInkPdf,
+  pdfLangLock = null,
+  onUnlockPdfLang,
   vin,
   plate,
   listingUrl,
@@ -172,6 +182,12 @@ export function AdminOrderMobileDock({
   const runPdf = (fn: () => void) => {
     setSheet(null);
     fn();
+  };
+  const lockedPdf = (lv: () => void, en: () => void, ru: () => void, de: () => void) => {
+    if (pdfLangLock === "en") return en;
+    if (pdfLangLock === "ru") return ru;
+    if (pdfLangLock === "de") return de;
+    return lv;
   };
 
   const copyVin = async () => {
@@ -245,7 +261,16 @@ export function AdminOrderMobileDock({
 
       {sheet === "pdf" && !dockCovered ? (
         <AdminMobileSheet open title="Ģenerēt PDF" onClose={() => setSheet(null)}>
-          <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdf)}>
+          {pdfLangLock && onUnlockPdfLang ? (
+            <button type="button" className={`${sheetRow} text-[var(--color-provin-muted)]`} onClick={onUnlockPdfLang}>
+              Mainīt valodu ({pdfLangLock.toUpperCase()})
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className={sheetRow}
+            onClick={() => runPdf(lockedPdf(onGeneratePdf, onGeneratePdfEn, onGeneratePdfRu, onGeneratePdfDe))}
+          >
             <FileText className="h-4 w-4 shrink-0 text-[var(--color-apple-text)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">{pdfProgressKey === "pdf" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt PDF"}</span>
@@ -256,11 +281,18 @@ export function AdminOrderMobileDock({
             progressKey={pdfProgressKey}
             progressPct={pdfProgressPct}
             keys={{ en: "pdf-en", ru: "pdf-ru", de: "pdf-de" }}
+            lockLang={pdfLangLock}
             onEn={() => runPdf(onGeneratePdfEn)}
             onRu={() => runPdf(onGeneratePdfRu)}
             onDe={() => runPdf(onGeneratePdfDe)}
           />
-          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateBusinessPdf)}>
+          <button
+            type="button"
+            className={sheetRow}
+            onClick={() =>
+              runPdf(lockedPdf(onGenerateBusinessPdf, onGenerateBusinessPdfEn, onGenerateBusinessPdfRu, onGenerateBusinessPdfDe))
+            }
+          >
             <FileText className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">{pdfProgressKey === "business" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt BUSINESS PDF"}</span>
@@ -273,11 +305,18 @@ export function AdminOrderMobileDock({
             progressKey={pdfProgressKey}
             progressPct={pdfProgressPct}
             keys={{ en: "business-en", ru: "business-ru", de: "business-de" }}
+            lockLang={pdfLangLock}
             onEn={() => runPdf(onGenerateBusinessPdfEn)}
             onRu={() => runPdf(onGenerateBusinessPdfRu)}
             onDe={() => runPdf(onGenerateBusinessPdfDe)}
           />
-          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateDealerPdf)}>
+          <button
+            type="button"
+            className={sheetRow}
+            onClick={() =>
+              runPdf(lockedPdf(onGenerateDealerPdf, onGenerateDealerPdfEn, onGenerateDealerPdfRu, onGenerateDealerPdfDe))
+            }
+          >
             <FileText className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">{pdfProgressKey === "dealer" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt dīlera PDF"}</span>
@@ -288,11 +327,16 @@ export function AdminOrderMobileDock({
             progressKey={pdfProgressKey}
             progressPct={pdfProgressPct}
             keys={{ en: "dealer-en", ru: "dealer-ru", de: "dealer-de" }}
+            lockLang={pdfLangLock}
             onEn={() => runPdf(onGenerateDealerPdfEn)}
             onRu={() => runPdf(onGenerateDealerPdfRu)}
             onDe={() => runPdf(onGenerateDealerPdfDe)}
           />
-          <button type="button" className={sheetRow} onClick={() => runPdf(onGenerateAsvPdf)}>
+          <button
+            type="button"
+            className={sheetRow}
+            onClick={() => runPdf(lockedPdf(onGenerateAsvPdf, onGenerateAsvPdfEn, onGenerateAsvPdfRu, onGenerateAsvPdfDe))}
+          >
             <FileText className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
               <span className="block">{pdfProgressKey === "asv" ? `${pdfProgressPct ?? 0}%` : "Ģenerēt ASV PDF"}</span>
@@ -303,6 +347,7 @@ export function AdminOrderMobileDock({
             progressKey={pdfProgressKey}
             progressPct={pdfProgressPct}
             keys={{ en: "asv-en", ru: "asv-ru", de: "asv-de" }}
+            lockLang={pdfLangLock}
             onEn={() => runPdf(onGenerateAsvPdfEn)}
             onRu={() => runPdf(onGenerateAsvPdfRu)}
             onDe={() => runPdf(onGenerateAsvPdfDe)}

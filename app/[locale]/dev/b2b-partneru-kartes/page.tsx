@@ -25,7 +25,7 @@ export default async function B2bPartnerCardsDevPreviewPage({
           <B2bPartnerWalletHome
             initialWallet={buildB2bWalletView(wallet, emptyB2bWalletPrices())}
             legacy={null}
-            initialReportLang={isB2bWalletReportLang(lang) ? lang : "lv"}
+            initialReportLang={isB2bWalletReportLang(lang) ? lang : null}
           />
         </B2bPartnerAccountShell>
       </div>

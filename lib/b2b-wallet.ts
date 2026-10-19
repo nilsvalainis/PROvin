@@ -38,6 +38,11 @@ export function isB2bWalletReportLang(value: unknown): value is B2bWalletReportL
   return value === "lv" || value === "ru" || value === "en" || value === "de";
 }
 
+/** Jauni pirkumi: valoda obligāta, bez noklusējuma. Vecos pasūtījumus neskār. */
+export function b2bWalletProductRequiresReportLang(product: B2bWalletProductId): boolean {
+  return product === "dealer_pro";
+}
+
 /** Individuālās cenas (centi). `null` = noklusējuma cena. */
 export type B2bWalletPriceOverrides = Record<B2bWalletProductId, number | null>;
 

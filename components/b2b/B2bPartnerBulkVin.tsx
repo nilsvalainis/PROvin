@@ -23,6 +23,7 @@ import { isPlausibleListingUrl, sanitizeVinInput } from "@/lib/order-field-valid
 import { trackMetaLead } from "@/lib/meta-pixel";
 import {
   B2B_WALLET_PRODUCTS,
+  b2bWalletProductRequiresReportLang,
   formatB2bWalletEuro,
   type B2bWalletProductId,
   type B2bWalletReportLang,
@@ -49,7 +50,7 @@ export type B2bPartnerBulkVinWallet = {
   product: B2bWalletProductId;
   priceCents: number;
   balanceCents: number;
-  reportLang: B2bWalletReportLang;
+  reportLang: B2bWalletReportLang | null;
   onTopup: () => void;
   onOrdered: (args: { balanceCents: number | null; accepted: number }) => void;
 };
@@ -142,7 +143,10 @@ export function B2bPartnerBulkVin({
   const needsPurpose = !wallet || wallet.product === "business";
   const walletTotalCents = wallet ? wallet.priceCents * counts.orderable : 0;
   const walletShortCents = wallet ? Math.max(0, walletTotalCents - wallet.balanceCents) : 0;
-  const canOrder = wallet ? counts.orderable > 0 && walletShortCents === 0 : creditPlan.canOrder;
+  const walletNeedsLang = Boolean(wallet && b2bWalletProductRequiresReportLang(wallet.product) && !wallet.reportLang);
+  const canOrder = wallet
+    ? counts.orderable > 0 && walletShortCents === 0 && !walletNeedsLang
+    : creditPlan.canOrder;
 
   const setPurpose = (key: string, purpose: B2bPartnerAuditPurpose) => {
     setAllPurpose(purpose);
@@ -237,7 +241,9 @@ export function B2bPartnerBulkVin({
         headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
         body: JSON.stringify({
           product: cfg.product,
-          ...(cfg.product === "dealer_pro" ? { reportLang: cfg.reportLang } : {}),
+          ...(b2bWalletProductRequiresReportLang(cfg.product) && cfg.reportLang
+            ? { reportLang: cfg.reportLang }
+            : {}),
           items: orderable.map((row) => ({
             vin: row.vin,
             ...(isBusiness ? { auditPurpose: row.purpose } : {}),
@@ -268,6 +274,10 @@ export function B2bPartnerBulkVin({
       }
       if (data.error === "audit_purpose") {
         setFormError(t("bulkNeedPurpose"));
+        return;
+      }
+      if (data.error === "report_lang") {
+        setFormError(t("walletReportLangHint"));
         return;
       }
       if (!res.ok || !data.ok) {
@@ -319,6 +329,10 @@ export function B2bPartnerBulkVin({
       return;
     }
     if (wallet) {
+      if (walletNeedsLang) {
+        setFormError(t("walletReportLangHint"));
+        return;
+      }
       if (canOrder) await onWalletOrder(wallet, orderable);
       return;
     }
@@ -758,6 +772,7 @@ export function B2bPartnerBulkVin({
           </>
         )}
         {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
+        {walletNeedsLang ? <p className={styles.inlineFieldError}>{t("walletReportLangHint")}</p> : null}
 
         <button
           type="button"

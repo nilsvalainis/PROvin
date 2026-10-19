@@ -23,7 +23,11 @@ const IntlProvider = NextIntlClientProvider as unknown as FunctionComponent<{
   timeZone: string;
 }>;
 
-function render(hidden: B2bWalletProductId[], overrides: B2bWalletPriceOverrides | null = null): string {
+function render(
+  hidden: B2bWalletProductId[],
+  overrides: B2bWalletPriceOverrides | null = null,
+  reportLang: "lv" | "en" | "ru" | "de" | null = null,
+): string {
   const wallet = applyB2bWalletTopup(emptyB2bWallet(), { amountCents: 5000, sessionId: "cs_r" }).wallet;
   return renderToStaticMarkup(
     createElement(
@@ -32,6 +36,7 @@ function render(hidden: B2bWalletProductId[], overrides: B2bWalletPriceOverrides
       createElement(B2bPartnerWalletHome, {
         initialWallet: buildB2bWalletView(wallet, overrides, 50, hidden),
         legacy: null,
+        initialReportLang: reportLang,
       }),
     ),
   );
@@ -45,16 +50,25 @@ const LANG_SWITCH = 'data-lang="de"';
 const t = lvPartner.Partner;
 
 describe("partner portal hides admin-hidden wallet cards", () => {
-  it("shows all three cards with samples and the PRO language switcher by default", () => {
+  it("shows all three cards with samples and an empty required PRO language selector", () => {
     const html = render([]);
     expect(textOf(html)).toContain(t.walletProductBusinessTitle);
     expect(html).toContain(t.walletProductRawTitle);
     expect(html).toContain(t.walletProductProTitle);
     expect(html).toContain(RAW_SAMPLE);
-    expect(html).toContain(PRO_SAMPLE);
+    expect(html).not.toContain(PRO_SAMPLE);
+    expect(html).toContain(t.walletReportLangPlaceholder);
+    expect(html).toContain(t.walletReportLangHint);
     expect(html).toContain(LANG_SWITCH);
     expect(html).toContain('aria-disabled="true"');
     expect(html.match(/<article/g)).toHaveLength(3);
+  });
+
+  it("shows the matching PRO sample after a language is chosen", () => {
+    const html = render([], null, "lv");
+    expect(html).toContain(PRO_SAMPLE);
+    expect(html).not.toContain(t.walletReportLangHint);
+    expect(html).toContain('value="lv"');
   });
 
   it("hides the PRO card together with its language switcher and sample link", () => {
@@ -78,10 +92,10 @@ describe("partner portal hides admin-hidden wallet cards", () => {
   it("hides the Business card and its disabled sample badge", () => {
     const html = render(["business"]);
     expect(textOf(html)).not.toContain(t.walletProductBusinessTitle);
-    expect(html).not.toContain('aria-disabled="true"');
     expect(html.match(/<article/g)).toHaveLength(2);
     expect(html).toContain(t.walletProductRawTitle);
     expect(html).toContain(t.walletProductProTitle);
+    expect(html).toContain(t.walletReportLangPlaceholder);
   });
 
   it("shows a notice when every product is hidden", () => {

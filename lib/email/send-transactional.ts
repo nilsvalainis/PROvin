@@ -9,7 +9,7 @@ import {
   adminNewPartnerHtml,
   b2bWalletRefundEmailHtml,
   auditCompletedEmailHtml,
-  b2bIrissEmailHtml,
+  b2bProvinEmailHtml,
   dealerDataNoDataRefundEmailHtml,
   dealerDataOperatorMessageEmailHtml,
   listingPeekCustomerCommentHtml,
@@ -955,7 +955,7 @@ export async function sendMorningSummaryEmail(opts: {
   });
 }
 
-/** IRISS B2B: rēķins pēc maka papildināšanas. Bez PROVIN, bez VIN. */
+/** B2B: rēķins pēc maka papildināšanas. Zīmols PROVIN, bez .LV. */
 export async function sendB2bWalletTopupInvoiceEmail(opts: {
   to: string;
   subject: string;
@@ -972,7 +972,7 @@ export async function sendB2bWalletTopupInvoiceEmail(opts: {
     from: getB2bMailFromAddress(),
     subject: opts.subject,
     text: opts.text,
-    html: b2bIrissEmailHtml({ title: opts.subject, paragraphs }),
+    html: b2bProvinEmailHtml({ title: opts.subject, paragraphs }),
     ...(opts.invoiceAttachment
       ? {
           attachments: [

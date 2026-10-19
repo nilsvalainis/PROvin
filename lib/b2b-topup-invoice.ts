@@ -1,15 +1,17 @@
 /**
- * IRISS B2B maka papildināšanas rēķins (LV vieta, Nila redaktors vēl precizēs).
- * Vietturņi e-pastā: {{summa}} {{atlikums}} {{rekins}} {{uznemums}}.
- * Zīmols: IRISS, bez PROVIN, bez VIN, bez PVN rindām.
+ * B2B maka papildināšanas rēķins.
+ * PDF/HTML: PROVIN zīmols (bez .LV), zilā tēma, bez PVN numura un piezīmēm.
+ * E-pasts: PROVIN, zils #0061D2.
  */
 
+import { B2B_CLIENT_BRAND } from "@/lib/b2b-pdf-brand";
 import { getCompanyLegal } from "@/lib/company";
 import { invoiceBuyerLines, normalizeInvoiceBuyer } from "@/lib/invoice-buyer";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { InvoiceOrderPayload } from "@/lib/generate-invoice-html";
 
-export const B2B_TOPUP_INVOICE_BRAND = "IRISS";
+/** E-pasta From vārds paliek atsevišķi; rēķina PDF zīmols. */
+export const B2B_TOPUP_INVOICE_PDF_BRAND = B2B_CLIENT_BRAND;
 
 export function formatIrsInvoiceNumber(year: number, seq: number): string {
   return `IRS-${year}-${String(seq).padStart(4, "0")}`;
@@ -35,11 +37,8 @@ export function fallbackB2bTopupInvoiceNumber(sessionId: string, created: number
 
 export const B2B_TOPUP_INVOICE = {
   serviceLine: "Konta papildināšana",
-  /** Juridiskā piezīme pārskatīšanai: pārdevējs nav PVN maksātājs. */
-  pvnNote:
-    "Pakalpojuma sniedzējs nav PVN maksātājs. Pievienotās vērtības nodoklis netiek piemērots.",
   email: {
-    subject: "IRISS: rēķins par konta papildināšanu {{summa}}",
+    subject: "PROVIN: rēķins par konta papildināšanu {{summa}}",
     body: [
       "Sveiki!",
       "",
@@ -50,39 +49,53 @@ export const B2B_TOPUP_INVOICE = {
       "Rēķina PDF ir pievienots šim e-pastam.",
       "",
       "Ar cieņu,",
-      "IRISS",
+      "PROVIN",
     ].join("\n"),
   },
 } as const;
 
 export type B2bTopupInvoiceSeller = {
-  brand: string;
   legalName: string;
   regNo: string;
   address: string;
+  bank?: string;
 };
-
-export function getB2bTopupInvoicePvnNote(): string {
-  return process.env.B2B_INVOICE_PVN_NOTE?.trim() || B2B_TOPUP_INVOICE.pvnNote;
-}
 
 export function getB2bTopupInvoiceSeller(): B2bTopupInvoiceSeller {
   const legal = getCompanyLegal();
+  const bank = process.env.B2B_INVOICE_SELLER_BANK?.trim() || "";
   return {
-    brand: B2B_TOPUP_INVOICE_BRAND,
     legalName: process.env.B2B_INVOICE_SELLER_NAME?.trim() || legal.legalName,
     regNo: process.env.B2B_INVOICE_SELLER_REG?.trim() || legal.regNo,
     address: process.env.B2B_INVOICE_SELLER_ADDRESS?.trim() || legal.legalAddress,
+    ...(bank ? { bank } : {}),
   };
 }
 
+/** Rēķina „Pakalpojuma sniedzējs” bloka rindas (bez zīmola, to rāda logotips). */
 export function b2bTopupInvoiceSellerLines(seller = getB2bTopupInvoiceSeller()): string[] {
   return [
-    seller.brand,
     seller.legalName || "-",
-    seller.regNo ? `Reģ. Nr.: ${seller.regNo}` : null,
+    seller.regNo ? `Reg.nr. ${seller.regNo}` : null,
     seller.address || null,
+    seller.bank || null,
   ].filter((line): line is string => Boolean(line));
+}
+
+/** Adrese / banka zem vienas sniedzēja rindas (vārds un Reg.nr. jau ir provider line). */
+export function b2bTopupInvoiceSellerExtraLines(seller = getB2bTopupInvoiceSeller()): string[] {
+  return [seller.address || null, seller.bank || null].filter((line): line is string => Boolean(line));
+}
+
+/**
+ * Viena rinda, piem.:
+ * "Pakalpojuma sniedzējs: Nils Valainis, Reg.nr. 09118711109"
+ */
+export function b2bTopupInvoiceProviderLine(seller = getB2bTopupInvoiceSeller()): string {
+  const parts = [seller.legalName || "-", seller.regNo ? `Reg.nr. ${seller.regNo}` : null].filter(
+    (part): part is string => Boolean(part),
+  );
+  return `Pakalpojuma sniedzējs: ${parts.join(", ")}`;
 }
 
 export type B2bTopupInvoiceEmailVars = {
@@ -118,7 +131,8 @@ function esc(s: string): string {
 /** HTML rēķins testiem un priekšskatījumam. PDF lieto to pašu saturu. */
 export function buildB2bTopupInvoiceHtml(order: InvoiceOrderPayload): string {
   const seller = getB2bTopupInvoiceSeller();
-  const sellerLines = b2bTopupInvoiceSellerLines(seller);
+  const extraLines = b2bTopupInvoiceSellerExtraLines(seller);
+  const providerLine = b2bTopupInvoiceProviderLine(seller);
   const buyer = normalizeInvoiceBuyer({
     companyName: order.companyName,
     companyReg: order.companyReg,
@@ -133,21 +147,21 @@ export function buildB2bTopupInvoiceHtml(order: InvoiceOrderPayload): string {
     dateStyle: "long",
     timeStyle: "short",
   }).format(new Date(order.created * 1000));
-  const pvnNote = getB2bTopupInvoicePvnNote();
 
   return `<!DOCTYPE html>
 <html lang="lv">
 <head>
 <meta charset="utf-8"/>
-<title>Rēķins ${esc(order.invoiceNumber)} - IRISS</title>
+<title>Rēķins ${esc(order.invoiceNumber)} - ${esc(B2B_TOPUP_INVOICE_PDF_BRAND)}</title>
 </head>
-<body>
-<p>IRISS</p>
+<body style="font-family:Inter,sans-serif">
+<p style="font-size:24px;font-weight:800;margin:0"><span style="color:#000">PRO</span><span style="color:#0061D2">VIN</span></p>
 <p>Rēķins</p>
 <p>Rēķina Nr.: ${esc(order.invoiceNumber)}</p>
 <p>Datums: ${esc(invoiceDate)}</p>
 <h2>Pakalpojuma sniedzējs</h2>
-${sellerLines.map((line) => `<p>${esc(line)}</p>`).join("")}
+<p>${esc(providerLine)}</p>
+${extraLines.map((line) => `<p>${esc(line)}</p>`).join("")}
 <h2>Klients</h2>
 ${buyerLines.length ? buyerLines.map((line) => `<p>${esc(line)}</p>`).join("") : "<p>-</p>"}
 <table>
@@ -155,7 +169,6 @@ ${buyerLines.length ? buyerLines.map((line) => `<p>${esc(line)}</p>`).join("") :
 <tr><td>${esc(B2B_TOPUP_INVOICE.serviceLine)}</td><td>1</td><td>${esc(money)}</td></tr>
 </table>
 <p>Kopā ${esc(money)}</p>
-<p>${esc(pvnNote)}</p>
 </body>
 </html>`;
 }

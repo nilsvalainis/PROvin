@@ -16,7 +16,7 @@ import {
 import { describeDealerDataJob, type DealerDataJob } from "@/lib/dealer-data-job-types";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
-import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
+import { AdminPdfLangSplitButton, type PdfLockLang } from "@/components/admin/AdminPdfLangSplitButton";
 import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel";
 
 /**
@@ -38,6 +38,8 @@ type Props = {
   onGenerateDealerPdfEn?: () => void;
   onGenerateDealerPdfRu?: () => void;
   onGenerateDealerPdfDe?: () => void;
+  pdfLangLock?: PdfLockLang | null;
+  onUnlockPdfLang?: () => void;
   pdfProgressKey?: string | null;
   pdfProgressPct?: number | null;
 };
@@ -90,6 +92,8 @@ export function AdminDealerDataJobStrip({
   onGenerateDealerPdfEn,
   onGenerateDealerPdfRu,
   onGenerateDealerPdfDe,
+  pdfLangLock = null,
+  onUnlockPdfLang,
   pdfProgressKey = null,
   pdfProgressPct = null,
 }: Props) {
@@ -460,6 +464,8 @@ export function AdminDealerDataJobStrip({
                 ? `${pdfProgressPct ?? 0}%`
                 : null
             }
+            lockLang={pdfLangLock}
+            onUnlockLang={onUnlockPdfLang}
             toneClass="border border-slate-300 bg-white text-slate-700 shadow-none hover:bg-slate-50"
             dividerClass="border-slate-200"
             menuSide="down"
