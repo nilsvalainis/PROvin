@@ -5,7 +5,7 @@ import { isMarketplacePlatform } from "@/lib/marketplace/types";
 import { isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const session = await getAdminSession();
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     orderId,
     order: rec,
     explicit: true,
+    trigger: "manual",
     ...(platforms?.length ? { platforms } : {}),
   });
   return NextResponse.json(out, { status: out.ok ? 200 : out.blocked ? 409 : 400 });

@@ -22,6 +22,7 @@ import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
 import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { listingHistoryRecordId } from "@/lib/admin-change-history";
 import { IrissBrandLogoSlot } from "@/components/admin/IrissBrandLogoSlot";
@@ -107,6 +108,11 @@ import {
   type IrissPasutijumsListStatus,
   type IrissPasutijumsRecord,
 } from "@/lib/iriss-pasutijumi-types";
+import {
+  irissOrderRangeErrorFor,
+  irissOrderRangeView,
+  type IrissOrderRangeField,
+} from "@/lib/iriss-order-range-fields";
 
 const fieldClass =
   "min-h-[44px] w-full min-w-0 rounded-[10px] border border-[#e5e7eb] bg-white px-2.5 py-2 text-[16px] text-[#111827] outline-none transition focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 sm:min-h-[38px] sm:text-[13px]";
@@ -201,6 +207,7 @@ function Field({
   id,
   warning,
   type = "text",
+  className,
 }: {
   label: string;
   value: string;
@@ -211,9 +218,10 @@ function Field({
   id?: string;
   warning?: string | null;
   type?: string;
+  className?: string;
 }) {
   return (
-    <label className="block min-w-0">
+    <label className={`block min-w-0${className ? ` ${className}` : ""}`}>
       <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">{label}</span>
       <input
         id={id}
@@ -308,6 +316,7 @@ export function IrissOrderRoom({
   conflict,
   deleted,
   onPatch,
+  onPatchRange,
   onPatchRecord,
   onInactiveReason,
   onSetStatus,
@@ -355,6 +364,7 @@ export function IrissOrderRoom({
   conflict: ReactNode;
   deleted: boolean;
   onPatch: <K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => void;
+  onPatchRange: (field: IrissOrderRangeField, raw: string) => void;
   onPatchRecord: (patch: Partial<IrissPasutijumsRecord>) => void;
   onInactiveReason: (value: string) => void;
   onSetStatus: (status: IrissPasutijumsListStatus) => void;
@@ -854,46 +864,52 @@ export function IrissOrderRoom({
           <div className="min-w-0 space-y-3">
             <section className={cardClass}>
               <CardTitle>Transportlīdzekļa specifikācija</CardTitle>
-              <div className="iriss-mobile-kv grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                <label className="block min-w-0">
-                  <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Statuss</span>
-                  <select
-                    className={fieldClass}
-                    value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
-                    aria-label="Statuss specifikācijā"
-                    onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
-                  >
-                    {IRISS_PASUTIJUMS_PICKER_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {IRISS_PASUTIJUMS_PICKER_STATUS_LV[status]}
-                      </option>
-                    ))}
-                  </select>
-                  {rec.listStatus === "inactive" ? (
-                    <input
-                      className={`${fieldClass} mt-1.5`}
-                      value={rec.inactiveReason ?? ""}
-                      placeholder="Iemesls (neobligāti)"
-                      aria-label="Neaktīvs iemesls"
-                      onChange={(e) => onInactiveReason(e.target.value)}
-                    />
-                  ) : null}
-                </label>
-                <Field label="Marka / modelis" value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
-                <Field label="Kopējais budžets" value={rec.totalBudget} onChange={(value) => onPatch("totalBudget", value)} />
-                <Field label="Ražošanas gadi" value={rec.productionYears} placeholder="piem., 2018-2021" onChange={(value) => onPatch("productionYears", value)} />
-                <Field label="Dzinēja tips" value={rec.engineType} onChange={(value) => onPatch("engineType", value)} />
-                <Field label="Ātrumkārba" value={rec.transmission} onChange={(value) => onPatch("transmission", value)} />
-                <Field label="Virsbūves tips" value={rec.bodyType} placeholder="piem., hečbeks, SUV" onChange={(value) => onPatch("bodyType", value)} />
-                <Field label="Piedziņas tips" value={rec.driveType} placeholder="piem., priekšējā, 4x4" onChange={(value) => onPatch("driveType", value)} />
-                <Field label="Sēdvietu skaits" value={rec.seatCount} placeholder="piem., 5" onChange={(value) => onPatch("seatCount", value)} />
-                <Field label="Maks. nobraukums" value={rec.maxMileage} onChange={(value) => onPatch("maxMileage", value)} />
-                <Field label="Vēlamās krāsas" value={rec.preferredColors} onChange={(value) => onPatch("preferredColors", value)} />
-                <Field label="Nevēlamās krāsas" value={rec.nonPreferredColors} onChange={(value) => onPatch("nonPreferredColors", value)} />
-                <Field label="Jauda (kW)" value={rec.powerKw} placeholder="piem., 180-245" onChange={(value) => onPatch("powerKw", value)} />
-                <Field label="Bojājumu tolerance" value={rec.damageTolerance} placeholder="piem., tikai kosmētika" onChange={(value) => onPatch("damageTolerance", value)} />
-                <Field label="Valstis" value={rec.preferredCountries} placeholder="piem., DE, NL, BE" onChange={(value) => onPatch("preferredCountries", value)} />
-                <Field label="Salona apdare" value={rec.interiorFinish} onChange={(value) => onPatch("interiorFinish", value)} />
+              <div className="iriss-mobile-kv iriss-spec-fields">
+                <div className="iriss-spec-top">
+                  <label className="block min-w-0">
+                    <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Statuss</span>
+                    <select
+                      className={fieldClass}
+                      value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
+                      aria-label="Statuss specifikācijā"
+                      onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
+                    >
+                      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {IRISS_PASUTIJUMS_PICKER_STATUS_LV[status]}
+                        </option>
+                      ))}
+                    </select>
+                    {rec.listStatus === "inactive" ? (
+                      <input
+                        className={`${fieldClass} mt-1.5`}
+                        value={rec.inactiveReason ?? ""}
+                        placeholder="Iemesls (neobligāti)"
+                        aria-label="Neaktīvs iemesls"
+                        onChange={(e) => onInactiveReason(e.target.value)}
+                      />
+                    ) : null}
+                  </label>
+                  <Field label="Marka / modelis" value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
+                </div>
+                <IrissSpecDiapazoniBlock
+                  ranges={irissOrderRangeView(rec)}
+                  onPatchRange={onPatchRange}
+                  rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
+                  inputClassName={fieldClass}
+                />
+                <div className="iriss-spec-rest">
+                  <Field label="Dzinēja tips" value={rec.engineType} onChange={(value) => onPatch("engineType", value)} />
+                  <Field label="Ātrumkārba" value={rec.transmission} onChange={(value) => onPatch("transmission", value)} />
+                  <Field label="Virsbūves tips" value={rec.bodyType} placeholder="piem., hečbeks, SUV" onChange={(value) => onPatch("bodyType", value)} />
+                  <Field label="Piedziņas tips" value={rec.driveType} placeholder="piem., priekšējā, 4x4" onChange={(value) => onPatch("driveType", value)} />
+                  <Field label="Sēdvietu skaits" value={rec.seatCount} placeholder="piem., 5" onChange={(value) => onPatch("seatCount", value)} />
+                  <Field label="Vēlamās krāsas" value={rec.preferredColors} onChange={(value) => onPatch("preferredColors", value)} />
+                  <Field label="Nevēlamās krāsas" value={rec.nonPreferredColors} onChange={(value) => onPatch("nonPreferredColors", value)} />
+                  <Field label="Bojājumu tolerance" value={rec.damageTolerance} placeholder="piem., tikai kosmētika" onChange={(value) => onPatch("damageTolerance", value)} />
+                  <Field label="Valstis" value={rec.preferredCountries} placeholder="piem., DE, NL, BE" onChange={(value) => onPatch("preferredCountries", value)} />
+                  <Field className="iriss-spec-full" label="Salona apdare" value={rec.interiorFinish} onChange={(value) => onPatch("interiorFinish", value)} />
+                </div>
               </div>
               <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
             </section>
@@ -1118,7 +1134,7 @@ export function IrissOrderRoom({
             </Link>
           </div>
           <p className="text-[12px] leading-snug text-[#6b7280]">
-            Tie paši jau nolasītie auto, kas Klientu filtros ir piesaistīti šim pasūtījumam. Izsoles nāk no saišu nolasīšanas. mobile.de un AutoScout24 tikai ar pogu Ielādēt.
+            Tie paši jau nolasītie auto, kas Klientu filtros ir piesaistīti šim pasūtījumam. Izsoles nāk no saišu nolasīšanas. mobile.de un AutoScout24 nāk no ielādes zemāk.
           </p>
           <IrissMarketplaceLoadPanel orderId={rec.id} />
           {listingsCache === "off" ? (

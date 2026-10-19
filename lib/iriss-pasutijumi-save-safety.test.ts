@@ -121,6 +121,30 @@ describe("mergeIrissPasutijumsRecords", () => {
     expect(merged.criteria).toBeUndefined();
   });
 
+  it("persists operator from-to criteria onto a legacy record", () => {
+    const server = rec("a", { brandModel: "Volvo XC60", engineType: "dīzelis" });
+    const criteria = emptyIrissCriteria();
+    criteria.filters[0]!.useForm = true;
+    criteria.filters[0]!.make = { value: ["Volvo"], manual: "", source: "form" };
+    criteria.filters[0]!.models = { value: ["XC60"], manual: "", source: "form" };
+    criteria.filters[0]!.yearFrom = { value: 2018, manual: "", source: "form" };
+    criteria.filters[0]!.yearTo = { value: 2021, manual: "", source: "form" };
+    criteria.filters[0]!.budgetFrom = { value: 10000, manual: "", source: "form" };
+    criteria.filters[0]!.budgetTo = { value: 22000, manual: "", source: "form" };
+    criteria.filters[0]!.mileageTo = { value: 150000, manual: "", source: "form" };
+    const local = {
+      ...server,
+      productionYears: "2018-2021",
+      totalBudget: "10000-22000",
+      maxMileage: "150000",
+      criteria,
+    };
+    const merged = mergeIrissPasutijumsRecords(server, local);
+    expect(merged.criteria?.filters[0]?.budgetFrom.value).toBe(10000);
+    expect(merged.criteria?.filters[0]?.yearTo.value).toBe(2021);
+    expect(merged.brandModel).toBe("Volvo XC60");
+  });
+
   it("keeps criteria that was already stored and ignores a fresh migration", () => {
     const stored = emptyIrissCriteria();
     stored.filters[0]!.label = "Jau saglabāts";
@@ -131,7 +155,7 @@ describe("mergeIrissPasutijumsRecords", () => {
       criteria: readIrissCriteria({ engineType: "benzīns" }),
     };
     const merged = mergeIrissPasutijumsRecords(server, local);
-    expect(merged.criteria).toBe(stored);
+    expect(merged.criteria).toEqual(stored);
     expect(merged.criteria?.filters[0]?.label).toBe("Jau saglabāts");
     expect(merged.engineType).toBe("benzīns");
   });

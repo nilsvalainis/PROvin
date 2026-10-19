@@ -1,14 +1,27 @@
 import { assignMarketplaceGroupIds } from "@/lib/marketplace/dedupe";
 import {
   decideMarketplaceBudget,
+  marketplaceAutoMaxItemsPerProvider,
+  marketplaceAutoMonthlyUsdCap,
+  MARKETPLACE_LOADS_DISABLED_REASON,
+  marketplaceLoadsEnabled,
+  MARKETPLACE_RUNS_KEEP,
   marketplaceMaxItemsPerProvider,
   marketplaceMonthKey,
   marketplaceMonthlyUsdCap,
+  usageSpentUsd,
+  usageSpentUsdByTrigger,
 } from "@/lib/marketplace/cost-caps";
 import { normalizeMarketplaceListings } from "@/lib/marketplace/normalize";
 import { attachMarketplacePriceCompare } from "@/lib/marketplace/price-compare";
 import { marketplaceProviders } from "@/lib/marketplace/providers";
-import { marketplaceQueryFromOrder, marketplaceOrderHasFetchBounds, type MarketplaceOrderCriteria } from "@/lib/marketplace/query-from-order";
+import {
+  marketplaceQueryFromOrder,
+  marketplaceOrderHasFetchBounds,
+  marketplaceExtraRangeMissing,
+  marketplaceStrictMissingFields,
+  type MarketplaceOrderCriteria,
+} from "@/lib/marketplace/query-from-order";
 import {
   readMarketplaceListingsState,
   readMarketplaceUsageMonth,
@@ -17,9 +30,11 @@ import {
 } from "@/lib/marketplace/store";
 import { marketplaceListingExpiresAt, marketplaceListingVehicleId } from "@/lib/marketplace/to-listing-vehicle";
 import {
+  MARKETPLACE_TOO_BROAD_ERROR,
   MARKETPLACE_TTL_DAYS,
   type ListingProvider,
   type MarketplaceLoadResult,
+  type MarketplaceLoadTrigger,
   type MarketplacePlatform,
   type MarketplaceProviderId,
   type MarketplaceQuery,
@@ -32,8 +47,11 @@ export type MarketplaceLoadInput = {
   order: MarketplaceOrderCriteria;
   platforms?: MarketplacePlatform[];
   maxItems?: number;
-  /** Obligāti: maksas avots tikai pēc operatora pogas. */
-  explicit: true;
+  sortNewest?: boolean;
+  /** auto: cron. manual: tikai pēc pogas (explicit: true). */
+  trigger?: MarketplaceLoadTrigger;
+  /** Manuālajai ielādei obligāti true. Cron to nesūta. */
+  explicit?: boolean;
   now?: string;
   providers?: ListingProvider[];
 };
@@ -69,6 +87,8 @@ export async function previewMarketplaceLoad(input: {
     ...preview,
     budget,
     queryReady: marketplaceOrderHasFetchBounds(input.order),
+    missingFields: marketplaceStrictMissingFields(input.order),
+    needsOneOfExtra: marketplaceExtraRangeMissing(input.order),
     usageMonth: usage.month,
   };
 }
@@ -93,11 +113,16 @@ function mergeStored(previous: readonly MarketplaceStoredListing[], incoming: re
   return [...map.values()];
 }
 
+function resolveLoadTrigger(input: MarketplaceLoadInput): MarketplaceLoadTrigger {
+  return input.trigger === "auto" ? "auto" : "manual";
+}
+
 /**
- * Ielādē tikai pēc explicit pogas. Nekad no cron / lapas atvēršanas.
+ * Manuāli: tikai pēc pogas (explicit: true). Auto: tikai no cron sweep.
  */
 export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Promise<MarketplaceLoadResult> {
-  if (input.explicit !== true) {
+  const trigger = resolveLoadTrigger(input);
+  if (trigger === "manual" && input.explicit !== true) {
     return { ok: false, blocked: true, error: "explicit_required", added: 0, grouped: 0, estimatedUsd: 0, remainingMonthlyUsd: 0 };
   }
   const orderId = input.orderId.trim();
@@ -105,9 +130,34 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     return { ok: false, error: "order_required", added: 0, grouped: 0, estimatedUsd: 0, remainingMonthlyUsd: 0 };
   }
   if (!marketplaceOrderHasFetchBounds(input.order)) {
-    return { ok: false, blocked: true, error: "criteria_empty", added: 0, grouped: 0, estimatedUsd: 0, remainingMonthlyUsd: 0 };
+    return {
+      ok: false,
+      blocked: true,
+      error: MARKETPLACE_TOO_BROAD_ERROR,
+      missingFields: marketplaceStrictMissingFields(input.order),
+      needsOneOfExtra: marketplaceExtraRangeMissing(input.order),
+      added: 0,
+      grouped: 0,
+      estimatedUsd: 0,
+      remainingMonthlyUsd: 0,
+    };
   }
-  const preview = await previewMarketplaceLoad(input);
+  if (!marketplaceLoadsEnabled()) {
+    return {
+      ok: false,
+      blocked: true,
+      error: MARKETPLACE_LOADS_DISABLED_REASON,
+      added: 0,
+      grouped: 0,
+      estimatedUsd: 0,
+      remainingMonthlyUsd: 0,
+      chargedUsd: 0,
+      monthlyUsedUsd: 0,
+    };
+  }
+  const maxItems =
+    input.maxItems ?? (trigger === "auto" ? marketplaceAutoMaxItemsPerProvider() : marketplaceMaxItemsPerProvider());
+  const preview = await previewMarketplaceLoad({ ...input, maxItems });
   if (!preview.budget.allowed) {
     return {
       ok: false,
@@ -118,6 +168,22 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
       estimatedUsd: preview.budget.estimatedUsd,
       remainingMonthlyUsd: preview.budget.remainingMonthlyUsd,
     };
+  }
+  if (trigger === "auto") {
+    const autoCap = marketplaceAutoMonthlyUsdCap();
+    const autoUsed = usageSpentUsdByTrigger(await readMarketplaceUsageMonth(marketplaceMonthKey(new Date(input.now ?? Date.now()))), "auto");
+    const remainingAuto = Math.round((autoCap - autoUsed) * 1000) / 1000;
+    if (preview.budget.estimatedUsd > remainingAuto + 1e-9) {
+      return {
+        ok: false,
+        blocked: true,
+        error: "budžets sasniegts",
+        added: 0,
+        grouped: 0,
+        estimatedUsd: preview.budget.estimatedUsd,
+        remainingMonthlyUsd: preview.budget.remainingMonthlyUsd,
+      };
+    }
   }
   const unconfigured = preview.estimates.filter((e) => !e.configured);
   if (unconfigured.length === preview.estimates.length) {
@@ -138,6 +204,7 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
   const collected = [];
   let chargedUsd = 0;
   const notes: string[] = [];
+  const providerCharges: Array<{ providerId: MarketplaceProviderId; usd: number; items: number }> = [];
   for (const provider of preview.providers) {
     const estimate = preview.estimates.find((e) => e.providerId === provider.id && e.platform === provider.platform);
     if (!estimate?.configured) {
@@ -145,10 +212,20 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
       continue;
     }
     try {
-      const raw = await provider.search(query, { maxItems: preview.maxItems, maxUsd: estimate.maxUsd });
-      const normalized = normalizeMarketplaceListings(provider.platform, provider.id, raw, now);
+      const found = await provider.search(query, {
+        maxItems: preview.maxItems,
+        maxUsd: preview.budget.perRunCapUsd,
+        ...(input.sortNewest ? { sortNewest: true } : {}),
+      });
+      const normalized = normalizeMarketplaceListings(provider.platform, provider.id, found.items, now);
       collected.push(...normalized);
-      chargedUsd += estimate.maxUsd;
+      const actual = Number.isFinite(found.chargedUsd) ? found.chargedUsd : 0;
+      chargedUsd += actual;
+      providerCharges.push({
+        providerId: provider.id,
+        usd: actual,
+        items: normalized.length,
+      });
     } catch (e) {
       notes.push(`${provider.label}: ${e instanceof Error ? e.message : "kļūda"}`);
     }
@@ -160,6 +237,23 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
   const previous = await readMarketplaceListingsState();
   const nextItems = mergeStored(previous.items, stored);
   const runId = `mkt-${now.replace(/[:.]/g, "-")}-${orderId.slice(0, 8)}`;
+  const usage = await readMarketplaceUsageMonth(marketplaceMonthKey(new Date(now)));
+  usage.capUsd = marketplaceMonthlyUsdCap();
+  let monthUsd = usageSpentUsd(usage);
+  const chargedRounded = Math.round(chargedUsd * 1000) / 1000;
+  for (const charge of providerCharges) {
+    monthUsd = Math.round((monthUsd + charge.usd) * 1000) / 1000;
+    usage.entries.push({
+      runId,
+      orderId,
+      providerId: charge.providerId,
+      items: stored.filter((s) => s.providerId === charge.providerId).length,
+      usd: charge.usd,
+      monthUsd,
+      at: now,
+      trigger,
+    });
+  }
   const run: MarketplaceRunRecord = {
     id: runId,
     orderId,
@@ -169,20 +263,22 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     maxItems: preview.maxItems,
     maxUsd: preview.budget.perRunCapUsd,
     estimatedUsd: preview.budget.estimatedUsd,
-    chargedUsd: Math.round(chargedUsd * 1000) / 1000,
+    chargedUsd: chargedRounded,
+    monthUsd,
     itemCount: collected.length,
     keptCount: stored.length,
     rejectedCount: Math.max(0, collected.length - stored.length),
     startedAt,
     finishedAt: new Date().toISOString(),
     status: stored.length > 0 ? (notes.length ? "partial" : "ok") : notes.length ? "failed" : "ok",
+    trigger,
     note: notes.join(" "),
   };
   const write = await writeMarketplaceListingsState({
     version: 1,
     updatedAt: run.finishedAt,
     items: nextItems,
-    runs: [...previous.runs, run].slice(-80),
+    runs: [...previous.runs, run].slice(-MARKETPLACE_RUNS_KEEP),
   });
   if (!write.ok) {
     return {
@@ -195,18 +291,6 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     };
   }
 
-  const usage = await readMarketplaceUsageMonth(marketplaceMonthKey(new Date(now)));
-  usage.capUsd = marketplaceMonthlyUsdCap();
-  for (const estimate of preview.estimates.filter((e) => e.configured)) {
-    usage.entries.push({
-      runId,
-      orderId,
-      providerId: estimate.providerId,
-      items: stored.filter((s) => s.providerId === estimate.providerId).length,
-      usd: estimate.maxUsd,
-      at: now,
-    });
-  }
   await writeMarketplaceUsageMonth(usage);
 
   const groupCount = new Set(stored.map((s) => s.groupId)).size;
@@ -216,6 +300,8 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     added: stored.length,
     grouped: stored.length - groupCount,
     estimatedUsd: preview.budget.estimatedUsd,
+    chargedUsd: chargedRounded,
+    monthlyUsedUsd: monthUsd,
     remainingMonthlyUsd: Math.round((preview.budget.remainingMonthlyUsd - chargedUsd) * 1000) / 1000,
   };
 }

@@ -1,7 +1,10 @@
+import { migrateIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import type { IrissCriteriaFilter, IrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import {
   emptyMarketplaceQuery,
-  marketplaceQueryHasBounds,
+  MARKETPLACE_TOO_BROAD_ERROR,
+  marketplaceQueryHasMatchBounds,
+  marketplaceQueryHasStrictBounds,
   type MarketplaceQuery,
 } from "@/lib/marketplace/types";
 
@@ -12,6 +15,8 @@ export type MarketplaceOrderCriteria = {
   totalBudget?: string;
   engineType?: string;
   transmission?: string;
+  bodyType?: string;
+  driveType?: string;
   powerKw?: string;
   preferredCountries?: string;
   criteria?: IrissCriteriaV1 | null;
@@ -22,11 +27,30 @@ function digits(raw: string | undefined, max = 12): number | null {
   return Number.isFinite(n) && n > 0 && String(n).length <= max ? n : null;
 }
 
-function yearPair(raw: string | undefined): { from: number | null; to: number | null } {
-  const text = String(raw ?? "");
-  const years = [...text.matchAll(/(?:19|20)\d{2}/g)].map((m) => Number.parseInt(m[0], 10)).filter((n) => n >= 1980 && n <= 2035);
-  if (years.length === 0) return { from: null, to: null };
-  return { from: Math.min(...years), to: Math.max(...years) };
+function firstEnabledFormFilter(criteria: IrissCriteriaV1 | null | undefined): IrissCriteriaFilter | null {
+  if (!criteria?.filters?.length) return null;
+  return criteria.filters.find((f) => f.enabled && f.useForm) ?? criteria.filters.find((f) => f.enabled) ?? null;
+}
+
+function effectiveFilter(order: MarketplaceOrderCriteria): IrissCriteriaFilter {
+  return firstEnabledFormFilter(order.criteria) ?? migrateIrissCriteria(order).filters[0]!;
+}
+
+function fuelLabel(filter: IrissCriteriaFilter, fallback: string): string {
+  const groups = filter.fuel.value.map((f) => f.group);
+  if (groups.includes("diesel")) return "diesel";
+  if (groups.includes("petrol")) return "petrol";
+  if (groups.includes("hybrid")) return "hybrid";
+  if (groups.includes("electric")) return "electric";
+  if (groups.includes("gas")) return "gas";
+  return fallback.trim();
+}
+
+function gearboxLabel(filter: IrissCriteriaFilter, fallback: string): string {
+  const groups = filter.gearbox.value.map((g) => g.group);
+  if (groups.includes("automatic")) return "automatic";
+  if (groups.includes("manual")) return "manual";
+  return fallback.trim();
 }
 
 function splitBrandModel(brandModel: string): { make: string; model: string } {
@@ -40,55 +64,104 @@ function splitBrandModel(brandModel: string): { make: string; model: string } {
   return { make: parts[0]!, model: parts.slice(1).join(" ") };
 }
 
-function firstEnabledFormFilter(criteria: IrissCriteriaV1 | null | undefined): IrissCriteriaFilter | null {
-  if (!criteria?.filters?.length) return null;
-  return criteria.filters.find((f) => f.enabled && f.useForm) ?? criteria.filters.find((f) => f.enabled) ?? null;
-}
-
-function fuelLabel(filter: IrissCriteriaFilter | null, fallback: string): string {
-  const groups = filter?.fuel.value.map((f) => f.group) ?? [];
-  if (groups.includes("diesel")) return "diesel";
-  if (groups.includes("petrol")) return "petrol";
-  if (groups.includes("hybrid")) return "hybrid";
-  if (groups.includes("electric")) return "electric";
-  if (groups.includes("gas")) return "gas";
-  return fallback.trim();
-}
-
-function gearboxLabel(filter: IrissCriteriaFilter | null, fallback: string): string {
-  const groups = filter?.gearbox.value.map((g) => g.group) ?? [];
-  if (groups.includes("automatic")) return "automatic";
-  if (groups.includes("manual")) return "manual";
-  return fallback.trim();
-}
-
 /** Pasūtījuma forma / IrissCriteriaV1 -> vienots tirgus vaicājums. */
 export function marketplaceQueryFromOrder(order: MarketplaceOrderCriteria): MarketplaceQuery {
-  const filter = firstEnabledFormFilter(order.criteria);
+  const filter = effectiveFilter(order);
   const brand = splitBrandModel(order.brandModel ?? "");
-  const years = yearPair(order.productionYears);
   const q = emptyMarketplaceQuery();
-  q.make = (filter?.make.value[0] ?? brand.make).trim();
-  q.model = (filter?.models.value[0] ?? brand.model).trim();
-  q.yearFrom = filter?.yearFrom.value ?? years.from;
-  q.yearTo = filter?.yearTo.value ?? years.to;
-  q.mileageFrom = filter?.mileageFrom.value ?? null;
-  q.mileageTo = filter?.mileageTo.value ?? digits(order.maxMileage);
-  q.priceFrom = filter?.budgetFrom.value ?? null;
-  q.priceTo = filter?.budgetTo.value ?? digits(order.totalBudget, 7);
+  q.make = (filter.make.value[0] ?? brand.make).trim();
+  q.model = (filter.models.value[0] ?? brand.model).trim();
+  q.yearFrom = filter.yearFrom.value;
+  q.yearTo = filter.yearTo.value;
+  q.mileageFrom = filter.mileageFrom.value;
+  q.mileageTo = filter.mileageTo.value ?? digits(order.maxMileage);
+  q.priceFrom = filter.budgetFrom.value;
+  q.priceTo = filter.budgetTo.value ?? digits(order.totalBudget, 7);
   q.fuel = fuelLabel(filter, order.engineType ?? "");
   q.gearbox = gearboxLabel(filter, order.transmission ?? "");
-  q.powerFromKw = filter?.kwFrom.value ?? null;
-  q.powerToKw = filter?.kwTo.value ?? digits(order.powerKw);
-  q.countries = filter?.countries.value.length ? [...filter.countries.value] : [];
+  q.powerFromKw = filter.kwFrom.value;
+  q.powerToKw = filter.kwTo.value ?? digits(order.powerKw);
+  q.displacementFromCc = filter.ccFrom.value;
+  q.displacementToCc = filter.ccTo.value;
+  q.body = (filter.bodyTypes.value[0] ?? order.bodyType ?? "").trim();
+  q.drive = (filter.drive.value[0] ?? order.driveType ?? "").trim();
+  q.countries = filter.countries.value.length ? [...filter.countries.value] : [];
   if (!q.countries.length && (order.preferredCountries ?? "").trim()) {
     q.countries = order.preferredCountries!.split(/[,;/]+/).map((s) => s.trim()).filter(Boolean).slice(0, 8);
   }
   return q;
 }
 
+export const MARKETPLACE_STRICT_FIELD_LABELS = {
+  make: "marka",
+  model: "modelis",
+  priceFrom: "cena no",
+  priceTo: "cena līdz",
+  yearFrom: "gadi no",
+  yearTo: "gadi līdz",
+} as const;
+
+export const MARKETPLACE_EXTRA_RANGE_MESSAGE = "Vēl vajag vienu no: nobraukums līdz, tilpums vai jauda.";
+
+function extraRangeOk(order: MarketplaceOrderCriteria): boolean {
+  const q = marketplaceQueryFromOrder(order);
+  const mileageOk = q.mileageTo != null && (q.mileageFrom == null || q.mileageFrom <= q.mileageTo);
+  const ccOk =
+    q.displacementFromCc != null &&
+    q.displacementToCc != null &&
+    q.displacementFromCc <= q.displacementToCc;
+  const powerOk = q.powerFromKw != null && q.powerToKw != null && q.powerFromKw <= q.powerToKw;
+  return mileageOk || ccOk || powerOk;
+}
+
+export function marketplaceExtraRangeMissing(order: MarketplaceOrderCriteria): boolean {
+  return !extraRangeOk(order);
+}
+
+/** Tikai marka, modelis, cena, gadi. Extra “viens no” šeit nav. */
+export function marketplaceStrictMissingFields(order: MarketplaceOrderCriteria): string[] {
+  const q = marketplaceQueryFromOrder(order);
+  const missing: string[] = [];
+  if (!q.make.trim()) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.make);
+  if (!q.model.trim()) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.model);
+  if (q.priceFrom == null) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.priceFrom);
+  if (q.priceTo == null) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.priceTo);
+  if (q.priceFrom != null && q.priceTo != null && q.priceFrom > q.priceTo) {
+    if (!missing.includes(MARKETPLACE_STRICT_FIELD_LABELS.priceFrom)) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.priceFrom);
+    if (!missing.includes(MARKETPLACE_STRICT_FIELD_LABELS.priceTo)) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.priceTo);
+  }
+  if (q.yearFrom == null) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.yearFrom);
+  if (q.yearTo == null) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.yearTo);
+  if (q.yearFrom != null && q.yearTo != null && q.yearFrom > q.yearTo) {
+    if (!missing.includes(MARKETPLACE_STRICT_FIELD_LABELS.yearFrom)) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.yearFrom);
+    if (!missing.includes(MARKETPLACE_STRICT_FIELD_LABELS.yearTo)) missing.push(MARKETPLACE_STRICT_FIELD_LABELS.yearTo);
+  }
+  return missing;
+}
+
+export function marketplaceTooBroadSkipReason(order: MarketplaceOrderCriteria | null): string {
+  if (!order) return "nav kritēriju";
+  const missing = marketplaceStrictMissingFields(order);
+  const extra = marketplaceExtraRangeMissing(order);
+  if (!missing.length && !extra) return "";
+  if (missing.length && extra) {
+    return `${MARKETPLACE_TOO_BROAD_ERROR} (trūkst: ${missing.join(", ")}). ${MARKETPLACE_EXTRA_RANGE_MESSAGE}`;
+  }
+  if (missing.length) return `${MARKETPLACE_TOO_BROAD_ERROR} (trūkst: ${missing.join(", ")})`;
+  return `${MARKETPLACE_TOO_BROAD_ERROR}. ${MARKETPLACE_EXTRA_RANGE_MESSAGE}`;
+}
+
+export function marketplaceMissingFieldsMessage(missing: readonly string[]): string {
+  if (!missing.length) return "";
+  return `Ielādēt nav iespējams. Aizpildi: ${missing.join(", ")}.`;
+}
+
+export function marketplaceMissingExtraRangeMessage(missing: boolean): string {
+  return missing ? MARKETPLACE_EXTRA_RANGE_MESSAGE : "";
+}
+
 export function marketplaceOrderHasFetchBounds(order: MarketplaceOrderCriteria): boolean {
-  return marketplaceQueryHasBounds(marketplaceQueryFromOrder(order));
+  return marketplaceQueryHasStrictBounds(marketplaceQueryFromOrder(order));
 }
 
 function fold(raw: string): string {
@@ -139,6 +212,9 @@ export type MarketplaceMatchVehicle = {
   fuel?: string;
   transmission?: string;
   powerKw?: string;
+  bodyType?: string;
+  driveType?: string;
+  displacementCc?: number | null;
   priceCurrent?: number | null;
   priceStart?: number | null;
   priceBuyNow?: number | null;
@@ -162,9 +238,9 @@ function vehiclePrice(v: MarketplaceMatchVehicle): number | null {
   return null;
 }
 
-/** Tas pats filtrs, ko lieto pēc ielādes: marka/modelis/gads/km/cena/degviela/kārba. */
+/** Tas pats filtrs, ko lieto pēc ielādes: marka/modelis/gads/km/cena/degviela/kārba/jauda/tilpums. */
 export function marketplaceVehicleMatchesQuery(v: MarketplaceMatchVehicle, q: MarketplaceQuery): boolean {
-  if (!marketplaceQueryHasBounds(q)) return false;
+  if (!marketplaceQueryHasMatchBounds(q)) return false;
   const hay = `${v.manufacturer ?? ""} ${v.title ?? ""}`;
   if (q.make && hay.trim() && !includesLoose(hay, q.make)) return false;
   if (q.model && hay.trim() && !includesLoose(hay, q.model)) return false;
@@ -172,6 +248,7 @@ export function marketplaceVehicleMatchesQuery(v: MarketplaceMatchVehicle, q: Ma
   if (!inRange(v.mileageKm ?? null, q.mileageFrom, q.mileageTo)) return false;
   if (!inRange(vehiclePrice(v), q.priceFrom, q.priceTo)) return false;
   if (!inRange(vehiclePower(v), q.powerFromKw, q.powerToKw)) return false;
+  if (!inRange(v.displacementCc ?? null, q.displacementFromCc, q.displacementToCc)) return false;
   if (q.fuel && (v.fuel ?? "").trim() && fuelAlias(v.fuel ?? "") !== fuelAlias(q.fuel) && !includesLoose(v.fuel ?? "", q.fuel)) {
     return false;
   }
@@ -181,6 +258,12 @@ export function marketplaceVehicleMatchesQuery(v: MarketplaceMatchVehicle, q: Ma
     gearboxAlias(v.transmission ?? "") !== gearboxAlias(q.gearbox) &&
     !includesLoose(v.transmission ?? "", q.gearbox)
   ) {
+    return false;
+  }
+  if (q.body && (v.bodyType ?? "").trim() && !includesLoose(v.bodyType ?? "", q.body) && !includesLoose(hay, q.body)) {
+    return false;
+  }
+  if (q.drive && (v.driveType ?? "").trim() && !includesLoose(v.driveType ?? "", q.drive) && !includesLoose(hay, q.drive)) {
     return false;
   }
   return true;

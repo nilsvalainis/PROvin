@@ -1,9 +1,9 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadMarketplaceForOrder, previewMarketplaceLoad } from "@/lib/marketplace/load";
-import { readMarketplaceListingsState } from "@/lib/marketplace/store";
+import { readMarketplaceListingsState, readMarketplaceUsageMonth } from "@/lib/marketplace/store";
 import type { ListingProvider, MarketplaceRawListing } from "@/lib/marketplace/types";
 
 const RAW: MarketplaceRawListing[] = [
@@ -57,7 +57,7 @@ function mockProvider(platform: "mobilede" | "autoscout24", raw: MarketplaceRawL
       usdPerThousand: 0.1,
       configured: true,
     }),
-    search: async () => raw,
+    search: async () => ({ items: raw, chargedUsd: 0.01 }),
   };
 }
 
@@ -67,10 +67,12 @@ describe("loadMarketplaceForOrder", () => {
   beforeEach(async () => {
     dir = await mkdtemp(path.join(os.tmpdir(), "iriss-mkt-"));
     process.env.ADMIN_IRISS_MARKETPLACE_DIR = dir;
+    process.env.MARKETPLACE_LOADS_ENABLED = "true";
   });
 
   afterEach(async () => {
     delete process.env.ADMIN_IRISS_MARKETPLACE_DIR;
+    delete process.env.MARKETPLACE_LOADS_ENABLED;
     await rm(dir, { recursive: true, force: true });
   });
 
@@ -78,7 +80,7 @@ describe("loadMarketplaceForOrder", () => {
     brandModel: "Volvo XC60",
     productionYears: "2018-2020",
     maxMileage: "150000",
-    totalBudget: "25000",
+    totalBudget: "10000-25000",
     engineType: "diesel",
     transmission: "automatic",
   };
@@ -100,11 +102,23 @@ describe("loadMarketplaceForOrder", () => {
     expect(state.items.some((i) => i.platform === "autoscout24")).toBe(true);
   });
 
+  it("allows an auto trigger without the operator explicit flag", async () => {
+    const loaded = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order,
+      trigger: "auto",
+      maxItems: 40,
+      providers: [mockProvider("mobilede", RAW)],
+    });
+    expect(loaded.ok).toBe(true);
+    const state = await readMarketplaceListingsState();
+    expect(state.runs.some((r) => r.trigger === "auto")).toBe(true);
+  });
+
   it("blocks an implicit call and an empty search", async () => {
     const implicit = await loadMarketplaceForOrder({
       orderId: "00000000-0000-4000-8000-000000000001",
       order,
-      // @ts-expect-error explicit is required
       explicit: false,
       providers: [mockProvider("mobilede", RAW)],
     });
@@ -116,7 +130,23 @@ describe("loadMarketplaceForOrder", () => {
       explicit: true,
       providers: [mockProvider("mobilede", RAW)],
     });
-    expect(empty.error).toBe("criteria_empty");
+    expect(empty.error).toBe("par plāši kritēriji");
+    expect(empty.missingFields?.length).toBeGreaterThan(0);
+    expect(empty.missingFields?.join(",")).not.toMatch(/nobraukums|tilpums|jauda/);
+    expect(empty.needsOneOfExtra).toBe(true);
+    const noExtra = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order: {
+        brandModel: "Volvo XC60",
+        productionYears: "2018-2020",
+        totalBudget: "10000-25000",
+      },
+      explicit: true,
+      providers: [mockProvider("mobilede", RAW)],
+    });
+    expect(noExtra.ok).toBe(false);
+    expect(noExtra.missingFields).toEqual([]);
+    expect(noExtra.needsOneOfExtra).toBe(true);
   });
 
   it("shows the estimated max cost before any paid call", async () => {
@@ -126,5 +156,40 @@ describe("loadMarketplaceForOrder", () => {
     });
     expect(preview.budget.estimatedUsd).toBeGreaterThan(0);
     expect(preview.queryReady).toBe(true);
+  });
+
+  it("does not call provider search when MARKETPLACE_LOADS_ENABLED is not true", async () => {
+    delete process.env.MARKETPLACE_LOADS_ENABLED;
+    const search = vi.fn(async () => ({ items: RAW, chargedUsd: 0 }));
+    const provider = { ...mockProvider("mobilede", RAW), search };
+    const out = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order,
+      explicit: true,
+      providers: [provider],
+    });
+    expect(out.ok).toBe(false);
+    expect(out.blocked).toBe(true);
+    expect(out.error).toBe("Ielāde izslēgta (izmaksu kontrole)");
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it("writes this run cost and the monthly total on the ledger and result", async () => {
+    const loaded = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order,
+      explicit: true,
+      providers: [mockProvider("mobilede", RAW)],
+    });
+    expect(loaded.ok).toBe(true);
+    expect(loaded.chargedUsd).toBeGreaterThan(0);
+    expect(loaded.monthlyUsedUsd).toBe(loaded.chargedUsd);
+    expect(loaded.run?.monthUsd).toBe(loaded.monthlyUsedUsd);
+    const state = await readMarketplaceListingsState();
+    expect(state.runs[0]?.chargedUsd).toBe(loaded.chargedUsd);
+    expect(state.runs[0]?.monthUsd).toBe(loaded.monthlyUsedUsd);
+    const usage = await readMarketplaceUsageMonth();
+    expect(usage.entries[0]?.usd).toBe(loaded.chargedUsd);
+    expect(usage.entries.at(-1)?.monthUsd).toBe(loaded.monthlyUsedUsd);
   });
 });

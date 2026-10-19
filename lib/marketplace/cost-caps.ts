@@ -1,9 +1,20 @@
-import type { MarketplaceCostEstimate, MarketplaceProviderId, MarketplaceQuery, MarketplaceUsageMonth } from "@/lib/marketplace/types";
+import type {
+  MarketplaceCostEstimate,
+  MarketplaceLoadTrigger,
+  MarketplaceProviderId,
+  MarketplaceQuery,
+  MarketplaceUsageMonth,
+} from "@/lib/marketplace/types";
 
-export const MARKETPLACE_DEFAULT_MONTHLY_USD_CAP = 30;
-export const MARKETPLACE_DEFAULT_PER_RUN_USD_CAP = 1;
+export const MARKETPLACE_DEFAULT_MONTHLY_USD_CAP = 4.5;
+export const MARKETPLACE_DEFAULT_PER_RUN_USD_CAP = 0.5;
 export const MARKETPLACE_DEFAULT_MAX_ITEMS = 150;
+export const MARKETPLACE_DEFAULT_AUTO_INTERVAL_DAYS = 3;
+export const MARKETPLACE_DEFAULT_AUTO_MAX_ITEMS = 40;
+export const MARKETPLACE_DEFAULT_AUTO_MONTHLY_USD_CAP = 4.5;
 export const MARKETPLACE_HARD_MAX_ITEMS = 300;
+export const MARKETPLACE_RUNS_KEEP = 300;
+export const MARKETPLACE_APIFY_START_USD = 0.005;
 
 function envNumber(name: string, fallback: number, min: number, max: number): number {
   const raw = process.env[name]?.trim() ?? "";
@@ -11,6 +22,19 @@ function envNumber(name: string, fallback: number, min: number, max: number): nu
   const n = Number.parseFloat(raw);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, n));
+}
+
+export const MARKETPLACE_LOADS_DISABLED_REASON = "Ielāde izslēgta (izmaksu kontrole)";
+export const MARKETPLACE_AUTO_DISABLED_REASON = "Automātiskā ielāde izslēgta (izmaksu kontrole)";
+
+/** Tikai precīza vērtība `true`. Tukšs, 1, yes, TRUE = izslēgts. */
+export function marketplaceLoadsEnabled(): boolean {
+  return process.env.MARKETPLACE_LOADS_ENABLED === "true";
+}
+
+/** Tikai precīza vērtība `true`. Noklusējums izslēgts. */
+export function marketplaceAutoEnabled(): boolean {
+  return process.env.MARKETPLACE_AUTO_ENABLED === "true";
 }
 
 export function marketplaceMonthlyUsdCap(): number {
@@ -25,14 +49,42 @@ export function marketplaceMaxItemsPerProvider(): number {
   return Math.round(envNumber("MARKETPLACE_MAX_ITEMS_PER_PROVIDER", MARKETPLACE_DEFAULT_MAX_ITEMS, 1, MARKETPLACE_HARD_MAX_ITEMS));
 }
 
-export function estimateProviderUsd(usdPerThousand: number, maxItems: number): number {
+export function marketplaceAutoIntervalDays(): number {
+  return Math.round(envNumber("MARKETPLACE_AUTO_INTERVAL_DAYS", MARKETPLACE_DEFAULT_AUTO_INTERVAL_DAYS, 1, 14));
+}
+
+export function marketplaceAutoMaxItemsPerProvider(): number {
+  return Math.round(
+    envNumber("MARKETPLACE_AUTO_MAX_ITEMS_PER_PROVIDER", MARKETPLACE_DEFAULT_AUTO_MAX_ITEMS, 1, marketplaceMaxItemsPerProvider()),
+  );
+}
+
+export function marketplaceAutoMonthlyUsdCap(): number {
+  return envNumber("MARKETPLACE_AUTO_MONTHLY_USD_CAP", MARKETPLACE_DEFAULT_AUTO_MONTHLY_USD_CAP, 0, marketplaceMonthlyUsdCap());
+}
+
+export function estimateProviderUsd(usdPerThousand: number, maxItems: number, startUsd = 0): number {
   const items = Math.max(0, Math.min(MARKETPLACE_HARD_MAX_ITEMS, Math.floor(maxItems)));
-  return Math.round(((usdPerThousand * items) / 1000) * 1000) / 1000;
+  return Math.round(((usdPerThousand * items) / 1000 + startUsd) * 1000) / 1000;
 }
 
 export function usageSpentUsd(month: MarketplaceUsageMonth | null | undefined): number {
   if (!month) return 0;
   return Math.round(month.entries.reduce((sum, e) => sum + (Number.isFinite(e.usd) ? e.usd : 0), 0) * 1000) / 1000;
+}
+
+export function usageSpentUsdByTrigger(
+  month: MarketplaceUsageMonth | null | undefined,
+  trigger: MarketplaceLoadTrigger,
+): number {
+  if (!month) return 0;
+  return (
+    Math.round(
+      month.entries
+        .filter((e) => (e.trigger === "auto" ? "auto" : "manual") === trigger)
+        .reduce((sum, e) => sum + (Number.isFinite(e.usd) ? e.usd : 0), 0) * 1000,
+    ) / 1000
+  );
 }
 
 export function marketplaceMonthKey(at = new Date()): string {
@@ -119,7 +171,7 @@ export function providerEstimate(
     providerId,
     platform,
     maxItems: items,
-    maxUsd: estimateProviderUsd(usdPerThousand, items),
+    maxUsd: estimateProviderUsd(usdPerThousand, items, MARKETPLACE_APIFY_START_USD),
     usdPerThousand,
     configured,
     ...(reason ? { reason } : {}),

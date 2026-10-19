@@ -4,13 +4,16 @@ import { get, put } from "@vercel/blob";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { marketplaceMonthKey, emptyMarketplaceUsageMonth } from "@/lib/marketplace/cost-caps";
+import { marketplaceMonthKey, emptyMarketplaceUsageMonth, MARKETPLACE_RUNS_KEEP } from "@/lib/marketplace/cost-caps";
 import { marketplaceListingExpiresAt, marketplaceListingIsExpired, marketplaceListingVehicleId } from "@/lib/marketplace/to-listing-vehicle";
 import {
+  emptyMarketplaceAutoCronState,
   emptyMarketplaceListingsState,
   isMarketplacePlatform,
   isMarketplaceProviderId,
   MARKETPLACE_TTL_DAYS,
+  type MarketplaceAutoCronState,
+  type MarketplaceAutoCronStatus,
   type MarketplaceListingsState,
   type MarketplaceRunRecord,
   type MarketplaceStoredListing,
@@ -20,6 +23,7 @@ import {
 
 const DEFAULT_RELATIVE_DIR = ".data/iriss-marketplace";
 const LISTINGS_FILENAME = "listings.json";
+const AUTO_CRON_FILENAME = "auto-cron.json";
 
 type ResolvedStorage =
   | { kind: "disabled" }
@@ -124,19 +128,44 @@ function parseRun(v: unknown): MarketplaceRunRecord | null {
       gearbox: str((v.query as { gearbox?: unknown } | undefined)?.gearbox, 40),
       powerFromKw: numOrNull((v.query as { powerFromKw?: unknown } | undefined)?.powerFromKw),
       powerToKw: numOrNull((v.query as { powerToKw?: unknown } | undefined)?.powerToKw),
-      countries: [],
+      displacementFromCc: numOrNull((v.query as { displacementFromCc?: unknown } | undefined)?.displacementFromCc),
+      displacementToCc: numOrNull((v.query as { displacementToCc?: unknown } | undefined)?.displacementToCc),
+      body: str((v.query as { body?: unknown } | undefined)?.body, 40),
+      drive: str((v.query as { drive?: unknown } | undefined)?.drive, 40),
+      countries: Array.isArray((v.query as { countries?: unknown } | undefined)?.countries)
+        ? ((v.query as { countries?: unknown[] }).countries ?? []).map((c) => str(c, 8)).filter(Boolean).slice(0, 8)
+        : [],
     },
     maxItems: typeof v.maxItems === "number" ? v.maxItems : 0,
     maxUsd: typeof v.maxUsd === "number" ? v.maxUsd : 0,
     estimatedUsd: typeof v.estimatedUsd === "number" ? v.estimatedUsd : 0,
     chargedUsd: typeof v.chargedUsd === "number" ? v.chargedUsd : 0,
+    monthUsd: typeof v.monthUsd === "number" ? v.monthUsd : 0,
     itemCount: typeof v.itemCount === "number" ? v.itemCount : 0,
     keptCount: typeof v.keptCount === "number" ? v.keptCount : 0,
     rejectedCount: typeof v.rejectedCount === "number" ? v.rejectedCount : 0,
     startedAt: str(v.startedAt, 40),
     finishedAt: str(v.finishedAt, 40),
     status: v.status === "partial" || v.status === "blocked" || v.status === "failed" ? v.status : "ok",
+    trigger: v.trigger === "auto" ? "auto" : "manual",
     note: str(v.note, 240),
+  };
+}
+
+function parseUsageEntry(v: unknown): MarketplaceUsageEntry | null {
+  if (!isObj(v)) return null;
+  const runId = str(v.runId, 80);
+  const providerId = str(v.providerId, 40);
+  if (!runId || !isMarketplaceProviderId(providerId)) return null;
+  return {
+    runId,
+    orderId: str(v.orderId, 80),
+    providerId,
+    items: typeof v.items === "number" ? v.items : 0,
+    usd: typeof v.usd === "number" ? v.usd : 0,
+    monthUsd: typeof v.monthUsd === "number" ? v.monthUsd : 0,
+    at: str(v.at, 40),
+    trigger: v.trigger === "auto" ? "auto" : "manual",
   };
 }
 
@@ -150,7 +179,7 @@ export function normalizeMarketplaceListingsState(raw: unknown, nowMs = Date.now
     version: 1,
     updatedAt: str(raw.updatedAt, 40),
     items: items.filter((item) => !marketplaceListingIsExpired(item.expiresAt, nowMs)),
-    runs: runs.slice(-80),
+    runs: runs.slice(-MARKETPLACE_RUNS_KEEP),
   };
 }
 
@@ -219,17 +248,7 @@ export async function readMarketplaceUsageMonth(month = marketplaceMonthKey()): 
   const raw = await readJson(r, `usage-${month}.json`);
   if (!isObj(raw) || raw.version !== 1) return empty;
   const entries = Array.isArray(raw.entries)
-    ? raw.entries
-        .filter(isObj)
-        .map((e) => ({
-          runId: str(e.runId, 80),
-          orderId: str(e.orderId, 80),
-          providerId: str(e.providerId, 40),
-          items: typeof e.items === "number" ? e.items : 0,
-          usd: typeof e.usd === "number" ? e.usd : 0,
-          at: str(e.at, 40),
-        }))
-        .filter((e): e is MarketplaceUsageEntry => Boolean(e.runId) && isMarketplaceProviderId(e.providerId))
+    ? raw.entries.map(parseUsageEntry).filter((e): e is MarketplaceUsageEntry => e !== null)
     : [];
   return { version: 1, month, capUsd: typeof raw.capUsd === "number" ? raw.capUsd : empty.capUsd, entries };
 }
@@ -241,6 +260,58 @@ export async function writeMarketplaceUsageMonth(
   if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
   try {
     await writeJson(r, `usage-${usage.month}.json`, JSON.stringify(usage, null, 2));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+function parseAutoCronStatus(v: unknown): MarketplaceAutoCronStatus {
+  if (v === "ok" || v === "skipped" || v === "budžets sasniegts" || v === "failed") return v;
+  return "skipped";
+}
+
+export function normalizeMarketplaceAutoCronState(raw: unknown): MarketplaceAutoCronState {
+  const empty = emptyMarketplaceAutoCronState();
+  if (!isObj(raw) || raw.version !== 1) return empty;
+  const skipped = Array.isArray(raw.skipped)
+    ? raw.skipped
+        .filter(isObj)
+        .map((s) => ({ orderId: str(s.orderId, 80), reason: str(s.reason, 180) }))
+        .filter((s) => s.orderId)
+    : [];
+  return {
+    version: 1,
+    updatedAt: str(raw.updatedAt, 40),
+    lastStartedAt: str(raw.lastStartedAt, 40),
+    lastFinishedAt: str(raw.lastFinishedAt, 40),
+    status: parseAutoCronStatus(raw.status),
+    reason: str(raw.reason, 240),
+    loadedOrderIds: Array.isArray(raw.loadedOrderIds)
+      ? raw.loadedOrderIds.map((id) => str(id, 80)).filter(Boolean).slice(0, 400)
+      : [],
+    skipped: skipped.slice(0, 400),
+    loadedCount: typeof raw.loadedCount === "number" ? raw.loadedCount : 0,
+    skippedCount: typeof raw.skippedCount === "number" ? raw.skippedCount : skipped.length,
+    estimatedUsd: typeof raw.estimatedUsd === "number" ? raw.estimatedUsd : 0,
+    chargedUsd: typeof raw.chargedUsd === "number" ? raw.chargedUsd : 0,
+  };
+}
+
+export async function readMarketplaceAutoCronState(): Promise<MarketplaceAutoCronState> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return emptyMarketplaceAutoCronState();
+  const raw = await readJson(r, AUTO_CRON_FILENAME);
+  return normalizeMarketplaceAutoCronState(raw);
+}
+
+export async function writeMarketplaceAutoCronState(
+  state: MarketplaceAutoCronState,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+  try {
+    await writeJson(r, AUTO_CRON_FILENAME, JSON.stringify(normalizeMarketplaceAutoCronState(state), null, 2));
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };

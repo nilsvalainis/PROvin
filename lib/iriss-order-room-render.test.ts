@@ -205,6 +205,10 @@ describe("IrissOrderRoom render", () => {
     );
     expect(errors).toEqual([]);
     assertOrderStaysOpen(html);
+    expect(html).toContain("mobile.de un AutoScout24 nāk no ielādes zemāk");
+    expect(html).toContain("tikai jauniem sludinājumiem");
+    expect(html).not.toContain("tikai ar pogu Ielādēt");
+    expect(html).not.toMatch(/\u2014|\u2013/);
   });
 
   it("shows Nolasīt on Pārskats listing links", async () => {
@@ -221,6 +225,11 @@ describe("IrissOrderRoom render", () => {
     expect(html).toContain("Nolasīt");
     expect(html).toContain("Izveidot filtru");
     expect(html).toContain("Avanss un darījums");
+    expect(html).toContain("DIAPAZONI");
+    expect(html).toContain("Gadi");
+    expect(html).not.toContain("Gadi no-līdz");
+    expect(html).toContain("* obligāti. + vismaz viens: nobraukums, tilpums vai jauda.");
+    expect(html).toContain("iriss-spec-full");
   });
 
   it("lists generated documents newest first", async () => {

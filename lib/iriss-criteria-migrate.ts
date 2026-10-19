@@ -27,6 +27,7 @@ import {
 } from "@/lib/iriss-criteria-taxonomy";
 import {
   IRISS_CRITERIA_VERSION,
+  irissCriteriaIsOperatorAuthored,
   parseIrissCriteriaV1,
   type IrissCriteriaFilter,
   type IrissCriteriaLinks,
@@ -367,15 +368,21 @@ export function attachIrissCriteria<T extends IrissCriteriaMigrationInput>(recor
 
 /**
  * Saglabājamais `criteria`.
- * Vecam ierakstam bez šī lauka atvasinājums tiek izmests.
- * Ja lauks jau bija saglabāts, paliek tieši tas. Jauns ieraksts (stored nav) netiek aiztikts.
+ * Operatora aizpildīti diapazoni (source form) paliek.
+ * Atvasinājums no teksta uz vecu ierakstu netiek rakstīts.
+ * Ja lauks jau bija saglabāts un ieeja nav operatora, paliek saglabātais.
  */
-export function retainStoredIrissCriteria<T extends { criteria?: IrissCriteriaV1 }>(
-  stored: { criteria?: IrissCriteriaV1 } | null | undefined,
+export function retainStoredIrissCriteria<T extends { criteria?: unknown }>(
+  stored: { criteria?: unknown } | null | undefined,
   incoming: T,
 ): T {
   if (!stored) return incoming;
-  if (stored.criteria) return { ...incoming, criteria: stored.criteria };
+  const incomingParsed = parseIrissCriteriaV1(incoming.criteria);
+  if (incomingParsed && irissCriteriaIsOperatorAuthored(incomingParsed)) {
+    return { ...incoming, criteria: incomingParsed };
+  }
+  const storedParsed = parseIrissCriteriaV1(stored.criteria);
+  if (storedParsed) return { ...incoming, criteria: storedParsed };
   if (incoming.criteria === undefined) return incoming;
   const next = { ...incoming };
   delete next.criteria;

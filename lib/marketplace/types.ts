@@ -1,6 +1,7 @@
 /**
  * Tirgus sludinājumu (mobile.de, AutoScout24) adapteru slānis.
- * Tikai iekšēji / B2B: nav publiska kataloga. Maksas avoti netiek ielādēti automātiski.
+ * Tikai iekšēji / B2B: nav publiska kataloga.
+ * Manuālā poga Ielādēt paliek. Automātiskā ielāde: cron ik pa dažām dienām ar atsevišķu auto budžetu.
  */
 
 export const MARKETPLACE_PLATFORMS = ["mobilede", "autoscout24"] as const;
@@ -24,6 +25,10 @@ export type MarketplaceQuery = {
   gearbox: string;
   powerFromKw: number | null;
   powerToKw: number | null;
+  displacementFromCc: number | null;
+  displacementToCc: number | null;
+  body: string;
+  drive: string;
   countries: string[];
 };
 
@@ -40,20 +45,33 @@ export type MarketplaceCostEstimate = {
 export type MarketplaceLimits = {
   maxItems: number;
   maxUsd: number;
+  /** Pēc pirmās ielādes: lūgt actoram jaunākos sludinājumus. */
+  sortNewest?: boolean;
+};
+
+export type MarketplaceLoadTrigger = "manual" | "auto";
+
+export type MarketplaceSearchResult = {
+  items: MarketplaceRawListing[];
+  chargedUsd: number;
 };
 
 export type MarketplaceRawListing = {
   externalId?: unknown;
   url?: unknown;
+  canonicalUrl?: unknown;
+  sourceUrl?: unknown;
   title?: unknown;
   make?: unknown;
   model?: unknown;
   year?: unknown;
   firstReg?: unknown;
+  firstRegistration?: unknown;
   mileageKm?: unknown;
   price?: unknown;
   priceEur?: unknown;
   fuel?: unknown;
+  fuelType?: unknown;
   gearbox?: unknown;
   transmission?: unknown;
   powerKw?: unknown;
@@ -123,12 +141,14 @@ export type MarketplaceRunRecord = {
   maxUsd: number;
   estimatedUsd: number;
   chargedUsd: number;
+  monthUsd?: number;
   itemCount: number;
   keptCount: number;
   rejectedCount: number;
   startedAt: string;
   finishedAt: string;
   status: "ok" | "partial" | "blocked" | "failed";
+  trigger: MarketplaceLoadTrigger;
   note: string;
 };
 
@@ -138,7 +158,31 @@ export type MarketplaceUsageEntry = {
   providerId: MarketplaceProviderId;
   items: number;
   usd: number;
+  monthUsd?: number;
   at: string;
+  trigger: MarketplaceLoadTrigger;
+};
+
+export type MarketplaceAutoCronStatus = "ok" | "skipped" | "budžets sasniegts" | "failed";
+
+export type MarketplaceAutoSkip = {
+  orderId: string;
+  reason: string;
+};
+
+export type MarketplaceAutoCronState = {
+  version: 1;
+  updatedAt: string;
+  lastStartedAt: string;
+  lastFinishedAt: string;
+  status: MarketplaceAutoCronStatus;
+  reason: string;
+  loadedOrderIds: string[];
+  skipped: MarketplaceAutoSkip[];
+  loadedCount: number;
+  skippedCount: number;
+  estimatedUsd: number;
+  chargedUsd: number;
 };
 
 export type MarketplaceUsageMonth = {
@@ -159,10 +203,14 @@ export type MarketplaceLoadResult = {
   ok: boolean;
   blocked?: boolean;
   error?: string;
+  missingFields?: string[];
+  needsOneOfExtra?: boolean;
   run?: MarketplaceRunRecord;
   added: number;
   grouped: number;
   estimatedUsd: number;
+  chargedUsd?: number;
+  monthlyUsedUsd?: number;
   remainingMonthlyUsd: number;
 };
 
@@ -174,7 +222,7 @@ export interface ListingProvider {
   isConfigured(): boolean;
   buildQuery(criteria: MarketplaceQuery): Record<string, unknown>;
   estimateCost(query: MarketplaceQuery, maxItems: number): MarketplaceCostEstimate;
-  search(query: MarketplaceQuery, limits: MarketplaceLimits): Promise<MarketplaceRawListing[]>;
+  search(query: MarketplaceQuery, limits: MarketplaceLimits): Promise<MarketplaceSearchResult>;
 }
 
 export function isMarketplacePlatform(v: string): v is MarketplacePlatform {
@@ -199,6 +247,10 @@ export function emptyMarketplaceQuery(): MarketplaceQuery {
     gearbox: "",
     powerFromKw: null,
     powerToKw: null,
+    displacementFromCc: null,
+    displacementToCc: null,
+    body: "",
+    drive: "",
     countries: [],
   };
 }
@@ -207,7 +259,54 @@ export function emptyMarketplaceListingsState(): MarketplaceListingsState {
   return { version: 1, updatedAt: "", items: [], runs: [] };
 }
 
+export function emptyMarketplaceAutoCronState(): MarketplaceAutoCronState {
+  return {
+    version: 1,
+    updatedAt: "",
+    lastStartedAt: "",
+    lastFinishedAt: "",
+    status: "skipped",
+    reason: "",
+    loadedOrderIds: [],
+    skipped: [],
+    loadedCount: 0,
+    skippedCount: 0,
+    estimatedUsd: 0,
+    chargedUsd: 0,
+  };
+}
+
+export const MARKETPLACE_TOO_BROAD_ERROR = "par plāši kritēriji";
+
+function rangeOk(from: number | null, to: number | null, both: boolean): boolean {
+  if (both) {
+    if (from == null || to == null) return false;
+    return from <= to;
+  }
+  if (from != null && to != null && from > to) return false;
+  return to != null;
+}
+
+/**
+ * Stingrie vārti: marka + modelis + cena no-līdz + gadi no-līdz
+ * un vismaz viens no: nobraukums līdz, tilpums, jauda.
+ */
+export function marketplaceQueryHasStrictBounds(q: MarketplaceQuery): boolean {
+  if (!q.make.trim() || !q.model.trim()) return false;
+  if (!rangeOk(q.priceFrom, q.priceTo, true)) return false;
+  if (!rangeOk(q.yearFrom, q.yearTo, true)) return false;
+  const mileage = rangeOk(q.mileageFrom, q.mileageTo, false);
+  const cc = rangeOk(q.displacementFromCc, q.displacementToCc, true);
+  const power = rangeOk(q.powerFromKw, q.powerToKw, true);
+  return mileage || cc || power;
+}
+
 export function marketplaceQueryHasBounds(q: MarketplaceQuery): boolean {
+  return marketplaceQueryHasStrictBounds(q);
+}
+
+/** Match pēc ielādes: pietiek ar jebkuru aizpildītu filtru. Ielādes vārti paliek stingri. */
+export function marketplaceQueryHasMatchBounds(q: MarketplaceQuery): boolean {
   return Boolean(
     q.make.trim() ||
       q.model.trim() ||
@@ -220,6 +319,10 @@ export function marketplaceQueryHasBounds(q: MarketplaceQuery): boolean {
       q.fuel.trim() ||
       q.gearbox.trim() ||
       q.powerFromKw != null ||
-      q.powerToKw != null,
+      q.powerToKw != null ||
+      q.displacementFromCc != null ||
+      q.displacementToCc != null ||
+      q.body.trim() ||
+      q.drive.trim(),
   );
 }

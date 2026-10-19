@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { marketplaceWarningAt80 } from "@/lib/marketplace/cost-caps";
+import {
+  MARKETPLACE_LOADS_DISABLED_REASON,
+  marketplaceAutoEnabled,
+  marketplaceLoadsEnabled,
+  marketplaceWarningAt80,
+} from "@/lib/marketplace/cost-caps";
 import { previewMarketplaceLoad } from "@/lib/marketplace/load";
 import { MARKETPLACE_PLATFORM_LABEL } from "@/lib/marketplace/providers";
+import { marketplaceTooBroadSkipReason } from "@/lib/marketplace/query-from-order";
 import { isMarketplacePlatform } from "@/lib/marketplace/types";
 import { isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 
@@ -27,13 +33,18 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: true,
     queryReady: preview.queryReady,
+    missingFields: preview.missingFields,
+    needsOneOfExtra: preview.needsOneOfExtra,
+    tooBroadReason: preview.queryReady ? "" : marketplaceTooBroadSkipReason(rec),
     estimatedUsd: preview.budget.estimatedUsd,
     monthlyUsedUsd: preview.budget.monthlyUsedUsd,
     monthlyCapUsd: preview.budget.monthlyCapUsd,
     perRunCapUsd: preview.budget.perRunCapUsd,
     remainingMonthlyUsd: preview.budget.remainingMonthlyUsd,
-    allowed: preview.budget.allowed && preview.queryReady,
-    reason: preview.budget.reason,
+    loadsEnabled: marketplaceLoadsEnabled(),
+    autoEnabled: marketplaceAutoEnabled(),
+    allowed: preview.budget.allowed && preview.queryReady && marketplaceLoadsEnabled(),
+    reason: marketplaceLoadsEnabled() ? preview.budget.reason : MARKETPLACE_LOADS_DISABLED_REASON,
     warning80: marketplaceWarningAt80(preview.budget.monthlyUsedUsd, preview.budget.monthlyCapUsd),
     tokenReady: preview.estimates.some((e) => e.configured),
     providers: preview.estimates.map((e) => ({
