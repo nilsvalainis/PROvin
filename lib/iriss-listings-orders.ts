@@ -9,6 +9,7 @@ import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { splitBrandModel } from "@/lib/iriss-listings-ecarstrade-catalog";
 import { formatIrissClientName, formatIrissListSpecSummary, irissListRowPowerKwLabel } from "@/lib/iriss-pasutijumi-list-row";
 import type { IrissPasutijumsListRow, IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
+import { isIrissScanOrderId, type IrissListingDataset } from "@/lib/iriss-scan-listings";
 
 export type IrissListingOrderBrief = {
   id: string;
@@ -111,6 +112,56 @@ export function listingLinkedOrders(orderIds: readonly string[], byId: ReadonlyM
     if (hit) out.push(hit);
   }
   return out;
+}
+
+export const IRISS_LISTING_CLIENT_NAME_MISSING = "Klients nav";
+
+/** Tukšs vārds, SCAN bez klienta vai aizstājējteksts nav klienta rinda. */
+export function irissListingOrderHasClient(o: Pick<IrissListingOrderBrief, "id" | "clientName">): boolean {
+  if (isIrissScanOrderId(o.id)) return false;
+  const t = o.clientName.trim();
+  return Boolean(t) && t !== IRISS_LISTING_CLIENT_NAME_MISSING && t !== "Klients" && t !== "-";
+}
+
+function radarRowLabel(o: Pick<IrissListingOrderBrief, "clientName" | "brandModel">): string {
+  const name = o.brandModel.trim() || o.clientName.trim() || "SCAN";
+  return name.startsWith("Radars:") ? name : `Radars: ${name}`;
+}
+
+/**
+ * Kartītes klienta rindas: tikai reāli pasūtījumi ar klienta vārdu.
+ * SCAN/radar id klientu cilnē nerāda; monitoringu cilnē rāda kā „Radars: …”.
+ * Bez piesaistīta pasūtījuma (nav brief mapē) rindu nav, jo `listingLinkedOrders` tās jau izlaiž.
+ */
+export function listingClientMatchRows(
+  linked: readonly IrissListingOrderBrief[],
+  dataset: IrissListingDataset = "orders",
+): IrissListingOrderBrief[] {
+  const out: IrissListingOrderBrief[] = [];
+  const seen = new Set<string>();
+  for (const o of linked) {
+    if (!o.id || seen.has(o.id)) continue;
+    seen.add(o.id);
+    if (isIrissScanOrderId(o.id)) {
+      if (dataset !== "scan") continue;
+      out.push({ ...o, clientName: radarRowLabel(o) });
+      continue;
+    }
+    if (dataset === "scan" || !irissListingOrderHasClient(o)) continue;
+    out.push(o);
+  }
+  return out;
+}
+
+export function listingOrderChipSubtitle(o: Pick<IrissListingOrderBrief, "brandModel" | "budget" | "budgetRaw">): string {
+  const raw = o.budgetRaw.trim();
+  const budget =
+    o.budget != null
+      ? `${Math.round(o.budget).toLocaleString("lv-LV")} €`
+      : !raw || raw === "\u2014" || raw === "-"
+        ? ""
+        : raw;
+  return [o.brandModel.trim(), budget].filter(Boolean).join(" · ");
 }
 
 /**

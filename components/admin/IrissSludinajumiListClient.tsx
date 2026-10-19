@@ -50,6 +50,7 @@ import {
 import { listingFmtClock, listingFmtDateTime, LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-panel";
 import {
   listingBudgetForVehicle,
+  listingClientMatchRows,
   listingLinkedOrders,
   listingOrdersById,
   listingVehicleOrderIds,
@@ -62,7 +63,7 @@ import {
 import { irissListingMatchKey, type IrissListingHitStatus, type IrissListingMatchNotice } from "@/lib/iriss-listing-match-client";
 import { mergeListingOrderOvMigration } from "@/lib/iriss-listing-order-ov";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
-import { irissPasutijumsOfferSeedFromListing, irissPasutijumsSeedFromListing } from "@/lib/iriss-pasutijums-from-listing";
+import { irissPasutijumsOfferSeedFromListing } from "@/lib/iriss-pasutijums-from-listing";
 import { irissScanSeedFromListing } from "@/lib/iriss-scan-from-listing";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
@@ -161,6 +162,16 @@ function linkedOrdersOf(
   extra: Record<string, string[]>,
 ): IrissListingOrderBrief[] {
   return listingLinkedOrders(effectiveListingOrderIds(v, prefs, extra), byId);
+}
+
+function displayLinkedOf(
+  v: Pick<IrissListingVehicle, "id" | "orderIds">,
+  prefs: IrissListPrefs,
+  byId: ReadonlyMap<string, IrissListingOrderBrief>,
+  extra: Record<string, string[]>,
+  dataset: IrissListingDataset,
+): IrissListingOrderBrief[] {
+  return listingClientMatchRows(linkedOrdersOf(v, prefs, byId, extra), dataset);
 }
 
 function budgetOf(
@@ -1202,36 +1213,21 @@ export function IrissSludinajumiListClient({
             nowMs={nowMs}
             prefs={prefs}
             onPrefs={applyPrefs}
-            linked={linkedOrdersOf(v, prefs, orderById, matchOrderIds)}
+            linked={displayLinkedOf(v, prefs, orderById, matchOrderIds, dataset)}
             budget={budgetOf(v, prefs, orderById, matchOrderIds)}
-            matchNew={listingIsMatchNew(v.id, linkedOrdersOf(v, prefs, orderById, matchOrderIds))}
+            matchNew={listingIsMatchNew(v.id, displayLinkedOf(v, prefs, orderById, matchOrderIds, dataset))}
             duplicates={duplicatesByListing[v.id] ?? []}
             layout={view}
             onOpen={() => {
               setDrawerId(v.id);
               void markListingViewed(v.id);
             }}
-            onPreviewOrder={(o) => {
-              const linked = linkedOrdersOf(v, prefs, orderById, matchOrderIds);
-              setPreviewOrders(linked.length > 0 ? linked : [o]);
-            }}
+            onPreviewOrder={(o) => setPreviewOrders([o])}
+            onPreviewLinked={(orders) => setPreviewOrders([...orders])}
             mobile={mobile}
             imageHidden={Boolean(hiddenImages[v.id])}
             onImageError={() => setHiddenImages((prev) => ({ ...prev, [v.id]: true }))}
             onVinPatch={(id, patch) => setVinPatch((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))}
-            onCreateOrder={async (vehicle) => {
-              const seed = irissPasutijumsSeedFromListing(vehicle, crypto.randomUUID(), new Date().toISOString());
-              const res = await fetch("/api/admin/iriss-pasutijumi", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json", Accept: "application/json" },
-                body: JSON.stringify({ record: seed, listingVehicleId: vehicle.id }),
-              });
-              const data = (await res.json().catch(() => ({}))) as { id?: unknown };
-              if (!res.ok || typeof data.id !== "string") return;
-              router.push(`/admin/iriss/pasutijumi/${encodeURIComponent(data.id)}`);
-              router.refresh();
-            }}
             onCreateRadar={async (vehicle) => {
               const seed = irissScanSeedFromListing(vehicle, crypto.randomUUID(), new Date().toISOString());
               const res = await fetch("/api/admin/iriss-scan", {
@@ -1277,14 +1273,11 @@ export function IrissSludinajumiListClient({
             v={drawerVehicle}
             prefs={prefs}
             orders={orders}
-            linked={linkedOrdersOf(drawerVehicle, prefs, orderById, matchOrderIds)}
+            linked={displayLinkedOf(drawerVehicle, prefs, orderById, matchOrderIds, dataset)}
             budget={budgetOf(drawerVehicle, prefs, orderById, matchOrderIds)}
             onClose={() => setDrawerId(null)}
             onPrefs={applyPrefs}
-            onPreviewOrder={(o) => {
-              const linked = linkedOrdersOf(drawerVehicle, prefs, orderById, matchOrderIds);
-              setPreviewOrders(linked.length > 0 ? linked : [o]);
-            }}
+            onPreviewOrder={(o) => setPreviewOrders([o])}
             mobile={mobile}
             onVinPatch={(id, patch) => setVinPatch((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))}
           />

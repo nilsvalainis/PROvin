@@ -71,11 +71,11 @@ export function IrissListingVehicleCard({
   budget,
   onOpen,
   onPreviewOrder,
+  onPreviewLinked,
   mobile,
   imageHidden,
   onImageError,
   onVinPatch,
-  onCreateOrder,
   onCreateRadar,
   onCreateOffer,
   matchNew = false,
@@ -90,11 +90,11 @@ export function IrissListingVehicleCard({
   budget: number | null;
   onOpen: () => void;
   onPreviewOrder: (order: IrissListingOrderBrief) => void;
+  onPreviewLinked?: (orders: readonly IrissListingOrderBrief[]) => void;
   mobile: IrissMobilePlatform | null;
   imageHidden: boolean;
   onImageError: () => void;
   onVinPatch?: (id: string, patch: ListingVinOcrPatch) => void;
-  onCreateOrder?: (v: IrissListingVehicle) => void | Promise<void>;
   onCreateRadar?: (v: IrissListingVehicle) => void | Promise<void>;
   onCreateOffer?: (v: IrissListingVehicle) => void | Promise<void>;
   matchNew?: boolean;
@@ -332,7 +332,12 @@ export function IrissListingVehicleCard({
           <IrissListingOrderChips orders={linked} onPreview={onPreviewOrder} />
           <IrissListingCardActions
             v={v}
-            onCreateOrder={onCreateOrder}
+            previewDisabled={linked.length === 0}
+            onPreviewDetails={() => {
+              if (linked.length === 0) return;
+              if (onPreviewLinked) onPreviewLinked(linked);
+              else onPreviewOrder(linked[0]!);
+            }}
             onCreateRadar={onCreateRadar}
             onCreateOffer={onCreateOffer}
           />

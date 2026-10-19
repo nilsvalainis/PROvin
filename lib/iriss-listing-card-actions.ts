@@ -1,11 +1,12 @@
 /** LIST kartītes darbības: viena rinda, vienāds augstums, neitrālas ikonas. */
 
-export const IRISS_LISTING_CARD_ACTION_ORDER = "Pasūtījums" as const;
+export const IRISS_LISTING_CARD_ACTION_ORDER = "Pasūtījuma detaļas" as const;
+/** Paliek kā palīga etiķete; kartītē pogu nerāda. */
 export const IRISS_LISTING_CARD_ACTION_RADAR = "Pievienot radaram" as const;
-export const IRISS_LISTING_CARD_ACTION_OFFER = "Piedāvājums" as const;
-export const IRISS_LISTING_CARD_ACTION_ORDER_MENU = "Izveidot pasūtījumu" as const;
+export const IRISS_LISTING_CARD_ACTION_OFFER = "Nosūtīt klientam" as const;
+export const IRISS_LISTING_CARD_ACTION_ORDER_MENU = "Izveidot radaru" as const;
 
-/** Trīs darbības paliek vienā rindā arī ~400px; teksts var iet uz otru rindu pogas iekšā. */
+/** Darbības paliek vienā rindā arī ~400px; teksts var iet uz otru rindu pogas iekšā. */
 export const IRISS_LISTING_CARD_ACTIONS_ROW_CLASS =
   "flex w-full min-w-0 flex-nowrap items-stretch gap-1";
 
