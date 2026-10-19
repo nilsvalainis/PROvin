@@ -37,9 +37,9 @@ export function fallbackB2bTopupInvoiceNumber(sessionId: string, created: number
 
 export const B2B_TOPUP_INVOICE = {
   serviceLine: "Konta papildināšana",
-  /** Juridiskā piezīme pārskatīšanai: pārdevējs nav PVN maksātājs. */
+  /** Juridiskā piezīme: PVN nav piemērots (PVN likuma 139.² pants). */
   pvnNote:
-    "Pakalpojuma sniedzējs nav PVN maksātājs. Pievienotās vērtības nodoklis netiek piemērots.",
+    "PVN nav piemērots (PVN likuma 139.² pants).",
   email: {
     subject: "PROVIN: rēķins par konta papildināšanu {{summa}}",
     body: [

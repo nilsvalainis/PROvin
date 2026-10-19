@@ -96,14 +96,12 @@ describe("B2B top-up invoice", () => {
     expect(styled).not.toContain("Pakalpojuma sniedzējs:");
     const pvnNote = getB2bTopupInvoicePvnNote();
     expect(pvnNote).toBe(
-      "Pakalpojuma sniedzējs nav PVN maksātājs. Pievienotās vērtības nodoklis netiek piemērots.",
+      "PVN nav piemērots (PVN likuma 139.² pants).",
     );
     expect(html).toContain(pvnNote);
     expect(styled).toContain(`class="inv-pvn-note">${pvnNote}</p>`);
     expect(html).not.toContain("PVN likme");
     expect(styled).not.toContain("PVN likme");
-    expect(html).not.toContain("139.");
-    expect(styled).not.toContain("139.");
     expect(html).not.toMatch(/PVN\s*(nr|num|ID)/i);
     expect(html).not.toContain("Transportlīdzekļa VIN");
     expect(html).not.toContain("WVWZZZ3HZHE703058");
