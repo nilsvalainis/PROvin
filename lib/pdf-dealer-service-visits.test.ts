@@ -31,7 +31,7 @@ describe("PDF dīlera servisa vizītes", () => {
     expect(buildPdfFirstLastReadingSpanHtml({ firstKm: "", lastKm: "", firstMeta: "", lastMeta: "" })).toBe("");
   });
 
-  it("puts the type tag at the far right of the header, km immediately to its left", () => {
+  it("puts km at the far right of the header, type tag immediately to its left", () => {
     const html = buildDealerServiceVisitsHtml(
       [{ date: "12.10.2024", odometer: "201149", location: "", works: "Eļļas maiņa" }],
       { omitSpan: true, lang: "en" },
@@ -39,8 +39,8 @@ describe("PDF dīlera servisa vizītes", () => {
     const chips = html.match(/<div class="pdf-svc-chips">[\s\S]*?<\/div>/)?.[0] ?? "";
     expect(chips).toContain("201 149 km");
     expect(chips).toMatch(/pdf-svc-tag--maintenance">Service</);
-    expect(chips.indexOf("pdf-svc-km")).toBeLessThan(chips.indexOf("pdf-svc-tag"));
-    expect(chips.indexOf("201 149 km")).toBeLessThan(chips.indexOf("Service"));
+    expect(chips.indexOf("pdf-svc-tag")).toBeLessThan(chips.indexOf("pdf-svc-km"));
+    expect(chips.indexOf("Service")).toBeLessThan(chips.indexOf("201 149 km"));
   });
 
   it("ņem gadu no DD.MM.YYYY", () => {

@@ -4,7 +4,7 @@ exports[`dealer PDF timeline mileage layout > keeps the km chip in the visit hea
 "<div class="pdf-svc-year-block"><div class="pdf-keep-head"><p class="pdf-svc-year">2026</p><div class="pdf-svc-visit pdf-svc-kind--repair">
     <time class="pdf-svc-date">31.03.2026</time>
     <span class="pdf-svc-rail" aria-hidden="true"><span class="pdf-svc-dot"></span></span>
-    <article class="pdf-svc-box"><div class="pdf-svc-box-top"><p class="pdf-svc-place">Forchheim</p><div class="pdf-svc-chips"><span class="pdf-svc-km">214 259 km</span><span class="pdf-svc-tag pdf-svc-tag--repair">Remonts</span></div></div><ul class="pdf-svc-works"><li class="pdf-svc-work">Serviss</li></ul></article>
+    <article class="pdf-svc-box"><div class="pdf-svc-box-top"><p class="pdf-svc-place">Forchheim</p><div class="pdf-svc-chips"><span class="pdf-svc-tag pdf-svc-tag--repair">Remonts</span><span class="pdf-svc-km">214 259 km</span></div></div><ul class="pdf-svc-works"><li class="pdf-svc-work">Serviss</li></ul></article>
   </div></div>
 </div>"
 `;

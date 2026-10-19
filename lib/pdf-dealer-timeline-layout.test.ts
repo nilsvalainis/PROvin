@@ -22,7 +22,7 @@ describe("dealer PDF timeline mileage layout", () => {
     expect(html).not.toMatch(/pdf-svc-when/);
     expect(html).toMatch(/<time class="pdf-svc-date">31\.03\.2026<\/time>/);
     expect(html).toMatch(
-      /<div class="pdf-svc-chips"><span class="pdf-svc-km">214 259 km<\/span><span class="pdf-svc-tag /,
+      /<div class="pdf-svc-chips"><span class="pdf-svc-tag pdf-svc-tag--repair">Remonts<\/span><span class="pdf-svc-km">214 259 km<\/span>/,
     );
     const dateIdx = html.indexOf('class="pdf-svc-date"');
     const kmIdx = html.indexOf('class="pdf-svc-km"');
@@ -33,8 +33,8 @@ describe("dealer PDF timeline mileage layout", () => {
     expect(kmIdx).toBeGreaterThan(dateIdx);
     expect(boxTopIdx).toBeGreaterThan(dateIdx);
     expect(chipsIdx).toBeGreaterThan(boxTopIdx);
-    expect(kmIdx).toBeGreaterThan(chipsIdx);
-    expect(tagIdx).toBeGreaterThan(kmIdx);
+    expect(tagIdx).toBeGreaterThan(chipsIdx);
+    expect(kmIdx).toBeGreaterThan(tagIdx);
     expect(html).toMatchSnapshot();
   });
 
