@@ -1,6 +1,7 @@
 /**
  * mobile.de / AutoScout24 meklēšanas URL no IRISS tirgus vaicājuma.
  * Actoram dodam tikai šī Store aktora ievadi: URL + maxResults. Raw fuelType/transmission/bodyType nesūtam.
+ * Automātiskie filtri vienmēr ir tikai dīleru sludinājumi (nav privāto pārdevēju).
  */
 
 import { MOBILE_DE_MAKE_ID_TO_NAME } from "@/lib/iriss-listings-ecarstrade-criteria";
@@ -51,17 +52,26 @@ function as24Fuel(raw: string): string {
   return "";
 }
 
+function isAutomaticGear(t: string): boolean {
+  // IRISS: AT / A/T / automāts / automats / automatic. AT only as a whole word.
+  return /auto|dsg|tiptronic|cvt|a\s*\/\s*t|\bat\b/.test(t);
+}
+
+function isManualGear(t: string): boolean {
+  return /manu|schalt|\bmt\b/.test(t);
+}
+
 function mobileGear(raw: string): string {
   const t = fold(raw);
-  if (/auto|dsg|tiptronic|cvt/.test(t)) return "AUTOMATIC_GEAR";
-  if (/manu|schalt/.test(t)) return "MANUAL_GEAR";
+  if (isAutomaticGear(t)) return "AUTOMATIC_GEAR";
+  if (isManualGear(t)) return "MANUAL_GEAR";
   return "";
 }
 
 function as24Gear(raw: string): string {
   const t = fold(raw);
-  if (/auto|dsg|tiptronic|cvt/.test(t)) return "A";
-  if (/manu|schalt/.test(t)) return "M";
+  if (isAutomaticGear(t)) return "A";
+  if (isManualGear(t)) return "M";
   return "";
 }
 
@@ -80,7 +90,7 @@ function mobileBody(raw: string): string {
 function as24Body(raw: string): string {
   const t = fold(raw);
   if (/suv|offroad/.test(t)) return "suv";
-  if (/wagon|estate|kombi/.test(t)) return "estate";
+  if (/wagon|estate|kombi|universal/.test(t)) return "estate";
   if (/hatch|compact/.test(t)) return "compact";
   if (/coupe/.test(t)) return "coupe";
   if (/cabrio|convert/.test(t)) return "convertible";
@@ -109,6 +119,8 @@ export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false):
   url.searchParams.set("isSearchRequest", "true");
   url.searchParams.set("dam", "false");
   url.searchParams.set("cn", "DE");
+  // Anbieter: Händler. Current suchen.mobile.de param (ONLY_FSBO_ADS = Privatanbieter).
+  url.searchParams.set("adLimitation", "ONLY_DEALER_ADS");
   const makeId = mobileDeMakeId(q.make);
   if (makeId) {
     url.searchParams.set("ms", q.model.trim() ? `${makeId};;;${q.model.trim()}` : `${makeId};;;`);
@@ -150,6 +162,8 @@ export function buildAutoscout24SearchUrl(q: MarketplaceQuery, sortNewest = fals
   url.searchParams.set("cy", "D");
   url.searchParams.set("ustate", "N,U");
   url.searchParams.set("damaged_listing", "0");
+  // Anbieter: Händler. Current autoscout24.de /lst param (custtype=P = Privat).
+  url.searchParams.set("custtype", "D");
   if (q.yearFrom != null) url.searchParams.set("fregfrom", String(q.yearFrom));
   if (q.yearTo != null) url.searchParams.set("fregto", String(q.yearTo));
   if (q.mileageFrom != null) url.searchParams.set("kmfrom", String(q.mileageFrom));
@@ -200,5 +214,7 @@ export function marketplaceActorSearchInput(
     maxResults,
     damageStatus: "EXCLUDE",
     includeDetails: false,
+    // blackfalcondata~mobile-de-scraper: sellerType "Dealer" / "Private Seller".
+    sellerType: "Dealer",
   };
 }
