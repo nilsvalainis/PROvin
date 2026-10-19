@@ -152,6 +152,23 @@ function parseRun(v: unknown): MarketplaceRunRecord | null {
   };
 }
 
+function parseUsageEntry(v: unknown): MarketplaceUsageEntry | null {
+  if (!isObj(v)) return null;
+  const runId = str(v.runId, 80);
+  const providerId = str(v.providerId, 40);
+  if (!runId || !isMarketplaceProviderId(providerId)) return null;
+  return {
+    runId,
+    orderId: str(v.orderId, 80),
+    providerId,
+    items: typeof v.items === "number" ? v.items : 0,
+    usd: typeof v.usd === "number" ? v.usd : 0,
+    monthUsd: typeof v.monthUsd === "number" ? v.monthUsd : 0,
+    at: str(v.at, 40),
+    trigger: v.trigger === "auto" ? "auto" : "manual",
+  };
+}
+
 export function normalizeMarketplaceListingsState(raw: unknown, nowMs = Date.now()): MarketplaceListingsState {
   if (!isObj(raw) || raw.version !== 1) return emptyMarketplaceListingsState();
   const items = Array.isArray(raw.items)
@@ -231,19 +248,7 @@ export async function readMarketplaceUsageMonth(month = marketplaceMonthKey()): 
   const raw = await readJson(r, `usage-${month}.json`);
   if (!isObj(raw) || raw.version !== 1) return empty;
   const entries = Array.isArray(raw.entries)
-    ? raw.entries
-        .filter(isObj)
-        .map((e) => ({
-          runId: str(e.runId, 80),
-          orderId: str(e.orderId, 80),
-          providerId: str(e.providerId, 40),
-          items: typeof e.items === "number" ? e.items : 0,
-          usd: typeof e.usd === "number" ? e.usd : 0,
-          monthUsd: typeof e.monthUsd === "number" ? e.monthUsd : 0,
-          at: str(e.at, 40),
-          trigger: e.trigger === "auto" ? ("auto" as const) : ("manual" as const),
-        }))
-        .filter((e): e is MarketplaceUsageEntry => Boolean(e.runId) && isMarketplaceProviderId(e.providerId))
+    ? raw.entries.map(parseUsageEntry).filter((e): e is MarketplaceUsageEntry => e !== null)
     : [];
   return { version: 1, month, capUsd: typeof raw.capUsd === "number" ? raw.capUsd : empty.capUsd, entries };
 }
