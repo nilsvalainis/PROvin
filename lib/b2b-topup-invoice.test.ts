@@ -10,7 +10,7 @@ import {
   parseIrsInvoiceSequence,
   renderB2bTopupInvoiceEmail,
 } from "@/lib/b2b-topup-invoice";
-import { toInvoiceOrderPayload } from "@/lib/generate-invoice-html";
+import { buildInvoiceHtml, toInvoiceOrderPayload } from "@/lib/generate-invoice-html";
 import { getB2bMailFromAddress } from "@/lib/email/mail-config";
 import { b2bProvinEmailHtml } from "@/lib/email/html-templates";
 import { buildPartnerPackArchiveRow } from "@/lib/b2b-partner-archive-rows";
@@ -66,8 +66,33 @@ describe("B2B top-up invoice", () => {
     expect(html).toContain("SIA Salons");
     expect(html).toContain("40000000000");
     expect(html).toContain("Konta papildināšana");
-    expect(html).toContain(b2bTopupInvoiceProviderLine());
+    expect(b2bTopupInvoiceProviderLine()).toBe("Nils Valainis, Reg.nr. 09118711109");
+    expect(html).toContain("<h2>Pakalpojuma sniedzējs</h2>");
+    expect(html).toContain("Nils Valainis, Reg.nr. 09118711109");
+    expect(html).not.toContain("Pakalpojuma sniedzējs:");
     expect(html).toContain("Reg.nr.");
+    const styled = buildInvoiceHtml(
+      toInvoiceOrderPayload(
+        {
+          id: "cs_topup_1",
+          created: 1_700_000_000,
+          amountTotal: 10000,
+          currency: "EUR",
+          customerEmail: "salons@example.lv",
+          customerDetailsEmail: "salons@example.lv",
+          vin: "WVWZZZ3HZHE703058",
+          customerName: "Jānis",
+          companyName: "SIA Salons",
+          companyReg: "40000000000",
+          companyAddress: "Rīga",
+        },
+        "IRS-2026-0001",
+        "b2b_topup",
+      ),
+    );
+    expect(styled).toContain('id="inv-seller">Pakalpojuma sniedzējs</h2>');
+    expect(styled).toContain("<p>Nils Valainis, Reg.nr. 09118711109</p>");
+    expect(styled).not.toContain("Pakalpojuma sniedzējs:");
     expect(html).not.toContain("PVN");
     expect(html).not.toContain("PVN likme");
     expect(html).not.toContain("Transportlīdzekļa VIN");

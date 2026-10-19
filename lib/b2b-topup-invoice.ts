@@ -88,14 +88,14 @@ export function b2bTopupInvoiceSellerExtraLines(seller = getB2bTopupInvoiceSelle
 }
 
 /**
- * Viena rinda, piem.:
- * "Pakalpojuma sniedzējs: Nils Valainis, Reg.nr. 09118711109"
+ * Viena rinda zem virsraksta „Pakalpojuma sniedzējs”, piem.:
+ * "Nils Valainis, Reg.nr. 09118711109"
  */
 export function b2bTopupInvoiceProviderLine(seller = getB2bTopupInvoiceSeller()): string {
   const parts = [seller.legalName || "-", seller.regNo ? `Reg.nr. ${seller.regNo}` : null].filter(
     (part): part is string => Boolean(part),
   );
-  return `Pakalpojuma sniedzējs: ${parts.join(", ")}`;
+  return parts.join(", ");
 }
 
 export type B2bTopupInvoiceEmailVars = {
