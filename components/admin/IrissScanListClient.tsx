@@ -144,7 +144,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
           </AdminMobileTopBar>
         </div>
         {/* min-7: virsraksts + skaits, meklēšana pa labi; zem tā sīka pelēka statusa rinda. */}
-        <header className="sticky top-0 z-20 -mx-2 hidden bg-[#F8F8F9]/95 px-2 pb-1.5 pt-2 backdrop-blur md:block sm:mx-0 sm:px-0">
+        <header className="sticky top-0 z-20 -mx-2 hidden bg-[var(--bg-base,#e9ecf1)] px-2 pb-1.5 pt-2 md:block sm:mx-0 sm:px-0">
           <div className="flex items-center gap-2">
             <h1 className="flex-1 text-[17px] font-semibold tracking-tight text-[var(--color-apple-text)]">Radars</h1>
             {searchOpen || query ? (

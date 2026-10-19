@@ -1,9 +1,9 @@
-/* IRISS admin apgabals — iOS HIG krāsu sistēma (bez oranžiem akcentiem). */
+/* IRISS admin apgabals. Akcents no 00-tema tokeniem (--acc); zaļais paliek semantisks. */
 .iriss-admin-scope {
-  --color-provin-accent: #007aff;
-  --color-provin-accent-hover: #0062d1;
-  --color-provin-accent-soft: rgb(0 122 255 / 0.18);
-  --color-provin-accent-muted: #4f8bcf;
+  --color-provin-accent: var(--acc, #3d5bd9);
+  --color-provin-accent-hover: var(--acc, #3d5bd9);
+  --color-provin-accent-soft: var(--acc-soft, rgba(61, 91, 217, 0.12));
+  --color-provin-accent-muted: var(--acc, #3d5bd9);
   --color-apple-blue: var(--color-provin-accent);
   --color-apple-blue-hover: var(--color-provin-accent-hover);
   --color-provin-green: #34c759;
@@ -184,8 +184,8 @@
   color: #15803d !important;
 }
 
-.admin-ios-theme [data-iriss-order-room="1"] [class*="1d4ed8"] {
-  color: #1d4ed8 !important;
+.admin-ios-theme [data-iriss-order-room="1"] [class*="iriss-ink-link"] {
+  color: var(--ink, #0b0c10) !important;
 }
 
 .admin-ios-theme [data-iriss-order-room="1"] button {

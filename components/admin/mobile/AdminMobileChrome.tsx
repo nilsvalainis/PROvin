@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
+import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
+import { useAdminShellLayout } from "@/components/admin/AdminShellLayoutContext";
 import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
+import { adminChromeDataset } from "@/lib/admin-chrome-attrs";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
 import {
@@ -59,6 +62,7 @@ export function AdminMobileTopBar({
   }, []);
   const collapsed = mode === "collapsed";
   const hasBack = Boolean(backHref || onBack);
+  const iriss = useAdminShellLayout()?.workspace === "iriss";
   return (
     <>
       <header
@@ -79,13 +83,16 @@ export function AdminMobileTopBar({
             )
           ) : null}
           <div className="min-w-0 flex-1">
-            <h1
-              className={`truncate font-bold tracking-tight text-[var(--label)] ${
-                hasBack || collapsed ? "text-[17px] leading-none" : "text-[34px] leading-none"
-              }`}
-            >
-              {title}
-            </h1>
+            <div className="flex min-w-0 items-center gap-2">
+              <h1
+                className={`min-w-0 truncate font-bold tracking-tight text-[var(--label)] ${
+                  hasBack || collapsed ? "text-[17px] leading-none" : "text-[34px] leading-none"
+                }`}
+              >
+                {title}
+              </h1>
+              {iriss ? <IrissProjectIndicator className="shrink-0" /> : null}
+            </div>
             {subtitle && !collapsed ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
           </div>
           {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
@@ -306,6 +313,7 @@ export function AdminMobileSheet({
 }) {
   const [shown, setShown] = useState(open);
   const theme = useAdminMobileColorScheme();
+  const layoutWorkspace = useAdminShellLayout()?.workspace ?? "pro";
   useAdminScrollLock(open);
   useEffect(() => {
     if (open) setShown(true);
@@ -320,7 +328,7 @@ export function AdminMobileSheet({
   }, [open, onClose]);
   if (!shown) return null;
   const panel = (
-    <div className="admin-m admin-sheet-root md:hidden" role="dialog" aria-modal="true" aria-label={title} data-open={open ? "true" : "false"} data-admin-theme={theme}>
+    <div className="admin-m admin-sheet-root md:hidden" role="dialog" aria-modal="true" aria-label={title} data-open={open ? "true" : "false"} {...adminChromeDataset(layoutWorkspace, theme)}>
       <button
         type="button"
         aria-label="Aizvērt"

@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { adminMobileThemeColor } from "@/lib/admin-mobile-collapse";
+import { irissPwaThemeColor } from "@/lib/iriss-pwa";
 import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
+import type { AdminWorkspaceId } from "@/lib/admin-chrome-attrs";
 
 function subscribeMobileViewport(onStoreChange: () => void): () => void {
   const mq = window.matchMedia(ADMIN_MOBILE_MQ);
@@ -31,7 +33,10 @@ export function useAdminClientReady(): boolean {
   return ready;
 }
 
-/** Light/dark tokens uz `.admin-m[data-admin-theme]`, nevis globālā site tēma. */
+/**
+ * Light/dark uz `.admin-m[data-theme]` / `[data-admin-theme]`.
+ * Nav lietotāja slēdža: seko `prefers-color-scheme`.
+ */
 export function useAdminMobileColorScheme(): "light" | "dark" {
   return useSyncExternalStore(
     (onChange) => {
@@ -44,10 +49,13 @@ export function useAdminMobileColorScheme(): "light" | "dark" {
   );
 }
 
-/** Safari theme-color seko admin tēmai (ne paliek pie pirmā meta). */
-export function useSyncAdminMobileThemeColor(theme: "light" | "dark"): void {
+/** Safari theme-color seko admin tēmai (ne paliek pie pirmā meta). IRISS = --bg-base. */
+export function useSyncAdminMobileThemeColor(
+  theme: "light" | "dark",
+  workspace: AdminWorkspaceId = "pro",
+): void {
   useEffect(() => {
-    const color = adminMobileThemeColor(theme);
+    const color = workspace === "iriss" ? irissPwaThemeColor(theme) : adminMobileThemeColor(theme);
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     if (metas.length === 0) {
       const el = document.createElement("meta");
@@ -57,5 +65,5 @@ export function useSyncAdminMobileThemeColor(theme: "light" | "dark"): void {
       return;
     }
     metas.forEach((el) => el.setAttribute("content", color));
-  }, [theme]);
+  }, [theme, workspace]);
 }
