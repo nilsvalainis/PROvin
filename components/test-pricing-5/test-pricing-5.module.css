@@ -2915,6 +2915,22 @@ html[data-site-theme="light"] .inlineInput:focus {
   color: #fbbf24;
 }
 
+.miniConfirmField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+}
+
+.miniConfirmLabel {
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+  color: rgb(228 228 231 / 0.96);
+}
+
 .miniConfirmActions {
   display: flex;
   flex-direction: column;
@@ -2963,7 +2979,8 @@ html[data-site-theme="light"] .miniConfirmListItem {
   color: #64748b;
 }
 
-html[data-site-theme="light"] .miniConfirmListHeading {
+html[data-site-theme="light"] .miniConfirmListHeading,
+html[data-site-theme="light"] .miniConfirmLabel {
   color: #0f172a;
 }
 
