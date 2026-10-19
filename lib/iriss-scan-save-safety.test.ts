@@ -54,4 +54,24 @@ describe("prepareIrissScanWrite", () => {
     expect(merged.listingLinkAuto1).toEqual(["https://auto1.com/x"]);
     expect(merged.workspaceRevision).toBe(2);
   });
+
+  it("keeps listing spec fields when merging a radar created from a card", () => {
+    const server = {
+      ...emptyIrissScanRecord("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", "2026-10-14T10:00:00.000Z"),
+      workspaceRevision: 1,
+      brandModel: "Volvo XC60",
+      productionYears: "2019",
+    };
+    const local = {
+      ...emptyIrissScanRecord("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", "2026-10-14T10:00:00.000Z"),
+      engineType: "dīzelis 140 kW",
+      transmission: "automāts",
+      bodyType: "SUV",
+    };
+    const merged = mergeIrissScanRecords(server, local);
+    expect(merged.productionYears).toBe("2019");
+    expect(merged.engineType).toBe("dīzelis 140 kW");
+    expect(merged.transmission).toBe("automāts");
+    expect(merged.bodyType).toBe("SUV");
+  });
 });

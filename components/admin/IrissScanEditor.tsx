@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ExternalLink, Plus, Trash2, X } from "lucide-react";
+import { ChevronLeft, ExternalLink, Filter, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -16,6 +16,7 @@ import {
 } from "@/lib/iriss-listing-link-lists";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
+import { applyGeneratedScanSourceFilter } from "@/lib/iriss-scan-platform-search";
 import { IRISS_SCAN_SOURCES, type IrissScanLinkKey } from "@/lib/iriss-scan-sources";
 import { IRISS_STALE_REVISION, irissScanWorkspaceRevision, mergeIrissScanRecords } from "@/lib/iriss-scan-save-safety";
 import { nextStableRowKeys } from "@/lib/iriss-stable-row-keys";
@@ -27,11 +28,13 @@ function SourceGroup({
   logoKey,
   links,
   onChange,
+  onGenerateFilter,
 }: {
   label: string;
   logoKey: import("@/lib/iriss-auction-logos").IrissAuctionLogoKey;
   links: readonly string[];
   onChange: (next: string[]) => void;
+  onGenerateFilter?: () => void;
 }) {
   const rows = coerceIrissListingLinkList(links);
   const filled = rows.filter((r) => r.trim()).length;
@@ -46,6 +49,17 @@ function SourceGroup({
           <span className="sr-only">{label}</span>
         </h2>
         <span className="text-[11px] text-[#aeaeb2]">{filled > 0 ? filled : ""}</span>
+        {onGenerateFilter ? (
+          <button
+            type="button"
+            onClick={onGenerateFilter}
+            className="ml-auto inline-flex h-8 items-center gap-1 rounded-full bg-[#e9e9ee] px-2.5 text-[12px] font-medium text-[#3a3a3c]"
+            title={`Izveidot ${label} meklēšanas filtru no ieraksta kritērijiem`}
+          >
+            <Filter className="h-3.5 w-3.5 text-slate-500" aria-hidden strokeWidth={1.5} />
+            Izveidot filtru
+          </button>
+        ) : null}
       </div>
       <div className="overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
         {rows.map((line, idx) => {
@@ -325,7 +339,26 @@ export function IrissScanEditor({
         </div>
 
         {IRISS_SCAN_SOURCES.map((s) => (
-          <SourceGroup key={s.key} label={s.label} logoKey={s.logoKey} links={rec[s.key]} onChange={(next) => patchRecord({ [s.key]: next } as Pick<IrissScanRecord, IrissScanLinkKey>)} />
+          <SourceGroup
+            key={s.key}
+            label={s.label}
+            logoKey={s.logoKey}
+            links={rec[s.key]}
+            onChange={(next) => patchRecord({ [s.key]: next } as Pick<IrissScanRecord, IrissScanLinkKey>)}
+            onGenerateFilter={() => {
+              const next = applyGeneratedScanSourceFilter(rec, s.filterPlatform);
+              if (!next.url) {
+                setSaveMsg("Nav pietiekamu kritēriju šim filtram (marka).");
+                return;
+              }
+              if (next.record === rec) {
+                setSaveMsg("Šī avota filtrs jau ir sarakstā.");
+                return;
+              }
+              patchRecord(next.record);
+              setSaveMsg(`Pievienots ${s.label} filtrs. Saglabā.`);
+            }}
+          />
         ))}
 
         <button

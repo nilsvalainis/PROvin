@@ -5,6 +5,7 @@
 
 import { listingFmtEur } from "@/lib/iriss-listings-card";
 import { listingBidPrice } from "@/lib/iriss-listings-cost";
+import { listingBrandModelLabel } from "@/lib/iriss-listing-search-fields";
 import { defaultOfferValidUntilYmd } from "@/lib/iriss-offer-valid-until";
 import { emptyIrissOfferRecord, emptyIrissPasutijums, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
@@ -36,8 +37,7 @@ export function irissPasutijumsSeedFromListing(
   nowIso: string,
 ): IrissPasutijumsRecord {
   const rec = emptyIrissPasutijums(id, nowIso);
-  const brand = [v.manufacturer, v.title].map((s) => (s ?? "").trim()).filter(Boolean);
-  rec.brandModel = brand[0] && brand[1] && brand[1].toLowerCase().includes(brand[0].toLowerCase()) ? brand[1] : brand.join(" ").trim() || v.title.trim();
+  rec.brandModel = listingBrandModelLabel(v);
   rec.vin = irissListingVin(v.vin);
   rec.productionYears = (v.year || "").trim();
   rec.engineType = [v.fuel, v.powerKw].map((s) => (s ?? "").trim()).filter(Boolean).join(" ");
