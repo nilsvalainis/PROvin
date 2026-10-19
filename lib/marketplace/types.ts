@@ -290,3 +290,25 @@ export function marketplaceQueryHasStrictBounds(q: MarketplaceQuery): boolean {
 export function marketplaceQueryHasBounds(q: MarketplaceQuery): boolean {
   return marketplaceQueryHasStrictBounds(q);
 }
+
+/** Match pēc ielādes: pietiek ar jebkuru aizpildītu filtru. Ielādes vārti paliek stingri. */
+export function marketplaceQueryHasMatchBounds(q: MarketplaceQuery): boolean {
+  return Boolean(
+    q.make.trim() ||
+      q.model.trim() ||
+      q.yearFrom != null ||
+      q.yearTo != null ||
+      q.mileageFrom != null ||
+      q.mileageTo != null ||
+      q.priceFrom != null ||
+      q.priceTo != null ||
+      q.fuel.trim() ||
+      q.gearbox.trim() ||
+      q.powerFromKw != null ||
+      q.powerToKw != null ||
+      q.displacementFromCc != null ||
+      q.displacementToCc != null ||
+      q.body.trim() ||
+      q.drive.trim(),
+  );
+}

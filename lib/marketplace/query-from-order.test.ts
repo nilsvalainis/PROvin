@@ -114,4 +114,26 @@ describe("marketplaceVehicleMatchesOrder", () => {
     expect(marketplaceVehicleMatchesOrder({ ...fit, priceCurrent: 40000 }, order)).toBe(false);
     expect(marketplaceVehicleMatchesOrder({ ...fit, title: "BMW X5", manufacturer: "BMW" }, order)).toBe(false);
   });
+
+  it("still matches a listing when only price-to is set", () => {
+    const loose = {
+      brandModel: "Volvo XC60",
+      productionYears: "2018-2020",
+      maxMileage: "150000",
+      totalBudget: "25000",
+    };
+    expect(marketplaceOrderHasFetchBounds(loose)).toBe(false);
+    expect(
+      marketplaceVehicleMatchesOrder(
+        {
+          title: "Volvo XC60 D4",
+          manufacturer: "Volvo",
+          year: "2019",
+          mileageKm: 90000,
+          priceCurrent: 18900,
+        },
+        loose,
+      ),
+    ).toBe(true);
+  });
 });

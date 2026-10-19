@@ -3,6 +3,7 @@ import type { IrissCriteriaFilter, IrissCriteriaV1 } from "@/lib/iriss-criteria-
 import {
   emptyMarketplaceQuery,
   MARKETPLACE_TOO_BROAD_ERROR,
+  marketplaceQueryHasMatchBounds,
   marketplaceQueryHasStrictBounds,
   type MarketplaceQuery,
 } from "@/lib/marketplace/types";
@@ -220,7 +221,7 @@ function vehiclePrice(v: MarketplaceMatchVehicle): number | null {
 
 /** Tas pats filtrs, ko lieto pēc ielādes: marka/modelis/gads/km/cena/degviela/kārba/jauda/tilpums. */
 export function marketplaceVehicleMatchesQuery(v: MarketplaceMatchVehicle, q: MarketplaceQuery): boolean {
-  if (!marketplaceQueryHasStrictBounds(q)) return false;
+  if (!marketplaceQueryHasMatchBounds(q)) return false;
   const hay = `${v.manufacturer ?? ""} ${v.title ?? ""}`;
   if (q.make && hay.trim() && !includesLoose(hay, q.make)) return false;
   if (q.model && hay.trim() && !includesLoose(hay, q.model)) return false;

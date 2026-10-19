@@ -73,7 +73,7 @@ describe("discoverListingOrderMatches", () => {
         listingLinkEcarstrade: [],
         productionYears: "2018-2020",
         maxMileage: "150000",
-        totalBudget: "25000",
+        totalBudget: "10000-25000",
         engineType: "diesel",
         transmission: "automatic",
       }),
