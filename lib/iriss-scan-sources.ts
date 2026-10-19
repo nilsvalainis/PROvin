@@ -10,6 +10,8 @@ export type IrissScanLinkKey =
   | "listingLinkMobile"
   | "listingLinksOther";
 
+export type IrissScanFilterPlatform = "auto1" | "openline" | "autobid" | "ecarstrade" | "mobilede" | "autoscout24";
+
 /** SCAN avoti (kārtība = rādīšanas secība). Krāsas sakrīt ar platformu čipiem. */
 export const IRISS_SCAN_SOURCES: ReadonlyArray<{
   key: IrissScanLinkKey;
@@ -17,13 +19,14 @@ export const IRISS_SCAN_SOURCES: ReadonlyArray<{
   short: string;
   color: string;
   logoKey: IrissAuctionLogoKey;
+  filterPlatform: IrissScanFilterPlatform;
 }> = [
-  { key: "listingLinkAuto1", label: "Auto1", short: "A1", color: "#FF9500", logoKey: "auto1" },
-  { key: "listingLinkOpenline", label: "Openlane", short: "OL", color: "#007AFF", logoKey: "openline" },
-  { key: "listingLinkAutobid", label: "Autobid", short: "AB", color: "#5AC8FA", logoKey: "autobid" },
-  { key: "listingLinkEcarstrade", label: "eCarsTrade", short: "ET", color: "#34C759", logoKey: "ecarstrade" },
-  { key: "listingLinkMobile", label: "Mobile", short: "M", color: "#FF3B30", logoKey: "mobile" },
-  { key: "listingLinksOther", label: "Citi", short: "C", color: "#8E8E93", logoKey: "citi" },
+  { key: "listingLinkAuto1", label: "Auto1", short: "A1", color: "#FF9500", logoKey: "auto1", filterPlatform: "auto1" },
+  { key: "listingLinkOpenline", label: "Openlane", short: "OL", color: "#007AFF", logoKey: "openline", filterPlatform: "openline" },
+  { key: "listingLinkAutobid", label: "Autobid", short: "AB", color: "#5AC8FA", logoKey: "autobid", filterPlatform: "autobid" },
+  { key: "listingLinkEcarstrade", label: "eCarsTrade", short: "ET", color: "#34C759", logoKey: "ecarstrade", filterPlatform: "ecarstrade" },
+  { key: "listingLinkMobile", label: "mobile.de", short: "M", color: "#FF3B30", logoKey: "mobile", filterPlatform: "mobilede" },
+  { key: "listingLinksOther", label: "AutoScout24", short: "C", color: "#8E8E93", logoKey: "autoscout24", filterPlatform: "autoscout24" },
 ];
 
 /** Aizpildīto saišu skaits katram avotam (tikai > 0). */

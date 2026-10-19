@@ -53,4 +53,25 @@ describe("IRISS SCAN store revision", () => {
     expect(ok.record.workspaceRevision).toBe(2);
     expect(ok.record.brandModel).toBe("Otrais");
   });
+
+  it("persists listing spec fields used by Izveidot filtru", async () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "iriss-scan-"));
+    dirs.push(dir);
+    const store = await loadStore(dir);
+    const created = await store.createIrissScan({
+      id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      brandModel: "Volvo XC60",
+      productionYears: "2019",
+      engineType: "dīzelis 140 kW",
+      transmission: "automāts",
+      bodyType: "SUV",
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    const read = await store.readIrissScan(created.record.id);
+    expect(read?.productionYears).toBe("2019");
+    expect(read?.engineType).toContain("140 kW");
+    expect(read?.transmission).toBe("automāts");
+    expect(read?.bodyType).toBe("SUV");
+  });
 });

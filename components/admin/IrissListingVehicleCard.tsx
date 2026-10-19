@@ -7,6 +7,7 @@ import { IrissListingCardPriceColumn, IrissListingCardPriceColumnMobile } from "
 import { IrissListingCardSpecGrid } from "@/components/admin/IrissListingCardSpecGrid";
 import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
+import { IrissListingCardActions } from "@/components/admin/IrissListingCardActions";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
 import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
 import { LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-panel";
@@ -75,6 +76,7 @@ export function IrissListingVehicleCard({
   onImageError,
   onVinPatch,
   onCreateOrder,
+  onCreateRadar,
   onCreateOffer,
   matchNew = false,
   duplicates = [],
@@ -93,14 +95,13 @@ export function IrissListingVehicleCard({
   onImageError: () => void;
   onVinPatch?: (id: string, patch: ListingVinOcrPatch) => void;
   onCreateOrder?: (v: IrissListingVehicle) => void | Promise<void>;
+  onCreateRadar?: (v: IrissListingVehicle) => void | Promise<void>;
   onCreateOffer?: (v: IrissListingVehicle) => void | Promise<void>;
   matchNew?: boolean;
   duplicates?: readonly IrissVinDuplicateLink[];
   layout?: "list" | "grid";
 }) {
   const [vinCopied, setVinCopied] = useState(false);
-  const [createBusy, setCreateBusy] = useState(false);
-  const [offerBusy, setOfferBusy] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const phone = useAdminMobileViewport();
   const clientReady = useAdminClientReady();
@@ -327,36 +328,14 @@ export function IrissListingVehicleCard({
             <span className="rounded-md bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white sm:hidden">+{dmg.cats.length - 2}</span>
           ) : null}
         </div>
-        <div className="flex flex-wrap items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
           <IrissListingOrderChips orders={linked} onPreview={onPreviewOrder} />
-          {onCreateOrder ? (
-            <button
-              type="button"
-              disabled={createBusy}
-              className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-              onClick={(e) => {
-                e.stopPropagation();
-                setCreateBusy(true);
-                void Promise.resolve(onCreateOrder(v)).finally(() => setCreateBusy(false));
-              }}
-            >
-              {createBusy ? "Veido…" : "Izveidot pasūtījumu"}
-            </button>
-          ) : null}
-          {onCreateOffer ? (
-            <button
-              type="button"
-              disabled={offerBusy}
-              className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOfferBusy(true);
-                void Promise.resolve(onCreateOffer(v)).finally(() => setOfferBusy(false));
-              }}
-            >
-              {offerBusy ? "Veido…" : "Piedāvājums"}
-            </button>
-          ) : null}
+          <IrissListingCardActions
+            v={v}
+            onCreateOrder={onCreateOrder}
+            onCreateRadar={onCreateRadar}
+            onCreateOffer={onCreateOffer}
+          />
         </div>
 
         <div onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>

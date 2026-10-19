@@ -8,6 +8,12 @@ export type IrissScanRecord = {
   brandModel: string;
   /** VIN, ja zināms. Tukšs vecajos JSON. */
   vin: string;
+  /** Modeļa gads / periods (LIST → Radars). Tukšs vecajos JSON. */
+  productionYears: string;
+  /** Degviela un jauda (kW). Tukšs vecajos JSON. */
+  engineType: string;
+  transmission: string;
+  bodyType: string;
   listingLinkMobile: string[];
   listingLinkAutobid: string[];
   listingLinkOpenline: string[];
@@ -32,6 +38,10 @@ export function emptyIrissScanRecord(id: string, nowIso: string): IrissScanRecor
     workspaceRevision: 0,
     brandModel: "",
     vin: "",
+    productionYears: "",
+    engineType: "",
+    transmission: "",
+    bodyType: "",
     listingLinkMobile: [""],
     listingLinkAutobid: [""],
     listingLinkOpenline: [""],

@@ -63,6 +63,7 @@ import { irissListingMatchKey, type IrissListingHitStatus, type IrissListingMatc
 import { mergeListingOrderOvMigration } from "@/lib/iriss-listing-order-ov";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { irissPasutijumsOfferSeedFromListing, irissPasutijumsSeedFromListing } from "@/lib/iriss-pasutijums-from-listing";
+import { irissScanSeedFromListing } from "@/lib/iriss-scan-from-listing";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
 import { irissListingPlatformIngestStats } from "@/lib/iriss-listings-ingest-stats";
@@ -1229,6 +1230,19 @@ export function IrissSludinajumiListClient({
               const data = (await res.json().catch(() => ({}))) as { id?: unknown };
               if (!res.ok || typeof data.id !== "string") return;
               router.push(`/admin/iriss/pasutijumi/${encodeURIComponent(data.id)}`);
+              router.refresh();
+            }}
+            onCreateRadar={async (vehicle) => {
+              const seed = irissScanSeedFromListing(vehicle, crypto.randomUUID(), new Date().toISOString());
+              const res = await fetch("/api/admin/iriss-scan", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify({ record: seed }),
+              });
+              const data = (await res.json().catch(() => ({}))) as { id?: unknown };
+              if (!res.ok || typeof data.id !== "string") return;
+              router.push(`/admin/iriss/scan/${encodeURIComponent(data.id)}`);
               router.refresh();
             }}
             onCreateOffer={async (vehicle) => {
