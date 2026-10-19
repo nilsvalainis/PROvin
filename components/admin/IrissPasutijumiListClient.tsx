@@ -1195,9 +1195,9 @@ export function IrissPasutijumiListClient({
         </div>
       </AdminMobileSheet>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 max-md:px-4">
         {visibleRows.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-slate-200 bg-white px-3 py-8 text-center text-[13px] text-black/60">
+          <p className="rounded-lg border border-dashed border-[var(--separator)] bg-[var(--surface)] px-3 py-8 text-center text-[13px] text-[var(--label-secondary)]">
             {searching ? "Nekas neatbilst meklējumam." : "Nav pasūtījumu šajā filtrā."}
           </p>
         ) : null}

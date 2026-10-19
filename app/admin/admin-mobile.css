@@ -425,6 +425,24 @@
     color: var(--label) !important;
   }
 
+  .admin-m .bg-\[\#F8F8F9\] {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .admin-m[data-admin-theme="dark"] .bg-white {
+    background: var(--surface) !important;
+    color: var(--label);
+  }
+
+  .admin-ios-theme:has(.admin-m) {
+    background: var(--bg, #f2f2f7) !important;
+  }
+
+  .admin-ios-theme:has(.admin-m[data-admin-theme="dark"]) {
+    background: #000000 !important;
+  }
+
   .admin-m [data-admin-brand-logo] {
     display: none !important;
   }

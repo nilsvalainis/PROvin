@@ -778,6 +778,11 @@ export function IrissSludinajumiListClient({
           title="Sludinājumi"
           trailing={
             <>
+              <AdminMobileRoundBtn
+                name="kartot"
+                label={`Kārtot: ${LISTING_SORTS.find((x) => x.id === sort)?.label ?? "Jaunākie"}`}
+                onClick={() => { setMenuOpen(true); setFilterOpen(false); }}
+              />
               <AdminMobileRoundBtn name="filtri" label="Filtri" onClick={() => { setFilterOpen(true); setMenuOpen(false); }} />
               <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => { setMenuOpen(true); setFilterOpen(false); }} />
             </>
@@ -791,32 +796,12 @@ export function IrissSludinajumiListClient({
               { id: "scan", label: `Mūsu monitorings ${scanOrders.length}` },
             ]}
           />
-          <div className="mt-2 flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <AdminMobileSearchField
-                value={query}
-                onChange={setQuery}
-                placeholder="Meklēt marku, modeli, VIN"
-              />
-            </div>
-            <label className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-[var(--fill-secondary)] px-3 text-[13px] font-medium text-[var(--label)]">
-              <span className="sr-only">Kārtot pēc</span>
-              <select
-                aria-label="Kārtot pēc"
-                value={sort}
-                onChange={(e) => {
-                  const next = parseListingSort(e.target.value);
-                  if (next) writeListQuery({ sort: next });
-                }}
-                className="max-w-[7.5rem] bg-transparent text-[13px] font-medium text-[var(--label)] outline-none"
-              >
-                {LISTING_SORTS.map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {x.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="mt-2">
+            <AdminMobileSearchField
+              value={query}
+              onChange={setQuery}
+              placeholder="Meklēt marku, modeli, VIN"
+            />
           </div>
         </AdminMobileTopBar>
       </div>
@@ -993,6 +978,23 @@ export function IrissSludinajumiListClient({
               <>
                 <div className="mx-auto mb-3 h-1.5 w-9 rounded-full bg-[#c7c7cc] sm:hidden" aria-hidden />
                 <p className="mb-2 text-center text-[17px] font-semibold sm:hidden">Vairāk</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93] sm:hidden">Kārtot</p>
+                <div className="mb-3 overflow-hidden rounded-xl bg-[var(--surface)] sm:hidden">
+                  {LISTING_SORTS.map((x) => (
+                    <button
+                      key={x.id}
+                      type="button"
+                      onClick={() => {
+                        writeListQuery({ sort: x.id });
+                        setMenuOpen(false);
+                      }}
+                      className="flex min-h-12 w-full items-center justify-between border-b border-[var(--separator)] px-4 text-[17px] last:border-b-0"
+                    >
+                      {x.label}
+                      {sort === x.id ? <span className="text-[var(--label-secondary)]">✓</span> : null}
+                    </button>
+                  ))}
+                </div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Nolasīšana</p>
                 <div className="mt-1 grid grid-cols-[1fr_auto] gap-y-0.5">
                   <span className="text-[#8e8e93]">Pēdējā</span><span>{mounted && latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : "nav veikta"}</span>
@@ -1138,8 +1140,8 @@ export function IrissSludinajumiListClient({
       </header>
 
       {visible.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-10 text-center shadow-sm">
-          <p className="text-sm font-medium text-black">
+        <section className="mx-4 rounded-2xl border border-dashed border-[var(--separator)] bg-[var(--surface)] px-6 py-10 text-center shadow-none max-md:mx-4">
+          <p className="text-sm font-medium text-[var(--label)]">
             {vehicles.length === 0 ? "Nav nolasītu auto" : "Šajā filtrā nav auto"}
           </p>
           <p className="mt-1.5 text-[12px] text-[var(--color-provin-muted)]">

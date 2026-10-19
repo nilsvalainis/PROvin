@@ -96,5 +96,7 @@ describe("admin mobile document scroll", () => {
     expect(css).toMatch(/#admin-main-scroll \{[\s\S]*overflow:\s*visible !important/);
     const shell = readFileSync(new URL("../components/admin/AdminShell.tsx", import.meta.url), "utf8");
     expect(shell).not.toMatch(/max-md:h-dvh/);
+    const main = readFileSync(new URL("../components/admin/AdminShellMainWithMobilePull.tsx", import.meta.url), "utf8");
+    expect(main).toMatch(/max-md:p-0/);
   });
 });

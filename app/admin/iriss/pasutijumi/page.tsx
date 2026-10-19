@@ -62,7 +62,7 @@ export default async function IrissPasutijumiListPage() {
       ) : null}
 
       {storeEnabled && rows.length === 0 && !loadError ? (
-        <div className="mt-4">
+        <div className="mt-4 max-md:hidden">
           <AdminIrissOrdersExportButton compact />
         </div>
       ) : null}

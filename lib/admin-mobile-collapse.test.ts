@@ -71,7 +71,7 @@ describe("admin mobile spec files", () => {
     const side = readFileSync(new URL("../components/admin/AdminSidebar.tsx", import.meta.url), "utf8");
     expect(side).toMatch(/\{\s*\.\.\.VIN,\s*label:\s*"VIN"\s*\}/);
     expect(side).toMatch(/floating/);
-    expect(side).toMatch(/z-\[20\]/);
+    expect(side).toMatch(/fixed inset-0 z-\[20\]/);
     expect(side).not.toMatch(/z-\[40\]/);
     expect(side).toMatch(/whitespace-nowrap leading-none/);
   });
@@ -82,6 +82,7 @@ describe("admin mobile spec files", () => {
     expect(bar).not.toMatch(/item\.urgent \?/);
     expect(bar).toMatch(/sludinajumi/);
     expect(bar).toMatch(/animate-pulse/);
+    expect(bar).not.toMatch(/scheduleAdminIdleWork/);
   });
 
   it("PRO kartītes ir kompaktas un galvenē paliek tikai +", () => {

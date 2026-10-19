@@ -216,16 +216,16 @@ export default async function AdminOrdersPage({
       {null}
       {hasStripeIssue && orders.length > 0 ? (
         <div
-          className={`mt-3 rounded-2xl border px-4 py-3.5 text-sm shadow-sm ${
+          className={`mt-3 rounded-2xl border px-4 py-3.5 text-sm shadow-sm max-md:mx-4 max-md:mt-2 max-md:rounded-[14px] max-md:px-3 max-md:py-2 ${
             onlyDemoShown
               ? "border-[var(--color-provin-accent)]/20 bg-[var(--color-provin-accent-soft)]/60 text-[var(--color-apple-text)]"
               : "border-amber-200/90 bg-amber-50/90 text-amber-950"
           }`}
         >
-          <p className="font-semibold tracking-tight">
+          <p className="font-semibold tracking-tight max-md:text-[13px]">
             {onlyDemoShown ? "Tikai parauga dati" : "Papildu avots (Stripe) nav pieejams"}
           </p>
-          <p className={`mt-1.5 leading-relaxed ${onlyDemoShown ? "text-[var(--color-provin-muted)]" : "text-amber-900/90"}`}>
+          <p className={`mt-1.5 leading-relaxed max-md:hidden ${onlyDemoShown ? "text-[var(--color-provin-muted)]" : "text-amber-900/90"}`}>
             {onlyDemoShown
               ? "Īstu maksājumu sarakstu varēsi ielādēt vēlāk, kad serverī būs iestatīts STRIPE_SECRET_KEY. Kamēr turpini dizaina un darba plūsmas uzlabošanu ar demo ierakstiem."
               : stripeError}

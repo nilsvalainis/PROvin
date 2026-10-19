@@ -38,8 +38,9 @@ async function dismissNextOverlay(page) {
 async function settle(page) {
   await page.waitForSelector(".admin-m", { timeout: 60_000 });
   await dismissNextOverlay(page);
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(800);
   await dismissNextOverlay(page);
+  await page.locator(".animate-pulse").first().waitFor({ state: "detached", timeout: 4_000 }).catch(() => {});
 }
 
 async function metrics(page) {

@@ -513,7 +513,7 @@ function AdminOrdersMobileChrome({
         />
       </div>
     </AdminMobileTopBar>
-    {belowTitle ? <div className="mt-2 md:hidden">{belowTitle}</div> : null}
+        {belowTitle ? <div className="mt-2 px-4 md:hidden">{belowTitle}</div> : null}
     <AdminMobileSheet open={moreOpen} title="Darbības" onClose={() => setMoreOpen(false)}>
       <div className="space-y-2">
         <AdminClientLinkButton />
@@ -796,7 +796,7 @@ export function AdminOrdersTable({
           filterCounts={filterCounts}
           belowTitle={belowTopBar}
         />
-      <ul className="mt-2 space-y-2">
+      <ul className="mt-2 space-y-2 px-4">
         {dayGroups.map((g) => (
         <Fragment key={g.key}>
           <li className="flex items-baseline justify-between px-1 pt-1 text-[13px] font-medium text-[var(--label-secondary)]">
