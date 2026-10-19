@@ -73,8 +73,8 @@ describe("notifyB2bWalletRefundEmail", () => {
     expect(state.send).toHaveBeenCalledTimes(1);
     const args = state.send.mock.calls[0]![0] as { to: string; subject: string; text: string };
     expect(args.to).toBe("salons@example.lv");
-    expect(args.subject).toContain("IRISS");
-    expect(args.subject + args.text).not.toMatch(/PROVIN/i);
+    expect(args.subject).toContain("PROVIN");
+    expect(args.subject + args.text).not.toContain("PROVIN.LV");
     expect(args.text).toContain("19,99 €");
     expect(args.text).toContain("50,00 €");
     expect(state.job?.refund?.emailSentAt).toBeTruthy();

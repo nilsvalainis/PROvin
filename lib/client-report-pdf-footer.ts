@@ -29,6 +29,8 @@ export function buildPdfDocFooterHtml(args: {
   amountTotalCents: number | null;
   generatedLabel: string;
   productBrand?: ProvinAuditPdfProductBrand | null;
+  /** false = B2B: PROVIN bez .LV. Noklusējums saglabā mazumtirdzniecības PROVIN.LV. */
+  includeLvSuffix?: boolean;
 }): string {
   const b = getClientReportLegalFooterBlocks();
   const productLabel = formatPdfDocFooterProductLabel(
@@ -38,7 +40,7 @@ export function buildPdfDocFooterHtml(args: {
     vin: args.vin,
     generatedLabel: args.generatedLabel,
   });
-  const logo = provincLogoSvg().replace(
+  const logo = provincLogoSvg({ includeLvSuffix: args.includeLvSuffix !== false }).replace(
     'class="pdf-v1-logo"',
     'class="pdf-v1-logo pdf-doc-footer__logo"',
   );

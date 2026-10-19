@@ -1,7 +1,7 @@
 /**
- * IRISS B2B maka atmaksas e-pasta teksts (LV vieta, Nila redaktors vēl precizēs).
+ * B2B maka atmaksas e-pasta teksts.
  * Vietturņi: {{vin}} {{summa}} {{atlikums}} {{produkts}}.
- * Zīmols: IRISS, bez PROVIN.
+ * Zīmols: PROVIN, bez .LV.
  */
 
 export const B2B_WALLET_REFUND_EMAIL_PRODUCT: Record<"business" | "dealer_raw" | "dealer_pro", string> = {
@@ -11,7 +11,7 @@ export const B2B_WALLET_REFUND_EMAIL_PRODUCT: Record<"business" | "dealer_raw" |
 };
 
 export const B2B_WALLET_REFUND_EMAIL = {
-  subject: "IRISS: dati VIN {{vin}} nav pieejami, {{summa}} atgriezti kontā",
+  subject: "PROVIN: dati VIN {{vin}} nav pieejami, {{summa}} atgriezti kontā",
   body: [
     "Sveiki!",
     "",
@@ -20,7 +20,7 @@ export const B2B_WALLET_REFUND_EMAIL = {
     "Jaunais atlikums: {{atlikums}}.",
     "",
     "Ar cieņu,",
-    "IRISS",
+    "PROVIN",
   ].join("\n"),
 } as const;
 

@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
 import { BULK_VIN_MAX, isBulkVinFormatValid } from "@/lib/b2b-partner-bulk-vin";
 import { isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
-import { isB2bWalletProductId, isB2bWalletProductVisible, isB2bWalletReportLang, type B2bWalletProductId } from "@/lib/b2b-wallet";
+import {
+  b2bWalletProductRequiresReportLang,
+  isB2bWalletProductId,
+  isB2bWalletProductVisible,
+  isB2bWalletReportLang,
+  type B2bWalletProductId,
+} from "@/lib/b2b-wallet";
 import { purchaseB2bWalletBulk, type B2bWalletBulkItemInput } from "@/lib/b2b-wallet-bulk-purchase";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import {
@@ -72,7 +78,7 @@ export async function POST(req: Request) {
   }
 
   const reportLang = isB2bWalletReportLang(raw.reportLang) ? raw.reportLang : null;
-  if (product === "dealer_pro" && !reportLang) {
+  if (b2bWalletProductRequiresReportLang(product) && !reportLang) {
     return NextResponse.json({ error: "report_lang" }, { status: 400 });
   }
 

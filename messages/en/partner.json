@@ -299,6 +299,8 @@
     "walletProductProDesc": "Processed dealer data report for the buyer: service and repair history, oil change interval chart, mileage check and summary.",
     "walletProductProTag": "12-24h",
     "walletReportLang": "Report language",
+    "walletReportLangPlaceholder": "Choose language",
+    "walletReportLangHint": "Choose a report language before buying.",
     "walletSample": "View sample",
     "walletSampleSoon": "Soon",
     "walletSampleAria": "Opens the PDF sample in a new tab",

@@ -9,6 +9,7 @@ import {
   applyB2bWalletRefund,
   applyB2bWalletTopup,
   b2bWalletDiscountPct,
+  b2bWalletProductRequiresReportLang,
   buildB2bWalletOrderNoteParts,
   canAffordCheapestB2bWalletProduct,
   cheapestB2bWalletPriceCents,
@@ -248,5 +249,11 @@ describe("b2b wallet prices", () => {
     const none = buildB2bWalletView(wallet, null, 50, ["business", "dealer_raw", "dealer_pro"]);
     expect(none.products).toEqual([]);
     expect(none.cheapestCents).toBe(0);
+  });
+
+  it("requires a report language only for language-dependent products", () => {
+    expect(b2bWalletProductRequiresReportLang("dealer_pro")).toBe(true);
+    expect(b2bWalletProductRequiresReportLang("dealer_raw")).toBe(false);
+    expect(b2bWalletProductRequiresReportLang("business")).toBe(false);
   });
 });

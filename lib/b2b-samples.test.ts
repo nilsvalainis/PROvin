@@ -24,6 +24,8 @@ describe("b2b wallet samples", () => {
     expect(resolveB2bWalletSampleUrl("dealer_pro", "lv", samples)).toBe("/samples/b2b/pro-lv.pdf");
     expect(resolveB2bWalletSampleUrl("dealer_pro", "ru", samples)).toBeNull();
     expect(resolveB2bWalletSampleUrl("dealer_pro", "en", samples)).toBe("/samples/b2b/pro.pdf");
+    expect(resolveB2bWalletSampleUrl("dealer_pro", null, samples)).toBe("/samples/b2b/pro.pdf");
+    expect(resolveB2bWalletSampleUrl("dealer_pro")).toBeNull();
   });
 
   it("only uses site-relative sample paths", () => {

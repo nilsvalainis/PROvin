@@ -7,7 +7,8 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import {
   B2B_TOPUP_INVOICE,
-  b2bTopupInvoiceSellerLines,
+  b2bTopupInvoiceProviderLine,
+  b2bTopupInvoiceSellerExtraLines,
   getB2bTopupInvoicePvnNote,
 } from "@/lib/b2b-topup-invoice";
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
@@ -65,7 +66,7 @@ function lineHeight(size: number): number {
 }
 
 const ACCENT_PROVIN = rgb(0 / 255, 97 / 255, 210 / 255);
-const ACCENT_IRISS = rgb(242 / 255, 101 / 255, 34 / 255);
+const WORDMARK_BLACK = rgb(0, 0, 0);
 const INK = rgb(29 / 255, 29 / 255, 31 / 255);
 const MUTED = rgb(110 / 255, 110 / 255, 115 / 255);
 const LINE = rgb(0.91, 0.91, 0.93);
@@ -104,17 +105,33 @@ function drawParagraph(ctx: Ctx, text: string, size: number, color = INK, f?: PD
   }
 }
 
+/** B2B: PROVIN vārdzīme bez .LV (PRO melns, VIN zils). */
+function drawProvinWordmark(ctx: Ctx, size: number, includeLvSuffix: boolean) {
+  ensureSpace(ctx, lineHeight(size));
+  const parts: Array<[string, ReturnType<typeof rgb>]> = [
+    ["PRO", WORDMARK_BLACK],
+    ["VIN", ACCENT_PROVIN],
+    ...(includeLvSuffix ? [[".LV", WORDMARK_BLACK] as [string, ReturnType<typeof rgb>]] : []),
+  ];
+  let x = ctx.margin;
+  for (const [text, color] of parts) {
+    ctx.page.drawText(text, { x, y: ctx.y, size, font: ctx.fontBold, color });
+    x += ctx.fontBold.widthOfTextAtSize(text, size);
+  }
+  ctx.y -= lineHeight(size);
+}
+
 export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<Uint8Array> {
   const topup = order.variant === "b2b_topup";
   const legal = getCompanyLegal();
-  const brand = topup ? "IRISS" : getCompanyPublicBrand();
+  const brand = getCompanyPublicBrand();
   const lineDesc = topup ? B2B_TOPUP_INVOICE.serviceLine : buildInvoiceServiceLineDescription(order);
   const pvnFooter = topup ? getB2bTopupInvoicePvnNote() : getInvoicePvnFooterText();
   const money = formatMoneyEur(order.amountTotal, order.currency);
   const vin = order.vin?.trim() || "-";
   const buyerLines = invoiceBuyerLines(invoiceBuyerFromOrder(order));
   const invoiceNo = order.invoiceNumber;
-  const accent = topup ? ACCENT_IRISS : ACCENT_PROVIN;
+  const accent = ACCENT_PROVIN;
 
   const dateFmt = new Intl.DateTimeFormat("lv-LV", {
     dateStyle: "long",
@@ -147,7 +164,10 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
 
   drawTextLine(ctx, "RĒĶINS", 11, { font: fontBold, color: MUTED });
   ctx.y -= 2;
-  drawTextLine(ctx, brand, 20, { font: fontBold, color: accent });
+  if (topup) {
+    ctx.y -= 10;
+    drawProvinWordmark(ctx, 22, false);
+  } else drawTextLine(ctx, brand, 20, { font: fontBold, color: accent });
   ctx.y -= 8;
   drawTextLine(ctx, `Rēķina Nr.: ${invoiceNo}`, 10);
   drawTextLine(ctx, `Datums: ${invoiceDate}`, 10);
@@ -163,7 +183,8 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
 
   drawTextLine(ctx, "Pakalpojuma sniedzējs", 9, { font: fontBold, color: MUTED });
   if (topup) {
-    for (const line of b2bTopupInvoiceSellerLines()) {
+    drawParagraph(ctx, b2bTopupInvoiceProviderLine(), 10);
+    for (const line of b2bTopupInvoiceSellerExtraLines()) {
       drawParagraph(ctx, line, 10);
     }
   } else {
@@ -291,7 +312,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   });
   ctx.y = sumTop - boxH - 18;
 
-  drawParagraph(ctx, pvnFooter, 8, MUTED);
+  if (pvnFooter) drawParagraph(ctx, pvnFooter, 8, MUTED);
 
   return pdfDoc.save();
 }

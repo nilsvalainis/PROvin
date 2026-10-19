@@ -19,6 +19,7 @@ import {
   B2B_WALLET_PRODUCT_IDS,
   B2B_WALLET_PRODUCTS,
   B2B_WALLET_REPORT_LANGS,
+  b2bWalletProductRequiresReportLang,
   formatB2bWalletEuro,
   type B2bWalletProductId,
   type B2bWalletReportLang,
@@ -106,10 +107,17 @@ function SoonBadge() {
   );
 }
 
-function SampleLink({ product, reportLang }: { product: B2bWalletProductId; reportLang: B2bWalletReportLang }) {
+function SampleLink({
+  product,
+  reportLang,
+}: {
+  product: B2bWalletProductId;
+  reportLang: B2bWalletReportLang | null;
+}) {
   const t = useTranslations("Partner");
   const url = resolveB2bWalletSampleUrl(product, reportLang);
-  const langSuffix = product === "dealer_pro" ? ` (${reportLang.toUpperCase()})` : "";
+  const langSuffix =
+    b2bWalletProductRequiresReportLang(product) && reportLang ? ` (${reportLang.toUpperCase()})` : "";
   const rowClass = "mt-2.5 inline-flex min-h-[22px] items-center gap-1.5 self-start text-[0.74rem] font-semibold";
   if (!url) {
     return (
@@ -144,7 +152,7 @@ function ProductCard({
 }: {
   product: B2bWalletProductId;
   view: B2bWalletView;
-  reportLang: B2bWalletReportLang;
+  reportLang: B2bWalletReportLang | null;
   onReportLang: (lang: B2bWalletReportLang) => void;
   onBuy: () => void;
 }) {
@@ -153,6 +161,9 @@ function ProductCard({
   const price = view.prices[product];
   const affordable = view.balanceCents >= price.priceCents;
   const refundable = B2B_WALLET_PRODUCTS[product].refundOnNoData;
+  const needsLang = b2bWalletProductRequiresReportLang(product);
+  const langMissing = needsLang && !reportLang;
+  const buyDisabled = !affordable || langMissing;
 
   return (
     <article className="flex min-w-0 flex-col rounded-[0.9rem] border border-white/10 bg-[rgb(20_20_20/0.72)] p-5 shadow-[0_18px_48px_-28px_rgba(0,0,0,0.8)]">
@@ -165,43 +176,34 @@ function ProductCard({
       <h2 className="mt-4 text-[1.08rem] font-bold leading-snug tracking-[-0.01em] text-zinc-100">{renderB2bProvinBusinessName(t(copy.title))}</h2>
       <p className="mt-2 text-[0.82rem] leading-relaxed text-zinc-400">{t(copy.desc)}</p>
 
-      {product === "dealer_pro" ? (
+      {needsLang ? (
         <div className="mt-4">
-          <p className={B2B_LABEL_CLASS}>{t("walletReportLang")}</p>
-          <div
-            className="inline-flex gap-0.5 rounded-lg border border-white/12 bg-white/[0.03] p-0.5"
-            role="radiogroup"
-            aria-label={t("walletReportLang")}
-            onKeyDown={(event) => {
-              const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
-              if (!step) return;
-              event.preventDefault();
-              const langs = B2B_WALLET_REPORT_LANGS;
-              const next = langs[(langs.indexOf(reportLang) + step + langs.length) % langs.length];
-              onReportLang(next);
-              event.currentTarget.querySelector<HTMLButtonElement>(`[data-lang="${next}"]`)?.focus();
-            }}
-          >
-            {B2B_WALLET_REPORT_LANGS.map((lang) => {
-              const active = lang === reportLang;
-              return (
-                <button
-                  key={lang}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  tabIndex={active ? 0 : -1}
-                  data-lang={lang}
-                  className={`h-7 w-11 rounded-md text-[0.66rem] font-semibold tracking-[0.08em] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-300/70 ${
-                    active ? "bg-zinc-300/90 text-zinc-900" : "text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100"
-                  }`}
-                  onClick={() => onReportLang(lang)}
-                >
+          <label className="block min-w-0">
+            <span className={B2B_LABEL_CLASS}>{t("walletReportLang")}</span>
+            <select
+              className={`${styles.inlineInput} mt-0`}
+              value={reportLang ?? ""}
+              aria-label={t("walletReportLang")}
+              aria-required="true"
+              aria-invalid={langMissing ? true : undefined}
+              onChange={(event) => {
+                const next = event.target.value;
+                if (next === "lv" || next === "en" || next === "ru" || next === "de") onReportLang(next);
+              }}
+            >
+              <option value="" disabled>
+                {t("walletReportLangPlaceholder")}
+              </option>
+              {B2B_WALLET_REPORT_LANGS.map((lang) => (
+                <option key={lang} value={lang} data-lang={lang}>
                   {lang.toUpperCase()}
-                </button>
-              );
-            })}
-          </div>
+                </option>
+              ))}
+            </select>
+          </label>
+          {langMissing ? (
+            <p className="mt-1.5 text-[0.7rem] leading-snug text-zinc-500">{t("walletReportLangHint")}</p>
+          ) : null}
         </div>
       ) : null}
 
@@ -243,8 +245,8 @@ function ProductCard({
         <div className="mt-2.5">
           <button
             type="button"
-            className={`${styles.liquidCta}${affordable ? "" : " opacity-45"}`}
-            disabled={!affordable}
+            className={`${styles.liquidCta}${buyDisabled ? " opacity-45" : ""}`}
+            disabled={buyDisabled}
             onClick={onBuy}
           >
             <span className={styles.liquidCtaShimmer} aria-hidden />
@@ -268,7 +270,7 @@ function PurchaseDialog({
 }: {
   product: B2bWalletProductId | null;
   view: B2bWalletView;
-  reportLang: B2bWalletReportLang;
+  reportLang: B2bWalletReportLang | null;
   onClose: () => void;
   onPurchased: (args: { product: B2bWalletProductId; orderId: string; vin: string; balanceCents: number }) => void;
   onBulkOrdered: (args: { balanceCents: number | null; accepted: number }) => void;
@@ -304,6 +306,8 @@ function PurchaseDialog({
   if (!product) return null;
   const price = view.prices[product];
   const isBusiness = product === "business";
+  const needsLang = b2bWalletProductRequiresReportLang(product);
+  const langMissing = needsLang && !reportLang;
 
   const onSubmit = async () => {
     setVinError("");
@@ -323,6 +327,10 @@ function PurchaseDialog({
       setListingError(t("listingError"));
       return;
     }
+    if (needsLang && !reportLang) {
+      setFormError(t("walletReportLangHint"));
+      return;
+    }
     setBusy(true);
     try {
       trackMetaLead();
@@ -334,7 +342,7 @@ function PurchaseDialog({
           product,
           vin,
           ...(isBusiness ? { auditPurpose, ...(listing ? { listingUrl: listing } : {}) } : {}),
-          ...(product === "dealer_pro" ? { reportLang } : {}),
+          ...(needsLang && reportLang ? { reportLang } : {}),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as {
@@ -365,6 +373,10 @@ function PurchaseDialog({
       }
       if (data.error === "product_hidden") {
         setFormError(t("walletProductUnavailable"));
+        return;
+      }
+      if (data.error === "report_lang") {
+        setFormError(t("walletReportLangHint"));
         return;
       }
       if (!res.ok || !data.ok || !data.orderId) {
@@ -425,11 +437,12 @@ function PurchaseDialog({
             <p className="mt-0.5 text-zinc-500">
               {t("walletBalancePill", { amount: formatB2bWalletEuro(view.balanceCents) })}
             </p>
-            {product === "dealer_pro" ? (
+            {needsLang ? (
               <p className="mt-0.5 text-zinc-500">
-                {t("walletReportLang")}: {reportLang.toUpperCase()}
+                {t("walletReportLang")}: {reportLang ? reportLang.toUpperCase() : t("walletReportLangPlaceholder")}
               </p>
             ) : null}
+            {langMissing ? <p className="mt-1.5 text-[0.7rem] leading-snug text-zinc-500">{t("walletReportLangHint")}</p> : null}
           </div>
           <B2bPartnerBulkVin
             wallet={{
@@ -456,9 +469,9 @@ function PurchaseDialog({
             <p className="mt-0.5 text-zinc-500">
               {t("buyBalanceAfter", { amount: formatB2bWalletEuro(Math.max(0, view.balanceCents - price.priceCents)) })}
             </p>
-            {product === "dealer_pro" ? (
+            {needsLang ? (
               <p className="mt-0.5 text-zinc-500">
-                {t("walletReportLang")}: {reportLang.toUpperCase()}
+                {t("walletReportLang")}: {reportLang ? reportLang.toUpperCase() : t("walletReportLangPlaceholder")}
               </p>
             ) : null}
           </div>
@@ -538,8 +551,9 @@ function PurchaseDialog({
           {vinError ? <p className={styles.inlineFieldError}>{vinError}</p> : null}
           {listingError ? <p className={styles.inlineFieldError}>{listingError}</p> : null}
           {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
+          {langMissing ? <p className={styles.inlineFieldError}>{t("walletReportLangHint")}</p> : null}
 
-          <button type="submit" className={styles.liquidCta} disabled={busy}>
+          <button type="submit" className={styles.liquidCta} disabled={busy || langMissing}>
             <span className={styles.liquidCtaShimmer} aria-hidden />
             <span className={styles.liquidCtaLabel}>
               {busy ? t("buyLoading") : t("buyConfirm", { amount: formatB2bWalletEuro(price.priceCents) })}
@@ -555,18 +569,18 @@ function PurchaseDialog({
 export function B2bPartnerWalletHome({
   initialWallet,
   legacy,
-  initialReportLang = "lv",
+  initialReportLang = null,
 }: {
   initialWallet: B2bWalletView;
   legacy: B2bLegacyCredits | null;
-  initialReportLang?: B2bWalletReportLang;
+  initialReportLang?: B2bWalletReportLang | null;
 }) {
   const t = useTranslations("Partner");
   const router = useRouter();
   const [view, setView] = useState<B2bWalletView>(initialWallet);
   const [topupOpen, setTopupOpen] = useState(false);
   const [buying, setBuying] = useState<B2bWalletProductId | null>(null);
-  const [reportLang, setReportLang] = useState<B2bWalletReportLang>(initialReportLang);
+  const [reportLang, setReportLang] = useState<B2bWalletReportLang | null>(initialReportLang);
   const [topupPaid, setTopupPaid] = useState(false);
   const [buyOk, setBuyOk] = useState("");
 
@@ -653,6 +667,7 @@ export function B2bPartnerWalletHome({
             reportLang={reportLang}
             onReportLang={setReportLang}
             onBuy={() => {
+              if (b2bWalletProductRequiresReportLang(product) && !reportLang) return;
               setBuyOk("");
               setBuying(product);
             }}

@@ -35,10 +35,14 @@ export function pdfPreparedForPrefix(lang: PdfRunningLang = "lv"): string {
   }
 }
 
-export function buildPdfRunningHeaderLine(makeModel: string, vin: string): string {
+export function buildPdfRunningHeaderLine(
+  makeModel: string,
+  vin: string,
+  brand = "PROVIN.LV",
+): string {
   const auto = makeModel.replace(/\s+/g, " ").trim();
   const code = vin.replace(/\s+/g, "").trim().toUpperCase();
-  const parts = ["PROVIN.LV"];
+  const parts = [brand.trim() || "PROVIN.LV"];
   if (auto) parts.push(auto);
   if (code) parts.push(`VIN ${code}`);
   return parts.join(" · ");

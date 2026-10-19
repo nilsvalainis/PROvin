@@ -247,10 +247,6 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "Lielie mezgli": { en: "Major assemblies", ru: "Крупные узлы" },
   "Nav fiksēts": { en: "None recorded", ru: "Не зафиксировано" },
   "Robs datos": { en: "Gap in records", ru: "Пробел в данных" },
-  "Fakts no dīlera žurnāla, ne verdikts par izlaistu apkopi.": {
-    en: "A fact from the dealer log, not a verdict that servicing was skipped.",
-    ru: "Факт из журнала дилера, а не вывод о пропущенном ТО.",
-  },
   "Detalizēts darbu saraksts atskaitē nav pieejams.": {
     en: "A detailed list of work is not available in this report.",
     ru: "Подробный перечень работ в отчёте недоступен.",
@@ -518,8 +514,6 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "Lielie mezgli": "Große Baugruppen",
   "Nav fiksēts": "Nicht erfasst",
   "Robs datos": "Lücke in den Daten",
-  "Fakts no dīlera žurnāla, ne verdikts par izlaistu apkopi.":
-    "Ein Fakt aus dem Händlerprotokoll, kein Urteil über ausgelassene Wartung.",
   "Detalizēts darbu saraksts atskaitē nav pieejams.":
     "Eine detaillierte Arbeitsliste liegt in diesem Bericht nicht vor.",
   "Pirmais ieraksts": "Erster Eintrag",

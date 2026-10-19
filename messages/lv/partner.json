@@ -299,6 +299,8 @@
     "walletProductProDesc": "Apstrādāta dīlera datu atskaite pircējam: apkopju un remontu vēsture, eļļas maiņas intervālu grafiks, nobraukuma pārbaude un kopsavilkums.",
     "walletProductProTag": "12-24h",
     "walletReportLang": "Atskaites valoda",
+    "walletReportLangPlaceholder": "Izvēlieties valodu",
+    "walletReportLangHint": "Lai iegādātos, vispirms izvēlieties atskaites valodu.",
     "walletSample": "Skatīt paraugu",
     "walletSampleSoon": "Drīzumā",
     "walletSampleAria": "Atver PDF paraugu jaunā cilnē",

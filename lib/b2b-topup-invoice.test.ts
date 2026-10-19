@@ -2,32 +2,33 @@ import { describe, expect, it } from "vitest";
 import { applyB2bWalletTopup, attachB2bWalletTopupInvoice, emptyB2bWallet } from "@/lib/b2b-wallet";
 import {
   B2B_TOPUP_INVOICE,
+  b2bTopupInvoiceProviderLine,
+  getB2bTopupInvoicePvnNote,
   buildB2bTopupInvoiceHtml,
   fallbackB2bTopupInvoiceNumber,
   fillB2bTopupInvoiceEmailTemplate,
   formatIrsInvoiceNumber,
-  getB2bTopupInvoicePvnNote,
   parseIrsInvoiceSequence,
   renderB2bTopupInvoiceEmail,
 } from "@/lib/b2b-topup-invoice";
-import { toInvoiceOrderPayload } from "@/lib/generate-invoice-html";
+import { buildInvoiceHtml, toInvoiceOrderPayload } from "@/lib/generate-invoice-html";
 import { getB2bMailFromAddress } from "@/lib/email/mail-config";
-import { b2bIrissEmailHtml } from "@/lib/email/html-templates";
+import { b2bProvinEmailHtml } from "@/lib/email/html-templates";
 import { buildPartnerPackArchiveRow } from "@/lib/b2b-partner-archive-rows";
 
 describe("B2B top-up invoice", () => {
-  it("fills email placeholders without PROVIN, VIN or long dashes", () => {
+  it("fills email placeholders with PROVIN, without .LV or long dashes", () => {
     const rendered = renderB2bTopupInvoiceEmail({
       summa: "100,00 €",
       atlikums: "250,00 €",
       rekins: "IRS-2026-0003",
       uznemums: "SIA Salons",
     });
-    expect(rendered.subject).toBe("IRISS: rēķins par konta papildināšanu 100,00 €");
+    expect(rendered.subject).toBe("PROVIN: rēķins par konta papildināšanu 100,00 €");
     expect(rendered.text).toContain("250,00 €");
     expect(rendered.text).toContain("IRS-2026-0003");
-    expect(rendered.subject + rendered.text).not.toMatch(/PROVIN/i);
-    expect(rendered.subject + rendered.text).not.toMatch(/VIN/i);
+    expect(rendered.text).toContain("Ar cieņu,\nPROVIN");
+    expect(rendered.subject + rendered.text).not.toContain("PROVIN.LV");
     expect(rendered.subject + rendered.text).not.toMatch(/Paldies par pasūtījumu/);
     expect(rendered.subject + rendered.text).not.toMatch(/[–—]/);
     expect(B2B_TOPUP_INVOICE.email.subject).toContain("{{summa}}");
@@ -41,7 +42,7 @@ describe("B2B top-up invoice", () => {
     ).toBe("x IRS-1");
   });
 
-  it("prints both parties, service line and nav-PVN note without VAT rows", () => {
+  it("prints both parties and the service line without PVN rows or notes", () => {
     const html = buildB2bTopupInvoiceHtml(
       toInvoiceOrderPayload(
         {
@@ -61,19 +62,53 @@ describe("B2B top-up invoice", () => {
         "b2b_topup",
       ),
     );
-    expect(html).toContain("IRISS");
+    expect(html).toContain("PROVIN");
+    expect(html).not.toContain("PROVIN.LV");
     expect(html).toContain("SIA Salons");
     expect(html).toContain("40000000000");
     expect(html).toContain("Konta papildināšana");
-    expect(html).toContain(getB2bTopupInvoicePvnNote());
-    expect(html).not.toMatch(/PROVIN/i);
+    expect(b2bTopupInvoiceProviderLine()).toBe("Nils Valainis, Reg.nr. 09118711109");
+    expect(html).toContain("<h2>Pakalpojuma sniedzējs</h2>");
+    expect(html).toContain("Nils Valainis, Reg.nr. 09118711109");
+    expect(html).not.toContain("Pakalpojuma sniedzējs:");
+    expect(html).toContain("Reg.nr.");
+    const styled = buildInvoiceHtml(
+      toInvoiceOrderPayload(
+        {
+          id: "cs_topup_1",
+          created: 1_700_000_000,
+          amountTotal: 10000,
+          currency: "EUR",
+          customerEmail: "salons@example.lv",
+          customerDetailsEmail: "salons@example.lv",
+          vin: "WVWZZZ3HZHE703058",
+          customerName: "Jānis",
+          companyName: "SIA Salons",
+          companyReg: "40000000000",
+          companyAddress: "Rīga",
+        },
+        "IRS-2026-0001",
+        "b2b_topup",
+      ),
+    );
+    expect(styled).toContain('id="inv-seller">Pakalpojuma sniedzējs</h2>');
+    expect(styled).toContain("<p>Nils Valainis, Reg.nr. 09118711109</p>");
+    expect(styled).not.toContain("Pakalpojuma sniedzējs:");
+    const pvnNote = getB2bTopupInvoicePvnNote();
+    expect(pvnNote).toBe(
+      "PVN nav piemērots (PVN likuma 139.² pants).",
+    );
+    expect(html).toContain(pvnNote);
+    expect(styled).toContain(`class="inv-pvn-note">${pvnNote}</p>`);
     expect(html).not.toContain("PVN likme");
+    expect(styled).not.toContain("PVN likme");
+    expect(html).not.toMatch(/PVN\s*(nr|num|ID)/i);
     expect(html).not.toContain("Transportlīdzekļa VIN");
     expect(html).not.toContain("WVWZZZ3HZHE703058");
     expect(html).not.toMatch(/[–—]/);
   });
 
-  it("uses IRISS From and IRS sequential format", () => {
+  it("uses PROVIN From and IRS sequential format", () => {
     expect(formatIrsInvoiceNumber(2026, 3)).toBe("IRS-2026-0003");
     expect(parseIrsInvoiceSequence("IRS-2026-0003", 2026)).toBe(3);
     expect(fallbackB2bTopupInvoiceNumber("cs_abc", 1_700_000_000)).toMatch(/^IRS-\d{4}-\d{4}$/);
@@ -83,8 +118,12 @@ describe("B2B top-up invoice", () => {
     delete process.env.SMTP_FROM_B2B;
     delete process.env.SMTP_FROM;
     process.env.SMTP_USER = "desk@example.lv";
-    expect(getB2bMailFromAddress()).toBe("IRISS <desk@example.lv>");
-    expect(b2bIrissEmailHtml({ title: "IRISS: rēķins", paragraphs: ["Summa 100,00 €."] })).not.toMatch(/PROVIN/i);
+    expect(getB2bMailFromAddress()).toBe("PROVIN <desk@example.lv>");
+    const html = b2bProvinEmailHtml({ title: "PROVIN: rēķins", paragraphs: ["Summa 100,00 €."] });
+    expect(html).toContain("PROVIN");
+    expect(html).toContain("#0061D2");
+    expect(html).not.toContain("PROVIN.LV");
+    expect(html).not.toContain("#F26522");
     if (prevUser === undefined) delete process.env.SMTP_USER;
     else process.env.SMTP_USER = prevUser;
     if (prevFrom === undefined) delete process.env.SMTP_FROM;

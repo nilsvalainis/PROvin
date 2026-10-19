@@ -1,8 +1,9 @@
 import {
   B2B_TOPUP_INVOICE,
-  b2bTopupInvoiceSellerLines,
+  B2B_TOPUP_INVOICE_PDF_BRAND,
+  b2bTopupInvoiceProviderLine,
+  b2bTopupInvoiceSellerExtraLines,
   getB2bTopupInvoicePvnNote,
-  getB2bTopupInvoiceSeller,
 } from "@/lib/b2b-topup-invoice";
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
 import { formatMoneyEur } from "@/lib/format-money";
@@ -110,9 +111,9 @@ export function getInvoicePvnFooterText(): string {
 export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
   const topup = order.variant === "b2b_topup";
   const legal = getCompanyLegal();
-  const brand = topup ? getB2bTopupInvoiceSeller().brand : getCompanyPublicBrand();
+  const brand = topup ? B2B_TOPUP_INVOICE_PDF_BRAND : getCompanyPublicBrand();
   const lineDesc = topup ? B2B_TOPUP_INVOICE.serviceLine : buildInvoiceServiceLineDescription(order);
-  const pvnFooter = topup ? getB2bTopupInvoicePvnNote() : getInvoicePvnFooterText();
+  const pvnFooter = topup ? "" : getInvoicePvnFooterText();
 
   const money = formatMoneyEur(order.amountTotal, order.currency);
   const email = order.customerEmail ?? order.customerDetailsEmail ?? "-";
@@ -127,7 +128,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
   const invoiceDate = dateFmt.format(new Date(order.created * 1000));
 
   const supplierLines = topup
-    ? b2bTopupInvoiceSellerLines()
+    ? b2bTopupInvoiceSellerExtraLines()
     : ([
         brand,
         legal.legalName || "-",
@@ -137,7 +138,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
 
   const css = `
     :root{
-      --inv-accent:${topup ? "#F26522" : "#0061d2"};
+      --inv-accent:#0061d2;
       --inv-ink:#1d1d1f;
       --inv-muted:#86868b;
       --inv-line:#e8e8ed;
@@ -288,7 +289,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
 <body>
 <div class="inv-wrap">
   <header class="inv-hero">
-    <div>${topup ? `<p class="inv-doc-title" style="color:var(--inv-accent)">IRISS</p>` : provincLogoSvg()}</div>
+    <div>${provincLogoSvg({ includeLvSuffix: !topup })}</div>
     <div class="inv-hero-right">
       <p class="inv-doc-title">Rēķins</p>
       <p class="inv-brand-sub">${esc(brand)}</p>
@@ -302,6 +303,7 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
   <div class="inv-grid">
     <section class="inv-panel" aria-labelledby="inv-seller">
       <h2 id="inv-seller">Pakalpojuma sniedzējs</h2>
+      ${topup ? `<p>${esc(b2bTopupInvoiceProviderLine())}</p>` : ""}
       ${supplierHtml || `<p>-</p>`}
     </section>
     <section class="inv-panel" aria-labelledby="inv-buyer">
@@ -357,14 +359,18 @@ export function buildInvoiceHtml(order: InvoiceOrderPayload): string {
     </div>
     ${
       topup
-        ? ""
+        ? `<p class="inv-pvn-note">${esc(getB2bTopupInvoicePvnNote())}</p>`
         : `<p class="inv-pvn-note">PVN likme 0%; pievienotās vērtības nodoklis netiek piemērots atsevišķi.</p>`
     }
   </div>
 
-  <footer class="inv-foot">
+  ${
+    pvnFooter
+      ? `<footer class="inv-foot">
     <p class="inv-foot-legal">${esc(pvnFooter)}</p>
-  </footer>
+  </footer>`
+      : ""
+  }
 </div>
 </body>
 </html>`;

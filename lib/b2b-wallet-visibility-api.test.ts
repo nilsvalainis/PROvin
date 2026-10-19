@@ -66,6 +66,20 @@ describe("hidden wallet products cannot be ordered", () => {
     expect(state.updateWallet).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects dealer_pro without reportLang", async () => {
+    const { POST } = await import("@/app/api/partner/wallet/purchase/route");
+    const res = await POST(
+      new Request("http://localhost/api/partner/wallet/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": "test_key_nolan" },
+        body: JSON.stringify({ product: "dealer_pro", vin: "WVWZZZ1KZAW000001" }),
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "report_lang" });
+    expect(state.updateWallet).not.toHaveBeenCalled();
+  });
+
   it("purchaseB2bWalletProduct refuses hidden products on its own", async () => {
     const { purchaseB2bWalletProduct } = await import("@/lib/b2b-wallet-purchase");
     const result = await purchaseB2bWalletProduct({
