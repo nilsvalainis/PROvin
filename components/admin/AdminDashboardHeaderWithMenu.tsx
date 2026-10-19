@@ -12,6 +12,7 @@ export function AdminDashboardHeaderWithMenu({
   mobileBackHref,
   mobileSubtitle,
   mobileTrailing,
+  mobileBelowTitle,
 }: {
   children: ReactNode;
   mobileTitle?: string;
@@ -19,18 +20,19 @@ export function AdminDashboardHeaderWithMenu({
   mobileBackHref?: string;
   mobileSubtitle?: string;
   mobileTrailing?: ReactNode;
+  mobileBelowTitle?: ReactNode;
 }) {
   return (
     <>
       {mobileTitle && !hideOnPhone ? (
-        <div className="md:hidden">
-          <AdminMobileTopBar
-            title={mobileTitle}
-            subtitle={mobileSubtitle}
-            backHref={mobileBackHref}
-            trailing={mobileTrailing}
-          />
-        </div>
+        <AdminMobileTopBar
+          title={mobileTitle}
+          subtitle={mobileSubtitle}
+          backHref={mobileBackHref}
+          trailing={mobileTrailing}
+        >
+          {mobileBelowTitle}
+        </AdminMobileTopBar>
       ) : null}
       <header
         className={`flex flex-wrap items-start gap-2 border-b border-slate-200/70 pb-5 max-md:border-b-0 max-md:pb-2 ${

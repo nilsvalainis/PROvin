@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { openWindowSyncThen } from "@/lib/admin-open-window";
 import { useAdminOverlayCover } from "@/lib/admin-overlay-cover";
-import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import {
   Bot,
   FileText,
@@ -12,8 +11,8 @@ import {
   Quote,
   Save,
   Sparkles,
-  X,
 } from "lucide-react";
+import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 
 import { copyTextToClipboard } from "@/components/admin/AdminClipboardButton";
 import { AdminMobileActionDock } from "@/components/admin/mobile/AdminMobileChrome";
@@ -111,51 +110,6 @@ function PdfLangRow({
         {chip(keys.de, "DE", onDe)}
       </div>
     </details>
-  );
-}
-
-function Sheet({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  children: React.ReactNode;
-}) {
-  useAdminScrollLock(true);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  return (
-    <div className="fixed inset-0 z-[70] md:hidden" role="dialog" aria-modal="true" aria-label={title}>
-      <button
-        type="button"
-        className="absolute inset-0 h-full w-full cursor-default bg-black/40"
-        aria-label="Aizvērt"
-        onClick={onClose}
-      />
-      <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl">
-        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-slate-300/80" aria-hidden />
-        <div className="flex items-center justify-between px-4 py-3">
-          <p className="text-[13px] font-semibold text-[var(--color-apple-text)]">{title}</p>
-          <button
-            type="button"
-            className="rounded-lg p-1.5 text-[var(--color-provin-muted)] transition hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
-            aria-label="Aizvērt"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" strokeWidth={1.5} aria-hidden />
-          </button>
-        </div>
-        <div className="max-h-[60dvh] overflow-y-auto px-2 pb-2">{children}</div>
-      </div>
-    </div>
   );
 }
 
@@ -264,7 +218,7 @@ export function AdminOrderMobileDock({
       )}
 
       {sheet === "flash" && !dockCovered ? (
-        <Sheet title="FLASH MAX" onClose={() => setSheet(null)}>
+        <AdminMobileSheet open title="FLASH MAX" onClose={() => setSheet(null)}>
           <button type="button" className={sheetRow} disabled={flashDisabled} onClick={() => runFlash(defaultFlashMaxSelection())}>
             <Sparkles className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
@@ -286,11 +240,11 @@ export function AdminOrderMobileDock({
           <p className="px-3 py-2 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
             Pilna aģentu izvēle ar modeļiem pieejama uz datora.
           </p>
-        </Sheet>
+        </AdminMobileSheet>
       ) : null}
 
       {sheet === "pdf" && !dockCovered ? (
-        <Sheet title="Ģenerēt PDF" onClose={() => setSheet(null)}>
+        <AdminMobileSheet open title="Ģenerēt PDF" onClose={() => setSheet(null)}>
           <button type="button" className={sheetRow} onClick={() => runPdf(onGeneratePdf)}>
             <FileText className="h-4 w-4 shrink-0 text-[var(--color-apple-text)]" strokeWidth={1.5} aria-hidden />
             <span className="min-w-0">
@@ -367,11 +321,11 @@ export function AdminOrderMobileDock({
               <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">Tumšāks teksts papīra drukai</span>
             </span>
           </button>
-        </Sheet>
+        </AdminMobileSheet>
       ) : null}
 
       {sheet === "more" && !dockCovered ? (
-        <Sheet title="Vairāk" onClose={() => setSheet(null)}>
+        <AdminMobileSheet open title="Vairāk" onClose={() => setSheet(null)}>
           <button
             type="button"
             className={sheetRow}
@@ -438,7 +392,7 @@ export function AdminOrderMobileDock({
             <Quote className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
             Biežās frāzes
           </button>
-        </Sheet>
+        </AdminMobileSheet>
       ) : null}
     </>
   );

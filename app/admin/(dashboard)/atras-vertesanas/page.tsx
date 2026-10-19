@@ -2,7 +2,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
+import { AdminListingPeekMobileFilters } from "@/components/admin/AdminListingPeekMobileFilters";
 import { AdminListingPeekSla } from "@/components/admin/AdminListingPeekSla";
+import { formatAdminMobilePhone } from "@/lib/admin-mobile-ds";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { listPaidCheckoutSessions } from "@/lib/admin-orders";
 import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
@@ -88,24 +90,30 @@ export default async function AdminListingPeeksPage({
   ]);
   const docs = new Map<string, QuickEvalDoc | null>(docPairs);
   const tabHref = (t: TabId) => `/admin/atras-vertesanas?tab=${t}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
+  const stats = await loadListingPeekConversionStats().catch(() => null);
+  const convLine = stats
+    ? `Konversija ${stats.conversionRatePct == null ? "-" : `${stats.conversionRatePct.toLocaleString("lv-LV", { maximumFractionDigits: 1 })}%`} · ${stats.convertedPeople.toLocaleString("lv-LV")} no ${stats.uniquePeople.toLocaleString("lv-LV")} klientiem`
+    : undefined;
 
   return (
-    <div className="w-full max-w-none">
-      <AdminDashboardHeaderWithMenu mobileTitle="Ātrie vērtējumi">
+    <div className="w-full max-w-none pb-[var(--admin-tabbar-h,5.5rem)] md:pb-0">
+      <AdminDashboardHeaderWithMenu mobileTitle="Ātrie vērtējumi" mobileSubtitle={convLine}>
         <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">Lead</p>
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Ātrie vērtējumi
         </h1>
       </AdminDashboardHeaderWithMenu>
 
-      <div className="mt-6">
+      <div className="mt-6 max-md:hidden">
         <Suspense fallback={<div className="h-[8.5rem] rounded-2xl border border-slate-200/80 bg-white" />}>
           <ListingPeekConversionPanel />
         </Suspense>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-2">
-        <nav className="flex flex-nowrap gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 text-[12px] font-semibold [scrollbar-width:none] max-md:w-full [&::-webkit-scrollbar]:hidden">
+      <AdminListingPeekMobileFilters tab={tab} q={q} counts={counts} />
+
+      <div className="mt-5 hidden flex-wrap items-center justify-between gap-2 md:flex">
+        <nav className="flex flex-nowrap gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 text-[12px] font-semibold [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((t) => (
             <Link
               key={t.id}
@@ -131,11 +139,11 @@ export default async function AdminListingPeeksPage({
       </div>
 
       {shown.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-10 text-center text-sm text-[var(--color-provin-muted)]">
+        <div className="mt-4 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-10 text-center text-sm text-[var(--color-provin-muted)] max-md:border-[var(--am-hair)] max-md:bg-[var(--am-s1)] max-md:text-[var(--am-ink2)]">
           {q ? "Nekas netika atrasts." : "Šeit nav ierakstu."}
         </div>
       ) : (
-        <ul className="mt-3 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <ul className="mt-3 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white max-md:space-y-2.5 max-md:divide-y-0 max-md:border-0 max-md:bg-transparent max-md:shadow-none">
           {shown.map((e) => {
             const doc = docs.get(e.id) ?? null;
             const listingUrl = canonicalizeListingUrl(e.listingUrl);
@@ -157,21 +165,21 @@ export default async function AdminListingPeeksPage({
             const pending = e.status === "new" || e.status === "in_progress";
             const href = `/admin/atras-vertesanas/${encodeURIComponent(e.id)}`;
             return (
-              <li key={e.id} className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3.5 py-2.5 hover:bg-slate-50/70 max-md:min-h-[88px] max-md:items-start md:flex-nowrap">
-                <Link href={href} className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 md:flex-nowrap">
-                  <span className="w-[11.5rem] shrink-0">
+              <li key={e.id} className="relative flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3.5 py-2.5 hover:bg-slate-50/70 max-md:min-h-[88px] max-md:items-start max-md:rounded-[22px] max-md:bg-[var(--am-s1)] max-md:px-4 max-md:py-3.5 max-md:shadow-[var(--am-card-shadow)] max-md:hover:bg-[var(--am-s1)] md:flex-nowrap">
+                <Link href={href} className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 max-md:flex-col max-md:items-stretch md:flex-nowrap">
+                  <span className="w-[11.5rem] shrink-0 max-md:absolute max-md:right-3 max-md:top-3 max-md:w-auto">
                     <AdminListingPeekSla createdAt={e.createdAt} complete={e.status === "completed"} rejected={e.status === "rejected"} />
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-semibold text-[var(--color-apple-text)] max-md:text-[17px]">
-                      {e.status === "new" ? <i className="mr-1.5 inline-block h-2 w-2 rounded-full bg-[var(--color-provin-accent)]" title="Jauns, vēl nav atvērts" /> : null}
+                  <span className="min-w-0 flex-1 max-md:pr-16">
+                    <span className="block truncate text-[13px] font-semibold text-[var(--color-apple-text)] max-md:text-[16px]">
+                      {e.status === "new" ? <i className="mr-1.5 inline-block h-2 w-2 rounded-full bg-[var(--am-ink3,#8a8a8e)]" title="Jauns, vēl nav atvērts" /> : null}
                       {title}
                     </span>
-                    <span className="block truncate font-mono text-[11px] text-[var(--color-provin-muted)] max-md:text-[13px]">{e.vin || "VIN nav"}</span>
+                    <span className="block truncate font-mono text-[11px] text-[var(--color-provin-muted)] max-md:text-[12.5px]">{e.vin || "VIN nav"}</span>
                   </span>
                   <span className="w-[12rem] min-w-0 truncate text-[12px] text-[var(--color-provin-muted)] max-md:w-full">
                     {e.email}
-                    {e.phone ? ` · ${e.phone}` : ""}
+                    {e.phone ? ` · ${formatAdminMobilePhone(e.phone)}` : ""}
                   </span>
                   <span className="qe-source-dots flex shrink-0 items-center gap-1 max-md:hidden" aria-label="Avoti">
                     {dots.map((d) => (

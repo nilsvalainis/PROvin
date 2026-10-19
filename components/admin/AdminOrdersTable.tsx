@@ -28,6 +28,7 @@ import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import {
   AdminMobileChips,
   AdminMobileSearchField,
+  AdminMobileSheet,
   AdminMobileStatusTag,
   AdminMobileTopBar,
 } from "@/components/admin/mobile/AdminMobileChrome";
@@ -435,10 +436,12 @@ function AdminOrdersMobileChrome({
   colorFilter,
   onColorFilter,
   filterCounts,
+  belowTitle,
 }: {
   colorFilter: AuditResultColor | "all" | "none";
   onColorFilter: (c: AuditResultColor | "all" | "none") => void;
   filterCounts: { all: number; green: number; orange: number; red: number; none: number };
+  belowTitle?: ReactNode;
 }) {
   const router = useRouter();
   const pathname = usePathname() || "/admin/dashboard";
@@ -476,15 +479,16 @@ function AdminOrdersMobileChrome({
       title="Pasūtījumi"
       trailing={
         <>
-          <span className="max-md:[&_button]:h-9 max-md:[&_button]:w-9 max-md:[&_button]:rounded-full max-md:[&_button]:px-0 max-md:[&_button]:text-[0px] max-md:[&_svg]:h-[18px] max-md:[&_svg]:w-[18px]">
+          <span className="max-md:[&>button]:h-9 max-md:[&>button]:w-9 max-md:[&>button]:rounded-full max-md:[&>button]:px-0 max-md:[&>button]:text-[0px] max-md:[&_svg]:h-[18px] max-md:[&_svg]:w-[18px]">
             <AdminClientLinkButton />
           </span>
-          <span className="max-md:[&_button]:h-9 max-md:[&_button]:w-9 max-md:[&_button]:rounded-full max-md:[&_button]:px-0 max-md:[&_button]:text-[0px]">
+          <span className="max-md:[&>button]:h-9 max-md:[&>button]:w-9 max-md:[&>button]:rounded-full max-md:[&>button]:px-0 max-md:[&>button]:text-[0px]">
             <AdminCreateManualOrderButton compact />
           </span>
         </>
       }
     >
+      {belowTitle ? <div className="mb-3">{belowTitle}</div> : null}
       <div className={`flex items-center gap-2 ${pending ? "opacity-60" : ""}`}>
         <div className="min-w-0 flex-1">
           <AdminMobileSearchField value={q} onChange={setQ} placeholder="Meklēt VIN, klientu" />
@@ -587,6 +591,7 @@ export function AdminOrdersTable({
   consultationList = false,
   toolbarEnd,
   doneOrder = "desc",
+  belowTopBar,
 }: {
   /** Izpildīto dienu secība (servera kārtošana „Vecākie” → asc). */
   doneOrder?: "desc" | "asc";
@@ -599,6 +604,7 @@ export function AdminOrdersTable({
   orderEditsLocalStorageKeyPrefix?: string;
   /** Saglabāts API savietojamībai (konsultāciju saraksta wrapperiem). */
   consultationList?: boolean;
+  belowTopBar?: ReactNode;
 }) {
   void consultationList;
   const router = useRouter();
@@ -606,6 +612,9 @@ export function AdminOrdersTable({
   const [completeOverride, setCompleteOverride] = useState<Record<string, boolean>>({});
   const [colorOverride, setColorOverride] = useState<Record<string, AuditResultColor | null>>({});
   const [colorFilter, setColorFilter] = useState<AuditResultColor | "all" | "none">("all");
+  const [cardMenuId, setCardMenuId] = useState<string | null>(null);
+  const swipeRef = useRef<{ id: string; x: number; dx: number } | null>(null);
+  const lastSwipeDx = useRef(0);
   const [clientOverrides, setClientOverrides] = useState<
     Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string; vin?: string }>
   >({});
@@ -770,6 +779,7 @@ export function AdminOrdersTable({
           colorFilter={colorFilter}
           onColorFilter={setColorFilter}
           filterCounts={filterCounts}
+          belowTitle={belowTopBar}
         />
       <ul className="mt-3 space-y-2.5">
         {dayGroups.map((g) => (
@@ -800,7 +810,42 @@ export function AdminOrdersTable({
               className={`am-row am-press relative rounded-[22px] bg-[var(--am-s1)] p-4 shadow-[var(--am-card-shadow)] ${accent} ${
                 v.isPack ? "cursor-default" : "cursor-pointer"
               }`}
-              onClick={v.isPack ? undefined : openOrderFromCard}
+              onPointerDown={(e) => {
+                if (!v.pdfHref) return;
+                swipeRef.current = { id: o.id, x: e.clientX, dx: 0 };
+              }}
+              onPointerMove={(e) => {
+                const s = swipeRef.current;
+                if (!s || s.id !== o.id) return;
+                s.dx = Math.min(0, e.clientX - s.x);
+                e.currentTarget.style.transform = `translateX(${s.dx}px)`;
+                e.currentTarget.style.transition = "none";
+              }}
+              onPointerUp={(e) => {
+                const s = swipeRef.current;
+                e.currentTarget.style.transform = "";
+                e.currentTarget.style.transition = "transform var(--d-std) var(--ease-out)";
+                lastSwipeDx.current = s?.dx ?? 0;
+                if (s && s.dx < -72 && v.pdfHref) {
+                  window.open(v.pdfHref, "_blank", "noopener,noreferrer");
+                }
+                swipeRef.current = null;
+              }}
+              onPointerCancel={(e) => {
+                e.currentTarget.style.transform = "";
+                swipeRef.current = null;
+              }}
+              onClick={
+                v.isPack
+                  ? undefined
+                  : (e) => {
+                      if (Math.abs(lastSwipeDx.current) > 12) {
+                        lastSwipeDx.current = 0;
+                        return;
+                      }
+                      openOrderFromCard(e);
+                    }
+              }
               onAuxClick={
                 v.isPack
                   ? undefined
@@ -819,25 +864,31 @@ export function AdminOrdersTable({
                     }
               }
             >
+              {o.auditResultColor === "red" ? (
+                <span className="absolute left-3 top-3 rounded-[6px] bg-[var(--am-fill)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--am-ink2)]">
+                  Riski
+                </span>
+              ) : null}
               {v.isPack ? null : (
                 <div
-                  className="absolute right-3 top-3"
+                  className={`absolute right-3 top-3 flex items-center gap-1 ${o.auditResultColor === "red" ? "" : ""}`}
                   onClick={(e) => e.stopPropagation()}
                   onKeyDown={(e) => e.stopPropagation()}
                 >
-                  <AdminMobileStatusTag
+                  <AdminMobileStatusTag>
+                    {formatAdminMobileDeadlineHours(o.deadlineFromUnix ?? o.created)}
+                  </AdminMobileStatusTag>
+                  <button
+                    type="button"
+                    aria-label="Termiņš"
+                    className="am-press grid h-[22px] w-[22px] place-items-center rounded-[7px] bg-[var(--am-fill)] text-[var(--am-ink2)]"
                     onClick={() => {
                       const el = document.querySelector<HTMLButtonElement>(`[data-admin-audit-color="${o.id}"] button, [data-admin-audit-color="${o.id}"]`);
                       el?.click();
                     }}
                   >
-                    {o.auditComplete ? null : (
-                      <>
-                        <AdminMobileIcon name="pulkstenis" className="h-3 w-3" />
-                        {formatAdminMobileDeadlineHours(o.deadlineFromUnix ?? o.created)}
-                      </>
-                    )}
-                  </AdminMobileStatusTag>
+                    <AdminMobileIcon name="izverst" className="h-3 w-3" />
+                  </button>
                   <div className="sr-only" data-admin-audit-color={o.id}>
                     <AdminAuditDeadlineCell
                       sessionId={o.id}
@@ -848,7 +899,7 @@ export function AdminOrdersTable({
                   </div>
                 </div>
               )}
-              <div className="flex items-start justify-between gap-2 pr-16">
+              <div className={`flex items-start justify-between gap-2 pr-16 ${o.auditResultColor === "red" ? "pt-5" : ""}`}>
                 <div className="min-w-0">
                   <p className="truncate text-[16px] font-semibold tracking-tight text-[var(--am-ink)]">
                     {v.isPack ? v.packLabel : (o.makeModel?.trim() || v.primaryClient).toUpperCase()}
@@ -919,21 +970,21 @@ export function AdminOrdersTable({
                   <p className="mt-0.5 truncate text-[13px] tabular-nums text-[var(--am-ink2)]">
                     {dateFmt.format(new Date(o.created * 1000))} ·{" "}
                     {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}
-                    {o.auditResultColor ? ` · ${adminMobileAuditFilterLabel(o.auditResultColor)}` : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   {v.pdfHref ? (
-                    <a
-                      href={v.pdfHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--am-fill)] text-[var(--am-ink2)]"
-                      aria-label="Atvērt rēķinu PDF"
-                      onClick={(e) => e.stopPropagation()}
+                    <button
+                      type="button"
+                      className="am-press grid h-9 w-9 place-items-center rounded-full text-[var(--am-ink2)]"
+                      aria-label="Vairāk"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCardMenuId(o.id);
+                      }}
                     >
-                      <AdminMobileIcon name="pdf" className="h-4 w-4" />
-                    </a>
+                      <AdminMobileIcon name="vairak" className="h-4 w-4" />
+                    </button>
                   ) : null}
                   {v.isPack ? null : <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />}
                 </div>
@@ -944,6 +995,29 @@ export function AdminOrdersTable({
         </Fragment>
         ))}
       </ul>
+      <AdminMobileSheet
+        open={Boolean(cardMenuId)}
+        title="Darbības"
+        onClose={() => setCardMenuId(null)}
+      >
+        {(() => {
+          const row = displayedOrders.find((x) => x.id === cardMenuId);
+          const pdf = row ? invoicePdfHref(row) : null;
+          if (!pdf) return <p className="text-[14px] text-[var(--am-ink2)]">Nav pieejamu darbību.</p>;
+          return (
+            <a
+              href={pdf}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="am-press flex h-[50px] items-center gap-3 rounded-[18px] bg-[var(--am-fill)] px-4 text-[16px] text-[var(--am-ink)]"
+              onClick={() => setCardMenuId(null)}
+            >
+              <AdminMobileIcon name="pdf" className="h-5 w-5" />
+              Atvērt PDF
+            </a>
+          );
+        })()}
+      </AdminMobileSheet>
       </div>
 
       <div className="mt-3 hidden overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)] md:block">

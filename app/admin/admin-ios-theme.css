@@ -137,7 +137,7 @@ body:has(.admin-ios-theme) {
     touch-action: pan-y pinch-zoom !important;
   }
 
-  .admin-ios-theme header h1 {
+  .admin-ios-theme header:not(.am-topbar) h1 {
     font-size: 34px !important;
     line-height: 1.1 !important;
     letter-spacing: -0.03em;

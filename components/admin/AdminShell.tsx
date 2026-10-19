@@ -9,7 +9,7 @@ import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
 import { AdminVinHandoffProvider } from "./AdminVinHandoffContext";
 import { IrissPavadzimesMobileBar } from "@/components/admin/IrissPavadzimesMobileBar";
-import { useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
+import { useAdminMobileColorScheme, useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
 import {
   ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
   ADMIN_MOBILE_TABBAR_H_CSS,
@@ -51,6 +51,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
   const hideTabBar = isDetailScreen || /^\/admin\/atras-vertesanas\/[^/]+$/.test(pathname);
   const { collapsed, toggle } = useAdminSidebarCollapsed();
   const mobile = useAdminMobileViewport();
+  const adminTheme = useAdminMobileColorScheme();
 
   return (
     <AdminVinHandoffProvider>
@@ -58,6 +59,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
       className={`admin-m flex min-h-dvh bg-white max-md:h-dvh max-md:min-h-0 ${
         hideTabBar ? "" : "max-md:pb-[var(--admin-tabbar-h)]"
       }`}
+      data-admin-theme={adminTheme}
       style={{ ["--admin-tabbar-h" as string]: hideTabBar ? "0px" : ADMIN_MOBILE_TABBAR_H_CSS }}
     >
       {mobile ? null : <AdminSidebar collapsed={collapsed} onToggle={toggle} />}

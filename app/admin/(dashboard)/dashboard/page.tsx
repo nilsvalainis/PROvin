@@ -185,6 +185,17 @@ export default async function AdminOrdersPage({
       </Link>
     ) : null;
   const paged = queryAdminOrderRows(tableOrders, ordersQuery);
+  const vinCards = pickOrderVinScanDashboardCards(
+    ordersWithUpsell.map((o) => ({
+      sessionId: o.id,
+      title: [o.makeModel, o.vin || draftSummaries.get(o.id)?.vin].filter(Boolean).join(" · ") || o.customerName || "Pasūtījums",
+      vin: o.vin || draftSummaries.get(o.id)?.vin || null,
+      checkoutLine: o.checkoutLine,
+      auditComplete: Boolean(o.auditComplete),
+      isB2bPack: Boolean(o.isB2bPack),
+      hint: draftSummaries.get(o.id)?.vinScan ?? null,
+    })),
+  );
   const moreHref = (() => {
     const p = new URLSearchParams();
     if (showAll) p.set("show_all", "1");
@@ -249,22 +260,11 @@ export default async function AdminOrdersPage({
 
       {orders.length > 0 ? (
         <>
-          <AdminOrderVinScanDashboardCards
-            cards={pickOrderVinScanDashboardCards(
-              ordersWithUpsell.map((o) => ({
-                sessionId: o.id,
-                title: [o.makeModel, o.vin || draftSummaries.get(o.id)?.vin].filter(Boolean).join(" · ") || o.customerName || "Pasūtījums",
-                vin: o.vin || draftSummaries.get(o.id)?.vin || null,
-                checkoutLine: o.checkoutLine,
-                auditComplete: Boolean(o.auditComplete),
-                isB2bPack: Boolean(o.isB2bPack),
-                hint: draftSummaries.get(o.id)?.vinScan ?? null,
-              })),
-            )}
-          />
+          <AdminOrderVinScanDashboardCards cards={vinCards} surface="desktop" />
           <AdminOrdersTable
             orders={paged.rows}
             doneOrder={ordersQuery.sort === "oldest" ? "asc" : "desc"}
+            belowTopBar={<AdminOrderVinScanDashboardCards cards={vinCards} surface="mobile" />}
             toolbarEnd={
               <>
                 <AdminClientLinkButton />
@@ -276,7 +276,7 @@ export default async function AdminOrdersPage({
           {ordersQuery.q && paged.matched === 0 ? (
             <p className="mt-6 text-center text-sm text-[#86868b]">Nekas netika atrasts pēc „{ordersQuery.q}”.</p>
           ) : null}
-          <div className="mt-6 flex flex-col items-center gap-2 pb-20 md:pb-0">
+          <div className="mt-6 flex flex-col items-center gap-2 pb-[var(--admin-tabbar-h,5.5rem)] md:pb-0">
             <p className="text-xs text-[#86868b]">
               Aktīvie: {paged.activeCount} · izpildītie: {paged.doneShown} no {paged.doneTotal}
             </p>

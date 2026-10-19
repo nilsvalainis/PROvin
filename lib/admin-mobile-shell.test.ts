@@ -4,6 +4,8 @@ import {
   ADMIN_MOBILE_BADGE_POLL_MS,
   ADMIN_MOBILE_PTR_THRESHOLD_PX,
   ADMIN_MOBILE_SECONDARY_DELAY_MS,
+  ADMIN_MOBILE_TABBAR_DOCK_NAV,
+  ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
   adminMobilePtrLabel,
   adminMobilePullToRefreshEnabled,
   scheduleAdminIdleWork,
@@ -40,6 +42,41 @@ describe("admin mobile perf constants", () => {
     }, 20);
     cancel();
     expect(ran).toBe(false);
+  });
+});
+
+describe("admin mobile css selectors", () => {
+  it("uses descendant .admin-ios-theme .admin-m, not a compound class", () => {
+    const css = readFileSync(new URL("../app/admin/admin-mobile.css", import.meta.url), "utf8");
+    expect(css).toMatch(/\.admin-ios-theme \.admin-m/);
+    expect(css).not.toMatch(/\.admin-m\.admin-ios-theme/);
+    expect(css).toMatch(/html:has\(\.admin-m\)/);
+    expect(css).toMatch(/\.admin-m\[data-admin-theme="dark"\]/);
+    expect(css).not.toMatch(/@media \(prefers-color-scheme: dark\)[\s\S]*\.admin-m \{/);
+  });
+
+  it("exports Safari theme-color for admin layout", () => {
+    const layout = readFileSync(new URL("../app/admin/layout.tsx", import.meta.url), "utf8");
+    expect(layout).toMatch(/themeColor:/);
+    expect(layout).toMatch(/#EEF0F3/);
+    expect(layout).toMatch(/viewportFit: "cover"/);
+    expect(layout).toMatch(/manifest.webmanifest/);
+  });
+});
+
+describe("admin mobile tab dock", () => {
+  it("keeps 12pt only between the glass capsule and search", () => {
+    expect(ADMIN_MOBILE_TABBAR_DOCK_WRAPPER).toMatch(/gap-\[12pt\]/);
+    expect(ADMIN_MOBILE_TABBAR_DOCK_NAV).toMatch(/gap-0/);
+    expect(ADMIN_MOBILE_TABBAR_DOCK_NAV).not.toMatch(/gap-\[12pt\]/);
+  });
+});
+
+describe("admin mobile VIN SCAN row", () => {
+  it("keeps the VIN SCAN card under the title even with zero jobs", () => {
+    const src = readFileSync(new URL("../components/admin/AdminOrderVinScanDashboardCards.tsx", import.meta.url), "utf8");
+    expect(src).toMatch(/VIN SCAN/);
+    expect(src).not.toMatch(/\{cards\.length > 0 \? \(/);
   });
 });
 

@@ -29,3 +29,16 @@ export function useAdminClientReady(): boolean {
   }, []);
   return ready;
 }
+
+/** Light/dark tokens uz `.admin-m[data-admin-theme]`, nevis globālā site tēma. */
+export function useAdminMobileColorScheme(): "light" | "dark" {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    () => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"),
+    () => "light",
+  );
+}

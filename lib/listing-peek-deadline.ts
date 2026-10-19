@@ -1,4 +1,5 @@
 import type { AuditDeadlineStatus } from "@/lib/admin-audit-deadline";
+import { formatAdminMobileHoursLabel } from "@/lib/admin-mobile-ds";
 
 /** Ātrais vērtējums — atbildes SLA 24 h no iesūtīšanas. */
 export const LISTING_PEEK_REPLY_DEADLINE_MS = 24 * 60 * 60 * 1000;
@@ -40,4 +41,11 @@ export function formatListingPeekDeadlineRemaining(
     label: h > 0 ? `${h} h ${m} min` : `${m} min`,
     status: remainingMs <= LISTING_PEEK_REPLY_URGENT_MS ? "urgent" : "ok",
   };
+}
+
+/** Mobilais neitrālais tags: `20 h`. */
+export function formatListingPeekDeadlineHours(createdAt: string, nowMs = Date.now()): string | null {
+  const createdMs = listingPeekCreatedMs(createdAt);
+  if (createdMs == null) return null;
+  return formatAdminMobileHoursLabel(createdMs + LISTING_PEEK_REPLY_DEADLINE_MS - nowMs);
 }

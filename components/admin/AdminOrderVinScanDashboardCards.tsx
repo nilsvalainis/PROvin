@@ -18,15 +18,20 @@ function counts(card: OrderVinScanDashboardCard): string {
 
 export function AdminOrderVinScanDashboardCards({
   cards,
+  surface = "all",
 }: {
   cards: OrderVinScanDashboardCard[];
+  surface?: "all" | "mobile" | "desktop";
 }) {
   const autoN = cards.length;
   const infoN = cards.reduce((n, c) => n + c.found, 0);
   const timeoutN = cards.reduce((n, c) => n + c.timeout, 0);
+  const showMobile = surface !== "desktop";
+  const showDesktop = surface !== "mobile";
   return (
     <>
-      <div className="mb-3 overflow-hidden rounded-[22px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)] md:hidden">
+      {showMobile ? (
+      <div className="overflow-hidden rounded-[18px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)] md:hidden">
         <Link href="/admin/kopsavilkums" className="am-press flex min-h-[50px] items-center gap-3 px-4">
           <AdminMobileIcon name="rits" className="h-5 w-5 text-[var(--am-ink2)]" />
           <span className="min-w-0 flex-1">
@@ -35,23 +40,24 @@ export function AdminOrderVinScanDashboardCards({
           </span>
           <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
         </Link>
-        {cards.length > 0 ? (
-          <Link href="/admin/vin-scan" className="am-press flex min-h-[50px] items-center gap-3 border-t border-[var(--am-hair)] px-4">
-            <AdminMobileIcon name="vinParbaude" className="h-5 w-5 text-[var(--am-ink2)]" />
-            <span className="min-w-0 flex-1">
-              <span className="block text-[16px] font-semibold text-[var(--am-ink)]">VIN SCAN</span>
-              <span className="block text-[13px] text-[var(--am-ink2)]">
-                {autoN} auto · {infoN} info{timeoutN ? ` · ${timeoutN} noildzes` : ""}
-              </span>
+        <Link href="/admin/vin-scan" className="am-press flex min-h-[50px] items-center gap-3 border-t border-[var(--am-hair)] px-4">
+          <AdminMobileIcon name="vinParbaude" className="h-5 w-5 text-[var(--am-ink2)]" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[16px] font-semibold text-[var(--am-ink)]">VIN SCAN</span>
+            <span className="block text-[13px] text-[var(--am-ink2)]">
+              {autoN} auto · {infoN} info{timeoutN ? ` · ${timeoutN} noildzes` : ""}
             </span>
+          </span>
+          {autoN > 0 ? (
             <span className="mr-1 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--am-badge)] px-1 text-[10px] font-semibold text-[var(--am-badge-ink)]">
               {autoN}
             </span>
-            <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
-          </Link>
-        ) : null}
+          ) : null}
+          <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
+        </Link>
       </div>
-      {cards.length === 0 ? null : (
+      ) : null}
+      {showDesktop && cards.length > 0 ? (
         <section className="mt-3 hidden md:block" aria-label="VIN SCAN jaunie pasūtījumi">
           <h2 className="mb-1.5 flex items-center gap-1.5 px-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#8e8e93]">
             VIN SCAN
@@ -74,7 +80,7 @@ export function AdminOrderVinScanDashboardCards({
             ))}
           </ul>
         </section>
-      )}
+      ) : null}
     </>
   );
 }

@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
+import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
+import { ADMIN_MAIN_SCROLL_ID } from "@/lib/admin-mobile-shell";
 
 export function AdminMobileTopBar({
   title,
@@ -21,10 +24,24 @@ export function AdminMobileTopBar({
   trailing?: ReactNode;
   children?: ReactNode;
 }) {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const scroller = document.getElementById(ADMIN_MAIN_SCROLL_ID);
+    const readY = () => (scroller ? scroller.scrollTop : window.scrollY);
+    const onScroll = () => setCompact(readY() > 18);
+    onScroll();
+    scroller?.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scroller?.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+  const hasBack = Boolean(backHref || onBack);
   return (
-    <header className="am-glass sticky top-0 z-40 rounded-b-[28px] px-4 pb-3 pt-[max(10px,env(safe-area-inset-top))] md:hidden">
+    <header className="am-glass am-topbar sticky top-0 z-[20] px-4 pb-3 pt-[max(10px,env(safe-area-inset-top))] md:hidden">
       <div className="flex items-center gap-2">
-        {backHref || onBack ? (
+        {hasBack ? (
           backHref ? (
             <Link href={backHref} aria-label="Atpakaļ" className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--am-fill)] text-[var(--am-ink)]">
               <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
@@ -36,10 +53,16 @@ export function AdminMobileTopBar({
           )
         ) : null}
         <div className="min-w-0 flex-1">
-          <h1 className={`truncate font-bold tracking-tight text-[var(--am-ink)] ${backHref || onBack ? "text-[19px]" : "text-[26px]"}`}>
+          <h1
+            className={`origin-left truncate font-bold tracking-tight text-[var(--am-ink)] ${hasBack ? "text-[19px]" : "text-[26px]"}`}
+            style={{
+              transform: !hasBack && compact ? "scale(0.65)" : "scale(1)",
+              transition: "transform var(--d-std) var(--ease-out)",
+            }}
+          >
             {title}
           </h1>
-          {subtitle ? <p className="truncate font-mono text-[12.5px] tracking-[0.01em] text-[var(--am-ink2)]">{subtitle}</p> : null}
+          {subtitle ? <p className="truncate text-[13px] text-[var(--am-ink2)]">{subtitle}</p> : null}
         </div>
         {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
       </div>
@@ -111,7 +134,7 @@ export function AdminMobileChips({
   onChange: (id: string) => void;
 }) {
   return (
-    <div className="-mx-1 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="am-chip-fade -mx-1 flex gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((it) => {
         const on = it.id === value;
         return (
@@ -124,7 +147,9 @@ export function AdminMobileChips({
             }`}
           >
             {it.label}
-            {it.count != null ? <span className={on ? "opacity-80" : "text-[var(--am-ink3)]"}>{it.count}</span> : null}
+            {it.count != null ? (
+              <span className={on ? "text-[var(--am-s1)]/70" : "text-[var(--am-ink3)]"}>{it.count}</span>
+            ) : null}
           </button>
         );
       })}
@@ -141,8 +166,19 @@ export function AdminMobileSegments({
   value: string;
   onChange: (id: string) => void;
 }) {
+  const i = Math.max(0, items.findIndex((it) => it.id === value));
+  const n = Math.max(1, items.length);
   return (
-    <div className="flex h-8 rounded-full bg-[var(--am-fill)] p-0.5" role="tablist">
+    <div className="relative flex h-8 overflow-hidden rounded-full bg-[var(--am-fill)] p-0.5" role="tablist">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-0.5 bottom-0.5 rounded-full bg-[var(--am-s1)] shadow-sm"
+        style={{
+          width: `calc((100% - 4px) / ${n})`,
+          transform: `translateX(${i * 100}%)`,
+          transition: "transform var(--d-std) var(--ease-out)",
+        }}
+      />
       {items.map((it) => {
         const on = it.id === value;
         return (
@@ -152,7 +188,7 @@ export function AdminMobileSegments({
             role="tab"
             aria-selected={on}
             onClick={() => onChange(it.id)}
-            className={`h-full flex-1 rounded-full text-[12px] font-semibold ${on ? "bg-[var(--am-s1)] text-[var(--am-ink)] shadow-sm" : "text-[var(--am-ink2)]"}`}
+            className={`relative z-[1] h-full min-w-0 flex-1 truncate px-0.5 text-[11px] font-semibold ${on ? "text-[var(--am-ink)]" : "text-[var(--am-ink2)]"}`}
           >
             {it.label}
           </button>
@@ -188,7 +224,6 @@ export function AdminMobileStatusTag({ children, onClick }: { children: ReactNod
     return (
       <button type="button" className={cls} onClick={onClick}>
         {children}
-        <AdminMobileIcon name="izverst" className="h-3 w-3" />
       </button>
     );
   }
@@ -198,7 +233,7 @@ export function AdminMobileStatusTag({ children, onClick }: { children: ReactNod
 export function AdminMobileCountBadge({ n }: { n: number }) {
   if (n <= 0) return null;
   return (
-    <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--am-badge)] px-1 text-[10px] font-semibold tabular-nums text-[var(--am-badge-ink)]">
+    <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--am-badge)] px-0.5 text-[9px] font-semibold tabular-nums text-[var(--am-badge-ink)] ring-2 ring-[var(--am-bg,#eef0f3)]">
       {n > 99 ? "99+" : n}
     </span>
   );
@@ -210,14 +245,17 @@ export function AdminMobileSheet({
   subtitle,
   onClose,
   children,
+  action,
 }: {
   open: boolean;
   title: string;
   subtitle?: string;
   onClose: () => void;
   children: ReactNode;
+  action?: ReactNode;
 }) {
   const [shown, setShown] = useState(open);
+  const theme = useAdminMobileColorScheme();
   useAdminScrollLock(open);
   useEffect(() => {
     if (open) setShown(true);
@@ -231,22 +269,21 @@ export function AdminMobileSheet({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
   if (!shown) return null;
-  return (
-    <div className="fixed inset-0 z-[120] md:hidden" role="dialog" aria-modal="true" aria-label={title}>
+  const panel = (
+    <div className="admin-m admin-sheet-root md:hidden" role="dialog" aria-modal="true" aria-label={title} data-open={open ? "true" : "false"} data-admin-theme={theme}>
       <button
         type="button"
         aria-label="Aizvērt"
-        className={`absolute inset-0 bg-[var(--am-scrim)] transition-opacity duration-[var(--d-sheet)] ${open ? "opacity-100" : "opacity-0"}`}
+        className="admin-sheet-scrim"
         onClick={onClose}
         onTransitionEnd={() => {
           if (!open) setShown(false);
         }}
       />
       <div
-        className={`am-glass absolute inset-x-0 bottom-0 max-h-[88dvh] overflow-y-auto rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 transition-transform duration-[var(--d-sheet)] ${
-          open ? "translate-y-0" : "translate-y-[calc(100%+16px)]"
+        className={`am-glass admin-sheet-panel rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 ${
+          open ? "" : "admin-sheet-out"
         }`}
-        style={{ transitionTimingFunction: "var(--spring)" }}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--am-fill2)]" aria-hidden />
         <div className="mb-3 flex items-start justify-between gap-3">
@@ -259,9 +296,11 @@ export function AdminMobileSheet({
           </button>
         </div>
         {children}
+        {action}
       </div>
     </div>
   );
+  return <AdminBodyPortal>{panel}</AdminBodyPortal>;
 }
 
 export function AdminMobileSectionNav({
@@ -274,7 +313,7 @@ export function AdminMobileSectionNav({
   onPick: (id: string) => void;
 }) {
   return (
-    <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="am-chip-fade -mx-1 mt-3 flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((it) => {
         const on = it.id === activeId;
         return (
@@ -302,7 +341,7 @@ export function AdminMobileActionDock({
   more?: () => void;
 }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex items-end justify-center gap-2 px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 md:hidden">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[30] flex items-end justify-center gap-2 px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 md:hidden">
       <nav className="am-glass pointer-events-auto flex h-[62px] min-w-0 flex-1 items-stretch rounded-full px-1.5">
         {actions.map((a) => {
           const inner = (
@@ -344,13 +383,15 @@ export function AdminMobileSearchField({
   value,
   onChange,
   placeholder,
+  onSubmit,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
+  onSubmit?: () => void;
 }) {
   return (
-    <label className="flex h-9 items-center gap-2 rounded-full bg-[var(--am-fill)] px-3 text-[var(--am-ink2)]">
+    <label className="flex h-9 items-center gap-2 px-1 text-[var(--am-ink2)]">
       <AdminMobileIcon name="meklet" className="h-4 w-4" />
       <input
         type="search"
@@ -360,6 +401,9 @@ export function AdminMobileSearchField({
         spellCheck={false}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSubmit?.();
+        }}
         placeholder={placeholder}
         className="min-w-0 flex-1 bg-transparent text-[15px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
       />
@@ -390,5 +434,21 @@ export function AdminMobileSecondaryButton({ children, onClick, disabled }: { ch
     >
       {children}
     </button>
+  );
+}
+
+export function AdminMobileTabPill({ index, count }: { index: number; count: number }) {
+  if (index < 0 || count <= 0) return null;
+  const style: CSSProperties = {
+    width: `calc((100% - 12px) / ${count})`,
+    transform: `translateX(${index * 100}%)`,
+    transition: "transform var(--d-std) var(--ease-out)",
+  };
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute top-1 bottom-1 left-1.5 rounded-full bg-[var(--am-fill2)]"
+      style={style}
+    />
   );
 }
