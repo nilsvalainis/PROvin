@@ -33,5 +33,23 @@ describe("seo-public-metadata", () => {
     expect(meta.openGraph?.images).toEqual([
       expect.objectContaining({ url: "/og.png", width: 1200, height: 630 }),
     ]);
+    expect(meta.robots).toEqual({ index: true, follow: true });
+  });
+
+  it("uses the shared indexability gate for robots so sitemap cannot drift", () => {
+    const indexed = buildPublicPageMetadata({
+      locale: "de",
+      path: "/partneriem",
+      title: "Partner",
+      description: "B2B",
+    });
+    expect(indexed.robots).toEqual({ index: true, follow: true });
+    const checkout = buildPublicPageMetadata({
+      locale: "lv",
+      path: "/pasutit",
+      title: "Pasūtīt",
+      description: "Forma",
+    });
+    expect(checkout.robots).toEqual({ index: false, follow: true });
   });
 });

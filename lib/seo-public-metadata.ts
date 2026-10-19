@@ -1,31 +1,26 @@
 import type { Metadata } from "next";
 import { PUBLIC_LOCALES } from "@/i18n/locales";
-import { routing } from "@/i18n/routing";
 import { getCompanyPublicBrand } from "@/lib/company";
-import { DEFAULT_OG_IMAGE_PATH } from "@/lib/seo-public-paths";
-import { getPublicSiteOrigin } from "@/lib/site-url";
+import {
+  DEFAULT_OG_IMAGE_PATH,
+  indexableLocalesForPath,
+  publicHreflangLanguages,
+  publicPageHref,
+  publicPageRobots,
+} from "@/lib/seo-public-paths";
 
 /** `app/[locale]/layout.tsx` metadati mantojas visām apakšlapām. Bez sava `alternates` katra
  * apakšlapa kanonizējas uz sākumlapu, tāpēc katrai indeksējamai lapai jāizsauc šie palīgi. */
 
 type PublicLocale = (typeof PUBLIC_LOCALES)[number];
 
-function normalizePath(path: string): string {
-  if (!path || path === "/") return "";
-  return path.startsWith("/") ? path : `/${path}`;
-}
-
 export function publicPageUrl(locale: string, path = ""): string {
-  const base = getPublicSiteOrigin().replace(/\/$/, "");
-  return `${base}/${locale}${normalizePath(path)}`;
+  return publicPageHref(locale, path);
 }
 
 /** Kanoniskais URL + `hreflang` pāri (`x-default` → noklusējuma lokalizācija). */
 export function publicPageAlternates(locale: string, path = ""): NonNullable<Metadata["alternates"]> {
-  const languages: Record<string, string> = {};
-  for (const l of PUBLIC_LOCALES) languages[l] = publicPageUrl(l, path);
-  languages["x-default"] = publicPageUrl(routing.defaultLocale, path);
-  return { canonical: publicPageUrl(locale, path), languages };
+  return { canonical: publicPageUrl(locale, path), languages: publicHreflangLanguages(path) };
 }
 
 export function openGraphLocale(locale: string): string {
@@ -35,8 +30,10 @@ export function openGraphLocale(locale: string): string {
   return "lv_LV";
 }
 
-export function openGraphLocaleAlternates(locale: string): string[] {
-  return PUBLIC_LOCALES.filter((l) => l !== locale).map(openGraphLocale);
+export function openGraphLocaleAlternates(locale: string, path = ""): string[] {
+  return indexableLocalesForPath(path)
+    .filter((l) => l !== locale)
+    .map(openGraphLocale);
 }
 
 export function isPublicLocale(locale: string): locale is PublicLocale {
@@ -79,7 +76,7 @@ export function buildPublicPageMetadata(args: {
       url,
       siteName: brand,
       locale: openGraphLocale(locale),
-      alternateLocale: openGraphLocaleAlternates(locale),
+      alternateLocale: openGraphLocaleAlternates(locale, path),
       type: "website",
       images: [{ url: DEFAULT_OG_IMAGE_PATH, width: 1200, height: 630, alt: ogImageAlt }],
     },
@@ -89,7 +86,7 @@ export function buildPublicPageMetadata(args: {
       description: ogDescription,
       images: [DEFAULT_OG_IMAGE_PATH],
     },
-    robots: { index: true, follow: true },
+    robots: publicPageRobots(locale, path),
   };
 }
 

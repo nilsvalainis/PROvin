@@ -2,19 +2,15 @@ import type { MetadataRoute } from "next";
 import { isBlogLocaleIndexable, listBlogPosts } from "@/lib/blog/posts";
 import { PUBLIC_LOCALES } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
-import { INDEXABLE_PUBLIC_PATHS } from "@/lib/seo-public-paths";
-import { getPublicSiteOrigin } from "@/lib/site-url";
+import {
+  INDEXABLE_PUBLIC_PATHS,
+  isIndexablePublicPage,
+  publicHreflangLanguages,
+  publicPageHref,
+} from "@/lib/seo-public-paths";
 
-function languagesForPath(base: string, path: string): Record<string, string> {
-  const languages: Record<string, string> = {};
-  for (const loc of PUBLIC_LOCALES) languages[loc] = `${base}/${loc}${path}`;
-  languages["x-default"] = `${base}/${routing.defaultLocale}${path}`;
-  return languages;
-}
-
-/** `localePrefix: "always"` — kanoniskie URL ar `/${locale}` (piem. `/lv/pasutit`). */
+/** `localePrefix: "always"`: tikai indeksējami kanoniskie URL ar `/${locale}`. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = getPublicSiteOrigin().replace(/\/$/, "");
   let posts: Awaited<ReturnType<typeof listBlogPosts>> = [];
   try {
     posts = await listBlogPosts();
@@ -25,13 +21,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [];
 
   for (const locale of PUBLIC_LOCALES) {
-    const prefix = `/${locale}`;
     for (const { path, changeFrequency, priority } of INDEXABLE_PUBLIC_PATHS) {
+      if (!isIndexablePublicPage(locale, path)) continue;
       entries.push({
-        url: `${base}${prefix}${path}`,
+        url: publicPageHref(locale, path),
         changeFrequency,
         priority,
-        alternates: { languages: languagesForPath(base, path) },
+        alternates: { languages: publicHreflangLanguages(path) },
       });
     }
     for (const post of posts) {
@@ -39,11 +35,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const postPath = `/blogs/${post.slug}`;
       const languages: Record<string, string> = {};
       for (const loc of PUBLIC_LOCALES) {
-        if (isBlogLocaleIndexable(post, loc)) languages[loc] = `${base}/${loc}${postPath}`;
+        if (isBlogLocaleIndexable(post, loc)) languages[loc] = publicPageHref(loc, postPath);
       }
-      languages["x-default"] = `${base}/${routing.defaultLocale}${postPath}`;
+      languages["x-default"] = publicPageHref(routing.defaultLocale, postPath);
       entries.push({
-        url: `${base}${prefix}${postPath}`,
+        url: publicPageHref(locale, postPath),
         lastModified: new Date(`${post.publishedAt}T12:00:00.000Z`),
         changeFrequency: "monthly",
         priority: 0.65,
