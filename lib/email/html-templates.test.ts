@@ -82,10 +82,10 @@ describe("adminAuditSlaWarningHtml", () => {
         { label: "Atlicis", value: "2 h 10 min" },
       ],
     });
-    expect(html).toContain("Audita termiņš: atlikušas ≤ 3 h");
+    expect(html).toContain("Līdz audita termiņam atlikušas 3 h vai mazāk");
     expect(html).toContain("WVWZZZ");
     expect(html).toContain("https://www.provin.lv/admin/orders/cs_test");
-    expect(html).toContain("48 h sagatavošanas SLA");
+    expect(html).toContain("Pabeidz auditu, lai iekļautos termiņā");
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
   });
@@ -134,10 +134,10 @@ describe("morningSummaryEmailHtml", () => {
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
     expect(html.toLowerCase()).not.toContain("eksperts");
-    expect(html).not.toContain("Avoti, kas krīt 3 reizes pēc kārtas");
+    expect(html).not.toContain("Datu avoti ar kļūdām 3 reizes pēc kārtas");
   });
 
-  it("rāda avotus, kas krīt 3 reizes pēc kārtas", () => {
+  it("rāda datu avotus ar kļūdām 3 reizes pēc kārtas", () => {
     const html = morningSummaryEmailHtml({
       dateLabel: "15. oktobris",
       pageUrl: "https://provin.lv/admin/kopsavilkums",
@@ -152,7 +152,7 @@ describe("morningSummaryEmailHtml", () => {
       newPeeks: [],
       failingSources: [{ title: "stat.vin", detail: "3x: timeout" }],
     });
-    expect(html).toContain("Avoti, kas krīt 3 reizes pēc kārtas");
+    expect(html).toContain("Datu avoti ar kļūdām 3 reizes pēc kārtas (pārbaudi piekļuvi)");
     expect(html).toContain("stat.vin");
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");

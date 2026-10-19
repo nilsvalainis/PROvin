@@ -79,13 +79,13 @@ function adminOrderPlainText(p: OrderEmailPayload): string {
   const lines = [
     "Jauns PROVIN pasūtījums",
     "",
-    `Session: ${p.sessionId}`,
+    `Sesijas ID: ${p.sessionId}`,
     `Vārds: ${p.customerName ?? "-"}`,
     `E-pasts: ${p.customerEmail ?? "-"}`,
     `Tālrunis: ${p.customerPhone ?? "-"}`,
     `VIN: ${p.vin ?? "-"}`,
     `Sludinājums: ${p.listingUrl ?? "-"}`,
-    p.contactMethod ? `Saziņa: ${contactLabel(p.contactMethod)}` : "Atskaite: e-pastā",
+    p.contactMethod ? `Saziņas veids: ${contactLabel(p.contactMethod)}` : "Saziņas veids: E-pasts (atskaite)",
     p.heardAbout ? `Kur uzzināja: ${p.heardAbout}` : "",
     `Summa: ${p.amountTotal ?? "-"} ${p.currency ?? ""}`,
   ].filter(Boolean);
@@ -126,17 +126,17 @@ async function sendSmtpMail(opts: {
 
 /** Admin: jauns pasūtījums (HTML, Google Workspace SMTP). */
 export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayload, adminTo: string): Promise<void> {
-  const subject = `PROVIN: jauns maksājums: ${payload.vin ?? payload.sessionId}`;
+  const subject = `PROVIN: jauns maksājums ${payload.vin ?? payload.sessionId}`;
   const text = adminOrderPlainText(payload);
   const html = adminNewOrderHtml([
-    { label: "Session", value: payload.sessionId },
+    { label: "Sesijas ID", value: payload.sessionId },
     { label: "Vārds", value: payload.customerName ?? "-" },
     { label: "E-pasts", value: payload.customerEmail ?? "-" },
     { label: "Tālrunis", value: payload.customerPhone ?? "-" },
     { label: "VIN", value: payload.vin ?? "-" },
     { label: "Sludinājums", value: payload.listingUrl ?? "-" },
     {
-      label: "Saziņa",
+      label: "Saziņas veids",
       value: payload.contactMethod ? contactLabel(payload.contactMethod) : "E-pasts (atskaite)",
     },
     ...(payload.heardAbout ? [{ label: "Kur uzzināja", value: payload.heardAbout }] : []),
@@ -173,21 +173,21 @@ export async function sendAdminAuditSlaWarningEmail(
   payload: AdminAuditSlaWarningEmailPayload,
   adminTo: string,
 ): Promise<void> {
-  const subject = `PROVIN: 3 h līdz audita termiņam: ${payload.vin ?? payload.sessionId}`;
+  const subject = `PROVIN: 3 h līdz audita termiņam (${payload.vin ?? payload.sessionId})`;
   const text = [
-    "Audita sagatavošanas termiņš: atlikušas ≤ 3 h.",
+    "Līdz audita termiņam atlikušas 3 h vai mazāk. Pabeidz auditu, lai iekļautos termiņā.",
     "",
-    `Session: ${payload.sessionId}`,
+    `Sesijas ID: ${payload.sessionId}`,
     `VIN: ${payload.vin ?? "-"}`,
-    `Atlicis: ${payload.remainingLabel}`,
-    `Admin: ${payload.adminUrl}`,
+    `Atlikušais laiks: ${payload.remainingLabel}`,
+    `Atvērt admin paneli: ${payload.adminUrl}`,
   ].join("\n");
   const html = adminAuditSlaWarningHtml({
     adminUrl: payload.adminUrl,
     lines: [
-      { label: "Session", value: payload.sessionId },
+      { label: "Sesijas ID", value: payload.sessionId },
       { label: "VIN", value: payload.vin ?? "-" },
-      { label: "Atlicis", value: payload.remainingLabel },
+      { label: "Atlikušais laiks", value: payload.remainingLabel },
     ],
   });
 
@@ -223,23 +223,27 @@ export function getAdminNewPartnerNotifyEmail(): string {
 
 export async function sendAdminNewPartnerNotificationEmail(payload: AdminNewPartnerEmailPayload): Promise<void> {
   const to = getAdminNewPartnerNotifyEmail();
-  const subject = `PROVIN: jauns partneris: ${payload.companyName}`;
+  const subject = `PROVIN: jauns B2B partneris ${payload.companyName}`;
   const text = [
-    "Jauns B2B partneris",
+    "Reģistrējies jauns B2B partneris. Partnerim piešķirtas noklusējuma cenas. Individuālās cenas vari iestatīt admin panelī.",
     "",
     `Uzņēmums: ${payload.companyName}`,
-    `Reģ. nr.: ${payload.companyReg}`,
+    `Reģistrācijas numurs: ${payload.companyReg}`,
     `Adrese: ${payload.companyAddress}`,
     `Kontaktpersona: ${payload.contactName}`,
     `E-pasts: ${payload.email}`,
     `Tālrunis: ${payload.phone}`,
-    `Admin: ${payload.adminUrl}`,
+    "",
+    `Atvērt admin paneli: ${payload.adminUrl}`,
+    "Lai sazinātos ar partneri, atbildi uz šo e-pastu.",
   ].join("\n");
   const html = adminNewPartnerHtml({
     adminUrl: payload.adminUrl,
+    lead: "Reģistrējies jauns B2B partneris. Partnerim piešķirtas noklusējuma cenas. Individuālās cenas vari iestatīt admin panelī.",
+    ctaLabel: "Atvērt admin paneli",
     lines: [
       { label: "Uzņēmums", value: payload.companyName },
-      { label: "Reģ. nr.", value: payload.companyReg },
+      { label: "Reģistrācijas numurs", value: payload.companyReg },
       { label: "Adrese", value: payload.companyAddress },
       { label: "Kontaktpersona", value: payload.contactName },
       { label: "E-pasts", value: payload.email },
@@ -364,13 +368,14 @@ export async function sendPaymentConfirmationEmail(opts: {
   const text =
     paymentRendered?.text ??
     [
-      "Paldies par pasūtījumu.",
+      "Labdien!",
+      "",
+      "Paldies par pasūtījumu. Maksājumu esam saņēmuši.",
       "",
       `Summa: ${amountLine}`,
       `VIN: ${opts.vin ?? "-"}`,
       "",
-      "Rēķins PDF ir pievienots šim e-pastam.",
-      `Rēķins (PDF): ${invoiceUrl}`,
+      `Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit: ${invoiceUrl}`,
     ].join("\n");
   const subject = paymentRendered?.subject ?? "PROVIN: maksājums saņemts, rēķins pielikumā";
 
@@ -560,13 +565,13 @@ export async function sendListingPeekLeadEmail(opts: {
   heardAbout?: string | null;
   id: string;
 }): Promise<void> {
-  const subject = "PROVIN: bezmaksas sludinājuma komentārs";
+  const subject = "PROVIN: jauns ātrā vērtējuma pieprasījums";
   // Tieša saite uz šo ātro vērtējumu; bez sesijas admin atver pieteikšanos un pēc tās atgriež šeit (?next=).
   const adminUrl = `${getSiteOrigin()}/admin/atras-vertesanas/${encodeURIComponent(opts.id)}`;
   const text = [
-    "Jauns bezmaksas sludinājuma komentāra pieprasījums.",
+    "Jauns bezmaksas ātrā vērtējuma pieprasījums.",
     "",
-    `Atvērt admin: ${adminUrl}`,
+    `Atvērt admin paneli: ${adminUrl}`,
     "",
     `ID: ${opts.id}`,
     `E-pasts: ${opts.email}`,
@@ -575,11 +580,11 @@ export async function sendListingPeekLeadEmail(opts: {
     `VIN: ${opts.vin?.trim() || "-"}`,
     `Kur uzzināja: ${opts.heardAbout?.trim() || "-"}`,
     "",
-    "Atbilde klientam: Admin → Ātrie vērtējumi → ieraksti komentāru → «Nosūtīt e-pastu».",
-    "NESŪTI ar Gmail Reply: tur būs parasts teksts bez HTML CTA pogas.",
+    "Kā atbildēt: Admin → Ātrie vērtējumi → ieraksti komentāru → „Nosūtīt e-pastu”.",
+    "Neatbildi ar Gmail „Reply”: klients saņems vienkāršu tekstu bez aicinājuma pogas.",
   ].join("\n");
-  const html = `<p>Jauns <strong>bezmaksas sludinājuma komentāra</strong> pieprasījums.</p>
-<p style="margin:16px 0;"><a href="${escHtmlMail(adminUrl)}" style="display:inline-block;background:#1d1d1f;color:#ffffff;text-decoration:none;font-family:sans-serif;font-size:14px;font-weight:600;padding:12px 20px;border-radius:10px;">Atvērt ātro vērtējumu</a></p>
+  const html = `<p>Jauns <strong>bezmaksas ātrā vērtējuma</strong> pieprasījums.</p>
+<p style="margin:16px 0;"><a href="${escHtmlMail(adminUrl)}" style="display:inline-block;background:#1d1d1f;color:#ffffff;text-decoration:none;font-family:sans-serif;font-size:14px;font-weight:600;padding:12px 20px;border-radius:10px;">Atvērt admin paneli</a></p>
 <table cellpadding="8" style="border-collapse:collapse;font-family:sans-serif;font-size:14px;">
 <tr><td><strong>ID</strong></td><td>${escHtmlMail(opts.id)}</td></tr>
 <tr><td><strong>E-pasts</strong></td><td>${escHtmlMail(opts.email)}</td></tr>
@@ -588,7 +593,7 @@ export async function sendListingPeekLeadEmail(opts: {
 <tr><td><strong>VIN</strong></td><td>${escHtmlMail(opts.vin?.trim() || "-")}</td></tr>
 <tr><td><strong>Kur uzzināja</strong></td><td>${escHtmlMail(opts.heardAbout?.trim() || "-")}</td></tr>
 </table>
-<p style="color:#666;font-size:13px;"><strong>Svarīgi:</strong> atbildi no <em>Admin → Ātrie vērtējumi → Nosūtīt e-pastu</em>. Gmail Reply sūta parasto tekstu <strong>bez</strong> PROVIN AUDITS CTA pogas.</p>`;
+<p style="color:#666;font-size:13px;"><strong>Kā atbildēt:</strong> Admin → Ātrie vērtējumi → ieraksti komentāru → „Nosūtīt e-pastu”. Neatbildi ar Gmail „Reply”: klients saņems vienkāršu tekstu bez aicinājuma pogas.</p>`;
 
   await sendSmtpMail({
     to: opts.adminTo,
@@ -627,7 +632,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     doc,
     htmlContext: { photoCids: photos.map((p) => listingPeekPhotoCid(p.id)) },
   });
-  const subject = rendered?.subject ?? "PROVIN: īss komentārs par tavu sludinājumu";
+  const subject = rendered?.subject ?? "PROVIN: īss komentārs par sludinājumu";
   const text =
     rendered?.text ??
     [
@@ -637,11 +642,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
       comment,
       ...(photos.length > 0 ? ["", fotoPiezime] : []),
       "",
-      "Noskaidro visu par savu topošo auto.",
-      "PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.",
-      "",
-      "Pasūtīt:",
-      auditsUrl,
+      `Pirms pirkuma pārbaudiet pilnu auto vēsturi ar PROVIN AUDITS: ${auditsUrl}`,
       "",
       "Ar cieņu,",
       "PROVIN.LV",

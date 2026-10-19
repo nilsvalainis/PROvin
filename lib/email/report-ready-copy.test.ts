@@ -15,19 +15,19 @@ describe("report-ready product emails", () => {
 
   it("builds dealer subject without a consumer discount", () => {
     expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962")).toBe(
-      "PROVIN servisa vēstures atskaite ir gatava",
+      "PROVIN: oficiālā dīlera dati ir gatavi",
     );
     const text = buildReportReadyPlainText({
       kind: "dealer",
       vin: "WAUZZZF44LA062962",
       attachmentLines: ["OFICIALA_DILERA_DATI.pdf"],
     });
-    expect(text).toContain("oficiālā dīlera servisa vēstures dati");
+    expect(text).toContain("oficiālā dīlera dati");
     expect(text).toContain("OFICIALA_DILERA_DATI.pdf");
     expect(text).not.toContain("20%");
     expect(text).not.toContain("79,99");
     expect(text).not.toContain("PROVIN AUDITS");
-    expect(text).toContain("Nils / IRISS");
+    expect(text).toContain("Nils");
     expect(text).toContain("PROVIN.LV");
     expect(text).not.toContain("PROVIN.LV komanda");
     expect(text).not.toContain("g.page");
@@ -54,7 +54,7 @@ describe("report-ready product emails", () => {
     expect(html).not.toContain("Pasūtīt PROVIN AUDITS");
     expect(html).not.toContain("20%");
     expect(html).not.toContain("79,99");
-    expect(html).toContain("Nils / IRISS");
+    expect(html).toContain("Nils");
   });
 
   it("adds Google review HTML only when asked", () => {
@@ -71,7 +71,7 @@ describe("report-ready product emails", () => {
       productKind: "audits",
       includeGoogleReview: true,
     });
-    expect(on).toContain("atvēlēsiet īsu brīdi");
+    expect(on).toContain("būšu pateicīgs par īsu atsauksmi");
     expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
   });
 
@@ -110,7 +110,7 @@ describe("report-ready product emails", () => {
       attachmentLines: ["PROVIN_atskaite.pdf"],
       productKind: "audits",
     });
-    expect(retail).toContain("Nils / IRISS");
+    expect(retail).toContain("Nils");
     expect(retail).toContain("PROVIN.LV");
   });
 
@@ -128,9 +128,9 @@ describe("report-ready product emails", () => {
       attachmentLines: [],
       includeGoogleReview: true,
     });
-    expect(on).toContain("atvēlēsiet īsu brīdi");
+    expect(on).toContain("būšu pateicīgs par īsu atsauksmi");
     expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
-    expect(on).toContain("Nils / IRISS");
-    expect(on.indexOf("g.page")).toBeLessThan(on.indexOf("Nils / IRISS"));
+    expect(on).toContain("Nils");
+    expect(on.indexOf("g.page")).toBeLessThan(on.indexOf("Nils"));
   });
 });

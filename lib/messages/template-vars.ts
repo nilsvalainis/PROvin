@@ -41,12 +41,12 @@ export function buildReportReadyEmailVars(opts: {
 
 export function whatsappQuestionsLine(kind: ReportReadyProductKind): string {
   if (kind === "dealer") {
-    return "Ja Jums rodas papildu jautājumi, droši rakstiet šeit vai uz info@provin.lv.";
+    return "Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim.";
   }
   if (kind === "mini") {
-    return "Ja Jums rodas kādi jautājumi, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!";
+    return "Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim.";
   }
-  return "Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!";
+  return "Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim.";
 }
 
 export function buildWaReportReadyVars(opts: { kind: ReportReadyProductKind; vin?: string | null }): Record<string, string> {

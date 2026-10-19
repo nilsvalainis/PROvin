@@ -121,8 +121,8 @@ describe("admin-morning-summary-email", () => {
     const summary = buildMorningSummary([{ id: "ok", created, customerName: "Jānis" }], [], NOW);
     const mail = buildMorningSummaryEmail(summary, { pageUrl: PAGE, nowMs: NOW });
     expect(mail.subject).toBe("PROVIN: rīta kopsavilkums, 13. oktobris");
-    expect(mail.text).toContain("Nav kavētu auditu un jaunu vērtējumu pēdējās 24 h.");
-    expect(mail.html).toContain("Nav kavētu auditu un jaunu vērtējumu pēdējās 24 h.");
+    expect(mail.text).toContain("Kavētu auditu nav, un pēdējās 24 h nav jaunu vērtējumu.");
+    expect(mail.html).toContain("Kavētu auditu nav, un pēdējās 24 h nav jaunu vērtējumu.");
     expect(mail.html).toContain(PAGE);
     expectCleanCopy(mail.subject);
     expectCleanCopy(mail.text);

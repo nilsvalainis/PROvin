@@ -19,12 +19,12 @@ function amountLine(amountEur?: string | null): string {
 
 function whatsappQuestionsLine(kind: ReportReadyProductKind): string {
   if (kind === "dealer") {
-    return "Ja Jums rodas papildu jautājumi, droši rakstiet šeit vai uz info@provin.lv.";
+    return "Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim.";
   }
   if (kind === "mini") {
-    return "Ja Jums rodas kādi jautājumi, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!";
+    return "Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim.";
   }
-  return "Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet šeit vai uz info@provin.lv, labprāt palīdzēsim!";
+  return "Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim.";
 }
 
 /** Gatavs ziņojums pēc e-pasta šablona (pielikumu sarakstu WA neiekļauj). */
@@ -38,11 +38,11 @@ export function whatsappPrefillReportReady(
 
   const parts: string[] = ["Labdien!", ""];
   if (opts.kind === "dealer") {
-    parts.push("Jūsu pieprasītie oficiālā dīlera servisa vēstures dati ir sagatavoti.");
+    parts.push("Jūsu pasūtītie oficiālā dīlera dati ir gatavi.");
   } else if (opts.kind === "mini") {
-    parts.push("Jūsu pasūtītā PROVIN MINI atskaite ir sagatavota.");
+    parts.push("Jūsu PROVIN MINI atskaite ir gatava.");
   } else {
-    parts.push("Jūsu pasūtītā PROVIN AUDITS atskaite ir sagatavota.");
+    parts.push("Jūsu PROVIN AUDITS atskaite ir gatava.");
   }
   parts.push("", whatsappQuestionsLine(opts.kind), "", googleReviewPlainBlock(), "", clientMessageSignOff());
   return parts.join("\n");
@@ -65,14 +65,13 @@ export function whatsappPrefillSelectConsultation(templatesDoc?: MessageTemplate
   if (rendered?.text) return rendered.text;
   return `Sveiki!
 
-Nosūtu Jums PROVIN SELECT stratēģisko konsultāciju. Visus papildu materiālus nosūtīju uz Jūsu e-pastu.
+Nosūtu Jums PROVIN SELECT stratēģisko konsultāciju. Papildu materiālus nosūtīju uz Jūsu e-pastu.
 
-⚠️ Svarīgi: Sakarā ar tehniskiem uzlabojumiem, e-pasts dažkārt mēdz nonākt Spam mapē. Lūdzu, pārbaudiet!
+Svarīgi: ja e-pastu neredzat, pārbaudiet arī mapi „Spam” (surogātpasts).
 
-Ja rodas jautājumi par konsultācijas ieteikumiem vai vēlaties palīdzību auto izvēlē, droši rakstiet šeit vai zvaniet. Labprāt palīdzēšu!
+Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstiet šeit vai zvaniet. Labprāt palīdzēšu.
 
-Ar cieņu,
-PROVIN.LV`;
+${clientMessageSignOff()}`;
 }
 
 /**
@@ -93,14 +92,13 @@ export function whatsappPrefillDealerNoDataRefunded(
   const amount = amountLine(amountEur);
   return `Labdien!
 
-Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.
+Pārbaudījām Jūsu auto. Diemžēl oficiālā dīlera dati par to nav pieejami.
 
-Informācija par naudas atmaksu:
-Summa: ${amount} (veikta pilnā apmērā uz to pašu maksājumu karti).
+Atmaksājām ${amount} pilnā apmērā uz karti, ar kuru maksājāt.
 
 Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.
 
-Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.
+Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.
 
 Pasūtīt: https://provin.lv
 
@@ -115,13 +113,13 @@ export function whatsappPrefillDealerPaymentCancelled(vin?: string | null, templ
   const rendered = resolveMessageSync("wa.dealer.cancelled", vars, { doc: templatesDoc });
   if (rendered?.text) return rendered.text;
 
-  return `Sveiki!
+  return `Labdien!
 
-Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts un maksājums atgriezts pilnā apmērā.
+Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām visu summu.
 
-Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.
+Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.
 
-Ja vēlaties pasūtīt atkārtoti, droši rakstiet šeit.
+Ja vēlaties pasūtīt atkārtoti, rakstiet šeit.
 
 ${clientMessageSignOff()}`;
 }

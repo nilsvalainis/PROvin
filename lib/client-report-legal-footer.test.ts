@@ -96,7 +96,7 @@ describe("client report legal footer", () => {
     expect(html).toContain("PROVIN AUDITS atskaite");
     expect(html).toContain("WVWZZZ1JZXW000001");
     expect(html).toContain("Kopsavilkuma PDF atskaiti");
-    expect(html).toContain("Nils / IRISS");
+    expect(html).toContain("Nils");
     expect(html).toContain("PROVIN.LV");
     expect(html).not.toContain("PROVIN.LV komanda");
     expect(html).not.toContain("SVARĪGA INFORMĀCIJA");

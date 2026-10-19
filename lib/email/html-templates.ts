@@ -79,7 +79,7 @@ export function paymentConfirmationHtml(opts: {
 <p style="margin:0 0 20px;color:${MUTED};font-size:15px;">Maksājums ir saņemts. Jūsu pasūtījums tiek apstrādāts.</p>
 <p style="margin:0 0 6px;font-size:14px;"><strong>Summa:</strong> ${esc(opts.amountLine)}</p>
 <p style="margin:0 0 24px;font-size:14px;"><strong>VIN:</strong> ${esc(opts.vin)}</p>
-<p style="margin:0 0 24px;font-size:14px;">Rēķins PDF ir pievienots šim e-pastam. To var arī lejupielādēt šeit.</p>
+<p style="margin:0 0 24px;font-size:14px;">Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit.</p>
 ${ctaButton(opts.invoiceUrl, "Lejupielādēt rēķinu (PDF)")}
 `;
   return shell(inner);
@@ -133,10 +133,10 @@ export function adminAuditSlaWarningHtml(opts: {
         `<tr><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;color:${MUTED};width:38%;">${esc(l.label)}</td><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;">${esc(l.value)}</td></tr>`,
     )
     .join("");
-  const cta = opts.adminUrl ? ctaButton(opts.adminUrl, "Atvērt pasūtījumu") : "";
+  const cta = opts.adminUrl ? ctaButton(opts.adminUrl, "Atvērt admin paneli") : "";
   const inner = `
-<p style="margin:0 0 8px;font-size:20px;font-weight:600;">Audita termiņš: atlikušas ≤ 3 h</p>
-<p style="margin:0 0 24px;color:${MUTED};font-size:14px;">PROVIN 48 h sagatavošanas SLA.</p>
+<p style="margin:0 0 8px;font-size:20px;font-weight:600;">Līdz audita termiņam atlikušas 3 h vai mazāk</p>
+<p style="margin:0 0 24px;color:${MUTED};font-size:14px;">Pabeidz auditu, lai iekļautos termiņā.</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
 ${cta}
 `;
@@ -198,11 +198,11 @@ ${photoCids
 
   const inner = `
 <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:600;">PROVIN.LV · Bezmaksas komentārs</p>
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;color:${INK};">Īss skatījums uz tavu sludinājumu</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;color:${INK};">Īss komentārs par sludinājumu</p>
 ${listingBlock}
 ${bodyHtml}
 ${photoBlock}
-<p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:${INK};">Noskaidro visu par savu topošo auto.</p>
+<p style="margin:20px 0 6px;font-size:16px;font-weight:600;color:${INK};">Pirms pirkuma pārbaudiet pilnu auto vēsturi ar PROVIN AUDITS.</p>
 <p style="margin:0 0 4px;font-size:14px;line-height:1.55;color:${MUTED};">PROVIN AUDITS: visaptveroša auto vēstures un risku izpēte.</p>
 ${cta}
 <p style="margin:8px 0 0;font-size:15px;line-height:1.6;color:${INK};">Ar cieņu,<br/><span style="color:${MUTED};font-weight:600;">PROVIN.LV</span></p>
@@ -220,12 +220,12 @@ function clientSignOffHtml(b2bClient?: boolean): string {
   if (b2bClient) {
     return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span></p>`;
   }
-  return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>Nils / IRISS<br/>PROVIN.LV</p>`;
+  return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>`;
 }
 
 function googleReviewHtml(): string {
   const href = esc(GOOGLE_REVIEW_URL);
-  return `<p style="margin:0 0 20px;font-size:15px;color:${INK};line-height:1.6;">Būšu ļoti pateicīgs, ja atvēlēsiet īsu brīdi, lai atstātu atsauksmi par šo projektu Google: <a href="${href}" style="color:${BRAND};text-decoration:none;font-weight:500;word-break:break-all;">${href}</a></p>`;
+  return `<p style="margin:0 0 20px;font-size:15px;color:${INK};line-height:1.6;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: <a href="${href}" style="color:${BRAND};text-decoration:none;font-weight:500;word-break:break-all;">${href}</a></p>`;
 }
 
 function reportReadyCloseHtml(
@@ -265,25 +265,25 @@ export function auditCompletedEmailHtml(opts: {
   if (kind === "dealer") {
     body = `
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pieprasītie oficiālā dīlera servisa vēstures dati${vinHtml} ir sagatavoti.</p>
-<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">Pielikumā atradīsiet šādus dokumentus:</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtītie oficiālā dīlera dati${vinHtml} ir gatavi.</p>
+<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">Pielikumā atradīsiet:</p>
 ${fileList}
-${reportReadyCloseHtml(`Ja Jums rodas papildu jautājumi, droši rakstiet mums uz ${mailLink}.`, opts.includeGoogleReview, b2bClient)}`;
+${reportReadyCloseHtml(`Ja rodas jautājumi, rakstiet uz ${mailLink}. Labprāt palīdzēsim.`, opts.includeGoogleReview, b2bClient)}`;
   } else if (kind === "mini") {
     body = `
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtītā PROVIN MINI atskaite${vinHtml} ir sagatavota un pievienota šī e-pasta pielikumā.</p>
-${reportReadyCloseHtml(`Ja Jums rodas kādi jautājumi, droši rakstiet mums uz ${mailLink}, labprāt palīdzēsim!`, opts.includeGoogleReview, b2bClient)}`;
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu PROVIN MINI atskaite${vinHtml} ir gatava. Tā pievienota šī e-pasta pielikumā.</p>
+${reportReadyCloseHtml(`Ja rodas jautājumi, rakstiet uz ${mailLink}. Labprāt palīdzēsim.`, opts.includeGoogleReview, b2bClient)}`;
   } else {
     body = `
 <p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtītā PROVIN AUDITS atskaite${vinHtml} ir sagatavota.</p>
-<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">E-pasta pielikumā atradīsiet:</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu PROVIN AUDITS atskaite${vinHtml} ir gatava.</p>
+<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">Pielikumā atradīsiet:</p>
 <ul style="margin:4px 0 16px;padding-left:22px;color:${INK};font-size:15px;line-height:1.45;">
 <li style="margin:4px 0;">Kopsavilkuma PDF atskaiti</li>
 <li style="margin:4px 0;">Papildu materiālus un pielikumus</li>
 </ul>
-${reportReadyCloseHtml(`Ja Jums rodas kādi jautājumi vai nepieciešama papildu konsultācija, droši rakstiet mums uz ${mailLink}, labprāt palīdzēsim!`, opts.includeGoogleReview, b2bClient)}`;
+${reportReadyCloseHtml(`Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet uz ${mailLink}. Labprāt palīdzēsim.`, opts.includeGoogleReview, b2bClient)}`;
   }
 
   return shell(body, { omitBrandRibbon: !b2bClient, b2bClient });
@@ -469,12 +469,10 @@ export function dealerDataNoDataRefundEmailHtml(opts: {
   if (opts.cancelled) {
     const inner = `
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtījums par oficiālā dīlera servisa vēsturi ir atcelts${
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Atcēlām Jūsu oficiālā dīlera datu pasūtījumu${
       vinEsc ? ` (VIN <strong>${vinEsc}</strong>)` : ""
-    }.</p>
-<p style="margin:0 0 18px;font-size:15px;color:${INK};line-height:1.6;">Atmaksa ${esc(
-      amount,
-    )} veikta pilnā apmērā uz to pašu karti. Nauda kontā parasti ir 5 līdz 10 darba dienu laikā, atkarībā no bankas.</p>
+    } un atmaksājām ${esc(amount)} pilnā apmērā uz karti, ar kuru maksājāt.</p>
+<p style="margin:0 0 18px;font-size:15px;color:${INK};line-height:1.6;">Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.</p>
 <p style="margin:0 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas jautājumi, atbildiet uz šo e-pastu (<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>).</p>
 ${clientSignOffHtml()}
 `;
@@ -485,14 +483,14 @@ ${clientSignOffHtml()}
   const inner = `
 <p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>
 <p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Esam pārbaudījuši oficiālā dīlera servisa vēsturi Jūsu pasūtījumam${vinPart}. Diemžēl dati par šo automašīnu mūsu sistēmā nav pieejami.</p>
-<p style="margin:0 0 6px;font-size:15px;color:${INK};line-height:1.6;"><strong>Informācija par naudas atmaksu:</strong><br/>Summa: ${esc(
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Pārbaudījām Jūsu auto${vinPart}. Diemžēl oficiālā dīlera dati par to nav pieejami.</p>
+<p style="margin:0 0 6px;font-size:15px;color:${INK};line-height:1.6;">Atmaksājām ${esc(
     amount,
-  )} (veikta pilnā apmērā uz to pašu maksājumu karti).</p>
+  )} pilnā apmērā uz karti, ar kuru maksājāt.</p>
 <p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Piezīme: bankas izrakstā atmaksa var neparādīties kā jauns ienākošais maksājums, bet gan kā atcelta rezervētā summa.</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Ja šo pārbaudi veicāt pirms auto iegādes, rekomendējam izmantot PROVIN AUDITS: padziļinātu auto vēstures pārbaudi, odometra atbilstības, negadījumu un risku analīzi.</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Ja auto vēl tikai plānojat pirkt, iesakām PROVIN AUDITS: padziļinātu vēstures pārbaudi ar nobraukuma, negadījumu un risku analīzi.</p>
 ${ctaButton("https://provin.lv", "Pasūtīt PROVIN AUDITS")}
-<p style="margin:16px 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja Jums rodas papildu jautājumi, droši rakstiet mums uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>.</p>
+<p style="margin:16px 0 20px;font-size:15px;color:${MUTED};line-height:1.55;">Ja rodas jautājumi, rakstiet uz <a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>.</p>
 ${clientSignOffHtml()}
 `;
   return shell(inner, { omitBrandRibbon: true });
@@ -532,7 +530,7 @@ export function morningSummaryEmailHtml(opts: {
 }): string {
   const empty =
     opts.overdueAudits.length + opts.dueTodayAudits.length + opts.newPeeks.length === 0
-      ? `<p style="margin:20px 0 0;font-size:15px;color:${MUTED};">Nav kavētu auditu un jaunu vērtējumu pēdējās 24 h.</p>`
+      ? `<p style="margin:20px 0 0;font-size:15px;color:${MUTED};">Kavētu auditu nav, un pēdējās 24 h nav jaunu vērtējumu.</p>`
       : "";
   const inner = `
 <p style="margin:0 0 6px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Rīta kopsavilkums</p>
@@ -553,11 +551,11 @@ export function morningSummaryEmailHtml(opts: {
 </td>
 </tr>
 </table>
-<p style="margin:12px 0 0;font-size:13px;color:${MUTED};">Auditi ${opts.openAudits} · vērtējumi ${opts.openPeeks} · jauni 24 h: ${opts.newPeeksLast24h}</p>
+<p style="margin:12px 0 0;font-size:13px;color:${MUTED};">Atvērtie auditi: ${opts.openAudits} · ātrie vērtējumi: ${opts.openPeeks} · jauni pēdējās 24 h: ${opts.newPeeksLast24h}</p>
 ${morningSummaryEmailSection("Kavētie auditi (48 h)", opts.overdueAudits)}
 ${morningSummaryEmailSection("Šodienas termiņi", opts.dueTodayAudits)}
 ${morningSummaryEmailSection("Jauni ātrie vērtējumi (24 h)", opts.newPeeks)}
-${morningSummaryEmailSection("Avoti, kas krīt 3 reizes pēc kārtas", opts.failingSources ?? [])}
+${morningSummaryEmailSection("Datu avoti ar kļūdām 3 reizes pēc kārtas (pārbaudi piekļuvi)", opts.failingSources ?? [])}
 ${empty}
 ${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}
 `;

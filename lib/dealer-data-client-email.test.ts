@@ -31,7 +31,7 @@ describe("dealer-data-client-email drafts", () => {
     expect(d.text).toMatch(/atcelta rezervētā summa/);
     expect(d.text).toContain("PROVIN AUDITS");
     expect(d.text).toContain(`Pasūtīt: ${DEALER_NO_DATA_AUDIT_CTA_URL}`);
-    expect(d.text).toContain("Nils / IRISS");
+    expect(d.text).toContain("Nils");
     expect(d.text).not.toMatch(/—/);
   });
 
@@ -50,11 +50,11 @@ describe("dealer-data-client-email drafts", () => {
   it("keeps the retail dealer-ready template unchanged", () => {
     const d = buildDealerReadyEmailDraft({ vin: "WVWZZZ3CZME138258" });
     expect(d.subject).toBe("PROVIN.LV: oficiālā dīlera dati pielikumā");
-    expect(d.text).toContain("Nils / IRISS");
+    expect(d.text).toContain("Nils");
     expect(d.text).toContain("PROVIN.LV");
     expect(d.text).toContain("info@provin.lv");
     const html = dealerDataOperatorMessageEmailHtml({ text: d.text });
-    expect(html).toContain("Nils / IRISS");
+    expect(html).toContain("Nils");
     expect(html).toContain("PROVIN.LV");
     expect(html).not.toContain('letter-spacing:0.12em;text-transform:uppercase;color:#0061D2;font-weight:700;">PROVIN<');
   });
