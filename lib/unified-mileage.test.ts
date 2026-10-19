@@ -365,6 +365,20 @@ describe("selectNewestVerifiedMileageRow", () => {
   });
 });
 
+describe("collectUnifiedMileageRows — jūdzes uz km", () => {
+  it("converts dealer mi readings with the shared helper", () => {
+    const collected = collectUnifiedMileageRows({
+      autoRecordsBlock: {
+        ...emptyAutoRecordsBlock(),
+        serviceHistory: [{ date: "02.10.2014", odometer: "10000", country: "ASV", unit: "mi" }],
+      },
+    });
+    expect(collected).toHaveLength(1);
+    expect(collected[0]?.odometer).toBe("16093");
+    expect(collected[0]?.unit).toBe("mi");
+  });
+});
+
 describe("collectUnifiedMileageRows — dokumenta rādījumi", () => {
   it("marks dealer mileage rows that come from a service/repair order", () => {
     const collected = collectUnifiedMileageRows({

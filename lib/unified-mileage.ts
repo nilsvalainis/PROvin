@@ -26,8 +26,9 @@ import { CC_VIN_PDF_SOURCE_LABEL, type CcVinBlockState } from "@/lib/cc-vin-repo
 import { ASV_PDF_SOURCE_LABEL, type AsvBlockState } from "@/lib/asv-report";
 import { resolveListingMileageChartRow } from "@/lib/listing-odometer";
 import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
+import { milesToKmRounded } from "@/lib/miles-to-km";
 
-export const MILES_TO_KM = 1.609344;
+export { MILES_TO_KM } from "@/lib/miles-to-km";
 
 export type MileageDatePrecision = "day" | "month";
 export type MileageUnit = "km" | "mi";
@@ -136,7 +137,7 @@ export function odometerToKmDisplay(raw: string, unit?: string): string {
   const n = Number.parseInt(digits, 10);
   if (!Number.isFinite(n) || n <= 0) return trimmed;
   const resolved = parseMileageUnit(unit) ?? parseMileageUnit(trimmed);
-  if (resolved === "mi") return String(Math.round(n * MILES_TO_KM));
+  if (resolved === "mi") return String(milesToKmRounded(n));
   return trimmed;
 }
 

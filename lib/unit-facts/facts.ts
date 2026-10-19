@@ -223,7 +223,7 @@ export const UNIT_FACTS: readonly UnitFact[] = [
         message: "7G-DCT eļļas maiņas cikls ir ~60 000 km; pārbaudi, vai teikumā nav nepareizs intervāls vai „nākamā apkope”.",
       },
     ],
-    note: "Mercedes detaļu katalogi (Meyle/PST 2025) norāda arī 100 000 km jaunākiem; IRISS izmanto 60 000 km. Pārbaude brīdina tikai par intervāla vārdiem.",
+    note: "Mercedes detaļu katalogi (Meyle/PST 2025) norāda arī 100 000 km jaunākiem; IRISS izmanto 60 000 km. ASV StarTuned 60K ir 96 561 km pēc pārrēķina; ES cikls paliek 60 000 km. Pārbaude brīdina tikai par intervāla vārdiem.",
     addedAt: "2026-10-17",
   },
 
@@ -582,15 +582,15 @@ export const UNIT_FACTS: readonly UnitFact[] = [
     codes: ["DQ381", "0GC"],
     topic: "service_interval",
     statementLv:
-      "VAG DQ381 (0GC) eļļas un filtra maiņas intervāls STRĪDĪGS: ES avoti 120 000 km vai 5 gadi; VW 2026 ASV grāmata 80 000 jūdzes, smagos apstākļos 60 000 jūdzes (~96 500 km). Konkrētam auto jāpārbauda pēc VIN.",
+      "VAG DQ381 (0GC) eļļas un filtra maiņas intervāls STRĪDĪGS: ES avoti 120 000 km vai 5 gadi; VW 2026 ASV grāmata 128 748 km, smagos apstākļos 96 561 km. Konkrētam auto jāpārbauda pēc VIN.",
     status: "disputed",
     sources: [
       {
         kind: "oem_doc",
-        title: "VW Owners Literature 2026 VW Service (US): 0GC 80,000 miles; severe 60,000 miles (~96 500 km)",
+        title: "VW Owners Literature 2026 VW Service (US): 0GC 128 748 km; smagie apstākļi 96 561 km",
         url: "https://ownersliterature.vw.com/owners-literature-service/v1/document/d063309f-f793-4d23-8799-a4ff5ffb3850",
         accessed: "2026-10-17",
-        note: "ASV grāmata. 60 000 ir jūdzes, ne km.",
+        note: "ASV grāmata. Intervāli pārrēķināti uz km.",
       },
       {
         kind: "supplier",
@@ -611,7 +611,7 @@ export const UNIT_FACTS: readonly UnitFact[] = [
       "(DQ381|0GC|DSG|kārb)[^.]{0,120}(intervāl|ik\\s+pēc)",
       "(intervāl|ik\\s+pēc)[^.]{0,120}(DQ381|0GC|DSG|kārb)",
     ],
-    note: "Paliek disputed līdz ES erWin/ELSA pēc VIN. 4Motion 60 000 km: nav apstiprināts.",
+    note: "Paliek disputed līdz ES erWin/ELSA pēc VIN. 4Motion smagais intervāls (96 561 km no ASV grāmatas): nav apstiprināts ES.",
     addedAt: "2026-10-17",
   },
   {
@@ -930,7 +930,7 @@ export const UNIT_FACTS: readonly UnitFact[] = [
     sources: [
       {
         kind: "specialist",
-        title: "TPS (VW Group UK): DQ250 0D9, 40,000 miles fluid and filter",
+        title: "TPS (VW Group UK): DQ250 0D9, 64 374 km fluid and filter",
         url: "https://tps.trade/insider/dsg-servicing/",
         accessed: "2026-10-17",
       },
@@ -962,7 +962,7 @@ export const UNIT_FACTS: readonly UnitFact[] = [
       },
       {
         kind: "specialist",
-        title: "Palmers Garage: Ford UK 6 years or 100,000 miles",
+        title: "Palmers Garage: Ford UK 6 years or 160 934 km",
         url: "https://palmersgarage.co.uk/2024/01/17/ford-2-0l-ecoblue-timing-wet-belt-replacement-revised-service-interval/",
         accessed: "2026-10-17",
       },

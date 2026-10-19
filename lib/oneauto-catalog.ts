@@ -1,6 +1,7 @@
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
 import { capitalizeServiceField, formatServiceWorksLines } from "@/lib/service-works-lines";
 import { repairDealerImportText } from "@/lib/dealer-text-repair";
+import { milesToKmRounded } from "@/lib/miles-to-km";
 
 export const ONEAUTO_SOURCE_TAG = "oneautoapi" as const;
 
@@ -460,7 +461,7 @@ export function oneautoOdometerToKm(raw: string, unitRaw = ""): string {
   if (!t) return "";
   const n = Number.parseFloat(t.replace(/[^\d.,]/g, "").replace(",", "."));
   if (!Number.isFinite(n) || n <= 0) return t;
-  if (/^(mi|mile|miles)$/i.test(unitRaw.trim())) return String(Math.round(n * 1.609344));
+  if (/^(mi|mile|miles)$/i.test(unitRaw.trim())) return String(milesToKmRounded(n));
   return String(Math.round(n));
 }
 

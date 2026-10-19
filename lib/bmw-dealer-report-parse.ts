@@ -10,6 +10,7 @@
  */
 
 import { formatAutoRecordsDateForOutput } from "@/lib/auto-records-paste-parse";
+import { milesToKmRounded } from "@/lib/miles-to-km";
 import type { OutvinEquipmentLine, OutvinVehicleInfo } from "@/lib/outvin-dealer-types";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 import { serviceWorkTermLv } from "@/lib/service-work-term-lv";
@@ -44,8 +45,6 @@ export type BmwDealerReportParse = {
   /** `true`, ja atskaitē ir sadaļa „Service History: No service history found.” */
   serviceHistoryEmpty: boolean;
 };
-
-const MI_TO_KM = 1.609344;
 
 /** Lauka etiķetes tieši tādā formā, kā tās ir dīlera izdrukā. */
 const VEHICLE_INFO_LABELS: { key: keyof OutvinVehicleInfo; label: string }[] = [
@@ -113,7 +112,7 @@ function digitsOnly(raw: string): string {
 function milesToKm(miles: string): string {
   const value = Number.parseInt(digitsOnly(miles), 10);
   if (!Number.isFinite(value) || value <= 0) return "";
-  return String(Math.round(value * MI_TO_KM));
+  return String(milesToKmRounded(value));
 }
 
 /** „188,858 mi / 303,938 km” → km cipari; ja km nav, pārrēķina no jūdzēm. */

@@ -218,5 +218,7 @@
  *   renderēšanas laikā; AI lekciju neģenerē.
  * - 2026-10-19.0 - B2B dīlera automātika: VIN Decoder + OE vēsture; Gemini
  *   komentārs PRO klienta valodā vai RAW oriģinālvalodā; zīmols PROVIN.
+ * - 2026-10-19.1 - Tikai km: avota jūdzes pārrēķina (1 mi = 1.609344 km)
+ *   un klienta tekstā jūdzes / mi / mph neraksta.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-19.0";
+export const PROVIN_AI_PROMPT_VERSION = "2026-10-19.1";
