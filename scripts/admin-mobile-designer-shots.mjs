@@ -123,10 +123,9 @@ async function shot(colorScheme, suffix) {
   report.listings = await metrics(page);
   await shotPage(page, `after-iriss-sludinajumi-${suffix}`);
 
-  await more.click({ timeout: 10_000 }).catch(async () => {
-    await page.locator('nav[aria-label="Galvenā izvēlne"] button[aria-label="Vairāk"]').click();
-  });
-  await page.waitForSelector('[role="dialog"][aria-label="Vairāk"]', { timeout: 10_000 });
+  const tabMore = page.locator('nav[aria-label="Galvenā izvēlne"] button[aria-label="Vairāk"]');
+  await tabMore.click({ timeout: 10_000, force: true });
+  await page.waitForSelector('[role="dialog"][aria-label="Vairāk"]', { timeout: 20_000 });
   await page.waitForTimeout(250);
   await shotPage(page, `after-iriss-vairak-${suffix}`);
 

@@ -417,6 +417,14 @@
     display: none !important;
   }
 
+  .admin-m .rounded-2xl.border-dashed.bg-white,
+  .admin-m .rounded-xl.border-dashed.bg-white,
+  .admin-m .rounded-lg.border-dashed.bg-white {
+    background: var(--surface) !important;
+    border-color: var(--separator) !important;
+    color: var(--label) !important;
+  }
+
   .admin-m [data-admin-brand-logo] {
     display: none !important;
   }
