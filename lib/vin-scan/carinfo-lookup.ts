@@ -1,8 +1,9 @@
 /**
- * car.info VIN SCAN: vispirms /sv-se/vin/S/{VIN} (tiešs JSON/HTML no servera),
- * tad /en-se. Super-search iet pa CARINFO_SEARCH_LOCALES (SE, DK, NO, FI).
+ * car.info VIN SCAN: vispirms /sv-se/vin/S/{VIN} (tiešs HTML no servera),
+ * tad /en-se. Super-search JSON iet pa CARINFO_SEARCH_LOCALES (SE, DK, NO, FI).
  * Numurs tikai ja VIN lapas un super-search auto neatrada.
- * Bez CapSolver un bez proxy. Relejs ir rezerve, ja visas tiešās lapas ir bloķētas.
+ * Bez CapSolver un bez proxy. VIN HTML lapa drīkst iet caur Chrome releju.
+ * Super-search JSON caur Chrome page.goto saņem 403 pēc ~52 s, tāpēc tam ir īss limits.
  */
 import { extractPageFromHtml, isCloudflareChallengeHtml, looksLikeCloudflareWafBlock } from "@/lib/vin-sources/html-extract";
 import { parseCarinfoExtract } from "@/lib/vin-sources/carinfo-parse";
@@ -21,6 +22,31 @@ export type CarinfoPageResponse = { status: number; text: string };
 
 const NONE = "car.info šo VIN neatrada";
 const BLOCKED = "car.info bloķē serveri - atver pārlūkā";
+
+/**
+ * Visa ķēde beidzas pirms avota ārējā 90 s timeout (`Avots neatbildēja laikā`).
+ * Sliktākais gadījums: 2 VIN lapas + visas super-search lokales vēl ietilpst budžetā,
+ * tāpēc DK/NO/FI netiek nogrieztas, ja pirmās lokales apēd savu limitu.
+ */
+export const CARINFO_LOOKUP_BUDGET_MS = 55_000;
+/** Viena VIN vai numura HTML lapa (tiešais fetch un, ja vajag, Chrome). */
+export const CARINFO_PAGE_FETCH_MS = 12_000;
+/**
+ * Viens super-search JSON. Chrome `/listings/page` šai adresei gaida ~52 s un atdod 403.
+ * Limits ir īss, lai pēc en-se un sv-se vēl paliek laiks DK/NO/FI.
+ */
+export const CARINFO_SUPER_SEARCH_FETCH_MS = 4_000;
+/** Tiešais super-search no Vercel, pirms plain HTTP releja. Kopā ar releju ietilpst FETCH limitā. */
+export const CARINFO_SUPER_SEARCH_DIRECT_MS = 1_800;
+export const CARINFO_SUPER_SEARCH_RELAY_MS = 1_800;
+
+const MIN_FETCH_MS = 250;
+
+export type CarinfoLookupLimits = {
+  budgetMs?: number;
+  pageFetchMs?: number;
+  superSearchFetchMs?: number;
+};
 
 export function carinfoResponseBlocked(status: number, text: string): boolean {
   if (status === 0 || status === 403 || status === 429 || status === 503) return true;
@@ -103,22 +129,72 @@ export function carinfoScanFromPage(status: number, html: string): VinScanParse 
  * Lokāles ir tās pašas, ko car.info HTTP avots: SE, DK, NO, FI. Pirmais trāpījums apstājas.
  * Numura lapa tikai pēc tīras iztrūkuma atbildes, un tikai ja SE numurs ir derīgs.
  * Bloķēts tiek atgriezts tikai tad, ja neviena lapa auto neatrada un neviena nebija tīrs "nav".
+ * Katram pieprasījumam ir limits. Ja laiks beidzas, atgriež none vai blocked, nevis timeout.
  */
+function blockedPage(): CarinfoPageResponse {
+  return { status: 0, text: "" };
+}
+
+function withDeadline(
+  pending: Promise<CarinfoPageResponse>,
+  ms: number,
+): Promise<CarinfoPageResponse> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(blockedPage()), ms);
+    pending.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(blockedPage());
+      },
+    );
+  });
+}
+
 export async function runCarinfoLookup(
   vin: string,
   plate: string,
   fetchPage: (url: string) => Promise<CarinfoPageResponse>,
+  limits?: CarinfoLookupLimits,
 ): Promise<VinScanParse> {
   const svUrl = carinfoSvVinUrl(vin);
   const enUrl = carinfoSwedenVinUrl(vin);
   const seen = new Set<string>();
   let sawBlocked = false;
   let sawMiss = false;
+  const budgetMs = limits?.budgetMs ?? CARINFO_LOOKUP_BUDGET_MS;
+  const pageFetchMs = limits?.pageFetchMs ?? CARINFO_PAGE_FETCH_MS;
+  const superSearchFetchMs = limits?.superSearchFetchMs ?? CARINFO_SUPER_SEARCH_FETCH_MS;
+  const started = Date.now();
+
+  function leftMs(): number {
+    return budgetMs - (Date.now() - started);
+  }
+
+  function hasTime(): boolean {
+    return leftMs() >= MIN_FETCH_MS;
+  }
+
+  function fetchCapped(url: string): Promise<CarinfoPageResponse> {
+    const left = leftMs();
+    if (left < MIN_FETCH_MS) return Promise.resolve(blockedPage());
+    const cap = url.includes("/search/super/") ? superSearchFetchMs : pageFetchMs;
+    return withDeadline(fetchPage(url), Math.min(left, cap));
+  }
+
+  function finish(): VinScanParse {
+    if (sawBlocked && !sawMiss) return { status: "blocked", summary: BLOCKED, openUrl: svUrl };
+    return { status: "none", summary: NONE, openUrl: sawMiss ? enUrl : svUrl };
+  }
 
   async function read(url: string): Promise<VinScanParse | null> {
     if (seen.has(url)) return null;
+    if (!hasTime()) return null;
     seen.add(url);
-    const page = await fetchPage(url);
+    const page = await fetchCapped(url);
     const parsed = carinfoScanFromPage(page.status, page.text);
     if (parsed.status === "blocked") {
       sawBlocked = true;
@@ -137,8 +213,9 @@ export async function runCarinfoLookup(
 
   const searchTime = Date.now();
   for (const locale of CARINFO_SEARCH_LOCALES) {
+    if (!hasTime()) break;
     const searchUrl = carinfoSuperSearchUrl(locale, vin, searchTime);
-    const search = await fetchPage(searchUrl);
+    const search = await fetchCapped(searchUrl);
     if (carinfoResponseBlocked(search.status, search.text)) {
       sawBlocked = true;
       continue;
@@ -149,12 +226,11 @@ export async function runCarinfoLookup(
     if (parsed) return parsed;
   }
 
-  if (isValidScanPlate("se", plate) && sawMiss) {
+  if (isValidScanPlate("se", plate) && sawMiss && hasTime()) {
     const plateUrl = carinfoSwedenPlateUrl(plate);
     const parsed = await read(plateUrl);
     if (parsed) return parsed;
   }
 
-  if (sawBlocked && !sawMiss) return { status: "blocked", summary: BLOCKED, openUrl: svUrl };
-  return { status: "none", summary: NONE, openUrl: sawMiss ? enUrl : svUrl };
+  return finish();
 }

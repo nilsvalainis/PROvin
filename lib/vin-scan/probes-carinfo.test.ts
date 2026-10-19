@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const scanFetch = vi.fn();
 const applyVinScanRelayIfBlocked = vi.fn();
+const applyCarinfoSuperSearchHttp = vi.fn();
 
 vi.mock("server-only", () => ({}));
 
@@ -15,6 +16,8 @@ vi.mock("@/lib/vin-scan/http", () => ({
 
 vi.mock("@/lib/vin-scan/listings-page-relay", () => ({
   applyVinScanRelayIfBlocked: (...args: unknown[]) => applyVinScanRelayIfBlocked(...args),
+  applyCarinfoSuperSearchHttp: (...args: unknown[]) => applyCarinfoSuperSearchHttp(...args),
+  isCarinfoSuperSearchUrl: (url: string) => String(url).includes("/search/super/"),
 }));
 
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
@@ -46,15 +49,22 @@ function ctx() {
   return { vin: VIN, plates: emptyVinScanPlates(), listingUrl: "" };
 }
 
+const EMPTY_SUPER = JSON.stringify({ hits: { idents: [] }, hits_html: "" });
+
 describe("probeCarinfo releja super-search", () => {
   afterEach(() => {
     scanFetch.mockReset();
     applyVinScanRelayIfBlocked.mockReset();
+    applyCarinfoSuperSearchHttp.mockReset();
   });
 
-  it("bloķēts tiešais ceļš caur releju atrod DK super-search, nevis tukšu VIN lapu", async () => {
+  it("bloķēts tiešais ceļš super-search lasa pa HTTP releju, VIN lapu pa Chrome", async () => {
     scanFetch.mockResolvedValue({ status: 403, text: BLOCKED, cookie: "" });
     applyVinScanRelayIfBlocked.mockImplementation(async (url: string) => {
+      if (url === DK_PAGE) return { status: 200, text: SHARAN_HTML, cookie: "" };
+      return { status: 200, text: EMPTY_SHELL, cookie: "" };
+    });
+    applyCarinfoSuperSearchHttp.mockImplementation(async (url: string) => {
       if (String(url).includes("/en-dk/search/super/")) {
         return {
           status: 200,
@@ -65,15 +75,16 @@ describe("probeCarinfo releja super-search", () => {
           cookie: "",
         };
       }
-      if (url === DK_PAGE) return { status: 200, text: SHARAN_HTML, cookie: "" };
-      return { status: 200, text: EMPTY_SHELL, cookie: "" };
+      return { status: 200, text: EMPTY_SUPER, cookie: "" };
     });
 
     const row = await probeCarinfo(ctx());
 
-    const relayed = applyVinScanRelayIfBlocked.mock.calls.map((call) => String(call[0]));
-    expect(relayed.some((url) => url.includes("/search/super/"))).toBe(true);
-    expect(relayed).toContain(DK_PAGE);
+    const chrome = applyVinScanRelayIfBlocked.mock.calls.map((call) => String(call[0]));
+    const http = applyCarinfoSuperSearchHttp.mock.calls.map((call) => String(call[0]));
+    expect(chrome.some((url) => url.includes("/search/super/"))).toBe(false);
+    expect(chrome).toContain(DK_PAGE);
+    expect(http.some((url) => url.includes("/en-dk/search/super/"))).toBe(true);
     expect(row.status).toBe("found");
     expect(row.summary).toContain("Sharan");
     expect(row.summary).toContain("2014");
@@ -81,10 +92,33 @@ describe("probeCarinfo releja super-search", () => {
     expect(row.openUrl).toBe(DK_PAGE);
   });
 
+  it("lēns Chrome super-search netiek saukts un neapēd budžetu", async () => {
+    scanFetch.mockResolvedValue({ status: 403, text: BLOCKED, cookie: "" });
+    applyVinScanRelayIfBlocked.mockImplementation(async (url: string) => {
+      if (String(url).includes("/search/super/")) {
+        await new Promise((resolve) => setTimeout(resolve, 5_000));
+        return { status: 403, text: BLOCKED, cookie: "" };
+      }
+      return { status: 200, text: EMPTY_SHELL, cookie: "" };
+    });
+    applyCarinfoSuperSearchHttp.mockResolvedValue({ status: 403, text: BLOCKED, cookie: "" });
+
+    const started = Date.now();
+    const row = await probeCarinfo(ctx());
+    const chrome = applyVinScanRelayIfBlocked.mock.calls.map((call) => String(call[0]));
+
+    expect(Date.now() - started).toBeLessThan(2_500);
+    expect(chrome.some((url) => url.includes("/search/super/"))).toBe(false);
+    expect(applyCarinfoSuperSearchHttp).toHaveBeenCalled();
+    expect(row.status === "none" || row.status === "blocked").toBe(true);
+    expect(row.summary).not.toMatch(/neatbildēja laikā/);
+  });
+
   it("tiešs 200 VIN lapa releju neprasa", async () => {
     scanFetch.mockResolvedValue({ status: 200, text: SHARAN_HTML, cookie: "" });
     const row = await probeCarinfo(ctx());
     expect(applyVinScanRelayIfBlocked).not.toHaveBeenCalled();
+    expect(applyCarinfoSuperSearchHttp).not.toHaveBeenCalled();
     expect(row.status).toBe("found");
     expect(row.summary).toContain("Sharan");
   });

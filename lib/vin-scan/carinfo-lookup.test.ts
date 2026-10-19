@@ -6,7 +6,14 @@ import {
   carinfoSwedenPlateUrl,
   carinfoSwedenVinUrl,
 } from "@/lib/vin-sources/carinfo-search";
-import { runCarinfoLookup } from "@/lib/vin-scan/carinfo-lookup";
+import {
+  CARINFO_LOOKUP_BUDGET_MS,
+  CARINFO_PAGE_FETCH_MS,
+  CARINFO_SUPER_SEARCH_DIRECT_MS,
+  CARINFO_SUPER_SEARCH_FETCH_MS,
+  CARINFO_SUPER_SEARCH_RELAY_MS,
+  runCarinfoLookup,
+} from "@/lib/vin-scan/carinfo-lookup";
 
 const VIN = "YV1LW5522V2348444";
 
@@ -227,5 +234,126 @@ describe("runCarinfoLookup", () => {
     expect(parsed.summary).toContain("Renault Captur");
     expect(parsed.summary).toContain("2014");
     expect(parsed.flags?.registrationCountry).toBeUndefined();
+  });
+
+  it("limiti ietilpst budžetā un paliek zem 90 s ārējā timeout", () => {
+    const worst = CARINFO_PAGE_FETCH_MS * 2 + CARINFO_SUPER_SEARCH_FETCH_MS * CARINFO_SEARCH_LOCALES.length;
+    expect(worst).toBeLessThanOrEqual(CARINFO_LOOKUP_BUDGET_MS);
+    expect(CARINFO_LOOKUP_BUDGET_MS).toBeLessThan(90_000);
+    expect(CARINFO_SUPER_SEARCH_DIRECT_MS + CARINFO_SUPER_SEARCH_RELAY_MS).toBeLessThanOrEqual(
+      CARINFO_SUPER_SEARCH_FETCH_MS,
+    );
+  });
+
+  it("lēns super-search 403 nepārsniedz budžetu, DK/NO/FI VIN lapas joprojām iet un atrastā uzvar", async () => {
+    const dkVin = "WVWZZZ7NZEV015204";
+    const dkPage = `https://www.car.info/en-dk/vin/DK/${dkVin}`;
+    const noPage = `https://www.car.info/en-no/vin/N/${dkVin}`;
+    const fiPage = `https://www.car.info/en-fi/vin/FIN/${dkVin}`;
+    const calls: string[] = [];
+    const started = Date.now();
+    const parsed = await runCarinfoLookup(
+      dkVin,
+      "",
+      async (url) => {
+        calls.push(url);
+        if (url.includes("/en-se/search/super/") || url.includes("/sv-se/search/super/")) {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          return { status: 403, text: "<html><title>403 Forbidden</title></html>" };
+        }
+        if (url.includes("/en-dk/search/super/")) {
+          return {
+            status: 200,
+            text: JSON.stringify({
+              hits: { idents: [{ country: "DK", vin: dkVin }] },
+              hits_html: `<a href="${dkPage}">`,
+            }),
+          };
+        }
+        if (url.includes("/en-no/search/super/")) {
+          return {
+            status: 200,
+            text: JSON.stringify({
+              hits: { idents: [{ country: "N", vin: dkVin }] },
+              hits_html: `<a href="${noPage}">`,
+            }),
+          };
+        }
+        if (url.includes("/en-fi/search/super/")) {
+          return {
+            status: 200,
+            text: JSON.stringify({
+              hits: { idents: [{ country: "FIN", vin: dkVin, secondary_name_blurred: "Volkswagen Sharan" }] },
+              hits_html: `<a href="${fiPage}">`,
+            }),
+          };
+        }
+        if (url === fiPage) {
+          return {
+            status: 200,
+            text: `
+              <html><body>
+              <p>AB12345 is a Volkswagen Sharan from 2014.</p>
+              <dl><dt>Mileage</dt><dd>198,580 km</dd></dl>
+              <table>
+              <tr><th>Reported odometer readings</th><th></th></tr>
+              <tr><td>Inspection 198,580 km</td><td>2024-06-01</td></tr>
+              </table>
+              </body></html>
+            `,
+          };
+        }
+        if (url === dkPage || url === noPage) return { status: 404, text: "not found" };
+        if (url.includes("/search/super/")) return { status: 200, text: EMPTY_SUPER };
+        return { status: 404, text: "not found" };
+      },
+      { budgetMs: 800, pageFetchMs: 100, superSearchFetchMs: 40 },
+    );
+    expect(Date.now() - started).toBeLessThan(350);
+    expect(calls).toContain(dkPage);
+    expect(calls).toContain(noPage);
+    expect(calls).toContain(fiPage);
+    expect(superSearchLocales(calls)).toEqual([...CARINFO_SEARCH_LOCALES]);
+    expect(parsed.status).toBe("found");
+    expect(parsed.openUrl).toBe(fiPage);
+    expect(parsed.summary).toContain("Sharan");
+    expect(parsed.summary).toContain("2014");
+    expect(parsed.summary).not.toMatch(/neatbildēja laikā/);
+  });
+
+  it("VIN lapas found uzvar, pat ja super-search pēc tam karātos", async () => {
+    let superCalls = 0;
+    const parsed = await runCarinfoLookup(
+      VIN,
+      "",
+      async (url) => {
+        if (url.includes("/search/super/")) {
+          superCalls += 1;
+          await new Promise((resolve) => setTimeout(resolve, 5_000));
+          return { status: 403, text: "" };
+        }
+        return { status: 200, text: VOLVO_V70_HTML };
+      },
+      { budgetMs: 2_000, pageFetchMs: 500, superSearchFetchMs: 40 },
+    );
+    expect(superCalls).toBe(0);
+    expect(parsed.status).toBe("found");
+    expect(parsed.summary).toContain("Volvo V70");
+  });
+
+  it("budžeta beigās atgriež blocked, nevis karas līdz ārējam timeout", async () => {
+    const started = Date.now();
+    const parsed = await runCarinfoLookup(
+      VIN,
+      "BMX837",
+      async () => {
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        return { status: 403, text: "<html><title>403 Forbidden</title></html>" };
+      },
+      { budgetMs: 700, pageFetchMs: 40, superSearchFetchMs: 40 },
+    );
+    expect(Date.now() - started).toBeLessThan(1_200);
+    expect(parsed.status).toBe("blocked");
+    expect(parsed.summary).toBe("car.info bloķē serveri - atver pārlūkā");
   });
 });

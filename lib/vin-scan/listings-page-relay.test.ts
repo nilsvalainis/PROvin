@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyCarinfoSuperSearchHttp,
   applyVinScanRelayIfBlocked,
+  fetchCarinfoSuperSearchViaRelay,
   fetchVinScanAuctionPage,
   fetchVinScanPageViaRelay,
+  isCarinfoSuperSearchUrl,
   isVinScanRelayUrl,
   vinScanPageNeedsRelay,
   withVinScanRelayDedupe,
@@ -235,5 +238,68 @@ describe("fetchVinScanAuctionPage", () => {
         throw new Error("timeout");
       }, { env: {} }),
     ).rejects.toThrow("timeout");
+  });
+});
+
+const SUPER = "https://www.car.info/en-se/search/super/WVWZZZ7NZEV015204?time=1";
+
+describe("car.info super-search HTTP relejs", () => {
+  it("atpazīst tikai super-search JSON, ne VIN lapu", () => {
+    expect(isCarinfoSuperSearchUrl(SUPER)).toBe(true);
+    expect(isCarinfoSuperSearchUrl("https://www.car.info/en-dk/vin/DK/WVWZZZ7NZEV015204")).toBe(false);
+    expect(isCarinfoSuperSearchUrl("https://stat.vin/cars/WBA")).toBe(false);
+  });
+
+  it("POST /listings/http un nekad /page", async () => {
+    const calls: string[] = [];
+    const fetchImpl = (async (input: RequestInfo | URL) => {
+      calls.push(String(input));
+      return {
+        ok: true,
+        status: 200,
+        text: async () =>
+          JSON.stringify({
+            ok: true,
+            status: 200,
+            html: JSON.stringify({ hits: { idents: [{ country: "DK" }] }, hits_html: "" }),
+            finalUrl: SUPER,
+          }),
+      } as Response;
+    }) as typeof fetch;
+    const out = await fetchCarinfoSuperSearchViaRelay(SUPER, { fetchImpl, env: ENV, timeoutMs: 1_000 });
+    expect(calls).toEqual(["https://csdd-relay.provin.lv/listings/http"]);
+    expect(out.ok).toBe(true);
+    if (out.ok) expect(out.html).toContain("DK");
+  });
+
+  it("vecs relejs ar HTTP 400 neatver Chrome un atgriežas uzreiz", async () => {
+    const fetchImpl = (async () =>
+      ({
+        ok: false,
+        status: 400,
+        text: async () => JSON.stringify({ ok: false, error: "platform: openlane | auto1 | autobid | ecarstrade" }),
+      }) as Response) as typeof fetch;
+    const page = { status: 403, text: "<html><title>403 Forbidden</title></html>", cookie: "" };
+    const out = await applyCarinfoSuperSearchHttp(SUPER, page, { fetchImpl, env: ENV, timeoutMs: 1_000 });
+    expect(out).toBe(page);
+  });
+
+  it("ilga 403 atbilde nepārsniedz īso limitu", async () => {
+    const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(resolve, 5_000);
+        init?.signal?.addEventListener("abort", () => {
+          clearTimeout(timer);
+          const err = new Error("aborted");
+          err.name = "AbortError";
+          reject(err);
+        });
+      });
+      return { ok: true, status: 200, text: async () => "{}" } as Response;
+    }) as typeof fetch;
+    const started = Date.now();
+    const out = await fetchCarinfoSuperSearchViaRelay(SUPER, { fetchImpl, env: ENV, timeoutMs: 50 });
+    expect(Date.now() - started).toBeLessThan(500);
+    expect(out).toEqual({ ok: false, reason: "Relejs neatbildēja 1 s laikā" });
   });
 });

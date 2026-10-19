@@ -145,6 +145,8 @@ vēlreiz, otrais mēģinājums vispirms atver `https://stat.vin/` (sīkdatnes pa
 `/var/lib/provin-listings/profiles/vinscan`). Ja HTML jau ir izsole, atbilde ir status 200, nevis sākotnējais 403.
 CapSolver šim WAF netiek lietots.
 
+`POST /listings/http` ar `{url}` lasa tikai car.info super-search JSON (`/{locale}/search/super/{VIN}`) ar parasto HTTP un XHR galvenēm. Chrome `page.goto` uz šo adresi saņem 403 un gaida ~52 s. Tas pats ceļš ieslēdzas, ja super-search URL tomēr atnāk uz `POST /listings/page`. VIN HTML lapas paliek Chrome.
+
 ### Izvietošana pēc šī labojuma (no repo saknes)
 
 ```bash
