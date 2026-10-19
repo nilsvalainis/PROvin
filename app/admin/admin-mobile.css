@@ -316,19 +316,27 @@
     margin-right: 16px;
   }
 
+  .admin-ios-theme .admin-m button.iriss-status-chip,
+  .admin-ios-theme .admin-m button.iriss-status-chip[aria-pressed="true"][data-tone],
   .admin-m .iriss-status-chip {
     background: var(--fill-tertiary) !important;
+    background-color: var(--fill-tertiary) !important;
     border-color: transparent !important;
     color: var(--label) !important;
   }
 
+  .admin-ios-theme .admin-m button.iriss-status-chip[aria-pressed="true"],
+  .admin-ios-theme .admin-m button.iriss-status-chip[aria-pressed="true"][data-tone],
   .admin-m .iriss-status-chip[aria-pressed="true"] {
     background: var(--chip-active-bg) !important;
+    background-color: var(--chip-active-bg) !important;
     color: var(--chip-active-fg) !important;
   }
 
+  .admin-ios-theme .admin-m button.iriss-status-chip .iriss-status-chip-count,
   .admin-m .iriss-status-chip-count {
     background: transparent !important;
+    background-color: transparent !important;
     opacity: 0.6;
     color: inherit !important;
   }
