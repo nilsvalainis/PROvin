@@ -19,7 +19,7 @@ export const MARKETPLACE_APIFY_MOBILEDE_USD_PER_RESULT = 0.00059;
 export const MARKETPLACE_APIFY_AUTOSCOUT24_USD_PER_RESULT = 0.00049;
 
 export function formatMarketplaceUsd(n: number): string {
-  return `${(Number.isFinite(n) ? n : 0).toFixed(3)} $`;
+  return `${(Number.isFinite(n) ? n : 0).toFixed(2).replace(".", ",")} $`;
 }
 
 function envNumber(name: string, fallback: number, min: number, max: number): number {

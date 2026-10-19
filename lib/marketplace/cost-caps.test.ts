@@ -67,7 +67,9 @@ describe("marketplace cost caps", () => {
     );
     expect(usageSpentUsdByTrigger(used, "auto")).toBeCloseTo(0.4, 5);
     expect(usageSpentUsdByTrigger(used, "manual")).toBeCloseTo(1.2, 5);
-    expect(formatMarketplaceUsd(0.0109)).toBe("0.011 $");
+    expect(formatMarketplaceUsd(0.0109)).toBe("0,01 $");
+    expect(formatMarketplaceUsd(4.5)).toBe("4,50 $");
+    expect(formatMarketplaceUsd(0.25)).toBe("0,25 $");
     expect(MARKETPLACE_APIFY_MOBILEDE_USD_PER_RESULT).toBe(0.00059);
     expect(MARKETPLACE_APIFY_AUTOSCOUT24_USD_PER_RESULT).toBe(0.00049);
   });
