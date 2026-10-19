@@ -109,4 +109,27 @@ describe("normalizeMarketplaceListing", () => {
       locationCountry: "DE",
     });
   });
+
+  it("drops listings clearly marked as private seller and keeps dealer or unknown", () => {
+    const base = {
+      url: "https://suchen.mobile.de/fahrzeuge/details.html?id=2002",
+      title: "Volvo XC60",
+      make: "Volvo",
+    };
+    expect(
+      normalizeMarketplaceListing("mobilede", "apify-mobilede", { ...base, sellerType: "Private Seller" }, "2026-10-19T12:00:00.000Z"),
+    ).toBeNull();
+    expect(
+      normalizeMarketplaceListing(
+        "autoscout24",
+        "apify-autoscout24",
+        { url: "https://www.autoscout24.de/angebote/x", title: "Volvo XC60", make: "Volvo", sellerType: "Private" },
+        "2026-10-19T12:00:00.000Z",
+      ),
+    ).toBeNull();
+    expect(
+      normalizeMarketplaceListing("mobilede", "apify-mobilede", { ...base, sellerType: "Dealer" }, "2026-10-19T12:00:00.000Z")?.title,
+    ).toBe("Volvo XC60");
+    expect(normalizeMarketplaceListing("mobilede", "apify-mobilede", base, "2026-10-19T12:00:00.000Z")?.title).toBe("Volvo XC60");
+  });
 });
