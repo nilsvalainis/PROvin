@@ -31,7 +31,7 @@ export function IrissAdminSidebarNav({ orientation = "vertical" }: Props) {
         Radars
       </Link>
       <Link href="/admin/iriss/sludinajumi" className={navItemClass(sludinajumiActive)}>
-        Klientu filtri
+        Sludinājumi
       </Link>
       <IrissNewOfferMenuButton compact={horizontal} />
       {!horizontal ? (

@@ -106,26 +106,35 @@ export function AdminMobileRoundBtn({
   onClick,
   href,
   primary = false,
+  badge,
 }: {
   name: AdminMobileIconName;
   label: string;
   onClick?: () => void;
   href?: string;
   primary?: boolean;
+  badge?: number;
 }) {
-  const cls = `am-press grid h-9 w-9 place-items-center rounded-full ${
+  const count = formatAdminMobileBadgeCount(badge ?? 0);
+  const cls = `am-press relative grid h-9 w-9 place-items-center rounded-full ${
     primary ? "bg-[var(--chip-active-bg)] text-[var(--chip-active-fg)]" : "bg-[var(--fill-secondary)] text-[var(--label)]"
   }`;
+  const inner = (
+    <>
+      <AdminMobileIcon name={name} className="h-[18px] w-[18px]" />
+      {count ? <span className="am-badge">{count}</span> : null}
+    </>
+  );
   if (href) {
     return (
       <Link href={href} aria-label={label} className={cls}>
-        <AdminMobileIcon name={name} className="h-[18px] w-[18px]" />
+        {inner}
       </Link>
     );
   }
   return (
     <button type="button" aria-label={label} onClick={onClick} className={cls}>
-      <AdminMobileIcon name={name} className="h-[18px] w-[18px]" />
+      {inner}
     </button>
   );
 }

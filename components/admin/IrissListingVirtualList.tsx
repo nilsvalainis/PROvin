@@ -6,12 +6,15 @@ import { IRISS_LISTINGS_MOBILE_PAGE, irissNextWindowLimit, irissWindowSlice } fr
 
 export const IRISS_LISTING_PAGE_SIZE = 40;
 export const IRISS_LISTING_ROW_ESTIMATE_PX = 300;
+export const IRISS_LISTING_GRID_ROW_ESTIMATE_PX = 420;
 const OVERSCAN = 3;
 
 type Props<T> = {
   items: readonly T[];
   getKey: (item: T) => string;
   renderItem: (item: T) => ReactNode;
+  layout?: "list" | "grid";
+  columns?: number;
 };
 
 function useIrissMobileViewport(): boolean {
@@ -30,8 +33,10 @@ function useIrissMobileViewport(): boolean {
  * Desktop: lappuse + logs (kā iepriekš).
  * Mobilajā: bez iekšējā ritinātāja, lai darbojas lapas pull-to-refresh, un porcijas aug ritinot.
  */
-export function IrissListingVirtualList<T>({ items, getKey, renderItem }: Props<T>) {
+export function IrissListingVirtualList<T>({ items, getKey, renderItem, layout = "list", columns = 1 }: Props<T>) {
   const mobile = useIrissMobileViewport();
+  const grid = layout === "grid" && !mobile && columns > 1;
+  const rowPx = grid ? IRISS_LISTING_GRID_ROW_ESTIMATE_PX : IRISS_LISTING_ROW_ESTIMATE_PX;
   const scrollerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
@@ -60,9 +65,10 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem }: Props<
     const update = () => {
       const top = el.scrollTop;
       const height = el.clientHeight || 800;
-      const start = Math.max(0, Math.floor(top / IRISS_LISTING_ROW_ESTIMATE_PX) - OVERSCAN);
-      const visible = Math.ceil(height / IRISS_LISTING_ROW_ESTIMATE_PX) + OVERSCAN * 2;
-      setWin({ start, end: Math.min(pageItems.length, start + visible) });
+      const unit = grid ? Math.max(1, Math.ceil(pageItems.length / columns)) : pageItems.length;
+      const start = Math.max(0, Math.floor(top / rowPx) - OVERSCAN);
+      const visible = Math.ceil(height / rowPx) + OVERSCAN * 2;
+      setWin({ start, end: Math.min(unit, start + visible) });
     };
     update();
     el.addEventListener("scroll", update, { passive: true });
@@ -72,7 +78,7 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem }: Props<
       el.removeEventListener("scroll", update);
       ro?.disconnect();
     };
-  }, [mobile, pageItems.length, safePage]);
+  }, [mobile, pageItems.length, safePage, grid, columns, rowPx]);
 
   useEffect(() => {
     if (!mobile || !mobileWindow.hasMore) return;
@@ -110,18 +116,26 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem }: Props<
     );
   }
 
-  const start = Math.min(win.start, pageItems.length);
-  const end = Math.max(start, Math.min(win.end, pageItems.length));
-  const topPad = start * IRISS_LISTING_ROW_ESTIMATE_PX;
-  const bottomPad = Math.max(0, pageItems.length - end) * IRISS_LISTING_ROW_ESTIMATE_PX;
+  const rows: T[][] = [];
+  if (grid) {
+    for (let i = 0; i < pageItems.length; i += columns) {
+      rows.push(pageItems.slice(i, i + columns));
+    }
+  }
+  const unitCount = grid ? rows.length : pageItems.length;
+  const start = Math.min(win.start, unitCount);
+  const end = Math.max(start, Math.min(win.end, unitCount));
+  const topPad = start * rowPx;
+  const bottomPad = Math.max(0, unitCount - end) * rowPx;
   const from = items.length === 0 ? 0 : pageStart + 1;
   const to = Math.min(pageStart + pageItems.length, items.length);
+  const gridClass = columns >= 4 ? "grid grid-cols-4 gap-3" : "grid grid-cols-3 gap-3";
 
   return (
     <div>
       <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#8e8e93]">
         <span>
-          {from}-{to} no {items.length}
+          {from}-{to} no {items.length} auto
         </span>
         {pageCount > 1 ? (
           <div className="inline-flex items-center gap-1">
@@ -149,14 +163,22 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem }: Props<
       </div>
       <div
         ref={scrollerRef}
-        className="max-h-[min(78vh,920px)] space-y-1.5 overflow-y-auto overscroll-y-contain sm:space-y-2"
+        className={`max-h-[min(78vh,920px)] overflow-y-auto overscroll-y-contain ${grid ? "" : "space-y-1.5 sm:space-y-2"}`}
       >
         {topPad > 0 ? <div aria-hidden style={{ height: topPad }} /> : null}
-        {pageItems.slice(start, end).map((item) => (
-          <div key={getKey(item)} className="[content-visibility:auto] [contain-intrinsic-size:300px]">
-            {renderItem(item)}
-          </div>
-        ))}
+        {grid
+          ? rows.slice(start, end).map((row) => (
+              <div key={row.map(getKey).join("|")} className={`${gridClass} mb-3 [content-visibility:auto]`} style={{ containIntrinsicSize: `${rowPx}px` }}>
+                {row.map((item) => (
+                  <div key={getKey(item)}>{renderItem(item)}</div>
+                ))}
+              </div>
+            ))
+          : pageItems.slice(start, end).map((item) => (
+              <div key={getKey(item)} className="[content-visibility:auto] [contain-intrinsic-size:300px]">
+                {renderItem(item)}
+              </div>
+            ))}
         {bottomPad > 0 ? <div aria-hidden style={{ height: bottomPad }} /> : null}
       </div>
     </div>

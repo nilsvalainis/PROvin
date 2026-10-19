@@ -1,22 +1,29 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AdminAnchoredSheet } from "@/components/admin/AdminBodyPortal";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
 import { IrissListingVehicleCard } from "@/components/admin/IrissListingVehicleCard";
 import { IrissNewMatchNotice } from "@/components/admin/IrissNewMatchNotice";
 import { IrissListingVirtualList } from "@/components/admin/IrissListingVirtualList";
-import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
-import { IrissListingsLoginButton } from "@/components/admin/IrissListingsLoginPanel";
+import { IrissSludinajumiActivePills } from "@/components/admin/iriss-sludinajumi/IrissSludinajumiActivePills";
+import { IrissSludinajumiCostsPanel } from "@/components/admin/iriss-sludinajumi/IrissSludinajumiCostsPanel";
+import { IrissSludinajumiFiltersForm } from "@/components/admin/iriss-sludinajumi/IrissSludinajumiFiltersForm";
+import { IrissSludinajumiMoreMenu } from "@/components/admin/iriss-sludinajumi/IrissSludinajumiMoreMenu";
+import { IrissSludinajumiScrimPanel } from "@/components/admin/iriss-sludinajumi/IrissSludinajumiOverlay";
+import { IrissSludinajumiSourceStatusBody } from "@/components/admin/iriss-sludinajumi/IrissSludinajumiSourceStatusPanel";
+import "@/components/admin/iriss-sludinajumi/iriss-slud.css";
+import { useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
 import { type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useMobilePlatform } from "@/hooks/useMobilePlatform";
-import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowUpDown, Car, LayoutGrid, List, MoreHorizontal, Search, SlidersHorizontal } from "lucide-react";
 import {
+  AdminMobileChips,
   AdminMobileRoundBtn,
   AdminMobileSearchField,
   AdminMobileSegments,
+  AdminMobileSheet,
   AdminMobileTopBar,
 } from "@/components/admin/mobile/AdminMobileChrome";
 import { isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
@@ -24,15 +31,23 @@ import { listingBidPrice, listingExtrasI, listingMaxBid, type ListingCostParts }
 import { listingExcludedForMissingPrice, listingIsOverBudgetHidden, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
 import { listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 import {
+  applyListingListQuery,
+  countActiveListingFilters,
+  LISTING_DEFAULT_SORT,
   LISTING_SORTS,
+  LISTING_SOURCE_CHIPS,
+  listingFilterPills,
+  type ListingFilterPillId,
   type ListingSort,
   parseListingSort,
   parseListingSources,
+  parseListingView,
   parsePriceBound,
   sortListingVehicles,
   vehicleInPriceRange,
   vehicleInSources,
 } from "@/lib/iriss-listings-list-view";
+import { listingFmtClock, listingFmtDateTime, LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-panel";
 import {
   listingBudgetForVehicle,
   listingLinkedOrders,
@@ -74,24 +89,11 @@ import {
   type ListingTax,
 } from "@/lib/iriss-listings-vat";
 import {
-  IRISS_AUCTION_LISTING_PLATFORMS,
-  IRISS_RELAY_LISTING_PLATFORMS,
   type IrissListingPlatform,
-  type IrissListingSourceRun,
   type IrissListingVehicle,
   type IrissListingsLatestView,
-  type IrissPlatformHealthItem,
   type IrissPlatformHealthReport,
 } from "@/lib/iriss-listings-types";
-
-const PLATFORM_LABEL: Record<IrissListingPlatform, string> = {
-  autobid: "AUTOBID",
-  openline: "OPENLANE",
-  auto1: "AUTO1",
-  ecarstrade: "ECARSTRADE",
-  mobilede: "MOBILE.DE",
-  autoscout24: "AUTOSCOUT24",
-};
 
 const PLATFORM_LABEL_LONG: Record<IrissListingPlatform, string> = {
   autobid: "Autobid",
@@ -107,52 +109,9 @@ const RECENT_WINDOW_HOURS = 36;
 
 type Tab = IrissListTab;
 
-function healthLabel(status: IrissPlatformHealthItem["status"]): string {
-  if (status === "ok") return "OK";
-  if (status === "stale") return "novecojis";
-  if (status === "blocked_by_waf") return "bloķēts (403)";
-  if (status === "login_required") return "jāielogojas no jauna";
-  if (status === "relay_not_configured") return "relejs nav pieslēgts";
-  if (status === "no_sources") return "nav saišu";
-  if (status === "not_run") return "nav lasīts";
-  return "neizdevās";
-}
-
-function healthTextClass(status: IrissPlatformHealthItem["status"]): string {
-  if (status === "ok") return "text-emerald-800";
-  if (status === "stale" || status === "no_sources" || status === "not_run") return "text-slate-700";
-  if (status === "relay_not_configured") return "text-sky-900";
-  if (status === "login_required") return "text-amber-900";
-  if (status === "blocked_by_waf") return "text-orange-950";
-  return "text-red-900";
-}
-
-function sourceStatusLabel(status: IrissListingSourceRun["status"]): string {
-  if (status === "ok") return "OK";
-  if (status === "login_required") return "Jāielogojas";
-  if (status === "blocked_by_waf") return "Bloķēts (403)";
-  if (status === "parse_failed") return "Parse kļūda";
-  if (status === "relay_not_configured") return "Relejs nav pieslēgts";
-  if (status === "skipped") return "Izlaists";
-  return "Nolasīšana neizdevās";
-}
-
 function fmtEur(n: number | null): string {
   if (n === null) return "";
   return `${Math.round(n).toLocaleString("lv-LV")} €`;
-}
-
-function fmtDateTime(iso: string): string {
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return iso || "";
-  return new Intl.DateTimeFormat("lv-LV", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Europe/Riga",
-  }).format(new Date(t));
 }
 
 function hoursSince(iso: string, nowMs: number): number {
@@ -220,8 +179,17 @@ function roomOf(v: IrissListingVehicle, prefs: IrissListPrefs, budget: number | 
   return listingMaxBid(args.kind, args.foreignVatPct, budget, extrasOf(v, prefs)) - bid;
 }
 
-/** Atverot lapu vienmēr: cilne „Jauni”, kārtot „Jaunākie” (neatjauno no localStorage). */
-const DEFAULT_SORT: ListingSort = "seen";
+function useListingGridColumns(): number {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const mq = window.matchMedia("(min-width: 1280px)");
+      mq.addEventListener("change", onStoreChange);
+      return () => mq.removeEventListener("change", onStoreChange);
+    },
+    () => (window.matchMedia("(min-width: 1280px)").matches ? 4 : 3),
+    () => 3,
+  );
+}
 
 type Props = {
   latest: IrissListingsLatestView | null;
@@ -238,15 +206,6 @@ type Props = {
 };
 
 const DATASET_STORAGE_KEY = "iriss-list-dataset";
-
-const SOURCE_CHIPS: ReadonlyArray<{ id: IrissListingPlatform; label: string }> = [
-  { id: "autobid", label: "Autobid" },
-  { id: "openline", label: "Openlane" },
-  { id: "auto1", label: "Auto1" },
-  { id: "ecarstrade", label: "eCarsTrade" },
-  { id: "mobilede", label: "mobile.de" },
-  { id: "autoscout24", label: "AutoScout24" },
-];
 
 async function persistListingDismissItems(items: IrissListingDismissPatch[]): Promise<void> {
   if (items.length === 0) return;
@@ -317,26 +276,33 @@ export function IrissSludinajumiListClient({
   const [prefsReady, setPrefsReady] = useState(false);
   const [drawerId, setDrawerId] = useState<string | null>(null);
   const [previewOrders, setPreviewOrders] = useState<IrissListingOrderBrief[] | null>(null);
-  const [showCosts, setShowCosts] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sourceStatusOpen, setSourceStatusOpen] = useState(false);
+  const [costsOpen, setCostsOpen] = useState(false);
+  const [mobileSortOpen, setMobileSortOpen] = useState(false);
+  const [matchesOpen, setMatchesOpen] = useState(false);
+  const phone = useAdminMobileViewport();
   const filterRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const sortRef = useRef<HTMLDivElement>(null);
+  const gridColumns = useListingGridColumns();
 
-  // Filtri un „⋯” aizveras, klikšķinot/pieskaroties jebkur ārpusē vai nospiežot Esc.
   useEffect(() => {
-    if (!filterOpen && !menuOpen) return;
+    if (!filterOpen && !menuOpen && !sortOpen) return;
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node;
       if (t instanceof Element && t.closest("[data-admin-list-sheet]")) return;
       if (filterOpen && filterRef.current && !filterRef.current.contains(t)) setFilterOpen(false);
       if (menuOpen && menuRef.current && !menuRef.current.contains(t)) setMenuOpen(false);
+      if (sortOpen && sortRef.current && !sortRef.current.contains(t)) setSortOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setFilterOpen(false);
         setMenuOpen(false);
+        setSortOpen(false);
       }
     };
     document.addEventListener("pointerdown", onDown);
@@ -345,7 +311,7 @@ export function IrissSludinajumiListClient({
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [filterOpen, menuOpen]);
+  }, [filterOpen, menuOpen, sortOpen]);
   const mobile = useMobilePlatform();
   const restoredQueryRef = useRef(false);
   const tab = prefs.tab;
@@ -353,7 +319,8 @@ export function IrissSludinajumiListClient({
   const hideTech = prefs.hideTech;
   const hideOverBudget = prefs.hideOverBudget;
   const overBudgetThreshold = prefs.overBudgetThreshold;
-  const sort = parseListingSort(searchParams.get("sort")) ?? DEFAULT_SORT;
+  const sort = parseListingSort(searchParams.get("sort")) ?? LISTING_DEFAULT_SORT;
+  const view = parseListingView(searchParams.get("view"));
   const sources = parseListingSources(searchParams.get("src"));
   const priceMin = parsePriceBound(searchParams.get("min"));
   const priceMax = parsePriceBound(searchParams.get("max"));
@@ -375,6 +342,7 @@ export function IrissSludinajumiListClient({
         body: JSON.stringify({ orderOv: migrated.next }),
       });
     }
+    // Atverot lapu vienmēr: cilne "Jauni", kārtot "Jaunākie" (neatjauno no localStorage).
     setPrefs({ ...loaded, costs: loaded.costs, hidden, tab: "new", listScope: "all", sort: null, budget: null, orderOv: migrated.next });
     setPrefsReady(true);
     setMounted(true);
@@ -437,9 +405,6 @@ export function IrissSludinajumiListClient({
     restoredQueryRef.current = true;
     const params = new URLSearchParams(searchParams.toString());
     let changed = false;
-    if (false) {
-      changed = true;
-    }
     if (!searchParams.get("src") && prefs.sources.length > 0) {
       params.set("src", prefs.sources.join(","));
       changed = true;
@@ -461,55 +426,44 @@ export function IrissSludinajumiListClient({
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
   }, [mounted, pathname, prefs.orderFilter, prefs.priceMax, prefs.priceMin, prefs.sort, prefs.sources, prefsReady, router, searchParams]);
 
-  function writeListQuery(next: {
-    sort?: ListingSort;
-    sources?: IrissListingPlatform[];
-    min?: string | null;
-    max?: string | null;
-    ord?: string | null;
-  }) {
-    const params = new URLSearchParams(searchParams.toString());
-    const sortNext = next.sort ?? sort;
-    if (sortNext === DEFAULT_SORT) params.delete("sort");
-    else params.set("sort", sortNext);
+  function writeListQuery(next: Parameters<typeof applyListingListQuery>[1]) {
+    const params = applyListingListQuery(searchParams, next, {
+      sort,
+      view,
+      sourceChipCount: LISTING_SOURCE_CHIPS.length,
+    });
     setPrefs((p) => ({
       ...p,
       sort: null,
       ...(next.sources
-        ? { sources: next.sources.length === 0 || next.sources.length === SOURCE_CHIPS.length ? [] : next.sources }
+        ? { sources: next.sources.length === 0 || next.sources.length === LISTING_SOURCE_CHIPS.length ? [] : next.sources }
         : {}),
       ...(next.min !== undefined ? { priceMin: parsePriceBound(next.min) } : {}),
       ...(next.max !== undefined ? { priceMax: parsePriceBound(next.max) } : {}),
       ...(next.ord !== undefined ? { orderFilter: next.ord ?? "" } : {}),
     }));
-    if (next.sources) {
-      if (next.sources.length === 0 || next.sources.length === SOURCE_CHIPS.length) params.delete("src");
-      else params.set("src", next.sources.join(","));
-    }
-    if (next.min !== undefined) {
-      const n = parsePriceBound(next.min);
-      if (n === null) params.delete("min");
-      else params.set("min", String(n));
-    }
-    if (next.max !== undefined) {
-      const n = parsePriceBound(next.max);
-      if (n === null) params.delete("max");
-      else params.set("max", String(n));
-    }
-    if (next.ord !== undefined) {
-      const s = (next.ord ?? "").trim();
-      if (!s) params.delete("ord");
-      else params.set("ord", s);
-    }
     const q = params.toString();
     router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
   }
 
   function toggleSource(id: IrissListingPlatform) {
-    const current = sources.length === 0 ? SOURCE_CHIPS.map((s) => s.id) : sources;
+    const current = sources.length === 0 ? LISTING_SOURCE_CHIPS.map((s) => s.id) : sources;
     const has = current.includes(id);
     const next = has ? current.filter((s) => s !== id) : [...current, id];
-    writeListQuery({ sources: next.length === SOURCE_CHIPS.length ? [] : next });
+    writeListQuery({ sources: next.length === LISTING_SOURCE_CHIPS.length ? [] : next });
+  }
+
+  function clearFilterPill(id: ListingFilterPillId) {
+    if (id === "src") writeListQuery({ sources: [] });
+    if (id === "price") writeListQuery({ min: null, max: null });
+    if (id === "tech") setPrefs((p) => ({ ...p, hideTech: false }));
+    if (id === "budget") setPrefs((p) => ({ ...p, hideOverBudget: false }));
+    if (id === "hidden") setPrefs((p) => ({ ...p, listScope: "all" }));
+  }
+
+  function clearAllFilters() {
+    writeListQuery({ sources: [], min: null, max: null });
+    setPrefs((p) => ({ ...p, hideTech: false, hideOverBudget: false, listScope: "all" }));
   }
 
   const allVehicles = useMemo(
@@ -608,7 +562,7 @@ export function IrissSludinajumiListClient({
     () => irissListingPlatformIngestStats(latest?.sources ?? [], vehicles),
     [latest?.sources, vehicles],
   );
-  const ectIngest = ingestStats.find((s) => s.platform === "ecarstrade");
+  const sortLabel = LISTING_SORTS.find((x) => x.id === sort)?.label ?? "Jaunākie";
 
   async function syncNow() {
     if (syncBusy) return;
@@ -682,7 +636,7 @@ export function IrissSludinajumiListClient({
     { id: "price", label: "Cenu izmaiņas", count: counts.price },
     { id: "all", label: "Visi", count: counts.all },
     { id: "gone", label: "Pazuduši", count: counts.gone },
-    { id: "fav", label: "★ Favorīti", count: favCount },
+    { id: "fav", label: "Favorīti", count: favCount },
   ];
 
   const I = listingExtrasI(prefs.costs);
@@ -698,22 +652,27 @@ export function IrissSludinajumiListClient({
       ),
     [orders, vehicles, prefs, matchOrderIds],
   );
-  const platformDots = (["auto1", "openline", "autobid", "ecarstrade"] as const).map((platform) => {
-    const h = vatHealth[platform];
-    const login = health?.items.find((x) => x.platform === platform);
-    const warn = h.stale + h.missingFields + h.rateMissing + h.conflict + h.defaultUnrecognised;
-    const label = PLATFORM_LABEL_LONG[platform];
-    const vat =
-      platform === "auto1"
-        ? `${h.margin} Margin · ${h.gross} ar PVN · ${warn} ⚠`
-        : platform === "openline"
-          ? `${h.margin} · ${h.net} NETO · ${warn} ⚠`
-          : platform === "ecarstrade"
-            ? `${h.net} NETO · ${h.margin} · ${warn} ⚠`
-            : `${h.margin} · ${h.gross} · ${warn} ⚠`;
-    return { platform, label, vat, title: `${label}: ${login ? healthLabel(login.status) : "nav pārbaudīts"} · ${vat}${h.reason ? ` · ${h.reason}` : ""}` };
+  const activeFilterCount = countActiveListingFilters({
+    sources,
+    priceMin,
+    priceMax,
+    hideTech,
+    hideOverBudget,
+    listScope,
   });
-  const activeFilterCount = (sources.length > 0 ? 1 : 0) + (priceMin != null || priceMax != null ? 1 : 0) + (hideTech ? 1 : 0) + (listScope === "hidden" ? 1 : 0);
+  const filterPills = listingFilterPills({
+    sources,
+    sourceLabels: LISTING_PLATFORM_LABEL,
+    priceMin,
+    priceMax,
+    hideTech,
+    hideOverBudget,
+    overBudgetThreshold,
+    listScope,
+  });
+  const refreshedAt = mounted && latest?.summary.finishedAt ? listingFmtClock(latest.summary.finishedAt, nowMs) : "";
+  const nextReadLabel = mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "";
+  const finishedAtLabel = mounted && latest?.summary.finishedAt ? listingFmtDateTime(latest.summary.finishedAt) : "";
 
   function setDataset(next: IrissListingDataset) {
     if (next === dataset) return;
@@ -777,20 +736,91 @@ export function IrissSludinajumiListClient({
     router.push(notice.href);
   }
 
+  const STROKE = 1.6;
+  const extrasLabel = fmtEur(I);
+  const selectedOrderValue = serializeListingOrderFilter(orderFilter);
+  const selectedOrderLabel =
+    clientOptions.find((o) => o.value === selectedOrderValue)?.label ??
+    (dataset === "scan" ? "Viss monitorings" : "Visi klienti");
+
+  function filtersForm(extra?: ReactNode) {
+    return (
+      <IrissSludinajumiFiltersForm
+        sources={sources}
+        onToggleSource={toggleSource}
+        minKey={searchParams.get("min") ?? ""}
+        maxKey={searchParams.get("max") ?? ""}
+        minDefault={searchParams.get("min") ?? ""}
+        maxDefault={searchParams.get("max") ?? ""}
+        onMin={(v) => writeListQuery({ min: v })}
+        onMax={(v) => writeListQuery({ max: v })}
+        hideTech={hideTech}
+        onHideTech={(v) => setPrefs((p) => ({ ...p, hideTech: v }))}
+        techCount={techCount}
+        hideOverBudget={hideOverBudget}
+        onHideOverBudget={(v) => setPrefs((p) => ({ ...p, hideOverBudget: v }))}
+        overBudgetThreshold={overBudgetThreshold}
+        onThreshold={(v) => setPrefs((p) => ({ ...p, overBudgetThreshold: parseOverBudgetThreshold(v, p.overBudgetThreshold) }))}
+        overBudgetCount={overBudgetCount}
+        onlyHidden={listScope === "hidden"}
+        onOnlyHidden={(v) => setPrefs((p) => ({ ...p, listScope: v ? "hidden" : "all" }))}
+        hiddenCount={hiddenCount}
+        resultCount={sorted.length}
+        onApply={() => setFilterOpen(false)}
+        extra={extra}
+      />
+    );
+  }
+
+  function sourceStatusBody() {
+    return (
+      <IrissSludinajumiSourceStatusBody
+        finishedAtLabel={finishedAtLabel}
+        ingest={ingestStats}
+        vehicleCount={counts.all}
+        freshCount={counts.fresh}
+        priceCount={counts.price}
+        okSources={latest?.summary.okCount ?? 0}
+        totalSources={latest?.summary.totalSources ?? 0}
+        vatHealth={vatHealth}
+        health={health}
+        problemSources={problemSources}
+        problemsOpen={showSources}
+        onToggleProblems={() => setShowSources((v) => !v)}
+        syncBusy={syncBusy}
+        syncMsg={syncMsg}
+        onSync={() => void syncNow()}
+        onHealthDone={() => void loadHealth()}
+      />
+    );
+  }
+
   return (
-    <div className="mt-1 space-y-2 touch-manipulation sm:mt-1.5 sm:space-y-2">
+    <div className="iriss-slud mt-1 space-y-2 touch-manipulation sm:mt-1.5 sm:space-y-2">
       <div className="md:hidden">
         <AdminMobileTopBar
           title="Sludinājumi"
           trailing={
             <>
+              {notices.length > 0 ? (
+                <AdminMobileRoundBtn
+                  name="atzime"
+                  label={`Jaunas atbilstības ${notices.length}`}
+                  badge={notices.length}
+                  onClick={() => { setMatchesOpen(true); setMenuOpen(false); setFilterOpen(false); setMobileSortOpen(false); setSourceStatusOpen(false); setCostsOpen(false); }}
+                />
+              ) : null}
               <AdminMobileRoundBtn
-                name="kartot"
-                label={`Kārtot: ${LISTING_SORTS.find((x) => x.id === sort)?.label ?? "Jaunākie"}`}
-                onClick={() => { setMenuOpen(true); setFilterOpen(false); }}
+                name="filtri"
+                label="Filtri"
+                badge={activeFilterCount}
+                onClick={() => { setFilterOpen(true); setMenuOpen(false); setMobileSortOpen(false); }}
               />
-              <AdminMobileRoundBtn name="filtri" label="Filtri" onClick={() => { setFilterOpen(true); setMenuOpen(false); }} />
-              <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => { setMenuOpen(true); setFilterOpen(false); }} />
+              <AdminMobileRoundBtn
+                name="vairak"
+                label="Vairāk"
+                onClick={() => { setMenuOpen(true); setFilterOpen(false); setMobileSortOpen(false); }}
+              />
             </>
           }
         >
@@ -798,27 +828,45 @@ export function IrissSludinajumiListClient({
             value={dataset}
             onChange={(id) => setDataset(id as typeof dataset)}
             items={[
-              { id: "orders", label: `Klientu pasūtījumi ${clientOrders.length}` },
-              { id: "scan", label: `Mūsu monitorings ${scanOrders.length}` },
+              { id: "orders", label: `Pasūtījumi ${clientOrders.length}` },
+              { id: "scan", label: `Monitorings ${scanOrders.length}` },
             ]}
           />
           <div className="mt-2">
             <AdminMobileSearchField
               value={query}
               onChange={setQuery}
-              placeholder="Meklēt marku, modeli, VIN"
+              placeholder="Meklēt auto, VIN, klientu"
             />
           </div>
+          <div className="mt-2">
+            <AdminMobileChips
+              value={tab}
+              onChange={(id) => setPrefs((p) => ({ ...p, tab: id as Tab }))}
+              items={tabs.map((t) => ({ id: t.id, label: t.id === "price" ? "Cenas" : t.label, count: t.count }))}
+            />
+          </div>
+          <button
+            type="button"
+            className="mt-2 flex items-center gap-1.5 text-[12px] text-[var(--am-ink2)]"
+            title={nextReadLabel ? `Nākamā nolasīšana ${nextReadLabel}` : "Nākamā nolasīšana"}
+            onClick={() => { setSourceStatusOpen(true); setMenuOpen(false); }}
+          >
+            {problemSources.length > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-[var(--slud-warn,#c2410c)]" aria-hidden /> : null}
+            <span>Atjaunots {refreshedAt || (latest?.summary.finishedAt ? "\u00a0" : "nav")}</span>
+            {nextReadLabel ? <span>· nākamā {nextReadLabel}</span> : null}
+          </button>
         </AdminMobileTopBar>
       </div>
-      {/* Web (md+): panelis nav lipīgs. Atbilstības ir žetons rīku rindā, ne atsevišķa josla. */}
+
       <header
         data-iriss-listings-toolbar=""
-        className="relative z-20 -mx-2 hidden bg-transparent px-2 pb-1 pt-0.5 md:static md:z-auto md:mx-0 md:block md:bg-transparent md:px-0 md:backdrop-blur-none"
+        className="relative z-20 hidden bg-transparent pb-1 pt-0.5 md:static md:z-auto md:block md:bg-transparent md:backdrop-blur-none"
       >
-        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-          <div className="min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] md:flex-none md:overflow-visible [&::-webkit-scrollbar]:hidden">
-            <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[#e9e9ee] p-[2px] text-[12px]">
+        <div className="slud-glass rounded-[28px] px-4 py-3.5">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+            <h1 className="shrink-0 text-[26px] font-bold leading-none tracking-[-0.028em]">Sludinājumi</h1>
+            <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[var(--slud-fill)] p-[3px] text-[13px]">
               {([
                 ["orders", "Klientu pasūtījumi", clientOrders.length],
                 ["scan", "Mūsu monitorings", scanOrders.length],
@@ -829,325 +877,299 @@ export function IrissSludinajumiListClient({
                   role="tab"
                   aria-selected={dataset === id}
                   onClick={() => setDataset(id)}
-                  className={`inline-flex h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 transition sm:h-7 sm:px-3 ${dataset === id ? "bg-white font-semibold text-[var(--color-apple-text)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-[#3a3a3c]"}`}
+                  className={`inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 transition ${dataset === id ? "bg-[var(--slud-s1)] font-semibold shadow-sm" : "font-medium text-[var(--slud-ink2)]"}`}
                 >
                   {label}
-                  <span className="text-[11px] font-normal text-[#8e8e93]">{n}</span>
+                  <span className="text-[12px] font-normal text-[var(--slud-ink3)]">{n}</span>
                 </button>
               ))}
             </div>
-          </div>
-          <div className="flex w-full min-w-0 items-center gap-1 md:w-auto md:flex-1">
-          <div className="flex min-w-0 flex-1 overflow-x-auto rounded-[10px] bg-[#e9e9ee] p-[2px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setPrefs((p) => ({ ...p, tab: t.id }))}
-                className={`inline-flex h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-[8px] px-2.5 text-[12.5px] transition sm:h-7 sm:px-3 ${
-                  tab === t.id ? "bg-white font-semibold text-[var(--color-apple-text)] shadow-[0_1px_3px_rgba(0,0,0,0.12)]" : "font-medium text-[#3a3a3c]"
-                }`}
+            <label className="inline-flex h-8 max-w-[min(100%,22rem)] min-w-0 items-center gap-1.5 rounded-full bg-[var(--slud-fill)] px-2.5 text-[13px]">
+              <Car className="h-3.5 w-3.5 shrink-0 text-[var(--slud-ink2)]" strokeWidth={STROKE} aria-hidden />
+              <select
+                aria-label={dataset === "scan" ? "Monitorētais ieraksts" : "Klients un pasūtījums"}
+                value={selectedOrderValue}
+                onChange={(e) => writeListQuery({ ord: e.target.value || null })}
+                className="min-w-0 flex-1 truncate bg-transparent font-medium outline-none"
+                title={selectedOrderLabel}
               >
-                {t.id === "price" ? <><span className="sm:hidden">Cenas</span><span className="hidden sm:inline">{t.label}</span></> : t.id === "fav" ? <><span className="sm:hidden">★</span><span className="hidden sm:inline">{t.label}</span></> : t.label}
-                <span className="text-[11px] font-normal text-[#8e8e93]">{t.id === "new" || t.id === "price" ? (mounted ? t.count : "\u00a0") : t.count}</span>
+                <option value="">{dataset === "scan" ? "Viss monitorings" : "Visi klienti"}</option>
+                {clientOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.indent ? "\u00a0\u00a0\u00a0- " : ""}
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="ml-auto flex flex-wrap items-center gap-1">
+              <button
+                type="button"
+                title={nextReadLabel ? `Nākamā nolasīšana ${nextReadLabel}` : "Nākamā nolasīšana"}
+                onClick={() => { setSourceStatusOpen(true); setMenuOpen(false); setFilterOpen(false); }}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] text-[var(--slud-ink2)] hover:bg-[var(--slud-fill)]"
+              >
+                {problemSources.length > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-[var(--slud-warn)]" aria-hidden /> : null}
+                <span>Atjaunots {refreshedAt || (latest?.summary.finishedAt ? "\u00a0" : "nav")}</span>
               </button>
-            ))}
+              <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
+            </div>
           </div>
-          {searchOpen || query ? (
-            <input
-              type="search"
-              autoFocus
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onBlur={() => { if (!query) setSearchOpen(false); }}
-              placeholder="Meklēt marku, modeli, VIN"
-              className="h-10 w-36 shrink rounded-[9px] bg-[#e9e9ee] px-2.5 text-base text-[var(--color-apple-text)] outline-none placeholder:text-[#8e8e93] sm:h-7 sm:w-52 sm:text-[12.5px]"
-            />
-          ) : (
-            <button type="button" aria-label="Meklēt" onClick={() => setSearchOpen(true)} className="inline-flex h-10 min-h-10 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] font-medium text-[#3a3a3c] hover:bg-[#e9e9ee] sm:h-7 sm:min-h-0">
-              <Search className="h-4 w-4" aria-hidden />
-              <span className="hidden min-[420px]:inline">Meklēt</span>
-            </button>
-          )}
-          <div ref={filterRef} className="relative shrink-0">
-            <button
-              type="button"
-              aria-label="Filtri"
-              aria-expanded={filterOpen}
-              onClick={() => { setFilterOpen((v) => !v); setMenuOpen(false); }}
-              className={`inline-flex h-10 min-h-10 items-center gap-1 rounded-full px-2 text-[12px] font-medium hover:bg-[#e9e9ee] sm:h-7 sm:min-h-0 ${activeFilterCount > 0 ? "text-[var(--color-provin-accent)]" : "text-[#3a3a3c]"}`}
-            >
-              <SlidersHorizontal className="h-4 w-4" aria-hidden />
-              <span className="hidden min-[420px]:inline">Filtri</span>
-              {activeFilterCount > 0 ? <span className="rounded-full bg-[var(--color-provin-accent)] px-1.5 text-[10px] font-semibold leading-4 text-white">{activeFilterCount}</span> : null}
-            </button>
-            <AdminAnchoredSheet
-              open={filterOpen}
-              onClose={() => setFilterOpen(false)}
-              closeLabel="Aizvērt filtrus"
-              sheetId="list-filter"
-              mobileClassName="fixed inset-x-0 bottom-0 z-40 max-h-[85dvh] overflow-y-auto rounded-t-[14px] bg-[#f2f2f7] p-4 pb-[max(16px,env(safe-area-inset-bottom))] text-[15px] shadow-[0_10px_32px_rgba(0,0,0,0.16)]"
-              desktopClassName="hidden sm:absolute sm:right-0 sm:top-9 sm:z-40 sm:block sm:w-[300px] sm:rounded-xl sm:bg-white sm:p-3.5 sm:text-[12px] sm:shadow-[0_10px_32px_rgba(0,0,0,0.16)]"
-            >
-              {() => (
-              <>
-                <div className="mx-auto mb-3 h-1.5 w-9 rounded-full bg-[#c7c7cc] sm:hidden" aria-hidden />
-                <p className="mb-2 text-center text-[17px] font-semibold sm:hidden">Filtri</p>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Avots</p>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  {SOURCE_CHIPS.map((src) => {
-                    const on = sources.length === 0 || sources.includes(src.id);
-                    return (
-                      <button
-                        key={src.id}
-                        type="button"
-                        aria-pressed={on}
-                        aria-label={src.label}
-                        onClick={() => toggleSource(src.id)}
-                        className={`inline-flex h-8 items-center bg-transparent px-0.5 sm:h-7 ${on ? "opacity-100" : "opacity-35"}`}
-                      >
-                        <IrissAuctionLogo platform={src.id} fallback={src.label} size="sm" />
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Cena €</p>
-                <div className="mt-1 flex items-center gap-1.5">
-                  <input type="number" min={0} inputMode="numeric" aria-label="Cena no" placeholder="No" defaultValue={searchParams.get("min") ?? ""} key={`min-${searchParams.get("min") ?? ""}`} onBlur={(e) => writeListQuery({ min: e.target.value.trim() })} className="h-9 w-full rounded-lg bg-[#f2f2f5] px-2.5 text-base outline-none sm:h-7 sm:text-[12px]" />
-                  <span className="text-[#8e8e93]">-</span>
-                  <input type="number" min={0} inputMode="numeric" aria-label="Cena līdz" placeholder="Līdz" defaultValue={searchParams.get("max") ?? ""} key={`max-${searchParams.get("max") ?? ""}`} onBlur={(e) => writeListQuery({ max: e.target.value.trim() })} className="h-9 w-full rounded-lg bg-[#f2f2f5] px-2.5 text-base outline-none sm:h-7 sm:text-[12px]" />
-                </div>
-                <label className="mt-3 flex items-center gap-2 font-medium">
-                  <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={hideTech} onChange={(e) => setPrefs((p) => ({ ...p, hideTech: e.target.checked }))} />
-                  Slēpt ar motora/kārbas bojājumiem ({techCount})
-                </label>
-                <label className="mt-2 flex items-start gap-2 font-medium">
-                  <input type="checkbox" className="mt-0.5 h-5 w-5 sm:h-4 sm:w-4" checked={hideOverBudget} onChange={(e) => setPrefs((p) => ({ ...p, hideOverBudget: e.target.checked }))} />
-                  <span>
-                    Slēpt virs budžeta +
-                    <input
-                      type="number"
-                      min={0}
-                      inputMode="numeric"
-                      aria-label="Slieksnis virs budžeta, €"
-                      value={overBudgetThreshold}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        const raw = e.target.value.trim();
-                        if (raw === "") return;
-                        setPrefs((p) => ({ ...p, overBudgetThreshold: parseOverBudgetThreshold(raw, p.overBudgetThreshold) }));
-                      }}
-                      className="mx-1 h-7 w-16 rounded-md bg-[#f2f2f5] px-1.5 text-center text-[12px] outline-none"
-                    />
-                    € ({overBudgetCount})
-                  </span>
-                </label>
-                <label className="mt-2 flex items-center gap-2 font-medium">
-                  <input type="checkbox" className="h-5 w-5 sm:h-4 sm:w-4" checked={listScope === "hidden"} onChange={(e) => setPrefs((p) => ({ ...p, listScope: e.target.checked ? "hidden" : "all" }))} />
-                  Rādīt tikai paslēptos ({hiddenCount})
-                </label>
-                <button type="button" onClick={() => setFilterOpen(false)} className="mt-3 h-[50px] w-full rounded-xl bg-[var(--color-provin-accent)] text-[17px] font-semibold text-white sm:h-8 sm:rounded-lg sm:text-[12.5px]">
-                  Rādīt {sorted.length} auto
+
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <div className="flex min-w-0 flex-1 flex-wrap gap-1">
+              {tabs.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setPrefs((p) => ({ ...p, tab: t.id }))}
+                  data-on={tab === t.id ? "true" : "false"}
+                  className="slud-chip inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--slud-fill)] px-3 text-[13px] font-medium"
+                >
+                  {t.label}
+                  <span className="tabular-nums opacity-70">{t.id === "new" || t.id === "price" ? (mounted ? t.count : "\u00a0") : t.count}</span>
                 </button>
-              </>
-              )}
-            </AdminAnchoredSheet>
-          </div>
-          <label className="inline-flex h-10 min-h-10 shrink-0 items-center gap-1 rounded-full px-2 text-[12px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:min-h-0">
-            <ArrowUpDown className="h-3.5 w-3.5" aria-hidden />
-            <span className="hidden sm:inline">Kārtot</span>
-            <select
-              aria-label="Kārtot pēc"
-              value={sort}
-              onChange={(e) => {
-                const next = parseListingSort(e.target.value);
-                if (next) writeListQuery({ sort: next });
-              }}
-              className="max-w-[7.5rem] bg-transparent text-[12px] font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-none"
-            >
-              {LISTING_SORTS.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
-            </select>
-          </label>
-          <div ref={menuRef} className="relative shrink-0">
-            <button type="button" aria-label="Vairāk" aria-expanded={menuOpen} onClick={() => { setMenuOpen((v) => !v); setFilterOpen(false); }} className="grid h-10 w-10 min-h-10 place-items-center rounded-full text-[16px] text-[#8e8e93] hover:bg-[#e9e9ee] sm:h-7 sm:w-7 sm:min-h-0">
-              ⋯
-            </button>
-            <AdminAnchoredSheet
-              open={menuOpen}
-              onClose={() => setMenuOpen(false)}
-              closeLabel="Aizvērt"
-              sheetId="list-more"
-              mobileClassName="fixed inset-x-0 bottom-0 z-40 max-h-[85dvh] overflow-y-auto rounded-t-[14px] bg-[#f2f2f7] p-4 pb-[max(16px,env(safe-area-inset-bottom))] text-[15px] shadow-[0_10px_32px_rgba(0,0,0,0.16)]"
-              desktopClassName="hidden sm:absolute sm:right-0 sm:top-9 sm:z-40 sm:block sm:w-[340px] sm:rounded-xl sm:bg-white sm:p-3.5 sm:text-[12px] sm:shadow-[0_10px_32px_rgba(0,0,0,0.16)]"
-            >
-              {() => (
-              <>
-                <div className="mx-auto mb-3 h-1.5 w-9 rounded-full bg-[#c7c7cc] sm:hidden" aria-hidden />
-                <p className="mb-2 text-center text-[17px] font-semibold sm:hidden">Vairāk</p>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93] sm:hidden">Kārtot</p>
-                <div className="mb-3 overflow-hidden rounded-xl bg-[var(--surface)] sm:hidden">
+              ))}
+            </div>
+            <label className="relative inline-flex h-8 min-w-[12rem] flex-1 items-center gap-1.5 rounded-full bg-[var(--slud-fill)] px-3 text-[13px] text-[var(--slud-ink2)]">
+              <Search className="h-3.5 w-3.5 shrink-0" strokeWidth={STROKE} aria-hidden />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Meklēt auto, VIN, klientu"
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-[var(--slud-ink)] outline-none placeholder:text-[var(--slud-ink3)]"
+              />
+            </label>
+            <div ref={filterRef} className="relative shrink-0">
+              <button
+                type="button"
+                aria-label="Filtri"
+                aria-expanded={filterOpen}
+                onClick={() => { setFilterOpen((v) => !v); setMenuOpen(false); setSortOpen(false); }}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium hover:bg-[var(--slud-fill)]"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={STROKE} aria-hidden />
+                Filtri
+                {activeFilterCount > 0 ? (
+                  <span className="slud-badge inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums">{activeFilterCount}</span>
+                ) : null}
+              </button>
+              {filterOpen ? (
+                <div className="absolute right-0 top-10 z-40 hidden w-[min(92vw,22.5rem)] rounded-[22px] bg-[var(--slud-s1)] p-4 shadow-[var(--slud-shadow)] md:block">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-[16px] font-semibold">Filtri</p>
+                    <button type="button" onClick={clearAllFilters} className="text-[13px] font-medium text-[var(--slud-ink2)] hover:underline">
+                      Notīrīt
+                    </button>
+                  </div>
+                  {filtersForm()}
+                </div>
+              ) : null}
+            </div>
+            <div ref={sortRef} className="relative shrink-0">
+              <button
+                type="button"
+                aria-label="Kārtot"
+                aria-expanded={sortOpen}
+                onClick={() => { setSortOpen((v) => !v); setFilterOpen(false); setMenuOpen(false); }}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium hover:bg-[var(--slud-fill)]"
+              >
+                <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={STROKE} aria-hidden />
+                {sortLabel}
+              </button>
+              {sortOpen ? (
+                <div className="absolute right-0 top-10 z-40 hidden w-56 overflow-hidden rounded-2xl bg-[var(--slud-s1)] py-1 shadow-[var(--slud-shadow)] md:block">
                   {LISTING_SORTS.map((x) => (
                     <button
                       key={x.id}
                       type="button"
                       onClick={() => {
                         writeListQuery({ sort: x.id });
-                        setMenuOpen(false);
+                        setSortOpen(false);
                       }}
-                      className="flex min-h-12 w-full items-center justify-between border-b border-[var(--separator)] px-4 text-[17px] last:border-b-0"
+                      className="flex min-h-10 w-full items-center justify-between px-3 text-left text-[14px] hover:bg-[var(--slud-fill)]"
                     >
                       {x.label}
-                      {sort === x.id ? <span className="text-[var(--label-secondary)]">✓</span> : null}
+                      {sort === x.id ? <span className="text-[var(--slud-ink3)]">✓</span> : null}
                     </button>
                   ))}
                 </div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Nolasīšana</p>
-                <div className="mt-1 grid grid-cols-[1fr_auto] gap-y-0.5">
-                  <span className="text-[#8e8e93]">Pēdējā</span><span>{mounted && latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : "nav veikta"}</span>
-                  <span className="text-[#8e8e93]">Nākamā automātiskā</span><span>{mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "\u00a0"}</span>
-                  <span className="text-[#8e8e93]">Avoti OK · Auto · Jauni · Cenas</span><span>{latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0} · {counts.all} · {mounted ? counts.fresh : ""} · {mounted ? counts.price : ""}</span>
+              ) : null}
+            </div>
+            <div role="group" aria-label="Skats" className="inline-flex rounded-full bg-[var(--slud-fill)] p-[3px]">
+              <button
+                type="button"
+                aria-label="Saraksts"
+                aria-pressed={view === "list"}
+                onClick={() => writeListQuery({ view: "list" })}
+                className={`grid h-7 w-8 place-items-center rounded-full ${view === "list" ? "bg-[var(--slud-s1)] shadow-sm" : ""}`}
+              >
+                <List className="h-3.5 w-3.5" strokeWidth={STROKE} />
+              </button>
+              <button
+                type="button"
+                aria-label="Režģis"
+                aria-pressed={view === "grid"}
+                onClick={() => writeListQuery({ view: "grid" })}
+                className={`grid h-7 w-8 place-items-center rounded-full ${view === "grid" ? "bg-[var(--slud-s1)] shadow-sm" : ""}`}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" strokeWidth={STROKE} />
+              </button>
+            </div>
+            <div ref={menuRef} className="relative shrink-0">
+              <button
+                type="button"
+                aria-label="Vairāk"
+                aria-expanded={menuOpen}
+                onClick={() => { setMenuOpen((v) => !v); setFilterOpen(false); setSortOpen(false); }}
+                className="grid h-8 w-8 place-items-center rounded-full hover:bg-[var(--slud-fill)]"
+              >
+                <MoreHorizontal className="h-4 w-4" strokeWidth={STROKE} />
+              </button>
+              {menuOpen ? (
+                <div className="absolute right-0 top-10 z-40 hidden w-[22rem] rounded-[22px] bg-[var(--slud-s1)] p-3.5 shadow-[var(--slud-shadow)] md:block">
+                  <IrissSludinajumiMoreMenu
+                    syncBusy={syncBusy}
+                    syncMsg={syncMsg}
+                    problemCount={problemSources.length}
+                    extrasLabel={extrasLabel}
+                    onSync={() => void syncNow()}
+                    onSourceStatus={() => { setSourceStatusOpen(true); setMenuOpen(false); }}
+                    onCosts={() => { setCostsOpen(true); setMenuOpen(false); }}
+                  />
                 </div>
-                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Nolasīšana pa avotiem</p>
-                {ingestStats.map((s) => (
-                  <div key={s.platform} className="flex justify-between gap-3 py-0.5">
-                    <span className="inline-flex items-center">
-                      <IrissAuctionLogo platform={s.platform} fallback={PLATFORM_LABEL_LONG[s.platform]} size="sm" />
-                    </span>
-                    <span className="text-[#8e8e93]">
-                      {s.platform === "mobilede" || s.platform === "autoscout24"
-                        ? s.vehicleCount > 0
-                          ? `${s.vehicleCount} ielādēti (poga Ielādēt)`
-                          : "tikai ar pogu Ielādēt"
-                        : s.sourceCount === 0
-                          ? "nav saišu"
-                          : `${s.okCount}/${s.sourceCount} avoti · ${s.vehicleCount} auto${s.status !== "ok" && s.status !== "none" ? ` · ${sourceStatusLabel(s.status)}` : ""}`}
-                    </span>
-                  </div>
-                ))}
-                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">PVN pa avotiem</p>
-                {platformDots.map((d) => (
-                  <div key={d.platform} className="flex justify-between gap-3 py-0.5" title={d.title}>
-                    <span className="flex items-center gap-1.5">
-                      <IrissAuctionLogo platform={d.platform} fallback={d.label} size="sm" />
-                    </span>
-                    <span className="text-[#8e8e93]">{d.vat}</span>
-                  </div>
-                ))}
-                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Pieslēgumi</p>
-                {(mounted && health?.items ? health.items : IRISS_AUCTION_LISTING_PLATFORMS.map((platform) => ({ platform, status: "not_run" as const, note: "", checkedAt: "" }))).map((item) => (
-                  <div key={item.platform} className="flex items-center justify-between gap-2 py-0.5">
-                    <span title={item.note} className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold">
-                      <IrissAuctionLogo platform={item.platform} fallback={PLATFORM_LABEL_LONG[item.platform]} size="sm" />
-                      <span className={healthTextClass(item.status)}>{healthLabel(item.status)}</span>
-                    </span>
-                    {IRISS_RELAY_LISTING_PLATFORMS.includes(item.platform) ? (
-                      <IrissListingsLoginButton platform={item.platform} onDone={() => void loadHealth()} />
-                    ) : (
-                      <span className="text-[10.5px] text-[#8e8e93]">env ECARSTRADE_USER</span>
-                    )}
-                  </div>
-                ))}
-                {problemSources.length > 0 ? (
-                  <>
-                    <button type="button" onClick={() => setShowSources((v) => !v)} className="mt-2 text-[11px] font-medium text-[var(--color-provin-accent)] hover:underline">
-                      {showSources ? "Slēpt avotu problēmas" : `Avotu problēmas (${problemSources.length})`}
-                    </button>
-                    {showSources ? (
-                      <ul className="mt-1 space-y-1 text-[11px] text-slate-600">
-                        {problemSources.map((src) => (
-                          <li key={src.id} className="flex flex-wrap items-center gap-x-2">
-                            <IrissAuctionLogo platform={src.platform} fallback={PLATFORM_LABEL[src.platform]} size="sm" />
-                            <span className="font-medium text-[var(--color-apple-text)]">{src.orderBrandModel || src.orderId}</span>
-                            <span>{sourceStatusLabel(src.status)}</span>
-                            {src.note ? <span className="text-slate-500">{src.note}</span> : null}
-                            <a href={src.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[var(--color-provin-accent)] hover:underline">avots</a>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </>
-                ) : null}
-                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Izmaksas</p>
-                <div className="flex items-center justify-between">
-                  <span className="tabular-nums">I = <b>{fmtEur(I)}</b></span>
-                  <button type="button" onClick={() => setShowCosts((x) => !x)} className="text-[12px] font-semibold text-[var(--color-provin-accent)]">
-                    {showCosts ? "Slēpt I" : "Izmaksas ›"}
-                  </button>
-                </div>
-                {showCosts ? (
-                  <div className="mt-1.5 grid grid-cols-2 gap-2">
-                    {([
-                      ["fee", "Izsoles komisija"],
-                      ["transport", "Transports"],
-                      ["commission", "Komisija"],
-                      ["unplanned", "Neplānotie"],
-                    ] as const).map(([k, l]) => (
-                      <label key={k} className="grid text-[10px] font-semibold text-slate-500">
-                        {l}
-                        <input type="number" inputMode="numeric" value={prefs.costs[k]} onChange={(e) => setGlobalCost(k, Number(e.target.value) || 0)} className="h-10 w-full rounded-md bg-[#f2f2f5] px-2 text-base font-normal text-[var(--color-apple-text)] outline-none sm:h-8 sm:text-[12px]" />
-                      </label>
-                    ))}
-                  </div>
-                ) : null}
-                <p className="mt-1 text-[10.5px] text-[#8e8e93]">Budžets - no pasūtījumiem.</p>
-                <button type="button" onClick={() => setMenuOpen(false)} className="mt-3 h-[50px] w-full rounded-xl bg-white text-[17px] font-semibold sm:hidden sm:h-10 sm:rounded-lg sm:bg-[#f2f2f5] sm:text-[12.5px]">Aizvērt</button>
-              </>
-              )}
-            </AdminAnchoredSheet>
+              ) : null}
+            </div>
           </div>
-          <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
+
+          <IrissSludinajumiActivePills pills={filterPills} onClear={clearFilterPill} onClearAll={clearAllFilters} />
         </div>
-        </div>
-        <div className="admin-source-logo-row mt-1 flex max-w-full flex-nowrap items-center gap-x-2 overflow-x-auto text-[11px] text-[#8e8e93] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="inline-flex shrink-0 items-center gap-1.5">
-            {platformDots.map((d) => (
-              <span key={d.platform} title={d.title} className="inline-flex items-center gap-1">
-                <IrissAuctionLogo platform={d.platform} fallback={d.label} size="sm" />
-              </span>
-            ))}
-          </span>
-          <span className="shrink-0 whitespace-nowrap">
-            Nolasīts {mounted && latest?.summary.finishedAt ? fmtDateTime(latest.summary.finishedAt) : latest?.summary.finishedAt ? "\u00a0" : "nav"}
-            <span className="hidden sm:inline"> · nākamā {mounted ? nextIrissListingsAutomaticReadLabel(new Date(), latest?.lastAutomaticSlot) : "\u00a0"}</span>
-            {" "}· {latest?.summary.okCount ?? 0}/{latest?.summary.totalSources ?? 0} avoti OK
-            {ectIngest && (ectIngest.sourceCount > 0 || ectIngest.vehicleCount > 0) ? (
-              <span title="eCarsTrade nolasīšana" className="inline-flex items-center gap-1">
-                {" · "}
-                <IrissAuctionLogo platform="ecarstrade" fallback="eCarsTrade" size="sm" />
-                {ectIngest.okCount}/{ectIngest.sourceCount} · {ectIngest.vehicleCount} auto
-              </span>
-            ) : (
-              <span title="eCarsTrade nolasīšana" className="inline-flex items-center gap-1">
-                {" · "}
-                <IrissAuctionLogo platform="ecarstrade" fallback="eCarsTrade" size="sm" />
-                nav saišu
-              </span>
-            )}
-          </span>
-          <button type="button" onClick={() => void syncNow()} disabled={syncBusy} className="shrink-0 font-semibold text-[var(--color-provin-accent)] disabled:opacity-55">
-            {syncBusy ? (syncMsg && /\d+\/\d+/.test(syncMsg) ? syncMsg.replace(" meklējumi nolasīti", "") : "Nolasa…") : "Nolasīt"}
-          </button>
-          <span className="shrink-0 text-[#d1d1d6]">|</span>
-          <label className="inline-flex max-w-[60vw] shrink-0 items-center gap-1">
-            <span>{dataset === "scan" ? "Monitorings" : "Klients"}</span>
-            <select
-              aria-label={dataset === "scan" ? "Monitorētais ieraksts" : "Klients un pasūtījums"}
-              value={serializeListingOrderFilter(orderFilter)}
-              onChange={(e) => writeListQuery({ ord: e.target.value || null })}
-              className="max-w-[48vw] bg-transparent text-[11.5px] font-semibold text-[var(--color-apple-text)] outline-none sm:max-w-[260px]"
-            >
-              <option value="">{dataset === "scan" ? "Viss monitorings" : "Visi klienti"}</option>
-              {clientOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.indent ? "\u00a0\u00a0\u00a0- " : ""}
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        {syncMsg && !syncBusy ? <p className="mt-0.5 text-center text-[11px] text-[#8e8e93]">{syncMsg}</p> : null}
+        {syncMsg && !syncBusy ? <p className="mt-1 text-center text-[11px] text-[var(--slud-ink3)]">{syncMsg}</p> : null}
       </header>
+
+      <AdminMobileSheet open={phone && filterOpen} title="Filtri" onClose={() => setFilterOpen(false)}>
+        <div className="iriss-slud">{filtersForm(
+          <>
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">Klients</p>
+              <select
+                aria-label={dataset === "scan" ? "Monitorētais ieraksts" : "Klients un pasūtījums"}
+                value={selectedOrderValue}
+                onChange={(e) => writeListQuery({ ord: e.target.value || null })}
+                className="mt-2 h-11 w-full rounded-xl bg-[var(--am-fill)] px-3 text-[15px] outline-none"
+              >
+                <option value="">{dataset === "scan" ? "Viss monitorings" : "Visi klienti"}</option>
+                {clientOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">Kārtot</p>
+              <select
+                aria-label="Kārtot pēc"
+                value={sort}
+                onChange={(e) => {
+                  const next = parseListingSort(e.target.value);
+                  if (next) writeListQuery({ sort: next });
+                }}
+                className="mt-2 h-11 w-full rounded-xl bg-[var(--am-fill)] px-3 text-[15px] outline-none"
+              >
+                {LISTING_SORTS.map((x) => (
+                  <option key={x.id} value={x.id}>{x.label}</option>
+                ))}
+              </select>
+            </div>
+          </>,
+        )}</div>
+      </AdminMobileSheet>
+
+      <AdminMobileSheet open={phone && menuOpen} title="Vairāk" onClose={() => setMenuOpen(false)}>
+        <div className="iriss-slud">
+        <IrissSludinajumiMoreMenu
+          syncBusy={syncBusy}
+          syncMsg={syncMsg}
+          problemCount={problemSources.length}
+          extrasLabel={extrasLabel}
+          includeSort
+          sortLabel={sortLabel}
+          onSort={() => { setMenuOpen(false); setMobileSortOpen(true); }}
+          onSync={() => void syncNow()}
+          onSourceStatus={() => { setSourceStatusOpen(true); setMenuOpen(false); }}
+          onCosts={() => { setCostsOpen(true); setMenuOpen(false); }}
+        />
+        </div>
+      </AdminMobileSheet>
+
+      <AdminMobileSheet open={phone && mobileSortOpen} title="Kārtot" onClose={() => setMobileSortOpen(false)}>
+        <div className="overflow-hidden rounded-2xl bg-[var(--am-s1)]">
+          {LISTING_SORTS.map((x) => (
+            <button
+              key={x.id}
+              type="button"
+              onClick={() => {
+                writeListQuery({ sort: x.id });
+                setMobileSortOpen(false);
+              }}
+              className="flex min-h-12 w-full items-center justify-between border-b border-[var(--am-hair)] px-4 text-[17px] last:border-b-0"
+            >
+              {x.label}
+              {sort === x.id ? <span className="text-[var(--am-ink2)]">✓</span> : null}
+            </button>
+          ))}
+        </div>
+      </AdminMobileSheet>
+
+      <AdminMobileSheet open={phone && sourceStatusOpen} title="Avotu statuss" onClose={() => setSourceStatusOpen(false)}>
+        <div className="iriss-slud">{sourceStatusBody()}</div>
+      </AdminMobileSheet>
+      <AdminMobileSheet open={phone && costsOpen} title="Izmaksu pieņēmumi" onClose={() => setCostsOpen(false)}>
+        <div className="iriss-slud">
+          <IrissSludinajumiCostsPanel costs={prefs.costs} onChange={setGlobalCost} />
+        </div>
+      </AdminMobileSheet>
+      <AdminMobileSheet open={phone && matchesOpen} title="Jaunas atbilstības" onClose={() => setMatchesOpen(false)}>
+        <ul className="divide-y divide-[var(--am-hair)]">
+          {notices.map((notice) => (
+            <li key={`${notice.orderId}|${notice.listingId}`}>
+              <a
+                href={notice.href}
+                className="flex min-h-12 items-center justify-between gap-3 py-2 text-[15px]"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMatchesOpen(false);
+                  void openMatchNotice(notice);
+                }}
+              >
+                <span className="min-w-0 truncate">{notice.clientName} · {notice.title}</span>
+                <span className="shrink-0 text-[12px] text-[var(--am-ink2)]">{LISTING_PLATFORM_LABEL[notice.platform as IrissListingPlatform] ?? notice.platform}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </AdminMobileSheet>
+
+      <IrissSludinajumiScrimPanel
+        open={!phone && sourceStatusOpen}
+        onClose={() => setSourceStatusOpen(false)}
+        title="Avotu statuss"
+        widthClass="w-[min(100vw,560px)]"
+        side="right"
+      >
+        {sourceStatusBody()}
+      </IrissSludinajumiScrimPanel>
+      <IrissSludinajumiScrimPanel
+        open={!phone && costsOpen}
+        onClose={() => setCostsOpen(false)}
+        title="Izmaksu pieņēmumi"
+        widthClass="w-[min(92vw,26rem)]"
+        side="center"
+      >
+        <IrissSludinajumiCostsPanel costs={prefs.costs} onChange={setGlobalCost} />
+      </IrissSludinajumiScrimPanel>
 
       {visible.length === 0 ? (
         <section className="mx-4 rounded-2xl border border-dashed border-[var(--separator)] bg-[var(--surface)] px-6 py-10 text-center shadow-none max-md:mx-4">
@@ -1165,6 +1187,8 @@ export function IrissSludinajumiListClient({
       <IrissListingVirtualList
         items={sorted}
         getKey={(v) => v.id}
+        layout={view}
+        columns={gridColumns}
         renderItem={(v) => (
           <IrissListingVehicleCard
             v={v}
@@ -1175,6 +1199,7 @@ export function IrissSludinajumiListClient({
             budget={budgetOf(v, prefs, orderById, matchOrderIds)}
             matchNew={listingIsMatchNew(v.id, linkedOrdersOf(v, prefs, orderById, matchOrderIds))}
             duplicates={duplicatesByListing[v.id] ?? []}
+            layout={view}
             onOpen={() => {
               setDrawerId(v.id);
               void markListingViewed(v.id);

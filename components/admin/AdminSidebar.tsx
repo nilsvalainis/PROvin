@@ -70,7 +70,7 @@ export const ADMIN_NAV_LABELS = {
   irissHome: "Pasūtījumi",
   irissNew: "Jauns pasūtījums",
   irissScan: "Radars",
-  irissList: "Klientu filtri",
+  irissList: "Sludinājumi",
   irissReport: "Mēneša atskaite",
   irissWaybills: "Pavadzīmes",
   irissSettings: "Iestatījumi",
