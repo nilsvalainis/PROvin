@@ -1,4 +1,5 @@
 import type { IrissListingVehicle, IrissListingsLatestView } from "@/lib/iriss-listings-types";
+import { collapseMarketplaceListingsByOrder } from "@/lib/marketplace/dedupe";
 import { marketplaceListingsToVehicles } from "@/lib/marketplace/to-listing-vehicle";
 import type { MarketplaceStoredListing } from "@/lib/marketplace/types";
 
@@ -25,7 +26,7 @@ export function mergeMarketplaceIntoLatestView(
   stored: readonly MarketplaceStoredListing[],
   nowMs = Date.now(),
 ): IrissListingsLatestView | null {
-  const marketplaceVehicles = marketplaceListingsToVehicles(stored, nowMs);
+  const marketplaceVehicles = marketplaceListingsToVehicles(collapseMarketplaceListingsByOrder(stored), nowMs);
   if (!latest) {
     if (marketplaceVehicles.length === 0) return null;
     const now = new Date(nowMs).toISOString();

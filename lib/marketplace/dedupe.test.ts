@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { assignMarketplaceGroupIds, marketplaceListingFingerprint } from "@/lib/marketplace/dedupe";
+import {
+  assignMarketplaceGroupIds,
+  collapseMarketplaceListings,
+  collapseMarketplaceListingsByOrder,
+  marketplaceListingFingerprint,
+  marketplaceListingsAreSameCar,
+} from "@/lib/marketplace/dedupe";
 import type { MarketplaceNormalizedListing } from "@/lib/marketplace/types";
 
 function item(partial: Partial<MarketplaceNormalizedListing>): MarketplaceNormalizedListing {
@@ -41,5 +47,63 @@ describe("marketplace listing fingerprint", () => {
     expect(vinGroup).toHaveLength(2);
     expect(vinGroup[0]?.groupId).toBe(vinGroup[1]?.groupId);
     expect(grouped.find((x) => x.make === "BMW")?.groupId).not.toBe(vinGroup[0]?.groupId);
+  });
+
+  it("matches make+model+year+price and mileage within 100 km", () => {
+    const a = item({ mileageKm: 212000, priceEur: 12900 });
+    const b = item({
+      platform: "autoscout24",
+      providerId: "apify-autoscout24",
+      externalId: "as",
+      listingUrl: "https://www.autoscout24.de/angebote/as",
+      mileageKm: 212080,
+      priceEur: 12900,
+    });
+    const far = item({ externalId: "far", mileageKm: 212200, priceEur: 12900 });
+    const otherPrice = item({ externalId: "p", mileageKm: 212000, priceEur: 13000 });
+    expect(marketplaceListingsAreSameCar(a, b)).toBe(true);
+    expect(marketplaceListingsAreSameCar(a, far)).toBe(false);
+    expect(marketplaceListingsAreSameCar(a, otherPrice)).toBe(false);
+  });
+
+  it("collapses cross-source and same-source duplicates, keeping mobile.de first and extra links", () => {
+    const md = item({
+      externalId: "md",
+      listingUrl: "https://suchen.mobile.de/fahrzeuge/details.html?id=md",
+      mileageKm: 180000,
+      priceEur: 11900,
+    });
+    const as1 = item({
+      platform: "autoscout24",
+      providerId: "apify-autoscout24",
+      externalId: "as1",
+      listingUrl: "https://www.autoscout24.de/angebote/as1",
+      mileageKm: 180050,
+      priceEur: 11900,
+    });
+    const as2 = item({
+      platform: "autoscout24",
+      providerId: "apify-autoscout24",
+      externalId: "as2",
+      listingUrl: "https://www.autoscout24.de/angebote/as2",
+      mileageKm: 180040,
+      priceEur: 11900,
+    });
+    const other = item({ externalId: "other", make: "BMW", model: "X5", mileageKm: 90000, priceEur: 22000 });
+    const collapsed = collapseMarketplaceListings([as1, as2, md, other]);
+    expect(collapsed).toHaveLength(2);
+    const car = collapsed.find((x) => x.make === "Volvo");
+    expect(car?.platform).toBe("mobilede");
+    expect(car?.listingUrl).toContain("mobile.de");
+    expect(car?.sourceLinks?.map((l) => l.url).sort()).toEqual(
+      ["https://www.autoscout24.de/angebote/as1", "https://www.autoscout24.de/angebote/as2"].sort(),
+    );
+    expect(collapsed.find((x) => x.make === "BMW")?.sourceLinks).toBeUndefined();
+  });
+
+  it("collapses only within the same order", () => {
+    const a = { ...item({ mileageKm: 180000, priceEur: 11900 }), orderId: "o1" };
+    const b = { ...item({ mileageKm: 180000, priceEur: 11900 }), orderId: "o2" };
+    expect(collapseMarketplaceListingsByOrder([a, b])).toHaveLength(2);
   });
 });

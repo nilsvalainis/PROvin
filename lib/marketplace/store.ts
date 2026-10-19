@@ -16,6 +16,7 @@ import {
   type MarketplaceAutoCronStatus,
   type MarketplaceListingsState,
   type MarketplaceRunRecord,
+  type MarketplaceSourceLink,
   type MarketplaceStoredListing,
   type MarketplaceUsageEntry,
   type MarketplaceUsageMonth,
@@ -87,6 +88,21 @@ function parseStoredListing(v: unknown): MarketplaceStoredListing | null {
     locationCountry: str(v.locationCountry, 8).toUpperCase(),
     fetchedAt,
     ...(str(v.vin, 17).length === 17 ? { vin: str(v.vin, 17).toUpperCase() } : {}),
+    ...(str(v.sellerName, 80) ? { sellerName: str(v.sellerName, 80) } : {}),
+    ...(str(v.location, 80) ? { location: str(v.location, 80) } : {}),
+    ...(Array.isArray(v.sourceLinks)
+      ? {
+          sourceLinks: v.sourceLinks
+            .map((row) => {
+              if (!isObj(row)) return null;
+              const platform = str(row.platform, 20);
+              const url = str(row.url, 500);
+              if (!isMarketplacePlatform(platform) || !url) return null;
+              return { platform, url };
+            })
+            .filter((row): row is MarketplaceSourceLink => Boolean(row)),
+        }
+      : {}),
     id: str(v.id, 40) || marketplaceListingVehicleId(platform, externalId),
     orderId,
     tenantScope: "iriss",

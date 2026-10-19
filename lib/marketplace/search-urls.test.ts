@@ -122,6 +122,8 @@ describe("marketplace search URLs", () => {
     expect(input.category).toBe("CAR");
     expect(input.sort).toBe("newest");
     expect(input.fuelType).toEqual(["DIESEL"]);
+    expect(input.customFilters).toEqual([{ field: "country", op: "equals", value: "DE" }]);
+    expect(input).not.toHaveProperty("country");
     expect(input).not.toHaveProperty("webhook");
   });
 
@@ -214,6 +216,7 @@ describe("marketplace search URLs", () => {
       powerMax: 313,
       transmission: ["AUTOMATIC_GEAR"],
       bodyType: ["KOMBI"],
+      customFilters: [{ field: "country", op: "equals", value: "DE" }],
     });
     expect(marketplaceKwToPs(230)).toBe(313);
 

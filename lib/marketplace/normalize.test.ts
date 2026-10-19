@@ -42,7 +42,8 @@ describe("normalizeMarketplaceListing", () => {
       powerKw: "140",
       locationCountry: "DE",
     });
-    expect(JSON.stringify(item)).not.toMatch(/1\.Hand|Scheckheft|example\.com\/a|111|a@b\.de|Hans/);
+    expect(item?.sellerName).toBe("Hans");
+    expect(JSON.stringify(item)).not.toMatch(/1\.Hand|Scheckheft|example\.com\/a|111|a@b\.de/);
   });
 
   it("dedupes the same external id in one source", () => {
@@ -131,5 +132,94 @@ describe("normalizeMarketplaceListing", () => {
       normalizeMarketplaceListing("mobilede", "apify-mobilede", { ...base, sellerType: "Dealer" }, "2026-10-19T12:00:00.000Z")?.title,
     ).toBe("Volvo XC60");
     expect(normalizeMarketplaceListing("mobilede", "apify-mobilede", base, "2026-10-19T12:00:00.000Z")?.title).toBe("Volvo XC60");
+  });
+
+  it("takes externalId from listingKey then listingId before the URL", () => {
+    const fromKey = normalizeMarketplaceListing(
+      "mobilede",
+      "apify-mobilede",
+      {
+        listingKey: "451508690",
+        listingId: "hash-id",
+        canonicalUrl: "https://suchen.mobile.de/fahrzeuge/details.html?id=999",
+        title: "Audi A6",
+        make: "Audi",
+      },
+      "2026-10-19T12:00:00.000Z",
+    );
+    expect(fromKey?.externalId).toBe("451508690");
+    const fromId = normalizeMarketplaceListing(
+      "mobilede",
+      "apify-mobilede",
+      {
+        listingId: "hash-id",
+        url: "https://suchen.mobile.de/fahrzeuge/details.html?id=999",
+        title: "Audi A6",
+        make: "Audi",
+      },
+      "2026-10-19T12:00:00.000Z",
+    );
+    expect(fromId?.externalId).toBe("hash-id");
+  });
+
+  it("uses title plus subTitle or makeModelDescription for the card headline", () => {
+    const item = normalizeMarketplaceListing(
+      "mobilede",
+      "apify-mobilede",
+      {
+        url: "https://suchen.mobile.de/fahrzeuge/details.html?id=330",
+        title: "Audi A6",
+        subTitle: "3.0 TDI quattro S line",
+        make: "Audi",
+        model: "A6",
+        country: "DE",
+      },
+      "2026-10-19T12:00:00.000Z",
+    );
+    expect(item?.title).toBe("Audi A6 3.0 TDI quattro S line");
+    const headline = normalizeMarketplaceListing(
+      "mobilede",
+      "apify-mobilede",
+      {
+        url: "https://suchen.mobile.de/fahrzeuge/details.html?id=331",
+        headline: "Audi A6 Avant 3.0 TDI",
+        title: "Audi A6",
+        make: "Audi",
+        country: "DE",
+      },
+      "2026-10-19T12:00:00.000Z",
+    );
+    expect(headline?.title).toBe("Audi A6 Avant 3.0 TDI");
+  });
+
+  it("drops non-DE rows when the actor sent a country field and keeps unknown country", () => {
+    const nl = normalizeMarketplaceListing(
+      "mobilede",
+      "apify-mobilede",
+      {
+        url: "https://suchen.mobile.de/fahrzeuge/details.html?id=nl",
+        title: "Audi A6",
+        make: "Audi",
+        country: "NL",
+        location: "Hengelo",
+        sellerName: "Auto NL",
+      },
+      "2026-10-19T12:00:00.000Z",
+    );
+    expect(nl).toBeNull();
+    const unknown = normalizeMarketplaceListing(
+      "mobilede",
+      "apify-mobilede",
+      {
+        url: "https://suchen.mobile.de/fahrzeuge/details.html?id=de-unknown",
+        title: "Audi A6",
+        make: "Audi",
+        location: "Fulda",
+        sellerName: "Autohaus Fulda",
+      },
+      "2026-10-19T12:00:00.000Z",
+    );
+    expect(unknown?.sellerName).toBe("Autohaus Fulda");
+    expect(unknown?.location).toBe("Fulda");
   });
 });

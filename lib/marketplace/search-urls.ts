@@ -253,6 +253,8 @@ function mobileDeActorInput(q: MarketplaceQuery, maxResults: number, sortNewest:
   const fuel = mobileFuel(q.fuel);
   if (fuel) input.fuelType = [fuel];
   if (sortNewest) input.sort = "newest";
+  // Schema has no country field. customFilters keeps only DE rows after scrape.
+  input.customFilters = [{ field: "country", op: "equals", value: "DE" }];
   return input;
 }
 

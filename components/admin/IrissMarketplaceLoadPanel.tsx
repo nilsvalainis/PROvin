@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
+  MARKETPLACE_APIFY_AUTOSCOUT24_USD_PER_RESULT,
+  MARKETPLACE_APIFY_MOBILEDE_USD_PER_RESULT,
+  MARKETPLACE_APIFY_START_USD,
+  formatMarketplaceUsd,
+} from "@/lib/marketplace/cost-caps";
+import {
   marketplaceMissingExtraRangeMessage,
   marketplaceMissingFieldsMessage,
 } from "@/lib/marketplace/query-from-order";
@@ -75,7 +81,13 @@ function formatLvDate(iso: string | undefined): string {
 
 const ALL_PLATFORMS: MarketplacePlatform[] = ["mobilede", "autoscout24"];
 
-export function IrissMarketplaceLoadPanel({ orderId }: { orderId: string }) {
+export function IrissMarketplaceLoadPanel({
+  orderId,
+  onLoaded,
+}: {
+  orderId: string;
+  onLoaded?: () => void | Promise<void>;
+}) {
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [usage, setUsage] = useState<UsageResponse | null>(null);
@@ -160,9 +172,10 @@ export function IrissMarketplaceLoadPanel({ orderId }: { orderId: string }) {
       const monthlyUsedUsd = body.monthlyUsedUsd ?? 0;
       setLastLoadCost({ chargedUsd, monthlyUsedUsd });
       setMsg(
-        `Ielādēti ${body.added ?? 0} sludinājumi. Šī ielāde: ${chargedUsd.toFixed(2)} $. Mēneša kopsumma: ${monthlyUsedUsd.toFixed(2)} $.`,
+        `Ielādēti ${body.added ?? 0} sludinājumi. Šī ielāde: ${formatMarketplaceUsd(chargedUsd)}. Mēneša kopsumma: ${formatMarketplaceUsd(monthlyUsedUsd)}.`,
       );
       await Promise.all([loadEstimate(), loadStatus(), loadUsage()]);
+      await onLoaded?.();
       setBusy(false);
     } catch {
       setMsg("Ielāde neizdevās.");
@@ -215,11 +228,18 @@ export function IrissMarketplaceLoadPanel({ orderId }: { orderId: string }) {
         })}
       </div>
       <p className="mt-2 text-[12px] text-[#374151]">
-        Aprēķinātā maksimālā cena: {maxUsd.toFixed(2)} $ (griests {estimate?.perRunCapUsd?.toFixed(2) ?? "0.50"} $
-        šai ielādei, {monthlyCapUsd.toFixed(2)} $ mēnesī).
+        Aprēķinātā maksimālā cena: {formatMarketplaceUsd(maxUsd)} (griests{" "}
+        {estimate?.perRunCapUsd != null ? formatMarketplaceUsd(estimate.perRunCapUsd) : "0.500 $"} šai ielādei,{" "}
+        {formatMarketplaceUsd(monthlyCapUsd)} mēnesī).
       </p>
       <p className="mt-1 text-[12px] text-[#374151]">
-        Šī ielāde: {chargedUsd.toFixed(2)} $ · mēneša kopsumma: {monthlyUsedUsd.toFixed(2)} $ / {monthlyCapUsd.toFixed(2)} $
+        Šī ielāde: {formatMarketplaceUsd(chargedUsd)} · mēneša kopsumma: {formatMarketplaceUsd(monthlyUsedUsd)} /{" "}
+        {formatMarketplaceUsd(monthlyCapUsd)}
+      </p>
+      <p className="mt-1 text-[12px] text-[#374151]">
+        Izmaksu pieņēmumi: starts {formatMarketplaceUsd(MARKETPLACE_APIFY_START_USD)}, mobile.de{" "}
+        {MARKETPLACE_APIFY_MOBILEDE_USD_PER_RESULT} $ / rezultāts, AutoScout24 {MARKETPLACE_APIFY_AUTOSCOUT24_USD_PER_RESULT}{" "}
+        $ / rezultāts.
       </p>
       {estimate?.warning80 ? (
         <p className="mt-1 text-[12px] text-amber-900">Mēneša budžets ir virs 80%.</p>

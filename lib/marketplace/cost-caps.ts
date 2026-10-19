@@ -15,6 +15,12 @@ export const MARKETPLACE_DEFAULT_AUTO_MONTHLY_USD_CAP = 4.5;
 export const MARKETPLACE_HARD_MAX_ITEMS = 300;
 export const MARKETPLACE_RUNS_KEEP = 300;
 export const MARKETPLACE_APIFY_START_USD = 0.005;
+export const MARKETPLACE_APIFY_MOBILEDE_USD_PER_RESULT = 0.00059;
+export const MARKETPLACE_APIFY_AUTOSCOUT24_USD_PER_RESULT = 0.00049;
+
+export function formatMarketplaceUsd(n: number): string {
+  return `${(Number.isFinite(n) ? n : 0).toFixed(3)} $`;
+}
 
 function envNumber(name: string, fallback: number, min: number, max: number): number {
   const raw = process.env[name]?.trim() ?? "";
@@ -70,7 +76,7 @@ export function estimateProviderUsd(usdPerThousand: number, maxItems: number, st
 
 export function usageSpentUsd(month: MarketplaceUsageMonth | null | undefined): number {
   if (!month) return 0;
-  return Math.round(month.entries.reduce((sum, e) => sum + (Number.isFinite(e.usd) ? e.usd : 0), 0) * 1000) / 1000;
+  return month.entries.reduce((sum, e) => sum + (Number.isFinite(e.usd) ? e.usd : 0), 0);
 }
 
 export function usageSpentUsdByTrigger(
@@ -78,13 +84,9 @@ export function usageSpentUsdByTrigger(
   trigger: MarketplaceLoadTrigger,
 ): number {
   if (!month) return 0;
-  return (
-    Math.round(
-      month.entries
-        .filter((e) => (e.trigger === "auto" ? "auto" : "manual") === trigger)
-        .reduce((sum, e) => sum + (Number.isFinite(e.usd) ? e.usd : 0), 0) * 1000,
-    ) / 1000
-  );
+  return month.entries
+    .filter((e) => (e.trigger === "auto" ? "auto" : "manual") === trigger)
+    .reduce((sum, e) => sum + (Number.isFinite(e.usd) ? e.usd : 0), 0);
 }
 
 export function marketplaceMonthKey(at = new Date()): string {
@@ -121,7 +123,7 @@ export function decideMarketplaceBudget(input: {
   if (estimatedUsd > perRunCapUsd + 1e-9) {
     return {
       allowed: false,
-      reason: `Šīs ielādes griests ir ${perRunCapUsd.toFixed(2)} $, aprēķins ${estimatedUsd.toFixed(2)} $.`,
+      reason: `Šīs ielādes griests ir ${formatMarketplaceUsd(perRunCapUsd)}, aprēķins ${formatMarketplaceUsd(estimatedUsd)}.`,
       estimatedUsd,
       monthlyUsedUsd,
       monthlyCapUsd,
@@ -132,7 +134,7 @@ export function decideMarketplaceBudget(input: {
   if (estimatedUsd > remainingMonthlyUsd + 1e-9) {
     return {
       allowed: false,
-      reason: `Mēneša griests ${monthlyCapUsd.toFixed(2)} $ ir sasniegts vai nepietiek (${monthlyUsedUsd.toFixed(2)} $ jau iztērēti).`,
+      reason: `Mēneša griests ${formatMarketplaceUsd(monthlyCapUsd)} ir sasniegts vai nepietiek (${formatMarketplaceUsd(monthlyUsedUsd)} jau iztērēti).`,
       estimatedUsd,
       monthlyUsedUsd,
       monthlyCapUsd,

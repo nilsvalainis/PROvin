@@ -70,6 +70,7 @@ export type IrissOrderRoomHit = {
   lastSeenAt: string;
   location: string;
   priceHistory: IrissListingPriceChange[];
+  sourceLinks?: Array<{ platform: IrissListingPlatform; url: string }>;
 };
 
 export type IrissOrderRoomHitSource = {
@@ -100,6 +101,7 @@ export type IrissOrderRoomHitSource = {
   firstSeenAt?: string;
   location?: string;
   priceHistory?: IrissListingPriceChange[];
+  sourceLinks?: Array<{ platform: IrissListingPlatform; url: string }>;
 };
 
 export type IrissOrderRoomCheck = { id: string; label: string; pass: boolean };
@@ -265,6 +267,16 @@ export function buildIrissOrderRoomHits(
       lastSeenAt: typeof row.lastSeenAt === "string" ? row.lastSeenAt.trim() : "",
       location: (v.location ?? "").trim(),
       priceHistory: Array.isArray(row.priceHistory) ? (row.priceHistory as IrissListingPriceChange[]) : v.priceHistory ?? [],
+      ...(Array.isArray(v.sourceLinks) && v.sourceLinks.length
+        ? {
+            sourceLinks: v.sourceLinks
+              .map((link) => ({
+                platform: link.platform,
+                url: typeof link.url === "string" ? link.url.trim() : "",
+              }))
+              .filter((link) => link.url),
+          }
+        : {}),
     });
   }
   out.sort((a, b) => b.firstSeenAt.localeCompare(a.firstSeenAt) || a.title.localeCompare(b.title, "lv"));

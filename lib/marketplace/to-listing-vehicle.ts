@@ -39,7 +39,7 @@ export function marketplaceListingToVehicle(item: MarketplaceStoredListing): Iri
     fuel: item.fuel,
     transmission: item.gearbox,
     powerKw: item.powerKw,
-    location: item.locationCountry,
+    location: item.sellerName || item.location || item.locationCountry,
     countryCode: item.locationCountry,
     imageUrl: "",
     currency: "EUR",
@@ -59,6 +59,11 @@ export function marketplaceListingToVehicle(item: MarketplaceStoredListing): Iri
     priceHistory: [],
     ...(item.vin ? { vin: item.vin, vinSource: "source" as const } : {}),
     priceCompareNote: item.priceCompare.note,
+    ...(item.sourceLinks?.length
+      ? {
+          sourceLinks: item.sourceLinks.map((link) => ({ platform: link.platform, url: link.url })),
+        }
+      : {}),
   };
 }
 

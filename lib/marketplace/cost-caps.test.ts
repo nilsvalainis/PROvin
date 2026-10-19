@@ -14,6 +14,9 @@ import {
   marketplaceWarningAt80,
   providerEstimate,
   usageSpentUsdByTrigger,
+  formatMarketplaceUsd,
+  MARKETPLACE_APIFY_MOBILEDE_USD_PER_RESULT,
+  MARKETPLACE_APIFY_AUTOSCOUT24_USD_PER_RESULT,
 } from "@/lib/marketplace/cost-caps";
 import { emptyMarketplaceQuery } from "@/lib/marketplace/types";
 
@@ -64,6 +67,9 @@ describe("marketplace cost caps", () => {
     );
     expect(usageSpentUsdByTrigger(used, "auto")).toBeCloseTo(0.4, 5);
     expect(usageSpentUsdByTrigger(used, "manual")).toBeCloseTo(1.2, 5);
+    expect(formatMarketplaceUsd(0.0109)).toBe("0.011 $");
+    expect(MARKETPLACE_APIFY_MOBILEDE_USD_PER_RESULT).toBe(0.00059);
+    expect(MARKETPLACE_APIFY_AUTOSCOUT24_USD_PER_RESULT).toBe(0.00049);
   });
 
   it("treats only exact true as enabled for loads and auto", () => {

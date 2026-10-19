@@ -106,6 +106,21 @@ describe("buildIrissOrderRoomHits", () => {
     expect(withPhoto[0]?.imageCount).toBe(2);
     expect(withPhoto[0]?.imageUrls).toEqual(["https://img/a.jpg", "https://img/b.jpg"]);
     expect(withPhoto[0]?.price).toBeNull();
+    const withSources = buildIrissOrderRoomHits(
+      [
+        source({
+          id: "m",
+          platform: "mobilede",
+          title: "Audi A6 3.0 TDI",
+          location: "Autohaus Fulda",
+          sourceLinks: [{ platform: "autoscout24", url: "https://www.autoscout24.de/angebote/x" }],
+        }),
+      ],
+      "order-1",
+      {},
+    );
+    expect(withSources[0]?.location).toBe("Autohaus Fulda");
+    expect(withSources[0]?.sourceLinks).toEqual([{ platform: "autoscout24", url: "https://www.autoscout24.de/angebote/x" }]);
   });
 
   it("uses eCarsTrade bid, then estimate, then buy-now", () => {
