@@ -24,11 +24,30 @@
     .reply { max-width: 85%; border: 1px solid #E5E7EB; border-radius: 16px; padding: 8px 12px; }
     .chip { display: inline-block; background: #ECFDF3; color: #067647; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
     .form { border-top: 1px solid #F3F4F6; padding: 12px; }
-    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    label { font-size: 11px; font-weight: 600; color: #6b7280; }
+    label, .field { display: block; font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 8px; }
     input { width: 100%; margin-top: 4px; border: 1px solid #E5E7EB; border-radius: 12px; padding: 8px 12px; font-size: 14px; box-sizing: border-box; }
-    .span2 { grid-column: 1 / -1; }
-    button { width: 100%; margin-top: 12px; height: 40px; border: 0; border-radius: 999px; background: #111827; color: #fff; font-size: 14px; font-weight: 700; }
+    .hint { display: block; margin-top: 4px; font-size: 11px; font-weight: 400; color: #9aa3b2; line-height: 1.4; }
+    .plates { display: flex; gap: 6px; margin: 4px 0 10px; }
+    .plate { flex: 1; border: 0; border-radius: 999px; padding: 8px 6px 7px; font-size: 12px; font-weight: 600; background: #F3F4F6; color: #111827; }
+    .plate.on { background: #111827; color: #fff; }
+    .plate small { display: block; font-size: 10px; font-weight: 500; margin-top: 1px; }
+    .plate.on small { color: rgba(255,255,255,.72); }
+    .plate:not(.on).busy small { color: #b45309; }
+    .plate:not(.on).free small { color: #067647; }
+    .hours { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+    .unit { height: 38px; display: grid; place-items: center; font-size: 13px; font-weight: 600; color: #6b7280; }
+    button.submit { width: 100%; margin-top: 4px; height: 40px; border: 0; border-radius: 999px; background: #111827; color: #fff; font-size: 14px; font-weight: 700; }
+    .caption { margin-top: 14px; padding: 10px 12px; background: #EEF2FF; border-radius: 10px; font-size: 11px; line-height: 1.45; color: #1e293b; }
+    .overlay { position: fixed; inset: 0; background: #0f172a66; display: none; align-items: center; justify-content: center; padding: 16px; }
+    .overlay.open { display: flex; }
+    .dialog { width: 100%; max-width: 360px; background: #fff; border: 1px solid #E5E7EB; border-radius: 16px; padding: 16px; }
+    .dialog h3 { margin: 0; font-size: 15px; }
+    .warn { margin: 10px 0 0; background: #FEF3F2; color: #7a271a; border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.45; }
+    .dialog p { margin: 8px 0 0; font-size: 13px; color: #374151; line-height: 1.45; }
+    .dialog-actions { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .dialog-actions button { height: 40px; border-radius: 10px; font-size: 12.5px; font-weight: 600; }
+    .btn-primary { border: 1px solid #111827; background: #111827; color: #fff; }
+    .btn-ghost { border: 1px solid #E5E7EB; background: #fff; color: #111827; }
   </style>
 </head>
 <body>
@@ -36,9 +55,9 @@
     <h1>Pavadzīmes</h1>
     <div class="grid">
       <div class="card">
-        <p class="muted">B861-6</p>
-        <p style="margin:4px 0 0;font-size:16px;font-weight:700">VW Passat</p>
-        <p class="muted">B1937 · Bremen - Riga</p>
+        <p class="muted">P02799</p>
+        <p style="margin:4px 0 0;font-size:16px;font-weight:700">Volvo V50</p>
+        <p class="muted">B193-7 · līdz 22.10.2026, 15:59</p>
       </div>
       <section class="chat" id="csdd">
         <header class="head">
@@ -51,35 +70,64 @@
           </div>
           <span class="muted">0 darbā</span>
         </header>
-        <div class="thread">
-          <div class="req">
-            <div class="bubble">
-              <p class="muted" style="color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.12em;font-size:10px;margin:0">Pavadzīme</p>
-              <p style="margin:0;font-weight:700">VW Passat</p>
-              <p style="margin:0;font-family:ui-monospace,monospace;font-size:11px;color:rgba(255,255,255,.8)">WVWZZZ3CZE1234567</p>
-              <p style="margin:0">B1937</p>
-              <p style="margin:0">Maršruts Bremen -&gt; Riga</p>
-              <p style="margin:0">Derīgums 2026-10-20 - 2026-10-30</p>
-            </div>
-            <div class="reply">
-              <span class="chip">Izveidota</span>
-              <p style="margin:4px 0 0;font-size:13px">Izdota B861-6</p>
-              <p style="margin:4px 0 0;font-family:ui-monospace,monospace;font-size:12px;color:#067647">B861-6</p>
-            </div>
-            <span class="muted">13:05</span>
-          </div>
+        <div class="thread" id="thread">
+          <p class="muted" style="text-align:center;padding:32px 8px">Izvēlies numuru, marku un stundas. Aivars saņem tikai šīs pavadzīmes datus.</p>
         </div>
         <form class="form">
-          <div class="fields">
-            <label class="span2">VIN<input value="WVWZZZ3CZE1234567" readonly /></label>
-            <label>No<input value="Bremen" readonly /></label>
-            <label>Līdz<input value="Riga" readonly /></label>
-            <label class="span2">Piezīme pavadzīmei<input placeholder="Tikai teksts uz pavadzīmes, ne komanda" readonly /></label>
+          <span class="field" style="margin-bottom:0">Numurs</span>
+          <div class="plates">
+            <button type="button" class="plate busy" id="p1">B193-7<small>aizņemts</small></button>
+            <button type="button" class="plate free on" id="p2">B762-7<small>brīvs</small></button>
+            <button type="button" class="plate busy" id="p3">B861-6<small>aizņemts</small></button>
           </div>
-          <button type="button">Izveidot pavadzīmi</button>
+          <label>Marka, modelis<input value="VW Passat" readonly /></label>
+          <label>VIN <span style="font-weight:400">(nav obligāts)</span><input class="mono" placeholder="17 zīmes" readonly />
+            <span class="hint">Ja ievadīts VIN, Aivars meklē auto starp tirdzniecībā pieņemtajiem. Ja neatrod, izraksta pavadzīmi ar sākumpunktu; beigu punkts pēc noklusējuma ir Tukuma CSDD.</span>
+          </label>
+          <label>Derīgums<span class="hours"><input value="48" readonly /><span class="unit">h</span></span>
+            <span class="hint">Sākums: tagad. Beigas: tagad + 48 h (22.10.2026, 16:50).</span>
+          </label>
+          <label>Komentārs<input value="B762 uz 48h" readonly />
+            <span class="hint">Maršruts pēc noklusējuma: Tukums, Rīgas iela -&gt; Tukuma CSDD. Citu maršrutu raksti šeit.</span>
+            <span class="hint">Komentārs ir tikai šīs pavadzīmes dati (numurs, stundas, maršruts). Aivars to neizpilda kā komandu. Teksts nenonāk pie citiem aģentiem.</span>
+          </label>
+          <button class="submit" type="button">Izveidot pavadzīmi</button>
+          <p class="caption"><b>Aivara limits.</b> IRISS lietotājs var pieprasīt tikai CSDD pavadzīmi. Komentārs serverī iet kā <code>comment_untrusted</code> (citēti dati, līdz 400 zīmēm), ne kā instrukcija. Citi aģenti šo lauku neredz.</p>
         </form>
       </section>
     </div>
   </div>
+  <div class="overlay" id="overlay">
+    <div class="dialog">
+      <h3>Numurs ir aizņemts</h3>
+      <div class="warn">B193-7 jau ir uz aktīvas pavadzīmes P02799 (Volvo V50, līdz 22.10.2026, 15:59). Jauna pavadzīme pārtrauks esošo.</div>
+      <p>Apstiprini tikai tad, ja tiešām vajag jaunu pavadzīmi šim numuram.</p>
+      <div class="dialog-actions">
+        <button type="button" class="btn-primary">Tomēr izveidot</button>
+        <button type="button" class="btn-ghost">Atcelt</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const state = new URLSearchParams(location.search).get("state") || "free";
+    const thread = document.getElementById("thread");
+    if (state === "busy") {
+      document.getElementById("p1").classList.add("on");
+      document.getElementById("p2").classList.remove("on");
+      document.getElementById("overlay").classList.add("open");
+    } else if (state === "reply") {
+      thread.innerHTML =
+        '<div class="req"><div class="bubble">' +
+        '<p style="margin:0;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.12em;font-size:10px">Pavadzīme</p>' +
+        '<p style="margin:2px 0 0;font-weight:700">VW Passat</p>' +
+        '<p style="margin:0">B762-7 · 48 h</p>' +
+        '<p style="margin:0">Tukums, Rīgas iela -&gt; Tukuma CSDD</p>' +
+        '<p style="margin:4px 0 0;color:rgba(255,255,255,.8)">Komentārs: B762 uz 48h</p>' +
+        '</div><div class="reply"><span class="chip">Izveidota</span>' +
+        '<p style="margin:4px 0 0;font-size:13px">Izdota P02820</p>' +
+        '<p style="margin:4px 0 0;font-family:ui-monospace,monospace;font-size:12px;color:#067647">P02820</p>' +
+        '</div><span class="muted">16:50</span></div>';
+    }
+  </script>
 </body>
 </html>

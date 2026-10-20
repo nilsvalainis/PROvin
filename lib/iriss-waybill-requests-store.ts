@@ -95,6 +95,7 @@ export async function createWaybillRequest(input: {
     routeFrom: payload.routeFrom,
     routeTo: payload.routeTo,
     validDays: payload.validDays,
+    validHours: payload.validHours,
     validFrom: payload.validFrom,
     validUntil: payload.validUntil,
     noteUntrusted: sanitizeNoteUntrusted(payload.noteUntrusted),

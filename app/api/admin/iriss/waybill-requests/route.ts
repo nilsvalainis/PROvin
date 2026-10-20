@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
 import { emptyWaybillRequestsDoc, waybillChatPayload } from "@/lib/iriss-waybill-requests";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
+import { readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
+import {
+  displayDealerPlate,
+  emptyWaybillPlateStates,
+  waybillPlateOccupancy,
+  type WaybillPlateState,
+} from "@/lib/iriss-waybill-plates";
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 
@@ -19,12 +26,29 @@ async function loadVehiclesSafe() {
   }
 }
 
+async function loadPlatesSafe(): Promise<WaybillPlateState[]> {
+  try {
+    return waybillPlateOccupancy(await readIrissPavadzimesCached());
+  } catch (err) {
+    console.error("[iriss-waybill] plates_failed", err instanceof Error ? err.message : err);
+    return emptyWaybillPlateStates();
+  }
+}
+
+function confirmBusy(body: unknown): boolean {
+  return Boolean(body && typeof body === "object" && !Array.isArray(body) && (body as { confirmBusy?: unknown }).confirmBusy === true);
+}
+
 export async function GET() {
   const gate = await requireIrissSectionApi("pavadzimes");
   if (!gate.ok) return gate.response;
   try {
-    const [doc, vehicles] = await Promise.all([readWaybillRequestsDoc(), loadVehiclesSafe()]);
-    return NextResponse.json({ ok: true, ...waybillChatPayload(doc), vehicles }, NO_STORE);
+    const [doc, vehicles, plates] = await Promise.all([
+      readWaybillRequestsDoc(),
+      loadVehiclesSafe(),
+      loadPlatesSafe(),
+    ]);
+    return NextResponse.json({ ok: true, ...waybillChatPayload(doc), vehicles, plates }, NO_STORE);
   } catch (err) {
     console.error("[iriss-waybill] list_failed", err instanceof Error ? err.message : err);
     return NextResponse.json(
@@ -33,6 +57,7 @@ export async function GET() {
         ok: false,
         ...waybillChatPayload(emptyWaybillRequestsDoc()),
         vehicles: [],
+        plates: emptyWaybillPlateStates(),
       },
       { status: 500, ...NO_STORE },
     );
@@ -52,10 +77,24 @@ export async function POST(req: Request) {
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400, ...NO_STORE });
   }
-  const actor = gate.actor;
-  const createdBy = actor.kind === "admin" ? "env-admin" : actor.user.id;
-  const createdByName = actor.kind === "admin" ? actor.name : actor.user.name;
   try {
+    const plates = await loadPlatesSafe();
+    const plate = displayDealerPlate(parsed.value.plate);
+    const occupancy = plates.find((row) => row.plate === plate);
+    if (occupancy?.busy && !confirmBusy(body)) {
+      return NextResponse.json(
+        {
+          error: "Numurs ir aizņemts.",
+          busy: true,
+          plate: occupancy.plate,
+          current: occupancy.current,
+        },
+        { status: 409, ...NO_STORE },
+      );
+    }
+    const actor = gate.actor;
+    const createdBy = actor.kind === "admin" ? "env-admin" : actor.user.id;
+    const createdByName = actor.kind === "admin" ? actor.name : actor.user.name;
     const request = await createWaybillRequest({
       createdBy,
       createdByName,
@@ -63,7 +102,7 @@ export async function POST(req: Request) {
     });
     const doc = await readWaybillRequestsDoc();
     return NextResponse.json(
-      { ok: true, request, ...waybillChatPayload(doc) },
+      { ok: true, request, ...waybillChatPayload(doc), plates },
       NO_STORE,
     );
   } catch (err) {
