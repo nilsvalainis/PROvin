@@ -41,6 +41,23 @@ describe("eCarsTrade search mapper", () => {
     expect(u.searchParams.getAll("country[]")).toEqual(["BEL", "NET", "LUX", "GER"]);
   });
 
+  it("omits year_from and mileage_to from public eCarsTrade search URLs", () => {
+    const url = ecarstradeSearchUrl({
+      ...filterFromBrandModel("Volvo XC60"),
+      yearFrom: 2018,
+      yearTo: 2022,
+      mileageFrom: 10000,
+      mileageTo: 150000,
+      fuels: ["Diesel"],
+    })!;
+    expect(url).not.toContain("year_from=");
+    expect(url).not.toContain("year_to=");
+    expect(url).not.toContain("mileage_from=");
+    expect(url).not.toContain("mileage_to=");
+    expect(url).toContain("fuel[]=Diesel");
+    expect(url).toContain("mark[]=68");
+  });
+
   it("maps Auto1 filters including year, fuel, gearbox, km, price and kW", () => {
     const url =
       "https://www.auto1.com/en/app/merchant/cars?channel=24h&manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018-01-01&firstRegistrationTo=2022-12-31&minMileage=10000&maxMileage=150000&fuelTypes=DIESEL&gearboxes=AUTOMATIC&bodyTypes=SUV&minPrice=12000&maxPrice=28000&powerFrom=110&powerTo=180";
@@ -60,10 +77,10 @@ describe("eCarsTrade search mapper", () => {
     expect(filter.bodies).toEqual(["SUV/Off-road Vehicle/Pickup Truck"]);
     const built = ecarstradeSearchUrl(filter)!;
     const u = new URL(built);
-    expect(u.searchParams.get("year_from")).toBe("2018");
-    expect(u.searchParams.get("year_to")).toBe("2022");
-    expect(u.searchParams.get("mileage_from")).toBe("10000");
-    expect(u.searchParams.get("mileage_to")).toBe("150000");
+    expect(u.searchParams.get("year_from")).toBeNull();
+    expect(u.searchParams.get("year_to")).toBeNull();
+    expect(u.searchParams.get("mileage_from")).toBeNull();
+    expect(u.searchParams.get("mileage_to")).toBeNull();
     expect(u.searchParams.get("price_from")).toBe("12000");
     expect(u.searchParams.get("price_to")).toBe("28000");
     expect(u.searchParams.get("power_from")).toBe("110");
@@ -253,7 +270,8 @@ describe("eCarsTrade search mapper", () => {
     expect(filled.excludeColors).toEqual(["Yellow"]);
     expect(filled.vat).toEqual(["reclaimable"]);
     const url = ecarstradeSearchUrl(filled)!;
-    expect(url).toContain("year_from=2018");
+    expect(url).not.toContain("year_from=");
+    expect(url).not.toContain("mileage_to=");
     expect(url).toContain("price_to=28000");
     expect(url).toContain("iriss_drive=awd");
     expect(url).toContain("iriss_exclude_color=Yellow");
@@ -276,9 +294,9 @@ describe("eCarsTrade search mapper", () => {
     const applied = applyEcarstradeOrderCriteria(auction, order);
     const url = ecarstradeSearchUrl(applied)!;
     const params = new URL(url).searchParams;
-    expect(params.get("year_from")).toBe("2018");
-    expect(params.get("year_to")).toBe("2021");
-    expect(params.get("mileage_to")).toBe("140000");
+    expect(params.get("year_from")).toBeNull();
+    expect(params.get("year_to")).toBeNull();
+    expect(params.get("mileage_to")).toBeNull();
     expect(params.get("price_to")).toBe("26000");
     expect(params.get("fuel[]")).toBe("Petrol");
     expect(params.get("gearbox[]")).toBe("Manual");
@@ -482,7 +500,7 @@ describe("eCarsTrade search mapper", () => {
     expect(kw.powerToKw).toBe(176);
   });
 
-  it("plans one exact ET URL per auction link and does not merge different km", () => {
+  it("collapses auction links that only differ by year/km that public eCarsTrade ignores", () => {
     const plans = planEcarstradeSearchUrls({
       id: "exact-no-merge",
       brandModel: "Volvo XC60",
@@ -496,14 +514,11 @@ describe("eCarsTrade search mapper", () => {
       listingLinkMobile: [""],
       listingLinkEcarstrade: [""],
     });
-    expect(plans).toHaveLength(2);
-    const auto1 = plans.find((p) => p.sourceUrls.some((u) => u.includes("auto1.com")));
-    const openlane = plans.find((p) => p.sourceUrls.some((u) => u.includes("openlane")));
-    expect(auto1?.filter.mileageTo).toBe(150000);
-    expect(openlane?.filter.mileageTo).toBe(180000);
-    expect(auto1?.url).toContain("mileage_to=150000");
-    expect(openlane?.url).toContain("mileage_to=180000");
-    expect(auto1?.url).not.toContain("mileage_to=180000");
+    expect(plans).toHaveLength(1);
+    expect(plans[0]!.url).not.toContain("mileage_to=");
+    expect(plans[0]!.url).not.toContain("year_from=");
+    expect(plans[0]!.url).toContain("fuel[]=Diesel");
+    expect([150000, 180000]).toContain(plans[0]!.filter.mileageTo);
   });
 
   it("does not generate ET from Mobile.de or brandModel when there is no auction link", () => {
@@ -594,9 +609,9 @@ describe("eCarsTrade search mapper", () => {
     });
     expect(plans).toHaveLength(1);
     const url = plans[0]!.url;
-    expect(url).toContain("year_from=2018");
-    expect(url).toContain("year_to=2022");
-    expect(url).toContain("mileage_to=150000");
+    expect(url).not.toContain("year_from=");
+    expect(url).not.toContain("year_to=");
+    expect(url).not.toContain("mileage_to=");
     expect(url).toContain("price_to=28000");
     expect(url).toContain("fuel[]=Diesel");
     expect(url).toContain("gearbox[]=Automatic");
@@ -626,12 +641,12 @@ describe("eCarsTrade search mapper", () => {
       listingLinkMobile: [""],
       listingLinkEcarstrade: [""],
     });
-    expect(plans).toHaveLength(3);
+    expect(plans.length).toBeGreaterThanOrEqual(1);
+    expect(plans.every((p) => !p.url.includes("mileage_to="))).toBe(true);
+    expect(plans.every((p) => !p.url.includes("year_from="))).toBe(true);
     const openlane = plans.find((p) => p.sourceUrls.some((u) => u.includes("openlane")));
     const autobid = plans.find((p) => p.sourceUrls.some((u) => u.includes("autobid")));
-    expect(openlane?.url).toContain("mileage_to=180000");
     expect(openlane?.url).not.toContain("price_to=");
-    expect(autobid?.url).toContain("mileage_to=160000");
     expect(autobid?.url).not.toContain("price_to=");
     expect(autobid?.url).not.toContain("year_to=");
   });
@@ -807,7 +822,7 @@ describe("eCarsTrade search mapper", () => {
     expect(filter.gearboxes).toEqual(["Automatic"]);
     expect(filter.gearboxes).not.toContain("Semi-automatic");
     const url = ecarstradeSearchUrl(filter)!;
-    expect(url).toContain("year_from=2018");
+    expect(url).not.toContain("year_from=");
     expect(url).not.toContain("year_to=");
     expect(url).toContain("gearbox[]=Automatic");
     expect(url).not.toContain("Semi-automatic");

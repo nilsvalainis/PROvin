@@ -347,6 +347,11 @@ export type IrissPasutijumsRecord = {
   listingLinkOpenline: string[];
   listingLinkAuto1: string[];
   listingLinkEcarstrade: string[];
+  /**
+   * Operators ir rediģējis vai dzēsis eCarsTrade saites. Fona ģenerēšana
+   * tās vairs nepapildina. Vecie JSON bez lauka = nav manuāls.
+   */
+  ecarstradeLinksManual?: boolean;
   /** „Citi” — vairākas rindas; tukšās pirms saglabāšanas var apvienot. */
   listingLinksOther: string[];
   /** Dzintarzeme Auto izmaksu tāmes lauki (admin autosaglabāšana). */

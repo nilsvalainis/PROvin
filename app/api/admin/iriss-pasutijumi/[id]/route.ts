@@ -182,6 +182,7 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     equipmentDesired: str("equipmentDesired"),
     notes: str("notes"),
     ...parseIrissPasutijumsListingLinks(o),
+    ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: parseOffersFromBody(o),
     generatedDocuments: normalizeGeneratedDocuments(o.generatedDocuments),

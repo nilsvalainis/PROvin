@@ -4,6 +4,7 @@ import { emptyIrissCriteria } from "@/lib/iriss-criteria-types";
 import { emptyIrissOfferRecord, emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
 import {
   IRISS_STALE_REVISION,
+  canSafelyMergeIrissPasutijumsRecords,
   irissPasutijumsHasOperatorContent,
   irissRevisionMatches,
   irissWorkspaceRevision,
@@ -11,6 +12,7 @@ import {
   nextIrissWorkspaceRevision,
   parseExpectedIrissRevision,
   planSilentAutosave,
+  prepareIrissPasutijumsConcurrentWrite,
 } from "@/lib/iriss-pasutijumi-save-safety";
 
 function rec(id: string, extra: Partial<ReturnType<typeof emptyIrissPasutijums>> = {}) {
@@ -158,6 +160,63 @@ describe("mergeIrissPasutijumsRecords", () => {
     expect(merged.criteria).toEqual(stored);
     expect(merged.criteria?.filters[0]?.label).toBe("Jau saglabāts");
     expect(merged.engineType).toBe("benzīns");
+  });
+
+  it("keeps a later deleted eCarsTrade list instead of restoring server rows", () => {
+    const server = rec("a", {
+      listingLinkEcarstrade: [
+        "https://ecarstrade.com/search?mark[]=68",
+        "https://ecarstrade.com/search?mark[]=68&fuel[]=Diesel",
+      ],
+      notes: "Aģenta piezīme",
+      fieldUpdatedAt: { listingLinkEcarstrade: 10, notes: 40 },
+    });
+    const local = rec("a", {
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68"],
+      ecarstradeLinksManual: true,
+      fieldUpdatedAt: { listingLinkEcarstrade: 50 },
+      clearedFields: {},
+      notes: "",
+    });
+    const merged = mergeIrissPasutijumsRecords(server, local);
+    expect(merged.listingLinkEcarstrade).toEqual(["https://ecarstrade.com/search?mark[]=68"]);
+    expect(merged.ecarstradeLinksManual).toBe(true);
+    expect(merged.notes).toBe("Aģenta piezīme");
+  });
+
+  it("merges concurrent notes vs ET-link edits instead of stale_revision", () => {
+    const server = rec("a", {
+      workspaceRevision: 6,
+      notes: "Aģenta piezīme",
+      listingLinkEcarstrade: [
+        "https://ecarstrade.com/search?mark[]=68",
+        "https://ecarstrade.com/search?mark[]=5",
+      ],
+      fieldUpdatedAt: { notes: 40 },
+    });
+    const local = rec("a", {
+      workspaceRevision: 5,
+      notes: "",
+      listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68"],
+      ecarstradeLinksManual: true,
+      fieldUpdatedAt: { listingLinkEcarstrade: 50 },
+    });
+    expect(canSafelyMergeIrissPasutijumsRecords(server, local)).toBe(true);
+    const prepared = prepareIrissPasutijumsConcurrentWrite(server, local, 5);
+    expect(prepared.ok).toBe(true);
+    if (!prepared.ok) return;
+    expect(prepared.merged).toBe(true);
+    expect(prepared.record.notes).toBe("Aģenta piezīme");
+    expect(prepared.record.listingLinkEcarstrade).toEqual(["https://ecarstrade.com/search?mark[]=68"]);
+    expect(prepared.record.ecarstradeLinksManual).toBe(true);
+  });
+
+  it("still flags stale_revision when the same text field changed on both sides without timestamps", () => {
+    const server = rec("a", { workspaceRevision: 2, notes: "cita cilne" });
+    const local = rec("a", { workspaceRevision: 1, notes: "vecā cilne" });
+    expect(canSafelyMergeIrissPasutijumsRecords(server, local)).toBe(false);
+    const prepared = prepareIrissPasutijumsConcurrentWrite(server, local, 1);
+    expect(prepared).toEqual({ ok: false, error: IRISS_STALE_REVISION, record: server });
   });
 });
 

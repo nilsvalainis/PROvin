@@ -122,4 +122,40 @@ describe("IRISS autosave without images (FS store)", () => {
     if (stale.ok) return;
     expect(stale.stale).toBe(true);
   });
+
+  it("merges a later eCarsTrade deletion with another tab's notes instead of 409", async () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "iriss-wire-merge-"));
+    dirs.push(dir);
+    const store = await load(dir);
+    const etA = "https://ecarstrade.com/search?mark[]=68";
+    const etB = "https://ecarstrade.com/search?mark[]=5";
+    const base = {
+      ...emptyIrissPasutijums(ORDER_ID, NOW),
+      brandModel: "Volvo XC60",
+      listingLinkEcarstrade: [etA, etB],
+    };
+    const a = await store.writeIrissPasutijums(base, { expectedWorkspaceRevision: null });
+    expect(a.ok).toBe(true);
+    if (!a.ok) return;
+    const agent = await store.writeIrissPasutijums(
+      { ...a.record, notes: "Aģenta piezīme", fieldUpdatedAt: { notes: 40 } },
+      { expectedWorkspaceRevision: a.record.workspaceRevision },
+    );
+    expect(agent.ok).toBe(true);
+    if (!agent.ok) return;
+    const nils = await store.writeIrissPasutijums(
+      {
+        ...a.record,
+        listingLinkEcarstrade: [etA],
+        ecarstradeLinksManual: true,
+        fieldUpdatedAt: { listingLinkEcarstrade: 50 },
+      },
+      { expectedWorkspaceRevision: a.record.workspaceRevision },
+    );
+    expect(nils.ok).toBe(true);
+    if (!nils.ok) return;
+    expect(nils.record.notes).toBe("Aģenta piezīme");
+    expect(nils.record.listingLinkEcarstrade).toEqual([etA]);
+    expect(nils.record.ecarstradeLinksManual).toBe(true);
+  });
 });

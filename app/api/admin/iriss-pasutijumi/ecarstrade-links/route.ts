@@ -43,6 +43,7 @@ function recordFromBody(raw: unknown): IrissPasutijumsRecord | null {
     equipmentRequired: str("equipmentRequired"),
     dealVat21Required: o.dealVat21Required === true,
     ...parseIrissPasutijumsListingLinks(o),
+    ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
   };
 }
 

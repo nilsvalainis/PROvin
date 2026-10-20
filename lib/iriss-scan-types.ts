@@ -29,6 +29,8 @@ export type IrissScanRecord = {
   listingLinkAuto1: string[];
   listingLinkEcarstrade: string[];
   listingLinksOther: string[];
+  /** Operators ir rediģējis eCarsTrade saites. Fona ģenerēšana tās nepapildina. */
+  ecarstradeLinksManual?: boolean;
 };
 
 export type IrissScanListRow = IrissScanRecord;

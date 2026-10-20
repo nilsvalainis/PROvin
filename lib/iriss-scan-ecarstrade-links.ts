@@ -21,7 +21,16 @@ export type IrissEcarstradeLinkSource = {
   listingLinkAutobid: readonly string[];
   listingLinkMobile: readonly string[];
   listingLinkEcarstrade: readonly string[];
+  /**
+   * Operators ir rediģējis vai dzēsis eCarsTrade saites. Fona ģenerēšana
+   * tās vairs nepapildina un nepārraksta.
+   */
+  ecarstradeLinksManual?: boolean;
 } & OrderSearchFields;
+
+export function irissEcarstradeLinksAreManual(rec: Pick<IrissEcarstradeLinkSource, "ecarstradeLinksManual">): boolean {
+  return rec.ecarstradeLinksManual === true;
+}
 
 export type IrissEcarstradeLinkPlan = {
   sourceUrls: string[];
@@ -144,9 +153,14 @@ function previewFromPlans(
 export function previewEcarstradeLinksForScan(rec: IrissEcarstradeLinkSource): IrissScanEcarstradeLinkPreview {
   const generated = generateEcarstradeSearchUrls(rec);
   const existing = filledIrissListingLinks(rec.listingLinkEcarstrade);
+  if (irissEcarstradeLinksAreManual(rec)) {
+    return previewFromPlans(rec, generated, [], "eCarsTrade saites ir manuālas", false);
+  }
+  if (existing.length > 0) {
+    return previewFromPlans(rec, generated, [], generated.length === 0 ? NO_AUCTION_ET_REASON : "eCarsTrade saite jau ir", false);
+  }
   const added: string[] = [];
   for (const url of generated) {
-    if (existing.some((e) => sameEcarstradeSearch(e, url))) continue;
     if (added.some((e) => sameEcarstradeSearch(e, url))) continue;
     added.push(url);
   }
@@ -187,9 +201,16 @@ export function replaceEcarstradeLinks<T extends IrissEcarstradeLinkSource>(rec:
     generated.length === 0 ? NO_AUCTION_ET_REASON : same ? "eCarsTrade saite jau ir aktuāla" : "",
     !same,
   );
-  if (same) return { record: rec, preview };
+  if (same) {
+    if (rec.ecarstradeLinksManual) return { record: rec, preview };
+    return { record: { ...rec, ecarstradeLinksManual: true }, preview: { ...preview, changed: true } };
+  }
   return {
-    record: { ...rec, listingLinkEcarstrade: generated.length > 0 ? generated : [""] },
+    record: {
+      ...rec,
+      listingLinkEcarstrade: generated.length > 0 ? generated : [""],
+      ecarstradeLinksManual: true,
+    },
     preview,
   };
 }
