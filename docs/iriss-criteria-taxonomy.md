@@ -31,7 +31,7 @@ Ticamība `high` vai `medium` drīkst nonākt strukturētajā filtrā. `low` un 
 | hydrogen |  | ūdeņradis, fuel cell |
 | other |  | etanols, flex fuel, sonstige, cits |
 
-Teksta valodas: EN, DE, FR, NL, LV. Piemēri, kas tiek pazīti: Benzin, benzīns, Benzine, Essence, Gasoline, Diesel, dīzelis, Gazole, Gasoil, Hybrid (Benzin/Elektro), Plug-in-Hybrid, Mild-Hybrid, e-Hybrid, PHEV, MHEV, HEV, Elektro, électrique, elektrisch, Autogas, Erdgas, LPG, GPL, CNG, Wasserstoff.
+Teksta valodas: EN, DE, FR, NL, LV. Piemēri, kas tiek pazīti: Benzin, benzīns, Benzine, Essence, Gasoline, Diesel, dīzelis, Gazole, Gasoil, Hybrid (Benzin/Elektro), Plug-in-Hybrid, Mild-Hybrid, e-Hybrid, PHEV, MHEV, HEV, Elektro, électrique, elektrisch, Autogas, Erdgas, LPG, GPL, CNG, Wasserstoff. Virsbūve LV: sedans, universālis, hečbeks, apvidus, kupeja, kabriolets, minivens, pikaps, mikroautobuss. Kārba LV: manuāla, mehāniskā, automāts.
 
 e-Hybrid ir vidēja ticamība un apakštips `phev`, jo tā bieži sauc VW spraudņa hibrīdu. Tas nav izsoles skaitliskais kods.
 

@@ -9,7 +9,11 @@ import type {
 } from "@/lib/iriss-criteria-types";
 import type { BodyGroup, DriveGroup } from "@/lib/iriss-criteria-taxonomy";
 
-export type SharedOrderCriteriaSource = IrissCriteriaMigrationInput & { notes?: string };
+export type SharedOrderCriteriaSource = IrissCriteriaMigrationInput & {
+  notes?: string;
+  modelExtension?: string;
+  agentNotes?: string;
+};
 
 const FUEL: Record<string, string> = {
   petrol: "Benzīns",
@@ -31,7 +35,7 @@ const FUEL: Record<string, string> = {
 };
 
 const GEARBOX: Record<string, string> = {
-  manual: "Mehāniskā",
+  manual: "Manuāla",
   automatic: "Automāts",
   torque_converter: "Hidrauliskais automāts",
   dsg_dct: "DSG/DCT",
@@ -135,7 +139,11 @@ export function SharedOrderCriteriaForm({ source }: { source: SharedOrderCriteri
         </p>
       </div>
       {filters.map((filter) => {
-        const rows = rowsFor(filter);
+        const extra = [
+          { label: "Modeļa paplašinājums", value: source.modelExtension?.trim() ?? "" },
+          { label: "Piezīmes aģentam", value: source.agentNotes?.trim() ?? "" },
+        ].filter((row) => row.value);
+        const rows = [...rowsFor(filter), ...extra];
         return (
           <div key={filter.id} className="space-y-2">
             <p className="text-sm font-semibold text-slate-800">{filter.label}</p>

@@ -24,8 +24,18 @@ const MAKE_ALIASES: Record<string, string> = {
   citroën: "citroen",
   "land rover": "land rover",
   landrover: "land rover",
+  "range rover": "land rover",
+  rangerover: "land rover",
+  volk: "volkswagen",
+  vwag: "volkswagen",
+  "v w": "volkswagen",
+  merc: "mercedes",
+  "m-b": "mercedes",
+  "m b": "mercedes",
+  "skoda auto": "skoda",
   "alfa romeo": "alfa romeo",
   alfa: "alfa romeo",
+  "alfa-romeo": "alfa romeo",
   "ds automobiles": "ds automobiles",
   ds: "ds automobiles",
   "rolls royce": "rolls-royce",
@@ -309,7 +319,7 @@ export function resolveEcarstradeModelById(makeId: number, modelId: number): Eca
   return ecarstradeModelsForMake(makeId).find((m) => m.id === modelId) ?? null;
 }
 
-const TWO_WORD_MAKES = ["land rover", "alfa romeo", "ds automobiles", "rolls royce", "rolls-royce"];
+const TWO_WORD_MAKES = ["land rover", "range rover", "alfa romeo", "ds automobiles", "rolls royce", "rolls-royce"];
 
 export function splitBrandModel(brandModel: string): { make: string; model: string } {
   const raw = String(brandModel ?? "").replace(/\s+/g, " ").trim();

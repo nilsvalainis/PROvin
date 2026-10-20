@@ -19,6 +19,16 @@ describe("parseDisplacementCc", () => {
     expect(parseDisplacementCc("1998 cm3").value).toBe(1998);
     expect(parseDisplacementCc("").value).toBeNull();
   });
+
+  it("keeps incomplete tilpums typing as the written value, not liters", () => {
+    expect(parseDisplacementCc("1")).toEqual({ value: null, manual: "1" });
+    expect(parseDisplacementCc("16")).toEqual({ value: null, manual: "16" });
+    expect(parseDisplacementCc("196")).toEqual({ value: null, manual: "196" });
+    expect(parseDisplacementCc("1968").value).toBe(1968);
+    const rec = emptyIrissPasutijums("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "2026-10-19T10:00:00.000Z");
+    const typed = applyIrissOrderRangeEdit(rec, "ccFrom", "1", 1);
+    expect(irissOrderRangeView(typed).ccFrom).toBe("1");
+  });
 });
 
 describe("parsePowerKwInput", () => {

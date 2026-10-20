@@ -1,5 +1,12 @@
+import {
+  bodiesMatchGroups,
+  drivesMatchGroups,
+  fuelsMatchGroups,
+  gearboxesMatchGroups,
+  listingPlatformOf,
+  modelExtensionsMatchTitle,
+} from "@/lib/iriss-criteria-listing-match";
 import { resolveEcarstradeMake, resolveMakesFromBrand } from "@/lib/iriss-listings-ecarstrade-catalog";
-import { driveTokensForMatch } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
   fillMakeModelFromBrand,
   parseListingSearchUrl,
@@ -107,13 +114,7 @@ export function makeMatchesHay(hay: string, name: string): boolean {
 }
 
 function driveMatches(hay: string, drives: EcarstradeSearchFilter["drives"]): boolean {
-  if (drives.length === 0) return true;
-  if (!hay.trim()) return true;
-  const wanted = drives.some((d) => driveTokensForMatch(d).some((t) => includesToken(hay, t)));
-  if (wanted) return true;
-  const other = (["awd", "fwd", "rwd"] as const).filter((d) => !drives.includes(d));
-  const hasOther = other.some((d) => driveTokensForMatch(d).some((t) => includesToken(hay, t)));
-  return !hasOther;
+  return drivesMatchGroups(hay, drives);
 }
 
 /** Krāsa paliek nolasīta un attēlota. Filtrs pēc krāsas vairs neatmet auto. */
@@ -142,12 +143,14 @@ export function vehicleMatchesSearchFilter(v: ListingSearchVehicle, filter: Ecar
   if (!inRange(priceOf(v), filter.priceFrom, filter.priceTo)) return false;
   if (!inRange(powerOf(v), filter.powerFromKw, filter.powerToKw)) return false;
   if (!inRange(doorsOf(v), filter.doorsFrom, filter.doorsTo)) return false;
-  if (!matchesAny(v.fuel ?? "", filter.fuels)) return false;
-  if (!matchesAny(v.transmission ?? "", filter.gearboxes)) return false;
-  if (!matchesAny(`${v.bodyType ?? ""} ${v.title ?? ""}`, filter.bodies)) return false;
+  const platform = listingPlatformOf(v.platform);
+  if (!fuelsMatchGroups(v.fuel ?? "", filter.fuels, platform)) return false;
+  if (!gearboxesMatchGroups(v.transmission ?? "", filter.gearboxes, platform)) return false;
+  if (!bodiesMatchGroups(`${v.bodyType ?? ""} ${v.title ?? ""}`, filter.bodies, platform)) return false;
   if (!driveMatches(`${v.title ?? ""} ${v.bodyType ?? ""}`, filter.drives)) return false;
   if (!colorMatches(v.color ?? "", filter.colors, filter.excludeColors)) return false;
   if (!excludeMatches(hay, filter.excludeTokens)) return false;
+  if (!modelExtensionsMatchTitle(hay, filter.modelExtensions ?? [])) return false;
   // `iriss_need` paliek URL; kartītes virsrakstā aprīkojuma parasti nav, tādēļ nometšanu nē.
   return true;
 }
@@ -320,6 +323,7 @@ export function listingSearchFilterHasBounds(filter: EcarstradeSearchFilter): bo
     filter.colors.length > 0 ||
     filter.drives.length > 0 ||
     filter.includeTokens.length > 0 ||
+    (filter.modelExtensions?.length ?? 0) > 0 ||
     filter.excludeTokens.length > 0 ||
     filter.excludeColors.length > 0 ||
     filter.doorsFrom != null ||

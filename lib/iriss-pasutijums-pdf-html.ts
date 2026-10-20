@@ -483,7 +483,7 @@ export function buildIrissPasutijumsPrintHtml(
       infoTile("Sēdvietu skaits", record.seatCount),
   );
 
-  const markaRows = rowIf("Marka / modelis", record.brandModel);
+  const markaRows = rowIf("Marka / modelis", record.brandModel) + rowIf("Modeļa paplašinājums", record.modelExtension);
   const markaTable = wrapTable(markaRows);
   const specRestRows =
     rowIf("Kopējais budžets", record.totalBudget) +

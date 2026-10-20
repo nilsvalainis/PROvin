@@ -44,8 +44,7 @@ function dashOrEmpty(raw: string): string {
   return !t || t === "\u2014" || t === "-" ? "" : t;
 }
 
-/** Kopējais budžets no pasūtījuma teksta (`18000`, `18 000 €`, `līdz 15.000`). */
-export function parseIrissOrderBudget(raw: string): number | null {
+function parseOneBudgetNumber(raw: string): number | null {
   const t = raw.trim().replace(/\u00a0/g, " ");
   if (!t || t === "\u2014" || t === "-" || /^nav\b/i.test(t)) return null;
   const m = t.match(/(\d[\d.\s,'’]*)/);
@@ -65,6 +64,28 @@ export function parseIrissOrderBudget(raw: string): number | null {
   }
   const n = Number.parseFloat(s);
   return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+}
+
+export function parseIrissOrderBoundRange(raw: string): { from: number | null; to: number | null } {
+  const t = raw.trim().replace(/\u00a0/g, " ").replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-");
+  if (!t || t === "-" || /^nav\b/i.test(t)) return { from: null, to: null };
+  const range = t.match(/(\d[\d\s.\u00a0]*)\s*(?:-|lidz|līdz|to|bis)\s*(\d[\d\s.\u00a0]*)/i);
+  if (range) {
+    const nums = [parseOneBudgetNumber(range[1] ?? ""), parseOneBudgetNumber(range[2] ?? "")]
+      .filter((n): n is number => n != null)
+      .sort((a, b) => a - b);
+    if (nums.length === 0) return { from: null, to: null };
+    return { from: nums[0] ?? null, to: nums[nums.length - 1] ?? null };
+  }
+  return { from: null, to: parseOneBudgetNumber(t) };
+}
+
+/**
+ * Aprēķini ņem diapazona augšējo robežu (`25000-32000` → 32000).
+ * Viena summa paliek kā līdz šim (`18 000 €` → 18000). Grāmatzīmes lieto `parseIrissOrderBoundRange`.
+ */
+export function parseIrissOrderBudget(raw: string): number | null {
+  return parseIrissOrderBoundRange(raw).to;
 }
 
 export function irissListingOrderBrief(row: IrissPasutijumsListRow): IrissListingOrderBrief {

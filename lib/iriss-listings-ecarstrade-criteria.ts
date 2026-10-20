@@ -126,9 +126,13 @@ const COLOR_ALIASES: Record<string, string> = {
   rot: ECARSTRADE_COLOR.red,
   rood: ECARSTRADE_COLOR.red,
   sarkans: ECARSTRADE_COLOR.red,
+  sarkana: ECARSTRADE_COLOR.red,
   silver: ECARSTRADE_COLOR.silver,
   silber: ECARSTRADE_COLOR.silver,
   sudrabs: ECARSTRADE_COLOR.silver,
+  sudrabains: ECARSTRADE_COLOR.silver,
+  anthracit: ECARSTRADE_COLOR.grey,
+  antracits: ECARSTRADE_COLOR.grey,
   violet: ECARSTRADE_COLOR.violet,
   white: ECARSTRADE_COLOR.white,
   weiss: ECARSTRADE_COLOR.white,
@@ -138,6 +142,29 @@ const COLOR_ALIASES: Record<string, string> = {
   gelb: ECARSTRADE_COLOR.yellow,
   geel: ECARSTRADE_COLOR.yellow,
   dzeltens: ECARSTRADE_COLOR.yellow,
+  dzeltena: ECARSTRADE_COLOR.yellow,
+  dzeltenais: ECARSTRADE_COLOR.yellow,
+  melna: ECARSTRADE_COLOR.black,
+  melnais: ECARSTRADE_COLOR.black,
+  balta: ECARSTRADE_COLOR.white,
+  baltais: ECARSTRADE_COLOR.white,
+  zila: ECARSTRADE_COLOR.blue,
+  zilais: ECARSTRADE_COLOR.blue,
+  sarkanais: ECARSTRADE_COLOR.red,
+  peleka: ECARSTRADE_COLOR.grey,
+  pelekais: ECARSTRADE_COLOR.grey,
+  sudraba: ECARSTRADE_COLOR.silver,
+  zala: ECARSTRADE_COLOR.green,
+  champagne: ECARSTRADE_COLOR.beige,
+  champagner: ECARSTRADE_COLOR.beige,
+  graphite: ECARSTRADE_COLOR.grey,
+  graphit: ECARSTRADE_COLOR.grey,
+  titan: ECARSTRADE_COLOR.grey,
+  titangrau: ECARSTRADE_COLOR.grey,
+  bordeaux: ECARSTRADE_COLOR.red,
+  oliv: ECARSTRADE_COLOR.green,
+  glacier: ECARSTRADE_COLOR.white,
+  polar: ECARSTRADE_COLOR.white,
 };
 
 /** Parametri, kas nav meklēšanas kritērijs (kanāls, lapa, valoda, analitika). */
@@ -256,7 +283,17 @@ export function isWildcardCriterion(raw: string): boolean {
 export function mapEcarstradeColor(raw: string): string | null {
   const s = fold(raw);
   if (isWildcardCriterion(s)) return null;
-  return COLOR_ALIASES[s] ?? COLOR_ALIASES[s.replace(/\s+/g, "")] ?? null;
+  const stripped = s
+    .replace(/\b(?:metallic|metalik|metalisks|metaliska|met\.|perl|pearl|perleffekt|mica)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return (
+    COLOR_ALIASES[s] ??
+    COLOR_ALIASES[s.replace(/\s+/g, "")] ??
+    COLOR_ALIASES[stripped] ??
+    COLOR_ALIASES[stripped.replace(/\s+/g, "")] ??
+    null
+  );
 }
 
 export function mapEcarstradeDrive(raw: string): EcarstradeDrive | null {
@@ -279,7 +316,7 @@ export function mapEcarstradeDrive(raw: string): EcarstradeDrive | null {
 
 export function driveTokensForMatch(drive: EcarstradeDrive): string[] {
   if (drive === ECARSTRADE_DRIVE.awd) {
-    return ["awd", "4x4", "4wd", "quattro", "xdrive", "4matic", "4motion", "allrad", "all wheel"];
+    return ["awd", "4x4", "4wd", "quattro", "xdrive", "4matic", "4motion", "allrad", "all wheel", "allwheel", "4wd"];
   }
   if (drive === ECARSTRADE_DRIVE.fwd) return ["fwd", "front wheel", "front", "priekšēj", "voorwiel"];
   return ["rwd", "rear wheel", "rear", "heck", "aizmugur"];

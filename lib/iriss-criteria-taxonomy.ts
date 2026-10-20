@@ -320,7 +320,7 @@ function hasDieselWord(s: string): boolean {
 }
 
 function hasPetrolWord(s: string): boolean {
-  return /\bpetrol\b|\bgasoline\b|\bbenzin|\bessence\b|\bsans plomb\b|\bunleaded\b|\botto\b|\btfsi\b|\btsi\b|\bfsi\b|\bgdi\b|\bpb95\b|\bsp95\b/.test(s);
+  return /\bpetrol\b|\bgasoline\b|\bbenzin|\bessence\b|\bsans plomb\b|\bunleaded\b|\botto\b|\btfsi\b|\btsi\b|\bfsi\b|\bgdi\b|\bpb95\b|\bsp95\b|\bsuperbenzin\b/.test(s);
 }
 
 function hasElectricWord(s: string): boolean {
@@ -476,8 +476,8 @@ export function normalizeGearbox(raw: string, platform?: AuctionPlatform | strin
     return gearHit(raw, "automatic", "high", { sub: "amt" });
   }
 
-  const manual = /\bschalt|\bmanual\b|\bmanuell\b|\bmehan|\bstick\b|\bhandgeschakeld\b|\bhandbak\b|\bboite manuelle\b|\bhandmatig\b/.test(s);
-  const automatic = /\bautomat|\bautomaat\b|\bauto\b/.test(s);
+  const manual = /\bschalt|\bmanual\b|\bmanuell\b|\bmanuala\b|\bmehan|\bstick\b|\bhandgeschakeld\b|\bhandbak\b|\bboite manuelle\b|\bhandmatig\b|\bschaltgetriebe\b/.test(s);
+  const automatic = /\bautomat|\bautomaat\b|\bautomats\b|\bauto\b/.test(s);
   if (manual && automatic) return gearTodo(raw, "TODO: vienā vērtībā ir gan manuālā, gan automātiskā kārba");
   if (manual) return gearHit(raw, "manual", "high");
   if (/\bautomat|\bautomaat\b/.test(s)) return gearHit(raw, "automatic", "high", { note: AUTO_NO_SUB });
@@ -530,10 +530,10 @@ export function normalizeBody(raw: string, platform?: AuctionPlatform | string):
     return bodyFromEtName(raw, ECARSTRADE_BODY.suv)!;
   }
 
-  if (/\bpickup\b|\bpick up\b|\bpritsche\b|\bdouble cab\b/.test(s)) return { group: "pickup", raw, confidence: "high" };
-  if (/\bcabrio|\bconvertible\b|\broadster\b|\bspider\b|\bspyder\b/.test(s)) return { group: "cabrio", raw, confidence: "high" };
-  if (/\bsuv\b|\bcrossover\b|\boff road\b|\boffroad\b|\bgelandewagen\b|\bsav\b/.test(s)) return { group: "suv", raw, confidence: "high" };
-  if (/\bestate\b|\bwagon\b|\bkombi\b|\bcombi\b|\bavant\b|\bbreak\b|\bstation\b|\btouring\b|\bvariant\b|\buniversal\b/.test(s)) {
+  if (/\bpickup\b|\bpick up\b|\bpikaps\b|\bpritsche\b|\bdouble cab\b/.test(s)) return { group: "pickup", raw, confidence: "high" };
+  if (/\bcabrio|\bconvertible\b|\bkabriolet|\broadster\b|\bspider\b|\bspyder\b/.test(s)) return { group: "cabrio", raw, confidence: "high" };
+  if (/\bsuv\b|\bcrossover\b|\bapvidus\b|\boff road\b|\boffroad\b|\bgelandewagen\b|\bsav\b/.test(s)) return { group: "suv", raw, confidence: "high" };
+  if (/\bestate\b|\bwagon\b|\bkombi\b|\bcombi\b|\bavant\b|\bbreak\b|\bstation\b|\btouring\b|\bvariant\b|\buniversal|\buniversalis\b/.test(s)) {
     const medium = /\btouring\b|\bvariant\b|\bavant\b/.test(s);
     return {
       group: "wagon",
@@ -542,14 +542,14 @@ export function normalizeBody(raw: string, platform?: AuctionPlatform | string):
       ...(medium ? { note: "Avant, Variant vai Touring ir virsbūves vārds ar vidēju ticamību." } : {}),
     };
   }
-  if (/\bmpv\b|\bminivan\b|\bmonospace\b|\bpeople carrier\b|\bgran tourer\b/.test(s)) return { group: "mpv", raw, confidence: "high" };
-  if (/\bminibus\b|\btransporter\b|\bkasten\b|\bfourgon\b|\bfurgon|\bpanel van\b|\bvan bus\b|\bbus\b|\bvan\b/.test(s)) {
+  if (/\bmpv\b|\bminivan\b|\bminiven|\bmonospace\b|\bpeople carrier\b|\bgran tourer\b/.test(s)) return { group: "mpv", raw, confidence: "high" };
+  if (/\bminibus\b|\btransporter\b|\bkasten\b|\bfourgon\b|\bfurgon|\bmikroautobuss\b|\bpanel van\b|\bvan bus\b|\bbus\b|\bvan\b/.test(s)) {
     return { group: "van_bus", raw, confidence: "high" };
   }
-  if (/\bhatch|\bschragheck\b|\bcitadine\b|\bsmall car\b/.test(s)) return { group: "hatchback", raw, confidence: "high" };
+  if (/\bhatch|\bhecbek|\bschragheck\b|\bcitadine\b|\bsmall car\b/.test(s)) return { group: "hatchback", raw, confidence: "high" };
   if (s === "compact") return { group: "hatchback", raw, confidence: "medium", note: "compact bez hatchback vārda." };
-  if (/\bcoupe\b|\bsports car\b|\bsport car\b|\bsportscar\b/.test(s)) return { group: "coupe", raw, confidence: "high" };
-  if (/\bsedan\b|\bsaloon\b|\blimousine\b|\blimo\b|\bberline\b|\bstufenheck\b/.test(s)) return { group: "sedan", raw, confidence: "high" };
+  if (/\bcoupe\b|\bkupeja\b|\bsports car\b|\bsport car\b|\bsportscar\b/.test(s)) return { group: "coupe", raw, confidence: "high" };
+  if (/\bsedan\b|\bsedans\b|\bsaloon\b|\blimousine\b|\blimuzin|\blimo\b|\bberline\b|\bstufenheck\b/.test(s)) return { group: "sedan", raw, confidence: "high" };
 
   const et = bodyFromEtName(raw, trimmed);
   if (et && et.group) return et;
@@ -563,10 +563,10 @@ export function normalizeDrive(raw: string, platform?: AuctionPlatform | string)
   const resolved = typeof platform === "string" ? resolveAuctionPlatform(platform) : platform;
   if (!trimmed || isWildcardCriterion(trimmed)) return { group: null, raw, confidence: "unknown" };
   const s = foldCriterion(trimmed);
-  const fwd = /\bfwd\b|\bfront wheel\b|\bfront drive\b|\bprieksej|\bvoorwiel\b|\bfrontantrieb\b|\bvorderrad\b/.test(s) || s === "front";
-  const rwd = /\brwd\b|\brear wheel\b|\brear drive\b|\baizmugur|\bheckantrieb\b|\bachterwiel\b|\bhinterrad\b/.test(s) || s === "rear";
+  const fwd = /\bfwd\b|\bfront wheel\b|\bfront drive\b|\bfront\b|\bprieksej|\bvoorwiel\b|\bfrontantrieb\b|\bvorderrad\b/.test(s);
+  const rwd = /\brwd\b|\brear wheel\b|\brear drive\b|\brear\b|\baizmugur|\bheckantrieb\b|\bachterwiel\b|\bhinterrad\b/.test(s);
   const awd =
-    /\bawd\b|\b4x4\b|\b4wd\b|\bfour wheel\b|\ball wheel\b|\ballrad\b|\bquattro\b|\bxdrive\b|\b4matic\b|\b4motion\b|\ball4\b|\ball 4\b|\bsyncro\b|\bhaldex\b|\bpilnpiedzin/.test(
+    /\bawd\b|\b4x4\b|\b4wd\b|\bfour wheel\b|\ball wheel\b|\ballrad\b|\ballradantrieb\b|\bquattro\b|\bxdrive\b|\b4matic\b|\b4motion\b|\ball4\b|\ball 4\b|\bsyncro\b|\bhaldex\b|\bpilnpiedzin/.test(
       s,
     ) || s === "all wheel" || s === "integral";
   const hits = [fwd ? "fwd" : "", rwd ? "rwd" : "", awd ? "awd" : ""].filter(Boolean);

@@ -313,10 +313,35 @@
   background: #fffafa !important;
 }
 
+.iriss-internal-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--line, #e5e5ea);
+  background: var(--warn-bg, #fffbeb);
+  color: var(--warn-dot, #d97706);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.iriss-spec-calc-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface-2, #f5f5f7);
+  color: var(--ink, #0b0c10);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 @media (min-width: 768px) {
   .iriss-spec-top {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
     gap: 10px 16px;
   }
 
@@ -334,8 +359,10 @@
     grid-column: 1 / -1;
   }
 
-  .iriss-spec-hint {
-    align-self: end;
+  .iriss-spec-hint,
+  .iriss-spec-calc-note {
+    grid-column: 1 / -1;
+    align-self: start;
   }
 
   .iriss-spec-rest {
@@ -427,6 +454,10 @@
     margin: 6px 0 8px;
     padding: 0;
     border: 0;
+  }
+
+  .iriss-spec-calc-note {
+    margin: 6px 0 8px;
   }
 
   .iriss-range-field {

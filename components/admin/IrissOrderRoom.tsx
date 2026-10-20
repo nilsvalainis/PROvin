@@ -25,7 +25,9 @@ import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark"
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
-import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
+import { IrissInternalNoteField } from "@/components/admin/IrissInternalNoteField";
+import { IrissOrderClientDataCard } from "@/components/admin/IrissOrderClientDataCard";
+import { IrissSpecChoiceSelect } from "@/components/admin/IrissSpecChoiceSelect";
 import { listingHistoryRecordId } from "@/lib/admin-change-history";
 import { IrissBrandLogoSlot } from "@/components/admin/IrissBrandLogoSlot";
 import { listingFmtEur } from "@/lib/iriss-listings-card";
@@ -51,13 +53,11 @@ import {
   IRISS_ADVANCE_NOT_RECEIVED,
   IRISS_ADVANCE_RECEIVED,
   IRISS_DEAL_WORKFLOW_STATUSES,
-  IRISS_OVERVIEW_EDITING,
   formatIrissOverviewFinancingChip,
   formatIrissOverviewPlatformsLine,
   formatIrissOverviewSavedCapsule,
   irissDealWorkflowStatusOf,
   irissOverviewAdvanceReceived,
-  irissOverviewEmailDisplay,
 } from "@/lib/iriss-order-overview-view";
 import {
   newIrissCommunicationEvent,
@@ -128,6 +128,17 @@ import {
   irissOrderRangeView,
   type IrissOrderRangeField,
 } from "@/lib/iriss-order-range-fields";
+import {
+  IRISS_BODY_SELECT_OPTIONS,
+  IRISS_FUEL_SELECT_OPTIONS,
+  IRISS_GEARBOX_SELECT_OPTIONS,
+  bodySelectValue,
+  fuelSelectValue,
+  gearboxSelectValue,
+  persistBodySelect,
+  persistFuelSelect,
+  persistGearboxSelect,
+} from "@/lib/iriss-order-spec-selects";
 
 const fieldClass =
   "min-h-[44px] w-full min-w-0 rounded-[10px] border border-[#e5e7eb] bg-white px-2.5 py-2 text-[16px] text-[#111827] outline-none transition focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 sm:min-h-[38px] sm:text-[13px]";
@@ -165,6 +176,8 @@ type CriteriaDraft = Pick<
   | "interiorFinish"
   | "equipmentRequired"
   | "equipmentDesired"
+  | "modelExtension"
+  | "agentNotes"
 >;
 
 function criteriaFrom(rec: IrissPasutijumsRecord): CriteriaDraft {
@@ -181,6 +194,8 @@ function criteriaFrom(rec: IrissPasutijumsRecord): CriteriaDraft {
     interiorFinish: rec.interiorFinish,
     equipmentRequired: rec.equipmentRequired,
     equipmentDesired: rec.equipmentDesired,
+    modelExtension: rec.modelExtension,
+    agentNotes: rec.agentNotes,
   };
 }
 
@@ -234,75 +249,6 @@ function Field({
       />
       {warning ? <p className="mt-1 text-[11px] text-amber-800">{warning}</p> : null}
     </label>
-  );
-}
-
-function InlineField({
-  label,
-  value,
-  display,
-  onChange,
-  onCommit,
-  onEditing,
-  placeholder,
-  type = "text",
-}: {
-  label: string;
-  value: string;
-  display?: string;
-  onChange: (value: string) => void;
-  onCommit: () => void;
-  onEditing?: (on: boolean) => void;
-  placeholder?: string;
-  type?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [flash, setFlash] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
-
-  function close(commit: boolean) {
-    setOpen(false);
-    onEditing?.(false);
-    if (commit) {
-      onCommit();
-      setFlash(true);
-      window.setTimeout(() => setFlash(false), 1200);
-    }
-  }
-
-  return (
-    <div className="min-w-0">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--ink3)]">{label}</p>
-      {open ? (
-        <input
-          ref={inputRef}
-          className="mt-1 h-9 w-full rounded-full bg-[var(--fill)] px-3 text-[15px] text-[var(--ink)] outline-none"
-          value={value}
-          type={type}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={() => close(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-            if (e.key === "Escape") close(false);
-          }}
-        />
-      ) : (
-        <button
-          type="button"
-          className="mt-1 min-h-9 w-full truncate rounded-full text-left text-[15px] font-medium text-[var(--ink)]"
-          onClick={() => {
-            setOpen(true);
-            onEditing?.(true);
-          }}
-        >
-          {flash ? "Saglabāts" : display ?? (value.trim() || placeholder || "-")}
-        </button>
-      )}
-    </div>
   );
 }
 
@@ -378,7 +324,7 @@ export function IrissOrderRoom({
   saveMsg,
   orderPdfRetryOpen,
   phoneWarning,
-  vinWarning,
+  vinWarning: _vinWarning,
   canCall,
   canEmail,
   conflict,
@@ -465,7 +411,6 @@ export function IrissOrderRoom({
   onMarketplaceLoaded?: () => void | Promise<void>;
 }) {
   const [tab, setTab] = useState<IrissOrderRoomTab>(coerceIrissOrderRoomTab(initialTab));
-  const [editingCount, setEditingCount] = useState(0);
   const tabSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [bucket, setBucket] = useState<IrissOrderRoomHitBucket>("new");
   const [commFilter, setCommFilter] = useState<IrissCommFilter>("all");
@@ -611,7 +556,7 @@ export function IrissOrderRoom({
   const financingChip = formatIrissOverviewFinancingChip(rec.clientFinancingPercent, rec.orderDate);
   const clientName = [rec.clientFirstName, rec.clientLastName].map((part) => part.trim()).filter(Boolean).join(" ");
   const savedTime = irissOrderRoomStamp(rec.updatedAt).split(" ")[1] ?? "";
-  const savedCapsule = editingCount > 0 ? IRISS_OVERVIEW_EDITING : formatIrissOverviewSavedCapsule(savedTime);
+  const savedCapsule = formatIrissOverviewSavedCapsule(savedTime);
   const refLabel = irissOrderRoomRef(rec.id);
   const linkCount = irissOrderRoomListingLinkCount(rec);
   const platforms = irissOrderRoomPlatformLabels(visibleHits);
@@ -995,59 +940,12 @@ export function IrissOrderRoom({
               steps={steps}
               onSelect={(step) => {
                 setTab(step.tab);
-                if (step.id === "vin") document.getElementById("iriss-room-vin")?.focus();
               }}
               onOpenSearch={() => setTab("search")}
             />
           </section>
         <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="min-w-0 space-y-3">
-            <section className={cardClass}>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--ink3)]">Klienta dati</p>
-              <p className="mb-3 text-[12px] text-[var(--ink2)]">Klikšķis uz lauka to uzreiz labo. Pāreja saglabā automātiski.</p>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <InlineField
-                  label="Vārds, uzvārds"
-                  value={[rec.clientFirstName, rec.clientLastName].filter(Boolean).join(" ")}
-                  onChange={(value) => {
-                    const normalized = value.replace(/\s+/g, " ").trim();
-                    if (!normalized) {
-                      onPatchRecord({ clientFirstName: "", clientLastName: "" });
-                      return;
-                    }
-                    const [first, ...rest] = normalized.split(" ");
-                    onPatchRecord({ clientFirstName: first ?? "", clientLastName: rest.join(" ") });
-                  }}
-                  onCommit={() => void onSave()}
-                  onEditing={(on) => setEditingCount((n) => Math.max(0, n + (on ? 1 : -1)))}
-                  placeholder="-"
-                />
-                <InlineField
-                  label="Tālrunis"
-                  value={rec.phone}
-                  onChange={(value) => onPatch("phone", value)}
-                  onCommit={() => void onSave()}
-                  onEditing={(on) => setEditingCount((n) => Math.max(0, n + (on ? 1 : -1)))}
-                  placeholder="-"
-                />
-                <InlineField
-                  label="E-pasts"
-                  value={rec.email}
-                  display={irissOverviewEmailDisplay(rec.email)}
-                  onChange={(value) => onPatch("email", value)}
-                  onCommit={() => void onSave()}
-                  onEditing={(on) => setEditingCount((n) => Math.max(0, n + (on ? 1 : -1)))}
-                />
-                <InlineField
-                  label="Pasūtījuma datums"
-                  value={rec.orderDate}
-                  type="date"
-                  onChange={(value) => onPatch("orderDate", value)}
-                  onCommit={() => void onSave()}
-                  onEditing={(on) => setEditingCount((n) => Math.max(0, n + (on ? 1 : -1)))}
-                />
-              </div>
-            </section>
             <section className={cardClass}>
               <CardTitle>Kritēriji</CardTitle>
               <div className="iriss-mobile-kv iriss-spec-fields">
@@ -1077,6 +975,12 @@ export function IrissOrderRoom({
                     ) : null}
                   </label>
                   <Field label="Marka / modelis" value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
+                  <Field
+                    label="Modeļa paplašinājums"
+                    value={rec.modelExtension}
+                    placeholder="piem., S-line"
+                    onChange={(value) => onPatch("modelExtension", value)}
+                  />
                 </div>
                 <IrissSpecDiapazoniBlock
                   ranges={irissOrderRangeView(rec)}
@@ -1085,9 +989,27 @@ export function IrissOrderRoom({
                   inputClassName={fieldClass}
                 />
                 <div className="iriss-spec-rest">
-                  <Field label="Dzinēja tips" value={rec.engineType} onChange={(value) => onPatch("engineType", value)} />
-                  <Field label="Ātrumkārba" value={rec.transmission} onChange={(value) => onPatch("transmission", value)} />
-                  <Field label="Virsbūves tips" value={rec.bodyType} placeholder="piem., hečbeks, SUV" onChange={(value) => onPatch("bodyType", value)} />
+                  <IrissSpecChoiceSelect
+                    label="Degviela"
+                    value={fuelSelectValue(rec.engineType)}
+                    options={IRISS_FUEL_SELECT_OPTIONS}
+                    selectClassName={fieldClass}
+                    onChange={(value) => onPatch("engineType", persistFuelSelect(value, rec.engineType))}
+                  />
+                  <IrissSpecChoiceSelect
+                    label="Ātrumkārba"
+                    value={gearboxSelectValue(rec.transmission)}
+                    options={IRISS_GEARBOX_SELECT_OPTIONS}
+                    selectClassName={fieldClass}
+                    onChange={(value) => onPatch("transmission", persistGearboxSelect(value, rec.transmission))}
+                  />
+                  <IrissSpecChoiceSelect
+                    label="Virsbūves tips"
+                    value={bodySelectValue(rec.bodyType)}
+                    options={IRISS_BODY_SELECT_OPTIONS}
+                    selectClassName={fieldClass}
+                    onChange={(value) => onPatch("bodyType", persistBodySelect(value, rec.bodyType))}
+                  />
                   <Field label="Piedziņas tips" value={rec.driveType} placeholder="piem., priekšējā, 4x4" onChange={(value) => onPatch("driveType", value)} />
                   <Field label="Sēdvietu skaits" value={rec.seatCount} placeholder="piem., 5" onChange={(value) => onPatch("seatCount", value)} />
                   <Field label="Vēlamās krāsas" value={rec.preferredColors} onChange={(value) => onPatch("preferredColors", value)} />
@@ -1107,7 +1029,13 @@ export function IrissOrderRoom({
                   <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Obligātās prasības</span>
                   <textarea className={areaClass} value={rec.equipmentRequired} onChange={(e) => onPatch("equipmentRequired", e.target.value)} />
                 </label>
-                <label className="block">
+                <IrissInternalNoteField
+                  label="Piezīmes aģentam"
+                  value={rec.agentNotes}
+                  onChange={(value) => onPatch("agentNotes", value)}
+                  className={areaClass}
+                />
+                <label className="block sm:col-span-2">
                   <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Vēlamās prasības</span>
                   <textarea className={areaClass} value={rec.equipmentDesired} onChange={(e) => onPatch("equipmentDesired", e.target.value)} />
                 </label>
@@ -1117,7 +1045,18 @@ export function IrissOrderRoom({
 
             <section className={cardClass}>
               <CardTitle>Piezīmes</CardTitle>
-              <textarea className={areaClass} aria-label="Piezīmes" value={rec.notes} onChange={(e) => onPatch("notes", e.target.value)} />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Piezīmes</span>
+                  <textarea className={areaClass} aria-label="Piezīmes" value={rec.notes} onChange={(e) => onPatch("notes", e.target.value)} />
+                </label>
+                <IrissInternalNoteField
+                  label="Piezīmes (iekšējās)"
+                  value={rec.internalNotes}
+                  onChange={(value) => onPatch("internalNotes", value)}
+                  className={areaClass}
+                />
+              </div>
               <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
             </section>
 
@@ -1132,49 +1071,6 @@ export function IrissOrderRoom({
                 sectionSave={<IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />}
               />
             </div>
-
-            <section className={cardClass}>
-              <CardTitle>Klienta dati</CardTitle>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field
-                  label="Vārds, uzvārds"
-                  autoComplete="name"
-                  value={[rec.clientFirstName, rec.clientLastName].filter(Boolean).join(" ").trim()}
-                  onChange={(value) => {
-                    const normalized = value.replace(/\s+/g, " ").trim();
-                    if (!normalized) {
-                      onPatchRecord({ clientFirstName: "", clientLastName: "" });
-                      return;
-                    }
-                    const [first, ...rest] = normalized.split(" ");
-                    onPatchRecord({ clientFirstName: first ?? "", clientLastName: rest.join(" ") });
-                  }}
-                />
-                <label className="block min-w-0">
-                  <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Tālrunis</span>
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <input className={`${fieldClass} min-w-0 flex-1`} value={rec.phone} inputMode="tel" autoComplete="tel" onChange={(e) => onPatch("phone", e.target.value)} />
-                    <button type="button" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[var(--color-provin-accent)] disabled:opacity-35 md:hidden" title="Zvanīt" aria-label="Zvanīt" disabled={!canCall} onClick={onCall}>
-                      <Phone className="h-5 w-5" aria-hidden />
-                    </button>
-                    <button type="button" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 disabled:opacity-35" title="Atvērt WhatsApp" aria-label="Atvērt WhatsApp" disabled={!canCall} onClick={() => onWhatsappText("")}>
-                      <WhatsAppGlyph className="h-5 w-5" />
-                    </button>
-                  </div>
-                  {phoneWarning ? <p className="mt-1 text-[11px] text-amber-800">{phoneWarning}</p> : null}
-                </label>
-                <Field label="E-pasts" value={rec.email} inputMode="email" autoComplete="email" onChange={(value) => onPatch("email", value)} />
-                <Field id="iriss-room-vin" label="VIN (ja zināms)" value={rec.vin} warning={vinWarning} onChange={(value) => onPatch("vin", value.toUpperCase())} />
-              </div>
-              <IrissGoogleContactStatusRow
-                rec={rec}
-                configured={googleContactsConfigured}
-                busy={googleContactBusy}
-                onRetry={onRetryGoogleContact}
-                buttonClass={roomBtn}
-              />
-              <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
-            </section>
 
             <section className={`${cardClass} border-red-100/80 bg-red-50/20`}>
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
@@ -1258,27 +1154,25 @@ export function IrissOrderRoom({
                 </div>
               </details>
             </section>
-            <section className={cardClass}>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--ink3)]">Klienta kontakti</p>
-              <p className="text-[15px] font-medium text-[var(--ink)]">{clientName || "-"}</p>
-              <p className="mt-1 text-[13px] text-[var(--ink2)]">{rec.phone.trim() || "-"}</p>
-              <p className="mt-0.5 text-[13px] text-[var(--ink2)]">
-                {rec.email.trim() ? rec.email : "e-pasts nav norādīts"}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button type="button" className={`${roomBtn} md:hidden`} disabled={!canCall} onClick={onCall}>
-                  Zvanīt
-                </button>
-                <button type="button" className={roomBtnWa} disabled={!canCall} onClick={() => onWhatsappText("")}>
-                  WhatsApp
-                </button>
-                {canEmail ? (
-                  <button type="button" className={roomBtn} onClick={() => openMail("")}>
-                    E-pasts
-                  </button>
-                ) : null}
-              </div>
-            </section>
+            <IrissOrderClientDataCard
+              rec={rec}
+              fieldClass={fieldClass}
+              phoneWarning={phoneWarning}
+              canCall={canCall}
+              canEmail={canEmail}
+              busy={busy || orderPdfBusy}
+              onPatch={onPatch}
+              onPatchRecord={onPatchRecord}
+              onSave={onSave}
+              onCall={onCall}
+              onWhatsapp={() => onWhatsappText("")}
+              onEmail={() => openMail("")}
+              googleContactsConfigured={googleContactsConfigured}
+              googleContactBusy={googleContactBusy}
+              onRetryGoogleContact={onRetryGoogleContact}
+              buttonClass={roomBtn}
+              whatsappClass={roomBtnWa}
+            />
             <section className={cardClass}>
               <CardTitle>Statusa vēsture</CardTitle>
               {history.length === 0 ? (
@@ -1957,13 +1851,11 @@ export function IrissOrderRoom({
                 [
                   ["totalBudget", "Budžets līdz"],
                   ["productionYears", "Gadi"],
-                  ["engineType", "Dzinējs"],
                   ["preferredColors", "Krāsa"],
-                  ["transmission", "Ātrumkārba"],
                   ["driveType", "Piedziņa"],
-                  ["bodyType", "Virsbūve"],
                   ["maxMileage", "Max km"],
                   ["interiorFinish", "Salons"],
+                  ["modelExtension", "Modeļa paplašinājums"],
                 ] as const
               ).map(([key, label]) => (
                 <Field
@@ -1973,10 +1865,48 @@ export function IrissOrderRoom({
                   onChange={(value) => setCriteriaDraft((prev) => ({ ...prev, [key]: value }))}
                 />
               ))}
+              <IrissSpecChoiceSelect
+                label="Degviela"
+                value={fuelSelectValue(criteriaDraft.engineType)}
+                options={IRISS_FUEL_SELECT_OPTIONS}
+                selectClassName={fieldClass}
+                onChange={(value) =>
+                  setCriteriaDraft((prev) => ({ ...prev, engineType: persistFuelSelect(value, prev.engineType) }))
+                }
+              />
+              <IrissSpecChoiceSelect
+                label="Ātrumkārba"
+                value={gearboxSelectValue(criteriaDraft.transmission)}
+                options={IRISS_GEARBOX_SELECT_OPTIONS}
+                selectClassName={fieldClass}
+                onChange={(value) =>
+                  setCriteriaDraft((prev) => ({
+                    ...prev,
+                    transmission: persistGearboxSelect(value, prev.transmission),
+                  }))
+                }
+              />
+              <IrissSpecChoiceSelect
+                label="Virsbūves tips"
+                value={bodySelectValue(criteriaDraft.bodyType)}
+                options={IRISS_BODY_SELECT_OPTIONS}
+                selectClassName={fieldClass}
+                onChange={(value) =>
+                  setCriteriaDraft((prev) => ({ ...prev, bodyType: persistBodySelect(value, prev.bodyType) }))
+                }
+              />
               <label className="block sm:col-span-2">
                 <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Obligātās prasības</span>
                 <textarea className={areaClass} value={criteriaDraft.equipmentRequired} onChange={(e) => setCriteriaDraft((prev) => ({ ...prev, equipmentRequired: e.target.value }))} />
               </label>
+              <div className="sm:col-span-2">
+                <IrissInternalNoteField
+                  label="Piezīmes aģentam"
+                  value={criteriaDraft.agentNotes}
+                  onChange={(value) => setCriteriaDraft((prev) => ({ ...prev, agentNotes: value }))}
+                  className={areaClass}
+                />
+              </div>
               <label className="block sm:col-span-2">
                 <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Vēlamās prasības</span>
                 <textarea className={areaClass} value={criteriaDraft.equipmentDesired} onChange={(e) => setCriteriaDraft((prev) => ({ ...prev, equipmentDesired: e.target.value }))} />

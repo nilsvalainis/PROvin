@@ -17,6 +17,8 @@ import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { IrissInternalNoteField } from "@/components/admin/IrissInternalNoteField";
+import { IrissSpecChoiceSelect } from "@/components/admin/IrissSpecChoiceSelect";
 import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
 import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
@@ -46,6 +48,17 @@ import {
   type IrissOrderRangeField,
   type IrissOrderSpecTextKey,
 } from "@/lib/iriss-order-range-fields";
+import {
+  IRISS_BODY_SELECT_OPTIONS,
+  IRISS_FUEL_SELECT_OPTIONS,
+  IRISS_GEARBOX_SELECT_OPTIONS,
+  bodySelectValue,
+  fuelSelectValue,
+  gearboxSelectValue,
+  persistBodySelect,
+  persistFuelSelect,
+  persistGearboxSelect,
+} from "@/lib/iriss-order-spec-selects";
 import {
   appendIrissStatusHistory,
   applyIrissFieldEdit,
@@ -1857,6 +1870,12 @@ export function IrissPasutijumsEditor({
                 value={rec.brandModel}
                 onChange={(e) => patch("brandModel", e.target.value)}
               />
+              <LabeledInput
+                label="Modeļa paplašinājums"
+                value={rec.modelExtension}
+                placeholder="piem., S-line"
+                onChange={(e) => patch("modelExtension", e.target.value)}
+              />
             </div>
             <IrissSpecDiapazoniBlock
               ranges={specRanges}
@@ -1865,34 +1884,29 @@ export function IrissPasutijumsEditor({
               inputClassName={fieldClass}
             />
             <div className="iriss-spec-rest">
-              <label className="block min-w-0">
-                <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">VIN</span>
-                <input
-                  className={fieldClass}
-                  value={rec.vin}
-                  onChange={(e) => patch("vin", e.target.value.toUpperCase())}
-                  autoComplete="off"
-                  spellCheck={false}
-                  autoCapitalize="characters"
-                  aria-label="VIN"
-                />
-                {orderVinWarning ? <p className="mt-1 text-[11px] text-amber-800">{orderVinWarning}</p> : null}
-              </label>
-              <LabeledInput
-                label="Dzinēja tips"
-                value={rec.engineType}
-                onChange={(e) => patch("engineType", e.target.value)}
+              <IrissSpecChoiceSelect
+                label="Degviela"
+                value={fuelSelectValue(rec.engineType)}
+                options={IRISS_FUEL_SELECT_OPTIONS}
+                selectClassName={fieldClass}
+                labelClassName="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]"
+                onChange={(value) => patch("engineType", persistFuelSelect(value, rec.engineType))}
               />
-              <LabeledInput
+              <IrissSpecChoiceSelect
                 label="Ātrumkārba"
-                value={rec.transmission}
-                onChange={(e) => patch("transmission", e.target.value)}
+                value={gearboxSelectValue(rec.transmission)}
+                options={IRISS_GEARBOX_SELECT_OPTIONS}
+                selectClassName={fieldClass}
+                labelClassName="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]"
+                onChange={(value) => patch("transmission", persistGearboxSelect(value, rec.transmission))}
               />
-              <LabeledInput
+              <IrissSpecChoiceSelect
                 label="Virsbūves tips"
-                value={rec.bodyType}
-                onChange={(e) => patch("bodyType", e.target.value)}
-                placeholder="piem., hečbeks, SUV"
+                value={bodySelectValue(rec.bodyType)}
+                options={IRISS_BODY_SELECT_OPTIONS}
+                selectClassName={fieldClass}
+                labelClassName="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]"
+                onChange={(value) => patch("bodyType", persistBodySelect(value, rec.bodyType))}
               />
               <LabeledInput
                 label="Piedziņas tips"
@@ -1952,18 +1966,36 @@ export function IrissPasutijumsEditor({
               value={rec.equipmentRequired}
               onChange={(e) => patch("equipmentRequired", e.target.value)}
             />
-            <LabeledTextarea
-              label="Vēlamās prasības"
-              value={rec.equipmentDesired}
-              onChange={(e) => patch("equipmentDesired", e.target.value)}
+            <IrissInternalNoteField
+              label="Piezīmes aģentam"
+              value={rec.agentNotes}
+              onChange={(value) => patch("agentNotes", value)}
+              className={textareaClass}
+              labelClassName="text-[11px] font-medium text-[var(--color-provin-muted)]"
             />
+            <div className="sm:col-span-2">
+              <LabeledTextarea
+                label="Vēlamās prasības"
+                value={rec.equipmentDesired}
+                onChange={(e) => patch("equipmentDesired", e.target.value)}
+              />
+            </div>
           </div>
           <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
 
         <section className={shellCard}>
           <BlockTitle>Piezīmes</BlockTitle>
-          <LabeledTextarea label="Piezīmes" value={rec.notes} onChange={(e) => patch("notes", e.target.value)} />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <LabeledTextarea label="Piezīmes" value={rec.notes} onChange={(e) => patch("notes", e.target.value)} />
+            <IrissInternalNoteField
+              label="Piezīmes (iekšējās)"
+              value={rec.internalNotes}
+              onChange={(value) => patch("internalNotes", value)}
+              className={textareaClass}
+              labelClassName="text-[11px] font-medium text-[var(--color-provin-muted)]"
+            />
+          </div>
           <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
         </section>
 

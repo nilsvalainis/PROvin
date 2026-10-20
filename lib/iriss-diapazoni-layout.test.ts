@@ -62,7 +62,7 @@ describe("IRISS DIAPAZONI mockup v2", () => {
     expect(css).toContain("#fca5a5");
     expect(css).toContain("#fffafa");
     expect(css).toContain("iriss-range-unit-end");
-    expect(css).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 2fr)");
+    expect(css).toContain("grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr)");
     for (const file of [
       "components/admin/IrissOrderRoom.tsx",
       "components/admin/IrissRangeFromToField.tsx",

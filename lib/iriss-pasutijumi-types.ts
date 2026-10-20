@@ -309,6 +309,8 @@ export type IrissPasutijumsRecord = {
   googleContactError?: string;
   orderDate: string;
   brandModel: string;
+  /** Modeļa paplašinājums (S-line, M Sport). Tukšs vecajos JSON. */
+  modelExtension: string;
   /** VIN, ja zināms. Tukšs vecajos JSON. */
   vin: string;
   productionYears: string;
@@ -339,7 +341,11 @@ export type IrissPasutijumsRecord = {
   dealWorkflowStatus?: string;
   equipmentRequired: string;
   equipmentDesired: string;
+  /** Piezīmes aģentam. Iekšējas, nav PDF. Tukšs vecajos JSON. */
+  agentNotes: string;
   notes: string;
+  /** Iekšējās piezīmes. Nav PDF un nav klienta izeja. Tukšs vecajos JSON. */
+  internalNotes: string;
   /**
    * Sludinājumu platformu saites (masīvi; vecais JSON var būt viena virkne).
    * Kārtība saglabājas. Tukša forma: `[""]`.
@@ -505,6 +511,7 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     email: "",
     orderDate: d,
     brandModel: "",
+    modelExtension: "",
     vin: "",
     productionYears: "",
     totalBudget: "",
@@ -529,7 +536,9 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     dealEkki: false,
     equipmentRequired: "",
     equipmentDesired: "",
+    agentNotes: "",
     notes: "",
+    internalNotes: "",
     listingLinkMobile: [""],
     listingLinkAutobid: [""],
     listingLinkOpenline: [""],

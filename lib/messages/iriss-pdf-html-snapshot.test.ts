@@ -52,7 +52,14 @@ describe("IRISS printable PDF HTML (template defaults)", () => {
     rec.engineType = "Benzīns";
     rec.equipmentRequired = "ACC";
     rec.notes = "Piezīme";
+    rec.agentNotes = "Aģentam: personas kods 123456-12345";
+    rec.internalNotes = "Iekšēji: neatklāt klientam";
     const html = buildIrissPasutijumsPrintHtml(rec, FIXED_DATE, null);
+    expect(html).toContain("Piezīme");
+    expect(html).not.toContain("Aģentam");
+    expect(html).not.toContain("personas kods");
+    expect(html).not.toContain("Iekšēji");
+    expect(html).not.toContain("neatklāt klientam");
     expect(html).toMatchSnapshot();
   });
 });
