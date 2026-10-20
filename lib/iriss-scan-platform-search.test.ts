@@ -57,6 +57,24 @@ describe("applyGeneratedScanSourceFilter", () => {
     expect(applyGeneratedScanSourceFilter(rec, "mobilede").url).toBeNull();
   });
 
+  it("builds van marketplace URLs for a Sprinter radar", () => {
+    const rec = radar({
+      brandModel: "Mercedes-Benz Sprinter H2L4 (extra long), ar kondicionieri",
+      productionYears: "2020-2026",
+      engineType: "Dīzelis līdz 2.0 (1950 cm3), no 110 kW / 150 ZS",
+      transmission: "Manuālā",
+      bodyType: "Furgons H2L4 (extra long)",
+      vehicleCategory: "van",
+    });
+    const mobile = applyGeneratedScanSourceFilter(rec, "mobilede");
+    expect(mobile.url).toContain("vc=Van");
+    expect(mobile.url).toContain("s=Van");
+    expect(mobile.url).toContain("fe=AIR_CONDITIONING");
+    const as24 = applyGeneratedScanSourceFilter(mobile.record, "autoscout24");
+    expect(as24.url).toContain("atype=X");
+    expect(as24.url).toContain("mercedes-benz/sprinter");
+  });
+
   it("maps every Radars source to a filter platform", () => {
     expect(IRISS_SCAN_SOURCES.map((s) => s.filterPlatform)).toEqual([
       "auto1",

@@ -21,6 +21,9 @@ import { IRISS_SCAN_SOURCES, type IrissScanLinkKey } from "@/lib/iriss-scan-sour
 import { IRISS_STALE_REVISION, irissScanWorkspaceRevision, mergeIrissScanRecords } from "@/lib/iriss-scan-save-safety";
 import { nextStableRowKeys } from "@/lib/iriss-stable-row-keys";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
+import { IrissMarketplaceLoadPanel } from "@/components/admin/IrissMarketplaceLoadPanel";
+import { irissScanApifyPlatforms } from "@/lib/marketplace/query-from-scan";
+import type { MarketplaceVehicleCategory } from "@/lib/marketplace/types";
 
 /** min-7 stils: pelēks fons, baltas grupētas kartes, sīki pelēki virsraksti, akcenta teksts darbībām. */
 function SourceGroup({
@@ -131,6 +134,7 @@ export function IrissScanEditor({
   const [conflict, setConflict] = useState<{ server: IrissScanRecord } | null>(null);
   const [conflictBusy, setConflictBusy] = useState(false);
   const persistedIdRef = useRef(unsavedDraft ? "" : initialRecord.id);
+  const [persistId, setPersistId] = useState(unsavedDraft ? "" : initialRecord.id);
   const chips = useMemo(() => buildListingPlatformChips(rec, 50), [rec]);
 
   const patchRecord = useCallback((patch: Partial<IrissScanRecord>) => {
@@ -172,9 +176,11 @@ export function IrissScanEditor({
       if (data.record) {
         setRec(data.record);
         persistedIdRef.current = data.record.id;
+        setPersistId(data.record.id);
         if (isCreate) router.replace(`/admin/iriss/scan/${encodeURIComponent(data.record.id)}`);
       } else if (typeof data.id === "string") {
         persistedIdRef.current = data.id;
+        setPersistId(data.id);
         if (isCreate) router.replace(`/admin/iriss/scan/${encodeURIComponent(data.id)}`);
       }
       setDirty(false);
@@ -192,6 +198,7 @@ export function IrissScanEditor({
     setConflictBusy(true);
     setRec(conflict.server);
     persistedIdRef.current = conflict.server.id;
+    setPersistId(conflict.server.id);
     setDirty(false);
     setConflict(null);
     setSaveMsg("Ielādēta servera versija.");
@@ -337,6 +344,86 @@ export function IrissScanEditor({
             </button>
           </div>
         </div>
+
+        <section className="overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
+          {(
+            [
+              ["productionYears", "Gadi", "2020-2026"],
+              ["engineType", "Dzinējs", "Dīzelis līdz 2.0, no 110 kW"],
+              ["transmission", "Kārba", "Manuālā"],
+              ["bodyType", "Virsbūve", "Furgons H2L4"],
+            ] as const
+          ).map(([key, label, placeholder]) => (
+            <label key={key} className="flex min-h-[44px] items-center gap-3 border-b border-[#e5e5ea] px-3 last:border-b-0">
+              <span className="w-[5.5rem] shrink-0 text-[12px] font-medium text-[#8e8e93]">{label}</span>
+              <input
+                className="min-w-0 flex-1 bg-transparent py-2.5 text-[15px] text-[var(--color-apple-text)] outline-none placeholder:text-[#c7c7cc]"
+                value={rec[key]}
+                placeholder={placeholder}
+                onChange={(e) => patchRecord({ [key]: e.target.value } as Pick<IrissScanRecord, typeof key>)}
+                aria-label={label}
+              />
+            </label>
+          ))}
+          <div className="flex min-h-[44px] items-center gap-3 px-3">
+            <span className="w-[5.5rem] shrink-0 text-[12px] font-medium text-[#8e8e93]">Tips</span>
+            <div className="flex flex-wrap gap-1.5 py-2">
+              {(
+                [
+                  ["", "Automātiski"],
+                  ["car", "Vieglā"],
+                  ["van", "Furgons"],
+                ] as const
+              ).map(([value, label]) => {
+                const on = rec.vehicleCategory === value;
+                return (
+                  <button
+                    key={value || "auto"}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => patchRecord({ vehicleCategory: value as MarketplaceVehicleCategory | "" })}
+                    className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold ${
+                      on ? "border-[#111827] bg-[#111827] text-white" : "border-[#e5e7eb] bg-[#f3f4f6] text-[#374151]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
+          <p className="px-3 pt-3 text-[12px] font-semibold text-[#8e8e93]">Apify ielāde</p>
+          <label className="flex min-h-[44px] items-center gap-3 border-b border-[#e5e5ea] px-3">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-[#111827]"
+              checked={rec.apifyMobiledeEnabled}
+              onChange={(e) => patchRecord({ apifyMobiledeEnabled: e.target.checked })}
+            />
+            <span className="text-[15px] text-[var(--color-apple-text)]">mobile.de</span>
+          </label>
+          <label className="flex min-h-[44px] items-center gap-3 px-3">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-[#111827]"
+              checked={rec.apifyAutoscout24Enabled}
+              onChange={(e) => patchRecord({ apifyAutoscout24Enabled: e.target.checked })}
+            />
+            <span className="text-[15px] text-[var(--color-apple-text)]">AutoScout24</span>
+          </label>
+        </section>
+
+        {persistId ? (
+          <IrissMarketplaceLoadPanel
+            scanId={persistId}
+            enabledPlatforms={irissScanApifyPlatforms(rec)}
+          />
+        ) : (
+          <p className="px-1 text-[12px] text-[#8e8e93]">Saglabā radaru, tad ielādē mobile.de / AutoScout24.</p>
+        )}
 
         {IRISS_SCAN_SOURCES.map((s) => (
           <SourceGroup

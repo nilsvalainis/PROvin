@@ -74,4 +74,27 @@ describe("IRISS SCAN store revision", () => {
     expect(read?.transmission).toBe("automāts");
     expect(read?.bodyType).toBe("SUV");
   });
+
+  it("persists Apify enable flags and van category", async () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "iriss-scan-"));
+    dirs.push(dir);
+    const store = await loadStore(dir);
+    const created = await store.createIrissScan({
+      id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      brandModel: "Mercedes-Benz Sprinter H2L4",
+      productionYears: "2020-2026",
+      engineType: "Dīzelis līdz 2.0, no 110 kW",
+      transmission: "Manuālā",
+      bodyType: "Furgons H2L4",
+      vehicleCategory: "van",
+      apifyMobiledeEnabled: true,
+      apifyAutoscout24Enabled: true,
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    const read = await store.readIrissScan(created.record.id);
+    expect(read?.vehicleCategory).toBe("van");
+    expect(read?.apifyMobiledeEnabled).toBe(true);
+    expect(read?.apifyAutoscout24Enabled).toBe(true);
+  });
 });

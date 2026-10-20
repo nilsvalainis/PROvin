@@ -8,6 +8,7 @@ import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/adm
 import { normalizeIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 import { IRISS_STALE_REVISION, parseExpectedIrissRevision, prepareIrissScanWrite } from "@/lib/iriss-scan-save-safety";
 import { emptyIrissScanRecord, type IrissScanListOrder, type IrissScanListRow, type IrissScanRecord } from "@/lib/iriss-scan-types";
+import { isMarketplaceVehicleCategory } from "@/lib/marketplace/types";
 
 const DEFAULT_RELATIVE_DIR = ".data/iriss-scan";
 const BLOB_PREFIX = "iriss-scan/";
@@ -213,6 +214,12 @@ function normalizeRecord(raw: unknown, id: string): IrissScanRecord | null {
     engineType: sanitizeDraftTextForStorage(str("engineType"), 200),
     transmission: sanitizeDraftTextForStorage(str("transmission"), 80),
     bodyType: sanitizeDraftTextForStorage(str("bodyType"), 80),
+    vehicleCategory: (() => {
+      const category = str("vehicleCategory");
+      return isMarketplaceVehicleCategory(category) ? category : "";
+    })(),
+    apifyMobiledeEnabled: o.apifyMobiledeEnabled === true,
+    apifyAutoscout24Enabled: o.apifyAutoscout24Enabled === true,
     listingLinkMobile: normalizeLinks(o.listingLinkMobile),
     listingLinkAutobid: normalizeLinks(o.listingLinkAutobid),
     listingLinkOpenline: normalizeLinks(o.listingLinkOpenline),
