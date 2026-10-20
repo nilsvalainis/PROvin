@@ -570,13 +570,32 @@
   color: var(--bad, #c2362b);
 }
 
-.admin-ios-theme .iriss-pas-hits {
+.admin-ios-theme .iriss-pas-hits,
+.admin-ios-theme .admin-m .iriss-pas-hits,
+.admin-ios-theme .iriss-pasutijumi-view .iriss-pas-hits {
   background: var(--news-bg, var(--ink, #0b0c10)) !important;
   color: var(--news-fg, var(--onink, #fff)) !important;
 }
 
+@media (max-width: 767px) {
+  .admin-ios-theme .admin-m .iriss-pas-hits,
+  .admin-ios-theme .iriss-pasutijumi-view .iriss-pas-hits {
+    background: var(--news-bg, var(--ink, #0b0c10)) !important;
+    color: var(--news-fg, var(--onink, #fff)) !important;
+  }
+}
+
 .iriss-pas-card {
   background: var(--s1);
+}
+
+.admin-ios-theme .admin-sheet-opaque,
+.admin-m .admin-sheet-opaque,
+.iriss-limits-card {
+  background: var(--s1, #fff) !important;
+  color: var(--ink, #0b0c10);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 @media (max-width: 767px) {

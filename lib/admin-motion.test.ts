@@ -53,6 +53,8 @@ describe("admin motion tokens", () => {
     expect(motionCss).toContain(`.${ADMIN_MOTION_MOVING_CLASS}`);
     expect(motionCss).toMatch(/\.admin-mp\.admin-moving > i[\s\S]*?will-change:\s*transform/);
     expect(motionCss).toMatch(/\.admin-sheet-panel\.admin-moving[\s\S]*?will-change:\s*transform/);
+    expect(motionCss).toMatch(/\.admin-sheet-opaque/);
+    expect(motionCss).toMatch(/background:\s*var\(--s1, #fff\)/);
     expect(motionCss).not.toMatch(/transition:[^;{]*backdrop-filter/);
     expect(motionCss).not.toMatch(/animation:[^;{]*backdrop-filter/);
     expect(motionCss.match(/will-change:/g)?.length ?? 0).toBe(2);
