@@ -31,6 +31,8 @@ import { isIrissOfferLinkPath } from "./lib/iriss-offer-client-link";
 import { decideB2bDemoHostRequest } from "./lib/b2b-demo-host";
 import { decideAdminApiGate } from "./lib/admin-api-gate";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "./lib/admin-session-token";
+import { decideAdminPageAccess, logisticsHomePath, type AccessActor } from "./lib/staff-roles";
+import { STAFF_SESSION_COOKIE_NAME, verifyStaffSessionToken } from "./lib/staff-session-token";
 
 /* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
    papildu redirectus; next-intl ar vienu lokalizāciju un `localePrefix: "as-needed"`/`never` deva 307 cilpu uz `/`. */
@@ -66,6 +68,25 @@ function isAdminLoginPath(pathname: string): boolean {
   return pathname === "/admin/login" || pathname.startsWith("/admin/login/");
 }
 
+async function resolveAdminPageActor(request: NextRequest): Promise<AccessActor> {
+  if (await verifyAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value)) {
+    return { kind: "admin" };
+  }
+  const staff = await verifyStaffSessionToken(request.cookies.get(STAFF_SESSION_COOKIE_NAME)?.value);
+  if (staff) return { kind: "staff", role: staff.role };
+  return { kind: "none" };
+}
+
+function adminForbiddenRedirect(request: NextRequest): NextResponse {
+  const dest = request.nextUrl.clone();
+  dest.pathname = logisticsHomePath();
+  dest.search = "";
+  const res = redirect307(dest);
+  res.headers.set("Cache-Control", "private, no-store");
+  res.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return res;
+}
+
 /** Bez derīgas sesijas lapa netiek renderēta: tukša 307 atbilde, nekādu datu ķermenī. */
 function adminLoginRedirect(request: NextRequest): NextResponse {
   const { pathname, search } = request.nextUrl;
@@ -88,6 +109,7 @@ function adminApiJson(status: number, error: string): NextResponse {
 async function gateAdminApi(request: NextRequest): Promise<NextResponse> {
   const decision = await decideAdminApiGate(request);
   if (decision.action === "unauthorized") return adminApiJson(401, "unauthorized");
+  if (decision.action === "forbidden") return adminApiJson(403, "forbidden");
   if (decision.action === "forbidden_origin") return adminApiJson(403, "forbidden origin");
   return NextResponse.next();
 }
@@ -197,10 +219,11 @@ export default async function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/admin")) {
     const requestHeaders = new Headers(request.headers);
+    const actor = await resolveAdminPageActor(request);
+    const access = decideAdminPageAccess(pathname, actor);
+    if (access === "login") return adminLoginRedirect(request);
+    if (access === "forbidden") return adminForbiddenRedirect(request);
     if (!isAdminLoginPath(pathname)) {
-      if (!(await verifyAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value))) {
-        return adminLoginRedirect(request);
-      }
       requestHeaders.set("x-admin-intended-path", pathname);
     }
     return NextResponse.next({ request: { headers: requestHeaders } });

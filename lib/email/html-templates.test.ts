@@ -3,6 +3,7 @@ import {
   listingPeekCustomerCommentHtml,
   partnerPasswordResetEmailHtml,
   partnerVerifyEmailHtml,
+  staffInviteEmailHtml,
   adminNewPartnerHtml,
   morningSummaryEmailHtml,
   adminAuditSlaWarningHtml,
@@ -67,6 +68,20 @@ describe("partnerPasswordResetEmailHtml", () => {
     });
     expect(html).toContain("Atjaunojiet paroli");
     expect(html).toContain("https://provin.lv/lv/partneriem/parole?token=rst_abc");
+    expect(html).toContain("24 stundas");
+    expect(html).not.toContain("\u2014");
+    expect(html).not.toContain("\u2013");
+  });
+});
+
+describe("staffInviteEmailHtml", () => {
+  it("includes the one-time IRISS invite CTA without dashes", () => {
+    const html = staffInviteEmailHtml({
+      name: "Anna Piemere",
+      inviteUrl: "https://www.provin.lv/admin/uzaicinajums/abc",
+    });
+    expect(html).toContain("IRISS pieeja");
+    expect(html).toContain("https://www.provin.lv/admin/uzaicinajums/abc");
     expect(html).toContain("24 stundas");
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
