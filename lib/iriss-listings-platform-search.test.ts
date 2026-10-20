@@ -94,11 +94,15 @@ describe("platform search URL builders", () => {
   it("round-trips eCarsTrade from the same order fields", () => {
     const url = listingPlatformSearchUrl("ecarstrade", volvoOrder);
     expect(url).toContain("ecarstrade.com");
+    expect(url).not.toContain("year_from=");
+    expect(url).not.toContain("mileage_to=");
     const parsed = parseListingSearchUrl(url!);
     expect(parsed.makeIds).toEqual([68]);
     expect(parsed.modelId).toBe(1866);
-    expect(parsed.yearFrom).toBe(2018);
-    expect(parsed.yearTo).toBe(2022);
+    expect(parsed.yearFrom).toBeNull();
+    expect(parsed.yearTo).toBeNull();
+    expect(filterFromOrderFields(volvoOrder).yearFrom).toBe(2018);
+    expect(filterFromOrderFields(volvoOrder).yearTo).toBe(2022);
   });
 
   it("returns null without a make", () => {

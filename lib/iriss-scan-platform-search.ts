@@ -20,7 +20,7 @@ import {
   type OrderSearchFields,
 } from "@/lib/iriss-listings-ecarstrade-search";
 import { buildMarketplaceSearchUrl } from "@/lib/marketplace/search-urls";
-import { marketplaceQueryFromOrder } from "@/lib/marketplace/query-from-order";
+import { marketplaceQueryFromScan } from "@/lib/marketplace/query-from-scan";
 import type { IrissScanFilterPlatform, IrissScanLinkKey } from "@/lib/iriss-scan-sources";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 import type { MarketplacePlatform } from "@/lib/marketplace/types";
@@ -110,13 +110,17 @@ export function scanOrderSearchFields(rec: IrissScanRecord): OrderSearchFields {
   return withPowerKw(fields);
 }
 
-function marketplaceUrl(platform: MarketplacePlatform, fields: OrderSearchFields): string | null {
-  const q = marketplaceQueryFromOrder({ ...fields, powerKw: fields.engineType });
+function marketplaceUrl(platform: MarketplacePlatform, rec: IrissScanRecord, fields: OrderSearchFields): string | null {
+  const q = marketplaceQueryFromScan({
+    ...rec,
+    brandModel: fields.brandModel || rec.brandModel,
+    productionYears: fields.productionYears || rec.productionYears,
+    engineType: fields.engineType || rec.engineType,
+    transmission: fields.transmission || rec.transmission,
+    bodyType: fields.bodyType || rec.bodyType,
+  });
   const kw = parseEnginePowerKwFromText(fields.engineType ?? "", { bareNumberIsKw: true });
-  if (kw != null) {
-    q.powerFromKw = kw;
-    q.powerToKw = kw;
-  }
+  if (kw != null && q.powerFromKw == null) q.powerFromKw = kw;
   if (!q.make.trim()) return null;
   return buildMarketplaceSearchUrl(platform, q);
 }
@@ -143,7 +147,7 @@ export function applyGeneratedScanSourceFilter(
 ): { record: IrissScanRecord; url: string | null } {
   const fields = scanOrderSearchFields(rec);
   if (platform === "mobilede" || platform === "autoscout24") {
-    const url = marketplaceUrl(platform, fields);
+    const url = marketplaceUrl(platform, rec, fields);
     if (!url) return { record: rec, url: null };
     const key: IrissScanLinkKey = platform === "mobilede" ? "listingLinkMobile" : "listingLinksOther";
     return { record: appendLink(rec, key, url), url };

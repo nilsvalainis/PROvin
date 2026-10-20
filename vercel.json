@@ -66,6 +66,9 @@
     "app/api/cron/morning-summary/route.ts": {
       "maxDuration": 60
     },
+    "app/api/cron/izmaksas-snapshots/route.ts": {
+      "maxDuration": 60
+    },
     "app/api/cron/vin-scan-canary/route.ts": {
       "maxDuration": 300
     },
@@ -118,6 +121,10 @@
     {
       "path": "/api/cron/iriss-marketplace-auto",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/izmaksas-snapshots",
+      "schedule": "0 3,4 * * *"
     }
   ]
 }

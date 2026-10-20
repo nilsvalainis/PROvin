@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissGoogleContactsBackfillButton } from "@/components/admin/IrissGoogleContactsBackfillButton";
 import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaAuctionSourcesPanel";
@@ -31,6 +32,18 @@ export default async function IrissSettingsPage() {
       <section className="mt-4 max-w-xl rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-[#8e8e93]">Loģistika</p>
         <IrissLogistikaAuctionSourcesPanel initialSources={sources} compact />
+      </section>
+      <section className="mt-4 max-w-xl rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
+        <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Lietotāji un pieeja</h2>
+        <p className="mt-1 text-[13px] leading-snug text-[var(--color-provin-muted)]">
+          Nils uzaicina, piešķir un atsauc IRISS lomas. Katra pieteikšanās un pieeja paliek žurnālā.
+        </p>
+        <Link
+          href="/admin/iriss/iestatijumi/lietotaji"
+          className="mt-3 inline-flex rounded-full bg-[#111827] px-4 py-2 text-[13px] font-medium text-white"
+        >
+          Atvērt lietotājus
+        </Link>
       </section>
       <section className="mt-4 max-w-xl rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Google Contacts</h2>

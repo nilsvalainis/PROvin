@@ -2,6 +2,7 @@ import { createHmac } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import middleware from "../middleware";
+import { STAFF_SESSION_TOKEN_TYP } from "@/lib/staff-session-token";
 
 vi.mock("next-intl/middleware", () => ({ default: () => () => NextResponse.next() }));
 
@@ -11,6 +12,21 @@ function sessionCookie(exp = Date.now() + 60_000): string {
   const payload = Buffer.from(JSON.stringify({ typ: "admin", exp }), "utf8").toString("base64url");
   const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
   return `provin_admin_session=${payload}.${sig}`;
+}
+
+function staffCookie(exp = Date.now() + 60_000): string {
+  const payload = Buffer.from(
+    JSON.stringify({
+      typ: STAFF_SESSION_TOKEN_TYP,
+      sid: "ses_abcdefgh",
+      uid: "usr_abcdefgh",
+      role: "logistics",
+      exp,
+    }),
+    "utf8",
+  ).toString("base64url");
+  const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
+  return `provin_staff_session=${payload}.${sig}`;
 }
 
 function req(url: string, cookie?: string): NextRequest {
@@ -130,6 +146,30 @@ describe("middleware admin gate", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("location")).toBeNull();
     expect(res.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  });
+
+  it("lets logistics open only the logistika page and redirects other admin pages", async () => {
+    const ok = await middleware(req("https://www.provin.lv/admin/iriss/logistika", staffCookie()));
+    expect(ok.status).toBe(200);
+    const denied = await middleware(req("https://www.provin.lv/admin/iriss/pasutijumi", staffCookie()));
+    expect(denied.status).toBe(307);
+    expect(new URL(denied.headers.get("location")!).pathname).toBe("/admin/iriss/logistika");
+  });
+
+  it("does not gate the invite accept page", async () => {
+    const res = await middleware(req("https://www.provin.lv/admin/uzaicinajums/abc"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("returns 403 for logistics on PRO/IRISS admin APIs", async () => {
+    const res = await middleware(req("https://www.provin.lv/api/admin/badges", staffCookie()));
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "forbidden" });
+    const allowed = await middleware(req("https://www.provin.lv/api/admin/iriss/logistika/points", staffCookie()));
+    expect(allowed.status).toBe(200);
+    const storeApi = await middleware(req("https://www.provin.lv/api/admin/iriss-logistics/orders", staffCookie()));
+    expect(storeApi.status).toBe(200);
   });
 
   it("does not touch public pages", async () => {

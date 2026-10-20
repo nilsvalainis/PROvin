@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IRISS lietotāji</title>
+  <style>
+    :root { font-family: ui-sans-serif, system-ui, sans-serif; color: #111827; }
+    body { margin: 0; background: #F4F6F9; }
+    .page { padding: 16px; }
+    .row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    h1 { margin: 0; font-size: 24px; }
+    .badge { background: #EEF2FF; color: #3d5bd9; border-radius: 999px; padding: 2px 8px; font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+    .btn { background: #111827; color: #fff; border: 0; border-radius: 999px; padding: 8px 14px; font-size: 13px; }
+    .card { background: #fff; border: 1px solid #E5E7EB; border-radius: 22px; margin-top: 12px; }
+    .user { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-left: 2px solid transparent; }
+    .user.active { border-left-color: #3d5bd9; background: #F8FAFF; }
+    .av { width: 36px; height: 36px; border-radius: 999px; background: #EEF2FF; color: #3d5bd9; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+    .muted { color: #6b7280; font-size: 12px; }
+    .ok { background: #ECFDF3; color: #067647; border-radius: 999px; padding: 2px 8px; font-size: 11px; }
+    .grid { display: grid; gap: 12px; }
+    @media (min-width: 900px) { .grid { grid-template-columns: 1fr 320px; } }
+  </style>
+</head>
+<body>
+  <div class="page" id="users">
+    <div class="row">
+      <div>
+        <div class="row" style="justify-content:flex-start">
+          <h1>Lietotāji un pieeja</h1>
+          <span class="badge">IRISS</span>
+        </div>
+        <p class="muted">Citas personas redz tikai savai lomai atļauto. Lomu pārvalda serveris katrā pieprasījumā.</p>
+      </div>
+      <button class="btn">+ Pievienot personu</button>
+    </div>
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="user">
+            <div class="av">NV</div>
+            <div style="flex:1"><strong>Nils Valainis</strong><div class="muted">env administrators</div></div>
+            <span class="muted">Administrators</span>
+            <span class="ok">Aktīvs</span>
+          </div>
+          <div class="user active">
+            <div class="av">JP</div>
+            <div style="flex:1"><strong>Jānis Paraugs</strong><div class="muted">janis.paraugs@example.lv</div></div>
+            <span class="muted">Loģistika</span>
+            <span class="ok">Aktīvs</span>
+          </div>
+        </div>
+        <div class="card" style="padding:16px">
+          <div class="muted" style="letter-spacing:.12em;text-transform:uppercase;font-weight:700">Lomas</div>
+          <p><strong>Loģistika</strong><br /><span class="muted">Tikai Loģistikas karte, punkti, reisi. Bez cenām, klientu datiem un šofera personas datiem.</span></p>
+        </div>
+      </div>
+      <div class="card" style="padding:16px">
+        <strong>Jānis Paraugs</strong>
+        <p class="muted">Loģistika · 2FA nav · 1 aktīva sesija</p>
+        <p class="muted">Ierīce: Chrome, Windows</p>
+        <button class="btn" style="background:#fff;color:#B42318;border:1px solid #E5E7EB">Atsaukt pieeju</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

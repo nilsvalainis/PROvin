@@ -1,3 +1,7 @@
+import type { MarketplaceVehicleCategory } from "@/lib/marketplace/types";
+
+export type IrissScanVehicleCategory = MarketplaceVehicleCategory | "";
+
 export type IrissScanRecord = {
   id: string;
   createdAt: string;
@@ -14,12 +18,19 @@ export type IrissScanRecord = {
   engineType: string;
   transmission: string;
   bodyType: string;
+  /** car = PKW, van = furgons. Tukšs = no virsbūves / modeļa. */
+  vehicleCategory: IrissScanVehicleCategory;
+  /** Manuāla Apify ielāde. Noklusējums izslēgts. Nav cron. */
+  apifyMobiledeEnabled: boolean;
+  apifyAutoscout24Enabled: boolean;
   listingLinkMobile: string[];
   listingLinkAutobid: string[];
   listingLinkOpenline: string[];
   listingLinkAuto1: string[];
   listingLinkEcarstrade: string[];
   listingLinksOther: string[];
+  /** Operators ir rediģējis eCarsTrade saites. Fona ģenerēšana tās nepapildina. */
+  ecarstradeLinksManual?: boolean;
 };
 
 export type IrissScanListRow = IrissScanRecord;
@@ -42,6 +53,9 @@ export function emptyIrissScanRecord(id: string, nowIso: string): IrissScanRecor
     engineType: "",
     transmission: "",
     bodyType: "",
+    vehicleCategory: "",
+    apifyMobiledeEnabled: false,
+    apifyAutoscout24Enabled: false,
     listingLinkMobile: [""],
     listingLinkAutobid: [""],
     listingLinkOpenline: [""],

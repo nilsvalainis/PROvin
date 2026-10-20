@@ -1,6 +1,5 @@
 import "./iriss-logistika.css";
 import { IrissLogistikaClient } from "@/components/admin/iriss-logistika/IrissLogistikaClient";
-import { requireAdminPage } from "@/lib/admin-auth";
 import {
   getIrissLogisticsStorageState,
   listLogisticsAuctionSources,
@@ -8,6 +7,7 @@ import {
   listLogisticsPoints,
   listPreviousLogisticsPoints,
 } from "@/lib/iriss-logistics-store";
+import { requireLogisticsPage } from "@/lib/staff-auth";
 
 export const metadata = {
   title: "Loģistika | IRISS",
@@ -16,7 +16,7 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function IrissLogistikaPage() {
-  await requireAdminPage();
+  const actor = await requireLogisticsPage();
   const storage = getIrissLogisticsStorageState();
   const storeEnabled = storage.enabled;
   const [orders, points, previous, sources] = storeEnabled
@@ -27,6 +27,8 @@ export default async function IrissLogistikaPage() {
         listLogisticsAuctionSources(),
       ])
     : [[], [], [], []];
+  const viewerName = actor.kind === "admin" ? actor.name : actor.user.name;
+  const canEnableTotp = actor.kind === "staff" && !actor.user.totpEnabled;
 
   return (
     <IrissLogistikaClient
@@ -35,6 +37,8 @@ export default async function IrissLogistikaPage() {
       initialPrevious={previous}
       initialSources={sources}
       storeEnabled={storeEnabled}
+      viewerName={viewerName}
+      canEnableTotp={canEnableTotp}
     />
   );
 }

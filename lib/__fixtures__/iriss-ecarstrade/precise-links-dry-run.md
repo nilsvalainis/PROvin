@@ -38,15 +38,15 @@ Produkcijas dati netiek rakstīti. Atjaunot ET palaižams pēc Nils apstiprināj
 **Rezultāta eCarsTrade**
 - ET 1 no 1 avota saišu:
   - avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&firstRegistrationTo=2022&fuelTypes=DIESEL&gearboxes=AUTOMATIC&bodyTypes=SUV&driveTypes=ALL_WHEEL&minMileage=10000&maxMileage=150000&minPrice=12000&maxPrice=28000&powerFrom=110&powerTo=180`
-  - saite: `https://ecarstrade.com/search?mark[]=68&model[]=1866&year_from=2018&year_to=2022&mileage_from=10000&mileage_to=150000&price_from=12000&price_to=28000&power_from=110&power_to=180&fuel[]=Diesel&gearbox[]=Automatic&category[]=SUV%2FOff-road%20Vehicle%2FPickup%20Truck&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER&iriss_drive=awd`
+  - saite: `https://ecarstrade.com/search?mark[]=68&model[]=1866&price_from=12000&price_to=28000&power_from=110&power_to=180&fuel[]=Diesel&gearbox[]=Automatic&category[]=SUV%2FOff-road%20Vehicle%2FPickup%20Truck&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER&iriss_drive=awd`
   - kartēts: marka: Volvo; modelis: XC60 (id 1866); gadi: 2018-2022; nobraukums: 10000-150000 km; cena: 12000-28000 EUR; jauda: 110-180 kW; degviela: Diesel; kārba: Automatic; virsbūve: SUV/Off-road Vehicle/Pickup Truck; piedziņa (post-filtrs): awd
 - ET 2 no 1 avota saišu:
   - avots: `https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2018&yearTo=2022&fuels=diesel&transmissions=automatic&mileageTo=180000`
-  - saite: `https://ecarstrade.com/search?mark[]=68&model[]=1866&year_from=2018&year_to=2022&mileage_to=180000&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
+  - saite: `https://ecarstrade.com/search?mark[]=68&model[]=1866&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
   - kartēts: marka: Volvo; modelis: XC60 (id 1866); gadi: 2018-2022; nobraukums: …-180000 km; degviela: Diesel; kārba: Automatic
 - ET 3 no 1 avota saišu:
   - avots: `https://autobid.de/en/search-results?brandId-brand=49&name-model=XC60&yearFrom-year=2018&mileageTo-mileage=160000&gearboxId-gearbox=Automatic`
-  - saite: `https://ecarstrade.com/search?mark[]=68&model[]=1866&year_from=2018&mileage_to=160000&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
+  - saite: `https://ecarstrade.com/search?mark[]=68&model[]=1866&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
   - kartēts: marka: Volvo; modelis: XC60 (id 1866); gadi: 2018-…; nobraukums: …-160000 km; kārba: Automatic
 
 **Pašreizējā saglabātā ET** (netiek pārrakstīta šajā dry-run)
@@ -68,7 +68,7 @@ ET 1 avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model
 | kārba | Automatic | Automatic |
 | virsbūve | SUV/Off-road Vehicle/Pickup Truck | SUV/Off-road Vehicle/Pickup Truck |
 | piedziņa | awd | awd |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=68&model[]=1866&year_from=2018&year_to=2022&mileage_from=10000&mileage_to=150000&price_from=12000&price_to=28000&power_from=110&power_to=180&fuel[]=Diesel&gearbox[]=Automatic&category[]=SUV%2FOff-road%20Vehicle%2FPickup%20Truck&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER&iriss_drive=awd` |
+| ET saite | - | `https://ecarstrade.com/search?mark[]=68&model[]=1866&price_from=12000&price_to=28000&power_from=110&power_to=180&fuel[]=Diesel&gearbox[]=Automatic&category[]=SUV%2FOff-road%20Vehicle%2FPickup%20Truck&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER&iriss_drive=awd` |
 
 ET 2 avots: `https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2018&yearTo=2022&fuels=diesel&transmissions=automatic&mileageTo=180000`
 
@@ -80,7 +80,7 @@ ET 2 avots: `https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom
 | nobraukums | …-180000 km | …-180000 km |
 | degviela | Diesel | Diesel |
 | kārba | Automatic | Automatic |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=68&model[]=1866&year_from=2018&year_to=2022&mileage_to=180000&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+| ET saite | - | `https://ecarstrade.com/search?mark[]=68&model[]=1866&fuel[]=Diesel&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
 
 ET 3 avots: `https://autobid.de/en/search-results?brandId-brand=49&name-model=XC60&yearFrom-year=2018&mileageTo-mileage=160000&gearboxId-gearbox=Automatic`
 
@@ -91,7 +91,7 @@ ET 3 avots: `https://autobid.de/en/search-results?brandId-brand=49&name-model=XC
 | gadi | 2018-… | 2018-… |
 | nobraukums | …-160000 km | …-160000 km |
 | kārba | Automatic | Automatic |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=68&model[]=1866&year_from=2018&mileage_to=160000&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+| ET saite | - | `https://ecarstrade.com/search?mark[]=68&model[]=1866&gearbox[]=Automatic&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
 
 
 ### Pasūtījums: Jānis / Audi A6 Avant quattro
@@ -114,7 +114,7 @@ ET 3 avots: `https://autobid.de/en/search-results?brandId-brand=49&name-model=XC
 **Rezultāta eCarsTrade**
 - ET 1 no 1 avota saišu:
   - avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=A6&driveTypes=ALL_WHEEL&colors=BLACK&doorCount=5&equipment=navigation&excludedModels=Allroad&maxMileage=160000&fuelTypes=DIESEL&gearboxes=AUTOMATIC&bodyTypes=ESTATE&cubicCapacityFrom=2000&cubicCapacityTo=3000&firstRegistrationFrom=2017`
-  - saite: `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&mileage_to=160000&fuel[]=Diesel&gearbox[]=Automatic&category[]=Estate%20Car&color[]=Black&engine_from=2000&engine_to=3000&doors_from=5&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER&iriss_drive=awd&iriss_need=navigation&iriss_exclude=Allroad`
+  - saite: `https://ecarstrade.com/search?mark[]=5&model[]=55&fuel[]=Diesel&gearbox[]=Automatic&category[]=Estate%20Car&color[]=Black&engine_from=2000&engine_to=3000&doors_from=5&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER&iriss_drive=awd&iriss_need=navigation&iriss_exclude=Allroad`
   - kartēts: marka: Audi; modelis: A6 (id 55); gadi: 2017-…; nobraukums: …-160000 km; degviela: Diesel; kārba: Automatic; virsbūve: Estate Car; krāsa: Black; tilpums: 2000-3000 cm3; durvis: 5-…; piedziņa (post-filtrs): awd; aprīkojums (post-filtrs): navigation; izslēgts (post-filtrs): Allroad
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
@@ -136,7 +136,7 @@ ET 1 avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=
 | piedziņa | awd | awd |
 | aprīkojums | navigation | navigation |
 | izslēgts | Allroad | Allroad |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&mileage_to=160000&fuel[]=Diesel&gearbox[]=Automatic&category[]=Estate%20Car&color[]=Black&engine_from=2000&engine_to=3000&doors_from=5&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER&iriss_drive=awd&iriss_need=navigation&iriss_exclude=Allroad` |
+| ET saite | - | `https://ecarstrade.com/search?mark[]=5&model[]=55&fuel[]=Diesel&gearbox[]=Automatic&category[]=Estate%20Car&color[]=Black&engine_from=2000&engine_to=3000&doors_from=5&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER&iriss_drive=awd&iriss_need=navigation&iriss_exclude=Allroad` |
 
 
 ### Pasūtījums: Māra / BMW 5/7 (tikai forma)
@@ -196,7 +196,7 @@ ET 1 avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=
 **Rezultāta eCarsTrade**
 - ET 1 no 1 avota saišu:
   - avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=A6&fuelTypes=DIESEL&firstRegistrationFrom=2017`
-  - saite: `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&fuel[]=Diesel&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
+  - saite: `https://ecarstrade.com/search?mark[]=5&model[]=55&fuel[]=Diesel&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
   - kartēts: marka: Audi; modelis: A6 (id 55); gadi: 2017-…; degviela: Diesel
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
@@ -209,7 +209,7 @@ ET 1 avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=
 | modelis | A6 (id 55) | A6 (id 55) |
 | gadi | 2017-… | 2017-… |
 | degviela | Diesel | Diesel |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=5&model[]=55&year_from=2017&fuel[]=Diesel&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+| ET saite | - | `https://ecarstrade.com/search?mark[]=5&model[]=55&fuel[]=Diesel&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
 
 
 ### Radars: LEXUS/TOYOTA Openlane + Mobile kW
@@ -228,7 +228,7 @@ ET 1 avots: `https://www.auto1.com/en/app/merchant/cars?manufacturer=AUDI&model=
 **Rezultāta eCarsTrade**
 - ET 1 no 1 avota saišu:
   - avots: `https://www.openlane.eu/en/findcar?makes=lexus&makes=toyota&yearFrom=2018`
-  - saite: `https://ecarstrade.com/search?mark[]=39&mark[]=66&year_from=2018&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
+  - saite: `https://ecarstrade.com/search?mark[]=39&mark[]=66&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER`
   - kartēts: marka: Lexus, Toyota; gadi: 2018-…
 
 **Precīzais salīdzinājums (avots kā izsole to lasa vs ET)**
@@ -239,7 +239,7 @@ ET 1 avots: `https://www.openlane.eu/en/findcar?makes=lexus&makes=toyota&yearFro
 |---|---|---|
 | marka | Lexus, Toyota | Lexus, Toyota |
 | gadi | 2018-… | 2018-… |
-| ET saite | - | `https://ecarstrade.com/search?mark[]=39&mark[]=66&year_from=2018&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
+| ET saite | - | `https://ecarstrade.com/search?mark[]=39&mark[]=66&country[]=BEL&country[]=NET&country[]=LUX&country[]=GER` |
 
 
 ### Radars: Porsche 176 kW Mobile.de

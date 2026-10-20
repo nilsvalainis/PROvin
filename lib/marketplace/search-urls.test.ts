@@ -195,6 +195,37 @@ describe("marketplace search URLs", () => {
     expect(input.model).toBe("A6");
   });
 
+  it("switches mobile.de vc and AutoScout24 atype for van vs car", () => {
+    const car = emptyMarketplaceQuery();
+    car.make = "Volvo";
+    car.model = "XC60";
+    car.vehicleCategory = "car";
+    expect(new URL(buildMobileDeSearchUrl(car)).searchParams.get("vc")).toBe("Car");
+    expect(new URL(buildAutoscout24SearchUrl(car)).searchParams.get("atype")).toBe("C");
+    expect(marketplaceActorSearchInput("mobilede", car).category).toBe("CAR");
+
+    const van = emptyMarketplaceQuery();
+    van.make = "Mercedes-Benz";
+    van.model = "Sprinter";
+    van.vehicleCategory = "van";
+    van.yearFrom = 2020;
+    van.yearTo = 2026;
+    van.mileageTo = 180000;
+    van.features = ["air_conditioning"];
+    const mobile = new URL(buildMobileDeSearchUrl(van));
+    expect(mobile.searchParams.get("s")).toBe("Van");
+    expect(mobile.searchParams.get("vc")).toBe("Van");
+    expect(mobile.searchParams.get("ml")).toBe(":180000");
+    expect(mobile.searchParams.get("fe")).toBe("AIR_CONDITIONING");
+    expect(mobile.toString()).not.toMatch(/mile/i);
+    const as24 = new URL(buildAutoscout24SearchUrl(van));
+    expect(as24.searchParams.get("atype")).toBe("X");
+    expect(as24.searchParams.get("kmto")).toBe("180000");
+    expect(as24.searchParams.has("mileto")).toBe(false);
+    expect(as24.searchParams.get("eq")).toBe("5");
+    expect(marketplaceActorSearchInput("mobilede", van).category).toBe("VAN");
+  });
+
   it("builds Audi A6 dealer search actor inputs with PS power and KOMBI", () => {
     const q = audiA6Query();
     const mobile = marketplaceActorSearchInput("mobilede", q, { maxItems: 10 });

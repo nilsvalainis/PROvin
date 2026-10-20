@@ -17,6 +17,7 @@ import {
   listingPeekCustomerCommentHtml,
   partnerPasswordResetEmailHtml,
   partnerVerifyEmailHtml,
+  staffInviteEmailHtml,
   paymentConfirmationHtml,
 } from "@/lib/email/html-templates";
 import { unpaidReminderEmailHtml } from "@/lib/admin-unpaid-reminder-copy";
@@ -1043,6 +1044,29 @@ export async function sendUnpaidOrderReminderEmail(opts: {
     text,
     html: unpaidReminderEmailHtml(text),
     headers: { "Auto-Submitted": "no" },
+  });
+}
+
+export async function sendStaffInviteEmail(opts: {
+  to: string;
+  name: string;
+  inviteUrl: string;
+}): Promise<void> {
+  const name = opts.name.trim() || "kolēģi";
+  const subject = "IRISS: uzaicinājums iestatīt pieeju";
+  const text = [
+    `Sveiki, ${name}.`,
+    "",
+    "Nils uzaicināja tevi uz IRISS. Saite derīga 24 stundas un darbojas vienu reizi.",
+    opts.inviteUrl,
+    "",
+    "Ja tu to neprasīji, ignorē šo vēstuli.",
+  ].join("\n");
+  await sendSmtpMail({
+    to: opts.to,
+    subject,
+    text,
+    html: staffInviteEmailHtml({ name, inviteUrl: opts.inviteUrl }),
   });
 }
 

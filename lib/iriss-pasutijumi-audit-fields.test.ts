@@ -66,6 +66,23 @@ describe("IRISS audit fields", () => {
     expect(irissRequiredFieldWarnings(rec({ clientFirstName: "Anna", phone: "20000000" }))).toEqual([]);
   });
 
+  it("marks edited eCarsTrade links as manual and timestamps the list", () => {
+    const prev = rec({
+      listingLinkEcarstrade: [
+        "https://ecarstrade.com/search?mark[]=68",
+        "https://ecarstrade.com/search?mark[]=68&fuel[]=Diesel",
+      ],
+    });
+    const next = applyIrissFieldEdit(prev, { listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=68"] }, 50);
+    expect(next.listingLinkEcarstrade).toEqual(["https://ecarstrade.com/search?mark[]=68"]);
+    expect(next.ecarstradeLinksManual).toBe(true);
+    expect(next.fieldUpdatedAt?.listingLinkEcarstrade).toBe(50);
+    const cleared = applyIrissFieldEdit(next, { listingLinkEcarstrade: [""] }, 60);
+    expect(cleared.listingLinkEcarstrade).toEqual([""]);
+    expect(cleared.clearedFields?.listingLinkEcarstrade).toBe(60);
+    expect(cleared.ecarstradeLinksManual).toBe(true);
+  });
+
   it("parses stored audit JSON defensively", () => {
     const picked = pickIrissPasutijumsAuditFields({
       clearedFields: { notes: 12 },

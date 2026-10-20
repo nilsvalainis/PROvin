@@ -1,20 +1,20 @@
 import "server-only";
 
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
 import { IRISS_LOGISTICS_ACCESS_SCOPE } from "@/lib/iriss-logistics-types";
+import { requireLogisticsApi } from "@/lib/staff-auth";
 
 /**
- * Vienīgā vārteja Loģistikas API. Šobrīd = admin sesija.
- * Lomu pārbaude (`iriss.logistics`) nāk atsevišķā PR - ievietot šeit, nevis katrā maršrutā.
+ * Vienīgā vārteja Loģistikas API: administrators vai Loģistika loma (#347).
  */
 export async function requireIrissLogisticsApi(): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
-  if (!(await getAdminSession())) {
+  const gate = await requireLogisticsApi();
+  if (!gate.ok) {
     return {
       ok: false,
       response: NextResponse.json(
-        { error: "unauthorized", scope: IRISS_LOGISTICS_ACCESS_SCOPE },
-        { status: 401 },
+        { error: gate.response.status === 403 ? "forbidden" : "unauthorized", scope: IRISS_LOGISTICS_ACCESS_SCOPE },
+        { status: gate.response.status, headers: irissLogisticsScopeHeader() },
       ),
     };
   }

@@ -32,6 +32,8 @@ type Props = {
   initialPrevious: LogisticsPreviousPointRow[];
   initialSources: LogisticsAuctionSource[];
   storeEnabled: boolean;
+  viewerName?: string;
+  canEnableTotp?: boolean;
 };
 
 export function IrissLogistikaClient({
@@ -40,6 +42,8 @@ export function IrissLogistikaClient({
   initialPrevious,
   initialSources,
   storeEnabled,
+  viewerName,
+  canEnableTotp,
 }: Props) {
   const [orders, setOrders] = useState(initialOrders);
   const [points] = useState(initialPoints);
@@ -196,8 +200,9 @@ export function IrissLogistikaClient({
       </header>
 
       {pageTab === "settings" ? (
-        <div className="mt-3 max-w-3xl">
+        <div className="mt-3 max-w-3xl space-y-3">
           <IrissLogistikaAuctionSourcesPanel initialSources={initialSources} />
+          {canEnableTotp ? <IrissLogistikaStaffTotp viewerName={viewerName ?? ""} /> : null}
         </div>
       ) : pageTab === "points" ? (
         <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(16rem,22rem)_1fr]">
@@ -538,5 +543,64 @@ export function IrissLogistikaClient({
         </table>
       </div>
     </div>
+  );
+}
+
+function IrissLogistikaStaffTotp({ viewerName }: { viewerName: string }) {
+  const [totpSecret, setTotpSecret] = useState<string | null>(null);
+  const [totpCode, setTotpCode] = useState("");
+  const [notice, setNotice] = useState("");
+
+  async function post(body: Record<string, string>) {
+    return fetch("/api/admin/iriss/logistika/totp", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  return (
+    <section className="rounded-2xl bg-white p-4 shadow-sm">
+      <h2 className="text-[15px] font-semibold">2FA (pēc izvēles)</h2>
+      <p className="mt-1 text-[13px] text-[var(--ink2)]">
+        {viewerName ? `${viewerName}, ` : ""}Loģistikas lomā var ieslēgt 2FA šeit. Cenas un klienti paliek neredzami.
+      </p>
+      {totpSecret ? (
+        <div className="mt-3 space-y-2">
+          <p className="break-all font-mono text-[11px] text-[var(--ink2)]">{totpSecret}</p>
+          <input
+            value={totpCode}
+            onChange={(e) => setTotpCode(e.target.value)}
+            className="h-10 w-full rounded-xl border border-[#e5e7eb] px-3 text-[16px]"
+            placeholder="6 ciparu kods"
+            inputMode="numeric"
+          />
+          <button
+            type="button"
+            className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white"
+            onClick={async () => {
+              const res = await post({ action: "confirm", code: totpCode });
+              setNotice(res.ok ? "2FA ieslēgta." : "Kods nederīgs.");
+            }}
+          >
+            Apstiprināt
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="mt-3 h-9 rounded-full border border-[#e5e7eb] px-3 text-[12.5px] font-semibold"
+          onClick={async () => {
+            const res = await post({ action: "start" });
+            const data = (await res.json()) as { secret?: string };
+            setTotpSecret(data.secret ?? null);
+          }}
+        >
+          Ieslēgt 2FA
+        </button>
+      )}
+      {notice ? <p className="mt-2 text-[12px] text-[var(--ink2)]">{notice}</p> : null}
+    </section>
   );
 }

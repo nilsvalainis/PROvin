@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="../app/admin/admin-iriss-theme.css" />
+  <link rel="stylesheet" href="../app/admin/admin-costs-theme.css" />
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  </style>
+</head>
+<body>
+<div id="root" class="admin-ios-theme"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const theme = q.get("theme") === "iriss" ? "iriss" : "pro";
+const mobile = q.get("mobile") === "1";
+const chrome = theme === "iriss"
+  ? { crumb: "Vairāk · IRISS admin · Pārvaldība", subtitle: "IRISS · visi projekti" }
+  : { crumb: "Vairāk · PRO admin · Pārvaldība", subtitle: "PRO · visi projekti" };
+const groups = [
+  { id: "ai", label: "AI aģenti", n: 2, usd: "21,50 $", pct: "24 %", open: true, rows: [
+    ["Anthropic Claude (pasūtījumu AI)", "tokeni, aprēķins no lietojuma", "live", "18,40 $", "21 %", "limits 40,00 $ · no konta", "atlikums 21,60 $", 0.46],
+    ["Google Gemini", "tokeni", "live", "3,10 $", "4 %", "limits 10,00 $ · no konta", "atlikums 6,90 $", 0.31],
+  ]},
+  { id: "api", label: "API avoti", n: 5, usd: "32,25 $", pct: "36 %", open: true, rows: [
+    ["Apify (mobile.de, AutoScout24)", "11 ielādes · max 0,25 $ / ielādei", "live", "2,75 $", "3 %", "limits 4,50 $ · no konta", "atlikums 1,75 $", 0.61],
+    ["CarFax", "4 atskaites", "live", "12,00 $", "14 %", "bez limita", "", 0],
+    ["AutoDNA", "5 atskaites", "live", "8,50 $", "10 %", "bez limita", "", 0],
+    ["carVertical", "2 atskaites", "live", "6,00 $", "7 %", "bez limita", "", 0],
+    ["stat.vin", "6 pieprasījumi", "live", "3,00 $", "3 %", "bez limita", "", 0],
+  ]},
+  { id: "google", label: "Google", n: 2, usd: "0,00 $", pct: "0 %", open: true, rows: [
+    ["Maps - Dynamic Maps", "bezmaksas kvota · atjaunināts 20.10. 14:00", "", "0,00 $", "0 %", "1 240 / 10 000 mēn. · kvota no konta", "atlikums 8 760 · stingra kvota", 0.12],
+    ["Maps - Geocoding", "bezmaksas kvota · atjaunināts 20.10. 14:00", "", "0,00 $", "0 %", "310 / 10 000 mēn. · kvota no konta", "atlikums 9 690 · stingra kvota", 0.03],
+  ]},
+  { id: "infra", label: "Infrastruktūra", n: 2, usd: "25,00 $", pct: "28 %", open: true, rows: [
+    ["Vercel", "Pro plāns · atjaunināts 20.10. 06:00", "", "20,00 $", "23 %", "bez limita", "", 0],
+    ["Fixie (proxy)", "plāns · atjaunināts 20.10. 06:00", "", "5,00 $", "6 %", "bez limita", "", 0],
+  ]},
+  { id: "payments", label: "Maksājumi", n: 1, usd: "9,62 $", pct: "11 %", open: false, rows: []},
+];
+function live(v) { return v === "live" ? `<span class="admin-costs-live">live</span>` : v ? `<span class="admin-costs-muted text-[11px]">${v}</span>` : ""; }
+function bar(r) {
+  if (!r[5] || r[5] === "bez limita") return `<p class="admin-costs-muted text-[11px]">bez limita</p>`;
+  return `<div class="min-w-0"><p class="admin-costs-muted text-[11px] leading-4">${r[5]}</p>
+    <div class="admin-costs-track mt-1 h-1.5 overflow-hidden rounded-full"><div class="admin-costs-bar h-full rounded-full" style="width:${Math.round(r[7]*100)}%"></div></div>
+    ${r[6] ? `<p class="admin-costs-muted mt-0.5 text-[11px] leading-4">${r[6]}</p>` : ""}</div>`;
+}
+function row(r) {
+  return `<div class="admin-costs-hair border-t px-4 py-3 sm:px-5">
+    <div class="flex flex-wrap items-start gap-x-4 gap-y-2">
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-2"><p class="admin-costs-ink text-[14px] font-medium">${r[0]}</p>${live(r[2])}</div>
+        <p class="admin-costs-muted mt-0.5 text-[12px]">${r[1]}</p>
+        <div class="mt-2 max-w-[16rem] sm:hidden">${bar(r)}</div>
+      </div>
+      <p class="admin-costs-ink shrink-0 text-[14px] font-semibold tabular-nums">${r[3]}</p>
+      <p class="admin-costs-muted w-10 shrink-0 text-right text-[13px] tabular-nums">${r[4]}</p>
+      <div class="hidden w-[13.5rem] shrink-0 sm:block">${bar(r)}</div>
+    </div></div>`;
+}
+const legend = groups.map(g => `<li class="admin-costs-soft flex items-center gap-1.5 text-[12px]"><span class="h-1.5 w-1.5 rounded-full" style="background:var(--costs-dot-${g.id})"></span>${g.label} ${g.pct}</li>`).join("");
+const stack = groups.filter(g => g.usd !== "0,00 $").map(g => `<div class="h-full" style="width:${parseInt(g.pct, 10)}%;background:var(--costs-dot-${g.id})"></div>`).join("");
+const cards = groups.map(g => `<section class="admin-costs-card overflow-hidden rounded-2xl">
+  <div class="flex w-full items-center gap-2.5 px-4 py-3.5">
+    <span class="admin-costs-muted text-[14px]">${g.open ? "▾" : "▸"}</span>
+    <span class="h-2 w-2 shrink-0 rounded-full" style="background:var(--costs-dot-${g.id})"></span>
+    <span class="admin-costs-ink min-w-0 flex-1 truncate text-[15px] font-semibold">${g.label} <span class="admin-costs-muted font-normal">${g.n} avoti</span></span>
+    <span class="admin-costs-ink shrink-0 text-[15px] font-semibold tabular-nums">${g.usd}</span>
+    <span class="admin-costs-pct">${g.pct}</span>
+  </div>
+  ${g.open ? g.rows.map(row).join("") : ""}
+</section>`).join("");
+const brand = theme === "iriss"
+  ? `<span class="admin-costs-chip">${chrome.subtitle}</span>`
+  : `<span class="admin-costs-muted text-[13px]">· ${chrome.subtitle}</span>`;
+const view = `<div class="admin-costs-view w-full max-w-none px-4 pb-8 pt-3 md:px-0 md:pt-0" data-costs-theme="${theme}">
+  <header class="${mobile ? "" : "md:hidden"} ${mobile ? "" : "hidden"}">
+    <p class="admin-costs-muted text-[13px]">${chrome.crumb}</p>
+    <h1 class="admin-costs-ink mt-2 text-[34px] font-bold leading-none tracking-tight">Izmaksas</h1>
+    <p class="admin-costs-muted mt-1 text-[13px]">${chrome.subtitle}</p>
+    <div class="mt-3 flex gap-1.5"><a class="admin-costs-tab" data-on="false">Septembris</a><a class="admin-costs-tab" data-on="true">Oktobris</a></div>
+  </header>
+  <section class="admin-costs-card ${mobile ? "mt-4" : "mt-0"} rounded-2xl p-4 sm:p-5">
+    <div class="${mobile ? "hidden" : "flex"} items-start justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2"><h1 class="admin-costs-ink text-[1.5rem] font-semibold tracking-tight">Izmaksas</h1>${brand}</div>
+        <p class="admin-costs-muted mt-3 text-[13px]">Kopā oktobrī (1.-20.10)</p>
+        <p class="admin-costs-ink mt-1 text-[2.35rem] font-semibold leading-none tabular-nums">88,37 $</p>
+      </div>
+      <div class="flex flex-col items-end gap-3">
+        <div class="flex gap-1.5"><a class="admin-costs-tab" data-on="false">Septembris</a><a class="admin-costs-tab" data-on="true">Oktobris</a></div>
+        <p class="admin-costs-muted max-w-[16rem] text-right text-[11px] leading-4">live avoti - reāllaikā, pārējie reizi dienā parauga dati</p>
+      </div>
+    </div>
+    <div class="${mobile ? "" : "hidden"}">
+      <p class="admin-costs-muted text-[13px]">Kopā oktobrī (1.-20.10)</p>
+      <p class="admin-costs-ink mt-1 text-[2.1rem] font-semibold leading-none tabular-nums">88,37 $</p>
+      <p class="admin-costs-muted mt-2 text-[11px] leading-4">live avoti - reāllaikā, pārējie reizi dienā parauga dati</p>
+    </div>
+    <div class="admin-costs-track mt-4 flex h-2 overflow-hidden rounded-full">${stack}</div>
+    <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1">${legend}</ul>
+  </section>
+  <p class="admin-costs-banner mt-3" data-level="80">Apify 61 % no mēneša limita (2,75 $ / 4,50 $). Brīdinājums pie 80 %, pie 100 % ielāde apstājas. Brīdinājumi 80 % / 100 % iekļauti rīta kopsavilkumā.</p>
+  <div class="mt-3 flex flex-col gap-3">${cards}</div>
+</div>`;
+const sidebar = theme === "iriss" ? `<aside class="hidden w-[240px] shrink-0 p-3 md:block">
+  <p class="px-2.5 text-[11px] font-bold tracking-[0.12em]">PROVIN <span class="iriss-proj">IRISS</span></p>
+  <div class="mt-3 flex h-7 rounded-md bg-black/5 p-0.5 text-[12px] font-semibold"><span class="flex flex-1 items-center justify-center text-[#8e8e93]">PRO</span><span class="flex flex-1 items-center justify-center rounded bg-white shadow">IRISS</span></div>
+  <p class="mt-4 px-2.5 text-[13px] text-[#8e8e93]">Meklēt</p>
+  <p class="mt-2 px-2.5 text-[13.5px]">Pasūtījumi</p>
+  <p class="px-2.5 text-[13.5px]">Sludinājumi</p>
+  <p class="px-2.5 text-[13.5px]">Radars</p>
+  <p class="px-2.5 text-[13.5px]">VIN pārbaude</p>
+  <p class="px-2.5 text-[13.5px]">Mēneša atskaite</p>
+  <p class="px-2.5 text-[13.5px]">Pavadzīmes</p>
+  <p class="px-2.5 text-[13.5px]">Iestatījumi</p>
+  <p class="mt-3 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Pārvaldība</p>
+  <p class="rounded-lg px-2.5 py-2 text-[13.5px] font-semibold" style="background:var(--fill2,#e8efff)">Izmaksas</p>
+  <p class="mt-3 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Pavadzīmes</p>
+</aside>` : `<aside class="hidden w-[240px] shrink-0 bg-white/70 p-3 md:block">
+  <p class="px-2.5 text-[11px] font-bold tracking-[0.12em]">PROVIN</p>
+  <p class="mt-4 px-2.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">Pārvaldība</p>
+  <p class="rounded-lg bg-[#e8efff] px-2.5 py-2 text-[13.5px] font-semibold">Izmaksas</p>
+</aside>`;
+const wrap = document.getElementById("root");
+wrap.className = "admin-ios-theme min-h-dvh";
+wrap.innerHTML = `<div class="admin-m flex min-h-dvh" data-section="${theme}" data-theme="light" data-admin-theme="light">${mobile ? "" : sidebar}<main class="min-w-0 flex-1 p-3 md:p-5">${view}</main></div>`;
+if (mobile) document.querySelector("header")?.classList.remove("hidden");
+</script>
+</body>
+</html>

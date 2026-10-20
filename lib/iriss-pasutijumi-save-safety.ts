@@ -8,8 +8,10 @@ import { retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import {
   fieldClearedAt,
   fieldTimestamp,
+  IRISS_LISTING_LINK_KEYS,
   mergeIrissStatusHistory,
   statusChangedMs,
+  type IrissListingLinkKey,
 } from "@/lib/iriss-pasutijumi-audit-fields";
 import { parseClearedFields } from "@/lib/admin-cleared-fields";
 import type { IrissOfferAttachment, IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -126,10 +128,55 @@ const STRING_KEYS = [
   "pinnedAt",
 ] as const satisfies readonly (keyof IrissPasutijumsRecord)[];
 
-function mergeLinkLists(local: string[], server: string[]): string[] {
-  const filledLocal = local.filter((s) => s.trim());
-  if (filledLocal.length > 0) return local;
-  return server;
+function listingLinkEventMs(rec: IrissPasutijumsRecord, key: IrissListingLinkKey): number {
+  return Math.max(fieldClearedAt(rec, key), fieldTimestamp(rec, key));
+}
+
+function listingLinksFilled(links: readonly string[] | undefined): boolean {
+  return (Array.isArray(links) ? links : []).some((s) => s.trim());
+}
+
+function listingLinksEqual(a: readonly string[] | undefined, b: readonly string[] | undefined): boolean {
+  const left = Array.isArray(a) ? a : [];
+  const right = Array.isArray(b) ? b : [];
+  if (left.length !== right.length) return false;
+  return left.every((v, i) => v === right[i]);
+}
+
+function mergeLinkLists(
+  key: IrissListingLinkKey,
+  local: IrissPasutijumsRecord,
+  server: IrissPasutijumsRecord,
+): string[] {
+  const localList = local[key];
+  const serverList = server[key];
+  if (listingLinksEqual(localList, serverList)) return localList;
+  const lEvent = listingLinkEventMs(local, key);
+  const sEvent = listingLinkEventMs(server, key);
+  if (lEvent !== sEvent) return lEvent > sEvent ? localList : serverList;
+  if (key === "listingLinkEcarstrade") {
+    if (local.ecarstradeLinksManual && !server.ecarstradeLinksManual) return localList;
+    if (server.ecarstradeLinksManual && !local.ecarstradeLinksManual) return serverList;
+  }
+  const lClear = fieldClearedAt(local, key);
+  const sClear = fieldClearedAt(server, key);
+  if (!listingLinksFilled(localList) && lClear > 0 && lClear >= sEvent) return localList;
+  if (!listingLinksFilled(serverList) && sClear > 0 && sClear >= lEvent) return serverList;
+  if (listingLinksFilled(localList)) return localList;
+  return serverList;
+}
+
+function mergeEcarstradeManual(
+  local: IrissPasutijumsRecord,
+  server: IrissPasutijumsRecord,
+  mergedEt: string[],
+): boolean | undefined {
+  const localWon = listingLinksEqual(mergedEt, local.listingLinkEcarstrade);
+  const serverWon = listingLinksEqual(mergedEt, server.listingLinkEcarstrade);
+  if (localWon && local.ecarstradeLinksManual) return true;
+  if (serverWon && server.ecarstradeLinksManual) return true;
+  if (local.ecarstradeLinksManual || server.ecarstradeLinksManual) return true;
+  return undefined;
 }
 
 function mergeClearedMs(local: unknown, server: unknown): Record<string, number> {
@@ -208,12 +255,15 @@ export function mergeIrissPasutijumsRecords(
   for (const key of STRING_KEYS) {
     (next as unknown as Record<string, string>)[key] = mergeStringByTimestamp(key, local, server);
   }
-  next.listingLinkMobile = mergeLinkLists(local.listingLinkMobile, server.listingLinkMobile);
-  next.listingLinkAutobid = mergeLinkLists(local.listingLinkAutobid, server.listingLinkAutobid);
-  next.listingLinkOpenline = mergeLinkLists(local.listingLinkOpenline, server.listingLinkOpenline);
-  next.listingLinkAuto1 = mergeLinkLists(local.listingLinkAuto1, server.listingLinkAuto1);
-  next.listingLinkEcarstrade = mergeLinkLists(local.listingLinkEcarstrade, server.listingLinkEcarstrade);
-  next.listingLinksOther = mergeLinkLists(local.listingLinksOther, server.listingLinksOther);
+  next.listingLinkMobile = mergeLinkLists("listingLinkMobile", local, server);
+  next.listingLinkAutobid = mergeLinkLists("listingLinkAutobid", local, server);
+  next.listingLinkOpenline = mergeLinkLists("listingLinkOpenline", local, server);
+  next.listingLinkAuto1 = mergeLinkLists("listingLinkAuto1", local, server);
+  next.listingLinkEcarstrade = mergeLinkLists("listingLinkEcarstrade", local, server);
+  next.listingLinksOther = mergeLinkLists("listingLinksOther", local, server);
+  const etManual = mergeEcarstradeManual(local, server, next.listingLinkEcarstrade);
+  if (etManual) next.ecarstradeLinksManual = true;
+  else delete next.ecarstradeLinksManual;
 
   const byId = new Map(server.offers.map((o) => [o.id, o]));
   const offers: IrissOfferRecord[] = local.offers.map((o) => {
@@ -233,6 +283,80 @@ export function mergeIrissPasutijumsRecords(
     ? local.documentPhotos
     : server.documentPhotos;
   return retainStoredIrissCriteria(server, next);
+}
+
+function stringFieldConflictUnsafe(
+  key: (typeof STRING_KEYS)[number],
+  local: IrissPasutijumsRecord,
+  server: IrissPasutijumsRecord,
+): boolean {
+  const l = typeof local[key] === "string" ? local[key] : "";
+  const s = typeof server[key] === "string" ? server[key] : "";
+  if (l === s) return false;
+  const lEvent = Math.max(fieldClearedAt(local, key), fieldTimestamp(local, key));
+  const sEvent = Math.max(fieldClearedAt(server, key), fieldTimestamp(server, key));
+  if (lEvent !== sEvent) return false;
+  const lEmpty = !l.trim();
+  const sEmpty = !s.trim();
+  if (lEmpty && fieldClearedAt(local, key) > 0) return false;
+  if (sEmpty && fieldClearedAt(server, key) > 0) return false;
+  if (lEmpty || sEmpty) return false;
+  return true;
+}
+
+function listingFieldConflictUnsafe(
+  key: IrissListingLinkKey,
+  local: IrissPasutijumsRecord,
+  server: IrissPasutijumsRecord,
+): boolean {
+  if (listingLinksEqual(local[key], server[key])) return false;
+  const lEvent = listingLinkEventMs(local, key);
+  const sEvent = listingLinkEventMs(server, key);
+  if (lEvent !== sEvent) return false;
+  if (key === "listingLinkEcarstrade" && Boolean(local.ecarstradeLinksManual) !== Boolean(server.ecarstradeLinksManual)) {
+    return false;
+  }
+  if (!listingLinksFilled(local[key]) && fieldClearedAt(local, key) > 0) return false;
+  if (!listingLinksFilled(server[key]) && fieldClearedAt(server, key) > 0) return false;
+  if (!listingLinksFilled(local[key]) || !listingLinksFilled(server[key])) return false;
+  return true;
+}
+
+/**
+ * Drošs, ja katram atšķirīgajam laukam ir jaunāks timestamp, tombstone vai
+ * manuāls ET marķieris. Abas puses aizpildījušas to pašu lauku bez laika = 409.
+ */
+export function canSafelyMergeIrissPasutijumsRecords(
+  server: IrissPasutijumsRecord,
+  local: IrissPasutijumsRecord,
+): boolean {
+  for (const key of STRING_KEYS) {
+    if (stringFieldConflictUnsafe(key, local, server)) return false;
+  }
+  for (const key of IRISS_LISTING_LINK_KEYS) {
+    if (listingFieldConflictUnsafe(key, local, server)) return false;
+  }
+  return true;
+}
+
+export type PrepareIrissPasutijumsWriteResult =
+  | { ok: true; record: IrissPasutijumsRecord; merged: boolean }
+  | { ok: false; error: typeof IRISS_STALE_REVISION; record: IrissPasutijumsRecord };
+
+/** Revīzijas sakritība, vai lauku sapludināšana. Citādi stale_revision. */
+export function prepareIrissPasutijumsConcurrentWrite(
+  existing: IrissPasutijumsRecord | null,
+  incoming: IrissPasutijumsRecord,
+  expected: number | null,
+): PrepareIrissPasutijumsWriteResult {
+  const existingRev = irissWorkspaceRevision(existing);
+  if (!existing || irissRevisionMatches(existingRev, expected)) {
+    return { ok: true, record: incoming, merged: false };
+  }
+  if (!canSafelyMergeIrissPasutijumsRecords(existing, incoming)) {
+    return { ok: false, error: IRISS_STALE_REVISION, record: existing };
+  }
+  return { ok: true, record: mergeIrissPasutijumsRecords(existing, incoming), merged: true };
 }
 
 function mergeCommunicationEvents(

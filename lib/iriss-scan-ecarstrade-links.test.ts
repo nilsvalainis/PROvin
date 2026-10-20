@@ -81,10 +81,10 @@ describe("iriss scan eCarsTrade link backfill", () => {
         listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2018&fuels=diesel&mileageTo=180000"],
       }),
     );
-    expect(same.generated).toHaveLength(2);
-    expect(same.generated.some((u) => u.includes("mileage_to=150000"))).toBe(true);
-    expect(same.generated.some((u) => u.includes("mileage_to=180000"))).toBe(true);
-    expect(same.generated.every((u) => u.includes("year_from=2018") && u.includes("fuel[]=Diesel"))).toBe(true);
+    expect(same.generated).toHaveLength(1);
+    expect(same.generated.every((u) => !u.includes("mileage_to="))).toBe(true);
+    expect(same.generated.every((u) => !u.includes("year_from="))).toBe(true);
+    expect(same.generated.every((u) => u.includes("fuel[]=Diesel"))).toBe(true);
 
     const split = previewEcarstradeLinksForScan(
       rec({
@@ -100,8 +100,7 @@ describe("iriss scan eCarsTrade link backfill", () => {
     expect(split.generated).toHaveLength(1);
     expect(split.generated[0]).toContain("fuel[]=Diesel");
     expect(split.generated[0]).not.toContain("fuel[]=Petrol");
-    expect(split.generated[0]).toContain("year_from=2018");
-    expect(split.generated[0]).not.toContain("year_from=2019");
+    expect(split.generated[0]).not.toContain("year_from=");
     expect(split.plans.every((p) => p.sourceUrls.every((u) => !/mobile\.de/i.test(u)))).toBe(true);
   });
 
@@ -141,9 +140,11 @@ describe("iriss scan eCarsTrade link backfill", () => {
     const next = replaceEcarstradeLinks(row);
     expect(next.preview.added).toHaveLength(1);
     expect(next.record.listingLinkEcarstrade).toHaveLength(1);
-    expect(next.record.listingLinkEcarstrade[0]).toContain("year_from=2018");
-    expect(next.record.listingLinkEcarstrade[0]).toContain("mileage_to=150000");
+    expect(next.record.listingLinkEcarstrade[0]).not.toContain("year_from=");
+    expect(next.record.listingLinkEcarstrade[0]).not.toContain("mileage_to=");
+    expect(next.record.listingLinkEcarstrade[0]).toContain("fuel[]=Diesel");
     expect(next.record.listingLinkEcarstrade[0]).not.toBe(row.listingLinkEcarstrade[0]);
+    expect(next.record.ecarstradeLinksManual).toBe(true);
     const again = replaceEcarstradeLinks(next.record);
     expect(again.preview.added).toEqual([]);
     expect(again.record.listingLinkEcarstrade).toEqual(next.record.listingLinkEcarstrade);
@@ -170,8 +171,33 @@ describe("iriss scan eCarsTrade link backfill", () => {
     expect(next.preview.changed).toBe(true);
     expect(next.preview.generated).toEqual([]);
     expect(next.record.listingLinkEcarstrade).toEqual([""]);
+    expect(next.record.ecarstradeLinksManual).toBe(true);
     const again = replaceEcarstradeLinks(next.record);
     expect(again.preview.changed).toBe(false);
     expect(again.record.listingLinkEcarstrade).toEqual([""]);
+  });
+
+  it("does not re-append generated ET links after the operator deletes extras", () => {
+    const seeded = appendEcarstradeLinksToScan(
+      rec({
+        brandModel: "Volvo XC60",
+        listingLinkAuto1: [
+          "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&fuelTypes=DIESEL&maxMileage=150000",
+        ],
+        listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2018&fuels=diesel&mileageTo=180000"],
+        listingLinkEcarstrade: [""],
+      }),
+    ).record;
+    expect(seeded.listingLinkEcarstrade.filter((u) => u.trim()).length).toBeGreaterThan(0);
+    const kept = seeded.listingLinkEcarstrade[0] ?? "";
+    const deleted = {
+      ...seeded,
+      listingLinkEcarstrade: [kept],
+      ecarstradeLinksManual: true,
+    };
+    const again = appendEcarstradeLinksToScan(deleted);
+    expect(again.preview.added).toEqual([]);
+    expect(again.record.listingLinkEcarstrade).toEqual([kept]);
+    expect(again.preview.skippedReason).toMatch(/manuāl/i);
   });
 });

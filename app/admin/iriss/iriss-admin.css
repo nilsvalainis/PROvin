@@ -295,6 +295,10 @@
   font-size: 11.5px;
 }
 
+.iriss-range-unit-phone {
+  display: none;
+}
+
 .iriss-range-unit-end {
   display: none;
 }
@@ -425,44 +429,77 @@
     border: 0;
   }
 
+  .iriss-range-field {
+    display: grid;
+    grid-template-columns: 100px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 8px;
+    min-height: 44px;
+    padding: 4px 0;
+  }
+
   .iriss-range-label {
     margin-bottom: 0;
     flex: 0 0 auto;
   }
 
   .iriss-range-pair {
-    flex: 1 1 auto;
-    justify-content: flex-end;
+    display: grid;
+    flex: none;
+    grid-template-columns: minmax(0, 1fr) 10px minmax(0, 1fr);
+    justify-content: stretch;
     gap: 4px;
+    min-width: 0;
   }
 
   .iriss-range-input-wrap {
-    flex: 0 1 auto;
+    position: relative;
+    flex: none;
     width: auto;
+    min-width: 0;
   }
 
-  .iriss-range-field :is(input, select) {
-    flex: 0 1 auto !important;
-    width: 4.6rem;
-    max-width: 38vw;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+  .iriss-spec-fields .iriss-range-field :is(input, select):not([type="checkbox"]) {
+    flex: none !important;
+    width: 100%;
+    max-width: none;
+    height: 36px;
+    min-height: 36px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    border-radius: 10px !important;
+    border: 1px solid var(--hair, #e5e7eb) !important;
+    background: var(--s1, #fff) !important;
+  }
+
+  .iriss-spec-fields .iriss-range-field input.iriss-range-input-has-unit,
+  .iriss-spec-fields .iriss-range-field input.iriss-range-input-has-phone-unit {
+    padding-right: 1.7rem !important;
   }
 
   .iriss-range-unit {
+    display: inline;
+    font-size: 12px;
+    color: var(--ink3, #9a9faa) !important;
+    font-weight: 400;
+  }
+
+  .iriss-range-unit-desk {
     display: none;
   }
 
-  .iriss-range-unit-end {
+  .iriss-range-unit-phone {
     display: inline;
-    flex: 0 0 auto;
-    font-size: 13px;
-    font-weight: 700;
+  }
+
+  .iriss-range-unit-end {
+    display: none;
   }
 
   .iriss-range-sep {
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 600;
+    text-align: center;
   }
 
   .iriss-spec-fields input.iriss-range-input-missing,

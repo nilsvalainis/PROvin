@@ -9,12 +9,28 @@ import {
 } from "@/lib/admin-api-gate";
 import { ADMIN_SESSION_TOKEN_TYP } from "@/lib/admin-session-token";
 import { B2B_DEMO_ADMIN_SECRET_HEADER } from "@/lib/b2b-demo-admin-secret";
+import { STAFF_SESSION_TOKEN_TYP } from "@/lib/staff-session-token";
 
 const SECRET = "test-admin-secret-0123456789";
 const DEMO_ADMIN = "dedicated-secret-16";
 
 function sessionCookie(exp = Date.now() + 60_000): string {
   const payload = Buffer.from(JSON.stringify({ typ: ADMIN_SESSION_TOKEN_TYP, exp }), "utf8").toString("base64url");
+  const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
+  return `${payload}.${sig}`;
+}
+
+function staffCookie(exp = Date.now() + 60_000): string {
+  const payload = Buffer.from(
+    JSON.stringify({
+      typ: STAFF_SESSION_TOKEN_TYP,
+      sid: "ses_abcdefgh",
+      uid: "usr_abcdefgh",
+      role: "logistics",
+      exp,
+    }),
+    "utf8",
+  ).toString("base64url");
   const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
   return `${payload}.${sig}`;
 }
@@ -27,6 +43,7 @@ function req(opts: {
   path: string;
   method?: string;
   cookie?: string;
+  staffCookie?: string;
   origin?: string;
   referer?: string;
   host?: string;
@@ -46,8 +63,9 @@ function req(opts: {
     headers: headers(h),
     cookies: {
       get(name: string) {
-        if (name !== "provin_admin_session" || !opts.cookie) return undefined;
-        return { value: opts.cookie };
+        if (name === "provin_admin_session" && opts.cookie) return { value: opts.cookie };
+        if (name === "provin_staff_session" && opts.staffCookie) return { value: opts.staffCookie };
+        return undefined;
       },
     },
   };
@@ -182,6 +200,25 @@ describe("decideAdminApiGate", () => {
     expect(await decideAdminApiGate(req({ path: "/api/admin/cron/morning-summary", method: "POST" }))).toEqual({
       action: "next",
     });
+  });
+
+  it("lets a logistics session through only on logistics APIs", async () => {
+    expect(
+      await decideAdminApiGate(req({ path: "/api/admin/iriss/logistika/points", staffCookie: staffCookie() })),
+    ).toEqual({ action: "next" });
+    expect(
+      await decideAdminApiGate(req({ path: "/api/admin/iriss-logistics/orders", staffCookie: staffCookie() })),
+    ).toEqual({ action: "next" });
+    expect(await decideAdminApiGate(req({ path: "/api/admin/badges", staffCookie: staffCookie() }))).toEqual({
+      action: "forbidden",
+    });
+    expect(await decideAdminApiGate(req({ path: "/api/admin/staff/users", staffCookie: staffCookie() }))).toEqual({
+      action: "forbidden",
+    });
+  });
+
+  it("lets invite accept through without a session", async () => {
+    expect(await decideAdminApiGate(req({ path: "/api/admin/staff/accept-invite" }))).toEqual({ action: "next" });
   });
 
   it("lets b2b-demo platform scripts through with the dedicated header", async () => {

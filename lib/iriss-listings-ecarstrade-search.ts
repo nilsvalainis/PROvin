@@ -1039,8 +1039,8 @@ function intersectRange(
 /**
  * Pasūtījuma gadi, km, cena, degviela un kārba nonāk ET vaicājumā.
  * Izsoles URL sašaurina diapazonu; tukšu degvielu vai kārbu aizpilda no pasūtījuma.
- * future_api.php: year_from/year_to (GGGG), mileage_from/mileage_to, price_from/price_to (veseli),
- * fuel[] un gearbox[] (Diesel, Petrol, Automatic, Manual).
+ * future_api.php ņem year_from/mileage_to; publiskā /search lapa tos ignorē, tāpēc
+ * ģenerētajā ET saitē tos neliekam. price_from/price_to, fuel[] un gearbox[] paliek.
  */
 export function applyEcarstradeOrderCriteria(
   filter: EcarstradeSearchFilter,
@@ -1254,10 +1254,8 @@ export function ecarstradeSearchUrl(filter: EcarstradeSearchFilter): string | nu
   for (const id of filter.makeIds) appendQuery(parts, "mark[]", String(id));
   const ids = filter.modelIds.length ? filter.modelIds : filter.modelId != null ? [filter.modelId] : [];
   for (const id of uniqNums(ids)) appendQuery(parts, "model[]", String(id));
-  if (filter.yearFrom != null) appendQuery(parts, "year_from", String(filter.yearFrom));
-  if (filter.yearTo != null) appendQuery(parts, "year_to", String(filter.yearTo));
-  if (filter.mileageFrom != null) appendQuery(parts, "mileage_from", String(filter.mileageFrom));
-  if (filter.mileageTo != null) appendQuery(parts, "mileage_to", String(filter.mileageTo));
+  // Publiskā /search lapa year_from / year_to / mileage_from / mileage_to neņem.
+  // Filtra objektā gadi un km paliek post-filtram, ja ielīmētajā URL tie jau ir.
   if (filter.priceFrom != null) appendQuery(parts, "price_from", String(filter.priceFrom));
   if (filter.priceTo != null) appendQuery(parts, "price_to", String(filter.priceTo));
   if (filter.powerFromKw != null) appendQuery(parts, "power_from", String(filter.powerFromKw));

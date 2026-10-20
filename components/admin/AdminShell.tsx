@@ -8,7 +8,6 @@ import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./Adm
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
 import { AdminVinHandoffProvider } from "./AdminVinHandoffContext";
-import { IrissPavadzimesMobileBar } from "@/components/admin/IrissPavadzimesMobileBar";
 import { AdminShellLayoutContext } from "@/components/admin/AdminShellLayoutContext";
 import {
   useAdminMobileColorScheme,
@@ -18,6 +17,7 @@ import {
 import {
   ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
   ADMIN_MOBILE_TABBAR_H_CSS,
+  IRISS_MOBILE_TABBAR_H_CSS,
   adminMobilePullToRefreshEnabled,
 } from "@/lib/admin-mobile-shell";
 import { adminChromeDataset, type AdminWorkspaceId } from "@/lib/admin-chrome-attrs";
@@ -64,7 +64,13 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
         workspace === "iriss" ? "" : "bg-[var(--am-bg,#F2F2F7)]"
       } ${hideTabBar ? "" : "max-md:pb-[var(--admin-tabbar-h)]"}`}
       {...adminChromeDataset(workspace, adminTheme)}
-      style={{ ["--admin-tabbar-h" as string]: hideTabBar ? "0px" : ADMIN_MOBILE_TABBAR_H_CSS }}
+      style={{
+        ["--admin-tabbar-h" as string]: hideTabBar
+          ? "0px"
+          : workspace === "iriss"
+            ? IRISS_MOBILE_TABBAR_H_CSS
+            : ADMIN_MOBILE_TABBAR_H_CSS,
+      }}
     >
       {mobile ? null : <AdminSidebar collapsed={collapsed} onToggle={toggle} workspace={workspace} />}
       <div className={`flex min-w-0 flex-1 flex-col ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
@@ -74,7 +80,6 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
               isDetailScreen={isDetailScreen}
               pullToRefresh={pullToRefresh}
               notice={notice}
-              topSlot={workspace === "iriss" ? <IrissPavadzimesMobileBar /> : null}
             >
               {children}
             </AdminShellMainWithMobilePull>

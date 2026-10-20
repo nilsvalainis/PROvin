@@ -3,7 +3,11 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ADMIN_DIR = path.resolve(__dirname, "../app/admin");
-const PUBLIC_PAGES = new Set(["login/page.tsx"]);
+const PUBLIC_PAGES = new Set(["login/page.tsx", "uzaicinajums/[token]/page.tsx"]);
+
+function isPageAuthGuard(line: string): boolean {
+  return /await require(?:Admin|Logistics)Page\(\)/.test(line);
+}
 
 function listPages(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -38,9 +42,11 @@ describe("admin pages check the session before loading data", () => {
   it.each(pages.map((p) => [path.relative(ADMIN_DIR, p), p]))("%s", (_rel, file) => {
     const src = fs.readFileSync(file, "utf8");
     expect(src).not.toMatch(/^["']use client["']/m);
-    expect(firstStatementAfter(src, /export default async function \w*\s*\(/)).toBe("await requireAdminPage();");
+    const first = firstStatementAfter(src, /export default async function \w*\s*\(/);
+    expect(isPageAuthGuard(first ?? "")).toBe(true);
     if (/export async function generateMetadata\s*\(/.test(src)) {
-      expect(firstStatementAfter(src, /export async function generateMetadata\s*\(/)).toBe("await requireAdminPage();");
+      const metaFirst = firstStatementAfter(src, /export async function generateMetadata\s*\(/);
+      expect(isPageAuthGuard(metaFirst ?? "")).toBe(true);
     }
   });
 });

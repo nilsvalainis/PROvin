@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   currentRigaYearMonth,
   formatLvCalendarDay,
+  formatLvMonthTitle,
   formatLvYearMonth,
   formatYearMonthKey,
   isoInRigaYearMonth,
   parseYearMonthKey,
   rigaCalendarDayKey,
   rigaClockHour,
+  rigaDaysInMonth,
   rigaYearMonthKey,
   shiftYearMonth,
 } from "@/lib/admin-riga-calendar";
@@ -50,6 +52,9 @@ describe("admin-riga-calendar", () => {
 
   it("labels the month in Latvian and defaults to current Riga month", () => {
     expect(formatLvYearMonth(2026, 10)).toBe("2026. gada oktobris");
+    expect(formatLvMonthTitle(10)).toBe("Oktobris");
+    expect(rigaDaysInMonth(2026, 9)).toBe(30);
+    expect(rigaDaysInMonth(2026, 10)).toBe(31);
     const now = Date.parse("2026-01-15T10:00:00.000Z");
     expect(currentRigaYearMonth(now)).toEqual({ year: 2026, month: 1 });
   });

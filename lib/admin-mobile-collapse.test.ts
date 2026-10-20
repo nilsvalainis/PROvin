@@ -48,12 +48,11 @@ describe("admin mobile chrome metrics", () => {
 });
 
 describe("admin mobile spec files", () => {
-  it("ritina dokumentu un izbīdāmo galveni", () => {
+  it("ritina dokumentu un galveni kopā ar saturu", () => {
     const chrome = readFileSync(new URL("../components/admin/mobile/AdminMobileChrome.tsx", import.meta.url), "utf8");
-    expect(chrome).toMatch(/nextAdminMobileChromeMode/);
-    expect(chrome).toMatch(/requestAnimationFrame/);
-    expect(chrome).toMatch(/passive:\s*true/);
-    expect(chrome).toMatch(/am-topbar-sticky/);
+    expect(chrome).not.toMatch(/nextAdminMobileChromeMode/);
+    expect(chrome).not.toMatch(/requestAnimationFrame/);
+    expect(chrome).not.toMatch(/am-topbar-sticky/);
     expect(chrome).toMatch(/am-topbar-expand/);
     expect(chrome).not.toMatch(/#admin-main-scroll/);
   });
@@ -74,6 +73,9 @@ describe("admin mobile spec files", () => {
     expect(side).toMatch(/fixed inset-0 z-\[20\]/);
     expect(side).not.toMatch(/z-\[40\]/);
     expect(side).toMatch(/whitespace-nowrap leading-none/);
+    expect(side).toMatch(/Pārvaldība/);
+    expect(side).toMatch(/\/admin\/izmaksas/);
+    expect(side).toMatch(/\/admin\/iriss\/izmaksas/);
   });
 
   it("pavadzīmju pilles nav melnas un sludinājumos slēpjas", () => {

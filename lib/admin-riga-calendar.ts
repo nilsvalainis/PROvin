@@ -92,3 +92,20 @@ export function formatLvYearMonth(year: number, month: number): string {
   const name = LV_MONTH_NAMES[month - 1];
   return name ? `${year}. gada ${name}` : formatYearMonthKey(year, month);
 }
+
+/** Cilnēm: `Oktobris`. */
+export function formatLvMonthTitle(month: number): string {
+  const name = LV_MONTH_NAMES[month - 1] ?? "";
+  if (!name) return "";
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+export function rigaMonthDayNumber(ms: number): number {
+  return Number(rigaCalendarDayKey(ms).slice(8, 10));
+}
+
+export function rigaDaysInMonth(year: number, month: number): number {
+  const next = shiftYearMonth(year, month, 1);
+  const nextNoonUtc = Date.UTC(next.year, next.month - 1, 1, 12, 0, 0);
+  return rigaMonthDayNumber(nextNoonUtc - 24 * 60 * 60 * 1000);
+}

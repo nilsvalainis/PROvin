@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
 import { useAdminShellLayout } from "@/components/admin/AdminShellLayoutContext";
@@ -10,11 +10,8 @@ import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { adminChromeDataset } from "@/lib/admin-chrome-attrs";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
-import {
-  formatAdminMobileBadgeCount,
-  nextAdminMobileChromeMode,
-  type AdminMobileChromeMode,
-} from "@/lib/admin-mobile-collapse";
+import { formatAdminMobileBadgeCount } from "@/lib/admin-mobile-collapse";
+import { IrissPavadzimesMobileBar } from "@/components/admin/IrissPavadzimesMobileBar";
 
 export function AdminMobileTopBar({
   title,
@@ -31,45 +28,46 @@ export function AdminMobileTopBar({
   trailing?: ReactNode;
   children?: ReactNode;
 }) {
-  const [mode, setMode] = useState<AdminMobileChromeMode>("expanded");
-  const [stuck, setStuck] = useState(false);
-  const modeRef = useRef<AdminMobileChromeMode>("expanded");
-  const lastYRef = useRef(0);
-  useEffect(() => {
-    lastYRef.current = window.scrollY || document.documentElement.scrollTop || 0;
-    let raf = 0;
-    const apply = () => {
-      raf = 0;
-      const y = window.scrollY || document.documentElement.scrollTop || 0;
-      const next = nextAdminMobileChromeMode(y, y - lastYRef.current, modeRef.current);
-      lastYRef.current = y;
-      if (next !== modeRef.current) {
-        modeRef.current = next;
-        setMode(next);
-      }
-      setStuck(y > 10);
-    };
-    const onScroll = () => {
-      if (raf) return;
-      raf = window.requestAnimationFrame(apply);
-    };
-    apply();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (raf) window.cancelAnimationFrame(raf);
-    };
-  }, []);
-  const collapsed = mode === "collapsed";
-  const hasBack = Boolean(backHref || onBack);
   const iriss = useAdminShellLayout()?.workspace === "iriss";
+  const hasBack = Boolean(backHref || onBack);
+  if (iriss) {
+    return (
+      <header className="am-topbar flex flex-col gap-2 px-4 pb-4 pt-[calc(env(safe-area-inset-top,0px)+8px)] md:hidden">
+        <div className="flex h-10 items-center gap-2">
+          {hasBack ? (
+            backHref ? (
+              <Link href={backHref} aria-label="Atpakaļ" className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
+                <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
+              </Link>
+            ) : (
+              <button type="button" aria-label="Atpakaļ" onClick={onBack} className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
+                <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
+              </button>
+            )
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <h1
+                className={`min-w-0 truncate font-bold tracking-tight text-[var(--label)] ${
+                  hasBack ? "text-[17px] leading-none" : "text-[34px] leading-none"
+                }`}
+              >
+                {title}
+              </h1>
+              <IrissProjectIndicator className="shrink-0" />
+            </div>
+            {subtitle ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
+          </div>
+          {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
+        </div>
+        {children ? <div className="flex flex-col gap-2">{children}</div> : null}
+        <IrissPavadzimesMobileBar embedded />
+      </header>
+    );
+  }
   return (
     <>
-      <header
-        className="am-topbar-sticky px-4 pb-2 pt-[max(10px,env(safe-area-inset-top))] md:hidden"
-        data-stuck={stuck ? "true" : "false"}
-        data-collapsed={collapsed ? "true" : "false"}
-      >
+      <header className="am-topbar px-4 pb-2 pt-[max(10px,env(safe-area-inset-top))] md:hidden">
         <div className="flex h-11 items-center gap-2">
           {hasBack ? (
             backHref ? (
@@ -86,23 +84,18 @@ export function AdminMobileTopBar({
             <div className="flex min-w-0 items-center gap-2">
               <h1
                 className={`min-w-0 truncate font-bold tracking-tight text-[var(--label)] ${
-                  hasBack || collapsed ? "text-[17px] leading-none" : "text-[34px] leading-none"
+                  hasBack ? "text-[17px] leading-none" : "text-[34px] leading-none"
                 }`}
               >
                 {title}
               </h1>
-              {iriss ? <IrissProjectIndicator className="shrink-0" /> : null}
             </div>
-            {subtitle && !collapsed ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
           </div>
           {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
         </div>
       </header>
-      {children ? (
-        <div className="am-topbar-expand px-4 md:hidden" data-collapsed={collapsed ? "true" : "false"}>
-          {children}
-        </div>
-      ) : null}
+      {children ? <div className="am-topbar-expand px-4 md:hidden">{children}</div> : null}
     </>
   );
 }

@@ -527,6 +527,7 @@ export function morningSummaryEmailHtml(opts: {
   dueTodayAudits: MorningSummaryEmailLine[];
   newPeeks: MorningSummaryEmailLine[];
   failingSources?: MorningSummaryEmailLine[];
+  costAlerts?: MorningSummaryEmailLine[];
 }): string {
   const empty =
     opts.overdueAudits.length + opts.dueTodayAudits.length + opts.newPeeks.length === 0
@@ -556,6 +557,7 @@ ${morningSummaryEmailSection("Kavētie auditi (48 h)", opts.overdueAudits)}
 ${morningSummaryEmailSection("Šodienas termiņi", opts.dueTodayAudits)}
 ${morningSummaryEmailSection("Jauni ātrie vērtējumi (24 h)", opts.newPeeks)}
 ${morningSummaryEmailSection("Datu avoti ar kļūdām 3 reizes pēc kārtas (pārbaudi piekļuvi)", opts.failingSources ?? [])}
+${morningSummaryEmailSection("Izmaksas", opts.costAlerts ?? [])}
 ${empty}
 ${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}
 `;
@@ -587,6 +589,17 @@ ${paras}
 </td></tr></table>
 </body>
 </html>`;
+}
+
+export function staffInviteEmailHtml(opts: { name: string; inviteUrl: string }): string {
+  const name = opts.name.trim() || "kolēģi";
+  const inner = `
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">IRISS pieeja</p>
+<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">Sveiki, ${esc(name)}. Nils uzaicināja tevi uz IRISS. Saite derīga 24 stundas un darbojas vienu reizi.</p>
+${ctaButton(opts.inviteUrl, "Iestatīt paroli")}
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:${MUTED};">Ja tu to neprasīji, ignorē šo vēstuli.</p>
+`;
+  return shell(inner);
 }
 
 /** @deprecated B2B klients redz PROVIN. */

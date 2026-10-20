@@ -9,12 +9,15 @@ import { marketplaceListingExpiresAt, marketplaceListingIsExpired, marketplaceLi
 import {
   emptyMarketplaceAutoCronState,
   emptyMarketplaceListingsState,
+  isMarketplaceOwnerKind,
   isMarketplacePlatform,
   isMarketplaceProviderId,
+  isMarketplaceVehicleCategory,
   MARKETPLACE_TTL_DAYS,
   type MarketplaceAutoCronState,
   type MarketplaceAutoCronStatus,
   type MarketplaceListingsState,
+  type MarketplaceQuery,
   type MarketplaceRunRecord,
   type MarketplaceSourceLink,
   type MarketplaceStoredListing,
@@ -119,39 +122,52 @@ function parseStoredListing(v: unknown): MarketplaceStoredListing | null {
   };
 }
 
+function parseQuery(raw: unknown): MarketplaceQuery {
+  const q = isObj(raw) ? raw : {};
+  const category = str(q.vehicleCategory, 8);
+  const features = Array.isArray(q.features)
+    ? q.features.map((f) => str(f, 40)).filter(Boolean).slice(0, 12)
+    : [];
+  return {
+    make: str(q.make, 40),
+    model: str(q.model, 60),
+    yearFrom: numOrNull(q.yearFrom),
+    yearTo: numOrNull(q.yearTo),
+    mileageFrom: numOrNull(q.mileageFrom),
+    mileageTo: numOrNull(q.mileageTo),
+    priceFrom: numOrNull(q.priceFrom),
+    priceTo: numOrNull(q.priceTo),
+    fuel: str(q.fuel, 40),
+    gearbox: str(q.gearbox, 40),
+    powerFromKw: numOrNull(q.powerFromKw),
+    powerToKw: numOrNull(q.powerToKw),
+    displacementFromCc: numOrNull(q.displacementFromCc),
+    displacementToCc: numOrNull(q.displacementToCc),
+    body: str(q.body, 40),
+    drive: str(q.drive, 40),
+    countries: Array.isArray(q.countries)
+      ? q.countries.map((c) => str(c, 8)).filter(Boolean).slice(0, 8)
+      : [],
+    vehicleCategory: isMarketplaceVehicleCategory(category) ? category : "car",
+    features,
+  };
+}
+
 function parseRun(v: unknown): MarketplaceRunRecord | null {
   if (!isObj(v)) return null;
   const id = str(v.id, 80);
   const orderId = str(v.orderId, 80);
   if (!id || !orderId) return null;
+  const ownerKind = str(v.ownerKind, 12);
   return {
     id,
     orderId,
     tenantScope: "iriss",
+    ...(isMarketplaceOwnerKind(ownerKind) ? { ownerKind } : {}),
     providers: Array.isArray(v.providers)
       ? v.providers.map((p) => str(p, 40)).filter(isMarketplaceProviderId)
       : [],
-    query: {
-      make: str((v.query as { make?: unknown } | undefined)?.make, 40),
-      model: str((v.query as { model?: unknown } | undefined)?.model, 60),
-      yearFrom: numOrNull((v.query as { yearFrom?: unknown } | undefined)?.yearFrom),
-      yearTo: numOrNull((v.query as { yearTo?: unknown } | undefined)?.yearTo),
-      mileageFrom: numOrNull((v.query as { mileageFrom?: unknown } | undefined)?.mileageFrom),
-      mileageTo: numOrNull((v.query as { mileageTo?: unknown } | undefined)?.mileageTo),
-      priceFrom: numOrNull((v.query as { priceFrom?: unknown } | undefined)?.priceFrom),
-      priceTo: numOrNull((v.query as { priceTo?: unknown } | undefined)?.priceTo),
-      fuel: str((v.query as { fuel?: unknown } | undefined)?.fuel, 40),
-      gearbox: str((v.query as { gearbox?: unknown } | undefined)?.gearbox, 40),
-      powerFromKw: numOrNull((v.query as { powerFromKw?: unknown } | undefined)?.powerFromKw),
-      powerToKw: numOrNull((v.query as { powerToKw?: unknown } | undefined)?.powerToKw),
-      displacementFromCc: numOrNull((v.query as { displacementFromCc?: unknown } | undefined)?.displacementFromCc),
-      displacementToCc: numOrNull((v.query as { displacementToCc?: unknown } | undefined)?.displacementToCc),
-      body: str((v.query as { body?: unknown } | undefined)?.body, 40),
-      drive: str((v.query as { drive?: unknown } | undefined)?.drive, 40),
-      countries: Array.isArray((v.query as { countries?: unknown } | undefined)?.countries)
-        ? ((v.query as { countries?: unknown[] }).countries ?? []).map((c) => str(c, 8)).filter(Boolean).slice(0, 8)
-        : [],
-    },
+    query: parseQuery(v.query),
     maxItems: typeof v.maxItems === "number" ? v.maxItems : 0,
     maxUsd: typeof v.maxUsd === "number" ? v.maxUsd : 0,
     estimatedUsd: typeof v.estimatedUsd === "number" ? v.estimatedUsd : 0,

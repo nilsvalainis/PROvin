@@ -17,7 +17,10 @@ describe("IRISS Loģistika UI contracts", () => {
   it("keeps header and filter chips from being sticky", () => {
     expect(client).toContain('className="md:static"');
     expect(client).not.toMatch(/sticky top-/);
-    expect(page).toContain("await requireAdminPage();");
+    expect(page).toContain("await requireLogisticsPage();");
+    expect(page).toContain("IrissLogistikaClient");
+    expect(page).toContain("canEnableTotp");
+    expect(page).not.toContain("IrissLogisticsHomeClient");
   });
 
   it("adds Loģistika between Radars and VIN in IRISS nav", () => {
@@ -79,6 +82,8 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(client).toContain('setPageTab("settings")');
     expect(client).toContain("Iestatījumi");
     expect(settings).toContain("IrissLogistikaAuctionSourcesPanel");
+    expect(settings).toContain("Lietotāji un pieeja");
+    expect(settings).toContain("/admin/iriss/iestatijumi/lietotaji");
     expect(sourcesPanel).toContain("Izsoļu avoti");
     expect(sourcesPanel).toContain("Saite (pirkumi / pasūtījumi)");
     expect(sourcesPanel).toContain("Konts");

@@ -23,6 +23,13 @@ import {
   type MarketplaceOrderCriteria,
 } from "@/lib/marketplace/query-from-order";
 import {
+  marketplaceQueryFromScan,
+  marketplaceRadarExtraRangeMissing,
+  marketplaceRadarMissingFields,
+  marketplaceScanHasFetchBounds,
+} from "@/lib/marketplace/query-from-scan";
+import type { IrissScanRecord } from "@/lib/iriss-scan-types";
+import {
   readMarketplaceListingsState,
   readMarketplaceUsageMonth,
   writeMarketplaceListingsState,
@@ -35,6 +42,7 @@ import {
   type ListingProvider,
   type MarketplaceLoadResult,
   type MarketplaceLoadTrigger,
+  type MarketplaceOwnerKind,
   type MarketplacePlatform,
   type MarketplaceProviderId,
   type MarketplaceQuery,
@@ -42,9 +50,13 @@ import {
   type MarketplaceStoredListing,
 } from "@/lib/marketplace/types";
 
+export const MARKETPLACE_RADAR_AUTO_FORBIDDEN = "Radara ielāde ir tikai manuāla. Automātiska Apify ielāde radarā nav.";
+
 export type MarketplaceLoadInput = {
   orderId: string;
   order: MarketplaceOrderCriteria;
+  scan?: IrissScanRecord;
+  ownerKind?: MarketplaceOwnerKind;
   platforms?: MarketplacePlatform[];
   maxItems?: number;
   sortNewest?: boolean;
@@ -61,13 +73,20 @@ function platformsToProviderIds(platforms: readonly MarketplacePlatform[] | unde
   return platforms.map((p) => (p === "autoscout24" ? "apify-autoscout24" : "apify-mobilede"));
 }
 
+function resolveOwnerKind(input: { ownerKind?: MarketplaceOwnerKind; scan?: IrissScanRecord }): MarketplaceOwnerKind {
+  if (input.ownerKind === "radar" || input.scan) return "radar";
+  return "order";
+}
+
 export function estimateMarketplaceLoad(input: {
   order: MarketplaceOrderCriteria;
+  scan?: IrissScanRecord;
+  ownerKind?: MarketplaceOwnerKind;
   platforms?: MarketplacePlatform[];
   maxItems?: number;
   providers?: ListingProvider[];
 }) {
-  const query = marketplaceQueryFromOrder(input.order);
+  const query = input.scan ? marketplaceQueryFromScan(input.scan) : marketplaceQueryFromOrder(input.order);
   const maxItems = input.maxItems ?? marketplaceMaxItemsPerProvider();
   const providers = input.providers ?? marketplaceProviders(platformsToProviderIds(input.platforms));
   const estimates = providers.map((p) => p.estimateCost(query, maxItems));
@@ -76,6 +95,8 @@ export function estimateMarketplaceLoad(input: {
 
 export async function previewMarketplaceLoad(input: {
   order: MarketplaceOrderCriteria;
+  scan?: IrissScanRecord;
+  ownerKind?: MarketplaceOwnerKind;
   platforms?: MarketplacePlatform[];
   maxItems?: number;
   providers?: ListingProvider[];
@@ -83,12 +104,23 @@ export async function previewMarketplaceLoad(input: {
   const preview = estimateMarketplaceLoad(input);
   const usage = await readMarketplaceUsageMonth();
   const budget = decideMarketplaceBudget({ estimates: preview.estimates, usage });
+  const radar = resolveOwnerKind(input) === "radar";
   return {
     ...preview,
     budget,
-    queryReady: marketplaceOrderHasFetchBounds(input.order),
-    missingFields: marketplaceStrictMissingFields(input.order),
-    needsOneOfExtra: marketplaceExtraRangeMissing(input.order),
+    queryReady: radar
+      ? Boolean(input.scan && marketplaceScanHasFetchBounds(input.scan))
+      : marketplaceOrderHasFetchBounds(input.order),
+    missingFields: radar
+      ? input.scan
+        ? marketplaceRadarMissingFields(input.scan)
+        : ["marka"]
+      : marketplaceStrictMissingFields(input.order),
+    needsOneOfExtra: radar
+      ? input.scan
+        ? marketplaceRadarExtraRangeMissing(input.scan)
+        : true
+      : marketplaceExtraRangeMissing(input.order),
     usageMonth: usage.month,
   };
 }
@@ -122,6 +154,18 @@ function resolveLoadTrigger(input: MarketplaceLoadInput): MarketplaceLoadTrigger
  */
 export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Promise<MarketplaceLoadResult> {
   const trigger = resolveLoadTrigger(input);
+  const ownerKind = resolveOwnerKind(input);
+  if (ownerKind === "radar" && trigger === "auto") {
+    return {
+      ok: false,
+      blocked: true,
+      error: MARKETPLACE_RADAR_AUTO_FORBIDDEN,
+      added: 0,
+      grouped: 0,
+      estimatedUsd: 0,
+      remainingMonthlyUsd: 0,
+    };
+  }
   if (trigger === "manual" && input.explicit !== true) {
     return { ok: false, blocked: true, error: "explicit_required", added: 0, grouped: 0, estimatedUsd: 0, remainingMonthlyUsd: 0 };
   }
@@ -129,13 +173,26 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
   if (!orderId) {
     return { ok: false, error: "order_required", added: 0, grouped: 0, estimatedUsd: 0, remainingMonthlyUsd: 0 };
   }
-  if (!marketplaceOrderHasFetchBounds(input.order)) {
+  const tooBroad = ownerKind === "radar"
+    ? !(input.scan && marketplaceScanHasFetchBounds(input.scan))
+    : !marketplaceOrderHasFetchBounds(input.order);
+  if (tooBroad) {
     return {
       ok: false,
       blocked: true,
       error: MARKETPLACE_TOO_BROAD_ERROR,
-      missingFields: marketplaceStrictMissingFields(input.order),
-      needsOneOfExtra: marketplaceExtraRangeMissing(input.order),
+      missingFields:
+        ownerKind === "radar"
+          ? input.scan
+            ? marketplaceRadarMissingFields(input.scan)
+            : ["marka"]
+          : marketplaceStrictMissingFields(input.order),
+      needsOneOfExtra:
+        ownerKind === "radar"
+          ? input.scan
+            ? marketplaceRadarExtraRangeMissing(input.scan)
+            : true
+          : marketplaceExtraRangeMissing(input.order),
       added: 0,
       grouped: 0,
       estimatedUsd: 0,
@@ -267,6 +324,7 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
     id: runId,
     orderId,
     tenantScope: "iriss",
+    ownerKind,
     providers: preview.providers.map((p) => p.id),
     query,
     maxItems: preview.maxItems,

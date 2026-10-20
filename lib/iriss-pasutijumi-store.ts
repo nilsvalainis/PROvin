@@ -33,11 +33,11 @@ import {
 } from "@/lib/iriss-pasutijumi-audit-fields";
 import { irissPasutijumsToListRow } from "@/lib/iriss-pasutijumi-list-row";
 import {
-  irissRevisionMatches,
   irissWorkspaceRevision,
   IRISS_STALE_REVISION,
   nextIrissWorkspaceRevision,
   parseExpectedIrissRevision,
+  prepareIrissPasutijumsConcurrentWrite,
 } from "@/lib/iriss-pasutijumi-save-safety";
 import {
   emptyIrissPasutijums,
@@ -555,6 +555,7 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     equipmentDesired: sanitizeDraftTextForStorage(str("equipmentDesired")),
     notes: sanitizeDraftTextForStorage(str("notes")),
     ...sanitizeListingLinks(o),
+    ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
     offers: normalizeOffers(o.offers),
     generatedDocuments: normalizeGeneratedDocuments(o.generatedDocuments),
@@ -1125,13 +1126,18 @@ export async function writeIrissPasutijums(
     if (!isSafeIrissPasutijumsId(record.id)) return { ok: false, error: "invalid_id" };
     const sanitizedRaw = normalizeRecord(record, record.id);
     if (!sanitizedRaw) return { ok: false, error: "invalid_record" };
-    const sanitized = withAutoEcarstradeLinks(sanitizedRaw);
     const updatedAt = new Date().toISOString();
     const existing = await readIrissPasutijums(record.id);
     const existingRev = irissWorkspaceRevision(existing);
-    if (existing && !irissRevisionMatches(existingRev, opts?.expectedWorkspaceRevision ?? null)) {
-      return { ok: false, error: IRISS_STALE_REVISION, stale: true, record: existing };
+    const prepared = prepareIrissPasutijumsConcurrentWrite(
+      existing,
+      sanitizedRaw,
+      opts?.expectedWorkspaceRevision ?? null,
+    );
+    if (!prepared.ok) {
+      return { ok: false, error: IRISS_STALE_REVISION, stale: true, record: prepared.record };
     }
+    const sanitized = withAutoEcarstradeLinks(prepared.record);
     const createdAt = existing?.createdAt ?? sanitized.createdAt ?? updatedAt;
     const incomingDeletedAt = typeof record.deletedAt === "string" ? record.deletedAt : undefined;
     let out: IrissPasutijumsRecord = {

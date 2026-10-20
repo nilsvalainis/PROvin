@@ -8,6 +8,7 @@ import {
   type AiUsageRecord,
   type AiUsageSummary,
 } from "@/lib/ai-usage";
+import { persistAiCostRecords } from "@/lib/admin-costs-persist";
 
 type Bag = { records: AiUsageRecord[] };
 
@@ -64,6 +65,7 @@ export async function withAiUsageMeter<T>(fn: () => Promise<T>): Promise<{ resul
   const bag: Bag = { records: [] };
   return storage.run(bag, async () => {
     const result = await fn();
+    persistAiCostRecords(bag.records);
     return { result, usage: summarizeAiUsage(bag.records) };
   });
 }

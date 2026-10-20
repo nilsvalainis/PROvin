@@ -8,6 +8,7 @@ import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/adm
 import { normalizeIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 import { IRISS_STALE_REVISION, parseExpectedIrissRevision, prepareIrissScanWrite } from "@/lib/iriss-scan-save-safety";
 import { emptyIrissScanRecord, type IrissScanListOrder, type IrissScanListRow, type IrissScanRecord } from "@/lib/iriss-scan-types";
+import { isMarketplaceVehicleCategory } from "@/lib/marketplace/types";
 
 const DEFAULT_RELATIVE_DIR = ".data/iriss-scan";
 const BLOB_PREFIX = "iriss-scan/";
@@ -213,12 +214,19 @@ function normalizeRecord(raw: unknown, id: string): IrissScanRecord | null {
     engineType: sanitizeDraftTextForStorage(str("engineType"), 200),
     transmission: sanitizeDraftTextForStorage(str("transmission"), 80),
     bodyType: sanitizeDraftTextForStorage(str("bodyType"), 80),
+    vehicleCategory: (() => {
+      const category = str("vehicleCategory");
+      return isMarketplaceVehicleCategory(category) ? category : "";
+    })(),
+    apifyMobiledeEnabled: o.apifyMobiledeEnabled === true,
+    apifyAutoscout24Enabled: o.apifyAutoscout24Enabled === true,
     listingLinkMobile: normalizeLinks(o.listingLinkMobile),
     listingLinkAutobid: normalizeLinks(o.listingLinkAutobid),
     listingLinkOpenline: normalizeLinks(o.listingLinkOpenline),
     listingLinkAuto1: normalizeLinks(o.listingLinkAuto1),
     listingLinkEcarstrade: normalizeLinks(o.listingLinkEcarstrade),
     listingLinksOther: normalizeLinks(o.listingLinksOther),
+    ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
   };
 }
 
@@ -285,52 +293,92 @@ async function removeFromListRowsIndex(
   invalidateScanListCache();
 }
 
+async function listRecordIds(r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>): Promise<string[]> {
+  if (r.kind === "blob") return listBlobRecordIds(r.prefix, r.token);
+  let names: string[] = [];
+  try {
+    names = await fs.readdir(r.dir);
+  } catch {
+    return [];
+  }
+  const ids: string[] = [];
+  for (const name of names) {
+    if (!name.endsWith(".json") || name === LIST_ORDER_FILENAME || name === LIST_ROWS_FILENAME) continue;
+    const id = name.slice(0, -".json".length);
+    if (isSafeIrissScanId(id)) ids.push(id);
+  }
+  return ids;
+}
+
+async function mergeMissingScanRows(
+  indexed: readonly IrissScanListRow[],
+  ids: readonly string[],
+): Promise<{ rows: IrissScanListRow[]; changed: boolean }> {
+  const byId = new Map(indexed.map((row) => [row.id, row]));
+  let changed = false;
+  for (const id of ids) {
+    if (byId.has(id)) continue;
+    const rec = await readIrissScan(id);
+    if (!rec) continue;
+    byId.set(id, rec);
+    changed = true;
+  }
+  return { rows: sortRowsByUpdatedDesc([...byId.values()]), changed };
+}
+
 async function rebuildListRowsFromRecords(r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>): Promise<IrissScanListRow[]> {
+  const ids = await listRecordIds(r);
   const rows: IrissScanListRow[] = [];
-  if (r.kind === "blob") {
-    const ids = await listBlobRecordIds(r.prefix, r.token);
-    for (const id of ids) {
-      const rec = await readIrissScan(id);
-      if (rec) rows.push(rec);
-    }
-  } else {
-    let names: string[] = [];
-    try {
-      names = await fs.readdir(r.dir);
-    } catch {
-      return [];
-    }
-    for (const name of names) {
-      if (!name.endsWith(".json") || name === LIST_ORDER_FILENAME || name === LIST_ROWS_FILENAME) continue;
-      const id = name.slice(0, -5);
-      if (!isSafeIrissScanId(id)) continue;
-      const rec = await readIrissScan(id);
-      if (rec) rows.push(rec);
-    }
+  for (const id of ids) {
+    const rec = await readIrissScan(id);
+    if (rec) rows.push(rec);
   }
   return sortRowsByUpdatedDesc(rows);
+}
+
+async function persistScanRecordIndex(
+  r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
+  row: IrissScanListRow,
+): Promise<void> {
+  try {
+    await upsertListRowsIndex(r, row);
+  } catch {
+    invalidateScanListCache();
+    const rebuilt = await rebuildListRowsFromRecords(r);
+    if (!rebuilt.some((x) => x.id === row.id)) rebuilt.push(row);
+    await writeListRowsIndex(r, rebuilt).catch(() => {});
+    invalidateScanListCache();
+  }
 }
 
 export async function listIrissScan(): Promise<IrissScanListRow[]> {
   const r = resolveStorage();
   if (r.kind === "disabled") return [];
 
-  if (BLOB_LIST_CACHE_TTL_MS > 0 && blobListRowsCache && blobListRowsCache.expiresAt > Date.now()) {
-    return blobListRowsCache.rows;
+  const ids = await listRecordIds(r);
+  const indexed = (await readListRowsIndex(r)) ?? [];
+  const merged = await mergeMissingScanRows(indexed, ids);
+  if (merged.changed || (indexed.length === 0 && merged.rows.length > 0)) {
+    await writeListRowsIndex(r, merged.rows).catch(() => {});
   }
+  blobListRowsCache = { expiresAt: Date.now() + Math.max(BLOB_LIST_CACHE_TTL_MS, 0), rows: merged.rows };
+  return merged.rows;
+}
 
-  let rows = await readListRowsIndex(r);
-  if (!rows) {
-    rows = await rebuildListRowsFromRecords(r);
-    if (rows.length > 0) {
-      await writeListRowsIndex(r, rows).catch(() => {});
+export async function readIrissScanWithRetry(
+  id: string,
+  opts?: { attempts?: number; delayMs?: number },
+): Promise<IrissScanRecord | null> {
+  const attempts = Math.max(1, Math.min(5, opts?.attempts ?? 4));
+  const delayMs = Math.max(0, Math.min(500, opts?.delayMs ?? 80));
+  for (let i = 0; i < attempts; i++) {
+    const rec = await readIrissScan(id);
+    if (rec) return rec;
+    if (i < attempts - 1 && delayMs) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
-
-  if (BLOB_LIST_CACHE_TTL_MS > 0) {
-    blobListRowsCache = { expiresAt: Date.now() + BLOB_LIST_CACHE_TTL_MS, rows };
-  }
-  return rows;
+  return null;
 }
 
 export async function readIrissScan(id: string): Promise<IrissScanRecord | null> {
@@ -382,7 +430,7 @@ export async function writeIrissScan(
         addRandomSuffix: false,
         allowOverwrite: true,
       });
-      await upsertListRowsIndex(r, out).catch(() => {});
+      await persistScanRecordIndex(r, out);
       return { ok: true, record: out };
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) };
@@ -395,7 +443,7 @@ export async function writeIrissScan(
     const tmp = `${fp}.tmp`;
     await fs.writeFile(tmp, JSON.stringify(out, null, 2), "utf8");
     await fs.rename(tmp, fp);
-    await upsertListRowsIndex(r, out).catch(() => {});
+    await persistScanRecordIndex(r, out);
     return { ok: true, record: out };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };
@@ -429,12 +477,14 @@ export async function deleteIrissScan(id: string): Promise<{ ok: true } | { ok: 
       }
     }
     await removeFromListRowsIndex(r, id).catch(() => {});
+    invalidateScanListCache();
     return { ok: true };
   }
 
   try {
     await fs.unlink(filePath(r.dir, id)).catch(() => undefined);
     await removeFromListRowsIndex(r, id).catch(() => {});
+    invalidateScanListCache();
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };

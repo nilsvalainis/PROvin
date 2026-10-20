@@ -4,6 +4,7 @@ import { isIrissScanStoreEnabled, isSafeIrissScanId, listIrissScan, readIrissSca
 import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 import { appendEcarstradeLinksToScan, previewEcarstradeLinksForScan, replaceEcarstradeLinks } from "@/lib/iriss-scan-ecarstrade-links";
 import { emptyIrissScanRecord, type IrissScanRecord } from "@/lib/iriss-scan-types";
+import { isMarketplaceVehicleCategory } from "@/lib/marketplace/types";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,12 @@ function recordFromBody(raw: unknown): IrissScanRecord | null {
     engineType: str("engineType"),
     transmission: str("transmission"),
     bodyType: str("bodyType"),
+    vehicleCategory: (() => {
+      const category = str("vehicleCategory");
+      return isMarketplaceVehicleCategory(category) ? category : "";
+    })(),
+    apifyMobiledeEnabled: o.apifyMobiledeEnabled === true,
+    apifyAutoscout24Enabled: o.apifyAutoscout24Enabled === true,
     listingLinkAuto1: coerceIrissListingLinkList(o.listingLinkAuto1),
     listingLinkOpenline: coerceIrissListingLinkList(o.listingLinkOpenline),
     listingLinkAutobid: coerceIrissListingLinkList(o.listingLinkAutobid),
