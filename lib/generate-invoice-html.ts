@@ -8,15 +8,8 @@ import {
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
 import { formatMoneyEur } from "@/lib/format-money";
 import { provincLogoSvg } from "@/lib/client-report-pdf-layout-draft";
+import { escapeHtml as esc } from "@/lib/html-escape";
 import { invoiceBuyerLines, normalizeInvoiceBuyer } from "@/lib/invoice-buyer";
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 /** Dizains saskaņā ar PDF atskaitēm: Inter, PROVIN logotips, zīmola zils. */
 export type InvoiceOrderPayload = {

@@ -1,4 +1,5 @@
 import { adminRichHtmlToPdfSafeHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { escapeHtml as esc } from "@/lib/html-escape";
 import { DZINTARZEME_AUTO_LOGO_PUBLIC_PATH } from "@/lib/dzintarzeme-logo";
 import { getIrissPdfSupplierFooterLines, IRISS_BRAND_ORANGE_HEX } from "@/lib/iriss-brand";
 import { formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
@@ -15,14 +16,6 @@ const INK = "#111827";
 const SLATE_600 = "#1F2937";
 /** Bloku fons - Tailwind `bg-slate-50` (#F8FAFC). */
 const PANEL = "#F8FAFC";
-
-function esc(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 function richCommentBody(html: string): string {
   return adminRichHtmlToPdfSafeHtml(html).trim();
@@ -649,7 +642,7 @@ export function buildIrissOfferPrintHtml(
   const gallery =
     imageAttachments.length > 0
       ? `<div class="ipdf-gallery">${imageAttachments
-          .map((img) => `<figure class="ipdf-photo"><img src="${img.dataUrl}" alt=""/></figure>`)
+          .map((img) => `<figure class="ipdf-photo"><img src="${esc(img.dataUrl)}" alt=""/></figure>`)
           .join("")}</div>`
       : "";
 

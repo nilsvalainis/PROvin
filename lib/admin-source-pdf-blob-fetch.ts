@@ -3,9 +3,8 @@ import "server-only";
 import { del, get } from "@vercel/blob";
 
 import {
+  isAllowedSourcePdfBlobUrl,
   isSafeAdminOrderId,
-  isVercelBlobHostname,
-  sourcePdfBlobPathPrefix,
   type SourcePdfBlobRef,
 } from "@/lib/admin-source-pdf-blob-constants";
 import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
@@ -26,21 +25,11 @@ export async function fetchSourcePdfsFromBlob(
   if (!isSafeAdminOrderId(sid)) throw new Error("invalid_session_id");
   const token = blobRwToken();
   if (!token) throw new Error("blob_token_missing");
-  const expected = `/${sourcePdfBlobPathPrefix(sid)}/`;
-
   const out: FetchedSourcePdf[] = [];
   for (const ref of refs) {
     const urlStr = (ref.url ?? "").trim();
     if (!urlStr) continue;
-    let u: URL;
-    try {
-      u = new URL(urlStr);
-    } catch {
-      throw new Error("invalid_blob_url");
-    }
-    if (u.protocol !== "https:") throw new Error("invalid_blob_url");
-    if (!isVercelBlobHostname(u.hostname)) throw new Error("invalid_blob_host");
-    if (!decodeURIComponent(u.pathname).includes(expected)) throw new Error("blob_path_session_mismatch");
+    if (!isAllowedSourcePdfBlobUrl(sid, urlStr)) throw new Error("blob_path_session_mismatch");
 
     const res = await get(urlStr, { access: "private", token, useCache: false });
     if (!res || res.statusCode !== 200 || !res.stream) throw new Error("blob_fetch_failed");
@@ -54,10 +43,12 @@ export async function fetchSourcePdfsFromBlob(
   return out;
 }
 
-/** Pagaidu faili krātuvē pēc apstrādes vairs nav vajadzīgi. */
-export async function deleteSourcePdfBlobs(urls: string[]): Promise<void> {
+/** Pagaidu faili krātuvē pēc apstrādes vairs nav vajadzīgi. Tikai šī pasūtījuma Blob ceļš. */
+export async function deleteSourcePdfBlobs(sessionId: string, urls: string[]): Promise<void> {
   const token = blobRwToken();
-  const clean = urls.map((u) => u.trim()).filter(Boolean);
+  const clean = urls
+    .map((u) => u.trim())
+    .filter((url) => url && isAllowedSourcePdfBlobUrl(sessionId, url));
   if (!token || clean.length === 0) return;
   await Promise.all(
     clean.map(async (url) => {

@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { SITE_CSP_REPORT_ONLY } from "./lib/csp";
 import { IRISS_LISTING_IMAGE_HOST_SUFFIXES } from "./lib/iriss-listing-image";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
@@ -15,6 +16,10 @@ const securityHeaders: { key: string; value: string }[] = [
   {
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+  },
+  {
+    key: "Content-Security-Policy-Report-Only",
+    value: SITE_CSP_REPORT_ONLY,
   },
 ];
 

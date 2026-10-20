@@ -1,10 +1,11 @@
 import "server-only";
 
 import nodemailer from "nodemailer";
+import type { Transporter } from "nodemailer";
 import { getMailFromAddress, getMailReplyTo } from "@/lib/email/mail-config";
 import { isSmtpConfigured } from "@/lib/email/send-transactional";
 
-function transport(): nodemailer.Transporter | null {
+function transport(): Transporter | null {
   if (!isSmtpConfigured()) return null;
   const user = process.env.SMTP_USER!.trim();
   const pass = process.env.SMTP_PASS!.trim();

@@ -30,7 +30,7 @@ export async function coverCheckcarVinWatermark(
 async function coverCheckcarVinWatermarkUnsafe(
   jpegBody: Buffer,
 ): Promise<CheckcarWatermarkCoverResult> {
-  let raw: { data: Buffer; info: sharp.OutputInfo };
+  let raw: { data: Buffer; info: { width: number; height: number; channels: number } };
   try {
     raw = await sharp(jpegBody).rotate().removeAlpha().raw().toBuffer({ resolveWithObject: true });
   } catch {
