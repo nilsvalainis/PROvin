@@ -5,6 +5,7 @@ import { isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import { logisticsOrderMapLabel, logisticsPreviousPointLabel } from "@/lib/iriss-logistics-labels";
 import {
   applyLogisticsMapCamera,
+  elementHasBox,
   readLogisticsMapCamera,
   waitForGoogleMapTilesIdle,
   type LogisticsMapCamera,
@@ -73,6 +74,7 @@ type Props = {
 export type IrissLogistikaMapHandle = {
   snapshotView: () => LogisticsMapCamera | null;
   applyView: (camera: LogisticsMapCamera) => void;
+  hostEl: () => HTMLDivElement | null;
   notifyResize: () => void;
   waitForTilesIdle: () => Promise<void>;
   fitVisible: (pad?: number) => void;
@@ -111,9 +113,11 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       const map = mapRef.current;
       if (map) applyLogisticsMapCamera(map, camera);
     },
+    hostEl: () => hostRef.current,
     notifyResize: () => {
       const map = mapRef.current;
-      if (map && window.google?.maps?.event) google.maps.event.trigger(map, "resize");
+      if (!map || !window.google?.maps?.event || !elementHasBox(hostRef.current)) return;
+      google.maps.event.trigger(map, "resize");
     },
     waitForTilesIdle: () => {
       const map = mapRef.current;
@@ -171,6 +175,21 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!ready || !host) return;
+    const relayout = () => {
+      const map = mapRef.current;
+      if (!map || !window.google?.maps?.event || !elementHasBox(host)) return;
+      google.maps.event.trigger(map, "resize");
+    };
+    relayout();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(relayout);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, [ready]);
 
   useEffect(() => {
     const map = mapRef.current;

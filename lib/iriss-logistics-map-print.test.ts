@@ -9,7 +9,9 @@ import {
   logisticsPrintLegendRows,
   logisticsPrintNumberMap,
   logisticsPrintSheetTitle,
+  elementHasBox,
   readLogisticsMapCamera,
+  scheduleWhenElementHasBox,
   waitForGoogleMapTilesIdle,
 } from "@/lib/iriss-logistics-map-print";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
@@ -152,5 +154,35 @@ describe("Loģistika map print helpers", () => {
     }, { timeoutMs: 2000, afterIdleMs: 5 });
     handlers.idle!();
     await pending;
+  });
+
+  it("waits until a host has width and height before resize", () => {
+    const box = { clientWidth: 0, clientHeight: 0 };
+    const queue: FrameRequestCallback[] = [];
+    expect(elementHasBox(box)).toBe(false);
+    expect(elementHasBox({ clientWidth: 640, clientHeight: 400 })).toBe(true);
+    let ready = 0;
+    const stop = scheduleWhenElementHasBox(
+      () => box,
+      () => {
+        ready += 1;
+      },
+      {
+        timeoutMs: 4000,
+        raf: (cb) => {
+          queue.push(cb);
+          return queue.length;
+        },
+        cancelRaf: () => undefined,
+      },
+    );
+    queue.shift()?.(0);
+    expect(ready).toBe(0);
+    box.clientWidth = 960;
+    box.clientHeight = 620;
+    queue.shift()?.(0);
+    queue.shift()?.(0);
+    expect(ready).toBe(1);
+    stop();
   });
 });

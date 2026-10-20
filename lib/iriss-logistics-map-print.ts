@@ -108,6 +108,81 @@ export function logisticsPrintLegendLeaksForbidden(
   return rows.some((row) => hasForbiddenLogisticsKey(row as unknown as Record<string, unknown>));
 }
 
+export function elementHasBox(
+  el: { clientWidth: number; clientHeight: number } | null | undefined,
+  minPx = 8,
+): boolean {
+  return Boolean(el && el.clientWidth >= minPx && el.clientHeight >= minPx);
+}
+
+type Raf = (cb: FrameRequestCallback) => number;
+type CancelRaf = (id: number) => void;
+
+function defaultRaf(): Raf {
+  if (typeof requestAnimationFrame === "function") return requestAnimationFrame.bind(globalThis);
+  return (cb) => setTimeout(() => cb(0), 0) as unknown as number;
+}
+
+function defaultCancelRaf(): CancelRaf {
+  if (typeof cancelAnimationFrame === "function") return cancelAnimationFrame.bind(globalThis);
+  return (id) => clearTimeout(id);
+}
+
+/**
+ * Palaiž onReady, kad elementam ir platums un augstums (pēc modal / flex layout).
+ * Timeout gadījumā tāpat izsauc, lai karte mēģinātu resize.
+ */
+export function scheduleWhenElementHasBox(
+  getEl: () => { clientWidth: number; clientHeight: number } | null | undefined,
+  onReady: () => void,
+  opts?: { timeoutMs?: number; minPx?: number; raf?: Raf; cancelRaf?: CancelRaf },
+): () => void {
+  const minPx = opts?.minPx ?? 8;
+  const timeoutMs = opts?.timeoutMs ?? 2500;
+  const raf = opts?.raf ?? defaultRaf();
+  const cancelRaf = opts?.cancelRaf ?? defaultCancelRaf();
+  let settled = false;
+  let rafId = 0;
+  let observer: ResizeObserver | null = null;
+
+  const cleanup = () => {
+    cancelRaf(rafId);
+    observer?.disconnect();
+    observer = null;
+    clearTimeout(timer);
+  };
+
+  const settle = () => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    onReady();
+  };
+
+  const check = () => {
+    if (settled) return;
+    if (elementHasBox(getEl(), minPx)) {
+      rafId = raf(() => settle());
+      return;
+    }
+    rafId = raf(check);
+  };
+
+  const timer = setTimeout(settle, timeoutMs);
+  const el = getEl();
+  if (typeof ResizeObserver !== "undefined" && el && typeof (el as Element).nodeType === "number") {
+    observer = new ResizeObserver(() => {
+      if (elementHasBox(getEl(), minPx)) settle();
+    });
+    observer.observe(el as Element);
+  }
+  rafId = raf(check);
+  return () => {
+    settled = true;
+    cleanup();
+  };
+}
+
 /**
  * Google Maps: pēc resize/center sagaida idle, tad tilesloaded (vai īsu pauzi, ja tiles jau ir).
  */
