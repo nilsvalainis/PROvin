@@ -677,6 +677,15 @@ function buildPdfLifeKmHtml(e: LifecycleEvent): string {
   return `<span class="pdf-life-km">${inner}</span>`;
 }
 
+function buildPdfLifeBodyHtml(e: LifecycleEvent): string {
+  const body = e.body?.trim() ?? "";
+  if (!body) return "";
+  return `<div class="pdf-life-card__body">
+    <p class="pdf-life-card__body-text">${escapeHtml(body)}</p>
+    <button type="button" class="pdf-life-card__more" hidden data-life-more aria-expanded="false">Vēl</button>
+  </div>`;
+}
+
 function buildPdfLifeFactHtml(e: LifecycleEvent): string {
   const detail = e.detail.trim();
   const hideCountryDup = lifecycleDetailDuplicatesCountry(detail, e.country);
@@ -734,6 +743,7 @@ function buildPdfLifeCardItemHtml(e: LifecycleEvent, dealerMakeHint = ""): strin
         ${buildPdfLifeFactHtml(e)}
         ${buildPdfLifeKmHtml(e)}
       </div>
+      ${buildPdfLifeBodyHtml(e)}
     </article>
   </li>`;
 }
@@ -2226,11 +2236,36 @@ function reportFontGuardScript(): string {
       document.fonts.load("700 12px Inter")
     ]);
   }
+  function initLifeCardMore(){
+    var blocks=document.querySelectorAll(".pdf-life-card__body");
+    for(var i=0;i<blocks.length;i++){
+      (function(wrap){
+        if(wrap.getAttribute("data-more-ready")) return;
+        var text=wrap.querySelector(".pdf-life-card__body-text");
+        var btn=wrap.querySelector(".pdf-life-card__more");
+        if(!text||!btn) return;
+        wrap.setAttribute("data-more-ready","1");
+        if(text.scrollHeight>text.clientHeight+1){
+          btn.hidden=false;
+          btn.addEventListener("click",function(){
+            var open=wrap.classList.toggle("is-expanded");
+            btn.setAttribute("aria-expanded",open?"true":"false");
+          });
+        }
+      })(blocks[i]);
+    }
+  }
   var ready=loadInter().catch(function(){});
   window.__provinReportReady=ready;
   ready.then(function(){
     document.documentElement.setAttribute("data-provin-fonts","ready");
+    initLifeCardMore();
   });
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",initLifeCardMore);
+  }else{
+    initLifeCardMore();
+  }
 })();
 </script>`;
 }
@@ -2426,6 +2461,25 @@ ${clientReportPageChromeCss(running)}
       .pdf-life-ico--brand .pdf-ico--brand-logo{width:${BRAND_LOGO_PDF_LIFE_PX}px;height:${BRAND_LOGO_PDF_LIFE_PX}px;object-fit:contain;display:block;}
       .pdf-life-card__fact{min-width:0;}
       .pdf-life-card__sub{margin:0;font-size:var(--pdf-fs-table);color:#475569;line-height:1.4;}
+      .pdf-life-card__body{margin:6px 0 0;min-width:0;width:100%;}
+      .pdf-life-card__body-text{
+        margin:0;font-size:11px;color:#64748b;line-height:1.4;
+        display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;
+      }
+      .pdf-life-card__body.is-expanded .pdf-life-card__body-text{
+        -webkit-line-clamp:unset;line-clamp:unset;overflow:visible;
+      }
+      .pdf-life-card__more{
+        margin:4px 0 0;padding:0;border:0;background:none;color:${PDF_BRAND_BLUE_HEX};
+        font:inherit;font-size:11px;font-weight:650;cursor:pointer;
+      }
+      @media print{
+        .pdf-life-card__body-text{
+          -webkit-line-clamp:unset!important;line-clamp:unset!important;overflow:visible!important;
+          font-size:10px;color:#64748b;
+        }
+        .pdf-life-card__more{display:none!important;}
+      }
       .pdf-life-price-delta{margin-left:0.35em;font-weight:700;font-variant-numeric:tabular-nums;}
       .pdf-life-price-delta--up{color:#047857;}
       .pdf-life-price-delta--down{color:#B91C1C;}

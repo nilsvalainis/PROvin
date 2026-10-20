@@ -84,6 +84,8 @@ export type LifecycleEvent = {
   year: string;
   title: string;
   detail: string;
+  /** Garš avota teksts zem kartītes virsraksta rindas (pilnā platumā). */
+  body?: string;
   country: string;
   /** Tikai `import`: iepriekšējā valsts (mērķa valsts paliek `country`). */
   fromCountry?: string;
@@ -239,6 +241,7 @@ function makeEvent(args: {
   rawDate: string;
   title: string;
   detail?: string;
+  body?: string;
   country?: string;
   odometer?: string;
   source?: string;
@@ -254,6 +257,7 @@ function makeEvent(args: {
     year: yearOf(args.rawDate, ms),
     title: args.title,
     detail: lifecyclePublicCaption(args.detail ?? ""),
+    ...(args.body?.trim() ? { body: lifecyclePublicCaption(args.body) } : null),
     country: normalizeCountryNameLv(args.country ?? "") || (args.country ?? "").trim(),
     odometer: args.odometer?.trim() ?? "",
     sources: args.source?.trim() ? [args.source.trim()] : [],
@@ -368,7 +372,31 @@ function classifyInformationalVendorTimelineKind(description: string): Lifecycle
   return kind;
 }
 
-function vendorTimelineTitleAndDetail(description: string, kind: LifecycleEventKind): { title: string; detail: string } {
+const VENDOR_SHORT_TITLE_MAX = 32;
+
+function vendorKindShortTitle(kind: LifecycleEventKind): string {
+  switch (kind) {
+    case "first_registration":
+      return "Pirmā reģistrācija";
+    case "inspection":
+      return "Tehniskā apskate";
+    case "listed":
+      return "Sludinājums";
+    case "service":
+      return "Servisa apmeklējums";
+    case "incident":
+      return "Negadījums";
+    case "sale":
+      return "Pārdots";
+    default:
+      return "Ieraksts reģistrā";
+  }
+}
+
+function vendorTimelineTitleAndDetail(
+  description: string,
+  kind: LifecycleEventKind,
+): { title: string; detail: string; body?: string } {
   const raw = description.trim();
   if (kind === "inspection") {
     const split = raw.match(/^(?:veikta\s+)?(tehniskā apskate|periodiskā apskate|reģistrācijas apskate|importa apskate)\s*[:.\-]\s*(.+)$/i);
@@ -380,7 +408,11 @@ function vendorTimelineTitleAndDetail(description: string, kind: LifecycleEventK
     if (!raw || /^sludinājums$/i.test(raw)) return { title: "Sludinājums", detail: "" };
     return { title: "Sludinājums", detail: raw };
   }
-  return { title: raw || "Ieraksts reģistrā", detail: "" };
+  if (!raw) return { title: vendorKindShortTitle(kind), detail: "" };
+  if (raw.length <= VENDOR_SHORT_TITLE_MAX) return { title: raw, detail: "" };
+  const headed = raw.match(/^(.{2,32}?)\s*[:.\-]\s+(.+)$/);
+  if (headed) return { title: headed[1]!.trim(), detail: "", body: headed[2]!.trim() };
+  return { title: vendorKindShortTitle(kind), detail: "", body: raw };
 }
 
 /** Reģistrācija, apskate, oficiāls odometrs u.c. - ne sludinājuma vai laikposma tabulas valsts. */
@@ -596,15 +628,16 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
       const kind = informational
         ? classifyInformationalVendorTimelineKind(t.description)
         : classifyVendorTimelineKind(t.description);
-      const { title, detail } = vendorTimelineTitleAndDetail(t.description, kind);
+      const { title, detail, body } = vendorTimelineTitleAndDetail(t.description, kind);
       const failedInspection =
-        kind === "inspection" && /neizturēt|ikke godkendt|omsyn|betinget/i.test(`${title} ${detail} ${t.description}`);
+        kind === "inspection" && /neizturēt|ikke godkendt|omsyn|betinget/i.test(`${title} ${detail} ${body ?? ""} ${t.description}`);
       out.push(
         makeEvent({
           kind,
           rawDate: t.date,
           title,
           detail,
+          body,
           country: t.country,
           odometer: t.odometer,
           source: b.title,
@@ -855,6 +888,7 @@ function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
       prev.timelineInformational = false;
     }
     if (!prev.detail && e.detail) prev.detail = e.detail;
+    if (!prev.body && e.body) prev.body = e.body;
     for (const s of e.sources) if (!prev.sources.includes(s)) prev.sources.push(s);
     collapseCountryOnlyDetail(prev);
   }
@@ -906,6 +940,7 @@ function mergeSameDateTypeCountryDisagreement(events: LifecycleEvent[]): Lifecyc
     if (sameCountry || !prev.country || !e.country) {
       if (!prev.odometer && e.odometer) prev.odometer = e.odometer;
       if (!prev.detail && e.detail) prev.detail = e.detail;
+      if (!prev.body && e.body) prev.body = e.body;
       for (const s of e.sources) if (!prev.sources.includes(s)) prev.sources.push(s);
       continue;
     }
