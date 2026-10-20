@@ -1,6 +1,6 @@
 "use client";
 
-import { FileDown, FileText, Mail, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
+import { ChevronRight, FileDown, FileText, Mail, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from "react";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
@@ -64,6 +64,7 @@ import {
   timelineFromPasutijums,
   type IrissCommFilter,
 } from "@/lib/iriss-communication-timeline";
+import { type IrissCommTypeFilter } from "@/lib/iriss-order-comm-view";
 import { hitMatchesIrissPriceFilter, irissPriceChipFilterLabel, irissPriceHistoryRows, latestIrissPriceChip, type IrissPriceChipFilter } from "@/lib/iriss-listing-price-chips";
 import { IRISS_OFFERS_CONTINUE, IRISS_OFFERS_SEND, formatIrissOffersLinksSummary, irissOfferCardPrimary } from "@/lib/iriss-order-offers-view";
 import { IRISS_SEARCH_BUCKETS, formatIrissHitSourceLine, irissHitAuctionUrl } from "@/lib/iriss-order-search-view";
@@ -468,6 +469,7 @@ export function IrissOrderRoom({
   const tabSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [bucket, setBucket] = useState<IrissOrderRoomHitBucket>("new");
   const [commFilter, setCommFilter] = useState<IrissCommFilter>("all");
+  const [commTypeFilter, setCommTypeFilter] = useState<IrissCommTypeFilter>("all");
   const [priceFilter, setPriceFilter] = useState<IrissPriceChipFilter>("all");
   const [priceFilterOpen, setPriceFilterOpen] = useState(false);
   const [criteriaOpen, setCriteriaOpen] = useState(false);
@@ -1620,112 +1622,138 @@ export function IrissOrderRoom({
       ) : null}
 
       {tab === "communication" ? (
-        <div className="mt-3 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(240px,1fr)]">
-          <section className={`${cardClass} space-y-2`}>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                className={actionBtn}
-                onClick={() =>
-                  onPatchRecord({
-                    communicationEvents: [
-                      ...(rec.communicationEvents ?? []),
-                      newIrissCommunicationEvent("whatsapp", "Nosūtīts WhatsApp", { status: "sent", body: composer }),
-                    ],
-                  })
-                }
-              >
-                Nosūtīts
-              </button>
-              <button
-                type="button"
-                className={actionBtn}
-                onClick={() =>
-                  onPatchRecord({
-                    communicationEvents: [
-                      ...(rec.communicationEvents ?? []),
-                      newIrissCommunicationEvent("call", "Klienta atbilde", { status: "answered", body: composer }),
-                    ],
-                  })
-                }
-              >
-                Klienta atbilde
-              </button>
-              <button
-                type="button"
-                className={actionBtn}
-                onClick={() =>
-                  onPatchRecord({
-                    communicationEvents: [
-                      ...(rec.communicationEvents ?? []),
-                      newIrissCommunicationEvent("call", "Neatzīmēts zvans", { status: "missed" }),
-                    ],
-                  })
-                }
-              >
-                Neatzīmēt
-              </button>
-            </div>
-            <IrissCommunicationTimeline items={commTimeline} filter={commFilter} onFilter={setCommFilter} />
-            <label className="mt-2 block">
-              <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6b7280]">Piezīmes</span>
-              <textarea className={areaClass} aria-label="Piezīmes" value={rec.notes} onChange={(e) => onPatch("notes", e.target.value)} />
-            </label>
-            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end">
-              <label className="block min-w-0 flex-1">
-                <span className="sr-only">Ziņa</span>
-                <textarea className={areaClass} value={composer} placeholder="Rakstīt piezīmi vai WhatsApp melnrakstu…" aria-label="Ziņas teksts" onChange={(e) => setComposer(e.target.value)} />
-              </label>
-              <div className="flex flex-wrap gap-2">
+        <div className="iriss-komunikacija-view mt-3 grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,2fr)_minmax(240px,1fr)]">
+          <section className={`${cardClass} flex min-h-[420px] flex-col space-y-2`}>
+            <IrissCommunicationTimeline
+              items={commTimeline}
+              filter={commFilter}
+              onFilter={setCommFilter}
+              typeFilter={commTypeFilter}
+              onTypeFilter={setCommTypeFilter}
+            />
+            <div className="mt-auto border-t border-[var(--hair)] pt-3">
+              <div className="mb-2 flex flex-wrap gap-2">
                 <button
                   type="button"
                   className={actionBtn}
-                  onClick={() => {
-                    const next = appendIrissOrderRoomNote(rec.notes, composer, new Date().toISOString());
-                    if (next === rec.notes) return;
-                    onAppendNote(composer);
-                    setComposer("");
-                  }}
+                  onClick={() =>
+                    onPatchRecord({
+                      communicationEvents: [
+                        ...(rec.communicationEvents ?? []),
+                        newIrissCommunicationEvent("whatsapp", "Nosūtīts WhatsApp", { status: "sent", body: composer }),
+                      ],
+                    })
+                  }
                 >
-                  Piezīme
+                  Nosūtīts
                 </button>
-                <button type="button" className={roomBtnWa} disabled={!canCall} onClick={() => onWhatsappText(composer)}>
-                  Atvērt WhatsApp
+                <button
+                  type="button"
+                  className={actionBtn}
+                  onClick={() =>
+                    onPatchRecord({
+                      communicationEvents: [
+                        ...(rec.communicationEvents ?? []),
+                        newIrissCommunicationEvent("call", "Klienta atbilde", { status: "answered", body: composer }),
+                      ],
+                    })
+                  }
+                >
+                  Klienta atbilde
                 </button>
-                <button type="button" className={actionBtn} disabled={!canEmail} onClick={() => openMail(composer)}>
-                  E-pasts
+                <button
+                  type="button"
+                  className={actionBtn}
+                  onClick={() =>
+                    onPatchRecord({
+                      communicationEvents: [
+                        ...(rec.communicationEvents ?? []),
+                        newIrissCommunicationEvent("call", "Neatzīmēts zvans", { status: "missed" }),
+                      ],
+                    })
+                  }
+                >
+                  Neatzīmēt
                 </button>
+              </div>
+              <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end">
+                <label className="block min-w-0 flex-1">
+                  <span className="sr-only">Ziņa</span>
+                  <textarea className={areaClass} value={composer} placeholder="Rakstīt piezīmi vai WhatsApp melnrakstu…" aria-label="Ziņas teksts" onChange={(e) => setComposer(e.target.value)} />
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className={actionBtn}
+                    onClick={() => {
+                      const next = appendIrissOrderRoomNote(rec.notes, composer, new Date().toISOString());
+                      if (next === rec.notes) return;
+                      onAppendNote(composer);
+                      setComposer("");
+                    }}
+                  >
+                    Piezīme
+                  </button>
+                  <button type="button" className={roomBtnWa} disabled={!canCall} onClick={() => onWhatsappText(composer)}>
+                    Atvērt WhatsApp
+                  </button>
+                  {canEmail ? (
+                    <button type="button" className={actionBtn} onClick={() => openMail(composer)}>
+                      E-pasts
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </div>
           </section>
-          <aside>
+          <aside className="space-y-3">
             <section className={cardClass}>
               <CardTitle>Ātrā saziņa</CardTitle>
               <div className="grid gap-2">
-                <button type="button" className={roomBtn} disabled={!canCall} onClick={onCall}>
+                <p className="text-[14px] font-semibold text-[var(--ink)]">{rec.phone.trim() || "Tālrunis nav"}</p>
+                <button type="button" className={`${roomBtn} md:hidden`} disabled={!canCall} onClick={onCall}>
                   <Phone className="h-4 w-4" aria-hidden />
-                  {rec.phone.trim() || "Tālrunis nav"}
+                  Zvanīt
                 </button>
                 <button type="button" className={`${roomBtnWa} w-full`} disabled={!canCall} onClick={() => onWhatsappText(composer)}>
                   WhatsApp
                 </button>
-                <button type="button" className={roomBtn} disabled={!canEmail} onClick={() => openMail(composer)}>
-                  <Mail className="h-4 w-4" aria-hidden />
-                  {rec.email.trim() || "E-pasts nav"}
-                </button>
+                {canEmail ? (
+                  <button type="button" className={roomBtn} onClick={() => openMail(composer)}>
+                    <Mail className="h-4 w-4" aria-hidden />
+                    {rec.email.trim()}
+                  </button>
+                ) : null}
               </div>
-              <div className="mt-3.5">
+            </section>
+            <section className={`${cardClass} max-lg:hidden`}>
+              <CardTitle>Piezīmes</CardTitle>
+              <textarea className={areaClass} aria-label="Piezīmes" value={rec.notes} onChange={(e) => onPatch("notes", e.target.value)} />
+            </section>
+            <section className={cardClass}>
+              <div className="mb-2 flex items-center justify-between gap-2">
                 <CardTitle>Šabloni</CardTitle>
-                <ul>
-                  {IRISS_ORDER_ROOM_TEMPLATES.map((template) => (
-                    <li key={template.id} className="border-b border-dashed border-[#eee] last:border-0">
-                      <button type="button" className="w-full py-1.5 text-left text-[13px] text-[#111827] hover:bg-[#f9fafb]" onClick={() => setComposer(template.text)}>
-                        {template.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                <span className="lg:hidden">
+                  <IrissOverflowMenu label="Piezīmes">
+                    <IrissOverflowItem>
+                      <label className="block w-full">
+                        <span className="mb-1 block text-[11px] font-semibold text-[var(--ink2)]">Piezīmes</span>
+                        <textarea className={areaClass} aria-label="Piezīmes" value={rec.notes} onChange={(e) => onPatch("notes", e.target.value)} />
+                      </label>
+                    </IrissOverflowItem>
+                  </IrissOverflowMenu>
+                </span>
               </div>
+              <ul>
+                {IRISS_ORDER_ROOM_TEMPLATES.map((template) => (
+                  <li key={template.id} className="border-b border-dashed border-[var(--hair)] last:border-0">
+                    <button type="button" className="flex w-full items-center justify-between py-2 text-left text-[13px] text-[var(--ink)]" onClick={() => setComposer(template.text)}>
+                      <span>{template.label}</span>
+                      <ChevronRight className="h-4 w-4 text-[var(--ink3)]" aria-hidden />
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </section>
           </aside>
         </div>
