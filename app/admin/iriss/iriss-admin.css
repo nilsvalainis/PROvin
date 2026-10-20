@@ -333,7 +333,7 @@
   padding: 8px 10px;
   border-radius: 10px;
   background: #eff6ff;
-  color: #1d4ed8;
+  color: var(--acc, #3d5bd9);
   font-size: 12px;
   line-height: 1.4;
 }
