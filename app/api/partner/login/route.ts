@@ -9,16 +9,20 @@ export const runtime = "nodejs";
 
 const LOGIN_MAX_PER_WINDOW = 20;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+/** Viena konta paroles minēšana no daudziem IP. */
+const LOGIN_ACCOUNT_MAX_PER_WINDOW = 10;
+
+function rateLimited(retryAfterSec: number) {
+  return NextResponse.json(
+    { error: "rate_limited" },
+    { status: 429, headers: { "Retry-After": String(retryAfterSec) } },
+  );
+}
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
   const limited = checkRateLimit(`partner-login:${ip}`, LOGIN_MAX_PER_WINDOW, LOGIN_WINDOW_MS);
-  if (!limited.ok) {
-    return NextResponse.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
-    );
-  }
+  if (!limited.ok) return rateLimited(limited.retryAfterSec);
 
   let email = "";
   let password = "";
@@ -30,6 +34,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
   }
 
+  const accountKey = email.trim().toLowerCase().slice(0, 200);
+  if (accountKey) {
+    const limitedAccount = checkRateLimit(
+      `partner-login-acc:${accountKey}`,
+      LOGIN_ACCOUNT_MAX_PER_WINDOW,
+      LOGIN_WINDOW_MS,
+    );
+    if (!limitedAccount.ok) return rateLimited(limitedAccount.retryAfterSec);
+  }
+
   const result = await authenticateB2bPartner(email, password);
   if (!result.ok) {
     if (result.error === "unverified") {
@@ -38,6 +52,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
   }
 
-  await writeB2bPartnerServerSession({ partnerId: result.partner.id, email: result.partner.email });
+  await writeB2bPartnerServerSession({ partnerId: result.partner.id, email: result.partner.email, passwordHash: result.partner.passwordHash });
   return NextResponse.json({ ok: true, partner: toPublicPartner(result.partner) });
 }

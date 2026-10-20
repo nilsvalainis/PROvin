@@ -55,6 +55,18 @@ export function isPartnerAuditPurpose(value: string): value is B2bPartnerAuditPu
   return value === "client" || value === "internal";
 }
 
+/**
+ * Servera atzīmes piezīmēs (`partner_id=…`, `wallet_txn=…` u.c.) nosaka partnera piederību,
+ * maka atmaksu un RAW datu piekļuvi. Klienta brīvais teksts (Stripe „Komentārs”, formas
+ * piezīmes) tās nedrīkst atdarināt: `atslēga=` kļūst par `atslēga =`, teksts paliek lasāms.
+ */
+const RESERVED_NOTE_MARKER_RE =
+  /\b(partner_id|partner_company|checkout_line|audit_purpose|wallet_txn|wallet_product|wallet_cents|report_lang|lot)\s*=/gi;
+
+export function neutralizeReservedOrderNoteMarkers(text: string): string {
+  return text.replace(RESERVED_NOTE_MARKER_RE, (_m, key: string) => `${key} =`);
+}
+
 export function partnerNotesMatchId(notes: string, partnerId: string): boolean {
   const id = partnerId.trim();
   return Boolean(id) && notes.includes(`partner_id=${id}`);

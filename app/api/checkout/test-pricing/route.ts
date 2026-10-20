@@ -140,9 +140,10 @@ export async function POST(req: Request) {
     ? localeRaw
     : routing.defaultLocale;
 
-  const sourcePage =
-    typeof raw.sourcePage === "string" && raw.sourcePage.trim() ? raw.sourcePage.trim() : "home-pricing";
-  const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim() : "";
+  /** Stripe metadata vērtība max 500 zīmes; garāka ievade nedrīkst izraisīt 500. */
+  const sourcePageRaw = typeof raw.sourcePage === "string" ? raw.sourcePage.trim().slice(0, 64) : "";
+  const sourcePage = /^[a-z0-9_-]+$/i.test(sourcePageRaw) ? sourcePageRaw : "home-pricing";
+  const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim().slice(0, 500) : "";
   const vinInput = typeof raw.vin === "string" ? raw.vin : "";
   const vin = normalizeVin(vinInput);
   const parsedEmail = parseOptionalCheckoutEmail(raw.customerEmail);

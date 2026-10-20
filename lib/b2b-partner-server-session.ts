@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 
@@ -11,7 +11,26 @@ const DEV_FALLBACK_SECRET = "provin-local-dev-secret-min-16-chars";
 export type B2bPartnerServerSession = {
   partnerId: string;
   email: string;
+  /**
+   * Paroles versija (īss hash no `passwordHash`). Pēc paroles maiņas vai atiestatīšanas
+   * vecās sīkdatnes vairs neder. Sīkdatnēm pirms šī lauka tā nav (derīgas līdz `exp`).
+   */
+  pv?: string;
 };
+
+/** Paroles versija sesijai: neatklāj hash, tikai salīdzināšanai. */
+export function b2bPartnerPasswordVersion(passwordHash: string): string {
+  return createHash("sha256").update(`b2b-partner-pv:${passwordHash}`).digest("hex").slice(0, 16);
+}
+
+/** Vai sesija atbilst partnera pašreizējai parolei (`pv` nav = veca sīkdatne, pieņem). */
+export function isB2bPartnerSessionPasswordCurrent(
+  session: Pick<B2bPartnerServerSession, "pv">,
+  passwordHash: string,
+): boolean {
+  if (!session.pv) return true;
+  return session.pv === b2bPartnerPasswordVersion(passwordHash);
+}
 
 export function resolveB2bPartnerSessionSecret(env: NodeJS.ProcessEnv = process.env): string {
   const dedicated = env.B2B_PARTNER_SESSION_SECRET?.trim() ?? "";
@@ -29,7 +48,12 @@ function signSession(session: B2bPartnerServerSession): string {
   if (!secret) throw new Error("B2B partner session secret nav iestatīts");
   const exp = Date.now() + TOKEN_MAX_AGE_MS;
   const payload = Buffer.from(
-    JSON.stringify({ partnerId: session.partnerId, email: session.email, exp }),
+    JSON.stringify({
+      partnerId: session.partnerId,
+      email: session.email,
+      ...(session.pv ? { pv: session.pv } : {}),
+      exp,
+    }),
     "utf8",
   ).toString("base64url");
   const sig = createHmac("sha256", secret).update(payload).digest("hex");
@@ -50,13 +74,15 @@ function readSessionFromToken(token: string): B2bPartnerServerSession | null {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as {
       partnerId?: unknown;
       email?: unknown;
+      pv?: unknown;
       exp?: unknown;
     };
     if (typeof data.exp !== "number" || data.exp <= Date.now()) return null;
     const partnerId = typeof data.partnerId === "string" ? data.partnerId.trim() : "";
     const email = typeof data.email === "string" ? data.email.trim() : "";
     if (!isSafeB2bPartnerId(partnerId) || !email.includes("@")) return null;
-    return { partnerId, email };
+    const pv = typeof data.pv === "string" && /^[0-9a-f]{16}$/.test(data.pv) ? data.pv : undefined;
+    return pv ? { partnerId, email, pv } : { partnerId, email };
   } catch {
     return null;
   }
@@ -74,9 +100,18 @@ export async function readB2bPartnerServerEmail(): Promise<string | null> {
   return session?.email ?? null;
 }
 
-export async function writeB2bPartnerServerSession(session: B2bPartnerServerSession): Promise<void> {
+export async function writeB2bPartnerServerSession(session: {
+  partnerId: string;
+  email: string;
+  passwordHash: string;
+}): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, signSession(session), {
+  const token = signSession({
+    partnerId: session.partnerId,
+    email: session.email,
+    pv: b2bPartnerPasswordVersion(session.passwordHash),
+  });
+  cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
