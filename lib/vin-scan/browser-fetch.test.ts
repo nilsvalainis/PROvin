@@ -110,7 +110,17 @@ describe("VIN SCAN from browser", () => {
         summary: "Nav datu (pārlūkā)",
       }),
     ).toMatchObject({ id: "nicb", status: "none", html: "" });
+    expect(
+      parseVinScanBrowserEventDetail({
+        id: "stat_vin",
+        vin: "WBA5R1C0XLFH42873",
+        status: "unknown",
+        html: "<html>ok</html>",
+        finalUrl: "https://stat.vin/car-not-found",
+      })?.pageUrl,
+    ).toBe("https://stat.vin/car-not-found");
     expect(browserImportErrorLv("page_not_ready")).toMatch(/Lapa vēl nav gatava/);
     expect(browserImportErrorLv("vin_mismatch")).toMatch(/VIN lapā nesakrīt/);
+    expect(browserImportErrorLv("write_failed")).toMatch(/saglabāt/);
   });
 });

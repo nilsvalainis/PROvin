@@ -8,6 +8,7 @@ import { readOrderDraft } from "@/lib/admin-order-draft-store";
 import { isPlaceholderVin, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { ORDER_VIN_SCAN_BROWSER_IMPORT_IDS, parseOrderVinScanRecord } from "@/lib/order-vin-scan";
 import { applyBrowserArchiveHtml } from "@/lib/order-vin-scan-browser-html";
+import { logVinScanBrowserImport } from "@/lib/vin-scan/browser-import-log";
 import { upsertOrderDraftVinScan } from "@/lib/admin-order-draft-store";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
 
@@ -50,9 +51,23 @@ export async function POST(req: Request) {
     if (br && typeof br === "object") {
       const id = typeof br.id === "string" ? br.id : "";
       const html = typeof br.html === "string" ? br.html : "";
-      const pageUrl = typeof br.pageUrl === "string" ? br.pageUrl.trim().slice(0, 500) : "";
+      const pageUrl = (
+        (typeof br.finalUrl === "string" && br.finalUrl.trim()) ||
+        (typeof br.pageUrl === "string" ? br.pageUrl : "")
+      )
+        .trim()
+        .slice(0, 500);
       const httpStatus = typeof br.httpStatus === "number" && Number.isFinite(br.httpStatus) ? br.httpStatus : undefined;
       if (!existing || !ORDER_VIN_SCAN_BROWSER_IMPORT_IDS.includes(id) || existing.vin !== vin) {
+        logVinScanBrowserImport({
+          route: "order-vin-scan",
+          event: "import_rejected",
+          error: "invalid_browser_result",
+          id,
+          httpStatus,
+          pageUrl,
+          html,
+        });
         return NextResponse.json({ error: "invalid_browser_result" }, { status: 400 });
       }
       if (html.trim()) {
@@ -60,16 +75,42 @@ export async function POST(req: Request) {
         if (applied.ok) {
           const saved = await upsertOrderDraftVinScan(sessionId, applied.record);
           if (!saved.ok) return NextResponse.json({ error: saved.error }, { status: 500 });
+          logVinScanBrowserImport({
+            route: "order-vin-scan",
+            event: "import_saved",
+            id,
+            httpStatus,
+            pageUrl,
+            html,
+          });
           return NextResponse.json({ ok: true, vinScan: applied.record });
         }
         const clientStatus = br.status === "found" || br.status === "none" ? br.status : "";
         const hasRow = existing.indicators.some((row) => row.id === id);
         if (applied.error !== "page_not_ready" || !clientStatus || !hasRow) {
+          logVinScanBrowserImport({
+            route: "order-vin-scan",
+            event: "import_rejected",
+            error: applied.error,
+            id,
+            httpStatus,
+            pageUrl,
+            html,
+          });
           return NextResponse.json({ error: applied.error }, { status: 400 });
         }
       }
       const status: "found" | "none" | "" = br.status === "found" || br.status === "none" ? br.status : "";
       if (!status) {
+        logVinScanBrowserImport({
+          route: "order-vin-scan",
+          event: "import_rejected",
+          error: "invalid_browser_result",
+          id,
+          httpStatus,
+          pageUrl,
+          html,
+        });
         return NextResponse.json({ error: "invalid_browser_result" }, { status: 400 });
       }
       const summary = (typeof br.summary === "string" ? br.summary : "").trim().slice(0, 300);

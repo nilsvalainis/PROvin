@@ -22,14 +22,19 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.24\.1/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.24.1"');
+    expect(src).toMatch(/@version\s+1\.24\.2/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.24.2"');
     expect(src).toContain("function stampUserscriptVersion()");
     expect(src).toContain('document.addEventListener("provin-userscript-ping"');
     expect(src).toContain('new CustomEvent("provin-userscript-pong", { detail: SCRIPT_VERSION })');
     expect(src).toContain("childList: true,");
     expect(src).toContain("window.setInterval(run, 5000);");
     expect(src).toContain("const BROWSER_FETCH_MAX_TRIES = 3;");
+    expect(src).toContain("function htmlLooksLikeChallenge(");
+    expect(src).toContain("function retryLater()");
+    expect(src).toContain("anonymous: false");
+    expect(src).toContain("res.finalUrl");
+    expect(src).toContain("finalUrl: pageUrl");
     expect(src).toContain("// @connect      stat.vin");
     expect(src).toContain("// @connect      bid.cars");
     expect(src).toContain("// @connect      bidfax.info");
@@ -97,6 +102,7 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(src).toContain('if (id === "checkcar_vin")');
     expect(src).toContain('if (id === "stat_vin")');
     expect(src).toContain("extractStatVinExtras");
+    expect(src).toContain("lot(?:\\s*number)?");
     expect(src).toContain("pieprasījumu limits");
     expect(src).toContain('if (id === "plc_auction")');
     expect(src).toContain('if (id === "lt_itpr")');
@@ -139,12 +145,14 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(vinScanUserscriptMeetsMin("1.23.0")).toBe(false);
     expect(vinScanUserscriptMeetsMin("1.24.0")).toBe(true);
     expect(vinScanUserscriptMeetsMin("1.24.1")).toBe(true);
+    expect(vinScanUserscriptMeetsMin("1.24.2")).toBe(true);
     expect(vinScanUserscriptMeetsMin("1.24")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
     expect(vinScanUserscriptUpdateNeeded("")).toBe(false);
     expect(vinScanUserscriptUpdateNeeded("1.23.0")).toBe(true);
     expect(vinScanUserscriptUpdateNeeded("1.24.0")).toBe(false);
     expect(vinScanUserscriptUpdateNeeded("1.24.1")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.24.2")).toBe(false);
     const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
     const panel = readFileSync(path.join(ROOT, "components/admin/AdminVinScanPanel.tsx"), "utf8");
     const handoff = readFileSync(path.join(ROOT, "components/admin/AdminVinScanBrowserFetchHandoff.tsx"), "utf8");

@@ -123,7 +123,15 @@ async function runOrderFreeVinScanOnce(
       plates: emptyVinScanPlates(),
       scannedAt,
       indicators: saved.indicators,
-    }).catch(() => undefined);
+    }).catch((err) => {
+      console.warn(
+        JSON.stringify({
+          vinScanStore: true,
+          event: "snapshot_write_failed",
+          msg: err instanceof Error ? err.message : "write_failed",
+        }),
+      );
+    });
     await recordSourceOutcomes(vinScanSourceHealthOutcomes(saved.indicators)).catch(() => undefined);
     return {
       ok: true,
