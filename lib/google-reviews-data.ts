@@ -3,11 +3,15 @@
  * Atjaunini šeit, kad parādās jaunas atsauksmes Google profilā.
  */
 
+import type { GoogleReviewRelative } from "@/lib/google-reviews-relative";
+
 export type GoogleReviewEntry = {
   id: string;
   author: string;
   rating: 5;
-  /** Relatīvais laiks kā Google (LV). */
+  /** Relatīvais laiks kā Google (strukturēts, formatē pēc lapas valodas). */
+  relative: GoogleReviewRelative;
+  /** LV avota teksts. EN/DE/RU lapā nelieto. */
   relativeDateLv: string;
   text: string;
 };
@@ -21,6 +25,7 @@ export const GOOGLE_REVIEWS: GoogleReviewEntry[] = [
     id: "edgars-sulcs",
     author: "Edgars Šulcs",
     rating: 5,
+    relative: { value: 19, unit: "hour" },
     relativeDateLv: "pirms 19 stundām",
     text: "Lieliska pieredze ar Provin! Pirms auto iegādes nolēmu pārbaudīt tā vēsturi un biju patīkami pārsteigts par atskaites kvalitāti un apjomu. Salīdzinot ar citiem populārajiem servisiem, Provin piedāvā krietni detalizētāku, dziļāku un nopietnāku informāciju. Dati ir precīzi un ļoti izsmeļoši, tas palīdzēja pieņemt drošu lēmumu par auto iegādi. Noteikti iesaku visiem!",
   },
@@ -28,6 +33,7 @@ export const GOOGLE_REVIEWS: GoogleReviewEntry[] = [
     id: "ieva-pilverte",
     author: "Ieva Pilverte",
     rating: 5,
+    relative: { value: 2, unit: "day" },
     relativeDateLv: "pirms 2 dienām",
     text: "Ļoti izsmeļoša atskaite, katra centa vērta! Un konsultācija pēc atskaite, ļoti palīdzēja nepieļaut kļūdu. 😀 paldies!",
   },
@@ -35,6 +41,7 @@ export const GOOGLE_REVIEWS: GoogleReviewEntry[] = [
     id: "dzintars-jaunzems",
     author: "Dzintars Jaunzems",
     rating: 5,
+    relative: { value: 5, unit: "day" },
     relativeDateLv: "pirms 5 dienām",
     text: 'Paldies! Ļoti noderīgs atbalsts, ja plānojat pirkt auto un gribat "ieberziena" risku samazināt līdz minimumam!',
   },
@@ -42,6 +49,7 @@ export const GOOGLE_REVIEWS: GoogleReviewEntry[] = [
     id: "andris-ever",
     author: "Andris Ever",
     rating: 5,
+    relative: { value: 4, unit: "week" },
     relativeDateLv: "pirms 4 nedēļām",
     text: "Ļoti vērtīga atskaite, sīki un detalizēti, rūpīgi izpētīts no visiem aspektiem. Paldies, pie auto apskates, jau zināju auto vājās vietas, kur skatīties, kam pievērst īpašu uzmanību tieši konkrētajam modelim. Auto nopirku, arī pirms pirkšanas sazvanījos un izrunājām manus novērojumus.",
   },
@@ -49,6 +57,7 @@ export const GOOGLE_REVIEWS: GoogleReviewEntry[] = [
     id: "ralph-lv",
     author: "Ralph_LV",
     rating: 5,
+    relative: { value: 4, unit: "week" },
     relativeDateLv: "pirms 4 nedēļām",
     text: "Vēlos pateikt lielu paldies Provin.lv komandai! Pēc atskaites saņemšanas sazvanījāmies, un šī saruna man tiešām palīdzēja. Ne tikai izskaidroja visu saprotamā valodā, bet arī deva vērtīgus padomus, kam pievērst uzmanību: iespējamām krāsotām detaļām, salona nolietojumam un citām niansēm, ko pats, visticamāk, nebūtu pamanījis. Visvairāk novērtēju to, ka neviens neko neuzspieda, bet ieteica, ko vēl pārbaudīt, pirms tērēt naudu remontiem, un palīdzēja pieņemt pārdomātu lēmumu. Pēc sarunas galva bija daudz skaidrāka, pazuda steiga un emocijas, un uz automašīnu paskatījos pavisam citādi. Ja meklējat godīgu un profesionālu palīdzību pirms auto iegādes, Provin.lv noteikti ir īstā vieta. Paldies par jūsu laiku, zināšanām un cilvēcīgo attieksmi!",
   },
@@ -56,6 +65,7 @@ export const GOOGLE_REVIEWS: GoogleReviewEntry[] = [
     id: "juris-tuliks",
     author: "Juris TŪLIKS",
     rating: 5,
+    relative: { value: 5, unit: "week" },
     relativeDateLv: "pirms 5 nedēļām",
     text: "Viss notiek ātri, profesionāli un korekti. Ja vēlies godīgu, pārskatāmu un saprotamu atskaiti par savu interesējošo auto, noteikti iesaku. Paldies!!",
   },
@@ -63,6 +73,7 @@ export const GOOGLE_REVIEWS: GoogleReviewEntry[] = [
     id: "aigars-smiltnieks",
     author: "Aigars Smiltnieks",
     rating: 5,
+    relative: { value: 10, unit: "week" },
     relativeDateLv: "pirms 10 nedēļām",
     text: `Ļoti profesionāla un kvalitatīva pieeja auto pārbaudei. Pasūtīju PROVIN auditu, un saņemtā atskaite pārspēja gaidīto: ļoti detalizēta, padziļināta un ar daudz vērtīgu informāciju, ko standarta pārbaudēs nemaz nevar ieraudzīt.
 

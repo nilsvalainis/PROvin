@@ -20,6 +20,7 @@ import {
 } from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { followStripeCheckoutUrl } from "@/lib/meta-pixel";
+import { localizedEmailInputProps } from "@/lib/email-input-validity";
 
 const SELECT_CARD_ICONS: LucideIcon[] = [Layers, Filter, AlertTriangle, MessageSquare];
 
@@ -47,6 +48,7 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
   const t = useTranslations("ProvinSelect");
   const tOrder = useTranslations("Order");
   const locale = useLocale();
+  const emailNative = localizedEmailInputProps(locale, tOrder("validation.email"));
   const rawIncluded = t.raw("included");
   const includedRows: IncludedRow[] = Array.isArray(rawIncluded)
     ? (rawIncluded as IncludedRow[]).filter((r) => r && typeof r.title === "string" && typeof r.body === "string")
@@ -465,8 +467,11 @@ export function ProvinSelectSection({ variant = "full" }: ProvinSelectSectionPro
                         type="email"
                         name="email"
                         autoComplete="email"
+                        lang={emailNative.lang}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        onInvalid={emailNative.onInvalid}
+                        onInput={emailNative.onInput}
                         className="w-full"
                         required
                         disabled={fieldDisabled}

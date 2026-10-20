@@ -15,6 +15,7 @@ import {
   validateOrderFields,
 } from "@/lib/order-field-validation";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
+import { localizedEmailInputProps } from "@/lib/email-input-validity";
 
 const labelDefault =
   "block text-left text-[11px] font-medium uppercase tracking-[0.04em] text-[#6e6e73]";
@@ -75,6 +76,7 @@ export function OrderForm({
   const t = useTranslations("Order");
   const te = useTranslations("Order.errors");
   const locale = useLocale();
+  const emailNative = localizedEmailInputProps(locale, t("validation.email"));
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -530,11 +532,14 @@ export function OrderForm({
                         type="email"
                         required
                         autoComplete="email"
+                        lang={emailNative.lang}
                         value={email}
                         onChange={(e) => {
                           setEmail(e.target.value);
                           setHeroStep2FieldErrors((p) => ({ ...p, email: null }));
                         }}
+                        onInvalid={emailNative.onInvalid}
+                        onInput={emailNative.onInput}
                         className="w-full"
                         placeholder={t("emailPlaceholder")}
                         aria-invalid={Boolean(heroStep2FieldErrors.email)}
@@ -562,8 +567,11 @@ export function OrderForm({
                       type="email"
                       required
                       autoComplete="email"
+                      lang={emailNative.lang}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onInvalid={emailNative.onInvalid}
+                      onInput={emailNative.onInput}
                       className={inputBase}
                       placeholder={t("emailPlaceholder")}
                     />

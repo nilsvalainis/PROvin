@@ -45,6 +45,7 @@ export async function HomeGoogleReviews() {
               googleLabel={t("sourceLabel")}
               prevLabel={t("prev")}
               nextLabel={t("next")}
+              locale={locale}
             />
           </div>
 

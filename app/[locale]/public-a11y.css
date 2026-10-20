@@ -1,0 +1,52 @@
+/**
+ * Publiskās lapas a11y. Tokens `--color-provin-accent` (#0066FF) paliek:
+ * aizpildījums ar baltu tekstu joprojām iztur 4.5:1. Šeit tikai teksts/ikonas
+ * uz tumša fona, kur #0066FF ir ~4.35:1.
+ */
+
+.provin-skip-to-content {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 80;
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  padding: 0.55rem 0.9rem;
+  background: #000000;
+  color: #3d8bff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transform: translateY(-160%);
+}
+
+.provin-skip-to-content:focus,
+.provin-skip-to-content:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid #3d8bff;
+  outline-offset: 2px;
+}
+
+html[data-site-theme="dark"] :where(
+  .text-provin-accent,
+  [class*="text-provin-accent"],
+  .marketing-hero-h1-blue,
+  .marketing-hero-pillar-icon
+) {
+  color: #3d8bff;
+}
+
+html[data-site-theme="dark"] .provin-wordmark-logo-vin:not(.provin-wordmark-logo-vin--select) {
+  color: #3d8bff;
+}
+
+html[data-site-theme="dark"] .home-footer-link:hover {
+  color: #3d8bff;
+}
+
+html[data-site-theme="dark"] .provin-select-section :where(.text-provin-accent, [class*="text-provin-accent"]) {
+  color: var(--color-provin-accent, #f59e0b);
+}
