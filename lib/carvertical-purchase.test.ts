@@ -274,7 +274,7 @@ describe("CarVertical click policy", () => {
 describe("userscript stays aligned with no auto-buy", () => {
   it("does not auto-click CarVertical preview and gates check behind purchase flag", () => {
     const src = readFileSync(path.join(ROOT, "public/userscripts/provin-vin-autofill.user.js"), "utf8");
-    expect(src).toMatch(/@version\s+1\.24\.1/);
+    expect(src).toMatch(/@version\s+1\.24\.2/);
     expect(src).toContain('input[name="identifier"]');
     expect(src).toContain("purposeOptionChosen");
     expect(src).toContain("carVerticalPurchasedReportReady");
