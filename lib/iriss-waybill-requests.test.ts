@@ -21,6 +21,7 @@ const sample = (over: Partial<WaybillRequest> = {}): WaybillRequest => ({
   routeFrom: "Bremen",
   routeTo: "Riga",
   validDays: 10,
+  validHours: 48,
   validFrom: "2026-10-20",
   validUntil: "2026-10-30",
   noteUntrusted: "",
@@ -40,6 +41,20 @@ describe("waybill requests", () => {
     const raw = { ...sample(), freeText: "a\u0007b" } as Record<string, unknown>;
     delete raw.noteUntrusted;
     expect(parseWaybillRequest(raw)?.noteUntrusted).toBe("a b");
+  });
+
+  it("reads comment_untrusted and ISO validity timestamps", () => {
+    const raw = {
+      ...sample(),
+      validFrom: "2026-10-20T16:50:00.000Z",
+      validUntil: "2026-10-22T16:50:00.000Z",
+      comment_untrusted: "B762 uz 48h",
+    } as Record<string, unknown>;
+    delete raw.noteUntrusted;
+    const parsed = parseWaybillRequest(raw);
+    expect(parsed?.noteUntrusted).toBe("B762 uz 48h");
+    expect(parsed?.validFrom).toBe("2026-10-20T16:50:00.000Z");
+    expect(parsed?.validHours).toBe(48);
   });
 
   it("parses a queued request and builds chat order", () => {

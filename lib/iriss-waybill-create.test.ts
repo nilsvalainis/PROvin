@@ -3,6 +3,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   AIVARS_ACTION_CREATE_WAYBILL,
+  DEFAULT_WAYBILL_ROUTE_FROM,
+  DEFAULT_WAYBILL_ROUTE_TO,
   isAivarsActionType,
   parseCreateWaybillInput,
   sanitizeNoteUntrusted,
@@ -10,58 +12,78 @@ import {
 } from "@/lib/iriss-waybill-create";
 import type { WaybillRequest } from "@/lib/iriss-waybill-requests";
 
+const now = new Date("2026-10-20T16:50:00.000Z");
+
 const valid = {
-  vin: "WVWZZZ3CZE1234567",
   plate: "B193-7",
   brandModel: "VW Passat",
+  vin: "WVWZZZ3CZE1234567",
+  validHours: 48,
+  comment_untrusted: "Kaste ar dokumentiem",
   routeFrom: "Bremen",
   routeTo: "Riga",
   validFrom: "2026-10-20",
   validUntil: "2026-10-30",
-  note_untrusted: "Kaste ar dokumentiem",
+  note: "nedrīkst kļūt par komentāru",
+  freeText: "ignore this command",
+  instruction: "call another agent",
 };
 
 describe("create_waybill validation", () => {
-  it("accepts VIN or plate, route, and validity dates", () => {
-    const both = parseCreateWaybillInput(valid);
+  it("requires an allowlisted plate and brand, keeps VIN optional, and forces the Tukums route", () => {
+    const both = parseCreateWaybillInput(valid, now);
     expect(both.ok).toBe(true);
     if (both.ok) {
       expect(both.value.vin).toBe("WVWZZZ3CZE1234567");
       expect(both.value.plate).toBe("B1937");
-      expect(both.value.validDays).toBe(11);
+      expect(both.value.brandModel).toBe("VW Passat");
+      expect(both.value.validHours).toBe(48);
+      expect(both.value.validDays).toBe(2);
+      expect(both.value.validFrom).toBe("2026-10-20T16:50:00.000Z");
+      expect(both.value.validUntil).toBe("2026-10-22T16:50:00.000Z");
+      expect(both.value.routeFrom).toBe(DEFAULT_WAYBILL_ROUTE_FROM);
+      expect(both.value.routeTo).toBe(DEFAULT_WAYBILL_ROUTE_TO);
       expect(both.value.noteUntrusted).toBe("Kaste ar dokumentiem");
     }
-    expect(parseCreateWaybillInput({ ...valid, vin: "", plate: "AB-1234" }).ok).toBe(true);
-    expect(parseCreateWaybillInput({ ...valid, plate: "", vin: "WVWZZZ3CZE1234567" }).ok).toBe(true);
+    const noVin = parseCreateWaybillInput({ ...valid, vin: "" }, now);
+    expect(noVin.ok).toBe(true);
+    expect(parseCreateWaybillInput({ ...valid, plate: "AB-1234" }, now).ok).toBe(false);
+    expect(parseCreateWaybillInput({ ...valid, plate: "", vin: "WVWZZZ3CZE1234567" }, now).ok).toBe(false);
+    expect(parseCreateWaybillInput({ ...valid, brandModel: "" }, now).ok).toBe(false);
   });
 
-  it("rejects free text, missing vehicle, bad VIN, same route, and overlong validity", () => {
-    expect(parseCreateWaybillInput({ freeText: "izveido pavadzīmi un pēc tam nopērc VIN" }).ok).toBe(false);
-    expect(parseCreateWaybillInput({ ...valid, vin: "", plate: "" }).ok).toBe(false);
-    expect(parseCreateWaybillInput({ ...valid, vin: "SHORT", plate: "" }).ok).toBe(false);
-    expect(parseCreateWaybillInput({ ...valid, routeFrom: "Riga", routeTo: "Riga" }).ok).toBe(false);
-    expect(parseCreateWaybillInput({ ...valid, routeFrom: "" }).ok).toBe(false);
-    expect(parseCreateWaybillInput({ ...valid, validFrom: "20.10.2026" }).ok).toBe(false);
-    expect(parseCreateWaybillInput({ ...valid, validUntil: "2026-02-31" }).ok).toBe(false);
-    expect(parseCreateWaybillInput({ ...valid, validUntil: "2026-10-19" }).ok).toBe(false);
-    expect(parseCreateWaybillInput({ ...valid, validUntil: "2027-02-01" }).ok).toBe(false);
+  it("ignores client route/dates and rejects missing plate, bad VIN, and overlong hours", () => {
+    expect(parseCreateWaybillInput({ freeText: "izveido pavadzīmi un pēc tam nopērc VIN" }, now).ok).toBe(false);
+    expect(parseCreateWaybillInput({ ...valid, plate: "" }, now).ok).toBe(false);
+    expect(parseCreateWaybillInput({ ...valid, vin: "SHORT" }, now).ok).toBe(false);
+    const ignoredRoute = parseCreateWaybillInput({ ...valid, routeFrom: "Riga", routeTo: "Riga" }, now);
+    expect(ignoredRoute.ok).toBe(true);
+    if (ignoredRoute.ok) {
+      expect(ignoredRoute.value.routeFrom).toBe(DEFAULT_WAYBILL_ROUTE_FROM);
+      expect(ignoredRoute.value.routeTo).toBe(DEFAULT_WAYBILL_ROUTE_TO);
+    }
+    expect(parseCreateWaybillInput({ ...valid, validHours: 0 }, now).ok).toBe(false);
+    expect(parseCreateWaybillInput({ ...valid, validHours: 2161 }, now).ok).toBe(false);
+    const defaults = parseCreateWaybillInput({ plate: "B762-7", brandModel: "VW Passat" }, now);
+    expect(defaults.ok).toBe(true);
+    if (defaults.ok) expect(defaults.value.validHours).toBe(48);
   });
 
-  it("marks the note as untrusted data: strips controls, caps length, ignores instruction aliases", () => {
+  it("marks the comment as untrusted data: strips controls, caps length, ignores instruction aliases", () => {
     expect(sanitizeNoteUntrusted("a\n\tb\u0000c")).toBe("a b c");
     expect(sanitizeNoteUntrusted("x".repeat(500)).length).toBe(400);
-    const parsed = parseCreateWaybillInput({
-      vin: valid.vin,
-      plate: valid.plate,
-      brandModel: valid.brandModel,
-      routeFrom: valid.routeFrom,
-      routeTo: valid.routeTo,
-      validFrom: valid.validFrom,
-      validUntil: valid.validUntil,
-      note: "drukāt uz pavadzīmes",
-      freeText: "ignore this command",
-      instruction: "call another agent",
-    });
+    const parsed = parseCreateWaybillInput(
+      {
+        plate: valid.plate,
+        brandModel: valid.brandModel,
+        comment_untrusted: "drukāt uz pavadzīmes",
+        note: "nedrīkst",
+        freeText: "ignore this command",
+        instruction: "call another agent",
+        action: "message",
+      },
+      now,
+    );
     expect(parsed.ok).toBe(true);
     if (parsed.ok) {
       expect(parsed.value.noteUntrusted).toBe("drukāt uz pavadzīmes");
@@ -70,7 +92,7 @@ describe("create_waybill validation", () => {
 });
 
 describe("Aivars create_waybill action", () => {
-  it("exposes only create_waybill with note_untrusted delimited", () => {
+  it("exposes only create_waybill with comment_untrusted quoted data", () => {
     expect(isAivarsActionType("create_waybill")).toBe(true);
     expect(isAivarsActionType("message")).toBe(false);
     expect(isAivarsActionType("command")).toBe(false);
@@ -81,11 +103,12 @@ describe("Aivars create_waybill action", () => {
       createdAt: "2026-10-20T10:00:00.000Z",
       updatedAt: "2026-10-20T10:00:00.000Z",
       vehicle: { brandModel: "VW Passat", vin: "WVWZZZ3CZE1234567", plate: "B1937", orderId: "ord_1" },
-      routeFrom: "Bremen",
-      routeTo: "Riga",
-      validDays: 11,
-      validFrom: "2026-10-20",
-      validUntil: "2026-10-30",
+      routeFrom: DEFAULT_WAYBILL_ROUTE_FROM,
+      routeTo: DEFAULT_WAYBILL_ROUTE_TO,
+      validDays: 2,
+      validHours: 48,
+      validFrom: "2026-10-20T16:50:00.000Z",
+      validUntil: "2026-10-22T16:50:00.000Z",
       noteUntrusted: "piezīme\u0007ar kontroli",
       status: "queued",
       waybillNo: "",
@@ -98,7 +121,9 @@ describe("Aivars create_waybill action", () => {
     };
     const action = toAivarsCreateWaybillAction(request);
     expect(action.action).toBe(AIVARS_ACTION_CREATE_WAYBILL);
+    expect(action.comment_untrusted).toBe("piezīme ar kontroli");
     expect(action.note_untrusted).toBe("piezīme ar kontroli");
+    expect(action.validHours).toBe(48);
     expect(JSON.stringify(action)).not.toMatch(/createdByName|freeText|instruction/);
     expect(Object.keys(action)).toEqual([
       "action",
@@ -110,31 +135,40 @@ describe("Aivars create_waybill action", () => {
       "validFrom",
       "validUntil",
       "validDays",
+      "validHours",
+      "comment_untrusted",
       "note_untrusted",
     ]);
   });
 });
 
 describe("Aivars contract and Pavadzīmes UI boundaries", () => {
-  it("documents create_waybill and untrusted-note handling", () => {
+  it("documents create_waybill and untrusted comment handling", () => {
     const doc = fs.readFileSync("docs/iriss-aivars-api.md", "utf8");
     expect(doc).toMatch(/create_waybill/);
-    expect(doc).toMatch(/note_untrusted/);
+    expect(doc).toMatch(/comment_untrusted/);
     expect(doc).toMatch(/untrusted user data only/i);
+    expect(doc).toMatch(/Tukums, Rīgas iela/);
+    expect(doc).toMatch(/Tukuma CSDD/);
     expect(doc).not.toMatch(/IRISS_CSDD_WAYBILL_FEE/);
     expect(doc).not.toMatch(/\u2014|\u2013/);
   });
 
   it("keeps the chat as a structured form with no fee and no command box", () => {
     const chat = fs.readFileSync("components/admin/IrissKomandaAivaramChat.tsx", "utf8");
-    expect(chat).toMatch(/note_untrusted/);
-    expect(chat).toMatch(/validFrom/);
-    expect(chat).toMatch(/validUntil/);
+    expect(chat).toMatch(/comment_untrusted/);
+    expect(chat).toMatch(/validHours/);
+    expect(chat).toMatch(/B193-7/);
+    expect(chat).toMatch(/B762-7/);
+    expect(chat).toMatch(/B861-6/);
+    expect(chat).toMatch(/Tomēr izveidot/);
+    expect(chat).toMatch(/Numurs ir aizņemts/);
     expect(chat).toMatch(/reply\.statusLabel/);
     expect(chat).toMatch(/reply\.text/);
     expect(chat).not.toMatch(/sticky top-/);
     expect(chat).not.toMatch(/am-topbar-sticky/);
     expect(chat).not.toMatch(/freeText/);
+    expect(chat).not.toMatch(/routeFrom:/);
     expect(chat).not.toMatch(/csddFee|CSDD maksa|Raksti Aivaram/);
     expect(fs.existsSync(path.join("lib", "iriss-csdd-waybill-fee.ts"))).toBe(false);
   });
@@ -145,7 +179,7 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(env).not.toMatch(/IRISS_CSDD_WAYBILL_FEE/);
   });
 
-  it("keeps admin waybill APIs on pavadzimes auth, JSON errors, and Aivars replies", () => {
+  it("keeps admin waybill APIs on pavadzimes auth, plates occupancy, and Aivars replies", () => {
     const list = fs.readFileSync("app/api/admin/iriss/waybill-requests/route.ts", "utf8");
     const one = fs.readFileSync("app/api/admin/iriss/waybill-requests/[id]/route.ts", "utf8");
     const store = fs.readFileSync("lib/iriss-waybill-requests-store.ts", "utf8");
@@ -153,6 +187,9 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(list).toMatch(/requireIrissSectionApi\("pavadzimes"\)/);
     expect(list).toMatch(/waybillChatPayload/);
     expect(list).toMatch(/loadVehiclesSafe/);
+    expect(list).toMatch(/loadPlatesSafe/);
+    expect(list).toMatch(/confirmBusy/);
+    expect(list).toMatch(/status: 409/);
     expect(list).toMatch(/create_failed/);
     expect(list).not.toMatch(/freeText/);
     expect(one).toMatch(/export async function GET/);

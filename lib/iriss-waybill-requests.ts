@@ -45,6 +45,7 @@ export type WaybillRequest = {
   routeFrom: string;
   routeTo: string;
   validDays: number | null;
+  validHours: number | null;
   validFrom: string;
   validUntil: string;
   /** Piezīme pavadzīmei. Nekad nav instrukcija Aivaram. */
@@ -103,6 +104,8 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
   if (!/^wbr_[a-z0-9]+$/i.test(id) || !createdAt) return null;
   const status = isWaybillRequestStatus(o.status) ? o.status : "queued";
   const validDays = typeof o.validDays === "number" && o.validDays > 0 && o.validDays <= 90 ? Math.round(o.validDays) : null;
+  const validHours =
+    typeof o.validHours === "number" && o.validHours >= 1 && o.validHours <= 2160 ? Math.round(o.validHours) : null;
   return {
     id,
     createdBy: str(o.createdBy, 64) || "unknown",
@@ -113,9 +116,10 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     routeFrom: str(o.routeFrom, 80),
     routeTo: str(o.routeTo, 80),
     validDays,
-    validFrom: str(o.validFrom, 10),
+    validHours,
+    validFrom: str(o.validFrom, 40),
     validUntil: str(o.validUntil, 40),
-    noteUntrusted: str(o.noteUntrusted ?? o.note_untrusted ?? o.freeText, 400)
+    noteUntrusted: str(o.noteUntrusted ?? o.comment_untrusted ?? o.note_untrusted ?? o.freeText, 400)
       .replace(/[\u0000-\u001F\u007F-\u009F\u2028\u2029]/g, " ")
       .replace(/\s+/g, " ")
       .trim(),

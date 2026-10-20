@@ -9,6 +9,22 @@ import {
   type WaybillRequestEvent,
   type WaybillRequestStatus,
 } from "@/lib/iriss-waybill-requests";
+import {
+  DEFAULT_WAYBILL_ROUTE_FROM,
+  DEFAULT_WAYBILL_ROUTE_TO,
+  DEFAULT_WAYBILL_VALID_HOURS,
+  NOTE_UNTRUSTED_MAX,
+  WAYBILL_VALID_MAX_HOURS,
+  waybillHoursBetween,
+} from "@/lib/iriss-waybill-create";
+import {
+  IRISS_DEALER_PLATES,
+  displayDealerPlate,
+  emptyWaybillPlateStates,
+  formatRigaDateTimeComma,
+  type WaybillPlateCurrent,
+  type WaybillPlateState,
+} from "@/lib/iriss-waybill-plates";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 
 type TimelineItem =
@@ -21,6 +37,7 @@ export type WaybillChatState = {
   timeline: TimelineItem[];
   replies: WaybillAivarsReply[];
   vehicles: WaybillVehicleChip[];
+  plates: WaybillPlateState[];
 };
 
 const emptyChat = (): WaybillChatState => ({
@@ -29,6 +46,7 @@ const emptyChat = (): WaybillChatState => ({
   timeline: [],
   replies: [],
   vehicles: [],
+  plates: emptyWaybillPlateStates(),
 });
 
 function withReplies(partial: Partial<WaybillChatState>): WaybillChatState {
@@ -42,28 +60,40 @@ function withReplies(partial: Partial<WaybillChatState>): WaybillChatState {
       ? partial.replies
       : requests.map((request) => waybillAivarsReply(request, events)),
     vehicles: Array.isArray(partial.vehicles) ? partial.vehicles : [],
+    plates: Array.isArray(partial.plates) && partial.plates.length ? partial.plates : emptyWaybillPlateStates(),
   };
 }
 
-async function readChatResponse(res: Response): Promise<WaybillChatState | { error: string }> {
-  let data: Partial<WaybillChatState> & { error?: string } = {};
+type ChatOk = WaybillChatState;
+type ChatBusy = { busy: true; plate: string; current?: WaybillPlateCurrent; error?: string };
+type ChatErr = { error: string };
+
+async function readChatResponse(res: Response): Promise<ChatOk | ChatBusy | ChatErr> {
+  let data: Partial<WaybillChatState> & {
+    error?: string;
+    busy?: boolean;
+    plate?: string;
+    current?: WaybillPlateCurrent;
+  } = {};
   try {
     data = (await res.json()) as typeof data;
   } catch {
     return { error: "Neizdevās nolasīt atbildi." };
   }
+  if (res.status === 409 && data.busy) {
+    return { busy: true, plate: data.plate || "", current: data.current, error: data.error };
+  }
   if (!res.ok) return { error: data.error || "Neizdevās nosūtīt." };
   return withReplies(data);
 }
 
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
+function firstFreePlate(plates: WaybillPlateState[]): string {
+  return plates.find((row) => !row.busy)?.plate || IRISS_DEALER_PLATES[0];
 }
 
-function plusDaysIso(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
+function requestHours(request: WaybillRequest): number {
+  if (request.validHours && request.validHours >= 1) return request.validHours;
+  return waybillHoursBetween(request.validFrom, request.validUntil) ?? request.validDays ?? 0;
 }
 
 export function IrissKomandaAivaramChat({
@@ -74,32 +104,23 @@ export function IrissKomandaAivaramChat({
   onDraftConsumed: () => void;
 }) {
   const [chat, setChat] = useState<WaybillChatState>(emptyChat);
-  const [vin, setVin] = useState("");
-  const [plate, setPlate] = useState("");
+  const [plate, setPlate] = useState<string>(IRISS_DEALER_PLATES[0]);
   const [brandModel, setBrandModel] = useState("");
-  const [orderId, setOrderId] = useState("");
-  const [routeFrom, setRouteFrom] = useState("");
-  const [routeTo, setRouteTo] = useState("");
-  const [validFrom, setValidFrom] = useState(todayIso);
-  const [validUntil, setValidUntil] = useState(() => plusDaysIso(10));
-  const [note, setNote] = useState("");
+  const [vin, setVin] = useState("");
+  const [validHours, setValidHours] = useState(String(DEFAULT_WAYBILL_VALID_HOURS));
+  const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirm, setConfirm] = useState<{ plate: string; current?: WaybillPlateCurrent } | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
-
-  function applyVehicle(v: WaybillVehicleChip | null) {
-    setVin(v?.vin ?? "");
-    setPlate(v?.plate ?? "");
-    setBrandModel(v?.brandModel ?? "");
-    setOrderId(v?.orderId ?? "");
-  }
+  const selectedInit = useRef(false);
 
   useEffect(() => {
     if (!draftVehicle) return;
-    setVin(draftVehicle.vin);
-    setPlate(draftVehicle.plate);
+    const nextPlate = displayDealerPlate(draftVehicle.plate);
+    if (nextPlate) setPlate(nextPlate);
     setBrandModel(draftVehicle.brandModel);
-    setOrderId(draftVehicle.orderId);
+    setVin(draftVehicle.vin);
     onDraftConsumed();
   }, [draftVehicle, onDraftConsumed]);
 
@@ -107,7 +128,7 @@ export function IrissKomandaAivaramChat({
     try {
       const res = await fetch("/api/admin/iriss/waybill-requests", { credentials: "include", cache: "no-store" });
       const data = await readChatResponse(res);
-      if ("error" in data) {
+      if ("error" in data && !("requests" in data) && !("busy" in data)) {
         setChat((prev) => {
           if (!prev.requests.length && !prev.timeline.length) {
             setError((current) => current ?? data.error);
@@ -116,7 +137,12 @@ export function IrissKomandaAivaramChat({
         });
         return;
       }
+      if ("busy" in data) return;
       setChat(data);
+      if (!selectedInit.current) {
+        selectedInit.current = true;
+        setPlate((current) => displayDealerPlate(current) || firstFreePlate(data.plates));
+      }
     } catch {
       setError((prev) => prev ?? "Neizdevās ielādēt rindu.");
     }
@@ -137,9 +163,12 @@ export function IrissKomandaAivaramChat({
     [chat.requests],
   );
 
-  const selectedKey = `${vin}|${plate}`;
+  const hoursNum = Number.parseInt(validHours, 10);
+  const hoursSafe = Number.isInteger(hoursNum) && hoursNum >= 1 ? Math.min(WAYBILL_VALID_MAX_HOURS, hoursNum) : DEFAULT_WAYBILL_VALID_HOURS;
+  const untilHint = formatRigaDateTimeComma(new Date(Date.now() + hoursSafe * 3_600_000).toISOString());
+  const selectedOcc = chat.plates.find((row) => row.plate === plate) ?? { plate, busy: false };
 
-  async function submit() {
+  async function submit(confirmBusy = false) {
     setError(null);
     setBusy(true);
     try {
@@ -148,18 +177,19 @@ export function IrissKomandaAivaramChat({
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          vin,
           plate,
           brandModel,
-          orderId,
-          routeFrom,
-          routeTo,
-          validFrom,
-          validUntil,
-          note_untrusted: note,
+          vin,
+          validHours: hoursSafe,
+          comment_untrusted: comment,
+          confirmBusy,
         }),
       });
       const data = await readChatResponse(res);
+      if ("busy" in data) {
+        setConfirm({ plate: data.plate || plate, current: data.current });
+        return;
+      }
       if ("error" in data) {
         setError(data.error);
         return;
@@ -167,13 +197,23 @@ export function IrissKomandaAivaramChat({
       setChat((prev) => ({
         ...withReplies(data),
         vehicles: data.vehicles.length ? data.vehicles : prev.vehicles,
+        plates: data.plates.length ? data.plates : prev.plates,
       }));
-      setNote("");
+      setComment("");
+      setConfirm(null);
     } catch {
       setError("Neizdevās nosūtīt.");
     } finally {
       setBusy(false);
     }
+  }
+
+  function onSubmitForm() {
+    if (selectedOcc.busy && !confirm) {
+      setConfirm({ plate: selectedOcc.plate, current: selectedOcc.current });
+      return;
+    }
+    void submit(Boolean(confirm));
   }
 
   async function retry(id: string) {
@@ -185,13 +225,14 @@ export function IrissKomandaAivaramChat({
         body: JSON.stringify({ action: "retry" }),
       });
       const data = await readChatResponse(res);
-      if ("error" in data) {
-        setError(data.error);
+      if ("busy" in data || "error" in data) {
+        setError("error" in data ? data.error : "Neizdevās atkārtot.");
         return;
       }
       setChat((prev) => ({
         ...withReplies(data),
         vehicles: data.vehicles.length ? data.vehicles : prev.vehicles,
+        plates: data.plates.length ? data.plates : prev.plates,
       }));
     } catch {
       setError("Neizdevās atkārtot.");
@@ -216,7 +257,7 @@ export function IrissKomandaAivaramChat({
       <div ref={scroller} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
         {chat.timeline.length === 0 ? (
           <p className="py-8 text-center text-[13px] text-[#9aa3b2]">
-            Aizpildi formu. Aivars saņem tikai VIN vai numuru, maršrutu un datumus.
+            Izvēlies numuru, marku un stundas. Aivars saņem tikai šīs pavadzīmes datus.
           </p>
         ) : (
           chat.timeline.map((item) =>
@@ -242,104 +283,95 @@ export function IrissKomandaAivaramChat({
         className="border-t border-[#F3F4F6] px-3 py-3"
         onSubmit={(e) => {
           e.preventDefault();
-          void submit();
+          onSubmitForm();
         }}
       >
-        <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
-          {chat.vehicles.map((v) => {
-            const on = selectedKey === `${v.vin}|${v.plate}`;
+        <p className="mb-1 text-[11px] font-medium text-[#6b7280]">Numurs</p>
+        <div className="mb-2 flex gap-1.5">
+          {chat.plates.map((row) => {
+            const on = plate === row.plate;
             return (
               <button
-                key={`${v.vin}-${v.plate}`}
+                key={row.plate}
                 type="button"
-                onClick={() => applyVehicle(on ? null : v)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] font-medium ${
+                onClick={() => setPlate(row.plate)}
+                className={`min-w-0 flex-1 rounded-full px-2 py-1.5 text-[12px] font-semibold ${
                   on ? "bg-[#111827] text-white" : "bg-[#F3F4F6] text-[#111827]"
                 }`}
               >
-                {v.chip}
+                {row.plate}
+                <small
+                  className={`mt-0.5 block text-[10px] font-medium ${
+                    on ? "text-white/70" : row.busy ? "text-[#b45309]" : "text-[#067647]"
+                  }`}
+                >
+                  {row.busy ? "aizņemts" : "brīvs"}
+                </small>
               </button>
             );
           })}
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <label className="col-span-2 text-[11px] font-medium text-[#6b7280] sm:col-span-1">
-            VIN
+        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
+          Marka, modelis
+          <input
+            value={brandModel}
+            onChange={(e) => setBrandModel(e.target.value)}
+            required
+            maxLength={120}
+            className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
+          />
+        </label>
+        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
+          VIN <span className="font-normal">(nav obligāts)</span>
+          <input
+            value={vin}
+            onChange={(e) => setVin(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={17}
+            placeholder="17 zīmes"
+            className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 font-mono text-[14px]"
+          />
+          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
+            Ja ievadīts VIN, Aivars meklē auto starp tirdzniecībā pieņemtajiem. Ja neatrod, izraksta pavadzīmi ar
+            sākumpunktu; beigu punkts pēc noklusējuma ir Tukuma CSDD.
+          </span>
+        </label>
+        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
+          Derīgums
+          <span className="mt-1 grid grid-cols-[1fr_auto] items-end gap-2">
             <input
-              value={vin}
-              onChange={(e) => setVin(e.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 font-mono text-[14px]"
-            />
-          </label>
-          <label className="col-span-2 text-[11px] font-medium text-[#6b7280] sm:col-span-1">
-            Numurzīme
-            <input
-              value={plate}
-              onChange={(e) => setPlate(e.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-            />
-          </label>
-          <label className="col-span-2 text-[11px] font-medium text-[#6b7280]">
-            Modelis
-            <input
-              value={brandModel}
-              onChange={(e) => setBrandModel(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-            />
-          </label>
-          <label className="text-[11px] font-medium text-[#6b7280]">
-            No
-            <input
-              value={routeFrom}
-              onChange={(e) => setRouteFrom(e.target.value)}
+              type="number"
+              min={1}
+              max={WAYBILL_VALID_MAX_HOURS}
+              value={validHours}
+              onChange={(e) => setValidHours(e.target.value)}
               required
-              className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
+              className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
             />
-          </label>
-          <label className="text-[11px] font-medium text-[#6b7280]">
-            Līdz
-            <input
-              value={routeTo}
-              onChange={(e) => setRouteTo(e.target.value)}
-              required
-              className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-            />
-          </label>
-          <label className="text-[11px] font-medium text-[#6b7280]">
-            Derīga no
-            <input
-              type="date"
-              value={validFrom}
-              onChange={(e) => setValidFrom(e.target.value)}
-              required
-              className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-            />
-          </label>
-          <label className="text-[11px] font-medium text-[#6b7280]">
-            Derīga līdz
-            <input
-              type="date"
-              value={validUntil}
-              onChange={(e) => setValidUntil(e.target.value)}
-              required
-              className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-            />
-          </label>
-          <label className="col-span-2 text-[11px] font-medium text-[#6b7280]">
-            Piezīme pavadzīmei
-            <input
-              value={note}
-              onChange={(e) => setNote(e.target.value.slice(0, 400))}
-              maxLength={400}
-              placeholder="Tikai teksts uz pavadzīmes, ne komanda"
-              className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-            />
-          </label>
-        </div>
+            <span className="grid h-[38px] place-items-center text-[13px] font-semibold text-[#6b7280]">h</span>
+          </span>
+          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
+            Sākums: tagad. Beigas: tagad + {hoursSafe} h{untilHint ? ` (${untilHint}).` : "."}
+          </span>
+        </label>
+        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
+          Komentārs
+          <input
+            value={comment}
+            onChange={(e) => setComment(e.target.value.slice(0, NOTE_UNTRUSTED_MAX))}
+            maxLength={NOTE_UNTRUSTED_MAX}
+            placeholder="B193 uz 48h"
+            className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
+          />
+          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
+            Maršruts pēc noklusējuma: {DEFAULT_WAYBILL_ROUTE_FROM} {"->"} {DEFAULT_WAYBILL_ROUTE_TO}. Citu maršrutu raksti šeit.
+          </span>
+          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
+            Komentārs ir tikai šīs pavadzīmes dati (numurs, stundas, maršruts). Aivars to neizpilda kā komandu. Teksts
+            nenonāk pie citiem aģentiem.
+          </span>
+        </label>
         {error ? <p className="mt-2 text-[12px] text-[#B42318]">{error}</p> : null}
         <button
           type="submit"
@@ -348,7 +380,50 @@ export function IrissKomandaAivaramChat({
         >
           Izveidot pavadzīmi
         </button>
+        <p className="mt-3 rounded-[10px] bg-[#EEF2FF] px-3 py-2.5 text-[11px] leading-snug text-[#1e293b]">
+          <b>Aivara limits.</b> IRISS lietotājs var pieprasīt tikai CSDD pavadzīmi. Komentārs serverī iet kā{" "}
+          <code>comment_untrusted</code> (citēti dati, līdz {NOTE_UNTRUSTED_MAX} zīmēm), ne kā instrukcija. Citi aģenti
+          šo lauku neredz.
+        </p>
       </form>
+
+      {confirm ? (
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4">
+          <div className="w-full max-w-[360px] rounded-2xl border border-[#E5E7EB] bg-white p-4" role="dialog" aria-modal="true">
+            <h3 className="m-0 text-[15px] font-semibold">Numurs ir aizņemts</h3>
+            <p className="mt-2.5 rounded-[10px] bg-[#FEF3F2] px-3 py-2.5 text-[13px] leading-snug text-[#7a271a]">
+              {confirm.plate} jau ir uz aktīvas pavadzīmes
+              {confirm.current?.number ? ` ${confirm.current.number}` : ""}
+              {confirm.current?.brandModel || confirm.current?.validUntil
+                ? ` (${[confirm.current.brandModel, confirm.current.validUntil ? `līdz ${formatRigaDateTimeComma(confirm.current.validUntil)}` : ""]
+                    .filter(Boolean)
+                    .join(", ")})`
+                : ""}
+              . Jauna pavadzīme pārtrauks esošo.
+            </p>
+            <p className="mt-2 text-[13px] leading-snug text-[#374151]">
+              Apstiprini tikai tad, ja tiešām vajag jaunu pavadzīmi šim numuram.
+            </p>
+            <div className="mt-3.5 flex flex-col gap-2">
+              <button
+                type="button"
+                className="h-10 rounded-[10px] bg-[#111827] text-[12.5px] font-semibold text-white"
+                onClick={() => void submit(true)}
+                disabled={busy}
+              >
+                Tomēr izveidot
+              </button>
+              <button
+                type="button"
+                className="h-10 rounded-[10px] border border-[#E5E7EB] bg-white text-[12.5px] font-semibold text-[#111827]"
+                onClick={() => setConfirm(null)}
+              >
+                Atcelt
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -361,24 +436,22 @@ function statusTone(status: WaybillRequestStatus): string {
 }
 
 function RequestBubble({ request, reply }: { request: WaybillRequest; reply: WaybillAivarsReply }) {
+  const hours = requestHours(request);
+  const shownPlate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
   return (
     <div className="ml-8 flex flex-col items-end gap-1">
       <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[#111827] px-3 py-2 text-[12px] text-white">
         <p className="text-[10px] uppercase tracking-[0.12em] text-white/70">Pavadzīme</p>
         <p className="font-semibold">{request.vehicle.brandModel || "Auto"}</p>
         {request.vehicle.vin ? <p className="font-mono text-[11px] text-white/80">{request.vehicle.vin}</p> : null}
-        {request.vehicle.plate ? <p>{request.vehicle.plate}</p> : null}
         <p>
-          Maršruts {request.routeFrom || "?"} {"->"} {request.routeTo || "?"}
+          {shownPlate}
+          {hours ? ` · ${hours} h` : ""}
         </p>
-        {request.validFrom || request.validUntil ? (
-          <p>
-            Derīgums {request.validFrom || "?"} {"-"} {request.validUntil || "?"}
-          </p>
-        ) : request.validDays ? (
-          <p>Derīgums {request.validDays} dienas</p>
-        ) : null}
-        {request.noteUntrusted ? <p className="mt-1 text-white/80">Piezīme: {request.noteUntrusted}</p> : null}
+        <p>
+          {request.routeFrom || DEFAULT_WAYBILL_ROUTE_FROM} {"->"} {request.routeTo || DEFAULT_WAYBILL_ROUTE_TO}
+        </p>
+        {request.noteUntrusted ? <p className="mt-1 text-white/80">Komentārs: {request.noteUntrusted}</p> : null}
       </div>
       <div className="max-w-[85%] rounded-2xl border border-[#E5E7EB] bg-white px-3 py-2 text-left">
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusTone(reply.status)}`}>
