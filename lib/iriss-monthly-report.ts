@@ -6,6 +6,7 @@ import {
   parseYearMonthKey,
 } from "@/lib/admin-riga-calendar";
 import { formatIrissClientName } from "@/lib/iriss-pasutijumi-list-row";
+import { formatIrissReportClientName } from "@/lib/iriss-monthly-report-view";
 import { parseIrissPasutijumsListStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
 /**
@@ -101,10 +102,12 @@ export function buildIrissMonthlyReport(
     const offers = rec.offers ?? [];
     return {
       id: rec.id,
-      clientName: formatIrissClientName({
-        clientFirstName: rec.clientFirstName ?? "",
-        clientLastName: rec.clientLastName ?? "",
-      }),
+      clientName: formatIrissReportClientName(
+        formatIrissClientName({
+          clientFirstName: rec.clientFirstName ?? "",
+          clientLastName: rec.clientLastName ?? "",
+        }),
+      ),
       brandModel: (rec.brandModel ?? "").trim() || "-",
       status,
       createdAt: rec.createdAt,

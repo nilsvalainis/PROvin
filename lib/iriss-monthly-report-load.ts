@@ -1,5 +1,6 @@
 import "server-only";
 
+import { shiftYearMonth } from "@/lib/admin-riga-calendar";
 import { buildIrissMonthlyReport, type IrissMonthlyReport } from "@/lib/iriss-monthly-report";
 import {
   getIrissPasutijumiStorageState,
@@ -9,6 +10,7 @@ import {
 
 export type IrissMonthlyReportLoad = {
   report: IrissMonthlyReport;
+  previous: IrissMonthlyReport;
   storeEnabled: boolean;
   loadError: string | null;
 };
@@ -19,9 +21,11 @@ export type IrissMonthlyReportLoad = {
  */
 export async function loadIrissMonthlyReport(year: number, month: number): Promise<IrissMonthlyReportLoad> {
   const storage = getIrissPasutijumiStorageState();
+  const prev = shiftYearMonth(year, month, -1);
   if (!storage.enabled) {
     return {
       report: buildIrissMonthlyReport([], year, month),
+      previous: buildIrissMonthlyReport([], prev.year, prev.month),
       storeEnabled: false,
       loadError: null,
     };
@@ -34,12 +38,14 @@ export async function loadIrissMonthlyReport(year: number, month: number): Promi
     ).filter((rec): rec is NonNullable<typeof rec> => Boolean(rec));
     return {
       report: buildIrissMonthlyReport(records, year, month),
+      previous: buildIrissMonthlyReport(records, prev.year, prev.month),
       storeEnabled: true,
       loadError: null,
     };
   } catch (e) {
     return {
       report: buildIrissMonthlyReport([], year, month),
+      previous: buildIrissMonthlyReport([], prev.year, prev.month),
       storeEnabled: true,
       loadError: e instanceof Error ? e.message : "Neizdevās ielādēt IRISS pasūtījumus.",
     };

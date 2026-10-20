@@ -75,6 +75,7 @@ describe("iriss-monthly-report", () => {
       offersCreatedInMonth: 1,
     });
     expect(JSON.stringify(report)).not.toMatch(/VIN|audit|Stripe/i);
+    expect(report.rows.find((r) => r.id === "o4")?.clientName).toBe("Bez vārda");
   });
 
   it("exports a CSV summary without VIN or audit columns", () => {
