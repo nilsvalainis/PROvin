@@ -23,6 +23,18 @@ export default async function IrissSettingsPage() {
       </AdminDashboardHeaderWithMenu>
       <IrissTameCommissionSettingsForm />
       <section className="mt-4 max-w-xl rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
+        <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Lietotāji un pieeja</h2>
+        <p className="mt-1 text-[13px] leading-snug text-[var(--color-provin-muted)]">
+          Nils uzaicina, piešķir un atsauc IRISS lomas. Katra pieteikšanās un pieeja paliek žurnālā.
+        </p>
+        <a
+          href="/admin/iriss/iestatijumi/lietotaji"
+          className="mt-3 inline-flex rounded-full bg-[#111827] px-4 py-2 text-[13px] font-medium text-white"
+        >
+          Atvērt lietotājus
+        </a>
+      </section>
+      <section className="mt-4 max-w-xl rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Google Contacts</h2>
         <p className="mt-1 text-[13px] leading-snug text-[var(--color-provin-muted)]">
           Piesaista IRISS pasūtījumu klientus kontam info@provin.lv. Esošos kontaktus nepārraksta.
