@@ -29,6 +29,7 @@ import { isClientLinkPath } from "./lib/client-link";
 import { isUnpaidPaymentPath } from "./lib/admin-unpaid-payment-link";
 import { isIrissOfferLinkPath } from "./lib/iriss-offer-client-link";
 import { decideB2bDemoHostRequest } from "./lib/b2b-demo-host";
+import { decideAdminApiGate } from "./lib/admin-api-gate";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "./lib/admin-session-token";
 
 /* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
@@ -77,6 +78,20 @@ function adminLoginRedirect(request: NextRequest): NextResponse {
   return res;
 }
 
+function adminApiJson(status: number, error: string): NextResponse {
+  return NextResponse.json(
+    { error },
+    { status, headers: { "Cache-Control": "private, no-store" } },
+  );
+}
+
+async function gateAdminApi(request: NextRequest): Promise<NextResponse> {
+  const decision = await decideAdminApiGate(request);
+  if (decision.action === "unauthorized") return adminApiJson(401, "unauthorized");
+  if (decision.action === "forbidden_origin") return adminApiJson(403, "forbidden origin");
+  return NextResponse.next();
+}
+
 export default async function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
   const b2bDemo = decideB2bDemoHostRequest(request.headers.get("host"), pathname);
@@ -90,6 +105,9 @@ export default async function middleware(request: NextRequest) {
     return new NextResponse("Not Found", { status: 404, headers: { "X-Robots-Tag": "noindex, nofollow" } });
   }
   if (pathname.startsWith("/api")) {
+    if (pathname.startsWith("/api/admin")) {
+      return gateAdminApi(request);
+    }
     return NextResponse.next();
   }
   if (pathname === "/b2b-demo" || pathname.startsWith("/b2b-demo/")) {

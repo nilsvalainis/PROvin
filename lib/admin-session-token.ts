@@ -1,13 +1,33 @@
 /**
  * Admin sesijas sīkdatnes pārbaude bez Node `crypto` un `next/headers`, lai to var lietot
  * gan `middleware.ts` (Edge), gan servera kodā. Formāts sakrīt ar `lib/admin-auth.ts` `signToken`:
- * `base64url(JSON {exp}).hex(HMAC-SHA256(secret, payload))`.
+ * `base64url(JSON {typ:"admin",exp}).hex(HMAC-SHA256(secret, payload))`.
  */
 
 export const ADMIN_SESSION_COOKIE_NAME = "provin_admin_session";
+export const ADMIN_SESSION_TOKEN_TYP = "admin";
 
 /** Tikai `next dev`: nekad netiek lietots, ja `NODE_ENV === "production"`. */
 export const ADMIN_DEV_FALLBACK_SECRET = "provin-local-dev-secret-min-16-chars";
+
+export type AdminSessionPayload = {
+  typ: typeof ADMIN_SESSION_TOKEN_TYP;
+  exp: number;
+};
+
+export function encodeAdminSessionPayload(exp: number): string {
+  const body: AdminSessionPayload = { typ: ADMIN_SESSION_TOKEN_TYP, exp };
+  const bytes = new TextEncoder().encode(JSON.stringify(body));
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+export function isAdminSessionPayload(data: unknown): data is AdminSessionPayload {
+  if (!data || typeof data !== "object") return false;
+  const o = data as { typ?: unknown; exp?: unknown };
+  return o.typ === ADMIN_SESSION_TOKEN_TYP && typeof o.exp === "number";
+}
 
 export function resolveAdminSessionSecret(env: NodeJS.ProcessEnv = process.env): string {
   const v = env.ADMIN_SECRET?.trim() ?? "";
@@ -59,8 +79,8 @@ export async function verifyAdminSessionToken(
   try {
     const expected = await hmacSha256Hex(secret, payload);
     if (!constantTimeEqual(sig.toLowerCase(), expected)) return false;
-    const data = decodeBase64UrlJson(payload) as { exp?: unknown } | null;
-    return typeof data?.exp === "number" && data.exp > nowMs;
+    const data = decodeBase64UrlJson(payload);
+    return isAdminSessionPayload(data) && data.exp > nowMs;
   } catch {
     return false;
   }
