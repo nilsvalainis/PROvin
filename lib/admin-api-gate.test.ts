@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   adminApiOriginAllowed,
   decideAdminApiGate,
+  decidePartnerApiCsrf,
   isAdminApiLoginOrLogoutPath,
   isAdminApiSessionExemptPath,
   isAdminApiWebhookOrCronPath,
@@ -290,5 +291,25 @@ describe("decideAdminApiGate", () => {
         }),
       ),
     ).toEqual({ action: "unauthorized" });
+  });
+});
+
+describe("decidePartnerApiCsrf", () => {
+  const h = (init: Record<string, string>) => new Headers({ host: "www.provin.lv", ...init });
+  it("allows GET without Origin", () => {
+    expect(decidePartnerApiCsrf({ method: "GET", headers: h({}) })).toBe("next");
+  });
+  it("allows same-origin POST", () => {
+    expect(decidePartnerApiCsrf({ method: "POST", headers: h({ "sec-fetch-site": "same-origin" }) })).toBe("next");
+    expect(decidePartnerApiCsrf({ method: "POST", headers: h({ origin: "https://www.provin.lv" }) })).toBe("next");
+  });
+  it("blocks cross-site and same-site subdomain POST", () => {
+    expect(decidePartnerApiCsrf({ method: "POST", headers: h({ origin: "https://evil.example" }) })).toBe(
+      "forbidden_origin",
+    );
+    expect(
+      decidePartnerApiCsrf({ method: "POST", headers: h({ origin: "https://demo.provin.lv", "sec-fetch-site": "same-site" }) }),
+    ).toBe("forbidden_origin");
+    expect(decidePartnerApiCsrf({ method: "DELETE", headers: h({}) })).toBe("forbidden_origin");
   });
 });

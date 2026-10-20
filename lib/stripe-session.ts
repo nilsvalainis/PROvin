@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { isAppLocale, type AppLocale } from "@/i18n/locales";
+import { neutralizeReservedOrderNoteMarkers } from "@/lib/b2b-partner-orders";
 
 export type CheckoutLineKind =
   | "audit"
@@ -206,7 +207,8 @@ export function getOrderFieldsFromSession(session: Stripe.Checkout.Session): {
   const heardLabel = heardAboutDisplayLabel(heardRaw, "lv");
   const commentParts = [metaNotes, clientComment].filter((p): p is string => Boolean(p));
   const uniqueComments = commentParts.filter((p, i) => commentParts.indexOf(p) === i);
-  const notes = stripHeardAboutFromClientNotes(uniqueComments.length ? uniqueComments.join("\n\n") : null);
+  const joined = uniqueComments.length ? neutralizeReservedOrderNoteMarkers(uniqueComments.join("\n\n")) : null;
+  const notes = stripHeardAboutFromClientNotes(joined);
 
   return {
     vin: meta("vin") ?? getCustomFieldValue(session, "vin"),

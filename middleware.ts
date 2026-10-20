@@ -29,7 +29,7 @@ import { isClientLinkPath } from "./lib/client-link";
 import { isUnpaidPaymentPath } from "./lib/admin-unpaid-payment-link";
 import { isIrissOfferLinkPath } from "./lib/iriss-offer-client-link";
 import { decideB2bDemoHostRequest } from "./lib/b2b-demo-host";
-import { decideAdminApiGate } from "./lib/admin-api-gate";
+import { decideAdminApiGate, decidePartnerApiCsrf } from "./lib/admin-api-gate";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "./lib/admin-session-token";
 import { actorHomePath, decideAdminPageAccess, type AccessActor } from "./lib/staff-roles";
 import {
@@ -133,6 +133,9 @@ export default async function middleware(request: NextRequest) {
   if (pathname.startsWith("/api")) {
     if (pathname.startsWith("/api/admin")) {
       return gateAdminApi(request);
+    }
+    if (pathname.startsWith("/api/partner/") && decidePartnerApiCsrf(request) === "forbidden_origin") {
+      return adminApiJson(403, "forbidden origin");
     }
     return NextResponse.next();
   }
