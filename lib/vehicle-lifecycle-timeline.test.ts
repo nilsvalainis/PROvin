@@ -8,6 +8,11 @@ import {
   vendorTimelineIsInformational,
 } from "@/lib/vehicle-lifecycle-timeline";
 import { simultaneousDeNlPlListingVendorBlock } from "@/lib/vendor-timeline-listing.fixture";
+import {
+  LONG_TIMELINE_BODY_A,
+  LONG_TIMELINE_BODY_B,
+  longTimelineEntriesVendorBlock,
+} from "@/lib/timeline-long-entries.fixture";
 import { emptyAsvBlock } from "@/lib/asv-report";
 import { countryLabelToIso2 } from "@/lib/country-names-lv";
 
@@ -318,5 +323,30 @@ describe("laikposma ieraksti ir informatīvi, nobraukums/negadījumi paliek stip
     const events = buildVehicleLifecycleEvents({ csddForm: csdd });
     const ta = events.find((e) => e.kind === "inspection" && e.sources.includes("CSDD"));
     expect(ta?.odometer).toBe("148200");
+  });
+});
+
+describe("gari laikposma teksti", () => {
+  it("īsais virsraksts paliek title, garais teksts iet body", () => {
+    const events = buildVehicleLifecycleEvents({
+      manualVendorBlocks: [longTimelineEntriesVendorBlock()],
+    });
+    const cesija = events.find((e) => e.title === "Cesija");
+    expect(cesija).toBeTruthy();
+    expect(cesija?.body).toBeFalsy();
+
+    const longA = events.find((e) => e.body === LONG_TIMELINE_BODY_A);
+    expect(longA?.title).toBe("Ieraksts reģistrā");
+    expect(longA?.detail).toBe("");
+    expect(longA?.odometer).toBe("118400");
+
+    const longB = events.find((e) => e.body === LONG_TIMELINE_BODY_B);
+    expect(longB?.title).toBe("Ieraksts reģistrā");
+    expect(longB?.detail).toBe("");
+
+    const listed = events.find((e) => e.kind === "listed");
+    expect(listed?.title).toBe("Sludinājums");
+    expect(listed?.detail).toMatch(/18 900/);
+    expect(listed?.body).toBeFalsy();
   });
 });

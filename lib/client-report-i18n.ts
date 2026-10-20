@@ -162,6 +162,7 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "DĪLERA DATI": { en: "DEALER RECORDS", ru: "ДАННЫЕ ДИЛЕРА" },
   "IZSOĻU PORTĀLU ARHĪVS": { en: "AUCTION PLATFORM ARCHIVE", ru: "АРХИВ АУКЦИОННЫХ ПЛОЩАДОК" },
   "Pirmā reģistrācija": { en: "First registration", ru: "Первая регистрация" },
+  "Ieraksts reģistrā": { en: "Register record", ru: "Запись в реестре" },
   "Tehniskā apskate": { en: "Technical inspection", ru: "Техосмотр" },
   "Īpašnieka maiņa": { en: "Change of ownership", ru: "Смена владельца" },
   "Servisa apmeklējums": { en: "Service visit", ru: "Посещение сервиса" },
@@ -447,6 +448,7 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "DĪLERA DATI": "HÄNDLERDATEN",
   "IZSOĻU PORTĀLU ARHĪVS": "AUKTIONSARCHIV",
   "Pirmā reģistrācija": "Erstzulassung",
+  "Ieraksts reģistrā": "Registereintrag",
   "Tehniskā apskate": "Technische Prüfung",
   "Īpašnieka maiņa": "Halterwechsel",
   "Servisa apmeklējums": "Werkstattbesuch",
@@ -635,6 +637,20 @@ export function translateClientReportYesNo(value: boolean, lang: ClientReportLan
   }
 }
 
+/** Kartītes „Vēl” poga. Nav STATIC_TRANSLATIONS atslēga, lai sweep neaizvietotu citus „Vēl”. */
+export function translateClientReportLifeMore(lang: ClientReportLang): string {
+  switch (lang) {
+    case "en":
+      return "More";
+    case "ru":
+      return "Ещё";
+    case "de":
+      return "Mehr";
+    default:
+      return "Vēl";
+  }
+}
+
 /** Tukša vērtība kopsavilkumā. Nav globālā sweep atslēga „Nav”. */
 export function translateClientReportNone(lang: ClientReportLang): string {
   switch (lang) {
@@ -663,6 +679,10 @@ export function applyClientReportStaticTranslations(html: string, lang: ClientRe
     const translated = translateClientReportStatic(lv, lang);
     if (!translated || translated === lv) continue;
     out = out.replace(new RegExp(escapeRegExp(lv), "g"), translated);
+  }
+  const more = translateClientReportLifeMore(lang);
+  if (more !== "Vēl") {
+    out = out.replace(/(<button\b[^>]*\bdata-life-more\b[^>]*>)Vēl(<\/button>)/g, `$1${more}$2`);
   }
   return out;
 }

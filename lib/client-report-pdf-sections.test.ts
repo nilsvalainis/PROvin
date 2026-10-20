@@ -9,6 +9,7 @@ import {
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
 import { KEY_READ_HISTORY_LABEL } from "@/lib/vendor-service-history";
+import { LONG_TIMELINE_BODY_A, longTimelineEntriesVendorBlock } from "@/lib/timeline-long-entries.fixture";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import {
   buildVehicleLifecycleEvents,
@@ -1195,6 +1196,30 @@ describe("Vēstures kopsavilkums", () => {
     expect(importLi?.[0]).toContain("→");
     expect(importLi?.[0]).toContain("pdf-life-rail");
     expect(importLi?.[0]).not.toContain("pdf-life-card__kind");
+  });
+
+  it("puts long timeline text under the title row, full card width", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        manualVendorBlocks: [longTimelineEntriesVendorBlock()],
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("pdf-life-card__body");
+    expect(html).toContain("pdf-life-card__body-text");
+    expect(html).toContain("pdf-life-card__more");
+    expect(html).toContain('data-life-more');
+    expect(html).toContain(LONG_TIMELINE_BODY_A);
+    const kind = html.match(/pdf-life-card__kind[\s\S]*?<span>([^<]+)<\/span>/g) ?? [];
+    expect(kind.some((row) => row.includes("Ieraksts reģistrā"))).toBe(true);
+    expect(kind.some((row) => row.includes(LONG_TIMELINE_BODY_A))).toBe(false);
+    expect(html).toContain("-webkit-line-clamp:2");
+    expect(html).toMatch(/@media print\{[\s\S]*pdf-life-card__more\{display:none/);
+    expect(html).toContain("Cesija");
+    expect(html).toContain("Sludinājums");
   });
 
   it("renders hub incidents as the same hanging cards as other events", () => {

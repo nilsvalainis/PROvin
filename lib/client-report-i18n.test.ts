@@ -4,6 +4,7 @@ import {
   applyClientReportStaticTranslations,
   CLIENT_REPORT_DE,
   clientReportStaticKeys,
+  translateClientReportLifeMore,
   translateClientReportStatic,
 } from "@/lib/client-report-i18n";
 
@@ -98,5 +99,15 @@ describe("applyClientReportStaticTranslations", () => {
     const html = "<p>Šis teksts vārdnīcā nav</p>";
     const out = applyClientReportStaticTranslations(html, "en");
     expect(out).toBe(html);
+  });
+
+  it("translates the life-card more button without sweeping other Vēl text", () => {
+    expect(translateClientReportLifeMore("en")).toBe("More");
+    expect(translateClientReportLifeMore("de")).toBe("Mehr");
+    const html =
+      '<p>Vēl nav datu</p><button type="button" class="pdf-life-card__more" data-life-more>Vēl</button>';
+    const out = applyClientReportStaticTranslations(html, "en");
+    expect(out).toContain(">More</button>");
+    expect(out).toContain("Vēl nav datu");
   });
 });
