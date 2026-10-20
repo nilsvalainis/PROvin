@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildPartnerOrderNotes,
+  neutralizeReservedOrderNoteMarkers,
   formatB2bArchiveAmount,
   formatB2bPartnerOrderDate,
   b2bPackInfoLabelLv,
@@ -109,5 +110,16 @@ describe("b2b partner archive rows", () => {
   it("labels pack info rows with product and quantity", () => {
     expect(b2bPackInfoLabelLv({ checkoutLine: "business", packQty: 1 })).toBe("Paka · PROVIN BUSINESS × 1");
     expect(b2bPackInfoLabelLv({ checkoutLine: "dealer", packQty: 10 })).toBe("Paka · Dīlera dati × 10");
+  });
+});
+
+describe("neutralizeReservedOrderNoteMarkers", () => {
+  it("keeps server-built notes parseable only when not neutralized", () => {
+    const server = buildPartnerOrderNotes({ plan: "business", partnerId: "ptr_0123456789abcdef", lotId: "l1" });
+    expect(parsePartnerIdFromNotes(server)).toBe("ptr_0123456789abcdef");
+    expect(parsePartnerIdFromNotes(neutralizeReservedOrderNoteMarkers(server))).toBeNull();
+  });
+  it("leaves ordinary text untouched", () => {
+    expect(neutralizeReservedOrderNoteMarkers("Lūdzu zvanīt pēc 17:00, a=b")).toBe("Lūdzu zvanīt pēc 17:00, a=b");
   });
 });

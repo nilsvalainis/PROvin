@@ -2,7 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 import { normalizePartnerEmail, toPublicPartner, type B2bPartnerPublicProfile, type B2bPartnerRecord } from "@/lib/b2b-partner-account";
-import { readB2bPartnerServerSession } from "@/lib/b2b-partner-server-session";
+import { isB2bPartnerSessionPasswordCurrent, readB2bPartnerServerSession } from "@/lib/b2b-partner-server-session";
 import { getB2bPartnerById } from "@/lib/b2b-partner-store";
 import { isPartnerEmailVerified } from "@/lib/b2b-partner-verify";
 
@@ -13,6 +13,7 @@ async function resolveActiveB2bPartnerUncached(): Promise<B2bPartnerRecord | nul
   if (!partner || partner.status !== "active") return null;
   if (!isPartnerEmailVerified(partner)) return null;
   if (partner.email !== normalizePartnerEmail(session.email)) return null;
+  if (!isB2bPartnerSessionPasswordCurrent(session, partner.passwordHash)) return null;
   return partner;
 }
 

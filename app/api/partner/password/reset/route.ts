@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   }
 
   if (isPartnerEmailVerified(result.partner)) {
-    await writeB2bPartnerServerSession({ partnerId: result.partner.id, email: result.partner.email });
+    await writeB2bPartnerServerSession({ partnerId: result.partner.id, email: result.partner.email, passwordHash: result.partner.passwordHash });
   }
 
   return NextResponse.json({

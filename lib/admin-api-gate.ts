@@ -157,3 +157,12 @@ export async function decideAdminApiGate(request: {
 
   return { action: "next" };
 }
+
+/**
+ * B2B partneru API (`/api/partner/*`): sīkdatnes sesija, tāpēc mainošiem pieprasījumiem
+ * tāda pati CSRF Origin pārbaude kā adminam. GET paliek atvērts (lasīšana, PDF saites).
+ */
+export function decidePartnerApiCsrf(request: { method: string; headers: Headers }): "next" | "forbidden_origin" {
+  if (!isUnsafeHttpMethod(request.method)) return "next";
+  return adminApiOriginAllowed(request.headers) ? "next" : "forbidden_origin";
+}

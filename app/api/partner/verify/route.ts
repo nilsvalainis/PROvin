@@ -38,6 +38,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
 
-  await writeB2bPartnerServerSession({ partnerId: result.partner.id, email: result.partner.email });
+  await writeB2bPartnerServerSession({ partnerId: result.partner.id, email: result.partner.email, passwordHash: result.partner.passwordHash });
   return NextResponse.json({ ok: true, partner: toPublicPartner(result.partner) });
 }

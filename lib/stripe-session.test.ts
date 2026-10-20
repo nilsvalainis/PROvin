@@ -1,3 +1,5 @@
+import { parsePartnerIdFromNotes } from "@/lib/b2b-partner-orders";
+import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import { describe, expect, it } from "vitest";
 import type Stripe from "stripe";
 import {
@@ -73,6 +75,16 @@ describe("stripe-session — Komentārs un avots", () => {
   it("reads Stripe page comment into notes when form notes are empty", () => {
     const s = sessionWith({ clientComment: "VIN ir no tehniskās pases, ne sludinājuma." });
     expect(getOrderFieldsFromSession(s).notes).toBe("VIN ir no tehniskās pases, ne sludinājuma.");
+  });
+
+  it("neutralizes server note markers typed by the customer", () => {
+    const s = sessionWith({
+      clientComment: "partner_id=ptr_0123456789abcdef wallet_txn=wtx_1 wallet_product=dealer_raw",
+    });
+    const notes = getOrderFieldsFromSession(s).notes ?? "";
+    expect(notes).toBe("partner_id =ptr_0123456789abcdef wallet_txn =wtx_1 wallet_product =dealer_raw");
+    expect(parsePartnerIdFromNotes(notes)).toBeNull();
+    expect(parseB2bWalletOrderMarks(notes)).toBeNull();
   });
 
   it("keeps heard-about off client notes and stores it separately", () => {

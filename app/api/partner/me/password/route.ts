@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
-import { changeB2bPartnerPassword } from "@/lib/b2b-partner-store";
+import { writeB2bPartnerServerSession } from "@/lib/b2b-partner-server-session";
+import { changeB2bPartnerPassword, getB2bPartnerById } from "@/lib/b2b-partner-store";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 
@@ -38,6 +39,15 @@ export async function POST(req: Request) {
   if (!result.ok) {
     const status = result.error === "invalid_current" ? 403 : 400;
     return NextResponse.json({ error: result.error }, { status });
+  }
+  // Citas ierīces ar veco paroli tiek izrakstītas; šī sesija saņem jauno versiju.
+  const updated = await getB2bPartnerById(partner.id);
+  if (updated) {
+    await writeB2bPartnerServerSession({
+      partnerId: updated.id,
+      email: updated.email,
+      passwordHash: updated.passwordHash,
+    });
   }
   return NextResponse.json({ ok: true });
 }
