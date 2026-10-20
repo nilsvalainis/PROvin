@@ -27,7 +27,7 @@ describe("status chips", () => {
 
     const on = statusChipClass(true, "searching");
     expect(on).toContain("bg-sky-50");
-    expect(on).toContain("min-h-10");
+    expect(on).toContain("min-h-11");
   });
 
   it("renders counts as a small badge", () => {

@@ -8,6 +8,7 @@ import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logi
 import { IrissLogistikaCabinet } from "@/components/admin/iriss-logistika/IrissLogistikaCabinet";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
+import { AdminMobileChips, AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
 import { filterLogisticsOrdersByView, isLogisticsOrderActive, isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import { logisticsGoogleMapsDirUrl, logisticsGoogleMapsPlaceUrl } from "@/lib/iriss-logistics-maps-dir";
@@ -251,8 +252,31 @@ export function IrissLogistikaClient({
   }
 
   return (
-    <div className="iriss-log-screen px-3 pb-28 pt-3 md:px-4 md:pb-8">
-      <header className="iriss-log-no-print md:static">
+    <div className="iriss-log-screen px-3 pb-28 pt-3 max-md:px-0 md:px-4 md:pb-8">
+      <div className="iriss-log-no-print md:hidden">
+        <AdminMobileTopBar
+          title="Loģistika"
+          trailing={
+            <AdminMobileRoundBtn name="pievienot" primary label="Nopirkts" onClick={() => setPurchaseOpen(true)} />
+          }
+        >
+          <AdminMobileSearchField
+            value={pageTab === "points" ? pointQuery : query}
+            onChange={pageTab === "points" ? setPointQuery : setQuery}
+            placeholder={pageTab === "points" ? "Meklēt punktu, pilsētu" : "VIN, nosaukums, pickup"}
+          />
+          <AdminMobileChips
+            value={pageTab}
+            onChange={(id) => setPageTab(id as PageTab)}
+            items={[
+              { id: "orders", label: "Pasūtījumi", count: counts.active },
+              { id: "points", label: "Punkti", count: points.length },
+              { id: "settings", label: "Iestatījumi" },
+            ]}
+          />
+        </AdminMobileTopBar>
+      </div>
+      <header className="iriss-log-no-print hidden md:static md:block">
         <div className="flex flex-wrap items-start gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -288,7 +312,7 @@ export function IrissLogistikaClient({
           </div>
         </div>
         {pageTab === "orders" ? (
-          <div className="mt-3">
+          <div className="mt-3 max-md:px-4">
             <StatusFilterChipRow layout="scroll" label="Loģistikas filtri">
               {(["today", "due", "active", "archive"] as const).map((key) => (
                 <StatusFilterChip
@@ -306,12 +330,12 @@ export function IrissLogistikaClient({
       </header>
 
       {pageTab === "settings" ? (
-        <div className="mt-3 max-w-3xl space-y-3">
+        <div className="mt-3 max-w-3xl space-y-3 max-md:px-4">
           <IrissLogistikaAuctionSourcesPanel initialSources={initialSources} />
           {canEnableTotp ? <IrissLogistikaStaffTotp viewerName={viewerName ?? ""} /> : null}
         </div>
       ) : pageTab === "points" ? (
-        <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(16rem,22rem)_1fr]">
+        <div className="mt-3 grid gap-3 max-md:px-4 lg:grid-cols-[minmax(16rem,22rem)_1fr]">
           <div className="space-y-3">
             {groupedPoints.map((g) => (
               <section key={g.auction}>
@@ -325,7 +349,7 @@ export function IrissLogistikaClient({
                       key={p.id}
                       type="button"
                       onClick={() => setPointId(p.id)}
-                      className={`flex w-full items-start gap-2 border-b border-[#f3f4f6] px-3 py-2.5 text-left last:border-0 ${p.id === selectedPoint?.id ? "bg-[var(--acc-soft)]" : ""}`}
+                      className={`flex min-h-11 w-full items-start gap-2 border-b border-[#f3f4f6] px-3 py-2.5 text-left last:border-0 ${p.id === selectedPoint?.id ? "bg-[var(--acc-soft)]" : ""}`}
                     >
                       <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[var(--acc)]" />
                       <span className="min-w-0 flex-1">
@@ -402,7 +426,7 @@ export function IrissLogistikaClient({
           ) : null}
         </div>
       ) : (
-        <div className="mt-3 grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]">
+        <div className="mt-3 grid items-start gap-3 max-md:px-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]">
           <div className="min-w-0">
             {selectedIds.length > 0 ? (
               <div className="iriss-log-no-print mb-2 hidden items-center gap-2 rounded-2xl bg-white px-3 py-2 text-[12.5px] shadow-sm md:flex">
@@ -600,13 +624,13 @@ export function IrissLogistikaClient({
       )}
 
       {selectedIds.length > 0 && pageTab === "orders" ? (
-        <div className="iriss-log-no-print fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom,0px))] z-20 flex items-center gap-2 bg-[var(--bg-base)] px-3 py-2 md:hidden">
+        <div className="iriss-log-no-print fixed inset-x-0 bottom-[calc(62px+max(8px,calc(env(safe-area-inset-bottom,0px)-20px))+8px)] z-20 flex items-center gap-2 bg-[var(--s1,#fff)] px-3 py-2 md:hidden">
           <span className="text-[13px] font-semibold">{selectedIds.length} atzīmētas</span>
-          <button type="button" className="ml-auto text-[13px]" onClick={() => void printCurrentMap()}>
+          <button type="button" className="ml-auto inline-flex min-h-11 items-center px-2 text-[13px] font-semibold" onClick={() => void printCurrentMap()}>
             Drukāt
           </button>
           {dirUrl ? (
-            <a href={dirUrl} target="_blank" rel="noreferrer" className="rounded-full bg-[var(--ink)] px-3 py-1.5 text-[13px] font-semibold text-white">
+            <a href={dirUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-full bg-[var(--ink)] px-3 text-[13px] font-semibold text-white">
               Sastādīt maršrutu
             </a>
           ) : null}
