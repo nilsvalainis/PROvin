@@ -1,3 +1,5 @@
+import { appendMissingFlatPhotos } from "@/lib/photo-group-legacy-recover";
+
 /** Negadījumu kopsavilkuma fotogrāfijas — PDF zem apraksta (līdz 100 gab.). */
 export const INCIDENT_MAX_PHOTOS = 100;
 
@@ -91,7 +93,9 @@ export function normalizeIncidentPhotoGroups(
       if (photos.length === 0 && !title) continue;
       out.push({ id, title, photos });
     }
-    if (out.length > 0) return enforcePhotoGroupLimit(out);
+    if (out.length > 0) {
+      return enforcePhotoGroupLimit(appendMissingFlatPhotos(out, normalizeIncidentPhotos(legacyPhotos)));
+    }
   }
 
   const flat = normalizeIncidentPhotos(legacyPhotos);

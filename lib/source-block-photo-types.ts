@@ -1,4 +1,5 @@
 import { parseHidePhotoWatermarks } from "@/lib/admin-photo-watermark";
+import { appendMissingFlatPhotos } from "@/lib/photo-group-legacy-recover";
 
 /** Avotu sadaļu fotogrāfijas — vizuālie pierādījumi PDF (līdz 50 gab. vienā blokā). */
 export const SOURCE_BLOCK_MAX_PHOTOS = 50;
@@ -90,7 +91,9 @@ export function normalizeSourceBlockPhotoGroups(rawGroups: unknown, legacyPhotos
       if (photos.length === 0 && !title) continue;
       out.push({ id, title, photos });
     }
-    if (out.length > 0) return enforcePhotoGroupLimit(out);
+    if (out.length > 0) {
+      return enforcePhotoGroupLimit(appendMissingFlatPhotos(out, normalizeSourceBlockPhotos(legacyPhotos)));
+    }
   }
 
   const flat = normalizeSourceBlockPhotos(legacyPhotos);

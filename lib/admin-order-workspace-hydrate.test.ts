@@ -57,6 +57,89 @@ describe("resolveOrderWorkspaceHydration", () => {
     expect(resolved.hydrated.iriss).toBe(direct.iriss);
   });
 
+  it("keeps legacy flat incident photos when a newer local snapshot has empty titled groups", () => {
+    const photoIds = [
+      "inc_ph_937727923800eda3afa93f26",
+      "inc_ph_5798840b66b5e88b0e48f4ab",
+      "inc_ph_c3194363ced8f763b41688f7",
+      "inc_ph_d8fc9e5fb7f70941379bd33f",
+      "inc_ph_d565f075dad85e0297bd7ac5",
+      "inc_ph_72ad282fab2805fc9c7ac312",
+      "inc_ph_3a475614946ec7b77ab96a4d",
+      "inc_ph_01fd8003e0ca28c5bef70436",
+      "inc_ph_ad2da1b13360ff7c9e18477e",
+      "inc_ph_ec652ef4236da799844f4245",
+      "inc_ph_0a34f943d694e3b78a294a47",
+      "inc_ph_57c8cfb9091d9a330846ebab",
+      "inc_ph_95631a1cd3dfbbd25db519a2",
+      "inc_ph_ce56efb9f45898a2d5b76016",
+      "inc_ph_5f30ac6719ea67e103654067",
+      "inc_ph_753187aa2706658382904a17",
+      "inc_ph_51c54a11fa3482be40daf5d2",
+      "inc_ph_24cc1a42a0f4a21a7cf0e5c9",
+      "inc_ph_5f94ae6bfbc5e4e785e5f00c",
+      "inc_ph_2855e69b45ff35264bc9688c",
+      "inc_ph_48c03b05b02eee298f9be659",
+      "inc_ph_f726326ab2a6055274099f40",
+    ];
+    const blocks = createDefaultSourceBlocks();
+    blocks.autodna = { ...emptyVendorAvotuBlock(), comments: "AutoDNA 2017 Hollywood" };
+    const legacyServer = serializeOrderWorkspaceSnapshotFromRef(
+      {
+        sourceBlocks: blocks,
+        iriss: "BMW 640i kopsavilkums",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+        incidentPhotos: photoIds.map((id) => ({ id })),
+      },
+      DEFAULT_PDF_VISIBILITY,
+      {},
+      "2026-10-20T17:00:00.000Z",
+    );
+    const parsedServer = JSON.parse(legacyServer) as { workspaceRevision?: number; incidentPhotoGroups?: unknown };
+    parsedServer.workspaceRevision = 276;
+    delete parsedServer.incidentPhotoGroups;
+    const serverRaw = JSON.stringify(parsedServer);
+
+    const emptyLocalBlocks = createDefaultSourceBlocks();
+    const emptyLocal = serializeOrderWorkspaceSnapshotFromRef(
+      {
+        sourceBlocks: emptyLocalBlocks,
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+        incidentPhotoGroups: [
+          { id: "inc_phg_dba3356fdeba12c81d232520", title: "Arhīva fotogrāfijas 2026-10-20", photos: [] },
+        ],
+        incidentPhotos: [],
+      },
+      DEFAULT_PDF_VISIBILITY,
+      {},
+      "2026-10-20T22:20:00.000Z",
+    );
+    const parsedLocal = JSON.parse(emptyLocal) as { workspaceRevision?: number };
+    parsedLocal.workspaceRevision = 270;
+    const localRaw = JSON.stringify(parsedLocal);
+
+    const resolved = resolveOrderWorkspaceHydration({
+      localRaw,
+      localRawLegacyV2: null,
+      backupRaw: null,
+      serverWorkspaceJson: serverRaw,
+    });
+    expect(resolved.hydrated.incidentPhotos.map((p) => p.id)).toEqual(photoIds);
+    expect(resolved.hydrated.incidentPhotoGroups.flatMap((g) => g.photos.map((p) => p.id))).toEqual(photoIds);
+    expect(resolved.workspaceRevision).toBe(276);
+  });
+
   it("falls back to server only when no local", () => {
     const server = snapshotWithAutodnaComment("Tikai serveris", "2026-06-01T10:00:00.000Z");
     const resolved = resolveOrderWorkspaceHydration({

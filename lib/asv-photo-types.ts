@@ -1,5 +1,7 @@
 /** ASV vēstures fotogrāfijas (izsoles / negadījumi) — PDF. */
 
+import { appendMissingFlatPhotos } from "@/lib/photo-group-legacy-recover";
+
 export const ASV_MAX_PHOTOS = 500;
 
 export type AsvPhotoMeta = {
@@ -100,7 +102,9 @@ export function normalizeAsvPhotoGroups(rawGroups: unknown, legacyPhotos?: unkno
       if (photos.length === 0 && !title) continue;
       out.push({ id, title, photos });
     }
-    if (out.length > 0) return enforcePhotoGroupLimit(out);
+    if (out.length > 0) {
+      return enforcePhotoGroupLimit(appendMissingFlatPhotos(out, normalizeAsvPhotos(legacyPhotos)));
+    }
   }
 
   const flat = normalizeAsvPhotos(legacyPhotos);

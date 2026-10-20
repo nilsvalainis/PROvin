@@ -1,3 +1,5 @@
+import { appendMissingFlatPhotos } from "@/lib/photo-group-legacy-recover";
+
 /** Starptautiskās vēstures avota fotogrāfijas — vizuālie pierādījumi PDF. */
 export const CC_VIN_MAX_PHOTOS = 500;
 
@@ -100,7 +102,9 @@ export function normalizeCcVinPhotoGroups(rawGroups: unknown, legacyPhotos?: unk
       if (photos.length === 0 && !title) continue;
       out.push({ id, title, photos });
     }
-    if (out.length > 0) return enforcePhotoGroupLimit(out);
+    if (out.length > 0) {
+      return enforcePhotoGroupLimit(appendMissingFlatPhotos(out, normalizeCcVinPhotos(legacyPhotos)));
+    }
   }
 
   const flat = normalizeCcVinPhotos(legacyPhotos);

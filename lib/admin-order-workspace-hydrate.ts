@@ -1,16 +1,22 @@
 /**
  * Admin darba zonas ielāde: uzvar jaunākais `savedAt` starp pārlūka melnrakstu, rezerves kopiju un serveri
  * (K3 — vecs local vairs nepārraksta jaunāku servera versiju no citas ierīces).
+ * Foto lauki: salipina visus avotus, lai jaunāks tukšs localStorage nepazaudētu servera bildes.
  */
 import {
+  collectWorkspaceSourceBlockPhotoIds,
   createDefaultSourceBlocks,
   emptyVendorAvotuBlock,
   hydrateWorkspaceFromStorage,
 } from "@/lib/admin-source-blocks";
 import {
+  coalesceOrderWorkspacePersistBody,
   parseWorkspaceSnapshotSavedAtMs,
   pickNewestBackupSnapshotRaw,
+  type OrderWorkspacePersistBody,
 } from "@/lib/admin-order-workspace-persist";
+import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
+import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import {
   applyOrderPdfVisibilityDefaults,
   defaultPdfVisibilityForOrder,
@@ -64,12 +70,14 @@ export function resolveOrderWorkspaceHydration(args: {
   });
   const localRaw = args.localRaw?.trim() ? args.localRaw : args.localRawLegacyV2?.trim() ? args.localRawLegacyV2 : null;
 
-  // K3: uzvar jaunākais `savedAt` (local / backup / server). Vienāds vai nezināms laiks → local > backup > server (vecā secība).
+  // K3: teksts — jaunākais `savedAt` (vienāds laiks → local). Foto — salipina visus avotus.
   const backupPick = pickNewestBackupSnapshotRaw(args.backupRaw);
-  const candidates: { source: "local" | "backup" | "server"; raw: string; savedAtMs: number; rank: number }[] = [];
-  if (localRaw) candidates.push({ source: "local", raw: localRaw, savedAtMs: parseWorkspaceSnapshotSavedAtMs(localRaw), rank: 0 });
+  const rawCandidates: { source: "local" | "backup" | "server"; raw: string; savedAtMs: number; rank: number }[] = [];
+  if (localRaw) {
+    rawCandidates.push({ source: "local", raw: localRaw, savedAtMs: parseWorkspaceSnapshotSavedAtMs(localRaw), rank: 0 });
+  }
   if (backupPick) {
-    candidates.push({
+    rawCandidates.push({
       source: "backup",
       raw: backupPick.data,
       savedAtMs: Math.max(backupPick.savedAtMs, parseWorkspaceSnapshotSavedAtMs(backupPick.data)),
@@ -77,19 +85,84 @@ export function resolveOrderWorkspaceHydration(args: {
     });
   }
   if (args.serverWorkspaceJson?.trim()) {
-    candidates.push({
+    rawCandidates.push({
       source: "server",
       raw: args.serverWorkspaceJson,
       savedAtMs: parseWorkspaceSnapshotSavedAtMs(args.serverWorkspaceJson),
       rank: 2,
     });
   }
-  candidates.sort((a, b) => b.savedAtMs - a.savedAtMs || a.rank - b.rank);
-  for (const c of candidates) {
+  rawCandidates.sort((a, b) => b.savedAtMs - a.savedAtMs || a.rank - b.rank);
+
+  const hydratedCandidates: {
+    source: "local" | "backup" | "server";
+    data: HydratedWorkspaceSnapshot;
+    body: OrderWorkspacePersistBody;
+    revision: number;
+  }[] = [];
+  for (const c of rawCandidates) {
     const hydrated = hydrateWorkspaceFromStorage(c.raw);
-    if (hydrated) {
-      return { source: c.source, hydrated: withOrderDefaults(hydrated), workspaceRevision: revisionFromRaw(c.raw) };
+    if (!hydrated) continue;
+    const data = withOrderDefaults(hydrated);
+    hydratedCandidates.push({
+      source: c.source,
+      data,
+      revision: revisionFromRaw(c.raw),
+      body: {
+        sourceBlocks: data.sourceBlocks,
+        iriss: data.iriss,
+        apskatesPlāns: data.apskatesPlāns,
+        tehniskoRiskuAnalize: data.tehniskoRiskuAnalize,
+        cenasAtbilstiba: data.cenasAtbilstiba,
+        previewConfirmed: data.previewConfirmed,
+        vehicleAiExtraction: data.vehicleAiExtraction,
+        vehicleAiExtractionMeta: data.vehicleAiExtractionMeta,
+        incidentPhotoGroups: data.incidentPhotoGroups,
+        incidentPhotos: data.incidentPhotos,
+        ...sourceBlockWipesSnapshotField(data.sourceBlockWipes),
+        ...clearedFieldsSnapshotField(data.clearedFields),
+      },
+    });
+  }
+
+  const chosen = hydratedCandidates[0];
+  if (chosen) {
+    let mergedBody = chosen.body;
+    for (const other of hydratedCandidates.slice(1)) {
+      mergedBody = coalesceOrderWorkspacePersistBody(mergedBody, other.body);
     }
+    const maxRevision = hydratedCandidates.reduce((n, c) => Math.max(n, c.revision), 0);
+    const keptPhotoIds = new Set<string>([
+      ...collectWorkspaceSourceBlockPhotoIds(mergedBody.sourceBlocks),
+      ...(mergedBody.incidentPhotos ?? []).map((photo) => photo.id),
+    ]);
+    const asv = mergedBody.sourceBlocks.asv;
+    const ccVin = mergedBody.sourceBlocks.cc_vin;
+    const listing = mergedBody.sourceBlocks.listing_analysis;
+    for (const group of [...(asv?.photoGroups ?? []), ...(ccVin?.photoGroups ?? []), ...(listing?.photoGroups ?? [])]) {
+      for (const photo of group.photos ?? []) {
+        if (photo?.id) keptPhotoIds.add(photo.id);
+      }
+    }
+    const deleted = (chosen.data.deletedPhotoIds ?? []).filter((id) => !keptPhotoIds.has(id));
+    return {
+      source: chosen.source,
+      hydrated: {
+        ...chosen.data,
+        sourceBlocks: mergedBody.sourceBlocks,
+        iriss: mergedBody.iriss,
+        apskatesPlāns: mergedBody.apskatesPlāns,
+        tehniskoRiskuAnalize: mergedBody.tehniskoRiskuAnalize,
+        cenasAtbilstiba: mergedBody.cenasAtbilstiba,
+        previewConfirmed: mergedBody.previewConfirmed,
+        vehicleAiExtraction: mergedBody.vehicleAiExtraction,
+        vehicleAiExtractionMeta: mergedBody.vehicleAiExtractionMeta,
+        incidentPhotoGroups: mergedBody.incidentPhotoGroups ?? [],
+        incidentPhotos: mergedBody.incidentPhotos ?? [],
+        ...(deleted.length ? { deletedPhotoIds: deleted } : {}),
+      },
+      workspaceRevision: maxRevision,
+    };
   }
 
   const legacy = args.legacyInternalRaw?.trim();

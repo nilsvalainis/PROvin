@@ -1,3 +1,5 @@
+import { appendMissingFlatPhotos } from "@/lib/photo-group-legacy-recover";
+
 /** Oficiālā dīlera fotogrāfijas — vizuālie pierādījumi PDF (līdz 50 gab.). */
 export const AUTO_RECORDS_MAX_PHOTOS = 50;
 
@@ -91,7 +93,9 @@ export function normalizeAutoRecordsPhotoGroups(
       if (photos.length === 0 && !title) continue;
       out.push({ id, title, photos });
     }
-    if (out.length > 0) return enforcePhotoGroupLimit(out);
+    if (out.length > 0) {
+      return enforcePhotoGroupLimit(appendMissingFlatPhotos(out, normalizeAutoRecordsPhotos(legacyPhotos)));
+    }
   }
 
   const flat = normalizeAutoRecordsPhotos(legacyPhotos);
