@@ -1,8 +1,15 @@
-import { timingSafeEqual } from "node:crypto";
+/** Edge-safe: middleware and Node routes both import this. */
 
 export const B2B_DEMO_ADMIN_SECRET_HEADER = "x-b2b-demo-admin-secret";
 
 const MIN_SECRET_LEN = 16;
+
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 
 export function resolveB2bDemoAdminSecret(env: NodeJS.ProcessEnv = process.env): string {
   const dedicated = env.B2B_DEMO_ADMIN_SECRET?.trim() ?? "";
@@ -23,12 +30,5 @@ export function verifyB2bDemoAdminSecret(
   const secret = resolveB2bDemoAdminSecret(env);
   if (!secret || secret.length < MIN_SECRET_LEN) return false;
   if (!headerValue) return false;
-  try {
-    const a = Buffer.from(headerValue, "utf8");
-    const b = Buffer.from(secret, "utf8");
-    if (a.length !== b.length) return false;
-    return timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
+  return constantTimeEqual(headerValue, secret);
 }

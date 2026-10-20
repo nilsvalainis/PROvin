@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   SOURCE_PDF_DIRECT_UPLOAD_MAX_BYTES,
+  isAllowedSourcePdfBlobUrl,
   isSafeAdminOrderId,
   isVercelBlobHostname,
   parseSourcePdfBlobRefs,
@@ -46,6 +47,25 @@ describe("avotu PDF Blob pārsūtīšana", () => {
     ]);
     expect(parseSourcePdfBlobRefs("", 5)).toEqual([]);
     expect(parseSourcePdfBlobRefs("{not json", 5)).toEqual([]);
+  });
+
+  it("dzēšanai un lasīšanai atļauj tikai šī pasūtījuma Blob ceļu", () => {
+    const sid = "cs_test_a1b2c3d4e5";
+    const ok = `https://abc.public.blob.vercel-storage.com/admin-source-pdf/${sid}/file.pdf`;
+    expect(isAllowedSourcePdfBlobUrl(sid, ok)).toBe(true);
+    expect(
+      isAllowedSourcePdfBlobUrl(sid, `https://abc.public.blob.vercel-storage.com/admin-source-pdf/other/file.pdf`),
+    ).toBe(false);
+    expect(isAllowedSourcePdfBlobUrl(sid, "https://evil.example/admin-source-pdf/cs_test_a1b2c3d4e5/x.pdf")).toBe(
+      false,
+    );
+    expect(isAllowedSourcePdfBlobUrl(sid, ok.replace("https://", "http://"))).toBe(false);
+    expect(
+      isAllowedSourcePdfBlobUrl(
+        sid,
+        `https://user:pass@abc.public.blob.vercel-storage.com/admin-source-pdf/${sid}/file.pdf`,
+      ),
+    ).toBe(false);
   });
 
   it("ievēro maksimālo failu skaitu", () => {

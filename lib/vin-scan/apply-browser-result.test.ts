@@ -124,6 +124,8 @@ describe("atsevišķā VIN SCAN pārlūka rezultāts", () => {
   it("atsevišķais rīks un API saglabā pārlūka rezultātu tajā pašā Blob ceļā", () => {
     const panel = readFileSync(path.join(ROOT, "components/admin/AdminVinScanPanel.tsx"), "utf8");
     const route = readFileSync(path.join(ROOT, "app/api/admin/vin-scan/route.ts"), "utf8");
+    const orderRoute = readFileSync(path.join(ROOT, "app/api/admin/order-vin-scan/route.ts"), "utf8");
+    const store = readFileSync(path.join(ROOT, "lib/vin-scan/store.ts"), "utf8");
     const handoff = readFileSync(path.join(ROOT, "components/admin/AdminVinScanBrowserFetchHandoff.tsx"), "utf8");
     const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
     expect(panel).toContain("AdminVinScanBrowserFetchHandoff");
@@ -137,7 +139,13 @@ describe("atsevišķā VIN SCAN pārlūka rezultāts", () => {
     expect(route).toContain("applyVinScanBrowserResultToSnapshot");
     expect(route).toContain("browserResult");
     expect(route).toContain("writeVinScanSnapshot");
+    expect(route).toContain("logVinScanBrowserImport");
+    expect(route).toContain("finalUrl");
     expect(route).toContain("preferBrowserArchiveImport");
+    expect(orderRoute).toContain("logVinScanBrowserImport");
+    expect(orderRoute).toContain("finalUrl");
+    expect(store).toContain("blob_write_failed");
+    expect(store).toContain("isEphemeralDir");
     expect(route).not.toMatch(/purchaseCarVerticalReport|carvertical/i);
   });
 });

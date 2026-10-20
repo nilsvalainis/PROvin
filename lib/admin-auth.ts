@@ -3,7 +3,12 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ADMIN_SESSION_COOKIE_NAME, resolveAdminSessionSecret } from "@/lib/admin-session-token";
+import {
+  ADMIN_SESSION_COOKIE_NAME,
+  encodeAdminSessionPayload,
+  isAdminSessionPayload,
+  resolveAdminSessionSecret,
+} from "@/lib/admin-session-token";
 
 const COOKIE_NAME = ADMIN_SESSION_COOKIE_NAME;
 const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -36,8 +41,7 @@ function resolvePassword(): string {
 function signToken(): string {
   const secret = resolveSecret();
   if (!secret) throw new Error("ADMIN_SECRET nav iestatīts");
-  const exp = Date.now() + TOKEN_MAX_AGE_MS;
-  const payload = Buffer.from(JSON.stringify({ exp }), "utf8").toString("base64url");
+  const payload = encodeAdminSessionPayload(Date.now() + TOKEN_MAX_AGE_MS);
   const sig = createHmac("sha256", secret).update(payload).digest("hex");
   return `${payload}.${sig}`;
 }
@@ -53,8 +57,8 @@ export function verifyToken(token: string): boolean {
     const a = Buffer.from(sig, "hex");
     const b = Buffer.from(expected, "hex");
     if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
-    const data = JSON.parse(Buffer.from(payload, "base64url").toString()) as { exp?: number };
-    return typeof data.exp === "number" && data.exp > Date.now();
+    const data: unknown = JSON.parse(Buffer.from(payload, "base64url").toString());
+    return isAdminSessionPayload(data) && data.exp > Date.now();
   } catch {
     return false;
   }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { adminHtmlDocumentHeaders } from "@/lib/csp";
 import { warmMessageTemplatesCache } from "@/lib/messages/message-runtime";
 import { buildIrissPasutijumsPrintHtml } from "@/lib/iriss-pasutijums-pdf-html";
 import { buildIrissPasutijumsPdfBytes } from "@/lib/iriss-pasutijums-pdf";
@@ -33,11 +34,10 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     const html = buildIrissPasutijumsPrintHtml(rec, generated, templatesDoc);
     return new NextResponse(html, {
       status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
+      headers: adminHtmlDocumentHeaders({
         "Cache-Control": pdfCache,
         "X-Robots-Tag": "noindex, nofollow",
-      },
+      }),
     });
   }
   const bytes = await buildIrissPasutijumsPdfBytes(rec);

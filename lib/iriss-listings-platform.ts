@@ -43,3 +43,37 @@ export function cleanHttpUrl(value: string): string {
     return "";
   }
 }
+
+function isBlockedListingUrlIdentity(u: URL): boolean {
+  if (u.username || u.password) return true;
+  if (u.port && u.port !== "443" && u.port !== "80") return true;
+  const host = u.hostname.toLowerCase();
+  if (!host || host === "localhost" || host.endsWith(".localhost")) return true;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return true;
+  if (host.includes(":")) return true;
+  return false;
+}
+
+/**
+ * Nolasīšanas saite: zināma izsoļu platforma, https, bez lietotāja/paroles un bez IP hosta.
+ * `http` tiek pacelts uz `https`, lai operatora ielīmējums nesalūztu.
+ */
+export function normalizeAllowedListingSourceUrl(raw: string): string | null {
+  const cleaned = cleanHttpUrl(raw);
+  if (!cleaned) return null;
+  let u: URL;
+  try {
+    u = new URL(cleaned);
+  } catch {
+    return null;
+  }
+  if (u.protocol === "http:") u.protocol = "https:";
+  if (u.protocol !== "https:") return null;
+  if (isBlockedListingUrlIdentity(u)) return null;
+  if (!detectIrissListingPlatform(u.toString())) return null;
+  return u.toString();
+}
+
+export function isAllowedListingSourceUrl(raw: string): boolean {
+  return normalizeAllowedListingSourceUrl(raw) !== null;
+}

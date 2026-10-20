@@ -43,6 +43,39 @@ const STAT_HTML = `<!doctype html><html><body>
 </body></html>`;
 
 describe("pārlūka arhīva HTML imports", () => {
+  it("2026-10 stat.vin kartīte saglabā lotu, km no jūdzēm un g-static foto", () => {
+    const vin = "WDD1173421N570488";
+    const photo =
+      "https://g-static.copart.com/v1/AUTH_svc_depdoc/ids-g-prod-top1-pub-perm/0925/ee075ec6ac3c4781baa99672ef0b7ba0_O_2.jpg";
+    const html = `<!doctype html><html><body>
+      <h1>Mercedes-Benz CLA VIN: ${vin}</h1>
+      <p>Sale History (0) Auction completed Copart</p>
+      <p>Lot number: 50558298</p>
+      <p>Location: Turku</p>
+      <p>Damage: Front End</p>
+      <p>Odometer, mi: 185,389 mi</p>
+      <p>Keys: N/A</p>
+      <p>No similar cars were found at the auction.</p>
+      <img src="${photo}">
+    </body></html>`;
+    const applied = applyBrowserArchiveHtml({
+      record: { at: "2026-10-20T09:00:00.000Z", vin, status: "done", indicators: [] },
+      id: "stat_vin",
+      html,
+      pageUrl: `https://stat.vin/cars/${vin}`,
+      vin,
+    });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    const row = applied.record.indicators.find((item) => item.id === "stat_vin");
+    expect(row?.status).toBe("found");
+    expect(row?.auctions?.[0]?.lot).toBe("50558298");
+    expect(row?.auctions?.[0]?.odometer).toMatch(/km/);
+    expect(row?.auctions?.[0]?.odometer).not.toMatch(/\bmi\b/);
+    expect(row?.media?.photoUrl).toContain("g-static.copart.com");
+    expect(`${row?.summary ?? ""}\n${row?.detail ?? ""}`).not.toMatch(/\bkeys?\b/i);
+  });
+
   it("stat.vin lapa saglabā foto, lotu, vietu, cenu un km; poga ir Ielikt AUCTION", () => {
     const applied = applyBrowserArchiveHtml({
       record: record([blockedStat]),

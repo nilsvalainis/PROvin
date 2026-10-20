@@ -252,3 +252,10 @@ export type CopilotAiResponse = {
 export function isCopilotSourceKey(v: string): v is CopilotSourceKey {
   return (COPILOT_SOURCE_KEYS as readonly string[]).includes(v);
 }
+
+export type CopilotApplyMode = "auto" | "preview";
+
+/** Noklusējums: priekšskatījums. Automātiska ierakstīšana tikai ar skaidru `auto`. */
+export function parseCopilotApplyMode(raw: unknown): CopilotApplyMode {
+  return typeof raw === "string" && raw.trim() === "auto" ? "auto" : "preview";
+}

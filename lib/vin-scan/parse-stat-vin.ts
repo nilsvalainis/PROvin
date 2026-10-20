@@ -4,6 +4,7 @@
  * Cloudflare / 429 / 403 - skaidrs statuss, nevis „Lapa nav atpazīta”.
  */
 
+import { milesToKmRounded } from "@/lib/miles-to-km";
 import type { VinScanAuction, VinScanParse, VinScanVehicle } from "@/lib/vin-scan/types";
 
 export type StatVinPageInput = {
@@ -18,8 +19,10 @@ export type StatVinPageInput = {
 const CF_RE =
   /just a moment|performing security verification|security verification|verifies you are not a bot|checking your browser|verify you are human|attention required|cf-browser-verification|access blocked|sorry, you have been blocked/i;
 const RATE_RE = /too many requests|rate limit(?:ed)?|try again later/i;
+/** Tukša meklēšana / car-not-found. „No data found” un „Sale History (0)” ir kartītes blakus teksts, ne none. */
 const NONE_RE =
-  /not found|page not found|car not found|car-not-found|no vehicle|nothing found|no results|no similar cars|were not found|no sale history|sale history\s*\(\s*0\s*\)|we couldn['’]?t find/i;
+  /page not found|car not found|car-not-found|no vehicle|nothing found|no results|we couldn['’]?t find a vehicle|vehicle not found/i;
+const SOFT_NONE_RE = /no similar cars|were not found|no sale history|sale history\s*\(\s*0\s*\)|no data found/i;
 const AUCTION_RE = /\b(auction|sold|sale date|odometer|mileage|lot|bid|copart|iaai)\b/i;
 const PHOTO_SKIP_RE = /logo|favicon|sprite|pixel|1x1|avatar|icon|emoji|placeholder|spinner|badge/i;
 const AUCTION_PHOTO_HOST_RE = /copart|iaai|stat\.vin|bidfax|poctra|cloudfront|auction/i;
@@ -66,11 +69,23 @@ function yearFromDate(raw: string): string {
   return iso?.[1] && Number(iso[1]) >= 1990 && Number(iso[1]) <= 2100 ? iso[1] : "";
 }
 
-function kmLv(raw: string): string {
-  const n = Number(String(raw).replace(/[^\d.]/g, ""));
-  if (!Number.isFinite(n) || n <= 0) return raw.trim();
-  return `${Math.round(n).toLocaleString("lv-LV")} km`;
+/** stat.vin ASV kartīte raksta „Odometer, mi”. Bez vienības atstāj skaitli kā km (vecais HTML). */
+export function formatStatVinOdometerKm(raw: string): string {
+  const text = String(raw).trim();
+  if (!text) return "";
+  const n = Number(text.replace(/[^\d.]/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return "";
+  const miles = /\b(mi|mile|miles)\b/i.test(text);
+  const km = miles ? milesToKmRounded(n) : Math.round(n);
+  return `${km.toLocaleString("lv-LV")} km`;
 }
+
+function kmLv(raw: string): string {
+  return formatStatVinOdometerKm(raw);
+}
+
+const LOT_CAPTURE_RE = /lot(?:\s*number)?[:\s#№"']*([0-9]{5,10})|\/lot\/([0-9]{5,10})/i;
+const ODO_CAPTURE_RE = /(?:odometer|mileage|odometrs)(?:,?\s*mi)?[:\s]*([\d\s,]{3,12})/i;
 
 function venueName(raw: string): string {
   const t = raw.trim();
@@ -126,7 +141,7 @@ function extractEmbeddedJson(html: string): unknown[] {
       /* ignore */
     }
   }
-  for (const m of html.matchAll(/<script[^>]*type="application\/json"[^>]*>([\s\S]*?)<\/script>/gi)) {
+  for (const m of html.matchAll(/<script[^>]*type="application\/(?:ld\+)?json"[^>]*>([\s\S]*?)<\/script>/gi)) {
     if (!m[1]) continue;
     try {
       out.push(JSON.parse(m[1]));
@@ -137,6 +152,40 @@ function extractEmbeddedJson(html: string): unknown[] {
   return out;
 }
 
+function auctionFromSchemaVehicle(rec: Record<string, unknown>, vin: string): VinScanAuction | null {
+  const typeName = str(rec["@type"] || rec.type);
+  if (!/vehicle/i.test(typeName)) return null;
+  const idVin = str(rec.vehicleIdentificationNumber || rec.sku || rec.mpn).toUpperCase();
+  if (vin && idVin && idVin !== vin) return null;
+  const desc = str(rec.description);
+  const lotHit = LOT_CAPTURE_RE.exec(desc);
+  const lot = str(rec.lot || rec.lotNumber) || lotHit?.[1] || lotHit?.[2] || "";
+  const miles = /mileage of\s+([\d\s,]+)\s*miles/i.exec(desc)?.[1] ?? "";
+  const odoRaw = miles || str(rec.mileageFromOdometer || rec.odometer || rec.mileage);
+  const odometer = odoRaw ? kmLv(miles ? `${odoRaw} mi` : odoRaw) : "";
+  const damage = str(rec.knownVehicleDamages || rec.damage || rec.primaryDamage);
+  const date = str(rec.purchaseDate || rec.date || rec.saleDate).slice(0, 32);
+  const venue = venueName(
+    str(asRecord(rec.seller).name) || /copart\s*finland|copart\s*fi|\biaai\b|\bcopart\b/i.exec(desc)?.[0] || "",
+  );
+  const photoList = asArray(rec.image)
+    .map((item) => normalizePhotoUrl(typeof item === "string" ? item : str(asRecord(item).url || asRecord(item).src)))
+    .filter(Boolean);
+  if (!lot && !venue && !damage && !odometer && !photoList.length) return null;
+  const photos = [...new Set(photoList)].slice(0, 200);
+  return {
+    title: [venue || "Izsole", lot ? `lots ${lot}` : "", damage, odometer].filter(Boolean).join(" · ").slice(0, 180),
+    date: date || undefined,
+    venue: venue || undefined,
+    lot: lot || undefined,
+    odometer: odometer || undefined,
+    damage: damage || undefined,
+    photoUrl: photos[0] || undefined,
+    photoCount: photos.length || undefined,
+    photoUrls: photos.length ? photos : undefined,
+  };
+}
+
 function walkAuctionRecords(node: unknown, vin: string, out: VinScanAuction[], depth = 0): void {
   if (depth > 8 || out.length >= 20) return;
   if (Array.isArray(node)) {
@@ -145,17 +194,25 @@ function walkAuctionRecords(node: unknown, vin: string, out: VinScanAuction[], d
   }
   const rec = asRecord(node);
   if (!Object.keys(rec).length) return;
+  if (Array.isArray(rec["@graph"])) {
+    walkAuctionRecords(rec["@graph"], vin, out, depth + 1);
+  }
+  if (/vehicle/i.test(str(rec["@type"] || rec.type))) {
+    const schemaAuction = auctionFromSchemaVehicle(rec, vin);
+    if (schemaAuction) out.push(schemaAuction);
+  }
 
   const lot = str(rec.lot || rec.lotNumber || rec.lot_number || rec.itemId || rec.item_id);
   const place = str(rec.country || rec.countryCode || rec.location || rec.yard || rec.saleCountry || rec.saleLocation);
   const venue = venueName(
     [str(rec.auction || rec.auctionName || rec.site || rec.seller || rec.venue || rec.source), place].filter(Boolean).join(" "),
   );
-  const date = str(rec.date || rec.saleDate || rec.sale_date || rec.auctionDate || rec.soldDate);
+  const date = str(rec.date || rec.saleDate || rec.sale_date || rec.auctionDate || rec.soldDate || rec.purchaseDate);
   const price = str(rec.price || rec.finalBid || rec.final_bid || rec.soldPrice || rec.highBid);
-  const odometerRaw = str(rec.odometer || rec.mileage || rec.odometerValue);
-  const odometer = odometerRaw ? kmLv(odometerRaw) : "";
-  const damage = str(rec.damage || rec.primaryDamage || rec.primary_damage || rec.secondaryDamage);
+  const unit = str(rec.odometerUnit || rec.mileageUnit || rec.unit);
+  const odometerRaw = str(rec.odometer || rec.mileage || rec.odometerValue || rec.mileageFromOdometer);
+  const odometer = odometerRaw ? kmLv([odometerRaw, unit].filter(Boolean).join(" ")) : "";
+  const damage = str(rec.damage || rec.primaryDamage || rec.primary_damage || rec.knownVehicleDamages || rec.secondaryDamage);
   const photoList = asArray(rec.photos || rec.images)
     .map((item) => normalizePhotoUrl(typeof item === "string" ? item : str(asRecord(item).url || asRecord(item).src || asRecord(item).href)))
     .filter(Boolean);
@@ -190,9 +247,12 @@ function auctionsFromText(text: string, vin: string): VinScanAuction[] {
   const copart = /copart/i.test(text);
   const copartFi = copart && /copart\s*fi\b|copart\.fi|\bfinland\b/i.test(text);
   const iaai = /iaai|iaa i/i.test(text);
-  const lot = /lot[:\s#№]*([0-9]{5,10})/i.exec(text)?.[1] ?? "";
-  const odo = /(?:odometer|mileage|odometrs)[:\s]*([\d\s,]{3,12})/i.exec(text)?.[1] ?? "";
-  const damage = /(?:damage|bojājums|primary damage)[:\s]+([A-Za-zĀ-ž /-]{3,40})/i.exec(text)?.[1] ?? "";
+  const lotHit = LOT_CAPTURE_RE.exec(text);
+  const lot = lotHit?.[1] || lotHit?.[2] || "";
+  const odoMatch = ODO_CAPTURE_RE.exec(text);
+  const odo = odoMatch?.[1] ?? "";
+  const odoMiles = Boolean(odoMatch && /\bmi\b/i.test(odoMatch[0] + text.slice((odoMatch.index ?? 0) + odoMatch[0].length, (odoMatch.index ?? 0) + odoMatch[0].length + 8)));
+  const damage = /(?:primary damage|bojājums|(?<![A-Za-z])damage):[:\s]*([A-Za-zĀ-ž /-]{3,40})/i.exec(text)?.[1] ?? "";
   const year =
     yearFromDate(/((?:19|20)\d{2})/.exec(text)?.[1] ?? "") ||
     yearFromDate(/sale(?:\s+date)?[:\s]+([0-9./-]{6,12})/i.exec(text)?.[1] ?? "");
@@ -222,8 +282,9 @@ function auctionsFromText(text: string, vin: string): VinScanAuction[] {
       photoCount: Number.isFinite(photoCount) && photoCount > 0 ? photoCount : undefined,
     });
   }
-  if (out[0] && odo && !out[0].price) {
-    out[0] = { ...out[0], title: [out[0].title, kmLv(odo)].filter(Boolean).join(" · ") };
+  if (out[0] && odo && !out[0].odometer) {
+    const odometer = kmLv(odoMiles ? `${odo} mi` : odo);
+    out[0] = { ...out[0], odometer, title: [out[0].title, odometer].filter(Boolean).join(" · ") };
   }
   return out.slice(0, 8);
 }
@@ -234,6 +295,39 @@ function vehicleFromText(text: string): VinScanVehicle | undefined {
   const model = /(?:model|modelis)[:\s]+([A-Za-z0-9 -]{1,40})/i.exec(text)?.[1] ?? "";
   if (!make && !model && !year) return undefined;
   return { make, model, year };
+}
+
+function vehicleFromNode(node: unknown, depth = 0): VinScanVehicle | undefined {
+  if (depth > 6) return undefined;
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const found = vehicleFromNode(item, depth + 1);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  const rec = asRecord(node);
+  if (/vehicle/i.test(str(rec["@type"] || rec.type))) {
+    const manufacturer = str(rec.manufacturer) || str(asRecord(rec.manufacturer).name);
+    const year = yearFromDate(str(rec.productionDate || rec.modelDate || rec.vehicleModelDate || rec.year));
+    const model = str(rec.model || rec.vehicleModel);
+    if (manufacturer || model || year) return { make: manufacturer, model, year };
+  }
+  for (const key of ["@graph", "props", "pageProps", "data", "car"]) {
+    if (key in rec) {
+      const found = vehicleFromNode(rec[key], depth + 1);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+function vehicleFromEmbedded(html: string): VinScanVehicle | undefined {
+  for (const blob of extractEmbeddedJson(html)) {
+    const found = vehicleFromNode(blob);
+    if (found) return found;
+  }
+  return undefined;
 }
 
 function cutLabeled(text: string, labels: string): string {
@@ -263,7 +357,7 @@ function priceOf(text: string): string {
 
 function lotMarks(html: string): { lot: string; index: number }[] {
   const out: { lot: string; index: number }[] = [];
-  const re = /lot[:\s#№"']*([0-9]{5,10})|\/lot\/([0-9]{5,10})/gi;
+  const re = /lot(?:\s*number)?[:\s#№"']*([0-9]{5,10})|\/lot\/([0-9]{5,10})/gi;
   for (const match of html.matchAll(re)) {
     const lot = match[1] || match[2] || "";
     if (!lot || out.some((row) => row.lot === lot)) continue;
@@ -286,9 +380,10 @@ function auctionFromChunk(chunkHtml: string, lot: string, allPhotos: readonly st
             : "",
   );
   if (!venue && !lot && !AUCTION_RE.test(text)) return null;
-  const damage = cutLabeled(text, "primary damage|damage|bojājums").replace(/[.,;]+$/, "");
-  const odoRaw = cutLabeled(text, "odometer|mileage|odometrs").replace(/[^\d\s,.]/g, "").trim();
-  const odometer = odoRaw ? kmLv(odoRaw) : "";
+  const damage = cutLabeled(text, "primary damage|bojājums|(?<![A-Za-z])damage").replace(/[.,;]+$/, "");
+  const odoLabeled = cutLabeled(text, "odometer(?:,?\\s*mi)?|mileage|odometrs");
+  const odoRaw = odoLabeled.replace(/[^\d\s,.]/g, "").trim();
+  const odometer = odoRaw ? kmLv(/\bmi\b/i.test(odoLabeled) ? `${odoRaw} mi` : odoRaw) : "";
   const location = cutLabeled(text, "location|sale location|branch|yard");
   const date = saleDateOf(text);
   const price = priceOf(text);
@@ -359,7 +454,7 @@ export function classifyStatVinText(text: string, vin: string): { status: "found
     return { status: "unknown", summary: "stat.vin: pieprasījumu limits" };
   }
   if (!hasVin(text, vin)) {
-    if (NONE_RE.test(text)) return { status: "none", summary: "Nav izsoles ieraksta" };
+    if (NONE_RE.test(text) || SOFT_NONE_RE.test(text)) return { status: "none", summary: "Nav izsoles ieraksta" };
     if (text.trim().length < 40) return null;
     return { status: "unknown", summary: "stat.vin: lapa bez VIN un bez „nav atrasts”" };
   }
@@ -403,7 +498,7 @@ export function parseStatVinPage(input: StatVinPageInput): VinScanParse {
   if (input.status >= 400) {
     return { status: "unknown", summary: `stat.vin: HTTP ${input.status}` };
   }
-  if (NONE_RE.test(text)) {
+  if (NONE_RE.test(text) || (!hasVin(text, vin) && SOFT_NONE_RE.test(text))) {
     return { status: "none", summary: "Nav izsoles ieraksta" };
   }
   if (!hasVin(text, vin)) {
@@ -434,7 +529,7 @@ function buildStatVinFound(html: string, text: string, vin: string): VinScanPars
     .map((row) => ({ date: row.date || "", odometer: row.odometer || "" }));
 
   if (hasVin(text, vin) && (auctions.length > 0 || AUCTION_RE.test(text))) {
-    const vehicle = vehicleFromText(text);
+    const vehicle = vehicleFromText(text) ?? vehicleFromEmbedded(html);
     return {
       status: "found",
       summary: formatStatVinFoundSummary(auctions, photoCount),

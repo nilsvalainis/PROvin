@@ -31,14 +31,14 @@ describe("b2b demo admin secret", () => {
     const env = {
       B2B_DEMO_ADMIN_SECRET: "dedicated-secret-16",
       ADMIN_SECRET: "fallback-admin-secret",
-    };
+    } as NodeJS.ProcessEnv;
     expect(resolveB2bDemoAdminSecret(env)).toBe("dedicated-secret-16");
     expect(verifyB2bDemoAdminSecret("dedicated-secret-16", env)).toBe(true);
     expect(verifyB2bDemoAdminSecret("fallback-admin-secret", env)).toBe(false);
   });
 
   it("krīt uz ADMIN_SECRET, ja dedicated nav", () => {
-    const env = { ADMIN_SECRET: "fallback-admin-secret" };
+    const env = { ADMIN_SECRET: "fallback-admin-secret" } as NodeJS.ProcessEnv;
     expect(b2bDemoAdminSecretConfigured(env)).toBe(true);
     expect(verifyB2bDemoAdminSecret("fallback-admin-secret", env)).toBe(true);
     expect(verifyB2bDemoAdminSecret("wrong-secret-value-x", env)).toBe(false);

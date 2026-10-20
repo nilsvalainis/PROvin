@@ -24,7 +24,7 @@ import {
   storedEcarstradeIdsNeedingPrice,
 } from "@/lib/iriss-listings-relay";
 import { isIrissListingsAutomaticSlot, isIrissListingsContinuationWindow } from "@/lib/iriss-listings-schedule";
-import { cleanHttpUrl, detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
+import { cleanHttpUrl, detectIrissListingPlatform, normalizeAllowedListingSourceUrl } from "@/lib/iriss-listings-platform";
 import { enrichListingSearchUrl } from "@/lib/iriss-listings-search-filter";
 import {
   buildIrissListingSources,
@@ -656,7 +656,11 @@ export async function runIrissListingsOrderLinkSync(opts: {
       warnings,
     };
   }
-  const sourceUrl = enrichListingSearchUrl(platform, cleaned, rec.brandModel.trim());
+  const allowedUrl = normalizeAllowedListingSourceUrl(cleaned);
+  if (!allowedUrl) {
+    return { ok: false, status: "skipped", note: "Nederīga saite.", vehicleCount: 0, newCount: 0, warnings };
+  }
+  const sourceUrl = enrichListingSearchUrl(platform, allowedUrl, rec.brandModel.trim());
   const src: IrissListingSource = {
     id: irissListingSourceId(rec.id, sourceUrl),
     orderId: rec.id,
