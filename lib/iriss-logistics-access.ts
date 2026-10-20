@@ -1,6 +1,7 @@
 import "server-only";
 
 import { NextResponse } from "next/server";
+import { cabinetRolesFromSections, type CabinetAccessQuery } from "@/lib/iriss-logistics-cabinet-access";
 import { ENV_ADMIN_USER_ID } from "@/lib/staff-roles";
 import { IRISS_LOGISTICS_ACCESS_SCOPE } from "@/lib/iriss-logistics-types";
 import { requireLogisticsApi, type AdminOrStaffActor } from "@/lib/staff-auth";
@@ -26,6 +27,16 @@ export async function requireIrissLogisticsApi(): Promise<
 
 export function logisticsCabinetActorId(actor: AdminOrStaffActor): string {
   return actor.kind === "admin" ? ENV_ADMIN_USER_ID : actor.user.id;
+}
+
+export function logisticsCabinetAccessQuery(
+  actor: AdminOrStaffActor,
+  carId: string,
+): Omit<CabinetAccessQuery, "section" | "docType"> {
+  if (actor.kind === "admin") {
+    return { userId: ENV_ADMIN_USER_ID, roles: ["gramatvede"], carId };
+  }
+  return { userId: actor.user.id, roles: cabinetRolesFromSections(actor.user.sections), carId };
 }
 
 export function irissLogisticsScopeHeader(): Record<string, string> {

@@ -422,6 +422,13 @@ export async function getLogisticsOrder(id: string): Promise<LogisticsOrder | nu
   return items.find((p) => p.id === id) ?? null;
 }
 
+export async function findLogisticsOrderByVin(vin: string): Promise<LogisticsOrder | null> {
+  const needle = vin.trim().toUpperCase();
+  if (needle.length < 8) return null;
+  const items = await listLogisticsOrders();
+  return items.find((p) => p.vin.toUpperCase() === needle) ?? null;
+}
+
 export async function upsertLogisticsOrder(patch: Partial<LogisticsOrder> & { id?: string }): Promise<LogisticsOrder> {
   const items = await listLogisticsOrders();
   const now = new Date().toISOString();

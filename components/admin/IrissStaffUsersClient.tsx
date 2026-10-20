@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { IrissCabinetAccessPanel } from "@/components/admin/IrissCabinetAccessPanel";
 import { IRISS_SECTION_CATALOG, IRISS_SECTION_LABELS, type IrissSection } from "@/lib/staff-roles";
 import type { EnvAdminPublic, StaffAuditEntry, StaffUserPublic } from "@/lib/staff-types";
 
@@ -310,6 +311,7 @@ export function IrissStaffUsersClient() {
               onAct={act}
             />
           ) : null}
+          <IrissCabinetAccessPanel users={users} />
         </aside>
       </div>
 

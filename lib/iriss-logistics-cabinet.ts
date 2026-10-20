@@ -81,13 +81,15 @@ export type CabinetPickup = {
   updatedBy: string;
 };
 
+export type CabinetAccessDocType = CabinetDocType | "invoices";
+
 export type CabinetAccessRule = {
   id: string;
   userId: string;
   role: string;
   carId: string;
   section: CabinetSectionId | "";
-  docType: CabinetDocType | "";
+  docType: CabinetAccessDocType | "";
   allow: boolean;
   updatedAt: string;
   updatedBy: string;

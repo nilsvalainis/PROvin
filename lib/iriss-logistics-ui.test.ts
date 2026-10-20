@@ -164,4 +164,18 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(domain).toContain("postAtvests");
     expect(domain).toContain("Car Invoice");
   });
+
+  it("keeps a Nils-controlled cabinet access matrix and Bearer upload API", () => {
+    const access = readFileSync("lib/iriss-logistics-cabinet-access.ts", "utf8");
+    const roles = readFileSync("lib/staff-roles.ts", "utf8");
+    const upload = readFileSync("app/api/iriss/logistics/documents/route.ts", "utf8");
+    const env = readFileSync(".env.example", "utf8");
+    expect(access).toContain('role === "logistika" || role === "gramatvede"');
+    expect(access).toContain('role === "serviss"');
+    expect(roles).toContain('id: "gramatvede"');
+    expect(roles).toContain('id: "serviss"');
+    expect(upload).toContain("verifyIrissLogisticsUploadToken");
+    expect(upload).not.toMatch(/process\.env\.IRISS_LOGISTICS_UPLOAD_TOKEN/);
+    expect(env).toContain("# IRISS_LOGISTICS_UPLOAD_TOKEN=");
+  });
 });
