@@ -108,6 +108,16 @@ export function vwGroupRecallCheckUrl(vin: string): string {
   return `https://www.gov.uk/check-vehicle-recall?vin=${vinQuery(vin)}`;
 }
 
+/** BMW USA VIN forma. Agrākā bmwusa.com/recall.html ir 404, bmw.com/en/footer/recall.html pāradresē uz tirgus sākumlapu bez VIN. */
+export function bmwRecallCheckUrl(vin: string): string {
+  return `https://www.bmwusa.com/safety-and-emission-recalls.html?vin=${vinQuery(vin)}`;
+}
+
+/** Mercedes-Benz USA atsaukumu lapa. mercedes-benz.com/en/innovation/product-innovation/recalls/ ir 404. */
+export function mercedesRecallCheckUrl(vin: string): string {
+  return `https://www.mbusa.com/en/recall?vin=${vinQuery(vin)}`;
+}
+
 function plateQ(raw: string): string {
   return encodeURIComponent(raw.trim().toUpperCase());
 }
@@ -280,7 +290,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     country: "OEM",
     hint: "BMW / MINI atsaukumu pārbaude",
     needs: ["vin"],
-    openUrl: (vin) => `https://www.bmw.com/en/footer/recall.html?vin=${vinQuery(vin)}`,
+    openUrl: (vin) => bmwRecallCheckUrl(vin),
   },
   {
     id: "recall_mercedes",
@@ -288,7 +298,7 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     country: "OEM",
     hint: "Mercedes-Benz atsaukumu pārbaude",
     needs: ["vin"],
-    openUrl: (vin) => `https://www.mercedes-benz.com/en/innovation/product-innovation/recalls/?vin=${vinQuery(vin)}`,
+    openUrl: (vin) => mercedesRecallCheckUrl(vin),
   },
   {
     id: "recall_volvo",
