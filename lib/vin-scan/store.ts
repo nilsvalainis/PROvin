@@ -88,9 +88,16 @@ async function readJson(key: string): Promise<unknown | null> {
   }
 }
 
+function isEphemeralDir(dir: string): boolean {
+  const normalized = path.resolve(dir);
+  const tmp = path.resolve(os.tmpdir());
+  return normalized === tmp || normalized.startsWith(`${tmp}${path.sep}`);
+}
+
 async function writeJson(key: string, value: unknown): Promise<void> {
   const body = JSON.stringify(value);
   const blob = resolveBlob();
+  let blobOk = false;
   if (blob) {
     try {
       await put(`${blob.prefix}${key}.json`, body, {
@@ -100,14 +107,25 @@ async function writeJson(key: string, value: unknown): Promise<void> {
         allowOverwrite: true,
         contentType: "application/json",
       });
-    } catch {
-      /* failsistēma */
+      blobOk = true;
+    } catch (e) {
+      console.warn(
+        JSON.stringify({
+          vinScanStore: true,
+          event: "blob_write_failed",
+          keyKind: key === INDEX_KEY ? "history" : key.startsWith("joj-") ? "joj" : "snapshot",
+          msg: e instanceof Error ? e.message.slice(0, 160) : "error",
+        }),
+      );
     }
   }
   const dir = resolveDir();
   if (dir) {
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(path.join(dir, `${key}.json`), body, "utf8");
+  }
+  if (blob && !blobOk && (!dir || isEphemeralDir(dir))) {
+    throw new Error("blob_write_failed");
   }
 }
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.24.1
+// @version      1.24.2
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -111,7 +111,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.24.1";
+  const SCRIPT_VERSION = "1.24.2";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -416,10 +416,17 @@
             summary: summary || "",
             html: html,
             pageUrl: pageUrl,
+            finalUrl: pageUrl,
             httpStatus: httpStatus,
             at: Date.now(),
           },
         }),
+      );
+    }
+
+    function htmlLooksLikeChallenge(html) {
+      return /just a moment|performing security verification|security verification|checking your browser|verify you are human|cf-browser-verification|access blocked/i.test(
+        html,
       );
     }
 
@@ -448,10 +455,17 @@
       browserFetched[key] = 1;
       const pageUrl = specUrl(vin);
       const label = BROWSER_FETCH_LABEL[id] || id;
+      function retryLater() {
+        delete browserFetched[key];
+        window.setTimeout(function () {
+          fetchBlockedSourceInBrowser(id, token);
+        }, 1200 * browserFetchTries[key]);
+      }
       xhr({
         method: "GET",
         url: pageUrl,
         timeout: 25000,
+        anonymous: false,
         headers: {
           Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
           "Accept-Language": "en-US,en;q=0.9,lv;q=0.6",
@@ -459,16 +473,32 @@
         onload: function (res) {
           const html = limitBrowserHtml(id, String(res.responseText || ""));
           const text = html.replace(/<[^>]+>/g, " ");
+          const finalUrl = String(res.finalUrl || pageUrl);
+          const hasVin = text.toUpperCase().indexOf(vin) !== -1;
           const limited =
             res.status === 429 ||
-            (/too many requests|rate limit(?:ed)?|try again later/i.test(text) && text.toUpperCase().indexOf(vin) === -1);
-          publishBrowserHtml(id, vin, pageUrl, res.status, html, limited ? label + ": pieprasījumu limits" : "");
+            (/too many requests|rate limit(?:ed)?|try again later/i.test(text) && !hasVin);
+          const challenge = (htmlLooksLikeChallenge(html) || (res.status === 403 && !hasVin)) && !limited;
+          if (challenge && browserFetchTries[key] < BROWSER_FETCH_MAX_TRIES) {
+            retryLater();
+            return;
+          }
+          publishBrowserHtml(
+            id,
+            vin,
+            finalUrl,
+            res.status,
+            html,
+            limited ? label + ": pieprasījumu limits" : "",
+          );
         },
         onerror: function () {
-          delete browserFetched[key];
+          if (browserFetchTries[key] < BROWSER_FETCH_MAX_TRIES) retryLater();
+          else delete browserFetched[key];
         },
         ontimeout: function () {
-          delete browserFetched[key];
+          if (browserFetchTries[key] < BROWSER_FETCH_MAX_TRIES) retryLater();
+          else delete browserFetched[key];
         },
       });
     }
@@ -909,7 +939,7 @@
         return { status: "unknown", summary: "stat.vin: pieprasījumu limits" };
       }
       if (!hasVin) {
-        if (/not found|page not found|car not found|car-not-found|no vehicle|nothing found|no results|no similar cars|were not found/i.test(text)) {
+        if (/page not found|car not found|car-not-found|no vehicle|nothing found|no results|no similar cars|were not found|no data found|no sale history|sale history\s*\(\s*0\s*\)/i.test(text)) {
           return { status: "none", summary: "Nav izsoles ieraksta" };
         }
         return null;
@@ -922,7 +952,6 @@
         const bits = [head, photos && Number(photos[1]) > 0 ? photos[1] + " foto" : ""].filter(Boolean);
         return { status: "found", summary: bits.length ? bits.join(", ") : "Ir izsoles ieraksts" };
       }
-      if (/no sale history|sale history\s*\(\s*0\s*\)/i.test(text)) return { status: "none", summary: "Nav izsoles ieraksta" };
       return null;
     }
     if (id === "bid_cars") {
@@ -1431,7 +1460,7 @@
     }
     const text = (document.body && document.body.innerText) || "";
     const venue = /iaai/i.test(text) ? "IAAI" : /copart/i.test(text) ? "Copart" : "";
-    const lot = (text.match(/lot[:\s#№]*([0-9]{5,10})/i) || [])[1] || "";
+    const lot = (text.match(/lot(?:\s*number)?[:\s#№]*([0-9]{5,10})/i) || [])[1] || "";
     const year = (text.match(/((?:19|20)\d{2})/) || [])[1] || "";
     if (venue || lot || count) {
       auctions.push({

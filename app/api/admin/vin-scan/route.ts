@@ -13,6 +13,7 @@ import {
   parseVinScanPlates,
 } from "@/lib/vin-scan/plates";
 import { applyVinScanBrowserResultToSnapshot } from "@/lib/vin-scan/apply-browser-result";
+import { logVinScanBrowserImport } from "@/lib/vin-scan/browser-import-log";
 import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
 import { preferBrowserArchiveImport } from "@/lib/order-vin-scan-browser-html";
 import { runVinScan, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
@@ -65,21 +66,60 @@ export async function POST(req: Request) {
   if (br && typeof br === "object") {
     if (!isValidVin(vin)) return NextResponse.json({ error: "invalid_vin" }, { status: 400 });
     const existing = await readVinScanSnapshot(vin).catch(() => null);
+    const pageUrl =
+      (typeof br.finalUrl === "string" && br.finalUrl.trim()) ||
+      (typeof br.pageUrl === "string" ? br.pageUrl : "");
+    const html = typeof br.html === "string" ? br.html : "";
+    const httpStatus = typeof br.httpStatus === "number" && Number.isFinite(br.httpStatus) ? br.httpStatus : undefined;
+    const sourceId = typeof br.id === "string" ? br.id : "";
     const applied = applyVinScanBrowserResultToSnapshot({
       snapshot: existing,
       vin,
       plates,
       browserResult: {
-        id: typeof br.id === "string" ? br.id : "",
+        id: sourceId,
         status: typeof br.status === "string" ? br.status : "",
         summary: typeof br.summary === "string" ? br.summary : "",
-        html: typeof br.html === "string" ? br.html : "",
-        pageUrl: typeof br.pageUrl === "string" ? br.pageUrl : "",
-        ...(typeof br.httpStatus === "number" && Number.isFinite(br.httpStatus) ? { httpStatus: br.httpStatus } : {}),
+        html,
+        pageUrl,
+        ...(httpStatus != null ? { httpStatus } : {}),
       },
     });
-    if (!applied.ok) return NextResponse.json({ error: applied.error }, { status: 400 });
-    await writeVinScanSnapshot(applied.snapshot).catch(() => undefined);
+    if (!applied.ok) {
+      logVinScanBrowserImport({
+        route: "vin-scan",
+        event: "import_rejected",
+        error: applied.error,
+        id: sourceId,
+        httpStatus,
+        pageUrl,
+        html,
+      });
+      return NextResponse.json({ error: applied.error }, { status: 400 });
+    }
+    try {
+      await writeVinScanSnapshot(applied.snapshot);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "write_failed";
+      logVinScanBrowserImport({
+        route: "vin-scan",
+        event: "snapshot_write_failed",
+        error: msg,
+        id: sourceId,
+        httpStatus,
+        pageUrl,
+        html,
+      });
+      return NextResponse.json({ error: "write_failed" }, { status: 500 });
+    }
+    logVinScanBrowserImport({
+      route: "vin-scan",
+      event: "import_saved",
+      id: sourceId,
+      httpStatus,
+      pageUrl,
+      html,
+    });
     return NextResponse.json({
       ok: true,
       vin,
@@ -149,7 +189,15 @@ export async function POST(req: Request) {
   const scannedAt = scanned.length ? new Date().toISOString() : prev?.scannedAt || new Date().toISOString();
   after(() => recordSourceOutcomes(vinScanSourceHealthOutcomes(scanned)));
   if (isValidVin(vin) && scanned.length) {
-    await writeVinScanSnapshot({ vin, plates, scannedAt, indicators }).catch(() => undefined);
+    await writeVinScanSnapshot({ vin, plates, scannedAt, indicators }).catch((err) => {
+      console.warn(
+        JSON.stringify({
+          vinScanStore: true,
+          event: "snapshot_write_failed",
+          msg: err instanceof Error ? err.message : "write_failed",
+        }),
+      );
+    });
   }
   return NextResponse.json({
     ok: true,
