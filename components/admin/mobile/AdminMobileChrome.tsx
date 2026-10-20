@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
 import { useAdminShellLayout } from "@/components/admin/AdminShellLayoutContext";
@@ -10,11 +10,7 @@ import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { adminChromeDataset } from "@/lib/admin-chrome-attrs";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
-import {
-  formatAdminMobileBadgeCount,
-  nextAdminMobileChromeMode,
-  type AdminMobileChromeMode,
-} from "@/lib/admin-mobile-collapse";
+import { formatAdminMobileBadgeCount } from "@/lib/admin-mobile-collapse";
 import { IrissPavadzimesMobileBar } from "@/components/admin/IrissPavadzimesMobileBar";
 
 export function AdminMobileTopBar({
@@ -33,37 +29,6 @@ export function AdminMobileTopBar({
   children?: ReactNode;
 }) {
   const iriss = useAdminShellLayout()?.workspace === "iriss";
-  const [mode, setMode] = useState<AdminMobileChromeMode>("expanded");
-  const [stuck, setStuck] = useState(false);
-  const modeRef = useRef<AdminMobileChromeMode>("expanded");
-  const lastYRef = useRef(0);
-  useEffect(() => {
-    if (iriss) return;
-    lastYRef.current = window.scrollY || document.documentElement.scrollTop || 0;
-    let raf = 0;
-    const apply = () => {
-      raf = 0;
-      const y = window.scrollY || document.documentElement.scrollTop || 0;
-      const next = nextAdminMobileChromeMode(y, y - lastYRef.current, modeRef.current);
-      lastYRef.current = y;
-      if (next !== modeRef.current) {
-        modeRef.current = next;
-        setMode(next);
-      }
-      setStuck(y > 10);
-    };
-    const onScroll = () => {
-      if (raf) return;
-      raf = window.requestAnimationFrame(apply);
-    };
-    apply();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (raf) window.cancelAnimationFrame(raf);
-    };
-  }, [iriss]);
-  const collapsed = !iriss && mode === "collapsed";
   const hasBack = Boolean(backHref || onBack);
   if (iriss) {
     return (
@@ -102,11 +67,7 @@ export function AdminMobileTopBar({
   }
   return (
     <>
-      <header
-        className="am-topbar-sticky px-4 pb-2 pt-[max(10px,env(safe-area-inset-top))] md:hidden"
-        data-stuck={stuck ? "true" : "false"}
-        data-collapsed={collapsed ? "true" : "false"}
-      >
+      <header className="am-topbar px-4 pb-2 pt-[max(10px,env(safe-area-inset-top))] md:hidden">
         <div className="flex h-11 items-center gap-2">
           {hasBack ? (
             backHref ? (
@@ -123,22 +84,18 @@ export function AdminMobileTopBar({
             <div className="flex min-w-0 items-center gap-2">
               <h1
                 className={`min-w-0 truncate font-bold tracking-tight text-[var(--label)] ${
-                  hasBack || collapsed ? "text-[17px] leading-none" : "text-[34px] leading-none"
+                  hasBack ? "text-[17px] leading-none" : "text-[34px] leading-none"
                 }`}
               >
                 {title}
               </h1>
             </div>
-            {subtitle && !collapsed ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
           </div>
           {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
         </div>
       </header>
-      {children ? (
-        <div className="am-topbar-expand px-4 md:hidden" data-collapsed={collapsed ? "true" : "false"}>
-          {children}
-        </div>
-      ) : null}
+      {children ? <div className="am-topbar-expand px-4 md:hidden">{children}</div> : null}
     </>
   );
 }

@@ -21,11 +21,12 @@ const src = Object.fromEntries(
 ) as Record<keyof typeof files, string>;
 
 describe("IRISS mobile safe-area layout", () => {
-  it("keeps PRO sticky chrome and IRISS scrolling header", () => {
-    expect(src.chrome).toMatch(/am-topbar-sticky/);
-    expect(src.chrome).toMatch(/if \(iriss\) return;/);
+  it("keeps PRO and IRISS TopBar scrolling with content", () => {
+    expect(src.chrome).not.toMatch(/am-topbar-sticky/);
+    expect(src.chrome).not.toMatch(/nextAdminMobileChromeMode/);
+    expect(src.chrome).not.toMatch(/data-stuck/);
     expect(src.chrome).toMatch(/am-topbar flex flex-col gap-2/);
-    expect(src.chrome).not.toMatch(/iriss[\s\S]{0,200}am-topbar-sticky/);
+    expect(src.chrome).toMatch(/className="am-topbar px-4 pb-2/);
     expect(src.chrome).toMatch(/safe-area-inset-top,0px\)\+8px/);
     expect(src.chrome).toMatch(/IrissPavadzimesMobileBar embedded/);
     expect(src.shell).not.toMatch(/IrissPavadzimesMobileBar/);
