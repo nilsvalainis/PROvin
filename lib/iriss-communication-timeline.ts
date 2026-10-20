@@ -27,6 +27,7 @@ export const IRISS_COMM_CHANNELS = [
   "email",
   "offer",
   "advance",
+  "status",
 ] as const;
 
 export type IrissCommFilter = (typeof IRISS_COMM_CHANNELS)[number];
@@ -38,6 +39,7 @@ export const IRISS_COMM_CHANNEL_LV: Record<IrissCommFilter, string> = {
   email: "E-pasti",
   offer: "Piedāvājumi",
   advance: "Avanss",
+  status: "Statuss",
 };
 
 export type IrissCommKind =
@@ -328,6 +330,7 @@ export function filterIrissCommunicationTimeline(
   return items.filter((item) => {
     if (filter === "offer") return item.kind === "offer";
     if (filter === "advance") return item.kind === "advance";
+    if (filter === "status") return item.kind === "status";
     return item.kind === filter;
   });
 }

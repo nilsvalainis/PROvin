@@ -7,30 +7,29 @@ import {
   type IrissCommFilter,
   type IrissCommTimelineItem,
 } from "@/lib/iriss-communication-timeline";
-
-const filterBtn =
-  "rounded-full border px-3 py-1.5 text-[12px] font-semibold";
-
-function kindDot(kind: IrissCommTimelineItem["kind"]): string {
-  if (kind === "whatsapp") return "bg-[#16a34a]";
-  if (kind === "call") return "bg-[#111827]";
-  if (kind === "email") return "bg-[#2563eb]";
-  if (kind === "advance") return "bg-[#ca8a04]";
-  if (kind === "offer") return "bg-[#0f766e]";
-  if (kind === "status") return "bg-[#7c3aed]";
-  return "bg-[#6b7280]";
-}
+import {
+  IRISS_COMM_TYPE_FILTERS,
+  formatIrissCommDateLeft,
+  irissCommBubbleSide,
+  irissCommTypeMatches,
+  type IrissCommTypeFilter,
+} from "@/lib/iriss-order-comm-view";
 
 export function IrissCommunicationTimeline({
   items,
   filter,
   onFilter,
+  typeFilter = "all",
+  onTypeFilter,
 }: {
   items: readonly IrissCommTimelineItem[];
   filter: IrissCommFilter;
   onFilter: (next: IrissCommFilter) => void;
+  typeFilter?: IrissCommTypeFilter;
+  onTypeFilter?: (next: IrissCommTypeFilter) => void;
 }) {
-  const shown = filterIrissCommunicationTimeline(items, filter);
+  const channelShown = filterIrissCommunicationTimeline(items, filter);
+  const shown = channelShown.filter((row) => irissCommTypeMatches(row, typeFilter));
   const counts = Object.fromEntries(
     IRISS_COMM_CHANNELS.map((id) => [id, filterIrissCommunicationTimeline(items, id).length]),
   ) as Record<IrissCommFilter, number>;
@@ -38,49 +37,100 @@ export function IrissCommunicationTimeline({
   return (
     <div className="space-y-2">
       <div className="flex max-w-full flex-wrap gap-1.5" role="tablist" aria-label="Komunikācijas filtri">
-        {IRISS_COMM_CHANNELS.map((id) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={filter === id}
-            className={`${filterBtn} ${
-              filter === id
-                ? "border-[#111827] bg-[#111827] text-white"
-                : "border-[#e5e7eb] bg-[#f3f4f6] text-[#374151]"
-            }`}
-            onClick={() => onFilter(id)}
-          >
-            {IRISS_COMM_CHANNEL_LV[id]} {counts[id]}
-          </button>
-        ))}
+        {IRISS_COMM_CHANNELS.map((id) => {
+          const active = filter === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={`rounded-full px-3 py-1.5 text-[12px] font-semibold ${
+                active
+                  ? "bg-[var(--chip-active-bg)] text-[var(--chip-active-fg)]"
+                  : "bg-[var(--s1)] text-[var(--ink2)] shadow-[var(--sh)]"
+              }`}
+              onClick={() => onFilter(id)}
+            >
+              {id === "all" ? "Visi" : IRISS_COMM_CHANNEL_LV[id]}
+              <em className="ml-1.5 rounded-full bg-[color-mix(in_srgb,currentColor_14%,transparent)] px-1.5 py-px text-[11px] font-semibold not-italic">
+                {counts[id]}
+              </em>
+            </button>
+          );
+        })}
       </div>
+      {onTypeFilter ? (
+        <div className="flex max-w-full flex-wrap gap-1.5" role="tablist" aria-label="Tipa filtrs">
+          {IRISS_COMM_TYPE_FILTERS.map((item) => {
+            const active = typeFilter === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={`rounded-full px-3 py-1.5 text-[12px] font-semibold ${
+                  active
+                    ? "bg-[var(--chip-active-bg)] text-[var(--chip-active-fg)]"
+                    : "bg-[var(--s1)] text-[var(--ink2)] shadow-[var(--sh)]"
+                }`}
+                onClick={() => onTypeFilter(item.id)}
+              >
+                {item.id === "all"
+                  ? "Viss"
+                  : item.id === "sent"
+                    ? "Nosūtīts"
+                    : item.id === "answered"
+                      ? "Klienta atbilde"
+                      : "Neatzīmēts zvans"}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
       {shown.length === 0 ? (
-        <p className="text-[13px] leading-snug text-[#6b7280]">
+        <p className="text-[13px] leading-snug text-[var(--ink2)]">
           Šajā filtrā ierakstu nav. Zvans, WhatsApp un e-pasts atveras ar pogām. Piezīmes paliek pasūtījumā.
         </p>
       ) : (
         <ul className="space-y-2">
-          {shown.map((row) => (
-            <li key={row.id} className="flex items-start gap-3 border-b border-dashed border-[#eee] py-2 last:border-0">
-              <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${kindDot(row.kind)}`} aria-hidden />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[13px] font-semibold text-[#111827]">{row.title}</p>
-                  {row.statusLabel ? (
-                    <span className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[11px] font-semibold text-[#374151]">
-                      {row.statusLabel}
-                    </span>
-                  ) : null}
+          {shown.map((row) => {
+            const when = formatIrissCommDateLeft(row.stamp);
+            const side = irissCommBubbleSide(row);
+            return (
+              <li key={row.id} className="flex items-start gap-3 py-1.5">
+                <div className="w-[52px] shrink-0 text-[11px] leading-tight text-[var(--ink3)]">
+                  <p>{when.date}</p>
+                  {when.time ? <p>{when.time}</p> : null}
                 </div>
-                <p className="mt-0.5 text-[12px] text-[#6b7280]">
-                  {row.stamp}
-                  {row.durationMin ? ` · ${row.durationMin} min` : ""}
-                  {row.body ? ` · ${row.body}` : ""}
-                </p>
-              </div>
-            </li>
-          ))}
+                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[var(--ink3)]" aria-hidden />
+                <div className={`min-w-0 flex-1 ${side === "client" ? "flex justify-end" : ""}`}>
+                  <div
+                    className={`max-w-[92%] rounded-[16px] px-3 py-2 ${
+                      side === "client" ? "bg-[var(--fill)]" : "bg-[var(--s2)]"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-[13px] font-semibold text-[var(--ink)]">{row.title}</p>
+                      {row.statusLabel ? (
+                        <span className="rounded-full bg-[var(--fill)] px-2 py-0.5 text-[11px] font-semibold text-[var(--ink2)]">
+                          {row.statusLabel}
+                        </span>
+                      ) : null}
+                    </div>
+                    {row.body || row.durationMin ? (
+                      <p className="mt-0.5 text-[12px] text-[var(--ink2)]">
+                        {row.durationMin ? `${row.durationMin} min` : ""}
+                        {row.durationMin && row.body ? " · " : ""}
+                        {row.body ?? ""}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
