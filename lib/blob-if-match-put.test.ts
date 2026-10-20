@@ -17,6 +17,12 @@ const blobState = vi.hoisted(() => ({
 }));
 
 vi.mock("@vercel/blob", () => ({
+  BlobNotFoundError: class BlobNotFoundError extends Error {
+    constructor(message = "not found") {
+      super(message);
+      this.name = "BlobNotFoundError";
+    }
+  },
   get: vi.fn(async () => ({
     statusCode: 200,
     stream: new ReadableStream({

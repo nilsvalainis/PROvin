@@ -21,6 +21,11 @@ import { IRISS_SCAN_SOURCES, type IrissScanLinkKey } from "@/lib/iriss-scan-sour
 import { IRISS_STALE_REVISION, irissScanWorkspaceRevision, mergeIrissScanRecords } from "@/lib/iriss-scan-save-safety";
 import { nextStableRowKeys } from "@/lib/iriss-stable-row-keys";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
+import { applyIrissScanSaveResult, irissScanSaveRequest } from "@/lib/iriss-scan-editor-save";
+import { irissScanHasOperatorContent } from "@/lib/iriss-scan-vin";
+import { IrissMarketplaceLoadPanel } from "@/components/admin/IrissMarketplaceLoadPanel";
+import { irissScanApifyPlatforms } from "@/lib/marketplace/query-from-scan";
+import type { MarketplaceVehicleCategory } from "@/lib/marketplace/types";
 
 /** min-7 stils: pelēks fons, baltas grupētas kartes, sīki pelēki virsraksti, akcenta teksts darbībām. */
 function SourceGroup({
@@ -125,12 +130,13 @@ export function IrissScanEditor({
   const router = useRouter();
   const [rec, setRec] = useState<IrissScanRecord>(initialRecord);
   const [busy, setBusy] = useState(false);
-  const [dirty, setDirty] = useState(Boolean(unsavedDraft && initialRecord.vin));
+  const [dirty, setDirty] = useState(Boolean(unsavedDraft && irissScanHasOperatorContent(initialRecord)));
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [conflict, setConflict] = useState<{ server: IrissScanRecord } | null>(null);
   const [conflictBusy, setConflictBusy] = useState(false);
   const persistedIdRef = useRef(unsavedDraft ? "" : initialRecord.id);
+  const [persistId, setPersistId] = useState(unsavedDraft ? "" : initialRecord.id);
   const chips = useMemo(() => buildListingPlatformChips(rec, 50), [rec]);
 
   const patchRecord = useCallback((patch: Partial<IrissScanRecord>) => {
@@ -142,45 +148,32 @@ export function IrissScanEditor({
   const save = useCallback(async () => {
     setBusy(true);
     setSaveMsg(null);
+    const snapshot = rec;
     try {
       const persistId = persistedIdRef.current;
-      const isCreate = !persistId;
-      const url = isCreate ? "/api/admin/iriss-scan" : `/api/admin/iriss-scan/${encodeURIComponent(rec.id)}`;
-      const body = isCreate
-        ? { record: rec }
-        : { ...rec, expectedWorkspaceRevision: irissScanWorkspaceRevision(rec) };
-      const res = await fetch(url, {
-        method: isCreate ? "POST" : "PATCH",
+      const req = irissScanSaveRequest(snapshot, persistId);
+      const res = await fetch(req.url, {
+        method: req.method,
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(req.body),
       });
-      if (res.status === 409) {
-        const data = (await res.json().catch(() => ({}))) as { record?: IrissScanRecord; error?: string };
-        if (data.record) {
-          setConflict({ server: data.record });
-          setSaveMsg("Konflikts: cita cilne jau saglabāja jaunāku ierakstu.");
-          return;
-        }
-      }
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setSaveMsg(data.error === "empty_record" ? "Nav ko saglabāt. Ieraksti VIN, marku vai saiti." : `Kļūda ${res.status}`);
-        return;
-      }
-      const data = (await res.json()) as { record?: IrissScanRecord; id?: string };
-      if (data.record) {
-        setRec(data.record);
-        persistedIdRef.current = data.record.id;
-        if (isCreate) router.replace(`/admin/iriss/scan/${encodeURIComponent(data.record.id)}`);
-      } else if (typeof data.id === "string") {
-        persistedIdRef.current = data.id;
-        if (isCreate) router.replace(`/admin/iriss/scan/${encodeURIComponent(data.id)}`);
-      }
+      const data = (await res.json().catch(() => ({}))) as { record?: IrissScanRecord; id?: string; error?: string };
+      const applied = applyIrissScanSaveResult({ rec: snapshot, persistId, status: res.status, body: data });
+      setRec(applied.rec);
+      persistedIdRef.current = applied.persistId;
+      setPersistId(applied.persistId);
+      setSaveMsg(applied.message);
+      if (applied.conflict) setConflict({ server: applied.conflict });
+      if (!applied.ok) return;
       setDirty(false);
       setConflict(null);
-      setSaveMsg("Saglabāts");
+      if (req.isCreate && applied.href) {
+        router.replace(applied.href);
+        router.refresh();
+      }
     } catch {
+      setRec(snapshot);
       setSaveMsg("Tīkla kļūda");
     } finally {
       setBusy(false);
@@ -192,6 +185,7 @@ export function IrissScanEditor({
     setConflictBusy(true);
     setRec(conflict.server);
     persistedIdRef.current = conflict.server.id;
+    setPersistId(conflict.server.id);
     setDirty(false);
     setConflict(null);
     setSaveMsg("Ielādēta servera versija.");
@@ -337,6 +331,86 @@ export function IrissScanEditor({
             </button>
           </div>
         </div>
+
+        <section className="overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
+          {(
+            [
+              ["productionYears", "Gadi", "2020-2026"],
+              ["engineType", "Dzinējs", "Dīzelis līdz 2.0, no 110 kW"],
+              ["transmission", "Kārba", "Manuālā"],
+              ["bodyType", "Virsbūve", "Furgons H2L4"],
+            ] as const
+          ).map(([key, label, placeholder]) => (
+            <label key={key} className="flex min-h-[44px] items-center gap-3 border-b border-[#e5e5ea] px-3 last:border-b-0">
+              <span className="w-[5.5rem] shrink-0 text-[12px] font-medium text-[#8e8e93]">{label}</span>
+              <input
+                className="min-w-0 flex-1 bg-transparent py-2.5 text-[15px] text-[var(--color-apple-text)] outline-none placeholder:text-[#c7c7cc]"
+                value={rec[key]}
+                placeholder={placeholder}
+                onChange={(e) => patchRecord({ [key]: e.target.value } as Pick<IrissScanRecord, typeof key>)}
+                aria-label={label}
+              />
+            </label>
+          ))}
+          <div className="flex min-h-[44px] items-center gap-3 px-3">
+            <span className="w-[5.5rem] shrink-0 text-[12px] font-medium text-[#8e8e93]">Tips</span>
+            <div className="flex flex-wrap gap-1.5 py-2">
+              {(
+                [
+                  ["", "Automātiski"],
+                  ["car", "Vieglā"],
+                  ["van", "Furgons"],
+                ] as const
+              ).map(([value, label]) => {
+                const on = rec.vehicleCategory === value;
+                return (
+                  <button
+                    key={value || "auto"}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => patchRecord({ vehicleCategory: value as MarketplaceVehicleCategory | "" })}
+                    className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold ${
+                      on ? "border-[#111827] bg-[#111827] text-white" : "border-[#e5e7eb] bg-[#f3f4f6] text-[#374151]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.08)]">
+          <p className="px-3 pt-3 text-[12px] font-semibold text-[#8e8e93]">Apify ielāde</p>
+          <label className="flex min-h-[44px] items-center gap-3 border-b border-[#e5e5ea] px-3">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-[#111827]"
+              checked={rec.apifyMobiledeEnabled}
+              onChange={(e) => patchRecord({ apifyMobiledeEnabled: e.target.checked })}
+            />
+            <span className="text-[15px] text-[var(--color-apple-text)]">mobile.de</span>
+          </label>
+          <label className="flex min-h-[44px] items-center gap-3 px-3">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-[#111827]"
+              checked={rec.apifyAutoscout24Enabled}
+              onChange={(e) => patchRecord({ apifyAutoscout24Enabled: e.target.checked })}
+            />
+            <span className="text-[15px] text-[var(--color-apple-text)]">AutoScout24</span>
+          </label>
+        </section>
+
+        {persistId ? (
+          <IrissMarketplaceLoadPanel
+            scanId={persistId}
+            enabledPlatforms={irissScanApifyPlatforms(rec)}
+          />
+        ) : (
+          <p className="px-1 text-[12px] text-[#8e8e93]">Saglabā radaru, tad ielādē mobile.de / AutoScout24.</p>
+        )}
 
         {IRISS_SCAN_SOURCES.map((s) => (
           <SourceGroup

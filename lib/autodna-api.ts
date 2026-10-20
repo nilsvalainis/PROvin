@@ -61,7 +61,8 @@ export type AutodnaApiErrorCode =
   | "autodna_business_error"
   | "autodna_bad_request"
   | "autodna_upstream_error"
-  | "autodna_invalid_response";
+  | "autodna_invalid_response"
+  | "autodna_in_progress";
 
 function autodnaNotConfiguredFailure(): AutodnaApiFailure {
   return {
@@ -335,6 +336,7 @@ export function autodnaFailureHttpStatus(code: AutodnaApiErrorCode, upstreamStat
   if (code === "autodna_ip_not_allowed" || code === "autodna_ip_blacklisted") return 502;
   if (code === "autodna_unauthorized") return 502;
   if (code === "autodna_not_enough_credits") return 402;
+  if (code === "autodna_in_progress") return 409;
   if (upstreamStatus >= 400 && upstreamStatus < 600) return upstreamStatus;
   return 502;
 }

@@ -24,6 +24,27 @@ export function isVercelBlobHostname(hostname: string): boolean {
   return h.endsWith(".public.blob.vercel-storage.com") || h.endsWith(".blob.vercel-storage.com");
 }
 
+/** Copilot PDF Blob: tikai https, Vercel Blob hosts un šī pasūtījuma `admin-source-pdf/{id}/` ceļš. */
+export function isAllowedSourcePdfBlobUrl(sessionId: string, urlStr: string): boolean {
+  const sid = sessionId.trim();
+  if (!isSafeAdminOrderId(sid)) return false;
+  let u: URL;
+  try {
+    u = new URL(urlStr.trim());
+  } catch {
+    return false;
+  }
+  if (u.protocol !== "https:") return false;
+  if (u.username || u.password) return false;
+  if (!isVercelBlobHostname(u.hostname)) return false;
+  const expected = `/${sourcePdfBlobPathPrefix(sid)}/`;
+  try {
+    return decodeURIComponent(u.pathname).includes(expected);
+  } catch {
+    return false;
+  }
+}
+
 export type SourcePdfBlobRef = { url: string; name?: string };
 
 /** `fileUrls` JSON no pieprasījuma → atsauces. */

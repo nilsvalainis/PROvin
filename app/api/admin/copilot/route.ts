@@ -14,6 +14,7 @@ import {
   COPILOT_SOURCE_KEYS,
   isCopilotSourceKey,
   isDestructiveCopilotAction,
+  parseCopilotApplyMode,
   type CopilotAction,
   type CopilotChatMessage,
   type CopilotSourceKey,
@@ -256,7 +257,7 @@ export async function POST(req: Request) {
   const photos: { fileName: string; mimeType: string; buffer: ArrayBuffer }[] = [];
   /** Lieli PDF ceļo caur Vercel Blob — funkcijas pieprasījuma ķermenis ir ~4,5 MB. */
   let blobRefs: SourcePdfBlobRef[] = [];
-  let applyMode: "auto" | "preview" = "auto";
+  let applyMode: "auto" | "preview" = "preview";
   let auditContextRaw: unknown = null;
   let citiAvotiSectionIndex: number | undefined;
 
@@ -268,8 +269,7 @@ export async function POST(req: Request) {
       history = parseHistory(form.get("history"));
       sourceBlocks = parseSourceBlocks(form.get("sourceBlocks"));
       allowedSources = parseAllowedSources(form.get("allowedSources"));
-      const mode = str(form.get("applyMode")).trim();
-      if (mode === "preview") applyMode = "preview";
+      applyMode = parseCopilotApplyMode(form.get("applyMode"));
       auditContextRaw = form.get("auditContext");
       const citiIdxRaw = Number(str(form.get("citiAvotiSectionIndex")));
       if (Number.isInteger(citiIdxRaw) && citiIdxRaw >= 0) citiAvotiSectionIndex = citiIdxRaw;
@@ -409,7 +409,7 @@ export async function POST(req: Request) {
       sourceBlocks = parseSourceBlocks(b.sourceBlocks);
       allowedSources = parseAllowedSources(b.allowedSources);
       auditContextRaw = b.auditContext ?? null;
-      if (str(b.applyMode).trim() === "preview") applyMode = "preview";
+      applyMode = parseCopilotApplyMode(b.applyMode);
       const citiIdxJson = Number(str(b.citiAvotiSectionIndex));
       if (Number.isInteger(citiIdxJson) && citiIdxJson >= 0) citiAvotiSectionIndex = citiIdxJson;
     }
@@ -430,7 +430,7 @@ export async function POST(req: Request) {
     } catch (e) {
       const detail = e instanceof Error ? e.message : "unknown";
       console.error(`${LOG_PREFIX} blob_fetch_failed`, detail);
-      await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
+      await deleteSourcePdfBlobs(sessionId, blobRefs.map((r) => r.url));
       return NextResponse.json({ error: "blob_fetch_failed", detail }, { status: 502 });
     }
   }
@@ -673,7 +673,12 @@ export async function POST(req: Request) {
     ];
 
     const shouldPatch = applyMode === "auto" && (autoResult.applied.length > 0 || changedKeys.size > 0);
+    const previewConfirm =
+      applyMode === "preview" ? [...vendorAgentApplied, ...autoResult.applied, ...needsConfirm] : needsConfirm;
     const replyParts = [ai.reply.trim()];
+    if (applyMode === "preview" && previewConfirm.length > 0) {
+      replyParts.push("Priekšskatījums: izmaiņas nav ierakstītas. Apstiprini zemāk, ja tās der.");
+    }
     if (!skipGenericCopilot) {
       if (vendorAgentNotes.length > 0) replyParts.push(vendorAgentNotes.filter(Boolean).join("\n"));
       if (csddImportNotes.length > 0) replyParts.push(csddImportNotes.join("\n"));
@@ -723,7 +728,7 @@ export async function POST(req: Request) {
       autoApplied: shouldPatch
         ? [...vendorAgentApplied, ...autoResult.applied].map((a) => ({ ...a, label: describeAction(a) }))
         : [],
-      needsConfirm: needsConfirm.map((a) => ({ ...a, label: describeAction(a) })),
+      needsConfirm: previewConfirm.map((a) => ({ ...a, label: describeAction(a) })),
       skipped: hardSkipped.map((s) => ({ ...s.action, label: describeAction(s.action), reason: s.reason })),
       patchedSourceBlocks: shouldPatch
         ? Object.fromEntries(changedList.map((k) => [k, workingBlocks[k]]))
@@ -741,7 +746,7 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ error: "generation_failed", detail: msg }, { status: 502 });
   } finally {
-    await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
+    await deleteSourcePdfBlobs(sessionId, blobRefs.map((r) => r.url));
   }
   });
 }

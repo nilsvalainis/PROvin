@@ -1,9 +1,7 @@
 import "server-only";
 
 import { randomBytes } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
-import { get, put } from "@vercel/blob";
+import { createJsonDocStore } from "@/lib/b2b-json-doc-store";
 import {
   emptyB2bPartnerPrices,
   isSafeB2bPartnerId,
@@ -45,111 +43,56 @@ import {
   type B2bEmailVerifyPurpose,
 } from "@/lib/b2b-partner-verify";
 
-const RELATIVE_DIR = ".data/b2b-partners";
-const FILENAME = "index.json";
-const BLOB_PATHNAME = "b2b-partners/index.json";
+const DOC_KEY = "index";
 
-type PartnerDoc = {
+export type B2bPartnerDoc = {
   version: 1;
   updatedAt: string;
   partners: B2bPartnerRecord[];
 };
 
-function emptyDoc(): PartnerDoc {
+export function emptyB2bPartnerDoc(): B2bPartnerDoc {
   return { version: 1, updatedAt: new Date().toISOString(), partners: [] };
 }
 
-function parseDoc(raw: string): PartnerDoc {
-  try {
-    const p = JSON.parse(raw) as Partial<PartnerDoc>;
-    const partners: B2bPartnerRecord[] = [];
-    if (Array.isArray(p.partners)) {
-      for (const item of p.partners) {
-        const row = parsePartnerRecord(item);
-        if (row) partners.push(row);
-      }
+export function parseB2bPartnerDoc(raw: unknown): B2bPartnerDoc {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("invalid_partner_doc");
+  }
+  const p = raw as Partial<B2bPartnerDoc>;
+  const partners: B2bPartnerRecord[] = [];
+  if (Array.isArray(p.partners)) {
+    for (const item of p.partners) {
+      const row = parsePartnerRecord(item);
+      if (row) partners.push(row);
     }
-    return {
-      version: 1,
-      updatedAt:
-        typeof p.updatedAt === "string" && p.updatedAt.trim() ? p.updatedAt.trim() : new Date().toISOString(),
-      partners,
-    };
-  } catch {
-    return emptyDoc();
   }
+  return {
+    version: 1,
+    updatedAt:
+      typeof p.updatedAt === "string" && p.updatedAt.trim() ? p.updatedAt.trim() : new Date().toISOString(),
+    partners,
+  };
 }
 
-function blobToken(): string | null {
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "";
-  return token || null;
-}
-
-function filesystemPath(): string {
-  return path.join(process.cwd(), RELATIVE_DIR, FILENAME);
-}
-
-async function readFromBlob(token: string): Promise<PartnerDoc | null> {
-  try {
-    const res = await get(BLOB_PATHNAME, {
-      access: "private",
-      token,
-      useCache: false,
-    });
-    if (!res || res.statusCode !== 200 || !res.stream) return null;
-    const text = await new Response(res.stream).text();
-    return parseDoc(text);
-  } catch {
-    return null;
-  }
-}
-
-async function writeToBlob(token: string, doc: PartnerDoc): Promise<void> {
-  await put(BLOB_PATHNAME, JSON.stringify(doc), {
-    access: "private",
-    token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: "application/json",
-  });
-}
-
-async function readFromFilesystem(): Promise<PartnerDoc | null> {
-  try {
-    const raw = await fs.readFile(filesystemPath(), "utf8");
-    return parseDoc(raw);
-  } catch {
-    return null;
-  }
-}
-
-async function writeToFilesystem(doc: PartnerDoc): Promise<void> {
-  const fp = filesystemPath();
-  await fs.mkdir(path.dirname(fp), { recursive: true });
-  const tmp = `${fp}.${process.pid}.${Date.now()}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(doc), "utf8");
-  await fs.rename(tmp, fp);
-}
-
-async function readDoc(): Promise<PartnerDoc> {
-  const token = blobToken();
-  if (token) {
-    const fromBlob = await readFromBlob(token);
-    if (fromBlob) return fromBlob;
-  }
-  const fromFs = await readFromFilesystem();
-  return fromFs ?? emptyDoc();
-}
+const store = createJsonDocStore<B2bPartnerDoc>({
+  blobPrefix: "b2b-partners/",
+  dirName: "b2b-partners",
+  isSafeKey: (key) => key === DOC_KEY,
+  parse: parseB2bPartnerDoc,
+  empty: emptyB2bPartnerDoc,
+});
 
 const READ_CACHE_TTL_MS = 3000;
-let readCache: { at: number; doc: PartnerDoc } | null = null;
-let readInflight: Promise<PartnerDoc> | null = null;
+let readCache: { at: number; doc: B2bPartnerDoc } | null = null;
+let readInflight: Promise<B2bPartnerDoc> | null = null;
 
 /** Lasīšanai (saraksts, žetons, N× getById vienā pieprasījumā): viens Blob GET uz ~3 s. */
-async function readDocCached(): Promise<PartnerDoc> {
+async function readDocCached(): Promise<B2bPartnerDoc> {
   if (readCache && Date.now() - readCache.at < READ_CACHE_TTL_MS) return readCache.doc;
   if (readInflight) return readInflight;
-  readInflight = readDoc()
+  readInflight = store
+    .read(DOC_KEY)
     .then((doc) => {
       readCache = { at: Date.now(), doc };
       return doc;
@@ -158,22 +101,6 @@ async function readDocCached(): Promise<PartnerDoc> {
       readInflight = null;
     });
   return readInflight;
-}
-
-async function writeDoc(doc: PartnerDoc): Promise<void> {
-  readCache = null;
-  const next = { ...doc, updatedAt: new Date().toISOString() };
-  const token = blobToken();
-  if (token) {
-    await writeToBlob(token, next);
-    try {
-      await writeToFilesystem(next);
-    } catch {
-      /* ignore */
-    }
-    return;
-  }
-  await writeToFilesystem(next);
 }
 
 let writeChain: Promise<unknown> = Promise.resolve();
@@ -185,6 +112,22 @@ function withLock<T>(fn: () => Promise<T>): Promise<T> {
     () => undefined,
   );
   return run;
+}
+
+function mutatePartners<R>(
+  mutate: (doc: B2bPartnerDoc) => { value: R; next?: B2bPartnerDoc } | Promise<{ value: R; next?: B2bPartnerDoc }>,
+): Promise<R> {
+  readCache = null;
+  return withLock(() =>
+    store.update<R>(DOC_KEY, async (doc) => {
+      const decision = await mutate(doc);
+      if (decision.next === undefined) return { value: decision.value };
+      return {
+        value: decision.value,
+        next: { ...decision.next, updatedAt: new Date().toISOString() },
+      };
+    }),
+  );
 }
 
 function newPartnerId(): string {
@@ -220,13 +163,12 @@ export async function createB2bPartner(
   password: string,
   opts?: { requireEmailVerification?: boolean },
 ): Promise<CreateB2bPartnerResult> {
-  return withLock(async () => {
+  return mutatePartners<CreateB2bPartnerResult>(async (doc) => {
     const normalized = normalizePartnerWriteInput(input);
-    if (partnerFieldError(normalized)) return { ok: false, error: "invalid_fields" };
-    if (!isUsablePartnerPassword(password)) return { ok: false, error: "weak_password" };
-    const doc = await readDoc();
+    if (partnerFieldError(normalized)) return { value: { ok: false, error: "invalid_fields" } };
+    if (!isUsablePartnerPassword(password)) return { value: { ok: false, error: "weak_password" } };
     if (doc.partners.some((p) => p.email === normalized.email)) {
-      return { ok: false, error: "email_taken" };
+      return { value: { ok: false, error: "email_taken" } };
     }
     const now = new Date().toISOString();
     const requireVerify = Boolean(opts?.requireEmailVerification);
@@ -251,27 +193,28 @@ export async function createB2bPartner(
       walletHiddenProducts: [],
       adminSeenAt: requireVerify ? null : now,
     };
-    doc.partners.push(record);
-    await writeDoc(doc);
-    return { ok: true, partner: toPublicPartner(record), verifyToken };
+    return {
+      value: { ok: true, partner: toPublicPartner(record), verifyToken },
+      next: { ...doc, partners: [...doc.partners, record] },
+    };
   });
 }
 
 export async function markB2bPartnerAdminSeen(
   id: string,
 ): Promise<{ ok: true; partner: B2bPartnerPublicProfile } | { ok: false; error: "not_found" }> {
-  return withLock(async () => {
-    if (!isSafeB2bPartnerId(id)) return { ok: false, error: "not_found" };
-    const doc = await readDoc();
+  return mutatePartners<{ ok: true; partner: B2bPartnerPublicProfile } | { ok: false; error: "not_found" }>(
+    async (doc) => {
+    if (!isSafeB2bPartnerId(id)) return { value: { ok: false, error: "not_found" } };
     const idx = doc.partners.findIndex((p) => p.id === id);
-    if (idx < 0) return { ok: false, error: "not_found" };
+    if (idx < 0) return { value: { ok: false, error: "not_found" } };
     const prev = doc.partners[idx]!;
-    if (prev.adminSeenAt) return { ok: true, partner: toPublicPartner(prev) };
+    if (prev.adminSeenAt) return { value: { ok: true, partner: toPublicPartner(prev) } };
     const now = new Date().toISOString();
     const record: B2bPartnerRecord = { ...prev, adminSeenAt: now, updatedAt: now };
-    doc.partners[idx] = record;
-    await writeDoc(doc);
-    return { ok: true, partner: toPublicPartner(record) };
+    const partners = doc.partners.slice();
+    partners[idx] = record;
+    return { value: { ok: true, partner: toPublicPartner(record) }, next: { ...doc, partners } };
   });
 }
 
@@ -290,11 +233,10 @@ export async function updateB2bPartner(
     walletHiddenProducts?: readonly B2bWalletProductId[];
   },
 ): Promise<UpdateB2bPartnerResult> {
-  return withLock(async () => {
-    if (!isSafeB2bPartnerId(id)) return { ok: false, error: "not_found" };
-    const doc = await readDoc();
+  return mutatePartners<UpdateB2bPartnerResult>(async (doc) => {
+    if (!isSafeB2bPartnerId(id)) return { value: { ok: false, error: "not_found" } };
     const idx = doc.partners.findIndex((p) => p.id === id);
-    if (idx < 0) return { ok: false, error: "not_found" };
+    if (idx < 0) return { value: { ok: false, error: "not_found" } };
     const prev = doc.partners[idx]!;
     const nextInput = normalizePartnerWriteInput({
       companyName: patch.companyName ?? prev.companyName,
@@ -304,12 +246,12 @@ export async function updateB2bPartner(
       email: patch.email ?? prev.email,
       phone: patch.phone ?? prev.phone,
     });
-    if (partnerFieldError(nextInput)) return { ok: false, error: "invalid_fields" };
+    if (partnerFieldError(nextInput)) return { value: { ok: false, error: "invalid_fields" } };
     if (doc.partners.some((p) => p.id !== id && p.email === nextInput.email)) {
-      return { ok: false, error: "email_taken" };
+      return { value: { ok: false, error: "email_taken" } };
     }
     if (patch.password != null && patch.password.trim()) {
-      if (!isUsablePartnerPassword(patch.password)) return { ok: false, error: "weak_password" };
+      if (!isUsablePartnerPassword(patch.password)) return { value: { ok: false, error: "weak_password" } };
     }
     const status: B2bPartnerStatus = patch.status === "disabled" || patch.status === "active" ? patch.status : prev.status;
     const now = new Date().toISOString();
@@ -342,9 +284,9 @@ export async function updateB2bPartner(
           }
         : {}),
     };
-    doc.partners[idx] = record;
-    await writeDoc(doc);
-    return { ok: true, partner: toPublicPartner(record) };
+    const partners = doc.partners.slice();
+    partners[idx] = record;
+    return { value: { ok: true, partner: toPublicPartner(record) }, next: { ...doc, partners } };
   });
 }
 
@@ -378,34 +320,36 @@ function issueVerifyFields(
 export async function resendB2bPartnerVerifyToken(
   email: string,
 ): Promise<{ token: string; to: string; purpose: B2bEmailVerifyPurpose } | null> {
-  return withLock(async () => {
+  return mutatePartners<{ token: string; to: string; purpose: B2bEmailVerifyPurpose } | null>(async (doc) => {
     const key = normalizePartnerEmail(email);
-    if (!key) return null;
-    const doc = await readDoc();
+    if (!key) return { value: null };
     const idx = doc.partners.findIndex((p) => p.email === key || p.pendingEmail === key);
-    if (idx < 0) return null;
+    if (idx < 0) return { value: null };
     const prev = doc.partners[idx]!;
-    if (prev.status !== "active") return null;
+    if (prev.status !== "active") return { value: null };
     const purpose: B2bEmailVerifyPurpose | null = prev.pendingEmail
       ? "email_change"
       : !isPartnerEmailVerified(prev)
         ? "signup"
         : null;
-    if (!purpose) return null;
+    if (!purpose) return { value: null };
     const issued = issueVerifyFields(purpose);
     const now = new Date().toISOString();
-    doc.partners[idx] = {
+    const partners = doc.partners.slice();
+    partners[idx] = {
       ...prev,
       emailVerifyHash: issued.emailVerifyHash,
       emailVerifyExpiresAt: issued.emailVerifyExpiresAt,
       emailVerifyPurpose: issued.emailVerifyPurpose,
       updatedAt: now,
     };
-    await writeDoc(doc);
     return {
-      token: issued.token,
-      to: purpose === "email_change" && prev.pendingEmail ? prev.pendingEmail : prev.email,
-      purpose,
+      value: {
+        token: issued.token,
+        to: purpose === "email_change" && prev.pendingEmail ? prev.pendingEmail : prev.email,
+        purpose,
+      },
+      next: { ...doc, partners },
     };
   });
 }
@@ -414,8 +358,7 @@ export async function consumeB2bPartnerVerifyToken(
   token: string,
 ): Promise<{ ok: true; partner: B2bPartnerRecord } | { ok: false; error: "invalid" }> {
   if (!isSafeB2bVerifyToken(token)) return { ok: false, error: "invalid" };
-  return withLock(async () => {
-    const doc = await readDoc();
+  return mutatePartners<{ ok: true; partner: B2bPartnerRecord } | { ok: false; error: "invalid" }>(async (doc) => {
     const nowMs = Date.now();
     const idx = doc.partners.findIndex(
       (p) =>
@@ -423,15 +366,16 @@ export async function consumeB2bPartnerVerifyToken(
         isB2bVerifyHashOpen(p.emailVerifyExpiresAt, nowMs) &&
         b2bVerifyTokensEqual(p.emailVerifyHash!, token),
     );
-    if (idx < 0) return { ok: false, error: "invalid" };
+    if (idx < 0) return { value: { ok: false, error: "invalid" } };
     const prev = doc.partners[idx]!;
     const stamp = new Date().toISOString();
+    const partners = doc.partners.slice();
     if (prev.emailVerifyPurpose === "email_change") {
       const nextEmail = prev.pendingEmail;
       if (!nextEmail || doc.partners.some((p) => p.id !== prev.id && p.email === nextEmail)) {
-        return { ok: false, error: "invalid" };
+        return { value: { ok: false, error: "invalid" } };
       }
-      doc.partners[idx] = {
+      partners[idx] = {
         ...prev,
         email: nextEmail,
         pendingEmail: null,
@@ -442,7 +386,7 @@ export async function consumeB2bPartnerVerifyToken(
         updatedAt: stamp,
       };
     } else {
-      doc.partners[idx] = {
+      partners[idx] = {
         ...prev,
         pendingEmail: null,
         emailVerifiedAt: stamp,
@@ -452,8 +396,7 @@ export async function consumeB2bPartnerVerifyToken(
         updatedAt: stamp,
       };
     }
-    await writeDoc(doc);
-    return { ok: true, partner: doc.partners[idx]! };
+    return { value: { ok: true, partner: partners[idx]! }, next: { ...doc, partners } };
   });
 }
 
@@ -462,28 +405,28 @@ export async function changeB2bPartnerPassword(
   currentPassword: string,
   nextPassword: string,
 ): Promise<{ ok: true } | { ok: false; error: "not_found" | "invalid_current" | "weak_password" | "same_password" }> {
-  return withLock(async () => {
-    if (!isSafeB2bPartnerId(id)) return { ok: false, error: "not_found" };
-    const doc = await readDoc();
+  return mutatePartners<{ ok: true } | { ok: false; error: "not_found" | "invalid_current" | "weak_password" | "same_password" }>(
+    async (doc) => {
+    if (!isSafeB2bPartnerId(id)) return { value: { ok: false, error: "not_found" } };
     const idx = doc.partners.findIndex((p) => p.id === id);
-    if (idx < 0) return { ok: false, error: "not_found" };
+    if (idx < 0) return { value: { ok: false, error: "not_found" } };
     const prev = doc.partners[idx]!;
     if (!verifyB2bPartnerPassword(currentPassword, prev.passwordHash)) {
-      return { ok: false, error: "invalid_current" };
+      return { value: { ok: false, error: "invalid_current" } };
     }
-    if (!isUsablePartnerPassword(nextPassword)) return { ok: false, error: "weak_password" };
+    if (!isUsablePartnerPassword(nextPassword)) return { value: { ok: false, error: "weak_password" } };
     if (verifyB2bPartnerPassword(nextPassword.trim(), prev.passwordHash)) {
-      return { ok: false, error: "same_password" };
+      return { value: { ok: false, error: "same_password" } };
     }
-    doc.partners[idx] = {
+    const partners = doc.partners.slice();
+    partners[idx] = {
       ...prev,
       passwordHash: hashB2bPartnerPassword(nextPassword.trim()),
       passwordResetHash: null,
       passwordResetExpiresAt: null,
       updatedAt: new Date().toISOString(),
     };
-    await writeDoc(doc);
-    return { ok: true };
+    return { value: { ok: true }, next: { ...doc, partners } };
   });
 }
 
@@ -495,20 +438,22 @@ export async function requestB2bPartnerEmailChange(
   | { ok: true; token: string; to: string; partner: B2bPartnerPublicProfile }
   | { ok: false; error: "not_found" | "invalid_current" | "invalid_email" | "email_taken" | "same_email" }
 > {
-  return withLock(async () => {
-    if (!isSafeB2bPartnerId(id)) return { ok: false, error: "not_found" };
-    const doc = await readDoc();
+  return mutatePartners<
+    | { ok: true; token: string; to: string; partner: B2bPartnerPublicProfile }
+    | { ok: false; error: "not_found" | "invalid_current" | "invalid_email" | "email_taken" | "same_email" }
+  >(async (doc) => {
+    if (!isSafeB2bPartnerId(id)) return { value: { ok: false, error: "not_found" } };
     const idx = doc.partners.findIndex((p) => p.id === id);
-    if (idx < 0) return { ok: false, error: "not_found" };
+    if (idx < 0) return { value: { ok: false, error: "not_found" } };
     const prev = doc.partners[idx]!;
     if (!verifyB2bPartnerPassword(currentPassword, prev.passwordHash)) {
-      return { ok: false, error: "invalid_current" };
+      return { value: { ok: false, error: "invalid_current" } };
     }
     const email = normalizePartnerEmail(nextEmail).slice(0, 254);
-    if (!isValidOrderEmail(email)) return { ok: false, error: "invalid_email" };
-    if (email === prev.email) return { ok: false, error: "same_email" };
+    if (!isValidOrderEmail(email)) return { value: { ok: false, error: "invalid_email" } };
+    if (email === prev.email) return { value: { ok: false, error: "same_email" } };
     if (doc.partners.some((p) => p.id !== id && (p.email === email || p.pendingEmail === email))) {
-      return { ok: false, error: "email_taken" };
+      return { value: { ok: false, error: "email_taken" } };
     }
     const issued = issueVerifyFields("email_change");
     const now = new Date().toISOString();
@@ -520,33 +465,35 @@ export async function requestB2bPartnerEmailChange(
       emailVerifyPurpose: issued.emailVerifyPurpose,
       updatedAt: now,
     };
-    doc.partners[idx] = record;
-    await writeDoc(doc);
-    return { ok: true, token: issued.token, to: email, partner: toPublicPartner(record) };
+    const partners = doc.partners.slice();
+    partners[idx] = record;
+    return {
+      value: { ok: true, token: issued.token, to: email, partner: toPublicPartner(record) },
+      next: { ...doc, partners },
+    };
   });
 }
 
 export async function requestB2bPartnerPasswordReset(
   email: string,
 ): Promise<{ token: string; to: string } | null> {
-  return withLock(async () => {
+  return mutatePartners<{ token: string; to: string } | null>(async (doc) => {
     const key = normalizePartnerEmail(email);
-    if (!key || !isValidOrderEmail(key)) return null;
-    const doc = await readDoc();
+    if (!key || !isValidOrderEmail(key)) return { value: null };
     const idx = doc.partners.findIndex((p) => p.email === key);
-    if (idx < 0) return null;
+    if (idx < 0) return { value: null };
     const prev = doc.partners[idx]!;
-    if (prev.status !== "active") return null;
+    if (prev.status !== "active") return { value: null };
     const token = newB2bResetToken();
     const now = new Date().toISOString();
-    doc.partners[idx] = {
+    const partners = doc.partners.slice();
+    partners[idx] = {
       ...prev,
       passwordResetHash: hashB2bVerifyToken(token),
       passwordResetExpiresAt: new Date(Date.now() + B2B_PASSWORD_RESET_TTL_MS).toISOString(),
       updatedAt: now,
     };
-    await writeDoc(doc);
-    return { token, to: prev.email };
+    return { value: { token, to: prev.email }, next: { ...doc, partners } };
   });
 }
 
@@ -556,8 +503,8 @@ export async function completeB2bPartnerPasswordReset(
 ): Promise<{ ok: true; partner: B2bPartnerRecord } | { ok: false; error: "invalid" | "weak_password" }> {
   if (!isSafeB2bResetToken(token)) return { ok: false, error: "invalid" };
   if (!isUsablePartnerPassword(nextPassword)) return { ok: false, error: "weak_password" };
-  return withLock(async () => {
-    const doc = await readDoc();
+  return mutatePartners<{ ok: true; partner: B2bPartnerRecord } | { ok: false; error: "invalid" | "weak_password" }>(
+    async (doc) => {
     const nowMs = Date.now();
     const idx = doc.partners.findIndex(
       (p) =>
@@ -565,32 +512,29 @@ export async function completeB2bPartnerPasswordReset(
         isB2bVerifyHashOpen(p.passwordResetExpiresAt, nowMs) &&
         b2bVerifyTokensEqual(p.passwordResetHash!, token),
     );
-    if (idx < 0) return { ok: false, error: "invalid" };
+    if (idx < 0) return { value: { ok: false, error: "invalid" } };
     const prev = doc.partners[idx]!;
-    if (prev.status !== "active") return { ok: false, error: "invalid" };
+    if (prev.status !== "active") return { value: { ok: false, error: "invalid" } };
     const stamp = new Date().toISOString();
-    doc.partners[idx] = {
+    const partners = doc.partners.slice();
+    partners[idx] = {
       ...prev,
       passwordHash: hashB2bPartnerPassword(nextPassword.trim()),
       passwordResetHash: null,
       passwordResetExpiresAt: null,
       updatedAt: stamp,
     };
-    await writeDoc(doc);
-    return { ok: true, partner: doc.partners[idx]! };
+    return { value: { ok: true, partner: partners[idx]! }, next: { ...doc, partners } };
   });
 }
 
 export async function deleteB2bPartner(
   id: string,
 ): Promise<{ ok: true } | { ok: false; error: "not_found" }> {
-  return withLock(async () => {
-    if (!isSafeB2bPartnerId(id)) return { ok: false, error: "not_found" };
-    const doc = await readDoc();
+  return mutatePartners<{ ok: true } | { ok: false; error: "not_found" }>(async (doc) => {
+    if (!isSafeB2bPartnerId(id)) return { value: { ok: false, error: "not_found" } };
     const next = doc.partners.filter((p) => p.id !== id);
-    if (next.length === doc.partners.length) return { ok: false, error: "not_found" };
-    doc.partners = next;
-    await writeDoc(doc);
-    return { ok: true };
+    if (next.length === doc.partners.length) return { value: { ok: false, error: "not_found" } };
+    return { value: { ok: true }, next: { ...doc, partners: next } };
   });
 }

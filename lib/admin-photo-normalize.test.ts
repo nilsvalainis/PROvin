@@ -14,6 +14,10 @@ import { jpegWithCheckcarWatermarkCovered } from "@/lib/checkcar-watermark-cover
 const SERVICE_SCREEN = path.join(process.cwd(), "lib/fixtures/checkcar-watermark-service-screen.jpg");
 
 describe("admin photo normalize", () => {
+  it("sharp vips ir pieejams pēc atjauninājuma", () => {
+    expect(sharp.versions.vips).toMatch(/^\d+\.\d+/);
+  });
+
   it("atpazīst HEIC faila vārdu un ftyp maģiju", () => {
     expect(isLikelyHeicImageFile({ name: "IMG_1234.HEIC", type: "" })).toBe(true);
     expect(isLikelyHeicImageFile({ name: "photo.jpg", type: "image/jpeg" })).toBe(false);

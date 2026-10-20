@@ -6,7 +6,12 @@
  */
 
 import { MOBILE_DE_MAKE_ID_TO_NAME } from "@/lib/iriss-listings-ecarstrade-criteria";
-import type { MarketplaceLimits, MarketplacePlatform, MarketplaceQuery } from "@/lib/marketplace/types";
+import type {
+  MarketplaceLimits,
+  MarketplacePlatform,
+  MarketplaceQuery,
+  MarketplaceVehicleCategory,
+} from "@/lib/marketplace/types";
 
 function fold(raw: string): string {
   return raw
@@ -37,12 +42,44 @@ export function marketplaceKwToPs(kw: number): number {
 }
 
 function mobileDeMakeId(make: string): string | null {
-  const want = fold(make);
+  const want = fold(make).replace(/\s+/g, "");
   if (!want) return null;
+  if (want === "mercedes" || want === "mercedes-benz" || want === "mercedesbenz") return "17200";
   for (const [id, name] of Object.entries(MOBILE_DE_MAKE_ID_TO_NAME)) {
-    if (fold(name) === want) return id;
+    if (fold(name).replace(/\s+/g, "") === want) return id;
   }
   return null;
+}
+
+export function marketplaceSearchMake(make: string): string {
+  const t = fold(make).replace(/\s+/g, "");
+  if (t === "mercedes" || t === "mercedes-benz" || t === "mercedesbenz") return "Mercedes-Benz";
+  return make.trim();
+}
+
+const TRANSPORTER_MODEL =
+  /\bsprinter\b|\bcrafter\b|\btransit\b|\bducato\b|\bboxer\b|\bjumper\b|\bmaster\b|\bmovano\b|\bvivaro\b|\btrafic\b|\btraffic\b|\bvito\b|\btransporter\b/;
+
+const VAN_BODY =
+  /\bfurgon|\btransporter\b|\bkasten\b|\bfourgon\b|\bpanel.?van\b|\bminibus\b|\bh2l4\b|\bh2\s*l4\b/;
+
+export function inferMarketplaceVehicleCategory(
+  body: string,
+  model: string,
+  make = "",
+): MarketplaceVehicleCategory {
+  const hay = fold(`${make} ${model} ${body}`);
+  if (VAN_BODY.test(hay) || TRANSPORTER_MODEL.test(hay)) return "van";
+  return "car";
+}
+
+/** PKW vs furgons. Noklusējums car, lai vecie pasūtījumi paliek vieglo kategorijā. */
+export function marketplaceVehicleCategory(q: MarketplaceQuery): MarketplaceVehicleCategory {
+  return q.vehicleCategory === "van" ? "van" : "car";
+}
+
+export function marketplaceHasAirConditioning(q: MarketplaceQuery): boolean {
+  return q.features.some((f) => /air.?cond|klima|ac\b/i.test(f));
 }
 
 function mobileFuel(raw: string): string {
@@ -148,8 +185,10 @@ function colonRange(from: number | null, to: number | null): string {
 export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false): string {
   const url = new URL("https://suchen.mobile.de/fahrzeuge/search.html");
   const model = marketplaceModelSearchToken(q.model);
-  url.searchParams.set("s", "Car");
-  url.searchParams.set("vc", "Car");
+  const category = marketplaceVehicleCategory(q);
+  const vc = category === "van" ? "Van" : "Car";
+  url.searchParams.set("s", vc);
+  url.searchParams.set("vc", vc);
   url.searchParams.set("isSearchRequest", "true");
   url.searchParams.set("dam", "0");
   url.searchParams.set("cn", "DE");
@@ -159,11 +198,12 @@ export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false):
   if (makeId) {
     url.searchParams.set("ms", makeId);
   } else if (q.make.trim()) {
-    url.searchParams.set("make", q.make.trim());
+    url.searchParams.set("make", marketplaceSearchMake(q.make));
     if (model) url.searchParams.set("model", model);
   }
   const years = colonRange(q.yearFrom, q.yearTo);
   if (years) url.searchParams.set("fr", years);
+  // Nobraukums tikai km (mobile.de ml), ne jūdzes.
   const km = colonRange(q.mileageFrom, q.mileageTo);
   if (km) url.searchParams.set("ml", km);
   const price = colonRange(q.priceFrom, q.priceTo);
@@ -176,10 +216,13 @@ export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false):
   if (fuel) url.searchParams.set("ft", fuel);
   const gear = mobileGear(q.gearbox);
   if (gear) url.searchParams.set("tr", gear);
-  const body = mobileUrlBody(q.body);
-  if (body) url.searchParams.set("c", body);
+  if (category !== "van") {
+    const body = mobileUrlBody(q.body);
+    if (body) url.searchParams.set("c", body);
+  }
   const drive = mobileDrive(q.drive);
   if (drive) url.searchParams.set("dr", drive);
+  if (marketplaceHasAirConditioning(q)) url.searchParams.set("fe", "AIR_CONDITIONING");
   if (sortNewest) {
     url.searchParams.set("sb", "doc");
     url.searchParams.set("od", "down");
@@ -187,19 +230,45 @@ export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false):
   return url.toString();
 }
 
+const AS24_COUNTRY: Record<string, string> = {
+  de: "D",
+  d: "D",
+  germany: "D",
+  at: "A",
+  a: "A",
+  austria: "A",
+  be: "B",
+  b: "B",
+  belgium: "B",
+  nl: "NL",
+  netherlands: "NL",
+  lu: "L",
+  l: "L",
+  luxembourg: "L",
+};
+
+function as24Countries(q: MarketplaceQuery): string {
+  const codes = q.countries
+    .map((c) => AS24_COUNTRY[fold(c).replace(/\s+/g, "")] ?? (c.trim().length <= 3 ? c.trim().toUpperCase() : ""))
+    .filter(Boolean);
+  return [...new Set(codes)].join(",") || "D";
+}
+
 export function buildAutoscout24SearchUrl(q: MarketplaceQuery, sortNewest = false): string {
-  const make = slug(q.make) || "auto";
+  const make = slug(marketplaceSearchMake(q.make)) || "auto";
   const model = slug(marketplaceModelSearchToken(q.model));
   const path = model ? `/lst/${make}/${model}` : `/lst/${make}`;
   const url = new URL(`https://www.autoscout24.de${path}`);
-  url.searchParams.set("atype", "C");
-  url.searchParams.set("cy", "D");
+  const category = marketplaceVehicleCategory(q);
+  url.searchParams.set("atype", category === "van" ? "X" : "C");
+  url.searchParams.set("cy", as24Countries(q));
   url.searchParams.set("ustate", "N,U");
   url.searchParams.set("damaged_listing", "exclude");
   // Anbieter: Händler. Current autoscout24.de /lst param (custtype=P = Privat).
   url.searchParams.set("custtype", "D");
   if (q.yearFrom != null) url.searchParams.set("fregfrom", String(q.yearFrom));
   if (q.yearTo != null) url.searchParams.set("fregto", String(q.yearTo));
+  // Nobraukums tikai km, ne jūdzes (nav milefrom / mileto).
   if (q.mileageFrom != null) url.searchParams.set("kmfrom", String(q.mileageFrom));
   if (q.mileageTo != null) url.searchParams.set("kmto", String(q.mileageTo));
   if (q.priceFrom != null) url.searchParams.set("pricefrom", String(q.priceFrom));
@@ -213,8 +282,11 @@ export function buildAutoscout24SearchUrl(q: MarketplaceQuery, sortNewest = fals
   if (fuel) url.searchParams.set("fuel", fuel);
   const gear = as24Gear(q.gearbox);
   if (gear) url.searchParams.set("gear", gear);
-  const body = as24Body(q.body);
-  if (body) url.searchParams.set("body", body);
+  if (category !== "van") {
+    const body = as24Body(q.body);
+    if (body) url.searchParams.set("body", body);
+  }
+  if (marketplaceHasAirConditioning(q)) url.searchParams.set("eq", "5");
   url.searchParams.set("sort", sortNewest ? "age" : "standard");
   return url.toString();
 }
@@ -229,14 +301,15 @@ export function buildMarketplaceSearchUrl(
 
 function mobileDeActorInput(q: MarketplaceQuery, maxResults: number, sortNewest: boolean): Record<string, unknown> {
   const model = marketplaceModelSearchToken(q.model);
+  const category = marketplaceVehicleCategory(q);
   const input: Record<string, unknown> = {
     maxResults,
     includeDetails: false,
-    category: "CAR",
+    category: category === "van" ? "VAN" : "CAR",
     sellerType: "DEALER",
     damageStatus: "EXCLUDE",
   };
-  if (q.make.trim()) input.make = q.make.trim();
+  if (q.make.trim()) input.make = marketplaceSearchMake(q.make);
   if (model) input.model = model;
   if (q.priceFrom != null) input.priceMin = q.priceFrom;
   if (q.priceTo != null) input.priceMax = q.priceTo;
@@ -248,10 +321,13 @@ function mobileDeActorInput(q: MarketplaceQuery, maxResults: number, sortNewest:
   if (q.powerToKw != null) input.powerMax = marketplaceKwToPs(q.powerToKw);
   const gear = mobileGear(q.gearbox);
   if (gear) input.transmission = [gear];
-  const body = mobileActorBody(q.body);
-  if (body) input.bodyType = [body];
+  if (category !== "van") {
+    const body = mobileActorBody(q.body);
+    if (body) input.bodyType = [body];
+  }
   const fuel = mobileFuel(q.fuel);
   if (fuel) input.fuelType = [fuel];
+  if (marketplaceHasAirConditioning(q)) input.features = ["AIR_CONDITIONING"];
   if (sortNewest) input.sort = "newest";
   // Schema has no country field. customFilters keeps only DE rows after scrape.
   input.customFilters = [{ field: "country", op: "equals", value: "DE" }];

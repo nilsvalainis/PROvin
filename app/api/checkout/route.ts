@@ -16,6 +16,7 @@ import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
 import { stripeAttributionMetadataFromRequest } from "@/lib/ad-attribution";
 import { ATTR_COOKIE_NAME } from "@/lib/cookie-consent";
+import { mergeStripeCheckoutMetadata } from "@/lib/stripe-checkout-metadata";
 import { createMetaEventId } from "@/lib/meta-pixel";
 import {
   checkoutMetaClientFields,
@@ -169,22 +170,26 @@ export async function POST(req: Request) {
     phone_number_collection: { enabled: false },
     /** Stripe lapā — sociālie tīkli + komentārs (nav obligāti). */
     custom_fields: getCheckoutIntakeCustomFields(locale),
-    metadata: {
-      checkout_line: "audit",
-      ...stripeAttributionMetadataFromRequest(req.headers.get("cookie"), ATTR_COOKIE_NAME),
-      ...stripeMetaCapiMetadataFromRequest(req),
-      vin,
-      listing_url: listingUrl || "",
-      report_delivery: "email",
-      phone,
-      /** Klienta apzināta atteikšanās no PTN atteikuma tiesībām (digitāls saturs, tūlītēja izpilde). */
-      withdrawal_waiver_ack: "true",
-      /** Pilnvarojums + noteikumi/privātums — saskaņā ar pasūtījuma formas apstiprinājumu. */
-      authorization_ack: "true",
-      ...(name ? { customer_name: name } : {}),
-      ...(notes ? { notes } : {}),
-      ...invoiceBuyerMetadataFromUnknown(raw),
-    },
+    metadata: mergeStripeCheckoutMetadata(
+      {
+        ...stripeAttributionMetadataFromRequest(req.headers.get("cookie"), ATTR_COOKIE_NAME),
+        ...stripeMetaCapiMetadataFromRequest(req),
+        ...invoiceBuyerMetadataFromUnknown(raw),
+      },
+      {
+        checkout_line: "audit",
+        vin,
+        listing_url: listingUrl || "",
+        report_delivery: "email",
+        phone,
+        /** Klienta apzināta atteikšanās no PTN atteikuma tiesībām (digitāls saturs, tūlītēja izpilde). */
+        withdrawal_waiver_ack: "true",
+        /** Pilnvarojums + noteikumi/privātums - saskaņā ar pasūtījuma formas apstiprinājumu. */
+        authorization_ack: "true",
+        ...(name ? { customer_name: name } : {}),
+        ...(notes ? { notes } : {}),
+      },
+    ),
     locale: stripeCheckoutLocale(locale),
   });
 

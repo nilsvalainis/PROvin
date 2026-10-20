@@ -4,7 +4,8 @@
  */
 import { NextResponse } from "next/server";
 
-import { autodnaGetReport, getAutodnaConfig } from "@/lib/autodna-api";
+import { getAutodnaConfig } from "@/lib/autodna-api";
+import { autodnaGetReportIdempotent } from "@/lib/autodna-purchase";
 import { autodnaResultToNextResponse } from "@/lib/autodna-admin-route";
 import { getAdminSession } from "@/lib/admin-auth";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -36,9 +37,10 @@ export async function POST(req: Request) {
   }
 
   const deliveryByEmail = o.deliveryByEmail === true || o.deliveryByEmail === "true";
+  const force = o.force === true || o.force === "true";
 
   try {
-    const result = await autodnaGetReport({ vin, deliveryByEmail }, config);
+    const result = await autodnaGetReportIdempotent({ vin, deliveryByEmail }, config, { force });
     return autodnaResultToNextResponse(result, "admin/autodna/get-report", { vin });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";

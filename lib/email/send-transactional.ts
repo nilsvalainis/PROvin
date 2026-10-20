@@ -1,7 +1,9 @@
 import "server-only";
 
 import nodemailer from "nodemailer";
-import type { Attachment } from "nodemailer/lib/mailer";
+import type { SendMailOptions, Transporter } from "nodemailer";
+
+type Attachment = NonNullable<SendMailOptions["attachments"]>[number];
 import { getB2bMailFromAddress, getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
 import {
   adminAuditSlaWarningHtml,
@@ -43,7 +45,7 @@ export function isSmtpConfigured(): boolean {
   return Boolean(user && pass);
 }
 
-function getSmtpTransport(): nodemailer.Transporter | null {
+function getSmtpTransport(): Transporter | null {
   if (!isSmtpConfigured()) return null;
   const user = process.env.SMTP_USER!.trim();
   const pass = process.env.SMTP_PASS!.trim();

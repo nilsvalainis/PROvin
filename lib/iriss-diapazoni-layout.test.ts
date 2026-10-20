@@ -7,7 +7,9 @@ const files = [
   "components/admin/IrissRangeFromToField.tsx",
   "components/admin/IrissSpecDiapazoniBlock.tsx",
   "components/admin/IrissMarketplaceLoadPanel.tsx",
+  "components/admin/IrissScanEditor.tsx",
   "lib/marketplace/query-from-order.ts",
+  "lib/marketplace/query-from-scan.ts",
   "app/admin/iriss/iriss-admin.css",
 ] as const;
 
@@ -46,6 +48,13 @@ describe("IRISS DIAPAZONI mockup v2", () => {
     expect(sources["components/admin/IrissOrderRoom.tsx"]).toContain(
       "mobile.de un AutoScout24 nāk no ielādes zemāk",
     );
+    expect(panel).toContain("Automātiska ielāde radarā nav");
+    expect(panel).toContain("scanId");
+    expect(panel).toContain("MARKETPLACE_RADAR_EXTRA_RANGE_MESSAGE");
+    expect(panel).toContain("formatMarketplaceUsd(monthlyCapUsd)");
+    expect(sources["components/admin/IrissScanEditor.tsx"]).toContain("apifyMobiledeEnabled");
+    expect(sources["components/admin/IrissScanEditor.tsx"]).toContain("IrissMarketplaceLoadPanel");
+    expect(sources["components/admin/IrissScanEditor.tsx"]).toContain("Furgons");
   });
 
   it("styles required empty fields and phone units without em dashes", () => {
@@ -59,7 +68,9 @@ describe("IRISS DIAPAZONI mockup v2", () => {
       "components/admin/IrissRangeFromToField.tsx",
       "components/admin/IrissSpecDiapazoniBlock.tsx",
       "components/admin/IrissMarketplaceLoadPanel.tsx",
+      "components/admin/IrissScanEditor.tsx",
       "lib/marketplace/query-from-order.ts",
+      "lib/marketplace/query-from-scan.ts",
     ] as const) {
       expect(sources[file], file).not.toMatch(/\u2014|\u2013/);
     }

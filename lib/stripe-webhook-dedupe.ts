@@ -1,27 +1,69 @@
 /**
- * Stripe var atkārtoti nosūtīt notikumu. Viena procesa ietvaros novērš dublikātus.
- * Serverless vairākās instancēs teorētiski iespējams dubults — pilnai garantijai vajadzīga DB/Redis.
+ * Stripe var atkārtoti nosūtīt notikumu. Lēmums ir tīrs; Blob krātuve ir
+ * `stripe-webhook-dedupe-store.ts` (serverless instances dala to pašu stāvokli).
  */
 
-const seen = new Map<string, number>();
-const MAX_AGE_MS = 72 * 60 * 60 * 1000;
+export const STRIPE_DEDUPE_DONE_MAX_AGE_MS = 72 * 60 * 60 * 1000;
+export const STRIPE_DEDUPE_STALE_CLAIM_MS = 15 * 60 * 1000;
 
-function prune(now: number): void {
-  for (const [id, t] of seen) {
-    if (now - t > MAX_AGE_MS) seen.delete(id);
+export type StripeDedupeStatus = "claimed" | "done";
+
+export type StripeDedupeRecord = {
+  status: StripeDedupeStatus;
+  claimedAt: number;
+  eventId: string;
+};
+
+export type StripeDedupeDecision = "begin" | "duplicate" | "reclaim";
+
+export function parseStripeDedupeRecord(raw: unknown): StripeDedupeRecord | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const status = o.status === "claimed" || o.status === "done" ? o.status : null;
+  const eventId = typeof o.eventId === "string" ? o.eventId.trim() : "";
+  const claimedAt =
+    typeof o.claimedAt === "number"
+      ? o.claimedAt
+      : typeof o.claimedAt === "string"
+        ? Date.parse(o.claimedAt)
+        : NaN;
+  if (!status || !eventId || !Number.isFinite(claimedAt)) return null;
+  return { status, claimedAt, eventId };
+}
+
+export function stripeDedupeBlobKey(eventId: string): string {
+  const cleaned = eventId.trim().replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
+  return cleaned || "invalid";
+}
+
+export function isSafeStripeDedupeKey(key: string): boolean {
+  return /^[a-zA-Z0-9._-]{1,200}$/.test(key);
+}
+
+export function stripeDedupeDecision(
+  existing: StripeDedupeRecord | null,
+  now: number,
+  opts?: { doneMaxAgeMs?: number; staleClaimMs?: number },
+): StripeDedupeDecision {
+  if (!existing) return "begin";
+  const doneMax = opts?.doneMaxAgeMs ?? STRIPE_DEDUPE_DONE_MAX_AGE_MS;
+  const staleMs = opts?.staleClaimMs ?? STRIPE_DEDUPE_STALE_CLAIM_MS;
+  const age = now - existing.claimedAt;
+  if (existing.status === "done") {
+    return age > doneMax ? "begin" : "duplicate";
   }
+  if (age > staleMs) return "reclaim";
+  return "duplicate";
 }
 
-/** Ja `false` — šis event.id jau apstrādāts; atgriezt 200 bez darbībām. */
-export function tryBeginStripeEvent(eventId: string): boolean {
-  const now = Date.now();
-  prune(now);
-  if (seen.has(eventId)) return false;
-  seen.set(eventId, now);
-  return true;
+export function newStripeDedupeClaim(eventId: string, now: number, status: StripeDedupeStatus = "claimed"): StripeDedupeRecord {
+  return { status, claimedAt: now, eventId };
 }
 
-/** Ja apstrāde neizdevās (pirms veiksmīgas atbildes), atļaut Stripe atkārtot mēģinājumu. */
-export function releaseStripeEvent(eventId: string): void {
-  seen.delete(eventId);
+/** Meta Purchase tikai pēc veiksmīgas sesijas dedupe (ne pirms tās). */
+export function stripeShouldSendMetaPurchase(args: {
+  paymentStatus: string | null | undefined;
+  sessionDedupeAcquired: boolean;
+}): boolean {
+  return args.paymentStatus === "paid" && args.sessionDedupeAcquired;
 }

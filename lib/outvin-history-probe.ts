@@ -31,6 +31,15 @@ import {
   outvinHistoryTypeLabel,
 } from "@/lib/outvin-official-types";
 import { normalizeVin } from "@/lib/order-field-validation";
+import {
+  claimOutvinHistoryPurchase,
+  claimOutvinVehiclePurchase,
+  completeOutvinHistoryPurchase,
+  completeOutvinVehiclePurchase,
+  releaseOutvinHistoryPurchase,
+  releaseOutvinVehiclePurchase,
+  resetOutvinVehiclePurchase,
+} from "@/lib/vendor-purchase-lock-store";
 
 export type { OutvinOfficialHistoryType } from "@/lib/outvin-official-types";
 export { isOutvinOfficialHistoryType } from "@/lib/outvin-official-types";
@@ -58,6 +67,25 @@ function vehicleOrderFromFetch(
 /**
  * 1. solis — GET /vehicle/{VIN}. Bez veiksmīga pasūtījuma history bieži atgriež 402.
  */
+function applyVehicleOrderToBundle(
+  bundle: OutvinDataBundle,
+  normalized: string,
+  vehicleOrder: OutvinVehicleOrderRecord,
+): OutvinDataBundle {
+  let nextBundle: OutvinDataBundle = { ...bundle, vin: normalized, vehicleOrder };
+  if (vehicleOrder.ok && vehicleOrder.payload != null) {
+    const vehicleInfo = mapOutvinVehicleJsonToInfo(vehicleOrder.payload, normalized);
+    nextBundle = {
+      ...nextBundle,
+      vehicleInfo: overlayNonemptyVehicleInfo(
+        nextBundle.vehicleInfo,
+        sanitizeDealerVehicleInfo(vehicleInfo),
+      ),
+    };
+  }
+  return nextBundle;
+}
+
 export async function ensureOutvinVehicleOrderForVin(
   vin: string,
   bundle: OutvinDataBundle,
@@ -68,28 +96,58 @@ export async function ensureOutvinVehicleOrderForVin(
     return { bundle, vehicleOrder: bundle.vehicleOrder, blocked: false };
   }
 
-  const r = await fetchOutvinVehicleOrderResult(normalized);
-  const vehicleOrder = vehicleOrderFromFetch(normalized, r);
-
-  if (!r.ok) {
-    logOutvinApiFailure("outvin/vehicle-order", normalized, "GET", "vehicle/{VIN}", r.status, r.skipReason, r.rawBodyPreview);
+  if (options?.forceRefresh) {
+    await resetOutvinVehiclePurchase(normalized);
   }
 
-  let nextBundle: OutvinDataBundle = { ...bundle, vin: normalized, vehicleOrder };
-
-  if (r.ok && r.body != null) {
-    const vehicleInfo = mapOutvinVehicleJsonToInfo(r.body, normalized);
-    nextBundle = {
-      ...nextBundle,
-      vehicleInfo: overlayNonemptyVehicleInfo(
-        nextBundle.vehicleInfo,
-        sanitizeDealerVehicleInfo(vehicleInfo),
-      ),
+  const claim = await claimOutvinVehiclePurchase(normalized);
+  if (!options?.forceRefresh && claim.action === "replay" && claim.entry.ok) {
+    const vehicleOrder: OutvinVehicleOrderRecord = {
+      orderedAt: claim.entry.claimedAt,
+      httpStatus: claim.entry.httpStatus ?? 200,
+      ok: true,
+      vin: normalized,
+      ...(claim.entry.payload != null ? { payload: claim.entry.payload } : {}),
+    };
+    return {
+      bundle: applyVehicleOrderToBundle(bundle, normalized, vehicleOrder),
+      vehicleOrder,
+      blocked: false,
     };
   }
+  if (claim.action === "in_progress") {
+    const vehicleOrder: OutvinVehicleOrderRecord = {
+      orderedAt: new Date().toISOString(),
+      httpStatus: 409,
+      ok: false,
+      vin: normalized,
+      error: "in_progress",
+    };
+    return { bundle: { ...bundle, vin: normalized, vehicleOrder }, vehicleOrder, blocked: false };
+  }
 
-  const blocked = !r.ok && (r.status === 402 || r.skipReason === "payment_required");
-  return { bundle: nextBundle, vehicleOrder, blocked };
+  try {
+    const r = await fetchOutvinVehicleOrderResult(normalized);
+    const vehicleOrder = vehicleOrderFromFetch(normalized, r);
+
+    if (!r.ok) {
+      logOutvinApiFailure("outvin/vehicle-order", normalized, "GET", "vehicle/{VIN}", r.status, r.skipReason, r.rawBodyPreview);
+      await releaseOutvinVehiclePurchase(normalized);
+    } else {
+      await completeOutvinVehiclePurchase(normalized, {
+        ok: true,
+        httpStatus: r.status,
+        payload: r.body,
+      });
+    }
+
+    const nextBundle = applyVehicleOrderToBundle(bundle, normalized, vehicleOrder);
+    const blocked = !r.ok && (r.status === 402 || r.skipReason === "payment_required");
+    return { bundle: nextBundle, vehicleOrder, blocked };
+  } catch (err) {
+    await releaseOutvinVehiclePurchase(normalized);
+    throw err;
+  }
 }
 
 /**
@@ -112,32 +170,64 @@ export async function fetchOutvinOfficialHistoryTypes(
       continue;
     }
 
+    const claim = await claimOutvinHistoryPurchase(normalized, type);
+    if (claim.action === "replay") {
+      if (claim.entry.ok && claim.entry.payload != null) {
+        bundle = applyOutvinPurchaseToBundle(bundle, type, claim.entry.payload, claim.entry.claimedAt);
+        results.push({ type, ok: true, httpStatus: claim.entry.httpStatus });
+      } else {
+        results.push({
+          type,
+          ok: false,
+          error: "replay_failed",
+          httpStatus: claim.entry.httpStatus,
+        });
+      }
+      continue;
+    }
+    if (claim.action === "in_progress") {
+      results.push({ type, ok: false, error: "in_progress", httpStatus: 409 });
+      continue;
+    }
+
     if (purchaseIndex > 0) {
       await sleepMs(OUTVIN_SEQUENTIAL_PURCHASE_DELAY_MS);
     }
     purchaseIndex += 1;
 
-    const r = await fetchOutvinHistoryResult(normalized, type);
+    try {
+      const r = await fetchOutvinHistoryResult(normalized, type);
 
-    if (r.status === 402 && r.skipReason === "payment_required") {
-      logOutvinPurchaseHistoryFailure("outvin/history", normalized, type, r.status, r.skipReason, r.rawBodyPreview);
-      paymentRequired = true;
-      results.push({ type, ok: false, error: "payment_required", httpStatus: r.status });
-      continue;
+      if (r.status === 402 && r.skipReason === "payment_required") {
+        logOutvinPurchaseHistoryFailure("outvin/history", normalized, type, r.status, r.skipReason, r.rawBodyPreview);
+        paymentRequired = true;
+        await releaseOutvinHistoryPurchase(normalized, type);
+        results.push({ type, ok: false, error: "payment_required", httpStatus: r.status });
+        continue;
+      }
+
+      if (!r.ok || r.body == null) {
+        logOutvinPurchaseHistoryFailure("outvin/history", normalized, type, r.status, r.skipReason, r.rawBodyPreview);
+        await releaseOutvinHistoryPurchase(normalized, type);
+        const errLabel =
+          r.skipReason === "rate_limited"
+            ? "rate_limited (pārāk daudz pieprasījumu - mēģini vēlreiz pēc brīža)"
+            : (r.skipReason ?? `http_${r.status}`);
+        results.push({ type, ok: false, error: errLabel, httpStatus: r.status });
+        continue;
+      }
+
+      await completeOutvinHistoryPurchase(normalized, type, {
+        ok: true,
+        httpStatus: r.status,
+        payload: r.body,
+      });
+      bundle = applyOutvinPurchaseToBundle(bundle, type, r.body);
+      results.push({ type, ok: true, httpStatus: r.status });
+    } catch (err) {
+      await releaseOutvinHistoryPurchase(normalized, type);
+      throw err;
     }
-
-    if (!r.ok || r.body == null) {
-      logOutvinPurchaseHistoryFailure("outvin/history", normalized, type, r.status, r.skipReason, r.rawBodyPreview);
-      const errLabel =
-        r.skipReason === "rate_limited"
-          ? "rate_limited (pārāk daudz pieprasījumu — mēģini vēlreiz pēc brīža)"
-          : (r.skipReason ?? `http_${r.status}`);
-      results.push({ type, ok: false, error: errLabel, httpStatus: r.status });
-      continue;
-    }
-
-    bundle = applyOutvinPurchaseToBundle(bundle, type, r.body);
-    results.push({ type, ok: true, httpStatus: r.status });
   }
 
   bundle.capabilitySlots = buildOutvinCapabilitySlots(normalized, bundle);

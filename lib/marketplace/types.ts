@@ -12,6 +12,12 @@ export type MarketplaceProviderId = (typeof MARKETPLACE_PROVIDER_IDS)[number];
 
 export const MARKETPLACE_TTL_DAYS = 30;
 
+export const MARKETPLACE_VEHICLE_CATEGORIES = ["car", "van"] as const;
+export type MarketplaceVehicleCategory = (typeof MARKETPLACE_VEHICLE_CATEGORIES)[number];
+
+export const MARKETPLACE_OWNER_KINDS = ["order", "radar"] as const;
+export type MarketplaceOwnerKind = (typeof MARKETPLACE_OWNER_KINDS)[number];
+
 export type MarketplaceQuery = {
   make: string;
   model: string;
@@ -30,6 +36,10 @@ export type MarketplaceQuery = {
   body: string;
   drive: string;
   countries: string[];
+  /** car = PKW; van = furgons / transporteris (mobile.de vc=Van, AutoScout24 atype=X). */
+  vehicleCategory: MarketplaceVehicleCategory;
+  /** Piem. air_conditioning. Nobraukums vienmēr km, ne jūdzes. */
+  features: string[];
 };
 
 export type MarketplaceCostEstimate = {
@@ -155,6 +165,7 @@ export type MarketplaceRunRecord = {
   id: string;
   orderId: string;
   tenantScope: "iriss";
+  ownerKind?: MarketplaceOwnerKind;
   providers: MarketplaceProviderId[];
   query: MarketplaceQuery;
   maxItems: number;
@@ -254,6 +265,14 @@ export function isMarketplaceProviderId(v: string): v is MarketplaceProviderId {
   return (MARKETPLACE_PROVIDER_IDS as readonly string[]).includes(v);
 }
 
+export function isMarketplaceVehicleCategory(v: string): v is MarketplaceVehicleCategory {
+  return (MARKETPLACE_VEHICLE_CATEGORIES as readonly string[]).includes(v);
+}
+
+export function isMarketplaceOwnerKind(v: string): v is MarketplaceOwnerKind {
+  return (MARKETPLACE_OWNER_KINDS as readonly string[]).includes(v);
+}
+
 export function emptyMarketplaceQuery(): MarketplaceQuery {
   return {
     make: "",
@@ -273,6 +292,8 @@ export function emptyMarketplaceQuery(): MarketplaceQuery {
     body: "",
     drive: "",
     countries: [],
+    vehicleCategory: "car",
+    features: [],
   };
 }
 
@@ -320,6 +341,29 @@ export function marketplaceQueryHasStrictBounds(q: MarketplaceQuery): boolean {
   const cc = rangeOk(q.displacementFromCc, q.displacementToCc, true);
   const power = rangeOk(q.powerFromKw, q.powerToKw, true);
   return mileage || cc || power;
+}
+
+function radarOpenRangeOk(from: number | null, to: number | null, need: "from" | "to"): boolean {
+  if (from != null && to != null && from > to) return false;
+  return need === "from" ? from != null : to != null;
+}
+
+/** Extra: nobraukums līdz (km), tilpums līdz / no-līdz, vai jauda no / no-līdz. Bez cenas. */
+export function marketplaceQueryHasRadarExtraRange(q: MarketplaceQuery): boolean {
+  const mileage = radarOpenRangeOk(q.mileageFrom, q.mileageTo, "to");
+  const cc = radarOpenRangeOk(q.displacementFromCc, q.displacementToCc, "to");
+  const power = radarOpenRangeOk(q.powerFromKw, q.powerToKw, "from");
+  return mileage || cc || power;
+}
+
+/**
+ * Radars: marka + modelis + gadi no-līdz, bez cenas.
+ * Extra: nobraukums līdz (km), tilpums līdz / no-līdz, vai jauda no / no-līdz.
+ */
+export function marketplaceQueryHasRadarBounds(q: MarketplaceQuery): boolean {
+  if (!q.make.trim() || !q.model.trim()) return false;
+  if (!rangeOk(q.yearFrom, q.yearTo, true)) return false;
+  return marketplaceQueryHasRadarExtraRange(q);
 }
 
 export function marketplaceQueryHasBounds(q: MarketplaceQuery): boolean {

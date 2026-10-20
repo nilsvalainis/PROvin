@@ -1,6 +1,7 @@
 /**
  * Automātiskā mobile.de / AutoScout24 ielāde IRISS pasūtījumiem.
  * Izsoļu (Auto1 / Openlane / Autobid / eCarsTrade) sync šeit nesauc.
+ * Radara (SCAN) ieraksti šeit NAV: radarā Apify ir tikai manuāla poga, bez cron.
  */
 import { marketplaceActorId, readApifyToken } from "@/lib/marketplace/apify-client";
 import {

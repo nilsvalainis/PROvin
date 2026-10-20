@@ -31,6 +31,26 @@ describe("marketplaceQueryFromOrder", () => {
     expect(q.priceTo).toBe(22000);
     expect(q.fuel).toMatch(/dīzel|diesel/i);
     expect(q.gearbox).toMatch(/autom|automatic/i);
+    expect(q.vehicleCategory).toBe("car");
+    expect(q.features).toEqual([]);
+  });
+
+  it("keeps passenger-car category for orders even with a van body", () => {
+    const q = marketplaceQueryFromOrder({
+      brandModel: "Mercedes-Benz Sprinter",
+      productionYears: "2020-2026",
+      maxMileage: "180000",
+      totalBudget: "20000-40000",
+      bodyType: "Furgons H2L4",
+    });
+    expect(q.vehicleCategory).toBe("car");
+    expect(marketplaceOrderHasFetchBounds({
+      brandModel: "Mercedes-Benz Sprinter",
+      productionYears: "2020-2026",
+      maxMileage: "180000",
+      totalBudget: "20000-40000",
+      bodyType: "Furgons H2L4",
+    })).toBe(true);
   });
 
   it("prefers structured IrissCriteriaV1 when the form filter is on", () => {

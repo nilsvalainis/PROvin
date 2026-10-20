@@ -4,6 +4,7 @@ import { deleteIrissScan, isSafeIrissScanId, readIrissScan, writeIrissScan } fro
 import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 import { IRISS_STALE_REVISION, parseExpectedIrissRevision } from "@/lib/iriss-scan-save-safety";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
+import { isMarketplaceVehicleCategory } from "@/lib/marketplace/types";
 
 export const runtime = "nodejs";
 
@@ -27,6 +28,12 @@ function parseBodyRecord(id: string, body: unknown): IrissScanRecord | null {
     engineType: str("engineType"),
     transmission: str("transmission"),
     bodyType: str("bodyType"),
+    vehicleCategory: (() => {
+      const category = str("vehicleCategory");
+      return isMarketplaceVehicleCategory(category) ? category : "";
+    })(),
+    apifyMobiledeEnabled: o.apifyMobiledeEnabled === true,
+    apifyAutoscout24Enabled: o.apifyAutoscout24Enabled === true,
     listingLinkMobile: links(o, "listingLinkMobile"),
     listingLinkAutobid: links(o, "listingLinkAutobid"),
     listingLinkOpenline: links(o, "listingLinkOpenline"),
