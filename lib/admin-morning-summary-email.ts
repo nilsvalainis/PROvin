@@ -1,5 +1,6 @@
 import { formatLvCalendarDay, rigaClockHour } from "@/lib/admin-riga-calendar";
 import type { MorningQueueItem, MorningSummary } from "@/lib/admin-morning-summary";
+import { formatAdminCostPercent, formatAdminCostUsd, shortCostLabel, type CostAlert } from "@/lib/admin-costs";
 import { morningSummaryEmailHtml } from "@/lib/email/html-templates";
 
 /** Vercel Cron ir UTC: 05:00 = 08:00 EEST, 06:00 = 08:00 EET. Handleris sūta tikai Rīgas 08:00. */
@@ -44,6 +45,15 @@ function itemLine(item: MorningQueueItem): { title: string; detail: string } {
 
 function capLines(items: readonly MorningQueueItem[]): { title: string; detail: string }[] {
   return items.slice(0, MORNING_SUMMARY_EMAIL_LIST_CAP).map(itemLine);
+}
+
+function costAlertDetail(row: CostAlert): string {
+  const limit = row.limitUsd != null ? `${formatAdminCostUsd(row.usd)} / ${formatAdminCostUsd(row.limitUsd)}` : formatAdminCostUsd(row.usd);
+  return `${formatAdminCostPercent(row.percent)}, ${limit}`;
+}
+
+function costAlertLine(row: CostAlert): string {
+  return `${shortCostLabel(row.source)}: ${costAlertDetail(row)}`;
 }
 
 export function buildMorningSummaryEmailSubject(summary: MorningSummary, nowMs: number): string {
@@ -102,6 +112,14 @@ export function buildMorningSummaryEmailText(
     }
   }
 
+  const costs = summary.costAlerts ?? [];
+  if (costs.length > 0) {
+    lines.push("", "Izmaksas");
+    for (const row of costs.slice(0, MORNING_SUMMARY_EMAIL_LIST_CAP)) {
+      lines.push(costAlertLine(row));
+    }
+  }
+
   lines.push("", "Atvērt kopsavilkumu:", opts.pageUrl);
   return lines.join("\n");
 }
@@ -126,6 +144,10 @@ export function buildMorningSummaryEmail(
     failingSources: (summary.failingSources ?? []).slice(0, MORNING_SUMMARY_EMAIL_LIST_CAP).map((row) => ({
       title: row.id,
       detail: row.msg ? `${row.streak} reizes pēc kārtas, ${row.msg}` : `${row.streak} reizes pēc kārtas`,
+    })),
+    costAlerts: (summary.costAlerts ?? []).slice(0, MORNING_SUMMARY_EMAIL_LIST_CAP).map((row) => ({
+      title: shortCostLabel(row.source),
+      detail: costAlertDetail(row),
     })),
   });
   return {

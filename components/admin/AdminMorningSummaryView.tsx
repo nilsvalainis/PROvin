@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { AuditDeadlineStatus } from "@/lib/admin-audit-deadline";
+import { formatAdminCostUsd } from "@/lib/admin-costs";
 import type { MorningQueueItem, MorningSummary } from "@/lib/admin-morning-summary";
 
 const TONE: Record<AuditDeadlineStatus, string> = {
@@ -110,6 +111,40 @@ export function AdminMorningSummaryView({
       <Section title="Šodienas termiņi" items={summary.dueTodayAudits} />
       <Section title="Steidzamie auditi" items={summary.urgentAudits} />
       <Section title="Jauni un neatbildētie vērtējumi" items={summary.unansweredPeeks} />
+
+      {(summary.costAlerts ?? []).length > 0 ? (
+        <section className="mt-6">
+          <h2 className="px-0.5 text-[13px] font-semibold text-[#3a3a3c]">
+            Izmaksas <span className="font-normal text-[#8e8e93]">{summary.costAlerts.length}</span>
+          </h2>
+          <ul className="mt-2 flex flex-col gap-2">
+            {summary.costAlerts.map((alert) => (
+              <li key={alert.source}>
+                <Link
+                  href="/admin/izmaksas"
+                  className="flex min-h-[4.5rem] items-center gap-3 rounded-2xl border border-[#e5e5ea] bg-white px-4 py-3 shadow-sm active:scale-[0.99]"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[16px] font-semibold text-[var(--color-apple-text)]">{alert.label}</p>
+                    <p className="mt-0.5 truncate text-[12px] text-[#8e8e93]">
+                      {alert.limitUsd != null
+                        ? `${formatAdminCostUsd(alert.usd)} / ${formatAdminCostUsd(alert.limitUsd)}`
+                        : formatAdminCostUsd(alert.usd)}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold tabular-nums ${
+                      alert.level >= 100 ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-950"
+                    }`}
+                  >
+                    {Math.round(alert.percent)} %
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="mt-8 flex flex-col gap-2">
         <Link

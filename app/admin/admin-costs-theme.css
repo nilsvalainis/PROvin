@@ -1,0 +1,259 @@
+/*
+ * Izmaksu skats: viens komponents, divas tēmas (PRO / IRISS).
+ * Tokeni uz `.admin-costs-view[data-costs-theme]`. IRISS lasa 00-tema (--ink, --acc, --sh).
+ * Specificitāte pēc admin-ios-theme, lai muted pelēkais nepaliek #000.
+ */
+
+.admin-ios-theme .admin-costs-view,
+.admin-ios-theme .admin-costs-view :is(p, span, h1, h2, h3, h4, label, small, li, button, a) {
+  color: inherit;
+}
+
+.admin-ios-theme .admin-costs-view .admin-costs-ink {
+  color: var(--costs-ink);
+}
+.admin-ios-theme .admin-costs-view .admin-costs-soft {
+  color: var(--costs-ink2);
+}
+.admin-ios-theme .admin-costs-view .admin-costs-muted {
+  color: var(--costs-ink3);
+}
+.admin-ios-theme .admin-costs-view .admin-costs-live {
+  color: var(--costs-live-fg);
+}
+.admin-ios-theme .admin-costs-view .admin-costs-chip {
+  color: var(--costs-chip-fg);
+}
+.admin-ios-theme .admin-costs-view .admin-costs-pct {
+  color: var(--costs-ink2);
+}
+.admin-ios-theme .admin-costs-view .admin-costs-tab[data-on="true"] {
+  color: var(--costs-tab-on-fg);
+}
+.admin-ios-theme .admin-costs-view .admin-costs-tab[data-on="false"] {
+  color: var(--costs-tab-off-fg);
+}
+.admin-ios-theme .admin-costs-view .admin-costs-banner[data-level="80"] {
+  color: var(--costs-warn-fg);
+}
+.admin-ios-theme .admin-costs-view .admin-costs-banner[data-level="100"] {
+  color: var(--costs-danger-fg);
+}
+.admin-ios-theme .admin-costs-view .admin-costs-save {
+  color: var(--costs-tab-on-fg);
+}
+
+.admin-costs-view {
+  --costs-ink: #1d1d1f;
+  --costs-ink2: #3a3a3c;
+  --costs-ink3: #8e8e93;
+  --costs-card: #ffffff;
+  --costs-muted-bg: #f2f2f7;
+  --costs-track: #e5e5ea;
+  --costs-hair: #f2f2f7;
+  --costs-bar: #1d1d1f;
+  --costs-tab-on-bg: #1d1d1f;
+  --costs-tab-on-fg: #ffffff;
+  --costs-tab-off-bg: #f2f2f7;
+  --costs-tab-off-fg: #3a3a3c;
+  --costs-live-bg: #d1fadf;
+  --costs-live-fg: #027a48;
+  --costs-warn-border: #f5c518;
+  --costs-warn-bg: #fff8f0;
+  --costs-warn-fg: #9a3412;
+  --costs-danger-border: #fca5a5;
+  --costs-danger-bg: #fef2f2;
+  --costs-danger-fg: #7f1d1d;
+  --costs-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --costs-chip-bg: transparent;
+  --costs-chip-fg: #8e8e93;
+  --costs-edit-bg: #f5f5f7;
+  --costs-input-border: #e5e5ea;
+  color: var(--costs-ink);
+}
+
+.admin-costs-view[data-costs-theme="pro"] {
+  --costs-dot-ai: #1d1d1f;
+  --costs-dot-api: #636366;
+  --costs-dot-google: #8e8e93;
+  --costs-dot-infra: #aeaeb2;
+  --costs-dot-payments: #c7c7cc;
+}
+
+.admin-costs-view[data-costs-theme="iriss"] {
+  --costs-ink: var(--ink, #0b0c10);
+  --costs-ink2: var(--ink2, #5e636e);
+  --costs-ink3: var(--ink3, #9a9faa);
+  --costs-card: var(--s1, #ffffff);
+  --costs-muted-bg: var(--fill, rgba(116, 120, 138, 0.11));
+  --costs-track: var(--fill2, rgba(116, 120, 138, 0.19));
+  --costs-hair: var(--hair, rgba(17, 24, 39, 0.08));
+  --costs-bar: var(--acc, #3d5bd9);
+  --costs-tab-on-bg: var(--ink, #0b0c10);
+  --costs-tab-on-fg: var(--onink, #ffffff);
+  --costs-tab-off-bg: var(--fill, rgba(116, 120, 138, 0.11));
+  --costs-tab-off-fg: var(--ink2, #5e636e);
+  --costs-warn-border: #e0a04a;
+  --costs-warn-bg: var(--warn-soft, rgba(168, 100, 0, 0.12));
+  --costs-warn-fg: var(--warn, #a86400);
+  --costs-danger-border: color-mix(in srgb, #c23b3b 40%, transparent);
+  --costs-danger-bg: rgba(194, 59, 59, 0.1);
+  --costs-danger-fg: #8a1f1f;
+  --costs-shadow: var(--sh, 0 0 0 0.5px rgba(17, 24, 39, 0.05), 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 14px rgba(16, 24, 40, 0.045));
+  --costs-chip-bg: var(--acc-soft, rgba(61, 91, 217, 0.12));
+  --costs-chip-fg: var(--acc, #3d5bd9);
+  --costs-edit-bg: var(--s2, #f4f5f8);
+  --costs-input-border: var(--hair, rgba(17, 24, 39, 0.08));
+  --costs-dot-ai: var(--acc, #3d5bd9);
+  --costs-dot-api: #5b7ae8;
+  --costs-dot-google: #8b9eef;
+  --costs-dot-infra: #b7c2e3;
+  --costs-dot-payments: #c5c9d4;
+}
+
+.admin-m[data-section="iriss"][data-theme="dark"] .admin-costs-view[data-costs-theme="iriss"],
+.admin-m[data-section="iriss"][data-admin-theme="dark"] .admin-costs-view[data-costs-theme="iriss"] {
+  --costs-danger-fg: #f3b4b4;
+  --costs-live-bg: rgba(2, 122, 72, 0.22);
+  --costs-live-fg: #6ee7b7;
+}
+
+.admin-costs-card {
+  background: var(--costs-card);
+  box-shadow: var(--costs-shadow);
+}
+
+.admin-costs-ink {
+  color: var(--costs-ink);
+}
+
+.admin-costs-soft {
+  color: var(--costs-ink2);
+}
+
+.admin-costs-muted {
+  color: var(--costs-ink3);
+}
+
+.admin-costs-hair {
+  border-color: var(--costs-hair);
+}
+
+.admin-costs-track {
+  background: var(--costs-track);
+}
+
+.admin-costs-bar {
+  background: var(--costs-bar);
+}
+
+.admin-costs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px 0 7px;
+  border-radius: 7px;
+  background: var(--costs-chip-bg);
+  color: var(--costs-chip-fg);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.admin-costs-view[data-costs-theme="iriss"] .admin-costs-chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--costs-chip-fg);
+  flex: none;
+}
+
+.admin-costs-tab {
+  display: inline-flex;
+  height: 32px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.admin-costs-tab[data-on="true"] {
+  background: var(--costs-tab-on-bg);
+  color: var(--costs-tab-on-fg);
+}
+
+.admin-costs-tab[data-on="false"] {
+  background: var(--costs-tab-off-bg);
+  color: var(--costs-tab-off-fg);
+}
+
+.admin-costs-tab[data-on="false"]:hover {
+  filter: brightness(0.97);
+}
+
+.admin-costs-live {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--costs-live-bg);
+  color: var(--costs-live-fg);
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.admin-costs-pct {
+  display: inline-flex;
+  height: 24px;
+  min-width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--costs-muted-bg);
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--costs-ink2);
+}
+
+.admin-costs-banner {
+  border-radius: 16px;
+  border-width: 1px;
+  border-style: solid;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.admin-costs-banner[data-level="80"] {
+  border-color: var(--costs-warn-border);
+  background: var(--costs-warn-bg);
+  color: var(--costs-warn-fg);
+}
+
+.admin-costs-banner[data-level="100"] {
+  border-color: var(--costs-danger-border);
+  background: var(--costs-danger-bg);
+  color: var(--costs-danger-fg);
+}
+
+.admin-costs-edit {
+  background: var(--costs-edit-bg);
+}
+
+.admin-costs-edit input {
+  border-color: var(--costs-input-border) !important;
+}
+
+.admin-costs-save {
+  background: var(--costs-tab-on-bg);
+  color: var(--costs-tab-on-fg);
+}

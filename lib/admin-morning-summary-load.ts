@@ -13,6 +13,8 @@ import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
 import { listListingPeeks } from "@/lib/listing-peek-store";
 import { upsellListOverlay } from "@/lib/order-upsell";
 import { readUpsellDisplayOffers } from "@/lib/order-upsell-store";
+import { resolveCostMonth } from "@/lib/admin-costs";
+import { loadCostAlerts } from "@/lib/admin-costs-load";
 import { sourcesFailingInARow } from "@/lib/source-health";
 import { readSourceHealth } from "@/lib/source-health-store";
 
@@ -51,12 +53,15 @@ export async function loadMorningSummary(nowMs = Date.now()): Promise<MorningSum
     };
   });
 
-  const failingSources = await readSourceHealth()
-    .then((doc) => sourcesFailingInARow(doc, 3))
-    .catch(() => []);
+  const [failingSources, costAlerts] = await Promise.all([
+    readSourceHealth()
+      .then((doc) => sourcesFailingInARow(doc, 3))
+      .catch(() => []),
+    loadCostAlerts(resolveCostMonth(null, nowMs), nowMs).catch(() => []),
+  ]);
 
   return {
-    summary: { ...buildMorningSummary(inputs, peeks, nowMs), failingSources },
+    summary: { ...buildMorningSummary(inputs, peeks, nowMs), failingSources, costAlerts },
     stripeError: stripeError ?? null,
   };
 }

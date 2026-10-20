@@ -527,6 +527,7 @@ export function morningSummaryEmailHtml(opts: {
   dueTodayAudits: MorningSummaryEmailLine[];
   newPeeks: MorningSummaryEmailLine[];
   failingSources?: MorningSummaryEmailLine[];
+  costAlerts?: MorningSummaryEmailLine[];
 }): string {
   const empty =
     opts.overdueAudits.length + opts.dueTodayAudits.length + opts.newPeeks.length === 0
@@ -556,6 +557,7 @@ ${morningSummaryEmailSection("Kavētie auditi (48 h)", opts.overdueAudits)}
 ${morningSummaryEmailSection("Šodienas termiņi", opts.dueTodayAudits)}
 ${morningSummaryEmailSection("Jauni ātrie vērtējumi (24 h)", opts.newPeeks)}
 ${morningSummaryEmailSection("Datu avoti ar kļūdām 3 reizes pēc kārtas (pārbaudi piekļuvi)", opts.failingSources ?? [])}
+${morningSummaryEmailSection("Izmaksas", opts.costAlerts ?? [])}
 ${empty}
 ${ctaButton(opts.pageUrl, "Atvērt kopsavilkumu")}
 `;
