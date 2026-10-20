@@ -360,33 +360,52 @@ function normalizeAsvJojIngest(raw: unknown): AsvJojIngest {
   };
 }
 
+/**
+ * Admin „+ Rinda” appends an empty draft at the end. Persist/hydrate runs
+ * `normalizeAsvBlock` via `mergeSourceBlocksWithDefaults`, so empty rows must
+ * stay if they are trailing. Mid-list blanks are still dropped.
+ */
+function keepRowsWithTrailingEmpty<T>(rows: T[], hasData: (r: T) => boolean, empty?: () => T): T[] {
+  let end = rows.length;
+  while (end > 0 && !hasData(rows[end - 1]!)) end--;
+  const data = rows.slice(0, end).filter(hasData);
+  const trailing = rows.slice(end);
+  if (data.length === 0) {
+    if (trailing.length > 0) return trailing;
+    return empty ? [empty()] : [];
+  }
+  return [...data, ...trailing];
+}
+
 export function normalizeAsvBlock(raw: unknown): AsvBlockState {
   const e = emptyAsvBlock();
   if (!raw || typeof raw !== "object") return e;
   const o = raw as Record<string, unknown>;
-  const withFallback = <T>(rows: T[], empty: () => T): T[] => (rows.length > 0 ? rows : [empty()]);
 
-  const checks = arr(o.checks)
-    .map((x) => {
+  const checks = keepRowsWithTrailingEmpty(
+    arr(o.checks).map((x) => {
       const r = rowObj(x);
       const severity = r.severity === "alert" ? "alert" : "ok";
       return { label: str(r.label, 120), status: str(r.status, 120), severity } as AsvCheckRow;
-    })
-    .filter(asvCheckRowHasData);
+    }),
+    asvCheckRowHasData,
+  );
 
-  const mileage = arr(o.mileage)
-    .map((x) => {
+  const mileage = keepRowsWithTrailingEmpty(
+    arr(o.mileage).map((x) => {
       const r = rowObj(x);
       return {
         date: str(r.date, 40),
         odometer: str(r.odometer, 40),
         country: str(r.country, 120),
       } as AutoRecordsServiceRow;
-    })
-    .filter(autoRecordsRowHasData);
+    }),
+    autoRecordsRowHasData,
+    emptyAsvMileageRow,
+  );
 
-  const damages = arr(o.damages)
-    .map((x) => {
+  const damages = keepRowsWithTrailingEmpty(
+    arr(o.damages).map((x) => {
       const r = rowObj(x);
       return {
         date: str(r.date, 40),
@@ -394,19 +413,23 @@ export function normalizeAsvBlock(raw: unknown): AsvBlockState {
         amount: str(r.amount, 60),
         description: str(r.description, 400),
       } as AsvDamageRow;
-    })
-    .filter(asvDamageRowHasData);
+    }),
+    asvDamageRowHasData,
+    emptyAsvDamageRow,
+  );
 
   const records = (key: "brands" | "liens" | "thefts") =>
-    arr(o[key])
-      .map((x) => {
+    keepRowsWithTrailingEmpty(
+      arr(o[key]).map((x) => {
         const r = rowObj(x);
         return { date: str(r.date, 40), label: str(r.label, 160), detail: str(r.detail, 400) } as AsvRecordRow;
-      })
-      .filter(asvRecordRowHasData);
+      }),
+      asvRecordRowHasData,
+      emptyAsvRecordRow,
+    );
 
-  const titles = arr(o.titles)
-    .map((x) => {
+  const titles = keepRowsWithTrailingEmpty(
+    arr(o.titles).map((x) => {
       const r = rowObj(x);
       return {
         date: str(r.date, 40),
@@ -414,11 +437,13 @@ export function normalizeAsvBlock(raw: unknown): AsvBlockState {
         odometer: str(r.odometer, 40),
         note: str(r.note, 200),
       } as AsvTitleRow;
-    })
-    .filter(asvTitleRowHasData);
+    }),
+    asvTitleRowHasData,
+    emptyAsvTitleRow,
+  );
 
-  const sales = arr(o.sales)
-    .map((x) => {
+  const sales = keepRowsWithTrailingEmpty(
+    arr(o.sales).map((x) => {
       const r = rowObj(x);
       return {
         date: str(r.date, 40),
@@ -427,8 +452,10 @@ export function normalizeAsvBlock(raw: unknown): AsvBlockState {
         price: str(r.price, 60),
         status: str(r.status, 80),
       } as AsvSaleRow;
-    })
-    .filter(asvSaleRowHasData);
+    }),
+    asvSaleRowHasData,
+    emptyAsvSaleRow,
+  );
 
   const synced = syncAsvPhotoGroupsAndFlat(normalizeAsvPhotoGroups(o.photoGroups, o.photos));
 
@@ -446,13 +473,13 @@ export function normalizeAsvBlock(raw: unknown): AsvBlockState {
     overlapCompare: normalizeAsvOverlapCompare(o.overlapCompare),
     sourceAttribution: normalizeAsvSourceAttribution(o.sourceAttribution),
     checks,
-    mileage: withFallback(mileage, emptyAsvMileageRow),
-    damages: withFallback(damages, emptyAsvDamageRow),
-    brands: withFallback(records("brands"), emptyAsvRecordRow),
-    titles: withFallback(titles, emptyAsvTitleRow),
-    sales: withFallback(sales, emptyAsvSaleRow),
-    liens: withFallback(records("liens"), emptyAsvRecordRow),
-    thefts: withFallback(records("thefts"), emptyAsvRecordRow),
+    mileage,
+    damages,
+    brands: records("brands"),
+    titles,
+    sales,
+    liens: records("liens"),
+    thefts: records("thefts"),
     comments: str(o.comments, 12000),
     rawUnprocessedData: str(o.rawUnprocessedData, 200000),
     aiContextRaw: str(o.aiContextRaw, 200000),
