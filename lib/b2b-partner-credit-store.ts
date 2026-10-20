@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { del, get } from "@vercel/blob";
+import { del } from "@vercel/blob";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import {
   emptyB2bCreditWallet,
@@ -13,6 +13,8 @@ import {
 } from "@/lib/b2b-partner-credits";
 import { normalizeBlobEtag } from "@/lib/blob-etag";
 import { putBlobBodyIfMatch } from "@/lib/blob-if-match-put";
+import { isNodeNotFoundError, readPrivateBlobText } from "@/lib/blob-read";
+import { parseJsonDocObject } from "@/lib/b2b-json-doc-store";
 import {
   compareAndSwap,
   ConditionalWriteConflict,
@@ -48,20 +50,9 @@ async function readFromBlob(
   partnerId: string,
   token: string,
 ): Promise<{ wallet: B2bCreditWallet; etag: string } | null> {
-  try {
-    const res = await get(blobKey(partnerId), {
-      access: "private",
-      token,
-      useCache: false,
-    });
-    if (!res || res.statusCode !== 200 || !res.stream) return null;
-    const text = await new Response(res.stream).text();
-    const etag = normalizeBlobEtag(res.blob?.etag);
-    if (!etag) return null;
-    return { wallet: parseB2bCreditWallet(JSON.parse(text) as unknown), etag };
-  } catch {
-    return null;
-  }
+  const snap = await readPrivateBlobText({ pathname: blobKey(partnerId), token });
+  if (snap.state === "missing") return null;
+  return { wallet: parseB2bCreditWallet(parseJsonDocObject(snap.text)), etag: snap.etag };
 }
 
 async function writeToBlob(
@@ -84,9 +75,10 @@ async function readFromFilesystem(
 ): Promise<{ wallet: B2bCreditWallet; etag: string } | null> {
   try {
     const raw = await fs.readFile(filePath(partnerId), "utf8");
-    return { wallet: parseB2bCreditWallet(JSON.parse(raw) as unknown), etag: hashBody(raw) };
-  } catch {
-    return null;
+    return { wallet: parseB2bCreditWallet(parseJsonDocObject(raw)), etag: hashBody(raw) };
+  } catch (err) {
+    if (isNodeNotFoundError(err)) return null;
+    throw err;
   }
 }
 
@@ -95,7 +87,8 @@ async function writeToFilesystem(partnerId: string, wallet: B2bCreditWallet, eta
   let current: string | null = null;
   try {
     current = hashBody(await fs.readFile(fp, "utf8"));
-  } catch {
+  } catch (err) {
+    if (!isNodeNotFoundError(err)) throw err;
     current = null;
   }
   if (current !== etag) throw new ConditionalWriteConflict();
@@ -105,7 +98,8 @@ async function writeToFilesystem(partnerId: string, wallet: B2bCreditWallet, eta
   let again: string | null = null;
   try {
     again = hashBody(await fs.readFile(fp, "utf8"));
-  } catch {
+  } catch (err) {
+    if (!isNodeNotFoundError(err)) throw err;
     again = null;
   }
   if (again !== etag) {

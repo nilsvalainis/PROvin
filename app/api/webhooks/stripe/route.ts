@@ -10,7 +10,12 @@ import { readB2bWallet, updateB2bWallet } from "@/lib/b2b-wallet-store";
 import { notifyAdminEmail, notifyAdminTelegram } from "@/lib/notify";
 import { persistPaidOrderInvoice } from "@/lib/invoice-storage";
 import { triggerInvoiceSequenceRepairInBackground } from "@/lib/invoice-counter";
-import { releaseStripeEvent, tryBeginStripeEvent } from "@/lib/stripe-webhook-dedupe";
+import {
+  completeStripeEvent,
+  releaseStripeEvent,
+  tryBeginStripeEvent,
+} from "@/lib/stripe-webhook-dedupe-store";
+import { stripeShouldSendMetaPurchase } from "@/lib/stripe-webhook-dedupe";
 import { ensureConsultationDraftSeed } from "@/lib/admin-consultation-draft-store";
 import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/stripe-session";
 import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
@@ -50,31 +55,32 @@ async function fulfillPaidCheckoutSession(
   stripe: Stripe,
   stripeEventId: string,
   thinSession: Stripe.Checkout.Session,
-): Promise<void> {
+): Promise<"pending" | "done"> {
   const session = await stripe.checkout.sessions.retrieve(thinSession.id);
   const ps = session.payment_status;
   if (ps !== "paid" && ps !== "no_payment_required") {
-    console.info("[stripe webhook] skip fulfillment — session not paid yet", {
+    console.info("[stripe webhook] skip fulfillment - session not paid yet", {
       sessionId: session.id,
       payment_status: ps,
     });
-    releaseStripeEvent(stripeEventId);
-    return;
+    await releaseStripeEvent(stripeEventId);
+    return "pending";
   }
 
-  if (ps === "paid") {
-    void notifyMetaPurchaseFromStripeSession(session);
-  }
-
-  if (!tryBeginStripeEvent(fulfillDedupeKey(session.id))) {
+  if (!(await tryBeginStripeEvent(fulfillDedupeKey(session.id)))) {
     console.info("[stripe webhook] fulfillment already recorded for session", { sessionId: session.id });
-    return;
+    return "done";
+  }
+
+  if (stripeShouldSendMetaPurchase({ paymentStatus: ps, sessionDedupeAcquired: true })) {
+    void notifyMetaPurchaseFromStripeSession(session);
   }
 
   try {
     if ((session.metadata?.fulfillment ?? "").trim() === "order_upsell") {
       await fulfillOrderUpsellPayment(session);
-      return;
+      await completeStripeEvent(fulfillDedupeKey(thinSession.id));
+      return "done";
     }
 
     try {
@@ -197,13 +203,21 @@ async function fulfillPaidCheckoutSession(
 
     console.info("PROVIN order:", payload);
     triggerInvoiceSequenceRepairInBackground();
-    if (isWalletTopup) return;
+    if (isWalletTopup) {
+      await completeStripeEvent(fulfillDedupeKey(thinSession.id));
+      return "done";
+    }
 
     const checkoutLine = getCheckoutLineFromSession(session);
     const fulfillment = session.metadata?.fulfillment?.trim() ?? "";
     const partnerId = session.metadata?.partner_id?.trim() ?? "";
     const packQtyRaw = Number.parseInt(session.metadata?.pack_qty ?? "", 10);
 
+    /**
+     * Vecās kredītu pakas: tikai Stripe sesijām, kurām `fulfillment=b2b_pack` ielika
+     * serveris (partneru paku ceļš slēgts). Publiskais checkout šīs atslēgas vairs
+     * nepieņem no klienta ievades.
+     */
     if (
       fulfillment === "b2b_pack" &&
       (checkoutLine === "dealer" || checkoutLine === "business") &&
@@ -329,8 +343,10 @@ async function fulfillPaidCheckoutSession(
         }
       });
     }
+    await completeStripeEvent(fulfillDedupeKey(thinSession.id));
+    return "done";
   } catch (e) {
-    releaseStripeEvent(fulfillDedupeKey(thinSession.id));
+    await releaseStripeEvent(fulfillDedupeKey(thinSession.id));
     throw e;
   }
 }
@@ -390,15 +406,21 @@ export async function POST(req: Request) {
   }
 
   if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
-    if (!tryBeginStripeEvent(event.id)) {
-      return NextResponse.json({ received: true, duplicate: true });
+    try {
+      if (!(await tryBeginStripeEvent(event.id))) {
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+    } catch (e) {
+      console.error("[stripe webhook] dedupe begin failed:", e);
+      return NextResponse.json({ error: "dedupe_unavailable" }, { status: 500 });
     }
 
     try {
       const thin = event.data.object as Stripe.Checkout.Session;
-      await fulfillPaidCheckoutSession(stripe, event.id, thin);
+      const state = await fulfillPaidCheckoutSession(stripe, event.id, thin);
+      if (state === "done") await completeStripeEvent(event.id);
     } catch (e) {
-      releaseStripeEvent(event.id);
+      await releaseStripeEvent(event.id);
       console.error(`[stripe webhook] ${event.type}:`, e);
       return NextResponse.json({ error: "Apstrādes kļūda" }, { status: 500 });
     }

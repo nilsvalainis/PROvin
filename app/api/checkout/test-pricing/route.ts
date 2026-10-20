@@ -20,7 +20,7 @@ import {
   resolveInitiateCheckoutValueEur,
   stripeMetaCapiMetadataFromRequest,
 } from "@/lib/meta-capi";
-import { stripeCheckoutProductMetadata } from "@/lib/stripe-checkout-metadata";
+import { mergeStripeCheckoutMetadata, stripeCheckoutProductMetadata } from "@/lib/stripe-checkout-metadata";
 import {
   getTestPricingPlan,
   isTestPricingPlanId,
@@ -236,24 +236,28 @@ export async function POST(req: Request) {
           consent_collection: { terms_of_service: "required" as const },
           custom_fields: buildCheckoutCustomFields(plan, locale),
         }),
-    metadata: {
-      ...stripeCheckoutProductMetadata(plan.id),
-      ...stripeAttributionMetadataFromRequest(req.headers.get("cookie"), ATTR_COOKIE_NAME),
-      ...stripeMetaCapiMetadataFromRequest(req),
-      listing_url: listingUrl,
-      vin: vin || "",
-      report_delivery: "email",
-      source_page: sourcePage,
-      ...(clientCollected
-        ? {
-            withdrawal_waiver_ack: "true",
-            authorization_ack: "true",
-            ...(isTp5CheckoutSource(sourcePage) ? { inline_checkout: "true" } : {}),
-          }
-        : {}),
-      ...invoiceBuyerMetadataFromUnknown(raw),
-      ...checkoutEmail.metadata,
-    },
+    metadata: mergeStripeCheckoutMetadata(
+      {
+        ...stripeAttributionMetadataFromRequest(req.headers.get("cookie"), ATTR_COOKIE_NAME),
+        ...stripeMetaCapiMetadataFromRequest(req),
+        ...invoiceBuyerMetadataFromUnknown(raw),
+        ...checkoutEmail.metadata,
+      },
+      {
+        ...stripeCheckoutProductMetadata(plan.id),
+        listing_url: listingUrl,
+        vin: vin || "",
+        report_delivery: "email",
+        source_page: sourcePage,
+        ...(clientCollected
+          ? {
+              withdrawal_waiver_ack: "true",
+              authorization_ack: "true",
+              ...(isTp5CheckoutSource(sourcePage) ? { inline_checkout: "true" } : {}),
+            }
+          : {}),
+      },
+    ),
     locale: stripeCheckoutLocale(locale),
     ...(submitNote
       ? {

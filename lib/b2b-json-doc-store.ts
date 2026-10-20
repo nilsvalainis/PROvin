@@ -4,9 +4,9 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { get } from "@vercel/blob";
 import { normalizeBlobEtag } from "@/lib/blob-etag";
 import { putBlobBodyIfMatch } from "@/lib/blob-if-match-put";
+import { BlobReadFailedError, isNodeNotFoundError, readPrivateBlobText } from "@/lib/blob-read";
 import {
   compareAndSwap,
   ConditionalWriteConflict,
@@ -16,12 +16,15 @@ import {
 /**
  * Viens JSON dokuments uz atslēgu: Blob (produkcija) ar `ifMatch` vai lokālais fails.
  * `update` ir compare-and-swap, tāpēc vienlaicīgi pieprasījumi nepārraksta viens otru.
+ * Lasīšanas kļūda nav „tukšs” - pretējā gadījumā nākamais raksts var izdzēst partnerus/maku.
  */
 export type JsonDocStore<T> = {
   read: (key: string) => Promise<T>;
   update: <R>(
     key: string,
-    mutate: (current: T) => Promise<{ value: R; next?: T }> | { value: R; next?: T },
+    mutate: (
+      current: T,
+    ) => { value: R; next?: T } | Promise<{ value: R; next?: T }>,
   ) => Promise<R>;
 };
 
@@ -31,6 +34,23 @@ function hashBody(body: string): string {
 
 function blobToken(): string | null {
   return process.env.BLOB_READ_WRITE_TOKEN?.trim() || null;
+}
+
+export function parseJsonDocText(text: string): unknown {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch (err) {
+    throw new BlobReadFailedError(err instanceof Error ? err.message : "json_parse_failed");
+  }
+}
+
+/** Dokumenta saknei jābūt objektam. `null` / masīvs / skalārs nav „tukšs” - citādi nākamais raksts izdzēš datus. */
+export function parseJsonDocObject(text: string): Record<string, unknown> {
+  const raw = parseJsonDocText(text);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new BlobReadFailedError("json_not_object");
+  }
+  return raw as Record<string, unknown>;
 }
 
 export function createJsonDocStore<T>(opts: {
@@ -48,25 +68,20 @@ export function createJsonDocStore<T>(opts: {
   const blobKey = (key: string) => `${opts.blobPrefix}${key}.json`;
 
   async function readBlob(key: string, token: string): Promise<{ value: T; etag: string } | null> {
-    try {
-      const res = await get(blobKey(key), { access: "private", token, useCache: false });
-      if (!res || res.statusCode !== 200 || !res.stream) return null;
-      const text = await new Response(res.stream).text();
-      const etag = normalizeBlobEtag(res.blob?.etag);
-      if (!etag) return null;
-      return { value: opts.parse(JSON.parse(text) as unknown), etag };
-    } catch {
-      return null;
-    }
+    const snap = await readPrivateBlobText({ pathname: blobKey(key), token });
+    if (snap.state === "missing") return null;
+    return { value: opts.parse(parseJsonDocObject(snap.text)), etag: snap.etag };
   }
 
   async function readFile(key: string): Promise<{ value: T; etag: string } | null> {
+    let raw: string;
     try {
-      const raw = await fs.readFile(filePath(key), "utf8");
-      return { value: opts.parse(JSON.parse(raw) as unknown), etag: hashBody(raw) };
-    } catch {
-      return null;
+      raw = await fs.readFile(filePath(key), "utf8");
+    } catch (err) {
+      if (isNodeNotFoundError(err)) return null;
+      throw err;
     }
+    return { value: opts.parse(parseJsonDocObject(raw)), etag: hashBody(raw) };
   }
 
   async function snapshot(key: string): Promise<ConditionalSnapshot<T>> {
@@ -86,8 +101,9 @@ export function createJsonDocStore<T>(opts: {
     const currentHash = async () => {
       try {
         return hashBody(await fs.readFile(fp, "utf8"));
-      } catch {
-        return null;
+      } catch (err) {
+        if (isNodeNotFoundError(err)) return null;
+        throw err;
       }
     };
     if ((await currentHash()) !== etag) throw new ConditionalWriteConflict();

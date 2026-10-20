@@ -1,5 +1,6 @@
-import { get, put } from "@vercel/blob";
+import { put } from "@vercel/blob";
 import { blobIfMatchPutFields, normalizeBlobEtag } from "@/lib/blob-etag";
+import { readPrivateBlobText } from "@/lib/blob-read";
 import { ConditionalWriteConflict, isConditionalWriteConflict } from "@/lib/conditional-write";
 
 export type BlobJsonRead = {
@@ -8,23 +9,14 @@ export type BlobJsonRead = {
   rawEtag: string | null;
 };
 
+/** `null` tikai ja objekta nav. Tīkla/5xx kļūda tiek izmesta, nevis uzskatīta par tukšu. */
 export async function readBlobTextWithEtag(opts: {
   pathname: string;
   token: string;
 }): Promise<BlobJsonRead | null> {
-  try {
-    const res = await get(opts.pathname, {
-      access: "private",
-      token: opts.token,
-      useCache: false,
-    });
-    if (!res || res.statusCode !== 200 || !res.stream) return null;
-    const text = await new Response(res.stream).text();
-    const rawEtag = res.blob?.etag?.trim() || null;
-    return { text, rawEtag, etag: normalizeBlobEtag(rawEtag) };
-  } catch {
-    return null;
-  }
+  const snap = await readPrivateBlobText(opts);
+  if (snap.state === "missing") return null;
+  return { text: snap.text, etag: snap.etag, rawEtag: snap.rawEtag };
 }
 
 export type BlobPutEtagResult = {

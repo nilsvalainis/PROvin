@@ -9,6 +9,7 @@ import { invoiceBuyerMetadata } from "@/lib/invoice-buyer";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getPublicSiteOrigin } from "@/lib/site-url";
+import { mergeStripeCheckoutMetadata } from "@/lib/stripe-checkout-metadata";
 import { getStripe } from "@/lib/stripe";
 import { stripeCheckoutLocale } from "@/lib/stripe-session";
 
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
     success_url: `${origin}${prefix}/partneriem/konts?topup=1`,
     cancel_url: `${origin}${prefix}/partneriem/konts`,
     phone_number_collection: { enabled: false },
-    metadata: {
+    metadata: mergeStripeCheckoutMetadata(null, {
       checkout_line: "business",
       fulfillment: B2B_WALLET_TOPUP_FULFILLMENT,
       partner_id: partner.id,
@@ -86,7 +87,7 @@ export async function POST(req: Request) {
         companyReg: partner.companyReg,
         companyAddress: partner.companyAddress,
       }),
-    },
+    }),
     locale: stripeCheckoutLocale(locale),
   });
   if (!session.url) return NextResponse.json({ error: "session_failed" }, { status: 500 });
