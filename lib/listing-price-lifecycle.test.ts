@@ -30,6 +30,17 @@ describe("collectListingPriceLifecyclePoints", () => {
     ]);
   });
 
+  it("does not repeat unchanged km on a later price-change point", () => {
+    const points = collectListingPriceLifecyclePoints({
+      priceHistory: [
+        { date: "09.09.2026", price: 18900, mileage: 192000, year: 2012, delta: 0 },
+        { date: "02.10.2026", price: 18400, mileage: 192000, year: 2012, delta: -500 },
+      ],
+    });
+    expect(points[0]?.mileageKm).toBe(192000);
+    expect(points[1]?.mileageKm).toBeNull();
+  });
+
   it("formats price and ASCII deltas", () => {
     expect(formatListingPriceEur(8500)).toBe("8 500 €");
     expect(formatListingPriceDelta(500)).toBe("+500");

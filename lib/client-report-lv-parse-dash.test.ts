@@ -5,7 +5,8 @@ describe("CSDD parsēšana pēc domuzīmju aizstāšanas (#279)", () => {
   it("pirmā reģistrācija ar en/em domuzīmi joprojām tiek atpazīta", () => {
     for (const dash of ["-", "\u2013", "\u2014"]) {
       const basics = parseLvRegistryBasics(`12.05.2019 ${dash} Pirmā reģistrācija Latvijā`);
-      expect(JSON.stringify(basics)).toContain("12.05.2019");
+      expect(basics.firstRegLatvia).toBe("12.05.2019");
+      expect(basics.firstReg).toBeNull();
     }
   });
 

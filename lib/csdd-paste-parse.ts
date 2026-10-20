@@ -15,6 +15,7 @@ import {
 import { parseCsddMileagePairsDense } from "@/lib/csdd-mileage-dense-parse";
 import {
   parseOwnerRegistrationFromRaw,
+  ownerFirstRegistrationInLatvia,
   parsePreviousRegistrationCountry,
   resolvePrevInspectionBlockFromRaw,
   parseLastTechnicalInspectionHead,
@@ -115,6 +116,12 @@ function looseLvDateToIso(s: string): string {
   return "";
 }
 
+function sameCsddDay(a: string, b: string): boolean {
+  const ia = looseLvDateToIso(a);
+  const ib = looseLvDateToIso(b);
+  return Boolean(ia) && ia === ib;
+}
+
 /**
  * Tehniskie lauki no ielīmēta CSDD teksta (atslēga:vērtība, TAB, regex).
  * Nākamās apskates datums paste laikā tiek ņemts no dokumenta augšas; iepriekšējās — no LV nobraukuma tabulas (applyCsddPasteToForm).
@@ -169,10 +176,18 @@ export function parseCsddTechnicalFields(
     }
   }
 
+  const firstRegLatviaSrc = st.firstRegLatvia ?? basics.firstRegLatvia;
+  const firstRegistrationLatvia = firstRegLatviaSrc
+    ? looseLvDateToIso(firstRegLatviaSrc) || firstRegLatviaSrc.trim()
+    : "";
   const firstRegSrc = st.firstReg ?? basics.firstReg;
-  const firstRegistration = firstRegSrc
+  let firstRegistration = firstRegSrc
     ? looseLvDateToIso(firstRegSrc) || firstRegSrc.trim()
     : "";
+  // „Pirmā reģistrācija Latvijā” nekad neaizpilda pasaules pirmo reģistrāciju.
+  if (firstRegistration && firstRegistrationLatvia && sameCsddDay(firstRegistration, firstRegistrationLatvia)) {
+    firstRegistration = "";
+  }
 
   let engineDisplacementCm3 = (st.engineDisplacementCm3 ?? "").trim();
   if (!engineDisplacementCm3) {
@@ -243,6 +258,7 @@ export function parseCsddTechnicalFields(
     modelYear,
     color,
     firstRegistration,
+    firstRegistrationLatvia,
     engineDisplacementCm3,
     enginePowerKw,
     fuelType,
@@ -550,10 +566,13 @@ export function applyCsddPasteToForm(
     nextInspectionDate = current.nextInspectionDate;
   }
 
-  let firstRegistration = tech.firstRegistration;
-  if (!firstRegistration.trim()) {
-    const firstLv = ownerReg.events.find((e) => /Pirmā\s+reģistrācija\s+Latvijā/i.test(e.label));
-    if (firstLv?.date) firstRegistration = lvDateToIsoFlexible(firstLv.date) || firstLv.date;
+  const firstLv = ownerFirstRegistrationInLatvia(ownerReg.events);
+  const firstLvIso = firstLv?.date ? lvDateToIsoFlexible(firstLv.date) || firstLv.date : "";
+  let firstRegistrationLatvia = tech.firstRegistrationLatvia.trim() || firstLvIso;
+  // „Pirmā reģistrācija Latvijā” nekad neaizpilda pasaules pirmo reģistrāciju.
+  let firstRegistration = tech.firstRegistration.trim();
+  if (firstRegistration && firstRegistrationLatvia && sameCsddDay(firstRegistration, firstRegistrationLatvia)) {
+    firstRegistration = "";
   }
 
   let prevInspectionDate = "";
@@ -624,6 +643,7 @@ export function applyCsddPasteToForm(
   const parsedScalars: Partial<CsddFormFields> = {
     ...techFields,
     firstRegistration,
+    firstRegistrationLatvia,
     opacityCoefficient,
     ownerCountLatvia: ownerReg.ownerCount,
     nextInspectionDate,
@@ -672,6 +692,10 @@ export function backfillCsddExtendedFromRaw(csdd: CsddFormFields): CsddFormField
   }
   if (!(csdd.ownerRegistrationEvents ?? []).some((e) => e.date.trim()) && ownerReg.events.length > 0) {
     patch.ownerRegistrationEvents = ownerReg.events;
+  }
+  if (!csdd.firstRegistrationLatvia.trim()) {
+    const firstLv = ownerFirstRegistrationInLatvia(ownerReg.events);
+    if (firstLv?.date) patch.firstRegistrationLatvia = lvDateToIsoFlexible(firstLv.date) || firstLv.date;
   }
   if (!(csdd.technicalInspectionHistory ?? []).some((r) => r.date.trim()) && ta.length > 0) {
     patch.technicalInspectionHistory = ta;

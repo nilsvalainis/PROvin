@@ -73,6 +73,7 @@ import {
   type AutoRecordsBlockState,
   type WorkspaceSourceBlocks,
 } from "@/lib/admin-source-blocks";
+import { collectWorkspaceRecordDates } from "@/lib/csdd-first-registration-guard";
 import { syncListingAnalysisPhotoGroupsAndFlat } from "@/lib/listing-analysis-photo-types";
 import { syncAutoRecordsPhotoGroupsAndFlat } from "@/lib/auto-records-photo-types";
 import {
@@ -5313,6 +5314,7 @@ export function OrderDetailWorkspace({
                 value={blocksDisplaySafe.csdd}
                 readOnly={false}
                 onChange={(next) => updateSourceBlock("csdd", next)}
+                otherRecordDates={collectWorkspaceRecordDates(blocksDisplaySafe)}
                 trafficFillLevel={traffic.csdd}
                 pdfIncludeBlock={pdfVisibility.csdd}
                 onPdfIncludeBlockChange={(next) => onPdfVisibilityChange({ csdd: next })}

@@ -42,6 +42,17 @@ export type CsddOwnerChangeRow = {
   label: string;
 };
 
+/** CSDD īpašnieku vēstures rinda „Pirmā reģistrācija Latvijā”, ne pirmā pasaulē. */
+export function isCsddFirstRegistrationInLatviaLabel(label: string): boolean {
+  return /pirm[āa]\s+reģistr[āa]cija\s+latvij/i.test(label);
+}
+
+export function ownerFirstRegistrationInLatvia(
+  events: readonly CsddOwnerChangeRow[] | null | undefined,
+): CsddOwnerChangeRow | undefined {
+  return (events ?? []).find((e) => e.date.trim() && isCsddFirstRegistrationInLatviaLabel(e.label));
+}
+
 const PAGE_FOOTER_RE = /^\s*\d+\s*\/\s*\d+\s*$/;
 const DEFECT_ROW_RE = /^([\d.]+)\s+(\d)\s+(.*)$/;
 const OLD_DEFECT_ROW_RE = /^(\d{3})\s+(\d)\s+(.*)$/;
