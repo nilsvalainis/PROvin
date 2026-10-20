@@ -81,10 +81,11 @@ async function listBlobPaths(prefix, token) {
   return out;
 }
 
-async function fetchBlobText(url, token) {
+/** Baiti, ne `text()` - PDF/foto citādi tiek sabojāti UTF-8 dekodēšanā. */
+async function fetchBlobBytes(url, token) {
   const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
   if (!res.ok) return null;
-  return res.text();
+  return Buffer.from(await res.arrayBuffer());
 }
 
 async function backupBlobPrefix(prefix, token, destDir) {
@@ -93,14 +94,14 @@ async function backupBlobPrefix(prefix, token, destDir) {
   let files = 0;
   let bytes = 0;
   for (const [pathname, url] of blobs) {
-    const text = await fetchBlobText(url, token);
-    if (text == null) continue;
+    const body = await fetchBlobBytes(url, token);
+    if (body == null) continue;
     const rel = pathname.startsWith(prefix) ? pathname.slice(prefix.length) : path.basename(pathname);
     const fp = path.join(destDir, rel.replace(/\//g, "__"));
     await fs.mkdir(path.dirname(fp), { recursive: true });
-    await fs.writeFile(fp, text, "utf8");
+    await fs.writeFile(fp, body);
     files += 1;
-    bytes += Buffer.byteLength(text, "utf8");
+    bytes += body.length;
   }
   return { files, bytes, skipped: files === 0 };
 }
@@ -158,6 +159,8 @@ async function main() {
     { key: "iriss-scan", prefix: "iriss-scan/" },
     { key: "iriss-sludinajumi", prefix: process.env.ADMIN_IRISS_LISTINGS_BLOB_PREFIX?.trim() || "iriss-sludinajumi/" },
     { key: "manual-orders", prefix: "admin-manual-orders/" },
+    { key: "b2b-partner-credits", prefix: "b2b-partner-credits/" },
+    { key: "daily-backups", prefix: process.env.ADMIN_DRAFT_DAILY_BACKUP_BLOB_PREFIX?.trim() || "admin-daily-backups/" },
   ];
 
   if (blobToken) {

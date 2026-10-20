@@ -112,14 +112,18 @@ async function main() {
   if (blobToken && orderPrefix) {
     const blobDir = path.join(backupRoot, "vercel-blob-order-drafts");
     await fs.mkdir(blobDir, { recursive: true });
-    const blobs = await listBlobJson(orderPrefix, blobToken);
+    const normalizedPrefix = orderPrefix.endsWith("/") ? orderPrefix : `${orderPrefix}/`;
+    const blobs = await listBlobJson(normalizedPrefix, blobToken);
     let files = 0;
     let bytes = 0;
     for (const [pathname, url] of blobs) {
       const text = await fetchBlobText(url, blobToken);
       if (!text) continue;
-      const name = path.basename(pathname);
-      const fp = path.join(blobDir, name);
+      /** Saglabā apakšmapes (`_meta/`, `order_upsell/` u.c.) - `basename` sajauca vienādus nosaukumus. */
+      const rel = pathname.startsWith(normalizedPrefix) ? pathname.slice(normalizedPrefix.length) : path.basename(pathname);
+      if (rel.split("/").some((seg) => !seg || seg === "." || seg === "..")) continue;
+      const fp = path.join(blobDir, ...rel.split("/"));
+      await fs.mkdir(path.dirname(fp), { recursive: true });
       await fs.writeFile(fp, text, "utf8");
       files += 1;
       bytes += Buffer.byteLength(text, "utf8");
