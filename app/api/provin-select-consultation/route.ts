@@ -4,7 +4,7 @@ import { isSmtpConfigured, sendProvinSelectConsultationLeadEmail } from "@/lib/e
 import { isValidOrderEmail, isValidOrderPhone } from "@/lib/order-field-validation";
 import { getAdminOrderNotifyEmail } from "@/lib/notify";
 import { isProvinSelectPublic } from "@/lib/provin-select-flags";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   }
 
   const ip = getClientIpFromRequest(req);
-  const rl = checkRateLimit(`provin_select:${ip}`, MAX_PER_WINDOW, WINDOW_MS);
+  const rl = await checkRateLimit(`provin_select:${ip}`, MAX_PER_WINDOW, WINDOW_MS);
   if (!rl.ok) {
     return NextResponse.json(
       { error: "rate_limited", retryAfterSec: rl.retryAfterSec },

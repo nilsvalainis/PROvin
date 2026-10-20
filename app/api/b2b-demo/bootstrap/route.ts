@@ -4,13 +4,13 @@ import { bootstrapFirstB2bDemoTenant } from "@/lib/b2b-demo-seed";
 import { isUsableB2bDemoPassword } from "@/lib/b2b-demo-users";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const limited = checkRateLimit(`b2b-demo-bootstrap:${ip}`, 5, 15 * 60 * 1000);
+  const limited = await checkRateLimit(`b2b-demo-bootstrap:${ip}`, 5, 15 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json({ error: "Pārāk daudz mēģinājumu." }, { status: 429 });
   }

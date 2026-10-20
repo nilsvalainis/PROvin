@@ -7,6 +7,7 @@
 import { NextResponse } from "next/server";
 
 import { cleanupExpiredQuickEvals } from "@/lib/quick-eval-service";
+import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function GET(req: Request) {
     .filter(Boolean);
   if (secrets.length === 0) return NextResponse.json({ error: "missing_cron_secret" }, { status: 503 });
   const auth = req.headers.get("authorization")?.trim() ?? "";
-  if (!secrets.some((s) => auth === `Bearer ${s}`)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  if (!bearerMatchesAnySecret(auth, secrets)) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   try {
     const r = await cleanupExpiredQuickEvals();
     return NextResponse.json({ ok: true, ...r });

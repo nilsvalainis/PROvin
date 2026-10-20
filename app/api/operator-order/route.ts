@@ -11,7 +11,7 @@ import {
   vinOrPlateErrorMessage,
 } from "@/lib/order-field-validation";
 import { operatorOrderConfigured, verifyOperatorOrderKey } from "@/lib/operator-order-auth";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   const ip = getClientIpFromRequest(req);
-  const rl = checkRateLimit(`operator-order:${ip}`, CHECKOUT_MAX_PER_WINDOW, CHECKOUT_WINDOW_MS);
+  const rl = await checkRateLimit(`operator-order:${ip}`, CHECKOUT_MAX_PER_WINDOW, CHECKOUT_WINDOW_MS);
   if (!rl.ok) {
     return NextResponse.json(
       { error: "Pārāk daudz pieprasījumu. Uzgaidi un mēģini vēlreiz." },

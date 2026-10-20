@@ -9,6 +9,7 @@
 import { NextResponse } from "next/server";
 
 import { runAdminAuditSlaWarnings } from "@/lib/admin-audit-sla-warning-run";
+import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ function isAuthorized(req: Request): { ok: true } | { ok: false; status: number;
   if (secrets.length === 0) return { ok: false, status: 503, error: "missing_cron_secret" };
   const auth = req.headers.get("authorization")?.trim() ?? "";
   if (!auth) return { ok: false, status: 401, error: "missing_authorization" };
-  if (!secrets.some((s) => auth === `Bearer ${s}`)) return { ok: false, status: 403, error: "forbidden" };
+  if (!bearerMatchesAnySecret(auth, secrets)) return { ok: false, status: 403, error: "forbidden" };
   return { ok: true };
 }
 

@@ -4,7 +4,7 @@ import { paidIdentitiesForUnpaidFilter } from "@/lib/admin-unpaid-orders";
 import { findUnpaidReminderRecord, listUnpaidReminderRecords } from "@/lib/admin-unpaid-reminder-store";
 import { isSafeUnpaidPaymentToken, unpaidReminderOrderUrl } from "@/lib/admin-unpaid-payment-link";
 import { hashClientLinkToken } from "@/lib/client-link-crypto";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
@@ -26,7 +26,7 @@ function plain(status: number, text: string): NextResponse {
 
 export async function GET(req: Request, ctx: Ctx) {
   const ip = getClientIpFromRequest(req);
-  const rl = checkRateLimit(`apmaksa:${ip}`, 40, 10 * 60 * 1000);
+  const rl = await checkRateLimit(`apmaksa:${ip}`, 40, 10 * 60 * 1000);
   if (!rl.ok) {
     return plain(429, "Pārāk daudz pieprasījumu. Mēģiniet vēlāk.");
   }

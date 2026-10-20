@@ -17,7 +17,7 @@ import {
   isPlausibleListingUrl,
   normalizeVin,
 } from "@/lib/order-field-validation";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   const partner = await resolveActiveB2bPartner();
   if (!partner) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const limited = checkRateLimit(`partner-wallet-bulk:${getClientIpFromRequest(req)}`, 20, 10 * 60 * 1000);
+  const limited = await checkRateLimit(`partner-wallet-bulk:${getClientIpFromRequest(req)}`, 20, 10 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "rate_limited" },

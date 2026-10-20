@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { loginB2bDemoUser } from "@/lib/b2b-demo-auth";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { ensureB2bDemoSeed } from "@/lib/b2b-demo-seed";
 
 export const runtime = "nodejs";
@@ -11,7 +11,7 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const limited = checkRateLimit(`b2b-demo-login:${ip}`, LOGIN_MAX_PER_WINDOW, LOGIN_WINDOW_MS);
+  const limited = await checkRateLimit(`b2b-demo-login:${ip}`, LOGIN_MAX_PER_WINDOW, LOGIN_WINDOW_MS);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "Pārāk daudz mēģinājumu. Uzgaidi un mēģini vēlreiz." },

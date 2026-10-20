@@ -5,7 +5,7 @@ import {
   verifyAdminCredentials,
 } from "@/lib/admin-auth";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { envAdminDisplayName, setStaffSessionCookie, signTotpChallenge, verifyTotpChallenge } from "@/lib/staff-auth";
 import { ENV_ADMIN_USER_ID, staffHomePath } from "@/lib/staff-roles";
 import {
@@ -30,7 +30,7 @@ function actorKey(username: string): string {
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
   const userAgent = req.headers.get("user-agent") ?? "";
-  const limitedIp = checkRateLimit(`admin-login:${ip}`, LOGIN_MAX_PER_WINDOW, LOGIN_WINDOW_MS);
+  const limitedIp = await checkRateLimit(`admin-login:${ip}`, LOGIN_MAX_PER_WINDOW, LOGIN_WINDOW_MS);
   if (!limitedIp.ok) {
     await appendStaffAudit({
       userId: ENV_ADMIN_USER_ID,
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   const password = typeof body.password === "string" ? body.password : "";
   const totp = typeof body.totp === "string" ? body.totp : "";
   const challenge = typeof body.challenge === "string" ? body.challenge : "";
-  const limitedAccount = checkRateLimit(
+  const limitedAccount = await checkRateLimit(
     `admin-login-acc:${actorKey(username) || ip}`,
     LOGIN_MAX_PER_WINDOW,
     LOGIN_WINDOW_MS,

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { dispatchPartnerPasswordResetEmail } from "@/lib/b2b-partner-password-reset-mail";
 import { requestB2bPartnerPasswordReset } from "@/lib/b2b-partner-store";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -11,7 +11,7 @@ const FORGOT_WINDOW_MS = 15 * 60 * 1000;
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const limited = checkRateLimit(`partner-password-forgot:${ip}`, FORGOT_MAX_PER_WINDOW, FORGOT_WINDOW_MS);
+  const limited = await checkRateLimit(`partner-password-forgot:${ip}`, FORGOT_MAX_PER_WINDOW, FORGOT_WINDOW_MS);
   if (!limited.ok) {
     return NextResponse.json(
       { ok: true },

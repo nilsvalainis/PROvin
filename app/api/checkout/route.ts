@@ -10,7 +10,7 @@ import {
   vinOrPlateErrorMessage,
 } from "@/lib/order-field-validation";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { ORDER_SECTION_ID } from "@/lib/order-section";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
@@ -63,7 +63,7 @@ type CheckoutBody = {
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const checkoutRl = checkRateLimit(`checkout:${ip}`, CHECKOUT_MAX_PER_WINDOW, CHECKOUT_WINDOW_MS);
+  const checkoutRl = await checkRateLimit(`checkout:${ip}`, CHECKOUT_MAX_PER_WINDOW, CHECKOUT_WINDOW_MS);
   if (!checkoutRl.ok) {
     const copy = await getOrderCopy(routing.defaultLocale);
     return NextResponse.json(

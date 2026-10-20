@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import { isSafeIrissOfferAttachmentId, isSafeIrissOfferLinkToken } from "@/lib/iriss-offer-client-link";
 import { readIrissOfferPublicPhoto } from "@/lib/iriss-offer-client-link-load";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIpFromRequest } from "@/lib/client-ip";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 function clientIp(req: Request): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip")?.trim() || "unknown";
+  return getClientIpFromRequest(req);
 }
 
 export async function GET(req: Request, ctx: { params: Promise<{ token: string; attachmentId: string }> }) {
-  const ipRl = checkRateLimit(`iriss-offer-photo:${clientIp(req)}`, 180, 10 * 60 * 1000);
+  const ipRl = await checkRateLimit(`iriss-offer-photo:${clientIp(req)}`, 180, 10 * 60 * 1000);
   if (!ipRl.ok) {
     return new NextResponse(null, { status: 404, headers: { "X-Robots-Tag": "noindex, nofollow", "Cache-Control": "private, no-store" } });
   }

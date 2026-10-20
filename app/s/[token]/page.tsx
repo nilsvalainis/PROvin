@@ -9,8 +9,9 @@ import {
   isSafeClientLinkToken,
 } from "@/lib/client-link";
 import { readClientLinkByToken } from "@/lib/client-link-store";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
+import { getClientIpFromHeaders } from "@/lib/client-ip";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -42,8 +43,8 @@ export default async function ClientSecureLinkPage({ params }: { params: Promise
   const token = raw?.trim() ?? "";
 
   const headerList = await headers();
-  const ip = headerList.get("x-forwarded-for")?.split(",")[0]?.trim() || headerList.get("x-real-ip")?.trim() || "unknown";
-  const ipRl = checkRateLimit(`client-link-get:${ip}`, 40, 10 * 60 * 1000);
+  const ip = getClientIpFromHeaders(headerList);
+  const ipRl = await checkRateLimit(`client-link-get:${ip}`, 40, 10 * 60 * 1000);
   if (!ipRl.ok) {
     return (
       <>
@@ -62,7 +63,7 @@ export default async function ClientSecureLinkPage({ params }: { params: Promise
     );
   }
 
-  const hashRl = checkRateLimit(`client-link-hash:${hashClientLinkToken(token).slice(0, 16)}`, 40, 10 * 60 * 1000);
+  const hashRl = await checkRateLimit(`client-link-hash:${hashClientLinkToken(token).slice(0, 16)}`, 40, 10 * 60 * 1000);
   if (!hashRl.ok) {
     return (
       <>

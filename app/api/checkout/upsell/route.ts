@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { isOfferExpired, isUpsellToken } from "@/lib/order-upsell";
 import { createOrderUpsellCheckoutSession } from "@/lib/order-upsell-checkout";
 import { readUpsellByToken } from "@/lib/order-upsell-store";
@@ -67,7 +67,7 @@ async function startUpsellCheckout(req: Request, token: string): Promise<NextRes
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const limit = checkRateLimit(`upsell:${ip}`, MAX_PER_WINDOW, WINDOW_MS);
+  const limit = await checkRateLimit(`upsell:${ip}`, MAX_PER_WINDOW, WINDOW_MS);
   if (!limit.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
