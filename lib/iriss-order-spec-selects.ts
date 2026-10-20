@@ -5,6 +5,7 @@
 
 import {
   acceptedNormalization,
+  foldCriterion,
   normalizeBody,
   normalizeFuel,
   normalizeGearbox,
@@ -113,18 +114,35 @@ export function persistBodySelect(value: string, previous: string): string {
   return label;
 }
 
-/** Mehāniskā / Petrol / Saloon -> Manuāla / Benzīns / Sedans. Elektro un gāze paliek. */
+const ENGINE_ALIASES: Record<string, string> = {
+  petrol: "Benzīns",
+  benzin: "Benzīns",
+  gasoline: "Benzīns",
+};
+
+const TRANSMISSION_ALIASES: Record<string, string> = {
+  mehaniska: "Manuāla",
+  mechanical: "Manuāla",
+};
+
+const BODY_ALIASES: Record<string, string> = {
+  saloon: "Sedans",
+};
+
+function rewriteDeprecatedLabel(raw: string, aliases: Record<string, string>): string {
+  const next = aliases[foldCriterion(raw)];
+  return next ?? raw;
+}
+
+/** Tikai novecojušās etiķetes. `dīzelis` / `SUV` paliek, lai legacy fails paliek identisks. */
 export function migrateIrissSpecSelectLabels(rec: {
   engineType: string;
   transmission: string;
   bodyType: string;
 }): { engineType: string; transmission: string; bodyType: string } {
-  const fuel = fuelSelectValue(rec.engineType);
-  const gear = gearboxSelectValue(rec.transmission);
-  const body = bodySelectValue(rec.bodyType);
   return {
-    engineType: fuel ? persistFuelSelect(fuel, rec.engineType) : rec.engineType,
-    transmission: gear ? persistGearboxSelect(gear, rec.transmission) : rec.transmission,
-    bodyType: body ? persistBodySelect(body, rec.bodyType) : rec.bodyType,
+    engineType: rewriteDeprecatedLabel(rec.engineType, ENGINE_ALIASES),
+    transmission: rewriteDeprecatedLabel(rec.transmission, TRANSMISSION_ALIASES),
+    bodyType: rewriteDeprecatedLabel(rec.bodyType, BODY_ALIASES),
   };
 }

@@ -1163,7 +1163,7 @@ export function IrissOrderRoom({
               busy={busy || orderPdfBusy}
               onPatch={onPatch}
               onPatchRecord={onPatchRecord}
-              onSave={() => void onSave()}
+              onSave={onSave}
               onCall={onCall}
               onWhatsapp={() => onWhatsappText("")}
               onEmail={() => openMail("")}

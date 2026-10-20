@@ -1,12 +1,20 @@
 /**
  * Modeļa paplašinājums (S-line, M Sport, AMG Line).
  * `S line` = `S-line` = `Sline`.
+ * Bez taxonomy importa: ecarstrade-search jau importē šo moduli.
  */
 
-import { foldCriterion } from "@/lib/iriss-criteria-taxonomy";
+function foldModelToken(raw: string): string {
+  return raw
+    .replace(/ß/g, "ss")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[\s/_.,+()[\]{}-]+/g, "");
+}
 
 export function foldModelExtension(raw: string): string {
-  return foldCriterion(raw).replace(/[\s-]+/g, "");
+  return foldModelToken(raw);
 }
 
 export function splitModelExtensions(raw: string): string[] {

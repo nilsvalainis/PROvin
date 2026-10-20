@@ -175,4 +175,18 @@ describe("spec select migration", () => {
       bodyType: "Sedans",
     });
   });
+
+  it("keeps already-valid Latvian labels and SUV casing", () => {
+    expect(
+      migrateIrissSpecSelectLabels({
+        engineType: "dīzelis",
+        transmission: "automāts",
+        bodyType: "SUV",
+      }),
+    ).toEqual({
+      engineType: "dīzelis",
+      transmission: "automāts",
+      bodyType: "SUV",
+    });
+  });
 });

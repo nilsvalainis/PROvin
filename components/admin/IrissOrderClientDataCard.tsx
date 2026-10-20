@@ -4,6 +4,7 @@ import { Phone } from "lucide-react";
 import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
 import { irissOverviewEmailDisplay } from "@/lib/iriss-order-overview-view";
+import type { IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 
 function WhatsAppGlyph({ className }: { className?: string }) {
@@ -48,7 +49,7 @@ export function IrissOrderClientDataCard({
   busy: boolean;
   onPatch: <K extends keyof IrissPasutijumsRecord>(key: K, value: IrissPasutijumsRecord[K]) => void;
   onPatchRecord: (patch: Partial<IrissPasutijumsRecord>) => void;
-  onSave: () => void;
+  onSave: () => Promise<IrissOrderSaveResult>;
   onCall: () => void;
   onWhatsapp: () => void;
   onEmail: () => void;
