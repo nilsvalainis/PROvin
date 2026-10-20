@@ -1,36 +1,28 @@
 "use client";
 
-import { ArrowUpDown, ChevronDown, Pin, Search, Trash2 } from "lucide-react";
-import { motion, Reorder, useDragControls } from "framer-motion";
+import { ChevronDown, Search } from "lucide-react";
+import { Reorder } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { memo, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent } from "react";
-import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { AdminIrissOrdersExportButton } from "@/components/admin/AdminIrissOrdersExportButton";
 import { IrissGoogleContactsBackfillButton } from "@/components/admin/IrissGoogleContactsBackfillButton";
-import { IrissPasutijumiNewFab } from "@/components/admin/IrissPasutijumiNewFab";
-import { IRISS_ORDER_SORT_EVENT, IRISS_ORDER_SORT_KEY, type IrissOrderSortMode } from "@/components/admin/IrissOrderSortSelect";
+import { IrissOverflowItem, IrissOverflowLabel, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
+import { IrissPasutijumiListRow } from "@/components/admin/IrissPasutijumiListRow";
 import {
-  buildListingPlatformChips,
-  IR_LISTING_ALL_CHIP_STYLE,
-  LISTING_PLATFORM_CHIPS_SCROLL_ROW_COMPACT_CLASS,
-  LISTING_PLATFORM_CHIP_ANCHOR_COMPACT_CLASS,
-} from "@/lib/iriss-listing-links";
+  IRISS_ORDER_SORT_EVENT,
+  IRISS_ORDER_SORT_KEY,
+  type IrissOrderSortMode,
+} from "@/components/admin/IrissOrderSortSelect";
 import {
   countIrissListStatuses,
-  formatIrissClientName,
-  formatIrissListDate,
-  formatIrissListSpecSummary,
   irissListRowMatchesQuery,
   irissListRowPowerKwLabel,
   irissPasutijumsToListRow,
-  irissPhoneTelHref,
 } from "@/lib/iriss-pasutijumi-list-row";
-import { IrissBrandLogoSlot } from "@/components/admin/IrissBrandLogoSlot";
+import { IRISS_LIST_SORT_LABEL } from "@/lib/iriss-pasutijumi-list-view";
 import { IRISS_ORDERS_LIST_PAGE, irissNextWindowLimit, irissWindowSlice } from "@/lib/iriss-list-window";
 import {
   canonicalIrissPasutijumsListStatus,
-  displayIrissPasutijumsListStatusLabel,
   IRISS_PASUTIJUMS_PICKER_STATUSES,
   IRISS_PASUTIJUMS_PICKER_STATUS_LV,
   type IrissPasutijumiListOrder,
@@ -51,20 +43,10 @@ import {
   readIrissListTrashFilter,
 } from "@/lib/iriss-pasutijumi-status-filter";
 import { appendIrissStatusHistory, isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
-import { IrissOrderSortSelect } from "@/components/admin/IrissOrderSortSelect";
 import { AdminMobileSheet } from "@/components/admin/AdminMobileSheet";
 import { AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 
 type SortMode = IrissOrderSortMode;
-
-const SORT_LABEL: Record<SortMode, string> = {
-  created_desc: "Jaunākie vispirms",
-  created_asc: "Vecākie vispirms",
-  brand_asc: "Marka A-Z",
-  brand_desc: "Marka Z-A",
-  budget_asc: "Budžets: zemākā",
-  budget_desc: "Budžets: augstākā",
-};
 
 const SORT_MODES: readonly SortMode[] = [
   "created_desc",
@@ -79,19 +61,7 @@ function isSortMode(s: string): s is SortMode {
   return (SORT_MODES as readonly string[]).includes(s);
 }
 
-const SWIPE_ACTION_BLOCK_WIDTH = 72;
-const SWIPE_ACTION_WIDTH = SWIPE_ACTION_BLOCK_WIDTH * 2;
-const SWIPE_CLOSE_THRESHOLD = SWIPE_ACTION_WIDTH * 0.4;
-const SWIPE_OPEN_THRESHOLD = SWIPE_ACTION_WIDTH * 0.5;
-const SWIPE_VELOCITY_OPEN = -620;
-const SWIPE_VELOCITY_CLOSE = 620;
-const SWIPE_SPRING = { type: "spring" as const, stiffness: 1000, damping: 60, mass: 0.45 };
-const LONG_PRESS_MS = 450;
-const MOVE_CANCEL_LONG_PRESS_PX = 10;
-const SWIPE_AXIS_MIN = 14;
-const SWIPE_AXIS_BIAS = 8;
 const LIST_ORDER_PERSIST_DEBOUNCE_MS = 380;
-
 
 function useNarrowIrissSwipeViewport(): boolean {
   return useSyncExternalStore(
@@ -194,14 +164,6 @@ function rowMatchesStatusFilter(
   return Boolean(f[st]);
 }
 
-function statusBadgeClass(st: IrissPasutijumsListStatus): string {
-  const canon = canonicalIrissPasutijumsListStatus(st);
-  if (canon === "completed") return "bg-emerald-100 text-emerald-950";
-  if (canon === "inactive") return "bg-red-100 text-red-950";
-  if (canon === "reserved") return "bg-violet-100 text-violet-950";
-  return "bg-slate-100 text-slate-800";
-}
-
 async function persistListOrder(order: IrissPasutijumiListOrder): Promise<boolean> {
   try {
     const res = await fetch("/api/admin/iriss-pasutijumi/list-order", {
@@ -216,460 +178,23 @@ async function persistListOrder(order: IrissPasutijumiListOrder): Promise<boolea
   }
 }
 
-const IrissRowCard = memo(function IrissRowCard({
-  row,
-  onPin,
-  onAskDelete,
-  onSetStatus,
-  onRestore,
-  actionBusy,
-  registerSwipeCloser,
-  closeOtherSwipes,
-  narrowSwipeViewport,
-  dragReorderEnabled,
-}: {
-  row: IrissPasutijumsListRow;
-  onPin: (id: string) => void;
-  onAskDelete: (id: string) => void;
-  onSetStatus: (id: string, status: IrissPasutijumsListStatus) => void;
-  onRestore?: (id: string) => void;
-  actionBusy: string | null;
-  registerSwipeCloser: (id: string, closer: (() => void) | null) => void;
-  closeOtherSwipes: (exceptId: string) => void;
-  narrowSwipeViewport: boolean;
-  dragReorderEnabled: boolean;
-}) {
-  const reorderDragControls = useDragControls();
-  const swipeDragControls = useDragControls();
-  const swipeAxisRef = useRef<"idle" | "vertical" | "horizontal">("idle");
-  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
-  const longPressTimerRef = useRef<number | null>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [statusMenuOpen, setStatusMenuOpen] = useState(false);
-  const statusBtnRef = useRef<HTMLButtonElement>(null);
-  const statusMenuRef = useRef<HTMLDivElement>(null);
-  const chips = buildListingPlatformChips({
-    listingLinkMobile: row.listingLinkMobile,
-    listingLinkAutobid: row.listingLinkAutobid,
-    listingLinkOpenline: row.listingLinkOpenline,
-    listingLinkAuto1: row.listingLinkAuto1,
-    listingLinkEcarstrade: row.listingLinkEcarstrade,
-    listingLinksOther: row.listingLinksOther,
-  });
-  const specSummary = formatIrissListSpecSummary(row);
-  const powerKwLabel = irissListRowPowerKwLabel(row);
-  const equipmentRequired = (row.equipmentRequired ?? "").trim();
-  const isPinned = Boolean(row.pinnedAt);
-  const statusBusy = actionBusy === row.id;
-  const curStatus = row.listStatus ?? "active";
-  const clientName = formatIrissClientName(row);
-  const listDate = formatIrissListDate(row);
-  const telHref = irissPhoneTelHref(row.phone);
-  const router = useRouter();
-  const href = `/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`;
-  const prefetchedRef = useRef(false);
-  const prefetchRow = useCallback(() => {
-    if (prefetchedRef.current) return;
-    prefetchedRef.current = true;
-    void router.prefetch(href);
-  }, [href, router]);
-
-  const openAllListings = () => {
-    for (const chip of chips) {
-      window.open(chip.href, "_blank", "noopener,noreferrer");
-    }
-  };
-
-  const clearLongPressTimer = useCallback(() => {
-    if (longPressTimerRef.current !== null) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
-
-  const onFrontPointerDown = (e: PointerEvent<HTMLDivElement>) => {
-    swipeAxisRef.current = "idle";
-    pointerStartRef.current = { x: e.clientX, y: e.clientY };
-    clearLongPressTimer();
-    closeOtherSwipes(row.id);
-    setStatusMenuOpen(false);
-
-    const startEv = e;
-    if (!dragReorderEnabled) return;
-    longPressTimerRef.current = window.setTimeout(() => {
-      longPressTimerRef.current = null;
-      reorderDragControls.start(startEv);
-    }, LONG_PRESS_MS);
-  };
-
-  const onFrontPointerMove = (e: PointerEvent<HTMLDivElement>) => {
-    const start = pointerStartRef.current;
-    if (!start) return;
-
-    const dx = e.clientX - start.x;
-    const dy = e.clientY - start.y;
-    const absX = Math.abs(dx);
-    const absY = Math.abs(dy);
-
-    if (absX > MOVE_CANCEL_LONG_PRESS_PX || absY > MOVE_CANCEL_LONG_PRESS_PX) {
-      clearLongPressTimer();
-    }
-
-    if (narrowSwipeViewport && swipeAxisRef.current === "idle") {
-      if (absY > SWIPE_AXIS_MIN && absY > absX + SWIPE_AXIS_BIAS) {
-        swipeAxisRef.current = "vertical";
-      } else if (absX > SWIPE_AXIS_MIN && absX > absY + SWIPE_AXIS_BIAS) {
-        swipeAxisRef.current = "horizontal";
-        swipeDragControls.start(e.nativeEvent);
-      }
-    }
-  };
-
-  const onFrontPointerEnd = () => {
-    clearLongPressTimer();
-    pointerStartRef.current = null;
-    swipeAxisRef.current = "idle";
-  };
-
-  const closeSwipe = useCallback(() => setIsOpen(false), []);
-
-  useEffect(() => {
-    registerSwipeCloser(row.id, closeSwipe);
-    return () => registerSwipeCloser(row.id, null);
-  }, [closeSwipe, registerSwipeCloser, row.id]);
-
-  useEffect(() => {
-    if (!statusMenuOpen) return;
-    const onDoc = (e: Event) => {
-      const t = e.target;
-      if (!(t instanceof Node)) {
-        setStatusMenuOpen(false);
-        return;
-      }
-      if (statusBtnRef.current?.contains(t) || statusMenuRef.current?.contains(t)) return;
-      setStatusMenuOpen(false);
-    };
-    const timer = window.setTimeout(() => {
-      document.addEventListener("pointerdown", onDoc, true);
-    }, 0);
-    return () => {
-      window.clearTimeout(timer);
-      document.removeEventListener("pointerdown", onDoc, true);
-    };
-  }, [statusMenuOpen]);
-
-  const chipsRow =
-    chips.length > 0 ? (
-      <div
-        role="group"
-        aria-label="Sludinājumu platformu saites"
-        className={LISTING_PLATFORM_CHIPS_SCROLL_ROW_COMPACT_CLASS}
-        onClick={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        {chips.map((c, i) => (
-          <a
-            key={`${c.href}-${i}`}
-            href={c.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={c.title}
-            className={LISTING_PLATFORM_CHIP_ANCHOR_COMPACT_CLASS}
-            style={c.chipStyle}
-          >
-            <IrissAuctionLogo platform={c.logoKey} fallback={c.letter} size="sm" />
-          </a>
-        ))}
-        <button
-          type="button"
-          onClick={openAllListings}
-          title="Atvērt visas saites"
-          aria-label="Atvērt visas saites"
-          className={LISTING_PLATFORM_CHIP_ANCHOR_COMPACT_CLASS}
-          style={IR_LISTING_ALL_CHIP_STYLE}
-        >
-          ALL
-        </button>
-      </div>
-    ) : null;
-
-  const frontInner = (
-    <div className="relative flex min-h-[88px] items-center gap-2.5 py-2.5 pl-3 pr-2 md:min-h-[82px]">
-      <Link
-        href={href}
-        prefetch={false}
-        onPointerEnter={prefetchRow}
-        onPointerDown={prefetchRow}
-        onFocus={prefetchRow}
-        aria-label={`Atvērt pasūtījumu: ${row.brandModel}`}
-        className="absolute inset-0 z-0 rounded-lg"
-      />
-      <div className="relative z-10 shrink-0" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-        <button
-          ref={statusBtnRef}
-          type="button"
-          disabled={statusBusy}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setStatusMenuOpen((v) => !v);
-          }}
-          className={`iriss-row-status inline-flex h-8 items-center gap-0.5 rounded-md px-2 text-[13px] font-semibold md:h-7 md:rounded md:px-1.5 md:text-[11px] ${
-            narrowSwipeViewport ? "bg-[var(--am-fill)] font-medium text-[var(--am-ink2)]" : statusBadgeClass(curStatus)
-          }`}
-          aria-haspopup="menu"
-          aria-expanded={statusMenuOpen}
-        >
-          {displayIrissPasutijumsListStatusLabel(curStatus)}
-          <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
-        </button>
-      </div>
-      <div className="pointer-events-none relative z-10 flex min-w-0 flex-1 items-start gap-2.5">
-        <IrissBrandLogoSlot brandModel={row.brandModel} className="mt-0.5" />
-        <span className="min-w-0 flex-1">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span className="truncate text-[16px] font-semibold leading-snug text-[var(--color-apple-text)] sm:text-[17px]">
-              {row.brandModel}
-            </span>
-            {powerKwLabel ? (
-              <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[var(--color-apple-text)] sm:text-[14px]">
-                {powerKwLabel}
-              </span>
-            ) : null}
-            {isPinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-black" aria-hidden /> : null}
-          </span>
-          <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 text-[12px] leading-snug text-[var(--color-provin-muted)]">
-            <span className="truncate">{clientName}</span>
-            <span className="tabular-nums">{listDate}</span>
-            <span className="truncate">{row.totalBudget}</span>
-            {telHref ? (
-              <a
-                href={telHref}
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-                className="pointer-events-auto font-normal text-[var(--label-secondary)] hover:underline md:hidden"
-              >
-                {row.phone}
-              </a>
-            ) : row.phone && row.phone !== "-" && row.phone !== "\u2014" ? (
-              <span className="md:hidden">{row.phone}</span>
-            ) : null}
-          </span>
-          {equipmentRequired ? (
-            <span className="mt-0.5 block truncate text-[12px] font-medium leading-snug text-[var(--color-apple-text)]">
-              <span className="text-[var(--color-provin-muted)]">Obligāti: </span>
-              {equipmentRequired}
-            </span>
-          ) : null}
-          {specSummary ? (
-            <span className={`mt-0.5 block truncate text-[12px] leading-snug text-[var(--color-provin-muted)]`}>
-              {specSummary}
-            </span>
-          ) : null}
-          {row.hasExpiredOffer ? (
-            <span className="mt-0.5 inline-flex rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-              Piedāvājums beidzies
-            </span>
-          ) : null}
-        </span>
-      </div>
-      {telHref ? (
-        <a
-          href={telHref}
-          onClick={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="relative z-10 hidden shrink-0 text-[12px] font-medium text-[var(--color-provin-accent)] hover:underline md:inline"
-        >
-          {row.phone}
-        </a>
-      ) : row.phone && row.phone !== "-" && row.phone !== "\u2014" ? (
-        <span className="relative z-10 hidden shrink-0 text-[12px] text-[var(--color-provin-muted)] md:inline">{row.phone}</span>
-      ) : null}
-      {chipsRow ? <div className="relative z-10 hidden min-w-0 max-w-[11rem] shrink md:block">{chipsRow}</div> : null}
-      <div className="relative z-10 hidden shrink-0 items-center md:flex md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
-        <button
-          type="button"
-          onClick={() => onPin(row.id)}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-black"
-          aria-label={isPinned ? "Noņemt piespraušanu" : "Piespraust augšā"}
-        >
-          <Pin className="h-3.5 w-3.5" />
-        </button>
-        {isIrissRecordDeleted(row) && onRestore ? (
-          <button
-            type="button"
-            onClick={() => onRestore(row.id)}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="inline-flex h-7 items-center rounded-md px-1.5 text-[10px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-100"
-          >
-            Atjaunot
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onAskDelete(row.id)}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-700"
-            aria-label="Dzēst pasūtījumu"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-
-  const statusMenu = statusMenuOpen ? (
-    <div
-      ref={statusMenuRef}
-      role="menu"
-      className="absolute left-3 top-[2.55rem] z-50 min-w-[7.5rem] overflow-hidden rounded-md border border-slate-200 bg-white py-0.5 shadow-lg"
-      onPointerDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
-    >
-      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
-        <button
-          key={s}
-          type="button"
-          role="menuitem"
-          disabled={statusBusy}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setStatusMenuOpen(false);
-            onSetStatus(row.id, s);
-          }}
-          className={`flex w-full px-2.5 py-1.5 text-left text-[11px] font-semibold ${
-            canonicalIrissPasutijumsListStatus(curStatus) === s ? "bg-slate-100 text-black" : "text-black/80 hover:bg-slate-50"
-          }`}
-        >
-          {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
-        </button>
-      ))}
-    </div>
-  ) : null;
-
-  const cardInner = (
-    <div
-      className={`group relative overflow-visible rounded-lg border border-[#E5E7EB] bg-white shadow-none transition hover:border-slate-300 [content-visibility:auto] [contain-intrinsic-size:1px_92px] ${
-        statusMenuOpen ? "z-40" : ""
-      }`}
-    >
-      <div className="relative overflow-x-clip rounded-lg">
-      {narrowSwipeViewport ? (
-        <div className="absolute inset-y-0 right-0 z-0 flex bg-[#E5E7EB]" style={{ width: SWIPE_ACTION_WIDTH }}>
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(false);
-              onPin(row.id);
-            }}
-            className="flex h-full w-[72px] flex-col items-center justify-center gap-0.5 bg-[#8E8E93] text-white transition active:brightness-95"
-            aria-label={isPinned ? "Noņemt piespraušanu" : "Piespraust augšā"}
-          >
-            <Pin className="h-5 w-5" />
-            <span className="text-[11px] font-semibold leading-none">{isPinned ? "Noņemt" : "Piespraust"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(false);
-              if (isIrissRecordDeleted(row) && onRestore) onRestore(row.id);
-              else onAskDelete(row.id);
-            }}
-            className={`flex h-full w-[72px] flex-col items-center justify-center gap-0.5 text-white transition active:brightness-95 ${isIrissRecordDeleted(row) ? "bg-[#34C759]" : "bg-[#FF3B30]"}`}
-            aria-label={isIrissRecordDeleted(row) ? "Atjaunot pasūtījumu" : "Dzēst pasūtījumu"}
-          >
-            <Trash2 className="h-5 w-5" />
-            <span className="text-[11px] font-semibold leading-none">{isIrissRecordDeleted(row) ? "Atjaunot" : "Dzēst"}</span>
-          </button>
-        </div>
-      ) : null}
-
-      {narrowSwipeViewport ? (
-        <motion.div
-          drag="x"
-          dragControls={swipeDragControls}
-          dragListener={false}
-          dragConstraints={{ left: -SWIPE_ACTION_WIDTH, right: 0 }}
-          dragElastic={0.12}
-          dragMomentum={false}
-          dragDirectionLock
-          onDirectionLock={(axis) => {
-            if (axis === "x") closeOtherSwipes(row.id);
-          }}
-          animate={{ x: isOpen ? -SWIPE_ACTION_WIDTH : 0 }}
-          transition={SWIPE_SPRING}
-          onPointerDown={onFrontPointerDown}
-          onPointerMove={onFrontPointerMove}
-          onPointerUp={onFrontPointerEnd}
-          onPointerCancel={onFrontPointerEnd}
-          onPanStart={clearLongPressTimer}
-          onDragEnd={(_, info) => {
-            const dragBase = isOpen ? -SWIPE_ACTION_WIDTH : 0;
-            const finalX = Math.max(-SWIPE_ACTION_WIDTH, Math.min(0, dragBase + info.offset.x));
-            const velocityX = info.velocity.x;
-            const revealed = Math.abs(finalX);
-            let shouldOpen = false;
-            if (velocityX <= SWIPE_VELOCITY_OPEN) shouldOpen = true;
-            else if (velocityX >= SWIPE_VELOCITY_CLOSE) shouldOpen = false;
-            else if (revealed >= SWIPE_OPEN_THRESHOLD) shouldOpen = true;
-            else if (revealed < SWIPE_CLOSE_THRESHOLD) shouldOpen = false;
-            else {
-              const projected = finalX + velocityX * 0.18;
-              shouldOpen = Math.abs(projected) >= SWIPE_OPEN_THRESHOLD;
-            }
-            setIsOpen(shouldOpen);
-            if (shouldOpen) closeOtherSwipes(row.id);
-          }}
-          className="relative z-10 touch-pan-y overscroll-x-contain bg-white will-change-transform"
-          style={{ transform: "translateZ(0)", touchAction: "pan-y pinch-zoom" }}
-        >
-          {frontInner}
-        </motion.div>
-      ) : (
-        <div
-          className="relative z-10 bg-white"
-          onPointerDown={onFrontPointerDown}
-          onPointerMove={onFrontPointerMove}
-          onPointerUp={onFrontPointerEnd}
-          onPointerCancel={onFrontPointerEnd}
-        >
-          {frontInner}
-        </div>
-      )}
-      </div>
-      {statusMenu}
-    </div>
-  );
-
-  if (dragReorderEnabled) {
-    return (
-      <Reorder.Item
-        value={row.id}
-        dragListener={false}
-        dragControls={reorderDragControls}
-        className={`list-none ${statusMenuOpen ? "relative z-40" : ""}`}
-      >
-        {cardInner}
-      </Reorder.Item>
-    );
-  }
-  return <div className={`list-none ${statusMenuOpen ? "relative z-40" : ""}`}>{cardInner}</div>;
-});
-
 export function IrissPasutijumiListClient({
   rows,
   initialListOrder,
+  newHitsByOrder = {},
 }: {
   rows: IrissPasutijumsListRow[];
   initialListOrder: IrissPasutijumiListOrder | null;
+  newHitsByOrder?: Record<string, number>;
 }) {
   const [localRows, setLocalRows] = useState<IrissPasutijumsListRow[]>(rows);
   const [sortMode, setSortMode] = useState<SortMode>("created_desc");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  const [statusSheetId, setStatusSheetId] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [listOrder, setListOrder] = useState<IrissPasutijumiListOrder>(() => {
     if (initialListOrder && (initialListOrder.pinnedOrder.length > 0 || initialListOrder.unpinnedOrder.length > 0)) {
@@ -790,6 +315,29 @@ export function IrissPasutijumiListClient({
     };
   }, []);
 
+  const applySort = useCallback(
+    (next: SortMode) => {
+      setSortMode(next);
+      try {
+        localStorage.setItem(IRISS_ORDER_SORT_KEY, next);
+      } catch {
+        /* ignore */
+      }
+      window.dispatchEvent(new CustomEvent(IRISS_ORDER_SORT_EVENT, { detail: next }));
+      const lr = localRowsRef.current;
+      const sortedIds = sortCore(
+        lr.filter((r) => !r.pinnedAt),
+        next,
+      ).map((r) => r.id);
+      setListOrder((prev) => {
+        const merged = { ...prev, unpinnedOrder: sortedIds };
+        schedulePersistListOrder(merged);
+        return merged;
+      });
+    },
+    [schedulePersistListOrder],
+  );
+
   useEffect(() => {
     const onSortChange = (ev: Event) => {
       const next = (ev as CustomEvent<SortMode>).detail;
@@ -830,7 +378,7 @@ export function IrissPasutijumiListClient({
   const statusCounts = useMemo(() => countIrissListStatuses(liveRows), [liveRows]);
 
   const allStatusesInFilter = useMemo(
-    () => statusFilter.active && statusFilter.completed && statusFilter.inactive,
+    () => statusFilter.active && statusFilter.reserved && statusFilter.completed && statusFilter.inactive,
     [statusFilter],
   );
 
@@ -842,7 +390,7 @@ export function IrissPasutijumiListClient({
     [localRows, statusFilter, searchQuery, trashOn],
   );
 
-  const dragReorderEnabled = allStatusesInFilter && !searching && !narrowSwipeViewport;
+  const dragReorderEnabled = allStatusesInFilter && !searching;
 
   const { pinnedRows, unpinnedRows } = useMemo(() => {
     const pinned = visibleRows.filter((r) => Boolean(r.pinnedAt));
@@ -977,7 +525,7 @@ export function IrissPasutijumiListClient({
     } finally {
       setActionBusy(null);
     }
-  }, [closeOtherSwipes, deleteTargetId, schedulePersistListOrder]);
+  }, [closeOtherSwipes, deleteTargetId]);
 
   const onRestore = useCallback(async (id: string) => {
     setActionBusy(id);
@@ -1047,13 +595,15 @@ export function IrissPasutijumiListClient({
   }, [schedulePersistListOrder]);
 
   const renderRow = (row: IrissPasutijumsListRow) => (
-    <IrissRowCard
+    <IrissPasutijumiListRow
       key={row.id}
       row={rowMap.get(row.id) ?? row}
+      newHits={newHitsByOrder[row.id] ?? 0}
       onPin={onPin}
       onAskDelete={setDeleteTargetId}
       onSetStatus={onSetStatus}
       onRestore={onRestore}
+      onAskStatus={setStatusSheetId}
       actionBusy={actionBusy}
       registerSwipeCloser={registerSwipeCloser}
       closeOtherSwipes={closeOtherSwipes}
@@ -1062,26 +612,97 @@ export function IrissPasutijumiListClient({
     />
   );
 
+  useEffect(() => {
+    if (!sortMenuOpen) return;
+    const onDoc = (e: Event) => {
+      const t = e.target;
+      if (!(t instanceof Node) || !sortMenuRef.current?.contains(t)) setSortMenuOpen(false);
+    };
+    const timer = window.setTimeout(() => document.addEventListener("pointerdown", onDoc, true), 0);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("pointerdown", onDoc, true);
+    };
+  }, [sortMenuOpen]);
+
+  const sortButton = (
+    <div ref={sortMenuRef} className="relative hidden md:inline-flex">
+      <button
+        type="button"
+        onClick={() => setSortMenuOpen((v) => !v)}
+        className="iriss-pas-sort inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-[var(--s1)] px-3 text-[13px] font-semibold text-[var(--ink)] shadow-[var(--sh)]"
+        aria-label={`Kārtot: ${IRISS_LIST_SORT_LABEL[sortMode]}`}
+        aria-expanded={sortMenuOpen}
+        aria-haspopup="listbox"
+      >
+        {IRISS_LIST_SORT_LABEL[sortMode]}
+        <ChevronDown className="h-3.5 w-3.5 opacity-55" aria-hidden />
+      </button>
+      {sortMenuOpen ? (
+        <div
+          role="listbox"
+          className="iriss-ov-menu absolute right-0 top-[calc(100%+6px)] z-50 min-w-[14rem] overflow-hidden rounded-2xl bg-[var(--s1)] py-1 shadow-[var(--gsh)]"
+        >
+          {SORT_MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              role="option"
+              aria-selected={sortMode === mode}
+              onClick={() => {
+                applySort(mode);
+                setSortMenuOpen(false);
+              }}
+              className="flex min-h-11 w-full items-center justify-between px-3.5 text-left text-[14px] font-medium text-[var(--ink)] hover:bg-[var(--fill)]"
+            >
+              {IRISS_LIST_SORT_LABEL[mode]}
+              {sortMode === mode ? <span className="text-[var(--acc)]">✓</span> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+
+  const toolbarMenu = (
+    <IrissOverflowMenu label="Vairāk">
+      <IrissOverflowLabel>Saraksts</IrissOverflowLabel>
+      <IrissOverflowItem disabled={ectBusy} onClick={() => void appendEcarstradeLinks()}>
+        {ectBusy ? "Atjauno eCarsTrade saites…" : "Atjaunot eCarsTrade saites"}
+      </IrissOverflowItem>
+      <IrissOverflowItem href="/admin/iriss/atskaite">Mēneša atskaite</IrissOverflowItem>
+      <IrissOverflowLabel>Eksports</IrissOverflowLabel>
+      <AdminIrissOrdersExportButton menu />
+      <IrissOverflowLabel>Klienti</IrissOverflowLabel>
+      <IrissGoogleContactsBackfillButton menu />
+    </IrissOverflowMenu>
+  );
+
   return (
-    <>
+    <div className="iriss-pasutijumi-view">
       <div className="md:hidden">
         <AdminMobileTopBar
           title="Pasūtījumi"
           trailing={
             <>
-              <AdminMobileRoundBtn name="kartot" label={`Kārtot: ${SORT_LABEL[sortMode]}`} onClick={() => setSheetOpen(true)} />
-              <AdminMobileRoundBtn name="pievienot" label="Jauns pasūtījums" href="/admin/iriss/pasutijumi/new" />
+              <AdminMobileRoundBtn name="kartot" label={`Kārtot: ${IRISS_LIST_SORT_LABEL[sortMode]}`} onClick={() => setSortSheetOpen(true)} />
+              <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => setMoreSheetOpen(true)} />
+              <AdminMobileRoundBtn name="pievienot" primary label="Jauns pasūtījums" href="/admin/iriss/pasutijumi/new" />
             </>
           }
         >
           <AdminMobileSearchField value={searchQuery} onChange={setSearchQuery} placeholder="Vārds, tālrunis, marka" />
-          <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />
+          <div className="iriss-pas-seg">
+            <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />
+          </div>
         </AdminMobileTopBar>
       </div>
-      <div className="sticky top-0 z-30 mb-1.5 hidden bg-[#F8F8F9] py-1 md:mb-2 md:block md:border-b md:border-slate-200/80 md:bg-[#F8F8F9]/95 md:py-2 md:backdrop-blur-sm">
-        <div className="flex items-center gap-1.5 md:flex-wrap md:gap-2">
-          <label className="relative min-w-0 flex-1 md:min-w-[10rem] md:max-w-xs">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 md:left-2 md:h-3.5 md:w-3.5" aria-hidden />
+
+      <div className="iriss-pas-toolbar mb-3 hidden md:block">
+        <div className="flex items-center gap-2">
+          <h1 className="iriss-list-title shrink-0 text-[22px] font-bold tracking-tight text-[var(--ink)]">Pasūtījumi</h1>
+          <label className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink3)]" aria-hidden />
             <input
               ref={searchRef}
               type="search"
@@ -1089,121 +710,121 @@ export function IrissPasutijumiListClient({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Vārds, tālrunis, marka"
               aria-label="Meklēt pasūtījumus"
-              className="h-10 min-h-10 w-full rounded-[10px] border-0 bg-[#e5e5ea] pl-9 pr-3 text-base text-black outline-none placeholder:text-[#8e8e93] md:h-8 md:min-h-8 md:rounded-md md:border md:border-slate-200 md:bg-white md:pl-7 md:pr-2 md:text-[12px] md:placeholder:text-slate-400 md:ring-[var(--color-provin-accent)]/25 md:focus:ring-2"
+              className="am-search-desk h-10 w-full rounded-full border-0 bg-[var(--s1)] pl-9 pr-3 text-[14px] text-[var(--ink)] shadow-[var(--sh)] outline-none placeholder:text-[var(--ink3)]"
             />
           </label>
-          <button
-            type="button"
-            onClick={() => setSheetOpen(true)}
-            aria-label={`Kārtot: ${SORT_LABEL[sortMode]}`}
-            title={SORT_LABEL[sortMode]}
-            className="inline-flex h-10 min-h-10 w-10 shrink-0 items-center justify-center rounded-full bg-transparent text-[var(--color-apple-text)] md:hidden"
+          {sortButton}
+          {toolbarMenu}
+          <Link
+            href="/admin/iriss/pasutijumi/new"
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[var(--chip-active-bg)] px-4 text-[14px] font-semibold text-[var(--chip-active-fg)]"
           >
-            <ArrowUpDown className="h-4 w-4" aria-hidden />
-          </button>
-          <div className="hidden md:contents">
-            <IrissPasutijumiStatusFilter layout="wrap" counts={statusCounts} trashCount={trashCount} />
-            <IrissOrderSortSelect compact />
-          </div>
-          <div className="ml-auto hidden items-center gap-1.5 md:flex">
-            <button
-              type="button"
-              onClick={() => void appendEcarstradeLinks()}
-              disabled={ectBusy}
-              className="inline-flex h-8 items-center rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm disabled:opacity-40"
-              title="Atjaunot eCarsTrade saites no Auto1 / Openlane / Autobid / Mobile filtriem visiem pasūtījumiem"
-            >
-              {ectBusy ? "ET…" : "Atjaunot ET"}
-            </button>
-            <Link
-              href="/admin/iriss/atskaite"
-              className="inline-flex h-8 items-center rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm"
-            >
-              Atskaite
-            </Link>
-            <AdminIrissOrdersExportButton compact />
-          </div>
+            + Jauns pasūtījums
+          </Link>
         </div>
-        <div className="mt-1 bg-transparent md:hidden">
-          <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />
+        <div className="iriss-pas-seg mt-2">
+          <IrissPasutijumiStatusFilter layout="wrap" counts={statusCounts} trashCount={trashCount} />
         </div>
-        {ectMsg ? <p className="mt-1 text-[11px] text-[#8e8e93]">{ectMsg}</p> : null}
-        <div className="mt-1.5 flex justify-end">
-          <IrissGoogleContactsBackfillButton compact />
-        </div>
+        {ectMsg ? <p className="mt-1 text-[12px] text-[var(--ink2)]">{ectMsg}</p> : null}
       </div>
 
-      <AdminMobileSheet
-        open={sheetOpen}
-        title="Kārtot un filtrēt"
-        onClose={() => setSheetOpen(false)}
-        action={
-          <button
-            type="button"
-            onClick={() => setSheetOpen(false)}
-            className="mt-3 flex h-[50px] w-full items-center justify-center rounded-xl bg-[var(--color-provin-accent)] text-[17px] font-semibold text-white"
-          >
-            Lietot
-          </button>
-        }
-      >
-        <div className="mb-3 overflow-hidden rounded-xl bg-white">
+      {ectMsg ? <p className="mb-2 px-4 text-[12px] text-[var(--ink2)] md:hidden">{ectMsg}</p> : null}
+
+      <AdminMobileSheet open={sortSheetOpen} title="Kārtot" onClose={() => setSortSheetOpen(false)}>
+        <div className="mb-3 overflow-hidden rounded-xl bg-[var(--s1)]">
           {SORT_MODES.map((mode) => (
             <button
               key={mode}
               type="button"
               onClick={() => {
-                setSortMode(mode);
-                try {
-                  localStorage.setItem(IRISS_ORDER_SORT_KEY, mode);
-                } catch {
-                  /* ignore */
-                }
-                window.dispatchEvent(new CustomEvent(IRISS_ORDER_SORT_EVENT, { detail: mode }));
+                applySort(mode);
+                setSortSheetOpen(false);
               }}
-              className="flex min-h-12 w-full items-center justify-between border-b border-[#e5e5ea] px-4 text-[17px] last:border-b-0"
+              className="flex min-h-12 w-full items-center justify-between border-b border-[var(--hair)] px-4 text-[17px] last:border-b-0"
             >
-              {SORT_LABEL[mode]}
-              {sortMode === mode ? <span className="text-[var(--color-provin-accent)]">✓</span> : null}
+              {IRISS_LIST_SORT_LABEL[mode]}
+              {sortMode === mode ? <span className="text-[var(--acc)]">✓</span> : null}
             </button>
           ))}
         </div>
-        <div className="mb-3 bg-transparent px-1 py-1">
-          <IrissPasutijumiStatusFilter layout="wrap" counts={statusCounts} trashCount={trashCount} />
-        </div>
-        <div className="overflow-hidden rounded-xl bg-white">
+      </AdminMobileSheet>
+
+      <AdminMobileSheet
+        open={moreSheetOpen}
+        title="Vairāk"
+        onClose={() => setMoreSheetOpen(false)}
+      >
+        <div className="overflow-hidden rounded-xl bg-[var(--s1)]">
           <button
             type="button"
             onClick={() => void appendEcarstradeLinks()}
             disabled={ectBusy}
             className="flex min-h-12 w-full items-center px-4 text-left text-[17px] disabled:opacity-40"
           >
-            {ectBusy ? "eCarsTrade…" : "eCarsTrade saites"}
+            {ectBusy ? "eCarsTrade…" : "Atjaunot eCarsTrade saites"}
           </button>
-          <Link href="/admin/iriss/atskaite" className="flex min-h-12 items-center border-t border-[#e5e5ea] px-4 text-[17px] text-[var(--color-apple-text)]">
+          <Link href="/admin/iriss/atskaite" className="flex min-h-12 items-center border-t border-[var(--hair)] px-4 text-[17px] text-[var(--ink)]">
             Mēneša atskaite
           </Link>
-          <div className="border-t border-[#e5e5ea] px-4 py-2">
-            <AdminIrissOrdersExportButton compact />
+          <div className="border-t border-[var(--hair)] px-4 py-2">
+            <IrissGoogleContactsBackfillButton compact />
           </div>
         </div>
       </AdminMobileSheet>
 
+      <AdminMobileSheet
+        open={Boolean(statusSheetId)}
+        title="Statuss"
+        onClose={() => setStatusSheetId(null)}
+      >
+        <div className="overflow-hidden rounded-xl bg-[var(--s1)]">
+          {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                if (statusSheetId) onSetStatus(statusSheetId, s);
+                setStatusSheetId(null);
+              }}
+              className="flex min-h-12 w-full items-center border-b border-[var(--hair)] px-4 text-[17px] last:border-b-0"
+            >
+              {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
+            </button>
+          ))}
+        </div>
+      </AdminMobileSheet>
+
+      <div className="hidden px-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--ink3)] md:grid md:grid-cols-[24px_minmax(0,1.4fr)_minmax(0,1fr)_7.5rem_5.5rem_minmax(0,1.1fr)_9.5rem] md:gap-3 md:px-4">
+        <span />
+        <span>Auto</span>
+        <span>Klients</span>
+        <span>Budžets</span>
+        <span>Jaunie</span>
+        <span>Nākamā darbība</span>
+        <span className="text-right">WhatsApp · statuss</span>
+      </div>
+
       <div className="flex flex-col gap-2 max-md:px-4">
         {visibleRows.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-[var(--separator)] bg-[var(--surface)] px-3 py-8 text-center text-[13px] text-[var(--label-secondary)]">
+          <p className="rounded-[18px] border border-dashed border-[var(--hair)] bg-[var(--s1)] px-3 py-8 text-center text-[13px] text-[var(--ink2)]">
             {searching ? "Nekas neatbilst meklējumam." : "Nav pasūtījumu šajā filtrā."}
           </p>
         ) : null}
 
         {shownPinnedRows.length > 0 ? (
-          dragReorderEnabled ? (
-            <Reorder.Group axis="y" values={shownPinnedRows.map((r) => r.id)} onReorder={onReorderPinned} className="flex flex-col gap-2">
-              {shownPinnedRows.map(renderRow)}
-            </Reorder.Group>
-          ) : (
-            <div className="flex flex-col gap-2">{shownPinnedRows.map(renderRow)}</div>
-          )
+          <>
+            <p className="flex items-center gap-1.5 px-1 pt-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--ink3)]">
+              Piespraustie
+            </p>
+            {dragReorderEnabled ? (
+              <Reorder.Group axis="y" values={shownPinnedRows.map((r) => r.id)} onReorder={onReorderPinned} className="flex flex-col gap-2">
+                {shownPinnedRows.map(renderRow)}
+              </Reorder.Group>
+            ) : (
+              <div className="flex flex-col gap-2">{shownPinnedRows.map(renderRow)}</div>
+            )}
+            {shownUnpinnedRows.length > 0 ? <div className="mx-1 h-px bg-[var(--hair)]" aria-hidden /> : null}
+          </>
         ) : null}
 
         {shownUnpinnedRows.length > 0 ? (
@@ -1227,10 +848,10 @@ export function IrissPasutijumiListClient({
           <div
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-md rounded-2xl border border-slate-200/90 bg-white p-4 shadow-xl sm:p-5"
+            className="w-full max-w-md rounded-2xl border border-[var(--hair)] bg-[var(--s1)] p-4 shadow-[var(--gsh)] sm:p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-base font-semibold text-[var(--color-apple-text)]">
+            <h2 className="text-base font-semibold text-[var(--ink)]">
               Vai tiešām vēlaties neatgriezeniski dzēst šo pasūtījumu?
             </h2>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
@@ -1238,7 +859,7 @@ export function IrissPasutijumiListClient({
                 type="button"
                 onClick={() => setDeleteTargetId(null)}
                 disabled={Boolean(actionBusy)}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--hair)] bg-[var(--s1)] px-4 text-[13px] font-medium text-[var(--ink)] disabled:opacity-50"
               >
                 Atcelt
               </button>
@@ -1246,7 +867,7 @@ export function IrissPasutijumiListClient({
                 type="button"
                 onClick={() => void onConfirmDelete()}
                 disabled={Boolean(actionBusy)}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-red-700 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:bg-red-800 disabled:opacity-50"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--bad)] px-4 text-[13px] font-semibold text-white disabled:opacity-50"
               >
                 {actionBusy ? "Dzēš…" : "Dzēst"}
               </button>
@@ -1254,8 +875,6 @@ export function IrissPasutijumiListClient({
           </div>
         </div>
       ) : null}
-
-      <IrissPasutijumiNewFab />
-    </>
+    </div>
   );
 }

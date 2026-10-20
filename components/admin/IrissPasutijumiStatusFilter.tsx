@@ -79,6 +79,9 @@ export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount
   }, []);
 
   const isAllOn = IRISS_PASUTIJUMS_PICKER_STATUSES.every((k) => filter[k]);
+  const allCount = counts
+    ? IRISS_PASUTIJUMS_PICKER_STATUSES.reduce((n, key) => n + (counts[key] ?? 0), 0)
+    : undefined;
 
   return (
     <StatusFilterChipRow layout={layout} className={className}>
@@ -92,7 +95,7 @@ export function IrissPasutijumiStatusFilter({ className = "", counts, trashCount
           onClick={() => toggle(key)}
         />
       ))}
-      <StatusFilterChip label="Visi" pressed={isAllOn} tone="neutral" disabled={isAllOn} onClick={selectAll} />
+      <StatusFilterChip label="Visi" count={allCount} pressed={isAllOn} tone="neutral" disabled={isAllOn} onClick={selectAll} />
       <StatusFilterChip
         label="Miskaste"
         count={trashCount}

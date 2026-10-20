@@ -18,7 +18,13 @@ function fallbackName(format: ExportFormat): string {
   return `provin-iriss-pasutijumi-backup-${day}.zip`;
 }
 
-export function AdminIrissOrdersExportButton({ compact = false }: { compact?: boolean }) {
+export function AdminIrissOrdersExportButton({
+  compact = false,
+  menu = false,
+}: {
+  compact?: boolean;
+  menu?: boolean;
+}) {
   const [phase, setPhase] = useState<"idle" | "loading" | "error">("idle");
   const [loadingFormat, setLoadingFormat] = useState<ExportFormat | null>(null);
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -69,6 +75,45 @@ export function AdminIrissOrdersExportButton({ compact = false }: { compact?: bo
   }, []);
 
   const busy = phase === "loading";
+
+  if (menu) {
+    return (
+      <>
+        <button
+          type="button"
+          role="menuitem"
+          disabled={busy}
+          onClick={() => void runExport("pdf")}
+          className="iriss-ov-item flex min-h-11 w-full items-center px-3.5 text-left text-[14px] font-medium text-[var(--ink)] hover:bg-[var(--fill)] disabled:opacity-40"
+        >
+          {loadingFormat === "pdf" ? "PDF…" : "PDF"}
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          disabled={busy}
+          onClick={() => void runExport("zip")}
+          className="iriss-ov-item flex min-h-11 w-full items-center px-3.5 text-left text-[14px] font-medium text-[var(--ink)] hover:bg-[var(--fill)] disabled:opacity-40"
+        >
+          {loadingFormat === "zip" ? "ZIP…" : "ZIP"}
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          disabled={busy}
+          onClick={() => void runExport("json")}
+          className="iriss-ov-item flex min-h-11 w-full items-center px-3.5 text-left text-[14px] font-medium text-[var(--ink)] hover:bg-[var(--fill)] disabled:opacity-40"
+        >
+          {loadingFormat === "json" ? "Eksportē backup…" : "Eksportēt backup"}
+        </button>
+        {phase === "error" && errMsg ? (
+          <p className="px-3.5 pb-2 text-[12px] leading-snug text-[var(--bad)]" role="alert">
+            {errMsg}
+          </p>
+        ) : null}
+      </>
+    );
+  }
 
   const btnClass = compact
     ? "inline-flex h-8 items-center gap-1.5 rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:border-[var(--color-provin-accent)]/35 hover:bg-slate-50/90 disabled:opacity-55"
