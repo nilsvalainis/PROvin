@@ -71,7 +71,7 @@ describe("Radars Izveidot filtru", () => {
   it("adds the filter button next to each source group", () => {
     expect(editor).toContain("Izveidot filtru");
     expect(editor).toContain("applyGeneratedScanSourceFilter");
-    expect(editor).toContain("onGenerateFilter");
+    expect(editor).toContain("irissScanFilterTableRows");
     expect(editor.match(/Izveidot filtru/g)?.length).toBeGreaterThanOrEqual(1);
   });
 });
