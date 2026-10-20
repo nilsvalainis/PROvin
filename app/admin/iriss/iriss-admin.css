@@ -588,3 +588,14 @@
     transition: none !important;
   }
 }
+
+/* 03 Mēneša atskaite. Tokeni no 00-tema. Nav sticky galvenes. */
+.iriss-atskaite-view {
+  color: var(--ink);
+}
+
+@media (max-width: 767px) {
+  .iriss-atskaite-view .am-topbar {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+  }
+}

@@ -1,9 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { formatIrissMonthlyReportCsv, type IrissMonthlyReport } from "@/lib/iriss-monthly-report";
+import { useMemo, useState } from "react";
+import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
+import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { formatYearMonthKey, shiftYearMonth } from "@/lib/admin-riga-calendar";
+import { formatIrissMonthlyReportCsv, type IrissMonthlyReport } from "@/lib/iriss-monthly-report";
+import {
+  formatIrissMonthlyDelta,
+  formatIrissReportMonthLocative,
+  formatIrissReportNavLabel,
+  IRISS_REPORT_ABOUT,
+  IRISS_REPORT_ABOUT_TITLE,
+  IRISS_REPORT_PDF_HINT,
+  IRISS_REPORT_PDF_VALUE,
+  irissMonthlyMetricDeltas,
+  irissMonthlyMetricSnapshot,
+} from "@/lib/iriss-monthly-report-view";
 import { IRISS_PASUTIJUMS_LIST_STATUS_LV } from "@/lib/iriss-pasutijumi-types";
 
 const STATUS_LV = IRISS_PASUTIJUMS_LIST_STATUS_LV;
@@ -12,10 +25,19 @@ function hrefForMonth(year: number, month: number): string {
   return `/admin/iriss/atskaite?month=${formatYearMonthKey(year, month)}`;
 }
 
-export function IrissMonthlyReportView({ report }: { report: IrissMonthlyReport }) {
+export function IrissMonthlyReportView({
+  report,
+  previous,
+}: {
+  report: IrissMonthlyReport;
+  previous: IrissMonthlyReport;
+}) {
   const csv = useMemo(() => formatIrissMonthlyReportCsv(report), [report]);
   const prev = shiftYearMonth(report.year, report.month, -1);
   const next = shiftYearMonth(report.year, report.month, 1);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const deltas = irissMonthlyMetricDeltas(irissMonthlyMetricSnapshot(report), irissMonthlyMetricSnapshot(previous));
+  const prevLoc = formatIrissReportMonthLocative(previous.month);
 
   function downloadCsv() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -30,92 +52,179 @@ export function IrissMonthlyReportView({ report }: { report: IrissMonthlyReport 
     URL.revokeObjectURL(url);
   }
 
-  return (
-    <div className="mx-auto w-full max-w-3xl pb-10">
-      <div className="flex items-center justify-between gap-2">
-        <Link
-          href={hrefForMonth(prev.year, prev.month)}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-[#f2f2f7] text-[15px] font-semibold text-[var(--color-apple-text)]"
-        >
-          ‹
-        </Link>
-        <p className="text-center text-[17px] font-semibold capitalize text-[var(--color-apple-text)]">
-          {report.monthLabel}
-        </p>
-        <Link
-          href={hrefForMonth(next.year, next.month)}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-[#f2f2f7] text-[15px] font-semibold text-[var(--color-apple-text)]"
-        >
-          ›
-        </Link>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat label="Pasūtījumi" value={report.ordersCreated} />
-        <Stat label="Aktīvi" value={report.ordersByStatus.active} />
-        <Stat label="Izpildīti" value={report.ordersByStatus.completed} />
-        <Stat label="Neaktīvi" value={report.ordersByStatus.inactive} />
-        <Stat label="Piedāvājumi" value={report.offersCreated} />
-        <Stat label="Ar piedāvājumu" value={report.ordersWithOffers} />
-        <Stat label="Laboti piedāvājumi" value={report.offersUpdated} />
-        <Stat label="PDF ģenerēšana" value="nav datos" muted />
-      </div>
-
-      <p className="mt-3 text-[12px] text-[#8e8e93]">
-        Single-tenant IRISS ops (ĪRISS). Nav Stripe un nav PROVIN VIN/auditu metriku. Multi-tenant
-        dīleru panelis vēl nav.
-      </p>
-
-      <button
-        type="button"
-        onClick={downloadCsv}
-        className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-[var(--color-apple-text)] text-[15px] font-semibold text-white"
+  const monthNav = (
+    <div className="flex items-center justify-center gap-2">
+      <Link
+        href={hrefForMonth(prev.year, prev.month)}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--s1)] text-[16px] font-semibold text-[var(--ink)] shadow-[var(--sh)]"
+        aria-label="Iepriekšējais mēnesis"
       >
-        Lejupielādēt CSV
-      </button>
+        ‹
+      </Link>
+      <p className="min-w-[10.5rem] text-center text-[15px] font-semibold text-[var(--ink)]">
+        {formatIrissReportNavLabel(report.year, report.month)}
+      </p>
+      <Link
+        href={hrefForMonth(next.year, next.month)}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--s1)] text-[16px] font-semibold text-[var(--ink)] shadow-[var(--sh)]"
+        aria-label="Nākamais mēnesis"
+      >
+        ›
+      </Link>
+    </div>
+  );
+
+  const overflow = (
+    <IrissOverflowMenu label="Vairāk">
+      <IrissOverflowItem onClick={downloadCsv}>Lejupielādēt CSV</IrissOverflowItem>
+      <IrissOverflowItem onClick={() => setAboutOpen(true)}>{IRISS_REPORT_ABOUT_TITLE}</IrissOverflowItem>
+    </IrissOverflowMenu>
+  );
+
+  return (
+    <div className="iriss-atskaite-view">
+      <div className="md:hidden">
+        <AdminMobileTopBar title="Mēneša atskaite" trailing={overflow}>
+          {monthNav}
+        </AdminMobileTopBar>
+      </div>
+
+      <header className="mb-4 hidden md:block">
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-[22px] font-bold tracking-tight text-[var(--ink)]">Mēneša atskaite</h1>
+            <p className="mt-1 text-[13px] text-[var(--ink2)]">
+              IRISS pasūtījumi un piedāvājumi. Bez PROVIN auditu metriku.
+            </p>
+          </div>
+          {monthNav}
+          <button
+            type="button"
+            onClick={downloadCsv}
+            className="inline-flex h-10 items-center rounded-full bg-[var(--s1)] px-3 text-[13px] font-semibold text-[var(--ink)] shadow-[var(--sh)]"
+          >
+            Lejupielādēt CSV
+          </button>
+          {overflow}
+        </div>
+      </header>
+
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <Stat label="Pasūtījumi" value={report.ordersCreated} hint={formatIrissMonthlyDelta(deltas.ordersCreated, prevLoc)} />
+        <Stat label="Aktīvi" value={report.ordersByStatus.active} hint={formatIrissMonthlyDelta(deltas.active)} />
+        <Stat label="Izpildīti" value={report.ordersByStatus.completed} hint={formatIrissMonthlyDelta(deltas.completed)} />
+        <Stat label="Neaktīvi" value={report.ordersByStatus.inactive} hint={formatIrissMonthlyDelta(deltas.inactive)} />
+        <Stat label="Piedāvājumi" value={report.offersCreated} hint={formatIrissMonthlyDelta(deltas.offersCreated)} />
+        <Stat label="Ar piedāvājumu" value={report.ordersWithOffers} hint={formatIrissMonthlyDelta(deltas.ordersWithOffers)} />
+        <Stat label="Laboti piedāvājumi" value={report.offersUpdated} hint={formatIrissMonthlyDelta(deltas.offersUpdated)} />
+        <Stat label="PDF ģenerēšana" value={IRISS_REPORT_PDF_VALUE} hint={IRISS_REPORT_PDF_HINT} muted />
+      </div>
 
       {report.rows.length === 0 ? (
-        <p className="mt-8 rounded-2xl border border-dashed border-[#e5e5ea] bg-white px-5 py-10 text-center text-[15px] text-[#8e8e93]">
+        <p className="mt-8 rounded-2xl bg-[var(--s1)] px-5 py-10 text-center text-[15px] text-[var(--ink3)] shadow-[var(--sh)]">
           Šajā mēnesī nav jaunu IRISS pasūtījumu.
         </p>
       ) : (
-        <ul className="mt-6 divide-y divide-[#f0f0f2] overflow-hidden rounded-2xl border border-[#e5e5ea] bg-white">
-          {report.rows.map((row) => (
-            <li key={row.id}>
-              <Link
-                href={`/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`}
-                className="flex min-h-[4.25rem] items-center gap-3 px-4 py-3 active:bg-[#f2f2f7]"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[15px] font-semibold text-[var(--color-apple-text)]">{row.clientName}</p>
-                  <p className="mt-0.5 truncate text-[12px] text-[#8e8e93]">{row.brandModel}</p>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p className="text-[12px] font-semibold text-[#3a3a3c]">{STATUS_LV[row.status]}</p>
-                  <p className="mt-0.5 text-[11px] tabular-nums text-[#8e8e93]">
-                    {row.offersCreatedInMonth}/{row.offerCount} piedāv.
-                  </p>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          <p className="mt-6 mb-2 text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--ink2)]">
+            {formatIrissReportNavLabel(report.year, report.month).split(" ")[0]} pasūtījumi · {report.rows.length}
+          </p>
+          <div className="hidden overflow-hidden rounded-3xl bg-[var(--s1)] shadow-[var(--sh)] md:block">
+            <table className="w-full text-left text-[14px]">
+              <thead>
+                <tr className="text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--ink3)]">
+                  <th className="px-4 py-3 font-semibold">Klients</th>
+                  <th className="px-4 py-3 font-semibold">Auto</th>
+                  <th className="px-4 py-3 font-semibold">Statuss</th>
+                  <th className="px-4 py-3 text-right font-semibold">Piedāvājumi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.rows.map((row) => (
+                  <tr key={row.id} className="border-t border-[var(--hair)]">
+                    <td className="px-4 py-3">
+                      <Link href={`/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`} className="font-semibold text-[var(--ink)]">
+                        {row.clientName}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-[var(--ink2)]">{row.brandModel}</td>
+                    <td className="px-4 py-3 text-[var(--ink2)]">{STATUS_LV[row.status]}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-[var(--ink2)]">
+                      {row.offersCreatedInMonth}/{row.offerCount} piedāv.
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <ul className="space-y-2 md:hidden">
+            {report.rows.map((row) => (
+              <li key={row.id}>
+                <Link
+                  href={`/admin/iriss/pasutijumi/${encodeURIComponent(row.id)}`}
+                  className="flex min-h-[4.25rem] items-center gap-3 rounded-2xl bg-[var(--s1)] px-4 py-3 shadow-[var(--sh)]"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-semibold text-[var(--ink)]">{row.clientName}</p>
+                    <p className="mt-0.5 truncate text-[12px] text-[var(--ink2)]">{row.brandModel}</p>
+                  </div>
+                  <p className="shrink-0 text-[12px] font-semibold text-[var(--ink2)]">{STATUS_LV[row.status]}</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
+
+      {aboutOpen ? (
+        <div
+          className="fixed inset-0 z-[140] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
+          onClick={() => setAboutOpen(false)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="iriss-report-about-title"
+            className="w-full max-w-md rounded-3xl bg-[var(--s1)] p-5 shadow-[var(--gsh)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="iriss-report-about-title" className="text-[16px] font-semibold text-[var(--ink)]">
+              {IRISS_REPORT_ABOUT_TITLE}
+            </h2>
+            <p className="mt-2 text-[14px] leading-relaxed text-[var(--ink2)]">{IRISS_REPORT_ABOUT}</p>
+            <button
+              type="button"
+              onClick={() => setAboutOpen(false)}
+              className="mt-4 inline-flex h-10 items-center rounded-full bg-[var(--s2)] px-4 text-[13px] font-semibold text-[var(--ink)]"
+            >
+              Aizvērt
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function Stat({ label, value, muted }: { label: string; value: number | string; muted?: boolean }) {
+function Stat({
+  label,
+  value,
+  hint,
+  muted,
+}: {
+  label: string;
+  value: number | string;
+  hint?: string;
+  muted?: boolean;
+}) {
   return (
-    <div className="rounded-2xl border border-[#e5e5ea] bg-white px-3 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#8e8e93]">{label}</p>
-      <p
-        className={`mt-1 font-bold leading-tight text-[var(--color-apple-text)] ${
-          muted ? "text-[15px]" : "text-[1.65rem] tabular-nums"
-        }`}
-      >
+    <div className="rounded-3xl bg-[var(--s1)] px-3 py-3 shadow-[var(--sh)]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--ink3)]">{label}</p>
+      <p className={`mt-1 font-bold leading-tight text-[var(--ink)] ${muted ? "text-[17px]" : "text-[1.65rem] tabular-nums"}`}>
         {value}
       </p>
+      {hint ? <p className="mt-1 text-[12px] text-[var(--ink3)]">{hint}</p> : null}
     </div>
   );
 }
