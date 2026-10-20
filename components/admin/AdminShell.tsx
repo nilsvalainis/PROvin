@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { AdminGlobalSearch, AdminMobileSearchButton } from "./AdminGlobalSearch";
+import { AdminGlobalSearch } from "./AdminGlobalSearch";
+import { AdminMobileWorkspaceSwitch } from "./AdminMobileWorkspaceSwitch";
 import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./AdminSidebar";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
@@ -88,7 +89,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
       {hideTabBar ? null : (
         <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
           <AdminMobileTabBar workspace={workspace} />
-          <AdminMobileSearchButton />
+          <AdminMobileWorkspaceSwitch />
         </div>
       )}
       <AdminGlobalSearch />

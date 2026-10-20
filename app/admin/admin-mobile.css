@@ -1,6 +1,12 @@
 /* PROVIN / IRISS admin phone UI (max 767px). Desktop classes stay untouched. */
 
 :root {
+  --focus: #2563eb;
+  --btn-dark-bg: rgba(31, 36, 48, .89);
+  --btn-dark-fg: #fff;
+  --status-chip-bg: #f2f2f7;
+  --status-chip-dot: #8e8e93;
+  --status-chip-fg: #3a3a3c;
   --d-micro: 120ms;
   --d-std: 220ms;
   --d-std-l: 250ms;
@@ -502,6 +508,103 @@
     height: 44px;
     min-height: 44px;
     white-space: nowrap;
+  }
+
+  .admin-ws-switch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    background: var(--btn-dark-bg, rgba(31, 36, 48, 0.89));
+    color: var(--btn-dark-fg, #fff);
+    text-decoration: none;
+    box-shadow: none;
+  }
+
+  .admin-ws-switch small {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    opacity: 0.7;
+    line-height: 1;
+  }
+
+  .admin-ws-switch b {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+
+  .admin-ws-switch[data-ws="pro"] {
+    background: #fff;
+    color: #1d1d1f;
+    border: 1px solid #d2d2d7;
+  }
+
+  .admin-ws-switch:focus-visible {
+    outline: 2px solid var(--focus, #2563eb);
+    outline-offset: 2px;
+  }
+
+  .iriss-mini-lv-plate {
+    display: inline-flex;
+    align-items: stretch;
+    height: 28px;
+    border-radius: 6px;
+    border: 1.5px solid #c8102e;
+    background: #fff;
+    overflow: hidden;
+    flex: none;
+  }
+
+  .iriss-mini-lv-plate-eu {
+    width: 14px;
+    background: #003399;
+    color: #fff;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 0 3px;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  .iriss-mini-lv-plate-nr {
+    padding: 0 7px;
+    color: #c8102e;
+    font-family: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 28px;
+    letter-spacing: 0.04em;
+  }
+
+  .iriss-plate-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 22px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--status-chip-bg, #f2f2f7);
+    color: var(--status-chip-fg, #3a3a3c);
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .iriss-plate-status-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--status-chip-dot, #8e8e93);
   }
 }
 

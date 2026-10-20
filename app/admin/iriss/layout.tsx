@@ -51,11 +51,11 @@ export default async function AdminIrissLayout({ children }: { children: ReactNo
   const actor = await getAdminOrStaffActor();
   if (!actor) {
     const h = await headers();
-    const intended = h.get("x-admin-intended-path")?.trim() || "/admin/iriss/pasutijumi";
+    const intended = h.get("x-admin-intended-path")?.trim() || "/admin/iriss";
     const safe =
       intended.startsWith("/admin") && !intended.startsWith("/admin/login")
         ? intended
-        : "/admin/iriss/pasutijumi";
+        : "/admin/iriss";
     redirect(`/admin/login?next=${encodeURIComponent(safe)}`);
   }
 

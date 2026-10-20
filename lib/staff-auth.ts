@@ -147,7 +147,7 @@ export async function requireLogisticsApi(): Promise<
 }
 
 export function staffActorHomePath(actor: AdminOrStaffActor): string {
-  if (actor.kind === "admin") return "/admin/iriss/pasutijumi";
+  if (actor.kind === "admin") return "/admin/iriss";
   return staffHomePath(actor.user.sections);
 }
 

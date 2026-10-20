@@ -11,5 +11,5 @@ export const dynamic = "force-dynamic";
 export default async function AdminIndexPage() {
   await requireAdminPage();
   const ws = (await cookies()).get("admin_ws")?.value;
-  redirect(ws === "iriss" ? "/admin/iriss/pasutijumi" : "/admin/dashboard");
+  redirect(ws === "iriss" ? "/admin/iriss" : "/admin/dashboard");
 }

@@ -28,18 +28,22 @@ describe("IRISS / PRO mobile audit guards", () => {
     expect(src.shell).not.toMatch(/am-topbar-sticky/);
   });
 
-  it("does not ship the unapproved menu-home or IRISS/PRO dock switch", () => {
-    expect(src.shell).toMatch(/AdminMobileSearchButton/);
-    expect(src.shell).not.toMatch(/IRISS\s*<->\s*PRO/);
-    expect(src.chrome).not.toMatch(/lv-plate|eu-band|mini-plate/);
-    expect(src.bar).not.toMatch(/B193-7|B762-7|B192/);
+  it("ships the approved menu home, back arrow and IRISS/PRO dock switch", () => {
+    expect(src.shell).toMatch(/AdminMobileWorkspaceSwitch/);
+    expect(src.shell).not.toMatch(/AdminMobileSearchButton/);
+    expect(src.chrome).toMatch(/defaultBackHref/);
+    expect(src.chrome).toMatch(/\/admin\/iriss/);
+    expect(src.bar).toMatch(/IrissPavadzimesPlateStrip/);
     expect(src.logistika).not.toMatch(/mobileTitle="Izvēlne"|title="Izvēlne"/);
   });
 
-  it("keeps waybill chips on current document labels, with 44px tap height", () => {
-    expect(src.bar).toMatch(/min-h-11/);
-    expect(src.bar).toMatch(/irissWaybillMobileBarItems/);
-    expect(src.bar).not.toMatch(/displayDealerPlate/);
+  it("shows mini LV plates with status hours, not waybill numbers", () => {
+    expect(src.bar).toMatch(/IrissPavadzimesPlateStrip/);
+    const strip = readFileSync(new URL("../components/admin/IrissPavadzimesPlateStrip.tsx", import.meta.url), "utf8");
+    expect(strip).toMatch(/min-h-11/);
+    expect(strip).toMatch(/IrissMiniLvPlate/);
+    expect(strip).not.toMatch(/formatIrissWaybillChip/);
+    expect(strip).not.toMatch(/item\.number/);
   });
 
   it("makes sheets and the global search panel opaque", () => {
@@ -82,6 +86,10 @@ describe("IRISS / PRO mobile audit guards", () => {
     expect(admin).toMatch(/--news-bg,\s*var\(--ink/);
     expect(src.row).not.toMatch(/#2563eb/);
     expect(src.chrome).not.toMatch(/#2563eb/);
+    expect(src.irissTheme).toMatch(/--focus:\s*#2563eb/);
+    expect(src.irissTheme).toMatch(/--btn-dark-bg:\s*rgba\(31,\s*36,\s*48,\s*\.89\)/);
+    expect(src.irissTheme).toMatch(/--status-chip-bg:\s*#f2f2f7/);
+    expect(src.irissTheme).toMatch(/--news-bg:\s*var\(--ink\)/);
   });
 
   it("keeps the unapproved mockup in scripts only", () => {

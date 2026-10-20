@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
+import { IrissPavadzimesPlateStrip } from "@/components/admin/IrissPavadzimesPlateStrip";
 import { ADMIN_MOBILE_MQ } from "@/lib/admin-mobile-shell";
-import { irissWaybillMobileBarItems } from "@/lib/iriss-pavadzimes-mobile-bar";
-import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
 
 function useIrissMobileViewport(): boolean {
   return useSyncExternalStore(
@@ -21,64 +19,24 @@ function useIrissMobileViewport(): boolean {
 
 const IRISS_DETAIL_PATH = /^\/admin\/iriss\/(?:pasutijumi|scan)\/[^/]+$/;
 
-/** Mobilā josla virs IRISS satura. Dati no esošā aktīvo pavadzīmju pieprasījuma. */
-export function IrissPavadzimesMobileBar({ embedded = false }: { embedded?: boolean }) {
+function isIrissMenuHome(pathname: string): boolean {
+  return pathname === "/admin/iriss" || pathname === "/admin/iriss/";
+}
+
+/** Mobilā josla virs IRISS satura. Mini LV plāksnes + statuss / stundas, bez pavadzīmes numura. */
+export function IrissPavadzimesMobileBar({
+  embedded = false,
+  force = false,
+}: {
+  embedded?: boolean;
+  force?: boolean;
+}) {
   const mobile = useIrissMobileViewport();
   const pathname = usePathname() || "";
   const hideBar =
-    pathname.startsWith("/admin/iriss/sludinajumi") || IRISS_DETAIL_PATH.test(pathname);
-  const [rows, setRows] = useState<IrissPavadzimeListRow[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    if (!mobile || hideBar) return;
-    let cancelled = false;
-    void fetch("/api/admin/iriss-pavadzimes?active=1", { credentials: "include", cache: "no-store" })
-      .then(async (res) => {
-        const json = (await res.json().catch(() => null)) as { rows?: IrissPavadzimeListRow[] } | null;
-        if (!cancelled && res.ok && Array.isArray(json?.rows)) setRows(json.rows);
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        if (!cancelled) setLoaded(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [mobile, hideBar]);
-
-  if (!mobile || hideBar) return null;
-  const rowClass = embedded
-    ? "am-chip-fade -mr-4 flex max-w-full items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-    : "flex max-w-full gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
-  if (!loaded) {
-    return (
-      <div className="mb-0 max-w-full md:hidden" aria-hidden>
-        <div className={rowClass}>
-          <span className="h-11 w-28 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
-          <span className="h-11 w-24 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
-          <span className="h-11 w-20 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
-        </div>
-      </div>
-    );
-  }
-  if (rows.length === 0) return null;
-  const items = irissWaybillMobileBarItems(rows);
-
-  return (
-    <div className="mb-0 max-w-full md:hidden" aria-label="Pavadzīmju derīgums">
-      <div className={rowClass}>
-        <span className="shrink-0 text-[12px] font-medium text-[var(--label-secondary)]">Pavadzīmes</span>
-        {items.map((item) => (
-          <Link
-            key={item.id}
-            href="/admin/iriss/pavadzimes"
-            className="iriss-waybill-chip inline-flex min-h-11 max-w-[16rem] shrink-0 items-center rounded-full bg-[var(--fill-secondary)] px-3 text-[12px] font-medium text-[var(--label)]"
-          >
-            <span className="truncate">{item.label}</span>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
+    !force &&
+    (isIrissMenuHome(pathname) ||
+      pathname.startsWith("/admin/iriss/sludinajumi") ||
+      IRISS_DETAIL_PATH.test(pathname));
+  return <IrissPavadzimesPlateStrip enabled={mobile && !hideBar} embedded={embedded} />;
 }

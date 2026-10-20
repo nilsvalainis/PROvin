@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
@@ -12,6 +13,10 @@ import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
 import { formatAdminMobileBadgeCount } from "@/lib/admin-mobile-collapse";
 import { IrissPavadzimesMobileBar } from "@/components/admin/IrissPavadzimesMobileBar";
+
+function isIrissMenuHome(pathname: string): boolean {
+  return pathname === "/admin/iriss" || pathname === "/admin/iriss/";
+}
 
 export function AdminMobileTopBar({
   title,
@@ -28,15 +33,18 @@ export function AdminMobileTopBar({
   trailing?: ReactNode;
   children?: ReactNode;
 }) {
+  const pathname = usePathname() ?? "";
   const iriss = useAdminShellLayout()?.workspace === "iriss";
-  const hasBack = Boolean(backHref || onBack);
+  const defaultBackHref = iriss && !onBack && !isIrissMenuHome(pathname) ? "/admin/iriss" : undefined;
+  const resolvedBackHref = backHref ?? defaultBackHref;
+  const hasBack = Boolean(resolvedBackHref || onBack);
   if (iriss) {
     return (
       <header className="am-topbar flex flex-col gap-2 px-4 pb-4 pt-[calc(env(safe-area-inset-top,0px)+8px)] md:hidden">
         <div className="flex min-h-11 items-center gap-2">
           {hasBack ? (
-            backHref ? (
-              <Link href={backHref} aria-label="Atpakaļ" className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
+            resolvedBackHref ? (
+              <Link href={resolvedBackHref} aria-label="Atpakaļ" className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
                 <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
               </Link>
             ) : (
@@ -70,8 +78,8 @@ export function AdminMobileTopBar({
       <header className="am-topbar px-4 pb-2 pt-[max(10px,env(safe-area-inset-top))] md:hidden">
         <div className="flex min-h-11 items-center gap-2">
           {hasBack ? (
-            backHref ? (
-              <Link href={backHref} aria-label="Atpakaļ" className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
+            resolvedBackHref ? (
+              <Link href={resolvedBackHref} aria-label="Atpakaļ" className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
                 <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
               </Link>
             ) : (

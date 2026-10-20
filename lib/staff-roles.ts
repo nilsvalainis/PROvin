@@ -169,9 +169,8 @@ export function irissSectionMeta(id: IrissSection): IrissSectionMeta {
 }
 
 export function staffHomePath(sections: readonly IrissSection[]): string {
-  const first = sections[0];
-  if (!first) return LOGISTICS_PAGE_PREFIX;
-  return irissSectionMeta(first).pagePrefixes[0] ?? LOGISTICS_PAGE_PREFIX;
+  if (sections.length > 0) return "/admin/iriss";
+  return LOGISTICS_PAGE_PREFIX;
 }
 
 export function sectionForAdminPagePath(pathname: string): IrissSection | null {
@@ -276,7 +275,7 @@ export function logisticsHomePath(): string {
 
 export function actorHomePath(actor: AccessActor): string {
   if (actor.kind === "staff") return staffHomePath(actor.sections);
-  if (actor.kind === "admin") return "/admin/iriss/pasutijumi";
+  if (actor.kind === "admin") return "/admin/iriss";
   return "/admin/login";
 }
 
