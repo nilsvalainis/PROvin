@@ -99,6 +99,9 @@ describe("MINI confirm copy", () => {
     expect(miniConfirmBody(lv, "warning")).toBe(
       "Ārvalstu vēsturi (negadījumus, nobraukumu, dīlera datus) pārbauda tikai PROVIN AUDITS. MINI parāda tikai Latvijas datus un sniedz konsultāciju.",
     );
+    expect(lv.emailLabel).toBe("E-pasts atskaites saņemšanai");
+    expect(lv.emailContinue).toBe("Turpināt");
+    expect(lv.emailError).toBe("Ievadi derīgu e-pastu vai atstāj tukšu.");
   });
 
   it("never uses eksperts or unicode dashes in any locale", () => {
@@ -134,6 +137,9 @@ describe("MINI confirm modal markup", () => {
     expect(modal).toContain("styles.miniConfirmDotExc");
     expect(modal).not.toContain("🟢");
     expect(modal).not.toContain("🔴");
+    expect(modal).toContain('type="email"');
+    expect(modal).toContain("copy.emailLabel");
+    expect(modal).toContain("Tp5CheckoutEmailModal");
   });
 });
 

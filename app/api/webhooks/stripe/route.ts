@@ -14,6 +14,7 @@ import { releaseStripeEvent, tryBeginStripeEvent } from "@/lib/stripe-webhook-de
 import { ensureConsultationDraftSeed } from "@/lib/admin-consultation-draft-store";
 import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/stripe-session";
 import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
+import { invalidateUnpaidCheckoutListCache } from "@/lib/admin-unpaid-orders";
 import { getStripe } from "@/lib/stripe";
 import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
 import { runOrderFreeVinScan } from "@/lib/order-vin-scan-run";
@@ -381,6 +382,11 @@ export async function POST(req: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
     return NextResponse.json({ error: `Webhook paraksts: ${msg}` }, { status: 400 });
+  }
+
+  if (event.type === "checkout.session.expired") {
+    invalidateUnpaidCheckoutListCache();
+    return NextResponse.json({ received: true });
   }
 
   if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {

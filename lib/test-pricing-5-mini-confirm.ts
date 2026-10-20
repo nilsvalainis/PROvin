@@ -12,6 +12,9 @@ export type Tp5MiniConfirmCopy = {
   warnTitle: string;
   warnBar: string;
   warnBody: string;
+  emailLabel: string;
+  emailError: string;
+  emailContinue: string;
 };
 
 const LV: Tp5MiniConfirmCopy = {
@@ -27,6 +30,9 @@ const LV: Tp5MiniConfirmCopy = {
   warnBar: "⚠️ Auto Latvijā nav reģistrēts vai ir reģistrēts mazāk nekā 3 gadus.",
   warnBody:
     "Ārvalstu vēsturi (negadījumus, nobraukumu, dīlera datus) pārbauda tikai PROVIN AUDITS. MINI parāda tikai Latvijas datus un sniedz konsultāciju.",
+  emailLabel: "E-pasts atskaites saņemšanai",
+  emailError: "Ievadi derīgu e-pastu vai atstāj tukšu.",
+  emailContinue: "Turpināt",
 };
 
 const EN: Tp5MiniConfirmCopy = {
@@ -42,6 +48,9 @@ const EN: Tp5MiniConfirmCopy = {
   warnBar: "⚠️ The car is not registered in Latvia, or has been registered for less than 3 years.",
   warnBody:
     "Foreign history (accidents, mileage, dealer data) is checked only by PROVIN AUDITS. MINI shows Latvian data only and provides a consultation.",
+  emailLabel: "Email for the report",
+  emailError: "Enter a valid email or leave the field empty.",
+  emailContinue: "Continue",
 };
 
 const DE: Tp5MiniConfirmCopy = {
@@ -57,6 +66,9 @@ const DE: Tp5MiniConfirmCopy = {
   warnBar: "⚠️ Das Auto ist in Lettland nicht zugelassen oder weniger als 3 Jahre zugelassen.",
   warnBody:
     "Die ausländische Historie (Unfälle, Laufleistung, Händlerdaten) prüft nur PROVIN AUDITS. MINI zeigt nur lettische Daten und bietet eine Beratung.",
+  emailLabel: "E-Mail für den Bericht",
+  emailError: "Bitte eine gültige E-Mail eingeben oder das Feld leer lassen.",
+  emailContinue: "Weiter",
 };
 
 const RU: Tp5MiniConfirmCopy = {
@@ -72,6 +84,9 @@ const RU: Tp5MiniConfirmCopy = {
   warnBar: "⚠️ Автомобиль не зарегистрирован в Латвии или зарегистрирован менее 3 лет.",
   warnBody:
     "Зарубежную историю (аварии, пробег, данные дилера) проверяет только PROVIN AUDITS. MINI показывает только латвийские данные и даёт консультацию.",
+  emailLabel: "Эл. почта для отчёта",
+  emailError: "Введите корректный адрес или оставьте поле пустым.",
+  emailContinue: "Продолжить",
 };
 
 export function getTp5MiniConfirmCopy(locale?: string): Tp5MiniConfirmCopy {

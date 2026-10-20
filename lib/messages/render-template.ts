@@ -2,12 +2,14 @@
  * Vienots {{mainīgo}} un izvēles bloku renderētājs (bez Blob).
  */
 
-const PLACEHOLDER_RE = /\{\{([#\/]?)([a-z0-9_]+)\}\}/gi;
+/** `vin`, `maksajuma_saite` un arī `maksājuma_saite` (apstiprinātais atgādinājuma šablons). */
+const VAR_KEY = "[\\p{L}0-9_]+";
+const PLACEHOLDER_RE = new RegExp(`\\{\\{([#\\/]?)(${VAR_KEY})\\}\\}`, "giu");
 
 export function extractTemplatePlaceholders(template: string): string[] {
   const keys = new Set<string>();
   let m: RegExpExecArray | null;
-  const re = /\{\{([#\/]?)([a-z0-9_]+)\}\}/gi;
+  const re = new RegExp(`\\{\\{([#\\/]?)(${VAR_KEY})\\}\\}`, "giu");
   while ((m = re.exec(template)) !== null) {
     const prefix = m[1];
     const key = m[2].toLowerCase();
@@ -24,14 +26,14 @@ function isNonEmpty(v: unknown): boolean {
 
 /** Aizvieto {{x}} un {{#x}}…{{/x}} kad x nav tukšs. */
 export function renderTemplateString(template: string, vars: Record<string, string>): string {
-  const openRe = /\{\{#([a-z0-9_]+)\}\}/gi;
+  const openRe = new RegExp(`\\{\\{#(${VAR_KEY})\\}\\}`, "giu");
   let out = template.replace(/\r\n/g, "\n");
 
   out = out.replace(openRe, (_, key: string) => {
     const k = key.toLowerCase();
     return isNonEmpty(vars[k]) ? "" : "\0BLOCK_START\0";
   });
-  out = out.replace(/\{\{\/([a-z0-9_]+)\}\}/gi, (_, key: string) => {
+  out = out.replace(new RegExp(`\\{\\{\\/(${VAR_KEY})\\}\\}`, "giu"), (_, key: string) => {
     const k = key.toLowerCase();
     return isNonEmpty(vars[k]) ? "" : "\0BLOCK_END\0";
   });

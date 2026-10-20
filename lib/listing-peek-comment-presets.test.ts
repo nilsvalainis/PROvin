@@ -70,7 +70,7 @@ describe("assembleListingPeekCustomerComment", () => {
     expect(comment).not.toContain("1. ");
     expect(comment).toContain("Sākotnējie dati norāda uz augstu odometra rādījumu ticamību");
     expect(comment).toContain(". Automašīnas negadījumu vēsturi nepieciešams padziļināti pārbaudīt");
-    expect(comment).toContain(". Modelim ir zināmas ekspluatācijas nianses");
+    expect(comment).toContain(". Šim modelim ir zināmas nianses");
     expect(comment).toContain(". Pārdevējam ir salīdzinoši laba reputācija");
     expect(comment).toContain(". Virspusēji izvērtējot sludinājuma fotogrāfijas, būtiski vizuālie defekti netika novēroti.");
     expect(comment).toContain(". Ja auto ir apkopts pie oficiālā dīlera");
@@ -162,7 +162,7 @@ describe("parseListingPeekAiPayload", () => {
           technical: listingPeekPhraseByTone("technical", "positive"),
           seller: "",
           photos: listingPeekPhraseByTone("photos", "caution"),
-          dealer: listingPeekPhraseByTone("dealer", "critical"),
+          dealer: listingPeekPhraseByTone("dealer", "concern"),
           closer: true,
         }) +
         "\n```",
@@ -171,7 +171,7 @@ describe("parseListingPeekAiPayload", () => {
     expect(parsed?.lines.odometer).toBe(listingPeekPhraseByTone("odometer", "caution"));
     expect(parsed?.lines.technical).toBe(listingPeekPhraseByTone("technical", "positive"));
     expect(parsed?.lines.photos).toBe(listingPeekPhraseByTone("photos", "caution"));
-    expect(parsed?.lines.dealer).toBe(listingPeekPhraseByTone("dealer", "critical"));
+    expect(parsed?.lines.dealer).toBe(listingPeekPhraseByTone("dealer", "concern"));
     expect(parsed?.lines.incidents).toBe("");
   });
 
@@ -244,17 +244,64 @@ describe("LISTING_PEEK_TOPICS", () => {
     expect(all).not.toContain("\u2014");
     expect(all).not.toContain("\u2013");
     expect(LISTING_PEEK_COMMENT_CLOSER).not.toContain("\u2014");
+    expect(LISTING_PEEK_COMMENT_CLOSER).not.toContain("\u2013");
     expect(LISTING_PEEK_TOPICS).toHaveLength(7);
-    expect(LISTING_PEEK_TOPICS.map((t) => t.phrases.length)).toEqual([7, 5, 3, 4, 5, 6, 5]);
+    expect(LISTING_PEEK_TOPICS.map((t) => t.phrases.length)).toEqual([7, 5, 3, 4, 4, 5, 5]);
     for (const topic of LISTING_PEEK_TOPICS) {
       const ids = topic.phrases.map((p) => p.id);
       expect(new Set(ids).size).toBe(ids.length);
       expect(topic.phrases[0]?.tone).toBe("positive");
     }
-    expect(listingPeekPhraseByTone("odometer", "critical")).toContain("manipulāciju");
+    expect(listingPeekPhraseById("photos-lenki")).toBe("");
+    expect(listingPeekPhraseById("dealer-nav")).toBe("");
+    expect(listingPeekPhraseByTone("photos", "info")).toBe("");
+    expect(listingPeekPhraseByTone("dealer", "critical")).toBe("");
     expect(listingPeekPhraseByTone("incidents", "info")).toContain("Latvijas OCTA datubāzē");
-    expect(listingPeekPhraseByTone("photos", "info")).toContain("leņķu dēļ");
-    expect(listingPeekPhraseByTone("dealer", "critical")).toContain("nav iespējams");
     expect(listingPeekPhraseById("recommendation-neiesakam")).toContain("neiesakām");
+  });
+
+  it("uses the approved Latvian preset texts", () => {
+    expect(listingPeekPhraseById("odometer-ncsdd")).toBe(
+      "Latvijā šim auto vēl nav veikta agregātu numuru salīdzināšana, tāpēc CSDD sistēmā pagaidām nav redzami nobraukuma rādījumi no ārvalstu tehniskajām apskatēm (tie glabājas Eiropas EUCARIS datubāzē). Tie parādīsies pēc numuru salīdzināšanas, un citos avotos tie nav pieejami. Ja pārdevējs nav gatavs numurus salīdzināt pirms auto iegādes, pārbaude starptautiskajos reģistros var būt vienīgais veids, kā pārliecināties par nobraukuma patiesumu.",
+    );
+    expect(listingPeekPhraseById("odometer-kritisks")).toBe(
+      "Pieejamie dati liecina par iespējamām nobraukuma pretrunām auto vēsturē, taču droši to var apstiprināt tikai ar padziļinātu pārbaudi.",
+    );
+    expect(listingPeekPhraseById("odometer-ierobezoti")).toBe(
+      "Jāņem vērā, ka šim auto pilnu nobraukuma hronoloģiju no publiskajiem ārvalstu reģistriem iegūt var būt grūti: izcelsmes valsts un auto vecums var neļaut iegūt pietiekami daudz informācijas, lai izsekotu visam nobraukumam.",
+    );
+    expect(listingPeekPhraseById("odometer-tehniska-pase")).toBe(
+      "Šim auto datus no ārvalstu reģistriem iegūt var būt grūti. Pirms pasūtījuma palūdziet pārdevējam ārvalsts reģistrācijas apliecības (tehniskās pases) foto, kurā redzams reģistrācijas numurs. Tas var palīdzēt iegūt vairāk vēstures datu.",
+    );
+    expect(listingPeekPhraseById("incidents-nav-redzams")).toBe(
+      "Sākotnēji bojājumu pazīmes negadījumu vēsturē nav redzamas.",
+    );
+    expect(listingPeekPhraseById("technical-merens")).toBe(
+      "Konceptuāli šis modelis ir uzticams, taču daudz ko noteiks konkrētā auto stāvoklis, vēsture un objektīvs novērtējums klātienē, jo, kā jau visiem auto, arī šim ir savas vājās vietas.",
+    );
+    expect(listingPeekPhraseById("technical-nianses")).toBe(
+      "Šim modelim ir zināmas nianses, kurām jāpievērš uzmanība gan apskatot auto klātienē, gan turpmākajā ekspluatācijā.",
+    );
+    expect(listingPeekPhraseById("technical-problematisks")).toBe(
+      "Šim modelim ir zināmi riski, kas noteikti jāņem vērā gan pirms pirkuma, gan pēc tā.",
+    );
+    expect(LISTING_PEEK_COMMENT_CLOSER).toBe(
+      "Šis ir sākotnējs, virspusējs vērtējums. PROVIN AUDITS dod pilnu ainu: nobraukuma hronoloģiju, negadījumu datus, dīleru vēsturi un šī modeļa tehniskos riskus. Tas palīdz pieņemt pārdomātu lēmumu un iegūt argumentus cenas sarunām.",
+    );
+  });
+
+  it("still recognizes a previously sent letter with the legacy closer", () => {
+    const legacyCloser =
+      "Šis ir virspusējs sākotnējais vērtējums. Pilnu auto analīzi ar nobraukuma hronoloģiju, negadījumu datiem, dīleru vēsturi un specifisko tehnisko risku analīzi nodrošina PROVIN AUDITS. Tas ir drošākais veids, kā pilnvērtīgi noskaidrot digitālo auto vēsturi, izvairīties no dārgiem remontiem un iegūt argumentus cenas apspriešanai.";
+    const body = listingPeekPhraseByTone("technical", "caution");
+    const parsed = parseListingPeekCustomerComment(`${body}\n\n${legacyCloser}`);
+    expect(parsed.closer).toBe(true);
+    expect(parsed.lines.technical).toBe(body);
+    expect(insertListingPeekLetterSentence(`${body}\n\n${legacyCloser}`, "VIN no Vācijas, 2018. gads.")).toContain(
+      `${legacyCloser}`,
+    );
+    expect(insertListingPeekLetterSentence(`${body}\n\n${legacyCloser}`, "VIN no Vācijas, 2018. gads.")).not.toContain(
+      LISTING_PEEK_COMMENT_CLOSER,
+    );
   });
 });

@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
 import { Tp5DesktopFeatureIconRow } from "@/components/test-pricing-5/Tp5DesktopFeatureIconRow";
-import { Tp5MiniConfirmModal } from "@/components/test-pricing-5/Tp5MiniConfirmModal";
+import { Tp5CheckoutEmailModal, Tp5MiniConfirmModal } from "@/components/test-pricing-5/Tp5MiniConfirmModal";
 import { Tp5MobilePricingCard } from "@/components/test-pricing-5/Tp5MobilePricingCard";
 import { getTp5HeroCopy } from "@/lib/test-pricing-5-hero-copy";
 import {
@@ -57,6 +57,7 @@ export function ProvinPricingHero({
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [miniConfirm, setMiniConfirm] = useState<MiniCsddModalVariant | null>(null);
+  const [emailConfirmPlan, setEmailConfirmPlan] = useState<TestPricingPlanId | null>(null);
   const mobileHeroCopy = getTp5HeroCopy(locale, mobileActiveId);
   const desktopHeroCopy = getTp5HeroCopy(locale, desktopActiveId);
 
@@ -85,7 +86,7 @@ export function ProvinPricingHero({
   }, [searchParams]);
 
   const submitCheckout = useCallback(
-    async (planId: TestPricingPlanId) => {
+    async (planId: TestPricingPlanId, customerEmail?: string) => {
       setGlobalError(null);
       const validation = validateTp5InlineFields(listingUrl, vin, locale);
       if (!validation.ok) {
@@ -106,6 +107,7 @@ export function ProvinPricingHero({
             locale,
             listingUrl: listingUrl.trim(),
             vin: normalizeVin(vin),
+            customerEmail: customerEmail?.trim() || undefined,
             withdrawalConsent: true,
             sourcePage: checkoutSource,
           }),
@@ -150,10 +152,6 @@ export function ProvinPricingHero({
 
   const requestServiceCheckout = useCallback(
     async (serviceId: Tp5MobileServiceId) => {
-      if (serviceId !== "mini") {
-        await submitCheckout(TP5_MOBILE_CHECKOUT_PLAN[serviceId]);
-        return;
-      }
       setGlobalError(null);
       const validation = validateTp5InlineFields(listingUrl, vin, locale);
       if (!validation.ok) {
@@ -163,12 +161,16 @@ export function ProvinPricingHero({
         return;
       }
       setErrors({});
+      if (serviceId !== "mini") {
+        setEmailConfirmPlan(TP5_MOBILE_CHECKOUT_PLAN[serviceId]);
+        return;
+      }
       setLoading(true);
       const variant = await lookupMiniConfirmVariant();
       setLoading(false);
       setMiniConfirm(variant);
     },
-    [listingUrl, locale, lookupMiniConfirmVariant, submitCheckout, vin],
+    [listingUrl, locale, lookupMiniConfirmVariant, vin],
   );
 
   const submitMobileCheckout = useCallback(() => {
@@ -183,17 +185,36 @@ export function ProvinPricingHero({
     setMiniConfirm(null);
   }, []);
 
-  const continueMiniCheckout = useCallback(() => {
-    setMiniConfirm(null);
-    void submitCheckout(TP5_MOBILE_CHECKOUT_PLAN.mini);
-  }, [submitCheckout]);
+  const closeEmailConfirm = useCallback(() => {
+    setEmailConfirmPlan(null);
+  }, []);
 
-  const switchToAuditsCheckout = useCallback(() => {
-    setMiniConfirm(null);
-    setMobileActiveId("audits");
-    setDesktopActiveId("audits");
-    void submitCheckout(TP5_MOBILE_CHECKOUT_PLAN.audits);
-  }, [submitCheckout]);
+  const continueMiniCheckout = useCallback(
+    (email: string) => {
+      setMiniConfirm(null);
+      void submitCheckout(TP5_MOBILE_CHECKOUT_PLAN.mini, email);
+    },
+    [submitCheckout],
+  );
+
+  const switchToAuditsCheckout = useCallback(
+    (email: string) => {
+      setMiniConfirm(null);
+      setMobileActiveId("audits");
+      setDesktopActiveId("audits");
+      void submitCheckout(TP5_MOBILE_CHECKOUT_PLAN.audits, email);
+    },
+    [submitCheckout],
+  );
+
+  const continueEmailCheckout = useCallback(
+    (email: string) => {
+      const planId = emailConfirmPlan;
+      setEmailConfirmPlan(null);
+      if (planId) void submitCheckout(planId, email);
+    },
+    [emailConfirmPlan, submitCheckout],
+  );
 
   const stopSwipePropagation = (event: SyntheticEvent) => {
     event.stopPropagation();
@@ -285,6 +306,12 @@ export function ProvinPricingHero({
         onContinueMini={continueMiniCheckout}
         onSwitchAudits={switchToAuditsCheckout}
         onClose={closeMiniConfirm}
+      />
+      <Tp5CheckoutEmailModal
+        open={emailConfirmPlan !== null}
+        locale={locale}
+        onContinue={continueEmailCheckout}
+        onClose={closeEmailConfirm}
       />
     </div>
   );
