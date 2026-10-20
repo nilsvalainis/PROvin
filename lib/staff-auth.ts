@@ -12,7 +12,12 @@ import {
   signStaffSessionToken,
   verifyStaffSessionToken,
 } from "@/lib/staff-session-token";
-import { logisticsHomePath } from "@/lib/staff-roles";
+import {
+  actorHomePath,
+  staffHasSection,
+  staffHomePath,
+  type IrissSection,
+} from "@/lib/staff-roles";
 import {
   resolveLiveStaffSession,
   revokeStaffSession,
@@ -38,12 +43,14 @@ export async function setStaffSessionCookie(opts: {
   sessionId: string;
   userId: string;
   role: StaffUser["role"];
+  sections: StaffUser["sections"];
   expiresAtMs: number;
 }): Promise<void> {
   const token = await signStaffSessionToken({
     sid: opts.sessionId,
     uid: opts.userId,
     role: opts.role,
+    sections: opts.sections,
     exp: opts.expiresAtMs,
   });
   const cookieStore = await cookies();
@@ -74,7 +81,6 @@ export async function getStaffSession(): Promise<StaffActor | null> {
   if (!payload) return null;
   const live = await resolveLiveStaffSession(payload.sid, payload.uid);
   if (!live) return null;
-  if (live.user.role !== payload.role) return null;
   await touchStaffSession(payload.sid);
   return { kind: "staff", user: live.user, sessionId: payload.sid };
 }
@@ -93,30 +99,45 @@ export async function getAdminOrStaffActor(): Promise<AdminOrStaffActor | null> 
   return getStaffSession();
 }
 
-/**
- * Loģistikas lapas: administrators vai aktīvs Loģistika lietotājs.
- * Neatļauts: novirze uz Loģistikas sākumu (lomu lietotājs) vai login.
- */
-export async function requireLogisticsPage(): Promise<AdminOrStaffActor> {
+export async function requireIrissSectionPage(section: IrissSection): Promise<AdminOrStaffActor> {
   const actor = await getAdminOrStaffActor();
   if (actor?.kind === "admin") return actor;
-  if (actor?.kind === "staff" && actor.user.role === "logistics") return actor;
+  if (actor?.kind === "staff" && staffHasSection(actor.user, section)) return actor;
   if (actor?.kind === "staff") {
-    redirect(logisticsHomePath());
+    redirect(staffHomePath(actor.user.sections));
   }
-  const intended = (await headers()).get("x-admin-intended-path")?.trim() || logisticsHomePath();
-  const safe = intended.startsWith("/admin") && !intended.startsWith("/admin/login") ? intended : logisticsHomePath();
+  const intended = (await headers()).get("x-admin-intended-path")?.trim() || staffHomePath([section]);
+  const safe = intended.startsWith("/admin") && !intended.startsWith("/admin/login") ? intended : staffHomePath([section]);
   redirect(`/admin/login?next=${encodeURIComponent(safe)}`);
+}
+
+/** Loģistikas lapas: administrators vai darbinieks ar sadaļu Loģistika. */
+export async function requireLogisticsPage(): Promise<AdminOrStaffActor> {
+  return requireIrissSectionPage("logistika");
+}
+
+export async function requireIrissSectionApi(section: IrissSection): Promise<
+  { ok: true; actor: AdminOrStaffActor } | { ok: false; response: NextResponse }
+> {
+  const actor = await getAdminOrStaffActor();
+  if (actor?.kind === "admin") return { ok: true, actor };
+  if (actor?.kind === "staff" && staffHasSection(actor.user, section)) return { ok: true, actor };
+  if (!actor) return { ok: false, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+  return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
 }
 
 export async function requireLogisticsApi(): Promise<
   { ok: true; actor: AdminOrStaffActor } | { ok: false; response: NextResponse }
 > {
-  const actor = await getAdminOrStaffActor();
-  if (actor?.kind === "admin") return { ok: true, actor };
-  if (actor?.kind === "staff" && actor.user.role === "logistics") return { ok: true, actor };
-  return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
+  return requireIrissSectionApi("logistika");
 }
+
+export function staffActorHomePath(actor: AdminOrStaffActor): string {
+  if (actor.kind === "admin") return "/admin/iriss/pasutijumi";
+  return staffHomePath(actor.user.sections);
+}
+
+export { actorHomePath };
 
 export async function logoutStaffSessionIfAny(): Promise<void> {
   const cookieStore = await cookies();

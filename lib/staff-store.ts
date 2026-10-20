@@ -4,7 +4,14 @@ import { createHash, randomBytes } from "node:crypto";
 import { createJsonDocStore } from "@/lib/b2b-json-doc-store";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import { hashStaffPassword, isUsableStaffPassword, verifyStaffPassword } from "@/lib/staff-password";
-import { ENV_ADMIN_USER_ID, isStaffRole, normalizeStaffEmail, type StaffRole } from "@/lib/staff-roles";
+import {
+  ENV_ADMIN_USER_ID,
+  isStaffRole,
+  normalizeStaffEmail,
+  normalizeStaffSections,
+  type IrissSection,
+  type StaffRole,
+} from "@/lib/staff-roles";
 import { STAFF_SESSION_IDLE_MS, STAFF_SESSION_MAX_AGE_MS } from "@/lib/staff-session-token";
 import {
   isStaffUserId,
@@ -183,16 +190,19 @@ export type InviteStaffResult =
 export async function inviteStaffUser(input: {
   name: string;
   email: string;
-  role: StaffRole;
+  role?: StaffRole;
+  sections?: readonly IrissSection[];
   createdBy: string;
   ip?: string;
   userAgent?: string;
 }): Promise<InviteStaffResult> {
   const name = input.name.trim().slice(0, 120);
   const email = normalizeStaffEmail(input.email);
+  const sections = normalizeStaffSections(input.sections, input.role);
   if (!name) return { ok: false, error: "invalid_name" };
   if (!isValidOrderEmail(email)) return { ok: false, error: "invalid_email" };
-  if (!isStaffRole(input.role)) return { ok: false, error: "invalid_role" };
+  if (sections.length === 0) return { ok: false, error: "invalid_role" };
+  const role: StaffRole = sections.includes("logistika") ? "logistics" : "logistics";
 
   return mutateDoc<InviteStaffResult>((doc) => {
     if (doc.users.some((u) => u.email === email && u.status !== "revoked")) {
@@ -203,7 +213,8 @@ export async function inviteStaffUser(input: {
       id: newId("usr"),
       name,
       email,
-      role: input.role,
+      role,
+      sections,
       status: "invited",
       passwordHash: null,
       totpEnabled: false,
@@ -229,7 +240,7 @@ export async function inviteStaffUser(input: {
         userId: input.createdBy,
         action: "invite_created",
         target: user.id,
-        meta: { email, role: input.role, name },
+        meta: { email, role, sections, name },
         ip: input.ip ?? "unknown",
         userAgent: input.userAgent ?? "",
       },
@@ -275,14 +286,52 @@ export async function acceptStaffInvite(input: { token: string; password: string
   });
 }
 
-export async function peekStaffInvite(token: string): Promise<{ name: string; email: string; role: StaffRole } | null> {
+export async function peekStaffInvite(
+  token: string,
+): Promise<{ name: string; email: string; role: StaffRole; sections: IrissSection[] } | null> {
   const tokenHash = hashInviteToken(token.trim());
   const doc = await readStaffAccessDoc();
   const invite = doc.invites.find((i) => i.tokenHash === tokenHash);
   if (!invite || invite.usedAt || Date.parse(invite.expiresAt) <= Date.now()) return null;
   const user = doc.users.find((u) => u.id === invite.userId);
   if (!user || user.status === "revoked") return null;
-  return { name: user.name, email: user.email, role: user.role };
+  return { name: user.name, email: user.email, role: user.role, sections: user.sections };
+}
+
+export async function setStaffSections(input: {
+  userId: string;
+  sections: readonly IrissSection[];
+  actorId: string;
+  ip?: string;
+  userAgent?: string;
+}): Promise<StaffUserPublic | null> {
+  const sections = normalizeStaffSections(input.sections);
+  if (sections.length === 0) return null;
+  return mutateDoc((doc) => {
+    const user = doc.users.find((u) => u.id === input.userId);
+    if (!user) return { value: null };
+    const prev = user.sections;
+    const nextUser: StaffUser = {
+      ...user,
+      sections,
+      role: sections.includes("logistika") ? "logistics" : user.role,
+    };
+    const next = appendAudit(
+      { ...doc, users: doc.users.map((u) => (u.id === user.id ? nextUser : u)) },
+      {
+        userId: input.actorId,
+        action: "sections_updated",
+        target: user.id,
+        meta: { email: user.email, from: prev, to: sections },
+        ip: input.ip ?? "unknown",
+        userAgent: input.userAgent ?? "",
+      },
+    );
+    return {
+      value: toPublicStaffUser(nextUser, liveSessionsFor(next, user.id, Date.now()).length),
+      next,
+    };
+  });
 }
 
 export type StaffAuthResult =

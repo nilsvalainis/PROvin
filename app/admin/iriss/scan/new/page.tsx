@@ -3,7 +3,7 @@ import { IrissScanEditor } from "@/components/admin/IrissScanEditor";
 import { isIrissScanStoreEnabled } from "@/lib/iriss-scan-store";
 import { emptyIrissScanRecord } from "@/lib/iriss-scan-types";
 import { irissScanVinFromQuery } from "@/lib/iriss-scan-vin";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { requireIrissSectionPage } from "@/lib/staff-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export default async function IrissScanNewPage({
 }: {
   searchParams?: Promise<{ vin?: string }>;
 }) {
-  await requireAdminPage();
+  await requireIrissSectionPage("radars");
   if (!isIrissScanStoreEnabled()) {
     redirect("/admin/iriss/scan");
   }

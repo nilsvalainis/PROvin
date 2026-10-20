@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { lastMarketplaceAutoLoadAt, lastMarketplaceLoadAt, nextMarketplaceAutoAt } from "@/lib/marketplace/auto-load";
 import { marketplaceAutoIntervalDays } from "@/lib/marketplace/cost-caps";
 import { resolveMarketplaceAdminTarget } from "@/lib/marketplace/admin-target";
@@ -8,8 +8,8 @@ import { marketplaceItemsForOrder, readMarketplaceListingsState } from "@/lib/ma
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
-  const session = await getAdminSession();
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("radars");
+  if (!gate.ok) return gate.response;
   const url = new URL(req.url);
   const target = await resolveMarketplaceAdminTarget({
     orderId: url.searchParams.get("orderId") ?? "",

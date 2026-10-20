@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { deleteIrissScan, isSafeIrissScanId, readIrissScan, writeIrissScan } from "@/lib/iriss-scan-store";
 import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 import { IRISS_STALE_REVISION, parseExpectedIrissRevision } from "@/lib/iriss-scan-save-safety";
@@ -44,8 +44,8 @@ function parseBodyRecord(id: string, body: unknown): IrissScanRecord | null {
 }
 
 export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("radars");
+  if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
   if (!isSafeIrissScanId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   const rec = await readIrissScan(id);
@@ -54,8 +54,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 }
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("radars");
+  if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
   if (!isSafeIrissScanId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   let body: unknown;
@@ -84,8 +84,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 }
 
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("radars");
+  if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
   if (!isSafeIrissScanId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   const d = await deleteIrissScan(id);

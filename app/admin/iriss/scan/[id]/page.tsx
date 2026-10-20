@@ -1,14 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import { IrissScanEditor } from "@/components/admin/IrissScanEditor";
 import { isIrissScanStoreEnabled, isSafeIrissScanId, readIrissScanWithRetry } from "@/lib/iriss-scan-store";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { requireIrissSectionPage } from "@/lib/staff-auth";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ id: string }> };
 
 export default async function IrissScanDetailPage({ params }: Props) {
-  await requireAdminPage();
+  await requireIrissSectionPage("radars");
   if (!isIrissScanStoreEnabled()) {
     redirect("/admin/iriss/scan");
   }

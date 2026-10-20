@@ -4,7 +4,7 @@
  */
 import { NextResponse } from "next/server";
 
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { findVinHistory, reuseVehicleData } from "@/lib/vin-history";
 
 export const runtime = "nodejs";
@@ -14,7 +14,8 @@ export const maxDuration = 300;
 const SAFE_SESSION = /^[A-Za-z0-9_]{6,200}$/;
 
 export async function GET(req: Request) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("vin");
+  if (!gate.ok) return gate.response;
   const url = new URL(req.url);
   const sessionId = (url.searchParams.get("sessionId") ?? "").trim();
   const keys = url.searchParams.getAll("vin").map((v) => v.trim()).filter(Boolean);
@@ -23,7 +24,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("vin");
+  if (!gate.ok) return gate.response;
   let b: Record<string, unknown>;
   try {
     b = (await req.json()) as Record<string, unknown>;

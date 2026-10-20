@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { patchIrissListingVehicleVin, readIrissListingsLatestView } from "@/lib/iriss-listings-aggregate-store";
 import { isIrissListingsVinOcrEnabled, ocrVinFromListingPhotos } from "@/lib/iriss-listings-vin-ocr";
 import { listingVinOcrIsCrossChecked } from "@/lib/iriss-listings-vin-from-photos";
@@ -13,8 +13,8 @@ const OCR_ROUTE_BUDGET_MS = 100_000;
 const MISS_RETRY_MS = 7 * 86_400_000;
 
 export async function POST(req: Request) {
-  const session = await getAdminSession();
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("sludinajumi");
+  if (!gate.ok) return gate.response;
   if (!isIrissListingsVinOcrEnabled()) {
     return NextResponse.json({ status: "skipped", reason: "disabled", vin: "" });
   }

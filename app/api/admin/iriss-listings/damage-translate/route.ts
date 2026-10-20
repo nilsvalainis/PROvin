@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { hasAnyAdminAiProviderKey } from "@/lib/admin-ai-dispatch";
 import { classifyListingDamage } from "@/lib/iriss-listings-damage";
 import { translateListingDamageLv } from "@/lib/iriss-listings-damage-translate";
@@ -8,8 +8,8 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const session = await getAdminSession();
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("sludinajumi");
+  if (!gate.ok) return gate.response;
   if (!hasAnyAdminAiProviderKey()) return NextResponse.json({ error: "missing_ai_key" }, { status: 503 });
   let body: unknown;
   try {

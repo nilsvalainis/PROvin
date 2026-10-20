@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { IrissLogisticsAppShell } from "@/components/admin/IrissLogisticsAppShell";
+import { IrissStaffAppShell } from "@/components/admin/IrissStaffAppShell";
 import { IrissPwaRegister } from "@/components/admin/IrissPwaRegister";
 import { getAdminOrStaffActor } from "@/lib/staff-auth";
 import {
@@ -61,10 +61,10 @@ export default async function AdminIrissLayout({ children }: { children: ReactNo
 
   if (actor.kind === "staff") {
     return (
-      <IrissLogisticsAppShell name={actor.user.name}>
+      <IrissStaffAppShell name={actor.user.name} sections={actor.user.sections}>
         <IrissPwaRegister />
         {children}
-      </IrissLogisticsAppShell>
+      </IrissStaffAppShell>
     );
   }
 

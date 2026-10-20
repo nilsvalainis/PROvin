@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { readGoogleContactsConfig } from "@/lib/google-contacts";
 import { maybeSyncGoogleContact } from "@/lib/iriss-google-contact-sync";
 import { normalizeGeneratedDocuments } from "@/lib/iriss-generated-documents";
@@ -190,8 +190,8 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
 }
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pasutijumi");
+  if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
   if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   const rec = await readIrissPasutijums(id);
@@ -209,8 +209,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
   const t0 = Date.now();
   const { id } = await ctx.params;
   try {
-    const ok = await getAdminSession();
-    if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const gate = await requireIrissSectionApi("pasutijumi");
+    if (!gate.ok) return gate.response;
     if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
 
     let body: unknown;
@@ -289,8 +289,8 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
 }
 
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pasutijumi");
+  if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
   if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   const d = await deleteIrissPasutijums(id);

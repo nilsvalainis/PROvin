@@ -1,11 +1,16 @@
 /**
- * Loģistikas (lomu) sesijas sīkdatne. Nav kopīga ar Nila `provin_admin_session`.
+ * Darbinieka (lomu) sesijas sīkdatne. Nav kopīga ar Nila `provin_admin_session`.
  * Edge-drošs HMAC, tāds pats algoritms kā `lib/admin-session-token.ts`.
- * Formāts: `base64url(JSON {typ:"staff",sid,uid,role,exp}).hex(HMAC-SHA256)`.
+ * Formāts: `base64url(JSON {typ:"staff",sid,uid,role,sections,exp}).hex(HMAC-SHA256)`.
  */
 
 import { resolveAdminSessionSecret } from "@/lib/admin-session-token";
-import { isStaffRole, type StaffRole } from "@/lib/staff-roles";
+import {
+  isStaffRole,
+  normalizeStaffSections,
+  type IrissSection,
+  type StaffRole,
+} from "@/lib/staff-roles";
 
 export const STAFF_SESSION_COOKIE_NAME = "provin_staff_session";
 export const STAFF_SESSION_TOKEN_TYP = "staff";
@@ -19,7 +24,9 @@ export type StaffSessionPayload = {
   typ: typeof STAFF_SESSION_TOKEN_TYP;
   sid: string;
   uid: string;
+  /** Legacy: viena loma. Ja `sections` tukšs, `logistics` = Loģistika. */
   role: StaffRole;
+  sections: IrissSection[];
   exp: number;
 };
 
@@ -40,16 +47,29 @@ export function encodeStaffSessionPayload(input: Omit<StaffSessionPayload, "typ"
 
 export function isStaffSessionPayload(data: unknown): data is StaffSessionPayload {
   if (!data || typeof data !== "object") return false;
-  const o = data as { typ?: unknown; sid?: unknown; uid?: unknown; role?: unknown; exp?: unknown };
-  return (
-    o.typ === STAFF_SESSION_TOKEN_TYP &&
-    typeof o.sid === "string" &&
-    isStaffSessionId(o.sid) &&
-    typeof o.uid === "string" &&
-    isStaffSessionId(o.uid) &&
-    isStaffRole(o.role) &&
-    typeof o.exp === "number"
-  );
+  const o = data as {
+    typ?: unknown;
+    sid?: unknown;
+    uid?: unknown;
+    role?: unknown;
+    sections?: unknown;
+    exp?: unknown;
+  };
+  if (o.typ !== STAFF_SESSION_TOKEN_TYP) return false;
+  if (typeof o.sid !== "string" || !isStaffSessionId(o.sid)) return false;
+  if (typeof o.uid !== "string" || !isStaffSessionId(o.uid)) return false;
+  if (typeof o.exp !== "number") return false;
+  const sections = normalizeStaffSections(o.sections, o.role);
+  if (sections.length === 0) return false;
+  if (o.role !== undefined && o.role !== null && !isStaffRole(o.role)) return false;
+  return true;
+}
+
+export function staffSectionsFromPayload(data: {
+  role?: unknown;
+  sections?: unknown;
+}): IrissSection[] {
+  return normalizeStaffSections(data.sections, data.role);
 }
 
 function toHex(bytes: Uint8Array): string {
@@ -105,7 +125,12 @@ export async function verifyStaffSessionToken(
     if (!constantTimeEqual(sig.toLowerCase(), expected)) return null;
     const data = decodeBase64UrlJson(payload);
     if (!isStaffSessionPayload(data) || data.exp <= nowMs) return null;
-    return data;
+    const sections = staffSectionsFromPayload(data);
+    return {
+      ...data,
+      role: isStaffRole(data.role) ? data.role : "logistics",
+      sections,
+    };
   } catch {
     return null;
   }

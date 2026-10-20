@@ -19,7 +19,7 @@ function routePathname(file: string): string {
 }
 
 const HANDLER_GUARD =
-  /getAdminSession\(|requireLogisticsApi\(|requireB2bDemoPlatformAdmin\(|requireAdminPage\(/;
+  /getAdminSession\(|requireLogisticsApi\(|requireIrissSectionApi\(|requireB2bDemoPlatformAdmin\(|requireAdminPage\(/;
 
 describe("admin API handlers check a session", () => {
   const files = listRoutes(path.join(API_DIR, "admin"));

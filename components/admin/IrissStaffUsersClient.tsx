@@ -1,12 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  FUTURE_ROLE_DESCRIPTIONS,
-  STAFF_ROLE_DESCRIPTIONS,
-  STAFF_ROLE_LABELS,
-  type StaffRole,
-} from "@/lib/staff-roles";
+import { IRISS_SECTION_CATALOG, IRISS_SECTION_LABELS, type IrissSection } from "@/lib/staff-roles";
 import type { EnvAdminPublic, StaffAuditEntry, StaffUserPublic } from "@/lib/staff-types";
 
 type SessionRow = { id: string; createdAt: string; lastSeenAt: string; ip: string; device: string };
@@ -23,6 +18,11 @@ const AUDIT_LABEL: Record<StaffAuditEntry["action"], string> = {
   sessions_revoked: "beidza sesijas",
   totp_enabled: "ieslēdza 2FA",
   totp_disabled: "izslēdza 2FA",
+  sections_updated: "mainīja sadaļas",
+  waybill_requested: "nosūtīja pavadzīmes pieprasījumu",
+  waybill_retry: "atkārtoja pavadzīmes pieprasījumu",
+  waybill_claimed: "Aivars paņēma pieprasījumu",
+  waybill_result: "Aivars atgrieza rezultātu",
   point_viewed: "skatīja punktus",
   point_edited: "laboja punktu",
   print: "drukāja karti",
@@ -43,6 +43,10 @@ function formatWhen(iso: string | null): string {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const hh = String(d.getHours()).padStart(2, "0");
   const mi = String(d.getMinutes()).padStart(2, "0");
+  const today = new Date();
+  const sameDay =
+    d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+  if (sameDay) return `šodien ${hh}:${mi}`;
   return `${hh}:${mi} · ${dd}.${mm}.${d.getFullYear()}`;
 }
 
@@ -52,9 +56,9 @@ function statusLabel(status: DirectoryUser["status"]): { text: string; className
   return { text: "Atsaukts", className: "bg-[#FEF3F2] text-[#B42318]" };
 }
 
-function roleLabel(user: DirectoryUser): string {
-  if ("envAdmin" in user && user.envAdmin) return "Administrators";
-  return STAFF_ROLE_LABELS[user.role as StaffRole] ?? user.role;
+function userSections(user: DirectoryUser): IrissSection[] | "admin" {
+  if ("envAdmin" in user && user.envAdmin) return "admin";
+  return Array.isArray(user.sections) && user.sections.length ? user.sections : ["logistika"];
 }
 
 export function IrissStaffUsersClient() {
@@ -66,7 +70,8 @@ export function IrissStaffUsersClient() {
   const [modal, setModal] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<StaffRole>("logistics");
+  const [inviteSections, setInviteSections] = useState<IrissSection[]>(["logistika"]);
+  const [draftSections, setDraftSections] = useState<IrissSection[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [totp, setTotp] = useState<{ secret: string; otpauth: string } | null>(null);
@@ -96,12 +101,23 @@ export function IrissStaffUsersClient() {
   useEffect(() => {
     if (!selected || selected.envAdmin) {
       setSessions([]);
+      setDraftSections([]);
       return;
     }
+    const next = userSections(selected);
+    setDraftSections(next === "admin" ? [] : [...next]);
     void fetch(`/api/admin/staff/users/${encodeURIComponent(selected.id)}`, { credentials: "include", cache: "no-store" })
       .then((r) => r.json())
       .then((data: { sessions?: SessionRow[] }) => setSessions(data.sessions ?? []));
   }, [selected]);
+
+  function toggleDraft(id: IrissSection) {
+    setDraftSections((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+  }
+
+  function toggleInvite(id: IrissSection) {
+    setInviteSections((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+  }
 
   async function invite() {
     setBusy(true);
@@ -111,7 +127,7 @@ export function IrissStaffUsersClient() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, role }),
+        body: JSON.stringify({ name, email, sections: inviteSections }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -121,13 +137,14 @@ export function IrissStaffUsersClient() {
       setModal(false);
       setName("");
       setEmail("");
+      setInviteSections(["logistika"]);
       await load();
     } finally {
       setBusy(false);
     }
   }
 
-  async function act(action: string, extra?: Record<string, string>) {
+  async function act(action: string, extra?: Record<string, unknown>) {
     if (!selected || selected.envAdmin) return;
     setBusy(true);
     try {
@@ -147,6 +164,12 @@ export function IrissStaffUsersClient() {
     }
   }
 
+  const current = selected ? userSections(selected) : [];
+  const dirty =
+    selected && !selected.envAdmin && current !== "admin"
+      ? draftSections.join(",") !== current.join(",")
+      : false;
+
   return (
     <div className="relative min-h-full w-full bg-[#F4F6F9] px-3 pb-24 pt-3 sm:px-4 sm:pb-8">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -160,7 +183,8 @@ export function IrissStaffUsersClient() {
             </span>
           </div>
           <p className="mt-1.5 max-w-xl text-[13px] text-[#6b7280]">
-            Citas personas redz tikai savai lomai atļauto. Lomu pārvalda serveris katrā pieprasījumā.
+            Katrai personai var atzīmēt vairākas sadaļas. Navigācijā redzamas tikai atļautās, sākuma lapa - pirmā
+            atzīmētā. Pārbaude notiek serverī.
           </p>
         </div>
         <button
@@ -175,10 +199,17 @@ export function IrissStaffUsersClient() {
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-3">
           <section className="overflow-hidden rounded-[22px] border border-[#E5E7EB] bg-white shadow-sm">
+            <div className="hidden grid-cols-[1fr_minmax(0,220px)_88px_140px] gap-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9aa3b2] sm:grid">
+              <span>Persona</span>
+              <span>Sadaļas</span>
+              <span>Statuss</span>
+              <span>Pēdējā pieteikšanās</span>
+            </div>
             <ul>
               {directory.map((user) => {
                 const st = statusLabel(user.status);
                 const active = selected?.id === user.id;
+                const secs = userSections(user);
                 return (
                   <li key={user.id}>
                     <button
@@ -193,18 +224,30 @@ export function IrissStaffUsersClient() {
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[14px] font-medium text-[#111827]">{user.name}</span>
-                        <span className="block truncate text-[12px] text-[#6b7280]">{user.email || "env administrators"}</span>
+                        <span className="block truncate text-[12px] text-[#6b7280]">
+                          {user.email || "env administrators"}
+                        </span>
                       </span>
-                      <span className="hidden text-[12px] text-[#6b7280] sm:block">{roleLabel(user)}</span>
+                      <span className="hidden min-w-0 flex-wrap justify-end gap-1 sm:flex">
+                        {secs === "admin" ? (
+                          <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[#3d5bd9]">
+                            Visas (administrators)
+                          </span>
+                        ) : (
+                          secs.map((id) => (
+                            <span
+                              key={id}
+                              className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[#3d5bd9]"
+                            >
+                              {IRISS_SECTION_LABELS[id]}
+                            </span>
+                          ))
+                        )}
+                      </span>
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${st.className}`}>{st.text}</span>
-                      <span className="hidden text-[11px] text-[#9aa3b2] lg:block">{formatWhen(user.lastLoginAt)}</span>
-                      <span className="hidden text-[11px] text-[#9aa3b2] xl:block">{user.totpEnabled ? "2FA" : "-"}</span>
-                      {!user.envAdmin && user.status !== "revoked" ? (
-                        <span className="hidden text-[12px] text-[#B42318] md:inline">Atsaukt pieeju</span>
-                      ) : null}
-                      {!user.envAdmin && user.status === "revoked" ? (
-                        <span className="hidden text-[12px] text-[#067647] md:inline">Atjaunot</span>
-                      ) : null}
+                      <span className="hidden w-[140px] shrink-0 text-right text-[11px] text-[#9aa3b2] lg:block">
+                        {formatWhen(user.lastLoginAt)}
+                      </span>
                     </button>
                   </li>
                 );
@@ -212,116 +255,21 @@ export function IrissStaffUsersClient() {
             </ul>
           </section>
 
-          <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa3b2]">Lomas</p>
-            <div className="mt-3 space-y-3">
-              <div>
-                <p className="text-[14px] font-medium">Loģistika</p>
-                <p className="text-[13px] text-[#6b7280]">{STAFF_ROLE_DESCRIPTIONS.logistics}</p>
-              </div>
-              {FUTURE_ROLE_DESCRIPTIONS.map((row) => (
-                <div key={row.title}>
-                  <p className="text-[14px] font-medium">{row.title}</p>
-                  <p className="text-[13px] text-[#6b7280]">{row.body}</p>
-                </div>
-              ))}
-            </div>
+          <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm xl:hidden">
+            {selected ? <UserDetailCard
+              selected={selected}
+              draftSections={draftSections}
+              sessions={sessions}
+              totp={totp}
+              totpCode={totpCode}
+              setTotpCode={setTotpCode}
+              busy={busy}
+              dirty={Boolean(dirty)}
+              onToggle={toggleDraft}
+              onSave={() => void act("set_sections", { sections: draftSections })}
+              onAct={act}
+            /> : null}
           </section>
-        </div>
-
-        <aside className="space-y-3">
-          {selected ? (
-            <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-full bg-[#EEF2FF] text-[13px] font-semibold text-[#3d5bd9]">
-                  {initials(selected.name)}
-                </span>
-                <div>
-                  <p className="text-[15px] font-semibold">{selected.name}</p>
-                  <p className="text-[12px] text-[#6b7280]">{roleLabel(selected)}</p>
-                </div>
-              </div>
-              <dl className="mt-4 space-y-2 text-[13px]">
-                <div className="flex justify-between gap-3">
-                  <dt className="text-[#9aa3b2]">Pēdējā pieteikšanās</dt>
-                  <dd>{formatWhen(selected.lastLoginAt)}</dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt className="text-[#9aa3b2]">2FA</dt>
-                  <dd>{selected.totpEnabled ? "Ieslēgta" : "Nav"}</dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt className="text-[#9aa3b2]">Sesijas</dt>
-                  <dd>{selected.envAdmin ? "Env HMAC" : `${selected.sessionCount} aktīvas`}</dd>
-                </div>
-              </dl>
-              {sessions[0] ? (
-                <p className="mt-3 text-[12px] text-[#6b7280]">Ierīce: {sessions[0].device}</p>
-              ) : null}
-              {!selected.envAdmin ? (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void act("revoke_sessions")}
-                    className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px]"
-                  >
-                    Beigt sesijas
-                  </button>
-                  {selected.status === "revoked" ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void act("restore")}
-                      className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white"
-                    >
-                      Atjaunot pieeju
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void act("revoke")}
-                      className="rounded-full px-3 py-1.5 text-[12px] text-[#B42318]"
-                    >
-                      Atsaukt pieeju
-                    </button>
-                  )}
-                  {!selected.totpEnabled ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void act("totp_start")}
-                      className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px]"
-                    >
-                      Ieslēgt 2FA
-                    </button>
-                  ) : null}
-                </div>
-              ) : (
-                <p className="mt-3 text-[12px] text-[#9aa3b2]">Nila env pieteikšanās paliek nemainīta.</p>
-              )}
-              {totp && selected && !selected.envAdmin ? (
-                <div className="mt-3 space-y-2 rounded-xl bg-[#F8FAFC] p-3">
-                  <p className="break-all font-mono text-[11px]">{totp.secret}</p>
-                  <input
-                    value={totpCode}
-                    onChange={(e) => setTotpCode(e.target.value)}
-                    className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[16px]"
-                    placeholder="6 ciparu kods"
-                    inputMode="numeric"
-                  />
-                  <button
-                    type="button"
-                    className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white"
-                    onClick={() => void act("totp_confirm", { code: totpCode })}
-                  >
-                    Apstiprināt 2FA
-                  </button>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
 
           <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa3b2]">Darbību žurnāls</p>
@@ -331,7 +279,7 @@ export function IrissStaffUsersClient() {
               ) : (
                 audit.map((row) => (
                   <li key={row.id} className="flex gap-2 text-[13px]">
-                    <span className="w-16 shrink-0 text-[#9aa3b2]">{formatWhen(row.createdAt).split(" · ")[0]}</span>
+                    <span className="w-16 shrink-0 text-[#9aa3b2]">{formatWhen(row.createdAt).split(" · ")[0]?.replace("šodien ", "")}</span>
                     <span className="min-w-0 text-[#111827]">
                       {row.userId === "env-admin"
                         ? admin?.name || "Administrators"
@@ -344,6 +292,24 @@ export function IrissStaffUsersClient() {
               )}
             </ul>
           </section>
+        </div>
+
+        <aside className="hidden space-y-3 xl:block">
+          {selected ? (
+            <UserDetailCard
+              selected={selected}
+              draftSections={draftSections}
+              sessions={sessions}
+              totp={totp}
+              totpCode={totpCode}
+              setTotpCode={setTotpCode}
+              busy={busy}
+              dirty={Boolean(dirty)}
+              onToggle={toggleDraft}
+              onSave={() => void act("set_sections", { sections: draftSections })}
+              onAct={act}
+            />
+          ) : null}
         </aside>
       </div>
 
@@ -373,16 +339,23 @@ export function IrissStaffUsersClient() {
                 className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2.5 text-[16px]"
               />
             </label>
-            <label className="mb-3 block text-[13px]">
-              Loma
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as StaffRole)}
-                className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2.5 text-[16px]"
-              >
-                <option value="logistics">Loģistika</option>
-              </select>
-            </label>
+            <p className="mb-2 text-[13px] font-medium">Sadaļas</p>
+            <ul className="mb-3 divide-y divide-[#F3F4F6] rounded-2xl border border-[#E5E7EB]">
+              {IRISS_SECTION_CATALOG.map((row) => {
+                const on = inviteSections.includes(row.id);
+                return (
+                  <li key={row.id} className="flex items-center justify-between px-3 py-2.5">
+                    <label className="flex flex-1 items-center gap-2 text-[14px]">
+                      <input type="checkbox" checked={on} onChange={() => toggleInvite(row.id)} />
+                      {row.label}
+                    </label>
+                    {on && inviteSections[0] === row.id ? (
+                      <span className="text-[12px] text-[#3d5bd9]">sākuma lapa</span>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
             <p className="text-[12px] leading-relaxed text-[#6b7280]">
               Persona saņem vienreizēju uzaicinājuma saiti (derīga 24 h), pēc tam iestata paroli un 2FA. Uzaicinājums tiek
               nosūtīts tikai pēc šīs apstiprināšanas.
@@ -394,7 +367,7 @@ export function IrissStaffUsersClient() {
               </button>
               <button
                 type="button"
-                disabled={busy}
+                disabled={busy || inviteSections.length === 0}
                 onClick={() => void invite()}
                 className="rounded-full bg-[#111827] px-4 py-2 text-[13px] font-medium text-white"
               >
@@ -405,5 +378,142 @@ export function IrissStaffUsersClient() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+function UserDetailCard({
+  selected,
+  draftSections,
+  sessions,
+  totp,
+  totpCode,
+  setTotpCode,
+  busy,
+  dirty,
+  onToggle,
+  onSave,
+  onAct,
+}: {
+  selected: DirectoryUser;
+  draftSections: IrissSection[];
+  sessions: SessionRow[];
+  totp: { secret: string; otpauth: string } | null;
+  totpCode: string;
+  setTotpCode: (v: string) => void;
+  busy: boolean;
+  dirty: boolean;
+  onToggle: (id: IrissSection) => void;
+  onSave: () => void;
+  onAct: (action: string, extra?: Record<string, unknown>) => void;
+}) {
+  return (
+    <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-[#EEF2FF] text-[13px] font-semibold text-[#3d5bd9]">
+            {initials(selected.name)}
+          </span>
+          <div>
+            <p className="text-[15px] font-semibold">{selected.name}</p>
+            <p className="text-[12px] text-[#6b7280]">{selected.email || "env administrators"}</p>
+          </div>
+        </div>
+        {!selected.envAdmin ? (
+          <button
+            type="button"
+            disabled={busy || !dirty || draftSections.length === 0}
+            onClick={onSave}
+            className="rounded-full bg-[#EEF2FF] px-3 py-1.5 text-[12px] font-medium text-[#3d5bd9] disabled:opacity-40"
+          >
+            Saglabāt
+          </button>
+        ) : null}
+      </div>
+
+      {selected.envAdmin ? (
+        <p className="mt-4 text-[13px] text-[#6b7280]">Visas sadaļas (administrators). Nila env pieteikšanās paliek nemainīta.</p>
+      ) : (
+        <>
+          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa3b2]">Pieejamās sadaļas</p>
+          <ul className="mt-2 divide-y divide-[#F3F4F6]">
+            {IRISS_SECTION_CATALOG.map((row) => {
+              const on = draftSections.includes(row.id);
+              const pos = draftSections.indexOf(row.id);
+              const home = pos === 0;
+              return (
+                <li key={row.id} className="flex items-center justify-between py-2">
+                  <label className="flex flex-1 items-center gap-2 text-[14px]">
+                    <input type="checkbox" checked={on} onChange={() => onToggle(row.id)} />
+                    {row.label}
+                  </label>
+                  {home ? (
+                    <span className="text-[12px] text-[#3d5bd9]">sākuma lapa</span>
+                  ) : on ? (
+                    <span className="text-[12px] text-[#9aa3b2]">{pos + 1}.</span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2 text-[12px] leading-relaxed text-[#6b7280]">
+            Sākuma lapa - pirmā atzīmētā ({draftSections[0] ? IRISS_SECTION_LABELS[draftSections[0]] : "-"}). Cenas, klientu
+            dati un šofera personas dati šīm sadaļām netiek rādīti, ja tas nav atļauts. Izmaiņas stājas spēkā nākamajā
+            pieprasījumā; atvērtās sesijas redz jauno sarakstu.
+          </p>
+        </>
+      )}
+
+      {!selected.envAdmin ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void onAct("revoke_sessions")}
+            className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px]"
+          >
+            Beigt sesijas
+          </button>
+          {selected.status === "revoked" ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void onAct("restore")}
+              className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white"
+            >
+              Atjaunot pieeju
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void onAct("revoke")}
+              className="rounded-full px-3 py-1.5 text-[12px] text-[#B42318]"
+            >
+              Atsaukt pieeju
+            </button>
+          )}
+        </div>
+      ) : null}
+      {sessions[0] ? <p className="mt-3 text-[12px] text-[#6b7280]">Ierīce: {sessions[0].device}</p> : null}
+      {totp && !selected.envAdmin ? (
+        <div className="mt-3 space-y-2 rounded-xl bg-[#F8FAFC] p-3">
+          <p className="break-all font-mono text-[11px]">{totp.secret}</p>
+          <input
+            value={totpCode}
+            onChange={(e) => setTotpCode(e.target.value)}
+            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[16px]"
+            placeholder="6 ciparu kods"
+            inputMode="numeric"
+          />
+          <button
+            type="button"
+            className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white"
+            onClick={() => void onAct("totp_confirm", { code: totpCode })}
+          >
+            Apstiprināt 2FA
+          </button>
+        </div>
+      ) : null}
+    </section>
   );
 }

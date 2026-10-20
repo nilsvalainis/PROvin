@@ -156,10 +156,55 @@ describe("middleware admin gate", () => {
     expect(new URL(denied.headers.get("location")!).pathname).toBe("/admin/iriss/logistika");
   });
 
+  it("lets a multi-section cookie open granted pages and blocks the rest", async () => {
+    const payload = Buffer.from(
+      JSON.stringify({
+        typ: STAFF_SESSION_TOKEN_TYP,
+        sid: "ses_abcdefgh",
+        uid: "usr_abcdefgh",
+        role: "logistics",
+        sections: ["logistika", "pavadzimes"],
+        exp: Date.now() + 60_000,
+      }),
+      "utf8",
+    ).toString("base64url");
+    const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
+    const cookie = `provin_staff_session=${payload}.${sig}`;
+    expect((await middleware(req("https://www.provin.lv/admin/iriss/pavadzimes", cookie))).status).toBe(200);
+    expect((await middleware(req("https://www.provin.lv/admin/iriss/logistika", cookie))).status).toBe(200);
+    const denied = await middleware(req("https://www.provin.lv/admin/iriss/pasutijumi", cookie));
+    expect(denied.status).toBe(307);
+    expect(new URL(denied.headers.get("location")!).pathname).toBe("/admin/iriss/logistika");
+  });
+
   it("does not gate the invite accept page", async () => {
     const res = await middleware(req("https://www.provin.lv/admin/uzaicinajums/abc"));
     expect(res.status).toBe(200);
     expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("lets Pavadzīmes-only staff open waybills and blocks every other agent", async () => {
+    const payload = Buffer.from(
+      JSON.stringify({
+        typ: STAFF_SESSION_TOKEN_TYP,
+        sid: "ses_abcdefgh",
+        uid: "usr_abcdefgh",
+        role: "logistics",
+        sections: ["pavadzimes"],
+        exp: Date.now() + 60_000,
+      }),
+      "utf8",
+    ).toString("base64url");
+    const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
+    const cookie = `provin_staff_session=${payload}.${sig}`;
+    expect((await middleware(req("https://www.provin.lv/admin/iriss/pavadzimes", cookie))).status).toBe(200);
+    expect((await middleware(req("https://www.provin.lv/api/admin/iriss/waybill-requests", cookie))).status).toBe(200);
+    const vin = await middleware(req("https://www.provin.lv/admin/vin-scan", cookie));
+    expect(vin.status).toBe(307);
+    expect(new URL(vin.headers.get("location")!).pathname).toBe("/admin/iriss/pavadzimes");
+    expect((await middleware(req("https://www.provin.lv/api/admin/vin-scan", cookie))).status).toBe(403);
+    expect((await middleware(req("https://www.provin.lv/api/admin/outvin/purchase", cookie))).status).toBe(403);
+    expect((await middleware(req("https://www.provin.lv/api/admin/iriss-pasutijumi", cookie))).status).toBe(403);
   });
 
   it("returns 403 for logistics on PRO/IRISS admin APIs", async () => {

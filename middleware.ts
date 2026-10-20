@@ -31,8 +31,12 @@ import { isIrissOfferLinkPath } from "./lib/iriss-offer-client-link";
 import { decideB2bDemoHostRequest } from "./lib/b2b-demo-host";
 import { decideAdminApiGate } from "./lib/admin-api-gate";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "./lib/admin-session-token";
-import { decideAdminPageAccess, logisticsHomePath, type AccessActor } from "./lib/staff-roles";
-import { STAFF_SESSION_COOKIE_NAME, verifyStaffSessionToken } from "./lib/staff-session-token";
+import { actorHomePath, decideAdminPageAccess, type AccessActor } from "./lib/staff-roles";
+import {
+  STAFF_SESSION_COOKIE_NAME,
+  staffSectionsFromPayload,
+  verifyStaffSessionToken,
+} from "./lib/staff-session-token";
 
 /* Lokāli: `next dev` / `next start` ar `--hostname 127.0.0.1` un `localhost` hostu atšķirība var radīt
    papildu redirectus; next-intl ar vienu lokalizāciju un `localePrefix: "as-needed"`/`never` deva 307 cilpu uz `/`. */
@@ -73,13 +77,13 @@ async function resolveAdminPageActor(request: NextRequest): Promise<AccessActor>
     return { kind: "admin" };
   }
   const staff = await verifyStaffSessionToken(request.cookies.get(STAFF_SESSION_COOKIE_NAME)?.value);
-  if (staff) return { kind: "staff", role: staff.role };
+  if (staff) return { kind: "staff", sections: staffSectionsFromPayload(staff) };
   return { kind: "none" };
 }
 
-function adminForbiddenRedirect(request: NextRequest): NextResponse {
+function adminForbiddenRedirect(request: NextRequest, actor: AccessActor): NextResponse {
   const dest = request.nextUrl.clone();
-  dest.pathname = logisticsHomePath();
+  dest.pathname = actorHomePath(actor);
   dest.search = "";
   const res = redirect307(dest);
   res.headers.set("Cache-Control", "private, no-store");
@@ -222,7 +226,7 @@ export default async function middleware(request: NextRequest) {
     const actor = await resolveAdminPageActor(request);
     const access = decideAdminPageAccess(pathname, actor);
     if (access === "login") return adminLoginRedirect(request);
-    if (access === "forbidden") return adminForbiddenRedirect(request);
+    if (access === "forbidden") return adminForbiddenRedirect(request, actor);
     if (!isAdminLoginPath(pathname)) {
       requestHeaders.set("x-admin-intended-path", pathname);
     }

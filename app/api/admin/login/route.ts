@@ -7,7 +7,7 @@ import {
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit-memory";
 import { envAdminDisplayName, setStaffSessionCookie, signTotpChallenge, verifyTotpChallenge } from "@/lib/staff-auth";
-import { ENV_ADMIN_USER_ID, logisticsHomePath } from "@/lib/staff-roles";
+import { ENV_ADMIN_USER_ID, staffHomePath } from "@/lib/staff-roles";
 import {
   appendStaffAudit,
   authenticateStaffPassword,
@@ -111,12 +111,14 @@ export async function POST(req: Request) {
       sessionId: session.id,
       userId: staffAuth.user.id,
       role: staffAuth.user.role,
+      sections: staffAuth.user.sections,
       expiresAtMs: Date.parse(session.expiresAt),
     });
     return NextResponse.json({
       ok: true,
       role: staffAuth.user.role,
-      redirect: logisticsHomePath(),
+      sections: staffAuth.user.sections,
+      redirect: staffHomePath(staffAuth.user.sections),
     });
   }
 
