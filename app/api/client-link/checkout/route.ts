@@ -18,6 +18,7 @@ import {
   resolveInitiateCheckoutValueEur,
   stripeMetaCapiMetadataFromRequest,
 } from "@/lib/meta-capi";
+import { mergeStripeCheckoutMetadata } from "@/lib/stripe-checkout-metadata";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -95,10 +96,7 @@ export async function POST(req: Request) {
   try {
     const session = await stripe.checkout.sessions.create({
       ...params,
-      metadata: {
-        ...params.metadata,
-        ...stripeMetaCapiMetadataFromRequest(req),
-      },
+      metadata: mergeStripeCheckoutMetadata(stripeMetaCapiMetadataFromRequest(req), params.metadata),
     });
     if (!session.url) {
       return NextResponse.json({ error: "session_failed" }, { status: 500 });

@@ -38,3 +38,57 @@ export function stripeCheckoutProductMetadata(planId: string): {
     product_tier: stripeProductTierFromPlanId(planId),
   };
 }
+
+/**
+ * Atslēgas, ko drīkst uzstādīt tikai serveris. Klienta ķermenis, sīkdatne vai
+ * CAPI/UTM izkliede tās nedrīkst pārrakstīt (`fulfillment=b2b_pack` u.c.).
+ */
+export const STRIPE_SERVER_METADATA_KEYS = [
+  "fulfillment",
+  "partner_id",
+  "pack_qty",
+  "topup_cents",
+  "checkout_line",
+  "product_tier",
+  "upgrade_of",
+  "order_id",
+  "upgrade_kind",
+  "upgrade_token",
+  "client_link_hash",
+] as const;
+
+export type StripeServerMetadataKey = (typeof STRIPE_SERVER_METADATA_KEYS)[number];
+
+const SERVER_METADATA_KEY_SET = new Set<string>(STRIPE_SERVER_METADATA_KEYS);
+
+export function isStripeServerMetadataKey(key: string): boolean {
+  return SERVER_METADATA_KEY_SET.has(key);
+}
+
+/** Noņem servera atslēgas no neuzticama avota (sīkdatne, CAPI, formas izkliede). */
+export function omitStripeServerMetadataKeys(
+  untrusted: Record<string, string> | null | undefined,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!untrusted) return out;
+  for (const [key, value] of Object.entries(untrusted)) {
+    if (!key || isStripeServerMetadataKey(key)) continue;
+    if (typeof value !== "string") continue;
+    out[key] = value;
+  }
+  return out;
+}
+
+/**
+ * Stripe Checkout `metadata`: vispirms neuzticamie lauki (bez rezervētajām atslēgām),
+ * servera atslēgas vienmēr pēdējās.
+ */
+export function mergeStripeCheckoutMetadata(
+  untrusted: Record<string, string> | null | undefined,
+  trusted: Record<string, string>,
+): Record<string, string> {
+  return {
+    ...omitStripeServerMetadataKeys(untrusted),
+    ...trusted,
+  };
+}

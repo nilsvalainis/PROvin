@@ -9,6 +9,7 @@ import {
   type StoredUpsellOffer,
 } from "@/lib/order-upsell-store";
 import { getPublicSiteOrigin } from "@/lib/site-url";
+import { mergeStripeCheckoutMetadata } from "@/lib/stripe-checkout-metadata";
 import { getStripe } from "@/lib/stripe";
 import { stripeCheckoutLocale } from "@/lib/stripe-session";
 
@@ -31,10 +32,7 @@ export async function createOrderUpsellCheckoutSession(opts: {
   const session = await stripe.checkout.sessions.create({
     ...params,
     locale: stripeCheckoutLocale("lv"),
-    metadata: {
-      ...params.metadata,
-      ...(opts.trackingMetadata ?? {}),
-    },
+    metadata: mergeStripeCheckoutMetadata(opts.trackingMetadata, params.metadata),
   });
   if (!session.url) {
     throw new Error("session_failed");
