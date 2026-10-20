@@ -110,6 +110,7 @@ const STRING_KEYS = [
   "email",
   "orderDate",
   "brandModel",
+  "modelExtension",
   "vin",
   "productionYears",
   "totalBudget",
@@ -124,7 +125,9 @@ const STRING_KEYS = [
   "interiorFinish",
   "equipmentRequired",
   "equipmentDesired",
+  "agentNotes",
   "notes",
+  "internalNotes",
   "pinnedAt",
 ] as const satisfies readonly (keyof IrissPasutijumsRecord)[];
 
@@ -387,6 +390,7 @@ export function irissPasutijumsHasOperatorContent(rec: IrissPasutijumsRecord): b
     rec.phone,
     rec.email,
     rec.brandModel,
+    rec.modelExtension,
     rec.vin,
     rec.productionYears,
     rec.totalBudget,
@@ -396,6 +400,8 @@ export function irissPasutijumsHasOperatorContent(rec: IrissPasutijumsRecord): b
     rec.notes,
     rec.equipmentRequired,
     rec.equipmentDesired,
+    rec.agentNotes,
+    rec.internalNotes,
   ]
     .join("")
     .trim();

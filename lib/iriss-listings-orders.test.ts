@@ -34,6 +34,11 @@ describe("parseIrissOrderBudget", () => {
     expect(parseIrissOrderBudget("")).toBeNull();
     expect(parseIrissOrderBudget("nav norādīts")).toBeNull();
   });
+
+  it("uses the upper bound of a from-to range for calculations", () => {
+    expect(parseIrissOrderBudget("25000-32000")).toBe(32000);
+    expect(parseIrissOrderBudget("25 000 - 32 000 €")).toBe(32000);
+  });
 });
 
 describe("order briefs and linking", () => {

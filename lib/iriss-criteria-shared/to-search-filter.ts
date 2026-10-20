@@ -125,9 +125,10 @@ export function filterToSearchFilter(filter: IrissCriteriaFilter): EcarstradeSea
     vat: filter.vatRequired.value === true ? ["reclaimable"] : filter.vatRequired.value === false ? ["not_reclaimable"] : [],
     emissionFrom: filter.emissionMin.value ?? "",
     drives: [...filter.drive.value],
-    includeTokens: uniq(filter.equipmentRequired.value),
+    includeTokens: [],
     excludeTokens: uniq(filter.excludeModels.value),
     excludeColors: [],
+    modelExtensions: [],
     unmapped,
   };
 }

@@ -122,7 +122,7 @@ function parseKm(raw: string): { value: number | null; manual: string } {
   return { value: n, manual: "" };
 }
 
-/** cm³ vai litri (`1.6`, `1,6 l`, `1600`, `1600 cm3`). */
+/** cm³ vai litri (`1.6`, `1,6 l`, `1600`, `1600 cm3`). Kails `1` paliek rakstītais, ne 1000. */
 export function parseDisplacementCc(raw: string): { value: number | null; manual: string } {
   const t = raw.trim();
   if (!t) return { value: null, manual: "" };
@@ -130,7 +130,8 @@ export function parseDisplacementCc(raw: string): { value: number | null; manual
   if (mapped != null) return { value: mapped, manual: "" };
   const n = Number.parseFloat(t.replace(",", ".").replace(/[^\d.]/g, ""));
   if (!Number.isFinite(n)) return { value: null, manual: t };
-  if (n >= 1 && n <= 10 && !/\d{3,}/.test(t)) return { value: Math.round(n * 1000), manual: "" };
+  if (n >= 1 && n <= 10 && /[.,]|l\b/i.test(t) && !/\d{3,}/.test(t)) return { value: Math.round(n * 1000), manual: "" };
+  if (n >= 600 && n <= 9000) return { value: Math.round(n), manual: "" };
   return { value: null, manual: t };
 }
 

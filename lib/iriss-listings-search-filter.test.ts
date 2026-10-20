@@ -72,6 +72,40 @@ describe("vehicleMatchesSearchFilter", () => {
   });
 });
 
+describe("vehicleMatchesSearchFilter synonym groups", () => {
+  it("keeps German Autobid/mobile listings against ET English bookmark labels", () => {
+    const filter = parseListingSearchUrl(
+      "https://ecarstrade.com/search?mark[]=5&fuel[]=Petrol&gearbox[]=Automatic&category[]=Estate+Car",
+    );
+    expect(
+      vehicleMatchesSearchFilter(
+        {
+          title: "Audi A6 Avant",
+          manufacturer: "Audi",
+          fuel: "Benzin",
+          transmission: "Automatik",
+          bodyType: "Kombi",
+          platform: "autobid",
+        },
+        filter,
+      ),
+    ).toBe(true);
+    expect(
+      vehicleMatchesSearchFilter(
+        {
+          title: "Audi A6 Limousine",
+          manufacturer: "Audi",
+          fuel: "Diesel",
+          transmission: "Schaltgetriebe",
+          bodyType: "Limousine",
+          platform: "mobile",
+        },
+        filter,
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("vehicleMatchesSearchFilter post-filter", () => {
   it("drops opposite drive, keeps quattro of any colour", () => {
     const filter = parseListingSearchUrl(

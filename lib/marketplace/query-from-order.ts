@@ -1,3 +1,9 @@
+import {
+  bodiesMatchGroups,
+  drivesMatchGroups,
+  fuelsMatchGroups,
+  gearboxesMatchGroups,
+} from "@/lib/iriss-criteria-listing-match";
 import { migrateIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import type { IrissCriteriaFilter, IrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import {
@@ -173,9 +179,9 @@ function fold(raw: string): string {
 
 function fuelAlias(raw: string): string {
   const t = fold(raw);
+  if (/hybrid|hibrid|phev|mhev|hev/.test(t)) return "hybrid";
   if (/dizel|diesel/.test(t)) return "diesel";
   if (/petrol|benz|gasoline|otto/.test(t)) return "petrol";
-  if (/hybrid/.test(t)) return "hybrid";
   if (/electro|electric|ev\b/.test(t)) return "electric";
   if (/lpg|cng|gas/.test(t)) return "gas";
   return t;
@@ -184,7 +190,7 @@ function fuelAlias(raw: string): string {
 function gearboxAlias(raw: string): string {
   const t = fold(raw);
   if (/auto|dsg|tiptronic|cvt/.test(t)) return "automatic";
-  if (/manu|schalt/.test(t)) return "manual";
+  if (/manu|schalt|mehan/.test(t)) return "manual";
   return t;
 }
 
@@ -249,21 +255,16 @@ export function marketplaceVehicleMatchesQuery(v: MarketplaceMatchVehicle, q: Ma
   if (!inRange(vehiclePrice(v), q.priceFrom, q.priceTo)) return false;
   if (!inRange(vehiclePower(v), q.powerFromKw, q.powerToKw)) return false;
   if (!inRange(v.displacementCc ?? null, q.displacementFromCc, q.displacementToCc)) return false;
-  if (q.fuel && (v.fuel ?? "").trim() && fuelAlias(v.fuel ?? "") !== fuelAlias(q.fuel) && !includesLoose(v.fuel ?? "", q.fuel)) {
+  if (q.fuel && (v.fuel ?? "").trim() && !fuelsMatchGroups(v.fuel ?? "", [q.fuel])) {
     return false;
   }
-  if (
-    q.gearbox &&
-    (v.transmission ?? "").trim() &&
-    gearboxAlias(v.transmission ?? "") !== gearboxAlias(q.gearbox) &&
-    !includesLoose(v.transmission ?? "", q.gearbox)
-  ) {
+  if (q.gearbox && (v.transmission ?? "").trim() && !gearboxesMatchGroups(v.transmission ?? "", [q.gearbox])) {
     return false;
   }
-  if (q.body && (v.bodyType ?? "").trim() && !includesLoose(v.bodyType ?? "", q.body) && !includesLoose(hay, q.body)) {
+  if (q.body && (v.bodyType ?? "").trim() && !bodiesMatchGroups(`${v.bodyType ?? ""} ${hay}`, [q.body])) {
     return false;
   }
-  if (q.drive && (v.driveType ?? "").trim() && !includesLoose(v.driveType ?? "", q.drive) && !includesLoose(hay, q.drive)) {
+  if (q.drive && ((v.driveType ?? "").trim() || hay.trim()) && !drivesMatchGroups(`${v.driveType ?? ""} ${hay}`, [q.drive])) {
     return false;
   }
   return true;
