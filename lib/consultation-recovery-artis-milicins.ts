@@ -1,6 +1,7 @@
 /**
- * Atkopšanas momentuzņēmums — Artis Miļicins PROVIN SELECT (2026-05-21 PDF).
- * Servera melnraksta atjaunošanai (Artis Miļicins) vai `scripts/restore-consultation-artis.mjs`.
+ * Konsultācijas melnraksta atkopšanas momentuzņēmums (2026-05-21 PDF).
+ * Klienta e-pasts un tālrunis tikai no CONSULTATION_RECOVERY_EMAIL / CONSULTATION_RECOVERY_PHONE.
+ * Tukšs env: atkopšana pēc e-pasta nesakrīt un neieliek kontaktus.
  */
 import type {
   ConsultationDraftOrderEdits,
@@ -12,7 +13,16 @@ import { createDefaultSourceBlocks, emptyCsddFields, emptyLtabBlock } from "@/li
 import { adminRichHtmlToPlainText, plainTextToMinimalRichHtml } from "@/lib/admin-rich-comment-html";
 import { DEFAULT_PDF_VISIBILITY } from "@/lib/pdf-visibility";
 
-export const RECOVERY_ARTIS_EMAIL = "milicins80@gmail.com";
+export function readConsultationRecoveryEmail(env: NodeJS.ProcessEnv = process.env): string {
+  return (env.CONSULTATION_RECOVERY_EMAIL ?? "").trim();
+}
+
+export function readConsultationRecoveryPhone(env: NodeJS.ProcessEnv = process.env): string {
+  return (env.CONSULTATION_RECOVERY_PHONE ?? "").trim();
+}
+
+/** Klienta e-pasts no env; tukšs = atkopšana pēc e-pasta neieslēdzas. */
+export const RECOVERY_ARTIS_EMAIL = readConsultationRecoveryEmail();
 
 const IETEIKUMI_PLAIN = `Virsbūves korozija (Rūsa): Lai gan Audi virsbūves ir cinkotas, 14 gadus vecam auto (pat braucot Latvijā tikai gadu) ir obligāti jāpārbauda tipiskās riska vietas. Īpaša uzmanība jāpievērš riteņu arkām, sliekšņu apakšējām malām (vietās, kur lido akmeņi no riteņiem) un bagāžnieka vāka malai ap numura zīmes apgaismojumu.
 
@@ -127,8 +137,8 @@ function richWithBoldHeadings(plain: string): string {
 export function buildArtisMilicinsRecoveryOrderEdits(): ConsultationDraftOrderEdits {
   return {
     customerName: "Artis Miļicins",
-    customerEmail: RECOVERY_ARTIS_EMAIL,
-    customerPhone: "25135328",
+    customerEmail: readConsultationRecoveryEmail(),
+    customerPhone: readConsultationRecoveryPhone(),
     notes: "Sveiki, meklēju auto 4*4\nautomāts, dīzelis. Cenu kategorija 10000 - 14000 €",
   };
 }

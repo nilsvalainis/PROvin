@@ -17,7 +17,7 @@ const DEV_FALLBACK_USERNAME = "admin";
 const DEV_FALLBACK_PASSWORD = "provin-local-dev";
 
 function isProduction(): boolean {
-  return process.env.NODE_ENV === "production";
+  return process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
 }
 
 function resolveSecret(): string {

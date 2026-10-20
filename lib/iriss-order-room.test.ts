@@ -258,10 +258,10 @@ describe("offers and client copy", () => {
 
   it("formats the room header from the order and keeps share text plain", () => {
     const rec = order({
-      clientFirstName: "Romāns",
-      clientLastName: "Kļeščenkovs",
-      phone: "+37129390687",
-      email: "roman.k@inbox.lv",
+      clientFirstName: "Jānis",
+      clientLastName: "Bērziņš",
+      phone: "+37120000000",
+      email: "klients@example.lv",
       totalBudget: "16 000 €",
       dealServiceStartDeposit: true,
       orderDate: "2026-09-17",
@@ -270,7 +270,7 @@ describe("offers and client copy", () => {
     expect(irissOrderRoomRef("abcdef12-3456-7890-abcd-ef1234567890")).toBe("P-7890");
     expect(irissOrderRoomStamp("2026-10-15T11:31:00.000Z")).toBe("15.10 14:31");
     expect(irissOrderRoomSavedLabel(rec.updatedAt)).toBe("saglabāts 14:31");
-    expect(irissOrderRoomClientLine(rec)).toContain("Romāns Kļeščenkovs");
+    expect(irissOrderRoomClientLine(rec)).toContain("Jānis Bērziņš");
     expect(irissOrderRoomClientLine(rec)).toContain("budžets 16 000 €");
     expect(irissOrderRoomDealPill(rec)).toContain("17.09");
     const share = irissOrderRoomHitShareText(hit({ id: "w", title: "Audi A6", detailUrl: "https://auto1.example/1" }));
