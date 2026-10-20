@@ -30,6 +30,12 @@ import { isUnpaidPaymentPath } from "./lib/admin-unpaid-payment-link";
 import { isIrissOfferLinkPath } from "./lib/iriss-offer-client-link";
 import { decideB2bDemoHostRequest } from "./lib/b2b-demo-host";
 import { decideAdminApiGate, decidePartnerApiCsrf } from "./lib/admin-api-gate";
+import {
+  THANKS_SESSION_COOKIE_NAME,
+  decideThanksSessionCapture,
+  signThanksSessionToken,
+  thanksSessionCookieOptions,
+} from "./lib/thanks-session";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "./lib/admin-session-token";
 import { actorHomePath, decideAdminPageAccess, type AccessActor } from "./lib/staff-roles";
 import {
@@ -217,6 +223,23 @@ export default async function middleware(request: NextRequest) {
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 365,
     });
+    return res;
+  }
+
+  const thanksCapture = decideThanksSessionCapture({ pathname, searchParams });
+  if (thanksCapture.action === "redirect") {
+    const dest = request.nextUrl.clone();
+    dest.pathname = thanksCapture.pathname;
+    dest.search = thanksCapture.search;
+    const res = redirect307(dest);
+    if (thanksCapture.sessionId) {
+      const token = await signThanksSessionToken(thanksCapture.sessionId);
+      if (token) {
+        res.cookies.set(THANKS_SESSION_COOKIE_NAME, token, thanksSessionCookieOptions());
+      }
+    }
+    res.headers.set("Cache-Control", "private, no-store");
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
     return res;
   }
 

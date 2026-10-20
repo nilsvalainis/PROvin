@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { PROVIN_CONSENT_UPDATED_EVENT } from "@/lib/cookie-consent";
 import { trackMetaPurchase } from "@/lib/meta-pixel";
+import { applyThanksSessionUrlCleanup, thanksUrlIsSafeForPixels } from "@/lib/thanks-session";
 
 type Props = {
   transactionId: string;
@@ -21,7 +22,9 @@ export function MetaPurchaseConversion({ transactionId, value }: Props) {
 
     const key = `${FIRED_PREFIX}${transactionId}`;
     const tryFire = () => {
-      if (typeof sessionStorage === "undefined") return false;
+      if (typeof window === "undefined" || typeof sessionStorage === "undefined") return false;
+      applyThanksSessionUrlCleanup(window.location.href);
+      if (!thanksUrlIsSafeForPixels(window.location.href)) return false;
       if (sessionStorage.getItem(key) === "1") return true;
       const ok = trackMetaPurchase({ eventId: transactionId, value });
       if (ok) sessionStorage.setItem(key, "1");

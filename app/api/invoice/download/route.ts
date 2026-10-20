@@ -1,5 +1,11 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOrBuildInvoicePdfForSession } from "@/lib/invoice-storage";
+import {
+  THANKS_SESSION_COOKIE_NAME,
+  authorizeInvoiceDownload,
+  readThanksSessionIdFromToken,
+} from "@/lib/thanks-session";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,15 +22,23 @@ function pdfHeaders(invoiceNumber: string, bytes: Uint8Array) {
 }
 
 /**
- * Publiska rēķina lejupielāde pēc apmaksas: `?session_id=cs_…` (Stripe Checkout sesijas ID).
- * Sesija tiek pārbaudīta caur Stripe API `getCheckoutSessionDetail`; kešots PDF no Blob.
+ * Rēķina lejupielāde pēc apmaksas. Auth = parakstītā httpOnly sīkdatne no /paldies.
+ * `?session_id=` viena pati neder.
  */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const sessionId = searchParams.get("session_id")?.trim();
-  if (!sessionId) {
-    return NextResponse.json({ error: "missing_session_id" }, { status: 400 });
+  const cookieStore = await cookies();
+  const cookieSessionId = await readThanksSessionIdFromToken(
+    cookieStore.get(THANKS_SESSION_COOKIE_NAME)?.value,
+  );
+  const auth = authorizeInvoiceDownload({
+    cookieSessionId,
+    querySessionId: searchParams.get("session_id"),
+  });
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
+  const sessionId = auth.sessionId;
 
   let result;
   try {
