@@ -36,11 +36,16 @@
     min-height: 420px;
   }
 }
+.iriss-log-map-toolbar {
+  flex: 0 0 auto;
+  border-bottom: 1px solid #f3f4f6;
+}
 .iriss-log-map-hero .iriss-log-map-shell {
   position: absolute;
   inset: 0;
   height: auto !important;
   min-height: 0;
+  border-radius: 0;
 }
 
 .iriss-log-map-fs {

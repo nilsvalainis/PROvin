@@ -121,6 +121,18 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(client).not.toContain("Klients");
   });
 
+  it("keeps map controls in a row above an edge-to-edge map, never sticky", () => {
+    const css = readFileSync("app/admin/iriss/logistika/iriss-logistika.css", "utf8");
+    expect(client).toContain("iriss-log-map-toolbar");
+    expect(client).toContain('className="iriss-log-print-root"');
+    expect(client).not.toContain("iriss-log-print-root px-2");
+    expect(client).not.toContain("px-2 pb-2");
+    expect(client).not.toMatch(/sticky top-/);
+    expect(css).toContain(".iriss-log-map-toolbar");
+    expect(css).toMatch(/\.iriss-log-map-hero \.iriss-log-map-shell \{[\s\S]*?border-radius:\s*0/);
+    expect(map).toContain('fill ? "" : "rounded-[14px]"');
+  });
+
   it("gives the fullscreen map a sized host, then resize + fitBounds without a second Maps load", () => {
     const css = readFileSync("app/admin/iriss/logistika/iriss-logistika.css", "utf8");
     expect(css).toContain(".iriss-log-map-fs-card .iriss-log-print-root");
