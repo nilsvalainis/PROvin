@@ -1447,10 +1447,10 @@ export function IrissPasutijumsEditor({
   );
 
   const openOfferPdfForId = useCallback(
-    async (offerId: string) => {
+    async (offerId: string, omitImages = false) => {
       setOfferPdfBusy(true);
       try {
-        const { blob, imagesOmitted } = await generateOfferPdfBlob(offerId, !forceNoClientPdf);
+        const { blob, imagesOmitted } = await generateOfferPdfBlob(offerId, !forceNoClientPdf, omitImages);
         if (imagesOmitted > 0) {
           const notice = irissOfferImagesOmittedNotice(imagesOmitted);
           setOfferPdfNotice(notice);
@@ -2178,7 +2178,7 @@ export function IrissPasutijumsEditor({
           googleContactBusy={googleContactBusy}
           onRetryGoogleContact={() => void retryGoogleContact()}
           onGeneratedDocument={ingestGeneratedDocument}
-          onOpenOfferPdf={(offerId) => void openOfferPdfForId(offerId)}
+          onOpenOfferPdf={(offerId, omitImages) => void openOfferPdfForId(offerId, omitImages)}
           onAlbumFiles={(album, files) => void onAlbumFiles(album, files)}
           albumBusy={albumFileBusy}
           onRestore={() => void restoreDeleted()}

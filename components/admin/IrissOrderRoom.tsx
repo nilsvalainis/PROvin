@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, FileDown, FileText, Mail, Pencil, Phone, Plus, Send, Star, Trash2, X } from "lucide-react";
+import { FileDown, FileText, Mail, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from "react";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
@@ -65,6 +65,8 @@ import {
   type IrissCommFilter,
 } from "@/lib/iriss-communication-timeline";
 import { hitMatchesIrissPriceFilter, irissPriceChipFilterLabel, irissPriceHistoryRows, latestIrissPriceChip, type IrissPriceChipFilter } from "@/lib/iriss-listing-price-chips";
+import { IRISS_OFFERS_CONTINUE, IRISS_OFFERS_SEND, formatIrissOffersLinksSummary, irissOfferCardPrimary } from "@/lib/iriss-order-offers-view";
+import { IRISS_SEARCH_BUCKETS, formatIrissHitSourceLine, irissHitAuctionUrl } from "@/lib/iriss-order-search-view";
 import {
   IRISS_ORDER_ROOM_TABS,
   IRISS_ORDER_ROOM_TEMPLATES,
@@ -147,13 +149,6 @@ const roomBtnPrimary =
 
 const roomBtnDark =
   "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#111827] bg-[#111827] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-110 disabled:opacity-40";
-
-const BUCKETS: ReadonlyArray<{ id: IrissOrderRoomHitBucket; label: string }> = [
-  { id: "new", label: "Jauni" },
-  { id: "saved", label: "Saglabāti" },
-  { id: "offered", label: "Piedāvāti" },
-  { id: "reject", label: "Neder" },
-];
 
 type CriteriaDraft = Pick<
   IrissPasutijumsRecord,
@@ -452,7 +447,7 @@ export function IrissOrderRoom({
   onCreateOffer: () => void;
   onEditOffer: (offer: IrissOfferRecord) => void;
   onPrepareOffer: (hit: IrissOrderRoomHit) => void;
-  onOpenOfferPdf: (offerId: string) => void;
+  onOpenOfferPdf: (offerId: string, omitImages?: boolean) => void;
   onRestore: () => void;
   onOrderRestored: (record: IrissPasutijumsRecord) => void;
   onDeleteOrder: () => void;
@@ -474,6 +469,7 @@ export function IrissOrderRoom({
   const [bucket, setBucket] = useState<IrissOrderRoomHitBucket>("new");
   const [commFilter, setCommFilter] = useState<IrissCommFilter>("all");
   const [priceFilter, setPriceFilter] = useState<IrissPriceChipFilter>("all");
+  const [priceFilterOpen, setPriceFilterOpen] = useState(false);
   const [criteriaOpen, setCriteriaOpen] = useState(false);
   const [criteriaOn, setCriteriaOn] = useState(false);
   const [criteriaDraft, setCriteriaDraft] = useState<CriteriaDraft>(() => criteriaFrom(rec));
@@ -490,7 +486,7 @@ export function IrissOrderRoom({
   const [hitStatus, setHitStatus] = useState<Record<string, IrissListingHitStatus>>(() => coerceIrissHitStatusMap(initialHitStatus));
   const duplicates = coerceIrissDuplicatesByListing(duplicatesByListing);
   const safeHits = (Array.isArray(hits) ? hits : []).filter((hit) => hit && typeof hit.id === "string");
-  useAdminScrollLock(criteriaOpen);
+  useAdminScrollLock(criteriaOpen || priceFilterOpen);
 
   useEffect(() => {
     setDismissed(new Set(stringList(dismissedHitIds)));
@@ -1335,18 +1331,18 @@ export function IrissOrderRoom({
       ) : null}
 
       {tab === "search" ? (
-        <div className="mt-3 min-w-0 space-y-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-2xl border border-[#e5e7eb] bg-white px-3 py-2.5">
-            <b className="text-[12px] text-[#111827]">KRITĒRIJI</b>
+        <div className="iriss-mekletajs-view mt-3 min-w-0 space-y-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-[22px] bg-[var(--s1)] px-3 py-2.5 shadow-[var(--sh)]">
+            <b className="text-[12px] text-[var(--ink)]">KRITĒRIJI</b>
             {chips.map((chip) => (
               <button
                 key={chip.id}
                 type="button"
                 onClick={openCriteria}
-                className={`max-w-full truncate rounded-full border px-2.5 py-1 text-[12px] font-semibold ${
+                className={`max-w-full truncate rounded-full px-2.5 py-1 text-[12px] font-semibold ${
                   chip.tone === "required"
-                    ? "border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]"
-                    : "border-[#e5e7eb] bg-[#f3f4f6] text-[#374151]"
+                    ? "bg-[color-mix(in_srgb,var(--bad)_12%,transparent)] text-[var(--bad)]"
+                    : "bg-[var(--fill)] text-[var(--ink2)]"
                 }`}
               >
                 {chip.label}
@@ -1357,7 +1353,7 @@ export function IrissOrderRoom({
               Visi kritēriji
             </button>
             {criteriaOn ? (
-              <button type="button" className="rounded-full bg-[#111827] px-2.5 py-1 text-[12px] font-semibold text-white" onClick={() => setCriteriaOn(false)}>
+              <button type="button" className="rounded-full bg-[var(--chip-active-bg)] px-2.5 py-1 text-[12px] font-semibold text-[var(--chip-active-fg)]" onClick={() => setCriteriaOn(false)}>
                 Filtrs ieslēgts
               </button>
             ) : null}
@@ -1365,54 +1361,75 @@ export function IrissOrderRoom({
               Atvērt meklētājā
             </Link>
           </div>
-          <p className="text-[12px] leading-snug text-[#6b7280]">
+          <p className="text-[12px] leading-snug text-[var(--ink2)]">
             Tie paši jau nolasītie auto, kas Klientu filtros ir piesaistīti šim pasūtījumam. Izsoles nāk no saišu nolasīšanas. mobile.de un AutoScout24 nāk no ielādes zemāk.
           </p>
-          <IrissMarketplaceLoadPanel orderId={rec.id} onLoaded={onMarketplaceLoaded} />
+          <IrissMarketplaceLoadPanel orderId={rec.id} onLoaded={onMarketplaceLoaded} onFixCriteria={openCriteria} />
           {listingsCache === "off" ? (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-950">
+            <p className="rounded-[18px] bg-[var(--s1)] px-3 py-2 text-[13px] text-[var(--ink)] shadow-[var(--sh)]">
               Sludinājumu kešs nav ieslēgts. Maksas avoti netiek prasīti.
             </p>
           ) : null}
-          <div className="flex max-w-full flex-wrap gap-1.5" role="tablist" aria-label="Cenas filtrs">
-            {(["all", "down", "up"] as const).map((id) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setPriceFilter(id)}
-                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold ${
-                  priceFilter === id
-                    ? "border-[#111827] bg-[#111827] text-white"
-                    : "border-[#e5e7eb] bg-[#f3f4f6] text-[#374151]"
-                }`}
-              >
-                {id === "all" ? "Cenas visām" : irissPriceChipFilterLabel(id)}
-              </button>
-            ))}
-          </div>
           <div className="flex max-w-full flex-wrap gap-1.5" role="tablist" aria-label="Sludinājumu statuss">
-            {BUCKETS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setBucket(item.id)}
-                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold ${
-                  bucket === item.id
-                    ? "border-[#111827] bg-[#111827] text-white"
-                    : "border-[#e5e7eb] bg-[#f3f4f6] text-[#374151]"
-                }`}
-              >
-                {item.label} {bucketCounts[item.id]}
-              </button>
-            ))}
+            {IRISS_SEARCH_BUCKETS.map((item) => {
+              const active = bucket === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setBucket(item.id)}
+                  className={`rounded-full px-3 py-1.5 text-[12px] font-semibold ${
+                    active
+                      ? "bg-[var(--chip-active-bg)] text-[var(--chip-active-fg)]"
+                      : "bg-[var(--s1)] text-[var(--ink2)] shadow-[var(--sh)]"
+                  }`}
+                >
+                  {item.label}
+                  <em className="ml-1.5 rounded-full bg-[color-mix(in_srgb,currentColor_14%,transparent)] px-1.5 py-px text-[11px] font-semibold not-italic">{bucketCounts[item.id]}</em>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex max-w-full flex-wrap items-center gap-1.5" role="tablist" aria-label="Cenas filtrs">
+            {(["all", "down", "up"] as const).map((id) => {
+              const active = priceFilter === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setPriceFilter(id)}
+                  className={`rounded-full px-3 py-1.5 text-[12px] font-semibold ${
+                    active
+                      ? "bg-[var(--chip-active-bg)] text-[var(--chip-active-fg)]"
+                      : "bg-[var(--s1)] text-[var(--ink2)] shadow-[var(--sh)]"
+                  }`}
+                >
+                  {id === "all" ? "Cenas visām" : irissPriceChipFilterLabel(id)}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setPriceFilterOpen(true)}
+              className="rounded-full bg-[var(--s1)] px-3 py-1.5 text-[12px] font-semibold text-[var(--ink)] shadow-[var(--sh)]"
+            >
+              Cenas filtrs
+            </button>
           </div>
           {shownHits.length === 0 ? (
-            <p className="rounded-2xl border border-[#E5E7EB] bg-white px-4 py-6 text-[14px] text-[var(--color-provin-muted)]">
+            <p className="rounded-[22px] bg-[var(--s1)] px-4 py-6 text-[14px] text-[var(--ink2)] shadow-[var(--sh)]">
               {listingsCache === "off" ? "Kešā nav ko rādīt." : "Šajā statusā nav sludinājumu."}
             </p>
           ) : (
             <ul className="space-y-3">
-              {shownHits.map((hit) => (
+              {shownHits.map((hit) => {
+                const auctionUrl = irissHitAuctionUrl(hit);
+                const extraLinks = (hit.sourceLinks ?? []).filter((link) => link.url && link.url !== auctionUrl);
+                return (
                 <li key={hit.id} className="min-w-0">
                   <IrissOrderRoomHitCard
                     hit={hit}
@@ -1435,78 +1452,63 @@ export function IrissOrderRoom({
                       </IrissOrderMatchBoundary>
                     }
                     actions={
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => onPrepareOffer(hit)} className={roomBtnPrimary}>
-                          <Pencil className="h-3.5 w-3.5" aria-hidden />
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <p className="w-full text-[12px] font-semibold text-[var(--ink2)]">{formatIrissHitSourceLine(hit.platform, hit.countryCode)}</p>
+                        <button type="button" onClick={() => onPrepareOffer(hit)} className={roomBtn}>
                           Sagatavot piedāvājumu
                         </button>
-                        <button type="button" disabled={!canCall} onClick={() => onWhatsappText(irissOrderRoomHitShareText(hit))} className={roomBtnDark}>
-                          <Send className="h-3.5 w-3.5" aria-hidden />
-                          Nosūtīt klientam
-                        </button>
-                        {typeof hit.detailUrl === "string" && hit.detailUrl ? (
-                          <a href={hit.detailUrl} target="_blank" rel="noopener noreferrer" className={roomBtn}>
-                            Atvērt {hit.platform === "mobilede" ? "mobile.de" : hit.platform === "autoscout24" ? "AutoScout24" : "portālā"}
+                        {auctionUrl ? (
+                          <a href={auctionUrl} target="_blank" rel="noopener noreferrer" className={roomBtnDark}>
+                            Atvērt izsolē
                           </a>
                         ) : null}
-                        {(hit.sourceLinks ?? []).map((link) => (
-                          <a
-                            key={link.url}
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={roomBtn}
-                          >
-                            Atvērt {link.platform === "mobilede" ? "mobile.de" : link.platform === "autoscout24" ? "AutoScout24" : "portālā"}
-                          </a>
-                        ))}
-                        <button type="button" aria-pressed={favIds.has(hit.id)} aria-label={favIds.has(hit.id) ? "Noņemt no saglabātajiem" : "Saglabāt"} onClick={() => toggleFav(hit.id)} className={`${roomBtn} w-10 px-0`}>
-                          <Star className={`h-4 w-4 ${favIds.has(hit.id) ? "fill-amber-400 text-amber-500" : "text-slate-500"}`} aria-hidden />
-                        </button>
-                        {dismissed.has(hit.id) ? (
-                          <button type="button" onClick={() => void setHitHidden(hit, false)} className={roomBtn}>
-                            Atjaunot
-                          </button>
-                        ) : (
-                          <button type="button" onClick={() => void setHitHidden(hit, true)} className={roomBtn}>
-                            <X className="h-3.5 w-3.5" aria-hidden />
-                            Neder
-                          </button>
-                        )}
+                        <IrissOverflowMenu label="Vairāk">
+                          <IrissOverflowItem disabled={!canCall} onClick={() => onWhatsappText(irissOrderRoomHitShareText(hit))}>
+                            Nosūtīt klientam
+                          </IrissOverflowItem>
+                          <IrissOverflowItem href={searchHref}>Atvērt meklētājā</IrissOverflowItem>
+                          {extraLinks.map((link) => (
+                            <IrissOverflowItem key={link.url} href={link.url}>
+                              Atvērt {link.platform === "mobilede" ? "mobile.de" : link.platform === "autoscout24" ? "AutoScout24" : "portālā"}
+                            </IrissOverflowItem>
+                          ))}
+                          {dismissed.has(hit.id) ? (
+                            <IrissOverflowItem onClick={() => void setHitHidden(hit, false)}>Rādīt atkal</IrissOverflowItem>
+                          ) : (
+                            <IrissOverflowItem onClick={() => void setHitHidden(hit, true)}>Nav interesanti</IrissOverflowItem>
+                          )}
+                        </IrissOverflowMenu>
                       </div>
                     }
                   />
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </div>
       ) : null}
 
       {tab === "offers" ? (
-        <div className="mt-3 min-w-0 space-y-3">
-          <section className={cardClass}>
-            <CardTitle>Sludinājumu saites</CardTitle>
-            <IrissListingPlatformsFields
-              rec={rec}
-              onPatch={onPatchRecord}
-              onReadLink={onReadLink}
-              readingUrl={readingUrl}
-              readCountByUrl={readCountByUrl}
-            />
-            <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
-          </section>
+        <div className="iriss-mekletajs-view mt-3 min-w-0 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[13px] text-[#6b7280]">Klienta portfelis · {rec.offers.length} piedāvājumi</p>
-            <button type="button" onClick={onCreateOffer} className={roomBtnPrimary}>
-              <Plus className="h-4 w-4" aria-hidden />
-              Jauns piedāvājums
-            </button>
+            <p className="text-[15px] font-semibold text-[var(--ink)]">Piedāvājumi · {rec.offers.length}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={onCreateOffer} className={roomBtnDark}>
+                <Plus className="h-4 w-4" aria-hidden />
+                Jauns piedāvājums
+              </button>
+              <IrissOverflowMenu label="Vairāk">
+                <IrissOverflowItem href="/admin/iriss/pasutijumi/new?newOffer=1&noClientPdf=1">
+                  Jauns piedāvājums bez klienta datiem
+                </IrissOverflowItem>
+              </IrissOverflowMenu>
+            </div>
           </div>
           {rec.offers.length === 0 ? (
-            <p className="rounded-2xl border border-[#e5e7eb] bg-white px-4 py-6 text-[14px] text-[#6b7280]">Šim klientam vēl nav piedāvājumu.</p>
+            <p className="rounded-[22px] bg-[var(--s1)] px-4 py-6 text-[14px] text-[var(--ink2)] shadow-[var(--sh)]">Šim klientam vēl nav piedāvājumu.</p>
           ) : (
-            <ul className="grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <ul className="grid min-w-0 gap-3">
               {rec.offers.map((offer, index) => {
                 const total = irissOrderRoomOfferTotal(offer);
                 const thumb = irissOrderRoomOfferThumb(offer);
@@ -1514,47 +1516,56 @@ export function IrissOrderRoom({
                 const badge = offerPortfolioBadge(offer, link);
                 const sent = link ? formatIrissOfferLinkStamp(link.createdAt) : "";
                 const opened = link && link.viewCount > 0 ? formatIrissOfferLinkStamp(link.statusAt) : "";
+                const primary = irissOfferCardPrimary(offer, link);
+                const source = offer.auctionPlatform.trim();
                 return (
-                  <li key={offer.id} className="min-w-0 overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white">
-                    <div className="flex items-center gap-3 p-3 md:block md:p-0">
-                      <div className="relative h-14 w-[70px] shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-slate-300 to-slate-500 md:h-[150px] md:w-full md:rounded-none">
+                  <li key={offer.id} className="min-w-0 overflow-hidden rounded-[22px] bg-[var(--s1)] shadow-[var(--sh)]">
+                    <div className="flex items-center gap-3 p-3">
+                      <div className="relative h-14 w-[70px] shrink-0 overflow-hidden rounded-lg bg-[var(--fill)]">
                         {thumb ? (
                           <IrissLazyImage
                             src={listingDisplayImageUrl({ url: thumb, maxWidth: 480 })}
                             alt=""
-                            sizes="(max-width: 767px) 70px, 320px"
+                            sizes="70px"
                           />
                         ) : null}
                       </div>
-                      <div className="min-w-0 flex-1 md:p-3">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-[14px] font-bold leading-snug text-[#111827]">{offer.title || `Piedāvājums ${index + 1}`}</p>
-                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${badge.className}`}>{badge.label}</span>
+                          <p className="text-[14px] font-bold leading-snug text-[var(--ink)]">{offer.title || `Piedāvājums ${index + 1}`}</p>
+                          <span className="shrink-0 rounded-full bg-[var(--fill)] px-2 py-0.5 text-[11px] font-bold text-[var(--ink2)]">{badge.label}</span>
                         </div>
-                        <p className="mt-1 text-[13px] text-[#111827]">{offer.brandModel.trim() || "Marka nav norādīta"}</p>
-                        <p className="mt-1 text-[18px] font-extrabold text-[#111827]">{total != null ? listingFmtEur(total) : "Cena nav"}</p>
-                        <p className="mt-1 text-[12px] text-[#6b7280]">
+                        <p className="mt-1 text-[13px] text-[var(--ink)]">{offer.brandModel.trim() || "Marka nav norādīta"}</p>
+                        <p className="mt-1 text-[18px] font-extrabold text-[var(--ink)]">{total != null ? listingFmtEur(total) : "Cena nav"}</p>
+                        {source ? <p className="mt-1 text-[12px] font-semibold text-[var(--ink2)]">{source}</p> : null}
+                        <p className="mt-1 text-[12px] text-[var(--ink2)]">
                           {sent ? `Nosūtīts ${sent}` : "Nav nosūtīts"}
                           {opened ? ` · pēd. atvēra ${opened}` : ""}
+                          {link?.viewCount ? ` · Atvērts ${link.viewCount}×` : ""}
                           {link?.question ? ` · ${link.question}` : ""}
                         </p>
                       </div>
-                      <button type="button" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#e5e7eb] bg-white md:hidden" aria-label="Labot" onClick={() => onEditOffer(offer)}>
-                        <ChevronRight className="h-5 w-5" aria-hidden />
-                      </button>
                     </div>
                     <div className="space-y-2 px-3 pb-3">
-                      <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => onEditOffer(offer)} className={roomBtn}>
-                          <Pencil className="h-3.5 w-3.5" aria-hidden />
-                          Labot
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" onClick={() => onEditOffer(offer)} className={roomBtnDark}>
+                          {primary.label === IRISS_OFFERS_CONTINUE
+                            ? "Turpināt rediģēt"
+                            : primary.label === IRISS_OFFERS_SEND
+                              ? "Nosūtīt"
+                              : "Atvērt piedāvājumu"}
                         </button>
-                        <button type="button" onClick={() => onOpenOfferPdf(offer.id)} className={roomBtn}>
-                          PDF
-                        </button>
-                        <button type="button" disabled={!canCall} onClick={() => onWhatsappText(offerShareText(offer))} className={roomBtnWa}>
-                          WA
-                        </button>
+                        <IrissOverflowMenu label="Vairāk">
+                          <IrissOverflowItem onClick={() => onEditOffer(offer)}>Labot</IrissOverflowItem>
+                          <IrissOverflowItem onClick={() => onOpenOfferPdf(offer.id)}>PDF</IrissOverflowItem>
+                          <IrissOverflowItem onClick={() => onOpenOfferPdf(offer.id, true)}>PDF bez attēliem</IrissOverflowItem>
+                          <IrissOverflowItem disabled={!canCall} onClick={() => onWhatsappText(offerShareText(offer))}>
+                            WhatsApp
+                          </IrissOverflowItem>
+                          <IrissOverflowItem disabled={!canCall} onClick={() => onWhatsappText(offerShareText(offer))}>
+                            Nosūtīt
+                          </IrissOverflowItem>
+                        </IrissOverflowMenu>
                       </div>
                       <IrissOfferClientLinkBar
                         offerId={offer.id}
@@ -1572,17 +1583,33 @@ export function IrissOrderRoom({
               })}
             </ul>
           )}
+          <details className="rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--sh)]">
+            <summary className="cursor-pointer text-[14px] font-semibold text-[var(--ink)]">
+              Sludinājumu saites · {irissOrderRoomListingLinkCount(rec)}
+            </summary>
+            <p className="mt-2 text-[12px] text-[var(--ink2)]">
+              {formatIrissOffersLinksSummary(rec)}. Klikšķis atver Nolasīt, filtru, Pievienot saiti, Atjaunot eCarsTrade.
+            </p>
+            <IrissListingPlatformsFields
+              rec={rec}
+              onPatch={onPatchRecord}
+              onReadLink={onReadLink}
+              readingUrl={readingUrl}
+              readCountByUrl={readCountByUrl}
+            />
+            <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
+          </details>
           {rec.offers.length > 0 ? (
             <section className={cardClass}>
               <CardTitle>Atbilžu vēsture</CardTitle>
               {replies.length === 0 ? (
-                <p className="text-[13px] text-[#6b7280]">Klientu atbilžu vēl nav.</p>
+                <p className="text-[13px] text-[var(--ink2)]">Klientu atbilžu vēl nav.</p>
               ) : (
                 <ul>
                   {replies.map((row) => (
-                    <li key={row.id} className="flex items-start justify-between gap-3 border-b border-dashed border-[#eee] py-1.5 text-[13px] last:border-0">
+                    <li key={row.id} className="flex items-start justify-between gap-3 border-b border-dashed border-[var(--hair)] py-1.5 text-[13px] last:border-0">
                       <span className="min-w-0">{row.text}</span>
-                      <span className="shrink-0 text-[12px] text-[#6b7280]">{row.side}</span>
+                      <span className="shrink-0 text-[12px] text-[var(--ink2)]">{row.side}</span>
                     </li>
                   ))}
                 </ul>
@@ -1973,6 +2000,39 @@ export function IrissOrderRoom({
                 {criteriaBusy ? "Saglabā…" : "Saglabāt un filtrēt"}
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+      {priceFilterOpen ? (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-[rgba(20,24,35,0.2)] p-3 md:items-center" role="presentation">
+          <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--gsh)]">
+            <p className="text-[15px] font-semibold text-[var(--ink)]">Cenas filtrs</p>
+            <div className="mt-3 flex flex-col gap-2">
+              {(["all", "down", "up"] as const).map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    setPriceFilter(id);
+                    setPriceFilterOpen(false);
+                  }}
+                  className={`rounded-[14px] px-3 py-2.5 text-left text-[13px] font-semibold ${
+                    priceFilter === id
+                      ? "bg-[var(--chip-active-bg)] text-[var(--chip-active-fg)]"
+                      : "bg-[var(--fill)] text-[var(--ink)]"
+                  }`}
+                >
+                  {id === "all" ? "Cenas visām" : irissPriceChipFilterLabel(id)}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-full bg-[var(--fill)] text-[13px] font-semibold"
+              onClick={() => setPriceFilterOpen(false)}
+            >
+              Atcelt
+            </button>
           </div>
         </div>
       ) : null}
