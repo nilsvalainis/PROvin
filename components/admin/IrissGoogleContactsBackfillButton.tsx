@@ -46,9 +46,11 @@ async function runBackfillPass(dryRun: boolean): Promise<GoogleContactBackfillCo
 export function IrissGoogleContactsBackfillButton({
   compact = false,
   menu = false,
+  settingsRow = false,
 }: {
   compact?: boolean;
   menu?: boolean;
+  settingsRow?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -82,10 +84,18 @@ export function IrissGoogleContactsBackfillButton({
     }
   }, [busy]);
 
-  const label = busy ? "Sinhronizē…" : menu ? "Sinhronizēt ar Google Contacts" : "Sinhronizēt klientus ar Google Contacts";
+  const label = busy
+    ? "Sinhronizē…"
+    : menu
+      ? "Sinhronizēt ar Google Contacts"
+      : settingsRow
+        ? "Sinhronizēt klientus"
+        : "Sinhronizēt klientus ar Google Contacts";
   const btnClass = compact
     ? "inline-flex h-8 items-center rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50/90 disabled:opacity-40"
-    : "inline-flex min-h-[40px] items-center rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50/90 disabled:opacity-40";
+    : settingsRow
+      ? "inline-flex min-h-9 shrink-0 items-center rounded-full bg-[var(--fill)] px-3 text-[13px] font-medium text-[var(--ink)] disabled:opacity-40"
+      : "inline-flex min-h-[40px] items-center rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50/90 disabled:opacity-40";
 
   if (menu) {
     return (
@@ -111,7 +121,7 @@ export function IrissGoogleContactsBackfillButton({
   }
 
   return (
-    <div className={compact ? "flex flex-col items-end gap-1" : "flex flex-col gap-1.5"}>
+    <div className={compact || settingsRow ? "flex flex-col items-end gap-1" : "flex flex-col gap-1.5"}>
       <button type="button" className={btnClass} disabled={busy} onClick={() => void run()}>
         {label}
       </button>
@@ -121,7 +131,7 @@ export function IrissGoogleContactsBackfillButton({
         </p>
       ) : msg ? (
         <p className="max-w-lg text-[11px] leading-snug text-[var(--color-provin-muted)]">{msg}</p>
-      ) : compact ? null : (
+      ) : compact || settingsRow ? null : (
         <p className="max-w-lg text-[11px] leading-snug text-[var(--color-provin-muted)]">
           Piesaista esošos IRISS klientus kontam info@provin.lv. Esošos Google kontaktus nepārraksta.
         </p>
