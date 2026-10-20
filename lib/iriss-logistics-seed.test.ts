@@ -31,7 +31,10 @@ describe("logistics seed from punkti.json", () => {
   it("maps izņemts / piegādāts into the archive, not the default view", () => {
     expect(mapSeedStatus("izņemts")).toBe("picked_up");
     expect(mapSeedStatus("piegādāts Rīgā")).toBe("delivered");
-    expect(mapSeedStatus("savākšana apstiprināta")).toBe("scheduled");
+    expect(mapSeedStatus("savākšana apstiprināta")).toBe("pickup_confirmed");
+    expect(mapSeedStatus("dokumenti tiek izdoti")).toBe("documents_issuing");
+    expect(mapSeedStatus("gatavs savākšanai")).toBe("ready_for_pickup");
+    expect(mapSeedStatus("ceļā uz noliktavu")).toBe("in_transit_to_warehouse");
     const { orders } = seedLogisticsFromPunkti({
       izsoles: {
         Openlane: [

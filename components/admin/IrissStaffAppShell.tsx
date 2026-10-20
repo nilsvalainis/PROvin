@@ -9,6 +9,8 @@ import {
   Map,
   Radar,
   ScanLine,
+  Wallet,
+  Wrench,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -21,6 +23,8 @@ const SECTION_ICON: Record<IrissSection, LucideIcon> = {
   sludinajumi: List,
   radars: Radar,
   logistika: Map,
+  gramatvede: Wallet,
+  serviss: Wrench,
   pavadzimes: FileText,
   vin: ScanLine,
   atskaite: CalendarRange,

@@ -1,12 +1,29 @@
-# Loģistika dokumentu augšupielāde (pārlūka rutīna)
+# Loģistika auto upsert un dokumentu augšupielāde (pārlūka rutīna)
 
 Auth: `Authorization: Bearer <IRISS_LOGISTICS_UPLOAD_TOKEN>` (vismaz 16 rakstzīmes). Vercel env. **Nekad neizdrukā vērtību.**
 
-Base: `POST /api/iriss/logistics/documents`
+## Auto upsert
 
-Paredzēts Auto1 Car Invoice PDF un Upcoming pickups PDF. Atbilde satur `document.title` (Auto1: `Car Invoice: <nr>` no `sourceUrl`).
+`POST /api/iriss/logistics/cars` (JSON vai multipart). VIN ir obligāts. Ja VIN jau ir, lauki tiek atjaunināti; ja nav, auto tiek izveidots. Audits: `upsert`.
 
-## Lauks
+| Lauks | Piezīme |
+| --- | --- |
+| `vin` | 8-17 rakstzīmes |
+| `auction` | Autobid, Auto1, Openlane, BCA, cits |
+| `stockNo` / `lotNo` | izsoles stock / lot nr. |
+| `make`, `model` | marka / modelis |
+| `pickupPoint` / `pickupPointId` / `address` | punkts vai adrese |
+| `status` | atslēga vai LV: gaida apmaksu, dokumenti tiek izdoti, gatavs savākšanai, savākšana apstiprināta, ceļā uz noliktavu |
+| `pickupCode` | savākšanas kods |
+| `freeParkingUntil` | `YYYY-MM-DD` vai `DD.MM.YYYY` |
+| `note` | brīvais teksts |
+| `file` | neobligāts PDF (multipart, pēc VIN) |
+
+## Dokumenta PDF pēc VIN
+
+`POST /api/iriss/logistics/documents`
+
+Paredzēts Auto1 Car Invoice PDF un Upcoming pickups PDF. Atbilde satur `document.title` (Auto1: `Car Invoice: <nr>` no `sourceUrl`). Ja VIN vēl nav kabinetā, vispirms izveido auto, tad pievieno PDF.
 
 | Lauks | Piezīme |
 | --- | --- |

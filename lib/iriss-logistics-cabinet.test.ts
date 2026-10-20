@@ -68,8 +68,11 @@ describe("Loģistika cabinet helpers", () => {
 
   it("maps order status to pickup stage without inventing Atvests", () => {
     expect(defaultPickupStageFromOrderStatus("organize_pickup")).toBe("waiting");
+    expect(defaultPickupStageFromOrderStatus("ready_for_pickup")).toBe("waiting");
     expect(defaultPickupStageFromOrderStatus("scheduled")).toBe("planned");
+    expect(defaultPickupStageFromOrderStatus("pickup_confirmed")).toBe("planned");
     expect(defaultPickupStageFromOrderStatus("picked_up")).toBe("in_transit");
+    expect(defaultPickupStageFromOrderStatus("in_transit_to_warehouse")).toBe("in_transit");
     expect(defaultPickupStageFromOrderStatus("delivered")).toBe("arrived");
   });
 

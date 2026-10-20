@@ -142,8 +142,10 @@ export function resolveCabinetSectionOpen(
 
 export function defaultPickupStageFromOrderStatus(status: string): CabinetPickupStage {
   if (status === "delivered" || status === "archived") return "arrived";
-  if (status === "picked_up") return "in_transit";
-  if (status === "scheduled") return "planned";
+  if (status === "picked_up" || status === "in_transit_to_warehouse" || status === "waiting_transport") {
+    return "in_transit";
+  }
+  if (status === "scheduled" || status === "pickup_confirmed") return "planned";
   return "waiting";
 }
 

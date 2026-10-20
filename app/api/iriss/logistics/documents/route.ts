@@ -7,7 +7,8 @@ import {
   irissLogisticsUploadTokenConfigured,
   verifyIrissLogisticsUploadToken,
 } from "@/lib/iriss-logistics-upload-token";
-import { findLogisticsOrderByVin, getLogisticsOrder } from "@/lib/iriss-logistics-store";
+import { findLogisticsOrderByVin, getLogisticsOrder, upsertLogisticsOrderByVin } from "@/lib/iriss-logistics-store";
+import { isLogisticsUpsertVin, normalizeLogisticsVin } from "@/lib/iriss-logistics-car-upsert";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,8 +80,24 @@ export async function POST(req: Request) {
   }
   if (!docNumber && sourceUrl) docNumber = auto1InvoiceNumberFromUrl(sourceUrl);
 
-  const order = carId ? await getLogisticsOrder(carId) : vin ? await findLogisticsOrderByVin(vin) : null;
-  if (!order) return NextResponse.json({ error: "order_not_found" }, { status: 404 });
+  let order = carId ? await getLogisticsOrder(carId) : vin ? await findLogisticsOrderByVin(vin) : null;
+  if (!order) {
+    const needle = normalizeLogisticsVin(vin);
+    if (!isLogisticsUpsertVin(needle)) {
+      return NextResponse.json({ error: "order_not_found" }, { status: 404 });
+    }
+    const created = await upsertLogisticsOrderByVin(needle, { vin: needle });
+    order = created.order;
+    await appendCabinetAudit({
+      actorId: "upload-api",
+      action: "upsert",
+      carId: order.id,
+      documentId: "",
+      section: "",
+      docType: "",
+      detail: created.created ? "created" : "updated",
+    });
+  }
 
   try {
     const result = await upsertCabinetDocument({

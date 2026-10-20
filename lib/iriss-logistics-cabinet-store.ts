@@ -178,7 +178,7 @@ export type CabinetAuditEntry = {
   id: string;
   at: string;
   actorId: string;
-  action: "view" | "download" | "upload" | "delete" | "access_change";
+  action: "view" | "download" | "upload" | "delete" | "access_change" | "upsert";
   carId: string;
   documentId: string;
   section: string;
@@ -193,7 +193,14 @@ function normalizeAudit(raw: unknown): CabinetAuditEntry | null {
   const id = str(raw.id, 80);
   if (!id) return null;
   const action = raw.action;
-  if (action !== "view" && action !== "download" && action !== "upload" && action !== "delete" && action !== "access_change") {
+  if (
+    action !== "view" &&
+    action !== "download" &&
+    action !== "upload" &&
+    action !== "delete" &&
+    action !== "access_change" &&
+    action !== "upsert"
+  ) {
     return null;
   }
   return {

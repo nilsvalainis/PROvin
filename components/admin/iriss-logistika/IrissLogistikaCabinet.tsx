@@ -25,7 +25,10 @@ import {
   formatLogisticsAddress,
   formatLogisticsDate,
   formatLogisticsEur,
+  isLogisticsOrderStatus,
+  isLogisticsPipelineStatus,
   LOGISTICS_ORDER_STATUS_LV,
+  LOGISTICS_PIPELINE_STATUSES,
   type LogisticsOrder,
   type LogisticsPoint,
 } from "@/lib/iriss-logistics-types";
@@ -37,18 +40,28 @@ type Props = {
   groupedPoints: GroupedPoints;
   onAssignPoint: (orderId: string, pickupPointId: string) => void;
   onPatchOrder: (id: string, action: "wake" | "picked_up" | "delivered") => void;
+  onOrderUpdated: (order: LogisticsOrder) => void;
 };
 
 const A_UPLOAD_TYPES: CabinetDocType[] = ["purchase_confirm", "car_invoice", "auction_invoice", "service_invoice"];
 const C_UPLOAD_TYPES: CabinetDocType[] = ["service_invoice", "csdd_status", "note"];
 
-export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onPatchOrder }: Props) {
+export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onPatchOrder, onOrderUpdated }: Props) {
   const [prefs, setPrefs] = useState<Record<string, string>>(() =>
     typeof window === "undefined" ? {} : readCabinetPrefsFromStorage(window.localStorage.getItem(CABINET_LOCAL_PREFS_KEY)),
   );
   const [documents, setDocuments] = useState<CabinetDocument[]>([]);
   const [pickup, setPickup] = useState<CabinetPickup | null>(null);
   const [uploading, setUploading] = useState<CabinetSectionId | null>(null);
+  const [pickupCode, setPickupCode] = useState(order.pickupRef);
+  const [note, setNote] = useState(order.notes);
+  const [parkingUntil, setParkingUntil] = useState(order.freeParkingUntil);
+
+  useEffect(() => {
+    setPickupCode(order.pickupRef);
+    setNote(order.notes);
+    setParkingUntil(order.freeParkingUntil);
+  }, [order.id, order.pickupRef, order.notes, order.freeParkingUntil]);
 
   const stage: CabinetPickupStage = pickup?.stage ?? defaultPickupStageFromOrderStatus(order.status);
   const arrived = stage === "arrived";
@@ -116,12 +129,37 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
     [open, stage],
   );
 
+  async function saveOrderFields(patch: Partial<LogisticsOrder>) {
+    const res = await fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(order.id)}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    const body = (await res.json()) as { order?: LogisticsOrder };
+    if (body.order) onOrderUpdated(body.order);
+    return body.order;
+  }
+
+  async function savePickupCode(nextCode: string) {
+    const saved = await saveOrderFields({ pickupRef: nextCode });
+    const res = await fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(order.id)}/pickup`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pickupCode: nextCode, pickupDate: order.pickupDate }),
+    });
+    const body = (await res.json()) as { pickup?: CabinetPickup };
+    if (body.pickup) setPickup(body.pickup);
+    return saved;
+  }
+
   async function setStage(next: CabinetPickupStage) {
     const res = await fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(order.id)}/pickup`, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stage: next, pickupCode: order.pickupRef, pickupDate: order.pickupDate }),
+      body: JSON.stringify({ stage: next, pickupCode: pickupCode || order.pickupRef, pickupDate: order.pickupDate }),
     });
     const body = (await res.json()) as { pickup?: CabinetPickup };
     if (body.pickup) setPickup(body.pickup);
@@ -162,6 +200,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
           <h2 className="text-[18px] font-semibold leading-tight">{order.title || `${order.make} ${order.model}`}</h2>
           <p className="flex flex-wrap items-center gap-1.5 font-mono text-[12px] text-[var(--ink2)]">
             <span>{order.vin}</span>
+            {order.stockNo ? <span>lot {order.stockNo}</span> : null}
             {order.auction ? <IrissAuctionLogo name={order.auction} /> : null}
           </p>
         </div>
@@ -181,6 +220,69 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
         {order.priceEur != null ? ` · apmaksāts ${formatLogisticsEur(order.priceEur)}` : ""}
         {order.pickupDate ? ` · pickup ${formatLogisticsDate(order.pickupDate)}` : ""}
       </p>
+
+      <div className="mt-3 grid gap-2">
+        <label className="block text-[12px] text-[var(--ink2)]">
+          Statuss
+          <select
+            value={order.status}
+            disabled={isLogisticsOrderArchived(order)}
+            onChange={(e) => {
+              const next = e.target.value;
+              if (isLogisticsOrderStatus(next)) void saveOrderFields({ status: next });
+            }}
+            className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2 text-[13px]"
+          >
+            {!isLogisticsPipelineStatus(order.status) ? (
+              <option value={order.status}>{LOGISTICS_ORDER_STATUS_LV[order.status]}</option>
+            ) : null}
+            {LOGISTICS_PIPELINE_STATUSES.map((key) => (
+              <option key={key} value={key}>
+                {LOGISTICS_ORDER_STATUS_LV[key]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block text-[12px] text-[var(--ink2)]">
+          Pickup kods
+          <input
+            value={pickupCode}
+            onChange={(e) => setPickupCode(e.target.value)}
+            onBlur={() => {
+              if (pickupCode.trim() === (order.pickupRef || "").trim()) return;
+              void savePickupCode(pickupCode.trim());
+            }}
+            className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2 font-mono text-[13px]"
+          />
+        </label>
+        <label className="block text-[12px] text-[var(--ink2)]">
+          Bezmaksas stāvvieta līdz
+          <input
+            type="date"
+            value={parkingUntil.slice(0, 10)}
+            onChange={(e) => {
+              const next = e.target.value;
+              setParkingUntil(next);
+              if (next === (order.freeParkingUntil || "").slice(0, 10)) return;
+              void saveOrderFields({ freeParkingUntil: next });
+            }}
+            className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2 text-[13px]"
+          />
+        </label>
+        <label className="block text-[12px] text-[var(--ink2)]">
+          Piezīme
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onBlur={() => {
+              if (note.trim() === (order.notes || "").trim()) return;
+              void saveOrderFields({ notes: note });
+            }}
+            rows={3}
+            className="mt-1 w-full rounded-xl border border-[#e5e7eb] px-2 py-2 text-[13px]"
+          />
+        </label>
+      </div>
 
       {CABINET_SECTIONS.map((section) => (
         <section key={section} className="iriss-log-cab-sec mt-3">

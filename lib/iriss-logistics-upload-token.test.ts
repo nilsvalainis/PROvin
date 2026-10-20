@@ -19,6 +19,8 @@ describe("Loģistika upload Bearer token", () => {
     const docs = readFileSync("docs/iriss-logistics-upload-api.md", "utf8");
     expect(docs).toContain("Authorization: Bearer");
     expect(docs).toContain("IRISS_LOGISTICS_UPLOAD_TOKEN");
+    expect(docs).toContain("POST /api/iriss/logistics/cars");
+    expect(docs).toContain("POST /api/iriss/logistics/documents");
     expect(docs).not.toMatch(/Bearer [A-Za-z0-9_-]{16,}/);
   });
 

@@ -9,12 +9,22 @@ export type LogisticsAuction = (typeof LOGISTICS_AUCTIONS)[number];
 export const LOGISTICS_ORDER_SOURCES = ["auction", "private"] as const;
 export type LogisticsOrderSource = (typeof LOGISTICS_ORDER_SOURCES)[number];
 
-export const LOGISTICS_ORDER_STATUSES = [
+/** Aktīvie cauruļvada statusi (bez Izņemts / Piegādāts / Arhīvs). */
+export const LOGISTICS_PIPELINE_STATUSES = [
   "awaiting_payment",
+  "documents_issuing",
   "organize_pickup",
+  "ready_for_pickup",
+  "pickup_confirmed",
+  "in_transit_to_warehouse",
   "waiting_transport",
   "scheduled",
   "ready",
+] as const;
+export type LogisticsPipelineStatus = (typeof LOGISTICS_PIPELINE_STATUSES)[number];
+
+export const LOGISTICS_ORDER_STATUSES = [
+  ...LOGISTICS_PIPELINE_STATUSES,
   "picked_up",
   "delivered",
   "archived",
@@ -145,6 +155,8 @@ export type LogisticsOrder = {
   pickupLng: number | null;
   geocodeStatus: LogisticsGeocodeStatus;
   pickupDate: string;
+  stockNo: string;
+  freeParkingUntil: string;
   status: LogisticsOrderStatus;
   archived: boolean;
   archivedAt: string;
@@ -191,7 +203,11 @@ export type LogisticsPreviousPointRow = {
 
 export const LOGISTICS_ORDER_STATUS_LV: Record<LogisticsOrderStatus, string> = {
   awaiting_payment: "Gaida apmaksu",
+  documents_issuing: "Dokumenti tiek izdoti",
   organize_pickup: "Jāorganizē savākšana",
+  ready_for_pickup: "Gatavs savākšanai",
+  pickup_confirmed: "Savākšana apstiprināta",
+  in_transit_to_warehouse: "Ceļā uz noliktavu",
   waiting_transport: "Gaida pārvešanu",
   scheduled: "Savākšana plānota",
   ready: "Gatavs izsniegšanai",
@@ -214,6 +230,69 @@ export function isLogisticsAuction(v: unknown): v is LogisticsAuction {
 
 export function isLogisticsOrderStatus(v: unknown): v is LogisticsOrderStatus {
   return typeof v === "string" && (LOGISTICS_ORDER_STATUSES as readonly string[]).includes(v);
+}
+
+export function isLogisticsPipelineStatus(v: unknown): v is LogisticsPipelineStatus {
+  return typeof v === "string" && (LOGISTICS_PIPELINE_STATUSES as readonly string[]).includes(v);
+}
+
+function foldLogisticsStatusLabel(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/ā/g, "a")
+    .replace(/ē/g, "e")
+    .replace(/ī/g, "i")
+    .replace(/ū/g, "u")
+    .replace(/č/g, "c")
+    .replace(/ģ/g, "g")
+    .replace(/ķ/g, "k")
+    .replace(/ļ/g, "l")
+    .replace(/ņ/g, "n")
+    .replace(/š/g, "s")
+    .replace(/ž/g, "z")
+    .replace(/['"`]/g, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+const LOGISTICS_STATUS_ALIASES: Record<string, LogisticsOrderStatus> = Object.fromEntries(
+  LOGISTICS_ORDER_STATUSES.flatMap((key) => {
+    const label = foldLogisticsStatusLabel(LOGISTICS_ORDER_STATUS_LV[key]);
+    return [
+      [key, key],
+      [foldLogisticsStatusLabel(key.replace(/_/g, " ")), key],
+      [label, key],
+    ];
+  }),
+) as Record<string, LogisticsOrderStatus>;
+
+/** Pieņem angļu atslēgu vai LV etiķeti (t.sk. gaida apmaksu, gatavs savākšanai). */
+export function parseLogisticsOrderStatus(raw: unknown): LogisticsOrderStatus | null {
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  if (isLogisticsOrderStatus(trimmed)) return trimmed;
+  return LOGISTICS_STATUS_ALIASES[foldLogisticsStatusLabel(trimmed)] ?? null;
+}
+
+export function parseLogisticsAuctionName(raw: unknown): LogisticsAuction | "" {
+  if (typeof raw !== "string") return "";
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (isLogisticsAuction(trimmed)) return trimmed;
+  const found = LOGISTICS_AUCTIONS.find((a) => a.toLowerCase() === trimmed.toLowerCase());
+  return found ?? "cits";
+}
+
+/** YYYY-MM-DD vai DD.MM.YYYY. Tukšs, ja nav datuma. */
+export function parseLogisticsIsoDate(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  const t = raw.trim();
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const lv = t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (lv) return `${lv[3]}-${lv[2].padStart(2, "0")}-${lv[1].padStart(2, "0")}`;
+  return "";
 }
 
 export function isLogisticsArchivedStatus(v: unknown): v is LogisticsArchivedStatus {
