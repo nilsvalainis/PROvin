@@ -50,6 +50,7 @@ import {
   type AsvSaleRow,
   type AsvTitleRow,
 } from "@/lib/asv-report";
+import { displayUsdAsEur } from "@/lib/currency-eur-convert";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import { ADMIN_SOURCE_DATA_TABLE_CLASS } from "@/lib/admin-source-data-table";
 import { appendAsvPhotoGroups } from "@/lib/joj-asv-merge";
@@ -427,8 +428,8 @@ export function AdminAsvSourceBlock({
                       setRows("damages", patchRow<AsvDamageRow>(damageRows, i, { description: next })),
                       { multiline: true },
                     )}
-                    {textCell(i, "summa", row.amount, (next) =>
-                      setRows("damages", patchRow<AsvDamageRow>(damageRows, i, { amount: next })),
+                    {textCell(i, "summa", displayUsdAsEur(row.amount), (next) =>
+                      setRows("damages", patchRow<AsvDamageRow>(damageRows, i, { amount: displayUsdAsEur(next) })),
                     )}
                     {textCell(i, "vieta", row.region, (next) =>
                       setRows("damages", patchRow<AsvDamageRow>(damageRows, i, { region: next })),
@@ -588,8 +589,8 @@ export function AdminAsvSourceBlock({
                     {textCell(i, "izsoles odometrs", row.odometer, (next) =>
                       setRows("sales", patchRow<AsvSaleRow>(saleRows, i, { odometer: next })),
                     )}
-                    {textCell(i, "izsoles cena", row.price, (next) =>
-                      setRows("sales", patchRow<AsvSaleRow>(saleRows, i, { price: next })),
+                    {textCell(i, "izsoles cena", displayUsdAsEur(row.price), (next) =>
+                      setRows("sales", patchRow<AsvSaleRow>(saleRows, i, { price: displayUsdAsEur(next) })),
                     )}
                     {textCell(i, "izsoles statuss", row.status, (next) =>
                       setRows("sales", patchRow<AsvSaleRow>(saleRows, i, { status: next })),

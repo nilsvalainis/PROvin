@@ -233,7 +233,7 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
       },
     ]);
     // Izsoles cena „38 745 USD” tiek pārkonvertēta uz EUR — audita ieraksts operatoram.
-    expect(p.notes).toEqual(["38 745 USD → 35 550 € (ECB 15.10.2026, 1 EUR = 1.09 USD)"]);
+    expect(p.notes).toEqual(["38 745 USD → 35 650 €"]);
   });
 
   it("nolasa title ierakstus un izsoļu pārdošanas", () => {
@@ -248,7 +248,7 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
         date: "20.11.2019",
         venue: "Bmw Of Murrieta (Murrieta, CA)",
         odometer: "5 660",
-        price: "35 550 €",
+        price: "35 650 €",
         status: "Pārdots",
       },
     ]);
@@ -367,7 +367,7 @@ describe("cc-vin (starptautiskā vēsture) PDF parseris", () => {
           date: "10.06.2026",
           venue: "AUTOBID",
           odometer: "304 900",
-          price: "3 660 €",
+          price: "3 670 €",
           status: "Pārdots",
         },
       ]);

@@ -65,6 +65,7 @@ import {
   type CcVinSaleRow,
   type CcVinTitleRow,
 } from "@/lib/cc-vin-report";
+import { displayUsdAsEur } from "@/lib/currency-eur-convert";
 import {
   CC_VIN_AUCTION_CHECK_HEADING,
   applyCcVinAuctionCheckTemplate,
@@ -613,15 +614,15 @@ export function AdminCcVinSourceBlock({
                     {textCell(
                       i,
                       "bojājuma summa",
-                      row.amount,
+                      displayUsdAsEur(row.amount),
                       (next) =>
                         setRows(
                           "damages",
                           patchRow<CcVinDamageRow>(damageRows, i, {
-                            amount: next,
+                            amount: displayUsdAsEur(next),
                           }),
                         ),
-                      { placeholder: "12 400 USD" },
+                      { placeholder: "11 410 €" },
                     )}
                     {textCell(
                       i,
@@ -913,11 +914,11 @@ export function AdminCcVinSourceBlock({
                     {textCell(
                       i,
                       "pārdošanas cena",
-                      row.price,
+                      displayUsdAsEur(row.price),
                       (next) =>
                         setRows(
                           "sales",
-                          patchRow<CcVinSaleRow>(saleRows, i, { price: next }),
+                          patchRow<CcVinSaleRow>(saleRows, i, { price: displayUsdAsEur(next) }),
                         ),
                       { placeholder: "7 662 EUR" },
                     )}

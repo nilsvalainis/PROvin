@@ -1,10 +1,14 @@
 /**
- * Valūtas → EUR pēc šodienas ECB dienas kursa (kešots uz kalendāro dienu).
- * Kursu neizdomā: ja ECB tabulas nav, paliek sākotnējā valūta ar atzīmi.
+ * Valūtas → EUR. USD vienmēr pēc fiksētā kursa (`USD_TO_EUR_RATE`).
+ * Pārējās valūtas: šodienas ECB dienas kurss (kešots uz kalendāro dienu).
+ * Ja ECB tabulas nav, paliek sākotnējā valūta ar atzīmi (USD izņēmums).
  */
 
 export const ECB_DAILY_RATES_URL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
 export const ECB_RATE_MISSING_MARKER = "ECB kurss nav pieejams";
+
+/** 1 USD = 0.92 EUR. Mainīt tikai šo konstanti. */
+export const USD_TO_EUR_RATE = 0.92;
 
 export type EcbDailyRates = {
   /** ECB Cube `time` (YYYY-MM-DD). */
@@ -15,8 +19,8 @@ export type EcbDailyRates = {
   fetchedOn: string;
 };
 
-/** @deprecated Tikai atpakaļsaderībai; konversija vairs nelieto fiksētus kursus. */
-export const EUR_REFERENCE_RATES: Record<string, number> = { EUR: 1 };
+/** @deprecated Izmanto `USD_TO_EUR_RATE` USD un ECB pārējām valūtām. */
+export const EUR_REFERENCE_RATES: Record<string, number> = { EUR: 1, USD: 1 / USD_TO_EUR_RATE };
 
 const CURRENCY_TOKENS: { code: string; re: RegExp }[] = [
   { code: "EUR", re: /(?:\bEUR\b|€)/i },
@@ -202,7 +206,7 @@ function formatOriginalAmount(bounds: { lo: number; hi: number }, code: string):
 }
 
 /**
- * Summas teksts (jebkurā valūtā) → EUR, ja ir šodienas ECB kurss.
+ * Summas teksts → EUR. USD vienmēr pēc `USD_TO_EUR_RATE`; citas valūtas pēc ECB.
  * Nezināmu valūtu vai teksta bez cipariem neizdomā — atgriež `null`.
  */
 export function convertAmountTextToEur(raw: string): EurConversion | null {
@@ -220,8 +224,21 @@ export function convertAmountTextToEur(raw: string): EurConversion | null {
     return { display, fromCurrency: "EUR", ratePerEur: 1, converted: false };
   }
 
-  const rate = cachedRates?.rates[code];
   const originalDisplay = formatOriginalAmount(bounds, code);
+  if (code === "USD") {
+    const lo = roundEur(bounds.lo * USD_TO_EUR_RATE);
+    const hi = roundEur(bounds.hi * USD_TO_EUR_RATE);
+    const display = lo === hi ? `${groupEur(lo)} €` : `${groupEur(lo)} - ${groupEur(hi)} €`;
+    return {
+      display,
+      fromCurrency: "USD",
+      ratePerEur: 1 / USD_TO_EUR_RATE,
+      originalDisplay,
+      converted: true,
+    };
+  }
+
+  const rate = cachedRates?.rates[code];
   if (!(rate && rate > 0)) {
     return {
       display: `${originalDisplay} (${ECB_RATE_MISSING_MARKER})`,
@@ -246,11 +263,20 @@ export function convertAmountTextToEur(raw: string): EurConversion | null {
   };
 }
 
-/** Īss audita ieraksts: „38 745 USD → 35 550 € (ECB 15.10.2026, 1 EUR = 1.09 USD)”. */
+/** Īss audita ieraksts. USD bez ECB teksta; lauks pats rāda tikai eiro. */
 export function describeEurConversion(rawAmount: string, conversion: EurConversion): string {
   const raw = rawAmount.replace(/\s+/g, " ").trim();
   if (conversion.rateMissing) return `${raw} (${ECB_RATE_MISSING_MARKER})`;
   if (!conversion.converted) return "";
+  if (conversion.fromCurrency === "USD") return `${raw} → ${conversion.display}`;
   const datePart = conversion.rateDate ? `ECB ${formatEcbDateLv(conversion.rateDate)}, ` : "";
   return `${raw} → ${conversion.display} (${datePart}1 EUR = ${conversion.ratePerEur} ${conversion.fromCurrency})`;
+}
+
+/** Saglabāta/ievadīta USD summa → „280 €”. Citas valūtas atstāj kā ir. */
+export function displayUsdAsEur(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "";
+  if (detectCurrencyCode(t) !== "USD") return raw;
+  return convertAmountTextToEur(t)?.display ?? raw;
 }

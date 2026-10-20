@@ -15,6 +15,7 @@ import type {
   AsvSourceAttribution,
   AsvSourceSnapshots,
 } from "@/lib/asv-source-types";
+import { displayUsdAsEur } from "@/lib/currency-eur-convert";
 import {
   ccVinAlertChecks,
   ccVinAmountToEurDisplay,
@@ -410,7 +411,7 @@ export function normalizeAsvBlock(raw: unknown): AsvBlockState {
       return {
         date: str(r.date, 40),
         region: str(r.region, 120),
-        amount: str(r.amount, 60),
+        amount: displayUsdAsEur(str(r.amount, 60)),
         description: str(r.description, 400),
       } as AsvDamageRow;
     }),
@@ -449,7 +450,7 @@ export function normalizeAsvBlock(raw: unknown): AsvBlockState {
         date: str(r.date, 40),
         venue: str(r.venue, 160),
         odometer: str(r.odometer, 40),
-        price: str(r.price, 60),
+        price: displayUsdAsEur(str(r.price, 60)),
         status: str(r.status, 80),
       } as AsvSaleRow;
     }),
