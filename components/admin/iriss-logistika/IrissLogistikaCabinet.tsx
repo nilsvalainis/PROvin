@@ -35,6 +35,23 @@ import {
 
 type GroupedPoints = { auction: string; rows: LogisticsPoint[] }[];
 
+/** localStorage var būt bloķēts (privātais režīms, iframe). Tad prefs paliek tikai serverī. */
+function readStoredCabinetPrefs(): Record<string, string> {
+  try {
+    return readCabinetPrefsFromStorage(window.localStorage.getItem(CABINET_LOCAL_PREFS_KEY));
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredCabinetPrefs(prefs: Record<string, string>) {
+  try {
+    window.localStorage.setItem(CABINET_LOCAL_PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    // Ignorē: serveris joprojām glabā iestatījumus.
+  }
+}
+
 type Props = {
   order: LogisticsOrder;
   groupedPoints: GroupedPoints;
@@ -47,9 +64,8 @@ const A_UPLOAD_TYPES: CabinetDocType[] = ["purchase_confirm", "car_invoice", "au
 const C_UPLOAD_TYPES: CabinetDocType[] = ["service_invoice", "csdd_status", "note"];
 
 export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onPatchOrder, onOrderUpdated }: Props) {
-  const [prefs, setPrefs] = useState<Record<string, string>>(() =>
-    typeof window === "undefined" ? {} : readCabinetPrefsFromStorage(window.localStorage.getItem(CABINET_LOCAL_PREFS_KEY)),
-  );
+  // Nelasām localStorage renderēšanas laikā: serveris renderē bez tā, tāpēc hidratācija nesakrīt.
+  const [prefs, setPrefs] = useState<Record<string, string>>({});
   const [documents, setDocuments] = useState<CabinetDocument[]>([]);
   const [pickup, setPickup] = useState<CabinetPickup | null>(null);
   const [uploading, setUploading] = useState<CabinetSectionId | null>(null);
@@ -76,6 +92,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
   );
 
   useEffect(() => {
+    setPrefs(readStoredCabinetPrefs());
     let cancelled = false;
     void fetch("/api/admin/iriss-logistics/cabinet-prefs", { credentials: "include" })
       .then((res) => res.json() as Promise<{ prefs?: Record<string, string> }>)
@@ -83,7 +100,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
         if (cancelled || !body.prefs) return;
         setPrefs((prev) => {
           const next = { ...prev, ...body.prefs };
-          window.localStorage.setItem(CABINET_LOCAL_PREFS_KEY, JSON.stringify(next));
+          writeStoredCabinetPrefs(next);
           return next;
         });
       })
@@ -116,7 +133,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
       const value = nextOpen ? "open" : "closed";
       setPrefs((prev) => {
         const next = { ...prev, [key]: value };
-        window.localStorage.setItem(CABINET_LOCAL_PREFS_KEY, JSON.stringify(next));
+        writeStoredCabinetPrefs(next);
         return next;
       });
       void fetch("/api/admin/iriss-logistics/cabinet-prefs", {

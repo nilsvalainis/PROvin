@@ -538,6 +538,8 @@ export async function upsertLogisticsOrder(patch: Partial<LogisticsOrder> & { id
       };
     }
   }
+  // Ierakstam un atgriežam normalizētu ierakstu, lai klients nesaņem neparsētus laukus (piem., null datumus).
+  next = normalizeOrder(next) ?? next;
   const out = prev ? items.map((p) => (p.id === id ? next : p)) : [...items, next];
   await writeLogisticsOrders(out);
   return next;
