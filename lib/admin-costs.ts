@@ -541,7 +541,7 @@ export function buildCostDashboard(input: BuildCostDashboardInput): CostDashboar
     const amounts = sourceAmounts(def, input);
     const limitRow = pickLimit(input.limits, def.id);
     let limitUsd = limitRow?.limitUsd ?? null;
-    let limitUnits = limitRow?.limitUnits ?? (def.defaultLimitUnits ?? null);
+    const limitUnits = limitRow?.limitUnits ?? (def.defaultLimitUnits ?? null);
     let hard = limitRow?.hard ?? Boolean(def.hardDefault);
     let sourceOfLimit = limitRow?.sourceOfLimit ?? (def.defaultLimitUnits ? "account" : null);
     if (def.id === "apify" && input.marketplace) {

@@ -3,7 +3,7 @@
 import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import {
   adminCostsChrome,
@@ -235,7 +235,7 @@ export function AdminCostsView({
   workspace: AdminCostsWorkspace;
 }) {
   const router = useRouter();
-  const nowMs = useMemo(() => Date.now(), [dashboard.month, dashboard.totalUsd]);
+  const nowMs = Date.now();
   const banner = costAlertBannerText(dashboard.alerts);
   const worst = dashboard.alerts[0]?.level ?? 0;
   const hrefBase = adminCostsHref(workspace);
