@@ -106,6 +106,12 @@ body:has(.admin-ios-theme) {
 .admin-ios-theme .provin-btn-ghost {
   border-radius: 12px;
   border: 1px solid var(--admin-ios-border);
+}
+
+/* PRO saglabā pogu stiklu. IRISS: blur tikai joslai, cilņu joslai, apakšējai lapai. */
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) button,
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) .provin-btn,
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) .provin-btn-ghost {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }

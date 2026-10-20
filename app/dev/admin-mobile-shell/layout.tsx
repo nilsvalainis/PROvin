@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import "../../admin/admin-ios-theme.css";
+import "../../admin/admin-motion.css";
+import "../../admin/admin-mobile.css";
+import "../../admin/admin-iriss-theme.css";
 
 export const metadata = {
   title: "Admin mobile shell test",

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { createContext, useContext, useMemo } from "react";
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { AdminGlobalSearch, AdminMobileSearchButton } from "./AdminGlobalSearch";
 import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./AdminSidebar";
@@ -9,6 +9,7 @@ import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
 import { AdminVinHandoffProvider } from "./AdminVinHandoffContext";
 import { IrissPavadzimesMobileBar } from "@/components/admin/IrissPavadzimesMobileBar";
+import { AdminShellLayoutContext } from "@/components/admin/AdminShellLayoutContext";
 import {
   useAdminMobileColorScheme,
   useAdminMobileViewport,
@@ -19,19 +20,12 @@ import {
   ADMIN_MOBILE_TABBAR_H_CSS,
   adminMobilePullToRefreshEnabled,
 } from "@/lib/admin-mobile-shell";
+import { adminChromeDataset, type AdminWorkspaceId } from "@/lib/admin-chrome-attrs";
 
-type AdminShellLayoutValue = {
-  sidebarCollapsed: boolean;
-  expandSidebar: () => void;
-};
+export type { AdminShellLayoutValue } from "@/components/admin/AdminShellLayoutContext";
+export { useAdminShellLayout } from "@/components/admin/AdminShellLayoutContext";
 
-const AdminShellLayoutContext = createContext<AdminShellLayoutValue | null>(null);
-
-export function useAdminShellLayout() {
-  return useContext(AdminShellLayoutContext);
-}
-
-export type AdminShellWorkspace = "pro" | "iriss";
+export type AdminShellWorkspace = AdminWorkspaceId;
 
 type Props = {
   children: ReactNode;
@@ -43,11 +37,6 @@ type Props = {
 
 export function AdminShell({ children, notice, workspace = "pro" }: Props) {
   const pathname = usePathname() ?? "";
-  const shellLayoutValue = useMemo(
-    () => ({ sidebarCollapsed: false, expandSidebar: () => undefined }),
-    [],
-  );
-
   const isProWorkspace = workspace === "pro";
   const isDetailScreen = /^\/admin\/(?:iriss\/pasutijumi|orders|konsultacijas|commission-invoice|partneri)\/[^/]+$/.test(pathname);
   const pullToRefresh = adminMobilePullToRefreshEnabled(pathname);
@@ -56,21 +45,30 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
   const { collapsed, toggle } = useAdminSidebarCollapsed();
   const mobile = useAdminMobileViewport();
   const adminTheme = useAdminMobileColorScheme();
-  useSyncAdminMobileThemeColor(adminTheme);
+  useSyncAdminMobileThemeColor(adminTheme, workspace);
+  const shellLayoutValue = useMemo(
+    () => ({
+      sidebarCollapsed: false,
+      expandSidebar: () => undefined,
+      workspace,
+      theme: adminTheme,
+    }),
+    [adminTheme, workspace],
+  );
 
   return (
     <AdminVinHandoffProvider>
+    <AdminShellLayoutContext.Provider value={shellLayoutValue}>
     <div
-      className={`admin-m flex min-h-dvh bg-[var(--am-bg,#F2F2F7)] ${
-        hideTabBar ? "" : "max-md:pb-[var(--admin-tabbar-h)]"
-      }`}
-      data-admin-theme={adminTheme}
+      className={`admin-m flex min-h-dvh ${
+        workspace === "iriss" ? "" : "bg-[var(--am-bg,#F2F2F7)]"
+      } ${hideTabBar ? "" : "max-md:pb-[var(--admin-tabbar-h)]"}`}
+      {...adminChromeDataset(workspace, adminTheme)}
       style={{ ["--admin-tabbar-h" as string]: hideTabBar ? "0px" : ADMIN_MOBILE_TABBAR_H_CSS }}
     >
-      {mobile ? null : <AdminSidebar collapsed={collapsed} onToggle={toggle} />}
+      {mobile ? null : <AdminSidebar collapsed={collapsed} onToggle={toggle} workspace={workspace} />}
       <div className={`flex min-w-0 flex-1 flex-col ${!isProWorkspace ? "iriss-admin-scope" : ""}`}>
         {null}
-        <AdminShellLayoutContext.Provider value={shellLayoutValue}>
           <AdminAuditDeadlineTickProvider>
             <AdminShellMainWithMobilePull
               isDetailScreen={isDetailScreen}
@@ -81,7 +79,6 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
               {children}
             </AdminShellMainWithMobilePull>
           </AdminAuditDeadlineTickProvider>
-        </AdminShellLayoutContext.Provider>
       </div>
       {hideTabBar ? null : (
         <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
@@ -91,6 +88,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
       )}
       <AdminGlobalSearch />
     </div>
+    </AdminShellLayoutContext.Provider>
     </AdminVinHandoffProvider>
   );
 }

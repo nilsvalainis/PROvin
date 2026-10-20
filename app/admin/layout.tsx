@@ -7,6 +7,7 @@ import "./admin-ios-theme.css";
 import "./admin-motion.css";
 import "./admin-pro-order-theme.css";
 import "./admin-mobile.css";
+import "./admin-iriss-theme.css";
 
 export const metadata: Metadata = {
   title: "Administrēšana | PROVIN",

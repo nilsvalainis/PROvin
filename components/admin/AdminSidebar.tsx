@@ -29,7 +29,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { IrissPavadzimesSidebarCard } from "@/components/admin/IrissPavadzimesSidebarCard";
+import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
 import { useAdminClientReady, useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
+import { adminChromeDataset } from "@/lib/admin-chrome-attrs";
 import { isModifiedClick, startAdminViewTransition, viewTransitionDir } from "@/lib/admin-motion";
 import { requestAdminGlobalSearch } from "@/lib/admin-global-search";
 import { finiteBadgeCount } from "@/lib/admin-sidebar-badge";
@@ -394,21 +396,38 @@ export function useAdminSidebarCollapsed() {
 }
 
 /** Desktop (md+) sānjosla. Noklusējumā atvērta; sakļauta = ikonu josla (stāvoklis localStorage). */
-export function AdminSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+export function AdminSidebar({
+  collapsed,
+  onToggle,
+  workspace: workspaceProp,
+}: {
+  collapsed: boolean;
+  onToggle: () => void;
+  workspace?: AdminWorkspace;
+}) {
   const pathname = usePathname() || "";
   const badges = useBadges();
   const offer = useNewIrissOffer();
-  const ws = useAdminWorkspace();
+  const wsFromPath = useAdminWorkspace();
+  const ws = workspaceProp ?? wsFromPath;
   return (
     <aside
       className={`sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-[#e5e5ea] bg-white transition-[width] duration-200 md:flex ${collapsed ? "w-[64px]" : "w-[232px]"}`}
       aria-label="Galvenā izvēlne"
     >
-      <div className={`flex h-12 shrink-0 items-center ${collapsed ? "justify-center" : "justify-between pl-5 pr-2"}`}>
+      <div className={`flex h-12 shrink-0 items-center ${collapsed ? "justify-center" : "justify-between gap-2 pl-5 pr-2"}`}>
         {collapsed ? null : (
-          <Link href="/admin/dashboard" className="admin-nav-link text-[15px] font-bold tracking-tight text-[var(--color-apple-text)]">
-            PROVIN
-          </Link>
+          <>
+            <Link href="/admin/dashboard" className="admin-nav-link min-w-0 truncate text-[15px] font-bold tracking-tight text-[var(--color-apple-text)]">
+              PROVIN
+            </Link>
+            {ws === "iriss" ? (
+              <>
+                <span className="min-w-0 flex-1" aria-hidden />
+                <IrissProjectIndicator />
+              </>
+            ) : null}
+          </>
         )}
         <button
           type="button"
@@ -611,7 +630,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
         <AdminBodyPortal>
           <div
             className="admin-m pointer-events-auto fixed inset-0 z-[20] flex flex-col md:hidden"
-            data-admin-theme={theme}
+            {...adminChromeDataset(workspace, theme)}
             role="dialog"
             aria-modal="true"
             aria-label="Vairāk"

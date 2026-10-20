@@ -6,8 +6,8 @@
   "scope": "/admin/iriss/",
   "display": "standalone",
   "lang": "lv",
-  "background_color": "#F2F2F7",
-  "theme_color": "#F2F2F7",
+  "background_color": "#E9ECF1",
+  "theme_color": "#E9ECF1",
   "icons": [
     {
       "src": "/admin/iriss/icon-192.png",

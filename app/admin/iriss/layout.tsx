@@ -6,7 +6,12 @@ import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { IrissPwaRegister } from "@/components/admin/IrissPwaRegister";
 import { getAdminSession } from "@/lib/admin-auth";
-import { IRISS_PWA_MANIFEST_PATH, IRISS_PWA_NAME, IRISS_PWA_THEME_COLOR } from "@/lib/iriss-pwa";
+import {
+  IRISS_PWA_MANIFEST_PATH,
+  IRISS_PWA_NAME,
+  IRISS_PWA_THEME_COLOR,
+  IRISS_PWA_THEME_COLOR_DARK,
+} from "@/lib/iriss-pwa";
 import { getRequestOrigin } from "@/lib/request-origin";
 
 export const metadata: Metadata = {
@@ -31,7 +36,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: IRISS_PWA_THEME_COLOR },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: dark)", color: IRISS_PWA_THEME_COLOR_DARK },
   ],
   colorScheme: "light dark",
   width: "device-width",

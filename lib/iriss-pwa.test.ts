@@ -1,7 +1,15 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { classifyIrissSwRequest, irissSwResponseCacheable, isIrissStaticAsset } from "../public/admin/iriss/sw-core.js";
-import { IRISS_PWA_MANIFEST_PATH, IRISS_PWA_NAME, IRISS_PWA_SCOPE, IRISS_PWA_START_URL, IRISS_PWA_SW_PATH } from "@/lib/iriss-pwa";
+import {
+  IRISS_PWA_MANIFEST_PATH,
+  IRISS_PWA_NAME,
+  IRISS_PWA_SCOPE,
+  IRISS_PWA_START_URL,
+  IRISS_PWA_SW_PATH,
+  IRISS_PWA_THEME_COLOR,
+  IRISS_PWA_THEME_COLOR_DARK,
+} from "@/lib/iriss-pwa";
 
 function headers(map: Record<string, string>) {
   return {
@@ -69,8 +77,10 @@ describe("IRISS service worker policy", () => {
     expect(manifest.start_url).toBe(IRISS_PWA_START_URL);
     expect(manifest.scope).toBe(IRISS_PWA_SCOPE);
     expect(manifest.display).toBe("standalone");
-    expect(manifest.theme_color).toBe("#F2F2F7");
-    expect(manifest.background_color).toBe("#F2F2F7");
+    expect(manifest.theme_color).toBe(IRISS_PWA_THEME_COLOR);
+    expect(manifest.background_color).toBe(IRISS_PWA_THEME_COLOR);
+    expect(IRISS_PWA_THEME_COLOR).toBe("#E9ECF1");
+    expect(IRISS_PWA_THEME_COLOR_DARK).toBe("#060607");
     expect(manifest.icons.map((icon) => icon.sizes)).toEqual(["192x192", "512x512", "512x512"]);
     const sw = readFileSync(new URL("../public/admin/iriss/sw.js", import.meta.url), "utf8");
     expect(sw).toContain("network-only");

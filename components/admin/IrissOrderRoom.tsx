@@ -1131,7 +1131,7 @@ export function IrissOrderRoom({
                 Filtrs ieslēgts
               </button>
             ) : null}
-            <Link href={searchHref} className="text-[13px] font-semibold text-[#1d4ed8]">
+            <Link href={searchHref} className="iriss-ink-link text-[13px] font-semibold text-[var(--ink)]">
               Atvērt meklētājā
             </Link>
           </div>
@@ -1611,7 +1611,7 @@ export function IrissOrderRoom({
       </div>
 
       <div className="fixed inset-x-0 bottom-[var(--admin-tabbar-h,0px)] z-[40] grid grid-cols-3 gap-2 border-t border-[#e5e7eb] bg-[#fffffff2] px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 md:hidden">
-        <button type="button" disabled={orderPdfBusy} onClick={onPdf} className="flex h-11 min-w-0 items-center justify-center rounded-xl bg-white text-[14px] font-semibold text-[#1d4ed8] shadow-[inset_0_0_0_1px_#e5e7eb]">
+        <button type="button" disabled={orderPdfBusy} onClick={onPdf} className="iriss-ink-link flex h-11 min-w-0 items-center justify-center rounded-xl bg-[var(--s1,#fff)] text-[14px] font-semibold text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--hair,#e5e7eb)]">
           {orderPdfBusy ? "PDF…" : "Līgums"}
         </button>
         <button type="button" onClick={onCreateOffer} className="flex h-11 min-w-0 items-center justify-center rounded-xl bg-[#e5e7eb] text-[14px] font-semibold text-[#111827]">
