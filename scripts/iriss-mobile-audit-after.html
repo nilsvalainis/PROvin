@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IRISS mobile AFTER</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #e9ecf1; font-family: ui-sans-serif, system-ui, sans-serif; color: #0b0c10; }
+    .phone {
+      width: 100%; max-width: 390px; height: 844px; overflow: hidden; position: relative;
+      background:
+        radial-gradient(640px 420px at 12% 0%, rgba(150,170,220,.36), transparent 70%),
+        radial-gradient(720px 520px at 92% 18%, rgba(200,180,230,.26), transparent 70%),
+        #e9ecf1;
+    }
+    .status { height: 54px; padding: 16px 22px 0; font-size: 15px; font-weight: 600; }
+    .top { padding: 4px 16px 12px; }
+    .row { display: flex; align-items: center; min-height: 44px; gap: 8px; }
+    h1 { margin: 0; font-size: 34px; line-height: 1; }
+    .pill { height: 22px; padding: 0 8px; border-radius: 7px; background: rgba(61,91,217,.12); color: #3d5bd9; font-size: 11px; font-weight: 750; display: flex; align-items: center; }
+    .round { width: 44px; height: 44px; border-radius: 999px; background: rgba(116,120,138,.2); flex: none; }
+    .round.pri { background: #111827; }
+    .search { height: 44px; border-radius: 999px; background: rgba(116,120,138,.12); display: flex; align-items: center; padding: 0 12px; color: #9a9faa; font-size: 15px; margin-top: 8px; }
+    .chips { display: flex; gap: 6px; overflow: hidden; margin-top: 8px; }
+    .chip { height: 44px; border-radius: 999px; padding: 0 14px; background: #111827; color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; }
+    .chip.g { background: rgba(116,120,138,.12); color: #0b0c10; font-weight: 500; }
+    .way { margin-top: 8px; font-size: 12px; color: #5e636e; display: flex; gap: 6px; align-items: center; overflow: hidden; }
+    .way b { display: inline-flex; min-height: 44px; align-items: center; padding: 0 12px; border-radius: 999px; background: rgba(116,120,138,.2); color: #0b0c10; font-weight: 500; }
+    .cards { padding: 8px 16px 96px; display: flex; flex-direction: column; gap: 8px; }
+    .card { background: #fff; border-radius: 18px; padding: 12px 14px; }
+    .card h2 { margin: 0 88px 4px 0; font-size: 16px; line-height: 1.25; }
+    .meta { color: #5e636e; font-size: 12px; line-height: 1.35; }
+    .st { float: right; min-height: 36px; border-radius: 999px; padding: 8px 10px; font-size: 12px; font-weight: 600; background: rgba(116,120,138,.2); }
+    .hits { display: inline-flex; margin-top: 8px; background: #111827; color: #fff; border-radius: 999px; padding: 3px 8px; font-size: 11px; font-weight: 700; }
+    .next { display: block; margin-top: 6px; font-size: 12px; color: #5e636e; }
+    .dock { position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; gap: 12px; }
+    .tabbar { flex: 1; height: 62px; border-radius: 999px; background: rgba(255,255,255,.86); display: flex; }
+    .tabbar span { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; }
+    .search-btn { width: 52px; height: 52px; border-radius: 999px; background: rgba(255,255,255,.86); }
+    .sheet { position: absolute; inset: 0; background: rgba(20,24,35,.45); }
+    .panel { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 36px 36px 0 0; padding: 10px 16px 28px; }
+    .handle { width: 40px; height: 4px; border-radius: 999px; background: #d4d4d8; margin: 0 auto 12px; }
+    .opt { min-height: 48px; display: flex; align-items: center; font-size: 17px; border-bottom: 0.5px solid #eee; }
+  </style>
+</head>
+<body>
+  <section class="phone" data-shot="after-list">
+    <div class="status">20:35</div>
+    <div class="top">
+      <div class="row">
+        <h1>Pasūtījumi</h1>
+        <span class="pill">IRISS</span>
+        <span style="margin-left:auto" class="round"></span>
+        <span class="round"></span>
+        <span class="round pri"></span>
+      </div>
+      <div class="search">Vārds, tālrunis, marka</div>
+      <div class="chips">
+        <span class="chip">Aktīvs 36</span>
+        <span class="chip g">Rezervēts 1</span>
+        <span class="chip g">Izpildīts 21</span>
+      </div>
+      <div class="way">Pavadzīmes <b>P00744 MB E350 43 h</b> <b>P02806 Toyota 18 h</b></div>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="st">Aktīvs</span>
+        <h2>Audi A6 C7 BI-TURBO Sline</h2>
+        <div class="meta">2012-2015 · 3.0 TDI 230 kW · 110000-140000 km</div>
+        <div class="meta">Romāns Kleščenkovs · 11000-14000 €</div>
+        <span class="hits">21 jauni</span>
+        <span class="next">Apskatīt 21 jaunu sludinājumu</span>
+      </div>
+      <div class="card">
+        <span class="st">Aktīvs</span>
+        <h2>BMW 220 B48</h2>
+        <div class="meta">Benzīns · Edgars Grasis · 140000 km</div>
+        <span class="next">Sagatavot pirmo piedāvājumu</span>
+      </div>
+    </div>
+    <div class="dock">
+      <div class="tabbar"><span>Pasūtījumi</span><span>Sludinājumi</span><span>Radars</span><span>Vairāk</span></div>
+      <div class="search-btn"></div>
+    </div>
+  </section>
+  <section class="phone" data-shot="after-sheet" hidden>
+    <div class="status">20:35</div>
+    <div class="top">
+      <div class="row"><h1>Pasūtījumi</h1><span class="pill">IRISS</span></div>
+    </div>
+    <div class="sheet">
+      <div class="panel">
+        <div class="handle"></div>
+        <h2 style="margin:0 0 8px;font-size:19px">Kārtot</h2>
+        <div class="opt">Jaunākie</div>
+        <div class="opt">Vecākie</div>
+        <div class="opt">Marka A-Z</div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

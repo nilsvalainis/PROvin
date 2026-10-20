@@ -209,7 +209,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
       disabled={statusBusy}
       onClick={toggleStatusMenu}
       onPointerDown={(e) => e.stopPropagation()}
-      className="iriss-pas-status inline-flex h-8 items-center gap-0.5 rounded-full border border-[var(--hair)] bg-[var(--s1)] px-2.5 text-[12px] font-semibold text-[var(--ink)]"
+      className="iriss-pas-status inline-flex min-h-9 items-center gap-0.5 rounded-full border border-[var(--hair)] bg-[var(--s1)] px-2.5 text-[12px] font-semibold text-[var(--ink)] max-md:min-h-11"
       aria-haspopup="menu"
       aria-expanded={statusMenuOpen}
     >
@@ -235,12 +235,12 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
       aria-label="Atvērt WhatsApp"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
-      className="relative z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--ink)] hover:bg-[var(--fill)]"
+      className="relative z-10 inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--ink)] hover:bg-[var(--fill)]"
     >
       <MessageCircle className="h-4 w-4" aria-hidden />
     </a>
   ) : (
-    <span className="inline-flex h-9 w-9" aria-hidden />
+    <span className="inline-flex h-11 w-11" aria-hidden />
   );
 
   const callBtn = showCall && telHref ? (
@@ -249,7 +249,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
       aria-label="Zvanīt"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
-      className="relative z-10 inline-flex h-9 w-9 items-center justify-center rounded-full text-[var(--ink)] hover:bg-[var(--fill)] md:hidden"
+      className="relative z-10 inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--ink)] hover:bg-[var(--fill)] md:hidden"
     >
       <Phone className="h-4 w-4" aria-hidden />
     </a>
@@ -302,21 +302,21 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
       <div className="pointer-events-none relative z-10 min-w-0 flex-1 md:grid md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_7.5rem_5.5rem_minmax(0,1.1fr)] md:items-center md:gap-3">
         <span className="min-w-0">
           <span className="flex min-w-0 items-start justify-between gap-2 md:block">
-            <span className="block min-w-0 truncate text-[16px] font-semibold leading-snug text-[var(--ink)] md:text-[15px]">
+            <span className="block min-w-0 break-words text-[16px] font-semibold leading-snug text-[var(--ink)] max-md:line-clamp-2 md:truncate md:text-[15px]">
               {row.brandModel}
             </span>
             <span className="relative z-10 pointer-events-auto shrink-0 md:hidden">{statusBtn}</span>
           </span>
           {specBrief ? (
-            <span className="mt-0.5 block truncate text-[12px] leading-snug text-[var(--ink2)]">{specBrief}</span>
+            <span className="mt-0.5 block text-[12px] leading-snug text-[var(--ink2)] max-md:line-clamp-2 md:truncate">{specBrief}</span>
           ) : null}
           <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 text-[12px] leading-snug text-[var(--ink2)] md:hidden">
-            <span className="truncate">{client.name}</span>
-            {budget !== "-" ? <span className="truncate">· {budget}</span> : null}
+            <span className="min-w-0 break-words">{client.name}</span>
+            {budget !== "-" ? <span className="shrink-0">· {budget}</span> : null}
           </span>
-          <span className="mt-1.5 flex min-w-0 items-center gap-2 md:hidden">
+          <span className="mt-1.5 flex min-w-0 flex-col items-start gap-1 md:hidden">
             {newHitsLabel}
-            {nextStep ? <span className="min-w-0 truncate text-[12px] text-[var(--ink2)]">{nextStep}</span> : null}
+            {nextStep ? <span className="min-w-0 text-[12px] leading-snug text-[var(--ink2)] max-md:line-clamp-2">{nextStep}</span> : null}
           </span>
           {row.hasExpiredOffer ? (
             <span className="iriss-pas-expired mt-1 inline-flex rounded-full border border-[var(--hair)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ink2)]">

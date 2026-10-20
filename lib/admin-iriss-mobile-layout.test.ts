@@ -50,7 +50,7 @@ describe("IRISS mobile safe-area layout", () => {
     expect(src.bar).toMatch(/Pavadzīmes/);
     expect(src.bar).toMatch(/sludinajumi/);
     expect(src.bar).toMatch(/pasutijumi\|scan/);
-    expect(src.bar).toMatch(/h-7/);
+    expect(src.bar).toMatch(/min-h-11/);
     expect(src.list).toMatch(/AdminMobileSearchField/);
     expect(src.list).toMatch(/IrissPasutijumiStatusFilter layout="scroll"/);
     expect(src.list).toMatch(/title="LIMITI"/);
@@ -79,5 +79,16 @@ describe("IRISS mobile safe-area layout", () => {
     expect(src.irissAdmin).toMatch(/grid-template-columns: 100px minmax\(0, 1fr\)/);
     expect(src.irissAdmin).toMatch(/iriss-range-unit-phone/);
     expect(src.irissAdmin).toMatch(/\.iriss-range-unit-end \{\s*display: none;/);
+  });
+
+  it("keeps phone tap targets at 44px and sheets opaque", () => {
+    expect(src.chrome).toMatch(/h-11 w-11/);
+    expect(src.chrome).toMatch(/admin-sheet-opaque/);
+    expect(src.mobileCss).toMatch(/height:\s*44px/);
+    expect(src.mobileCss).toMatch(/\.iriss-status-chip \{[\s\S]*min-height:\s*44px/);
+    expect(src.mobileCss).toMatch(/\.admin-sheet-panel\.am-glass/);
+    expect(src.irissTheme).toMatch(/\.am-search \{[\s\S]*height:\s*44px/);
+    expect(src.irissTheme).not.toMatch(/\.am-search \{[\s\S]*height:\s*36px/);
+    expect(src.irissTheme).not.toMatch(/\.iriss-status-chip \{[\s\S]*height:\s*32px/);
   });
 });

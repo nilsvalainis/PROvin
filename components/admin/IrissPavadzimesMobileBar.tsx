@@ -55,9 +55,9 @@ export function IrissPavadzimesMobileBar({ embedded = false }: { embedded?: bool
     return (
       <div className="mb-0 max-w-full md:hidden" aria-hidden>
         <div className={rowClass}>
-          <span className="h-7 w-28 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
-          <span className="h-7 w-24 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
-          <span className="h-7 w-20 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
+          <span className="h-11 w-28 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
+          <span className="h-11 w-24 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
+          <span className="h-11 w-20 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
         </div>
       </div>
     );
@@ -73,7 +73,7 @@ export function IrissPavadzimesMobileBar({ embedded = false }: { embedded?: bool
           <Link
             key={item.id}
             href="/admin/iriss/pavadzimes"
-            className="iriss-waybill-chip inline-flex h-[22px] max-w-[16rem] shrink-0 items-center rounded-full bg-[var(--fill-secondary)] px-3 text-[12px] font-medium text-[var(--label)]"
+            className="iriss-waybill-chip inline-flex min-h-11 max-w-[16rem] shrink-0 items-center rounded-full bg-[var(--fill-secondary)] px-3 text-[12px] font-medium text-[var(--label)]"
           >
             <span className="truncate">{item.label}</span>
           </Link>

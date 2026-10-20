@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IRISS mobile BEFORE</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: #e9ecf1; font-family: ui-sans-serif, system-ui, sans-serif; color: #0b0c10; }
+    .phone { width: 100%; max-width: 390px; height: 844px; overflow: hidden; background: #e9ecf1; position: relative; }
+    .status { height: 54px; padding: 16px 22px 0; font-size: 15px; font-weight: 600; }
+    .top { padding: 4px 16px 12px; }
+    .row { display: flex; align-items: center; height: 40px; gap: 8px; }
+    h1 { margin: 0; font-size: 34px; line-height: 1; }
+    .pill { height: 22px; padding: 0 8px; border-radius: 7px; background: rgba(61,91,217,.12); color: #3d5bd9; font-size: 11px; font-weight: 750; display: flex; align-items: center; }
+    .round { width: 36px; height: 36px; border-radius: 999px; background: rgba(116,120,138,.2); }
+    .search { height: 36px; border-radius: 999px; background: rgba(116,120,138,.12); display: flex; align-items: center; padding: 0 12px; color: #9a9faa; font-size: 15px; margin-top: 8px; }
+    .chips { display: flex; gap: 6px; overflow: hidden; margin-top: 8px; }
+    .chip { height: 32px; border-radius: 999px; padding: 0 12px; background: #111; color: #000; font-size: 13px; display: flex; align-items: center; }
+    .chip.g { background: rgba(116,120,138,.12); color: #0b0c10; }
+    .way { margin-top: 8px; font-size: 12px; color: #5e636e; white-space: nowrap; overflow: hidden; }
+    .way b { display: inline-flex; height: 22px; align-items: center; padding: 0 10px; border-radius: 999px; background: rgba(116,120,138,.2); color: #0b0c10; font-weight: 500; }
+    .cards { padding: 8px 16px 90px; display: flex; flex-direction: column; gap: 8px; }
+    .card { background: #fff; border-radius: 18px; padding: 10px 12px; position: relative; }
+    .card h2 { margin: 0 72px 2px 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .meta { color: #5e636e; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .st { position: absolute; right: 12px; top: 10px; height: 22px; border-radius: 7px; padding: 0 6px; font-size: 11px; background: rgba(116,120,138,.2); }
+    .black { display: inline-block; margin-top: 6px; background: #111; color: #000; border-radius: 999px; padding: 2px 8px; font-size: 11px; }
+    .ghost { margin-top: 10px; opacity: .35; font-size: 11px; }
+    .dock { position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; gap: 12px; }
+    .tabbar { flex: 1; height: 62px; border-radius: 999px; background: rgba(255,255,255,.8); display: flex; }
+    .tabbar span { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+    .search-btn { width: 52px; height: 52px; border-radius: 999px; background: rgba(255,255,255,.8); }
+  </style>
+</head>
+<body>
+  <section class="phone" data-shot="before-list">
+    <div class="status">20:35</div>
+    <div class="top">
+      <div class="row">
+        <h1>Pasūtījumi</h1>
+        <span class="pill">IRISS</span>
+        <span style="margin-left:auto" class="round"></span>
+        <span class="round"></span>
+        <span class="round"></span>
+      </div>
+      <div class="search">Vārds, tālrunis, marka</div>
+      <div class="chips">
+        <span class="chip">Aktīvs 36</span>
+        <span class="chip g">Rezervēts 1</span>
+        <span class="chip g">Izpildīts 21</span>
+        <span class="chip g">Neaktīvs</span>
+      </div>
+      <div class="way">Pavadzīmes <b>P00744 MB E350 43 h</b> <b>P02806 Toyota Co</b></div>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="st">Aktīvs</span>
+        <h2>Audi A6 C7 BI-TURBO Sline</h2>
+        <div class="meta">2012-2015 · 3.0 TDI 230 kW · 110000-140000</div>
+        <div class="meta">Romāns Kleščenkovs · 11000-14000</div>
+        <span class="black">Apskatīt 21 jaunu sludinājumu</span>
+      </div>
+      <div class="card">
+        <span class="st">Aktīvs</span>
+        <h2>BMW 220 B48</h2>
+        <div class="meta">Benzīns · Edgars Grasis · 140000</div>
+        <div class="ghost">0,00 $ / 0,00 $ · 0% · Tikai adminam</div>
+      </div>
+    </div>
+    <div class="dock">
+      <div class="tabbar"><span>Pasūtījumi</span><span>Sludinājumi</span><span>Radars</span><span>Vairāk</span></div>
+      <div class="search-btn"></div>
+    </div>
+  </section>
+</body>
+</html>

@@ -20,7 +20,7 @@ export type StatusChipTone = (typeof STATUS_CHIP_TONES)[number];
 export type StatusChipRowLayout = "scroll" | "wrap";
 
 const CHIP_BASE =
-  "iriss-status-chip inline-flex h-10 min-h-10 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[13px] font-semibold leading-none transition md:h-8 md:min-h-8 md:px-2 md:text-[12px]";
+  "iriss-status-chip inline-flex h-11 min-h-11 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[13px] font-semibold leading-none transition md:h-8 md:min-h-8 md:px-2 md:text-[12px]";
 
 const CHIP_OFF = "border-transparent bg-transparent text-black/70 hover:bg-black/[0.04]";
 

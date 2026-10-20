@@ -495,7 +495,7 @@ function AdminOrdersMobileChrome({
             onClick={() => push({ sort: sort === "oldest" ? "newest" : "oldest" })}
           />
           <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => setMoreOpen(true)} />
-          <span className="max-md:[&>button]:h-9 max-md:[&>button]:w-9 max-md:[&>button]:rounded-full max-md:[&>button]:bg-[var(--fill-secondary)] max-md:[&>button]:px-0 max-md:[&>button]:text-[0px] max-md:[&>button]:text-[var(--label)] max-md:[&>button]:shadow-none">
+          <span className="max-md:[&>button]:h-11 max-md:[&>button]:w-11 max-md:[&>button]:rounded-full max-md:[&>button]:bg-[var(--fill-secondary)] max-md:[&>button]:px-0 max-md:[&>button]:text-[0px] max-md:[&>button]:text-[var(--label)] max-md:[&>button]:shadow-none">
             <AdminCreateManualOrderButton compact />
           </span>
         </>
@@ -916,7 +916,7 @@ export function AdminOrdersTable({
                 </div>
               )}
               <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 truncate text-[16px] font-semibold tracking-tight text-[var(--label)]">
+                <p className="min-w-0 break-words text-[16px] font-semibold tracking-tight text-[var(--label)] max-md:line-clamp-2">
                   {v.isPack ? v.packLabel : (o.makeModel?.trim() || v.primaryClient).toUpperCase()}
                 </p>
                 {v.isPack ? null : (

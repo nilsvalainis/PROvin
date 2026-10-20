@@ -866,7 +866,7 @@ export function IrissSludinajumiListClient({
           </div>
           <button
             type="button"
-            className="mt-2 flex items-center gap-1.5 text-[12px] text-[var(--am-ink2)]"
+            className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-[12px] text-[var(--am-ink2)]"
             title={nextReadLabel ? `Nākamā nolasīšana ${nextReadLabel}` : "Nākamā nolasīšana"}
             onClick={() => { setSourceStatusOpen(true); setMenuOpen(false); }}
           >

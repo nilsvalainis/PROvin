@@ -239,7 +239,7 @@
 
   .am-search {
     display: flex;
-    height: 40px;
+    height: 44px;
     align-items: center;
     gap: 8px;
     border-radius: 999px;
@@ -256,8 +256,27 @@
   }
 
   .admin-m .iriss-waybill-chip {
+    min-height: 44px;
     background: var(--fill-secondary) !important;
     color: var(--label) !important;
+  }
+
+  .admin-m .iriss-ov-trigger {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .admin-m .iriss-pas-status {
+    min-height: 36px;
+  }
+
+  .admin-sheet-panel,
+  .admin-sheet-panel.am-glass,
+  .admin-sheet-panel.admin-sheet-solid {
+    background: var(--am-s1, #ffffff);
+    background-color: var(--am-s1, #ffffff);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .admin-m [data-iriss-listings-toolbar] {
@@ -480,8 +499,8 @@
   }
 
   .admin-m .iriss-status-chip {
-    height: 36px;
-    min-height: 36px;
+    height: 44px;
+    min-height: 44px;
     white-space: nowrap;
   }
 }
