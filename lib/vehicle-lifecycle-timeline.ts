@@ -106,16 +106,26 @@ export type LifecycleEvent = {
   countryUnverified?: boolean;
   /**
    * Rinda no avota „Laikposma ieraksti” tabulas (AutoDNA, CarVertical, Citi avoti).
-   * Kā sludinājums: zemāks svars, neģenerē valsts maiņu un nekļūst par `prevCountry`.
-   * Atšķirībā no sludinājuma PDF nerāda „(pēc sludinājuma, nav apstiprināts)”.
+   * Zemāks svars nekā nobraukums / reģistrs: nerāda „nav apstiprināts” un nestājas pretī
+   * jau apstiprinātai citai valstij. Ja pirms tam nav stipras valsts, zināmā ISO valsts
+   * aizpilda ķēdi (ASV no CarVertical pirms Lietuvas odometra).
    * Reģistra hronoloģija (tjekbil / Finnik / Traficom u.c.) šo karogu nesaņem.
    */
   timelineInformational?: boolean;
 };
 
-/** Valsts no sludinājuma vai laikposma tabulas - rāda, bet nešķērso robežu. */
+/** Valsts no sludinājuma vai laikposma tabulas - rāda, bet nešķērso robežu pret stipro ķēdi. */
 export function lifecycleCountryIsSoft(e: Pick<LifecycleEvent, "countryUnverified" | "timelineInformational">): boolean {
   return e.countryUnverified === true || e.timelineInformational === true;
+}
+
+/** Viena vārteja: sludinājums, robs, neapstiprināts vai neatpazīstams teksts nav valsts. */
+export function lifecycleEventKnownCountryIso(
+  e: Pick<LifecycleEvent, "country" | "kind" | "countryUnverified">,
+): string | null {
+  if (e.kind === "listed" || e.kind === "gap") return null;
+  if (e.countryUnverified) return null;
+  return countryLabelToIso2(e.country);
 }
 
 /**
@@ -415,11 +425,23 @@ function vendorTimelineTitleAndDetail(
   return { title: vendorKindShortTitle(kind), detail: "", body: raw };
 }
 
-/** Reģistrācija, apskate, oficiāls odometrs u.c. - ne sludinājuma vai laikposma tabulas valsts. */
+/** Stipra rezidence: atpazīstama valsts, ne sludinājums un ne laikposma tabula. */
 export function lifecycleEventProvidesCountryResidence(e: LifecycleEvent): boolean {
-  if (!e.country || lifecycleCountryIsSoft(e)) return false;
-  if (e.kind === "listed" || e.kind === "gap") return false;
-  return true;
+  if (lifecycleCountryIsSoft(e)) return false;
+  return lifecycleEventKnownCountryIso(e) != null;
+}
+
+/**
+ * Ķēdes solis: neatpazīta valsts (COPART, „Copart”) izlaižama, ķēde paliek.
+ * Laikposma rinda ar ISO valsti tikai aizpilda tukšu ķēdi vai apstiprina to pašu ISO.
+ * Maiņu ģenerē tikai stiprs notikums (nobraukums, reģistrs, negadījums).
+ */
+function lifecycleEventCountryChainIso(e: LifecycleEvent, prevIso: string): string | null {
+  const iso = lifecycleEventKnownCountryIso(e);
+  if (!iso) return null;
+  if (lifecycleEventProvidesCountryResidence(e)) return iso;
+  if (!prevIso || iso === prevIso) return iso;
+  return null;
 }
 
 function lifecycleSourceLooksInformationalVendor(source: string): boolean {
@@ -971,10 +993,12 @@ function addDerivedEvents(
 ): LifecycleEvent[] {
   const out: LifecycleEvent[] = [];
   let prevCountry = "";
+  let prevIso = "";
   let prevResidence: LifecycleEvent | null = null;
   let seededCsddPrevious = false;
   const previousCountryNorm =
     normalizeCountryNameLv(previousRegistrationCountry) || previousRegistrationCountry.trim();
+  const previousIso = countryLabelToIso2(previousCountryNorm);
   for (const [i, e] of sorted.entries()) {
     const prev = i > 0 ? sorted[i - 1]! : null;
     if (prev && prev.time > 0 && e.time > 0) {
@@ -994,39 +1018,38 @@ function addDerivedEvents(
         });
       }
     }
-    if (lifecycleEventProvidesCountryResidence(e)) {
+    const nextIso = lifecycleEventCountryChainIso(e, prevIso);
+    if (nextIso) {
+      const hard = lifecycleEventProvidesCountryResidence(e);
       let fromCountry = prevCountry;
-      if (!fromCountry && !seededCsddPrevious && previousCountryNorm && csddFirstRegistrationInLatvia(e)) {
+      let fromIso = prevIso;
+      if (!fromIso && !seededCsddPrevious && previousIso && csddFirstRegistrationInLatvia(e)) {
         fromCountry = previousCountryNorm;
+        fromIso = previousIso;
         seededCsddPrevious = true;
       }
-      if (fromCountry && e.country !== fromCountry) {
-        const fromIso = countryLabelToIso2(fromCountry);
-        const toIso = countryLabelToIso2(e.country);
-        if (fromIso && toIso && fromIso !== toIso) {
-          const caSide = fromIso === "CA" ? prevResidence : toIso === "CA" ? e : null;
-          if (!isDisputedUsCanadaCountryPair(fromIso, toIso, caSide)) {
-            out.push({
-              kind: "import",
-              date: e.date,
-              time: e.time > 0 ? e.time - 1 : 0,
-              year: e.year,
-              title: `${fromCountry} → ${e.country}`,
-              detail: `${fromCountry} → ${e.country}`,
-              country: e.country,
-              fromCountry,
-              odometer: "",
-              sources: [...e.sources],
-              tone: "warn",
-            });
-          }
+      if (hard && fromIso && fromIso !== nextIso) {
+        const fromLabel = normalizeCountryNameLv(fromCountry) || fromCountry;
+        const toLabel = normalizeCountryNameLv(e.country) || e.country;
+        const caSide = fromIso === "CA" ? prevResidence : nextIso === "CA" ? e : null;
+        if (!isDisputedUsCanadaCountryPair(fromIso, nextIso, caSide)) {
+          out.push({
+            kind: "import",
+            date: e.date,
+            time: e.time > 0 ? e.time - 1 : 0,
+            year: e.year,
+            title: `${fromLabel} → ${toLabel}`,
+            detail: `${fromLabel} → ${toLabel}`,
+            country: toLabel,
+            fromCountry: fromLabel,
+            odometer: "",
+            sources: [...e.sources],
+            tone: "warn",
+          });
         }
       }
-    }
-    // Sludinājuma/tirgus valsts nekad nekļūst par jauno "zināmo" valsti: nākamais notikums
-    // joprojām salīdzinās pret pēdējo oficiāli apstiprināto valsti, ne pret pārdevēja pieņēmumu.
-    if (lifecycleEventProvidesCountryResidence(e)) {
-      prevCountry = e.country;
+      prevCountry = normalizeCountryNameLv(e.country) || e.country;
+      prevIso = nextIso;
       prevResidence = e;
     }
     out.push(e);
@@ -1035,8 +1058,7 @@ function addDerivedEvents(
 }
 
 /**
- * Vienā dienā maksimums viena valsts maiņa.
- * A → B → A tajā pašā datumā tiek apvienots un paliek brīdinājums.
+ * Tikai vienas dienas A → B → A tiek apvienots. A → B → C paliek atsevišķas pārejas.
  */
 function collapseSameDayCountryTransitions(events: LifecycleEvent[]): LifecycleEvent[] {
   const importsByDay = new Map<string, LifecycleEvent[]>();
@@ -1051,43 +1073,23 @@ function collapseSameDayCountryTransitions(events: LifecycleEvent[]): LifecycleE
   for (const dayImports of importsByDay.values()) {
     if (dayImports.length <= 1) continue;
     const chain = [...dayImports].sort((a, b) => a.time - b.time);
-    const start = chain[0]!.fromCountry?.trim() || "";
-    const end = chain[chain.length - 1]!.country.trim();
+    const startIso = countryLabelToIso2(chain[0]!.fromCountry ?? "");
+    const endIso = countryLabelToIso2(chain[chain.length - 1]!.country);
+    if (!startIso || !endIso || startIso !== endIso) continue;
     const hopText = chain.map((e) => `${e.fromCountry ?? "?"} → ${e.country}`).join(", ");
     for (const e of chain) drop.add(e);
-    const bounced =
-      Boolean(start) &&
-      Boolean(end) &&
-      normalizeCountryNameLv(start).toLowerCase() === normalizeCountryNameLv(end).toLowerCase();
     extras.push({
       kind: "anomaly",
       date: chain[0]!.date,
       time: chain[0]!.time,
       year: chain[0]!.year,
       title: "Vienas dienas valsts maiņa apvienota",
-      detail: bounced
-        ? `${hopText}. Atkārtota A → B → A vienā datumā.`
-        : `${hopText}. Neto: ${start} → ${end}.`,
-      country: bounced ? "" : end,
+      detail: `${hopText}. Atkārtota A → B → A vienā datumā.`,
+      country: "",
       odometer: "",
       sources: [...new Set(chain.flatMap((e) => e.sources))],
       tone: "warn",
     });
-    if (!bounced && start && end && start !== end) {
-      extras.push({
-        kind: "import",
-        date: chain[0]!.date,
-        time: Math.min(...chain.map((e) => (e.time > 0 ? e.time : 0))),
-        year: chain[0]!.year,
-        title: `${start} → ${end}`,
-        detail: `${start} → ${end}`,
-        country: end,
-        fromCountry: start,
-        odometer: "",
-        sources: [...new Set(chain.flatMap((e) => e.sources))],
-        tone: "warn",
-      });
-    }
   }
   if (drop.size === 0) return events;
   return sortAscending([...events.filter((e) => !drop.has(e)), ...extras]);
