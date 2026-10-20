@@ -70,6 +70,8 @@ function runRecord(partial: Partial<MarketplaceRunRecord> & Pick<MarketplaceRunR
       body: "",
       drive: "",
       countries: [],
+      vehicleCategory: "car",
+      features: [],
     },
     maxItems: 40,
     maxUsd: 1,
@@ -367,6 +369,8 @@ describe("marketplace auto budget and skip", () => {
     expect(src).not.toMatch(/iriss-listings-sync|runIrissListingsDailySync/);
     const cronSrc = readFileSync(path.join(process.cwd(), "app/api/cron/iriss-marketplace-auto/route.ts"), "utf8");
     expect(cronSrc).not.toMatch(/iriss-listings-sync|runIrissListingsDailySync/);
+    expect(src).not.toMatch(/iriss-scan-store|listIrissScan/);
+    expect(cronSrc).not.toMatch(/iriss-scan-store|listIrissScan/);
     const loadForOrder = vi.fn(async () => okLoad(0.05));
     await runMarketplaceAutoSweep(baseDeps({ loadForOrder }));
     expect(loadForOrder).toHaveBeenCalledTimes(1);

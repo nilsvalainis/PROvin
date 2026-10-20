@@ -11,6 +11,7 @@ import {
   marketplaceMissingExtraRangeMessage,
   marketplaceMissingFieldsMessage,
 } from "@/lib/marketplace/query-from-order";
+import { MARKETPLACE_RADAR_EXTRA_RANGE_MESSAGE } from "@/lib/marketplace/query-from-scan";
 import type { MarketplacePlatform } from "@/lib/marketplace/types";
 
 type EstimateResponse = {
@@ -83,22 +84,34 @@ const ALL_PLATFORMS: MarketplacePlatform[] = ["mobilede", "autoscout24"];
 
 export function IrissMarketplaceLoadPanel({
   orderId,
+  scanId,
+  enabledPlatforms,
   onLoaded,
 }: {
-  orderId: string;
+  orderId?: string;
+  scanId?: string;
+  enabledPlatforms?: MarketplacePlatform[];
   onLoaded?: () => void | Promise<void>;
 }) {
   const [estimate, setEstimate] = useState<EstimateResponse | null>(null);
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [usage, setUsage] = useState<UsageResponse | null>(null);
-  const [platforms, setPlatforms] = useState<MarketplacePlatform[]>(ALL_PLATFORMS);
+  const [platforms, setPlatforms] = useState<MarketplacePlatform[]>(
+    enabledPlatforms?.length ? enabledPlatforms : ALL_PLATFORMS,
+  );
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [lastLoadCost, setLastLoadCost] = useState<{ chargedUsd: number; monthlyUsedUsd: number } | null>(null);
 
+  const ownerQuery = scanId
+    ? `scanId=${encodeURIComponent(scanId)}`
+    : `orderId=${encodeURIComponent(orderId ?? "")}`;
+  const availablePlatforms = enabledPlatforms?.length ? enabledPlatforms : ALL_PLATFORMS;
+  const radar = Boolean(scanId);
+
   async function loadEstimate() {
     try {
-      const res = await fetch(`/api/admin/iriss-marketplace/estimate?orderId=${encodeURIComponent(orderId)}`, {
+      const res = await fetch(`/api/admin/iriss-marketplace/estimate?${ownerQuery}`, {
         credentials: "include",
         cache: "no-store",
       });
@@ -111,7 +124,7 @@ export function IrissMarketplaceLoadPanel({
 
   async function loadStatus() {
     try {
-      const res = await fetch(`/api/admin/iriss-marketplace/status?orderId=${encodeURIComponent(orderId)}`, {
+      const res = await fetch(`/api/admin/iriss-marketplace/status?${ownerQuery}`, {
         credentials: "include",
         cache: "no-store",
       });
@@ -136,10 +149,14 @@ export function IrissMarketplaceLoadPanel({
   }
 
   useEffect(() => {
+    setPlatforms((prev) => {
+      const next = prev.filter((p) => availablePlatforms.includes(p));
+      return next.length ? next : availablePlatforms;
+    });
     void loadEstimate();
     void loadStatus();
     void loadUsage();
-  }, [orderId]);
+  }, [orderId, scanId, availablePlatforms.join("|")]);
 
   function toggle(platform: MarketplacePlatform) {
     setPlatforms((prev) => {
@@ -160,7 +177,11 @@ export function IrissMarketplaceLoadPanel({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, platforms, explicit: true }),
+        body: JSON.stringify({
+          ...(scanId ? { scanId } : { orderId }),
+          platforms,
+          explicit: true,
+        }),
       });
       const body = (await res.json().catch(() => ({}))) as LoadResponse;
       if (!res.ok || !body.ok) {
@@ -190,7 +211,11 @@ export function IrissMarketplaceLoadPanel({
   const allowed = !loadsOff && estimate?.allowed !== false && queryReady;
   const maxUsd = estimate?.estimatedUsd ?? 0;
   const missingText = marketplaceMissingFieldsMessage(missingFields);
-  const extraText = marketplaceMissingExtraRangeMessage(extraMissing);
+  const extraText = radar
+    ? extraMissing
+      ? MARKETPLACE_RADAR_EXTRA_RANGE_MESSAGE
+      : ""
+    : marketplaceMissingExtraRangeMessage(extraMissing);
   const disabledText = "Ielāde izslēgta (izmaksu kontrole)";
   const chargedUsd = lastLoadCost?.chargedUsd ?? status?.lastRun?.chargedUsd ?? usage?.lastChargedUsd ?? 0;
   const monthlyUsedUsd = lastLoadCost?.monthlyUsedUsd ?? status?.lastRun?.monthUsd ?? usage?.lastMonthUsd ?? usage?.spentUsd ?? estimate?.monthlyUsedUsd ?? 0;
@@ -199,18 +224,26 @@ export function IrissMarketplaceLoadPanel({
   return (
     <section className="rounded-2xl border border-[#e5e7eb] bg-white px-4 py-3.5">
       <p className="text-[13px] font-semibold text-[#111827]">mobile.de un AutoScout24</p>
-      <p className="mt-1 text-[12px] leading-snug text-[#6b7280]">
-        Automātiska ielāde ik pa {status?.intervalDays ?? 3} dienām tikai jauniem sludinājumiem. Poga Ielādēt -
-        manuāla ielāde tagad.
-      </p>
-      <p className="mt-1 text-[12px] text-[#374151]">
-        Pēdējā automātiskā ielāde: {formatLvDate(status?.lastAutoAt) || "vēl nav"}
-      </p>
-      <p className="mt-0.5 text-[12px] text-[#374151]">
-        Nākamā: {formatLvDate(status?.nextAutoAt) || "pēc cron"}
-      </p>
+      {radar ? (
+        <p className="mt-1 text-[12px] leading-snug text-[#6b7280]">
+          Ielāde tikai ar pogu Ielādēt. Automātiska ielāde radarā nav. Mēneša griests {formatMarketplaceUsd(monthlyCapUsd)}.
+        </p>
+      ) : (
+        <>
+          <p className="mt-1 text-[12px] leading-snug text-[#6b7280]">
+            Automātiska ielāde ik pa {status?.intervalDays ?? 3} dienām tikai jauniem sludinājumiem. Poga Ielādēt -
+            manuāla ielāde tagad.
+          </p>
+          <p className="mt-1 text-[12px] text-[#374151]">
+            Pēdējā automātiskā ielāde: {formatLvDate(status?.lastAutoAt) || "vēl nav"}
+          </p>
+          <p className="mt-0.5 text-[12px] text-[#374151]">
+            Nākamā: {formatLvDate(status?.nextAutoAt) || "pēc cron"}
+          </p>
+        </>
+      )}
       <div className="mt-2 flex flex-wrap gap-2">
-        {ALL_PLATFORMS.map((platform) => {
+        {availablePlatforms.map((platform) => {
           const on = platforms.includes(platform);
           return (
             <button
