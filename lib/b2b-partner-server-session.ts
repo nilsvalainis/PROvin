@@ -13,13 +13,15 @@ export type B2bPartnerServerSession = {
   email: string;
 };
 
-function resolveSecret(): string {
-  const dedicated = process.env.B2B_PARTNER_SESSION_SECRET?.trim() ?? "";
+export function resolveB2bPartnerSessionSecret(env: NodeJS.ProcessEnv = process.env): string {
+  const dedicated = env.B2B_PARTNER_SESSION_SECRET?.trim() ?? "";
   if (dedicated) return dedicated;
-  const admin = process.env.ADMIN_SECRET?.trim() ?? "";
-  if (admin) return admin;
-  if (process.env.NODE_ENV !== "production") return DEV_FALLBACK_SECRET;
+  if (env.NODE_ENV !== "production") return DEV_FALLBACK_SECRET;
   return "";
+}
+
+function resolveSecret(): string {
+  return resolveB2bPartnerSessionSecret();
 }
 
 function signSession(session: B2bPartnerServerSession): string {

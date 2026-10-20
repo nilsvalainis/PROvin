@@ -8,7 +8,7 @@ vi.mock("next-intl/middleware", () => ({ default: () => () => NextResponse.next(
 const SECRET = "test-admin-secret-0123456789";
 
 function sessionCookie(exp = Date.now() + 60_000): string {
-  const payload = Buffer.from(JSON.stringify({ exp }), "utf8").toString("base64url");
+  const payload = Buffer.from(JSON.stringify({ typ: "admin", exp }), "utf8").toString("base64url");
   const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
   return `provin_admin_session=${payload}.${sig}`;
 }
@@ -16,6 +16,14 @@ function sessionCookie(exp = Date.now() + 60_000): string {
 function req(url: string, cookie?: string): NextRequest {
   const u = new URL(url);
   return new NextRequest(u, { headers: { host: u.host, ...(cookie ? { cookie } : {}) } });
+}
+
+function reqInit(url: string, init: { cookie?: string; method?: string; origin?: string; extra?: Record<string, string> }): NextRequest {
+  const u = new URL(url);
+  const headers: Record<string, string> = { host: u.host, ...init.extra };
+  if (init.cookie) headers.cookie = init.cookie;
+  if (init.origin) headers.origin = init.origin;
+  return new NextRequest(u, { method: init.method ?? "GET", headers });
 }
 
 describe("middleware admin gate", () => {
@@ -61,14 +69,55 @@ describe("middleware admin gate", () => {
     expect(res.headers.get("location")).toBeNull();
   });
 
-  it.each(["/api/admin/badges", "/api/admin/login", "/api/cron/morning-summary", "/api/webhooks/stripe", "/api/b2b-demo/login"])(
-    "leaves API route %s to its own auth",
+  it.each(["/api/cron/morning-summary", "/api/webhooks/stripe", "/api/b2b-demo/login"])(
+    "leaves non-admin API route %s to its own auth",
     async (path) => {
       const res = await middleware(req(`https://www.provin.lv${path}`));
       expect(res.status).toBe(200);
       expect(res.headers.get("location")).toBeNull();
     },
   );
+
+  it("does not require a session for /api/admin/login", async () => {
+    const res = await middleware(req("https://www.provin.lv/api/admin/login"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("blocks /api/admin/* without an admin session", async () => {
+    const res = await middleware(req("https://www.provin.lv/api/admin/badges"));
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: "unauthorized" });
+  });
+
+  it("lets a typed admin session through /api/admin GET", async () => {
+    const res = await middleware(req("https://www.provin.lv/api/admin/badges", sessionCookie()));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
+  });
+
+  it("rejects mutating /api/admin from a foreign Origin even with a session", async () => {
+    const res = await middleware(
+      reqInit("https://www.provin.lv/api/admin/partners", {
+        method: "POST",
+        cookie: sessionCookie(),
+        origin: "https://evil.example",
+      }),
+    );
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "forbidden origin" });
+  });
+
+  it("allows mutating /api/admin from the site Origin with a session", async () => {
+    const res = await middleware(
+      reqInit("https://www.provin.lv/api/admin/partners", {
+        method: "POST",
+        cookie: sessionCookie(),
+        origin: "https://www.provin.lv",
+      }),
+    );
+    expect(res.status).toBe(200);
+  });
 
   it("leaves B2B demo pages to their own session", async () => {
     const res = await middleware(req("https://demo.provin.lv/b2b-demo/pasutijumi"));
