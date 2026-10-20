@@ -4,6 +4,7 @@ import { writeB2bPartnerServerSession } from "@/lib/b2b-partner-server-session";
 import { authenticateB2bPartner } from "@/lib/b2b-partner-store";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { gatePartnerLoginTurnstile } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 
@@ -21,18 +22,27 @@ function rateLimited(retryAfterSec: number) {
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const limited = await checkRateLimit(`partner-login:${ip}`, LOGIN_MAX_PER_WINDOW, LOGIN_WINDOW_MS);
-  if (!limited.ok) return rateLimited(limited.retryAfterSec);
 
   let email = "";
   let password = "";
+  let turnstileToken: unknown = null;
   try {
-    const body = (await req.json()) as { email?: unknown; password?: unknown };
+    const body = (await req.json()) as { email?: unknown; password?: unknown; turnstileToken?: unknown };
     email = typeof body.email === "string" ? body.email : "";
     password = typeof body.password === "string" ? body.password : "";
+    turnstileToken = body.turnstileToken;
   } catch {
     return NextResponse.json({ error: "invalid_credentials" }, { status: 401 });
   }
+
+  // Captcha pirms rate-limit: bez derīga tokena svešinieki nevar triggerot lockout.
+  const captcha = await gatePartnerLoginTurnstile({ token: turnstileToken, remoteIp: ip });
+  if (!captcha.ok) {
+    return NextResponse.json({ error: captcha.error }, { status: captcha.status });
+  }
+
+  const limited = await checkRateLimit(`partner-login:${ip}`, LOGIN_MAX_PER_WINDOW, LOGIN_WINDOW_MS);
+  if (!limited.ok) return rateLimited(limited.retryAfterSec);
 
   const accountKey = email.trim().toLowerCase().slice(0, 200);
   if (accountKey) {

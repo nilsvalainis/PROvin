@@ -29,6 +29,7 @@ describe("CSP policies", () => {
     expect(csp).toContain("https://connect.facebook.net");
     expect(csp).toContain("https://va.vercel-scripts.com");
     expect(csp).toContain("https://vercel.live");
+    expect(csp).toContain("https://challenges.cloudflare.com");
     expect(csp).toContain("https://fonts.googleapis.com");
     expect(csp).toContain("https://fonts.gstatic.com");
     expect(csp).toContain("report-uri /api/csp-report");

@@ -17,6 +17,8 @@
     "loginPassword": "Password",
     "loginSubmit": "Sign in",
     "loginError": "Check your email and password.",
+    "loginCaptchaError": "Confirm you are not a robot.",
+    "loginCaptchaAria": "Security check",
     "loginLoading": "Signing in…",
     "loggedIn": "Signed in.",
     "emailAria": "Email address",

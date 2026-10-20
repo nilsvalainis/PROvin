@@ -17,6 +17,8 @@
     "loginPassword": "Passwort",
     "loginSubmit": "Anmelden",
     "loginError": "Bitte E-Mail und Passwort prüfen.",
+    "loginCaptchaError": "Bitte bestätigen Sie, dass Sie kein Roboter sind.",
+    "loginCaptchaAria": "Sicherheitsprüfung",
     "loginLoading": "Wird angemeldet…",
     "loggedIn": "Angemeldet.",
     "emailAria": "E-Mail-Adresse",

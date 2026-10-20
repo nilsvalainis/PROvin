@@ -17,6 +17,8 @@
     "loginPassword": "Пароль",
     "loginSubmit": "Войти",
     "loginError": "Проверьте адрес почты и пароль.",
+    "loginCaptchaError": "Подтвердите, что вы не робот.",
+    "loginCaptchaAria": "Проверка безопасности",
     "loginLoading": "Вход…",
     "loggedIn": "Вы вошли.",
     "emailAria": "Адрес электронной почты",
