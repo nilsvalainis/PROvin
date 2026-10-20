@@ -1370,7 +1370,7 @@ export function describeEcarstradeFilter(filter: EcarstradeSearchFilter): string
   if (filter.vat.length) lines.push(`PVN: ${filter.vat.join(", ")}`);
   if (filter.emissionFrom) lines.push(`emisija: ${filter.emissionFrom}`);
   if (filter.drives.length) lines.push(`piedziņa (post-filtrs): ${filter.drives.join(", ")}`);
-  if (filter.includeTokens.length) lines.push(`aģentam (grāmatzīme): ${filter.includeTokens.join(", ")}`);
+  if (filter.includeTokens.length) lines.push(`aprīkojums (post-filtrs): ${filter.includeTokens.join(", ")}`);
   if (filter.modelExtensions?.length) lines.push(`modeļa paplašinājums: ${filter.modelExtensions.join(", ")}`);
   if (filter.excludeTokens.length) lines.push(`izslēgts (post-filtrs): ${filter.excludeTokens.join(", ")}`);
   if (filter.excludeColors.length) lines.push(`izslēgtas krāsas (post-filtrs): ${filter.excludeColors.join(", ")}`);
