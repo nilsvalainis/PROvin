@@ -16,7 +16,7 @@ describe("IRISS print HTML escaping", () => {
     expect(html).toContain("fonts.googleapis.com");
     expect(html).toContain("family=Inter");
     expect(html).not.toContain("<script>alert(1)</script>");
-    expect(html).not.toContain("onerror=alert");
+    expect(html).not.toContain("<img src=x");
     expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
     expect(html).toContain("O&#39;Brien");
     expect(html).toContain("&lt;svg onload=alert(1)&gt;");

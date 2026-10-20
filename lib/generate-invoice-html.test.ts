@@ -63,7 +63,7 @@ describe("invoice HTML buyer requisites", () => {
       ),
     );
     expect(html).not.toContain("<script>");
-    expect(html).not.toContain("onerror=alert");
+    expect(html).not.toContain("<img src=x");
     expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
     expect(html).toContain("&lt;b&gt;Co&lt;/b&gt;");
     expect(html).toContain("&amp;");

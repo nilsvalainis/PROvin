@@ -11,9 +11,16 @@ describe("nodemailer transport", () => {
       text: "Sveiki",
       html: "<p>Sveiki</p>",
     });
-    expect(info.accepted).toContain("klients@example.com");
-    const parsed = JSON.parse(String(info.message)) as { subject?: string; html?: string };
+    expect(info.messageId).toBeTruthy();
+    const parsed = JSON.parse(String(info.message)) as {
+      subject?: string;
+      html?: string;
+      to?: unknown;
+      envelope?: { to?: string[] };
+    };
     expect(parsed.subject).toBe("PROVIN tests");
     expect(parsed.html).toContain("Sveiki");
+    const to = parsed.envelope?.to ?? parsed.to;
+    expect(JSON.stringify(to)).toContain("klients@example.com");
   });
 });
