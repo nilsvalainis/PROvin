@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
+import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaAuctionSourcesPanel";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
@@ -15,6 +16,9 @@ import {
   LOGISTICS_PRINT_PAGE_CSS,
   logisticsOrdersForMapPrint,
   logisticsPrintLegendRows,
+  logisticsPrintNumberMap,
+  logisticsPrintSheetTitle,
+  type LogisticsMapCamera,
 } from "@/lib/iriss-logistics-map-print";
 import {
   formatLogisticsAddress,
@@ -68,7 +72,10 @@ export function IrissLogistikaClient({
   const [preview, setPreview] = useState<{ lat: number; lng: number } | null>(null);
   const [pointQuery, setPointQuery] = useState("");
   const [printing, setPrinting] = useState(false);
+  const [mapFullscreen, setMapFullscreen] = useState(false);
   const mapHandleRef = useRef<IrissLogistikaMapHandle>(null);
+  const cameraBeforeFs = useRef<LogisticsMapCamera | null>(null);
+  const mapFsCardRef = useRef<HTMLDivElement>(null);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   const visibleOrders = useMemo(() => {
@@ -145,6 +152,12 @@ export function IrissLogistikaClient({
     [visibleOrders, selectedSet],
   );
   const printLegend = useMemo(() => logisticsPrintLegendRows(printOrders), [printOrders]);
+  const printNumbers = useMemo(() => logisticsPrintNumberMap(printOrders), [printOrders]);
+  const printSheet = useMemo(
+    () => logisticsPrintSheetTitle(new Date(), printOrders.length),
+    [printOrders.length, printing],
+  );
+  const otherPrintCount = Math.max(0, visibleOrders.filter((o) => o.pickupLat != null && o.pickupLng != null).length - printOrders.length);
 
   useEffect(() => {
     document.documentElement.classList.toggle(LOGISTICS_PRINT_HTML_CLASS, printing);
@@ -168,6 +181,39 @@ export function IrissLogistikaClient({
     window.addEventListener("afterprint", endPrint);
     return () => window.removeEventListener("afterprint", endPrint);
   }, []);
+
+  useEffect(() => {
+    if (!mapFullscreen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMapFullscreen();
+    };
+    window.addEventListener("keydown", onKey);
+    const frame = requestAnimationFrame(() => {
+      mapFsCardRef.current?.focus();
+      mapHandleRef.current?.notifyResize();
+      mapHandleRef.current?.fitVisible();
+    });
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+      cancelAnimationFrame(frame);
+    };
+  }, [mapFullscreen]);
+
+  function openMapFullscreen() {
+    cameraBeforeFs.current = mapHandleRef.current?.snapshotView() ?? null;
+    setMapFullscreen(true);
+  }
+
+  function closeMapFullscreen() {
+    setMapFullscreen(false);
+    requestAnimationFrame(() => {
+      mapHandleRef.current?.notifyResize();
+      if (cameraBeforeFs.current) mapHandleRef.current?.applyView(cameraBeforeFs.current);
+    });
+  }
 
   async function printCurrentMap() {
     if (printing) return;
@@ -262,8 +308,9 @@ export function IrissLogistikaClient({
           <div className="space-y-3">
             {groupedPoints.map((g) => (
               <section key={g.auction}>
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">
-                  {g.auction} · {g.rows.length}
+                <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">
+                  <IrissAuctionLogo name={g.auction} />
+                  <span>· {g.rows.length}</span>
                 </p>
                 <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
                   {g.rows.map((p) => (
@@ -366,9 +413,29 @@ export function IrissLogistikaClient({
                 ) : null}
               </div>
             ) : null}
-            <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div
+              className={mapFullscreen ? "iriss-log-map-fs" : ""}
+              onClick={mapFullscreen ? () => closeMapFullscreen() : undefined}
+              role={mapFullscreen ? "presentation" : undefined}
+            >
+            <div
+              ref={mapFsCardRef}
+              tabIndex={mapFullscreen ? -1 : undefined}
+              role={mapFullscreen ? "dialog" : undefined}
+              aria-modal={mapFullscreen ? true : undefined}
+              aria-label={mapFullscreen ? "Karte" : undefined}
+              className={mapFullscreen ? "iriss-log-map-fs-card" : "overflow-hidden rounded-2xl bg-white shadow-sm"}
+              onClick={mapFullscreen ? (e) => e.stopPropagation() : undefined}
+            >
               <div className="iriss-log-no-print flex items-center justify-between gap-2 px-3 py-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">Karte</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">
+                  Karte
+                  {mapFullscreen ? (
+                    <span className="ml-2 font-medium normal-case tracking-normal text-[var(--ink2)]">
+                      {counts.active} aktīvi auto · {selectedIds.length} atzīmēti
+                    </span>
+                  ) : null}
+                </p>
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
@@ -385,41 +452,59 @@ export function IrissLogistikaClient({
                   >
                     Drukāt
                   </button>
+                  {mapFullscreen ? (
+                    <button type="button" aria-label="Aizvērt" onClick={() => closeMapFullscreen()} className="rounded-full border border-[#e5e7eb] px-2 py-1 text-[12px] font-semibold">
+                      X
+                    </button>
+                  ) : (
+                    <button type="button" onClick={() => openMapFullscreen()} className="rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold">
+                      Pilnekrāns
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="iriss-log-print-root px-2 pb-2">
-                <IrissLogistikaMap
-                  ref={mapHandleRef}
-                  height={200}
-                  mode={printing ? "cars" : showPrevious ? "previous" : "cars"}
-                  orders={printing ? printOrders : showPrevious ? [] : visibleOrders}
-                  previous={previous}
-                  selectedIds={selectedSet}
-                  focus={printing ? null : preview}
-                  lockView={printing}
-                  printSelectedOnly={printing}
-                  onSelect={(id) => {
-                    if (showPrevious) {
-                      setPointId(id);
-                      setPageTab("points");
-                      return;
-                    }
-                    toggleSelect(id);
-                  }}
-                />
-                <ul className="iriss-log-print-legend">
-                  {printLegend.length === 0 ? (
-                    <li>Nav atzīmētu punktu.</li>
-                  ) : (
-                    printLegend.map((row) => (
-                      <li key={row.id}>
-                        {row.label}
-                        {row.place ? ` · ${row.place}` : ""}
-                        {row.hours ? ` · ${row.hours}` : ""}
-                      </li>
-                    ))
-                  )}
-                </ul>
+                <div className="iriss-log-map-hero">
+                  <div className="iriss-log-print-chrome pointer-events-none absolute left-2 right-2 top-2 z-[3] flex items-end justify-between gap-2 text-[11px] text-[#334155]">
+                    <p className="font-semibold">{printSheet.heading}</p>
+                    <p>{printSheet.meta}</p>
+                  </div>
+                  <IrissLogistikaMap
+                    ref={mapHandleRef}
+                    fill
+                    height={420}
+                    mode={printing || mapFullscreen ? "cars" : showPrevious ? "previous" : "cars"}
+                    orders={showPrevious && !printing && !mapFullscreen ? [] : visibleOrders}
+                    previous={previous}
+                    selectedIds={selectedSet}
+                    focus={printing ? null : preview}
+                    lockView={printing}
+                    printNumbers={printing ? printNumbers : undefined}
+                    onSelect={(id) => {
+                      if (showPrevious && !mapFullscreen) {
+                        setPointId(id);
+                        setPageTab("points");
+                        return;
+                      }
+                      toggleSelect(id);
+                    }}
+                  />
+                  <ul className="iriss-log-print-legend pointer-events-none absolute bottom-2 right-2 z-[3] flex flex-col gap-0.5 text-[10px] text-[#111]">
+                    {printLegend.length === 0 ? (
+                      <li>Nav punktu ar koordinātēm.</li>
+                    ) : (
+                      printLegend.map((row) => (
+                        <li key={row.id}>
+                          <span className="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#3d5bd9] text-[9px] font-bold text-white">
+                            {row.n}
+                          </span>
+                          {row.label}
+                        </li>
+                      ))
+                    )}
+                    {otherPrintCount > 0 ? <li className="text-[#6b7280]">pelēks punkts = citi aktīvie</li> : null}
+                  </ul>
+                </div>
               </div>
               {showPrevious ? (
                 <ul className="iriss-log-no-print border-t border-[#f3f4f6] px-3 py-2 text-[13px]">
@@ -427,7 +512,13 @@ export function IrissLogistikaClient({
                     <li key={p.pointId}>
                       <button type="button" className="flex w-full items-center gap-2 py-1.5 text-left" onClick={() => { setPointId(p.pointId); setPageTab("points"); }}>
                         <span className="min-w-0 flex-1 truncate">
-                          {p.city || p.name} · {p.auction}
+                          {p.city || p.name}
+                          {p.auction ? (
+                            <>
+                              {" · "}
+                              <IrissAuctionLogo name={p.auction} />
+                            </>
+                          ) : null}
                         </span>
                         <span className="text-[12px] text-[var(--ink3)]">{p.lastPickupDate ? `pēd. ${formatLogisticsDate(p.lastPickupDate)}` : ""}</span>
                         <span className="tabular-nums text-[var(--ink2)]">{p.useCount}×</span>
@@ -436,6 +527,7 @@ export function IrissLogistikaClient({
                   ))}
                 </ul>
               ) : null}
+            </div>
             </div>
             <ul className="iriss-log-no-print mt-3 overflow-hidden rounded-2xl bg-white shadow-sm">
               {visibleOrders.map((o) => {
@@ -457,7 +549,7 @@ export function IrissLogistikaClient({
                       <span className="block text-[13.5px] font-semibold">{o.title || logisticsOrderMapLabel(o)}</span>
                       <span className="block font-mono text-[11px] text-[var(--ink3)]">{o.vin}</span>
                       <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[12px] text-[var(--ink2)]">
-                        {o.auction ? <span>{o.auction}</span> : <span>Privāts</span>}
+                        {o.auction ? <IrissAuctionLogo name={o.auction} /> : <span>Privāts</span>}
                         {href ? (
                           <a href={href} target="_blank" rel="noreferrer" className="font-semibold text-[var(--acc)]" onClick={(e) => e.stopPropagation()}>
                             {o.source === "private" ? "Sludinājums" : "Atvērt izsolē"}
@@ -493,10 +585,10 @@ export function IrissLogistikaClient({
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h2 className="text-[18px] font-semibold leading-tight">{active.title || `${active.make} ${active.model}`}</h2>
-                  <p className="font-mono text-[12px] text-[var(--ink2)]">
-                    {active.vin}
-                    {active.auction ? ` · ${active.auction}` : ""}
-                    {active.priceEur != null ? ` · ${formatLogisticsEur(active.priceEur)}` : ""}
+                  <p className="flex flex-wrap items-center gap-1.5 font-mono text-[12px] text-[var(--ink2)]">
+                    <span>{active.vin}</span>
+                    {active.auction ? <IrissAuctionLogo name={active.auction} /> : null}
+                    {active.priceEur != null ? <span>· {formatLogisticsEur(active.priceEur)}</span> : null}
                   </p>
                 </div>
                 {active.auctionUrl || active.listingUrl ? (
