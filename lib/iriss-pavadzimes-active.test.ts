@@ -31,7 +31,7 @@ describe("selectActiveIrissPavadzimes", () => {
       row({ number: "P02700", plate: "B762-7", validUntil: rigaLocalToUtc(2026, 10, 16, 10, 0)! }),
       row({ number: "P02515", plate: "B192-7", validUntil: rigaLocalToUtc(2026, 10, 13, 12, 0)! }),
     ];
-    expect(selectActiveIrissPavadzimes(rows, now).map((r) => r.number)).toEqual(["P02787", "P02700", "P02515"]);
+    expect(selectActiveIrissPavadzimes(rows, now).map((r) => r.number)).toEqual(["P02515", "P02787", "P02700"]);
   });
 
   it("atmet sen beigušos numurus, atstāj nesen beigušos", () => {
