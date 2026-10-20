@@ -111,9 +111,20 @@ export async function requireIrissSectionPage(section: IrissSection): Promise<Ad
   redirect(`/admin/login?next=${encodeURIComponent(safe)}`);
 }
 
-/** Loģistikas lapas: administrators vai darbinieks ar sadaļu Loģistika. */
+function staffHasLogisticsCabinet(actor: AdminOrStaffActor): boolean {
+  return actor.kind === "admin" || (actor.kind === "staff" && actor.user.sections.some((s) => s === "logistika" || s === "gramatvede" || s === "serviss"));
+}
+
+/** Loģistikas lapas: administrators, Loģistika, Grāmatvede vai Serviss. */
 export async function requireLogisticsPage(): Promise<AdminOrStaffActor> {
-  return requireIrissSectionPage("logistika");
+  const actor = await getAdminOrStaffActor();
+  if (actor && staffHasLogisticsCabinet(actor)) return actor;
+  if (actor?.kind === "staff") {
+    redirect(staffHomePath(actor.user.sections));
+  }
+  const intended = (await headers()).get("x-admin-intended-path")?.trim() || staffHomePath(["logistika"]);
+  const safe = intended.startsWith("/admin") && !intended.startsWith("/admin/login") ? intended : staffHomePath(["logistika"]);
+  redirect(`/admin/login?next=${encodeURIComponent(safe)}`);
 }
 
 export async function requireIrissSectionApi(section: IrissSection): Promise<
@@ -129,7 +140,10 @@ export async function requireIrissSectionApi(section: IrissSection): Promise<
 export async function requireLogisticsApi(): Promise<
   { ok: true; actor: AdminOrStaffActor } | { ok: false; response: NextResponse }
 > {
-  return requireIrissSectionApi("logistika");
+  const actor = await getAdminOrStaffActor();
+  if (actor && staffHasLogisticsCabinet(actor)) return { ok: true, actor };
+  if (!actor) return { ok: false, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+  return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
 }
 
 export function staffActorHomePath(actor: AdminOrStaffActor): string {

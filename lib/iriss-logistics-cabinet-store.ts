@@ -103,7 +103,12 @@ function normalizeAccess(raw: unknown): CabinetAccessRule | null {
     role: str(raw.role, 40),
     carId: str(raw.carId ?? raw.car_id, 80),
     section: isCabinetSectionId(raw.section) ? raw.section : "",
-    docType: isCabinetDocType(raw.docType ?? raw.doc_type) ? (raw.docType ?? raw.doc_type) as CabinetDocType : "",
+    docType:
+      (raw.docType ?? raw.doc_type) === "invoices"
+        ? "invoices"
+        : isCabinetDocType(raw.docType ?? raw.doc_type)
+          ? ((raw.docType ?? raw.doc_type) as CabinetDocType)
+          : "",
     allow: raw.allow !== false,
     updatedAt: str(raw.updatedAt ?? raw.updated_at, 40),
     updatedBy: str(raw.updatedBy ?? raw.updated_by, 80),
@@ -137,6 +142,98 @@ export async function getCabinetPickup(carId: string): Promise<CabinetPickup | n
 
 export async function listCabinetAccessRules(): Promise<CabinetAccessRule[]> {
   return readItems(ACCESS_FILE, normalizeAccess);
+}
+
+export async function upsertCabinetAccessRule(
+  patch: Partial<CabinetAccessRule> & { updatedBy: string },
+): Promise<CabinetAccessRule> {
+  const items = await listCabinetAccessRules();
+  const now = new Date().toISOString();
+  const id = patch.id?.trim() || `ca-${randomUUID()}`;
+  const prev = items.find((p) => p.id === id);
+  const next: CabinetAccessRule = {
+    id,
+    userId: patch.userId ?? prev?.userId ?? "",
+    role: patch.role ?? prev?.role ?? "",
+    carId: patch.carId ?? prev?.carId ?? "",
+    section: patch.section ?? prev?.section ?? "",
+    docType: patch.docType ?? prev?.docType ?? "",
+    allow: patch.allow ?? prev?.allow ?? true,
+    updatedAt: now,
+    updatedBy: patch.updatedBy,
+  };
+  const out = prev ? items.map((p) => (p.id === id ? next : p)) : [...items, next];
+  await writeLogisticsJsonFile(ACCESS_FILE, { version: 1, items: out });
+  return next;
+}
+
+export async function removeCabinetAccessRule(id: string): Promise<boolean> {
+  const items = await listCabinetAccessRules();
+  if (!items.some((p) => p.id === id)) return false;
+  await writeLogisticsJsonFile(ACCESS_FILE, { version: 1, items: items.filter((p) => p.id !== id) });
+  return true;
+}
+
+export type CabinetAuditEntry = {
+  id: string;
+  at: string;
+  actorId: string;
+  action: "view" | "download" | "upload" | "delete" | "access_change" | "upsert";
+  carId: string;
+  documentId: string;
+  section: string;
+  docType: string;
+  detail: string;
+};
+
+const AUDIT_FILE = "cabinet-audit.json";
+
+function normalizeAudit(raw: unknown): CabinetAuditEntry | null {
+  if (!isObj(raw)) return null;
+  const id = str(raw.id, 80);
+  if (!id) return null;
+  const action = raw.action;
+  if (
+    action !== "view" &&
+    action !== "download" &&
+    action !== "upload" &&
+    action !== "delete" &&
+    action !== "access_change" &&
+    action !== "upsert"
+  ) {
+    return null;
+  }
+  return {
+    id,
+    at: str(raw.at, 40),
+    actorId: str(raw.actorId, 80),
+    action,
+    carId: str(raw.carId, 80),
+    documentId: str(raw.documentId, 80),
+    section: str(raw.section, 8),
+    docType: str(raw.docType, 40),
+    detail: str(raw.detail, 200),
+  };
+}
+
+export async function listCabinetAudit(limit = 80): Promise<CabinetAuditEntry[]> {
+  const items = await readItems(AUDIT_FILE, normalizeAudit);
+  return items.slice(-Math.max(1, Math.min(limit, 300))).reverse();
+}
+
+export async function appendCabinetAudit(entry: Omit<CabinetAuditEntry, "id" | "at">): Promise<void> {
+  const items = await readItems(AUDIT_FILE, normalizeAudit);
+  const next: CabinetAuditEntry = {
+    ...entry,
+    id: `al-${randomUUID()}`,
+    at: new Date().toISOString(),
+  };
+  await writeLogisticsJsonFile(AUDIT_FILE, { version: 1, items: [...items, next].slice(-400) });
+}
+
+export async function getCabinetDocument(id: string): Promise<CabinetDocument | null> {
+  const items = await listCabinetDocuments();
+  return items.find((d) => d.id === id) ?? null;
 }
 
 export async function listCabinetUserPreferences(userId: string): Promise<CabinetUserPreference[]> {

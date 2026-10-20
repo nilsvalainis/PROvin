@@ -587,6 +587,7 @@ export function IrissLogistikaClient({
               groupedPoints={groupedPoints}
               onAssignPoint={(orderId, pickupPointId) => void assignPoint(orderId, pickupPointId)}
               onPatchOrder={(id, action) => void patchOrder(id, action)}
+              onOrderUpdated={(next) => setOrders((prev) => prev.map((o) => (o.id === next.id ? next : o)))}
             />
           ) : null}
         </div>

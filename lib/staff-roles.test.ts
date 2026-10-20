@@ -130,4 +130,15 @@ describe("IRISS section path access (deny by default)", () => {
     expect(normalizeStaffSections(undefined, "logistics")).toEqual(["logistika"]);
     expect(normalizeStaffSections(["pavadzimes", "logistika", "pavadzimes"])).toEqual(["pavadzimes", "logistika"]);
   });
+
+  it("lets Grāmatvede and Serviss open Loģistika APIs, not other IRISS pages", () => {
+    const book: AccessActor = { kind: "staff", sections: ["gramatvede"] };
+    const shop: AccessActor = { kind: "staff", sections: ["serviss"] };
+    expect(decideAdminPageAccess("/admin/iriss/logistika", book)).toBe("allow");
+    expect(decideAdminPageAccess("/admin/iriss/logistika", shop)).toBe("allow");
+    expect(decideAdminApiAccess("/api/admin/iriss-logistics/orders", book)).toBe("allow");
+    expect(decideAdminApiAccess("/api/admin/iriss-logistics/documents/x", shop)).toBe("allow");
+    expect(decideAdminPageAccess("/admin/iriss/pasutijumi", book)).toBe("forbidden");
+    expect(decideAdminPageAccess("/admin/iriss/pavadzimes", shop)).toBe("forbidden");
+  });
 });

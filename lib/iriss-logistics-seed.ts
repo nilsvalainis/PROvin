@@ -112,11 +112,15 @@ export function mapSeedStatus(raw: string): LogisticsOrderStatus {
   const s = raw.toLowerCase();
   if (/piegādāt/.test(s)) return "delivered";
   if (/izņemts/.test(s) && !/nav/.test(s)) return "picked_up";
+  if (/ceļā uz noliktavu|cela uz noliktavu/.test(s)) return "in_transit_to_warehouse";
+  if (/dokumenti tiek izdoti/.test(s)) return "documents_issuing";
+  if (/gatavs savākšan|gatavs savaksan/.test(s)) return "ready_for_pickup";
+  if (/savākšana apstiprin|savaksana apstiprin/.test(s)) return "pickup_confirmed";
   if (/savākt|picked.?up/.test(s) && /apstiprin/.test(s) === false && /nav/.test(s) === false) return "picked_up";
   if (/apmaksu/.test(s)) return "awaiting_payment";
   if (/pārveš|atvests/.test(s)) return "waiting_transport";
   if (/gatavs/.test(s)) return "ready";
-  if (/pieraksts|savākšana apstiprin|plānot/.test(s)) return "scheduled";
+  if (/pieraksts|plānot/.test(s)) return "scheduled";
   if (/organizē|saskaņo/.test(s)) return "organize_pickup";
   return "organize_pickup";
 }
@@ -216,7 +220,7 @@ export function seedLogisticsFromPunkti(
             parkingRule: point.parkingRule,
             rules: point.rules,
           },
-          pickupRef: (car.ref ?? "").trim(),
+          pickupRef: (car.pickup_kods ?? car.ref ?? "").trim(),
           pickupAddress: [point.street, [point.postcode, point.city].filter(Boolean).join(" "), point.country]
             .filter(Boolean)
             .join(", "),
@@ -224,6 +228,8 @@ export function seedLogisticsFromPunkti(
           pickupLng: point.lng,
           geocodeStatus: coords.lat == null ? "pending" : coords.precise ? "ok" : "neprecizs",
           pickupDate: pickupDateFromTerm(car.termins ?? ""),
+          stockNo: (car.ref ?? "").trim(),
+          freeParkingUntil: pickupDateFromTerm(car.termins ?? ""),
           status,
           archived,
           archivedAt: archived ? now : "",

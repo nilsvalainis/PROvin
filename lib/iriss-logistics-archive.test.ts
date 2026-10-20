@@ -34,6 +34,8 @@ function order(partial: Partial<LogisticsOrder>): LogisticsOrder {
     pickupLng: 5.52,
     geocodeStatus: "ok",
     pickupDate: "2026-10-21",
+    stockNo: "11630702",
+    freeParkingUntil: "",
     status: "ready",
     archived: false,
     archivedAt: "",

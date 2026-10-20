@@ -17,6 +17,8 @@ export const IRISS_SECTIONS = [
   "sludinajumi",
   "radars",
   "logistika",
+  "gramatvede",
+  "serviss",
   "pavadzimes",
   "vin",
   "atskaite",
@@ -57,6 +59,18 @@ export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
     apiPrefixes: ["/api/admin/iriss/logistika", "/api/admin/iriss-logistics"],
   },
   {
+    id: "gramatvede",
+    label: "Grāmatvede",
+    pagePrefixes: ["/admin/iriss/logistika"],
+    apiPrefixes: ["/api/admin/iriss/logistika", "/api/admin/iriss-logistics"],
+  },
+  {
+    id: "serviss",
+    label: "Serviss",
+    pagePrefixes: ["/admin/iriss/logistika"],
+    apiPrefixes: ["/api/admin/iriss/logistika", "/api/admin/iriss-logistics"],
+  },
+  {
     id: "pavadzimes",
     label: "Pavadzīmes",
     pagePrefixes: ["/admin/iriss/pavadzimes"],
@@ -87,6 +101,8 @@ export const IRISS_SECTION_LABELS: Record<IrissSection, string> = {
   sludinajumi: "Sludinājumi",
   radars: "Radars",
   logistika: "Loģistika",
+  gramatvede: "Grāmatvede",
+  serviss: "Serviss",
   pavadzimes: "Pavadzīmes",
   vin: "VIN pārbaude",
   atskaite: "Mēneša atskaite",
@@ -231,8 +247,9 @@ export function decideAdminPageAccess(pathname: string, actor: AccessActor): Pag
   if (actor.kind === "admin") return "allow";
   if (actor.kind !== "staff") return "forbidden";
   if (isStaffIrissHomePath(pathname)) return actor.sections.length > 0 ? "allow" : "forbidden";
-  const section = sectionForAdminPagePath(pathname);
-  if (section && actor.sections.includes(section)) return "allow";
+  if (actor.sections.some((id) => irissSectionMeta(id).pagePrefixes.some((prefix) => pathMatchesPrefix(pathname, prefix)))) {
+    return "allow";
+  }
   return "forbidden";
 }
 
@@ -247,8 +264,9 @@ export function decideAdminApiAccess(pathname: string, actor: AccessActor): ApiA
       ? "allow"
       : "forbidden";
   }
-  const section = sectionForAdminApiPath(pathname);
-  if (section && actor.sections.includes(section)) return "allow";
+  if (actor.sections.some((id) => irissSectionMeta(id).apiPrefixes.some((prefix) => pathMatchesPrefix(pathname, prefix)))) {
+    return "allow";
+  }
   return "forbidden";
 }
 

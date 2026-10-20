@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
-import { irissLogisticsScopeHeader, logisticsCabinetActorId, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
+import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, logisticsCabinetActorId, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
+import { evaluateCabinetAccess } from "@/lib/iriss-logistics-cabinet-access";
 import { isCabinetDocType, isCabinetSectionId } from "@/lib/iriss-logistics-cabinet";
-import { upsertCabinetDocument } from "@/lib/iriss-logistics-cabinet-store";
+import { appendCabinetAudit, listCabinetAccessRules, upsertCabinetDocument } from "@/lib/iriss-logistics-cabinet-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,6 +61,12 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "invalid_document" }, { status: 400, headers: irissLogisticsScopeHeader() });
   }
 
+  const rules = await listCabinetAccessRules();
+  const allowed = evaluateCabinetAccess({ ...logisticsCabinetAccessQuery(gate.actor, id), section, docType: type }, rules);
+  if (!allowed) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403, headers: irissLogisticsScopeHeader() });
+  }
+
   try {
     const result = await upsertCabinetDocument({
       carId: id,
@@ -73,6 +80,15 @@ export async function POST(req: Request, ctx: Ctx) {
       contentType,
       fileName,
       uploadedBy: logisticsCabinetActorId(gate.actor),
+    });
+    await appendCabinetAudit({
+      actorId: logisticsCabinetActorId(gate.actor),
+      action: "upload",
+      carId: id,
+      documentId: result.document.id,
+      section,
+      docType: type,
+      detail: result.duplicate ? "duplicate" : "created",
     });
     return NextResponse.json(
       { ok: true, duplicate: result.duplicate, document: result.document },

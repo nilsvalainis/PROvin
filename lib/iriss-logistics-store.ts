@@ -28,6 +28,8 @@ import {
   IRISS_LOGISTICS_WORKSPACE,
   isLogisticsAuction,
   isLogisticsOrderStatus,
+  parseLogisticsIsoDate,
+  parseLogisticsOrderStatus,
   snapshotLogisticsPoint,
   type LogisticsAuctionSource,
   type LogisticsGeocodeCacheEntry,
@@ -225,7 +227,7 @@ function normalizeOrder(raw: unknown): LogisticsOrder | null {
   if (!isObj(raw)) return null;
   const id = str(raw.id, 80);
   if (!id) return null;
-  const status: LogisticsOrderStatus = isLogisticsOrderStatus(raw.status) ? raw.status : "organize_pickup";
+  const status: LogisticsOrderStatus = parseLogisticsOrderStatus(raw.status) ?? "organize_pickup";
   const archived = raw.archived === true || status === "picked_up" || status === "delivered" || status === "archived";
   const source: LogisticsOrderSource = raw.source === "private" ? "private" : "auction";
   const geocodeStatus: LogisticsGeocodeStatus =
@@ -276,12 +278,14 @@ function normalizeOrder(raw: unknown): LogisticsOrder | null {
           rules: str(raw.pickupSnapshot.rules, 800),
         }
       : null,
-    pickupRef: str(raw.pickupRef, 80),
+    pickupRef: str(raw.pickupRef ?? raw.pickupCode ?? raw.pickup_code, 80),
     pickupAddress: str(raw.pickupAddress, 240),
     pickupLat: numOrNull(raw.pickupLat),
     pickupLng: numOrNull(raw.pickupLng),
     geocodeStatus,
     pickupDate: str(raw.pickupDate, 40),
+    stockNo: str(raw.stockNo ?? raw.stock_no ?? raw.lotNo ?? raw.lot_no, 80),
+    freeParkingUntil: parseLogisticsIsoDate(raw.freeParkingUntil ?? raw.free_parking_until) || str(raw.freeParkingUntil, 40),
     status,
     archived,
     archivedAt: str(raw.archivedAt, 40),
@@ -422,6 +426,48 @@ export async function getLogisticsOrder(id: string): Promise<LogisticsOrder | nu
   return items.find((p) => p.id === id) ?? null;
 }
 
+export async function findLogisticsOrderByVin(vin: string): Promise<LogisticsOrder | null> {
+  const needle = vin.trim().toUpperCase();
+  if (needle.length < 8) return null;
+  const items = await listLogisticsOrders();
+  return items.find((p) => p.vin.toUpperCase() === needle) ?? null;
+}
+
+export async function findLogisticsPointByHint(hint: string): Promise<LogisticsPoint | null> {
+  const q = hint.trim().toLowerCase();
+  if (!q) return null;
+  const items = await listLogisticsPoints();
+  const byId = items.find((p) => p.id === hint.trim());
+  if (byId) return byId;
+  const exactName = items.find((p) => p.name.toLowerCase() === q);
+  if (exactName) return exactName;
+  return (
+    items.find((p) => {
+      const hay = `${p.name} ${p.street} ${p.city} ${p.postcode}`.toLowerCase();
+      return hay.includes(q);
+    }) ?? null
+  );
+}
+
+export async function upsertLogisticsOrderByVin(
+  vin: string,
+  patch: Partial<LogisticsOrder>,
+): Promise<{ order: LogisticsOrder; created: boolean }> {
+  const needle = vin.trim().toUpperCase();
+  const existing = await findLogisticsOrderByVin(needle);
+  let nextPatch = { ...patch, vin: needle };
+  const hint = (patch.pickupPointId ?? "").trim();
+  if (hint) {
+    const point = await findLogisticsPointByHint(hint);
+    if (point) nextPatch = { ...nextPatch, pickupPointId: point.id };
+  }
+  const order = await upsertLogisticsOrder({
+    ...nextPatch,
+    id: existing?.id,
+  });
+  return { order, created: !existing };
+}
+
 export async function upsertLogisticsOrder(patch: Partial<LogisticsOrder> & { id?: string }): Promise<LogisticsOrder> {
   const items = await listLogisticsOrders();
   const now = new Date().toISOString();
@@ -449,6 +495,8 @@ export async function upsertLogisticsOrder(patch: Partial<LogisticsOrder> & { id
     pickupLng: null,
     geocodeStatus: "pending",
     pickupDate: "",
+    stockNo: "",
+    freeParkingUntil: "",
     status: "organize_pickup",
     archived: false,
     archivedAt: "",
@@ -467,6 +515,13 @@ export async function upsertLogisticsOrder(patch: Partial<LogisticsOrder> & { id
     workspace: IRISS_LOGISTICS_WORKSPACE,
     updatedAt: now,
     createdAt: base.createdAt,
+  };
+  const parsedStatus = parseLogisticsOrderStatus(next.status);
+  if (parsedStatus) next = { ...next, status: parsedStatus };
+  next = {
+    ...next,
+    stockNo: next.stockNo ?? "",
+    freeParkingUntil: parseLogisticsIsoDate(next.freeParkingUntil) || next.freeParkingUntil || "",
   };
   if (patch.pickupPointId && patch.pickupPointId !== base.pickupPointId) {
     const point = await getLogisticsPoint(patch.pickupPointId);
