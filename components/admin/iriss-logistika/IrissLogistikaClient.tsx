@@ -434,7 +434,7 @@ export function IrissLogistikaClient({
               className={mapFullscreen ? "iriss-log-map-fs-card" : "overflow-hidden rounded-2xl bg-white shadow-sm"}
               onClick={mapFullscreen ? (e) => e.stopPropagation() : undefined}
             >
-              <div className="iriss-log-no-print flex items-center justify-between gap-2 px-3 py-2">
+              <div className="iriss-log-no-print iriss-log-map-toolbar flex items-center justify-between gap-2 px-3 py-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">
                   Karte
                   {mapFullscreen ? (
@@ -470,7 +470,7 @@ export function IrissLogistikaClient({
                   )}
                 </div>
               </div>
-              <div className="iriss-log-print-root px-2 pb-2">
+              <div className="iriss-log-print-root">
                 <div className="iriss-log-map-hero">
                   <div className="iriss-log-print-chrome pointer-events-none absolute left-2 right-2 top-2 z-[3] flex items-end justify-between gap-2 text-[11px] text-[#334155]">
                     <p className="font-semibold">{printSheet.heading}</p>

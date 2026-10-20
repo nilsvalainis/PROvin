@@ -256,7 +256,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
 
   return (
     <div
-      className="iriss-log-map-shell relative overflow-hidden rounded-[14px] bg-[#d7dde6]"
+      className={`iriss-log-map-shell relative overflow-hidden bg-[#d7dde6] ${fill ? "" : "rounded-[14px]"}`}
       style={fill ? undefined : { height }}
     >
       <div ref={hostRef} className="absolute inset-0" />
