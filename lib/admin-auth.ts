@@ -4,11 +4,22 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
+  ADMIN_GOOGLE_ALLOWED_EMAIL,
   ADMIN_SESSION_COOKIE_NAME,
   encodeAdminSessionPayload,
-  isAdminSessionPayload,
+  isAcceptedAdminSessionPayload,
+  isAdminGoogleSessionPayload,
   resolveAdminSessionSecret,
+  type AdminGoogleSessionPayload,
+  type AdminSessionPayload,
 } from "@/lib/admin-session-token";
+import {
+  ADMIN_GOOGLE_SESSION_IDLE_MS,
+  ADMIN_GOOGLE_TOUCH_INTERVAL_MS,
+  isAdminGoogleSessionLive,
+  readAdminGoogleState,
+  touchAdminGoogleSession,
+} from "@/lib/admin-google-sessions";
 
 const COOKIE_NAME = ADMIN_SESSION_COOKIE_NAME;
 const TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -39,36 +50,104 @@ function resolvePassword(): string {
 }
 
 function signToken(): string {
+  return signAdminPayload(encodeAdminSessionPayload(Date.now() + TOKEN_MAX_AGE_MS));
+}
+
+function signAdminPayload(payload: string): string {
   const secret = resolveSecret();
   if (!secret) throw new Error("ADMIN_SECRET nav iestatīts");
-  const payload = encodeAdminSessionPayload(Date.now() + TOKEN_MAX_AGE_MS);
   const sig = createHmac("sha256", secret).update(payload).digest("hex");
   return `${payload}.${sig}`;
 }
 
-export function verifyToken(token: string): boolean {
+/** Paraksts + exp + statiskās pārbaudes; atgriež payload vai `null`. */
+export function decodeAdminToken(token: string): AdminSessionPayload | null {
   const secret = resolveSecret();
-  if (!secret) return false;
+  if (!secret) return null;
   const parts = token.split(".");
-  if (parts.length !== 2) return false;
+  if (parts.length !== 2) return null;
   const [payload, sig] = parts;
   try {
     const expected = createHmac("sha256", secret).update(payload).digest("hex");
     const a = Buffer.from(sig, "hex");
     const b = Buffer.from(expected, "hex");
-    if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
     const data: unknown = JSON.parse(Buffer.from(payload, "base64url").toString());
-    return isAdminSessionPayload(data) && data.exp > Date.now();
+    return isAcceptedAdminSessionPayload(data) ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+export function verifyToken(token: string): boolean {
+  return decodeAdminToken(token) !== null;
+}
+
+/** Google sesijas sīkdatne dzīvo 30 dienas no pēdējās aktivitātes; atjauno ne biežāk kā 1x dienā. */
+const GOOGLE_TOKEN_MAX_AGE_MS = ADMIN_GOOGLE_SESSION_IDLE_MS;
+const GOOGLE_TOKEN_REFRESH_AFTER_MS = 24 * 60 * 60 * 1000;
+
+function signGoogleToken(google: Pick<AdminGoogleSessionPayload, "sid" | "sub" | "ver">, nowMs = Date.now()): string {
+  return signAdminPayload(
+    encodeAdminSessionPayload(nowMs + GOOGLE_TOKEN_MAX_AGE_MS, { ...google, email: ADMIN_GOOGLE_ALLOWED_EMAIL }),
+  );
+}
+
+async function setGoogleCookie(token: string): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: Math.floor(GOOGLE_TOKEN_MAX_AGE_MS / 1000),
+  });
+}
+
+export async function setAdminGoogleSessionCookie(google: Pick<AdminGoogleSessionPayload, "sid" | "sub" | "ver">): Promise<void> {
+  await setGoogleCookie(signGoogleToken(google));
+}
+
+/**
+ * Google sesija katrā pieprasījumā: allowlist (karogs + e-pasts jau `decodeAdminToken`),
+ * piespraustais `sub`, sesijas versija, atsaukšana, dīkstāve. Blob kļūda = nav sesijas.
+ */
+async function verifyLiveGoogleSession(payload: AdminGoogleSessionPayload): Promise<boolean> {
+  const now = Date.now();
+  let state;
+  try {
+    state = await readAdminGoogleState();
   } catch {
     return false;
   }
+  if (!isAdminGoogleSessionLive(state, payload, now)) return false;
+  const session = state.sessions.find((s) => s.id === payload.sid);
+  if (session && now - Date.parse(session.lastSeenAt) >= ADMIN_GOOGLE_TOUCH_INTERVAL_MS) {
+    await touchAdminGoogleSession(payload.sid, now).catch(() => undefined);
+  }
+  const issuedAt = payload.exp - GOOGLE_TOKEN_MAX_AGE_MS;
+  if (now - issuedAt >= GOOGLE_TOKEN_REFRESH_AFTER_MS) {
+    // Server Component nedrīkst mainīt sīkdatnes; Route Handler / Server Action gan.
+    await setGoogleCookie(signGoogleToken(payload, now)).catch(() => undefined);
+  }
+  return true;
+}
+
+/** Pašreizējās sīkdatnes Google sesijas dati (ja tāda ir), bez stāvokļa pārbaudes. */
+export async function readAdminGoogleCookiePayload(): Promise<AdminGoogleSessionPayload | null> {
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
+  const data = token ? decodeAdminToken(token) : null;
+  return data && isAdminGoogleSessionPayload(data) ? data : null;
 }
 
 export async function getAdminSession(): Promise<boolean> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return false;
-  return verifyToken(token);
+  const data = decodeAdminToken(token);
+  if (!data) return false;
+  if (data.via === undefined) return true;
+  return isAdminGoogleSessionPayload(data) && verifyLiveGoogleSession(data);
 }
 
 /**

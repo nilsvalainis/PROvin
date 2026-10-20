@@ -8,13 +8,14 @@ import {
   getAdminSession,
   getDevLoginPrefill,
 } from "@/lib/admin-auth";
+import { resolveAdminGoogleConfig } from "@/lib/admin-google-oidc";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getStaffSession } from "@/lib/staff-auth";
 import { staffHomePath } from "@/lib/staff-roles";
 
 export const dynamic = "force-dynamic";
 
-type LoginPageProps = { searchParams: Promise<{ next?: string }> };
+type LoginPageProps = { searchParams: Promise<{ next?: string; google_error?: string }> };
 
 function resolvePostLoginPath(nextParam: string | undefined): string {
   const raw = typeof nextParam === "string" ? nextParam.trim() : "";
@@ -42,6 +43,10 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
   const origin = await getRequestOrigin();
   const adminLoginUrl = `${origin}/admin/login`;
   const isDev = process.env.NODE_ENV === "development";
+  // Karogs ADMIN_GOOGLE_LOGIN_ENABLED=1 + OAuth vide; citādi lapa paliek nemainīta.
+  const googleLoginHref = resolveAdminGoogleConfig()
+    ? `/api/admin/login/google?next=${encodeURIComponent(postLoginPath)}`
+    : null;
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-[var(--color-provin-surface)] px-4 py-12">
@@ -142,6 +147,21 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
               </div>
             ) : null}
             <LoginForm devPrefill={devPrefill} postLoginPath={postLoginPath} />
+            {googleLoginHref ? (
+              <div className="space-y-2">
+                {sp.google_error ? (
+                  <p className="text-center text-sm text-red-700" role="alert">
+                    Google pieteikšanās neizdevās.
+                  </p>
+                ) : null}
+                <a
+                  href={googleLoginHref}
+                  className="block w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-medium text-[var(--color-apple-text)] hover:bg-slate-50"
+                >
+                  Sign in with Google
+                </a>
+              </div>
+            ) : null}
           </div>
         )}
 
