@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Footer } from "@/components/Footer";
 import { GoogleAdsPurchaseConversion } from "@/components/GoogleAdsPurchaseConversion";
 import { MetaPurchaseConversion } from "@/components/MetaPurchaseConversion";
+import { ThanksSessionUrlCleanup } from "@/components/ThanksSessionUrlCleanup";
 import { getGoogleAdsPurchaseLabel } from "@/lib/google-ads";
 import { getPaidCheckoutConversionValueEur } from "@/lib/google-ads-purchase-value";
 import { resolveThanksPageConversion } from "@/lib/google-ads-thanks-conversion";
+import {
+  THANKS_SESSION_COOKIE_NAME,
+  parseThanksCheckoutSessionId,
+  readThanksSessionIdFromToken,
+  signThanksSessionToken,
+  thanksSessionCookieOptions,
+} from "@/lib/thanks-session";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
@@ -29,7 +38,14 @@ export default async function ThanksPage({ searchParams, params }: Props) {
   const sp = await searchParams;
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Thanks" });
-  const sid = sp.session_id;
+  const cookieStore = await cookies();
+  const fromQuery = parseThanksCheckoutSessionId(sp.session_id);
+  if (fromQuery) {
+    const token = await signThanksSessionToken(fromQuery);
+    if (token) cookieStore.set(THANKS_SESSION_COOKIE_NAME, token, thanksSessionCookieOptions());
+  }
+  const sid =
+    fromQuery ?? (await readThanksSessionIdFromToken(cookieStore.get(THANKS_SESSION_COOKIE_NAME)?.value));
   // Konversija tikai apmaksātai Stripe sesijai (neapmaksāta / viltota / Stripe kļūda = nekā).
   const paidValue = sid ? await getPaidCheckoutConversionValueEur(sid) : null;
   const conversion = await resolveThanksPageConversion({
@@ -56,7 +72,7 @@ export default async function ThanksPage({ searchParams, params }: Props) {
           )}
           {sid && (
             <a
-              href={`/api/invoice/download?session_id=${encodeURIComponent(sid)}`}
+              href="/api/invoice/download"
               className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-full bg-provin-accent px-6 text-[17px] font-normal text-white"
             >
               {t("downloadInvoice")}
@@ -71,6 +87,7 @@ export default async function ThanksPage({ searchParams, params }: Props) {
         </div>
         <Footer />
       </div>
+      <ThanksSessionUrlCleanup />
       {conversion ? (
         <GoogleAdsPurchaseConversion
           transactionId={conversion.transactionId}
