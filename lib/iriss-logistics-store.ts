@@ -676,3 +676,62 @@ export function googleMapsBrowserKey(): string {
 export function googleMapsServerKey(): string {
   return process.env.GOOGLE_MAPS_SERVER_KEY?.trim() || process.env.GOOGLE_MAPS_GEOCODING_API_KEY?.trim() || googleMapsBrowserKey();
 }
+
+export async function readLogisticsJsonFile(filename: string): Promise<unknown | null> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return null;
+  return readJson(r, filename);
+}
+
+export async function writeLogisticsJsonFile(filename: string, body: unknown): Promise<void> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") throw new Error("store_disabled");
+  await writeJson(r, filename, body);
+}
+
+export async function putLogisticsBinaryFile(
+  relPath: string,
+  bytes: Buffer,
+  contentType: string,
+): Promise<{ pathname: string }> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") throw new Error("store_disabled");
+  const safe = relPath.replace(/^\/+/, "").replace(/\.\./g, "");
+  if (r.kind === "blob") {
+    const pathname = `${r.prefix}${safe}`;
+    await put(pathname, bytes, {
+      access: "private",
+      token: r.token,
+      contentType,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
+    return { pathname: safe };
+  }
+  const fp = path.join(r.dir, safe);
+  await fs.mkdir(path.dirname(fp), { recursive: true });
+  await fs.writeFile(fp, bytes);
+  return { pathname: safe };
+}
+
+export async function getLogisticsBinaryFile(relPath: string): Promise<{ bytes: Buffer; contentType: string } | null> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return null;
+  const safe = relPath.replace(/^\/+/, "").replace(/\.\./g, "");
+  if (r.kind === "blob") {
+    try {
+      const got = await get(`${r.prefix}${safe}`, { access: "private", token: r.token, useCache: false });
+      if (!got?.stream || got.statusCode !== 200) return null;
+      const bytes = Buffer.from(await new Response(got.stream).arrayBuffer());
+      return { bytes, contentType: got.blob.contentType || "application/octet-stream" };
+    } catch {
+      return null;
+    }
+  }
+  try {
+    const bytes = await fs.readFile(path.join(r.dir, safe));
+    return { bytes, contentType: "application/octet-stream" };
+  } catch {
+    return null;
+  }
+}

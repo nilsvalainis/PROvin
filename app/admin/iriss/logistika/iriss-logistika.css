@@ -80,6 +80,59 @@
   }
 }
 
+.iriss-log-cab-sec {
+  overflow: hidden;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+.iriss-log-cab-head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  text-align: left;
+}
+.iriss-log-cab-letter {
+  display: inline-flex;
+  height: 22px;
+  width: 22px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.iriss-log-cab-chip {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.iriss-log-cab-chip.on {
+  background: #e8eeff;
+  color: #3d5bd9;
+}
+.iriss-log-cab-chip.done {
+  background: #e8f8ef;
+  color: #157a46;
+}
+.iriss-log-cab-btn {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .iriss-log-print-chrome,
 .iriss-log-print-legend {
   display: none;

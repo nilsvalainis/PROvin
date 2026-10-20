@@ -1,13 +1,16 @@
 import "server-only";
 
 import { NextResponse } from "next/server";
+import { ENV_ADMIN_USER_ID } from "@/lib/staff-roles";
 import { IRISS_LOGISTICS_ACCESS_SCOPE } from "@/lib/iriss-logistics-types";
-import { requireLogisticsApi } from "@/lib/staff-auth";
+import { requireLogisticsApi, type AdminOrStaffActor } from "@/lib/staff-auth";
 
 /**
  * Vienīgā vārteja Loģistikas API: administrators vai Loģistika loma (#347).
  */
-export async function requireIrissLogisticsApi(): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
+export async function requireIrissLogisticsApi(): Promise<
+  { ok: true; actor: AdminOrStaffActor } | { ok: false; response: NextResponse }
+> {
   const gate = await requireLogisticsApi();
   if (!gate.ok) {
     return {
@@ -18,7 +21,11 @@ export async function requireIrissLogisticsApi(): Promise<{ ok: true } | { ok: f
       ),
     };
   }
-  return { ok: true };
+  return { ok: true, actor: gate.actor };
+}
+
+export function logisticsCabinetActorId(actor: AdminOrStaffActor): string {
+  return actor.kind === "admin" ? ENV_ADMIN_USER_ID : actor.user.id;
 }
 
 export function irissLogisticsScopeHeader(): Record<string, string> {
