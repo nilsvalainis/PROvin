@@ -568,7 +568,7 @@ export function applyCsddPasteToForm(
 
   const firstLv = ownerFirstRegistrationInLatvia(ownerReg.events);
   const firstLvIso = firstLv?.date ? lvDateToIsoFlexible(firstLv.date) || firstLv.date : "";
-  let firstRegistrationLatvia = tech.firstRegistrationLatvia.trim() || firstLvIso;
+  const firstRegistrationLatvia = tech.firstRegistrationLatvia.trim() || firstLvIso;
   // „Pirmā reģistrācija Latvijā” nekad neaizpilda pasaules pirmo reģistrāciju.
   let firstRegistration = tech.firstRegistration.trim();
   if (firstRegistration && firstRegistrationLatvia && sameCsddDay(firstRegistration, firstRegistrationLatvia)) {
