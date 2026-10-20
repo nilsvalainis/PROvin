@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { rigaLocalToUtc } from "@/lib/iriss-pavadzimes-parse";
 import {
   compactDealerPlate,
+  dealerPlateMeta,
   displayDealerPlate,
   emptyWaybillPlateStates,
   formatRigaDateTimeComma,
@@ -13,11 +14,16 @@ describe("IRISS dealer plates", () => {
   it("allowlists only the three trading numbers", () => {
     expect(displayDealerPlate("B193-7")).toBe("B193-7");
     expect(displayDealerPlate("b7627")).toBe("B762-7");
-    expect(displayDealerPlate("B 861-6")).toBe("B861-6");
+    expect(displayDealerPlate("B 192-7")).toBe("B192-7");
+    expect(displayDealerPlate("B861-6")).toBe("");
     expect(compactDealerPlate("B193-7")).toBe("B1937");
+    expect(isAllowlistedWaybillPlate("B861-6")).toBe(false);
     expect(isAllowlistedWaybillPlate("AB-1234")).toBe(false);
     expect(isAllowlistedWaybillPlate("WVWZZZ3CZE1234567")).toBe(false);
-    expect(emptyWaybillPlateStates().map((row) => row.plate)).toEqual(["B193-7", "B762-7", "B861-6"]);
+    expect(emptyWaybillPlateStates().map((row) => row.plate)).toEqual(["B193-7", "B762-7", "B192-7"]);
+    expect(dealerPlateMeta("B193-7")).toEqual({ owner: "SIA ĪRISS", bottomText: "SIA ĪRISS" });
+    expect(dealerPlateMeta("B192-7")).toEqual({ owner: "SIA Dzintarzeme Auto", bottomText: "Dzintarzeme auto" });
+    expect(dealerPlateMeta("B192-7").bottomText).not.toMatch(/371|\+/);
   });
 
   it("marks a plate busy only while the latest waybill is still valid", () => {
@@ -52,7 +58,7 @@ describe("IRISS dealer plates", () => {
       current: { number: "P02799", brandModel: "Volvo V50" },
     });
     expect(occ[1]).toMatchObject({ plate: "B762-7", busy: false });
-    expect(occ[2]).toMatchObject({ plate: "B861-6", busy: false });
+    expect(occ[2]).toMatchObject({ plate: "B192-7", busy: false });
   });
 
   it("formats Europe/Riga wall time with a comma", () => {

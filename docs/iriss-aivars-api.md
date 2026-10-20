@@ -33,7 +33,7 @@ Pending jobs (GET) and the claim payload are this object:
 
 Required structured fields (validated by the server before the job is queued):
 
-- plate: one of `B193-7`, `B762-7`, `B861-6` (stored compact, e.g. `B7627`)
+- plate: one of `B193-7`, `B762-7`, `B192-7` (stored compact, e.g. `B7627`)
 - `brandModel`
 - VIN optional. If present it must be a 17-char ISO VIN.
 - `validHours` integer 1-2160 (default 48). Server sets `validFrom = now` and `validUntil = now + N h` (Europe/Riga clock for operators, ISO UTC in the job).
