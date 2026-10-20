@@ -219,6 +219,22 @@ describe("own-write revision helpers", () => {
     expect(
       isOwnWriteRevisionConflict({
         error: "stale_revision",
+        expectedRevision: 325,
+        currentRevision: 327,
+        lastOkRevision: null,
+      }),
+    ).toBe(true);
+    expect(
+      isOwnWriteRevisionConflict({
+        error: "stale_revision",
+        expectedRevision: 325,
+        currentRevision: 328,
+        lastOkRevision: null,
+      }),
+    ).toBe(true);
+    expect(
+      isOwnWriteRevisionConflict({
+        error: "stale_revision",
         expectedRevision: 5,
         currentRevision: 6,
         lastOkRevision: 6,
@@ -354,6 +370,61 @@ describe("own-write revision helpers", () => {
     if (result.ok) expect(result.workspaceRevision).toBe(7);
     expect(calls).toBe(2);
     expect(getLastOkWorkspaceRevision("s-own")).toBe(7);
+  });
+
+  it("retries stale_revision when reload left the server two revisions ahead", async () => {
+    clearLastOkWorkspaceRevision("s-reload");
+    clearWorkspacePersistQueue("s-reload");
+    let calls = 0;
+    vi.stubGlobal(
+      "fetch",
+      async (_url: string, init?: RequestInit) => {
+        calls += 1;
+        const body = JSON.parse(String(init?.body ?? "{}")) as {
+          expectedWorkspaceRevision?: number;
+        };
+        if (calls === 1) {
+          return new Response(
+            JSON.stringify({ ok: false, error: "stale_revision", currentRevision: 327 }),
+            { status: 409, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        expect(body.expectedWorkspaceRevision).toBe(327);
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            updatedAt: new Date().toISOString(),
+            durable: true,
+            storageBackend: "blob",
+            workspaceRevision: 328,
+            workspaceChecksum: "z",
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      },
+    );
+    const result = await persistWorkspaceState({
+      sessionId: "s-reload",
+      body: {
+        sourceBlocks: createDefaultSourceBlocks(),
+        iriss: "kopsavilkums",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+      },
+      baseline: null,
+      pdfVisibility: mergePdfVisibility(undefined),
+      pdfBannerInclude: mergeProvinBannerPdfInclude(undefined),
+      expectedWorkspaceRevision: 325,
+      logContext: "autosave",
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.workspaceRevision).toBe(328);
+    expect(calls).toBe(2);
+    expect(getLastOkWorkspaceRevision("s-reload")).toBe(328);
   });
 
   it("does not treat a distant stale revision as own-write", async () => {

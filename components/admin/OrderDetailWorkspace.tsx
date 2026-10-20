@@ -577,6 +577,7 @@ function serializeWorkspaceState(
   bannerInclude: ProvinBannerPdfInclude,
   savedAt?: string,
   manualBanners: ProvinManualBanner[] = [],
+  workspaceRevision?: number,
 ): string {
   return serializeOrderWorkspaceSnapshotFromRef(
     workspaceToPersistBody(ws),
@@ -584,6 +585,7 @@ function serializeWorkspaceState(
     bannerInclude,
     savedAt,
     manualBanners,
+    workspaceRevision,
   );
 }
 
@@ -872,6 +874,8 @@ export function OrderDetailWorkspace({
   const portfolioDragDepth = useRef(0);
   const hydrationSnapshotRef = useRef("");
   const workspaceDirtyRef = useRef(false);
+  const suppressHydrateAutosaveRef = useRef(true);
+  const lastNavigationFlushAtRef = useRef(0);
   const workspaceHydratedOnceRef = useRef(false);
   const workspaceServerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const workspaceServerSaveGenRef = useRef(0);
@@ -1059,6 +1063,7 @@ export function OrderDetailWorkspace({
         pdfBannerIncludeRef.current,
         new Date().toISOString(),
         manualBannersRef.current,
+        workspaceRevisionRef.current,
       );
       try {
         localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
@@ -2592,6 +2597,7 @@ export function OrderDetailWorkspace({
         mergedBannerInclude,
         undefined,
         mergedManualBanners,
+        resolved.workspaceRevision,
       );
 
       if (rawV2) {
@@ -2619,6 +2625,8 @@ export function OrderDetailWorkspace({
     }
     workspaceHydratedOnceRef.current = true;
     workspaceDirtyRef.current = false;
+    suppressHydrateAutosaveRef.current = true;
+    lastNavigationFlushAtRef.current = 0;
     setWorkspaceHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- serverWorkspaceJson apzināti nav deps: localStorage vienmēr uzvar
   }, [payload.sessionId, payload.serverInternalComment, onPdfVisibilityChange, orderDraftPersistenceEnabled]);
@@ -2698,6 +2706,7 @@ export function OrderDetailWorkspace({
           pdfBannerIncludeRef.current,
           new Date().toISOString(),
           manualBannersRef.current,
+          workspaceRevisionRef.current,
         );
         try {
           localStorage.setItem(storageKeyWorkspace(payload.sessionId), snapshot);
@@ -2739,6 +2748,9 @@ export function OrderDetailWorkspace({
 
   const forceNavigationFlush = useCallback(() => {
     if (!workspaceHydratedOnceRef.current) return;
+    const now = Date.now();
+    if (now - lastNavigationFlushAtRef.current < 2000) return;
+    lastNavigationFlushAtRef.current = now;
     workspaceDirtyRef.current = true;
     if (workspaceServerSaveTimerRef.current) {
       clearTimeout(workspaceServerSaveTimerRef.current);
@@ -2920,6 +2932,11 @@ export function OrderDetailWorkspace({
   /** Katra izmaiņa — tūlītējs lokālais saglabājums; serveris — debounce. */
   useEffect(() => {
     if (!workspaceHydrated) return;
+    if (suppressHydrateAutosaveRef.current) {
+      workspaceDirtyRef.current = false;
+      commitWorkspaceLocalNow({ force: true });
+      return;
+    }
     workspaceDirtyRef.current = true;
     commitWorkspaceLocalNow({ force: true });
     setWorkspaceAutosaveStatus("saving");
@@ -2931,9 +2948,15 @@ export function OrderDetailWorkspace({
 
   useEffect(() => {
     if (!workspaceHydrated) return;
+    if (suppressHydrateAutosaveRef.current) return;
     workspaceDirtyRef.current = true;
     commitWorkspaceLocalNow({ force: true });
   }, [pdfVisibility, pdfBannerInclude, manualBanners, workspaceHydrated, commitWorkspaceLocalNow]);
+
+  useEffect(() => {
+    if (!workspaceHydrated) return;
+    suppressHydrateAutosaveRef.current = false;
+  }, [workspaceHydrated, ws, pdfVisibility, pdfBannerInclude, manualBanners]);
 
   useEffect(() => {
     let cancelled = false;

@@ -63,6 +63,13 @@ let globalSaveGeneration = 0;
 /** Šīs cilnes pēdējā veiksmīgā workspace revīzija pa sessionId (pašraksts). */
 const lastOkRevisionBySession = new Map<string, number>();
 
+/**
+ * Vienas cilnes pārlāde: beforeunload + pagehide + hidratācijas autosaglabāšana
+ * var palielināt servera revīziju par 2-3, pirms jaunā lapa ielasīt SSR numuru.
+ * Tālāks lēciens paliek īsts svešās cilnes konflikts.
+ */
+export const OWN_WRITE_REVISION_LAG = 3;
+
 export function bumpWorkspaceSaveGeneration(): number {
   globalSaveGeneration += 1;
   return globalSaveGeneration;
@@ -111,7 +118,10 @@ export function isOwnWriteRevisionConflict(opts: {
   const current = opts.currentRevision;
   if (current == null || !Number.isFinite(current)) return false;
   if (opts.lastOkRevision != null && current === opts.lastOkRevision) return true;
-  if (opts.expectedRevision != null && current === opts.expectedRevision + 1) return true;
+  if (opts.expectedRevision != null && Number.isFinite(opts.expectedRevision)) {
+    const lag = current - opts.expectedRevision;
+    if (lag >= 1 && lag <= OWN_WRITE_REVISION_LAG) return true;
+  }
   return false;
 }
 

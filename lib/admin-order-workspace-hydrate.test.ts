@@ -266,5 +266,42 @@ describe("resolveOrderWorkspaceHydration", () => {
     expect(JSON.parse(oldRaw).odometerAnomalyOverrides).toBeUndefined();
     expect(hydrateWorkspaceFromStorage(oldRaw)?.odometerAnomalyOverrides).toBeUndefined();
   });
+
+  it("uses server revision when newer local snapshot has no workspaceRevision", () => {
+    const server = snapshotWithAutodnaComment("Serveris 325", "2026-10-20T22:40:33.549Z");
+    const parsedServer = JSON.parse(server) as { workspaceRevision?: number };
+    parsedServer.workspaceRevision = 325;
+    const local = snapshotWithAutodnaComment("Lokālais pēc hidratācijas", "2026-10-20T22:40:40.000Z");
+    expect(JSON.parse(local).workspaceRevision).toBeUndefined();
+    const resolved = resolveOrderWorkspaceHydration({
+      localRaw: local,
+      localRawLegacyV2: null,
+      backupRaw: null,
+      serverWorkspaceJson: JSON.stringify(parsedServer),
+    });
+    expect(resolved.source).toBe("local");
+    expect(resolved.workspaceRevision).toBe(325);
+  });
+
+  it("writes workspaceRevision into the local snapshot", () => {
+    const raw = serializeOrderWorkspaceSnapshotFromRef(
+      {
+        sourceBlocks: createDefaultSourceBlocks(),
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+      },
+      DEFAULT_PDF_VISIBILITY,
+      {},
+      "2026-10-20T22:40:33.549Z",
+      [],
+      325,
+    );
+    expect(JSON.parse(raw).workspaceRevision).toBe(325);
+  });
 });
 
