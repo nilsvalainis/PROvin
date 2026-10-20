@@ -5,10 +5,14 @@ declare namespace google.maps {
     setCenter(latLng: LatLngLiteral): void;
     setZoom(z: number): void;
     getZoom(): number | undefined;
+    getCenter(): LatLng | undefined;
     fitBounds(b: LatLngBounds, pad?: number): void;
+    setOptions(opts: Record<string, unknown>): void;
   }
   class LatLng {
     constructor(lat: number, lng: number);
+    lat(): number;
+    lng(): number;
   }
   class LatLngBounds {
     extend(p: LatLngLiteral): void;
@@ -28,6 +32,10 @@ declare namespace google.maps {
   }
   const SymbolPath: { CIRCLE: number };
   type LatLngLiteral = { lat: number; lng: number };
+  namespace event {
+    function addListenerOnce(instance: object, eventName: string, handler: () => void): object;
+    function trigger(instance: object, eventName: string): void;
+  }
 }
 
 interface Window {

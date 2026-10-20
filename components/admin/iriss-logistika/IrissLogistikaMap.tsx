@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import { logisticsOrderMapLabel, logisticsPreviousPointLabel } from "@/lib/iriss-logistics-labels";
+import {
+  applyLogisticsMapCamera,
+  readLogisticsMapCamera,
+  waitForGoogleMapTilesIdle,
+  type LogisticsMapCamera,
+} from "@/lib/iriss-logistics-map-print";
 import type { LogisticsOrder, LogisticsPoint, LogisticsPreviousPointRow } from "@/lib/iriss-logistics-types";
 
 type Gmaps = typeof google.maps;
@@ -55,24 +61,62 @@ type Props = {
   focus?: { lat: number; lng: number } | null;
   onSelect: (id: string) => void;
   notice?: string;
+  /** Drukā: neatlasa jaunu kadru (paliek pašreizējais zoom/centrs). */
+  lockView?: boolean;
+  /** Drukā: kartē paliek tikai atzīmētie. */
+  printSelectedOnly?: boolean;
 };
 
-export function IrissLogistikaMap({
-  height,
-  mode,
-  orders,
-  previous,
-  selectedIds,
-  focus,
-  onSelect,
-  notice,
-}: Props) {
+export type IrissLogistikaMapHandle = {
+  snapshotView: () => LogisticsMapCamera | null;
+  applyView: (camera: LogisticsMapCamera) => void;
+  notifyResize: () => void;
+  waitForTilesIdle: () => Promise<void>;
+};
+
+export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(function IrissLogistikaMap(
+  {
+    height,
+    mode,
+    orders,
+    previous,
+    selectedIds,
+    focus,
+    onSelect,
+    notice,
+    lockView = false,
+    printSelectedOnly = false,
+  },
+  ref,
+) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<google.maps.OverlayView[]>([]);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const [limitNotice, setLimitNotice] = useState(notice ?? "");
   const [ready, setReady] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    snapshotView: () => {
+      const map = mapRef.current;
+      return map ? readLogisticsMapCamera(map) : null;
+    },
+    applyView: (camera) => {
+      const map = mapRef.current;
+      if (map) applyLogisticsMapCamera(map, camera);
+    },
+    notifyResize: () => {
+      const map = mapRef.current;
+      if (map && window.google?.maps?.event) google.maps.event.trigger(map, "resize");
+    },
+    waitForTilesIdle: () => {
+      const map = mapRef.current;
+      if (!map || !window.google?.maps?.event) return Promise.resolve();
+      return waitForGoogleMapTilesIdle((event, fn) => {
+        google.maps.event.addListenerOnce(map, event, fn);
+      });
+    },
+  }), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -114,7 +158,7 @@ export function IrissLogistikaMap({
     for (const o of overlaysRef.current) o.setMap(null);
     markersRef.current = [];
     overlaysRef.current = [];
-    const pts = toMapPoints(mode, orders, previous, selectedIds);
+    const pts = toMapPoints(mode, orders, previous, selectedIds).filter((p) => !printSelectedOnly || p.selected);
     const bounds = new google.maps.LatLngBounds();
     for (const p of pts) {
       const pos = { lat: p.lat, lng: p.lng };
@@ -147,19 +191,22 @@ export function IrissLogistikaMap({
       overlay.setMap(map);
       overlaysRef.current.push(overlay);
     }
-    if (focus) {
-      map.panTo(focus);
-      if ((map.getZoom() ?? 7) < 9) map.setZoom(10);
-    } else if (pts.length === 1) {
-      map.setCenter({ lat: pts[0]!.lat, lng: pts[0]!.lng });
-      map.setZoom(9);
-    } else if (pts.length > 1) {
-      map.fitBounds(bounds, 36);
+    if (!lockView) {
+      if (focus) {
+        map.panTo(focus);
+        if ((map.getZoom() ?? 7) < 9) map.setZoom(10);
+      } else if (pts.length === 1) {
+        map.setCenter({ lat: pts[0]!.lat, lng: pts[0]!.lng });
+        map.setZoom(9);
+      } else if (pts.length > 1) {
+        map.fitBounds(bounds, 36);
+      }
     }
-  }, [mode, orders, previous, selectedIds, focus, ready, onSelect]);
+    map.setOptions({ disableDefaultUI: lockView, zoomControl: !lockView, gestureHandling: lockView ? "none" : "greedy" });
+  }, [mode, orders, previous, selectedIds, focus, ready, onSelect, lockView, printSelectedOnly]);
 
   return (
-    <div className="relative overflow-hidden rounded-[14px] bg-[#d7dde6]" style={{ height }}>
+    <div className="iriss-log-map-shell relative overflow-hidden rounded-[14px] bg-[#d7dde6]" style={{ height }}>
       <div ref={hostRef} className="absolute inset-0" />
       {limitNotice ? (
         <div className="absolute inset-0 z-[1] flex items-center justify-center bg-[#d7dde6]/90 px-4 text-center text-[12.5px] leading-snug text-[#334155]">
@@ -169,7 +216,7 @@ export function IrissLogistikaMap({
       <p className="pointer-events-none absolute bottom-1.5 right-2 z-[1] text-[10px] text-black/50">Google Maps</p>
     </div>
   );
-}
+});
 
 function makeLabelOverlay(
   text: string,

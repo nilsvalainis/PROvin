@@ -1,14 +1,21 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
 import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaAuctionSourcesPanel";
-import { IrissLogistikaMap } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
+import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
 import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
 import { filterLogisticsOrdersByView, isLogisticsOrderActive, isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import { logisticsGoogleMapsDirUrl, logisticsGoogleMapsPlaceUrl } from "@/lib/iriss-logistics-maps-dir";
 import { logisticsOrderMapLabel } from "@/lib/iriss-logistics-labels";
+import {
+  LOGISTICS_PRINT_HTML_CLASS,
+  LOGISTICS_PRINT_PAGE_CSS,
+  logisticsOrdersForMapPrint,
+  logisticsPrintLegendRows,
+} from "@/lib/iriss-logistics-map-print";
 import {
   formatLogisticsAddress,
   formatLogisticsDate,
@@ -60,6 +67,8 @@ export function IrissLogistikaClient({
   const [pointId, setPointId] = useState<string | null>(initialPoints[0]?.id ?? null);
   const [preview, setPreview] = useState<{ lat: number; lng: number } | null>(null);
   const [pointQuery, setPointQuery] = useState("");
+  const [printing, setPrinting] = useState(false);
+  const mapHandleRef = useRef<IrissLogistikaMapHandle>(null);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   const visibleOrders = useMemo(() => {
@@ -131,8 +140,52 @@ export function IrissLogistikaClient({
 
   const selectedPoint = points.find((p) => p.id === pointId) ?? groupedPoints[0]?.rows[0] ?? null;
   const usedCount = (id: string) => orders.filter((o) => o.pickupPointId === id).length;
+  const printOrders = useMemo(
+    () => logisticsOrdersForMapPrint(visibleOrders, selectedSet),
+    [visibleOrders, selectedSet],
+  );
+  const printLegend = useMemo(() => logisticsPrintLegendRows(printOrders), [printOrders]);
 
-  function printSelected() {
+  useEffect(() => {
+    document.documentElement.classList.toggle(LOGISTICS_PRINT_HTML_CLASS, printing);
+    let pageStyle: HTMLStyleElement | null = null;
+    if (printing) {
+      pageStyle = document.createElement("style");
+      pageStyle.setAttribute("data-iriss-log-print-page", "1");
+      pageStyle.textContent = LOGISTICS_PRINT_PAGE_CSS;
+      document.head.appendChild(pageStyle);
+    }
+    return () => {
+      document.documentElement.classList.remove(LOGISTICS_PRINT_HTML_CLASS);
+      pageStyle?.remove();
+    };
+  }, [printing]);
+
+  useEffect(() => {
+    function endPrint() {
+      setPrinting(false);
+    }
+    window.addEventListener("afterprint", endPrint);
+    return () => window.removeEventListener("afterprint", endPrint);
+  }, []);
+
+  async function printCurrentMap() {
+    if (printing) return;
+    const handle = mapHandleRef.current;
+    const view = handle?.snapshotView() ?? null;
+    flushSync(() => setPrinting(true));
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+    handle?.notifyResize();
+    if (view) handle?.applyView(view);
+    await handle?.waitForTilesIdle();
+    void fetch("/api/admin/iriss/logistika/print", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
     window.print();
   }
 
@@ -146,7 +199,7 @@ export function IrissLogistikaClient({
 
   return (
     <div className="iriss-log-screen px-3 pb-28 pt-3 md:px-4 md:pb-8">
-      <header className="md:static">
+      <header className="iriss-log-no-print md:static">
         <div className="flex flex-wrap items-start gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -298,12 +351,12 @@ export function IrissLogistikaClient({
         <div className="mt-3 grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]">
           <div className="min-w-0">
             {selectedIds.length > 0 ? (
-              <div className="mb-2 hidden items-center gap-2 rounded-2xl bg-white px-3 py-2 text-[12.5px] shadow-sm md:flex">
+              <div className="iriss-log-no-print mb-2 hidden items-center gap-2 rounded-2xl bg-white px-3 py-2 text-[12.5px] shadow-sm md:flex">
                 <span className="font-semibold">Atzīmētas {selectedIds.length}</span>
                 <button type="button" className="text-[var(--ink2)]" onClick={() => setSelectedIds([])}>
                   Notīrīt
                 </button>
-                <button type="button" className="ml-auto rounded-full border border-[#e5e7eb] px-3 py-1 font-semibold" onClick={printSelected}>
+                <button type="button" className="ml-auto rounded-full border border-[#e5e7eb] px-3 py-1 font-semibold" onClick={() => void printCurrentMap()}>
                   Drukāt karti
                 </button>
                 {dirUrl ? (
@@ -314,25 +367,37 @@ export function IrissLogistikaClient({
               </div>
             ) : null}
             <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-              <div className="flex items-center justify-between px-3 py-2">
+              <div className="iriss-log-no-print flex items-center justify-between gap-2 px-3 py-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">Karte</p>
-                <button
-                  type="button"
-                  aria-pressed={showPrevious}
-                  onClick={() => setShowPrevious((v) => !v)}
-                  className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${showPrevious ? "bg-[var(--acc-soft)] text-[var(--acc)]" : "bg-[#f3f4f6]"}`}
-                >
-                  Iepriekš izmantotie punkti
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    aria-pressed={showPrevious}
+                    onClick={() => setShowPrevious((v) => !v)}
+                    className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${showPrevious ? "bg-[var(--acc-soft)] text-[var(--acc)]" : "bg-[#f3f4f6]"}`}
+                  >
+                    Iepriekš izmantotie punkti
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void printCurrentMap()}
+                    className="rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold"
+                  >
+                    Drukāt
+                  </button>
+                </div>
               </div>
-              <div className="px-2 pb-2">
+              <div className="iriss-log-print-root px-2 pb-2">
                 <IrissLogistikaMap
+                  ref={mapHandleRef}
                   height={200}
-                  mode={showPrevious ? "previous" : "cars"}
-                  orders={showPrevious ? [] : visibleOrders}
+                  mode={printing ? "cars" : showPrevious ? "previous" : "cars"}
+                  orders={printing ? printOrders : showPrevious ? [] : visibleOrders}
                   previous={previous}
                   selectedIds={selectedSet}
-                  focus={preview}
+                  focus={printing ? null : preview}
+                  lockView={printing}
+                  printSelectedOnly={printing}
                   onSelect={(id) => {
                     if (showPrevious) {
                       setPointId(id);
@@ -342,9 +407,22 @@ export function IrissLogistikaClient({
                     toggleSelect(id);
                   }}
                 />
+                <ul className="iriss-log-print-legend">
+                  {printLegend.length === 0 ? (
+                    <li>Nav atzīmētu punktu.</li>
+                  ) : (
+                    printLegend.map((row) => (
+                      <li key={row.id}>
+                        {row.label}
+                        {row.place ? ` · ${row.place}` : ""}
+                        {row.hours ? ` · ${row.hours}` : ""}
+                      </li>
+                    ))
+                  )}
+                </ul>
               </div>
               {showPrevious ? (
-                <ul className="border-t border-[#f3f4f6] px-3 py-2 text-[13px]">
+                <ul className="iriss-log-no-print border-t border-[#f3f4f6] px-3 py-2 text-[13px]">
                   {previous.map((p) => (
                     <li key={p.pointId}>
                       <button type="button" className="flex w-full items-center gap-2 py-1.5 text-left" onClick={() => { setPointId(p.pointId); setPageTab("points"); }}>
@@ -359,7 +437,7 @@ export function IrissLogistikaClient({
                 </ul>
               ) : null}
             </div>
-            <ul className="mt-3 overflow-hidden rounded-2xl bg-white shadow-sm">
+            <ul className="iriss-log-no-print mt-3 overflow-hidden rounded-2xl bg-white shadow-sm">
               {visibleOrders.map((o) => {
                 const archived = isLogisticsOrderArchived(o);
                 const href = o.auctionUrl || o.listingUrl;
@@ -411,7 +489,7 @@ export function IrissLogistikaClient({
             </ul>
           </div>
           {active ? (
-            <aside className="rounded-2xl bg-white p-4 shadow-sm">
+            <aside className="iriss-log-no-print rounded-2xl bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h2 className="text-[18px] font-semibold leading-tight">{active.title || `${active.make} ${active.model}`}</h2>
@@ -487,9 +565,9 @@ export function IrissLogistikaClient({
       )}
 
       {selectedIds.length > 0 && pageTab === "orders" ? (
-        <div className="fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom,0px))] z-20 flex items-center gap-2 bg-[var(--bg-base)] px-3 py-2 md:hidden">
+        <div className="iriss-log-no-print fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom,0px))] z-20 flex items-center gap-2 bg-[var(--bg-base)] px-3 py-2 md:hidden">
           <span className="text-[13px] font-semibold">{selectedIds.length} atzīmētas</span>
-          <button type="button" className="ml-auto text-[13px]" onClick={printSelected}>
+          <button type="button" className="ml-auto text-[13px]" onClick={() => void printCurrentMap()}>
             Drukāt
           </button>
           {dirUrl ? (
@@ -500,6 +578,7 @@ export function IrissLogistikaClient({
         </div>
       ) : null}
 
+      <div className="iriss-log-no-print">
       <IrissLogistikaNewPurchase
         open={purchaseOpen}
         points={points}
@@ -512,35 +591,6 @@ export function IrissLogistikaClient({
           setView("active");
         }}
       />
-
-      <div className="iriss-log-print p-6">
-        <h1 className="text-lg font-semibold">Loģistika · atzīmētie</h1>
-        <p className="mb-3 text-xs">Pie punkta: marka/modelis · izsole. Distances km.</p>
-        <table className="w-full text-left text-xs">
-          <thead>
-            <tr>
-              <th>Auto · izsole</th>
-              <th>Adrese</th>
-              <th>Darba laiks</th>
-              <th>Kontakts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders
-              .filter((o) => selectedSet.has(o.id))
-              .map((o) => (
-                <tr key={o.id}>
-                  <td>
-                    {logisticsOrderMapLabel(o)}
-                    <div>{o.vin}</div>
-                  </td>
-                  <td>{o.pickupAddress}</td>
-                  <td>{o.pickupSnapshot?.hoursText}</td>
-                  <td>{o.pickupSnapshot?.phone}</td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
       </div>
     </div>
   );
