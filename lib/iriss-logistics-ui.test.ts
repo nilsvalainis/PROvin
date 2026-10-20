@@ -15,7 +15,7 @@ const map = readFileSync("components/admin/iriss-logistika/IrissLogistikaMap.tsx
 
 describe("IRISS Loģistika UI contracts", () => {
   it("keeps header and filter chips from being sticky", () => {
-    expect(client).toContain('className="md:static"');
+    expect(client).toContain('className="iriss-log-no-print md:static"');
     expect(client).not.toMatch(/sticky top-/);
     expect(page).toContain("await requireLogisticsPage();");
     expect(page).toContain("IrissLogistikaClient");
@@ -75,6 +75,36 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(env).toContain("GOOGLE_MAPS_SERVER_KEY");
     expect(env).toContain("HTTP referrers");
     expect(env).toContain("10 000");
+  });
+
+  it("prints the current map view after tiles idle, A4 landscape, selected points only", () => {
+    const css = readFileSync("app/admin/iriss/logistika/iriss-logistika.css", "utf8");
+    const printLib = readFileSync("lib/iriss-logistics-map-print.ts", "utf8");
+    expect(client).toMatch(/>\s*Drukāt\s*</);
+    expect(client).toContain("printCurrentMap");
+    expect(client).toContain("waitForTilesIdle");
+    expect(client).toContain("lockView={printing}");
+    expect(client).toContain("printSelectedOnly={printing}");
+    expect(client).toContain("iriss-log-print-legend");
+    expect(client).toContain("iriss-log-print-root");
+    expect(client).toContain("/api/admin/iriss/logistika/print");
+    expect(client).not.toMatch(/sticky top-/);
+    expect(client).toContain('className="iriss-log-no-print md:static"');
+    expect(css).toMatch(/@page\s*\{\s*size:\s*A4 landscape/);
+    expect(css).toMatch(/margin:\s*4mm/);
+    expect(css).toContain("body *");
+    expect(css).toContain("visibility: hidden");
+    expect(css).toContain(".iriss-log-print-root");
+    expect(css).toContain("iriss-log-print-legend");
+    expect(printLib).toContain('bind("idle"');
+    expect(printLib).toContain('bind("tilesloaded"');
+    expect(printLib).toContain("logisticsPrintLegendRows");
+    expect(map).toContain("lockView");
+    expect(map).toContain("printSelectedOnly");
+    expect(map).toContain("waitForGoogleMapTilesIdle");
+    expect(map).toContain("addListenerOnce");
+    expect(client).not.toMatch(/iriss-log-print p-6/);
+    expect(client).not.toContain("Klients");
   });
 
   it("keeps an editable auction-sources list in Loģistika settings", () => {

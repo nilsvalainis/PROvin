@@ -14,7 +14,7 @@ export function IrissLogisticsAppShell({ name, children }: { name: string; child
 
   return (
     <div className="iriss-admin-scope min-h-dvh bg-[#F4F6F9] text-[#111827]">
-      <header className="relative z-10 flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <header className="iriss-log-no-print relative z-10 flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex min-w-0 items-center gap-2">
           <span className="text-[15px] font-semibold tracking-tight">Loģistika</span>
           <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#3d5bd9]">

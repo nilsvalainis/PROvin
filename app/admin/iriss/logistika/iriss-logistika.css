@@ -24,14 +24,92 @@
   font-size: 9.5px;
   font-weight: 500;
 }
-.iriss-log-print {
+.iriss-log-print-legend {
   display: none;
 }
+html.iriss-log-printing,
+html.iriss-log-printing body {
+  background: #fff !important;
+}
+html.iriss-log-printing .iriss-log-print-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  padding: 0 !important;
+}
+html.iriss-log-printing .iriss-log-print-root .iriss-log-map-shell {
+  flex: 1 1 auto;
+  height: auto !important;
+  min-height: 0;
+  border-radius: 0 !important;
+}
+html.iriss-log-printing .iriss-log-print-legend {
+  display: block;
+  flex: 0 0 auto;
+  max-height: 22mm;
+  overflow: hidden;
+  padding: 4px 8px 6px;
+  font-size: 10px;
+  line-height: 1.25;
+  column-count: 2;
+  column-gap: 12px;
+  color: #111;
+  background: #fff;
+}
+@page {
+  size: A4 landscape;
+  margin: 4mm;
+}
 @media print {
-  .iriss-log-screen {
+  @page {
+    size: A4 landscape;
+    margin: 4mm;
+  }
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  body * {
+    visibility: hidden !important;
+  }
+  .iriss-log-print-root,
+  .iriss-log-print-root * {
+    visibility: visible !important;
+  }
+  .iriss-log-print-root {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+  .iriss-log-no-print,
+  .iriss-log-screen > header,
+  .admin-m > aside,
+  .admin-m-tabbar-dock {
     display: none !important;
   }
-  .iriss-log-print {
+  .iriss-log-map-shell {
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+  }
+  .iriss-log-print-legend {
     display: block !important;
+    visibility: visible !important;
   }
 }
