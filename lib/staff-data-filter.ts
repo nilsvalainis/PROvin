@@ -78,7 +78,7 @@ export function logisticsVinShort(vin: string | null | undefined): string | null
   return t.slice(-6);
 }
 
-export function stripForbiddenLogisticsFields<T extends Record<string, unknown>>(raw: T): T {
+export function stripForbiddenLogisticsFields(raw: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(raw)) {
     if (PRICE_KEYS.has(key) || CLIENT_KEYS.has(key) || DRIVER_PII_KEYS.has(key)) continue;
@@ -88,7 +88,7 @@ export function stripForbiddenLogisticsFields<T extends Record<string, unknown>>
     }
     out[key] = value;
   }
-  return out as T;
+  return out;
 }
 
 export function toLogisticsTripView(raw: Record<string, unknown>): LogisticsTripView {

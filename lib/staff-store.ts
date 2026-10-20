@@ -194,9 +194,9 @@ export async function inviteStaffUser(input: {
   if (!isValidOrderEmail(email)) return { ok: false, error: "invalid_email" };
   if (!isStaffRole(input.role)) return { ok: false, error: "invalid_role" };
 
-  return mutateDoc((doc) => {
+  return mutateDoc<InviteStaffResult>((doc) => {
     if (doc.users.some((u) => u.email === email && u.status !== "revoked")) {
-      return { value: { ok: false, error: "duplicate_email" } satisfies InviteStaffResult };
+      return { value: { ok: false, error: "duplicate_email" } };
     }
     const now = new Date().toISOString();
     const user: StaffUser = {
@@ -234,7 +234,7 @@ export async function inviteStaffUser(input: {
         userAgent: input.userAgent ?? "",
       },
     );
-    return { value: { ok: true, user: toPublicStaffUser(user, 0), token } satisfies InviteStaffResult, next };
+    return { value: { ok: true, user: toPublicStaffUser(user, 0), token }, next };
   });
 }
 
@@ -246,14 +246,14 @@ export async function acceptStaffInvite(input: { token: string; password: string
   if (!isUsableStaffPassword(input.password)) return { ok: false, error: "weak_password" };
   const tokenHash = hashInviteToken(input.token.trim());
   const passwordHash = hashStaffPassword(input.password);
-  return mutateDoc((doc) => {
+  return mutateDoc<AcceptInviteResult>((doc) => {
     const invite = doc.invites.find((i) => i.tokenHash === tokenHash);
-    if (!invite) return { value: { ok: false, error: "invalid_token" } satisfies AcceptInviteResult };
-    if (invite.usedAt) return { value: { ok: false, error: "used" } satisfies AcceptInviteResult };
-    if (Date.parse(invite.expiresAt) <= Date.now()) return { value: { ok: false, error: "expired" } satisfies AcceptInviteResult };
+    if (!invite) return { value: { ok: false, error: "invalid_token" } };
+    if (invite.usedAt) return { value: { ok: false, error: "used" } };
+    if (Date.parse(invite.expiresAt) <= Date.now()) return { value: { ok: false, error: "expired" } };
     const user = doc.users.find((u) => u.id === invite.userId);
-    if (!user) return { value: { ok: false, error: "invalid_token" } satisfies AcceptInviteResult };
-    if (user.status === "revoked") return { value: { ok: false, error: "revoked" } satisfies AcceptInviteResult };
+    if (!user) return { value: { ok: false, error: "invalid_token" } };
+    if (user.status === "revoked") return { value: { ok: false, error: "revoked" } };
     const now = new Date().toISOString();
     const nextUser: StaffUser = { ...user, status: "active", passwordHash, failedLoginCount: 0, lockedUntil: null };
     const next = appendAudit(
@@ -271,7 +271,7 @@ export async function acceptStaffInvite(input: { token: string; password: string
         userAgent: "",
       },
     );
-    return { value: { ok: true, user: toPublicStaffUser(nextUser, 0) } satisfies AcceptInviteResult, next };
+    return { value: { ok: true, user: toPublicStaffUser(nextUser, 0) }, next };
   });
 }
 
