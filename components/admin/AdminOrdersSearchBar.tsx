@@ -49,7 +49,7 @@ export function AdminOrdersSearchBar() {
       value={q}
       onChange={(e) => setQ(e.target.value)}
       aria-label="Meklēt pasūtījumus"
-      className="h-9 min-w-0 flex-1 rounded-lg border border-[#d2d2d7] bg-white px-3 text-[16px] text-[#1d1d1f] focus:border-[#1d1d1f] focus:outline-none md:h-7 md:w-56 md:flex-none md:text-[13px]"
+      className="h-11 min-w-0 flex-1 rounded-lg border border-[#d2d2d7] bg-white px-3 text-[16px] text-[#1d1d1f] focus:border-[#1d1d1f] focus:outline-none md:h-7 md:w-56 md:flex-none md:text-[13px]"
     />
   );
   const sortSelect = (
@@ -57,7 +57,7 @@ export function AdminOrdersSearchBar() {
       value={sort}
       onChange={(e) => push({ sort: e.target.value })}
       aria-label="Kārtot"
-      className="h-9 rounded-lg border border-[#d2d2d7] bg-white px-2 text-[14px] text-[#1d1d1f] md:h-7 md:text-[12px]"
+      className="h-11 rounded-lg border border-[#d2d2d7] bg-white px-2 text-[14px] text-[#1d1d1f] md:h-7 md:text-[12px]"
     >
       <option value="newest">Jaunākie</option>
       <option value="oldest">Vecākie</option>

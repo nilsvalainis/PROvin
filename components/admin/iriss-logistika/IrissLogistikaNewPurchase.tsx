@@ -190,7 +190,7 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
               </button>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full text-[#6b7280]" aria-label="Aizvērt">
+          <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-full text-[#6b7280]" aria-label="Aizvērt">
             ×
           </button>
         </div>

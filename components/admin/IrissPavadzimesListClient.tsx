@@ -195,8 +195,8 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
       <Suspense fallback={null}>
         <PavadzimeSearchFocus rowCount={rows.length} />
       </Suspense>
-      <div className="mt-2 flex items-center gap-2">
-        <div className="inline-flex shrink-0 rounded-lg bg-[#e9e9ee] p-0.5" role="tablist" aria-label="Pavadzīmju filtrs">
+      <div className="mt-2 flex max-w-full flex-wrap items-center gap-2 max-md:px-4">
+        <div className="inline-flex min-w-0 flex-1 rounded-lg bg-[#e9e9ee] p-0.5 max-md:w-full max-md:flex-none" role="tablist" aria-label="Pavadzīmju filtrs">
           {(["current", "archive", "all"] as const).map((v) => (
             <button
               key={v}
@@ -204,7 +204,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
               role="tab"
               aria-selected={view === v}
               onClick={() => setView(v)}
-              className={`h-6 rounded-md px-2 text-[12px] font-semibold transition ${
+              className={`min-h-11 flex-1 rounded-md px-2 text-[13px] font-semibold transition md:h-8 md:min-h-8 md:flex-none ${
                 v === "all" ? "hidden md:inline-flex" : ""
               } ${view === v ? "bg-white text-[#1d1d1f] shadow-sm" : "text-[#6e6e73] hover:text-[#1d1d1f]"}`}
             >
@@ -213,7 +213,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
           ))}
         </div>
         {data.pendingParse > 0 ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#8e8e93]" aria-hidden /> : null}
-        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 max-md:w-full max-md:flex-none md:ml-auto md:max-w-[20rem]">
           <input
             ref={vinRef}
             type="text"
@@ -222,7 +222,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
             spellCheck={false}
             placeholder="VIN"
             aria-label="VIN"
-            className="h-7 w-[9.5rem] rounded-lg border-0 bg-[#e9e9ee] px-2 text-[12px] text-[#1d1d1f] outline-none placeholder:text-[#8e8e93] focus:ring-2 focus:ring-[var(--color-provin-accent)]/35"
+            className="h-11 min-w-0 flex-1 rounded-lg border-0 bg-[#e9e9ee] px-3 text-[16px] text-[#1d1d1f] outline-none placeholder:text-[#8e8e93] focus:ring-2 focus:ring-[var(--color-provin-accent)]/35 md:h-8 md:w-[9.5rem] md:flex-none md:text-[12px]"
           />
           <input
             ref={fileRef}
@@ -239,10 +239,10 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
             type="button"
             disabled={uploading}
             onClick={() => fileRef.current?.click()}
-            className="inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-lg bg-[#1d1d1f] px-2.5 text-[12.5px] font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 shrink-0 items-center gap-1 whitespace-nowrap rounded-lg bg-[#1d1d1f] px-3 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 md:h-8 md:px-2.5 md:text-[12.5px]"
           >
             {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />}
-            <span className="hidden sm:inline">PDF</span>
+            <span>PDF</span>
           </button>
         </div>
       </div>
@@ -258,7 +258,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
             <p className="mt-1 text-[13px] text-[#6b7280]">Beigušās un pārtrauktās ir Arhīvā.</p>
           </div>
         ) : (
-          <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-1 md:overflow-visible lg:grid-cols-1">
+          <div className="flex max-w-full flex-col gap-3 max-md:px-4 md:grid md:grid-cols-1 lg:grid-cols-1">
             {rows.map((row) => {
               const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
               const days = remainingWaybillDays(row.validUntil, now);
@@ -270,7 +270,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                 <article
                   key={row.id}
                   data-pavadzime={row.id}
-                  className="w-[min(100%,280px)] shrink-0 rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm md:w-auto"
+                  className="w-full min-w-0 rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-mono text-[12px] text-[#6b7280]">{dash(row.number)}</p>
@@ -292,7 +292,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                       href={pdfHref}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px] font-medium"
+                      className="inline-flex min-h-11 items-center gap-1 rounded-full border border-[#E5E7EB] px-3 text-[13px] font-medium"
                     >
                       <FileText className="h-3.5 w-3.5" strokeWidth={1.75} />
                       PDF
@@ -308,7 +308,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                           orderId: row.order?.id ?? "",
                         })
                       }
-                      className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px] font-medium"
+                      className="inline-flex min-h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[13px] font-medium"
                     >
                       Pagarināt
                     </button>
@@ -330,7 +330,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
         </div>
       ) : (
         <>
-          <ul className="mt-0 space-y-2 md:hidden">
+          <ul className="mt-0 space-y-2 px-4 md:hidden">
             {rows.map((row) => {
               const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
               const orderHref = row.order ? `/admin/iriss/pasutijumi/${encodeURIComponent(row.order.id)}` : null;
@@ -364,7 +364,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                         href={pdfHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ececee] text-[#8e8e93]"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ececee] text-[#8e8e93]"
                         aria-label="Atvērt PDF"
                       >
                         <FileText className="h-4 w-4" strokeWidth={1.75} aria-hidden />

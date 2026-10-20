@@ -33,14 +33,14 @@ export function AdminMobileTopBar({
   if (iriss) {
     return (
       <header className="am-topbar flex flex-col gap-2 px-4 pb-4 pt-[calc(env(safe-area-inset-top,0px)+8px)] md:hidden">
-        <div className="flex h-10 items-center gap-2">
+        <div className="flex min-h-11 items-center gap-2">
           {hasBack ? (
             backHref ? (
-              <Link href={backHref} aria-label="Atpakaļ" className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
+              <Link href={backHref} aria-label="Atpakaļ" className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
                 <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
               </Link>
             ) : (
-              <button type="button" aria-label="Atpakaļ" onClick={onBack} className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
+              <button type="button" aria-label="Atpakaļ" onClick={onBack} className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
                 <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
               </button>
             )
@@ -68,14 +68,14 @@ export function AdminMobileTopBar({
   return (
     <>
       <header className="am-topbar px-4 pb-2 pt-[max(10px,env(safe-area-inset-top))] md:hidden">
-        <div className="flex h-11 items-center gap-2">
+        <div className="flex min-h-11 items-center gap-2">
           {hasBack ? (
             backHref ? (
-              <Link href={backHref} aria-label="Atpakaļ" className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
+              <Link href={backHref} aria-label="Atpakaļ" className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
                 <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
               </Link>
             ) : (
-              <button type="button" aria-label="Atpakaļ" onClick={onBack} className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
+              <button type="button" aria-label="Atpakaļ" onClick={onBack} className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)]">
                 <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
               </button>
             )
@@ -116,7 +116,7 @@ export function AdminMobileRoundBtn({
   badge?: number;
 }) {
   const count = formatAdminMobileBadgeCount(badge ?? 0);
-  const cls = `am-press relative grid h-9 w-9 place-items-center rounded-full ${
+  const cls = `am-press relative grid h-11 w-11 place-items-center rounded-full ${
     primary ? "bg-[var(--chip-active-bg)] text-[var(--chip-active-fg)]" : "bg-[var(--fill-secondary)] text-[var(--label)]"
   }`;
   const inner = (
@@ -180,7 +180,7 @@ export function AdminMobileChips({
             key={it.id}
             type="button"
             onClick={() => onChange(it.id)}
-            className={`am-press inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] ${
+            className={`am-press inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] ${
               on
                 ? "bg-[var(--chip-active-bg)] font-semibold text-[var(--chip-active-fg)]"
                 : "bg-[var(--fill-secondary)] font-medium text-[var(--label)]"
@@ -209,7 +209,7 @@ export function AdminMobileSegments({
   const i = Math.max(0, items.findIndex((it) => it.id === value));
   const n = Math.max(1, items.length);
   return (
-    <div className="relative flex h-8 overflow-hidden rounded-full bg-[var(--am-fill)] p-0.5" role="tablist">
+    <div className="relative flex h-11 overflow-hidden rounded-full bg-[var(--am-fill)] p-0.5" role="tablist">
       <span
         aria-hidden
         className="pointer-events-none absolute top-0.5 bottom-0.5 rounded-full bg-[var(--am-s1)] shadow-sm"
@@ -265,7 +265,7 @@ export function AdminMobileStatusTag({
   onClick?: (e: { stopPropagation: () => void }) => void;
 }) {
   const cls =
-    "inline-flex h-[22px] items-center gap-0.5 rounded-[7px] bg-[var(--fill-secondary)] px-1.5 text-[11px] font-medium text-[var(--label-secondary)]";
+    "inline-flex min-h-11 items-center gap-0.5 rounded-[10px] bg-[var(--fill-secondary)] px-2.5 text-[12px] font-medium text-[var(--label-secondary)]";
   if (onClick) {
     return (
       <button type="button" className={cls} onClick={onClick}>
@@ -345,7 +345,7 @@ export function AdminMobileSheet({
             <h2 className="text-[19px] font-bold text-[var(--am-ink)]">{title}</h2>
             {subtitle ? <p className="mt-0.5 text-[13px] text-[var(--am-ink2)]">{subtitle}</p> : null}
           </div>
-          <button type="button" aria-label="Aizvērt" onClick={onClose} className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--am-fill)]">
+          <button type="button" aria-label="Aizvērt" onClick={onClose} className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--am-fill)]">
             <AdminMobileIcon name="aizvert" className="h-4 w-4" />
           </button>
         </div>
@@ -375,7 +375,7 @@ export function AdminMobileSectionNav({
             key={it.id}
             type="button"
             onClick={() => onPick(it.id)}
-            className={`am-press inline-flex h-9 shrink-0 items-center rounded-full px-3 text-[13px] ${
+            className={`am-press inline-flex h-11 shrink-0 items-center rounded-full px-3 text-[13px] ${
               on
                 ? "bg-[var(--chip-active-bg)] font-semibold text-[var(--chip-active-fg)]"
                 : "bg-[var(--fill-secondary)] text-[var(--label)]"
