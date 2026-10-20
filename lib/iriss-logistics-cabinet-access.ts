@@ -1,11 +1,12 @@
 import {
+  CABINET_SECTIONS,
   isCabinetDocType,
   isCabinetSectionId,
   type CabinetAccessRule,
   type CabinetDocType,
   type CabinetSectionId,
 } from "@/lib/iriss-logistics-cabinet";
-import type { IrissSection } from "@/lib/staff-roles";
+import { ENV_ADMIN_USER_ID, type IrissSection } from "@/lib/staff-roles";
 
 export const CABINET_INVOICE_TYPES: readonly CabinetDocType[] = [
   "car_invoice",
@@ -25,6 +26,19 @@ export type CabinetAccessQuery = {
   carId: string;
   section: CabinetSectionId;
   docType: CabinetDocType;
+};
+
+export type CabinetAccessView = {
+  write: boolean;
+  hideSums: boolean;
+  admin: boolean;
+  sections: CabinetSectionId[];
+};
+
+const SECTION_SAMPLE_TYPES: Record<CabinetSectionId, readonly CabinetDocType[]> = {
+  A: ["purchase_confirm", "car_invoice", "auction_invoice", "service_invoice"],
+  B: ["pickup_pdf"],
+  C: ["service_invoice", "csdd_status", "note"],
 };
 
 export function isCabinetAccessRole(v: unknown): v is CabinetAccessRole {
@@ -47,9 +61,27 @@ export function isCabinetInvoiceType(type: CabinetDocType): boolean {
   return (CABINET_INVOICE_TYPES as readonly string[]).includes(type);
 }
 
-/** Nils 17:01: Loģistika redz visu. Grāmatvede - viss. Serviss - rēķini pēc noklusējuma nē. */
-export function defaultCabinetAccessAllow(role: CabinetAccessRole, docType: CabinetDocType): boolean {
-  if (role === "logistika" || role === "gramatvede") return true;
+export function isCabinetAdminQuery(query: Pick<CabinetAccessQuery, "userId" | "roles">): boolean {
+  return query.userId === ENV_ADMIN_USER_ID && query.roles.length === 0;
+}
+
+/** v5.1 / Andris: Loģistika neredz A un servisa rēķinus. Grāmatvede - A rēķini + C, tikai piešķirtiem auto. */
+export function defaultCabinetAccessAllow(
+  role: CabinetAccessRole,
+  docType: CabinetDocType,
+  section?: CabinetSectionId,
+): boolean {
+  if (role === "logistika") {
+    if (section === "A") return false;
+    if (isCabinetInvoiceType(docType)) return false;
+    return true;
+  }
+  if (role === "gramatvede") {
+    if (section === "B") return false;
+    if (section === "A") return isCabinetInvoiceType(docType);
+    if (section === "C") return true;
+    return isCabinetInvoiceType(docType);
+  }
   if (role === "serviss") return !isCabinetInvoiceType(docType);
   return false;
 }
@@ -80,17 +112,38 @@ function ruleScore(rule: CabinetAccessRule): number {
   );
 }
 
+export function gramatvedeCarAssigned(
+  query: Pick<CabinetAccessQuery, "userId" | "roles" | "carId">,
+  rules: readonly CabinetAccessRule[],
+): boolean {
+  return rules.some((rule) => {
+    if (!rule.allow) return false;
+    if (rule.role && rule.role !== "gramatvede" && rule.role !== "admin") return false;
+    if (rule.userId && rule.userId !== query.userId) return false;
+    if (rule.carId && rule.carId !== query.carId) return false;
+    return Boolean(rule.userId || rule.role === "gramatvede");
+  });
+}
+
+function isAssignmentOnlyRule(rule: CabinetAccessRule): boolean {
+  return !rule.section && !rule.docType;
+}
+
 export function evaluateCabinetAccess(query: CabinetAccessQuery, rules: readonly CabinetAccessRule[]): boolean {
-  if (query.roles.length === 0 && query.userId === "env-admin") return true;
+  if (isCabinetAdminQuery(query)) return true;
   const matches = rules.filter((rule) => ruleApplies(rule, query));
-  if (matches.length > 0) {
-    const best = Math.max(...matches.map(ruleScore));
-    const top = matches.filter((rule) => ruleScore(rule) === best);
+  const specific = matches.filter((rule) => !isAssignmentOnlyRule(rule));
+  if (specific.length > 0) {
+    const best = Math.max(...specific.map(ruleScore));
+    const top = specific.filter((rule) => ruleScore(rule) === best);
     if (top.some((rule) => !rule.allow)) return false;
     return true;
   }
+  if (matches.some((rule) => isAssignmentOnlyRule(rule) && !rule.allow)) return false;
   if (query.roles.length === 0) return false;
-  return query.roles.some((role) => defaultCabinetAccessAllow(role, query.docType));
+  const gramatvedeOnly = query.roles.includes("gramatvede") && !query.roles.includes("logistika");
+  if (gramatvedeOnly && !gramatvedeCarAssigned(query, rules)) return false;
+  return query.roles.some((role) => defaultCabinetAccessAllow(role, query.docType, query.section));
 }
 
 export function filterDocumentsByCabinetAccess<T extends { section: CabinetSectionId; type: CabinetDocType }>(
@@ -111,4 +164,50 @@ export function canUseCabinetSection(
   return sampleTypes.some((docType) =>
     evaluateCabinetAccess({ ...query, docType: query.docType ?? docType }, rules),
   );
+}
+
+export function visibleCabinetSections(
+  query: Omit<CabinetAccessQuery, "section" | "docType">,
+  rules: readonly CabinetAccessRule[],
+): CabinetSectionId[] {
+  return CABINET_SECTIONS.filter((section) =>
+    canUseCabinetSection({ ...query, section }, rules, SECTION_SAMPLE_TYPES[section]),
+  );
+}
+
+export function cabinetCarVisibleToActor(
+  query: Omit<CabinetAccessQuery, "section" | "docType">,
+  rules: readonly CabinetAccessRule[],
+): boolean {
+  if (isCabinetAdminQuery(query)) return true;
+  if (query.roles.includes("logistika") || query.roles.includes("serviss")) return true;
+  if (query.roles.includes("gramatvede")) return gramatvedeCarAssigned(query, rules);
+  return false;
+}
+
+export function cabinetActorCanWrite(query: Pick<CabinetAccessQuery, "userId" | "roles">): boolean {
+  if (isCabinetAdminQuery(query)) return true;
+  return query.roles.includes("logistika") || query.roles.includes("serviss");
+}
+
+export function cabinetActorHidesSums(query: Pick<CabinetAccessQuery, "userId" | "roles">): boolean {
+  if (isCabinetAdminQuery(query)) return false;
+  if (query.roles.includes("gramatvede")) return false;
+  return query.roles.includes("logistika") || query.roles.includes("serviss");
+}
+
+export function buildCabinetAccessView(
+  query: Omit<CabinetAccessQuery, "section" | "docType">,
+  rules: readonly CabinetAccessRule[],
+): CabinetAccessView {
+  return {
+    write: cabinetActorCanWrite(query),
+    hideSums: cabinetActorHidesSums(query),
+    admin: isCabinetAdminQuery(query),
+    sections: visibleCabinetSections(query, rules),
+  };
+}
+
+export function isCabinetSectionIdList(v: unknown): v is CabinetSectionId[] {
+  return Array.isArray(v) && v.every((x) => isCabinetSectionId(x));
 }

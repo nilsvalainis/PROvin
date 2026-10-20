@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
+import { logisticsCabinetWriteForbidden, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
 import { upsertLogisticsOrder } from "@/lib/iriss-logistics-store";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 
@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const gate = await requireIrissLogisticsApi();
   if (!gate.ok) return gate.response;
+  const denied = logisticsCabinetWriteForbidden(gate.actor);
+  if (denied) return denied;
   let body: unknown = {};
   try {
     body = await req.json();

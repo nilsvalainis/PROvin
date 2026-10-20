@@ -20,10 +20,11 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
   const [rules, setRules] = useState<CabinetAccessRule[]>([]);
   const [audit, setAudit] = useState<AuditRow[]>([]);
   const [userId, setUserId] = useState("");
-  const [role, setRole] = useState<CabinetAccessRole | "">("serviss");
-  const [section, setSection] = useState<CabinetSectionId | "">("A");
-  const [docType, setDocType] = useState<"invoices" | "">("invoices");
-  const [allow, setAllow] = useState(false);
+  const [role, setRole] = useState<CabinetAccessRole | "">("gramatvede");
+  const [carId, setCarId] = useState("");
+  const [section, setSection] = useState<CabinetSectionId | "">("");
+  const [docType, setDocType] = useState<"invoices" | "">("");
+  const [allow, setAllow] = useState(true);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -44,7 +45,7 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, role, section, docType, allow }),
+        body: JSON.stringify({ userId, role, carId: carId.trim(), section, docType, allow }),
       });
       await load();
     } finally {
@@ -71,8 +72,9 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
     <section className="mt-4 rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
       <h2 className="text-[15px] font-semibold">Kabineta pieeja (A/B/C × dokumenta tips)</h2>
       <p className="mt-1 text-[12px] leading-relaxed text-[#6b7280]">
-        Noklusējums: Loģistika redz visu, Grāmatvede visu visiem auto, Serviss neredz rēķinus. Šeit Nils var pārrakstīt
-        lietotājam vai lomai. Pārbaude ir servera pusē; skatījumi paliek auditā.
+        Noklusējums: Loģistika neredz A un rēķinus, Grāmatvede tikai lasa A rēķinus un C piešķirtajiem auto, Serviss
+        neredz rēķinus. Piešķirt auto: lietotājs + Grāmatvede + auto ID, sadaļa Visas, tips Visi, Atļaut. Pārbaude ir
+        servera pusē; skatījumi paliek auditā.
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <label className="text-[12px] text-[#6b7280]">
@@ -96,6 +98,15 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
               </option>
             ))}
           </select>
+        </label>
+        <label className="text-[12px] text-[#6b7280]">
+          Auto ID (tukšs = visi)
+          <input
+            value={carId}
+            onChange={(e) => setCarId(e.target.value)}
+            placeholder="lo-"
+            className="mt-1 h-9 w-full rounded-xl border border-[#E5E7EB] px-2 text-[13px]"
+          />
         </label>
         <label className="text-[12px] text-[#6b7280]">
           Sadaļa
@@ -135,8 +146,9 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
         {rules.map((row) => (
           <li key={row.id} className="flex items-center justify-between gap-2 py-2">
             <span>
-              {row.userId || ROLE_LV[(row.role as CabinetAccessRole) || "logistika"] || row.role} · {row.section || "visas"} ·{" "}
-              {row.docType || "visi"} · {row.allow ? "atļaut" : "aizliegt"}
+              {row.userId || ROLE_LV[(row.role as CabinetAccessRole) || "logistika"] || row.role}
+              {row.carId ? ` · ${row.carId}` : ""} · {row.section || "visas"} · {row.docType || "visi"} ·{" "}
+              {row.allow ? "atļaut" : "aizliegt"}
             </span>
             <button type="button" className="text-[12px] text-[#B42318]" onClick={() => void remove(row.id)}>
               Dzēst

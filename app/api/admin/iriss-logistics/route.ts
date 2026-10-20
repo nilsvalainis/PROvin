@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
+import { cabinetActorCanWrite, cabinetActorHidesSums, cabinetCarVisibleToActor } from "@/lib/iriss-logistics-cabinet-access";
+import { listCabinetAccessRules } from "@/lib/iriss-logistics-cabinet-store";
+import { logisticsCabinetAccessQuery, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
 import { filterLogisticsOrdersByView, isLogisticsOrderActive } from "@/lib/iriss-logistics-archive";
 import { isLogisticsListView, LOGISTICS_DEFAULT_LIST_VIEW } from "@/lib/iriss-logistics-types";
 import {
@@ -27,8 +29,18 @@ export async function GET(req: Request) {
   const view = isLogisticsListView(viewRaw) ? viewRaw : LOGISTICS_DEFAULT_LIST_VIEW;
   const includePrevious = url.searchParams.get("previous") === "1";
   try {
-    const [points, orders] = await Promise.all([listLogisticsPoints(), listLogisticsOrders()]);
-    const filtered = filterLogisticsOrdersByView(orders, view);
+    const [points, orders, rules] = await Promise.all([
+      listLogisticsPoints(),
+      listLogisticsOrders(),
+      listCabinetAccessRules(),
+    ]);
+    const actorQuery = logisticsCabinetAccessQuery(gate.actor, "");
+    const hideSums = cabinetActorHidesSums(actorQuery);
+    const scoped = orders.filter((order) =>
+      cabinetCarVisibleToActor({ ...actorQuery, carId: order.id }, rules),
+    );
+    const visible = hideSums ? scoped.map((order) => ({ ...order, priceEur: null })) : scoped;
+    const filtered = filterLogisticsOrdersByView(visible, view);
     const previous = includePrevious ? await listPreviousLogisticsPoints() : [];
     return NextResponse.json(
       {
@@ -36,9 +48,10 @@ export async function GET(req: Request) {
         view,
         points,
         orders: filtered,
-        allOrderCount: orders.length,
-        activeCount: orders.filter(isLogisticsOrderActive).length,
-        archivedCount: orders.length - orders.filter(isLogisticsOrderActive).length,
+        allOrderCount: scoped.length,
+        activeCount: scoped.filter(isLogisticsOrderActive).length,
+        archivedCount: scoped.length - scoped.filter(isLogisticsOrderActive).length,
+        access: { hideSums, write: cabinetActorCanWrite(actorQuery) },
         previous,
       },
       { headers: irissLogisticsScopeHeader() },

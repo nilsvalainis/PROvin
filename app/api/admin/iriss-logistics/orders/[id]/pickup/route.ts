@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { irissLogisticsScopeHeader, logisticsCabinetActorId, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
+import { irissLogisticsScopeHeader, logisticsCabinetActorId, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
 import { isCabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
 import { upsertCabinetPickup } from "@/lib/iriss-logistics-cabinet-store";
 import { getLogisticsOrder } from "@/lib/iriss-logistics-store";
@@ -12,6 +12,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function PATCH(req: Request, ctx: Ctx) {
   const gate = await requireIrissLogisticsApi();
   if (!gate.ok) return gate.response;
+  const denied = logisticsCabinetWriteForbidden(gate.actor);
+  if (denied) return denied;
   const { id } = await ctx.params;
   const order = await getLogisticsOrder(id);
   if (!order) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });

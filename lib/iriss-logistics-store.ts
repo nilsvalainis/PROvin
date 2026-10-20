@@ -13,6 +13,7 @@ import {
 } from "@/lib/iriss-logistics-archive";
 import {
   decideLogisticsMapsQuota,
+  emptyLogisticsMapsDayUsage,
   emptyLogisticsMapsUsageMonth,
   incrementLogisticsMapsUsage,
   logisticsMapsMonthKey,
@@ -690,8 +691,11 @@ export async function readLogisticsMapsUsage(month = logisticsMapsMonthKey()): P
     for (const [k, v] of Object.entries(raw.days)) {
       if (!isObj(v)) continue;
       days[k] = {
+        ...emptyLogisticsMapsDayUsage(),
         mapsJs: typeof v.mapsJs === "number" ? v.mapsJs : 0,
         geocoding: typeof v.geocoding === "number" ? v.geocoding : 0,
+        geocodePlace: typeof v.geocodePlace === "number" ? v.geocodePlace : 0,
+        searchDestinations: typeof v.searchDestinations === "number" ? v.searchDestinations : 0,
       };
     }
   }
@@ -700,6 +704,8 @@ export async function readLogisticsMapsUsage(month = logisticsMapsMonthKey()): P
     month,
     mapsJs: typeof raw.mapsJs === "number" ? raw.mapsJs : 0,
     geocoding: typeof raw.geocoding === "number" ? raw.geocoding : 0,
+    geocodePlace: typeof raw.geocodePlace === "number" ? raw.geocodePlace : 0,
+    searchDestinations: typeof raw.searchDestinations === "number" ? raw.searchDestinations : 0,
     days,
   };
 }

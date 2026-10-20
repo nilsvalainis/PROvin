@@ -1,4 +1,4 @@
-import type { LogisticsMapsApi, LogisticsMapsUsageMonth } from "@/lib/iriss-logistics-types";
+import type { LogisticsMapsApi, LogisticsMapsDayUsage, LogisticsMapsUsageMonth } from "@/lib/iriss-logistics-types";
 
 /** Google Maps Platform bezmaksas slieksnis, ko turam ar rezervi. */
 export const LOGISTICS_MAPS_MONTHLY_CAP = 10_000;
@@ -10,6 +10,20 @@ export const LOGISTICS_MAPS_LIMIT_NOTICE =
 
 export const LOGISTICS_MAPS_DAILY_NOTICE =
   "Šodienas Google Maps limits (~320 izsaukumi) ir sasniegts. Mēģiniet rīt - mēneša kopējais limits paliek 10 000.";
+
+export const LOGISTICS_GEOCODE_PLACE_URL = "https://geocode.googleapis.com/v4/geocode/places";
+export const LOGISTICS_SEARCH_DESTINATIONS_URL = "https://geocode.googleapis.com/v4/geocode/destinations";
+
+export const LOGISTICS_MAPS_API_FIELD: Record<LogisticsMapsApi, keyof LogisticsMapsDayUsage> = {
+  maps_js: "mapsJs",
+  geocoding: "geocoding",
+  geocode_place: "geocodePlace",
+  search_destinations: "searchDestinations",
+};
+
+export function emptyLogisticsMapsDayUsage(): LogisticsMapsDayUsage {
+  return { mapsJs: 0, geocoding: 0, geocodePlace: 0, searchDestinations: 0 };
+}
 
 export function logisticsMapsMonthKey(at = new Date()): string {
   const y = at.getUTCFullYear();
@@ -25,11 +39,19 @@ export function logisticsMapsDayKey(at = new Date()): string {
 }
 
 export function emptyLogisticsMapsUsageMonth(month: string): LogisticsMapsUsageMonth {
-  return { version: 1, month, mapsJs: 0, geocoding: 0, days: {} };
+  return {
+    version: 1,
+    month,
+    mapsJs: 0,
+    geocoding: 0,
+    geocodePlace: 0,
+    searchDestinations: 0,
+    days: {},
+  };
 }
 
 export function logisticsMapsUsed(usage: LogisticsMapsUsageMonth, api: LogisticsMapsApi): number {
-  return api === "maps_js" ? usage.mapsJs : usage.geocoding;
+  return usage[LOGISTICS_MAPS_API_FIELD[api]];
 }
 
 export function logisticsMapsDayUsed(
@@ -39,7 +61,7 @@ export function logisticsMapsDayUsed(
 ): number {
   const row = usage.days[day];
   if (!row) return 0;
-  return api === "maps_js" ? row.mapsJs : row.geocoding;
+  return row[LOGISTICS_MAPS_API_FIELD[api]] ?? 0;
 }
 
 export type LogisticsMapsQuotaDecision = {
@@ -114,37 +136,37 @@ export function incrementLogisticsMapsUsage(
   at = new Date(),
 ): LogisticsMapsUsageMonth {
   const day = logisticsMapsDayKey(at);
-  const prev = usage.days[day] ?? { mapsJs: 0, geocoding: 0 };
-  const nextDay =
-    api === "maps_js"
-      ? { mapsJs: prev.mapsJs + 1, geocoding: prev.geocoding }
-      : { mapsJs: prev.mapsJs, geocoding: prev.geocoding + 1 };
+  const field = LOGISTICS_MAPS_API_FIELD[api];
+  const prev = { ...emptyLogisticsMapsDayUsage(), ...(usage.days[day] ?? {}) };
+  const nextDay = { ...prev, [field]: (prev[field] ?? 0) + 1 };
   return {
     ...usage,
-    mapsJs: api === "maps_js" ? usage.mapsJs + 1 : usage.mapsJs,
-    geocoding: api === "geocoding" ? usage.geocoding + 1 : usage.geocoding,
+    mapsJs: usage.mapsJs ?? 0,
+    geocoding: usage.geocoding ?? 0,
+    geocodePlace: usage.geocodePlace ?? 0,
+    searchDestinations: usage.searchDestinations ?? 0,
+    [field]: (usage[field] ?? 0) + 1,
     days: { ...usage.days, [day]: nextDay },
   };
 }
 
+function apiSummary(usage: LogisticsMapsUsageMonth, api: LogisticsMapsApi, at: Date) {
+  const d = decideLogisticsMapsQuota({ usage, api, at });
+  return {
+    monthlyUsed: d.monthlyUsed,
+    monthlyCap: d.monthlyCap,
+    dailyUsed: d.dailyUsed,
+    dailyCap: d.dailyCap,
+    remainingMonthly: d.remainingMonthly,
+  };
+}
+
 export function logisticsMapsUsageSummary(usage: LogisticsMapsUsageMonth, at = new Date()) {
-  const mapsJs = decideLogisticsMapsQuota({ usage, api: "maps_js", at });
-  const geocoding = decideLogisticsMapsQuota({ usage, api: "geocoding", at });
   return {
     month: usage.month,
-    mapsJs: {
-      monthlyUsed: mapsJs.monthlyUsed,
-      monthlyCap: mapsJs.monthlyCap,
-      dailyUsed: mapsJs.dailyUsed,
-      dailyCap: mapsJs.dailyCap,
-      remainingMonthly: mapsJs.remainingMonthly,
-    },
-    geocoding: {
-      monthlyUsed: geocoding.monthlyUsed,
-      monthlyCap: geocoding.monthlyCap,
-      dailyUsed: geocoding.dailyUsed,
-      dailyCap: geocoding.dailyCap,
-      remainingMonthly: geocoding.remainingMonthly,
-    },
+    mapsJs: apiSummary(usage, "maps_js", at),
+    geocoding: apiSummary(usage, "geocoding", at),
+    geocodePlace: apiSummary(usage, "geocode_place", at),
+    searchDestinations: apiSummary(usage, "search_destinations", at),
   };
 }

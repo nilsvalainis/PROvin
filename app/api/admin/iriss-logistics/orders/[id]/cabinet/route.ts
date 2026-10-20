@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
-import { filterDocumentsByCabinetAccess } from "@/lib/iriss-logistics-cabinet-access";
+import { buildCabinetAccessView, filterDocumentsByCabinetAccess } from "@/lib/iriss-logistics-cabinet-access";
 import { defaultPickupStageFromOrderStatus } from "@/lib/iriss-logistics-cabinet";
 import { appendCabinetAudit, getCabinetPickup, listCabinetAccessRules, listLiveCabinetDocuments } from "@/lib/iriss-logistics-cabinet-store";
 import { getLogisticsOrder } from "@/lib/iriss-logistics-store";
@@ -22,6 +22,7 @@ export async function GET(_req: Request, ctx: Ctx) {
     listCabinetAccessRules(),
   ]);
   const query = logisticsCabinetAccessQuery(gate.actor, id);
+  const access = buildCabinetAccessView(query, rules);
   const visible = filterDocumentsByCabinetAccess(documents, query, rules);
   if (visible.length) {
     await appendCabinetAudit({
@@ -38,6 +39,7 @@ export async function GET(_req: Request, ctx: Ctx) {
     {
       ok: true,
       documents: visible,
+      access,
       pickup: pickup ?? {
         carId: id,
         stage: defaultPickupStageFromOrderStatus(order.status),

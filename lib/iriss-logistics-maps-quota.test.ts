@@ -3,9 +3,11 @@ import {
   decideLogisticsMapsQuota,
   emptyLogisticsMapsUsageMonth,
   incrementLogisticsMapsUsage,
+  LOGISTICS_GEOCODE_PLACE_URL,
   LOGISTICS_MAPS_DAILY_CAP,
   LOGISTICS_MAPS_LIMIT_NOTICE,
   LOGISTICS_MAPS_MONTHLY_CAP,
+  LOGISTICS_SEARCH_DESTINATIONS_URL,
   logisticsMapsDayKey,
   logisticsMapsMonthKey,
 } from "@/lib/iriss-logistics-maps-quota";
@@ -40,5 +42,25 @@ describe("Google Maps hard counters", () => {
     expect(d.reason).toBe("daily_cap");
     expect(LOGISTICS_MAPS_DAILY_CAP).toBe(320);
     expect(LOGISTICS_MAPS_MONTHLY_CAP).toBe(10_000);
+  });
+
+  it("caps GeocodePlace and SearchDestinations at 320/day like the others", () => {
+    const usage = emptyLogisticsMapsUsageMonth("2026-10");
+    usage.days[logisticsMapsDayKey(at)] = {
+      mapsJs: 0,
+      geocoding: 0,
+      geocodePlace: LOGISTICS_MAPS_DAILY_CAP,
+      searchDestinations: LOGISTICS_MAPS_DAILY_CAP,
+    };
+    usage.geocodePlace = LOGISTICS_MAPS_DAILY_CAP;
+    usage.searchDestinations = LOGISTICS_MAPS_DAILY_CAP;
+    expect(decideLogisticsMapsQuota({ usage, api: "geocode_place", at }).allowed).toBe(false);
+    expect(decideLogisticsMapsQuota({ usage, api: "search_destinations", at }).allowed).toBe(false);
+    expect(decideLogisticsMapsQuota({ usage, api: "geocode_place", at }).reason).toBe("daily_cap");
+    expect(LOGISTICS_GEOCODE_PLACE_URL).toContain("/v4/geocode/places");
+    expect(LOGISTICS_SEARCH_DESTINATIONS_URL).toContain("/v4/geocode/destinations");
+    const next = incrementLogisticsMapsUsage(emptyLogisticsMapsUsageMonth("2026-10"), "geocode_place", at);
+    expect(next.geocodePlace).toBe(1);
+    expect(next.searchDestinations).toBe(0);
   });
 });

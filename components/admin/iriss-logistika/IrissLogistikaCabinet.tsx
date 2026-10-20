@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import {
   CABINET_DOC_TYPE_LABEL,
@@ -19,8 +20,10 @@ import {
   type CabinetPickupStage,
   type CabinetSectionId,
 } from "@/lib/iriss-logistics-cabinet";
+import type { CabinetAccessView } from "@/lib/iriss-logistics-cabinet-access";
 import { isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import { logisticsGoogleMapsDirUrl } from "@/lib/iriss-logistics-maps-dir";
+import { logisticsParkingDeadlineTimer } from "@/lib/iriss-logistics-parking-timer";
 import {
   formatLogisticsAddress,
   formatLogisticsDate,
@@ -72,12 +75,25 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
   const [pickupCode, setPickupCode] = useState(order.pickupRef);
   const [note, setNote] = useState(order.notes);
   const [parkingUntil, setParkingUntil] = useState(order.freeParkingUntil);
+  const [access, setAccess] = useState<CabinetAccessView>({
+    write: false,
+    hideSums: true,
+    admin: false,
+    sections: [],
+  });
+  const [accessReady, setAccessReady] = useState(false);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
     setPickupCode(order.pickupRef);
     setNote(order.notes);
     setParkingUntil(order.freeParkingUntil);
   }, [order.id, order.pickupRef, order.notes, order.freeParkingUntil]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowMs(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const stage: CabinetPickupStage = pickup?.stage ?? defaultPickupStageFromOrderStatus(order.status);
   const arrived = stage === "arrived";
@@ -113,11 +129,13 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
   useEffect(() => {
     let cancelled = false;
     void fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(order.id)}/cabinet`, { credentials: "include" })
-      .then((res) => res.json() as Promise<{ documents?: CabinetDocument[]; pickup?: CabinetPickup }>)
+      .then((res) => res.json() as Promise<{ documents?: CabinetDocument[]; pickup?: CabinetPickup; access?: CabinetAccessView }>)
       .then((body) => {
         if (cancelled) return;
         setDocuments(body.documents ?? []);
         setPickup(body.pickup ?? null);
+        if (body.access) setAccess(body.access);
+        setAccessReady(true);
       })
       .catch(() => undefined);
     return () => {
@@ -234,16 +252,24 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
       </div>
       <p className="mt-3 rounded-xl bg-[#f8fafc] px-3 py-2 text-[13px]">
         {order.createdAt ? `Nopirkts ${formatLogisticsDate(order.createdAt.slice(0, 10))}` : LOGISTICS_ORDER_STATUS_LV[order.status]}
-        {order.priceEur != null ? ` · apmaksāts ${formatLogisticsEur(order.priceEur)}` : ""}
+        {!access.hideSums && order.priceEur != null ? ` · apmaksāts ${formatLogisticsEur(order.priceEur)}` : ""}
         {order.pickupDate ? ` · pickup ${formatLogisticsDate(order.pickupDate)}` : ""}
       </p>
+
+      {access.admin ? (
+        <p className="mt-2 text-[12px]">
+          <Link href="/admin/iriss/iestatijumi/lietotaji" className="font-semibold text-[var(--acc)]">
+            Grāmatveža piekļuve
+          </Link>
+        </p>
+      ) : null}
 
       <div className="mt-3 grid gap-2">
         <label className="block text-[12px] text-[var(--ink2)]">
           Statuss
           <select
             value={order.status}
-            disabled={isLogisticsOrderArchived(order)}
+            disabled={!access.write || isLogisticsOrderArchived(order)}
             onChange={(e) => {
               const next = e.target.value;
               if (isLogisticsOrderStatus(next)) void saveOrderFields({ status: next });
@@ -264,9 +290,10 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
           Pickup kods
           <input
             value={pickupCode}
+            disabled={!access.write}
             onChange={(e) => setPickupCode(e.target.value)}
             onBlur={() => {
-              if (pickupCode.trim() === (order.pickupRef || "").trim()) return;
+              if (!access.write || pickupCode.trim() === (order.pickupRef || "").trim()) return;
               void savePickupCode(pickupCode.trim());
             }}
             className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2 font-mono text-[13px]"
@@ -276,23 +303,34 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
           Bezmaksas stāvvieta līdz
           <input
             type="date"
+            disabled={!access.write}
             value={parkingUntil.slice(0, 10)}
             onChange={(e) => {
               const next = e.target.value;
               setParkingUntil(next);
-              if (next === (order.freeParkingUntil || "").slice(0, 10)) return;
+              if (!access.write || next === (order.freeParkingUntil || "").slice(0, 10)) return;
               void saveOrderFields({ freeParkingUntil: next });
             }}
             className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2 text-[13px]"
           />
+          {(() => {
+            const timer = logisticsParkingDeadlineTimer(parkingUntil, new Date(nowMs));
+            if (!timer.label) return null;
+            return (
+              <span className={`mt-1 block text-[12px] font-semibold ${timer.overdue ? "text-red-700" : "text-emerald-700"}`}>
+                {timer.label}
+              </span>
+            );
+          })()}
         </label>
         <label className="block text-[12px] text-[var(--ink2)]">
           Piezīme
           <textarea
             value={note}
+            disabled={!access.write}
             onChange={(e) => setNote(e.target.value)}
             onBlur={() => {
-              if (note.trim() === (order.notes || "").trim()) return;
+              if (!access.write || note.trim() === (order.notes || "").trim()) return;
               void saveOrderFields({ notes: note });
             }}
             rows={3}
@@ -301,7 +339,8 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
         </label>
       </div>
 
-      {CABINET_SECTIONS.map((section) => (
+      {accessReady
+        ? CABINET_SECTIONS.filter((section) => access.sections.includes(section)).map((section) => (
         <section key={section} className="iriss-log-cab-sec mt-3">
           <button type="button" className="iriss-log-cab-head" onClick={() => toggleSection(section)} aria-expanded={open[section]}>
             <span className="iriss-log-cab-letter">{section}</span>
@@ -335,11 +374,13 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                 ))}
                 {docsA.length === 0 ? <li className="px-2 py-2 text-[12.5px] text-[var(--ink2)]">Nav augšupielādētu dokumentu.</li> : null}
               </ul>
-              <UploadRow
-                types={A_UPLOAD_TYPES}
-                busy={uploading === "A"}
-                onUpload={(type, file) => void uploadFile("A", type, file)}
-              />
+              {access.write ? (
+                <UploadRow
+                  types={A_UPLOAD_TYPES}
+                  busy={uploading === "A"}
+                  onUpload={(type, file) => void uploadFile("A", type, file)}
+                />
+              ) : null}
             </div>
           ) : null}
 
@@ -351,7 +392,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                   <button
                     key={key}
                     type="button"
-                    disabled={arrived}
+                    disabled={!access.write || arrived}
                     onClick={() => void setStage(key)}
                     className={`h-8 rounded-full text-[12px] font-semibold ${stage === key && !arrived ? "bg-white shadow-sm" : "text-[var(--ink3)]"}`}
                   >
@@ -360,7 +401,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                 ))}
               </div>
               <p className="mt-1.5 text-[12px] text-[var(--ink2)]">Atvests atbloķē sadaļu C un pārvieto auto uz Autoparku.</p>
-              {!arrived ? (
+              {!arrived && access.write ? (
                 <button type="button" onClick={() => void setStage("arrived")} className="mt-2 h-8 rounded-full border border-[#e5e7eb] px-3 text-[12px] font-semibold">
                   Atzīmēt kā Atvests
                 </button>
@@ -379,7 +420,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                     <a href={`/api/admin/iriss-logistics/documents/${encodeURIComponent(pickupPdf.id)}`} target="_blank" rel="noreferrer" className="rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold">
                       Atvērt
                     </a>
-                  ) : (
+                  ) : access.write ? (
                     <label className="rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold">
                       Augšupielādēt
                       <input
@@ -393,6 +434,8 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                         }}
                       />
                     </label>
+                  ) : (
+                    <span className="rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] text-[var(--ink3)]">tikai lasīšana</span>
                   )}
                 </div>
                 {pickupPdf ? <p className="mt-1 text-[11px] font-semibold text-emerald-700">kods redzams</p> : <p className="mt-1 text-[11px] text-[var(--ink3)]">nav pickup dokumenta</p>}
@@ -412,6 +455,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                 Punkts
                 <select
                   value={order.pickupPointId}
+                  disabled={!access.write}
                   onChange={(e) => onAssignPoint(order.id, e.target.value)}
                   className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2 text-[13px]"
                 >
@@ -459,9 +503,9 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                   <DocRow key={d.id} doc={d} />
                 ))}
               </ul>
-              {arrived ? (
+              {arrived && access.write ? (
                 <UploadRow
-                  types={C_UPLOAD_TYPES}
+                  types={C_UPLOAD_TYPES.filter((t) => t !== "service_invoice" || !access.hideSums)}
                   busy={uploading === "C"}
                   onUpload={(type, file) => void uploadFile("C", type, file)}
                 />
@@ -469,24 +513,27 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
             </div>
           ) : null}
         </section>
-      ))}
+      ))
+        : null}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {isLogisticsOrderArchived(order) ? (
-          <button type="button" onClick={() => onPatchOrder(order.id, "wake")} className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
-            Pamodināt
-          </button>
-        ) : (
-          <>
-            <button type="button" onClick={() => onPatchOrder(order.id, "picked_up")} className="h-9 rounded-full border border-[#e5e7eb] px-3 text-[12.5px] font-semibold">
-              Izņemts
+      {access.write ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {isLogisticsOrderArchived(order) ? (
+            <button type="button" onClick={() => onPatchOrder(order.id, "wake")} className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
+              Pamodināt
             </button>
-            <button type="button" onClick={() => onPatchOrder(order.id, "delivered")} className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
-              Piegādāts
-            </button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <button type="button" onClick={() => onPatchOrder(order.id, "picked_up")} className="h-9 rounded-full border border-[#e5e7eb] px-3 text-[12.5px] font-semibold">
+                Izņemts
+              </button>
+              <button type="button" onClick={() => onPatchOrder(order.id, "delivered")} className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
+                Piegādāts
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
     </aside>
   );
 }
