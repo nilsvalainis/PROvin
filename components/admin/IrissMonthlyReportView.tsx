@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { formatYearMonthKey, shiftYearMonth } from "@/lib/admin-riga-calendar";
@@ -36,8 +37,35 @@ export function IrissMonthlyReportView({
   const prev = shiftYearMonth(report.year, report.month, -1);
   const next = shiftYearMonth(report.year, report.month, 1);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const mobileAboutTriggerRef = useRef<HTMLButtonElement>(null);
+  const desktopAboutTriggerRef = useRef<HTMLButtonElement>(null);
+  const lastAboutFrom = useRef<"mobile" | "desktop">("desktop");
   const deltas = irissMonthlyMetricDeltas(irissMonthlyMetricSnapshot(report), irissMonthlyMetricSnapshot(previous));
   const prevLoc = formatIrissReportMonthLocative(previous.month);
+
+  function openAbout(from: "mobile" | "desktop") {
+    lastAboutFrom.current = from;
+    setAboutOpen(true);
+  }
+
+  function closeAbout() {
+    setAboutOpen(false);
+    window.requestAnimationFrame(() => {
+      (lastAboutFrom.current === "mobile" ? mobileAboutTriggerRef : desktopAboutTriggerRef).current?.focus();
+    });
+  }
+
+  useEffect(() => {
+    if (!aboutOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeAbout();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [aboutOpen]);
 
   function downloadCsv() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -74,23 +102,26 @@ export function IrissMonthlyReportView({
     </div>
   );
 
-  const overflow = (
-    <IrissOverflowMenu label="Vairāk">
-      <IrissOverflowItem onClick={downloadCsv}>Lejupielādēt CSV</IrissOverflowItem>
-      <IrissOverflowItem onClick={() => setAboutOpen(true)}>{IRISS_REPORT_ABOUT_TITLE}</IrissOverflowItem>
-    </IrissOverflowMenu>
-  );
+  function overflowFor(from: "mobile" | "desktop") {
+    return (
+      <IrissOverflowMenu label="Vairāk" triggerRef={from === "mobile" ? mobileAboutTriggerRef : desktopAboutTriggerRef}>
+        <IrissOverflowItem onClick={downloadCsv}>Lejupielādēt CSV</IrissOverflowItem>
+        <IrissOverflowItem onClick={() => openAbout(from)}>{IRISS_REPORT_ABOUT_TITLE}</IrissOverflowItem>
+      </IrissOverflowMenu>
+    );
+  }
 
   return (
     <div className="iriss-atskaite-view">
       <div className="md:hidden">
-        <AdminMobileTopBar title="Mēneša atskaite" trailing={overflow}>
+        <AdminMobileTopBar title="Mēneša atskaite" trailing={overflowFor("mobile")}>
           {monthNav}
         </AdminMobileTopBar>
       </div>
 
       <header className="mb-4 hidden md:block">
         <div className="flex items-center gap-2">
+          <AdminCollapsedMenuButton className="mt-0.5" />
           <div className="min-w-0 flex-1">
             <h1 className="text-[22px] font-bold tracking-tight text-[var(--ink)]">Mēneša atskaite</h1>
             <p className="mt-1 text-[13px] text-[var(--ink2)]">
@@ -105,18 +136,18 @@ export function IrissMonthlyReportView({
           >
             Lejupielādēt CSV
           </button>
-          {overflow}
+          {overflowFor("desktop")}
         </div>
       </header>
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <Stat label="Pasūtījumi" value={report.ordersCreated} hint={formatIrissMonthlyDelta(deltas.ordersCreated, prevLoc)} />
-        <Stat label="Aktīvi" value={report.ordersByStatus.active} hint={formatIrissMonthlyDelta(deltas.active)} />
-        <Stat label="Izpildīti" value={report.ordersByStatus.completed} hint={formatIrissMonthlyDelta(deltas.completed)} />
-        <Stat label="Neaktīvi" value={report.ordersByStatus.inactive} hint={formatIrissMonthlyDelta(deltas.inactive)} />
-        <Stat label="Piedāvājumi" value={report.offersCreated} hint={formatIrissMonthlyDelta(deltas.offersCreated)} />
-        <Stat label="Ar piedāvājumu" value={report.ordersWithOffers} hint={formatIrissMonthlyDelta(deltas.ordersWithOffers)} />
-        <Stat label="Laboti piedāvājumi" value={report.offersUpdated} hint={formatIrissMonthlyDelta(deltas.offersUpdated)} />
+        <Stat label="Aktīvi" value={report.ordersByStatus.active} hint={formatIrissMonthlyDelta(deltas.active, prevLoc)} />
+        <Stat label="Izpildīti" value={report.ordersByStatus.completed} hint={formatIrissMonthlyDelta(deltas.completed, prevLoc)} />
+        <Stat label="Neaktīvi" value={report.ordersByStatus.inactive} hint={formatIrissMonthlyDelta(deltas.inactive, prevLoc)} />
+        <Stat label="Piedāvājumi" value={report.offersCreated} hint={formatIrissMonthlyDelta(deltas.offersCreated, prevLoc)} />
+        <Stat label="Ar piedāvājumu" value={report.ordersWithOffers} hint={formatIrissMonthlyDelta(deltas.ordersWithOffers, prevLoc)} />
+        <Stat label="Laboti piedāvājumi" value={report.offersUpdated} hint={formatIrissMonthlyDelta(deltas.offersUpdated, prevLoc)} />
         <Stat label="PDF ģenerēšana" value={IRISS_REPORT_PDF_VALUE} hint={IRISS_REPORT_PDF_HINT} muted />
       </div>
 
@@ -179,7 +210,7 @@ export function IrissMonthlyReportView({
       {aboutOpen ? (
         <div
           className="fixed inset-0 z-[140] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={() => setAboutOpen(false)}
+          onClick={closeAbout}
           role="presentation"
         >
           <div
@@ -190,12 +221,12 @@ export function IrissMonthlyReportView({
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="iriss-report-about-title" className="text-[16px] font-semibold text-[var(--ink)]">
-              {IRISS_REPORT_ABOUT_TITLE}
+              Par atskaiti
             </h2>
             <p className="mt-2 text-[14px] leading-relaxed text-[var(--ink2)]">{IRISS_REPORT_ABOUT}</p>
             <button
               type="button"
-              onClick={() => setAboutOpen(false)}
+              onClick={closeAbout}
               className="mt-4 inline-flex h-10 items-center rounded-full bg-[var(--s2)] px-4 text-[13px] font-semibold text-[var(--ink)]"
             >
               Aizvērt

@@ -56,6 +56,7 @@ describe("IRISS mobile safe-area layout", () => {
   });
 
   it("uses compact editor icons, scrolling tabs, and keeps Saglabāt", () => {
+    expect(src.room).toContain("AdminDashboardHeaderWithMenu");
     expect(src.room).toMatch(/mobileTitle=\{title\}/);
     expect(src.room).toMatch(/AdminMobileSaveStatus/);
     expect(src.room).toMatch(/aria-label="Zvanīt"/);

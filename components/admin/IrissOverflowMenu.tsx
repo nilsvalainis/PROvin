@@ -1,17 +1,19 @@
 "use client";
 
 import { MoreHorizontal } from "lucide-react";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
 
 export function IrissOverflowMenu({
   label = "Vairāk",
   align = "end",
   triggerClassName,
+  triggerRef,
   children,
 }: {
   label?: string;
   align?: "start" | "end";
   triggerClassName?: string;
+  triggerRef?: Ref<HTMLButtonElement>;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -41,6 +43,7 @@ export function IrissOverflowMenu({
   return (
     <div ref={rootRef} className="relative inline-flex">
       <button
+        ref={triggerRef}
         type="button"
         className={
           triggerClassName ??

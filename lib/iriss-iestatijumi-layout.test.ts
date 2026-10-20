@@ -9,6 +9,7 @@ describe("iriss settings layout", () => {
     const limits = readFileSync("components/admin/IrissMarketplaceLimitsCard.tsx", "utf8");
     const copy = readFileSync("lib/iriss-iestatijumi-view.ts", "utf8");
 
+    expect(page).toContain("AdminDashboardHeaderWithMenu");
     expect(page).toContain("iriss-iestatijumi-view");
     expect(page).toContain("bg-[var(--bg-base)]");
     expect(page).toContain("IrissMarketplaceLimitsCard");

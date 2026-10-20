@@ -9,6 +9,7 @@ describe("radar list Jauns ieraksts and leftovers", () => {
     const empty = readFileSync("app/admin/iriss/scan/page.tsx", "utf8");
     const editor = readFileSync("components/admin/IrissScanEditor.tsx", "utf8");
     const findsUi = readFileSync("components/admin/IrissScanFinds.tsx", "utf8");
+    expect(list).toContain("AdminCollapsedMenuButton");
     expect(list).toContain('href="/admin/iriss/scan/new"');
     expect(list.match(/Jauns ieraksts/g)?.length).toBeGreaterThanOrEqual(1);
     expect(list).toMatch(/AdminMobileRoundBtn name="pievienot"/);

@@ -14,8 +14,8 @@ describe("iriss monthly report view copy", () => {
     expect(formatIrissReportNavLabel(2026, 10)).toBe("Oktobris 2026");
     expect(formatIrissReportMonthLocative(9)).toBe("septembri");
     expect(formatIrissMonthlyDelta(3, "septembri")).toBe("+3 pret septembri");
-    expect(formatIrissMonthlyDelta(0)).toBe("bez izmaiņām");
-    expect(formatIrissMonthlyDelta(-1)).toBe("-1");
+    expect(formatIrissMonthlyDelta(0, "septembri")).toBe("bez izmaiņām");
+    expect(formatIrissMonthlyDelta(-1, "septembri")).toBe("-1 pret septembri");
   });
 
   it("shows Bez vārda and Nav datu without long dashes", () => {

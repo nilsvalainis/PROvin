@@ -4,6 +4,7 @@ import { ChevronRight, Pin, RefreshCw, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { IrissScanEditor } from "@/components/admin/IrissScanEditor";
 import { IrissScanFinds } from "@/components/admin/IrissScanFinds";
@@ -246,6 +247,7 @@ export function IrissScanListClient({
       {showList ? (
         <header className="iriss-scan-toolbar mb-3 hidden md:block">
           <div className="flex items-center gap-2">
+            <AdminCollapsedMenuButton className="mt-0.5" />
             <h1 className="shrink-0 text-[22px] font-bold tracking-tight text-[var(--ink)]">Radars</h1>
             <label className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink3)]" aria-hidden />
