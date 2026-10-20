@@ -39,7 +39,8 @@ import {
   type UnmappedCriterion,
 } from "@/lib/iriss-listings-ecarstrade-criteria";
 import { ECARSTRADE_ORIGIN, ECARSTRADE_SEARCH_PATH } from "@/lib/iriss-listings-ecarstrade";
-import { parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
+import { parseIrissOrderBoundRange } from "@/lib/iriss-listings-orders";
+import { splitModelExtensions } from "@/lib/iriss-model-extension";
 
 export type EcarstradeSearchFilter = {
   /** Viena vai vairākas markas (`mark[]` atkārtojas). */
@@ -71,11 +72,13 @@ export type EcarstradeSearchFilter = {
   emissionFrom: string;
   /** ET URL nav piedziņas lauka: `iriss_drive`. */
   drives: EcarstradeDrive[];
-  /** Obligātais aprīkojums / variants: `iriss_need` (post-filtrs). */
+  /** Aģenta piezīmes / variants: `iriss_need` (grāmatzīme, ne aprīkojums). */
   includeTokens: string[];
   /** Izslēgtie modeļi / teksts: `iriss_exclude`. */
   excludeTokens: string[];
   excludeColors: string[];
+  /** Modeļa paplašinājums (S-line). Virsraksta saturam. */
+  modelExtensions: string[];
   unmapped: UnmappedCriterion[];
 };
 
@@ -98,6 +101,8 @@ export type OrderSearchFields = {
   preferredColors?: string;
   nonPreferredColors?: string;
   equipmentRequired?: string;
+  agentNotes?: string;
+  modelExtension?: string;
   dealVat21Required?: boolean;
 };
 
@@ -163,6 +168,7 @@ const emptyFilter = (): EcarstradeSearchFilter => ({
   includeTokens: [],
   excludeTokens: [],
   excludeColors: [],
+  modelExtensions: [],
   unmapped: [],
 });
 
@@ -994,10 +1000,12 @@ export function filterFromOrderFields(fields: OrderSearchFields): EcarstradeSear
   const years = parseYearPeriod(fields.productionYears ?? "");
   filter.yearFrom = years.from;
   filter.yearTo = years.to;
-  const km = intFromRaw(fields.maxMileage ?? "");
-  if (km != null) filter.mileageTo = km;
-  const budget = parseIrissOrderBudget(fields.totalBudget ?? "");
-  if (budget != null) filter.priceTo = budget;
+  const km = parseIrissOrderBoundRange(fields.maxMileage ?? "");
+  if (km.from != null) filter.mileageFrom = km.from;
+  if (km.to != null) filter.mileageTo = km.to;
+  const budget = parseIrissOrderBoundRange(fields.totalBudget ?? "");
+  if (budget.from != null) filter.priceFrom = budget.from;
+  if (budget.to != null) filter.priceTo = budget.to;
   const fuel = mapFuel(fields.engineType ?? "");
   if (fuel) filter.fuels = [fuel];
   const cc = mapEngineCc(fields.engineType ?? "");
@@ -1019,7 +1027,8 @@ export function filterFromOrderFields(fields: OrderSearchFields): EcarstradeSear
   filter.excludeColors = uniq(
     (fields.nonPreferredColors ?? "").split(/[,;/]+/).map(mapEcarstradeColor).filter((x): x is string => Boolean(x)),
   );
-  filter.includeTokens = uniq(splitListTokens(fields.equipmentRequired ?? ""));
+  filter.includeTokens = uniq(splitListTokens(fields.agentNotes ?? ""));
+  filter.modelExtensions = splitModelExtensions(fields.modelExtension ?? "");
   if (fields.dealVat21Required) filter.vat = ["reclaimable"];
   return filter;
 }
@@ -1059,6 +1068,8 @@ export function applyEcarstradeOrderCriteria(
     priceTo: price.to,
     fuels: filter.fuels.length ? [...filter.fuels] : [...order.fuels],
     gearboxes: filter.gearboxes.length ? [...filter.gearboxes] : [...order.gearboxes],
+    includeTokens: uniq([...(filter.includeTokens ?? []), ...(order.includeTokens ?? [])]),
+    modelExtensions: uniq([...(filter.modelExtensions ?? []), ...(order.modelExtensions ?? [])]),
   };
 }
 
@@ -1099,6 +1110,7 @@ export function fillFilterGaps(filter: EcarstradeSearchFilter, extra: Ecarstrade
     includeTokens: uniq([...filter.includeTokens, ...extra.includeTokens]),
     excludeTokens: uniq([...filter.excludeTokens, ...extra.excludeTokens]),
     excludeColors: uniq([...filter.excludeColors, ...extra.excludeColors]),
+    modelExtensions: uniq([...(filter.modelExtensions ?? []), ...(extra.modelExtensions ?? [])]),
     unmapped: [...filter.unmapped, ...extra.unmapped],
   });
 }
@@ -1221,6 +1233,7 @@ export function mergeCompatibleEcarstradeFilters(a: EcarstradeSearchFilter, b: E
     includeTokens: uniq([...a.includeTokens, ...b.includeTokens]),
     excludeTokens: uniq([...a.excludeTokens, ...b.excludeTokens]),
     excludeColors: uniq([...a.excludeColors, ...b.excludeColors]),
+    modelExtensions: uniq([...(a.modelExtensions ?? []), ...(b.modelExtensions ?? [])]),
     unmapped: [...a.unmapped, ...b.unmapped],
   };
 }
@@ -1308,6 +1321,7 @@ export function ecarstradeFilterSignature(filter: EcarstradeSearchFilter): strin
     [...filter.includeTokens].sort().join(","),
     [...filter.excludeTokens].sort().join(","),
     [...filter.excludeColors].sort().join(","),
+    [...(filter.modelExtensions ?? [])].sort().join(","),
   ].join("|");
 }
 
@@ -1356,7 +1370,8 @@ export function describeEcarstradeFilter(filter: EcarstradeSearchFilter): string
   if (filter.vat.length) lines.push(`PVN: ${filter.vat.join(", ")}`);
   if (filter.emissionFrom) lines.push(`emisija: ${filter.emissionFrom}`);
   if (filter.drives.length) lines.push(`piedziņa (post-filtrs): ${filter.drives.join(", ")}`);
-  if (filter.includeTokens.length) lines.push(`aprīkojums (post-filtrs): ${filter.includeTokens.join(", ")}`);
+  if (filter.includeTokens.length) lines.push(`aģentam (grāmatzīme): ${filter.includeTokens.join(", ")}`);
+  if (filter.modelExtensions?.length) lines.push(`modeļa paplašinājums: ${filter.modelExtensions.join(", ")}`);
   if (filter.excludeTokens.length) lines.push(`izslēgts (post-filtrs): ${filter.excludeTokens.join(", ")}`);
   if (filter.excludeColors.length) lines.push(`izslēgtas krāsas (post-filtrs): ${filter.excludeColors.join(", ")}`);
   if (filter.unmapped.length) {
@@ -1380,6 +1395,7 @@ export function cloneEcarstradeFilter(filter: EcarstradeSearchFilter): Ecarstrad
     includeTokens: [...filter.includeTokens],
     excludeTokens: [...filter.excludeTokens],
     excludeColors: [...filter.excludeColors],
+    modelExtensions: [...(filter.modelExtensions ?? [])],
     unmapped: filter.unmapped.map((u) => ({ ...u })),
   };
 }

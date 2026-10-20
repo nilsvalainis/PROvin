@@ -29,6 +29,7 @@ function recordFromBody(raw: unknown): IrissPasutijumsRecord | null {
   return {
     ...base,
     brandModel: str("brandModel"),
+    modelExtension: str("modelExtension"),
     vin: str("vin"),
     productionYears: str("productionYears"),
     totalBudget: str("totalBudget"),
@@ -41,6 +42,7 @@ function recordFromBody(raw: unknown): IrissPasutijumsRecord | null {
     preferredColors: str("preferredColors"),
     nonPreferredColors: str("nonPreferredColors"),
     equipmentRequired: str("equipmentRequired"),
+    agentNotes: str("agentNotes"),
     dealVat21Required: o.dealVat21Required === true,
     ...parseIrissPasutijumsListingLinks(o),
     ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),

@@ -5,6 +5,9 @@ import type { IrissOrderRangeField, IrissOrderRangeView } from "@/lib/iriss-orde
 
 export const IRISS_DIAPAZONI_HINT = "* obligāti. + vismaz viens: nobraukums, tilpums vai jauda.";
 
+export const IRISS_DIAPAZONI_CALC_NOTE =
+  "Aprēķinos ņemts augstākais skaitlis. Diapazons paliek tikai grāmatzīmēm.";
+
 export function IrissSpecDiapazoniBlock({
   ranges,
   onPatchRange,
@@ -64,6 +67,7 @@ export function IrissSpecDiapazoniBlock({
         onFrom={(value) => onPatchRange("ccFrom", value)}
         onTo={(value) => onPatchRange("ccTo", value)}
         error={rangeError("cc")}
+        inputMode="numeric"
         inputClassName={inputClassName}
       />
       <IrissRangeFromToField
@@ -78,6 +82,7 @@ export function IrissSpecDiapazoniBlock({
         inputClassName={inputClassName}
       />
       <p className="iriss-spec-hint">{IRISS_DIAPAZONI_HINT}</p>
+      <p className="iriss-spec-calc-note">{IRISS_DIAPAZONI_CALC_NOTE}</p>
     </div>
   );
 }

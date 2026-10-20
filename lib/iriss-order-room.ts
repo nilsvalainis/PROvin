@@ -9,7 +9,15 @@ import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { listingFmtEur } from "@/lib/iriss-listings-card";
 import { listingComparisonPrice } from "@/lib/iriss-listings-cost";
 import { listingMatchesOrderMakeModel } from "@/lib/iriss-listing-order-gate";
-import { listingVehicleOrderIds } from "@/lib/iriss-listings-orders";
+import {
+  bodiesMatchGroups,
+  colorsMatchGroups,
+  drivesMatchGroups,
+  fuelsMatchGroups,
+  gearboxesMatchGroups,
+} from "@/lib/iriss-criteria-listing-match";
+import { listingVehicleOrderIds, parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
+import { splitModelExtensions, titleHasAnyModelExtension } from "@/lib/iriss-model-extension";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import type { IrissListingPlatform, IrissListingPriceChange, IrissListingVehicleChange } from "@/lib/iriss-listings-types";
 import { irissListingVin } from "@/lib/iriss-pasutijums-from-listing";
@@ -157,14 +165,6 @@ function norm(raw: string): string {
     .trim();
 }
 
-function includesText(hay: string, needle: string): boolean {
-  const h = norm(hay);
-  const n = norm(needle);
-  if (!h || !n || n.length < 2) return false;
-  if (n.length <= 3) return h.split(" ").some((word) => word === n);
-  return h.includes(n) || n.includes(h);
-}
-
 export function irissOrderRoomHitPrice(
   v: Pick<IrissOrderRoomHitSource, "platform" | "priceBuyNow" | "priceCurrent" | "priceStart" | "priceMinimal" | "priceEstimate">,
 ): number | null {
@@ -193,10 +193,7 @@ export function parseIrissYearSpan(raw: string): { from: number | null; to: numb
 }
 
 function parseLooseNumber(raw: string): number | null {
-  const digits = raw.replace(/[^\d]/g, "");
-  if (!digits) return null;
-  const n = Number(digits);
-  return Number.isFinite(n) && n > 0 ? n : null;
+  return parseIrissOrderBudget(raw);
 }
 
 function groupInt(n: number): string {
@@ -311,23 +308,10 @@ export function irissOrderRoomVisibleHits(
   return hits.filter((h) => h.change !== "gone" || dismissed.has(h.id) || offered.has(h.id));
 }
 
-const DRIVE_GROUPS: ReadonlyArray<{ needles: string[]; label: string }> = [
-  { needles: ["quattro", "4x4", "awd", "4motion", "xdrive", "4matic", "pilnpiedzina"], label: "4x4" },
-  { needles: ["fwd", "prieksej"], label: "priekšējā" },
-  { needles: ["rwd", "aizmugur"], label: "aizmugurējā" },
-];
-
 function driveHit(orderDrive: string, hay: string): boolean | null {
   const raw = orderDrive.trim();
   if (!raw || !hay.trim()) return null;
-  if (includesText(hay, raw)) return true;
-  const nOrder = norm(raw);
-  const nHay = norm(hay);
-  const group = DRIVE_GROUPS.find((g) => g.needles.some((n) => nOrder.includes(n)) || includesText(raw, g.label));
-  if (!group) return null;
-  const hayHasDrive = DRIVE_GROUPS.some((g) => g.needles.some((n) => nHay.includes(n)));
-  if (!hayHasDrive) return null;
-  return group.needles.some((n) => nHay.includes(n));
+  return drivesMatchGroups(hay, [raw]);
 }
 
 export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderRoomHit): IrissOrderRoomMatch {
@@ -349,13 +333,17 @@ export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderR
     checks.push({ id: "km", label: "km", pass: hit.mileageKm <= maxKm });
   }
   if (rec.transmission.trim() && hit.transmission.trim()) {
-    checks.push({ id: "gear", label: humanDash(rec.transmission), pass: includesText(hit.transmission, rec.transmission) });
+    checks.push({
+      id: "gear",
+      label: humanDash(rec.transmission),
+      pass: gearboxesMatchGroups(hit.transmission, [rec.transmission], hit.platform),
+    });
   }
   if (rec.bodyType.trim() && (hit.bodyType.trim() || hit.title.trim())) {
     checks.push({
       id: "body",
       label: humanDash(rec.bodyType),
-      pass: includesText(`${hit.bodyType} ${hit.title}`, rec.bodyType),
+      pass: bodiesMatchGroups(`${hit.bodyType} ${hit.title}`, [rec.bodyType], hit.platform),
     });
   }
   const drive = driveHit(rec.driveType, `${hit.title} ${hit.bodyType}`);
@@ -364,31 +352,21 @@ export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderR
   const wanted = irissOrderRoomExcludeTokens(rec.preferredColors);
   const banned = irissOrderRoomExcludeTokens(rec.nonPreferredColors);
   if (colorHay && (wanted.length > 0 || banned.length > 0)) {
-    const excluded = banned.some((c) => includesText(colorHay, c));
-    const wantedOk = wanted.length === 0 || wanted.some((c) => includesText(colorHay, c));
-    checks.push({ id: "color", label: "krāsa", pass: !excluded && wantedOk });
+    checks.push({ id: "color", label: "krāsa", pass: colorsMatchGroups(colorHay, wanted, banned) });
   }
   const engine = rec.engineType.trim();
-  if (engine) {
-    const hay = `${hit.fuel} ${hit.powerKw} ${hit.title}`;
-    const power = parseLooseNumber(hit.powerKw);
-    const wantedPower = [...engine.matchAll(/\d{2,3}/g)].map((m) => Number(m[0])).find((n) => n >= 40 && n <= 800);
-    const tokens = norm(engine)
-      .split(" ")
-      .filter((t) => t.length >= 3 && !/^\d+$/.test(t) && t !== "tips");
-    const tokenOk = tokens.some((t) => norm(hay).includes(t));
-    const powerOk = wantedPower != null && power != null && Math.abs(power - wantedPower) <= 5;
-    if (hay.trim() && (tokens.length > 0 || (wantedPower != null && power != null))) {
-      checks.push({ id: "engine", label: "dzinējs", pass: tokenOk || powerOk });
-    }
+  if (engine && hit.fuel.trim()) {
+    checks.push({
+      id: "engine",
+      label: "dzinējs",
+      pass: fuelsMatchGroups(hit.fuel, [engine], hit.platform),
+    });
   }
 
   const equipmentBadges: IrissOrderRoomCheck[] = [];
-  const equipHay = `${hit.title} ${hit.fuel} ${hit.bodyType}`;
-  for (const token of irissOrderRoomExcludeTokens(rec.equipmentRequired)) {
-    if (token.length < 3) continue;
-    if (includesText(equipHay, token)) equipmentBadges.push({ id: `eq-${norm(token)}`, label: humanDash(token), pass: true });
-    if (equipmentBadges.length >= 2) break;
+  const trimHay = `${hit.title} ${hit.bodyType}`;
+  if (rec.modelExtension.trim() && titleHasAnyModelExtension(trimHay, splitModelExtensions(rec.modelExtension))) {
+    equipmentBadges.push({ id: "trim", label: humanDash(rec.modelExtension), pass: true });
   }
 
   const percent = checks.length > 0 ? Math.round((checks.filter((c) => c.pass).length / checks.length) * 100) : null;
@@ -418,7 +396,10 @@ export function irissOrderRoomHitPassesCriteria(rec: IrissPasutijumsRecord, hit:
   const maxKm = parseLooseNumber(rec.maxMileage);
   if (maxKm != null && hit.mileageKm != null && hit.mileageKm > maxKm) return false;
   const banned = irissOrderRoomExcludeTokens(rec.nonPreferredColors);
-  if (hit.color.trim() && banned.some((c) => includesText(hit.color, c))) return false;
+  if (hit.color.trim() && !colorsMatchGroups(hit.color, [], banned)) return false;
+  if (rec.modelExtension.trim() && !titleHasAnyModelExtension(`${hit.title} ${hit.bodyType}`, splitModelExtensions(rec.modelExtension))) {
+    return false;
+  }
   return true;
 }
 
@@ -435,9 +416,7 @@ export function irissOrderRoomCriteriaChips(rec: IrissPasutijumsRecord): IrissOr
   const km = parseLooseNumber(rec.maxMileage);
   if (km != null) chips.push({ id: "km", label: `≤ ${groupInt(km)} km`, tone: "neutral" });
   if (rec.preferredColors.trim()) chips.push({ id: "color", label: humanDash(rec.preferredColors), tone: "neutral" });
-  if (rec.equipmentRequired.trim()) {
-    chips.push({ id: "required", label: `Obligāti: ${humanDash(rec.equipmentRequired)}`, tone: "required" });
-  }
+  if (rec.modelExtension.trim()) chips.push({ id: "trim", label: humanDash(rec.modelExtension), tone: "neutral" });
   return chips;
 }
 
@@ -571,7 +550,7 @@ export function irissOrderRoomNextSteps(input: {
   newHits: number;
   offerCount: number;
   hasPhone: boolean;
-  hasVin: boolean;
+  hasVin?: boolean;
 }): IrissOrderRoomNextStep[] {
   const steps: IrissOrderRoomNextStep[] = [];
   if (input.newHits > 0) {
@@ -584,7 +563,7 @@ export function irissOrderRoomNextSteps(input: {
   if (input.offerCount === 0) {
     steps.push({ id: "offer", label: "Sagatavot pirmo piedāvājumu", tab: "offers" });
   }
-  if (!input.hasVin) steps.push({ id: "vin", label: "Ievadīt VIN, ja tas ir zināms", tab: "overview" });
+  void input.hasVin;
   if (input.hasPhone) steps.push({ id: "contact", label: "Sazināties ar klientu", tab: "communication" });
   return steps;
 }

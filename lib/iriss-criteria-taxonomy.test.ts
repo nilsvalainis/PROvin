@@ -156,6 +156,8 @@ describe("normalizeGearbox", () => {
     ["Schaltgetriebe", "manual", undefined],
     ["manuell", "manual", undefined],
     ["mehāniskā", "manual", undefined],
+    ["manuāla", "manual", undefined],
+    ["automāts", "automatic", undefined],
     ["Automatik", "automatic", undefined],
     ["Steptronic", "automatic", "torque_converter"],
     ["Tiptronic", "automatic", "torque_converter"],
@@ -230,6 +232,15 @@ describe("normalizeBody", () => {
     ["Transporter", "van_bus"],
     ["pickup", "pickup"],
     ["pick-up", "pickup"],
+    ["sedans", "sedan"],
+    ["universālis", "wagon"],
+    ["hečbeks", "hatchback"],
+    ["apvidus", "suv"],
+    ["kupeja", "coupe"],
+    ["kabriolets", "cabrio"],
+    ["minivens", "mpv"],
+    ["pikaps", "pickup"],
+    ["mikroautobuss", "van_bus"],
   ] as const)("maps %s to %s", (raw, group) => {
     expect(normalizeBody(raw).group).toBe(group);
   });

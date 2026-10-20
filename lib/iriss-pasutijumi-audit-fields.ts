@@ -20,6 +20,7 @@ const STRING_KEYS = [
   "email",
   "orderDate",
   "brandModel",
+  "modelExtension",
   "vin",
   "productionYears",
   "totalBudget",
@@ -34,7 +35,9 @@ const STRING_KEYS = [
   "interiorFinish",
   "equipmentRequired",
   "equipmentDesired",
+  "agentNotes",
   "notes",
+  "internalNotes",
   "pinnedAt",
   "inactiveReason",
 ] as const;

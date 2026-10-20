@@ -25,6 +25,7 @@ import { parseIrissDealWorkflowStatus } from "@/lib/iriss-order-overview-view";
 import { normalizeIrissCommunicationEvents } from "@/lib/iriss-communication-timeline";
 import { normalizeIrissOfferBlocks } from "@/lib/iriss-offer-blocks";
 import { irissOrderPhotoAlbumOfferId, normalizeIrissOrderPhotoAlbum } from "@/lib/iriss-order-photos";
+import { migrateIrissSpecSelectLabels } from "@/lib/iriss-order-spec-selects";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import {
   isIrissRecordDeleted,
@@ -526,12 +527,15 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     email: sanitizeDraftTextForStorage(str("email"), 320),
     orderDate: sanitizeDraftTextForStorage(str("orderDate"), 32),
     brandModel: sanitizeDraftTextForStorage(str("brandModel"), 400),
+    modelExtension: sanitizeDraftTextForStorage(str("modelExtension"), 120),
     vin: sanitizeDraftTextForStorage(str("vin"), 32),
     productionYears: sanitizeDraftTextForStorage(str("productionYears"), 120),
     totalBudget: sanitizeDraftTextForStorage(str("totalBudget"), 120),
-    engineType: sanitizeDraftTextForStorage(str("engineType"), 200),
-    transmission: sanitizeDraftTextForStorage(str("transmission"), 120),
-    bodyType: sanitizeDraftTextForStorage(str("bodyType"), 120),
+    ...migrateIrissSpecSelectLabels({
+      engineType: sanitizeDraftTextForStorage(str("engineType"), 200),
+      transmission: sanitizeDraftTextForStorage(str("transmission"), 120),
+      bodyType: sanitizeDraftTextForStorage(str("bodyType"), 120),
+    }),
     driveType: sanitizeDraftTextForStorage(str("driveType"), 120),
     seatCount: sanitizeDraftTextForStorage(str("seatCount"), 40),
     maxMileage: sanitizeDraftTextForStorage(str("maxMileage"), 120),
@@ -557,7 +561,9 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
       : {}),
     equipmentRequired: sanitizeDraftTextForStorage(str("equipmentRequired")),
     equipmentDesired: sanitizeDraftTextForStorage(str("equipmentDesired")),
+    agentNotes: sanitizeDraftTextForStorage(str("agentNotes")),
     notes: sanitizeDraftTextForStorage(str("notes")),
+    internalNotes: sanitizeDraftTextForStorage(str("internalNotes")),
     ...sanitizeListingLinks(o),
     ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
