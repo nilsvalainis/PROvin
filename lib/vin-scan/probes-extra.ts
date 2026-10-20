@@ -5,7 +5,12 @@ import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { vinScanParseFromListingHistory } from "@/lib/vin-scan/listing-history";
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { browserFetchLane, type VinScanBrowserFetchId } from "@/lib/vin-scan/browser-fetch";
-import { vinScanCatalogItem, vwGroupRecallCheckUrl } from "@/lib/vin-scan/catalog";
+import {
+  bmwRecallCheckUrl,
+  mercedesRecallCheckUrl,
+  vinScanCatalogItem,
+  vwGroupRecallCheckUrl,
+} from "@/lib/vin-scan/catalog";
 import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
 import { statVinBrowserLane } from "@/lib/vin-scan/stat-vin-browser";
 import { scanCaptchaTokenPlaceholder, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
@@ -165,6 +170,8 @@ export const ASV_MARKET_RECALL_LABEL = "ASV tirgus, var neattiekties";
  * Tukša Austrālijas VIN pārbaude arī nav „atsaukumu nav” šim ES auto.
  */
 export const VW_GROUP_RECALL_BROWSER_LABEL = "Lielbritānijas GOV.UK atsaukumu pārbaude pārlūkā";
+/** volvocars.com/intl atsaukumu lapa ir JS tirgus izvēle. Serverim HTML nekad nav atsaukuma fakts. */
+export const VOLVO_RECALL_BROWSER_LABEL = "Volvo atsaukumu pārbaude pārlūkā";
 
 function isUsManufacturerRecallUrl(url: string): boolean {
   try {
@@ -235,12 +242,12 @@ const OEM_META: Record<OemRecallBrand, { id: VinScanIndicator["id"]; label: stri
   bmw: {
     id: "recall_bmw",
     label: "BMW",
-    url: (vin) => `https://www.bmwusa.com/recall.html?vin=${encodeURIComponent(vin)}`,
+    url: (vin) => bmwRecallCheckUrl(vin),
   },
   mercedes: {
     id: "recall_mercedes",
     label: "Mercedes",
-    url: (vin) => `https://www.mbusa.com/en/recall?vin=${encodeURIComponent(vin)}`,
+    url: (vin) => mercedesRecallCheckUrl(vin),
   },
   volvo: {
     id: "recall_volvo",
@@ -265,6 +272,9 @@ export async function probeOemRecall(ctx: VinScanContext, brand: OemRecallBrand)
   // VW Group: UK recalls.html ir 404, GOV.UK HTML nav šī VIN atsaukuma fakts.
   if (!isUsWmiVin(ctx.vin)) {
     if (brand === "vw") return vwGroupRecallOperatorLink(ctx, oemUrl);
+    if (brand === "volvo") {
+      return done(meta.id, ctx, { status: "browser_only", summary: VOLVO_RECALL_BROWSER_LABEL, openUrl: oemUrl });
+    }
     if (isUsManufacturerRecallUrl(oemUrl)) {
       return asvMarketOperatorLink(meta.id, ctx, oemUrl);
     }

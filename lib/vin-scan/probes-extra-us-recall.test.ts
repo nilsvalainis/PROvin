@@ -11,9 +11,10 @@ vi.mock("@/lib/vin-scan/http", () => ({
 }));
 
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
-import { vwGroupRecallCheckUrl } from "@/lib/vin-scan/catalog";
+import { VIN_SCAN_CATALOG, vwGroupRecallCheckUrl } from "@/lib/vin-scan/catalog";
 import {
   ASV_MARKET_RECALL_LABEL,
+  VOLVO_RECALL_BROWSER_LABEL,
   VW_GROUP_RECALL_BROWSER_LABEL,
   probeNhtsaRecalls,
   probeOemRecall,
@@ -22,6 +23,7 @@ import {
 const EU_BMW = "WBA5R1C0XLFH42873";
 const EU_VW = "WVWZZZ7NZEV015204";
 const EU_SKODA = "TMBJH9NP9N7043581";
+const EU_VOLVO = "YV1DZ5251B2146640";
 const US_HONDA = "1HGCM82633A004352";
 const US_VW = "1VWBH7A32EC527891";
 
@@ -52,7 +54,28 @@ describe("NHTSA / ASV OEM atsaukumi ne-ASV VIN", () => {
     expect(row.status).toBe("browser_only");
     expect(row.summary).toBe(ASV_MARKET_RECALL_LABEL);
     expect(row.openUrl).toContain("bmwusa.com");
+    expect(row.openUrl).not.toContain("/recall.html");
     expect(row.recalls ?? []).toEqual([]);
+  });
+
+  it("ES WMI Volvo: JS tirgus izvēles lapu nelasa, rāda operatora saiti", async () => {
+    const row = await probeOemRecall(ctx(EU_VOLVO), "volvo");
+    expect(scanFetch).not.toHaveBeenCalled();
+    expect(scanFetchSmart).not.toHaveBeenCalled();
+    expect(row.status).toBe("browser_only");
+    expect(row.summary).toBe(VOLVO_RECALL_BROWSER_LABEL);
+    expect(row.openUrl).toContain("volvocars.com");
+    expect(row.openUrl).toContain(EU_VOLVO);
+  });
+
+  it("kataloga atsaukumu saites nav zināmās 404 / pāradresācijas lapas", () => {
+    const urls = VIN_SCAN_CATALOG.filter((item) => item.id.startsWith("recall_")).map((item) => item.openUrl(EU_BMW));
+    for (const url of urls) {
+      expect(url).not.toContain("bmwusa.com/recall.html");
+      expect(url).not.toContain("bmw.com/en/footer/recall.html");
+      expect(url).not.toContain("product-innovation/recalls");
+      expect(url).toContain(EU_BMW);
+    }
   });
 
   it("ES WMI VW: mirusī UK lapa netiek prasīta, ir GOV.UK operatora saite", async () => {
