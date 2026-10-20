@@ -38,6 +38,18 @@ export function isOrderUpsellKind(v: string): v is OrderUpsellKind {
   return (ORDER_UPSELL_KINDS as readonly string[]).includes(v);
 }
 
+/**
+ * Vai šis Stripe maksājums ir tas, kas apmaksāja piedāvājumu. Arī webhook atkārtojumā
+ * (piedāvājums jau "paid" ar to pašu sesiju) - lai daļēji neizdevusies apstrāde tiktu pabeigta.
+ */
+export function isUpsellSettledByStripeSession(
+  offer: { status: string; stripeSessionId?: string },
+  stripeSessionId: string,
+): boolean {
+  const settled = offer.status === "paid" || offer.status === "manual";
+  return !settled || offer.stripeSessionId === stripeSessionId;
+}
+
 export function isUpsellToken(v: string): boolean {
   return /^[a-f0-9]{32}$/.test(v);
 }

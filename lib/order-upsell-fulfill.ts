@@ -6,7 +6,7 @@ import { isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 import { enqueueDealerDataJob } from "@/lib/dealer-data-job";
 import { trySendDealerDataOperatorEmail } from "@/lib/email/send-transactional";
 import { notifyAdminTelegram } from "@/lib/notify";
-import { buildUpsellPaidEmail, isOrderUpsellKind } from "@/lib/order-upsell";
+import { buildUpsellPaidEmail, isOrderUpsellKind, isUpsellSettledByStripeSession } from "@/lib/order-upsell";
 import { readUpsellByToken, settleUpsellOffer } from "@/lib/order-upsell-store";
 
 /**
@@ -80,7 +80,8 @@ export async function fulfillOrderUpsellPayment(session: Stripe.Checkout.Session
     console.error("[order-upsell] telegram failed", err);
   }
 
-  if (kindRaw === "mini_to_dealer" && vin && !already) {
+  // Atkārtojumā pēc daļējas kļūmes piedāvājums jau ir "paid" ar šo sesiju - dīlera dati vēl jāieliek rindā.
+  if (kindRaw === "mini_to_dealer" && vin && isUpsellSettledByStripeSession(found.offer, session.id)) {
     try {
       await enqueueDealerDataJob({ sessionId: parentSessionId, vin });
     } catch (err) {
