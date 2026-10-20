@@ -4,6 +4,7 @@ import { readGoogleContactsConfig } from "@/lib/google-contacts";
 import { maybeSyncGoogleContact } from "@/lib/iriss-google-contact-sync";
 import { normalizeGeneratedDocuments } from "@/lib/iriss-generated-documents";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
+import { parseIrissDealWorkflowStatus } from "@/lib/iriss-order-overview-view";
 import { pickIrissPasutijumsAuditFields } from "@/lib/iriss-pasutijumi-audit-fields";
 import {
   IRISS_MAX_OFFER_ATTACHMENTS,
@@ -178,6 +179,9 @@ function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | nul
     dealVat21Required: bool("dealVat21Required"),
     dealServiceStartDeposit: bool("dealServiceStartDeposit"),
     dealEkki: bool("dealEkki"),
+    ...(parseIrissDealWorkflowStatus(o.dealWorkflowStatus)
+      ? { dealWorkflowStatus: parseIrissDealWorkflowStatus(o.dealWorkflowStatus) }
+      : {}),
     equipmentRequired: str("equipmentRequired"),
     equipmentDesired: str("equipmentDesired"),
     notes: str("notes"),

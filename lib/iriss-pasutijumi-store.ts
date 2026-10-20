@@ -21,6 +21,7 @@ import { retainGoogleContactFields } from "@/lib/iriss-server-owned-fields";
 import { attachmentAfterBlobPut, parseDataUrlPayload } from "@/lib/iriss-offer-attachment-blob";
 import { irissOfferThumbBlobPath, renderIrissOfferThumbJpeg } from "@/lib/iriss-offer-image-thumb";
 import { normalizeIrissAdvanceDraft } from "@/lib/iriss-advance";
+import { parseIrissDealWorkflowStatus } from "@/lib/iriss-order-overview-view";
 import { normalizeIrissCommunicationEvents } from "@/lib/iriss-communication-timeline";
 import { normalizeIrissOfferBlocks } from "@/lib/iriss-offer-blocks";
 import { irissOrderPhotoAlbumOfferId, normalizeIrissOrderPhotoAlbum } from "@/lib/iriss-order-photos";
@@ -551,6 +552,9 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     dealVat21Required: bool("dealVat21Required"),
     dealServiceStartDeposit: bool("dealServiceStartDeposit"),
     dealEkki: bool("dealEkki"),
+    ...(parseIrissDealWorkflowStatus(o.dealWorkflowStatus)
+      ? { dealWorkflowStatus: parseIrissDealWorkflowStatus(o.dealWorkflowStatus) }
+      : {}),
     equipmentRequired: sanitizeDraftTextForStorage(str("equipmentRequired")),
     equipmentDesired: sanitizeDraftTextForStorage(str("equipmentDesired")),
     notes: sanitizeDraftTextForStorage(str("notes")),
