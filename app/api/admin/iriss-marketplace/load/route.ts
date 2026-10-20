@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { parseMarketplacePlatforms, resolveMarketplaceAdminTarget } from "@/lib/marketplace/admin-target";
 import { loadMarketplaceForOrder } from "@/lib/marketplace/load";
 
@@ -7,8 +7,8 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(req: Request) {
-  const session = await getAdminSession();
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("radars");
+  if (!gate.ok) return gate.response;
   let body: { orderId?: unknown; scanId?: unknown; platforms?: unknown; explicit?: unknown } = {};
   try {
     body = (await req.json()) as typeof body;

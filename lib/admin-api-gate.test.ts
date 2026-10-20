@@ -202,6 +202,56 @@ describe("decideAdminApiGate", () => {
     });
   });
 
+  it("lets a multi-section session through granted APIs only", async () => {
+    const payload = Buffer.from(
+      JSON.stringify({
+        typ: STAFF_SESSION_TOKEN_TYP,
+        sid: "ses_abcdefgh",
+        uid: "usr_abcdefgh",
+        role: "logistics",
+        sections: ["logistika", "pavadzimes"],
+        exp: Date.now() + 60_000,
+      }),
+      "utf8",
+    ).toString("base64url");
+    const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
+    const multi = `${payload}.${sig}`;
+    expect(
+      await decideAdminApiGate(req({ path: "/api/admin/iriss-pavadzimes", staffCookie: multi })),
+    ).toEqual({ action: "next" });
+    expect(
+      await decideAdminApiGate(req({ path: "/api/admin/iriss-pasutijumi", staffCookie: multi })),
+    ).toEqual({ action: "forbidden" });
+  });
+
+  it("lets Pavadzimes-only staff through waybill APIs and forbids VIN and other agents", async () => {
+    const payload = Buffer.from(
+      JSON.stringify({
+        typ: STAFF_SESSION_TOKEN_TYP,
+        sid: "ses_abcdefgh",
+        uid: "usr_abcdefgh",
+        role: "logistics",
+        sections: ["pavadzimes"],
+        exp: Date.now() + 60_000,
+      }),
+      "utf8",
+    ).toString("base64url");
+    const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
+    const cookie = `${payload}.${sig}`;
+    expect(
+      await decideAdminApiGate(req({ path: "/api/admin/iriss/waybill-requests", staffCookie: cookie })),
+    ).toEqual({ action: "next" });
+    expect(await decideAdminApiGate(req({ path: "/api/admin/vin-scan", staffCookie: cookie }))).toEqual({
+      action: "forbidden",
+    });
+    expect(await decideAdminApiGate(req({ path: "/api/admin/outvin/purchase", staffCookie: cookie }))).toEqual({
+      action: "forbidden",
+    });
+    expect(await decideAdminApiGate(req({ path: "/api/admin/csdd-tech-data", staffCookie: cookie }))).toEqual({
+      action: "forbidden",
+    });
+  });
+
   it("lets a logistics session through only on logistics APIs", async () => {
     expect(
       await decideAdminApiGate(req({ path: "/api/admin/iriss/logistika/points", staffCookie: staffCookie() })),

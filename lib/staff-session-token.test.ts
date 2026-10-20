@@ -22,10 +22,12 @@ describe("staff session token", () => {
       sid: "ses_abcdefgh",
       uid: "usr_abcdefgh",
       role: "logistics",
+      sections: ["logistika"],
       exp: Date.now() + 60_000,
     });
     const payload = await verifyStaffSessionToken(token);
     expect(payload?.role).toBe("logistics");
+    expect(payload?.sections).toEqual(["logistika"]);
     expect(payload?.sid).toBe("ses_abcdefgh");
     expect(await verifyAdminSessionToken(token)).toBe(false);
   });
@@ -35,6 +37,7 @@ describe("staff session token", () => {
       sid: "ses_abcdefgh",
       uid: "usr_abcdefgh",
       role: "logistics",
+      sections: ["logistika"],
       exp: Date.now() - 1,
     });
     expect(await verifyStaffSessionToken(expired)).toBeNull();
@@ -43,6 +46,7 @@ describe("staff session token", () => {
       sid: "ses_abcdefgh",
       uid: "usr_abcdefgh",
       role: "logistics",
+      sections: ["logistika"],
       exp: Date.now() + 60_000,
     });
     const sig = createHmac("sha256", "wrong-secret-0123456789").update(payload).digest("hex");
@@ -53,5 +57,21 @@ describe("staff session token", () => {
     );
     const adminSig = createHmac("sha256", SECRET).update(adminPayload).digest("hex");
     expect(await verifyStaffSessionToken(`${adminPayload}.${adminSig}`)).toBeNull();
+  });
+
+  it("accepts a legacy cookie that only has role=logistics", async () => {
+    const payload = Buffer.from(
+      JSON.stringify({
+        typ: "staff",
+        sid: "ses_abcdefgh",
+        uid: "usr_abcdefgh",
+        role: "logistics",
+        exp: Date.now() + 60_000,
+      }),
+      "utf8",
+    ).toString("base64url");
+    const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
+    const decoded = await verifyStaffSessionToken(`${payload}.${sig}`);
+    expect(decoded?.sections).toEqual(["logistika"]);
   });
 });

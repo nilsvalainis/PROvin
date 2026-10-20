@@ -3,7 +3,7 @@
  */
 import { NextResponse } from "next/server";
 
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { getOutvinConfig, runOutvinCapabilitiesPrecheck } from "@/lib/outvin-api";
 import { parseOutvinDataBundleRaw } from "@/lib/outvin-data-bundle";
 import { isOutvinApiVin, normalizeVin } from "@/lib/order-field-validation";
@@ -11,8 +11,8 @@ import { isOutvinApiVin, normalizeVin } from "@/lib/order-field-validation";
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("vin");
+  if (!gate.ok) return gate.response;
 
   if (!getOutvinConfig()) {
     return NextResponse.json({ error: "missing_outvin_credentials" }, { status: 503 });

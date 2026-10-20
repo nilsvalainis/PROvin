@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { buildMarketplaceUsageSummary } from "@/lib/marketplace/auto-load";
 
 export const runtime = "nodejs";
 
 /** Šī mēneša tirgus tēriņi (USD), auto griesti, run skaits, pēdējā auto ielāde. */
 export async function GET() {
-  const session = await getAdminSession();
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("radars");
+  if (!gate.ok) return gate.response;
   const summary = await buildMarketplaceUsageSummary();
   return NextResponse.json(summary);
 }

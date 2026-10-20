@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { adminHtmlDocumentHeaders } from "@/lib/csp";
 import { warmMessageTemplatesCache } from "@/lib/messages/message-runtime";
 import { buildIrissOfferPrintHtml } from "@/lib/iriss-pasutijums-pdf-html";
@@ -10,8 +10,8 @@ export const runtime = "nodejs";
 export const maxDuration = 120;
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string; offerId: string }> }) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pasutijumi");
+  if (!gate.ok) return gate.response;
   const { id, offerId } = await ctx.params;
   if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   const stored = await readIrissPasutijums(id);

@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { getAdminOrStaffActor, staffActorHomePath } from "@/lib/staff-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminIrissHomePage() {
-  await requireAdminPage();
-  redirect("/admin/iriss/pasutijumi");
+  const actor = await getAdminOrStaffActor();
+  if (!actor) {
+    redirect("/admin/login?next=%2Fadmin%2Firiss");
+  }
+  redirect(staffActorHomePath(actor));
 }

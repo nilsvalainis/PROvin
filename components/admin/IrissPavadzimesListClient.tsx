@@ -6,11 +6,15 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import { IrissKomandaAivaramChat } from "@/components/admin/IrissKomandaAivaramChat";
 import { formatIrissWaybillChip } from "@/lib/admin-mobile-ds";
 import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
+import { waybillRemainingShare } from "@/lib/iriss-pavadzimes-countdown";
 import { waybillLifecycleLabel } from "@/lib/iriss-pavadzimes-lifecycle";
 import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
+import { remainingWaybillDays, waybillSoonTone } from "@/lib/iriss-waybill-requests";
+import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 
 type PageData = {
   rows: IrissPavadzimeListRow[];
@@ -29,11 +33,16 @@ function validityClass(tone: IrissPavadzimeValidityTone): string {
 
 type WaybillView = "all" | "current" | "archive";
 
-const VIEW_LABEL: Record<WaybillView, string> = { all: "Visas", current: "Aktuālās", archive: "Arhīvs" };
+const VIEW_LABEL: Record<WaybillView, string> = { all: "Visas", current: "Aktīvās", archive: "Arhīvs" };
+
+function isActiveNow(row: IrissPavadzimeListRow): boolean {
+  if (row.archived || row.lifecycle === "interrupted") return false;
+  return row.validityTone === "ok" || row.validityTone === "today";
+}
 
 function inView(row: IrissPavadzimeListRow, view: WaybillView): boolean {
-  if (view === "current") return !row.archived;
-  if (view === "archive") return Boolean(row.archived);
+  if (view === "current") return isActiveNow(row);
+  if (view === "archive") return !isActiveNow(row);
   return true;
 }
 
@@ -86,7 +95,8 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<WaybillView>("all");
+  const [view, setView] = useState<WaybillView>("current");
+  const [extendVehicle, setExtendVehicle] = useState<WaybillVehicleChip | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const vinRef = useRef<HTMLInputElement>(null);
 
@@ -168,7 +178,13 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   );
 
   const now = new Date(nowMs);
-  const rows = data.rows.filter((row) => inView(row, view));
+  const rows = data.rows
+    .filter((row) => inView(row, view))
+    .slice()
+    .sort((a, b) => {
+      if (view !== "current") return 0;
+      return Date.parse(a.validUntil || "") - Date.parse(b.validUntil || "");
+    });
   const viewCount = (v: WaybillView) => data.rows.filter((row) => inView(row, v)).length;
 
   return (
@@ -181,7 +197,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
       </Suspense>
       <div className="mt-2 flex items-center gap-2">
         <div className="inline-flex shrink-0 rounded-lg bg-[#e9e9ee] p-0.5" role="tablist" aria-label="Pavadzīmju filtrs">
-          {(["all", "current", "archive"] as const).map((v) => (
+          {(["current", "archive", "all"] as const).map((v) => (
             <button
               key={v}
               type="button"
@@ -189,8 +205,8 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
               aria-selected={view === v}
               onClick={() => setView(v)}
               className={`h-6 rounded-md px-2 text-[12px] font-semibold transition ${
-                view === v ? "bg-white text-[#1d1d1f] shadow-sm" : "text-[#6e6e73] hover:text-[#1d1d1f]"
-              }`}
+                v === "all" ? "hidden md:inline-flex" : ""
+              } ${view === v ? "bg-white text-[#1d1d1f] shadow-sm" : "text-[#6e6e73] hover:text-[#1d1d1f]"}`}
             >
               {VIEW_LABEL[v]} <span className="tabular-nums text-[#8e8e93]">{viewCount(v)}</span>
             </button>
@@ -233,13 +249,88 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
       {error ? <p className="mt-1 text-right text-[11px] text-red-600">{error}</p> : null}
       {data.dropboxError ? <p className="mt-1 text-right text-[11px] text-red-600">{data.dropboxError}</p> : null}
 
-      {rows.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
+      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+        <div className="min-w-0">
+      {view === "current" ? (
+        rows.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
+            <p className="font-medium text-black">Nav aktīvu pavadzīmju</p>
+            <p className="mt-1 text-[13px] text-[#6b7280]">Beigušās un pārtrauktās ir Arhīvā.</p>
+          </div>
+        ) : (
+          <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-1 md:overflow-visible lg:grid-cols-1">
+            {rows.map((row) => {
+              const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
+              const days = remainingWaybillDays(row.validUntil, now);
+              const tone = waybillSoonTone(days);
+              const share = waybillRemainingShare(row.issuedAt, row.validUntil, now);
+              const bar = tone === "soon" ? "bg-[#f97316]" : "bg-[#3d5bd9]";
+              const dayClass = tone === "soon" ? "text-[#c2410c]" : "text-[#3d5bd9]";
+              return (
+                <article
+                  key={row.id}
+                  data-pavadzime={row.id}
+                  className="w-[min(100%,280px)] shrink-0 rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm md:w-auto"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-mono text-[12px] text-[#6b7280]">{dash(row.number)}</p>
+                    <span className="rounded-full bg-[#ECFDF3] px-2 py-0.5 text-[11px] font-medium text-[#067647]">aktīva</span>
+                  </div>
+                  <p className="mt-1 text-[16px] font-semibold">{dash(row.brandModel)}</p>
+                  <p className="text-[12px] text-[#6b7280]">
+                    {row.plate.trim() ? row.plate : ""}
+                    {row.validUntil ? ` · līdz ${formatWaybillDateTime(row.validUntil, now)}` : ""}
+                  </p>
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#EEF2FF]">
+                    <div className={`h-full ${bar}`} style={{ width: `${Math.round(share * 100)}%` }} />
+                  </div>
+                  <p className={`mt-1 text-right text-[12px] font-medium ${dayClass}`}>
+                    {days === null ? "" : days <= 0 ? "beigusies" : `vēl ${days} d.`}
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <a
+                      href={pdfHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px] font-medium"
+                    >
+                      <FileText className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      PDF
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExtendVehicle({
+                          chip: row.brandModel.split(/\s+/).slice(0, 2).join(" ") || row.number,
+                          brandModel: row.brandModel,
+                          vin: row.vin,
+                          plate: row.plate,
+                          orderId: row.order?.id ?? "",
+                        })
+                      }
+                      className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px] font-medium"
+                    >
+                      Pagarināt
+                    </button>
+                    <AdminChangeHistoryButton
+                      kind="iriss-waybill"
+                      recordId={row.id}
+                      endpoint="/api/admin/change-history"
+                      onRestored={(body) => applyWaybillRestore(row.id, body.record)}
+                    />
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )
+      ) : rows.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
           <p className="font-medium text-black">Nav pavadzīmju</p>
         </div>
       ) : (
         <>
-          <ul className="mt-4 space-y-2 md:hidden">
+          <ul className="mt-0 space-y-2 md:hidden">
             {rows.map((row) => {
               const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
               const orderHref = row.order ? `/admin/iriss/pasutijumi/${encodeURIComponent(row.order.id)}` : null;
@@ -385,6 +476,12 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
           </div>
         </>
       )}
+        </div>
+        <IrissKomandaAivaramChat
+          draftVehicle={extendVehicle}
+          onDraftConsumed={() => setExtendVehicle(null)}
+        />
+      </div>
     </>
   );
 }

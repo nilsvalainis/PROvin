@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { isSafeIrissPavadzimeId } from "@/lib/iriss-pavadzimes-parse";
 import { readIrissPavadzimePdf } from "@/lib/iriss-pavadzimes-store";
 
@@ -20,7 +20,8 @@ function pdfHeaders(fileName: string, bytes: Uint8Array) {
 }
 
 export async function GET(_req: Request, ctx: RouteContext) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pavadzimes");
+  if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
   if (!isSafeIrissPavadzimeId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
 

@@ -1,4 +1,10 @@
-import { isStaffRole, normalizeStaffEmail, type StaffRole } from "@/lib/staff-roles";
+import {
+  isStaffRole,
+  normalizeStaffEmail,
+  normalizeStaffSections,
+  type IrissSection,
+  type StaffRole,
+} from "@/lib/staff-roles";
 
 export type StaffStatus = "invited" | "active" | "revoked";
 
@@ -7,6 +13,8 @@ export type StaffUser = {
   name: string;
   email: string;
   role: StaffRole;
+  /** Piešķirtās IRISS sadaļas secībā; pirmā = sākuma lapa. */
+  sections: IrissSection[];
   status: StaffStatus;
   passwordHash: string | null;
   totpEnabled: boolean;
@@ -55,6 +63,11 @@ export type StaffAuditAction =
   | "sessions_revoked"
   | "totp_enabled"
   | "totp_disabled"
+  | "sections_updated"
+  | "waybill_requested"
+  | "waybill_retry"
+  | "waybill_claimed"
+  | "waybill_result"
   | "point_viewed"
   | "point_edited"
   | "print"
@@ -109,6 +122,11 @@ export function isStaffAuditAction(value: unknown): value is StaffAuditAction {
     value === "sessions_revoked" ||
     value === "totp_enabled" ||
     value === "totp_disabled" ||
+    value === "sections_updated" ||
+    value === "waybill_requested" ||
+    value === "waybill_retry" ||
+    value === "waybill_claimed" ||
+    value === "waybill_result" ||
     value === "point_viewed" ||
     value === "point_edited" ||
     value === "print" ||
@@ -126,7 +144,10 @@ export function parseStaffUser(raw: unknown): StaffUser | null {
   const id = str(o.id) ?? "";
   const name = str(o.name) ?? "";
   const email = typeof o.email === "string" ? normalizeStaffEmail(o.email) : "";
-  if (!isStaffUserId(id) || !name || !email || !isStaffRole(o.role) || !isStaffStatus(o.status)) return null;
+  const sections = normalizeStaffSections(o.sections, o.role);
+  const roleOk = isStaffRole(o.role) || sections.length > 0;
+  if (!isStaffUserId(id) || !name || !email || !roleOk || !isStaffStatus(o.status)) return null;
+  if (sections.length === 0) return null;
   const createdAt = str(o.createdAt);
   if (!createdAt) return null;
   const passwordHash = typeof o.passwordHash === "string" && o.passwordHash.startsWith("scrypt$") ? o.passwordHash : null;
@@ -134,7 +155,8 @@ export function parseStaffUser(raw: unknown): StaffUser | null {
     id,
     name: name.slice(0, 120),
     email,
-    role: o.role,
+    role: isStaffRole(o.role) ? o.role : "logistics",
+    sections,
     status: o.status,
     passwordHash,
     totpEnabled: o.totpEnabled === true,
@@ -211,6 +233,7 @@ export function toPublicStaffUser(user: StaffUser, sessionCount = 0): StaffUserP
     name: user.name,
     email: user.email,
     role: user.role,
+    sections: user.sections,
     status: user.status,
     totpEnabled: user.totpEnabled,
     lastLoginAt: user.lastLoginAt,

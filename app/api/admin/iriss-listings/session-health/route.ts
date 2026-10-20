@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { getIrissPlatformHealthReport } from "@/lib/iriss-listings-session-health";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function GET() {
-  const session = await getAdminSession();
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("sludinajumi");
+  if (!gate.ok) return gate.response;
   try {
     const report = await getIrissPlatformHealthReport();
     return NextResponse.json(report);

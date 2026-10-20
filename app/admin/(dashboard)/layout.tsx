@@ -2,16 +2,18 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { IrissStaffAppShell } from "@/components/admin/IrissStaffAppShell";
 import { PostPaymentLegalBanner } from "@/components/admin/PostPaymentLegalBanner";
-import { getAdminSession } from "@/lib/admin-auth";
 import { needsUrgentCompanyLegalOnAdmin } from "@/lib/admin-orders";
 import { getRequestOrigin } from "@/lib/request-origin";
+import { getAdminOrStaffActor, staffActorHomePath } from "@/lib/staff-auth";
+import { staffHasSection } from "@/lib/staff-roles";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardLayout({ children }: { children: ReactNode }) {
-  const session = await getAdminSession();
-  if (!session) {
+  const actor = await getAdminOrStaffActor();
+  if (!actor) {
     const h = await headers();
     const intended = h.get("x-admin-intended-path")?.trim() || "/admin/dashboard";
     const safe =
@@ -19,6 +21,15 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
         ? intended
         : "/admin";
     redirect(`/admin/login?next=${encodeURIComponent(safe)}`);
+  }
+
+  if (actor.kind === "staff") {
+    const h = await headers();
+    const path = h.get("x-admin-intended-path")?.trim() || "";
+    if (!path.startsWith("/admin/vin-scan") || !staffHasSection(actor.user, "vin")) {
+      redirect(staffActorHomePath(actor));
+    }
+    return <IrissStaffAppShell name={actor.user.name} sections={actor.user.sections}>{children}</IrissStaffAppShell>;
   }
 
   const origin = await getRequestOrigin();

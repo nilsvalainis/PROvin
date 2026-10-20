@@ -12,7 +12,7 @@ import {
   isStaffPublicApiPath,
   type AccessActor,
 } from "@/lib/staff-roles";
-import { STAFF_SESSION_COOKIE_NAME, verifyStaffSessionToken } from "@/lib/staff-session-token";
+import { STAFF_SESSION_COOKIE_NAME, staffSectionsFromPayload, verifyStaffSessionToken } from "@/lib/staff-session-token";
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -59,7 +59,7 @@ export async function resolveAccessActorFromCookies(cookies: {
   const adminToken = cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
   if (await verifyAdminSessionToken(adminToken)) return { kind: "admin" };
   const staff = await verifyStaffSessionToken(cookies.get(STAFF_SESSION_COOKIE_NAME)?.value);
-  if (staff) return { kind: "staff", role: staff.role };
+  if (staff) return { kind: "staff", sections: staffSectionsFromPayload(staff) };
   return { kind: "none" };
 }
 

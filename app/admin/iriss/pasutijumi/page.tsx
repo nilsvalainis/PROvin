@@ -6,12 +6,12 @@ import {
   listIrissPasutijumi,
   readIrissListOrder,
 } from "@/lib/iriss-pasutijumi-store";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { requireIrissSectionPage } from "@/lib/staff-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function IrissPasutijumiListPage() {
-  await requireAdminPage();
+  await requireIrissSectionPage("pasutijumi");
   const storage = getIrissPasutijumiStorageState();
   const storeEnabled = storage.enabled;
   let rows = [] as Awaited<ReturnType<typeof listIrissPasutijumi>>;

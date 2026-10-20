@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import {
   appendEcarstradeLinksToPasutijums,
@@ -61,8 +61,8 @@ function summarize(previews: ReturnType<typeof previewEcarstradeLinksForPasutiju
 }
 
 export async function GET(req: Request) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pasutijumi");
+  if (!gate.ok) return gate.response;
   if (!isIrissPasutijumiStoreEnabled()) return NextResponse.json({ error: "store_disabled" }, { status: 503 });
 
   const id = new URL(req.url).searchParams.get("id")?.trim() ?? "";
@@ -83,8 +83,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pasutijumi");
+  if (!gate.ok) return gate.response;
   if (!isIrissPasutijumiStoreEnabled()) return NextResponse.json({ error: "store_disabled" }, { status: 503 });
 
   let body: Record<string, unknown> = {};
