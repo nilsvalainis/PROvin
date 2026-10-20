@@ -19,12 +19,15 @@ import {
 } from "@/lib/iriss-waybill-create";
 import {
   IRISS_DEALER_PLATES,
+  dealerPlateMeta,
   displayDealerPlate,
   emptyWaybillPlateStates,
   formatRigaDateTimeComma,
   type WaybillPlateCurrent,
   type WaybillPlateState,
 } from "@/lib/iriss-waybill-plates";
+import { formatWaybillExpiryDdMmHm } from "@/lib/iriss-pavadzimes-countdown";
+import { LvDealerPlate } from "@/components/admin/LvDealerPlate";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 
 type TimelineItem =
@@ -315,27 +318,20 @@ export function IrissKomandaAivaramChat({
         }}
       >
         <p className="mb-1 text-[11px] font-medium text-[#6b7280]">Numurs</p>
-        <div className="mb-2 flex gap-1.5">
+        <div className="mb-2 flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-3.5">
           {chat.plates.map((row) => {
-            const on = plate === row.plate;
+            const meta = dealerPlateMeta(row.plate);
             return (
-              <button
+              <LvDealerPlate
                 key={row.plate}
-                type="button"
+                number={row.plate}
+                selected={plate === row.plate}
+                busy={row.busy}
+                owner={meta.owner}
+                bottomText={meta.bottomText}
+                busyUntil={row.current?.validUntil ? formatWaybillExpiryDdMmHm(row.current.validUntil) : ""}
                 onClick={() => setPlate(row.plate)}
-                className={`min-w-0 flex-1 rounded-full px-2 py-1.5 text-[12px] font-semibold ${
-                  on ? "bg-[#111827] text-white" : "bg-[#F3F4F6] text-[#111827]"
-                }`}
-              >
-                {row.plate}
-                <small
-                  className={`mt-0.5 block text-[10px] font-medium ${
-                    on ? "text-white/70" : row.busy ? "text-[#b45309]" : "text-[#067647]"
-                  }`}
-                >
-                  {row.busy ? "aizņemts" : "brīvs"}
-                </small>
-              </button>
+              />
             );
           })}
         </div>

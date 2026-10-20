@@ -29,9 +29,9 @@ describe("selectActiveIrissPavadzimes", () => {
       row({ number: "P01000", plate: "B193-7", validUntil: rigaLocalToUtc(2026, 9, 1, 12, 0)! }),
       row({ number: "P02787", plate: "B193-7", validUntil: rigaLocalToUtc(2026, 10, 14, 15, 59)! }),
       row({ number: "P02700", plate: "B762-7", validUntil: rigaLocalToUtc(2026, 10, 16, 10, 0)! }),
-      row({ number: "P02515", plate: "B861-6", validUntil: rigaLocalToUtc(2026, 10, 13, 12, 0)! }),
+      row({ number: "P02515", plate: "B192-7", validUntil: rigaLocalToUtc(2026, 10, 13, 12, 0)! }),
     ];
-    expect(selectActiveIrissPavadzimes(rows, now).map((r) => r.number)).toEqual(["P02787", "P02700", "P02515"]);
+    expect(selectActiveIrissPavadzimes(rows, now).map((r) => r.number)).toEqual(["P02515", "P02787", "P02700"]);
   });
 
   it("atmet sen beigušos numurus, atstāj nesen beigušos", () => {
@@ -44,10 +44,10 @@ describe("selectActiveIrissPavadzimes", () => {
 
   it("kārto pēc numura zīmes", () => {
     const rows = [
-      row({ number: "P3", plate: "B861-6", validUntil: rigaLocalToUtc(2026, 10, 20, 12, 0)! }),
+      row({ number: "P3", plate: "B192-7", validUntil: rigaLocalToUtc(2026, 10, 20, 12, 0)! }),
       row({ number: "P1", plate: "B193-7", validUntil: rigaLocalToUtc(2026, 10, 20, 12, 0)! }),
       row({ number: "P2", plate: "B762-7", validUntil: rigaLocalToUtc(2026, 10, 20, 12, 0)! }),
     ];
-    expect(selectActiveIrissPavadzimes(rows, now).map((r) => r.plate)).toEqual(["B193-7", "B762-7", "B861-6"]);
+    expect(selectActiveIrissPavadzimes(rows, now).map((r) => r.plate)).toEqual(["B192-7", "B193-7", "B762-7"]);
   });
 });

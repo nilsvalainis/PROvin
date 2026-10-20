@@ -5,8 +5,25 @@
 
 import { selectActiveIrissPavadzimes } from "@/lib/iriss-pavadzimes-active";
 
-export const IRISS_DEALER_PLATES = ["B193-7", "B762-7", "B861-6"] as const;
+export const IRISS_DEALER_PLATES = ["B193-7", "B762-7", "B192-7"] as const;
 export type IrissDealerPlate = (typeof IRISS_DEALER_PLATES)[number];
+
+export type IrissDealerPlateMeta = {
+  owner: string;
+  bottomText: string;
+};
+
+export const IRISS_DEALER_PLATE_META: Record<IrissDealerPlate, IrissDealerPlateMeta> = {
+  "B193-7": { owner: "SIA ĪRISS", bottomText: "SIA ĪRISS" },
+  "B762-7": { owner: "SIA ĪRISS", bottomText: "SIA ĪRISS" },
+  "B192-7": { owner: "SIA Dzintarzeme Auto", bottomText: "Dzintarzeme auto" },
+};
+
+export function dealerPlateMeta(plate: string): IrissDealerPlateMeta {
+  const display = displayDealerPlate(plate);
+  if (display) return IRISS_DEALER_PLATE_META[display];
+  return { owner: "", bottomText: "" };
+}
 
 export type WaybillPlateCurrent = {
   number: string;

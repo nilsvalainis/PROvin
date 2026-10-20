@@ -4,7 +4,8 @@ import { computeWaybillLifecycles, sortWaybillsNewestFirst } from "@/lib/iriss-p
 import { matchIrissPavadzimesToOrders } from "@/lib/iriss-pavadzimes-match";
 import { waybillValidityTone } from "@/lib/iriss-pavadzimes-parse";
 import { listIrissPavadzimes, readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
-import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
+import type { IrissPavadzimeListRow, IrissPavadzimeRecord } from "@/lib/iriss-pavadzimes-types";
+import { isAllowlistedWaybillPlate } from "@/lib/iriss-waybill-plates";
 
 export type IrissPavadzimesPageData = {
   rows: IrissPavadzimeListRow[];
@@ -40,10 +41,18 @@ export async function loadIrissPavadzimesPageData(now = new Date()): Promise<Iri
   };
 }
 
+/** Sānjosla / mobilā josla: tikai dzīvie dīlera nr., bez B861-6. */
+export function selectActiveCardWaybills(
+  rows: IrissPavadzimeRecord[],
+  now = new Date(),
+): IrissPavadzimeListRow[] {
+  return toActiveWaybillRows(rows, now).filter((row) => isAllowlistedWaybillPlate(row.plate));
+}
+
 /** Sānjoslas karte: tikai kešs, bez Dropbox sync un bez pasūtījumu saskaņošanas. */
 export async function loadIrissPavadzimesActiveCardData(now = new Date()): Promise<{
   rows: IrissPavadzimeListRow[];
 }> {
   const cached = await readIrissPavadzimesCached();
-  return { rows: toActiveWaybillRows(cached, now) };
+  return { rows: selectActiveCardWaybills(cached, now) };
 }

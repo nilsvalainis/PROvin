@@ -48,6 +48,8 @@ describe("create_waybill validation", () => {
     const noVin = parseCreateWaybillInput({ ...valid, vin: "" }, now);
     expect(noVin.ok).toBe(true);
     expect(parseCreateWaybillInput({ ...valid, plate: "AB-1234" }, now).ok).toBe(false);
+    expect(parseCreateWaybillInput({ ...valid, plate: "B861-6" }, now).ok).toBe(false);
+    expect(parseCreateWaybillInput({ ...valid, plate: "B192-7" }, now).ok).toBe(true);
     expect(parseCreateWaybillInput({ ...valid, plate: "", vin: "WVWZZZ3CZE1234567" }, now).ok).toBe(false);
     expect(parseCreateWaybillInput({ ...valid, brandModel: "" }, now).ok).toBe(false);
   });
@@ -150,6 +152,8 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(doc).toMatch(/untrusted user data only/i);
     expect(doc).toMatch(/Tukums, Rīgas iela/);
     expect(doc).toMatch(/Tukuma CSDD/);
+    expect(doc).toMatch(/B192-7/);
+    expect(doc).not.toMatch(/B861-6/);
     expect(doc).not.toMatch(/IRISS_CSDD_WAYBILL_FEE/);
     expect(doc).not.toMatch(/\u2014|\u2013/);
   });
@@ -165,7 +169,14 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(chat).toMatch(/if \(isChatError\(data\) \|\| !isChatOk\(data\)\)/);
     expect(plates).toMatch(/B193-7/);
     expect(plates).toMatch(/B762-7/);
-    expect(plates).toMatch(/B861-6/);
+    expect(plates).toMatch(/B192-7/);
+    expect(plates).not.toMatch(/B861-6/);
+    expect(chat).toMatch(/LvDealerPlate/);
+    const plateBtn = fs.readFileSync("components/admin/LvDealerPlate.tsx", "utf8");
+    expect(plateBtn).toMatch(/ring-\[#2563EB\]/);
+    expect(plateBtn).toMatch(/Brīvs/);
+    expect(plateBtn).toMatch(/Aizņemts/);
+    expect(plateBtn).not.toMatch(/27733440|\+371/);
     expect(chat).toMatch(/Tomēr izveidot/);
     expect(chat).toMatch(/Numurs ir aizņemts/);
     expect(chat).toMatch(/reply\.statusLabel/);
@@ -205,5 +216,13 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(store).toMatch(/audit_failed/);
     expect(page).not.toMatch(/sticky top-/);
     expect(page).not.toMatch(/am-topbar-sticky/);
+    expect(page).not.toMatch(/LvDealerPlate/);
+    const sidebar = fs.readFileSync("components/admin/IrissPavadzimesSidebarCard.tsx", "utf8");
+    const cardList = fs.readFileSync("lib/iriss-pavadzimes-list.ts", "utf8");
+    expect(sidebar).toMatch(/function LvTransitPlate/);
+    expect(sidebar).not.toMatch(/LvDealerPlate/);
+    expect(sidebar).not.toMatch(/B861-6/);
+    expect(cardList).toMatch(/selectActiveCardWaybills/);
+    expect(cardList).toMatch(/isAllowlistedWaybillPlate/);
   });
 });

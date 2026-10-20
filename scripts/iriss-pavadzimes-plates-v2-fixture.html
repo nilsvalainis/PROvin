@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pavadzīmes plate buttons v2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" />
+  <style>
+    :root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #111827; }
+    body { margin: 0; background: #F4F6F9; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 16px; }
+    h1 { margin: 0 0 12px; font-size: 22px; }
+    .grid { display: grid; gap: 16px; }
+    @media (min-width: 1000px) { .page-grid { grid-template-columns: 220px minmax(0,1fr) minmax(320px,420px); } }
+    .card, .chat, .side { background: #fff; border: 1px solid #E5E7EB; border-radius: 18px; }
+    .card { padding: 16px; }
+    .side { padding: 12px; }
+    .chat { overflow: hidden; }
+    .muted { color: #6b7280; font-size: 12px; }
+    .head { display: flex; justify-content: space-between; padding: 12px 16px; }
+    .form { border-top: 1px solid #F3F4F6; padding: 12px; }
+    label { display: block; font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 8px; }
+    input { width: 100%; margin-top: 4px; border: 1px solid #E5E7EB; border-radius: 12px; padding: 8px 12px; box-sizing: border-box; }
+    .pills { display: flex; gap: 6px; margin: 4px 0 10px; }
+    .pill { flex: 1; border: 0; border-radius: 999px; padding: 8px 6px; font-size: 12px; font-weight: 600; background: #F3F4F6; }
+    .pill.on { background: #111827; color: #fff; }
+    .pill small { display: block; font-size: 10px; font-weight: 500; }
+    .plates { display: flex; gap: 14px; margin: 8px 0 12px; }
+    .plates.col { flex-direction: column; align-items: center; max-width: 300px; margin-left: auto; margin-right: auto; gap: 16px; }
+    .plate-btn { flex: 1; min-width: 0; text-align: center; background: none; border: 0; padding: 0; }
+    .owner { font: 500 11px Inter, Arial; color: #9CA3AF; margin-bottom: 4px; }
+    .ring { display: block; border-radius: 15px; }
+    .ring.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2563EB; }
+    .chip { display: inline-flex; align-items: center; gap: 7px; margin-top: 6px; padding: 4px 10px; border-radius: 999px; font: 500 13px Inter, Arial; color: #374151; }
+    .chip.free { background: #F0FDF4; }
+    .chip.busy { background: #FFFBEB; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+    .submit { width: 100%; height: 40px; border: 0; border-radius: 999px; background: #111827; color: #fff; font-weight: 700; }
+    .side-label { font-size: 10px; font-weight: 700; letter-spacing: .06em; color: #9ca3af; }
+    .mini { display: inline-flex; height: 22px; width: 104px; overflow: hidden; border-radius: 3px; border: 1px solid #c8102e; }
+    .mini-eu { width: 13px; background: #0039a6; color: #fff; font-size: 6.5px; display: grid; place-items: end center; padding-bottom: 1px; }
+    .mini-num { flex: 1; display: flex; align-items: center; justify-content: space-between; padding: 0 6px 0 5px; color: #d21f2b; font: 600 16px "Barlow Condensed", sans-serif; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 id="title">Pavadzīmes</h1>
+    <div class="grid page-grid" id="page">
+      <aside class="side" id="sidebar">
+        <div class="side-label">PAVADZĪMES</div>
+        <div style="border-top:1px solid #f3f4f6;padding-top:6px;margin-top:6px">
+          <span class="mini"><span class="mini-eu">LV</span><span class="mini-num"><span>B</span><span>193</span><span>-</span><span>7</span></span></span>
+          <div class="muted" style="margin-top:4px">Volvo V50</div>
+          <div class="muted">22.10 15:59</div>
+        </div>
+      </aside>
+      <section class="card">
+        <p class="muted">P02799</p>
+        <p style="margin:4px 0 0;font-size:16px;font-weight:700">Volvo V50</p>
+        <p class="muted">B193-7 · līdz 22.10.2026, 15:59</p>
+      </section>
+      <section class="chat" id="form">
+        <div class="head">
+          <div>
+            <p style="margin:0;font-size:15px;font-weight:700">CSDD pavadzīme</p>
+            <p class="muted" style="color:#067647;margin:0">Aivars izveido tikai pavadzīmes</p>
+          </div>
+        </div>
+        <form class="form">
+          <div class="muted" style="font-weight:600">Numurs</div>
+          <div id="plates"></div>
+          <label>Marka, modelis<input value="VW Passat" readonly /></label>
+          <label>VIN (nav obligāts)<input value="" readonly /></label>
+          <label>Derīgums<input value="48" readonly /></label>
+          <label>Komentārs<input value="B193 uz 48h" readonly /></label>
+          <button class="submit" type="button">Izveidot pavadzīmi</button>
+        </form>
+      </section>
+    </div>
+  </div>
+  <script>
+    const after = new URLSearchParams(location.search).get("state") !== "before";
+    document.getElementById("title").textContent = after ? "Pavadzīmes (pēc)" : "Pavadzīmes (pirms)";
+    const STARS = [
+      "35.5,23.8 36.3,26.0 38.5,26.0 36.7,27.4 37.4,29.6 35.5,28.3 33.6,29.6 34.3,27.4 32.5,26.0 34.7,26.0",
+      "44.0,26.1 44.8,28.2 47.0,28.3 45.2,29.7 45.9,31.9 44.0,30.6 42.1,31.9 42.8,29.7 41.0,28.3 43.2,28.2",
+      "50.2,32.3 51.0,34.5 53.3,34.5 51.4,35.9 52.1,38.1 50.2,36.8 48.3,38.1 49.0,35.9 47.2,34.5 49.5,34.5",
+      "52.5,40.8 53.3,43.0 55.5,43.0 53.7,44.4 54.4,46.6 52.5,45.3 50.6,46.6 51.3,44.4 49.5,43.0 51.7,43.0",
+      "50.2,49.3 51.0,51.5 53.3,51.5 51.4,52.9 52.1,55.1 50.2,53.8 48.3,55.1 49.0,52.9 47.2,51.5 49.5,51.5",
+      "44.0,55.5 44.8,57.7 47.0,57.7 45.2,59.1 45.9,61.3 44.0,60.0 42.1,61.3 42.8,59.1 41.0,57.7 43.2,57.7",
+      "35.5,57.8 36.3,60.0 38.5,60.0 36.7,61.4 37.4,63.6 35.5,62.3 33.6,63.6 34.3,61.4 32.5,60.0 34.7,60.0",
+      "27.0,55.5 27.8,57.7 30.0,57.7 28.2,59.1 28.9,61.3 27.0,60.0 25.1,61.3 25.8,59.1 24.0,57.7 26.2,57.7",
+      "20.8,49.3 21.5,51.5 23.8,51.5 22.0,52.9 22.7,55.1 20.8,53.8 18.9,55.1 19.6,52.9 17.7,51.5 20.0,51.5",
+      "18.5,40.8 19.3,43.0 21.5,43.0 19.7,44.4 20.4,46.6 18.5,45.3 16.6,46.6 17.3,44.4 15.5,43.0 17.7,43.0",
+      "20.8,32.3 21.5,34.5 23.8,34.5 22.0,35.9 22.7,38.1 20.8,36.8 18.9,38.1 19.6,35.9 17.7,34.5 20.0,34.5",
+      "27.0,26.1 27.8,28.2 30.0,28.3 28.2,29.7 28.9,31.9 27.0,30.6 25.1,31.9 25.8,29.7 24.0,28.3 26.2,28.2",
+    ].map((p) => '<polygon fill="#FFCC00" points="' + p + '"/>').join("");
+    function svg(letter, digits, last, bottom) {
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 536 146" aria-hidden="true" style="width:100%;display:block">' +
+        '<rect width="520" height="130" rx="10" fill="#FFFFFF" stroke="#1F2937" stroke-width="1.5"/>' +
+        '<rect x="5" y="5" width="510" height="120" rx="7" fill="none" stroke="#C8102E" stroke-width="4"/>' +
+        '<path d="M9 9H62V121H9Z" fill="#003399"/>' + STARS +
+        '<text x="35.5" y="98" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="26" fill="#fff">LV</text>' +
+        '<text x="287" y="94" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="600" font-size="88" letter-spacing="3" fill="#C8102E">' + letter + '<tspan dx="26">' + digits + "</tspan>-" + last + "</text>" +
+        '<text x="287" y="117" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="500" font-size="14" letter-spacing=".5" fill="#C8102E">' + bottom + "</text></svg>";
+    }
+    const mobile = window.innerWidth < 640;
+    const box = document.getElementById("plates");
+    if (!after) {
+      box.className = "pills";
+      box.innerHTML =
+        '<button type="button" class="pill on">B193-7<small>brīvs</small></button>' +
+        '<button type="button" class="pill">B762-7<small>aizņemts</small></button>' +
+        '<button type="button" class="pill">B861-6<small>aizņemts</small></button>';
+    } else {
+      box.className = "plates" + (mobile ? " col" : "");
+      const rows = [
+        ["B", "193", "7", "SIA ĪRISS", "SIA ĪRISS", false, true],
+        ["B", "762", "7", "SIA ĪRISS", "SIA ĪRISS", true, false],
+        ["B", "192", "7", "Dzintarzeme auto", "SIA Dzintarzeme Auto", false, false],
+      ];
+      box.innerHTML = rows.map((r) =>
+        '<div class="plate-btn"><div class="owner">' + r[4] + '</div><span class="ring' + (r[6] ? " on" : "") + '">' +
+        svg(r[0], r[1], r[2], r[3]) + '</span><span class="chip ' + (r[5] ? "busy" : "free") + '"><i class="dot" style="background:' +
+        (r[5] ? "#D97706" : "#16A34A") + '"></i>' + (r[5] ? "Aizņemts · līdz 22.10 18:57" : "Brīvs") + "</span></div>"
+      ).join("");
+    }
+  </script>
+</body>
+</html>
