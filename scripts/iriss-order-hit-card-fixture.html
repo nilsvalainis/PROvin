@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IRISS order listing card fixture</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --s1: #fff;
+      --ink: #0b0c10;
+      --ink2: #5e636e;
+      --ink3: #9a9faa;
+      --onink: #fff;
+      --fill: rgba(116, 120, 138, 0.11);
+      --hair: rgba(17, 24, 39, 0.08);
+      --gsh: inset 0 1px 0 #fff, 0 1px 1px rgba(16, 24, 40, 0.04), 0 8px 22px rgba(16, 24, 40, 0.07);
+      --gb: rgba(255, 255, 255, 0.92);
+      --news-bg: var(--ink);
+      --news-fg: var(--onink);
+      --color-apple-text: #0b0c10;
+      --color-provin-muted: #5e636e;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      background: #e9ecf1;
+      color: #0b0c10;
+    }
+    /* Reproduces admin-ios-theme.css:71 and :75 */
+    .admin-ios-theme a:not(.iriss-listing-platform-chip):not(.admin-nav-link):not(.iriss-waybill-chip) {
+      color: #000000;
+    }
+    .admin-ios-theme :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd) {
+      color: #000000;
+    }
+    /* Existing order-room dark button fix: button only */
+    .admin-ios-theme [data-iriss-order-room="1"] button[class*="bg-[#111827]"] {
+      background: #111827 !important;
+      border-color: #111827 !important;
+      color: #fff !important;
+    }
+    .room-btn {
+      display: inline-flex;
+      height: 40px;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      padding: 0 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .room-btn-dark {
+      display: inline-flex;
+      height: 40px;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid #111827;
+      background: #111827;
+      padding: 0 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .iriss-ov-menu {
+      border: 0.5px solid var(--gb);
+    }
+    .iriss-pas-hits {
+      display: inline-flex;
+      height: 24px;
+      align-items: center;
+      border-radius: 999px;
+      background: var(--ink);
+      padding: 0 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--onink);
+    }
+    /* AFTER-only rules are injected by the screenshot script when SHOT=after */
+  </style>
+</head>
+<body class="admin-ios-theme p-6">
+  <p class="mb-3 text-[12px] font-semibold" id="shot-label">IRISS pasūtījuma kartīte · BEFORE</p>
+
+  <div class="mb-4 flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm">
+    <span class="text-[13px] font-semibold">P-A3B2 · Audi A6</span>
+    <span class="iriss-pas-hits" data-shot="jaunie">21 jauni</span>
+  </div>
+
+  <div data-iriss-order-room="1" class="min-w-0 overflow-x-hidden">
+    <article
+      id="hit-card"
+      class="flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#E5E7EB] bg-white sm:flex-row sm:items-stretch sm:gap-4 sm:rounded-2xl sm:p-3.5"
+      data-auction-url="https://www.auto1.com/en/auction/example"
+    >
+      <div class="h-[160px] w-full shrink-0 rounded-none sm:h-[200px] sm:w-[220px] sm:rounded-lg" style="background:linear-gradient(135deg,#1f2937,#4b5563)"></div>
+      <div class="flex min-w-0 flex-1 flex-col gap-2 p-2.5 sm:p-0">
+        <div class="text-[11px] font-semibold tabular-nums text-slate-500">Nr. 7602956</div>
+        <div class="text-[17px] font-semibold leading-tight text-[var(--color-apple-text)]" id="hit-title">
+          Audi A6 Avant 3.0 TDI
+        </div>
+        <div class="mt-auto flex flex-wrap items-center gap-2" data-iriss-no-card-nav>
+          <p class="w-full text-[12px] font-semibold text-[var(--ink2)]">Auto1 · Vācija</p>
+          <button type="button" class="room-btn">Sagatavot piedāvājumu</button>
+          <a href="https://www.auto1.com/en/auction/example" target="_blank" rel="noopener" class="room-btn-dark bg-[#111827] text-white" id="open-auction">
+            Atvērt izsolē
+          </a>
+          <div class="relative inline-flex">
+            <button type="button" class="inline-flex h-9 w-9 items-center justify-center rounded-full" aria-label="Vairāk" id="more-btn">⋯</button>
+            <div
+              id="ov-menu"
+              role="menu"
+              class="iriss-ov-menu absolute right-0 top-[calc(100%+6px)] z-50 min-w-[15.5rem] overflow-hidden rounded-2xl bg-[var(--s1)] py-1 shadow-[var(--gsh)]"
+            >
+              <button type="button" class="iriss-ov-item flex min-h-11 w-full items-center px-3.5 text-left text-[14px] font-medium text-[var(--ink)]">Nosūtīt klientam</button>
+              <a href="/admin/iriss/sludinajumi" class="iriss-ov-item flex min-h-11 w-full items-center px-3.5 text-left text-[14px] font-medium text-[var(--ink)]">Atvērt meklētājā</a>
+              <button type="button" class="iriss-ov-item flex min-h-11 w-full items-center px-3.5 text-left text-[14px] font-medium text-[var(--ink)]">Nav interesanti</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</body>
+</html>

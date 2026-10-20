@@ -43,6 +43,10 @@ describe("IRISS 00-tema tokens", () => {
     expect(css).toMatch(/--ink3:\s*#9a9faa/i);
     expect(css).toMatch(/--acc:\s*#3d5bd9/i);
     expect(css).toMatch(/--acc-soft:\s*rgba\(61,\s*91,\s*217,\s*0\.12\)/);
+    expect(css).toMatch(/--news-bg:\s*var\(--ink\)/);
+    expect(css).toMatch(/--news-fg:\s*var\(--onink\)/);
+    expect(irissAdmin).toMatch(/\.iriss-pas-hits/);
+    expect(irissAdmin).toMatch(/:is\(button, a\)\[class\*="bg-\[#111827\]"\]/);
     expect(css).toMatch(/--warn:\s*#a86400/i);
     expect(css).toMatch(/radial-gradient\(640px 420px at 12% 0%/);
     expect(css).toMatch(/radial-gradient\(720px 520px at 92% 18%/);

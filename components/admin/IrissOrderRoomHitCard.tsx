@@ -1,7 +1,7 @@
 "use client";
 
 import { Star, X } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissListingCardPhotoGallery } from "@/components/admin/IrissListingCardPhotoGallery";
 import { IrissListingCardPriceColumn, IrissListingCardPriceColumnMobile } from "@/components/admin/IrissListingCardPriceColumn";
@@ -44,11 +44,14 @@ function CountryFlag({ code }: { code: string }) {
   );
 }
 
+const HIT_CARD_NAV_IGNORE = "a,button,input,textarea,select,[role='menu'],[data-iriss-no-card-nav]";
+
 export function IrissOrderRoomHitCard({
   hit,
   budget,
   isFav,
   dismissed,
+  auctionUrl,
   onToggleFav,
   onDismiss,
   onRestore,
@@ -59,6 +62,7 @@ export function IrissOrderRoomHitCard({
   budget: number | null;
   isFav: boolean;
   dismissed: boolean;
+  auctionUrl?: string;
   onToggleFav: () => void;
   onDismiss: () => void;
   onRestore: () => void;
@@ -103,8 +107,19 @@ export function IrissOrderRoomHitCard({
   const referrerPolicy: "no-referrer" | undefined =
     hit.platform === "openline" || /images\.openlane\.eu/i.test(photos[0] ?? "") ? "no-referrer" : undefined;
 
+  function openAuction() {
+    if (!auctionUrl) return;
+    window.open(auctionUrl, "_blank", "noopener");
+  }
+
+  function onCardClick(e: MouseEvent<HTMLElement>) {
+    const t = e.target;
+    if (!(t instanceof Element) || t.closest(HIT_CARD_NAV_IGNORE)) return;
+    openAuction();
+  }
+
   const favHide = (
-    <div className="flex gap-1.5">
+    <div className="flex gap-1.5" data-iriss-no-card-nav onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
       <button
         type="button"
         title={isFav ? "Noņemt no saglabātajiem" : "Saglabāt"}
@@ -149,7 +164,23 @@ export function IrissOrderRoomHitCard({
   };
 
   return (
-    <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#E5E7EB] bg-white sm:flex-row sm:items-stretch sm:gap-4 sm:rounded-2xl sm:p-3.5">
+    <article
+      className={`flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#E5E7EB] bg-white sm:flex-row sm:items-stretch sm:gap-4 sm:rounded-2xl sm:p-3.5${auctionUrl ? " cursor-pointer" : ""}`}
+      data-iriss-hit-card
+      role={auctionUrl ? "link" : undefined}
+      tabIndex={auctionUrl ? 0 : undefined}
+      onClick={auctionUrl ? onCardClick : undefined}
+      onKeyDown={
+        auctionUrl
+          ? (e) => {
+              if (e.key !== "Enter" && e.key !== " ") return;
+              if (e.target instanceof Element && e.target.closest(HIT_CARD_NAV_IGNORE)) return;
+              e.preventDefault();
+              openAuction();
+            }
+          : undefined
+      }
+    >
       <IrissListingCardPhotoGallery
         photos={photos}
         thumbUrl={hit.thumbUrl}
@@ -165,7 +196,13 @@ export function IrissOrderRoomHitCard({
           </div>
         ) : null}
         <div className="text-[17px] font-semibold leading-tight text-[var(--color-apple-text)]" title={hit.title}>
-          {hit.title || "Sludinājums"}
+          {auctionUrl ? (
+            <a href={auctionUrl} target="_blank" rel="noopener" className="text-inherit no-underline" onClick={(e) => e.stopPropagation()}>
+              {hit.title || "Sludinājums"}
+            </a>
+          ) : (
+            hit.title || "Sludinājums"
+          )}
         </div>
         {subtitle ? <div className="text-[12px] text-[var(--color-provin-muted)]">{subtitle}</div> : null}
         <IrissListingCardSpecGrid specs={specs} />
@@ -183,12 +220,20 @@ export function IrissOrderRoomHitCard({
           {priceChip ? <IrissPriceChangeChip chip={priceChip} /> : null}
         </div>
         <IrissPriceHistoryPanel rows={priceRows} />
-        {matchSection}
-        <IrissListingCardPriceColumnMobile {...priceProps} />
-        {actions}
+        <div data-iriss-no-card-nav onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          {matchSection}
+        </div>
+        <div data-iriss-no-card-nav onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          <IrissListingCardPriceColumnMobile {...priceProps} />
+        </div>
+        <div data-iriss-no-card-nav onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          {actions}
+        </div>
       </div>
 
-      <IrissListingCardPriceColumn {...priceProps} />
+      <div data-iriss-no-card-nav onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+        <IrissListingCardPriceColumn {...priceProps} />
+      </div>
     </article>
   );
 }

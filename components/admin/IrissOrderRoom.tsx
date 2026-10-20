@@ -1438,6 +1438,7 @@ export function IrissOrderRoom({
                     budget={budget}
                     isFav={favIds.has(hit.id)}
                     dismissed={dismissed.has(hit.id)}
+                    auctionUrl={auctionUrl}
                     onToggleFav={() => toggleFav(hit.id)}
                     onDismiss={() => void setHitHidden(hit, true)}
                     onRestore={() => void setHitHidden(hit, false)}
@@ -1460,7 +1461,7 @@ export function IrissOrderRoom({
                           Sagatavot piedāvājumu
                         </button>
                         {auctionUrl ? (
-                          <a href={auctionUrl} target="_blank" rel="noopener noreferrer" className={roomBtnDark}>
+                          <a href={auctionUrl} target="_blank" rel="noopener" className={roomBtnDark}>
                             Atvērt izsolē
                           </a>
                         ) : null}
