@@ -23,6 +23,7 @@ describe("iriss order search and offers layout", () => {
     expect(room).not.toMatch(/sticky top-0/);
     expect(room).not.toMatch(/\u2014|\u2013/);
     expect(panel).toContain("Tirgus ielāde");
+    expect(panel).toContain("IRISS_LOAD_BUSY");
     expect(panel).toContain("Ielādēt");
     expect(panel).toContain("Ielāde izslēgta (izmaksu kontrole)");
     expect(panel).toContain("Labot kritērijus");
