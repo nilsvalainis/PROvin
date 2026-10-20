@@ -4,7 +4,7 @@ import { IrissScanListClient } from "@/components/admin/IrissScanListClient";
 import { IrissScanNewFab } from "@/components/admin/IrissScanNewFab";
 import { getIrissScanStorageState, listIrissScan, readIrissScanListOrder } from "@/lib/iriss-scan-store";
 import { irissScanVinFromQuery } from "@/lib/iriss-scan-vin";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { requireIrissSectionPage } from "@/lib/staff-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ export default async function IrissScanListPage({
 }: {
   searchParams?: Promise<{ vin?: string }>;
 }) {
-  await requireAdminPage();
+  await requireIrissSectionPage("radars");
   const sp = (await searchParams) ?? {};
   const vin = irissScanVinFromQuery(sp.vin);
   if (vin) {

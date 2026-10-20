@@ -6,7 +6,7 @@
 import { NextResponse, after } from "next/server";
 import { recordSourceOutcomes } from "@/lib/source-health-store";
 
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { getOutvinConfig } from "@/lib/outvin-api";
 import { executeOutvinB2bPurchase } from "@/lib/outvin-history-probe";
 import { parseOutvinDataBundleRaw } from "@/lib/outvin-data-bundle";
@@ -17,8 +17,8 @@ export const maxDuration = 90;
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("vin");
+  if (!gate.ok) return gate.response;
 
   if (!getOutvinConfig()) {
     return NextResponse.json({ error: "missing_outvin_credentials" }, { status: 503 });

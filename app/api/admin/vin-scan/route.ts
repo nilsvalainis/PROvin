@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { recordSourceOutcomes } from "@/lib/source-health-store";
 
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { fetchCsddTechData } from "@/lib/csdd-tech-data";
 import { canonicalizeListingUrl, isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { defaultVinScanSourceIds, VIN_SCAN_TTL_MS } from "@/lib/vin-scan/catalog";
@@ -25,8 +25,8 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function GET(req: Request) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("vin");
+  if (!gate.ok) return gate.response;
   const url = new URL(req.url);
   if (url.searchParams.get("history") === "1") {
     const entries = await listVinScanHistory().catch(() => []);
@@ -45,8 +45,8 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("vin");
+  if (!gate.ok) return gate.response;
 
   let body: Record<string, unknown>;
   try {

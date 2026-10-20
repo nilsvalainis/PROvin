@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { readGoogleContactsConfig, upsertGoogleContactForOrder } from "@/lib/google-contacts";
 import { applyGoogleContactSync, orderHasMatchableGoogleContact } from "@/lib/iriss-google-contact-fields";
 import {
@@ -13,8 +13,8 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pasutijumi");
+  if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
   if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   const rec = await readIrissPasutijums(id);

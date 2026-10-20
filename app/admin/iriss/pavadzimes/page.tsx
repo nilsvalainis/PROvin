@@ -1,13 +1,13 @@
 import { IrissPavadzimesListClient } from "@/components/admin/IrissPavadzimesListClient";
 import { loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { requireIrissSectionPage } from "@/lib/staff-auth";
 
 export const metadata = { title: "Pavadzīmes" };
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 export default async function IrissPavadzimesPage() {
-  await requireAdminPage();
+  await requireIrissSectionPage("pavadzimes");
   let data: Awaited<ReturnType<typeof loadIrissPavadzimesPageData>>;
   try {
     data = await loadIrissPavadzimesPageData();

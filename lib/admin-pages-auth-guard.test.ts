@@ -6,7 +6,9 @@ const ADMIN_DIR = path.resolve(__dirname, "../app/admin");
 const PUBLIC_PAGES = new Set(["login/page.tsx", "uzaicinajums/[token]/page.tsx"]);
 
 function isPageAuthGuard(line: string): boolean {
-  return /await require(?:Admin|Logistics)Page\(\)/.test(line);
+  return /await require(?:Admin|Logistics)Page\(\)/.test(line)
+    || /await requireIrissSectionPage\(/.test(line)
+    || /await getAdminOrStaffActor\(\)/.test(line);
 }
 
 function listPages(dir: string): string[] {

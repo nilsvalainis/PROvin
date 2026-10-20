@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import {
   MARKETPLACE_LOADS_DISABLED_REASON,
   marketplaceAutoEnabled,
@@ -16,8 +16,8 @@ import { isMarketplacePlatform } from "@/lib/marketplace/types";
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
-  const session = await getAdminSession();
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("radars");
+  if (!gate.ok) return gate.response;
   const url = new URL(req.url);
   const platforms = [
     ...url.searchParams.getAll("platform").map((p) => p.trim()).filter(isMarketplacePlatform),

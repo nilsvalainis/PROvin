@@ -13,7 +13,7 @@ import { isEcarstradeNoPriceNoBid } from "@/lib/iriss-listing-order-gate";
 import { readIrissOfferClientLinksForOrder } from "@/lib/iriss-offer-client-link-store";
 import { isIrissPasutijumiStoreEnabled, isSafeIrissPasutijumsId, readIrissListingOrderOv, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { stripIrissOfferImageDataUrls } from "@/lib/iriss-pasutijums-offer-images";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { requireIrissSectionPage } from "@/lib/staff-auth";
 import { readGoogleContactsConfig } from "@/lib/google-contacts";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ export default async function IrissPasutijumsDetailPage({
   params,
   searchParams,
 }: Props & { searchParams?: Promise<{ newOffer?: string; noClientPdf?: string; offer?: string; room?: string }> }) {
-  await requireAdminPage();
+  await requireIrissSectionPage("pasutijumi");
   if (!isIrissPasutijumiStoreEnabled()) {
     redirect("/admin/iriss/pasutijumi");
   }

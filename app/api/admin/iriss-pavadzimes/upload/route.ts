@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
 import { uploadIrissPavadzime } from "@/lib/iriss-pavadzimes-store";
 import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pavadzimes");
+  if (!gate.ok) return gate.response;
 
   let form: FormData;
   try {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { listingOfferSlug } from "@/lib/iriss-listings-offer";
 import { zipListingPhotoUrls } from "@/lib/iriss-listings-photos-zip";
 
@@ -7,8 +7,8 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const session = await getAdminSession();
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("sludinajumi");
+  if (!gate.ok) return gate.response;
   let body: unknown;
   try {
     body = await req.json();

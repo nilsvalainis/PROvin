@@ -10,7 +10,7 @@ import {
 } from "@/lib/admin-auth";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getStaffSession } from "@/lib/staff-auth";
-import { logisticsHomePath } from "@/lib/staff-roles";
+import { staffHomePath } from "@/lib/staff-roles";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +32,7 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
   }
   const staff = await getStaffSession();
   if (staff) {
-    redirect(logisticsHomePath());
+    redirect(staffHomePath(staff.user.sections));
   }
 
   const configured = adminAuthConfigured();

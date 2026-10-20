@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { VIN_SOURCES_BROWSER_UNAVAILABLE, isVinSourcesBrowserAllowed } from "@/lib/vin-sources/browser";
 import { fetchVinSource, vinSourceNeedsBrowser } from "@/lib/vin-sources";
@@ -13,8 +13,8 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(req: Request) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("vin");
+  if (!gate.ok) return gate.response;
 
   let body: Record<string, unknown>;
   try {

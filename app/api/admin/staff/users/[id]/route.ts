@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { ENV_ADMIN_USER_ID } from "@/lib/staff-roles";
+import { ENV_ADMIN_USER_ID, normalizeStaffSections } from "@/lib/staff-roles";
 import {
   confirmStaffTotp,
   findStaffUserById,
@@ -9,6 +9,7 @@ import {
   restoreStaffAccess,
   revokeAllStaffSessions,
   revokeStaffAccess,
+  setStaffSections,
   setStaffTotpSecret,
 } from "@/lib/staff-store";
 import { generateTotpSecret, totpAuthUrl, verifyTotpCode } from "@/lib/staff-totp";
@@ -48,15 +49,30 @@ export async function POST(req: Request, ctx: Ctx) {
   if (id === ENV_ADMIN_USER_ID) {
     return NextResponse.json({ error: "Env administratoru nevar mainīt." }, { status: 400 });
   }
-  let body: { action?: string };
+  let body: { action?: string; sections?: unknown };
   try {
-    body = (await req.json()) as { action?: string };
+    body = (await req.json()) as { action?: string; sections?: unknown };
   } catch {
     return NextResponse.json({ error: "Nederīgs pieprasījums" }, { status: 400 });
   }
   const ip = getClientIpFromRequest(req);
   const userAgent = req.headers.get("user-agent") ?? "";
   const action = body.action;
+  if (action === "set_sections") {
+    const sections = normalizeStaffSections(body.sections);
+    if (sections.length === 0) {
+      return NextResponse.json({ error: "Atzīmē vismaz vienu sadaļu." }, { status: 400 });
+    }
+    const user = await setStaffSections({
+      userId: id,
+      sections,
+      actorId: ENV_ADMIN_USER_ID,
+      ip,
+      userAgent,
+    });
+    if (!user) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true, user });
+  }
   if (action === "revoke") {
     const user = await revokeStaffAccess({ userId: id, actorId: ENV_ADMIN_USER_ID, ip, userAgent });
     if (!user) return NextResponse.json({ error: "not_found" }, { status: 404 });

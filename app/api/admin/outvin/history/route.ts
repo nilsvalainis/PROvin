@@ -3,13 +3,13 @@
  */
 import { NextResponse } from "next/server";
 
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
 
 export async function POST() {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("vin");
+  if (!gate.ok) return gate.response;
 
   return NextResponse.json(
     {

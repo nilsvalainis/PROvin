@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { loadIrissPavadzimesActiveCardData, loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
 
 export const runtime = "nodejs";
@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 export async function GET(req: Request) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pavadzimes");
+  if (!gate.ok) return gate.response;
   try {
     const active = new URL(req.url).searchParams.get("active") === "1";
     const data = active ? await loadIrissPavadzimesActiveCardData() : await loadIrissPavadzimesPageData();

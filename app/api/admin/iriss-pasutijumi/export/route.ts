@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import {
   buildIrissOrdersBackupJsonString,
   buildIrissOrdersBackupZipBuffer,
@@ -18,8 +18,8 @@ function parseFormat(raw: string | null): "zip" | "json" | "pdf" {
 }
 
 export async function GET(req: Request) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pasutijumi");
+  if (!gate.ok) return gate.response;
 
   const url = new URL(req.url);
   const format = parseFormat(url.searchParams.get("format"));

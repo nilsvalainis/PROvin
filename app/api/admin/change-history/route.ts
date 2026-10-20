@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { adminActorLabel, getAdminSession } from "@/lib/admin-auth";
+import { adminActorLabel } from "@/lib/admin-auth";
+import { getAdminOrStaffActor } from "@/lib/staff-auth";
+import { staffHasSection, type IrissSection } from "@/lib/staff-roles";
 import {
   applyIrissOrderSnapshot,
   isAdminChangeHistoryKind,
@@ -25,10 +27,31 @@ function operatorKind(value: unknown): AdminChangeHistoryKind | null {
   return value;
 }
 
+function sectionForHistoryKind(kind: AdminChangeHistoryKind): IrissSection {
+  if (kind === "iriss-waybill") return "pavadzimes";
+  if (kind === "iriss-order") return "pasutijumi";
+  return "sludinajumi";
+}
+
+async function requireHistoryAccess(kind: AdminChangeHistoryKind | null) {
+  const actor = await getAdminOrStaffActor();
+  if (actor?.kind === "admin") return { ok: true as const, actor };
+  if (actor?.kind === "staff") {
+    if (kind && staffHasSection(actor.user, sectionForHistoryKind(kind))) return { ok: true as const, actor };
+    return { ok: false as const, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
+  }
+  return { ok: false as const, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+}
+
+function historyActorLabel(actor: { kind: "admin"; name: string } | { kind: "staff"; user: { name: string } }): string {
+  return actor.kind === "admin" ? adminActorLabel() : actor.user.name.slice(0, 80);
+}
+
 export async function GET(req: Request) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const url = new URL(req.url);
   const kind = operatorKind(url.searchParams.get("kind"));
+  const gate = await requireHistoryAccess(kind);
+  if (!gate.ok) return gate.response;
   const id = url.searchParams.get("id") ?? "";
   if (!kind || !isSafeAdminChangeRecordId(kind, id)) {
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
@@ -38,7 +61,6 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   let body: { kind?: unknown; recordId?: unknown; entryId?: unknown };
   try {
     body = (await req.json()) as typeof body;
@@ -46,6 +68,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
   const kind = operatorKind(body.kind);
+  const gate = await requireHistoryAccess(kind);
+  if (!gate.ok) return gate.response;
   const recordId = typeof body.recordId === "string" ? body.recordId : "";
   const entryId = typeof body.entryId === "string" ? body.entryId : "";
   if (!kind || !isSafeAdminChangeRecordId(kind, recordId) || !isSafeAdminChangeEntryId(entryId)) {
@@ -53,7 +77,7 @@ export async function POST(req: Request) {
   }
   const snapshot = await loadAdminChangeSnapshot(kind, recordId, entryId, SCOPE);
   if (!snapshot) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  const by = adminActorLabel();
+  const by = historyActorLabel(gate.actor);
 
   if (kind === "iriss-order") {
     const current = await readIrissPasutijums(recordId);

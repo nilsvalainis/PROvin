@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdminSession } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { indexGoogleContactPhonesAndEmails, orderHasMatchableGoogleContact } from "@/lib/google-contact-match";
 import {
   decideGoogleContactBackfillRow,
@@ -56,8 +56,8 @@ async function persistLinkedOrder(rec: IrissPasutijumsRecord, result: GoogleCont
 }
 
 export async function POST(req: Request) {
-  const ok = await getAdminSession();
-  if (!ok) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("pasutijumi");
+  if (!gate.ok) return gate.response;
   if (!isIrissPasutijumiStoreEnabled()) {
     return NextResponse.json({ error: "store_disabled" }, { status: 503 });
   }

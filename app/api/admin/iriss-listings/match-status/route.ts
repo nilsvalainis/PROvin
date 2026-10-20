@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { adminActorLabel, getAdminSession } from "@/lib/admin-auth";
+import { adminActorLabel } from "@/lib/admin-auth";
+import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { parseListingMatchPatches } from "@/lib/iriss-listing-match";
 import { patchIrissListingMatchStatus } from "@/lib/iriss-listing-match-store";
 
@@ -7,8 +8,8 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 export async function PATCH(req: Request) {
-  const session = await getAdminSession();
-  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const gate = await requireIrissSectionApi("sludinajumi");
+  if (!gate.ok) return gate.response;
 
   let body: unknown;
   try {

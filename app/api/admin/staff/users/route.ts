@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { envAdminDisplayName } from "@/lib/staff-auth";
-import { ENV_ADMIN_USER_ID, isStaffRole } from "@/lib/staff-roles";
+import { ENV_ADMIN_USER_ID, isStaffRole, normalizeStaffSections } from "@/lib/staff-roles";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import {
   inviteStaffUser,
@@ -55,14 +55,14 @@ export async function POST(req: Request) {
   if (!(await getAdminSession())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  let body: { name?: string; email?: string; role?: string };
+  let body: { name?: string; email?: string; role?: string; sections?: unknown };
   try {
-    body = (await req.json()) as { name?: string; email?: string; role?: string };
+    body = (await req.json()) as { name?: string; email?: string; role?: string; sections?: unknown };
   } catch {
     return NextResponse.json({ error: "Nederīgs pieprasījums" }, { status: 400 });
   }
-  const role = body.role;
-  if (!isStaffRole(role)) {
+  const sections = normalizeStaffSections(body.sections, isStaffRole(body.role) ? body.role : undefined);
+  if (sections.length === 0) {
     return NextResponse.json({ error: "Nederīga loma" }, { status: 400 });
   }
   const ip = getClientIpFromRequest(req);
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
   const result = await inviteStaffUser({
     name: typeof body.name === "string" ? body.name : "",
     email: typeof body.email === "string" ? body.email : "",
-    role,
+    sections,
     createdBy: ENV_ADMIN_USER_ID,
     ip,
     userAgent,

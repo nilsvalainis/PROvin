@@ -8,6 +8,7 @@ import {
   resolveLiveStaffSession,
   revokeAllStaffSessions,
   revokeStaffAccess,
+  setStaffSections,
 } from "@/lib/staff-store";
 
 const suffix = () => `${Date.now()}${Math.random().toString(16).slice(2)}`;
@@ -43,6 +44,29 @@ describe("staff store access lifecycle", () => {
     const count = await revokeAllStaffSessions({ userId: auth.user.id, actorId: "env-admin" });
     expect(count).toBeGreaterThan(0);
     expect(await resolveLiveStaffSession(session.id, auth.user.id)).toBeNull();
+  });
+
+  it("grants a second section without killing the live session", async () => {
+    const email = `multi.${suffix()}@example.lv`;
+    const invited = await inviteStaffUser({
+      name: "Jānis Paraugs",
+      email,
+      sections: ["logistika"],
+      createdBy: "env-admin",
+    });
+    if (!invited.ok) throw new Error("invite");
+    expect(invited.user.sections).toEqual(["logistika"]);
+    await acceptStaffInvite({ token: invited.token, password: "pietiekami12x" });
+    const auth = await authenticateStaffPassword(email, "pietiekami12x");
+    if (!auth.ok) throw new Error("auth");
+    const { session } = await createStaffSession({ user: auth.user, ip: "127.0.0.1", userAgent: "test" });
+    const updated = await setStaffSections({
+      userId: auth.user.id,
+      sections: ["logistika", "pavadzimes"],
+      actorId: "env-admin",
+    });
+    expect(updated?.sections).toEqual(["logistika", "pavadzimes"]);
+    expect(await resolveLiveStaffSession(session.id, auth.user.id)).not.toBeNull();
   });
 
   it("revoking access kills the session and blocks login", async () => {

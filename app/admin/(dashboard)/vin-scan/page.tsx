@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { AdminSourceHealthCompact, type SourceHealthItem } from "@/components/admin/AdminSourceHealthStrip";
 import { readSourceHealth } from "@/lib/source-health-store";
 import { VIN_SCAN_CATALOG } from "@/lib/vin-scan/catalog";
-import { requireAdminPage } from "@/lib/admin-auth";
+import { requireIrissSectionPage } from "@/lib/staff-auth";
 
 /** Tāds pats avotu saraksts kā VIN SCAN flīzēm, nevis primārie + veselības filtrs. */
 
@@ -20,7 +20,7 @@ export default async function AdminVinScanPage({
 }: {
   searchParams?: Promise<{ vin?: string }>;
 }) {
-  await requireAdminPage();
+  await requireIrissSectionPage("vin");
   const sp = searchParams ? await searchParams : undefined;
   /** LIST kartīte: `/admin/vin-scan?vin=` aizpilda lauku; klients palaiž skenēšanu, ja VIN derīgs. */
   const initialVin = normalizeVin(sp?.vin ?? "");
