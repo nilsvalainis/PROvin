@@ -513,3 +513,53 @@
     color: #fca5a5 !important;
   }
 }
+
+/* 01 Pasūtījumi: segmenti, kartītes, izvēlne. Tokeni no 00-tema. */
+.iriss-pasutijumi-view {
+  color: var(--ink);
+}
+
+.iriss-pas-seg button.iriss-status-chip[aria-pressed="true"] {
+  border-color: transparent !important;
+  background: var(--chip-active-bg) !important;
+  color: var(--chip-active-fg) !important;
+}
+
+.iriss-pas-seg button.iriss-status-chip:not([aria-pressed="true"]) {
+  border-color: transparent !important;
+  background: var(--s1) !important;
+  color: var(--ink2) !important;
+  box-shadow: var(--sh);
+}
+
+.iriss-pas-seg button.iriss-status-chip[aria-pressed="true"] .iriss-status-chip-count {
+  background: color-mix(in srgb, var(--chip-active-fg) 16%, transparent) !important;
+  color: inherit !important;
+}
+
+.admin-ios-theme .iriss-pasutijumi-view button.iriss-status-chip[aria-pressed="true"],
+.admin-ios-theme .iriss-pasutijumi-view button.iriss-status-chip[aria-pressed="true"][data-tone] {
+  border-color: transparent !important;
+  background: var(--chip-active-bg) !important;
+  color: var(--chip-active-fg) !important;
+}
+
+.admin-ios-theme .iriss-pasutijumi-view button.iriss-status-chip:not([aria-pressed="true"]) {
+  border-color: transparent !important;
+  background: var(--s1) !important;
+  color: var(--ink2) !important;
+}
+
+.iriss-ov-menu {
+  border: 0.5px solid var(--gb);
+}
+
+.iriss-pas-card {
+  background: var(--s1);
+}
+
+@media (max-width: 767px) {
+  .iriss-pasutijumi-view .am-topbar {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+  }
+}

@@ -43,7 +43,13 @@ async function runBackfillPass(dryRun: boolean): Promise<GoogleContactBackfillCo
   return acc;
 }
 
-export function IrissGoogleContactsBackfillButton({ compact = false }: { compact?: boolean }) {
+export function IrissGoogleContactsBackfillButton({
+  compact = false,
+  menu = false,
+}: {
+  compact?: boolean;
+  menu?: boolean;
+}) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -76,14 +82,38 @@ export function IrissGoogleContactsBackfillButton({ compact = false }: { compact
     }
   }, [busy]);
 
+  const label = busy ? "Sinhronizē…" : menu ? "Sinhronizēt ar Google Contacts" : "Sinhronizēt klientus ar Google Contacts";
   const btnClass = compact
     ? "inline-flex h-8 items-center rounded-md border border-slate-200/90 bg-white px-2 text-[11px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50/90 disabled:opacity-40"
     : "inline-flex min-h-[40px] items-center rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-[13px] font-medium text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50/90 disabled:opacity-40";
 
+  if (menu) {
+    return (
+      <div>
+        <button
+          type="button"
+          role="menuitem"
+          className="iriss-ov-item flex min-h-11 w-full items-center px-3.5 text-left text-[14px] font-medium text-[var(--ink)] hover:bg-[var(--fill)] disabled:opacity-40"
+          disabled={busy}
+          onClick={() => void run()}
+        >
+          {label}
+        </button>
+        {err ? (
+          <p className="px-3.5 pb-2 text-[12px] leading-snug text-[var(--bad)]" role="alert">
+            {err}
+          </p>
+        ) : msg ? (
+          <p className="px-3.5 pb-2 text-[12px] leading-snug text-[var(--ink2)]">{msg}</p>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
     <div className={compact ? "flex flex-col items-end gap-1" : "flex flex-col gap-1.5"}>
       <button type="button" className={btnClass} disabled={busy} onClick={() => void run()}>
-        {busy ? "Sinhronizē…" : "Sinhronizēt klientus ar Google Contacts"}
+        {label}
       </button>
       {err ? (
         <p className="max-w-md text-[11px] leading-snug text-red-700" role="alert">

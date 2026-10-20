@@ -150,7 +150,7 @@ function named(kind: "reads" | "writes", file: string): number {
 
 describe("IRISS listings read cache", () => {
   it("row links do not prefetch every detail page", () => {
-    const src = readFileSync(path.join(process.cwd(), "components/admin/IrissPasutijumiListClient.tsx"), "utf8");
+    const src = readFileSync(path.join(process.cwd(), "components/admin/IrissPasutijumiListRow.tsx"), "utf8");
     expect(src).toContain("prefetch={false}");
     expect(src).toContain("router.prefetch(href)");
     expect(src).not.toMatch(/^\s+prefetch\s*$/m);
