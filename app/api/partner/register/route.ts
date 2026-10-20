@@ -6,7 +6,7 @@ import { createB2bPartner } from "@/lib/b2b-partner-store";
 import { dispatchAdminNewPartnerEmail } from "@/lib/b2b-partner-notify-mail";
 import { dispatchPartnerVerifyEmail } from "@/lib/b2b-partner-verify-mail";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -27,7 +27,7 @@ function readWriteInput(raw: Record<string, unknown>): B2bPartnerWriteInput {
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const limited = checkRateLimit(`partner-register:${ip}`, REGISTER_MAX_PER_WINDOW, REGISTER_WINDOW_MS);
+  const limited = await checkRateLimit(`partner-register:${ip}`, REGISTER_MAX_PER_WINDOW, REGISTER_WINDOW_MS);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "rate_limited" },

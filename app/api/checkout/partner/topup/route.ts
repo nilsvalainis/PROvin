@@ -6,7 +6,7 @@ import { formatB2bWalletEuro, isValidB2bWalletTopupCents } from "@/lib/b2b-walle
 import { getOrderCopy } from "@/lib/checkout-copy";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { invoiceBuyerMetadata } from "@/lib/invoice-buyer";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { getRequestOrigin } from "@/lib/request-origin";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { mergeStripeCheckoutMetadata } from "@/lib/stripe-checkout-metadata";
@@ -23,7 +23,7 @@ async function checkoutOrigin(): Promise<string> {
 
 /** Partnera maka papildināšana: Stripe Checkout uz brīvu summu. Rēķins nāk ar webhook e-pastu. */
 export async function POST(req: Request) {
-  const limited = checkRateLimit(`checkout-partner-topup:${getClientIpFromRequest(req)}`, 30, 10 * 60 * 1000);
+  const limited = await checkRateLimit(`checkout-partner-topup:${getClientIpFromRequest(req)}`, 30, 10 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "rate_limited" },

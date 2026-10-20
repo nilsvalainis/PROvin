@@ -7,13 +7,14 @@ import {
 import { hashIrissOfferLinkToken } from "@/lib/iriss-offer-client-link-token";
 import { openUsableIrissOfferLink } from "@/lib/iriss-offer-client-link-load";
 import { respondIrissOfferClientLink } from "@/lib/iriss-offer-client-link-store";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIpFromRequest } from "@/lib/client-ip";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function clientIp(req: Request): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip")?.trim() || "unknown";
+  return getClientIpFromRequest(req);
 }
 
 function hidden() {
@@ -25,7 +26,7 @@ function hidden() {
 
 export async function POST(req: Request) {
   if (!irissOfferLinkRequestIsSameOrigin(req)) return hidden();
-  const ipRl = checkRateLimit(`iriss-offer-respond:${clientIp(req)}`, 20, 10 * 60 * 1000);
+  const ipRl = await checkRateLimit(`iriss-offer-respond:${clientIp(req)}`, 20, 10 * 60 * 1000);
   if (!ipRl.ok) return hidden();
   let body: { token?: unknown; action?: unknown; text?: unknown };
   try {
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
   const action = body.action;
   if (!isSafeIrissOfferLinkToken(token)) return hidden();
   if (action !== "approve" && action !== "decline" && action !== "question") return hidden();
-  const hashRl = checkRateLimit(`iriss-offer-respond-hash:${hashIrissOfferLinkToken(token).slice(0, 16)}`, 12, 10 * 60 * 1000);
+  const hashRl = await checkRateLimit(`iriss-offer-respond-hash:${hashIrissOfferLinkToken(token).slice(0, 16)}`, 12, 10 * 60 * 1000);
   if (!hashRl.ok) return hidden();
   const opened = await openUsableIrissOfferLink(token);
   if (!opened) return hidden();

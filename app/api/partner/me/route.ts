@@ -3,7 +3,7 @@ import { partnerFieldError, type B2bPartnerWriteInput } from "@/lib/b2b-partner-
 import { resolveActiveB2bPartner, resolveActiveB2bPartnerProfile } from "@/lib/b2b-partner-auth";
 import { updateB2bPartner } from "@/lib/b2b-partner-store";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export async function GET() {
 
 export async function PATCH(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const limited = checkRateLimit(`partner-me-patch:${ip}`, PATCH_MAX_PER_WINDOW, PATCH_WINDOW_MS);
+  const limited = await checkRateLimit(`partner-me-patch:${ip}`, PATCH_MAX_PER_WINDOW, PATCH_WINDOW_MS);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "rate_limited" },
