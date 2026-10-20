@@ -16,6 +16,7 @@ import {
   fuelsMatchGroups,
   gearboxesMatchGroups,
 } from "@/lib/iriss-criteria-listing-match";
+import { acceptedNormalization, normalizeDrive } from "@/lib/iriss-criteria-taxonomy";
 import { listingVehicleOrderIds, parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
 import { splitModelExtensions, titleHasAnyModelExtension } from "@/lib/iriss-model-extension";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
@@ -311,6 +312,8 @@ export function irissOrderRoomVisibleHits(
 function driveHit(orderDrive: string, hay: string): boolean | null {
   const raw = orderDrive.trim();
   if (!raw || !hay.trim()) return null;
+  const listing = normalizeDrive(hay);
+  if (!acceptedNormalization(listing.confidence, listing.group)) return null;
   return drivesMatchGroups(hay, [raw]);
 }
 
