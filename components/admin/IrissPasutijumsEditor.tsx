@@ -1610,8 +1610,8 @@ export function IrissPasutijumsEditor({
     <div
       className={
         unsavedDraft
-          ? "mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 max-md:pb-28 sm:px-6 lg:px-10"
-          : "mx-auto w-full min-w-0 max-w-[1280px] overflow-x-hidden bg-[#f4f5f7] px-3 pb-4 max-md:pb-28 sm:px-4 lg:px-5"
+          ? "mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 max-md:px-0 max-md:pb-28 sm:px-6 lg:px-10"
+          : "mx-auto w-full min-w-0 max-w-[1280px] overflow-x-hidden bg-[#f4f5f7] px-3 pb-4 max-md:px-0 max-md:pb-28 sm:px-4 lg:px-5"
       }
     >
       <IrissUnsavedChangesGuard dirty={dirty} onSave={saveCurrentPage} />
@@ -2099,19 +2099,19 @@ export function IrissPasutijumsEditor({
         </section>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-[40] flex gap-2 border-t border-[#e5e5ea] bg-[rgba(249,249,249,0.94)] px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2.5 backdrop-blur md:hidden">
+      <div className="iriss-action-dock md:hidden">
         <button
           type="button"
           disabled={orderPdfBusy}
           onClick={() => void openPdf()}
-          className="flex h-[50px] flex-1 items-center justify-center rounded-xl bg-white text-[17px] font-semibold text-[var(--color-provin-accent)] shadow-[inset_0_0_0_1px_#d1d1d6]"
+          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-white text-[15px] font-semibold text-[var(--color-provin-accent)] shadow-[inset_0_0_0_1px_#d1d1d6]"
         >
-          {orderPdfBusy ? "PDF…" : "PDF"}
+          {orderPdfBusy ? "PDF…" : "Līgums"}
         </button>
         <button
           type="button"
           onClick={openCreateOffer}
-          className="flex h-[50px] flex-1 items-center justify-center rounded-xl bg-[#e5e5ea] text-[17px] font-semibold text-[var(--color-apple-text)]"
+          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[#111827] text-[15px] font-semibold text-white"
         >
           Piedāvājums
         </button>
@@ -2119,7 +2119,7 @@ export function IrissPasutijumsEditor({
           type="button"
           disabled={busy || orderPdfBusy}
           onClick={saveCurrentPage}
-          className="flex h-[50px] flex-1 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] text-[17px] font-semibold text-white"
+          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[var(--color-provin-accent)] text-[15px] font-semibold text-white"
         >
           {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
         </button>

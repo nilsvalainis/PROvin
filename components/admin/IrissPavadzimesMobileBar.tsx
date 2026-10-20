@@ -19,16 +19,19 @@ function useIrissMobileViewport(): boolean {
   );
 }
 
+const IRISS_DETAIL_PATH = /^\/admin\/iriss\/(?:pasutijumi|scan)\/[^/]+$/;
+
 /** Mobilā josla virs IRISS satura. Dati no esošā aktīvo pavadzīmju pieprasījuma. */
-export function IrissPavadzimesMobileBar() {
+export function IrissPavadzimesMobileBar({ embedded = false }: { embedded?: boolean }) {
   const mobile = useIrissMobileViewport();
   const pathname = usePathname() || "";
-  const hideOnListings = pathname.startsWith("/admin/iriss/sludinajumi");
+  const hideBar =
+    pathname.startsWith("/admin/iriss/sludinajumi") || IRISS_DETAIL_PATH.test(pathname);
   const [rows, setRows] = useState<IrissPavadzimeListRow[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!mobile || hideOnListings) return;
+    if (!mobile || hideBar) return;
     let cancelled = false;
     void fetch("/api/admin/iriss-pavadzimes?active=1", { credentials: "include", cache: "no-store" })
       .then(async (res) => {
@@ -42,16 +45,19 @@ export function IrissPavadzimesMobileBar() {
     return () => {
       cancelled = true;
     };
-  }, [mobile, hideOnListings]);
+  }, [mobile, hideBar]);
 
-  if (!mobile || hideOnListings) return null;
+  if (!mobile || hideBar) return null;
+  const rowClass = embedded
+    ? "am-chip-fade -mr-4 flex max-w-full items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    : "flex max-w-full gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
   if (!loaded) {
     return (
       <div className="mb-0 max-w-full md:hidden" aria-hidden>
-        <div className="flex max-w-full gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="h-8 w-28 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
-          <span className="h-8 w-24 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
-          <span className="h-8 w-20 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
+        <div className={rowClass}>
+          <span className="h-7 w-28 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
+          <span className="h-7 w-24 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
+          <span className="h-7 w-20 shrink-0 animate-pulse rounded-full bg-[var(--fill-secondary)]" />
         </div>
       </div>
     );
@@ -61,12 +67,13 @@ export function IrissPavadzimesMobileBar() {
 
   return (
     <div className="mb-0 max-w-full md:hidden" aria-label="Pavadzīmju derīgums">
-      <div className="flex max-w-full gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className={rowClass}>
+        <span className="shrink-0 text-[12px] font-medium text-[var(--label-secondary)]">Pavadzīmes</span>
         {items.map((item) => (
           <Link
             key={item.id}
             href="/admin/iriss/pavadzimes"
-            className="iriss-waybill-chip inline-flex h-8 max-w-[16rem] shrink-0 items-center rounded-full bg-[var(--fill-secondary)] px-2.5 text-[12px] font-medium text-[var(--label)]"
+            className="iriss-waybill-chip inline-flex h-7 max-w-[16rem] shrink-0 items-center rounded-full bg-[var(--fill-secondary)] px-2.5 text-[12px] font-medium text-[var(--label)]"
           >
             <span className="truncate">{item.label}</span>
           </Link>

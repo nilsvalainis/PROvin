@@ -4,6 +4,7 @@
 export function IrissRangeFromToField({
   label,
   unit,
+  phoneUnit,
   required,
   from,
   to,
@@ -17,6 +18,8 @@ export function IrissRangeFromToField({
 }: {
   label: string;
   unit?: string;
+  /** Tikai telefonā (desktop paliek `unit`). */
+  phoneUnit?: string;
   required?: boolean;
   from: string;
   to: string;
@@ -30,7 +33,20 @@ export function IrissRangeFromToField({
 }) {
   const fromMissing = Boolean(required && !from.trim());
   const toMissing = Boolean(required && !to.trim());
-  const inputBase = unit ? `${inputClassName} iriss-range-input iriss-range-input-has-unit` : `${inputClassName} iriss-range-input`;
+  const inputBase = [
+    inputClassName,
+    "iriss-range-input",
+    unit ? "iriss-range-input-has-unit" : "",
+    phoneUnit ? "iriss-range-input-has-phone-unit" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const unitMarks = unit || phoneUnit ? (
+    <>
+      {unit ? <span className="iriss-range-unit-desk">{unit}</span> : null}
+      {phoneUnit ? <span className="iriss-range-unit-phone">{phoneUnit}</span> : null}
+    </>
+  ) : null;
 
   return (
     <div className="iriss-range-field min-w-0">
@@ -56,9 +72,9 @@ export function IrissRangeFromToField({
             aria-required={required || undefined}
             aria-invalid={fromMissing || undefined}
           />
-          {unit ? (
-            <span className="iriss-range-unit" aria-hidden>
-              {unit}
+          {unitMarks ? (
+            <span className="iriss-range-unit" data-unit={unit || phoneUnit} aria-hidden>
+              {unitMarks}
             </span>
           ) : null}
         </label>
@@ -78,9 +94,9 @@ export function IrissRangeFromToField({
             aria-required={required || undefined}
             aria-invalid={toMissing || undefined}
           />
-          {unit ? (
-            <span className="iriss-range-unit" aria-hidden>
-              {unit}
+          {unitMarks ? (
+            <span className="iriss-range-unit" data-unit={unit || phoneUnit} aria-hidden>
+              {unitMarks}
             </span>
           ) : null}
         </label>
