@@ -7,10 +7,20 @@
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session-token";
 import { B2B_DEMO_ADMIN_SECRET_HEADER, verifyB2bDemoAdminSecret } from "@/lib/b2b-demo-admin-secret";
 import { getPublicSiteOrigin } from "@/lib/site-url";
+import {
+  decideAdminApiAccess,
+  isStaffPublicApiPath,
+  type AccessActor,
+} from "@/lib/staff-roles";
+import { STAFF_SESSION_COOKIE_NAME, verifyStaffSessionToken } from "@/lib/staff-session-token";
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
-export type AdminApiGateDecision = { action: "next" } | { action: "unauthorized" } | { action: "forbidden_origin" };
+export type AdminApiGateDecision =
+  | { action: "next" }
+  | { action: "unauthorized" }
+  | { action: "forbidden" }
+  | { action: "forbidden_origin" };
 
 export function isUnsafeHttpMethod(method: string): boolean {
   return UNSAFE_METHODS.has(method.toUpperCase());
@@ -36,7 +46,21 @@ export function isAdminApiWebhookOrCronPath(pathname: string): boolean {
 }
 
 export function isAdminApiSessionExemptPath(pathname: string): boolean {
-  return isAdminApiLoginOrLogoutPath(pathname) || isAdminApiWebhookOrCronPath(pathname);
+  return (
+    isAdminApiLoginOrLogoutPath(pathname) ||
+    isAdminApiWebhookOrCronPath(pathname) ||
+    isStaffPublicApiPath(pathname)
+  );
+}
+
+export async function resolveAccessActorFromCookies(cookies: {
+  get(name: string): { value: string } | undefined;
+}): Promise<AccessActor> {
+  const adminToken = cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
+  if (await verifyAdminSessionToken(adminToken)) return { kind: "admin" };
+  const staff = await verifyStaffSessionToken(cookies.get(STAFF_SESSION_COOKIE_NAME)?.value);
+  if (staff) return { kind: "staff", role: staff.role };
+  return { kind: "none" };
 }
 
 export function isAdminB2bDemoApiPath(pathname: string): boolean {
@@ -119,9 +143,11 @@ export async function decideAdminApiGate(request: {
   const demoHeader = request.headers.get(B2B_DEMO_ADMIN_SECRET_HEADER);
   const demoHeaderOk = isAdminB2bDemoApiPath(pathname) && verifyB2bDemoAdminSecret(demoHeader);
 
-  if (!isAdminApiLoginOrLogoutPath(pathname) && !demoHeaderOk) {
-    const token = request.cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
-    if (!(await verifyAdminSessionToken(token))) return { action: "unauthorized" };
+  if (!isAdminApiSessionExemptPath(pathname) && !demoHeaderOk) {
+    const actor = await resolveAccessActorFromCookies(request.cookies);
+    const access = decideAdminApiAccess(pathname, actor);
+    if (access === "unauthorized") return { action: "unauthorized" };
+    if (access === "forbidden") return { action: "forbidden" };
   }
 
   if (isUnsafeHttpMethod(request.method) && !adminApiOriginAllowed(request.headers)) {

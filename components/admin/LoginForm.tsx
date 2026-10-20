@@ -12,6 +12,8 @@ type Props = {
 export function LoginForm({ devPrefill = null, postLoginPath = "/admin" }: Props) {
   const [username, setUsername] = useState(devPrefill?.username ?? "");
   const [password, setPassword] = useState(devPrefill?.password ?? "");
+  const [totp, setTotp] = useState("");
+  const [challenge, setChallenge] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,11 +25,24 @@ export function LoginForm({ devPrefill = null, postLoginPath = "/admin" }: Props
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, totp, challenge }),
       });
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as {
+        error?: string;
+        totpRequired?: boolean;
+        challenge?: string;
+        redirect?: string;
+      };
       if (!res.ok) {
         setError(data.error ?? "Neizdevās pieteikties");
+        return;
+      }
+      if (data.totpRequired && data.challenge) {
+        setChallenge(data.challenge);
+        return;
+      }
+      if (data.redirect?.startsWith("/admin") && !data.redirect.startsWith("/admin/login")) {
+        window.location.href = data.redirect;
         return;
       }
       window.location.href =
@@ -73,6 +88,23 @@ export function LoginForm({ devPrefill = null, postLoginPath = "/admin" }: Props
           required
         />
       </div>
+      {challenge ? (
+        <div>
+          <label htmlFor="admin-totp" className="mb-2 block text-sm font-medium text-[var(--color-apple-text)]">
+            2FA kods
+          </label>
+          <input
+            id="admin-totp"
+            name="totp"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={totp}
+            onChange={(e) => setTotp(e.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none ring-0 transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25"
+            required
+          />
+        </div>
+      ) : null}
       {error ? (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
           {error}

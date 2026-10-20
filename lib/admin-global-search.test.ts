@@ -81,6 +81,10 @@ describe("admin meklēšanas normalizācija", () => {
   it("atrod sadaļu pēc nosaukuma un grupē pēc tipa", () => {
     const hits = searchAdminGlobal(adminSearchSectionRecords(), "pavadzimes", { kind: "operator" });
     expect(hits.map((h) => h.href)).toEqual(["/admin/iriss/pavadzimes"]);
+    expect(searchAdminGlobal(adminSearchSectionRecords(), "izmaksas", { kind: "operator" }).map((h) => h.href)).toEqual([
+      "/admin/izmaksas",
+      "/admin/iriss/izmaksas",
+    ]);
     expect(groupAdminSearchHits(hits)).toEqual([
       {
         kind: "section",

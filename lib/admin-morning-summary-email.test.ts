@@ -128,4 +128,28 @@ describe("admin-morning-summary-email", () => {
     expectCleanCopy(mail.text);
     expectCleanCopy(mail.html);
   });
+
+  it("includes izmaksu sliekšņus in the morning mail", () => {
+    const summary = buildMorningSummary([{ id: "ok", created: Math.floor((NOW - 8 * 3600_000) / 1000) }], [], NOW);
+    summary.costAlerts = [
+      {
+        source: "apify",
+        label: "Apify (mobile.de, AutoScout24)",
+        level: 80,
+        percent: 80,
+        usd: 3.6,
+        limitUsd: 4.5,
+        units: 14,
+        limitUnits: null,
+        hard: true,
+      },
+    ];
+    const mail = buildMorningSummaryEmail(summary, { pageUrl: PAGE, nowMs: NOW });
+    expect(mail.text).toContain("Izmaksas");
+    expect(mail.text).toContain("Apify: 80 %, 3,60 $ / 4,50 $");
+    expect(mail.html).toContain("Izmaksas");
+    expect(mail.html).toContain("Apify");
+    expectCleanCopy(mail.text);
+    expectCleanCopy(mail.html);
+  });
 });

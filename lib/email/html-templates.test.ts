@@ -3,6 +3,7 @@ import {
   listingPeekCustomerCommentHtml,
   partnerPasswordResetEmailHtml,
   partnerVerifyEmailHtml,
+  staffInviteEmailHtml,
   adminNewPartnerHtml,
   morningSummaryEmailHtml,
   adminAuditSlaWarningHtml,
@@ -67,6 +68,20 @@ describe("partnerPasswordResetEmailHtml", () => {
     });
     expect(html).toContain("Atjaunojiet paroli");
     expect(html).toContain("https://provin.lv/lv/partneriem/parole?token=rst_abc");
+    expect(html).toContain("24 stundas");
+    expect(html).not.toContain("\u2014");
+    expect(html).not.toContain("\u2013");
+  });
+});
+
+describe("staffInviteEmailHtml", () => {
+  it("includes the one-time IRISS invite CTA without dashes", () => {
+    const html = staffInviteEmailHtml({
+      name: "Anna Piemere",
+      inviteUrl: "https://www.provin.lv/admin/uzaicinajums/abc",
+    });
+    expect(html).toContain("IRISS pieeja");
+    expect(html).toContain("https://www.provin.lv/admin/uzaicinajums/abc");
     expect(html).toContain("24 stundas");
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
@@ -156,5 +171,26 @@ describe("morningSummaryEmailHtml", () => {
     expect(html).toContain("stat.vin");
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
+  });
+
+  it("lists izmaksu 80 % brīdinājumus", () => {
+    const html = morningSummaryEmailHtml({
+      dateLabel: "20. oktobris",
+      pageUrl: "https://provin.lv/admin/kopsavilkums",
+      open: 1,
+      urgent: 0,
+      overdue: 0,
+      openAudits: 1,
+      openPeeks: 0,
+      newPeeksLast24h: 0,
+      overdueAudits: [],
+      dueTodayAudits: [],
+      newPeeks: [],
+      costAlerts: [{ title: "Apify", detail: "80 %, 3,60 $ / 4,50 $" }],
+    });
+    expect(html).toContain("Izmaksas");
+    expect(html).toContain("Apify");
+    expect(html).toContain("3,60 $ / 4,50 $");
+    expect(html).not.toContain("\u2014");
   });
 });

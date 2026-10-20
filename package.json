@@ -31,6 +31,7 @@
     "audit:knowledge": "node scripts/audit-knowledge-cli.mjs --load-env-local",
     "vin:fetch": "node scripts/vin-fetch.mjs",
     "screenshot:mobile": "node scripts/mobile-screenshot.mjs",
+    "screenshot:iriss-staff": "node scripts/iriss-staff-roles-screenshot.mjs",
     "test:admin-mobile": "node scripts/admin-mobile-iphone-test.mjs",
     "stripe:listen": "stripe listen --forward-to localhost:3000/api/webhooks/stripe",
     "brand-logos:embed-pdf": "node scripts/embed-pdf-brand-logos.mjs"

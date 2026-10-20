@@ -22,6 +22,7 @@ import {
   Search,
   Settings,
   Sun,
+  Wallet,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -65,6 +66,7 @@ export const ADMIN_NAV_LABELS = {
   groupIriss: "IRISS",
   groupWeb: "WEB",
   groupB2b: "B2B",
+  groupOps: "Pārvaldība",
   orders: "Pasūtījumi",
   morning: "Rīta kopsavilkums",
   vinScan: "VIN pārbaude",
@@ -83,6 +85,7 @@ export const ADMIN_NAV_LABELS = {
   invoices: "Rēķini",
   partners: "Partneri",
   demoDealers: "Demo dīleri",
+  costs: "Izmaksas",
   logout: "Iziet",
 } as const;
 const L = ADMIN_NAV_LABELS;
@@ -99,6 +102,8 @@ const FAST: Item = { href: "/admin/atras-vertesanas", label: L.fast, icon: Zap, 
 const VIN: Item = { href: "/admin/vin-scan", label: L.vinScan, icon: ScanLine, match: starts("/admin/vin-scan") };
 const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Handshake, badge: "partners", match: starts("/admin/partneri") };
 const DEMO_DILERI: Item = { href: "/admin/b2b-demo", label: L.demoDealers, icon: Building2, match: starts("/admin/b2b-demo") };
+const IZMAKSAS: Item = { href: "/admin/izmaksas", label: L.costs, icon: Wallet, match: starts("/admin/izmaksas") };
+const I_IZMAKSAS: Item = { href: "/admin/iriss/izmaksas", label: L.costs, icon: Wallet, match: starts("/admin/iriss/izmaksas") };
 const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, plus: true, match: starts("/admin/iriss/pasutijumi") };
 const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
 const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybills, icon: FileText, match: starts("/admin/iriss/pavadzimes") };
@@ -134,13 +139,18 @@ export const ADMIN_NAV_GROUPS: Group[] = [
       DEMO_DILERI,
     ],
   },
+  { title: L.groupOps, items: [IZMAKSAS] },
 ];
 
 /** PRO un IRISS izvēlnes nejaucas: katrai darba zonai savas grupas. */
 export type AdminWorkspace = "pro" | "iriss";
 const WS_GROUPS: Record<AdminWorkspace, Group[]> = {
   pro: ADMIN_NAV_GROUPS.filter((g) => g.title !== L.groupIriss),
-  iriss: ADMIN_NAV_GROUPS.filter((g) => g.title === L.groupIriss),
+  /** IRISS: Pārvaldība starp Iestatījumi un Pavadzīmes (sānjoslas kartītes). */
+  iriss: [
+    { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
+    { title: L.groupOps, items: [I_IZMAKSAS] },
+  ],
 };
 export const ADMIN_WS_COOKIE = "admin_ws";
 /** Lapas, kas pieder abām zonām — zonu nosaka pēdējā izvēle. */
@@ -541,6 +551,8 @@ const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/iriss/atskaite": "atskaite",
   "/admin/iriss/pavadzimes": "pavadzimes",
   "/admin/iriss/iestatijumi": "iestatijumi",
+  "/admin/izmaksas": "rekini",
+  "/admin/iriss/izmaksas": "rekini",
 };
 
 /** Mobilā apakšējā cilņu josla: 4 iPhone cilnes + atsevišķa meklēšana. PRO/IRISS centrs ir „Vairāk”. */

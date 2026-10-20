@@ -9,6 +9,8 @@ import {
   getDevLoginPrefill,
 } from "@/lib/admin-auth";
 import { getRequestOrigin } from "@/lib/request-origin";
+import { getStaffSession } from "@/lib/staff-auth";
+import { logisticsHomePath } from "@/lib/staff-roles";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,10 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
   const session = await getAdminSession();
   if (session) {
     redirect(postLoginPath);
+  }
+  const staff = await getStaffSession();
+  if (staff) {
+    redirect(logisticsHomePath());
   }
 
   const configured = adminAuthConfigured();

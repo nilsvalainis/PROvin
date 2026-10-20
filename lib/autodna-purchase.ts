@@ -96,6 +96,8 @@ export async function autodnaGetReportIdempotent(
       httpStatus: result.status,
       payload: result,
     });
+    const { persistPaidSourceCost } = await import("@/lib/admin-costs-persist");
+    persistPaidSourceCost({ source: "autodna", units: 1, ref: vin });
     return result;
   } catch (err) {
     await releaseAutodnaReportPurchase(vin);
