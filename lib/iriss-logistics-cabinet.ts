@@ -15,6 +15,7 @@ export const CABINET_DOC_TYPES = [
   "auction_invoice",
   "service_invoice",
   "pickup_pdf",
+  "cmr",
   "csdd_status",
   "note",
   "other",
@@ -27,6 +28,7 @@ export const CABINET_DOC_TYPE_LABEL: Record<CabinetDocType, string> = {
   auction_invoice: "Auction Invoice",
   service_invoice: "Servisa rēķins",
   pickup_pdf: "Pickup dokuments",
+  cmr: "CMR",
   csdd_status: "CSDD pārbaude",
   note: "Piezīmes",
   other: "Dokuments",
@@ -169,8 +171,20 @@ export function logisticsDocumentTitle(input: {
 
 export function cabinetDocTypeForSection(section: CabinetSectionId, type: CabinetDocType): boolean {
   if (section === "A") return type === "purchase_confirm" || type === "car_invoice" || type === "auction_invoice" || type === "service_invoice" || type === "other";
-  if (section === "B") return type === "pickup_pdf" || type === "other";
+  if (section === "B") return type === "pickup_pdf" || type === "cmr" || type === "other";
   return type === "service_invoice" || type === "csdd_status" || type === "note" || type === "other";
+}
+
+export function cabinetDocumentSourceChip(source: string, auction = ""): string {
+  const s = source.trim();
+  if (!s || s === "upload" || s === "manual") return "";
+  const low = s.toLowerCase();
+  if (low === "email" || low === "e-pasts") return "No e-pasta";
+  if (low === "auto1" || low === "auction" || low === "izsole") {
+    return auction ? `No izsoles - ${auction}` : "No izsoles";
+  }
+  if (/^no /i.test(s)) return s;
+  return `No ${s}`;
 }
 
 export function liveCabinetDocuments(docs: CabinetDocument[]): CabinetDocument[] {

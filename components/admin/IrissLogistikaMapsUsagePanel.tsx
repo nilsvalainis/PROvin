@@ -11,6 +11,7 @@ type Usage = {
   geocoding?: { monthlyUsed: number; monthlyCap: number; dailyUsed: number; dailyCap: number };
   geocodePlace?: { monthlyUsed: number; monthlyCap: number; dailyUsed: number; dailyCap: number };
   searchDestinations?: { monthlyUsed: number; monthlyCap: number; dailyUsed: number; dailyCap: number };
+  directions?: { monthlyUsed: number; monthlyCap: number; dailyUsed: number; dailyCap: number };
 };
 
 export function IrissLogistikaMapsUsagePanel() {
@@ -26,12 +27,13 @@ export function IrissLogistikaMapsUsagePanel() {
   const geo = usage?.geocoding;
   const place = usage?.geocodePlace;
   const dest = usage?.searchDestinations;
+  const dir = usage?.directions;
   return (
     <section className="mt-5 max-w-xl rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--sh)] sm:p-5">
       <h2 className="text-[15px] font-semibold text-[var(--ink)]">Pārvaldība · Google Maps</h2>
       <p className="mt-1 text-[13px] leading-snug text-[var(--ink2)]">
-        Loģistikas karte un ģeokodēšana. Maps JS, Geocoding, GeocodePlace un SearchDestinations. Cietais limits 10 000 /
-        mēn. katram (~320 / dienā), lai nerastos rēķins. Kešotās adreses skaitītāju netērē.
+        Loģistikas karte, ģeokodēšana un maršruti. Maps JS, Geocoding, GeocodePlace, SearchDestinations un Directions.
+        Cietais limits 10 000 / mēn. katram (~320 / dienā), lai nerastos rēķins. Kešotās adreses skaitītāju netērē.
       </p>
       <dl className="mt-3 grid grid-cols-2 gap-3 text-[13px]">
         <div className="rounded-xl bg-[var(--s2)] px-3 py-2.5">
@@ -61,6 +63,13 @@ export function IrissLogistikaMapsUsagePanel() {
             {dest ? `${dest.monthlyUsed} / ${dest.monthlyCap}` : "…"}
           </dd>
           <dd className="text-[12px] text-[var(--ink2)]">šodien {dest ? `${dest.dailyUsed} / ${dest.dailyCap}` : "…"}</dd>
+        </div>
+        <div className="rounded-xl bg-[var(--s2)] px-3 py-2.5">
+          <dt className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">Directions</dt>
+          <dd className="mt-1 tabular-nums text-[15px] font-semibold">
+            {dir ? `${dir.monthlyUsed} / ${dir.monthlyCap}` : "…"}
+          </dd>
+          <dd className="text-[12px] text-[var(--ink2)]">šodien {dir ? `${dir.dailyUsed} / ${dir.dailyCap}` : "…"}</dd>
         </div>
       </dl>
       <p className="mt-2 text-[12px] text-[var(--ink2)]">
