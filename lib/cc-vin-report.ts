@@ -10,7 +10,7 @@ import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import type { CcVinPhotoGroup, CcVinPhotoMeta } from "@/lib/cc-vin-photo-types";
 import { normalizeCcVinPhotoGroups, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
-import { convertAmountTextToEur } from "@/lib/currency-eur-convert";
+import { convertAmountTextToEur, displayUsdAsEur } from "@/lib/currency-eur-convert";
 
 /** Admin bloka nosaukums (tikai admin panelis). */
 export const CC_VIN_ADMIN_LABEL = "CC.VIN";
@@ -276,7 +276,7 @@ export function normalizeCcVinBlock(raw: unknown): CcVinBlockState {
       return {
         date: str(r.date, 40),
         region: str(r.region, 120),
-        amount: str(r.amount, 60),
+        amount: displayUsdAsEur(str(r.amount, 60)),
         description: str(r.description, 400),
       } as CcVinDamageRow;
     })
@@ -309,7 +309,7 @@ export function normalizeCcVinBlock(raw: unknown): CcVinBlockState {
         date: str(r.date, 40),
         venue: str(r.venue, 160),
         odometer: str(r.odometer, 40),
-        price: str(r.price, 60),
+        price: displayUsdAsEur(str(r.price, 60)),
         status: str(r.status, 80),
       } as CcVinSaleRow;
     })

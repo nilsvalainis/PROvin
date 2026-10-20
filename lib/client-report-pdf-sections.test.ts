@@ -610,7 +610,7 @@ describe("Vēstures kopsavilkums", () => {
     const sale = events.find((e) => e.kind === "sale");
     expect(sale).toBeTruthy();
     expect(sale!.date).toBe("20.11.2019");
-    expect(sale!.detail).toBe("35 550 €");
+    expect(sale!.detail).toBe("35 650 €");
     expect(sale!.title).toContain("Bmw Of Murrieta");
   });
 

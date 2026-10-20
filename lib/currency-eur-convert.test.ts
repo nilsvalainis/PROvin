@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { normalizeCcVinBlock } from "@/lib/cc-vin-report";
 import {
   convertAmountTextToEur,
   describeEurConversion,
+  displayUsdAsEur,
   ECB_RATE_MISSING_MARKER,
   loadEcbDailyRates,
   parseEcbEurofxXml,
   setEcbDailyRatesForTests,
+  USD_TO_EUR_RATE,
 } from "@/lib/currency-eur-convert";
 
 const SAMPLE_XML = `<?xml version="1.0"?>
@@ -63,15 +66,25 @@ describe("loadEcbDailyRates", () => {
 });
 
 describe("convertAmountTextToEur", () => {
-  it("converts USD with the mocked ECB rate and keeps the original in the note", () => {
-    setEcbDailyRatesForTests({ date: "2026-10-15", rates: { USD: 1.09 } });
+  it("converts USD with the fixed 0.92 rate even without ECB", () => {
+    expect(USD_TO_EUR_RATE).toBe(0.92);
     const conv = convertAmountTextToEur("38 745 USD");
     expect(conv?.converted).toBe(true);
-    expect(conv?.display).toBe("35 550 €");
-    expect(conv?.rateDate).toBe("2026-10-15");
-    expect(describeEurConversion("38 745 USD", conv!)).toBe(
-      "38 745 USD → 35 550 € (ECB 15.10.2026, 1 EUR = 1.09 USD)",
-    );
+    expect(conv?.display).toBe("35 650 €");
+    expect(conv?.display).not.toMatch(/USD|ECB/);
+    expect(describeEurConversion("38 745 USD", conv!)).toBe("38 745 USD → 35 650 €");
+    expect(displayUsdAsEur("280 USD")).toBe("258 €");
+    expect(displayUsdAsEur("1 360 USD")).toBe("1 250 €");
+    expect(displayUsdAsEur("12 400 €")).toBe("12 400 €");
+  });
+
+  it("normalizes stored Checkcar.vin USD amount and sale price to EUR", () => {
+    const b = normalizeCcVinBlock({
+      damages: [{ date: "01.06.2016", region: "ASV", amount: "280 USD", description: "Front" }],
+      sales: [{ date: "01.06.2016", venue: "Copart", odometer: "", price: "1 000 USD", status: "Pārdots" }],
+    });
+    expect(b.damages[0]?.amount).toBe("258 €");
+    expect(b.sales[0]?.price).toBe("920 €");
   });
 
   it("converts PLN, SEK and GBP when those ECB rows exist", () => {
@@ -82,13 +95,13 @@ describe("convertAmountTextToEur", () => {
     expect(describeEurConversion("850 GBP", convertAmountTextToEur("850 GBP")!)).toContain("ECB 15.10.2026");
   });
 
-  it("keeps the original currency with a marker when no ECB rate is loaded", () => {
+  it("still converts USD when no ECB table is loaded", () => {
     const conv = convertAmountTextToEur("4 200 USD");
-    expect(conv?.converted).toBe(false);
-    expect(conv?.rateMissing).toBe(true);
-    expect(conv?.display).toContain("USD");
-    expect(conv?.display).toContain(ECB_RATE_MISSING_MARKER);
-    expect(describeEurConversion("4 200 USD", conv!)).toContain(ECB_RATE_MISSING_MARKER);
+    expect(conv?.converted).toBe(true);
+    expect(conv?.rateMissing).toBeFalsy();
+    expect(conv?.display).toBe("3 860 €");
+    expect(conv?.display).not.toMatch(/USD|ECB/);
+    expect(describeEurConversion("4 200 USD", conv!)).toBe("4 200 USD → 3 860 €");
   });
 
   it("does not invent a rate for a currency missing from the ECB table", () => {

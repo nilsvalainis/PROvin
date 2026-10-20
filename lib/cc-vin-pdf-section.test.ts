@@ -133,7 +133,7 @@ describe("starptautiskās vēstures PDF sadaļa", () => {
         date: "10.06.2026",
         venue: "AUTOBID",
         odometer: "304 900",
-        price: "3 660 €",
+        price: "3 670 €",
         status: "Pārdots",
       },
     ]);
