@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   auto1InvoiceNumberFromUrl,
+  cabinetDocumentSourceChip,
   cabinetPhaseForStage,
   cabinetPrefKey,
   cabinetSectionSummary,
@@ -84,6 +85,13 @@ describe("Loģistika cabinet helpers", () => {
     ];
     expect(liveCabinetDocuments(rows).map((d) => d.id)).toEqual(["1", "3"]);
     expect(cabinetSectionSummary("A", rows)).toBe("2 no 4 augšupielādēti");
+  });
+
+  it("tags automatic document sources and keeps CMR as a cabinet type", () => {
+    expect(cabinetDocumentSourceChip("auto1", "Auto1")).toBe("No izsoles - Auto1");
+    expect(cabinetDocumentSourceChip("email")).toBe("No e-pasta");
+    expect(cabinetDocumentSourceChip("upload")).toBe("");
+    expect(logisticsDocumentTitle({ type: "cmr" })).toBe("CMR");
   });
 
   it("parses localStorage prefs without throwing", () => {

@@ -19,10 +19,11 @@ export const LOGISTICS_MAPS_API_FIELD: Record<LogisticsMapsApi, keyof LogisticsM
   geocoding: "geocoding",
   geocode_place: "geocodePlace",
   search_destinations: "searchDestinations",
+  directions: "directions",
 };
 
 export function emptyLogisticsMapsDayUsage(): LogisticsMapsDayUsage {
-  return { mapsJs: 0, geocoding: 0, geocodePlace: 0, searchDestinations: 0 };
+  return { mapsJs: 0, geocoding: 0, geocodePlace: 0, searchDestinations: 0, directions: 0 };
 }
 
 export function logisticsMapsMonthKey(at = new Date()): string {
@@ -46,6 +47,7 @@ export function emptyLogisticsMapsUsageMonth(month: string): LogisticsMapsUsageM
     geocoding: 0,
     geocodePlace: 0,
     searchDestinations: 0,
+    directions: 0,
     days: {},
   };
 }
@@ -145,6 +147,7 @@ export function incrementLogisticsMapsUsage(
     geocoding: usage.geocoding ?? 0,
     geocodePlace: usage.geocodePlace ?? 0,
     searchDestinations: usage.searchDestinations ?? 0,
+    directions: usage.directions ?? 0,
     [field]: (usage[field] ?? 0) + 1,
     days: { ...usage.days, [day]: nextDay },
   };
@@ -168,5 +171,6 @@ export function logisticsMapsUsageSummary(usage: LogisticsMapsUsageMonth, at = n
     geocoding: apiSummary(usage, "geocoding", at),
     geocodePlace: apiSummary(usage, "geocode_place", at),
     searchDestinations: apiSummary(usage, "search_destinations", at),
+    directions: apiSummary(usage, "directions", at),
   };
 }

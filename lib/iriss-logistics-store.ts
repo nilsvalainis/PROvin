@@ -696,6 +696,7 @@ export async function readLogisticsMapsUsage(month = logisticsMapsMonthKey()): P
         geocoding: typeof v.geocoding === "number" ? v.geocoding : 0,
         geocodePlace: typeof v.geocodePlace === "number" ? v.geocodePlace : 0,
         searchDestinations: typeof v.searchDestinations === "number" ? v.searchDestinations : 0,
+        directions: typeof v.directions === "number" ? v.directions : 0,
       };
     }
   }
@@ -706,6 +707,7 @@ export async function readLogisticsMapsUsage(month = logisticsMapsMonthKey()): P
     geocoding: typeof raw.geocoding === "number" ? raw.geocoding : 0,
     geocodePlace: typeof raw.geocodePlace === "number" ? raw.geocodePlace : 0,
     searchDestinations: typeof raw.searchDestinations === "number" ? raw.searchDestinations : 0,
+    directions: typeof raw.directions === "number" ? raw.directions : 0,
     days,
   };
 }

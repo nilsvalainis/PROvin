@@ -85,3 +85,26 @@ export async function geocodeLogisticsAddress(raw: string): Promise<LogisticsGeo
     clearTimeout(t);
   }
 }
+
+export type LogisticsGeocodeChoice = {
+  formatted: string;
+  lat: number;
+  lng: number;
+};
+
+export async function geocodeLogisticsAddressChoices(
+  raw: string,
+  limit = 3,
+): Promise<
+  | { ok: true; cached: boolean; choices: LogisticsGeocodeChoice[] }
+  | { ok: false; limited?: boolean; notice: string }
+> {
+  const first = await geocodeLogisticsAddress(raw);
+  if (!first.ok) return first;
+  void limit;
+  return {
+    ok: true,
+    cached: first.cached,
+    choices: [{ formatted: first.entry.formatted, lat: first.entry.lat, lng: first.entry.lng }],
+  };
+}

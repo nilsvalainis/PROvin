@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IRISS Loģistika · Kravu plāns</title>
+  <style>
+    body { margin:0; font:13px/1.35 Inter, system-ui, sans-serif; background:#e9ecf1; color:#0b0c10; }
+    .iriss-log-screen {
+      --iriss-log-cargo-next:#1e9e57; --krava-next2:#5e5ce6; --iriss-log-cargo-after:var(--krava-next2); --iriss-log-cargo-none:#3a3a3c;
+      --iriss-log-status-chip-bg:#f2f2f7; --iriss-log-status-chip-dot:#8e8e93; --btn-dark-bg:rgba(31,36,48,.89);
+      max-width:1180px; margin:0 auto; padding:16px 16px 40px;
+    }
+    h1 { font-size:22px; margin:0; }
+    .grid { display:grid; grid-template-columns:1fr 280px; gap:12px; margin-top:12px; }
+    .card { background:#fff; border-radius:14px; }
+    .map { height:280px; background:linear-gradient(#cfe6d4,#d7e0ea); border-radius:0 0 14px 14px; position:relative; }
+    .pin { position:absolute; transform:translate(-50%,-100%); text-align:center; }
+    .needle { width:18px; height:26px; margin:0 auto; background:var(--iriss-log-cargo-next); clip-path:polygon(50% 100%, 0 0, 100% 0); border-radius:10px 10px 0 0; }
+    .pcard { background:#fff; border-radius:8px; padding:4px 7px; box-shadow:0 1px 4px rgba(0,0,0,.12); font-size:11px; font-weight:600; }
+    .row { display:flex; align-items:center; gap:8px; padding:8px 14px; }
+    .dot { width:8px; height:8px; border-radius:99px; }
+    .chip { display:inline-flex; align-items:center; gap:6px; background:var(--iriss-log-status-chip-bg); border-radius:999px; padding:4px 10px; }
+    .chip i { width:6px; height:6px; border-radius:99px; background:var(--iriss-log-status-chip-dot); }
+    table { width:100%; border-collapse:collapse; }
+    th { text-align:left; font-size:11px; color:#6e6e73; padding:10px 12px; }
+    td { padding:10px 12px; border-top:1px solid #e5e5ea; }
+    .btn { background:var(--btn-dark-bg); color:#fff; border:0; border-radius:10px; padding:8px 14px; font-weight:600; }
+    .sec { background:#fff; border:1px solid #d2d2d7; color:#1d1d1f; border-radius:10px; padding:8px 14px; font-weight:600; }
+    @media (max-width:700px) { .grid { grid-template-columns:1fr; } .aside { order:-1; } }
+  </style>
+</head>
+<body>
+  <div class="iriss-log-screen">
+    <h1>Loģistika</h1>
+    <p style="margin:4px 0 0;color:#6e6e73;font-size:12px">10 aktīvi · km</p>
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div style="padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;color:#6e6e73">KARTE</div>
+          <div class="map">
+            <div class="pin" style="left:32%;top:38%">
+              <div class="needle"></div>
+              <div class="pcard">Volvo XC60<br><span style="color:#6e6e73;font-weight:500">Auto1 · Ieplānots</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px;overflow:auto">
+          <div style="padding:12px 14px 0;font-size:11px;font-weight:700;letter-spacing:.06em;color:#6e6e73">VISI AUTO · 10</div>
+          <table>
+            <tr><th>Auto</th><th>VIN</th><th>Statuss</th><th>Krava</th><th>Dok.</th><th></th></tr>
+            <tr>
+              <td>Volvo XC60</td>
+              <td style="font-family:ui-monospace">YV1UZA8VDN1234567</td>
+              <td><span class="chip"><i></i>Ieplānots</span></td>
+              <td><span class="dot" style="background:var(--iriss-log-cargo-next);display:inline-block"></span> Nākošā krava</td>
+              <td>2 / 4</td>
+              <td><button class="sec">Pārvietot uz Autoparku</button></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <aside class="card aside">
+        <div style="padding:12px 14px 4px;font-size:11px;font-weight:700;letter-spacing:.06em;color:#6e6e73">KRAVU PLĀNS</div>
+        <div class="row"><span class="dot" style="background:var(--iriss-log-cargo-next)"></span><strong>Nākošā krava</strong> 1</div>
+        <div class="row"><input type="checkbox" checked /><span class="dot" style="background:var(--iriss-log-cargo-next)"></span> Volvo XC60</div>
+        <div class="row"><span class="dot" style="background:var(--iriss-log-cargo-after)"></span><strong>Aiznākošā krava</strong> 0</div>
+        <div class="row"><span class="dot" style="background:var(--iriss-log-cargo-none)"></span><strong>Nav kravā</strong> 0</div>
+        <div style="padding:12px"><button class="btn">Atvērt Google Maps</button></div>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

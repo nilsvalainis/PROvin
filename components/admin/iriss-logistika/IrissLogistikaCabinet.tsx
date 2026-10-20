@@ -9,6 +9,7 @@ import {
   CABINET_PICKUP_STAGE_LV,
   CABINET_SECTIONS,
   CABINET_SECTION_LABEL,
+  cabinetDocumentSourceChip,
   cabinetPhaseForStage,
   cabinetSectionSummary,
   defaultPickupStageFromOrderStatus,
@@ -226,6 +227,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
   const docsB = documents.filter((d) => d.section === "B");
   const docsC = documents.filter((d) => d.section === "C");
   const pickupPdf = docsB.find((d) => d.type === "pickup_pdf");
+  const pickupCmr = docsB.find((d) => d.type === "cmr");
 
   return (
     <aside className="iriss-log-no-print rounded-2xl bg-white p-4 shadow-sm">
@@ -441,6 +443,36 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                 {pickupPdf ? <p className="mt-1 text-[11px] font-semibold text-emerald-700">kods redzams</p> : <p className="mt-1 text-[11px] text-[var(--ink3)]">nav pickup dokumenta</p>}
               </div>
 
+              <div className="mt-2 rounded-xl border border-dashed border-[#d2d2d7] px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="text-[13px] font-semibold">CMR</p>
+                    <p className="text-[12px] text-[var(--ink2)]">
+                      {pickupCmr ? pickupCmr.title : "Nav pievienots - vajadzīgs tikai, ja parasti to izsniedz"}
+                    </p>
+                  </div>
+                  {pickupCmr ? (
+                    <a href={`/api/admin/iriss-logistics/documents/${encodeURIComponent(pickupCmr.id)}`} target="_blank" rel="noreferrer" className="iriss-log-btn-sec h-8 px-2.5 text-[12px]">
+                      Atvērt
+                    </a>
+                  ) : access.write ? (
+                    <label className="iriss-log-btn-sec h-8 px-2.5 text-[12px]">
+                      Augšupielādēt PDF
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) void uploadFile("B", "cmr", file);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  ) : null}
+                </div>
+              </div>
+
               <dl className="mt-3 grid grid-cols-[7.5rem_1fr] gap-y-1 text-[13px]">
                 <dt className="text-[var(--ink2)]">Pickup kods</dt>
                 <dd className="font-semibold">{pickup?.pickupCode || order.pickupRef || "-"}</dd>
@@ -539,12 +571,14 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
 }
 
 function DocRow({ doc }: { doc: CabinetDocument }) {
+  const chip = cabinetDocumentSourceChip(doc.source);
   return (
     <li className="flex items-center justify-between gap-2 rounded-xl bg-[#f8fafc] px-3 py-2">
       <div className="min-w-0">
         <p className="truncate text-[13px] font-semibold">{doc.title}</p>
         <p className="truncate text-[11px] text-[var(--ink2)]">
-          {doc.source}
+          {chip ? <span className="iriss-log-status-chip mr-1">{chip}</span> : null}
+          {doc.source === "upload" ? "Pievienots manuāli" : doc.source}
           {doc.createdAt ? ` · ${formatLogisticsDate(doc.createdAt.slice(0, 10))}` : ""}
         </p>
       </div>
@@ -568,27 +602,38 @@ function UploadRow({
 }) {
   const [type, setType] = useState<CabinetDocType>(types[0] ?? "other");
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-2">
-      <select value={type} onChange={(e) => setType(e.target.value as CabinetDocType)} className="h-8 rounded-full border border-[#e5e7eb] px-2 text-[12px]">
-        {types.map((t) => (
-          <option key={t} value={t}>
-            {CABINET_DOC_TYPE_LABEL[t]}
-          </option>
-        ))}
-      </select>
-      <label className="h-8 cursor-pointer rounded-full bg-[var(--ink)] px-3 text-[12px] font-semibold leading-8 text-white">
-        {busy ? "Augšupielādē..." : "Augšupielādēt"}
-        <input
-          type="file"
-          className="hidden"
-          disabled={busy}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) onUpload(type, file);
-            e.target.value = "";
-          }}
-        />
-      </label>
+    <div
+      className="iriss-log-doc-drop mt-2"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files?.[0];
+        if (file) onUpload(type, file);
+      }}
+    >
+      <p>Ievilc failu vai izvēlies. PDF, JPG, PNG līdz 20 MB.</p>
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
+        <select value={type} onChange={(e) => setType(e.target.value as CabinetDocType)} className="h-8 rounded-[10px] border border-[#e5e7eb] px-2 text-[12px]">
+          {types.map((t) => (
+            <option key={t} value={t}>
+              {CABINET_DOC_TYPE_LABEL[t]}
+            </option>
+          ))}
+        </select>
+        <label className="h-8 cursor-pointer rounded-[10px] bg-[var(--btn-dark-bg,#111)] px-3 text-[12px] font-semibold leading-8 text-white">
+          {busy ? "Augšupielādē..." : "Augšupielādēt"}
+          <input
+            type="file"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) onUpload(type, file);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      </div>
     </div>
   );
 }

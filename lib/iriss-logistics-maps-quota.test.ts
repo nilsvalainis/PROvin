@@ -36,7 +36,13 @@ describe("Google Maps hard counters", () => {
   it("blocks at ~320 per day before the month is full", () => {
     const usage = emptyLogisticsMapsUsageMonth("2026-10");
     usage.geocoding = 400;
-    usage.days[logisticsMapsDayKey(at)] = { mapsJs: 0, geocoding: LOGISTICS_MAPS_DAILY_CAP };
+    usage.days[logisticsMapsDayKey(at)] = {
+      mapsJs: 0,
+      geocoding: LOGISTICS_MAPS_DAILY_CAP,
+      geocodePlace: 0,
+      searchDestinations: 0,
+      directions: 0,
+    };
     const d = decideLogisticsMapsQuota({ usage, api: "geocoding", at });
     expect(d.allowed).toBe(false);
     expect(d.reason).toBe("daily_cap");
@@ -51,6 +57,7 @@ describe("Google Maps hard counters", () => {
       geocoding: 0,
       geocodePlace: LOGISTICS_MAPS_DAILY_CAP,
       searchDestinations: LOGISTICS_MAPS_DAILY_CAP,
+      directions: 0,
     };
     usage.geocodePlace = LOGISTICS_MAPS_DAILY_CAP;
     usage.searchDestinations = LOGISTICS_MAPS_DAILY_CAP;
@@ -62,5 +69,14 @@ describe("Google Maps hard counters", () => {
     const next = incrementLogisticsMapsUsage(emptyLogisticsMapsUsageMonth("2026-10"), "geocode_place", at);
     expect(next.geocodePlace).toBe(1);
     expect(next.searchDestinations).toBe(0);
+  });
+
+  it("counts Directions against the same hard monthly and daily caps", () => {
+    const empty = emptyLogisticsMapsUsageMonth("2026-10");
+    const next = incrementLogisticsMapsUsage(empty, "directions", at);
+    expect(next.directions).toBe(1);
+    expect(next.days[logisticsMapsDayKey(at)]?.directions).toBe(1);
+    next.directions = LOGISTICS_MAPS_MONTHLY_CAP;
+    expect(decideLogisticsMapsQuota({ usage: next, api: "directions", at }).allowed).toBe(false);
   });
 });

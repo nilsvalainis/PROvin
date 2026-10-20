@@ -179,7 +179,13 @@ export type LogisticsGeocodeCacheEntry = {
   cachedAt: string;
 };
 
-export const LOGISTICS_MAPS_APIS = ["maps_js", "geocoding", "geocode_place", "search_destinations"] as const;
+export const LOGISTICS_MAPS_APIS = [
+  "maps_js",
+  "geocoding",
+  "geocode_place",
+  "search_destinations",
+  "directions",
+] as const;
 export type LogisticsMapsApi = (typeof LOGISTICS_MAPS_APIS)[number];
 
 export type LogisticsMapsDayUsage = {
@@ -187,6 +193,7 @@ export type LogisticsMapsDayUsage = {
   geocoding: number;
   geocodePlace: number;
   searchDestinations: number;
+  directions: number;
 };
 
 export type LogisticsMapsUsageMonth = {
@@ -196,6 +203,7 @@ export type LogisticsMapsUsageMonth = {
   geocoding: number;
   geocodePlace: number;
   searchDestinations: number;
+  directions: number;
   days: Record<string, LogisticsMapsDayUsage>;
 };
 

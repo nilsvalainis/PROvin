@@ -10,6 +10,7 @@ import {
   waitForGoogleMapTilesIdle,
   type LogisticsMapCamera,
 } from "@/lib/iriss-logistics-map-print";
+import { cargoClusterKey, cargoCssColor, type CargoBucket } from "@/lib/iriss-logistics-cargo-plan";
 import type { LogisticsOrder, LogisticsPoint, LogisticsPreviousPointRow } from "@/lib/iriss-logistics-types";
 
 type Gmaps = typeof google.maps;
@@ -22,6 +23,11 @@ type MapPoint = {
   selected: boolean;
   archived?: boolean;
   printNumber?: number;
+  cargo?: CargoBucket;
+  statusLv?: string;
+  auction?: string;
+  showOnMap?: boolean;
+  routeNumber?: number;
 };
 
 function toMapPoints(
@@ -29,6 +35,12 @@ function toMapPoints(
   orders: LogisticsOrder[],
   previous: LogisticsPreviousPointRow[],
   selectedIds: ReadonlySet<string>,
+  extra?: {
+    cargoByCarId?: ReadonlyMap<string, CargoBucket>;
+    showOnMapIds?: ReadonlySet<string>;
+    statusByCarId?: ReadonlyMap<string, string>;
+    routeNumbers?: ReadonlyMap<string, number>;
+  },
 ): MapPoint[] {
   if (mode === "previous") {
     return previous
@@ -43,6 +55,7 @@ function toMapPoints(
   }
   return orders
     .filter((o) => o.pickupLat != null && o.pickupLng != null)
+    .filter((o) => !extra?.showOnMapIds || extra.showOnMapIds.has(o.id))
     .map((o) => ({
       id: o.id,
       lat: o.pickupLat as number,
@@ -50,6 +63,11 @@ function toMapPoints(
       label: logisticsOrderMapLabel(o),
       selected: selectedIds.has(o.id),
       archived: isLogisticsOrderArchived(o),
+      cargo: extra?.cargoByCarId?.get(o.id) ?? "none",
+      statusLv: extra?.statusByCarId?.get(o.id) ?? "",
+      auction: o.auction,
+      showOnMap: extra?.showOnMapIds ? extra.showOnMapIds.has(o.id) : true,
+      routeNumber: extra?.routeNumbers?.get(o.id),
     }));
 }
 
@@ -69,6 +87,17 @@ type Props = {
   printNumbers?: ReadonlyMap<string, number>;
   /** Hero karte: augstumu nosaka CSS (aspect-ratio), ne fiksēti pikseļi. */
   fill?: boolean;
+  cargoByCarId?: ReadonlyMap<string, CargoBucket>;
+  showOnMapIds?: ReadonlySet<string>;
+  bounceCarId?: string | null;
+  hoverCarId?: string | null;
+  statusByCarId?: ReadonlyMap<string, string>;
+  routeNumbers?: ReadonlyMap<string, number>;
+  routePath?: ReadonlyArray<{ lat: number; lng: number }>;
+  routeColor?: string;
+  routeEnds?: ReadonlyArray<{ lat: number; lng: number; kind: "start" | "end"; type?: string }>;
+  pinVariant?: "default" | "cargo";
+  onHoverCar?: (id: string | null) => void;
 };
 
 export type IrissLogistikaMapHandle = {
@@ -93,6 +122,17 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     lockView = false,
     printNumbers,
     fill = false,
+    cargoByCarId,
+    showOnMapIds,
+    bounceCarId,
+    hoverCarId,
+    statusByCarId,
+    routeNumbers,
+    routePath,
+    routeColor,
+    routeEnds,
+    pinVariant = "default",
+    onHoverCar,
   },
   ref,
 ) {
@@ -100,6 +140,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<google.maps.OverlayView[]>([]);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const lineRef = useRef<{ setMap: (map: google.maps.Map | null) => void } | null>(null);
   const lastPtsRef = useRef<MapPoint[]>([]);
   const [limitNotice, setLimitNotice] = useState(notice ?? "");
   const [ready, setReady] = useState(false);
@@ -196,18 +237,66 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     if (!map || !ready) return;
     for (const m of markersRef.current) m.setMap(null);
     for (const o of overlaysRef.current) o.setMap(null);
+    lineRef.current?.setMap(null);
     markersRef.current = [];
     overlaysRef.current = [];
-    const pts = toMapPoints(mode, orders, previous, selectedIds).map((p) => ({
+    lineRef.current = null;
+    const pts = toMapPoints(mode, orders, previous, selectedIds, {
+      cargoByCarId,
+      showOnMapIds,
+      statusByCarId,
+      routeNumbers,
+    }).map((p) => ({
       ...p,
       printNumber: printNumbers?.get(p.id),
       selected: printNumbers ? printNumbers.has(p.id) : p.selected,
     }));
     lastPtsRef.current = pts;
     const bounds = new google.maps.LatLngBounds();
+    const useCargoPins = pinVariant === "cargo" && mode === "cars" && !printNumbers;
+    const clusters = new Map<string, MapPoint[]>();
+    for (const p of pts) {
+      bounds.extend({ lat: p.lat, lng: p.lng });
+      const key = cargoClusterKey(p.lat, p.lng);
+      const list = clusters.get(key) ?? [];
+      list.push(p);
+      clusters.set(key, list);
+    }
+    if (useCargoPins) {
+      const host = hostRef.current;
+      for (const group of clusters.values()) {
+        const head = group[0]!;
+        const bounce = group.some((g) => g.id === bounceCarId || g.id === hoverCarId);
+        const color = cargoCssColor(host, head.cargo ?? "none");
+        const overlay = makeCargoPinOverlay({
+          pts: group,
+          color,
+          bounce,
+          onSelect,
+          onHover: onHoverCar,
+        });
+        overlay.setMap(map);
+        overlaysRef.current.push(overlay);
+      }
+      for (const end of routeEnds ?? []) {
+        const overlay = makeRouteEndOverlay(end, cargoCssColor(hostRef.current, "none"));
+        overlay.setMap(map);
+        overlaysRef.current.push(overlay);
+        bounds.extend({ lat: end.lat, lng: end.lng });
+      }
+      if (routePath && routePath.length > 1) {
+        const PolylineCtor = (google.maps as unknown as { Polyline: new (opts: Record<string, unknown>) => { setMap: (map: google.maps.Map | null) => void } }).Polyline;
+        lineRef.current = new PolylineCtor({
+          map,
+          path: routePath,
+          strokeColor: routeColor || cargoCssColor(hostRef.current, "next"),
+          strokeOpacity: 0.95,
+          strokeWeight: 3,
+        });
+      }
+    } else {
     for (const p of pts) {
       const pos = { lat: p.lat, lng: p.lng };
-      bounds.extend(pos);
       const numbered = p.printNumber != null;
       const marker = new google.maps.Marker({
         map,
@@ -240,6 +329,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       overlay.setMap(map);
       overlaysRef.current.push(overlay);
     }
+    }
     if (!lockView) {
       if (focus) {
         map.panTo(focus);
@@ -252,7 +342,28 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       }
     }
     map.setOptions({ disableDefaultUI: lockView, zoomControl: !lockView, gestureHandling: lockView ? "none" : "greedy" });
-  }, [mode, orders, previous, selectedIds, focus, ready, onSelect, lockView, printNumbers]);
+  }, [
+    mode,
+    orders,
+    previous,
+    selectedIds,
+    focus,
+    ready,
+    onSelect,
+    lockView,
+    printNumbers,
+    cargoByCarId,
+    showOnMapIds,
+    bounceCarId,
+    hoverCarId,
+    statusByCarId,
+    routeNumbers,
+    routePath,
+    routeColor,
+    routeEnds,
+    pinVariant,
+    onHoverCar,
+  ]);
 
   return (
     <div
@@ -269,6 +380,81 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     </div>
   );
 });
+
+function makeCargoPinOverlay(input: {
+  pts: MapPoint[];
+  color: string;
+  bounce: boolean;
+  onSelect: (id: string) => void;
+  onHover?: (id: string | null) => void;
+}): google.maps.OverlayView {
+  const head = input.pts[0]!;
+  const pos = { lat: head.lat, lng: head.lng };
+  const count = input.pts.length;
+  const routeNo = input.pts.find((p) => p.routeNumber != null)?.routeNumber;
+  const badge = count > 1 ? String(count) : routeNo != null ? String(routeNo) : "";
+  class Pin extends google.maps.OverlayView {
+    div: HTMLDivElement | null = null;
+    onAdd() {
+      this.div = document.createElement("div");
+      this.div.className = `iriss-log-pin-wrap${input.bounce ? " bounce" : ""}`;
+      this.div.innerHTML = `<svg class="iriss-log-pin-needle" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 1C6.5 1 2 5.4 2 10.8 2 19 12 31 12 31s10-12 10-20.2C22 5.4 17.5 1 12 1z" fill="${input.color}"/><circle cx="12" cy="11" r="5.2" fill="#fff"/><text x="12" y="14.2" text-anchor="middle" font-size="8" font-weight="700" fill="${input.color}">${badge}</text></svg><div class="iriss-log-pin-card"><span class="t1"></span><span class="t2"></span></div>`;
+      const t1 = this.div.querySelector(".t1");
+      const t2 = this.div.querySelector(".t2");
+      if (t1) t1.textContent = count > 1 ? `${count} auto` : head.label;
+      if (t2) t2.textContent = head.statusLv || head.auction || "";
+      this.div.addEventListener("click", (e) => {
+        e.stopPropagation();
+        input.onSelect(head.id);
+      });
+      this.div.addEventListener("mouseenter", () => input.onHover?.(head.id));
+      this.div.addEventListener("mouseleave", () => input.onHover?.(null));
+      this.getPanes()?.overlayMouseTarget.appendChild(this.div);
+    }
+    draw() {
+      const proj = this.getProjection();
+      if (!proj || !this.div) return;
+      const p = proj.fromLatLngToDivPixel(new google.maps.LatLng(pos.lat, pos.lng));
+      if (!p) return;
+      this.div.style.left = `${p.x}px`;
+      this.div.style.top = `${p.y}px`;
+    }
+    onRemove() {
+      this.div?.remove();
+      this.div = null;
+    }
+  }
+  return new Pin();
+}
+
+function makeRouteEndOverlay(
+  end: { lat: number; lng: number; kind: "start" | "end"; type?: string },
+  color: string,
+): google.maps.OverlayView {
+  const icon = end.type === "port" ? "⛴" : end.type === "border" ? "▣" : "●";
+  class End extends google.maps.OverlayView {
+    div: HTMLDivElement | null = null;
+    onAdd() {
+      this.div = document.createElement("div");
+      this.div.className = "iriss-log-pin-wrap";
+      this.div.innerHTML = `<div style="width:22px;height:22px;border-radius:999px;background:${color};color:#fff;display:grid;place-items:center;font-size:11px">${icon}</div>`;
+      this.getPanes()?.overlayMouseTarget.appendChild(this.div);
+    }
+    draw() {
+      const proj = this.getProjection();
+      if (!proj || !this.div) return;
+      const p = proj.fromLatLngToDivPixel(new google.maps.LatLng(end.lat, end.lng));
+      if (!p) return;
+      this.div.style.left = `${p.x}px`;
+      this.div.style.top = `${p.y}px`;
+    }
+    onRemove() {
+      this.div?.remove();
+      this.div = null;
+    }
+  }
+  return new End();
+}
 
 function makeLabelOverlay(
   text: string,

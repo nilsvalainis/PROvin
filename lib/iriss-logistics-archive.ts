@@ -73,7 +73,7 @@ export function filterLogisticsOrdersByView(
   if (view === "due") {
     return active.filter((o) => pickupIsDueSoon(o.pickupDate, todayIso));
   }
-  if (view === "trips") return [];
+  if (view === "trips") return active;
   return active;
 }
 
