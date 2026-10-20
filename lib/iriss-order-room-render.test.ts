@@ -195,6 +195,22 @@ describe("iriss match props", () => {
 });
 
 describe("IrissOrderRoom render", () => {
+  it("links the listing title to the auction URL", async () => {
+    const { html, errors } = await renderHtml(
+      room({
+        initialTab: "search",
+        hits: [hit({ id: "listing-1", detailUrl: "https://www.auto1.com/en/auction/example" })],
+      }),
+    );
+    expect(errors).toEqual([]);
+    expect(html).toContain("https://www.auto1.com/en/auction/example");
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('rel="noopener"');
+    expect(html).toContain("data-iriss-hit-card");
+    expect(html).toContain("Atvērt izsolē");
+    expect(html).not.toMatch(/\u2014|\u2013/);
+  });
+
   it("opens the search tab when match props are null", async () => {
     const { html, errors } = await renderHtml(
       room({

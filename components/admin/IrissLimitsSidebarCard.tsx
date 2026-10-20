@@ -59,7 +59,7 @@ export function IrissLimitsSidebarCard({ data }: { data?: IrissLimitsView | null
   const view = data ?? fetched;
   if (!view) return null;
   return (
-    <section className="mt-3 rounded-[16px] bg-[var(--s1)] p-3 shadow-[var(--sh)]">
+    <section className="iriss-limits-card mt-3 rounded-[16px] bg-[var(--s1,#fff)] p-3 shadow-[var(--sh)]">
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <p className="text-[11px] font-extrabold tracking-[0.08em] text-[var(--ink)]">LIMITI</p>
         {view.stale ? null : view.refreshedLabel ? (

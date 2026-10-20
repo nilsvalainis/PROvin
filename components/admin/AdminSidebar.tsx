@@ -46,7 +46,7 @@ import {
 import { ADMIN_MOBILE_TABBAR_DOCK_NAV } from "@/lib/admin-mobile-shell";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
-import { AdminMobileCountBadge, AdminMobileTabPill } from "@/components/admin/mobile/AdminMobileChrome";
+import { AdminMobileCountBadge, AdminMobileSheet, AdminMobileTabPill } from "@/components/admin/mobile/AdminMobileChrome";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
@@ -748,22 +748,14 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
           </div>
         </AdminBodyPortal>
       ) : null}
-      {limitsOpen && limits ? (
-        <AdminBodyPortal>
-          <div className="fixed inset-0 z-[30] flex items-end bg-[rgba(20,24,35,0.2)] p-3 md:hidden" role="presentation">
-            <div role="dialog" aria-modal="true" className="w-full rounded-[22px] bg-[var(--s1)] p-3 shadow-[var(--gsh)]">
-              <IrissLimitsSidebarCard data={limits} />
-              <button
-                type="button"
-                className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-full bg-[var(--fill)] text-[13px] font-semibold"
-                onClick={() => setLimitsOpen(false)}
-              >
-                Aizvērt
-              </button>
-            </div>
-          </div>
-        </AdminBodyPortal>
-      ) : null}
+      <AdminMobileSheet
+        open={Boolean(limitsOpen && limits)}
+        title="LIMITI"
+        onClose={() => setLimitsOpen(false)}
+        opaque
+      >
+        <IrissLimitsSidebarCard data={limits} />
+      </AdminMobileSheet>
     </>
   );
 }

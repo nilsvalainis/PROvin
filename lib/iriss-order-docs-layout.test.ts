@@ -21,6 +21,11 @@ describe("iriss order documents and limits layout", () => {
     expect(sidebar).toContain("IrissPavadzimesSidebarCard");
     expect(card).toContain("LIMITI");
     expect(card).toContain("Tikai adminam");
+    expect(card).toContain("iriss-limits-card");
+    expect(card).toContain("bg-[var(--s1,#fff)]");
+    expect(sidebar).toContain("AdminMobileSheet");
+    expect(sidebar).toContain("opaque");
+    expect(sidebar).not.toMatch(/z-\[30\]/);
     expect(api).toContain('actor.kind !== "admin"');
     expect(room).not.toMatch(/\u2014|\u2013/);
   });

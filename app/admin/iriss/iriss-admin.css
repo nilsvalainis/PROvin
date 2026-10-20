@@ -213,7 +213,7 @@
   color: #fff !important;
 }
 
-.admin-ios-theme [data-iriss-order-room="1"] button[class*="bg-[#111827]"] {
+.admin-ios-theme [data-iriss-order-room="1"] :is(button, a)[class*="bg-[#111827]"] {
   background: #111827 !important;
   border-color: #111827 !important;
   color: #fff !important;
@@ -551,11 +551,51 @@
 }
 
 .iriss-ov-menu {
-  border: 0.5px solid var(--gb);
+  border: 0.5px solid var(--gb, rgba(17, 24, 39, 0.08));
+  background: var(--s1, #fff);
+  color: var(--ink, #0b0c10);
+}
+
+.iriss-ov-menu-portal {
+  z-index: 200;
+}
+
+.admin-ios-theme .iriss-ov-menu .iriss-ov-item,
+.iriss-ov-menu-portal .iriss-ov-item {
+  color: var(--ink, #0b0c10);
+}
+
+.admin-ios-theme .iriss-ov-menu .iriss-ov-item[class*="--bad"],
+.iriss-ov-menu-portal .iriss-ov-item[class*="--bad"] {
+  color: var(--bad, #c2362b);
+}
+
+.admin-ios-theme .iriss-pas-hits,
+.admin-ios-theme .admin-m .iriss-pas-hits,
+.admin-ios-theme .iriss-pasutijumi-view .iriss-pas-hits {
+  background: var(--news-bg, var(--ink, #0b0c10)) !important;
+  color: var(--news-fg, var(--onink, #fff)) !important;
+}
+
+@media (max-width: 767px) {
+  .admin-ios-theme .admin-m .iriss-pas-hits,
+  .admin-ios-theme .iriss-pasutijumi-view .iriss-pas-hits {
+    background: var(--news-bg, var(--ink, #0b0c10)) !important;
+    color: var(--news-fg, var(--onink, #fff)) !important;
+  }
 }
 
 .iriss-pas-card {
   background: var(--s1);
+}
+
+.admin-ios-theme .admin-sheet-opaque,
+.admin-m .admin-sheet-opaque,
+.iriss-limits-card {
+  background: var(--s1, #fff) !important;
+  color: var(--ink, #0b0c10);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 @media (max-width: 767px) {

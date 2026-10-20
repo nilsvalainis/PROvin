@@ -53,6 +53,12 @@ describe("IRISS mobile safe-area layout", () => {
     expect(src.bar).toMatch(/h-7/);
     expect(src.list).toMatch(/AdminMobileSearchField/);
     expect(src.list).toMatch(/IrissPasutijumiStatusFilter layout="scroll"/);
+    expect(src.list).toMatch(/title="LIMITI"/);
+    expect(src.list).toMatch(/opaque/);
+    expect(src.chrome).toMatch(/opaque = false/);
+    expect(src.chrome).toMatch(/admin-sheet-opaque/);
+    expect(src.irissAdmin).toMatch(/\.admin-sheet-opaque/);
+    expect(src.irissAdmin).toMatch(/\.iriss-limits-card/);
   });
 
   it("uses compact editor icons, scrolling tabs, and keeps Saglabāt", () => {
