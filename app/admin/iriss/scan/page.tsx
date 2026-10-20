@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { IrissScanListClient } from "@/components/admin/IrissScanListClient";
 import { IrissScanNewFab } from "@/components/admin/IrissScanNewFab";
@@ -28,7 +29,13 @@ export default async function IrissScanListPage({
       {storeEnabled && rows.length === 0 ? (
         <div className="mx-auto mt-10 max-w-sm px-6 text-center">
           <p className="text-[17px] font-semibold text-[var(--color-apple-text)]">Nav radara ierakstu</p>
-          <p className="mt-1 text-[13px] text-[#8e8e93]">Spied „+”, lai izveidotu pirmo ierakstu.</p>
+          <p className="mt-1 text-[13px] text-[#8e8e93]">Spied „+” vai Jauns ieraksts, lai izveidotu pirmo ierakstu.</p>
+          <Link
+            href="/admin/iriss/scan/new"
+            className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-[var(--color-provin-accent)] px-4 text-[14px] font-semibold text-white"
+          >
+            Jauns ieraksts
+          </Link>
         </div>
       ) : null}
       {storeEnabled && rows.length === 0 ? <IrissScanNewFab /> : null}

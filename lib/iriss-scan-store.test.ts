@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -96,5 +96,47 @@ describe("IRISS SCAN store revision", () => {
     expect(read?.vehicleCategory).toBe("van");
     expect(read?.apifyMobiledeEnabled).toBe(true);
     expect(read?.apifyAutoscout24Enabled).toBe(true);
+  });
+
+  it("lists a newly saved radar even when _list_rows.json is stale", async () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "iriss-scan-"));
+    dirs.push(dir);
+    const store = await loadStore(dir);
+    const oldIds = [
+      "11111111-1111-4111-8111-111111111111",
+      "22222222-2222-4222-8222-222222222222",
+      "33333333-3333-4333-8333-333333333333",
+      "44444444-4444-4444-8444-444444444444",
+      "55555555-5555-4555-8555-555555555555",
+      "66666666-6666-4666-8666-666666666666",
+    ];
+    for (const [i, id] of oldIds.entries()) {
+      const created = await store.createIrissScan({
+        id,
+        brandModel: `Vecais ${i + 1}`,
+      });
+      expect(created.ok).toBe(true);
+    }
+    const sprinterId = "8dc47497-a9ba-4108-acf3-b5244f5f89b5";
+    const created = await store.createIrissScan({
+      id: sprinterId,
+      brandModel: "Mercedes-Benz Sprinter H2L4",
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    const indexPath = path.join(dir, "_list_rows.json");
+    const stale = JSON.parse(readFileSync(indexPath, "utf8")) as Array<{ id: string }>;
+    writeFileSync(indexPath, JSON.stringify(stale.filter((row) => row.id !== sprinterId)), "utf8");
+
+    const listed = await store.listIrissScan();
+    expect(listed.map((row) => row.id).sort()).toEqual([...oldIds, sprinterId].sort());
+    expect(listed.find((row) => row.id === sprinterId)?.brandModel).toBe("Mercedes-Benz Sprinter H2L4");
+    expect(listed.filter((row) => oldIds.includes(row.id))).toHaveLength(6);
+
+    const direct = await store.readIrissScan(sprinterId);
+    expect(direct?.brandModel).toBe("Mercedes-Benz Sprinter H2L4");
+    const retried = await store.readIrissScanWithRetry(sprinterId, { attempts: 2, delayMs: 0 });
+    expect(retried?.id).toBe(sprinterId);
   });
 });

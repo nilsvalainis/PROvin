@@ -21,6 +21,8 @@ import { IRISS_SCAN_SOURCES, type IrissScanLinkKey } from "@/lib/iriss-scan-sour
 import { IRISS_STALE_REVISION, irissScanWorkspaceRevision, mergeIrissScanRecords } from "@/lib/iriss-scan-save-safety";
 import { nextStableRowKeys } from "@/lib/iriss-stable-row-keys";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
+import { applyIrissScanSaveResult, irissScanSaveRequest } from "@/lib/iriss-scan-editor-save";
+import { irissScanHasOperatorContent } from "@/lib/iriss-scan-vin";
 import { IrissMarketplaceLoadPanel } from "@/components/admin/IrissMarketplaceLoadPanel";
 import { irissScanApifyPlatforms } from "@/lib/marketplace/query-from-scan";
 import type { MarketplaceVehicleCategory } from "@/lib/marketplace/types";
@@ -128,7 +130,7 @@ export function IrissScanEditor({
   const router = useRouter();
   const [rec, setRec] = useState<IrissScanRecord>(initialRecord);
   const [busy, setBusy] = useState(false);
-  const [dirty, setDirty] = useState(Boolean(unsavedDraft && initialRecord.vin));
+  const [dirty, setDirty] = useState(Boolean(unsavedDraft && irissScanHasOperatorContent(initialRecord)));
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [conflict, setConflict] = useState<{ server: IrissScanRecord } | null>(null);
@@ -146,47 +148,32 @@ export function IrissScanEditor({
   const save = useCallback(async () => {
     setBusy(true);
     setSaveMsg(null);
+    const snapshot = rec;
     try {
       const persistId = persistedIdRef.current;
-      const isCreate = !persistId;
-      const url = isCreate ? "/api/admin/iriss-scan" : `/api/admin/iriss-scan/${encodeURIComponent(rec.id)}`;
-      const body = isCreate
-        ? { record: rec }
-        : { ...rec, expectedWorkspaceRevision: irissScanWorkspaceRevision(rec) };
-      const res = await fetch(url, {
-        method: isCreate ? "POST" : "PATCH",
+      const req = irissScanSaveRequest(snapshot, persistId);
+      const res = await fetch(req.url, {
+        method: req.method,
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(req.body),
       });
-      if (res.status === 409) {
-        const data = (await res.json().catch(() => ({}))) as { record?: IrissScanRecord; error?: string };
-        if (data.record) {
-          setConflict({ server: data.record });
-          setSaveMsg("Konflikts: cita cilne jau saglabāja jaunāku ierakstu.");
-          return;
-        }
-      }
-      if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as { error?: string };
-        setSaveMsg(data.error === "empty_record" ? "Nav ko saglabāt. Ieraksti VIN, marku vai saiti." : `Kļūda ${res.status}`);
-        return;
-      }
-      const data = (await res.json()) as { record?: IrissScanRecord; id?: string };
-      if (data.record) {
-        setRec(data.record);
-        persistedIdRef.current = data.record.id;
-        setPersistId(data.record.id);
-        if (isCreate) router.replace(`/admin/iriss/scan/${encodeURIComponent(data.record.id)}`);
-      } else if (typeof data.id === "string") {
-        persistedIdRef.current = data.id;
-        setPersistId(data.id);
-        if (isCreate) router.replace(`/admin/iriss/scan/${encodeURIComponent(data.id)}`);
-      }
+      const data = (await res.json().catch(() => ({}))) as { record?: IrissScanRecord; id?: string; error?: string };
+      const applied = applyIrissScanSaveResult({ rec: snapshot, persistId, status: res.status, body: data });
+      setRec(applied.rec);
+      persistedIdRef.current = applied.persistId;
+      setPersistId(applied.persistId);
+      setSaveMsg(applied.message);
+      if (applied.conflict) setConflict({ server: applied.conflict });
+      if (!applied.ok) return;
       setDirty(false);
       setConflict(null);
-      setSaveMsg("Saglabāts");
+      if (req.isCreate && applied.href) {
+        router.replace(applied.href);
+        router.refresh();
+      }
     } catch {
+      setRec(snapshot);
       setSaveMsg("Tīkla kļūda");
     } finally {
       setBusy(false);
