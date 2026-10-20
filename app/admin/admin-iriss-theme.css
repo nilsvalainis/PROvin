@@ -281,12 +281,51 @@ body:has(.admin-m[data-section="iriss"][data-admin-theme="dark"]) {
   }
 
   .admin-m[data-section="iriss"] {
+    --sp: 8px;
+    --side: 16px;
+    --admin-tab-side: 16px;
+    --admin-tab-bottom: max(8px, calc(env(safe-area-inset-bottom, 0px) - 20px));
+    --admin-tab-dock-pt: 0px;
     background-color: var(--bg-base);
     background-image:
       radial-gradient(640px 420px at 12% 0%, var(--g1), transparent 70%),
       radial-gradient(720px 520px at 92% 18%, var(--g2), transparent 70%),
       radial-gradient(900px 560px at 50% 105%, var(--g3), transparent 70%);
     background-attachment: scroll;
+  }
+
+  .admin-m[data-section="iriss"] .am-search {
+    height: 36px;
+  }
+
+  .admin-m[data-section="iriss"] .iriss-status-chip {
+    height: 32px;
+    min-height: 32px;
+  }
+
+  .admin-m[data-section="iriss"] .iriss-action-dock {
+    position: fixed;
+    left: var(--admin-tab-side);
+    right: var(--admin-tab-side);
+    bottom: var(--admin-tab-bottom);
+    z-index: 40;
+    display: flex;
+    gap: 8px;
+  }
+
+  .admin-m[data-section="iriss"] [data-iriss-order-room="1"] {
+    padding-right: 16px;
+    padding-bottom: calc(62px + var(--admin-tab-bottom) + 16px);
+    padding-left: 16px;
+  }
+
+  .admin-m[data-section="iriss"] [data-iriss-order-room="1"] .am-topbar {
+    margin-right: -16px;
+    margin-left: -16px;
+  }
+
+  .admin-m[data-section="iriss"] :is(input, textarea, select):focus {
+    scroll-margin-bottom: calc(var(--admin-tab-bottom) + 80px);
   }
 }
 

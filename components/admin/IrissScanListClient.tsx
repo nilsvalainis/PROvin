@@ -117,7 +117,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
 
   return (
     <>
-      <div className="mx-auto w-full max-w-[860px] px-2 sm:px-0">
+      <div className="mx-auto w-full max-w-[860px] px-2 max-md:px-0 sm:px-0">
         <div className="md:hidden">
           <AdminMobileTopBar
             title="Radars"

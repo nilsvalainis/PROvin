@@ -7,6 +7,7 @@ import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissLazyImage } from "@/components/admin/IrissLazyImage";
 import { IrissOrderRoomHitCard } from "@/components/admin/IrissOrderRoomHitCard";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
+import { AdminMobileRoundBtn, AdminMobileSaveStatus, AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissAdvanceSection } from "@/components/admin/IrissAdvanceSection";
 import { IrissClientFinancingSection } from "@/components/admin/IrissClientFinancingSection";
@@ -411,6 +412,7 @@ export function IrissOrderRoom({
   const [roomMsg, setRoomMsg] = useState<string | null>(null);
   const [composer, setComposer] = useState("");
   const [linksOpen, setLinksOpen] = useState(true);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [offerLinks, setOfferLinks] = useState<IrissOfferClientLinkAdminView[]>(Array.isArray(initialOfferLinks) ? initialOfferLinks : []);
   const [linkBusyId, setLinkBusyId] = useState<string | null>(null);
   const [hitStatus, setHitStatus] = useState<Record<string, IrissListingHitStatus>>(() => coerceIrissHitStatusMap(initialHitStatus));
@@ -646,9 +648,107 @@ export function IrissOrderRoom({
   const title = rec.brandModel.trim() || "Pasūtījums";
   const budgetLabel = rec.totalBudget.trim();
 
+  const tabs = (
+    <div className="-mx-1 mt-2 flex max-w-full gap-0.5 overflow-x-auto border-b border-[#e5e7eb] [scrollbar-width:none] md:mx-0 md:mt-3" role="tablist" aria-label="Pasūtījuma istaba">
+      {(
+        [
+          ["overview", "Pārskats", null],
+          ["search", "Meklētājs", filteredHits.length],
+          ["offers", "Piedāvājumi", rec.offers.length],
+          ["communication", "Komunikācija", commCount],
+          ["documents", "Dokumenti", docCount],
+        ] as const
+      ).map(([id, label, count]) => {
+        const active = tab === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => setTab(id)}
+            className={`shrink-0 border-b-2 px-2.5 py-2.5 text-[13px] font-semibold md:px-3.5 md:text-[13.5px] ${
+              active ? "border-[#111827] text-[#111827]" : "border-transparent text-[#6b7280]"
+            }`}
+          >
+            {label}
+            {count != null ? (
+              <em className="ml-1.5 rounded-full bg-[#f3f4f6] px-1.5 py-px text-[11px] font-semibold not-italic text-[#374151]">{count}</em>
+            ) : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div data-iriss-order-room="1" className="min-w-0 overflow-x-hidden pb-1">
-      <AdminDashboardHeaderWithMenu>
+      <AdminDashboardHeaderWithMenu
+        mobileTitle={title}
+        mobileBackHref="/admin/iriss/pasutijumi"
+        mobileTrailing={
+          <>
+            <AdminMobileSaveStatus
+              saved={!busy && !orderPdfBusy}
+              busy={busy || orderPdfBusy}
+              onSave={() => void onSave()}
+            />
+            <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => setMoreOpen(true)} />
+          </>
+        }
+        mobileBelowTitle={
+          <div className="flex h-8 items-center gap-2">
+            <label className="inline-flex min-w-0 items-center">
+              <span className="sr-only">Statuss</span>
+              <select
+                className="iriss-status-pill h-8 rounded-full border border-[#111827] bg-[#111827] px-2.5 text-[12px] font-semibold text-white outline-none"
+                value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
+                aria-label="Pasūtījuma statuss"
+                onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
+              >
+                {IRISS_PASUTIJUMS_PICKER_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {IRISS_PASUTIJUMS_PICKER_STATUS_LV[status]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className="min-w-0 truncate text-[13px] text-[var(--am-ink2)]">{clientName || refLabel}</span>
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)] disabled:opacity-35"
+                disabled={!canCall}
+                onClick={onCall}
+                title="Zvanīt"
+                aria-label="Zvanīt"
+              >
+                <Phone className="h-4 w-4" aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)] disabled:opacity-35"
+                disabled={!canCall}
+                onClick={() => onWhatsappText("")}
+                title="Atvērt WhatsApp"
+                aria-label="Atvērt WhatsApp"
+              >
+                <WhatsAppGlyph className="h-4 w-4 fill-current" />
+              </button>
+              <button
+                type="button"
+                className="am-press grid h-9 w-9 place-items-center rounded-full bg-[var(--fill-secondary)] text-[var(--label)] disabled:opacity-35"
+                disabled={!canEmail}
+                onClick={() => openMail("")}
+                title="E-pasts"
+                aria-label="E-pasts"
+              >
+                <Mail className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+          </div>
+        }
+      >
         <div className="min-w-0">
           <Link
             href="/admin/iriss/pasutijumi"
@@ -656,7 +756,6 @@ export function IrissOrderRoom({
             className="mb-2 inline-flex min-h-10 items-center gap-1 text-[13px] font-medium text-[#6b7280]"
           >
             <span aria-hidden>←</span>
-            <span className="text-[17px] font-semibold text-[#111827] md:hidden">{refLabel}</span>
             <span className="hidden md:inline">IRISS · Pasūtījumi / {refLabel}</span>
           </Link>
           <div className="rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 sm:px-[18px] sm:py-3.5">
@@ -756,52 +855,10 @@ export function IrissOrderRoom({
                 </button>
               </div>
             </div>
-            <div className="mt-2 grid grid-cols-3 gap-2 md:hidden">
-              <button type="button" className={roomBtn} disabled={!canCall} onClick={onCall}>
-                <Phone className="h-4 w-4" aria-hidden />
-                Zvanīt
-              </button>
-              <button type="button" className={roomBtnWa} disabled={!canCall} onClick={() => onWhatsappText("")}>
-                <WhatsAppGlyph className="h-4 w-4 fill-white" />
-                WhatsApp
-              </button>
-              <button type="button" className={roomBtn} disabled={!canEmail} onClick={() => openMail("")} aria-label="E-pasts">
-                <Mail className="h-4 w-4" aria-hidden />
-              </button>
-            </div>
-          </div>
-          <div className="-mx-1 mt-2 flex max-w-full gap-0.5 overflow-x-auto border-b border-[#e5e7eb] [scrollbar-width:none] md:mx-0 md:mt-3" role="tablist" aria-label="Pasūtījuma istaba">
-            {(
-              [
-                ["overview", "Pārskats", null],
-                ["search", "Meklētājs", filteredHits.length],
-                ["offers", "Piedāvājumi", rec.offers.length],
-                ["communication", "Komunikācija", commCount],
-                ["documents", "Dokumenti", docCount],
-              ] as const
-            ).map(([id, label, count]) => {
-              const active = tab === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setTab(id)}
-                  className={`shrink-0 border-b-2 px-2.5 py-2.5 text-[13px] font-semibold md:px-3.5 md:text-[13.5px] ${
-                    active ? "border-[#111827] text-[#111827]" : "border-transparent text-[#6b7280]"
-                  }`}
-                >
-                  {label}
-                  {count != null ? (
-                    <em className="ml-1.5 rounded-full bg-[#f3f4f6] px-1.5 py-px text-[11px] font-semibold not-italic text-[#374151]">{count}</em>
-                  ) : null}
-                </button>
-              );
-            })}
           </div>
         </div>
       </AdminDashboardHeaderWithMenu>
+      {tabs}
 
       {saveMsg ? (
         <p className="mt-2 text-[12px] font-medium text-[var(--color-provin-muted)]" role="status">
@@ -1106,7 +1163,7 @@ export function IrissOrderRoom({
 
       {tab === "search" ? (
         <div className="mt-3 min-w-0 space-y-3">
-          <div className="sticky top-0 z-10 flex min-w-0 flex-wrap items-center gap-2 rounded-2xl border border-[#e5e7eb] bg-white px-3 py-2.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-2xl border border-[#e5e7eb] bg-white px-3 py-2.5 md:sticky md:top-0 md:z-10">
             <b className="text-[12px] text-[#111827]">KRITĒRIJI</b>
             {chips.map((chip) => (
               <button
@@ -1610,17 +1667,42 @@ export function IrissOrderRoom({
       ) : null}
       </div>
 
-      <div className="fixed inset-x-0 bottom-[var(--admin-tabbar-h,0px)] z-[40] grid grid-cols-3 gap-2 border-t border-[#e5e7eb] bg-[#fffffff2] px-3 pb-[max(8px,env(safe-area-inset-bottom))] pt-2 md:hidden">
-        <button type="button" disabled={orderPdfBusy} onClick={onPdf} className="iriss-ink-link flex h-11 min-w-0 items-center justify-center rounded-xl bg-[var(--s1,#fff)] text-[14px] font-semibold text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--hair,#e5e7eb)]">
+      <div className="iriss-action-dock md:hidden">
+        <button type="button" disabled={orderPdfBusy} onClick={onPdf} className="iriss-ink-link flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[var(--s1,#fff)] text-[15px] font-semibold text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--hair,#e5e7eb)]">
           {orderPdfBusy ? "PDF…" : "Līgums"}
         </button>
-        <button type="button" onClick={onCreateOffer} className="flex h-11 min-w-0 items-center justify-center rounded-xl bg-[#e5e7eb] text-[14px] font-semibold text-[#111827]">
+        <button type="button" onClick={onCreateOffer} className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[#111827] text-[15px] font-semibold text-white">
           Piedāvājums
         </button>
-        <button type="button" disabled={busy || orderPdfBusy} onClick={() => void onSave()} className="flex h-11 min-w-0 items-center justify-center rounded-xl bg-[#2563eb] text-[14px] font-semibold text-white disabled:opacity-50">
-          {busy || orderPdfBusy ? "…" : "Saglabāt"}
+        <button type="button" disabled={busy || orderPdfBusy} onClick={() => void onSave()} className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[var(--acc,#2563eb)] text-[15px] font-semibold text-white disabled:opacity-50">
+          {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
         </button>
       </div>
+      <AdminMobileSheet open={moreOpen} title="Darbības" onClose={() => setMoreOpen(false)}>
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            disabled={orderPdfBusy}
+            onClick={() => {
+              setMoreOpen(false);
+              onPdf();
+            }}
+            className="flex h-11 items-center justify-center rounded-full bg-[var(--fill-secondary)] text-[15px] font-semibold text-[var(--label)]"
+          >
+            {orderPdfBusy ? "PDF…" : "Līgums PDF"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMoreOpen(false);
+              onDeleteOrder();
+            }}
+            className="flex h-11 items-center justify-center rounded-full bg-[var(--fill-secondary)] text-[15px] font-semibold text-red-700"
+          >
+            Dzēst pasūtījumu
+          </button>
+        </div>
+      </AdminMobileSheet>
 
       {criteriaOpen ? (
         <div className="fixed inset-0 z-[80] flex items-end justify-end bg-[#0f172a66] md:items-stretch" role="presentation" onClick={() => setCriteriaOpen(false)}>
