@@ -74,6 +74,7 @@ export const ADMIN_MOBILE_ICON_URL = {
   avotsMaksas: "/admin-mobile/icons/avots-maksas.svg",
   pavadzimes: "/admin-mobile/icons/pavadzimes.svg",
   radars: "/admin-mobile/icons/radars.svg",
+  logistika: "/admin-mobile/icons/logistika.svg",
   sludinajums: "/admin-mobile/icons/sludinajums.svg",
   atskaite: "/admin-mobile/icons/atskaite.svg",
   iestatijumi: "/admin-mobile/icons/iestatijumi.svg",

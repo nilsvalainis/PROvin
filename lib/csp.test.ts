@@ -23,6 +23,8 @@ describe("CSP policies", () => {
     expect(csp).toContain("https://js.stripe.com");
     expect(csp).toContain("https://checkout.stripe.com");
     expect(csp).toContain("https://www.googletagmanager.com");
+    expect(csp).toContain("https://maps.googleapis.com");
+    expect(csp).toContain("https://maps.gstatic.com");
     expect(csp).toContain("https://connect.facebook.net");
     expect(csp).toContain("https://va.vercel-scripts.com");
     expect(csp).toContain("https://vercel.live");

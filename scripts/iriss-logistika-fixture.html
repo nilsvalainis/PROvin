@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IRISS Loģistika</title>
+  <style>
+    :root { --ink:#0b0c10; --ink2:#5e636e; --acc:#3d5bd9; --acc-soft:rgba(61,91,217,.12); --bg:#e9ecf1; }
+    body { margin:0; font: 13px/1.35 system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 16px; }
+    h1 { font-size: 22px; margin: 0; }
+    .row { display:flex; gap:8px; align-items:center; }
+    .chip { border:0; background:#fff; border-radius:999px; padding:6px 10px; font-weight:600; }
+    .chip.on { background:#111; color:#fff; }
+    .grid { display:grid; grid-template-columns: 1fr 320px; gap:12px; margin-top:12px; }
+    .card { background:#fff; border-radius:16px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+    .map { height:200px; background: linear-gradient(#cfd8c4,#d7e0ea); border-radius:14px; position:relative; margin:8px; }
+    .dot { position:absolute; width:10px; height:10px; border-radius:50%; background:#111; box-shadow:0 0 0 3px #3d5bd9; }
+    .lab { position:absolute; font-size:10px; font-weight:600; color:#fff; background:rgba(15,18,28,.7); padding:2px 6px; border-radius:6px; }
+    .item { display:flex; gap:8px; padding:10px 12px; border-top:1px solid #f3f4f6; }
+    .item.archived { opacity:.55; }
+    .wake { border:1px solid #e5e7eb; border-radius:999px; padding:4px 10px; background:#fff; font-weight:600; }
+    .btn { background:#111; color:#fff; border:0; border-radius:999px; padding:8px 12px; font-weight:600; }
+    a { color: var(--acc); font-weight:600; text-decoration:none; }
+    @media (max-width: 700px) {
+      .grid { grid-template-columns: 1fr; }
+      .aside { display:none; }
+      .map { height:150px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <div class="row"><h1>Loģistika</h1><span style="color:var(--acc);font-weight:700;font-size:12px">IRISS</span></div>
+        <p style="margin:4px 0 0;color:var(--ink2);font-size:12px">8 aktīvi · 1 arhīvā · km</p>
+      </div>
+      <button class="btn">+ Nopirkts</button>
+    </div>
+    <div class="row" style="margin-top:12px;flex-wrap:wrap">
+      <button class="chip">Šodien jādara 2</button>
+      <button class="chip">Termiņš tuvu 3</button>
+      <button class="chip on">Visi aktīvie 8</button>
+      <button class="chip">Arhīvs 1</button>
+    </div>
+    <div class="grid">
+      <div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between;padding:8px 12px">
+            <span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:#9a9faa">KARTE</span>
+            <button class="chip">Iepriekš izmantotie punkti</button>
+          </div>
+          <div class="map">
+            <span class="dot" style="left:28%;top:42%"></span>
+            <span class="lab" style="left:31%;top:38%">VW Passat · Openlane</span>
+            <span class="dot" style="left:58%;top:36%;background:#9aa1ad;box-shadow:none"></span>
+            <span class="lab" style="left:61%;top:32%;background:rgba(255,255,255,.62);color:#1f2430">BMW 520d · Autobid</span>
+          </div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div class="item">
+            <input type="checkbox" checked />
+            <div>
+              <strong>VW Passat Variant 2.0 TDI</strong>
+              <div style="font-family:ui-monospace;font-size:11px;color:#9a9faa">WWZZZ3CZLE012345</div>
+              <div>Openlane · <a href="#">Atvērt izsolē</a></div>
+            </div>
+          </div>
+          <div class="item">
+            <input type="checkbox" />
+            <div>
+              <strong>Skoda Superb 1.6 TDI</strong>
+              <div style="font-family:ui-monospace;font-size:11px;color:#9a9faa">TMBJG9NP9H7045709</div>
+              <div>Auto1 · Gatavs izsniegšanai</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <aside class="card aside" style="padding:16px">
+        <h2 style="margin:0 0 4px;font-size:18px">VW Passat Variant 2.0 TDI</h2>
+        <div style="font-family:ui-monospace;font-size:12px;color:var(--ink2)">WWZZZ3CZLE012345 · Openlane</div>
+        <p>Pickup: Openlane Bremen · Musterstraße 1, 28000 Bremen, DE</p>
+        <p>Darba laiks P-Pk 7:00-15:30</p>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

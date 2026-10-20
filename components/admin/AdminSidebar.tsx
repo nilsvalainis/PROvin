@@ -22,6 +22,7 @@ import {
   Search,
   Settings,
   Sun,
+  Truck,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -50,7 +51,7 @@ import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileView
 
 /** Variants A: grupēta kreisā sānjosla visiem admin paneļiem (PRO + IRISS). Mobilajā — apakšējā cilņu josla + „Vairāk”. */
 
-type Item = { href: string; label: string; icon: LucideIcon; badge?: "fast" | "partners" | "orders" | "irissMatches"; plus?: boolean; match: (p: string) => boolean };
+type Item = { href: string; label: string; icon: LucideIcon; badge?: "fast" | "partners" | "orders" | "irissMatches" | "irissLogistics"; plus?: boolean; match: (p: string) => boolean };
 type Group = { title: string; items: Item[] };
 
 const starts = (prefix: string) => (p: string) => p.startsWith(prefix);
@@ -72,6 +73,7 @@ export const ADMIN_NAV_LABELS = {
   irissHome: "Pasūtījumi",
   irissNew: "Jauns pasūtījums",
   irissScan: "Radars",
+  irissLogistics: "Loģistika",
   irissList: "Sludinājumi",
   irissReport: "Mēneša atskaite",
   irissWaybills: "Pavadzīmes",
@@ -101,6 +103,13 @@ const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Hands
 const DEMO_DILERI: Item = { href: "/admin/b2b-demo", label: L.demoDealers, icon: Building2, match: starts("/admin/b2b-demo") };
 const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, plus: true, match: starts("/admin/iriss/pasutijumi") };
 const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
+const I_LOGISTICS: Item = {
+  href: "/admin/iriss/logistika",
+  label: L.irissLogistics,
+  icon: Truck,
+  badge: "irissLogistics",
+  match: starts("/admin/iriss/logistika"),
+};
 const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybills, icon: FileText, match: starts("/admin/iriss/pavadzimes") };
 const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, badge: "irissMatches", match: starts("/admin/iriss/sludinajumi") };
 const I_REPORT: Item = { href: "/admin/iriss/atskaite", label: L.irissReport, icon: CalendarRange, match: starts("/admin/iriss/atskaite") };
@@ -111,7 +120,7 @@ const I_VIN: Item = { ...VIN, label: L.vinScan };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
   { title: L.groupPro, items: [MORNING, SAKUMS, VIN, FAST] },
-  { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
+  { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
   {
     title: L.groupWeb,
     items: [
@@ -245,7 +254,7 @@ function refreshCount(url: string): Promise<void> {
 
 const badgePollRefs = new Map<string, number>();
 
-function useCountValue(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount" | "urgentCount" | "irissMatchCount"): number {
+function useCountValue(url: string, key: "openCount" | "unseenCount" | "activeCount" | "overdueCount" | "urgentCount" | "irissMatchCount" | "irissLogisticsCount"): number {
   const [n, setN] = useState(0);
   useEffect(() => {
     const e = countEntry(url);
@@ -312,6 +321,7 @@ function ordersBadgeTone(badges: { ordersOverdue: number; ordersUrgent: number }
 function navBadgeTone(kind: Item["badge"], badges: { ordersOverdue: number; ordersUrgent: number }) {
   if (kind === "orders") return ordersBadgeTone(badges);
   if (kind === "irissMatches") return { gray: true, warn: false };
+  if (kind === "irissLogistics") return { gray: true, warn: false };
   return { gray: false, warn: false };
 }
 
@@ -326,7 +336,8 @@ function useBadges() {
   const ordersOverdue = useCountValue(BADGES_URL, "overdueCount");
   const ordersUrgent = useCountValue(BADGES_URL, "urgentCount");
   const irissMatches = useCountValue(BADGES_URL, "irissMatchCount");
-  return { fast, partners, orders, ordersOverdue, ordersUrgent, irissMatches } as const;
+  const irissLogistics = useCountValue(BADGES_URL, "irissLogisticsCount");
+  return { fast, partners, orders, ordersOverdue, ordersUrgent, irissMatches, irissLogistics } as const;
 }
 
 /**
@@ -521,6 +532,7 @@ const MOBILE_TAB_ICON: Record<string, AdminMobileIconName> = {
   "/admin/iriss/pasutijumi": "pasutijumi",
   "/admin/iriss/sludinajumi": "sludinajums",
   "/admin/iriss/scan": "radars",
+  "/admin/iriss/logistika": "logistika",
 };
 
 const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
@@ -538,6 +550,7 @@ const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/iriss/pasutijumi": "pasutijumi",
   "/admin/iriss/sludinajumi": "sludinajums",
   "/admin/iriss/scan": "radars",
+  "/admin/iriss/logistika": "logistika",
   "/admin/iriss/atskaite": "atskaite",
   "/admin/iriss/pavadzimes": "pavadzimes",
   "/admin/iriss/iestatijumi": "iestatijumi",

@@ -16,6 +16,7 @@ export const IRISS_OWN_STORAGE_PREFIXES = [
   "iriss-listings/",
   "iriss-marketplace/",
   "iriss-scan/",
+  "iriss-logistics/",
 ] as const;
 
 export const IRISS_OWN_RELAY_SESSION_SCOPE = "iriss-relay-chrome-profiles";

@@ -1,5 +1,6 @@
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { IrissGoogleContactsBackfillButton } from "@/components/admin/IrissGoogleContactsBackfillButton";
+import { IrissLogistikaMapsUsagePanel } from "@/components/admin/IrissLogistikaMapsUsagePanel";
 import { IrissTameCommissionSettingsForm } from "@/components/admin/IrissTameCommissionSettingsForm";
 import { requireAdminPage } from "@/lib/admin-auth";
 
@@ -22,6 +23,7 @@ export default async function IrissSettingsPage() {
         </p>
       </AdminDashboardHeaderWithMenu>
       <IrissTameCommissionSettingsForm />
+      <IrissLogistikaMapsUsagePanel />
       <section className="mt-4 max-w-xl rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Google Contacts</h2>
         <p className="mt-1 text-[13px] leading-snug text-[var(--color-provin-muted)]">
