@@ -8,7 +8,7 @@ describe("iriss order overview layout", () => {
     const copy = readFileSync("lib/iriss-order-overview-view.ts", "utf8");
 
     expect(room).toContain("iriss-parskats-view");
-    expect(room).toContain("bg-[var(--bg-base)]");
+    expect(room).not.toMatch(/iriss-parskats-view[^\n]*bg-\[var\(--bg-base\)\]/);
     expect(room).toContain("Klienta dati");
     expect(room).toContain("Klienta kontakti");
     expect(room).toContain("Avanss un darījums");

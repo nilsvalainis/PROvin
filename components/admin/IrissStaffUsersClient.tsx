@@ -172,7 +172,7 @@ export function IrissStaffUsersClient() {
       : false;
 
   return (
-    <div className="relative min-h-full w-full bg-[#F4F6F9] px-3 pb-24 pt-3 sm:px-4 sm:pb-8">
+    <div className="relative min-h-full w-full px-3 pb-24 pt-3 sm:px-4 sm:pb-8">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">

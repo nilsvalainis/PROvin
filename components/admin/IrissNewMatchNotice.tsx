@@ -37,7 +37,7 @@ export function IrissNewMatchNotice({
       <button
         type="button"
         disabled={empty}
-        className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium text-[var(--slud-ink,#0b0c10)] hover:bg-[var(--slud-fill,rgba(116,120,138,.11))] disabled:cursor-default disabled:opacity-45 disabled:hover:bg-transparent"
+        className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] font-medium text-[var(--slud-ink,#0b0c10)] hover:bg-[var(--slud-fill,rgba(116,120,138,.11))] disabled:cursor-default disabled:opacity-45 disabled:hover:bg-transparent"
         aria-expanded={open}
         aria-label={open ? `Aizvērt, ${label} ${n}` : `${label} ${n}`}
         title={empty ? `${label} 0` : label}

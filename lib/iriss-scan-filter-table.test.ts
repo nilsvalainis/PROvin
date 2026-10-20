@@ -11,6 +11,7 @@ describe("iriss scan filter table", () => {
     const mobile = rows.find((r) => r.label === "mobile.de");
     const as24 = rows.find((r) => r.label === "AutoScout24");
     expect(a1?.action).toBe("create");
+    expect(a1?.logoKey).toBe("auto1");
     expect(a1?.status).toBe("-");
     expect(mobile?.description).toBe("Manuāli, maksas");
     expect(as24?.description).toBe("Nav filtra");

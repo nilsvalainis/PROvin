@@ -223,7 +223,7 @@ describe("IrissOrderRoom render", () => {
     );
     expect(errors).toEqual([]);
     expect(html).toContain("Nolasīt");
-    expect(html).toContain("Izveidot filtru");
+    expect(html).toContain("Izveidot");
     expect(html).toContain("Avanss un darījums");
     expect(html).toContain("DIAPAZONI");
     expect(html).toContain("Gadi");

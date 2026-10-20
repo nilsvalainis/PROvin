@@ -39,12 +39,12 @@ export default async function IrissScanListPage({
       {storeEnabled && data.rows.length === 0 ? (
         <div className="mx-auto mt-10 max-w-sm px-6 text-center">
           <p className="text-[17px] font-semibold text-[var(--ink)]">Nav radara ierakstu</p>
-          <p className="mt-1 text-[13px] text-[var(--ink3)]">Spied „+” vai Jauns ieraksts, lai izveidotu pirmo ierakstu.</p>
+          <p className="mt-1 text-[13px] text-[var(--ink3)]">Spied „+” vai Jauns radars, lai izveidotu pirmo ierakstu.</p>
           <Link
             href="/admin/iriss/scan/new"
-            className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-[var(--chip-active-bg)] px-4 text-[14px] font-semibold text-[var(--chip-active-fg)]"
+            className="mt-4 inline-flex h-[34px] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[var(--chip-active-bg)] px-4 text-[14px] font-semibold text-[var(--chip-active-fg)]"
           >
-            Jauns ieraksts
+            Jauns radars
           </Link>
         </div>
       ) : null}

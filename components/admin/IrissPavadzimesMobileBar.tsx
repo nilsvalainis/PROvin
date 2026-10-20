@@ -73,7 +73,7 @@ export function IrissPavadzimesMobileBar({ embedded = false }: { embedded?: bool
           <Link
             key={item.id}
             href="/admin/iriss/pavadzimes"
-            className="iriss-waybill-chip inline-flex h-7 max-w-[16rem] shrink-0 items-center rounded-full bg-[var(--fill-secondary)] px-2.5 text-[12px] font-medium text-[var(--label)]"
+            className="iriss-waybill-chip inline-flex h-[22px] max-w-[16rem] shrink-0 items-center rounded-full bg-[var(--fill-secondary)] px-3 text-[12px] font-medium text-[var(--label)]"
           >
             <span className="truncate">{item.label}</span>
           </Link>

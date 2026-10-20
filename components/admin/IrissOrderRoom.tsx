@@ -754,7 +754,7 @@ export function IrissOrderRoom({
   );
 
   return (
-    <div data-iriss-order-room="1" className="iriss-parskats-view min-w-0 overflow-x-hidden bg-[var(--bg-base)] pb-1">
+    <div data-iriss-order-room="1" className="iriss-parskats-view min-w-0 overflow-x-hidden pb-1">
       <AdminDashboardHeaderWithMenu
         mobileTitle={title}
         mobileBackHref="/admin/iriss/pasutijumi"
@@ -958,7 +958,7 @@ export function IrissOrderRoom({
             type="button"
             disabled={busy}
             onClick={onRestore}
-            className="mt-2 inline-flex h-8 items-center rounded-lg border border-amber-400/80 bg-white px-2 text-[11px] font-semibold text-amber-950 disabled:opacity-50"
+            className="mt-2 inline-flex h-8 items-center whitespace-nowrap rounded-lg border border-amber-400/80 bg-white px-3 text-[12px] font-semibold text-amber-950 disabled:opacity-50"
           >
             Atjaunot
           </button>
@@ -1312,7 +1312,7 @@ export function IrissOrderRoom({
                 <IrissListingPlatformChipsRow rec={rec} />
               </details>
               <button type="button" className="mt-2 text-[13px] font-semibold text-[var(--color-provin-accent)]" onClick={() => setLinksOpen((v) => !v)}>
-                {linksOpen ? "Aizvērt saites" : "Rediģēt saites"}
+                {linksOpen ? "Aizvērt saites" : "Saites"}
               </button>
               {linksOpen ? (
                 <div className="mt-3">
@@ -1341,7 +1341,7 @@ export function IrissOrderRoom({
                 key={chip.id}
                 type="button"
                 onClick={openCriteria}
-                className={`max-w-full truncate rounded-full px-2.5 py-1 text-[12px] font-semibold ${
+                className={`inline-flex h-[26px] max-w-full items-center truncate whitespace-nowrap rounded-full px-3 text-[12px] font-semibold ${
                   chip.tone === "required"
                     ? "bg-[color-mix(in_srgb,var(--bad)_12%,transparent)] text-[var(--bad)]"
                     : "bg-[var(--fill)] text-[var(--ink2)]"
@@ -1355,7 +1355,7 @@ export function IrissOrderRoom({
               Visi kritēriji
             </button>
             {criteriaOn ? (
-              <button type="button" className="rounded-full bg-[var(--chip-active-bg)] px-2.5 py-1 text-[12px] font-semibold text-[var(--chip-active-fg)]" onClick={() => setCriteriaOn(false)}>
+              <button type="button" className="inline-flex h-[26px] items-center whitespace-nowrap rounded-full bg-[var(--chip-active-bg)] px-3 text-[12px] font-semibold text-[var(--chip-active-fg)]" onClick={() => setCriteriaOn(false)}>
                 Filtrs ieslēgts
               </button>
             ) : null}
