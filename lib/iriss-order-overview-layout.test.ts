@@ -43,6 +43,10 @@ describe("iriss order overview layout", () => {
     expect(css).toContain("minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr)");
     expect(css).toContain(".iriss-spec-calc-note");
     expect(css).toContain(".iriss-internal-badge");
+    expect(css).toContain("var(--warn-bg");
+    expect(css).toContain("var(--surface-2");
+    expect(css).not.toMatch(/\.iriss-internal-badge\s*\{[^}]*#(?:fdba74|fff7ed|c2410c)/);
+    expect(css).not.toMatch(/\.iriss-spec-calc-note\s*\{[^}]*(?:#eff6ff|--acc|#2563eb|#3d5bd9|#1d4ed8)/);
     expect(steps).toContain("Atvērt Meklētāju");
     expect(copy).toContain("Meklējam");
     expect(copy).toContain("Avanss saņemts");
