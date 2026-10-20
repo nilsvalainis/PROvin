@@ -57,13 +57,10 @@ export async function tryBeginStripeEvent(eventId: string, now = Date.now()): Pr
     if (decision === "duplicate") return { value: false };
     return { value: true, next: newStripeDedupeClaim(eventId, now, "claimed") };
   });
+  // Neiegūta atslēga netiek kešota atmiņā: cita instance to var vēl atbrīvot (kļūda),
+  // un Stripe atkārtojumam jāredz Blob stāvoklis, nevis šīs instances viltus "done".
   if (acquired) memorySet(key, newStripeDedupeClaim(eventId, now, "claimed"));
-  else memorySet(key, currentOrDone(key, now));
   return acquired;
-}
-
-function currentOrDone(key: string, now: number): StripeDedupeRecord {
-  return memoryGet(key) ?? newStripeDedupeClaim(key, now, "done");
 }
 
 /** Ja apstrāde neizdevās (pirms veiksmīgas atbildes), atļaut Stripe atkārtot mēģinājumu. */
