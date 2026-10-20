@@ -67,7 +67,7 @@ describe("thanks session cookie token", () => {
   it("rejects a tampered payload and a wrong secret", async () => {
     const token = await signThanksSessionToken("cs_live_order12345");
     expect(token).toBeTruthy();
-    const [payload, sig] = token!.split(".");
+    const [, sig] = token!.split(".");
     const swapped = Buffer.from(
       JSON.stringify({ typ: THANKS_SESSION_TOKEN_TYP, sid: "cs_live_other9999", exp: Date.now() + 60_000 }),
     ).toString("base64url");

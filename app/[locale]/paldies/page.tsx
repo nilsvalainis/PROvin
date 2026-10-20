@@ -71,6 +71,8 @@ export default async function ThanksPage({ searchParams, params }: Props) {
             </p>
           )}
           {sid && (
+            // PDF lejupielāde (API), ne lapas navigācija.
+            // eslint-disable-next-line @next/next/no-html-link-for-pages
             <a
               href="/api/invoice/download"
               className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-full bg-provin-accent px-6 text-[17px] font-normal text-white"
