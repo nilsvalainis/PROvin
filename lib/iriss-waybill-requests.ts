@@ -123,7 +123,7 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     waybillNo: str(o.waybillNo, 24),
     pdfUrl: str(o.pdfUrl, 500),
     errorReason: str(o.errorReason, 500),
-    lastReplyText: str(o.lastReplyText ?? o.last_reply_text, 2000),
+    lastReplyText: str(o.lastReplyText || o.last_reply_text, 2000),
     attempts: typeof o.attempts === "number" && o.attempts >= 1 ? Math.min(20, Math.round(o.attempts)) : 1,
     pickedBy: str(o.pickedBy, 80),
     pickedAt: str(o.pickedAt, 40),
