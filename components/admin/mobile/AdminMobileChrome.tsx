@@ -296,6 +296,7 @@ export function AdminMobileSheet({
   onClose,
   children,
   action,
+  opaque = false,
 }: {
   open: boolean;
   title: string;
@@ -303,6 +304,8 @@ export function AdminMobileSheet({
   onClose: () => void;
   children: ReactNode;
   action?: ReactNode;
+  /** Solid card (LIMITI). Default glass stays for other sheets. */
+  opaque?: boolean;
 }) {
   const [shown, setShown] = useState(open);
   const theme = useAdminMobileColorScheme();
@@ -332,7 +335,7 @@ export function AdminMobileSheet({
         }}
       />
       <div
-        className={`am-glass admin-sheet-panel rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 ${
+        className={`${opaque ? "admin-sheet-opaque" : "am-glass"} admin-sheet-panel rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 ${
           open ? "" : "admin-sheet-out"
         }`}
       >

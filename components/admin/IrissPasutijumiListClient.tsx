@@ -891,7 +891,7 @@ export function IrissPasutijumiListClient({
           </div>
         </div>
       ) : null}
-      <AdminMobileSheet open={limitsOpen} title="LIMITI" onClose={() => setLimitsOpen(false)}>
+      <AdminMobileSheet open={limitsOpen} title="LIMITI" onClose={() => setLimitsOpen(false)} opaque>
         <IrissLimitsSidebarCard data={limits} />
       </AdminMobileSheet>
     </div>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=390, initial-scale=1" />
+  <title>IRISS pasūtījumi mobile fixture</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --s1: #fff;
+      --ink: #0b0c10;
+      --ink2: #5e636e;
+      --ink3: #9a9faa;
+      --onink: #fff;
+      --news-bg: var(--ink);
+      --news-fg: var(--onink);
+      --fill: rgba(116, 120, 138, 0.11);
+      --hair: rgba(17, 24, 39, 0.08);
+      --sh: 0 1px 2px rgba(16, 24, 40, 0.04);
+      --gsh: 0 8px 22px rgba(16, 24, 40, 0.12);
+      --am-z-tab: 30;
+    }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      background: #e9ecf1;
+      color: #0b0c10;
+    }
+    .admin-ios-theme a:not(.iriss-listing-platform-chip):not(.admin-nav-link):not(.iriss-waybill-chip) {
+      color: #000000;
+    }
+    .admin-ios-theme :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd) {
+      color: #000000;
+    }
+    .iriss-pas-hits {
+      display: inline-flex;
+      height: 24px;
+      align-items: center;
+      border-radius: 999px;
+      background: var(--ink);
+      padding: 0 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--onink);
+    }
+    .row {
+      margin: 0 12px 8px;
+      border-radius: 18px;
+      background: #fff;
+      padding: 10px 12px;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    }
+    .limits-broken {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 78px;
+      z-index: 30;
+      border-radius: 22px;
+      background: var(--s1-missing, transparent);
+      padding: 12px;
+    }
+    .limits-fixed {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 50;
+      border-radius: 36px 36px 0 0;
+      background: #fff;
+      padding: 12px 16px 28px;
+      box-shadow: 0 8px 22px rgba(16, 24, 40, 0.12);
+    }
+    .tabbar {
+      position: fixed;
+      left: 16px;
+      right: 16px;
+      bottom: 8px;
+      z-index: 30;
+      display: flex;
+      justify-content: space-around;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 10px 8px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="admin-ios-theme admin-m" data-section="iriss">
+  <p class="px-4 pt-3 text-[12px] font-semibold" id="shot-label">Pasūtījumi · BEFORE 390</p>
+  <div class="iriss-pasutijumi-view px-1 pb-40">
+    <div class="row">
+      <p class="text-[16px] font-semibold">Audi A6 C7 BI-XENON</p>
+      <p class="mt-0.5 text-[12px] text-[var(--ink2)]">230 kW · 2012-2015 · 3.0 TDI</p>
+      <div class="mt-1.5 flex items-center gap-2">
+        <span class="iriss-pas-hits" data-shot="jaunie">21 jauni</span>
+        <span class="min-w-0 truncate text-[12px] text-[var(--ink2)]">Apskatīt 21 jaunus sludinājumus</span>
+      </div>
+    </div>
+    <div class="row">
+      <p class="text-[16px] font-semibold">BMW 330 e92</p>
+      <p class="mt-0.5 text-[12px] text-[var(--ink2)]">2005-2007 · 3.0 N52</p>
+      <div class="mt-1.5 flex items-center gap-2">
+        <span class="iriss-pas-hits" data-shot="jaunie">1 jauns</span>
+        <span class="min-w-0 truncate text-[12px] text-[var(--ink2)]">Apskatīt 1 jaunu sludinājumu</span>
+      </div>
+    </div>
+    <div class="row">
+      <p class="text-[16px] font-semibold">BMW 545i</p>
+      <p class="mt-0.5 text-[12px] text-[var(--ink2)]">N62</p>
+      <div class="mt-1.5 flex items-center gap-2">
+        <span class="text-[13px] tabular-nums text-[var(--ink3)]">-</span>
+        <span class="min-w-0 truncate text-[12px] text-[var(--ink2)]">Sagatavot pirmo piedāvājumu</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="limits-panel" class="limits-broken" data-open="true">
+    <p class="text-[11px] font-extrabold tracking-[0.08em]">LIMITI</p>
+    <p class="mt-2 flex justify-between text-[12px] font-semibold"><span>Gemini</span><span>0 %</span></p>
+    <p class="text-[11px]">0,00 $ / 0,00 $</p>
+    <p class="mt-2 flex justify-between text-[12px] font-semibold"><span>Apify</span><span>0 %</span></p>
+    <p class="text-[11px]">0,00 $ / 0,00 $</p>
+    <p class="mt-2 flex justify-between text-[12px] font-semibold"><span>Vercel</span><span>0 %</span></p>
+    <p class="text-[11px]">0,00 $ / 0,00 $</p>
+    <p class="mt-2 text-[10px]">Tikai adminam</p>
+    <button type="button" class="mt-2 inline-flex h-10 w-full items-center justify-center rounded-full bg-[var(--fill)] text-[13px] font-semibold">Aizvērt</button>
+  </div>
+  <div class="tabbar">
+    <span>Pasūtījumi</span>
+    <span>Sludinājumi</span>
+    <span>Radars</span>
+    <span>Vairāk</span>
+  </div>
+</body>
+</html>
