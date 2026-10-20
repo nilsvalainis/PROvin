@@ -160,6 +160,9 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(chat).toMatch(/comment_untrusted/);
     expect(chat).toMatch(/validHours/);
     expect(chat).toMatch(/IRISS_DEALER_PLATES/);
+    expect(chat).toMatch(/function isChatOk/);
+    expect(chat).toMatch(/function isChatError/);
+    expect(chat).toMatch(/if \(isChatError\(data\) \|\| !isChatOk\(data\)\)/);
     expect(plates).toMatch(/B193-7/);
     expect(plates).toMatch(/B762-7/);
     expect(plates).toMatch(/B861-6/);

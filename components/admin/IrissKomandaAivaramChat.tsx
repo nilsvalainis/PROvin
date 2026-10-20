@@ -67,8 +67,35 @@ function withReplies(partial: Partial<WaybillChatState>): WaybillChatState {
 type ChatOk = WaybillChatState;
 type ChatBusy = { busy: true; plate: string; current?: WaybillPlateCurrent; error?: string };
 type ChatErr = { error: string };
+type ChatResponse = ChatOk | ChatBusy | ChatErr;
 
-async function readChatResponse(res: Response): Promise<ChatOk | ChatBusy | ChatErr> {
+function isChatBusy(data: ChatResponse): data is ChatBusy {
+  return typeof data === "object" && data !== null && "busy" in data && data.busy === true;
+}
+
+function isChatOk(data: ChatResponse): data is ChatOk {
+  if (typeof data !== "object" || data === null || isChatBusy(data)) return false;
+  const row = data as Partial<WaybillChatState>;
+  return (
+    Array.isArray(row.requests) &&
+    Array.isArray(row.events) &&
+    Array.isArray(row.timeline) &&
+    Array.isArray(row.replies) &&
+    Array.isArray(row.vehicles) &&
+    Array.isArray(row.plates)
+  );
+}
+
+function isChatError(data: ChatResponse): data is ChatErr {
+  return typeof data === "object" && data !== null && "error" in data && !isChatBusy(data) && !isChatOk(data);
+}
+
+function chatErrorMessage(data: ChatResponse, fallback: string): string {
+  if (isChatError(data) && data.error) return data.error;
+  return fallback;
+}
+
+async function readChatResponse(res: Response): Promise<ChatResponse> {
   let data: Partial<WaybillChatState> & {
     error?: string;
     busy?: boolean;
@@ -128,16 +155,17 @@ export function IrissKomandaAivaramChat({
     try {
       const res = await fetch("/api/admin/iriss/waybill-requests", { credentials: "include", cache: "no-store" });
       const data = await readChatResponse(res);
-      if ("error" in data && !("requests" in data) && !("busy" in data)) {
+      if (isChatBusy(data)) return;
+      if (isChatError(data) || !isChatOk(data)) {
+        const message = chatErrorMessage(data, "Neizdevās ielādēt rindu.");
         setChat((prev) => {
           if (!prev.requests.length && !prev.timeline.length) {
-            setError((current) => current ?? data.error);
+            setError((current) => current ?? message);
           }
           return prev;
         });
         return;
       }
-      if ("busy" in data) return;
       setChat(data);
       if (!selectedInit.current) {
         selectedInit.current = true;
@@ -186,12 +214,12 @@ export function IrissKomandaAivaramChat({
         }),
       });
       const data = await readChatResponse(res);
-      if ("busy" in data) {
+      if (isChatBusy(data)) {
         setConfirm({ plate: data.plate || plate, current: data.current });
         return;
       }
-      if ("error" in data) {
-        setError(data.error);
+      if (isChatError(data) || !isChatOk(data)) {
+        setError(chatErrorMessage(data, "Neizdevās nosūtīt."));
         return;
       }
       setChat((prev) => ({
@@ -225,8 +253,8 @@ export function IrissKomandaAivaramChat({
         body: JSON.stringify({ action: "retry" }),
       });
       const data = await readChatResponse(res);
-      if ("busy" in data || "error" in data) {
-        setError("error" in data ? data.error : "Neizdevās atkārtot.");
+      if (isChatBusy(data) || isChatError(data) || !isChatOk(data)) {
+        setError(chatErrorMessage(data, "Neizdevās atkārtot."));
         return;
       }
       setChat((prev) => ({
