@@ -3,6 +3,8 @@ import {
   inProgressIsStale,
   parseWaybillRequest,
   remainingWaybillDays,
+  waybillAivarsReply,
+  waybillChatPayload,
   waybillChatTimeline,
   waybillSoonTone,
   type WaybillRequest,
@@ -26,6 +28,7 @@ const sample = (over: Partial<WaybillRequest> = {}): WaybillRequest => ({
   waybillNo: "",
   pdfUrl: "",
   errorReason: "",
+  lastReplyText: "",
   attempts: 1,
   pickedBy: "",
   pickedAt: "",
@@ -85,5 +88,41 @@ describe("waybill requests", () => {
     expect(waybillSoonTone(6)).toBe("ok");
     expect(waybillSoonTone(4)).toBe("soon");
     expect(waybillSoonTone(0)).toBe("expired");
+  });
+
+  it("reads lastReplyText and builds Aivars status plus result per request", () => {
+    const raw = { ...sample(), last_reply_text: "CSDD: izdota B193-7" };
+    const parsed = parseWaybillRequest(raw);
+    expect(parsed?.lastReplyText).toBe("CSDD: izdota B193-7");
+    const issued = sample({
+      status: "issued",
+      waybillNo: "B861-6",
+      pdfUrl: "/api/admin/iriss-pavadzimes/wb1/pdf",
+      lastReplyText: "",
+    });
+    const reply = waybillAivarsReply(issued, [
+      {
+        id: "wbe_2",
+        requestId: issued.id,
+        kind: "issued",
+        text: "Izdota B861-6",
+        waybillNo: "B861-6",
+        pdfUrl: "/api/admin/iriss-pavadzimes/wb1/pdf",
+        createdAt: "2026-10-20T10:05:00.000Z",
+        by: "aivars",
+      },
+    ]);
+    expect(reply.statusLabel).toBe("Izveidota");
+    expect(reply.text).toBe("Izdota B861-6");
+    expect(reply.waybillNo).toBe("B861-6");
+    const payload = waybillChatPayload({
+      version: 1,
+      updatedAt: "2026-10-20T10:05:00.000Z",
+      requests: [sample({ status: "issued", waybillNo: "B861-6", lastReplyText: "Izdota B861-6" })],
+      events: [],
+    });
+    expect(payload.replies[0]?.status).toBe("issued");
+    expect(payload.replies[0]?.text).toBe("Izdota B861-6");
+    expect(payload.replies[0]?.waybillNo).toBe("B861-6");
   });
 });

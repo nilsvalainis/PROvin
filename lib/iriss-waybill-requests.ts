@@ -53,6 +53,8 @@ export type WaybillRequest = {
   waybillNo: string;
   pdfUrl: string;
   errorReason: string;
+  /** Pēdējais Aivara teksts (statuss / kļūda / rezultāts). Nav instrukcija. */
+  lastReplyText: string;
   attempts: number;
   pickedBy: string;
   pickedAt: string;
@@ -121,6 +123,7 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     waybillNo: str(o.waybillNo, 24),
     pdfUrl: str(o.pdfUrl, 500),
     errorReason: str(o.errorReason, 500),
+    lastReplyText: str(o.lastReplyText || o.last_reply_text, 2000),
     attempts: typeof o.attempts === "number" && o.attempts >= 1 ? Math.min(20, Math.round(o.attempts)) : 1,
     pickedBy: str(o.pickedBy, 80),
     pickedAt: str(o.pickedAt, 40),
@@ -201,4 +204,47 @@ export function waybillSoonTone(days: number | null): "ok" | "soon" | "expired" 
   if (days <= 0) return "expired";
   if (days < 5) return "soon";
   return "ok";
+}
+
+export type WaybillAivarsReply = {
+  requestId: string;
+  status: WaybillRequestStatus;
+  statusLabel: string;
+  text: string;
+  waybillNo: string;
+  pdfUrl: string;
+  at: string;
+};
+
+const AIVARS_REPLY_KINDS = new Set<WaybillRequestEventKind>(["issued", "error", "message", "in_progress"]);
+
+export function waybillAivarsReply(request: WaybillRequest, events: WaybillRequestEvent[]): WaybillAivarsReply {
+  const mine = events.filter((event) => event.requestId === request.id);
+  const last =
+    [...mine].reverse().find((event) => AIVARS_REPLY_KINDS.has(event.kind)) ?? mine[mine.length - 1] ?? null;
+  const queuedFallback = request.status === "queued" ? "Gaida Aivaru." : "";
+  const text = (request.lastReplyText || last?.text || request.errorReason || queuedFallback).trim();
+  return {
+    requestId: request.id,
+    status: request.status,
+    statusLabel: WAYBILL_REQUEST_STATUS_LABEL[request.status],
+    text,
+    waybillNo: request.waybillNo || last?.waybillNo || "",
+    pdfUrl: request.pdfUrl || last?.pdfUrl || "",
+    at: last?.createdAt || request.updatedAt,
+  };
+}
+
+export function waybillChatPayload(doc: WaybillRequestsDoc): {
+  requests: WaybillRequest[];
+  events: WaybillRequestEvent[];
+  timeline: WaybillChatItem[];
+  replies: WaybillAivarsReply[];
+} {
+  return {
+    requests: doc.requests,
+    events: doc.events,
+    timeline: waybillChatTimeline(doc),
+    replies: doc.requests.map((request) => waybillAivarsReply(request, doc.events)),
+  };
 }

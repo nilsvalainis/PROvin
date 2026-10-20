@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CSDD pavadzīme</title>
+  <style>
+    :root { font-family: ui-sans-serif, system-ui, sans-serif; color: #111827; }
+    body { margin: 0; background: #F4F6F9; }
+    .page { max-width: 1080px; margin: 0 auto; padding: 16px 16px 32px; }
+    h1 { margin: 0; font-size: 28px; }
+    .muted { color: #6b7280; font-size: 12px; }
+    .grid { display: grid; gap: 16px; margin-top: 16px; }
+    @media (min-width: 1100px) { .grid { grid-template-columns: minmax(0,1fr) minmax(320px,420px); } }
+    .card, .chat { background: #fff; border: 1px solid #E5E7EB; border-radius: 22px; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+    .card { padding: 16px; }
+    .chat { overflow: hidden; }
+    .head { display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 16px; }
+    .av { width: 32px; height: 32px; border-radius: 999px; background: #111827; color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+    .ok { color: #067647; font-size: 12px; }
+    .thread { padding: 0 16px 12px; display: flex; flex-direction: column; gap: 12px; }
+    .req { margin-left: 32px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .bubble { max-width: 85%; background: #111827; color: #fff; border-radius: 16px 16px 4px 16px; padding: 8px 12px; font-size: 12px; }
+    .reply { max-width: 85%; border: 1px solid #E5E7EB; border-radius: 16px; padding: 8px 12px; }
+    .chip { display: inline-block; background: #ECFDF3; color: #067647; border-radius: 999px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+    .form { border-top: 1px solid #F3F4F6; padding: 12px; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    label { font-size: 11px; font-weight: 600; color: #6b7280; }
+    input { width: 100%; margin-top: 4px; border: 1px solid #E5E7EB; border-radius: 12px; padding: 8px 12px; font-size: 14px; box-sizing: border-box; }
+    .span2 { grid-column: 1 / -1; }
+    button { width: 100%; margin-top: 12px; height: 40px; border: 0; border-radius: 999px; background: #111827; color: #fff; font-size: 14px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Pavadzīmes</h1>
+    <div class="grid">
+      <div class="card">
+        <p class="muted">B861-6</p>
+        <p style="margin:4px 0 0;font-size:16px;font-weight:700">VW Passat</p>
+        <p class="muted">B1937 · Bremen - Riga</p>
+      </div>
+      <section class="chat" id="csdd">
+        <header class="head">
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="av">A</span>
+            <div>
+              <p style="margin:0;font-size:15px;font-weight:700">CSDD pavadzīme</p>
+              <p class="ok" style="margin:0">Aivars izveido tikai pavadzīmes</p>
+            </div>
+          </div>
+          <span class="muted">0 darbā</span>
+        </header>
+        <div class="thread">
+          <div class="req">
+            <div class="bubble">
+              <p class="muted" style="color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.12em;font-size:10px;margin:0">Pavadzīme</p>
+              <p style="margin:0;font-weight:700">VW Passat</p>
+              <p style="margin:0;font-family:ui-monospace,monospace;font-size:11px;color:rgba(255,255,255,.8)">WVWZZZ3CZE1234567</p>
+              <p style="margin:0">B1937</p>
+              <p style="margin:0">Maršruts Bremen -&gt; Riga</p>
+              <p style="margin:0">Derīgums 2026-10-20 - 2026-10-30</p>
+            </div>
+            <div class="reply">
+              <span class="chip">Izveidota</span>
+              <p style="margin:4px 0 0;font-size:13px">Izdota B861-6</p>
+              <p style="margin:4px 0 0;font-family:ui-monospace,monospace;font-size:12px;color:#067647">B861-6</p>
+            </div>
+            <span class="muted">13:05</span>
+          </div>
+        </div>
+        <form class="form">
+          <div class="fields">
+            <label class="span2">VIN<input value="WVWZZZ3CZE1234567" readonly /></label>
+            <label>No<input value="Bremen" readonly /></label>
+            <label>Līdz<input value="Riga" readonly /></label>
+            <label class="span2">Piezīme pavadzīmei<input placeholder="Tikai teksts uz pavadzīmes, ne komanda" readonly /></label>
+          </div>
+          <button type="button">Izveidot pavadzīmi</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
