@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type SyntheticEvent } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
@@ -31,6 +31,18 @@ import { parseHeroPlanParam } from "@/lib/home-hero-plan";
 import { publicOrderVinFromQuery, PUBLIC_ORDER_VIN_QUERY } from "@/lib/public-order-vin-prefill";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 
+/**
+ * `useSearchParams` atsevišķā Suspense bērnā: citādi statiskajā renderā viss hero (ar H1 un
+ * cenu karti) pāriet uz klienta renderu un HTML tā nav (SEO, CLS). Parametri pienāk pēc hidratācijas.
+ */
+function HeroSearchParamsSync({ onChange }: { onChange: (params: URLSearchParams) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    onChange(new URLSearchParams(searchParams.toString()));
+  }, [searchParams, onChange]);
+  return null;
+}
+
 type Props = {
   checkoutSource: string;
   sectionId?: string;
@@ -46,11 +58,21 @@ export function ProvinPricingHero({
 }: Props) {
   const locale = useLocale();
   const uiCopy = getTp5UiCopy(locale);
-  const searchParams = useSearchParams();
-  const initialPlan =
-    parseHeroPlanParam(searchParams.get("plan") ?? searchParams.get("tab")) ?? "audits";
-  const [mobileActiveId, setMobileActiveId] = useState<Tp5MobileServiceId>(initialPlan);
-  const [desktopActiveId, setDesktopActiveId] = useState<Tp5MobileServiceId>(initialPlan);
+  const [searchParams, setSearchParams] = useState<URLSearchParams>(() => new URLSearchParams());
+  const [mobileActiveId, setMobileActiveId] = useState<Tp5MobileServiceId>("audits");
+  const [desktopActiveId, setDesktopActiveId] = useState<Tp5MobileServiceId>("audits");
+  const planParamApplied = useRef(false);
+  const onSearchParams = useCallback((params: URLSearchParams) => {
+    setSearchParams(params);
+    // Kā agrāk `useState(initialPlan)`: `?plan=` / `?tab=` nosaka sākuma cilni tikai vienreiz.
+    if (planParamApplied.current) return;
+    planParamApplied.current = true;
+    const plan = parseHeroPlanParam(params.get("plan") ?? params.get("tab"));
+    if (plan) {
+      setMobileActiveId(plan);
+      setDesktopActiveId(plan);
+    }
+  }, []);
   const [vin, setVin] = useState("");
   const [listingUrl, setListingUrl] = useState("");
   const [errors, setErrors] = useState<Tp5InlineFieldErrors>({});
@@ -222,6 +244,9 @@ export function ProvinPricingHero({
 
   return (
     <div className={styles.heroPricingShell}>
+      <Suspense fallback={null}>
+        <HeroSearchParamsSync onChange={onSearchParams} />
+      </Suspense>
       <section id={sectionId} className={styles.heroSurface} aria-labelledby={mobileTitleId}>
         <div className={styles.heroAmbientGlow} aria-hidden />
         <div className={styles.heroBackdrop} aria-hidden>
@@ -232,11 +257,12 @@ export function ProvinPricingHero({
       <div className={styles.heroInnerMobile}>
         {cancelled ? <p className={styles.cancelNote}>{uiCopy.cancelNote}</p> : null}
 
-        {/* One H1 in HTML. Mobile UI has no visible title; desktop shows this same string. */}
-        <p id={mobileTitleId} className="sr-only">
+        {/* Mobilajā skatā redzama virsraksta nav: H1 tikai ekrāna lasītājam. Desktop `heroInnerMobile`
+            ir `display:none`, tāpēc katrā skatā pieejams tieši viens H1. */}
+        <h1 id={mobileTitleId} className="sr-only">
           {mobileHeroCopy.titlePrefix}
           {mobileHeroCopy.titleAccent}
-        </p>
+        </h1>
 
         <div className={styles.stage}>
           <Tp5MobilePricingCard
