@@ -20,6 +20,7 @@
   --hair: rgba(17, 24, 39, 0.08);
   --badge: #5e636e;
   --onink: #fff;
+  /* Jaunie pilles: #376 tokens. Do not restyle .iriss-pas-hits here. Token PR later: --news-bg #2563eb. */
   --news-bg: var(--ink);
   --news-fg: var(--onink);
   --acc: #3d5bd9;
@@ -335,7 +336,7 @@ body:has(.admin-m[data-section="iriss"][data-admin-theme="dark"]) {
     min-height: 44px;
   }
 
-  .admin-m[data-section="iriss"] .iriss-ok-chip {
+  .admin-m[data-section="iriss"] .iriss-ok-chip:not(.iriss-pas-hits) {
     color: var(--chip-active-fg, #fff) !important;
     background: var(--chip-active-bg, #1c1c1e) !important;
   }

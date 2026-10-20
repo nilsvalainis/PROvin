@@ -68,6 +68,22 @@ describe("IRISS / PRO mobile audit guards", () => {
     expect(src.orders).toMatch(/max-md:line-clamp-2/);
   });
 
+  it("keeps #376 Jaunie pills on --news-* and does not restyle them", () => {
+    const admin = readFileSync(new URL("../app/admin/iriss/iriss-admin.css", import.meta.url), "utf8");
+    expect(src.row).toMatch(/iriss-pas-hits/);
+    expect(src.row).toMatch(/--news-bg/);
+    expect(src.row).toMatch(/--news-fg/);
+    expect(src.irissTheme).toMatch(/--news-bg:\s*var\(--ink\)/);
+    expect(src.irissTheme).toMatch(/--news-fg:\s*var\(--onink\)/);
+    expect(src.irissTheme).not.toMatch(/\.iriss-pas-hits\s*\{/);
+    expect(src.mobileCss).not.toMatch(/\.iriss-pas-hits\s*\{/);
+    expect(src.motion).not.toMatch(/\.iriss-pas-hits\s*\{/);
+    expect(admin).toMatch(/\.iriss-pas-hits/);
+    expect(admin).toMatch(/--news-bg,\s*var\(--ink/);
+    expect(src.row).not.toMatch(/#2563eb/);
+    expect(src.chrome).not.toMatch(/#2563eb/);
+  });
+
   it("keeps the unapproved mockup in scripts only", () => {
     const mock = readFileSync(new URL("../scripts/iriss-mobile-mockups.html", import.meta.url), "utf8");
     expect(mock).toContain("IRISS sākums");
@@ -78,5 +94,7 @@ describe("IRISS / PRO mobile audit guards", () => {
     expect(mock).toContain("B762-7");
     expect(mock).toContain("class=\"switch\"");
     expect(mock).toContain("Sākums");
+    expect(mock).toContain("#2563eb");
+    expect(mock).toContain("--btn-dark-bg");
   });
 });
