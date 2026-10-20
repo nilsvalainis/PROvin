@@ -20,6 +20,7 @@ type MapPoint = {
   label: string;
   selected: boolean;
   archived?: boolean;
+  printNumber?: number;
 };
 
 function toMapPoints(
@@ -63,8 +64,10 @@ type Props = {
   notice?: string;
   /** Drukā: neatlasa jaunu kadru (paliek pašreizējais zoom/centrs). */
   lockView?: boolean;
-  /** Drukā: kartē paliek tikai atzīmētie. */
-  printSelectedOnly?: boolean;
+  /** Drukā: numurē atzīmētos punktus (pārējie paliek pelēki). */
+  printNumbers?: ReadonlyMap<string, number>;
+  /** Hero karte: augstumu nosaka CSS (aspect-ratio), ne fiksēti pikseļi. */
+  fill?: boolean;
 };
 
 export type IrissLogistikaMapHandle = {
@@ -72,6 +75,7 @@ export type IrissLogistikaMapHandle = {
   applyView: (camera: LogisticsMapCamera) => void;
   notifyResize: () => void;
   waitForTilesIdle: () => Promise<void>;
+  fitVisible: (pad?: number) => void;
 };
 
 export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(function IrissLogistikaMap(
@@ -85,7 +89,8 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     onSelect,
     notice,
     lockView = false,
-    printSelectedOnly = false,
+    printNumbers,
+    fill = false,
   },
   ref,
 ) {
@@ -93,6 +98,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<google.maps.OverlayView[]>([]);
   const markersRef = useRef<google.maps.Marker[]>([]);
+  const lastPtsRef = useRef<MapPoint[]>([]);
   const [limitNotice, setLimitNotice] = useState(notice ?? "");
   const [ready, setReady] = useState(false);
 
@@ -115,6 +121,21 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       return waitForGoogleMapTilesIdle((event, fn) => {
         google.maps.event.addListenerOnce(map, event, fn);
       });
+    },
+    fitVisible: (pad = 36) => {
+      const map = mapRef.current;
+      const pts = lastPtsRef.current;
+      if (!map || pts.length === 0) return;
+      const picked = pts.filter((p) => p.selected);
+      const use = picked.length > 0 ? picked : pts;
+      if (use.length === 1) {
+        map.setCenter({ lat: use[0]!.lat, lng: use[0]!.lng });
+        map.setZoom(9);
+        return;
+      }
+      const bounds = new google.maps.LatLngBounds();
+      for (const p of use) bounds.extend({ lat: p.lat, lng: p.lng });
+      map.fitBounds(bounds, pad);
     },
   }), []);
 
@@ -158,24 +179,33 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     for (const o of overlaysRef.current) o.setMap(null);
     markersRef.current = [];
     overlaysRef.current = [];
-    const pts = toMapPoints(mode, orders, previous, selectedIds).filter((p) => !printSelectedOnly || p.selected);
+    const pts = toMapPoints(mode, orders, previous, selectedIds).map((p) => ({
+      ...p,
+      printNumber: printNumbers?.get(p.id),
+      selected: printNumbers ? printNumbers.has(p.id) : p.selected,
+    }));
+    lastPtsRef.current = pts;
     const bounds = new google.maps.LatLngBounds();
     for (const p of pts) {
       const pos = { lat: p.lat, lng: p.lng };
       bounds.extend(pos);
+      const numbered = p.printNumber != null;
       const marker = new google.maps.Marker({
         map,
         position: pos,
         clickable: true,
         opacity: p.archived ? 0.45 : 1,
-        icon: p.selected
+        label: numbered
+          ? { text: String(p.printNumber), color: "#fff", fontSize: "11px", fontWeight: "700" }
+          : undefined,
+        icon: p.selected || numbered
           ? {
               path: google.maps.SymbolPath.CIRCLE,
-              scale: 7,
-              fillColor: "#111318",
+              scale: numbered ? 10 : 7,
+              fillColor: "#3d5bd9",
               fillOpacity: 1,
-              strokeColor: "#3d5bd9",
-              strokeWeight: 3,
+              strokeColor: "#fff",
+              strokeWeight: 2,
             }
           : {
               path: google.maps.SymbolPath.CIRCLE,
@@ -187,7 +217,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       });
       marker.addListener("click", () => onSelect(p.id));
       markersRef.current.push(marker);
-      const overlay = makeLabelOverlay(p.label, pos, Boolean(p.selected), Boolean(p.archived));
+      const overlay = makeLabelOverlay(p.label, pos, Boolean(p.selected || numbered), Boolean(p.archived));
       overlay.setMap(map);
       overlaysRef.current.push(overlay);
     }
@@ -203,10 +233,13 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       }
     }
     map.setOptions({ disableDefaultUI: lockView, zoomControl: !lockView, gestureHandling: lockView ? "none" : "greedy" });
-  }, [mode, orders, previous, selectedIds, focus, ready, onSelect, lockView, printSelectedOnly]);
+  }, [mode, orders, previous, selectedIds, focus, ready, onSelect, lockView, printNumbers]);
 
   return (
-    <div className="iriss-log-map-shell relative overflow-hidden rounded-[14px] bg-[#d7dde6]" style={{ height }}>
+    <div
+      className="iriss-log-map-shell relative overflow-hidden rounded-[14px] bg-[#d7dde6]"
+      style={fill ? undefined : { height }}
+    >
       <div ref={hostRef} className="absolute inset-0" />
       {limitNotice ? (
         <div className="absolute inset-0 z-[1] flex items-center justify-center bg-[#d7dde6]/90 px-4 text-center text-[12.5px] leading-snug text-[#334155]">

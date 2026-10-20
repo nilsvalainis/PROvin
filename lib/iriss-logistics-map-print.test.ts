@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   applyLogisticsMapCamera,
+  LOGISTICS_PRINT_MAP_HEIGHT_MM,
+  LOGISTICS_PRINT_MAP_WIDTH_MM,
+  LOGISTICS_PRINT_PAGE_CSS,
   logisticsOrdersForMapPrint,
   logisticsPrintLegendLeaksForbidden,
   logisticsPrintLegendRows,
+  logisticsPrintNumberMap,
+  logisticsPrintSheetTitle,
   readLogisticsMapCamera,
   waitForGoogleMapTilesIdle,
 } from "@/lib/iriss-logistics-map-print";
@@ -62,12 +67,25 @@ function order(partial: Partial<LogisticsOrder> = {}): LogisticsOrder {
 }
 
 describe("Loģistika map print helpers", () => {
-  it("prints only checked points that are in the current filter set", () => {
+  it("prints checked points; if none checked, all visible with coords", () => {
     const a = order({ id: "a" });
     const b = order({ id: "b", pickupLat: null, pickupLng: null });
     const c = order({ id: "c" });
-    const rows = logisticsOrdersForMapPrint([a, b, c], new Set(["a", "b", "missing"]));
-    expect(rows.map((o) => o.id)).toEqual(["a"]);
+    expect(logisticsOrdersForMapPrint([a, b, c], new Set(["a", "b", "missing"])).map((o) => o.id)).toEqual(["a"]);
+    expect(logisticsOrdersForMapPrint([a, b, c], new Set()).map((o) => o.id)).toEqual(["a", "c"]);
+  });
+
+  it("uses A4 landscape with 10 mm margin and a dated sheet title", () => {
+    expect(LOGISTICS_PRINT_MAP_WIDTH_MM).toBe(277);
+    expect(LOGISTICS_PRINT_MAP_HEIGHT_MM).toBe(170);
+    expect(logisticsPrintNumberMap([order({ id: "a" }), order({ id: "b" })]).get("b")).toBe(2);
+    expect(LOGISTICS_PRINT_PAGE_CSS).toContain("A4 landscape");
+    expect(LOGISTICS_PRINT_PAGE_CSS).toContain("margin: 10mm");
+    const sheet = logisticsPrintSheetTitle(new Date(2026, 9, 20, 16, 52), 3);
+    expect(sheet.heading).toBe("IRISS · Loģistika - karte");
+    expect(sheet.meta).toContain("20.10.2026 16:52");
+    expect(sheet.meta).toContain("3 atzīmēti punkti");
+    expect(sheet.heading).not.toMatch(/\u2014/);
   });
 
   it("legend is make/model · auction plus place/hours, never price or client", () => {
@@ -76,6 +94,7 @@ describe("Loģistika map print helpers", () => {
     expect(rows).toEqual([
       {
         id: "lo-1",
+        n: 1,
         label: "VW Passat · Openlane",
         place: "Musterstraße 1, 28000 Bremen, DE",
         hours: "P-Pk 7:00-15:30",

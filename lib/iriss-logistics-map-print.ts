@@ -7,7 +7,9 @@ export const LOGISTICS_PRINT_TILES_EVENT = "tilesloaded";
 export const LOGISTICS_PRINT_HTML_CLASS = "iriss-log-printing";
 export const LOGISTICS_PRINT_AFTER_IDLE_MS = 400;
 export const LOGISTICS_PRINT_IDLE_TIMEOUT_MS = 5000;
-export const LOGISTICS_PRINT_PAGE_CSS = "@page { size: A4 landscape; margin: 4mm; }";
+export const LOGISTICS_PRINT_PAGE_CSS = "@page { size: A4 landscape; margin: 10mm; }";
+export const LOGISTICS_PRINT_MAP_WIDTH_MM = 277;
+export const LOGISTICS_PRINT_MAP_HEIGHT_MM = 170;
 
 export type LogisticsMapCamera = {
   lat: number;
@@ -17,6 +19,7 @@ export type LogisticsMapCamera = {
 
 export type LogisticsPrintLegendRow = {
   id: string;
+  n: number;
   label: string;
   place: string;
   hours: string;
@@ -25,6 +28,10 @@ export type LogisticsPrintLegendRow = {
 export type LogisticsMapIdleBinder = (event: "idle" | "tilesloaded", fn: () => void) => void;
 
 type LatLngLike = { lat: () => number; lng: () => number };
+
+function hasPickupCoords(o: LogisticsOrder): boolean {
+  return o.pickupLat != null && o.pickupLng != null;
+}
 
 export function readLogisticsMapCamera(map: {
   getCenter: () => LatLngLike | null | undefined;
@@ -50,21 +57,42 @@ export function applyLogisticsMapCamera(
   map.setZoom(camera.zoom);
 }
 
-/** Tikai atzīmētie punkti, kas ir redzami pēc pašreizējiem filtriem. */
+/**
+ * Drukas numurētie punkti: atzīmētie ar koordinātēm.
+ * Ja neviens nav atzīmēts, ņem visus redzamos aktīvos (ne tukšu ziņu).
+ */
 export function logisticsOrdersForMapPrint(
   visibleOrders: LogisticsOrder[],
   selectedIds: ReadonlySet<string>,
 ): LogisticsOrder[] {
-  return visibleOrders.filter((o) => selectedIds.has(o.id) && o.pickupLat != null && o.pickupLng != null);
+  const withGeo = visibleOrders.filter(hasPickupCoords);
+  const picked = withGeo.filter((o) => selectedIds.has(o.id));
+  return picked.length > 0 ? picked : withGeo;
+}
+
+export function logisticsPrintNumberMap(orders: LogisticsOrder[]): Map<string, number> {
+  const map = new Map<string, number>();
+  orders.forEach((o, i) => map.set(o.id, i + 1));
+  return map;
 }
 
 export function logisticsPrintLegendRows(orders: LogisticsOrder[]): LogisticsPrintLegendRow[] {
-  return orders.map((o) => ({
+  return orders.map((o, i) => ({
     id: o.id,
+    n: i + 1,
     label: logisticsOrderMapLabel(o),
     place: (o.pickupAddress || formatLogisticsAddress(o.pickupSnapshot ?? {})).trim(),
     hours: (o.pickupSnapshot?.hoursText ?? "").trim(),
   }));
+}
+
+export function logisticsPrintSheetTitle(now = new Date(), count = 0): { heading: string; meta: string } {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const stamp = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  return {
+    heading: "IRISS · Loģistika - karte",
+    meta: `${stamp} · ${count} atzīmēti punkti`,
+  };
 }
 
 export function logisticsPrintLegendLeaksForbidden(
