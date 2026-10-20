@@ -5840,7 +5840,6 @@ export function OrderDetailWorkspace({
                   maxPhotos={INCIDENT_MAX_PHOTOS}
                   emptyGroup={emptyIncidentPhotoGroup}
                   sectionTitle="Negadījuma fotogrāfijas"
-                  simple
                   headerActions={
                     <AdminPdfIncludeToggle
                       checked={pdfVisibility.incidentPhotos}
