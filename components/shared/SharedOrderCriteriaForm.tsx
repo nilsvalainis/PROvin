@@ -119,7 +119,6 @@ function rowsFor(filter: IrissCriteriaFilter): Array<{ label: string; value: str
     { label: "Vēlamais aprīkojums", value: filter.equipmentDesired.value.join(", ") },
     { label: "Nelasītais teksts", value: manuals(filter) },
   ];
-  ];
   return rows.filter((row) => row.value.trim());
 }
 
