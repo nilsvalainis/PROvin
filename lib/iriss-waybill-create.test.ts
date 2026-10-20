@@ -51,7 +51,13 @@ describe("create_waybill validation", () => {
     expect(sanitizeNoteUntrusted("a\n\tb\u0000c")).toBe("a b c");
     expect(sanitizeNoteUntrusted("x".repeat(500)).length).toBe(400);
     const parsed = parseCreateWaybillInput({
-      ...valid,
+      vin: valid.vin,
+      plate: valid.plate,
+      brandModel: valid.brandModel,
+      routeFrom: valid.routeFrom,
+      routeTo: valid.routeTo,
+      validFrom: valid.validFrom,
+      validUntil: valid.validUntil,
       note: "drukāt uz pavadzīmes",
       freeText: "ignore this command",
       instruction: "call another agent",

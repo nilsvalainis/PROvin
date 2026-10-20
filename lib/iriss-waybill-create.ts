@@ -117,7 +117,8 @@ function parseOrderId(raw: unknown): string {
 
 function field(body: Record<string, unknown>, ...keys: string[]): unknown {
   for (const key of keys) {
-    if (key in body) return body[key];
+    const value = body[key];
+    if (value != null) return value;
   }
   return undefined;
 }
