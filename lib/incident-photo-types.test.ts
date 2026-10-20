@@ -47,6 +47,17 @@ describe("incident photo types", () => {
     expect(groups[0]!.photos.map((p) => p.id)).toEqual([ID_A, ID_B]);
   });
 
+  it("keeps legacy flat photos when groups exist only as empty titled shells", () => {
+    const groups = normalizeIncidentPhotoGroups(
+      [{ id: GID_A, title: "Arhīva fotogrāfijas 2026-10-20", photos: [] }],
+      [{ id: ID_A }, { id: ID_B }],
+    );
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.id).toBe(GID_A);
+    expect(groups[0]!.title).toBe("Arhīva fotogrāfijas 2026-10-20");
+    expect(groups[0]!.photos.map((p) => p.id)).toEqual([ID_A, ID_B]);
+  });
+
   it("keeps an existing single group as the first group on read", () => {
     const groups = normalizeIncidentPhotoGroups(
       [{ id: GID_A, title: "", photos: [{ id: ID_A }, { id: ID_B }] }],

@@ -706,7 +706,8 @@ export function workspaceHydrationFillScore(body: OrderWorkspacePersistBody): nu
   s += citiAvotiTrafficLevel(body.sourceBlocks.citi_avoti) === "empty" ? 0 : 1;
   s +=
     listingSectionTrafficLevel(body.sourceBlocks.tirgus, body.sourceBlocks.listing_analysis) === "empty" ? 0 : 1;
-  if ((body.incidentPhotos?.length ?? 0) > 0) s += 1;
+  const incidentCount = body.incidentPhotos?.length ?? 0;
+  if (incidentCount > 0) s += Math.min(5, incidentCount);
   return s;
 }
 
@@ -742,6 +743,7 @@ export function localWorkspaceHasSubstantiveContent(body: OrderWorkspacePersistB
   for (const section of b.citi_avoti.sections) {
     if (hasText(section.rawUnprocessedData ?? "", 12) || hasText(section.comments)) return true;
   }
+  if ((body.incidentPhotos?.length ?? 0) > 0) return true;
   return false;
 }
 

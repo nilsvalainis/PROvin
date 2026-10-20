@@ -1,3 +1,5 @@
+import { appendMissingFlatPhotos } from "@/lib/photo-group-legacy-recover";
+
 /** Sludinājuma analīzes „Fotogrāfiju analīze” — vizuālie pierādījumi PDF (līdz 100 gab.). */
 export const LISTING_ANALYSIS_MAX_PHOTOS = 100;
 
@@ -91,7 +93,11 @@ export function normalizeListingAnalysisPhotoGroups(
       if (photos.length === 0 && !title) continue;
       out.push({ id, title, photos });
     }
-    if (out.length > 0) return enforcePhotoGroupLimit(out);
+    if (out.length > 0) {
+      return enforcePhotoGroupLimit(
+        appendMissingFlatPhotos(out, normalizeListingAnalysisPhotos(legacyPhotos)),
+      );
+    }
   }
 
   const flat = normalizeListingAnalysisPhotos(legacyPhotos);
