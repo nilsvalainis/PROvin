@@ -566,6 +566,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
   bannerInclude: ProvinBannerPdfInclude,
   savedAt = new Date().toISOString(),
   manualBanners: ProvinManualBanner[] = [],
+  workspaceRevision?: number,
 ): string {
   const normalized = normalizeOrderWorkspacePersistBody(body);
   return JSON.stringify({
@@ -588,6 +589,9 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
     savedAt,
+    ...(typeof workspaceRevision === "number" && workspaceRevision > 0
+      ? { workspaceRevision: Math.floor(workspaceRevision) }
+      : {}),
   });
 }
 
