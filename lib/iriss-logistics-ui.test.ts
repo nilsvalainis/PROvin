@@ -121,6 +121,24 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(client).not.toContain("Klients");
   });
 
+  it("gives the fullscreen map a sized host, then resize + fitBounds without a second Maps load", () => {
+    const css = readFileSync("app/admin/iriss/logistika/iriss-logistika.css", "utf8");
+    expect(css).toContain(".iriss-log-map-fs-card .iriss-log-print-root");
+    expect(css).toMatch(/\.iriss-log-map-fs-card \.iriss-log-print-root \{[\s\S]*?flex:\s*1 1 auto/);
+    expect(css).toMatch(/\.iriss-log-map-fs-card \.iriss-log-map-hero \{[\s\S]*?height:\s*100%/);
+    expect(client).toContain("scheduleWhenElementHasBox");
+    expect(client).toContain("hostEl()");
+    expect(client).toContain("notifyResize");
+    expect(client).toContain("fitVisible");
+    expect(client).not.toMatch(/sticky top-/);
+    expect(map).toContain("elementHasBox");
+    expect(map).toContain("ResizeObserver");
+    expect(map).toContain("hostEl:");
+    const mapsConfigHits = map.match(/\/api\/admin\/iriss-logistics\/maps-config/g) ?? [];
+    expect(mapsConfigHits).toHaveLength(1);
+    expect(map).toContain("}, []);");
+  });
+
   it("keeps an editable auction-sources list in Loģistika settings", () => {
     expect(client).toContain("IrissLogistikaAuctionSourcesPanel");
     expect(client).toContain('setPageTab("settings")');

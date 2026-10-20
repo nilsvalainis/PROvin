@@ -19,6 +19,7 @@ import {
   logisticsPrintLegendRows,
   logisticsPrintNumberMap,
   logisticsPrintSheetTitle,
+  scheduleWhenElementHasBox,
   type LogisticsMapCamera,
 } from "@/lib/iriss-logistics-map-print";
 import {
@@ -191,15 +192,18 @@ export function IrissLogistikaClient({
       if (e.key === "Escape") closeMapFullscreen();
     };
     window.addEventListener("keydown", onKey);
-    const frame = requestAnimationFrame(() => {
-      mapFsCardRef.current?.focus();
-      mapHandleRef.current?.notifyResize();
-      mapHandleRef.current?.fitVisible();
-    });
+    const stopWait = scheduleWhenElementHasBox(
+      () => mapHandleRef.current?.hostEl() ?? mapFsCardRef.current,
+      () => {
+        mapFsCardRef.current?.focus();
+        mapHandleRef.current?.notifyResize();
+        mapHandleRef.current?.fitVisible();
+      },
+    );
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
-      cancelAnimationFrame(frame);
+      stopWait();
     };
   }, [mapFullscreen]);
 
@@ -211,8 +215,10 @@ export function IrissLogistikaClient({
   function closeMapFullscreen() {
     setMapFullscreen(false);
     requestAnimationFrame(() => {
-      mapHandleRef.current?.notifyResize();
-      if (cameraBeforeFs.current) mapHandleRef.current?.applyView(cameraBeforeFs.current);
+      requestAnimationFrame(() => {
+        mapHandleRef.current?.notifyResize();
+        if (cameraBeforeFs.current) mapHandleRef.current?.applyView(cameraBeforeFs.current);
+      });
     });
   }
 
