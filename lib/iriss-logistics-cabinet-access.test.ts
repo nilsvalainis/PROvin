@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCabinetAccessView,
+  cabinetActorCanWrite,
+  cabinetCarVisibleToActor,
   cabinetRolesFromSections,
   defaultCabinetAccessAllow,
   evaluateCabinetAccess,
@@ -23,42 +26,70 @@ function rule(partial: Partial<CabinetAccessRule>): CabinetAccessRule {
 }
 
 describe("cabinet access matrix", () => {
-  it("lets Loģistika see invoices by default (Nils 17:01)", () => {
-    expect(defaultCabinetAccessAllow("logistika", "car_invoice")).toBe(true);
-    expect(defaultCabinetAccessAllow("logistika", "service_invoice")).toBe(true);
-    expect(defaultCabinetAccessAllow("logistika", "pickup_pdf")).toBe(true);
+  it("hides section A and invoice types from Loģistika by default", () => {
+    expect(defaultCabinetAccessAllow("logistika", "car_invoice", "A")).toBe(false);
+    expect(defaultCabinetAccessAllow("logistika", "service_invoice", "C")).toBe(false);
+    expect(defaultCabinetAccessAllow("logistika", "pickup_pdf", "B")).toBe(true);
     expect(
       evaluateCabinetAccess(
         { userId: "u1", roles: ["logistika"], carId: "lo-1", section: "A", docType: "car_invoice" },
         [],
       ),
-    ).toBe(true);
+    ).toBe(false);
+    expect(buildCabinetAccessView({ userId: "u1", roles: ["logistika"], carId: "lo-1" }, []).sections).toEqual([
+      "B",
+      "C",
+    ]);
   });
 
-  it("gives Grāmatvede full access and Serviss default-deny invoices", () => {
+  it("makes Grāmatvede read-only and only on assigned cars", () => {
     expect(cabinetRolesFromSections(["gramatvede"])).toEqual(["gramatvede"]);
-    expect(defaultCabinetAccessAllow("gramatvede", "car_invoice")).toBe(true);
-    expect(defaultCabinetAccessAllow("serviss", "car_invoice")).toBe(false);
-    expect(defaultCabinetAccessAllow("serviss", "pickup_pdf")).toBe(true);
+    expect(cabinetActorCanWrite({ userId: "g1", roles: ["gramatvede"] })).toBe(false);
     expect(
       evaluateCabinetAccess(
-        { userId: "u2", roles: ["serviss"], carId: "lo-1", section: "C", docType: "service_invoice" },
+        { userId: "g1", roles: ["gramatvede"], carId: "lo-1", section: "A", docType: "car_invoice" },
         [],
       ),
     ).toBe(false);
+    const assigned = rule({ userId: "g1", carId: "lo-1", role: "gramatvede", allow: true });
+    expect(
+      evaluateCabinetAccess(
+        { userId: "g1", roles: ["gramatvede"], carId: "lo-1", section: "A", docType: "car_invoice" },
+        [assigned],
+      ),
+    ).toBe(true);
+    expect(
+      evaluateCabinetAccess(
+        { userId: "g1", roles: ["gramatvede"], carId: "lo-2", section: "A", docType: "car_invoice" },
+        [assigned],
+      ),
+    ).toBe(false);
+    expect(
+      evaluateCabinetAccess(
+        { userId: "g1", roles: ["gramatvede"], carId: "lo-1", section: "B", docType: "pickup_pdf" },
+        [assigned],
+      ),
+    ).toBe(false);
+    expect(cabinetCarVisibleToActor({ userId: "g1", roles: ["gramatvede"], carId: "lo-1" }, [assigned])).toBe(true);
+    const view = buildCabinetAccessView({ userId: "g1", roles: ["gramatvede"], carId: "lo-1" }, [assigned]);
+    expect(view.write).toBe(false);
+    expect(view.hideSums).toBe(false);
+    expect(view.sections).toEqual(["A", "C"]);
+    expect(buildCabinetAccessView({ userId: "u1", roles: ["logistika"], carId: "lo-1" }, []).hideSums).toBe(true);
+    expect(cabinetActorCanWrite({ userId: "env-admin", roles: [] })).toBe(true);
   });
 
   it("lets Nils override a user/role × section × type rule on the server", () => {
     const hideInvoice: CabinetAccessRule = rule({
       id: "hide",
       userId: "u1",
-      section: "A",
-      docType: "invoices",
+      section: "C",
+      docType: "note",
       allow: false,
     });
     expect(
       evaluateCabinetAccess(
-        { userId: "u1", roles: ["logistika"], carId: "lo-1", section: "A", docType: "car_invoice" },
+        { userId: "u1", roles: ["logistika"], carId: "lo-1", section: "C", docType: "note" },
         [hideInvoice],
       ),
     ).toBe(false);
@@ -74,8 +105,9 @@ describe("cabinet access matrix", () => {
     const docs = [
       { id: "1", section: "A" as const, type: "car_invoice" as const },
       { id: "2", section: "B" as const, type: "pickup_pdf" as const },
+      { id: "3", section: "C" as const, type: "service_invoice" as const },
     ];
-    const kept = filterDocumentsByCabinetAccess(docs, { userId: "s1", roles: ["serviss"], carId: "lo-1" }, []);
+    const kept = filterDocumentsByCabinetAccess(docs, { userId: "s1", roles: ["logistika"], carId: "lo-1" }, []);
     expect(kept.map((d) => d.id)).toEqual(["2"]);
   });
 });

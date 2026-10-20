@@ -179,15 +179,24 @@ export type LogisticsGeocodeCacheEntry = {
   cachedAt: string;
 };
 
-export const LOGISTICS_MAPS_APIS = ["maps_js", "geocoding"] as const;
+export const LOGISTICS_MAPS_APIS = ["maps_js", "geocoding", "geocode_place", "search_destinations"] as const;
 export type LogisticsMapsApi = (typeof LOGISTICS_MAPS_APIS)[number];
+
+export type LogisticsMapsDayUsage = {
+  mapsJs: number;
+  geocoding: number;
+  geocodePlace: number;
+  searchDestinations: number;
+};
 
 export type LogisticsMapsUsageMonth = {
   version: 1;
   month: string;
   mapsJs: number;
   geocoding: number;
-  days: Record<string, { mapsJs: number; geocoding: number }>;
+  geocodePlace: number;
+  searchDestinations: number;
+  days: Record<string, LogisticsMapsDayUsage>;
 };
 
 export type LogisticsPreviousPointRow = {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
-import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, logisticsCabinetActorId, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
+import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, logisticsCabinetActorId, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
 import { evaluateCabinetAccess } from "@/lib/iriss-logistics-cabinet-access";
 import { isCabinetDocType, isCabinetSectionId } from "@/lib/iriss-logistics-cabinet";
 import { appendCabinetAudit, listCabinetAccessRules, upsertCabinetDocument } from "@/lib/iriss-logistics-cabinet-store";
@@ -14,6 +14,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function POST(req: Request, ctx: Ctx) {
   const gate = await requireIrissLogisticsApi();
   if (!gate.ok) return gate.response;
+  const denied = logisticsCabinetWriteForbidden(gate.actor);
+  if (denied) return denied;
   const { id } = await ctx.params;
   const ct = req.headers.get("content-type") ?? "";
   let section = "";

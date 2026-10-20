@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
+import { cabinetActorHidesSums } from "@/lib/iriss-logistics-cabinet-access";
+import { logisticsCabinetAccessQuery, logisticsCabinetWriteForbidden, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
 import { getLogisticsOrder, setLogisticsOrderArchiveState, upsertLogisticsOrder } from "@/lib/iriss-logistics-store";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 
@@ -14,12 +15,18 @@ export async function GET(_req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   const order = await getLogisticsOrder(id);
   if (!order) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
-  return NextResponse.json({ ok: true, order }, { headers: irissLogisticsScopeHeader() });
+  const hideSums = cabinetActorHidesSums(logisticsCabinetAccessQuery(gate.actor, id));
+  return NextResponse.json(
+    { ok: true, order: hideSums ? { ...order, priceEur: null } : order },
+    { headers: irissLogisticsScopeHeader() },
+  );
 }
 
 export async function PATCH(req: Request, ctx: Ctx) {
   const gate = await requireIrissLogisticsApi();
   if (!gate.ok) return gate.response;
+  const denied = logisticsCabinetWriteForbidden(gate.actor);
+  if (denied) return denied;
   const { id } = await ctx.params;
   let body: unknown = {};
   try {

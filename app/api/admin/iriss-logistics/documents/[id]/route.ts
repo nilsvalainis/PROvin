@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, logisticsCabinetActorId, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
+import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, logisticsCabinetActorId, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
 import { evaluateCabinetAccess } from "@/lib/iriss-logistics-cabinet-access";
 import { appendCabinetAudit, getCabinetDocument, listCabinetAccessRules, readCabinetDocumentBytes, softDeleteCabinetDocument } from "@/lib/iriss-logistics-cabinet-store";
 
@@ -42,6 +42,8 @@ export async function GET(_req: Request, ctx: Ctx) {
 export async function DELETE(_req: Request, ctx: Ctx) {
   const gate = await requireIrissLogisticsApi();
   if (!gate.ok) return gate.response;
+  const denied = logisticsCabinetWriteForbidden(gate.actor);
+  if (denied) return denied;
   const { id } = await ctx.params;
   const existing = await getCabinetDocument(id);
   if (existing && !existing.deletedAt) {

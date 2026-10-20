@@ -142,9 +142,10 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(sourcesLib).toContain("enabled: false");
   });
 
-  it("keeps the car cabinet A/B/C and does not hide invoices from Loģistika", () => {
+  it("keeps the car cabinet A/B/C with parking timer and access-aware writes", () => {
     const cabinet = readFileSync("components/admin/iriss-logistika/IrissLogistikaCabinet.tsx", "utf8");
     const domain = readFileSync("lib/iriss-logistics-cabinet.ts", "utf8");
+    const timer = readFileSync("lib/iriss-logistics-parking-timer.ts", "utf8");
     expect(cabinet).toContain("CABINET_SECTION_LABEL");
     expect(cabinet).toContain("CABINET_PICKUP_STAGE_LV");
     expect(cabinet).toContain("Atzīmēt kā Atvests");
@@ -164,22 +165,36 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(cabinet).toContain("saveOrderFields");
     expect(cabinet).toContain("Izņemts");
     expect(cabinet).toContain("Piegādāts");
+    expect(cabinet).toContain("logisticsParkingDeadlineTimer");
+    expect(cabinet).toContain("access.write");
+    expect(cabinet).toContain("access.hideSums");
+    expect(cabinet).toContain("Grāmatveža piekļuve");
+    expect(cabinet).toContain("access.admin");
     expect(cabinet).not.toMatch(/sticky top-/);
     expect(cabinet).not.toMatch(/\u2014/);
+    expect(timer).toContain("stāvvietas termiņš beidzies");
     expect(domain).toContain("cabinet.section.");
     expect(domain).toContain("preAtvests");
     expect(domain).toContain("postAtvests");
     expect(domain).toContain("Car Invoice");
   });
 
-  it("keeps a Nils-controlled cabinet access matrix and Bearer upload API", () => {
+  it("keeps Grāmatvede read-only, logistics hide A/invoices, and Bearer upload API", () => {
     const access = readFileSync("lib/iriss-logistics-cabinet-access.ts", "utf8");
     const roles = readFileSync("lib/staff-roles.ts", "utf8");
     const upload = readFileSync("app/api/iriss/logistics/documents/route.ts", "utf8");
     const cars = readFileSync("app/api/iriss/logistics/cars/route.ts", "utf8");
+    const panel = readFileSync("components/admin/IrissCabinetAccessPanel.tsx", "utf8");
     const env = readFileSync(".env.example", "utf8");
-    expect(access).toContain('role === "logistika" || role === "gramatvede"');
+    expect(access).toContain('if (role === "logistika")');
+    expect(access).toContain('if (section === "A") return false');
+    expect(access).toContain('if (role === "gramatvede")');
+    expect(access).toContain("cabinetActorCanWrite");
+    expect(access).toContain("cabinetActorHidesSums");
+    expect(access).toContain("gramatvedeCarAssigned");
     expect(access).toContain('role === "serviss"');
+    expect(panel).toContain("Auto ID");
+    expect(panel).toContain("carId");
     expect(roles).toContain('id: "gramatvede"');
     expect(roles).toContain('id: "serviss"');
     expect(upload).toContain("verifyIrissLogisticsUploadToken");
@@ -191,5 +206,41 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(cars).not.toMatch(/process\.env\.IRISS_LOGISTICS_UPLOAD_TOKEN/);
     expect(env).toContain("# IRISS_LOGISTICS_UPLOAD_TOKEN=");
     expect(env).toContain("POST /api/iriss/logistics/cars");
+  });
+
+  it("caps Maps v4 GeocodePlace and SearchDestinations and keeps document sha256 titles", () => {
+    const quota = readFileSync("lib/iriss-logistics-maps-quota.ts", "utf8");
+    const v4 = readFileSync("lib/iriss-logistics-maps-v4.ts", "utf8");
+    const mapsPanel = readFileSync("components/admin/IrissLogistikaMapsUsagePanel.tsx", "utf8");
+    const store = readFileSync("lib/iriss-logistics-cabinet-store.ts", "utf8");
+    const domain = readFileSync("lib/iriss-logistics-cabinet.ts", "utf8");
+    expect(quota).toContain("geocode_place");
+    expect(quota).toContain("search_destinations");
+    expect(quota).toContain("LOGISTICS_GEOCODE_PLACE_URL");
+    expect(quota).toContain("/v4/geocode/places");
+    expect(quota).toContain("/v4/geocode/destinations");
+    expect(quota).toContain("LOGISTICS_MAPS_DAILY_CAP = 320");
+    expect(v4).toContain("consumeLogisticsMapsQuota");
+    expect(v4).toContain("logisticsGeocodePlaceV4");
+    expect(v4).toContain("logisticsSearchDestinationsV4");
+    expect(mapsPanel).toContain("GeocodePlace v4");
+    expect(mapsPanel).toContain("SearchDestinations v4");
+    expect(store).toContain("sha256");
+    expect(store).toContain("deletedAt");
+    expect(store).toContain("docNumber");
+    expect(store).toContain("sourceUrl");
+    expect(store).toContain("doc_number");
+    expect(store).toContain("source_url");
+    expect(store).toContain("softDeleteCabinetDocument");
+    expect(domain).toContain("logisticsDocumentTitle");
+    expect(domain).toContain("deletedAt");
+    const fixture = readFileSync("scripts/iriss-logistika-kabinets-fixture.html", "utf8");
+    const shot = readFileSync("scripts/iriss-logistika-kabinets-screenshot.mjs", "utf8");
+    expect(fixture).not.toMatch(/sticky/);
+    expect(fixture).toContain("vēl 2 d. 11 h");
+    expect(fixture).toContain("id=\"pec-logistika\"");
+    expect(fixture).toContain("id=\"pirms\"");
+    expect(shot).toContain("width: 390");
+    expect(shot).toContain("width: 1440");
   });
 });
