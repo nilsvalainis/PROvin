@@ -4,12 +4,13 @@ import { describe, expect, it } from "vitest";
 describe("iriss order overview layout", () => {
   it("keeps overview chrome, desktop without call, and avanss only on Pārskats", () => {
     const room = readFileSync("components/admin/IrissOrderRoom.tsx", "utf8");
+    const clientCard = readFileSync("components/admin/IrissOrderClientDataCard.tsx", "utf8");
     const steps = readFileSync("components/admin/IrissOrderRoomNextSteps.tsx", "utf8");
     const copy = readFileSync("lib/iriss-order-overview-view.ts", "utf8");
 
     expect(room).toContain("iriss-parskats-view");
     expect(room).not.toMatch(/iriss-parskats-view[^\n]*bg-\[var\(--bg-base\)\]/);
-    expect(room).toContain("Klienta dati");
+    expect(clientCard).toContain("Klienta dati");
     expect(room).not.toContain("Klienta kontakti");
     expect(room).toContain("Avanss un darījums");
     expect(room).toContain("Atzīmēt avansu saņemtu");

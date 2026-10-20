@@ -563,8 +563,8 @@ export function normalizeDrive(raw: string, platform?: AuctionPlatform | string)
   const resolved = typeof platform === "string" ? resolveAuctionPlatform(platform) : platform;
   if (!trimmed || isWildcardCriterion(trimmed)) return { group: null, raw, confidence: "unknown" };
   const s = foldCriterion(trimmed);
-  const fwd = /\bfwd\b|\bfront wheel\b|\bfront drive\b|\bprieksej|\bvoorwiel\b|\bfrontantrieb\b|\bvorderrad\b/.test(s) || s === "front";
-  const rwd = /\brwd\b|\brear wheel\b|\brear drive\b|\baizmugur|\bheckantrieb\b|\bachterwiel\b|\bhinterrad\b/.test(s) || s === "rear";
+  const fwd = /\bfwd\b|\bfront wheel\b|\bfront drive\b|\bfront\b|\bprieksej|\bvoorwiel\b|\bfrontantrieb\b|\bvorderrad\b/.test(s);
+  const rwd = /\brwd\b|\brear wheel\b|\brear drive\b|\brear\b|\baizmugur|\bheckantrieb\b|\bachterwiel\b|\bhinterrad\b/.test(s);
   const awd =
     /\bawd\b|\b4x4\b|\b4wd\b|\bfour wheel\b|\ball wheel\b|\ballrad\b|\ballradantrieb\b|\bquattro\b|\bxdrive\b|\b4matic\b|\b4motion\b|\ball4\b|\ball 4\b|\bsyncro\b|\bhaldex\b|\bpilnpiedzin/.test(
       s,

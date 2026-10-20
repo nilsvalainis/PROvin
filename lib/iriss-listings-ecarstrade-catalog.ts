@@ -319,7 +319,7 @@ export function resolveEcarstradeModelById(makeId: number, modelId: number): Eca
   return ecarstradeModelsForMake(makeId).find((m) => m.id === modelId) ?? null;
 }
 
-const TWO_WORD_MAKES = ["land rover", "alfa romeo", "ds automobiles", "rolls royce", "rolls-royce"];
+const TWO_WORD_MAKES = ["land rover", "range rover", "alfa romeo", "ds automobiles", "rolls royce", "rolls-royce"];
 
 export function splitBrandModel(brandModel: string): { make: string; model: string } {
   const raw = String(brandModel ?? "").replace(/\s+/g, " ").trim();
