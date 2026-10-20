@@ -1,0 +1,35 @@
+declare namespace google.maps {
+  class Map {
+    constructor(el: HTMLElement, opts?: Record<string, unknown>);
+    panTo(latLng: LatLngLiteral): void;
+    setCenter(latLng: LatLngLiteral): void;
+    setZoom(z: number): void;
+    getZoom(): number | undefined;
+    fitBounds(b: LatLngBounds, pad?: number): void;
+  }
+  class LatLng {
+    constructor(lat: number, lng: number);
+  }
+  class LatLngBounds {
+    extend(p: LatLngLiteral): void;
+  }
+  class Marker {
+    constructor(opts: Record<string, unknown>);
+    setMap(map: Map | null): void;
+    addListener(name: string, fn: () => void): void;
+  }
+  class OverlayView {
+    setMap(map: Map | null): void;
+    getPanes(): { overlayMouseTarget: HTMLElement } | null;
+    getProjection(): { fromLatLngToDivPixel(ll: LatLng): { x: number; y: number } | null } | null;
+    onAdd(): void;
+    draw(): void;
+    onRemove(): void;
+  }
+  const SymbolPath: { CIRCLE: number };
+  type LatLngLiteral = { lat: number; lng: number };
+}
+
+interface Window {
+  google?: { maps: typeof google.maps };
+}

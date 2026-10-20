@@ -19,6 +19,8 @@ export type AdminBadgeCounts = {
   urgentCount: number;
   /** IRISS jaunas sludinājumu atbilstības. 0, ja kešs nav vai lasīšana neizdodas. */
   irissMatchCount: number;
+  /** IRISS Loģistika aktīvie (vēl neizņemti / nepiegādāti). */
+  irissLogisticsCount: number;
 };
 
 /**
@@ -55,5 +57,13 @@ export async function loadAdminBadgeCounts(): Promise<AdminBadgeCounts> {
     irissMatchCount = 0;
   }
 
-  return { openCount, unseenCount, activeCount, overdueCount, urgentCount, irissMatchCount };
+  let irissLogisticsCount = 0;
+  try {
+    const { countActiveLogisticsOrders } = await import("@/lib/iriss-logistics-store");
+    irissLogisticsCount = await countActiveLogisticsOrders();
+  } catch {
+    irissLogisticsCount = 0;
+  }
+
+  return { openCount, unseenCount, activeCount, overdueCount, urgentCount, irissMatchCount, irissLogisticsCount };
 }

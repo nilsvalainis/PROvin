@@ -206,6 +206,9 @@ describe("decideAdminApiGate", () => {
     expect(
       await decideAdminApiGate(req({ path: "/api/admin/iriss/logistika/points", staffCookie: staffCookie() })),
     ).toEqual({ action: "next" });
+    expect(
+      await decideAdminApiGate(req({ path: "/api/admin/iriss-logistics/orders", staffCookie: staffCookie() })),
+    ).toEqual({ action: "next" });
     expect(await decideAdminApiGate(req({ path: "/api/admin/badges", staffCookie: staffCookie() }))).toEqual({
       action: "forbidden",
     });

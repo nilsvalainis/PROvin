@@ -39,7 +39,9 @@ describe("IRISS role path access (deny by default)", () => {
 
   it("denies logistics every admin API except its prefix and logout", () => {
     expect(isLogisticsApiPath("/api/admin/iriss/logistika/points")).toBe(true);
+    expect(isLogisticsApiPath("/api/admin/iriss-logistics/orders")).toBe(true);
     expect(decideAdminApiAccess("/api/admin/iriss/logistika/points", { kind: "staff", role: "logistics" })).toBe("allow");
+    expect(decideAdminApiAccess("/api/admin/iriss-logistics/maps-config", { kind: "staff", role: "logistics" })).toBe("allow");
     expect(decideAdminApiAccess("/api/admin/logout", { kind: "staff", role: "logistics" })).toBe("allow");
     expect(decideAdminApiAccess("/api/admin/badges", { kind: "staff", role: "logistics" })).toBe("forbidden");
     expect(decideAdminApiAccess("/api/admin/iriss-pasutijumi", { kind: "staff", role: "logistics" })).toBe("forbidden");

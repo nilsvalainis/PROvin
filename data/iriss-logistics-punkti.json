@@ -1,0 +1,186 @@
+{
+  "atjaunots": "2026-10-20T14:06+03:00",
+  "avots": "Loģistika: jauno pirkumu skenēšana (Gmail 3 kastes + izsoļu sesijas)",
+  "izsoles": {
+    "Autobid": [
+      {
+        "punkts": "aha Zweckverband Abfallwirtschaft Region Hannover",
+        "adrese": "Hansastraße 42, 30419 Hannover, DE (Autobid norādītā atrašanās vieta); kontakts: Sachgebiet 1.3 Fahrzeugwerkstatt, Karl-Wiechert-Allee 60 c, 30625 Hannover",
+        "kontakti": "Sascha Wagner, sascha.wagner@aha-region.de, tel. +49 511 9911-47940, mob. +49 151 40562330",
+        "darba_laiks": "nav norādīts (ierašanās 07:30 pieteikta)",
+        "auto": [
+          {
+            "marka": "Unsinn",
+            "modelis": "UDK 2630 Kipper (piekabe)",
+            "vin": "W0900000020U02956",
+            "ref": "AB.83523.042",
+            "saite": "https://autobid.de/?action=car&id=3552620&show=car",
+            "pickup_kods": "6C766469",
+            "termins": "Savākšana apstiprināta 21.10.2026 08:00 (Juris Eltermanis, CK6200)",
+            "statuss": "savākšana apstiprināta"
+          }
+        ]
+      },
+      {
+        "punkts": "Kramer Automotive GmbH",
+        "adrese": "Hersfelder Str. 33, 36179 Bebra, DE",
+        "kontakti": "",
+        "darba_laiks": "",
+        "auto": [
+          {
+            "marka": "Mercedes-Benz",
+            "modelis": "Sprinter 316 CDI Autotransporter",
+            "vin": "WDB9061331N534460",
+            "ref": "AB.84073.008",
+            "saite": "https://autobid.de/?action=car&id=3602407&show=car",
+            "pickup_kods": "",
+            "termins": "Nopirkts 17.10.2026, 11 970,81 €; rēķins P.RE.2487506 nosūtīts Lainei 19.10; saņemšanas apliecība būs pēc apmaksas",
+            "statuss": "gaida apmaksu"
+          }
+        ]
+      },
+      {
+        "punkts": "VGRDD GmbH, AUDI Dresden Kesselsdorfer Str. (ex-AH Pattusch)",
+        "adrese": "Kesselsdorfer Str. 300, 01169 Dresden, DE",
+        "kontakti": "",
+        "darba_laiks": "",
+        "auto": [
+          {
+            "marka": "Audi",
+            "modelis": "A4 Avant 2.0 TDI S line",
+            "vin": "WAUZZZ8K0FA036715",
+            "ref": "AB.84112.034",
+            "saite": "https://autobid.de/?action=car&id=3588283&show=car",
+            "pickup_kods": "",
+            "termins": "Nopirkts 14.10.2026, 10 449,23 €; apmaksāts, saņemšanas dokuments Autobid pastkastē kopš 16.10",
+            "statuss": "jāorganizē savākšana"
+          }
+        ]
+      },
+      {
+        "punkts": "MHC Mobility GmbH",
+        "adrese": "An der Autobahn 12, 27404 Bockel, DE",
+        "kontakti": "Michael Jörn, Michael.Joern@mhcmobility.de (Gebrauchtwagenverkauf)",
+        "darba_laiks": "nav norādīts; dienu jāpaziņo precīzi (iekrāvējs nav vienmēr uz vietas); tikai auto + piekabe vai mazais busiņš",
+        "auto": [
+          {
+            "marka": "Nussbaum",
+            "modelis": "Sprinter Mobil II pacēlājs",
+            "vin": "HEBEUEHNE20261001",
+            "ref": "AB.84047.010",
+            "saite": "https://autobid.de/?action=car&id=3571602&show=car",
+            "pickup_kods": "Abholschein P08LJW7V",
+            "termins": "Nopirkts 12.10.2026, rēķins P.RE.2483632; savākšanas diena vēl nav saskaņota",
+            "statuss": "jāsaskaņo diena"
+          }
+        ]
+      }
+    ],
+    "AUTO1": [
+      {
+        "punkts": "CEVA Logistics Ghislenghien (ex GEFCO)",
+        "adrese": "Rue du Parc Industriel 27, 7822 Ghislenghien, BE",
+        "kontakti": "Didier Beth (CEVA); pieraksts obligāts dls-platform.com",
+        "darba_laiks": "P-Pk 08:00-11:45, 12:30-16:00; svētku dienās slēgts",
+        "auto": [
+          {
+            "marka": "Skoda",
+            "modelis": "Superb 1.6 TDI Style",
+            "vin": "TMBJG9NP9H7045709",
+            "ref": "SL20282",
+            "saite": "",
+            "pickup_kods": "Šofera kods 8f610; loading ref LD-20261016-08434863",
+            "termins": "Pieraksts 21.10.2026 08:00 (pēdējā bezmaksas glabāšanas diena)",
+            "statuss": "pieraksts apstiprināts"
+          },
+          {
+            "marka": "Volvo",
+            "modelis": "XC60 2.0 D3 Momentum 2WD",
+            "vin": "YV1DZ3150E2599639",
+            "ref": "CV18804",
+            "saite": "",
+            "pickup_kods": "Loading ref LD-20261016-08434879",
+            "termins": "AUTO1 20.10 apstiprināja: var savākt 21.10.2026, pieraksts izveidots (ticket #40507033)",
+            "statuss": "pieraksts apstiprināts"
+          }
+        ]
+      },
+      {
+        "punkts": "Logistikzentrum Ketzin",
+        "adrese": "Gewerbegebiet Etzin (Einfahrt Mosolf Gate, NICHT Autohero), 14669 Ketzin, DE",
+        "kontakti": "",
+        "darba_laiks": "P-Pk 07:00-15:30",
+        "auto": [
+          {
+            "marka": "BMW",
+            "modelis": "3er 325d (2009)",
+            "vin": "WBAPN51050VJ67210",
+            "ref": "CV16094",
+            "saite": "",
+            "pickup_kods": "AUTO1 My Orders (Skatīt izņemšanas kodu)",
+            "termins": "Izņemšana bija plānota 19.10.2026; ja nesavāc 7 dienās (līdz 26.10), 20 € + 4,50 €/dienā, tikai skaidrā naudā",
+            "statuss": "plānots 19.10, savākšana nav apstiprināta e-pastā"
+          }
+        ]
+      },
+      {
+        "punkts": "Logistikzentrum Hattingen",
+        "adrese": "Hattingen, DE (precīza adrese vēl nav AUTO1 lapā)",
+        "kontakti": "",
+        "darba_laiks": "",
+        "auto": [
+          {
+            "marka": "Volvo",
+            "modelis": "XC60 2.4 D5 Summum AWD (2013)",
+            "vin": "YV1DZ8256D2439274",
+            "ref": "YE89130",
+            "saite": "https://www.auto1.com/en/app/inventory/my-orders/all/1",
+            "pickup_kods": "",
+            "termins": "Nopirkts 17.10.2026, 5 990 € apmaksāts 19.10; savākšanas datumu var izvēlēties, kad auto atvests uz punktu; 12 dienas bezmaksas, tad 15 €/dienā",
+            "statuss": "gaida pārvešanu uz savākšanas punktu"
+          }
+        ]
+      }
+    ],
+    "Openlane": [
+      {
+        "punkts": "Stobart Automotive Europe / HUB Bilzen",
+        "adrese": "Kruisbosstraat 3, 3740 Bilzen, BE",
+        "kontakti": "+32 89 300979, openlane@eddiestobart.eu",
+        "darba_laiks": "P-Pk 07:00-16:30; pieraksts obligāts vismaz 24 h iepriekš (ar PuA); drošības apavi un veste",
+        "auto": [
+          {
+            "marka": "BMW",
+            "modelis": "iX (iX40)",
+            "vin": "WBY11CF060CM04850",
+            "ref": "11630702",
+            "saite": "",
+            "pickup_kods": "PuA 11630702 (BE 6064154)",
+            "termins": "PuA izsūtīts 08.10.2026; pēc 14 dienām (no 22.10) papildu maksa",
+            "statuss": "gatavs izsniegšanai, transporteris nav norādīts"
+          },
+          {
+            "marka": "Volvo",
+            "modelis": "S60",
+            "vin": "YV1RS694062550360",
+            "ref": "11578463",
+            "saite": "",
+            "pickup_kods": "PuA 11578463 (BE 6025704)",
+            "termins": "PuA izsūtīts 01.10.2026; 14 dienas beidzās 15.10, papildu maksa jau var rēķināties",
+            "statuss": "gatavs izsniegšanai, nav savākts (pēc e-pastiem)"
+          }
+        ]
+      }
+    ]
+  },
+  "sesijas_20_10_14_05": {
+    "AUTO1": "AKTĪVS",
+    "Autobid": "IZLOGOTS",
+    "Openlane/ADESA": "IZLOGOTS",
+    "CarOnSale": "IZLOGOTS",
+    "Copart.de": "IZLOGOTS",
+    "eCarsTrade": "IZLOGOTS",
+    "Troostwijk": "IZLOGOTS",
+    "mobile.de": "IZLOGOTS"
+  }
+}

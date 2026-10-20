@@ -38,6 +38,8 @@ export const SITE_CSP_REPORT_ONLY = [
     "https://www.google-analytics.com",
     "https://www.googleadservices.com",
     "https://www.google.com",
+    "https://maps.googleapis.com",
+    "https://maps.gstatic.com",
     "https://googleads.g.doubleclick.net",
     "https://pagead2.googlesyndication.com",
     "https://connect.facebook.net",

@@ -1,6 +1,7 @@
 /**
  * IRISS lomu pieejas: noklusēti aizliegts. Edge-drošs (middleware + testi).
- * Administrators (Nils, env HMAC) redz visu. Loģistika: tikai /admin/iriss/logistika un tās API.
+ * Administrators (Nils, env HMAC) redz visu. Loģistika: tikai /admin/iriss/logistika
+ * un API `/api/admin/iriss/logistika*` plus `/api/admin/iriss-logistics*`.
  */
 
 export const STAFF_ROLE_LOGISTICS = "logistics" as const;
@@ -20,6 +21,8 @@ export type ApiAccessDecision = "allow" | "unauthorized" | "forbidden";
 
 export const LOGISTICS_PAGE_PREFIX = "/admin/iriss/logistika";
 export const LOGISTICS_API_PREFIX = "/api/admin/iriss/logistika";
+/** Reālās Loģistikas kartes / avotu API (atšķiras no lomas sākuma `/api/admin/iriss/logistika`). */
+export const LOGISTICS_STORE_API_PREFIX = "/api/admin/iriss-logistics";
 
 export const STAFF_ROLE_LABELS: Record<StaffRole, string> = {
   logistics: "Loģistika",
@@ -46,7 +49,12 @@ export function isLogisticsPagePath(pathname: string): boolean {
 }
 
 export function isLogisticsApiPath(pathname: string): boolean {
-  return pathname === LOGISTICS_API_PREFIX || pathname.startsWith(`${LOGISTICS_API_PREFIX}/`);
+  return (
+    pathname === LOGISTICS_API_PREFIX ||
+    pathname.startsWith(`${LOGISTICS_API_PREFIX}/`) ||
+    pathname === LOGISTICS_STORE_API_PREFIX ||
+    pathname.startsWith(`${LOGISTICS_STORE_API_PREFIX}/`)
+  );
 }
 
 export function isStaffInvitePagePath(pathname: string): boolean {

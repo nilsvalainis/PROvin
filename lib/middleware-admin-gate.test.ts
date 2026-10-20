@@ -168,6 +168,8 @@ describe("middleware admin gate", () => {
     expect(await res.json()).toEqual({ error: "forbidden" });
     const allowed = await middleware(req("https://www.provin.lv/api/admin/iriss/logistika/points", staffCookie()));
     expect(allowed.status).toBe(200);
+    const storeApi = await middleware(req("https://www.provin.lv/api/admin/iriss-logistics/orders", staffCookie()));
+    expect(storeApi.status).toBe(200);
   });
 
   it("does not touch public pages", async () => {

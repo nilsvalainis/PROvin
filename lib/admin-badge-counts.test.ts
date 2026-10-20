@@ -24,6 +24,10 @@ vi.mock("@/lib/admin-orders-flags", () => ({
   })),
 }));
 
+vi.mock("@/lib/iriss-logistics-store", () => ({
+  countActiveLogisticsOrders: vi.fn(async () => 0),
+}));
+
 describe("loadAdminBadgeCounts", () => {
   it("returns all badge fields", async () => {
     const { loadAdminBadgeCounts } = await import("@/lib/admin-badge-counts");
@@ -35,6 +39,7 @@ describe("loadAdminBadgeCounts", () => {
       overdueCount: 0,
       urgentCount: 0,
       irissMatchCount: 0,
+      irissLogisticsCount: expect.any(Number),
     });
   });
 });
