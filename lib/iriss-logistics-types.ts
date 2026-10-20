@@ -34,8 +34,26 @@ export type LogisticsListView = (typeof LOGISTICS_LIST_VIEWS)[number];
 /** Pirmais skats: tikai vēl neizņemtie / nepiegādātie. */
 export const LOGISTICS_DEFAULT_LIST_VIEW: LogisticsListView = "active";
 
-export const LOGISTICS_PAGE_VIEWS = ["orders", "points"] as const;
+export const LOGISTICS_PAGE_VIEWS = ["orders", "points", "settings"] as const;
 export type LogisticsPageView = (typeof LOGISTICS_PAGE_VIEWS)[number];
+
+/** Izsoļu avoti Loģistikas iestatījumos. Jaunus var pievienot bez koda. */
+export type LogisticsAuctionSourceFilters = {
+  account: string;
+  status: string;
+  keywords: string;
+};
+
+export type LogisticsAuctionSource = {
+  id: string;
+  name: string;
+  url: string;
+  filters: LogisticsAuctionSourceFilters;
+  enabled: boolean;
+  builtin: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type LogisticsHoursSlot = {
   days: string;

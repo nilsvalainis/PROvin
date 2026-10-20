@@ -6,6 +6,8 @@ const page = readFileSync("app/admin/iriss/logistika/page.tsx", "utf8");
 const sidebar = readFileSync("components/admin/AdminSidebar.tsx", "utf8");
 const parseServer = readFileSync("lib/iriss-logistics-listing-parse-server.ts", "utf8");
 const settings = readFileSync("app/admin/iriss/iestatijumi/page.tsx", "utf8");
+const sourcesPanel = readFileSync("components/admin/iriss-logistika/IrissLogistikaAuctionSourcesPanel.tsx", "utf8");
+const sourcesLib = readFileSync("lib/iriss-logistics-auction-sources.ts", "utf8");
 const env = readFileSync(".env.example", "utf8");
 const listApi = readFileSync("app/api/admin/iriss-logistics/route.ts", "utf8");
 const orderPatch = readFileSync("app/api/admin/iriss-logistics/orders/[id]/route.ts", "utf8");
@@ -70,5 +72,24 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(env).toContain("GOOGLE_MAPS_SERVER_KEY");
     expect(env).toContain("HTTP referrers");
     expect(env).toContain("10 000");
+  });
+
+  it("keeps an editable auction-sources list in Loģistika settings", () => {
+    expect(client).toContain("IrissLogistikaAuctionSourcesPanel");
+    expect(client).toContain('setPageTab("settings")');
+    expect(client).toContain("Iestatījumi");
+    expect(settings).toContain("IrissLogistikaAuctionSourcesPanel");
+    expect(sourcesPanel).toContain("Izsoļu avoti");
+    expect(sourcesPanel).toContain("Saite (pirkumi / pasūtījumi)");
+    expect(sourcesPanel).toContain("Konts");
+    expect(sourcesPanel).toContain("Statuss");
+    expect(sourcesPanel).toContain("Atslēgvārdi");
+    expect(sourcesPanel).toContain("Jauns avots");
+    expect(sourcesPanel).toContain('aria-label={`${source.name} ieslēgts`}');
+    expect(sourcesPanel).not.toMatch(/APIFY_/);
+    expect(sourcesLib).not.toMatch(/APIFY_/);
+    expect(sourcesLib).not.toMatch(/from ["']@\/lib\/marketplace/);
+    expect(sourcesLib).toContain('name: "Copart.de"');
+    expect(sourcesLib).toContain("enabled: false");
   });
 });

@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
+import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaAuctionSourcesPanel";
 import { IrissLogistikaMap } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
 import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
@@ -17,21 +18,29 @@ import {
   LOGISTICS_LIST_VIEW_LV,
   LOGISTICS_ORDER_STATUS_LV,
   type LogisticsListView,
+  type LogisticsAuctionSource,
   type LogisticsOrder,
   type LogisticsPoint,
   type LogisticsPreviousPointRow,
 } from "@/lib/iriss-logistics-types";
 
-type PageTab = "orders" | "points";
+type PageTab = "orders" | "points" | "settings";
 
 type Props = {
   initialOrders: LogisticsOrder[];
   initialPoints: LogisticsPoint[];
   initialPrevious: LogisticsPreviousPointRow[];
+  initialSources: LogisticsAuctionSource[];
   storeEnabled: boolean;
 };
 
-export function IrissLogistikaClient({ initialOrders, initialPoints, initialPrevious, storeEnabled }: Props) {
+export function IrissLogistikaClient({
+  initialOrders,
+  initialPoints,
+  initialPrevious,
+  initialSources,
+  storeEnabled,
+}: Props) {
   const [orders, setOrders] = useState(initialOrders);
   const [points] = useState(initialPoints);
   const [previous] = useState(initialPrevious);
@@ -150,6 +159,9 @@ export function IrissLogistikaClient({ initialOrders, initialPoints, initialPrev
               <button type="button" onClick={() => setPageTab("points")} className={`rounded-full px-2.5 py-1 ${pageTab === "points" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
                 Punktu datubāze {points.length}
               </button>
+              <button type="button" onClick={() => setPageTab("settings")} className={`rounded-full px-2.5 py-1 ${pageTab === "settings" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
+                Iestatījumi
+              </button>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -183,7 +195,11 @@ export function IrissLogistikaClient({ initialOrders, initialPoints, initialPrev
         ) : null}
       </header>
 
-      {pageTab === "points" ? (
+      {pageTab === "settings" ? (
+        <div className="mt-3 max-w-3xl">
+          <IrissLogistikaAuctionSourcesPanel initialSources={initialSources} />
+        </div>
+      ) : pageTab === "points" ? (
         <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(16rem,22rem)_1fr]">
           <div className="space-y-3">
             {groupedPoints.map((g) => (

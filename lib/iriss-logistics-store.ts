@@ -17,6 +17,11 @@ import {
   incrementLogisticsMapsUsage,
   logisticsMapsMonthKey,
 } from "@/lib/iriss-logistics-maps-quota";
+import {
+  LOGISTICS_AUCTION_SOURCES_FILE,
+  mergeLogisticsAuctionSources,
+  normalizeLogisticsAuctionSource,
+} from "@/lib/iriss-logistics-auction-sources";
 import { previousLogisticsPoints } from "@/lib/iriss-logistics-previous-points";
 import { seedLogisticsFromPunkti, type LogisticsPunktiJson } from "@/lib/iriss-logistics-seed";
 import {
@@ -24,6 +29,7 @@ import {
   isLogisticsAuction,
   isLogisticsOrderStatus,
   snapshotLogisticsPoint,
+  type LogisticsAuctionSource,
   type LogisticsGeocodeCacheEntry,
   type LogisticsGeocodeStatus,
   type LogisticsListingParsed,
@@ -40,6 +46,7 @@ const DEFAULT_RELATIVE_DIR = ".data/iriss-logistics";
 export const IRISS_LOGISTICS_BLOB_PREFIX = "iriss-logistics/";
 const POINTS_FILE = "points.json";
 const ORDERS_FILE = "orders.json";
+const SOURCES_FILE = LOGISTICS_AUCTION_SOURCES_FILE;
 const GEOCODE_FILE = "geocode-cache.json";
 const USAGE_FILE_PREFIX = "maps-usage-";
 const SEED_META_FILE = "seed-meta.json";
@@ -505,6 +512,75 @@ export async function countActiveLogisticsOrders(): Promise<number> {
 export async function listPreviousLogisticsPoints(nowMs = Date.now()): Promise<LogisticsPreviousPointRow[]> {
   const [orders, points] = await Promise.all([listLogisticsOrders(), listLogisticsPoints()]);
   return previousLogisticsPoints({ orders, points, nowMs });
+}
+
+async function ensureAuctionSources(r: Exclude<ResolvedStorage, { kind: "disabled" }>): Promise<void> {
+  const raw = await readJson(r, SOURCES_FILE);
+  const existing = isObj(raw) && Array.isArray(raw.items)
+    ? raw.items.map((row) => normalizeLogisticsAuctionSource(row)).filter((p): p is LogisticsAuctionSource => p !== null)
+    : [];
+  const merged = mergeLogisticsAuctionSources(existing);
+  if (existing.length === merged.length && existing.every((row, i) => row.id === merged[i]?.id)) return;
+  await writeJson(r, SOURCES_FILE, { version: 1, items: merged });
+}
+
+export async function listLogisticsAuctionSources(): Promise<LogisticsAuctionSource[]> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return [];
+  await ensureAuctionSources(r);
+  const raw = await readJson(r, SOURCES_FILE);
+  const items = isObj(raw) && Array.isArray(raw.items) ? raw.items : [];
+  return mergeLogisticsAuctionSources(
+    items.map((row) => normalizeLogisticsAuctionSource(row)).filter((p): p is LogisticsAuctionSource => p !== null),
+  );
+}
+
+export async function writeLogisticsAuctionSources(items: LogisticsAuctionSource[]): Promise<void> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") throw new Error("store_disabled");
+  await writeJson(r, SOURCES_FILE, { version: 1, items });
+}
+
+export async function upsertLogisticsAuctionSource(
+  patch: Partial<LogisticsAuctionSource> & Pick<LogisticsAuctionSource, "name">,
+): Promise<LogisticsAuctionSource> {
+  const items = await listLogisticsAuctionSources();
+  const now = new Date().toISOString();
+  const id = patch.id?.trim() || "";
+  const prev = id ? items.find((p) => p.id === id) : items.find((p) => p.name.trim().toLowerCase() === patch.name.trim().toLowerCase());
+  const next = normalizeLogisticsAuctionSource(
+    {
+      ...(prev ?? {}),
+      ...patch,
+      id: prev?.id || id,
+      builtin: patch.builtin ?? prev?.builtin ?? false,
+      createdAt: prev?.createdAt ?? now,
+      updatedAt: now,
+      enabled: patch.enabled ?? prev?.enabled ?? true,
+    },
+    now,
+  );
+  if (!next) throw new Error("invalid_source");
+  const out = prev ? items.map((p) => (p.id === prev.id ? next : p)) : [...items, next];
+  await writeLogisticsAuctionSources(out);
+  return next;
+}
+
+export async function setLogisticsAuctionSourceEnabled(id: string, enabled: boolean): Promise<LogisticsAuctionSource | null> {
+  const items = await listLogisticsAuctionSources();
+  const prev = items.find((p) => p.id === id);
+  if (!prev) return null;
+  const next = { ...prev, enabled, updatedAt: new Date().toISOString() };
+  await writeLogisticsAuctionSources(items.map((p) => (p.id === id ? next : p)));
+  return next;
+}
+
+export async function removeLogisticsAuctionSource(id: string): Promise<boolean> {
+  const items = await listLogisticsAuctionSources();
+  const prev = items.find((p) => p.id === id);
+  if (!prev || prev.builtin) return false;
+  await writeLogisticsAuctionSources(items.filter((p) => p.id !== id));
+  return true;
 }
 
 export async function readGeocodeCache(): Promise<Record<string, LogisticsGeocodeCacheEntry>> {
