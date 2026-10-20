@@ -74,10 +74,10 @@ export const CARVERTICAL_CHECKOUT_HUMAN_STOP_LV =
   "CarVertical: bankas 3-D Secure vai kartes apstiprinājums. Apstipriniet šajā cilnē. Skripts tālāk nespiedīs";
 
 export const CARVERTICAL_PURPOSE_SURVEY_RE =
-  /for what purpose|what (will you|do you) use this report|k[aā]d[eē][ļl].{0,12}vēlies pārbaudīt|vēlies pārbaudīt|k[aā]p[eē]c (j[uū]s )?(p[eē]rc|vajag)|m[eē]r[kķ]im|purpose .{0,40}report|why (are you buying|do you need)/i;
+  /for what purpose|what (will you|do you) use this report|what.?s your goal|goal with this (vehicle )?history|k[aā]d[eē][ļl].{0,20}vēlies pārbaudīt|vēlies pārbaudīt|k[aā]p[eē]c (j[uū]s )?(p[eē]rc|vajag)|m[eē]r[kķ]im|purpose .{0,40}report|why (are you buying|do you need)/i;
 
 export const CARVERTICAL_PURPOSE_PREFERRED_RE =
-  /buying a (used )?car|buy(ing)? a (used )?vehicle|i'?m buying|want to buy|p[eē]rku auto|es pērku transportlīdzekli|pērku transportlīdzekli|ieg[aā]d[aā]jos|used car purchase/i;
+  /buying a (used )?(car|vehicle)|buy(ing)? a (used )?(car|vehicle)|i['’]?m buying|want to buy|p[eē]rku auto|es pērku transportlīdzekli|pērku transportlīdzekli|ieg[aā]d[aā]jos|used car purchase/i;
 
 export const CARVERTICAL_PURPOSE_DEALER_RE =
   /professional|dealer|workshop|business use|i'?m a (dealer|professional)|komersant|d[iī]ler|profesion|autod[iī]ler|fleet/i;
@@ -97,20 +97,37 @@ export const CARVERTICAL_EXPLICIT_SAVED_PAY_RE =
 export const CARVERTICAL_SAVED_PAY_CLICK_RE =
   /pay with (credits?|balance|wallet|saved)|use (your )?(credits?|balance|wallet)|izmantot (kred[iī]t|atlikum)|maks[aā]t ar (kred[iī]t|atlikum|saglab)|complete (purchase|payment|order)|pay now|maks[aā]t|\bpay\b|checkout|buy now|pirkt tagad|confirm (and )?pay|place order/i;
 
-/** Ielogotā kontā šīs pogas sāk jaunu (maksas) atskaiti. */
+/** Ielogotā kontā šīs pogas sāk jaunu (maksas) atskaiti. Nav galvenes „Pārbaudīt” / meklēt. */
 export const CARVERTICAL_START_REPORT_CLICK_RE =
-  /sākt pārbaudi|pārbaudīt|pārbaudi|check vin|verify|search|meklēt/i;
+  /sākt pārbaudi|pārbaudīt transportlīdzekli|pārbaudīt vin|pārbaudi vin|check vehicle|check vin|verify vin|ģenerēt jaunu atskaiti|generate new report|pārbaudi šo transportlīdzekli|check this vehicle/i;
 
-export const CARVERTICAL_BUY_REPORT_CLICK_RE = /pirkt|buy report|get report|full report/i;
+export const CARVERTICAL_BUY_REPORT_CLICK_RE =
+  /pirkt|buy report|get report|full report|pērc par|buy for\b|saņemt atskaiti/i;
 
 /** Tikai vienas atskaites paka (ne 2/3 auto vai „Ietaupi %”). */
-export const CARVERTICAL_BUY_ONE_REPORT_RE = /pirkt\s+1\s+atskait|buy\s+1\s+report/i;
+export const CARVERTICAL_BUY_ONE_REPORT_RE =
+  /pirkt\s+1\s+atskait|buy\s+1\s+report|pirkt atskaiti(?: tūlīt)?(?!s)|buy report(?: now)?(?!s)/i;
+
+/** Cena / pakete pēc priekšpārbaudes. CarVertical 2026: „Pārbaudīt cenu” / „Check pricing”. */
+export const CARVERTICAL_CHECK_PRICING_RE =
+  /pārbaudīt cenu|check pricing|skatīt cenu|see pric(e|ing)|view pric(e|ing)/i;
+
+/** Vienas atskaites pirkuma CTA ārpus „Pirkt 1 …” (Pērc par, Saņemt atskaiti). */
+export const CARVERTICAL_BUY_FORWARD_RE = /pērc par|perc par|buy for\b|saņemt atskaiti|get the report/i;
+
+/** VIN apstiprinājums pēc „Vai šis VIN izskatās pareizs?” / „Does this VIN look right?”. */
+export const CARVERTICAL_VIN_CONFIRM_CLICK_RE =
+  /ziņot un turpināt|report\s*(&|and)\s*proceed/i;
+
+/** Nav pirkuma solis: labot citu VIN, notīrīt, sākt bez VIN. */
+export const CARVERTICAL_START_AVOID_RE =
+  /citu transport|other vehicle|bez vin|without a vin|without a reg|notīrīt ievad|clear input|pamanīji kļūdu|pirkt atskaites\b|buy reports\b/i;
 
 export const CARVERTICAL_MULTI_PACK_CLICK_AVOID_RE =
   /pirkt\s+[23]\b|pirkt\s+(div|trīs|two|three)\b|\b2\s+atskait|\b3\s+atskait|ietaup\s*%|save\s+\d+\s*%/i;
 
 export const CARVERTICAL_COUNTRY_STAY_LV_RE =
-  /palikt valstī|stay in (latvia|your country)|remain in latvia/i;
+  /palikt valstī|stay in [\p{L}]+|remain in [\p{L}]+/iu;
 
 export const CARVERTICAL_VIN_INPUT_SELECTORS = [
   'input[name="identifier"]',
@@ -123,6 +140,22 @@ export const CARVERTICAL_PRICE_CARD_LABEL_RE = /^\s*€|^\s*\d+[,.]?\d*\s*€/;
 
 const CARVERTICAL_LABEL_MAX = 160;
 
+const CARVERTICAL_CTA_EXTRACT_RES = [
+  CARVERTICAL_CHECK_PRICING_RE,
+  CARVERTICAL_BUY_ONE_REPORT_RE,
+  CARVERTICAL_BUY_FORWARD_RE,
+  CARVERTICAL_VIN_CONFIRM_CLICK_RE,
+  CARVERTICAL_COUNTRY_STAY_LV_RE,
+  CARVERTICAL_PURPOSE_PREFERRED_RE,
+  CARVERTICAL_PURPOSE_DEALER_RE,
+  CARVERTICAL_CONTINUE_CLICK_RE,
+  CARVERTICAL_EXPLICIT_SAVED_PAY_RE,
+  CARVERTICAL_SAVED_PAY_CLICK_RE,
+  CARVERTICAL_DISMISS_CLICK_RE,
+  CARVERTICAL_START_REPORT_CLICK_RE,
+  CARVERTICAL_BUY_REPORT_CLICK_RE,
+];
+
 export type CarVerticalCheckoutKind =
   | "idle"
   | "wait"
@@ -131,6 +164,8 @@ export type CarVerticalCheckoutKind =
   | "dismiss"
   | "country_stay"
   | "buy_one"
+  | "check_pricing"
+  | "vin_confirm"
   | "start_report"
   | "continue"
   | "pay_saved";
@@ -188,6 +223,7 @@ function firstAllowedLabel(labels: string[], re: RegExp): string {
     const t = raw.trim();
     if (!t || t.length > CARVERTICAL_LABEL_MAX) continue;
     if (CARVERTICAL_NEVER_CLICK_RE.test(t)) continue;
+    if (CARVERTICAL_START_AVOID_RE.test(t)) continue;
     if (re.test(t)) return t;
   }
   return "";
@@ -196,7 +232,9 @@ function firstAllowedLabel(labels: string[], re: RegExp): string {
 function isStartReportLabel(label: string): boolean {
   const t = label.trim();
   if (!t || CARVERTICAL_NEVER_CLICK_RE.test(t)) return false;
+  if (CARVERTICAL_START_AVOID_RE.test(t)) return false;
   if (CARVERTICAL_PRICE_CARD_LABEL_RE.test(t)) return false;
+  if (CARVERTICAL_CHECK_PRICING_RE.test(t)) return false;
   if (CARVERTICAL_MULTI_PACK_CLICK_AVOID_RE.test(t) && !CARVERTICAL_BUY_ONE_REPORT_RE.test(t)) return false;
   if (CARVERTICAL_SAVED_PAY_CLICK_RE.test(t) && /checkout|pay now|maksāt|complete/i.test(t)) return false;
   return CARVERTICAL_START_REPORT_CLICK_RE.test(t) || CARVERTICAL_BUY_REPORT_CLICK_RE.test(t);
@@ -206,9 +244,57 @@ export function isCarVerticalClickablePurchaseLabel(label: string): boolean {
   const t = label.trim();
   if (!t || t.length > CARVERTICAL_LABEL_MAX) return false;
   if (CARVERTICAL_NEVER_CLICK_RE.test(t)) return false;
+  if (CARVERTICAL_START_AVOID_RE.test(t)) return false;
   if (CARVERTICAL_PRICE_CARD_LABEL_RE.test(t)) return false;
   if (CARVERTICAL_MULTI_PACK_CLICK_AVOID_RE.test(t) && !CARVERTICAL_BUY_ONE_REPORT_RE.test(t)) return false;
   return true;
+}
+
+function labelLooksLikeCta(label: string): boolean {
+  const t = label.trim();
+  if (!isCarVerticalClickablePurchaseLabel(t)) return false;
+  return CARVERTICAL_CTA_EXTRACT_RES.some((re) => re.test(t));
+}
+
+/** Garas pakas kartes: ņem rindu vai zināmo CTA, nevis visu textContent. */
+export function extractCarVerticalActionLabel(raw: string): string {
+  const text = String(raw || "");
+  const compact = text.replace(/\s+/g, " ").trim();
+  if (!compact) return "";
+  const lines = text
+    .split(/\n+/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  for (const line of lines) {
+    if (line.length <= CARVERTICAL_LABEL_MAX && labelLooksLikeCta(line)) return line;
+  }
+  if (compact.length <= CARVERTICAL_LABEL_MAX && labelLooksLikeCta(compact) && lines.length <= 1) {
+    return compact;
+  }
+  for (const re of CARVERTICAL_CTA_EXTRACT_RES) {
+    const hit = compact.match(re);
+    if (!hit || !hit[0]) continue;
+    const idx = compact.toLowerCase().indexOf(hit[0].toLowerCase());
+    if (idx < 0) continue;
+    let start = idx;
+    let end = idx + hit[0].length;
+    while (start > 0 && compact[start - 1] !== "." && end - start < 80) start -= 1;
+    while (end < compact.length && compact[end] !== "." && end - start < 80) end += 1;
+    const phrase = compact.slice(start, end).trim();
+    if (phrase.length <= CARVERTICAL_LABEL_MAX && isCarVerticalClickablePurchaseLabel(phrase)) {
+      return phrase;
+    }
+    if (hit[0].length <= CARVERTICAL_LABEL_MAX && isCarVerticalClickablePurchaseLabel(hit[0])) {
+      return hit[0];
+    }
+  }
+  return compact.length <= CARVERTICAL_LABEL_MAX ? compact : "";
+}
+
+function isBuyOneLabel(label: string): boolean {
+  const t = label.trim();
+  if (!isCarVerticalClickablePurchaseLabel(t)) return false;
+  return CARVERTICAL_BUY_ONE_REPORT_RE.test(t) || CARVERTICAL_BUY_FORWARD_RE.test(t);
 }
 
 export function isCarVerticalCheckoutFlowPage(href: string): boolean {
@@ -251,6 +337,9 @@ export function carVerticalAutofillMayClick(label: string, purchaseConfirmed: bo
   if (!isCarVerticalClickablePurchaseLabel(t)) return false;
   if (CARVERTICAL_3DS_PAGE_RE.test(t)) return false;
   if (CARVERTICAL_BUY_ONE_REPORT_RE.test(t)) return true;
+  if (CARVERTICAL_BUY_FORWARD_RE.test(t)) return true;
+  if (CARVERTICAL_CHECK_PRICING_RE.test(t)) return true;
+  if (CARVERTICAL_VIN_CONFIRM_CLICK_RE.test(t)) return true;
   if (CARVERTICAL_COUNTRY_STAY_LV_RE.test(t)) return true;
   if (rankCarVerticalPurposeLabel(t) >= 2) return true;
   if (CARVERTICAL_DISMISS_CLICK_RE.test(t)) return true;
@@ -267,6 +356,7 @@ export function classifyCarVerticalCheckoutStep(input: {
   has3dsFrame?: boolean;
   hasNewCardField?: boolean;
   purposeOptionChosen?: boolean;
+  ignoredLabels?: string[];
 }): CarVerticalCheckoutDecision {
   if (!input.purchaseConfirmed) {
     return { kind: "idle", label: "", log: "nav apstiprinājuma" };
@@ -276,22 +366,24 @@ export function classifyCarVerticalCheckoutStep(input: {
     return { kind: "stop_3ds", label: "", log: CARVERTICAL_CHECKOUT_HUMAN_STOP_LV };
   }
 
-  const labels = input.labels.map((item) => item.trim()).filter(Boolean);
-  const href = String(input.href || "");
+  const ignored = new Set((input.ignoredLabels || []).map((item) => item.trim()).filter(Boolean));
+  const labels = input.labels
+    .map((item) => extractCarVerticalActionLabel(item) || String(item || "").trim())
+    .filter((item) => item && !ignored.has(item));
 
   const countryStay = firstAllowedLabel(labels, CARVERTICAL_COUNTRY_STAY_LV_RE);
   if (countryStay && /latvij|latvia/i.test(`${input.pageText} ${countryStay}`)) {
     return { kind: "country_stay", label: countryStay, log: `country_stay ${countryStay}` };
   }
 
-  const onPricing = /\/pricing\b|package=/i.test(href);
-  if (onPricing) {
-    const buyOne = labels.find(
-      (item) => isCarVerticalClickablePurchaseLabel(item) && CARVERTICAL_BUY_ONE_REPORT_RE.test(item),
-    );
-    if (buyOne) {
-      return { kind: "buy_one", label: buyOne.trim(), log: `buy_one ${buyOne.trim()}` };
-    }
+  const buyOne = labels.find((item) => isBuyOneLabel(item));
+  if (buyOne) {
+    return { kind: "buy_one", label: buyOne.trim(), log: `buy_one ${buyOne.trim()}` };
+  }
+
+  const checkPricing = firstAllowedLabel(labels, CARVERTICAL_CHECK_PRICING_RE);
+  if (checkPricing) {
+    return { kind: "check_pricing", label: checkPricing, log: `check_pricing ${checkPricing}` };
   }
 
   const purposeSurvey =
@@ -308,6 +400,11 @@ export function classifyCarVerticalCheckoutStep(input: {
     if (contAfterPurpose) {
       return { kind: "continue", label: contAfterPurpose, log: `continue ${contAfterPurpose}` };
     }
+  }
+
+  const vinConfirm = firstAllowedLabel(labels, CARVERTICAL_VIN_CONFIRM_CLICK_RE);
+  if (vinConfirm) {
+    return { kind: "vin_confirm", label: vinConfirm, log: `vin_confirm ${vinConfirm}` };
   }
 
   const dismiss = pickCarVerticalDismissLabel(labels);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.24.2
+// @version      1.25.0
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -111,7 +111,7 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.24.2";
+  const SCRIPT_VERSION = "1.25.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -771,6 +771,7 @@
     }
     if (!vin) {
       const vinRaw =
+        params.get("identifier") ||
         params.get("vin") ||
         params.get("q") ||
         params.get("knr") ||
@@ -1693,9 +1694,9 @@
   const CARVERTICAL_CHECKOUT_HUMAN_STOP_LV =
     "CarVertical: bankas 3-D Secure vai kartes apstiprinājums. Apstipriniet šajā cilnē. Skripts tālāk nespiedīs";
   const CARVERTICAL_PURPOSE_SURVEY_RE =
-    /for what purpose|what (will you|do you) use this report|k[aā]d[eē][ļl].{0,12}vēlies pārbaudīt|vēlies pārbaudīt|k[aā]p[eē]c (j[uū]s )?(p[eē]rc|vajag)|m[eē]r[kķ]im|purpose .{0,40}report|why (are you buying|do you need)/i;
+    /for what purpose|what (will you|do you) use this report|what.?s your goal|goal with this (vehicle )?history|k[aā]d[eē][ļl].{0,20}vēlies pārbaudīt|vēlies pārbaudīt|k[aā]p[eē]c (j[uū]s )?(p[eē]rc|vajag)|m[eē]r[kķ]im|purpose .{0,40}report|why (are you buying|do you need)/i;
   const CARVERTICAL_PURPOSE_PREFERRED_RE =
-    /buying a (used )?car|buy(ing)? a (used )?vehicle|i'?m buying|want to buy|p[eē]rku auto|es pērku transportlīdzekli|pērku transportlīdzekli|ieg[aā]d[aā]jos|used car purchase/i;
+    /buying a (used )?(car|vehicle)|buy(ing)? a (used )?(car|vehicle)|i['’]?m buying|want to buy|p[eē]rku auto|es pērku transportlīdzekli|pērku transportlīdzekli|ieg[aā]d[aā]jos|used car purchase/i;
   const CARVERTICAL_PURPOSE_DEALER_RE =
     /professional|dealer|workshop|business use|i'?m a (dealer|professional)|komersant|d[iī]ler|profesion|autod[iī]ler|fleet/i;
   const CARVERTICAL_PURPOSE_AVOID_RE =
@@ -1709,15 +1710,39 @@
   const CARVERTICAL_SAVED_PAY_CLICK_RE =
     /pay with (credits?|balance|wallet|saved)|use (your )?(credits?|balance|wallet)|izmantot (kred[iī]t|atlikum)|maks[aā]t ar (kred[iī]t|atlikum|saglab)|complete (purchase|payment|order)|pay now|maks[aā]t|\bpay\b|checkout|buy now|pirkt tagad|confirm (and )?pay|place order/i;
   const CARVERTICAL_START_REPORT_CLICK_RE =
-    /sākt pārbaudi|pārbaudīt|pārbaudi|check vin|verify|search|meklēt/i;
-  const CARVERTICAL_BUY_REPORT_CLICK_RE = /pirkt|buy report|get report|full report/i;
-  const CARVERTICAL_BUY_ONE_REPORT_RE = /pirkt\s+1\s+atskait|buy\s+1\s+report/i;
+    /sākt pārbaudi|pārbaudīt transportlīdzekli|pārbaudīt vin|pārbaudi vin|check vehicle|check vin|verify vin|ģenerēt jaunu atskaiti|generate new report|pārbaudi šo transportlīdzekli|check this vehicle/i;
+  const CARVERTICAL_BUY_REPORT_CLICK_RE =
+    /pirkt|buy report|get report|full report|pērc par|buy for\b|saņemt atskaiti/i;
+  const CARVERTICAL_BUY_ONE_REPORT_RE =
+    /pirkt\s+1\s+atskait|buy\s+1\s+report|pirkt atskaiti(?: tūlīt)?(?!s)|buy report(?: now)?(?!s)/i;
+  const CARVERTICAL_CHECK_PRICING_RE =
+    /pārbaudīt cenu|check pricing|skatīt cenu|see pric(e|ing)|view pric(e|ing)/i;
+  const CARVERTICAL_BUY_FORWARD_RE = /pērc par|perc par|buy for\b|saņemt atskaiti|get the report/i;
+  const CARVERTICAL_VIN_CONFIRM_CLICK_RE =
+    /ziņot un turpināt|report\s*(&|and)\s*proceed/i;
+  const CARVERTICAL_START_AVOID_RE =
+    /citu transport|other vehicle|bez vin|without a vin|without a reg|notīrīt ievad|clear input|pamanīji kļūdu|pirkt atskaites\b|buy reports\b/i;
   const CARVERTICAL_MULTI_PACK_CLICK_AVOID_RE =
     /pirkt\s+[23]\b|pirkt\s+(div|trīs|two|three)\b|\b2\s+atskait|\b3\s+atskait|ietaup\s*%|save\s+\d+\s*%/i;
   const CARVERTICAL_COUNTRY_STAY_LV_RE =
-    /palikt valstī|stay in (latvia|your country)|remain in latvia/i;
+    /palikt valstī|stay in [\p{L}]+|remain in [\p{L}]+/iu;
   const CARVERTICAL_PRICE_CARD_LABEL_RE = /^\s*€|^\s*\d+[,.]?\d*\s*€/;
   const CARVERTICAL_LABEL_MAX = 160;
+  const CARVERTICAL_CTA_EXTRACT_RES = [
+    CARVERTICAL_CHECK_PRICING_RE,
+    CARVERTICAL_BUY_ONE_REPORT_RE,
+    CARVERTICAL_BUY_FORWARD_RE,
+    CARVERTICAL_VIN_CONFIRM_CLICK_RE,
+    CARVERTICAL_COUNTRY_STAY_LV_RE,
+    CARVERTICAL_PURPOSE_PREFERRED_RE,
+    CARVERTICAL_PURPOSE_DEALER_RE,
+    CARVERTICAL_CONTINUE_CLICK_RE,
+    CARVERTICAL_EXPLICIT_SAVED_PAY_RE,
+    CARVERTICAL_SAVED_PAY_CLICK_RE,
+    CARVERTICAL_DISMISS_CLICK_RE,
+    CARVERTICAL_START_REPORT_CLICK_RE,
+    CARVERTICAL_BUY_REPORT_CLICK_RE,
+  ];
 
   function rankCarVerticalPurposeLabel(label) {
     const t = String(label || "").trim();
@@ -1752,6 +1777,7 @@
       const t = String(labels[i] || "").trim();
       if (!t || t.length > CARVERTICAL_LABEL_MAX) continue;
       if (CARVERTICAL_NEVER_CLICK_RE.test(t)) continue;
+      if (CARVERTICAL_START_AVOID_RE.test(t)) continue;
       if (re.test(t)) return t;
     }
     return "";
@@ -1774,7 +1800,9 @@
   function isCarVerticalStartReportLabel(label) {
     const t = String(label || "").trim();
     if (!t || CARVERTICAL_NEVER_CLICK_RE.test(t)) return false;
+    if (CARVERTICAL_START_AVOID_RE.test(t)) return false;
     if (CARVERTICAL_PRICE_CARD_LABEL_RE.test(t)) return false;
+    if (CARVERTICAL_CHECK_PRICING_RE.test(t)) return false;
     if (CARVERTICAL_MULTI_PACK_CLICK_AVOID_RE.test(t) && !CARVERTICAL_BUY_ONE_REPORT_RE.test(t)) return false;
     if (CARVERTICAL_SAVED_PAY_CLICK_RE.test(t) && /checkout|pay now|maksāt|complete/i.test(t)) return false;
     return CARVERTICAL_START_REPORT_CLICK_RE.test(t) || CARVERTICAL_BUY_REPORT_CLICK_RE.test(t);
@@ -1784,9 +1812,59 @@
     const t = String(label || "").trim();
     if (!t || t.length > CARVERTICAL_LABEL_MAX) return false;
     if (CARVERTICAL_NEVER_CLICK_RE.test(t)) return false;
+    if (CARVERTICAL_START_AVOID_RE.test(t)) return false;
     if (CARVERTICAL_PRICE_CARD_LABEL_RE.test(t)) return false;
     if (CARVERTICAL_MULTI_PACK_CLICK_AVOID_RE.test(t) && !CARVERTICAL_BUY_ONE_REPORT_RE.test(t)) return false;
     return true;
+  }
+
+  function carVerticalLabelLooksLikeCta(label) {
+    const t = String(label || "").trim();
+    if (!isCarVerticalClickablePurchaseLabel(t)) return false;
+    for (let i = 0; i < CARVERTICAL_CTA_EXTRACT_RES.length; i += 1) {
+      if (CARVERTICAL_CTA_EXTRACT_RES[i].test(t)) return true;
+    }
+    return false;
+  }
+
+  function extractCarVerticalActionLabel(raw) {
+    const text = String(raw || "");
+    const compact = text.replace(/\s+/g, " ").trim();
+    if (!compact) return "";
+    const lines = text.split(/\n+/);
+    const trimmedLines = [];
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = String(lines[i] || "").replace(/\s+/g, " ").trim();
+      if (line) trimmedLines.push(line);
+      if (line.length <= CARVERTICAL_LABEL_MAX && carVerticalLabelLooksLikeCta(line)) return line;
+    }
+    if (compact.length <= CARVERTICAL_LABEL_MAX && carVerticalLabelLooksLikeCta(compact) && trimmedLines.length <= 1) {
+      return compact;
+    }
+    for (let r = 0; r < CARVERTICAL_CTA_EXTRACT_RES.length; r += 1) {
+      const hit = compact.match(CARVERTICAL_CTA_EXTRACT_RES[r]);
+      if (!hit || !hit[0]) continue;
+      const idx = compact.toLowerCase().indexOf(hit[0].toLowerCase());
+      if (idx < 0) continue;
+      let start = idx;
+      let end = idx + hit[0].length;
+      while (start > 0 && compact[start - 1] !== "." && end - start < 80) start -= 1;
+      while (end < compact.length && compact[end] !== "." && end - start < 80) end += 1;
+      const phrase = compact.slice(start, end).trim();
+      if (phrase.length <= CARVERTICAL_LABEL_MAX && isCarVerticalClickablePurchaseLabel(phrase)) {
+        return phrase;
+      }
+      if (hit[0].length <= CARVERTICAL_LABEL_MAX && isCarVerticalClickablePurchaseLabel(hit[0])) {
+        return hit[0];
+      }
+    }
+    return compact.length <= CARVERTICAL_LABEL_MAX ? compact : "";
+  }
+
+  function isCarVerticalBuyOneLabel(label) {
+    const t = String(label || "").trim();
+    if (!isCarVerticalClickablePurchaseLabel(t)) return false;
+    return CARVERTICAL_BUY_ONE_REPORT_RE.test(t) || CARVERTICAL_BUY_FORWARD_RE.test(t);
   }
 
   function isCarVerticalCheckoutFlowPage(href) {
@@ -1829,22 +1907,31 @@
     if (input.has3dsFrame || CARVERTICAL_3DS_PAGE_RE.test(page)) {
       return { kind: "stop_3ds", label: "", log: CARVERTICAL_CHECKOUT_HUMAN_STOP_LV };
     }
-    const labels = (input.labels || []).map(function (item) {
-      return String(item || "").trim();
-    }).filter(Boolean);
-    const href = String(input.href || "");
+    const ignored = {};
+    const ignoredList = input.ignoredLabels || [];
+    for (let ig = 0; ig < ignoredList.length; ig += 1) {
+      const key = String(ignoredList[ig] || "").trim();
+      if (key) ignored[key] = 1;
+    }
+    const labels = (input.labels || [])
+      .map(function (item) {
+        return extractCarVerticalActionLabel(item) || String(item || "").trim();
+      })
+      .filter(function (item) {
+        return item && !ignored[item];
+      });
     const countryStay = firstAllowedCarVerticalLabel(labels, CARVERTICAL_COUNTRY_STAY_LV_RE);
     if (countryStay && /latvij|latvia/i.test(String(input.pageText || "") + " " + countryStay)) {
       return { kind: "country_stay", label: countryStay, log: "country_stay " + countryStay };
     }
-    const onPricing = /\/pricing\b|package=/i.test(href);
-    if (onPricing) {
-      for (let pi = 0; pi < labels.length; pi += 1) {
-        const item = labels[pi];
-        if (isCarVerticalClickablePurchaseLabel(item) && CARVERTICAL_BUY_ONE_REPORT_RE.test(item)) {
-          return { kind: "buy_one", label: item.trim(), log: "buy_one " + item.trim() };
-        }
+    for (let bi = 0; bi < labels.length; bi += 1) {
+      if (isCarVerticalBuyOneLabel(labels[bi])) {
+        return { kind: "buy_one", label: labels[bi].trim(), log: "buy_one " + labels[bi].trim() };
       }
+    }
+    const checkPricing = firstAllowedCarVerticalLabel(labels, CARVERTICAL_CHECK_PRICING_RE);
+    if (checkPricing) {
+      return { kind: "check_pricing", label: checkPricing, log: "check_pricing " + checkPricing };
     }
     const purposeSurvey =
       CARVERTICAL_PURPOSE_SURVEY_RE.test(input.pageText || "") || /vēlies pārbaudīt/i.test(input.pageText || "");
@@ -1861,6 +1948,10 @@
       if (contAfterPurpose) {
         return { kind: "continue", label: contAfterPurpose, log: "continue " + contAfterPurpose };
       }
+    }
+    const vinConfirm = firstAllowedCarVerticalLabel(labels, CARVERTICAL_VIN_CONFIRM_CLICK_RE);
+    if (vinConfirm) {
+      return { kind: "vin_confirm", label: vinConfirm, log: "vin_confirm " + vinConfirm };
     }
     const dismiss = pickCarVerticalDismissLabel(labels);
     if (dismiss) {
@@ -1894,17 +1985,18 @@
     return { kind: "wait", label: "", log: "gaida nākamo soli" };
   }
 
-  function carVerticalNodeLabel(el) {
+  function carVerticalNodeRawText(el) {
     if (!el) return "";
     if (el.tagName === "INPUT" && el.type === "radio") {
       const lab = el.labels && el.labels[0];
-      return String((lab && lab.textContent) || el.value || el.getAttribute("aria-label") || "")
-        .replace(/\s+/g, " ")
-        .trim();
+      return String((lab && lab.textContent) || el.value || el.getAttribute("aria-label") || "");
     }
-    return String(el.textContent || el.value || el.getAttribute("aria-label") || "")
-      .replace(/\s+/g, " ")
-      .trim();
+    return String(el.textContent || el.value || el.getAttribute("aria-label") || "");
+  }
+
+  function carVerticalNodeLabel(el) {
+    const aria = el ? String(el.getAttribute("aria-label") || "") : "";
+    return extractCarVerticalActionLabel(aria) || extractCarVerticalActionLabel(carVerticalNodeRawText(el));
   }
 
   function carVerticalHasVisible3dsFrame() {
@@ -1977,6 +2069,11 @@
     const labels = items.map(function (item) {
       return item.label;
     });
+    const skip = window.__provinCvSkipLabels || (window.__provinCvSkipLabels = {});
+    const ignored = [];
+    for (const key in skip) {
+      if (Object.prototype.hasOwnProperty.call(skip, key) && skip[key] >= 6) ignored.push(key);
+    }
     const decision = classifyCarVerticalCheckoutStep({
       purchaseConfirmed: true,
       pageText: pageText,
@@ -1985,6 +2082,7 @@
       has3dsFrame: carVerticalHasVisible3dsFrame(),
       hasNewCardField: carVerticalHasVisibleNewCardField(),
       purposeOptionChosen: Boolean(window.__provinCvPurposeChosen),
+      ignoredLabels: ignored,
     });
     console.log("PROVIN CarVertical solis:", decision.kind, decision.label || decision.log);
     if (decision.kind === "purpose") {
@@ -1998,11 +2096,6 @@
     window.__provinCvHumanStop = false;
     if (decision.kind === "wait" || decision.kind === "idle" || !decision.label) {
       return decision;
-    }
-    const skip = window.__provinCvSkipLabels || (window.__provinCvSkipLabels = {});
-    if ((skip[decision.label] || 0) >= 6) {
-      console.log("PROVIN CarVertical solis: izlaiž atkārtotu", decision.label);
-      return { kind: "wait", label: "", log: "pārāk daudz atkārtojumu" };
     }
     const hit =
       items.find(function (item) {

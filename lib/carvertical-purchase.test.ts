@@ -6,6 +6,8 @@ import { buildCarverticalPrecheckPurchaseUrl } from "@/lib/admin-vin-urls";
 import {
   CARVERTICAL_AUTOMATIC_FLOW_SOURCE_FILES,
   CARVERTICAL_BUY_ONE_REPORT_RE,
+  CARVERTICAL_BUY_FORWARD_RE,
+  CARVERTICAL_CHECK_PRICING_RE,
   CARVERTICAL_CHECKOUT_HUMAN_STOP_LV,
   CARVERTICAL_COUNTRY_STAY_LV_RE,
   CARVERTICAL_DISMISS_CLICK_RE,
@@ -15,12 +17,15 @@ import {
   CARVERTICAL_PURCHASED_SUMMARY_LV,
   CARVERTICAL_EXPLICIT_SAVED_PAY_RE,
   CARVERTICAL_SAVED_PAY_CLICK_RE,
+  CARVERTICAL_START_AVOID_RE,
+  CARVERTICAL_VIN_CONFIRM_CLICK_RE,
   CARVERTICAL_3DS_PAGE_RE,
   CARVERTICAL_VIN_INPUT_SELECTORS,
   buildCarVerticalPurchasedScanResult,
   carVerticalAutofillMayClick,
   carVerticalPurchasedReportReady,
   classifyCarVerticalCheckoutStep,
+  extractCarVerticalActionLabel,
   isCarVerticalCheckoutFlowPage,
   isCarVerticalClickablePurchaseLabel,
   isCarVerticalPurchasedScanSource,
@@ -182,7 +187,104 @@ describe("CarVertical click policy", () => {
     expect(carVerticalAutofillMayClick("Pirkt 1 atskaiti", true)).toBe(true);
     expect(CARVERTICAL_BUY_ONE_REPORT_RE.test("Pirkt 1 atskaiti")).toBe(true);
     expect(CARVERTICAL_COUNTRY_STAY_LV_RE.test("Palikt valstī: Latvija")).toBe(true);
+    expect(CARVERTICAL_COUNTRY_STAY_LV_RE.test("Stay in Latvia")).toBe(true);
     expect(CARVERTICAL_VIN_INPUT_SELECTORS[0]).toBe('input[name="identifier"]');
+  });
+
+  it("clicks through current CarVertical CTAs and skips VIN edit/header search", () => {
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Tā ir Tava izvēle. Priekšpārbaude gatava.",
+        href: `https://www.carvertical.com/lv/precheck/searching?identifier=${VIN}`,
+        labels: ["Pārbaudīt transportlīdzekli", "Pārbaudīt cenu", "Labot"],
+      }),
+    ).toMatchObject({ kind: "check_pricing", label: "Pārbaudīt cenu" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Check pricing",
+        href: "https://www.carvertical.com/en/precheck",
+        labels: ["Check vehicle", "Check pricing"],
+      }),
+    ).toMatchObject({ kind: "check_pricing", label: "Check pricing" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Izvēlies cenu piedāvājumu",
+        href: `https://www.carvertical.com/lv/precheck?identifier=${VIN}`,
+        labels: ["Pārbaudīt transportlīdzekli", "Pirkt atskaiti", "Pirkt 3 atskaites"],
+      }),
+    ).toMatchObject({ kind: "buy_one", label: "Pirkt atskaiti" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Select pricing package",
+        href: "https://www.carvertical.com/lv/precheck",
+        labels: ["Pērc par 24,99 €", "Pirkt 3 atskaites"],
+      }),
+    ).toMatchObject({ kind: "buy_one", label: "Pērc par 24,99 €" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "What’s your goal with this vehicle history check?",
+        labels: ["I’m selling a vehicle", "I’m buying a vehicle", "Continue"],
+      }),
+    ).toMatchObject({ kind: "purpose", label: "I’m buying a vehicle" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Vai šis VIN izskatās pareizs?",
+        labels: ["Sākt bez VIN", "Ziņot un turpināt", "Pārbaudi citu transportlīdzekli"],
+      }),
+    ).toMatchObject({ kind: "vin_confirm", label: "Ziņot un turpināt" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Does this VIN look right?",
+        labels: ["Start without a VIN", "Report & proceed"],
+      }),
+    ).toMatchObject({ kind: "vin_confirm", label: "Report & proceed" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Stay in Latvia",
+        labels: ["Stay in Latvia", "Change country"],
+      }),
+    ).toMatchObject({ kind: "country_stay", label: "Stay in Latvia" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "Tu jau pārbaudīji šo auto",
+        labels: ["Skatīt atskaiti", "Ģenerēt jaunu atskaiti"],
+      }),
+    ).toMatchObject({ kind: "start_report", label: "Ģenerēt jaunu atskaiti" });
+    expect(
+      classifyCarVerticalCheckoutStep({
+        purchaseConfirmed: true,
+        pageText: "precheck",
+        labels: ["Pārbaudīt transportlīdzekli", "Pārbaudīt cenu"],
+        ignoredLabels: ["Pārbaudīt cenu"],
+      }),
+    ).toMatchObject({ kind: "start_report", label: "Pārbaudīt transportlīdzekli" });
+    expect(carVerticalAutofillMayClick("Pārbaudīt cenu", true)).toBe(true);
+    expect(carVerticalAutofillMayClick("Check pricing", true)).toBe(true);
+    expect(carVerticalAutofillMayClick("Pirkt atskaiti tūlīt", true)).toBe(true);
+    expect(carVerticalAutofillMayClick("Ziņot un turpināt", true)).toBe(true);
+    expect(carVerticalAutofillMayClick("Pārbaudi citu transportlīdzekli", true)).toBe(false);
+    expect(carVerticalAutofillMayClick("Start without a VIN", true)).toBe(false);
+    expect(carVerticalAutofillMayClick("Pirkt atskaites", true)).toBe(false);
+    expect(isCarVerticalClickablePurchaseLabel("Pirkt 3 atskaites")).toBe(false);
+    expect(CARVERTICAL_CHECK_PRICING_RE.test("Pārbaudīt cenu")).toBe(true);
+    expect(CARVERTICAL_BUY_FORWARD_RE.test("Pērc par 19,99 €")).toBe(true);
+    expect(CARVERTICAL_VIN_CONFIRM_CLICK_RE.test("Report & proceed")).toBe(true);
+    expect(CARVERTICAL_START_AVOID_RE.test("Check other vehicle")).toBe(true);
+    expect(CARVERTICAL_BUY_ONE_REPORT_RE.test("Pirkt atskaites")).toBe(false);
+    expect(
+      extractCarVerticalActionLabel(
+        "1 atskaite\n24,99 €\nBojājumi, nobraukums, īpašnieki un vēl desmit punkti kas padara karti garu\nPirkt 1 atskaiti",
+      ),
+    ).toBe("Pirkt 1 atskaiti");
   });
 
   it("does not treat precheck, pricing, checkout or reports list as purchased report", () => {
@@ -274,8 +376,15 @@ describe("CarVertical click policy", () => {
 describe("userscript stays aligned with no auto-buy", () => {
   it("does not auto-click CarVertical preview and gates check behind purchase flag", () => {
     const src = readFileSync(path.join(ROOT, "public/userscripts/provin-vin-autofill.user.js"), "utf8");
-    expect(src).toMatch(/@version\s+1\.24\.2/);
+    expect(src).toMatch(/@version\s+1\.25\.0/);
     expect(src).toContain('input[name="identifier"]');
+    expect(src).toContain('params.get("identifier")');
+    expect(src).toContain("extractCarVerticalActionLabel");
+    expect(src).toContain("ignoredLabels");
+    expect(src).toContain(CARVERTICAL_CHECK_PRICING_RE.source);
+    expect(src).toContain(CARVERTICAL_BUY_FORWARD_RE.source);
+    expect(src).toContain(CARVERTICAL_VIN_CONFIRM_CLICK_RE.source);
+    expect(src).toContain(CARVERTICAL_START_AVOID_RE.source);
     expect(src).toContain("purposeOptionChosen");
     expect(src).toContain("carVerticalPurchasedReportReady");
     expect(src).toContain("isCarVerticalCheckoutFlowPage");

@@ -22,8 +22,8 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.24\.2/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.24.2"');
+    expect(src).toMatch(/@version\s+1\.25\.0/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.25.0"');
     expect(src).toContain("function stampUserscriptVersion()");
     expect(src).toContain('document.addEventListener("provin-userscript-ping"');
     expect(src).toContain('new CustomEvent("provin-userscript-pong", { detail: SCRIPT_VERSION })');
@@ -146,6 +146,7 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(vinScanUserscriptMeetsMin("1.24.0")).toBe(true);
     expect(vinScanUserscriptMeetsMin("1.24.1")).toBe(true);
     expect(vinScanUserscriptMeetsMin("1.24.2")).toBe(true);
+    expect(vinScanUserscriptMeetsMin("1.25.0")).toBe(true);
     expect(vinScanUserscriptMeetsMin("1.24")).toBe(true);
     expect(vinScanUserscriptMeetsMin("2.0.0")).toBe(true);
     expect(vinScanUserscriptUpdateNeeded("")).toBe(false);
@@ -153,6 +154,7 @@ describe("userscript sync with VIN scan catalog", () => {
     expect(vinScanUserscriptUpdateNeeded("1.24.0")).toBe(false);
     expect(vinScanUserscriptUpdateNeeded("1.24.1")).toBe(false);
     expect(vinScanUserscriptUpdateNeeded("1.24.2")).toBe(false);
+    expect(vinScanUserscriptUpdateNeeded("1.25.0")).toBe(false);
     const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
     const panel = readFileSync(path.join(ROOT, "components/admin/AdminVinScanPanel.tsx"), "utf8");
     const handoff = readFileSync(path.join(ROOT, "components/admin/AdminVinScanBrowserFetchHandoff.tsx"), "utf8");
