@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaAuctionSourcesPanel";
+import { IrissLogistikaCabinet } from "@/components/admin/iriss-logistika/IrissLogistikaCabinet";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
 import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
@@ -581,77 +582,12 @@ export function IrissLogistikaClient({
             </ul>
           </div>
           {active ? (
-            <aside className="iriss-log-no-print rounded-2xl bg-white p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <h2 className="text-[18px] font-semibold leading-tight">{active.title || `${active.make} ${active.model}`}</h2>
-                  <p className="flex flex-wrap items-center gap-1.5 font-mono text-[12px] text-[var(--ink2)]">
-                    <span>{active.vin}</span>
-                    {active.auction ? <IrissAuctionLogo name={active.auction} /> : null}
-                    {active.priceEur != null ? <span>· {formatLogisticsEur(active.priceEur)}</span> : null}
-                  </p>
-                </div>
-                {active.auctionUrl || active.listingUrl ? (
-                  <a
-                    href={active.auctionUrl || active.listingUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-8 items-center rounded-full border border-[#e5e7eb] px-3 text-[12px] font-semibold"
-                  >
-                    {active.source === "private" ? "Sludinājums" : "Atvērt izsolē"}
-                  </a>
-                ) : null}
-              </div>
-              <p className="mt-3 rounded-xl bg-[#f8fafc] px-3 py-2 text-[13px]">{active.nextAction || active.statusNote || LOGISTICS_ORDER_STATUS_LV[active.status]}</p>
-              <section className="mt-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">Pickup</p>
-                <label className="mt-1 block text-[12px] text-[var(--ink2)]">
-                  Punkts
-                  <select
-                    value={active.pickupPointId}
-                    onChange={(e) => void assignPoint(active.id, e.target.value)}
-                    className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2 text-[13px]"
-                  >
-                    <option value="">Nav izvēlēts</option>
-                    {groupedPoints.map((g) => (
-                      <optgroup key={g.auction} label={g.auction}>
-                        {g.rows.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </label>
-                <dl className="mt-2 grid grid-cols-[7rem_1fr] gap-y-1 text-[13px]">
-                  <dt className="text-[var(--ink2)]">Adrese</dt>
-                  <dd>{active.pickupAddress || formatLogisticsAddress(active.pickupSnapshot ?? {})}</dd>
-                  <dt className="text-[var(--ink2)]">Darba laiks</dt>
-                  <dd>{active.pickupSnapshot?.hoursText || "-"}</dd>
-                  <dt className="text-[var(--ink2)]">Ref</dt>
-                  <dd>{active.pickupRef || "-"}</dd>
-                  <dt className="text-[var(--ink2)]">Termiņš</dt>
-                  <dd>{active.pickupDate ? formatLogisticsDate(active.pickupDate) : "-"}</dd>
-                </dl>
-              </section>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {isLogisticsOrderArchived(active) ? (
-                  <button type="button" onClick={() => void patchOrder(active.id, "wake")} className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
-                    Pamodināt
-                  </button>
-                ) : (
-                  <>
-                    <button type="button" onClick={() => void patchOrder(active.id, "picked_up")} className="h-9 rounded-full border border-[#e5e7eb] px-3 text-[12.5px] font-semibold">
-                      Izņemts
-                    </button>
-                    <button type="button" onClick={() => void patchOrder(active.id, "delivered")} className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
-                      Piegādāts
-                    </button>
-                  </>
-                )}
-              </div>
-            </aside>
+            <IrissLogistikaCabinet
+              order={active}
+              groupedPoints={groupedPoints}
+              onAssignPoint={(orderId, pickupPointId) => void assignPoint(orderId, pickupPointId)}
+              onPatchOrder={(id, action) => void patchOrder(id, action)}
+            />
           ) : null}
         </div>
       )}

@@ -37,8 +37,8 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(client).toContain("isLogisticsOrderActive");
     expect(client).toContain('className={`flex items-start gap-2 border-b border-[#f3f4f6] px-3 py-2.5 last:border-0 ${archived ? "opacity-55" : ""}');
     expect(client).toContain('patchOrder(o.id, "wake")');
-    expect(client).toContain('patchOrder(active.id, "picked_up")');
-    expect(client).toContain('patchOrder(active.id, "delivered")');
+    expect(client).toContain("IrissLogistikaCabinet");
+    expect(client).toContain('onPatchOrder={(id, action) => void patchOrder(id, action)}');
     expect(client).toContain("Nav aktīvu auto. Piegādātie ir arhīvā.");
     expect(client).toContain("Iepriekš izmantotie punkti");
     expect(client).toContain("Atvērt izsolē");
@@ -140,5 +140,28 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(sourcesLib).not.toMatch(/from ["']@\/lib\/marketplace/);
     expect(sourcesLib).toContain('name: "Copart.de"');
     expect(sourcesLib).toContain("enabled: false");
+  });
+
+  it("keeps the car cabinet A/B/C and does not hide invoices from Loģistika", () => {
+    const cabinet = readFileSync("components/admin/iriss-logistika/IrissLogistikaCabinet.tsx", "utf8");
+    const domain = readFileSync("lib/iriss-logistics-cabinet.ts", "utf8");
+    expect(cabinet).toContain("CABINET_SECTION_LABEL");
+    expect(cabinet).toContain("CABINET_PICKUP_STAGE_LV");
+    expect(cabinet).toContain("Atzīmēt kā Atvests");
+    expect(domain).toContain('A: "Iegādes dokumenti"');
+    expect(domain).toContain('B: "Pick up līdz atvešanai"');
+    expect(domain).toContain('C: "Pēc atvešanas"');
+    expect(domain).toContain('waiting: "Gaida"');
+    expect(domain).toContain('planned: "Ieplānots"');
+    expect(domain).toContain('in_transit: "Ceļā"');
+    expect(domain).toContain('arrived: "Atvests"');
+    expect(cabinet).toContain("CABINET_LOCAL_PREFS_KEY");
+    expect(cabinet).toContain("/api/admin/iriss-logistics/cabinet-prefs");
+    expect(cabinet).not.toMatch(/sticky top-/);
+    expect(cabinet).not.toMatch(/\u2014/);
+    expect(domain).toContain("cabinet.section.");
+    expect(domain).toContain("preAtvests");
+    expect(domain).toContain("postAtvests");
+    expect(domain).toContain("Car Invoice");
   });
 });
