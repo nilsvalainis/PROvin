@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import {
   CABINET_DOC_TYPE_LABEL,
@@ -257,9 +258,9 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
 
       {access.admin ? (
         <p className="mt-2 text-[12px]">
-          <a href="/admin/iriss/iestatijumi/lietotaji" className="font-semibold text-[var(--acc)]">
+          <Link href="/admin/iriss/iestatijumi/lietotaji" className="font-semibold text-[var(--acc)]">
             Grāmatveža piekļuve
-          </a>
+          </Link>
         </p>
       ) : null}
 
