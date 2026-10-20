@@ -11,7 +11,7 @@ describe("iriss settings layout", () => {
 
     expect(page).toContain("AdminDashboardHeaderWithMenu");
     expect(page).toContain("iriss-iestatijumi-view");
-    expect(page).toContain("bg-[var(--bg-base)]");
+    expect(page).not.toContain("bg-[var(--bg-base)]");
     expect(page).toContain("IrissMarketplaceLimitsCard");
     expect(page).toContain("IrissLogistikaMapsUsagePanel");
     expect(page).toContain("IrissLogistikaAuctionSourcesPanel");

@@ -28,13 +28,13 @@ import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { nextStableRowKeys } from "@/lib/iriss-stable-row-keys";
 
 const actionBtn =
-  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-semibold text-[#111827] shadow-[0_1px_2px_#0000000d] transition hover:bg-[#f9fafb] disabled:opacity-40";
+  "inline-flex h-[34px] min-h-[34px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] border border-[#e5e7eb] bg-white px-4 text-[13px] font-semibold text-[#111827] shadow-[0_1px_2px_#0000000d] transition hover:bg-[#f9fafb] disabled:opacity-40";
 
 const inp =
-  "min-h-[40px] w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[13px] text-[var(--color-apple-text)] shadow-sm outline-none focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
+  "h-11 min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-[13px] text-[var(--color-apple-text)] shadow-sm outline-none focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
 
 const inpInvalid =
-  "min-h-[40px] w-full rounded-lg border border-red-400 bg-white px-2 py-1.5 text-[13px] text-[var(--color-apple-text)] shadow-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-400/30 sm:text-[15px]";
+  "h-11 min-h-11 w-full rounded-lg border border-red-400 bg-white px-3.5 py-1.5 text-[13px] text-[var(--color-apple-text)] shadow-sm outline-none focus:border-red-500 focus:ring-2 focus:ring-red-400/30 sm:text-[15px]";
 
 const lbl = "mb-0.5 block text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]";
 
@@ -65,7 +65,7 @@ export function IrissListingPlatformChipsRow({ rec }: { rec: IrissPasutijumsReco
         type="button"
         onClick={openAll}
         title="Atvērt visas saites"
-        aria-label="Atvērt visas saites"
+        aria-label="Atvērt visas"
         className={LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS}
         style={IR_LISTING_ALL_CHIP_STYLE}
       >
@@ -128,7 +128,7 @@ function SourceLinkList({
               title="Izveidot meklēšanas filtru no pasūtījuma specifikācijas"
             >
               <Filter className="h-4 w-4" aria-hidden />
-              Izveidot filtru
+              Izveidot
             </button>
           ) : null}
           <button
@@ -138,7 +138,7 @@ function SourceLinkList({
             className={actionBtn}
             title="Pievienot vēl vienu saites lauku"
           >
-            + Pievienot saiti
+            + Saite
           </button>
         </div>
       </div>
@@ -240,7 +240,7 @@ export function IrissListingPlatformsFields({ rec, onPatch, onReadLink, readingU
           className={actionBtn}
           title="Atjaunot eCarsTrade saiti tikai no Auto1 / Openlane / Autobid filtriem"
         >
-          Atjaunot eCarsTrade
+          Atjaunot ET
         </button>
       </div>
       <div className="grid grid-cols-1 gap-3.5">

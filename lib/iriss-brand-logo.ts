@@ -97,13 +97,54 @@ export function irissBrandLogoUsesWideLayout(brandModel: string): boolean {
   return slug ? dealerBrandHasWideMark(slug) : false;
 }
 
-export function irissBrandLogoSrc(brandModel: string): string | null {
-  const slug = irissSlugForBrandModel(brandModel);
+export function irissBrandLogoSrcForSlug(slug: string): string | null {
   if (!slug) return null;
   return dealerBrandLogoPublicPath(slug, {
     cacheBust: false,
     variant: dealerBrandHasWideMark(slug) ? "wide" : "primary",
   });
+}
+
+export function irissBrandLogoSrc(brandModel: string): string | null {
+  const slug = irissSlugForBrandModel(brandModel);
+  return slug ? irissBrandLogoSrcForSlug(slug) : null;
+}
+
+const IRISS_MULTI_WORD_BRANDS = [
+  "aston martin",
+  "alfa romeo",
+  "land rover",
+  "mercedes-benz",
+  "rolls-royce",
+  "ds automobiles",
+] as const;
+
+/** Up to two OEM slugs from a radar title (Lexus / Toyota, Mercedes-Benz, …). */
+export function irissBrandMarksForTitle(brandModel: string): string[] {
+  const normalized = brandModel
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_./+,&|]+/g, " ")
+    .replace(/\s+/g, " ");
+  if (!normalized) return [];
+  const found: string[] = [];
+  const seen = new Set<string>();
+  const push = (slug: string | null | undefined) => {
+    if (!slug || seen.has(slug)) return;
+    seen.add(slug);
+    found.push(slug);
+  };
+  for (const key of IRISS_MULTI_WORD_BRANDS) {
+    if (normalized === key || normalized.includes(` ${key} `) || normalized.startsWith(`${key} `) || normalized.endsWith(` ${key}`)) {
+      push(IRISS_BRAND_SLUG[key] ?? IRISS_BRAND_SLUG[key.replace(/ /g, "-")]);
+    }
+  }
+  for (const token of normalized.split(" ")) {
+    push(IRISS_BRAND_SLUG[token] ?? null);
+  }
+  return found.slice(0, 2);
 }
 
 export function irissBrandFallbackLabel(brandModel: string): string {

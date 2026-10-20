@@ -108,7 +108,8 @@ describe("IRISS chrome wiring", () => {
 
   it("moves ScanList desktop hex and 1d4ed8 hacks onto tokens", () => {
     expect(scan).not.toMatch(/#F8F8F9/);
-    expect(scan).toMatch(/--bg-base/);
+    expect(scan).not.toMatch(/bg-\[var\(--bg-base\)\]/);
+    expect(css).toMatch(/padding-inline:\s*14px/);
     expect(irissAdmin).not.toMatch(/class\*="1d4ed8"/);
     expect(irissAdmin).not.toMatch(/#1d4ed8/);
     const room = readFileSync(new URL("../components/admin/IrissOrderRoom.tsx", import.meta.url), "utf8");

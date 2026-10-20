@@ -52,7 +52,7 @@ export function IrissListingsLoginButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-11 shrink-0 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm hover:bg-[var(--color-provin-accent)]/8 sm:h-6 sm:px-2 sm:py-0.5 sm:text-[10px]"
+        className="inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm hover:bg-[var(--color-provin-accent)]/8 sm:h-[34px] sm:px-4 sm:py-0.5 sm:text-[13px]"
       >
         Ielogoties
       </button>

@@ -1,3 +1,4 @@
+import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { parseListingSearchUrl } from "@/lib/iriss-listings-ecarstrade-search";
 import { IRISS_SCAN_SOURCES, type IrissScanFilterPlatform, type IrissScanLinkKey } from "@/lib/iriss-scan-sources";
@@ -8,6 +9,7 @@ export type IrissScanFilterTableAction = "open" | "create";
 export type IrissScanFilterTableRow = {
   key: IrissScanLinkKey;
   platform: IrissScanFilterPlatform;
+  logoKey: IrissAuctionLogoKey;
   label: string;
   description: string;
   status: string;
@@ -97,6 +99,7 @@ export function irissScanFilterTableRows(
     return {
       key: s.key,
       platform: s.filterPlatform,
+      logoKey: s.logoKey,
       label: s.label,
       description,
       status: statusLabel(links.length, filters.length),

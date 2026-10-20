@@ -925,7 +925,7 @@ export function IrissSludinajumiListClient({
                 type="button"
                 title={nextReadLabel ? `Nākamā nolasīšana ${nextReadLabel}` : "Nākamā nolasīšana"}
                 onClick={() => { setSourceStatusOpen(true); setMenuOpen(false); setFilterOpen(false); }}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] text-[var(--slud-ink2)] hover:bg-[var(--slud-fill)]"
+                className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] text-[var(--slud-ink2)] hover:bg-[var(--slud-fill)]"
               >
                 {problemSources.length > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-[var(--slud-warn)]" aria-hidden /> : null}
                 <span>Atjaunots {refreshedAt || (latest?.summary.finishedAt ? "\u00a0" : "nav")}</span>

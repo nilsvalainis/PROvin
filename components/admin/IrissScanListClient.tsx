@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
+import { IrissRadarBrandMark } from "@/components/admin/IrissRadarBrandMark";
 import { IrissScanEditor } from "@/components/admin/IrissScanEditor";
 import { IrissScanFinds } from "@/components/admin/IrissScanFinds";
 import { AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
@@ -20,6 +22,7 @@ import {
   formatIrissScanTitle,
   irissScanNewHitsFor,
 } from "@/lib/iriss-scan-list-view";
+import { irissScanSourceCounts } from "@/lib/iriss-scan-sources";
 import type { IrissScanListOrder, IrissScanListRow, IrissScanRecord } from "@/lib/iriss-scan-types";
 
 function useDesktopSplit(): boolean {
@@ -185,7 +188,8 @@ export function IrissScanListClient({
         <ul className="space-y-2">
           {visibleRows.map((row) => {
             const hits = irissScanNewHitsFor(row.id, hitsByScan);
-            const sources = formatIrissScanSourcesText(row);
+            const sources = irissScanSourceCounts(row);
+            const sourceText = formatIrissScanSourcesText(row);
             const last = formatIrissScanLastRead(row.updatedAt);
             const active = editorRecord?.id === row.id;
             return (
@@ -197,20 +201,29 @@ export function IrissScanListClient({
                     active ? "ring-1 ring-[var(--ink)]/10" : ""
                   }`}
                 >
+                  <IrissRadarBrandMark brandModel={row.brandModel} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                      {row.pinnedAt ? <Pin className="h-3 w-3 shrink-0 fill-current text-[var(--ink3)]" aria-label="Piesprausts" /> : null}
-                      <p className="truncate text-[15px] font-semibold text-[var(--ink)]">{formatIrissScanTitle(row.brandModel)}</p>
+                    <div className="flex min-w-0 items-start gap-1.5">
+                      {row.pinnedAt ? <Pin className="mt-1 h-3 w-3 shrink-0 fill-current text-[var(--ink3)]" aria-label="Piesprausts" /> : null}
+                      <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[var(--ink)]">{formatIrissScanTitle(row.brandModel)}</p>
                     </div>
-                    <p className="mt-0.5 truncate text-[12px] text-[var(--ink2)]">{sources || "Nav saišu"}</p>
+                    <div className="mt-1 flex min-h-[16px] items-center gap-2 overflow-hidden" title={sourceText || "Nav saišu"}>
+                      {sources.length === 0 ? (
+                        <span className="text-[12px] text-[var(--ink2)]">Nav saišu</span>
+                      ) : (
+                        sources.map((s) => (
+                          <IrissAuctionLogo key={s.key} platform={s.logoKey} fallback={s.label} size="sm" />
+                        ))
+                      )}
+                    </div>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
                     {hits > 0 ? (
-                      <span className="inline-flex h-6 items-center rounded-full bg-[var(--chip-active-bg)] px-2 text-[11px] font-semibold text-[var(--chip-active-fg)]">
+                      <span className="iriss-ok-chip inline-flex items-center rounded-full bg-[var(--chip-active-bg)] px-2.5 text-[var(--chip-active-fg)]">
                         {formatIrissScanNewHitsLabel(hits)}
                       </span>
                     ) : null}
-                    {last ? <span className="text-[11px] text-[var(--ink3)]">{last}</span> : null}
+                    {last ? <span className="whitespace-nowrap text-[11px] text-[var(--ink3)]">{last}</span> : null}
                   </div>
                   <ChevronRight className="h-4 w-4 shrink-0 text-[var(--ink3)]" aria-hidden />
                 </Link>
@@ -223,7 +236,7 @@ export function IrissScanListClient({
   );
 
   return (
-    <div className="iriss-radars-view bg-[var(--bg-base)]">
+    <div className="iriss-radars-view">
       {showList ? (
         <div className="md:hidden">
           <AdminMobileTopBar
@@ -235,7 +248,7 @@ export function IrissScanListClient({
                     {ectBusy ? "Atjauno eCarsTrade saites..." : "Atjaunot eCarsTrade saites"}
                   </IrissOverflowItem>
                 </IrissOverflowMenu>
-                <AdminMobileRoundBtn name="pievienot" primary label="Jauns ieraksts" href="/admin/iriss/scan/new" />
+                <AdminMobileRoundBtn name="pievienot" primary label="Jauns radars" href="/admin/iriss/scan/new" />
               </>
             }
           >
@@ -246,7 +259,7 @@ export function IrissScanListClient({
 
       {showList ? (
         <header className="iriss-scan-toolbar mb-3 hidden md:block">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <AdminCollapsedMenuButton className="mt-0.5" />
             <h1 className="shrink-0 text-[22px] font-bold tracking-tight text-[var(--ink)]">Radars</h1>
             <label className="relative min-w-0 flex-1">
@@ -257,24 +270,24 @@ export function IrissScanListClient({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Meklēt marku..."
                 aria-label="Meklēt marku"
-                className="h-10 w-full rounded-full border-0 bg-[var(--s1)] pl-9 pr-3 text-[14px] text-[var(--ink)] shadow-[var(--sh)] outline-none placeholder:text-[var(--ink3)]"
+                className="h-11 w-full rounded-full border-0 bg-[var(--s1)] pl-9 pr-3.5 text-[14px] text-[var(--ink)] shadow-[var(--sh)] outline-none placeholder:text-[var(--ink3)]"
               />
             </label>
             <button
               type="button"
               onClick={() => void appendEcarstradeLinks()}
               disabled={ectBusy}
-              className="inline-flex h-10 items-center gap-1.5 rounded-full bg-[var(--s1)] px-3 text-[13px] font-semibold text-[var(--ink)] shadow-[var(--sh)] disabled:opacity-40"
+              className="inline-flex h-[34px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--s1)] px-4 text-[13px] font-semibold text-[var(--ink)] shadow-[var(--sh)] disabled:opacity-40"
               title="Atjaunot eCarsTrade saites no Auto1 / Openlane / Autobid / Mobile filtriem"
             >
-              <RefreshCw className={`h-4 w-4 ${ectBusy ? "animate-spin" : ""}`} aria-hidden />
-              {ectBusy ? "ET..." : "Atjaunot eCarsTrade"}
+              <RefreshCw className={`h-3.5 w-3.5 ${ectBusy ? "animate-spin" : ""}`} aria-hidden />
+              {ectBusy ? "ET..." : "Atjaunot ET"}
             </button>
             <Link
               href="/admin/iriss/scan/new"
-              className="inline-flex h-10 items-center rounded-full bg-[var(--chip-active-bg)] px-3 text-[13px] font-semibold text-[var(--chip-active-fg)]"
+              className="inline-flex h-[34px] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[var(--chip-active-bg)] px-4 text-[13px] font-semibold text-[var(--chip-active-fg)]"
             >
-              Jauns ieraksts
+              Jauns radars
             </Link>
           </div>
           <p className="mt-1 text-[12px] text-[var(--ink3)]">

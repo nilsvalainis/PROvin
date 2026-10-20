@@ -56,7 +56,7 @@ export function IrissStaffAppShell({
   }
 
   return (
-    <div className="iriss-admin-scope flex h-dvh flex-col bg-[#F4F6F9] text-[#111827] md:flex-row">
+    <div className="iriss-admin-scope flex h-dvh flex-col text-[#111827] md:flex-row">
       <aside className="relative hidden w-[220px] shrink-0 flex-col border-r border-[#ececf2] bg-[#F4F6F9] px-3 py-4 md:flex">
         <div className="mb-5 flex items-center gap-2 px-2">
           <span className="text-[15px] font-semibold tracking-tight">IRISS</span>
@@ -121,7 +121,7 @@ export function IrissStaffAppShell({
                   }`}
                 >
                   <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                  <span className="truncate">{IRISS_SECTION_LABELS[id]}</span>
+                  <span className="truncate whitespace-nowrap">{IRISS_SECTION_LABELS[id]}</span>
                 </Link>
               );
             })}

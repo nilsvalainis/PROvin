@@ -67,11 +67,11 @@ describe("listing card actions", () => {
   });
 });
 
-describe("Radars Izveidot filtru", () => {
+describe("Radars Izveidot", () => {
   it("adds the filter button next to each source group", () => {
-    expect(editor).toContain("Izveidot filtru");
+    expect(editor).toContain("Izveidot");
     expect(editor).toContain("applyGeneratedScanSourceFilter");
     expect(editor).toContain("irissScanFilterTableRows");
-    expect(editor.match(/Izveidot filtru/g)?.length).toBeGreaterThanOrEqual(1);
+    expect(editor.match(/>[\s]*Izveidot[\s]*</g)?.length).toBeGreaterThanOrEqual(1);
   });
 });

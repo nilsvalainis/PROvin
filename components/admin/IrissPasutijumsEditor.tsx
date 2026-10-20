@@ -1801,7 +1801,7 @@ export function IrissPasutijumsEditor({
             type="button"
             disabled={busy}
             onClick={() => void restoreDeleted()}
-            className="mt-2 inline-flex h-8 items-center rounded-lg border border-amber-400/80 bg-white px-2 text-[11px] font-semibold text-amber-950 disabled:opacity-50"
+            className="mt-2 inline-flex h-8 items-center whitespace-nowrap rounded-lg border border-amber-400/80 bg-white px-3 text-[12px] font-semibold text-amber-950 disabled:opacity-50"
           >
             Atjaunot
           </button>

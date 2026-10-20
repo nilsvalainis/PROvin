@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
+import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissMarketplaceLoadPanel } from "@/components/admin/IrissMarketplaceLoadPanel";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { IrissScanFinds } from "@/components/admin/IrissScanFinds";
@@ -66,10 +67,18 @@ export function IrissScanEditor({
   const filterRows = useMemo(() => irissScanFilterTableRows(rec), [rec]);
   const fieldNotice = irissScanFieldNotice(saveMsg);
   const [liveFinds, setLiveFinds] = useState(finds);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setLiveFinds(finds);
   }, [finds]);
+
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    el.style.height = `${Math.min(el.scrollHeight, 56)}px`;
+  }, [rec.brandModel]);
 
   useEffect(() => {
     setRec(initialRecord);
@@ -217,15 +226,19 @@ export function IrissScanEditor({
 
       <header className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <input
-            className="w-full bg-transparent text-[1.45rem] font-semibold leading-tight tracking-tight text-[var(--ink)] outline-none placeholder:text-[var(--ink3)]"
+          <textarea
+            ref={titleRef}
+            rows={1}
+            data-bare
+            className="w-full resize-none overflow-hidden bg-transparent text-[20px] font-semibold leading-[1.25] tracking-tight text-[var(--ink)] outline-none placeholder:text-[var(--ink3)] md:text-[22px]"
             placeholder="Marka modelis"
             aria-label="Marka modelis"
             value={rec.brandModel}
             onChange={(e) => patchRecord({ brandModel: e.target.value })}
           />
           <input
-            className="mt-1 w-full bg-transparent text-[14px] tracking-wide text-[var(--ink)] outline-none placeholder:text-[var(--ink3)]"
+            data-bare
+            className="mt-1 w-full bg-transparent font-mono text-[14px] tracking-wide text-[var(--ink)] outline-none placeholder:text-[var(--ink3)]"
             placeholder="VIN"
             aria-label="VIN"
             autoCapitalize="characters"
@@ -241,7 +254,7 @@ export function IrissScanEditor({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="inline-flex h-9 items-center rounded-full bg-[var(--s1)] px-3 text-[12px] font-semibold text-[var(--ink2)] shadow-[var(--sh)]" aria-live="polite">
+          <span className="iriss-ok-chip inline-flex items-center rounded-full bg-[var(--s1)] px-3.5 text-[12px] text-[var(--ink2)] shadow-[var(--sh)]" aria-live="polite">
             {busy ? "Saglabā..." : "Saglabāts"}
           </span>
           <IrissOverflowMenu label="Darbības">
@@ -252,7 +265,7 @@ export function IrissScanEditor({
               <IrissOverflowItem
                 onClick={() => chips.forEach((c) => window.open(c.href, "_blank", "noopener,noreferrer"))}
               >
-                Atvērt visas saites
+                Atvērt visas
               </IrissOverflowItem>
             ) : null}
             <IrissOverflowItem tone="danger" onClick={() => setDeleteOpen(true)}>
@@ -280,15 +293,15 @@ export function IrissScanEditor({
             <button
               type="button"
               onClick={() => setLinksOpen(true)}
-              className="inline-flex h-9 items-center rounded-full bg-[var(--s2)] px-3 text-[13px] font-semibold text-[var(--ink)]"
+              className="inline-flex h-[34px] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[var(--s2)] px-4 text-[13px] font-semibold text-[var(--ink)]"
             >
-              Rediģēt saites
+              Saites
             </button>
             <button
               type="button"
               disabled={chips.length === 0}
               onClick={() => chips.forEach((c) => window.open(c.href, "_blank", "noopener,noreferrer"))}
-              className="inline-flex h-9 items-center rounded-full bg-[var(--s2)] px-3 text-[13px] font-semibold text-[var(--ink)] disabled:opacity-40"
+              className="inline-flex h-[34px] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[var(--s2)] px-4 text-[13px] font-semibold text-[var(--ink)] disabled:opacity-40"
             >
               Atvērt visas
             </button>
@@ -296,19 +309,29 @@ export function IrissScanEditor({
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[28rem] text-left text-[13px]">
+            <colgroup>
+              <col className="w-[120px]" />
+              <col />
+              <col className="w-[72px]" />
+              <col className="w-24" />
+            </colgroup>
             <tbody>
               {filterRows.map((row) => (
-                <tr key={row.key} className="border-t border-[var(--hair)] first:border-t-0">
-                  <th className="py-2.5 pr-3 font-semibold text-[var(--ink)]">{row.label}</th>
-                  <td className="py-2.5 pr-3 text-[var(--ink2)]">{row.description}</td>
-                  <td className="py-2.5 pr-3 text-[var(--ink3)]">{row.status}</td>
-                  <td className="py-2.5 text-right">
+                <tr key={row.key} className="h-[52px] border-t border-[var(--hair)] first:border-t-0">
+                  <th className="w-[120px] py-2.5 pr-3 font-semibold text-[var(--ink)]">
+                    <IrissAuctionLogo platform={row.logoKey} fallback={row.label} size="md" />
+                  </th>
+                  <td className="min-w-0 py-2.5 pr-3 text-[var(--ink2)]">{row.description}</td>
+                  <td className="w-[72px] py-2.5 pr-3 text-[var(--ink3)]">
+                    <span className="iriss-ok-chip bg-[var(--s2)] text-[var(--ink2)]">{row.status}</span>
+                  </td>
+                  <td className="w-24 py-2.5 text-right">
                     {row.action === "open" && row.href ? (
                       <a
                         href={row.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-8 items-center rounded-full bg-[var(--s2)] px-3 text-[12px] font-semibold text-[var(--ink)]"
+                        className="inline-flex h-[34px] w-24 items-center justify-center whitespace-nowrap rounded-full bg-[var(--s2)] text-[12px] font-semibold text-[var(--ink)]"
                       >
                         Atvērt
                       </a>
@@ -327,9 +350,9 @@ export function IrissScanEditor({
                           }
                           patchRecord(next.record);
                         }}
-                        className="inline-flex h-8 items-center rounded-full bg-[var(--chip-active-bg)] px-3 text-[12px] font-semibold text-[var(--chip-active-fg)]"
+                        className="inline-flex h-[34px] w-24 items-center justify-center whitespace-nowrap rounded-full bg-[var(--chip-active-bg)] text-[12px] font-semibold text-[var(--chip-active-fg)]"
                       >
-                        Izveidot filtru
+                        Izveidot
                       </button>
                     )}
                   </td>
@@ -370,6 +393,7 @@ export function IrissScanEditor({
             <label key={key} className="flex min-h-[44px] items-center gap-3">
               <span className="w-[5.5rem] shrink-0 text-[12px] font-medium text-[var(--ink3)]">{label}</span>
               <input
+                data-bare
                 className="min-w-0 flex-1 bg-transparent py-2.5 text-[15px] text-[var(--ink)] outline-none placeholder:text-[var(--ink3)]"
                 value={rec[key]}
                 placeholder={placeholder}
@@ -472,8 +496,9 @@ export function IrissScanEditor({
               })();
             }}
             className="text-[13px] font-semibold text-[var(--acc)] disabled:opacity-40"
+            title="Atjaunot eCarsTrade saites no Auto1 / Openlane / Autobid / Mobile filtriem"
           >
-            Atjaunot eCarsTrade
+            Atjaunot ET
           </button>
           {persistId ? (
             <IrissMarketplaceLoadPanel scanId={persistId} enabledPlatforms={irissScanApifyPlatforms(rec)} />

@@ -38,6 +38,7 @@ function SourceGroup({
             <div key={rowKeysRef.current[idx] ?? `row-${idx}`} className="border-b border-[var(--hair)] last:border-b-0">
               <div className="flex min-h-[44px] items-center gap-1 pl-3 pr-1">
                 <input
+                  data-bare
                   className={`min-w-0 flex-1 bg-transparent py-2.5 text-[15px] outline-none placeholder:text-[var(--ink3)] ${
                     err ? "text-[var(--bad)]" : "text-[var(--ink)]"
                   }`}

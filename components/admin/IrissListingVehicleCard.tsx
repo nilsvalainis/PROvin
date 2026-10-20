@@ -236,7 +236,7 @@ export function IrissListingVehicleCard({
                 <span>VIN {listingVinShort(vinUi.vin)}</span>
                 <button
                   type="button"
-                  className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-600 hover:bg-slate-50"
+                  className="inline-flex h-7 items-center whitespace-nowrap rounded border border-slate-200 bg-white px-2.5 text-[11.5px] font-semibold text-slate-600 hover:bg-slate-50"
                   onClick={(e) => {
                     e.stopPropagation();
                     copyVin();
@@ -246,7 +246,7 @@ export function IrissListingVehicleCard({
                 </button>
                 <a
                   href={vinUi.scanHref}
-                  className="rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-50"
+                  className="inline-flex h-7 items-center whitespace-nowrap rounded border border-slate-200 bg-white px-2.5 text-[11.5px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-50"
                   onClick={(e) => e.stopPropagation()}
                 >
                   VIN SCAN

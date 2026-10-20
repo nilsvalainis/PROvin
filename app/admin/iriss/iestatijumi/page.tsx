@@ -21,7 +21,7 @@ export default async function IrissSettingsPage() {
   const sources = storage.enabled ? await listLogisticsAuctionSources() : [];
   const limits = await loadIrissSettingsLimits();
   return (
-    <div className="iriss-iestatijumi-view relative min-h-full w-full max-w-none bg-[var(--bg-base)] px-3 pb-28 pt-3 sm:px-4 sm:pb-10">
+    <div className="iriss-iestatijumi-view relative min-h-full w-full max-w-none px-3 pb-28 pt-3 sm:px-4 sm:pb-10">
       <AdminDashboardHeaderWithMenu mobileTitle="Iestatījumi">
         <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--ink)] sm:text-[1.5rem]">
           Iestatījumi

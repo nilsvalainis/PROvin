@@ -41,7 +41,7 @@ export function IrissScanFinds({
               type="button"
               aria-pressed={bucket === b.id}
               onClick={() => setBucket(b.id)}
-              className="iriss-status-chip inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold"
+              className="iriss-status-chip inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12px] font-semibold"
             >
               {b.label}
               <span className="iriss-status-chip-count rounded-full px-1.5 text-[11px]">{counts[b.id]}</span>
