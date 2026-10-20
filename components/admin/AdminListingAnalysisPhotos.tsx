@@ -27,6 +27,7 @@ import {
   emptyListingAnalysisPhotoGroup,
   LISTING_ANALYSIS_MAX_PHOTOS,
 } from "@/lib/listing-analysis-photo-types";
+import { defaultArchivePhotoGroupTitle } from "@/lib/photo-group-default-title";
 import { compressImageFileToJpegForConsultation } from "@/lib/consultation-photo-client-compress";
 import { AdminPhotoLightbox, type AdminLightboxPhoto } from "@/components/admin/AdminPhotoLightbox";
 import { AdminPhotoWatermarkToggle } from "@/components/admin/AdminPhotoWatermarkToggle";
@@ -48,8 +49,8 @@ type Props = {
   maxPhotos?: number;
   emptyGroup?: () => PhotoGroupLike;
   sectionTitle?: string;
-  /** Bez grupu virsrakstiem — viena foto josla (negadījumu kopsavilkums). */
-  simple?: boolean;
+  /** Jaunas grupas virsraksts (noklusējums: Arhīva fotogrāfijas + datums). */
+  defaultGroupTitle?: () => string;
   /** PDF ķeksis pie virsraksta (kopsavilkuma negadījuma foto). */
   headerActions?: ReactNode;
   /** Slēpt CheckCar.vin ūdenszīmi pirms augšupielādes (noklusējums: izslēgts). */
@@ -121,17 +122,18 @@ function collectImageFilesFromDataTransfer(dt: DataTransfer): File[] {
   return out;
 }
 
-function newDefaultGroup(index: number, emptyGroup: () => PhotoGroupLike): PhotoGroupLike {
-  return { ...emptyGroup(), title: `Grupa ${index}` };
+function newDefaultGroup(emptyGroup: () => PhotoGroupLike, title: string): PhotoGroupLike {
+  return { ...emptyGroup(), title: title.trim().slice(0, 120) };
 }
 
 function ensureGroupInList(
   groups: PhotoGroupLike[],
   targetGroupId: string,
   emptyGroup: () => PhotoGroupLike,
+  title: string,
 ): PhotoGroupLike[] {
   if (groups.some((g) => g.id === targetGroupId)) return groups;
-  return [...groups, { ...newDefaultGroup(groups.length + 1, emptyGroup), id: targetGroupId }];
+  return [...groups, { ...newDefaultGroup(emptyGroup, title), id: targetGroupId }];
 }
 
 function findGroupIdOfPhoto(groups: PhotoGroupLike[], photoId: string): string | null {
@@ -283,7 +285,7 @@ export function AdminListingAnalysisPhotos({
   maxPhotos = LISTING_ANALYSIS_MAX_PHOTOS,
   emptyGroup = emptyListingAnalysisPhotoGroup,
   sectionTitle = "Fotogrāfijas (PDF režģis)",
-  simple = false,
+  defaultGroupTitle = defaultArchivePhotoGroupTitle,
   headerActions,
   hidePhotoWatermarks,
   onHidePhotoWatermarksChange,
@@ -369,8 +371,7 @@ export function AdminListingAnalysisPhotos({
   };
 
   const addGroup = () => {
-    const n = photoGroups.length + 1;
-    void commitGroups([...photoGroups, newDefaultGroup(n, emptyGroup)], "Pievienota jauna grupa");
+    void commitGroups([...photoGroups, newDefaultGroup(emptyGroup, defaultGroupTitle())], "Pievienota jauna grupa");
   };
 
   const removeGroup = async (groupId: string) => {
@@ -417,7 +418,7 @@ export function AdminListingAnalysisPhotos({
     const imageFiles = collectImageFiles(list);
     if (!imageFiles.length || disabled) return;
 
-    const nextGroupList = ensureGroupInList(photoGroups, targetGroupId, emptyGroup);
+    const nextGroupList = ensureGroupInList(photoGroups, targetGroupId, emptyGroup, defaultGroupTitle());
     const currentTotal = totalPhotos(nextGroupList);
 
     setBusy(true);
@@ -483,7 +484,7 @@ export function AdminListingAnalysisPhotos({
 
       if (uploaded.length > 0) {
         const nextGroups = appendUploadedPhotosToGroup(
-          ensureGroupInList(photoGroupsRef.current, targetGroupId, emptyGroup),
+          ensureGroupInList(photoGroupsRef.current, targetGroupId, emptyGroup, defaultGroupTitle()),
           targetGroupId,
           uploaded,
         );
@@ -787,17 +788,15 @@ export function AdminListingAnalysisPhotos({
               onChange={setHideWatermarks}
               disabled={busy}
             />
-            {simple ? null : (
-              <button
-                type="button"
-                onClick={addGroup}
-                disabled={busy}
-                className="inline-flex items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] hover:bg-black/[0.03] disabled:opacity-45"
-              >
-                <FolderPlus className="h-3.5 w-3.5" aria-hidden />
-                Pievienot grupu
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={addGroup}
+              disabled={busy}
+              className="inline-flex items-center gap-1 rounded-md border border-[var(--admin-field-border)] bg-[var(--admin-field-bg)] px-2 py-1 text-[10px] font-medium text-[var(--admin-field-text)] hover:bg-black/[0.03] disabled:opacity-45"
+            >
+              <FolderPlus className="h-3.5 w-3.5" aria-hidden />
+              Pievienot grupu
+            </button>
             {photoCount > 0 ? (
               <button
                 type="button"
@@ -844,9 +843,7 @@ export function AdminListingAnalysisPhotos({
       {photoGroups.length === 0 && !disabled
         ? renderDropZone(
             defaultGroupId,
-            simple
-              ? "Velc negadījuma fotogrāfijas šeit vai izmanto „Atvērt no datora…”."
-              : "Velc attēlus šeit vai izmanto „Atvērt no datora…” - tiks izveidota pirmā grupa. Pēc tam vari pievienot virsrakstu (datums, avots).",
+            "Velc attēlus šeit vai izmanto „Atvērt no datora…” - tiks izveidota pirmā grupa. Pēc tam vari pievienot virsrakstu (datums, avots).",
           )
         : null}
 
@@ -872,7 +869,6 @@ export function AdminListingAnalysisPhotos({
               key={group.id}
               className="space-y-2 rounded-md border border-[var(--admin-field-border)]/70 bg-[var(--admin-field-bg)]/40 p-2"
             >
-              {simple ? null : (
               <div className="flex flex-wrap items-start gap-2">
                 <div className="min-w-0 flex-1">
                   <label className="mb-0.5 block text-[9px] font-medium uppercase tracking-wide text-[var(--color-provin-muted)]">
@@ -903,7 +899,6 @@ export function AdminListingAnalysisPhotos({
                   </div>
                 ) : null}
               </div>
-              )}
 
               {renderDropZone(
                 group.id,
