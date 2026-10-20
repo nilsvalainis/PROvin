@@ -192,7 +192,7 @@ describe("izmaiņu vēstures klienta robeža", () => {
       const src = read(file);
       expect(src, file).not.toMatch(/autodna|carvertical|outvin|vin-sources|scrape-listing|refreshStripePaidIndexFromStripe|runIrissPavadzimesDropboxSync/i);
     }
-    expect(read("app/api/admin/change-history/route.ts")).toMatch(/getAdminSession/);
+    expect(read("app/api/admin/change-history/route.ts")).toMatch(/getAdminOrStaffActor/);
     expect(read("app/api/b2b-demo/orders/[id]/history/route.ts")).toMatch(/requireB2bDemoActor/);
     expect(read("components/admin/AdminShellMainWithMobilePull.tsx")).not.toContain("admin-search-gutter");
     expect(read("app/admin/admin-ios-theme.css")).not.toContain("admin-search-gutter");

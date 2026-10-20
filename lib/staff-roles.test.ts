@@ -11,11 +11,12 @@ import {
   sectionForAdminApiPath,
   sectionForAdminPagePath,
   staffHomePath,
+  type AccessActor,
 } from "@/lib/staff-roles";
 
-const logistics = { kind: "staff" as const, sections: ["logistika"] as const };
-const waybills = { kind: "staff" as const, sections: ["pavadzimes"] as const };
-const both = { kind: "staff" as const, sections: ["logistika", "pavadzimes"] as const };
+const logistics: AccessActor = { kind: "staff", sections: ["logistika"] };
+const waybills: AccessActor = { kind: "staff", sections: ["pavadzimes"] };
+const both: AccessActor = { kind: "staff", sections: ["logistika", "pavadzimes"] };
 
 describe("IRISS section path access (deny by default)", () => {
   it("lets anyone open login and invite pages", () => {

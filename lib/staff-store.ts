@@ -6,7 +6,6 @@ import { isValidOrderEmail } from "@/lib/order-field-validation";
 import { hashStaffPassword, isUsableStaffPassword, verifyStaffPassword } from "@/lib/staff-password";
 import {
   ENV_ADMIN_USER_ID,
-  isStaffRole,
   normalizeStaffEmail,
   normalizeStaffSections,
   type IrissSection,
