@@ -61,8 +61,7 @@ describe("IRISS mobile safe-area layout", () => {
     expect(src.room).toMatch(/aria-label="Zvanīt"/);
     expect(src.room).toMatch(/aria-label="Atvērt WhatsApp"/);
     expect(src.room).not.toMatch(/grid grid-cols-3 gap-2 md:hidden/);
-    expect(src.room).toMatch(/md:sticky md:top-0 md:z-10/);
-    expect(src.room).not.toMatch(/className="sticky top-0 z-10/);
+    expect(src.room).not.toMatch(/sticky top-0/);
     expect(src.room).toMatch(/iriss-action-dock/);
     expect(src.room).toMatch(/Saglabāt/);
     expect(src.editor).toMatch(/iriss-action-dock/);

@@ -626,6 +626,26 @@
   position: static;
 }
 
+.admin-ios-theme [data-iriss-order-room="1"] .iriss-order-tabs [role="tab"] {
+  border: none !important;
+  border-radius: 999px !important;
+  border-bottom: none !important;
+  background: var(--s1) !important;
+  color: var(--ink2) !important;
+  box-shadow: var(--sh) !important;
+}
+
+.admin-ios-theme [data-iriss-order-room="1"] .iriss-order-tabs [role="tab"][aria-selected="true"] {
+  background: var(--chip-active-bg) !important;
+  color: var(--chip-active-fg) !important;
+  box-shadow: none !important;
+}
+
+.admin-ios-theme [data-iriss-order-room="1"] .iriss-order-tabs [role="tab"] em {
+  background: color-mix(in srgb, currentColor 14%, transparent) !important;
+  color: inherit !important;
+}
+
 @media (max-width: 767px) {
   .iriss-parskats-view .am-topbar {
     padding-top: calc(env(safe-area-inset-top, 0px) + 8px);

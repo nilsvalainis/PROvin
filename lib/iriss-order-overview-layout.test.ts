@@ -23,6 +23,9 @@ describe("iriss order overview layout", () => {
     expect(room).toContain("md:hidden");
     expect(room).not.toMatch(/sticky top-0/);
     expect(room).not.toMatch(/\u2014|\u2013/);
+    const css = readFileSync("app/admin/iriss/iriss-admin.css", "utf8");
+    expect(css).toContain(".iriss-parskats-view .iriss-order-tabs");
+    expect(css).toContain(".iriss-order-tabs [role=\"tab\"]");
     expect(steps).toContain("Atvērt Meklētāju");
     expect(copy).toContain("Meklējam");
     expect(copy).toContain("Avanss saņemts");
