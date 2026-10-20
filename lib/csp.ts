@@ -21,9 +21,19 @@ export const ADMIN_HTML_DOCUMENT_CSP = [
 ].join("; ");
 
 /**
- * Report-Only visai vietnei. `unsafe-inline` / `unsafe-eval` - Next.js un Consent/gtag
- * iekļautie skripti (nonce šajā kārtā nav). `connect-src https:` - GA/Ads/Meta/Stripe
- * apakšdomēni mainās; Report-Only nedrīkst nogāzt maksājumus un analītiku.
+ * Enforcing politika visai vietnei: tikai direktīvas, kas nevar salauzt skriptus, Stripe vai
+ * analītiku (clickjacking, `<base>` injekcija, spraudņi). Pilnā politika paliek Report-Only.
+ */
+export const SITE_CSP_ENFORCED = ["frame-ancestors 'self'", "base-uri 'self'", "object-src 'none'"].join("; ");
+
+/** `next dev` (React Refresh) lieto `eval`; produkcijā bez tā, lai atskaites rāda, vai kas to prasa. */
+const SCRIPT_UNSAFE_EVAL = process.env.NODE_ENV === "production" ? [] : ["'unsafe-eval'"];
+
+/**
+ * Report-Only visai vietnei. `unsafe-inline` - Next.js un Consent/gtag iekļautie skripti
+ * (nonce šajā kārtā nav). `connect-src https:` - GA/Ads/Meta/Stripe apakšdomēni mainās;
+ * Report-Only nedrīkst nogāzt maksājumus un analītiku. `upgrade-insecure-requests` Report-Only
+ * režīmā tiek ignorēts (tikai konsoles brīdinājums), vietnei jau ir HSTS.
  */
 export const SITE_CSP_REPORT_ONLY = [
   "default-src 'self'",
@@ -31,7 +41,7 @@ export const SITE_CSP_REPORT_ONLY = [
     "script-src",
     "'self'",
     "'unsafe-inline'",
-    "'unsafe-eval'",
+    ...SCRIPT_UNSAFE_EVAL,
     "https://js.stripe.com",
     "https://*.js.stripe.com",
     "https://www.googletagmanager.com",
@@ -70,7 +80,6 @@ export const SITE_CSP_REPORT_ONLY = [
   "worker-src 'self' blob:",
   "media-src 'self' blob:",
   "object-src 'none'",
-  "upgrade-insecure-requests",
   `report-uri ${CSP_REPORT_PATH}`,
 ].join("; ");
 

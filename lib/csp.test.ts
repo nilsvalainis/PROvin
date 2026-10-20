@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ADMIN_HTML_DOCUMENT_CSP,
+  SITE_CSP_ENFORCED,
   SITE_CSP_REPORT_ONLY,
   adminHtmlDocumentHeaders,
   summarizeCspReport,
@@ -31,6 +32,12 @@ describe("CSP policies", () => {
     expect(csp).toContain("https://fonts.googleapis.com");
     expect(csp).toContain("https://fonts.gstatic.com");
     expect(csp).toContain("report-uri /api/csp-report");
+  });
+
+  it("enforced site policy only restricts framing, base and plugins", () => {
+    expect(SITE_CSP_ENFORCED).toBe("frame-ancestors 'self'; base-uri 'self'; object-src 'none'");
+    expect(SITE_CSP_ENFORCED).not.toContain("script-src");
+    expect(SITE_CSP_REPORT_ONLY).not.toContain("upgrade-insecure-requests");
   });
 
   it("summarizes CSP reports without path/query", () => {

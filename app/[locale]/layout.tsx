@@ -35,6 +35,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
+  if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
   const t = await getTranslations({ locale, namespace: "Meta" });
   const keywords = t.raw("keywords") as string[];
 

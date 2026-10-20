@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
+import { notFound } from "next/navigation";
+import { isAppLocale } from "@/i18n/locales";
 import { Footer } from "@/components/Footer";
 import { HomeGoogleReviews } from "@/components/home/HomeGoogleReviews";
 import { HomeRiskAuditGuideSection } from "@/components/home/HomeRiskAuditGuideSection";
@@ -19,6 +21,8 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
+  // `/.env`, `/llms.txt` u.c. nonāk šeit kā `[locale]`: 404, nevis 500 (static→dynamic).
+  if (!isAppLocale(locale)) notFound();
   const t = await getTranslations({ locale, namespace: "Meta" });
   return buildPublicPageMetadata({
     locale,
@@ -34,6 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;
+  if (!isAppLocale(locale)) notFound();
   const t = await getTranslations({ locale, namespace: "Meta" });
   const offers = buildServiceOffersJsonLd(
     locale,
