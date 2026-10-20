@@ -226,6 +226,7 @@ function normalizeRecord(raw: unknown, id: string): IrissScanRecord | null {
     listingLinkAuto1: normalizeLinks(o.listingLinkAuto1),
     listingLinkEcarstrade: normalizeLinks(o.listingLinkEcarstrade),
     listingLinksOther: normalizeLinks(o.listingLinksOther),
+    ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
   };
 }
 

@@ -40,6 +40,7 @@ function parseBodyRecord(id: string, body: unknown): IrissScanRecord | null {
     listingLinkAuto1: links(o, "listingLinkAuto1"),
     listingLinkEcarstrade: links(o, "listingLinkEcarstrade"),
     listingLinksOther: links(o, "listingLinksOther"),
+    ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
   };
 }
 

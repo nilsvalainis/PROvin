@@ -218,13 +218,16 @@ export function IrissListingPlatformsFields({ rec, onPatch, onReadLink, readingU
       listingLinkOpenline: next.record.listingLinkOpenline,
       listingLinkAutobid: next.record.listingLinkAutobid,
       listingLinkEcarstrade: next.record.listingLinkEcarstrade,
+      ...(platform === "ecarstrade" ? { ecarstradeLinksManual: true } : {}),
     });
   };
 
   const generateEcarstrade = () => {
     const next = replaceEcarstradeLinksOnPasutijums(rec);
-    if (!next.preview.changed) return;
-    onPatch({ listingLinkEcarstrade: next.record.listingLinkEcarstrade });
+    onPatch({
+      listingLinkEcarstrade: next.record.listingLinkEcarstrade,
+      ecarstradeLinksManual: true,
+    });
   };
 
   return (

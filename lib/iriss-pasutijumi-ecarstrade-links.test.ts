@@ -115,5 +115,32 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     expect(next.preview.generated).toEqual([]);
     expect(next.record.listingLinkEcarstrade).toEqual([""]);
     expect(next.record.clientFirstName).toBe("Anna");
+    expect(next.record.ecarstradeLinksManual).toBe(true);
+  });
+
+  it("does not restore deleted eCarsTrade rows on later autosave/backfill", () => {
+    const row = rec({
+      brandModel: "Volvo XC60",
+      listingLinkAuto1: [
+        "https://www.auto1.com/en/app/merchant/cars?manufacturer=VOLVO&model=XC60&firstRegistrationFrom=2018&fuelTypes=DIESEL",
+      ],
+      listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2018&fuels=diesel"],
+      listingLinkEcarstrade: [""],
+    });
+    const seeded = withAutoEcarstradeLinks(row);
+    const kept = seeded.listingLinkEcarstrade[0] ?? "";
+    expect(kept).toContain("ecarstrade.com/search");
+    const afterDelete = withAutoEcarstradeLinks({
+      ...seeded,
+      listingLinkEcarstrade: [kept],
+      ecarstradeLinksManual: true,
+    });
+    expect(afterDelete.listingLinkEcarstrade).toEqual([kept]);
+    const emptied = withAutoEcarstradeLinks({
+      ...seeded,
+      listingLinkEcarstrade: [""],
+      ecarstradeLinksManual: true,
+    });
+    expect(emptied.listingLinkEcarstrade).toEqual([""]);
   });
 });

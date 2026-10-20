@@ -41,6 +41,28 @@ const STRING_KEYS = [
 
 export type IrissClearableStringKey = (typeof STRING_KEYS)[number];
 
+export const IRISS_LISTING_LINK_KEYS = [
+  "listingLinkMobile",
+  "listingLinkAutobid",
+  "listingLinkOpenline",
+  "listingLinkAuto1",
+  "listingLinkEcarstrade",
+  "listingLinksOther",
+] as const;
+
+export type IrissListingLinkKey = (typeof IRISS_LISTING_LINK_KEYS)[number];
+
+function listingLinksEqual(a: readonly string[] | undefined, b: readonly string[] | undefined): boolean {
+  const left = Array.isArray(a) ? a : [];
+  const right = Array.isArray(b) ? b : [];
+  if (left.length !== right.length) return false;
+  return left.every((v, i) => v === right[i]);
+}
+
+function listingLinksFilled(links: readonly string[] | undefined): boolean {
+  return (Array.isArray(links) ? links : []).some((s) => s.trim());
+}
+
 function isIsoDate(v: unknown): v is string {
   return typeof v === "string" && v.trim().length >= 10 && !Number.isNaN(Date.parse(v));
 }
@@ -117,12 +139,26 @@ export function applyIrissFieldEdit(
       fieldUpdatedAt[key] = nowMs;
     }
   }
-  return {
+  for (const key of IRISS_LISTING_LINK_KEYS) {
+    if (!(key in patch)) continue;
+    const nextList = Array.isArray(patch[key]) ? (patch[key] as string[]) : [];
+    const prevList = Array.isArray(prev[key]) ? prev[key] : [];
+    if (listingLinksEqual(nextList, prevList)) continue;
+    fieldUpdatedAt[key] = nowMs;
+    if (listingLinksFilled(prevList) && !listingLinksFilled(nextList)) cleared[key] = nowMs;
+    else delete cleared[key];
+  }
+  const next: IrissPasutijumsRecord = {
     ...prev,
     ...patch,
     clearedFields: Object.keys(cleared).length ? cleared : undefined,
     fieldUpdatedAt: Object.keys(fieldUpdatedAt).length ? fieldUpdatedAt : undefined,
   };
+  if ("listingLinkEcarstrade" in patch) {
+    next.ecarstradeLinksManual = patch.ecarstradeLinksManual === false ? undefined : true;
+  }
+  if (next.ecarstradeLinksManual !== true) delete next.ecarstradeLinksManual;
+  return next;
 }
 
 export function appendIrissStatusHistory(
