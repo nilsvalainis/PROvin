@@ -137,4 +137,27 @@ describe("fetchAdifyHistoryHtmlViaCapsolver", () => {
     expect(out.html).toBeNull();
     expect(out.error).toMatch(/pēc CapSolver/);
   });
+
+  it("passes through CapSolver custom proxy connect failed", async () => {
+    const fetchPage = vi.fn().mockResolvedValue({
+      status: 403,
+      text: CF_HTML,
+      cookie: "",
+      finalUrl: PAGE,
+    });
+    const solve = vi.fn().mockResolvedValue({
+      ok: false,
+      reason: "Adify: CapSolver: custom proxy connect failed (HTTP 400)",
+    });
+    const out = await fetchAdifyHistoryHtmlViaCapsolver(PAGE, {
+      hasKey: () => true,
+      getProxy: () => FIXIE,
+      stickyProxyUrl: () => FIXIE,
+      solve,
+      fetchPage,
+    });
+    expect(out.html).toBeNull();
+    expect(out.error).toMatch(/custom proxy connect failed/);
+    expect(solve).toHaveBeenCalledTimes(1);
+  });
 });

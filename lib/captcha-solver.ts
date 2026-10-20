@@ -40,6 +40,16 @@ export type TurnstileTask = {
   websiteKey: string;
 };
 
+export type CapsolverProxyStyle = "structured" | "scheme_colon" | "colon" | "url";
+
+export type CapsolverProxyParts = {
+  scheme: "http" | "https" | "socks4" | "socks5";
+  host: string;
+  port: string;
+  user: string;
+  pass: string;
+};
+
 export type CloudflareChallengeTask = {
   kind: "cloudflare_challenge";
   websiteURL: string;
@@ -49,6 +59,8 @@ export type CloudflareChallengeTask = {
    * demands websiteKey.
    */
   proxy?: string;
+  /** How `proxy` is sent to createTask. Queue sets this; default inferred from the string. */
+  proxyStyle?: CapsolverProxyStyle;
   html?: string;
   userAgent?: string;
 };
@@ -140,13 +152,15 @@ function proxyUrl(scheme: string, host: string, port: string, user?: string, pas
   return `${scheme}://${host}:${port}`;
 }
 
+export function isIpv4Host(host: string): boolean {
+  return /^(?:\d{1,3}\.){3}\d{1,3}$/.test(host.trim());
+}
+
 /**
- * Normalizē proxy CapSolver API formātam.
- * DNS hostiem (Fixie `*.usefixie.com`) CapSolver dokumentē URL formu `http://user:pass@host:port`
- * ("Use url dns"). Colon forma `host:port:user:pass` paliek derīga IP, bet hostname bieži dod
- * HTTP 400 "custom proxy connect failed".
+ * Parse CapSolver / Fixie proxy env into parts.
+ * Accepts `http://user:pass@host:port`, `http:host:port:user:pass`, `host:port:user:pass`.
  */
-export function capsolverProxyFromUrl(raw: string): string | null {
+export function parseCapsolverProxy(raw: string): CapsolverProxyParts | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
   if (/^(https?|socks[45]):\/\//i.test(trimmed)) {
@@ -154,76 +168,105 @@ export function capsolverProxyFromUrl(raw: string): string | null {
       const parsed = new URL(trimmed);
       if (!parsed.hostname) return null;
       const scheme = parsed.protocol.replace(/:$/, "").toLowerCase();
+      if (!PROXY_SCHEMES.has(scheme)) return null;
       const port = parsed.port || defaultPortForProxyScheme(scheme);
       if (!port) return null;
-      return proxyUrl(scheme, parsed.hostname, port, parsed.username || undefined, parsed.password);
+      return {
+        scheme: scheme as CapsolverProxyParts["scheme"],
+        host: parsed.hostname,
+        port,
+        user: parsed.username || "",
+        pass: parsed.password || "",
+      };
     } catch {
       return null;
     }
   }
-  const parts = trimmed.split(":");
-  const scheme = parts[0]?.toLowerCase() ?? "";
-  if (PROXY_SCHEMES.has(scheme) && parts.length >= 5) {
-    const [, host, port, user, ...rest] = parts;
-    if (host && port && user) return proxyUrl(scheme, host, port, user, rest.join(":"));
-    return null;
+  const bits = trimmed.split(":");
+  const scheme = bits[0]?.toLowerCase() ?? "";
+  if (PROXY_SCHEMES.has(scheme) && bits.length >= 5) {
+    const [, host, port, user, ...rest] = bits;
+    if (!host || !port || !user) return null;
+    return { scheme: scheme as CapsolverProxyParts["scheme"], host, port, user, pass: rest.join(":") };
   }
-  if (parts.length >= 4) {
-    const [host, port, user, ...rest] = parts;
-    if (host && port && user) return proxyUrl("http", host, port, user, rest.join(":"));
-    return null;
+  if (bits.length >= 4) {
+    const [host, port, user, ...rest] = bits;
+    if (!host || !port || !user) return null;
+    return { scheme: "http", host, port, user, pass: rest.join(":") };
   }
-  if (parts.length === 2 && parts[0] && parts[1]) return proxyUrl("http", parts[0], parts[1]);
+  if (bits.length === 2 && bits[0] && bits[1]) {
+    return { scheme: "http", host: bits[0], port: bits[1], user: "", pass: "" };
+  }
   return null;
 }
 
 /**
- * CapSolver custom proxy: `host:port:user:pass`.
- * URL form `http://user:pass@host:port` often returns HTTP 400 "custom proxy connect failed".
+ * CapSolver `proxyType`. `https` means TLS to the proxy itself.
+ * Fixie and typical `https://user:pass@host:80` env URLs are HTTP CONNECT, not TLS-to-proxy.
+ * Sending `https` there returns HTTP 400 "custom proxy connect failed".
  */
+export function capsolverProxyType(parts: CapsolverProxyParts): "http" | "https" | "socks4" | "socks5" {
+  if (parts.scheme === "socks4" || parts.scheme === "socks5") return parts.scheme;
+  if (parts.scheme === "https" && parts.port !== "443") return "http";
+  if (/\.(usefixie\.com|fixie\.addon\.io)$/i.test(parts.host)) return "http";
+  return parts.scheme === "https" ? "https" : "http";
+}
+
+/** CapSolver docs: `http:host:port:user:pass` (HTTP + auth). Never sent before this fix. */
+export function capsolverProxySchemeColonForm(raw: string | CapsolverProxyParts): string | null {
+  const parts = typeof raw === "string" ? parseCapsolverProxy(raw) : raw;
+  if (!parts?.host || !parts.port) return null;
+  const scheme = capsolverProxyType(parts);
+  if (parts.user) return `${scheme}:${parts.host}:${parts.port}:${parts.user}:${parts.pass}`;
+  return `${scheme}:${parts.host}:${parts.port}`;
+}
+
+/** HTTP URL for undici / CapSolver "Use url dns". */
+export function capsolverProxyFromUrl(raw: string): string | null {
+  const parts = parseCapsolverProxy(raw);
+  if (!parts) return null;
+  return proxyUrl(parts.scheme === "https" && parts.port !== "443" ? "http" : parts.scheme, parts.host, parts.port, parts.user || undefined, parts.pass);
+}
+
+/** CapSolver CF example: `ip:port:user:pass`. Hostname in this form often 400s. */
 export function capsolverProxyColonForm(raw: string): string | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  let host = "";
-  let port = "";
-  let user = "";
-  let pass = "";
-  if (/^(https?|socks[45]):\/\//i.test(trimmed)) {
-    try {
-      const parsed = new URL(trimmed);
-      host = parsed.hostname;
-      const scheme = parsed.protocol.replace(/:$/, "").toLowerCase();
-      port = parsed.port || defaultPortForProxyScheme(scheme);
-      user = decodeURIComponent(parsed.username || "");
-      pass = decodeURIComponent(parsed.password || "");
-    } catch {
-      return null;
-    }
-  } else {
-    const parts = trimmed.split(":");
-    const scheme = parts[0]?.toLowerCase() ?? "";
-    if (PROXY_SCHEMES.has(scheme) && parts.length >= 5) {
-      const [, h, p, u, ...rest] = parts;
-      host = h ?? "";
-      port = p ?? "";
-      user = u ?? "";
-      pass = rest.join(":");
-    } else if (parts.length >= 4) {
-      const [h, p, u, ...rest] = parts;
-      host = h ?? "";
-      port = p ?? "";
-      user = u ?? "";
-      pass = rest.join(":");
-    } else if (parts.length === 2) {
-      host = parts[0] ?? "";
-      port = parts[1] ?? "";
-    } else {
-      return null;
-    }
+  const parts = parseCapsolverProxy(raw);
+  if (!parts) return null;
+  if (parts.user) return `${parts.host}:${parts.port}:${parts.user}:${parts.pass}`;
+  return `${parts.host}:${parts.port}`;
+}
+
+export function applyCapsolverProxyToTask(
+  cfTask: Record<string, unknown>,
+  proxy: string | undefined,
+  style?: CapsolverProxyStyle,
+): void {
+  const raw = (proxy ?? "").trim();
+  if (!raw) return;
+  const parts = parseCapsolverProxy(raw);
+  const resolved: CapsolverProxyStyle =
+    style ?? (/^(https?|socks[45]):\/\//i.test(raw) ? "url" : raw.includes("://") ? "url" : "colon");
+  if (!parts) {
+    cfTask.proxy = raw;
+    return;
   }
-  if (!host || !port) return null;
-  if (user) return `${host}:${port}:${user}:${pass}`;
-  return `${host}:${port}`;
+  if (resolved === "structured") {
+    cfTask.proxyType = capsolverProxyType(parts);
+    cfTask.proxyAddress = parts.host;
+    cfTask.proxyPort = Number(parts.port);
+    if (parts.user) cfTask.proxyLogin = parts.user;
+    if (parts.pass) cfTask.proxyPassword = parts.pass;
+    return;
+  }
+  if (resolved === "scheme_colon") {
+    cfTask.proxy = capsolverProxySchemeColonForm(parts) ?? raw;
+    return;
+  }
+  if (resolved === "colon") {
+    cfTask.proxy = capsolverProxyColonForm(raw) ?? raw;
+    return;
+  }
+  cfTask.proxy = capsolverProxyFromUrl(raw) ?? raw;
 }
 
 function proxyForCapsolverTask(proxy: string | undefined): string {
@@ -236,17 +279,28 @@ export function isInvalidHtmlFailure(reason: string): boolean {
   return /invalid html|invalid task data:\s*invalid html/i.test(reason);
 }
 
+function proxyIdentityKey(parts: CapsolverProxyParts): string {
+  return `${capsolverProxyType(parts)}\0${parts.host}\0${parts.port}\0${parts.user}\0${parts.pass}`;
+}
+
 /**
- * AntiCloudflareTask only (proxy required). URL form first (pre-#149 / Fixie DNS),
- * then colon `host:port:user:pass`. Never ProxyLess: CapSolver maps that to Turnstile
- * and returns "websiteKey is required".
+ * AntiCloudflareTask only (proxy required). Never ProxyLess: CapSolver maps that
+ * name to Turnstile and returns "websiteKey is required".
+ *
+ * Prod Fixie is `http://user:pass@*.usefixie.com:80`. CapSolver CF example wants
+ * `ip:port:user:pass` or structured fields. URL `http://user:pass@host:port` and
+ * hostname colon often return HTTP 400 "custom proxy connect failed".
+ * Order: structured → `http:host:port:user:pass` → colon → optional IPv4 → URL last.
  */
-export function cloudflareChallengeTaskQueue(task: CloudflareChallengeTask): CloudflareChallengeTask[] {
+export function cloudflareChallengeTaskQueue(
+  task: CloudflareChallengeTask,
+  extraHosts: string[] = [],
+): CloudflareChallengeTask[] {
   const seen = new Set<string>();
   const out: CloudflareChallengeTask[] = [];
-  const push = (proxy: string, html: string | undefined) => {
+  const push = (proxy: string, style: CapsolverProxyStyle, html: string | undefined) => {
     if (!proxy) return;
-    const key = `${proxy}\0${html ? "1" : "0"}`;
+    const key = `${style}\0${proxy}\0${html ? "1" : "0"}`;
     if (seen.has(key)) return;
     seen.add(key);
     out.push({
@@ -254,6 +308,7 @@ export function cloudflareChallengeTaskQueue(task: CloudflareChallengeTask): Clo
       websiteURL: task.websiteURL,
       userAgent: task.userAgent,
       proxy,
+      proxyStyle: style,
       ...(html ? { html } : {}),
     });
   };
@@ -261,19 +316,59 @@ export function cloudflareChallengeTaskQueue(task: CloudflareChallengeTask): Clo
   const raws = [task.proxy, process.env.CAPSOLVER_PROXY, process.env.FIXIE_URL]
     .map((s) => (s ?? "").trim())
     .filter(Boolean);
-  const forms: string[] = [];
-  for (const raw of [...new Set(raws)]) {
-    const url = capsolverProxyFromUrl(raw);
-    const colon = capsolverProxyColonForm(raw);
-    if (url) forms.push(url);
-    if (colon && colon !== url) forms.push(colon);
+  const identities: CapsolverProxyParts[] = [];
+  const idKeys = new Set<string>();
+  const addParts = (raw: string) => {
+    const parts = parseCapsolverProxy(raw);
+    if (!parts) return;
+    const key = proxyIdentityKey(parts);
+    if (idKeys.has(key)) return;
+    idKeys.add(key);
+    identities.push(parts);
+  };
+  for (const raw of raws) addParts(raw);
+  const base = identities[0];
+  if (base) {
+    for (const host of extraHosts) {
+      const trimmed = host.trim();
+      if (!trimmed || trimmed === base.host) continue;
+      addParts(capsolverProxySchemeColonForm({ ...base, host: trimmed }) ?? "");
+    }
   }
+
   const html = task.html?.trim() || undefined;
-  for (const proxy of [...new Set(forms)]) {
-    if (html) push(proxy, html);
-    push(proxy, undefined);
+  for (const [i, parts] of identities.entries()) {
+    const proxy = capsolverProxySchemeColonForm(parts) ?? `${parts.host}:${parts.port}`;
+    if (i === 0) {
+      if (html) {
+        push(proxy, "structured", html);
+        push(proxy, "scheme_colon", html);
+        push(proxy, "colon", html);
+      }
+      push(proxy, "structured", undefined);
+      push(proxy, "scheme_colon", undefined);
+      if (html) push(proxy, "url", html);
+    } else if (html) {
+      push(proxy, "structured", html);
+      push(proxy, "scheme_colon", html);
+    } else {
+      push(proxy, "structured", undefined);
+      push(proxy, "scheme_colon", undefined);
+    }
   }
-  return out.slice(0, 6);
+  return out.slice(0, 8);
+}
+
+export async function resolveCapsolverProxyIpv4(host: string): Promise<string[]> {
+  const trimmed = host.trim();
+  if (!trimmed || isIpv4Host(trimmed)) return [];
+  try {
+    const dns = await import("node:dns/promises");
+    const rows = await dns.lookup(trimmed, { all: true, family: 4 });
+    return [...new Set(rows.map((row) => row.address).filter(Boolean))].slice(0, 2);
+  } catch {
+    return [];
+  }
 }
 
 export function getCaptchaSolverProxy(): string {
@@ -381,15 +476,11 @@ export function captchaCreateTaskBody(
       },
     };
   }
-  const cfProxyRaw = (task.proxy ?? "").trim();
-  const cfProxy = /^(https?|socks[45]):\/\//i.test(cfProxyRaw)
-    ? capsolverProxyFromUrl(cfProxyRaw) ?? cfProxyRaw
-    : capsolverProxyColonForm(cfProxyRaw) ?? cfProxyRaw;
   const cfTask: Record<string, unknown> = {
     type: "AntiCloudflareTask",
     websiteURL: task.websiteURL,
   };
-  if (cfProxy) cfTask.proxy = cfProxy;
+  applyCapsolverProxyToTask(cfTask, task.proxy, task.proxyStyle);
   if (task.html) cfTask.html = task.html;
   if (task.userAgent) cfTask.userAgent = task.userAgent;
   return { clientKey: apiKey, task: cfTask };
@@ -447,6 +538,11 @@ type SolveDeps = {
   now?: () => number;
   /** Admin UI: `mnt.ee` / `lkf.ee` / `car.info`. */
   sourceLabel?: string;
+  /**
+   * Cloudflare: extra IPv4 gateways when the proxy host is DNS (Fixie).
+   * `null` skips lookup. Default is dns.lookup, disabled under Vitest.
+   */
+  resolveProxyIps?: ((host: string) => Promise<string[]>) | null;
 };
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -558,9 +654,20 @@ function labeledSolveResult(result: CaptchaSolveResult, sourceLabel?: string): C
   return { ok: false, reason: prefixCaptchaSourceReason(result.reason, sourceLabel) };
 }
 
+async function extraCapsolverProxyHosts(task: CloudflareChallengeTask, deps: SolveDeps): Promise<string[]> {
+  if (deps.resolveProxyIps === null) return [];
+  const raw = (task.proxy || process.env.CAPSOLVER_PROXY || process.env.FIXIE_URL || "").trim();
+  const parts = parseCapsolverProxy(raw);
+  if (!parts || isIpv4Host(parts.host)) return [];
+  const resolve =
+    deps.resolveProxyIps ?? (process.env.VITEST ? async () => [] : resolveCapsolverProxyIpv4);
+  return resolve(parts.host);
+}
+
 export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Promise<CaptchaSolveResult> {
   if (task.kind === "cloudflare_challenge") {
-    const queue = cloudflareChallengeTaskQueue(task);
+    const extraHosts = await extraCapsolverProxyHosts(task, deps);
+    const queue = cloudflareChallengeTaskQueue(task, extraHosts);
     if (queue.length === 0) {
       return labeledSolveResult(
         { ok: false, reason: "Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" },
@@ -571,11 +678,12 @@ export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Pro
     const skipProxy = new Set<string>();
     let skipHtml = false;
     for (const variant of queue) {
-      const proxyKey = (variant.proxy ?? "").trim();
-      if (!proxyKey || skipProxy.has(proxyKey)) continue;
+      const proxyRaw = (variant.proxy ?? "").trim();
+      const proxyKey = `${variant.proxyStyle ?? ""}\0${proxyRaw}`;
+      if (!proxyRaw || skipProxy.has(proxyKey)) continue;
       if (skipHtml && variant.html) continue;
       last = await solveCaptchaOnce(variant, deps);
-      if (last.ok) return { ...last, proxy: proxyKey };
+      if (last.ok) return { ...last, proxy: proxyRaw };
       if (/Nav CAPSOLVER_API_KEY/i.test(last.reason)) return last;
       if (isProxyConnectFailure(last.reason)) skipProxy.add(proxyKey);
       if (isInvalidHtmlFailure(last.reason)) skipHtml = true;

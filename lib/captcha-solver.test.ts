@@ -7,9 +7,13 @@ import {
   captchaProvider,
   captchaTaskDisplayName,
   captchaTaskTypeName,
+  applyCapsolverProxyToTask,
   capsolverProxyColonForm,
   capsolverProxyFromUrl,
+  capsolverProxySchemeColonForm,
+  capsolverProxyType,
   cloudflareChallengeTaskQueue,
+  parseCapsolverProxy,
   defaultCaptchaSolveTimeoutMs,
   formatCaptchaPollTimeoutReason,
   getCaptchaSolverProxy,
@@ -28,6 +32,8 @@ import {
 } from "@/lib/captcha-solver";
 
 const FIXIE_URL = "http://fixie:secret@group.usefixie.com:80";
+const FIXIE_SCHEME_COLON = "http:group.usefixie.com:80:fixie:secret";
+const FIXIE_COLON = "group.usefixie.com:80:fixie:secret";
 
 function jsonFetch(handler: (url: string) => unknown): typeof fetch {
   return (async (input: RequestInfo | URL) => {
@@ -165,6 +171,7 @@ describe("capsolverProxyFromUrl", () => {
 
   it("atgriež HTTP URL undici ProxyAgent", () => {
     expect(httpProxyUrlFromCapsolver("group.usefixie.com:80:fixie:secret")).toBe(FIXIE_URL);
+    expect(httpProxyUrlFromCapsolver(FIXIE_SCHEME_COLON)).toBe(FIXIE_URL);
     expect(httpProxyUrlFromCapsolver(FIXIE_URL)).toBe(FIXIE_URL);
   });
 
@@ -203,15 +210,67 @@ describe("capsolverProxyFromUrl", () => {
 
 describe("capsolverProxyColonForm", () => {
   it("URL http://user:pass@host:port kļūst host:port:user:pass", () => {
-    expect(capsolverProxyColonForm(FIXIE_URL)).toBe("group.usefixie.com:80:fixie:secret");
-    expect(capsolverProxyColonForm("group.usefixie.com:80:fixie:secret")).toBe("group.usefixie.com:80:fixie:secret");
+    expect(capsolverProxyColonForm(FIXIE_URL)).toBe(FIXIE_COLON);
+    expect(capsolverProxyColonForm(FIXIE_COLON)).toBe(FIXIE_COLON);
     expect(capsolverProxyColonForm("")).toBeNull();
     expect(capsolverProxyColonForm("not-a-proxy")).toBeNull();
   });
 });
 
+describe("parseCapsolverProxy / CapSolver CF formāti", () => {
+  it("sadala Fixie URL, scheme-colon un colon vienādās daļās", () => {
+    const fromUrl = parseCapsolverProxy(FIXIE_URL);
+    expect(fromUrl).toEqual({
+      scheme: "http",
+      host: "group.usefixie.com",
+      port: "80",
+      user: "fixie",
+      pass: "secret",
+    });
+    expect(parseCapsolverProxy(FIXIE_SCHEME_COLON)).toEqual(fromUrl);
+    expect(parseCapsolverProxy(FIXIE_COLON)).toEqual(fromUrl);
+    expect(capsolverProxySchemeColonForm(FIXIE_URL)).toBe(FIXIE_SCHEME_COLON);
+    expect(capsolverProxyType(fromUrl!)).toBe("http");
+  });
+
+  it("https:// Fixie :80 kļūst CapSolver proxyType http (ne TLS pret proksi)", () => {
+    const parts = parseCapsolverProxy("https://fixie:secret@ventoux.usefixie.com:80");
+    expect(parts?.scheme).toBe("https");
+    expect(capsolverProxyType(parts!)).toBe("http");
+    expect(capsolverProxySchemeColonForm(parts!)).toBe("http:ventoux.usefixie.com:80:fixie:secret");
+    const task: Record<string, unknown> = {};
+    applyCapsolverProxyToTask(task, "https://fixie:secret@ventoux.usefixie.com:80", "structured");
+    expect(task).toEqual({
+      proxyType: "http",
+      proxyAddress: "ventoux.usefixie.com",
+      proxyPort: 80,
+      proxyLogin: "fixie",
+      proxyPassword: "secret",
+    });
+    expect(task).not.toHaveProperty("proxy");
+  });
+
+  it("structured nesūta proxy virkni; scheme_colon paliek http:host:port:user:pass", () => {
+    const structured: Record<string, unknown> = {};
+    applyCapsolverProxyToTask(structured, FIXIE_URL, "structured");
+    expect(structured).toMatchObject({
+      proxyType: "http",
+      proxyAddress: "group.usefixie.com",
+      proxyPort: 80,
+      proxyLogin: "fixie",
+      proxyPassword: "secret",
+    });
+    const schemeColon: Record<string, unknown> = {};
+    applyCapsolverProxyToTask(schemeColon, FIXIE_URL, "scheme_colon");
+    expect(schemeColon).toEqual({ proxy: FIXIE_SCHEME_COLON });
+    const urlStyle: Record<string, unknown> = {};
+    applyCapsolverProxyToTask(urlStyle, FIXIE_URL, "url");
+    expect(urlStyle).toEqual({ proxy: FIXIE_URL });
+  });
+});
+
 describe("cloudflareChallengeTaskQueue", () => {
-  it("vispirms URL, tad colon; nekad ProxyLess; invalid html atpazīst", () => {
+  it("vispirms structured, tad scheme_colon; nekad ProxyLess; invalid html atpazīst", () => {
     const prevFixie = process.env.FIXIE_URL;
     const prevCap = process.env.CAPSOLVER_PROXY;
     delete process.env.FIXIE_URL;
@@ -224,16 +283,29 @@ describe("cloudflareChallengeTaskQueue", () => {
         proxy: FIXIE_URL,
         html,
       });
-      expect(queue[0]).toMatchObject({ proxy: FIXIE_URL, html });
-      expect(queue[1]).toMatchObject({ proxy: FIXIE_URL });
-      expect(queue[1]?.html).toBeUndefined();
-      expect(queue.some((t) => t.proxy === "group.usefixie.com:80:fixie:secret" && t.html === html)).toBe(true);
-      expect(queue.every((t) => Boolean(t.proxy))).toBe(true);
-      expect(queue.length).toBe(4);
-      expect(queue.length).toBeLessThanOrEqual(6);
+      expect(queue[0]).toMatchObject({ proxy: FIXIE_SCHEME_COLON, proxyStyle: "structured", html });
+      expect(queue[1]).toMatchObject({ proxy: FIXIE_SCHEME_COLON, proxyStyle: "scheme_colon", html });
+      expect(queue.some((t) => t.proxyStyle === "colon" && t.html === html)).toBe(true);
+      expect(queue.some((t) => t.proxyStyle === "structured" && !t.html)).toBe(true);
+      expect(queue.some((t) => t.proxyStyle === "url" && t.html === html)).toBe(true);
+      expect(queue.every((t) => Boolean(t.proxy) && Boolean(t.proxyStyle))).toBe(true);
+      expect(queue.length).toBeGreaterThanOrEqual(5);
+      expect(queue.length).toBeLessThanOrEqual(8);
+      const withIp = cloudflareChallengeTaskQueue(
+        {
+          kind: "cloudflare_challenge",
+          websiteURL: "https://adify.lv/history",
+          proxy: FIXIE_URL,
+          html,
+        },
+        ["34.250.212.67"],
+      );
+      expect(withIp.some((t) => t.proxy === "http:34.250.212.67:80:fixie:secret" && t.proxyStyle === "structured")).toBe(
+        true,
+      );
       expect(cloudflareChallengeTaskQueue({
         kind: "cloudflare_challenge",
-        websiteURL: "https://stat.vin/",
+        websiteURL: "https://example.invalid/",
       })).toEqual([]);
     } finally {
       if (prevFixie === undefined) delete process.env.FIXIE_URL;
@@ -339,36 +411,51 @@ describe("solveCaptcha", () => {
     proxy: FIXIE_URL,
   };
 
-  it("Cloudflare: proxy connect failed tad colon, nekad ProxyLess", async () => {
+  it("Cloudflare: structured connect failed tad scheme_colon, nekad ProxyLess", async () => {
     const prevFixie = process.env.FIXIE_URL;
     const prevCap = process.env.CAPSOLVER_PROXY;
     delete process.env.FIXIE_URL;
     delete process.env.CAPSOLVER_PROXY;
     const types: string[] = [];
     const proxies: string[] = [];
+    const styles: string[] = [];
     const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body ?? "{}")) as {
-        task?: { type?: string; proxy?: string; websiteKey?: string };
+        task?: {
+          type?: string;
+          proxy?: string;
+          proxyType?: string;
+          proxyAddress?: string;
+          websiteKey?: string;
+        };
       };
       const type = String(body.task?.type ?? "");
       if (type) types.push(type);
       expect(body.task?.websiteKey).toBeUndefined();
       const proxy = String(body.task?.proxy ?? "");
-      if (proxy) proxies.push(proxy);
-      if (proxy.startsWith("http")) {
+      if (body.task?.proxyType) {
+        styles.push("structured");
         return {
           json: async () => ({ errorId: 1, errorDescription: "custom proxy connect failed" }),
           status: 400,
         } as Response;
       }
+      if (proxy) proxies.push(proxy);
+      if (proxy === FIXIE_SCHEME_COLON) {
+        styles.push("scheme_colon");
+        return {
+          json: async () => ({
+            errorId: 0,
+            status: "ready",
+            taskId: "cf-scheme-colon",
+            solution: { cookies: { cf_clearance: "cf-1" }, userAgent: "ua" },
+          }),
+          status: 200,
+        } as Response;
+      }
       return {
-        json: async () => ({
-          errorId: 0,
-          status: "ready",
-          taskId: "cf-colon",
-          solution: { cookies: { cf_clearance: "cf-1" }, userAgent: "ua" },
-        }),
-        status: 200,
+        json: async () => ({ errorId: 1, errorDescription: "custom proxy connect failed" }),
+        status: 400,
       } as Response;
     }) as typeof fetch;
     try {
@@ -379,14 +466,21 @@ describe("solveCaptcha", () => {
           proxy: FIXIE_URL,
           html: "<html><title>Just a moment...</title></html>",
         },
-        { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000 },
+        {
+          apiKey: "12345678key",
+          fetchImpl,
+          sleep: async () => undefined,
+          timeoutMs: 5_000,
+          resolveProxyIps: null,
+        },
       );
       expect(result).toMatchObject({ ok: true, token: "cf-1" });
       expect(types.every((t) => t === "AntiCloudflareTask")).toBe(true);
       expect(types).not.toContain("AntiCloudflareTaskProxyLess");
-      expect(proxies.some((p) => p === FIXIE_URL)).toBe(true);
-      expect(proxies.some((p) => p === "group.usefixie.com:80:fixie:secret")).toBe(true);
-      if (result.ok) expect(result.proxy).toBe("group.usefixie.com:80:fixie:secret");
+      expect(styles[0]).toBe("structured");
+      expect(styles).toContain("scheme_colon");
+      expect(proxies).toContain(FIXIE_SCHEME_COLON);
+      if (result.ok) expect(result.proxy).toBe(FIXIE_SCHEME_COLON);
     } finally {
       if (prevFixie === undefined) delete process.env.FIXIE_URL;
       else process.env.FIXIE_URL = prevFixie;
@@ -411,7 +505,7 @@ describe("solveCaptcha", () => {
           kind: "cloudflare_challenge",
           websiteURL: "https://stat.vin/",
         },
-        { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000 },
+        { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000, resolveProxyIps: null },
       );
       expect(creates).toBe(0);
       expect(result.ok).toBe(false);
@@ -458,7 +552,7 @@ describe("solveCaptcha", () => {
           proxy: "group.usefixie.com:80:fixie:secret",
           html: "<html>not a challenge</html>",
         },
-        { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000 },
+        { apiKey: "12345678key", fetchImpl, sleep: async () => undefined, timeoutMs: 5_000, resolveProxyIps: null },
       );
       expect(result).toMatchObject({ ok: true, token: "cf-2" });
       expect(htmlFlags[0]).toBe(true);
@@ -903,6 +997,32 @@ describe("CapSolver createTask payload schema", () => {
   function taskOf(body: Record<string, unknown>): Record<string, unknown> {
     return body.task as Record<string, unknown>;
   }
+
+  it("AntiCloudflareTask structured: proxyType lauki, bez proxy virknes un websiteKey", () => {
+    const adify = taskOf(
+      captchaCreateTaskBody("key-1", {
+        kind: "cloudflare_challenge",
+        websiteURL: "https://adify.lv/history?url=https://www.ss.lv/x",
+        proxy: FIXIE_URL,
+        proxyStyle: "structured",
+        html: "<html><title>Just a moment...</title></html>",
+        userAgent: "Mozilla/5.0",
+      }),
+    );
+    expect(adify).toEqual({
+      type: "AntiCloudflareTask",
+      websiteURL: "https://adify.lv/history?url=https://www.ss.lv/x",
+      proxyType: "http",
+      proxyAddress: "group.usefixie.com",
+      proxyPort: 80,
+      proxyLogin: "fixie",
+      proxyPassword: "secret",
+      html: "<html><title>Just a moment...</title></html>",
+      userAgent: "Mozilla/5.0",
+    });
+    expect(adify).not.toHaveProperty("proxy");
+    expect(adify).not.toHaveProperty("websiteKey");
+  });
 
   it("AntiCloudflareTask: websiteURL + proxy, bez websiteKey", () => {
     const lt = taskOf(
