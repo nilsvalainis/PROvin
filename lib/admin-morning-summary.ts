@@ -1,4 +1,5 @@
 import { auditDeadlineMs, formatAuditDeadlineRemaining, type AuditDeadlineStatus } from "@/lib/admin-audit-deadline";
+import type { CostAlert } from "@/lib/admin-costs";
 import { rigaCalendarDayKey } from "@/lib/admin-riga-calendar";
 import {
   LISTING_PEEK_REPLY_DEADLINE_MS,
@@ -74,6 +75,8 @@ export type MorningSummary = {
   newPeeksLast24h: MorningQueueItem[];
   /** VIN SCAN avoti, kas krīt vismaz 3 reizes pēc kārtas. */
   failingSources: MorningFailingSource[];
+  /** Izmaksu 80 % / 100 % sliekšņi. */
+  costAlerts: CostAlert[];
 };
 
 function peekHost(url: string | undefined): string {
@@ -218,5 +221,6 @@ export function buildMorningSummary(
     unansweredPeeks: peekItems,
     newPeeksLast24h,
     failingSources: [],
+    costAlerts: [],
   };
 }

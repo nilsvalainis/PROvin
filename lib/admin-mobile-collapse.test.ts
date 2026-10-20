@@ -74,6 +74,9 @@ describe("admin mobile spec files", () => {
     expect(side).toMatch(/fixed inset-0 z-\[20\]/);
     expect(side).not.toMatch(/z-\[40\]/);
     expect(side).toMatch(/whitespace-nowrap leading-none/);
+    expect(side).toMatch(/Pārvaldība/);
+    expect(side).toMatch(/\/admin\/izmaksas/);
+    expect(side).toMatch(/\/admin\/iriss\/izmaksas/);
   });
 
   it("pavadzīmju pilles nav melnas un sludinājumos slēpjas", () => {

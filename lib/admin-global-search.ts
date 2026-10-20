@@ -94,6 +94,8 @@ const ADMIN_SEARCH_SECTIONS: readonly SectionSeed[] = [
   { id: "templates", title: "Tekstu šabloni", subtitle: "WEB", href: "/admin/teksti", text: "tekstu šabloni" },
   { id: "invoices", title: "Rēķini", subtitle: "B2B", href: "/admin/commission-invoice", text: "rēķini" },
   { id: "partners", title: "Partneri", subtitle: "B2B", href: "/admin/partneri", text: "partneri" },
+  { id: "costs", title: "Izmaksas", subtitle: "Pārvaldība", href: "/admin/izmaksas", text: "izmaksas AI aģenti Stripe Apify" },
+  { id: "iriss-costs", title: "Izmaksas", subtitle: "IRISS · Pārvaldība", href: "/admin/iriss/izmaksas", text: "izmaksas IRISS AI aģenti Stripe Apify" },
 ];
 
 export function adminSearchSectionRecords(): AdminSearchRecord[] {
