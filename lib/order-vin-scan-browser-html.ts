@@ -9,7 +9,7 @@ import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { isVinScanSourceId, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
 import { parseAuctionArchive, parseNicbHtml } from "@/lib/vin-scan/parse-extra";
-import { parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
+import { formatStatVinOdometerKm, parseStatVinPage } from "@/lib/vin-scan/parse-stat-vin";
 import { isSwedishBrowserSourceId, parseSwedishVehiclePage, swedishSourceLabel } from "@/lib/vin-scan/parse-sweden";
 import { buildVinScanIndicator, type VinScanAuction, type VinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
@@ -53,9 +53,7 @@ function visibleText(html: string): string {
 }
 
 function kmLv(raw: string): string {
-  const n = Number(String(raw).replace(/[^\d]/g, ""));
-  if (!Number.isFinite(n) || n <= 0) return "";
-  return `${Math.round(n).toLocaleString("lv-LV")} km`;
+  return formatStatVinOdometerKm(raw);
 }
 
 function labeled(text: string, labels: string, requireDigit = false): string {
@@ -118,9 +116,10 @@ function enrichFound(parsed: VinScanParse, html: string): VinScanParse {
   const text = visibleText(html);
   const location = labeled(text, "location|sale location|branch|yard");
   const price = labeled(text, "final bid|winning bid|sold for|sold price", true);
-  const lot = /lot[:\s#№]*([0-9]{5,10})/i.exec(text)?.[1] ?? "";
-  const odo = /(?:odometer|mileage|odometrs)[:\s]*([\d\s,]{3,12})/i.exec(text)?.[1] ?? "";
-  const km = odo ? kmLv(odo) : "";
+  const lot = /lot(?:\s*number)?[:\s#№]*([0-9]{5,10})/i.exec(text)?.[1] ?? "";
+  const odoMatch = /(?:odometer|mileage|odometrs)(?:,?\s*mi)?[:\s]*([\d\s,]{3,12})/i.exec(text);
+  const odo = odoMatch?.[1] ?? "";
+  const km = odo ? kmLv(/\bmi\b/i.test(odoMatch?.[0] ?? "") ? `${odo} mi` : odo) : "";
   const auctions = (parsed.auctions ?? []).map((row, index) => {
     if (index !== 0) return row;
     let title = row.title || "";

@@ -99,6 +99,7 @@ export function browserImportErrorLv(code: string | undefined): string {
   if (code === "vin_mismatch") return "VIN lapā nesakrīt ar pasūtījumu";
   if (code === "too_large") return "Lapa ir par lielu importam";
   if (code === "page_not_ready") return "Lapa vēl nav gatava. Pagaidiet, kamēr ielādējas, un mēģiniet vēlreiz";
+  if (code === "write_failed") return "Importēšana neizdevās saglabāt";
   return "Importēšana neizdevās";
 }
 
@@ -122,13 +123,17 @@ export function parseVinScanBrowserEventDetail(raw: unknown): VinScanBrowserEven
   const html = typeof d.html === "string" ? d.html : "";
   const status = typeof d.status === "string" ? d.status : "";
   if (!html.trim() && status !== "found" && status !== "none") return null;
+  const pageUrl =
+    (typeof d.pageUrl === "string" && d.pageUrl.trim()) ||
+    (typeof d.finalUrl === "string" && d.finalUrl.trim()) ||
+    "";
   return {
     id,
     vin,
     status,
     summary: typeof d.summary === "string" ? d.summary : "",
     html,
-    pageUrl: typeof d.pageUrl === "string" ? d.pageUrl : "",
+    pageUrl,
     ...(typeof d.httpStatus === "number" && Number.isFinite(d.httpStatus) ? { httpStatus: d.httpStatus } : {}),
   };
 }
