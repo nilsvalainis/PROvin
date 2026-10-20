@@ -16,6 +16,7 @@ import {
   tryBeginStripeEvent,
 } from "@/lib/stripe-webhook-dedupe-store";
 import { stripeShouldSendMetaPurchase } from "@/lib/stripe-webhook-dedupe";
+import { runStripeFulfillmentStepOnce } from "@/lib/stripe-webhook-step";
 import { ensureConsultationDraftSeed } from "@/lib/admin-consultation-draft-store";
 import { getCheckoutLineFromSession, getOrderFieldsFromSession } from "@/lib/stripe-session";
 import { upsertPaidCheckoutSessionFromStripe } from "@/lib/admin-orders";
@@ -123,17 +124,19 @@ async function fulfillPaidCheckoutSession(
       currency: session.currency?.toUpperCase() ?? null,
     };
 
-    try {
-      await notifyAdminTelegram(payload);
-    } catch (e) {
-      console.error("Telegram notify:", e);
-    }
-    try {
-      await notifyAdminEmail(payload);
-      console.info("[stripe webhook] admin order notification sent", { sessionId: session.id });
-    } catch (e) {
-      console.error("Email notify:", e);
-    }
+    await runStripeFulfillmentStepOnce("notify", session.id, async () => {
+      try {
+        await notifyAdminTelegram(payload);
+      } catch (e) {
+        console.error("Telegram notify:", e);
+      }
+      try {
+        await notifyAdminEmail(payload);
+        console.info("[stripe webhook] admin order notification sent", { sessionId: session.id });
+      } catch (e) {
+        console.error("Email notify:", e);
+      }
+    });
 
     let persistedInvoice: { invoiceNumber: string } | null = null;
     try {
@@ -156,198 +159,225 @@ async function fulfillPaidCheckoutSession(
       }
     }
 
-    if (email) {
-      try {
-        const invoiceAttachment = await getInvoiceEmailAttachment(session.id);
-        if (!invoiceAttachment) {
-          throw new Error("invoice_attachment_missing");
-        }
-        if (isWalletTopup) {
-          const partnerId = session.metadata?.partner_id?.trim() ?? "";
-          const [partner, wallet] = await Promise.all([
-            isSafeB2bPartnerId(partnerId) ? getB2bPartnerById(partnerId) : Promise.resolve(null),
-            isSafeB2bPartnerId(partnerId) ? readB2bWallet(partnerId) : Promise.resolve(null),
-          ]);
-          const amountCents = session.amount_total ?? 0;
-          const rendered = renderB2bTopupInvoiceEmail({
-            summa: formatB2bWalletEuro(amountCents),
-            atlikums: formatB2bWalletEuro(wallet?.balanceCents ?? amountCents),
-            rekins: persistedInvoice?.invoiceNumber ?? "-",
-            uznemums: partner?.companyName ?? "",
-          });
-          await sendB2bWalletTopupInvoiceEmail({
-            to: email,
-            subject: rendered.subject,
-            text: rendered.text,
-            invoiceAttachment,
-          });
-          console.info("[stripe webhook] B2B top-up invoice email sent", { sessionId: session.id, to: email });
+    /** Klienta e-pasts ir pēdējais solis: tā kļūme (SMTP) nebloķē ielasi, un Stripe atkārtos tikai to. */
+    const sendCustomerConfirmation = () =>
+      runStripeFulfillmentStepOnce("customer-email", session.id, async () => {
+        if (email) {
+          try {
+            const invoiceAttachment = await getInvoiceEmailAttachment(session.id);
+            if (!invoiceAttachment) {
+              throw new Error("invoice_attachment_missing");
+            }
+            if (isWalletTopup) {
+              const partnerId = session.metadata?.partner_id?.trim() ?? "";
+              const [partner, wallet] = await Promise.all([
+                isSafeB2bPartnerId(partnerId) ? getB2bPartnerById(partnerId) : Promise.resolve(null),
+                isSafeB2bPartnerId(partnerId) ? readB2bWallet(partnerId) : Promise.resolve(null),
+              ]);
+              const amountCents = session.amount_total ?? 0;
+              const rendered = renderB2bTopupInvoiceEmail({
+                summa: formatB2bWalletEuro(amountCents),
+                atlikums: formatB2bWalletEuro(wallet?.balanceCents ?? amountCents),
+                rekins: persistedInvoice?.invoiceNumber ?? "-",
+                uznemums: partner?.companyName ?? "",
+              });
+              await sendB2bWalletTopupInvoiceEmail({
+                to: email,
+                subject: rendered.subject,
+                text: rendered.text,
+                invoiceAttachment,
+              });
+              console.info("[stripe webhook] B2B top-up invoice email sent", { sessionId: session.id, to: email });
+            } else {
+              await sendPaymentConfirmationEmail({
+                to: email,
+                sessionId: session.id,
+                amountTotal: payload.amountTotal,
+                currency: payload.currency,
+                vin: payload.vin,
+                invoiceAttachment,
+              });
+              console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id, to: email });
+            }
+          } catch (e) {
+            console.error("[stripe webhook] Customer payment confirmation email failed:", e);
+            throw e;
+          }
         } else {
-          await sendPaymentConfirmationEmail({
-            to: email,
-            sessionId: session.id,
-            amountTotal: payload.amountTotal,
-            currency: payload.currency,
-            vin: payload.vin,
-            invoiceAttachment,
-          });
-          console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id, to: email });
+          console.warn("[stripe webhook] paid session: no customer email - payment confirmation skipped");
         }
-      } catch (e) {
-        console.error("[stripe webhook] Customer payment confirmation email failed:", e);
-        throw e;
-      }
-    } else {
-      console.warn("[stripe webhook] paid session: no customer email - payment confirmation skipped");
-    }
+      });
 
-    console.info("PROVIN order:", payload);
-    triggerInvoiceSequenceRepairInBackground();
     if (isWalletTopup) {
+      await sendCustomerConfirmation();
+      console.info("PROVIN order:", payload);
+      triggerInvoiceSequenceRepairInBackground();
       await completeStripeEvent(fulfillDedupeKey(thinSession.id));
       return "done";
     }
 
-    const checkoutLine = getCheckoutLineFromSession(session);
-    const fulfillment = session.metadata?.fulfillment?.trim() ?? "";
-    const partnerId = session.metadata?.partner_id?.trim() ?? "";
-    const packQtyRaw = Number.parseInt(session.metadata?.pack_qty ?? "", 10);
+    await runStripeFulfillmentStepOnce("downstream", session.id, () =>
+      startPaidOrderDownstream(session, { order, email, phone }),
+    );
 
-    /**
-     * Vecās kredītu pakas: tikai Stripe sesijām, kurām `fulfillment=b2b_pack` ielika
-     * serveris (partneru paku ceļš slēgts). Publiskais checkout šīs atslēgas vairs
-     * nepieņem no klienta ievades.
-     */
-    if (
-      fulfillment === "b2b_pack" &&
-      (checkoutLine === "dealer" || checkoutLine === "business") &&
-      partnerId
-    ) {
-      const qty = Number.isFinite(packQtyRaw) && packQtyRaw > 0 ? Math.min(packQtyRaw, 50) : 1;
-      after(async () => {
-        try {
-          const { grantB2bCredits, walletHasGrantedSession } = await import("@/lib/b2b-partner-credits");
-          const { updateB2bCreditWallet } = await import("@/lib/b2b-partner-credit-store");
-          await updateB2bCreditWallet(partnerId, (wallet) => {
-            if (walletHasGrantedSession(wallet, session.id)) return { value: false };
-            return {
-              wallet: grantB2bCredits(wallet, checkoutLine, qty, new Date(), session.id),
-              value: true,
-            };
-          });
-          console.info("[stripe webhook] b2b pack credits granted", {
-            sessionId: session.id,
-            partnerId,
-            checkoutLine,
-            qty,
-          });
-        } catch (err) {
-          console.error("[stripe webhook] b2b pack credits:", err);
-        }
-      });
-    }
-
-    /**
-     * Dīlera produkts: VIN Decoder + OE servisa vēsture jāielasa automātiski. OneAuto pollings
-     * ir par lēnu webhook atbildei, tāpēc darbu atzīmējam sinhroni un izpildām
-     * pēc atbildes; cron slaucītājs pārņem, ja fona izpilde nepaspēj.
-     * B2B paka (bez VIN) šeit NEIELASA - ielase sākas tikai pie VIN iesniegšanas.
-     */
-    if (
-      fulfillment !== "b2b_pack" &&
-      order.vin &&
-      isDealerDataAutoFetchOrder({ checkoutLine, amountTotalCents: session.amount_total })
-    ) {
-      const vin = order.vin;
-      const queued = await enqueueDealerDataJob({ sessionId: session.id, vin }).catch((err) => {
-        console.error("[stripe webhook] dealer data enqueue:", err);
-        return false;
-      });
-      if (queued) {
-        after(async () => {
-          try {
-            const r = await runDealerDataJob({ sessionId: session.id, vin, trigger: "webhook" });
-            console.info("[stripe webhook] dealer data job", { sessionId: session.id, ...r });
-          } catch (err) {
-            console.error("[stripe webhook] dealer data job:", err);
-          }
-        });
-      }
-    }
-
-    if (checkoutLine === "provin_select") {
-      void ensureConsultationDraftSeed(session.id).catch((err) => {
-        console.error("[stripe webhook] consultation draft seed:", err);
-      });
-    } else {
-      // `after`, nevis `void`: ielase (relejs, CapSolver, mnt.ee) var ilgt pēc atbildes Stripe.
-      // Visi avoti vienā piegājienā (paralēli zvani, viena saglabāšana), lai iekļautos 300 s.
-      after(async () => {
-        await ensureOrderDraftEditsFromCheckoutFields(session.id, {
-          vinOrPlate: order.vin,
-          listingUrl: order.listingUrl,
-          customerEmail: email,
-          customerPhone: phone,
-          customerName: order.customerName,
-          notes: order.notes,
-        }).catch((err) => {
-          console.error("[stripe webhook] order draft seed:", err);
-        });
-
-        let effectiveVin = order.vin?.trim() ? normalizeVin(order.vin) : "";
-        if (effectiveVin && !isValidVin(effectiveVin)) {
-          try {
-            const resolved = await resolveOrderVinFromPlate(session.id, {
-              stripeVin: order.vin,
-              listingUrl: order.listingUrl,
-              runDownstream: false,
-            });
-            if (resolved.effectiveVin) effectiveVin = resolved.effectiveVin;
-            console.info("[stripe webhook] plate→vin", { sessionId: session.id, ...resolved });
-          } catch (err) {
-            console.error("[stripe webhook] plate→vin:", err);
-          }
-        }
-
-        // Ātrais vērtējums ar to pašu VIN + e-pastu → dati pāriet automātiski (pirms bezmaksas ielases).
-        try {
-          const qe = await autoImportQuickEvalForPaidOrder(session.id, {
-            vin: effectiveVin || order.vin,
-            email,
-          });
-          if (qe) console.info("[stripe webhook] quick eval auto import", { sessionId: session.id, ...qe });
-        } catch (err) {
-          console.error("[stripe webhook] quick eval auto import:", err);
-        }
-        const vinForAuto = effectiveVin && isValidVin(effectiveVin) ? effectiveVin : order.vin;
-        const [seedRes, scanRes] = await Promise.allSettled([
-          seedPaidOrderAutoSources(session.id, {
-            vin: vinForAuto,
-            listingUrl: order.listingUrl,
-          }),
-          runOrderFreeVinScan(session.id, { vin: vinForAuto, listingUrl: order.listingUrl }),
-        ]);
-        if (seedRes.status === "fulfilled") {
-          const r = seedRes.value;
-          console.info("[stripe webhook] paid order auto sources", { sessionId: session.id, ...r });
-          if (r.mnt_ee === "no_solver" || r.lkf_ee === "no_solver") {
-            console.warn("[stripe webhook] Estonia registry seed skipped: nav CAPSOLVER_API_KEY");
-          }
-        } else {
-          console.error("[stripe webhook] paid order auto sources:", seedRes.reason);
-        }
-        if (scanRes.status === "fulfilled") {
-          console.info("[stripe webhook] free VIN SCAN", { sessionId: session.id, ...scanRes.value });
-        } else {
-          console.error("[stripe webhook] free VIN SCAN:", scanRes.reason);
-        }
-      });
-    }
+    await sendCustomerConfirmation();
+    console.info("PROVIN order:", payload);
+    triggerInvoiceSequenceRepairInBackground();
     await completeStripeEvent(fulfillDedupeKey(thinSession.id));
     return "done";
   } catch (e) {
     await releaseStripeEvent(fulfillDedupeKey(thinSession.id));
     throw e;
+  }
+}
+
+/**
+ * Ielases un melnraksta sākšana pēc apmaksas (dīlera dati, sludinājums, CSDD, reģistri).
+ * Izpilda vienreiz katrai sesijai; atkārtots webhook to neatkārto.
+ */
+async function startPaidOrderDownstream(
+  session: Stripe.Checkout.Session,
+  ctx: {
+    order: ReturnType<typeof getOrderFieldsFromSession>;
+    email: string | null;
+    phone: string | null;
+  },
+): Promise<void> {
+  const { order, email, phone } = ctx;
+  const checkoutLine = getCheckoutLineFromSession(session);
+  const fulfillment = session.metadata?.fulfillment?.trim() ?? "";
+  const partnerId = session.metadata?.partner_id?.trim() ?? "";
+  const packQtyRaw = Number.parseInt(session.metadata?.pack_qty ?? "", 10);
+
+  /**
+   * Vecās kredītu pakas: tikai Stripe sesijām, kurām `fulfillment=b2b_pack` ielika
+   * serveris (partneru paku ceļš slēgts). Publiskais checkout šīs atslēgas vairs
+   * nepieņem no klienta ievades.
+   */
+  if (
+    fulfillment === "b2b_pack" &&
+    (checkoutLine === "dealer" || checkoutLine === "business") &&
+    partnerId
+  ) {
+    const qty = Number.isFinite(packQtyRaw) && packQtyRaw > 0 ? Math.min(packQtyRaw, 50) : 1;
+    after(async () => {
+      try {
+        const { grantB2bCredits, walletHasGrantedSession } = await import("@/lib/b2b-partner-credits");
+        const { updateB2bCreditWallet } = await import("@/lib/b2b-partner-credit-store");
+        await updateB2bCreditWallet(partnerId, (wallet) => {
+          if (walletHasGrantedSession(wallet, session.id)) return { value: false };
+          return {
+            wallet: grantB2bCredits(wallet, checkoutLine, qty, new Date(), session.id),
+            value: true,
+          };
+        });
+        console.info("[stripe webhook] b2b pack credits granted", {
+          sessionId: session.id,
+          partnerId,
+          checkoutLine,
+          qty,
+        });
+      } catch (err) {
+        console.error("[stripe webhook] b2b pack credits:", err);
+      }
+    });
+  }
+
+  /**
+   * Dīlera produkts: VIN Decoder + OE servisa vēsture jāielasa automātiski. OneAuto pollings
+   * ir par lēnu webhook atbildei, tāpēc darbu atzīmējam sinhroni un izpildām
+   * pēc atbildes; cron slaucītājs pārņem, ja fona izpilde nepaspēj.
+   * B2B paka (bez VIN) šeit NEIELASA - ielase sākas tikai pie VIN iesniegšanas.
+   */
+  if (
+    fulfillment !== "b2b_pack" &&
+    order.vin &&
+    isDealerDataAutoFetchOrder({ checkoutLine, amountTotalCents: session.amount_total })
+  ) {
+    const vin = order.vin;
+    const queued = await enqueueDealerDataJob({ sessionId: session.id, vin }).catch((err) => {
+      console.error("[stripe webhook] dealer data enqueue:", err);
+      return false;
+    });
+    if (queued) {
+      after(async () => {
+        try {
+          const r = await runDealerDataJob({ sessionId: session.id, vin, trigger: "webhook" });
+          console.info("[stripe webhook] dealer data job", { sessionId: session.id, ...r });
+        } catch (err) {
+          console.error("[stripe webhook] dealer data job:", err);
+        }
+      });
+    }
+  }
+
+  if (checkoutLine === "provin_select") {
+    void ensureConsultationDraftSeed(session.id).catch((err) => {
+      console.error("[stripe webhook] consultation draft seed:", err);
+    });
+  } else {
+    // `after`, nevis `void`: ielase (relejs, CapSolver, mnt.ee) var ilgt pēc atbildes Stripe.
+    // Visi avoti vienā piegājienā (paralēli zvani, viena saglabāšana), lai iekļautos 300 s.
+    after(async () => {
+      await ensureOrderDraftEditsFromCheckoutFields(session.id, {
+        vinOrPlate: order.vin,
+        listingUrl: order.listingUrl,
+        customerEmail: email,
+        customerPhone: phone,
+        customerName: order.customerName,
+        notes: order.notes,
+      }).catch((err) => {
+        console.error("[stripe webhook] order draft seed:", err);
+      });
+
+      let effectiveVin = order.vin?.trim() ? normalizeVin(order.vin) : "";
+      if (effectiveVin && !isValidVin(effectiveVin)) {
+        try {
+          const resolved = await resolveOrderVinFromPlate(session.id, {
+            stripeVin: order.vin,
+            listingUrl: order.listingUrl,
+            runDownstream: false,
+          });
+          if (resolved.effectiveVin) effectiveVin = resolved.effectiveVin;
+          console.info("[stripe webhook] plate→vin", { sessionId: session.id, ...resolved });
+        } catch (err) {
+          console.error("[stripe webhook] plate→vin:", err);
+        }
+      }
+
+      // Ātrais vērtējums ar to pašu VIN + e-pastu → dati pāriet automātiski (pirms bezmaksas ielases).
+      try {
+        const qe = await autoImportQuickEvalForPaidOrder(session.id, {
+          vin: effectiveVin || order.vin,
+          email,
+        });
+        if (qe) console.info("[stripe webhook] quick eval auto import", { sessionId: session.id, ...qe });
+      } catch (err) {
+        console.error("[stripe webhook] quick eval auto import:", err);
+      }
+      const vinForAuto = effectiveVin && isValidVin(effectiveVin) ? effectiveVin : order.vin;
+      const [seedRes, scanRes] = await Promise.allSettled([
+        seedPaidOrderAutoSources(session.id, {
+          vin: vinForAuto,
+          listingUrl: order.listingUrl,
+        }),
+        runOrderFreeVinScan(session.id, { vin: vinForAuto, listingUrl: order.listingUrl }),
+      ]);
+      if (seedRes.status === "fulfilled") {
+        const r = seedRes.value;
+        console.info("[stripe webhook] paid order auto sources", { sessionId: session.id, ...r });
+        if (r.mnt_ee === "no_solver" || r.lkf_ee === "no_solver") {
+          console.warn("[stripe webhook] Estonia registry seed skipped: nav CAPSOLVER_API_KEY");
+        }
+      } else {
+        console.error("[stripe webhook] paid order auto sources:", seedRes.reason);
+      }
+      if (scanRes.status === "fulfilled") {
+        console.info("[stripe webhook] free VIN SCAN", { sessionId: session.id, ...scanRes.value });
+      } else {
+        console.error("[stripe webhook] free VIN SCAN:", scanRes.reason);
+      }
+    });
   }
 }
 
