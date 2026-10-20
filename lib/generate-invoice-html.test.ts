@@ -41,4 +41,32 @@ describe("invoice HTML buyer requisites", () => {
     expect(html).toContain("Rēķins");
     expect(html).toContain("ā");
   });
+
+  it("escapes buyer fields so markup cannot execute", () => {
+    const html = buildInvoiceHtml(
+      toInvoiceOrderPayload(
+        {
+          id: "cs_test_xss",
+          created: 1_700_000_000,
+          amountTotal: 6999,
+          currency: "EUR",
+          customerEmail: `a@b.lv"><img src=x onerror=alert(1)>`,
+          customerDetailsEmail: null,
+          vin: `WVW"><script>alert(1)</script>`,
+          customerName: `<img src=x onerror=alert(1)>`,
+          phone: "+37120000000",
+          companyName: `SIA "Demo" & <b>Co</b>`,
+          companyReg: "40103123456",
+          companyAddress: "Rīga",
+        },
+        "PRV-2026-0002",
+      ),
+    );
+    expect(html).not.toContain("<script>");
+    expect(html).not.toContain("onerror=alert");
+    expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
+    expect(html).toContain("&lt;b&gt;Co&lt;/b&gt;");
+    expect(html).toContain("&amp;");
+  });
 });
+

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+import { adminHtmlDocumentHeaders } from "@/lib/csp";
 import { buildInvoiceHtml, toInvoiceOrderPayload } from "@/lib/generate-invoice-html";
 import { getOrCreateInvoiceNumber } from "@/lib/invoice-number";
 
@@ -37,9 +38,8 @@ export async function GET(_req: Request, ctx: RouteContext) {
 
   return new NextResponse(html, {
     status: 200,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "private, no-store",
-    },
+    headers: adminHtmlDocumentHeaders({
+      "X-Robots-Tag": "noindex, nofollow",
+    }),
   });
 }

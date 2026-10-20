@@ -150,12 +150,12 @@ export async function POST(req: Request) {
   } catch (e) {
     const detail = e instanceof Error ? e.message : "unknown";
     console.error(`${LOG_PREFIX} blob_fetch_failed`, detail);
-    await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
+    await deleteSourcePdfBlobs(sessionId, blobRefs.map((r) => r.url));
     return NextResponse.json({ error: "blob_fetch_failed", detail }, { status: 502 });
   }
 
   if (buffer.byteLength > PDF_AI_INLINE_MAX_BYTES) {
-    await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
+    await deleteSourcePdfBlobs(sessionId, blobRefs.map((r) => r.url));
     return NextResponse.json(
       {
         error: "file_too_large",
@@ -328,6 +328,6 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ error: "extraction_failed", detail }, { status: 502 });
   } finally {
-    await deleteSourcePdfBlobs(blobRefs.map((r) => r.url));
+    await deleteSourcePdfBlobs(sessionId, blobRefs.map((r) => r.url));
   }
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyCopilotActions, buildCopilotBlocksSummary } from "@/lib/admin-copilot-apply";
 import { createDefaultSourceBlocks, emptyCitiAvotiSection } from "@/lib/admin-source-blocks";
-import type { CopilotAction } from "@/lib/admin-copilot-types";
+import { parseCopilotApplyMode, type CopilotAction } from "@/lib/admin-copilot-types";
 import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
 
 describe("applyCopilotActions", () => {
@@ -676,5 +676,16 @@ describe("Copilot dzēšanas darbības", () => {
       }),
     );
     expect(r.actions.map((a) => a.type)).toEqual(["delete_incident", "clear_field"]);
+  });
+});
+
+describe("parseCopilotApplyMode", () => {
+  it("defaults to preview unless the client sends auto", () => {
+    expect(parseCopilotApplyMode(undefined)).toBe("preview");
+    expect(parseCopilotApplyMode("")).toBe("preview");
+    expect(parseCopilotApplyMode("preview")).toBe("preview");
+    expect(parseCopilotApplyMode("AUTO")).toBe("preview");
+    expect(parseCopilotApplyMode("auto")).toBe("auto");
+    expect(parseCopilotApplyMode(" auto ")).toBe("auto");
   });
 });

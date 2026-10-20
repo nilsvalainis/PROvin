@@ -5,6 +5,7 @@ import { isEcarstradeNoPriceNoBid } from "@/lib/iriss-listing-order-gate";
 import { runIrissListingsOrderLinkSync } from "@/lib/iriss-listings-sync";
 import { orderRoomMatchProps, prepareIrissListingMatchWorkspace } from "@/lib/iriss-listing-match-store";
 import { buildIrissOrderRoomHits } from "@/lib/iriss-order-room";
+import { isAllowedListingSourceUrl } from "@/lib/iriss-listings-platform";
 import { isSafeIrissPasutijumsId, readIrissListingOrderOv, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 
 export const runtime = "nodejs";
@@ -24,6 +25,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
   if (!sourceUrl) return NextResponse.json({ error: "missing_url" }, { status: 400 });
+  if (!isAllowedListingSourceUrl(sourceUrl)) {
+    return NextResponse.json({ error: "url_not_allowed" }, { status: 400 });
+  }
 
   const out = await runIrissListingsOrderLinkSync({ orderId: id, sourceUrl });
   const rec = await readIrissPasutijums(id);

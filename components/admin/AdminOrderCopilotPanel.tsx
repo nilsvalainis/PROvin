@@ -527,7 +527,7 @@ export function AdminOrderCopilotPanel({
       const fd = new FormData();
       fd.set("sessionId", sessionId);
       fd.set("message", text);
-      fd.set("applyMode", "auto");
+      fd.set("applyMode", "preview");
       fd.set("history", JSON.stringify(historyForApi()));
       fd.set("sourceBlocks", JSON.stringify(getSourceBlocks()));
       fd.set("allowedSources", JSON.stringify(allowedSources));
