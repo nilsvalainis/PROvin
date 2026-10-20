@@ -7,12 +7,27 @@ describe("radar list Jauns ieraksts and leftovers", () => {
   it("renders Jauns ieraksts as a link to /admin/iriss/scan/new", () => {
     const list = readFileSync("components/admin/IrissScanListClient.tsx", "utf8");
     const empty = readFileSync("app/admin/iriss/scan/page.tsx", "utf8");
+    const editor = readFileSync("components/admin/IrissScanEditor.tsx", "utf8");
+    const findsUi = readFileSync("components/admin/IrissScanFinds.tsx", "utf8");
     expect(list).toContain('href="/admin/iriss/scan/new"');
-    expect(list.match(/Jauns ieraksts/g)?.length).toBeGreaterThanOrEqual(2);
-    expect(list).not.toMatch(/AdminMobileRoundBtn name="pievienot"/);
+    expect(list.match(/Jauns ieraksts/g)?.length).toBeGreaterThanOrEqual(1);
+    expect(list).toMatch(/AdminMobileRoundBtn name="pievienot"/);
+    expect(list).not.toContain("IrissScanNewFab");
+    expect(list).not.toContain("IrissAuctionLogo");
+    expect(list).not.toMatch(/sticky top-0/);
     expect(empty).toContain('href="/admin/iriss/scan/new"');
     expect(empty).toContain("Jauns ieraksts");
     expect(list).not.toMatch(/\u2014|\u2013/);
+    expect(editor).not.toMatch(/\u2014|\u2013/);
+    expect(editor).toContain("Saglabāts");
+    expect(editor).toContain("Rediģēt saites");
+    expect(editor).toContain("IrissScanFinds");
+    expect(findsUi).toContain("Jaunākie atradumi");
+    expect(editor).toContain("Neizdevās saglabāt");
+    expect(editor).toContain("Dzēst šo radara ierakstu?");
+    expect(editor).toContain("Darbību nevar atsaukt.");
+    expect(editor).not.toMatch(/>Saglabāt</);
+    expect(editor).toContain("IrissUnsavedChangesGuard");
   });
 
   it("keeps pinned rows and still appends a new radar that is missing from the saved order", () => {

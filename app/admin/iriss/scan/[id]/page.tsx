@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { IrissScanEditor } from "@/components/admin/IrissScanEditor";
+import { IrissScanListClient } from "@/components/admin/IrissScanListClient";
+import { loadIrissScanPageData } from "@/lib/iriss-scan-page-data";
 import { isIrissScanStoreEnabled, isSafeIrissScanId, readIrissScanWithRetry } from "@/lib/iriss-scan-store";
 import { requireIrissSectionPage } from "@/lib/staff-auth";
 
@@ -16,5 +17,17 @@ export default async function IrissScanDetailPage({ params }: Props) {
   if (!isSafeIrissScanId(id)) notFound();
   const rec = await readIrissScanWithRetry(id);
   if (!rec) notFound();
-  return <IrissScanEditor initialRecord={rec} />;
+  const data = await loadIrissScanPageData();
+  return (
+    <div className="relative min-h-full w-full max-w-none pb-24 sm:pb-8">
+      <IrissScanListClient
+        rows={data.rows}
+        initialListOrder={data.initialListOrder}
+        newHitsByScan={data.newHitsByScan}
+        finds={data.finds}
+        selectedRecord={rec}
+        mode="edit"
+      />
+    </div>
+  );
 }

@@ -563,3 +563,28 @@
     padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
   }
 }
+
+/* 02 Radars: saraksts + redaktors. Tokeni no 00-tema. Nav sticky galvenes. */
+.iriss-radars-view {
+  color: var(--ink);
+}
+
+@media (max-width: 767px) {
+  .iriss-radars-view .am-topbar {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+  }
+}
+
+.iriss-scan-row {
+  background: var(--s1);
+}
+
+.iriss-scan-find-card {
+  background: var(--s1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iriss-scan-find-card [style*="translateX"] {
+    transition: none !important;
+  }
+}

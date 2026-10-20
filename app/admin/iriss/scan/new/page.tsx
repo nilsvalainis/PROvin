@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { IrissScanEditor } from "@/components/admin/IrissScanEditor";
+import { IrissScanListClient } from "@/components/admin/IrissScanListClient";
+import { loadIrissScanPageData } from "@/lib/iriss-scan-page-data";
 import { isIrissScanStoreEnabled } from "@/lib/iriss-scan-store";
 import { emptyIrissScanRecord } from "@/lib/iriss-scan-types";
 import { irissScanVinFromQuery } from "@/lib/iriss-scan-vin";
@@ -19,5 +20,18 @@ export default async function IrissScanNewPage({
   const sp = (await searchParams) ?? {};
   const rec = emptyIrissScanRecord(crypto.randomUUID(), new Date().toISOString());
   rec.vin = irissScanVinFromQuery(sp.vin);
-  return <IrissScanEditor initialRecord={rec} unsavedDraft />;
+  const data = await loadIrissScanPageData();
+  return (
+    <div className="relative min-h-full w-full max-w-none pb-24 sm:pb-8">
+      <IrissScanListClient
+        rows={data.rows}
+        initialListOrder={data.initialListOrder}
+        newHitsByScan={data.newHitsByScan}
+        finds={data.finds}
+        selectedRecord={rec}
+        unsavedDraft
+        mode="edit"
+      />
+    </div>
+  );
 }
