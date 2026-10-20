@@ -13,10 +13,67 @@ export const ADMIN_DEV_FALLBACK_SECRET = "provin-local-dev-secret-min-16-chars";
 export type AdminSessionPayload = {
   typ: typeof ADMIN_SESSION_TOKEN_TYP;
   exp: number;
+  /** Tikai Google pieteikšanās sesijām; paroles sesijām lauka nav. */
+  via?: typeof ADMIN_GOOGLE_SESSION_VIA;
+  sid?: string;
+  sub?: string;
+  ver?: number;
+  email?: string;
 };
 
-export function encodeAdminSessionPayload(exp: number): string {
-  const body: AdminSessionPayload = { typ: ADMIN_SESSION_TOKEN_TYP, exp };
+export const ADMIN_GOOGLE_SESSION_VIA = "google";
+/** Vienīgais Google konts, kuram atļauta admin pieteikšanās. */
+export const ADMIN_GOOGLE_ALLOWED_EMAIL = "info@provin.lv";
+export const ADMIN_GOOGLE_ALLOWED_HD = "provin.lv";
+
+/** Karogs: izslēgts pēc noklusējuma. Izslēdzot, visas Google sesijas uzreiz kļūst nederīgas. */
+export function isAdminGoogleLoginEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return (env.ADMIN_GOOGLE_LOGIN_ENABLED ?? "").trim() === "1";
+}
+
+export type AdminGoogleSessionPayload = AdminSessionPayload & {
+  via: typeof ADMIN_GOOGLE_SESSION_VIA;
+  sid: string;
+  sub: string;
+  ver: number;
+  email: string;
+};
+
+export function isAdminGoogleSessionPayload(data: AdminSessionPayload): data is AdminGoogleSessionPayload {
+  return (
+    data.via === ADMIN_GOOGLE_SESSION_VIA &&
+    typeof data.sid === "string" &&
+    data.sid.length > 0 &&
+    typeof data.sub === "string" &&
+    data.sub.length > 0 &&
+    typeof data.ver === "number" &&
+    typeof data.email === "string"
+  );
+}
+
+/**
+ * Kopīgā pieņemšanas loģika Edge un Node pārbaudei. Google sesijām šeit tikai statiskās
+ * pārbaudes (karogs, allowlist e-pasts); sesijas stāvokli (atsaukšana, versija, piespraustais
+ * `sub`, dīkstāve) servera pusē pārbauda `lib/admin-auth.ts` `getAdminSession`.
+ */
+export function isAcceptedAdminSessionPayload(
+  data: unknown,
+  nowMs: number = Date.now(),
+  env: NodeJS.ProcessEnv = process.env,
+): data is AdminSessionPayload {
+  if (!isAdminSessionPayload(data) || data.exp <= nowMs) return false;
+  if (data.via === undefined) return true;
+  if (!isAdminGoogleSessionPayload(data)) return false;
+  return isAdminGoogleLoginEnabled(env) && data.email === ADMIN_GOOGLE_ALLOWED_EMAIL;
+}
+
+export function encodeAdminSessionPayload(
+  exp: number,
+  google?: Pick<AdminGoogleSessionPayload, "sid" | "sub" | "ver" | "email">,
+): string {
+  const body: AdminSessionPayload = google
+    ? { typ: ADMIN_SESSION_TOKEN_TYP, exp, via: ADMIN_GOOGLE_SESSION_VIA, ...google }
+    : { typ: ADMIN_SESSION_TOKEN_TYP, exp };
   const bytes = new TextEncoder().encode(JSON.stringify(body));
   let bin = "";
   for (const b of bytes) bin += String.fromCharCode(b);
@@ -25,7 +82,8 @@ export function encodeAdminSessionPayload(exp: number): string {
 
 export function isAdminSessionPayload(data: unknown): data is AdminSessionPayload {
   if (!data || typeof data !== "object") return false;
-  const o = data as { typ?: unknown; exp?: unknown };
+  const o = data as { typ?: unknown; exp?: unknown; via?: unknown };
+  if (o.via !== undefined && o.via !== ADMIN_GOOGLE_SESSION_VIA) return false;
   return o.typ === ADMIN_SESSION_TOKEN_TYP && typeof o.exp === "number";
 }
 
@@ -80,7 +138,7 @@ export async function verifyAdminSessionToken(
     const expected = await hmacSha256Hex(secret, payload);
     if (!constantTimeEqual(sig.toLowerCase(), expected)) return false;
     const data = decodeBase64UrlJson(payload);
-    return isAdminSessionPayload(data) && data.exp > nowMs;
+    return isAcceptedAdminSessionPayload(data, nowMs);
   } catch {
     return false;
   }
