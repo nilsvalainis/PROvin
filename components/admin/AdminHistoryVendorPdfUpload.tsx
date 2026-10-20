@@ -70,6 +70,13 @@ type Props = {
   ) => void;
   /** `true` kamēr aģents strādā — bloķē autosaglabāšanu. */
   onParseActiveChange?: (active: boolean) => void;
+  title?: string;
+  hint?: string;
+  /** Kompaktāks drop zona (ASV cilnes sakļautais slānis). */
+  compact?: boolean;
+  /** Negaida automātisku tabulu pārrakstīšanu: operators pats spiež Ievietot. */
+  deferApply?: boolean;
+  applyLabel?: string;
 };
 
 type AgentResponse = {
@@ -113,6 +120,11 @@ function describeUploadError(
   return detail && detail !== label ? `${label} - ${detail}` : label;
 }
 
+type PendingApply = {
+  patched: Partial<WorkspaceSourceBlocks>;
+  changedKeys: CopilotSourceKey[];
+};
+
 export function AdminHistoryVendorPdfUpload({
   target,
   sessionId,
@@ -121,6 +133,11 @@ export function AdminHistoryVendorPdfUpload({
   getSourceBlocks,
   applyPatchedBlocks,
   onParseActiveChange,
+  title,
+  hint,
+  compact = false,
+  deferApply = false,
+  applyLabel = "Ievietot tabulās",
 }: Props) {
   const inputId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -129,7 +146,11 @@ export function AdminHistoryVendorPdfUpload({
   const [dropActive, setDropActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const labels = LABELS[target];
+  const [pendingApply, setPendingApply] = useState<PendingApply | null>(null);
+  const labels = {
+    title: title ?? LABELS[target].title,
+    hint: hint ?? LABELS[target].hint,
+  };
 
   const uploadFile = useCallback(
     async (file: File) => {
@@ -138,6 +159,7 @@ export function AdminHistoryVendorPdfUpload({
       onParseActiveChange?.(true);
       setError(null);
       setNotice(null);
+      setPendingApply(null);
       try {
         const fd = new FormData();
         fd.set("target", target);
@@ -164,16 +186,23 @@ export function AdminHistoryVendorPdfUpload({
         }
 
         const changedKeys = data.changedKeys ?? [];
-        if (data.patchedSourceBlocks && changedKeys.length > 0) {
-          applyPatchedBlocks(data.patchedSourceBlocks, changedKeys);
+        const canApply = Boolean(data.patchedSourceBlocks && changedKeys.length > 0);
+        if (canApply && data.patchedSourceBlocks) {
+          if (deferApply) {
+            setPendingApply({ patched: data.patchedSourceBlocks, changedKeys });
+          } else {
+            applyPatchedBlocks(data.patchedSourceBlocks, changedKeys);
+          }
         }
         const dropped = (data.skipped ?? []).filter(
           (s) => !s.reason.endsWith("already_filled") && s.reason !== "needs_confirm",
         );
         const lines = [
           data.summary?.trim() || `„${file.name}” apstrādāts.`,
-          changedKeys.length > 0
-            ? `Aizpildīts: ${changedKeys.join(", ")} (${data.applied?.length ?? 0} ieraksti).`
+          canApply
+            ? deferApply
+              ? `Nolasīts: ${changedKeys.join(", ")} (${data.applied?.length ?? 0} ieraksti). Ievieto ar pogu zemāk.`
+              : `Aizpildīts: ${changedKeys.join(", ")} (${data.applied?.length ?? 0} ieraksti).`
             : "Jaunu rindu nebija - tabulas jau atbilst atskaitei.",
           dropped.length > 0
             ? `Neievietoti ${dropped.length}: ${dropped
@@ -199,6 +228,7 @@ export function AdminHistoryVendorPdfUpload({
     [
       applyPatchedBlocks,
       busy,
+      deferApply,
       disabled,
       getSourceBlocks,
       onParseActiveChange,
@@ -207,6 +237,15 @@ export function AdminHistoryVendorPdfUpload({
       target,
     ],
   );
+
+  const commitPendingApply = () => {
+    if (!pendingApply || disabled || readOnly || busy) return;
+    applyPatchedBlocks(pendingApply.patched, pendingApply.changedKeys);
+    setPendingApply(null);
+    setNotice((prev) =>
+      [prev, `Ievietots: ${pendingApply.changedKeys.join(", ")}.`].filter(Boolean).join(" "),
+    );
+  };
 
   const onFiles = useCallback(
     (files: FileList | null) => {
@@ -225,7 +264,7 @@ export function AdminHistoryVendorPdfUpload({
   if (readOnly) return null;
 
   return (
-    <div className="mb-3">
+    <div className={compact ? "mb-1" : "mb-3"}>
       <input
         ref={fileRef}
         id={inputId}
@@ -271,7 +310,7 @@ export function AdminHistoryVendorPdfUpload({
           onFiles(e.dataTransfer.files);
         }}
         className={[
-          "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed px-3 py-4 text-center transition",
+          `flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed px-3 text-center transition ${compact ? "py-2" : "py-4"}`,
           dropActive
             ? "border-[var(--color-provin-accent)] bg-[var(--color-provin-accent)]/5"
             : "border-slate-300/90 bg-slate-50/80 hover:border-slate-400 hover:bg-slate-50",
@@ -296,6 +335,15 @@ export function AdminHistoryVendorPdfUpload({
         <p className="mt-1 text-[9px] leading-snug text-emerald-800/90" role="status">
           {notice}
         </p>
+      ) : null}
+      {pendingApply ? (
+        <button
+          type="button"
+          className="mt-1.5 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-[var(--color-provin-muted)] hover:bg-slate-50"
+          onClick={commitPendingApply}
+        >
+          {applyLabel}
+        </button>
       ) : null}
       {error ? (
         <p className="mt-1 text-[9px] leading-snug text-amber-800/90" role="alert">
