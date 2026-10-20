@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import { milesToKmRounded } from "@/lib/miles-to-km";
 import {
   classifyStatVinText,
   extractStatVinPhotoUrls,
   formatStatVinFoundSummary,
+  formatStatVinOdometerKm,
   isStatVinNotFoundUrl,
   parseStatVinPage,
 } from "@/lib/vin-scan/parse-stat-vin";
@@ -180,6 +182,55 @@ describe("parseStatVinPage", () => {
     expect(r.auctions?.[0]?.venue).toBe("IAAI");
     expect(r.auctions?.[0]?.title).toMatch(/7788123/);
   });
+
+  it("2026-10 kartīte: Lot number, Odometer mi → km, JSON-LD foto; Sale History (0) nav none", () => {
+    const vin = "WDD1173421N570488";
+    const photo =
+      "https://g-static.copart.com/v1/AUTH_svc_depdoc/ids-g-prod-top1-pub-perm/0925/ee075ec6ac3c4781baa99672ef0b7ba0_O_2.jpg";
+    const html = `<!doctype html><html><body>
+      <h1>Mercedes-Benz CLA 2017 VIN: ${vin}</h1>
+      <p>Copart</p>
+      <p>Sale History (0)</p>
+      <p>Auction completed</p>
+      <p>20 Photos</p>
+      <p>AI damage report</p>
+      <p>Auction: COPART FINLAND</p>
+      <p>Lot number: 50558298</p>
+      <p>VIN: ${vin}</p>
+      <p>Location: Turku</p>
+      <p>Damage: Front End</p>
+      <p>Odometer, mi: 185,389 mi</p>
+      <p>Keys: N/A</p>
+      <table><tr><td>No data found</td></tr></table>
+      <p>No similar cars were found at the auction.</p>
+      <img src="${photo}">
+      <script type="application/ld+json">${JSON.stringify({
+        "@type": "Vehicle",
+        vehicleIdentificationNumber: vin,
+        knownVehicleDamages: "Front End",
+        purchaseDate: "2025-09-24 10:51:58",
+        description:
+          "Vehicle Mercedes-Benz CLA 2017 was sold on at COPART FINLAND auction, lot number 50558298, with Front End damage. It was purchased for , with a mileage of 185389 miles at the time of sale.",
+        image: [photo],
+        manufacturer: "Mercedes-Benz",
+        model: "CLA",
+        productionDate: "2017",
+      })}</script>
+    </body></html>`;
+    const r = parseStatVinPage({ status: 200, html, vin, finalUrl: `https://stat.vin/cars/${vin}` });
+    expect(r.status).toBe("found");
+    expect(r.summary).not.toMatch(/nav izsoles/i);
+    expect(r.auctions?.[0]?.lot).toBe("50558298");
+    expect(r.auctions?.[0]?.venue).toBe("Copart FI");
+    expect(r.auctions?.[0]?.odometer).toBe(formatStatVinOdometerKm("185389 mi"));
+    expect((r.auctions?.[0]?.odometer || "").replace(/[^\d]/g, "")).toBe(String(milesToKmRounded(185389)));
+    expect(r.auctions?.[0]?.odometer).toMatch(/km/);
+    expect(r.mileage?.[0]?.odometer).toMatch(/km/);
+    expect(r.media?.photoUrl).toContain("g-static.copart.com");
+    expect(r.vehicle?.make).toMatch(/Mercedes/i);
+    expect(`${r.summary}\n${r.detail ?? ""}\n${r.auctions?.[0]?.title ?? ""}`).not.toMatch(/\bkeys?\b/i);
+    expect(classifyStatVinText(html.replace(/<[^>]+>/g, " "), vin)?.status).toBe("found");
+  });
 });
 
 describe("classifyStatVinText", () => {
@@ -197,6 +248,14 @@ describe("classifyStatVinText", () => {
     expect(
       classifyStatVinText(`RAM 2500 2026 VIN: ${VIN} Sale History (13) Auction Date Final Bid Copart`, VIN)?.status,
     ).toBe("found");
+  });
+});
+
+describe("formatStatVinOdometerKm", () => {
+  it("mi pārvērš km; bez vienības atstāj skaitli kā km", () => {
+    expect(formatStatVinOdometerKm("185,389 mi").replace(/[^\d]/g, "")).toBe(String(milesToKmRounded(185389)));
+    expect(formatStatVinOdometerKm("185389").replace(/[^\d]/g, "")).toBe("185389");
+    expect(formatStatVinOdometerKm("")).toBe("");
   });
 });
 

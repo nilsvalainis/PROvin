@@ -10,8 +10,6 @@ const DEV_FALLBACK_SECRET = "provin-local-dev-secret-min-16-chars";
 export function resolveB2bDemoSessionSecret(env: NodeJS.ProcessEnv = process.env): string {
   const dedicated = env.B2B_DEMO_SESSION_SECRET?.trim() ?? "";
   if (dedicated) return dedicated;
-  const admin = env.ADMIN_SECRET?.trim() ?? "";
-  if (admin) return admin;
   if (env.NODE_ENV !== "production") return DEV_FALLBACK_SECRET;
   return "";
 }

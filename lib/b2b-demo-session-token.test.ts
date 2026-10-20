@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readB2bDemoSessionToken, resolveB2bDemoSessionSecret, signB2bDemoSessionToken } from "./b2b-demo-session-token";
+import {
+  readB2bDemoSessionToken,
+  resolveB2bDemoSessionSecret,
+  resolveB2bDemoWrapSecret,
+  signB2bDemoSessionToken,
+} from "./b2b-demo-session-token";
 
 describe("b2b demo session token", () => {
   const session = {
@@ -19,5 +24,44 @@ describe("b2b demo session token", () => {
   it("produkcijā bez secret neatgriež fallback", () => {
     expect(resolveB2bDemoSessionSecret({ NODE_ENV: "production" })).toBe("");
     expect(resolveB2bDemoSessionSecret({ NODE_ENV: "development" }).length).toBeGreaterThanOrEqual(16);
+  });
+
+  it("produkcijā nekrīt uz ADMIN_SECRET, ja dedicated ir iestatīts vai nav", () => {
+    expect(
+      resolveB2bDemoSessionSecret({
+        NODE_ENV: "production",
+        ADMIN_SECRET: "admin-secret-16chars",
+      } as NodeJS.ProcessEnv),
+    ).toBe("");
+    expect(
+      resolveB2bDemoSessionSecret({
+        NODE_ENV: "production",
+        B2B_DEMO_SESSION_SECRET: "demo-session-secret",
+        ADMIN_SECRET: "admin-secret-16chars",
+      } as NodeJS.ProcessEnv),
+    ).toBe("demo-session-secret");
+  });
+
+  it("wrap secret krīt uz demo session secret, nevis ADMIN_SECRET", () => {
+    expect(
+      resolveB2bDemoWrapSecret({
+        NODE_ENV: "production",
+        ADMIN_SECRET: "admin-secret-16chars",
+      } as NodeJS.ProcessEnv),
+    ).toBe("");
+    expect(
+      resolveB2bDemoWrapSecret({
+        NODE_ENV: "production",
+        B2B_DEMO_SESSION_SECRET: "demo-session-secret",
+        ADMIN_SECRET: "admin-secret-16chars",
+      } as NodeJS.ProcessEnv),
+    ).toBe("demo-session-secret");
+    expect(
+      resolveB2bDemoWrapSecret({
+        NODE_ENV: "production",
+        B2B_DEMO_TENANT_WRAP_SECRET: "wrap-secret-16char",
+        B2B_DEMO_SESSION_SECRET: "demo-session-secret",
+      } as NodeJS.ProcessEnv),
+    ).toBe("wrap-secret-16char");
   });
 });

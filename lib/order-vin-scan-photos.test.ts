@@ -28,6 +28,11 @@ describe("VIN SCAN izsoļu foto URL", () => {
     expect(isAllowedVinScanAuctionPhotoUrl("https://vis.iaai.com/image.jpg")).toBe(true);
     expect(isAllowedVinScanAuctionPhotoUrl("https://cars2.import-motor.com/copart/a.webp")).toBe(true);
     expect(isAllowedVinScanAuctionPhotoUrl("https://www.copart.fi/photo/a.jpg")).toBe(true);
+    expect(
+      isAllowedVinScanAuctionPhotoUrl(
+        "https://g-static.copart.com/v1/AUTH_svc_depdoc/ids-g-prod-top1-pub-perm/0925/ee075ec6ac3c4781baa99672ef0b7ba0_O_2.jpg",
+      ),
+    ).toBe(true);
     expect(isAllowedVinScanAuctionPhotoUrl("http://cs.copart.com/a.jpg")).toBe(false);
     expect(isAllowedVinScanAuctionPhotoUrl("https://127.0.0.1/a.jpg")).toBe(false);
     expect(isAllowedVinScanAuctionPhotoUrl("https://evil.example/a.jpg")).toBe(false);
