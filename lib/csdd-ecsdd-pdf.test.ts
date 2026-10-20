@@ -128,7 +128,8 @@ describe("e.csdd.lv TCPDF → CSDD forma", () => {
     expect(fields.grossMassKg).toBe("3270");
     expect(fields.curbMassKg).toBe("2333");
     expect(fields.registrationStatus).toMatch(/Noņemts/i);
-    expect(fields.firstRegistration).toBe("2026-05-19");
+    expect(fields.firstRegistration).toBe("");
+    expect(fields.firstRegistrationLatvia).toBe("2026-05-19");
     expect(fields.nextInspectionDate).toBe("2027-06-17");
     expect(fields.prevInspectionDate).toBe("2026-06-10");
     expect(fields.particulateMatter).toBe("2000001");

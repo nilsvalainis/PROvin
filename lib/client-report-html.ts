@@ -985,6 +985,7 @@ function escapeCsddPdfFieldValue(key: keyof CsddFormFields, v: string): string {
     key === "nextInspectionDate" ||
     key === "prevInspectionDate" ||
     key === "firstRegistration" ||
+    key === "firstRegistrationLatvia" ||
     key === "insuranceValidUntil";
   return isDateKey ? formatCsddNextInspectionCell(v) : escapeHtml(v);
 }
@@ -1389,6 +1390,7 @@ export function buildCsddAvotuZoneHtml(
       key === "nextInspectionDate" ||
       key === "prevInspectionDate" ||
       key === "firstRegistration" ||
+      key === "firstRegistrationLatvia" ||
       key === "insuranceValidUntil" ||
       key === "vin" ||
       key.startsWith("coc")

@@ -53,6 +53,10 @@ import {
 } from "@/lib/listing-price-lifecycle";
 import { resolveListingCountry } from "@/lib/listing-odometer";
 import { isVendorTimelineListingRecord } from "@/lib/vendor-timeline-listing";
+import {
+  isCsddFirstRegistrationInLatviaLabel,
+  ownerFirstRegistrationInLatvia,
+} from "@/lib/csdd-extended-parse";
 
 export const PDF_LIFECYCLE_TITLE = "Vēstures kopsavilkums";
 
@@ -202,6 +206,22 @@ function monthKey(ms: number): string {
   if (ms <= 0) return "";
   const d = new Date(ms);
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function sameLifecycleMonth(a: LifecycleEvent, b: LifecycleEvent): boolean {
+  const ka = a.time > 0 ? monthKey(a.time) : "";
+  const kb = b.time > 0 ? monthKey(b.time) : "";
+  return Boolean(ka) && ka === kb;
+}
+
+function isListingLikeSource(source: string): boolean {
+  const sq = source.toLowerCase().replace(/[\s._-]+/g, "");
+  return /sslv|sludin|tirgusdati/.test(sq);
+}
+
+function listingSourcesCompatible(host: LifecycleEvent, odo: LifecycleEvent): boolean {
+  if (host.sources.some((s) => odo.sources.includes(s))) return true;
+  return host.sources.some(isListingLikeSource) && odo.sources.some(isListingLikeSource);
 }
 
 /** DD.MM.YYYY / ISO, vai MM.YYYY (→ mēneša 1. diena). 0, ja nederīgs. */
@@ -459,14 +479,40 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
   const out: LifecycleEvent[] = [];
   const csdd = input.csddForm;
 
-  if (csdd?.firstRegistration.trim()) {
+  const firstLvOwner =
+    ownerFirstRegistrationInLatvia(csdd?.ownerRegistrationEvents) ??
+    (csdd?.ownerRegistrationEvents ?? []).find(
+      (e) => e.date.trim() && /pirmā\s+reģistrācija/i.test(e.label),
+    );
+  const firstLvDate = (csdd?.firstRegistrationLatvia.trim() || firstLvOwner?.date || "").trim();
+  const firstRegDate = csdd?.firstRegistration.trim() ?? "";
+  const firstRegMs = firstRegDate ? parseLifecycleTimeMs(firstRegDate) : 0;
+  const firstLvMs = firstLvDate ? parseLifecycleTimeMs(firstLvDate) : 0;
+  const firstRegDuplicatesFirstLv =
+    firstRegMs > 0 && firstLvMs > 0 && eventDayKeyFromMs(firstRegMs) === eventDayKeyFromMs(firstLvMs);
+
+  // Pasaules pirmā reģistrācija nav Latvija, ja ir atsevišķa pirmā reģistrācija Latvijā.
+  if (firstRegDate && !firstRegDuplicatesFirstLv) {
     out.push(
       makeEvent({
         kind: "first_registration",
-        rawDate: csdd.firstRegistration,
+        rawDate: firstRegDate,
         title: "Pirmā reģistrācija",
-        detail: "",
-        country: csdd.previousRegistrationCountry,
+        detail: "1. reģistrācija pasaulē",
+        country: "",
+        source: "CSDD",
+      }),
+    );
+  }
+
+  if (firstLvDate && !firstLvOwner) {
+    out.push(
+      makeEvent({
+        kind: "first_registration",
+        rawDate: firstLvDate,
+        title: "Pirmā reģistrācija",
+        detail: "1. reģistrācija Latvijā",
+        country: "Latvija",
         source: "CSDD",
       }),
     );
@@ -477,7 +523,7 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
     if (!e.date.trim()) continue;
     lvOwner += 1;
     const raw = e.label.trim();
-    const firstLv = /pirmā\s+reģistrācija/i.test(raw);
+    const firstLv = isCsddFirstRegistrationInLatviaLabel(raw) || /pirmā\s+reģistrācija/i.test(raw);
     out.push(
       makeEvent({
         kind: firstLv ? "first_registration" : "registration",
@@ -719,31 +765,49 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
   });
 }
 
+function eventDayKeyFromMs(ms: number): string {
+  if (ms <= 0) return "";
+  const d = new Date(ms);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+}
+
+function sameLifecycleDay(a: LifecycleEvent, b: LifecycleEvent): boolean {
+  const ka = eventDayKey(a);
+  const kb = eventDayKey(b);
+  return Boolean(ka) && ka === kb;
+}
+
+function odometerHostOwnsReading(host: LifecycleEvent, odo: LifecycleEvent): boolean {
+  if (host.kind === "odometer") return false;
+  // ss.lv / sludinājuma km paliek uz sludinājuma kartes tajā pašā dienā, ne uz Citi avoti.
+  if (lifecycleCountryIsSoft(odo)) {
+    return host.kind === "listed" && sameLifecycleDay(host, odo) && listingSourcesCompatible(host, odo);
+  }
+  if (host.kind === "listed" || host.timelineInformational) return false;
+  if (sameLifecycleDay(host, odo)) return true;
+  return sameLifecycleMonth(host, odo);
+}
+
 /**
- * Odometra ieraksti tajā pašā mēnesī pieķeras faktiskajam notikumam, nevis dublējas atsevišķā rindā.
- * Izņēmums: apstiprināts (ne `countryUnverified`) odometra ieraksts nekad nekļūst par "listed"
- * (sludinājums) saimnieku. Sludinājums ir tikai norāde, ne juridisks apstiprinājums, tāpēc oficiāls
- * avota ieraksts (CSDD/dīleris/carVertical/cits) tajā pašā mēnesī paliek savs, neatkarīgs ieraksts -
- * tas ļauj tam pareizi noteikt reālu robežšķērsošanu un nenozūd apvienojumā ar sludinājuma karti.
- * Sludinājuma PAŠA (arī nesertificēta) odometra rinda gan joprojām pieķeras savai "Sludinājums"
- * kartei - tā ir viens un tas pats fakts, ne atsevišķa liecība, un dublēt to būtu nepareizi.
+ * Odometra km pieķeras tikai tai pašai dienai un tam notikumam, kam km pieder.
+ * Mēneša „tuvākā rinda” (tukšs Citi avoti, cenas izmaiņa) km nedrīkst pārmantot.
  */
 function mergeOdometerIntoFacts(facts: LifecycleEvent[], odo: LifecycleEvent[]): LifecycleEvent[] {
+  const byDay = new Map<string, LifecycleEvent[]>();
   const byMonth = new Map<string, LifecycleEvent[]>();
   for (const f of facts) {
-    const key = monthKey(f.time);
-    if (!key) continue;
-    byMonth.set(key, [...(byMonth.get(key) ?? []), f]);
+    const day = eventDayKey(f);
+    if (day) byDay.set(day, [...(byDay.get(day) ?? []), f]);
+    const month = f.time > 0 ? monthKey(f.time) : "";
+    if (month) byMonth.set(month, [...(byMonth.get(month) ?? []), f]);
   }
   const kept: LifecycleEvent[] = [];
   for (const o of odo) {
-    const key = monthKey(o.time);
-    const hosts = key ? byMonth.get(key) : undefined;
-    const host = hosts?.find((h) => {
-      if (h.kind === "odometer") return false;
-      if ((h.kind === "listed" || h.timelineInformational) && !lifecycleCountryIsSoft(o)) return false;
-      return true;
-    });
+    const dayHosts = byDay.get(eventDayKey(o)) ?? [];
+    const monthHosts = o.time > 0 ? (byMonth.get(monthKey(o.time)) ?? []) : [];
+    const host =
+      dayHosts.find((h) => odometerHostOwnsReading(h, o)) ??
+      monthHosts.find((h) => odometerHostOwnsReading(h, o));
     if (o.kind === "anomaly" || !host) {
       kept.push(o);
       continue;
@@ -798,11 +862,12 @@ function dedupeSameEvents(events: LifecycleEvent[]): LifecycleEvent[] {
 }
 
 function eventDayKey(e: LifecycleEvent): string {
-  if (e.time > 0) {
-    const d = new Date(e.time);
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-  }
+  if (e.time > 0) return eventDayKeyFromMs(e.time);
   return e.date.trim();
+}
+
+function csddFirstRegistrationInLatvia(e: LifecycleEvent): boolean {
+  return e.kind === "first_registration" && e.sources.includes("CSDD") && e.country === "Latvija";
 }
 
 function preferMergedCountry(a: LifecycleEvent, b: LifecycleEvent): string {
@@ -865,10 +930,16 @@ function monthsBetween(a: number, b: number): number {
 }
 
 /** Loģikas slānis: valsts maiņa → imports; ilgs klusums → robs. */
-function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
+function addDerivedEvents(
+  sorted: LifecycleEvent[],
+  previousRegistrationCountry = "",
+): LifecycleEvent[] {
   const out: LifecycleEvent[] = [];
   let prevCountry = "";
   let prevResidence: LifecycleEvent | null = null;
+  let seededCsddPrevious = false;
+  const previousCountryNorm =
+    normalizeCountryNameLv(previousRegistrationCountry) || previousRegistrationCountry.trim();
   for (const [i, e] of sorted.entries()) {
     const prev = i > 0 ? sorted[i - 1]! : null;
     if (prev && prev.time > 0 && e.time > 0) {
@@ -888,29 +959,32 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
         });
       }
     }
-    if (
-      lifecycleEventProvidesCountryResidence(e) &&
-      prevCountry &&
-      e.country !== prevCountry
-    ) {
-      const fromIso = countryLabelToIso2(prevCountry);
-      const toIso = countryLabelToIso2(e.country);
-      if (fromIso && toIso && fromIso !== toIso) {
-        const caSide = fromIso === "CA" ? prevResidence : toIso === "CA" ? e : null;
-        if (!isDisputedUsCanadaCountryPair(fromIso, toIso, caSide)) {
-          out.push({
-            kind: "import",
-            date: e.date,
-            time: e.time > 0 ? e.time - 1 : 0,
-            year: e.year,
-            title: `${prevCountry} → ${e.country}`,
-            detail: `${prevCountry} → ${e.country}`,
-            country: e.country,
-            fromCountry: prevCountry,
-            odometer: "",
-            sources: [...e.sources],
-            tone: "warn",
-          });
+    if (lifecycleEventProvidesCountryResidence(e)) {
+      let fromCountry = prevCountry;
+      if (!fromCountry && !seededCsddPrevious && previousCountryNorm && csddFirstRegistrationInLatvia(e)) {
+        fromCountry = previousCountryNorm;
+        seededCsddPrevious = true;
+      }
+      if (fromCountry && e.country !== fromCountry) {
+        const fromIso = countryLabelToIso2(fromCountry);
+        const toIso = countryLabelToIso2(e.country);
+        if (fromIso && toIso && fromIso !== toIso) {
+          const caSide = fromIso === "CA" ? prevResidence : toIso === "CA" ? e : null;
+          if (!isDisputedUsCanadaCountryPair(fromIso, toIso, caSide)) {
+            out.push({
+              kind: "import",
+              date: e.date,
+              time: e.time > 0 ? e.time - 1 : 0,
+              year: e.year,
+              title: `${fromCountry} → ${e.country}`,
+              detail: `${fromCountry} → ${e.country}`,
+              country: e.country,
+              fromCountry,
+              odometer: "",
+              sources: [...e.sources],
+              tone: "warn",
+            });
+          }
         }
       }
     }
@@ -923,6 +997,65 @@ function addDerivedEvents(sorted: LifecycleEvent[]): LifecycleEvent[] {
     out.push(e);
   }
   return out;
+}
+
+/**
+ * Vienā dienā maksimums viena valsts maiņa.
+ * A → B → A tajā pašā datumā tiek apvienots un paliek brīdinājums.
+ */
+function collapseSameDayCountryTransitions(events: LifecycleEvent[]): LifecycleEvent[] {
+  const importsByDay = new Map<string, LifecycleEvent[]>();
+  for (const e of events) {
+    if (e.kind !== "import") continue;
+    const key = eventDayKey(e);
+    if (!key) continue;
+    importsByDay.set(key, [...(importsByDay.get(key) ?? []), e]);
+  }
+  const drop = new Set<LifecycleEvent>();
+  const extras: LifecycleEvent[] = [];
+  for (const dayImports of importsByDay.values()) {
+    if (dayImports.length <= 1) continue;
+    const chain = [...dayImports].sort((a, b) => a.time - b.time);
+    const start = chain[0]!.fromCountry?.trim() || "";
+    const end = chain[chain.length - 1]!.country.trim();
+    const hopText = chain.map((e) => `${e.fromCountry ?? "?"} → ${e.country}`).join(", ");
+    for (const e of chain) drop.add(e);
+    const bounced =
+      Boolean(start) &&
+      Boolean(end) &&
+      normalizeCountryNameLv(start).toLowerCase() === normalizeCountryNameLv(end).toLowerCase();
+    extras.push({
+      kind: "anomaly",
+      date: chain[0]!.date,
+      time: chain[0]!.time,
+      year: chain[0]!.year,
+      title: "Vienas dienas valsts maiņa apvienota",
+      detail: bounced
+        ? `${hopText}. Atkārtota A → B → A vienā datumā.`
+        : `${hopText}. Neto: ${start} → ${end}.`,
+      country: bounced ? "" : end,
+      odometer: "",
+      sources: [...new Set(chain.flatMap((e) => e.sources))],
+      tone: "warn",
+    });
+    if (!bounced && start && end && start !== end) {
+      extras.push({
+        kind: "import",
+        date: chain[0]!.date,
+        time: Math.min(...chain.map((e) => (e.time > 0 ? e.time : 0))),
+        year: chain[0]!.year,
+        title: `${start} → ${end}`,
+        detail: `${start} → ${end}`,
+        country: end,
+        fromCountry: start,
+        odometer: "",
+        sources: [...new Set(chain.flatMap((e) => e.sources))],
+        tone: "warn",
+      });
+    }
+  }
+  if (drop.size === 0) return events;
+  return sortAscending([...events.filter((e) => !drop.has(e)), ...extras]);
 }
 
 function parseLifecycleOdometerKm(raw: string): number | null {
@@ -956,5 +1089,7 @@ export function buildVehicleLifecycleEvents(input: LifecycleInput): LifecycleEve
   const deduped = mergeSameDateTypeCountryDisagreement(dedupeSameEvents(merged)).filter((e) => e.time > 0);
   if (deduped.length === 0) return [];
   for (const e of deduped) collapseCountryOnlyDetail(e);
-  return addDerivedEvents(sortAscending(deduped));
+  return collapseSameDayCountryTransitions(
+    addDerivedEvents(sortAscending(deduped), input.csddForm?.previousRegistrationCountry ?? ""),
+  );
 }

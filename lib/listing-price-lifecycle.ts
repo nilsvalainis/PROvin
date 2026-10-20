@@ -91,16 +91,20 @@ export function collectListingPriceLifecyclePoints(args: {
   if (out.length === 0) return [];
 
   let lastPrice = out[0]!.price;
+  let lastShownKm = out[0]!.mileageKm;
   for (const row of history.slice(startIndex)) {
     if (Math.round(row.price) === Math.round(lastPrice)) continue;
     const delta = Math.round(row.price) - Math.round(lastPrice);
+    const km = parseKm(row.mileage);
+    const ownedKm = km != null && km !== lastShownKm ? km : null;
     out.push({
       date: row.date.trim(),
       price: row.price,
-      mileageKm: parseKm(row.mileage),
+      mileageKm: ownedKm,
       delta,
     });
     lastPrice = row.price;
+    if (ownedKm != null) lastShownKm = ownedKm;
   }
   return out;
 }

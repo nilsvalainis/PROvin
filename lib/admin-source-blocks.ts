@@ -362,8 +362,10 @@ export type CsddFormFields = {
   rawUnprocessedData: string;
   makeModel: string;
   registrationNumber: string;
-  /** HTML date (YYYY-MM-DD) vai teksts no CSDD. */
+  /** HTML date (YYYY-MM-DD) vai teksts no CSDD. Pirmā reģistrācija pasaulē, ne Latvijā. */
   firstRegistration: string;
+  /** Pirmā reģistrācija Latvijā (īpašnieku vēstures rinda). Nekad neaizpilda `firstRegistration`. */
+  firstRegistrationLatvia: string;
   nextInspectionDate: string;
   prevInspectionDate: string;
   engineDisplacementCm3: string;
@@ -484,7 +486,8 @@ export const CSDD_FORM_STRUCTURED_FIELDS: {
   { key: "registrationNumber", label: "Reģistrācijas numurs:" },
   { key: "vin", label: "VIN:" },
   { key: "modelYear", label: "Izlaiduma gads:" },
-  { key: "firstRegistration", label: "Pirmā reģistrācija:" },
+  { key: "firstRegistration", label: "Pirmā reģistrācija (pasaulē):" },
+  { key: "firstRegistrationLatvia", label: "Pirmā reģistrācija Latvijā:" },
   { key: "nextInspectionDate", label: "Nākamās apskates datums:" },
   { key: "prevInspectionDate", label: "Iepriekšējās apskates datums:" },
   { key: "insuranceValidUntil", label: "OCTA polise derīga līdz:" },
@@ -670,6 +673,7 @@ export function emptyCsddFields(): CsddFormFields {
     makeModel: "",
     registrationNumber: "",
     firstRegistration: "",
+    firstRegistrationLatvia: "",
     nextInspectionDate: "",
     prevInspectionDate: "",
     engineDisplacementCm3: "",
@@ -2363,6 +2367,7 @@ function parseCsddStoredFieldsRaw(raw: Record<string, unknown>): Omit<CsddFormFi
     makeModel: clipCsddField(raw.makeModel, 240),
     registrationNumber: clipCsddField(raw.registrationNumber, 40),
     firstRegistration: clipCsddField(raw.firstRegistration, 40),
+    firstRegistrationLatvia: clipCsddField(raw.firstRegistrationLatvia, 40),
     nextInspectionDate: clipCsddField(raw.nextInspectionDate, 40),
     prevInspectionDate: clipCsddField(raw.prevInspectionDate, 40),
     engineDisplacementCm3: clipCsddField(raw.engineDisplacementCm3, 40),

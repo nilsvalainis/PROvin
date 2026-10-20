@@ -13,6 +13,8 @@ export type LvRegistryBasics = {
   markModel: string | null;
   regNr: string | null;
   firstReg: string | null;
+  /** Tikai „Pirmā reģistrācija Latvijā” - nav pirmā reģistrācija pasaulē. */
+  firstRegLatvia: string | null;
   euro: string | null;
   powerKw: string | null;
   /** Pilnā / pielaujamā masa (kg), nevis pašmasa. */
@@ -26,6 +28,7 @@ export type LvRegistryBasics = {
 /** Strukturēti lauki no tabulas / `atslēga: vērtība` (admin ielīme). */
 export type RegistryStructuredFields = {
   firstReg: string | null;
+  firstRegLatvia: string | null;
   enginePower: string | null;
   engineDisplacementCm3: string | null;
   grossWeight: string | null;
@@ -94,6 +97,7 @@ export function intervalRunKm(sortedAsc: OdometerHistoryPoint[]): number[] {
 export function extractRegistryStructuredFields(csdd: string): RegistryStructuredFields {
   const out: RegistryStructuredFields = {
     firstReg: null,
+    firstRegLatvia: null,
     enginePower: null,
     engineDisplacementCm3: null,
     grossWeight: null,
@@ -135,6 +139,10 @@ export function extractRegistryStructuredFields(csdd: string): RegistryStructure
     }
     if (!key || !val) continue;
     const nk = normKey(key);
+    if (nk.includes("latvij") && (nk.includes("pirma_registracija") || nk.includes("pirmas_registracijas"))) {
+      out.firstRegLatvia = val;
+      continue;
+    }
     if (
       nk === "first_reg_date" ||
       nk.includes("first_reg") ||
@@ -303,10 +311,14 @@ export function parseLvRegistryBasics(csdd: string): LvRegistryBasics {
       /(?:reģ\.?\s*nr\.?|reģistr[āa]cijas\s+numurs|valsts\s+numurzīme)\s*[:\-]?\s*([A-ZĀČĒĢĪĶĻŅŠŪŽa-zāčēģīķļņšūž0-9\s\-]{4,14})/i,
     ) ?? firstMatch(t, /\b([A-Z]{1,2}\s?\d{3,4})\b/);
 
-  const firstReg =
+  const firstRegLatvia =
     firstMatch(t, /(\d{1,2}[./]\d{1,2}[./]\d{2,4})\s*[-\u2013\u2014]\s*Pirm[āa]\s+reģistr[āa]cija\s+Latvijā/i) ??
-    firstMatch(t, /pirm[āa]\s+reģistr[āa]cij[as]*\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i) ??
-    firstMatch(t, /pirm[āa]\s+reģistr[āa]cij[as]*\s*[:\-]?\s*(\d{4}-\d{2}-\d{2})/i);
+    firstMatch(t, /pirm[āa]\s+reģistr[āa]cija\s+Latvijā\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i) ??
+    firstMatch(t, /pirm[āa]\s+reģistr[āa]cija\s+Latvijā\s*[:\-]?\s*(\d{4}-\d{2}-\d{2})/i);
+
+  const firstReg =
+    firstMatch(t, /pirm[āa]\s+reģistr[āa]cij[as]*(?:\s*\(pasaul[eē]\))?\s*[:\-]?\s*(\d{1,2}[./]\d{1,2}[./]\d{2,4})/i) ??
+    firstMatch(t, /pirm[āa]\s+reģistr[āa]cij[as]*(?:\s*\(pasaul[eē]\))?\s*[:\-]?\s*(\d{4}-\d{2}-\d{2})/i);
 
   const euro =
     firstMatch(t, /(?:emisijas\s+klase|euro\s*standarts?|euro)\s*[:\-]?\s*(EURO\s*\d|euro\s*\d|E\s*\d)/i) ??
@@ -339,6 +351,7 @@ export function parseLvRegistryBasics(csdd: string): LvRegistryBasics {
     markModel,
     regNr,
     firstReg,
+    firstRegLatvia,
     euro,
     powerKw,
     grossMassKg,

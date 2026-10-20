@@ -1,7 +1,7 @@
 "use client";
 
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { CountryFlagWithCode } from "@/components/admin/CountryFlagWithCode";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
@@ -79,6 +79,7 @@ import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { ADMIN_SOURCE_DATA_TABLE_CLASS, ADMIN_SOURCE_TABLE_WRAP_CLASS } from "@/lib/admin-source-data-table";
 import { CSDD_COMMENT_TEMPLATES, applyCsddCommentTemplate } from "@/lib/admin-csdd-comment-presets";
 import { AlertTriangle, Lock } from "lucide-react";
+import { collectCsddFirstRegistrationWarnings } from "@/lib/csdd-first-registration-guard";
 
 const inp =
   "min-w-0 w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25";
@@ -105,6 +106,7 @@ function FieldAlertTriangleIcon({ flag }: { flag: Exclude<CsddFieldUiFlag, "none
 
 const dateKeys = new Set<keyof CsddFormFields>([
   "firstRegistration",
+  "firstRegistrationLatvia",
   "nextInspectionDate",
   "prevInspectionDate",
   "insuranceValidUntil",
@@ -205,6 +207,8 @@ type Props = {
   aiComment?: AdminAiSourceCommentSlot;
   photosPersistenceEnabled?: boolean;
   onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
+  /** Citu avotu datumi FR1 pārbaudei (pasaules pirmā reģistrācija pret agrāko ierakstu). */
+  otherRecordDates?: string[];
 };
 
 const mileCell = "px-1.5 py-0.5";
@@ -225,7 +229,12 @@ export function AdminCsddSourceBlock({
   aiComment,
   photosPersistenceEnabled = false,
   onPhotoGroupsStructuralCommit,
+  otherRecordDates,
 }: Props) {
+  const firstRegWarnings = useMemo(
+    () => collectCsddFirstRegistrationWarnings({ csdd: value, otherRecordDates }),
+    [value, otherRecordDates],
+  );
   const setField = (key: keyof CsddFormFields, v: string) => {
     onChange(setCsddFieldManually(value, key, v));
   };
@@ -372,6 +381,23 @@ export function AdminCsddSourceBlock({
         )}
       </div>
 
+      {firstRegWarnings.length > 0 ? (
+        <div
+          className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-[10px] leading-snug text-amber-900"
+          role="status"
+          data-csdd-first-reg-warnings=""
+        >
+          <p className="font-medium uppercase tracking-wide">Pirmās reģistrācijas brīdinājumi</p>
+          <ul className="mt-1 list-disc pl-4">
+            {firstRegWarnings.map((w) => (
+              <li key={`${w.id}-${w.message.slice(0, 40)}`}>
+                <span className="font-semibold">{w.id}</span> {w.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {CSDD_FORM_STRUCTURED_FIELDS.map(({ key, label }) => {
           const strVal = typeof value[key] === "string" ? (value[key] as string) : String(value[key] ?? "");
@@ -382,12 +408,14 @@ export function AdminCsddSourceBlock({
           });
           const isVignetteField =
             key === "vehicleType" || key === "grossMassKg" || key === "seatCount";
+          const isFirstRegField = key === "firstRegistration" || key === "firstRegistrationLatvia";
           const isFlagField =
             key === "particulateMatter" ||
             key === "nextInspectionDate" ||
             key === "insuranceValidUntil" ||
             key === "vin" ||
-            isVignetteField;
+            isVignetteField ||
+            isFirstRegField;
           let flag: CsddFieldUiFlag = "none";
           let flagTitle = "";
           if (key === "particulateMatter") {
@@ -411,6 +439,9 @@ export function AdminCsddSourceBlock({
             if (flag === "yellow") {
               flagTitle = key === "seatCount" ? vignette.seatWarningTitle : vignette.warningTitle;
             }
+          } else if (isFirstRegField && firstRegWarnings.length > 0) {
+            flag = "yellow";
+            flagTitle = firstRegWarnings.map((w) => w.message).join(" ");
           }
           const showFlag = isFlagField && flag !== "none";
 

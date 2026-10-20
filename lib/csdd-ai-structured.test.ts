@@ -56,6 +56,8 @@ describe("csddFieldsFromStructuredAiPayload", () => {
     );
 
     expect(fields.registrationNumber).toBe("KG982");
+    expect(fields.firstRegistration).toBe("");
+    expect(fields.firstRegistrationLatvia).toBe("2016-01-22");
     expect(fields.makeModel).toBe("MERCEDES BENZ E220");
     expect(fields.fuelType).toBe("Dīzeļdegviela");
     expect(fields.vehicleType).toBe("Vieglais plašlietojuma (M1)");

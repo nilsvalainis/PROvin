@@ -39,9 +39,14 @@ export const CSDD_AI_RESPONSE_SCHEMA: AiJsonSchema = {
           type: JsonType.STRING,
           description: "Tikai numura zīme, piem. KG982 — bez vārdiem Statuss, Reģistrācijas",
         },
+        pirmasRegistracija: {
+          type: JsonType.STRING,
+          description:
+            "Pirmā reģistrācija pasaulē DD.MM.YYYY. Tikai ja CSDD lauks ir „Pirmā reģistrācija” bez „Latvijā”. Tukšs, ja zināma tikai pirmā reģistrācija Latvijā.",
+        },
         pirmasRegistracijaLatvija: {
           type: JsonType.STRING,
-          description: "Pirmā reģistrācija Latvijā DD.MM.YYYY no īpašnieku vēstures",
+          description: "Pirmā reģistrācija Latvijā DD.MM.YYYY no īpašnieku vēstures. Nekad nekopēt uz pirmasRegistracija.",
         },
         nakosasApskatesDatums: { type: JsonType.STRING, description: "Nākošā TA / Nākamās apskates datums DD.MM.YYYY" },
         ieprieksejasApskatesDatums: {
@@ -387,7 +392,9 @@ export function csddFieldsFromStructuredAiPayload(
 
   const nextInspectionIso = dateToIsoInput(asString(pam.nakosasApskatesDatums, 32));
   const prevInspectionIso = dateToIsoInput(asString(pam.ieprieksejasApskatesDatums, 32));
-  const firstRegIso = dateToIsoInput(asString(pam.pirmasRegistracijaLatvija, 32));
+  const firstRegLvIso = dateToIsoInput(asString(pam.pirmasRegistracijaLatvija, 32));
+  let firstRegIso = dateToIsoInput(asString(pam.pirmasRegistracija, 32));
+  if (firstRegIso && firstRegLvIso && firstRegIso === firstRegLvIso) firstRegIso = "";
 
   let prevInspectionBlock = mapPrevInspectionFromAi(normalized.ieprieksejasApskatesDati);
   if (!previousInspectionBlockHasData(prevInspectionBlock)) {
@@ -421,6 +428,7 @@ export function csddFieldsFromStructuredAiPayload(
     makeModel: asString(pam.markaModelis, 120),
     registrationNumber: sanitizeCsddRegistrationNumber(asString(pam.registracijasNumurs, 32)),
     firstRegistration: firstRegIso,
+    firstRegistrationLatvia: firstRegLvIso,
     nextInspectionDate: nextInspectionIso,
     prevInspectionDate: prevInspectionIso || (ta[0] ? dateToIsoInput(ta[0].date) : ""),
     fuelType: asString(pam.degvielasVeids, 80),
