@@ -102,6 +102,7 @@ export async function createWaybillRequest(input: {
     waybillNo: "",
     pdfUrl: "",
     errorReason: "",
+    lastReplyText: "Saņemts. Gaida Aivaru.",
     attempts: 1,
     pickedBy: "",
     pickedAt: "",
@@ -118,7 +119,7 @@ export async function createWaybillRequest(input: {
     });
     return { value: request, next };
   });
-  await appendStaffAudit({
+  await recordWaybillAudit({
     userId: input.createdBy,
     action: "waybill_requested",
     target: request.id,
@@ -148,6 +149,7 @@ export async function retryWaybillRequest(input: {
       ...current,
       status: "queued",
       errorReason: "",
+      lastReplyText: `Atkārtots (mēģinājums ${current.attempts + 1}).`,
       attempts: current.attempts + 1,
       pickedBy: "",
       pickedAt: "",
@@ -168,7 +170,7 @@ export async function retryWaybillRequest(input: {
     return { value: nextReq, next };
   });
   if (updated) {
-    await appendStaffAudit({
+    await recordWaybillAudit({
       userId: input.actorId,
       action: "waybill_retry",
       target: updated.id,
@@ -198,6 +200,7 @@ export async function claimWaybillRequest(id: string, pickedBy = "aivars"): Prom
       pickedAt: now,
       updatedAt: now,
       errorReason: "",
+      lastReplyText: "Paņēmu darbā.",
     };
     let next = { ...doc, requests: doc.requests.map((r) => (r.id === id ? nextReq : r)) };
     next = pushEvent(next, {
@@ -211,7 +214,7 @@ export async function claimWaybillRequest(id: string, pickedBy = "aivars"): Prom
     return { value: nextReq, next };
   });
   if (claimed) {
-    await appendStaffAudit({
+    await recordWaybillAudit({
       userId: claimed.createdBy,
       action: "waybill_claimed",
       target: claimed.id,
@@ -242,6 +245,7 @@ export async function appendWaybillRequestEvent(input: {
     const current = doc.requests.find((r) => r.id === input.id);
     if (!current) return { value: null };
     const status = statusMap[input.kind] ?? current.status;
+    const replyText = (input.text ?? input.errorReason ?? "").trim().slice(0, 2000);
     const nextReq: WaybillRequest = {
       ...current,
       status,
@@ -249,6 +253,7 @@ export async function appendWaybillRequestEvent(input: {
       waybillNo: input.waybillNo?.trim() ? input.waybillNo.trim().slice(0, 24) : current.waybillNo,
       pdfUrl: input.pdfUrl?.trim() ? input.pdfUrl.trim().slice(0, 500) : current.pdfUrl,
       errorReason: input.kind === "error" ? (input.errorReason ?? input.text ?? "").slice(0, 500) : current.errorReason,
+      lastReplyText: replyText || current.lastReplyText,
       pickedBy: input.kind === "in_progress" ? by : current.pickedBy,
       pickedAt: input.kind === "in_progress" ? now : current.pickedAt,
     };
@@ -285,7 +290,7 @@ export async function completeWaybillRequest(input: {
     by: input.by,
   });
   if (result) {
-    await appendStaffAudit({
+    await recordWaybillAudit({
       userId: result.createdBy,
       action: "waybill_result",
       target: result.id,
@@ -297,4 +302,12 @@ export async function completeWaybillRequest(input: {
     });
   }
   return result;
+}
+
+async function recordWaybillAudit(entry: Parameters<typeof appendStaffAudit>[0]): Promise<void> {
+  try {
+    await appendStaffAudit(entry);
+  } catch (err) {
+    console.error("[iriss-waybill] audit_failed", err instanceof Error ? err.message : err);
+  }
 }

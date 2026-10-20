@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   WAYBILL_REQUEST_STATUS_LABEL,
+  waybillAivarsReply,
+  type WaybillAivarsReply,
   type WaybillRequest,
   type WaybillRequestEvent,
+  type WaybillRequestStatus,
 } from "@/lib/iriss-waybill-requests";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 
@@ -16,6 +19,7 @@ export type WaybillChatState = {
   requests: WaybillRequest[];
   events: WaybillRequestEvent[];
   timeline: TimelineItem[];
+  replies: WaybillAivarsReply[];
   vehicles: WaybillVehicleChip[];
 };
 
@@ -23,8 +27,34 @@ const emptyChat = (): WaybillChatState => ({
   requests: [],
   events: [],
   timeline: [],
+  replies: [],
   vehicles: [],
 });
+
+function withReplies(partial: Partial<WaybillChatState>): WaybillChatState {
+  const requests = Array.isArray(partial.requests) ? partial.requests : [];
+  const events = Array.isArray(partial.events) ? partial.events : [];
+  return {
+    requests,
+    events,
+    timeline: Array.isArray(partial.timeline) ? partial.timeline : [],
+    replies: Array.isArray(partial.replies) && partial.replies.length
+      ? partial.replies
+      : requests.map((request) => waybillAivarsReply(request, events)),
+    vehicles: Array.isArray(partial.vehicles) ? partial.vehicles : [],
+  };
+}
+
+async function readChatResponse(res: Response): Promise<WaybillChatState | { error: string }> {
+  let data: Partial<WaybillChatState> & { error?: string } = {};
+  try {
+    data = (await res.json()) as typeof data;
+  } catch {
+    return { error: "Neizdevās nolasīt atbildi." };
+  }
+  if (!res.ok) return { error: data.error || "Neizdevās nosūtīt." };
+  return withReplies(data);
+}
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -74,14 +104,22 @@ export function IrissKomandaAivaramChat({
   }, [draftVehicle, onDraftConsumed]);
 
   const load = async () => {
-    const res = await fetch("/api/admin/iriss/waybill-requests", { credentials: "include", cache: "no-store" });
-    const data = (await res.json()) as Partial<WaybillChatState>;
-    setChat({
-      requests: Array.isArray(data.requests) ? data.requests : [],
-      events: Array.isArray(data.events) ? data.events : [],
-      timeline: Array.isArray(data.timeline) ? data.timeline : [],
-      vehicles: Array.isArray(data.vehicles) ? data.vehicles : [],
-    });
+    try {
+      const res = await fetch("/api/admin/iriss/waybill-requests", { credentials: "include", cache: "no-store" });
+      const data = await readChatResponse(res);
+      if ("error" in data) {
+        setChat((prev) => {
+          if (!prev.requests.length && !prev.timeline.length) {
+            setError((current) => current ?? data.error);
+          }
+          return prev;
+        });
+        return;
+      }
+      setChat(data);
+    } catch {
+      setError((prev) => prev ?? "Neizdevās ielādēt rindu.");
+    }
   };
 
   useEffect(() => {
@@ -121,38 +159,42 @@ export function IrissKomandaAivaramChat({
           note_untrusted: note,
         }),
       });
-      const data = (await res.json()) as Partial<WaybillChatState> & { error?: string };
-      if (!res.ok) {
-        setError(data.error || "Neizdevās nosūtīt.");
+      const data = await readChatResponse(res);
+      if ("error" in data) {
+        setError(data.error);
         return;
       }
       setChat((prev) => ({
-        ...prev,
-        requests: data.requests ?? prev.requests,
-        events: data.events ?? prev.events,
-        timeline: data.timeline ?? prev.timeline,
+        ...withReplies(data),
+        vehicles: data.vehicles.length ? data.vehicles : prev.vehicles,
       }));
       setNote("");
+    } catch {
+      setError("Neizdevās nosūtīt.");
     } finally {
       setBusy(false);
     }
   }
 
   async function retry(id: string) {
-    const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "retry" }),
-    });
-    const data = (await res.json()) as Partial<WaybillChatState>;
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "retry" }),
+      });
+      const data = await readChatResponse(res);
+      if ("error" in data) {
+        setError(data.error);
+        return;
+      }
       setChat((prev) => ({
-        ...prev,
-        requests: data.requests ?? prev.requests,
-        events: data.events ?? prev.events,
-        timeline: data.timeline ?? prev.timeline,
+        ...withReplies(data),
+        vehicles: data.vehicles.length ? data.vehicles : prev.vehicles,
       }));
+    } catch {
+      setError("Neizdevās atkārtot.");
     }
   }
 
@@ -179,7 +221,11 @@ export function IrissKomandaAivaramChat({
         ) : (
           chat.timeline.map((item) =>
             item.type === "request" ? (
-              <RequestBubble key={`r-${item.request.id}`} request={item.request} />
+              <RequestBubble
+                key={`r-${item.request.id}`}
+                request={item.request}
+                reply={chat.replies.find((row) => row.requestId === item.request.id) ?? waybillAivarsReply(item.request, chat.events)}
+              />
             ) : (
               <EventBubble
                 key={item.event.id}
@@ -307,7 +353,14 @@ export function IrissKomandaAivaramChat({
   );
 }
 
-function RequestBubble({ request }: { request: WaybillRequest }) {
+function statusTone(status: WaybillRequestStatus): string {
+  if (status === "issued") return "bg-[#ECFDF3] text-[#067647]";
+  if (status === "error") return "bg-[#FEF3F2] text-[#B42318]";
+  if (status === "in_progress") return "bg-[#EEF2FF] text-[#3d5bd9]";
+  return "bg-[#F3F4F6] text-[#4b5563]";
+}
+
+function RequestBubble({ request, reply }: { request: WaybillRequest; reply: WaybillAivarsReply }) {
   return (
     <div className="ml-8 flex flex-col items-end gap-1">
       <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[#111827] px-3 py-2 text-[12px] text-white">
@@ -326,6 +379,23 @@ function RequestBubble({ request }: { request: WaybillRequest }) {
           <p>Derīgums {request.validDays} dienas</p>
         ) : null}
         {request.noteUntrusted ? <p className="mt-1 text-white/80">Piezīme: {request.noteUntrusted}</p> : null}
+      </div>
+      <div className="max-w-[85%] rounded-2xl border border-[#E5E7EB] bg-white px-3 py-2 text-left">
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusTone(reply.status)}`}>
+          {reply.statusLabel}
+        </span>
+        {reply.text ? <p className="mt-1 text-[13px] text-[#111827]">{reply.text}</p> : null}
+        {reply.waybillNo ? <p className="mt-1 font-mono text-[12px] text-[#067647]">{reply.waybillNo}</p> : null}
+        {reply.pdfUrl ? (
+          <a
+            href={reply.pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 inline-block text-[12px] font-medium text-[#3d5bd9]"
+          >
+            Atvērt pavadzīmi
+          </a>
+        ) : null}
       </div>
       <span className="text-[11px] text-[#9aa3b2]">{formatHm(request.createdAt)}</span>
     </div>

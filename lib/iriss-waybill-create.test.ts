@@ -91,6 +91,7 @@ describe("Aivars create_waybill action", () => {
       waybillNo: "",
       pdfUrl: "",
       errorReason: "",
+      lastReplyText: "",
       attempts: 1,
       pickedBy: "",
       pickedAt: "",
@@ -129,6 +130,10 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(chat).toMatch(/note_untrusted/);
     expect(chat).toMatch(/validFrom/);
     expect(chat).toMatch(/validUntil/);
+    expect(chat).toMatch(/reply\.statusLabel/);
+    expect(chat).toMatch(/reply\.text/);
+    expect(chat).not.toMatch(/sticky top-/);
+    expect(chat).not.toMatch(/am-topbar-sticky/);
     expect(chat).not.toMatch(/freeText/);
     expect(chat).not.toMatch(/csddFee|CSDD maksa|Raksti Aivaram/);
     expect(fs.existsSync(path.join("lib", "iriss-csdd-waybill-fee.ts"))).toBe(false);
@@ -138,5 +143,25 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     const env = fs.readFileSync(".env.example", "utf8");
     expect(env).toMatch(/IRISS_AIVARS_API_TOKEN/);
     expect(env).not.toMatch(/IRISS_CSDD_WAYBILL_FEE/);
+  });
+
+  it("keeps admin waybill APIs on pavadzimes auth, JSON errors, and Aivars replies", () => {
+    const list = fs.readFileSync("app/api/admin/iriss/waybill-requests/route.ts", "utf8");
+    const one = fs.readFileSync("app/api/admin/iriss/waybill-requests/[id]/route.ts", "utf8");
+    const store = fs.readFileSync("lib/iriss-waybill-requests-store.ts", "utf8");
+    const page = fs.readFileSync("components/admin/IrissPavadzimesListClient.tsx", "utf8");
+    expect(list).toMatch(/requireIrissSectionApi\("pavadzimes"\)/);
+    expect(list).toMatch(/waybillChatPayload/);
+    expect(list).toMatch(/loadVehiclesSafe/);
+    expect(list).toMatch(/create_failed/);
+    expect(list).not.toMatch(/freeText/);
+    expect(one).toMatch(/export async function GET/);
+    expect(one).toMatch(/waybillAivarsReply/);
+    expect(one).toMatch(/action !== "retry"/);
+    expect(store).toMatch(/recordWaybillAudit/);
+    expect(store).toMatch(/lastReplyText/);
+    expect(store).toMatch(/audit_failed/);
+    expect(page).not.toMatch(/sticky top-/);
+    expect(page).not.toMatch(/am-topbar-sticky/);
   });
 });
