@@ -20,6 +20,8 @@
   --hair: rgba(17, 24, 39, 0.08);
   --badge: #5e636e;
   --onink: #fff;
+  --news-bg: var(--ink);
+  --news-fg: var(--onink);
   --acc: #3d5bd9;
   --acc-soft: rgba(61, 91, 217, 0.12);
   --warn: #a86400;

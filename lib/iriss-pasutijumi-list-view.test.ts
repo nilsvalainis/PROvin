@@ -128,5 +128,8 @@ describe("IRISS 01 list chrome", () => {
     expect(row).not.toMatch(/IrissAuctionLogo/);
     expect(row).toMatch(/Atvērt visas saites/);
     expect(row).toMatch(/Piespraust/);
+    expect(row).toContain("iriss-pas-hits");
+    expect(row).toContain("--news-fg");
+    expect(row).not.toMatch(/sticky top-0/);
   });
 });
