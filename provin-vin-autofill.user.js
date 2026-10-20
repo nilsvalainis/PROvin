@@ -1831,13 +1831,15 @@
     const text = String(raw || "");
     const compact = text.replace(/\s+/g, " ").trim();
     if (!compact) return "";
-    if (compact.length <= CARVERTICAL_LABEL_MAX && isCarVerticalClickablePurchaseLabel(compact)) {
-      return compact;
-    }
     const lines = text.split(/\n+/);
+    const trimmedLines = [];
     for (let i = 0; i < lines.length; i += 1) {
       const line = String(lines[i] || "").replace(/\s+/g, " ").trim();
+      if (line) trimmedLines.push(line);
       if (line.length <= CARVERTICAL_LABEL_MAX && carVerticalLabelLooksLikeCta(line)) return line;
+    }
+    if (compact.length <= CARVERTICAL_LABEL_MAX && carVerticalLabelLooksLikeCta(compact) && trimmedLines.length <= 1) {
+      return compact;
     }
     for (let r = 0; r < CARVERTICAL_CTA_EXTRACT_RES.length; r += 1) {
       const hit = compact.match(CARVERTICAL_CTA_EXTRACT_RES[r]);

@@ -261,15 +261,15 @@ export function extractCarVerticalActionLabel(raw: string): string {
   const text = String(raw || "");
   const compact = text.replace(/\s+/g, " ").trim();
   if (!compact) return "";
-  if (compact.length <= CARVERTICAL_LABEL_MAX && isCarVerticalClickablePurchaseLabel(compact)) {
-    return compact;
-  }
   const lines = text
     .split(/\n+/)
     .map((line) => line.replace(/\s+/g, " ").trim())
     .filter(Boolean);
   for (const line of lines) {
     if (line.length <= CARVERTICAL_LABEL_MAX && labelLooksLikeCta(line)) return line;
+  }
+  if (compact.length <= CARVERTICAL_LABEL_MAX && labelLooksLikeCta(compact) && lines.length <= 1) {
+    return compact;
   }
   for (const re of CARVERTICAL_CTA_EXTRACT_RES) {
     const hit = compact.match(re);
