@@ -1074,14 +1074,8 @@ export function IrissPasutijumiListClient({
             </>
           }
         >
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <AdminMobileSearchField value={searchQuery} onChange={setSearchQuery} placeholder="Vārds, tālrunis, marka" />
-            </div>
-          </div>
-          <div className="mt-3">
-            <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />
-          </div>
+          <AdminMobileSearchField value={searchQuery} onChange={setSearchQuery} placeholder="Vārds, tālrunis, marka" />
+          <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />
         </AdminMobileTopBar>
       </div>
       <div className="sticky top-0 z-30 mb-1.5 hidden bg-[#F8F8F9] py-1 md:mb-2 md:block md:border-b md:border-slate-200/80 md:bg-[#F8F8F9]/95 md:py-2 md:backdrop-blur-sm">

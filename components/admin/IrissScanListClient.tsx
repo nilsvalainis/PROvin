@@ -7,30 +7,9 @@ import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import { irissScanSourceCounts } from "@/lib/iriss-scan-sources";
 import type { IrissScanListOrder, IrissScanListRow } from "@/lib/iriss-scan-types";
+import { orderIrissScanListRows } from "@/lib/iriss-scan-list-order";
 import { IrissScanNewFab } from "@/components/admin/IrissScanNewFab";
 import { AdminMobileRoundBtn, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
-
-function orderRows(rows: IrissScanListRow[], order: IrissScanListOrder | null): IrissScanListRow[] {
-  if (!order) return [...rows].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
-  const map = new Map(rows.map((r) => [r.id, r]));
-  const used = new Set<string>();
-  const pinned: IrissScanListRow[] = [];
-  const unpinned: IrissScanListRow[] = [];
-  for (const id of order.pinnedOrder) {
-    const row = map.get(id);
-    if (!row) continue;
-    pinned.push(row);
-    used.add(id);
-  }
-  for (const id of order.unpinnedOrder) {
-    const row = map.get(id);
-    if (!row) continue;
-    unpinned.push(row);
-    used.add(id);
-  }
-  const rest = rows.filter((r) => !used.has(r.id)).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
-  return [...pinned, ...unpinned, ...rest];
-}
 
 export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissScanListRow[]; initialListOrder: IrissScanListOrder | null }) {
   const [localRows, setLocalRows] = useState(rows);
@@ -42,7 +21,26 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
   const [ectBusy, setEctBusy] = useState(false);
   const [ectMsg, setEctMsg] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const ordered = useMemo(() => orderRows(localRows, initialListOrder), [localRows, initialListOrder]);
+  const ordered = useMemo(() => orderIrissScanListRows(localRows, initialListOrder), [localRows, initialListOrder]);
+
+  useEffect(() => {
+    setLocalRows(rows);
+  }, [rows]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/admin/iriss-scan", { credentials: "include", cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json().catch(() => ({}))) as { rows?: IrissScanListRow[] };
+        if (cancelled || !Array.isArray(data.rows)) return;
+        setLocalRows(data.rows);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const visibleRows = useMemo(() => {
     const q = query.trim().toLowerCase();
     return q ? ordered.filter((r) => `${r.brandModel} ${r.vin ?? ""}`.toLowerCase().includes(q)) : ordered;
@@ -119,7 +117,7 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
 
   return (
     <>
-      <div className="mx-auto w-full max-w-[860px] px-2 sm:px-0">
+      <div className="mx-auto w-full max-w-[860px] px-2 max-md:px-0 sm:px-0">
         <div className="md:hidden">
           <AdminMobileTopBar
             title="Radars"
@@ -127,7 +125,12 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
             trailing={
               <>
                 <AdminMobileRoundBtn name="meklet" label="Meklēt" onClick={() => setSearchOpen(true)} />
-                <AdminMobileRoundBtn name="pievienot" label="Jauns ieraksts" href="/admin/iriss/scan/new" primary />
+                <Link
+                  href="/admin/iriss/scan/new"
+                  className="am-press inline-flex h-9 items-center rounded-full bg-[var(--chip-active-bg)] px-3 text-[13px] font-semibold text-[var(--chip-active-fg)]"
+                >
+                  Jauns ieraksts
+                </Link>
               </>
             }
           >
@@ -147,6 +150,12 @@ export function IrissScanListClient({ rows, initialListOrder }: { rows: IrissSca
         <header className="sticky top-0 z-20 -mx-2 hidden bg-[var(--bg-base,#e9ecf1)] px-2 pb-1.5 pt-2 md:block sm:mx-0 sm:px-0">
           <div className="flex items-center gap-2">
             <h1 className="flex-1 text-[17px] font-semibold tracking-tight text-[var(--color-apple-text)]">Radars</h1>
+            <Link
+              href="/admin/iriss/scan/new"
+              className="inline-flex h-9 items-center rounded-[10px] bg-[var(--color-provin-accent)] px-3 text-[13px] font-semibold text-white"
+            >
+              Jauns ieraksts
+            </Link>
             {searchOpen || query ? (
               <input
                 type="search"

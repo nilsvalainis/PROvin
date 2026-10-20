@@ -22,6 +22,7 @@ export function IrissSpecDiapazoniBlock({
       <IrissRangeFromToField
         label="Cena"
         unit="EUR"
+        phoneUnit="€"
         required
         from={ranges.budgetFrom}
         to={ranges.budgetTo}
@@ -32,6 +33,7 @@ export function IrissSpecDiapazoniBlock({
       />
       <IrissRangeFromToField
         label="Gadi"
+        phoneUnit="g."
         required
         from={ranges.yearFrom}
         to={ranges.yearTo}
@@ -44,6 +46,7 @@ export function IrissSpecDiapazoniBlock({
       <IrissRangeFromToField
         label="Nobraukums"
         unit="km"
+        phoneUnit="km"
         from={ranges.mileageFrom}
         to={ranges.mileageTo}
         onFrom={(value) => onPatchRange("mileageFrom", value)}
@@ -55,6 +58,7 @@ export function IrissSpecDiapazoniBlock({
       <IrissRangeFromToField
         label="Tilpums"
         unit="cm3"
+        phoneUnit="cm³"
         from={ranges.ccFrom}
         to={ranges.ccTo}
         onFrom={(value) => onPatchRange("ccFrom", value)}
@@ -65,6 +69,7 @@ export function IrissSpecDiapazoniBlock({
       <IrissRangeFromToField
         label="Jauda"
         unit="kW"
+        phoneUnit="kW"
         from={ranges.kwFrom}
         to={ranges.kwTo}
         onFrom={(value) => onPatchRange("kwFrom", value)}

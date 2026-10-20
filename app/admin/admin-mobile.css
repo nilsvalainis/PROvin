@@ -264,6 +264,20 @@
     overflow-x: hidden;
   }
 
+  .admin-m {
+    --admin-tab-side: 12px;
+    --admin-tab-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    --admin-tab-dock-pt: 8px;
+  }
+
+  .admin-m-tabbar-dock {
+    left: var(--admin-tab-side);
+    right: var(--admin-tab-side);
+    bottom: var(--admin-tab-bottom);
+    padding-top: var(--admin-tab-dock-pt);
+    padding-bottom: 0;
+  }
+
   .am-topbar {
     z-index: var(--am-z-top);
     background: transparent;

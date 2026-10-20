@@ -543,7 +543,7 @@ export function normalizeBody(raw: string, platform?: AuctionPlatform | string):
     };
   }
   if (/\bmpv\b|\bminivan\b|\bmonospace\b|\bpeople carrier\b|\bgran tourer\b/.test(s)) return { group: "mpv", raw, confidence: "high" };
-  if (/\bminibus\b|\btransporter\b|\bkasten\b|\bfourgon\b|\bpanel van\b|\bvan bus\b|\bbus\b|\bvan\b/.test(s)) {
+  if (/\bminibus\b|\btransporter\b|\bkasten\b|\bfourgon\b|\bfurgon|\bpanel van\b|\bvan bus\b|\bbus\b|\bvan\b/.test(s)) {
     return { group: "van_bus", raw, confidence: "high" };
   }
   if (/\bhatch|\bschragheck\b|\bcitadine\b|\bsmall car\b/.test(s)) return { group: "hatchback", raw, confidence: "high" };
