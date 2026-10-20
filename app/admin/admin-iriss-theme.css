@@ -24,7 +24,7 @@
   --acc-soft: rgba(61, 91, 217, 0.12);
   --warn: #a86400;
   --warn-soft: rgba(168, 100, 0, 0.12);
-  --bad: #c0392b;
+  --bad: #c2362b;
   --bad-soft: rgba(192, 57, 43, 0.12);
   --glass: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(243, 245, 250, 0.6));
   --gb: rgba(255, 255, 255, 0.92);
@@ -118,7 +118,7 @@
   --acc-soft: rgba(142, 166, 255, 0.16);
   --warn: #e3a54a;
   --warn-soft: rgba(227, 165, 74, 0.15);
-  --bad: #e86a5c;
+  --bad: #ff6f61;
   --bad-soft: rgba(232, 106, 92, 0.16);
   --glass: linear-gradient(180deg, rgba(44, 44, 50, 0.74), rgba(26, 26, 30, 0.64));
   --gb: rgba(255, 255, 255, 0.13);

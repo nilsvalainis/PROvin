@@ -46,6 +46,7 @@ import {
 import { appendIrissStatusHistory, isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 import { AdminMobileSheet } from "@/components/admin/AdminMobileSheet";
 import { AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
+import { IrissLimitsMobileDot, IrissLimitsSidebarCard, useIrissLimits } from "@/components/admin/IrissLimitsSidebarCard";
 
 type SortMode = IrissOrderSortMode;
 
@@ -195,6 +196,8 @@ export function IrissPasutijumiListClient({
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const [moreSheetOpen, setMoreSheetOpen] = useState(false);
+  const [limitsOpen, setLimitsOpen] = useState(false);
+  const limits = useIrissLimits();
   const [statusSheetId, setStatusSheetId] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const [listOrder, setListOrder] = useState<IrissPasutijumiListOrder>(() => {
@@ -692,7 +695,18 @@ export function IrissPasutijumiListClient({
             </>
           }
         >
-          <AdminMobileSearchField value={searchQuery} onChange={setSearchQuery} placeholder="Vārds, tālrunis, marka" />
+          <AdminMobileSearchField
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Vārds, tālrunis, marka"
+            trailing={
+              limits && !limits.stale && limits.worst !== "ok" ? (
+                <button type="button" onClick={() => setLimitsOpen(true)} aria-label="Limiti">
+                  <IrissLimitsMobileDot data={limits} />
+                </button>
+              ) : null
+            }
+          />
           <div className="iriss-pas-seg">
             <IrissPasutijumiStatusFilter layout="scroll" counts={statusCounts} trashCount={trashCount} />
           </div>
@@ -877,6 +891,9 @@ export function IrissPasutijumiListClient({
           </div>
         </div>
       ) : null}
+      <AdminMobileSheet open={limitsOpen} title="LIMITI" onClose={() => setLimitsOpen(false)}>
+        <IrissLimitsSidebarCard data={limits} />
+      </AdminMobileSheet>
     </div>
   );
 }

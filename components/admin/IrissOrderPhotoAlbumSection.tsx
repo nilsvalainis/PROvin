@@ -1,6 +1,7 @@
 "use client";
 
 import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter";
+import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { IRISS_ORDER_PHOTO_ALBUM_LV, type IrissOrderPhotoAlbum, type IrissOrderPhotoAlbumId } from "@/lib/iriss-order-photos";
 import { IRISS_MAX_OFFER_ATTACHMENTS, type IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
 
@@ -26,11 +27,16 @@ export function IrissOrderPhotoAlbumSection({
   const coverId = album?.coverAttachmentId ?? "";
 
   return (
-    <section className="min-w-0 rounded-2xl border border-[#e5e7eb] bg-white p-4">
-      <p className="text-[13px] font-semibold text-[#111827]">{IRISS_ORDER_PHOTO_ALBUM_LV[albumId]}</p>
-      <p className="mt-1 text-[12px] text-[#6b7280]">
+    <section className="min-w-0 rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--sh)]">
+      <p className="text-[13px] font-semibold text-[var(--ink)]">{IRISS_ORDER_PHOTO_ALBUM_LV[albumId]}</p>
+      <p className="mt-1 text-[12px] text-[var(--ink2)]">
         Tas pats kārtotājs kā piedāvājumā: vāks, dzēšana, atcelšana, velkšana.
       </p>
+      {attachments.length === 0 ? (
+        <p className="mt-3 rounded-[14px] bg-[var(--fill)] px-3 py-4 text-[13px] text-[var(--ink2)]">
+          Vēl nav failu. Pievienot failus, lai rādītu sīktēlus un Vāks birku.
+        </p>
+      ) : null}
       {onFiles ? (
         <label className={`${roomBtn} mt-3 cursor-pointer`}>
           Pievienot failus
@@ -48,9 +54,18 @@ export function IrissOrderPhotoAlbumSection({
         </label>
       ) : null}
       {onCopyToOffer ? (
-        <button type="button" className={`${roomBtn} ml-2 mt-3`} onClick={onCopyToOffer} disabled={attachments.length === 0}>
-          Kopēt uz piedāvājumu
-        </button>
+        <>
+          <button type="button" className={`${roomBtn} ml-2 mt-3 max-md:hidden`} onClick={onCopyToOffer} disabled={attachments.length === 0}>
+            Kopēt uz piedāvājumu
+          </button>
+          <span className="ml-2 mt-3 inline-flex md:hidden">
+            <IrissOverflowMenu label="Vairāk">
+              <IrissOverflowItem disabled={attachments.length === 0} onClick={onCopyToOffer}>
+                Kopēt uz piedāvājumu
+              </IrissOverflowItem>
+            </IrissOverflowMenu>
+          </span>
+        </>
       ) : null}
       <IrissOfferImageSorter
         attachments={attachments}
