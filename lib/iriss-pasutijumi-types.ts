@@ -335,6 +335,8 @@ export type IrissPasutijumsRecord = {
   dealVat21Required: boolean;
   dealServiceStartDeposit: boolean;
   dealEkki: boolean;
+  /** Darījuma plūsmas statuss. Tukšs vecajos JSON - neraksta, kamēr operators nav izvēlējies. */
+  dealWorkflowStatus?: string;
   equipmentRequired: string;
   equipmentDesired: string;
   notes: string;
