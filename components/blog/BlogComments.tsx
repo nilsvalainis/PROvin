@@ -124,6 +124,8 @@ export function BlogComments({ slug, labels }: Props) {
           {labels.name}
           <input
             required
+            name="name"
+            autoComplete="name"
             maxLength={80}
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -135,6 +137,7 @@ export function BlogComments({ slug, labels }: Props) {
           {labels.comment}
           <textarea
             required
+            name="comment"
             maxLength={4000}
             rows={5}
             value={body}

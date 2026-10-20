@@ -25,7 +25,6 @@ export default function robots(): MetadataRoute.Robots {
           "/partneriem/parole",
           "/partneriem/registracija",
           "/partneriem/apstiprinat",
-          "/_next/static/media/",
         ],
       },
     ],
