@@ -4,8 +4,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { IrissLogisticsAppShell } from "@/components/admin/IrissLogisticsAppShell";
 import { IrissPwaRegister } from "@/components/admin/IrissPwaRegister";
-import { getAdminSession } from "@/lib/admin-auth";
+import { getAdminOrStaffActor } from "@/lib/staff-auth";
 import {
   IRISS_PWA_MANIFEST_PATH,
   IRISS_PWA_NAME,
@@ -47,8 +48,8 @@ export const viewport: Viewport = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminIrissLayout({ children }: { children: ReactNode }) {
-  const session = await getAdminSession();
-  if (!session) {
+  const actor = await getAdminOrStaffActor();
+  if (!actor) {
     const h = await headers();
     const intended = h.get("x-admin-intended-path")?.trim() || "/admin/iriss/pasutijumi";
     const safe =
@@ -56,6 +57,15 @@ export default async function AdminIrissLayout({ children }: { children: ReactNo
         ? intended
         : "/admin/iriss/pasutijumi";
     redirect(`/admin/login?next=${encodeURIComponent(safe)}`);
+  }
+
+  if (actor.kind === "staff") {
+    return (
+      <IrissLogisticsAppShell name={actor.user.name}>
+        <IrissPwaRegister />
+        {children}
+      </IrissLogisticsAppShell>
+    );
   }
 
   const origin = await getRequestOrigin();

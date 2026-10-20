@@ -591,6 +591,17 @@ ${paras}
 </html>`;
 }
 
+export function staffInviteEmailHtml(opts: { name: string; inviteUrl: string }): string {
+  const name = opts.name.trim() || "kolēģi";
+  const inner = `
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">IRISS pieeja</p>
+<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">Sveiki, ${esc(name)}. Nils uzaicināja tevi uz IRISS. Saite derīga 24 stundas un darbojas vienu reizi.</p>
+${ctaButton(opts.inviteUrl, "Iestatīt paroli")}
+<p style="margin:20px 0 0;font-size:13px;line-height:1.55;color:${MUTED};">Ja tu to neprasīji, ignorē šo vēstuli.</p>
+`;
+  return shell(inner);
+}
+
 /** @deprecated B2B klients redz PROVIN. */
 export const b2bIrissEmailHtml = b2bProvinEmailHtml;
 export const b2bWalletRefundEmailHtml = b2bProvinEmailHtml;
