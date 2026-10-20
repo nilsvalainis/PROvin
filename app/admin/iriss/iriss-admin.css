@@ -599,3 +599,20 @@
     padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
   }
 }
+
+/* 04 Iestatījumi. Tokeni no 00-tema. Nav sticky galvenes. Lipīga tikai netīrā saglabāšanas josla. */
+.iriss-iestatijumi-view {
+  color: var(--ink);
+}
+
+@media (max-width: 767px) {
+  .iriss-iestatijumi-view .am-topbar {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iriss-iestatijumi-dock {
+    transition: none !important;
+  }
+}
