@@ -31,6 +31,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { IrissPavadzimesSidebarCard } from "@/components/admin/IrissPavadzimesSidebarCard";
+import { IrissLimitsSidebarCard, useIrissLimits } from "@/components/admin/IrissLimitsSidebarCard";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
 import { useAdminClientReady, useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
 import { adminChromeDataset } from "@/lib/admin-chrome-attrs";
@@ -519,6 +520,7 @@ export function AdminSidebar({
           </div>
         ))}
         {ws === "iriss" && !collapsed ? <IrissPavadzimesSidebarCard /> : null}
+        {ws === "iriss" && !collapsed ? <IrissLimitsSidebarCard /> : null}
       </nav>
       <div className={`shrink-0 border-t border-[#e5e5ea] p-2.5 ${collapsed ? "flex justify-center" : ""}`}>
         <button
@@ -576,8 +578,10 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   const workspace = workspaceProp ?? workspaceFromPath;
   const badges = useBadges();
   const [more, setMore] = useState(false);
+  const [limitsOpen, setLimitsOpen] = useState(false);
+  const limits = useIrissLimits();
   const theme = useAdminMobileColorScheme();
-  useAdminScrollLock(more);
+  useAdminScrollLock(more || limitsOpen);
 
   const goTab = useCallback(
     (href: string) => {
@@ -719,6 +723,18 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                     </div>
                   </div>
                 ))}
+                {workspace === "iriss" && limits ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMore(false);
+                      setLimitsOpen(true);
+                    }}
+                    className="mt-4 flex h-[50px] w-full items-center gap-3 rounded-[22px] bg-[var(--am-s1)] px-4 text-[16px] text-[var(--am-ink)] shadow-[var(--am-card-shadow)]"
+                  >
+                    LIMITI
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => void logout()}
@@ -728,6 +744,22 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                   {L.logout}
                 </button>
               </div>
+            </div>
+          </div>
+        </AdminBodyPortal>
+      ) : null}
+      {limitsOpen && limits ? (
+        <AdminBodyPortal>
+          <div className="fixed inset-0 z-[30] flex items-end bg-[rgba(20,24,35,0.2)] p-3 md:hidden" role="presentation">
+            <div role="dialog" aria-modal="true" className="w-full rounded-[22px] bg-[var(--s1)] p-3 shadow-[var(--gsh)]">
+              <IrissLimitsSidebarCard data={limits} />
+              <button
+                type="button"
+                className="mt-2 inline-flex h-10 w-full items-center justify-center rounded-full bg-[var(--fill)] text-[13px] font-semibold"
+                onClick={() => setLimitsOpen(false)}
+              >
+                Aizvērt
+              </button>
             </div>
           </div>
         </AdminBodyPortal>

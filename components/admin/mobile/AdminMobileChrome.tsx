@@ -437,11 +437,13 @@ export function AdminMobileSearchField({
   onChange,
   placeholder,
   onSubmit,
+  trailing,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   onSubmit?: () => void;
+  trailing?: ReactNode;
 }) {
   return (
     <label className="am-search text-[var(--label-secondary)]">
@@ -460,6 +462,7 @@ export function AdminMobileSearchField({
         placeholder={placeholder}
         className="min-w-0 flex-1 bg-transparent text-[15px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
       />
+      {trailing}
     </label>
   );
 }

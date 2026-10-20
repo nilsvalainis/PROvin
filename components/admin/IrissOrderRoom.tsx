@@ -1760,86 +1760,71 @@ export function IrissOrderRoom({
       ) : null}
 
       {tab === "documents" ? (
-        <div className="mt-3 min-w-0 space-y-3">
-          {generatedDocs.length > 0 ? (
-            <section className={cardClass}>
-              <CardTitle>Saglabātie dokumenti</CardTitle>
-              <ul className="divide-y divide-[#eee]">
-                {generatedDocs.map((doc) => (
-                  <li key={doc.id} className="flex flex-wrap items-center gap-2 py-2 first:pt-0 last:pb-0">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-semibold text-[#111827]">{doc.name}</p>
-                      <p className="text-[11.5px] text-[#6b7280]">
-                        {generatedDocumentKindLabel(doc.kind)}
-                        {formatGeneratedDocumentWhen(doc.createdAt) ? ` · ${formatGeneratedDocumentWhen(doc.createdAt)}` : ""}
-                        {doc.size ? ` · ${formatGeneratedDocumentSize(doc.size)}` : ""}
-                      </p>
-                    </div>
-                    <a
-                      className={roomBtn}
-                      href={`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/generated-document/${encodeURIComponent(doc.id)}`}
-                    >
-                      <FileDown className="h-4 w-4" aria-hidden />
-                      Lejupielādēt
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-          <ul className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <li className={cardClass}>
-              <FileText className="h-8 w-8 text-[#64748b]" aria-hidden />
-              <p className="mt-1 text-[14px] font-bold text-[#111827]">Pasūtījuma līgums</p>
-              <p className="mt-1 text-[12px] text-[#6b7280]">Esošais pasūtījuma izdruka</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button type="button" className={roomBtn} onClick={onPdf} disabled={orderPdfBusy}>
-                  Atvērt
-                </button>
-                <button type="button" className={roomBtn} onClick={onPdf} disabled={orderPdfBusy} aria-label="Lejupielādēt līgumu">
-                  <FileDown className="h-4 w-4" aria-hidden />
-                </button>
-              </div>
-            </li>
-            <li className={cardClass}>
-              <FileText className="h-8 w-8 text-[#64748b]" aria-hidden />
-              <p className="mt-1 text-[14px] font-bold text-[#111827]">Izmaksu tāme</p>
-              <p className="mt-1 text-[12px] text-[#6b7280]">Dzintarzeme Auto</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button
-                  type="button"
+        <div className="iriss-dokumenti-view mt-3 min-w-0 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-[15px] font-semibold text-[var(--ink)]">Saglabātie dokumenti</p>
+            <IrissOverflowMenu label="Ģenerēt" triggerClassName="inline-flex h-10 items-center rounded-full bg-[var(--chip-active-bg)] px-3.5 text-[13px] font-semibold text-[var(--chip-active-fg)]">
+              <IrissOverflowItem disabled={orderPdfBusy} onClick={onPdf}>
+                {orderPdfBusy ? "PDF..." : "Līgums"}
+              </IrissOverflowItem>
+              <IrissOverflowItem
+                onClick={() => {
+                  setTab("overview");
+                  window.setTimeout(() => document.getElementById("iriss-room-tame")?.scrollIntoView({ block: "start" }), 0);
+                }}
+              >
+                Tāme
+              </IrissOverflowItem>
+              <IrissOverflowItem onClick={onCreateOffer}>Piedāvājums</IrissOverflowItem>
+            </IrissOverflowMenu>
+          </div>
+          <ul className="space-y-2">
+            {generatedDocs.map((doc) => (
+              <li key={doc.id} className={`${cardClass} flex flex-wrap items-center gap-2`}>
+                <FileText className="h-5 w-5 text-[var(--ink3)]" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-[var(--ink)]">{doc.name}</p>
+                  <p className="text-[11.5px] text-[var(--ink2)]">
+                    {generatedDocumentKindLabel(doc.kind)}
+                    {formatGeneratedDocumentWhen(doc.createdAt) ? ` · ${formatGeneratedDocumentWhen(doc.createdAt)}` : ""}
+                    {doc.size ? ` · ${formatGeneratedDocumentSize(doc.size)}` : ""}
+                  </p>
+                </div>
+                <a
                   className={roomBtn}
-                  onClick={() => {
-                    setTab("overview");
-                    window.setTimeout(() => document.getElementById("iriss-room-tame")?.scrollIntoView({ block: "start" }), 0);
-                  }}
+                  href={`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/generated-document/${encodeURIComponent(doc.id)}`}
                 >
                   Atvērt
-                </button>
-              </div>
-            </li>
-            {rec.offers.map((offer, index) => (
-              <li key={offer.id} className={cardClass}>
-                <FileText className="h-8 w-8 text-[#64748b]" aria-hidden />
-                <p className="mt-1 text-[14px] font-bold text-[#111827]">{offer.title || `Piedāvājums ${index + 1}`} PDF</p>
-                <p className="mt-1 text-[12px] text-[#6b7280]">{offer.brandModel.trim() || "PDF no saglabātā piedāvājuma"}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button type="button" className={roomBtn} onClick={() => onOpenOfferPdf(offer.id)}>
-                    Atvērt
-                  </button>
-                  <button type="button" className={roomBtn} onClick={() => onOpenOfferPdf(offer.id)} aria-label="Lejupielādēt piedāvājumu">
-                    <FileDown className="h-4 w-4" aria-hidden />
-                  </button>
-                </div>
+                </a>
+                <a
+                  className={roomBtn}
+                  href={`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/generated-document/${encodeURIComponent(doc.id)}`}
+                >
+                  <FileDown className="h-4 w-4" aria-hidden />
+                  Lejupielādēt
+                </a>
               </li>
             ))}
-          </ul>
-          <section className={cardClass}>
-            <CardTitle>Ģenerēt</CardTitle>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={onPdf} disabled={orderPdfBusy} className={roomBtnPrimary}>
-                {orderPdfBusy ? "PDF…" : "Līgums"}
+            <li className={`${cardClass} flex flex-wrap items-center gap-2`}>
+              <FileText className="h-5 w-5 text-[var(--ink3)]" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold text-[var(--ink)]">Pasūtījuma līgums</p>
+                <p className="text-[11.5px] text-[var(--ink2)]">Esošais pasūtījuma izdruka</p>
+              </div>
+              <button type="button" className={roomBtn} onClick={onPdf} disabled={orderPdfBusy}>
+                Atvērt
               </button>
+              <button type="button" className={roomBtn} onClick={onPdf} disabled={orderPdfBusy} aria-label="Lejupielādēt līgumu">
+                <FileDown className="h-4 w-4" aria-hidden />
+                Lejupielādēt
+              </button>
+            </li>
+            <li className={`${cardClass} flex flex-wrap items-center gap-2`}>
+              <FileText className="h-5 w-5 text-[var(--ink3)]" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-semibold text-[var(--ink)]">Izmaksu tāme</p>
+                <p className="text-[11.5px] text-[var(--ink2)]">Dzintarzeme Auto</p>
+              </div>
               <button
                 type="button"
                 className={roomBtn}
@@ -1848,13 +1833,27 @@ export function IrissOrderRoom({
                   window.setTimeout(() => document.getElementById("iriss-room-tame")?.scrollIntoView({ block: "start" }), 0);
                 }}
               >
-                Tāme
+                Atvērt
               </button>
-              <button type="button" className={roomBtn} onClick={onCreateOffer}>
-                Piedāvājums
-              </button>
-            </div>
-          </section>
+            </li>
+            {rec.offers.map((offer, index) => (
+              <li key={offer.id} className={`${cardClass} flex flex-wrap items-center gap-2`}>
+                <FileText className="h-5 w-5 text-[var(--ink3)]" aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-[var(--ink)]">{offer.title || `Piedāvājums ${index + 1}`} PDF</p>
+                  <p className="text-[11.5px] text-[var(--ink2)]">{offer.brandModel.trim() || "PDF no saglabātā piedāvājuma"}</p>
+                </div>
+                <button type="button" className={roomBtn} onClick={() => onOpenOfferPdf(offer.id)}>
+                  Atvērt
+                </button>
+                <button type="button" className={roomBtn} onClick={() => onOpenOfferPdf(offer.id)} aria-label="Lejupielādēt piedāvājumu">
+                  <FileDown className="h-4 w-4" aria-hidden />
+                  Lejupielādēt
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="sr-only">Ģenerēt</p>
           <IrissOrderPhotoAlbumSection
             albumId="inspection"
             album={rec.inspectionPhotos}

@@ -701,3 +701,8 @@
   background: color-mix(in srgb, currentColor 14%, transparent) !important;
   color: inherit !important;
 }
+
+/* 08 Dokumenti. Tokeni no 00-tema. */
+.iriss-dokumenti-view {
+  color: var(--ink);
+}
