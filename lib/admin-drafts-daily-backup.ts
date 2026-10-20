@@ -26,11 +26,15 @@ export type DailyDraftBackupResult = {
   warnings: string[];
   backupRootFs: string;
   backupBlobPath?: string;
+  /** Vai snapshot ir saglabāts noturīgi (Blob vai pastāvīgs disks), nevis tikai `/tmp`. */
+  persisted: boolean;
   reports: BackupSourceReport[];
 };
 
 const DEFAULT_BACKUP_ROOT = ".data/daily-admin-draft-backups";
 const DEFAULT_BLOB_BACKUP_PREFIX = "admin-daily-backups/";
+/** Sk. `lib/b2b-partner-credit-store.ts`. */
+const B2B_PARTNER_CREDITS_BLOB_PREFIX = "b2b-partner-credits/";
 
 function envFlag(name: string, defaultValue: boolean): boolean {
   const raw = process.env[name]?.trim().toLowerCase() ?? "";
@@ -46,7 +50,7 @@ function shouldUploadDailySnapshotToBlob(): boolean {
 }
 
 /** Noklusējums: false — izvairās no list+get pa visiem order draft Blob failiem. */
-function shouldIncludeOrderDraftsFromBlob(): boolean {
+export function shouldIncludeOrderDraftsFromBlob(): boolean {
   return envFlag("ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB", false);
 }
 
@@ -106,24 +110,36 @@ async function readJsonFilesFromDir(dir: string): Promise<Map<string, string>> {
   return out;
 }
 
+/** Paralēli `get()` - secīgi simtiem pasūtījumu JSON neiekļautos cron `maxDuration`. */
+const BLOB_READ_CONCURRENCY = 8;
+
 async function readJsonFilesFromBlob(prefix: string, token: string): Promise<Map<string, string>> {
   const out = new Map<string, string>();
+  const pathnames: string[] = [];
   let cursor: string | undefined;
   do {
     const page = await list({ prefix, token, cursor, limit: 1000 });
     for (const b of page.blobs) {
-      if (!b.pathname.endsWith(".json")) continue;
+      if (b.pathname.endsWith(".json")) pathnames.push(b.pathname);
+    }
+    cursor = page.hasMore && page.cursor ? page.cursor : undefined;
+  } while (cursor);
+
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    while (next < pathnames.length) {
+      const pathname = pathnames[next++]!;
       try {
-        const got = await get(b.pathname, { access: "private", token, useCache: false });
+        const got = await get(pathname, { access: "private", token, useCache: false });
         if (!got?.stream || got.statusCode !== 200) continue;
         const text = await new Response(got.stream).text();
-        out.set(b.pathname.slice(prefix.length), text);
+        out.set(pathname.slice(prefix.length), text);
       } catch {
         /* ignore one blob */
       }
     }
-    cursor = page.hasMore && page.cursor ? page.cursor : undefined;
-  } while (cursor);
+  };
+  await Promise.all(Array.from({ length: Math.min(BLOB_READ_CONCURRENCY, pathnames.length) }, worker));
   return out;
 }
 
@@ -140,24 +156,20 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
 
   const backupBase = resolveBackupBaseDir();
   const backupRoot = path.join(backupBase, dateSlug());
+  /**
+   * Vercel: `process.cwd()/.data` nav rakstāms. Agrāk te bija agrs `return` - tad arī Blob snapshot
+   * (ADMIN_DRAFT_DAILY_BACKUP_TO_BLOB=1) nekad netika izveidots. Tagad turpinām tikai ar Blob.
+   */
+  let fsWritable = true;
   try {
     await fs.mkdir(backupRoot, { recursive: true });
   } catch (e) {
+    if (!process.env.VERCEL) throw e;
+    fsWritable = false;
     const msg = e instanceof Error ? e.message : String(e);
-    if (process.env.VERCEL) {
-      return {
-        startedAt,
-        finishedAt: new Date().toISOString(),
-        ok: true,
-        hadPayload: false,
-        warnings: [
-          `Filesystem backup unavailable on Vercel (${msg}). Set ADMIN_DRAFT_BACKUP_FS_ROOT to a writable path on a VPS, or rely on Admin → IRISS export / \`npm run iriss:merge-to-blob\` from your Mac (Dropbox).`,
-        ],
-        backupRootFs: backupRoot,
-        reports: [],
-      };
-    }
-    throw e;
+    warnings.push(
+      `Filesystem backup unavailable on Vercel (${msg}); only the Blob snapshot (ADMIN_DRAFT_DAILY_BACKUP_TO_BLOB=1) can persist. Offsite copy: \`npm run admin:backup-full\` from your Mac (Dropbox).`,
+    );
   }
 
   const orderEnabled = isOrderDraftStoreEnabled();
@@ -201,7 +213,8 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
   }
 
   const token = process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "";
-  const orderBlobPrefix = process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX?.trim() ?? "";
+  const orderBlobPrefixRaw = process.env.ADMIN_ORDER_DRAFT_BLOB_PREFIX?.trim() ?? "";
+  const orderBlobPrefix = orderBlobPrefixRaw && !orderBlobPrefixRaw.endsWith("/") ? `${orderBlobPrefixRaw}/` : orderBlobPrefixRaw;
   const irissBlobPrefix = "iriss-pasutijumi/";
   if (!token) warnings.push("BLOB_READ_WRITE_TOKEN is missing; no offsite Blob snapshot was created.");
 
@@ -212,6 +225,14 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
       for (const [k, v] of files) relPayload[k] = v;
       snapshotPayload["order-drafts-blob"] = relPayload;
       reports.push({ source: "order-drafts-blob", files: files.size, bytes: sizeOfMap(files) });
+    }
+    /** Partneru kredītu atlikumi (nauda) - tā pati pasūtījumu datu grupa. */
+    const credits = await readJsonFilesFromBlob(B2B_PARTNER_CREDITS_BLOB_PREFIX, token);
+    if (credits.size > 0) {
+      const relPayload: Record<string, string> = {};
+      for (const [k, v] of credits) relPayload[k] = v;
+      snapshotPayload["b2b-partner-credits-blob"] = relPayload;
+      reports.push({ source: "b2b-partner-credits-blob", files: credits.size, bytes: sizeOfMap(credits) });
     }
   }
   if (token && shouldIncludeIrissFromBlob()) {
@@ -231,6 +252,10 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
     }
   }
 
+  if (!shouldIncludeOrderDraftsFromBlob() && orderBlobPrefix) {
+    warnings.push("Order drafts in Blob are NOT in this snapshot (ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB=0).");
+  }
+
   const manifest = {
     startedAt,
     finishedAt: new Date().toISOString(),
@@ -238,8 +263,10 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
     reports,
     sources: Object.keys(snapshotPayload),
   };
-  await fs.writeFile(path.join(backupRoot, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
-  await fs.writeFile(path.join(backupRoot, "snapshot.json"), JSON.stringify(snapshotPayload), "utf8");
+  if (fsWritable) {
+    await fs.writeFile(path.join(backupRoot, "manifest.json"), JSON.stringify(manifest, null, 2), "utf8");
+    await fs.writeFile(path.join(backupRoot, "snapshot.json"), JSON.stringify(snapshotPayload), "utf8");
+  }
 
   let backupBlobPath: string | undefined;
   if (token && shouldUploadDailySnapshotToBlob()) {
@@ -263,7 +290,16 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
     backupBlobPath = blobPath;
   }
 
-  await trimFsBackupDirs(backupBase, fsRetentionFolderCount());
+  if (fsWritable) await trimFsBackupDirs(backupBase, fsRetentionFolderCount());
+
+  /** FS snapshot `os.tmpdir()` (vai Vercel bez FS) pazūd kopā ar instanci - noturīgs ir tikai Blob vai pastāvīgs disks. */
+  const persisted = Boolean(backupBlobPath) || (fsWritable && !isTmpPath(backupRoot) && !process.env.VERCEL);
+  if (!persisted) {
+    const msg =
+      "No durable backup was written (Blob upload disabled and filesystem is ephemeral). Set ADMIN_DRAFT_DAILY_BACKUP_TO_BLOB=1 and ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB=1.";
+    warnings.push(msg);
+    console.error("[cron/admin-drafts-daily-backup] not_persisted", { sources: manifest.sources });
+  }
 
   return {
     startedAt,
@@ -271,8 +307,9 @@ export async function runDailyAdminDraftBackup(): Promise<DailyDraftBackupResult
     ok: true,
     hadPayload: reports.length > 0,
     warnings,
-    backupRootFs: backupRoot,
+    backupRootFs: fsWritable ? backupRoot : "",
     backupBlobPath,
+    persisted,
     reports,
   };
 }
