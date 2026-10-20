@@ -4,6 +4,7 @@ import { ChevronDown, Search } from "lucide-react";
 import { Reorder } from "framer-motion";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { AdminIrissOrdersExportButton } from "@/components/admin/AdminIrissOrdersExportButton";
 import { IrissGoogleContactsBackfillButton } from "@/components/admin/IrissGoogleContactsBackfillButton";
 import { IrissOverflowItem, IrissOverflowLabel, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
@@ -700,6 +701,7 @@ export function IrissPasutijumiListClient({
 
       <div className="iriss-pas-toolbar mb-3 hidden md:block">
         <div className="flex items-center gap-2">
+          <AdminCollapsedMenuButton className="mt-0.5" />
           <h1 className="iriss-list-title shrink-0 text-[22px] font-bold tracking-tight text-[var(--ink)]">Pasūtījumi</h1>
           <label className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ink3)]" aria-hidden />

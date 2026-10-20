@@ -115,6 +115,7 @@ describe("IRISS 01 list chrome", () => {
     expect(list).not.toMatch(/IrissPasutijumiNewFab/);
     expect(page).not.toMatch(/IrissPasutijumiNewFab/);
     expect(page).not.toMatch(/#F8F8F9/);
+    expect(list).toContain("AdminCollapsedMenuButton");
     expect(list).toMatch(/Jauns pasūtījums/);
     expect(list).toMatch(/Atjaunot eCarsTrade saites/);
     expect(list).toMatch(/eCarsTrade saites jau ir aktuālas/);
