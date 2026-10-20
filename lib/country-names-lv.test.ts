@@ -140,6 +140,17 @@ describe("world country names → ISO2 + LV form", () => {
     expect(normalizeCountryNameLv("Vokietija")).toBe("Vācija");
     expect(normalizeCountryNameLv("Lietuva")).toBe("Lietuva");
     expect(normalizeCountryNameLv("Litwa")).toBe("Lietuva");
+    expect(countryLabelToIso2("California (ASV)")).toBe("US");
+    expect(countryLabelToIso2("California")).toBe("US");
+    expect(countryLabelToIso2("ASV")).toBe("US");
+    expect(countryLabelToIso2("USA")).toBe("US");
+    expect(countryLabelToIso2("US")).toBe("US");
+    expect(countryLabelToIso2("LT")).toBe("LT");
+    expect(countryLabelToIso2("Lietuva")).toBe("LT");
+    expect(countryLabelToIso2("Lithuania")).toBe("LT");
+    expect(countryLabelToIso2("Copart")).toBeNull();
+    expect(normalizeCountryNameLv("California (ASV)")).toBe("ASV");
+    expect(normalizeCountryNameLv("Lithuania")).toBe("Lietuva");
     expect(iso2ToLvDisplayName("JP")).toBeTruthy();
     expect(countryLabelToIso2("Japan")).toBe("JP");
     expect(countryLabelToIso2("Japonija")).toBe("JP");
