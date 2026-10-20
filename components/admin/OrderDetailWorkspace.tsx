@@ -5496,6 +5496,8 @@ export function OrderDetailWorkspace({
               onGenerateAsvPdf={() => void openPrintReport({ asvOnly: true })}
               orderVin={payload.vin ?? ""}
               listingUrl={payload.listingUrl ?? ""}
+              getSourceBlocks={() => wsPersistRef.current.sourceBlocks}
+              applyPatchedBlocks={applyCopilotPatchedBlocks}
             />
           </div>
         ) : null}

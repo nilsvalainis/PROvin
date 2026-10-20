@@ -10,6 +10,7 @@ import { AdminFieldResetButton } from "@/components/admin/AdminFieldResetButton"
 import { AdminCollapsibleShell } from "@/components/admin/AdminCollapsibleShell";
 import { AdminListingAnalysisPhotos } from "@/components/admin/AdminListingAnalysisPhotos";
 import { AdminAsvIngestBar } from "@/components/admin/AdminAsvIngestBar";
+import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 import { AdminJojIngestBar } from "@/components/admin/AdminJojIngestBar";
 import { AdminSourceBlockHeaderTools } from "@/components/admin/AdminClearSourceBlockButton";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
@@ -20,7 +21,14 @@ import {
   type AdminAiSourceCommentSlot,
 } from "@/components/admin/AdminSourceCommentField";
 import { AdminSourceCommentTemplates } from "@/components/admin/AdminSourceCommentTemplates";
+import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { TrafficFillLevel } from "@/lib/admin-block-traffic-status";
+import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  ASV_AUTODNA_USA_PDF_LABELS,
+  ASV_AUTODNA_USA_PDF_TARGET,
+  excludeAsvFromCopilotPatch,
+} from "@/lib/asv-autodna-usa-pdf";
 import { SUBHEADING_LUCIDE } from "@/lib/admin-lucide-registry";
 import { dropOrResetRow } from "@/lib/admin-drop-or-reset-row";
 import { ASV_DEFAULT_PRODUCT_IDS, type AsvProductId } from "@/lib/asv-catalog";
@@ -75,6 +83,11 @@ type Props = {
   onGenerateAsvPdf?: () => void;
   orderVin?: string;
   listingUrl?: string;
+  getSourceBlocks?: () => WorkspaceSourceBlocks;
+  applyPatchedBlocks?: (
+    patched: Partial<WorkspaceSourceBlocks>,
+    changedKeys: CopilotSourceKey[],
+  ) => void;
 };
 
 export function AdminAsvSourceBlock({
@@ -92,9 +105,12 @@ export function AdminAsvSourceBlock({
   onGenerateAsvPdf,
   orderVin = "",
   listingUrl = "",
+  getSourceBlocks,
+  applyPatchedBlocks,
 }: Props) {
   const editable = !readOnly && !disabled;
   const [selectedProducts, setSelectedProducts] = useState<AsvProductId[]>([...ASV_DEFAULT_PRODUCT_IDS]);
+  const [autodnaUsaPdfOpen, setAutodnaUsaPdfOpen] = useState(false);
 
   function rowsOf<T>(rows: T[] | undefined, fallback: () => T): T[] {
     return rows && rows.length > 0 ? rows : [fallback()];
@@ -214,6 +230,52 @@ export function AdminAsvSourceBlock({
             value={value}
             onChange={onChange}
           />
+
+          {editable && getSourceBlocks && applyPatchedBlocks ? (
+            <div className="mb-2 rounded-md border border-slate-200/80 bg-slate-50/50">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-2 px-2 py-1 text-left"
+                aria-expanded={autodnaUsaPdfOpen}
+                onClick={() => setAutodnaUsaPdfOpen((open) => !open)}
+              >
+                <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                  {ASV_AUTODNA_USA_PDF_LABELS.section}
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  {autodnaUsaPdfOpen
+                    ? ASV_AUTODNA_USA_PDF_LABELS.collapse
+                    : ASV_AUTODNA_USA_PDF_LABELS.open}
+                </span>
+              </button>
+              {autodnaUsaPdfOpen ? (
+                <div className="px-2 pb-2">
+                  <AdminHistoryVendorPdfUpload
+                    target={ASV_AUTODNA_USA_PDF_TARGET}
+                    sessionId={sessionId}
+                    disabled={disabled}
+                    readOnly={readOnly}
+                    getSourceBlocks={getSourceBlocks}
+                    applyPatchedBlocks={(patched, changedKeys) => {
+                      const next = excludeAsvFromCopilotPatch(
+                        patched as Record<string, unknown>,
+                        changedKeys,
+                      );
+                      applyPatchedBlocks(
+                        next.patched as Partial<WorkspaceSourceBlocks>,
+                        next.changedKeys as CopilotSourceKey[],
+                      );
+                    }}
+                    title={ASV_AUTODNA_USA_PDF_LABELS.title}
+                    hint={ASV_AUTODNA_USA_PDF_LABELS.hint}
+                    applyLabel={ASV_AUTODNA_USA_PDF_LABELS.apply}
+                    compact
+                    deferApply
+                  />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="mb-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {(
