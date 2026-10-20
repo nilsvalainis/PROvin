@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runDailyAdminDraftBackup } from "@/lib/admin-drafts-daily-backup";
+import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -9,7 +10,7 @@ function isAuthorized(req: Request): { ok: true } | { ok: false; status: number;
   if (!expected) return { ok: false, status: 503, error: "missing_cron_secret" };
   const auth = req.headers.get("authorization")?.trim() ?? "";
   if (!auth) return { ok: false, status: 401, error: "missing_authorization" };
-  if (auth !== `Bearer ${expected}`) return { ok: false, status: 403, error: "forbidden" };
+  if (!bearerMatchesAnySecret(auth, [expected])) return { ok: false, status: 403, error: "forbidden" };
   return { ok: true };
 }
 

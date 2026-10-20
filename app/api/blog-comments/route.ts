@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { appendBlogComment, listPublicBlogComments } from "@/lib/blog/comment-store";
 import { getBlogPost } from "@/lib/blog/posts";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const ip = getClientIpFromRequest(request) ?? "unknown";
-  const limited = checkRateLimit(`blog-comment:${ip}`, MAX_PER_WINDOW, WINDOW_MS);
+  const limited = await checkRateLimit(`blog-comment:${ip}`, MAX_PER_WINDOW, WINDOW_MS);
   if (!limited.ok) {
     return badRequest("Too many comments. Try again later.", 429);
   }

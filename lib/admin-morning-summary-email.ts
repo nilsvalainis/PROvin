@@ -2,6 +2,7 @@ import { formatLvCalendarDay, rigaClockHour } from "@/lib/admin-riga-calendar";
 import type { MorningQueueItem, MorningSummary } from "@/lib/admin-morning-summary";
 import { formatAdminCostPercent, formatAdminCostUsd, shortCostLabel, type CostAlert } from "@/lib/admin-costs";
 import { morningSummaryEmailHtml } from "@/lib/email/html-templates";
+import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
 
 /** Vercel Cron ir UTC: 05:00 = 08:00 EEST, 06:00 = 08:00 EET. Handleris sūta tikai Rīgas 08:00. */
 export const MORNING_SUMMARY_CRON_UTC_SCHEDULE = "0 5,6 * * *";
@@ -34,7 +35,7 @@ export function authorizeMorningSummaryCron(
   if (!expected) return { ok: false, status: 503, error: "missing_cron_secret" };
   const auth = authorization?.trim() ?? "";
   if (!auth) return { ok: false, status: 401, error: "missing_authorization" };
-  if (auth !== `Bearer ${expected}`) return { ok: false, status: 403, error: "forbidden" };
+  if (!bearerMatchesAnySecret(auth, [expected])) return { ok: false, status: 403, error: "forbidden" };
   return { ok: true };
 }
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { getStripe } from "@/lib/stripe";
 import { hashClientLinkToken } from "@/lib/client-link-crypto";
 import {
@@ -28,7 +28,7 @@ const WINDOW_MS = 10 * 60 * 1000;
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const rl = checkRateLimit(`client-link-checkout:${ip}`, MAX_PER_WINDOW, WINDOW_MS);
+  const rl = await checkRateLimit(`client-link-checkout:${ip}`, MAX_PER_WINDOW, WINDOW_MS);
   if (!rl.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } });
   }
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   if (!isSafeClientLinkToken(token)) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-  const tokenRl = checkRateLimit(`client-link-lookup:${hashClientLinkToken(token).slice(0, 16)}`, 30, WINDOW_MS);
+  const tokenRl = await checkRateLimit(`client-link-lookup:${hashClientLinkToken(token).slice(0, 16)}`, 30, WINDOW_MS);
   if (!tokenRl.ok) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }

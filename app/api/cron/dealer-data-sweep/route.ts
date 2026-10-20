@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { runDealerDataJob } from "@/lib/dealer-data-job";
 import { DEALER_DATA_MAX_AUTO_ATTEMPTS } from "@/lib/dealer-data-job-types";
 import { listUnfinishedDealerDataJobs } from "@/lib/dealer-data-job-store";
+import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ function isAuthorized(req: Request): { ok: true } | { ok: false; status: number;
   if (candidates.length === 0) return { ok: false, status: 503, error: "missing_cron_secret" };
   const auth = req.headers.get("authorization")?.trim() ?? "";
   if (!auth) return { ok: false, status: 401, error: "missing_authorization" };
-  if (!candidates.some((s) => auth === `Bearer ${s}`)) {
+  if (!bearerMatchesAnySecret(auth, candidates)) {
     return { ok: false, status: 403, error: "forbidden" };
   }
   return { ok: true };

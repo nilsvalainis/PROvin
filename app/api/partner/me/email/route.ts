@@ -3,7 +3,7 @@ import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
 import { requestB2bPartnerEmailChange } from "@/lib/b2b-partner-store";
 import { dispatchPartnerVerifyEmail } from "@/lib/b2b-partner-verify-mail";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -12,7 +12,7 @@ const EMAIL_WINDOW_MS = 15 * 60 * 1000;
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const limited = checkRateLimit(`partner-email:${ip}`, EMAIL_MAX_PER_WINDOW, EMAIL_WINDOW_MS);
+  const limited = await checkRateLimit(`partner-email:${ip}`, EMAIL_MAX_PER_WINDOW, EMAIL_WINDOW_MS);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "rate_limited" },

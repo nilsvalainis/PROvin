@@ -4,7 +4,7 @@ import { writeB2bPartnerServerSession } from "@/lib/b2b-partner-server-session";
 import { consumeB2bPartnerVerifyToken } from "@/lib/b2b-partner-store";
 import { isSafeB2bVerifyToken } from "@/lib/b2b-partner-verify";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -13,7 +13,7 @@ const VERIFY_WINDOW_MS = 15 * 60 * 1000;
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const limited = checkRateLimit(`partner-verify:${ip}`, VERIFY_MAX_PER_WINDOW, VERIFY_WINDOW_MS);
+  const limited = await checkRateLimit(`partner-verify:${ip}`, VERIFY_MAX_PER_WINDOW, VERIFY_WINDOW_MS);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "rate_limited" },

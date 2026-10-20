@@ -3,7 +3,7 @@ import { toPublicPartner } from "@/lib/b2b-partner-account";
 import { writeB2bPartnerServerSession } from "@/lib/b2b-partner-server-session";
 import { authenticateB2bPartner } from "@/lib/b2b-partner-store";
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -21,7 +21,7 @@ function rateLimited(retryAfterSec: number) {
 
 export async function POST(req: Request) {
   const ip = getClientIpFromRequest(req);
-  const limited = checkRateLimit(`partner-login:${ip}`, LOGIN_MAX_PER_WINDOW, LOGIN_WINDOW_MS);
+  const limited = await checkRateLimit(`partner-login:${ip}`, LOGIN_MAX_PER_WINDOW, LOGIN_WINDOW_MS);
   if (!limited.ok) return rateLimited(limited.retryAfterSec);
 
   let email = "";
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
   const accountKey = email.trim().toLowerCase().slice(0, 200);
   if (accountKey) {
-    const limitedAccount = checkRateLimit(
+    const limitedAccount = await checkRateLimit(
       `partner-login-acc:${accountKey}`,
       LOGIN_ACCOUNT_MAX_PER_WINDOW,
       LOGIN_WINDOW_MS,

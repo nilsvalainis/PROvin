@@ -4,7 +4,7 @@ import { createB2bPartnerLead } from "@/lib/b2b-partner-lead-store";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { getSiteOrigin } from "@/lib/email/mail-config";
 import { trySendAdminPartnerLeadEmail } from "@/lib/email/send-transactional";
-import { checkRateLimit } from "@/lib/rate-limit-memory";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const LOCALES = new Set(["lv", "en", "de", "ru"]);
 
 export async function POST(req: Request) {
-  const limited = checkRateLimit(`partner-lead:${getClientIpFromRequest(req)}`, 5, 10 * 60 * 1000);
+  const limited = await checkRateLimit(`partner-lead:${getClientIpFromRequest(req)}`, 5, 10 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "rate_limited" },
