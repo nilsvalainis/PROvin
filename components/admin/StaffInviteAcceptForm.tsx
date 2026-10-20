@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 export function StaffInviteAcceptForm({ token }: { token: string }) {
@@ -33,9 +34,9 @@ export function StaffInviteAcceptForm({ token }: { token: string }) {
     return (
       <p className="text-sm text-[#4b5563]">
         Parole iestatīta. Tagad vari{" "}
-        <a className="text-[#3d5bd9] underline" href="/admin/login">
+        <Link className="text-[#3d5bd9] underline" href="/admin/login">
           pieteikties
-        </a>{" "}
+        </Link>{" "}
         ar e-pastu.
       </p>
     );

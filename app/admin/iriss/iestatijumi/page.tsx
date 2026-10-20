@@ -2,6 +2,7 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { IrissGoogleContactsBackfillButton } from "@/components/admin/IrissGoogleContactsBackfillButton";
 import { IrissTameCommissionSettingsForm } from "@/components/admin/IrissTameCommissionSettingsForm";
 import { requireAdminPage } from "@/lib/admin-auth";
+import Link from "next/link";
 
 export const metadata = {
   title: "Iestatījumi | IRISS",
@@ -27,12 +28,12 @@ export default async function IrissSettingsPage() {
         <p className="mt-1 text-[13px] leading-snug text-[var(--color-provin-muted)]">
           Nils uzaicina, piešķir un atsauc IRISS lomas. Katra pieteikšanās un pieeja paliek žurnālā.
         </p>
-        <a
+        <Link
           href="/admin/iriss/iestatijumi/lietotaji"
           className="mt-3 inline-flex rounded-full bg-[#111827] px-4 py-2 text-[13px] font-medium text-white"
         >
           Atvērt lietotājus
-        </a>
+        </Link>
       </section>
       <section className="mt-4 max-w-xl rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-[15px] font-semibold text-[var(--color-apple-text)]">Google Contacts</h2>
