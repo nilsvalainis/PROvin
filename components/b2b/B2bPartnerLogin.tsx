@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { B2B_SECONDARY_BUTTON_CLASS } from "@/components/b2b/b2b-partner-ui";
 import { B2bPartnerQuoteDialog } from "@/components/b2b/B2bPartnerQuoteDialog";
+import { B2bTurnstile, partnerLoginNeedsTurnstile } from "@/components/b2b/B2bTurnstile";
 import { useRouter } from "@/i18n/navigation";
 
 function isLoginEmail(value: string): boolean {
@@ -26,10 +27,20 @@ export function B2bPartnerLogin() {
   const [forgotBusy, setForgotBusy] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const onTurnstileToken = useCallback((token: string | null) => {
+    setTurnstileToken(token);
+  }, []);
 
   const onSubmit = async () => {
     if (!isLoginEmail(loginEmail) || password.trim().length < 8) {
       setError(t("loginError"));
+      setUnverified(false);
+      return;
+    }
+    if (partnerLoginNeedsTurnstile() && !turnstileToken) {
+      setError(t("loginCaptchaError"));
       setUnverified(false);
       return;
     }
@@ -42,15 +53,21 @@ export function B2bPartnerLogin() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail.trim(), password }),
+        body: JSON.stringify({
+          email: loginEmail.trim(),
+          password,
+          ...(turnstileToken ? { turnstileToken } : {}),
+        }),
       });
-      if (res.status === 403) {
-        setUnverified(true);
-        setError(t("loginUnverified"));
-        return;
-      }
       if (!res.ok) {
-        setError(t("loginError"));
+        setTurnstileToken(null);
+        setTurnstileReset((n) => n + 1);
+        if (res.status === 403) {
+          setUnverified(true);
+          setError(t("loginUnverified"));
+          return;
+        }
+        setError(res.status === 400 ? t("loginCaptchaError") : t("loginError"));
         return;
       }
       router.push("/partneriem/konts");
@@ -207,6 +224,7 @@ export function B2bPartnerLogin() {
           aria-label={t("passwordAria")}
         />
       </label>
+      <B2bTurnstile onToken={onTurnstileToken} resetKey={turnstileReset} ariaLabel={t("loginCaptchaAria")} />
       {error ? <p className={styles.inlineFieldError}>{error}</p> : null}
       {resendOk ? <p className="text-[0.75rem] text-zinc-300">{t("verifyResendOk")}</p> : null}
       <button type="submit" className={styles.liquidCta} disabled={busy}>

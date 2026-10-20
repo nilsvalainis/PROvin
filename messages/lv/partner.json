@@ -17,6 +17,8 @@
     "loginPassword": "Parole",
     "loginSubmit": "Ieiet",
     "loginError": "Pārbaudiet e-pastu un paroli.",
+    "loginCaptchaError": "Apstipriniet, ka neesat robots.",
+    "loginCaptchaAria": "Drošības pārbaude",
     "loginLoading": "Notiek pieteikšanās…",
     "loggedIn": "Esat pieteicies.",
     "emailAria": "E-pasta adrese",
