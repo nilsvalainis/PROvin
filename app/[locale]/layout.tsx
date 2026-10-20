@@ -17,6 +17,7 @@ import { routing } from "@/i18n/routing";
 import { DEFAULT_OG_IMAGE_PATH } from "@/lib/seo-public-paths";
 import { openGraphLocale, openGraphLocaleAlternates } from "@/lib/seo-public-metadata";
 import { getPublicSiteOrigin } from "@/lib/site-url";
+import { CLIENT_MESSAGE_NAMESPACES, pickClientMessages } from "@/lib/i18n/client-messages";
 import "./design-direction-theme.css";
 
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
@@ -86,7 +87,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   }
 
   setRequestLocale(locale);
-  const messages = await getMessages();
+  // Klientam tikai klienta komponenšu vārdnīcas (nevis viss katalogs katrā lapā).
+  const messages = pickClientMessages(await getMessages(), CLIENT_MESSAGE_NAMESPACES);
 
   const tMetaDesc = await getTranslations({ locale, namespace: "Meta" });
 

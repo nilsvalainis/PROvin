@@ -70,7 +70,7 @@ export function Tp5TurnaroundInfoTip({ copy }: Props) {
       <button
         type="button"
         className={styles.turnaroundUrgencyHit}
-        aria-label={`${copy.turnaroundUrgencyCta}. ${copy.turnaroundInfoAria}`}
+        aria-label={`${copy.turnaroundUrgencyCta} ${copy.turnaroundInfoAria}`}
         aria-expanded={open}
         aria-controls={tipId}
         onClick={toggle}

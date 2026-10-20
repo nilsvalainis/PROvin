@@ -181,6 +181,7 @@ function CheckoutFields({
     >
       <input
         type="text"
+        name="vin"
         className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
         value={vin}
         onChange={(event) => onVinChange(sanitizeVinInput(event.target.value))}
@@ -197,6 +198,7 @@ function CheckoutFields({
       {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
       <input
         type="url"
+        name="listingUrl"
         className={`${styles.inlineInput} ${errors.listingUrl ? styles.inlineInputError : ""}`}
         value={listingUrl}
         onChange={(event) => onListingUrlChange(event.target.value)}
@@ -313,7 +315,7 @@ function MobilePackLayout({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                aria-label={`${tabTitle}${uiCopy.packageAriaSuffix}`}
+                aria-label={`${service.id === "dealer" ? `${uiCopy.newBadge} ` : ""}${tabTitle}${uiCopy.packageAriaSuffix}`}
                 className={`${styles.mobileSegBtn}${active ? ` ${styles.mobileSegBtnActive}` : ""}`}
                 onClick={() => setActiveServiceId(service.id)}
               >
@@ -481,7 +483,7 @@ export function Tp5MobilePricingCard({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                aria-label={`${service.title}${uiCopy.packageAriaSuffix}`}
+                aria-label={`${service.id === "dealer" ? `${uiCopy.newBadge} ` : ""}${service.title}${uiCopy.packageAriaSuffix}`}
                 className={styles.tierTabBtn}
                 onClick={() => setActiveServiceId(service.id)}
               >
