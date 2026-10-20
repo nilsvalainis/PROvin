@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>IRISS admin mobile 390×844</title>
+  <style>
+    :root {
+      --bg-base: #e9ecf1;
+      --s1: #fff;
+      --ink: #0b0c10;
+      --ink2: #5e636e;
+      --ink3: #9a9faa;
+      --fill: rgba(116, 120, 138, 0.11);
+      --fill2: rgba(116, 120, 138, 0.19);
+      --acc: #3d5bd9;
+      --sp: 8px;
+      --side: 16px;
+      --tab-bottom: 14px;
+      --safe-top: 59px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg-base); color: var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+    body { width: 390px; }
+    .phone { position: relative; width: 390px; min-height: 844px; overflow: hidden; background:
+      radial-gradient(640px 420px at 12% 0%, rgba(150, 170, 220, 0.36), transparent 70%),
+      radial-gradient(720px 520px at 92% 18%, rgba(200, 180, 230, 0.26), transparent 70%),
+      var(--bg-base); }
+    .status { height: var(--safe-top); padding: 14px 16px 0; font-size: 15px; font-weight: 600; }
+    .topbar { display: flex; flex-direction: column; gap: 8px; padding: 8px 16px 16px; }
+    .title-row { display: flex; align-items: center; height: 40px; gap: 8px; }
+    h1 { margin: 0; font-size: 34px; line-height: 1; letter-spacing: -0.02em; }
+    h1.small { font-size: 17px; }
+    .pill { display: inline-flex; align-items: center; height: 22px; padding: 0 8px 0 7px; border-radius: 7px; background: rgba(61, 91, 217, 0.12); color: var(--acc); font-size: 11px; font-weight: 750; letter-spacing: 0.08em; }
+    .round { width: 36px; height: 36px; border: 0; border-radius: 999px; background: var(--fill2); }
+    .search { height: 36px; border-radius: 999px; background: var(--fill); display: flex; align-items: center; padding: 0 12px; color: var(--ink3); font-size: 15px; }
+    .chips { display: flex; gap: 6px; overflow: hidden; }
+    .chip { height: 32px; border-radius: 999px; padding: 0 12px; background: var(--ink); color: #fff; font-size: 13px; font-weight: 600; display: flex; align-items: center; }
+    .chip.g { background: var(--fill); color: var(--ink); font-weight: 500; }
+    .way { display: flex; align-items: center; gap: 6px; height: 28px; color: var(--ink2); font-size: 12px; }
+    .way b { display: inline-flex; height: 28px; align-items: center; padding: 0 10px; border-radius: 999px; background: var(--fill2); color: var(--ink); font-weight: 500; }
+    .cards { padding: 8px 16px 90px; display: flex; flex-direction: column; gap: 8px; }
+    .card { background: var(--s1); border-radius: 18px; padding: 12px 16px; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04); }
+    .card h2 { margin: 0 56px 4px 0; font-size: 16px; }
+    .meta { color: var(--ink2); font-size: 12px; }
+    .st { position: absolute; right: 16px; top: 12px; height: 22px; border-radius: 7px; padding: 0 6px; font-size: 11px; background: var(--fill2); color: var(--ink2); }
+    .card { position: relative; }
+    .dock { position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; gap: 12px; align-items: center; }
+    .tabbar { flex: 1; height: 62px; border-radius: 999px; background: rgba(255,255,255,0.8); display: flex; }
+    .tabbar span { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; gap: 2px; }
+    .search-btn { width: 52px; height: 52px; border-radius: 999px; background: rgba(255,255,255,0.8); }
+    .row { display: grid; grid-template-columns: 100px 1fr 10px 1fr; gap: 4px; align-items: center; min-height: 44px; }
+    .lbl { font-size: 13px; color: var(--ink2); }
+    .fld { height: 36px; border-radius: 10px; background: var(--s1); border: 1px solid rgba(17,24,39,0.08); display: flex; align-items: center; justify-content: flex-end; padding: 0 8px; font-size: 13px; font-weight: 700; }
+    .fld small { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--ink3); }
+    .actions { position: absolute; left: 16px; right: 16px; bottom: 14px; display: flex; gap: 8px; }
+    .actions button { flex: 1; height: 50px; border: 0; border-radius: 999px; font-size: 15px; font-weight: 600; }
+    .ghost { background: var(--s1); }
+    .pri { background: #111827; color: #fff; }
+    .save { background: var(--acc); color: #fff; }
+    .page { display: none; }
+    .page.on { display: block; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid rgba(17,24,39,0.08); margin: 0 16px; }
+    .tabs i { font-style: normal; padding: 10px 8px; font-size: 13px; font-weight: 600; }
+    .tabs i.on { border-bottom: 2px solid #111827; }
+  </style>
+</head>
+<body>
+  <section id="list" class="phone page on" data-shot="list">
+    <div class="status">12:09</div>
+    <div class="topbar">
+      <div class="title-row">
+        <h1>Pasūtījumi</h1>
+        <span class="pill">IRISS</span>
+        <span style="margin-left:auto" class="round"></span>
+        <span class="round"></span>
+      </div>
+      <div class="search">Vārds, tālrunis, marka</div>
+      <div class="chips">
+        <span class="chip">Aktīvs 35</span>
+        <span class="chip g">Rezervēts 1</span>
+        <span class="chip g">Izpildīts 21</span>
+      </div>
+      <div class="way">Pavadzīmes <b>P00743 Audi A6 27 h</b> <b>P02806 Toyota</b></div>
+    </div>
+    <div class="cards">
+      <div class="card"><span class="st">Aktīvs</span><h2>Audi A6 C7 BI-TURBO Sline</h2><div class="meta">Romāns Klešenkovs · 11 000-14 000 € · 17.09</div></div>
+      <div class="card"><span class="st">Aktīvs</span><h2>Audi Q5 S-Line Mehānika</h2><div class="meta">Viktorija Krūmiņa · 12 000 € · 28.09</div></div>
+      <div class="card"><span class="st">Rezervēts</span><h2>BMW 220 B48 7 vietas</h2><div class="meta">Edgars Grasis · 14 000 € · 08.08</div></div>
+    </div>
+    <div class="dock">
+      <div class="tabbar"><span>Pasūtījumi</span><span>Sludinājumi</span><span>Radars</span><span>Vairāk</span></div>
+      <div class="search-btn"></div>
+    </div>
+  </section>
+  <section id="editor" class="phone page" data-shot="editor">
+    <div class="status">12:09</div>
+    <div class="topbar">
+      <div class="title-row">
+        <span class="round"></span>
+        <h1 class="small">Audi A6 C7 BI-TU…</h1>
+        <span style="margin-left:auto;height:26px;border-radius:999px;background:var(--fill);padding:0 8px;font-size:12px;display:flex;align-items:center">Saglabāts</span>
+        <span class="round"></span>
+      </div>
+      <div class="title-row" style="height:32px">
+        <span class="pill">IRISS</span>
+        <span class="chip" style="height:32px">Aktīvs</span>
+        <span class="meta">Romāns K.</span>
+        <span style="margin-left:auto" class="round"></span>
+        <span class="round"></span>
+      </div>
+    </div>
+    <div class="tabs"><i class="on">Pārskats</i><i>Meklētājs 24</i><i>Piedāvājumi 1</i></div>
+    <div class="cards" style="padding-top:16px">
+      <div class="card">
+        <div class="meta" style="margin-bottom:8px">TRANSPORTLĪDZEKĻA SPECIFIKĀCIJA</div>
+        <div class="row" style="grid-template-columns:100px 1fr"><span class="lbl">Statuss</span><span class="fld">Aktīvs</span></div>
+        <div class="row" style="grid-template-columns:100px 1fr"><span class="lbl">Marka, modelis</span><span class="fld">Audi A6 C7 BI-TURBO Sline</span></div>
+        <div class="row"><span class="lbl">Cena *</span><span class="fld">11 000<small>€</small></span><span>-</span><span class="fld">14 000<small>€</small></span></div>
+        <div class="row"><span class="lbl">Gadi *</span><span class="fld">2012<small>g.</small></span><span>-</span><span class="fld">2015<small>g.</small></span></div>
+        <div class="row"><span class="lbl">Nobraukums</span><span class="fld">180 000<small>km</small></span><span>-</span><span class="fld">280 000<small>km</small></span></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="ghost">Līgums</button>
+      <button class="pri">Piedāvājums</button>
+      <button class="save">Saglabāt</button>
+    </div>
+  </section>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { IrissScanEditor } from "@/components/admin/IrissScanEditor";
-import { isIrissScanStoreEnabled, isSafeIrissScanId, readIrissScan } from "@/lib/iriss-scan-store";
+import { isIrissScanStoreEnabled, isSafeIrissScanId, readIrissScanWithRetry } from "@/lib/iriss-scan-store";
 import { requireAdminPage } from "@/lib/admin-auth";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export default async function IrissScanDetailPage({ params }: Props) {
   }
   const { id } = await params;
   if (!isSafeIrissScanId(id)) notFound();
-  const rec = await readIrissScan(id);
+  const rec = await readIrissScanWithRetry(id);
   if (!rec) notFound();
   return <IrissScanEditor initialRecord={rec} />;
 }

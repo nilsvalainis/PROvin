@@ -2,7 +2,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { loadMarketplaceForOrder, previewMarketplaceLoad } from "@/lib/marketplace/load";
+import { loadMarketplaceForOrder, MARKETPLACE_RADAR_AUTO_FORBIDDEN, previewMarketplaceLoad } from "@/lib/marketplace/load";
+import { emptyIrissScanRecord } from "@/lib/iriss-scan-types";
 import { readMarketplaceListingsState, readMarketplaceUsageMonth } from "@/lib/marketplace/store";
 import type { ListingProvider, MarketplaceRawListing } from "@/lib/marketplace/types";
 
@@ -273,5 +274,72 @@ describe("loadMarketplaceForOrder", () => {
     const usage = await readMarketplaceUsageMonth();
     expect(usage.entries[0]?.usd).toBe(loaded.chargedUsd);
     expect(usage.entries.at(-1)?.monthUsd).toBe(loaded.monthlyUsedUsd);
+  });
+
+  it("loads a radar under the same monthly cap and refuses auto trigger", async () => {
+    const scan = {
+      ...emptyIrissScanRecord("11111111-1111-4111-8111-111111111111", "2026-10-20T00:00:00.000Z"),
+      brandModel: "Mercedes-Benz Sprinter",
+      productionYears: "2020-2026",
+      engineType: "Dīzelis līdz 2.0, no 110 kW",
+      transmission: "Manuālā",
+      bodyType: "Furgons",
+      vehicleCategory: "van" as const,
+      apifyMobiledeEnabled: true,
+      apifyAutoscout24Enabled: true,
+    };
+    const auto = await loadMarketplaceForOrder({
+      orderId: "scan:11111111-1111-4111-8111-111111111111",
+      order: scan,
+      scan,
+      ownerKind: "radar",
+      trigger: "auto",
+      providers: [mockProvider("mobilede", RAW)],
+    });
+    expect(auto.ok).toBe(false);
+    expect(auto.error).toBe(MARKETPLACE_RADAR_AUTO_FORBIDDEN);
+
+    const loaded = await loadMarketplaceForOrder({
+      orderId: "scan:11111111-1111-4111-8111-111111111111",
+      order: scan,
+      scan,
+      ownerKind: "radar",
+      explicit: true,
+      providers: [mockProvider("mobilede", RAW)],
+    });
+    expect(loaded.ok).toBe(true);
+    expect(loaded.added).toBeGreaterThan(0);
+    expect(loaded.run?.ownerKind).toBe("radar");
+    expect(loaded.run?.query.vehicleCategory).toBe("van");
+    expect(loaded.monthlyUsedUsd).toBe(loaded.chargedUsd);
+    const usage = await readMarketplaceUsageMonth();
+    expect(usage.entries[0]?.orderId).toBe("scan:11111111-1111-4111-8111-111111111111");
+
+    const orderFollow = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000099",
+      order: {
+        brandModel: "Volvo XC60",
+        productionYears: "2018-2020",
+        maxMileage: "150000",
+        totalBudget: "10000-25000",
+        engineType: "diesel",
+        transmission: "automatic",
+      },
+      explicit: true,
+      providers: [mockProvider("autoscout24", [RAW[1]!])],
+    });
+    expect(orderFollow.ok).toBe(true);
+    expect(orderFollow.monthlyUsedUsd).toBeCloseTo((loaded.chargedUsd ?? 0) + (orderFollow.chargedUsd ?? 0), 5);
+
+    const implicitRadar = await loadMarketplaceForOrder({
+      orderId: "scan:11111111-1111-4111-8111-111111111111",
+      order: scan,
+      scan,
+      ownerKind: "radar",
+      explicit: false,
+      providers: [mockProvider("mobilede", RAW)],
+    });
+    expect(implicitRadar.ok).toBe(false);
+    expect(implicitRadar.error).toBe("explicit_required");
   });
 });
