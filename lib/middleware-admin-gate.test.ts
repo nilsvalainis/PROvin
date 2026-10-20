@@ -153,7 +153,7 @@ describe("middleware admin gate", () => {
     expect(ok.status).toBe(200);
     const denied = await middleware(req("https://www.provin.lv/admin/iriss/pasutijumi", staffCookie()));
     expect(denied.status).toBe(307);
-    expect(new URL(denied.headers.get("location")!).pathname).toBe("/admin/iriss/logistika");
+    expect(new URL(denied.headers.get("location")!).pathname).toBe("/admin/iriss");
   });
 
   it("lets a multi-section cookie open granted pages and blocks the rest", async () => {
@@ -174,7 +174,7 @@ describe("middleware admin gate", () => {
     expect((await middleware(req("https://www.provin.lv/admin/iriss/logistika", cookie))).status).toBe(200);
     const denied = await middleware(req("https://www.provin.lv/admin/iriss/pasutijumi", cookie));
     expect(denied.status).toBe(307);
-    expect(new URL(denied.headers.get("location")!).pathname).toBe("/admin/iriss/logistika");
+    expect(new URL(denied.headers.get("location")!).pathname).toBe("/admin/iriss");
   });
 
   it("does not gate the invite accept page", async () => {
@@ -201,7 +201,7 @@ describe("middleware admin gate", () => {
     expect((await middleware(req("https://www.provin.lv/api/admin/iriss/waybill-requests", cookie))).status).toBe(200);
     const vin = await middleware(req("https://www.provin.lv/admin/vin-scan", cookie));
     expect(vin.status).toBe(307);
-    expect(new URL(vin.headers.get("location")!).pathname).toBe("/admin/iriss/pavadzimes");
+    expect(new URL(vin.headers.get("location")!).pathname).toBe("/admin/iriss");
     expect((await middleware(req("https://www.provin.lv/api/admin/vin-scan", cookie))).status).toBe(403);
     expect((await middleware(req("https://www.provin.lv/api/admin/outvin/purchase", cookie))).status).toBe(403);
     expect((await middleware(req("https://www.provin.lv/api/admin/iriss-pasutijumi", cookie))).status).toBe(403);

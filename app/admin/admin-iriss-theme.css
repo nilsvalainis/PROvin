@@ -20,9 +20,26 @@
   --hair: rgba(17, 24, 39, 0.08);
   --badge: #5e636e;
   --onink: #fff;
-  /* Jaunie pilles: #376 tokens. Do not restyle .iriss-pas-hits here. Token PR later: --news-bg #2563eb. */
+  /* Jaunie pilles: #376 tokens. Do not restyle .iriss-pas-hits here. */
   --news-bg: var(--ink);
   --news-fg: var(--onink);
+  /* saskanosana §2: tikai pievienoti. --news-* paliek #376. D = primārā poga. */
+  --focus: #2563eb;
+  --btn-dark-bg: rgba(31, 36, 48, .89);
+  --btn-dark-fg: #fff;
+  --btn-dark-bg-e: rgba(11, 12, 16, 0.07);
+  --btn-dark-bd-e: rgba(11, 12, 16, 0.2);
+  --btn-dark-fg-e: #0b0c10;
+  --status-chip-bg: #f2f2f7;
+  --status-chip-dot: #8e8e93;
+  --status-chip-fg: #3a3a3c;
+  --ok-bg: #f0fdf4;
+  --ok-dot: #16a34a;
+  --warn-bg: #fffbeb;
+  --warn-dot: #d97706;
+  --krava-next: #1e9e57;
+  --krava-after: #5e5ce6;
+  --krava-none: #3a3a3c;
   --acc: #3d5bd9;
   --acc-soft: rgba(61, 91, 217, 0.12);
   --warn: #a86400;

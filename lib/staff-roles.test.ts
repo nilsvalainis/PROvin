@@ -54,9 +54,10 @@ describe("IRISS section path access (deny by default)", () => {
     expect(decideAdminPageAccess("/admin/iriss/pavadzimes", both)).toBe("allow");
     expect(decideAdminPageAccess("/admin/iriss/pasutijumi", both)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/iriss/sludinajumi", both)).toBe("forbidden");
-    expect(staffHomePath(both.sections)).toBe("/admin/iriss/logistika");
-    expect(actorHomePath(both)).toBe("/admin/iriss/logistika");
-    expect(staffHomePath(waybills.sections)).toBe("/admin/iriss/pavadzimes");
+    expect(staffHomePath(both.sections)).toBe("/admin/iriss");
+    expect(actorHomePath(both)).toBe("/admin/iriss");
+    expect(staffHomePath(waybills.sections)).toBe("/admin/iriss");
+    expect(actorHomePath({ kind: "admin" })).toBe("/admin/iriss");
   });
 
   it("maps pages and APIs to the granted section", () => {

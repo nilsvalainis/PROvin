@@ -47,7 +47,7 @@ export function IrissStaffAppShell({
 }) {
   const pathname = usePathname() || "";
   const router = useRouter();
-  const home = sections[0] ? irissSectionMeta(sections[0]).pagePrefixes[0] : "/admin/iriss/logistika";
+  const home = "/admin/iriss";
 
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
@@ -76,6 +76,14 @@ export function IrissStaffAppShell({
           </div>
         </div>
         <nav className="flex min-h-0 flex-1 flex-col gap-1">
+          <Link
+            href={home}
+            className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[13.5px] font-medium ${
+              pathname === home || pathname === `${home}/` ? "bg-[#ececf3] text-[#111827]" : "text-[#4b5563] hover:bg-white"
+            }`}
+          >
+            Sākums
+          </Link>
           {sections.map((id) => {
             const href = irissSectionMeta(id).pagePrefixes[0] ?? home;
             const Icon = SECTION_ICON[id];
@@ -108,6 +116,14 @@ export function IrissStaffAppShell({
         <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</main>
         <nav className="relative z-10 border-t border-[#ececf2] bg-[#F4F6F9] px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 md:hidden">
           <div className="mx-auto flex max-w-md items-stretch gap-1 rounded-full bg-white p-1 shadow-sm">
+            <Link
+              href={home}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-full px-2 py-2 text-[11px] font-medium ${
+                pathname === home || pathname === `${home}/` ? "bg-[#ececf3] text-[#111827]" : "text-[#6b7280]"
+              }`}
+            >
+              <span className="truncate whitespace-nowrap">Sākums</span>
+            </Link>
             {sections.map((id) => {
               const href = irissSectionMeta(id).pagePrefixes[0] ?? home;
               const Icon = SECTION_ICON[id];

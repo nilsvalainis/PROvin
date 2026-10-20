@@ -73,6 +73,7 @@ export const ADMIN_NAV_LABELS = {
   morning: "Rīta kopsavilkums",
   vinScan: "VIN pārbaude",
   fast: "Ātrie vērtējumi",
+  irissMenu: "Sākums",
   irissHome: "Pasūtījumi",
   irissNew: "Jauns pasūtījums",
   irissScan: "Radars",
@@ -107,6 +108,12 @@ const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Hands
 const DEMO_DILERI: Item = { href: "/admin/b2b-demo", label: L.demoDealers, icon: Building2, match: starts("/admin/b2b-demo") };
 const IZMAKSAS: Item = { href: "/admin/izmaksas", label: L.costs, icon: Wallet, match: starts("/admin/izmaksas") };
 const I_IZMAKSAS: Item = { href: "/admin/iriss/izmaksas", label: L.costs, icon: Wallet, match: starts("/admin/iriss/izmaksas") };
+const I_MENU: Item = {
+  href: "/admin/iriss",
+  label: L.irissMenu,
+  icon: Home,
+  match: (p) => p === "/admin/iriss" || p === "/admin/iriss/",
+};
 const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, plus: true, match: starts("/admin/iriss/pasutijumi") };
 const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
 const I_LOGISTICS: Item = {
@@ -126,7 +133,7 @@ const I_VIN: Item = { ...VIN, label: L.vinScan };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
   { title: L.groupPro, items: [MORNING, SAKUMS, VIN, FAST] },
-  { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
+  { title: L.groupIriss, items: [I_MENU, I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
   {
     title: L.groupWeb,
     items: [
@@ -158,7 +165,7 @@ const WS_GROUPS: Record<AdminWorkspace, Group[]> = {
   pro: ADMIN_NAV_GROUPS.filter((g) => g.title !== L.groupIriss),
   /** IRISS: Pārvaldība starp Iestatījumi un Pavadzīmes (sānjoslas kartītes). */
   iriss: [
-    { title: L.groupIriss, items: [I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
+    { title: L.groupIriss, items: [I_MENU, I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
     { title: L.groupOps, items: [I_IZMAKSAS] },
   ],
 };
@@ -171,7 +178,7 @@ function readWsCookie(): AdminWorkspace | null {
   const m = /(?:^|; )admin_ws=(pro|iriss)/.exec(document.cookie);
   return m ? (m[1] as AdminWorkspace) : null;
 }
-function writeWsCookie(ws: AdminWorkspace) {
+export function writeWsCookie(ws: AdminWorkspace) {
   document.cookie = `${ADMIN_WS_COOKIE}=${ws}; Path=/admin; Max-Age=31536000; SameSite=Lax`;
 }
 
@@ -198,7 +205,7 @@ function WorkspaceSwitch({ ws }: { ws: AdminWorkspace }) {
       <Link href="/admin/dashboard" onClick={() => writeWsCookie("pro")} className={seg(ws === "pro")} aria-current={ws === "pro" ? "page" : undefined}>
         PRO
       </Link>
-      <Link href="/admin/iriss/pasutijumi" onClick={() => writeWsCookie("iriss")} className={seg(ws === "iriss")} aria-current={ws === "iriss" ? "page" : undefined}>
+      <Link href="/admin/iriss" onClick={() => writeWsCookie("iriss")} className={seg(ws === "iriss")} aria-current={ws === "iriss" ? "page" : undefined}>
         IRISS
       </Link>
     </div>
@@ -541,6 +548,7 @@ const MOBILE_TAB_ICON: Record<string, AdminMobileIconName> = {
   "/admin/dashboard": "pasutijumi",
   "/admin/vin-scan": "vinParbaude",
   "/admin/atras-vertesanas": "atrie",
+  "/admin/iriss": "atzime",
   "/admin/iriss/pasutijumi": "pasutijumi",
   "/admin/iriss/sludinajumi": "sludinajums",
   "/admin/iriss/scan": "radars",
@@ -559,6 +567,7 @@ const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/agregatu-zinasanas": "iestatijumi",
   "/admin/statistika": "statistika",
   "/admin/teksti": "komentars",
+  "/admin/iriss": "atzime",
   "/admin/iriss/pasutijumi": "pasutijumi",
   "/admin/iriss/sludinajumi": "sludinajums",
   "/admin/iriss/scan": "radars",
@@ -599,7 +608,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
     return () => window.removeEventListener("keydown", onKey);
   }, [more]);
 
-  const irissTabs: Item[] = [I_HOME, { ...I_LIST, label: "Sludinājumi" }, I_SCAN];
+  const irissTabs: Item[] = [I_MENU, I_HOME, { ...I_LIST, label: "Sludinājumi" }];
   const proTabs: Item[] = [SAKUMS, { ...VIN, label: "VIN" }, { ...FAST, label: "Ātrie" }];
   const tabs: Item[] = workspace === "iriss" ? irissTabs : proTabs;
   const tabHrefs = new Set(tabs.map((t) => t.href));
@@ -686,7 +695,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                     PRO
                   </Link>
                   <Link
-                    href="/admin/iriss/pasutijumi"
+                    href="/admin/iriss"
                     onClick={() => writeWsCookie("iriss")}
                     className={`relative z-[1] flex h-full flex-1 items-center justify-center rounded-full text-[12px] font-semibold ${
                       workspace === "iriss" ? "text-[var(--am-ink)]" : "text-[var(--am-ink2)]"

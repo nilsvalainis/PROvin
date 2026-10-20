@@ -80,10 +80,12 @@ describe("admin mobile spec files", () => {
 
   it("pavadzīmju pilles nav melnas un sludinājumos slēpjas", () => {
     const bar = readFileSync(new URL("../components/admin/IrissPavadzimesMobileBar.tsx", import.meta.url), "utf8");
-    expect(bar).toMatch(/--fill-secondary/);
+    const strip = readFileSync(new URL("../components/admin/IrissPavadzimesPlateStrip.tsx", import.meta.url), "utf8");
+    expect(strip).toMatch(/--fill-secondary/);
     expect(bar).not.toMatch(/item\.urgent \?/);
+    expect(strip).not.toMatch(/item\.urgent \?/);
     expect(bar).toMatch(/sludinajumi/);
-    expect(bar).toMatch(/animate-pulse/);
+    expect(strip).toMatch(/animate-pulse/);
     expect(bar).not.toMatch(/scheduleAdminIdleWork/);
   });
 
