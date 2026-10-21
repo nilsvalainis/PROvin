@@ -12,6 +12,11 @@ import {
 import { formatForensicsInt } from "@/lib/admin-ai-mileage-forensics";
 import { extractCampaignCodes, splitSentences } from "@/lib/unit-facts/check";
 import type { FactCheckFlag, FactCheckLevel } from "@/lib/unit-facts/types";
+import {
+  extractLoadedPowertrainIdentity,
+  findPowertrainContradictions,
+  powertrainContradictionsToFlags,
+} from "@/lib/comment-powertrain-guard";
 
 export type ContradictionCheckInput = {
   text: string;
@@ -19,6 +24,9 @@ export type ContradictionCheckInput = {
   facts: CanonicalFacts;
   /** Citu lauku teksti (plain) — km/datumiem starp laukiem. */
   otherFieldTexts?: Array<{ field: string; label: string; text: string }>;
+  /** Ielādētie avoti: OE VIN Lookup / dīleris / CSDD degviela un dzinējs. */
+  sourceBlocks?: import("@/lib/admin-source-blocks").WorkspaceSourceBlocks;
+  vin?: string | null;
 };
 
 const ROLLBACK_MENTION_RE =
@@ -157,6 +165,13 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
     seen.add(k);
     flags.push(f);
   };
+
+  if (input.sourceBlocks) {
+    const identity = extractLoadedPowertrainIdentity(input.sourceBlocks, { vin: input.vin });
+    for (const flag of powertrainContradictionsToFlags(findPowertrainContradictions(text, identity))) {
+      push(flag);
+    }
+  }
 
   // 1) Odometra kritums / CarVertical brīdinājums jāpiemin.
   if (hasRollbackOrMileageWarning(facts) && isMileageRelatedCommentField(field)) {

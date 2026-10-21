@@ -136,7 +136,7 @@ export function extractVehicleReportFingerprint(
     year,
     engineCode: (vi.engineCode || "").trim().toUpperCase(),
     transmission: normTransmission(vi.transmission),
-    fuelType: csdd.fuelType.trim().toLowerCase(),
+    fuelType: (vi.fuel || csdd.fuelType).trim().toLowerCase(),
     engineDisplacementCm3: csdd.engineDisplacementCm3.replace(/\D/g, ""),
     enginePowerKw: csdd.enginePowerKw.replace(/[^\d.,]/g, "").replace(",", "."),
     emissionStandard: csdd.emissionStandard.trim().toUpperCase(),

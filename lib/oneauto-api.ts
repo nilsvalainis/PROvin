@@ -11,6 +11,7 @@ import {
   oneautoResultIsNoData,
   type OneautoProductId,
 } from "@/lib/oneauto-catalog";
+import { oneautoChargedCostEventDrafts } from "@/lib/oneauto-cost-events";
 import type { OneautoProductResult } from "@/lib/oneauto-block";
 import {
   buildOneautoProductResult,
@@ -232,6 +233,7 @@ export async function fetchOneautoProducts(opts: {
   }
 
   const costCents = oneautoChargedCostCents(opts.products, results);
+  void persistOneautoChargedCosts(opts.vin, opts.products, results);
   return {
     source: ONEAUTO_SOURCE_TAG,
     vin: opts.vin,
@@ -240,6 +242,33 @@ export async function fetchOneautoProducts(opts: {
     results,
     display,
   };
+}
+
+async function persistOneautoChargedCosts(
+  vin: string,
+  products: readonly OneautoProductId[],
+  results: Partial<Record<OneautoProductId, OneautoProductResult>>,
+): Promise<void> {
+  try {
+    const { persistPaidSourceCost } = await import("@/lib/admin-costs-persist");
+    const { adminCostsEurToUsd } = await import("@/lib/admin-costs-live");
+    for (const row of oneautoChargedCostEventDrafts({
+      vin,
+      products,
+      results,
+      eurToUsd: adminCostsEurToUsd(),
+    })) {
+      persistPaidSourceCost({
+        source: "oneauto",
+        sku: row.sku,
+        units: row.units,
+        usd: row.usd,
+        ref: row.ref,
+      });
+    }
+  } catch (err) {
+    console.error("[oneauto] cost persist failed", err);
+  }
 }
 
 export async function fetchOneautoVinPath(

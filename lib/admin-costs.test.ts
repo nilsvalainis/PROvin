@@ -138,13 +138,23 @@ describe("admin cost dashboard", () => {
   });
 
   it("keeps live vs stored sources split and clamps the month", () => {
-    expect(liveCostSourceIds()).toEqual(["anthropic", "gemini", "apify", "carfax", "autodna", "carvertical", "statvin"]);
+    expect(liveCostSourceIds()).toEqual([
+      "anthropic",
+      "gemini",
+      "apify",
+      "carfax",
+      "autodna",
+      "carvertical",
+      "statvin",
+      "oneauto",
+    ]);
     expect(manualCostSourceIds()).toEqual(["maps-dynamic", "maps-geocoding", "vercel", "fixie", "stripe"]);
     expect(resolveCostMonth(undefined, NOW)).toBe("2026-10");
     expect(resolveCostMonth("2026-09", NOW)).toBe("2026-09");
     expect(resolveCostMonth("2026-11", NOW)).toBe("2026-10");
     expect(costMonthRangeLabel("2026-09", NOW)).toBe("Kopā septembrī (1.-30.09)");
     expect(shortCostLabel("statvin")).toBe("stat.vin");
+    expect(shortCostLabel("oneauto")).toBe("OneAuto");
   });
 });
 

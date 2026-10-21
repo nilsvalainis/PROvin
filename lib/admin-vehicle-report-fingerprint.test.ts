@@ -22,6 +22,39 @@ describe("extractVehicleReportFingerprint", () => {
     expect(fp.year).toBe(2016);
     expect(fp.fuelType).toContain("dīze");
   });
+
+  it("dod priekšroku OE VIN Lookup / dīlera degvielai pret CSDD", () => {
+    const blocks = mergeSourceBlocksWithDefaults({
+      csdd: {
+        ...emptyCsddFields(),
+        makeModel: "Audi A5",
+        fuelType: "Dīzeļdegviela",
+      },
+      auto_records: {
+        outvinReport: {
+          vehicleInfo: {
+            vinCode: "WAUZZZF59KA075097",
+            series: "",
+            typeCode: "",
+            steeringSide: "",
+            interior: "",
+            model: "A5 35 TFSI",
+            generation: "",
+            engineCode: "DLVB",
+            color: "",
+            transmission: "",
+            fuel: "Petrol",
+          },
+          accidentCheck: "",
+          stolenCheck: "",
+          equipment: [],
+        },
+      },
+    });
+    const fp = extractVehicleReportFingerprint(blocks);
+    expect(fp.engineCode).toBe("DLVB");
+    expect(fp.fuelType).toMatch(/petrol/i);
+  });
 });
 
 describe("scoreVehicleFingerprintSimilarity", () => {

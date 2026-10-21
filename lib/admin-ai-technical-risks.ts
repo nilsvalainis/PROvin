@@ -55,6 +55,11 @@ import {
 import { PROVIN_KB_EUR_ACTIVE } from "@/lib/provin-kb";
 import { formatApplicableUnitFactsForPrompt, parseVehicleYear } from "@/lib/unit-facts/check";
 import { buildCanonicalFactsSheet } from "@/lib/canonical-facts-sheet";
+import {
+  commentContradictsPowertrain,
+  extractLoadedPowertrainIdentity,
+  powertrainIdentityPromptBlock,
+} from "@/lib/comment-powertrain-guard";
 
 function withDealerFlags(flags: string[], issues: DealerMapIssue[]): string[] {
   return [...flags, ...issues.map((i) => `${i.id}: ${i.message}`)];
@@ -90,14 +95,17 @@ function unitFactsPromptBlock(input: AiOrderContextInput, identificationBrief: s
 function buildLegacyUserPrompt(input: AiOrderContextInput, identificationBrief: string, orderContext: string): string {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
   const makeModel = blocks.csdd.makeModel.trim();
-  const fuel = blocks.csdd.fuelType.trim();
-  const vehicleHint = [makeModel, fuel].filter(Boolean).join(", ");
+  const identity = extractLoadedPowertrainIdentity(blocks, { vin: input.vin });
+  const fuel = identity.fuelRaw || blocks.csdd.fuelType.trim();
+  const vehicleHint = [makeModel, fuel, identity.engineCode].filter(Boolean).join(", ");
+  const powertrainBlock = powertrainIdentityPromptBlock(identity);
   const verifiedFacts = unitFactsPromptBlock(input, identificationBrief);
   return appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
 
 ${identificationBrief}
+${powertrainBlock ? `\n${powertrainBlock}\n` : ""}
 ${verifiedFacts ? `\n${verifiedFacts}\n` : ""}
 ${orderContext}
 
@@ -198,6 +206,8 @@ async function generateTextFromMap(
     `Pasūtījuma ID: ${input.sessionId}
 
 ${buildCanonicalFactsSheet(input)}
+
+${powertrainIdentityPromptBlock(extractLoadedPowertrainIdentity(input.sourceBlocks, { vin: input.vin }))}
 
 ${costNote}
 
@@ -368,5 +378,8 @@ async function generateV2(input: AiOrderContextInput): Promise<TechnicalRiskAnal
 export async function generateTechnicalRiskAnalysisWithAi(
   input: AiOrderContextInput,
 ): Promise<TechnicalRiskAnalysisResult> {
-  return isTechRiskV2Enabled() ? generateV2(input) : generateV1(input);
+  const result = isTechRiskV2Enabled() ? await generateV2(input) : await generateV1(input);
+  const identity = extractLoadedPowertrainIdentity(input.sourceBlocks, { vin: input.vin });
+  if (!commentContradictsPowertrain(result.text, identity)) return result;
+  throw new Error("powertrain_contradiction");
 }

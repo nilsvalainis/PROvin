@@ -24,11 +24,17 @@ import {
   mergeDealerPaidOutcomes,
   resolveDealerCommentOutputLang,
   selectDealerAutoProductsToFetch,
+  shouldAutoFetchOeVinLookup,
   type DealerAutoProductId,
   type DealerCommentOutputLang,
   type DealerDataJob,
   type DealerPaidProductOutcome,
 } from "@/lib/dealer-data-job-types";
+import {
+  commentContradictsPowertrain,
+  extractLoadedPowertrainIdentity,
+  toGeneratedAgainst,
+} from "@/lib/comment-powertrain-guard";
 import { readDealerDataJob, upsertDealerDataJob } from "@/lib/dealer-data-job-store";
 import { refundB2bWalletOrderIfNoData } from "@/lib/b2b-wallet-refund";
 import { fetchOneautoProducts, getOneautoApiConfig } from "@/lib/oneauto-api";
@@ -48,10 +54,10 @@ import {
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 
 /**
- * Dīlera datu A-Z ķēde: pēc apmaksas ielasa VIN Decoder (€0.18) un
- * OE Service History Europe (€3.00), ieliek OFICIĀLĀ DĪLERA DATI avotā
- * un sagatavo Gemini komentāra melnrakstu. Citi OneAuto produkti paliek
- * operatora rokās. Klientam nekas netiek nosūtīts.
+ * Dīlera datu A-Z ķēde: pēc apmaksas ielasa OE Service History Europe (€3.00).
+ * Ja vēsturei ir ieraksti, vienreiz ielasa arī OE VIN Lookup (€0.36).
+ * VIN Decoder (€0.18) nekad netiek ielasīts automātiski. Citi OneAuto
+ * produkti paliek operatora rokās. Klientam nekas netiek nosūtīts.
  */
 const AUTO_PRODUCTS: readonly OneautoProductId[] = [...DEALER_AUTO_PRODUCT_IDS];
 
@@ -112,7 +118,13 @@ async function generateDealerNotes(
   if (!baseline) return false;
   const blocks = mergeSourceBlocksWithDefaults(baseline.sourceBlocks);
 
-  if (blocks.auto_records.comments.trim()) return false;
+  const identity = extractLoadedPowertrainIdentity(blocks, { vin });
+  const existingPlain = blocks.auto_records.comments.trim()
+    ? blocks.auto_records.comments
+    : "";
+  const mustReplace =
+    Boolean(existingPlain) && commentContradictsPowertrain(existingPlain, identity);
+  if (existingPlain && !mustReplace) return false;
 
   let generatedComments = "";
   try {
@@ -153,9 +165,14 @@ async function generateDealerNotes(
     auto_records: {
       ...current.auto_records,
       // Operatora teksts vienmēr uzvar: rakstām tikai, ja lauks joprojām tukšs.
-      comments:
-        current.auto_records.comments.trim() ||
-        aiExpertSourceCommentToRichHtml(generatedComments),
+      comments: mustReplace
+        ? aiExpertSourceCommentToRichHtml(generatedComments)
+        : current.auto_records.comments.trim() ||
+          aiExpertSourceCommentToRichHtml(generatedComments),
+      oneautoIngest: {
+        ...(current.auto_records.oneautoIngest ?? emptyOneautoIngest()),
+        generatedAgainst: toGeneratedAgainst(identity),
+      },
     },
   }));
 }
@@ -263,17 +280,7 @@ export async function runDealerDataJob(args: {
     existing?.paidOutcomes,
     outcomesFromResults(storedResults),
   );
-  let toFetch = selectDealerAutoProductsToFetch(storedOutcomes);
-  // Pabeigti vecie darbi (tikai OE vēsture): nepievieno VIN Decoder, lai nemainītu jau ielasītos pasūtījumus.
-  if (existing?.status === "done" || existing?.status === "no_data") {
-    const known = new Set<string>([
-      ...Object.keys(storedOutcomes),
-      ...(previousIngest?.selectedProducts ?? []),
-    ]);
-    if (!known.has("vin_decoder")) {
-      toFetch = toFetch.filter((id) => id !== "vin_decoder");
-    }
-  }
+  const toFetch = selectDealerAutoProductsToFetch(storedOutcomes);
 
   const attempts = (existing?.attempts ?? 0) + 1;
   await upsertDealerDataJob(sessionId, {
@@ -314,11 +321,13 @@ export async function runDealerDataJob(args: {
     });
   }
 
-  const paidOutcomes = mergeDealerPaidOutcomes(storedOutcomes, outcomesFromResults(mergedResults));
+  let paidOutcomes = mergeDealerPaidOutcomes(storedOutcomes, outcomesFromResults(mergedResults));
   const oeOutcome = paidOutcomes.oe_service_history ?? null;
-  const technical = dealerAutoFetchHasTechnicalFail(paidOutcomes);
-  if (technical) {
-    const error = String(mergedResults[technical]?.error ?? `${technical}_failed`).slice(0, 200);
+  const historyTechnical = dealerAutoFetchHasTechnicalFail({
+    oe_service_history: paidOutcomes.oe_service_history,
+  });
+  if (historyTechnical) {
+    const error = String(mergedResults[historyTechnical]?.error ?? `${historyTechnical}_failed`).slice(0, 200);
     await upsertDealerDataJob(sessionId, {
       vin,
       status: "failed",
@@ -337,12 +346,74 @@ export async function runDealerDataJob(args: {
   for (const id of Object.keys(mergedResults) as OneautoProductId[]) {
     payloads[id] = mergedResults[id]?.payload;
   }
-  const originalDisplay = buildOneautoDisplay(payloads);
+  let originalDisplay = buildOneautoDisplay(payloads);
+  const historyEventCount = filledOneautoServiceEvents(originalDisplay.serviceTimeline).length;
   const oeNoData =
     dealerOeHistoryIsNoData(oeOutcome) ||
     !mergedResults.oe_service_history ||
     oneautoPayloadIsNoData(mergedResults.oe_service_history.payload) ||
-    filledOneautoServiceEvents(originalDisplay.serviceTimeline).length === 0;
+    historyEventCount === 0;
+
+  if (
+    !oeNoData &&
+    shouldAutoFetchOeVinLookup({
+      historyHasEntries: true,
+      lookupOutcome: paidOutcomes.oe_vin_lookup,
+    })
+  ) {
+    try {
+      const lookupFetched = await fetchOneautoProducts({ vin, products: ["oe_vin_lookup"] });
+      mergedResults = mergeOneautoProductResults(mergedResults, lookupFetched.results);
+      lastCostEur = lookupFetched.costEur || lastCostEur;
+      paidOutcomes = mergeDealerPaidOutcomes(paidOutcomes, outcomesFromResults(mergedResults));
+      await upsertDealerDataJob(sessionId, {
+        vin,
+        status: "running",
+        attempts,
+        trigger: args.trigger,
+        skipTranslate,
+        commentLang,
+        paidOutcomes,
+        oneautoResults: resultsRecord(mergedResults),
+      });
+    } catch (e) {
+      const error = e instanceof Error ? e.message.slice(0, 200) : "network_error";
+      await upsertDealerDataJob(sessionId, {
+        vin,
+        status: "failed",
+        attempts,
+        error,
+        trigger: args.trigger,
+        skipTranslate,
+        commentLang,
+        paidOutcomes,
+        oneautoResults: resultsRecord(mergedResults),
+      });
+      return { ok: false, status: "failed", reason: error };
+    }
+    const lookupTechnical = dealerAutoFetchHasTechnicalFail({
+      oe_vin_lookup: paidOutcomes.oe_vin_lookup,
+    });
+    if (lookupTechnical) {
+      const error = String(mergedResults[lookupTechnical]?.error ?? `${lookupTechnical}_failed`).slice(0, 200);
+      await upsertDealerDataJob(sessionId, {
+        vin,
+        status: "failed",
+        attempts,
+        error,
+        trigger: args.trigger,
+        skipTranslate,
+        commentLang,
+        paidOutcomes,
+        oneautoResults: resultsRecord(mergedResults),
+      });
+      return { ok: false, status: "failed", reason: error };
+    }
+    for (const id of Object.keys(mergedResults) as OneautoProductId[]) {
+      payloads[id] = mergedResults[id]?.payload;
+    }
+    originalDisplay = buildOneautoDisplay(payloads);
+  }
 
   if (oeNoData) {
     await upsertDealerDataJob(sessionId, {
@@ -387,7 +458,11 @@ export async function runDealerDataJob(args: {
     };
     return {
       ...blocks,
-      auto_records: applyOneautoToAutoRecords(blocks.auto_records, { display, ingest }),
+      auto_records: applyOneautoToAutoRecords(blocks.auto_records, {
+        display,
+        ingest,
+        vehicleOverride: Boolean(mergedResults.oe_vin_lookup?.ok),
+      }),
     };
   });
 

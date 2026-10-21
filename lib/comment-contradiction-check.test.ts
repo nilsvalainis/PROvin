@@ -7,6 +7,7 @@ import {
   extractOdometerReadingKms,
   mergeFactCheckFlags,
 } from "@/lib/comment-contradiction-check";
+import { emptyCsddFields } from "@/lib/admin-source-blocks";
 
 function rollbackFacts() {
   const blocks = createDefaultSourceBlocks();
@@ -156,5 +157,62 @@ describe("comment contradiction check", () => {
     });
     const merged = mergeFactCheckFlags(extra, extra);
     expect(merged.length).toBe(extra.length);
+  });
+
+  it("flags a diesel comment when OE VIN Lookup fuel is petrol", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.csdd = { ...emptyCsddFields(), makeModel: "Audi A5 35 TFSI", fuelType: "" };
+    blocks.auto_records = {
+      ...blocks.auto_records,
+      outvinReport: {
+        vehicleInfo: {
+          vinCode: "WAUZZZF59KA075097",
+          model: "A5 35 TFSI",
+          modelSeries: "",
+          vehicleType: "",
+          transmission: "",
+          steeringSide: "",
+          engineCode: "DLVB",
+          engineNumber: "",
+          body: "",
+          drive: "",
+          power: "",
+          integrationLevel: "",
+          currentILevel: "",
+          developmentCode: "",
+          modelCode: "",
+          productionDate: "",
+          firstRegistration: "",
+          warrantyStartDate: "",
+          countryRegion: "",
+          color: "",
+          colorCode: "",
+          interior: "",
+          interiorCode: "",
+          fuel: "Benzin",
+          displacement: "",
+        },
+        accidentCheck: "",
+        stolenCheck: "",
+        equipment: [],
+      },
+      oneautoIngest: {
+        vinOverride: "",
+        lastFetchedVin: "WAUZZZF59KA075097",
+        fetchedAt: "2026-10-21T00:00:00.000Z",
+        selectedProducts: ["oe_vin_lookup"],
+        lastCostEur: "0.36",
+        results: { oe_vin_lookup: { ok: true, payload: { fuel: "Benzin", engine: "DLVB" } } },
+      },
+    };
+    const facts = buildCanonicalFacts({ sourceBlocks: blocks });
+    const flags = checkCommentContradictions({
+      text: "Dīzeļa motors ar DPF šajā nobraukumā ir ierasts.",
+      field: "technical_risks",
+      facts,
+      sourceBlocks: blocks,
+      vin: "WAUZZZF59KA075097",
+    });
+    expect(flags.some((f) => f.kind === "powertrain_fuel" && f.level === "E")).toBe(true);
   });
 });

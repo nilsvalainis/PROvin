@@ -60,7 +60,7 @@ function stripHtml(j: DealerDataJob, extra: string): string {
 const failed = job({
   status: "failed",
   error: "api_unavailable",
-  paidOutcomes: { vin_decoder: "ok", oe_service_history: "failed" },
+  paidOutcomes: { oe_vin_lookup: "ok", oe_service_history: "failed" },
   commentLang: "en",
 });
 const done = job({
@@ -68,7 +68,7 @@ const done = job({
   serviceEventCount: 12,
   aiGenerated: true,
   commentLang: "en",
-  paidOutcomes: { vin_decoder: "ok", oe_service_history: "ok" },
+  paidOutcomes: { oe_vin_lookup: "ok", oe_service_history: "ok" },
 });
 
 const html = `<!doctype html>

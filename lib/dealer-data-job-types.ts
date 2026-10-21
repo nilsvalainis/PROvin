@@ -114,17 +114,21 @@ export const DEALER_DATA_MAX_AUTO_ATTEMPTS = 3;
 
 /**
  * Automātiski ielasāmie OneAuto produkti pēc dīlera RAW/PRO apmaksas.
- * VIN Decoder (€0.18) + OE Service History Europe (€3.00). Citi produkti paliek operatora rokās.
+ * OE Service History Europe (€3.00) vienmēr; OE VIN Lookup (€0.36) tikai ja
+ * vēsturei ir ieraksti. VIN Decoder (€0.18) nekad netiek ielasīts automātiski.
  */
-export const DEALER_AUTO_PRODUCT_IDS = ["vin_decoder", "oe_service_history"] as const;
+export const DEALER_ALWAYS_AUTO_PRODUCT_IDS = ["oe_service_history"] as const;
+export const DEALER_FOLLOWUP_AUTO_PRODUCT_IDS = ["oe_vin_lookup"] as const;
+export const DEALER_AUTO_PRODUCT_IDS = ["oe_service_history", "oe_vin_lookup"] as const;
 export type DealerAutoProductId = (typeof DEALER_AUTO_PRODUCT_IDS)[number];
+export const DEALER_NEVER_AUTO_PRODUCT_IDS = ["vin_decoder"] as const;
 
 export type DealerPaidProductOutcome = "ok" | "no_data" | "failed" | "pending";
 
 export type DealerCommentOutputLang = "lv" | "en" | "de" | "ru" | "source";
 
 export const DEALER_DATA_RETRY_NO_RECHARGE_HINT =
-  "Atkārtot ielasi? Jau saņemtie maksas avoti (VIN Decoder un OE Service History) netiks izsaukti vēlreiz.";
+  "Atkārtot ielasi? Jau saņemtie maksas avoti (OE Service History un OE VIN Lookup) netiks izsaukti vēlreiz.";
 
 export function dealerPaidOutcomeFromResult(
   result: { ok?: boolean; error?: string } | null | undefined,
@@ -163,7 +167,14 @@ export function mergeDealerPaidOutcomes(
 export function selectDealerAutoProductsToFetch(
   existing: Partial<Record<DealerAutoProductId, DealerPaidProductOutcome | null | undefined>>,
 ): DealerAutoProductId[] {
-  return DEALER_AUTO_PRODUCT_IDS.filter((id) => !isDealerPaidProductSettled(existing[id] ?? null));
+  return DEALER_ALWAYS_AUTO_PRODUCT_IDS.filter((id) => !isDealerPaidProductSettled(existing[id] ?? null));
+}
+
+export function shouldAutoFetchOeVinLookup(args: {
+  historyHasEntries: boolean;
+  lookupOutcome?: DealerPaidProductOutcome | null;
+}): boolean {
+  return args.historyHasEntries && !isDealerPaidProductSettled(args.lookupOutcome ?? null);
 }
 
 export function dealerOeHistoryIsNoData(
@@ -255,8 +266,8 @@ export type DealerDataRunDecision =
   | { run: false; reason: "already_fetched" | "in_flight" | "too_many_attempts" | "vin_missing" };
 
 /**
- * Izmaksu aizsargs: VIN Decoder (€0.18) un OE Service History (€3.00) tam pašam
- * pasūtījumam neizsaucam divreiz. Paralēlu darbu nepalaižam.
+ * Izmaksu aizsargs: OE Service History (€3.00) un OE VIN Lookup (€0.36) tam
+ * pašam pasūtījumam neizsaucam divreiz. Paralēlu darbu nepalaižam.
  */
 export function decideDealerDataRun(args: {
   job: DealerDataJob | null;
@@ -423,11 +434,11 @@ export function describeDealerDataJob(job: DealerDataJob | null): string {
     case "running":
       return "Ielasa datus…";
     case "done": {
-      const decoder = job.paidOutcomes?.vin_decoder;
-      const decoderBit =
-        decoder === "ok" ? "VIN Decoder" : decoder === "no_data" ? "VIN Decoder (nav datu)" : null;
+      const lookup = job.paidOutcomes?.oe_vin_lookup;
+      const lookupBit =
+        lookup === "ok" ? "OE VIN Lookup" : lookup === "no_data" ? "OE VIN Lookup (nav datu)" : null;
       const parts = [
-        decoderBit,
+        lookupBit,
         `${job.serviceEventCount ?? 0} servisa ieraksti`,
       ].filter(Boolean);
       return `Ielasīts: ${parts.join(", ")}`;
