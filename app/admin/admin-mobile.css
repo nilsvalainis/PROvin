@@ -688,6 +688,8 @@
 .admin-ios-theme .admin-m a[class*="text-[var(--chip-active-fg)]"],
 .admin-ios-theme a[class*="text-[var(--chip-active-fg)]"] {
   color: var(--chip-active-fg) !important;
+}
+
 /* PRO pasūtījumu kartīšu toņi (telefons): maigs fons + svītra kreisajā malā. Strādā arī tumšajā režīmā. */
 .admin-ios-theme .am-row.am-tone {
   overflow: hidden;
