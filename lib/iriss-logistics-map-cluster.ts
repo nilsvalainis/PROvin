@@ -106,3 +106,33 @@ export function layoutMapPins<T extends PinInput>(points: readonly T[], clusterR
   }
   return out;
 }
+
+export type LabelBox = { x: number; y: number; w: number; h: number };
+
+/**
+ * Nosaukumu kartītes kartē nedrīkst aizklāt viena otru. Ejam no augšas uz leju; ja kartīte pārklājas ar
+ * jau novietotu, to pabīdām uz leju zem tās (ar atstarpi). Atgriež vertikālo nobīdi katrai kartītei.
+ */
+export function resolveLabelOverlaps(boxes: readonly LabelBox[], gap = 3): number[] {
+  const order = boxes.map((b, i) => ({ b, i })).sort((a, z) => a.b.y - z.b.y || a.b.x - z.b.x);
+  const placed: LabelBox[] = [];
+  const dy = new Array<number>(boxes.length).fill(0);
+  for (const { b, i } of order) {
+    let y = b.y;
+    let moved = true;
+    while (moved) {
+      moved = false;
+      for (const p of placed) {
+        const horiz = b.x < p.x + p.w && b.x + b.w > p.x;
+        const vert = y < p.y + p.h + gap && y + b.h + gap > p.y;
+        if (horiz && vert) {
+          y = p.y + p.h + gap;
+          moved = true;
+        }
+      }
+    }
+    dy[i] = y - b.y;
+    placed.push({ ...b, y });
+  }
+  return dy;
+}

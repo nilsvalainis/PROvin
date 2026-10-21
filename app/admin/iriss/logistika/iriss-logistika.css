@@ -655,8 +655,12 @@
   font-weight: 600;
 }
 
+/*
+ * Druka (Nils 21.10): 1. lapā tieši ekrāna skats (karte ar lāsēm, numuriem un līniju), 2. lapā auto saraksts.
+ * Drukas brīdī JS paslēpj visu pārējo (isolateElementForPrint), tāpēc bloks plūst normāli uz 2 lapām.
+ */
 .iriss-log-print-chrome,
-.iriss-log-print-legend {
+.iriss-log-print-list {
   display: none;
 }
 
@@ -664,72 +668,135 @@ html.iriss-log-printing,
 html.iriss-log-printing body {
   background: #fff !important;
 }
-html.iriss-log-printing .iriss-log-map-fs {
+html.iriss-log-printing .iriss-log-map-fs,
+html.iriss-log-printing .iriss-log-map-fs-card {
   position: static;
   inset: auto;
   z-index: auto;
   display: block;
-  padding: 0;
-  background: none;
-}
-html.iriss-log-printing .iriss-log-map-fs-card {
   width: auto;
   height: auto;
   overflow: visible;
+  padding: 0;
   border-radius: 0;
+  background: none;
   box-shadow: none;
 }
 html.iriss-log-printing .iriss-log-print-root {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  padding: 0 !important;
-}
-html.iriss-log-printing .iriss-log-print-chrome,
-html.iriss-log-printing .iriss-log-print-legend {
-  display: flex;
-}
-html.iriss-log-printing .iriss-log-print-chrome {
-  position: absolute;
-  top: 8px;
-  left: 12px;
-  right: 12px;
-  z-index: 3;
-  margin: 0;
-}
-html.iriss-log-printing .iriss-log-print-legend {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  z-index: 3;
-  margin: 0;
-  max-width: 46%;
-  flex-direction: column;
-  gap: 2px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 8px 10px;
-  box-shadow: 0 1px 6px rgba(15, 18, 28, 0.12);
-}
-html.iriss-log-printing .iriss-log-print-sheet {
+  display: block;
   width: 277mm;
   max-width: 100%;
+  margin: 0 auto;
+  background: #fff;
+}
+html.iriss-log-printing .iriss-log-print-chrome {
+  position: relative;
+  display: flex;
+  margin: 0 0 3mm;
+  font-size: 12px !important;
+  color: #1d1d1f !important;
 }
 html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero,
 html.iriss-log-printing .iriss-log-print-root .iriss-log-map-shell {
   position: relative;
   width: 277mm;
-  height: 170mm;
+  height: 165mm;
   max-width: 100%;
   min-height: 0;
   aspect-ratio: auto;
   border-radius: 0 !important;
   margin: 0 auto;
+}
+html.iriss-log-printing .iriss-log-print-list {
+  display: block;
+  break-before: page;
+  page-break-before: always;
+}
+/* Nosaukumu kartītes un hover padomi drukā netiek rādīti (numuri + saraksts 2. lapā). */
+html.iriss-log-printing .iriss-log-pin-tip,
+html.iriss-log-printing .iriss-log-pin-label {
+  display: none !important;
+}
+
+.iriss-log-print-list {
+  color: #1d1d1f;
+  font-family: Inter, Arial, sans-serif;
+}
+.iriss-log-print-list header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1.5px solid #1d1d1f;
+  padding-bottom: 2mm;
+  margin-bottom: 3mm;
+}
+.iriss-log-print-list h2 {
+  font-size: 15px;
+  font-weight: 700;
+}
+.iriss-log-print-list header p {
+  color: #6e6e73;
+  font-size: 11px;
+}
+.iriss-log-print-list table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.iriss-log-print-list th {
+  padding: 0 2mm 1.5mm;
+  color: #6e6e73;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.iriss-log-print-list td {
+  padding: 2mm;
+  border-top: 0.5px solid #d2d2d7;
+  vertical-align: top;
+}
+.iriss-log-print-list tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.iriss-log-print-list td b {
+  display: block;
+  font-weight: 600;
+}
+.iriss-log-print-list td small {
+  display: block;
+  color: #48484a;
+  font-size: 10px;
+}
+.iriss-log-print-list .mono {
+  font-family: ui-monospace, Menlo, monospace;
+}
+.iriss-log-print-list .n {
+  width: 10mm;
+}
+.iriss-log-print-list td.n span {
+  display: inline-flex;
+  width: 6mm;
+  height: 6mm;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #ea4335;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.iriss-log-print-list .hours {
+  width: 42mm;
+}
+.iriss-log-print-list .empty {
+  color: #6e6e73;
+  font-size: 12px;
 }
 
 @page {
@@ -737,10 +804,6 @@ html.iriss-log-printing .iriss-log-print-root .iriss-log-map-shell {
   margin: 10mm;
 }
 @media print {
-  @page {
-    size: A4 landscape;
-    margin: 10mm;
-  }
   html,
   body {
     margin: 0 !important;
@@ -749,82 +812,14 @@ html.iriss-log-printing .iriss-log-print-root .iriss-log-map-shell {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
-  body * {
-    visibility: hidden !important;
-  }
-  .iriss-log-print-root,
-  .iriss-log-print-root * {
-    visibility: visible !important;
-  }
-  .iriss-log-print-root {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    background: #fff !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-  }
-  .iriss-log-no-print,
-  .iriss-log-screen > header,
-  .admin-m > aside,
-  .admin-m-tabbar-dock {
+  .iriss-log-no-print {
     display: none !important;
   }
-  .iriss-log-map-fs,
-  .iriss-log-map-fs-card {
-    position: static !important;
-    inset: auto !important;
-    width: auto !important;
-    height: auto !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    background: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    overflow: visible !important;
-  }
-  .iriss-log-print-sheet {
-    width: 277mm;
-    margin: 0 auto;
-  }
-  .iriss-log-print-root .iriss-log-map-hero,
-  .iriss-log-print-root .iriss-log-map-shell {
-    width: 277mm !important;
-    height: 170mm !important;
-    min-height: 0 !important;
-    aspect-ratio: auto !important;
-    border-radius: 0 !important;
-    overflow: hidden !important;
-    margin: 0 auto;
-  }
-  .iriss-log-print-chrome,
-  .iriss-log-print-legend {
-    display: flex !important;
-    visibility: visible !important;
-  }
   .iriss-log-print-chrome {
-    position: absolute !important;
-    top: 8px !important;
-    left: 12px !important;
-    right: 12px !important;
-    z-index: 3 !important;
+    display: flex !important;
   }
-  .iriss-log-print-legend {
-    position: absolute !important;
-    right: 12px !important;
-    bottom: 12px !important;
-    z-index: 3 !important;
-    max-width: 46% !important;
-    flex-direction: column !important;
-    background: rgba(255, 255, 255, 0.92) !important;
-    padding: 8px 10px !important;
-    border-radius: 10px !important;
+  .iriss-log-print-list {
+    display: block !important;
   }
 }
 
