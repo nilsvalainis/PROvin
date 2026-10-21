@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { EyeOff, RotateCcw, Star, X } from "lucide-react";
 import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
@@ -21,17 +22,18 @@ import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { listingCostsFor, type IrissListPrefs, type ListingTaxOverride } from "@/lib/iriss-listings-operator-prefs";
 import { listingTaxCostArgs, listingTaxFlagReason, listingTaxLabel, listingTaxResolved, taxFromVehicle } from "@/lib/iriss-listings-vat";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
+import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
+import { formatIrissEurCents, formatIrissEurWhole } from "@/lib/iriss-price-format";
 
 function eur(n: number | null | undefined): string {
-  if (n == null || !Number.isFinite(n)) return "-";
-  return `${Math.round(n).toLocaleString("lv-LV")} €`;
+  return formatIrissEurWhole(n);
 }
 function dt(iso: string): string {
   const t = Date.parse(iso);
   return Number.isFinite(t) ? new Date(t).toLocaleString("lv-LV", { timeZone: "Europe/Riga" }) : "-";
 }
 function eur2(n: number): string {
-  return `${n.toLocaleString("lv-LV", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+  return formatIrissEurCents(n);
 }
 
 export function IrissListDrawer({
@@ -169,32 +171,39 @@ export function IrissListDrawer({
   }
 
   return (
-    <aside className="fixed inset-0 z-50 flex w-full flex-col overflow-auto overscroll-contain border-[#E5E7EB] bg-white px-3 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(8px,env(safe-area-inset-top))] shadow-[-10px_0_30px_rgb(0_0_0_/_0.1)] touch-manipulation sm:inset-y-0 sm:right-0 sm:left-auto sm:max-w-[600px] sm:border-l sm:p-4">
+    <aside
+      data-iriss-panel=""
+      style={{ backgroundColor: "var(--s1, #fff)" }}
+      className="fixed inset-0 z-[60] flex w-full flex-col overflow-auto overscroll-contain border-[#E5E7EB] bg-white px-3 pb-[max(16px,env(safe-area-inset-bottom))] pt-[max(8px,env(safe-area-inset-top))] shadow-[-10px_0_30px_rgb(0_0_0_/_0.1)] touch-manipulation sm:inset-y-0 sm:right-0 sm:left-auto sm:max-w-[600px] sm:border-l sm:p-4"
+    >
       <div className="sticky top-0 z-10 -mx-3 mb-1 flex items-center gap-1.5 border-b border-[#E5E7EB] bg-white px-3 py-1.5 sm:static sm:mx-0 sm:mb-0 sm:border-0 sm:px-0 sm:py-0">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{v.platform}</span>
+        <span className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{IRISS_LISTING_PLATFORM_LABEL[v.platform] ?? v.platform}</span>
         {flag ? <span title={flag.title}>{flag.flag}</span> : null}
         <span className="grow" />
         <button
           type="button"
           className={`grid h-11 w-11 place-items-center rounded-lg border text-lg ${prefs.fav.includes(v.id) ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB]"}`}
           title={prefs.fav.includes(v.id) ? "Noņemt no favorītiem" : "Favorīts"}
+          aria-label={prefs.fav.includes(v.id) ? "Noņemt no favorītiem" : "Favorīts"}
+          aria-pressed={prefs.fav.includes(v.id)}
           onClick={() => {
             const fav = prefs.fav.includes(v.id) ? prefs.fav.filter((x) => x !== v.id) : [...prefs.fav, v.id];
             onPrefs({ ...prefs, fav });
           }}
         >
-          {prefs.fav.includes(v.id) ? "★" : "☆"}
+          <Star className="h-5 w-5" fill={prefs.fav.includes(v.id) ? "currentColor" : "none"} aria-hidden />
         </button>
         <button
           type="button"
           className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] text-lg"
           title={prefs.hidden.includes(v.id) ? "Rādīt atkal" : "Nav interesanti"}
+          aria-label={prefs.hidden.includes(v.id) ? "Rādīt atkal" : "Nav interesanti"}
           onClick={() => {
             const hidden = prefs.hidden.includes(v.id) ? prefs.hidden.filter((x) => x !== v.id) : [...prefs.hidden, v.id];
             onPrefs({ ...prefs, hidden });
           }}
         >
-          {prefs.hidden.includes(v.id) ? "↺" : "✕"}
+          {prefs.hidden.includes(v.id) ? <RotateCcw className="h-5 w-5" aria-hidden /> : <EyeOff className="h-5 w-5" aria-hidden />}
         </button>
         {sourceHref ? (
           <IrissListingSourceOpen v={v} mobile={mobile ?? null} className="inline-flex h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[12px] font-semibold">
@@ -203,7 +212,7 @@ export function IrissListDrawer({
         ) : null}
         <IrissListingSourceExtras v={v} mobile={mobile ?? null} />
         <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] text-lg" aria-label="Aizvērt">
-          ✕
+          <X className="h-5 w-5" aria-hidden />
         </button>
       </div>
       <h2 className="mt-1 text-[16px] font-semibold leading-tight text-[var(--color-apple-text)] sm:mt-2 sm:text-[18px]">

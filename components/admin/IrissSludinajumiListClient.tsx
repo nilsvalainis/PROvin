@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
+import { formatIrissEurWhole } from "@/lib/iriss-price-format";
 import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
 import { IrissListingVehicleCard } from "@/components/admin/IrissListingVehicleCard";
 import { IrissNewMatchNotice } from "@/components/admin/IrissNewMatchNotice";
@@ -113,7 +114,7 @@ type Tab = IrissListTab;
 
 function fmtEur(n: number | null): string {
   if (n === null) return "";
-  return `${Math.round(n).toLocaleString("lv-LV")} €`;
+  return formatIrissEurWhole(n);
 }
 
 function hoursSince(iso: string, nowMs: number): number {
@@ -1268,7 +1269,7 @@ export function IrissSludinajumiListClient({
 
       {drawerVehicle ? (
         <>
-          <button type="button" className="fixed inset-0 z-40 hidden bg-slate-900/20 sm:block" aria-label="Aizvērt atvilktni" onClick={() => setDrawerId(null)} />
+          <button type="button" className="fixed inset-0 z-[55] hidden bg-slate-900/30 sm:block" aria-label="Aizvērt atvilktni" onClick={() => setDrawerId(null)} />
           <IrissListDrawer
             v={drawerVehicle}
             prefs={prefs}

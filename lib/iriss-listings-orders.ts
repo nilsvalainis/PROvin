@@ -10,6 +10,7 @@ import { splitBrandModel } from "@/lib/iriss-listings-ecarstrade-catalog";
 import { formatIrissClientName, formatIrissListSpecSummary, irissListRowPowerKwLabel } from "@/lib/iriss-pasutijumi-list-row";
 import type { IrissPasutijumsListRow, IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 import { isIrissScanOrderId, type IrissListingDataset } from "@/lib/iriss-scan-listings";
+import { formatIrissEurWhole } from "@/lib/iriss-price-format";
 
 export type IrissListingOrderBrief = {
   id: string;
@@ -178,7 +179,7 @@ export function listingOrderChipSubtitle(o: Pick<IrissListingOrderBrief, "brandM
   const raw = o.budgetRaw.trim();
   const budget =
     o.budget != null
-      ? `${Math.round(o.budget).toLocaleString("lv-LV")} €`
+      ? formatIrissEurWhole(o.budget)
       : !raw || raw === "\u2014" || raw === "-"
         ? ""
         : raw;
