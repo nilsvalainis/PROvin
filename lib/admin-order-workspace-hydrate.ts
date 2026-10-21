@@ -58,7 +58,7 @@ export function shouldAutosaveHydratedLocalDraft(args: {
   if (args.source !== "local" && args.source !== "backup") return false;
   const chosenRaw =
     args.source === "backup"
-      ? pickNewestBackupSnapshotRaw(args.backupRaw)?.data ?? args.backupRaw ?? null
+      ? pickNewestBackupSnapshotRaw(args.backupRaw ?? null)?.data ?? args.backupRaw ?? null
       : args.localRaw;
   if (revisionFromRaw(args.serverWorkspaceJson) > revisionFromRaw(chosenRaw)) return false;
   return parseWorkspaceSnapshotSavedAtMs(chosenRaw) > parseWorkspaceSnapshotSavedAtMs(args.serverWorkspaceJson);
