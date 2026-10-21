@@ -63,6 +63,9 @@ type Props = {
   canEnableTotp?: boolean;
 };
 
+/** Cik ilgi punkts kartē lēkā pēc klikšķa uz rindas vai punkta. */
+const LOGISTICS_BOUNCE_MS = 1600;
+
 export function IrissLogistikaClient({
   initialOrders,
   initialPoints,
@@ -102,6 +105,19 @@ export function IrissLogistikaClient({
   const mapFsCardRef = useRef<HTMLDivElement>(null);
   const cabinetRef = useRef<HTMLDivElement>(null);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const bounceTimer = useRef<number | null>(null);
+  /** Klikšķis tikai īsi parāda punktu kartē. Stāvoklis nepaliek, citādi ar hover lēkā divi punkti. */
+  const pulseBounce = useCallback((id: string) => {
+    if (bounceTimer.current != null) window.clearTimeout(bounceTimer.current);
+    setBounceId(id);
+    bounceTimer.current = window.setTimeout(() => {
+      bounceTimer.current = null;
+      setBounceId(null);
+    }, LOGISTICS_BOUNCE_MS);
+  }, []);
+  useEffect(() => () => {
+    if (bounceTimer.current != null) window.clearTimeout(bounceTimer.current);
+  }, []);
 
   // Telefonā kabinets ir zem tabulas un kravu plāna - aizritinām līdz tam, lai pieskāriens rindai ir redzams.
   useEffect(() => {
@@ -657,7 +673,7 @@ export function IrissLogistikaClient({
                         return;
                       }
                       toggleSelect(id);
-                      setBounceId(id);
+                      pulseBounce(id);
                       setPopupId(id);
                     }}
                   />
@@ -701,6 +717,9 @@ export function IrissLogistikaClient({
               ) : null}
             </div>
             </div>
+          </div>
+          {/* Datorā tabula aizņem abu kolonnu platumu zem kartes un kravu plāna; telefonā secība nemainās. */}
+          <div className="min-w-0 lg:col-span-2 lg:row-start-2">
             <IrissLogistikaCarsTable
               orders={visibleOrders}
               plan={cargoPlan}
@@ -771,7 +790,7 @@ export function IrissLogistikaClient({
             </ul>
           </div>
           {cabinetOpen && active ? (
-            <div ref={cabinetRef} className="iriss-log-cab-overlay scroll-mt-3">
+            <div ref={cabinetRef} className="iriss-log-cab-overlay scroll-mt-3 lg:col-start-2 lg:row-start-1">
               <button type="button" className="iriss-log-btn-sec mb-2 h-8 px-2.5 text-[12px]" onClick={() => setCabinetOpen(false)}>
                 Aizvērt kabinetu
               </button>
@@ -784,7 +803,7 @@ export function IrissLogistikaClient({
               />
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 lg:col-start-2 lg:row-start-1">
               <IrissLogistikaCargoPlan
                 orders={visibleOrders}
                 plan={cargoPlan}
@@ -792,7 +811,7 @@ export function IrissLogistikaClient({
                 bounceId={bounceId}
                 hoverId={hoverId}
                 onPlanChange={(next) => void persistCargoPlan(next)}
-                onRowClick={(id) => setBounceId((cur) => (cur === id ? null : id))}
+                onRowClick={pulseBounce}
                 onRowHover={setHoverId}
                 onRefreshDirections={(bucket) => void refreshCargoDirections(bucket)}
               />

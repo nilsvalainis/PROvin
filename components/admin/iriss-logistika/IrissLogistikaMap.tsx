@@ -2,7 +2,12 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
-import { logisticsOrderMapLabel, logisticsPreviousPointLabel } from "@/lib/iriss-logistics-labels";
+import {
+  logisticsMapFitKey,
+  logisticsOrderMapLabel,
+  logisticsPinCardCars,
+  logisticsPreviousPointLabel,
+} from "@/lib/iriss-logistics-labels";
 import {
   applyLogisticsMapCamera,
   elementHasBox,
@@ -28,6 +33,8 @@ type MapPoint = {
   auction?: string;
   showOnMap?: boolean;
   routeNumber?: number;
+  carMake?: string;
+  carModel?: string;
 };
 
 function toMapPoints(
@@ -68,6 +75,8 @@ function toMapPoints(
       auction: o.auction,
       showOnMap: extra?.showOnMapIds ? extra.showOnMapIds.has(o.id) : true,
       routeNumber: extra?.routeNumbers?.get(o.id),
+      carMake: o.make.trim() || (o.title.trim().split(/\s+/)[0] ?? ""),
+      carModel: o.model.trim() || o.title.trim().split(/\s+/).slice(1).join(" "),
     }));
 }
 
@@ -142,6 +151,9 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
   const markersRef = useRef<google.maps.Marker[]>([]);
   const lineRef = useRef<{ setMap: (map: google.maps.Map | null) => void } | null>(null);
   const lastPtsRef = useRef<MapPoint[]>([]);
+  /** Kamera (fitBounds) tikai pirmajā ielādē vai kad mainās punktu kopa. Hover un izcēlums skatu neaiztiek. */
+  const lastFitKeyRef = useRef<string | null>(null);
+  const lastFocusKeyRef = useRef<string | null>(null);
   const [limitNotice, setLimitNotice] = useState(notice ?? "");
   const [ready, setReady] = useState(false);
 
@@ -330,7 +342,13 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       overlaysRef.current.push(overlay);
     }
     }
-    if (!lockView) {
+    const fitKey = logisticsMapFitKey(mode, pts.map((p) => p.id));
+    const focusKey = focus ? `${focus.lat},${focus.lng}` : null;
+    const fitChanged = fitKey !== lastFitKeyRef.current;
+    const focusChanged = focusKey !== lastFocusKeyRef.current;
+    lastFitKeyRef.current = fitKey;
+    lastFocusKeyRef.current = focusKey;
+    if (!lockView && (fitChanged || (focusChanged && focus))) {
       if (focus) {
         map.panTo(focus);
         if ((map.getZoom() ?? 7) < 9) map.setZoom(10);
@@ -398,11 +416,29 @@ function makeCargoPinOverlay(input: {
     onAdd() {
       this.div = document.createElement("div");
       this.div.className = `iriss-log-pin-wrap${input.bounce ? " bounce" : ""}`;
-      this.div.innerHTML = `<svg class="iriss-log-pin-needle" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 1C6.5 1 2 5.4 2 10.8 2 19 12 31 12 31s10-12 10-20.2C22 5.4 17.5 1 12 1z" fill="${input.color}"/><circle cx="12" cy="11" r="5.2" fill="#fff"/><text x="12" y="14.2" text-anchor="middle" font-size="8" font-weight="700" fill="${input.color}">${badge}</text></svg><div class="iriss-log-pin-card"><span class="t1"></span><span class="t2"></span></div>`;
-      const t1 = this.div.querySelector(".t1");
-      const t2 = this.div.querySelector(".t2");
-      if (t1) t1.textContent = count > 1 ? `${count} auto` : head.label;
-      if (t2) t2.textContent = head.statusLv || head.auction || "";
+      this.div.innerHTML = `<svg class="iriss-log-pin-needle" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 1C6.5 1 2 5.4 2 10.8 2 19 12 31 12 31s10-12 10-20.2C22 5.4 17.5 1 12 1z" fill="${input.color}"/><circle cx="12" cy="11" r="5.2" fill="#fff"/><text x="12" y="14.2" text-anchor="middle" font-size="8" font-weight="700" fill="${input.color}">${badge}</text></svg><div class="iriss-log-pin-card"></div>`;
+      const card = this.div.querySelector(".iriss-log-pin-card");
+      const view = logisticsPinCardCars(
+        input.pts.map((p) => ({ make: p.carMake ?? p.label, model: p.carModel ?? "" })),
+      );
+      for (const car of view.cars) {
+        const make = document.createElement("span");
+        make.className = "t1";
+        make.textContent = car.make;
+        card?.appendChild(make);
+        if (car.model) {
+          const model = document.createElement("span");
+          model.className = "t2";
+          model.textContent = car.model;
+          card?.appendChild(model);
+        }
+      }
+      if (view.more > 0) {
+        const more = document.createElement("span");
+        more.className = "t2";
+        more.textContent = `+${view.more}`;
+        card?.appendChild(more);
+      }
       this.div.addEventListener("click", (e) => {
         e.stopPropagation();
         input.onSelect(head.id);

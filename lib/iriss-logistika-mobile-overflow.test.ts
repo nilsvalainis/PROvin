@@ -38,6 +38,6 @@ describe("Loģistika iPhone platums", () => {
   it("telefonā Auto kabinets pēc pieskāriena rindai tiek aizritināts redzamā zonā", () => {
     expect(src.logistika).toMatch(/matchMedia\("\(max-width: 1023px\)"\)/);
     expect(src.logistika).toMatch(/cabinetRef\.current\?\.scrollIntoView/);
-    expect(src.logistika).toContain('ref={cabinetRef} className="iriss-log-cab-overlay scroll-mt-3"');
+    expect(src.logistika).toContain('ref={cabinetRef} className="iriss-log-cab-overlay scroll-mt-3');
   });
 });
