@@ -32,12 +32,12 @@ import {
   AdminMobileRoundBtn,
   AdminMobileSearchField,
   AdminMobileSheet,
-  AdminMobileStatusTag,
   AdminMobileTopBar,
 } from "@/components/admin/mobile/AdminMobileChrome";
 import {
   adminMobileAuditFilterLabel,
-  formatAdminMobileDeadlineHours,
+  formatAdminMobileDeadlineTag,
+  type AdminMobileDeadlineTag,
 } from "@/lib/admin-mobile-ds";
 import { AdminAuditSlaListBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
 import { formatAuditDeadlineRemaining } from "@/lib/admin-audit-deadline";
@@ -46,6 +46,7 @@ import {
   AdminAuditResultColorControl,
 } from "@/components/admin/AdminAuditResultColorControl";
 import { AdminOrdersViewSwitch } from "@/components/admin/AdminOrdersViewSwitch";
+import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminVinNotSeventeenFlag } from "@/components/admin/AdminVinNotSeventeenFlag";
 import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
@@ -494,8 +495,9 @@ function AdminOrdersMobileChrome({
             label={sort === "oldest" ? "Vecākie" : "Jaunākie"}
             onClick={() => push({ sort: sort === "oldest" ? "newest" : "oldest" })}
           />
-          <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => setMoreOpen(true)} />
-          <span className="max-md:[&>button]:h-11 max-md:[&>button]:w-11 max-md:[&>button]:rounded-full max-md:[&>button]:bg-[var(--fill-secondary)] max-md:[&>button]:px-0 max-md:[&>button]:text-[0px] max-md:[&>button]:text-[var(--label)] max-md:[&>button]:shadow-none">
+          <AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMoreOpen(true)} />
+          {/* Primārā darbība (poga D): tumša, balta ikona. */}
+          <span className="max-md:[&_button]:h-11 max-md:[&_button]:w-11 max-md:[&_button]:justify-center max-md:[&_button]:rounded-full max-md:[&_button]:border-0 max-md:[&_button]:bg-[var(--am-btn-primary-bg)] max-md:[&_button]:px-0 max-md:[&_button]:text-[0px] max-md:[&_button]:text-[var(--am-btn-primary-fg)] max-md:[&_button]:shadow-none">
             <AdminCreateManualOrderButton compact />
           </span>
         </>
@@ -506,21 +508,24 @@ function AdminOrdersMobileChrome({
           <AdminMobileSearchField value={q} onChange={setQ} placeholder="Meklēt VIN, klientu" />
         </div>
       </div>
-      {showUnpaidViewSwitch ? (
-        <div className="mt-3">
-          <AdminOrdersViewSwitch />
-        </div>
-      ) : null}
-      <div className={showUnpaidViewSwitch ? "mt-2" : "mt-3"}>
+      {/* Viena čipu josla: rezultāta filtri + "Neapmaksāti" (atsevišķs skats). */}
+      <div className="mt-3">
         <AdminMobileChips
           value={colorFilter}
-          onChange={(id) => onColorFilter(id as AuditResultColor | "all" | "none")}
+          onChange={(id) => {
+            if (id === "unpaid") {
+              router.push(`${pathname}?view=unpaid`);
+              return;
+            }
+            onColorFilter(id as AuditResultColor | "all" | "none");
+          }}
           items={[
             { id: "all", label: adminMobileAuditFilterLabel("all"), count: filterCounts.all },
             { id: "orange", label: adminMobileAuditFilterLabel("orange"), count: filterCounts.orange },
             { id: "green", label: adminMobileAuditFilterLabel("green"), count: filterCounts.green },
             { id: "red", label: adminMobileAuditFilterLabel("red"), count: filterCounts.red },
             { id: "none", label: adminMobileAuditFilterLabel("none"), count: filterCounts.none },
+            ...(showUnpaidViewSwitch ? [{ id: "unpaid", label: "Neapmaksāti" }] : []),
           ]}
         />
       </div>
@@ -528,7 +533,16 @@ function AdminOrdersMobileChrome({
         {belowTitle ? <div className="mt-2 px-4 md:hidden">{belowTitle}</div> : null}
     <AdminMobileSheet open={moreOpen} title="Darbības" onClose={() => setMoreOpen(false)}>
       <div className="space-y-2">
-        <AdminClientLinkButton />
+        <Link
+          href="/admin/kopsavilkums"
+          onClick={() => setMoreOpen(false)}
+          className="am-press flex h-[50px] w-full items-center gap-3 rounded-[18px] bg-[var(--fill-secondary)] px-4 text-[16px] text-[var(--label)]"
+        >
+          <AdminMobileIcon name="rits" className="h-5 w-5" />
+          <span className="min-w-0 flex-1">Rīta kopsavilkums</span>
+          <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--label-secondary)]" />
+        </Link>
+        <AdminClientLinkButton variant="sheet" />
         <button
           type="button"
           onClick={() => {
@@ -540,9 +554,51 @@ function AdminOrdersMobileChrome({
           <AdminMobileIcon name="kartot" className="h-5 w-5" />
           {sort === "oldest" ? "Rādīt jaunākos" : "Rādīt vecākos"}
         </button>
+        {/* Eksports telefonā ir šeit, nevis lapas apakšā. */}
+        <div className="pt-2">
+          <AdminOrdersExportButton variant="sheet" />
+        </div>
       </div>
     </AdminMobileSheet>
     </>
+  );
+}
+
+/** Telefona kartītes virsraksts: auto, citādi klients vai VIN; nekad tikai "-". Bez lielajiem burtiem. */
+export function adminOrderCardTitle(
+  makeModel: string | null | undefined,
+  v: { primaryClient: string; vin: string; hasVin: boolean },
+): string {
+  const model = makeModel?.trim();
+  if (model) return model;
+  if (v.primaryClient && v.primaryClient !== "-") return v.primaryClient;
+  if (v.hasVin) return v.vin;
+  return "Pasūtījums bez datiem";
+}
+
+const DEADLINE_TAG_TONE: Record<AdminMobileDeadlineTag["tone"], string> = {
+  overdue: "bg-[var(--am-warn-bg)] font-semibold text-[var(--am-warn-fg)]",
+  urgent: "bg-[var(--fill-secondary)] font-semibold text-[var(--label)]",
+  ok: "bg-[var(--fill-secondary)] font-medium text-[var(--label-secondary)]",
+  done: "bg-[var(--fill-secondary)] font-medium text-[var(--label-secondary)]",
+};
+
+function AdminOrderDeadlineTag({
+  tag,
+  onClick,
+}: {
+  tag: AdminMobileDeadlineTag;
+  onClick: (e: { stopPropagation: () => void }) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${tag.label}. Darbības`}
+      className={`inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-[10px] px-2.5 text-[12px] ${DEADLINE_TAG_TONE[tag.tone]}`}
+    >
+      {tag.label}
+    </button>
   );
 }
 
@@ -917,28 +973,38 @@ export function AdminOrdersTable({
               )}
               <div className="flex items-start justify-between gap-2">
                 <p className="min-w-0 break-words text-[16px] font-semibold tracking-tight text-[var(--label)] max-md:line-clamp-2">
-                  {v.isPack ? v.packLabel : (o.makeModel?.trim() || v.primaryClient).toUpperCase()}
+                  {v.isPack ? v.packLabel : adminOrderCardTitle(o.makeModel, v)}
                 </p>
                 {v.isPack ? null : (
-                  <AdminMobileStatusTag
+                  <AdminOrderDeadlineTag
+                    tag={formatAdminMobileDeadlineTag(o.deadlineFromUnix ?? o.created, {
+                      complete: Boolean(o.auditComplete),
+                      nowMs: nowMs ?? undefined,
+                    })}
                     onClick={(e) => {
                       e.stopPropagation();
                       setCardMenuId(o.id);
                     }}
-                  >
-                    {formatAdminMobileDeadlineHours(o.deadlineFromUnix ?? o.created)}
-                  </AdminMobileStatusTag>
+                  />
                 )}
               </div>
-              <p className="mt-0.5 truncate font-mono text-[13px] tracking-[0.01em] text-[var(--label-secondary)]">
-                {v.isPack ? v.primaryClient : v.hasVin ? v.vin : "VIN nav"}
+              <p
+                className={`mt-0.5 truncate text-[13px] text-[var(--label-secondary)] ${
+                  !v.isPack && v.hasVin ? "font-mono tracking-[0.01em]" : ""
+                }`}
+              >
+                {v.isPack ? v.primaryClient : v.hasVin ? v.vin : "Bez VIN"}
                 {!v.isPack && v.hasVin ? <AdminVinNotSeventeenFlag vin={v.vin} compact /> : null}
               </p>
               <div className="mt-1 flex items-center justify-between gap-2">
                 <p className="min-w-0 truncate text-[13px] tabular-nums text-[var(--label-secondary)]">
-                  <span>{v.primaryClient}</span>
-                  {o.clientOrders?.length ? <span> {o.clientOrders.length + 1}×</span> : null}
-                  {" · "}
+                  {v.primaryClient && v.primaryClient !== "-" ? (
+                    <>
+                      <span>{v.primaryClient}</span>
+                      {o.clientOrders?.length ? <span> {o.clientOrders.length + 1}×</span> : null}
+                      {" · "}
+                    </>
+                  ) : null}
                   {dateFmt.format(new Date(o.created * 1000))}
                   {" · "}
                   {v.isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : formatMoneyEur(o.amountTotal, o.currency)}

@@ -57,12 +57,14 @@ describe("admin mobile spec files", () => {
     expect(chrome).not.toMatch(/#admin-main-scroll/);
   });
 
-  it("VIN SCAN un rīta kopsavilkums ir 36 pt pilles ar sheet", () => {
+  it("VIN SCAN rinda tikai ar aktīviem darbiem, rīta kopsavilkums galvenes izvēlnē", () => {
     const src = readFileSync(new URL("../components/admin/AdminOrderVinScanDashboardCards.tsx", import.meta.url), "utf8");
-    expect(src).toMatch(/h-9/);
-    expect(src).toMatch(/Rīta kopsavilkums/);
+    expect(src).toMatch(/autoN > 0 \? \(/);
     expect(src).toMatch(/VIN SCAN/);
     expect(src).toMatch(/AdminMobileSheet/);
+    expect(src).not.toMatch(/setSheet\("morning"\)/);
+    const table = readFileSync(new URL("../components/admin/AdminOrdersTable.tsx", import.meta.url), "utf8");
+    expect(table).toMatch(/href="\/admin\/kopsavilkums"/);
     expect(src).not.toMatch(/rounded-\[18px\] bg-\[var\(--am-s1\)\] shadow-\[var\(--am-card-shadow\)\] md:hidden/);
   });
 
