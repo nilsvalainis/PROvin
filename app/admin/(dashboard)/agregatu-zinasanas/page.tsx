@@ -13,7 +13,7 @@ export default async function AdminAgregatuZinasanasPage() {
   await requireAdminPage();
   const trainingV2 = isTrainingV2Enabled();
   return (
-    <div className={`w-full space-y-4 ${trainingV2 ? "max-w-5xl" : "max-w-3xl"}`}>
+    <div className={`w-full space-y-4 max-md:px-4 ${trainingV2 ? "max-w-5xl" : "max-w-3xl"}`}>
       <div>
         <h1 className="text-[20px] font-semibold tracking-tight text-[var(--color-apple-text)] max-md:text-[34px] max-md:font-bold max-md:leading-none">
           Agregātu zināšanas

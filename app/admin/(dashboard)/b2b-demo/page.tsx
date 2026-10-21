@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminB2bDemoTenantsPage() {
   await requireAdminPage();
   return (
-    <div className="w-full max-w-none">
+    <div className="w-full max-w-none max-md:px-4">
       <AdminDashboardHeaderWithMenu>
         <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">
           B2B

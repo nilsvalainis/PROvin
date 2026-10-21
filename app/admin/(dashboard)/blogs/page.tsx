@@ -24,7 +24,7 @@ export default async function AdminBlogsPage() {
   const commentCounts = Object.fromEntries(commentCountEntries) as Record<string, number>;
 
   return (
-    <div className="w-full max-w-none">
+    <div className="w-full max-w-none max-md:px-4">
       <AdminDashboardHeaderWithMenu>
         <p className="hidden text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)] md:block">
           PRO
