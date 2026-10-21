@@ -156,6 +156,16 @@ export function isIpv4Host(host: string): boolean {
   return /^(?:\d{1,3}\.){3}\d{1,3}$/.test(host.trim());
 }
 
+/** URL lietotājvārds/parole ir %-kodēti; CapSolver laukiem un `proxyUrl` vajag atkodētu vērtību. */
+function decodeProxyCredential(raw: string): string {
+  if (!raw) return "";
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
 /**
  * Parse CapSolver / Fixie proxy env into parts.
  * Accepts `http://user:pass@host:port`, `http:host:port:user:pass`, `host:port:user:pass`.
@@ -175,8 +185,8 @@ export function parseCapsolverProxy(raw: string): CapsolverProxyParts | null {
         scheme: scheme as CapsolverProxyParts["scheme"],
         host: parsed.hostname,
         port,
-        user: parsed.username || "",
-        pass: parsed.password || "",
+        user: decodeProxyCredential(parsed.username),
+        pass: decodeProxyCredential(parsed.password),
       };
     } catch {
       return null;
