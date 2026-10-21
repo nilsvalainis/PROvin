@@ -777,37 +777,3 @@
 .iriss-dokumenti-view {
   color: var(--ink);
 }
-
-/* Ielādes josla lapas augšā uzreiz pēc pieskāriena (loading.tsx). */
-.iriss-route-loading-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  z-index: 100;
-  height: 3px;
-  overflow: hidden;
-  background: rgba(37, 99, 235, 0.15);
-}
-.iriss-route-loading-bar::after {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 40%;
-  background: #2563eb;
-  animation: iriss-route-loading 1.1s ease-in-out infinite;
-}
-@keyframes iriss-route-loading {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(260%);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .iriss-route-loading-bar::after {
-    animation: none;
-    width: 100%;
-  }
-}

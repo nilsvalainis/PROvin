@@ -16,8 +16,8 @@ describe("telefona apakšējā josla un ielāde", () => {
     expect(sidebar).toMatch(/writeWsCookie\("iriss"\);\s*setMore\(false\);/);
   });
 
-  it("shows a loading state immediately for admin and IRISS pages", () => {
-    expect(existsSync("app/admin/loading.tsx")).toBe(true);
-    expect(existsSync("app/admin/iriss/loading.tsx")).toBe(true);
+  it("has no route-level loading.tsx (its Suspense boundary left pages un-hydrated in production)", () => {
+    expect(existsSync("app/admin/loading.tsx")).toBe(false);
+    expect(existsSync("app/admin/iriss/loading.tsx")).toBe(false);
   });
 });
