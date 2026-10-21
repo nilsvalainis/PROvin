@@ -111,7 +111,7 @@ import {
 } from "@/lib/admin-source-block-wipes";
 import { deletedPhotoIdsSnapshotField, mergeDeletedPhotoIds, removedPhotoIds } from "@/lib/admin-photo-tombstones";
 import { clearedFieldsSnapshotField, mergeClearedFields, nextClearedFields } from "@/lib/admin-cleared-fields";
-import { resolveOrderWorkspaceHydration } from "@/lib/admin-order-workspace-hydrate";
+import { resolveOrderWorkspaceHydration, shouldAutosaveHydratedLocalDraft } from "@/lib/admin-order-workspace-hydrate";
 import {
   bumpWorkspaceSaveGeneration,
   fetchCanonicalWorkspace,
@@ -875,6 +875,7 @@ export function OrderDetailWorkspace({
   const hydrationSnapshotRef = useRef("");
   const workspaceDirtyRef = useRef(false);
   const suppressHydrateAutosaveRef = useRef(true);
+  const pendingHydrateAutosaveRef = useRef(false);
   const lastNavigationFlushAtRef = useRef(0);
   const workspaceHydratedOnceRef = useRef(false);
   const workspaceServerSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2607,6 +2608,13 @@ export function OrderDetailWorkspace({
           /* quota */
         }
       }
+      pendingHydrateAutosaveRef.current = shouldAutosaveHydratedLocalDraft({
+        persistenceEnabled: orderDraftPersistenceEnabled,
+        source: resolved.source,
+        localRaw: rawV3 ?? rawV2,
+        backupRaw: rawBackup,
+        serverWorkspaceJson,
+      });
     } catch {
       setWs(EMPTY_WORKSPACE);
       wsPersistRef.current = EMPTY_WORKSPACE;
@@ -2622,6 +2630,7 @@ export function OrderDetailWorkspace({
       setPdfBannerInclude({});
       setManualBanners([]);
       hydrationSnapshotRef.current = serializeWorkspaceState(EMPTY_WORKSPACE, mergedVisibility, {}, undefined, []);
+      pendingHydrateAutosaveRef.current = false;
     }
     workspaceHydratedOnceRef.current = true;
     workspaceDirtyRef.current = false;
@@ -2776,6 +2785,14 @@ export function OrderDetailWorkspace({
     },
     [flushWorkspaceServerPatch, orderDraftPersistenceEnabled],
   );
+
+  useEffect(() => {
+    if (!workspaceHydrated || !pendingHydrateAutosaveRef.current) return;
+    pendingHydrateAutosaveRef.current = false;
+    suppressHydrateAutosaveRef.current = false;
+    workspaceDirtyRef.current = true;
+    scheduleWorkspaceServerPatch({ immediate: true, showFlash: false });
+  }, [workspaceHydrated, scheduleWorkspaceServerPatch]);
 
   const flushPersistWorkspace = useCallback(() => {
     commitWorkspaceLocalNow({ force: true });

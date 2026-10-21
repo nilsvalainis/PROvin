@@ -1,11 +1,13 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { describe, expect, it } from "vitest";
 import { emptyVendorAvotuBlock, createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { serializeOrderWorkspaceSnapshotFromRef } from "@/lib/admin-order-workspace-persist";
-import { resolveOrderWorkspaceHydration } from "@/lib/admin-order-workspace-hydrate";
+import { resolveOrderWorkspaceHydration, shouldAutosaveHydratedLocalDraft } from "@/lib/admin-order-workspace-hydrate";
 import { DEFAULT_PDF_VISIBILITY } from "@/lib/pdf-visibility";
 
-function snapshotWithAutodnaComment(comment: string, savedAt: string): string {
+function snapshotWithAutodnaComment(comment: string, savedAt: string, workspaceRevision?: number): string {
   const blocks = createDefaultSourceBlocks();
   blocks.autodna = { ...emptyVendorAvotuBlock(), comments: comment };
   return serializeOrderWorkspaceSnapshotFromRef(
@@ -22,8 +24,75 @@ function snapshotWithAutodnaComment(comment: string, savedAt: string): string {
     DEFAULT_PDF_VISIBILITY,
     {},
     savedAt,
+    [],
+    workspaceRevision,
   );
 }
+
+describe("shouldAutosaveHydratedLocalDraft", () => {
+  it("saves a newer local draft after reload when persistence is on", () => {
+    const local = snapshotWithAutodnaComment("Lokālais", "2026-06-10T12:00:00.000Z");
+    const server = snapshotWithAutodnaComment("Serveris", "2026-06-01T10:00:00.000Z");
+    expect(
+      shouldAutosaveHydratedLocalDraft({
+        persistenceEnabled: true,
+        source: "local",
+        localRaw: local,
+        serverWorkspaceJson: server,
+      }),
+    ).toBe(true);
+  });
+
+  it("does not overwrite a newer server version", () => {
+    const local = snapshotWithAutodnaComment("Lokālais", "2026-06-10T12:00:00.000Z", 1);
+    const newerByTime = snapshotWithAutodnaComment("Jaunāks serveris", "2026-06-11T08:00:00.000Z", 1);
+    const newerByRevision = snapshotWithAutodnaComment("Serveris", "2026-06-01T10:00:00.000Z", 5);
+    expect(
+      shouldAutosaveHydratedLocalDraft({
+        persistenceEnabled: true,
+        source: "server",
+        localRaw: local,
+        serverWorkspaceJson: newerByTime,
+      }),
+    ).toBe(false);
+    expect(
+      shouldAutosaveHydratedLocalDraft({
+        persistenceEnabled: true,
+        source: "local",
+        localRaw: local,
+        serverWorkspaceJson: newerByTime,
+      }),
+    ).toBe(false);
+    expect(
+      shouldAutosaveHydratedLocalDraft({
+        persistenceEnabled: true,
+        source: "local",
+        localRaw: local,
+        serverWorkspaceJson: newerByRevision,
+      }),
+    ).toBe(false);
+  });
+
+  it("wires reload autosave through OrderDetailWorkspace", () => {
+    const src = readFileSync(join(__dirname, "../components/admin/OrderDetailWorkspace.tsx"), "utf8");
+    expect(src).toContain("shouldAutosaveHydratedLocalDraft");
+    expect(src).toContain("pendingHydrateAutosaveRef");
+    expect(src).toContain("scheduleWorkspaceServerPatch({ immediate: true, showFlash: false })");
+  });
+
+  it("never writes when persistence is off (old orders / no durable store)", () => {
+    const local = snapshotWithAutodnaComment("Lokālais", "2026-06-10T12:00:00.000Z");
+    const server = snapshotWithAutodnaComment("Serveris", "2026-06-01T10:00:00.000Z");
+    expect(
+      shouldAutosaveHydratedLocalDraft({
+        persistenceEnabled: false,
+        source: "local",
+        localRaw: local,
+        serverWorkspaceJson: server,
+      }),
+    ).toBe(false);
+  });
+});
 
 describe("resolveOrderWorkspaceHydration", () => {
   it("K3: jaunāks serveris uzvar vecu local (cita ierīce)", () => {
