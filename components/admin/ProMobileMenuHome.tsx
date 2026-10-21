@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AdminMobileCountBadge, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import type { ProHomeSummary, ProHomeTile } from "@/lib/admin-pro-home";
+import { ADMIN_ORDERS_DEADLINE_PARAM } from "@/lib/admin-orders-deadline-filter";
 import { formatAdminMobileDeadlineTag, type AdminMobileIconName } from "@/lib/admin-mobile-ds";
 
 type Counts = { proHome: ProHomeSummary; openCount: number; unseenCount: number; activeCount: number };
@@ -42,14 +43,23 @@ function deadlineLabel(tile: ProHomeTile | undefined): { text: string; tone: str
   return { text: `tuvākais ${tag.label.replace(/^Atlikušas /, "")}`, tone: tag.tone };
 }
 
+/** Flīze ved uz sarakstu. "N kavē" ir atsevišķa saite uz tikai nokavētajiem. */
 function Tile({ href, title, count, sub, tone, overdue }: { href: string; title: string; count: number | null; sub: string; tone: string; overdue?: number }) {
   return (
-    <Link href={href} className={`admin-nav-link pro-home-tile tone-${tone}`}>
-      <span className="t">{title}</span>
-      <span className="n">{count == null ? "…" : count}</span>
-      {overdue ? <span className="o">{overdue} kavē</span> : null}
-      {sub ? <span className="s">{sub}</span> : null}
-    </Link>
+    <div className={`pro-home-tile tone-${tone}`}>
+      <Link href={href} className="admin-nav-link absolute inset-0 rounded-[14px]" aria-label={title} />
+      <span className="t pointer-events-none">{title}</span>
+      <span className="n pointer-events-none">{count == null ? "…" : count}</span>
+      {overdue ? (
+        <Link
+          href={`${href}?${ADMIN_ORDERS_DEADLINE_PARAM}=nokavets`}
+          className="admin-nav-link o relative z-10 -mx-1 self-start rounded-md px-1 underline decoration-dotted underline-offset-2"
+        >
+          {overdue} kavē
+        </Link>
+      ) : null}
+      {sub ? <span className="s pointer-events-none">{sub}</span> : null}
+    </div>
   );
 }
 

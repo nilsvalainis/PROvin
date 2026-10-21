@@ -42,6 +42,13 @@ import {
 } from "@/lib/admin-mobile-ds";
 import { AdminAuditSlaListBanner } from "@/components/admin/AdminAuditSlaWarningBanner";
 import { formatAuditDeadlineRemaining } from "@/lib/admin-audit-deadline";
+import { postAdminAuditComplete } from "@/lib/admin-audit-complete-client";
+import {
+  ADMIN_ORDERS_DEADLINE_PARAM,
+  adminOrdersDeadlineFilterLabel,
+  matchesAdminOrdersDeadlineFilter,
+  parseAdminOrdersDeadlineFilter,
+} from "@/lib/admin-orders-deadline-filter";
 import { useAdminAuditDeadlineTick } from "@/components/admin/AdminAuditDeadlineTickProvider";
 import {
   AdminAuditResultColorControl,
@@ -709,6 +716,18 @@ export function AdminOrdersTable({
   const [cardMenuId, setCardMenuId] = useState<string | null>(null);
   const swipeRef = useRef<{ id: string; x: number; dx: number } | null>(null);
   const lastSwipeDx = useRef(0);
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const deadlineFilter = parseAdminOrdersDeadlineFilter(searchParams?.get(ADMIN_ORDERS_DEADLINE_PARAM));
+  // Laiks tikai pēc ielādes, lai serveris un pārlūks renderē vienu un to pašu.
+  const [deadlineNow, setDeadlineNow] = useState<number | null>(null);
+  useEffect(() => setDeadlineNow(Date.now()), [deadlineFilter]);
+  const [undo, setUndo] = useState<{ id: string; complete: boolean; label: string } | null>(null);
+  useEffect(() => {
+    if (!undo) return;
+    const t = window.setTimeout(() => setUndo(null), 5000);
+    return () => window.clearTimeout(t);
+  }, [undo]);
   const [clientOverrides, setClientOverrides] = useState<
     Record<string, { customerName?: string; customerEmail?: string; customerPhone?: string; vin?: string }>
   >({});
@@ -761,8 +780,12 @@ export function AdminOrdersTable({
         : colorFilter === "none"
           ? withMeta.filter((o) => !o.auditResultColor)
           : withMeta.filter((o) => o.auditResultColor === colorFilter);
-    return sortAdminOrdersIncompleteFirst(filtered);
-  }, [orders, completeOverride, colorOverride, colorFilter]);
+    const byDeadline =
+      deadlineFilter && deadlineNow != null
+        ? filtered.filter((o) => matchesAdminOrdersDeadlineFilter(o, deadlineFilter, deadlineNow))
+        : filtered;
+    return sortAdminOrdersIncompleteFirst(byDeadline);
+  }, [orders, completeOverride, colorOverride, colorFilter, deadlineFilter, deadlineNow]);
 
   /**
    * NOTEIKUMS: visi aktīvie (neizpildītie) vienmēr augšā grupā „Aktīvie” (jaunākie ienākušie pirmie,
@@ -810,6 +833,32 @@ export function AdminOrdersTable({
   const markComplete = useCallback((id: string, complete: boolean) => {
     setCompleteOverride((prev) => ({ ...prev, [id]: complete }));
   }, []);
+
+  /** Vilkšana pa labi: "Izpildīts" ieslēgts vai izslēgts, ar atsaukšanu 5 s. */
+  const swipeToggleComplete = useCallback(
+    async (id: string, current: boolean, title: string) => {
+      const next = !current;
+      markComplete(id, next);
+      setUndo({ id, complete: next, label: `${next ? "Izpildīts" : "Atkal aktīvs"} · ${title}` });
+      if (!(await postAdminAuditComplete(id, next))) {
+        markComplete(id, current);
+        setUndo(null);
+        window.alert("Neizdevās saglabāt „Izpildīts”.");
+      }
+    },
+    [markComplete],
+  );
+
+  const undoSwipe = useCallback(async () => {
+    if (!undo) return;
+    const { id, complete } = undo;
+    setUndo(null);
+    markComplete(id, !complete);
+    if (!(await postAdminAuditComplete(id, !complete))) {
+      markComplete(id, complete);
+      window.alert("Neizdevās atsaukt.");
+    }
+  }, [markComplete, undo]);
 
   const markColor = useCallback((id: string, color: AuditResultColor | null) => {
     setColorOverride((prev) => ({ ...prev, [id]: color }));
@@ -878,6 +927,23 @@ export function AdminOrdersTable({
           showUnpaidViewSwitch={showUnpaidViewSwitch}
           title={consultationList ? "Konsultācijas" : "Pasūtījumi"}
         />
+      {deadlineFilter ? (
+        <div className="mx-4 mt-2 flex items-center justify-between gap-2 rounded-[14px] bg-[var(--surface)] px-3 py-2 shadow-[var(--am-card-shadow)]">
+          <span className="text-[14px] font-semibold text-[#b91c1c]">Rāda: {adminOrdersDeadlineFilterLabel(deadlineFilter)}</span>
+          <button
+            type="button"
+            className="am-press min-h-9 rounded-full bg-[var(--fill-secondary)] px-3 text-[13px] font-semibold text-[var(--label)]"
+            onClick={() => {
+              const next = new URLSearchParams(searchParams?.toString() ?? "");
+              next.delete(ADMIN_ORDERS_DEADLINE_PARAM);
+              const q = next.toString();
+              router.replace(q ? `${pathname}?${q}` : pathname || "/admin/dashboard");
+            }}
+          >
+            Rādīt visus
+          </button>
+        </div>
+      ) : null}
       <ul className="mt-2 space-y-2 px-4">
         {dayGroups.map((g) => (
         <Fragment key={g.key}>
@@ -917,23 +983,30 @@ export function AdminOrdersTable({
                 v.isPack ? "cursor-default" : "cursor-pointer"
               }`}
               onPointerDown={(e) => {
-                if (!v.pdfHref) return;
+                if (!v.pdfHref && v.isPack) return;
                 swipeRef.current = { id: o.id, x: e.clientX, dx: 0 };
               }}
               onPointerMove={(e) => {
                 const s = swipeRef.current;
                 if (!s || s.id !== o.id) return;
-                s.dx = Math.min(0, e.clientX - s.x);
+                // Pa kreisi: PDF (ja ir). Pa labi: Izpildīts (nav pakām).
+                const raw = e.clientX - s.x;
+                s.dx = raw < 0 ? (v.pdfHref ? raw : 0) : v.isPack ? 0 : Math.min(120, raw);
                 e.currentTarget.style.transform = `translateX(${s.dx}px)`;
                 e.currentTarget.style.transition = "none";
+                e.currentTarget.style.boxShadow = s.dx > 24 ? "inset 4px 0 0 #34c759, var(--am-card-shadow)" : "";
               }}
               onPointerUp={(e) => {
                 const s = swipeRef.current;
                 e.currentTarget.style.transform = "";
+                e.currentTarget.style.boxShadow = "";
                 e.currentTarget.style.transition = "transform var(--d-std) var(--ease-out)";
                 lastSwipeDx.current = s?.dx ?? 0;
                 if (s && s.dx < -72 && v.pdfHref) {
                   window.open(v.pdfHref, "_blank", "noopener,noreferrer");
+                }
+                if (s && s.dx > 72 && !v.isPack) {
+                  void swipeToggleComplete(o.id, Boolean(o.auditComplete), adminOrderCardTitle(o.makeModel, v));
                 }
                 swipeRef.current = null;
               }}
@@ -1049,8 +1122,26 @@ export function AdminOrdersTable({
           if (!row) return <p className="text-[14px] text-[var(--label-secondary)]">Nav pieejamu darbību.</p>;
           const view = orderRowView(row, clientOverrides[row.id], detailBaseNormalized);
           const pdf = view.pdfHref;
+          const phone = (clientOverrides[row.id]?.customerPhone ?? row.customerPhone ?? "").trim();
+          const email = (clientOverrides[row.id]?.customerEmail ?? row.customerEmail ?? "").trim();
+          const contactBtn =
+            "am-press flex h-[50px] flex-1 items-center justify-center gap-2 rounded-[18px] bg-[var(--fill-secondary)] px-4 text-[16px] font-semibold text-[var(--label)]";
           return (
             <div className="space-y-2">
+              {phone || email ? (
+                <div className="flex gap-2">
+                  {phone ? (
+                    <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className={contactBtn} onClick={() => setCardMenuId(null)}>
+                      Zvanīt
+                    </a>
+                  ) : null}
+                  {email ? (
+                    <a href={`mailto:${email}`} className={contactBtn} onClick={() => setCardMenuId(null)}>
+                      E-pasts
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
               {pdf ? (
                 <a
                   href={pdf}
@@ -1092,6 +1183,18 @@ export function AdminOrdersTable({
           );
         })()}
       </AdminMobileSheet>
+      {undo ? (
+        <div
+          role="status"
+          className="fixed inset-x-4 z-50 flex items-center gap-3 rounded-[16px] bg-[#1d1d1f] px-4 py-3 text-white shadow-lg"
+          style={{ bottom: "calc(var(--admin-tabbar-h, 0px) + 12px + env(safe-area-inset-bottom))" }}
+        >
+          <span className="min-w-0 flex-1 truncate text-[14px]">{undo.label}</span>
+          <button type="button" className="shrink-0 text-[14px] font-semibold text-[#64d2ff]" onClick={() => void undoSwipe()}>
+            Atsaukt
+          </button>
+        </div>
+      ) : null}
       </div>
 
       <div className="mt-3 hidden overflow-hidden rounded-xl bg-white shadow-[0_0_0_0.5px_rgba(0,0,0,0.1)] md:block">
