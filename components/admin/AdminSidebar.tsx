@@ -103,6 +103,8 @@ const SAKUMS: Item = {
   badge: "orders",
   match: (p) => p === "/admin" || p.startsWith("/admin/dashboard") || p.startsWith("/admin/orders/"),
 };
+/** PRO sākuma izvēlne (telefons): paziņojumi + sadaļas. Datorā atver Pasūtījumus. */
+const PRO_MENU: Item = { href: "/admin/pro", label: "Sākums", icon: Home, match: (p) => p === "/admin/pro" || p === "/admin/pro/" };
 const MORNING: Item = { href: "/admin/kopsavilkums", label: L.morning, icon: Sun, match: starts("/admin/kopsavilkums") };
 const FAST: Item = { href: "/admin/atras-vertesanas", label: L.fast, icon: Zap, badge: "fast", match: starts("/admin/atras-vertesanas") };
 const VIN: Item = { href: "/admin/vin-scan", label: L.vinScan, icon: ScanLine, match: starts("/admin/vin-scan") };
@@ -551,6 +553,7 @@ export function AdminSidebar({
 }
 
 const MOBILE_TAB_ICON: Record<string, AdminMobileIconName> = {
+  "/admin/pro": "atzime",
   "/admin/dashboard": "pasutijumi",
   "/admin/vin-scan": "vinParbaude",
   "/admin/atras-vertesanas": "atrie",
@@ -616,7 +619,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   }, [more]);
 
   const irissTabs: Item[] = [I_MENU, I_HOME, { ...I_LIST, label: "Sludinājumi" }];
-  const proTabs: Item[] = [SAKUMS, { ...VIN, label: "VIN" }, { ...FAST, label: "Ātrie" }];
+  const proTabs: Item[] = [PRO_MENU, { ...SAKUMS, label: "Pasūtījumi" }, { ...VIN, label: "VIN" }];
   const tabs: Item[] = workspace === "iriss" ? irissTabs : proTabs;
   const tabHrefs = new Set(tabs.map((t) => t.href));
   const shownPath = pendingHref ?? pathname;

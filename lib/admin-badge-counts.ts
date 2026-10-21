@@ -10,6 +10,7 @@ import { countOpenListingPeeks } from "@/lib/listing-peek-queue";
 import { readListingPeekDocForAdminRead } from "@/lib/listing-peek-store";
 import { isB2bPackAdminOrder } from "@/lib/b2b-partner-orders";
 import { upsellListOverlay } from "@/lib/order-upsell";
+import { summarizeProHome, type ProHomeSummary } from "@/lib/admin-pro-home";
 
 export type AdminBadgeCounts = {
   openCount: number;
@@ -21,6 +22,8 @@ export type AdminBadgeCounts = {
   irissMatchCount: number;
   /** IRISS Loģistika aktīvie (vēl neizņemti / nepiegādāti). */
   irissLogisticsCount: number;
+  /** PRO sākuma izvēlne telefonā: Pasūtījumi (MINI + auditi) un Dīleri ar tuvāko termiņu. */
+  proHome: ProHomeSummary;
 };
 
 /**
@@ -39,15 +42,17 @@ export async function loadAdminBadgeCounts(): Promise<AdminBadgeCounts> {
   const orders = filterAdminOrdersForDashboard(orderLoad.rows, false);
   const ids = orders.map((o) => o.id);
   const { complete: done, upsell } = await getOrderFlags(ids);
-  const { activeCount, overdueCount, urgentCount } = countAdminActiveOrders(
-    orders.map((o) => ({
-      created: o.created,
-      deadlineFromUnix: upsellListOverlay(upsell.get(o.id) ?? [])?.paidAtUnix,
-      auditComplete: Boolean(done.get(o.id)),
-      isB2bPack: isB2bPackAdminOrder(o),
-    })),
-    Date.now(),
-  );
+  const activeRows = orders.map((o) => ({
+    created: o.created,
+    deadlineFromUnix: upsellListOverlay(upsell.get(o.id) ?? [])?.paidAtUnix,
+    auditComplete: Boolean(done.get(o.id)),
+    isB2bPack: isB2bPackAdminOrder(o),
+    checkoutLine: o.checkoutLine,
+    amountTotalCents: o.amountTotal,
+  }));
+  const nowMs = Date.now();
+  const { activeCount, overdueCount, urgentCount } = countAdminActiveOrders(activeRows, nowMs);
+  const proHome = summarizeProHome(activeRows, nowMs);
 
   let irissMatchCount = 0;
   try {
@@ -65,5 +70,5 @@ export async function loadAdminBadgeCounts(): Promise<AdminBadgeCounts> {
     irissLogisticsCount = 0;
   }
 
-  return { openCount, unseenCount, activeCount, overdueCount, urgentCount, irissMatchCount, irissLogisticsCount };
+  return { openCount, unseenCount, activeCount, overdueCount, urgentCount, irissMatchCount, irissLogisticsCount, proHome };
 }

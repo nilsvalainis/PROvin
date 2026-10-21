@@ -104,7 +104,8 @@ describe("IRISS chrome wiring", () => {
     expect(indicator).toMatch(/iriss-proj/);
     expect(indicator).toMatch(/title="IRISS"/);
     expect(indicator).toMatch(/^\s+IRISS$/m);
-    expect(topBar).toMatch(/IrissProjectIndicator/);
+    // Telefona galvenē zonas pārslēgs "IRISS | PRO" (Nils 21.10), nevis tikai indikators.
+    expect(topBar).toMatch(/AdminWorkspaceSwitch/);
     expect(sidebar).toMatch(/IrissProjectIndicator/);
     expect(vp).toMatch(/prefers-color-scheme: dark/);
     expect(vp).not.toMatch(/localStorage/);

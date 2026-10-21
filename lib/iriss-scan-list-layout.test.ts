@@ -15,7 +15,9 @@ describe("radar list Jauns radars and leftovers", () => {
     expect(list).toContain("Jauns radars");
     expect(list).toContain("Atjaunot ET");
     expect(list).toContain("IrissRadarBrandMark");
-    expect(list).toContain("IrissAuctionLogo");
+    // Bez izsoļu logo sarakstā (Nils 21.10): avotu skaits un laiks vienā rindā.
+    expect(list).not.toContain("IrissAuctionLogo");
+    expect(list).toContain("avoti");
     expect(list).toContain("line-clamp-2");
     expect(list).toContain("flex-wrap");
     expect(list).toContain("shrink-0");
