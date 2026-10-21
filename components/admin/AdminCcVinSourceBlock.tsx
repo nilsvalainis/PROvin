@@ -201,12 +201,17 @@ export function AdminCcVinSourceBlock({
     fieldLabel: string,
     value_: string,
     onNext: (next: string) => void,
-    opts?: { placeholder?: string; multiline?: boolean; numeric?: boolean },
+    opts?: {
+      placeholder?: string;
+      multiline?: boolean;
+      numeric?: boolean;
+      normalizeOnBlur?: (raw: string) => string;
+    },
   ) => (
     <td className={`${cell} align-top`}>
       {readOnly ? (
         <span className="block whitespace-pre-wrap text-[var(--color-provin-muted)]">
-          {value_.trim() || "-"}
+          {(opts?.normalizeOnBlur ? opts.normalizeOnBlur(value_) : value_).trim() || "-"}
         </span>
       ) : opts?.multiline ? (
         <AdminAutoGrowTextarea
@@ -227,6 +232,12 @@ export function AdminCcVinSourceBlock({
           disabled={disabled}
           placeholder={opts?.placeholder}
           onChange={(e) => onNext(e.target.value)}
+          onBlur={(e) => {
+            // Pārrēķins pēc ievades, ne katrā taustiņā: „$1” citādi kļūst par „1 €” un sabojā summu.
+            if (!opts?.normalizeOnBlur) return;
+            const normalized = opts.normalizeOnBlur(e.target.value);
+            if (normalized !== e.target.value) onNext(normalized);
+          }}
           aria-label={`${ARIA} - ${fieldLabel} ${index + 1}`}
         />
       )}
@@ -614,15 +625,15 @@ export function AdminCcVinSourceBlock({
                     {textCell(
                       i,
                       "bojājuma summa",
-                      displayUsdAsEur(row.amount),
+                      row.amount,
                       (next) =>
                         setRows(
                           "damages",
                           patchRow<CcVinDamageRow>(damageRows, i, {
-                            amount: displayUsdAsEur(next),
+                            amount: next,
                           }),
                         ),
-                      { placeholder: "11 410 €" },
+                      { placeholder: "11 410 €", normalizeOnBlur: displayUsdAsEur },
                     )}
                     {textCell(
                       i,
@@ -914,13 +925,13 @@ export function AdminCcVinSourceBlock({
                     {textCell(
                       i,
                       "pārdošanas cena",
-                      displayUsdAsEur(row.price),
+                      row.price,
                       (next) =>
                         setRows(
                           "sales",
-                          patchRow<CcVinSaleRow>(saleRows, i, { price: displayUsdAsEur(next) }),
+                          patchRow<CcVinSaleRow>(saleRows, i, { price: next }),
                         ),
-                      { placeholder: "7 662 EUR" },
+                      { placeholder: "7 662 EUR", normalizeOnBlur: displayUsdAsEur },
                     )}
                     {textCell(
                       i,

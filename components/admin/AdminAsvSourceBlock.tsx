@@ -141,12 +141,12 @@ export function AdminAsvSourceBlock({
     fieldLabel: string,
     value_: string,
     onNext: (next: string) => void,
-    opts?: { multiline?: boolean },
+    opts?: { multiline?: boolean; normalizeOnBlur?: (raw: string) => string },
   ) => (
     <td className={`${cell} align-top`}>
       {readOnly ? (
         <span className="block whitespace-pre-wrap text-[var(--color-provin-muted)]">
-          {value_.trim() || "-"}
+          {(opts?.normalizeOnBlur ? opts.normalizeOnBlur(value_) : value_).trim() || "-"}
         </span>
       ) : opts?.multiline ? (
         <AdminAutoGrowTextarea
@@ -164,6 +164,12 @@ export function AdminAsvSourceBlock({
           value={value_}
           disabled={disabled}
           onChange={(e) => onNext(e.target.value)}
+          onBlur={(e) => {
+            // Pārrēķins pēc ievades, ne katrā taustiņā: „$1” citādi kļūst par „1 €” un sabojā summu.
+            if (!opts?.normalizeOnBlur) return;
+            const normalized = opts.normalizeOnBlur(e.target.value);
+            if (normalized !== e.target.value) onNext(normalized);
+          }}
           aria-label={`${ARIA} - ${fieldLabel} ${index + 1}`}
         />
       )}
@@ -428,8 +434,12 @@ export function AdminAsvSourceBlock({
                       setRows("damages", patchRow<AsvDamageRow>(damageRows, i, { description: next })),
                       { multiline: true },
                     )}
-                    {textCell(i, "summa", displayUsdAsEur(row.amount), (next) =>
-                      setRows("damages", patchRow<AsvDamageRow>(damageRows, i, { amount: displayUsdAsEur(next) })),
+                    {textCell(
+                      i,
+                      "summa",
+                      row.amount,
+                      (next) => setRows("damages", patchRow<AsvDamageRow>(damageRows, i, { amount: next })),
+                      { normalizeOnBlur: displayUsdAsEur },
                     )}
                     {textCell(i, "vieta", row.region, (next) =>
                       setRows("damages", patchRow<AsvDamageRow>(damageRows, i, { region: next })),
@@ -589,8 +599,12 @@ export function AdminAsvSourceBlock({
                     {textCell(i, "izsoles odometrs", row.odometer, (next) =>
                       setRows("sales", patchRow<AsvSaleRow>(saleRows, i, { odometer: next })),
                     )}
-                    {textCell(i, "izsoles cena", displayUsdAsEur(row.price), (next) =>
-                      setRows("sales", patchRow<AsvSaleRow>(saleRows, i, { price: displayUsdAsEur(next) })),
+                    {textCell(
+                      i,
+                      "izsoles cena",
+                      row.price,
+                      (next) => setRows("sales", patchRow<AsvSaleRow>(saleRows, i, { price: next })),
+                      { normalizeOnBlur: displayUsdAsEur },
                     )}
                     {textCell(i, "izsoles statuss", row.status, (next) =>
                       setRows("sales", patchRow<AsvSaleRow>(saleRows, i, { status: next })),
