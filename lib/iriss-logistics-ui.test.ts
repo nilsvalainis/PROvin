@@ -113,10 +113,7 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(css).toContain(".iriss-log-print-root");
     expect(css).toContain(".iriss-log-print-list");
     expect(css).not.toMatch(/height:\s*200px/);
-    expect(printLib).toContain('bind("idle"');
-    expect(printLib).toContain('bind("tilesloaded"');
-    expect(printLib).toContain("logisticsPrintLegendRows");
-    expect(printLib).toContain("LOGISTICS_PRINT_MAP_WIDTH_MM = 277");
+    // Drukas bibliotēkas uzvedība (idle/tilesloaded, 277 mm, leģenda): lib/iriss-logistics-map-print.test.ts.
     expect(printLib).not.toMatch(/staticmap/i);
     expect(map).toContain("lockView");
     expect(map).toContain("printNumbers");

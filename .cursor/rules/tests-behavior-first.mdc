@@ -1,0 +1,12 @@
+---
+description: Testi pārbauda uzvedību, nevis avota tekstu
+alwaysApply: true
+---
+
+# Testi: uzvedība pirms avota teksta
+
+- Jaunam kodam testē **ko tas dara**: tīras funkcijas `lib/` (ievade → izvade) vai komponentes renderēto HTML ar `renderHtml` / `renderText` no `lib/test-render.ts` (`*.test.tsx`).
+- **Nepievieno** jaunus `readFileSync(...)` + `toContain("…")` testus komponenšu avotam. Tie lūzt pie katras pārdēvēšanas un neko nepasaka par uzvedību.
+- Avota teksta tests ir pieņemams tikai, ja tā ir **aizlieguma** pārbaude, ko citādi nevar pārbaudīt (piem., nav `staticmap`, nav cenu drukā, nav `—`).
+- Mainot komponenti ar esošu avota teksta testu: ja tas pats ir pārbaudīts ar uzvedības testu, izdzēs dublējošās `toContain` rindas, nevis tās pārraksti.
+- Loģiku, ko gribas pārbaudīt, iznes tīrā funkcijā `lib/` un testē to.
