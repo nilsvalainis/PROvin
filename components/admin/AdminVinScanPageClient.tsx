@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AdminMobilePrimaryButton,
   AdminMobileSecondaryButton,
@@ -10,6 +10,13 @@ import {
 } from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import { AdminMobileVinCameraSheet } from "@/components/admin/mobile/AdminMobileVinCameraSheet";
+import { AdminVinScanRecent } from "@/components/admin/AdminVinScanRecent";
+import {
+  VIN_SCAN_HISTORY_KEY,
+  parseVinScanHistory,
+  pushVinScanHistory,
+  type VinScanHistoryEntry,
+} from "@/lib/vin-scan/camera-vin";
 import { useRouter } from "next/navigation";
 import { AdminVinHandoffBinder } from "@/components/admin/AdminVinHandoffBinder";
 import {
@@ -86,6 +93,27 @@ export function AdminVinScanPageClient({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [vinMode, setVinMode] = useState<"listing" | "vin">("listing");
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [recent, setRecent] = useState<VinScanHistoryEntry[]>([]);
+
+  useEffect(() => {
+    try {
+      setRecent(parseVinScanHistory(localStorage.getItem(VIN_SCAN_HISTORY_KEY)));
+    } catch {
+      setRecent([]);
+    }
+  }, []);
+
+  function rememberVin(v: string) {
+    setRecent((prev) => {
+      const next = pushVinScanHistory(prev, v, new Date().toISOString());
+      try {
+        localStorage.setItem(VIN_SCAN_HISTORY_KEY, JSON.stringify(next));
+      } catch {
+        // nav krātuves
+      }
+      return next;
+    });
+  }
   const vin = useMemo(() => normalizeVin(draft), [draft]);
   const valid = isValidVin(vin);
   const listingUrl = useMemo(() => canonicalizeListingUrl(listingDraft), [listingDraft]);
@@ -153,6 +181,7 @@ export function AdminVinScanPageClient({
   }
 
   function requestScan(force = false) {
+    if (valid) rememberVin(vin);
     setScanForce(force);
     setScanNonce((n) => n + 1);
   }
@@ -330,7 +359,7 @@ export function AdminVinScanPageClient({
               autoCapitalize="characters"
               autoComplete="off"
               spellCheck={false}
-              className="mt-1 w-full bg-transparent font-mono text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
+              className="mt-1.5 h-11 w-full px-3 font-mono text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
               value={draft}
               onChange={(e) => setDraft(e.target.value.toUpperCase())}
               aria-label="VIN"
@@ -346,7 +375,7 @@ export function AdminVinScanPageClient({
                 autoCapitalize="characters"
                 autoComplete="off"
                 spellCheck={false}
-                className="mt-1 w-full bg-transparent font-mono text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
+                className="mt-1.5 h-11 w-full px-3 font-mono text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
                 value={platesDraft.lv}
                 onChange={(e) => setPlatesDraft((prev) => ({ ...prev, lv: e.target.value.toUpperCase() }))}
                 aria-label="LV numurs"
@@ -359,7 +388,7 @@ export function AdminVinScanPageClient({
                 inputMode="url"
                 autoComplete="off"
                 spellCheck={false}
-                className="mt-1 w-full bg-transparent text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
+                className="mt-1.5 h-11 w-full px-3 text-[17px] text-[var(--am-ink)] outline-none placeholder:text-[var(--am-ink3)]"
                 value={listingDraft}
                 onChange={(e) => setListingDraft(e.target.value)}
                 aria-label="Sludinājums"
@@ -377,6 +406,9 @@ export function AdminVinScanPageClient({
             Ieslēgt kameru
           </AdminMobileSecondaryButton>
         </div>
+        <div className="mx-4 mt-3">
+          <AdminVinScanRecent entries={recent} onPick={(v) => setDraft(v)} />
+        </div>
         {!hasScanResult ? (
           <p className="mx-4 mt-3 text-center text-[13px] leading-snug text-[var(--am-ink3)]">
             Rezultāti pēc pārbaudes
@@ -389,6 +421,7 @@ export function AdminVinScanPageClient({
           onClose={() => setCameraOpen(false)}
           onVin={(v) => {
             setDraft(v);
+            rememberVin(v);
             setCameraOpen(false);
           }}
         />
