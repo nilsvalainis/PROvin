@@ -324,7 +324,7 @@ export default async function AdminOrdersPage({
         </div>
       )}
 
-      <div className="mt-8 flex flex-wrap items-start justify-end gap-3 border-t border-slate-100/80 pt-4">
+      <div className="mt-8 flex flex-wrap items-start justify-end gap-3 border-t border-slate-100/80 pt-4 max-md:px-4">
         <AdminOrdersExportButton />
       </div>
     </div>

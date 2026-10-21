@@ -98,7 +98,7 @@ export default async function AdminStatistikaPage() {
     : null;
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-4xl max-md:px-4">
       <AdminDashboardHeaderWithMenu>
         <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Statistika

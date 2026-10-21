@@ -23,7 +23,7 @@ export default async function AdminMorningSummaryPage() {
           48 h audita SLA un neatbildētie ātrie vērtējumi.
         </p>
       </AdminDashboardHeaderWithMenu>
-      <div className="mt-5">
+      <div className="mt-5 max-md:px-4">
         <AdminMorningSummaryView summary={summary} stripeError={stripeError} />
       </div>
     </div>
