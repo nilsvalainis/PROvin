@@ -52,3 +52,24 @@ export function irissPriceFormatWarning(raw: string): string | null {
   if (irissPriceLooksNumeric(raw)) return null;
   return "Cena izskatās pēc brīva teksta. PDF labāk ar skaitli, piem. 15000.";
 }
+
+/** Tūkstošu atstarpe vienmēr, arī 4 ciparu summām (`lv-LV` 5500 atstāj bez atstarpes). */
+function groupThousandsLv(intDigits: string): string {
+  return intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+/** Vesela summa eiro: "5 500 €", "-4 001 €", "-" ja nav skaitļa. */
+export function formatIrissEurWhole(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "-";
+  const r = Math.round(n);
+  const sign = r < 0 ? "-" : "";
+  return `${sign}${groupThousandsLv(String(Math.abs(r)))} €`;
+}
+
+/** Summa ar centiem: "5 500,00 €". */
+export function formatIrissEurCents(n: number): string {
+  if (!Number.isFinite(n)) return "-";
+  const sign = n < 0 ? "-" : "";
+  const [int, frac] = Math.abs(n).toFixed(2).split(".");
+  return `${sign}${groupThousandsLv(int!)},${frac} €`;
+}

@@ -9,12 +9,13 @@ import { isHttpUrlForOpen } from "@/lib/iriss-listing-links";
 import { labelIrissListingLinkRows } from "@/lib/iriss-listing-link-lists";
 import { IRISS_LISTING_CARD_ACTION_ORDER } from "@/lib/iriss-listing-card-actions";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
+import { formatIrissEurWhole } from "@/lib/iriss-price-format";
 import { IRISS_PASUTIJUMS_LIST_STATUS_LV } from "@/lib/iriss-pasutijumi-types";
 
 const STATUS_LABEL = IRISS_PASUTIJUMS_LIST_STATUS_LV;
 
 function fmtBudget(n: number | null, raw: string): string {
-  if (n != null) return `${Math.round(n).toLocaleString("lv-LV")} €`;
+  if (n != null) return formatIrissEurWhole(n);
   const t = raw.trim();
   if (!t || t === "-") return "nav norādīts";
   return t;
