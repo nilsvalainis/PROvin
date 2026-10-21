@@ -89,3 +89,16 @@ export function vinScanHistoryInfo(vin: string): string {
   const d = decodeVinLocal(vin);
   return [d.make, d.countryName, d.year].filter(Boolean).join(" · ") || `WMI ${d.wmi}`;
 }
+
+/** Servera un pārlūka vēsture kopā: jaunākais augšā, katrs VIN vienreiz, ne vairāk kā 15. */
+export function mergeVinScanHistory(
+  a: readonly VinScanHistoryEntry[],
+  b: readonly VinScanHistoryEntry[],
+): VinScanHistoryEntry[] {
+  const best = new Map<string, VinScanHistoryEntry>();
+  for (const e of [...a, ...b]) {
+    const prev = best.get(e.vin);
+    if (!prev || e.at > prev.at) best.set(e.vin, e);
+  }
+  return [...best.values()].sort((x, y) => (x.at < y.at ? 1 : x.at > y.at ? -1 : 0)).slice(0, VIN_SCAN_HISTORY_MAX);
+}

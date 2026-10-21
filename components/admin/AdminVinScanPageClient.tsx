@@ -13,6 +13,7 @@ import { AdminMobileVinCameraSheet } from "@/components/admin/mobile/AdminMobile
 import { AdminVinScanRecent } from "@/components/admin/AdminVinScanRecent";
 import {
   VIN_SCAN_HISTORY_KEY,
+  mergeVinScanHistory,
   parseVinScanHistory,
   pushVinScanHistory,
   type VinScanHistoryEntry,
@@ -95,24 +96,45 @@ export function AdminVinScanPageClient({
   const [cameraOpen, setCameraOpen] = useState(false);
   const [recent, setRecent] = useState<VinScanHistoryEntry[]>([]);
 
+  // Pārlūka kopija parādās uzreiz, servera saraksts (kopīgs iPhone un datoram) pievienojas pēc ielādes.
   useEffect(() => {
+    let local: VinScanHistoryEntry[] = [];
     try {
-      setRecent(parseVinScanHistory(localStorage.getItem(VIN_SCAN_HISTORY_KEY)));
+      local = parseVinScanHistory(localStorage.getItem(VIN_SCAN_HISTORY_KEY));
     } catch {
-      setRecent([]);
+      local = [];
     }
+    setRecent(local);
+    let stop = false;
+    void fetch("/api/admin/vin-scan/history", { credentials: "include", cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { entries?: unknown } | null) => {
+        if (stop || !data || !Array.isArray(data.entries)) return;
+        const server = parseVinScanHistory(JSON.stringify(data.entries));
+        setRecent((prev) => mergeVinScanHistory(prev, server));
+      })
+      .catch(() => undefined);
+    return () => {
+      stop = true;
+    };
   }, []);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIN_SCAN_HISTORY_KEY, JSON.stringify(recent));
+    } catch {
+      // nav krātuves
+    }
+  }, [recent]);
+
   function rememberVin(v: string) {
-    setRecent((prev) => {
-      const next = pushVinScanHistory(prev, v, new Date().toISOString());
-      try {
-        localStorage.setItem(VIN_SCAN_HISTORY_KEY, JSON.stringify(next));
-      } catch {
-        // nav krātuves
-      }
-      return next;
-    });
+    setRecent((prev) => pushVinScanHistory(prev, v, new Date().toISOString()));
+    void fetch("/api/admin/vin-scan/history", {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ vin: v }),
+    }).catch(() => undefined);
   }
   const vin = useMemo(() => normalizeVin(draft), [draft]);
   const valid = isValidVin(vin);

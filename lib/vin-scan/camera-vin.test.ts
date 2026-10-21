@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   VIN_SCAN_HISTORY_MAX,
   cameraVinCandidates,
+  mergeVinScanHistory,
   parseVinScanHistory,
   pickCameraVin,
   pushVinScanHistory,
@@ -44,5 +45,19 @@ describe("camera VIN rangs", () => {
   it("VIN prefikss nepārspēj īsto VIN", () => {
     const pick = pickCameraVin(["VNWBA3A5C50CF256551\n", "VNWBA3A5C50CF256551\n", "VNWBA3A5CS50CF256551\n"]);
     expect(pick?.vin).toBe("WBA3A5C50CF256551");
+  });
+});
+
+describe("VIN vēsture: serveris + pārlūks", () => {
+  it("apvieno, jaunākais augšā, dublikāts paliek ar jaunāko laiku", () => {
+    const local = [{ vin: "WBA3A5C50CF256551", at: "2026-10-21T10:00:00Z" }];
+    const server = [
+      { vin: "1M8GDM9AXKP042788", at: "2026-10-21T11:00:00Z" },
+      { vin: "WBA3A5C50CF256551", at: "2026-10-21T12:00:00Z" },
+    ];
+    expect(mergeVinScanHistory(local, server)).toEqual([
+      { vin: "WBA3A5C50CF256551", at: "2026-10-21T12:00:00Z" },
+      { vin: "1M8GDM9AXKP042788", at: "2026-10-21T11:00:00Z" },
+    ]);
   });
 });
