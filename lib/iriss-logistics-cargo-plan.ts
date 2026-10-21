@@ -149,18 +149,27 @@ export function normalizeCargoRoute(raw: unknown): CargoRouteState {
   };
 }
 
-/** Līnija: tikai derīgi punkti, noapaļoti, ne vairāk par 3000 (krātuves fails paliek mazs). */
+/** Cik punktu līnijai glabājam (krātuves fails paliek mazs, karte zīmē ātri). */
+export const CARGO_PATH_MAX_POINTS = 3000;
+
+/**
+ * Līnija: tikai derīgi punkti, noapaļoti. Gara līnija tiek vienmērīgi retināta līdz 3000 punktiem
+ * (sākums un beigas paliek), nevis apgriezta: agrāk 2400 km maršruts beidzās pusceļā.
+ */
 export function normalizeCargoPath(raw: unknown): CargoLatLng[] {
   if (!Array.isArray(raw)) return [];
-  const out: CargoLatLng[] = [];
+  const all: CargoLatLng[] = [];
   for (const p of raw) {
     if (!p || typeof p !== "object") continue;
     const lat = numOrNull((p as Record<string, unknown>).lat);
     const lng = numOrNull((p as Record<string, unknown>).lng);
     if (lat == null || lng == null) continue;
-    out.push({ lat: Math.round(lat * 1e5) / 1e5, lng: Math.round(lng * 1e5) / 1e5 });
-    if (out.length >= 3000) break;
+    all.push({ lat: Math.round(lat * 1e5) / 1e5, lng: Math.round(lng * 1e5) / 1e5 });
   }
+  if (all.length <= CARGO_PATH_MAX_POINTS) return all;
+  const step = (all.length - 1) / (CARGO_PATH_MAX_POINTS - 1);
+  const out: CargoLatLng[] = [];
+  for (let i = 0; i < CARGO_PATH_MAX_POINTS; i++) out.push(all[Math.round(i * step)]!);
   return out;
 }
 
@@ -185,7 +194,8 @@ export function cargoRoutePoints(
 
 /** Maršruta punktu atslēga: sākums, pieturas secībā, beigas. */
 export function cargoRoutePointsKey(points: ReadonlyArray<CargoLatLng>): string {
-  return points.map((p) => `${p.lat.toFixed(4)},${p.lng.toFixed(4)}`).join("|");
+  // "v2": līnijas, kas saglabātas pirms retināšanas labojuma (apgrieztas), pārrēķinās vienreiz pašas.
+  return `v2|${points.map((p) => `${p.lat.toFixed(4)},${p.lng.toFixed(4)}`).join("|")}`;
 }
 
 export function normalizeCargoCar(raw: unknown): CargoCarState | null {
