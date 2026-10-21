@@ -63,6 +63,9 @@ export async function suggestLogisticsAddresses(input: string, sessionToken: str
   };
 }
 
+/** Place Details lauki: abi ir Google "Essentials" līmenī (10 000 bez maksas mēnesī). */
+export const PLACE_DETAILS_FIELD_MASK = "formattedAddress,location";
+
 export type AddressPlaceResult =
   | { ok: true; formatted: string; name: string; lat: number; lng: number }
   | { ok: false; limited?: boolean; notice: string };
@@ -78,11 +81,11 @@ export async function logisticsPlaceDetails(placeId: string, sessionToken: strin
   url.searchParams.set("languageCode", "lv");
   if (sessionToken) url.searchParams.set("sessionToken", sessionToken.slice(0, 80));
   const res = await fetchJson(url.toString(), {
-    headers: { "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": "formattedAddress,location,displayName" },
+    // Tikai Essentials lauki (lētākais līmenis). Vietas nosaukumu klients ņem no ieteikuma (mainText), nevis no `displayName` (Pro).
+    headers: { "X-Goog-Api-Key": apiKey, "X-Goog-FieldMask": PLACE_DETAILS_FIELD_MASK },
   });
   const body = (res?.body ?? {}) as {
     formattedAddress?: string;
-    displayName?: { text?: string };
     location?: { latitude?: number; longitude?: number };
   };
   const lat = body.location?.latitude;
@@ -90,7 +93,7 @@ export async function logisticsPlaceDetails(placeId: string, sessionToken: strin
   if (!res || res.status !== 200 || typeof lat !== "number" || typeof lng !== "number") {
     return { ok: false, notice: "Vietas koordinātes neizdevās iegūt." };
   }
-  return { ok: true, formatted: body.formattedAddress ?? body.displayName?.text ?? "", name: body.displayName?.text ?? "", lat, lng };
+  return { ok: true, formatted: body.formattedAddress ?? "", name: "", lat, lng };
 }
 
 async function fetchJson(url: string, init: RequestInit): Promise<{ status: number; body: unknown } | null> {
