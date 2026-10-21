@@ -39,7 +39,7 @@ export function IrissPavadzimesPlateStrip({
           <Link
             key={item.plate}
             href="/admin/iriss/pavadzimes"
-            className="iriss-plate-strip-item inline-flex min-h-11 shrink-0 items-center gap-1.5"
+            className="iriss-plate-strip-item inline-flex min-h-11 shrink-0 flex-col items-center justify-center gap-0.5"
             aria-label={`${item.plate}, ${item.statusLabel}`}
           >
             <IrissMiniLvPlate plate={item.plate} />

@@ -455,7 +455,7 @@ export function IrissLogistikaClient({
           {canEnableTotp ? <IrissLogistikaStaffTotp viewerName={viewerName ?? ""} /> : null}
         </div>
       ) : pageTab === "points" ? (
-        <div className="mt-3 grid gap-3 max-md:px-4 lg:grid-cols-[minmax(16rem,22rem)_1fr]">
+        <div className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-3 max-md:px-4 lg:grid-cols-[minmax(16rem,22rem)_1fr]">
           <div className="space-y-3">
             {groupedPoints.map((g) => (
               <section key={g.auction}>
@@ -546,7 +546,7 @@ export function IrissLogistikaClient({
           ) : null}
         </div>
       ) : (
-        <div className="mt-3 grid items-start gap-3 max-md:px-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]">
+        <div className="mt-3 grid grid-cols-[minmax(0,1fr)] items-start gap-3 max-md:px-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]">
           <div className="min-w-0">
             {selectedIds.length > 0 ? (
               <div className="iriss-log-no-print mb-2 hidden items-center gap-2 rounded-2xl bg-white px-3 py-2 text-[12.5px] shadow-sm md:flex">
@@ -578,7 +578,7 @@ export function IrissLogistikaClient({
               className={mapFullscreen ? "iriss-log-map-fs-card" : "overflow-hidden rounded-2xl bg-white shadow-sm"}
               onClick={mapFullscreen ? (e) => e.stopPropagation() : undefined}
             >
-              <div className="iriss-log-no-print iriss-log-map-toolbar flex items-center justify-between gap-2 px-3 py-2">
+              <div className="iriss-log-no-print iriss-log-map-toolbar flex flex-wrap items-center justify-between gap-2 px-3 py-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--ink3)]">
                   Karte
                   {mapFullscreen ? (
@@ -587,7 +587,7 @@ export function IrissLogistikaClient({
                     </span>
                   ) : null}
                 </p>
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center justify-end gap-1.5">
                   <button
                     type="button"
                     aria-pressed={showPrevious}
