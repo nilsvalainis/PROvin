@@ -92,7 +92,9 @@ export default async function AdminListingPeeksPage({
   const tabHref = (t: TabId) => `/admin/atras-vertesanas?tab=${t}${q ? `&q=${encodeURIComponent(q)}` : ""}`;
   const stats = await loadListingPeekConversionStats().catch(() => null);
   const convLine = stats
-    ? `Konversija ${stats.conversionRatePct == null ? "-" : `${stats.conversionRatePct.toLocaleString("lv-LV", { maximumFractionDigits: 1 })}%`} · ${stats.convertedPeople.toLocaleString("lv-LV")} no ${stats.uniquePeople.toLocaleString("lv-LV")} klientiem`
+    ? stats.conversionRatePct == null || stats.uniquePeople === 0
+      ? "Konversija: vēl nav datu"
+      : `Konversija ${stats.conversionRatePct.toLocaleString("lv-LV", { maximumFractionDigits: 1 })}% · ${stats.convertedPeople.toLocaleString("lv-LV")} no ${stats.uniquePeople.toLocaleString("lv-LV")} klientiem`
     : undefined;
 
   return (
@@ -139,11 +141,11 @@ export default async function AdminListingPeeksPage({
       </div>
 
       {shown.length === 0 ? (
-        <div className="mt-4 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-10 text-center text-sm text-[var(--color-provin-muted)] max-md:border-[var(--am-hair)] max-md:bg-[var(--am-s1)] max-md:text-[var(--am-ink2)]">
-          {q ? "Nekas netika atrasts." : "Šeit nav ierakstu."}
+        <div className="mt-4 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-10 text-center text-sm text-[var(--color-provin-muted)] max-md:mx-4 max-md:border-[var(--am-hair)] max-md:bg-[var(--am-s1)] max-md:text-[var(--am-ink2)]">
+          {q ? "Nekas netika atrasts." : "Šeit nav ierakstu. Jauni ātrie vērtējumi parādīsies šeit."}
         </div>
       ) : (
-        <ul className="mt-3 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white max-md:space-y-2.5 max-md:divide-y-0 max-md:border-0 max-md:bg-transparent max-md:shadow-none">
+        <ul className="mt-3 divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white max-md:mx-4 max-md:space-y-2.5 max-md:divide-y-0 max-md:border-0 max-md:bg-transparent max-md:shadow-none">
           {shown.map((e) => {
             const doc = docs.get(e.id) ?? null;
             const listingUrl = canonicalizeListingUrl(e.listingUrl);

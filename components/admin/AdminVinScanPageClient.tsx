@@ -321,7 +321,7 @@ export function AdminVinScanPageClient({
             ]}
           />
         </AdminMobileTopBar>
-        <div className="mt-3 overflow-hidden rounded-[18px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)]">
+        <div className="mx-4 mt-3 overflow-hidden rounded-[18px] bg-[var(--am-s1)] shadow-[var(--am-card-shadow)]">
           <label className="block border-b border-[var(--am-hair)] px-4 py-3">
             <span className="block text-[11px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">VIN</span>
             <input
@@ -368,7 +368,7 @@ export function AdminVinScanPageClient({
             </>
           ) : null}
         </div>
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-2 px-4">
           <AdminMobilePrimaryButton disabled={!canScan || scanBusy || plateBusy} onClick={() => void runScan(false)}>
             {scanBusy ? "Pārbauda…" : "Pārbaudīt"}
           </AdminMobilePrimaryButton>
@@ -378,11 +378,11 @@ export function AdminVinScanPageClient({
           </AdminMobileSecondaryButton>
         </div>
         {!hasScanResult ? (
-          <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[13px] text-[var(--am-ink3)]">
+          <p className="mx-4 mt-3 text-center text-[13px] leading-snug text-[var(--am-ink3)]">
             Rezultāti pēc pārbaudes
           </p>
         ) : (
-          <div className="mt-2">{historyButton}</div>
+          <div className="mt-2 px-4">{historyButton}</div>
         )}
         <AdminMobileVinCameraSheet
           open={cameraOpen}

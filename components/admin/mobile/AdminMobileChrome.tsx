@@ -508,7 +508,7 @@ export function AdminMobilePrimaryButton({ children, onClick, disabled }: { chil
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="am-press h-11 w-full rounded-full bg-[var(--am-ink)] text-[16px] font-semibold text-[var(--am-s1)] disabled:opacity-40"
+      className="am-press h-11 w-full rounded-full bg-[var(--am-btn-primary-bg,var(--am-ink))] text-[16px] font-semibold text-[var(--am-btn-primary-fg,var(--am-s1))] disabled:bg-[var(--fill-secondary)] disabled:text-[var(--label-secondary)]"
     >
       {children}
     </button>
