@@ -1,5 +1,6 @@
 import "server-only";
 
+import { b2bServiceLabel } from "@/lib/b2b-order-notify-shared";
 import type { B2bPartnerRecord } from "@/lib/b2b-partner-account";
 import {
   buildPartnerVinArchiveRow,
@@ -229,7 +230,12 @@ export async function purchaseB2bWalletBulk(args: {
     balanceCents = (await readB2bWallet(partner.id)).balanceCents;
   }
 
-  schedulePartnerCreditVinOrderFollowups(followups);
+  schedulePartnerCreditVinOrderFollowups(followups, {
+    partnerId: partner.id,
+    companyName: partner.companyName,
+    contactName: partner.contactName,
+    serviceLabel: b2bServiceLabel(product),
+  });
 
   const chargedVins = new Set(debit.charged.map((row) => row.vin));
   const refundedCents = failed.filter((row) => row.refunded && chargedVins.has(row.vin)).length * priceCents;

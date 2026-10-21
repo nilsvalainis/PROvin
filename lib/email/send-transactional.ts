@@ -167,6 +167,32 @@ export async function sendAdminNewOrderNotificationEmail(payload: OrderEmailPayl
   }
 }
 
+/** B2B pasūtījumi no konta (Stripe tos nesūta): viena vēstule par vienu dīlera darbību. */
+export async function sendAdminB2bCreditOrdersEmail(opts: {
+  to: string;
+  subject: string;
+  companyLine: string;
+  serviceLabel: string;
+  lines: { vin: string; url: string }[];
+}): Promise<void> {
+  const text = [
+    "Jauns B2B pasūtījums no konta (bez Stripe maksājuma).",
+    `Partneris: ${opts.companyLine}`,
+    `Pakalpojums: ${opts.serviceLabel}`,
+    "",
+    ...opts.lines.map((l) => `${l.vin}: ${l.url}`),
+    "",
+    "Termiņš skaitās no šī brīža.",
+  ].join("\n");
+  const html = adminNewOrderHtml([
+    { label: "Partneris", value: opts.companyLine },
+    { label: "Pakalpojums", value: opts.serviceLabel },
+    { label: "Apmaksa", value: "No konta (bez Stripe)" },
+    ...opts.lines.map((l) => ({ label: l.vin, value: l.url })),
+  ]);
+  await sendSmtpMail({ to: opts.to, subject: opts.subject, text, html, headers: { "X-Priority": "1", Importance: "high" } });
+}
+
 export type AdminAuditSlaWarningEmailPayload = {
   sessionId: string;
   vin: string | null;

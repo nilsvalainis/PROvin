@@ -1,5 +1,6 @@
 import "server-only";
 
+import { b2bServiceLabel } from "@/lib/b2b-order-notify-shared";
 import type { B2bPartnerRecord } from "@/lib/b2b-partner-account";
 import type { B2bPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
 import {
@@ -115,7 +116,12 @@ export async function purchaseB2bWalletProduct(args: {
       dealerQueued: created.dealerQueued,
       dealerOnlyRaw: args.product === "dealer_raw",
     },
-  ]);
+  ], {
+    partnerId: args.partner.id,
+    companyName: args.partner.companyName,
+    contactName: args.partner.contactName,
+    serviceLabel: b2bServiceLabel(args.product),
+  });
 
   return { ok: true, duplicate: false, orderId: created.orderId, balanceCents, priceCents };
 }

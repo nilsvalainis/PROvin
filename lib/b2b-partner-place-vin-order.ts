@@ -1,6 +1,8 @@
 import "server-only";
 
 import { after } from "next/server";
+import { notifyAdminB2bCreditOrders } from "@/lib/b2b-order-notify";
+import type { B2bCreditOrderNotice } from "@/lib/b2b-order-notify-shared";
 import { patchOrderDraft } from "@/lib/admin-order-draft-store";
 import { seedPaidOrderAutoSources } from "@/lib/admin-paid-order-source-seed";
 import type { B2bPartnerPlanId } from "@/lib/b2b-partner-copy";
@@ -110,9 +112,19 @@ export async function runPartnerCreditVinOrderFollowup(args: PartnerVinOrderFoll
   }
 }
 
-export function schedulePartnerCreditVinOrderFollowups(jobs: readonly PartnerVinOrderFollowup[]): void {
+/**
+ * notice: kam paziņot (push, Telegram, e-pasts). Obligāts, lai neviens jauns ceļš nepaliek bez ziņas:
+ * pasūtījumi no konta neiet caur Stripe, un bez šī admin tos neredz līdz termiņam.
+ */
+export function schedulePartnerCreditVinOrderFollowups(
+  jobs: readonly PartnerVinOrderFollowup[],
+  notice: Omit<B2bCreditOrderNotice, "orders">,
+): void {
   if (jobs.length === 0) return;
   after(async () => {
+    await notifyAdminB2bCreditOrders({ ...notice, orders: jobs.map((j) => ({ orderId: j.orderId, vin: j.vin })) }).catch((err) =>
+      console.error("[partner/orders] notify:", err),
+    );
     for (const job of jobs) {
       await runPartnerCreditVinOrderFollowup(job);
     }
