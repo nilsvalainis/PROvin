@@ -7,6 +7,10 @@ import "./admin-ios-theme.css";
 import "./admin-motion.css";
 import "./admin-pro-order-theme.css";
 import "./admin-mobile.css";
+import "./mobile/workspace-switch.css";
+import "./mobile/pro-home.css";
+import "./mobile/link-contrast.css";
+import "./mobile/order-tones.css";
 import "./admin-iriss-theme.css";
 import "./admin-costs-theme.css";
 
