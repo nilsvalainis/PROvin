@@ -62,7 +62,13 @@ export type CargoRouteState = {
   end: CargoRouteEndpoint | null;
   distanceKm: number | null;
   durationMin: number | null;
+  /** Ceļa līnija mūsu kartei (no Directions API), lai to nav jāpārrēķina katrā ielādē. */
+  path: CargoLatLng[];
+  /** Punktu atslēga, pēc kuras līnija aprēķināta. Ja kravā mainās auto vai secība, līnija ir novecojusi. */
+  pathKey: string;
 };
+
+export type CargoLatLng = { lat: number; lng: number };
 
 export type CargoPlanState = {
   version: 1;
@@ -93,7 +99,7 @@ export function isRouteTemplateType(v: unknown): v is RouteTemplateType {
 }
 
 export function emptyCargoRoute(): CargoRouteState {
-  return { enabled: false, start: null, end: null, distanceKm: null, durationMin: null };
+  return { enabled: false, start: null, end: null, distanceKm: null, durationMin: null, path: [], pathKey: "" };
 }
 
 export function emptyCargoPlan(at = new Date().toISOString()): CargoPlanState {
@@ -138,7 +144,48 @@ export function normalizeCargoRoute(raw: unknown): CargoRouteState {
     end: normalizeCargoRouteEndpoint(row.end),
     distanceKm: numOrNull(row.distanceKm ?? row.distance_km),
     durationMin: numOrNull(row.durationMin ?? row.duration_min),
+    path: normalizeCargoPath(row.path),
+    pathKey: str(row.pathKey, 2000),
   };
+}
+
+/** Līnija: tikai derīgi punkti, noapaļoti, ne vairāk par 3000 (krātuves fails paliek mazs). */
+export function normalizeCargoPath(raw: unknown): CargoLatLng[] {
+  if (!Array.isArray(raw)) return [];
+  const out: CargoLatLng[] = [];
+  for (const p of raw) {
+    if (!p || typeof p !== "object") continue;
+    const lat = numOrNull((p as Record<string, unknown>).lat);
+    const lng = numOrNull((p as Record<string, unknown>).lng);
+    if (lat == null || lng == null) continue;
+    out.push({ lat: Math.round(lat * 1e5) / 1e5, lng: Math.round(lng * 1e5) / 1e5 });
+    if (out.length >= 3000) break;
+  }
+  return out;
+}
+
+/** Maršruta punkti secībā: sākums, kravas auto ar koordinātēm, beigas. */
+export function cargoRoutePoints(
+  plan: CargoPlanState,
+  bucket: Exclude<CargoBucket, "none">,
+  orders: ReadonlyArray<Pick<LogisticsOrder, "id" | "pickupLat" | "pickupLng">>,
+): CargoLatLng[] {
+  const route = plan.routes[bucket];
+  const byId = new Map(orders.map((o) => [o.id, o]));
+  const stops = carsInCargoBucket(plan, bucket).flatMap((c) => {
+    const o = byId.get(c.carId);
+    return o && o.pickupLat != null && o.pickupLng != null ? [{ lat: o.pickupLat, lng: o.pickupLng }] : [];
+  });
+  return [
+    ...(route.start ? [{ lat: route.start.lat, lng: route.start.lng }] : []),
+    ...stops,
+    ...(route.end ? [{ lat: route.end.lat, lng: route.end.lng }] : []),
+  ];
+}
+
+/** Maršruta punktu atslēga: sākums, pieturas secībā, beigas. */
+export function cargoRoutePointsKey(points: ReadonlyArray<CargoLatLng>): string {
+  return points.map((p) => `${p.lat.toFixed(4)},${p.lng.toFixed(4)}`).join("|");
 }
 
 export function normalizeCargoCar(raw: unknown): CargoCarState | null {
@@ -227,9 +274,11 @@ export function moveCargoCar(
   const target = carsInCargoBucket({ ...plan, cars: others }, bucket);
   const atIndex = index == null ? target.length : Math.max(0, Math.min(target.length, index));
   target.splice(atIndex, 0, { ...current, bucket, sort: atIndex });
+  // Visiem kravas auto jauna secība pēc pozīcijas, citādi vienāds `sort` sakārtojas pēc ID.
+  const ordered = target.map((c, i) => ({ ...c, sort: i }));
   return {
     ...plan,
-    cars: reindexCargoSort([...others.filter((c) => c.bucket !== bucket), ...target]),
+    cars: reindexCargoSort([...others.filter((c) => c.bucket !== bucket), ...ordered]),
     updatedAt: at,
   };
 }
@@ -264,7 +313,7 @@ export function setCargoRouteEndpoint(
 ): CargoPlanState {
   return {
     ...plan,
-    routes: { ...plan.routes, [bucket]: { ...plan.routes[bucket], [end]: value, distanceKm: null, durationMin: null } },
+    routes: { ...plan.routes, [bucket]: { ...plan.routes[bucket], [end]: value, distanceKm: null, durationMin: null, path: [], pathKey: "" } },
     updatedAt: at,
   };
 }

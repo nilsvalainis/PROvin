@@ -42,7 +42,9 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(client).toContain("IrissLogistikaCabinet");
     expect(client).toContain('onPatchOrder={(id, action) => void patchOrder(id, action)}');
     expect(client).toContain("Nav aktīvu auto. Piegādātie ir arhīvā.");
-    expect(client).toContain("Iepriekš izmantotie punkti");
+    // Kartē "Iepriekš izmantotie punkti" vietā ir slēdzis "Rādīt nosaukumus".
+    expect(client).not.toContain("Iepriekš izmantotie punkti");
+    expect(client).toContain("Rādīt nosaukumus");
     expect(client).toContain("Atvērt izsolē");
     expect(client).toContain("+ Nopirkts");
     expect(listApi).toContain("LOGISTICS_DEFAULT_LIST_VIEW");

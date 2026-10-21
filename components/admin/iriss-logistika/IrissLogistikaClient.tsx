@@ -18,8 +18,11 @@ import { filterLogisticsOrdersByView, isLogisticsOrderActive, isLogisticsOrderAr
 import { CABINET_PICKUP_STAGE_LV, type CabinetPickup, type CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
 import {
   CARGO_COLOR_FALLBACK,
+  cargoRoutePoints,
+  cargoRoutePointsKey,
   carsInCargoBucket,
   emptyCargoPlan,
+  normalizeCargoPath,
   moveCargoCar,
   type CargoBucket,
   type CargoPlanState,
@@ -39,7 +42,6 @@ import {
 } from "@/lib/iriss-logistics-map-print";
 import {
   formatLogisticsAddress,
-  formatLogisticsDate,
   formatLogisticsEur,
   LOGISTICS_AUCTIONS,
   LOGISTICS_DEFAULT_LIST_VIEW,
@@ -64,6 +66,8 @@ type Props = {
   canEnableTotp?: boolean;
 };
 
+const LABELS_PREF_KEY = "iriss.logistics.mapLabels";
+
 /** Cik ilgi punkts kartē lēkā pēc klikšķa uz rindas vai punkta. */
 const LOGISTICS_BOUNCE_MS = 1600;
 
@@ -86,7 +90,7 @@ export function IrissLogistikaClient({
   const [activeId, setActiveId] = useState<string | null>(
     initialOrders.find((o) => isLogisticsOrderActive(o))?.id ?? null,
   );
-  const [showPrevious, setShowPrevious] = useState(false);
+  const [showLabels, setShowLabels] = useState(false);
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [pointId, setPointId] = useState<string | null>(initialPoints[0]?.id ?? null);
   const [preview, setPreview] = useState<{ lat: number; lng: number } | null>(null);
@@ -210,34 +214,66 @@ export function IrissLogistikaClient({
     if (body.templates) setCargoTemplates(body.templates);
   }
 
-  async function refreshCargoDirections(bucket: "next" | "after") {
-    const route = cargoPlan.routes[bucket];
-    const stops = carsInCargoBucket(cargoPlan, bucket)
-      .map((c) => orders.find((o) => o.id === c.carId))
-      .filter((o): o is LogisticsOrder => Boolean(o && o.pickupLat != null && o.pickupLng != null))
-      .map((o) => ({ lat: o.pickupLat as number, lng: o.pickupLng as number }));
-    const points = [
-      route.start ? { lat: route.start.lat, lng: route.start.lng } : null,
-      ...stops,
-      route.end ? { lat: route.end.lat, lng: route.end.lng } : null,
-    ].filter((p): p is { lat: number; lng: number } => Boolean(p));
-    if (points.length < 2) return;
+  /**
+   * Maršruts mūsu kartē: Directions API līnija + km/laiks, saglabāti kravu plānā.
+   * `base` ir tikko mainītais plāns (ieslēgts maršruts, jauns sākums), lai neaizrakstītu to ar veco.
+   */
+  async function refreshCargoDirections(bucket: "next" | "after", base: CargoPlanState = cargoPlan) {
+    const points = cargoRoutePoints(base, bucket, orders);
+    if (points.length < 2) {
+      setNotice("Maršrutam vajag vismaz 2 punktus ar adresi (sākums, auto, beigas).");
+      return;
+    }
     const res = await fetch("/api/admin/iriss-logistics/directions", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ points }),
-    });
-    const body = (await res.json()) as { distanceKm?: number; durationMin?: number };
-    if (body.distanceKm == null) return;
+    }).catch(() => null);
+    const body = (res ? await res.json().catch(() => ({})) : {}) as {
+      distanceKm?: number;
+      durationMin?: number;
+      path?: Array<{ lat: number; lng: number }>;
+      notice?: string;
+    };
+    if (body.distanceKm == null) {
+      setNotice(body.notice || "Maršrutu neizdevās sastādīt.");
+      return;
+    }
     const next: CargoPlanState = {
-      ...cargoPlan,
+      ...base,
       routes: {
-        ...cargoPlan.routes,
-        [bucket]: { ...cargoPlan.routes[bucket], distanceKm: body.distanceKm, durationMin: body.durationMin ?? null },
+        ...base.routes,
+        [bucket]: {
+          ...base.routes[bucket],
+          distanceKm: body.distanceKm,
+          durationMin: body.durationMin ?? null,
+          path: normalizeCargoPath(body.path),
+          pathKey: cargoRoutePointsKey(points),
+        },
       },
     };
     await persistCargoPlan(next);
+  }
+
+  // "Rādīt nosaukumus" atceras katrs lietotājs savā pārlūkā.
+  useEffect(() => {
+    try {
+      setShowLabels(window.localStorage.getItem(LABELS_PREF_KEY) === "1");
+    } catch {
+      // privāts režīms: paliek izslēgts
+    }
+  }, []);
+
+  function toggleLabels() {
+    setShowLabels((v) => {
+      try {
+        window.localStorage.setItem(LABELS_PREF_KEY, v ? "0" : "1");
+      } catch {
+        // nav krātuves
+      }
+      return !v;
+    });
   }
 
   /** Statuss ar vienu klikšķi: uzreiz redzams, ja serveris atsaka - atgriežas. */
@@ -354,6 +390,14 @@ export function IrissLogistikaClient({
     return m;
   }, [cargoPlan]);
   const activeRoute = cargoPlan.routes.next.enabled ? "next" : cargoPlan.routes.after.enabled ? "after" : null;
+  /** Katras ieslēgtās kravas maršruts kartē savā krāsā. */
+  const routePaths = useMemo(
+    () =>
+      (["next", "after"] as const)
+        .filter((b) => cargoPlan.routes[b].enabled && cargoPlan.routes[b].path.length > 1)
+        .map((b) => ({ path: cargoPlan.routes[b].path, color: CARGO_COLOR_FALLBACK[b] })),
+    [cargoPlan],
+  );
   const routeEnds = useMemo(() => {
     if (!activeRoute) return [] as Array<{ lat: number; lng: number; kind: "start" | "end"; type?: string }>;
     const r = cargoPlan.routes[activeRoute];
@@ -734,14 +778,16 @@ export function IrissLogistikaClient({
                   ) : null}
                 </p>
                 <div className="flex flex-wrap items-center justify-end gap-1.5">
-                  <button
-                    type="button"
-                    aria-pressed={showPrevious}
-                    onClick={() => setShowPrevious((v) => !v)}
-                    className={`rounded-full px-2.5 py-1 text-[12px] font-semibold ${showPrevious ? "bg-[var(--acc-soft)] text-[var(--acc)]" : "bg-[#f3f4f6]"}`}
-                  >
-                    Iepriekš izmantotie punkti
-                  </button>
+                  <label className="mr-1 inline-flex cursor-pointer items-center gap-2 text-[12px] font-semibold">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={showLabels}
+                      className={`iriss-log-switch sm ${showLabels ? "on" : ""}`}
+                      onClick={() => toggleLabels()}
+                    />
+                    Rādīt nosaukumus
+                  </label>
                   <button
                     type="button"
                     onClick={() => void printCurrentMap()}
@@ -770,14 +816,15 @@ export function IrissLogistikaClient({
                     ref={mapHandleRef}
                     fill
                     height={420}
-                    mode={printing || mapFullscreen ? "cars" : showPrevious ? "previous" : "cars"}
-                    orders={showPrevious && !printing && !mapFullscreen ? [] : visibleOrders}
+                    mode="cars"
+                    orders={visibleOrders}
                     previous={previous}
                     selectedIds={selectedSet}
                     focus={printing ? null : preview}
                     lockView={printing}
                     printNumbers={printing ? printNumbers : undefined}
-                    pinVariant={showPrevious && !printing && !mapFullscreen ? "default" : "cargo"}
+                    pinVariant="cargo"
+                    showLabels={showLabels}
                     cargoByCarId={cargoByCarId}
                     showOnMapIds={showOnMapIds}
                     bounceCarId={bounceId}
@@ -785,14 +832,9 @@ export function IrissLogistikaClient({
                     statusByCarId={statusByCarId}
                     routeNumbers={routeNumbers}
                     routeEnds={routeEnds}
-                    routeColor={activeRoute === "after" ? CARGO_COLOR_FALLBACK.after : CARGO_COLOR_FALLBACK.next}
+                    routePaths={routePaths}
                     onHoverCar={setHoverId}
                     onSelect={(id) => {
-                      if (showPrevious && !mapFullscreen) {
-                        setPointId(id);
-                        setPageTab("points");
-                        return;
-                      }
                       toggleSelect(id);
                       pulseBounce(id);
                       setPopupId(id);
@@ -815,27 +857,6 @@ export function IrissLogistikaClient({
                   </ul>
                 </div>
               </div>
-              {showPrevious ? (
-                <ul className="iriss-log-no-print border-t border-[#f3f4f6] px-3 py-2 text-[13px]">
-                  {previous.map((p) => (
-                    <li key={p.pointId}>
-                      <button type="button" className="flex w-full items-center gap-2 py-1.5 text-left" onClick={() => { setPointId(p.pointId); setPageTab("points"); }}>
-                        <span className="min-w-0 flex-1 truncate">
-                          {p.city || p.name}
-                          {p.auction ? (
-                            <>
-                              {" · "}
-                              <IrissAuctionLogo name={p.auction} />
-                            </>
-                          ) : null}
-                        </span>
-                        <span className="text-[12px] text-[var(--ink3)]">{p.lastPickupDate ? `pēd. ${formatLogisticsDate(p.lastPickupDate)}` : ""}</span>
-                        <span className="tabular-nums text-[var(--ink2)]">{p.useCount}×</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
             </div>
             </div>
           </div>
@@ -863,7 +884,7 @@ export function IrissLogistikaClient({
                 onPlanChange={(next) => void persistCargoPlan(next)}
                 onRowClick={pulseBounce}
                 onRowHover={setHoverId}
-                onRefreshDirections={(bucket) => void refreshCargoDirections(bucket)}
+                onRefreshDirections={(bucket, base) => void refreshCargoDirections(bucket, base)}
                 onAddManual={addManualCar}
               />
               {popupOrder ? (

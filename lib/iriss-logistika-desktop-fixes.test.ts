@@ -31,7 +31,8 @@ describe("Loģistika map pin card", () => {
     expect(map).not.toContain("head.statusLv || head.auction");
     // Pastāvīgas kartītes vairs nav: punkts + grupa, nosaukums tikai hover/izceltam.
     expect(map).not.toContain("iriss-log-pin-card");
-    expect(map).toContain("clusterPixelPoints(placed, 30)");
+    expect(map).toContain("clusterPixelPoints(placed, input.showLabels ? 14 : 30)");
+    expect(map).toContain("pinLabelHtml(");
     expect(map).toContain("iriss-log-pin-tip");
   });
 });
