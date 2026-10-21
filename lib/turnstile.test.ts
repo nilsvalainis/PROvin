@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   TURNSTILE_SECRET_KEY_ENV,
@@ -139,5 +141,18 @@ describe("gatePartnerLoginTurnstile", () => {
       status: 400,
       error: "turnstile_failed",
     });
+  });
+});
+
+describe("client bundle site key", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("reads NEXT_PUBLIC_TURNSTILE_SITE_KEY literally so Next.js can inline it in the browser", () => {
+    const src = readFileSync(join(__dirname, "turnstile.ts"), "utf8");
+    expect(src).toContain("process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY");
+    vi.stubEnv(TURNSTILE_SITE_KEY_ENV, SITE);
+    expect(getTurnstileSiteKey()).toBe(SITE);
   });
 });
