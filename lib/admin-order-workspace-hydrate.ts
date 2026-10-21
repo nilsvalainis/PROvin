@@ -43,6 +43,27 @@ function revisionFromRaw(raw: string | null | undefined): number {
   }
 }
 
+/**
+ * Pēc pārlādes: ja pārlūka kopija ir jaunāka par serveri, saglabā to.
+ * Nekad nepārraksta jaunāku servera revīziju. Bez durable persistences (veci pasūtījumi) neraksta.
+ */
+export function shouldAutosaveHydratedLocalDraft(args: {
+  persistenceEnabled: boolean;
+  source: WorkspaceHydrateSource;
+  localRaw: string | null;
+  backupRaw?: string | null;
+  serverWorkspaceJson: string | null;
+}): boolean {
+  if (!args.persistenceEnabled) return false;
+  if (args.source !== "local" && args.source !== "backup") return false;
+  const chosenRaw =
+    args.source === "backup"
+      ? pickNewestBackupSnapshotRaw(args.backupRaw)?.data ?? args.backupRaw ?? null
+      : args.localRaw;
+  if (revisionFromRaw(args.serverWorkspaceJson) > revisionFromRaw(chosenRaw)) return false;
+  return parseWorkspaceSnapshotSavedAtMs(chosenRaw) > parseWorkspaceSnapshotSavedAtMs(args.serverWorkspaceJson);
+}
+
 export function resolveOrderWorkspaceHydration(args: {
   localRaw: string | null;
   localRawLegacyV2: string | null;
