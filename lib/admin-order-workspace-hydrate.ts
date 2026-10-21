@@ -4,7 +4,6 @@
  * Foto lauki: salipina visus avotus, lai jaunāks tukšs localStorage nepazaudētu servera bildes.
  */
 import {
-  collectWorkspaceSourceBlockPhotoIds,
   createDefaultSourceBlocks,
   emptyVendorAvotuBlock,
   hydrateWorkspaceFromStorage,
@@ -16,6 +15,7 @@ import {
   type OrderWorkspacePersistBody,
 } from "@/lib/admin-order-workspace-persist";
 import { clearedFieldsSnapshotField } from "@/lib/admin-cleared-fields";
+import { deletedPhotoIdsSnapshotField } from "@/lib/admin-photo-tombstones";
 import { sourceBlockWipesSnapshotField } from "@/lib/admin-source-block-wipes";
 import {
   applyOrderPdfVisibilityDefaults,
@@ -121,6 +121,8 @@ export function resolveOrderWorkspaceHydration(args: {
         incidentPhotos: data.incidentPhotos,
         ...sourceBlockWipesSnapshotField(data.sourceBlockWipes),
         ...clearedFieldsSnapshotField(data.clearedFields),
+        // K1: bez kapakmeņiem apvienošana atdzīvinātu dzēstās bildes no vecākiem snapshotiem.
+        ...deletedPhotoIdsSnapshotField(data.deletedPhotoIds),
       },
     });
   }
@@ -132,19 +134,6 @@ export function resolveOrderWorkspaceHydration(args: {
       mergedBody = coalesceOrderWorkspacePersistBody(mergedBody, other.body);
     }
     const maxRevision = hydratedCandidates.reduce((n, c) => Math.max(n, c.revision), 0);
-    const keptPhotoIds = new Set<string>([
-      ...collectWorkspaceSourceBlockPhotoIds(mergedBody.sourceBlocks),
-      ...(mergedBody.incidentPhotos ?? []).map((photo) => photo.id),
-    ]);
-    const asv = mergedBody.sourceBlocks.asv;
-    const ccVin = mergedBody.sourceBlocks.cc_vin;
-    const listing = mergedBody.sourceBlocks.listing_analysis;
-    for (const group of [...(asv?.photoGroups ?? []), ...(ccVin?.photoGroups ?? []), ...(listing?.photoGroups ?? [])]) {
-      for (const photo of group.photos ?? []) {
-        if (photo?.id) keptPhotoIds.add(photo.id);
-      }
-    }
-    const deleted = (chosen.data.deletedPhotoIds ?? []).filter((id) => !keptPhotoIds.has(id));
     return {
       source: chosen.source,
       hydrated: {
@@ -159,7 +148,7 @@ export function resolveOrderWorkspaceHydration(args: {
         vehicleAiExtractionMeta: mergedBody.vehicleAiExtractionMeta,
         incidentPhotoGroups: mergedBody.incidentPhotoGroups ?? [],
         incidentPhotos: mergedBody.incidentPhotos ?? [],
-        ...(deleted.length ? { deletedPhotoIds: deleted } : {}),
+        ...deletedPhotoIdsSnapshotField(mergedBody.deletedPhotoIds),
       },
       workspaceRevision: maxRevision,
     };
