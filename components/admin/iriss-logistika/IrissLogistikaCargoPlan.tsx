@@ -605,8 +605,72 @@ function RouteBlock({
         ) : (
           <span className="iriss-log-btn-sec opacity-40">Atvērt Google Maps</span>
         )}
+        <DriverLinkButton bucket={bucket} disabled={rows.length === 0} />
       </div>
     </div>
+  );
+}
+
+/** Tikai lasāma saite šoferim (pieturas, adreses, navigācija). Kopīgo caur iPhone kopīgošanu vai nokopē. */
+function DriverLinkButton({ bucket, disabled }: { bucket: "next" | "after"; disabled: boolean }) {
+  const [state, setState] = useState<"idle" | "busy" | "copied" | "revoked" | "error">("idle");
+
+  async function share() {
+    setState("busy");
+    try {
+      const res = await fetch("/api/admin/iriss-logistics/driver-link", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ bucket }),
+      });
+      const data = (await res.json().catch(() => null)) as { path?: string } | null;
+      if (!res.ok || !data?.path) throw new Error("create");
+      const url = `${window.location.origin}${data.path}`;
+      const title = bucket === "next" ? "Nākošā krava" : "Aiznākošā krava";
+      if (typeof navigator.share === "function") {
+        await navigator.share({ title, url }).catch(() => undefined);
+        setState("idle");
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setState("copied");
+    } catch {
+      setState("error");
+    }
+  }
+
+  async function revoke() {
+    if (!window.confirm("Atsaukt visas šīs kravas šofera saites?")) return;
+    setState("busy");
+    const res = await fetch("/api/admin/iriss-logistics/driver-link", {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ bucket }),
+    }).catch(() => null);
+    setState(res?.ok ? "revoked" : "error");
+  }
+
+  return (
+    <>
+      <button type="button" className="iriss-log-btn-sec" disabled={disabled || state === "busy"} onClick={() => void share()}>
+        {state === "copied" ? "Saite nokopēta" : "Saite šoferim"}
+      </button>
+      <button
+        type="button"
+        className="text-[12px] font-medium text-[#6e6e73] underline decoration-dotted underline-offset-2"
+        disabled={state === "busy"}
+        onClick={() => void revoke()}
+      >
+        {state === "revoked" ? "Saites atsauktas" : "Atsaukt saites"}
+      </button>
+      {state === "error" ? (
+        <p className="w-full text-[12.5px] text-[#9b1c13]" role="alert">
+          Neizdevās. Vajag rakstīšanas tiesības loģistikā.
+        </p>
+      ) : null}
+    </>
   );
 }
 
