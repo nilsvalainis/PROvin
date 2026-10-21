@@ -299,8 +299,8 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       for (const r of routePaths ?? []) {
         if (r.path.length < 2) continue;
         // Kā Google Maps: zila līnija ar tumšāku apmali.
-        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: ROUTE_LINE_BORDER, strokeOpacity: 1, strokeWeight: 8, zIndex: 1 }));
-        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: r.color, strokeOpacity: 1, strokeWeight: 6, zIndex: 2 }));
+        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: ROUTE_LINE_BORDER, strokeOpacity: 1, strokeWeight: 5, zIndex: 1 }));
+        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: r.color, strokeOpacity: 1, strokeWeight: 3, zIndex: 2 }));
       }
     } else {
     for (const p of pts) {
