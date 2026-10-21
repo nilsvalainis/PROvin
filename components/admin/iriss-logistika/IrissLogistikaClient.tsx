@@ -67,6 +67,9 @@ type Props = {
 };
 
 const LABELS_PREF_KEY = "iriss.logistics.mapLabels";
+const FOCUS_PREF_KEY = "iriss.logistics.mapFocus";
+
+type MapFocus = "all" | "next" | "after";
 
 /** Cik ilgi punkts kartē lēkā pēc klikšķa uz rindas vai punkta. */
 const LOGISTICS_BOUNCE_MS = 1600;
@@ -91,6 +94,8 @@ export function IrissLogistikaClient({
     initialOrders.find((o) => isLogisticsOrderActive(o))?.id ?? null,
   );
   const [showLabels, setShowLabels] = useState(false);
+  /** Kartē tikai viens reiss: pārējo auto punkti netraucē skatīt maršrutu. */
+  const [mapFocus, setMapFocus] = useState<MapFocus>("all");
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [pointId, setPointId] = useState<string | null>(initialPoints[0]?.id ?? null);
   const [preview, setPreview] = useState<{ lat: number; lng: number } | null>(null);
@@ -230,6 +235,7 @@ export function IrissLogistikaClient({
       return;
     }
     setRouteUi((prev) => ({ ...prev, [bucket]: { busy: true, notice: "" } }));
+    chooseMapFocus(bucket);
     const res = await fetch("/api/admin/iriss-logistics/directions", {
       method: "POST",
       credentials: "include",
@@ -271,6 +277,24 @@ export function IrissLogistikaClient({
       // privāts režīms: paliek izslēgts
     }
   }, []);
+
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem(FOCUS_PREF_KEY);
+      if (v === "next" || v === "after") setMapFocus(v);
+    } catch {
+      // nav krātuves
+    }
+  }, []);
+
+  function chooseMapFocus(next: MapFocus) {
+    setMapFocus(next);
+    try {
+      window.localStorage.setItem(FOCUS_PREF_KEY, next);
+    } catch {
+      // nav krātuves
+    }
+  }
 
   function toggleLabels() {
     setShowLabels((v) => {
@@ -403,23 +427,42 @@ export function IrissLogistikaClient({
     }
     return m;
   }, [cargoPlan]);
-  const activeRoute = cargoPlan.routes.next.enabled ? "next" : cargoPlan.routes.after.enabled ? "after" : null;
   /** Katras ieslēgtās kravas maršruts kartē savā krāsā. */
+  /** Reisi, kurus kartē rādīt: viens izvēlētais vai visi ieslēgtie maršruti. */
+  const focusBuckets = useMemo(
+    () => (mapFocus === "all" ? (["next", "after"] as const).filter((b) => cargoPlan.routes[b].enabled) : [mapFocus]),
+    [mapFocus, cargoPlan],
+  );
   const routePaths = useMemo(
     () =>
-      (["next", "after"] as const)
+      focusBuckets
         .filter((b) => cargoPlan.routes[b].enabled && cargoPlan.routes[b].path.length > 1)
         .map((b) => ({ path: cargoPlan.routes[b].path, color: CARGO_COLOR_FALLBACK[b] })),
-    [cargoPlan],
+    [cargoPlan, focusBuckets],
   );
   const routeEnds = useMemo(() => {
-    if (!activeRoute) return [] as Array<{ lat: number; lng: number; kind: "start" | "end"; type?: string }>;
-    const r = cargoPlan.routes[activeRoute];
     const ends: Array<{ lat: number; lng: number; kind: "start" | "end"; type?: string }> = [];
-    if (r.start) ends.push({ lat: r.start.lat, lng: r.start.lng, kind: "start", type: r.start.type });
-    if (r.end) ends.push({ lat: r.end.lat, lng: r.end.lng, kind: "end", type: r.end.type });
+    for (const b of focusBuckets) {
+      const r = cargoPlan.routes[b];
+      if (!r.enabled) continue;
+      if (r.start) ends.push({ lat: r.start.lat, lng: r.start.lng, kind: "start", type: r.start.type });
+      if (r.end) ends.push({ lat: r.end.lat, lng: r.end.lng, kind: "end", type: r.end.type });
+    }
     return ends;
-  }, [activeRoute, cargoPlan]);
+  }, [cargoPlan, focusBuckets]);
+  /** Kartes punkti: izvēlētajā reisā tikai tā kravas auto. */
+  const mapOrders = useMemo(
+    () => (mapFocus === "all" ? visibleOrders : visibleOrders.filter((o) => (cargoByCarId.get(o.id) ?? "none") === mapFocus)),
+    [mapFocus, visibleOrders, cargoByCarId],
+  );
+  const bucketCounts = useMemo(() => {
+    const out = { next: 0, after: 0 };
+    for (const o of visibleOrders) {
+      const b = cargoByCarId.get(o.id);
+      if (b === "next" || b === "after") out[b] += 1;
+    }
+    return out;
+  }, [visibleOrders, cargoByCarId]);
   const popupOrder = orders.find((o) => o.id === popupId) ?? null;
   const popupStage = (cargoPickups.find((p) => p.carId === popupId)?.stage ?? "waiting") as CabinetPickupStage;
 
@@ -791,6 +834,28 @@ export function IrissLogistikaClient({
                     </span>
                   ) : null}
                 </p>
+                <div className="iriss-log-trip-seg" role="radiogroup" aria-label="Kartē rādīt">
+                  {(["all", "next", "after"] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      role="radio"
+                      aria-checked={mapFocus === f}
+                      className={mapFocus === f ? "on" : ""}
+                      onClick={() => chooseMapFocus(f)}
+                    >
+                      {f === "all" ? (
+                        "Visi"
+                      ) : (
+                        <>
+                          <i style={{ background: CARGO_COLOR_FALLBACK[f] }} />
+                          {f === "next" ? "Nākošā" : "Aiznākošā"}
+                          <b>{bucketCounts[f]}</b>
+                        </>
+                      )}
+                    </button>
+                  ))}
+                </div>
                 <div className="flex flex-wrap items-center justify-end gap-1.5">
                   <label className="mr-1 inline-flex cursor-pointer items-center gap-2 text-[12px] font-semibold">
                     <button
@@ -831,7 +896,7 @@ export function IrissLogistikaClient({
                     fill
                     height={420}
                     mode="cars"
-                    orders={visibleOrders}
+                    orders={printing ? visibleOrders : mapOrders}
                     previous={previous}
                     selectedIds={selectedSet}
                     focus={printing ? null : preview}

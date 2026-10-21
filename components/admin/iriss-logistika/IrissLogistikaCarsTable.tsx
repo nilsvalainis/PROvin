@@ -242,8 +242,8 @@ export function IrissLogistikaCarsTable({
               </div>
               <div className="mt-2.5 flex items-center gap-2 text-[12px] text-[#6e6e73]">
                 <BucketDots bucket={bucket} onChange={(b) => onSetBucket(order.id, b)} />
-                <span>{CARGO_BUCKET_LV[bucket]}</span>
-                <span className="ml-auto tabular-nums">Dok. {docs.have}/{docs.expected}</span>
+                <span className="min-w-0 truncate whitespace-nowrap">{CARGO_BUCKET_LV[bucket]}</span>
+                <span className="ml-auto shrink-0 whitespace-nowrap tabular-nums">Dok. {docs.have}/{docs.expected}</span>
                 {order.source === "manual" ? (
                   <DeleteManual order={order} onDelete={onDeleteManual} />
                 ) : (
