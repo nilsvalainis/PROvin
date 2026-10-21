@@ -205,7 +205,7 @@ function WorkspaceSwitch({ ws }: { ws: AdminWorkspace }) {
       <Link href="/admin/dashboard" onClick={() => writeWsCookie("pro")} className={seg(ws === "pro")} aria-current={ws === "pro" ? "page" : undefined}>
         PRO
       </Link>
-      <Link href="/admin/iriss" onClick={() => writeWsCookie("iriss")} className={seg(ws === "iriss")} aria-current={ws === "iriss" ? "page" : undefined}>
+      <Link href="/admin/iriss/pasutijumi" onClick={() => writeWsCookie("iriss")} className={seg(ws === "iriss")} aria-current={ws === "iriss" ? "page" : undefined}>
         IRISS
       </Link>
     </div>
@@ -213,6 +213,8 @@ function WorkspaceSwitch({ ws }: { ws: AdminWorkspace }) {
 }
 
 const STORAGE_KEY = "admin-sidebar-collapsed";
+/** Sānjosla datorā bez sava scroll: pavadzīmes tikai 2, pārējās caur "Visas ›". */
+const IRISS_SIDEBAR_WAYBILL_LIMIT = 2;
 
 /**
  * Žetonu skaiti — viens kopīgs avots katram URL (modulī), nevis atsevišķs fetch katram žetonam/komponentam.
@@ -443,6 +445,7 @@ export function AdminSidebar({
     <aside
       className={`sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-[#e5e5ea] bg-white transition-[width] duration-200 md:flex ${collapsed ? "w-[64px]" : "w-[232px]"}`}
       aria-label="Galvenā izvēlne"
+      data-iriss-nav=""
     >
       <div className={`flex h-12 shrink-0 items-center ${collapsed ? "justify-center" : "justify-between gap-2 pl-5 pr-2"}`}>
         {collapsed ? null : (
@@ -491,7 +494,7 @@ export function AdminSidebar({
             ) : (
               <p className="px-2.5 pb-1 pt-3 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#8e8e93]">{g.title}</p>
             )}
-            {g.items.map((it) => {
+            {g.items.filter((it) => it !== I_MENU).map((it) => {
               const on = it.match(pathname);
               const n = it.badge ? badges[it.badge] : 0;
               const tone = navBadgeTone(it.badge, badges);
@@ -526,7 +529,7 @@ export function AdminSidebar({
             })}
           </div>
         ))}
-        {ws === "iriss" && !collapsed ? <IrissPavadzimesSidebarCard /> : null}
+        {ws === "iriss" && !collapsed ? <IrissPavadzimesSidebarCard limit={IRISS_SIDEBAR_WAYBILL_LIMIT} /> : null}
         {ws === "iriss" && !collapsed ? <IrissLimitsSidebarCard /> : null}
       </nav>
       <div className={`shrink-0 border-t border-[#e5e5ea] p-2.5 ${collapsed ? "flex justify-center" : ""}`}>

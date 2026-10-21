@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminMobileCountBadge, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
@@ -8,6 +9,8 @@ import { IrissPavadzimesPlateStrip } from "@/components/admin/IrissPavadzimesPla
 import { useIrissWaybillPlateStrip } from "@/components/admin/useIrissWaybillPlateStrip";
 import {
   cheapIrissMenuCount,
+  IRISS_DESKTOP_MEDIA,
+  irissDesktopHomeHref,
   irissMobileMenuGroups,
   irissMobileMenuItemsFor,
 } from "@/lib/iriss-mobile-menu";
@@ -38,6 +41,21 @@ function useCheapIrissBadgeCounts(enabled: boolean): { irissMatches: number; iri
   return counts;
 }
 
+/** Izvēlne ir tikai telefonam. Datorā (md+) uzreiz atver pirmo sadaļu (parasti Pasūtījumi). */
+function useDesktopRedirect(href: string | null) {
+  const router = useRouter();
+  useEffect(() => {
+    if (!href) return;
+    const mq = window.matchMedia(IRISS_DESKTOP_MEDIA);
+    const go = () => {
+      if (mq.matches) router.replace(href);
+    };
+    go();
+    mq.addEventListener("change", go);
+    return () => mq.removeEventListener("change", go);
+  }, [href, router]);
+}
+
 export function IrissMobileMenuHome({
   sections,
   isAdmin,
@@ -47,6 +65,7 @@ export function IrissMobileMenuHome({
 }) {
   const items = irissMobileMenuItemsFor(sections, isAdmin);
   const groups = irissMobileMenuGroups(items);
+  useDesktopRedirect(irissDesktopHomeHref(items));
   const canReadWaybills = isAdmin || sections.includes("pavadzimes");
   const badges = useCheapIrissBadgeCounts(isAdmin);
   const plates = useIrissWaybillPlateStrip(canReadWaybills);
@@ -83,22 +102,9 @@ export function IrissMobileMenuHome({
           ))}
         </div>
       </div>
-      <div className="hidden px-6 py-8 md:block">
-        <h1 className="text-[28px] font-bold tracking-tight text-[var(--label,#0b0c10)]">IRISS</h1>
-        <p className="mt-1 text-[14px] text-[var(--label-secondary,#5e636e)]">Izvēlies sadaļu sānjoslā vai zemāk.</p>
-        <div className="mt-6 grid max-w-xl grid-cols-1 gap-2">
-          {items.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              className="flex min-h-11 items-center justify-between rounded-[10px] bg-[var(--surface,#fff)] px-4 text-[15px] font-medium text-[var(--label,#0b0c10)]"
-            >
-              {item.label}
-              <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
-            </Link>
-          ))}
-        </div>
-      </div>
+      {items.length === 0 ? (
+        <p className="hidden px-6 py-8 text-[14px] text-[var(--label-secondary,#5e636e)] md:block">Nav pieejamu sadaļu.</p>
+      ) : null}
     </div>
   );
 }

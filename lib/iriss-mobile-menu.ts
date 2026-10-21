@@ -83,3 +83,11 @@ export function cheapIrissMenuCount(
   if (item.badge === "waybills") return Math.max(0, badges.waybills);
   return 0;
 }
+
+/** Datora platums (Tailwind `md`), no kura IRISS izvēlnes lapu nerāda. */
+export const IRISS_DESKTOP_MEDIA = "(min-width: 768px)";
+
+/** Datorā IRISS atver pirmo atļauto sadaļu (adminam Pasūtījumi). */
+export function irissDesktopHomeHref(items: readonly IrissMobileMenuItem[]): string | null {
+  return items[0]?.href ?? null;
+}
