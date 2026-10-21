@@ -29,12 +29,15 @@ import { irissScanApifyPlatforms } from "@/lib/marketplace/query-from-scan";
 import type { MarketplaceVehicleCategory } from "@/lib/marketplace/types";
 import { planSilentAutosave } from "@/lib/iriss-pasutijumi-save-safety";
 
+/** Stabils noklusējums: efekts ar [finds] citādi griežas bez gala. */
+const EMPTY_FINDS: IrissScanFindCard[] = [];
+
 export function IrissScanEditor({
   initialRecord,
   unsavedDraft = false,
   showBack = true,
   newHits = 0,
-  finds = [],
+  finds = EMPTY_FINDS,
   onRecordChange,
   onDeleted,
 }: {
@@ -249,14 +252,17 @@ export function IrissScanEditor({
           />
           <p className="mt-1 text-[12px] text-[var(--ink3)]">
             {rec.vin.trim() ? rec.vin.trim() : "VIN nav"}
-            {formatIrissScanLastRead(rec.updatedAt) ? ` · pēdējā nolasīšana ${formatIrissScanLastRead(rec.updatedAt)}` : ""}
+            {persistId && formatIrissScanLastRead(rec.updatedAt) ? ` · pēdējā nolasīšana ${formatIrissScanLastRead(rec.updatedAt)}` : ""}
             {formatIrissScanNewHitsLabel(newHits) ? ` · ${formatIrissScanNewHitsLabel(newHits)}` : ""}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className="iriss-ok-chip inline-flex items-center rounded-full bg-[var(--s1)] px-3.5 text-[12px] text-[var(--ink2)] shadow-[var(--sh)]" aria-live="polite">
-            {busy ? "Saglabā..." : "Saglabāts"}
-          </span>
+          {/* Jaunam radaram, kas vēl nav saglabāts, "Saglabāts" maldinātu. */}
+          {busy || persistId ? (
+            <span className="iriss-ok-chip inline-flex items-center rounded-full bg-[var(--s1)] px-3.5 text-[12px] text-[var(--ink2)] shadow-[var(--sh)]" aria-live="polite">
+              {busy ? "Saglabā..." : "Saglabāts"}
+            </span>
+          ) : null}
           <IrissOverflowMenu label="Darbības">
             <IrissOverflowItem onClick={() => void togglePin()}>
               {rec.pinnedAt ? "Atspraust" : "Piespraust"}
