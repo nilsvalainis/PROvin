@@ -595,3 +595,97 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* "IRISS | PRO" pārslēgs telefona galvenē: viens pieskāriens = otra zona. */
+.admin-ios-theme .am-ws-switch {
+  display: inline-flex;
+  height: 28px;
+  align-items: stretch;
+  gap: 2px;
+  border-radius: 999px;
+  background: var(--fill-secondary, rgba(118, 118, 128, 0.12));
+  padding: 2px;
+}
+.admin-ios-theme .am-ws-switch span {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 9px;
+  color: var(--label-secondary, #6e6e73) !important;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.admin-ios-theme .am-ws-switch span.on {
+  background: var(--surface, #fff);
+  box-shadow: 0 1px 2px rgba(11, 12, 16, 0.12);
+  color: var(--label, #000) !important;
+}
+.admin-ios-theme .am-ws-switch[data-ws="iriss"] span.on {
+  color: #2f56d6 !important;
+}
+
+/* PRO sākums: 3 paziņojumu flīzes (skaits + tuvākais termiņš). */
+.pro-home-now {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.admin-ios-theme .pro-home-tile {
+  position: relative;
+  display: flex;
+  min-height: 92px;
+  flex-direction: column;
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  box-shadow: var(--am-card-shadow);
+  padding: 10px 10px 9px;
+}
+.admin-ios-theme .pro-home-tile .t {
+  color: var(--label-secondary, #6e6e73) !important;
+  font-size: 12px;
+  font-weight: 600;
+}
+.admin-ios-theme .pro-home-tile .n {
+  margin-top: 2px;
+  color: var(--label, #000) !important;
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.admin-ios-theme .pro-home-tile .s {
+  margin-top: auto;
+  color: var(--label-secondary, #6e6e73) !important;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.admin-ios-theme .pro-home-tile.tone-urgent .s {
+  color: #c2410c !important;
+}
+.admin-ios-theme .pro-home-tile.tone-overdue .s {
+  color: #b91c1c !important;
+}
+.admin-ios-theme .pro-home-tile.tone-ok .s {
+  color: #15803d !important;
+}
+.admin-ios-theme .pro-home-tile .o {
+  margin-top: auto;
+  color: #b91c1c !important;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.admin-ios-theme .pro-home-tile .o + .s {
+  margin-top: 1px;
+}
+
+/*
+ * Tumšās saites-pogas (`a` ar --chip-active-fg tekstu): admin tēma saitēm liek `color: inherit`,
+ * tāpēc "+" un "Jauns radars" bija melns uz melna. Pogām (`button`) šī problēma nav.
+ */
+.admin-ios-theme .admin-m a[class*="text-[var(--chip-active-fg)]"],
+.admin-ios-theme a[class*="text-[var(--chip-active-fg)]"] {
+  color: var(--chip-active-fg) !important;
+}

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
-import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
 import { useAdminShellLayout } from "@/components/admin/AdminShellLayoutContext";
 import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
@@ -13,6 +12,7 @@ import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
 import { formatAdminMobileBadgeCount } from "@/lib/admin-mobile-collapse";
 import { IrissPavadzimesMobileBar } from "@/components/admin/IrissPavadzimesMobileBar";
+import { AdminWorkspaceSwitch } from "@/components/admin/mobile/AdminWorkspaceSwitch";
 
 function isIrissMenuHome(pathname: string): boolean {
   return pathname === "/admin/iriss" || pathname === "/admin/iriss/";
@@ -62,7 +62,7 @@ export function AdminMobileTopBar({
               >
                 {title}
               </h1>
-              <IrissProjectIndicator className="shrink-0" />
+              <AdminWorkspaceSwitch />
             </div>
             {subtitle ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
           </div>
@@ -97,6 +97,7 @@ export function AdminMobileTopBar({
               >
                 {title}
               </h1>
+              <AdminWorkspaceSwitch />
             </div>
             {subtitle ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
           </div>
@@ -159,7 +160,8 @@ export function AdminMobileRoundBtn({
   );
   if (href) {
     return (
-      <Link href={href} aria-label={label} className={cls}>
+      // `admin-nav-link`: admin tēma visām saitēm piespiež melnu krāsu; bez tā "+" uz melnā fona nav redzams.
+      <Link href={href} aria-label={label} className={`admin-nav-link ${cls}`}>
         {inner}
       </Link>
     );

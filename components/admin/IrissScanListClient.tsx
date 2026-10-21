@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
-import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { IrissRadarBrandMark } from "@/components/admin/IrissRadarBrandMark";
 import { IrissScanEditor } from "@/components/admin/IrissScanEditor";
@@ -179,7 +178,7 @@ export function IrissScanListClient({
   );
 
   const listBody = (
-    <div className="iriss-scan-list min-w-0">
+    <div className="iriss-scan-list min-w-0 max-md:px-4">
       {visibleRows.length === 0 ? (
         <p className="mt-6 text-center text-[13px] text-[var(--ink3)]">
           {query.trim() ? "Nekas nav atrasts" : "Nav radara ierakstu"}
@@ -197,7 +196,7 @@ export function IrissScanListClient({
                 <Link
                   href={`/admin/iriss/scan/${encodeURIComponent(row.id)}`}
                   aria-label={`Atvērt radaru: ${formatIrissScanTitle(row.brandModel) || row.vin || "ieraksts"}`}
-                  className={`iriss-scan-row flex min-h-[72px] items-center gap-3 rounded-2xl bg-[var(--s1)] px-3.5 py-3 shadow-[var(--sh)] transition hover:bg-[var(--s2)] md:min-h-[64px] ${
+                  className={`iriss-scan-row flex min-h-[64px] items-center gap-3 rounded-2xl bg-[var(--s1)] px-4 py-3 shadow-[var(--sh)] transition hover:bg-[var(--s2)] ${
                     active ? "ring-1 ring-[var(--ink)]/10" : ""
                   }`}
                 >
@@ -207,24 +206,17 @@ export function IrissScanListClient({
                       {row.pinnedAt ? <Pin className="mt-1 h-3 w-3 shrink-0 fill-current text-[var(--ink3)]" aria-label="Piesprausts" /> : null}
                       <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[var(--ink)]">{formatIrissScanTitle(row.brandModel)}</p>
                     </div>
-                    <div className="mt-1 flex min-h-[16px] items-center gap-2 overflow-hidden" title={sourceText || "Nav saišu"}>
-                      {sources.length === 0 ? (
-                        <span className="text-[12px] text-[var(--ink2)]">Nav saišu</span>
-                      ) : (
-                        sources.map((s) => (
-                          <IrissAuctionLogo key={s.key} platform={s.logoKey} fallback={s.label} size="sm" />
-                        ))
-                      )}
-                    </div>
+                    {/* Bez izsoļu logo (Nils 21.10): viena klusa rinda ar avotu skaitu un pēdējo nolasīšanu. */}
+                    <p className="mt-1 truncate text-[12.5px] text-[var(--ink3)]" title={sourceText || "Nav saišu"}>
+                      {sources.length === 0 ? "Nav saišu" : `${sources.length} ${sources.length === 1 ? "avots" : "avoti"}`}
+                      {last ? ` · ${last}` : ""}
+                    </p>
                   </div>
-                  <div className="flex shrink-0 flex-col items-end gap-1">
-                    {hits > 0 ? (
-                      <span className="iriss-ok-chip inline-flex items-center rounded-full bg-[var(--chip-active-bg)] px-2.5 text-[var(--chip-active-fg)]">
-                        {formatIrissScanNewHitsLabel(hits)}
-                      </span>
-                    ) : null}
-                    {last ? <span className="whitespace-nowrap text-[11px] text-[var(--ink3)]">{last}</span> : null}
-                  </div>
+                  {hits > 0 ? (
+                    <span className="iriss-ok-chip inline-flex shrink-0 items-center rounded-full bg-[var(--chip-active-bg)] px-2.5 text-[var(--chip-active-fg)]">
+                      {formatIrissScanNewHitsLabel(hits)}
+                    </span>
+                  ) : null}
                   <ChevronRight className="h-4 w-4 shrink-0 text-[var(--ink3)]" aria-hidden />
                 </Link>
               </li>
@@ -303,7 +295,7 @@ export function IrissScanListClient({
           <div>
             {listBody}
             {mode === "list" && !desktop ? (
-              <div className="mt-5">
+              <div className="mt-6 max-md:px-4">
                 <IrissScanFinds finds={liveFinds} onStatus={(card, status) => void setFindStatus(card, status)} />
               </div>
             ) : null}
