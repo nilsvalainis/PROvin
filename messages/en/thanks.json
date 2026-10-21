@@ -4,6 +4,9 @@
     "body": "Your order has been registered. You will receive a confirmation email shortly; our team will start data collection and analysis.",
     "sessionLabel": "Session ID:",
     "downloadInvoice": "Download invoice (PDF)",
+    "invoiceAttachedTitle": "The invoice is attached to the email",
+    "invoiceAttachedBody": "Open the payment confirmation email. The invoice PDF is attached. This link no longer works on this device.",
+    "invoiceAttachedHome": "Back to home",
     "back": "Back to home"
   }
 }

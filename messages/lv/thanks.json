@@ -4,6 +4,9 @@
     "body": "Tavs pasūtījums ir reģistrēts. Drīz saņemsi apstiprinājumu e-pastā; mūsu komanda uzsāks datu apkopošanu un analīzi.",
     "sessionLabel": "Sesijas ID:",
     "downloadInvoice": "Lejuplādēt rēķinu (PDF)",
+    "invoiceAttachedTitle": "Rēķins ir pielikumā e-pastā",
+    "invoiceAttachedBody": "Atveriet maksājuma apstiprinājuma e-pastu. Rēķina PDF ir pielikumā. Šī saite šajā ierīcē vairs neder.",
+    "invoiceAttachedHome": "Uz sākumu",
     "back": "Atpakaļ uz sākumu"
   }
 }
