@@ -599,6 +599,15 @@
     white-space: nowrap;
   }
 
+  /* Zem numurzīmes, lai visas 3 zīmes ietilpst 360-430px ekrānā bez horizontālas ritināšanas. */
+  .iriss-plate-strip-item .iriss-plate-status {
+    gap: 4px;
+    min-height: 16px;
+    padding: 1px 7px;
+    font-size: 11px;
+    line-height: 14px;
+  }
+
   .iriss-plate-status-dot {
     display: inline-block;
     width: 6px;
