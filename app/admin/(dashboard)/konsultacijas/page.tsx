@@ -28,18 +28,20 @@ export default async function AdminConsultationsPage() {
 
   return (
     <div className="w-full max-w-none">
-      <AdminDashboardHeaderWithMenu>
-        <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
-          Apstrādes telpa
-        </p>
-        <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
-          Konsultācijas
-        </h1>
-      </AdminDashboardHeaderWithMenu>
+      <div className="max-md:px-4">
+        <AdminDashboardHeaderWithMenu>
+          <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
+            Apstrādes telpa
+          </p>
+          <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
+            Konsultācijas
+          </h1>
+        </AdminDashboardHeaderWithMenu>
+      </div>
 
       {hasStripeIssue && consultations.length > 0 ? (
         <div
-          className={`mt-6 rounded-2xl border px-4 py-3.5 text-sm shadow-sm ${
+          className={`mt-6 rounded-2xl border px-4 max-md:mx-4 py-3.5 text-sm shadow-sm ${
             onlyDemoShown
               ? "border-[var(--color-provin-accent)]/20 bg-[var(--color-provin-accent-soft)]/60 text-[var(--color-apple-text)]"
               : "border-amber-200/90 bg-amber-50/90 text-amber-950"
@@ -57,7 +59,7 @@ export default async function AdminConsultationsPage() {
       ) : null}
 
       {!hasStripeIssue && consultations.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-slate-200/90 bg-white px-6 py-12 text-center shadow-sm">
+        <div className="mt-8 rounded-2xl border border-dashed max-md:mx-4 border-slate-200/90 bg-white px-6 py-12 text-center shadow-sm">
           <p className="font-medium text-[var(--color-apple-text)]">Nav konsultāciju</p>
           <p className="mt-2 text-sm text-[var(--color-provin-muted)]">
             {renderProvinText("Kad klienti apmaksās PROVIN SELECT formu, ieraksti parādīsies šeit.", {
