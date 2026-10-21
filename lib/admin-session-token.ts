@@ -52,9 +52,9 @@ export function isAdminGoogleSessionPayload(data: AdminSessionPayload): data is 
 }
 
 /**
- * Kopīgā pieņemšanas loģika Edge un Node pārbaudei. Google sesijām šeit tikai statiskās
- * pārbaudes (karogs, allowlist e-pasts); sesijas stāvokli (atsaukšana, versija, piespraustais
- * `sub`, dīkstāve) servera pusē pārbauda `lib/admin-auth.ts` `getAdminSession`.
+ * Kopīgā pieņemšanas loģika Edge un Node pārbaudei. Google sesijām šeit statiskās
+ * pārbaudes (karogs, allowlist e-pasts). Sesijas stāvokli (atsaukšana, versija,
+ * piespraustais `sub`, dīkstāve) pārbauda `admin-api-gate` un `getAdminSession`.
  */
 export function isAcceptedAdminSessionPayload(
   data: unknown,
@@ -124,22 +124,31 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
   return toHex(new Uint8Array(sig));
 }
 
+export async function decodeAdminSessionToken(
+  token: string | undefined | null,
+  secret: string = resolveAdminSessionSecret(),
+  nowMs: number = Date.now(),
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<AdminSessionPayload | null> {
+  if (!token || !secret) return null;
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  const [payload, sig] = parts as [string, string];
+  if (!payload || !sig || !HEX_RE.test(sig)) return null;
+  try {
+    const expected = await hmacSha256Hex(secret, payload);
+    if (!constantTimeEqual(sig.toLowerCase(), expected)) return null;
+    const data = decodeBase64UrlJson(payload);
+    return isAcceptedAdminSessionPayload(data, nowMs, env) ? data : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function verifyAdminSessionToken(
   token: string | undefined | null,
   secret: string = resolveAdminSessionSecret(),
   nowMs: number = Date.now(),
 ): Promise<boolean> {
-  if (!token || !secret) return false;
-  const parts = token.split(".");
-  if (parts.length !== 2) return false;
-  const [payload, sig] = parts as [string, string];
-  if (!payload || !sig || !HEX_RE.test(sig)) return false;
-  try {
-    const expected = await hmacSha256Hex(secret, payload);
-    if (!constantTimeEqual(sig.toLowerCase(), expected)) return false;
-    const data = decodeBase64UrlJson(payload);
-    return isAcceptedAdminSessionPayload(data, nowMs);
-  } catch {
-    return false;
-  }
+  return (await decodeAdminSessionToken(token, secret, nowMs)) !== null;
 }
