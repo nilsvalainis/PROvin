@@ -42,7 +42,7 @@ export function AdminListingPeekMobileFilters({
   }, [query]);
 
   return (
-    <div className={`md:hidden ${pending ? "opacity-60" : ""}`}>
+    <div className={`px-4 md:hidden ${pending ? "opacity-60" : ""}`}>
       <AdminMobileSegments
         value={tab}
         onChange={(id) => push({ tab: id as TabId })}
