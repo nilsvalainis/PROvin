@@ -22,8 +22,12 @@ export function parseTurnstileKey(raw: string | null | undefined): string | null
   return v;
 }
 
-export function getTurnstileSiteKey(env: NodeJS.ProcessEnv = process.env): string | null {
-  return parseTurnstileKey(env[TURNSTILE_SITE_KEY_ENV]);
+/**
+ * Pārlūkā Next.js ieliek tikai burtisku `process.env.NEXT_PUBLIC_*`; `env[...]` tur vienmēr ir tukšs,
+ * tāpēc bez `env` argumenta lasām atslēgu burtiski.
+ */
+export function getTurnstileSiteKey(env?: NodeJS.ProcessEnv): string | null {
+  return parseTurnstileKey(env ? env[TURNSTILE_SITE_KEY_ENV] : process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 }
 
 export function getTurnstileSecretKey(env: NodeJS.ProcessEnv = process.env): string | null {
