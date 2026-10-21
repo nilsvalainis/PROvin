@@ -33,4 +33,10 @@ describe("Loģistika iPhone platums", () => {
   it("Iestatījumi - Lietotāji saraksts nepaplašina lapu ar gariem e-pastiem", () => {
     expect(src.staffUsers).toContain("grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_320px]");
   });
+
+  it("telefonā Auto kabinets pēc pieskāriena rindai tiek aizritināts redzamā zonā", () => {
+    expect(src.logistika).toMatch(/matchMedia\("\(max-width: 1023px\)"\)/);
+    expect(src.logistika).toMatch(/cabinetRef\.current\?\.scrollIntoView/);
+    expect(src.logistika).toContain('ref={cabinetRef} className="iriss-log-cab-overlay scroll-mt-3"');
+  });
 });

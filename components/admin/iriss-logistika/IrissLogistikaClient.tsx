@@ -100,7 +100,16 @@ export function IrissLogistikaClient({
   const mapHandleRef = useRef<IrissLogistikaMapHandle>(null);
   const cameraBeforeFs = useRef<LogisticsMapCamera | null>(null);
   const mapFsCardRef = useRef<HTMLDivElement>(null);
+  const cabinetRef = useRef<HTMLDivElement>(null);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
+  // Telefonā kabinets ir zem tabulas un kravu plāna - aizritinām līdz tam, lai pieskāriens rindai ir redzams.
+  useEffect(() => {
+    if (!cabinetOpen || !activeId) return;
+    if (!window.matchMedia("(max-width: 1023px)").matches) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    cabinetRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, [cabinetOpen, activeId]);
 
   const visibleOrders = useMemo(() => {
     const filtered = filterLogisticsOrdersByView(orders, view);
@@ -762,7 +771,7 @@ export function IrissLogistikaClient({
             </ul>
           </div>
           {cabinetOpen && active ? (
-            <div className="iriss-log-cab-overlay">
+            <div ref={cabinetRef} className="iriss-log-cab-overlay scroll-mt-3">
               <button type="button" className="iriss-log-btn-sec mb-2 h-8 px-2.5 text-[12px]" onClick={() => setCabinetOpen(false)}>
                 Aizvērt kabinetu
               </button>
