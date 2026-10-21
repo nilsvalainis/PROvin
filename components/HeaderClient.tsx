@@ -123,7 +123,7 @@ export function HeaderClient() {
     "mx-auto flex min-h-[2.4rem] w-full min-w-0 max-w-none items-center gap-1.5 pl-[max(0.8rem,env(safe-area-inset-left,0px))] pr-[max(0.8rem,env(safe-area-inset-right,0px))] sm:min-h-9 lg:min-h-11 lg:gap-3 lg:pl-[max(1rem,env(safe-area-inset-left,0px))] lg:pr-[max(1rem,env(safe-area-inset-right,0px))]";
 
   return (
-    <header className={`${isHome ? "fixed lg:sticky" : "sticky"} top-0 z-[60] isolate w-full ${headerSurface}`}>
+    <header className={`relative z-[60] isolate w-full ${headerSurface}`}>
       <div className={headerInnerClass}>
         {isAzvinDemo ? (
           <Link href={AZVIN_PUBLIC_PATH} className={logoClass} aria-label="AZ.VIN">
