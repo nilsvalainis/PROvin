@@ -5,11 +5,18 @@ export const THANKS_SESSION_COOKIE_NAME = "provin_thanks_session";
 export const THANKS_SESSION_TOKEN_TYP = "thanks";
 export const THANKS_SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 7;
 
+/** Parakstīta rēķina saite apstiprinājuma e-pastā (citā ierīcē /paldies sīkdatnes nav). */
+export const INVOICE_LINK_TOKEN_TYP = "invoice";
+export const INVOICE_LINK_QUERY_PARAM = "t";
+export const INVOICE_LINK_MAX_AGE_SEC = 60 * 60 * 24 * 400;
+
 /** Tikai `next dev`: nekad netiek lietots, ja `NODE_ENV === "production"`. */
 export const THANKS_SESSION_DEV_FALLBACK_SECRET = "provin-local-dev-secret-min-16-chars";
 
+type SessionTokenTyp = typeof THANKS_SESSION_TOKEN_TYP | typeof INVOICE_LINK_TOKEN_TYP;
+
 export type ThanksSessionPayload = {
-  typ: typeof THANKS_SESSION_TOKEN_TYP;
+  typ: SessionTokenTyp;
   sid: string;
   exp: number;
 };
@@ -98,28 +105,30 @@ async function hmacSha256Hex(secret: string, data: string): Promise<string> {
   return toHex(new Uint8Array(sig));
 }
 
-function isThanksSessionPayload(data: unknown): data is ThanksSessionPayload {
+function isSessionTokenPayload(data: unknown, typ: SessionTokenTyp): data is ThanksSessionPayload {
   if (!data || typeof data !== "object") return false;
   const o = data as { typ?: unknown; sid?: unknown; exp?: unknown };
   return (
-    o.typ === THANKS_SESSION_TOKEN_TYP &&
+    o.typ === typ &&
     typeof o.sid === "string" &&
     typeof o.exp === "number" &&
     parseThanksCheckoutSessionId(o.sid) != null
   );
 }
 
-export async function signThanksSessionToken(
+async function signSessionToken(
+  typ: SessionTokenTyp,
   sessionId: string,
+  defaultMaxAgeSec: number,
   opts?: { secret?: string; nowMs?: number; maxAgeSec?: number },
 ): Promise<string | null> {
   const sid = parseThanksCheckoutSessionId(sessionId);
   const secret = opts?.secret ?? resolveThanksSessionSecret();
   if (!sid || !secret) return null;
   const nowMs = opts?.nowMs ?? Date.now();
-  const maxAgeSec = opts?.maxAgeSec ?? THANKS_SESSION_MAX_AGE_SEC;
+  const maxAgeSec = opts?.maxAgeSec ?? defaultMaxAgeSec;
   const payload = encodeBase64UrlJson({
-    typ: THANKS_SESSION_TOKEN_TYP,
+    typ,
     sid,
     exp: nowMs + maxAgeSec * 1000,
   });
@@ -127,7 +136,8 @@ export async function signThanksSessionToken(
   return `${payload}.${sig}`;
 }
 
-export async function readThanksSessionIdFromToken(
+async function readSessionIdFromToken(
+  typ: SessionTokenTyp,
   token: string | null | undefined,
   opts?: { secret?: string; nowMs?: number },
 ): Promise<string | null> {
@@ -142,11 +152,54 @@ export async function readThanksSessionIdFromToken(
     if (!constantTimeEqual(sig.toLowerCase(), expected)) return null;
     const data = decodeBase64UrlJson(payload);
     const nowMs = opts?.nowMs ?? Date.now();
-    if (!isThanksSessionPayload(data) || data.exp <= nowMs) return null;
+    if (!isSessionTokenPayload(data, typ) || data.exp <= nowMs) return null;
     return data.sid;
   } catch {
     return null;
   }
+}
+
+export function signThanksSessionToken(
+  sessionId: string,
+  opts?: { secret?: string; nowMs?: number; maxAgeSec?: number },
+): Promise<string | null> {
+  return signSessionToken(THANKS_SESSION_TOKEN_TYP, sessionId, THANKS_SESSION_MAX_AGE_SEC, opts);
+}
+
+export function readThanksSessionIdFromToken(
+  token: string | null | undefined,
+  opts?: { secret?: string; nowMs?: number },
+): Promise<string | null> {
+  return readSessionIdFromToken(THANKS_SESSION_TOKEN_TYP, token, opts);
+}
+
+export function signInvoiceLinkToken(
+  sessionId: string,
+  opts?: { secret?: string; nowMs?: number; maxAgeSec?: number },
+): Promise<string | null> {
+  return signSessionToken(INVOICE_LINK_TOKEN_TYP, sessionId, INVOICE_LINK_MAX_AGE_SEC, opts);
+}
+
+export function readInvoiceLinkSessionId(
+  token: string | null | undefined,
+  opts?: { secret?: string; nowMs?: number },
+): Promise<string | null> {
+  return readSessionIdFromToken(INVOICE_LINK_TOKEN_TYP, token, opts);
+}
+
+/**
+ * Rēķina saite e-pastam: `?t=` parakstīts tokens (sesijas ID viens pats neder).
+ * Bez noslēpuma (tikai nekonfigurēta vide) paliek vecā forma, lai e-pasts tiktu nosūtīts.
+ */
+export async function buildInvoiceDownloadUrl(
+  origin: string,
+  sessionId: string,
+  opts?: { secret?: string; nowMs?: number },
+): Promise<string> {
+  const base = `${origin.replace(/\/$/, "")}/api/invoice/download`;
+  const token = await signInvoiceLinkToken(sessionId, opts);
+  if (token) return `${base}?${INVOICE_LINK_QUERY_PARAM}=${encodeURIComponent(token)}`;
+  return `${base}?session_id=${encodeURIComponent(sessionId)}`;
 }
 
 export function stripSessionIdFromSearch(searchParams: URLSearchParams): string {
@@ -221,19 +274,21 @@ export type InvoiceDownloadAuth =
 
 /**
  * Rēķina lejupielāde neder no URL `session_id` viena paša.
- * Derīga ir tikai parakstītā httpOnly sīkdatne.
+ * Derīga ir parakstītā httpOnly sīkdatne vai parakstītā e-pasta saite (`?t=`).
  */
 export function authorizeInvoiceDownload(args: {
   cookieSessionId: string | null;
+  linkSessionId?: string | null;
   querySessionId?: string | null;
 }): InvoiceDownloadAuth {
-  const cookieSid = parseThanksCheckoutSessionId(args.cookieSessionId);
-  if (!cookieSid) {
+  const sid =
+    parseThanksCheckoutSessionId(args.linkSessionId) ?? parseThanksCheckoutSessionId(args.cookieSessionId);
+  if (!sid) {
     return { ok: false, status: 401, error: "unauthorized" };
   }
   const querySid = parseThanksCheckoutSessionId(args.querySessionId);
-  if (querySid && querySid !== cookieSid) {
+  if (querySid && querySid !== sid) {
     return { ok: false, status: 403, error: "forbidden" };
   }
-  return { ok: true, sessionId: cookieSid };
+  return { ok: true, sessionId: sid };
 }
