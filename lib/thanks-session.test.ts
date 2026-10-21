@@ -5,11 +5,14 @@ import {
   THANKS_SESSION_URL_CLEANUP_SNIPPET,
   applyThanksSessionUrlCleanup,
   authorizeInvoiceDownload,
+  buildInvoiceDownloadUrl,
   decideThanksSessionCapture,
   isThanksPagePath,
   parseThanksCheckoutSessionId,
+  readInvoiceLinkSessionId,
   readThanksSessionIdFromToken,
   resolveThanksSessionSecret,
+  signInvoiceLinkToken,
   signThanksSessionToken,
   stripSessionIdFromHref,
   thanksSessionCookieOptions,
@@ -177,6 +180,39 @@ describe("authorizeInvoiceDownload", () => {
   it("rejects a cookie/query mismatch", () => {
     expect(
       authorizeInvoiceDownload({ cookieSessionId: "cs_live_abc12345", querySessionId: "cs_live_other9999" }),
+    ).toEqual({ ok: false, status: 403, error: "forbidden" });
+  });
+});
+
+describe("invoice email link token", () => {
+  it("builds a signed ?t= link without the raw session id", async () => {
+    const url = await buildInvoiceDownloadUrl("https://www.provin.lv/", "cs_live_order12345", { secret: SECRET });
+    expect(url.startsWith("https://www.provin.lv/api/invoice/download?t=")).toBe(true);
+    expect(url).not.toContain("session_id");
+    expect(url).not.toContain("cs_live_order12345");
+    const t = new URL(url).searchParams.get("t");
+    expect(await readInvoiceLinkSessionId(t, { secret: SECRET })).toBe("cs_live_order12345");
+  });
+
+  it("is not interchangeable with the /paldies cookie token", async () => {
+    const link = await signInvoiceLinkToken("cs_live_order12345", { secret: SECRET });
+    const cookie = await signThanksSessionToken("cs_live_order12345", { secret: SECRET });
+    expect(await readThanksSessionIdFromToken(link, { secret: SECRET })).toBeNull();
+    expect(await readInvoiceLinkSessionId(cookie, { secret: SECRET })).toBeNull();
+    expect(await readInvoiceLinkSessionId(link, { secret: "another-secret-0123456789" })).toBeNull();
+  });
+
+  it("authorizes the email link on a device without the /paldies cookie", () => {
+    expect(authorizeInvoiceDownload({ cookieSessionId: null, linkSessionId: "cs_live_abc12345" })).toEqual({
+      ok: true,
+      sessionId: "cs_live_abc12345",
+    });
+    expect(
+      authorizeInvoiceDownload({
+        cookieSessionId: null,
+        linkSessionId: "cs_live_abc12345",
+        querySessionId: "cs_live_other9999",
+      }),
     ).toEqual({ ok: false, status: 403, error: "forbidden" });
   });
 });

@@ -2,8 +2,10 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOrBuildInvoicePdfForSession } from "@/lib/invoice-storage";
 import {
+  INVOICE_LINK_QUERY_PARAM,
   THANKS_SESSION_COOKIE_NAME,
   authorizeInvoiceDownload,
+  readInvoiceLinkSessionId,
   readThanksSessionIdFromToken,
 } from "@/lib/thanks-session";
 
@@ -22,8 +24,8 @@ function pdfHeaders(invoiceNumber: string, bytes: Uint8Array) {
 }
 
 /**
- * Rēķina lejupielāde pēc apmaksas. Auth = parakstītā httpOnly sīkdatne no /paldies.
- * `?session_id=` viena pati neder.
+ * Rēķina lejupielāde pēc apmaksas. Auth = parakstītā httpOnly sīkdatne no /paldies
+ * vai parakstītā e-pasta saite `?t=`. `?session_id=` viena pati neder.
  */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -31,8 +33,10 @@ export async function GET(req: Request) {
   const cookieSessionId = await readThanksSessionIdFromToken(
     cookieStore.get(THANKS_SESSION_COOKIE_NAME)?.value,
   );
+  const linkSessionId = await readInvoiceLinkSessionId(searchParams.get(INVOICE_LINK_QUERY_PARAM));
   const auth = authorizeInvoiceDownload({
     cookieSessionId,
+    linkSessionId,
     querySessionId: searchParams.get("session_id"),
   });
   if (!auth.ok) {

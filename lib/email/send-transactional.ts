@@ -38,6 +38,7 @@ import {
 import { getCachedMessageTemplatesDoc, warmMessageTemplatesCache } from "@/lib/messages/message-runtime";
 import { resolveMessageSync } from "@/lib/messages/resolve-message";
 import { buildReportReadyEmailVars, reportReadyTemplateId } from "@/lib/messages/template-vars";
+import { buildInvoiceDownloadUrl } from "@/lib/thanks-session";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
 export function isSmtpConfigured(): boolean {
@@ -348,7 +349,7 @@ export async function sendPaymentConfirmationEmail(opts: {
   }
 
   const origin = getSiteOrigin();
-  const invoiceUrl = `${origin}/api/invoice/download?session_id=${encodeURIComponent(opts.sessionId)}`;
+  const invoiceUrl = await buildInvoiceDownloadUrl(origin, opts.sessionId);
   const amountLine =
     opts.amountTotal != null
       ? `${opts.amountTotal} ${(opts.currency ?? "EUR").toUpperCase()}`
