@@ -262,6 +262,7 @@ describe("value and hashed user_data helpers", () => {
     expect(resolveInitiateCheckoutValueEur(null, 9999)).toBe(99.99);
     expect(resolveInitiateCheckoutValueEur(null, null)).toBeNull();
     expect(buildMetaCapiUserData({})).toEqual({});
-    expect(purchaseEventSourceUrl("cs_live_1")).toContain("session_id=cs_live_1");
+    expect(purchaseEventSourceUrl()).toMatch(/\/lv\/paldies$/);
+    expect(purchaseEventSourceUrl()).not.toContain("session_id");
   });
 });

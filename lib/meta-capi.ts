@@ -469,8 +469,12 @@ export async function notifyMetaInitiateCheckout(args: {
   }
 }
 
-export function purchaseEventSourceUrl(sessionId: string): string {
-  return `${getPublicSiteOrigin()}/lv/paldies?session_id=${encodeURIComponent(sessionId)}`;
+/**
+ * Lapa, kurā notika pirkums. Bez `session_id`: /paldies to noņem no adreses (#391),
+ * sesijas ID Meta jau saņem kā `event_id`.
+ */
+export function purchaseEventSourceUrl(): string {
+  return `${getPublicSiteOrigin()}/lv/paldies`;
 }
 
 export async function notifyMetaPurchaseFromStripeSession(session: {
@@ -494,7 +498,7 @@ export async function notifyMetaPurchaseFromStripeSession(session: {
       eventName: "Purchase",
       eventId: session.id,
       value,
-      eventSourceUrl: purchaseEventSourceUrl(session.id),
+      eventSourceUrl: purchaseEventSourceUrl(),
       consentGranted: true,
       userData: {
         email,
