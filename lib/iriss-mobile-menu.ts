@@ -36,6 +36,7 @@ export const IRISS_MOBILE_MENU_ITEMS: readonly IrissMobileMenuItem[] = [
     section: "logistika",
     badge: "irissLogistics",
   },
+  { id: "autoparks", href: "/admin/iriss/autoparks", label: "Autoparks", icon: "avatar", group: 2, section: "logistika" },
   {
     id: "pavadzimes",
     href: "/admin/iriss/pavadzimes",

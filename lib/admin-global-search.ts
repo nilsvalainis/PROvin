@@ -86,6 +86,7 @@ const ADMIN_SEARCH_SECTIONS: readonly SectionSeed[] = [
   { id: "iriss-list", title: "Sludinājumi", subtitle: "IRISS", href: "/admin/iriss/sludinajumi", text: "klientu filtri sludinājumi IRISS LIST" },
   { id: "iriss-scan", title: "Radars", subtitle: "IRISS", href: "/admin/iriss/scan", text: "radars" },
   { id: "iriss-logistics", title: "Loģistika", subtitle: "IRISS", href: "/admin/iriss/logistika", text: "loģistika punkti karte pickup" },
+  { id: "iriss-autoparks", title: "Autoparks", subtitle: "IRISS", href: "/admin/iriss/autoparks", text: "autoparks auto serviss rēķini pārdošana" },
   { id: "iriss-report", title: "Mēneša atskaite", subtitle: "IRISS", href: "/admin/iriss/atskaite", text: "mēneša atskaite" },
   { id: "iriss-waybills", title: "Pavadzīmes", subtitle: "IRISS", href: "/admin/iriss/pavadzimes", text: "pavadzīmes" },
   { id: "iriss-settings", title: "Iestatījumi", subtitle: "IRISS", href: "/admin/iriss/iestatijumi", text: "iestatījumi" },

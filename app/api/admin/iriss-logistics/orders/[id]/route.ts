@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cabinetActorHidesSums } from "@/lib/iriss-logistics-cabinet-access";
 import { logisticsCabinetAccessQuery, logisticsCabinetWriteForbidden, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
-import { getLogisticsOrder, setLogisticsOrderArchiveState, upsertLogisticsOrder } from "@/lib/iriss-logistics-store";
+import { getLogisticsOrder, removeManualLogisticsOrder, setLogisticsOrderArchiveState, upsertLogisticsOrder } from "@/lib/iriss-logistics-store";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 
 export const runtime = "nodejs";
@@ -47,4 +47,17 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
   const order = await upsertLogisticsOrder({ ...(row as Partial<LogisticsOrder>), id });
   return NextResponse.json({ ok: true, order }, { headers: irissLogisticsScopeHeader() });
+}
+
+/** Tikai ar roku ievadītie citu klientu auto (source = manual). */
+export async function DELETE(_req: Request, ctx: Ctx) {
+  const gate = await requireIrissLogisticsApi();
+  if (!gate.ok) return gate.response;
+  const denied = logisticsCabinetWriteForbidden(gate.actor);
+  if (denied) return denied;
+  const { id } = await ctx.params;
+  const result = await removeManualLogisticsOrder(id);
+  if (result === "not_found") return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
+  if (result === "not_manual") return NextResponse.json({ error: "not_manual" }, { status: 409, headers: irissLogisticsScopeHeader() });
+  return NextResponse.json({ ok: true }, { headers: irissLogisticsScopeHeader() });
 }

@@ -20,6 +20,7 @@ export function IrissAdminSidebarNav({ orientation = "vertical" }: Props) {
   const pasutijumiActive = pathname.startsWith("/admin/iriss/pasutijumi");
   const scanActive = pathname.startsWith("/admin/iriss/scan");
   const logistikaActive = pathname.startsWith("/admin/iriss/logistika");
+  const autoparksActive = pathname.startsWith("/admin/iriss/autoparks");
   const sludinajumiActive = pathname.startsWith("/admin/iriss/sludinajumi");
   const horizontal = orientation === "horizontal";
 
@@ -33,6 +34,9 @@ export function IrissAdminSidebarNav({ orientation = "vertical" }: Props) {
       </Link>
       <Link href="/admin/iriss/logistika" className={navItemClass(logistikaActive)}>
         Loģistika
+      </Link>
+      <Link href="/admin/iriss/autoparks" className={navItemClass(autoparksActive)}>
+        Autoparks
       </Link>
       <Link href="/admin/iriss/sludinajumi" className={navItemClass(sludinajumiActive)}>
         Sludinājumi

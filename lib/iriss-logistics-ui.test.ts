@@ -62,8 +62,9 @@ describe("IRISS Loģistika UI contracts", () => {
   });
 
   it("uses km only and no Apify", () => {
-    expect(client).toMatch(/\bkm\b/);
     expect(client).not.toMatch(/\bmiles\b/i);
+    // Galvenē nav lieka "· km" (attālums ir kravas maršrutā).
+    expect(client).not.toContain("arhīvā` : \"\"} · km");
     expect(parseServer).not.toMatch(/APIFY_/);
     expect(parseServer).not.toMatch(/from ["']@\/lib\/marketplace/);
     expect(client).not.toMatch(/\u2014/);
