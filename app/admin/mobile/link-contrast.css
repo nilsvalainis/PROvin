@@ -1,0 +1,8 @@
+/*
+ * Tumšās saites-pogas (`a` ar --chip-active-fg tekstu): admin tēma saitēm liek `color: inherit`,
+ * tāpēc "+" un "Jauns radars" bija melns uz melna. Pogām (`button`) šī problēma nav.
+ */
+.admin-ios-theme .admin-m a[class*="text-[var(--chip-active-fg)]"],
+.admin-ios-theme a[class*="text-[var(--chip-active-fg)]"] {
+  color: var(--chip-active-fg) !important;
+}

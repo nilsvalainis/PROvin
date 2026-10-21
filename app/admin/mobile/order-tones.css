@@ -1,0 +1,31 @@
+/* PRO pasūtījumu kartīšu toņi (telefons): maigs fons + svītra kreisajā malā. Strādā arī tumšajā režīmā. */
+.admin-ios-theme .am-row.am-tone {
+  overflow: hidden;
+}
+.admin-ios-theme .am-row.am-tone::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--am-tone-bar);
+}
+.admin-ios-theme .am-row.am-tone-new {
+  --am-tone-bar: #22c55e;
+  background: color-mix(in srgb, var(--surface, #fff) 91%, #22c55e 9%);
+}
+.admin-ios-theme .am-row.am-tone-dealer {
+  --am-tone-bar: #3b82f6;
+  background: color-mix(in srgb, var(--surface, #fff) 92%, #3b82f6 8%);
+}
+.admin-ios-theme .am-row.am-tone-mini {
+  --am-tone-bar: #f59e0b;
+  background: color-mix(in srgb, var(--surface, #fff) 90%, #f59e0b 10%);
+}
+.admin-ios-theme .am-row.am-tone-partner {
+  --am-tone-bar: #8b5cf6;
+  background: color-mix(in srgb, var(--surface, #fff) 92%, #8b5cf6 8%);
+}
+.admin-ios-theme .am-row.am-tone-pack {
+  --am-tone-bar: #a1a1aa;
+  background: color-mix(in srgb, var(--surface, #fff) 96%, #71717a 4%);
+}

@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import "../../admin/admin-ios-theme.css";
 import "../../admin/admin-motion.css";
 import "../../admin/admin-mobile.css";
+import "../../admin/mobile/workspace-switch.css";
+import "../../admin/mobile/pro-home.css";
+import "../../admin/mobile/link-contrast.css";
+import "../../admin/mobile/order-tones.css";
 import "../../admin/admin-iriss-theme.css";
 
 export const metadata = {

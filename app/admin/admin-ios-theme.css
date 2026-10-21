@@ -83,16 +83,28 @@ body:has(.admin-ios-theme) {
   color: #000000 !important;
 }
 
-.admin-ios-theme :is(input, select, textarea) {
-  border-radius: 14px !important;
-  border: 1px solid var(--admin-ios-border) !important;
-  background: #ffffff !important;
-  color: #000000 !important;
+/*
+ * Lauki: viena kārtula, krāsas un apmale no tokeniem. Telefons (admin-mobile.css) un IRISS (admin-iriss-theme.css)
+ * maina tikai tokenus, nevis atkārto kārtulu ar !important. Izvēles rūtiņas un slīdņi paliek pārlūka izskatā.
+ */
+.admin-ios-theme {
+  --admin-field-radius: 14px;
+  --admin-field-border: 1px solid var(--admin-ios-border);
+  --admin-field-bg: #ffffff;
+  --admin-field-ink: #000000;
+  --admin-field-placeholder: #6b7280;
+}
+
+.admin-ios-theme :is(input:where(:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"])), select, textarea) {
+  border-radius: var(--admin-field-radius) !important;
+  border: var(--admin-field-border) !important;
+  background: var(--admin-field-bg) !important;
+  color: var(--admin-field-ink) !important;
   box-shadow: none;
 }
 
 .admin-ios-theme :is(input, select, textarea)::placeholder {
-  color: #6b7280 !important;
+  color: var(--admin-field-placeholder) !important;
 }
 
 .admin-ios-theme :is(input, select, textarea):focus-visible {
