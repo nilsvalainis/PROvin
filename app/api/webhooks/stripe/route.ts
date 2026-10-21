@@ -1,3 +1,5 @@
+import { sendAdminPush } from "@/lib/admin-push";
+import { adminPushNewOrderMessage } from "@/lib/admin-push-shared";
 import { headers } from "next/headers";
 import { NextResponse, after } from "next/server";
 import Stripe from "stripe";
@@ -136,6 +138,7 @@ async function fulfillPaidCheckoutSession(
       } catch (e) {
         console.error("Email notify:", e);
       }
+      await sendAdminPush(adminPushNewOrderMessage(payload));
     });
 
     let persistedInvoice: { invoiceNumber: string } | null = null;

@@ -1,3 +1,5 @@
+import { sendAdminPush } from "@/lib/admin-push";
+import { adminPushSlaMessage } from "@/lib/admin-push-shared";
 import type { OrderEmailPayload } from "@/lib/email/types";
 import {
   sendAdminAuditSlaWarningEmail,
@@ -101,6 +103,8 @@ export async function notifyAdminAuditSlaWarning(opts: {
     await sendAdminAuditSlaWarningEmail(opts, to);
     email = true;
   }
+
+  await sendAdminPush(adminPushSlaMessage(opts));
 
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;

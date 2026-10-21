@@ -1,3 +1,5 @@
+import { sendAdminPush } from "@/lib/admin-push";
+import { adminPushQuickEvalMessage } from "@/lib/admin-push-shared";
 import { NextResponse, after } from "next/server";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { isSmtpConfigured, sendListingPeekLeadEmail } from "@/lib/email/send-transactional";
@@ -102,6 +104,8 @@ export async function POST(req: Request) {
       console.error("[listing-peek] free sources failed:", err);
     }
   });
+
+  await sendAdminPush(adminPushQuickEvalMessage({ id: created.entry.id, vin: created.entry.vin ?? null }));
 
   const adminTo = getAdminOrderNotifyEmail();
   if (adminTo && isSmtpConfigured()) {

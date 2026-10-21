@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminMobileCountBadge, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
+import { AdminPushToggle } from "@/components/admin/AdminPushToggle";
 import type { ProHomeSummary, ProHomeTile } from "@/lib/admin-pro-home";
 import { formatAdminMobileDeadlineTag, type AdminMobileIconName } from "@/lib/admin-mobile-ds";
 
@@ -141,6 +142,7 @@ export function ProMobileMenuHome() {
               })}
             </div>
           ))}
+          <AdminPushToggle />
         </div>
       </div>
     </div>
