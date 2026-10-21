@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import {
   CARGO_BUCKET_ADD_LV,
@@ -54,6 +54,23 @@ export function IrissLogistikaCargoPlan({
   const [colorFor, setColorFor] = useState<string | null>(null);
   const [addressFor, setAddressFor] = useState<{ bucket: "next" | "after"; end: "start" | "end" } | null>(null);
 
+  // Vilkšanas stāvoklis vienmēr notīrās, arī ja pele atlaista ārpus kartītes vai vilkšana atcelta.
+  useEffect(() => {
+    if (!dragId) return;
+    const clear = () => {
+      setDragId(null);
+      setDropBucket(null);
+    };
+    window.addEventListener("dragend", clear);
+    window.addEventListener("drop", clear);
+    window.addEventListener("blur", clear);
+    return () => {
+      window.removeEventListener("dragend", clear);
+      window.removeEventListener("drop", clear);
+      window.removeEventListener("blur", clear);
+    };
+  }, [dragId]);
+
   return (
     <aside className="iriss-log-cargo-card">
       <div className="flex items-center justify-between px-3.5 pb-1 pt-3">
@@ -66,7 +83,23 @@ export function IrissLogistikaCargoPlan({
         const route = cargoBucket ? plan.routes[cargoBucket] : null;
         const colorVar = `var(--iriss-log-cargo-${bucket})`;
         return (
-          <section key={bucket} className="border-t border-[var(--iriss-log-line)] first:border-t-0">
+          <section
+            key={bucket}
+            className={`border-t border-[var(--iriss-log-line)] first:border-t-0 ${dragId && dropBucket === bucket ? "iriss-log-cargo-drop-target" : ""}`}
+            onDragOver={(e) => {
+              if (!dragId) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              if (dropBucket !== bucket) setDropBucket(bucket);
+            }}
+            onDrop={(e) => {
+              if (!dragId) return;
+              e.preventDefault();
+              onPlanChange(moveCargoCar(plan, dragId, bucket));
+              setDragId(null);
+              setDropBucket(null);
+            }}
+          >
             <div className="iriss-log-cargo-head">
               <span className="iriss-log-cargo-dot" style={{ background: colorVar }} />
               <span className="text-[13px] font-semibold">{CARGO_BUCKET_LV[bucket]}</span>
@@ -113,9 +146,14 @@ export function IrissLogistikaCargoPlan({
                   return (
                     <li key={car.carId} className="relative">
                       <div
-                        className={`iriss-log-cargo-row ${bounceId === car.carId || hoverId === car.carId ? "active" : ""}`}
+                        className={`iriss-log-cargo-row cursor-grab active:cursor-grabbing ${bounceId === car.carId || hoverId === car.carId ? "active" : ""} ${dragId === car.carId ? "dragging" : ""}`}
                         draggable
-                        onDragStart={() => setDragId(car.carId)}
+                        onDragStart={(e) => {
+                          e.dataTransfer.effectAllowed = "move";
+                          e.dataTransfer.setData("text/plain", car.carId);
+                          onRowHover(null);
+                          setDragId(car.carId);
+                        }}
                         onDragEnd={() => {
                           setDragId(null);
                           setDropBucket(null);
@@ -124,16 +162,20 @@ export function IrissLogistikaCargoPlan({
                         onMouseEnter={() => onRowHover(car.carId)}
                         onMouseLeave={() => onRowHover(null)}
                       >
-                        <input
-                          type="checkbox"
-                          className="iriss-log-check"
-                          style={car.showOnMap ? { background: colorVar, borderColor: "transparent" } : undefined}
-                          checked={car.showOnMap}
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={car.showOnMap}
                           aria-label="Rādīt kartē"
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => onPlanChange(setCargoShowOnMap(plan, car.carId, e.target.checked))}
+                          title={car.showOnMap ? "Rāda kartē" : "Nerāda kartē"}
+                          className={`iriss-log-switch sm ${car.showOnMap ? "on" : ""}`}
+                          draggable={false}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onPlanChange(setCargoShowOnMap(plan, car.carId, !car.showOnMap));
+                          }}
                         />
-                        <span className="cursor-grab text-[12px] text-[#c7c7cc]" aria-hidden>
+                        <span className="text-[12px] text-[#c7c7cc]" aria-hidden>
                           ⋮⋮
                         </span>
                         <button
@@ -147,8 +189,8 @@ export function IrissLogistikaCargoPlan({
                           }}
                         />
                         <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{logisticsCarTitle(order)}</span>
-                        {order.auction ? <IrissAuctionLogo name={order.auction} /> : null}
-                        <span className="text-[12px] text-[#6e6e73]">{formatLogisticsPostal(order.pickupSnapshot)}</span>
+                        <span className="iriss-log-cargo-logo">{order.auction ? <IrissAuctionLogo name={order.auction} /> : null}</span>
+                        <span className="iriss-log-cargo-postal">{formatLogisticsPostal(order.pickupSnapshot)}</span>
                       </div>
                       {colorFor === car.carId ? (
                         <ColorMenu
@@ -161,21 +203,9 @@ export function IrissLogistikaCargoPlan({
                     </li>
                   );
                 })}
-                {dropBucket === bucket || dragId ? (
+                {dragId ? (
                   <li>
-                    <div
-                      className="iriss-log-cargo-drop"
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        setDropBucket(bucket);
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        if (dragId) onPlanChange(moveCargoCar(plan, dragId, bucket));
-                        setDragId(null);
-                        setDropBucket(null);
-                      }}
-                    >
+                    <div className="iriss-log-cargo-drop">
                       {CARGO_BUCKET_ADD_LV[bucket]}
                     </div>
                   </li>

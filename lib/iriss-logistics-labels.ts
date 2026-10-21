@@ -101,3 +101,23 @@ function overlap(
 ): boolean {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
+
+export type LogisticsPinCardCar = { make: string; model: string };
+
+/**
+ * Kartes punkta kartīte: katram auto marka un modelis (katrs savā rindā), bez izsoles nosaukuma.
+ * Vairāk par `max` auto: pirmie `max` un "+N".
+ */
+export function logisticsPinCardCars(
+  cars: readonly LogisticsPinCardCar[],
+  max = 3,
+): { cars: LogisticsPinCardCar[]; more: number } {
+  const clean = cars.map((c) => ({ make: c.make.trim() || "Auto", model: c.model.trim() }));
+  const shown = clean.length > max ? clean.slice(0, max) : clean;
+  return { cars: shown, more: clean.length - shown.length };
+}
+
+/** Atslēga, kas mainās tikai tad, kad mainās punktu kopa (nevis hover vai izcēlums). */
+export function logisticsMapFitKey(mode: string, ids: readonly string[]): string {
+  return `${mode}|${[...ids].sort().join(",")}`;
+}

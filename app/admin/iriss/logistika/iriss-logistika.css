@@ -131,6 +131,45 @@
 .iriss-log-screen .iriss-log-switch.on::after {
   left: 16px;
 }
+/* Mazais slēdzis "rādīt kartē": izslēgts gaiši pelēks, ieslēgts tumšs ar pogu pa labi. */
+.iriss-log-screen .iriss-log-switch.sm {
+  width: 28px;
+  height: 16px;
+  background: var(--iriss-log-check-empty);
+}
+.iriss-log-screen .iriss-log-switch.sm::after {
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 1px 2px rgba(11, 12, 16, 0.2);
+  transition: left 0.15s ease;
+}
+.iriss-log-screen .iriss-log-switch.sm.on {
+  background: var(--iriss-log-ink, #1d1d1f);
+}
+.iriss-log-screen .iriss-log-switch.sm.on::after {
+  left: 14px;
+}
+.iriss-log-cargo-row.dragging {
+  opacity: 0.45;
+}
+.iriss-log-cargo-drop-target {
+  background: var(--iriss-log-surface-2);
+}
+.iriss-log-cargo-logo {
+  display: inline-flex;
+  flex: 0 0 64px;
+  justify-content: flex-end;
+}
+.iriss-log-cargo-postal {
+  flex: 0 0 64px;
+  color: #6e6e73;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
 .iriss-log-cargo-card {
   overflow: hidden;
   border-radius: 14px;
@@ -253,29 +292,32 @@
 }
 .iriss-log-pin-card {
   margin-top: 2px;
-  min-width: 118px;
-  max-width: 168px;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(11, 12, 16, 0.12);
-  padding: 4px 7px;
-  line-height: 1.25;
+  max-width: 112px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 1px 3px rgba(11, 12, 16, 0.12);
+  padding: 2px 5px;
+  line-height: 1.2;
 }
 .iriss-log-pin-card .t1 {
   display: block;
   overflow: hidden;
   color: #1d1d1f;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .iriss-log-pin-card .t2 {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: #6e6e73;
-  font-size: 10px;
+  display: block;
+  overflow: hidden;
+  color: #4b4b52;
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-log-pin-card .t2 + .t1 {
+  margin-top: 2px;
 }
 .iriss-log-cab-overlay {
   position: relative;

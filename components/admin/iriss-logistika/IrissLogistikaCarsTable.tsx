@@ -49,19 +49,19 @@ export function IrissLogistikaCarsTable({ orders, plan, pickups, docCounts, onOp
             const docs = docCounts[order.id] ?? { have: 0, expected: 4 };
             return (
               <tr key={order.id} onClick={() => onOpenCabinet(order.id)} className="cursor-pointer">
-                <td className="font-semibold">{logisticsCarTitle(order)}</td>
-                <td className="font-mono text-[12px]">{order.vin}</td>
+                <td className="min-w-[12rem] font-semibold">{logisticsCarTitle(order)}</td>
+                <td className="whitespace-nowrap font-mono text-[12px]">{order.vin}</td>
                 <td>{order.auction ? <IrissAuctionLogo name={order.auction} /> : "Privāts"}</td>
                 <td>{formatLogisticsDate(order.createdAt.slice(0, 10)) || formatLogisticsDate(order.pickupDate)}</td>
                 <td>{formatLogisticsDate(order.pickupDate) || "-"}</td>
                 <td>
-                  <span className="iriss-log-status-chip">
+                  <span className="iriss-log-status-chip whitespace-nowrap">
                     <i />
                     {CABINET_PICKUP_STAGE_LV[stage]}
                   </span>
                 </td>
                 <td>
-                  <span className="inline-flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                     <span className="iriss-log-cargo-dot" style={{ background: `var(--iriss-log-cargo-${bucket})` }} />
                     {CARGO_BUCKET_LV[bucket]}
                   </span>
@@ -72,7 +72,7 @@ export function IrissLogistikaCarsTable({ orders, plan, pickups, docCounts, onOp
                 <td className="relative text-right">
                   <button
                     type="button"
-                    className="iriss-log-btn-sec h-8 px-2.5 text-[12px]"
+                    className="iriss-log-btn-sec h-8 whitespace-nowrap px-2.5 text-[12px]"
                     onClick={(e) => {
                       e.stopPropagation();
                       setConfirmId(order.id);
