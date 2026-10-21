@@ -26,8 +26,10 @@ describe("IRISS Loģistika UI contracts", () => {
   it("adds Loģistika between Radars and VIN in IRISS nav", () => {
     expect(sidebar).toContain('irissLogistics: "Loģistika"');
     expect(sidebar).toContain('href: "/admin/iriss/logistika"');
-    const group = sidebar.match(/items: \[I_MENU, I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_VIN/)?.[0] ?? "";
+    const group = sidebar.match(/items: \[I_MENU, I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN/)?.[0] ?? "";
     expect(group).toContain("I_LOGISTICS");
+    // Autoparks uzreiz aiz Loģistikas.
+    expect(sidebar).toContain('href: "/admin/iriss/autoparks"');
   });
 
   it("archives with Pamodināt and default active view", () => {
