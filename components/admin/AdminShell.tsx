@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminOfflineBanner } from "@/components/admin/AdminOfflineBanner";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
@@ -97,6 +98,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
         </div>
       )}
       <AdminGlobalSearch />
+      <AdminOfflineBanner />
     </div>
     </AdminShellLayoutContext.Provider>
     </AdminVinHandoffProvider>
