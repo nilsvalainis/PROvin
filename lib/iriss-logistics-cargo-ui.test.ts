@@ -36,7 +36,8 @@ describe("IRISS Loģistika kravu plāns UI", () => {
     expect(client).toContain("setBounceId");
     expect(plan).toContain("Maršruts");
     expect(plan).toContain("Atvērt Google Maps");
-    expect(plan).toContain("Kopēt maršrutu");
+    expect(plan).not.toContain("Kopēt maršrutu");
+    expect(plan).toContain("Sastādīt maršrutu kartē");
     expect(table).toContain("Uz Autoparku");
     expect(popup).toContain("Sūtīt šoferim");
     expect(popup).toContain("AdminWhatsAppOpenButton");

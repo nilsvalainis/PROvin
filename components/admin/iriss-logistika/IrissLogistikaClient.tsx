@@ -106,6 +106,11 @@ export function IrissLogistikaClient({
   const [popupId, setPopupId] = useState<string | null>(null);
   const [cabinetOpen, setCabinetOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  /** Maršruta poga: "Sastāda…" un kļūda tieši pie pogas, nevis lapas augšā. */
+  const [routeUi, setRouteUi] = useState<Record<"next" | "after", { busy: boolean; notice: string }>>({
+    next: { busy: false, notice: "" },
+    after: { busy: false, notice: "" },
+  });
   const [autoparkLink, setAutoparkLink] = useState<string | null>(null);
   const mapHandleRef = useRef<IrissLogistikaMapHandle>(null);
   const cameraBeforeFs = useRef<LogisticsMapCamera | null>(null);
@@ -221,9 +226,10 @@ export function IrissLogistikaClient({
   async function refreshCargoDirections(bucket: "next" | "after", base: CargoPlanState = cargoPlan) {
     const points = cargoRoutePoints(base, bucket, orders);
     if (points.length < 2) {
-      setNotice("Maršrutam vajag vismaz 2 punktus ar adresi (sākums, auto, beigas).");
+      setRouteUi((prev) => ({ ...prev, [bucket]: { busy: false, notice: "Maršrutam vajag vismaz 2 punktus ar adresi (sākums, auto, beigas)." } }));
       return;
     }
+    setRouteUi((prev) => ({ ...prev, [bucket]: { busy: true, notice: "" } }));
     const res = await fetch("/api/admin/iriss-logistics/directions", {
       method: "POST",
       credentials: "include",
@@ -237,9 +243,10 @@ export function IrissLogistikaClient({
       notice?: string;
     };
     if (body.distanceKm == null) {
-      setNotice(body.notice || "Maršrutu neizdevās sastādīt.");
+      setRouteUi((prev) => ({ ...prev, [bucket]: { busy: false, notice: body.notice || "Maršrutu neizdevās sastādīt." } }));
       return;
     }
+    setRouteUi((prev) => ({ ...prev, [bucket]: { busy: false, notice: "" } }));
     const next: CargoPlanState = {
       ...base,
       routes: {
@@ -885,6 +892,7 @@ export function IrissLogistikaClient({
                 onRowClick={pulseBounce}
                 onRowHover={setHoverId}
                 onRefreshDirections={(bucket, base) => void refreshCargoDirections(bucket, base)}
+                routeUi={routeUi}
                 onAddManual={addManualCar}
               />
               {popupOrder ? (

@@ -28,7 +28,6 @@ import {
   endpointFromTemplate,
   formatCargoDuration,
   formatCargoKm,
-  formatCargoRouteCopy,
   formatLogisticsPostal,
   isCargoBucket,
   logisticsCarTitle,
@@ -55,6 +54,7 @@ type Props = {
   onRowHover: (id: string | null) => void;
   /** `base`: tikko mainītais plāns, ko aprēķins izmanto (nevis veco stāvokli). */
   onRefreshDirections: (bucket: "next" | "after", base?: CargoPlanState) => void;
+  routeUi?: Record<"next" | "after", { busy: boolean; notice: string }>;
   /** Citu klientu auto ar roku: marka, modelis, adrese no ģeokodētāja. */
   onAddManual?: (bucket: CargoBucket, input: ManualCarInput) => Promise<boolean>;
 };
@@ -97,6 +97,7 @@ export function IrissLogistikaCargoPlan({
   onRowClick,
   onRowHover,
   onRefreshDirections,
+  routeUi,
   onAddManual,
 }: Props) {
   const byId = useMemo(() => new Map(orders.map((o) => [o.id, o])), [orders]);
@@ -261,6 +262,8 @@ export function IrissLogistikaCargoPlan({
                   setAddressFor={setAddressFor}
                   onPlanChange={onPlanChange}
                   onRefreshDirections={(base) => onRefreshDirections(cargoBucket, base)}
+                  busy={routeUi?.[cargoBucket].busy ?? false}
+                  error={routeUi?.[cargoBucket].notice ?? ""}
                 >
                   {rows}
                 </RouteBlock>
@@ -552,6 +555,8 @@ function RouteBlock({
   setAddressFor,
   onPlanChange,
   onRefreshDirections,
+  busy,
+  error,
   children,
 }: {
   bucket: "next" | "after";
@@ -563,6 +568,8 @@ function RouteBlock({
   setAddressFor: (v: { bucket: "next" | "after"; end: "start" | "end" } | null) => void;
   onPlanChange: (plan: CargoPlanState) => void;
   onRefreshDirections: (base?: CargoPlanState) => void;
+  busy: boolean;
+  error: string;
   children: ReactNode;
 }) {
   const route = plan.routes[bucket];
@@ -577,14 +584,6 @@ function RouteBlock({
   const mapsUrl = logisticsGoogleMapsDirUrl(points);
   const hasLine = route.path.length > 1;
   const stale = hasLine && route.pathKey !== cargoRoutePointsKey(points);
-  const copyText = formatCargoRouteCopy({
-    start: route.start,
-    stops: rows.flatMap((r) => {
-      const o = byId.get(r.carId);
-      return o ? [{ title: logisticsCarTitle(o), address: o.pickupSnapshot?.city }] : [];
-    }),
-    end: route.end,
-  });
 
   return (
     <div className="px-3.5 pb-3">
@@ -626,6 +625,11 @@ function RouteBlock({
         </div>
         {hasLine && !stale ? <p className="text-[12px] font-medium text-[#15803d]">Maršruts ir kartē</p> : null}
       </div>
+      {error ? (
+        <p className="mt-2 rounded-[10px] bg-[#fdecea] px-2.5 py-2 text-[12.5px] text-[#9b1c13]" role="alert">
+          {error}
+        </p>
+      ) : null}
       {stale ? (
         <p className="mt-2 rounded-[10px] bg-[#fffbeb] px-2.5 py-2 text-[12.5px] text-[#92400e]">
           Kravā mainījās auto vai secība. Pārrēķini, lai līnija kartē atbilst.
@@ -635,11 +639,11 @@ function RouteBlock({
         <button
           type="button"
           className="iriss-log-btn-dark"
-          disabled={points.length < 2}
+          disabled={points.length < 2 || busy}
           title={points.length < 2 ? "Vajag vismaz 2 punktus ar adresi" : undefined}
           onClick={() => onRefreshDirections()}
         >
-          {!hasLine ? "Sastādīt maršrutu kartē" : stale ? "Pārrēķināt maršrutu" : "Pārrēķināt"}
+          {busy ? "Sastāda…" : !hasLine ? "Sastādīt maršrutu kartē" : stale ? "Pārrēķināt maršrutu" : "Pārrēķināt"}
         </button>
         {mapsUrl ? (
           <a href={mapsUrl} target="_blank" rel="noreferrer" className="iriss-log-btn-sec">
@@ -648,15 +652,6 @@ function RouteBlock({
         ) : (
           <span className="iriss-log-btn-sec opacity-40">Atvērt Google Maps</span>
         )}
-        <button
-          type="button"
-          className="iriss-log-btn-sec"
-          onClick={() => {
-            if (copyText) void navigator.clipboard.writeText(copyText);
-          }}
-        >
-          Kopēt maršrutu
-        </button>
       </div>
     </div>
   );
