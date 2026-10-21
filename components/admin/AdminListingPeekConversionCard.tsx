@@ -99,8 +99,8 @@ export function AdminListingPeekConversionCard({ stats, variant = "full" }: Prop
         </ul>
       ) : null}
       <p className="mt-4 text-[12px]">
-        <Link href="/admin/atras-vertesanas" className="font-medium text-[var(--color-provin-accent)] hover:underline">
-          Ātrie vērtējumi
+        <Link href="/admin/atras-vertesanas" style={{ color: "var(--color-provin-accent)" }} className="font-medium text-[var(--color-provin-accent)] hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">
+          Atvērt ātros vērtējumus ›
         </Link>
       </p>
     </section>

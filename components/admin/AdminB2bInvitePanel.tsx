@@ -60,7 +60,7 @@ export function AdminB2bInvitePanel() {
           type="button"
           disabled={busy}
           onClick={() => void createInvite()}
-          className="inline-flex rounded-full bg-[var(--color-provin-accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] disabled:opacity-50"
+          className="inline-flex items-center rounded-full bg-[var(--color-provin-accent)] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[var(--color-provin-accent-hover)] disabled:opacity-50 max-md:min-h-11 max-md:px-5 max-md:text-[15px]"
         >
           {busy ? "Veido…" : "Izveidot ielūgumu"}
         </button>

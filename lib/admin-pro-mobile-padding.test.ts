@@ -14,7 +14,8 @@ describe("PRO admin telefonā nepieskaras ekrāna malai", () => {
 
   it("kopsavilkums, konsultācijas un eksports atkāpjas tikai tur, kur nebija atkāpes", () => {
     expect(page("kopsavilkums")).toContain('<div className="mt-5 max-md:px-4">');
-    expect(page("konsultacijas")).toContain('<div className="max-md:px-4">');
+    // Telefonā konsultāciju galvene paslēpta (virsraksts ir saraksta mobilajā galvenē), tāpēc atkāpe nav vajadzīga.
+    expect(page("konsultacijas")).toContain('<div className="max-md:hidden">');
     expect(page("konsultacijas")).toMatch(/border-dashed max-md:mx-4/);
     // Telefonā eksports ir galvenes izvēlnē "Darbības"; lapas apakšā tikai datorā.
     expect(page("dashboard")).toMatch(/border-slate-100\/80 pt-4 max-md:hidden/);

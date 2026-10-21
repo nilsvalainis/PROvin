@@ -92,7 +92,7 @@ export function AdminMobileTopBar({
             <div className="flex min-w-0 items-center gap-2">
               <h1
                 className={`min-w-0 truncate font-bold tracking-tight text-[var(--label)] ${
-                  hasBack ? "text-[17px] leading-none" : "text-[34px] leading-none"
+                  hasBack ? "text-[17px] leading-none" : title.length > 10 ? "text-[28px] leading-none" : "text-[34px] leading-none"
                 }`}
               >
                 {title}

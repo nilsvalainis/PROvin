@@ -445,7 +445,9 @@ function AdminOrdersMobileChrome({
   filterCounts,
   belowTitle,
   showUnpaidViewSwitch,
+  title = "Pasūtījumi",
 }: {
+  title?: string;
   colorFilter: AuditResultColor | "all" | "none";
   onColorFilter: (c: AuditResultColor | "all" | "none") => void;
   filterCounts: { all: number; green: number; orange: number; red: number; none: number };
@@ -487,7 +489,7 @@ function AdminOrdersMobileChrome({
   return (
     <>
     <AdminMobileTopBar
-      title="Pasūtījumi"
+      title={title}
       trailing={
         <>
           <AdminMobileRoundBtn
@@ -873,6 +875,7 @@ export function AdminOrdersTable({
           filterCounts={filterCounts}
           belowTitle={belowTopBar}
           showUnpaidViewSwitch={showUnpaidViewSwitch}
+          title={consultationList ? "Konsultācijas" : "Pasūtījumi"}
         />
       <ul className="mt-2 space-y-2 px-4">
         {dayGroups.map((g) => (
@@ -998,7 +1001,7 @@ export function AdminOrdersTable({
               </p>
               <div className="mt-1 flex items-center justify-between gap-2">
                 <p className="min-w-0 truncate text-[13px] tabular-nums text-[var(--label-secondary)]">
-                  {v.primaryClient && v.primaryClient !== "-" ? (
+                  {v.primaryClient && v.primaryClient !== "-" && v.primaryClient !== adminOrderCardTitle(o.makeModel, v) ? (
                     <>
                       <span>{v.primaryClient}</span>
                       {o.clientOrders?.length ? <span> {o.clientOrders.length + 1}×</span> : null}

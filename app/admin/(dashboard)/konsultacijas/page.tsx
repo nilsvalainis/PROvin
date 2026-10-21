@@ -28,7 +28,8 @@ export default async function AdminConsultationsPage() {
 
   return (
     <div className="w-full max-w-none">
-      <div className="max-md:px-4">
+      {/* Telefonā virsraksts "Konsultācijas" ir saraksta mobilajā galvenē. */}
+      <div className="max-md:hidden">
         <AdminDashboardHeaderWithMenu>
           <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--color-provin-muted)]">
             Apstrādes telpa
