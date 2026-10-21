@@ -281,7 +281,7 @@ export function IrissStaffUsersClient() {
                 audit.map((row) => (
                   <li key={row.id} className="flex gap-2 text-[13px]">
                     <span className="w-16 shrink-0 text-[#9aa3b2]">{formatWhen(row.createdAt).split(" · ")[0]?.replace("šodien ", "")}</span>
-                    <span className="min-w-0 text-[#111827]">
+                    <span className="min-w-0 text-[#111827] [overflow-wrap:anywhere]">
                       {row.userId === "env-admin"
                         ? admin?.name || "Administrators"
                         : users.find((u) => u.id === row.userId)?.name || row.userId}{" "}
