@@ -36,7 +36,7 @@ import { IrissLimitsSidebarCard, useIrissLimits } from "@/components/admin/Iriss
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
 import { useAdminClientReady, useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
 import { adminChromeDataset } from "@/lib/admin-chrome-attrs";
-import { isModifiedClick, startAdminViewTransition, viewTransitionDir } from "@/lib/admin-motion";
+import { isModifiedClick } from "@/lib/admin-motion";
 import { requestAdminGlobalSearch } from "@/lib/admin-global-search";
 import { finiteBadgeCount } from "@/lib/admin-sidebar-badge";
 import {
@@ -589,7 +589,6 @@ const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
 /** Mobilā apakšējā cilņu josla: 4 iPhone cilnes + atsevišķa meklēšana. PRO/IRISS centrs ir „Vairāk”. */
 export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: AdminWorkspace } = {}) {
   const pathname = usePathname() || "";
-  const router = useRouter();
   const workspaceFromPath = useAdminWorkspace();
   const workspace = workspaceProp ?? workspaceFromPath;
   const badges = useBadges();
@@ -599,15 +598,16 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   const theme = useAdminMobileColorScheme();
   useAdminScrollLock(more || limitsOpen);
 
-  const goTab = useCallback(
-    (href: string) => {
-      startAdminViewTransition(() => {
-        router.push(href);
-      }, viewTransitionDir(pathname, href));
-    },
-    [pathname, router],
-  );
-  useEffect(() => setMore(false), [pathname]);
+  /**
+   * Cilne, uz kuru lietotājs tikko pieskārās. Pille un atzīme pārvietojas uzreiz, kamēr serveris gatavo lapu.
+   * Agrāk te bija view transition ap router.push: animācija sākās pirms navigācijas, tās laikā lapa
+   * nereaģēja uz pieskārieniem, un saturs nomainījās vēlāk zem pirksta (Nils 21.10: "atveras cita sadaļa").
+   */
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  useEffect(() => {
+    setMore(false);
+    setPendingHref(null);
+  }, [pathname]);
   useEffect(() => {
     if (!more) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMore(false);
@@ -619,7 +619,8 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   const proTabs: Item[] = [SAKUMS, { ...VIN, label: "VIN" }, { ...FAST, label: "Ātrie" }];
   const tabs: Item[] = workspace === "iriss" ? irissTabs : proTabs;
   const tabHrefs = new Set(tabs.map((t) => t.href));
-  const inTabs = tabs.some((t) => t.match(pathname));
+  const shownPath = pendingHref ?? pathname;
+  const inTabs = tabs.some((t) => t.match(shownPath));
   const moreGroups = WS_GROUPS[workspace].map((g) => ({
     ...g,
     items: g.items.filter((it) => !tabHrefs.has(it.href)),
@@ -631,7 +632,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
       on ? "font-semibold text-[var(--am-ink)]" : "text-[var(--am-ink2)]"
     }`;
 
-  const selectedTabIndex = tabs.findIndex((t) => t.match(pathname));
+  const selectedTabIndex = tabs.findIndex((t) => t.match(shownPath));
   const pillIndex = more || selectedTabIndex < 0 ? tabs.length : selectedTabIndex;
   const tabCount = tabs.length + 1;
 
@@ -640,7 +641,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
       <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
           <AdminMobileTabPill index={pillIndex} count={tabCount} />
           {tabs.map((t) => {
-            const on = t.match(pathname) && !more;
+            const on = t.match(shownPath) && !more;
             const n = t.badge ? badges[t.badge] : 0;
             const icon = MOBILE_TAB_ICON[t.href] ?? "pasutijumi";
             return (
@@ -651,8 +652,8 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                 className={tabClass(on)}
                 onClick={(e) => {
                   if (isModifiedClick(e)) return;
-                  e.preventDefault();
-                  goTab(t.href);
+                  setMore(false);
+                  setPendingHref(t.href);
                 }}
               >
                 <span className="relative">
@@ -694,7 +695,10 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                   />
                   <Link
                     href="/admin/dashboard"
-                    onClick={() => writeWsCookie("pro")}
+                    onClick={() => {
+                      writeWsCookie("pro");
+                      setMore(false);
+                    }}
                     className={`relative z-[1] flex h-full flex-1 items-center justify-center rounded-full text-[12px] font-semibold ${
                       workspace === "pro" ? "text-[var(--am-ink)]" : "text-[var(--am-ink2)]"
                     }`}
@@ -703,7 +707,10 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
                   </Link>
                   <Link
                     href="/admin/iriss"
-                    onClick={() => writeWsCookie("iriss")}
+                    onClick={() => {
+                      writeWsCookie("iriss");
+                      setMore(false);
+                    }}
                     className={`relative z-[1] flex h-full flex-1 items-center justify-center rounded-full text-[12px] font-semibold ${
                       workspace === "iriss" ? "text-[var(--am-ink)]" : "text-[var(--am-ink2)]"
                     }`}
