@@ -5,6 +5,9 @@
  */
 import { NextResponse } from "next/server";
 
+import { isAdminPushConfigured, sendAdminPush } from "@/lib/admin-push";
+import { adminPushMorningMessage } from "@/lib/admin-push-shared";
+
 import {
   authorizeMorningSummaryCron,
   buildMorningSummaryEmail,
@@ -29,16 +32,31 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: true, skipped: "not_riga_send_hour" });
   }
 
+  // Push neatkarīgi no e-pasta: pietiek ar VAPID atslēgām un abonētu ierīci.
+  let pushed = 0;
+  let loaded: Awaited<ReturnType<typeof loadMorningSummary>> | null = null;
+  if (isAdminPushConfigured()) {
+    try {
+      loaded = await loadMorningSummary(nowMs);
+      const { summary } = loaded;
+      pushed = (await sendAdminPush(adminPushMorningMessage(summary.counts))).sent;
+    } catch (err) {
+      console.error("[cron/morning-summary] push failed", err);
+    }
+  }
+
   const to = getMorningSummaryRecipients();
   if (to.length === 0) {
+    if (pushed > 0) return NextResponse.json({ ok: true, pushed, email: "missing_morning_summary_to" });
     return NextResponse.json({ error: "missing_morning_summary_to" }, { status: 503 });
   }
   if (!isSmtpConfigured()) {
+    if (pushed > 0) return NextResponse.json({ ok: true, pushed, email: "smtp_not_configured" });
     return NextResponse.json({ error: "smtp_not_configured" }, { status: 503 });
   }
 
   try {
-    const { summary } = await loadMorningSummary(nowMs);
+    const { summary } = loaded ?? (await loadMorningSummary(nowMs));
     const mail = buildMorningSummaryEmail(summary, {
       pageUrl: morningSummaryAdminUrl(getSiteOrigin()),
       nowMs,
@@ -47,6 +65,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       ok: true,
       sent: true,
+      pushed,
       toCount: to.length,
       open: summary.counts.open,
       urgent: summary.counts.urgent,
