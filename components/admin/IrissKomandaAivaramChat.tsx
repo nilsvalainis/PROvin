@@ -318,7 +318,33 @@ export function IrissKomandaAivaramChat({
         }}
       >
         <p className="mb-1 text-[11px] font-medium text-[#6b7280]">Numurs</p>
-        <div className="mb-2 flex flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-3.5">
+        {/* Telefonā - kompaktās pilles (pirms #382); zīmētās numurzīmes tikai no md. */}
+        <div className="mb-2 flex gap-1.5 md:hidden">
+          {chat.plates.map((row) => {
+            const on = plate === row.plate;
+            return (
+              <button
+                key={row.plate}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setPlate(row.plate)}
+                className={`min-h-11 min-w-0 flex-1 rounded-full px-2 py-1.5 text-[12px] font-semibold ${
+                  on ? "bg-[#111827] text-white" : "bg-[#F3F4F6] text-[#111827]"
+                }`}
+              >
+                {row.plate}
+                <small
+                  className={`mt-0.5 block text-[10px] font-medium ${
+                    on ? "text-white/70" : row.busy ? "text-[#b45309]" : "text-[#067647]"
+                  }`}
+                >
+                  {row.busy ? "aizņemts" : "brīvs"}
+                </small>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mb-2 hidden md:flex md:flex-row md:items-start md:gap-3.5">
           {chat.plates.map((row) => {
             const meta = dealerPlateMeta(row.plate);
             return (
