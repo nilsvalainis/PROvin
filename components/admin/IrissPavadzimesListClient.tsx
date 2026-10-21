@@ -196,7 +196,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
         <PavadzimeSearchFocus rowCount={rows.length} />
       </Suspense>
       <div className="mt-2 flex max-w-full flex-wrap items-center gap-2 max-md:px-4">
-        <div className="inline-flex min-w-0 flex-1 rounded-lg bg-[#e9e9ee] p-0.5 max-md:w-full max-md:flex-none" role="tablist" aria-label="Pavadzīmju filtrs">
+        <div className="inline-flex min-w-0 items-stretch rounded-lg bg-[#e9e9ee] p-0.5 max-md:w-full" role="tablist" aria-label="Pavadzīmju filtrs">
           {(["current", "archive", "all"] as const).map((v) => (
             <button
               key={v}
@@ -204,11 +204,12 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
               role="tab"
               aria-selected={view === v}
               onClick={() => setView(v)}
-              className={`min-h-11 flex-1 rounded-md px-2 text-[13px] font-semibold transition md:h-8 md:min-h-8 md:flex-none ${
-                v === "all" ? "hidden md:inline-flex" : ""
+              className={`inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[13px] font-semibold leading-none transition md:h-8 md:min-h-8 md:flex-none ${
+                v === "all" ? "max-md:hidden" : ""
               } ${view === v ? "bg-white text-[#1d1d1f] shadow-sm" : "text-[#6e6e73] hover:text-[#1d1d1f]"}`}
             >
-              {VIEW_LABEL[v]} <span className="tabular-nums text-[#8e8e93]">{viewCount(v)}</span>
+              <span>{VIEW_LABEL[v]}</span>
+              <span className="tabular-nums text-[#8e8e93]">{viewCount(v)}</span>
             </button>
           ))}
         </div>
