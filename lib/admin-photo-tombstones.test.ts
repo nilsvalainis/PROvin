@@ -8,6 +8,7 @@ import {
 import { createDefaultSourceBlocks, hydrateWorkspaceFromStorage } from "@/lib/admin-source-blocks";
 import { mergePdfVisibility } from "@/lib/pdf-visibility";
 import { removedPhotoIds, stripDeletedPhotos } from "@/lib/admin-photo-tombstones";
+import { resolveOrderWorkspaceHydration } from "@/lib/admin-order-workspace-hydrate";
 import { coalesceOrderDraftWorkspacePatch, orderDraftWorkspaceToPersistBody, persistBodyToOrderDraftWorkspace } from "@/lib/admin-order-draft-workspace-merge";
 
 const A = "la_ph_aaaaaaaaaaaaaaaaaaaaaaaa";
@@ -89,5 +90,49 @@ describe("K1 photo tombstones", () => {
     expect(removedPhotoIds({ photos: [{ id: A }, { id: B }] }, { photos: [{ id: A }] })).toEqual([B]);
     const v = { x: { photos: [{ id: A }] } };
     expect(stripDeletedPhotos(v, new Set([B]))).toBe(v);
+  });
+});
+
+describe("K1 photo tombstones on hydrate (#396 photo coalesce)", () => {
+  const snap = (b: OrderWorkspacePersistBody, savedAt: string) =>
+    serializeOrderWorkspaceSnapshotFromRef(b, mergePdfVisibility({}), {}, savedAt);
+  const hydratedIds = (h: { sourceBlocks: OrderWorkspacePersistBody["sourceBlocks"] }) =>
+    (h.sourceBlocks.listing_analysis.photoGroups ?? []).flatMap((g) => g.photos.map((p) => p.id));
+
+  it("dzēsta bilde neatdzīvojas no vecāka servera snapshot pēc pārlādes", () => {
+    const local = snap(body([A], { deletedPhotoIds: [B] }), "2026-10-20T12:00:00.000Z");
+    const server = snap(body([A, B]), "2026-10-20T10:00:00.000Z");
+    const resolved = resolveOrderWorkspaceHydration({
+      localRaw: local,
+      localRawLegacyV2: null,
+      backupRaw: null,
+      serverWorkspaceJson: server,
+    });
+    expect(hydratedIds(resolved.hydrated)).toEqual([A]);
+    expect(resolved.hydrated.deletedPhotoIds).toEqual([B]);
+  });
+
+  it("servera kapakmenis noņem bildi arī no jaunāka local bez kapakmeņa", () => {
+    const local = snap(body([A, B]), "2026-10-20T12:00:00.000Z");
+    const server = snap(body([A], { deletedPhotoIds: [B] }), "2026-10-20T10:00:00.000Z");
+    const resolved = resolveOrderWorkspaceHydration({
+      localRaw: local,
+      localRawLegacyV2: null,
+      backupRaw: null,
+      serverWorkspaceJson: server,
+    });
+    expect(hydratedIds(resolved.hydrated)).toEqual([A]);
+  });
+
+  it("bez kapakmeņiem bildes joprojām apvienojas (#396)", () => {
+    const local = snap(body([A]), "2026-10-20T12:00:00.000Z");
+    const server = snap(body([A, B]), "2026-10-20T10:00:00.000Z");
+    const resolved = resolveOrderWorkspaceHydration({
+      localRaw: local,
+      localRawLegacyV2: null,
+      backupRaw: null,
+      serverWorkspaceJson: server,
+    });
+    expect(hydratedIds(resolved.hydrated).sort()).toEqual([A, B].sort());
   });
 });
