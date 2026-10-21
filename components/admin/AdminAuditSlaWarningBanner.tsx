@@ -25,7 +25,11 @@ export function AdminAuditSlaOrderBanner({
       }`}
       role="status"
     >
-      {overdue ? `48 h termiņš kavējas (${label}).` : `48 h termiņš: atlikušas ${label}.`}
+      {overdue
+        ? label === "Termiņš beidzies"
+          ? "48 h termiņš beidzies."
+          : `48 h termiņš: ${label.charAt(0).toLowerCase()}${label.slice(1)}.`
+        : `48 h termiņš: atlikušas ${label}.`}
     </p>
   );
 }

@@ -4533,9 +4533,15 @@ export function OrderDetailWorkspace({
   const showPortfolioInline = !portfolioPortalDomId || !portfolioPortalEl;
   const showPortfolioPortal = Boolean(portfolioPortalDomId && portfolioPortalEl);
 
+  /** Telefonā bez brīdinājumiem sekcija paliek tukša balta kartīte, tāpēc to tur nerāda. */
+  const alertsEmpty =
+    provinAlertBanners.length === 0 && provinInfoBanners.length === 0 && manualBanners.length === 0;
   const alertsSection = (
-      <section id="admin-order-section-bridinajumi" className={`${workspaceSectionShell} mb-1.5`}>
-        <div className={`flex flex-wrap items-center justify-between gap-2 ${bannerCards.hidden ? "" : "mb-1.5"}`}>
+      <section
+        id="admin-order-section-bridinajumi"
+        className={`${workspaceSectionShell} mb-1.5 ${alertsEmpty ? "max-md:hidden" : ""}`}
+      >
+        <div className={`flex flex-wrap items-center justify-between gap-2 max-md:hidden ${bannerCards.hidden ? "" : "mb-1.5"}`}>
           <button
             type="button"
             className="inline-flex h-6 items-center rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 text-[10px] font-medium text-[var(--color-apple-text)] hover:bg-black/[0.04]"
@@ -4864,7 +4870,7 @@ export function OrderDetailWorkspace({
       ) : null}
       <div className="md:hidden">
         <AdminMobileTopBar
-          title={(payload.customerName || "Pasūtījums").toUpperCase()}
+          title={payload.customerName?.trim() || "Pasūtījums"}
           subtitle={vinBar || undefined}
           backHref="/admin/dashboard"
           trailing={
@@ -4877,7 +4883,7 @@ export function OrderDetailWorkspace({
                   void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
                 }}
               />
-              <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => setMobileMore(true)} />
+              <AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMobileMore(true)} />
             </>
           }
         >
@@ -4895,7 +4901,6 @@ export function OrderDetailWorkspace({
             }}
           />
         </AdminMobileTopBar>
-        <p className="px-4 pb-2 text-[13px] text-[var(--am-ink2)]">3 maksas avoti ir izvēlnē ⋯</p>
         <AdminMobileSheet open={mobileMore} title="Darbības" onClose={() => setMobileMore(false)}>
           <div className="overflow-hidden rounded-[18px] bg-[var(--am-s1)]">
             <button type="button" className="flex h-[50px] w-full items-center px-4 text-[15px]" onClick={() => { setMobileMore(false); handleWhatsAppOpen(); }}>WhatsApp</button>
