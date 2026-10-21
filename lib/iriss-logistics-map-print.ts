@@ -216,3 +216,80 @@ export function waitForGoogleMapTilesIdle(
     });
   });
 }
+
+export type LogisticsPrintRow = {
+  id: string;
+  n: number;
+  car: string;
+  vin: string;
+  place: string;
+  address: string;
+  hours: string;
+  phone: string;
+  pickupRef: string;
+  pickupDate: string;
+  cargo: string;
+};
+
+/**
+ * Drukā tieši to, kas redzams ekrānā: izvēlētais reiss (maršruta secībā) vai visi kartes auto.
+ * Ja ir atzīmēti auto, tikai tie. Numuri sakrīt ar lāsēm kartē un sarakstu 2. lapā.
+ * Bez cenām un klienta datiem (Loģistikas loma).
+ */
+export function logisticsPrintPlan(input: {
+  mapOrders: LogisticsOrder[];
+  selectedIds: ReadonlySet<string>;
+  /** Reisa secība (maršruta pieturas), ja kartē ir viens reiss ar maršrutu. */
+  routeOrder?: readonly string[];
+  cargoLabelOf?: (id: string) => string;
+}): { rows: LogisticsPrintRow[]; numbers: Map<string, number> } {
+  const withGeo = input.mapOrders.filter(hasPickupCoords);
+  const picked = withGeo.filter((o) => input.selectedIds.has(o.id));
+  let list = picked.length > 0 ? picked : withGeo;
+  if (input.routeOrder?.length) {
+    const pos = new Map(input.routeOrder.map((id, i) => [id, i]));
+    list = [...list].sort((a, b) => (pos.get(a.id) ?? 1e6) - (pos.get(b.id) ?? 1e6));
+  }
+  const numbers = new Map<string, number>();
+  const rows = list.map((o, i) => {
+    numbers.set(o.id, i + 1);
+    const snap = o.pickupSnapshot;
+    return {
+      id: o.id,
+      n: i + 1,
+      car: logisticsOrderMapLabel(o),
+      vin: o.vin.trim(),
+      place: (snap?.name ?? "").trim(),
+      address: (o.pickupAddress || formatLogisticsAddress(snap ?? {})).trim(),
+      hours: (snap?.hoursText ?? "").trim(),
+      phone: (snap?.phone ?? "").trim(),
+      pickupRef: o.pickupRef.trim(),
+      pickupDate: o.pickupDate.trim(),
+      cargo: input.cargoLabelOf?.(o.id) ?? "",
+    };
+  });
+  return { rows, numbers };
+}
+
+/**
+ * Drukas brīdī paslēpj visu, kas nav drukas bloks (katra priekšteča brāļus līdz <body>), lai karte un
+ * saraksts plūst normāli uz 2 lapām. Atgriež funkciju, kas visu atjauno.
+ */
+export function isolateElementForPrint(el: HTMLElement): () => void {
+  const hidden: Array<{ node: HTMLElement; prev: string }> = [];
+  let cur: HTMLElement | null = el;
+  while (cur && cur !== document.body) {
+    const parent: HTMLElement | null = cur.parentElement;
+    if (!parent) break;
+    for (const sib of Array.from(parent.children)) {
+      if (sib === cur || !(sib instanceof HTMLElement)) continue;
+      if (sib.tagName === "SCRIPT" || sib.tagName === "STYLE" || sib.tagName === "LINK") continue;
+      hidden.push({ node: sib, prev: sib.style.display });
+      sib.style.display = "none";
+    }
+    cur = parent;
+  }
+  return () => {
+    for (const h of hidden) h.node.style.display = h.prev;
+  };
+}

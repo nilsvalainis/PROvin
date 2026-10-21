@@ -91,3 +91,19 @@ describe("maršruta līnijas retināšana", () => {
     expect(out[out.length - 1]).toEqual({ lat: 50.9, lng: 10 });
   });
 });
+
+describe("nosaukumu kartīšu pārklāšanās", () => {
+  it("stacks overlapping labels below each other and leaves free ones alone", async () => {
+    const { resolveLabelOverlaps } = await import("@/lib/iriss-logistics-map-cluster");
+    const dy = resolveLabelOverlaps([
+      { x: 0, y: 0, w: 100, h: 30 },
+      { x: 20, y: 10, w: 100, h: 30 },
+      { x: 30, y: 15, w: 100, h: 30 },
+      { x: 500, y: 0, w: 100, h: 30 },
+    ]);
+    expect(dy[0]).toBe(0);
+    expect(dy[1]).toBe(23);
+    expect(dy[2]).toBe(51);
+    expect(dy[3]).toBe(0);
+  });
+});

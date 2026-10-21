@@ -186,3 +186,18 @@ describe("Loģistika map print helpers", () => {
     stop();
   });
 });
+
+describe("drukas plāns: tieši ekrāna skats", () => {
+  it("prints the trip in route order, numbers match pins, no prices", async () => {
+    const { logisticsPrintPlan } = await import("@/lib/iriss-logistics-map-print");
+    const a = order({ id: "a", pickupLat: 1, pickupLng: 1, priceEur: 900 });
+    const b = order({ id: "b", pickupLat: 2, pickupLng: 2 });
+    const c = order({ id: "c", pickupLat: null, pickupLng: null });
+    const plan = logisticsPrintPlan({ mapOrders: [a, b, c], selectedIds: new Set(), routeOrder: ["b", "a"] });
+    expect(plan.rows.map((r) => [r.id, r.n])).toEqual([["b", 1], ["a", 2]]);
+    expect(plan.numbers.get("a")).toBe(2);
+    expect(JSON.stringify(plan.rows)).not.toMatch(/900|€/);
+    const picked = logisticsPrintPlan({ mapOrders: [a, b], selectedIds: new Set(["a"]) });
+    expect(picked.rows.map((r) => r.id)).toEqual(["a"]);
+  });
+});

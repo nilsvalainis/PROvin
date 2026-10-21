@@ -15,7 +15,7 @@ import {
   type LogisticsMapCamera,
 } from "@/lib/iriss-logistics-map-print";
 import { cargoCssColor, formatLogisticsPostal, type CargoBucket } from "@/lib/iriss-logistics-cargo-plan";
-import { clusterIsSameSpot, layoutMapPins } from "@/lib/iriss-logistics-map-cluster";
+import { clusterIsSameSpot, layoutMapPins, resolveLabelOverlaps } from "@/lib/iriss-logistics-map-cluster";
 import type { LogisticsOrder, LogisticsPoint, LogisticsPreviousPointRow } from "@/lib/iriss-logistics-types";
 
 type Gmaps = typeof google.maps;
@@ -273,7 +273,8 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     }));
     lastPtsRef.current = pts;
     const bounds = new google.maps.LatLngBounds();
-    const useCargoPins = pinVariant === "cargo" && mode === "cars" && !printNumbers;
+    // Drukā tās pašas lāses (ar drukas numuriem), lai papīrs izskatās tāpat kā ekrāns.
+    const useCargoPins = pinVariant === "cargo" && mode === "cars";
     for (const p of pts) bounds.extend({ lat: p.lat, lng: p.lng });
     if (useCargoPins) {
       const layer = makeCargoLayerOverlay({
@@ -297,9 +298,9 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       const PolylineCtor = (google.maps as unknown as { Polyline: new (opts: Record<string, unknown>) => { setMap: (map: google.maps.Map | null) => void } }).Polyline;
       for (const r of routePaths ?? []) {
         if (r.path.length < 2) continue;
-        // Balta apmale zem krāsainās līnijas, lai maršruts izceļas uz kartes.
-        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: "#ffffff", strokeOpacity: 0.9, strokeWeight: 7, zIndex: 1 }));
-        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: r.color, strokeOpacity: 0.95, strokeWeight: 4, zIndex: 2 }));
+        // Kā Google Maps: zila līnija ar tumšāku apmali.
+        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: ROUTE_LINE_BORDER, strokeOpacity: 1, strokeWeight: 8, zIndex: 1 }));
+        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: r.color, strokeOpacity: 1, strokeWeight: 6, zIndex: 2 }));
       }
     } else {
     for (const p of pts) {
@@ -423,6 +424,27 @@ function pinLabelHtml(members: MapPoint[]): string {
  * Viens slānis visiem auto punktiem. Pie katras tālummaiņas punkti, kas ekrānā ir tuvāk par 30 px,
  * saplūst grupā ar skaitu. Nosaukums parādās tikai, kad pele ir virs punkta vai auto ir izcelts.
  */
+/** Google Maps maršruta līnijas apmale (zem zilās līnijas). */
+const ROUTE_LINE_BORDER = "#1558b0";
+
+/** Nosaukumu kartītes vienu zem otras, ja tās citādi pārklātos (mēra pēc ievietošanas DOM). */
+function spreadLabels(root: HTMLElement) {
+  const labels = [...root.querySelectorAll<HTMLElement>(".iriss-log-pin-label")];
+  if (labels.length < 2) return;
+  const base = root.getBoundingClientRect();
+  const boxes = labels.map((l) => {
+    l.style.transform = "";
+    const r = l.getBoundingClientRect();
+    return { x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height };
+  });
+  const dy = resolveLabelOverlaps(boxes);
+  labels.forEach((l, i) => {
+    if (!dy[i]) return;
+    l.style.transform = `translateY(calc(-50% + ${dy[i]}px))`;
+    l.classList.add("shifted");
+  });
+}
+
 /** Kartes lāšu krāsas: Nākošā krava sarkana, Aiznākošā melna, pārējie pelēki (sakrīt ar kravu plāna punktiem). */
 export const PIN_COLOR: Record<CargoBucket, string> = {
   next: "#ea4335",
@@ -476,7 +498,7 @@ function makeCargoLayerOverlay(input: {
       root.replaceChildren();
       const placed = input.pts.flatMap((p) => {
         const px = proj.fromLatLngToDivPixel(new google.maps.LatLng(p.lat, p.lng));
-        return px ? [{ id: p.id, x: px.x, y: px.y, lat: p.lat, lng: p.lng, routeNumber: p.routeNumber, p }] : [];
+        return px ? [{ id: p.id, x: px.x, y: px.y, lat: p.lat, lng: p.lng, routeNumber: p.printNumber ?? p.routeNumber, p }] : [];
       });
       const tip = (p: MapPoint) =>
         `<span class="iriss-log-pin-tip"><b>${escapeHtml(pinTitle(p))}</b>${p.statusLv ? `<i>${escapeHtml(p.statusLv)}</i>` : ""}</span>`;
@@ -507,7 +529,7 @@ function makeCargoLayerOverlay(input: {
           const active = input.activeIds.has(p.id);
           const none = (p.cargo ?? "none") === "none";
           el.className = `iriss-log-tear${active ? " active" : ""}${p.selected ? " selected" : ""}${none ? " small" : ""}`;
-          el.innerHTML = `${teardropSvg(input.colorOf(p), item.kind === "stop" ? String(p.routeNumber) : "", none)}${
+          el.innerHTML = `${teardropSvg(input.colorOf(p), item.kind === "stop" ? String(item.point.routeNumber) : "", none)}${
             input.showLabels ? pinLabelHtml([p]) : tip(p)
           }`;
           el.addEventListener("click", (e) => {
@@ -561,6 +583,7 @@ function makeCargoLayerOverlay(input: {
         }
         root.appendChild(el);
       }
+      if (input.showLabels) spreadLabels(root);
     }
     onRemove() {
       this.closeListener?.remove();

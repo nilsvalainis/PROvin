@@ -92,10 +92,13 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(client).toContain("printNumbers={printing ? printNumbers : undefined}");
     expect(client).not.toContain("printSelectedOnly");
     expect(client).not.toContain("Nav atzīmētu punktu");
-    expect(client).toContain("logisticsOrdersForMapPrint");
+    // Drukā tieši ekrāna skatu (reiss vai visi), 2. lapā saraksts ar tiem pašiem numuriem.
+    expect(client).toContain("logisticsPrintPlan");
+    expect(client).toContain("<IrissLogistikaPrintList");
+    expect(client).toContain("isolateElementForPrint(printRootRef.current)");
     expect(client).toContain("Pilnekrāns");
     expect(client).toContain("IrissAuctionLogo");
-    expect(client).toContain("iriss-log-print-legend");
+
     expect(client).toContain("iriss-log-print-root");
     expect(client).toContain("/api/admin/iriss/logistika/print");
     expect(client).not.toMatch(/sticky top-/);
@@ -103,12 +106,12 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(css).toMatch(/@page\s*\{\s*size:\s*A4 landscape/);
     expect(css).toMatch(/margin:\s*10mm/);
     expect(css).toContain("277mm");
-    expect(css).toContain("170mm");
+    expect(css).toContain("165mm");
+    expect(css).toContain("break-before: page");
     expect(css).toContain("aspect-ratio: 8 / 7");
-    expect(css).toContain("body *");
-    expect(css).toContain("visibility: hidden");
+
     expect(css).toContain(".iriss-log-print-root");
-    expect(css).toContain("iriss-log-print-legend");
+    expect(css).toContain(".iriss-log-print-list");
     expect(css).not.toMatch(/height:\s*200px/);
     expect(printLib).toContain('bind("idle"');
     expect(printLib).toContain('bind("tilesloaded"');

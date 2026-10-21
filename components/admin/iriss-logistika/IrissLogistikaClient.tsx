@@ -11,13 +11,17 @@ import { IrissLogistikaCarsTable } from "@/components/admin/iriss-logistika/Iris
 import { IrissLogistikaCargoPlan, type ManualCarInput } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
+import { IrissLogistikaPrintList } from "@/components/admin/iriss-logistika/IrissLogistikaPrintList";
 import { AdminMobileChips, AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { IrissLogistikaRouteTemplatesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaRouteTemplatesPanel";
 import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
 import { filterLogisticsOrdersByView, isLogisticsOrderActive, isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import { CABINET_PICKUP_STAGE_LV, type CabinetPickup, type CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
 import {
+  CARGO_BUCKET_LV,
   CARGO_COLOR_FALLBACK,
+  formatCargoDuration,
+  formatCargoKm,
   cargoRoutePoints,
   cargoRoutePointsKey,
   carsInCargoBucket,
@@ -33,9 +37,8 @@ import { logisticsOrderMapLabel } from "@/lib/iriss-logistics-labels";
 import {
   LOGISTICS_PRINT_HTML_CLASS,
   LOGISTICS_PRINT_PAGE_CSS,
-  logisticsOrdersForMapPrint,
-  logisticsPrintLegendRows,
-  logisticsPrintNumberMap,
+  isolateElementForPrint,
+  logisticsPrintPlan,
   logisticsPrintSheetTitle,
   scheduleWhenElementHasBox,
   type LogisticsMapCamera,
@@ -67,6 +70,8 @@ type Props = {
 };
 
 const LABELS_PREF_KEY = "iriss.logistics.mapLabels";
+/** Maršruta līnija kā Google Maps: zila; Aiznākošā gaišāk zila, lai abas var atšķirt. */
+const ROUTE_LINE_COLOR = { next: "#1a73e8", after: "#7baaf7" } as const;
 /** Pauze pēc pēdējās kravas izmaiņas, pirms maršruts pārrēķinās pats. */
 const LIVE_ROUTE_DELAY_MS = 1500;
 const FOCUS_PREF_KEY = "iriss.logistics.mapFocus";
@@ -122,6 +127,8 @@ export function IrissLogistikaClient({
   const mapHandleRef = useRef<IrissLogistikaMapHandle>(null);
   const cameraBeforeFs = useRef<LogisticsMapCamera | null>(null);
   const mapFsCardRef = useRef<HTMLDivElement>(null);
+  const printRootRef = useRef<HTMLDivElement>(null);
+  const restorePrintRef = useRef<(() => void) | null>(null);
   const cabinetRef = useRef<HTMLDivElement>(null);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const bounceTimer = useRef<number | null>(null);
@@ -475,7 +482,7 @@ export function IrissLogistikaClient({
     () =>
       focusBuckets
         .filter((b) => cargoPlan.routes[b].enabled && cargoPlan.routes[b].path.length > 1)
-        .map((b) => ({ path: cargoPlan.routes[b].path, color: CARGO_COLOR_FALLBACK[b] })),
+        .map((b) => ({ path: cargoPlan.routes[b].path, color: ROUTE_LINE_COLOR[b] })),
     [cargoPlan, focusBuckets],
   );
   const routeEnds = useMemo(() => {
@@ -525,17 +532,32 @@ export function IrissLogistikaClient({
 
   const selectedPoint = points.find((p) => p.id === pointId) ?? groupedPoints[0]?.rows[0] ?? null;
   const usedCount = (id: string) => orders.filter((o) => o.pickupPointId === id).length;
-  const printOrders = useMemo(
-    () => logisticsOrdersForMapPrint(visibleOrders, selectedSet),
-    [visibleOrders, selectedSet],
-  );
-  const printLegend = useMemo(() => logisticsPrintLegendRows(printOrders), [printOrders]);
-  const printNumbers = useMemo(() => logisticsPrintNumberMap(printOrders), [printOrders]);
-  const printSheet = useMemo(
-    () => logisticsPrintSheetTitle(new Date(), printOrders.length),
-    [printOrders.length, printing],
-  );
-  const otherPrintCount = Math.max(0, visibleOrders.filter((o) => o.pickupLat != null && o.pickupLng != null).length - printOrders.length);
+  /** Drukā tieši ekrāna skatu: izvēlētais reiss (maršruta secībā) vai visi kartes auto pa kravām. */
+  const printPlan = useMemo(() => {
+    const routeOrder = (mapFocus === "all" ? (["next", "after", "none"] as const) : [mapFocus]).flatMap((b) =>
+      carsInCargoBucket(cargoPlan, b).map((c) => c.carId),
+    );
+    const visible = mapOrders.filter((o) => showOnMapIds.has(o.id) || !cargoPlan.cars.some((c) => c.carId === o.id));
+    return logisticsPrintPlan({
+      mapOrders: visible,
+      selectedIds: selectedSet,
+      routeOrder,
+      cargoLabelOf: (id) => CARGO_BUCKET_LV[cargoByCarId.get(id) ?? "none"],
+    });
+  }, [mapFocus, cargoPlan, mapOrders, showOnMapIds, selectedSet, cargoByCarId]);
+  const printOrders = useMemo(() => {
+    const ids = new Set(printPlan.rows.map((r) => r.id));
+    return mapOrders.filter((o) => ids.has(o.id));
+  }, [printPlan, mapOrders]);
+  const printNumbers = printPlan.numbers;
+  const printSheet = useMemo(() => {
+    const t = logisticsPrintSheetTitle(new Date(), printPlan.rows.length);
+    const trip = mapFocus === "all" ? "Visi auto" : CARGO_BUCKET_LV[mapFocus];
+    const route = mapFocus === "all" ? null : cargoPlan.routes[mapFocus];
+    const km = route?.enabled && route.distanceKm != null ? ` · ${formatCargoKm(route.distanceKm)}${route.durationMin != null ? `, ${formatCargoDuration(route.durationMin)}` : ""}` : "";
+    return { heading: `IRISS Loģistika · ${trip}${km}`, meta: t.meta.replace("atzīmēti punkti", "auto") };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- laiks drukas brīdī
+  }, [printPlan, mapFocus, cargoPlan, printing]);
 
   useEffect(() => {
     document.documentElement.classList.toggle(LOGISTICS_PRINT_HTML_CLASS, printing);
@@ -554,6 +576,8 @@ export function IrissLogistikaClient({
 
   useEffect(() => {
     function endPrint() {
+      restorePrintRef.current?.();
+      restorePrintRef.current = null;
       setPrinting(false);
     }
     window.addEventListener("afterprint", endPrint);
@@ -603,6 +627,7 @@ export function IrissLogistikaClient({
     const handle = mapHandleRef.current;
     const view = handle?.snapshotView() ?? null;
     flushSync(() => setPrinting(true));
+    if (printRootRef.current) restorePrintRef.current = isolateElementForPrint(printRootRef.current);
     await new Promise<void>((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
@@ -923,7 +948,7 @@ export function IrissLogistikaClient({
                   )}
                 </div>
               </div>
-              <div className="iriss-log-print-root">
+              <div ref={printRootRef} className="iriss-log-print-root">
                 <div className="iriss-log-map-hero">
                   <div className="iriss-log-print-chrome pointer-events-none absolute left-2 right-2 top-2 z-[3] flex items-end justify-between gap-2 text-[11px] text-[#334155]">
                     <p className="font-semibold">{printSheet.heading}</p>
@@ -934,14 +959,14 @@ export function IrissLogistikaClient({
                     fill
                     height={420}
                     mode="cars"
-                    orders={printing ? visibleOrders : mapOrders}
+                    orders={printing ? printOrders : mapOrders}
                     previous={previous}
                     selectedIds={selectedSet}
                     focus={printing ? null : preview}
                     lockView={printing}
                     printNumbers={printing ? printNumbers : undefined}
                     pinVariant="cargo"
-                    showLabels={showLabels}
+                    showLabels={printing ? false : showLabels}
                     cargoByCarId={cargoByCarId}
                     showOnMapIds={showOnMapIds}
                     bounceCarId={bounceId}
@@ -957,22 +982,8 @@ export function IrissLogistikaClient({
                       setPopupId(id);
                     }}
                   />
-                  <ul className="iriss-log-print-legend pointer-events-none absolute bottom-2 right-2 z-[3] flex flex-col gap-0.5 text-[10px] text-[#111]">
-                    {printLegend.length === 0 ? (
-                      <li>Nav punktu ar koordinātēm.</li>
-                    ) : (
-                      printLegend.map((row) => (
-                        <li key={row.id}>
-                          <span className="mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#3d5bd9] text-[9px] font-bold text-white">
-                            {row.n}
-                          </span>
-                          {row.label}
-                        </li>
-                      ))
-                    )}
-                    {otherPrintCount > 0 ? <li className="text-[#6b7280]">pelēks punkts = citi aktīvie</li> : null}
-                  </ul>
                 </div>
+                <IrissLogistikaPrintList heading={printSheet.heading} meta={printSheet.meta} rows={printPlan.rows} />
               </div>
             </div>
             </div>
