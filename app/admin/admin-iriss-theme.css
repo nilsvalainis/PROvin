@@ -252,13 +252,14 @@ body:has(.admin-m[data-section="iriss"][data-admin-theme="dark"]) {
   box-shadow: var(--gsh);
 }
 
-.admin-m[data-section="iriss"] aside {
+/* Tikai sānjosla. Paneļi un kartītes (<aside>) paliek ar savu fonu, citādi caur tiem spīd saraksts. */
+.admin-m[data-section="iriss"] aside[data-iriss-nav] {
   background: transparent;
   border-color: var(--hair);
   color: var(--ink);
 }
 
-.admin-m[data-section="iriss"] aside .admin-nav-link[aria-current="page"] {
+.admin-m[data-section="iriss"] aside[data-iriss-nav] .admin-nav-link[aria-current="page"] {
   background: var(--fill2);
   color: var(--ink);
 }

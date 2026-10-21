@@ -57,7 +57,7 @@ export function IrissStaffAppShell({
 
   return (
     <div className="iriss-admin-scope flex h-dvh flex-col text-[#111827] md:flex-row">
-      <aside className="relative hidden w-[220px] shrink-0 flex-col border-r border-[#ececf2] bg-[#F4F6F9] px-3 py-4 md:flex">
+      <aside data-iriss-nav="" className="relative hidden w-[220px] shrink-0 flex-col border-r border-[#ececf2] bg-[#F4F6F9] px-3 py-4 md:flex">
         <div className="mb-5 flex items-center gap-2 px-2">
           <span className="text-[15px] font-semibold tracking-tight">IRISS</span>
           <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#3d5bd9]">

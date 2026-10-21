@@ -76,7 +76,7 @@ function LvTransitPlate({ plate }: { plate: string }) {
   );
 }
 
-export function IrissPavadzimesSidebarCard() {
+export function IrissPavadzimesSidebarCard({ limit }: { limit?: number } = {}) {
   const [rows, setRows] = useState<IrissPavadzimeListRow[]>([]);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -99,6 +99,8 @@ export function IrissPavadzimesSidebarCard() {
   }, []);
 
   const now = new Date(nowMs);
+  const shown = limit != null ? rows.slice(0, limit) : rows;
+  const hiddenCount = rows.length - shown.length;
 
   return (
     <div className="mt-3">
@@ -108,12 +110,12 @@ export function IrissPavadzimesSidebarCard() {
           href="/admin/iriss/pavadzimes"
           className="admin-nav-link text-[10px] font-bold text-[#9ca3af] hover:text-[var(--color-apple-text)]"
         >
-          Visas ›
+          {hiddenCount > 0 ? `Visas ${rows.length} ›` : "Visas ›"}
         </Link>
       </div>
       {rows.length === 0 ? null : (
         <ul>
-          {rows.map((row) => {
+          {shown.map((row) => {
             const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
             const expiry = formatWaybillExpiryDdMmHm(row.validUntil) || "-";
             const count = formatWaybillCountdown(row.validUntil, now);
