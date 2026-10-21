@@ -2,6 +2,11 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getOrBuildInvoicePdfForSession } from "@/lib/invoice-storage";
 import {
+  buildInvoiceUnauthorizedHtml,
+  invoiceDownloadWantsHtml,
+  resolveInvoiceUnauthorizedLocale,
+} from "@/lib/invoice-download-unauthorized";
+import {
   INVOICE_LINK_QUERY_PARAM,
   THANKS_SESSION_COOKIE_NAME,
   authorizeInvoiceDownload,
@@ -40,6 +45,20 @@ export async function GET(req: Request) {
     querySessionId: searchParams.get("session_id"),
   });
   if (!auth.ok) {
+    if (auth.status === 401 && invoiceDownloadWantsHtml(req.headers.get("accept"))) {
+      const locale = resolveInvoiceUnauthorizedLocale({
+        cookieLocale: cookieStore.get("NEXT_LOCALE")?.value ?? cookieStore.get("provin-b2b-locale")?.value,
+        acceptLanguage: req.headers.get("accept-language"),
+      });
+      return new NextResponse(buildInvoiceUnauthorizedHtml(locale), {
+        status: 401,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "private, no-store",
+          "X-Robots-Tag": "noindex, nofollow",
+        },
+      });
+    }
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
   const sessionId = auth.sessionId;

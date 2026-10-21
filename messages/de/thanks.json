@@ -4,6 +4,9 @@
     "body": "Ihre Bestellung ist registriert. Sie erhalten in Kürze eine Bestätigung per E-Mail. Wir beginnen mit der Datensammlung und der Analyse.",
     "sessionLabel": "Sitzungs-ID:",
     "downloadInvoice": "Rechnung herunterladen (PDF)",
+    "invoiceAttachedTitle": "Die Rechnung liegt der E-Mail bei",
+    "invoiceAttachedBody": "Öffnen Sie die Zahlungsbestätigung. Die Rechnungs-PDF ist angehängt. Dieser Link funktioniert auf diesem Gerät nicht mehr.",
+    "invoiceAttachedHome": "Zur Startseite",
     "back": "Zur Startseite"
   }
 }
