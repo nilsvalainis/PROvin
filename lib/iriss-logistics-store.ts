@@ -230,7 +230,7 @@ function normalizeOrder(raw: unknown): LogisticsOrder | null {
   if (!id) return null;
   const status: LogisticsOrderStatus = parseLogisticsOrderStatus(raw.status) ?? "organize_pickup";
   const archived = raw.archived === true || status === "picked_up" || status === "delivered" || status === "archived";
-  const source: LogisticsOrderSource = raw.source === "private" ? "private" : "auction";
+  const source: LogisticsOrderSource = raw.source === "private" ? "private" : raw.source === "manual" ? "manual" : "auction";
   const geocodeStatus: LogisticsGeocodeStatus =
     raw.geocodeStatus === "ok" ||
     raw.geocodeStatus === "neprecizs" ||
@@ -544,6 +544,16 @@ export async function upsertLogisticsOrder(patch: Partial<LogisticsOrder> & { id
   const out = prev ? items.map((p) => (p.id === id ? next : p)) : [...items, next];
   await writeLogisticsOrders(out);
   return next;
+}
+
+/** Dzēš tikai ar roku ievadītu (citu klientu) auto. Izsoļu un privātos pasūtījumus nedzēš. */
+export async function removeManualLogisticsOrder(id: string): Promise<"removed" | "not_found" | "not_manual"> {
+  const items = await listLogisticsOrders();
+  const prev = items.find((p) => p.id === id);
+  if (!prev) return "not_found";
+  if (prev.source !== "manual") return "not_manual";
+  await writeLogisticsOrders(items.filter((p) => p.id !== id));
+  return "removed";
 }
 
 export async function setLogisticsOrderArchiveState(

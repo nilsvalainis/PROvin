@@ -3,6 +3,7 @@
  * Administrators (Nils, env HMAC) redz visu. Darbinieks - tikai piešķirtās sadaļas.
  * Vienam lietotājam var būt vairākas sadaļas (piem. Loģistika + Pavadzīmes).
  * Loģistika: `/admin/iriss/logistika` un API `/api/admin/iriss/logistika*` plus `/api/admin/iriss-logistics*`.
+ * Autoparks (`/admin/iriss/autoparks`) ir tām pašām lomām (Loģistika, Grāmatvede, Serviss), API zem `/api/admin/iriss-logistics/autoparks`.
  */
 
 /** Legacy lauks saglabātajos JSON (pirms vairākām sadaļām). */
@@ -55,19 +56,19 @@ export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
   {
     id: "logistika",
     label: "Loģistika",
-    pagePrefixes: ["/admin/iriss/logistika"],
+    pagePrefixes: ["/admin/iriss/logistika", "/admin/iriss/autoparks"],
     apiPrefixes: ["/api/admin/iriss/logistika", "/api/admin/iriss-logistics"],
   },
   {
     id: "gramatvede",
     label: "Grāmatvede",
-    pagePrefixes: ["/admin/iriss/logistika"],
+    pagePrefixes: ["/admin/iriss/logistika", "/admin/iriss/autoparks"],
     apiPrefixes: ["/api/admin/iriss/logistika", "/api/admin/iriss-logistics"],
   },
   {
     id: "serviss",
     label: "Serviss",
-    pagePrefixes: ["/admin/iriss/logistika"],
+    pagePrefixes: ["/admin/iriss/logistika", "/admin/iriss/autoparks"],
     apiPrefixes: ["/api/admin/iriss/logistika", "/api/admin/iriss-logistics"],
   },
   {

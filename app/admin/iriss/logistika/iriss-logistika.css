@@ -151,15 +151,10 @@
 .iriss-log-screen .iriss-log-switch.sm.on::after {
   left: 14px;
 }
-.iriss-log-cargo-row.dragging {
-  opacity: 0.45;
-}
-.iriss-log-cargo-drop-target {
-  background: var(--iriss-log-surface-2);
-}
 .iriss-log-cargo-logo {
   display: inline-flex;
-  flex: 0 0 64px;
+  flex: 0 0 auto;
+  max-width: 72px;
   justify-content: flex-end;
 }
 .iriss-log-cargo-postal {
@@ -181,29 +176,98 @@
   gap: 8px;
   padding: 12px 14px 8px;
 }
+/* Kravas kartīte: visa kartīte ir velkama (pele uzreiz, telefonā piespied un turi). */
+.iriss-log-cargo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 10px 12px;
+  border-radius: 12px;
+  transition: background 0.12s ease;
+}
+.iriss-log-cargo-list.over {
+  background: var(--iriss-log-surface-2);
+}
 .iriss-log-cargo-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  min-height: 56px;
   width: 100%;
-  padding: 8px 14px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 12px;
+  background: var(--iriss-log-surface);
+  padding: 8px 12px;
   text-align: left;
-  border: 0;
-  background: transparent;
+  cursor: grab;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: border-color 0.12s ease, background 0.12s ease;
 }
 .iriss-log-cargo-row:hover,
 .iriss-log-cargo-row.active {
+  border-color: #c7c7cc;
   background: var(--iriss-log-surface-2);
 }
-.iriss-log-cargo-drop {
-  margin: 6px 14px 10px;
-  border: 1px dashed var(--iriss-log-focus);
-  border-radius: 10px;
-  padding: 10px;
-  color: var(--iriss-log-focus);
-  font-size: 13px;
+.iriss-log-cargo-row:focus-visible {
+  outline: 2px solid var(--iriss-log-focus);
+  outline-offset: 2px;
+}
+.iriss-log-cargo-row.dragging {
+  opacity: 0.35;
+}
+.iriss-log-cargo-row.overlay {
+  cursor: grabbing;
+  border-color: #c7c7cc;
+  box-shadow: 0 10px 30px rgba(11, 12, 16, 0.18);
+}
+.iriss-log-cargo-num {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--iriss-log-surface-2);
+  font-size: 12px;
   font-weight: 600;
+}
+.iriss-log-cargo-dot-btn {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+.iriss-log-cargo-dot-btn:hover {
+  background: #e8e8ed;
+}
+.iriss-log-cargo-dot-btn .iriss-log-cargo-dot {
+  width: 12px;
+  height: 12px;
+}
+.iriss-log-cargo-drop {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #c7c7cc;
+  border-radius: 12px;
+  padding: 10px;
+  color: #8e8e93;
+  font-size: 13px;
+  font-weight: 500;
   text-align: center;
+}
+.iriss-log-cargo-drop.live {
+  border-color: var(--iriss-log-focus);
+  color: var(--iriss-log-focus);
+  font-weight: 600;
 }
 .iriss-log-cargo-menu {
   position: absolute;
@@ -290,34 +354,152 @@
   height: 30px;
   filter: drop-shadow(0 1px 2px rgba(11, 12, 16, 0.25));
 }
-.iriss-log-pin-card {
-  margin-top: 2px;
-  max-width: 112px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 1px 3px rgba(11, 12, 16, 0.12);
-  padding: 2px 5px;
-  line-height: 1.2;
+/* Kartes punkti: mazs krāsains aplis (krava), grupa ar skaitu. Nosaukums tikai hover vai izceltam auto. */
+.iriss-log-pin-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
-.iriss-log-pin-card .t1 {
+.iriss-log-pin,
+.iriss-log-pin-cluster {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+.iriss-log-pin:hover,
+.iriss-log-pin.active,
+.iriss-log-pin-cluster:hover,
+.iriss-log-pin-cluster.active,
+.iriss-log-pin-cluster.open {
+  z-index: 5;
+}
+.iriss-log-pin-dot {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2.5px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(11, 12, 16, 0.35);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.iriss-log-pin:hover .iriss-log-pin-dot {
+  transform: scale(1.15);
+}
+.iriss-log-pin.active .iriss-log-pin-dot {
+  animation: iriss-log-dot-bounce 0.55s ease-in-out infinite;
+}
+.iriss-log-pin.selected .iriss-log-pin-dot,
+.iriss-log-pin-cluster.selected .iriss-log-pin-ring {
+  outline: 2px solid var(--iriss-log-focus, #2563eb);
+  outline-offset: 1px;
+}
+.iriss-log-pin-ring {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 4px;
+  border-radius: 999px;
+  box-shadow: 0 1px 5px rgba(11, 12, 16, 0.3);
+  transition: transform 0.15s ease;
+}
+.iriss-log-pin-ring > span {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #fff;
+  color: #0b0c10;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.iriss-log-pin-cluster:hover .iriss-log-pin-ring {
+  transform: scale(1.08);
+}
+.iriss-log-pin-cluster.active .iriss-log-pin-ring {
+  animation: iriss-log-dot-bounce 0.55s ease-in-out infinite;
+}
+@keyframes iriss-log-dot-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+}
+.iriss-log-pin-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  display: none;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 2px 10px rgba(11, 12, 16, 0.18);
+  padding: 5px 9px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.iriss-log-pin-tip b {
   display: block;
-  overflow: hidden;
   color: #1d1d1f;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
 }
-.iriss-log-pin-card .t2 {
+.iriss-log-pin-tip i {
   display: block;
-  overflow: hidden;
-  color: #4b4b52;
-  font-size: 9.5px;
-  text-overflow: ellipsis;
+  color: #6e6e73;
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.35;
+}
+.iriss-log-pin:hover .iriss-log-pin-tip,
+.iriss-log-pin.active .iriss-log-pin-tip,
+.iriss-log-pin-cluster:hover .iriss-log-pin-tip,
+.iriss-log-pin-cluster.active .iriss-log-pin-tip {
+  display: block;
+}
+.iriss-log-pin-cluster.open .iriss-log-pin-tip {
+  display: none;
+}
+.iriss-log-pin-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  min-width: 210px;
+  transform: translateX(-50%);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(11, 12, 16, 0.18);
+  padding: 4px;
+}
+.iriss-log-pin-list button {
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #1d1d1f;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
   white-space: nowrap;
 }
-.iriss-log-pin-card .t2 + .t1 {
-  margin-top: 2px;
+.iriss-log-pin-list button:hover {
+  background: var(--iriss-log-surface-2, #f5f5f7);
+}
+.iriss-log-pin-list-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 999px;
 }
 .iriss-log-cab-overlay {
   position: relative;
@@ -642,5 +824,143 @@ html.iriss-log-printing .iriss-log-print-root .iriss-log-map-shell {
     background: rgba(255, 255, 255, 0.92) !important;
     padding: 8px 10px !important;
     border-radius: 10px !important;
+  }
+}
+
+/* Ātrā statusa maiņa: 4 posmi vienā segmentā. */
+.iriss-log-screen .iriss-log-stage {
+  display: inline-flex;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--iriss-log-surface-2);
+  padding: 2px;
+}
+.iriss-log-screen .iriss-log-stage.full {
+  display: flex;
+  width: 100%;
+}
+.iriss-log-screen .iriss-log-stage button {
+  min-height: 30px;
+  flex: 1 1 0;
+  border-radius: 8px;
+  padding: 4px 9px;
+  color: var(--iriss-log-status-chip-fg);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.iriss-log-screen .iriss-log-stage.full button {
+  min-height: 38px;
+  font-size: 13px;
+}
+.iriss-log-screen .iriss-log-stage button:hover {
+  background: #e8e8ed;
+}
+.iriss-log-screen .iriss-log-stage button.on {
+  background: var(--btn-dark-bg);
+  color: var(--btn-dark-fg);
+  font-weight: 600;
+}
+.iriss-log-screen .iriss-log-bucket-dots {
+  display: inline-flex;
+  gap: 2px;
+}
+.iriss-log-screen .iriss-log-bucket-dots button {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+.iriss-log-screen .iriss-log-bucket-dots button span {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  opacity: 0.35;
+}
+.iriss-log-screen .iriss-log-bucket-dots button:hover span {
+  opacity: 0.7;
+}
+.iriss-log-screen .iriss-log-bucket-dots button.on span {
+  width: 14px;
+  height: 14px;
+  opacity: 1;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px currentColor;
+}
+.iriss-log-car-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+}
+@media (min-width: 1280px) {
+  .iriss-log-car-cards {
+    display: none !important;
+  }
+}
+.iriss-log-car-cards > li {
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 14px;
+  background: var(--iriss-log-surface);
+  padding: 12px;
+}
+
+/* Citu klientu auto ar roku kravu plānā. */
+.iriss-log-manual-add {
+  margin: -4px 10px 12px;
+  display: block;
+  width: calc(100% - 20px);
+  border-radius: 10px;
+  padding: 8px 6px;
+  color: #6e6e73;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+.iriss-log-manual-add:hover {
+  background: var(--iriss-log-surface-2);
+  color: #1d1d1f;
+}
+.iriss-log-manual-form {
+  margin: -4px 10px 12px;
+  border-radius: 12px;
+  background: var(--iriss-log-surface-2);
+  padding: 12px;
+}
+.iriss-log-manual-input {
+  height: 36px;
+  min-width: 0;
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 10px;
+  font-size: 14px;
+}
+.iriss-log-manual-choice {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  text-align: left;
+}
+.iriss-log-manual-choice.on {
+  box-shadow: inset 0 0 0 2px var(--iriss-log-focus);
+}
+.iriss-log-manual-chip {
+  border-radius: 999px;
+  background: #f2f2f7;
+  padding: 2px 8px;
+  color: #3a3a3c;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+@media (min-width: 768px) and (max-width: 1279px) {
+  .iriss-log-car-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   }
 }

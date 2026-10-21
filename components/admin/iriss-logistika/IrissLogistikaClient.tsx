@@ -8,7 +8,7 @@ import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logi
 import { IrissLogistikaCabinet } from "@/components/admin/iriss-logistika/IrissLogistikaCabinet";
 import { IrissLogistikaCarPopup } from "@/components/admin/iriss-logistika/IrissLogistikaCarPopup";
 import { IrissLogistikaCarsTable } from "@/components/admin/iriss-logistika/IrissLogistikaCarsTable";
-import { IrissLogistikaCargoPlan } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
+import { IrissLogistikaCargoPlan, type ManualCarInput } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
 import { AdminMobileChips, AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
@@ -20,6 +20,7 @@ import {
   CARGO_COLOR_FALLBACK,
   carsInCargoBucket,
   emptyCargoPlan,
+  moveCargoCar,
   type CargoBucket,
   type CargoPlanState,
   type CargoRouteTemplate,
@@ -100,6 +101,8 @@ export function IrissLogistikaClient({
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [popupId, setPopupId] = useState<string | null>(null);
   const [cabinetOpen, setCabinetOpen] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [autoparkLink, setAutoparkLink] = useState<string | null>(null);
   const mapHandleRef = useRef<IrissLogistikaMapHandle>(null);
   const cameraBeforeFs = useRef<LogisticsMapCamera | null>(null);
   const mapFsCardRef = useRef<HTMLDivElement>(null);
@@ -182,13 +185,19 @@ export function IrissLogistikaClient({
   }, []);
 
   async function persistCargoPlan(next: CargoPlanState) {
+    const before = cargoPlan;
     setCargoPlan(next);
     const res = await fetch("/api/admin/iriss-logistics/cargo-plan", {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ plan: next }),
-    });
+    }).catch(() => null);
+    if (!res?.ok) {
+      setCargoPlan(before);
+      setNotice("Kravu plānu neizdevās saglabāt. Mēģini vēlreiz.");
+      return;
+    }
     const body = (await res.json()) as {
       plan?: CargoPlanState;
       pickups?: CabinetPickup[];
@@ -229,6 +238,89 @@ export function IrissLogistikaClient({
       },
     };
     await persistCargoPlan(next);
+  }
+
+  /** Statuss ar vienu klikšķi: uzreiz redzams, ja serveris atsaka - atgriežas. */
+  async function setPickupStage(carId: string, stage: CabinetPickupStage) {
+    const before = cargoPickups;
+    setCargoPickups((prev) => {
+      const at = new Date().toISOString();
+      const has = prev.some((p) => p.carId === carId);
+      return has
+        ? prev.map((p) => (p.carId === carId ? { ...p, stage, updatedAt: at } : p))
+        : [...prev, { carId, stage, pickupCode: "", pickupDate: "", arrivedAt: "", notes: "", updatedAt: at, updatedBy: "" }];
+    });
+    const res = await fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(carId)}/pickup`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stage }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      setCargoPickups(before);
+      setNotice(res?.status === 403 ? "Tev nav tiesību mainīt statusu." : "Statusu neizdevās saglabāt.");
+      return;
+    }
+    const body = (await res.json()) as { pickup?: CabinetPickup };
+    if (body.pickup) setCargoPickups((prev) => prev.map((p) => (p.carId === carId ? body.pickup! : p)));
+  }
+
+  async function moveToAutopark(orderId: string) {
+    const res = await fetch("/api/admin/iriss-logistics/autoparks", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fromOrderId: orderId }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      setNotice("Neizdevās pārvietot uz Autoparku.");
+      return;
+    }
+    const body = (await res.json()) as { order?: LogisticsOrder; car?: { id: string } };
+    if (body.order) setOrders((prev) => prev.map((o) => (o.id === orderId ? body.order! : o)));
+    setNotice(body.car ? "Auto ir Autoparkā." : "");
+    if (body.car) setAutoparkLink(`/admin/iriss/autoparks?auto=${encodeURIComponent(body.car.id)}`);
+  }
+
+  /** Citu klientu auto ar roku: uzreiz kartē un izvēlētajā kravā. */
+  async function addManualCar(bucket: CargoBucket, input: ManualCarInput): Promise<boolean> {
+    const res = await fetch("/api/admin/iriss-logistics/orders", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source: "manual",
+        make: input.make,
+        model: input.model,
+        title: `${input.make} ${input.model}`.trim(),
+        sellerContact: input.client,
+        notes: input.client,
+        pickupAddress: input.address,
+        pickupLat: input.lat,
+        pickupLng: input.lng,
+        geocodeStatus: "ok",
+        status: "organize_pickup",
+      }),
+    }).catch(() => null);
+    if (!res?.ok) return false;
+    const body = (await res.json()) as { order?: LogisticsOrder };
+    const order = body.order;
+    if (!order) return false;
+    setOrders((prev) => [order, ...prev]);
+    await persistCargoPlan(moveCargoCar(cargoPlan, order.id, bucket));
+    return true;
+  }
+
+  async function deleteManualCar(id: string) {
+    const res = await fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(id)}`, { method: "DELETE", credentials: "include" }).catch(() => null);
+    if (!res?.ok) {
+      setNotice("Neizdevās dzēst.");
+      return;
+    }
+    setOrders((prev) => prev.filter((o) => o.id !== id));
+    setCargoPlan((prev) => ({ ...prev, cars: prev.cars.filter((c) => c.carId !== id) }));
+    setSelectedIds((prev) => prev.filter((x) => x !== id));
+    if (popupId === id) setPopupId(null);
   }
 
   async function assignPoint(orderId: string, pickupPointId: string) {
@@ -419,7 +511,36 @@ export function IrissLogistikaClient({
             ]}
           />
         </AdminMobileTopBar>
+        {pageTab === "orders" ? (
+          <div className="mt-2 px-4">
+            <StatusFilterChipRow layout="scroll" label="Loģistikas filtri">
+              {(["today", "due", "active", "archive"] as const).map((key) => (
+                <StatusFilterChip
+                  key={key}
+                  label={LOGISTICS_LIST_VIEW_LV[key]}
+                  count={counts[key]}
+                  pressed={view === key}
+                  tone={key === "archive" ? "inactive" : key === "today" ? "searching" : "active"}
+                  onClick={() => setView(key)}
+                />
+              ))}
+            </StatusFilterChipRow>
+          </div>
+        ) : null}
       </div>
+      {notice ? (
+        <div className="iriss-log-no-print mx-3 mt-2 flex items-center gap-2 rounded-[12px] bg-white px-3 py-2 text-[13px] shadow-sm max-md:mx-4" role="status">
+          <span className="min-w-0 flex-1">{notice}</span>
+          {autoparkLink ? (
+            <a href={autoparkLink} className="font-semibold text-[var(--iriss-log-focus)]">
+              Atvērt Autoparkā
+            </a>
+          ) : null}
+          <button type="button" aria-label="Aizvērt" className="px-1 text-[#6e6e73]" onClick={() => { setNotice(""); setAutoparkLink(null); }}>
+            ✕
+          </button>
+        </div>
+      ) : null}
       <header className="iriss-log-no-print hidden md:static md:block">
         <div className="flex flex-wrap items-start gap-2">
           <div className="min-w-0 flex-1">
@@ -428,7 +549,7 @@ export function IrissLogistikaClient({
               <IrissProjectIndicator />
             </div>
             <p className="mt-0.5 text-[12px] text-[var(--ink2)]">
-              {counts.active} aktīvi{counts.archive ? ` · ${counts.archive} arhīvā` : ""} · km
+              {counts.active} aktīvi{counts.archive ? ` · ${counts.archive} arhīvā` : ""}
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[12px]">
               <button type="button" onClick={() => setPageTab("orders")} className={`rounded-full px-2.5 py-1 ${pageTab === "orders" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
@@ -718,7 +839,45 @@ export function IrissLogistikaClient({
             </div>
             </div>
           </div>
-          {/* Datorā tabula aizņem abu kolonnu platumu zem kartes un kravu plāna; telefonā secība nemainās. */}
+          {cabinetOpen && active ? (
+            <div ref={cabinetRef} className="iriss-log-cab-overlay scroll-mt-3 lg:col-start-2 lg:row-start-1">
+              <button type="button" className="iriss-log-btn-sec mb-2 h-8 px-2.5 text-[12px]" onClick={() => setCabinetOpen(false)}>
+                Aizvērt kabinetu
+              </button>
+              <IrissLogistikaCabinet
+                order={active}
+                groupedPoints={groupedPoints}
+                onAssignPoint={(orderId, pickupPointId) => void assignPoint(orderId, pickupPointId)}
+                onPatchOrder={(id, action) => void patchOrder(id, action)}
+                onOrderUpdated={(next) => setOrders((prev) => prev.map((o) => (o.id === next.id ? next : o)))}
+              />
+            </div>
+          ) : (
+            <div className="space-y-3 lg:col-start-2 lg:row-start-1">
+              <IrissLogistikaCargoPlan
+                orders={visibleOrders}
+                plan={cargoPlan}
+                templates={cargoTemplates}
+                bounceId={bounceId}
+                hoverId={hoverId}
+                onPlanChange={(next) => void persistCargoPlan(next)}
+                onRowClick={pulseBounce}
+                onRowHover={setHoverId}
+                onRefreshDirections={(bucket) => void refreshCargoDirections(bucket)}
+                onAddManual={addManualCar}
+              />
+              {popupOrder ? (
+                <IrissLogistikaCarPopup
+                  order={popupOrder}
+                  plan={cargoPlan}
+                  stage={popupStage}
+                  onClose={() => setPopupId(null)}
+                  onPlanChange={(next) => void persistCargoPlan(next)}
+                />
+              ) : null}
+            </div>
+          )}
+          {/* Datorā tabula aizņem abu kolonnu platumu zem kartes un kravu plāna. Telefonā: karte, kravas, auto. */}
           <div className="min-w-0 lg:col-span-2 lg:row-start-2">
             <IrissLogistikaCarsTable
               orders={visibleOrders}
@@ -729,14 +888,10 @@ export function IrissLogistikaClient({
                 setActiveId(id);
                 setCabinetOpen(true);
               }}
-              onMoveToAutopark={(id) => {
-                void fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(id)}/pickup`, {
-                  method: "PATCH",
-                  credentials: "include",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ stage: "arrived" }),
-                }).then(() => void patchOrder(id, "delivered"));
-              }}
+              onMoveToAutopark={(id) => void moveToAutopark(id)}
+              onSetStage={(id, stage) => void setPickupStage(id, stage)}
+              onSetBucket={(id, bucket) => void persistCargoPlan(moveCargoCar(cargoPlan, id, bucket))}
+              onDeleteManual={(id) => void deleteManualCar(id)}
             />
             <ul className="iriss-log-legacy-orders hidden iriss-log-no-print mt-3 overflow-hidden rounded-2xl bg-white shadow-sm">
               {visibleOrders.map((o) => {
@@ -789,43 +944,6 @@ export function IrissLogistikaClient({
               ) : null}
             </ul>
           </div>
-          {cabinetOpen && active ? (
-            <div ref={cabinetRef} className="iriss-log-cab-overlay scroll-mt-3 lg:col-start-2 lg:row-start-1">
-              <button type="button" className="iriss-log-btn-sec mb-2 h-8 px-2.5 text-[12px]" onClick={() => setCabinetOpen(false)}>
-                Aizvērt kabinetu
-              </button>
-              <IrissLogistikaCabinet
-                order={active}
-                groupedPoints={groupedPoints}
-                onAssignPoint={(orderId, pickupPointId) => void assignPoint(orderId, pickupPointId)}
-                onPatchOrder={(id, action) => void patchOrder(id, action)}
-                onOrderUpdated={(next) => setOrders((prev) => prev.map((o) => (o.id === next.id ? next : o)))}
-              />
-            </div>
-          ) : (
-            <div className="space-y-3 lg:col-start-2 lg:row-start-1">
-              <IrissLogistikaCargoPlan
-                orders={visibleOrders}
-                plan={cargoPlan}
-                templates={cargoTemplates}
-                bounceId={bounceId}
-                hoverId={hoverId}
-                onPlanChange={(next) => void persistCargoPlan(next)}
-                onRowClick={pulseBounce}
-                onRowHover={setHoverId}
-                onRefreshDirections={(bucket) => void refreshCargoDirections(bucket)}
-              />
-              {popupOrder ? (
-                <IrissLogistikaCarPopup
-                  order={popupOrder}
-                  plan={cargoPlan}
-                  stage={popupStage}
-                  onClose={() => setPopupId(null)}
-                  onPlanChange={(next) => void persistCargoPlan(next)}
-                />
-              ) : null}
-            </div>
-          )}
         </div>
       )}
 

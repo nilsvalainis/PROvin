@@ -6,7 +6,8 @@ export const IRISS_LOGISTICS_ACCESS_SCOPE = "iriss.logistics" as const;
 export const LOGISTICS_AUCTIONS = ["Autobid", "Auto1", "Openlane", "BCA", "cits"] as const;
 export type LogisticsAuction = (typeof LOGISTICS_AUCTIONS)[number];
 
-export const LOGISTICS_ORDER_SOURCES = ["auction", "private"] as const;
+/** `manual`: citu klientu auto, ievadīts ar roku kravu plānā (marka, modelis, adrese). Pēc atvešanas dzēšams. */
+export const LOGISTICS_ORDER_SOURCES = ["auction", "private", "manual"] as const;
 export type LogisticsOrderSource = (typeof LOGISTICS_ORDER_SOURCES)[number];
 
 /** Aktīvie cauruļvada statusi (bez Izņemts / Piegādāts / Arhīvs). */

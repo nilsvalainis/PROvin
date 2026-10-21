@@ -8,7 +8,9 @@ declare namespace google.maps {
     getCenter(): LatLng | undefined;
     fitBounds(b: LatLngBounds, pad?: number): void;
     setOptions(opts: Record<string, unknown>): void;
+    addListener(eventName: string, handler: () => void): MapsEventListener;
   }
+  type MapsEventListener = { remove(): void };
   class LatLng {
     constructor(lat: number, lng: number);
     lat(): number;

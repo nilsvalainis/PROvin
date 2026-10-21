@@ -5,7 +5,6 @@ import { isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import {
   logisticsMapFitKey,
   logisticsOrderMapLabel,
-  logisticsPinCardCars,
   logisticsPreviousPointLabel,
 } from "@/lib/iriss-logistics-labels";
 import {
@@ -15,7 +14,8 @@ import {
   waitForGoogleMapTilesIdle,
   type LogisticsMapCamera,
 } from "@/lib/iriss-logistics-map-print";
-import { cargoClusterKey, cargoCssColor, type CargoBucket } from "@/lib/iriss-logistics-cargo-plan";
+import { cargoCssColor, type CargoBucket } from "@/lib/iriss-logistics-cargo-plan";
+import { clusterIsSameSpot, clusterPixelPoints, clusterRingGradient } from "@/lib/iriss-logistics-map-cluster";
 import type { LogisticsOrder, LogisticsPoint, LogisticsPreviousPointRow } from "@/lib/iriss-logistics-types";
 
 type Gmaps = typeof google.maps;
@@ -154,6 +154,8 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
   /** Kamera (fitBounds) tikai pirmajā ielādē vai kad mainās punktu kopa. Hover un izcēlums skatu neaiztiek. */
   const lastFitKeyRef = useRef<string | null>(null);
   const lastFocusKeyRef = useRef<string | null>(null);
+  /** Atvērtā vienas vietas grupas saraksts paliek atvērts arī tad, kad slānis pārzīmējas (hover). */
+  const openClusterRef = useRef<string | null>(null);
   const [limitNotice, setLimitNotice] = useState(notice ?? "");
   const [ready, setReady] = useState(false);
 
@@ -266,30 +268,20 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     lastPtsRef.current = pts;
     const bounds = new google.maps.LatLngBounds();
     const useCargoPins = pinVariant === "cargo" && mode === "cars" && !printNumbers;
-    const clusters = new Map<string, MapPoint[]>();
-    for (const p of pts) {
-      bounds.extend({ lat: p.lat, lng: p.lng });
-      const key = cargoClusterKey(p.lat, p.lng);
-      const list = clusters.get(key) ?? [];
-      list.push(p);
-      clusters.set(key, list);
-    }
+    for (const p of pts) bounds.extend({ lat: p.lat, lng: p.lng });
     if (useCargoPins) {
       const host = hostRef.current;
-      for (const group of clusters.values()) {
-        const head = group[0]!;
-        const bounce = group.some((g) => g.id === bounceCarId || g.id === hoverCarId);
-        const color = cargoCssColor(host, head.cargo ?? "none");
-        const overlay = makeCargoPinOverlay({
-          pts: group,
-          color,
-          bounce,
-          onSelect,
-          onHover: onHoverCar,
-        });
-        overlay.setMap(map);
-        overlaysRef.current.push(overlay);
-      }
+      const layer = makeCargoLayerOverlay({
+        map,
+        pts,
+        colorOf: (p) => cargoCssColor(host, p.cargo ?? "none"),
+        activeIds: new Set([bounceCarId, hoverCarId].filter((x): x is string => Boolean(x))),
+        onSelect,
+        onHover: onHoverCar,
+        openKey: openClusterRef,
+      });
+      layer.setMap(map);
+      overlaysRef.current.push(layer);
       for (const end of routeEnds ?? []) {
         const overlay = makeRouteEndOverlay(end, cargoCssColor(hostRef.current, "none"));
         overlay.setMap(map);
@@ -399,68 +391,116 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
   );
 });
 
-function makeCargoPinOverlay(input: {
+function escapeHtml(text: string): string {
+  return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+}
+
+function pinTitle(p: MapPoint): string {
+  return `${p.carMake ?? ""} ${p.carModel ?? ""}`.trim() || p.label;
+}
+
+/**
+ * Viens slānis visiem auto punktiem. Pie katras tālummaiņas punkti, kas ekrānā ir tuvāk par 30 px,
+ * saplūst grupā ar skaitu. Nosaukums parādās tikai, kad pele ir virs punkta vai auto ir izcelts.
+ */
+function makeCargoLayerOverlay(input: {
+  map: google.maps.Map;
   pts: MapPoint[];
-  color: string;
-  bounce: boolean;
+  colorOf: (p: MapPoint) => string;
+  activeIds: ReadonlySet<string>;
   onSelect: (id: string) => void;
   onHover?: (id: string | null) => void;
+  openKey: { current: string | null };
 }): google.maps.OverlayView {
-  const head = input.pts[0]!;
-  const pos = { lat: head.lat, lng: head.lng };
-  const count = input.pts.length;
-  const routeNo = input.pts.find((p) => p.routeNumber != null)?.routeNumber;
-  const badge = count > 1 ? String(count) : routeNo != null ? String(routeNo) : "";
-  class Pin extends google.maps.OverlayView {
-    div: HTMLDivElement | null = null;
+  const open = input.openKey;
+  class Layer extends google.maps.OverlayView {
+    root: HTMLDivElement | null = null;
+    closeListener: google.maps.MapsEventListener | null = null;
     onAdd() {
-      this.div = document.createElement("div");
-      this.div.className = `iriss-log-pin-wrap${input.bounce ? " bounce" : ""}`;
-      this.div.innerHTML = `<svg class="iriss-log-pin-needle" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 1C6.5 1 2 5.4 2 10.8 2 19 12 31 12 31s10-12 10-20.2C22 5.4 17.5 1 12 1z" fill="${input.color}"/><circle cx="12" cy="11" r="5.2" fill="#fff"/><text x="12" y="14.2" text-anchor="middle" font-size="8" font-weight="700" fill="${input.color}">${badge}</text></svg><div class="iriss-log-pin-card"></div>`;
-      const card = this.div.querySelector(".iriss-log-pin-card");
-      const view = logisticsPinCardCars(
-        input.pts.map((p) => ({ make: p.carMake ?? p.label, model: p.carModel ?? "" })),
-      );
-      for (const car of view.cars) {
-        const make = document.createElement("span");
-        make.className = "t1";
-        make.textContent = car.make;
-        card?.appendChild(make);
-        if (car.model) {
-          const model = document.createElement("span");
-          model.className = "t2";
-          model.textContent = car.model;
-          card?.appendChild(model);
-        }
-      }
-      if (view.more > 0) {
-        const more = document.createElement("span");
-        more.className = "t2";
-        more.textContent = `+${view.more}`;
-        card?.appendChild(more);
-      }
-      this.div.addEventListener("click", (e) => {
-        e.stopPropagation();
-        input.onSelect(head.id);
+      this.root = document.createElement("div");
+      this.root.className = "iriss-log-pin-layer";
+      this.getPanes()?.overlayMouseTarget.appendChild(this.root);
+      this.closeListener = input.map.addListener("click", () => {
+        if (!open.current) return;
+        open.current = null;
+        this.draw();
       });
-      this.div.addEventListener("mouseenter", () => input.onHover?.(head.id));
-      this.div.addEventListener("mouseleave", () => input.onHover?.(null));
-      this.getPanes()?.overlayMouseTarget.appendChild(this.div);
     }
     draw() {
       const proj = this.getProjection();
-      if (!proj || !this.div) return;
-      const p = proj.fromLatLngToDivPixel(new google.maps.LatLng(pos.lat, pos.lng));
-      if (!p) return;
-      this.div.style.left = `${p.x}px`;
-      this.div.style.top = `${p.y}px`;
+      const root = this.root;
+      if (!proj || !root) return;
+      root.replaceChildren();
+      const placed = input.pts.flatMap((p) => {
+        const px = proj.fromLatLngToDivPixel(new google.maps.LatLng(p.lat, p.lng));
+        return px ? [{ id: p.id, x: px.x, y: px.y, p }] : [];
+      });
+      for (const group of clusterPixelPoints(placed, 30)) {
+        const members = group.members.map((m) => m.p);
+        const key = members.map((m) => m.id).sort().join("|");
+        const active = members.some((m) => input.activeIds.has(m.id));
+        const selected = members.some((m) => m.selected);
+        const el = document.createElement("div");
+        el.style.left = `${group.x}px`;
+        el.style.top = `${group.y}px`;
+        if (members.length === 1) {
+          const p = members[0]!;
+          const color = input.colorOf(p);
+          el.className = `iriss-log-pin${active ? " active" : ""}${selected ? " selected" : ""}`;
+          el.innerHTML = `<span class="iriss-log-pin-dot" style="background:${color}">${p.routeNumber ?? ""}</span><span class="iriss-log-pin-tip"><b>${escapeHtml(pinTitle(p))}</b>${p.statusLv ? `<i>${escapeHtml(p.statusLv)}</i>` : ""}</span>`;
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            input.onSelect(p.id);
+          });
+          el.addEventListener("mouseenter", () => input.onHover?.(p.id));
+          el.addEventListener("mouseleave", () => input.onHover?.(null));
+        } else {
+          const ring = clusterRingGradient(members.map((m) => input.colorOf(m)));
+          el.className = `iriss-log-pin-cluster${active ? " active" : ""}${selected ? " selected" : ""}`;
+          const names = members.slice(0, 4).map((m) => `<b>${escapeHtml(pinTitle(m))}</b>`).join("");
+          const more = members.length > 4 ? `<i>+${members.length - 4}</i>` : "";
+          el.innerHTML = `<span class="iriss-log-pin-ring" style="background:${ring}"><span>${members.length}</span></span><span class="iriss-log-pin-tip">${names}${more}</span>`;
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (clusterIsSameSpot(members)) {
+              open.current = open.current === key ? null : key;
+              this.draw();
+              return;
+            }
+            const bounds = new google.maps.LatLngBounds();
+            for (const m of members) bounds.extend({ lat: m.lat, lng: m.lng });
+            input.map.fitBounds(bounds, 80);
+          });
+          if (open.current === key) {
+            el.classList.add("open");
+            const list = document.createElement("div");
+            list.className = "iriss-log-pin-list";
+            for (const m of members) {
+              const row = document.createElement("button");
+              row.type = "button";
+              row.innerHTML = `<span class="iriss-log-pin-list-dot" style="background:${input.colorOf(m)}"></span><span>${escapeHtml(pinTitle(m))}</span>`;
+              row.addEventListener("click", (e) => {
+                e.stopPropagation();
+                input.onSelect(m.id);
+              });
+              row.addEventListener("mouseenter", () => input.onHover?.(m.id));
+              row.addEventListener("mouseleave", () => input.onHover?.(null));
+              list.appendChild(row);
+            }
+            el.appendChild(list);
+          }
+        }
+        root.appendChild(el);
+      }
     }
     onRemove() {
-      this.div?.remove();
-      this.div = null;
+      this.closeListener?.remove();
+      this.closeListener = null;
+      this.root?.remove();
+      this.root = null;
     }
   }
-  return new Pin();
+  return new Layer();
 }
 
 function makeRouteEndOverlay(

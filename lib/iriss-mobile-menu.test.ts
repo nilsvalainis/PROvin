@@ -13,6 +13,7 @@ describe("IRISS mobile menu home", () => {
       "sludinajumi",
       "radars",
       "logistika",
+      "autoparks",
       "pavadzimes",
       "vin",
       "atskaite",
@@ -23,7 +24,7 @@ describe("IRISS mobile menu home", () => {
 
   it("filters staff to granted sections and treats Grāmatvede as Loģistika", () => {
     const items = irissMobileMenuItemsFor(["gramatvede", "pavadzimes"], false);
-    expect(items.map((row) => row.id)).toEqual(["logistika", "pavadzimes"]);
+    expect(items.map((row) => row.id)).toEqual(["logistika", "autoparks", "pavadzimes"]);
     expect(items.some((row) => row.id === "iestatijumi")).toBe(false);
   });
 
@@ -37,6 +38,6 @@ describe("IRISS mobile menu home", () => {
     expect(cheapIrissMenuCount(items[0]!, { irissMatches: 12, irissLogistics: 3, waybills: 2 })).toBe(0);
     expect(cheapIrissMenuCount(items[1]!, { irissMatches: 12, irissLogistics: 3, waybills: 2 })).toBe(12);
     expect(cheapIrissMenuCount(items[3]!, { irissMatches: 12, irissLogistics: 3, waybills: 2 })).toBe(3);
-    expect(cheapIrissMenuCount(items[4]!, { irissMatches: 12, irissLogistics: 3, waybills: 2 })).toBe(2);
+    expect(cheapIrissMenuCount(items[5]!, { irissMatches: 12, irissLogistics: 3, waybills: 2 })).toBe(2);
   });
 });

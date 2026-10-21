@@ -29,7 +29,10 @@ describe("Loģistika map pin card", () => {
     const map = read("components/admin/iriss-logistika/IrissLogistikaMap.tsx");
     expect(map).not.toContain("`${count} auto`");
     expect(map).not.toContain("head.statusLv || head.auction");
-    expect(map).toContain("logisticsPinCardCars(");
+    // Pastāvīgas kartītes vairs nav: punkts + grupa, nosaukums tikai hover/izceltam.
+    expect(map).not.toContain("iriss-log-pin-card");
+    expect(map).toContain("clusterPixelPoints(placed, 30)");
+    expect(map).toContain("iriss-log-pin-tip");
   });
 });
 
@@ -50,15 +53,17 @@ describe("Loģistika map keeps the user's view", () => {
 describe("Kravu plāns", () => {
   const plan = read("components/admin/iriss-logistika/IrissLogistikaCargoPlan.tsx");
 
-  it("accepts a dropped card anywhere in a section and always clears drag state", () => {
-    expect(plan).toMatch(/<section[\s\S]*?onDragOver=[\s\S]*?onDrop=/);
-    expect(plan).toContain('window.addEventListener("dragend", clear)');
-    expect(plan).toContain('e.dataTransfer.setData("text/plain", car.carId)');
+  it("drags the whole card with mouse and touch, drops at an exact position", () => {
+    expect(plan).toContain("useSensor(MouseSensor, { activationConstraint: { distance: 5 } })");
+    expect(plan).toContain("useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } })");
+    expect(plan).toContain("onPlanChange(moveCargoCar(plan, activeId, bucket, index))");
+    expect(plan).toContain("onDragCancel={() => finishDrag(null)}");
+    expect(plan).toMatch(/className=\{`iriss-log-cargo-row[^`]*`\}\s*\{\.\.\.attributes\}\s*\{\.\.\.listeners\}/);
   });
 
   it("uses a real switch for 'Rādīt kartē'", () => {
     expect(plan).toContain('role="switch"');
-    expect(plan).toContain("aria-checked={car.showOnMap}");
+    expect(plan).toContain("aria-checked={showOnMap}");
     expect(plan).not.toContain('type="checkbox"\n                          className="iriss-log-check"');
     const css = read("app/admin/iriss/logistika/iriss-logistika.css");
     expect(css).toContain(".iriss-log-screen .iriss-log-switch.sm.on {");
@@ -70,6 +75,8 @@ describe("Loģistika layout", () => {
 
   it("spreads the Visi auto table across both columns on desktop", () => {
     expect(client).toContain('<div className="min-w-0 lg:col-span-2 lg:row-start-2">');
+    // Telefonā kravu plāns ir pirms auto saraksta.
+    expect(client.indexOf("<IrissLogistikaCargoPlan")).toBeLessThan(client.indexOf("<IrissLogistikaCarsTable"));
     expect(client).toContain('className="space-y-3 lg:col-start-2 lg:row-start-1"');
   });
 
@@ -80,7 +87,8 @@ describe("Loģistika layout", () => {
 
   it("keeps table button and cargo text on one line", () => {
     const table = read("components/admin/iriss-logistika/IrissLogistikaCarsTable.tsx");
-    expect(table).toContain("iriss-log-btn-sec h-8 whitespace-nowrap");
-    expect(table).toContain("inline-flex items-center gap-1.5 whitespace-nowrap");
+    expect(table).toContain("h-8 min-h-8 whitespace-nowrap px-2.5 text-[12px]");
+    expect(table).toContain('<table className="iriss-log-table max-xl:hidden">');
+    expect(table).toContain('<ul className="iriss-log-car-cards xl:hidden">');
   });
 });
