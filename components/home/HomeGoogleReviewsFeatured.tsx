@@ -5,6 +5,7 @@ import {
   GOOGLE_REVIEWS,
   type GoogleReviewEntry,
 } from "@/lib/google-reviews-data";
+import { formatGoogleReviewRelativeDate } from "@/lib/google-reviews-relative";
 
 /** Vienāds excerpt garums karuselī — balstīts uz pilnā BUJ kolonnas augstumu. */
 const QUOTE_MAX_CHARS = 240;
@@ -44,6 +45,7 @@ type Props = {
   googleLabel: string;
   prevLabel: string;
   nextLabel: string;
+  locale: string;
 };
 
 /**
@@ -55,6 +57,7 @@ export function HomeGoogleReviewsFeatured({
   googleLabel,
   prevLabel,
   nextLabel,
+  locale,
 }: Props) {
   const reviews: GoogleReviewEntry[] =
     GOOGLE_REVIEWS.length > 0 ? GOOGLE_REVIEWS : [];
@@ -133,7 +136,7 @@ export function HomeGoogleReviewsFeatured({
           </cite>
           <div className="flex min-h-[1rem] items-center justify-center gap-2 text-[11px] text-white/35 lg:justify-start">
             <StarRow count={current.rating} />
-            <span>{current.relativeDateLv}</span>
+            <span>{formatGoogleReviewRelativeDate(locale, current.relative)}</span>
           </div>
           <a
             href={profileUrl}

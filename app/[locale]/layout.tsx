@@ -9,6 +9,7 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { LenisProvider } from "@/components/providers/LenisProvider";
 import { Header } from "@/components/Header";
+import { SkipToContent } from "@/components/SkipToContent";
 import { HomeReloadScrollToTop } from "@/components/home/HomeReloadScrollToTop";
 import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
 import { getCompanyPublicBrand } from "@/lib/company";
@@ -19,6 +20,7 @@ import { openGraphLocale, openGraphLocaleAlternates } from "@/lib/seo-public-met
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { CLIENT_MESSAGE_NAMESPACES, pickClientMessages } from "@/lib/i18n/client-messages";
 import "./design-direction-theme.css";
+import "./public-a11y.css";
 
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
 
@@ -100,8 +102,13 @@ export default async function LocaleLayout({ children, params }: Props) {
       <LenisProvider>
         <HomeReloadScrollToTop />
         <LocaleHtmlLang />
+        <SkipToContent />
         <Header />
-        <main className="relative z-10 min-w-0 max-w-full overflow-x-clip pt-0 pb-0">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="relative z-10 min-w-0 max-w-full overflow-x-clip pt-0 pb-0"
+        >
           {children}
         </main>
         <CookieConsent />

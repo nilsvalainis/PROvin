@@ -7,6 +7,7 @@ import { B2B_SECONDARY_BUTTON_CLASS } from "@/components/b2b/b2b-partner-ui";
 import { B2bPartnerQuoteDialog } from "@/components/b2b/B2bPartnerQuoteDialog";
 import { B2bTurnstile, partnerLoginNeedsTurnstile } from "@/components/b2b/B2bTurnstile";
 import { useRouter } from "@/i18n/navigation";
+import { localizedEmailInputProps } from "@/lib/email-input-validity";
 
 function isLoginEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
@@ -15,6 +16,7 @@ function isLoginEmail(value: string): boolean {
 export function B2bPartnerLogin() {
   const t = useTranslations("Partner");
   const locale = useLocale();
+  const emailNative = localizedEmailInputProps(locale, t("quoteErrEmail"));
   const router = useRouter();
   const [loginEmail, setLoginEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -138,12 +140,15 @@ export function B2bPartnerLogin() {
           <input
             type="email"
             className={styles.inlineInput}
+            lang={emailNative.lang}
             value={loginEmail}
             onChange={(event) => {
               setLoginEmail(event.target.value);
               setError("");
               setForgotSent(false);
             }}
+            onInvalid={emailNative.onInvalid}
+            onInput={emailNative.onInput}
             autoComplete="username"
             inputMode="email"
             autoCapitalize="none"
@@ -191,6 +196,7 @@ export function B2bPartnerLogin() {
         <input
           type="email"
           className={styles.inlineInput}
+          lang={emailNative.lang}
           value={loginEmail}
           onChange={(event) => {
             setLoginEmail(event.target.value);
@@ -198,6 +204,8 @@ export function B2bPartnerLogin() {
             setUnverified(false);
             setResendOk(false);
           }}
+          onInvalid={emailNative.onInvalid}
+          onInput={emailNative.onInput}
           autoComplete="username"
           inputMode="email"
           autoCapitalize="none"

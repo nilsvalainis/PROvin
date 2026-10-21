@@ -4,7 +4,7 @@ import { useEffect, useId, useState, useTransition, type FormEvent } from "react
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowDown, ArrowRight, Check } from "lucide-react";
 import { track } from "@vercel/analytics";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { Link } from "@/i18n/navigation";
 import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
@@ -18,6 +18,7 @@ import {
 import { FREE_EVAL_SECTION_ID, FREE_EVAL_SECTION_ID_LEGACY } from "@/lib/paths";
 import { HEARD_ABOUT_OPTION_VALUES, isHeardAboutValue } from "@/lib/stripe-session";
 import { trackMetaLead } from "@/lib/meta-pixel";
+import { localizedEmailInputProps } from "@/lib/email-input-validity";
 
 function safeTrack(event: string, data?: Record<string, string | number | boolean>) {
   try {
@@ -29,6 +30,8 @@ function safeTrack(event: string, data?: Record<string, string | number | boolea
 
 export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: boolean }) {
   const t = useTranslations("RiskAuditGuide");
+  const locale = useLocale();
+  const emailNative = localizedEmailInputProps(locale, t("errors.email"));
   const baseId = useId();
   const reduceMotion = useReducedMotion();
   const [paused, setPaused] = useState(queuePaused);
@@ -324,10 +327,13 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
                               type="email"
                               autoComplete="email"
                               required
+                              lang={emailNative.lang}
                               placeholder={t("form.emailPlaceholder")}
                               aria-label={t("form.emailLabel")}
                               value={email}
                               onChange={(e) => setEmail(e.target.value)}
+                              onInvalid={emailNative.onInvalid}
+                              onInput={emailNative.onInput}
                               className={tp5Styles.inlineInput}
                             />
                             <input
