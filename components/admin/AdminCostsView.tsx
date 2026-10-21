@@ -25,7 +25,14 @@ import {
 
 function MonthTabs({ dashboard, hrefBase }: { dashboard: CostDashboard; hrefBase: string }) {
   const tab = (href: string, label: string, on: boolean) => (
-    <Link href={href} className="admin-costs-tab" data-on={on ? "true" : "false"}>
+    <Link
+      href={href}
+      className="admin-costs-tab max-md:h-11"
+      data-on={on ? "true" : "false"}
+      aria-current={on ? "page" : undefined}
+      // Krāsa inline: telefonā tēma pārrakstīja saites krāsu, aktīvais mēnesis bija melns uz melna.
+      style={{ color: on ? "var(--costs-tab-on-fg)" : "var(--costs-tab-off-fg)" }}
+    >
       {label}
     </Link>
   );
@@ -101,7 +108,7 @@ function SourceRow({
           <button
             type="button"
             onClick={() => setEdit((v) => !v)}
-            className="admin-costs-muted text-[12px] font-medium underline-offset-2 hover:underline"
+            className="admin-costs-muted text-[12px] font-medium underline-offset-2 hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center max-md:text-[14px]"
           >
             {edit ? "Aizvērt" : "Labot"}
           </button>

@@ -30,16 +30,18 @@ export default async function AdminPartnersPage() {
         <h1 className="mt-1 text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
           Partneri
         </h1>
-        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
+        <p className="mt-2 w-full max-w-none text-[13px] leading-relaxed text-[var(--color-provin-muted)] max-md:hidden">
           Reģistrē dīleri pats vai izveido unikālu ielūguma saiti, lai partneris reģistrētos pats. Publiska reģistrācija paliek slēgta.
         </p>
         <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
-          <Link href="/admin/partneri/statistika" className="font-medium text-[var(--color-provin-accent)] hover:underline">
+          {/* Krāsa inline: .admin-ios-theme pārraksta saišu krāsu uz melnu, tad tās neizskatās pēc saitēm. */}
+          <Link href="/admin/partneri/statistika" style={{ color: "var(--color-provin-accent)" }} className="font-medium text-[var(--color-provin-accent)] hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center">
             B2B statistika
           </Link>
           <Link
             href="/admin/partneri/pieteikumi"
-            className="inline-flex items-center gap-2 font-medium text-[var(--color-provin-accent)] hover:underline"
+            style={{ color: "var(--color-provin-accent)" }}
+            className="inline-flex items-center gap-2 font-medium text-[var(--color-provin-accent)] hover:underline max-md:min-h-11"
           >
             Cenu piedāvājuma pieteikumi
             {unhandledLeads > 0 ? (

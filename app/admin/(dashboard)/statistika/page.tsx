@@ -177,7 +177,8 @@ export default async function AdminStatistikaPage() {
         </section>
       ) : null}
 
-      <p className="mt-8 text-[12px]">
+      {/* Telefonā atpakaļ ir augšā ("‹ Atpakaļ"). */}
+      <p className="mt-8 text-[12px] max-md:hidden">
         <Link href="/admin/dashboard" className="font-medium text-[var(--color-provin-accent)] hover:underline">
           Atpakaļ uz pasūtījumiem
         </Link>
