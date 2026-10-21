@@ -284,7 +284,8 @@ async function startPaidOrderDownstream(
   }
 
   /**
-   * Dīlera produkts: VIN Decoder + OE servisa vēsture jāielasa automātiski. OneAuto pollings
+   * Dīlera produkts: OE servisa vēsture jāielasa automātiski; ja ir ieraksti,
+   * arī OE VIN Lookup. VIN Decoder netiek ielasīts. OneAuto pollings
    * ir par lēnu webhook atbildei, tāpēc darbu atzīmējam sinhroni un izpildām
    * pēc atbildes; cron slaucītājs pārņem, ja fona izpilde nepaspēj.
    * B2B paka (bez VIN) šeit NEIELASA - ielase sākas tikai pie VIN iesniegšanas.

@@ -36,6 +36,7 @@ vi.mock("@/lib/b2b-wallet-refund", () => ({
 }));
 vi.mock("@/lib/admin-rich-comment-html", () => ({
   aiExpertSourceCommentToRichHtml: (text: string) => `<p>${text}</p>`,
+  adminRichHtmlToPlainText: (text: string) => String(text ?? "").replace(/<[^>]+>/g, " "),
 }));
 
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
@@ -53,8 +54,11 @@ function historyPayload() {
   };
 }
 
-function decoderPayload() {
-  return { success: true, result: { make: "Audi", model: "A4", engine: "DEUA" } };
+function lookupPayload() {
+  return {
+    success: true,
+    result: { make: "Audi", model: "A5", engine: "DLVB", fuel: "Petrol", colour: "Black" },
+  };
 }
 
 function emptyDraft(notes: string) {
@@ -94,22 +98,33 @@ describe("runDealerDataJob paid idempotency", () => {
     );
   });
 
-  it("pirmajā reizē izsauc VIN Decoder un OE Service History, komentāru ģenerē EN", async () => {
-    fetchOneautoProducts.mockResolvedValue({
-      costEur: "3.18",
-      results: {
-        vin_decoder: { ok: true, payload: decoderPayload() },
-        oe_service_history: { ok: true, payload: historyPayload() },
-      },
-      display: { equipment: [], powertrain: [], serviceTimeline: [{ date: "10.01.2024", odometer: "12000", place: "Audi Riga", works: "Oil change" }] },
-    });
+  it("pirmajā reizē izsauc OE Service History, tad VIN Lookup, komentāru ģenerē EN", async () => {
+    fetchOneautoProducts
+      .mockResolvedValueOnce({
+        costEur: "3.00",
+        results: {
+          oe_service_history: { ok: true, payload: historyPayload() },
+        },
+        display: { equipment: [], powertrain: [], serviceTimeline: [{ date: "10.01.2024", odometer: "12000", place: "Audi Riga", works: "Oil change" }] },
+      })
+      .mockResolvedValueOnce({
+        costEur: "0.36",
+        results: {
+          oe_vin_lookup: { ok: true, payload: lookupPayload() },
+        },
+        display: { equipment: [], powertrain: [{ label: "Engine", value: "DLVB" }], serviceTimeline: [] },
+      });
 
     const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
     expect(r).toMatchObject({ ok: true, status: "done" });
-    expect(fetchOneautoProducts).toHaveBeenCalledTimes(1);
+    expect(fetchOneautoProducts).toHaveBeenCalledTimes(2);
     expect(fetchOneautoProducts.mock.calls[0]![0]).toEqual({
       vin: VIN,
-      products: ["vin_decoder", "oe_service_history"],
+      products: ["oe_service_history"],
+    });
+    expect(fetchOneautoProducts.mock.calls[1]![0]).toEqual({
+      vin: VIN,
+      products: ["oe_vin_lookup"],
     });
     expect(generateSourceCommentWithAi).toHaveBeenCalledTimes(1);
     expect(generateSourceCommentWithAi.mock.calls[0]![0]).toMatchObject({
@@ -127,9 +142,9 @@ describe("runDealerDataJob paid idempotency", () => {
       attempts: 1,
       createdAt: "2026-10-19T00:00:00.000Z",
       updatedAt: "2026-10-19T00:00:00.000Z",
-      paidOutcomes: { vin_decoder: "ok" },
+      paidOutcomes: { oe_vin_lookup: "ok" },
       oneautoResults: {
-        vin_decoder: { ok: true, payload: decoderPayload() },
+        oe_vin_lookup: { ok: true, payload: lookupPayload() },
       },
     });
     fetchOneautoProducts.mockResolvedValue({
@@ -154,9 +169,9 @@ describe("runDealerDataJob paid idempotency", () => {
       attempts: 1,
       createdAt: "2026-10-19T00:00:00.000Z",
       updatedAt: "2026-10-19T00:00:00.000Z",
-      paidOutcomes: { vin_decoder: "ok", oe_service_history: "ok" },
+      paidOutcomes: { oe_vin_lookup: "ok", oe_service_history: "ok" },
       oneautoResults: {
-        vin_decoder: { ok: true, payload: decoderPayload() },
+        oe_vin_lookup: { ok: true, payload: lookupPayload() },
         oe_service_history: { ok: true, payload: historyPayload() },
       },
     });
@@ -167,10 +182,10 @@ describe("runDealerDataJob paid idempotency", () => {
       vinOverride: "",
       lastFetchedVin: VIN,
       fetchedAt: "2026-10-19T00:00:00.000Z",
-      selectedProducts: ["vin_decoder", "oe_service_history"],
-      lastCostEur: "3.18",
+      selectedProducts: ["oe_vin_lookup", "oe_service_history"],
+      lastCostEur: "3.36",
       results: {
-        vin_decoder: { ok: true, payload: decoderPayload() },
+        oe_vin_lookup: { ok: true, payload: lookupPayload() },
         oe_service_history: { ok: true, payload: historyPayload() },
       },
       serviceTimelineOriginal: [{ date: "10.01.2024", odometer: "12000", place: "Riga", works: "Oil" }],
@@ -190,14 +205,21 @@ describe("runDealerDataJob paid idempotency", () => {
     readOrderDraft.mockResolvedValue(
       emptyDraft("B2B dealer · wallet_product=dealer_raw · wallet_txn=wtx_2 · wallet_cents=1999"),
     );
-    fetchOneautoProducts.mockResolvedValue({
-      costEur: "3.18",
-      results: {
-        vin_decoder: { ok: true, payload: decoderPayload() },
-        oe_service_history: { ok: true, payload: historyPayload() },
-      },
-      display: { equipment: [], powertrain: [], serviceTimeline: [{ date: "10.01.2024", odometer: "12000", place: "München", works: "Ölwechsel" }] },
-    });
+    fetchOneautoProducts
+      .mockResolvedValueOnce({
+        costEur: "3.00",
+        results: {
+          oe_service_history: { ok: true, payload: historyPayload() },
+        },
+        display: { equipment: [], powertrain: [], serviceTimeline: [{ date: "10.01.2024", odometer: "12000", place: "München", works: "Ölwechsel" }] },
+      })
+      .mockResolvedValueOnce({
+        costEur: "0.36",
+        results: {
+          oe_vin_lookup: { ok: true, payload: lookupPayload() },
+        },
+        display: { equipment: [], powertrain: [], serviceTimeline: [] },
+      });
 
     const r = await runDealerDataJob({
       sessionId: SESSION,
@@ -210,18 +232,94 @@ describe("runDealerDataJob paid idempotency", () => {
     expect(generateSourceCommentWithAi.mock.calls[0]![0]).toMatchObject({ outputLang: "source" });
   });
 
-  it("OE vēstures no_data atgriež no_data arī tad, ja VIN Decoder ir ok", async () => {
+  it("OE vēstures no_data neatver VIN Lookup un neatgriež Decoder", async () => {
     fetchOneautoProducts.mockResolvedValue({
-      costEur: "0.18",
+      costEur: "0.00",
       results: {
-        vin_decoder: { ok: true, payload: decoderPayload() },
         oe_service_history: { ok: false, error: "no_data", payload: { success: false } },
       },
-      display: { equipment: [], powertrain: [{ label: "Make", value: "Audi" }], serviceTimeline: [] },
+      display: { equipment: [], powertrain: [], serviceTimeline: [] },
     });
     const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "webhook" });
     expect(r).toMatchObject({ ok: true, status: "no_data" });
+    expect(fetchOneautoProducts).toHaveBeenCalledTimes(1);
+    expect(fetchOneautoProducts.mock.calls[0]![0].products).toEqual(["oe_service_history"]);
     expect(refundB2bWalletOrderIfNoData).toHaveBeenCalledWith(SESSION);
     expect(generateSourceCommentWithAi).not.toHaveBeenCalled();
+  });
+
+  it("pārraksta dīzeļa komentāru, kad VIN Lookup ieliek benzīnu", async () => {
+    const draft = emptyDraft(
+      "B2B dealer · wallet_product=dealer_pro · wallet_txn=wtx_1 · wallet_cents=2499 · report_lang=en",
+    );
+    draft.workspace.sourceBlocks.auto_records.comments = "<p>Šis dīzelis ir tipisks TDI ar DPF.</p>";
+    draft.workspace.sourceBlocks.auto_records.outvinReport = {
+      vehicleInfo: {
+        vinCode: VIN,
+        model: "A5 35 TFSI",
+        modelSeries: "",
+        vehicleType: "",
+        transmission: "",
+        steeringSide: "",
+        engineCode: "DLVB",
+        engineNumber: "",
+        body: "",
+        drive: "",
+        power: "",
+        integrationLevel: "",
+        currentILevel: "",
+        developmentCode: "",
+        modelCode: "",
+        productionDate: "",
+        firstRegistration: "",
+        warrantyStartDate: "",
+        countryRegion: "",
+        color: "Black",
+        colorCode: "",
+        interior: "",
+        interiorCode: "",
+        fuel: "Petrol",
+        displacement: "",
+      },
+      accidentCheck: "",
+      stolenCheck: "",
+      equipment: [],
+    };
+    draft.workspace.sourceBlocks.auto_records.oneautoIngest = {
+      vinOverride: "",
+      lastFetchedVin: VIN,
+      fetchedAt: "2026-10-19T00:00:00.000Z",
+      selectedProducts: ["oe_vin_lookup", "oe_service_history"],
+      lastCostEur: "3.36",
+      results: {
+        oe_vin_lookup: { ok: true, payload: lookupPayload() },
+        oe_service_history: { ok: true, payload: historyPayload() },
+      },
+      serviceTimelineOriginal: [{ date: "10.01.2024", odometer: "12000", place: "Riga", works: "Oil" }],
+    };
+    readDealerDataJob.mockResolvedValue({
+      sessionId: SESSION,
+      vin: VIN,
+      status: "done",
+      attempts: 1,
+      createdAt: "2026-10-19T00:00:00.000Z",
+      updatedAt: "2026-10-19T00:00:00.000Z",
+      paidOutcomes: { oe_vin_lookup: "ok", oe_service_history: "ok" },
+      oneautoResults: {
+        oe_vin_lookup: { ok: true, payload: lookupPayload() },
+        oe_service_history: { ok: true, payload: historyPayload() },
+      },
+    });
+    readOrderDraft.mockResolvedValue(draft);
+    generateSourceCommentWithAi.mockResolvedValue("35 TFSI benzīna motors DLVB.");
+
+    const r = await runDealerDataJob({ sessionId: SESSION, vin: VIN, trigger: "manual", force: true });
+    expect(r.status).toBe("done");
+    expect(fetchOneautoProducts).not.toHaveBeenCalled();
+    expect(generateSourceCommentWithAi).toHaveBeenCalledTimes(1);
+    expect(patchOrderDraft.mock.calls.some((call) => {
+      const comments = call[1]?.workspace?.sourceBlocks?.auto_records?.comments;
+      return typeof comments === "string" && comments.includes("35 TFSI");
+    })).toBe(true);
   });
 });

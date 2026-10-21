@@ -17,6 +17,7 @@ import {
   normalizeDealerDataJob,
   resolveDealerCommentOutputLang,
   selectDealerAutoProductsToFetch,
+  shouldAutoFetchOeVinLookup,
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
 
@@ -249,52 +250,59 @@ describe("normalizeDealerDataJob", () => {
       {
         vin: "WAUZZZ4M0JD000001",
         status: "failed",
-        paidOutcomes: { vin_decoder: "ok", oe_service_history: "failed" },
+        paidOutcomes: { oe_vin_lookup: "ok", oe_service_history: "failed" },
         commentLang: "de",
         skipTranslate: true,
-        oneautoResults: { vin_decoder: { ok: true, payload: { vin: "x" } } },
+        oneautoResults: { oe_vin_lookup: { ok: true, payload: { vin: "x" } } },
       },
       "cs_test_1",
     );
-    expect(parsed?.paidOutcomes).toEqual({ vin_decoder: "ok", oe_service_history: "failed" });
+    expect(parsed?.paidOutcomes).toEqual({ oe_vin_lookup: "ok", oe_service_history: "failed" });
     expect(parsed?.commentLang).toBe("de");
     expect(parsed?.skipTranslate).toBe(true);
-    expect(parsed?.oneautoResults?.vin_decoder).toMatchObject({ ok: true });
+    expect(parsed?.oneautoResults?.oe_vin_lookup).toMatchObject({ ok: true });
   });
 });
 
 describe("dealer auto paid products", () => {
-  it("automātika iekasē VIN Decoder un OE Service History", () => {
-    expect(DEALER_AUTO_PRODUCT_IDS).toEqual(["vin_decoder", "oe_service_history"]);
+  it("automātika iekasē OE Service History; VIN Lookup tikai pēc ierakstiem", () => {
+    expect(DEALER_AUTO_PRODUCT_IDS).toEqual(["oe_service_history", "oe_vin_lookup"]);
+    expect(DEALER_AUTO_PRODUCT_IDS).not.toContain("vin_decoder");
+    expect(selectDealerAutoProductsToFetch({})).toEqual(["oe_service_history"]);
   });
 
-  it("neizsauc jau settled produktus, arī pēc kļūdas", () => {
-    expect(selectDealerAutoProductsToFetch({})).toEqual(["vin_decoder", "oe_service_history"]);
-    expect(selectDealerAutoProductsToFetch({ vin_decoder: "ok" })).toEqual(["oe_service_history"]);
+  it("neizsauc jau settled vēsturi un VIN Lookup tikai ja ir ieraksti", () => {
+    expect(selectDealerAutoProductsToFetch({ oe_service_history: "ok" })).toEqual([]);
     expect(
-      selectDealerAutoProductsToFetch({ vin_decoder: "no_data", oe_service_history: "ok" }),
+      selectDealerAutoProductsToFetch({ oe_vin_lookup: "ok", oe_service_history: "ok" }),
     ).toEqual([]);
-    expect(
-      selectDealerAutoProductsToFetch({ vin_decoder: "failed", oe_service_history: "no_data" }),
-    ).toEqual(["vin_decoder"]);
+    expect(selectDealerAutoProductsToFetch({ oe_service_history: "failed" })).toEqual([
+      "oe_service_history",
+    ]);
+    expect(shouldAutoFetchOeVinLookup({ historyHasEntries: false, lookupOutcome: null })).toBe(false);
+    expect(shouldAutoFetchOeVinLookup({ historyHasEntries: true, lookupOutcome: null })).toBe(true);
+    expect(shouldAutoFetchOeVinLookup({ historyHasEntries: true, lookupOutcome: "ok" })).toBe(false);
+    expect(shouldAutoFetchOeVinLookup({ historyHasEntries: true, lookupOutcome: "no_data" })).toBe(
+      false,
+    );
   });
 
   it("settled iznākumu nevar pārrakstīt ar failed", () => {
     expect(
       mergeDealerPaidOutcomes(
-        { vin_decoder: "ok", oe_service_history: "no_data" },
-        { vin_decoder: "failed", oe_service_history: "failed" },
+        { oe_vin_lookup: "ok", oe_service_history: "no_data" },
+        { oe_vin_lookup: "failed", oe_service_history: "failed" },
       ),
-    ).toEqual({ vin_decoder: "ok", oe_service_history: "no_data" });
+    ).toEqual({ oe_vin_lookup: "ok", oe_service_history: "no_data" });
     expect(isDealerPaidProductSettled("ok")).toBe(true);
     expect(isDealerPaidProductSettled("failed")).toBe(false);
     expect(dealerPaidOutcomeFromResult({ ok: true })).toBe("ok");
     expect(dealerPaidOutcomeFromResult({ ok: false, error: "no_data" })).toBe("no_data");
     expect(dealerPaidOutcomeFromResult({ ok: false, error: "api_unavailable" })).toBe("failed");
-    expect(dealerAutoFetchHasTechnicalFail({ vin_decoder: "ok", oe_service_history: "pending" })).toBe(
+    expect(dealerAutoFetchHasTechnicalFail({ oe_vin_lookup: "ok", oe_service_history: "pending" })).toBe(
       "oe_service_history",
     );
-    expect(dealerAutoFetchHasTechnicalFail({ vin_decoder: "ok", oe_service_history: "no_data" })).toBeNull();
+    expect(dealerAutoFetchHasTechnicalFail({ oe_vin_lookup: "ok", oe_service_history: "no_data" })).toBeNull();
   });
 });
 

@@ -61,6 +61,8 @@ export type AutoRecordsOneautoIngest = {
    * OEM PDF lieto šo; admin tabulas var būt tulkotas.
    */
   serviceTimelineOriginal?: OneautoServiceEvent[];
+  /** Dzinējs / degviela, pret kuriem pēdējoreiz ģenerēts komentārs. */
+  generatedAgainst?: { engineCode: string; fuelKind: string };
 };
 
 export function emptyOneautoIngest(): AutoRecordsOneautoIngest {
@@ -91,6 +93,20 @@ export function parseOneautoIngestRaw(raw: unknown): AutoRecordsOneautoIngest {
     lastCostEur: typeof o.lastCostEur === "string" ? o.lastCostEur.slice(0, 20) : "",
     results: parseResultMap(o.results),
     serviceTimelineOriginal: filledOneautoServiceEvents(originalDisplay.serviceTimeline),
+    ...(o.generatedAgainst && typeof o.generatedAgainst === "object"
+      ? {
+          generatedAgainst: {
+            engineCode:
+              typeof (o.generatedAgainst as { engineCode?: unknown }).engineCode === "string"
+                ? (o.generatedAgainst as { engineCode: string }).engineCode.trim().toUpperCase().slice(0, 24)
+                : "",
+            fuelKind:
+              typeof (o.generatedAgainst as { fuelKind?: unknown }).fuelKind === "string"
+                ? (o.generatedAgainst as { fuelKind: string }).fuelKind.trim().toLowerCase().slice(0, 24)
+                : "",
+          },
+        }
+      : {}),
   };
 }
 
@@ -198,6 +214,7 @@ export function mergeOneautoIngest(
     lastCostEur: incoming.lastCostEur.trim() || prev.lastCostEur,
     results: mergeOneautoProductResults(prev.results, incoming.results),
     serviceTimelineOriginal: nextOriginal.length > 0 ? nextOriginal : prevOriginal,
+    generatedAgainst: incoming.generatedAgainst ?? prev.generatedAgainst,
   };
 }
 

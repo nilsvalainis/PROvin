@@ -17,6 +17,11 @@ import {
 import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { keepSourceCommentAfterExpansionStrip } from "@/lib/source-summary-comment-format";
 import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
+import {
+  commentContradictsPowertrain,
+  extractLoadedPowertrainIdentity,
+  powertrainIdentityPromptBlock,
+} from "@/lib/comment-powertrain-guard";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import { sourceCommentLengthLineForBreadth, type CommentBreadth } from "@/lib/ai-comment-breadth";
 import {
@@ -103,6 +108,8 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
         .filter(Boolean)
         .join("\n")
     : "";
+  const powertrainIdentity = extractLoadedPowertrainIdentity(input.sourceBlocks, { vin: input.vin });
+  const powertrainBlock = powertrainIdentityPromptBlock(powertrainIdentity);
 
   const portfolioContext = isolateDealer
     ? ""
@@ -262,6 +269,8 @@ ${
     : `Ja OPERATORA KOMANDAS nosauc citu avotu vai lauku („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”, „pārdevēja portrets”) - tās rindkopas ŠEIT NEKOPĒ. Drīksti ņemt datumus/km kā kontekstu, bet neatkarīgu rindkopu no tā neraksti.
 `
 }Neizdomā faktus. Neparafrāzē citu avotu komentārus gandrīz tādā pašā garumā.${oilRoleHint}${
+          powertrainBlock ? `\n\n${powertrainBlock}` : ""
+        }${
           input.outputLang ? `\n\n${dealerCommentLanguageDirective(input.outputLang)}` : ""
         }`,
         {
@@ -285,7 +294,25 @@ ${
     temperature: 0.25,
   });
   if (isOilInterval || isServiceHistory) return generated;
-  return keepSourceCommentAfterExpansionStrip(generated);
+  const cleaned = keepSourceCommentAfterExpansionStrip(generated);
+  if (!commentContradictsPowertrain(cleaned, powertrainIdentity)) return cleaned;
+  const retryPrompt = `${userPrompt}\n\n${powertrainBlock}\nVALIDATOR: iepriekšējā izeja runāja pretī ielādētajai degvielai vai dzinēja kodam. Pārraksti bez pretrunas.`;
+  const retried = keepSourceCommentAfterExpansionStrip(
+    await adminGenerateExpertText({
+      modelTier: input.modelTier,
+      systemInstruction: aiSourceCommentSystemPrompt(blockLabel, {
+        unlimitedLength: isDealerComments,
+        includeOilIntervalRole,
+      }),
+      userPrompt: retryPrompt,
+      qualityField: isDealerComments ? "source_dealer" : "source",
+      temperature: 0.15,
+    }),
+  );
+  if (commentContradictsPowertrain(retried, powertrainIdentity)) {
+    throw new Error("powertrain_contradiction");
+  }
+  return retried;
 }
 
 export { isAiSourceCommentBlockKey } from "@/lib/admin-source-comment-blocks";

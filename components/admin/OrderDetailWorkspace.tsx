@@ -231,6 +231,11 @@ import {
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import {
+  commentsNeedPowertrainRegenerate,
+  POWERTRAIN_REGENERATE_PROMPT_LV,
+  stampGeneratedAgainstOnBlocks,
+} from "@/lib/comment-powertrain-guard";
+import {
   AdminFactCheckButton,
   AdminFactCheckPanel,
   AdminFactCheckPublishConfirm,
@@ -795,6 +800,19 @@ export function OrderDetailWorkspace({
 }) {
   const fileInputId = useId();
   const [ws, setWs] = useState<WorkspacePersist>(EMPTY_WORKSPACE);
+  const powertrainCommentStale = useMemo(
+    () =>
+      commentsNeedPowertrainRegenerate({
+        sourceBlocks: ws.sourceBlocks,
+        commentTexts: [
+          ws.tehniskoRiskuAnalize,
+          ws.iriss,
+          (ws.sourceBlocks.auto_records?.comments as string | undefined) ?? "",
+        ],
+        vin: payload.vin,
+      }),
+    [payload.vin, ws.iriss, ws.sourceBlocks, ws.tehniskoRiskuAnalize],
+  );
   const [workspaceHydrated, setWorkspaceHydrated] = useState(false);
   const [workspaceSaveFlash, setWorkspaceSaveFlash] = useState(false);
   const [workspaceSaveServerOk, setWorkspaceSaveServerOk] = useState(true);
@@ -1470,6 +1488,7 @@ export function OrderDetailWorkspace({
         (text) =>
           updateWs({
             tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(text),
+            sourceBlocks: stampGeneratedAgainstOnBlocks(cur.sourceBlocks, payload.vin),
             ...technicalRiskMapSnapshotField(
               generated.technicalRiskMap
                 ? {
@@ -5894,6 +5913,9 @@ export function OrderDetailWorkspace({
                 />
                 <div className="min-w-0">
                   <AdminAiFieldError message={aiTechnicalRisksErr} />
+                  {powertrainCommentStale ? (
+                    <p className="mb-1 text-[11px] text-amber-800">{POWERTRAIN_REGENERATE_PROMPT_LV}</p>
+                  ) : null}
                   <AdminAiPolishRichCommentShell
                     value={ws.tehniskoRiskuAnalize ?? ""}
                     onChange={(next) => updateWs({ tehniskoRiskuAnalize: next })}

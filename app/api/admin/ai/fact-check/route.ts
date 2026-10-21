@@ -71,6 +71,8 @@ export async function POST(req: Request) {
     field: input.field,
     facts,
     otherFieldTexts,
+    sourceBlocks,
+    vin: context.vin,
   });
   const mergedFlags = mergeFactCheckFlags(result.flags, sheetFlags);
   const merged = { ...result, flags: mergedFlags };

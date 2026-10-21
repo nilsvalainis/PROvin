@@ -43,6 +43,7 @@ export function persistPaidSourceCost(opts: {
   source: CostSourceId;
   units?: number;
   usd?: number;
+  sku?: string;
   ref?: string;
   nowMs?: number;
 }): void {
@@ -55,6 +56,7 @@ export function persistPaidSourceCost(opts: {
     month: rigaYearMonthKey(nowMs),
     units,
     usd,
+    sku: opts.sku,
     ref: opts.ref,
   }).catch((err) => {
     console.error("[admin-costs] persist failed", opts.source, err);

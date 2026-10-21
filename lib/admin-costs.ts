@@ -25,6 +25,7 @@ export const COST_SOURCE_IDS = [
   "autodna",
   "carvertical",
   "statvin",
+  "oneauto",
   "maps-dynamic",
   "maps-geocoding",
   "vercel",
@@ -221,6 +222,17 @@ export const COST_SOURCES: readonly CostSourceDef[] = [
     dataMode: "events",
     unitLabel: "pieprasījumi",
     unitLabelOne: "pieprasījums",
+    liveApi: "none",
+  },
+  {
+    id: "oneauto",
+    group: "api",
+    label: "OneAuto (OEM)",
+    subtitle: "OE Service History / OE VIN Lookup, EUR",
+    freshness: "live",
+    dataMode: "events",
+    unitLabel: "produkti",
+    unitLabelOne: "produkts",
     liveApi: "none",
   },
   {
@@ -663,6 +675,7 @@ export function shortCostLabel(id: CostSourceId): string {
   if (id === "maps-dynamic") return "Maps Dynamic Maps";
   if (id === "maps-geocoding") return "Maps Geocoding";
   if (id === "statvin") return "stat.vin";
+  if (id === "oneauto") return "OneAuto";
   return costSourceDef(id)?.label ?? id;
 }
 

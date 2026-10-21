@@ -110,7 +110,9 @@ export type FactCheckFlag = {
     | "no_recalls_claim"
     | "leak_phrase"
     | "atsavinasanai"
-    | "unsourced_date";
+    | "unsourced_date"
+    | "powertrain_fuel"
+    | "powertrain_engine";
   message: string;
   sentence: string;
   factId?: string;
