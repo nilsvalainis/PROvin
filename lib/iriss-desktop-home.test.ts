@@ -25,7 +25,8 @@ describe("IRISS desktop home and sidebar", () => {
     expect(sidebar).toContain("IRISS_SIDEBAR_WAYBILL_LIMIT = 2");
     expect(sidebar).toContain('href="/admin/iriss/pasutijumi" onClick={() => writeWsCookie("iriss")}');
     const card = read("components/admin/IrissPavadzimesSidebarCard.tsx");
-    expect(card).toContain("rows.slice(0, limit)");
+    // Visas 3 zīmes vienā kompaktā rindā (apļi), nevis saraksts ar limitu.
+    expect(card).toContain("IrissWaybillGauges");
   });
 
   it("makes only the sidebar transparent, not panels or cards", () => {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminMobileCountBadge, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
-import { IrissPavadzimesPlateStrip } from "@/components/admin/IrissPavadzimesPlateStrip";
+import { IrissWaybillGauges } from "@/components/admin/IrissWaybillGauges";
 import { useIrissWaybillPlateStrip } from "@/components/admin/useIrissWaybillPlateStrip";
 import {
   cheapIrissMenuCount,
@@ -79,7 +79,7 @@ export function IrissMobileMenuHome({
     <div className="iriss-mobile-menu-home pb-4">
       <AdminMobileTopBar title="IRISS" subtitle="Izvēlies sadaļu. Dati ielādējas tikai pēc pieskāriena." />
       <div className="px-4 md:hidden">
-        {canReadWaybills ? <IrissPavadzimesPlateStrip enabled embedded /> : null}
+        {canReadWaybills ? <IrissWaybillGauges /> : null}
         <div className="flex flex-col gap-3 pt-3">
           {groups.map((group) => (
             <div key={group[0]!.id} className="overflow-hidden rounded-[14px] bg-[var(--surface,#fff)] shadow-[var(--am-card-shadow)]">

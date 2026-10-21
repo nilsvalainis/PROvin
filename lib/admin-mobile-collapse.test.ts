@@ -84,10 +84,10 @@ describe("admin mobile spec files", () => {
     const bar = readFileSync(new URL("../components/admin/IrissPavadzimesMobileBar.tsx", import.meta.url), "utf8");
     const strip = readFileSync(new URL("../components/admin/IrissPavadzimesPlateStrip.tsx", import.meta.url), "utf8");
     expect(strip).toMatch(/--fill-secondary/);
-    expect(bar).not.toMatch(/item\.urgent \?/);
     expect(strip).not.toMatch(/item\.urgent \?/);
-    expect(bar).toMatch(/sludinajumi/);
     expect(strip).toMatch(/animate-pulse/);
+    // Augšējā joslā numurzīmju vairs nav (Nils 21.10): josla neko nerāda.
+    expect(bar).toMatch(/return null;/);
     expect(bar).not.toMatch(/scheduleAdminIdleWork/);
   });
 

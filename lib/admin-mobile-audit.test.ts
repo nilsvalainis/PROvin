@@ -33,17 +33,16 @@ describe("IRISS / PRO mobile audit guards", () => {
     expect(src.shell).not.toMatch(/AdminMobileWorkspaceSwitch/);
     expect(src.chrome).toMatch(/defaultBackHref/);
     expect(src.chrome).toMatch(/\/admin\/iriss/);
-    expect(src.bar).toMatch(/IrissPavadzimesPlateStrip/);
+    expect(src.bar).toMatch(/return null;/);
     expect(src.logistika).not.toMatch(/mobileTitle="Izvēlne"|title="Izvēlne"/);
   });
 
-  it("shows mini LV plates with status hours, not waybill numbers", () => {
-    expect(src.bar).toMatch(/IrissPavadzimesPlateStrip/);
-    const strip = readFileSync(new URL("../components/admin/IrissPavadzimesPlateStrip.tsx", import.meta.url), "utf8");
-    expect(strip).toMatch(/min-h-11/);
-    expect(strip).toMatch(/IrissMiniLvPlate/);
-    expect(strip).not.toMatch(/formatIrissWaybillChip/);
-    expect(strip).not.toMatch(/item\.number/);
+  it("shows the 3 waybill plates as 48 h gauges with hours and car, not in the top bar", () => {
+    expect(src.bar).toMatch(/return null;/);
+    const gauges = readFileSync(new URL("../components/admin/IrissWaybillGauges.tsx", import.meta.url), "utf8");
+    expect(gauges).toMatch(/hoursLeft/);
+    expect(gauges).toMatch(/brandModel/);
+    expect(gauges).not.toMatch(/formatIrissWaybillChip/);
   });
 
   it("makes sheets and the global search panel opaque", () => {

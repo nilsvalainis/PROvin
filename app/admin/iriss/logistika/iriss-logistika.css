@@ -1186,3 +1186,39 @@ html.iriss-log-printing .iriss-log-print-root .iriss-log-map-shell {
 .iriss-log-ac-note.bad {
   color: #c2362b;
 }
+
+/* Kartē rādīt: Visi / Nākošā / Aiznākošā krava. */
+.iriss-log-trip-seg {
+  display: inline-flex;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--iriss-log-surface-2);
+  padding: 2px;
+}
+.iriss-log-trip-seg button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 4px 10px;
+  color: #3a3a3c;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.iriss-log-trip-seg button.on {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(11, 12, 16, 0.12);
+  color: #0b0c10;
+  font-weight: 600;
+}
+.iriss-log-trip-seg i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+.iriss-log-trip-seg b {
+  color: #8e8e93;
+  font-weight: 600;
+}

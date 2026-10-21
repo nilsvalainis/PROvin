@@ -219,7 +219,8 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(page).not.toMatch(/LvDealerPlate/);
     const sidebar = fs.readFileSync("components/admin/IrissPavadzimesSidebarCard.tsx", "utf8");
     const cardList = fs.readFileSync("lib/iriss-pavadzimes-list.ts", "utf8");
-    expect(sidebar).toMatch(/function LvTransitPlate/);
+    // Sānjoslā tie paši pavadzīmju apļi kā telefona izvēlnē (21.10, Nils).
+    expect(sidebar).toMatch(/IrissWaybillGauges size="sidebar"/);
     expect(sidebar).not.toMatch(/LvDealerPlate/);
     expect(sidebar).not.toMatch(/B861-6/);
     expect(cardList).toMatch(/selectActiveCardWaybills/);

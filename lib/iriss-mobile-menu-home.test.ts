@@ -23,7 +23,7 @@ describe("IRISS mobile menu home and workspace switch", () => {
     expect(src.page).not.toMatch(/staffActorHomePath/);
     expect(src.page).not.toMatch(/redirect\(staff/);
     expect(src.index).toContain('"/admin/iriss"');
-    expect(src.menu).toContain("IrissPavadzimesPlateStrip");
+    expect(src.menu).toContain("IrissWaybillGauges");
     expect(src.menu).toContain("cheapIrissMenuCount");
   });
 
@@ -45,7 +45,7 @@ describe("IRISS mobile menu home and workspace switch", () => {
 
   it("keeps the header scrolling and plates without waybill numbers", () => {
     expect(src.chrome).not.toMatch(/am-topbar-sticky/);
-    expect(src.bar).toContain("IrissPavadzimesPlateStrip");
+    expect(src.bar).toContain("return null;");
     expect(src.strip).toContain("IrissMiniLvPlate");
     expect(src.strip).toContain("statusLabel");
     expect(src.strip).not.toContain("formatIrissWaybillChip");

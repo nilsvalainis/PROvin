@@ -47,9 +47,8 @@ describe("IRISS mobile safe-area layout", () => {
 
   it("keeps invoice chips in the last topbar row and hides them on the editor", () => {
     expect(src.bar).toMatch(/embedded/);
-    expect(src.bar).toMatch(/sludinajumi/);
-    expect(src.bar).toMatch(/pasutijumi\|scan/);
-    expect(src.bar).toMatch(/IrissPavadzimesPlateStrip/);
+    // Numurzīmju josla augšā vairs netiek rādīta nevienā IRISS lapā.
+    expect(src.bar).toMatch(/return null;/);
     expect(src.list).toMatch(/AdminMobileSearchField/);
     expect(src.list).toMatch(/IrissPasutijumiStatusFilter layout="scroll"/);
     expect(src.list).toMatch(/title="LIMITI"/);
