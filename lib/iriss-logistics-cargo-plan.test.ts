@@ -82,9 +82,10 @@ describe("IRISS Loģistika kravu plāns", () => {
     expect(CARGO_CSS_VAR.next).toBe("--krava-next");
     expect(CARGO_CSS_VAR.after).toBe("--krava-next2");
     expect(CARGO_CSS_VAR.none).toBe("--krava-none");
-    expect(CARGO_COLOR_FALLBACK.next).toBe("#1e9e57");
-    expect(CARGO_COLOR_FALLBACK.after).toBe("#5e5ce6");
-    expect(CARGO_COLOR_FALLBACK.none).toBe("#3a3a3c");
+    // Nils 21.10: Nākošā sarkana, Aiznākošā melna (kā kartes lāses).
+    expect(CARGO_COLOR_FALLBACK.next).toBe("#ea4335");
+    expect(CARGO_COLOR_FALLBACK.after).toBe("#1d1d1f");
+    expect(CARGO_COLOR_FALLBACK.none).toBe("#9aa0a6");
   });
 
   it("moves a car between buckets and reindexes without inventing status", () => {

@@ -23,7 +23,6 @@ import {
   CARGO_BUCKET_ADD_LV,
   CARGO_BUCKET_LV,
   CARGO_BUCKETS,
-  cargoRoutePoints,
   cargoRoutePointsKey,
   carsInCargoBucket,
   endpointFromTemplate,
@@ -246,13 +245,8 @@ export function IrissLogistikaCargoPlan({
                       style={route.enabled ? { background: colorVar } : undefined}
                       onClick={() => {
                         if (!cargoBucket) return;
-                        const next = setCargoRouteEnabled(plan, cargoBucket, !route.enabled);
-                        onPlanChange(next);
-                        // Līniju rēķinām uzreiz tikai, ja jau ir ko savienot un tā nav aktuāla.
-                        const pts = cargoRoutePoints(next, cargoBucket, orders);
-                        if (!route.enabled && pts.length >= 2 && route.pathKey !== cargoRoutePointsKey(pts)) {
-                          onRefreshDirections(cargoBucket, next);
-                        }
+                        // Līniju pārrēķina Loģistikas dzīvais maršruts, kad ir ko savienot.
+                        onPlanChange(setCargoRouteEnabled(plan, cargoBucket, !route.enabled));
                       }}
                     />
                   </label>
@@ -558,10 +552,8 @@ function RouteBlock({
         onClose={() => setAddressFor(null)}
         onTemplatesChanged={onTemplatesChanged}
         onPick={(v) => {
-          const next = setCargoRouteEndpoint(plan, bucket, "start", v);
-          onPlanChange(next);
+          onPlanChange(setCargoRouteEndpoint(plan, bucket, "start", v));
           setAddressFor(null);
-          if (cargoRoutePoints(next, bucket, [...byId.values()]).length >= 2) onRefreshDirections(next);
         }}
       />
       <div className="-mx-3.5">{children}</div>
@@ -575,10 +567,8 @@ function RouteBlock({
         onClose={() => setAddressFor(null)}
         onTemplatesChanged={onTemplatesChanged}
         onPick={(v) => {
-          const next = setCargoRouteEndpoint(plan, bucket, "end", v);
-          onPlanChange(next);
+          onPlanChange(setCargoRouteEndpoint(plan, bucket, "end", v));
           setAddressFor(null);
-          if (cargoRoutePoints(next, bucket, [...byId.values()]).length >= 2) onRefreshDirections(next);
         }}
       />
       <div className="mt-3 flex items-end justify-between gap-2">

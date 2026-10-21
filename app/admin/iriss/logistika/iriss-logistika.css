@@ -1,11 +1,12 @@
 /* Loģistika v4 tokens: tikai šajā saknē, ne globālajos IRISS failos. */
 .iriss-log-screen {
-  --iriss-log-cargo-next: #1e9e57;
+  /* Nils 21.10: Nākošā krava spilgti sarkana, Aiznākošā melna, pārējie pelēki (kā kartes lāses). */
+  --iriss-log-cargo-next: #ea4335;
   --krava-next: var(--iriss-log-cargo-next);
-  --krava-next2: #5e5ce6;
+  --krava-next2: #1d1d1f;
   --iriss-log-cargo-after: var(--krava-next2);
   --krava-after: var(--krava-next2);
-  --iriss-log-cargo-none: #3a3a3c;
+  --iriss-log-cargo-none: #9aa0a6;
   --krava-none: var(--iriss-log-cargo-none);
   --iriss-log-news-bg: #2563eb;
   --iriss-log-news-fg: #fff;
@@ -96,7 +97,7 @@
 }
 .iriss-log-screen .iriss-log-check:checked {
   border-color: transparent;
-  background: var(--iriss-log-cargo-none);
+  background: var(--iriss-log-ink);
 }
 .iriss-log-screen .iriss-log-check:checked::after {
   content: "";
@@ -1221,4 +1222,83 @@ html.iriss-log-printing .iriss-log-print-root .iriss-log-map-shell {
 .iriss-log-trip-seg b {
   color: #8e8e93;
   font-weight: 600;
+}
+
+/* Google stila lāses: smaile tieši uz adreses. Nākošā sarkana, Aiznākošā melna, pārējie pelēki. */
+.iriss-log-tear {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  line-height: 0;
+  transition: transform 0.12s ease;
+}
+.iriss-log-tear-svg {
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(11, 12, 16, 0.35));
+}
+.iriss-log-tear:hover,
+.iriss-log-tear.active,
+.iriss-log-tear.open {
+  z-index: 5;
+}
+.iriss-log-tear:hover {
+  transform: translate(-50%, -100%) translateY(-3px);
+}
+.iriss-log-tear.active .iriss-log-tear-svg {
+  animation: iriss-log-dot-bounce 0.55s ease-in-out infinite;
+}
+.iriss-log-tear.selected .iriss-log-tear-svg {
+  filter: drop-shadow(0 0 0 #fff) drop-shadow(0 0 3px #2563eb);
+}
+.iriss-log-tear.small {
+  opacity: 0.9;
+}
+.iriss-log-tear:hover .iriss-log-pin-tip,
+.iriss-log-tear.active .iriss-log-pin-tip {
+  display: block;
+  line-height: normal;
+}
+.iriss-log-tear.open .iriss-log-pin-tip,
+.iriss-log-tear.open .iriss-log-pin-label {
+  display: none;
+}
+.iriss-log-tear .iriss-log-pin-label,
+.iriss-log-tear .iriss-log-pin-list {
+  line-height: normal;
+}
+/* "N auto": skaits blakus lāsei, lai to nevar sajaukt ar pieturas numuru. */
+.iriss-log-tear-count {
+  position: absolute;
+  left: calc(100% - 4px);
+  top: 4px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(11, 12, 16, 0.25);
+  padding: 2px 7px;
+  color: #1d1d1f;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.iriss-log-tear.group .iriss-log-pin-label {
+  top: calc(50% + 14px);
+}
+/* Vairākas pieturas vienā adresē: lāses blakus, tieva līnija uz īsto punktu. */
+.iriss-log-spread-line {
+  position: absolute;
+  height: 1.5px;
+  transform-origin: 0 50%;
+  background: rgba(11, 12, 16, 0.55);
+  pointer-events: none;
+}
+.iriss-log-spread-dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%);
+  border: 1.5px solid #fff;
+  border-radius: 999px;
+  background: #1d1d1f;
+  pointer-events: none;
 }

@@ -20,9 +20,9 @@ export const CARGO_BUCKET_ADD_LV: Record<CargoBucket, string> = {
 
 /** Fallback, ja CSS mainīgais nav ielasīts. Vienīgais avots UI ir Loģistikas tokeni. */
 export const CARGO_COLOR_FALLBACK: Record<CargoBucket, string> = {
-  next: "#1e9e57",
-  after: "#5e5ce6",
-  none: "#3a3a3c",
+  next: "#ea4335",
+  after: "#1d1d1f",
+  none: "#9aa0a6",
 };
 
 export const CARGO_CSS_VAR: Record<CargoBucket, string> = {

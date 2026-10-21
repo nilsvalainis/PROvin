@@ -61,3 +61,48 @@ export function clusterIsSameSpot(points: ReadonlyArray<{ lat: number; lng: numb
   const lng = points.map((p) => p.lng);
   return Math.max(...lat) - Math.min(...lat) < eps && Math.max(...lng) - Math.min(...lng) < eps;
 }
+
+export type PinInput = ClusterInputPoint & { lat: number; lng: number; routeNumber?: number };
+
+export type PinLayout<T extends PinInput> =
+  /** Maršruta pietura: sava lāse ar numuru. `dx/dy` > 0, ja vienā adresē vairākas pieturas (izvērstas blakus). */
+  | { kind: "stop"; point: T; x: number; y: number; dx: number; dy: number; anchorX: number; anchorY: number }
+  /** Viens auto bez maršruta. */
+  | { kind: "single"; point: T; x: number; y: number }
+  /** Vairāki auto bez maršruta tuvu kopā ekrānā: "N auto". */
+  | { kind: "group"; members: T[]; x: number; y: number };
+
+/** Atstarpe starp blakus izvērstām lāsēm vienā adresē (px). */
+export const PIN_SPREAD_PX = 34;
+
+/**
+ * Kartes lāšu izkārtojums:
+ * - maršruta pieturas nekad nesaplūst skaitļos; vienā adresē tās izvēršas blakus ar līniju uz īsto punktu;
+ * - pārējie auto saplūst pēc attāluma ekrānā un rāda "N auto", lai to nevar sajaukt ar pieturas numuru.
+ */
+export function layoutMapPins<T extends PinInput>(points: readonly T[], clusterRadius = 30): PinLayout<T>[] {
+  const out: PinLayout<T>[] = [];
+  const stops = points.filter((p) => p.routeNumber != null);
+  const rest = points.filter((p) => p.routeNumber == null);
+  const bySpot = new Map<string, T[]>();
+  for (const p of stops) {
+    const key = `${p.lat.toFixed(4)},${p.lng.toFixed(4)}`;
+    const list = bySpot.get(key) ?? [];
+    list.push(p);
+    bySpot.set(key, list);
+  }
+  for (const group of bySpot.values()) {
+    const sorted = [...group].sort((a, b) => (a.routeNumber ?? 0) - (b.routeNumber ?? 0));
+    const n = sorted.length;
+    sorted.forEach((p, i) => {
+      const dx = n > 1 ? Math.round((i - (n - 1) / 2) * PIN_SPREAD_PX) : 0;
+      const dy = n > 1 ? -12 : 0;
+      out.push({ kind: "stop", point: p, x: p.x + dx, y: p.y + dy, dx, dy, anchorX: p.x, anchorY: p.y });
+    });
+  }
+  for (const c of clusterPixelPoints(rest, clusterRadius)) {
+    if (c.members.length === 1) out.push({ kind: "single", point: c.members[0]!, x: c.x, y: c.y });
+    else out.push({ kind: "group", members: c.members, x: c.x, y: c.y });
+  }
+  return out;
+}

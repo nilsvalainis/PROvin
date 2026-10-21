@@ -67,6 +67,8 @@ type Props = {
 };
 
 const LABELS_PREF_KEY = "iriss.logistics.mapLabels";
+/** Pauze pēc pēdējās kravas izmaiņas, pirms maršruts pārrēķinās pats. */
+const LIVE_ROUTE_DELAY_MS = 1500;
 const FOCUS_PREF_KEY = "iriss.logistics.mapFocus";
 
 type MapFocus = "all" | "next" | "after";
@@ -224,18 +226,31 @@ export function IrissLogistikaClient({
     if (body.templates) setCargoTemplates(body.templates);
   }
 
+  /** Jaunākais plāns un pasūtījumi: aprēķina beigās pārbaudām, vai pa to laiku nekas nav mainījies. */
+  const planRef = useRef(cargoPlan);
+  planRef.current = cargoPlan;
+  const ordersRef = useRef(orders);
+  ordersRef.current = orders;
+  const routeInflight = useRef<Record<"next" | "after", string>>({ next: "", after: "" });
+  const routeFailedKey = useRef<Record<"next" | "after", string>>({ next: "", after: "" });
+
   /**
-   * Maršruts mūsu kartē: Directions API līnija + km/laiks, saglabāti kravu plānā.
-   * `base` ir tikko mainītais plāns (ieslēgts maršruts, jauns sākums), lai neaizrakstītu to ar veco.
+   * Maršruts mūsu kartē: Routes API līnija + km/laiks, saglabāti kravu plānā.
+   * `auto`: dzīvais pārrēķins pēc izmaiņām (bez paziņojuma par trūkstošiem punktiem, karte nepārslēdzas).
+   * Ja aprēķina laikā kravā kas mainījies, rezultātu neglabājam: nākamo aprēķinu palaiž efekts.
    */
-  async function refreshCargoDirections(bucket: "next" | "after", base: CargoPlanState = cargoPlan) {
-    const points = cargoRoutePoints(base, bucket, orders);
+  async function refreshCargoDirections(bucket: "next" | "after", base: CargoPlanState = planRef.current, opts: { auto?: boolean } = {}) {
+    const points = cargoRoutePoints(base, bucket, ordersRef.current);
     if (points.length < 2) {
-      setRouteUi((prev) => ({ ...prev, [bucket]: { busy: false, notice: "Maršrutam vajag vismaz 2 punktus ar adresi (sākums, auto, beigas)." } }));
+      if (!opts.auto) {
+        setRouteUi((prev) => ({ ...prev, [bucket]: { busy: false, notice: "Maršrutam vajag vismaz 2 punktus ar adresi (sākums, auto, beigas)." } }));
+      }
       return;
     }
+    const key = cargoRoutePointsKey(points);
+    routeInflight.current[bucket] = key;
     setRouteUi((prev) => ({ ...prev, [bucket]: { busy: true, notice: "" } }));
-    chooseMapFocus(bucket);
+    if (!opts.auto) chooseMapFocus(bucket);
     const res = await fetch("/api/admin/iriss-logistics/directions", {
       method: "POST",
       credentials: "include",
@@ -248,26 +263,49 @@ export function IrissLogistikaClient({
       path?: Array<{ lat: number; lng: number }>;
       notice?: string;
     };
+    routeInflight.current[bucket] = "";
     if (body.distanceKm == null) {
+      routeFailedKey.current[bucket] = key;
       setRouteUi((prev) => ({ ...prev, [bucket]: { busy: false, notice: body.notice || "Maršrutu neizdevās sastādīt." } }));
       return;
     }
+    routeFailedKey.current[bucket] = "";
     setRouteUi((prev) => ({ ...prev, [bucket]: { busy: false, notice: "" } }));
+    const latest = planRef.current;
+    const latestKey = cargoRoutePointsKey(cargoRoutePoints(latest, bucket, ordersRef.current));
+    if (latestKey !== key) return;
     const next: CargoPlanState = {
-      ...base,
+      ...latest,
       routes: {
-        ...base.routes,
+        ...latest.routes,
         [bucket]: {
-          ...base.routes[bucket],
+          ...latest.routes[bucket],
           distanceKm: body.distanceKm,
           durationMin: body.durationMin ?? null,
           path: normalizeCargoPath(body.path),
-          pathKey: cargoRoutePointsKey(points),
+          pathKey: key,
         },
       },
     };
     await persistCargoPlan(next);
   }
+
+  // Dzīvais maršruts: ja kravai ieslēgts "Maršruts" un mainās auto, secība, sākums vai beigas,
+  // līnija pārrēķinās pati ~1,5 s pēc pēdējās izmaiņas (ātra vilkšana = viens aprēķins).
+  useEffect(() => {
+    const timers: number[] = [];
+    for (const bucket of ["next", "after"] as const) {
+      const route = cargoPlan.routes[bucket];
+      if (!route.enabled) continue;
+      const points = cargoRoutePoints(cargoPlan, bucket, orders);
+      if (points.length < 2) continue;
+      const key = cargoRoutePointsKey(points);
+      if (key === route.pathKey || key === routeInflight.current[bucket] || key === routeFailedKey.current[bucket]) continue;
+      timers.push(window.setTimeout(() => void refreshCargoDirections(bucket, planRef.current, { auto: true }), LIVE_ROUTE_DELAY_MS));
+    }
+    return () => timers.forEach((t) => window.clearTimeout(t));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- tikai plāna/pasūtījumu izmaiņas palaiž pārrēķinu
+  }, [cargoPlan, orders]);
 
   // "Rādīt nosaukumus" atceras katrs lietotājs savā pārlūkā.
   useEffect(() => {

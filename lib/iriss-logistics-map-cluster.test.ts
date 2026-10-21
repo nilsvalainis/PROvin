@@ -60,3 +60,23 @@ describe("maršruts mūsu kartē", () => {
     expect(saved.routes.next.pathKey).toBe("k");
   });
 });
+
+describe("layoutMapPins", () => {
+  it("never merges route stops into a count and spreads stops at the same address", async () => {
+    const { layoutMapPins, PIN_SPREAD_PX } = await import("@/lib/iriss-logistics-map-cluster");
+    const out = layoutMapPins([
+      { id: "a", x: 100, y: 100, lat: 50.9, lng: 5.5, routeNumber: 5 },
+      { id: "b", x: 100, y: 100, lat: 50.9, lng: 5.5, routeNumber: 2 },
+      { id: "c", x: 110, y: 104, lat: 51.0, lng: 5.6, routeNumber: 3 },
+      { id: "d", x: 300, y: 300, lat: 52, lng: 7 },
+      { id: "e", x: 305, y: 302, lat: 52.01, lng: 7.01 },
+    ]);
+    const stops = out.filter((p) => p.kind === "stop");
+    expect(stops).toHaveLength(3);
+    const same = stops.filter((p) => p.kind === "stop" && p.anchorX === 100 && p.dx !== 0);
+    expect(same.map((p) => (p.kind === "stop" ? p.point.routeNumber : 0))).toEqual([2, 5]);
+    expect(Math.abs((same[1] as { dx: number }).dx - (same[0] as { dx: number }).dx)).toBe(PIN_SPREAD_PX);
+    const group = out.find((p) => p.kind === "group");
+    expect(group && group.kind === "group" ? group.members.map((m) => m.id) : []).toEqual(["d", "e"]);
+  });
+});
