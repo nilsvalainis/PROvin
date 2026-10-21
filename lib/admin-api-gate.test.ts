@@ -8,7 +8,8 @@ import {
   isAdminApiSessionExemptPath,
   isAdminApiWebhookOrCronPath,
 } from "@/lib/admin-api-gate";
-import { ADMIN_SESSION_TOKEN_TYP } from "@/lib/admin-session-token";
+import { emptyAdminGoogleState, type AdminGoogleState } from "@/lib/admin-google-session-live";
+import { ADMIN_GOOGLE_ALLOWED_EMAIL, ADMIN_SESSION_TOKEN_TYP, encodeAdminSessionPayload } from "@/lib/admin-session-token";
 import { B2B_DEMO_ADMIN_SECRET_HEADER } from "@/lib/b2b-demo-admin-secret";
 import { STAFF_SESSION_TOKEN_TYP } from "@/lib/staff-session-token";
 
@@ -19,6 +20,40 @@ function sessionCookie(exp = Date.now() + 60_000): string {
   const payload = Buffer.from(JSON.stringify({ typ: ADMIN_SESSION_TOKEN_TYP, exp }), "utf8").toString("base64url");
   const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
   return `${payload}.${sig}`;
+}
+
+const GOOGLE_SUB = "110000000000000000001";
+const GOOGLE_NOW = Date.parse("2026-10-21T12:00:00.000Z");
+
+function googleCookie(over: { sid?: string; sub?: string; ver?: number; email?: string; exp?: number } = {}): string {
+  const payload = encodeAdminSessionPayload(over.exp ?? GOOGLE_NOW + 60_000, {
+    sid: over.sid ?? "ags_1",
+    sub: over.sub ?? GOOGLE_SUB,
+    ver: over.ver ?? 3,
+    email: over.email ?? ADMIN_GOOGLE_ALLOWED_EMAIL,
+  });
+  const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
+  return `${payload}.${sig}`;
+}
+
+function liveGoogleState(over: Partial<AdminGoogleState> = {}): AdminGoogleState {
+  return {
+    ...emptyAdminGoogleState(),
+    pinnedSub: GOOGLE_SUB,
+    sessionVersion: 3,
+    sessions: [
+      {
+        id: "ags_1",
+        sub: GOOGLE_SUB,
+        createdAt: new Date(GOOGLE_NOW - 1000).toISOString(),
+        lastSeenAt: new Date(GOOGLE_NOW - 1000).toISOString(),
+        ip: "1.1.1.1",
+        userAgent: "ua",
+        revokedAt: null,
+      },
+    ],
+    ...over,
+  };
 }
 
 function staffCookie(exp = Date.now() + 60_000): string {
@@ -270,6 +305,62 @@ describe("decideAdminApiGate", () => {
 
   it("lets invite accept through without a session", async () => {
     expect(await decideAdminApiGate(req({ path: "/api/admin/staff/accept-invite" }))).toEqual({ action: "next" });
+  });
+
+  it("lets a live Google admin session through after allowlist + session version check", async () => {
+    vi.stubEnv("ADMIN_GOOGLE_LOGIN_ENABLED", "1");
+    expect(
+      await decideAdminApiGate(req({ path: "/api/admin/badges", cookie: googleCookie() }), {
+        googleState: liveGoogleState(),
+        nowMs: GOOGLE_NOW,
+      }),
+    ).toEqual({ action: "next" });
+  });
+
+  it("rejects a Google cookie after logout-everywhere on every admin API, including logistika and b2b-demo", async () => {
+    vi.stubEnv("ADMIN_GOOGLE_LOGIN_ENABLED", "1");
+    const cookie = googleCookie({ ver: 3 });
+    const revoked = liveGoogleState({ sessionVersion: 4 });
+    const opts = { googleState: revoked, nowMs: GOOGLE_NOW };
+    for (const path of [
+      "/api/admin/badges",
+      "/api/admin/iriss/logistika/points",
+      "/api/admin/iriss-logistics/orders",
+      "/api/admin/b2b-demo/tenants",
+    ]) {
+      expect(await decideAdminApiGate(req({ path, cookie }), opts), path).toEqual({ action: "unauthorized" });
+    }
+  });
+
+  it("rejects a Google cookie that is not on the allowlist even if the store is live", async () => {
+    vi.stubEnv("ADMIN_GOOGLE_LOGIN_ENABLED", "1");
+    expect(
+      await decideAdminApiGate(req({ path: "/api/admin/badges", cookie: googleCookie({ email: "other@provin.lv" }) }), {
+        googleState: liveGoogleState(),
+        nowMs: GOOGLE_NOW,
+      }),
+    ).toEqual({ action: "unauthorized" });
+  });
+
+  it("fails closed in production when Google session state cannot be read", async () => {
+    vi.stubEnv("ADMIN_GOOGLE_LOGIN_ENABLED", "1");
+    vi.stubEnv("NODE_ENV", "production");
+    expect(
+      await decideAdminApiGate(req({ path: "/api/admin/badges", cookie: googleCookie() }), {
+        loadGoogleState: async () => null,
+        nowMs: GOOGLE_NOW,
+      }),
+    ).toEqual({ action: "unauthorized" });
+  });
+
+  it("still lets staff through logistika after Google logout-everywhere", async () => {
+    vi.stubEnv("ADMIN_GOOGLE_LOGIN_ENABLED", "1");
+    expect(
+      await decideAdminApiGate(
+        req({ path: "/api/admin/iriss/logistika/points", cookie: googleCookie(), staffCookie: staffCookie() }),
+        { googleState: liveGoogleState({ sessionVersion: 4 }), nowMs: GOOGLE_NOW },
+      ),
+    ).toEqual({ action: "next" });
   });
 
   it("lets b2b-demo platform scripts through with the dedicated header", async () => {

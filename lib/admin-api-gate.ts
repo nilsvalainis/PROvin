@@ -4,7 +4,16 @@
  * under `/api/admin`.
  */
 
-import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-session-token";
+import {
+  isAdminGoogleSessionLive,
+  type AdminGoogleState,
+} from "@/lib/admin-google-session-live";
+import { adminApiGateIsProduction, loadAdminGoogleStateForGate } from "@/lib/admin-google-state-edge";
+import {
+  ADMIN_SESSION_COOKIE_NAME,
+  decodeAdminSessionToken,
+  isAdminGoogleSessionPayload,
+} from "@/lib/admin-session-token";
 import { B2B_DEMO_ADMIN_SECRET_HEADER, verifyB2bDemoAdminSecret } from "@/lib/b2b-demo-admin-secret";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import {
@@ -53,11 +62,39 @@ export function isAdminApiSessionExemptPath(pathname: string): boolean {
   );
 }
 
-export async function resolveAccessActorFromCookies(cookies: {
-  get(name: string): { value: string } | undefined;
-}): Promise<AccessActor> {
+export type AdminApiGateOptions = {
+  /** Testiem: iedot stāvokli bez Blob. `null` = stāvokli neizdevās nolasīt. */
+  googleState?: AdminGoogleState | null;
+  loadGoogleState?: () => Promise<AdminGoogleState | null>;
+  nowMs?: number;
+};
+
+async function resolveGoogleAdminLive(
+  payload: Parameters<typeof isAdminGoogleSessionLive>[1],
+  opts?: AdminApiGateOptions,
+): Promise<boolean> {
+  const nowMs = opts?.nowMs ?? Date.now();
+  if (opts && "googleState" in opts) {
+    return opts.googleState != null && isAdminGoogleSessionLive(opts.googleState, payload, nowMs);
+  }
+  const state = opts?.loadGoogleState ? await opts.loadGoogleState() : await loadAdminGoogleStateForGate();
+  if (state) return isAdminGoogleSessionLive(state, payload, nowMs);
+  return !adminApiGateIsProduction();
+}
+
+export async function resolveAccessActorFromCookies(
+  cookies: {
+    get(name: string): { value: string } | undefined;
+  },
+  opts?: AdminApiGateOptions,
+): Promise<AccessActor> {
   const adminToken = cookies.get(ADMIN_SESSION_COOKIE_NAME)?.value;
-  if (await verifyAdminSessionToken(adminToken)) return { kind: "admin" };
+  const admin = await decodeAdminSessionToken(adminToken, undefined, opts?.nowMs);
+  if (admin) {
+    if (!isAdminGoogleSessionPayload(admin) || (await resolveGoogleAdminLive(admin, opts))) {
+      return { kind: "admin" };
+    }
+  }
   const staff = await verifyStaffSessionToken(cookies.get(STAFF_SESSION_COOKIE_NAME)?.value);
   if (staff) return { kind: "staff", sections: staffSectionsFromPayload(staff) };
   return { kind: "none" };
@@ -131,12 +168,15 @@ export function adminApiOriginAllowed(headers: Headers): boolean {
   return allowedAdminApiOrigins(headers).has(claimed);
 }
 
-export async function decideAdminApiGate(request: {
-  nextUrl: { pathname: string };
-  method: string;
-  headers: Headers;
-  cookies: { get(name: string): { value: string } | undefined };
-}): Promise<AdminApiGateDecision> {
+export async function decideAdminApiGate(
+  request: {
+    nextUrl: { pathname: string };
+    method: string;
+    headers: Headers;
+    cookies: { get(name: string): { value: string } | undefined };
+  },
+  opts?: AdminApiGateOptions,
+): Promise<AdminApiGateDecision> {
   const pathname = request.nextUrl.pathname;
   if (isAdminApiWebhookOrCronPath(pathname)) return { action: "next" };
 
@@ -144,7 +184,7 @@ export async function decideAdminApiGate(request: {
   const demoHeaderOk = isAdminB2bDemoApiPath(pathname) && verifyB2bDemoAdminSecret(demoHeader);
 
   if (!isAdminApiSessionExemptPath(pathname) && !demoHeaderOk) {
-    const actor = await resolveAccessActorFromCookies(request.cookies);
+    const actor = await resolveAccessActorFromCookies(request.cookies, opts);
     const access = decideAdminApiAccess(pathname, actor);
     if (access === "unauthorized") return { action: "unauthorized" };
     if (access === "forbidden") return { action: "forbidden" };
