@@ -149,6 +149,7 @@ import {
 } from "@/lib/client-report-translate-client";
 import type { ClientReportTranslationCache } from "@/lib/client-report-translate-client";
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
+import { AdminPhoneSectionCollapse } from "@/components/admin/AdminPhoneSectionCollapse";
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
 import { isPartnerOrderNotes } from "@/lib/b2b-partner-orders";
 import { isB2bInternationalClientReport } from "@/lib/b2b-pdf-brand";
@@ -5687,13 +5688,19 @@ export function OrderDetailWorkspace({
 
         {(phoneStack || wizardStep === 12) ? (
           <section id="admin-m-sec-foto" className="min-w-0">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
-              <AdminPdfIncludeToggle
-                checked={pdfVisibility.sludinajums}
-                onChange={(next) => onPdfVisibilityChange({ sludinajums: next })}
-              />
-            </div>
+            <AdminPhoneSectionCollapse
+              sessionId={payload.sessionId}
+              sectionId="sludinajums"
+              header={
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className={workspaceSectionTitle}>Sludinājuma analīze</h2>
+                  <AdminPdfIncludeToggle
+                    checked={pdfVisibility.sludinajums}
+                    onChange={(next) => onPdfVisibilityChange({ sludinajums: next })}
+                  />
+                </div>
+              }
+            >
             <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] dark:shadow-[0_2px_22px_rgba(0,0,0,0.4)]">
               <ListingAnalysisMainBlockTitleRow
                 icon={LISTING_ANALYSIS_CHROME_LUCIDE.mainSection}
@@ -5768,18 +5775,25 @@ export function OrderDetailWorkspace({
                 </div>
               </div>
             </div>
+            </AdminPhoneSectionCollapse>
           </section>
         ) : null}
 
         {(phoneStack || wizardStep === 13) ? (
           <section id="admin-m-sec-komentari" className="min-w-0">
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
-                <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
-                  <span>Kopsavilkums</span>
-                </h2>
-              </div>
-            </div>
+            <AdminPhoneSectionCollapse
+              sessionId={payload.sessionId}
+              sectionId="kopsavilkums"
+              header={
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h2 className={`${workspaceSectionTitle} flex flex-wrap items-baseline gap-x-2 gap-y-0`}>
+                      <span>Kopsavilkums</span>
+                    </h2>
+                  </div>
+                </div>
+              }
+            >
             <div className="mt-1.5 overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] dark:shadow-[0_2px_22px_rgba(0,0,0,0.4)]">
               <ListingAnalysisMainBlockTitleRow
                 icon={IRISS_CHROME_LUCIDE.mainSection}
@@ -6106,6 +6120,7 @@ export function OrderDetailWorkspace({
                 </div>
               </div>
             </div>
+            </AdminPhoneSectionCollapse>
           </section>
         ) : null}
       </div>

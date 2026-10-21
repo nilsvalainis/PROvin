@@ -2,7 +2,8 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import type { SourceBlockKey } from "@/lib/admin-source-blocks";
-import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS, SOURCE_BLOCK_EXTERNAL_URL, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
+import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS, SOURCE_BLOCK_EXTERNAL_URL, SOURCE_BLOCK_LABELS, SOURCE_BLOCK_PHONE_LABELS } from "@/lib/admin-source-blocks";
+import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
 import { SOURCE_BLOCK_LUCIDE } from "@/lib/admin-lucide-registry";
@@ -78,18 +79,50 @@ export function AdminSourceBlockHeader({ blockKey, className = "mb-2", trafficFi
       ? companionSourceOpensForBlock(blockKey, vin)
       : [];
 
-  const row = (
+  const phone = useAdminIsPhone();
+  const openCompanions = () => {
+    for (const extra of companions) {
+      window.open(extra.href, "_blank", "noopener,noreferrer");
+    }
+  };
+
+  // Telefonā nosaukums izvērš avotu turpat (bloka galvenes klikšķis); ārējo avotu atver atsevišķa ↗ poga.
+  // Agrāk viss nosaukums bija saite: pieskāriens atvēra citu lapu, un izvērst varēja tikai šaurā bultiņa.
+  const phoneRow = (
+    <div className="flex min-w-0 flex-1 items-center gap-2">
+      <span className={`provin-source-title inline-flex min-w-0 flex-1 items-center gap-2 font-medium uppercase tracking-wide ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS} text-slate-600`}>
+        <AdminProvinLucide icon={Icon} />
+        <span className="min-w-0 truncate whitespace-nowrap">{SOURCE_BLOCK_PHONE_LABELS[blockKey] ?? label}</span>
+        {ingestChip ? (
+          <span
+            className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium normal-case tracking-normal ${INGEST_CHIP_TONE[ingestChip.tone]}`}
+          >
+            {ingestChip.label}
+          </span>
+        ) : null}
+      </span>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${label} - atvērt avotu jaunā cilnē`}
+        data-provin-handoff-vin={handoffVin || undefined}
+        onClick={openCompanions}
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-500 active:bg-slate-200/50"
+      >
+        <ExternalLinkIcon className="shrink-0" />
+      </a>
+    </div>
+  );
+
+  const row = phone ? phoneRow : (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`${label} - atvērt avotu jaunā cilnē`}
       data-provin-handoff-vin={handoffVin || undefined}
-      onClick={() => {
-        for (const extra of companions) {
-          window.open(extra.href, "_blank", "noopener,noreferrer");
-        }
-      }}
+      onClick={openCompanions}
       className={`provin-source-title inline-flex max-w-full flex-1 items-center gap-2 font-medium uppercase tracking-wide underline-offset-2 transition hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-provin-accent)] focus-visible:ring-offset-1 ${SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS} text-slate-600`}
     >
       <AdminProvinLucide icon={Icon} />
