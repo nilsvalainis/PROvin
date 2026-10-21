@@ -10,6 +10,7 @@ import { Check, FileText, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { formatMoneyEur } from "@/lib/format-money";
 import type { SerializedAdminOrderTableRow } from "@/lib/serialize-admin-order-table";
 import { isDealerHighlightAdminOrder, isMiniHighlightAdminOrder } from "@/lib/admin-customer-identity";
+import { adminOrderCardTone } from "@/lib/admin-order-card-tone";
 import {
   b2bPackInfoLabelLv,
   isB2bPackAdminOrder,
@@ -888,7 +889,16 @@ export function AdminOrdersTable({
           </li>
           {g.list.map((o) => {
           const v = orderRowView(o, clientOverrides[o.id], detailBaseNormalized);
-          const accent = "";
+          const tone = adminOrderCardTone({
+            createdUnix: o.created,
+            nowMs: nowMs ?? Date.now(),
+            complete: Boolean(o.auditComplete),
+            isPack: v.isPack,
+            partnerHighlight: v.partnerHighlight,
+            dealerHighlight: v.dealerHighlight,
+            miniHighlight: v.miniHighlight,
+          });
+          const accent = tone ? `am-tone am-tone-${tone}` : "";
           const openOrderFromCard = (e: MouseEvent) => {
             if (v.isPack) return;
             if (!shouldOpenAdminOrderFromRowClick(e.target)) return;

@@ -226,6 +226,17 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
 };
 
 /** Ātrās saites avotiem — tikai admin panelis (ne PDF). */
+/** Telefonā īsāki avotu nosaukumi, lai galvene ietilpst vienā rindā (Nils 21.10). PDF un dators nemainās. */
+export const SOURCE_BLOCK_PHONE_LABELS: Partial<Record<SourceBlockKey, string>> = {
+  auto_records: "DĪLERA DATI",
+  tjekbil: "DĀNIJA",
+  finnik: "NĪDERLANDE",
+  mnt_ee: "MNT.EE IGAUNIJA",
+  lkf_ee: "LKF.EE OCTA",
+  carinfo: "ZVIEDRIJA",
+  traficom_fi: "SOMIJA",
+};
+
 export const SOURCE_BLOCK_EXTERNAL_URL: Record<SourceBlockKey, string> = {
   csdd: "https://e.csdd.lv/tadati/",
   ltab: "https://services.ltab.lv/lv/VehicleInsAndAcc",
