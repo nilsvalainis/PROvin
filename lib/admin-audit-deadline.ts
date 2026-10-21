@@ -30,7 +30,12 @@ export function formatAuditDeadlineRemaining(
   if (remainingMs <= 0) {
     const overdueH = Math.ceil(Math.abs(remainingMs) / (60 * 60 * 1000));
     return {
-      label: overdueH <= 1 ? "Termiņš beidzies" : `Kavējas ${overdueH} h`,
+      label:
+        overdueH <= 1
+          ? "Termiņš beidzies"
+          : overdueH >= 48
+            ? `Kavējas ${Math.floor(overdueH / 24)} d`
+            : `Kavējas ${overdueH} h`,
       status: "overdue",
     };
   }

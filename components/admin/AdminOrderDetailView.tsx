@@ -733,14 +733,15 @@ export function AdminOrderDetailView({
     >
       <AdminVinHandoffBinder vin={mergedVin} />
       <div className="mx-auto w-full max-w-[min(76.8rem,calc(100vw-1.25rem))] px-3 pt-0 sm:px-5">
-      <div className="mb-2 flex flex-wrap items-center gap-2">
+      {/* Telefonā atpakaļ ir mobilajā galvenē ("‹"), tāpēc šī rinda tikai datorā. */}
+      <div className="mb-2 flex flex-wrap items-center gap-2 max-md:hidden">
         <AdminCollapsedMenuButton />
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <Link
             href="/admin/dashboard"
             className="inline-flex items-center gap-1 rounded-full border border-slate-200/90 bg-white px-2.5 py-1.5 text-[11px] font-medium text-[var(--color-provin-accent)] shadow-sm transition hover:border-[var(--color-provin-accent)]/30 hover:bg-[var(--color-provin-accent-soft)]/50"
           >
-            <span aria-hidden>←</span> Back
+            <span aria-hidden>←</span> Atpakaļ
           </Link>
         </div>
       </div>
@@ -782,9 +783,10 @@ export function AdminOrderDetailView({
         </div>
       ) : null}
 
-      <header className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-[var(--admin-border-subtle)] pb-2">
+      <header className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-[var(--admin-border-subtle)] pb-2 max-md:mb-2 max-md:items-center max-md:px-1">
         <h1 className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-semibold tracking-tight text-[var(--color-apple-text)]">
-          <span>Pasūtījums</span>
+          {/* Telefonā virsraksts ir mobilajā galvenē; šeit paliek rezultāta krāsa un produkts. */}
+          <span className="max-md:sr-only">Pasūtījums</span>
           <AdminAuditResultColorControl sessionId={order.id} initialColor={auditResultColor} />
         </h1>
         <p className="text-[11px] font-semibold text-[var(--color-provin-muted)]" title="Pasūtītais produkts">

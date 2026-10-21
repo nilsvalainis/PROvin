@@ -97,7 +97,7 @@ export function AdminCollapsibleShell({
     <button
       type="button"
       data-accordion-no-toggle
-      className="admin-pr flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/40 hover:text-slate-800 md:hidden"
+      className="admin-pr flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/40 hover:text-slate-800 max-md:h-11 max-md:w-11 md:hidden"
       aria-label={fullscreen ? "Aizvērt pilnekrānu" : "Atvērt bloku pilnekrānā"}
       aria-pressed={fullscreen}
       onClick={(e) => {
@@ -219,14 +219,17 @@ export function AdminCollapsibleShell({
           data-accordion-no-toggle
           className="group flex shrink-0 flex-col items-stretch justify-center gap-0.5 border-l-0 bg-transparent px-1.5 py-1"
         >
-          <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 opacity-70 transition-opacity hover:opacity-100">
-            {headerActions}
-            {fullscreenToggle}
-          </div>
+          {/* Telefonā darbības nav blakus virsrakstam (citādi nosaukums sarūk līdz 2 burtiem); tās ir rindā zem galvenes. */}
+          {phone ? null : (
+            <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 opacity-70 transition-opacity hover:opacity-100">
+              {headerActions}
+              {fullscreenToggle}
+            </div>
+          )}
           <button
             type="button"
             data-accordion-no-toggle
-            className={`admin-pr flex h-7 w-full min-w-[1.75rem] items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/40 hover:text-slate-800 ${
+            className={`admin-pr flex h-7 w-full min-w-[1.75rem] items-center justify-center rounded-md text-slate-500 hover:bg-slate-200/40 hover:text-slate-800 max-md:h-11 max-md:min-w-11 ${
               fullscreen ? "max-md:hidden" : ""
             }`}
             aria-expanded={!collapsed}
@@ -240,6 +243,12 @@ export function AdminCollapsibleShell({
           </button>
         </div>
       </div>
+      {phone && (!collapsed || fullscreen) ? (
+        <div data-accordion-no-toggle className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 pb-2">
+          {headerActions}
+          <span className="ml-auto">{fullscreenToggle}</span>
+        </div>
+      ) : null}
       {/* Pilnekrānā bloks vienmēr ir atvērts, citādi operators redzētu tukšu ekrānu. */}
       {bodyMounted || fullscreen ? (
         <div className="admin-exp" data-open={fullscreen || bodyOpen ? "true" : "false"}>
