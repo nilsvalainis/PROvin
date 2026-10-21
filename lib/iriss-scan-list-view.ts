@@ -24,11 +24,22 @@ export function countIrissScanLinks(rec: Pick<IrissScanRecord, IrissScanLinkKey>
   return IRISS_SCAN_SOURCES.reduce((n, s) => n + filledIrissListingLinks(rec[s.key]).length, 0);
 }
 
+/** "DD.MM HH:MM" Rīgas laikā (serveris glabā UTC, tāpēc agrāk rādīja 2-3 h atpakaļ). */
 export function formatIrissScanLastRead(iso: string | null | undefined): string {
   const raw = (iso ?? "").trim();
-  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if (!m) return "";
-  return `${m[3]}.${m[2]} ${m[4]}:${m[5]}`;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw)) return "";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Riga",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  return `${get("day")}.${get("month")} ${get("hour")}:${get("minute")}`;
 }
 
 export function formatIrissScanNewHitsLabel(count: number): string {
