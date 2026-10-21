@@ -12,9 +12,9 @@ const map = readFileSync("components/admin/iriss-logistika/IrissLogistikaMap.tsx
 describe("IRISS Loģistika kravu plāns UI", () => {
   it("scopes cargo tokens to Loģistika and keeps statuses grey", () => {
     expect(css).toContain(".iriss-log-screen {");
-    expect(css).toContain("--iriss-log-cargo-next: #1e9e57");
-    expect(css).toContain("--krava-next2: #5e5ce6");
-    expect(css).toContain("--iriss-log-cargo-none: #3a3a3c");
+    expect(css).toContain("--iriss-log-cargo-next: #ea4335");
+    expect(css).toContain("--krava-next2: #1d1d1f");
+    expect(css).toContain("--iriss-log-cargo-none: #9aa0a6");
     expect(css).not.toContain("#0a7cff");
     expect(css).toContain("--iriss-log-cargo-after: var(--krava-next2)");
     expect(css).toContain("--btn-dark-bg:");
@@ -23,8 +23,8 @@ describe("IRISS Loģistika kravu plāns UI", () => {
     expect(css).not.toMatch(/--iriss-log-cargo-next:[^;]*#188038/);
     expect(table).toContain("iriss-log-stage");
     expect(css).toContain(".iriss-log-screen .iriss-log-stage button.on {");
-    expect(table).not.toContain("#1e9e57");
-    expect(plan).not.toContain("#1e9e57");
+    expect(table).not.toContain("#ea4335");
+    expect(plan).not.toContain("#ea4335");
   });
 
   it("wires cargo plan, bounce, table and WhatsApp without touching Reisi as a status", () => {
@@ -50,5 +50,12 @@ describe("IRISS Loģistika kravu plāns UI", () => {
 
   it("backs the Reisi list view with active cars", () => {
     expect(filterLogisticsOrdersByView([{ archived: false, status: "ready" } as never], "trips")).toHaveLength(1);
+  });
+
+  it("recomputes an enabled route live after cargo changes without overwriting newer edits", () => {
+    expect(client).toContain("const LIVE_ROUTE_DELAY_MS = 1500;");
+    expect(client).toContain("if (latestKey !== key) return;");
+    expect(client).toContain("routeFailedKey.current[bucket]");
+    expect(plan).not.toContain("onRefreshDirections(cargoBucket, next)");
   });
 });
