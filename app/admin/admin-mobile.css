@@ -510,47 +510,6 @@
     white-space: nowrap;
   }
 
-  .admin-ws-switch {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    width: 52px;
-    height: 52px;
-    border-radius: 999px;
-    background: var(--btn-dark-bg, rgba(31, 36, 48, 0.89));
-    color: var(--btn-dark-fg, #fff);
-    text-decoration: none;
-    box-shadow: none;
-  }
-
-  .admin-ws-switch small {
-    font-size: 8px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    opacity: 0.7;
-    line-height: 1;
-  }
-
-  .admin-ws-switch b {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    line-height: 1;
-  }
-
-  .admin-ws-switch[data-ws="pro"] {
-    background: #fff;
-    color: #1d1d1f;
-    border: 1px solid #d2d2d7;
-  }
-
-  .admin-ws-switch:focus-visible {
-    outline: 2px solid var(--focus, #2563eb);
-    outline-offset: 2px;
-  }
-
   .iriss-mini-lv-plate {
     display: inline-flex;
     align-items: stretch;

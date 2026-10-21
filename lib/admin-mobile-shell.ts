@@ -81,3 +81,25 @@ export function adminMobilePtrLabel(refreshing: boolean, pullPx: number, thresho
   if (pullPx > 8) return "Velc, lai atjaunotu";
   return "";
 }
+
+/**
+ * PRO lapas no "Vairāk", kurām nav savas mobilās galvenes. Telefonā čaula tām rāda "‹ Atpakaļ".
+ * Tikai saraksta lapas; detaļu lapām (`/admin/partneri/[id]` u.c.) ir sava josla.
+ */
+export const PRO_MOBILE_BACK_PATHS = [
+  "/admin/agregatu-zinasanas",
+  "/admin/b2b-demo",
+  "/admin/blogs",
+  "/admin/commission-invoice",
+  "/admin/izmaksas",
+  "/admin/konsultacijas",
+  "/admin/kopsavilkums",
+  "/admin/partneri",
+  "/admin/statistika",
+  "/admin/teksti",
+] as const;
+
+export function proMobileNeedsBack(pathname: string): boolean {
+  const p = pathname.replace(/\/+$/, "") || "/";
+  return (PRO_MOBILE_BACK_PATHS as readonly string[]).includes(p);
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
@@ -105,6 +105,30 @@ export function AdminMobileTopBar({
       </header>
       {children ? <div className="am-topbar-expand px-4 md:hidden">{children}</div> : null}
     </>
+  );
+}
+
+/**
+ * Telefonā "‹ Atpakaļ" lapām, kurām nav savas mobilās galvenes (PRO "Vairāk" lapas).
+ * Atpakaļ pa vēsturi; ja lapa atvērta tieši (nav vēstures), uz Pasūtījumiem.
+ */
+export function AdminMobileBackRow({ fallbackHref = "/admin/dashboard" }: { fallbackHref?: string }) {
+  const router = useRouter();
+  return (
+    <div className="px-4 pt-[max(10px,env(safe-area-inset-top))] md:hidden">
+      <button
+        type="button"
+        aria-label="Atpakaļ"
+        onClick={() => {
+          if (window.history.length > 1) router.back();
+          else router.push(fallbackHref);
+        }}
+        className="am-press inline-flex min-h-11 items-center gap-1 rounded-full pr-3 text-[17px] font-medium text-[var(--color-provin-accent,#0066d6)]"
+      >
+        <AdminMobileIcon name="atpakal" className="h-[18px] w-[18px]" />
+        Atpakaļ
+      </button>
+    </div>
   );
 }
 

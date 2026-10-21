@@ -9,7 +9,7 @@ const files = {
   sidebar: "components/admin/AdminSidebar.tsx",
   bar: "components/admin/IrissPavadzimesMobileBar.tsx",
   strip: "components/admin/IrissPavadzimesPlateStrip.tsx",
-  sw: "components/admin/AdminMobileWorkspaceSwitch.tsx",
+  search: "components/admin/AdminGlobalSearch.tsx",
   index: "app/admin/page.tsx",
 } as const;
 
@@ -35,12 +35,12 @@ describe("IRISS mobile menu home and workspace switch", () => {
     expect(src.sidebar).toContain('label: L.irissMenu');
   });
 
-  it("replaces the search FAB with a one-tap IRISS/PRO switch", () => {
-    expect(src.shell).toContain("AdminMobileWorkspaceSwitch");
-    expect(src.shell).not.toContain("AdminMobileSearchButton");
-    expect(src.sw).toContain("writeWsCookie");
-    expect(src.sw).toContain('href = toIriss ? "/admin/iriss" : "/admin/dashboard"');
-    expect(src.sw).toContain("admin-ws-switch");
+  it("docks a search button next to the tab bar; IRISS/PRO switch lives in Vairāk", () => {
+    expect(src.shell).toContain("<AdminMobileSearchButton />");
+    expect(src.shell).not.toContain("AdminMobileWorkspaceSwitch");
+    expect(src.search).toContain("export function AdminMobileSearchButton");
+    expect(src.sidebar).toContain('aria-label="Darba zona"');
+    expect(src.sidebar).toContain('onClick={() => writeWsCookie("pro")}');
   });
 
   it("keeps the header scrolling and plates without waybill numbers", () => {

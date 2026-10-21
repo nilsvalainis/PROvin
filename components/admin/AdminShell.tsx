@@ -3,8 +3,8 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { AdminGlobalSearch } from "./AdminGlobalSearch";
-import { AdminMobileWorkspaceSwitch } from "./AdminMobileWorkspaceSwitch";
+import { AdminGlobalSearch, AdminMobileSearchButton } from "./AdminGlobalSearch";
+import { AdminMobileBackRow } from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./AdminSidebar";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
@@ -20,6 +20,7 @@ import {
   ADMIN_MOBILE_TABBAR_H_CSS,
   IRISS_MOBILE_TABBAR_H_CSS,
   adminMobilePullToRefreshEnabled,
+  proMobileNeedsBack,
 } from "@/lib/admin-mobile-shell";
 import { adminChromeDataset, type AdminWorkspaceId } from "@/lib/admin-chrome-attrs";
 
@@ -43,6 +44,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
   const pullToRefresh = adminMobilePullToRefreshEnabled(pathname);
   /** Detaļu lapām ar savu apakšējo joslu mobilajā cilņu joslu nerādām. */
   const hideTabBar = isDetailScreen || /^\/admin\/atras-vertesanas\/[^/]+$/.test(pathname);
+  const showProBack = isProWorkspace && proMobileNeedsBack(pathname);
   const { collapsed, toggle } = useAdminSidebarCollapsed();
   const mobile = useAdminMobileViewport();
   const adminTheme = useAdminMobileColorScheme();
@@ -82,6 +84,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
               pullToRefresh={pullToRefresh}
               notice={notice}
             >
+              {showProBack ? <AdminMobileBackRow /> : null}
               {children}
             </AdminShellMainWithMobilePull>
           </AdminAuditDeadlineTickProvider>
@@ -89,7 +92,8 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
       {hideTabBar ? null : (
         <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
           <AdminMobileTabBar workspace={workspace} />
-          <AdminMobileWorkspaceSwitch />
+          {/* Zonu maiņa (PRO / IRISS) ir "Vairāk" lapas augšā; šeit meklēšana kā iOS. */}
+          <AdminMobileSearchButton />
         </div>
       )}
       <AdminGlobalSearch />
