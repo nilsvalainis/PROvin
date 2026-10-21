@@ -8,6 +8,7 @@ import {
   isRouteTemplateType,
   normalizeCargoPlan,
   normalizeRouteTemplate,
+  shortenLegacyRouteTemplateNames,
   type CargoPlanState,
   type CargoRouteTemplate,
   type RouteTemplateType,
@@ -54,7 +55,11 @@ export async function listRouteTemplates(): Promise<CargoRouteTemplate[]> {
   const raw = await readLogisticsJsonFile(ROUTE_TEMPLATES_FILE);
   const items = isObj(raw) && Array.isArray(raw.items) ? raw.items : Array.isArray(raw) ? raw : [];
   const parsed = items.map(normalizeRouteTemplate).filter((x): x is CargoRouteTemplate => Boolean(x));
-  if (parsed.length > 0) return parsed;
+  if (parsed.length > 0) {
+    const short = shortenLegacyRouteTemplateNames(parsed);
+    if (short.changed) await writeLogisticsJsonFile(ROUTE_TEMPLATES_FILE, { items: short.items });
+    return short.items;
+  }
   const seeded = seedTemplates(new Date().toISOString());
   await writeLogisticsJsonFile(ROUTE_TEMPLATES_FILE, { items: seeded });
   return seeded;

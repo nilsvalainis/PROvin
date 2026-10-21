@@ -186,6 +186,7 @@ export const LOGISTICS_MAPS_APIS = [
   "geocode_place",
   "search_destinations",
   "directions",
+  "autocomplete",
 ] as const;
 export type LogisticsMapsApi = (typeof LOGISTICS_MAPS_APIS)[number];
 
@@ -195,6 +196,8 @@ export type LogisticsMapsDayUsage = {
   geocodePlace: number;
   searchDestinations: number;
   directions: number;
+  /** Places Autocomplete ieteikumi, rakstot adresi. */
+  autocomplete: number;
 };
 
 export type LogisticsMapsUsageMonth = {
@@ -205,6 +208,7 @@ export type LogisticsMapsUsageMonth = {
   geocodePlace: number;
   searchDestinations: number;
   directions: number;
+  autocomplete: number;
   days: Record<string, LogisticsMapsDayUsage>;
 };
 

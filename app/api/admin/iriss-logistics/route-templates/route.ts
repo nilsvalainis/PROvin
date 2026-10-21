@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { irissLogisticsScopeHeader, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
+import { irissLogisticsScopeHeader, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
 import { isRouteTemplateType } from "@/lib/iriss-logistics-cargo-plan";
 import { listRouteTemplates, upsertRouteTemplate } from "@/lib/iriss-logistics-cargo-store";
 import { geocodeLogisticsAddress } from "@/lib/iriss-logistics-geocode-server";
@@ -17,6 +17,8 @@ export async function GET() {
 export async function POST(req: Request) {
   const gate = await requireIrissLogisticsApi();
   if (!gate.ok) return gate.response;
+  const denied = logisticsCabinetWriteForbidden(gate.actor);
+  if (denied) return denied;
   let body: unknown = {};
   try {
     body = await req.json();

@@ -325,6 +325,13 @@ export function IrissLogistikaClient({
     if (body.car) setAutoparkLink(`/admin/iriss/autoparks?auto=${encodeURIComponent(body.car.id)}`);
   }
 
+  async function reloadTemplates() {
+    const res = await fetch("/api/admin/iriss-logistics/route-templates", { credentials: "include", cache: "no-store" }).catch(() => null);
+    if (!res?.ok) return;
+    const body = (await res.json()) as { templates?: CargoRouteTemplate[] };
+    if (body.templates) setCargoTemplates(body.templates);
+  }
+
   /** Citu klientu auto ar roku: uzreiz kartē un izvēlētajā kravā. */
   async function addManualCar(bucket: CargoBucket, input: ManualCarInput): Promise<boolean> {
     const res = await fetch("/api/admin/iriss-logistics/orders", {
@@ -893,6 +900,7 @@ export function IrissLogistikaClient({
                 onRowHover={setHoverId}
                 onRefreshDirections={(bucket, base) => void refreshCargoDirections(bucket, base)}
                 routeUi={routeUi}
+                onTemplatesChanged={() => void reloadTemplates()}
                 onAddManual={addManualCar}
               />
               {popupOrder ? (

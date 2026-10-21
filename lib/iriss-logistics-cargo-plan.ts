@@ -408,7 +408,7 @@ export function logisticsCopyAllCarText(order: LogisticsOrder, extra: { stageLv?
 export const DEFAULT_ROUTE_TEMPLATES: Omit<CargoRouteTemplate, "createdAt" | "updatedAt">[] = [
   {
     id: "tpl-stena-travemunde",
-    name: "Stena Line osta, Travemünde",
+    name: "Travemünde",
     address: "Skandinavienkai, 23570 Lübeck-Travemünde, Deutschland",
     lat: 53.9413,
     lng: 10.8635,
@@ -416,7 +416,7 @@ export const DEFAULT_ROUTE_TEMPLATES: Omit<CargoRouteTemplate, "createdAt" | "up
   },
   {
     id: "tpl-de-pl-gorlitz",
-    name: "DE-PL robeža Görlitz",
+    name: "Görlitz",
     address: "Grenzübergang Ludwigsdorf, 02828 Görlitz, Deutschland",
     lat: 51.1579,
     lng: 14.9884,
@@ -424,13 +424,31 @@ export const DEFAULT_ROUTE_TEMPLATES: Omit<CargoRouteTemplate, "createdAt" | "up
   },
   {
     id: "tpl-de-pl-frankfurt-oder",
-    name: "DE-PL robeža Frankfurt (Oder)",
+    name: "Frankfurt (Oder)",
     address: "Stadtbrücke, 15230 Frankfurt (Oder), Deutschland",
     lat: 52.3416,
     lng: 14.5506,
     type: "border",
   },
 ];
+
+/** Vecie garie noklusēto šablonu nosaukumi -> īsie (tikai, ja lietotājs tos nav mainījis). */
+export const LEGACY_ROUTE_TEMPLATE_NAMES: Record<string, string> = {
+  "tpl-stena-travemunde": "Stena Line osta, Travemünde",
+  "tpl-de-pl-gorlitz": "DE-PL robeža Görlitz",
+  "tpl-de-pl-frankfurt-oder": "DE-PL robeža Frankfurt (Oder)",
+};
+
+export function shortenLegacyRouteTemplateNames(items: CargoRouteTemplate[]): { items: CargoRouteTemplate[]; changed: boolean } {
+  let changed = false;
+  const out = items.map((t) => {
+    const def = DEFAULT_ROUTE_TEMPLATES.find((d) => d.id === t.id);
+    if (!def || LEGACY_ROUTE_TEMPLATE_NAMES[t.id] !== t.name) return t;
+    changed = true;
+    return { ...t, name: def.name };
+  });
+  return { items: out, changed };
+}
 
 export function normalizeRouteTemplate(raw: unknown): CargoRouteTemplate | null {
   if (!raw || typeof raw !== "object") return null;
