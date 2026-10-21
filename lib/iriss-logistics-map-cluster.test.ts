@@ -80,3 +80,14 @@ describe("layoutMapPins", () => {
     expect(group && group.kind === "group" ? group.members.map((m) => m.id) : []).toEqual(["d", "e"]);
   });
 });
+
+describe("maršruta līnijas retināšana", () => {
+  it("thins a long path evenly and keeps the start and the end", async () => {
+    const { normalizeCargoPath, CARGO_PATH_MAX_POINTS } = await import("@/lib/iriss-logistics-cargo-plan");
+    const raw = Array.from({ length: 9001 }, (_, i) => ({ lat: 50 + i / 10000, lng: 10 }));
+    const out = normalizeCargoPath(raw);
+    expect(out).toHaveLength(CARGO_PATH_MAX_POINTS);
+    expect(out[0]).toEqual({ lat: 50, lng: 10 });
+    expect(out[out.length - 1]).toEqual({ lat: 50.9, lng: 10 });
+  });
+});
