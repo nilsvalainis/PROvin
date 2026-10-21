@@ -9,7 +9,8 @@ function parseFilenameFromDisposition(cd: string | null): string | null {
   return m?.[1]?.trim() ? decodeURIComponent(m[1].replace(/"/g, "")) : null;
 }
 
-export function AdminOrdersExportButton() {
+/** `sheet` - divas pilna platuma rindas telefona izvēlnē "Darbības". */
+export function AdminOrdersExportButton({ variant = "toolbar" }: { variant?: "toolbar" | "sheet" } = {}) {
   const [phase, setPhase] = useState<"idle" | "loading" | "error">("idle");
   const [errMsg, setErrMsg] = useState<string | null>(null);
 
@@ -58,6 +59,32 @@ export function AdminOrdersExportButton() {
       setErrMsg(e instanceof Error ? e.message : String(e));
     }
   }, []);
+
+  if (variant === "sheet") {
+    return (
+      <div className="space-y-2">
+        <button type="button" disabled={phase === "loading"} onClick={() => void runExport("zip")} className="am-press flex h-[50px] w-full items-center gap-3 rounded-[18px] bg-[var(--fill-secondary)] px-4 text-left text-[16px] text-[var(--label)] disabled:opacity-55">
+          {phase === "loading" ? (
+            <Loader2 className="h-5 w-5 shrink-0 animate-spin" aria-hidden />
+          ) : (
+            <Download className="h-5 w-5 shrink-0" aria-hidden />
+          )}
+          Eksportēt visus pasūtījumus
+        </button>
+        <button type="button" disabled={phase === "loading"} onClick={() => void runExport("json")} className="am-press flex h-[50px] w-full items-center gap-3 rounded-[18px] bg-[var(--fill-secondary)] px-4 text-left text-[16px] text-[var(--label)] disabled:opacity-55">
+          <Download className="h-5 w-5 shrink-0" aria-hidden />
+          Eksportēt vienā JSON failā
+        </button>
+        {phase === "error" && errMsg ? (
+          <p className="px-1 text-[13px] leading-snug text-[var(--am-warn-fg,#b45309)]" role="alert">
+            {errMsg}
+          </p>
+        ) : (
+          <p className="px-1 text-[12px] leading-snug text-[var(--label-secondary)]">Rezerves kopija: melnraksti, indeksi un rēķinu PDF.</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-end gap-1.5">

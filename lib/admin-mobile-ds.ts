@@ -1,4 +1,4 @@
-import { auditDeadlineMs } from "@/lib/admin-audit-deadline";
+import { AUDIT_PREPARATION_URGENT_MS, auditDeadlineMs } from "@/lib/admin-audit-deadline";
 import type { AuditResultColor } from "@/lib/admin-audit-result-color";
 
 /** Telefona koncepta filtru etiķetes (desktop paliek Zaļš / Oranžs / Sarkans). */
@@ -86,6 +86,32 @@ export type AdminMobileIconName = keyof typeof ADMIN_MOBILE_ICON_URL;
 
 export function adminMobileIconUrl(name: AdminMobileIconName): string {
   return ADMIN_MOBILE_ICON_URL[name];
+}
+
+export type AdminMobileDeadlineTag = { label: string; tone: "overdue" | "urgent" | "ok" | "done" };
+
+/**
+ * Pasūtījuma kartītes termiņa birka telefonā: "Atlikušas 12 h", "Kavē 5 h", "Kavē 6 d", "Gatavs".
+ * Negatīvas stundas ("-3625 h") nav saprotamas, tāpēc kavējumu rāda vārdiski, no 48 h dienās.
+ */
+export function formatAdminMobileDeadlineTag(
+  createdUnixSec: number,
+  opts: { complete?: boolean; nowMs?: number } = {},
+): AdminMobileDeadlineTag {
+  if (opts.complete) return { label: "Gatavs", tone: "done" };
+  const nowMs = opts.nowMs ?? Date.now();
+  const remainingMs = auditDeadlineMs(createdUnixSec) - nowMs;
+  const hourMs = 60 * 60 * 1000;
+  if (remainingMs <= 0) {
+    const overdueH = Math.max(1, Math.ceil(Math.abs(remainingMs) / hourMs));
+    const label = overdueH >= 48 ? `Kavē ${Math.floor(overdueH / 24)} d` : `Kavē ${overdueH} h`;
+    return { label, tone: "overdue" };
+  }
+  if (remainingMs < hourMs) {
+    return { label: `Atlikušas ${Math.max(1, Math.round(remainingMs / 60_000))} min`, tone: "urgent" };
+  }
+  const h = Math.max(1, Math.round(remainingMs / hourMs));
+  return { label: `Atlikušas ${h} h`, tone: remainingMs <= AUDIT_PREPARATION_URGENT_MS ? "urgent" : "ok" };
 }
 
 /** Koncepta stūra birka: „44 h”. */

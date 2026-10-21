@@ -103,6 +103,11 @@
     --badge-fg: #ffffff;
     --chip-active-bg: #1c1c1e;
     --chip-active-fg: #ffffff;
+    /* Viena brīdinājuma krāsa (kavēts termiņš). Primārā poga D. */
+    --am-warn-bg: #fffbeb;
+    --am-warn-fg: #b45309;
+    --am-btn-primary-bg: rgba(31, 36, 48, 0.89);
+    --am-btn-primary-fg: #ffffff;
     --am-z-content: 0;
     --am-z-top: 20;
     --am-z-tab: 30;
@@ -146,6 +151,10 @@
     --badge-fg: #000000;
     --chip-active-bg: #f2f2f7;
     --chip-active-fg: #000000;
+    --am-warn-bg: rgba(240, 162, 58, 0.16);
+    --am-warn-fg: #f0a23a;
+    --am-btn-primary-bg: #f2f2f7;
+    --am-btn-primary-fg: #000000;
     --am-s2: #1f1f24;
     --am-ink3: #a1a1a6;
     --am-scrim: rgba(0, 0, 0, 0.55);

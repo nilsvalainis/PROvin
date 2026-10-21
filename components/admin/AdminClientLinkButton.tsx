@@ -43,7 +43,8 @@ function validityLabel(h: number): string {
   return `${h} h`;
 }
 
-export function AdminClientLinkButton() {
+/** `sheet` - pilna platuma rinda telefona izvēlnē "Darbības" (ar nosaukumu, ne tikai ikona). */
+export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "toolbar" | "sheet" } = {}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   useAdminScrollLock(open);
@@ -253,11 +254,18 @@ export function AdminClientLinkButton() {
 
   return (
     <>
-      <button type="button" onClick={() => void openDialog()} className={darkBtn} title="Jauna klienta saite" aria-label="Jauna klienta saite">
-        <Link2 className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-        <span className="hidden lg:inline">Jauna klienta saite</span>
-        <span className="hidden sm:inline lg:hidden">Klienta saite</span>
-      </button>
+      {variant === "sheet" ? (
+        <button type="button" onClick={() => void openDialog()} className="am-press flex h-[50px] w-full items-center gap-3 rounded-[18px] bg-[var(--fill-secondary)] px-4 text-left text-[16px] text-[var(--label)] disabled:opacity-55">
+          <Link2 className="h-5 w-5" strokeWidth={2} aria-hidden />
+          Jauna klienta saite
+        </button>
+      ) : (
+        <button type="button" onClick={() => void openDialog()} className={darkBtn} title="Jauna klienta saite" aria-label="Jauna klienta saite">
+          <Link2 className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+          <span className="hidden lg:inline">Jauna klienta saite</span>
+          <span className="hidden sm:inline lg:hidden">Klienta saite</span>
+        </button>
+      )}
 
       {open ? (
         <AdminBodyPortal>

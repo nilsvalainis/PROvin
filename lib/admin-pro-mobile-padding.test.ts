@@ -16,6 +16,7 @@ describe("PRO admin telefonā nepieskaras ekrāna malai", () => {
     expect(page("kopsavilkums")).toContain('<div className="mt-5 max-md:px-4">');
     expect(page("konsultacijas")).toContain('<div className="max-md:px-4">');
     expect(page("konsultacijas")).toMatch(/border-dashed max-md:mx-4/);
-    expect(page("dashboard")).toMatch(/border-slate-100\/80 pt-4 max-md:px-4/);
+    // Telefonā eksports ir galvenes izvēlnē "Darbības"; lapas apakšā tikai datorā.
+    expect(page("dashboard")).toMatch(/border-slate-100\/80 pt-4 max-md:hidden/);
   });
 });

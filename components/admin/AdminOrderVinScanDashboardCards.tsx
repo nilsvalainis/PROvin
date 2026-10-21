@@ -31,45 +31,24 @@ export function AdminOrderVinScanDashboardCards({
   const timeoutN = cards.reduce((n, c) => n + c.timeout, 0);
   const showMobile = surface !== "desktop";
   const showDesktop = surface !== "mobile";
-  const [sheet, setSheet] = useState<null | "morning" | "vin">(null);
+  const [sheet, setSheet] = useState<null | "vin">(null);
   const vinBadge = formatAdminMobileBadgeCount(autoN);
   return (
     <>
       {showMobile ? (
       <div className="md:hidden">
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setSheet("morning")}
-            className="am-press flex h-9 min-w-0 flex-1 items-center gap-1 rounded-full bg-[var(--fill-secondary)] px-3 text-left text-[13px] font-medium text-[var(--label)]"
-          >
-            <span className="min-w-0 flex-1 truncate">Rīta kopsavilkums</span>
-            <AdminMobileIcon name="uzPrieksu" className="h-3.5 w-3.5 shrink-0 text-[var(--label-secondary)]" />
-          </button>
+        {/* Rīta kopsavilkums ir galvenes izvēlnē "Darbības"; VIN SCAN rinda tikai tad, kad ir aktīvi darbi. */}
+        {autoN > 0 ? (
           <button
             type="button"
             onClick={() => setSheet("vin")}
-            className="am-press relative flex h-9 min-w-0 flex-1 items-center gap-1 rounded-full bg-[var(--fill-secondary)] px-3 text-left text-[13px] font-medium text-[var(--label)]"
+            className="am-press relative flex min-h-11 w-full items-center gap-2 rounded-[14px] bg-[var(--fill-secondary)] px-3 text-left text-[14px] font-medium text-[var(--label)]"
           >
-            <span className="min-w-0 flex-1 truncate">VIN SCAN{vinBadge ? ` ${vinBadge}` : ""}</span>
+            <AdminMobileIcon name="vinParbaude" className="h-4 w-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate">VIN SCAN · {vinBadge} auto</span>
             <AdminMobileIcon name="uzPrieksu" className="h-3.5 w-3.5 shrink-0 text-[var(--label-secondary)]" />
           </button>
-        </div>
-        <AdminMobileSheet
-          open={sheet === "morning"}
-          title="Rīta kopsavilkums"
-          subtitle="Termiņi šodien"
-          onClose={() => setSheet(null)}
-        >
-          <Link
-            href="/admin/kopsavilkums"
-            className="am-press flex h-[50px] items-center justify-between rounded-[18px] bg-[var(--fill-secondary)] px-4 text-[16px] text-[var(--label)]"
-            onClick={() => setSheet(null)}
-          >
-            Atvērt rīta kopsavilkumu
-            <AdminMobileIcon name="uzPrieksu" className="h-4 w-4" />
-          </Link>
-        </AdminMobileSheet>
+        ) : null}
         <AdminMobileSheet
           open={sheet === "vin"}
           title="VIN SCAN"
