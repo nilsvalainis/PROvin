@@ -269,6 +269,20 @@ describe("parseCapsolverProxy / CapSolver CF formāti", () => {
   });
 });
 
+describe("proxy credentials ar %-kodējumu", () => {
+  it("URL formā atkodē lietotāju/paroli un nekodē divreiz", () => {
+    const parts = parseCapsolverProxy("http://us%40er:p%40ss%3Aw@1.2.3.4:80");
+    expect(parts).toMatchObject({ user: "us@er", pass: "p@ss:w" });
+    expect(capsolverProxyFromUrl("http://us%40er:p%40ss%3Aw@1.2.3.4:80")).toBe(
+      "http://us%40er:p%40ss%3Aw@1.2.3.4:80",
+    );
+  });
+
+  it("nederīgs %-kodējums paliek kā ir", () => {
+    expect(parseCapsolverProxy("http://user:100%zz@1.2.3.4:80")?.pass).toBe("100%zz");
+  });
+});
+
 describe("cloudflareChallengeTaskQueue", () => {
   it("vispirms structured, tad scheme_colon; nekad ProxyLess; invalid html atpazīst", () => {
     const prevFixie = process.env.FIXIE_URL;
