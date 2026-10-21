@@ -14,7 +14,7 @@ import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChanges
 import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import type { IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
-import { IRISS_SCAN_AUTOSAVE_DEBOUNCE_MS, irissScanFieldNotice } from "@/lib/iriss-scan-autosave";
+import { IRISS_SCAN_AUTOSAVE_DEBOUNCE_MS, irissScanAutosaveHeader, irissScanFieldNotice } from "@/lib/iriss-scan-autosave";
 import { applyIrissScanSaveResult, irissScanSaveRequest } from "@/lib/iriss-scan-editor-save";
 import { irissScanFilterTableRows } from "@/lib/iriss-scan-filter-table";
 import type { IrissScanFindCard } from "@/lib/iriss-scan-finds";
@@ -29,12 +29,14 @@ import { irissScanApifyPlatforms } from "@/lib/marketplace/query-from-scan";
 import type { MarketplaceVehicleCategory } from "@/lib/marketplace/types";
 import { planSilentAutosave } from "@/lib/iriss-pasutijumi-save-safety";
 
+const EMPTY_FINDS: IrissScanFindCard[] = [];
+
 export function IrissScanEditor({
   initialRecord,
   unsavedDraft = false,
   showBack = true,
   newHits = 0,
-  finds = [],
+  finds = EMPTY_FINDS,
   onRecordChange,
   onDeleted,
 }: {
@@ -249,13 +251,15 @@ export function IrissScanEditor({
           />
           <p className="mt-1 text-[12px] text-[var(--ink3)]">
             {rec.vin.trim() ? rec.vin.trim() : "VIN nav"}
-            {formatIrissScanLastRead(rec.updatedAt) ? ` · pēdējā nolasīšana ${formatIrissScanLastRead(rec.updatedAt)}` : ""}
+            {persistId && formatIrissScanLastRead(rec.updatedAt)
+              ? ` · pēdējā nolasīšana ${formatIrissScanLastRead(rec.updatedAt)}`
+              : ""}
             {formatIrissScanNewHitsLabel(newHits) ? ` · ${formatIrissScanNewHitsLabel(newHits)}` : ""}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className="iriss-ok-chip inline-flex items-center rounded-full bg-[var(--s1)] px-3.5 text-[12px] text-[var(--ink2)] shadow-[var(--sh)]" aria-live="polite">
-            {busy ? "Saglabā..." : "Saglabāts"}
+            {irissScanAutosaveHeader(busy, Boolean(persistId))}
           </span>
           <IrissOverflowMenu label="Darbības">
             <IrissOverflowItem onClick={() => void togglePin()}>

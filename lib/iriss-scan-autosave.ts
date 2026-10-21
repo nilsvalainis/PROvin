@@ -8,10 +8,11 @@ export const IRISS_SCAN_SAVE_FAILED = "Neizdevās saglabāt";
 export const IRISS_SCAN_SAVE_RETRY = "Mēģināt vēlreiz";
 export const IRISS_SCAN_EMPTY_RECORD = "Nav ko saglabāt. Ieraksti VIN, marku vai saiti.";
 
-export type IrissScanAutosaveHeader = typeof IRISS_SCAN_AUTOSAVE_SAVED | typeof IRISS_SCAN_AUTOSAVE_SAVING;
+export type IrissScanAutosaveHeader = typeof IRISS_SCAN_AUTOSAVE_SAVED | typeof IRISS_SCAN_AUTOSAVE_SAVING | "";
 
-export function irissScanAutosaveHeader(saving: boolean): IrissScanAutosaveHeader {
-  return saving ? IRISS_SCAN_AUTOSAVE_SAVING : IRISS_SCAN_AUTOSAVE_SAVED;
+export function irissScanAutosaveHeader(saving: boolean, persisted = true): IrissScanAutosaveHeader {
+  if (saving) return IRISS_SCAN_AUTOSAVE_SAVING;
+  return persisted ? IRISS_SCAN_AUTOSAVE_SAVED : "";
 }
 
 export type IrissScanFieldNotice =

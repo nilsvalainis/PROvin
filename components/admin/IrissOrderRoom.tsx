@@ -311,6 +311,10 @@ function replyHistoryRows(offers: IrissOfferRecord[], links: IrissOfferClientLin
   return rows;
 }
 
+const EMPTY_OFFER_LINKS: IrissOfferClientLinkAdminView[] = [];
+const EMPTY_HIT_STATUS: Record<string, IrissListingHitStatus> = {};
+const EMPTY_DUPLICATES: Record<string, IrissVinDuplicateLink[]> = {};
+
 export function IrissOrderRoom({
   rec,
   hits,
@@ -349,9 +353,9 @@ export function IrissOrderRoom({
   onRestore,
   onOrderRestored,
   onDeleteOrder,
-  initialOfferLinks = [],
-  initialHitStatus = {},
-  duplicatesByListing = {},
+  initialOfferLinks = EMPTY_OFFER_LINKS,
+  initialHitStatus = EMPTY_HIT_STATUS,
+  duplicatesByListing = EMPTY_DUPLICATES,
   initialTab = "overview",
   googleContactsConfigured = false,
   googleContactBusy = false,

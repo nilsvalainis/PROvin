@@ -1,7 +1,17 @@
+import { ADMIN_RIGA_TZ } from "@/lib/admin-riga-calendar";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { irissScanOrderId } from "@/lib/iriss-scan-listings";
 import { IRISS_SCAN_SOURCES, type IrissScanLinkKey } from "@/lib/iriss-scan-sources";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
+
+const RIGA_SCAN_READ = new Intl.DateTimeFormat("en-GB", {
+  timeZone: ADMIN_RIGA_TZ,
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
 
 export function formatIrissScanTitle(brandModel: string | null | undefined): string {
   const t = (brandModel ?? "").trim();
@@ -26,9 +36,12 @@ export function countIrissScanLinks(rec: Pick<IrissScanRecord, IrissScanLinkKey>
 
 export function formatIrissScanLastRead(iso: string | null | undefined): string {
   const raw = (iso ?? "").trim();
-  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
-  if (!m) return "";
-  return `${m[3]}.${m[2]} ${m[4]}:${m[5]}`;
+  if (!raw) return "";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = Object.fromEntries(RIGA_SCAN_READ.formatToParts(d).map((part) => [part.type, part.value]));
+  if (!p.day || !p.month || !p.hour || !p.minute) return "";
+  return `${p.day}.${p.month} ${p.hour}:${p.minute}`;
 }
 
 export function formatIrissScanNewHitsLabel(count: number): string {

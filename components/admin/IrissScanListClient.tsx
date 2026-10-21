@@ -25,6 +25,9 @@ import {
 import { irissScanSourceCounts } from "@/lib/iriss-scan-sources";
 import type { IrissScanListOrder, IrissScanListRow, IrissScanRecord } from "@/lib/iriss-scan-types";
 
+const EMPTY_FINDS: IrissScanFindCard[] = [];
+const EMPTY_HITS_BY_SCAN: Record<string, number> = {};
+
 function useDesktopSplit(): boolean {
   return useSyncExternalStore(
     (onStoreChange) => {
@@ -41,8 +44,8 @@ function useDesktopSplit(): boolean {
 export function IrissScanListClient({
   rows,
   initialListOrder,
-  newHitsByScan = {},
-  finds = [],
+  newHitsByScan = EMPTY_HITS_BY_SCAN,
+  finds = EMPTY_FINDS,
   selectedRecord = null,
   unsavedDraft = false,
   mode = "list",

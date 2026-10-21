@@ -493,18 +493,24 @@ function LabeledOfferRichCommentField({
   );
 }
 
+const EMPTY_HITS: IrissOrderRoomHit[] = [];
+const EMPTY_DISMISSED_IDS: string[] = [];
+const EMPTY_OFFER_LINKS: IrissOfferClientLinkAdminView[] = [];
+const EMPTY_HIT_STATUS: Record<string, IrissListingHitStatus> = {};
+const EMPTY_DUPLICATES: Record<string, IrissVinDuplicateLink[]> = {};
+
 export function IrissPasutijumsEditor({
   initialRecord,
   autoOpenNewOffer = false,
   autoOpenOfferId = "",
   forceNoClientPdf = false,
   unsavedDraft = false,
-  roomHits = [],
-  dismissedHitIds = [],
+  roomHits = EMPTY_HITS,
+  dismissedHitIds = EMPTY_DISMISSED_IDS,
   listingsCache = "off",
-  initialOfferLinks = [],
-  initialHitStatus = {},
-  duplicatesByListing = {},
+  initialOfferLinks = EMPTY_OFFER_LINKS,
+  initialHitStatus = EMPTY_HIT_STATUS,
+  duplicatesByListing = EMPTY_DUPLICATES,
   initialRoomTab = "overview",
   googleContactsConfigured: googleContactsConfiguredInitial = false,
 }: {

@@ -13,6 +13,11 @@ describe("iriss scan autosave copy", () => {
     expect(irissScanAutosaveHeader(true)).toBe(IRISS_SCAN_AUTOSAVE_SAVING);
   });
 
+  it("hides Saglabāts on a new unsaved radar", () => {
+    expect(irissScanAutosaveHeader(false, false)).toBe("");
+    expect(irissScanAutosaveHeader(true, false)).toBe(IRISS_SCAN_AUTOSAVE_SAVING);
+  });
+
   it("keeps empty_record text at the field", () => {
     expect(irissScanFieldNotice(irissScanSaveFailureMessage(400, "empty_record"))).toEqual({
       kind: "empty",

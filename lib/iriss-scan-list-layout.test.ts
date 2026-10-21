@@ -28,7 +28,7 @@ describe("radar list Jauns radars and leftovers", () => {
     expect(empty).toContain("Jauns radars");
     expect(list).not.toMatch(/\u2014|\u2013/);
     expect(editor).not.toMatch(/\u2014|\u2013/);
-    expect(editor).toContain("Saglabāts");
+    expect(editor).toContain("irissScanAutosaveHeader");
     expect(editor).toContain("Saites");
     expect(editor).toContain("Izveidot");
     expect(editor).toContain("Atvērt visas");

@@ -179,9 +179,8 @@ body:has(.admin-m[data-section="iriss"][data-admin-theme="dark"]) {
   --color-apple-blue-hover: var(--acc);
 }
 
-.admin-ios-theme .admin-m[data-section="iriss"],
-.admin-ios-theme .admin-m[data-section="iriss"] :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd, a) {
-  color: inherit;
+.admin-ios-theme .admin-m[data-section="iriss"] {
+  color: var(--ink);
 }
 
 .admin-ios-theme .admin-m[data-section="iriss"] [class*="text-slate-"],

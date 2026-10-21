@@ -89,8 +89,8 @@
   --costs-track: var(--fill2, rgba(116, 120, 138, 0.19));
   --costs-hair: var(--hair, rgba(17, 24, 39, 0.08));
   --costs-bar: var(--acc, #3d5bd9);
-  --costs-tab-on-bg: var(--ink, #0b0c10);
-  --costs-tab-on-fg: var(--onink, #ffffff);
+  --costs-tab-on-bg: var(--btn-dark-bg, rgba(31, 36, 48, 0.89));
+  --costs-tab-on-fg: var(--btn-dark-fg, #fff);
   --costs-tab-off-bg: var(--fill, rgba(116, 120, 138, 0.11));
   --costs-tab-off-fg: var(--ink2, #5e636e);
   --costs-warn-border: #e0a04a;
