@@ -68,18 +68,22 @@ body:has(.admin-ios-theme) {
   font-family: inherit;
 }
 
-.admin-ios-theme a:not(.iriss-listing-platform-chip):not(.admin-nav-link):not(.iriss-waybill-chip) {
+/*
+ * Melnais teksts tikai PRO. IRISS lieto 00-tema tokenus; šie #000 noteikumi
+ * pārspēja chip/CTA `text-[var(--chip-active-fg)]` un tumšā režīma --ink.
+ */
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) a:not(.iriss-listing-platform-chip):not(.admin-nav-link):not(.iriss-waybill-chip) {
   color: #000000;
 }
 
-.admin-ios-theme :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd) {
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd) {
   color: #000000;
 }
 
-.admin-ios-theme [class*="text-slate-"],
-.admin-ios-theme [class*="text-zinc-"],
-.admin-ios-theme [class*="text-neutral-"],
-.admin-ios-theme [class*="text-gray-"] {
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) [class*="text-slate-"],
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) [class*="text-zinc-"],
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) [class*="text-neutral-"],
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) [class*="text-gray-"] {
   color: #000000 !important;
 }
 
@@ -101,6 +105,20 @@ body:has(.admin-ios-theme) {
   background: var(--admin-field-bg) !important;
   color: var(--admin-field-ink) !important;
   box-shadow: none;
+}
+
+/* IRISS primārās pogas: --btn-dark-* abos režīmos (gaišs teksts uz tumša fona). */
+.admin-ios-theme:has(.admin-m[data-section="iriss"]) :is(a, button)[class*="chip-active-bg"],
+.admin-ios-theme:has(.admin-m[data-section="iriss"]) :is(a, button)[class*="btn-dark"],
+.admin-ios-theme:has(.admin-m[data-section="iriss"]) a.admin-costs-tab[data-on="true"] {
+  background-color: var(--btn-dark-bg, rgba(31, 36, 48, 0.89));
+  color: var(--btn-dark-fg, #fff);
+}
+
+.admin-ios-theme:has(.admin-m[data-section="iriss"]) :is(a, button)[class*="chip-active-bg"] :is(span, p, small, svg),
+.admin-ios-theme:has(.admin-m[data-section="iriss"]) :is(a, button)[class*="btn-dark"] :is(span, p, small, svg),
+.admin-ios-theme:has(.admin-m[data-section="iriss"]) a.admin-costs-tab[data-on="true"] :is(span, p, small) {
+  color: var(--btn-dark-fg, #fff);
 }
 
 .admin-ios-theme :is(input, select, textarea)::placeholder {
